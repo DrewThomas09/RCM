@@ -166,8 +166,8 @@ def render_cyber_risk(params: dict = None) -> str:
         ck_kpi_block("Cyber Score", f"{r.overall_cyber_score}/100", "", "") +
         ck_kpi_block("Risk Tier", r.risk_tier.upper()[:14], "", "") +
         ck_kpi_block("Records in Scope", f"{r.total_records_in_scope:,}", "", "") +
-        ck_kpi_block("Insurance", f"${r.cyber_insurance_coverage_mm:,.0f}M", "", "") +
-        ck_kpi_block("Annual Spend", f"${r.annual_cyber_spend_mm:,.1f}M", "", "") +
+        ck_kpi_block("Insurance", f"${r.cyber_insurance_coverage_mm:,.2f}M", "", "") +
+        ck_kpi_block("Annual Spend", f"${r.annual_cyber_spend_mm:,.2f}M", "", "") +
         ck_kpi_block("Control Domains", str(len(r.domains)), "", "") +
         ck_kpi_block("Vendors at Risk", str(sum(1 for v in r.vendors if v.risk_score >= 50)), "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
@@ -195,7 +195,7 @@ def render_cyber_risk(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {tier_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Cyber Posture</div>
     <div style="color:{tier_c};font-weight:700;font-size:14px">Score {r.overall_cyber_score}/100 · Tier {_html.escape(r.risk_tier.upper())} · {r.total_records_in_scope:,} PHI records in scope</div>
-    <div style="color:{text_dim};font-size:11px;margin-top:4px">${r.cyber_insurance_coverage_mm:,.0f}M insurance tower · ${r.annual_cyber_spend_mm:,.1f}M annual spend · {hhs_incidents} HHS-reportable incidents LTM</div>
+    <div style="color:{text_dim};font-size:11px;margin-top:4px">${r.cyber_insurance_coverage_mm:,.2f}M insurance tower · ${r.annual_cyber_spend_mm:,.2f}M annual spend · {hhs_incidents} HHS-reportable incidents LTM</div>
   </div>
   <div style="{cell}"><div style="{h3}">Control Domain Maturity vs Industry Benchmark</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Incident History (LTM)</div>{i_tbl}</div>

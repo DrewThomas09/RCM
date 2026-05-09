@@ -90,18 +90,18 @@ def estimate_rac_exposure(inputs: RACInputs) -> RACExposureReport:
                         if inputs.base_ebitda_m > 0 else 0.0)
 
     if loss_pct_ebitda >= 0.30:
-        note = (f"RAC exposure ~${expected_mid:,.1f}M mid-case is "
+        note = (f"RAC exposure ~${expected_mid:,.2f}M mid-case is "
                 f"{loss_pct_ebitda*100:.1f}% of base EBITDA. This is "
                 "an IC-blocking number — forensic billing diligence "
                 "is non-negotiable; partner should not approve "
                 "without an adjustment to purchase price.")
     elif loss_pct_ebitda >= 0.10:
-        note = (f"RAC exposure ~${expected_mid:,.1f}M "
+        note = (f"RAC exposure ~${expected_mid:,.2f}M "
                 f"({loss_pct_ebitda*100:.1f}% of EBITDA) is "
                 "material. Structure purchase-price earn-out or "
                 "indemnity for the audit window.")
     elif loss_pct_ebitda >= 0.03:
-        note = (f"RAC exposure ~${expected_mid:,.1f}M is modest but "
+        note = (f"RAC exposure ~${expected_mid:,.2f}M is modest but "
                 "not ignorable. Standard reps & warranties with "
                 "typical insurance coverage.")
     elif inputs.medicare_ffs_revenue_m > 0:
@@ -134,7 +134,7 @@ def render_rac_markdown(r: RACExposureReport) -> str:
         f"- Adjusted for signals: "
         f"{r.adjusted_audit_hit_rate*100:.2f}%",
         f"- Exposed revenue (3-year look-back): "
-        f"${r.exposed_revenue_m:,.1f}M",
+        f"${r.exposed_revenue_m:,.2f}M",
         f"- Expected loss low: ${r.expected_loss_low_m:,.2f}M",
         f"- Expected loss mid: ${r.expected_loss_mid_m:,.2f}M",
         f"- Expected loss high: ${r.expected_loss_high_m:,.2f}M",

@@ -203,7 +203,7 @@ def _build_headline(
         head = f"Thesis is at risk on {len(ranked)} material item{'s' if len(ranked) != 1 else ''}"
     if at_risk_usd >= 1_000_000:
         head += (
-            f" — combined ${at_risk_usd/1e6:.1f}M of EBITDA at risk"
+            f" — combined ${at_risk_usd/1e6:.2f}M of EBITDA at risk"
         )
     head += "."
     # Add "thesis breakers" naming
@@ -274,7 +274,7 @@ def _build_ic_memo_html(
         f'border-left:3px solid #b91c1c;font-size:13px;'
         f'line-height:1.6;margin-bottom:12px;">'
         f'<strong>Combined EBITDA at risk:</strong> '
-        f'${at_risk_usd/1e6:,.1f}M. {len([e for e in ranked if e.severity == EvidenceSeverity.CRITICAL])} CRITICAL + '
+        f'${at_risk_usd/1e6:,.2f}M. {len([e for e in ranked if e.severity == EvidenceSeverity.CRITICAL])} CRITICAL + '
         f'{len([e for e in ranked if e.severity == EvidenceSeverity.HIGH])} HIGH evidence items across '
         f'{len(set(e.source for e in ranked))} source modules.'
         f'</div>'
@@ -424,7 +424,7 @@ def generate_bear_case(
             + (f", and [{top3[2].citation_key}] {top3[2].title[:60]}"
                if len(top3) > 2 else "")
             + ". Combined EBITDA at risk across the bear case is "
-            f"${at_risk/1e6:,.1f}M. "
+            f"${at_risk/1e6:,.2f}M. "
             f"{critical_count} CRITICAL, {high_count} HIGH, and "
             f"{medium_count} MEDIUM evidence items drawn from "
             f"{len(sources_active)} source module"

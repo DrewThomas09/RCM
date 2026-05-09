@@ -54,7 +54,7 @@ def _fmt(v: Any) -> str:
         return "—"
     if isinstance(v, float):
         if abs(v) >= 1e6:
-            return f"${v / 1e6:,.1f}M"
+            return f"${v / 1e6:,.2f}M"
         return f"{v:,.2f}"
     return str(v)
 
@@ -303,7 +303,7 @@ def render_screen_page(
                 f'<td><a href="/hospital/{ccn}" style="font-weight:500;">{name}</a></td>'
                 f'<td>{state}</td>'
                 f'<td class="num">{int(beds):,}</td>'
-                f'<td class="num">${float(rev)/1e6:,.0f}M</td>'
+                f'<td class="num">${float(rev)/1e6:,.2f}M</td>'
                 f'<td class="num" style="color:{margin_color};">{margin:.1%}</td>'
                 f'<td style="white-space:nowrap;">'
                 f'<a href="/hospital/{ccn}" class="cad-badge cad-badge-blue" '

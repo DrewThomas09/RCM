@@ -50,7 +50,7 @@ def render_hospital_profile(
         f'<span class="ident-sep">|</span>'
         f'<span class="ident-key">BEDS</span> <span class="ident-val">{beds:,}</span>'
         f'<span class="ident-sep">|</span>'
-        f'<span class="ident-key">NPR</span> <span class="ident-val">${npr/1e6:,.1f}M</span>'
+        f'<span class="ident-key">NPR</span> <span class="ident-val">${npr/1e6:,.2f}M</span>'
         f'<span class="ident-sep">|</span>'
         f'<span class="ident-key">MARGIN</span> '
         f'<span class="ident-val" style="color:{grade_color};">{margin:.1%}</span>'
@@ -265,7 +265,7 @@ def render_hospital_profile(
                 f'style="color:{PALETTE["text_primary"]};text-decoration:none;font-weight:600;">'
                 f'{c_name}</a></td>'
                 f'<td class="num">{c_beds:,}</td>'
-                f'<td class="num">${c_rev/1e6:,.0f}M</td></tr>'
+                f'<td class="num">${c_rev/1e6:,.2f}M</td></tr>'
             )
         comp_html = (
             f'<div class="cad-card cad-table-sticky">'

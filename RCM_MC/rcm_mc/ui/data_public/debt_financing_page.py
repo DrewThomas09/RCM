@@ -37,7 +37,7 @@ def _facilities_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(f.deal)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(f.sector)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(f.tranche)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${f.size_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${f.size_m:.2f}M</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(f.lead_arranger)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{f.sofr_spread_bps}bps</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{f.floor_bps}bps</td>',
@@ -66,9 +66,9 @@ def _syndication_table(items) -> str:
         fl_c = P["negative"] if s.flex_used_bps >= 25 else (warn if s.flex_used_bps > 0 else text_dim)
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.deal)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${s.total_package_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${s.committed_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">${s.allocation_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${s.total_package_m:.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${s.committed_m:.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">${s.allocation_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.accounts_participating}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{o_c};font-weight:700">{s.oversubscribed_x:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(s.launch_date)}</td>',
@@ -124,9 +124,9 @@ def _covenants_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{c.leverage_at_close:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{h_c};font-weight:700">{c.headroom_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.interest_cov_covenant:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.capex_flex_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.restricted_payment_basket_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${c.incremental_facility_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.capex_flex_m:.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.restricted_payment_basket_m:.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${c.incremental_facility_m:.2f}M</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -168,9 +168,9 @@ def _lenders_table(items) -> str:
         t_c = _tier_color(l.relationship_tier)
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(l.lender)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${l.commitments_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${l.commitments_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{l.deals_count}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${l.avg_hold_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${l.avg_hold_m:.2f}M</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(l.sectors_active)}</td>',
             f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{t_c};border:1px solid {t_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(l.relationship_tier)}</span></td>',
         ]
@@ -189,8 +189,8 @@ def render_debt_financing(params: dict = None) -> str:
 
     kpi_strip = (
         ck_kpi_block("Active Financings", str(r.total_financings), "", "") +
-        ck_kpi_block("Total Package", f"${r.total_package_m:,.1f}M", "", "") +
-        ck_kpi_block("Committed", f"${r.total_committed_m:,.1f}M", "", "") +
+        ck_kpi_block("Total Package", f"${r.total_package_m:,.2f}M", "", "") +
+        ck_kpi_block("Committed", f"${r.total_committed_m:,.2f}M", "", "") +
         ck_kpi_block("Avg SOFR+", f"{r.avg_sofr_spread}", "bps", "") +
         ck_kpi_block("Cov-Lite %", f"{r.cov_lite_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Avg Leverage", f"{r.avg_leverage:.2f}x", "", "") +
@@ -216,7 +216,7 @@ def render_debt_financing(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Debt Financing / LBO Commitment Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_financings} active financings · ${r.total_package_m:,.1f}M total package · SOFR+{r.avg_sofr_spread}bps average · {cov_lite_cnt} of {len(r.facilities)} facilities cov-lite ({r.cov_lite_pct * 100:.1f}%) · {active_marketing} in active syndication — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_financings} active financings · ${r.total_package_m:,.2f}M total package · SOFR+{r.avg_sofr_spread}bps average · {cov_lite_cnt} of {len(r.facilities)} facilities cov-lite ({r.cov_lite_pct * 100:.1f}%) · {active_marketing} in active syndication — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Syndication Status — Active Book</div>{s_tbl}</div>
@@ -226,7 +226,7 @@ def render_debt_financing(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Sector Clearing Benchmarks — SOFR+ Spread, Leverage, Interest Coverage</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Lender Book — Relationships & Concentration</div>{l_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Debt Market Summary:</strong> {r.total_financings} active LBO financings sum ${r.total_package_m:,.1f}M in package / ${r.total_committed_m:,.1f}M committed — {r.total_committed_m / r.total_package_m * 100 if r.total_package_m else 0:.1f}% commitment coverage.
+    <strong style="color:{text}">Debt Market Summary:</strong> {r.total_financings} active LBO financings sum ${r.total_package_m:,.2f}M in package / ${r.total_committed_m:,.2f}M committed — {r.total_committed_m / r.total_package_m * 100 if r.total_package_m else 0:.1f}% commitment coverage.
     Average pricing SOFR+{r.avg_sofr_spread}bps tracks Lipper Leveraged Loan Index ±25bps; {r.cov_lite_pct * 100:.1f}% cov-lite continues to dominate sponsored middle-market.
     Average leverage at close {r.avg_leverage:.2f}x EBITDA with 16.8% headroom to maintenance covenants — room for modest underperformance without trip.
     {active_marketing} of {len(r.syndications)} deals still in active syndication; {sum(1 for s in r.syndications if s.flex_used_bps > 0)} have triggered pricing flex (avg 37bps) — concentrated in fertility/infusion where market remains choppier.

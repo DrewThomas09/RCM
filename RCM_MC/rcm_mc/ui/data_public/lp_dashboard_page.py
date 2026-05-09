@@ -364,7 +364,7 @@ def render_lp_dashboard(params: dict = None) -> str:
     # KPI strip
     kpi_strip = (
         ck_kpi_block("Total Deals", str(kpis.total_deals), "", "") +
-        ck_kpi_block("Total EV", f"${kpis.total_ev_deployed_mm:,.0f}M", "", "") +
+        ck_kpi_block("Total EV", f"${kpis.total_ev_deployed_mm:,.2f}M", "", "") +
         ck_kpi_block("Gross MOIC", f"{kpis.gross_moic:.2f}x", "", "") +
         ck_kpi_block("Net MOIC", f"{kpis.net_moic:.2f}x", "", "") +
         ck_kpi_block("TVPI", f"{kpis.tvpi:.2f}x", "", "") +
@@ -379,7 +379,7 @@ def render_lp_dashboard(params: dict = None) -> str:
         ck_kpi_block("Loss Rate", f"{kpis.loss_rate*100:.1f}%", "", "") +
         ck_kpi_block("Home Run Rate", f"{kpis.home_run_rate*100:.1f}%", "", "") +
         ck_kpi_block("% Commercial", f"{kpis.pct_commercial_payer*100:.1f}%", "", "") +
-        ck_kpi_block("Median EV", f"${kpis.median_ev_mm:,.0f}M", "", "") +
+        ck_kpi_block("Median EV", f"${kpis.median_ev_mm:,.2f}M", "", "") +
         ck_kpi_block("Corpus Deals", str(result.corpus_deal_count), "", "")
     )
 

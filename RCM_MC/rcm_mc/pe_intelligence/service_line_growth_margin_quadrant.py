@@ -217,18 +217,18 @@ def render_service_line_quadrant_markdown(
         "",
         f"_{r.partner_note}_",
         "",
-        f"- Stars: ${r.stars_revenue_m:.1f}M",
-        f"- Cash cows: ${r.cash_cows_revenue_m:.1f}M",
+        f"- Stars: ${r.stars_revenue_m:.2f}M",
+        f"- Cash cows: ${r.cash_cows_revenue_m:.2f}M",
         f"- Question marks: "
-        f"${r.question_marks_revenue_m:.1f}M",
-        f"- Dogs: ${r.dogs_revenue_m:.1f}M",
+        f"${r.question_marks_revenue_m:.2f}M",
+        f"- Dogs: ${r.dogs_revenue_m:.2f}M",
         "",
         "| Line | Revenue | Growth | Margin | Quadrant | Action |",
         "|---|---|---|---|---|---|",
     ]
     for c in r.classifications:
         lines.append(
-            f"| {c.name} | ${c.revenue_m:.1f}M | "
+            f"| {c.name} | ${c.revenue_m:.2f}M | "
             f"{c.growth_rate_pct:+.1%} | "
             f"{c.ebitda_margin_pct:.0%} | "
             f"{c.quadrant} | {c.recommendation} |"

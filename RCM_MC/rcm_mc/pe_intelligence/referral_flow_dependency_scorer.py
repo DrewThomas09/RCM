@@ -225,7 +225,7 @@ def score_referral_flow_dependency(
         note = (
             f"{triggered} referral flags firing. "
             f"Expected EBITDA loss on top-1 departure "
-            f"${expected_ebitda_loss:,.1f}M at "
+            f"${expected_ebitda_loss:,.2f}M at "
             f"{base_prob*100:.1f}% probability. Haircut "
             "underwrite by this amount."
         )
@@ -268,7 +268,7 @@ def render_referral_flow_markdown(
         f"- Departure probability: "
         f"{r.departure_probability_pct:.1f}%",
         f"- Expected EBITDA loss: "
-        f"${r.expected_ebitda_loss_m:,.1f}M",
+        f"${r.expected_ebitda_loss_m:,.2f}M",
         "",
         "| Flag | Triggered | Partner comment |",
         "|---|---|---|",

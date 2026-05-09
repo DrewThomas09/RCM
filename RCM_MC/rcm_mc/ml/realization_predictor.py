@@ -201,7 +201,7 @@ def predict_realization(
     if top_negative:
         parts.append(f"Risks: {', '.join(f.label for f in top_negative)}.")
     if bridge_uplift > 0:
-        parts.append(f"Risk-adjusted uplift: ${risk_adj/1e6:.1f}M (vs ${bridge_uplift/1e6:.1f}M modeled).")
+        parts.append(f"Risk-adjusted uplift: ${risk_adj/1e6:.2f}M (vs ${bridge_uplift/1e6:.2f}M modeled).")
 
     return RealizationPrediction(
         expected_realization=round(realization, 3),

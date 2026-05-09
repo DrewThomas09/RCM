@@ -184,8 +184,8 @@ def _projection_table(projections) -> str:
             f'<td style="padding:5px 8px;text-align:center;color:{tdim}">Year {p.year}</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{lev_c}">{p.debt_ebitda:.2f}x</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{p.interest_coverage:.2f}x</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${p.ebitda_mm:.1f}M</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">${p.debt_mm:.1f}M</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${p.ebitda_mm:.2f}M</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">${p.debt_mm:.2f}M</td>'
             f'</tr>'
         )
 
@@ -222,7 +222,7 @@ def _peers_table(peers, title: str) -> str:
             f'<td style="padding:5px 8px;color:{tprim}">{p.company}</td>'
             f'<td style="padding:5px 8px;color:{tdim}">{p.sector[:20]}</td>'
             f'<td style="padding:5px 8px;text-align:center;color:{tdim}">{p.year}</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${p.ev_mm:.0f}M</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${p.ev_mm:.2f}M</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{lev_c}">{p.implied_leverage:.2f}x</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{p.moic:.2f}x</td>'
             f'</tr>'

@@ -157,8 +157,8 @@ def render_scenario_comparison_markdown(
     for s in (comparison.base, comparison.bull, comparison.bear):
         irr_str = f"{s.irr*100:.1f}%" if s.irr is not None else "—"
         lines.append(
-            f"| {s.name} | ${s.exit_ebitda_m:,.1f}M | "
-            f"{s.exit_multiple:.2f}x | ${s.exit_ev_m:,.1f}M | "
-            f"${s.exit_equity_m:,.1f}M | {s.moic:.2f}x | {irr_str} |"
+            f"| {s.name} | ${s.exit_ebitda_m:,.2f}M | "
+            f"{s.exit_multiple:.2f}x | ${s.exit_ev_m:,.2f}M | "
+            f"${s.exit_equity_m:,.2f}M | {s.moic:.2f}x | {irr_str} |"
         )
     return "\n".join(lines)

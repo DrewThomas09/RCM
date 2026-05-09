@@ -99,7 +99,7 @@ def read_banker_pricing_tension(
         verdict = "bridgeable"
         note = (
             f"Gap {gap_turns:.1f}× "
-            f"(${gap_dollars:.0f}M) is fully "
+            f"(${gap_dollars:.2f}M) is fully "
             f"bridged by "
             f"{inputs.operational_upside_turns:.1f}× "
             "operational upside. Move to confirmatory "
@@ -156,9 +156,9 @@ def render_banker_pricing_tension_markdown(
         "",
         f"_Verdict: **{r.verdict}**_ — {r.partner_note}",
         "",
-        f"- Banker EV: ${r.banker_implied_ev_m:.0f}M",
+        f"- Banker EV: ${r.banker_implied_ev_m:.2f}M",
         f"- Partner walk-away EV: "
-        f"${r.partner_implied_ev_m:.0f}M",
+        f"${r.partner_implied_ev_m:.2f}M",
         f"- Gap: {r.gap_turns:+.1f}× "
         f"(${r.gap_dollars_m:+.0f}M)",
         f"- Bridge available: "

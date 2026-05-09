@@ -199,12 +199,12 @@ def render_partner_economics(params: dict = None) -> str:
     pos = P["positive"]; acc = P["accent"]
 
     kpi_strip = (
-        ck_kpi_block("Practice Revenue", f"${r.practice_revenue_mm:,.0f}M", "", "") +
-        ck_kpi_block("Practice EBITDA", f"${r.practice_ebitda_mm:,.1f}M", "", "") +
+        ck_kpi_block("Practice Revenue", f"${r.practice_revenue_mm:,.2f}M", "", "") +
+        ck_kpi_block("Practice EBITDA", f"${r.practice_ebitda_mm:,.2f}M", "", "") +
         ck_kpi_block("Partners", str(r.total_partners), "", "") +
         ck_kpi_block("Avg Comp", f"${r.avg_partner_comp_k:,.0f}K", "", "") +
         ck_kpi_block("Phys Equity Pool", f"{r.physician_equity_pool_pct * 100:.0f}%", "", "") +
-        ck_kpi_block("Annual GP Cost", f"${r.annual_gp_cost_mm:,.1f}M", "", "") +
+        ck_kpi_block("Annual GP Cost", f"${r.annual_gp_cost_mm:,.2f}M", "", "") +
         ck_kpi_block("Tiers", str(len(r.tiers)), "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
@@ -248,7 +248,7 @@ def render_partner_economics(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Partner Thesis:</strong> {r.total_partners} partners with {r.physician_equity_pool_pct * 100:.1f}% equity pool.
     Avg partner comp ${r.avg_partner_comp_k:,.0f}K (salary + distributions). Mid-tier buy-in ${r.tiers[1].buy_in_value_mm if len(r.tiers) > 1 else 0:,.2f}M.
-    Annual partner economics total ${r.annual_gp_cost_mm:,.1f}M — critical to structure correctly for recruitment AND retention.
+    Annual partner economics total ${r.annual_gp_cost_mm:,.2f}M — critical to structure correctly for recruitment AND retention.
   </div>
 </div>"""
 

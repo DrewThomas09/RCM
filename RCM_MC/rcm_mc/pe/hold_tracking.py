@@ -477,9 +477,9 @@ def format_variance_report(df: pd.DataFrame) -> str:
                 a_str = f"{actual:.1f}d"
                 p_str = "—" if plan is None else f"{plan:.1f}d"
             else:  # money
-                a_str = f"${actual/1e6:.1f}M" if abs(actual) < 1e9 else f"${actual/1e9:.2f}B"
+                a_str = f"${actual/1e6:.2f}M" if abs(actual) < 1e9 else f"${actual/1e9:.2f}B"
                 p_str = ("—" if plan is None
-                         else (f"${plan/1e6:.1f}M" if abs(plan) < 1e9 else f"${plan/1e9:.2f}B"))
+                         else (f"${plan/1e6:.2f}M" if abs(plan) < 1e9 else f"${plan/1e9:.2f}B"))
             v_str = "—" if var_pct is None else f"{var_pct*100:+.1f}%"
             lines.append(
                 f"    {g} {r['kpi']:<22s} actual {a_str:>10s}  "

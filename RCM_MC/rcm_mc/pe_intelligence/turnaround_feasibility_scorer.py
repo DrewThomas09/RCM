@@ -125,7 +125,7 @@ def score_turnaround_feasibility(
         name="operator_placement_budget_reserved",
         passed=budget_ok,
         partner_comment=(
-            f"${inputs.operator_placement_budget_m:.1f}M "
+            f"${inputs.operator_placement_budget_m:.2f}M "
             "reserved for placement + transition."
             if budget_ok else
             "No operator-placement budget reserved. "
@@ -241,7 +241,7 @@ def score_turnaround_feasibility(
     )
     if placement_flag:
         note += (
-            f" On a ${inputs.current_ebitda_m:.0f}M EBITDA "
+            f" On a ${inputs.current_ebitda_m:.2f}M EBITDA "
             "target, $5M+ operator-placement budget is a "
             "closing-condition item, not a nice-to-have."
         )

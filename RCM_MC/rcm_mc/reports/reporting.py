@@ -38,9 +38,9 @@ def pretty_money(x: float) -> str:
     sign = "-" if x < 0 else ""
     x = abs(float(x))
     if x >= 1e9:
-        return f"{sign}${x/1e9:.1f}B"
+        return f"{sign}${x/1e9:.2f}B"
     if x >= 1e6:
-        return f"{sign}${x/1e6:.1f}M"
+        return f"{sign}${x/1e6:.2f}M"
     if x >= 1e3:
         return f"{sign}${x/1e3:.0f}K"
     return f"{sign}${x:.0f}"

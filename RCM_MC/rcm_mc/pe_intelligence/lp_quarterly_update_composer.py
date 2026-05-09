@@ -189,7 +189,7 @@ def compose_lp_quarterly_update(
         if inputs.reg_shock_this_quarter_m < 0:
             opening_frame += (
                 f"Driver: {inputs.reg_shock_description} "
-                f"(~${abs(inputs.reg_shock_this_quarter_m):.0f}M "
+                f"(~${abs(inputs.reg_shock_this_quarter_m):.2f}M "
                 "EBITDA impact). We own this call — the "
                 "exposure was in our model but we "
                 "underweighted timing."
@@ -212,7 +212,7 @@ def compose_lp_quarterly_update(
             opening_frame += (
                 f"Primary driver: "
                 f"{inputs.reg_shock_description} "
-                f"(~${abs(inputs.reg_shock_this_quarter_m):.0f}M "
+                f"(~${abs(inputs.reg_shock_this_quarter_m):.2f}M "
                 "EBITDA). The underlying business is "
                 "intact; the valuation re-rate reflects "
                 "reimbursement reality, not thesis failure."

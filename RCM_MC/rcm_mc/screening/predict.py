@@ -113,7 +113,7 @@ def _identify_risk_factors(c: DealCandidate) -> List[str]:
             f"Margin {c.ebitda_margin*100:.1f}% — turnaround case")
     if c.ebitda_mm < 5:
         out.append(
-            f"EBITDA ${c.ebitda_mm:.1f}M — sub-scale; narrow buyer "
+            f"EBITDA ${c.ebitda_mm:.2f}M — sub-scale; narrow buyer "
             "universe")
     if c.has_pe_history:
         out.append(

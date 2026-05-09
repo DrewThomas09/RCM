@@ -63,7 +63,7 @@ def _slb_waterfall_svg(scenarios) -> str:
         bars.append(
             f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" fill="{color}" opacity="0.88"/>'
             f'<text x="{x + bar_w / 2:.1f}" y="{y - 4:.1f}" fill="{P["text_dim"]}" font-size="11" '
-            f'text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">${s.total_slb_proceeds_mm:,.1f}M</text>'
+            f'text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">${s.total_slb_proceeds_mm:,.2f}M</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" '
             f'text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(s.scenario[:22])}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 26}" fill="{pos}" font-size="9" '
@@ -166,11 +166,11 @@ def _scenarios_table(scenarios) -> str:
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.scenario)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.properties_in_scope}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${s.total_slb_proceeds_mm:,.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${s.total_slb_proceeds_mm:,.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${s.incremental_rent_mm:+,.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{eb_c}">${s.net_ebitda_impact_mm:+,.2f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.debt_paydown_mm:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.equity_return_mm:,.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.debt_paydown_mm:,.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.equity_return_mm:,.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{mc};font-weight:600">+{s.implied_moic_lift * 100:.1f}%</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -211,7 +211,7 @@ def render_real_estate(params: dict = None) -> str:
         ck_kpi_block("Total Sqft", f"{r.total_sqft:,}", "", "") +
         ck_kpi_block("Owned %", f"{r.owned_sqft / r.total_sqft * 100:.0f}%" if r.total_sqft else "0%", "", "") +
         ck_kpi_block("Avg Cap Rate", f"{r.weighted_avg_cap_rate * 100:.2f}%", "", "") +
-        ck_kpi_block("Realizable RE", f"${r.realizable_re_value_mm:,.1f}M", "", "") +
+        ck_kpi_block("Realizable RE", f"${r.realizable_re_value_mm:,.2f}M", "", "") +
         ck_kpi_block("Annual Rent", f"${r.current_annual_rent_mm:,.2f}M", "", "") +
         ck_kpi_block("Occupancy % Rev", f"{r.annual_occupancy_cost_pct_rev * 100:.1f}%", "", "") +
         ck_kpi_block("Rent Savings (C)", f"${r.annual_rent_saved_mm:,.2f}M", "", "")
@@ -302,9 +302,9 @@ def render_real_estate(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Real Estate Thesis:</strong>
-    {r.owned_sqft:,} sqft owned + {r.leased_sqft:,} sqft leased = ${r.realizable_re_value_mm:,.1f}M realizable value.
+    {r.owned_sqft:,} sqft owned + {r.leased_sqft:,} sqft leased = ${r.realizable_re_value_mm:,.2f}M realizable value.
     SLB at {r.weighted_avg_cap_rate * 100:.2f}% cap rate extracts trapped equity. Owned + related-party
-    restructure unlocks ${r.slb_scenarios[1].total_slb_proceeds_mm:,.1f}M for debt paydown / equity distribution.
+    restructure unlocks ${r.slb_scenarios[1].total_slb_proceeds_mm:,.2f}M for debt paydown / equity distribution.
     Lease renegotiation adds ${r.annual_rent_saved_mm:,.2f}M/yr in EBITDA.
   </div>
 

@@ -155,20 +155,20 @@ def score_cv_readiness(
     gp = inputs.gp_reinvest_commitment_m
     if gp >= 25.0:
         s, note = 4, (
-            f"${gp:.0f}M GP commitment — strong LP "
+            f"${gp:.2f}M GP commitment — strong LP "
             "skin-in-the-game signal."
         )
     elif gp >= 10.0:
         s, note = 3, (
-            f"${gp:.0f}M GP commitment — adequate."
+            f"${gp:.2f}M GP commitment — adequate."
         )
     elif gp >= 5.0:
         s, note = 2, (
-            f"${gp:.0f}M — light but acceptable."
+            f"${gp:.2f}M — light but acceptable."
         )
     else:
         s, note = 0, (
-            f"${gp:.0f}M GP commitment — LP advisory "
+            f"${gp:.2f}M GP commitment — LP advisory "
             "committee will flag this as low skin."
         )
     dims.append(CVDimensionScore(

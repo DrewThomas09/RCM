@@ -511,7 +511,7 @@ def run_covenant_stress(
             (c for c in cures if c.covenant_name == name), None,
         )
         cure_str = (
-            f"${cure.median_cure_usd/1e6:.1f}M median equity cure"
+            f"${cure.median_cure_usd/1e6:.2f}M median equity cure"
             if cure and cure.median_cure_usd else
             "material equity cure"
         )

@@ -134,7 +134,7 @@ def render_hold_markdown(r: HoldOptimizerResult) -> str:
     for o in r.outcomes:
         irr_s = f"{o.irr*100:.1f}%" if o.irr is not None else "—"
         lines.append(
-            f"| {o.year} | ${o.exit_ev_m:,.0f}M | "
-            f"${o.exit_equity_m:,.0f}M | {o.moic:.2f}x | {irr_s} |"
+            f"| {o.year} | ${o.exit_ev_m:,.2f}M | "
+            f"${o.exit_equity_m:,.2f}M | {o.moic:.2f}x | {irr_s} |"
         )
     return "\n".join(lines)

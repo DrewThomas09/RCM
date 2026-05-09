@@ -39,11 +39,11 @@ def _calls_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(c.fund)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(c.call_date)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{c.call_number}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${c.amount_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${c.amount_m:.2f}M</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:11px;color:{text_dim};max-width:340px">{_html.escape(c.purpose)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.unfunded_before_m:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">${c.unfunded_after_m:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${c.ltm_called_m:,.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.unfunded_before_m:,.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">${c.unfunded_after_m:,.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${c.ltm_called_m:,.2f}M</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{d_c};font-weight:700">{"YES" if c.defaulted_lp else "NO"}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -64,11 +64,11 @@ def _dist_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(d.fund)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(d.dist_date)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{d.dist_number}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${d.amount_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${d.amount_m:.2f}M</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(d.type)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(d.source)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${d.ltm_distributed_m:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${d.net_to_lps_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${d.ltm_distributed_m:,.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${d.net_to_lps_m:.2f}M</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -89,13 +89,13 @@ def _cashflow_table(items) -> str:
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(c.fund)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.vintage}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${c.committed_m:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">${c.called_m:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${c.distributed_m:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${c.nav_m:,.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${c.committed_m:,.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">${c.called_m:,.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${c.distributed_m:,.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${c.nav_m:,.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{dpi_c};font-weight:700">{c.dpi:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{tvpi_c};font-weight:700">{c.tvpi:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.unfunded_m:,.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.unfunded_m:,.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{_html.escape(c.next_call_estimate)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -115,7 +115,7 @@ def _lp_comms_table(items) -> str:
         s_c = _status_color(c.status)
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(c.lp_name)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${c.commitment_m:,.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${c.commitment_m:,.2f}M</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(c.communication_type)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(c.date)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:11px;color:{text_dim};max-width:320px">{_html.escape(c.subject)}</td>',
@@ -165,7 +165,7 @@ def _treasury_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(t.fund)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(t.movement_type)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(t.date)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${t.amount_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${t.amount_m:.2f}M</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(t.from_entity)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(t.to_entity)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(t.bank)}</td>',
@@ -190,8 +190,8 @@ def render_capital_call_tracker(params: dict = None) -> str:
         ck_kpi_block("Committed", f"${r.total_committed_b:.2f}B", "", "") +
         ck_kpi_block("Called", f"${r.total_called_b:.2f}B", "", "") +
         ck_kpi_block("Distributed", f"${r.total_distributed_b:.2f}B", "", "") +
-        ck_kpi_block("LTM Calls", f"${r.ltm_calls_m:,.1f}M", "", "") +
-        ck_kpi_block("LTM Distributions", f"${r.ltm_distributions_m:,.1f}M", "", "") +
+        ck_kpi_block("LTM Calls", f"${r.ltm_calls_m:,.2f}M", "", "") +
+        ck_kpi_block("LTM Distributions", f"${r.ltm_distributions_m:,.2f}M", "", "") +
         ck_kpi_block("LTM Net", f"${r.net_ltm_m:+,.1f}M", "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
@@ -223,7 +223,7 @@ def render_capital_call_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Treasury Movements</div>{tr_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Capital Flow Summary:</strong> ${r.total_committed_b:.2f}B committed across {r.total_funds} funds — {r.total_called_b / r.total_committed_b * 100 if r.total_committed_b else 0:.1f}% called to date.
-    LTM activity: ${r.ltm_calls_m:,.1f}M in capital calls vs ${r.ltm_distributions_m:,.1f}M in distributions — net ${r.net_ltm_m:+,.1f}M (active deployment phase outpacing returns).
+    LTM activity: ${r.ltm_calls_m:,.2f}M in capital calls vs ${r.ltm_distributions_m:,.2f}M in distributions — net ${r.net_ltm_m:+,.1f}M (active deployment phase outpacing returns).
     Call pace: 12 new calls LTM averaging $329M per call — WCAS XV ($485M) and KKR III ($525M) are the two largest drawdowns for Project Azalea and Project Ridge.
     Distribution mix: 6 SBO exits ($1,630M), 1 IPO secondary ($545M), 1 dividend recap ($185M), 1 CV proceeds ($125M) — exit path diversification delivering LP liquidity despite strategic-sale drought.
     {active_requests} active LP requests including side-letter disclosure (Temasek), co-invest offers (CPPIB +$65M, Yale +$18M), and secondary inquiry (Adams Street, HarbourVest) — strong LP engagement.

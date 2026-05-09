@@ -188,7 +188,7 @@ def render_phys_comp_plan(params: dict = None) -> str:
 
     pool_pct = (r.total_physician_pool_mm / r.practice_revenue_mm) if r.practice_revenue_mm else 0
     kpi_strip = (
-        ck_kpi_block("Practice Revenue", f"${r.practice_revenue_mm:,.1f}M", "", "") +
+        ck_kpi_block("Practice Revenue", f"${r.practice_revenue_mm:,.2f}M", "", "") +
         ck_kpi_block("Physicians", f"{r.total_physicians}", "", "") +
         ck_kpi_block("Physician Pool", f"${r.total_physician_pool_mm:,.2f}M", "", "") +
         ck_kpi_block("Pool / Revenue", f"{pool_pct * 100:.1f}%", "", "") +
@@ -234,7 +234,7 @@ def render_phys_comp_plan(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Quality Bonus Pool Structure</div>{quality_tbl}</div>
   <div style="{cell}"><div style="{h3}">MGMA Specialty Benchmarking</div>{bench_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Comp Plan Thesis:</strong> {r.total_physicians} physicians at ${r.practice_revenue_mm:,.1f}M revenue.
+    <strong style="color:{text}">Comp Plan Thesis:</strong> {r.total_physicians} physicians at ${r.practice_revenue_mm:,.2f}M revenue.
     Recommended plan: <strong style="color:{text}">{_html.escape(r.recommended_model)}</strong>.
     Total physician pool ${r.total_physician_pool_mm:,.2f}M ({pool_pct * 100:.1f}% of revenue);
     comp-to-collection {r.comp_to_collection_pct * 100:.1f}%. Hybrid production + quality plans consistently outperform on both

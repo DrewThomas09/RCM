@@ -80,7 +80,7 @@ def simulate_secondary_pe(target: ExitTarget) -> ArchetypeResult:
         implied_multiple=round(multiple, 2),
         valuation_method="lbo_model_solved_for_entry",
         drivers=[
-            f"5y forward EBITDA: ${forward_ebitda:.1f}M",
+            f"5y forward EBITDA: ${forward_ebitda:.2f}M",
             f"Exit at {target.private_comp_multiple:.1f}x",
             f"50% LTV close, target 2.5x MOIC",
         ],
@@ -166,7 +166,7 @@ def simulate_ipo(target: ExitTarget) -> ArchetypeResult:
             implied_multiple=0.0,
             valuation_method="not_viable",
             drivers=[
-                f"Revenue ${target.ttm_revenue_mm:.0f}M < $200M floor "
+                f"Revenue ${target.ttm_revenue_mm:.2f}M < $200M floor "
                 f"or durability {target.growth_durability_score:.2f} "
                 f"< 0.6 floor",
             ],
@@ -202,9 +202,9 @@ def simulate_dividend_recap(target: ExitTarget) -> ArchetypeResult:
         valuation_method="leverage_capacity_to_5_5x",
         drivers=[
             f"Target total lev: {target_lev:.1f}x EBITDA",
-            f"New debt capacity: ${new_debt:.1f}M",
-            f"Existing net debt: ${target.net_debt_mm:.1f}M",
-            f"Distribution: ${distribution:.1f}M",
+            f"New debt capacity: ${new_debt:.2f}M",
+            f"Existing net debt: ${target.net_debt_mm:.2f}M",
+            f"Distribution: ${distribution:.2f}M",
         ],
         confidence=0.80,
     )

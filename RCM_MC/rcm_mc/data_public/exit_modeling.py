@@ -295,8 +295,8 @@ def model_exit(
         exit_ev = exit_ebitda * a.exit_multiple
         gross_equity = exit_ev - exit_debt_w_recap
         notes.append(
-            f"Div recap: +{recap_debt_add:.0f}M drawn mid-hold ({a.recap_leverage_add:.1f}x EBITDA); "
-            f"exit debt {exit_debt_w_recap:.0f}M"
+            f"Div recap: +{recap_debt_add:.2f}M drawn mid-hold ({a.recap_leverage_add:.1f}x EBITDA); "
+            f"exit debt {exit_debt_w_recap:.2f}M"
         )
         exit_debt = exit_debt_w_recap
 

@@ -168,7 +168,7 @@ def render_insurance(params: dict = None) -> str:
     kpi_strip = (
         ck_kpi_block("Annual Insurance", f"${r.total_annual_insurance_mm:,.2f}M", "", "") +
         ck_kpi_block("% of Revenue", f"{r.insurance_pct_of_revenue * 100:.2f}%", "", "") +
-        ck_kpi_block("Coverage Limits", f"${r.total_coverage_limits_mm:,.0f}M", "total", "") +
+        ck_kpi_block("Coverage Limits", f"${r.total_coverage_limits_mm:,.2f}M", "total", "") +
         ck_kpi_block("Open Reserves", f"${r.risk_adjusted_reserve_mm:,.2f}M", "", "") +
         ck_kpi_block("Deal Tail Cost", f"${r.total_deal_insurance_cost_mm:,.2f}M", "", "") +
         ck_kpi_block("Market Hardening", f"+${r.market_hardening_impact_mm:,.2f}M", "next renewal", "") +

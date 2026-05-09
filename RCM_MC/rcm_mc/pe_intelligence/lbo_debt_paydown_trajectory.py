@@ -231,7 +231,7 @@ def render_lbo_debt_paydown_markdown(
         "",
         f"- Entry leverage: {r.entry_leverage:.1f}×",
         f"- Exit leverage: {r.exit_leverage:.1f}×",
-        f"- Total paydown: ${r.total_paydown_m:.1f}M",
+        f"- Total paydown: ${r.total_paydown_m:.2f}M",
         f"- Back-loaded share: {r.back_loaded_pct:.0%}",
         "",
         "| Yr | EBITDA | Int | Tax | Capex | FCF | "

@@ -258,7 +258,7 @@ def check_physician_comp_normalization(
         verdict = "walk"
         note = (
             f"Pro-forma overstates EBITDA by "
-            f"${total_hair + churn_hit:,.1f}M "
+            f"${total_hair + churn_hit:,.2f}M "
             f"({haircut_pct*100:.1f}%). "
             "Partner: walk or demand seller recut."
         )
@@ -266,16 +266,16 @@ def check_physician_comp_normalization(
         verdict = "reprice"
         note = (
             f"Expected normalization haircut $"
-            f"{total_hair + churn_hit:,.1f}M "
+            f"{total_hair + churn_hit:,.2f}M "
             f"({haircut_pct*100:.1f}%). Partner: model off "
-            f"${adjusted_ebitda:,.1f}M; apply exit multiple "
+            f"${adjusted_ebitda:,.2f}M; apply exit multiple "
             "accordingly."
         )
     elif total_hair + churn_hit > 0:
         verdict = "proceed_with_adjustments"
         note = (
-            f"Modest haircut ${total_hair + churn_hit:,.1f}M. "
-            f"Partner: model off ${adjusted_ebitda:,.1f}M; "
+            f"Modest haircut ${total_hair + churn_hit:,.2f}M. "
+            f"Partner: model off ${adjusted_ebitda:,.2f}M; "
             "proceed."
         )
     else:
@@ -317,15 +317,15 @@ def render_physician_comp_norm_markdown(
         "",
         f"_{r.partner_note}_",
         "",
-        f"- Stated EBITDA: ${r.stated_ebitda_m:,.1f}M",
+        f"- Stated EBITDA: ${r.stated_ebitda_m:,.2f}M",
         f"- Normalization adjustments: "
-        f"${r.total_adjustments_m:,.1f}M",
-        f"- Surviving at QofE: ${r.total_surviving_m:,.1f}M",
-        f"- Haircut: ${r.total_haircut_m:,.1f}M",
-        f"- Churn EBITDA hit: ${r.churn_ebitda_hit_m:,.1f}M "
+        f"${r.total_adjustments_m:,.2f}M",
+        f"- Surviving at QofE: ${r.total_surviving_m:,.2f}M",
+        f"- Haircut: ${r.total_haircut_m:,.2f}M",
+        f"- Churn EBITDA hit: ${r.churn_ebitda_hit_m:,.2f}M "
         f"(cut {r.base_comp_cut_pct*100:.1f}%, "
         f"flag {'YES' if r.churn_risk_flag else 'no'})",
-        f"- **Adjusted EBITDA: ${r.adjusted_ebitda_m:,.1f}M**",
+        f"- **Adjusted EBITDA: ${r.adjusted_ebitda_m:,.2f}M**",
         "",
         "| Category | Amount | Survival | Surviving | Haircut "
         "| Partner read |",
@@ -333,10 +333,10 @@ def render_physician_comp_norm_markdown(
     ]
     for a in r.adjustments:
         lines.append(
-            f"| {a.category} | ${a.amount_m:,.1f}M | "
+            f"| {a.category} | ${a.amount_m:,.2f}M | "
             f"{a.expected_survival_pct*100:.0f}% | "
-            f"${a.expected_surviving_m:,.1f}M | "
-            f"${a.expected_haircut_m:,.1f}M | "
+            f"${a.expected_surviving_m:,.2f}M | "
+            f"${a.expected_haircut_m:,.2f}M | "
             f"{a.partner_commentary} |"
         )
     return "\n".join(lines)

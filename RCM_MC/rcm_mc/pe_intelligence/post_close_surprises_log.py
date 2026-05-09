@@ -96,11 +96,11 @@ def _category_commentary(cat: str, miss_rate: float,
 
     if avg_impact < -2.0:
         dollar_part = (f" When missed, {cat} items average "
-                       f"${abs(avg_impact):,.1f}M of EBITDA hit — "
+                       f"${abs(avg_impact):,.2f}M of EBITDA hit — "
                        "this is where portfolio dollars bleed.")
     elif avg_impact < 0:
         dollar_part = (f" Average missed impact is modest "
-                       f"(${abs(avg_impact):,.1f}M).")
+                       f"(${abs(avg_impact):,.2f}M).")
     else:
         dollar_part = ""
 
@@ -144,7 +144,7 @@ def compute_miss_rate(surprises: List[Surprise]) -> MissRateReport:
     elif overall_miss >= 0.25:
         note = (f"Overall miss rate {overall_miss*100:.1f}% across "
                 f"{total} items — the diligence template is "
-                f"systematically weak in {worst}. ${-overall_impact:,.1f}M "
+                f"systematically weak in {worst}. ${-overall_impact:,.2f}M "
                 "of bled EBITDA across the missed items.")
     elif overall_miss >= 0.15:
         note = (f"Miss rate {overall_miss*100:.1f}% is above "
@@ -175,7 +175,7 @@ def render_miss_rate_markdown(r: MissRateReport) -> str:
         f"- Missed (not known at close): {r.missed_items}",
         f"- Overall miss rate: {r.overall_miss_rate*100:.0f}%",
         f"- Missed EBITDA impact: "
-        f"${r.overall_missed_impact_m:,.1f}M",
+        f"${r.overall_missed_impact_m:,.2f}M",
         f"- Worst category: {r.worst_category}",
         "",
         "| Category | Items | Missed | Miss % | Avg missed $M | Commentary |",

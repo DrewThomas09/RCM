@@ -49,12 +49,12 @@ def _default_thesis(
             f"{growth_rate*100:.1f}% vs sector typical 5-7%.")
     if ebitda_mm >= 25:
         out.append(
-            f"Platform-scale EBITDA (${ebitda_mm:.0f}M) opens "
+            f"Platform-scale EBITDA (${ebitda_mm:.2f}M) opens "
             f"the secondary-PE + take-private exit windows.")
     elif ebitda_mm >= 10:
         out.append(
             f"Add-on candidate at "
-            f"${ebitda_mm:.0f}M EBITDA — buy-and-build runway.")
+            f"${ebitda_mm:.2f}M EBITDA — buy-and-build runway.")
     if sector in ("physician_group", "mso", "asc"):
         out.append(
             "Rollup sector with proven add-on multiple-arbitrage "

@@ -215,7 +215,7 @@ def _peers_table(peers: list) -> str:
     rows = ""
     for i, p in enumerate(peers):
         bg = P["row_stripe"] if i % 2 else P["panel"]
-        ev = f"${p.ev_mm:,.0f}M" if p.ev_mm else "—"
+        ev = f"${p.ev_mm:,.2f}M" if p.ev_mm else "—"
         mult = f"{p.ev_ebitda:.1f}×" if p.ev_ebitda else "—"
         moic = f"{p.moic:.2f}×" if p.moic else "—"
         irr = f"{p.irr*100:.1f}%" if p.irr else "—"
@@ -315,7 +315,7 @@ def render_ic_memo_gen(params: Dict[str, str]) -> str:
         )
 
         # KPI strip
-        ev_str   = f"${ev_mm:,.1f}M" if ev_mm else "—"
+        ev_str   = f"${ev_mm:,.2f}M" if ev_mm else "—"
         mult_str = f"{bm.deal_ev_ebitda:.1f}×" if bm.deal_ev_ebitda else "—"
         moic_str = f"{moic:.2f}×" if moic else "—"
         irr_str  = f"{irr*100:.1f}%" if irr else "—"

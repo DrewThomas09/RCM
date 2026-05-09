@@ -64,14 +64,14 @@ def size_coinvest(inputs: CoInvestInputs) -> CoInvestSizing:
     if coinvest == 0:
         note = ("Fund covers the whole check — no co-invest needed.")
     elif demand_coverage is not None and demand_coverage >= 1.5:
-        note = (f"Co-invest ${coinvest:,.1f}M — LP demand ~"
+        note = (f"Co-invest ${coinvest:,.2f}M — LP demand ~"
                 f"{demand_coverage:.1f}x covered. Allocation "
                 "decisions required.")
     elif demand_coverage is not None and demand_coverage < 1.0:
-        note = (f"Co-invest ${coinvest:,.1f}M — LP demand under-covers. "
+        note = (f"Co-invest ${coinvest:,.2f}M — LP demand under-covers. "
                 "Widen the invitation list or reduce syndication.")
     else:
-        note = (f"Co-invest ${coinvest:,.1f}M at standard allocation.")
+        note = (f"Co-invest ${coinvest:,.2f}M at standard allocation.")
     return CoInvestSizing(
         fund_capacity_m=round(capacity, 2),
         concentration_cap_m=round(conc_cap, 2),
@@ -87,10 +87,10 @@ def render_coinvest_markdown(sizing: CoInvestSizing) -> str:
     lines = [
         "# Co-invest sizing",
         "",
-        f"- Fund capacity: ${sizing.fund_capacity_m:,.1f}M",
-        f"- Concentration cap: ${sizing.concentration_cap_m:,.1f}M",
-        f"- Fund commitment: ${sizing.fund_commitment_m:,.1f}M",
-        f"- Co-invest offered: ${sizing.coinvest_offered_m:,.1f}M",
+        f"- Fund capacity: ${sizing.fund_capacity_m:,.2f}M",
+        f"- Concentration cap: ${sizing.concentration_cap_m:,.2f}M",
+        f"- Fund commitment: ${sizing.fund_commitment_m:,.2f}M",
+        f"- Co-invest offered: ${sizing.coinvest_offered_m:,.2f}M",
     ]
     if sizing.lp_demand_coverage_ratio is not None:
         lines.append(

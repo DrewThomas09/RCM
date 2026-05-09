@@ -291,10 +291,10 @@ def render_attribution_markdown(
         "",
         f"_{r.partner_note}_",
         "",
-        f"- Entry equity: ${r.entry_equity_m:,.1f}M",
-        f"- Exit equity: ${r.exit_equity_m:,.1f}M",
+        f"- Entry equity: ${r.entry_equity_m:,.2f}M",
+        f"- Exit equity: ${r.exit_equity_m:,.2f}M",
         f"- MOIC: {r.total_moic:.2f}x",
-        f"- Equity gain: ${r.total_equity_gain_m:,.1f}M",
+        f"- Equity gain: ${r.total_equity_gain_m:,.2f}M",
         "",
         "| Source | $M | Share | Rationale |",
         "|---|---|---|---|",
@@ -302,7 +302,7 @@ def render_attribution_markdown(
     for c in r.components:
         lines.append(
             f"| {c.source} | "
-            f"${c.dollar_contribution_m:,.1f}M | "
+            f"${c.dollar_contribution_m:,.2f}M | "
             f"{c.share_of_gain_pct:.1f}% | "
             f"{c.partner_rationale} |"
         )

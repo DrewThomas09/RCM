@@ -123,19 +123,19 @@ def overlay_wage_inflation(
 
     if drag_3yr >= inputs.base_ebitda_m * 0.10:
         note = (f"Regional wage overlay reveals "
-                f"${drag_3yr:,.1f}M of 3-year EBITDA drag "
+                f"${drag_3yr:,.2f}M of 3-year EBITDA drag "
                 f"({delta*100:.1f}pp under-modeled). This is a "
                 "structural underwrite error — fix the model before "
                 "IC.")
     elif drag_3yr >= inputs.base_ebitda_m * 0.03:
         note = (f"Model under-states wage inflation by "
                 f"{delta*100:.1f}pp; 3-year drag ~"
-                f"${drag_3yr:,.1f}M. Material but manageable "
+                f"${drag_3yr:,.2f}M. Material but manageable "
                 "— rebuild labor line with regional split.")
     elif delta > 0:
         note = (f"Model under-states wage inflation by "
                 f"{delta*100:.2f}pp; immaterial at 3-year horizon "
-                f"(~${drag_3yr:,.1f}M). Note in underwrite.")
+                f"(~${drag_3yr:,.2f}M). Note in underwrite.")
     elif delta < 0:
         note = (f"Model is conservative — actual weighted inflation "
                 f"is {weighted_inflation*100:.1f}% vs modeled "
@@ -164,7 +164,7 @@ def render_overlay_markdown(r: RegionalOverlayReport) -> str:
         f"_{r.partner_note}_",
         "",
         f"- Total clinical wage base: "
-        f"${r.total_clinical_wage_base_m:,.1f}M",
+        f"${r.total_clinical_wage_base_m:,.2f}M",
         f"- Weighted regional inflation: "
         f"{r.weighted_wage_inflation_pct*100:.2f}%",
         f"- Modeled inflation: "

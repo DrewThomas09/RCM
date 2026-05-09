@@ -123,19 +123,19 @@ class MedicaidMapReport:
 def _commentary(tier: str, revenue_m: float) -> str:
     if tier == "high_cut_risk":
         return (f"High cut risk state — "
-                f"${revenue_m:,.1f}M exposed. Budget-pressure + "
+                f"${revenue_m:,.2f}M exposed. Budget-pressure + "
                 "non-expansion profile means rate freezes ahead; "
                 "assume 5% bear case.")
     if tier == "medium_cut_risk":
-        return (f"Medium cut risk — ${revenue_m:,.1f}M. Baseline "
+        return (f"Medium cut risk — ${revenue_m:,.2f}M. Baseline "
                 "freeze possible; 2.5% bear case.")
     if tier == "waiver_risk":
-        return (f"Waiver risk — ${revenue_m:,.1f}M. 1115 waiver "
+        return (f"Waiver risk — ${revenue_m:,.2f}M. 1115 waiver "
                 "changes on docket; 4% bear. Timing uncertain.")
     if tier == "low_cut_risk":
-        return (f"Low cut risk — ${revenue_m:,.1f}M. Expansion "
+        return (f"Low cut risk — ${revenue_m:,.2f}M. Expansion "
                 "state with stable backfill funding.")
-    return f"Unmapped state — ${revenue_m:,.1f}M tracked at 2.5%."
+    return f"Unmapped state — ${revenue_m:,.2f}M tracked at 2.5%."
 
 
 def map_medicaid_exposure(
@@ -181,16 +181,16 @@ def map_medicaid_exposure(
     elif high_risk_share >= 0.50:
         note = (f"{high_risk_share*100:.1f}% of Medicaid exposure in "
                 "high-cut-risk or waiver-risk states. Underwrite "
-                f"with {total_impact:,.1f}M of state-risk bear drag.")
+                f"with {total_impact:,.2f}M of state-risk bear drag.")
     elif high_risk_share >= 0.25:
         note = (f"Moderate concentration in risky states "
                 f"({high_risk_share*100:.1f}%); "
-                f"${total_impact:,.1f}M bear drag. Monitor state "
+                f"${total_impact:,.2f}M bear drag. Monitor state "
                 "budget cycles.")
     elif high_risk_share > 0:
         note = (f"Modest state risk "
                 f"({high_risk_share*100:.1f}%); "
-                f"${total_impact:,.1f}M bear drag. Manageable.")
+                f"${total_impact:,.2f}M bear drag. Manageable.")
     else:
         note = ("Medicaid exposure is concentrated in low-risk "
                 "states — state budget risk is not a material lever.")
@@ -213,9 +213,9 @@ def render_medicaid_map_markdown(r: MedicaidMapReport) -> str:
         f"_{r.partner_note}_",
         "",
         f"- Total Medicaid revenue: "
-        f"${r.total_medicaid_revenue_m:,.1f}M",
+        f"${r.total_medicaid_revenue_m:,.2f}M",
         f"- Total bear-case EBITDA impact: "
-        f"${r.total_bear_ebitda_impact_m:,.1f}M",
+        f"${r.total_bear_ebitda_impact_m:,.2f}M",
         f"- Worst state: {r.worst_state} "
         f"(${r.worst_state_impact_m:,.2f}M)",
         f"- High-risk-state share: "
@@ -227,7 +227,7 @@ def render_medicaid_map_markdown(r: MedicaidMapReport) -> str:
     for e in r.exposures:
         lines.append(
             f"| {e.state} | {e.risk_tier} | "
-            f"${e.medicaid_revenue_m:,.1f}M | "
+            f"${e.medicaid_revenue_m:,.2f}M | "
             f"{e.bear_rate_cut_pct*100:.1f}% | "
             f"${e.bear_ebitda_impact_m:,.2f}M | "
             f"{e.partner_commentary} |"

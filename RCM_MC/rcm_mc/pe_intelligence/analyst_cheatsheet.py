@@ -51,7 +51,7 @@ def build_cheatsheet(review: PartnerReview) -> Dict[str, Any]:
 
     top_facts: List[str] = []
     if ctx.get("ebitda_m"):
-        top_facts.append(f"${ctx['ebitda_m']:.0f}M EBITDA")
+        top_facts.append(f"${ctx['ebitda_m']:.2f}M EBITDA")
     if ctx.get("hospital_type"):
         top_facts.append(f"Subsector: {ctx['hospital_type']}")
     if ctx.get("payer_mix"):

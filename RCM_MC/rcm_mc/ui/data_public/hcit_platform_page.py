@@ -134,7 +134,7 @@ def render_hcit_platform(params: dict = None) -> str:
     pos = P["positive"]; acc = P["accent"]
 
     kpi_strip = (
-        ck_kpi_block("Total ARR", f"${r.total_arr_mm:,.1f}M", "", "") +
+        ck_kpi_block("Total ARR", f"${r.total_arr_mm:,.2f}M", "", "") +
         ck_kpi_block("Growth YoY", f"{r.arr_growth_pct * 100:+.1f}%", "", "") +
         ck_kpi_block("NRR", f"{r.total_nrr_pct:.2f}x", "", "") +
         ck_kpi_block("Gross Margin", f"{r.total_gross_margin_pct * 100:.1f}%", "", "") +
@@ -167,10 +167,10 @@ def render_hcit_platform(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Sub-TAM Penetration &amp; Revenue Opportunity</div>{t_tbl}</div>
   <div style="{cell}"><div style="{h3}">Public &amp; Private Comp Universe</div>{c_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">HCIT SaaS Thesis:</strong> ${r.total_arr_mm:,.1f}M ARR growing {r.arr_growth_pct * 100:+.0f}% with {r.total_nrr_pct:.2f}x NRR and {r.total_gross_margin_pct * 100:.1f}% gross margin.
+    <strong style="color:{text}">HCIT SaaS Thesis:</strong> ${r.total_arr_mm:,.2f}M ARR growing {r.arr_growth_pct * 100:+.0f}% with {r.total_nrr_pct:.2f}x NRR and {r.total_gross_margin_pct * 100:.1f}% gross margin.
     Rule of 40 at {r.rule_of_40_score * 100:.0f} places platform in top third of healthcare SaaS; magic number {r.magic_number:.2f} signals efficient growth.
     Large health system / payer / PE-backed customer segments generate highest LTV and NRR (1.12-1.18x) — expansion motion is a reliable revenue compounder.
-    Aggregate TAM opportunity ${tam_opp:,.0f}M over 3-year horizon across 6 sub-markets.
+    Aggregate TAM opportunity ${tam_opp:,.2f}M over 3-year horizon across 6 sub-markets.
     Public comp set trades 3-13x EV/Revenue depending on growth/margin profile; private comps (Cotiviti, HealthEdge, Clario) support premium exit multiples for scaled platforms with defensible data assets.
   </div>
 </div>"""

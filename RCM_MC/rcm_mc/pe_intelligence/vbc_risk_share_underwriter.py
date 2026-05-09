@@ -219,8 +219,8 @@ def underwrite_vbc_contract(
     if expected.ebitda_m > revenue_m * 0.02:
         verdict = "profitable"
         note = (
-            f"Expected EBITDA ${expected.ebitda_m:.1f}M "
-            f"on ${revenue_m:.1f}M revenue. Breakeven "
+            f"Expected EBITDA ${expected.ebitda_m:.2f}M "
+            f"on ${revenue_m:.2f}M revenue. Breakeven "
             f"MLR {breakeven:.1%} vs. expected "
             f"{inputs.expected_actual_mlr_pct:.1%}. "
             "Solid margin; verify population risk-"
@@ -229,16 +229,16 @@ def underwrite_vbc_contract(
     elif expected.ebitda_m > 0:
         verdict = "thin_margin"
         note = (
-            f"Thin: only ${expected.ebitda_m:.1f}M "
+            f"Thin: only ${expected.ebitda_m:.2f}M "
             f"EBITDA. Volatility band ±5pp MLR is "
-            f"${volatility:.1f}M — a single bad cohort "
+            f"${volatility:.2f}M — a single bad cohort "
             "wipes the year. Negotiate higher PMPM or "
             "wider corridor."
         )
     elif expected.ebitda_m > -volatility * 0.5:
         verdict = "breakeven_zone"
         note = (
-            f"Near breakeven (${expected.ebitda_m:.1f}M "
+            f"Near breakeven (${expected.ebitda_m:.2f}M "
             f"EBITDA). MLR breakeven is "
             f"{breakeven:.1%}; we're "
             f"{(inputs.expected_actual_mlr_pct - breakeven) * 100:+.1f}pp "
@@ -247,7 +247,7 @@ def underwrite_vbc_contract(
     else:
         verdict = "loss_zone"
         note = (
-            f"Loss zone: ${expected.ebitda_m:.1f}M EBITDA. "
+            f"Loss zone: ${expected.ebitda_m:.2f}M EBITDA. "
             "Either renegotiate corridor / PMPM or do "
             "not assume EBITDA contribution from this "
             "contract."
@@ -280,13 +280,13 @@ def render_vbc_underwrite_markdown(
         f"_{r.partner_note}_",
         "",
         f"- Attributed lives: {r.attributed_lives:,}",
-        f"- Revenue: ${r.revenue_m:.1f}M",
+        f"- Revenue: ${r.revenue_m:.2f}M",
         f"- Admin: ${r.admin_m:.2f}M",
         f"- Stop-loss premium: "
         f"${r.stop_loss_premium_m:.2f}M",
         f"- Breakeven MLR: {r.breakeven_mlr_pct:.1%}",
         f"- Volatility band (±5pp MLR): "
-        f"${r.volatility_band_m:.1f}M",
+        f"${r.volatility_band_m:.2f}M",
         "",
         "| Scenario | MLR | EBITDA |",
         "|---|---|---|",

@@ -102,7 +102,7 @@ def _allocation_donut_svg(alloc: dict, ev_mm: float) -> str:
     # Just put center label
     total_lbl = (
         f'<text x="{cx}" y="{cy}" text-anchor="middle" fill="{P["text"]}" '
-        f'font-size="12" font-weight="600" font-family="JetBrains Mono,monospace">${ev_mm:,.0f}M</text>'
+        f'font-size="12" font-weight="600" font-family="JetBrains Mono,monospace">${ev_mm:,.2f}M</text>'
         f'<text x="{cx}" y="{cy + 14}" text-anchor="middle" fill="{text_dim}" '
         f'font-size="9" letter-spacing="0.08em" font-family="Inter,sans-serif">PURCHASE PRICE</text>'
     )
@@ -268,14 +268,14 @@ def render_tax_structure(params: dict = None) -> str:
     pos = P["positive"]; acc = P["accent"]
 
     kpi_strip = (
-        ck_kpi_block("EV", f"${r.ev_mm:,.0f}M", "", "") +
+        ck_kpi_block("EV", f"${r.ev_mm:,.2f}M", "", "") +
         ck_kpi_block("EBITDA", f"${r.ebitda_mm:,.2f}M", "", "") +
         ck_kpi_block("Recommended", r.recommended_structure[:16], "", "") +
-        ck_kpi_block("Tax Optimization", f"${r.total_tax_optimization_mm:,.1f}M", "", "") +
-        ck_kpi_block("Seller Net", f"${r.seller_net_proceeds_mm:,.1f}M", "", "") +
+        ck_kpi_block("Tax Optimization", f"${r.total_tax_optimization_mm:,.2f}M", "", "") +
+        ck_kpi_block("Seller Net", f"${r.seller_net_proceeds_mm:,.2f}M", "", "") +
         ck_kpi_block("Eff. Tax Rate", f"{r.effective_tax_rate * 100:.1f}%", "", "") +
-        ck_kpi_block("Rollover Deferred", f"${r.rollover_tax.deferred_gain_mm:,.1f}M", "", "") +
-        ck_kpi_block("Imm. Rollover Tax", f"${r.rollover_tax.immediate_tax_mm:,.1f}M", "", "")
+        ck_kpi_block("Rollover Deferred", f"${r.rollover_tax.deferred_gain_mm:,.2f}M", "", "") +
+        ck_kpi_block("Imm. Rollover Tax", f"${r.rollover_tax.immediate_tax_mm:,.2f}M", "", "")
     )
 
     comp_svg = _structure_comparison_svg(r.structure_options)
@@ -392,7 +392,7 @@ def render_tax_structure(params: dict = None) -> str:
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Tax Thesis:</strong>
     Recommended structure: <strong style="color:{text}">{_html.escape(r.recommended_structure)}</strong>.
-    Total optimization opportunity ${r.total_tax_optimization_mm:,.1f}M across step-up shield, PTE benefits,
+    Total optimization opportunity ${r.total_tax_optimization_mm:,.2f}M across step-up shield, PTE benefits,
     and rollover deferral. Modeled for {_html.escape(state)} with {hold}-year hold and {growth * 100:.1f}% revenue growth.
   </div>
 

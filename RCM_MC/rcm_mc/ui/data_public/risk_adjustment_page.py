@@ -41,7 +41,7 @@ def _portfolios_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{p.avg_raf:.3f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{p.prior_year_raf:.3f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{t_c};font-weight:700">+{p.raf_trend * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${p.ma_revenue_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${p.ma_revenue_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${p.revenue_per_raf_point_m:.2f}M</td>',
             f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{ci_c};border:1px solid {ci_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(p.coding_intensity)}</span></td>',
         ]
@@ -67,7 +67,7 @@ def _hcc_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{h.portfolio_members_k}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{warn};font-weight:700">{h.open_suspects:,}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{c_c};font-weight:700">{h.gap_closure_rate_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${h.revenue_opportunity_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${h.revenue_opportunity_m:.2f}M</td>',
             f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{p_c};border:1px solid {p_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(h.clinical_priority)}</span></td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -113,11 +113,11 @@ def _radv_table(items) -> str:
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(r.deal)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{r.current_raf:.3f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${r.radv_extrapolation_recovery_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${r.radv_extrapolation_recovery_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{r.audit_sample_size}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{e_c};font-weight:700">{r.error_rate_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">${r.likely_payback_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">${r.max_exposure_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">${r.likely_payback_m:.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">${r.max_exposure_m:.2f}M</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -162,7 +162,7 @@ def _programs_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{p.members_engaged_k}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{p.gaps_closed:,}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">+{p.raf_uplift:.3f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${p.revenue_captured_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${p.revenue_captured_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${p.cost_per_gap_closed:.2f}K</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -181,9 +181,9 @@ def render_risk_adjustment(params: dict = None) -> str:
     kpi_strip = (
         ck_kpi_block("MA Lives (Total)", f"{r.total_ma_lives_k:,.1f}K", "", "") +
         ck_kpi_block("Weighted RAF", f"{r.weighted_avg_raf:.3f}", "", "") +
-        ck_kpi_block("MA Revenue", f"${r.total_ma_revenue_m:,.1f}M", "", "") +
-        ck_kpi_block("Gap Opportunity", f"${r.total_raf_gap_opportunity_m:.1f}M", "", "") +
-        ck_kpi_block("RADV Max Exposure", f"${r.radv_total_exposure_m:.1f}M", "", "") +
+        ck_kpi_block("MA Revenue", f"${r.total_ma_revenue_m:,.2f}M", "", "") +
+        ck_kpi_block("Gap Opportunity", f"${r.total_raf_gap_opportunity_m:.2f}M", "", "") +
+        ck_kpi_block("RADV Max Exposure", f"${r.radv_total_exposure_m:.2f}M", "", "") +
         ck_kpi_block("Avg Coding Discipline", f"{r.avg_coding_intensity_score:.2f}", "/10", "") +
         ck_kpi_block("Deals Exposed", str(r.portfolio_deals_exposed), "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
@@ -205,7 +205,7 @@ def render_risk_adjustment(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Risk Adjustment / HCC Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_ma_lives_k:,.1f}K MA lives · weighted RAF {r.weighted_avg_raf:.3f} · ${r.total_ma_revenue_m:,.1f}M MA revenue · ${r.total_raf_gap_opportunity_m:.1f}M gap opportunity · ${r.radv_total_exposure_m:.1f}M max RADV exposure — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_ma_lives_k:,.1f}K MA lives · weighted RAF {r.weighted_avg_raf:.3f} · ${r.total_ma_revenue_m:,.2f}M MA revenue · ${r.total_raf_gap_opportunity_m:.2f}M gap opportunity · ${r.radv_total_exposure_m:.2f}M max RADV exposure — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Portfolio RAF Roll-up</div>{p_tbl}</div>
@@ -215,11 +215,11 @@ def render_risk_adjustment(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Coding Quality & Infrastructure</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">RADV Audit Exposure Simulation</div>{rd_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Risk Adjustment Portfolio Summary:</strong> {r.total_ma_lives_k:,.1f}K MA lives generate ${r.total_ma_revenue_m:,.1f}M revenue at weighted RAF {r.weighted_avg_raf:.3f} — portfolio RAF elevated vs national MA average 1.02 driven by chronic-heavy portfolios (Sage 2.12, Ash 1.95).
-    Gap analysis: ${r.total_raf_gap_opportunity_m:.1f}M in unclosed HCC opportunity across 15 top-priority categories; diabetes w/ complications ($18.5M), CHF ($15.8M), COPD ($14.5M) are top three.
-    V28 phase-in impact: ${v28_total_impact:.1f}M portfolio headwind — diabetes, CHF, and SUD categories hit hardest; mitigation via specificity coding and documentation uplift.
-    Gap-closure programs capture ${program_revenue:.1f}M annual revenue — prospective chart review ($65M) and retrospective chart review ($32M) are highest-ROI programs.
-    RADV exposure ${r.radv_total_exposure_m:.1f}M max across {r.portfolio_deals_exposed} portcos — Sage ($22M), Redwood ($12.5M), Linden ($10.5M) concentrated in behavioral + home health.
+    <strong style="color:{text}">Risk Adjustment Portfolio Summary:</strong> {r.total_ma_lives_k:,.1f}K MA lives generate ${r.total_ma_revenue_m:,.2f}M revenue at weighted RAF {r.weighted_avg_raf:.3f} — portfolio RAF elevated vs national MA average 1.02 driven by chronic-heavy portfolios (Sage 2.12, Ash 1.95).
+    Gap analysis: ${r.total_raf_gap_opportunity_m:.2f}M in unclosed HCC opportunity across 15 top-priority categories; diabetes w/ complications ($18.5M), CHF ($15.8M), COPD ($14.5M) are top three.
+    V28 phase-in impact: ${v28_total_impact:.2f}M portfolio headwind — diabetes, CHF, and SUD categories hit hardest; mitigation via specificity coding and documentation uplift.
+    Gap-closure programs capture ${program_revenue:.2f}M annual revenue — prospective chart review ($65M) and retrospective chart review ($32M) are highest-ROI programs.
+    RADV exposure ${r.radv_total_exposure_m:.2f}M max across {r.portfolio_deals_exposed} portcos — Sage ($22M), Redwood ($12.5M), Linden ($10.5M) concentrated in behavioral + home health.
     Coding intensity distribution: 4 disciplined, 4 standard, 2 high-intensity, 2 aggressive — "aggressive" profiles (Sage, Linden) raise RADV risk; coding discipline initiative scheduled Q2 2026.
   </div>
 </div>"""

@@ -146,9 +146,9 @@ def render_ai_operating_model(params: dict = None) -> str:
     gov_c = pos if r.governance_risk_tier == "well-governed" else (warn if r.governance_risk_tier == "moderate" else neg)
 
     kpi_strip = (
-        ck_kpi_block("Annual AI Spend", f"${r.total_annual_ai_spend_mm:,.1f}M", "", "") +
-        ck_kpi_block("Annual Savings", f"${r.total_annual_savings_mm:,.1f}M", "", "") +
-        ck_kpi_block("Revenue Lift", f"${r.total_revenue_lift_mm:,.1f}M", "", "") +
+        ck_kpi_block("Annual AI Spend", f"${r.total_annual_ai_spend_mm:,.2f}M", "", "") +
+        ck_kpi_block("Annual Savings", f"${r.total_annual_savings_mm:,.2f}M", "", "") +
+        ck_kpi_block("Revenue Lift", f"${r.total_revenue_lift_mm:,.2f}M", "", "") +
         ck_kpi_block("Blended ROI", f"{r.blended_roi_pct:.1f}x", "", "") +
         ck_kpi_block("In Production", f"{r.initiatives_in_prod}/{len(r.initiatives)}", "", "") +
         ck_kpi_block("Governance", r.governance_risk_tier.upper()[:14], "", "") +
@@ -176,7 +176,7 @@ def render_ai_operating_model(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {gov_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">AI Portfolio Health</div>
     <div style="color:{gov_c};font-weight:700;font-size:14px">Blended ROI {r.blended_roi_pct:.1f}x · {r.initiatives_in_prod} initiatives in production · Governance posture {_html.escape(r.governance_risk_tier.upper())}</div>
-    <div style="color:{text_dim};font-size:11px;margin-top:4px">Net annual value ${r.total_annual_savings_mm + r.total_revenue_lift_mm - r.total_annual_ai_spend_mm:,.1f}M · Regulatory remediation ${total_reg_cost:,.2f}M outstanding</div>
+    <div style="color:{text_dim};font-size:11px;margin-top:4px">Net annual value ${r.total_annual_savings_mm + r.total_revenue_lift_mm - r.total_annual_ai_spend_mm:,.2f}M · Regulatory remediation ${total_reg_cost:,.2f}M outstanding</div>
   </div>
   <div style="{cell}"><div style="{h3}">AI Initiative Portfolio</div>{i_tbl}</div>
   <div style="{cell}"><div style="{h3}">Vendor Landscape &amp; Contract Economics</div>{v_tbl}</div>
@@ -184,7 +184,7 @@ def render_ai_operating_model(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">ROI by Bucket — Strategic Value</div>{roi_tbl}</div>
   <div style="{cell}"><div style="{h3}">Regulatory Exposure — FDA SaMD, HHS, AB 3030, HTI-1</div>{reg_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">AI Operating Thesis:</strong> ${r.total_annual_ai_spend_mm:,.1f}M annual spend returns ${r.total_annual_savings_mm + r.total_revenue_lift_mm:,.1f}M value at {r.blended_roi_pct:.1f}x ROI.
+    <strong style="color:{text}">AI Operating Thesis:</strong> ${r.total_annual_ai_spend_mm:,.2f}M annual spend returns ${r.total_annual_savings_mm + r.total_revenue_lift_mm:,.2f}M value at {r.blended_roi_pct:.1f}x ROI.
     Highest-ROI initiatives: RCM claim scrubbing (6.59x), CDI AI (6.14x), ambient scribing (4.00x) — all production-deployed with 72-88% adoption.
     Radiology AI ROI (1.92x) is modest given infrastructure dependency; pilots in dermatology and LLM navigation showing promise but not yet validated.
     Model governance tier is <strong style="color:{gov_c}">{_html.escape(r.governance_risk_tier)}</strong> — dermatology image model pilot and LLM-based prior auth letter generation flagged for accelerated validation.

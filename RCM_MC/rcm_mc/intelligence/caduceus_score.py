@@ -79,7 +79,7 @@ def compute_caduceus_score(
         npr_pts = 0.0
     market_score = beds_pts + npr_pts
     breakdown["beds"] = f"{int(beds)} beds (+{beds_pts:.1f})"
-    breakdown["revenue"] = f"${npr/1e6:.0f}M NPR (+{npr_pts:.1f})"
+    breakdown["revenue"] = f"${npr/1e6:.2f}M NPR (+{npr_pts:.1f})"
 
     # ── Financial Health (0-25 pts) ──
     # Piecewise but continuous: -30% margin -> 0pts, 0% -> 8pts, +15% -> 25pts.

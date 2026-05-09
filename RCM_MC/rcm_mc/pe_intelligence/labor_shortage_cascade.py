@@ -111,7 +111,7 @@ def trace_labor_cascade(
                      f"{inputs.agency_premium_pct*100:.1f}% premium"),
         value=round(agency_incremental_m, 2), unit="$M",
         partner_note=(
-            f"${agency_incremental_m:,.1f}M incremental agency cost. "
+            f"${agency_incremental_m:,.2f}M incremental agency cost. "
             "Watch: agency premiums compounded in 2022; current "
             "book already reflects partial relief. Base case assumes "
             "premium holds — bear case assumes it re-spikes."),
@@ -138,7 +138,7 @@ def trace_labor_cascade(
                       "unit-level staffing gaps"),
         value=round(-quality_rev_hit, 2), unit="$M",
         partner_note=(
-            f"${quality_rev_hit:,.1f}M additional EBITDA hit from "
+            f"${quality_rev_hit:,.2f}M additional EBITDA hit from "
             "quality-driven volume dip. High-turnover units reduce "
             "throughput 3-8%."),
     ))
@@ -165,15 +165,15 @@ def trace_labor_cascade(
 
     if covenant_breach:
         note = (f"Labor cascade is a covenant breach scenario. EBITDA "
-                f"hit ${total_ebitda_hit:,.1f}M; coverage drops to "
+                f"hit ${total_ebitda_hit:,.2f}M; coverage drops to "
                 f"{post_cov:.2f}x. Not tolerable given base posture.")
     elif total_ebitda_hit / max(0.01, inputs.current_ebitda_m) >= 0.15:
-        note = (f"Labor cascade is material (${total_ebitda_hit:,.1f}M, "
+        note = (f"Labor cascade is material (${total_ebitda_hit:,.2f}M, "
                 f"{total_ebitda_hit/inputs.current_ebitda_m*100:.0f}% "
                 "of base EBITDA). Focus diligence on retention plan + "
                 "agency contract terms.")
     elif total_ebitda_hit > 0:
-        note = (f"Labor cascade is manageable (${total_ebitda_hit:,.1f}M "
+        note = (f"Labor cascade is manageable (${total_ebitda_hit:,.2f}M "
                 "EBITDA hit). Monitor agency trends quarterly.")
     else:
         note = ("Labor cascade is immaterial under current assumptions.")

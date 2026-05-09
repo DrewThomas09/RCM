@@ -106,7 +106,7 @@ def track_qofe(inputs: QofEInputs) -> QofETracker:
                 f"{high_sev} high finding(s). Escalate to deal team lead.")
     elif status == "draft":
         note = (f"QofE draft received — review adjustments "
-                f"(${total_adj:,.1f}M, ${unsupported:,.1f}M unsupported).")
+                f"(${total_adj:,.2f}M, ${unsupported:,.2f}M unsupported).")
     else:
         note = (f"QofE in progress ({inputs.days_until_target}d to target). "
                 "Monitor progress daily as deadline approaches.")
@@ -132,8 +132,8 @@ def render_qofe_markdown(t: QofETracker) -> str:
         "",
         f"- Status: **{t.status}**",
         f"- Days until target: {t.days_until_target}",
-        f"- Total adjustments: ${t.total_adjustments_m:,.1f}M "
-        f"(${t.unsupported_adjustments_m:,.1f}M unsupported)",
+        f"- Total adjustments: ${t.total_adjustments_m:,.2f}M "
+        f"(${t.unsupported_adjustments_m:,.2f}M unsupported)",
         f"- NWC vs peg: ${t.nwc_vs_peg_m:+,.1f}M",
         f"- High-severity findings: {t.high_severity_findings}",
         f"- Critical path: **{'YES' if t.is_on_critical_path else 'no'}**",

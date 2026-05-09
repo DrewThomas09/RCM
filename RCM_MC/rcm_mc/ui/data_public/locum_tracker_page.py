@@ -156,7 +156,7 @@ def _role_spend_svg(roles) -> str:
         color = neg if r.rate_premium_pct > 0.70 else acc
         bars.append(
             f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" fill="{color}" opacity="0.85"/>'
-            f'<text x="{x + bar_w / 2:.1f}" y="{y - 4:.1f}" fill="{text_dim}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">${r.annual_spend_mm:.1f}M</text>'
+            f'<text x="{x + bar_w / 2:.1f}" y="{y - 4:.1f}" fill="{text_dim}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">${r.annual_spend_mm:.2f}M</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(r.role[:14])}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 26}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">{r.headcount_fte:.1f} FTE</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 38}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">+{r.rate_premium_pct * 100:.1f}%</text>'
@@ -185,8 +185,8 @@ def render_locum_tracker(params: dict = None) -> str:
     pos = P["positive"]; acc = P["accent"]; neg = P["negative"]
 
     kpi_strip = (
-        ck_kpi_block("Revenue", f"${r.total_revenue_mm:,.0f}M", "", "") +
-        ck_kpi_block("Total Labor", f"${r.total_labor_mm:,.1f}M", "", "") +
+        ck_kpi_block("Revenue", f"${r.total_revenue_mm:,.2f}M", "", "") +
+        ck_kpi_block("Total Labor", f"${r.total_labor_mm:,.2f}M", "", "") +
         ck_kpi_block("Locum Spend", f"${r.locum_spend_mm:,.2f}M", "", "") +
         ck_kpi_block("Locum / Labor", f"{r.locum_pct_of_labor * 100:.1f}%", "", "") +
         ck_kpi_block("Contract FTE", f"{r.total_contract_fte:,.1f}", "", "") +
@@ -234,7 +234,7 @@ def render_locum_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Compliance Exposure — 1099 / Credentialing / Contract Drift</div>{comp_tbl}</div>
   <div style="{cell}"><div style="{h3}">Workforce Scenario Plans</div>{sc_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Workforce Thesis:</strong> ${r.locum_spend_mm:,.2f}M locum spend = {r.locum_pct_of_labor * 100:.1f}% of ${r.total_labor_mm:,.1f}M labor budget.
+    <strong style="color:{text}">Workforce Thesis:</strong> ${r.locum_spend_mm:,.2f}M locum spend = {r.locum_pct_of_labor * 100:.1f}% of ${r.total_labor_mm:,.2f}M labor budget.
     Rate premium averages {sum(rl.rate_premium_pct for rl in r.roles) / len(r.roles) * 100:.1f}% vs permanent; agency fees bleed additional 18-22%.
     Recommended: <strong style="color:{text}">{_html.escape(r.recommended_scenario)}</strong> —
     captures ~${max(s.year_one_savings_mm for s in r.scenarios):,.2f}M in year-1 savings. Coverage gaps carry ${total_gap_risk:,.2f}M revenue-at-risk;

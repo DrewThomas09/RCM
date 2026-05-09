@@ -183,7 +183,7 @@ def render_gp_benchmarking(params: Dict[str, str]) -> str:
                     f'<td style="padding:4px 8px;font-size:11px">{html.escape(d.get("deal_name","")[:44])}</td>'
                     f'<td style="padding:4px 8px;font-size:10px;color:{P["text_dim"]}">{html.escape((d.get("sector") or "—")[:24])}</td>'
                     f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{d.get("year","—")}</td>'
-                    f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{f"${d["ev_mm"]:,.0f}M" if d.get("ev_mm") else "—"}</td>'
+                    f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{f"${d["ev_mm"]:,.2f}M" if d.get("ev_mm") else "—"}</td>'
                     f'<td style="padding:4px 8px;font-size:12px;font-family:{_MONO};text-align:right;font-weight:700;color:{moic_col};font-variant-numeric:tabular-nums">{f"{moic:.2f}×" if moic else "—"}</td>'
                     f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{f"{irr*100:.1f}%" if irr else "—"}</td>'
                     f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{f"{d["hold_years"]:.1f}y" if d.get("hold_years") else "—"}</td>'

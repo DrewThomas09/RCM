@@ -97,7 +97,7 @@ def _confirm_thesis(ctx: SitdownContext) -> List[AgendaItem]:
         items.append(AgendaItem(
             block="thesis", minutes=10,
             topic=(f"Year-1 synergies "
-                   f"${ctx.claimed_year_1_synergies_m:.1f}M"),
+                   f"${ctx.claimed_year_1_synergies_m:.2f}M"),
             question=("Which specific year-1 synergies do YOU commit "
                       "to executing, with named owners and months?"),
             probe=("If they can only speak in totals and not by month "

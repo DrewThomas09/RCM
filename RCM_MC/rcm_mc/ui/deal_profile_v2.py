@@ -58,7 +58,7 @@ def _fmt_money(v: Optional[float]) -> str:
     if abs(v) >= 1e9:
         return f"${v / 1e9:,.2f}B"
     if abs(v) >= 1e6:
-        return f"${v / 1e6:,.1f}M"
+        return f"${v / 1e6:,.2f}M"
     if abs(v) >= 1e3:
         return f"${v / 1e3:,.0f}K"
     return f"${v:,.0f}"

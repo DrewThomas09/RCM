@@ -363,18 +363,18 @@ def audit_lever(
     if verdict == LeverVerdict.UNSUPPORTED:
         narr = (
             f"{prior.label}: banker claims "
-            f"${lever.claimed_usd/1e6:.1f}M. Our library of "
+            f"${lever.claimed_usd/1e6:.2f}M. Our library of "
             f"{prior.realization_n_samples} deals shows "
             f"{int(prior.failure_rate*100)}% realized <50% of claim on "
             f"this lever; realistic capture on your target is "
-            f"${realistic_median/1e6:.1f}M "
+            f"${realistic_median/1e6:.2f}M "
             f"({pct}% of claim)."
         )
     elif verdict == LeverVerdict.OVERSTATED:
         narr = (
             f"{prior.label}: banker's "
-            f"${lever.claimed_usd/1e6:.1f}M is above the P75 "
-            f"of realized outcomes (${realistic_p75/1e6:.1f}M). "
+            f"${lever.claimed_usd/1e6:.2f}M is above the P75 "
+            f"of realized outcomes (${realistic_p75/1e6:.2f}M). "
             f"Target adjustments applied "
             f"{'+' if (adj_median - prior.realization_median) >= 0 else ''}"
             f"{(adj_median - prior.realization_median)*100:.0f} pp "
@@ -383,18 +383,18 @@ def audit_lever(
     elif verdict == LeverVerdict.UNDERSTATED:
         narr = (
             f"{prior.label}: banker's "
-            f"${lever.claimed_usd/1e6:.1f}M is below typical "
+            f"${lever.claimed_usd/1e6:.2f}M is below typical "
             f"realization range (P25 "
-            f"${realistic_p25/1e6:.1f}M). Conservatively framed "
+            f"${realistic_p25/1e6:.2f}M). Conservatively framed "
             f"— likely held back for bid optics."
         )
     else:
         narr = (
             f"{prior.label}: banker's "
-            f"${lever.claimed_usd/1e6:.1f}M is inside the "
+            f"${lever.claimed_usd/1e6:.2f}M is inside the "
             f"realistic P25-P75 range "
-            f"(${realistic_p25/1e6:.1f}M – "
-            f"${realistic_p75/1e6:.1f}M). Credible."
+            f"(${realistic_p25/1e6:.2f}M – "
+            f"${realistic_p75/1e6:.2f}M). Credible."
         )
     if applied:
         boost_summary = ", ".join(
@@ -486,27 +486,27 @@ def audit_bridge(
     )
     if gap > 0 and gap_pct > 0.15:
         headline = (
-            f"Banker's bridge is ${claimed/1e6:.1f}M; realistic "
-            f"capture is ${realistic_med/1e6:.1f}M — "
-            f"${gap/1e6:.1f}M gap ({gap_pct*100:.1f}% of claim)."
+            f"Banker's bridge is ${claimed/1e6:.2f}M; realistic "
+            f"capture is ${realistic_med/1e6:.2f}M — "
+            f"${gap/1e6:.2f}M gap ({gap_pct*100:.1f}% of claim)."
         )
     elif gap > 0:
         headline = (
-            f"Banker's bridge is ${claimed/1e6:.1f}M; realistic "
-            f"capture is ${realistic_med/1e6:.1f}M — "
-            f"small ${gap/1e6:.1f}M gap ({gap_pct*100:.1f}% of claim) "
+            f"Banker's bridge is ${claimed/1e6:.2f}M; realistic "
+            f"capture is ${realistic_med/1e6:.2f}M — "
+            f"small ${gap/1e6:.2f}M gap ({gap_pct*100:.1f}% of claim) "
             f"inside acceptable tolerance."
         )
     elif gap < 0:
         headline = (
-            f"Banker's bridge is ${claimed/1e6:.1f}M; realistic "
-            f"capture is ${realistic_med/1e6:.1f}M — "
-            f"${abs(gap)/1e6:.1f}M *higher* than claimed. "
+            f"Banker's bridge is ${claimed/1e6:.2f}M; realistic "
+            f"capture is ${realistic_med/1e6:.2f}M — "
+            f"${abs(gap)/1e6:.2f}M *higher* than claimed. "
             f"Seller may be sandbagging."
         )
     else:
         headline = (
-            f"Banker's bridge is ${claimed/1e6:.1f}M; audit "
+            f"Banker's bridge is ${claimed/1e6:.2f}M; audit "
             f"confirms credibility across every lever."
         )
 
@@ -540,22 +540,22 @@ def audit_bridge(
     rec_parts: List[str] = []
     if price_reduction_usd and price_reduction_usd > 1_000_000:
         rec_parts.append(
-            f"Counter at ${counter_offer_usd/1e6:.1f}M "
-            f"(down ${price_reduction_usd/1e6:.1f}M at "
+            f"Counter at ${counter_offer_usd/1e6:.2f}M "
+            f"(down ${price_reduction_usd/1e6:.2f}M at "
             f"{entry_multiple:.1f}× on the gap)."
         )
     if earn_out_target_usd:
         rec_parts.append(
-            f"Alternative: structure ${earn_out_target_usd/1e6:.1f}M "
+            f"Alternative: structure ${earn_out_target_usd/1e6:.2f}M "
             f"as a 24-month earn-out triggered at "
-            f"${earn_out_trigger_usd/1e6:.1f}M LTM EBITDA."
+            f"${earn_out_trigger_usd/1e6:.2f}M LTM EBITDA."
         )
     if worst and worst.verdict in (
         LeverVerdict.UNSUPPORTED, LeverVerdict.OVERSTATED,
     ):
         rec_parts.append(
             f"Press banker on '{worst.lever.name}' — largest single "
-            f"gap at ${worst.gap_usd/1e6:.1f}M."
+            f"gap at ${worst.gap_usd/1e6:.2f}M."
         )
     # Double-count flag
     cats = {a.category for a in per_lever}

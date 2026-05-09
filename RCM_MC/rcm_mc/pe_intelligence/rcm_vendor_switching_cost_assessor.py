@@ -172,7 +172,7 @@ def assess_rcm_switching(
             f"Bad-case conversion: DSO peaks at "
             f"{peak_dso:.0f} days in month "
             f"{peak_month}, cumulative WC drag "
-            f"${max_drag:.1f}M. Recovery only by "
+            f"${max_drag:.2f}M. Recovery only by "
             f"month "
             f"{recovery_month if recovery_month else '>12'}. "
             "Factor the drag into cash-flow covenants."
@@ -182,18 +182,18 @@ def assess_rcm_switching(
             f"Realistic conversion: peak DSO "
             f"{peak_dso:.0f} days at month "
             f"{peak_month}, WC drag "
-            f"${max_drag:.1f}M. Recovery by month "
+            f"${max_drag:.2f}M. Recovery by month "
             f"{recovery_month if recovery_month else '?'}. "
-            f"Implementation ${inputs.implementation_cost_m:.1f}M + "
-            f"max WC drag ${max_drag:.1f}M → "
+            f"Implementation ${inputs.implementation_cost_m:.2f}M + "
+            f"max WC drag ${max_drag:.2f}M → "
             f"{payback} month payback if annual savings "
-            f"${annual_savings:.1f}M."
+            f"${annual_savings:.2f}M."
         )
     else:
         note = (
             f"Best-case conversion: manageable DSO "
             f"spike ({peak_dso:.0f} days), WC drag "
-            f"${max_drag:.1f}M. Recovery by month "
+            f"${max_drag:.2f}M. Recovery by month "
             f"{recovery_month}. Base-case should "
             "assume realistic, not best-case."
         )
@@ -232,11 +232,11 @@ def render_rcm_switching_markdown(
         f"- Recovery month: "
         f"{r.months_to_recover if r.months_to_recover else 'none in 12'}",
         f"- Max cumulative WC drag: "
-        f"${r.max_cumulative_wc_drag_m:.1f}M",
+        f"${r.max_cumulative_wc_drag_m:.2f}M",
         f"- Implementation: "
-        f"${r.implementation_cost_m:.1f}M",
+        f"${r.implementation_cost_m:.2f}M",
         f"- Annual savings post: "
-        f"${r.annual_savings_post_m:.1f}M",
+        f"${r.annual_savings_post_m:.2f}M",
         f"- Payback: "
         f"{r.payback_months if r.payback_months else 'n/a'} months",
         "",

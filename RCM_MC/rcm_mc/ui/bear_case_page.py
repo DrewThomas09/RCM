@@ -81,12 +81,12 @@ def _recommendation_for_report(report: "BearCaseReport") -> str:
         confidence = "high"
     at_risk = report.combined_ebitda_at_risk_usd or 0.0
     dollars_str = (
-        f"${at_risk/1e6:,.1f}M EBITDA at risk"
+        f"${at_risk/1e6:,.2f}M EBITDA at risk"
         if at_risk else None
     )
     reasoning = [
         f"{crit} critical theme(s) across {n_evidence} ranked evidence rows.",
-        f"Combined EBITDA-at-risk: ${at_risk/1e6:,.1f}M.",
+        f"Combined EBITDA-at-risk: ${at_risk/1e6:,.2f}M.",
     ]
     return recommendation_block(
         verdict=verdict,
@@ -252,7 +252,7 @@ def _verdict_card(
         + f'<div class="bc-kpi-grid">'
         f'  <div><div class="bc-kpi__label">EBITDA at Risk</div>'
         f'       <div class="bc-kpi__val crit">'
-        f'${report.combined_ebitda_at_risk_usd/1e6:,.1f}M{pct_frame}</div>'
+        f'${report.combined_ebitda_at_risk_usd/1e6:,.2f}M{pct_frame}</div>'
         f'       <div style="font-size:10px;color:{P["text_faint"]};'
         f'margin-top:3px;">sum across evidence '
         f'· &lt;3% clears IC · &gt;10% material · &gt;25% killable</div></div>'
@@ -652,7 +652,7 @@ def _render_bear_case_no_ccd(
         body, f"Bear Case (no CCD) — {deal_name}",
         subtitle=(
             f"{report.critical_count} critical · "
-            f"${report.combined_ebitda_at_risk_usd/1e6:,.1f}M at risk"
+            f"${report.combined_ebitda_at_risk_usd/1e6:,.2f}M at risk"
         ),
     )
 
@@ -859,6 +859,6 @@ def render_bear_case_page(
         body, f"Bear Case — {deal_name}",
         subtitle=(
             f"{report.critical_count} critical · "
-            f"${report.combined_ebitda_at_risk_usd/1e6:,.1f}M at risk"
+            f"${report.combined_ebitda_at_risk_usd/1e6:,.2f}M at risk"
         ),
     )

@@ -132,7 +132,7 @@ def render_platform_maturity(params: dict = None) -> str:
         ck_kpi_block("Overall Maturity", f"{r.overall_maturity_score}/100", "", "") +
         ck_kpi_block("Recommended Path", r.recommended_exit_path[:14], "", "") +
         ck_kpi_block("Time to Exit", f"{r.time_to_exit_months}mo", "", "") +
-        ck_kpi_block("Expected EV", f"${r.expected_exit_ev_mm:,.0f}M", "", "") +
+        ck_kpi_block("Expected EV", f"${r.expected_exit_ev_mm:,.2f}M", "", "") +
         ck_kpi_block("Dimensions", str(len(r.dimensions)), "", "") +
         ck_kpi_block("Exit Paths", str(len(r.exit_paths)), "", "") +
         ck_kpi_block("Remediations", str(len(r.remediations)), "", "") +
@@ -159,7 +159,7 @@ def render_platform_maturity(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {score_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Exit Recommendation</div>
     <div style="color:{score_c};font-weight:700;font-size:14px">{_html.escape(r.recommended_exit_path)} — {r.time_to_exit_months} months</div>
-    <div style="color:{text_dim};font-size:11px;margin-top:4px">Expected EV ${r.expected_exit_ev_mm:,.0f}M · Overall maturity {r.overall_maturity_score}/100 · Remediation cost ${total_remediation_cost:,.1f}M</div>
+    <div style="color:{text_dim};font-size:11px;margin-top:4px">Expected EV ${r.expected_exit_ev_mm:,.2f}M · Overall maturity {r.overall_maturity_score}/100 · Remediation cost ${total_remediation_cost:,.2f}M</div>
   </div>
   <div style="{cell}"><div style="{h3}">Maturity Dimensions — Current vs Thresholds</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Exit Path Comparison</div>{p_tbl}</div>
@@ -169,7 +169,7 @@ def render_platform_maturity(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Platform Maturity Thesis:</strong> Overall score {r.overall_maturity_score}/100.
     Recommended path: <strong style="color:{text}">{_html.escape(r.recommended_exit_path)}</strong>.
-    Remediation investment of ${total_remediation_cost:,.1f}M over 9-18 months moves platform from strategic-ready to IPO-ready — highest priorities are SOX 404 internal controls,
+    Remediation investment of ${total_remediation_cost:,.2f}M over 9-18 months moves platform from strategic-ready to IPO-ready — highest priorities are SOX 404 internal controls,
     payer diversification below 18% top-payer share, and 3-year audited financial track record.
     Sponsor-to-sponsor and continuation vehicle paths offer faster execution at modest multiple discount.
     Dividend recap remains available pre-exit to return capital to LPs while preserving exit optionality.

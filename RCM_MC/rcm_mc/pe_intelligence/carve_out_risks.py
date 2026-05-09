@@ -203,14 +203,14 @@ def assess_carve_out(inputs: CarveOutInputs) -> CarveOutAssessment:
 
     if high >= 3:
         note = (f"Severe carve-out profile: {high} high-severity risks. "
-                f"Estimated ${total:,.1f}M separation cost, "
+                f"Estimated ${total:,.2f}M separation cost, "
                 f"{longest}-month longest path. Re-underwrite.")
     elif high >= 1:
         note = (f"Material carve-out exposure: {high} high-severity "
-                f"risk(s), ${total:,.1f}M separation budget.")
+                f"risk(s), ${total:,.2f}M separation budget.")
     elif risks:
         note = (f"Standard carve-out profile: {len(risks)} manageable "
-                f"risks, ${total:,.1f}M separation budget.")
+                f"risks, ${total:,.2f}M separation budget.")
     else:
         note = "Clean carve-out — no flagged risks."
 
@@ -229,7 +229,7 @@ def render_carve_out_markdown(a: CarveOutAssessment) -> str:
         "",
         f"_{a.partner_note}_",
         "",
-        f"- Total separation cost estimate: ${a.total_separation_cost_m:,.1f}M",
+        f"- Total separation cost estimate: ${a.total_separation_cost_m:,.2f}M",
         f"- Longest-path timeline: {a.longest_path_months} months",
         f"- High-severity risk count: {a.high_severity_count}",
         "",
@@ -239,7 +239,7 @@ def render_carve_out_markdown(a: CarveOutAssessment) -> str:
     for r in a.risks:
         lines.append(f"### {r.name} ({r.severity})")
         lines.append(f"- {r.description}")
-        lines.append(f"- Estimated cost: ${r.estimated_cost_m:,.1f}M | "
+        lines.append(f"- Estimated cost: ${r.estimated_cost_m:,.2f}M | "
                      f"Timeline: {r.estimated_months} months")
         lines.append(f"- Mitigation: {r.mitigation}")
         lines.append("")

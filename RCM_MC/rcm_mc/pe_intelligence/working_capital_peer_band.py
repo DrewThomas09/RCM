@@ -157,15 +157,15 @@ def benchmark_working_capital(inputs: WCInputs) -> WCPeerReport:
     unfavorable = [l for l in levers if l.verdict == "unfavorable"]
     if len(unfavorable) >= 2:
         note = (f"WC posture weak on {len(unfavorable)} levers. "
-                f"~${total_release:,.1f}M cash release available by "
+                f"~${total_release:,.2f}M cash release available by "
                 "moving to peer-favorable end. CCC "
                 f"{ccc:.0f}d — high priority lever.")
     elif unfavorable:
         note = (f"WC weak link: {unfavorable[0].component.upper()} — "
-                f"~${unfavorable[0].cash_release_m:,.1f}M release "
+                f"~${unfavorable[0].cash_release_m:,.2f}M release "
                 "available.")
     elif total_release >= 5.0:
-        note = (f"WC in-band but ~${total_release:,.1f}M residual "
+        note = (f"WC in-band but ~${total_release:,.2f}M residual "
                 "opportunity to best-in-class.")
     else:
         note = (f"WC posture strong (CCC {ccc:.0f}d). Preserve, don't "
@@ -187,7 +187,7 @@ def render_wc_markdown(r: WCPeerReport) -> str:
         f"_{r.partner_note}_",
         "",
         f"- Cash conversion cycle: {r.cash_conversion_cycle:.1f} days",
-        f"- Total opportunity: ${r.total_cash_opportunity_m:,.1f}M",
+        f"- Total opportunity: ${r.total_cash_opportunity_m:,.2f}M",
         "",
         "| Lever | Actual | Low | High | Verdict | Release |",
         "|---|---:|---:|---:|---|---:|",

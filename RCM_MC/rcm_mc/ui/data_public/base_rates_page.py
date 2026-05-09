@@ -203,7 +203,7 @@ def render_base_rates(params: dict = None) -> str:
 
     kpi_strip = (
         ck_kpi_block("Matching Deals", f"{r.total_matching:,}", "", "") +
-        ck_kpi_block("Median EV", f"${p50_ev.p50:,.0f}M" if p50_ev else "—", "", "") +
+        ck_kpi_block("Median EV", f"${p50_ev.p50:,.2f}M" if p50_ev else "—", "", "") +
         ck_kpi_block("Median EV/EBITDA", f"{p50_mult.p50:,.2f}x" if p50_mult else "—", "", "") +
         ck_kpi_block("P75 EV/EBITDA", f"{p50_mult.p75:,.2f}x" if p50_mult else "—", "", "") +
         ck_kpi_block("Median EBITDA Mgn", f"{p50_margin.p50 * 100:.1f}%" if p50_margin else "—", "", "") +

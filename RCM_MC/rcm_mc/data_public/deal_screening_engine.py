@@ -188,9 +188,9 @@ def screen_deal(
     # --- EBITDA positivity ---
     ebitda = _safe_float(deal.get("ebitda_mm") or deal.get("ebitda_at_entry_mm"))
     if config.require_ebitda_positive and ebitda is not None and ebitda < 0:
-        fail_reasons.append(f"Negative EBITDA ${ebitda:.0f}M — pre-profitability")
+        fail_reasons.append(f"Negative EBITDA ${ebitda:.2f}M — pre-profitability")
     elif ebitda and ebitda > 0:
-        pass_signals.append(f"Positive EBITDA ${ebitda:.0f}M")
+        pass_signals.append(f"Positive EBITDA ${ebitda:.2f}M")
 
     # --- Medicaid concentration (Phase 3G: now a hard FAIL above 40%) ---
     medicaid = _payer_share(deal, "medicaid")
@@ -251,7 +251,7 @@ def screen_deal(
     # --- Deal size ---
     ev = _safe_float(deal.get("ev_mm"))
     if ev is not None and ev < config.min_ev_mm:
-        watch_reasons.append(f"EV ${ev:.0f}M below min diligence size ${config.min_ev_mm:.0f}M")
+        watch_reasons.append(f"EV ${ev:.2f}M below min diligence size ${config.min_ev_mm:.2f}M")
 
     # --- Senior partner heuristics ---
     try:

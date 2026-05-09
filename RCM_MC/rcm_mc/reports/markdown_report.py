@@ -18,7 +18,7 @@ from .narrative import generate_narrative
 
 def _fmt_money(val: float) -> str:
     if abs(val) >= 1_000_000:
-        return f"${val / 1_000_000:,.1f}M"
+        return f"${val / 1_000_000:,.2f}M"
     if abs(val) >= 1_000:
         return f"${val / 1_000:,.0f}K"
     return f"${val:,.0f}"

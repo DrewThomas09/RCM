@@ -186,7 +186,7 @@ def score_specialty_mix_stress(
         note = (
             f"{triggered} specialty-mix flags — this is a "
             f"single-service business. Partner: price as "
-            f"an add-on, not a platform. ~${concentration_m:,.1f}M "
+            f"an add-on, not a platform. ~${concentration_m:,.2f}M "
             "EBITDA at risk if specialty falters."
         )
     elif triggered >= 3:
@@ -200,7 +200,7 @@ def score_specialty_mix_stress(
         note = (
             f"{triggered} flags — heavily concentrated in "
             "top specialty. Partner: haircut underwrite by "
-            f"${concentration_m:,.1f}M and make specialty-"
+            f"${concentration_m:,.2f}M and make specialty-"
             "leader retention a closing condition."
         )
     elif triggered == 2:
@@ -246,7 +246,7 @@ def render_specialty_mix_markdown(
         f"- Triggered flags: {r.triggered_count} / "
         f"{len(r.flags)}",
         f"- Concentration-risk EBITDA: "
-        f"${r.concentration_risk_m:,.1f}M",
+        f"${r.concentration_risk_m:,.2f}M",
         "",
         "| Flag | Triggered | Partner comment |",
         "|---|---|---|",

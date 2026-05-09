@@ -30,7 +30,7 @@ def _sources_uses_svg(sources, uses) -> str:
             out += (f'<text x="{x + w/2:.1f}" y="{y + bar_h - 8}" text-anchor="middle" '
                     f'fill="{P["bg"]}" font-size="9">{label}</text>')
             out += (f'<text x="{x + w/2:.1f}" y="{y + bar_h - 1}" text-anchor="middle" '
-                    f'fill="{P["bg"]}" font-size="8" font-variant-numeric="tabular-nums">${amount:.0f}M</text>')
+                    f'fill="{P["bg"]}" font-size="8" font-variant-numeric="tabular-nums">${amount:.2f}M</text>')
         return out
 
     total = uses.total_mm
@@ -100,7 +100,7 @@ def _fcf_chart_svg(projections) -> str:
         lines.append(f'<text x="{x + bar_w/2:.1f}" y="{pad_t + chart_h + 16}" '
                      f'text-anchor="middle" fill="{P["text_dim"]}">Yr {p.year}</text>')
         lines.append(f'<text x="{x + bar_w/2:.1f}" y="{y - 3:.1f}" '
-                     f'text-anchor="middle" fill="{c}" font-size="9">${p.fcf_mm:.1f}M</text>')
+                     f'text-anchor="middle" fill="{c}" font-size="9">${p.fcf_mm:.2f}M</text>')
 
     lines.append('</svg>')
     return "\n".join(lines)
@@ -124,11 +124,11 @@ def _projection_table(projections) -> str:
         rows.append(
             f'<tr style="background:{rbg}">'
             f'<td style="padding:5px 8px;text-align:center;color:{tdim}">Yr {p.year}</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${p.revenue_mm:.1f}M</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${p.ebitda_mm:.1f}M</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${p.revenue_mm:.2f}M</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${p.ebitda_mm:.2f}M</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">{p.ebitda_margin*100:.1f}%</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">${p.interest_mm:.1f}M</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${p.fcf_mm:.1f}M</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">${p.interest_mm:.2f}M</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${p.fcf_mm:.2f}M</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{lev_c}">{p.leverage_ratio:.2f}x</td>'
             f'</tr>'
         )
@@ -167,8 +167,8 @@ def _returns_table(scenarios) -> str:
             f'<tr style="background:{rbg}">'
             f'<td style="padding:5px 8px;text-align:center;color:{tdim}">Year {s.hold_years}</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{s.exit_multiple:.1f}x</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${s.exit_ev_mm:.0f}M</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${s.exit_equity_mm:.0f}M</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${s.exit_ev_mm:.2f}M</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${s.exit_equity_mm:.2f}M</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{moic_c}">{s.moic:.2f}x</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{s.irr*100:.1f}%</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">{s.cash_yield_pct:.1f}%</td>'
@@ -329,13 +329,13 @@ def render_underwriting_model(params: dict) -> str:
     base_irr = f"{base_sc.irr*100:.1f}%" if base_sc else "—"
 
     kpis = ck_kpi_block("Entry EV/EBITDA", f"{r.entry_multiple:.1f}x",
-                         unit=f"EV: ${r.ev_mm:.0f}M / Size: {r.size_bucket}")
+                         unit=f"EV: ${r.ev_mm:.2f}M / Size: {r.size_bucket}")
     kpis += ck_kpi_block("Total Leverage", f"{r.sources.leverage_ratio:.2f}x",
-                          unit=f"Equity: {r.sources.equity_pct*100:.0f}% / ${r.sources.equity_mm:.0f}M")
+                          unit=f"Equity: {r.sources.equity_pct*100:.0f}% / ${r.sources.equity_mm:.2f}M")
     kpis += ck_kpi_block("Base MOIC (5yr)", base_moic, unit=f"IRR: {base_irr}")
     kpis += ck_kpi_block("Corpus P50 MOIC", f"{r.corpus_p50_moic:.2f}x",
                           unit=f"P25: {r.corpus_p25_moic:.2f}x / P75: {r.corpus_p75_moic:.2f}x")
-    kpis += ck_kpi_block("Interest Rate", f"{r.sources.senior_debt_mm:.0f}M sr / {r.sources.sub_debt_mm:.0f}M sub")
+    kpis += ck_kpi_block("Interest Rate", f"{r.sources.senior_debt_mm:.2f}M sr / {r.sources.sub_debt_mm:.2f}M sub")
     kpis += ck_kpi_block("Corpus Deals", str(r.corpus_deal_count))
 
     src_uses_svg = _sources_uses_svg(r.sources, r.uses)

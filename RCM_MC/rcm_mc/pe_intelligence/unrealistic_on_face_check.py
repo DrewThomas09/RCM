@@ -362,7 +362,7 @@ def _outsized_npr(i: SniffTestInputs) -> Optional[SniffHit]:
             kill_level=False,
             message=(
                 f"Physician-owned group at "
-                f"${i.npr_m:.0f}M NPR claiming "
+                f"${i.npr_m:.2f}M NPR claiming "
                 "minority-seller structure — size-vs-"
                 "structure mismatch; seller usually "
                 "wants rollover and control, not "

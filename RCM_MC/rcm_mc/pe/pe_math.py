@@ -221,7 +221,7 @@ def _fmt_money(v: float) -> str:
     if af >= 1e9:
         return f"{sign}${af/1e9:.2f}B{close}"
     if af >= 1e6:
-        return f"{sign}${af/1e6:.1f}M{close}"
+        return f"{sign}${af/1e6:.2f}M{close}"
     if af >= 1e3:
         return f"{sign}${af/1e3:.0f}K{close}"
     return f"{sign}${af:.0f}{close}"

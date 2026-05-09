@@ -168,13 +168,13 @@ def advise_earnout(inputs: EarnoutInputs) -> EarnoutReport:
                 "Driver is not measurable enough. Cut headline price "
                 "instead.")
     elif inputs.price_gap_m / max(1.0, inputs.total_transaction_value_m) >= 0.20:
-        note = (f"Price gap is {inputs.price_gap_m:,.1f}M vs "
-                f"${inputs.total_transaction_value_m:,.0f}M TV — "
+        note = (f"Price gap is {inputs.price_gap_m:,.2f}M vs "
+                f"${inputs.total_transaction_value_m:,.2f}M TV — "
                 "meaningful. Earn-out is the bridge. Structure "
                 "carefully.")
     else:
         note = (f"Earn-out bridges a modest "
-                f"${inputs.price_gap_m:,.1f}M gap. Go straight to "
+                f"${inputs.price_gap_m:,.2f}M gap. Go straight to "
                 "structure discussion.")
 
     structure = EarnoutStructure(
@@ -203,7 +203,7 @@ def render_earnout_markdown(r: EarnoutReport) -> str:
         "",
         f"- Driver quality: **{r.driver_quality}**",
         f"- Should propose: **{'yes' if s.should_propose else 'no'}**",
-        f"- Earn-out size: ${s.earnout_size_m:,.1f}M",
+        f"- Earn-out size: ${s.earnout_size_m:,.2f}M",
         f"- % of price gap covered: {s.earnout_pct_of_gap*100:.0f}%",
         f"- Trigger: {s.trigger}",
         f"- Vesting window: {s.vesting_window_months} months",

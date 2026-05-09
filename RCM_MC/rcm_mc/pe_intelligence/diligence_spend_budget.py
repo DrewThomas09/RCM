@@ -244,20 +244,20 @@ def size_diligence_budget(
 
     if pct_of_ev >= 0.008:
         note = (
-            f"Diligence budget ${total:,.1f}M "
+            f"Diligence budget ${total:,.2f}M "
             f"({pct_of_ev*100:.2f}% of EV). High — "
             f"{biggest.name} is the biggest line "
             "because of the identified risk axis."
         )
     elif pct_of_ev <= 0.003:
         note = (
-            f"Diligence budget ${total:,.1f}M "
+            f"Diligence budget ${total:,.2f}M "
             f"({pct_of_ev*100:.2f}% of EV). Lean — this "
             "is a clean deal on a standard scope."
         )
     else:
         note = (
-            f"Diligence budget ${total:,.1f}M "
+            f"Diligence budget ${total:,.2f}M "
             f"({pct_of_ev*100:.2f}% of EV). Standard. "
             f"Biggest line: {biggest.name}."
         )
@@ -279,7 +279,7 @@ def render_diligence_budget_markdown(
         "",
         f"_{r.partner_note}_",
         "",
-        f"- Total: ${r.total_m:,.1f}M "
+        f"- Total: ${r.total_m:,.2f}M "
         f"({r.total_pct_of_ev*100:.2f}% of EV)",
         f"- Biggest line: {r.biggest_line}",
         "",

@@ -32,7 +32,7 @@ def _funds_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(f.sponsor)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(f.fund_name)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{f.vintage}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${f.fund_size_b:.1f}B</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${f.fund_size_b:.2f}B</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{f.called_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{dp_c};font-weight:700">{f.dpi:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{f.rvpi:.2f}x</td>',
@@ -62,7 +62,7 @@ def _distributions_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(d.fund)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(d.event_date)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:11px;color:{text};font-weight:600">{_html.escape(d.portfolio_company)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${d.distribution_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${d.distribution_m:.2f}M</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(d.event_type)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{d.hold_years:.1f}y</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{m_c};font-weight:700">{d.moic:.2f}x</td>',
@@ -86,10 +86,10 @@ def _sectors_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(s.sector)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{s.sponsors}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{s.funds}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${s.total_commitment_b:.1f}B</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${s.total_commitment_b:.2f}B</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{d_c};font-weight:700">{s.aggregate_dpi:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.median_hold_years:.1f}y</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${s.exit_volume_m:,.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${s.exit_volume_m:,.2f}M</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -130,8 +130,8 @@ def _lp_requests_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(r.lp_name)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(r.lp_type)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(r.request_type)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${r.commitment_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">${r.dpi_shortfall_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${r.commitment_m:.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">${r.dpi_shortfall_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(r.request_date)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{pos}">{_html.escape(r.sponsor_response)}</td>',
         ]
@@ -179,7 +179,7 @@ def render_dpi_tracker(params: dict = None) -> str:
         ck_kpi_block("Weighted DPI", f"{r.weighted_dpi:.2f}x", "", "") +
         ck_kpi_block("Weighted TVPI", f"{r.weighted_tvpi:.2f}x", "", "") +
         ck_kpi_block("Distributions (12mo)", f"${r.total_distributions_b:.2f}B", "", "") +
-        ck_kpi_block("Pending Exits", f"${r.pending_exits_m:,.1f}M", "", "") +
+        ck_kpi_block("Pending Exits", f"${r.pending_exits_m:,.2f}M", "", "") +
         ck_kpi_block("Below Benchmark", str(r.below_benchmark_funds), "", "") +
         ck_kpi_block("Sectors", str(len(r.sectors)), "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
@@ -218,7 +218,7 @@ def render_dpi_tracker(params: dict = None) -> str:
     {q1q2_count} of {r.total_funds} tracked funds are top-half performers by TVPI — defensibility of healthcare alpha intact despite drought.
     {r.total_distributions_b:.2f}B in LTM distributions across portfolio — 48% secondary-buyout, 22% strategic sale, 18% dividend recap, 12% continuation vehicle — secondary/CV taking growing share vs historical 30% share.
     {active_requests} LP liquidity requests active; GPs responding with mix of continuation vehicles, dividend recaps, and accelerated exit sequencing — granular LP engagement is elevated.
-    Pending path-to-exit pipeline ${r.pending_exits_m:,.1f}M projected value at weighted 2.55x MOIC; {high_conf_exits} of {len(r.exit_paths)} classified high-confidence — supports 2026-2027 distribution recovery thesis.
+    Pending path-to-exit pipeline ${r.pending_exits_m:,.2f}M projected value at weighted 2.55x MOIC; {high_conf_exits} of {len(r.exit_paths)} classified high-confidence — supports 2026-2027 distribution recovery thesis.
     Exit drought watchlist: dividend recaps +62% YoY (interim liquidity valve); secondary-buyout 48% (up 10pts); continuation vehicle $24.5B (up 119%) — mechanism mix shifts away from strategic sale.
   </div>
 </div>"""

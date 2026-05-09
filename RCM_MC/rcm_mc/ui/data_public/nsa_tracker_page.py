@@ -92,10 +92,10 @@ def _deals_table(items) -> str:
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(d.deal)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(d.sector)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${d.out_of_network_revenue_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${d.out_of_network_revenue_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{d.annual_idr_cases:,}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${d.avg_case_value_m / 1000:,.2f}K</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">${d.revenue_at_risk_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">${d.revenue_at_risk_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{d.qpa_vs_median_charge_pct * 100:.1f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(d.strategy)}</td>',
         ]
@@ -161,7 +161,7 @@ def render_nsa_tracker(params: dict = None) -> str:
     kpi_strip = (
         ck_kpi_block("IDR Cases (Tracked)", str(r.total_cases), "", "") +
         ck_kpi_block("Total Disputed", f"${r.total_revenue_disputed_m:.3f}M", "", "") +
-        ck_kpi_block("Revenue at Risk", f"${r.total_revenue_at_risk_m:,.1f}M", "", "") +
+        ck_kpi_block("Revenue at Risk", f"${r.total_revenue_at_risk_m:,.2f}M", "", "") +
         ck_kpi_block("Provider Win Rate", f"{r.provider_win_rate_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Avg Admin Fee", f"${r.avg_admin_fee_m:.2f}", "", "") +
         ck_kpi_block("Active Strategies", str(r.active_strategies), "", "") +
@@ -185,7 +185,7 @@ def render_nsa_tracker(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">No Surprises Act / IDR Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_cases} active/resolved IDR cases · ${r.total_revenue_at_risk_m:,.1f}M revenue at risk across {r.active_strategies} strategies · {r.provider_win_rate_pct * 100:.1f}% provider win rate · {provider_won} awarded provider / {payer_won} awarded payer — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_cases} active/resolved IDR cases · ${r.total_revenue_at_risk_m:,.2f}M revenue at risk across {r.active_strategies} strategies · {r.provider_win_rate_pct * 100:.1f}% provider win rate · {provider_won} awarded provider / {payer_won} awarded payer — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Portfolio NSA / IDR Exposure by Deal</div>{d_tbl}</div>
@@ -194,7 +194,7 @@ def render_nsa_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Payer Posture Analytics</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Regulatory Developments Calendar</div>{r_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">NSA / IDR Portfolio Summary:</strong> {r.total_cases} IDR cases tracked across emergency, anesthesia, radiology, hospitalist, NICU, and ambulance services — ${r.total_revenue_at_risk_m:,.1f}M total revenue at risk.
+    <strong style="color:{text}">NSA / IDR Portfolio Summary:</strong> {r.total_cases} IDR cases tracked across emergency, anesthesia, radiology, hospitalist, NICU, and ambulance services — ${r.total_revenue_at_risk_m:,.2f}M total revenue at risk.
     Provider win rate {r.provider_win_rate_pct * 100:.1f}% on submitted cases — above CMS-reported industry average ~70% due to disciplined QPA-vs-claim documentation and batched IDR strategy.
     Payer dispersion: Kaiser (51.4% provider win) most restrictive; UHC (69.4%) slightly below average (aggressive QPA strategy); Centene, BCBS Michigan, Aetna, Humana, Cigna, Elevance track 72-74% (moderate posture).
     Emergency department portfolio: 3 of 4 ED groups track sub-26% OON rate and &lt;12% bad debt; Group 3 (Kaiser-concentrated) at 38.5% OON and 18.5% bad debt — remediation in progress.

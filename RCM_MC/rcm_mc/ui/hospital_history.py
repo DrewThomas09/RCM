@@ -21,8 +21,8 @@ def _fmt_m(val: Any) -> str:
     try:
         v = float(val)
         if abs(v) >= 1e9:
-            return f"${v/1e9:.1f}B"
-        return f"${v/1e6:.0f}M"
+            return f"${v/1e9:.2f}B"
+        return f"${v/1e6:.2f}M"
     except (TypeError, ValueError):
         return "—"
 

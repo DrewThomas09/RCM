@@ -324,12 +324,12 @@ def render_home(
         # into list-append so the strip auto-sizes its column count.
         summary_items: list[dict] = [
             {"label": "Active Deals", "value": str(n_deals)},
-            {"label": "Total Revenue", "value": f"${p_rev/1e6:,.0f}M"},
+            {"label": "Total Revenue", "value": f"${p_rev/1e6:,.2f}M"},
         ]
         if p_ebitda > 0:
             summary_items.append({
                 "label": "Est. EBITDA",
-                "value": f"${p_ebitda/1e6:,.0f}M",
+                "value": f"${p_ebitda/1e6:,.2f}M",
             })
         if p_dr:
             dr_tone = (

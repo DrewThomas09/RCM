@@ -342,9 +342,9 @@ def run_main(argv: Optional[list[str]] = None, prog: str = "rcm-mc") -> None:
         df = _sc(actual_cfg, bench_cfg, n_sims=1000, seed=int(args.seed), align_profile=bool(args.align_profile))
         drag = df["ebitda_drag"]
         mult = float(args.multiple)
-        print(f"SCREEN: EBITDA drag: ${drag.mean()/1e6:,.1f}M "
-              f"(P10: ${drag.quantile(0.10)/1e6:,.1f}M, P90: ${drag.quantile(0.90)/1e6:,.1f}M) "
-              f"| EV @ {mult}x: ${drag.mean()*mult/1e6:,.1f}M")
+        print(f"SCREEN: EBITDA drag: ${drag.mean()/1e6:,.2f}M "
+              f"(P10: ${drag.quantile(0.10)/1e6:,.2f}M, P90: ${drag.quantile(0.90)/1e6:,.2f}M) "
+              f"| EV @ {mult}x: ${drag.mean()*mult/1e6:,.2f}M")
         return
 
     # Step 4 (v2): Wire --template flag

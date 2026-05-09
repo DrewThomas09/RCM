@@ -176,7 +176,7 @@ def _plan_margin_svg(plans) -> str:
         bars.append(
             f'<rect x="{x:.1f}" y="{y_rev:.1f}" width="{bar_w:.1f}" height="{rev_h:.1f}" fill="{acc}" opacity="0.35"/>'
             f'<rect x="{x:.1f}" y="{y_margin:.1f}" width="{bar_w:.1f}" height="{margin_h:.1f}" fill="{pos}" opacity="0.9"/>'
-            f'<text x="{x + bar_w / 2:.1f}" y="{y_rev - 4:.1f}" fill="{text_dim}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">${p.annual_revenue_mm:.0f}M</text>'
+            f'<text x="{x + bar_w / 2:.1f}" y="{y_rev - 4:.1f}" fill="{text_dim}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">${p.annual_revenue_mm:.2f}M</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(p.plan_name[:16])}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 26}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(p.plan_type)}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 38}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">★ {p.star_rating:.1f}</text>'
@@ -217,8 +217,8 @@ def render_ma_contracts(params: dict = None) -> str:
         ck_kpi_block("Bid PMPM", f"${r.blended_bid_pmpm:,.0f}", "", "") +
         ck_kpi_block("Star (wtd)", f"{r.weighted_star_rating:.2f}", "", "") +
         ck_kpi_block("MLR", f"{r.blended_mlr * 100:.1f}%", "", "") +
-        ck_kpi_block("Revenue", f"${r.annual_revenue_mm:,.0f}M", "", "") +
-        ck_kpi_block("Margin", f"${r.annual_margin_mm:,.0f}M", f"({r.margin_pct * 100:.1f}%)", "") +
+        ck_kpi_block("Revenue", f"${r.annual_revenue_mm:,.2f}M", "", "") +
+        ck_kpi_block("Margin", f"${r.annual_margin_mm:,.2f}M", f"({r.margin_pct * 100:.1f}%)", "") +
         ck_kpi_block("V28 Net", f"${r.v28_net_impact_mm:+,.1f}M", "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
@@ -261,9 +261,9 @@ def render_ma_contracts(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Supplemental Benefit Portfolio — Utilization &amp; ROI</div>{supp_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">MA Thesis:</strong> {r.total_enrollment:,} MA lives at ${r.blended_bid_pmpm:,.0f} bid PMPM.
-    ${r.annual_revenue_mm:,.0f}M revenue, ${r.annual_margin_mm:,.0f}M margin ({r.margin_pct * 100:.1f}%), MLR {r.blended_mlr * 100:.1f}%, weighted star {r.weighted_star_rating:.2f}.
-    V28 phase-in erodes ${abs(r.v28_net_impact_mm):,.1f}M revenue by 2026. Offset via RAF capture (${raf_opportunity:,.1f}M incremental)
-    and star uplift to 4.5 (${star_opportunity:,.1f}M bonus). D-SNP/I-SNP segments carry highest margin per life
+    ${r.annual_revenue_mm:,.2f}M revenue, ${r.annual_margin_mm:,.2f}M margin ({r.margin_pct * 100:.1f}%), MLR {r.blended_mlr * 100:.1f}%, weighted star {r.weighted_star_rating:.2f}.
+    V28 phase-in erodes ${abs(r.v28_net_impact_mm):,.2f}M revenue by 2026. Offset via RAF capture (${raf_opportunity:,.2f}M incremental)
+    and star uplift to 4.5 (${star_opportunity:,.2f}M bonus). D-SNP/I-SNP segments carry highest margin per life
     but face steepest V28 headwind. Supplemental benefit dollar should follow ROI ranking — OTC and Flex cards lead.
   </div>
 </div>"""

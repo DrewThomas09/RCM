@@ -324,9 +324,9 @@ def render_rollup_arbitrage_markdown(
         "",
         f"- Blended entry multiple: "
         f"{r.blended_entry_multiple:.2f}x on "
-        f"${r.blended_entry_ebitda_m:.1f}M EBITDA",
-        f"- Exit EV: ${r.exit_ev_m:.0f}M; "
-        f"sponsor equity out: ${r.exit_equity_m:.0f}M",
+        f"${r.blended_entry_ebitda_m:.2f}M EBITDA",
+        f"- Exit EV: ${r.exit_ev_m:.2f}M; "
+        f"sponsor equity out: ${r.exit_equity_m:.2f}M",
         f"- Base MOIC: {r.base_moic:.2f}x; "
         f"same-multiple-exit MOIC: "
         f"{r.same_multiple_moic:.2f}x",

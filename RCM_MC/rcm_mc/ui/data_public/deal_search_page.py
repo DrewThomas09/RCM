@@ -170,7 +170,7 @@ def render_deal_search(
         '<div class="ck-kpi-grid">'
         + ck_kpi_block("Results", f'<span class="mn">{total:,}</span>', f"of {len(corpus):,} corpus deals")
         + ck_kpi_block("P50 MOIC", f'<span class="mn" style="color:{_moic_color(p50_m)}">{p50_m:.2f}x</span>', "filtered set")
-        + ck_kpi_block("Avg EV", f'<span class="mn">${avg_ev:.0f}M</span>', "filtered set")
+        + ck_kpi_block("Avg EV", f'<span class="mn">${avg_ev:.2f}M</span>', "filtered set")
         + ck_kpi_block("Page", f'<span class="mn">{page}/{total_pages}</span>', f"{PAGE_SIZE} per page")
         + '</div>'
     )
@@ -290,7 +290,7 @@ def render_deal_search(
   <td style="padding:4px 8px;font-size:9.5px;color:#94a3b8;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{_esc((d.get('buyer') or '')[:22])}</td>
   <td style="padding:4px 8px;font-size:9.5px;color:#64748b;">{_esc((d.get('sector') or '—')[:20])}</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{_esc(str(yr) if yr else '—')}</td>
-  <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{_fmt(ev, '${:.0f}M')}</td>
+  <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{_fmt(ev, '${:.2f}M')}</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{_fmt(ev_ebitda, '{:.1f}x')}</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{_fmt(hold, '{:.1f}y')}</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{moic_str}</td>

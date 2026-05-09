@@ -150,8 +150,8 @@ def render_pmi_playbook(params: dict = None) -> str:
         ck_kpi_block("Close Date", r.close_date, "", "") +
         ck_kpi_block("Days Since Close", str(r.days_since_close), "", "") +
         ck_kpi_block("Overall Progress", f"{r.overall_progress_pct * 100:.1f}%", "", "") +
-        ck_kpi_block("Synergy Run-Rate", f"${r.run_rate_synergies_mm:,.1f}M", "", "") +
-        ck_kpi_block("Synergy Target", f"${r.total_synergies_target_mm:,.1f}M", "", "") +
+        ck_kpi_block("Synergy Run-Rate", f"${r.run_rate_synergies_mm:,.2f}M", "", "") +
+        ck_kpi_block("Synergy Target", f"${r.total_synergies_target_mm:,.2f}M", "", "") +
         ck_kpi_block("Synergy %", f"{synergy_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Budget Util", f"{budget_util * 100:.1f}%", "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
@@ -175,8 +175,8 @@ def render_pmi_playbook(params: dict = None) -> str:
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {prog_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Integration Status — {_html.escape(r.target_acquisition)}</div>
-    <div style="color:{prog_c};font-weight:700;font-size:14px">Day {r.days_since_close} · {r.overall_progress_pct * 100:.1f}% complete · ${r.run_rate_synergies_mm:,.1f}M run-rate synergies ({synergy_pct * 100:.1f}% of target)</div>
-    <div style="color:{text_dim};font-size:11px;margin-top:4px">Integration spend ${r.integration_spend_mm:,.1f}M / ${r.integration_budget_mm:,.1f}M budget ({budget_util * 100:.1f}% util)</div>
+    <div style="color:{prog_c};font-weight:700;font-size:14px">Day {r.days_since_close} · {r.overall_progress_pct * 100:.1f}% complete · ${r.run_rate_synergies_mm:,.2f}M run-rate synergies ({synergy_pct * 100:.1f}% of target)</div>
+    <div style="color:{text_dim};font-size:11px;margin-top:4px">Integration spend ${r.integration_spend_mm:,.2f}M / ${r.integration_budget_mm:,.2f}M budget ({budget_util * 100:.1f}% util)</div>
   </div>
   <div style="{cell}"><div style="{h3}">Workstream Progress &amp; Budget</div>{w_tbl}</div>
   <div style="{cell}"><div style="{h3}">Synergy Capture vs Plan</div>{s_tbl}</div>
@@ -185,7 +185,7 @@ def render_pmi_playbook(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">TMS — Cost Savings by Function</div>{t_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">PMI Thesis:</strong> Integration {r.overall_progress_pct * 100:.1f}% complete at day {r.days_since_close}.
-    Synergy run-rate ${r.run_rate_synergies_mm:,.1f}M vs ${r.total_synergies_target_mm:,.1f}M target ({synergy_pct * 100:.1f}%). Back-office consolidation and supply-chain synergies ahead of plan;
+    Synergy run-rate ${r.run_rate_synergies_mm:,.2f}M vs ${r.total_synergies_target_mm:,.2f}M target ({synergy_pct * 100:.1f}%). Back-office consolidation and supply-chain synergies ahead of plan;
     payer rate improvement and cross-sell revenue synergies behind — high-risk items requiring escalation.
     IT/EHR unification and data-warehouse consolidation are the critical-path blockers for Year-1 milestones.
     Integration spend tracking at {budget_util * 100:.1f}% of budget — on target.

@@ -183,7 +183,7 @@ def render_add_on_sequencing_markdown(
         f"_{r.partner_note}_",
         "",
         f"- Total EBITDA added: "
-        f"${r.total_ebitda_added_m:.1f}M",
+        f"${r.total_ebitda_added_m:.2f}M",
         f"- Saturation quarter: "
         f"{r.saturation_quarter if r.saturation_quarter else 'none'}",
         f"- Unplaced: {r.unplaced_count}",
@@ -194,7 +194,7 @@ def render_add_on_sequencing_markdown(
     for s in r.sequence:
         lines.append(
             f"| {s.sequence} | {s.name} | "
-            f"${s.ebitda_m:.1f}M | "
+            f"${s.ebitda_m:.2f}M | "
             f"{s.priority_score} | "
             f"Q{s.assigned_quarter} | "
             f"{'⚠' if s.saturation_flag else '—'} |"

@@ -202,8 +202,8 @@ def render_regulatory_risk(params: dict = None) -> str:
         ck_kpi_block("Risk Tier", r.risk_label, "", "") +
         ck_kpi_block("Active Events", str(sum(1 for e in r.active_events if e.applies_to_deal)), "", "") +
         ck_kpi_block("Revenue Drag", f"{r.total_revenue_drag_pct * 100:+.1f}%", "", "") +
-        ck_kpi_block("EV at Risk", f"${r.total_ev_risk_mm:,.1f}M", "", "") +
-        ck_kpi_block("Remediation", f"${r.total_remediation_cost_mm:,.1f}M", "", "") +
+        ck_kpi_block("EV at Risk", f"${r.total_ev_risk_mm:,.2f}M", "", "") +
+        ck_kpi_block("Remediation", f"${r.total_remediation_cost_mm:,.2f}M", "", "") +
         ck_kpi_block("Gaps Identified", str(sum(1 for g in r.compliance_gaps if g.current_status != "compliant")), "", "")
     )
 
@@ -298,8 +298,8 @@ def render_regulatory_risk(params: dict = None) -> str:
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Regulatory Thesis:</strong>
     {_html.escape(sector)} at risk tier <strong style="color:{text}">{r.risk_label}</strong>.
-    Cumulative rev drag {r.total_revenue_drag_pct * 100:+.1f}%, implied EV at risk ${r.total_ev_risk_mm:,.1f}M,
-    plus ${r.total_remediation_cost_mm:,.1f}M of pre-close remediation spend. Materiality assessed
+    Cumulative rev drag {r.total_revenue_drag_pct * 100:+.1f}%, implied EV at risk ${r.total_ev_risk_mm:,.2f}M,
+    plus ${r.total_remediation_cost_mm:,.2f}M of pre-close remediation spend. Materiality assessed
     at &gt;5% EV threshold.
   </div>
 

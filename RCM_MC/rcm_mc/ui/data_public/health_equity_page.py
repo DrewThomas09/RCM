@@ -115,7 +115,7 @@ def render_health_equity(params: dict = None) -> str:
         ck_kpi_block("LIS/Dual %", f"{r.lis_dual_pct * 100:.1f}%", "", "") +
         ck_kpi_block("HEI Score", f"{r.overall_hei_score:.3f}", "", "") +
         ck_kpi_block("HEI Points", f"{r.hei_points_current:.1f}", "", "") +
-        ck_kpi_block("Bonus Potential", f"${r.hei_bonus_potential_mm:,.1f}M", "", "") +
+        ck_kpi_block("Bonus Potential", f"${r.hei_bonus_potential_mm:,.2f}M", "", "") +
         ck_kpi_block("HEI Measures", str(len(r.hei_components)), "", "") +
         ck_kpi_block("SDOH Domains", str(len(r.sdoh)), "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
@@ -146,7 +146,7 @@ def render_health_equity(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Equity Thesis:</strong> HEI score {r.overall_hei_score:.3f} ({r.hei_points_current:.0f}/100 points).
     LIS/Dual population is {r.lis_dual_pct * 100:.1f}% of book; {disparity_segments} of {len(r.demographics)} demographic segments show measurable disparity.
-    Equity investment ${total_inv_cost:,.1f}M yields estimated ${r.hei_bonus_potential_mm:,.1f}M Star bonus impact — positive ROI.
+    Equity investment ${total_inv_cost:,.2f}M yields estimated ${r.hei_bonus_potential_mm:,.2f}M Star bonus impact — positive ROI.
     Diabetes care and osteoporosis management show the widest gaps; transportation and community health worker investments have highest demonstrated ROI.
     CMS 2027 Stars calculation replaces the Reward Factor with HEI — making this scorecard directly tied to MA plan bonus payments and cut points.
   </div>

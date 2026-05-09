@@ -72,7 +72,7 @@ def _sponsor_to_sponsor_gaps(target: ExitTarget) -> List[ReadinessGap]:
             archetype=ExitArchetype.SPONSOR_TO_SPONSOR,
             title="EBITDA below sponsor-to-sponsor scale floor",
             description=(
-                f"TTM EBITDA ${target.ttm_ebitda_mm:.1f}M. Most "
+                f"TTM EBITDA ${target.ttm_ebitda_mm:.2f}M. Most "
                 f"sponsor buyers gate at $10M+ for platform deals; "
                 f"below that the universe narrows to add-on buyers "
                 f"who pay 1-2 turns less."),

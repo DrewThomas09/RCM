@@ -100,8 +100,8 @@ def _body_pass(ctx: LetterContext) -> List[str]:
         if gap_pct > 0.10:
             paras.append(
                 f"For context, our underwriting supports a price "
-                f"around ${ctx.price_we_could_support_m:,.0f}M vs the "
-                f"${ctx.asking_price_m:,.0f}M ask "
+                f"around ${ctx.price_we_could_support_m:,.2f}M vs the "
+                f"${ctx.asking_price_m:,.2f}M ask "
                 f"({gap_pct*100:.1f}% gap) — closing that gap would "
                 "likely require structure or earn-outs we don't "
                 "typically use.")

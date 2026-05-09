@@ -222,7 +222,7 @@ def _r_self_insurance_tail(ctx: HeuristicContext) -> Optional[HeuristicHit]:
         title="Self-insurance reserves under-funded",
         severity=sev,
         category="FINANCIAL",
-        finding=(f"~${gap:.1f}M gap in self-insurance actuarial reserves. "
+        finding=(f"~${gap:.2f}M gap in self-insurance actuarial reserves. "
                  "Retained risk not on the balance sheet at book value."),
         partner_voice=("Self-insurance gaps sit on the deal until somebody "
                        "pays. Demand an actuarial study and fund the gap "

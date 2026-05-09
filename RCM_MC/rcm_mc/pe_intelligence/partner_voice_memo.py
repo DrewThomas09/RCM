@@ -199,14 +199,14 @@ def _bear_case(i: PartnerVoiceInputs) -> str:
 def _summary(i: PartnerVoiceInputs, rec: str, score: int) -> str:
     if rec == REC_INVEST:
         return (
-            f"{i.deal_name} is a ${i.ebitda_m:,.0f}M EBITDA "
+            f"{i.deal_name} is a ${i.ebitda_m:,.2f}M EBITDA "
             f"{i.subsector} asset at {i.entry_multiple:.1f}x. Score "
             f"{score}/100. Thesis defensible, exit path clear. "
             "Move to final IC with standard closing conditions."
         )
     if rec == REC_PASS:
         return (
-            f"{i.deal_name} ({i.subsector}, ${i.ebitda_m:,.0f}M "
+            f"{i.deal_name} ({i.subsector}, ${i.ebitda_m:,.2f}M "
             f"EBITDA, {i.entry_multiple:.1f}x) scores {score}/100. "
             "Red flags / pattern-matches / valuation stretch make this "
             "a pass at current price. Re-evaluate on structural "

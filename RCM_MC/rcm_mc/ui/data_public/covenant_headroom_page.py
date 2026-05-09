@@ -173,8 +173,8 @@ def render_covenant_headroom(params: dict = None) -> str:
     status_c = pos if r.overall_status == "healthy" else (warn if r.overall_status == "monitoring" else neg)
 
     kpi_strip = (
-        ck_kpi_block("EBITDA TTM", f"${r.platform_ebitda_ttm_mm:,.1f}M", "", "") +
-        ck_kpi_block("Total Debt", f"${r.total_debt_mm:,.1f}M", "", "") +
+        ck_kpi_block("EBITDA TTM", f"${r.platform_ebitda_ttm_mm:,.2f}M", "", "") +
+        ck_kpi_block("Total Debt", f"${r.total_debt_mm:,.2f}M", "", "") +
         ck_kpi_block("Leverage", f"{r.total_leverage:.2f}x", "", "") +
         ck_kpi_block("Blended Rate", f"{r.blended_rate_pct:.2f}%", "", "") +
         ck_kpi_block("Next Test", r.next_test_date, "", "") +
@@ -215,10 +215,10 @@ def render_covenant_headroom(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Cure Rights Available</div>{cu_tbl}</div>
   <div style="{cell}"><div style="{h3}">Debt Amortization Schedule</div>{am_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {status_c};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Covenant Thesis:</strong> Platform at {r.total_leverage:.2f}x leverage on ${r.platform_ebitda_ttm_mm:,.1f}M TTM EBITDA; ${r.total_debt_mm:,.1f}M aggregate debt at {r.blended_rate_pct:.2f}% blended rate.
+    <strong style="color:{text}">Covenant Thesis:</strong> Platform at {r.total_leverage:.2f}x leverage on ${r.platform_ebitda_ttm_mm:,.2f}M TTM EBITDA; ${r.total_debt_mm:,.2f}M aggregate debt at {r.blended_rate_pct:.2f}% blended rate.
     Covenant posture is <strong style="color:{status_c}">{_html.escape(r.overall_status)}</strong>; next test {r.next_test_date}.
-    Stress test shows breach threshold at roughly -17% EBITDA miss. Cure rights of ~${r.cure_rights[0].cure_equity_needed_mm:,.1f}M equity contribution available from LP pro-rata,
-    providing meaningful buffer against technical breach. Cash sweep mechanism expected to pay down ${sum(a.excess_cash_sweep_mm for a in r.amort_schedule):,.1f}M over life of facility — material delevering path.
+    Stress test shows breach threshold at roughly -17% EBITDA miss. Cure rights of ~${r.cure_rights[0].cure_equity_needed_mm:,.2f}M equity contribution available from LP pro-rata,
+    providing meaningful buffer against technical breach. Cash sweep mechanism expected to pay down ${sum(a.excess_cash_sweep_mm for a in r.amort_schedule):,.2f}M over life of facility — material delevering path.
   </div>
 </div>"""
 

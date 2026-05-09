@@ -213,20 +213,20 @@ def prescreen_qofe(
     haircut_pct = (total_haircut / max(0.01, inputs.stated_ebitda_m))
 
     if haircut_pct >= 0.20:
-        note = (f"Seller's ${inputs.stated_ebitda_m:,.1f}M EBITDA "
-                f"loses ${total_haircut:,.1f}M at QofE "
+        note = (f"Seller's ${inputs.stated_ebitda_m:,.2f}M EBITDA "
+                f"loses ${total_haircut:,.2f}M at QofE "
                 f"({haircut_pct*100:.1f}% of stated). Partner: "
                 "re-price from adjusted EBITDA or pass. Do not "
                 "underwrite off the headline.")
     elif haircut_pct >= 0.10:
-        note = (f"Expected QofE haircut ${total_haircut:,.1f}M "
+        note = (f"Expected QofE haircut ${total_haircut:,.2f}M "
                 f"({haircut_pct*100:.1f}%). Partner: model off "
-                f"${qofe_adj_ebitda:,.1f}M, not stated. Exit "
+                f"${qofe_adj_ebitda:,.2f}M, not stated. Exit "
                 "multiple × adjusted EBITDA.")
     elif total_haircut > 0:
-        note = (f"Small QofE haircut ${total_haircut:,.1f}M "
+        note = (f"Small QofE haircut ${total_haircut:,.2f}M "
                 f"({haircut_pct*100:.1f}%). Partner: model off "
-                f"${qofe_adj_ebitda:,.1f}M; proceed on current "
+                f"${qofe_adj_ebitda:,.2f}M; proceed on current "
                 "thesis.")
     else:
         note = ("No add-backs asserted; stated EBITDA is QofE-"
@@ -260,11 +260,11 @@ def render_qofe_prescreen_markdown(
         "",
         f"_{r.partner_note}_",
         "",
-        f"- Stated EBITDA: ${r.stated_ebitda_m:,.1f}M",
-        f"- Seller add-backs: ${r.total_add_backs_m:,.1f}M",
-        f"- Expected surviving at QofE: ${r.total_expected_surviving_m:,.1f}M",
-        f"- Expected haircut: ${r.total_expected_haircut_m:,.1f}M",
-        f"- **QofE-adjusted EBITDA: ${r.qofe_adjusted_ebitda_m:,.1f}M**",
+        f"- Stated EBITDA: ${r.stated_ebitda_m:,.2f}M",
+        f"- Seller add-backs: ${r.total_add_backs_m:,.2f}M",
+        f"- Expected surviving at QofE: ${r.total_expected_surviving_m:,.2f}M",
+        f"- Expected haircut: ${r.total_expected_haircut_m:,.2f}M",
+        f"- **QofE-adjusted EBITDA: ${r.qofe_adjusted_ebitda_m:,.2f}M**",
         "",
         "| Category | Amount | Survival % | Surviving | Haircut | "
         "Partner read |",
@@ -272,10 +272,10 @@ def render_qofe_prescreen_markdown(
     ]
     for a in r.adjustments:
         lines.append(
-            f"| {a.category} | ${a.amount_m:,.1f}M | "
+            f"| {a.category} | ${a.amount_m:,.2f}M | "
             f"{a.expected_survival_pct*100:.0f}% | "
-            f"${a.expected_surviving_m:,.1f}M | "
-            f"${a.expected_haircut_m:,.1f}M | "
+            f"${a.expected_surviving_m:,.2f}M | "
+            f"${a.expected_haircut_m:,.2f}M | "
             f"{a.partner_commentary} |"
         )
     return "\n".join(lines)

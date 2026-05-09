@@ -70,7 +70,7 @@ def _rural_cah_high_irr(inputs: FaceInputs) -> Optional[ImplausibilityFinding]:
         return ImplausibilityFinding(
             name="rural_cah_irr_implausible", severity="high",
             claim=(f"{inputs.claimed_irr*100:.1f}% IRR on "
-                   f"rural/CAH asset at ${inputs.revenue_m:,.0f}M NPR."),
+                   f"rural/CAH asset at ${inputs.revenue_m:,.2f}M NPR."),
             reality=("Rural critical-access hospitals are cost-based "
                      "reimbursed with essentially no commercial "
                      "leverage. Historical vintage IRRs: mid-single-"
@@ -212,7 +212,7 @@ def _ultra_small_deal_high_irr(
             name="small_deal_extraordinary_irr",
             severity="medium",
             claim=(f"{inputs.claimed_irr*100:.1f}% IRR on "
-                   f"${inputs.ebitda_m:.1f}M EBITDA deal."),
+                   f"${inputs.ebitda_m:.2f}M EBITDA deal."),
             reality=("Sub-$20M EBITDA deals rarely generate 30%+ "
                      "IRR in institutional PE. Verify it isn't "
                      "an IRR on a tiny equity slug."),

@@ -224,13 +224,13 @@ def deal_context_bar(
     # Core financial strip
     strip_parts: List[str] = []
     if revenue:
-        strip_parts.append(f"${revenue/1e6:,.0f}M NPR")
+        strip_parts.append(f"${revenue/1e6:,.2f}M NPR")
     if ebitda:
         margin = (
             f" ({ebitda/revenue*100:.1f}% margin)"
             if revenue and revenue > 0 else ""
         )
-        strip_parts.append(f"${ebitda/1e6:,.1f}M EBITDA{margin}")
+        strip_parts.append(f"${ebitda/1e6:,.2f}M EBITDA{margin}")
     if enterprise_value:
         mult_bit = (
             f" · {entry_multiple:.1f}× entry"
@@ -239,7 +239,7 @@ def deal_context_bar(
             if ebitda and ebitda > 0 else ""
         )
         strip_parts.append(
-            f"${enterprise_value/1e6:,.0f}M EV{mult_bit}"
+            f"${enterprise_value/1e6:,.2f}M EV{mult_bit}"
         )
     if specialty:
         strip_parts.append(specialty.replace("_", " "))

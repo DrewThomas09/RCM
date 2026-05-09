@@ -74,7 +74,7 @@ def _utilization_row_to_record(row: Dict[str, Any], year: int) -> Optional[Dict[
         "notes": (
             f"CMS Medicare provider utilization {year}. "
             f"State: {state}. "
-            f"Total Medicare payment: ${payment_mm:.1f}M. "
+            f"Total Medicare payment: ${payment_mm:.2f}M. "
             f"Services: {total_services:,}. "
             f"Unique beneficiaries: {total_benes:,}. "
             f"Avg risk score: {avg_risk_score:.2f}."

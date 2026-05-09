@@ -241,7 +241,7 @@ def _synergy_question(
     if ctx.claimed_synergies_year_1_m > 5.0:
         return PartnerQuestion(
             tier="probe",
-            text=(f"You are claiming ${ctx.claimed_synergies_year_1_m:.1f}M "
+            text=(f"You are claiming ${ctx.claimed_synergies_year_1_m:.2f}M "
                   "of year-1 synergies. Partner experience: 25-30% of "
                   "run-rate in year 1 is realistic. Which specific "
                   "actions close in months 1-6 vs 7-12, with named "

@@ -300,7 +300,7 @@ def _regulatory_section(items: List[Any], anchor: str) -> str:
         impact = d.get("dollar_impact") or d.get("impact")
         impact_str = ""
         if isinstance(impact, (int, float)):
-            impact_str = f"${impact/1e6:.1f}M"
+            impact_str = f"${impact/1e6:.2f}M"
         elif impact is not None:
             impact_str = _html.escape(str(impact))
         desc = _html.escape(str(d.get("description") or d.get("note") or "")[:400])

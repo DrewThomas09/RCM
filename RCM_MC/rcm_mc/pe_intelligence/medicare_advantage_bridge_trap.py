@@ -199,8 +199,8 @@ def analyze_ma_bridge(
         verdict = "bridge_clears"
         note = (
             f"MA gain "
-            f"${ma_gain_net_of_cann_m:.1f}M/yr covers "
-            f"FFS loss ${ffs_loss:.1f}M/yr (coverage "
+            f"${ma_gain_net_of_cann_m:.2f}M/yr covers "
+            f"FFS loss ${ffs_loss:.2f}M/yr (coverage "
             f"{coverage:.1f}×). Bridge holds — "
             "but verify the named MA contract exists and "
             "cannibalization assumption is conservative."

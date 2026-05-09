@@ -198,9 +198,9 @@ def render_drug_pricing_340b(params: dict = None) -> str:
 
     kpi_strip = (
         ck_kpi_block("Covered Entities", str(r.total_covered_entities), "", "") +
-        ck_kpi_block("Annual Drug Spend", f"${r.total_drug_spend_mm:,.0f}M", "", "") +
-        ck_kpi_block("Ceiling Savings", f"${r.total_program_savings_mm:,.0f}M", "", "") +
-        ck_kpi_block("Program Margin", f"${r.total_margin_mm:,.0f}M", "", "") +
+        ck_kpi_block("Annual Drug Spend", f"${r.total_drug_spend_mm:,.2f}M", "", "") +
+        ck_kpi_block("Ceiling Savings", f"${r.total_program_savings_mm:,.2f}M", "", "") +
+        ck_kpi_block("Program Margin", f"${r.total_margin_mm:,.2f}M", "", "") +
         ck_kpi_block("Margin %", f"{r.program_margin_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Contract Pharmacy", f"{r.contract_pharmacy_network_size:,}", "", "") +
         ck_kpi_block("Audit Risk (wtd)", f"{r.audit_risk_weighted:.1f}", "", "") +
@@ -248,10 +248,10 @@ def render_drug_pricing_340b(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">State Medicaid Interaction — Carve-In vs Carve-Out</div>{medicaid_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">340B Thesis:</strong> {r.total_covered_entities} covered entities across {_html.escape(platform)} platform;
-    ${r.total_drug_spend_mm:,.0f}M WAC-equivalent drug spend produces ${r.total_program_savings_mm:,.0f}M 340B ceiling-price savings
-    ({(r.total_program_savings_mm / r.total_drug_spend_mm) * 100:.1f}% of spend) and ${r.total_margin_mm:,.0f}M net margin ({r.program_margin_pct * 100:.1f}%).
+    ${r.total_drug_spend_mm:,.2f}M WAC-equivalent drug spend produces ${r.total_program_savings_mm:,.2f}M 340B ceiling-price savings
+    ({(r.total_program_savings_mm / r.total_drug_spend_mm) * 100:.1f}% of spend) and ${r.total_margin_mm:,.2f}M net margin ({r.program_margin_pct * 100:.1f}%).
     Contract pharmacy network of {r.contract_pharmacy_network_size:,} retail locations captures spread; weighted audit risk {r.audit_risk_weighted:.1f}/100.
-    Manufacturer restrictions (Lilly, Sanofi, Novartis) erode ~${manuf_impact:,.1f}M/yr; audit exposure ${audit_exposure:,.2f}M if findings sustained.
+    Manufacturer restrictions (Lilly, Sanofi, Novartis) erode ~${manuf_impact:,.2f}M/yr; audit exposure ${audit_exposure:,.2f}M if findings sustained.
     Diversion and duplicate-discount are material deal-breakers — ongoing compliance program required.
   </div>
 </div>"""

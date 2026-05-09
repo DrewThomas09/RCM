@@ -182,8 +182,8 @@ def render_aco_economics(params: dict = None) -> str:
         ck_kpi_block("Beneficiaries", f"{r.total_beneficiaries:,}", "", "") +
         ck_kpi_block("Benchmark PMPM", f"${r.blended_benchmark_pmpm:,.0f}", "", "") +
         ck_kpi_block("Quality Score", f"{r.quality_score:.3f}", "", "") +
-        ck_kpi_block("Expected Savings", f"${r.expected_shared_savings_mm:,.1f}M", "", "") +
-        ck_kpi_block("Total Annual Value", f"${r.total_annual_value_mm:,.1f}M", "", "") +
+        ck_kpi_block("Expected Savings", f"${r.expected_shared_savings_mm:,.2f}M", "", "") +
+        ck_kpi_block("Total Annual Value", f"${r.total_annual_value_mm:,.2f}M", "", "") +
         ck_kpi_block("Tracks", str(len(r.tracks)), "", "") +
         ck_kpi_block("Infra Items", str(len(r.infrastructure)), "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
@@ -224,8 +224,8 @@ def render_aco_economics(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Full-Risk Transition Path</div>{risk_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">ACO Thesis:</strong> {r.total_beneficiaries:,} attributed lives at ${r.blended_benchmark_pmpm:,.0f} PMPM benchmark.
-    Quality score {r.quality_score:.3f} unlocks full savings share. Expected ${r.expected_shared_savings_mm:,.1f}M shared savings
-    + ${r.total_annual_value_mm - r.expected_shared_savings_mm:,.1f}M capitation/MA margin = ${r.total_annual_value_mm:,.1f}M total value.
+    Quality score {r.quality_score:.3f} unlocks full savings share. Expected ${r.expected_shared_savings_mm:,.2f}M shared savings
+    + ${r.total_annual_value_mm - r.expected_shared_savings_mm:,.2f}M capitation/MA margin = ${r.total_annual_value_mm:,.2f}M total value.
     Transition to full-risk over 4 years unlocks material margin expansion.
   </div>
 </div>"""

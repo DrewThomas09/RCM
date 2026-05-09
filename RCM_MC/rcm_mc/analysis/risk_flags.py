@@ -172,7 +172,7 @@ def _build_operational_flags(
                 f"breakdown — front-end eligibility, authorization, "
                 f"and back-end follow-up all warrant targeted "
                 f"diligence." +
-                (f" Estimated EBITDA at risk: ${ear/1_000_000:.1f}M." if ear else "")
+                (f" Estimated EBITDA at risk: ${ear/1_000_000:.2f}M." if ear else "")
             ),
             trigger_metrics=["denial_rate"],
             trigger_metric="denial_rate",
@@ -495,7 +495,7 @@ def _build_financial_flags(
             title="Operating at a loss",
             detail=(
                 f"Current EBITDA is negative "
-                f"(${bridge.current_ebitda/1_000_000:.1f}M). RCM "
+                f"(${bridge.current_ebitda/1_000_000:.2f}M). RCM "
                 f"improvements alone are unlikely to restore "
                 f"profitability — underwriting needs a cost-out or "
                 f"rate-reset storyline alongside."

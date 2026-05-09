@@ -328,7 +328,7 @@ def sponsor_report(record: SponsorRecord) -> str:
         f"  Median hold:        {f'{record.median_hold_years:.1f} yrs' if record.median_hold_years else '—'}",
         f"  Loss rate (<1.0x):  {record.loss_rate:.0%}",
         f"  Home run rate (>3x):{record.home_run_rate:.0%}",
-        f"  Avg deal size:      {f'${record.avg_ev_mm:,.0f}M' if record.avg_ev_mm else '—'}",
+        f"  Avg deal size:      {f'${record.avg_ev_mm:,.2f}M' if record.avg_ev_mm else '—'}",
         f"  Consistency score:  {record.consistency_score:.1f}/100",
         f"  Sectors:            {', '.join(record.sectors[:5])}{'…' if len(record.sectors) > 5 else ''}",
     ]

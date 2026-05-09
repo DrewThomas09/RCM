@@ -222,11 +222,11 @@ def decompose_cost_lines(
     if total_above > 0.02 * inputs.npr_m:
         note = (
             f"Above-band opportunity "
-            f"${total_above:.1f}M across "
+            f"${total_above:.2f}M across "
             f"{sum(1 for f in findings if f.status == 'above_band')} "
             "cost lines. Biggest lever: "
             f"{findings[0].line} "
-            f"(${findings[0].savings_opportunity_m:.1f}M). "
+            f"(${findings[0].savings_opportunity_m:.2f}M). "
             "Build 100-day plan around the top-2 lines."
         )
     elif total_below > 0.02 * inputs.npr_m:
@@ -272,9 +272,9 @@ def render_cost_line_markdown(
         "",
         f"- Subsector: {r.subsector}",
         f"- Above-band opportunity: "
-        f"${r.total_above_band_opportunity_m:.1f}M",
+        f"${r.total_above_band_opportunity_m:.2f}M",
         f"- Below-band risk: "
-        f"${r.total_below_band_risk_m:.1f}M",
+        f"${r.total_below_band_risk_m:.2f}M",
         "",
         "| Line | Observed | Peer band | Status | "
         "Opportunity | Lever |",

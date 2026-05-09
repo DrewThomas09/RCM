@@ -74,9 +74,9 @@ def render_data_dashboard(hcris_df: pd.DataFrame) -> str:
         if v >= 1e12:
             return f"${v/1e12:.1f}T"
         if v >= 1e9:
-            return f"${v/1e9:.1f}B"
+            return f"${v/1e9:.2f}B"
         if v >= 1e6:
-            return f"${v/1e6:.0f}M"
+            return f"${v/1e6:.2f}M"
         return f"${v:,.0f}"
 
     # ── KPIs ──

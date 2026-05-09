@@ -240,14 +240,14 @@ def render_revenue_leakage(params: dict = None) -> str:
     pos = P["positive"]; neg = P["negative"]; acc = P["accent"]
 
     kpi_strip = (
-        ck_kpi_block("Net Revenue", f"${r.net_revenue_mm:,.0f}M", "", "") +
-        ck_kpi_block("Gross Charges", f"${r.gross_charges_mm:,.0f}M", "", "") +
+        ck_kpi_block("Net Revenue", f"${r.net_revenue_mm:,.2f}M", "", "") +
+        ck_kpi_block("Gross Charges", f"${r.gross_charges_mm:,.2f}M", "", "") +
         ck_kpi_block("Total Leakage", f"${r.total_leakage_mm:,.2f}M", "", "") +
         ck_kpi_block("Leakage % of Rev", f"{r.total_leakage_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Recoverable", f"${r.recoverable_mm:,.2f}M", "", "") +
         ck_kpi_block("Year 1 Net", f"${r.net_recovery_yr1_mm:,.2f}M", "", "") +
         ck_kpi_block("Annual Uplift", f"${r.annualized_ebitda_uplift_mm:,.2f}M", "", "") +
-        ck_kpi_block("EV Impact", f"${r.ev_impact_mm:,.1f}M", "", "")
+        ck_kpi_block("EV Impact", f"${r.ev_impact_mm:,.2f}M", "", "")
     )
 
     bars_svg = _leakage_bars_svg(r.buckets)
@@ -340,7 +340,7 @@ def render_revenue_leakage(params: dict = None) -> str:
     <strong style="color:{text}">Revenue Leakage Thesis:</strong>
     ${r.total_leakage_mm:,.2f}M annual leakage ({r.total_leakage_pct * 100:.1f}% of net revenue). ${r.recoverable_mm:,.2f}M
     realistically recoverable via RCM initiatives. Year 1 net impact ${r.net_recovery_yr1_mm:,.2f}M; steady-state
-    annual EBITDA uplift ${r.annualized_ebitda_uplift_mm:,.2f}M worth ${r.ev_impact_mm:,.1f}M of EV at {mult:.1f}x exit.
+    annual EBITDA uplift ${r.annualized_ebitda_uplift_mm:,.2f}M worth ${r.ev_impact_mm:,.2f}M of EV at {mult:.1f}x exit.
   </div>
 
 </div>"""

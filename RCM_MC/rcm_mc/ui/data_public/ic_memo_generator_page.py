@@ -154,7 +154,7 @@ def render_ic_memo_generator(params: dict = None) -> str:
     kpi_strip = (
         ck_kpi_block("Deal", r.summary.deal_name[:16], "", "") +
         ck_kpi_block("Sector", r.summary.sector[:14], "", "") +
-        ck_kpi_block("EV", f"${r.summary.ev_mm:,.0f}M", "", "") +
+        ck_kpi_block("EV", f"${r.summary.ev_mm:,.2f}M", "", "") +
         ck_kpi_block("EV/EBITDA", f"{r.summary.ev_ebitda_multiple:.2f}x", "", "") +
         ck_kpi_block("Projected MOIC", f"{r.summary.projected_moic:.2f}x", "", "") +
         ck_kpi_block("Projected IRR", f"{r.summary.projected_irr * 100:.1f}%", "", "") +
@@ -191,11 +191,11 @@ def render_ic_memo_generator(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Scenario Outcomes</div>{sc_tbl}</div>
   <div style="{cell}"><div style="{h3}">Deal Structure</div>{st_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">IC Memo Summary:</strong> {_html.escape(r.summary.deal_name)} — {_html.escape(r.summary.sector)} platform at ${r.summary.ev_mm:,.0f}M / {r.summary.ev_ebitda_multiple:.1f}x LTM EBITDA.
+    <strong style="color:{text}">IC Memo Summary:</strong> {_html.escape(r.summary.deal_name)} — {_html.escape(r.summary.sector)} platform at ${r.summary.ev_mm:,.2f}M / {r.summary.ev_ebitda_multiple:.1f}x LTM EBITDA.
     Base case {r.summary.projected_moic:.2f}x MOIC / {r.summary.projected_irr * 100:.1f}% IRR over {r.summary.hold_years:.1f}y hold; probability-weighted expected {r.expected_moic:.2f}x / {r.expected_irr * 100:.1f}%.
     Investment thesis validates to {sum(t.validation_score for t in r.thesis) / len(r.thesis):.0f}/100 — strong on platform positioning, operating leverage, exit optionality.
     Material findings mitigated via management transition, W-2 conversion budget, BCBS 2nd-payer development.
-    Expected value creation ${sum(lv.expected_contribution_mm for lv in r.levers):,.1f}M across 7 levers; multiple arbitrage (13x→14.5x) adds $9.2M; bolt-on M&A adds $9.4M.
+    Expected value creation ${sum(lv.expected_contribution_mm for lv in r.levers):,.2f}M across 7 levers; multiple arbitrage (13x→14.5x) adds $9.2M; bolt-on M&A adds $9.4M.
     Recommend proceeding to final bid with submission authorization.
   </div>
 </div>"""

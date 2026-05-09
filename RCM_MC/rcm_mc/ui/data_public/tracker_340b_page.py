@@ -36,8 +36,8 @@ def _entity_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:260px">{_html.escape(e.eligibility_basis)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(e.enrolled_date)}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(e.ce_id)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${e.annual_340b_spend_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${e.annual_savings_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${e.annual_340b_spend_m:.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${e.annual_savings_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{c_c};font-weight:700">{e.compliance_score:.2f}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -62,7 +62,7 @@ def _pharmacy_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{p.dispense_volume_k}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{p.admin_fee_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{p.share_to_ce_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${p.annual_savings_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${p.annual_savings_m:.2f}M</td>',
             f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(p.status)}</span></td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -84,7 +84,7 @@ def _restriction_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(r.effective_date)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:300px">{_html.escape(r.scope)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{r.affected_deals}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">${r.annual_exposure_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">${r.annual_exposure_m:.2f}M</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{P["warning"]}">{_html.escape(r.litigation_status)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(r.workaround)}</td>',
         ]
@@ -130,11 +130,11 @@ def _breakdown_table(items) -> str:
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(s.drug_category)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{s.utilizers:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${s.gross_wac_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${s.net_cost_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${s.savings_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${s.gross_wac_m:.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${s.net_cost_m:.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${s.savings_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{sp_c};font-weight:700">{s.savings_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">${s.rebate_capture_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">${s.rebate_capture_m:.2f}M</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -172,8 +172,8 @@ def render_tracker_340b(params: dict = None) -> str:
 
     kpi_strip = (
         ck_kpi_block("Covered Entities", str(r.total_entities), "", "") +
-        ck_kpi_block("Annual Spend", f"${r.total_annual_spend_m:,.1f}M", "", "") +
-        ck_kpi_block("Annual Savings", f"${r.total_annual_savings_m:,.1f}M", "", "") +
+        ck_kpi_block("Annual Spend", f"${r.total_annual_spend_m:,.2f}M", "", "") +
+        ck_kpi_block("Annual Savings", f"${r.total_annual_savings_m:,.2f}M", "", "") +
         ck_kpi_block("Savings Rate", f"{r.effective_savings_rate * 100:.1f}%", "", "") +
         ck_kpi_block("Contract Pharmacies", str(r.total_contract_pharmacies), "", "") +
         ck_kpi_block("Avg Compliance", f"{r.avg_compliance_score:.2f}", "/10", "") +
@@ -198,7 +198,7 @@ def render_tracker_340b(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">340B Pharmacy Program Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_entities} covered entities · ${r.total_annual_spend_m:,.1f}M 340B spend · ${r.total_annual_savings_m:,.1f}M savings ({r.effective_savings_rate * 100:.1f}%) · {r.total_contract_pharmacies} contract pharmacies · {r.restricted_manufacturers} mfr restrictions — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_entities} covered entities · ${r.total_annual_spend_m:,.2f}M 340B spend · ${r.total_annual_savings_m:,.2f}M savings ({r.effective_savings_rate * 100:.1f}%) · {r.total_contract_pharmacies} contract pharmacies · {r.restricted_manufacturers} mfr restrictions — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Covered Entities — Portfolio Registration</div>{e_tbl}</div>
@@ -208,10 +208,10 @@ def render_tracker_340b(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Audit History — HRSA + Manufacturer</div>{a_tbl}</div>
   <div style="{cell}"><div style="{h3}">Regulatory Outlook</div>{u_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">340B Program Summary:</strong> {r.total_entities} covered entities across portfolio generate ${r.total_annual_savings_m:,.1f}M annual savings against ${r.total_annual_spend_m:,.1f}M 340B-eligible spend — effective {r.effective_savings_rate * 100:.1f}% blended savings rate.
+    <strong style="color:{text}">340B Program Summary:</strong> {r.total_entities} covered entities across portfolio generate ${r.total_annual_savings_m:,.2f}M annual savings against ${r.total_annual_spend_m:,.2f}M 340B-eligible spend — effective {r.effective_savings_rate * 100:.1f}% blended savings rate.
     Highest-value entities: Oncology Specialty ($28.5M), Oncology Infusion Center ($32.0M), Regional Infusion Network ($22.5M) — oncology and specialty drug categories drive 80%+ of savings dollars.
     CE-owned in-house pharmacies capture 100% savings vs 72-85% for contract pharmacy arrangements; in-house dispensing deployed across Oncology, Infusion, and Derma platforms.
-    Manufacturer restriction exposure: ${total_restriction_exposure:.1f}M annual revenue at risk from J&J, Merck, BMS, Lilly, AZ, Sanofi, Novartis, BI, Pfizer, Takeda conditions — 3rd Circuit 2025 ruling against HRSA expanded manufacturer leverage.
+    Manufacturer restriction exposure: ${total_restriction_exposure:.2f}M annual revenue at risk from J&J, Merck, BMS, Lilly, AZ, Sanofi, Novartis, BI, Pfizer, Takeda conditions — 3rd Circuit 2025 ruling against HRSA expanded manufacturer leverage.
     Audit history clean: 11 audits YTD with ${total_audit_repayment:.2f}M total repayments (0.4% of program spend); top-quartile compliance vs industry benchmarks.
     Regulatory outlook mixed: Medicare Part B ASP+6% reinstatement (+$3.8M benefit), state non-discrimination laws (+$7M), offset by proposed patient definition narrowing (-$3.2M) and Medicaid duplicate prohibition (-$1.5M).
   </div>

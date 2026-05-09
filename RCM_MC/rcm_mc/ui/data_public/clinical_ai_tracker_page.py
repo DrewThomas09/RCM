@@ -67,7 +67,7 @@ def _outcomes_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{o.sensitivity_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{o.specificity_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{o.time_saved_min_per_case:.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${o.revenue_impact_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${o.revenue_impact_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{s_c};font-weight:700">{o.clinician_satisfaction:.1f}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -188,7 +188,7 @@ def render_clinical_ai_tracker(params: dict = None) -> str:
     kpi_strip = (
         ck_kpi_block("AI Systems", str(r.total_systems), "", "") +
         ck_kpi_block("Deals w/ AI", str(r.total_deals_with_ai), "", "") +
-        ck_kpi_block("Annual Spend", f"${r.total_annual_spend_m:.1f}M", "", "") +
+        ck_kpi_block("Annual Spend", f"${r.total_annual_spend_m:.2f}M", "", "") +
         ck_kpi_block("Monthly Cases", f"{r.total_cases_monthly_k:,}K", "", "") +
         ck_kpi_block("Avg Adoption", f"{r.avg_adoption_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Avg Accuracy", f"{r.avg_accuracy_pct * 100:.1f}%", "", "") +
@@ -211,7 +211,7 @@ def render_clinical_ai_tracker(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Clinical AI / ML Deployment Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_systems} AI systems deployed across {r.total_deals_with_ai} portcos · ${r.total_annual_spend_m:.1f}M annual license spend · {r.total_cases_monthly_k:,}K monthly case volume · {r.avg_adoption_pct * 100:.1f}% daily usage · {r.avg_accuracy_pct * 100:.1f}% avg accuracy — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_systems} AI systems deployed across {r.total_deals_with_ai} portcos · ${r.total_annual_spend_m:.2f}M annual license spend · {r.total_cases_monthly_k:,}K monthly case volume · {r.avg_adoption_pct * 100:.1f}% daily usage · {r.avg_accuracy_pct * 100:.1f}% avg accuracy — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">AI Systems in Production</div>{s_tbl}</div>
@@ -221,7 +221,7 @@ def render_clinical_ai_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Vendor Evaluation Pipeline</div>{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">AI Governance & Compliance</div>{g_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">AI Portfolio Summary:</strong> {r.total_systems} AI systems generate ${total_revenue:.1f}M revenue / workflow impact against ${r.total_annual_spend_m:.1f}M license cost — {total_revenue / r.total_annual_spend_m if r.total_annual_spend_m else 0:.1f}x net ROI.
+    <strong style="color:{text}">AI Portfolio Summary:</strong> {r.total_systems} AI systems generate ${total_revenue:.2f}M revenue / workflow impact against ${r.total_annual_spend_m:.2f}M license cost — {total_revenue / r.total_annual_spend_m if r.total_annual_spend_m else 0:.1f}x net ROI.
     Highest-value deployments: Notable Autopilot ($38.5M, Oak), Nuance DAX ($32.0M, Cypress), Enter ML ($28.5M, Oak), Abridge Scribe ($25.5M, Oak) — all ambient scribes + operational ML.
     Radiology AI stack 3 systems (Aidoc ICH + PE, Viz.ai ANEURYSM) covering stroke + PE triage + aneurysm detection — high accuracy (91-95%) and strong time savings (12-18 min/case).
     Adoption distribution: GI Network 94%, RCM SaaS 92%, Radiology 92% top tier; Behavioral Health 52% bottom with 18.5% override rate and 5 complaints — requires UX redesign.

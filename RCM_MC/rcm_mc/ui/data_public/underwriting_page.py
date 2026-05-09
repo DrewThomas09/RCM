@@ -180,10 +180,10 @@ def _results_panel(result: Any, corpus: List[Dict[str, Any]]) -> str:
     <div style="font-size:8.5px;color:var(--ck-text-faint);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">Entry / Exit Summary</div>
     <div style="font-family:var(--ck-mono);font-size:10.5px;line-height:1.8;font-variant-numeric:tabular-nums;">
       <div>Entry EV/EBITDA: <strong>{result.entry_ev_ebitda:.1f}×</strong></div>
-      <div>Entry Equity: ${result.entry_equity_mm:.0f}M</div>
-      <div>Entry Debt: ${result.entry_debt_mm:.0f}M</div>
-      <div>Exit EV: ${result.exit_ev_mm:.0f}M</div>
-      <div>Exit Equity: ${result.exit_equity_mm:.0f}M</div>
+      <div>Entry Equity: ${result.entry_equity_mm:.2f}M</div>
+      <div>Entry Debt: ${result.entry_debt_mm:.2f}M</div>
+      <div>Exit EV: ${result.exit_ev_mm:.2f}M</div>
+      <div>Exit Equity: ${result.exit_equity_mm:.2f}M</div>
     </div>
   </div>
 </div>"""
@@ -375,7 +375,7 @@ def render_underwriting(
     body = (
         kpis
         + _input_form(params)
-        + (ck_section_header("UNDERWRITING RESULTS", f"EV ${ev:.0f}M · EBITDA ${eb:.0f}M · {eq*100:.1f}% equity · {cagr*100:.1f}% CAGR · {hold:.1f}yr hold · {exit_mult:.1f}× exit") + results_html + benchmark_html)
+        + (ck_section_header("UNDERWRITING RESULTS", f"EV ${ev:.2f}M · EBITDA ${eb:.2f}M · {eq*100:.1f}% equity · {cagr*100:.1f}% CAGR · {hold:.1f}yr hold · {exit_mult:.1f}× exit") + results_html + benchmark_html)
     )
 
     return chartis_shell(
@@ -383,7 +383,7 @@ def render_underwriting(
         title="Deal Underwriting",
         active_nav="/underwriting",
         subtitle=(
-            f"EV ${ev:.0f}M · EV/EBITDA {ev/eb:.1f}× · "
+            f"EV ${ev:.2f}M · EV/EBITDA {ev/eb:.1f}× · "
             + (f"MOIC {result.gross_moic:.2f}× · IRR {result.gross_irr*100:.1f}%" if result else "enter parameters above")
         ),
     )

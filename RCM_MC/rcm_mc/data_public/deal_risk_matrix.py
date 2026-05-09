@@ -181,7 +181,7 @@ def score_leverage_risk(deal: Dict[str, Any]) -> RiskDimension:
 
     if ebitda is not None and ebitda < 0:
         score += 30
-        drivers.append(f"Negative EBITDA ${ebitda:.0f}M — pre-profitability investment")
+        drivers.append(f"Negative EBITDA ${ebitda:.2f}M — pre-profitability investment")
     elif ebitda is not None and ev is not None and ev > 0:
         margin_implied = ebitda / ev if ev > 0 else None
         if margin_implied is not None and margin_implied < 0.05:
@@ -356,7 +356,7 @@ def score_operational_risk(deal: Dict[str, Any]) -> RiskDimension:
 
     if ebitda is not None and ebitda < 0:
         score += 30
-        drivers.append(f"Negative EBITDA ${ebitda:.0f}M — turnaround required")
+        drivers.append(f"Negative EBITDA ${ebitda:.2f}M — turnaround required")
     elif ebitda is not None and ev is not None and ev > 0:
         implied_margin_pct = ebitda / ev
         if implied_margin_pct < 0.04:

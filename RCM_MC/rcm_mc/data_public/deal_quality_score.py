@@ -144,10 +144,10 @@ def _credibility_check(deal: Dict[str, Any]) -> tuple[int, List[CredibilityFlag]
     try:
         e = float(ev)
         if e <= 0:
-            flags.append(CredibilityFlag("ev_nonpositive", "error", f"EV={e:.1f}M ≤ 0"))
+            flags.append(CredibilityFlag("ev_nonpositive", "error", f"EV={e:.2f}M ≤ 0"))
             deductions += 25
         elif e > 50_000:
-            flags.append(CredibilityFlag("ev_implausible", "warn", f"EV={e:.0f}M — unusually large"))
+            flags.append(CredibilityFlag("ev_implausible", "warn", f"EV={e:.2f}M — unusually large"))
             deductions += 5
     except (TypeError, ValueError):
         pass

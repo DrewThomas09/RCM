@@ -49,8 +49,8 @@ def render_lp_narrative(result: AttributionResult) -> str:
         f"Gross IRR: **{result.irr*100:.1f}%** · "
         f"Gross MOIC: **{result.moic:.2f}x**")
     lines.append(
-        f"Entry equity: ${result.entry_equity_mm:.1f}M → "
-        f"Exit equity: ${result.exit_equity_mm:.1f}M")
+        f"Entry equity: ${result.entry_equity_mm:.2f}M → "
+        f"Exit equity: ${result.exit_equity_mm:.2f}M")
     lines.append("")
     lines.append("### Value Creation Attribution (ILPA 2.0)")
     lines.append("")
@@ -88,12 +88,12 @@ def render_lp_narrative(result: AttributionResult) -> str:
     for label, dollars, share in rows:
         sign = "+" if dollars > 0 else ("−" if dollars < 0 else " ")
         lines.append(
-            f"| {label} | {sign}${abs(dollars):.1f}M | "
+            f"| {label} | {sign}${abs(dollars):.2f}M | "
             f"{share*100:+.1f}% |")
     lines.append("|---|---|---|")
     lines.append(
         f"| **Total value created** | "
-        f"**${c.total_value_created_mm:.1f}M** | 100.0% |")
+        f"**${c.total_value_created_mm:.2f}M** | 100.0% |")
     lines.append("")
 
     # Narrative bullets
@@ -104,7 +104,7 @@ def render_lp_narrative(result: AttributionResult) -> str:
         organic_share = (c.revenue_growth_organic_mm
                          / max(0.1, revenue_total))
         lines.append(
-            f"- Revenue growth contributed **${revenue_total:.0f}M** "
+            f"- Revenue growth contributed **${revenue_total:.2f}M** "
             f"({rev_share*100:.1f}% of value), "
             f"of which **{organic_share*100:.0f}%** organic and "
             f"**{(1-organic_share)*100:.0f}%** from add-on M&A.")
@@ -112,13 +112,13 @@ def render_lp_narrative(result: AttributionResult) -> str:
     if c.margin_expansion_mm > 0:
         lines.append(
             f"- Margin expansion contributed "
-            f"**${c.margin_expansion_mm:.0f}M** "
+            f"**${c.margin_expansion_mm:.2f}M** "
             f"({c.margin_expansion_mm / max(1.0, abs(c.total_value_created_mm))*100:.1f}%).")
 
     if c.multiple_expansion_mm > 0:
         lines.append(
             f"- Multiple expansion contributed "
-            f"**${c.multiple_expansion_mm:.0f}M** "
+            f"**${c.multiple_expansion_mm:.2f}M** "
             f"({c.multiple_expansion_mm / max(1.0, abs(c.total_value_created_mm))*100:.1f}%) "
             f"— note vintage / cycle dependence.")
 

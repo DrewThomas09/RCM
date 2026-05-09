@@ -85,10 +85,10 @@ def _compose_bullets(i: ExitStoryInputs) -> List[str]:
     elif cagr >= 0.08:
         bullets.append(
             f"Mid-teens topline growth with a "
-            f"${i.exit_revenue_m:,.0f}M scaled platform.")
+            f"${i.exit_revenue_m:,.2f}M scaled platform.")
     else:
         bullets.append(
-            f"${i.exit_revenue_m:,.0f}M scaled platform with proven "
+            f"${i.exit_revenue_m:,.2f}M scaled platform with proven "
             "operating discipline.")
 
     # Quality of earnings bullet.
@@ -200,8 +200,8 @@ def generate_exit_story(inputs: ExitStoryInputs) -> ExitStory:
 
     headline = (
         f"{lead} — {inputs.subsector or 'healthcare services'} "
-        f"{inputs.exit_revenue_m:,.0f}M NPR / "
-        f"${inputs.exit_ebitda_m:,.0f}M EBITDA after "
+        f"{inputs.exit_revenue_m:,.2f}M NPR / "
+        f"${inputs.exit_ebitda_m:,.2f}M EBITDA after "
         f"{cagr*100:.1f}% annual growth over {inputs.hold_years} years; "
         f"{scale_mult:.1f}x scaled from entry."
     )

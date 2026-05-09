@@ -43,8 +43,8 @@ def _levers_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(l.sector)}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(l.lever_category)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:11px;color:{text_dim};max-width:340px">{_html.escape(l.initiative)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${l.target_ebitda_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">${l.realized_ebitda_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${l.target_ebitda_m:.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">${l.realized_ebitda_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{r_c};font-weight:700">{l.realization_pct * 100:.1f}%</td>',
             f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(l.status)}</span></td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(l.owner)}</td>',
@@ -148,8 +148,8 @@ def _bridges_table(items) -> str:
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(b.lever_category)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{b.deals}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${b.aggregate_target_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${b.aggregate_realized_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${b.aggregate_target_m:.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${b.aggregate_realized_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{r_c};font-weight:700">{b.realization_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{b.contribution_to_growth_pct * 100:.1f}%</td>',
         ]
@@ -192,8 +192,8 @@ def render_vcp_tracker(params: dict = None) -> str:
 
     kpi_strip = (
         ck_kpi_block("Active Deals", str(r.total_deals), "", "") +
-        ck_kpi_block("Target EBITDA Lift", f"${r.total_target_ebitda_m:.1f}M", "", "") +
-        ck_kpi_block("Realized", f"${r.total_realized_ebitda_m:.1f}M", "", "") +
+        ck_kpi_block("Target EBITDA Lift", f"${r.total_target_ebitda_m:.2f}M", "", "") +
+        ck_kpi_block("Realized", f"${r.total_realized_ebitda_m:.2f}M", "", "") +
         ck_kpi_block("Realization %", f"{r.realization_pct * 100:.1f}%", "", "") +
         ck_kpi_block("On-Track %", f"{r.on_track_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Avg Days Post-Close", str(r.avg_days_post_close), "d", "") +
@@ -217,7 +217,7 @@ def render_vcp_tracker(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Value Creation Plan (VCP) / 100-Day Plan Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_deals} active deals · ${r.total_realized_ebitda_m:.1f}M realized vs ${r.total_target_ebitda_m:.1f}M target ({r.realization_pct * 100:.1f}%) · {r.on_track_pct * 100:.1f}% levers on track or complete · {beat_count} of {len(r.kpi_scorecards)} deals beat budget — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_deals} active deals · ${r.total_realized_ebitda_m:.2f}M realized vs ${r.total_target_ebitda_m:.2f}M target ({r.realization_pct * 100:.1f}%) · {r.on_track_pct * 100:.1f}% levers on track or complete · {beat_count} of {len(r.kpi_scorecards)} deals beat budget — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">EBITDA Bridge — Realized by Lever Category</div>{b_tbl}</div>
@@ -227,7 +227,7 @@ def render_vcp_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Sponsor Interventions</div>{int_tbl}</div>
   <div style="{cell}"><div style="{h3}">Portfolio-Wide Initiative Benchmarks</div>{t_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">VCP Portfolio Summary:</strong> {r.total_deals} deals executing against ${r.total_target_ebitda_m:.1f}M EBITDA value-creation plan — ${r.total_realized_ebitda_m:.1f}M realized ({r.realization_pct * 100:.1f}%) at average {r.avg_days_post_close} days post-close.
+    <strong style="color:{text}">VCP Portfolio Summary:</strong> {r.total_deals} deals executing against ${r.total_target_ebitda_m:.2f}M EBITDA value-creation plan — ${r.total_realized_ebitda_m:.2f}M realized ({r.realization_pct * 100:.1f}%) at average {r.avg_days_post_close} days post-close.
     {r.on_track_pct * 100:.1f}% of levers on track or complete; 5 of 26 levers "behind" are concentrated in RCM migration (Magnolia), payer mix (Redwood), and new-market entry (Willow) — all tractable with incremental resource commitment.
     Commercial and M&A lever categories carry the largest contribution to EBITDA growth — margin expansion averaging 160bps across beat-budget deals supports thesis integrity.
     {beat_count} of {len(r.kpi_scorecards)} portfolio companies beat budget — 3 misses (Redwood, Willow, Ash) have {interv_critical} active sponsor intervention(s) and are showing early response signals.

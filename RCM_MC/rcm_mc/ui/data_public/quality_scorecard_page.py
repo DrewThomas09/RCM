@@ -195,7 +195,7 @@ def render_quality_scorecard(params: dict = None) -> str:
         ck_kpi_block("HEDIS Measures", str(sum(1 for h in r.hedis if h.applies)), "", "") +
         ck_kpi_block("VBC Programs", str(sum(1 for v in r.vbc_programs if v.participation)), "", "") +
         ck_kpi_block("Annual Q Bonus", f"${r.total_annual_quality_bonus_mm:,.2f}M", "", "") +
-        ck_kpi_block("EV Quality Uplift", f"${r.total_ev_uplift_from_quality_mm:,.1f}M", "", "")
+        ck_kpi_block("EV Quality Uplift", f"${r.total_ev_uplift_from_quality_mm:,.2f}M", "", "")
     )
 
     ring_svg = _score_ring_svg(r.overall_score, r.tier)
@@ -284,7 +284,7 @@ def render_quality_scorecard(params: dict = None) -> str:
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Quality Thesis:</strong>
     Current score {r.overall_score:.0f} ({r.tier.replace("_", " ")}). Total annual VBC quality bonus
-    opportunity ${r.total_annual_quality_bonus_mm:,.2f}M, with ${r.total_ev_uplift_from_quality_mm:,.1f}M
+    opportunity ${r.total_annual_quality_bonus_mm:,.2f}M, with ${r.total_ev_uplift_from_quality_mm:,.2f}M
     of EV uplift from closing quality gaps. Quality is directly monetizable in MA, MSSP, and commercial P4P.
   </div>
 

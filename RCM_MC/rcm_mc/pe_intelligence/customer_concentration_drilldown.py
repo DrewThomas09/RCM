@@ -159,7 +159,7 @@ def analyze_customers(records: List[CustomerRecord],
 
     if t1 >= high_concentration_threshold:
         note = (f"Top customer is {t1*100:.1f}% of revenue — concentration "
-                f"risk is material. HHI {hhi}. ${total_rar:,.1f}M "
+                f"risk is material. HHI {hhi}. ${total_rar:,.2f}M "
                 "expected revenue at risk next 12mo.")
     elif t5 >= 0.50:
         note = (f"Top-5 = {t5*100:.1f}% of revenue — moderately "
@@ -190,8 +190,8 @@ def render_concentration_markdown(a: ConcentrationAnalysis) -> str:
         f"- Top-5: {a.top_5_pct:.1f}%",
         f"- Top-10: {a.top_10_pct:.1f}%",
         f"- Customer HHI: {a.customer_hhi}",
-        f"- Revenue at risk (12mo EV): ${a.total_revenue_at_risk_m:,.1f}M",
-        f"- Cross-sell upside (50% realized): ${a.total_cross_sell_upside_m:,.1f}M",
+        f"- Revenue at risk (12mo EV): ${a.total_revenue_at_risk_m:,.2f}M",
+        f"- Cross-sell upside (50% realized): ${a.total_cross_sell_upside_m:,.2f}M",
         "",
         "| Customer | Share % | Churn p | Rev at risk | Cross-sell |",
         "|---|---:|---:|---:|---:|",

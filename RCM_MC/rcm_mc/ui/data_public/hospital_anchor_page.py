@@ -42,9 +42,9 @@ def _contracts_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.service_line)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(c.contract_start)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(c.contract_end)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${c.contract_value_annual_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">${c.stipend_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.guaranteed_compensation_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${c.contract_value_annual_m:.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">${c.stipend_m:.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.guaranteed_compensation_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{c.productivity_based_pct * 100:.1f}%</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{ex_c};font-weight:700">{"YES" if c.exclusivity else "NO"}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{rp_c};font-weight:700">{c.renewal_probability_pct * 100:.1f}%</td>',
@@ -70,7 +70,7 @@ def _renewals_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc};font-weight:600">{_html.escape(r.contract)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(r.expires)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{m_c};font-weight:700">{r.months_until_expiry}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${r.revenue_at_risk_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${r.revenue_at_risk_m:.2f}M</td>',
             f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(r.renewal_status)}</span></td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:320px">{_html.escape(r.incumbent_advantage)}</td>',
         ]
@@ -95,7 +95,7 @@ def _stipends_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.service_line)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{s.stipend_vs_productivity_ratio * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.stipend_per_wrvu:.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${s.total_stipend_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${s.total_stipend_m:.2f}M</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{b_c};font-weight:700">{_html.escape(s.benchmark_percentile)}</td>',
             f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{t_c};border:1px solid {t_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(s.trend)}</span></td>',
         ]
@@ -119,7 +119,7 @@ def _counterparties_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(c.hospital_system)}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{r_c};font-weight:700">{_html.escape(c.rating)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{c.contracts_with_portfolio}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${c.total_revenue_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${c.total_revenue_m:.2f}M</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:240px">{_html.escape(c.geographic_markets)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:280px">{_html.escape(c.strategic_direction)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{h_c}">{_html.escape(c.financial_health)}</td>',
@@ -142,8 +142,8 @@ def _service_lines_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(s.service_line)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{s.portfolio_deals}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{s.total_contracts}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${s.revenue_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${s.avg_contract_size_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${s.revenue_m:.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${s.avg_contract_size_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">{s.weighted_renewal_prob * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.typical_term_years}y</td>',
         ]
@@ -166,7 +166,7 @@ def _at_risk_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc};font-weight:600">{_html.escape(a.hospital_system)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(a.service_line)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:340px">{_html.escape(a.risk_factors)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">${a.at_risk_revenue_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">${a.at_risk_revenue_m:.2f}M</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:300px">{_html.escape(a.mitigation_strategy)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(a.owner)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(a.action_date)}</td>',
@@ -186,12 +186,12 @@ def render_hospital_anchor(params: dict = None) -> str:
 
     kpi_strip = (
         ck_kpi_block("Contracts", str(r.total_contracts), "", "") +
-        ck_kpi_block("Contract Value", f"${r.total_contract_value_m:,.1f}M", "", "") +
-        ck_kpi_block("Stipend", f"${r.total_stipend_m:.1f}M", "", "") +
+        ck_kpi_block("Contract Value", f"${r.total_contract_value_m:,.2f}M", "", "") +
+        ck_kpi_block("Stipend", f"${r.total_stipend_m:.2f}M", "", "") +
         ck_kpi_block("Renewal Prob", f"{r.weighted_renewal_probability_pct * 100:.0f}%", "", "") +
         ck_kpi_block("Exclusive %", f"{r.exclusive_contracts}/{r.total_contracts}", "", "") +
         ck_kpi_block("Expiring ≤12 mo", str(r.contracts_expiring_12mo), "", "") +
-        ck_kpi_block("At Risk", f"${r.at_risk_revenue_m:.1f}M", "", "") +
+        ck_kpi_block("At Risk", f"${r.at_risk_revenue_m:.2f}M", "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
@@ -209,7 +209,7 @@ def render_hospital_anchor(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Hospital Anchor Contract Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_contracts} contracts · ${r.total_contract_value_m:,.1f}M annual value · ${r.total_stipend_m:.1f}M stipend · {r.weighted_renewal_probability_pct * 100:.1f}% weighted renewal · {r.exclusive_contracts}/{r.total_contracts} exclusive · ${r.at_risk_revenue_m:.1f}M at risk — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_contracts} contracts · ${r.total_contract_value_m:,.2f}M annual value · ${r.total_stipend_m:.2f}M stipend · {r.weighted_renewal_probability_pct * 100:.1f}% weighted renewal · {r.exclusive_contracts}/{r.total_contracts} exclusive · ${r.at_risk_revenue_m:.2f}M at risk — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Renewal Schedule — Next 36 Months</div>{rn_tbl}</div>
@@ -219,8 +219,8 @@ def render_hospital_anchor(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Stipend Economics</div>{st_tbl}</div>
   <div style="{cell}"><div style="{h3}">Hospital Counterparties — Credit & Strategy</div>{cp_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Hospital Anchor Contract Summary:</strong> {r.total_contracts} active contracts generate ${r.total_contract_value_m:,.1f}M annual revenue with ${r.total_stipend_m:.1f}M hospital-paid stipends — 29% stipend-to-total mix supports productivity gap during ramp / volatility.
-    Renewal profile: {r.weighted_renewal_probability_pct * 100:.1f}% weighted renewal probability; {r.contracts_expiring_12mo} contracts expiring within 12 months (${sum(r2.revenue_at_risk_m for r2 in r.renewals if r2.months_until_expiry <= 12):.1f}M revenue at renewal).
+    <strong style="color:{text}">Hospital Anchor Contract Summary:</strong> {r.total_contracts} active contracts generate ${r.total_contract_value_m:,.2f}M annual revenue with ${r.total_stipend_m:.2f}M hospital-paid stipends — 29% stipend-to-total mix supports productivity gap during ramp / volatility.
+    Renewal profile: {r.weighted_renewal_probability_pct * 100:.1f}% weighted renewal probability; {r.contracts_expiring_12mo} contracts expiring within 12 months (${sum(r2.revenue_at_risk_m for r2 in r.renewals if r2.months_until_expiry <= 12):.2f}M revenue at renewal).
     Counterparty concentration: HCA Healthcare ($283M across 5 contracts) is the single largest relationship — represents 30% of contract book; diversified across anesthesia, radiology, ED, hospitalist, pathology.
     Credit quality: 60% of contracted revenue from A-/better counterparties (HCA BBB+, Kaiser AA+, Ascension A+, CommonSpirit A-, Baylor AA-, AdventHealth AA-, Methodist AA); Tenet (B+) and UHS (BB+) at weaker end.
     Stipend benchmarking: HCA contracts at P75, CommonSpirit/Ascension at P60, Tenet at P75 (under anesthesia pressure); AdventHealth stipend "tightening" flags risk ahead of Dec 2025 renewal.

@@ -239,11 +239,11 @@ def render_workforce_planning(params: dict = None) -> str:
         ck_kpi_block("Total FTE", f"{r.total_fte:,}", "", "") +
         ck_kpi_block("Open Positions", str(r.open_positions), "", "") +
         ck_kpi_block("Agency FTE", str(r.agency_fte), "", "") +
-        ck_kpi_block("Labor Cost", f"${r.total_labor_cost_mm:,.1f}M", "", "") +
+        ck_kpi_block("Labor Cost", f"${r.total_labor_cost_mm:,.2f}M", "", "") +
         ck_kpi_block("Labor % Rev", f"{r.labor_pct_of_revenue * 100:.1f}%", "", "") +
         ck_kpi_block("Blended Turnover", f"{r.blended_turnover_rate * 100:.1f}%", "", "") +
-        ck_kpi_block("Turnover Cost", f"${r.total_annual_turnover_cost_mm:,.1f}M", "", "") +
-        ck_kpi_block("Initiative EV Impact", f"${r.ev_impact_from_labor_mm:,.0f}M", "", "")
+        ck_kpi_block("Turnover Cost", f"${r.total_annual_turnover_cost_mm:,.2f}M", "", "") +
+        ck_kpi_block("Initiative EV Impact", f"${r.ev_impact_from_labor_mm:,.2f}M", "", "")
     )
 
     spend_svg = _role_spend_svg(r.role_inventory)
@@ -334,8 +334,8 @@ def render_workforce_planning(params: dict = None) -> str:
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Workforce Thesis:</strong>
     {r.total_fte:,} FTEs, labor is {r.labor_pct_of_revenue * 100:.1f}% of revenue. Blended turnover
-    {r.blended_turnover_rate * 100:.1f}% costs ${r.total_annual_turnover_cost_mm:,.1f}M/yr. Total initiative
-    savings ${r.total_initiative_savings_mm:,.1f}M annually → ${r.ev_impact_from_labor_mm:,.0f}M EV uplift.
+    {r.blended_turnover_rate * 100:.1f}% costs ${r.total_annual_turnover_cost_mm:,.2f}M/yr. Total initiative
+    savings ${r.total_initiative_savings_mm:,.2f}M annually → ${r.ev_impact_from_labor_mm:,.2f}M EV uplift.
     Agency elimination and retention program are highest-ROI near-term moves.
   </div>
 

@@ -1177,9 +1177,9 @@ def _render_ebitda_sparkline(var_df, width: int = 600, height: int = 180) -> str
     # Y-axis min / max labels
     def _fmt_money_compact(v):
         if v >= 1e9:
-            return f"${v/1e9:.1f}B"
+            return f"${v/1e9:.2f}B"
         if v >= 1e6:
-            return f"${v/1e6:.1f}M"
+            return f"${v/1e6:.2f}M"
         return f"${v:,.0f}"
     y_labels = (
         f'<text x="{pad - 5}" y="{pad + 4}" text-anchor="end" '
@@ -4305,7 +4305,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             irr = outcome.get("irr") or {}
             lines: list = []
             tgt_sector = qp.get("sector") or "hospital"
-            tgt_ev = (f"${ev:.0f}M" if ev else "any size")
+            tgt_ev = (f"${ev:.2f}M" if ev else "any size")
             tgt_year = yr or "any year"
             lines.append(
                 f"## Comparable benchmark — {tgt_sector}, "
@@ -6397,8 +6397,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             gap = max(0, dr - 8)
             recoverable = rev * gap / 100 * 0.3
             memo_dict = {"sections": [
-                {"title": "Executive Summary", "content": f"{name} is a {beds}-bed hospital in {state} with ${rev/1e6:.0f}M in annual net patient revenue. Denial rate of {dr:.1f}% presents a clear RCM improvement opportunity.", "fact_checks_passed": True},
-                {"title": "Investment Thesis", "content": f"The primary value creation thesis centers on denial rate reduction from {dr:.1f}% to the industry target of 8%. Based on our analysis, this represents an estimated ${recoverable/1e6:.1f}M in annual recoverable revenue.", "fact_checks_passed": True},
+                {"title": "Executive Summary", "content": f"{name} is a {beds}-bed hospital in {state} with ${rev/1e6:.2f}M in annual net patient revenue. Denial rate of {dr:.1f}% presents a clear RCM improvement opportunity.", "fact_checks_passed": True},
+                {"title": "Investment Thesis", "content": f"The primary value creation thesis centers on denial rate reduction from {dr:.1f}% to the industry target of 8%. Based on our analysis, this represents an estimated ${recoverable/1e6:.2f}M in annual recoverable revenue.", "fact_checks_passed": True},
                 {"title": "Risk Assessment", "content": "Key risks include payer contract concentration, labor market tightness for medical coders, and regulatory uncertainty around Medicare reimbursement rates. See the pressure test and challenge solver for downside scenarios.", "fact_checks_passed": True},
                 {"title": "Recommendation", "content": "Recommend proceeding to Phase 2 diligence with focus on payer-level denial breakdown, coding accuracy assessment, and management team evaluation.", "fact_checks_passed": True},
             ], "fact_check_warnings": [], "llm_used": False}
@@ -13540,7 +13540,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         def _fmt_m(v):
             if v is None or (isinstance(v, float) and v != v):
                 return None
-            return f"${float(v)/1e6:.1f}M" if abs(v) < 1e9 else f"${float(v)/1e9:.2f}B"
+            return f"${float(v)/1e6:.2f}M" if abs(v) < 1e9 else f"${float(v)/1e9:.2f}B"
 
         def _fmt_p(v):
             if v is None or (isinstance(v, float) and v != v):

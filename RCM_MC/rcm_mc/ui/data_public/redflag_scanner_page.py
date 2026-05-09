@@ -150,7 +150,7 @@ def render_redflag_scanner(params: dict = None) -> str:
     kpi_strip = (
         ck_kpi_block("Target", r.target_name[:16], "", "") +
         ck_kpi_block("Sector", r.target_sector[:14], "", "") +
-        ck_kpi_block("EV", f"${r.target_ev_mm:,.0f}M", "", "") +
+        ck_kpi_block("EV", f"${r.target_ev_mm:,.2f}M", "", "") +
         ck_kpi_block("EV/EBITDA", f"{r.target_ev_ebitda:.2f}x", "", "") +
         ck_kpi_block("Total Flags", str(r.total_flags), "", "") +
         ck_kpi_block("Critical", str(r.critical_flags), "", "") +

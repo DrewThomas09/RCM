@@ -198,7 +198,7 @@ def _hero(
     )
 
     coll_num = provenance(
-        f'${total_coll/1e6:,.1f}M',
+        f'${total_coll/1e6:,.2f}M',
         source="sum(provider.collections_annual_usd)",
         formula="SUM(collections_annual_usd) over roster",
         detail=(
@@ -208,7 +208,7 @@ def _hero(
         ),
     )
     comp_num = provenance(
-        f'${total_comp/1e6:,.1f}M',
+        f'${total_comp/1e6:,.2f}M',
         source="sum(provider.total_comp_usd)",
         formula=(
             "SUM(base + productivity_bonus + stipend + "
@@ -220,7 +220,7 @@ def _hero(
         ),
     )
     contrib_num = provenance(
-        f'${total_contrib/1e6:,.1f}M',
+        f'${total_contrib/1e6:,.2f}M',
         source="sum(contribution_usd)",
         formula=(
             "SUM(collections - comp - allocated_overhead) per provider"
@@ -379,7 +379,7 @@ def _optimization_block(opt: RosterOptimization) -> str:
         f'Quote the EBITDA uplift as an offer-shape modification in '
         f'the bid ("our bid includes a 2-year retention structure '
         f'that drops {len(opt.candidates)} named underperformers for '
-        f'a ${opt.ebitda_uplift_usd/1e6:,.1f}M EBITDA lift"). Combined '
+        f'a ${opt.ebitda_uplift_usd/1e6:,.2f}M EBITDA lift"). Combined '
         f'with PPAM (who\'s likely to leave), this is the complete '
         f'physician-portfolio optimization view.'
         f'</div>'

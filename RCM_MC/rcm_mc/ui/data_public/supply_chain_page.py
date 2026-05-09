@@ -193,10 +193,10 @@ def render_supply_chain(params: dict = None) -> str:
     pos = P["positive"]; acc = P["accent"]
 
     kpi_strip = (
-        ck_kpi_block("Supply Spend", f"${r.total_supply_spend_mm:,.1f}M", "", "") +
+        ck_kpi_block("Supply Spend", f"${r.total_supply_spend_mm:,.2f}M", "", "") +
         ck_kpi_block("Supply % Rev", f"{r.supply_pct_revenue * 100:.1f}%", "", "") +
-        ck_kpi_block("Savings Opp", f"${r.total_savings_opportunity_mm:,.1f}M", "", "") +
-        ck_kpi_block("EV Uplift", f"${r.ev_uplift_mm:,.0f}M", "", "") +
+        ck_kpi_block("Savings Opp", f"${r.total_savings_opportunity_mm:,.2f}M", "", "") +
+        ck_kpi_block("EV Uplift", f"${r.ev_uplift_mm:,.2f}M", "", "") +
         ck_kpi_block("Categories", str(len(r.spend_categories)), "", "") +
         ck_kpi_block("Levers", str(len(r.gpo_levers)), "", "") +
         ck_kpi_block("Top Vendors", str(len(r.top_vendors)), "", "") +
@@ -246,10 +246,10 @@ def render_supply_chain(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">CapEx Project Portfolio</div>{capex_tbl}</div>
   <div style="{cell}"><div style="{h3}">Inventory KPIs</div>{inv_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Supply Chain Thesis:</strong> ${r.total_supply_spend_mm:,.1f}M annual supply spend
+    <strong style="color:{text}">Supply Chain Thesis:</strong> ${r.total_supply_spend_mm:,.2f}M annual supply spend
     ({r.supply_pct_revenue * 100:.1f}% of revenue). Top 3 levers (GPO tier upgrade, implant standardization,
-    direct manufacturer) unlock ~${r.total_savings_opportunity_mm * 0.65:,.1f}M. Total opportunity
-    ${r.total_savings_opportunity_mm:,.1f}M annual → ${r.ev_uplift_mm:,.0f}M EV uplift at exit.
+    direct manufacturer) unlock ~${r.total_savings_opportunity_mm * 0.65:,.2f}M. Total opportunity
+    ${r.total_savings_opportunity_mm:,.2f}M annual → ${r.ev_uplift_mm:,.2f}M EV uplift at exit.
   </div>
 </div>"""
 

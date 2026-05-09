@@ -37,12 +37,12 @@ def _bridge_svg(bridge) -> str:
         bars.append(
             f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" fill="{color}" opacity="0.88"/>'
             f'<text x="{x + bar_w / 2:.1f}" y="{y - 4:.1f}" fill="{P["text_dim"]}" font-size="11" '
-            f'text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">${b.ebitda_mm:,.1f}M</text>'
+            f'text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">${b.ebitda_mm:,.2f}M</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="10" '
             f'text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(b.stage)}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 28}" fill="{pos if b.delta_from_entry_mm > 0 else text_faint}" '
             f'font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">'
-            f'{"+" if b.delta_from_entry_mm > 0 else ""}${b.delta_from_entry_mm:,.1f}M</text>'
+            f'{"+" if b.delta_from_entry_mm > 0 else ""}${b.delta_from_entry_mm:,.2f}M</text>'
         )
 
     return (
@@ -82,7 +82,7 @@ def _checkpoint_svg(checkpoints) -> str:
             f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(cp.checkpoint)}</text>'
             f'<rect x="{pad_l}" y="{y}" width="{bw:.1f}" height="{bh}" fill="{pos}" opacity="{alpha:.2f}"/>'
             f'<text x="{pad_l + bw + 4:.1f}" y="{y + bh - 1}" fill="{P["text_dim"]}" font-size="10" '
-            f'font-family="JetBrains Mono,monospace">${cp.ebitda_realized_mm:,.1f}M ({cp.pct_of_plan * 100:.1f}%)</text>'
+            f'font-family="JetBrains Mono,monospace">${cp.ebitda_realized_mm:,.2f}M ({cp.pct_of_plan * 100:.1f}%)</text>'
         )
 
     return (
@@ -333,9 +333,9 @@ def render_value_creation_plan(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">VCP Thesis:</strong>
-    ${r.entry_ebitda_mm:,.1f}M entry EBITDA → ${r.target_ebitda_mm:,.1f}M target via ${r.total_plan_impact_mm:,.1f}M gross impact
+    ${r.entry_ebitda_mm:,.2f}M entry EBITDA → ${r.target_ebitda_mm:,.2f}M target via ${r.total_plan_impact_mm:,.2f}M gross impact
     across {len(r.initiatives)} initiatives. Current execution score {r.execution_score:.0f}/100 at Day {r.hold_day}.
-    Plan net value ${r.plan_net_value_mm:,.1f}M translates to ~${r.plan_net_value_mm * 11:,.0f}M of EV at 11x exit.
+    Plan net value ${r.plan_net_value_mm:,.2f}M translates to ~${r.plan_net_value_mm * 11:,.2f}M of EV at 11x exit.
   </div>
 
 </div>"""

@@ -202,7 +202,7 @@ def render_deck_bullets(review: PartnerReview) -> List[str]:
         bullets.append(review.narrative.headline)
     if ctx.get("ebitda_m"):
         bullets.append(
-            f"${ctx['ebitda_m']:.0f}M EBITDA, IRR "
+            f"${ctx['ebitda_m']:.2f}M EBITDA, IRR "
             f"{_fmt_pct(ctx.get('projected_irr'))}, "
             f"MOIC {_fmt_x(ctx.get('projected_moic'))}")
     for h in _top_hits(review, 3):

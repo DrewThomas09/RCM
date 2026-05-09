@@ -158,8 +158,8 @@ def _target_card(
         formula="(NPR − operating expenses) ÷ NPR",
         detail=(
             f"Fiscal year {target.fiscal_year}. "
-            f"NPR ${target.net_patient_revenue/1e6:,.1f}M; "
-            f"opex ${target.operating_expenses/1e6:,.1f}M."
+            f"NPR ${target.net_patient_revenue/1e6:,.2f}M; "
+            f"opex ${target.operating_expenses/1e6:,.2f}M."
         ),
     )
     trend_chip = _trend_signal_chip(trend_signal, history_len)
@@ -187,7 +187,7 @@ def _target_card(
         f'margin-top:3px;">{"heavy" if target.is_medicare_heavy else "moderate"}</div></div>'
         f'  <div><div class="hx-kpi__label">NPR (filed)</div>'
         f'       <div class="hx-kpi__val">'
-        f'${target.net_patient_revenue/1e6:,.1f}M</div>'
+        f'${target.net_patient_revenue/1e6:,.2f}M</div>'
         f'       <div style="font-size:10px;color:{P["text_faint"]};'
         f'margin-top:3px;">${target.net_revenue_per_bed/1e3:,.0f}K / bed</div></div>'
         f'  <div><div class="hx-kpi__label">Operating Margin</div>'
@@ -1038,10 +1038,10 @@ def render_hcris_xray_page(
         f'</div>'
         f'<div style="font-size:10.5px;color:{P["text_faint"]};'
         f'margin-top:8px;letter-spacing:0.3px;">'
-        f'EV <code>${default_ev/1e6:,.0f}M</code> (9.0× '
-        f'${actual_ebitda/1e6:,.1f}M EBITDA) · Equity '
-        f'<code>${default_equity/1e6:,.0f}M</code> · Debt '
-        f'<code>${default_debt/1e6:,.0f}M</code> · override '
+        f'EV <code>${default_ev/1e6:,.2f}M</code> (9.0× '
+        f'${actual_ebitda/1e6:,.2f}M EBITDA) · Equity '
+        f'<code>${default_equity/1e6:,.2f}M</code> · Debt '
+        f'<code>${default_debt/1e6:,.2f}M</code> · override '
         f'any of these on the destination page.'
         f'</div></div>'
     )

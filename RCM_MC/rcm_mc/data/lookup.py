@@ -112,7 +112,7 @@ def _fmt_money(v: Any) -> str:
     if af >= 1e9:
         return f"{sign}${af/1e9:.2f}B"
     if af >= 1e6:
-        return f"{sign}${af/1e6:.0f}M"
+        return f"{sign}${af/1e6:.2f}M"
     if af >= 1e3:
         return f"{sign}${af/1e3:.0f}K"
     return f"{sign}${af:.0f}"
@@ -602,7 +602,7 @@ def _render_trend_table(ccn: str) -> str:
         if af >= 1e9:
             return f"{sign}${af/1e9:.2f}B"
         if af >= 1e6:
-            return f"{sign}${af/1e6:.0f}M"
+            return f"{sign}${af/1e6:.2f}M"
         return f"{sign}${af:,.0f}"
 
     def _fmt_int(v):
@@ -1089,7 +1089,7 @@ def _render_990_cross_check(ccn: str, ein: str) -> str:
     def _fmt(v):
         if v is None:
             return "—"
-        return f"${v/1e6:.1f}M" if abs(v) >= 1e6 else f"${v:,.0f}"
+        return f"${v/1e6:.2f}M" if abs(v) >= 1e6 else f"${v:,.0f}"
 
     def _fmt_pct(v):
         if v is None:

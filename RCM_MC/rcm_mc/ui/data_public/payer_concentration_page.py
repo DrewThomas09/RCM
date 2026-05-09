@@ -185,7 +185,7 @@ def render_payer_concentration(params: dict = None) -> str:
     risk_c = neg if r.concentration_risk_label == "concentrated" else (P["warning"] if r.concentration_risk_label == "moderate" else pos)
 
     kpi_strip = (
-        ck_kpi_block("Revenue", f"${r.total_revenue_mm:,.0f}M", "", "") +
+        ck_kpi_block("Revenue", f"${r.total_revenue_mm:,.2f}M", "", "") +
         ck_kpi_block("Top Payer", f"{r.top_payer_share_pct * 100:.1f}%", "", "") +
         ck_kpi_block("CR3", f"{r.top3_share_pct * 100:.1f}%", "", "") +
         ck_kpi_block("CR5", f"{r.top5_share_pct * 100:.1f}%", "", "") +

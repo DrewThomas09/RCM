@@ -74,7 +74,7 @@ def _fmt_dollars_m(v: Optional[float]) -> str:
         return "n/a"
     if abs(v) >= 1_000:
         return f"${v/1_000:.2f}B"
-    return f"${v:.1f}M"
+    return f"${v:.2f}M"
 
 
 # ── Markdown ─────────────────────────────────────────────────────────

@@ -185,8 +185,8 @@ def _ticker_card(comp: PublicComp) -> str:
         f'{comp.ev_ebitda_multiple:.1f}×</div>'
         f'<div class="sa-ticker-mult-label">EV / EBITDA TTM</div>'
         f'<div class="sa-ticker-meta">'
-        f'<strong>EV:</strong> ${comp.enterprise_value_usd_bn:,.1f}B · '
-        f'<strong>Rev:</strong> ${comp.revenue_ttm_usd_bn:,.1f}B<br/>'
+        f'<strong>EV:</strong> ${comp.enterprise_value_usd_bn:,.2f}B · '
+        f'<strong>Rev:</strong> ${comp.revenue_ttm_usd_bn:,.2f}B<br/>'
         f'<strong>Op margin:</strong> '
         f'<span style="color:{op_color};font-weight:700;">'
         f'{op_margin}</span> · '
@@ -301,7 +301,7 @@ def _news_item_row(item: NewsItem) -> str:
 def _pe_transactions_block(txs: List[PETransaction]) -> str:
     rows: List[str] = []
     for t in txs:
-        size = f"${t.deal_size_usd_mm:,.0f}M" if t.deal_size_usd_mm else "—"
+        size = f"${t.deal_size_usd_mm:,.2f}M" if t.deal_size_usd_mm else "—"
         mult = (
             f"{t.ev_ebitda_multiple:.1f}×"
             if t.ev_ebitda_multiple else "—"

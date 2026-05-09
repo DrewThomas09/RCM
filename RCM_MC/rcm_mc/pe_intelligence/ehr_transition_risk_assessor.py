@@ -163,7 +163,7 @@ def assess_ehr_transition(
             f"Heavy migration: "
             f"{profile['prod_dip_pct']:.0%} productivity "
             f"dip over {profile['prod_dip_months']} mo; "
-            f"${revenue_during_dip:.1f}M revenue cliff. "
+            f"${revenue_during_dip:.2f}M revenue cliff. "
             "Model's year-1 FCF must absorb this; price "
             "migration into entry multiple."
         )
@@ -172,7 +172,7 @@ def assess_ehr_transition(
             f"Moderate migration: "
             f"{profile['prod_dip_pct']:.0%} dip over "
             f"{profile['prod_dip_months']} mo. "
-            f"${revenue_during_dip:.1f}M revenue drag "
+            f"${revenue_during_dip:.2f}M revenue drag "
             "but manageable."
         )
     else:

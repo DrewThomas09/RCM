@@ -183,8 +183,8 @@ def render_cap_structure_markdown(result: CapStructureResult) -> str:
     for p in result.points:
         irr_s = f"{p.equity_irr*100:.1f}%" if p.equity_irr is not None else "—"
         lines.append(
-            f"| {p.leverage_multiple:.1f}x | ${p.debt_m:,.0f}M | "
-            f"${p.equity_m:,.0f}M | ${p.interest_expense_m:,.1f}M | "
+            f"| {p.leverage_multiple:.1f}x | ${p.debt_m:,.2f}M | "
+            f"${p.equity_m:,.2f}M | ${p.interest_expense_m:,.2f}M | "
             f"{p.interest_coverage:.1f}x | {p.equity_moic:.2f}x | "
             f"{irr_s} | {p.default_risk_score} | {p.status} |"
         )

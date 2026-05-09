@@ -55,7 +55,7 @@ def _deals_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{d.support_turnover_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{cl_c};font-weight:700">{d.contract_labor_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{e_c};font-weight:700">{d.engagement_score:.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${d.retention_spend_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${d.retention_spend_m:.2f}M</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -76,7 +76,7 @@ def _programs_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(p.program)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{p.portfolio_deals}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{p.employees_covered:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${p.annual_cost_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${p.annual_cost_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{i_c};font-weight:700">{p.turnover_impact_pp:+.1f}pp</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:340px">{_html.escape(p.rationale)}</td>',
         ]
@@ -97,12 +97,12 @@ def _contract_table(items) -> str:
         p_c = warn if c.agency_pct_of_labor >= 0.10 else (acc if c.agency_pct_of_labor >= 0.05 else text_dim)
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(c.deal)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${c.agency_spend_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${c.agency_spend_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{p_c};font-weight:700">{c.agency_pct_of_labor * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">+{c.premium_vs_staff_pct * 100:.1f}%</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(c.peak_quarters)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{c.transition_to_staff_k}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${c.savings_opportunity_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${c.savings_opportunity_m:.2f}M</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -169,8 +169,8 @@ def render_workforce_retention(params: dict = None) -> str:
         ck_kpi_block("Total Headcount", f"{r.total_headcount:,}", "", "") +
         ck_kpi_block("Weighted Turnover", f"{r.weighted_turnover_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Avg Engagement", f"{r.avg_engagement_score:.2f}", "/10", "") +
-        ck_kpi_block("Contract Labor Spend", f"${r.total_contract_labor_spend_m:.1f}M", "", "") +
-        ck_kpi_block("Retention Spend", f"${r.total_retention_spend_m:.1f}M", "", "") +
+        ck_kpi_block("Contract Labor Spend", f"${r.total_contract_labor_spend_m:.2f}M", "", "") +
+        ck_kpi_block("Retention Spend", f"${r.total_retention_spend_m:.2f}M", "", "") +
         ck_kpi_block("Critical Roles", str(r.critical_roles), "", "") +
         ck_kpi_block("Active Programs", str(len(r.programs)), "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
@@ -192,7 +192,7 @@ def render_workforce_retention(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Workforce Turnover / Retention Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_headcount:,} headcount · {r.weighted_turnover_pct * 100:.1f}% weighted turnover · {r.avg_engagement_score:.2f}/10 engagement · ${r.total_contract_labor_spend_m:.1f}M contract labor · ${r.total_retention_spend_m:.1f}M retention spend · {r.critical_roles} critical roles — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_headcount:,} headcount · {r.weighted_turnover_pct * 100:.1f}% weighted turnover · {r.avg_engagement_score:.2f}/10 engagement · ${r.total_contract_labor_spend_m:.2f}M contract labor · ${r.total_retention_spend_m:.2f}M retention spend · {r.critical_roles} critical roles — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Turnover by Role (portfolio aggregate)</div>{r_tbl}</div>
@@ -206,8 +206,8 @@ def render_workforce_retention(params: dict = None) -> str:
     Highest-risk roles: Housekeeping/EVS (48.5%), Food Service (42.5%), Medical Assistant (34.5%), Phlebotomy (38.5%) — all non-clinical support roles with highest replacement volume but lower unit cost.
     Critical roles to prioritize: RN bedside (22.5% turnover), behavioral tech (32.5%), OR/specialty RNs, and allied-health technicians (cath lab, echo, radiology) — replacement cost $62-135K per FTE.
     Deal watchlist: Project Sage (Home Health, 38.5% turnover, 16.5% contract labor, $48.5M agency spend, $28.5M savings opportunity), Project Redwood (28.5%/12.5%), Project Linden (32.5%/12.5%).
-    Retention programs spending ${program_cost:.1f}M annually — top-ROI programs: flexible scheduling (-4.5pp, $0 cost), loan repayment (-4.2pp), sign-on bonus (-3.5pp for critical roles).
-    Contract labor savings opportunity ${savings_opp:.1f}M via structured agency-to-staff conversion — Sage alone $28.5M opportunity through in-home care workforce pipeline expansion.
+    Retention programs spending ${program_cost:.2f}M annually — top-ROI programs: flexible scheduling (-4.5pp, $0 cost), loan repayment (-4.2pp), sign-on bonus (-3.5pp for critical roles).
+    Contract labor savings opportunity ${savings_opp:.2f}M via structured agency-to-staff conversion — Sage alone $28.5M opportunity through in-home care workforce pipeline expansion.
     Benefits vs benchmarks: health insurance contribution (72% — between median/P75), 401(k) match (4% — at median), parental leave (12 weeks — between median/P75); childcare and student loan at P25 — upgrade opportunities.
   </div>
 </div>"""

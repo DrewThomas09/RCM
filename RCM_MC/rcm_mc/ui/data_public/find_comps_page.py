@@ -196,7 +196,7 @@ def _comp_row(i: int, d: Dict, sim: float, corpus_moic_p50: Optional[float]) -> 
     buyer = html.escape((d.get("buyer") or "—")[:30])
     yr = str(d.get("year") or "—")
     ev = d.get("ev_mm")
-    ev_str = f"${ev:,.0f}M" if ev else "—"
+    ev_str = f"${ev:,.2f}M" if ev else "—"
     mult = _ev_ebitda(d)
     mult_str = f"{mult:.1f}×" if mult else "—"
     moic = d.get("realized_moic")

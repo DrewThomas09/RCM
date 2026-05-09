@@ -57,7 +57,7 @@ def _access_table(items) -> str:
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(a.deal)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{m_c};font-weight:700">{a.medicaid_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${a.uninsured_charity_care_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${a.uninsured_charity_care_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{a.sliding_scale_patients_k:.1f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{a.avg_wait_days:.1f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{a.no_show_rate_pct * 100:.1f}%</td>',
@@ -219,7 +219,7 @@ def render_esg_impact(params: dict = None) -> str:
         ck_kpi_block("Portfolio Cos", str(r.total_portcos), "", "") +
         ck_kpi_block("Avg ESG Score", f"{r.avg_composite_score:.2f}", "/10", "") +
         ck_kpi_block("YoY Delta", f"{r.prior_year_delta:+.2f}", "", "") +
-        ck_kpi_block("Charity Care LTM", f"${r.total_charity_care_m:.1f}M", "", "") +
+        ck_kpi_block("Charity Care LTM", f"${r.total_charity_care_m:.2f}M", "", "") +
         ck_kpi_block("Avg Medicaid Mix", f"{r.total_medicaid_patients_k:.1f}%", "", "") +
         ck_kpi_block("Scope 1+2 (MTCO2e)", f"{r.total_scope_12_mtco2e:,.0f}", "", "") +
         ck_kpi_block("Frameworks", str(r.frameworks_tracked), "", "") +
@@ -244,7 +244,7 @@ def render_esg_impact(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">ESG / Impact Reporting Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_portcos} portcos · {r.avg_composite_score:.2f}/10 average ESG score (+{r.prior_year_delta:.2f} YoY) · ${r.total_charity_care_m:.1f}M charity care · {r.total_scope_12_mtco2e:,.0f} MTCO2e Scope 1+2 · {r.frameworks_tracked} frameworks tracked — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_portcos} portcos · {r.avg_composite_score:.2f}/10 average ESG score (+{r.prior_year_delta:.2f} YoY) · ${r.total_charity_care_m:.2f}M charity care · {r.total_scope_12_mtco2e:,.0f} MTCO2e Scope 1+2 · {r.frameworks_tracked} frameworks tracked — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">ESG Composite Scorecards</div>{s_tbl}</div>
@@ -256,7 +256,7 @@ def render_esg_impact(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Framework Compliance</div>{f_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">ESG Portfolio Summary:</strong> Portfolio-wide ESG composite {r.avg_composite_score:.2f}/10 — YoY improvement of +{r.prior_year_delta:.2f} driven primarily by social score gains (patient access + clinical quality).
-    Community benefit: ${r.total_charity_care_m:.1f}M in uninsured/charity care LTM; {medicaid_ge20} of {len(r.access)} portcos serve ≥20% Medicaid patients — strong access alignment with healthcare-as-social-infrastructure thesis.
+    Community benefit: ${r.total_charity_care_m:.2f}M in uninsured/charity care LTM; {medicaid_ge20} of {len(r.access)} portcos serve ≥20% Medicaid patients — strong access alignment with healthcare-as-social-infrastructure thesis.
     Clinical outcomes: HEDIS composite range 0.81-0.90; 2 sentinel events YTD (Sage, Linden) both fully investigated and root-cause remediated.
     Workforce: DEI strong on gender (68% female workforce average); POC representation 47% workforce / 41% leadership — tracks above S&P 500 healthcare benchmarks ±3pp.
     Climate: {sbti_validated} portcos with SBTi-validated targets, 5 committed, 3 not yet committed — Fund VI fundraising materials commit to full SBTi coverage by 2027.

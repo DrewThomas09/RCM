@@ -134,7 +134,7 @@ def _round1(inputs: ICDialogInputs) -> List[DialogTurn]:
 
     op = (
         f"Growth at {inputs.growth_rate:.0%} on a "
-        f"${inputs.recurring_ebitda_m:.0f}M base is "
+        f"${inputs.recurring_ebitda_m:.2f}M base is "
         "above-market. " +
         ("QofE is clean. " if inputs.qofe_clean else
          "QofE has open items. ") +
@@ -146,7 +146,7 @@ def _round1(inputs: ICDialogInputs) -> List[DialogTurn]:
         point=op, reaction_type="open"))
 
     md = (
-        f"Recurring EBITDA ${inputs.recurring_ebitda_m:.0f}M × "
+        f"Recurring EBITDA ${inputs.recurring_ebitda_m:.2f}M × "
         f"exit {inputs.exit_multiple:.1f}× / entry "
         f"{inputs.entry_multiple:.1f}× = "
         f"{inputs.exit_multiple/inputs.entry_multiple:.2f}x "
@@ -234,11 +234,11 @@ def _round2(
     # MD numbers challenges optimist's growth claim
     md_msg = (
         f"Optimist's {inputs.growth_rate:.0%} growth "
-        f"on ${inputs.recurring_ebitda_m:.0f}M = "
-        f"${inputs.recurring_ebitda_m * inputs.growth_rate:.1f}M "
+        f"on ${inputs.recurring_ebitda_m:.2f}M = "
+        f"${inputs.recurring_ebitda_m * inputs.growth_rate:.2f}M "
         "of new EBITDA per year. Over 5 years and at "
         f"{inputs.exit_multiple:.0f}× = "
-        f"${inputs.recurring_ebitda_m * inputs.growth_rate * 5 * inputs.exit_multiple:.0f}M "
+        f"${inputs.recurring_ebitda_m * inputs.growth_rate * 5 * inputs.exit_multiple:.2f}M "
         "of value. That's the half of MOIC that comes "
         "from EBITDA. The other half is multiple expansion "
         "and de-leverage. The math has to balance."

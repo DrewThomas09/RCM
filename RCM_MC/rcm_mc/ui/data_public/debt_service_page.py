@@ -293,10 +293,10 @@ def render_debt_service(params: dict = None) -> str:
     current_dscr = r.coverage_schedule[0].dscr if r.coverage_schedule else 0
 
     kpi_strip = (
-        ck_kpi_block("EV", f"${r.ev_mm:,.0f}M", "", "") +
+        ck_kpi_block("EV", f"${r.ev_mm:,.2f}M", "", "") +
         ck_kpi_block("EBITDA", f"${r.ebitda_mm:,.2f}M", "", "") +
         ck_kpi_block("Size Bucket", r.size_bucket, "", "") +
-        ck_kpi_block("Total Debt", f"${total_debt:,.0f}M", "", "") +
+        ck_kpi_block("Total Debt", f"${total_debt:,.2f}M", "", "") +
         ck_kpi_block("Equity %", f"{r.equity_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Blended Rate", f"{r.blended_rate_pct:.2f}%", "", "") +
         ck_kpi_block("Entry DSCR", f"{current_dscr:.2f}x", "", "") +
@@ -351,7 +351,7 @@ def render_debt_service(params: dict = None) -> str:
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Debt Service Coverage Tracker</h1>
     <p style="font-size:12px;color:{text_dim};margin-top:4px">
-      DSCR, interest coverage, covenant headroom, and stress testing — ${r.ev_mm:,.0f}M deal at {r.entry_multiple:.1f}x — {r.corpus_deal_count:,} corpus deals
+      DSCR, interest coverage, covenant headroom, and stress testing — ${r.ev_mm:,.2f}M deal at {r.entry_multiple:.1f}x — {r.corpus_deal_count:,} corpus deals
     </p>
   </div>
 
@@ -388,8 +388,8 @@ def render_debt_service(params: dict = None) -> str:
         <div><span style="color:{text_dim}">Size bucket:</span> {r.size_bucket}</div>
         <div><span style="color:{text_dim}">Entry multiple:</span> {r.entry_multiple:.2f}x</div>
         <div><span style="color:{text_dim}">EBITDA:</span> ${r.ebitda_mm:,.2f}M</div>
-        <div><span style="color:{text_dim}">Total debt:</span> ${total_debt:,.0f}M ({(total_debt / r.ev_mm * 100):.1f}% of EV)</div>
-        <div><span style="color:{text_dim}">Equity:</span> ${(r.ev_mm - total_debt):,.0f}M ({r.equity_pct * 100:.1f}% of EV)</div>
+        <div><span style="color:{text_dim}">Total debt:</span> ${total_debt:,.2f}M ({(total_debt / r.ev_mm * 100):.1f}% of EV)</div>
+        <div><span style="color:{text_dim}">Equity:</span> ${(r.ev_mm - total_debt):,.2f}M ({r.equity_pct * 100:.1f}% of EV)</div>
         <div><span style="color:{text_dim}">Blended cash rate:</span> {r.blended_rate_pct:.2f}%</div>
         <div><span style="color:{text_dim}">Annual cash interest:</span> ${sum(t.interest_mm for t in r.tranches):,.2f}M</div>
         <div><span style="color:{text_dim}">Annual amortization:</span> ${sum(t.amortization_mm for t in r.tranches):,.2f}M</div>

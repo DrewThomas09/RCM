@@ -228,8 +228,8 @@ def render_deal_pipeline(params: dict = None) -> str:
     kpi_strip = (
         ck_kpi_block("Sourced YTD", f"{sourced:,}", "", "") +
         ck_kpi_block("Active Pipeline", f"{r.total_active_deals:,}", "", "") +
-        ck_kpi_block("Pipeline EV", f"${r.total_pipeline_ev_mm:,.0f}M", "", "") +
-        ck_kpi_block("Prob-Weighted Close", f"${r.weighted_closed_ev_mm:,.0f}M", "", "") +
+        ck_kpi_block("Pipeline EV", f"${r.total_pipeline_ev_mm:,.2f}M", "", "") +
+        ck_kpi_block("Prob-Weighted Close", f"${r.weighted_closed_ev_mm:,.2f}M", "", "") +
         ck_kpi_block("End-to-End Conv", f"{r.end_to_end_conversion_pct:.2f}%", "", "") +
         ck_kpi_block("Avg Days (Src→Close)", f"{r.avg_days_source_to_close}", "", "") +
         ck_kpi_block("Source Channels", str(len(r.channels)), "", "") +
@@ -310,7 +310,7 @@ def render_deal_pipeline(params: dict = None) -> str:
     <strong style="color:{text}">Pipeline Thesis:</strong>
     {sourced:,} deals sourced YTD → {r.end_to_end_conversion_pct:.1f}% end-to-end conversion.
     Proprietary and Portfolio Follow-on channels dominate ROI; broad auctions remain cheapest but lowest quality.
-    ${r.weighted_closed_ev_mm:,.0f}M probability-weighted close in active pipeline.
+    ${r.weighted_closed_ev_mm:,.2f}M probability-weighted close in active pipeline.
   </div>
 
 </div>"""

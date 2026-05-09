@@ -308,9 +308,9 @@ def render_predictive_screener(
 
     def _fm(v):
         if abs(v) >= 1e9:
-            return f"${v/1e9:.1f}B"
+            return f"${v/1e9:.2f}B"
         if abs(v) >= 1e6:
-            return f"${v/1e6:.0f}M"
+            return f"${v/1e6:.2f}M"
         return f"${v:,.0f}"
 
     from ._ui_kit import format_value, kpi_strip
@@ -406,7 +406,7 @@ def render_predictive_screener(
             if abs(v) >= 1e9:
                 return f"${v / 1e9:.2f}B"
             if abs(v) >= 1e6:
-                return f"${v / 1e6:.1f}M"
+                return f"${v / 1e6:.2f}M"
             return f"${v:,.0f}"
         p10 = float(row.get("uplift_p10") or 0) if row.get("uplift_p10") is not None else None
         p90 = float(row.get("uplift_p90") or 0) if row.get("uplift_p90") is not None else None

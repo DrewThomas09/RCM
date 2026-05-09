@@ -281,16 +281,16 @@ def scrub_recurring_ebitda(
     if bleed > 0.10 * seller_view and seller_view > 0:
         note = (
             f"Exit-multiple bleed: seller pitches "
-            f"${seller_view:.1f}M equity; partner read "
-            f"${partner_view:.1f}M "
-            f"(${bleed:.1f}M gap). "
+            f"${seller_view:.2f}M equity; partner read "
+            f"${partner_view:.2f}M "
+            f"(${bleed:.2f}M gap). "
             "Anchor the next counter on recurring-only "
             "EBITDA × multiple + one-time × 1."
         )
     elif questionable > 0.5 * recurring:
         note = (
             f"Questionable items "
-            f"${questionable:.1f}M are a large share of "
+            f"${questionable:.2f}M are a large share of "
             "the bridge — prioritize QofE survival on "
             "owner comp, synergies, and annualized "
             "contract items. Re-run with QofE numbers."
@@ -298,7 +298,7 @@ def scrub_recurring_ebitda(
     else:
         note = (
             f"Line-item scrub confirms "
-            f"${exit_applicable:.1f}M recurring EBITDA. "
+            f"${exit_applicable:.2f}M recurring EBITDA. "
             "One-time items properly segregated; "
             "exit-multiple-applicable bridge clean."
         )
@@ -328,12 +328,12 @@ def render_recurring_ebitda_markdown(
         "",
         f"_{r.partner_note}_",
         "",
-        f"- Stated EBITDA: ${r.stated_ebitda_m:.1f}M",
-        f"- Recurring EBITDA: ${r.recurring_ebitda_m:.1f}M",
-        f"- One-time cash: ${r.one_time_cash_m:.1f}M (1× multiple)",
-        f"- Questionable: ${r.questionable_m:.1f}M",
+        f"- Stated EBITDA: ${r.stated_ebitda_m:.2f}M",
+        f"- Recurring EBITDA: ${r.recurring_ebitda_m:.2f}M",
+        f"- One-time cash: ${r.one_time_cash_m:.2f}M (1× multiple)",
+        f"- Questionable: ${r.questionable_m:.2f}M",
         f"- Exit-multiple-applicable: "
-        f"${r.exit_multiple_applicable_ebitda_m:.1f}M",
+        f"${r.exit_multiple_applicable_ebitda_m:.2f}M",
         f"- Exit-multiple bleed: "
         f"${r.exit_multiple_bleed_m:+.1f}M",
         "",

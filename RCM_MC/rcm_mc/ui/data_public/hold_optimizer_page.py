@@ -221,7 +221,7 @@ def _peer_table(peers: List[Dict[str, Any]], top: int = 15) -> str:
             f"<td>{sector}</td>"
             f"<td>{buyer}</td>"
             f"<td class='r mn'>{d.get('year', '—')}</td>"
-            f"<td class='r mn'>{f'${float(ev):.0f}M' if ev else '—'}</td>"
+            f"<td class='r mn'>{f'${float(ev):.2f}M' if ev else '—'}</td>"
             f"<td class='r mn'>{f'{ee:.1f}×' if ee else '—'}</td>"
             f"<td class='r mn'>{f'{float(h):.1f}yr' if h else '—'}</td>"
             f"<td class='r'>{moic_html}</td>"

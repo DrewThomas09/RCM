@@ -131,7 +131,7 @@ def fmt_ttv(ev_mm: float) -> str:
     if ev_mm >= 1000:
         return f"${ev_mm / 1000:.2f}B"
     if ev_mm >= 1:
-        return f"${ev_mm:.0f}M"
+        return f"${ev_mm:.2f}M"
     if ev_mm > 0:
         return f"${ev_mm * 1000:.0f}K"
     return "$0"

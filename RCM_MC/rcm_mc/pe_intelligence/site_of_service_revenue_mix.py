@@ -203,7 +203,7 @@ def analyze_site_of_service_mix(
     if op_migration_m > 0:
         note += (
             f" Migration opportunity: "
-            f"${op_migration_m:.1f}M of inpatient "
+            f"${op_migration_m:.2f}M of inpatient "
             "revenue eligible for OP shift — model the "
             "margin uplift if executed."
         )
@@ -239,14 +239,14 @@ def render_site_of_service_mix_markdown(
         f"_Verdict: **{r.reg_exposure_verdict}**_ — "
         f"{r.partner_note}",
         "",
-        f"- Total NPR: ${r.total_npr_m:.1f}M",
+        f"- Total NPR: ${r.total_npr_m:.2f}M",
         f"- Weighted margin: "
         f"{r.weighted_contribution_margin_pct:.1%} "
-        f"(${r.weighted_contribution_m:.1f}M contribution)",
+        f"(${r.weighted_contribution_m:.2f}M contribution)",
         f"- HOPD share: {r.hopd_share_pct:.0%}",
         f"- ASC share: {r.asc_share_pct:.0%}",
         f"- IP→OP migration opportunity: "
-        f"${r.op_migration_opportunity_m:.1f}M",
+        f"${r.op_migration_opportunity_m:.2f}M",
         "",
         "| Site | NPR $M | Share | Margin | "
         "Contribution | Reg exposure |",
@@ -255,10 +255,10 @@ def render_site_of_service_mix_markdown(
     for s in r.shares:
         lines.append(
             f"| {s.site_type} | "
-            f"${s.npr_m:.1f}M | "
+            f"${s.npr_m:.2f}M | "
             f"{s.share_pct:.0%} | "
             f"{s.typical_margin_pct:.0%} | "
-            f"${s.contribution_m:.1f}M | "
+            f"${s.contribution_m:.2f}M | "
             f"{s.reg_exposure} |"
         )
     return "\n".join(lines)

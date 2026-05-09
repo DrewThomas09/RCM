@@ -138,11 +138,11 @@ def render_zbb_tracker(params: dict = None) -> str:
     r_c = pos if r.capture_rate_pct >= 0.75 else (acc if r.capture_rate_pct >= 0.55 else P["warning"])
 
     kpi_strip = (
-        ck_kpi_block("Pre-ZBB Baseline", f"${r.total_baseline_mm:,.1f}M", "", "") +
-        ck_kpi_block("Current Run-Rate", f"${r.current_run_rate_mm:,.1f}M", "", "") +
-        ck_kpi_block("Target Run-Rate", f"${r.target_run_rate_mm:,.1f}M", "", "") +
-        ck_kpi_block("Savings Captured", f"${r.total_savings_captured_mm:,.1f}M", "", "") +
-        ck_kpi_block("Savings Remaining", f"${r.total_savings_potential_mm:,.1f}M", "", "") +
+        ck_kpi_block("Pre-ZBB Baseline", f"${r.total_baseline_mm:,.2f}M", "", "") +
+        ck_kpi_block("Current Run-Rate", f"${r.current_run_rate_mm:,.2f}M", "", "") +
+        ck_kpi_block("Target Run-Rate", f"${r.target_run_rate_mm:,.2f}M", "", "") +
+        ck_kpi_block("Savings Captured", f"${r.total_savings_captured_mm:,.2f}M", "", "") +
+        ck_kpi_block("Savings Remaining", f"${r.total_savings_potential_mm:,.2f}M", "", "") +
         ck_kpi_block("Capture Rate", f"{r.capture_rate_pct * 100:.0f}%", "", "") +
         ck_kpi_block("Initiatives", str(len(r.initiatives)), "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
@@ -166,8 +166,8 @@ def render_zbb_tracker(params: dict = None) -> str:
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {r_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">ZBB Transformation Progress</div>
-    <div style="color:{r_c};font-weight:700;font-size:14px">${r.total_savings_captured_mm:,.1f}M captured / ${r.total_savings_captured_mm + r.total_savings_potential_mm:,.1f}M opportunity · {r.capture_rate_pct * 100:.1f}% capture rate</div>
-    <div style="color:{text_dim};font-size:11px;margin-top:4px">Run-rate reduced from ${r.total_baseline_mm:,.1f}M → ${r.current_run_rate_mm:,.1f}M · ${r.current_run_rate_mm - r.target_run_rate_mm:,.1f}M remains to target</div>
+    <div style="color:{r_c};font-weight:700;font-size:14px">${r.total_savings_captured_mm:,.2f}M captured / ${r.total_savings_captured_mm + r.total_savings_potential_mm:,.2f}M opportunity · {r.capture_rate_pct * 100:.1f}% capture rate</div>
+    <div style="color:{text_dim};font-size:11px;margin-top:4px">Run-rate reduced from ${r.total_baseline_mm:,.2f}M → ${r.current_run_rate_mm:,.2f}M · ${r.current_run_rate_mm - r.target_run_rate_mm:,.2f}M remains to target</div>
   </div>
   <div style="{cell}"><div style="{h3}">Cost Category Rebuild — Baseline vs Current vs Target</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Savings Initiative Portfolio</div>{i_tbl}</div>
@@ -175,11 +175,11 @@ def render_zbb_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Spend Policy &amp; Control Framework</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Vendor Rationalization Results</div>{v_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">ZBB Thesis:</strong> Platform baseline ${r.total_baseline_mm:,.1f}M reduced to ${r.current_run_rate_mm:,.1f}M with ${r.total_savings_captured_mm:,.1f}M captured to date.
+    <strong style="color:{text}">ZBB Thesis:</strong> Platform baseline ${r.total_baseline_mm:,.2f}M reduced to ${r.current_run_rate_mm:,.2f}M with ${r.total_savings_captured_mm:,.2f}M captured to date.
     Highest-impact captures: consulting freeze (96%), benefits renegotiation (88%), malpractice pool consolidation (88%).
     Clinical productivity initiative is the lagging workstream at 31% capture — execution challenge requires CMO-led intervention.
-    ${r.total_savings_potential_mm:,.1f}M in remaining opportunity — concentrated in clinical labor and contract labor categories.
-    Vendor rationalization eliminated 183 redundant vendors across 8 categories, generating ${sum(v.savings_mm for v in r.vendors):,.1f}M annualized savings.
+    ${r.total_savings_potential_mm:,.2f}M in remaining opportunity — concentrated in clinical labor and contract labor categories.
+    Vendor rationalization eliminated 183 redundant vendors across 8 categories, generating ${sum(v.savings_mm for v in r.vendors):,.2f}M annualized savings.
     Waste audit surfaced ${sum(w.identified_mm for w in r.waste):,.2f}M of annual recurring waste; ${sum(w.eliminated_mm for w in r.waste):,.2f}M eliminated to date.
   </div>
 </div>"""

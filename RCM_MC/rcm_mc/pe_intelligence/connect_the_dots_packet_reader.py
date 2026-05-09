@@ -185,7 +185,7 @@ def _denial_fix_to_medicare_bridge(
             f"Denial fix of {denial_drop_bps:.0f} bps "
             f"reverses appeals-propped CMI "
             f"(~{cmi_impact_pct:.1%}); Medicare bridge "
-            f"loses ${abs(medicare_bridge_delta_m):.1f}M. "
+            f"loses ${abs(medicare_bridge_delta_m):.2f}M. "
             "Don't cheer the denial improvement until "
             "the Medicare leg is re-modeled."
         ),
@@ -303,7 +303,7 @@ def _wage_to_addback_risk(
                     else "Add-back claim not materially "
                          "affected"),
                 quantified_impact=(
-                    f"${s.comp_normalization_addback_m:.1f}M "
+                    f"${s.comp_normalization_addback_m:.2f}M "
                     "add-back at risk" if addback_at_risk
                     else "low stress"),
             ),
@@ -490,7 +490,7 @@ def _reg_event_to_ebitda(
                     f"{s.service_line_exposed_pct_of_npr:.0%} "
                     "of NPR"),
                 quantified_impact=(
-                    f"${s.npr_m * s.service_line_exposed_pct_of_npr:.0f}M "
+                    f"${s.npr_m * s.service_line_exposed_pct_of_npr:.2f}M "
                     "exposed NPR"),
             ),
             ChainStep(
@@ -499,21 +499,21 @@ def _reg_event_to_ebitda(
                     "Provider price taker — straight "
                     "rate hit"),
                 quantified_impact=(
-                    f"${npr_at_risk:.1f}M NPR at risk"),
+                    f"${npr_at_risk:.2f}M NPR at risk"),
             ),
             ChainStep(
                 step="ebitda_flow_through",
                 effect_detail=(
                     "Contribution margin × NPR loss"),
                 quantified_impact=(
-                    f"${ebitda_at_risk:.1f}M EBITDA hit"),
+                    f"${ebitda_at_risk:.2f}M EBITDA hit"),
             ),
         ],
         partner_summary=(
             f"{s.upcoming_reg_event_name}: "
             f"{s.service_line_exposed_pct_of_npr:.0%} "
             "of NPR exposed → "
-            f"${ebitda_at_risk:.1f}M EBITDA hit. "
+            f"${ebitda_at_risk:.2f}M EBITDA hit. "
             "Price into bridge or exit multiple "
             "contracts."
         ),

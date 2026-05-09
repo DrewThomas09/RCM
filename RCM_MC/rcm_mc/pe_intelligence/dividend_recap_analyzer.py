@@ -104,7 +104,7 @@ def analyze_recap(inputs: RecapInputs) -> RecapAssessment:
 
     if feasible:
         note = (
-            f"Recap feasible: size up to ${dividend:,.1f}M dividend "
+            f"Recap feasible: size up to ${dividend:,.2f}M dividend "
             f"(DPI uplift {dpi_uplift:.2f}x). Post-recap leverage "
             f"{post_leverage:.1f}x, coverage {post_coverage:.1f}x."
         )
@@ -130,8 +130,8 @@ def render_recap_markdown(a: RecapAssessment) -> str:
         f"_{a.partner_note}_",
         "",
         f"- Feasible: **{'yes' if a.feasible else 'no'}**",
-        f"- Max incremental debt: ${a.max_incremental_debt_m:,.1f}M",
-        f"- Proposed dividend: ${a.proposed_dividend_m:,.1f}M",
+        f"- Max incremental debt: ${a.max_incremental_debt_m:,.2f}M",
+        f"- Proposed dividend: ${a.proposed_dividend_m:,.2f}M",
         f"- Post-recap leverage: {a.post_recap_leverage:.2f}x",
         f"- Post-recap coverage: {a.post_recap_coverage:.2f}x",
         f"- DPI uplift: {a.dpi_uplift:.2f}x",

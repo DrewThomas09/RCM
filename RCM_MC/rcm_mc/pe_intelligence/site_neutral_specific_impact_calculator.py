@@ -236,7 +236,7 @@ def compute_site_neutral_exposure(
     if total_cumulative > 20:
         pn = (
             f"Site-neutral exposure over hold: "
-            f"${total_cumulative:.1f}M cumulative EBITDA. "
+            f"${total_cumulative:.2f}M cumulative EBITDA. "
             "Material — bake into exit-case EBITDA or "
             "expect exit buyer to model it against us. "
             "Price into purchase multiple now, not after "
@@ -245,14 +245,14 @@ def compute_site_neutral_exposure(
     elif total_cumulative > 5:
         pn = (
             f"Site-neutral exposure: "
-            f"${total_cumulative:.1f}M cumulative. "
+            f"${total_cumulative:.2f}M cumulative. "
             "Manageable but not zero — include in the "
             "base-case bridge and track CMS rulemaking."
         )
     elif total_cumulative > 0:
         pn = (
             f"Minor site-neutral exposure "
-            f"(${total_cumulative:.1f}M). Monitor but "
+            f"(${total_cumulative:.2f}M). Monitor but "
             "does not re-price the deal."
         )
     else:
@@ -279,7 +279,7 @@ def render_site_neutral_markdown(
         f"_{r.partner_note}_",
         "",
         f"- Total cumulative EBITDA at risk: "
-        f"${r.total_cumulative_ebitda_m:.1f}M",
+        f"${r.total_cumulative_ebitda_m:.2f}M",
         "",
         "| Service line | Effective year | Hits in hold | "
         "Years affected | Annual NPR at risk | "

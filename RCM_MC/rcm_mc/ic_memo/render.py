@@ -13,7 +13,7 @@ def _format_money(mm: float) -> str:
     if abs(mm) >= 1000:
         return f"${mm/1000:.2f}B"
     if abs(mm) >= 1:
-        return f"${mm:.1f}M"
+        return f"${mm:.2f}M"
     return f"${mm*1000:.0f}K"
 
 
@@ -43,9 +43,9 @@ def render_memo_markdown(memo: ICMemo) -> str:
             f"- **Base-case MOIC:** "
             f"{memo.scenarios.base.moic:.2f}× "
             f"({memo.scenarios.base.irr*100:.1f}% IRR over "
-            f"{memo.scenarios.base.entry_equity_mm:.0f}M "
+            f"{memo.scenarios.base.entry_equity_mm:.2f}M "
             f"entry equity → "
-            f"{memo.scenarios.base.exit_equity_mm:.0f}M exit "
+            f"{memo.scenarios.base.exit_equity_mm:.2f}M exit "
             f"equity).")
     lines.append(
         f"- **Risk count:** {len(memo.risks)} flagged.")

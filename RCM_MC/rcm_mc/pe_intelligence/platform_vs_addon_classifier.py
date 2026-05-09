@@ -101,10 +101,10 @@ def classify_platform_vs_addon(
         name="ebitda_at_scale_threshold",
         passed=ebitda_ok,
         partner_comment=(
-            f"EBITDA ${inputs.ebitda_m:,.1f}M ≥ $25M "
+            f"EBITDA ${inputs.ebitda_m:,.2f}M ≥ $25M "
             "platform threshold."
             if ebitda_ok else
-            f"EBITDA ${inputs.ebitda_m:,.1f}M below $25M "
+            f"EBITDA ${inputs.ebitda_m:,.2f}M below $25M "
             "platform threshold — sub-scale."
         ),
     ))

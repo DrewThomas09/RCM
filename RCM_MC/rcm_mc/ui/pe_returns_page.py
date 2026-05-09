@@ -66,8 +66,8 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
         f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
         f'<p><strong>{irr_assessment}.</strong> At {irr:.1%} IRR and {moic:.2f}x MOIC over '
         f'{hold:.0f} years, every $1 invested returns ${moic:.2f}.</p>'
-        f'<p style="margin-top:6px;">Entry equity of ${entry_eq/1e6:.0f}M grows to '
-        f'${total_dist/1e6:.0f}M in total distributions — a ${(total_dist-entry_eq)/1e6:.0f}M gain.</p>'
+        f'<p style="margin-top:6px;">Entry equity of ${entry_eq/1e6:.2f}M grows to '
+        f'${total_dist/1e6:.2f}M in total distributions — a ${(total_dist-entry_eq)/1e6:.2f}M gain.</p>'
         f'</div></div>'
     )
 
@@ -107,7 +107,7 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
     if trips_at > 0:
         cov_items.append({
             "label": "Covenant Trips at",
-            "value": f"${trips_at/1e6:.0f}M",
+            "value": f"${trips_at/1e6:.2f}M",
         })
     if coverage > 0:
         cov_items.append({
@@ -123,7 +123,7 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
         + kpi_strip(cov_items)
         + f'<div style="margin-top:12px;font-size:12.5px;color:{PALETTE["text_secondary"]};">'
         + f'<strong>Plain English:</strong> EBITDA can decline {cushion:.0%} '
-        + f'(from ${cov_ebitda/1e6:.0f}M to ${trips_at/1e6:.0f}M) before the {max_lev:.1f}x leverage covenant trips. '
+        + f'(from ${cov_ebitda/1e6:.2f}M to ${trips_at/1e6:.2f}M) before the {max_lev:.1f}x leverage covenant trips. '
         + f'{"This is comfortable headroom." if cushion > 0.25 else "This is tight — stress test carefully." if cushion > 0.10 else "Very thin — covenant breach risk is high."}'
         + f'</div></div>'
     ) if cov_ebitda > 0 else ""

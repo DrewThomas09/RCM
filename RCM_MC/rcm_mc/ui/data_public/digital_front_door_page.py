@@ -73,7 +73,7 @@ def _telehealth_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(t.deal)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{t.telehealth_visits_monthly_k}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{t.pct_of_total_visits * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${t.telehealth_revenue_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${t.telehealth_revenue_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{c_c};font-weight:700">{t.completion_rate_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{t.avg_duration_min:.1f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">{t.patient_satisfaction:.1f}</td>',
@@ -94,7 +94,7 @@ def _spend_table(items) -> str:
         g_c = pos if s.yoy_growth_pct >= 0.30 else (acc if s.yoy_growth_pct >= 0.15 else text_dim)
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(s.category)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${s.portfolio_spend_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${s.portfolio_spend_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{g_c};font-weight:700">+{s.yoy_growth_pct * 100:.1f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:360px">{_html.escape(s.vendors)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:320px">{_html.escape(s.typical_roi)}</td>',
@@ -165,7 +165,7 @@ def render_digital_front_door(params: dict = None) -> str:
         ck_kpi_block("Active Portal %", f"{r.weighted_portal_adoption_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Avg NPS", f"+{r.avg_nps}", "", "") +
         ck_kpi_block("Monthly Telehealth", f"{r.total_telehealth_visits_monthly_k:,}K", "", "") +
-        ck_kpi_block("Digital Spend", f"${r.total_digital_spend_m:.1f}M", "", "") +
+        ck_kpi_block("Digital Spend", f"${r.total_digital_spend_m:.2f}M", "", "") +
         ck_kpi_block("Google Rating", f"{r.avg_google_rating:.2f}★", "", "") +
         ck_kpi_block("Vendors Live", str(sum(1 for v in r.vendors if v.status == "live production")), "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
@@ -186,7 +186,7 @@ def render_digital_front_door(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Digital Front Door / Patient Experience Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_portcos} portcos · {r.weighted_portal_adoption_pct * 100:.1f}% active portal · avg NPS +{r.avg_nps} · {r.avg_google_rating:.2f}★ Google · {r.total_telehealth_visits_monthly_k:,}K monthly telehealth visits · ${total_th_rev:.1f}M telehealth revenue — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_portcos} portcos · {r.weighted_portal_adoption_pct * 100:.1f}% active portal · avg NPS +{r.avg_nps} · {r.avg_google_rating:.2f}★ Google · {r.total_telehealth_visits_monthly_k:,}K monthly telehealth visits · ${total_th_rev:.2f}M telehealth revenue — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Digital Channel Adoption</div>{a_tbl}</div>
@@ -199,8 +199,8 @@ def render_digital_front_door(params: dict = None) -> str:
     <strong style="color:{text}">Digital Front Door Summary:</strong> {r.weighted_portal_adoption_pct * 100:.1f}% average active-portal adoption tracks industry benchmark ~50% — Fertility (78%), Derma (58%), Specialty Pharm (65%), Infusion (58%) are top performers.
     Online scheduling at 62% portfolio average — favorable above industry benchmark; consumer-facing specialties (Derma, Fertility, Eye Care) lead adoption, hospital-based / home health lag.
     Average NPS +{r.avg_nps} with Willow (Fertility +72), Laurel (Derma +68), Oak (RCM +62) top performers; Sage (Home Health +45), Linden (Behavioral +48) drag reflects operational / access challenges.
-    Telehealth volume: {r.total_telehealth_visits_monthly_k:,}K monthly visits generating ${total_th_rev:.1f}M revenue — behavioral health (Redwood 48%, Linden 52%) and home health (Sage 22%) carry highest share.
-    Digital spend ${r.total_digital_spend_m:.1f}M portfolio-wide with ambient AI growing +85% YoY (highest category); Epic MyChart (18.5M spend, 850K users, 10 deals) is the largest single vendor.
+    Telehealth volume: {r.total_telehealth_visits_monthly_k:,}K monthly visits generating ${total_th_rev:.2f}M revenue — behavioral health (Redwood 48%, Linden 52%) and home health (Sage 22%) carry highest share.
+    Digital spend ${r.total_digital_spend_m:.2f}M portfolio-wide with ambient AI growing +85% YoY (highest category); Epic MyChart (18.5M spend, 850K users, 10 deals) is the largest single vendor.
     Funnel conversion: inquiry→booking averages 52%, booking→visit 82%, no-show 8.5% — Derma (62% booking, 88% show) best-in-class; Fertility high-consideration patients drive lower initial conversion but higher LTV.
   </div>
 </div>"""

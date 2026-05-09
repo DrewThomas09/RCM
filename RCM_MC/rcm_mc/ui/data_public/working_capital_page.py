@@ -238,10 +238,10 @@ def render_working_capital(params: dict = None) -> str:
         ck_kpi_block("DSO", f"{b.dso_days:.0f}d", "", "") +
         ck_kpi_block("DPO", f"{b.dpo_days:.0f}d", "", "") +
         ck_kpi_block("CCC", f"{b.ccc_days:.0f}d", "", "") +
-        ck_kpi_block("AR Balance", f"${b.ar_balance_mm:,.1f}M", "", "") +
-        ck_kpi_block("NWC", f"${b.nwc_mm:,.1f}M", "", "") +
+        ck_kpi_block("AR Balance", f"${b.ar_balance_mm:,.2f}M", "", "") +
+        ck_kpi_block("NWC", f"${b.nwc_mm:,.2f}M", "", "") +
         ck_kpi_block("NWC / Rev", f"{b.nwc_pct_revenue*100:.1f}%", "", "") +
-        ck_kpi_block("One-time Unlock", f"${r.total_cash_unlock_mm:,.1f}M", "", "") +
+        ck_kpi_block("One-time Unlock", f"${r.total_cash_unlock_mm:,.2f}M", "", "") +
         ck_kpi_block("Annual FCF Uplift", f"${r.annual_fcf_uplift_mm:,.2f}M", "", "")
     )
 
@@ -333,8 +333,8 @@ def render_working_capital(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Working Capital Thesis:</strong>
-    Baseline ${b.ar_balance_mm:,.1f}M tied up in AR at {b.dso_days:.0f}-day DSO. RCM initiatives can unlock
-    ~${r.total_cash_unlock_mm:,.1f}M one-time and ${r.annual_fcf_uplift_mm:,.2f}M/year in ongoing FCF —
+    Baseline ${b.ar_balance_mm:,.2f}M tied up in AR at {b.dso_days:.0f}-day DSO. RCM initiatives can unlock
+    ~${r.total_cash_unlock_mm:,.2f}M one-time and ${r.annual_fcf_uplift_mm:,.2f}M/year in ongoing FCF —
     a direct accretion to LP cash-on-cash returns.
   </div>
 

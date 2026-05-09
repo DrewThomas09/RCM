@@ -167,7 +167,7 @@ def score_synergies(
     elif vs_ebitda >= 0.30:
         note = (f"Claimed synergies {vs_ebitda*100:.1f}% of entry "
                 "EBITDA. Partner-prudent realization "
-                f"${total_credit:,.1f}M "
+                f"${total_credit:,.2f}M "
                 f"({overall_real*100:.1f}% of claimed). "
                 "When synergies are a huge share of the thesis, "
                 "diligence the TOP 3 by owner, not the list.")
@@ -180,8 +180,8 @@ def score_synergies(
                 f"({overall_real*100:.1f}% realized). Signed / "
                 "executed actions backing the claims.")
     else:
-        note = (f"Standard synergy profile. ${total_credit:,.1f}M "
-                f"partner-prudent credit vs ${total_claimed:,.1f}M "
+        note = (f"Standard synergy profile. ${total_credit:,.2f}M "
+                f"partner-prudent credit vs ${total_claimed:,.2f}M "
                 "claimed.")
 
     return SynergyReport(
@@ -200,8 +200,8 @@ def render_synergy_report_markdown(r: SynergyReport) -> str:
         "",
         f"_{r.partner_note}_",
         "",
-        f"- Total claimed: ${r.total_claimed_m:,.1f}M",
-        f"- Partner-prudent credit: ${r.total_partner_credit_m:,.1f}M",
+        f"- Total claimed: ${r.total_claimed_m:,.2f}M",
+        f"- Partner-prudent credit: ${r.total_partner_credit_m:,.2f}M",
         f"- Overall realization: {r.overall_realization_pct*100:.0f}%",
         f"- Synergies vs entry EBITDA: "
         f"{r.vs_entry_ebitda_pct*100:.1f}%",
@@ -211,7 +211,7 @@ def render_synergy_report_markdown(r: SynergyReport) -> str:
     ]
     for a in r.assessments:
         lines.append(
-            f"| {a.name} | {a.category} | ${a.claimed_m:,.1f}M | "
+            f"| {a.name} | {a.category} | ${a.claimed_m:,.2f}M | "
             f"{a.credibility_0_100}/100 | "
             f"{a.realization_pct*100:.0f}% | "
             f"${a.partner_credit_m:,.2f}M |"

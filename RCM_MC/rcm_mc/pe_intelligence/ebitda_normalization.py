@@ -102,9 +102,9 @@ def normalize_ebitda(reported_ebitda_m: float,
     gap_pct = (gap / seller_adj * 100) if seller_adj > 0 else 0.0
 
     if gap_pct >= 20:
-        note = (f"Seller's Adjusted EBITDA (${seller_adj:,.1f}M) is "
+        note = (f"Seller's Adjusted EBITDA (${seller_adj:,.2f}M) is "
                 f"{gap_pct:.1f}% above partner's number "
-                f"(${partner_adj:,.1f}M). Significant bridge — "
+                f"(${partner_adj:,.2f}M). Significant bridge — "
                 "renegotiate purchase price off partner view.")
     elif gap_pct >= 10:
         note = (f"Seller's bridge carries {gap_pct:.1f}% haircut vs "
@@ -131,10 +131,10 @@ def render_normalization_markdown(r: NormalizationResult) -> str:
         "",
         f"_{r.partner_note}_",
         "",
-        f"- Reported EBITDA: ${r.reported_ebitda_m:,.1f}M",
-        f"- Seller's Adjusted: ${r.seller_adjusted_ebitda_m:,.1f}M",
-        f"- Partner's Adjusted: ${r.partner_adjusted_ebitda_m:,.1f}M",
-        f"- Total haircut: ${r.rejected_m:,.1f}M",
+        f"- Reported EBITDA: ${r.reported_ebitda_m:,.2f}M",
+        f"- Seller's Adjusted: ${r.seller_adjusted_ebitda_m:,.2f}M",
+        f"- Partner's Adjusted: ${r.partner_adjusted_ebitda_m:,.2f}M",
+        f"- Total haircut: ${r.rejected_m:,.2f}M",
         "",
         "## Line items",
         "",

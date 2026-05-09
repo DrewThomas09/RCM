@@ -141,7 +141,7 @@ def _h_equity_check_over_concentration(ctx: HeuristicContext) -> Optional[Heuris
         severity=SEV_LOW,
         category="STRUCTURE",
         finding=(
-            f"Deal EBITDA of ${ctx.ebitda_m:.0f}M is likely a top-3 "
+            f"Deal EBITDA of ${ctx.ebitda_m:.2f}M is likely a top-3 "
             "equity check for a mid-market healthcare fund."
         ),
         partner_voice=(

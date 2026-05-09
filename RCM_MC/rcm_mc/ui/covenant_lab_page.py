@@ -285,7 +285,7 @@ def _debt_service_chart(
             f'text-anchor="end" font-size="10" '
             f'fill="{P["text_faint"]}" '
             f'font-family="JetBrains Mono,monospace">'
-            f'${val/1e6:.1f}M</text>'
+            f'${val/1e6:.2f}M</text>'
         )
     legend = (
         f'<g transform="translate({pad_l + 8},{pad_t + 4})">'
@@ -483,7 +483,7 @@ def _covenant_detail_table(res: CovenantStressResult) -> str:
             q50_display = _colored("never", P["positive"])
 
         cure_str_raw = (
-            f"${ec.median_cure_usd/1e6:.1f}M"
+            f"${ec.median_cure_usd/1e6:.2f}M"
             if ec and ec.median_cure_usd is not None else "—"
         )
         # Cure size color: large cure = bad
@@ -546,7 +546,7 @@ def _capital_stack_table(res: CovenantStressResult) -> str:
         rows.append([
             html.escape(t["name"]),
             t["kind"],
-            f"${t['principal_usd']/1e6:,.1f}M",
+            f"${t['principal_usd']/1e6:,.2f}M",
             f"{t['term_years']}y",
             f"+{t['spread_bps']:.0f}",
             amort,
@@ -754,8 +754,8 @@ def render_covenant_lab_page(
             + f'<div class="cl-callout">'
             + f'Covenant stress requires <strong>positive Y0 EBITDA'
             + '</strong> and <strong>non-zero total debt</strong>. '
-            + f'You supplied EBITDA <code>${ebitda_y0/1e6:,.1f}M</code> '
-            + f'and debt <code>${total_debt/1e6:,.0f}M</code>. '
+            + f'You supplied EBITDA <code>${ebitda_y0/1e6:,.2f}M</code> '
+            + f'and debt <code>${total_debt/1e6:,.2f}M</code>. '
             + f'Targets with negative operating margins cannot '
             + f'service covenant-bearing debt — partners should '
             + f'underwrite either a restructured target or a '
@@ -891,7 +891,7 @@ def render_covenant_lab_page(
         f'<div style="font-size:11px;color:{P["text_faint"]};'
         f'margin-top:4px;">'
         f'{len(stack.tranches)} tranches · '
-        f'${stack.total_funded_usd/1e6:.0f}M funded · '
+        f'${stack.total_funded_usd/1e6:.2f}M funded · '
         f'{len(custom_cov)} covenants tested · '
         f'{res.n_paths:,} simulated paths'
         f'</div>'
@@ -993,9 +993,9 @@ def render_covenant_lab_page(
             f'Peak quarterly debt service is '
             f'<strong>${peak_ds/1e6:.2f}M</strong> in '
             f'<strong>Y{peak_year}Q{peak_q}</strong> '
-            f'(${ds_annual/1e6:.1f}M annualized). '
+            f'(${ds_annual/1e6:.2f}M annualized). '
             f'At a 1.5× DSCR floor, the target needs '
-            f'<strong>${required_ebitda/1e6:.1f}M LTM EBITDA</strong> '
+            f'<strong>${required_ebitda/1e6:.2f}M LTM EBITDA</strong> '
             f'in that quarter to stay inside the covenant.'
         )
 

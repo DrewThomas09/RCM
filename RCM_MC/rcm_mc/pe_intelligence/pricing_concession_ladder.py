@@ -306,20 +306,20 @@ def build_concession_ladder(
         over_walk = inputs.current_seller_ask_m \
             - inputs.buyer_walk_away_price_m
         note = (
-            f"Seller ask ${inputs.current_seller_ask_m:,.0f}M is "
-            f"${over_walk:,.0f}M above walk-away "
-            f"${inputs.buyer_walk_away_price_m:,.0f}M. Ladder "
+            f"Seller ask ${inputs.current_seller_ask_m:,.2f}M is "
+            f"${over_walk:,.2f}M above walk-away "
+            f"${inputs.buyer_walk_away_price_m:,.2f}M. Ladder "
             "delays walk; every concession must close that gap "
             "or save equivalent structure."
         )
     elif gap / max(0.01, inputs.buyer_base_offer_m) > 0.10:
         note = (
-            f"Ask ${gap:,.0f}M above base offer ({gap/inputs.buyer_base_offer_m*100:.1f}%). "
+            f"Ask ${gap:,.2f}M above base offer ({gap/inputs.buyer_base_offer_m*100:.1f}%). "
             "Standard ladder; use structure moves before price."
         )
     elif gap > 0:
         note = (
-            f"Small gap ${gap:,.0f}M. One or two concessions "
+            f"Small gap ${gap:,.2f}M. One or two concessions "
             "should close. Lead with low-cost structure moves."
         )
     else:
@@ -344,8 +344,8 @@ def render_concession_ladder_markdown(
         "",
         f"_{l.partner_note}_",
         "",
-        f"- Walk-away price: ${l.walk_away_price_m:,.0f}M",
-        f"- Gap vs seller: ${l.gap_vs_seller_m:,.0f}M",
+        f"- Walk-away price: ${l.walk_away_price_m:,.2f}M",
+        f"- Gap vs seller: ${l.gap_vs_seller_m:,.2f}M",
         "",
         "| Round | Move | Cost to buyer | Seller pain | "
         "Rationale |",

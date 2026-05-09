@@ -318,19 +318,19 @@ def score_entry_risk(
     if ev > 0:
         if ev < 200:
             size_score = 8.0
-            size_rationale = f"Small deal (${ev:,.0f}M EV) — limited comparable exits"
+            size_rationale = f"Small deal (${ev:,.2f}M EV) — limited comparable exits"
             size_signal = "high"
         elif ev < 500:
             size_score = 5.0
-            size_rationale = f"Mid-market (${ev:,.0f}M EV) — moderate comparable depth"
+            size_rationale = f"Mid-market (${ev:,.2f}M EV) — moderate comparable depth"
             size_signal = "medium"
         elif ev < 2_000:
             size_score = 2.0
-            size_rationale = f"Large deal (${ev:,.0f}M EV) — good corpus coverage"
+            size_rationale = f"Large deal (${ev:,.2f}M EV) — good corpus coverage"
             size_signal = "low"
         else:
             size_score = 1.0
-            size_rationale = f"Mega deal (${ev:,.0f}M EV) — thin corpus but well-known dynamics"
+            size_rationale = f"Mega deal (${ev:,.2f}M EV) — thin corpus but well-known dynamics"
             size_signal = "low"
 
     dimensions.append(RiskDimension(

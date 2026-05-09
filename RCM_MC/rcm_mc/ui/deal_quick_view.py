@@ -57,7 +57,7 @@ def render_deal_quick_view(
             try:
                 v = float(val)
                 if scale:
-                    display = f"${v / scale:,.0f}M"
+                    display = f"${v / scale:,.2f}M"
                 elif suffix == "%":
                     display = f"{v:.1f}%"
                 else:

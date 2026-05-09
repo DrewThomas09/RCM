@@ -64,7 +64,7 @@ def export_bridge_xlsx(
     # Title
     ws1["A1"] = f"EBITDA Bridge — {hospital_name}"
     ws1["A1"].font = Font(name="Calibri", size=14, bold=True)
-    ws1["A2"] = f"CCN {ccn} | Net Revenue: ${bridge.get('net_revenue', 0)/1e6:.1f}M"
+    ws1["A2"] = f"CCN {ccn} | Net Revenue: ${bridge.get('net_revenue', 0)/1e6:.2f}M"
     ws1["A2"].font = Font(name="Calibri", size=10, color="666666")
 
     # Headers

@@ -244,10 +244,10 @@ def render_tech_stack(params: dict = None) -> str:
         ck_kpi_block("EHR Fragmentation", f"{r.ehr_fragmentation_score}/100", "", "") +
         ck_kpi_block("Modernness Score", f"{r.modernness_composite}/100", "", "") +
         ck_kpi_block("Cyber Posture", f"{r.cyber_posture_score}/100", "", "") +
-        ck_kpi_block("IT Spend", f"${r.total_it_spend_mm:,.1f}M", "", "") +
+        ck_kpi_block("IT Spend", f"${r.total_it_spend_mm:,.2f}M", "", "") +
         ck_kpi_block("IT % of Rev", f"{r.it_spend_pct_revenue * 100:.1f}%", "", "") +
         ck_kpi_block("Mod. Cost", f"${r.total_modernization_cost_mm:,.2f}M", "", "") +
-        ck_kpi_block("EV Uplift", f"${r.total_ev_uplift_mm:,.0f}M", "", "")
+        ck_kpi_block("EV Uplift", f"${r.total_ev_uplift_mm:,.2f}M", "", "")
     )
 
     heat_svg = _modernness_heatmap_svg(r.systems)
@@ -337,11 +337,11 @@ def render_tech_stack(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Tech Stack Thesis:</strong>
-    Composite modernness {r.modernness_composite}/100 on ${r.total_it_spend_mm:,.1f}M annual IT spend
+    Composite modernness {r.modernness_composite}/100 on ${r.total_it_spend_mm:,.2f}M annual IT spend
     ({r.it_spend_pct_revenue * 100:.1f}% of revenue). EHR fragmentation at {r.ehr_fragmentation_score}/100 is the
     biggest wedge — consolidation unlocks both cost savings and clinical-quality upside. Cyber posture
     {r.cyber_posture_score}/100 needs SOC 2 Type II + HITRUST for exit-readiness.
-    ${r.total_modernization_cost_mm:,.1f}M investment drives ${r.total_ev_uplift_mm:,.0f}M EV uplift.
+    ${r.total_modernization_cost_mm:,.2f}M investment drives ${r.total_ev_uplift_mm:,.2f}M EV uplift.
   </div>
 
 </div>"""

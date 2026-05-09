@@ -34,7 +34,7 @@ def _market_nested_svg(sizes) -> str:
             f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(s.level)}</text>'
             f'<rect x="{pad_l}" y="{y}" width="{bw:.1f}" height="{bh}" fill="{color}" opacity="0.85"/>'
             f'<text x="{pad_l + 6}" y="{y + bh / 2 + 4}" fill="{P["text"]}" font-size="11" '
-            f'font-family="JetBrains Mono,monospace;font-weight:600">${s.size_mm:,.0f}M</text>'
+            f'font-family="JetBrains Mono,monospace;font-weight:600">${s.size_mm:,.2f}M</text>'
             f'<text x="{pad_l + bw + 6:.1f}" y="{y + bh / 2 + 4}" fill="{text_dim}" font-size="10" '
             f'font-family="JetBrains Mono,monospace">Current share: {s.current_capture_pct:.2f}%</text>'
         )
@@ -96,7 +96,7 @@ def _penetration_svg(curve) -> str:
         ticks.append(
             f'<line x1="{pad_l}" y1="{yp:.1f}" x2="{w - pad_r}" y2="{yp:.1f}" stroke="{border}" stroke-width="0.5" opacity="0.3"/>'
             f'<text x="{pad_l - 4}" y="{yp + 3:.1f}" fill="{text_faint}" font-size="9" text-anchor="end" '
-            f'font-family="JetBrains Mono,monospace">${v:,.0f}M</text>'
+            f'font-family="JetBrains Mono,monospace">${v:,.2f}M</text>'
         )
 
     return (
@@ -136,7 +136,7 @@ def _driver_svg(drivers) -> str:
             f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(d.driver[:30])}</text>'
             f'<rect x="{pad_l}" y="{y}" width="{bw:.1f}" height="{bh}" fill="{cc}" opacity="0.85"/>'
             f'<text x="{pad_l + bw + 4:.1f}" y="{y + bh - 1}" fill="{P["text_dim"]}" font-size="10" '
-            f'font-family="JetBrains Mono,monospace">${d.implied_revenue_uplift_mm:,.0f}M</text>'
+            f'font-family="JetBrains Mono,monospace">${d.implied_revenue_uplift_mm:,.2f}M</text>'
         )
 
     return (
@@ -280,12 +280,12 @@ def render_growth_runway(params: dict = None) -> str:
 
     kpi_strip = (
         ck_kpi_block("Sector TAM", f"${r.tam_b:,.0f}B", "", "") +
-        ck_kpi_block("SAM", f"${r.sam_mm:,.0f}M", "", "") +
-        ck_kpi_block("SOM", f"${r.som_mm:,.0f}M", "", "") +
+        ck_kpi_block("SAM", f"${r.sam_mm:,.2f}M", "", "") +
+        ck_kpi_block("SOM", f"${r.som_mm:,.2f}M", "", "") +
         ck_kpi_block("Current Share", f"{r.current_share_pct:.3f}%", "of SAM", "") +
         ck_kpi_block("Target Share", f"{r.target_share_pct:.2f}%", "", "") +
         ck_kpi_block("Market Growth", f"{r.market_growth_pct * 100:.1f}%", "p.a.", "") +
-        ck_kpi_block("Terminal Rev", f"${r.implied_terminal_revenue_mm:,.0f}M", "", "") +
+        ck_kpi_block("Terminal Rev", f"${r.implied_terminal_revenue_mm:,.2f}M", "", "") +
         ck_kpi_block("MOIC Lift", f"{r.moic_lift_from_growth:.2f}x", "", "")
     )
 
@@ -393,9 +393,9 @@ def render_growth_runway(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Growth Runway Thesis:</strong>
-    ${r.tam_b:,.0f}B TAM, ${r.sam_mm:,.0f}M SAM within footprint, ${r.som_mm:,.0f}M obtainable.
+    ${r.tam_b:,.0f}B TAM, ${r.sam_mm:,.2f}M SAM within footprint, ${r.som_mm:,.2f}M obtainable.
     Current {r.current_share_pct:.3f}% SAM share → target {r.target_share_pct:.2f}% implies
-    ${r.total_addressable_upside_mm:,.0f}M of revenue uplift over 10 years. {r.moic_lift_from_growth:.2f}x MOIC lift
+    ${r.total_addressable_upside_mm:,.2f}M of revenue uplift over 10 years. {r.moic_lift_from_growth:.2f}x MOIC lift
     from compounded organic + share-gain + M&amp;A. Confidence: market growth (high), M&amp;A (high),
     geographic expansion (medium).
   </div>

@@ -37,7 +37,7 @@ def _fmt_ev_mm(v: Any) -> str:
         f = float(v)
         if abs(f) >= 1000:
             return f"${f/1000:.2f}B"
-        return f"${f:,.0f}M"
+        return f"${f:,.2f}M"
     except (TypeError, ValueError):
         return "—"
 

@@ -200,8 +200,8 @@ def _rates_table(rows: List[Dict[str, Any]], group_label: str) -> str:
         if v is None:
             return '<span class="faint">—</span>'
         if v >= 1000:
-            return f'<span class="mn">${v/1000:.1f}B</span>'
-        return f'<span class="mn">${v:.0f}M</span>'
+            return f'<span class="mn">${v/1000:.2f}B</span>'
+        return f'<span class="mn">${v:.2f}M</span>'
 
     header = f"""
 <thead>

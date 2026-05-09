@@ -160,7 +160,7 @@ def impact_ma_star_rating(
             f"Plan at {inputs.current_star_rating} "
             "stars with declining HEDIS/CAHPS — "
             f"half-star drop wipes out "
-            f"${abs(bear_delta):.1f}M EBITDA "
+            f"${abs(bear_delta):.2f}M EBITDA "
             "(bonus lost). Star rating is the thesis; "
             "verify quality-improvement program."
         )
@@ -192,7 +192,7 @@ def impact_ma_star_rating(
             f"{inputs.current_star_rating} stars — no "
             "bonus, standard rebate. Half-star lift to "
             "4 stars unlocks "
-            f"${bull_delta:.1f}M EBITDA upside."
+            f"${bull_delta:.2f}M EBITDA upside."
         )
 
     return MAStarReport(

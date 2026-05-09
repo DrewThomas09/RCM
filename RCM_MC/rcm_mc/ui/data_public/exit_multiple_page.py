@@ -113,7 +113,7 @@ def _scenario_table(scenarios) -> str:
             f'<td style="padding:5px 8px;color:{c};font-weight:600">{s.label}</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{s.exit_multiple:.1f}x</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{exp_c}">{exp_str}</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${s.ev_at_exit_mm:.0f}M</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${s.ev_at_exit_mm:.2f}M</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{s.moic:.2f}x</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{s.irr*100:.1f}%</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">{s.probability*100:.1f}%</td>'
@@ -278,7 +278,7 @@ def render_exit_multiple(params: dict) -> str:
                   else f"{r.timing_premium:.1f}x timing drag")
 
     kpis = ck_kpi_block("Entry EV/EBITDA", f"{r.entry_multiple:.1f}x",
-                         unit=f"EV: ${r.ev_mm:.0f}M")
+                         unit=f"EV: ${r.ev_mm:.2f}M")
     kpis += ck_kpi_block("Base Exit Multiple", f"{r.base_exit_multiple:.1f}x",
                           unit=timing_str)
     kpis += ck_kpi_block("Sector P25/P50/P75",

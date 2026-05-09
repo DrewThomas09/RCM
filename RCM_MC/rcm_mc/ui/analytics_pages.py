@@ -89,9 +89,9 @@ def render_counterfactual_page(deal_id: str, deal_name: str, result: Dict[str, A
         rows += (
             f'<tr>'
             f'<td class="num">Period {i+1}</td>'
-            f'<td class="num">${float(a)/1e6:.1f}M</td>'
-            f'<td class="num">${float(c)/1e6:.1f}M</td>'
-            f'<td class="num" style="color:{color};">${float(d)/1e6:.1f}M</td>'
+            f'<td class="num">${float(a)/1e6:.2f}M</td>'
+            f'<td class="num">${float(c)/1e6:.2f}M</td>'
+            f'<td class="num" style="color:{color};">${float(d)/1e6:.2f}M</td>'
             f'</tr>'
         )
 
@@ -101,7 +101,7 @@ def render_counterfactual_page(deal_id: str, deal_name: str, result: Dict[str, A
         f'<div class="cad-card" style="border-left:3px solid {cum_color};">'
         f'<h2>What This Means</h2>'
         f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
-        f'<p>Without the initiative, EBITDA would have been <strong>${abs(cumulative)/1e6:.1f}M '
+        f'<p>Without the initiative, EBITDA would have been <strong>${abs(cumulative)/1e6:.2f}M '
         f'{"higher" if cumulative < 0 else "lower"}</strong> over the period. '
         f'{"The initiative clearly created value." if cumulative > 0 else "The initiative did not deliver expected results."}</p>'
         f'<p style="margin-top:6px;">Methodology: {html.escape(method)}. '
@@ -115,7 +115,7 @@ def render_counterfactual_page(deal_id: str, deal_name: str, result: Dict[str, A
     cum_tone = "positive" if cumulative > 0 else "negative"
     cumul_kpis = kpi_strip([
         {"label": "CUMULATIVE INITIATIVE IMPACT",
-         "value": f"${cumulative/1e6:.1f}M", "tone": cum_tone},
+         "value": f"${cumulative/1e6:.2f}M", "tone": cum_tone},
         {"label": "PERIODS ANALYZED",
          "value": format_value(len(actual), kind="count")},
     ])
@@ -134,7 +134,7 @@ def render_counterfactual_page(deal_id: str, deal_name: str, result: Dict[str, A
 
     return chartis_shell(body, f"Counterfactual — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"Initiative impact: ${cumulative/1e6:.1f}M cumulative")
+                    subtitle=f"Initiative impact: ${cumulative/1e6:.2f}M cumulative")
 
 
 def render_benchmark_drift(drifts: List[Dict[str, Any]]) -> str:

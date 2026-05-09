@@ -152,7 +152,7 @@ def compose_founder_voice(
     payer_mix: Optional[Dict[str, float]] = None,
 ) -> Dict[str, Any]:
     """Framed from the target founder's perspective."""
-    size_phrase = (f"${ebitda_m:.0f}M EBITDA" if ebitda_m else "the business")
+    size_phrase = (f"${ebitda_m:.2f}M EBITDA" if ebitda_m else "the business")
     pay_phrase = _payer_phrase(payer_mix)
     headline = (
         f"From the founder's seat: {size_phrase}, {pay_phrase}. "
@@ -228,7 +228,7 @@ def compose_three_sentence(
         bands=bands, hits=hits, hospital_type=hospital_type,
         ebitda_m=ebitda_m, payer_mix=payer_mix,
     )
-    size = (f"${ebitda_m:.0f}M EBITDA" if ebitda_m else "middle-market")
+    size = (f"${ebitda_m:.2f}M EBITDA" if ebitda_m else "middle-market")
     pay = _payer_phrase(payer_mix)
     # 1. What it is. 2. The bet. 3. The answer.
     s1 = f"{size} {(hospital_type or 'healthcare')} target, {pay}."

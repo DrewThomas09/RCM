@@ -375,8 +375,8 @@ def render_deal_source_markdown(
     ]
     if r.expected_price_m is not None:
         lines.append(
-            f"- Expected price: ${r.expected_price_m:,.1f}M "
-            f"(discount ${r.expected_discount_m:,.1f}M)"
+            f"- Expected price: ${r.expected_price_m:,.2f}M "
+            f"(discount ${r.expected_discount_m:,.2f}M)"
         )
     lines.append(
         f"- Process duration: {p.process_duration_weeks} weeks"

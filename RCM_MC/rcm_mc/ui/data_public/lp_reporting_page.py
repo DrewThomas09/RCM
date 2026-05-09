@@ -170,7 +170,7 @@ def render_lp_reporting(params: dict = None) -> str:
     kpi_strip = (
         ck_kpi_block("Reporting Q", r.reporting_quarter, "", "") +
         ck_kpi_block("Funds", str(r.fund_count), "", "") +
-        ck_kpi_block("Total AUM", f"${r.total_aum_mm:,.0f}M", "", "") +
+        ck_kpi_block("Total AUM", f"${r.total_aum_mm:,.2f}M", "", "") +
         ck_kpi_block("Blended TVPI", f"{r.blended_tvpi:.2f}x", "", "") +
         ck_kpi_block("Blended DPI", f"{r.blended_dpi:.2f}x", "", "") +
         ck_kpi_block("Blended IRR", f"{r.blended_irr_pct:.1f}%", "", "") +
@@ -193,7 +193,7 @@ def render_lp_reporting(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">LP Reporting Dashboard</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{_html.escape(r.reporting_quarter)} · {r.fund_count} active funds · ${r.total_aum_mm:,.0f}M AUM · blended {r.blended_tvpi:.2f}x TVPI — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">{_html.escape(r.reporting_quarter)} · {r.fund_count} active funds · ${r.total_aum_mm:,.2f}M AUM · blended {r.blended_tvpi:.2f}x TVPI — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Fund-Level Performance Summary</div>{f_tbl}</div>
@@ -203,7 +203,7 @@ def render_lp_reporting(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Portfolio Company Marks &amp; Status</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">LP Communications Calendar</div>{cm_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">LP Reporting Thesis:</strong> ${r.total_aum_mm:,.0f}M AUM across {r.fund_count} funds;
+    <strong style="color:{text}">LP Reporting Thesis:</strong> ${r.total_aum_mm:,.2f}M AUM across {r.fund_count} funds;
     blended TVPI {r.blended_tvpi:.2f}x / DPI {r.blended_dpi:.2f}x / IRR {r.blended_irr_pct:.1f}%.
     {top_quartile} of {r.fund_count} funds tracking top-quartile vs PitchBook benchmarks.
     Q1 2026 value change driven primarily by EBITDA growth (54%) and multiple expansion (22%); realization gains added $45M from two exits.

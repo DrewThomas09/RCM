@@ -142,9 +142,9 @@ def render_negotiation_markdown(position: NegotiationPosition) -> str:
         "## Anchor / walkaway",
         "",
         f"- Anchor multiple: {position.anchor_multiple or 'n/a'}  ",
-        f"- Anchor price: ${position.anchor_price_m:,.1f}M" if position.anchor_price_m else "- Anchor price: n/a",
+        f"- Anchor price: ${position.anchor_price_m:,.2f}M" if position.anchor_price_m else "- Anchor price: n/a",
         f"- Walkaway multiple: {position.walkaway_multiple or 'n/a'}  ",
-        f"- Walkaway price: ${position.walkaway_price_m:,.1f}M" if position.walkaway_price_m else "- Walkaway price: n/a",
+        f"- Walkaway price: ${position.walkaway_price_m:,.2f}M" if position.walkaway_price_m else "- Walkaway price: n/a",
     ]
     if position.leverage_points:
         lines.extend(["", "## Leverage points", ""])

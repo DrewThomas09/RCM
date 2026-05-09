@@ -336,19 +336,19 @@ def read_bidder_landscape(
         note = (
             f"Landscape includes a high-premium strategic "
             f"(expected clearing "
-            f"${likely_clearing:,.0f}M "
-            f"vs. base ${inputs.our_base_price_m:,.0f}M). "
+            f"${likely_clearing:,.2f}M "
+            f"vs. base ${inputs.our_base_price_m:,.2f}M). "
             "Partner: drop unless we have a structural answer."
         )
     elif posture == "stay":
         note = (
             f"Competing bidders likely to walk in diligence "
-            f"(expected clearing ${likely_clearing:,.0f}M). "
+            f"(expected clearing ${likely_clearing:,.2f}M). "
             "Partner: stay disciplined; we are the backup bid."
         )
     else:
         note = (
-            f"Clearing price expected ${likely_clearing:,.0f}M. "
+            f"Clearing price expected ${likely_clearing:,.2f}M. "
             f"Partner posture: {posture}. Win on structure, not "
             "price."
         )
@@ -388,7 +388,7 @@ def render_bidder_landscape_markdown(
         lines.append(
             f"| {p.name} | "
             f"{p.expected_price_premium_pct*100:+.0f}% | "
-            f"${o.expected_clearing_m:,.0f}M | "
+            f"${o.expected_clearing_m:,.2f}M | "
             f"{p.partner_posture} | {p.partner_counter} |"
         )
     return "\n".join(lines)

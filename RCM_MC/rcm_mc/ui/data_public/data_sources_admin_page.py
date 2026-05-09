@@ -223,7 +223,7 @@ def render_data_sources_admin() -> str:
         ck_kpi_block("Seed Files", str(result.seed_file_count), "", "") +
         ck_kpi_block("Sectors", str(cov.sector_count), "", "") +
         ck_kpi_block("Year Range", f"{cov.year_range[0]}–{cov.year_range[1]}", "", "") +
-        ck_kpi_block("Avg Deal EV", f"${cov.avg_ev_mm:,.0f}M", "", "") +
+        ck_kpi_block("Avg Deal EV", f"${cov.avg_ev_mm:,.2f}M", "", "") +
         ck_kpi_block("Median MOIC", f"{cov.median_moic:.2f}x", "", "") +
         ck_kpi_block("Data Sources", str(len(result.data_sources)), "", "") +
         ck_kpi_block("Scrapers", str(len(result.scraper_statuses)), "", "")

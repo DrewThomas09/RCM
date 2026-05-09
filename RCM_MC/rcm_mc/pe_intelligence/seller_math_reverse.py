@@ -189,9 +189,9 @@ def reverse_engineer_seller_math(
     ]
 
     if premium > 0.15:
-        note = (f"Seller ask ${inputs.seller_ask_price_m:,.0f}M is "
+        note = (f"Seller ask ${inputs.seller_ask_price_m:,.2f}M is "
                 f"{premium*100:.1f}% above buyer's implied price "
-                f"${buyer_implied_price:,.0f}M. To justify, seller "
+                f"${buyer_implied_price:,.2f}M. To justify, seller "
                 f"must assume ONE of: "
                 f"{implied_exit_mult:.1f}x exit multiple, "
                 f"{implied_growth*100:.1f}%/yr EBITDA growth, or "
@@ -263,8 +263,8 @@ def render_seller_math_markdown(r: SellerMathReport) -> str:
         "",
         f"_{r.partner_note}_",
         "",
-        f"- Buyer's implied price: ${r.buyer_implied_price_m:,.1f}M",
-        f"- Seller's ask: ${r.seller_ask_price_m:,.1f}M",
+        f"- Buyer's implied price: ${r.buyer_implied_price_m:,.2f}M",
+        f"- Seller's ask: ${r.seller_ask_price_m:,.2f}M",
         f"- Ask premium: {r.ask_premium_pct*100:.1f}%",
         "",
         "| Variable | Buyer base | Implied seller | Delta | "

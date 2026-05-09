@@ -125,7 +125,7 @@ def _slice_table(slices: list, corpus_p50: Optional[float] = None) -> str:
             vs_corpus = f' <span style="font-size:8px;color:{P["positive"] if diff > 0 else P["negative"]}">{"+" if diff > 0 else ""}{diff:.2f}×</span>'
 
         ev = s.total_ev_mm
-        ev_str = f"${ev/1000:.1f}B" if ev and ev >= 1000 else (f"${ev:,.0f}M" if ev else "—")
+        ev_str = f"${ev/1000:.2f}B" if ev and ev >= 1000 else (f"${ev:,.2f}M" if ev else "—")
         p25_s = f"{s.moic_p25:.2f}×" if s.moic_p25 else "—"
         p50_s = f"{s.moic_p50:.2f}×" if s.moic_p50 else "—"
         p75_s = f"{s.moic_p75:.2f}×" if s.moic_p75 else "—"

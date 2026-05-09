@@ -148,7 +148,7 @@ def size_debt_capacity(inputs: DebtSizingInputs) -> DebtSizingReport:
                 "leverage or covenant-lite structure.")
     else:
         note = (f"Coverage binds at {leverage:.1f}x (stressed "
-                f"EBITDA ${stressed:,.1f}M / "
+                f"EBITDA ${stressed:,.2f}M / "
                 f"{inputs.coverage_hurdle:.1f}x hurdle). Partner-"
                 "prudent cap.")
 
@@ -172,7 +172,7 @@ def render_debt_sizing_markdown(r: DebtSizingReport) -> str:
         "",
         f"- Recommended leverage: "
         f"**{r.recommended_leverage_x:.2f}x**",
-        f"- Recommended debt: ${r.recommended_debt_m:,.1f}M",
+        f"- Recommended debt: ${r.recommended_debt_m:,.2f}M",
         f"- Coverage capacity: {r.coverage_capacity_x:.2f}x",
         f"- FCF capacity: {r.fcf_capacity_x:.2f}x",
         f"- Cycle cap: {r.cycle_cap_x:.2f}x",

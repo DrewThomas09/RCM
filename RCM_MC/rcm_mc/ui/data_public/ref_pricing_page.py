@@ -243,8 +243,8 @@ def render_ref_pricing(params: dict = None) -> str:
         ck_kpi_block("Market P75", f"{r.market_p75_index:.2f}x", "MCR", "") +
         ck_kpi_block("Gap to Median", f"+{gap_median_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Gap to P75", f"+{gap_p75_pct * 100:.1f}%", "", "") +
-        ck_kpi_block("Uplift to Median", f"${r.total_uplift_to_median_mm:,.1f}M", "", "") +
-        ck_kpi_block("Uplift to P75", f"${r.total_uplift_to_p75_mm:,.1f}M", "", "") +
+        ck_kpi_block("Uplift to Median", f"${r.total_uplift_to_median_mm:,.2f}M", "", "") +
+        ck_kpi_block("Uplift to P75", f"${r.total_uplift_to_p75_mm:,.2f}M", "", "") +
         ck_kpi_block("CPTs Analyzed", str(len(r.cpt_rows)), "", "")
     )
 
@@ -335,7 +335,7 @@ def render_ref_pricing(params: dict = None) -> str:
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Pricing Thesis:</strong>
     Current weighted index {r.current_weighted_index:.2f}x Medicare. Market median is {r.market_median_index:.2f}x
-    (uplift ${r.total_uplift_to_median_mm:,.1f}M), P75 is {r.market_p75_index:.2f}x (uplift ${r.total_uplift_to_p75_mm:,.1f}M).
+    (uplift ${r.total_uplift_to_median_mm:,.2f}M), P75 is {r.market_p75_index:.2f}x (uplift ${r.total_uplift_to_p75_mm:,.2f}M).
     Anthem &amp; BCBS Local expiring in next 18 months offer highest renegotiation leverage. Rate changes typically
     fall through ~100% to EBITDA.
   </div>

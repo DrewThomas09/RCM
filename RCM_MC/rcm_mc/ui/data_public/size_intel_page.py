@@ -68,7 +68,7 @@ def _log_scale_scatter(points: List[Tuple[float, float, str]], width: int = 500,
     for ev, moic, name in points:
         cx = sx(ev); cy = sy(moic)
         color = _moic_color(moic)
-        elements.append(f'<circle cx="{cx}" cy="{cy}" r="2.5" fill="{color}" opacity="0.7"><title>{_html.escape(name[:40])} · ${ev:.0f}M · {moic:.2f}x</title></circle>')
+        elements.append(f'<circle cx="{cx}" cy="{cy}" r="2.5" fill="{color}" opacity="0.7"><title>{_html.escape(name[:40])} · ${ev:.2f}M · {moic:.2f}x</title></circle>')
 
     elements.append(f'<text x="{margin["l"]+W//2}" y="{height-2}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#64748b">EV (log scale)</text>')
     elements.append(f'<text x="9" y="{margin["t"]+H//2}" text-anchor="middle" transform="rotate(-90,9,{margin["t"]+H//2})" font-family="JetBrains Mono,monospace" font-size="9" fill="#64748b">MOIC</text>')
@@ -118,9 +118,9 @@ def render_size_intel() -> str:
     kpis = (
         '<div class="ck-kpi-grid">'
         + ck_kpi_block("Deals w/ EV", f'<span class="mn">{profile.n_total}</span>', "have EV data")
-        + ck_kpi_block("EV P25", f'<span class="mn">${profile.ev_p25:.0f}M</span>', "25th percentile")
-        + ck_kpi_block("EV P50", f'<span class="mn">${profile.ev_p50:.0f}M</span>', "median deal size")
-        + ck_kpi_block("EV P75", f'<span class="mn">${profile.ev_p75:.0f}M</span>', "75th percentile")
+        + ck_kpi_block("EV P25", f'<span class="mn">${profile.ev_p25:.2f}M</span>', "25th percentile")
+        + ck_kpi_block("EV P50", f'<span class="mn">${profile.ev_p50:.2f}M</span>', "median deal size")
+        + ck_kpi_block("EV P75", f'<span class="mn">${profile.ev_p75:.2f}M</span>', "75th percentile")
         + ck_kpi_block("Size↔MOIC Corr",
                        f'<span class="mn" style="color:{"#22c55e" if corr>0.1 else "#ef4444" if corr<-0.1 else "#f59e0b"}">{corr:+.2f}</span>',
                        "Spearman ρ")
@@ -160,8 +160,8 @@ def render_size_intel() -> str:
         stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
         mc = _moic_color(b.moic_p50)
         optimal_badge = f'<span style="margin-left:4px;font-size:8px;color:#22c55e;font-family:var(--ck-mono);">★</span>' if best_bucket and b.label == best_bucket.label else ""
-        hi_label = f"${b.ev_range[1]:.0f}M" if b.ev_range[1] < 1000 else ("$1B+" if b.ev_range[1] < 1e6 else "—")
-        lo_label = f"${b.ev_range[0]:.0f}M" if b.ev_range[0] < 1000 else f"${int(b.ev_range[0])//1000}B"
+        hi_label = f"${b.ev_range[1]:.2f}M" if b.ev_range[1] < 1000 else ("$1B+" if b.ev_range[1] < 1e6 else "—")
+        lo_label = f"${b.ev_range[0]:.2f}M" if b.ev_range[0] < 1000 else f"${int(b.ev_range[0])//1000}B"
         bucket_rows.append(f"""<tr{stripe}>
   <td style="padding:5px 8px;">
     <span style="display:inline-block;width:8px;height:8px;background:{b.color};border-radius:1px;margin-right:4px;vertical-align:middle;"></span>
@@ -169,7 +169,7 @@ def render_size_intel() -> str:
   </td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-size:9.5px;color:#64748b;">{lo_label}–{hi_label}</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{b.n_deals}</td>
-  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#64748b;">${b.avg_ev_mm:.0f}M</td>
+  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#64748b;">${b.avg_ev_mm:.2f}M</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#64748b;">{b.moic_p25:.2f}x</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:{mc};font-weight:500;">{b.moic_p50:.2f}x</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#64748b;">{b.moic_p75:.2f}x</td>
@@ -220,7 +220,7 @@ def render_size_intel() -> str:
         active_nav="/size-intel",
         subtitle=(
             f"{profile.n_total} deals · "
-            f"P50 EV ${profile.ev_p50:.0f}M · "
+            f"P50 EV ${profile.ev_p50:.2f}M · "
             f"ρ(size,MOIC)={corr:+.2f}"
             + (f" · best {best_bucket.label}" if best_bucket else "")
         ),

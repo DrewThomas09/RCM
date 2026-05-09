@@ -531,7 +531,7 @@ def analyze_labor_efficiency(
                 "realistic"].annual_labor_savings
             result.notes.append(
                 f"Realistic labor optimization: "
-                f"${recurring/1e6:.1f}M annual EBITDA "
+                f"${recurring/1e6:.2f}M annual EBITDA "
                 f"uplift (target {target_percentile}, "
                 f"realism {realism_factor:.0%}).")
     return result

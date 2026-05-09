@@ -250,7 +250,7 @@ def build_vcp(ctx: VCPContext) -> VCPRoadmap:
                     if i.category in ("operations", "rcm"))
     if tech_imp > 0 and ctx.capex_budget_m < 2.0:
         risks.append(
-            f"Capex budget ${ctx.capex_budget_m:.1f}M does not "
+            f"Capex budget ${ctx.capex_budget_m:.2f}M does not "
             "support the tech-enablement and ops-heavy initiatives. "
             "Capex bottleneck.")
     risks = risks[:3]
@@ -261,14 +261,14 @@ def build_vcp(ctx: VCPContext) -> VCPRoadmap:
     elif over_under < -0.20:
         note = (f"VCP only closes "
                 f"{(total_impact / max(0.01, gap))*100:.1f}% of the "
-                f"${gap:,.1f}M bridge. The plan doesn't reach target; "
+                f"${gap:,.2f}M bridge. The plan doesn't reach target; "
                 "either target is wrong or plan is incomplete.")
     elif over_under > 0.30:
         note = (f"VCP overshoots the bridge by "
                 f"{over_under*100:.1f}%. Either plan is optimistic or "
                 "target is conservative. Partners haircut 20-30%.")
     else:
-        note = (f"VCP closes ${total_impact:,.1f}M vs ${gap:,.1f}M "
+        note = (f"VCP closes ${total_impact:,.2f}M vs ${gap:,.2f}M "
                 "bridge — reasonable fit. Execution risks are what "
                 "matters now.")
 
@@ -291,10 +291,10 @@ def render_vcp_markdown(r: VCPRoadmap) -> str:
         "",
         f"_{r.partner_note}_",
         "",
-        f"- Entry EBITDA: ${r.entry_ebitda_m:,.1f}M",
-        f"- Target EBITDA: ${r.target_ebitda_m:,.1f}M",
-        f"- Bridge gap: ${r.bridge_gap_m:,.1f}M",
-        f"- Initiative total: ${r.total_initiative_impact_m:,.1f}M",
+        f"- Entry EBITDA: ${r.entry_ebitda_m:,.2f}M",
+        f"- Target EBITDA: ${r.target_ebitda_m:,.2f}M",
+        f"- Bridge gap: ${r.bridge_gap_m:,.2f}M",
+        f"- Initiative total: ${r.total_initiative_impact_m:,.2f}M",
         f"- Over / undershoot: {r.over_or_undershoot_pct*100:+.0f}%",
         "",
         "## Initiatives",

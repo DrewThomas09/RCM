@@ -52,7 +52,7 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
                                kind="count")},
         {"label": "MARKET REVENUE",
          "value": (
-             f"${market_size.get('total_revenue', 0)/1e9:.1f}B"
+             f"${market_size.get('total_revenue', 0)/1e9:.2f}B"
          )},
         {"label": f"HHI: {hhi:,.0f}",         "value": hhi_badge},
         {"label": (
@@ -99,7 +99,7 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
             f'<td><a href="/hospital/{html.escape(str(c.get("ccn", "")))}">'
             f'{html.escape(str(c.get("name", ""))[:40])}</a></td>'
             f'<td class="num">{c.get("beds", 0)}</td>'
-            f'<td class="num">${c.get("revenue", 0)/1e6:,.0f}M</td>'
+            f'<td class="num">${c.get("revenue", 0)/1e6:,.2f}M</td>'
             f'<td class="num">{c.get("market_share_revenue", 0):.1%}</td>'
             f'<td class="num">{c.get("market_share_beds", 0):.1%}</td>'
             f'</tr>'

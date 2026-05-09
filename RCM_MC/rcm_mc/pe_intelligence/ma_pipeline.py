@@ -176,8 +176,8 @@ def render_pipeline_markdown(summary: PipelineSummary) -> str:
         f"_{summary.partner_note}_",
         "",
         f"- Active targets: {summary.n_active}",
-        f"- Total pipeline EBITDA: ${summary.total_ebitda_pipeline:,.0f}M",
-        f"- Weighted-close EBITDA: ${summary.weighted_ebitda_close:,.0f}M",
+        f"- Total pipeline EBITDA: ${summary.total_ebitda_pipeline:,.2f}M",
+        f"- Weighted-close EBITDA: ${summary.weighted_ebitda_close:,.2f}M",
         f"- Expected closes/yr: {summary.expected_closes_per_year:.1f}",
     ]
     if summary.capacity_ratio is not None:

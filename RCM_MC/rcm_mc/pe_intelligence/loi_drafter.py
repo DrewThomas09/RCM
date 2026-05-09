@@ -117,7 +117,7 @@ def compose_loi(
     headline = f"Letter of Intent — {name}"
     if negotiation.anchor_price_m is not None:
         price_summary = (
-            f"Purchase price: ${negotiation.anchor_price_m:,.1f}M "
+            f"Purchase price: ${negotiation.anchor_price_m:,.2f}M "
             f"({negotiation.anchor_multiple:.2f}x EBITDA), "
             f"subject to customary adjustments."
         )

@@ -196,8 +196,8 @@ def render_corpus_dashboard() -> str:
     _moic_color(_pct(vintage_p50s,50)) if vintage_p50s else "#e2e8f0",
     vintage_svg)}
   {_nav_tile("Deal Size Intelligence", "/size-intel",
-    f"P50 EV ${size_profile.ev_p50:.0f}M · {len(size_profile.buckets)} buckets",
-    f"${size_profile.ev_p50:.0f}M",
+    f"P50 EV ${size_profile.ev_p50:.2f}M · {len(size_profile.buckets)} buckets",
+    f"${size_profile.ev_p50:.2f}M",
     "#3b82f6",
     "")}
   {_nav_tile("Payer Intelligence", "/payer-intel",

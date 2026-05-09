@@ -133,7 +133,7 @@ def render_diligence_vendors(params: dict = None) -> str:
     kpi_strip = (
         ck_kpi_block("Vendors on Panel", str(r.total_vendors), "", "") +
         ck_kpi_block("Deals Covered LTM", str(r.total_deals_covered), "", "") +
-        ck_kpi_block("Total Spend LTM", f"${r.total_spend_ltm_mm:,.1f}M", "", "") +
+        ck_kpi_block("Total Spend LTM", f"${r.total_spend_ltm_mm:,.2f}M", "", "") +
         ck_kpi_block("Avg NPS", str(r.avg_nps), "", "") +
         ck_kpi_block("Tier 1 Vendors", str(sum(1 for v in r.vendors if v.tier == "Tier 1")), "", "") +
         ck_kpi_block("Categories", str(len(r.categories)), "", "") +
@@ -154,7 +154,7 @@ def render_diligence_vendors(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Diligence Vendor Directory</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">Panel of {r.total_vendors} diligence vendors · {r.total_deals_covered} deal engagements LTM · ${r.total_spend_ltm_mm:,.1f}M spend — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">Panel of {r.total_vendors} diligence vendors · {r.total_deals_covered} deal engagements LTM · ${r.total_spend_ltm_mm:,.2f}M spend — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Active Vendor Panel</div>{v_tbl}</div>
@@ -163,7 +163,7 @@ def render_diligence_vendors(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">New Vendor Pipeline</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Spend by Deal Phase</div>{ph_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Vendor Directory Thesis:</strong> 30 active vendors across 14 categories; ${r.total_spend_ltm_mm:,.1f}M spend LTM at average NPS {r.avg_nps}.
+    <strong style="color:{text}">Vendor Directory Thesis:</strong> 30 active vendors across 14 categories; ${r.total_spend_ltm_mm:,.2f}M spend LTM at average NPS {r.avg_nps}.
     Tier 1 partners (A&M, FTI, Chartis, Kirkland, Ropes) carry premium pricing but deliver on-time at 92-95%.
     Mid-market QoE firms (BDO, CohnReznick) offer 40-60% cost savings for lower-mid deals with comparable quality.
     Pipeline of 7 new vendors in vetting; highest-likelihood adds: Charles River Associates (regulatory) at 78%, WTW (HR/benefits, switch from Aon) at 68%, Riveron (QoE alternative to A&M) at 65%.

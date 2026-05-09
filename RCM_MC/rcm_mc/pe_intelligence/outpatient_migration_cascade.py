@@ -95,7 +95,7 @@ def trace_op_migration(inputs: OPMigrationInputs) -> OPMigrationReport:
                      "cases migrate to OP settings"),
         value=round(migrating_rev_at_ip_rates, 2), unit="$M",
         partner_note=(
-            f"${migrating_rev_at_ip_rates:,.1f}M of IP revenue is in "
+            f"${migrating_rev_at_ip_rates:,.2f}M of IP revenue is in "
             "motion. Migration rates above 20% in 5 years require "
             "infrastructure and physician-contract changes the deck "
             "often under-budgets."),
@@ -113,7 +113,7 @@ def trace_op_migration(inputs: OPMigrationInputs) -> OPMigrationReport:
                      f"{inputs.op_rate_as_pct_of_ip*100:.1f}% of IP"),
         value=round(-rev_loss_from_rate, 2), unit="$M",
         partner_note=(
-            f"${rev_loss_from_rate:,.1f}M revenue loss from moving to "
+            f"${rev_loss_from_rate:,.2f}M revenue loss from moving to "
             "OP rates. The narrative 'higher margin outpatient' "
             "ignores that the top-line shrinks first."),
     ))
@@ -142,7 +142,7 @@ def trace_op_migration(inputs: OPMigrationInputs) -> OPMigrationReport:
         backfill_ebitda = backfill_rev * inputs.ip_margin
         backfill_note = (
             f"Backfill assumption contributes "
-            f"${backfill_ebitda:,.1f}M EBITDA at 50% fill of "
+            f"${backfill_ebitda:,.2f}M EBITDA at 50% fill of "
             "displaced capacity with higher-acuity cases. Validate "
             "that demand exists.")
     else:
@@ -169,7 +169,7 @@ def trace_op_migration(inputs: OPMigrationInputs) -> OPMigrationReport:
                      f"{inputs.site_neutral_haircut_pct*100:.0f}%"),
         value=round(-site_neutral_ebitda_hit, 2), unit="$M",
         partner_note=(
-            f"${site_neutral_ebitda_hit:,.1f}M EBITDA exposed to "
+            f"${site_neutral_ebitda_hit:,.2f}M EBITDA exposed to "
             "site-neutral rulemaking. Bear case assumes this realizes "
             "mid-hold; base case assumes partial realization."),
     ))
@@ -182,19 +182,19 @@ def trace_op_migration(inputs: OPMigrationInputs) -> OPMigrationReport:
 
     if net_ebitda_impact < 0:
         note = (f"Outpatient-migration thesis is net negative on "
-                f"EBITDA (${net_ebitda_impact:,.1f}M). The revenue "
+                f"EBITDA (${net_ebitda_impact:,.2f}M). The revenue "
                 "loss from lower OP rates dominates; the backfill "
                 "and margin swap do not close the gap.")
     elif inputs.hopd_share_of_op >= 0.40 \
             and site_neutral_ebitda_hit >= net_ebitda_impact * 0.5:
         note = (f"Outpatient-migration thesis is modestly positive "
-                f"(${net_ebitda_impact:,.1f}M) but ≥ 50% of the "
+                f"(${net_ebitda_impact:,.2f}M) but ≥ 50% of the "
                 "benefit is at HOPD rates vulnerable to site-neutral. "
                 "The thesis is a regulatory bet, not an operational "
                 "one.")
     else:
         note = (f"Outpatient migration is net positive on EBITDA "
-                f"(${net_ebitda_impact:,.1f}M). Validate the "
+                f"(${net_ebitda_impact:,.2f}M). Validate the "
                 "backfill assumption and site-neutral exposure.")
 
     return OPMigrationReport(

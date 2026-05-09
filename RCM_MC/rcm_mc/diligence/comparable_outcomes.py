@@ -213,7 +213,7 @@ def _explain_reasons(target: Dict[str, Any],
     t_ev = _safe_float(target.get("ev_mm"))
     c_ev = _safe_float(candidate.get("ev_mm"))
     if t_ev and c_ev and 0.5 <= (c_ev / t_ev) <= 2.0:
-        reasons.append(f"EV within 2× ({c_ev:.0f} vs {t_ev:.0f}M)")
+        reasons.append(f"EV within 2× ({c_ev:.0f} vs {t_ev:.2f}M)")
     if _payer_mix_match(target.get("payer_mix"),
                         candidate.get("payer_mix")) >= 0.85:
         reasons.append("similar payer mix")

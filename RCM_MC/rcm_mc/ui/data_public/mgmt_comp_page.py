@@ -100,7 +100,7 @@ def _waterfall_svg(scenarios) -> str:
             f'<rect x="{x_base:.1f}" y="{gp_y:.1f}" width="{bar_w * 2:.1f}" height="{gp_bh:.1f}" fill="{warn}" opacity="0.85"/>'
             f'<rect x="{x_base:.1f}" y="{mgmt_y:.1f}" width="{bar_w * 2:.1f}" height="{mgmt_bh:.1f}" fill="{pos}" opacity="0.85"/>'
             f'<text x="{x_base + bar_w:.1f}" y="{mgmt_y - 4:.1f}" fill="{text_dim}" font-size="10" '
-            f'text-anchor="middle" font-family="JetBrains Mono,monospace">${s.exit_equity_mm:,.0f}M</text>'
+            f'text-anchor="middle" font-family="JetBrains Mono,monospace">${s.exit_equity_mm:,.2f}M</text>'
             f'<text x="{x_base + bar_w:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" '
             f'text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(s.scenario)}</text>'
         )
@@ -229,8 +229,8 @@ def render_mgmt_comp(params: dict = None) -> str:
     pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
 
     kpi_strip = (
-        ck_kpi_block("EV", f"${r.ev_mm:,.0f}M", "", "") +
-        ck_kpi_block("Equity", f"${r.equity_mm:,.0f}M", "", "") +
+        ck_kpi_block("EV", f"${r.ev_mm:,.2f}M", "", "") +
+        ck_kpi_block("Equity", f"${r.equity_mm:,.2f}M", "", "") +
         ck_kpi_block("Size Bucket", r.size_bucket, "", "") +
         ck_kpi_block("Total Rollover", f"${r.total_rollover_mm:,.2f}M", "", "") +
         ck_kpi_block("Option Pool FV", f"${r.total_option_pool_mm:,.2f}M", "", "") +

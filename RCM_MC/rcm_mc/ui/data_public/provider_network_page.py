@@ -155,7 +155,7 @@ def _peers_table(peers, title: str) -> str:
             f'<td style="padding:5px 8px;color:{tprim}">{p.company}</td>'
             f'<td style="padding:5px 8px;color:{tdim}">{p.sector[:20]}</td>'
             f'<td style="padding:5px 8px;text-align:center;color:{tdim}">{p.year}</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${p.ev_mm:.0f}M</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${p.ev_mm:.2f}M</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{p.payer_commercial*100:.1f}%</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{p.moic:.2f}x</td>'
             f'<td style="padding:5px 8px;color:{tdim};font-size:10px">{p.implied_regime}</td>'

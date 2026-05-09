@@ -132,13 +132,13 @@ def size_mip(inputs: MIPInputs) -> MIPPlan:
 
     if pool_pct >= 0.15:
         note = (f"MIP pool {pool_pct*100:.1f}% of post-close equity "
-                f"(${pool_m:,.1f}M). Above market median — justify "
+                f"(${pool_m:,.2f}M). Above market median — justify "
                 "on retention risk or founder relationship.")
     elif pool_pct <= 0.06:
-        note = (f"MIP pool {pool_pct*100:.1f}% (${pool_m:,.1f}M) is "
+        note = (f"MIP pool {pool_pct*100:.1f}% (${pool_m:,.2f}M) is "
                 "thin — verify that management will engage at this level.")
     else:
-        note = (f"MIP pool {pool_pct*100:.1f}% (${pool_m:,.1f}M) is "
+        note = (f"MIP pool {pool_pct*100:.1f}% (${pool_m:,.2f}M) is "
                 f"within market band for {inputs.deal_type}.")
 
     return MIPPlan(
@@ -158,7 +158,7 @@ def render_mip_markdown(plan: MIPPlan) -> str:
         f"_{plan.partner_note}_",
         "",
         f"- MIP pool: {plan.mip_pool_pct*100:.1f}% "
-        f"(${plan.mip_pool_m:,.1f}M)",
+        f"(${plan.mip_pool_m:,.2f}M)",
         f"- LTIP annual cash target (CEO): ${plan.ltip_annual_cash_k:,.0f}K",
         f"- Vesting: {plan.vesting}",
         f"- Accelerator: {plan.accel_clause}",

@@ -322,7 +322,7 @@ def generate_plan(ctx: PlanContext) -> Plan:
                 "actually execute on 12+ simultaneous workstreams.")
     else:
         note = (f"{len(actions)} actions — standard 100-day plan. "
-                f"~${total:,.1f}M of quantified EBITDA impact from "
+                f"~${total:,.2f}M of quantified EBITDA impact from "
                 "named items; more from retention / hiring / "
                 "governance work.")
 
@@ -340,7 +340,7 @@ def render_plan_markdown(plan: Plan) -> str:
         f"_{plan.partner_note}_",
         "",
         f"- Total quantified EBITDA impact: "
-        f"${plan.total_expected_impact_m:,.1f}M",
+        f"${plan.total_expected_impact_m:,.2f}M",
         "",
         "| Wk | Workstream | Action | Owner | $M impact | Trigger |",
         "|---:|---|---|---|---:|---|",

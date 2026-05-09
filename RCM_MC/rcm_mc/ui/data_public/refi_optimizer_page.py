@@ -168,11 +168,11 @@ def render_refi_optimizer(params: dict = None) -> str:
     pos = P["positive"]; acc = P["accent"]; neg = P["negative"]
 
     kpi_strip = (
-        ck_kpi_block("Portfolio Debt", f"${r.total_portfolio_debt_mm:,.0f}M", "", "") +
+        ck_kpi_block("Portfolio Debt", f"${r.total_portfolio_debt_mm:,.2f}M", "", "") +
         ck_kpi_block("Weighted Rate", f"{r.weighted_rate_pct:.2f}%", "", "") +
         ck_kpi_block("Refi Opportunities", str(r.refi_opportunities_identified), "", "") +
-        ck_kpi_block("Total Refi NPV", f"${r.total_refi_npv_mm:,.1f}M", "", "") +
-        ck_kpi_block("Near-Term Maturities", f"${r.near_term_maturities_mm:,.0f}M", "", "") +
+        ck_kpi_block("Total Refi NPV", f"${r.total_refi_npv_mm:,.2f}M", "", "") +
+        ck_kpi_block("Near-Term Maturities", f"${r.near_term_maturities_mm:,.2f}M", "", "") +
         ck_kpi_block("Holdcos in Portfolio", str(len(r.portfolio)), "", "") +
         ck_kpi_block("Active Quotes", str(len(r.quotes)), "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
@@ -198,7 +198,7 @@ def render_refi_optimizer(params: dict = None) -> str:
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {pos};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Portfolio Refi Opportunity</div>
-    <div style="color:{pos};font-weight:700;font-size:14px">${r.total_refi_npv_mm:,.1f}M Net NPV · {urgent_count} urgent refi candidates · ${r.near_term_maturities_mm:,.0f}M maturing in next 4 years</div>
+    <div style="color:{pos};font-weight:700;font-size:14px">${r.total_refi_npv_mm:,.2f}M Net NPV · {urgent_count} urgent refi candidates · ${r.near_term_maturities_mm:,.2f}M maturing in next 4 years</div>
     <div style="color:{text_dim};font-size:11px;margin-top:4px">Current weighted rate {r.weighted_rate_pct:.2f}% · market achievable ~8.75% · ~90bps compression available on average</div>
   </div>
   <div style="{cell}"><div style="{h3}">Active Portfolio Debt Stack</div>{p_tbl}</div>
@@ -208,12 +208,12 @@ def render_refi_optimizer(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Maturity Profile</div>{mt_tbl}</div>
   <div style="{cell}"><div style="{h3}">Covenant Headroom Portfolio-Wide</div>{c_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Refi Thesis:</strong> ${r.total_portfolio_debt_mm:,.0f}M portfolio debt at weighted {r.weighted_rate_pct:.2f}% rate.
-    Market achievable is ~8.75% — 90bps compression available across refi-eligible holdcos generating ${r.total_refi_npv_mm:,.1f}M cumulative Net NPV.
+    <strong style="color:{text}">Refi Thesis:</strong> ${r.total_portfolio_debt_mm:,.2f}M portfolio debt at weighted {r.weighted_rate_pct:.2f}% rate.
+    Market achievable is ~8.75% — 90bps compression available across refi-eligible holdcos generating ${r.total_refi_npv_mm:,.2f}M cumulative Net NPV.
     Urgent priority: Project Everest (behavioral health, 10.85% rate + tight covenant) and Project Larkspur (dental, 11.25%, tight covenant).
     Favorable market window: 2025Q2 tightening or 2026Q1 rate-cut anticipation.
     Best active quotes: KKR Credit captive (425 bps), Blue Owl (425 bps), Antares (460 bps). Lower-mid holdcos benefit more from boutique direct lenders (Monroe, Churchill) vs syndicated TL-B.
-    Near-term maturity wall ${r.near_term_maturities_mm:,.0f}M must be addressed before 2028; recommend sequence: Larkspur → Everest → Glacier.
+    Near-term maturity wall ${r.near_term_maturities_mm:,.2f}M must be addressed before 2028; recommend sequence: Larkspur → Everest → Glacier.
   </div>
 </div>"""
 

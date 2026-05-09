@@ -184,20 +184,20 @@ def score_synergy_sequencing(
         note = (
             f"Synergy timing is off by "
             f"{haircut_pct*100:.0f}% — "
-            f"${haircut_total:,.1f}M of seller's claim is "
+            f"${haircut_total:,.2f}M of seller's claim is "
             "mis-sequenced. Partner: rebuild the synergy "
             "ramp with realistic per-category landing."
         )
     elif haircut_pct >= 0.15:
         note = (
-            f"${haircut_total:,.1f}M "
+            f"${haircut_total:,.2f}M "
             f"({haircut_pct*100:.1f}%) of synergy haircut "
             "for timing. Partner: flag to the team; "
             "re-phase plan."
         )
     elif haircut_total > 0:
         note = (
-            f"Minor timing mis-phasing ${haircut_total:,.1f}M. "
+            f"Minor timing mis-phasing ${haircut_total:,.2f}M. "
             "Partner: accept with adjustment in the "
             "bridge."
         )
@@ -228,10 +228,10 @@ def render_synergy_sequencing_markdown(
         "",
         f"_{r.partner_note}_",
         "",
-        f"- Claimed: ${r.total_claimed_m:,.1f}M",
+        f"- Claimed: ${r.total_claimed_m:,.2f}M",
         f"- Realized (partner view): "
-        f"${r.total_realized_m:,.1f}M",
-        f"- Haircut: ${r.total_haircut_m:,.1f}M",
+        f"${r.total_realized_m:,.2f}M",
+        f"- Haircut: ${r.total_haircut_m:,.2f}M",
         "",
         "| Category | Claimed Y | Typical Y | Amount | "
         "Haircut | Realized | Partner commentary |",
@@ -241,9 +241,9 @@ def render_synergy_sequencing_markdown(
         lines.append(
             f"| {a.category} | Y{a.claimed_year} | "
             f"Y{a.typical_min_year}-Y{a.typical_max_year} | "
-            f"${a.amount_m:,.1f}M | "
+            f"${a.amount_m:,.2f}M | "
             f"{a.haircut_pct*100:.0f}% | "
-            f"${a.realized_m:,.1f}M | "
+            f"${a.realized_m:,.2f}M | "
             f"{a.partner_commentary} |"
         )
     return "\n".join(lines)

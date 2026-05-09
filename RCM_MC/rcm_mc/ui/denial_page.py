@@ -29,7 +29,7 @@ def render_denial_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -
         {"label": "Target Denial Rate",
          "value": f"{target_rate:.1f}%", "tone": "positive"},
         {"label": "Recoverable Annual Revenue",
-         "value": f"${total_impact/1e6:.1f}M"},
+         "value": f"${total_impact/1e6:.2f}M"},
         {"label": "Root Causes Identified",
          "value": format_value(len(drivers), kind="count")},
     ])
@@ -47,7 +47,7 @@ def render_denial_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -
             f'<tr>'
             f'<td style="font-weight:500;">{name}</td>'
             f'<td class="num">{pct:.1f}%</td>'
-            f'<td class="num">${impact/1e6:.1f}M</td>'
+            f'<td class="num">${impact/1e6:.2f}M</td>'
             f'<td><span class="cad-badge {sev_cls}">{html.escape(severity)}</span></td>'
             f'<td><div style="background:{PALETTE["bg_tertiary"]};border-radius:4px;height:8px;">'
             f'<div style="width:{bar_w:.0f}%;background:{PALETTE["negative"]};'
@@ -112,7 +112,7 @@ def render_denial_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -
         f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
         f'<p>At {denial_rate:.1f}%, this hospital\'s denial rate is {dr_level}. '
         f'Reducing to the target of {target_rate:.1f}% would recover an estimated '
-        f'<strong>${total_impact/1e6:.1f}M per year</strong> in revenue.</p>'
+        f'<strong>${total_impact/1e6:.2f}M per year</strong> in revenue.</p>'
         f'<p style="margin-top:6px;"><strong>Next steps:</strong> '
         f'Request the payer-level denial breakdown in '
         f'<a href="/models/questions/{html.escape(deal_id)}" style="color:{PALETTE["text_link"]};">diligence questions</a>. '
@@ -129,5 +129,5 @@ def render_denial_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -
     return chartis_shell(
         body, f"Denial Drivers — {html.escape(deal_name)}",
         active_nav="/analysis",
-        subtitle=f"Current: {denial_rate:.1f}% | Recoverable: ${total_impact/1e6:.1f}M/year",
+        subtitle=f"Current: {denial_rate:.1f}% | Recoverable: ${total_impact/1e6:.2f}M/year",
     )

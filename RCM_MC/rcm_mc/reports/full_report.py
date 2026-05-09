@@ -190,8 +190,8 @@ def generate_full_html_report(
         _p90 = float(df_summary.loc["ebitda_drag", "p90"])
         doc_html.append(
             f'<div style="background:#f0f9ff;border-left:4px solid #0f4c81;padding:1rem 1.25rem;border-radius:8px;margin:1rem 0;">'
-            f'<strong>Quick Reference:</strong> EBITDA Drag Mean: ${_mean/1e6:,.1f}M | '
-            f'P10: ${_p10/1e6:,.1f}M | P90: ${_p90/1e6:,.1f}M</div>'
+            f'<strong>Quick Reference:</strong> EBITDA Drag Mean: ${_mean/1e6:,.2f}M | '
+            f'P10: ${_p10/1e6:,.2f}M | P90: ${_p90/1e6:,.2f}M</div>'
         )
 
     # Build full report as single cohesive document

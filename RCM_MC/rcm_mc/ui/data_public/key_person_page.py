@@ -249,8 +249,8 @@ def render_key_person(params: dict = None) -> str:
         ck_kpi_block("Concentration Score", f"{r.concentration_score:.0f}", "/100", "") +
         ck_kpi_block("Key Persons", str(len(r.key_persons)), "", "") +
         ck_kpi_block("Sector", sector, "", "") +
-        ck_kpi_block("Revenue at Risk", f"${r.total_revenue_at_risk_mm:,.1f}M", "", "") +
-        ck_kpi_block("EV at Risk", f"${r.total_ev_at_risk_mm:,.1f}M", "", "") +
+        ck_kpi_block("Revenue at Risk", f"${r.total_revenue_at_risk_mm:,.2f}M", "", "") +
+        ck_kpi_block("EV at Risk", f"${r.total_ev_at_risk_mm:,.2f}M", "", "") +
         ck_kpi_block("Critical Gaps", str(sum(1 for kp in r.key_persons if kp.succession_status == "critical_gap")), "", "") +
         ck_kpi_block("High-Risk Persons", str(sum(1 for kp in r.key_persons if kp.departure_risk == "high")), "", "") +
         ck_kpi_block("Mitigation Cost", f"${r.total_mitigation_cost_mm:,.2f}M", "", "")
@@ -347,8 +347,8 @@ def render_key_person(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {neg if r.concentration_score >= 70 else acc};
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Key Person Thesis:</strong>
-    Concentration score {r.concentration_score:.0f}/100. Revenue at risk from 5 key persons: ${r.total_revenue_at_risk_mm:,.1f}M
-    (${r.total_ev_at_risk_mm:,.1f}M of EV). High-priority mitigation deployment: ${r.total_mitigation_cost_mm:,.2f}M.
+    Concentration score {r.concentration_score:.0f}/100. Revenue at risk from 5 key persons: ${r.total_revenue_at_risk_mm:,.2f}M
+    (${r.total_ev_at_risk_mm:,.2f}M of EV). High-priority mitigation deployment: ${r.total_mitigation_cost_mm:,.2f}M.
     Life insurance, non-solicits, and retention bonuses are the highest-ROI first moves.
   </div>
 

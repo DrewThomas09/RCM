@@ -268,7 +268,7 @@ def render_unit_economics(params: dict = None) -> str:
     kpi_strip = (
         ck_kpi_block("Sector", sector, "", "") +
         ck_kpi_block("Locations", str(r.num_locations), "", "") +
-        ck_kpi_block("Total Revenue", f"${r.total_revenue_mm:,.0f}M", "", "") +
+        ck_kpi_block("Total Revenue", f"${r.total_revenue_mm:,.2f}M", "", "") +
         ck_kpi_block("Revenue / Loc", f"${r.revenue_per_location_mm:,.2f}M", "", "") +
         ck_kpi_block("Payback", f"{r.payback_years:.1f} yrs", "", "") +
         ck_kpi_block("De Novo IRR", f"{r.de_novo_irr * 100:.1f}%", "", "") +

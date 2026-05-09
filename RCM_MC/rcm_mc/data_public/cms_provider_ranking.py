@@ -356,6 +356,6 @@ def anomaly_table(anomalies, top_n: int = 20) -> str:
         flag = str(row.get("anomaly_flag", ""))
         pay = row.get("total_payment")
         z_s = f"{z:+.2f}" if isinstance(z, float) else "n/a"
-        pay_s = f"${pay/1e6:,.1f}M" if isinstance(pay, (int, float)) else "n/a"
+        pay_s = f"${pay/1e6:,.2f}M" if isinstance(pay, (int, float)) else "n/a"
         lines.append(f"{pt:<30} {st:>6} {yr:>5} {z_s:>8} {flag:<14} {pay_s:>14}")
     return "\n".join(lines) + "\n"

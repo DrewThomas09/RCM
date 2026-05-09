@@ -182,14 +182,14 @@ def trace_cascade(inputs: CascadeInputs) -> CascadeReport:
     total_cash = sum(s.cash_impact_m for s in steps)
 
     if total_ebitda < -2.0:
-        note = (f"Cascade: ${total_ebitda:,.1f}M EBITDA and "
-                f"${total_cash:,.1f}M cash impact. Material — "
+        note = (f"Cascade: ${total_ebitda:,.2f}M EBITDA and "
+                f"${total_cash:,.2f}M cash impact. Material — "
                 "this is not 'just a denial blip,' it cascades.")
     elif total_ebitda < 0:
-        note = (f"Modest cascade (${total_ebitda:,.1f}M EBITDA) but "
+        note = (f"Modest cascade (${total_ebitda:,.2f}M EBITDA) but "
                 "cash side visible. Watch covenant headroom.")
     elif total_ebitda > 0:
-        note = (f"Net positive cascade (${total_ebitda:,.1f}M) — CDI "
+        note = (f"Net positive cascade (${total_ebitda:,.2f}M) — CDI "
                 "lift exceeds denial drag. Confirm CDI program is "
                 "actually operating, not planned.")
     else:

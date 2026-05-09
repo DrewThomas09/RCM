@@ -144,7 +144,7 @@ def _state_heatmap_table(stats: List[Dict[str, Any]], metric: str) -> str:
             if metric in ("avg_margin", "adjusted_margin"):
                 fmt_val = f"{val:.1%}"
             elif metric == "total_revenue":
-                fmt_val = f"${val / 1e9:.1f}B"
+                fmt_val = f"${val / 1e9:.2f}B"
             elif metric in ("medicare_pct", "medicaid_pct", "commercial_pct", "dsh_uplift_pct"):
                 fmt_val = f"{val:.0%}" if metric != "dsh_uplift_pct" else f"{val:.1%}"
             elif metric == "cmi_proxy":
@@ -163,7 +163,7 @@ def _state_heatmap_table(stats: List[Dict[str, Any]], metric: str) -> str:
             f'style="font-weight:600;">{s["state"]}</a></td>'
             f'<td class="num">{s["hospitals"]}</td>'
             f'<td class="num">{s["total_beds"]:,}</td>'
-            f'<td class="num">${s["total_revenue"]/1e9:.1f}B</td>'
+            f'<td class="num">${s["total_revenue"]/1e9:.2f}B</td>'
             f'<td class="num" style="color:{bg};font-weight:600;">{fmt_val}</td>'
             f'<td class="num">{s["avg_margin"]:.1%}</td>'
             f'<td><span class="cad-badge {conc_cls}">{conc_label}</span></td>'
@@ -351,7 +351,7 @@ def render_market_data(
         top_markets_rows += (
             f'<tr>'
             f'<td><a href="/market-data/state/{s["state"]}" style="font-weight:600;">{s["state"]}</a></td>'
-            f'<td class="num">${s["total_revenue"]/1e9:.1f}B</td>'
+            f'<td class="num">${s["total_revenue"]/1e9:.2f}B</td>'
             f'<td class="num">{pct:.1f}%</td>'
             f'<td class="num">{cumulative_pct:.1f}%</td>'
             f'<td class="num">{s["hospitals"]}</td>'
@@ -492,7 +492,7 @@ def render_state_detail(
             f'<tr>'
             f'<td><a href="/hospital/{ccn}" style="font-weight:500;">{name}</a></td>'
             f'<td class="num">{beds}</td>'
-            f'<td class="num">${rev/1e6:,.0f}M</td>'
+            f'<td class="num">${rev/1e6:,.2f}M</td>'
             f'<td class="num" style="color:{margin_color};">{margin:.1%}</td>'
             f'<td style="white-space:nowrap;">'
             f'<a href="/hospital/{ccn}" class="cad-badge cad-badge-blue" '
@@ -513,7 +513,7 @@ def render_state_detail(
         {"label": "TOTAL BEDS",
          "value": format_value(total_beds, kind="count")},
         {"label": "TOTAL NPR",
-         "value": f"${total_rev/1e9:.1f}B"},
+         "value": f"${total_rev/1e9:.2f}B"},
     ])
 
     body = (

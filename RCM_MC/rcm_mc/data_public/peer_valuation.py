@@ -226,7 +226,7 @@ def _build_valuation_ranges(
             low_multiple=round(p25, 2),
             median_multiple=round(p50, 2),
             high_multiple=round(p75, 2),
-            basis=f"Public comps P25/P50/P75 × {target_ebitda:.1f}M EBITDA",
+            basis=f"Public comps P25/P50/P75 × {target_ebitda:.2f}M EBITDA",
         ))
 
     # Trading comps: EV/Revenue
@@ -243,7 +243,7 @@ def _build_valuation_ranges(
             low_multiple=round(p25, 2),
             median_multiple=round(p50, 2),
             high_multiple=round(p75, 2),
-            basis=f"Public comps P25/P50/P75 × {target_revenue:.1f}M Revenue",
+            basis=f"Public comps P25/P50/P75 × {target_revenue:.2f}M Revenue",
         ))
 
     # Precedent transactions
@@ -260,7 +260,7 @@ def _build_valuation_ranges(
             low_multiple=round(p25, 2),
             median_multiple=round(p50, 2),
             high_multiple=round(p75, 2),
-            basis=f"{len(precedents)} PE transactions × {target_ebitda:.1f}M EBITDA",
+            basis=f"{len(precedents)} PE transactions × {target_ebitda:.2f}M EBITDA",
         ))
 
     # Apply PE control premium (typical 15-25% over public comps)

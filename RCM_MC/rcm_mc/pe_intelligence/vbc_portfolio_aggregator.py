@@ -200,7 +200,7 @@ def aggregate_vbc_portfolio(
     if total_bear < 0:
         note += (
             f" Correlated bear (all contracts +5pp MLR) "
-            f"= ${total_bear:.1f}M EBITDA. VBC portfolio "
+            f"= ${total_bear:.2f}M EBITDA. VBC portfolio "
             "becomes a drag in bear, not a contributor."
         )
 
@@ -227,7 +227,7 @@ def render_vbc_portfolio_markdown(
         f"_Verdict: **{r.portfolio_verdict}**_ — "
         f"{r.partner_note}",
         "",
-        f"- Total VBC revenue: ${r.total_revenue_m:.1f}M",
+        f"- Total VBC revenue: ${r.total_revenue_m:.2f}M",
         f"- Expected EBITDA: "
         f"${r.total_expected_ebitda_m:+.1f}M",
         f"- Bear EBITDA (all +5pp MLR): "

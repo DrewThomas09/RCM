@@ -142,7 +142,7 @@ def render_drug_shortage(params: dict = None) -> str:
     kpi_strip = (
         ck_kpi_block("Critical Drugs", str(r.total_critical_drugs), "", "") +
         ck_kpi_block("Active Shortages", str(r.active_shortages), "", "") +
-        ck_kpi_block("Platform Spend", f"${r.total_platform_spend_mm:,.1f}M", "", "") +
+        ck_kpi_block("Platform Spend", f"${r.total_platform_spend_mm:,.2f}M", "", "") +
         ck_kpi_block("Sole-Source Exposure", f"${r.sole_source_exposure_mm:,.2f}M", "", "") +
         ck_kpi_block("Supply Risk Score", f"{r.overall_supply_risk_score}/100", "", "") +
         ck_kpi_block("Risk Tier", r.risk_tier.upper(), "", "") +
@@ -180,7 +180,7 @@ def render_drug_shortage(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Supply Chain Thesis:</strong> {r.active_shortages} of {r.total_critical_drugs} critical drugs in active or intermittent shortage.
     Sole-source exposure ${r.sole_source_exposure_mm:,.2f}M (Adenosine, Regadenoson — cardiac stress testing).
-    China sterile-injectables tariff escalation is the highest-probability / highest-impact scenario at 45% likelihood and ${max(p.financial_impact_mm for p in r.playbooks if 'tariff' in p.scenario.lower()):,.1f}M downside.
+    China sterile-injectables tariff escalation is the highest-probability / highest-impact scenario at 45% likelihood and ${max(p.financial_impact_mm for p in r.playbooks if 'tariff' in p.scenario.lower()):,.2f}M downside.
     Vizient and Premier GPO performance is strong (95-96% fill rate, 2.5-2.8% backorder) — dual-sourcing strategy mitigates single-GPO risk.
     Recommend: activate compounding-pharmacy partnerships for oncology drugs, pre-position 90 days inventory on sole-source drugs, and establish secondary GPO contract for bottom-tercile drugs.
   </div>

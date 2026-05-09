@@ -147,8 +147,8 @@ def render_decay_markdown(r: IRRDecayReport) -> str:
         irr_s = f"{p.irr*100:.1f}%" if p.irr is not None else "—"
         mark = "✓" if p.clears_hurdle else "✗"
         lines.append(
-            f"| {p.year} | ${p.exit_ev_m:,.0f}M | "
-            f"${p.exit_equity_m:,.0f}M | {p.moic:.2f}x | "
+            f"| {p.year} | ${p.exit_ev_m:,.2f}M | "
+            f"${p.exit_equity_m:,.2f}M | {p.moic:.2f}x | "
             f"{irr_s} | {mark} |"
         )
     return "\n".join(lines)

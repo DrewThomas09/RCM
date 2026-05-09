@@ -54,7 +54,7 @@ def _waterfall_svg(breakdowns, reported: float, adjusted: float) -> str:
     lines.append(f'<text x="{pad_l - 6}" y="{y0 + bar_h - 3}" text-anchor="end" '
                  f'fill="{P["text_dim"]}">Reported EBITDA</text>')
     lines.append(f'<text x="{_x(reported) + 4:.1f}" y="{y0 + bar_h - 3}" '
-                 f'fill="{P["text"]}">${reported:.1f}M</text>')
+                 f'fill="{P["text"]}">${reported:.2f}M</text>')
 
     # Add-back bars
     running = reported
@@ -83,7 +83,7 @@ def _waterfall_svg(breakdowns, reported: float, adjusted: float) -> str:
     lines.append(f'<text x="{pad_l - 6}" y="{y_adj + bar_h - 3}" text-anchor="end" '
                  f'fill="{P["text"]}" font-weight="600">Adjusted EBITDA</text>')
     lines.append(f'<text x="{_x(adjusted) + 4:.1f}" y="{y_adj + bar_h - 3}" '
-                 f'fill="{P["positive"]}" font-weight="600">${adjusted:.1f}M</text>')
+                 f'fill="{P["positive"]}" font-weight="600">${adjusted:.2f}M</text>')
 
     lines.append('</svg>')
     return "\n".join(lines)
@@ -189,7 +189,7 @@ def _peers_table(peers: list, title: str) -> str:
             f'<td style="padding:5px 8px;color:{tprim}">{p["company"]}</td>'
             f'<td style="padding:5px 8px;color:{tdim}">{p["sector"]}</td>'
             f'<td style="padding:5px 8px;text-align:center;color:{tdim}">{p["year"]}</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${p["ev_mm"]:.0f}M</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${p["ev_mm"]:.2f}M</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{p["moic"]:.2f}x</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">{add_pct}</td>'
             f'</tr>'
@@ -285,10 +285,10 @@ def render_qoe_analyzer(params: dict) -> str:
 
     # KPI bar
     ev_ebitda_adj = round(ev_mm / r.adjusted_ebitda_mm, 1) if r.adjusted_ebitda_mm else 0.0
-    kpis = ck_kpi_block("Reported EBITDA", f"${r.reported_ebitda_mm:.1f}M")
-    kpis += ck_kpi_block("Total Add-Backs", f"${r.total_addback_mm:.1f}M",
+    kpis = ck_kpi_block("Reported EBITDA", f"${r.reported_ebitda_mm:.2f}M")
+    kpis += ck_kpi_block("Total Add-Backs", f"${r.total_addback_mm:.2f}M",
                          unit=f"{r.addback_pct_of_reported * 100:.1f}% of reported")
-    kpis += ck_kpi_block("Adjusted EBITDA", f"${r.adjusted_ebitda_mm:.1f}M")
+    kpis += ck_kpi_block("Adjusted EBITDA", f"${r.adjusted_ebitda_mm:.2f}M")
     kpis += ck_kpi_block("Adj. EV/EBITDA", f"{ev_ebitda_adj:.1f}x",
                          unit=f"Reported: {ev_mm/ebitda_mm:.1f}x")
     kpis += ck_kpi_block("Quality Tier",

@@ -198,9 +198,9 @@ def _return_table(returns, optimal_lev) -> str:
         cells = [
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:{"700" if is_opt else "400"}">{r.leverage:.1f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${r.exit_ebitda_mm:,.2f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${r.exit_ev_mm:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${r.remaining_debt_mm:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${r.exit_equity_mm:,.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${r.exit_ev_mm:,.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${r.remaining_debt_mm:,.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${r.exit_equity_mm:,.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{moic_c};font-weight:600">{r.moic:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{moic_c}">{r.irr * 100:.1f}%</td>',
         ]
@@ -267,7 +267,7 @@ def render_cap_structure(params: dict = None) -> str:
     pos = P["positive"]; acc = P["accent"]
 
     kpi_strip = (
-        ck_kpi_block("EV", f"${r.ev_mm:,.0f}M", "", "") +
+        ck_kpi_block("EV", f"${r.ev_mm:,.2f}M", "", "") +
         ck_kpi_block("EBITDA", f"${r.ebitda_mm:,.2f}M", "", "") +
         ck_kpi_block("Current Entry Mult", f"{r.ev_mm / r.ebitda_mm:.2f}x", "", "") +
         ck_kpi_block("Optimal Leverage", f"{r.optimal_leverage:.1f}x", "", "") +

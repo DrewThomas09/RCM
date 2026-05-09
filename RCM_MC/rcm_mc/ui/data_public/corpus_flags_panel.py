@@ -144,7 +144,7 @@ def _flag_card(flag: Any) -> str:
     if flag.ebitda_at_risk_mm is not None:
         risk_html = (
             f'<div class="ckf-flag-risk">'
-            f'EBITDA at risk: <strong>${flag.ebitda_at_risk_mm:.1f}M</strong></div>'
+            f'EBITDA at risk: <strong>${flag.ebitda_at_risk_mm:.2f}M</strong></div>'
         )
     return (
         f'<div class="ckf-flag" style="--flag-color:{color};--flag-bg:{bg};--flag-border:{color}33;">'
@@ -177,7 +177,7 @@ def render_corpus_flags_panel(deal: Dict[str, Any]) -> str:
     total_risk = summary.get("total_ebitda_at_risk_mm")
     risk_summary = (
         f'&nbsp;·&nbsp; <span style="color:#ea580c;font-family:\'JetBrains Mono\',monospace;'
-        f'font-variant-numeric:tabular-nums">${total_risk:.1f}M EBITDA at risk</span>'
+        f'font-variant-numeric:tabular-nums">${total_risk:.2f}M EBITDA at risk</span>'
         if total_risk else ""
     )
 

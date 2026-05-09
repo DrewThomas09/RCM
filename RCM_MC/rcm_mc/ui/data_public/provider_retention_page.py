@@ -200,11 +200,11 @@ def render_provider_retention(params: dict = None) -> str:
         ck_kpi_block("Total Providers", f"{r.total_providers:,}", "", "") +
         ck_kpi_block("Turnover %", f"{r.overall_turnover_pct * 100:.1f}%", "12mo", "") +
         ck_kpi_block("Expected Departures", str(r.expected_12mo_departures), "", "") +
-        ck_kpi_block("Cost of Churn", f"${r.cost_of_churn_mm:,.1f}M", "", "") +
+        ck_kpi_block("Cost of Churn", f"${r.cost_of_churn_mm:,.2f}M", "", "") +
         ck_kpi_block("Cost / Departure", f"${r.cost_per_departure_k:,.0f}K", "", "") +
-        ck_kpi_block("Retention Investment", f"${r.total_retention_investment_mm:,.1f}M", "", "") +
-        ck_kpi_block("Retained Revenue", f"${r.total_savings_from_retention_mm:,.1f}M", "", "") +
-        ck_kpi_block("EV Impact", f"${r.ev_impact_mm:,.0f}M", "", "")
+        ck_kpi_block("Retention Investment", f"${r.total_retention_investment_mm:,.2f}M", "", "") +
+        ck_kpi_block("Retained Revenue", f"${r.total_savings_from_retention_mm:,.2f}M", "", "") +
+        ck_kpi_block("EV Impact", f"${r.ev_impact_mm:,.2f}M", "", "")
     )
 
     cohort_svg = _cohort_svg(r.cohorts)
@@ -253,9 +253,9 @@ def render_provider_retention(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Retention Lever Portfolio</div>{lever_tbl}</div>
   <div style="{cell}"><div style="{h3}">Leadership Succession Readiness</div>{succ_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {P['negative']};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Retention Thesis:</strong> {r.overall_turnover_pct * 100:.1f}% overall churn costs ${r.cost_of_churn_mm:,.1f}M annually
-    (~${r.cost_per_departure_k:,.0f}K per departure). ${r.total_retention_investment_mm:,.1f}M investment in high-priority
-    levers retains ${r.total_savings_from_retention_mm:,.1f}M of revenue → ${r.ev_impact_mm:,.0f}M EV impact at exit.
+    <strong style="color:{text}">Retention Thesis:</strong> {r.overall_turnover_pct * 100:.1f}% overall churn costs ${r.cost_of_churn_mm:,.2f}M annually
+    (~${r.cost_per_departure_k:,.0f}K per departure). ${r.total_retention_investment_mm:,.2f}M investment in high-priority
+    levers retains ${r.total_savings_from_retention_mm:,.2f}M of revenue → ${r.ev_impact_mm:,.2f}M EV impact at exit.
   </div>
 </div>"""
 

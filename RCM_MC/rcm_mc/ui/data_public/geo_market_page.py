@@ -250,7 +250,7 @@ def render_geo_market(params: dict = None) -> str:
         ck_kpi_block("Priority Markets", str(r.priority_markets), "", "") +
         ck_kpi_block("Watch Markets", str(r.watch_markets), "", "") +
         ck_kpi_block("Secondary", str(r.secondary_markets), "", "") +
-        ck_kpi_block("Addressable Pop", f"{r.total_addressable_pop_mm:,.1f}M", "", "") +
+        ck_kpi_block("Addressable Pop", f"{r.total_addressable_pop_mm:,.2f}M", "", "") +
         ck_kpi_block("Top Market", top_name[:16], f"{top_score:.0f}", "") +
         ck_kpi_block("Sector", sector, "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
@@ -329,7 +329,7 @@ def render_geo_market(params: dict = None) -> str:
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Geographic Thesis:</strong>
     Top market: {_html.escape(top_name)} (score {top_score:.0f}). {r.priority_markets + r.watch_markets} CBSAs in Priority/Watch
-    tiers covering {r.total_addressable_pop_mm:,.1f}M people. Growth + low HHI + favorable payer mix drive scoring.
+    tiers covering {r.total_addressable_pop_mm:,.2f}M people. Growth + low HHI + favorable payer mix drive scoring.
     Sun Belt (TX, AZ, FL, NC) and tech corridors (RTP, Austin) dominate the priority list.
   </div>
 

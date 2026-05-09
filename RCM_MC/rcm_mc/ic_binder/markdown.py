@@ -19,7 +19,7 @@ def _format_money(mm: float) -> str:
     if abs(mm) >= 1000:
         return f"${mm/1000:.2f}B"
     if abs(mm) >= 1:
-        return f"${mm:.1f}M"
+        return f"${mm:.2f}M"
     return f"${mm*1000:.0f}K"
 
 

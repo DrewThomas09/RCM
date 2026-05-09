@@ -71,8 +71,8 @@ def deal_brief(
     lines.append(f"  DEAL BRIEF: {name}")
     lines.append(f"  Generated from Public Deals Corpus")
     lines.append(_hr("═"))
-    lines.append(f"  EV: {'${:,.0f}M'.format(ev) if ev else '—'}  |  "
-                 f"EBITDA: {'${:,.0f}M'.format(ebitda) if ebitda else '—'}  |  "
+    lines.append(f"  EV: {'${:,.2f}M'.format(ev) if ev else '—'}  |  "
+                 f"EBITDA: {'${:,.2f}M'.format(ebitda) if ebitda else '—'}  |  "
                  f"Year: {year or '—'}  |  Buyer: {buyer}")
     if ev and ebitda and ebitda > 0:
         lines.append(f"  Entry EV/EBITDA: {ev/ebitda:.1f}x")

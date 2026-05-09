@@ -156,27 +156,27 @@ def compute_reprice(
     if ebitda_hit > 0:
         talking_points.append(
             f"Run-rate EBITDA revised down "
-            f"${ebitda_hit:.1f}M based on QofE / "
+            f"${ebitda_hit:.2f}M based on QofE / "
             "diligence findings — multiple stays; EV "
             f"adjusts by "
-            f"${ebitda_hit * inputs.original_multiple:.1f}M."
+            f"${ebitda_hit * inputs.original_multiple:.2f}M."
         )
     if dollar_hit > 0:
         talking_points.append(
-            f"${dollar_hit:.1f}M of identified "
+            f"${dollar_hit:.2f}M of identified "
             "dollar items (WC peg, capex reserve, "
             "indemnity) — dollar-for-dollar off EV."
         )
     if safety_haircut > 0:
         talking_points.append(
-            f"${safety_haircut:.1f}M additional "
+            f"${safety_haircut:.2f}M additional "
             "margin-of-safety given identified "
             "execution risk."
         )
     if talking_points:
         talking_points.append(
-            f"Revised bid: ${new_bid:.0f}M "
-            f"(down ${bid_delta:.0f}M / "
+            f"Revised bid: ${new_bid:.2f}M "
+            f"(down ${bid_delta:.2f}M / "
             f"{bid_delta_pct:.0%} from original)."
         )
 
@@ -242,12 +242,12 @@ def render_reprice_markdown(
         "",
         f"_Verdict: **{r.verdict}**_ — {r.partner_note}",
         "",
-        f"- Original bid: ${r.original_bid_ev_m:.0f}M",
-        f"- EBITDA hit: ${r.ebitda_hit_m:.1f}M",
-        f"- Dollar hit: ${r.dollar_hit_m:.1f}M",
-        f"- Raw reprice: ${r.raw_reprice_m:.1f}M",
-        f"- Safety haircut: ${r.safety_haircut_m:.1f}M",
-        f"- New bid: ${r.new_bid_ev_m:.0f}M "
+        f"- Original bid: ${r.original_bid_ev_m:.2f}M",
+        f"- EBITDA hit: ${r.ebitda_hit_m:.2f}M",
+        f"- Dollar hit: ${r.dollar_hit_m:.2f}M",
+        f"- Raw reprice: ${r.raw_reprice_m:.2f}M",
+        f"- Safety haircut: ${r.safety_haircut_m:.2f}M",
+        f"- New bid: ${r.new_bid_ev_m:.2f}M "
         f"({r.bid_delta_pct:.0%} ↓)",
         "",
         "## Findings",

@@ -240,7 +240,7 @@ def render_sector_intel(min_deals: int = 3, sort_by: str = "moic_p50") -> str:
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
       color:{'#ef4444' if s.loss_rate>0.2 else '#f59e0b' if s.loss_rate>0.1 else '#22c55e'};">{s.loss_rate*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{s.avg_hold:.1f}y</td>
-  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">${s.avg_ev_mm:.0f}M</td>
+  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">${s.avg_ev_mm:.2f}M</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#3b82f6;">{s.sharpe_proxy:.2f}</td>
   <td style="padding:5px 8px;">{_sparkline(s.vintage_moic)}</td>
 </tr>""")

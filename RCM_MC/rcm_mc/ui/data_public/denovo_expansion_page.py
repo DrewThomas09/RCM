@@ -166,8 +166,8 @@ def render_denovo_expansion(params: dict = None) -> str:
     kpi_strip = (
         ck_kpi_block("Active Sites", str(r.total_active_sites), "", "") +
         ck_kpi_block("Planned Sites", str(r.total_sites_planned), "", "") +
-        ck_kpi_block("Investment", f"${r.total_investment_committed_mm:,.0f}M", "", "") +
-        ck_kpi_block("Stab EBITDA Target", f"${r.expected_stabilized_ebitda_mm:,.0f}M", "", "") +
+        ck_kpi_block("Investment", f"${r.total_investment_committed_mm:,.2f}M", "", "") +
+        ck_kpi_block("Stab EBITDA Target", f"${r.expected_stabilized_ebitda_mm:,.2f}M", "", "") +
         ck_kpi_block("Portfolio Payback", f"{r.portfolio_payback_years:.2f}y", "", "") +
         ck_kpi_block("Site Types", str(len(r.site_types)), "", "") +
         ck_kpi_block("Markets in Plan", str(len(r.markets)), "", "") +
@@ -198,7 +198,7 @@ def render_denovo_expansion(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Lease vs Buy Decision Matrix (10-Year NPV)</div>{lb_tbl}</div>
   <div style="{cell}"><div style="{h3}">Organic vs Inorganic Growth Blend</div>{bl_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">De Novo Thesis:</strong> {r.total_sites_planned} sites planned across {len(r.markets)} markets requires ${r.total_investment_committed_mm:,.0f}M investment for ${r.expected_stabilized_ebitda_mm:,.0f}M stabilized EBITDA —
+    <strong style="color:{text}">De Novo Thesis:</strong> {r.total_sites_planned} sites planned across {len(r.markets)} markets requires ${r.total_investment_committed_mm:,.2f}M investment for ${r.expected_stabilized_ebitda_mm:,.2f}M stabilized EBITDA —
     portfolio payback {r.portfolio_payback_years:.2f} years. De novo is a lower-multiple alternative to bolt-on M&A (2.5-3.0x vs 8-10x) but has longer ramp.
     Sun Belt markets (Austin, Phoenix, Nashville, Raleigh) show strongest demand scores and lowest competitor density. ASC de novo is the highest-margin site type at 4.2x payback at scale.
     Lease-to-own structures are most attractive for de novos — preserves capital during ramp and enables sale-leaseback at stabilization.

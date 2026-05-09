@@ -193,7 +193,7 @@ def render_secondaries_tracker(params: dict = None) -> str:
     Healthcare is ~28% of total GP-led activity — dialysis, HCIT/SaaS, behavioral, specialty pharmacy leading sectors.
     CV structures allow sponsors to extend hold on winning assets while providing existing LPs liquidity optionality (roll/sell/strip).
     Fairness opinions now standard; LPAC consent required for {lpac_required} of {len(r.conflicts)} material conflict areas.
-    Total recent transaction volume across tracked deals ${total_vol:,.0f}M; buyer demand remains strong, though pricing has softened -2% to -5% NAV discount.
+    Total recent transaction volume across tracked deals ${total_vol:,.2f}M; buyer demand remains strong, though pricing has softened -2% to -5% NAV discount.
     Use as exit alternative alongside strategic sale, sponsor-to-sponsor, and IPO paths in /platform-maturity.
   </div>
 </div>"""

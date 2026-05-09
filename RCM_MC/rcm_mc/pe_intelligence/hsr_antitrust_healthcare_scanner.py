@@ -212,7 +212,7 @@ def scan_hsr_antitrust(
         name="deal_size_above_hsr_threshold",
         triggered=hsr_threshold,
         partner_counter=(
-            f"Deal size ${inputs.deal_size_m:,.0f}M above "
+            f"Deal size ${inputs.deal_size_m:,.2f}M above "
             f"HSR threshold ${HSR_NOTIFICATION_THRESHOLD_M}M; "
             "HSR notification required with 30-day waiting."
             if hsr_threshold else

@@ -291,7 +291,7 @@ def persist_remark(
                 None, None, None,  # covenant not recomputed on re-mark
                 None, None,
                 f"Re-mark as of {result.as_of_quarter} "
-                f"(TTM EBITDA ${result.actual_ttm_ebitda/1e6:.1f}M, "
+                f"(TTM EBITDA ${result.actual_ttm_ebitda/1e6:.2f}M, "
                 f"{result.quarters_of_actuals} quarters actuals)",
             ),
         )
@@ -319,14 +319,14 @@ def format_remark(r: RemarkResult) -> str:
         f"Underwrite re-mark — {r.deal_id} as of {r.as_of_quarter}",
         "─" * 70,
         f"  Quarters of actuals:    {r.quarters_of_actuals}",
-        f"  TTM EBITDA:             ${r.actual_ttm_ebitda/1e6:.1f}M",
+        f"  TTM EBITDA:             ${r.actual_ttm_ebitda/1e6:.2f}M",
         f"  Cumulative Δ vs plan:   ${r.ebitda_delta_vs_plan/1e6:+.1f}M",
         f"  Years remaining:        {r.years_remaining:.2f}",
         "",
         f"  {'':22s}  {'Original':>12s}  {'Re-mark':>12s}  {'Δ':>8s}",
         f"  {'Exit EBITDA':22s}  "
-        f"{'$' + f'{r.original_exit_ebitda/1e6:.1f}M':>12s}  "
-        f"{'$' + f'{r.remark_exit_ebitda/1e6:.1f}M':>12s}  "
+        f"{'$' + f'{r.original_exit_ebitda/1e6:.2f}M':>12s}  "
+        f"{'$' + f'{r.remark_exit_ebitda/1e6:.2f}M':>12s}  "
         f"{(r.remark_exit_ebitda - r.original_exit_ebitda)/1e6:+.1f}M",
         f"  {'MOIC':22s}  "
         f"{_x_or_dash(r.original_moic):>12s}  "

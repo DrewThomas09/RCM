@@ -102,7 +102,7 @@ def _shock_obbba(inputs: RegulatoryStressInputs) -> RegulatoryShock:
         ebitda_impact_m=round(impact, 2),
         ebitda_impact_pct_of_base=round(pct, 4),
         partner_note=(f"OBBBA-style 3% Medicare cut: "
-                      f"${impact:,.1f}M EBITDA hit "
+                      f"${impact:,.2f}M EBITDA hit "
                       f"({pct*100:.1f}% of base)."),
     )
 
@@ -120,7 +120,7 @@ def _shock_sequestration(inputs: RegulatoryStressInputs) -> RegulatoryShock:
         revenue_impact_pct=rate_cut * total_exposed,
         ebitda_impact_m=round(impact, 2),
         ebitda_impact_pct_of_base=round(pct, 4),
-        partner_note=(f"Sequestration 2% cut: ${impact:,.1f}M EBITDA "
+        partner_note=(f"Sequestration 2% cut: ${impact:,.2f}M EBITDA "
                       f"hit ({pct*100:.1f}% of base)."),
     )
 
@@ -141,7 +141,7 @@ def _shock_site_neutral(inputs: RegulatoryStressInputs) -> RegulatoryShock:
         ebitda_impact_m=round(impact, 2),
         ebitda_impact_pct_of_base=round(pct, 4),
         partner_note=(f"Site-neutral on HOPD exposure: "
-                      f"${impact:,.1f}M EBITDA hit "
+                      f"${impact:,.2f}M EBITDA hit "
                       f"({pct*100:.1f}% of base)."),
     )
 
@@ -170,7 +170,7 @@ def _shock_state_medicaid_shift(
         revenue_impact_pct=rate_cut * medicaid_pct,
         ebitda_impact_m=round(impact, 2),
         ebitda_impact_pct_of_base=round(pct, 4),
-        partner_note=(f"State Medicaid 3% cut: ${impact:,.1f}M EBITDA "
+        partner_note=(f"State Medicaid 3% cut: ${impact:,.2f}M EBITDA "
                       f"hit ({pct*100:.1f}% of base)."),
     )
 
@@ -189,17 +189,17 @@ def stress_regulatory(
 
     if pct >= 0.30:
         note = (f"Combined regulatory stress is catastrophic "
-                f"(${combined:,.1f}M, {pct*100:.1f}% of base EBITDA). "
+                f"(${combined:,.2f}M, {pct*100:.1f}% of base EBITDA). "
                 "Thesis cannot tolerate even partial realization of "
                 "these; reduce leverage or pass.")
     elif pct >= 0.15:
         note = (f"Combined regulatory stress is material "
-                f"(${combined:,.1f}M, {pct*100:.1f}%). Partial "
+                f"(${combined:,.2f}M, {pct*100:.1f}%). Partial "
                 "realization is a real risk; model at 50% probability "
                 "and check covenant headroom.")
     elif pct >= 0.05:
         note = (f"Combined regulatory stress is manageable "
-                f"(${combined:,.1f}M, {pct*100:.1f}%). Monitor; build "
+                f"(${combined:,.2f}M, {pct*100:.1f}%). Monitor; build "
                 "into downside case.")
     else:
         note = ("Combined regulatory stress is immaterial. Deal is "
@@ -219,7 +219,7 @@ def render_reg_stress_markdown(r: RegulatoryStressReport) -> str:
         "",
         f"_{r.partner_note}_",
         "",
-        f"- Worst-case combined: ${r.worst_case_combined_m:,.1f}M "
+        f"- Worst-case combined: ${r.worst_case_combined_m:,.2f}M "
         f"({r.worst_case_pct*100:.1f}% of base EBITDA)",
         "",
         "| Shock | Rev impact | EBITDA hit | % base |",

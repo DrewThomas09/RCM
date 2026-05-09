@@ -236,14 +236,14 @@ def assess_technology_debt(inputs: TechDebtInputs) -> TechDebtReport:
 
     if high >= 3:
         note = (f"Significant tech debt: {high} high-severity findings, "
-                f"~${total_cost:,.1f}M and {longest}mo remediation. "
+                f"~${total_cost:,.2f}M and {longest}mo remediation. "
                 "Flag to IC as material pre-close risk.")
     elif high >= 1:
         note = (f"Material tech-debt remediation budget "
-                f"(~${total_cost:,.1f}M, {longest}mo) required. "
+                f"(~${total_cost:,.2f}M, {longest}mo) required. "
                 "Fold into 100-day plan.")
     elif findings:
-        note = (f"Manageable tech debt (~${total_cost:,.1f}M). "
+        note = (f"Manageable tech debt (~${total_cost:,.2f}M). "
                 "Include in operating plan.")
     else:
         note = "Technology posture is clean — no material findings."
@@ -266,7 +266,7 @@ def render_tech_debt_markdown(report: TechDebtReport) -> str:
         f"_{report.partner_note}_",
         "",
         f"- Risk score: {report.risk_score_0_100}/100",
-        f"- Total remediation cost: ${report.total_remediation_m:,.1f}M",
+        f"- Total remediation cost: ${report.total_remediation_m:,.2f}M",
         f"- Longest path: {report.longest_path_months} months",
         f"- Findings: {report.total_findings} "
         f"({report.high_severity} high)",
@@ -277,6 +277,6 @@ def render_tech_debt_markdown(report: TechDebtReport) -> str:
     for f in report.findings:
         lines.append(f"### {f.area} ({f.severity.upper()})")
         lines.append(f"- {f.description}")
-        lines.append(f"- Cost: ${f.cost_m:,.1f}M | Timeline: {f.months} months")
+        lines.append(f"- Cost: ${f.cost_m:,.2f}M | Timeline: {f.months} months")
         lines.append("")
     return "\n".join(lines)

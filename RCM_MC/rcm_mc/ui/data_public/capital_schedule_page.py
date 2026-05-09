@@ -67,8 +67,8 @@ def _jcurve_svg(quarters) -> str:
         f'<rect width="{w}" height="{h}" fill="{bg}"/>'
         + fill + zero_line + line + "".join(labels) +
         f'<text x="10" y="15" fill="{text_dim}" font-size="10" font-family="Inter,sans-serif">Cumulative Net Cash Flow ($M) — The J-Curve</text>'
-        f'<text x="{w - pad_r}" y="{20}" fill="{pos}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace">Peak: +${max(cum_cf):,.0f}M</text>'
-        f'<text x="{w - pad_r}" y="{35}" fill="{neg}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace">Trough: ${min(cum_cf):,.0f}M</text>'
+        f'<text x="{w - pad_r}" y="{20}" fill="{pos}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace">Peak: +${max(cum_cf):,.2f}M</text>'
+        f'<text x="{w - pad_r}" y="{35}" fill="{neg}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace">Trough: ${min(cum_cf):,.2f}M</text>'
         f'</svg>'
     )
 
@@ -158,12 +158,12 @@ def _quarters_table(quarters) -> str:
         cf_color = pos if net_cf >= 0 else neg
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">Year {yr}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${total_call:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${total_dist:,.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${total_call:,.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${total_dist:,.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{cf_color};font-weight:600">${net_cf:+,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${last.cumulative_called_mm:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${last.cumulative_distributed_mm:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${last.nav_mm:,.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${last.cumulative_called_mm:,.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${last.cumulative_distributed_mm:,.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${last.nav_mm:,.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">{last.dpi:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{last.tvpi:.2f}x</td>',
         ]
@@ -218,7 +218,7 @@ def _waterfall_table(tiers) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{t.lp_share * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">{t.gp_share * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">Y{t.est_timing_year:.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${t.est_amount_mm:,.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${t.est_amount_mm:,.2f}M</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -250,14 +250,14 @@ def render_capital_schedule(params: dict = None) -> str:
     pos = P["positive"]; acc = P["accent"]
 
     kpi_strip = (
-        ck_kpi_block("Fund Size", f"${r.fund_size_mm:,.0f}M", "", "") +
+        ck_kpi_block("Fund Size", f"${r.fund_size_mm:,.2f}M", "", "") +
         ck_kpi_block("Gross MOIC", f"{r.gross_moic:.2f}x", "", "") +
         ck_kpi_block("Net MOIC", f"{r.net_moic:.2f}x", "", "") +
         ck_kpi_block("Gross IRR", f"{r.gross_irr * 100:.1f}%", "", "") +
         ck_kpi_block("Net IRR", f"{r.net_irr * 100:.1f}%", "", "") +
         ck_kpi_block("Final DPI", f"{r.final_dpi:.2f}x", "", "") +
-        ck_kpi_block("Trough (J-curve)", f"${r.trough_jcurve_mm:,.0f}M", "", "") +
-        ck_kpi_block("Peak NAV", f"${r.peak_nav_mm:,.0f}M", "", "")
+        ck_kpi_block("Trough (J-curve)", f"${r.trough_jcurve_mm:,.2f}M", "", "") +
+        ck_kpi_block("Peak NAV", f"${r.peak_nav_mm:,.2f}M", "", "")
     )
 
     jcurve_svg = _jcurve_svg(r.quarters)
@@ -297,7 +297,7 @@ def render_capital_schedule(params: dict = None) -> str:
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Capital Call &amp; Distribution Schedule</h1>
     <p style="font-size:12px;color:{text_dim};margin-top:4px">
-      Fund lifecycle cash flows — J-curve, DPI/TVPI trajectory, LP waterfall — ${r.fund_size_mm:,.0f}M fund / {r.corpus_deal_count:,} corpus deals
+      Fund lifecycle cash flows — J-curve, DPI/TVPI trajectory, LP waterfall — ${r.fund_size_mm:,.2f}M fund / {r.corpus_deal_count:,} corpus deals
     </p>
   </div>
 
@@ -337,9 +337,9 @@ def render_capital_schedule(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Capital Thesis:</strong>
-    ${r.fund_size_mm:,.0f}M fund with {r.investment_period_years}-year investment period and
-    {r.total_years}-year life. J-curve trough ${r.trough_jcurve_mm:,.0f}M at Year {r.trough_jcurve_year:.1f},
-    peak NAV ${r.peak_nav_mm:,.0f}M at Year {r.peak_nav_year}. Gross IRR {r.gross_irr * 100:.1f}% / Net IRR {r.net_irr * 100:.1f}%.
+    ${r.fund_size_mm:,.2f}M fund with {r.investment_period_years}-year investment period and
+    {r.total_years}-year life. J-curve trough ${r.trough_jcurve_mm:,.2f}M at Year {r.trough_jcurve_year:.1f},
+    peak NAV ${r.peak_nav_mm:,.2f}M at Year {r.peak_nav_year}. Gross IRR {r.gross_irr * 100:.1f}% / Net IRR {r.net_irr * 100:.1f}%.
     Final TVPI {r.final_tvpi:.2f}x, DPI {r.final_dpi:.2f}x.
   </div>
 

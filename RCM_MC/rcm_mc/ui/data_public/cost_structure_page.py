@@ -88,7 +88,7 @@ def _leverage_svg(scenarios) -> str:
         bars.append(
             f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" fill="{color}" opacity="0.88"/>'
             f'<text x="{x + bar_w / 2:.1f}" y="{y - 4:.1f}" fill="{P["text_dim"]}" font-size="10" '
-            f'text-anchor="middle" font-family="JetBrains Mono,monospace">${s.implied_ebitda_mm:,.1f}M</text>'
+            f'text-anchor="middle" font-family="JetBrains Mono,monospace">${s.implied_ebitda_mm:,.2f}M</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" '
             f'text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(s.scenario)}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 26}" fill="{color}" font-size="9" '
@@ -201,11 +201,11 @@ def render_cost_structure(params: dict = None) -> str:
     pos = P["positive"]; acc = P["accent"]
 
     kpi_strip = (
-        ck_kpi_block("Revenue", f"${r.revenue_mm:,.0f}M", "", "") +
+        ck_kpi_block("Revenue", f"${r.revenue_mm:,.2f}M", "", "") +
         ck_kpi_block("EBITDA", f"${r.ebitda_mm:,.2f}M", "", "") +
         ck_kpi_block("EBITDA Margin", f"{r.ebitda_margin * 100:.1f}%", "", "") +
-        ck_kpi_block("COGS", f"${r.total_cogs_mm:,.1f}M", "", "") +
-        ck_kpi_block("SG&A", f"${r.total_sga_mm:,.1f}M", "", "") +
+        ck_kpi_block("COGS", f"${r.total_cogs_mm:,.2f}M", "", "") +
+        ck_kpi_block("SG&A", f"${r.total_sga_mm:,.2f}M", "", "") +
         ck_kpi_block("Variable Cost %", f"{r.variable_cost_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Op Leverage", f"{r.operating_leverage:.2f}x", "", "") +
         ck_kpi_block("Labor / Rev", f"{r.labor_pct_of_revenue * 100:.1f}%", "", "")

@@ -162,7 +162,7 @@ def value_secondary_sale(inputs: SecondarySaleInputs) -> SecondarySaleAssessment
         tone = f"Premium pricing ({abs(bps)} bps above NAV)."
 
     note = (f"{inputs.transaction_type} secondary: indicative "
-            f"{bps:+d} bps vs NAV → ${implied_price:,.1f}M. {tone}")
+            f"{bps:+d} bps vs NAV → ${implied_price:,.2f}M. {tone}")
 
     return SecondarySaleAssessment(
         transaction_type=inputs.transaction_type,
@@ -180,7 +180,7 @@ def render_secondary_markdown(a: SecondarySaleAssessment) -> str:
         f"_{a.partner_note}_",
         "",
         f"- Indicative vs NAV: {a.indicative_discount_bps:+d} bps",
-        f"- Implied price: ${a.implied_price_m:,.1f}M",
+        f"- Implied price: ${a.implied_price_m:,.2f}M",
         "",
         "## Discount / premium drivers",
         "",

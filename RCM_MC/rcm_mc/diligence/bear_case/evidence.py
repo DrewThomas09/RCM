@@ -240,8 +240,8 @@ def extract_covenant_evidence(
                 p75_cure = getattr(cure, "p75_cure_usd", None)
                 if cure_usd:
                     cure_str = (
-                        f"${cure_usd/1e6:.1f}M median cure "
-                        f"(${(p75_cure or 0)/1e6:.1f}M P75)"
+                        f"${cure_usd/1e6:.2f}M median cure "
+                        f"(${(p75_cure or 0)/1e6:.2f}M P75)"
                     )
             out.append(Evidence(
                 title=(
@@ -304,7 +304,7 @@ def extract_bridge_audit_evidence(
             out.append(Evidence(
                 title=(
                     f"'{lever_name}' is {verdict_val.lower()} "
-                    f"(${getattr(a, 'gap_usd', 0.0)/1e6:.1f}M gap vs "
+                    f"(${getattr(a, 'gap_usd', 0.0)/1e6:.2f}M gap vs "
                     f"realization prior)"
                 ),
                 source=EvidenceSource.BRIDGE_AUDIT,
@@ -331,7 +331,7 @@ def extract_bridge_audit_evidence(
         if total_gap > 2_000_000 and gap_pct > 0.15:
             out.append(Evidence(
                 title=(
-                    f"${total_gap/1e6:.1f}M aggregate bridge gap "
+                    f"${total_gap/1e6:.2f}M aggregate bridge gap "
                     f"({gap_pct*100:.1f}% of banker claim)"
                 ),
                 source=EvidenceSource.BRIDGE_AUDIT,
@@ -343,7 +343,7 @@ def extract_bridge_audit_evidence(
                 ebitda_impact_usd=total_gap,
                 narrative=(
                     f"Banker's aggregate EBITDA bridge overclaims "
-                    f"by ${total_gap/1e6:.1f}M versus the realization-"
+                    f"by ${total_gap/1e6:.2f}M versus the realization-"
                     f"prior rebuild. At entry multiple, that equates "
                     f"to a meaningful overpayment risk."
                 ),

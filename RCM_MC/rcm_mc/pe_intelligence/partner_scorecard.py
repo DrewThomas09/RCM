@@ -101,8 +101,8 @@ def run_scorecard(inputs: ScorecardInputs) -> ScorecardReport:
     checks.append(ScorecardCheck(
         dimension="scale",
         passed=scale_ok,
-        actual=f"${inputs.ebitda_m:,.1f}M EBITDA",
-        floor=f"${inputs.fund_min_ebitda_m:,.1f}M min",
+        actual=f"${inputs.ebitda_m:,.2f}M EBITDA",
+        floor=f"${inputs.fund_min_ebitda_m:,.2f}M min",
         rationale=("Fund scale discipline — sub-threshold deals eat "
                    "team bandwidth without moving the fund "
                    "mathematically."),

@@ -71,7 +71,7 @@ def _top_risk_or(default: str, risks: List[str]) -> str:
 def _skeptic(ctx: VoiceContext) -> VoiceParagraph:
     para = (
         f"The numbers. {ctx.deal_name} is priced at "
-        f"{ctx.entry_multiple:.1f}x on ${ctx.recurring_ebitda_m:,.0f}M "
+        f"{ctx.entry_multiple:.1f}x on ${ctx.recurring_ebitda_m:,.2f}M "
         "recurring EBITDA — fine if recurring is real and the exit "
         f"multiple holds. My concern: "
         f"{_top_risk_or('thesis depends on continued multiple expansion', ctx.top_risks)}. "
@@ -91,7 +91,7 @@ def _optimist(ctx: VoiceContext) -> VoiceParagraph:
     pillar = ctx.key_thesis_pillars[0] if ctx.key_thesis_pillars \
         else "operational lift"
     para = (
-        f"Fundamentals. {ctx.deal_name} has ${ctx.recurring_ebitda_m:,.0f}M "
+        f"Fundamentals. {ctx.deal_name} has ${ctx.recurring_ebitda_m:,.2f}M "
         f"recurring EBITDA and management capable of executing "
         f"{pillar}. Target {ctx.target_moic:.1f}x at "
         f"{ctx.target_irr*100:.1f}% is defensible; upside case is "
@@ -105,7 +105,7 @@ def _optimist(ctx: VoiceContext) -> VoiceParagraph:
 def _md_numbers(ctx: VoiceContext) -> VoiceParagraph:
     para = (
         f"Clinically and financially. {ctx.subsector} at "
-        f"${ctx.recurring_ebitda_m:,.0f}M — sub-scale relative to "
+        f"${ctx.recurring_ebitda_m:,.2f}M — sub-scale relative to "
         "national footprints. "
         f"Management score {ctx.management_score_0_100}/100 indicates "
         f"{'a capable team' if ctx.management_score_0_100 >= 70 else 'gaps in senior ranks'}. "
@@ -139,7 +139,7 @@ def _operating_partner(ctx: VoiceContext) -> VoiceParagraph:
 def _lp_facing(ctx: VoiceContext) -> VoiceParagraph:
     para = (
         f"Q+Y LP update framing. \"{ctx.deal_name} was acquired at "
-        f"{ctx.entry_multiple:.1f}x ${ctx.recurring_ebitda_m:,.0f}M "
+        f"{ctx.entry_multiple:.1f}x ${ctx.recurring_ebitda_m:,.2f}M "
         f"recurring EBITDA. Thesis: "
     )
     if ctx.key_thesis_pillars:

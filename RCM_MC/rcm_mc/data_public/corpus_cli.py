@@ -199,15 +199,15 @@ def _cmd_rcm(args: argparse.Namespace) -> None:
         else:
             print(f"\n  RCM Opportunity: {opp['deal_name']}")
             print(f"  Segment : {opp['benchmark_label']}")
-            print(f"  Revenue : ${opp.get('revenue_mm', 0):,.0f}M" if opp.get("revenue_mm") else "  Revenue : —")
-            print(f"  Est. EBITDA uplift: ${opp['estimated_total_ebitda_uplift_mm']:,.1f}M "
+            print(f"  Revenue : ${opp.get('revenue_mm', 0):,.2f}M" if opp.get("revenue_mm") else "  Revenue : —")
+            print(f"  Est. EBITDA uplift: ${opp['estimated_total_ebitda_uplift_mm']:,.2f}M "
                   f"({opp.get('uplift_pct_of_ebitda','?'):.1%} of EBITDA)"
                   if opp.get("uplift_pct_of_ebitda") else
-                  f"  Est. EBITDA uplift: ${opp['estimated_total_ebitda_uplift_mm']:,.1f}M")
+                  f"  Est. EBITDA uplift: ${opp['estimated_total_ebitda_uplift_mm']:,.2f}M")
             for lever, detail in opp["lever_details"].items():
                 uplift = detail.get("estimated_ebitda_uplift_mm", 0)
                 if uplift > 0:
-                    print(f"    • {lever}: +${uplift:.1f}M EBITDA")
+                    print(f"    • {lever}: +${uplift:.2f}M EBITDA")
     elif args.segment:
         bm = get_benchmarks(args.segment)
         if args.json:

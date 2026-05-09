@@ -199,7 +199,7 @@ def _ebitda_walk_svg(walk) -> str:
 
         y_top = base_y - total_h
         bars.append(
-            f'<text x="{x + bar_w / 2:.1f}" y="{y_top - 4:.1f}" fill="{text}" font-size="10" text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:700">${p.total_ebitda_mm:,.0f}M</text>'
+            f'<text x="{x + bar_w / 2:.1f}" y="{y_top - 4:.1f}" fill="{text}" font-size="10" text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:700">${p.total_ebitda_mm:,.2f}M</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(p.period[:10])}</text>'
         )
     legend = (
@@ -245,12 +245,12 @@ def render_rollup_economics(params: dict = None) -> str:
     pos = P["positive"]; acc = P["accent"]
 
     kpi_strip = (
-        ck_kpi_block("Entry EBITDA", f"${r.platform_entry_ebitda_mm:,.1f}M", "", "") +
-        ck_kpi_block("Exit EBITDA", f"${r.platform_exit_ebitda_mm:,.1f}M", "", "") +
+        ck_kpi_block("Entry EBITDA", f"${r.platform_entry_ebitda_mm:,.2f}M", "", "") +
+        ck_kpi_block("Exit EBITDA", f"${r.platform_exit_ebitda_mm:,.2f}M", "", "") +
         ck_kpi_block("Add-Ons", str(r.total_addons_closed), "", "") +
-        ck_kpi_block("Deployed", f"${r.total_deployed_mm:,.0f}M", "", "") +
-        ck_kpi_block("Synergies (Run-Rate)", f"${r.total_synergies_mm:,.1f}M", "", "") +
-        ck_kpi_block("Multiple Arb", f"${r.multiple_arbitrage_mm:,.0f}M", "", "") +
+        ck_kpi_block("Deployed", f"${r.total_deployed_mm:,.2f}M", "", "") +
+        ck_kpi_block("Synergies (Run-Rate)", f"${r.total_synergies_mm:,.2f}M", "", "") +
+        ck_kpi_block("Multiple Arb", f"${r.multiple_arbitrage_mm:,.2f}M", "", "") +
         ck_kpi_block("Base MOIC", f"{r.base_case_moic:.2f}x", "", "") +
         ck_kpi_block("Base IRR", f"{r.base_case_irr * 100:.1f}%", "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
@@ -298,9 +298,9 @@ def render_rollup_economics(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Year-by-Year EBITDA Walk Detail</div>{walk_tbl}</div>
   <div style="{cell}"><div style="{h3}">Exit Scenario Matrix — Downside, Base, Upside, IPO</div>{exit_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Roll-Up Thesis:</strong> 4x EBITDA growth from ${r.platform_entry_ebitda_mm:,.1f}M → ${r.platform_exit_ebitda_mm:,.1f}M via
-    {r.total_addons_closed} add-ons deploying ${r.total_deployed_mm:,.0f}M in aggregate. Multiple arbitrage (${entry_mult:.1f}x → ${exit_mult:.1f}x) creates ${r.multiple_arbitrage_mm:,.0f}M of value;
-    synergies add ${r.total_synergies_mm:,.1f}M run-rate. Base-case MOIC {r.base_case_moic:.2f}x / IRR {r.base_case_irr * 100:.1f}% —
+    <strong style="color:{text}">Roll-Up Thesis:</strong> 4x EBITDA growth from ${r.platform_entry_ebitda_mm:,.2f}M → ${r.platform_exit_ebitda_mm:,.2f}M via
+    {r.total_addons_closed} add-ons deploying ${r.total_deployed_mm:,.2f}M in aggregate. Multiple arbitrage (${entry_mult:.1f}x → ${exit_mult:.1f}x) creates ${r.multiple_arbitrage_mm:,.2f}M of value;
+    synergies add ${r.total_synergies_mm:,.2f}M run-rate. Base-case MOIC {r.base_case_moic:.2f}x / IRR {r.base_case_irr * 100:.1f}% —
     materially dependent on exit multiple. Integration cost ${total_int_cost:,.2f}M is ~{(total_int_cost / r.total_deployed_mm) * 100:.1f}% of deployed capital;
     risks concentrated in EHR unification and cross-sell revenue synergies (high execution risk). Downside exit of 7x produces material equity erosion.
   </div>

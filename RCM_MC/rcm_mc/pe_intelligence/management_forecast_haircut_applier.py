@@ -253,8 +253,8 @@ def render_management_haircut_markdown(
         f"- Mgmt IRR: {r.mgmt_irr:.1%} → "
         f"Partner IRR: {r.partner_irr:.1%} "
         f"(Δ {r.delta_irr:+.1%})",
-        f"- Mgmt exit EV: ${r.mgmt_exit_ev_m:.0f}M → "
-        f"Partner exit EV: ${r.partner_exit_ev_m:.0f}M",
+        f"- Mgmt exit EV: ${r.mgmt_exit_ev_m:.2f}M → "
+        f"Partner exit EV: ${r.partner_exit_ev_m:.2f}M",
         "",
         "| Year | Mgmt EBITDA | Haircut | Partner EBITDA |",
         "|---|---|---|---|",

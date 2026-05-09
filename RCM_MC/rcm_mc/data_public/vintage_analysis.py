@@ -336,7 +336,7 @@ def vintage_table(corpus_db_path: str) -> str:
         moic_m = f"{vs.moic_mean:.2f}x"  if vs.moic_mean  else "   —   "
         moic50 = f"{vs.moic_p50:.2f}x"   if vs.moic_p50   else "   —   "
         irr50  = f"{vs.irr_p50:.1%}"     if vs.irr_p50    else "    —  "
-        ev50   = f"${vs.ev_p50:,.0f}M"   if vs.ev_p50     else "      —"
+        ev50   = f"${vs.ev_p50:,.2f}M"   if vs.ev_p50     else "      —"
         lines.append(
             f"{yr:>4}  {vs.cycle:<12} {vs.n_deals:>3} {moic_m:>7} "
             f"{moic50:>8} {irr50:>8} {ev50:>9}"

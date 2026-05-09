@@ -53,7 +53,7 @@ def _bridge_svg(r) -> str:
     lines.append(f'<text x="{pad_l - 4}" y="{y + bar_h - 5}" text-anchor="end" '
                  f'fill="{P["text_dim"]}">Entry EV</text>')
     lines.append(f'<text x="{_bx(r.entry_ev_mm) + 4:.1f}" y="{y + bar_h - 5}" '
-                 f'fill="{P["text"]}">${r.entry_ev_mm:.0f}M</text>')
+                 f'fill="{P["text"]}">${r.entry_ev_mm:.2f}M</text>')
 
     running = r.entry_ev_mm
     for i, lev in enumerate(r.levers):
@@ -78,7 +78,7 @@ def _bridge_svg(r) -> str:
     lines.append(f'<text x="{pad_l - 4}" y="{y + bar_h - 5}" text-anchor="end" '
                  f'fill="{P["text"]}" font-weight="600">Exit EV</text>')
     lines.append(f'<text x="{_bx(r.exit_ev_mm) + 4:.1f}" y="{y + bar_h - 5}" '
-                 f'fill="{P["positive"]}" font-weight="600">${r.exit_ev_mm:.0f}M</text>')
+                 f'fill="{P["positive"]}" font-weight="600">${r.exit_ev_mm:.2f}M</text>')
 
     lines.append('</svg>')
     return "\n".join(lines)
@@ -135,8 +135,8 @@ def _levers_table(levers) -> str:
             f'<tr style="background:{rbg}">'
             f'<td style="padding:5px 8px;color:{c}">{lev.label}</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{lev.contribution_pct*100:.1f}%</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">+${lev.ebitda_contribution_mm:.1f}M</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">+${lev.ev_contribution_mm:.0f}M</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">+${lev.ebitda_contribution_mm:.2f}M</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">+${lev.ev_contribution_mm:.2f}M</td>'
             f'</tr>'
         )
 
@@ -281,11 +281,11 @@ def render_value_creation(params: dict) -> str:
 
     ev_created_pct = r.total_ev_created_mm / r.entry_ev_mm * 100 if r.entry_ev_mm else 0
 
-    kpis = ck_kpi_block("Entry EV", f"${r.entry_ev_mm:.0f}M",
+    kpis = ck_kpi_block("Entry EV", f"${r.entry_ev_mm:.2f}M",
                          unit=f"{r.entry_multiple:.1f}x EV/EBITDA")
-    kpis += ck_kpi_block("Exit EV", f"${r.exit_ev_mm:.0f}M",
+    kpis += ck_kpi_block("Exit EV", f"${r.exit_ev_mm:.2f}M",
                           unit=f"{r.exit_multiple:.1f}x EV/EBITDA")
-    kpis += ck_kpi_block("EV Created", f"${r.total_ev_created_mm:.0f}M",
+    kpis += ck_kpi_block("EV Created", f"${r.total_ev_created_mm:.2f}M",
                           unit=f"+{ev_created_pct:.1f}% vs entry")
     kpis += ck_kpi_block("MOIC", f"{r.moic:.2f}x",
                           unit=f"IRR: {r.irr*100:.1f}%")
@@ -341,10 +341,10 @@ def render_value_creation(params: dict) -> str:
       </div>
       <div style="font-family:\'JetBrains Mono\',monospace;font-size:16px;
         color:{P["positive"]};font-variant-numeric:tabular-nums;margin-top:4px">
-        +${rcm_total:.1f}M
+        +${rcm_total:.2f}M
       </div>
       <div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:{tdim};margin-top:3px">
-        NPV over hold: ${rcm_total_npv:.1f}M
+        NPV over hold: ${rcm_total_npv:.2f}M
       </div>
     </div>
   </div>

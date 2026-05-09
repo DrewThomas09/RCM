@@ -113,7 +113,7 @@ def _target_scatter_chart(
         cy = px_y(y)
         title = (
             f"{c.get('ticker', '')} · {c.get('name', '')} · "
-            f"${x:,.1f}B revenue · {y:.1f}x EV/EBITDA"
+            f"${x:,.2f}B revenue · {y:.1f}x EV/EBITDA"
         )
         dots.append(
             f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="5" '
@@ -133,7 +133,7 @@ def _target_scatter_chart(
         target_marker = (
             f'<circle cx="{tx:.1f}" cy="{ty:.1f}" r="9" '
             f'fill="none" stroke="{P["warning"]}" stroke-width="2">'
-            f'<title>Target · ${target_rev_bn:,.1f}B revenue · '
+            f'<title>Target · ${target_rev_bn:,.2f}B revenue · '
             f'{target_mult:.1f}x implied EV/EBITDA (12% margin '
             f'assumption)</title></circle>'
             f'<circle cx="{tx:.1f}" cy="{ty:.1f}" r="3" '
@@ -151,7 +151,7 @@ def _target_scatter_chart(
             f'<text x="{px_x(x_t):.1f}" y="{pad_t + inner_h + 16:.1f}" '
             f'fill="{P["text_faint"]}" text-anchor="middle" '
             f'font-size="9" font-family="JetBrains Mono, monospace">'
-            f'${x_t:,.1f}B</text>'
+            f'${x_t:,.2f}B</text>'
         )
 
     note = ""
@@ -395,7 +395,7 @@ def _transaction_multiples_section(
             f'{html.escape(specialty)}.</div></div>'
         )
     ev_range_str = (
-        f" · target EV ${ev_usd/1e6:,.0f}M" if ev_usd else ""
+        f" · target EV ${ev_usd/1e6:,.2f}M" if ev_usd else ""
     )
     return (
         f'<div style="background:{P["panel"]};border:1px solid '

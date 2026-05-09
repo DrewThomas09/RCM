@@ -674,7 +674,7 @@ def checklist_text(result: DiligenceChecklistResult) -> str:
     if result.sector:
         lines.append(f"Sector: {result.sector}")
     if result.ev_mm:
-        lines.append(f"EV: ${result.ev_mm:.0f}M")
+        lines.append(f"EV: ${result.ev_mm:.2f}M")
     lines.append("")
     lines.append(
         f"Status: {result.critical_count} CRITICAL · "

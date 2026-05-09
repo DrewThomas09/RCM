@@ -45,7 +45,7 @@ def identify_readiness_gaps(target: ExitTarget) -> List[ReadinessGap]:
             archetype=ExitArchetype.IPO,
             title="Reach public-market scale",
             description=(
-                f"Revenue ${target.ttm_revenue_mm:.0f}M vs $200M IPO "
+                f"Revenue ${target.ttm_revenue_mm:.2f}M vs $200M IPO "
                 f"floor. At current growth ~{years_at_growth*12:.0f} "
                 f"months to scale."),
             months_to_remediate=int(years_at_growth * 12),
@@ -93,7 +93,7 @@ def identify_readiness_gaps(target: ExitTarget) -> List[ReadinessGap]:
             title="High existing leverage limits recap",
             description=(
                 f"Net debt {leverage:.1f}× EBITDA — recap capacity "
-                f"limited to incremental ${(5.5 - leverage) * target.ttm_ebitda_mm:.1f}M."),
+                f"limited to incremental ${(5.5 - leverage) * target.ttm_ebitda_mm:.2f}M."),
             months_to_remediate=6, severity="low"))
 
     # Sort by severity then months

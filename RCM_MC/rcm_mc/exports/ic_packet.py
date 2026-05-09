@@ -379,7 +379,7 @@ def _headline_stats(
         if abs(v) >= 1_000_000_000:
             return f"${v/1_000_000_000:.2f}B"
         if abs(v) >= 1_000_000:
-            return f"${v/1_000_000:.1f}M"
+            return f"${v/1_000_000:.2f}M"
         return f"${v:,.0f}"
 
     ev_ebitda = None
@@ -1123,7 +1123,7 @@ def _market_context_section(
             f'<tr>'
             f'<td>{html.escape(c["ticker"])}</td>'
             f'<td>{html.escape(c["name"])}</td>'
-            f'<td class="num">${c["revenue_ttm_usd_bn"]:.1f}B</td>'
+            f'<td class="num">${c["revenue_ttm_usd_bn"]:.2f}B</td>'
             f'<td class="num">{c["ev_ebitda_multiple"]:.2f}x</td>'
             f'</tr>'
             for c in comps[:5]

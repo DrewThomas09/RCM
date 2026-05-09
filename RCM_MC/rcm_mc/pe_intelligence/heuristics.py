@@ -492,7 +492,7 @@ def _h_small_deal_mega_irr(ctx: HeuristicContext) -> Optional[HeuristicHit]:
         severity=severity,
         category="VALUATION",
         finding=(
-            f"${ctx.ebitda_m:.1f}M EBITDA deal with a projected {ctx.projected_irr*100:.1f}% IRR. "
+            f"${ctx.ebitda_m:.2f}M EBITDA deal with a projected {ctx.projected_irr*100:.1f}% IRR. "
             "Small deals show high dispersion — median > 40% is rare and "
             "usually means the entry multiple is understated."
         ),

@@ -184,8 +184,8 @@ def _back_office(s: HealthcareArchetypeSignals) -> Optional[ArchetypeMatch]:
                       s.it_platform_investment_planned_m) / 10.0)
     signals = [
         f"{s.multi_site_count} sites",
-        f"RCM investment ${s.centralized_rcm_investment_m:.1f}M",
-        f"IT platform investment ${s.it_platform_investment_planned_m:.1f}M",
+        f"RCM investment ${s.centralized_rcm_investment_m:.2f}M",
+        f"IT platform investment ${s.it_platform_investment_planned_m:.2f}M",
     ]
     return ArchetypeMatch(
         archetype="back_office_consolidation",

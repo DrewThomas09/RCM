@@ -181,7 +181,7 @@ def plot_tornado(oat_df: pd.DataFrame, outpath: str, baseline_drag: float) -> No
 
     def _fmt(x: float) -> str:
         if abs(x) >= 1e6:
-            return f"${x/1e6:.1f}M"
+            return f"${x/1e6:.2f}M"
         if abs(x) >= 1e3:
             return f"${x/1e3:.0f}K"
         return f"${x:.0f}"

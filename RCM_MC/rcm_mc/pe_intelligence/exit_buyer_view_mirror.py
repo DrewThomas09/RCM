@@ -230,7 +230,7 @@ def write_exit_buyer_mirror(
         )
     if inputs.site_neutral_remaining_arbitrage_m > 10:
         bear.append(
-            f"${inputs.site_neutral_remaining_arbitrage_m:.0f}M "
+            f"${inputs.site_neutral_remaining_arbitrage_m:.2f}M "
             "of site-of-service arbitrage still in "
             "EBITDA — vulnerable to next CMS rule cycle."
         )
@@ -285,7 +285,7 @@ def write_exit_buyer_mirror(
         note = (
             f"Our exit assumption ({inputs.our_assumed_exit_multiple:.1f}×) "
             f"materially above likely buyer entry "
-            f"({buyer_mult:.1f}×) → ${gap_dollar:.0f}M gap. "
+            f"({buyer_mult:.1f}×) → ${gap_dollar:.2f}M gap. "
             "Either we have a bid we trust at our number, "
             "or we re-underwrite exit case down."
         )

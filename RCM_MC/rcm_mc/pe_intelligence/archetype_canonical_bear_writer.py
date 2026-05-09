@@ -249,7 +249,7 @@ def write_canonical_bear(
         note = (
             f"{inputs.archetype} canonical bear: "
             f"EBITDA hit ~{bear['expected_ebitda_hit_pct']:.0%} "
-            f"(${hit_m:.1f}M); thesis-broken — bear "
+            f"(${hit_m:.2f}M); thesis-broken — bear "
             "scenario is not recoverable within hold. "
             f"Watch: {bear['early_warning_indicator']}"
         )
@@ -257,7 +257,7 @@ def write_canonical_bear(
         note = (
             f"{inputs.archetype} canonical bear: "
             f"EBITDA hit ~{bear['expected_ebitda_hit_pct']:.0%} "
-            f"(${hit_m:.1f}M); recoverable but extends "
+            f"(${hit_m:.2f}M); recoverable but extends "
             "hold by 12-18 months. Price the time-value "
             "drag into entry."
         )
@@ -265,7 +265,7 @@ def write_canonical_bear(
         note = (
             f"{inputs.archetype} canonical bear: "
             f"EBITDA hit ~{bear['expected_ebitda_hit_pct']:.0%} "
-            f"(${hit_m:.1f}M); recoverable within hold "
+            f"(${hit_m:.2f}M); recoverable within hold "
             "if operator addresses early. Early-warning: "
             f"{bear['early_warning_indicator']}"
         )
@@ -306,7 +306,7 @@ def render_canonical_bear_markdown(
         "",
         f"**Expected EBITDA hit:** "
         f"{r.expected_ebitda_hit_pct:.0%} "
-        f"(${r.expected_ebitda_hit_m:.1f}M)",
+        f"(${r.expected_ebitda_hit_m:.2f}M)",
         "",
         f"**Recovery posture:** {r.recovery_posture}",
         "",

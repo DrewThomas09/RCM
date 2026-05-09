@@ -376,7 +376,7 @@ def render_comparables(
         subtitle=(
             f"{len(comps)} comparables" +
             (f" · {sector}" if sector else "") +
-            (f" · EV ${ev_mm:,.0f}M" if ev_mm else "") +
+            (f" · EV ${ev_mm:,.2f}M" if ev_mm else "") +
             entry_multiple_str
         ) if has_query else f"{total_corpus} deals · {realized_n} realized",
     )

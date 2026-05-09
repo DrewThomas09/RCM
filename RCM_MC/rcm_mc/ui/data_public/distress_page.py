@@ -114,7 +114,7 @@ def _format_metric(
 def _facility_row(sig: DistressSignal) -> str:
     band_color = _BAND_COLORS.get(sig.band, "#666")
     npr_str = (
-        f"${sig.net_patient_revenue / 1e6:.0f}M"
+        f"${sig.net_patient_revenue / 1e6:.2f}M"
         if sig.net_patient_revenue and sig.net_patient_revenue >= 1e6
         else "—"
     )
@@ -242,7 +242,7 @@ def render_distress(
     revenue_at_risk_str = (
         f"${revenue_at_risk / 1e9:.2f}B"
         if revenue_at_risk >= 1e9
-        else f"${revenue_at_risk / 1e6:.0f}M"
+        else f"${revenue_at_risk / 1e6:.2f}M"
     )
     headline = (
         f'<div style="display:flex;gap:24px;align-items:baseline;margin-bottom:16px;">'

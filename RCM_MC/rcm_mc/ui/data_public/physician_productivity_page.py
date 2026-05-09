@@ -244,8 +244,8 @@ def render_physician_productivity(params: dict = None) -> str:
         ck_kpi_block("Total FTE", f"{r.total_fte:.1f}", "", "") +
         ck_kpi_block("Total wRVU", f"{r.total_wrvu:,.0f}", "", "") +
         ck_kpi_block("Productivity Score", f"{r.productivity_score:.0f}", "/100", "") +
-        ck_kpi_block("Collections", f"${r.total_collections_mm:,.1f}M", "", "") +
-        ck_kpi_block("Provider Comp", f"${r.total_provider_comp_mm:,.1f}M", "", "") +
+        ck_kpi_block("Collections", f"${r.total_collections_mm:,.2f}M", "", "") +
+        ck_kpi_block("Provider Comp", f"${r.total_provider_comp_mm:,.2f}M", "", "") +
         ck_kpi_block("Blended C/C", f"{r.blended_comp_to_coll_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Specialties", f"{len(r.providers)}", "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")

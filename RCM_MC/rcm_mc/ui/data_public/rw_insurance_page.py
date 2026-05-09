@@ -30,9 +30,9 @@ def _policies_table(items) -> str:
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(p.deal)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(p.policy_type)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${p.deal_size_m:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${p.primary_limit_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${p.total_tower_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${p.deal_size_m:,.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${p.primary_limit_m:.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${p.total_tower_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${p.retention_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{p.retention_pct * 100:.2f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">${p.premium_m:.2f}M</td>',
@@ -61,7 +61,7 @@ def _carriers_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(c.carrier)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{c.primary_policies}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{c.excess_layers}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${c.total_limit_deployed_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${c.total_limit_deployed_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.avg_rate_pct * 100:.2f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{cl_c};font-weight:700">{c.open_claims}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:340px">{_html.escape(c.notable_strengths)}</td>',
@@ -87,7 +87,7 @@ def _exclusions_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:280px">{_html.escape(e.scope)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{acc}">{_html.escape(e.standalone_coverage)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${e.annual_premium_m:.2f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${e.retention_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${e.retention_m:.2f}M</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -133,7 +133,7 @@ def _specialty_table(items) -> str:
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(s.coverage_type)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc};font-weight:600">{_html.escape(s.deal)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${s.limit_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${s.limit_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${s.retention_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">${s.premium_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{s.rate_pct * 100:.2f}%</td>',
@@ -178,9 +178,9 @@ def render_rw_insurance(params: dict = None) -> str:
 
     kpi_strip = (
         ck_kpi_block("Policies", str(r.total_policies), "", "") +
-        ck_kpi_block("Primary Limit", f"${r.total_primary_limit_m:.1f}M", "", "") +
-        ck_kpi_block("Total Tower", f"${r.total_tower_limit_m:,.1f}M", "", "") +
-        ck_kpi_block("Total Premium", f"${r.total_premium_m:.1f}M", "", "") +
+        ck_kpi_block("Primary Limit", f"${r.total_primary_limit_m:.2f}M", "", "") +
+        ck_kpi_block("Total Tower", f"${r.total_tower_limit_m:,.2f}M", "", "") +
+        ck_kpi_block("Total Premium", f"${r.total_premium_m:.2f}M", "", "") +
         ck_kpi_block("Avg Rate", f"{r.weighted_avg_rate_pct * 100:.2f}%", "", "") +
         ck_kpi_block("Avg Retention", f"{r.weighted_avg_retention_pct * 100:.2f}%", "", "") +
         ck_kpi_block("Open Claims", str(r.open_claims), "", "") +
@@ -204,7 +204,7 @@ def render_rw_insurance(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">R&W Insurance / M&A Insurance Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_policies} active policies · ${r.total_tower_limit_m:,.1f}M total tower · ${r.total_premium_m:.1f}M premium · {r.weighted_avg_rate_pct * 100:.2f}% weighted rate · {r.weighted_avg_retention_pct * 100:.2f}% avg retention · {r.open_claims} open claims — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_policies} active policies · ${r.total_tower_limit_m:,.2f}M total tower · ${r.total_premium_m:.2f}M premium · {r.weighted_avg_rate_pct * 100:.2f}% weighted rate · {r.weighted_avg_retention_pct * 100:.2f}% avg retention · {r.open_claims} open claims — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Active R&W Policies</div>{p_tbl}</div>
@@ -214,9 +214,9 @@ def render_rw_insurance(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Specialty Coverages</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Market Benchmarks by Deal Size</div>{b_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">R&W Insurance Program Summary:</strong> {r.total_policies} active policies with ${r.total_tower_limit_m:,.1f}M in coverage tower at ${r.total_premium_m:.1f}M annual premium — weighted {r.weighted_avg_rate_pct * 100:.2f}% rate tracks market ±25bps.
-    Carrier concentration: Beazley (6 primary, ${sum(c.total_limit_deployed_m for c in r.carriers if c.carrier == "Beazley"):.0f}M deployed) leads portfolio; AIG/Euclid + Euclid Transactional combined represent 50%+ of primary policies — continuing PE-healthcare market focus.
-    Claim experience: ${total_claimed:.1f}M claimed / ${total_paid:.1f}M paid ({total_paid / total_claimed * 100 if total_claimed else 0:.1f}% recovery); {r.open_claims} claims open with ~$9.5M aggregate alleged exposure under active investigation.
+    <strong style="color:{text}">R&W Insurance Program Summary:</strong> {r.total_policies} active policies with ${r.total_tower_limit_m:,.2f}M in coverage tower at ${r.total_premium_m:.2f}M annual premium — weighted {r.weighted_avg_rate_pct * 100:.2f}% rate tracks market ±25bps.
+    Carrier concentration: Beazley (6 primary, ${sum(c.total_limit_deployed_m for c in r.carriers if c.carrier == "Beazley"):.2f}M deployed) leads portfolio; AIG/Euclid + Euclid Transactional combined represent 50%+ of primary policies — continuing PE-healthcare market focus.
+    Claim experience: ${total_claimed:.2f}M claimed / ${total_paid:.2f}M paid ({total_paid / total_claimed * 100 if total_claimed else 0:.1f}% recovery); {r.open_claims} claims open with ~$9.5M aggregate alleged exposure under active investigation.
     Specialty coverage ${spec_prem:.2f}M annual premium across 10 policies — tax indemnity, contingent liability (FCA/DOJ), and litigation buyouts wrap the 9 known R&W policy exclusions.
     Market benchmarks: $500M-1B+ deal band softening (3.0% → 2.75% median rate); retentions tightening (0.50%); tower layers thickening (7-8 layers standard) — buyers' market for insureds.
     Exclusion footprint concentrated in 9 deals with known regulatory / legal matters — all covered by standalone policies or contingent liability wraps totaling ${sum(e.annual_premium_m for e in r.exclusions):.2f}M annual premium.

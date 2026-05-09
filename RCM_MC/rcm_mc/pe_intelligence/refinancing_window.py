@@ -148,7 +148,7 @@ def plan_refinance(tranches: List[DebtTranche],
     if now_actions:
         note = (
             f"{len(now_actions)} tranche(s) flagged for refi now. "
-            f"Next-24-month maturity wall: ${wall:,.0f}M."
+            f"Next-24-month maturity wall: ${wall:,.2f}M."
         )
     elif any(r.action == "refi_in_1_year" for r in recs):
         note = "Refi window opening in 12 months — start banker RFP."
@@ -169,7 +169,7 @@ def render_refi_plan_markdown(plan: RefiPlan) -> str:
         "",
         f"_{plan.partner_note}_",
         "",
-        f"- 24-month maturity wall: ${plan.total_maturity_wall_m:,.0f}M",
+        f"- 24-month maturity wall: ${plan.total_maturity_wall_m:,.2f}M",
         "",
         "| Tranche | Action | Years | Rate Δ bps |",
         "|---|---|---:|---:|",

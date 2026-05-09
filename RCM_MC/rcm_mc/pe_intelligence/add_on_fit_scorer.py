@@ -149,7 +149,7 @@ def _score_financial(ctx: AddOnContext) -> FitDimension:
     if ctx.target_ebitda_m < 2.0:
         score -= 15
         concerns.append(
-            f"Target EBITDA ${ctx.target_ebitda_m:.1f}M is too small "
+            f"Target EBITDA ${ctx.target_ebitda_m:.2f}M is too small "
             "— team-bandwidth cost often exceeds return.")
     return FitDimension("financial", max(0, min(100, score)), concerns)
 
@@ -200,7 +200,7 @@ def _score_execution(ctx: AddOnContext) -> FitDimension:
     if ctx.platform_capex_headroom_m < 2.0:
         score -= 15
         concerns.append(
-            f"Capex headroom ${ctx.platform_capex_headroom_m:.1f}M "
+            f"Capex headroom ${ctx.platform_capex_headroom_m:.2f}M "
             "is thin — integration capex may crowd out platform "
             "roadmap.")
     if ctx.months_to_close_expected > 6:

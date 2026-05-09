@@ -78,7 +78,7 @@ def _engagements_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(e.buyer_type)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(e.first_touch)}</td>',
             f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(e.stage)}</span></td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${e.ioi_amount_m:,.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${e.ioi_amount_m:,.2f}M</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:320px">{_html.escape(e.key_conditions)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{a_c};font-weight:700">{e.probability_advance_pct}%</td>',
         ]
@@ -126,13 +126,13 @@ def _valuations_table(items) -> str:
         m_c = pos if v.target_moic >= 2.75 else (acc if v.target_moic >= 2.35 else P["warning"])
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(v.deal)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${v.ltm_ebitda_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${v.run_rate_ebitda_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${v.ltm_ebitda_m:.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${v.run_rate_ebitda_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{v.base_multiple:.1f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">{v.ask_multiple:.1f}x</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:260px">{_html.escape(v.strategic_premium_range)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${v.entry_value_m:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${v.target_ev_m:,.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${v.entry_value_m:,.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${v.target_ev_m:,.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{m_c};font-weight:700">{v.target_moic:.2f}x</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -176,9 +176,9 @@ def _postures_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(p.deal)}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(p.current_round)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{p.active_buyers}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${p.high_bid_m:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${p.sponsor_min_acceptable_m:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${p.bid_dispersion_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${p.high_bid_m:,.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${p.sponsor_min_acceptable_m:,.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${p.bid_dispersion_m:.2f}M</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:280px">{_html.escape(p.posture)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:340px">{_html.escape(p.next_action)}</td>',
         ]
@@ -198,7 +198,7 @@ def render_sellside_process(params: dict = None) -> str:
     kpi_strip = (
         ck_kpi_block("Active Processes", str(r.total_active_processes), "", "") +
         ck_kpi_block("Buyers Engaged", str(r.total_buyers_engaged), "", "") +
-        ck_kpi_block("Target EV", f"${r.total_target_ev_m:,.1f}M", "", "") +
+        ck_kpi_block("Target EV", f"${r.total_target_ev_m:,.2f}M", "", "") +
         ck_kpi_block("Weighted MOIC", f"{r.weighted_target_moic:.2f}x", "", "") +
         ck_kpi_block("Closing ≤12 mo", str(r.processes_closing_12mo), "", "") +
         ck_kpi_block("Active Diligence", str(len(r.diligence)), "", "") +
@@ -220,7 +220,7 @@ def render_sellside_process(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Sell-Side Process Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_active_processes} active processes · {r.total_buyers_engaged} buyers engaged · ${r.total_target_ev_m:,.1f}M target EV · {r.weighted_target_moic:.2f}x weighted MOIC · {r.processes_closing_12mo} closings ≤12 mo — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_active_processes} active processes · {r.total_buyers_engaged} buyers engaged · ${r.total_target_ev_m:,.2f}M target EV · {r.weighted_target_moic:.2f}x weighted MOIC · {r.processes_closing_12mo} closings ≤12 mo — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Active Sell-Side Processes</div>{p_tbl}</div>
@@ -230,8 +230,8 @@ def render_sellside_process(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Valuation Analytics</div>{v_tbl}</div>
   <div style="{cell}"><div style="{h3}">Process Milestones</div>{m_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Sell-Side Program Summary:</strong> {r.total_active_processes} active processes representing ${r.total_target_ev_m:,.1f}M target EV at {r.weighted_target_moic:.2f}x weighted MOIC; {r.processes_closing_12mo} targeted for close within 12 months.
-    2026 cadence: Laurel Derma (Q4 close) + Oak RCM SaaS (Q3 IPO pricing) + Cypress GI Network (Q4 close); Fir Lab / Pathology close targets Q1 2027 — aggregate top-3 (Laurel, Cypress, Fir) ${(806.0 + 2059.0 + 1456.0):,.1f}M EV.
+    <strong style="color:{text}">Sell-Side Program Summary:</strong> {r.total_active_processes} active processes representing ${r.total_target_ev_m:,.2f}M target EV at {r.weighted_target_moic:.2f}x weighted MOIC; {r.processes_closing_12mo} targeted for close within 12 months.
+    2026 cadence: Laurel Derma (Q4 close) + Oak RCM SaaS (Q3 IPO pricing) + Cypress GI Network (Q4 close); Fir Lab / Pathology close targets Q1 2027 — aggregate top-3 (Laurel, Cypress, Fir) ${(806.0 + 2059.0 + 1456.0):,.2f}M EV.
     Buyer engagement book: 15 active conversations across strategic (Optum, UHG, LabCorp/Quest, Acadia, Advent), large PE (Hellman & Friedman, Apollo, Bain), and CV/sponsor structures — Laurel leads with 5 buyers active at IOI stage.
     Diligence readiness: 22 items tracked — Laurel Derma + Oak RCM complete, Cypress + Fir final prep, Magnolia + Cedar + Ash mid-diligence (35-65% complete), Willow and Aspen earliest.
     Oak RCM IPO on track for Q3 2026 pricing — S-1 confidential filing complete ahead of schedule; roadshow scheduled July 2026 with Goldman/MS syndicate.

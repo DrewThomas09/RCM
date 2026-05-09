@@ -175,9 +175,9 @@ def render_lbo_stress(params: dict = None) -> str:
     expected_irr = sum(s.irr_pct * s.probability_pct for s in r.scenarios) / sum(s.probability_pct for s in r.scenarios)
 
     kpi_strip = (
-        ck_kpi_block("Purchase Price", f"${b.purchase_price_mm:,.0f}M", "", "") +
+        ck_kpi_block("Purchase Price", f"${b.purchase_price_mm:,.2f}M", "", "") +
         ck_kpi_block("Entry Multiple", f"{b.entry_multiple:,.2f}x", "", "") +
-        ck_kpi_block("Equity Check", f"${b.equity_check_mm:,.0f}M", "", "") +
+        ck_kpi_block("Equity Check", f"${b.equity_check_mm:,.2f}M", "", "") +
         ck_kpi_block("Initial Leverage", f"{b.initial_leverage:,.2f}x", "", "") +
         ck_kpi_block("Base MOIC", f"{b.projected_moic:,.2f}x", "", "") +
         ck_kpi_block("Base IRR", f"{b.projected_irr_pct * 100:.1f}%", "", "") +

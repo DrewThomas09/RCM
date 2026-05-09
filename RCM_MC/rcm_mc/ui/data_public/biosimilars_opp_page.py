@@ -132,9 +132,9 @@ def render_biosimilars(params: dict = None) -> str:
 
     kpi_strip = (
         ck_kpi_block("LoE Waves", str(r.total_loe_waves), "", "") +
-        ck_kpi_block("Reference Sales", f"${r.total_reference_sales_b:,.1f}B", "", "") +
-        ck_kpi_block("Annual Opportunity", f"${r.total_annual_opportunity_mm:,.1f}M", "", "") +
-        ck_kpi_block("Annual Margin", f"${r.total_margin_mm:,.1f}M", "", "") +
+        ck_kpi_block("Reference Sales", f"${r.total_reference_sales_b:,.2f}B", "", "") +
+        ck_kpi_block("Annual Opportunity", f"${r.total_annual_opportunity_mm:,.2f}M", "", "") +
+        ck_kpi_block("Annual Margin", f"${r.total_margin_mm:,.2f}M", "", "") +
         ck_kpi_block("Weighted Y3 Adoption", f"{r.weighted_adoption_y3_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Interchangeable Bios", str(sum(1 for w in r.waves if w.interchangeable_approved)), "", "") +
         ck_kpi_block("Active Classes", str(len(r.dynamics)), "", "") +
@@ -163,10 +163,10 @@ def render_biosimilars(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">FDA Interchangeable Designation Status</div>{i_tbl}</div>
   <div style="{cell}"><div style="{h3}">Class-Level Competitive Dynamics</div>{d_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Biosimilars Thesis:</strong> {r.total_loe_waves} LoE waves representing ${r.total_reference_sales_b:,.1f}B in reference-drug sales.
+    <strong style="color:{text}">Biosimilars Thesis:</strong> {r.total_loe_waves} LoE waves representing ${r.total_reference_sales_b:,.2f}B in reference-drug sales.
     Weighted Y3 biosimilar adoption reaches {r.weighted_adoption_y3_pct * 100:.1f}% across the platform — driven by interchangeable status, payer formulary steering, and provider-economics alignment.
     Provider economics: biosimilar margin per dose is typically 60-70% below reference in absolute terms (ASP+6% math) but provider still captures meaningful absolute margin — and volume grows as biosimilars expand access.
-    Total annual margin opportunity ${r.total_margin_mm:,.1f}M across infusion/dispensing sites. Humira wave (2023 LoE, 10 biosimilars, 2 interchangeable) is the reference playbook;
+    Total annual margin opportunity ${r.total_margin_mm:,.2f}M across infusion/dispensing sites. Humira wave (2023 LoE, 10 biosimilars, 2 interchangeable) is the reference playbook;
     Stelara (2025) and Eylea (2025) are the next-wave opportunities. Oncology and rheum/IBD infusion sites capture the largest absolute dollars.
   </div>
 </div>"""

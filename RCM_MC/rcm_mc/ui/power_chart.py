@@ -84,7 +84,7 @@ def _format_y(value: float, kind: str) -> str:
         if abs(value) >= 1e9:
             return f"${value / 1e9:,.2f}B"
         if abs(value) >= 1e6:
-            return f"${value / 1e6:,.1f}M"
+            return f"${value / 1e6:,.2f}M"
         if abs(value) >= 1e3:
             return f"${value / 1e3:,.0f}K"
         return f"${value:,.0f}"

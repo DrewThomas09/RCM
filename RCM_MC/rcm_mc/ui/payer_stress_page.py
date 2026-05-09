@@ -167,7 +167,7 @@ def _mix_donut_svg(
         )
         tip = (
             f"{r.payer_name}: {frac*100:.1f}% of NPR "
-            f"(${r.npr_attributed_usd/1e6:,.1f}M)"
+            f"(${r.npr_attributed_usd/1e6:,.2f}M)"
         )
         segments.append(
             f'<path d="{d}" fill="{color}" '
@@ -402,7 +402,7 @@ def _payer_card(row: PayerStressRow) -> str:
         f'</div>'
         f'<div class="ps-payer-meta">'
         f'{html.escape(cat_label or "Unclassified")} · '
-        f'${row.npr_attributed_usd/1e6:,.1f}M NPR · '
+        f'${row.npr_attributed_usd/1e6:,.2f}M NPR · '
         f'leverage {int(row.negotiating_leverage*100)}/100 · '
         f'churn {int(row.churn_prob*100)}% · '
         f'renewal: {html.escape(renewal)}'
@@ -467,7 +467,7 @@ def _payer_table(report: PayerStressReport) -> str:
             html.escape(r.payer_name),
             (r.category or "").replace("_", " ").title(),
             f"{r.share_of_npr*100:.0f}%",
-            f"${r.npr_attributed_usd/1e6:,.1f}M",
+            f"${r.npr_attributed_usd/1e6:,.2f}M",
             _colored(f"{r.median_rate_move*100:+.2f}%", rate_color),
             _colored(f"{r.p10_rate_move*100:+.2f}%", tail_color),
             _colored(
@@ -832,7 +832,7 @@ def render_payer_stress_page(
             f"{html.escape(worst_tail.payer_name)}</strong> "
             f"(share {worst_tail.share_of_npr*100:.1f}%), which alone "
             f"removes "
-            f"<strong>${abs(worst_tail.p10_npr_delta_usd)/1e6:,.1f}M</strong> "
+            f"<strong>${abs(worst_tail.p10_npr_delta_usd)/1e6:,.2f}M</strong> "
             f"of NPR in the downside case. Factor this into the "
             f"P10 EBITDA floor before signing."
         )
@@ -853,7 +853,7 @@ def render_payer_stress_page(
         f'margin-top:4px;">'
         f'{len(mix)} payers · {report.n_paths} simulated paths · '
         f'{horizon}-year horizon · '
-        f'${total_npr/1e6:,.0f}M total NPR'
+        f'${total_npr/1e6:,.2f}M total NPR'
         + (f' · {report.unclassified_share*100:.1f}% unclassified'
            if report.unclassified_share > 0.05 else '')
         + f'</div>'

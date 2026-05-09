@@ -100,15 +100,15 @@ def market_size_sanity(inputs: CDDInputs) -> CDDFinding:
     if inputs.stated_tam_usd_b > ceiling * 1.2:
         return CDDFinding(
             check="tam_size", status="flag",
-            detail=(f"Stated TAM ${inputs.stated_tam_usd_b:.1f}B exceeds "
-                    f"the US ceiling for {inputs.subsector} (${ceiling:.1f}B)."),
+            detail=(f"Stated TAM ${inputs.stated_tam_usd_b:.2f}B exceeds "
+                    f"the US ceiling for {inputs.subsector} (${ceiling:.2f}B)."),
             partner_note=("TAM inflation is a classic red flag in CDD. "
                           "Press for the bottom-up build."),
         )
     return CDDFinding(
         check="tam_size", status="pass",
-        detail=(f"Stated TAM ${inputs.stated_tam_usd_b:.1f}B is within the "
-                f"US ceiling for {inputs.subsector} (${ceiling:.1f}B)."),
+        detail=(f"Stated TAM ${inputs.stated_tam_usd_b:.2f}B is within the "
+                f"US ceiling for {inputs.subsector} (${ceiling:.2f}B)."),
     )
 
 

@@ -44,7 +44,7 @@ def _ebitda_bridge_svg(projections) -> str:
         bars.append(
             f'<rect x="{x}" y="{y}" width="{bar_w}" height="{bh}" fill="{color}" opacity="0.8"/>'
             f'<text x="{x + bar_w // 2}" y="{y - 6}" fill="{text_dim}" font-size="10" '
-            f'text-anchor="middle" font-family="JetBrains Mono,monospace">${val:,.1f}M</text>'
+            f'text-anchor="middle" font-family="JetBrains Mono,monospace">${val:,.2f}M</text>'
             f'<text x="{x + bar_w // 2}" y="{h - pad_b + 16}" fill="{text_faint}" font-size="10" '
             f'text-anchor="middle" font-family="JetBrains Mono,monospace">{label}</text>'
         )
@@ -296,12 +296,12 @@ def render_bolton_analyzer(params: dict = None) -> str:
     irr_lift = (with_scen.irr - no_scen.irr) if with_scen else 0.0
 
     kpi_strip = (
-        ck_kpi_block("Platform EV", f"${r.platform_ev_mm:,.0f}M", "", "") +
+        ck_kpi_block("Platform EV", f"${r.platform_ev_mm:,.2f}M", "", "") +
         ck_kpi_block("Platform Mult", f"{r.platform_mult:.2f}x", "", "") +
         ck_kpi_block("Avg Bolt-on Mult", f"{arb.avg_bolton_mult:.2f}x", "", "") +
         ck_kpi_block("Mult Arbitrage", f"{arb.mult_arbitrage:+.2f}x", "", "") +
         ck_kpi_block("Blended Entry", f"{arb.blended_entry_mult:.2f}x", "", "") +
-        ck_kpi_block("Value Uplift", f"${arb.value_uplift_mm:,.0f}M", "", "") +
+        ck_kpi_block("Value Uplift", f"${arb.value_uplift_mm:,.2f}M", "", "") +
         ck_kpi_block("MOIC Lift", f"{moic_lift:+.2f}x", "", "") +
         ck_kpi_block("IRR Lift", f"{irr_lift * 100:+.1f}%", "", "")
     )
@@ -405,8 +405,8 @@ def render_bolton_analyzer(params: dict = None) -> str:
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Multiple Arbitrage:</strong>
     Platform trades at {r.platform_mult:.2f}x vs. bolt-ons at {arb.avg_bolton_mult:.2f}x (spread {arb.mult_arbitrage:+.2f}x).
-    Blended entry {arb.blended_entry_mult:.2f}x. Total immediate value uplift: ${arb.value_uplift_mm:,.0f}M.
-    Total equity deployed: ${r.total_capital_deployed_mm:,.1f}M.
+    Blended entry {arb.blended_entry_mult:.2f}x. Total immediate value uplift: ${arb.value_uplift_mm:,.2f}M.
+    Total equity deployed: ${r.total_capital_deployed_mm:,.2f}M.
   </div>
 
 </div>"""

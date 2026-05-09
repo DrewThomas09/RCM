@@ -62,7 +62,7 @@ def _football_field_svg(ranges) -> str:
         ticks.append(
             f'<line x1="{x:.1f}" y1="{pad_t}" x2="{x:.1f}" y2="{h - pad_b}" stroke="{border}" stroke-width="0.5" stroke-dasharray="2,3" opacity="0.4"/>'
             f'<text x="{x:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" text-anchor="middle" '
-            f'font-family="JetBrains Mono,monospace">${tv:,.0f}M</text>'
+            f'font-family="JetBrains Mono,monospace">${tv:,.2f}M</text>'
         )
 
     return (
@@ -148,9 +148,9 @@ def _ranges_table(ranges) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(r.methodology)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${r.low_ev_mm:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${r.median_ev_mm:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${r.high_ev_mm:,.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${r.low_ev_mm:,.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${r.median_ev_mm:,.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${r.high_ev_mm:,.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{r.low_multiple:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]};font-weight:600">{r.median_multiple:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{r.high_multiple:.2f}x</td>',
@@ -210,11 +210,11 @@ def render_peer_valuation(params: dict = None) -> str:
 
     kpi_strip = (
         ck_kpi_block("Sector", sector, "", "") +
-        ck_kpi_block("Target EBITDA", f"${r.target_ebitda_mm:,.1f}M", "", "") +
-        ck_kpi_block("Target Revenue", f"${r.target_revenue_mm:,.1f}M", "", "") +
-        ck_kpi_block("Low EV", f"${r.implied_ev_low_mm:,.0f}M", "", "") +
-        ck_kpi_block("Median EV", f"${r.implied_ev_median_mm:,.0f}M", "", "") +
-        ck_kpi_block("High EV", f"${r.implied_ev_high_mm:,.0f}M", "", "") +
+        ck_kpi_block("Target EBITDA", f"${r.target_ebitda_mm:,.2f}M", "", "") +
+        ck_kpi_block("Target Revenue", f"${r.target_revenue_mm:,.2f}M", "", "") +
+        ck_kpi_block("Low EV", f"${r.implied_ev_low_mm:,.2f}M", "", "") +
+        ck_kpi_block("Median EV", f"${r.implied_ev_median_mm:,.2f}M", "", "") +
+        ck_kpi_block("High EV", f"${r.implied_ev_high_mm:,.2f}M", "", "") +
         ck_kpi_block("Implied Mult", f"{r.current_implied_mult:.2f}x", "", "") +
         ck_kpi_block("Precedents", str(len(r.precedent_transactions)), "", "")
     )
@@ -295,7 +295,7 @@ def render_peer_valuation(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Valuation Thesis:</strong>
-    Implied EV range ${r.implied_ev_low_mm:,.0f}M – ${r.implied_ev_high_mm:,.0f}M (median ${r.implied_ev_median_mm:,.0f}M)
+    Implied EV range ${r.implied_ev_low_mm:,.2f}M – ${r.implied_ev_high_mm:,.2f}M (median ${r.implied_ev_median_mm:,.2f}M)
     at {r.current_implied_mult:.2f}x EBITDA. Public trading comps anchor the low end; precedent transactions
     set the typical control price; size premium typically adds 10-20% for $500M+ platforms.
   </div>

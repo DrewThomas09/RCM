@@ -302,9 +302,9 @@ def scrub_recurring_npr(
         note = (
             f"Seller pitches "
             f"{seller_growth:.1%} growth on TTM NPR "
-            f"${inputs.stated_ttm_npr_m:.0f}M; partner "
+            f"${inputs.stated_ttm_npr_m:.2f}M; partner "
             f"reads {partner_growth:.1%} on recurring "
-            f"${recurring_npr:.0f}M. "
+            f"${recurring_npr:.2f}M. "
             f"{distortion:.1%} of pitched growth is "
             "one-time / non-recurring NPR — anchor "
             "growth conversation on recurring base."
@@ -320,7 +320,7 @@ def scrub_recurring_npr(
     else:
         note = (
             f"Top line scrub clean — recurring NPR "
-            f"~${recurring_npr:.0f}M; growth rate "
+            f"~${recurring_npr:.2f}M; growth rate "
             f"{partner_growth:.1%} matches seller pitch."
         )
 
@@ -345,10 +345,10 @@ def render_recurring_npr_markdown(
         "",
         f"_{r.partner_note}_",
         "",
-        f"- Stated TTM NPR: ${r.stated_ttm_npr_m:.1f}M",
-        f"- Recurring NPR: ${r.recurring_npr_m:.1f}M",
-        f"- One-time NPR: ${r.one_time_npr_m:.1f}M",
-        f"- Questionable NPR: ${r.questionable_npr_m:.1f}M",
+        f"- Stated TTM NPR: ${r.stated_ttm_npr_m:.2f}M",
+        f"- Recurring NPR: ${r.recurring_npr_m:.2f}M",
+        f"- One-time NPR: ${r.one_time_npr_m:.2f}M",
+        f"- Questionable NPR: ${r.questionable_npr_m:.2f}M",
         f"- Seller growth pitch: "
         f"{r.seller_growth_rate_pct:+.1%}",
         f"- Partner growth read: "

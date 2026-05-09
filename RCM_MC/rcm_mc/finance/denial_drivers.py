@@ -177,7 +177,7 @@ def analyze_denial_drivers(
             category="Revenue Leakage",
             impact_description=(
                 f"NCR at {net_collection_rate:.1f}% vs 97% top-quartile. "
-                f"Every 1% NCR improvement = ${net_revenue/100/1e6:.1f}M annual revenue."
+                f"Every 1% NCR improvement = ${net_revenue/100/1e6:.2f}M annual revenue."
             ),
             estimated_annual_impact=impact,
             confidence="high",
@@ -208,7 +208,7 @@ def analyze_denial_drivers(
 
     total_opportunity = sum(d.estimated_annual_impact for d in drivers)
     thesis = (
-        f"Identified ${total_opportunity/1e6:.1f}M in annual RCM improvement "
+        f"Identified ${total_opportunity/1e6:.2f}M in annual RCM improvement "
         f"opportunity across {len(drivers)} drivers. "
         f"Primary levers: {', '.join(d.driver for d in drivers[:3])}."
     ) if drivers else "No significant denial drivers identified — hospital performing near benchmark."

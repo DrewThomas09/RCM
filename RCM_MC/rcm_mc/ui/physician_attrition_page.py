@@ -537,7 +537,7 @@ def _hero(report: AttritionReport, target_name: str) -> str:
         ),
     )
     collections_num = provenance(
-        f'${collections/1e6:,.1f}M',
+        f'${collections/1e6:,.2f}M',
         source="sum(provider.collections_annual_usd)",
         formula="SUM(collections_annual_usd) over roster",
         detail=(
@@ -546,7 +546,7 @@ def _hero(report: AttritionReport, target_name: str) -> str:
         ),
     )
     at_risk_num = provenance(
-        f'${at_risk/1e6:,.1f}M',
+        f'${at_risk/1e6:,.2f}M',
         source="AttritionReport.total_expected_collections_at_risk_usd",
         formula=(
             "SUM(probability × collections_annual_usd) over roster"

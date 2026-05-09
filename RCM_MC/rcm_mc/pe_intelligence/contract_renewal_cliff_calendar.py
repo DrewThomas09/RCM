@@ -218,8 +218,8 @@ def build_renewal_calendar(
         verdict = "cliff_warning"
         note = (
             f"Cliff at {cliff_label}: "
-            f"${cliff_value:.1f}M of "
-            f"${total_value:.1f}M rolls in one quarter "
+            f"${cliff_value:.2f}M of "
+            f"${total_value:.2f}M rolls in one quarter "
             "(>40% concentration). Underwrite that "
             "quarter explicitly; one bad outcome "
             "compounds."
@@ -228,8 +228,8 @@ def build_renewal_calendar(
         verdict = "lumpy"
         note = (
             f"Lumpy cliff at {cliff_label} "
-            f"(${cliff_value:.1f}M / "
-            f"${total_value:.1f}M). Manageable but "
+            f"(${cliff_value:.2f}M / "
+            f"${total_value:.2f}M). Manageable but "
             "give the cliff quarter pre-prep priority."
         )
     else:
@@ -237,8 +237,8 @@ def build_renewal_calendar(
         note = (
             f"Balanced renewal calendar — top quarter "
             f"{cliff_label} only "
-            f"${cliff_value:.1f}M / "
-            f"${total_value:.1f}M. Standard cadence "
+            f"${cliff_value:.2f}M / "
+            f"${total_value:.2f}M. Standard cadence "
             "for renewal management."
         )
 
@@ -265,9 +265,9 @@ def render_renewal_calendar_markdown(
         f"- Total renewals in hold: "
         f"{r.total_renewals_in_hold}",
         f"- Total annual value: "
-        f"${r.total_annual_value_in_hold_m:.1f}M",
+        f"${r.total_annual_value_in_hold_m:.2f}M",
         f"- Cliff quarter: {r.cliff_quarter_label} "
-        f"(${r.cliff_quarter_value_m:.1f}M)",
+        f"(${r.cliff_quarter_value_m:.2f}M)",
         "",
         "## Type concentration",
     ]
@@ -288,6 +288,6 @@ def render_renewal_calendar_markdown(
         lines.append(
             f"| Y{q.year}Q{q.quarter} | "
             f"{q.renewals_count} | "
-            f"${q.total_annual_value_m:.1f}M |"
+            f"${q.total_annual_value_m:.2f}M |"
         )
     return "\n".join(lines)

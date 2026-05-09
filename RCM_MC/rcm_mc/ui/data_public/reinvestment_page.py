@@ -68,7 +68,7 @@ def _yearly_stack_svg(yearly) -> str:
             bars.append(f'<rect x="{x:.1f}" y="{cy:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" fill="{color}" opacity="0.88"/>')
 
         bars.append(
-            f'<text x="{x + bar_w / 2:.1f}" y="{y0 - total_h - 4:.1f}" fill="{P["text_dim"]}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">${y_row.available_fcf_mm:,.1f}M</text>'
+            f'<text x="{x + bar_w / 2:.1f}" y="{y0 - total_h - 4:.1f}" fill="{P["text_dim"]}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">${y_row.available_fcf_mm:,.2f}M</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="10" text-anchor="middle" font-family="JetBrains Mono,monospace">Y{y_row.year}</text>'
         )
 
@@ -202,10 +202,10 @@ def render_reinvestment(params: dict = None) -> str:
     pos = P["positive"]; acc = P["accent"]
 
     kpi_strip = (
-        ck_kpi_block("Entry EV", f"${r.entry_ev_mm:,.0f}M", "", "") +
-        ck_kpi_block("Entry Equity", f"${r.entry_equity_mm:,.0f}M", "", "") +
+        ck_kpi_block("Entry EV", f"${r.entry_ev_mm:,.2f}M", "", "") +
+        ck_kpi_block("Entry Equity", f"${r.entry_equity_mm:,.2f}M", "", "") +
         ck_kpi_block("Hold", f"{r.hold_years} yrs", "", "") +
-        ck_kpi_block("Cumulative FCF", f"${r.cumulative_fcf_mm:,.1f}M", "", "") +
+        ck_kpi_block("Cumulative FCF", f"${r.cumulative_fcf_mm:,.2f}M", "", "") +
         ck_kpi_block("Base Case MOIC", f"{r.base_case_moic:.2f}x", "", "") +
         ck_kpi_block("Compounded MOIC", f"{r.compounded_moic:.2f}x", "", "") +
         ck_kpi_block("MOIC Lift", f"{r.moic_lift_from_reinvestment:+.2f}x", "", "") +
@@ -248,7 +248,7 @@ def render_reinvestment(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Strategy Scenarios</div>{scen_tbl}</div>
   <div style="{cell}"><div style="{h3}">Year-by-Year Allocation (Balanced)</div>{yr_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Reinvestment Thesis:</strong> ${r.cumulative_fcf_mm:,.1f}M of FCF generated over {r.hold_years} years.
+    <strong style="color:{text}">Reinvestment Thesis:</strong> ${r.cumulative_fcf_mm:,.2f}M of FCF generated over {r.hold_years} years.
     Balanced allocation (35/20/25/10/10) delivers {r.compounded_moic:.2f}x vs {r.base_case_moic:.2f}x for pure deleveraging.
     Bolt-on M&amp;A is the highest-marginal-impact use of FCF (2.4x MOIC on deployed capital).
   </div>

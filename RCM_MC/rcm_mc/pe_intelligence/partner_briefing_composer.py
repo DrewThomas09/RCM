@@ -154,14 +154,14 @@ def _format_negotiation(inputs: BriefingInputs) -> str:
     gap = inputs.current_seller_ask_m - inputs.walk_away_price_m
     if gap > 0:
         return (
-            f"Seller ask ${inputs.current_seller_ask_m:,.0f}M "
-            f"is ${gap:,.0f}M above walk-away. Concession "
+            f"Seller ask ${inputs.current_seller_ask_m:,.2f}M "
+            f"is ${gap:,.2f}M above walk-away. Concession "
             "ladder required or walk."
         )
     if gap < 0:
         return (
             f"Seller at/below walk-away "
-            f"${inputs.walk_away_price_m:,.0f}M. Tighten "
+            f"${inputs.walk_away_price_m:,.2f}M. Tighten "
             "structure; no price concession needed."
         )
     return "Seller at walk-away. Close on structure."

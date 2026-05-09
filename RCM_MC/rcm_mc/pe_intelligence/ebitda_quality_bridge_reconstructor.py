@@ -169,7 +169,7 @@ def build_ebitda_quality_bridge(
             running_ebitda_m=round(running, 2),
             partner_commentary=(
                 f"Y1 claimed gain "
-                f"${inputs.y1_claimed_ebitda_gain_m:,.1f}M "
+                f"${inputs.y1_claimed_ebitda_gain_m:,.2f}M "
                 f"is "
                 f"{inputs.cash_release_share_in_y1_gain*100:.0f}% "
                 "cash release; strip half — exit "
@@ -213,27 +213,27 @@ def build_ebitda_quality_bridge(
 
     if haircut_pct >= 0.20:
         note = (
-            f"Partner run-rate ${partner_run_rate:,.1f}M vs. "
-            f"seller stated ${inputs.stated_ebitda_m:,.1f}M "
+            f"Partner run-rate ${partner_run_rate:,.2f}M vs. "
+            f"seller stated ${inputs.stated_ebitda_m:,.2f}M "
             f"({haircut_pct*100:.1f}% haircut, "
-            f"${ev_delta:,.1f}M of EV impact at entry "
+            f"${ev_delta:,.2f}M of EV impact at entry "
             f"multiple {inputs.entry_multiple:.1f}x). "
             "Partner: do not underwrite off stated EBITDA."
         )
     elif haircut_pct >= 0.10:
         note = (
             f"Material haircut: stated "
-            f"${inputs.stated_ebitda_m:,.1f}M → run-rate "
-            f"${partner_run_rate:,.1f}M "
+            f"${inputs.stated_ebitda_m:,.2f}M → run-rate "
+            f"${partner_run_rate:,.2f}M "
             f"({haircut_pct*100:.1f}%). Biggest line: "
             f"{biggest}. Price at run-rate × exit mult."
         )
     elif haircut_pct > 0:
         note = (
             f"Modest haircut "
-            f"${total_haircut:,.1f}M "
+            f"${total_haircut:,.2f}M "
             f"({haircut_pct*100:.1f}%). Partner "
-            f"run-rate ${partner_run_rate:,.1f}M."
+            f"run-rate ${partner_run_rate:,.2f}M."
         )
     else:
         note = (
@@ -261,13 +261,13 @@ def render_ebitda_bridge_markdown(
         "",
         f"_{r.partner_note}_",
         "",
-        f"- Stated EBITDA: ${r.stated_ebitda_m:,.1f}M",
+        f"- Stated EBITDA: ${r.stated_ebitda_m:,.2f}M",
         f"- Partner run-rate EBITDA: "
-        f"${r.partner_run_rate_ebitda_m:,.1f}M",
-        f"- Haircut: ${r.total_haircut_m:,.1f}M "
+        f"${r.partner_run_rate_ebitda_m:,.2f}M",
+        f"- Haircut: ${r.total_haircut_m:,.2f}M "
         f"({r.total_haircut_pct*100:.1f}%)",
         f"- EV impact at entry multiple: "
-        f"${r.ev_delta_m:,.1f}M",
+        f"${r.ev_delta_m:,.2f}M",
         f"- Biggest haircut source: {r.biggest_haircut_source or 'none'}",
         "",
         "| Source | Δ ($M) | Running ($M) | "
@@ -281,7 +281,7 @@ def render_ebitda_bridge_markdown(
         )
         lines.append(
             f"| {l.source} | {delta_str} | "
-            f"${l.running_ebitda_m:,.1f}M | "
+            f"${l.running_ebitda_m:,.2f}M | "
             f"{l.partner_commentary} |"
         )
     return "\n".join(lines)

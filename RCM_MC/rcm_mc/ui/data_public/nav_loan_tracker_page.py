@@ -31,7 +31,7 @@ def _loans_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(l.sponsor)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{l.vintage}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${l.nav_at_close_b:.2f}B</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${l.loan_size_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${l.loan_size_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{lt_c};font-weight:700">{l.ltv_pct * 100:.2f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{l.sofr_spread_bps}bps</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{l.maturity_years}y</td>',
@@ -56,7 +56,7 @@ def _lenders_table(items) -> str:
         t_c = _tier_color(l.tier)
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(l.lender)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${l.total_commitments_m:,.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${l.total_commitments_m:,.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{l.loans}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{l.median_ltv_pct:.2f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(l.sector_focus)}</td>',
@@ -80,8 +80,8 @@ def _uses_table(items) -> str:
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(u.category)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{u.loan_count}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${u.total_volume_m:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${u.median_check_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${u.total_volume_m:,.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${u.median_check_m:.2f}M</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(u.typical_structure)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -103,7 +103,7 @@ def _coverage_table(items) -> str:
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(c.fund)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${c.nav_current_b:.2f}B</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.loan_outstanding_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.loan_outstanding_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{c.current_ltv_pct * 100:.2f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.maintenance_covenant_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{h_c};font-weight:700">{c.headroom_pct * 100:.1f}%</td>',
@@ -130,7 +130,7 @@ def _stress_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{s.nav_markdown_pct * 100:+.0f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{s.resulting_ltv_pct * 100:.1f}%</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{t_c};font-weight:700">{"TRIP" if s.covenant_trip else "SAFE"}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg if s.required_cure_m > 0 else text_dim};font-weight:700">${s.required_cure_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg if s.required_cure_m > 0 else text_dim};font-weight:700">${s.required_cure_m:.2f}M</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.impact_on_portfolio)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -153,7 +153,7 @@ def _benchmarks_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{b.typical_ltv_pct:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{b.typical_spread_bps}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{b.typical_tenor_years}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${b.market_volume_24_b:.1f}B</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${b.market_volume_24_b:.2f}B</td>',
             f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tr_c};border:1px solid {tr_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(b.pricing_trend)}</span></td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -171,7 +171,7 @@ def render_nav_loan_tracker(params: dict = None) -> str:
 
     kpi_strip = (
         ck_kpi_block("Active Loans", str(r.total_loans), "", "") +
-        ck_kpi_block("Outstanding", f"${r.total_outstanding_m:,.1f}M", "", "") +
+        ck_kpi_block("Outstanding", f"${r.total_outstanding_m:,.2f}M", "", "") +
         ck_kpi_block("Weighted LTV", f"{r.weighted_ltv_pct * 100:.2f}%", "", "") +
         ck_kpi_block("Weighted SOFR+", f"{r.weighted_spread_bps}", "bps", "") +
         ck_kpi_block("Near Maturity", str(r.loans_near_maturity), "", "") +
@@ -196,7 +196,7 @@ def render_nav_loan_tracker(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">NAV Loan / Fund-Level Financing Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_loans} active NAV loans · ${r.total_outstanding_m:,.1f}M outstanding · {r.weighted_ltv_pct * 100:.2f}% weighted LTV · SOFR+{r.weighted_spread_bps}bps · {r.loans_near_maturity} loans within 4-year maturity window — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_loans} active NAV loans · ${r.total_outstanding_m:,.2f}M outstanding · {r.weighted_ltv_pct * 100:.2f}% weighted LTV · SOFR+{r.weighted_spread_bps}bps · {r.loans_near_maturity} loans within 4-year maturity window — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Active NAV Loan Book</div>{l_tbl}</div>
@@ -206,10 +206,10 @@ def render_nav_loan_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Lender Book — Concentration & Pricing</div>{lend_tbl}</div>
   <div style="{cell}"><div style="{h3}">Market Benchmarks — NAV Loans & Adjacent</div>{b_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">NAV Loan Book Summary:</strong> ${r.total_outstanding_m:,.1f}M outstanding across {r.total_loans} healthcare PE funds — weighted {r.weighted_ltv_pct * 100:.2f}% LTV well inside 20% typical maintenance covenants with {avg_headroom * 100:.1f}% headroom.
-    Primary use of proceeds: LP distribution bridges (8 loans, ${sum(u.total_volume_m for u in r.uses if "distribution" in u.category.lower() or "liquidity" in u.category.lower()):.0f}M) during protracted exit drought; capex / add-on M&A use secondary.
+    <strong style="color:{text}">NAV Loan Book Summary:</strong> ${r.total_outstanding_m:,.2f}M outstanding across {r.total_loans} healthcare PE funds — weighted {r.weighted_ltv_pct * 100:.2f}% LTV well inside 20% typical maintenance covenants with {avg_headroom * 100:.1f}% headroom.
+    Primary use of proceeds: LP distribution bridges (8 loans, ${sum(u.total_volume_m for u in r.uses if "distribution" in u.category.lower() or "liquidity" in u.category.lower()):.2f}M) during protracted exit drought; capex / add-on M&A use secondary.
     Weighted SOFR+{r.weighted_spread_bps}bps pricing tracks market; healthcare PE NAV loans 25-50bps inside multi-sector NAV loans on stronger collateral coverage and lower NAV volatility.
-    Stress testing: base through -30% NAV markdown scenarios retain covenant compliance; -40% markdown triggers 3-fund covenant trip (${sum(s.required_cure_m for s in r.stress if s.covenant_trip):.0f}M aggregate cure capacity needed).
+    Stress testing: base through -30% NAV markdown scenarios retain covenant compliance; -40% markdown triggers 3-fund covenant trip (${sum(s.required_cure_m for s in r.stress if s.covenant_trip):.2f}M aggregate cure capacity needed).
     Lender concentration: top-2 specialists (17Capital, Hark Capital) hold 44% of loans; broader tier-1 participation ensures refinancing optionality at 4-5yr maturities.
     Pricing trend widening +25bps YTD reflects market repricing of PE NAV loan risk given exit drought, LP liquidity pressure, and secondary market compression.
   </div>

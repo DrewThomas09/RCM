@@ -41,7 +41,7 @@ def _programs_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.program_type)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{p.lives_covered_m:.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{p.participants:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${p.total_payments_b:.1f}B</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${p.total_payments_b:.2f}B</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.risk_structure)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{sv_c};font-weight:700">{p.savings_rate_pct:.2f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(p.active_through)}</td>',
@@ -68,9 +68,9 @@ def _exposures_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(e.sector)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(e.apm_programs)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{e.lives_covered_k:.1f}K</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${e.apm_revenue_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${e.apm_revenue_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{sh_c};font-weight:700">{e.apm_share_of_rev_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">${e.net_savings_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">${e.net_savings_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{q_c};font-weight:700">{e.quality_score:.1f}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -91,7 +91,7 @@ def _trends_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{t.year}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(t.program)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{t.participants:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${t.gross_spend_b:.1f}B</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${t.gross_spend_b:.2f}B</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${t.gross_savings_b:.2f}B</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{t.savings_rate_pct:.2f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{t.quality_score:.1f}</td>',
@@ -137,7 +137,7 @@ def _calendar_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{_html.escape(c.event_date)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{i_c};max-width:340px">{_html.escape(c.impact)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(c.affected_programs)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${c.portfolio_exposure_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${c.portfolio_exposure_m:.2f}M</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -177,10 +177,10 @@ def render_cms_apm_tracker(params: dict = None) -> str:
 
     kpi_strip = (
         ck_kpi_block("Active Programs", str(r.total_programs), "", "") +
-        ck_kpi_block("Lives Covered", f"{r.total_lives_covered_m:.1f}M", "", "") +
-        ck_kpi_block("CMS Payments", f"${r.total_apm_payments_b:.1f}B", "", "") +
+        ck_kpi_block("Lives Covered", f"{r.total_lives_covered_m:.2f}M", "", "") +
+        ck_kpi_block("CMS Payments", f"${r.total_apm_payments_b:.2f}B", "", "") +
         ck_kpi_block("Avg Savings Rate", f"{r.avg_savings_rate_pct:.2f}%", "", "") +
-        ck_kpi_block("Portfolio APM Revenue", f"${r.total_portfolio_apm_revenue_m:.1f}M", "", "") +
+        ck_kpi_block("Portfolio APM Revenue", f"${r.total_portfolio_apm_revenue_m:.2f}M", "", "") +
         ck_kpi_block("Deals @ Risk (>10%)", str(sum(1 for e in r.exposures if e.apm_share_of_rev_pct > 0.10)), "", "") +
         ck_kpi_block("Policy Events", str(len(r.calendar)), "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
@@ -200,7 +200,7 @@ def render_cms_apm_tracker(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">CMS Innovation Models / APM Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_programs} CMS APM programs · {r.total_lives_covered_m:.1f}M lives covered · ${r.total_apm_payments_b:.1f}B annual Medicare payments · avg {r.avg_savings_rate_pct:.2f}% savings rate · portfolio APM revenue ${r.total_portfolio_apm_revenue_m:.1f}M — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_programs} CMS APM programs · {r.total_lives_covered_m:.2f}M lives covered · ${r.total_apm_payments_b:.2f}B annual Medicare payments · avg {r.avg_savings_rate_pct:.2f}% savings rate · portfolio APM revenue ${r.total_portfolio_apm_revenue_m:.2f}M — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Program Catalog — CMMI & CMS APMs</div>{p_tbl}</div>
@@ -210,8 +210,8 @@ def render_cms_apm_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">2026-2027 Policy Calendar & Portfolio Impact</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Commercial / MA Value-Based Adjacency</div>{pa_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">CMS APM Portfolio Summary:</strong> {r.total_programs} active CMS APMs cover {r.total_lives_covered_m:.1f}M lives and route ${r.total_apm_payments_b:.1f}B in annual Medicare payments — avg {r.avg_savings_rate_pct:.2f}% savings rate across active programs.
-    Portfolio APM revenue ${r.total_portfolio_apm_revenue_m:.1f}M across {len(r.exposures)} platforms — {sum(1 for e in r.exposures if e.apm_share_of_rev_pct > 0.10)} deals at &gt;10% APM revenue share (Magnolia/MSK, Redwood/Behavioral, Cedar/Cardiology, Sage/Home Health, Linden/Behavioral).
+    <strong style="color:{text}">CMS APM Portfolio Summary:</strong> {r.total_programs} active CMS APMs cover {r.total_lives_covered_m:.2f}M lives and route ${r.total_apm_payments_b:.2f}B in annual Medicare payments — avg {r.avg_savings_rate_pct:.2f}% savings rate across active programs.
+    Portfolio APM revenue ${r.total_portfolio_apm_revenue_m:.2f}M across {len(r.exposures)} platforms — {sum(1 for e in r.exposures if e.apm_share_of_rev_pct > 0.10)} deals at &gt;10% APM revenue share (Magnolia/MSK, Redwood/Behavioral, Cedar/Cardiology, Sage/Home Health, Linden/Behavioral).
     Risk exposure: {r.portfolio_share_at_risk_pct * 100:.1f}% of portfolio revenue materially dependent on APM outcomes — concentrated in cardiology, home health, behavioral, and MSK.
     Policy overhang: ACO REACH sunset 2026-12-31 ($42.5B program ending), PCF sunset 2026-12-31 ($12.8B), BPCI-A sunset 2025-12-31 ($18.5B) — transition paths to MCP, MSSP, and TEAM identified.
     Commercial MA parallel: 35 commercial MA risk-based programs cover 28.5M lives at SOFR+ tighter to equity-implied cost — major sponsor targets include Humana, Clover, Alignment, Optum Care, ChenMed.

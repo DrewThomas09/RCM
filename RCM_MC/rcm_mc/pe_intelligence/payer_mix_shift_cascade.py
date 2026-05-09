@@ -157,7 +157,7 @@ def trace_mix_shift(inputs: MixShiftInputs) -> MixShiftReport:
         description="Revenue lift from rate change",
         value=round(rev_impact, 2), unit="$M",
         partner_note=(
-            f"${rev_impact:,.1f}M of revenue lift at full realization. "
+            f"${rev_impact:,.2f}M of revenue lift at full realization. "
             "Assume 50% realization probability in base case."),
     ))
 
@@ -168,7 +168,7 @@ def trace_mix_shift(inputs: MixShiftInputs) -> MixShiftReport:
         description="EBITDA lift from revenue × contribution margin",
         value=round(ebitda_impact, 2), unit="$M",
         partner_note=(
-            f"${ebitda_impact:,.1f}M EBITDA lift at full realization. "
+            f"${ebitda_impact:,.2f}M EBITDA lift at full realization. "
             "This is the exit-multiple-eligible lift (recurring, not "
             "one-time)."),
     ))
@@ -231,8 +231,8 @@ def render_mix_shift_markdown(r: MixShiftReport) -> str:
         f"_{r.partner_note}_",
         "",
         f"- Effective rate delta: {r.effective_rate_delta_pct:.2f}%",
-        f"- Revenue impact: ${r.revenue_impact_m:,.1f}M",
-        f"- EBITDA impact: ${r.ebitda_impact_m:,.1f}M",
+        f"- Revenue impact: ${r.revenue_impact_m:,.2f}M",
+        f"- EBITDA impact: ${r.ebitda_impact_m:,.2f}M",
         f"- Exit multiple uplift: {r.multiple_uplift_x:.2f}x",
         f"- Credibility: **{r.credibility_score_0_100}/100**",
         "",

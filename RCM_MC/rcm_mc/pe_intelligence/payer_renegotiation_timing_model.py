@@ -255,7 +255,7 @@ def project_payer_renegotiations(
             f"Top-3 payer concentration "
             f"{top_concentration:.0%}; exit-year rate "
             f"drift {exit_drift:+.1%}; cumulative EBITDA "
-            f"impact ${total_ebitda:.1f}M over hold. "
+            f"impact ${total_ebitda:.2f}M over hold. "
             "Exit buyer will model normalized rates "
             "net of renewals — bake this into exit-"
             "case EBITDA or expect multiple contraction."
@@ -264,7 +264,7 @@ def project_payer_renegotiations(
         note = (
             f"Rate drift {exit_drift:+.1%} by exit; "
             f"cumulative EBITDA impact "
-            f"${total_ebitda:.1f}M. Manageable but "
+            f"${total_ebitda:.2f}M. Manageable but "
             "price renewals into exit assumption, do "
             "not leave the buyer to discover them."
         )
@@ -278,7 +278,7 @@ def project_payer_renegotiations(
     else:
         note = (
             f"Modest cumulative EBITDA impact "
-            f"${total_ebitda:.1f}M. No flag."
+            f"${total_ebitda:.2f}M. No flag."
         )
 
     return PayerRenegotiationReport(
@@ -303,9 +303,9 @@ def render_payer_renegotiation_markdown(
         f"_{flag}_ — {r.partner_note}",
         "",
         f"- Cumulative NPR impact: "
-        f"${r.total_npr_impact_m:.1f}M",
+        f"${r.total_npr_impact_m:.2f}M",
         f"- Cumulative EBITDA impact: "
-        f"${r.total_ebitda_impact_m:.1f}M",
+        f"${r.total_ebitda_impact_m:.2f}M",
         f"- Exit-year rate drift: "
         f"{r.exit_year_normalized_rate_pct:+.1%}",
         "",

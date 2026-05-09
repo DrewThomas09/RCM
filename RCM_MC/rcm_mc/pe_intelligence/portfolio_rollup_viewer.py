@@ -209,9 +209,9 @@ def render_rollup_markdown(r: PortfolioRollup) -> str:
         f"- Deals: {r.total_deals} "
         f"({r.hold_count} held / {r.exit_count} exited / "
         f"{r.write_off_count} written off)",
-        f"- Cost: ${r.total_cost_m:,.1f}M",
-        f"- NAV: ${r.total_nav_m:,.1f}M",
-        f"- Realized: ${r.total_realized_m:,.1f}M",
+        f"- Cost: ${r.total_cost_m:,.2f}M",
+        f"- NAV: ${r.total_nav_m:,.2f}M",
+        f"- Realized: ${r.total_realized_m:,.2f}M",
         f"- Weighted MOIC: {r.weighted_moic:.2f}x",
     ]
     if r.weighted_irr is not None:
@@ -230,5 +230,5 @@ def render_rollup_markdown(r: PortfolioRollup) -> str:
                        "|---|---:|---:|---:|"])
         for s in r.by_subsector:
             lines.append(f"| {s.subsector} | {s.deal_count} | "
-                         f"${s.nav_m:,.1f}M | ${s.cost_m:,.1f}M |")
+                         f"${s.nav_m:,.2f}M | ${s.cost_m:,.2f}M |")
     return "\n".join(lines)

@@ -508,7 +508,7 @@ def detect_red_flags(
         pct_of_ebitda = rcm_lift_mm / ebitda
         if pct_of_ebitda > 0.40:
             flags.append(
-                f"RED FLAG: RCM improvement of ${rcm_lift_mm:.0f}M = "
+                f"RED FLAG: RCM improvement of ${rcm_lift_mm:.2f}M = "
                 f"{pct_of_ebitda:.0%} of entry EBITDA — "
                 "corpus-implied maximum is ~15-25% of EBITDA from pure RCM; "
                 "remainder requires volume or rate growth to be credible"

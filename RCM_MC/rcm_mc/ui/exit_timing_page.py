@@ -361,7 +361,7 @@ def _recommendation_block(rec: Optional[ExitRecommendation]) -> str:
         ),
     )
     proceeds_num = provenance(
-        f'${rec.probability_weighted_proceeds_usd/1e6:,.1f}M',
+        f'${rec.probability_weighted_proceeds_usd/1e6:,.2f}M',
         source="equity_proceeds × close_certainty",
         formula="(terminal_EV - remaining_debt) × buyer.close_certainty",
         detail=(
@@ -503,7 +503,7 @@ def _curve_table_block(curve: List[ExitCurvePoint]) -> str:
             f'<td style="padding:6px 10px;color:{P["text"]};font-weight:600;">Y{p.year}</td>'
             f'<td style="padding:6px 10px;text-align:right;color:{P["text_dim"]};'
             f'font-family:\'JetBrains Mono\',monospace;">'
-            f'${p.ebitda_median_usd/1e6:,.1f}M</td>'
+            f'${p.ebitda_median_usd/1e6:,.2f}M</td>'
             f'<td style="padding:6px 10px;text-align:right;color:{P["text_dim"]};'
             f'font-family:\'JetBrains Mono\',monospace;">'
             f'{p.exit_multiple_assumed:.1f}x</td>'
@@ -515,7 +515,7 @@ def _curve_table_block(curve: List[ExitCurvePoint]) -> str:
             f'{p.irr*100:.1f}%</td>'
             f'<td style="padding:6px 10px;text-align:right;color:{P["text_dim"]};'
             f'font-family:\'JetBrains Mono\',monospace;">'
-            f'${p.equity_proceeds_usd/1e6:,.1f}M</td>'
+            f'${p.equity_proceeds_usd/1e6:,.2f}M</td>'
             f'</tr>'
         )
     return (

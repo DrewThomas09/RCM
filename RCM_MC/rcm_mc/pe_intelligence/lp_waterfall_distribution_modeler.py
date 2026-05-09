@@ -236,14 +236,14 @@ def render_lp_waterfall_markdown(
         "",
         f"_{r.partner_note}_",
         "",
-        f"- Committed: ${r.committed_capital_m:.0f}M",
-        f"- Proceeds: ${r.total_proceeds_m:.0f}M",
+        f"- Committed: ${r.committed_capital_m:.2f}M",
+        f"- Proceeds: ${r.total_proceeds_m:.2f}M",
         f"- Gross MOIC: {r.gross_moic:.2f}× "
         f"(IRR {r.gross_irr:.1%})",
         f"- Net LP MOIC: {r.net_lp_moic:.2f}× "
         f"(IRR {r.net_lp_irr:.1%})",
-        f"- GP carry: ${r.gp_carry_m:.1f}M",
-        f"- GP mgmt fees: ${r.gp_mgmt_fees_m:.1f}M",
+        f"- GP carry: ${r.gp_carry_m:.2f}M",
+        f"- GP mgmt fees: ${r.gp_mgmt_fees_m:.2f}M",
         "",
         "| Step | Amount $M | To LP | To GP |",
         "|---|---|---|---|",

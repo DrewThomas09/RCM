@@ -144,7 +144,7 @@ def _positions_table(positions: List[Any], scenarios: List[Any]) -> str:
         rows.append(
             f"<tr>"
             f"<td>{_html.escape(pos.sector)}</td>"
-            f"<td class='r mn'>${pos.ev_mm:,.0f}M</td>"
+            f"<td class='r mn'>${pos.ev_mm:,.2f}M</td>"
             f"<td class='r mn'>{pos.weight*100:.1f}%</td>"
             f"<td class='r mn'>{pos.n_peers}</td>"
             f"<td class='r'>{base_moic_html}</td>"
@@ -233,7 +233,7 @@ def render_portfolio_sim(params: Dict[str, str]) -> str:
         + ck_kpi_block(
             "Portfolio Positions",
             f'<span class="mn">{result.n_positions}</span>',
-            f"${result.total_ev_mm:,.0f}M total EV",
+            f"${result.total_ev_mm:,.2f}M total EV",
         )
         + ck_kpi_block(
             "Base P50 MOIC",

@@ -198,13 +198,13 @@ def pick_syndicate(inputs: SyndicateInputs) -> SyndicateRecommendation:
         note = (f"Only {len(picks)} lender(s) fit — widen criteria or "
                 "reduce debt size.")
     elif inputs.total_debt_m > 1000:
-        note = (f"Large deal (${inputs.total_debt_m:,.0f}M) — use bulge-"
+        note = (f"Large deal (${inputs.total_debt_m:,.2f}M) — use bulge-"
                 "led syndicate with 4-6 joint arrangers.")
     elif inputs.total_debt_m > 250:
-        note = (f"Middle-market deal (${inputs.total_debt_m:,.0f}M) — "
+        note = (f"Middle-market deal (${inputs.total_debt_m:,.2f}M) — "
                 "commercial or direct-lender club with 2-4 participants.")
     else:
-        note = (f"Smaller deal (${inputs.total_debt_m:,.0f}M) — single "
+        note = (f"Smaller deal (${inputs.total_debt_m:,.2f}M) — single "
                 "direct lender or 2-lender club.")
 
     return SyndicateRecommendation(
@@ -221,7 +221,7 @@ def render_syndicate_markdown(r: SyndicateRecommendation) -> str:
         "",
         f"_{r.partner_note}_",
         "",
-        f"- Total debt: ${r.debt_m:,.1f}M",
+        f"- Total debt: ${r.debt_m:,.2f}M",
         "",
         "## Primary picks",
         "",

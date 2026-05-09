@@ -168,19 +168,19 @@ def compare_sponsor_vs_strategic(
     if abs_delta_pct < 0.02:
         note = (
             f"Paths effectively tied "
-            f"(${abs(delta):.1f}M delta). Pick "
+            f"(${abs(delta):.2f}M delta). Pick "
             "certainty: sponsor closes faster, less "
             "regulatory exposure."
         )
     elif winner == inputs.sponsor.name:
         note = (
-            f"Sponsor wins by ${abs(delta):.1f}M time-"
+            f"Sponsor wins by ${abs(delta):.2f}M time-"
             "discounted. Certainty + faster close "
             "outweighs the strategic multiple premium."
         )
     else:
         note = (
-            f"Strategic wins by ${abs(delta):.1f}M "
+            f"Strategic wins by ${abs(delta):.2f}M "
             "time-discounted even with regulatory risk "
             "and slower close. The premium is real — "
             "run the strategic process and keep "

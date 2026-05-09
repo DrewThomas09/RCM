@@ -203,7 +203,7 @@ def compare_exit_alternatives(
         partner_commentary=(
             f"Lever to "
             f"{inputs.dividend_recap_leverage_multiple:.1f}x; "
-            f"dividend ${recap_dividend:,.1f}M + hold to "
+            f"dividend ${recap_dividend:,.2f}M + hold to "
             "planned exit."
         ),
     ))
@@ -269,7 +269,7 @@ def render_exit_alternatives_markdown(
     ]
     for a in r.alternatives:
         lines.append(
-            f"| {a.name} | ${a.equity_proceeds_m:,.1f}M | "
+            f"| {a.name} | ${a.equity_proceeds_m:,.2f}M | "
             f"{a.moic:.2f}x | "
             f"{a.time_to_exit_yrs:.2f}yr | "
             f"{a.partner_commentary} |"

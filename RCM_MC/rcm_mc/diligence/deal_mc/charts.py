@@ -42,9 +42,9 @@ def _svg_escape(s: str) -> str:
 
 def _fmt_money(v: float) -> str:
     if abs(v) >= 1_000_000_000:
-        return f"${v/1_000_000_000:.1f}B"
+        return f"${v/1_000_000_000:.2f}B"
     if abs(v) >= 1_000_000:
-        return f"${v/1_000_000:.0f}M"
+        return f"${v/1_000_000:.2f}M"
     if abs(v) >= 1_000:
         return f"${v/1_000:.0f}K"
     return f"${v:,.0f}"

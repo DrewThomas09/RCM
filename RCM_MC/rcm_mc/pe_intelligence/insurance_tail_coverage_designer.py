@@ -216,19 +216,19 @@ def design_insurance_tail_package(
 
     if total >= 5.0:
         note = (
-            f"Total tail premium ${total:,.1f}M. Partner: "
+            f"Total tail premium ${total:,.2f}M. Partner: "
             "material close cost; negotiate with seller "
             "for partial cost-sharing or escrow."
         )
     elif total >= 2.0:
         note = (
-            f"Total tail premium ${total:,.1f}M. Budget "
+            f"Total tail premium ${total:,.2f}M. Budget "
             "into close-cost line item; standard for deal "
             "size."
         )
     else:
         note = (
-            f"Total tail premium ${total:,.1f}M. Lean; "
+            f"Total tail premium ${total:,.2f}M. Lean; "
             "proceed on standard close-cost basis."
         )
 
@@ -248,7 +248,7 @@ def render_insurance_tail_markdown(
         f"_{r.partner_note}_",
         "",
         f"- Total estimated premium: "
-        f"${r.total_estimated_premium_m:,.1f}M",
+        f"${r.total_estimated_premium_m:,.2f}M",
         "",
         "| Policy | Tail yrs | Limit | Premium mult | "
         "Est. premium | Partner commentary |",
@@ -257,7 +257,7 @@ def render_insurance_tail_markdown(
     for c in r.coverages:
         lines.append(
             f"| {c.policy} | {c.tail_years} | "
-            f"${c.recommended_limit_m:,.1f}M | "
+            f"${c.recommended_limit_m:,.2f}M | "
             f"{c.premium_multiplier:.2f}x | "
             f"${c.estimated_premium_m:,.2f}M | "
             f"{c.partner_commentary} |"

@@ -256,8 +256,8 @@ def render_compression_markdown(
         lines.append(
             f"| {s.turns_compression:+.1f}t | "
             f"{s.exit_multiple:.2f}x | "
-            f"${s.exit_ev_m:,.0f}M | "
-            f"${s.equity_proceeds_m:,.0f}M | "
+            f"${s.exit_ev_m:,.2f}M | "
+            f"${s.equity_proceeds_m:,.2f}M | "
             f"{s.moic:.2f}x | "
             f"{s.irr_pct:.1f}% |"
         )

@@ -44,8 +44,8 @@ def _affiliations_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(a.gpo_name)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(a.parent)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{a.portfolio_deals}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${a.annual_spend_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${a.realized_savings_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${a.annual_spend_m:.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${a.realized_savings_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{s_c};font-weight:700">{a.savings_rate_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{a.rebate_rate_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{a.contract_count}</td>',
@@ -67,9 +67,9 @@ def _categories_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(c.category)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${c.annual_spend_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${c.annual_spend_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{c.savings_rate_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${c.portfolio_savings_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${c.portfolio_savings_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.rebate_pct * 100:.1f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.top_contract)}</td>',
         ]
@@ -93,11 +93,11 @@ def _deals_table(items) -> str:
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(d.deal)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(d.sector)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${d.annual_spend_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${d.annual_spend_m:.2f}M</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(d.gpo)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">${d.gross_savings_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">${d.rebate_capture_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${d.net_savings_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">${d.gross_savings_m:.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">${d.rebate_capture_m:.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${d.net_savings_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{s_c};font-weight:700">{d.savings_vs_benchmark_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{c_c};font-weight:700">{d.compliance_pct * 100:.1f}%</td>',
         ]
@@ -121,7 +121,7 @@ def _contracts_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(c.contract)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(c.vendor)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.category)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${c.annual_spend_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${c.annual_spend_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{c.portfolio_deals}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{d_c};font-weight:700">{c.reference_price_delta_pct * 100:+.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(c.expires)}</td>',
@@ -146,8 +146,8 @@ def _bulk_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(b.initiative)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(b.sector)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{b.deals_participating}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${b.aggregated_volume_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${b.incremental_savings_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${b.aggregated_volume_m:.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${b.incremental_savings_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{b.cycle_days}</td>',
             f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(b.status)}</span></td>',
         ]
@@ -172,7 +172,7 @@ def _inflation_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{y_c};font-weight:700">+{p.ytd_price_change_pct:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">+{p.expected_ytd_change_pct:.1f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.hedging_strategy)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${p.portfolio_exposure_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${p.portfolio_exposure_m:.2f}M</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -188,10 +188,10 @@ def render_gpo_supply_tracker(params: dict = None) -> str:
     pos = P["positive"]; acc = P["accent"]
 
     kpi_strip = (
-        ck_kpi_block("Annual Spend", f"${r.total_annual_spend_m:,.1f}M", "", "") +
-        ck_kpi_block("Net Savings", f"${r.total_realized_savings_m:.1f}M", "", "") +
+        ck_kpi_block("Annual Spend", f"${r.total_annual_spend_m:,.2f}M", "", "") +
+        ck_kpi_block("Net Savings", f"${r.total_realized_savings_m:.2f}M", "", "") +
         ck_kpi_block("Savings Rate", f"{r.average_savings_rate_pct * 100:.1f}%", "", "") +
-        ck_kpi_block("Rebate Capture", f"${r.total_rebates_m:.1f}M", "", "") +
+        ck_kpi_block("Rebate Capture", f"${r.total_rebates_m:.2f}M", "", "") +
         ck_kpi_block("Deals Covered", str(r.portfolio_deals_covered), "", "") +
         ck_kpi_block("Active Contracts", str(r.contracts_active), "", "") +
         ck_kpi_block("Bulk Buys", str(len(r.bulk_buys)), "", "") +
@@ -214,7 +214,7 @@ def render_gpo_supply_tracker(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">GPO / Supply Chain Savings Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">${r.total_annual_spend_m:,.1f}M annual supply-chain spend across {r.portfolio_deals_covered} deals · ${r.total_realized_savings_m:.1f}M net savings ({r.average_savings_rate_pct * 100:.1f}% rate) · ${r.total_rebates_m:.1f}M rebate capture · {r.contracts_active} active contracts — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">${r.total_annual_spend_m:,.2f}M annual supply-chain spend across {r.portfolio_deals_covered} deals · ${r.total_realized_savings_m:.2f}M net savings ({r.average_savings_rate_pct * 100:.1f}% rate) · ${r.total_rebates_m:.2f}M rebate capture · {r.contracts_active} active contracts — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">GPO Affiliations — Scale, Savings, Rebates</div>{a_tbl}</div>
@@ -224,10 +224,10 @@ def render_gpo_supply_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Cross-Portfolio Bulk-Buy Initiatives</div>{b_tbl}</div>
   <div style="{cell}"><div style="{h3}">Inflation Watch — Category Price Pressure</div>{i_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Supply Chain Program Summary:</strong> ${r.total_annual_spend_m:,.1f}M aggregated supply-chain spend captures ${r.total_realized_savings_m:.1f}M in net savings at {r.average_savings_rate_pct * 100:.1f}% blended rate — materially above 11-13% industry benchmark for single-platform PE scale.
+    <strong style="color:{text}">Supply Chain Program Summary:</strong> ${r.total_annual_spend_m:,.2f}M aggregated supply-chain spend captures ${r.total_realized_savings_m:.2f}M in net savings at {r.average_savings_rate_pct * 100:.1f}% blended rate — materially above 11-13% industry benchmark for single-platform PE scale.
     PE-Specific GPO (Umbrella) and Vizient drive 75%+ of portfolio savings — Umbrella at 16.0% savings rate vs 13.5% for Vizient standard contracts reflects bulk-buy aggregation power.
     Implants / Devices (16.5% savings) and Medical/Surgical Supplies (14.5%) are the highest-value categories; pharmacy (8.5%) benefits from rebate economics but thinner gross savings.
-    Bulk-buy initiatives incremental ${bulk_incremental:.1f}M on top of base GPO savings — ortho implant bulk purchase ($6.5M) and Epic licensing consolidation ($5.5M) are the two largest cross-portfolio wins.
+    Bulk-buy initiatives incremental ${bulk_incremental:.2f}M on top of base GPO savings — ortho implant bulk purchase ($6.5M) and Epic licensing consolidation ($5.5M) are the two largest cross-portfolio wins.
     Inflation watch: staffing (+8.5%), insurance (+9.5%), and utilities (+6.8%) running above expected; hedging via direct contracts, captive insurance, and fixed-price energy ceilings largely in place.
     Compliance averages 92% across portfolio — Cedar (95.5%), Laurel (95.0%), and Aspen (94.0%) highest; Linden and Redwood (89-89.5%) present remediation opportunity worth ~$1.5M.
   </div>

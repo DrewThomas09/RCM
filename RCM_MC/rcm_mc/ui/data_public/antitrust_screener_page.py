@@ -170,7 +170,7 @@ def render_antitrust_screener(params: dict = None) -> str:
     score_c = neg if r.overall_risk_score >= 65 else (warn if r.overall_risk_score >= 40 else pos)
 
     kpi_strip = (
-        ck_kpi_block("Deal Size", f"${r.deal_size_mm:,.0f}M", "", "") +
+        ck_kpi_block("Deal Size", f"${r.deal_size_mm:,.2f}M", "", "") +
         ck_kpi_block("HSR Required", "YES" if r.hsr_required else "NO", "", "") +
         ck_kpi_block("2R Probability", f"{r.second_request_probability * 100:.0f}%", "", "") +
         ck_kpi_block("Overall Risk", f"{r.overall_risk_score}/100", "", "") +
@@ -217,7 +217,7 @@ def render_antitrust_screener(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">State-Level Review Exposure</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Remediation Options Matrix</div>{rem_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Anti-Trust Thesis:</strong> ${r.deal_size_mm:,.0f}M deal triggers HSR filing; Second Request probability {r.second_request_probability * 100:.1f}% given {sum(1 for o in r.overlaps if 'severe' in o.overlap_severity)} severe market overlaps in Texas MSAs.
+    <strong style="color:{text}">Anti-Trust Thesis:</strong> ${r.deal_size_mm:,.2f}M deal triggers HSR filing; Second Request probability {r.second_request_probability * 100:.1f}% given {sum(1 for o in r.overlaps if 'severe' in o.overlap_severity)} severe market overlaps in Texas MSAs.
     Post-USAP / Welsh Carson (2023) enforcement era, FTC is scrutinizing serial-acquisition theories against PE platform sponsors — relevance score 95.
     Recommended path: "Restructure deal (exclude 2 overlap markets)" — 92% approval probability, 6-month timeline, 25.8% deal value reduction.
     Alternative divestiture path preserves more value but extends timeline to 12-18 months and introduces execution risk.

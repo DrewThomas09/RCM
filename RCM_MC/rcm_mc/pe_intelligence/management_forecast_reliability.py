@@ -190,8 +190,8 @@ def render_reliability_markdown(r: ReliabilityReport) -> str:
     ]
     for y in r.years:
         lines.append(
-            f"| {y.year} | ${y.forecast_ebitda_m:,.1f}M | "
-            f"${y.actual_ebitda_m:,.1f}M | "
+            f"| {y.year} | ${y.forecast_ebitda_m:,.2f}M | "
+            f"${y.actual_ebitda_m:,.2f}M | "
             f"{y.variance_pct*100:+.1f}% | {y.status} |"
         )
     return "\n".join(lines)

@@ -208,13 +208,13 @@ def build_hold_shock_schedule(
                 "probabilities.")
     elif cumulative / max(0.01, base_ebitda) > 0.15:
         note = (f"Cumulative regulatory erosion "
-                f"${cumulative:,.1f}M "
+                f"${cumulative:,.2f}M "
                 f"({cumulative/base_ebitda*100:.1f}% of base "
                 "EBITDA). Partner: bake into base case, not "
                 "bear.")
     else:
         note = (f"Regulatory shocks contained at "
-                f"${cumulative:,.1f}M cumulative. Partner: "
+                f"${cumulative:,.2f}M cumulative. Partner: "
                 "standard stress; proceed on current thesis.")
 
     return HoldShockSchedule(
@@ -236,7 +236,7 @@ def render_hold_shock_schedule_markdown(
         f"_{s.partner_note}_",
         "",
         f"- Worst year: {s.worst_year} "
-        f"(EBITDA ${s.worst_year_ebitda_m:,.1f}M, "
+        f"(EBITDA ${s.worst_year_ebitda_m:,.2f}M, "
         f"leverage {s.worst_year_leverage:.2f}x)",
         f"- Covenant trip year: "
         f"{s.covenant_trip_year or 'none projected'}",

@@ -56,7 +56,7 @@ def _population_svg(pop) -> str:
             f'<rect x="{pad_l}" y="{y}" width="{w_35:.1f}" height="{bh}" fill="{age_c}" opacity="0.35"/>'
             # 2025 foreground
             f'<rect x="{pad_l}" y="{y}" width="{w_25:.1f}" height="{bh}" fill="{age_c}" opacity="0.85"/>'
-            f'<text x="{pad_l + w_35 + 4:.1f}" y="{y + bh - 2}" fill="{P["text_dim"]}" font-size="10" font-family="JetBrains Mono,monospace">{p.pop_2035_mm:.1f}M ({p.cagr_5yr * 100:+.1f}%)</text>'
+            f'<text x="{pad_l + w_35 + 4:.1f}" y="{y + bh - 2}" fill="{P["text_dim"]}" font-size="10" font-family="JetBrains Mono,monospace">{p.pop_2035_mm:.2f}M ({p.cagr_5yr * 100:+.1f}%)</text>'
         )
     return (f'<svg viewBox="0 0 {w} {h}" width="100%" style="max-width:{w}px" xmlns="http://www.w3.org/2000/svg">'
             f'<rect width="{w}" height="{h}" fill="{bg}"/>{"".join(bars)}'
@@ -186,7 +186,7 @@ def render_demand_forecast(params: dict = None) -> str:
     pos = P["positive"]; acc = P["accent"]
 
     kpi_strip = (
-        ck_kpi_block("US Pop 2025", f"{r.baseline_market_mm:,.0f}M", "", "") +
+        ck_kpi_block("US Pop 2025", f"{r.baseline_market_mm:,.2f}M", "", "") +
         ck_kpi_block("10-yr CAGR", f"{r.ten_yr_cagr * 100:.2f}%", "visits", "") +
         ck_kpi_block("Aging Tailwind", f"+{r.aging_tailwind_pct * 100:.1f}%", "", "") +
         ck_kpi_block("MA Share 2025", f"{r.medicare_share_2025 * 100:.1f}%", "", "") +

@@ -312,7 +312,7 @@ def ic_packet_report(packet: IcPacket) -> str:
         f"IC Quantitative Packet: {name}",
         "=" * 60,
         f"  Sector:  {sector}     Buyer: {buyer}",
-        f"  Entry EV: ${float(ev):,.0f}M    Entry EBITDA: ${float(ebitda):,.0f}M    EV/EBITDA: {mult}",
+        f"  Entry EV: ${float(ev):,.2f}M    Entry EBITDA: ${float(ebitda):,.2f}M    EV/EBITDA: {mult}",
         f"  Overall Signal:  [{packet.overall_signal.upper()}]  {packet.signal_rationale}",
         "",
         "1. LBO Entry Analysis",

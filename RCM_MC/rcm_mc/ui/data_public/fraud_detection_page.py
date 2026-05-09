@@ -158,7 +158,7 @@ def render_fraud_detection(params: dict = None) -> str:
     kpi_strip = (
         ck_kpi_block("Total Anomalies", str(r.total_anomalies_flagged), "", "") +
         ck_kpi_block("High Severity", str(r.high_severity_count), "", "") +
-        ck_kpi_block("Total Exposure", f"${r.total_exposure_mm:,.1f}M", "", "") +
+        ck_kpi_block("Total Exposure", f"${r.total_exposure_mm:,.2f}M", "", "") +
         ck_kpi_block("FWA Risk Score", f"{r.platform_fwa_risk_score}/100", "", "") +
         ck_kpi_block("Risk Tier", r.risk_tier.upper(), "", "") +
         ck_kpi_block("Upcoding CPTs", str(len(r.upcoding)), "", "") +
@@ -185,7 +185,7 @@ def render_fraud_detection(params: dict = None) -> str:
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {tier_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">FWA Risk Posture</div>
-    <div style="color:{tier_c};font-weight:700;font-size:14px">Risk tier: {_html.escape(r.risk_tier.upper())} · {r.total_anomalies_flagged} anomalies · ${r.total_exposure_mm:,.1f}M total exposure</div>
+    <div style="color:{tier_c};font-weight:700;font-size:14px">Risk tier: {_html.escape(r.risk_tier.upper())} · {r.total_anomalies_flagged} anomalies · ${r.total_exposure_mm:,.2f}M total exposure</div>
     <div style="color:{text_dim};font-size:11px;margin-top:4px">{r.high_severity_count} high-severity flags warrant immediate compliance review</div>
   </div>
   <div style="{cell}"><div style="{h3}">Provider-Level Billing Anomalies</div>{b_tbl}</div>
@@ -196,7 +196,7 @@ def render_fraud_detection(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Compliance Event History</div>{e_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">FWA Detection Thesis:</strong> {r.total_anomalies_flagged} distinct anomalies surfaced across billing, coding, referral, and geographic pattern-matching.
-    Aggregate financial exposure ${r.total_exposure_mm:,.1f}M if all findings sustained.
+    Aggregate financial exposure ${r.total_exposure_mm:,.2f}M if all findings sustained.
     Highest-concentration risks: upcoding on E/M codes 99214/99215 (85% pattern across network) and modifier stacking in surgical sub-specialties.
     Ownership-overlap referral patterns trigger AKS / Stark review for 6 of 8 intra-platform chains.
     Immediate remediation: audit top-10 anomaly-score providers, roll out documentation training, and implement real-time claim-edit rules before next submission cycle.

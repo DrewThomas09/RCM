@@ -329,7 +329,7 @@ def render_competitive_intel(params: dict = None) -> str:
     Market intensity {r.competitive_intensity_score}/100 with HHI of {r.market_hhi:,}. Our {r.our_market_share_est:.2f}%
     share vs top-5 combined {r.top_5_share:.1f}% — fragmented enough for roll-up thesis.
     Key gaps: scale, geography, brand. Top opportunity: commercial self-insured employer
-    (${r.share_opportunities[0].implied_revenue_mm:,.0f}M addressable if feasible).
+    (${r.share_opportunities[0].implied_revenue_mm:,.2f}M addressable if feasible).
   </div>
 
 </div>"""

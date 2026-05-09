@@ -365,24 +365,24 @@ def _flag_deal_size(
         # Very large deal — thin buyer universe
         sec_comparable = len([e for e in sec_evs if e >= ev_mm * 0.5])
         detail = (
-            f"EV ${ev_mm:,.0f}M exceeds corpus P90 (${corp_p90:,.0f}M). "
+            f"EV ${ev_mm:,.2f}M exceeds corpus P90 (${corp_p90:,.2f}M). "
             + (f"Only {sec_comparable} sector comparables at similar scale. " if sec_evs else "")
             + "Large-cap healthcare deals face thin buyer universe at exit and elevated financing risk."
         )
         return CorpusRedFlag(
             "SIZING", "medium",
-            f"EV ${ev_mm:,.0f}M is large-cap — thin comparables and buyer set",
+            f"EV ${ev_mm:,.2f}M is large-cap — thin comparables and buyer set",
             detail, None, corp_p90, ev_mm, "$M"
         )
     if ev_mm < corp_p10 and ev_mm > 0:
         detail = (
-            f"EV ${ev_mm:,.0f}M is sub-corpus P10 (${corp_p10:,.0f}M). "
+            f"EV ${ev_mm:,.2f}M is sub-corpus P10 (${corp_p10:,.2f}M). "
             "Very small transactions carry above-average key-man and integration risk. "
             "Verify platform add-on thesis has sufficient runway."
         )
         return CorpusRedFlag(
             "SIZING", "low",
-            f"EV ${ev_mm:,.0f}M is micro-cap — key-man and scale risk",
+            f"EV ${ev_mm:,.2f}M is micro-cap — key-man and scale risk",
             detail, None, corp_p10, ev_mm, "$M"
         )
     return None

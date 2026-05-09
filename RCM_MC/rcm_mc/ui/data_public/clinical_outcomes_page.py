@@ -231,12 +231,12 @@ def render_clinical_outcomes(params: dict = None) -> str:
     kpi_strip = (
         ck_kpi_block("Composite Score", f"{r.composite_quality_score:.0f}", "/100", "") +
         ck_kpi_block("MA Star Rating", f"{r.ma_star_rating:.1f}" if r.ma_star_rating else "N/A", "", "") +
-        ck_kpi_block("Star Bonus Opp.", f"${r.star_bonus_opportunity_mm:,.1f}M", "", "") +
+        ck_kpi_block("Star Bonus Opp.", f"${r.star_bonus_opportunity_mm:,.2f}M", "", "") +
         ck_kpi_block("Readmit Δ", f"{r.readmission_vs_benchmark_bp} bp", "gap", "") +
         ck_kpi_block("Metrics Tracked", str(len(r.metrics)), "", "") +
         ck_kpi_block("VBC Contracts", str(len(r.vbc_contracts)), "", "") +
         ck_kpi_block("Annual Quality Bonus", f"${r.total_annual_quality_bonus_mm:,.2f}M", "", "") +
-        ck_kpi_block("EV Impact", f"${r.total_ev_impact_mm:,.0f}M", "", "")
+        ck_kpi_block("EV Impact", f"${r.total_ev_impact_mm:,.2f}M", "", "")
     )
 
     star_svg = _star_trajectory_svg(r.star_progression)
@@ -323,7 +323,7 @@ def render_clinical_outcomes(params: dict = None) -> str:
     Composite score {r.composite_quality_score:.0f}/100. {len(r.vbc_contracts)} VBC contracts generate
     ${r.total_annual_quality_bonus_mm:,.2f}M annual quality bonus. Star Rating trajectory
     {r.ma_star_rating:.1f} → projected 4.0+ unlocks MA bonus eligibility. Total quality-driven
-    EV uplift ${r.total_ev_impact_mm:,.0f}M — monetizes outcomes into valuation.
+    EV uplift ${r.total_ev_impact_mm:,.2f}M — monetizes outcomes into valuation.
   </div>
 
 </div>"""

@@ -81,8 +81,8 @@ def _fmt_ev(v: Optional[float]) -> str:
     if v is None:
         return '<span style="color:var(--ck-text-faint)">—</span>'
     if v >= 1000:
-        return f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums">${v/1000:.1f}B</span>'
-    return f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums">${v:.0f}M</span>'
+        return f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums">${v/1000:.2f}B</span>'
+    return f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums">${v:.2f}M</span>'
 
 
 def _sector_pills(sectors: List[str]) -> str:

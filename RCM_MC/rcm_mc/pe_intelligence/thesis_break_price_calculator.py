@@ -192,28 +192,28 @@ def compute_thesis_break_price(
     if total_pct >= 0.25:
         note = (
             f"Cumulative haircut {total_pct*100:.0f}% "
-            f"(${total_dollars:,.0f}M off base "
-            f"${base:,.0f}M). Partner: walk-away "
-            f"${walk_away:,.0f}M. If seller won't accept, "
+            f"(${total_dollars:,.2f}M off base "
+            f"${base:,.2f}M). Partner: walk-away "
+            f"${walk_away:,.2f}M. If seller won't accept, "
             "pass."
         )
     elif total_pct >= 0.10:
         note = (
             f"Haircut {total_pct*100:.0f}% "
-            f"(${total_dollars:,.0f}M). Walk-away "
-            f"${walk_away:,.0f}M — use as LOI target, "
+            f"(${total_dollars:,.2f}M). Walk-away "
+            f"${walk_away:,.2f}M — use as LOI target, "
             "not ask-match."
         )
     elif total_pct > 0:
         note = (
             f"Light haircut {total_pct*100:.1f}%. Walk-"
-            f"away ${walk_away:,.0f}M. Modest "
+            f"away ${walk_away:,.2f}M. Modest "
             "negotiation room."
         )
     else:
         note = (
             f"No thesis-break haircuts. Walk-away = base "
-            f"${base:,.0f}M."
+            f"${base:,.2f}M."
         )
 
     return BreakPriceReport(
@@ -234,11 +234,11 @@ def render_break_price_markdown(
         "",
         f"_{r.partner_note}_",
         "",
-        f"- Base: ${r.base_price_m:,.1f}M",
-        f"- Walk-away: ${r.walk_away_price_m:,.1f}M",
+        f"- Base: ${r.base_price_m:,.2f}M",
+        f"- Walk-away: ${r.walk_away_price_m:,.2f}M",
         f"- Total haircut: "
         f"{r.total_haircut_pct*100:.1f}% "
-        f"(${r.total_haircut_m:,.1f}M)",
+        f"(${r.total_haircut_m:,.2f}M)",
         "",
         "| Source | Haircut % | $M | Partner rationale |",
         "|---|---|---|---|",
@@ -246,7 +246,7 @@ def render_break_price_markdown(
     for l in r.lines:
         lines.append(
             f"| {l.source} | {l.pct*100:.1f}% | "
-            f"${l.dollars_m:,.1f}M | "
+            f"${l.dollars_m:,.2f}M | "
             f"{l.partner_rationale} |"
         )
     return "\n".join(lines)

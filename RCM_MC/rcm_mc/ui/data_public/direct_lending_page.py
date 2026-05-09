@@ -129,7 +129,7 @@ def render_direct_lending(params: dict = None) -> str:
 
     kpi_strip = (
         ck_kpi_block("Facilities", str(r.total_facilities), "", "") +
-        ck_kpi_block("Total Outstanding", f"${r.total_outstanding_mm:,.0f}M", "", "") +
+        ck_kpi_block("Total Outstanding", f"${r.total_outstanding_mm:,.2f}M", "", "") +
         ck_kpi_block("Blended Rate", f"{r.blended_all_in_rate_pct:.2f}%", "", "") +
         ck_kpi_block("Weighted Leverage", f"{r.weighted_leverage:.2f}x", "", "") +
         ck_kpi_block("Cov-Lite %", f"{r.cov_lite_pct * 100:.1f}%", "", "") +
@@ -161,7 +161,7 @@ def render_direct_lending(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Default Rate Trend — Healthcare vs Overall</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Portfolio Marks by Sector</div>{mk_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Direct Lending Thesis:</strong> ${r.total_outstanding_mm:,.0f}M outstanding across {r.total_facilities} facilities at {r.blended_all_in_rate_pct:.2f}% blended all-in rate.
+    <strong style="color:{text}">Direct Lending Thesis:</strong> ${r.total_outstanding_mm:,.2f}M outstanding across {r.total_facilities} facilities at {r.blended_all_in_rate_pct:.2f}% blended all-in rate.
     Weighted leverage {r.weighted_leverage:.2f}x; cov-lite penetration {r.cov_lite_pct * 100:.1f}% — structural flexibility but reduced lender protection.
     Healthcare default rate trailing overall market at ~4% (vs 3.5% all-in); peak at 2025Q2, now moderating.
     {watch_count} watch-list sectors identified — behavioral, home-health/hospice, skilled nursing, and standalone telehealth showing sub-95 marks.

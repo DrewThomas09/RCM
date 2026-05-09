@@ -523,7 +523,7 @@ def _write_tracking_report(deal_dir: Path, state: Dict[str, Any]) -> Path:
                 if k in ("idr", "fwr"):
                     return f"{v*100:.1f}%"
                 if k == "net_patient_revenue":
-                    return f"${v/1e6:.1f}M"
+                    return f"${v/1e6:.2f}M"
                 return f"{v:.1f}"
             alerts = len(e.get("alerts") or [])
             alerts_str = f"⚠ {alerts}" if alerts else "—"

@@ -146,7 +146,7 @@ def render_telehealth_econ(params: dict = None) -> str:
 
     kpi_strip = (
         ck_kpi_block("Annual Visits", f"{r.total_visits_annual:,}", "", "") +
-        ck_kpi_block("Annual Revenue", f"${r.annual_revenue_mm:,.1f}M", "", "") +
+        ck_kpi_block("Annual Revenue", f"${r.annual_revenue_mm:,.2f}M", "", "") +
         ck_kpi_block("Blended GM", f"{r.blended_gross_margin_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Provider FTE", f"{r.total_provider_fte:,.0f}", "", "") +
         ck_kpi_block("States Operating", str(r.states_operating), "", "") +
@@ -180,9 +180,9 @@ def render_telehealth_econ(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Regulatory Cliff Exposure (PHE / Ryan Haight / Home Originating)</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Comparable DTC / Telehealth Platforms</div>{co_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Telehealth Thesis:</strong> {r.total_visits_annual:,} annual visits produce ${r.annual_revenue_mm:,.1f}M at {r.blended_gross_margin_pct * 100:.1f}% gross margin.
+    <strong style="color:{text}">Telehealth Thesis:</strong> {r.total_visits_annual:,} annual visits produce ${r.annual_revenue_mm:,.2f}M at {r.blended_gross_margin_pct * 100:.1f}% gross margin.
     Behavioral health and specialty consult are highest-margin visit types; async primary care has highest volume.
-    {r.total_provider_fte:,.0f} provider FTE across {r.states_operating} states with IMLC coverage. Cumulative regulatory cliff exposure ${total_cliff_risk:,.1f}M
+    {r.total_provider_fte:,.0f} provider FTE across {r.states_operating} states with IMLC coverage. Cumulative regulatory cliff exposure ${total_cliff_risk:,.2f}M
     concentrated in PHE-era Medicare flexibilities and DEA Ryan Haight telecontrolled-substance prescribing. Mitigation via bipartisan TCEA legislative push
     and in-person touchpoint model for DEA compliance. Behavioral-health telehealth parity is now permanent — the safest revenue stream post-PHE.
   </div>

@@ -167,7 +167,7 @@ def _bridge_comparison_chart(
             f'<text x="{pad_l + claimed_w + 6:.1f}" y="{y0 + bar_h * 0.75:.1f}" '
             f'font-size="10" fill="{P["text_faint"]}" '
             f'font-family="JetBrains Mono,monospace">'
-            f'${a.claimed_usd/1e6:.1f}M</text>'
+            f'${a.claimed_usd/1e6:.2f}M</text>'
         )
 
         # Realistic range (P25–P75 band) + median marker
@@ -197,7 +197,7 @@ def _bridge_comparison_chart(
             f'<text x="{pad_l + inner_w + 6}" y="{y1 + bar_h * 0.75:.1f}" '
             f'font-size="10" fill="{tone_bar}" '
             f'font-family="JetBrains Mono,monospace" font-weight="600">'
-            f'${a.realistic_median_usd/1e6:.1f}M</text>'
+            f'${a.realistic_median_usd/1e6:.2f}M</text>'
         )
 
     # Legend
@@ -297,15 +297,15 @@ def _verdict_card(report: BridgeAuditReport) -> str:
         + f'<div class="ba-kpi-grid">'
         f'  <div><div class="ba-kpi__label">Banker Claim</div>'
         f'       <div class="ba-kpi__val">'
-        f'${report.claimed_bridge_usd/1e6:.1f}M</div>'
+        f'${report.claimed_bridge_usd/1e6:.2f}M</div>'
         f'       <div style="font-size:10px;color:{P["text_faint"]};'
         f'margin-top:3px;">total sell-side bridge</div></div>'
         f'  <div><div class="ba-kpi__label">Realistic (P50)</div>'
         f'       <div class="ba-kpi__val pos">'
-        f'${report.realistic_bridge_usd/1e6:.1f}M</div>'
+        f'${report.realistic_bridge_usd/1e6:.2f}M</div>'
         f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">P25 ${report.realistic_bridge_p25_usd/1e6:.1f}M – '
-        f'P75 ${report.realistic_bridge_p75_usd/1e6:.1f}M</div></div>'
+        f'margin-top:3px;">P25 ${report.realistic_bridge_p25_usd/1e6:.2f}M – '
+        f'P75 ${report.realistic_bridge_p75_usd/1e6:.2f}M</div></div>'
         f'  <div><div class="ba-kpi__label">Gap</div>'
         f'       <div class="ba-kpi__val '
         f'{"neg" if report.gap_usd > 0 else "pos"}">{gap_val}</div>'
@@ -337,22 +337,22 @@ def _counter_bid_card(report: BridgeAuditReport) -> str:
         f'text-transform:uppercase;color:{P["text_faint"]};'
         f'font-weight:700;">Counter-bid recommendation</div>'
         f'<div class="ba-counter-num">'
-        f'${report.counter_offer_usd/1e6:,.0f}M</div>'
+        f'${report.counter_offer_usd/1e6:,.2f}M</div>'
         f'<div class="ba-counter-sub">'
         f'Banker asking '
         f'<strong style="color:{P["text"]};">'
-        f'${report.asking_price_usd/1e6:,.0f}M</strong> at '
+        f'${report.asking_price_usd/1e6:,.2f}M</strong> at '
         f'{report.entry_multiple:.1f}× — our audit shows '
-        f'${report.gap_usd/1e6:,.1f}M of realistic bridge gap. '
+        f'${report.gap_usd/1e6:,.2f}M of realistic bridge gap. '
         f'At the entry multiple, that prices out to '
         f'<strong style="color:{P["negative"]};">'
-        f'${report.price_reduction_usd/1e6:,.1f}M of overpayment</strong>. '
+        f'${report.price_reduction_usd/1e6:,.2f}M of overpayment</strong>. '
         f'Counter at '
         f'<strong style="color:{P["positive"]};">'
-        f'${report.counter_offer_usd/1e6:,.0f}M</strong>, or structure '
-        f'<strong>${(report.earn_out_target_usd or 0)/1e6:,.1f}M as a 24-month '
+        f'${report.counter_offer_usd/1e6:,.2f}M</strong>, or structure '
+        f'<strong>${(report.earn_out_target_usd or 0)/1e6:,.2f}M as a 24-month '
         f'earn-out</strong> triggered at '
-        f'<strong>${(report.earn_out_trigger_usd or 0)/1e6:,.1f}M</strong> '
+        f'<strong>${(report.earn_out_trigger_usd or 0)/1e6:,.2f}M</strong> '
         f'LTM EBITDA to preserve bid competitiveness while shifting '
         f'the realization risk back to the seller.'
         f'</div></div>'
@@ -788,7 +788,7 @@ def render_bridge_audit_page(
             f"Largest single gap is "
             f"<strong style=\"color:{P['negative']};\">"
             f"{html.escape(worst.lever.name)}</strong> — banker "
-            f"claims <strong>${worst.claimed_usd/1e6:,.1f}M</strong>, "
+            f"claims <strong>${worst.claimed_usd/1e6:,.2f}M</strong>, "
             f"realistic capture is "
             f"<strong>${worst.realistic_median_usd/1e6:,.2f}M</strong> "
             f"(<strong>{worst.adjusted_realization_median*100:.1f}%</strong> "
@@ -811,8 +811,8 @@ def render_bridge_audit_page(
         f'<div style="font-size:11px;color:{P["text_faint"]};'
         f'margin-top:4px;">'
         f'{len(report.per_lever)} levers audited · '
-        f'${report.claimed_bridge_usd/1e6:.1f}M claimed · '
-        f'${report.realistic_bridge_usd/1e6:.1f}M realistic'
+        f'${report.claimed_bridge_usd/1e6:.2f}M claimed · '
+        f'${report.realistic_bridge_usd/1e6:.2f}M realistic'
         f'</div>'
         f'{_verdict_card(report)}'
         f'{_counter_bid_card(report)}'

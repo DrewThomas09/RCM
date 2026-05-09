@@ -145,7 +145,7 @@ def stress_capex_intensity(
                 f"Catchup on "
                 f"{inputs.years_below_peer} yrs below peer "
                 f"({gap_pct*100:.1f}% gap) + disclosed "
-                f"${inputs.deferred_maintenance_backlog_m:,.1f}M "
+                f"${inputs.deferred_maintenance_backlog_m:,.2f}M "
                 "backlog."
                 if inputs.years_below_peer > 0 or
                 inputs.deferred_maintenance_backlog_m > 0
@@ -213,8 +213,8 @@ def stress_capex_intensity(
     if haircut_pct >= 0.15:
         note = (
             f"Projected 3-yr capex $"
-            f"{projected_total:,.1f}M vs. peer-median "
-            f"baseline ${baseline_total:,.1f}M. "
+            f"{projected_total:,.2f}M vs. peer-median "
+            f"baseline ${baseline_total:,.2f}M. "
             f"FCF-vs-EBITDA haircut "
             f"{haircut_pct*100:.1f}% — price in. "
             "Capex diligence workstream required."
@@ -222,20 +222,20 @@ def stress_capex_intensity(
     elif haircut_pct >= 0.08:
         note = (
             f"Projected 3-yr capex $"
-            f"{projected_total:,.1f}M. FCF haircut "
+            f"{projected_total:,.2f}M. FCF haircut "
             f"{haircut_pct*100:.1f}% vs peer. Model "
             "explicit."
         )
     elif deferred_catchup > 0:
         note = (
             f"Deferred-maintenance catchup "
-            f"${deferred_catchup:,.1f}M identified — "
+            f"${deferred_catchup:,.2f}M identified — "
             "closing-adjustment or retention item."
         )
     else:
         note = (
             f"Projected 3-yr capex $"
-            f"{projected_total:,.1f}M in-line with peer "
+            f"{projected_total:,.2f}M in-line with peer "
             "median. No material capex stress."
         )
 
@@ -258,11 +258,11 @@ def render_capex_stress_markdown(
         f"_{r.partner_note}_",
         "",
         f"- Projected 3-yr capex: "
-        f"${r.projected_3yr_capex_m:,.1f}M",
+        f"${r.projected_3yr_capex_m:,.2f}M",
         f"- Peer-ratio gap: "
         f"{r.peer_ratio_gap_pct*100:.2f}%",
         f"- Deferred catchup: "
-        f"${r.deferred_catchup_m:,.1f}M",
+        f"${r.deferred_catchup_m:,.2f}M",
         f"- FCF-vs-EBITDA haircut: "
         f"{r.fcf_vs_ebitda_haircut_pct*100:.1f}%",
         "",
@@ -271,7 +271,7 @@ def render_capex_stress_markdown(
     ]
     for c in r.components:
         lines.append(
-            f"| {c.name} | ${c.amount_m:,.1f}M | "
+            f"| {c.name} | ${c.amount_m:,.2f}M | "
             f"{c.partner_commentary} |"
         )
     return "\n".join(lines)

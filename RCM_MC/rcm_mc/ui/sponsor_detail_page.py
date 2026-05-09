@@ -101,8 +101,8 @@ def _fmt_money(v: Optional[float]) -> str:
     if v is None:
         return "—"
     if v >= 1000:
-        return f"${v / 1000:.1f}B"
-    return f"${v:.0f}M"
+        return f"${v / 1000:.2f}B"
+    return f"${v:.2f}M"
 
 
 def _vintage_bars(years_active: List[int],

@@ -109,10 +109,10 @@ def _build_milestones(base_price: float, ebitda_mm: float) -> List[EarnoutMilest
 
     items = [
         ("Year 1 EBITDA ≥ 110%",
-         "EBITDA vs base", f"${ebitda_mm * 1.10:,.1f}M",
+         "EBITDA vs base", f"${ebitda_mm * 1.10:,.2f}M",
          "TTM Year 1", max_total * 0.25, 0.75, "seller"),
         ("Year 2 EBITDA ≥ 125%",
-         "EBITDA vs base", f"${ebitda_mm * 1.25:,.1f}M",
+         "EBITDA vs base", f"${ebitda_mm * 1.25:,.2f}M",
          "TTM Year 2", max_total * 0.30, 0.58, "seller"),
         ("Revenue Retention ≥ 92%",
          "Payer revenue retention", "≥ 92%",

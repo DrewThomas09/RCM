@@ -388,7 +388,7 @@ def reimbursement_risk_table(scenarios: Dict[str, ReimbursementScenario]) -> str
         mcr = f"${s.medicare_ebitda_impact_mm:+.1f}M" if s.medicare_ebitda_impact_mm is not None else "  —  "
         mcd = f"${s.medicaid_ebitda_impact_mm:+.1f}M" if s.medicaid_ebitda_impact_mm is not None else "  —  "
         total = f"${s.total_ebitda_impact_mm:+.1f}M" if s.total_ebitda_impact_mm is not None else "  —  "
-        stressed = f"${s.stressed_ebitda_mm:.1f}M" if s.stressed_ebitda_mm is not None else "  —  "
+        stressed = f"${s.stressed_ebitda_mm:.2f}M" if s.stressed_ebitda_mm is not None else "  —  "
         pct = f"{s.ebitda_impact_pct:.1%}" if s.ebitda_impact_pct is not None else "  —  "
         lines.append(
             f"{name[:21]:<22} {mcr:>8} {mcd:>8} {total:>12} {stressed:>16} {pct:>8} {s.severity:>9}"
@@ -411,7 +411,7 @@ def reimbursement_risk_report(
         f"Reimbursement Risk Assessment — {deal.get('deal_name', 'Unknown Deal')}",
         "=" * 65,
         f"  Sector:             {sector}",
-        f"  Entry EBITDA:       ${ebitda:,.1f}M" if ebitda else "  Entry EBITDA:       Unknown",
+        f"  Entry EBITDA:       ${ebitda:,.2f}M" if ebitda else "  Entry EBITDA:       Unknown",
         f"  Govt exposure:      {(pm['medicare']+pm['medicaid']):.0%} "
         f"(Medicare {pm['medicare']:.0%} / Medicaid {pm['medicaid']:.0%})",
         f"  Sector rate vol:    ±{vol:.1%} annually (historical std dev)",
@@ -429,7 +429,7 @@ def reimbursement_risk_report(
                 lines.append(
                     f"    {name}: ${s.total_ebitda_impact_mm:+.1f}M EBITDA "
                     f"({s.ebitda_impact_pct:.1%}) → "
-                    f"${s.stressed_ebitda_mm:.1f}M stressed [{s.severity}]"
+                    f"${s.stressed_ebitda_mm:.2f}M stressed [{s.severity}]"
                 )
 
     severe = scenarios.get("severe_cut")

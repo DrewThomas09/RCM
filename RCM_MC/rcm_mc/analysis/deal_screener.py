@@ -164,7 +164,7 @@ def _narrative(s: DealScreen, coverage: float) -> str:
     parts: List[str] = []
     parts.append(f"{s.name or s.query}: {s.bed_count} beds in {s.state}.")
     if s.net_revenue:
-        parts.append(f"Net revenue ~${s.net_revenue / 1e6:.0f}M.")
+        parts.append(f"Net revenue ~${s.net_revenue / 1e6:.2f}M.")
     if s.quality_score is not None:
         parts.append(f"Quality: {s.quality_score:.1f} stars.")
     parts.append(f"Screening score: {s.risk_score}/100 → {s.verdict}.")

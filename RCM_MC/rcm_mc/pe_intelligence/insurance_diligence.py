@@ -152,7 +152,7 @@ def _check_sir_funding(inputs: InsuranceInputs) -> Optional[InsuranceGap]:
         return InsuranceGap(
             area="sir_funding",
             severity="high",
-            detail=(f"SIR reserves under-funded by ~${gap:.1f}M — retained "
+            detail=(f"SIR reserves under-funded by ~${gap:.2f}M — retained "
                     "risk not on the balance sheet at book value."),
             remediation="Fund SIR to actuarial level at close; adjust purchase price.",
         )

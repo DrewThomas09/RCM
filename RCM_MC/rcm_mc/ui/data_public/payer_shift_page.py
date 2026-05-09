@@ -142,7 +142,7 @@ def _projection_svg(yearly) -> str:
         circles.append(
             f'<circle cx="{x:.1f}" cy="{y_coord:.1f}" r="3" fill="{acc}"/>'
             f'<text x="{x:.1f}" y="{y_coord - 8:.1f}" fill="{text_dim}" font-size="9" '
-            f'text-anchor="middle" font-family="JetBrains Mono,monospace">${y.revenue_mm:,.0f}M</text>'
+            f'text-anchor="middle" font-family="JetBrains Mono,monospace">${y.revenue_mm:,.2f}M</text>'
             f'<text x="{x:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" '
             f'text-anchor="middle" font-family="JetBrains Mono,monospace">Y{y.year}</text>'
             f'<text x="{x:.1f}" y="{h - pad_b + 26}" fill="{pos}" font-size="9" '
@@ -277,8 +277,8 @@ def render_payer_shift(params: dict = None) -> str:
     ev_color = pos if r.total_ev_impact_mm >= 0 else neg
 
     kpi_strip = (
-        ck_kpi_block("Base Revenue", f"${r.base_revenue_mm:,.0f}M", "", "") +
-        ck_kpi_block("Terminal Rev", f"${r.terminal_revenue_mm:,.0f}M", "", "") +
+        ck_kpi_block("Base Revenue", f"${r.base_revenue_mm:,.2f}M", "", "") +
+        ck_kpi_block("Terminal Rev", f"${r.terminal_revenue_mm:,.2f}M", "", "") +
         ck_kpi_block("Entry Yield", f"{start_yield:.3f}", "", "") +
         ck_kpi_block("Exit Yield", f"{end_yield:.3f}", "", "") +
         ck_kpi_block("Yield Δ", f"{yield_chg * 100:+.1f}%", "", "") +

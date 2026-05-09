@@ -98,8 +98,8 @@ def _positions_table(positions) -> str:
             f'<td style="padding:5px 8px;color:{tprim}">{p.company}</td>'
             f'<td style="padding:5px 8px;color:{tdim}">{p.sector[:18]}</td>'
             f'<td style="padding:5px 8px;text-align:center;color:{tdim}">{p.entry_year}</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${p.invested_equity_mm:.0f}M</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">${p.current_nav_mm:.0f}M</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${p.invested_equity_mm:.2f}M</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">${p.current_nav_mm:.2f}M</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{moic_c}">{p.moic_current:.2f}x</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">{p.irr_current*100:.1f}%</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">{p.hold_years:.1f}yr</td>'
@@ -140,11 +140,11 @@ def _carry_table(carry_calcs) -> str:
         rows.append(
             f'<tr style="background:{rbg}">'
             f'<td style="padding:5px 8px;color:{tprim}">{c.company}</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">${c.invested_equity_mm:.0f}M</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${c.distributions_mm:.0f}M</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">${c.preferred_return_mm:.0f}M</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{P["warning"]}">${c.carry_amount_mm:.0f}M</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{P["accent"]}">${c.lp_net_proceeds_mm:.0f}M</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">${c.invested_equity_mm:.2f}M</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${c.distributions_mm:.2f}M</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">${c.preferred_return_mm:.2f}M</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{P["warning"]}">${c.carry_amount_mm:.2f}M</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{P["accent"]}">${c.lp_net_proceeds_mm:.2f}M</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{c.gross_moic:.2f}x</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">{c.net_moic_to_lp:.2f}x</td>'
             f'</tr>'
@@ -212,12 +212,12 @@ def render_mgmt_fee_tracker(params: dict) -> str:
     r = compute_mgmt_fee_tracker(fund_mm)
     fe = r.fund_economics
 
-    kpis = ck_kpi_block("Fund Size", f"${fe.fund_size_mm:.0f}M")
-    kpis += ck_kpi_block("Deployed Capital", f"${fe.invested_capital_mm:.0f}M",
+    kpis = ck_kpi_block("Fund Size", f"${fe.fund_size_mm:.2f}M")
+    kpis += ck_kpi_block("Deployed Capital", f"${fe.invested_capital_mm:.2f}M",
                           unit=f"{fe.deployment_pct*100:.1f}% deployed")
     kpis += ck_kpi_block("Annual Mgmt. Fees", f"${fe.total_annual_fees_mm:.2f}M",
                           unit=f"Net to LP after offset")
-    kpis += ck_kpi_block("Total Carry (GP)", f"${fe.total_carry_paid_mm:.0f}M",
+    kpis += ck_kpi_block("Total Carry (GP)", f"${fe.total_carry_paid_mm:.2f}M",
                           unit="20% carry above 8% hurdle")
     kpis += ck_kpi_block("LP Net MOIC", f"{fe.lp_net_moic:.2f}x",
                           unit=f"Fee drag: {fe.fee_drag_on_moic:.2f}x")
@@ -292,12 +292,12 @@ def render_mgmt_fee_tracker(params: dict) -> str:
     <div style="padding:8px;background:{bg_tert};border:1px solid {border}">
       <div style="font-size:10px;color:{tdim};font-family:\'JetBrains Mono\',monospace">Annual Fees</div>
       <div style="font-size:16px;color:{P["warning"]};font-variant-numeric:tabular-nums;
-        font-family:\'JetBrains Mono\',monospace">${fe.total_annual_fees_mm:.1f}M</div>
+        font-family:\'JetBrains Mono\',monospace">${fe.total_annual_fees_mm:.2f}M</div>
     </div>
     <div style="padding:8px;background:{bg_tert};border:1px solid {border}">
       <div style="font-size:10px;color:{tdim};font-family:\'JetBrains Mono\',monospace">GP Carry</div>
       <div style="font-size:16px;color:{P["warning"]};font-variant-numeric:tabular-nums;
-        font-family:\'JetBrains Mono\',monospace">${fe.total_carry_paid_mm:.0f}M</div>
+        font-family:\'JetBrains Mono\',monospace">${fe.total_carry_paid_mm:.2f}M</div>
     </div>
     <div style="padding:8px;background:{bg_tert};border:1px solid {border}">
       <div style="font-size:10px;color:{tdim};font-family:\'JetBrains Mono\',monospace">LP Net MOIC</div>

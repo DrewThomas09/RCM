@@ -341,7 +341,7 @@ def _fmt(value: float, unit: str) -> str:
         # value is in $M; escalate to $B if large
         if abs(value) >= 1000:
             return f"${value/1000:.2f}B"
-        return f"${value:,.1f}M"
+        return f"${value:,.2f}M"
     if unit == UNIT_DAYS:
         return f"{value:.1f}d"
     # num: comma-separated integer-ish

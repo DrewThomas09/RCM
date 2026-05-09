@@ -200,8 +200,8 @@ def render_patient_experience(params: dict = None) -> str:
         ck_kpi_block("NPS Trend", r.nps_trajectory, "", "") +
         ck_kpi_block("HCAHPS Top-Box", f"{r.hcahps_top_box_pct:.1f}%", "", "") +
         ck_kpi_block("Google Rating", f"{r.google_review_rating:.2f}", "stars", "") +
-        ck_kpi_block("Revenue at Risk", f"${r.total_revenue_at_risk_mm:,.1f}M", "", "") +
-        ck_kpi_block("EV Uplift Opp", f"${r.total_ev_impact_from_improvement_mm:,.0f}M", "", "") +
+        ck_kpi_block("Revenue at Risk", f"${r.total_revenue_at_risk_mm:,.2f}M", "", "") +
+        ck_kpi_block("EV Uplift Opp", f"${r.total_ev_impact_from_improvement_mm:,.2f}M", "", "") +
         ck_kpi_block("Initiatives", str(len(r.initiatives)), "", "")
     )
 
@@ -250,8 +250,8 @@ def render_patient_experience(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Experience Thesis:</strong> Composite {r.composite_pex_score}/100, NPS {r.nps_current} ({r.nps_trajectory}).
     Online reputation strong (Google {r.google_review_rating:.2f}); HCAHPS top-box {r.hcahps_top_box_pct:.1f}% at 68th percentile.
-    Current ${r.total_revenue_at_risk_mm:,.1f}M at risk from detractors. Total EV uplift from initiatives + retention:
-    ${r.total_ev_impact_from_improvement_mm:,.0f}M.
+    Current ${r.total_revenue_at_risk_mm:,.2f}M at risk from detractors. Total EV uplift from initiatives + retention:
+    ${r.total_ev_impact_from_improvement_mm:,.2f}M.
   </div>
 </div>"""
 

@@ -97,7 +97,7 @@ def _tornado_svg(sensitivities) -> str:
             f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(s.driver)}</text>'
             f'<rect x="{xr:.1f}" y="{y:.1f}" width="{bw:.1f}" height="{bh:.1f}" fill="{acc}" opacity="0.85"/>'
             f'<text x="{xr + bw + 4:.1f}" y="{y + bh / 2 + 3}" fill="{P["text_dim"]}" font-size="10" '
-            f'font-family="JetBrains Mono,monospace;font-weight:600">±${s.tornado_range_mm:,.0f}M</text>'
+            f'font-family="JetBrains Mono,monospace;font-weight:600">±${s.tornado_range_mm:,.2f}M</text>'
         )
 
     axis = (
@@ -217,7 +217,7 @@ def _sensitivity_table(sensitivities) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.driver)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{color}">{s.correlation_to_moic:+.3f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.elasticity:+.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]};font-weight:600">±${s.tornado_range_mm:,.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]};font-weight:600">±${s.tornado_range_mm:,.2f}M</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (

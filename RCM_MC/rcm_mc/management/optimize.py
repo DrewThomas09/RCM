@@ -140,7 +140,7 @@ def recommend_team_actions(
                     role=f"{risk.role} bench",
                     rationale=(
                         f"{risk.role} key-person risk "
-                        f"${risk.departure_impact_mm:.1f}M "
+                        f"${risk.departure_impact_mm:.2f}M "
                         f"with bench {risk.bench_strength:.1f} — "
                         f"recruit a deputy in year 1."),
                     priority="high",

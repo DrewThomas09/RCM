@@ -146,7 +146,7 @@ def render_tax_structure_analyzer(params: dict = None) -> str:
 
     kpi_strip = (
         ck_kpi_block("Recommended Structure", r.recommended_structure[:20], "", "") +
-        ck_kpi_block("Tax Savings", f"${r.estimated_tax_savings_mm:,.1f}M", "", "") +
+        ck_kpi_block("Tax Savings", f"${r.estimated_tax_savings_mm:,.2f}M", "", "") +
         ck_kpi_block("After-Tax MOIC Uplift", f"+{r.after_tax_moic_uplift:.2f}x", "", "") +
         ck_kpi_block("Structures Evaluated", str(len(r.structures)), "", "") +
         ck_kpi_block("Rollover Mechanics", str(len(r.rollovers)), "", "") +
@@ -174,7 +174,7 @@ def render_tax_structure_analyzer(params: dict = None) -> str:
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {pos};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Structuring Recommendation</div>
-    <div style="color:{pos};font-weight:700;font-size:14px">{_html.escape(r.recommended_structure)} · +${r.estimated_tax_savings_mm:,.1f}M savings · +{r.after_tax_moic_uplift:.2f}x MOIC uplift</div>
+    <div style="color:{pos};font-weight:700;font-size:14px">{_html.escape(r.recommended_structure)} · +${r.estimated_tax_savings_mm:,.2f}M savings · +{r.after_tax_moic_uplift:.2f}x MOIC uplift</div>
     <div style="color:{text_dim};font-size:11px;margin-top:4px">Recommended holding jurisdiction: {_html.escape(r.recommended_jurisdiction)}</div>
   </div>
   <div style="{cell}"><div style="{h3}">Structure Options Evaluated</div>{s_tbl}</div>

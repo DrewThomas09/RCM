@@ -192,8 +192,8 @@ def detect_revenue_recognition(panel: Dict[str, Any]) -> List[QoEFlag]:
                 proposed_adjustment_mm=-round(mag, 2),
                 confidence=0.65,
                 evidence=[
-                    f"revenue: ${revenue[i-1]:.1f}M → ${revenue[i]:.1f}M",
-                    f"AR: ${ar[i-1]:.1f}M → ${ar[i]:.1f}M",
+                    f"revenue: ${revenue[i-1]:.2f}M → ${revenue[i]:.2f}M",
+                    f"AR: ${ar[i-1]:.2f}M → ${ar[i]:.2f}M",
                 ],
             ))
     return out
@@ -231,18 +231,18 @@ def detect_nwc_manipulation(panel: Dict[str, Any]) -> List[QoEFlag]:
                 category="nwc_manipulation",
                 title="V-shaped NWC at period end",
                 description=(
-                    f"NWC dropped from ${nwc_prev:.1f}M to "
-                    f"${nwc_now:.1f}M and rebounded to "
-                    f"${nwc_next:.1f}M — classic year-end "
+                    f"NWC dropped from ${nwc_prev:.2f}M to "
+                    f"${nwc_now:.2f}M and rebounded to "
+                    f"${nwc_next:.2f}M — classic year-end "
                     f"window-dressing pattern. Normalize NWC peg "
                     f"using TTM average."),
                 period=str(periods[i]),
                 proposed_adjustment_mm=-round(magnitude, 2),
                 confidence=0.7,
                 evidence=[
-                    f"NWC[{periods[i-1]}]={nwc_prev:.1f}M, "
-                    f"NWC[{periods[i]}]={nwc_now:.1f}M, "
-                    f"NWC[{periods[i+1]}]={nwc_next:.1f}M",
+                    f"NWC[{periods[i-1]}]={nwc_prev:.2f}M, "
+                    f"NWC[{periods[i]}]={nwc_now:.2f}M, "
+                    f"NWC[{periods[i+1]}]={nwc_next:.2f}M",
                 ],
             ))
     return out
@@ -308,16 +308,16 @@ def detect_proof_of_cash(panel: Dict[str, Any]) -> List[QoEFlag]:
                 category="proof_of_cash",
                 title="Proof-of-cash gap",
                 description=(
-                    f"Revenue ${rev[i]:.1f}M vs cash receipts "
-                    f"${cash[i]:.1f}M — {gap_pct*100:.1f}% gap "
+                    f"Revenue ${rev[i]:.2f}M vs cash receipts "
+                    f"${cash[i]:.2f}M — {gap_pct*100:.1f}% gap "
                     f"exceeds normal collections lag. Investigate."),
                 period=str(periods[i]),
                 proposed_adjustment_mm=-round(
                     (rev[i] - cash[i]) * 0.5, 2),
                 confidence=0.7,
                 evidence=[
-                    f"revenue[{i}]=${rev[i]:.1f}M, "
-                    f"cash_receipts[{i}]=${cash[i]:.1f}M",
+                    f"revenue[{i}]=${rev[i]:.2f}M, "
+                    f"cash_receipts[{i}]=${cash[i]:.2f}M",
                 ],
             ))
     return out

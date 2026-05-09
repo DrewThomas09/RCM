@@ -211,14 +211,14 @@ def scan_clinical_outcomes(
         note = (
             f"{det_count} clinical indicators deteriorating; "
             f"forward reimbursement hit ~{total_bps:.0f} bps "
-            f"= ${dollar_hit:,.1f}M on Medicare revenue. "
+            f"= ${dollar_hit:,.2f}M on Medicare revenue. "
             "Partner: clinical-quality turnaround required "
             "before exit — 18-mo clock running."
         )
     elif det_count == 2:
         note = (
             f"{det_count} indicators deteriorating. "
-            f"~${dollar_hit:,.1f}M forward hit. Partner: "
+            f"~${dollar_hit:,.2f}M forward hit. Partner: "
             "diligence the two trendlines specifically; "
             "quality-program spending may be required."
         )
@@ -256,7 +256,7 @@ def render_clinical_outcome_markdown(
         f"- Deteriorating: {r.deteriorating_count}",
         f"- Forward reimbursement hit: "
         f"{r.total_forward_reimbursement_hit_bps:.0f} bps "
-        f"(${r.forward_reimbursement_hit_m:,.1f}M)",
+        f"(${r.forward_reimbursement_hit_m:,.2f}M)",
         "",
         "| Indicator | Slope/qtr | Deteriorating | "
         "Fwd hit (bps) | Partner comment |",

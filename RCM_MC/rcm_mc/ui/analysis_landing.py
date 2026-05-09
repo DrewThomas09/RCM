@@ -40,7 +40,7 @@ def render_analysis_landing(
                 ar_cls = "cad-badge-red" if ar_v > 55 else ("cad-badge-amber" if ar_v > 48 else "cad-badge-green")
                 metrics += f'<span class="cad-badge {ar_cls}" style="font-size:10px;">AR: {ar_v:.0f}d</span> '
             if rev is not None:
-                metrics += f'<span class="cad-badge cad-badge-muted" style="font-size:10px;">${float(rev)/1e6:.0f}M</span>'
+                metrics += f'<span class="cad-badge cad-badge-muted" style="font-size:10px;">${float(rev)/1e6:.2f}M</span>'
 
             # Quick estimates if revenue available
             quick_est = ""
@@ -52,8 +52,8 @@ def render_analysis_landing(
                 quick_est = (
                     f'<div style="display:flex;gap:16px;font-size:11px;color:{PALETTE["text_muted"]};'
                     f'margin-top:4px;font-family:var(--cad-mono);">'
-                    f'<span>Est. EBITDA: ${ebitda_est/1e6:.0f}M</span>'
-                    f'<span>Est. EV: ${ev_est/1e6:.0f}M (@11x)</span>'
+                    f'<span>Est. EBITDA: ${ebitda_est/1e6:.2f}M</span>'
+                    f'<span>Est. EV: ${ev_est/1e6:.2f}M (@11x)</span>'
                     f'</div>'
                 )
 

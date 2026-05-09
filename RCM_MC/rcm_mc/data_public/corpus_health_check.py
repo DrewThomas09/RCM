@@ -147,9 +147,9 @@ def _check_ev_range(deal: Dict, src_id: str, name: str) -> List[DealIssue]:
     if ev is None:
         return []
     if ev < 5:
-        issues.append(DealIssue(src_id, name, "ev_range", "warning", f"EV ${ev:.0f}M very small"))
+        issues.append(DealIssue(src_id, name, "ev_range", "warning", f"EV ${ev:.2f}M very small"))
     if ev > 50000:
-        issues.append(DealIssue(src_id, name, "ev_range", "info", f"EV ${ev:,.0f}M very large — verify"))
+        issues.append(DealIssue(src_id, name, "ev_range", "info", f"EV ${ev:,.2f}M very large — verify"))
     return issues
 
 

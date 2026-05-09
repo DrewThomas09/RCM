@@ -526,7 +526,7 @@ def run_payer_stress(
     if worst_payer and worst_payer.median_npr_delta_usd < 0:
         worst_msg = (
             f"{worst_payer.payer_name} drags cumulative NPR by "
-            f"${worst_payer.median_npr_delta_usd/1e6:,.1f}M at median"
+            f"${worst_payer.median_npr_delta_usd/1e6:,.2f}M at median"
         )
     else:
         worst_msg = "no single payer materially negative"
@@ -535,22 +535,22 @@ def run_payer_stress(
     if verdict == PayerStressVerdict.FAIL:
         headline_parts.append(
             f"Payer concentration is material — P10 5-year EBITDA "
-            f"drag is ${cum_ebitda_p10/1e6:,.1f}M."
+            f"drag is ${cum_ebitda_p10/1e6:,.2f}M."
         )
     elif verdict == PayerStressVerdict.WARNING:
         headline_parts.append(
             f"Payer mix carries elevated stress — P10 5-year "
-            f"EBITDA drag ${cum_ebitda_p10/1e6:,.1f}M."
+            f"EBITDA drag ${cum_ebitda_p10/1e6:,.2f}M."
         )
     elif verdict == PayerStressVerdict.CAUTION:
         headline_parts.append(
             f"Payer mix is balanced but watch the top payer — "
-            f"P10 drag ${cum_ebitda_p10/1e6:,.1f}M."
+            f"P10 drag ${cum_ebitda_p10/1e6:,.2f}M."
         )
     else:
         headline_parts.append(
             f"Payer mix passes stress test — even P10 case only "
-            f"moves EBITDA by ${cum_ebitda_p10/1e6:,.1f}M."
+            f"moves EBITDA by ${cum_ebitda_p10/1e6:,.2f}M."
         )
     headline_parts.append(worst_msg + ".")
     headline = " ".join(headline_parts)

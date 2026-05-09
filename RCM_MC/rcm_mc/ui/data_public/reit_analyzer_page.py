@@ -183,11 +183,11 @@ def render_reit_analyzer(params: dict = None) -> str:
 
     kpi_strip = (
         ck_kpi_block("Total Assets", str(r.total_assets), "", "") +
-        ck_kpi_block("Book Value", f"${r.total_book_value_mm:,.1f}M", "", "") +
-        ck_kpi_block("Market Value", f"${r.total_market_value_mm:,.1f}M", "", "") +
-        ck_kpi_block("Unrealized Gain", f"${r.total_unrealized_gain_mm:,.1f}M", "", "") +
+        ck_kpi_block("Book Value", f"${r.total_book_value_mm:,.2f}M", "", "") +
+        ck_kpi_block("Market Value", f"${r.total_market_value_mm:,.2f}M", "", "") +
+        ck_kpi_block("Unrealized Gain", f"${r.total_unrealized_gain_mm:,.2f}M", "", "") +
         ck_kpi_block("Weighted Cap", f"{r.weighted_cap_rate * 100:.2f}%", "", "") +
-        ck_kpi_block("Max Proceeds", f"${r.max_proceeds_mm:,.0f}M", "", "") +
+        ck_kpi_block("Max Proceeds", f"${r.max_proceeds_mm:,.2f}M", "", "") +
         ck_kpi_block("Recommendation", r.recommended_scenario[:16], "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
@@ -227,9 +227,9 @@ def render_reit_analyzer(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Rent Coverage &amp; Covenant Impact</div>{cov_tbl}</div>
   <div style="{cell}"><div style="{h3}">Proceeds Allocation Plan</div>{uses_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Sale-Leaseback Thesis:</strong> {r.total_assets} owned assets carry ${r.total_market_value_mm:,.1f}M market value on ${r.total_book_value_mm:,.1f}M book,
-    producing ${r.total_unrealized_gain_mm:,.1f}M hidden equity. Weighted cap rate {r.weighted_cap_rate * 100:.2f}% is sellable into public REITs (BBB-rated, 6-9% targets) or private
-    real estate credit funds. Recommended scenario: <strong style="color:{text}">{_html.escape(r.recommended_scenario)}</strong>, producing ${r.max_proceeds_mm:,.0f}M proceeds.
+    <strong style="color:{text}">Sale-Leaseback Thesis:</strong> {r.total_assets} owned assets carry ${r.total_market_value_mm:,.2f}M market value on ${r.total_book_value_mm:,.2f}M book,
+    producing ${r.total_unrealized_gain_mm:,.2f}M hidden equity. Weighted cap rate {r.weighted_cap_rate * 100:.2f}% is sellable into public REITs (BBB-rated, 6-9% targets) or private
+    real estate credit funds. Recommended scenario: <strong style="color:{text}">{_html.escape(r.recommended_scenario)}</strong>, producing ${r.max_proceeds_mm:,.2f}M proceeds.
     Post-SLB rent coverage remains comfortably above 1.75x covenant. Proceeds deployed 42% to debt paydown, 28% to bolt-on M&A, 15% to dividend recap — producing meaningful MOIC uplift at exit.
     Ground-lease optionality provides a tax-advantaged hybrid alternative if full SLB creates covenant stress.
   </div>

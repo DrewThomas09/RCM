@@ -31,7 +31,7 @@ def _funnel_table(items) -> str:
         cells = [
             f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:11px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em;font-weight:700">{_html.escape(f.stage)}</span></td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{text};font-weight:700">{f.count_ltm}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{pos};font-weight:700">${f.avg_size_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{pos};font-weight:700">${f.avg_size_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{text_dim}">{f.cycle_time_days}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{c_c};font-weight:700">{f.conversion_to_next_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{acc}">{f.annualized_run_rate}</td>',
@@ -57,8 +57,8 @@ def _channels_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{acc};font-weight:600">{c.qualified_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{pos};font-weight:700">{c.deals_closed}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{cl_c};font-weight:700">{c.close_rate_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{pos};font-weight:700">${c.total_closed_value_m:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{text_dim}">${c.median_close_size_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{pos};font-weight:700">${c.total_closed_value_m:,.2f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{text_dim}">${c.median_close_size_m:.2f}M</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:13px">'
@@ -107,7 +107,7 @@ def _proprietary_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.sector)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(p.introducer)}</td>',
             f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(p.stage)}</span></td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{pos};font-weight:700">${p.estimated_size_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{pos};font-weight:700">${p.estimated_size_m:.2f}M</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:320px">{_html.escape(p.proprietary_advantage)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{text_dim}">{p.days_since_intro}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{pr_c};font-weight:700">{p.probability_pct}%</td>',
@@ -132,7 +132,7 @@ def _team_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:340px">{_html.escape(t.coverage)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{acc}">{t.deals_sourced_ltm}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{pos};font-weight:700">{t.deals_closed_ltm}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{pos};font-weight:700">${t.total_closed_value_m:,.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{pos};font-weight:700">${t.total_closed_value_m:,.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{text}">{t.avg_markup_pct:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{p_c};font-weight:700">{t.proprietary_deal_pct * 100:.1f}%</td>',
         ]
@@ -156,7 +156,7 @@ def _closed_bridge_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(c.source)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.introducer)}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(c.process_type)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{pos};font-weight:700">${c.deal_value_m:,.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{pos};font-weight:700">${c.deal_value_m:,.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{text_dim}">{_html.escape(c.deal_date)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -176,7 +176,7 @@ def render_deal_sourcing(params: dict = None) -> str:
         ck_kpi_block("Annualized Pipeline", f"{r.total_annualized_pipeline:,}", "leads", "") +
         ck_kpi_block("Proprietary Opps", str(r.total_proprietary_opportunities), "", "") +
         ck_kpi_block("Closed LTM", str(r.total_closed_ltm), "", "") +
-        ck_kpi_block("Closed Value", f"${r.total_closed_value_m:,.1f}M", "", "") +
+        ck_kpi_block("Closed Value", f"${r.total_closed_value_m:,.2f}M", "", "") +
         ck_kpi_block("Close Rate", f"{r.weighted_close_rate_pct * 100:.2f}%", "", "") +
         ck_kpi_block("Sourcing Partners", str(len(r.team)), "", "") +
         ck_kpi_block("Intermediaries", str(len(r.intermediaries)), "", "") +
@@ -200,7 +200,7 @@ def render_deal_sourcing(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Deal Sourcing / Proprietary Flow Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_annualized_pipeline:,} annualized leads · {r.total_proprietary_opportunities} active proprietary opps · {r.total_closed_ltm} closed LTM ({prop_closed} proprietary = {prop_pct * 100:.1f}%) · ${r.total_closed_value_m:,.1f}M closed value — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_annualized_pipeline:,} annualized leads · {r.total_proprietary_opportunities} active proprietary opps · {r.total_closed_ltm} closed LTM ({prop_closed} proprietary = {prop_pct * 100:.1f}%) · ${r.total_closed_value_m:,.2f}M closed value — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Sourcing Funnel — LTM Activity</div>{f_tbl}</div>
@@ -210,11 +210,11 @@ def render_deal_sourcing(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Sourcing Team Productivity</div>{t_tbl}</div>
   <div style="{cell}"><div style="{h3}">Closed Deals Bridge — Source Attribution</div>{cb_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Deal Sourcing Summary:</strong> 485 annualized-leads pipeline converts at {r.weighted_close_rate_pct * 100:.2f}% to closed deals — {r.total_closed_ltm} transactions / ${r.total_closed_value_m:,.1f}M aggregate value LTM.
-    Proprietary deals represent {prop_pct * 100:.1f}% of closed count (${prop_value:,.1f}M value) — operating partner rolodex, portfolio introductions, and sponsor direct sourcing drive higher-conviction proprietary wins.
+    <strong style="color:{text}">Deal Sourcing Summary:</strong> 485 annualized-leads pipeline converts at {r.weighted_close_rate_pct * 100:.2f}% to closed deals — {r.total_closed_ltm} transactions / ${r.total_closed_value_m:,.2f}M aggregate value LTM.
+    Proprietary deals represent {prop_pct * 100:.1f}% of closed count (${prop_value:,.2f}M value) — operating partner rolodex, portfolio introductions, and sponsor direct sourcing drive higher-conviction proprietary wins.
     Intermediary performance: Edgemont (healthcare specialist) and Jefferies (middle market) top the league table — 3 and 2 closes respectively; 13+ shown by each with strong relationship tenure.
     Funnel conversion: Initial screen → Preliminary DD 48%, Preliminary → IOI 44%, IOI → MP 37%, MP → Confirmatory 51%, Confirmatory → Close 75% — reasonable conversion profile; top-of-funnel quality remains key.
-    Active proprietary pipeline ${sum(p.estimated_size_m for p in r.proprietary):,.1f}M total; probability-weighted ${sum(p.estimated_size_m * (p.probability_pct / 100.0) for p in r.proprietary):,.1f}M — Aspen-adjacent Southeast Ophthalmology (72% × $185M) is highest-conviction next close.
+    Active proprietary pipeline ${sum(p.estimated_size_m for p in r.proprietary):,.2f}M total; probability-weighted ${sum(p.estimated_size_m * (p.probability_pct / 100.0) for p in r.proprietary):,.2f}M — Aspen-adjacent Southeast Ophthalmology (72% × $185M) is highest-conviction next close.
     Team productivity: Sr. Partner 1 leads with 3 closes / $1,450M value; Sr. Partner 3 (healthtech) carries highest proprietary rate (55%); Directors are high-activity at screening but have not yet converted in LTM.
   </div>
 </div>"""

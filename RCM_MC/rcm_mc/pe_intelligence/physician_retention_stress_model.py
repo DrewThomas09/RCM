@@ -268,19 +268,19 @@ def run_retention_stress(
             verdict = "walk"
             read = (
                 f"Losing top {count} physicians costs "
-                f"~${total_ebitda_at_risk:.1f}M EBITDA "
+                f"~${total_ebitda_at_risk:.2f}M EBITDA "
                 "(> 30% of baseline) — the business is "
                 "over-concentrated in provider talent. "
                 "Walk unless retention package is "
-                f"pre-signed ≥${total_retention:.1f}M."
+                f"pre-signed ≥${total_retention:.2f}M."
             )
         elif total_ebitda_at_risk / max(0.01, baseline_ebitda) > 0.15:
             verdict = "price_in"
             read = (
                 f"Losing top {count} costs "
-                f"~${total_ebitda_at_risk:.1f}M "
+                f"~${total_ebitda_at_risk:.2f}M "
                 "EBITDA — price the retention package "
-                f"(${total_retention:.1f}M) into the "
+                f"(${total_retention:.2f}M) into the "
                 "deal; haircut purchase price if "
                 "seller won't fund it."
             )
@@ -288,7 +288,7 @@ def run_retention_stress(
             verdict = "acceptable"
             read = (
                 f"Top-{count} loss absorbable "
-                f"(~${total_ebitda_at_risk:.1f}M at "
+                f"(~${total_ebitda_at_risk:.2f}M at "
                 "risk). Standard retention package "
                 "sufficient."
             )
@@ -333,7 +333,7 @@ def run_retention_stress(
         note = (
             "Top-3 loss is meaningful. Require pre-"
             f"signed retention package of "
-            f"${top3_tier.retention_package_needed_m:.1f}M "
+            f"${top3_tier.retention_package_needed_m:.2f}M "
             "as closing condition; haircut purchase "
             "price by equivalent if seller won't fund."
         )
@@ -363,7 +363,7 @@ def render_retention_stress_markdown(
         f"{r.partner_note}",
         "",
         f"- Baseline EBITDA (physician-attributed): "
-        f"${r.baseline_ebitda_m:.1f}M",
+        f"${r.baseline_ebitda_m:.2f}M",
         "",
         "| Tier | Lost | Rev lost $M | EBITDA at risk | "
         "Retention pkg $M | Replacement $M | Verdict |",

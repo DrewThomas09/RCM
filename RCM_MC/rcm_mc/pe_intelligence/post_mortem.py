@@ -141,8 +141,8 @@ def _ebitda_finding(inputs: PostMortemInputs) -> Optional[PostMortemFinding]:
              inputs.planned_ebitda_at_exit_m)
     if (inputs.actual_ebitda_at_exit_m is not None
             and inputs.planned_ebitda_at_exit_m is not None):
-        detail = (f"Actual exit EBITDA ${inputs.actual_ebitda_at_exit_m:.1f}M "
-                  f"vs planned ${inputs.planned_ebitda_at_exit_m:.1f}M.")
+        detail = (f"Actual exit EBITDA ${inputs.actual_ebitda_at_exit_m:.2f}M "
+                  f"vs planned ${inputs.planned_ebitda_at_exit_m:.2f}M.")
     else:
         detail = "Exit EBITDA comparison incomplete."
     attribution = "internal" if g == "missed" else "mixed"

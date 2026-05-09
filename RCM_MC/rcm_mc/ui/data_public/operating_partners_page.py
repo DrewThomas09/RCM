@@ -147,7 +147,7 @@ def _engagement_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text};font-weight:600">{_html.escape(e.deal)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{acc}">{_html.escape(e.focus_area)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{e.hours_ltm:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${e.value_creation_m:.1f}M</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${e.value_creation_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{o_c};font-weight:700">{e.outcome_score:.1f}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -193,7 +193,7 @@ def render_operating_partners(params: dict = None) -> str:
         ck_kpi_block("Active Searches", str(r.active_searches), "", "") +
         ck_kpi_block("Bench Roster", str(r.total_bench_count), "", "") +
         ck_kpi_block("Engagement LTM", f"{r.total_engagement_hours_ltm:,}h", "", "") +
-        ck_kpi_block("Value Creation", f"${r.total_value_creation_m:.1f}M", "", "") +
+        ck_kpi_block("Value Creation", f"${r.total_value_creation_m:.2f}M", "", "") +
         ck_kpi_block("Comp Benchmarks", str(len(r.comp)), "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
@@ -214,7 +214,7 @@ def render_operating_partners(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Operating Partner / CEO Rolodex Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_operating_partners} operating partners · {r.total_exec_placements} exec placements LTM · {r.active_searches} active searches · {r.total_bench_count} bench roster · {r.total_engagement_hours_ltm:,} engagement hours · ${r.total_value_creation_m:.1f}M value creation attributed — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_operating_partners} operating partners · {r.total_exec_placements} exec placements LTM · {r.active_searches} active searches · {r.total_bench_count} bench roster · {r.total_engagement_hours_ltm:,} engagement hours · ${r.total_value_creation_m:.2f}M value creation attributed — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Operating Partner Roster</div>{p_tbl}</div>
@@ -224,7 +224,7 @@ def render_operating_partners(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Operating Partner Engagement & Value Creation</div>{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Executive Compensation Benchmarks</div>{c_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Operating Partner Program Summary:</strong> {r.total_operating_partners} dedicated operating partners deliver {r.total_engagement_hours_ltm:,} hours LTM across portfolio with ${r.total_value_creation_m:.1f}M value creation attributed — {r.total_value_creation_m / r.total_engagement_hours_ltm * 1000 if r.total_engagement_hours_ltm else 0:.1f}K value per hour.
+    <strong style="color:{text}">Operating Partner Program Summary:</strong> {r.total_operating_partners} dedicated operating partners deliver {r.total_engagement_hours_ltm:,} hours LTM across portfolio with ${r.total_value_creation_m:.2f}M value creation attributed — {r.total_value_creation_m / r.total_engagement_hours_ltm * 1000 if r.total_engagement_hours_ltm else 0:.1f}K value per hour.
     Average outcome score {avg_outcome:.2f}/10 across {len(r.engagement)} active engagements; top performers Sarah Chen (Oak/RCM SaaS, 9.2), Thomas Yang (Laurel/Derma bolt-on PMI, 9.1), Dr. Rebecca Liu (Cypress/GI ASC integration, 9.0).
     {r.total_exec_placements} executive placements in LTM across CEO, CFO, COO, CMO, CCO, CTO, CHRO roles; average CEO comp package $1.65M base + 3.5% equity tracks top-quartile Pearl Meyer PE healthcare benchmarks.
     {r.active_searches} searches currently in flight — 3 at finalist/offer stage (Project Azalea CEO, Project Terra CGO, Project Horizon CFO); 5 in candidate sourcing for Q2-Q3 2026 closes.
