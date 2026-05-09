@@ -14,13 +14,12 @@ from .brand import PALETTE
 
 
 def _fm(val: float) -> str:
-    if abs(val) >= 1e9:
-        return f"${val/1e9:.2f}B"
-    if abs(val) >= 1e6:
-        return f"${val/1e6:.1f}M"
-    if abs(val) >= 1e3:
-        return f"${val/1e3:.0f}K"
-    return f"${val:,.0f}"
+    """Money formatter — delegates to the kit's ``format_value``
+    so CLAUDE.md money-format spec (2dp + auto M/B suffix) is
+    enforced in one place. Thin wrapper kept to minimise churn at
+    call sites; consolidation guard test ratchets cap downward."""
+    from ._ui_kit import format_value
+    return format_value(val, kind="money")
 
 
 def render_fund_learning(db_path: str) -> str:
