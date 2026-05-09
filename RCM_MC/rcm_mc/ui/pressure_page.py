@@ -43,17 +43,15 @@ def render_pressure_page(
         bridge = packet.ebitda_bridge
         impact = bridge.total_ebitda_impact if bridge else 0
 
-        results_html = (
-            f'<div class="cad-kpi-grid">'
-            f'<div class="cad-kpi"><div class="cad-kpi-value">'
-            f'{html.escape(packet.deal_name or selected_deal_id)}</div>'
-            f'<div class="cad-kpi-label">Deal</div></div>'
-            f'<div class="cad-kpi"><div class="cad-kpi-value">{risk_count}</div>'
-            f'<div class="cad-kpi-label">Risk Flags</div></div>'
-            f'<div class="cad-kpi"><div class="cad-kpi-value">${impact/1e6:.1f}M</div>'
-            f'<div class="cad-kpi-label">EBITDA Impact</div></div>'
-            f'</div>'
-        )
+        # P26 follow-up: pressure-test summary migrated to kpi_strip.
+        from ._ui_kit import kpi_strip
+        results_html = kpi_strip([
+            {"label": "Deal",
+             "value": html.escape(packet.deal_name or selected_deal_id)},
+            {"label": "Risk Flags", "value": str(risk_count),
+             "tone": "negative" if risk_count else "neutral"},
+            {"label": "EBITDA Impact", "value": f"${impact/1e6:.1f}M"},
+        ])
 
         if packet.risk_flags:
             flag_rows = ""

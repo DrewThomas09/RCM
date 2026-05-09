@@ -33,19 +33,15 @@ def render_team_dashboard(db_path: str) -> str:
     n_hospitals = len(hospitals)
 
     # KPIs
-    kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(4,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(actors)}</div>'
-        f'<div class="cad-kpi-label">Team Members</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(activity)}</div>'
-        f'<div class="cad-kpi-label">Recent Actions</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_hospitals}</div>'
-        f'<div class="cad-kpi-label">Pipeline Hospitals</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{sum(1 for a in activity if a["action"] == "comment")}</div>'
-        f'<div class="cad-kpi-label">Comments</div></div>'
-        f'</div>'
-    )
+    # P26 follow-up: 4-tile team-summary KPIs migrated to kpi_strip.
+    from ._ui_kit import kpi_strip
+    n_comments = sum(1 for a in activity if a["action"] == "comment")
+    kpis = kpi_strip([
+        {"label": "Team Members", "value": str(len(actors))},
+        {"label": "Recent Actions", "value": str(len(activity))},
+        {"label": "Pipeline Hospitals", "value": str(n_hospitals)},
+        {"label": "Comments", "value": str(n_comments)},
+    ])
 
     # Activity feed
     activity_items = ""

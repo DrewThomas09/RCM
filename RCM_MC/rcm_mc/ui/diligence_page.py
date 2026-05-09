@@ -44,14 +44,15 @@ def render_diligence_questions(deal_id: str, deal_name: str, questions: List[Dic
     )
 
     nav = _model_nav(deal_id, "questions")
+    # P26 follow-up: questions-summary KPIs migrated to kpi_strip.
+    from ._ui_kit import kpi_strip
+    q_kpis = kpi_strip([
+        {"label": "Questions Generated", "value": str(len(questions))},
+        {"label": "Categories", "value": str(len(by_category))},
+    ])
     body = (
         f'{nav}'
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(questions)}</div>'
-        f'<div class="cad-kpi-label">Questions Generated</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(by_category)}</div>'
-        f'<div class="cad-kpi-label">Categories</div></div>'
-        f'</div>'
+        f'{q_kpis}'
 
         f'<div class="cad-card">'
         f'<h2>Categories</h2>'
@@ -117,14 +118,15 @@ def render_playbook(deal_id: str, deal_name: str, entries: List[Dict[str, Any]])
         )
 
     nav = _model_nav(deal_id, "playbook")
+    # P26 follow-up: playbook-summary KPIs migrated to kpi_strip.
+    from ._ui_kit import kpi_strip
+    pb_kpis = kpi_strip([
+        {"label": "Initiatives", "value": str(len(entries))},
+        {"label": "Total EBITDA Impact", "value": f"${total_impact/1e6:.1f}M"},
+    ])
     body = (
         f'{nav}'
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(entries)}</div>'
-        f'<div class="cad-kpi-label">Initiatives</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${total_impact/1e6:.1f}M</div>'
-        f'<div class="cad-kpi-label">Total EBITDA Impact</div></div>'
-        f'</div>'
+        f'{pb_kpis}'
 
         f'<div class="cad-card">'
         f'<h2>Value Creation Playbook</h2>'

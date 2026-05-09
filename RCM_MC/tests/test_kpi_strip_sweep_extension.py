@@ -425,5 +425,65 @@ class SixPageBatchFiveMigrated(unittest.TestCase):
         self.assertNotIn('class="cad-kpi-grid"', src)
 
 
+class FivePageBatchSixMigrated(unittest.TestCase):
+    """Batch 6 — final sweep batch: pressure, diligence, data_room,
+    team, bayesian. After this batch, no production page in
+    ``rcm_mc/ui/`` emits the legacy ``class=\"cad-kpi-grid\"`` markup."""
+
+    def _src(self, module_name: str) -> str:
+        import importlib
+        import inspect
+        return inspect.getsource(importlib.import_module(module_name))
+
+    def test_pressure_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.pressure_page")
+        self.assertIn("kpi_strip(", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_diligence_migrated_two_blocks(self) -> None:
+        src = self._src("rcm_mc.ui.diligence_page")
+        # Questions + playbook blocks both migrated.
+        self.assertGreaterEqual(src.count("kpi_strip("), 2)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_data_room_migrated_two_blocks(self) -> None:
+        src = self._src("rcm_mc.ui.data_room_page")
+        # Top KPIs + EBITDA bridge impact blocks both migrated.
+        self.assertGreaterEqual(src.count("kpi_strip("), 2)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_team_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.team_page")
+        self.assertIn("kpi_strip(", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_bayesian_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.bayesian_page")
+        self.assertIn("kpi_strip(", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+
+class CadKpiGridFullyEliminated(unittest.TestCase):
+    """Cross-cutting guard: after all six sweep batches, no module
+    under ``rcm_mc/ui/`` emits the legacy ``class=\"cad-kpi-grid\"``
+    pattern. Catches any future page that re-introduces it."""
+
+    def test_no_module_emits_legacy_grid_markup(self) -> None:
+        import pathlib
+        ui_dir = pathlib.Path(__file__).resolve().parent.parent / "rcm_mc" / "ui"
+        offenders: list[str] = []
+        for py in ui_dir.rglob("*.py"):
+            try:
+                src = py.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            if 'class="cad-kpi-grid"' in src:
+                offenders.append(str(py.relative_to(ui_dir)))
+        self.assertEqual(
+            offenders, [],
+            f"Legacy cad-kpi-grid markup found in: {offenders}",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

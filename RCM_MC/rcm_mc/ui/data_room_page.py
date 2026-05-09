@@ -67,22 +67,19 @@ def render_data_room(
     n_total = len(calibrations)
 
     # ── KPIs ──
-    kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_total}</div>'
-        f'<div class="cad-kpi-label">Total Metrics</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-pos);">'
-        f'{n_seller}</div>'
-        f'<div class="cad-kpi-label">Seller-Confirmed</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-accent);">'
-        f'{n_ml_only}</div>'
-        f'<div class="cad-kpi-label">ML-Predicted Only</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(entries)}</div>'
-        f'<div class="cad-kpi-label">Data Points Entered</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(_METRIC_DEFINITIONS)}</div>'
-        f'<div class="cad-kpi-label">Available Metrics</div></div>'
-        f'</div>'
-    )
+    # P26 follow-up: 5-tile data-room summary migrated to kpi_strip.
+    # The legacy ``var(--cad-accent)`` styling on ML-only count was
+    # signalling "still needs seller confirmation" — neutral tone is
+    # the closest faithful mapping (warning would overstate it).
+    from ._ui_kit import kpi_strip
+    kpis = kpi_strip([
+        {"label": "Total Metrics", "value": str(n_total)},
+        {"label": "Seller-Confirmed", "value": str(n_seller),
+         "tone": "positive" if n_seller else "neutral"},
+        {"label": "ML-Predicted Only", "value": str(n_ml_only)},
+        {"label": "Data Points Entered", "value": str(len(entries))},
+        {"label": "Available Metrics", "value": str(len(_METRIC_DEFINITIONS))},
+    ])
 
     # ── Data entry form ──
     metric_options = ""
@@ -288,23 +285,22 @@ def render_data_room(
             cal_uplift = bridge_cal["total_ebitda_impact"]
             delta_uplift = cal_uplift - ml_uplift
 
-            delta_color = "var(--cad-pos)" if delta_uplift > 0 else "var(--cad-neg)"
+            # P26 follow-up: bridge-impact KPIs migrated to kpi_strip.
+            delta_tone = "positive" if delta_uplift > 0 else "negative"
+            bridge_kpis = kpi_strip([
+                {"label": "ML-Only Bridge", "value": _fm(ml_uplift)},
+                {"label": "Calibrated Bridge", "value": _fm(cal_uplift),
+                 "tone": "positive"},
+                {"label": "Delta from Seller Data", "value": _fm(delta_uplift),
+                 "tone": delta_tone},
+            ])
             bridge_impact = (
                 f'<div class="cad-card" style="border-left:3px solid var(--cad-pos);">'
                 f'<h2>EBITDA Bridge Impact</h2>'
                 f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:10px;">'
                 f'Seller data changes the EBITDA bridge calculation. Current values from '
                 f'seller reports replace ML predictions in the bridge.</p>'
-                f'<div class="cad-kpi-grid" style="grid-template-columns:1fr 1fr 1fr;">'
-                f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(ml_uplift)}</div>'
-                f'<div class="cad-kpi-label">ML-Only Bridge</div></div>'
-                f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-pos);">'
-                f'{_fm(cal_uplift)}</div>'
-                f'<div class="cad-kpi-label">Calibrated Bridge</div></div>'
-                f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{delta_color};">'
-                f'{_fm(delta_uplift)}</div>'
-                f'<div class="cad-kpi-label">Delta from Seller Data</div></div>'
-                f'</div></div>'
+                f'{bridge_kpis}</div>'
             )
 
     # ── Nav ──

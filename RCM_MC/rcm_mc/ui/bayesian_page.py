@@ -28,30 +28,30 @@ def render_bayesian_profile(
     data_score = compute_missing_data_score(observed)
 
     # ── Data Quality KPIs ──
-    grade_color = {
-        "A": "var(--cad-pos)", "B": "var(--cad-accent)",
-        "C": "var(--cad-warn)", "D": "var(--cad-neg)",
-    }.get(data_score["grade"], "var(--cad-text3)")
-
-    kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{grade_color};">'
-        f'{data_score["grade"]}</div>'
-        f'<div class="cad-kpi-label">Data Quality Grade</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{data_score["completeness_pct"]:.0f}%</div>'
-        f'<div class="cad-kpi-label">Completeness</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{data_score["present_count"]}/{data_score["total_metrics"]}</div>'
-        f'<div class="cad-kpi-label">Metrics Provided</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{data_score["missing_count"]}</div>'
-        f'<div class="cad-kpi-label">Missing (Imputed)</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{len(data_score["suspicious_values"])}</div>'
-        f'<div class="cad-kpi-label">Suspicious Values</div></div>'
-        f'</div>'
+    # P26 follow-up: 5-tile data-quality KPIs migrated to kpi_strip.
+    # Grade A/B map to positive (B is informational-blue in the
+    # legacy palette, which sits closest to neutral in the kit's
+    # tone vocabulary; A wins the positive slot since B with positive
+    # would over-celebrate).
+    from ._ui_kit import kpi_strip
+    grade = data_score["grade"]
+    grade_tone = (
+        "positive" if grade == "A"
+        else "warning" if grade == "C"
+        else "negative" if grade == "D"
+        else "neutral"
     )
+    suspicious_count = len(data_score["suspicious_values"])
+    kpis = kpi_strip([
+        {"label": "Data Quality Grade", "value": grade, "tone": grade_tone},
+        {"label": "Completeness",
+         "value": f"{data_score['completeness_pct']:.0f}%"},
+        {"label": "Metrics Provided",
+         "value": f"{data_score['present_count']}/{data_score['total_metrics']}"},
+        {"label": "Missing (Imputed)", "value": str(data_score["missing_count"])},
+        {"label": "Suspicious Values", "value": str(suspicious_count),
+         "tone": "warning" if suspicious_count else "neutral"},
+    ])
 
     # ── Missing data warning ──
     missing_warning = ""
