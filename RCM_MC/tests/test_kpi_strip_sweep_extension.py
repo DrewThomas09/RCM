@@ -93,5 +93,72 @@ class PEReturnsPageMigrated(unittest.TestCase):
                 self.assertIn(label, html)
 
 
+class HospitalProfileMigrated(unittest.TestCase):
+    """Both KPI grids on the hospital profile (fundamentals + quality
+    metrics) migrated to kpi_strip. The quality strip is conditional
+    — items appear only for metrics that are populated."""
+
+    def _render(self, hospital_extra: dict | None = None) -> str:
+        from types import SimpleNamespace
+        from rcm_mc.ui.hospital_profile import render_hospital_profile
+
+        hospital = {
+            "ccn": "010001",
+            "name": "Aurora Hospital",
+            "state": "CA",
+            "city": "San Francisco",
+            "ownership": "Voluntary",
+            "hospital_type": "Acute Care",
+            "beds": 320,
+            "net_patient_revenue": 450_000_000,
+            "operating_margin": 0.08,
+            "net_income": 32_000_000,
+            "operating_expenses": 410_000_000,
+            "medicare_share": 0.42,
+            "medicaid_share": 0.18,
+            "commercial_share": 0.32,
+        }
+        if hospital_extra:
+            hospital.update(hospital_extra)
+        score = SimpleNamespace(
+            total=72.5,
+            band="Good",
+            components={
+                "market_position": 25,
+                "financial_health": 18,
+                "operational_quality": 15,
+                "competitive_moat": 14,
+            },
+            warnings=[],
+        )
+        return render_hospital_profile(hospital, score)
+
+    def test_fundamentals_uses_kpi_strip(self) -> None:
+        html = self._render()
+        self.assertIn("kpi-strip", html)
+        self.assertIn("kpi-strip-dense", html)
+        for label in (
+            "NET PATIENT REVENUE", "OPERATING MARGIN",
+            "NET INCOME", "LICENSED BEDS",
+            "REVENUE PER BED", "OPERATING EXPENSES",
+        ):
+            with self.subTest(label=label):
+                self.assertIn(label, html)
+
+    def test_no_legacy_cad_kpi_grid(self) -> None:
+        html = self._render()
+        self.assertNotIn('class="cad-kpi-grid"', html)
+
+    def test_quality_strip_conditional_inclusion(self) -> None:
+        html = self._render({
+            "star_rating": 4,
+            "readmission_rate": 13.2,
+        })
+        self.assertIn("CMS STAR RATING", html)
+        self.assertIn("READMISSION RATE", html)
+        self.assertNotIn("MORTALITY RATE", html)
+        self.assertNotIn("PATIENT EXPERIENCE", html)
+
+
 if __name__ == "__main__":
     unittest.main()

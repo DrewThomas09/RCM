@@ -110,24 +110,28 @@ def render_hospital_profile(
             f'<span class="cad-badge cad-badge-blue">Health System</span></div></div>'
         )
 
-    # Fundamentals — two rows of KPIs
+    # P26 follow-up: kpi_strip migration. ``dense=True`` because
+    # six tiles is dense by the helper's auto-densify rule. Margin
+    # is a 0..1 fraction so format_value(kind="percent") handles
+    # the 1dp formatting; revenue-per-bed needs custom formatting
+    # ($K suffix at the per-bed scale) so it stays as a literal.
+    from ._ui_kit import format_value, kpi_strip
+
     rev_per_bed = npr / beds if beds > 0 else 0
-    fundamentals = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${npr/1e6:,.1f}M</div>'
-        f'<div class="cad-kpi-label">Net Patient Revenue</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{margin:.1%}</div>'
-        f'<div class="cad-kpi-label">Operating Margin</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${ni/1e6:,.1f}M</div>'
-        f'<div class="cad-kpi-label">Net Income</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{beds}</div>'
-        f'<div class="cad-kpi-label">Licensed Beds</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${rev_per_bed/1e3:,.0f}K</div>'
-        f'<div class="cad-kpi-label">Revenue per Bed</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${opex/1e6:,.1f}M</div>'
-        f'<div class="cad-kpi-label">Operating Expenses</div></div>'
-        f'</div>'
-    )
+    fundamentals = kpi_strip([
+        {"label": "NET PATIENT REVENUE",
+         "value": format_value(npr, kind="money")},
+        {"label": "OPERATING MARGIN",
+         "value": format_value(margin, kind="percent")},
+        {"label": "NET INCOME",
+         "value": format_value(ni, kind="money")},
+        {"label": "LICENSED BEDS",
+         "value": format_value(beds, kind="count")},
+        {"label": "REVENUE PER BED",
+         "value": f"${rev_per_bed/1e3:,.0f}K"},
+        {"label": "OPERATING EXPENSES",
+         "value": format_value(opex, kind="money")},
+    ], dense=True)
 
     # Payer Mix
     payer_mix = (
@@ -159,28 +163,37 @@ def render_hospital_profile(
     hcahps = hospital.get("patient_experience_rating")
     quality_section = ""
     if any(v is not None for v in [star, readmit, mortality, hcahps]):
-        q_items = ""
+        # P26 follow-up: build the quality KPIs as a dict list so
+        # kpi_strip handles layout. Items are added conditionally
+        # so the strip degrades gracefully when only some metrics
+        # are populated. Star rating renders ★ glyphs as the value
+        # since the kit doesn't have a "stars" kind.
+        q_items = []
         if star is not None:
-            stars = "&#9733;" * int(float(star)) + "&#9734;" * (5 - int(float(star)))
-            q_items += (
-                f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["warning"]};">'
-                f'{stars}</div><div class="cad-kpi-label">CMS Star Rating ({float(star):.0f}/5)</div></div>'
+            stars = (
+                "&#9733;" * int(float(star))
+                + "&#9734;" * (5 - int(float(star)))
             )
+            q_items.append({
+                "label": f"CMS STAR RATING ({float(star):.0f}/5)",
+                "value": stars,
+                "tone": "warning",
+            })
         if readmit is not None:
-            q_items += (
-                f'<div class="cad-kpi"><div class="cad-kpi-value">{float(readmit):.1f}%</div>'
-                f'<div class="cad-kpi-label">Readmission Rate</div></div>'
-            )
+            q_items.append({
+                "label": "READMISSION RATE",
+                "value": f"{float(readmit):.1f}%",
+            })
         if mortality is not None:
-            q_items += (
-                f'<div class="cad-kpi"><div class="cad-kpi-value">{float(mortality):.1f}%</div>'
-                f'<div class="cad-kpi-label">Mortality Rate</div></div>'
-            )
+            q_items.append({
+                "label": "MORTALITY RATE",
+                "value": f"{float(mortality):.1f}%",
+            })
         if hcahps is not None:
-            q_items += (
-                f'<div class="cad-kpi"><div class="cad-kpi-value">{float(hcahps):.1f}/5</div>'
-                f'<div class="cad-kpi-label">Patient Experience</div></div>'
-            )
+            q_items.append({
+                "label": "PATIENT EXPERIENCE",
+                "value": f"{float(hcahps):.1f}/5",
+            })
         quality_section = (
             f'<div class="cad-card">'
             f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
@@ -189,7 +202,7 @@ def render_hospital_profile(
             f'<span style="font-family:var(--cad-mono);font-size:9.5px;'
             f'letter-spacing:0.1em;color:{PALETTE["text_muted"]};text-transform:uppercase;">'
             f'Source · CMS Care Compare</span></div>'
-            f'<div class="cad-kpi-grid">{q_items}</div></div>'
+            f'{kpi_strip(q_items)}</div>'
         )
 
     # Score Breakdown
