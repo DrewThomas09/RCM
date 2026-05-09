@@ -157,20 +157,16 @@ def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
     margin = hospital.get("operating_margin", 0)
     occ = hospital.get("occupancy_rate", 0)
 
-    kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_val(beds, "count")}</div>'
-        f'<div class="cad-kpi-label">Beds</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_val(rev, "dollars")}</div>'
-        f'<div class="cad-kpi-label">Net Revenue</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{margin:.1%}</div>'
-        f'<div class="cad-kpi-label">Op Margin</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{occ:.1%}</div>'
-        f'<div class="cad-kpi-label">Occupancy</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(outlier_flags)}</div>'
-        f'<div class="cad-kpi-label">Outlier Flags</div></div>'
-        f'</div>'
-    )
+    from ._ui_kit import format_value, kpi_strip
+    kpis = kpi_strip([
+        {"label": "Beds",       "value": _fmt_val(beds, "count")},
+        {"label": "Net Revenue","value": _fmt_val(rev, "dollars")},
+        {"label": "Op Margin",  "value": f"{margin:.1%}"},
+        {"label": "Occupancy",  "value": f"{occ:.1%}"},
+        {"label": "Outlier Flags",
+         "value": format_value(len(outlier_flags), kind="count"),
+         "tone": "warning" if outlier_flags else "neutral"},
+    ])
 
     # Regression residuals — run quick regressions for key targets
     residual_rows = ""

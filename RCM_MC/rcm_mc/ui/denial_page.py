@@ -22,21 +22,17 @@ def render_denial_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -
     total_impact = summary.get("total_annual_impact", 0)
     denial_rate = summary.get("current_denial_rate", 0)
     target_rate = summary.get("target_denial_rate", 0)
-    kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["negative"]};">'
-        f'{denial_rate:.1f}%</div>'
-        f'<div class="cad-kpi-label">Current Denial Rate</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["positive"]};">'
-        f'{target_rate:.1f}%</div>'
-        f'<div class="cad-kpi-label">Target Denial Rate</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'${total_impact/1e6:.1f}M</div>'
-        f'<div class="cad-kpi-label">Recoverable Annual Revenue</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(drivers)}</div>'
-        f'<div class="cad-kpi-label">Root Causes Identified</div></div>'
-        f'</div>'
-    )
+    from ._ui_kit import format_value, kpi_strip
+    kpis = kpi_strip([
+        {"label": "Current Denial Rate",
+         "value": f"{denial_rate:.1f}%", "tone": "negative"},
+        {"label": "Target Denial Rate",
+         "value": f"{target_rate:.1f}%", "tone": "positive"},
+        {"label": "Recoverable Annual Revenue",
+         "value": f"${total_impact/1e6:.1f}M"},
+        {"label": "Root Causes Identified",
+         "value": format_value(len(drivers), kind="count")},
+    ])
 
     # Drivers table
     driver_rows = ""

@@ -214,20 +214,35 @@ def render_hospital_history(
     covid_score, covid_label = _covid_resilience_score(trend_df)
     covid_color = PALETTE["positive"] if covid_score >= 65 else (PALETTE["warning"] if covid_score >= 45 else PALETTE["negative"])
 
-    kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(revs[-1]) if revs else "—"}</div>'
-        f'<div class="cad-kpi-label">Latest Revenue (FY{int(years[-1]) if years else "?"})</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{rev_color};">{rev_cagr:+.1%}</div>'
-        f'<div class="cad-kpi-label">Revenue CAGR ({n_years}yr)</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{margin_color};">'
-        f'{margins[-1]:.1%}</div>' if margins else f'—</div>'
-        f'<div class="cad-kpi-label">Latest Margin</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{covid_color};">'
-        f'{covid_score}/100</div>'
-        f'<div class="cad-kpi-label">COVID Resilience</div></div>'
-        f'</div>'
+    from ._ui_kit import kpi_strip
+    rev_tone = (
+        "positive" if rev_cagr >= 0.05
+        else "warning" if rev_cagr >= 0
+        else "negative"
     )
+    margin_tone = (
+        "positive" if margins and margins[-1] >= 0.05
+        else "warning" if margins and margins[-1] >= 0
+        else "negative"
+    )
+    covid_tone = (
+        "positive" if covid_score >= 65
+        else "warning" if covid_score >= 45
+        else "negative"
+    )
+    kpis = kpi_strip([
+        {"label": (
+            f"Latest Revenue (FY{int(years[-1]) if years else '?'})"
+         ),
+         "value": _fmt_m(revs[-1]) if revs else "—"},
+        {"label": f"Revenue CAGR ({n_years}yr)",
+         "value": f"{rev_cagr:+.1%}", "tone": rev_tone},
+        {"label": "Latest Margin",
+         "value": f"{margins[-1]:.1%}" if margins else "—",
+         "tone": margin_tone if margins else "neutral"},
+        {"label": "COVID Resilience",
+         "value": f"{covid_score}/100", "tone": covid_tone},
+    ])
 
     # === COVID Impact Analysis ===
     covid_section = ""

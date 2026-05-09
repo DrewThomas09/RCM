@@ -297,5 +297,45 @@ class SixPageBatchTwoMigrated(unittest.TestCase):
         self.assertNotIn('class="cad-kpi-grid"', src)
 
 
+class SixPageBatchThreeMigrated(unittest.TestCase):
+    """Batch 3: hospital_stats, hospital_history, deal_quick_view,
+    predictive_screener, denial_page, regression_page."""
+
+    def _src(self, module_name: str) -> str:
+        import importlib
+        import inspect
+        return inspect.getsource(importlib.import_module(module_name))
+
+    def test_hospital_stats_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.hospital_stats_page")
+        self.assertIn("kpi_strip(", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_hospital_history_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.hospital_history")
+        self.assertIn("kpi_strip(", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_deal_quick_view_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.deal_quick_view")
+        self.assertIn("kpi_strip(", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_predictive_screener_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.predictive_screener")
+        self.assertIn("kpi_strip(", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_denial_page_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.denial_page")
+        self.assertIn("kpi_strip(", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_regression_page_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.regression_page")
+        self.assertIn("kpi_strip(", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+
 if __name__ == "__main__":
     unittest.main()

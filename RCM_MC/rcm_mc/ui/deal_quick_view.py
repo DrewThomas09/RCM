@@ -46,7 +46,10 @@ def render_deal_quick_view(
         ("Claims Volume", profile.get("claims_volume"), "", None),
     ]
 
-    kpi_cards = ""
+    # P26 follow-up: kpi_strip migration. Items added conditionally
+    # — same skip-if-None semantic as the legacy markup.
+    from ._ui_kit import kpi_strip
+    kpi_items = []
     populated = 0
     for label, val, suffix, scale in kpi_fields:
         if val is not None:
@@ -61,17 +64,13 @@ def render_deal_quick_view(
                     display = f"{v:,.0f}"
             except (TypeError, ValueError):
                 display = str(val)
-
-            kpi_cards += (
-                f'<div class="cad-kpi">'
-                f'<div class="cad-kpi-value">{html.escape(display)}</div>'
-                f'<div class="cad-kpi-label">{html.escape(label)}</div>'
-                f'</div>'
-            )
+            kpi_items.append({
+                "label": label, "value": html.escape(display),
+            })
 
     profile_section = (
-        f'<div class="cad-kpi-grid">{kpi_cards}</div>'
-        if kpi_cards else
+        kpi_strip(kpi_items)
+        if kpi_items else
         f'<div class="cad-card"><p style="color:{PALETTE["text_muted"]};">'
         f'No profile metrics yet. '
         f'<a href="/import" style="color:{PALETTE["text_link"]};">Edit deal profile</a>.</p></div>'

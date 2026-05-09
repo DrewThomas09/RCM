@@ -383,23 +383,27 @@ def render_regression_page(
         )
         return chartis_shell(body, "Regression Analysis", subtitle="Insufficient data")
 
-    # ── KPI cards ──
-    r2_color = PALETTE["positive"] if result["r2"] > 0.5 else (PALETTE["warning"] if result["r2"] > 0.2 else PALETTE["negative"])
-    kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(6,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{r2_color};">'
-        f'{result["r2"]:.1%}</div><div class="cad-kpi-label">R&sup2;</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{result["adj_r2"]:.1%}</div>'
-        f'<div class="cad-kpi-label">Adj R&sup2;</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{result["n"]:,}</div>'
-        f'<div class="cad-kpi-label">Observations</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{result["p"]}</div>'
-        f'<div class="cad-kpi-label">Features</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{min(result["f_stat"], 9999):.1f}</div>'
-        f'<div class="cad-kpi-label">F-Statistic</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_num(result["rmse"])}</div>'
-        f'<div class="cad-kpi-label">RMSE (avg error)</div></div>'
-        f'</div>'
+    # ── KPI cards ── (P26 follow-up: kpi_strip migration with
+    # auto-densify for 6 tiles.)
+    from ._ui_kit import format_value, kpi_strip
+    r2_tone = (
+        "positive" if result["r2"] > 0.5
+        else "warning" if result["r2"] > 0.2
+        else "negative"
+    )
+    kpis = kpi_strip([
+        {"label": "R²", "value": f'{result["r2"]:.1%}',
+         "tone": r2_tone},
+        {"label": "Adj R²", "value": f'{result["adj_r2"]:.1%}'},
+        {"label": "Observations",
+         "value": format_value(result["n"], kind="count")},
+        {"label": "Features",
+         "value": format_value(result["p"], kind="count")},
+        {"label": "F-Statistic",
+         "value": f'{min(result["f_stat"], 9999):.1f}'},
+        {"label": "RMSE (avg error)",
+         "value": _fmt_num(result["rmse"])},
+    ], dense=True) + (
         f'<p style="font-size:11px;color:{PALETTE["text_secondary"]};margin-bottom:12px;">'
         f'R&sup2; = fraction of variance explained (1.0 = perfect, 0 = no signal). '
         f'RMSE = root mean squared error (average prediction miss in target units). '

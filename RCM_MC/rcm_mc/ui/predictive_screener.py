@@ -313,20 +313,17 @@ def render_predictive_screener(
             return f"${v/1e6:.0f}M"
         return f"${v:,.0f}"
 
-    kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{total_matches:,}</div>'
-        f'<div class="cad-kpi-label">Matching Hospitals</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(total_uplift)}</div>'
-        f'<div class="cad-kpi-label">Total Est. Uplift</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{avg_denial:.1%}</div>'
-        f'<div class="cad-kpi-label">Avg Est. Denial Rate</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{avg_margin:.1%}</div>'
-        f'<div class="cad-kpi-label">Avg Margin</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(hcris_df):,}</div>'
-        f'<div class="cad-kpi-label">Universe</div></div>'
-        f'</div>'
-    )
+    from ._ui_kit import format_value, kpi_strip
+    kpis = kpi_strip([
+        {"label": "Matching Hospitals",
+         "value": format_value(total_matches, kind="count")},
+        {"label": "Total Est. Uplift", "value": _fm(total_uplift)},
+        {"label": "Avg Est. Denial Rate",
+         "value": f"{avg_denial:.1%}"},
+        {"label": "Avg Margin", "value": f"{avg_margin:.1%}"},
+        {"label": "Universe",
+         "value": format_value(len(hcris_df), kind="count")},
+    ])
 
     # ── Results table ──
     rev_sot = _html.escape(sot_tooltip("net_patient_revenue"), quote=True)
