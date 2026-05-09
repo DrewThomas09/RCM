@@ -14,23 +14,6 @@ from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
-def _kpi_card(label: str, value: str, change: str = "", direction: str = "flat", source: str = "") -> str:
-    color = {"up": PALETTE["positive"], "down": PALETTE["negative"]}.get(direction, PALETTE["text_muted"])
-    delta = f'<div class="cad-kpi-delta" style="color:{color};">{html.escape(change)}</div>' if change else ""
-    tooltip = f' title="{html.escape(source)}"' if source else ""
-    src_line = (
-        f'<div style="font-size:9px;color:{PALETTE["text_muted"]};margin-top:2px;'
-        f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"'
-        f'{tooltip}>{html.escape(source[:50])}</div>'
-    ) if source else ""
-    return (
-        f'<div class="cad-kpi"{tooltip}>'
-        f'<div class="cad-kpi-value">{html.escape(value)}</div>'
-        f'<div class="cad-kpi-label">{html.escape(label)}</div>'
-        f'{delta}{src_line}</div>'
-    )
-
-
 def _insight_card(insight: Dict[str, Any]) -> str:
     sev = insight.get("severity", "info")
     color = {"critical": PALETTE["critical"], "warning": PALETTE["warning"]}.get(sev, PALETTE["brand_accent"])
@@ -267,16 +250,38 @@ def render_home(
 ) -> str:
     """Render the SeekingChartis home page."""
 
-    # Market Pulse KPIs
-    pulse_cards = ""
+    # P26 follow-up: Market Pulse migrated to kit's kpi_strip. The
+    # legacy ``_kpi_card`` carried ``change`` + ``source`` extras —
+    # we fold change into the value (delta after the headline number)
+    # and surface source as the muted sublabel so both signals
+    # survive the migration without inventing a new primitive.
+    from ._ui_kit import kpi_strip
+
+    pulse_items: list[dict] = []
     for ind in (market_pulse.indicators if hasattr(market_pulse, "indicators") else []):
-        pulse_cards += _kpi_card(
-            ind.label if hasattr(ind, "label") else ind.get("label", ""),
-            ind.value if hasattr(ind, "value") else ind.get("value", ""),
-            ind.change if hasattr(ind, "change") else ind.get("change", ""),
-            ind.direction if hasattr(ind, "direction") else ind.get("direction", "flat"),
-            ind.source if hasattr(ind, "source") else ind.get("source", ""),
+        label = ind.label if hasattr(ind, "label") else ind.get("label", "")
+        value = ind.value if hasattr(ind, "value") else ind.get("value", "")
+        change = ind.change if hasattr(ind, "change") else ind.get("change", "")
+        direction = ind.direction if hasattr(ind, "direction") else ind.get("direction", "flat")
+        source = ind.source if hasattr(ind, "source") else ind.get("source", "")
+        tone = (
+            "positive" if direction == "up"
+            else "negative" if direction == "down"
+            else "neutral"
         )
+        # Show change inline with the value (Bloomberg-style "1.23 +0.05").
+        value_with_delta = (
+            f"{html.escape(str(value))} "
+            f'<span style="font-size:11px;color:'
+            f'{PALETTE["positive"] if direction == "up" else PALETTE["negative"] if direction == "down" else PALETTE["text_muted"]};'
+            f'">{html.escape(str(change))}</span>'
+        ) if change else html.escape(str(value))
+        pulse_items.append({
+            "label": label,
+            "value": value_with_delta,
+            "tone": tone,
+            "sublabel": (source[:50] if source else None),
+        })
 
     pulse_section = (
         f'<div class="cad-card">'
@@ -287,7 +292,7 @@ def render_home(
         f'<a href="/methodology" style="font-size:10.5px;font-family:var(--cad-mono);'
         f'letter-spacing:0.06em;text-transform:uppercase;color:{PALETTE["text_link"]};">'
         f'Methodology &rarr;</a></div>'
-        f'<div class="cad-kpi-grid">{pulse_cards}</div>'
+        f'{kpi_strip(pulse_items)}'
         f'</div>'
     )
 
@@ -314,6 +319,40 @@ def render_home(
             avg_m = float(deals["ebitda_margin"].dropna().mean()) if "ebitda_margin" in deals.columns and deals["ebitda_margin"].notna().any() else 0.10
             p_ebitda = p_rev * avg_m
 
+        # P26 follow-up: Portfolio Summary migrated to kpi_strip.
+        # Build the items list dynamically; conditionals collapse
+        # into list-append so the strip auto-sizes its column count.
+        summary_items: list[dict] = [
+            {"label": "Active Deals", "value": str(n_deals)},
+            {"label": "Total Revenue", "value": f"${p_rev/1e6:,.0f}M"},
+        ]
+        if p_ebitda > 0:
+            summary_items.append({
+                "label": "Est. EBITDA",
+                "value": f"${p_ebitda/1e6:,.0f}M",
+            })
+        if p_dr:
+            dr_tone = (
+                "positive" if p_dr < 5
+                else "warning" if p_dr < 10
+                else "negative"
+            )
+            summary_items.append({
+                "label": "Avg Denial Rate",
+                "value": f"{p_dr:.1f}%",
+                "tone": dr_tone,
+            })
+        if p_ar:
+            ar_tone = (
+                "positive" if p_ar < 45
+                else "warning" if p_ar < 60
+                else "negative"
+            )
+            summary_items.append({
+                "label": "Avg AR Days",
+                "value": f"{p_ar:.0f}",
+                "tone": ar_tone,
+            })
         portfolio_summary = (
             f'<div class="cad-card">'
             f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
@@ -323,18 +362,8 @@ def render_home(
             f'<a href="/portfolio" style="font-size:10.5px;font-family:var(--cad-mono);'
             f'letter-spacing:0.06em;text-transform:uppercase;color:{PALETTE["text_link"]};">'
             f'View All &rarr;</a></div>'
-            f'<div class="cad-kpi-grid">'
-            f'<div class="cad-kpi"><div class="cad-kpi-value">{n_deals}</div>'
-            f'<div class="cad-kpi-label">Active Deals</div></div>'
-            f'<div class="cad-kpi"><div class="cad-kpi-value">${p_rev/1e6:,.0f}M</div>'
-            f'<div class="cad-kpi-label">Total Revenue</div></div>'
-            + (f'<div class="cad-kpi"><div class="cad-kpi-value">${p_ebitda/1e6:,.0f}M</div>'
-               f'<div class="cad-kpi-label">Est. EBITDA</div></div>' if p_ebitda > 0 else "")
-            + (f'<div class="cad-kpi"><div class="cad-kpi-value">{p_dr:.1f}%</div>'
-               f'<div class="cad-kpi-label">Avg Denial Rate</div></div>' if p_dr else "")
-            + (f'<div class="cad-kpi"><div class="cad-kpi-value">{p_ar:.0f}</div>'
-               f'<div class="cad-kpi-label">Avg AR Days</div></div>' if p_ar else "")
-            + f'</div></div>'
+            f'{kpi_strip(summary_items)}'
+            f'</div>'
         )
 
     # Active Deals Table

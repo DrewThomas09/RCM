@@ -337,5 +337,51 @@ class SixPageBatchThreeMigrated(unittest.TestCase):
         self.assertNotIn('class="cad-kpi-grid"', src)
 
 
+class SixPageBatchFourMigrated(unittest.TestCase):
+    """Batch 4: competitive_intel, model_validation, ml_insights,
+    memo_page, fund_learning, home_v2."""
+
+    def _src(self, module_name: str) -> str:
+        import importlib
+        import inspect
+        return inspect.getsource(importlib.import_module(module_name))
+
+    def test_competitive_intel_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.competitive_intel_page")
+        self.assertIn("kpi_strip(", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_model_validation_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.model_validation_page")
+        self.assertIn("kpi_strip(", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_ml_insights_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.ml_insights_page")
+        # Two KPI blocks migrated; both use kpi_strip.
+        self.assertGreaterEqual(src.count("kpi_strip("), 2)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_memo_page_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.memo_page")
+        # Three KPI blocks migrated.
+        self.assertGreaterEqual(src.count("kpi_strip("), 3)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_fund_learning_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.fund_learning_page")
+        self.assertIn("kpi_strip(", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_home_v2_migrated_two_blocks(self) -> None:
+        src = self._src("rcm_mc.ui.home_v2")
+        # Pulse + Portfolio Summary blocks both migrated.
+        self.assertGreaterEqual(src.count("kpi_strip("), 2)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+        # Local _kpi_card helper retired now that the only consumer
+        # is gone — guards against accidental re-introduction.
+        self.assertNotIn("def _kpi_card(", src)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -181,20 +181,17 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
     nat_margins = df["operating_margin"].dropna()
     nat_pctile = float((nat_margins < margin).mean() * 100) if len(nat_margins) > 10 else 50
 
-    kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(rev)}</div>'
-        f'<div class="cad-kpi-label">Net Revenue</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{margin:.1%}</div>'
-        f'<div class="cad-kpi-label">Margin (P{nat_pctile:.0f})</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{beds:.0f}</div>'
-        f'<div class="cad-kpi-label">Beds</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(df):,}</div>'
-        f'<div class="cad-kpi-label">National Universe</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(peer_groups)}</div>'
-        f'<div class="cad-kpi-label">Peer Groups</div></div>'
-        f'</div>'
-    )
+    from ._ui_kit import format_value, kpi_strip
+    kpis = kpi_strip([
+        {"label": "Net Revenue", "value": _fm(rev)},
+        {"label": f"Margin (P{nat_pctile:.0f})",
+         "value": f"{margin:.1%}"},
+        {"label": "Beds", "value": f"{beds:.0f}"},
+        {"label": "National Universe",
+         "value": format_value(len(df), kind="count")},
+        {"label": "Peer Groups",
+         "value": format_value(len(peer_groups), kind="count")},
+    ])
 
     # ── Multi-group percentile table ──
     group_names = list(peer_groups.keys())

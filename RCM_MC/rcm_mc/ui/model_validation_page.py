@@ -91,24 +91,30 @@ def render_model_validation(
     r2_color = "var(--cad-pos)" if avg_r2 > 0.5 else ("var(--cad-warn)" if avg_r2 > 0.3 else "var(--cad-neg)")
     cov_color = "var(--cad-pos)" if avg_coverage > 0.85 else ("var(--cad-warn)" if avg_coverage > 0.75 else "var(--cad-neg)")
 
-    kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(6,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{total_predictions:,}</div>'
-        f'<div class="cad-kpi-label">Predictions Made</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{total_actuals:,}</div>'
-        f'<div class="cad-kpi-label">Actuals Recorded</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{r2_color};">'
-        f'{avg_r2:.1%}</div>'
-        f'<div class="cad-kpi-label">Avg R&sup2;</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{cov_color};">'
-        f'{avg_coverage:.0%}</div>'
-        f'<div class="cad-kpi-label">90% CI Coverage</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(all_perfs)}</div>'
-        f'<div class="cad-kpi-label">Metrics Validated</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_grade_badge(top_grade)}</div>'
-        f'<div class="cad-kpi-label">Weakest Grade</div></div>'
-        f'</div>'
+    from ._ui_kit import format_value, kpi_strip
+    r2_tone = (
+        "positive" if avg_r2 > 0.5
+        else "warning" if avg_r2 > 0.3
+        else "negative"
     )
+    cov_tone = (
+        "positive" if avg_coverage > 0.85
+        else "warning" if avg_coverage > 0.75
+        else "negative"
+    )
+    kpis = kpi_strip([
+        {"label": "Predictions Made",
+         "value": format_value(total_predictions, kind="count")},
+        {"label": "Actuals Recorded",
+         "value": format_value(total_actuals, kind="count")},
+        {"label": "Avg R²", "value": f"{avg_r2:.1%}",
+         "tone": r2_tone},
+        {"label": "90% CI Coverage", "value": f"{avg_coverage:.0%}",
+         "tone": cov_tone},
+        {"label": "Metrics Validated",
+         "value": format_value(len(all_perfs), kind="count")},
+        {"label": "Weakest Grade", "value": _grade_badge(top_grade)},
+    ], dense=True)
 
     # ── Per-metric performance table ──
     metric_rows = ""

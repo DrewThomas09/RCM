@@ -59,20 +59,20 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
     n_distressed = sum(1 for d in distressed_list if d["distress_prob"] > 0.5)
     avg_margin = float(hcris_df.get("operating_margin", pd.Series(dtype=float)).dropna().median()) if "operating_margin" in df_clustered.columns else 0
 
-    kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_hospitals:,}</div>'
-        f'<div class="cad-kpi-label">Hospitals Analyzed</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_clusters}</div>'
-        f'<div class="cad-kpi-label">Archetypes</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-neg);">{n_distressed}</div>'
-        f'<div class="cad-kpi-label">High Distress Risk</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{auc:.3f}</div>'
-        f'<div class="cad-kpi-label">Distress Model AUC</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{avg_margin:.1%}</div>'
-        f'<div class="cad-kpi-label">Median Op Margin</div></div>'
-        f'</div>'
-    )
+    from ._ui_kit import format_value, kpi_strip
+    kpis = kpi_strip([
+        {"label": "Hospitals Analyzed",
+         "value": format_value(n_hospitals, kind="count")},
+        {"label": "Archetypes",
+         "value": format_value(n_clusters, kind="count")},
+        {"label": "High Distress Risk",
+         "value": format_value(n_distressed, kind="count"),
+         "tone": "negative"},
+        {"label": "Distress Model AUC",
+         "value": f"{auc:.3f}"},
+        {"label": "Median Op Margin",
+         "value": f"{avg_margin:.1%}"},
+    ])
 
     # ── Cluster archetypes ──
     cluster_cards = ""
@@ -375,44 +375,42 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             f'{turnaround_html}</div>'
         )
 
-    # ── KPIs ──
-    kpi_parts = []
+    # ── KPIs ── (P26 follow-up: kpi_strip migration; items added
+    # conditionally so the strip degrades gracefully when only a
+    # subset of the per-deal models has results.)
+    kpi_items = []
     if cluster_result:
-        kpi_parts.append(
-            f'<div class="cad-kpi"><div class="cad-kpi-value" style="font-size:14px;">'
-            f'{_html.escape(cluster_result.label[:25])}</div>'
-            f'<div class="cad-kpi-label">Archetype</div></div>'
-        )
+        kpi_items.append({
+            "label": "Archetype",
+            "value": _html.escape(cluster_result.label[:25]),
+        })
     if distress_result:
         prob = distress_result.distress_probability
-        prob_color = "var(--cad-pos)" if prob < 0.15 else ("var(--cad-warn)" if prob < 0.35 else "var(--cad-neg)")
-        kpi_parts.append(
-            f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{prob_color};">'
-            f'{prob:.1%}</div>'
-            f'<div class="cad-kpi-label">Distress Risk</div></div>'
+        prob_tone = (
+            "positive" if prob < 0.15
+            else "warning" if prob < 0.35
+            else "negative"
         )
+        kpi_items.append({
+            "label": "Distress Risk",
+            "value": f"{prob:.1%}", "tone": prob_tone,
+        })
     if rcm_result:
-        kpi_parts.append(
-            f'<div class="cad-kpi"><div class="cad-kpi-value">'
-            f'{_fmt_money(rcm_result.risk_adjusted_opportunity)}</div>'
-            f'<div class="cad-kpi-label">RCM Opportunity</div></div>'
-        )
-        kpi_parts.append(
-            f'<div class="cad-kpi"><div class="cad-kpi-value">'
-            f'{_grade_badge(rcm_result.grade)}</div>'
-            f'<div class="cad-kpi-label">Opportunity Grade</div></div>'
-        )
-        kpi_parts.append(
-            f'<div class="cad-kpi"><div class="cad-kpi-value">'
-            f'{rcm_result.projected_margin:.1%}</div>'
-            f'<div class="cad-kpi-label">Projected Margin</div></div>'
-        )
+        kpi_items.append({
+            "label": "RCM Opportunity",
+            "value": _fmt_money(rcm_result.risk_adjusted_opportunity),
+        })
+        kpi_items.append({
+            "label": "Opportunity Grade",
+            "value": _grade_badge(rcm_result.grade),
+        })
+        kpi_items.append({
+            "label": "Projected Margin",
+            "value": f"{rcm_result.projected_margin:.1%}",
+        })
 
-    if kpi_parts:
-        sections.append(
-            f'<div class="cad-kpi-grid" style="grid-template-columns:repeat({len(kpi_parts)},1fr);">'
-            + "".join(kpi_parts) + '</div>'
-        )
+    if kpi_items:
+        sections.append(kpi_strip(kpi_items))
 
     # ── Cluster detail ──
     if cluster_result:

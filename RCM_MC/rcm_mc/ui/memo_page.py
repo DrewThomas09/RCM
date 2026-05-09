@@ -18,18 +18,16 @@ def render_memo_page(deal_id: str, deal_name: str, memo: Dict[str, Any]) -> str:
     warnings = memo.get("fact_check_warnings", [])
     llm_used = memo.get("llm_used", False)
 
-    # KPIs
-    kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(sections)}</div>'
-        f'<div class="cad-kpi-label">Memo Sections</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(warnings)}</div>'
-        f'<div class="cad-kpi-label">Fact-Check Warnings</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{"AI" if llm_used else "Template"}</div>'
-        f'<div class="cad-kpi-label">Generation Method</div></div>'
-        f'</div>'
-    )
+    from ._ui_kit import format_value, kpi_strip
+    kpis = kpi_strip([
+        {"label": "Memo Sections",
+         "value": format_value(len(sections), kind="count")},
+        {"label": "Fact-Check Warnings",
+         "value": format_value(len(warnings), kind="count"),
+         "tone": "warning" if warnings else "neutral"},
+        {"label": "Generation Method",
+         "value": "AI" if llm_used else "Template"},
+    ])
 
     # Sections
     sections_html = ""
@@ -92,22 +90,22 @@ def render_validation_page(deal_id: str, deal_name: str, validation: Dict[str, A
     status_cls = "cad-badge-green" if is_valid else "cad-badge-red"
     status_text = "Valid" if is_valid else "Issues Found"
 
-    kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'<span class="cad-badge {status_cls}" style="font-size:14px;padding:4px 12px;">'
-        f'{status_text}</span></div>'
-        f'<div class="cad-kpi-label">Validation Status</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["negative"]};">'
-        f'{len(issues)}</div>'
-        f'<div class="cad-kpi-label">Issues</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["warning"]};">'
-        f'{len(warnings)}</div>'
-        f'<div class="cad-kpi-label">Warnings</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{fields}</div>'
-        f'<div class="cad-kpi-label">Profile Fields</div></div>'
-        f'</div>'
+    status_badge = (
+        f'<span class="cad-badge {status_cls}" '
+        'style="font-size:14px;padding:4px 12px;">'
+        f'{status_text}</span>'
     )
+    kpis = kpi_strip([
+        {"label": "Validation Status", "value": status_badge},
+        {"label": "Issues",
+         "value": format_value(len(issues), kind="count"),
+         "tone": "negative" if issues else "neutral"},
+        {"label": "Warnings",
+         "value": format_value(len(warnings), kind="count"),
+         "tone": "warning" if warnings else "neutral"},
+        {"label": "Profile Fields",
+         "value": format_value(fields, kind="count")},
+    ])
 
     issues_html = ""
     if issues:
@@ -160,17 +158,18 @@ def render_completeness_page(deal_id: str, deal_name: str, completeness: Dict[st
     pct = coverage * 100 if coverage < 1 else coverage
     bar_color = PALETTE["positive"] if pct > 70 else (PALETTE["warning"] if pct > 40 else PALETTE["negative"])
 
-    kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{grade_color};font-size:36px;">'
-        f'{grade}</div>'
-        f'<div class="cad-kpi-label">Completeness Grade</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{pct:.0f}%</div>'
-        f'<div class="cad-kpi-label">Coverage</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{present}/{total}</div>'
-        f'<div class="cad-kpi-label">Fields Populated</div></div>'
-        f'</div>'
+    grade_tone = (
+        "positive" if pct > 70
+        else "warning" if pct > 40
+        else "negative"
     )
+    kpis = kpi_strip([
+        {"label": "Completeness Grade",
+         "value": grade, "tone": grade_tone},
+        {"label": "Coverage", "value": f"{pct:.0f}%"},
+        {"label": "Fields Populated",
+         "value": f"{present}/{total}"},
+    ])
 
     bar = (
         f'<div class="cad-card">'

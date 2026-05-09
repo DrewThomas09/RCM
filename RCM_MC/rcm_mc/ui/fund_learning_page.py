@@ -49,20 +49,22 @@ def render_fund_learning(db_path: str) -> str:
     r_color = "var(--cad-pos)" if accuracy.fund_realization_pct >= 0.80 else (
         "var(--cad-warn)" if accuracy.fund_realization_pct >= 0.60 else "var(--cad-neg)")
 
-    kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(4,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{accuracy.n_closed_deals}</div>'
-        f'<div class="cad-kpi-label">Deals with Data</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(accuracy.total_planned)}</div>'
-        f'<div class="cad-kpi-label">Total Planned</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{r_color};">'
-        f'{_fm(accuracy.total_realized)}</div>'
-        f'<div class="cad-kpi-label">Total Realized</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{r_color};">'
-        f'{accuracy.fund_realization_pct:.0%}</div>'
-        f'<div class="cad-kpi-label">Fund Realization</div></div>'
-        f'</div>'
+    from ._ui_kit import format_value, kpi_strip
+    r_tone = (
+        "positive" if accuracy.fund_realization_pct >= 0.80
+        else "warning" if accuracy.fund_realization_pct >= 0.60
+        else "negative"
     )
+    kpis = kpi_strip([
+        {"label": "Deals with Data",
+         "value": format_value(accuracy.n_closed_deals, kind="count")},
+        {"label": "Total Planned", "value": _fm(accuracy.total_planned)},
+        {"label": "Total Realized",
+         "value": _fm(accuracy.total_realized), "tone": r_tone},
+        {"label": "Fund Realization",
+         "value": f"{accuracy.fund_realization_pct:.0%}",
+         "tone": r_tone},
+    ])
 
     # Narrative
     narrative = (
