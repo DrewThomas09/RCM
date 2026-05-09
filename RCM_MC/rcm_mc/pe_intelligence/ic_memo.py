@@ -289,9 +289,35 @@ def render_html(review: PartnerReview) -> str:
     ]
     for q in review.narrative.key_questions:
         parts.append(f"<li>{html.escape(q)}</li>")
+    # P67: embed the reproducibility block so an LP analyst can
+    # verify the IC memo's inputs match what was rendered. Inputs
+    # are the partner-review's deterministic fields — narrative
+    # text and ad-hoc context summary stay on the read path.
+    from rcm_mc.exports.reproducibility import reproducibility_block
+
+    repro_inputs = {
+        "deal_id": review.deal_id,
+        "deal_name": review.deal_name,
+        "generated_at": review.generated_at.isoformat(),
+        "recommendation": review.narrative.recommendation,
+        "context_summary": dict(review.context_summary),
+        "n_reasonableness_checks": len(review.reasonableness_checks),
+        "n_heuristic_hits": len(review.heuristic_hits),
+        "n_key_questions": len(review.narrative.key_questions),
+    }
+    repro_run_id = (
+        f"ic-memo-{review.deal_id}-"
+        f"{review.generated_at.strftime('%Y%m%dT%H%M%SZ')}"
+    )
+    repro_block = reproducibility_block(
+        repro_inputs,
+        run_id=repro_run_id,
+        artifact_kind="ic_memo",
+    )
     parts += [
         "</ol></section>",
         f'<blockquote class="ic-memo__dictation">{dictation}</blockquote>',
+        repro_block,
         "</article>",
     ]
     return "".join(parts)
