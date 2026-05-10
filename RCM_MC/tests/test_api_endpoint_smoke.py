@@ -601,6 +601,48 @@ class APIEndpointSmoke(unittest.TestCase):
             f"{leaks}",
         )
 
+    def test_analysis_export_content_types_per_format(self) -> None:
+        """``/api/analysis/<id>/export?format=<fmt>`` must return
+        the right Content-Type for each format. The export router
+        switches on the format query param to dispatch to different
+        renderers (HTML viewer, JSON packet, CSV, XLSX, PPTX, ZIP
+        package, diligence questions). Each renderer sets its own
+        Content-Type — drift between query value and header is a
+        partner-visible bug (downloads with wrong extension, parsers
+        that key off the header).
+
+        Pins the five formats whose Content-Types the smoke harness
+        can probe without leaking a binary blob into pytest stdout.
+        """
+        EXPECTED = {
+            "html":    "text/html",
+            "json":    "application/json",
+            "csv":     "text/csv",
+            "xlsx":    "application/vnd.openxmlformats",
+            "package": "application/zip",
+        }
+        gaps: list[str] = []
+        for fmt, want in EXPECTED.items():
+            try:
+                resp = self.opener.open(
+                    self.base + f"/api/analysis/smoke-a/export"
+                    f"?format={fmt}",
+                    timeout=10,
+                )
+            except Exception as e:
+                gaps.append(f"{fmt}: fetch error {e!r}")
+                continue
+            ct = resp.headers.get("Content-Type", "")
+            if want.lower() not in ct.lower():
+                gaps.append(
+                    f"{fmt}: Content-Type={ct!r}, expected to "
+                    f"contain {want!r}"
+                )
+        self.assertEqual(
+            gaps, [],
+            f"Export Content-Type drift across formats: {gaps}",
+        )
+
     def test_put_patch_delete_envelope_contracts(self) -> None:
         """Companion to test_documented_post_happy_paths — the
         non-POST mutation verbs (PUT, PATCH, DELETE) on the deal
