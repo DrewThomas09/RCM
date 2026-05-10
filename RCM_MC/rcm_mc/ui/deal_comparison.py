@@ -123,7 +123,7 @@ def _render_radar(packets: List[DealAnalysisPacket]) -> str:
 
 def render_comparison(packets: List[DealAnalysisPacket]) -> str:
     """Column-per-deal table + radar chart. Used by ``GET /compare``."""
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import chartis_shell, ck_kpi_block, ck_panel
 
     if not packets:
         body = (
@@ -171,53 +171,56 @@ def render_comparison(packets: List[DealAnalysisPacket]) -> str:
         for i, p in enumerate(packets)
     )
 
-    # KPI summary for each deal
-    kpi_cards = ""
+    # KPI summary for each deal — render each as a ck_panel with a
+    # ck_kpi_strip of four metrics + nav badges.
+    kpi_cards = []
     for i, p in enumerate(packets):
-        color = _PALETTE[i % len(_PALETTE)]
         dr = _pm_val(p, "denial_rate")
         ar = _pm_val(p, "days_in_ar")
         risk_count = len(p.risk_flags or [])
         grade = p.completeness.grade if p.completeness else "—"
         did = _esc(p.deal_id)
-        kpi_cards += (
-            f'<div class="cad-card" style="border-left:3px solid {color};">'
-            f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
-            f'<h3>{_esc(p.deal_name or p.deal_id)}</h3>'
-            f'<a href="/deal/{did}" class="cad-badge cad-badge-blue" style="text-decoration:none;">Dashboard</a>'
-            f'</div>'
-            f'<div style="display:flex;gap:16px;font-size:12px;">'
-            f'<span>DR: <strong>{_fmt(dr)}</strong></span>'
-            f'<span>AR: <strong>{_fmt(ar)}</strong></span>'
-            f'<span>Risks: <strong>{risk_count}</strong></span>'
-            f'<span>Grade: <strong>{grade}</strong></span>'
-            f'</div>'
-            f'<div style="display:flex;gap:6px;margin-top:8px;">'
-            f'<a href="/models/dcf/{did}" class="cad-badge cad-badge-muted" style="text-decoration:none;">DCF</a>'
-            f'<a href="/models/lbo/{did}" class="cad-badge cad-badge-muted" style="text-decoration:none;">LBO</a>'
-            f'<a href="/models/bridge/{did}" class="cad-badge cad-badge-muted" style="text-decoration:none;">Bridge</a>'
-            f'<a href="/models/denial/{did}" class="cad-badge cad-badge-muted" style="text-decoration:none;">Denial</a>'
-            f'</div></div>'
+        metrics = (
+            '<div class="ck-kpi-strip">'
+            + ck_kpi_block("Denial Rate", _fmt(dr))
+            + ck_kpi_block("AR Days", _fmt(ar))
+            + ck_kpi_block("Risks", str(risk_count))
+            + ck_kpi_block("Grade", grade)
+            + "</div>"
         )
+        nav_links = (
+            f'<p class="ck-section-body">'
+            f'<a href="/deal/{did}" class="cad-badge cad-badge-blue">Dashboard</a> '
+            f'<a href="/models/dcf/{did}" class="cad-badge cad-badge-muted">DCF</a> '
+            f'<a href="/models/lbo/{did}" class="cad-badge cad-badge-muted">LBO</a> '
+            f'<a href="/models/bridge/{did}" class="cad-badge cad-badge-muted">Bridge</a> '
+            f'<a href="/models/denial/{did}" class="cad-badge cad-badge-muted">Denial</a>'
+            f'</p>'
+        )
+        kpi_cards.append(ck_panel(
+            metrics + nav_links,
+            title=_esc(p.deal_name or p.deal_id),
+        ))
 
-    # Actions
-    deal_ids = ",".join(_esc(p.deal_id) for p in packets)
-    actions = (
-        f'<div class="cad-card" style="display:flex;gap:8px;flex-wrap:wrap;">'
-        f'<a href="/portfolio" class="cad-btn" style="text-decoration:none;">Portfolio</a>'
-        f'<a href="/portfolio/regression" class="cad-btn" style="text-decoration:none;">Regression</a>'
-        f'<a href="/analysis" class="cad-btn cad-btn-primary" style="text-decoration:none;">Analysis Hub</a>'
-        f'</div>'
+    actions = ck_panel(
+        '<p class="ck-section-body">'
+        '<a href="/portfolio" class="cad-btn">Portfolio</a> '
+        '<a href="/portfolio/regression" class="cad-btn">Regression</a> '
+        '<a href="/analysis" class="cad-btn cad-btn-primary">Analysis Hub</a>'
+        '</p>',
+        title="Next steps",
     )
 
     body = (
-        f'<div style="display:grid;grid-template-columns:{"1fr " * len(packets)};gap:12px;">'
-        f'{kpi_cards}</div>'
-        f'<div class="cad-card">'
-        f'<div style="margin-bottom:12px;font-size:12.5px;">{legend}</div>'
-        f'{radar}</div>'
-        f'<div class="cad-card">{table_html}</div>'
-        f'{actions}'
+        '<div class="ck-card-grid">'
+        + "".join(kpi_cards)
+        + '</div>'
+        + ck_panel(
+            f'<p class="ck-section-body">{legend}</p>{radar}',
+            title="Comparative radar",
+        )
+        + ck_panel(table_html, title="Dimension table")
+        + actions
     )
     return chartis_shell(
         body, "Deal Comparison",
