@@ -54,7 +54,7 @@ def _rate_ladder_svg(cpt_rows) -> str:
             f'<circle cx="{x_p75:.1f}" cy="{y + 8}" r="4" fill="{pos}"/>'
             # Rate labels below
             f'<text x="{x_cur:.1f}" y="{y + 22}" fill="{acc}" font-size="9" text-anchor="middle" '
-            f'font-family="JetBrains Mono,monospace">${c.current_avg_rate:,.0f}</text>'
+            f'font-family="JetBrains Mono,monospace">${c.current_avg_rate:,.2f}</text>'
         )
 
     legend = (

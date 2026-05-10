@@ -191,7 +191,7 @@ def _bucket_table(deals: List[Dict[str, Any]]) -> str:
             f'<td style="padding:5px 8px;font-size:12px;font-family:{_MONO};text-align:right;font-weight:700;color:{col};font-variant-numeric:tabular-nums">{f"{p50:.2f}×" if p50 else "—"}</td>'
             f'<td style="padding:5px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{P["text_dim"]};font-variant-numeric:tabular-nums">{f"{p75:.2f}×" if p75 else "—"}</td>'
             f'<td style="padding:5px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{f"{irr50*100:.1f}%" if irr50 else "—"}</td>'
-            f'<td style="padding:5px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{f"{win:.0f}%" if win is not None else "—"}</td>'
+            f'<td style="padding:5px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{f"{win:.1f}%" if win is not None else "—"}</td>'
             f'</tr>'
         )
 
@@ -366,8 +366,8 @@ def render_hold_analysis() -> str:
         f'color:{P.get("text_dim", "#465366")};font-family:{_SANS};">'
         f'<span style="color:{P["text"]};font-weight:600;">Sample-size reconciliation:</span> '
         f'<b>{n_corpus}</b> total corpus deals · '
-        f'<b>{n_hold}</b> with hold data ({coverage_pct_hold:.0f}%; histogram N) · '
-        f'<b>{n_both}</b> with hold + realized MOIC ({coverage_pct_both:.0f}%; scatter + bucket-table N) · '
+        f'<b>{n_hold}</b> with hold data ({coverage_pct_hold:.1f}%; histogram N) · '
+        f'<b>{n_both}</b> with hold + realized MOIC ({coverage_pct_both:.1f}%; scatter + bucket-table N) · '
         f'<b>{n_no_hold}</b> ongoing or undisclosed hold · '
         f'<b>{n_hold_no_moic}</b> hold without realized MOIC. '
         f'Hold precision: <b>{precision["month"]}</b> month-precision (public records), '

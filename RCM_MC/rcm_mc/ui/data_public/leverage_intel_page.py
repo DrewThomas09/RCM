@@ -67,7 +67,7 @@ def _leverage_histogram(points: List[Any], width: int = 440, height: int = 100) 
         if bh_d > 0:
             elements.append(f'<rect x="{bx}" y="{by+bh_p}" width="{max(1,bar_w-1)}" height="{bh_d}" fill=PALETTE["brand_accent"] opacity="0.9"/>')
         if i % 4 == 0:
-            elements.append(f'<text x="{bx+bar_w//2}" y="{height-1}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="#475569">{i*5}%</text>')
+            elements.append(f'<text x="{bx+bar_w//2}" y="{height-1}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="#475569">{i*5:.1f}%</text>')
     return (
         f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">'
         f'{"".join(elements)}'
@@ -240,7 +240,7 @@ def render_leverage_intel() -> str:
     </div>
   </div>
   <div style="padding:0 16px 10px;font-size:9px;color:#475569;">
-    Proxy leverage = 55% × (debt/EBITDA) / (EV/EBITDA) — approximation only
+    Proxy leverage = 55.0% × (debt/EBITDA) / (EV/EBITDA) — approximation only
     · Optimal = highest P50 MOIC bucket
     · {profile.n_direct} direct observations · {profile.n_proxied} EV/EBITDA proxies
   </div>

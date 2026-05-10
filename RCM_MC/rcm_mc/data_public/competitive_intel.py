@@ -136,7 +136,7 @@ _RECENT_MOVES = [
     ("2024-Q1", "Acadia Healthcare", "Acquisition", 125.0,
      "Bought Turning Point Centers (2 facilities)", "low"),
     ("2023-Q4", "Oak Street Health", "M&A", -10000.0,
-     "Acquired by CVS for $10.6B", "high"),
+     "Acquired by CVS for $10.60B", "high"),
     ("2023-Q3", "Summit BHC", "Recapitalization", 0.0,
      "FFL-led dividend recap", "low"),
 ]

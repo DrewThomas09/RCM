@@ -225,11 +225,11 @@ def render_payer_contracts(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Contract Optimization Opportunities</div>{o_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Payer Contract Portfolio Summary:</strong> {r.total_contracts} active contracts sum ${r.total_annual_revenue_m:,.2f}M annual revenue with weighted {r.weighted_avg_escalator_pct * 100:.2f}% escalator — tracks CPI ±50bps.
-    Concentration watchlist: UnitedHealthcare 25.8% of contracted revenue ($425M) — top single-payer exposure; Anthem/Elevance (17.3%), Aetna (11.8%), Cigna (11.2%) provide diversification.
-    {r.contracts_in_negotiation} contracts in active negotiation with $341.5M revenue at stake — UHC-Cypress (GI), UHC-Cedar (Cardiology), UHC-Spruce (Radiology) are the three major negotiations.
+    Concentration watchlist: UnitedHealthcare 25.8% of contracted revenue ($425.00M) — top single-payer exposure; Anthem/Elevance (17.3%), Aetna (11.8%), Cigna (11.2%) provide diversification.
+    {r.contracts_in_negotiation} contracts in active negotiation with $341.50M revenue at stake — UHC-Cypress (GI), UHC-Cedar (Cardiology), UHC-Spruce (Radiology) are the three major negotiations.
     Rate trend 2026 requested +3.0% average (up from +2.6% average in 2025); UHG accelerating (+0.3pp vs prior year), Humana moderating from peak 2024, Medicaid cooling.
     Network adequacy: 9/10 tracked markets ≥92% compliance; DFW (UHC ortho sports) and San Antonio (BCBS TX behavioral) show meaningful waived-member pressure = 760+ members — remediation targets.
-    Contract optimization runway: ${opt_value:.2f}M annualized value across 10 initiatives — clinical integration (+$15.8M), VBC add-ons (+$12.5M), ASC conversion (+$8.5M) top 3 by $$ value.
+    Contract optimization runway: ${opt_value:.2f}M annualized value across 10 initiatives — clinical integration (+$15.80M), VBC add-ons (+$12.50M), ASC conversion (+$8.50M) top 3 by $$ value.
   </div>
 </div>"""
 

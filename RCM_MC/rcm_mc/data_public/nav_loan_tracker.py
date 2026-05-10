@@ -181,10 +181,10 @@ def _build_coverage() -> List[CoverageAnalysis]:
 def _build_stress() -> List[StressTest]:
     return [
         StressTest("Base case (no markdown)", 0.0, 0.125, False, 0.0, "comfortable headroom 35-40%"),
-        StressTest("Moderate markdown (-10%)", -0.10, 0.139, False, 0.0, "headroom compresses to 30%"),
-        StressTest("Severe markdown (-20%)", -0.20, 0.156, False, 0.0, "approaches 75% of covenant"),
-        StressTest("Distressed markdown (-30%)", -0.30, 0.179, False, 0.0, "approaches 90% of covenant; cure advisable"),
-        StressTest("Worst-case markdown (-40%)", -0.40, 0.208, True, 115.0, "3 funds trip; ~$115M cure total"),
+        StressTest("Moderate markdown (-10%)", -0.10, 0.139, False, 0.0, "headroom compresses to 30.0%"),
+        StressTest("Severe markdown (-20%)", -0.20, 0.156, False, 0.0, "approaches 75.0% of covenant"),
+        StressTest("Distressed markdown (-30%)", -0.30, 0.179, False, 0.0, "approaches 90.0% of covenant; cure advisable"),
+        StressTest("Worst-case markdown (-40%)", -0.40, 0.208, True, 115.0, "3 funds trip; ~$115.00M cure total"),
         StressTest("Catastrophic (-50%)", -0.50, 0.250, True, 285.0, "7 of 12 funds trip; partial paydown required"),
     ]
 

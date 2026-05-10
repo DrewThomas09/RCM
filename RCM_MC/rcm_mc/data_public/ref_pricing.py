@@ -216,7 +216,7 @@ def _build_scenarios(
         ("Close gap to P75 (aggressive)", 2.10, total_p75_uplift * 0.35, "high", 0.28),
         ("Close gap to P75 (selected 2 payers)", 1.95, total_p75_uplift * 0.22, "medium", 0.48),
         ("Hold-flat (negotiate CPI only)", current_index * 1.03, revenue_mm * 0.03, "low", 0.88),
-        ("Downside: Payer cuts 3% on renewal", current_index * 0.97, -revenue_mm * 0.03, "low", 0.25),
+        ("Downside: Payer cuts 3.0% on renewal", current_index * 0.97, -revenue_mm * 0.03, "low", 0.25),
     ]
     rows = []
     for label, target_idx, rev_uplift, complex_, prob in scenarios:

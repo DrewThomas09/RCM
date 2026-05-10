@@ -206,11 +206,11 @@ def render_nav_loan_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Lender Book — Concentration & Pricing</div>{lend_tbl}</div>
   <div style="{cell}"><div style="{h3}">Market Benchmarks — NAV Loans & Adjacent</div>{b_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">NAV Loan Book Summary:</strong> ${r.total_outstanding_m:,.2f}M outstanding across {r.total_loans} healthcare PE funds — weighted {r.weighted_ltv_pct * 100:.2f}% LTV well inside 20% typical maintenance covenants with {avg_headroom * 100:.1f}% headroom.
+    <strong style="color:{text}">NAV Loan Book Summary:</strong> ${r.total_outstanding_m:,.2f}M outstanding across {r.total_loans} healthcare PE funds — weighted {r.weighted_ltv_pct * 100:.2f}% LTV well inside 20.0% typical maintenance covenants with {avg_headroom * 100:.1f}% headroom.
     Primary use of proceeds: LP distribution bridges (8 loans, ${sum(u.total_volume_m for u in r.uses if "distribution" in u.category.lower() or "liquidity" in u.category.lower()):.2f}M) during protracted exit drought; capex / add-on M&A use secondary.
     Weighted SOFR+{r.weighted_spread_bps}bps pricing tracks market; healthcare PE NAV loans 25-50bps inside multi-sector NAV loans on stronger collateral coverage and lower NAV volatility.
     Stress testing: base through -30% NAV markdown scenarios retain covenant compliance; -40% markdown triggers 3-fund covenant trip (${sum(s.required_cure_m for s in r.stress if s.covenant_trip):.2f}M aggregate cure capacity needed).
-    Lender concentration: top-2 specialists (17Capital, Hark Capital) hold 44% of loans; broader tier-1 participation ensures refinancing optionality at 4-5yr maturities.
+    Lender concentration: top-2 specialists (17Capital, Hark Capital) hold 44.0% of loans; broader tier-1 participation ensures refinancing optionality at 4-5yr maturities.
     Pricing trend widening +25bps YTD reflects market repricing of PE NAV loan risk given exit drought, LP liquidity pressure, and secondary market compression.
   </div>
 </div>"""

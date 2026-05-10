@@ -225,11 +225,11 @@ def render_gpo_supply_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Inflation Watch — Category Price Pressure</div>{i_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Supply Chain Program Summary:</strong> ${r.total_annual_spend_m:,.2f}M aggregated supply-chain spend captures ${r.total_realized_savings_m:.2f}M in net savings at {r.average_savings_rate_pct * 100:.1f}% blended rate — materially above 11-13% industry benchmark for single-platform PE scale.
-    PE-Specific GPO (Umbrella) and Vizient drive 75%+ of portfolio savings — Umbrella at 16.0% savings rate vs 13.5% for Vizient standard contracts reflects bulk-buy aggregation power.
+    PE-Specific GPO (Umbrella) and Vizient drive 75.0%+ of portfolio savings — Umbrella at 16.0% savings rate vs 13.5% for Vizient standard contracts reflects bulk-buy aggregation power.
     Implants / Devices (16.5% savings) and Medical/Surgical Supplies (14.5%) are the highest-value categories; pharmacy (8.5%) benefits from rebate economics but thinner gross savings.
-    Bulk-buy initiatives incremental ${bulk_incremental:.2f}M on top of base GPO savings — ortho implant bulk purchase ($6.5M) and Epic licensing consolidation ($5.5M) are the two largest cross-portfolio wins.
+    Bulk-buy initiatives incremental ${bulk_incremental:.2f}M on top of base GPO savings — ortho implant bulk purchase ($6.50M) and Epic licensing consolidation ($5.50M) are the two largest cross-portfolio wins.
     Inflation watch: staffing (+8.5%), insurance (+9.5%), and utilities (+6.8%) running above expected; hedging via direct contracts, captive insurance, and fixed-price energy ceilings largely in place.
-    Compliance averages 92% across portfolio — Cedar (95.5%), Laurel (95.0%), and Aspen (94.0%) highest; Linden and Redwood (89-89.5%) present remediation opportunity worth ~$1.5M.
+    Compliance averages 92.0% across portfolio — Cedar (95.5%), Laurel (95.0%), and Aspen (94.0%) highest; Linden and Redwood (89-89.5%) present remediation opportunity worth ~$1.50M.
   </div>
 </div>"""
 
