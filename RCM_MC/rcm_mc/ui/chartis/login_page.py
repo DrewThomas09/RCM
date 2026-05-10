@@ -16,7 +16,7 @@ from __future__ import annotations
 import html as _html
 from typing import Optional
 
-from rcm_mc.ui._chartis_kit import editorial_chartis_shell
+from rcm_mc.ui._chartis_kit import chartis_shell
 
 
 _LOGIN_EXTRA_CSS = """
@@ -322,7 +322,7 @@ def render_login_page(
         '</div>'
     )
 
-    return editorial_chartis_shell(
+    return chartis_shell(
         f'<div class="stage">{panel_l}{panel_r}</div>',
         title="Sign in",
         breadcrumbs=[("Home", "/"), ("Sign in", None)],
