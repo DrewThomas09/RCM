@@ -109,14 +109,14 @@ def _build_sdoh() -> List[SDOHScreening]:
 
 def _build_investments() -> List[EquityInvestment]:
     return [
-        EquityInvestment("Transportation Partnership (Lyft/Uber Health)", "Access", 1.8, 42000, "12% ED reduction for non-drivers", 0.22, 2.85),
+        EquityInvestment("Transportation Partnership (Lyft/Uber Health)", "Access", 1.8, 42000, "12.0% ED reduction for non-drivers", 0.22, 2.85),
         EquityInvestment("Community Health Worker Program", "Access", 3.2, 28500, "18pp HEDIS uplift in target ZIPs", 0.38, 4.25),
         EquityInvestment("Food Pantry / Produce Rx", "Nutrition", 2.1, 15800, "1.2-point HbA1c reduction", 0.28, 3.15),
-        EquityInvestment("Medicare-Medicaid Dual Care Coordinator", "Coordination", 4.5, 18500, "22% readmit reduction for duals", 0.42, 5.20),
-        EquityInvestment("Language Line / Translator Services", "Access", 1.2, 125000, "30% LEP closed-gap uplift", 0.18, 2.15),
-        EquityInvestment("Mobile Clinic (Rural/Urban Gap)", "Access", 2.8, 8500, "42% new-PCP visits", 0.32, 3.45),
-        EquityInvestment("Behavioral Integration at FQHC", "Behavioral", 3.5, 22000, "55% improvement in follow-up rate", 0.48, 5.85),
-        EquityInvestment("Rx Assistance / $0 Copay Program", "Pharmacy", 2.4, 85000, "18% adherence lift", 0.25, 2.95),
+        EquityInvestment("Medicare-Medicaid Dual Care Coordinator", "Coordination", 4.5, 18500, "22.0% readmit reduction for duals", 0.42, 5.20),
+        EquityInvestment("Language Line / Translator Services", "Access", 1.2, 125000, "30.0% LEP closed-gap uplift", 0.18, 2.15),
+        EquityInvestment("Mobile Clinic (Rural/Urban Gap)", "Access", 2.8, 8500, "42.0% new-PCP visits", 0.32, 3.45),
+        EquityInvestment("Behavioral Integration at FQHC", "Behavioral", 3.5, 22000, "55.0% improvement in follow-up rate", 0.48, 5.85),
+        EquityInvestment("Rx Assistance / $0.00 Copay Program", "Pharmacy", 2.4, 85000, "18.0% adherence lift", 0.25, 2.95),
     ]
 
 

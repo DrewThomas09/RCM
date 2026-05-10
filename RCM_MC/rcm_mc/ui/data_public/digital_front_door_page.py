@@ -145,7 +145,7 @@ def _funnel_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{b_c};font-weight:700">{f.inquiry_to_booking_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{v_c};font-weight:700">{f.book_to_visit_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{n_c};font-weight:700">{f.no_show_rate_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${f.cost_per_acquired:.0f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${f.cost_per_acquired:,.2f}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -196,12 +196,12 @@ def render_digital_front_door(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">New Patient Acquisition Funnel</div>{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">Vendor Deployment Status</div>{v_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Digital Front Door Summary:</strong> {r.weighted_portal_adoption_pct * 100:.1f}% average active-portal adoption tracks industry benchmark ~50% — Fertility (78%), Derma (58%), Specialty Pharm (65%), Infusion (58%) are top performers.
-    Online scheduling at 62% portfolio average — favorable above industry benchmark; consumer-facing specialties (Derma, Fertility, Eye Care) lead adoption, hospital-based / home health lag.
+    <strong style="color:{text}">Digital Front Door Summary:</strong> {r.weighted_portal_adoption_pct * 100:.1f}% average active-portal adoption tracks industry benchmark ~50.0% — Fertility (78.0%), Derma (58.0%), Specialty Pharm (65.0%), Infusion (58.0%) are top performers.
+    Online scheduling at 62.0% portfolio average — favorable above industry benchmark; consumer-facing specialties (Derma, Fertility, Eye Care) lead adoption, hospital-based / home health lag.
     Average NPS +{r.avg_nps} with Willow (Fertility +72), Laurel (Derma +68), Oak (RCM +62) top performers; Sage (Home Health +45), Linden (Behavioral +48) drag reflects operational / access challenges.
-    Telehealth volume: {r.total_telehealth_visits_monthly_k:,}K monthly visits generating ${total_th_rev:.2f}M revenue — behavioral health (Redwood 48%, Linden 52%) and home health (Sage 22%) carry highest share.
-    Digital spend ${r.total_digital_spend_m:.2f}M portfolio-wide with ambient AI growing +85% YoY (highest category); Epic MyChart (18.5M spend, 850K users, 10 deals) is the largest single vendor.
-    Funnel conversion: inquiry→booking averages 52%, booking→visit 82%, no-show 8.5% — Derma (62% booking, 88% show) best-in-class; Fertility high-consideration patients drive lower initial conversion but higher LTV.
+    Telehealth volume: {r.total_telehealth_visits_monthly_k:,}K monthly visits generating ${total_th_rev:.2f}M revenue — behavioral health (Redwood 48.0%, Linden 52.0%) and home health (Sage 22.0%) carry highest share.
+    Digital spend ${r.total_digital_spend_m:.2f}M portfolio-wide with ambient AI growing +85.0% YoY (highest category); Epic MyChart (18.5M spend, 850K users, 10 deals) is the largest single vendor.
+    Funnel conversion: inquiry→booking averages 52.0%, booking→visit 82.0%, no-show 8.5% — Derma (62.0% booking, 88.0% show) best-in-class; Fertility high-consideration patients drive lower initial conversion but higher LTV.
   </div>
 </div>"""
 

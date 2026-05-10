@@ -108,6 +108,10 @@ REPRESENTATIVE_ROUTES = [
     "/operating-partners",
     "/supply-chain",
     "/vdr-tracker",
+    "/digital-front-door",
+    "/entry-multiple",
+    "/health-equity",
+    "/quality-scorecard",
 ]
 
 # Per-route minimum compliance scores. Each route is pinned at
@@ -201,6 +205,10 @@ ROUTE_MIN_SCORES: dict[str, float] = {
     "/operating-partners":    1.0,
     "/supply-chain":          1.0,
     "/vdr-tracker":           1.0,
+    "/digital-front-door":    1.0,
+    "/entry-multiple":        1.0,
+    "/health-equity":         1.0,
+    "/quality-scorecard":     1.0,
 
     # 92% route — /news renders editorial copy with many embedded
     # press-release financial figures ("$8.2B Sale", "12% margin")
@@ -230,7 +238,7 @@ AGGREGATE_FLOOR_MEDIAN = 1.0
 # rule slip), so this guard catches a different regression mode:
 # silent erosion of the *count* of perfect routes. With 45/47
 # pinned at 1.0, any new <100% slip fails this floor.
-PERFECT_ROUTE_FLOOR = 74
+PERFECT_ROUTE_FLOOR = 78
 
 
 class _NoFollow(urllib.request.HTTPRedirectHandler):
