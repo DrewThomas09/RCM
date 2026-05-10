@@ -22,7 +22,7 @@ from datetime import date
 from typing import Any, Dict, List, Optional
 
 from ..diligence._pages import AVAILABLE_FIXTURES, _resolve_dataset
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import P, chartis_shell, ck_panel, ck_section_intro
 
 
 _HOSPITAL_BASED_SPECIALTIES = {
@@ -36,21 +36,21 @@ def _landing() -> str:
         f'<option value="{html.escape(n)}">{html.escape(l)}</option>'
         for n, l in AVAILABLE_FIXTURES
     )
+    intro = ck_section_intro(
+        eyebrow="IC Packet Assembler",
+        headline="One-click IC Memo",
+        body=(
+            "Assembles the signed IC deliverable in one browser-print "
+            "step: cover + partner synthesis + headline numbers + "
+            "Bankruptcy-Survivor Scan + QoR waterfall + risk-module "
+            "summary + counterfactual levers + market context + "
+            "100-day plan + open questions + walkaway conditions + "
+            "signature block. Single URL-reproducible memo."
+        ),
+        italic_word="memo",
+    )
     body = (
-        f'<div style="padding:24px 0 12px 0;">'
-        f'<div style="font-size:11px;color:{P["text_faint"]};letter-spacing:1.5px;'
-        f'text-transform:uppercase;margin-bottom:6px;font-weight:600;">'
-        f'IC Packet Assembler</div>'
-        f'<div style="font-size:22px;color:{P["text"]};font-weight:600;'
-        f'margin-bottom:4px;">One-click IC Memo</div>'
-        f'<div style="font-size:12px;color:{P["text_dim"]};max-width:720px;'
-        f'line-height:1.55;">Assembles the signed IC deliverable in one '
-        f'browser-print step: cover + partner synthesis + headline '
-        f'numbers + Bankruptcy-Survivor Scan + QoR waterfall + '
-        f'risk-module summary + counterfactual levers + market context '
-        f'+ 100-day plan + open questions + walkaway conditions + '
-        f'signature block. Single URL-reproducible memo.</div>'
-        f'</div>'
+        f'{intro}'
         f'<form method="GET" action="/diligence/ic-packet" '
         f'style="display:grid;grid-template-columns:1fr 1fr;gap:12px;'
         f'max-width:720px;margin-top:20px;background:{P["panel"]};'
