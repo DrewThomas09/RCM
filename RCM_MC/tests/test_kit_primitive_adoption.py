@@ -41,8 +41,8 @@ PRIMITIVES: list[tuple[str, re.Pattern, int]] = [
     # and module-level color tokens after the brand-hex moat closed.
     ("PALETTE[",       re.compile(r"\bPALETTE\["),       1028),
 
-    # The shared rendering shell. 408 call sites.
-    ("chartis_shell(", re.compile(r"\bchartis_shell\("), 408),
+    # The shared rendering shell. 409 call sites.
+    ("chartis_shell(", re.compile(r"\bchartis_shell\("), 409),
 
     # Empty-state primitive — 14 call sites currently. Low number
     # but new pages should adopt it; the floor catches retirement.
