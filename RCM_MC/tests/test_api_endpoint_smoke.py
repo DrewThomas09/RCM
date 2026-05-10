@@ -414,6 +414,50 @@ class APIEndpointSmoke(unittest.TestCase):
             f"from API_SMOKE_ROUTES with rationale.",
         )
 
+    def test_json_endpoints_return_parseable_json(self) -> None:
+        """For every 200-pinned smoke endpoint that the
+        Content-Type guard pins as ``application/json``, the
+        response body must parse as valid JSON.
+
+        Stronger than the existing status / exception-leakage
+        guards — those catch the *symptoms* of a broken handler
+        (5XX, exception strings); this catches a different failure
+        mode where the handler swallows an error and returns
+        a malformed JSON envelope (truncated body, embedded
+        Python ``repr()`` instead of valid JSON, etc.). Any partner
+        client that does ``response.json()`` will crash on this.
+        """
+        import json
+        SKIP = {
+            "/healthz", "/health",
+            "/api/backup",
+            "/api/deals/smoke-a/package",
+            "/api/analysis/smoke-a/export",
+            "/api/docs",
+        }
+        bad: list[str] = []
+        for path, expected_status in API_SMOKE_ROUTES:
+            if expected_status != 200:
+                continue
+            if path in SKIP:
+                continue
+            if path.endswith(".csv") or path.endswith(".memo"):
+                continue
+            try:
+                resp = self.opener.open(self.base + path, timeout=8)
+                body = resp.read()
+            except Exception:
+                continue
+            try:
+                json.loads(body.decode("utf-8"))
+            except Exception as e:
+                bad.append(f"{path}: {e!r}")
+        self.assertEqual(
+            bad, [],
+            f"JSON endpoints returned malformed JSON ({len(bad)}): "
+            f"{bad}",
+        )
+
     def test_partner_data_routes_require_auth(self) -> None:
         """Every partner-data route must reject unauthenticated
         requests with 401. A regression here is a hard data leak —
