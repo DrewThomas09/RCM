@@ -170,7 +170,7 @@ def render_platform_maturity(params: dict = None) -> str:
     <strong style="color:{text}">Platform Maturity Thesis:</strong> Overall score {r.overall_maturity_score}/100.
     Recommended path: <strong style="color:{text}">{_html.escape(r.recommended_exit_path)}</strong>.
     Remediation investment of ${total_remediation_cost:,.2f}M over 9-18 months moves platform from strategic-ready to IPO-ready — highest priorities are SOX 404 internal controls,
-    payer diversification below 18% top-payer share, and 3-year audited financial track record.
+    payer diversification below 18.0% top-payer share, and 3-year audited financial track record.
     Sponsor-to-sponsor and continuation vehicle paths offer faster execution at modest multiple discount.
     Dividend recap remains available pre-exit to return capital to LPs while preserving exit optionality.
   </div>

@@ -82,8 +82,8 @@ items:
     url: https://seekingalpha.com/article/hca-q1-2026
     summary: |
       HCA missed Q1 consensus EBITDA by 2.1% on site-neutral + TEAM
-      headwinds; multiple compressed from 10.2x trailing 12mo to
-      8.9x. Analyst consensus cut FY26 EBITDA 4-6%.
+      headwinds; multiple compressed from 10.20x trailing 12mo to
+      8.90x. Analyst consensus cut FY26 EBITDA 4-6%.
     tickers: [HCA]
     specialty: ACUTE_HOSPITAL
     sentiment: negative

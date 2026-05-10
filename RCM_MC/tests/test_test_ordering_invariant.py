@@ -83,7 +83,7 @@ class PerRouteCoverageDoesNotShrink(unittest.TestCase):
     update ROUTE_COUNT_FLOOR with a justified rationale.
     """
 
-    ROUTE_COUNT_FLOOR = 195
+    ROUTE_COUNT_FLOOR = 201
 
     def test_per_route_list_size(self) -> None:
         from tests.test_compliance_sweep_per_route import (
