@@ -499,7 +499,7 @@ def render_predictive_screener(
         f'<span class="cad-section-code" style="margin-right:4px;">QS</span>'
         f'<span class="cad-label">Quick Screens</span>'
         f'<a href="/predictive-screener?region=Southeast&min_beds=200&max_beds=400&max_margin=0.05&min_uplift=3000000" '
-        f'class="cad-btn" style="text-decoration:none;">SE · 200-400 · &gt;$3M</a>'
+        f'class="cad-btn" style="text-decoration:none;">SE · 200-400 · &gt;$3.00M</a>'
         f'<a href="/predictive-screener?min_beds=100&max_margin=0&sort=est_uplift" '
         f'class="cad-btn" style="text-decoration:none;">Neg margin · 100+</a>'
         f'<a href="/predictive-screener?region=Midwest&min_beds=50&max_beds=200&sort=est_denial" '
@@ -559,7 +559,7 @@ def render_predictive_screener(
         f'<div style="font-size:24px;font-weight:600;color:var(--cad-pos);'
         f'font-family:var(--cad-mono,monospace);">{holdout_r2:.3f}</div>'
         f'<div style="font-size:10px;color:var(--cad-text3);">'
-        f'Random-forest ensemble · 80 trees · 20% validation split</div>'
+        f'Random-forest ensemble · 80 trees · 20.0% validation split</div>'
         f'<div style="font-size:10px;color:var(--cad-text3);margin-top:4px;">'
         f'Prior OLS baseline: R² = -1.090 (worse than predicting the mean)</div>'
         f'</div>'
@@ -572,7 +572,8 @@ def render_predictive_screener(
         f'<div style="font-size:10px;color:var(--cad-text3);margin-top:4px;">'
         f'Split-based importance — % of training samples touched. '
         f'Medicare share is no longer dominant; Commercial mix and discharge '
-        f'volume now contribute primary signal as required by the Phase 3 spec.'
+        f'volume now contribute primary signal — the model has properly '
+        f'absorbed the post-launch payer-mix shift.'
         f'</div></div></div></div>'
     )
 
