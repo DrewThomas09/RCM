@@ -14938,7 +14938,11 @@ class RCMHandler(BaseHTTPRequestHandler):
 
         Cached on first call — subsequent calls within the same request
         return the same dict so the CSRF middleware and route handlers
-        share one parse.
+        share one parse. Also caches the raw bytes in
+        ``self._raw_body_cache`` so handlers that JSON-parse the body
+        (e.g. /api/screener/run) don't double-read rfile after the
+        CSRF middleware drained it — the second read would hang for
+        Content-Length seconds since the bytes are already gone.
         """
         cached = getattr(self, "_form_cache", None)
         if cached is not None:
@@ -14946,11 +14950,34 @@ class RCMHandler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length") or 0)
         if length <= 0:
             self._form_cache = {}
+            self._raw_body_cache = b""
             return self._form_cache
-        raw = self.rfile.read(length).decode("utf-8", errors="replace")
+        raw_bytes = self.rfile.read(length)
+        self._raw_body_cache = raw_bytes
+        raw = raw_bytes.decode("utf-8", errors="replace")
         parsed = urllib.parse.parse_qs(raw, keep_blank_values=True)
         self._form_cache = {k: (v[0] if v else "") for k, v in parsed.items()}
         return self._form_cache
+
+    def _raw_post_body(self) -> bytes:
+        """Return the raw POST body bytes, caching across reads.
+
+        Handlers should use this instead of ``self.rfile.read(...)``
+        because the CSRF middleware in _do_post_inner drains rfile
+        for form-urlencoded bodies. A direct rfile.read AFTER the
+        middleware would block for Content-Length seconds waiting
+        for bytes that are already consumed. With the cache, the
+        second access returns the same bytes instantly.
+        """
+        cached = getattr(self, "_raw_body_cache", None)
+        if cached is not None:
+            return cached
+        length = int(self.headers.get("Content-Length") or 0)
+        if length <= 0:
+            self._raw_body_cache = b""
+            return self._raw_body_cache
+        self._raw_body_cache = self.rfile.read(length)
+        return self._raw_body_cache
 
     def _route_api_post(self, path: str) -> None:
         """Handle form POSTs that write to the portfolio store.
@@ -15197,8 +15224,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/api/screener/run":
             import json as _scrjson
             from .intelligence.screener_engine import run_screen_from_filters as _scr_run
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            # Use the cached raw body — direct rfile.read here would
+            # hang for 120s when CSRF middleware already drained the
+            # stream (form-urlencoded bodies trip that path).
+            raw = self._raw_post_body() or b"{}"
             try:
                 payload = _scrjson.loads(raw.decode("utf-8") or "{}")
             except _scrjson.JSONDecodeError:
