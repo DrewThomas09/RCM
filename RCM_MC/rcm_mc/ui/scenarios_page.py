@@ -47,7 +47,7 @@ def render_scenarios_page(presets: List[Dict[str, Any]]) -> str:
         f'<h2>How Scenarios Work</h2>'
         f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
         f'<p>Each scenario applies multipliers to payer-specific initial denial rates (IDR). '
-        f'An IDR multiplier of 1.20 means denials increase 20% from the baseline. '
+        f'An IDR multiplier of 1.20 raises denials by twenty percent over baseline. '
         f'Scenarios can also shock volume, reimbursement rates, and cost structure.</p>'
         f'<p style="margin-top:6px;">To test a scenario on a deal: go to '
         f'<a href="/pressure" style="color:{PALETTE["text_link"]};">Pressure Test</a>, '
