@@ -535,6 +535,63 @@ class APIEndpointSmoke(unittest.TestCase):
         self.assertEqual(payload["code"], "RATE_LIMITED")
         self.assertIsInstance(payload["retry_after_secs"], (int, float))
 
+    def test_state_changing_post_writes_audit_entry(self) -> None:
+        """Every state-changing operation should write an audit
+        log entry. Compliance teams rely on this for SOC2 /
+        partner-facing change-tracking. Pre-fix this couldn't
+        regress silently because the audit page would render
+        nothing for the operation, but a contributor unwrapping
+        the audit hook from a handler would still see the route
+        return 200 — partner-invisible damage.
+
+        This test exercises one representative POST
+        (/api/portfolio/register) and asserts:
+
+        * The operation returns 200 with a JSON envelope.
+        * The /audit page now contains the deal_id we just used,
+          AND the action token ``portfolio.register``.
+
+        Catches the regression class: anyone removing
+        ``self._log_audit(...)`` from a handler.
+        """
+        import json
+        csrf = ""
+        for c in self.cookies:
+            if c.name == "rcm_csrf":
+                csrf = c.value
+                break
+
+        deal_id = "audit-trail-probe"
+        body = json.dumps({
+            "deal_id": deal_id,
+            "name": "Audit Trail Probe",
+            "stage": "sourced",
+        }).encode()
+        req = urllib.request.Request(
+            self.base + "/api/portfolio/register",
+            data=body, method="POST",
+        )
+        req.add_header("Content-Type", "application/json")
+        req.add_header("X-CSRF-Token", csrf)
+        resp = self.opener.open(req, timeout=8)
+        self.assertEqual(resp.status, 200)
+
+        # Now read the audit page and look for the new entry.
+        audit_html = self.opener.open(
+            self.base + "/audit", timeout=8,
+        ).read().decode("utf-8", errors="replace")
+
+        self.assertIn(
+            deal_id, audit_html,
+            f"deal_id {deal_id!r} not found in /audit body — "
+            f"register handler may be missing _log_audit() call",
+        )
+        self.assertIn(
+            "portfolio.register", audit_html,
+            "audit page missing 'portfolio.register' action — "
+            "audit hook on register may be unwired",
+        )
+
     def test_admin_only_routes_reject_analyst_role(self) -> None:
         """Routes that show user-management or audit data must
         require role=admin, not just role=any-authenticated.
