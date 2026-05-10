@@ -683,6 +683,23 @@ class PerRouteComplianceSweep(unittest.TestCase):
     def tearDownClass(cls) -> None:
         cls.server.shutdown()
 
+    def setUp(self) -> None:
+        """Re-pin CHARTIS_UI_V2=1 + drop cached kit modules at the
+        start of every test method.
+
+        Background: the conftest autouse fixture drops kit modules
+        and resets CHARTIS_UI_V2 to its session-start value between
+        every test method. With multiple test methods in this class,
+        the second method onward would lazy-import the kit with the
+        env var unset and bind to the v1 shell — every kit-presence
+        rule would then fail across all 264 routes.
+        """
+        import sys
+        os.environ["CHARTIS_UI_V2"] = "1"
+        for name in list(sys.modules):
+            if name.startswith("rcm_mc.ui._chartis_kit"):
+                sys.modules.pop(name, None)
+
     def _fetch(self, path: str) -> tuple[int, str]:
         try:
             resp = self.opener.open(self.base + path, timeout=8)
@@ -753,6 +770,42 @@ class PerRouteComplianceSweep(unittest.TestCase):
             f"only {perfect} routes at 100% — below floor "
             f"{PERFECT_ROUTE_FLOOR}. A regression dropped one or "
             f"more routes from 100% to <100%.",
+        )
+
+    def test_no_route_leaks_python_exceptions_in_html(self) -> None:
+        """For every 200-returning HTML route, the body must not
+        contain Python-exception strings.
+
+        Mirrors the API smoke harness's exception-leakage guard
+        (test_no_endpoint_leaks_python_exceptions_in_body) — a
+        handler that catches an internal error and renders a
+        traceback into the HTML response is partner-visible damage
+        but the editorial compliance sweep wouldn't fail it (the
+        kit primitives are still present in the shell). This guard
+        catches it directly.
+        """
+        bad_phrases = (
+            "cannot access local",
+            "Traceback (most recent",
+            "TypeError: ",
+            "AttributeError: ",
+            "KeyError: ",
+            "NameError: ",
+            "UnboundLocalError",
+        )
+        suspects: list[tuple[str, str]] = []
+        for path in REPRESENTATIVE_ROUTES:
+            status, body = self._fetch(path)
+            if status != 200 or not body:
+                continue
+            for phrase in bad_phrases:
+                if phrase in body:
+                    suspects.append((path, phrase))
+                    break
+        self.assertEqual(
+            suspects, [],
+            f"HTML routes leaking Python-exception text into the "
+            f"response body: {suspects}",
         )
 
 
