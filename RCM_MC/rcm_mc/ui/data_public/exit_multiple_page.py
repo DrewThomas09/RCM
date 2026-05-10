@@ -278,17 +278,17 @@ def render_exit_multiple(params: dict) -> str:
                   else f"{r.timing_premium:.2f}x timing drag")
 
     kpis = ck_kpi_block("Entry EV/EBITDA", f"{r.entry_multiple:.2f}x",
-                         unit=f"EV: ${r.ev_mm:.2f}M")
+                         sub=f"EV: ${r.ev_mm:.2f}M")
     kpis += ck_kpi_block("Base Exit Multiple", f"{r.base_exit_multiple:.2f}x",
-                          unit=timing_str)
+                          sub=timing_str)
     kpis += ck_kpi_block("Sector P25/P50/P75",
                           f"{r.sector_p25:.2f}x / {r.sector_p50:.2f}x / {r.sector_p75:.2f}x")
     kpis += ck_kpi_block("Base MOIC", f"{base_sc.moic:.2f}x",
-                          unit=f"IRR: {base_sc.irr*100:.1f}%")
+                          sub=f"IRR: {base_sc.irr*100:.1f}%")
     kpis += ck_kpi_block("Bull MOIC", f"{bull_sc.moic:.2f}x",
-                          unit=f"IRR: {bull_sc.irr*100:.1f}%")
+                          sub=f"IRR: {bull_sc.irr*100:.1f}%")
     kpis += ck_kpi_block("MOIC/Turn Sensitivity", f"{r.moic_sensitivity_per_turn:.2f}x",
-                          unit="per 1x multiple turn")
+                          sub="per 1x multiple turn")
 
     chart = _scenario_chart_svg(r.scenarios, r.entry_multiple)
     decomp_svg = _decomp_svg(r.decomp)

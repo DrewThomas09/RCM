@@ -282,13 +282,13 @@ def render_value_creation(params: dict) -> str:
     ev_created_pct = r.total_ev_created_mm / r.entry_ev_mm * 100 if r.entry_ev_mm else 0
 
     kpis = ck_kpi_block("Entry EV", f"${r.entry_ev_mm:.2f}M",
-                         unit=f"{r.entry_multiple:.2f}x EV/EBITDA")
+                         sub=f"{r.entry_multiple:.2f}x EV/EBITDA")
     kpis += ck_kpi_block("Exit EV", f"${r.exit_ev_mm:.2f}M",
-                          unit=f"{r.exit_multiple:.2f}x EV/EBITDA")
+                          sub=f"{r.exit_multiple:.2f}x EV/EBITDA")
     kpis += ck_kpi_block("EV Created", f"${r.total_ev_created_mm:.2f}M",
-                          unit=f"+{ev_created_pct:.1f}% vs entry")
+                          sub=f"+{ev_created_pct:.1f}% vs entry")
     kpis += ck_kpi_block("MOIC", f"{r.moic:.2f}x",
-                          unit=f"IRR: {r.irr*100:.1f}%")
+                          sub=f"IRR: {r.irr*100:.1f}%")
     kpis += ck_kpi_block("Sector Median MOIC", f"{r.sector_median_moic:.2f}x")
     kpis += ck_kpi_block("Corpus Deals", str(r.corpus_deal_count))
 

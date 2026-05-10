@@ -329,12 +329,12 @@ def render_underwriting_model(params: dict) -> str:
     base_irr = f"{base_sc.irr*100:.1f}%" if base_sc else "—"
 
     kpis = ck_kpi_block("Entry EV/EBITDA", f"{r.entry_multiple:.2f}x",
-                         unit=f"EV: ${r.ev_mm:.2f}M / Size: {r.size_bucket}")
+                         sub=f"EV: ${r.ev_mm:.2f}M / Size: {r.size_bucket}")
     kpis += ck_kpi_block("Total Leverage", f"{r.sources.leverage_ratio:.2f}x",
-                          unit=f"Equity: {r.sources.equity_pct*100:.1f}% / ${r.sources.equity_mm:.2f}M")
-    kpis += ck_kpi_block("Base MOIC (5yr)", base_moic, unit=f"IRR: {base_irr}")
+                          sub=f"Equity: {r.sources.equity_pct*100:.1f}% / ${r.sources.equity_mm:.2f}M")
+    kpis += ck_kpi_block("Base MOIC (5yr)", base_moic, sub=f"IRR: {base_irr}")
     kpis += ck_kpi_block("Corpus P50 MOIC", f"{r.corpus_p50_moic:.2f}x",
-                          unit=f"P25: {r.corpus_p25_moic:.2f}x / P75: {r.corpus_p75_moic:.2f}x")
+                          sub=f"P25: {r.corpus_p25_moic:.2f}x / P75: {r.corpus_p75_moic:.2f}x")
     kpis += ck_kpi_block("Interest Rate", f"{r.sources.senior_debt_mm:.2f}M sr / {r.sources.sub_debt_mm:.2f}M sub")
     kpis += ck_kpi_block("Corpus Deals", str(r.corpus_deal_count))
 

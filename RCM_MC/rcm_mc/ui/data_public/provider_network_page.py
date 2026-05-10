@@ -264,13 +264,13 @@ def render_provider_network(params: dict) -> str:
     kpis = ck_kpi_block("Network Regime",
                         f'<span style="color:{r.regime_color}">{r.network_regime.capitalize()}</span>')
     kpis += ck_kpi_block("HHI Score", f"{r.network_hhi:.0f}",
-                         unit=f"Concentration: {r.concentration_risk}",
-                         delta="0 = diversified, 10k = monopoly")
+                         sub=f"Concentration: {r.concentration_risk}",
+                         trend="0 = diversified, 10k = monopoly")
     kpis += ck_kpi_block("Conc. Risk",
                          f'<span style="color:{r.concentration_color}">{r.concentration_risk}</span>')
     kpis += ck_kpi_block("Corpus Median MOIC", f"{r.corpus_median_moic:.2f}x")
     kpis += ck_kpi_block("Adj. MOIC Estimate", f"{r.adjusted_moic_estimate:.2f}x",
-                         delta=adj_sign)
+                         trend=adj_sign)
     kpis += ck_kpi_block("Corpus Deals", str(r.corpus_deal_count))
 
     gauge = _hhi_gauge_svg(r.network_hhi, r.regime_color)

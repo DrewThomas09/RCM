@@ -177,11 +177,11 @@ def render_diligence_checklist(params: dict) -> str:
 
     kpis = ck_kpi_block("Total Items", str(r.total_items))
     kpis += ck_kpi_block("Critical", str(r.critical_items),
-                         unit="Require immediate attention")
+                         sub="Require immediate attention")
     kpis += ck_kpi_block("High", str(r.high_items))
     kpis += ck_kpi_block("Red Flags",
                          f'<span style="color:{P["negative"]}">{r.red_flags_triggered}</span>',
-                         unit="Triggered by deal profile")
+                         sub="Triggered by deal profile")
     medium = r.total_items - r.critical_items - r.high_items
     kpis += ck_kpi_block("Medium / Low", str(medium))
     kpis += ck_kpi_block("Corpus Deals", str(r.corpus_deal_count))

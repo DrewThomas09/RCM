@@ -214,13 +214,13 @@ def render_mgmt_fee_tracker(params: dict) -> str:
 
     kpis = ck_kpi_block("Fund Size", f"${fe.fund_size_mm:.2f}M")
     kpis += ck_kpi_block("Deployed Capital", f"${fe.invested_capital_mm:.2f}M",
-                          unit=f"{fe.deployment_pct*100:.1f}% deployed")
+                          sub=f"{fe.deployment_pct*100:.1f}% deployed")
     kpis += ck_kpi_block("Annual Mgmt. Fees", f"${fe.total_annual_fees_mm:.2f}M",
-                          unit=f"Net to LP after offset")
+                          sub=f"Net to LP after offset")
     kpis += ck_kpi_block("Total Carry (GP)", f"${fe.total_carry_paid_mm:.2f}M",
-                          unit="20% carry above 8% hurdle")
+                          sub="20.0% carry above 8.0% hurdle")
     kpis += ck_kpi_block("LP Net MOIC", f"{fe.lp_net_moic:.2f}x",
-                          unit=f"Fee drag: {fe.fee_drag_on_moic:.2f}x")
+                          sub=f"Fee drag: {fe.fee_drag_on_moic:.2f}x")
     kpis += ck_kpi_block("Portfolio Positions", str(len(r.positions)))
 
     fee_svg = _fee_waterfall_svg(r.fee_calculations)
