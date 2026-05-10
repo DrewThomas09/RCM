@@ -134,6 +134,37 @@ REPRESENTATIVE_ROUTES = [
     "/gp-benchmarking",
     "/initiatives",
     "/insights",
+    "/jobs",
+    "/ma-contracts",
+    "/module-index",
+    "/msa-concentration",
+    "/notes",
+    "/ops",
+    "/owners",
+    "/patient-experience",
+    "/payer-intel",
+    "/payer-intelligence",
+    "/physician-productivity",
+    "/portfolio-analytics",
+    "/portfolio-optimizer",
+    "/pressure",
+    "/query",
+    "/real-estate",
+    "/return-attribution",
+    "/revenue-leakage",
+    "/risk-matrix",
+    "/screen",
+    "/search",
+    "/sector-correlation",
+    "/sector-intel",
+    "/sector-momentum",
+    "/sponsor-league",
+    "/sponsor-track-record",
+    "/surrogate",
+    "/upload",
+    "/users",
+    "/variance",
+    "/vintage-perf",
 ]
 
 # Per-route minimum compliance scores. Each route is pinned at
@@ -253,6 +284,37 @@ ROUTE_MIN_SCORES: dict[str, float] = {
     "/gp-benchmarking":       1.0,
     "/initiatives":           1.0,
     "/insights":              1.0,
+    "/jobs":                  1.0,
+    "/ma-contracts":          1.0,
+    "/module-index":          1.0,
+    "/msa-concentration":     1.0,
+    "/notes":                 1.0,
+    "/ops":                   1.0,
+    "/owners":                1.0,
+    "/patient-experience":    1.0,
+    "/payer-intel":           1.0,
+    "/payer-intelligence":    1.0,
+    "/physician-productivity": 1.0,
+    "/portfolio-analytics":   1.0,
+    "/portfolio-optimizer":   1.0,
+    "/pressure":              1.0,
+    "/query":                 1.0,
+    "/real-estate":           1.0,
+    "/return-attribution":    1.0,
+    "/revenue-leakage":       1.0,
+    "/risk-matrix":           1.0,
+    "/screen":                1.0,
+    "/search":                1.0,
+    "/sector-correlation":    1.0,
+    "/sector-intel":          1.0,
+    "/sector-momentum":       1.0,
+    "/sponsor-league":        1.0,
+    "/sponsor-track-record":  1.0,
+    "/surrogate":             1.0,
+    "/upload":                1.0,
+    "/users":                 1.0,
+    "/variance":              1.0,
+    "/vintage-perf":          1.0,
 
     # 92% route — /news renders editorial copy with many embedded
     # press-release financial figures ("$8.2B Sale", "12% margin")
@@ -282,7 +344,7 @@ AGGREGATE_FLOOR_MEDIAN = 1.0
 # rule slip), so this guard catches a different regression mode:
 # silent erosion of the *count* of perfect routes. With 45/47
 # pinned at 1.0, any new <100% slip fails this floor.
-PERFECT_ROUTE_FLOOR = 100
+PERFECT_ROUTE_FLOOR = 131
 
 
 class _NoFollow(urllib.request.HTTPRedirectHandler):
