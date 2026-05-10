@@ -215,7 +215,7 @@ def _build_calendar() -> List[PolicyCalendar]:
         PolicyCalendar("TEAM Year 1 Launch", "2026-01-01", "Mandatory MSK participation begins", "TEAM", 22.5),
         PolicyCalendar("2026 Medicare Physician Fee Schedule", "2026-01-15", "-2.8% conversion factor cut proposed", "All FFS", 850.0),
         PolicyCalendar("CKCC Final PY", "2026-12-31", "Sunset — kidney care transition", "CKCC", 6.8),
-        PolicyCalendar("MSSP Enhanced Track New Entrants", "2026-01-01", "40% participant target", "MSSP", 132.5),
+        PolicyCalendar("MSSP Enhanced Track New Entrants", "2026-01-01", "40.0% participant target", "MSSP", 132.5),
         PolicyCalendar("2027 OPPS Proposed Rule", "2026-07-15", "Site-neutral payment expansion", "ASC/HOPD", 180.0),
         PolicyCalendar("Medicare Advantage RADV audit expansion", "2026-04-01", "Extrapolation final rule takes effect", "MA plans", 75.0),
         PolicyCalendar("IBH Model Cohort 2 Launch", "2026-07-01", "Additional states join Behavioral Health model", "IBH", 3.8),

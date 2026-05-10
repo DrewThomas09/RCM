@@ -231,7 +231,7 @@ def _build_waterfall(fund_size_mm: float, total_distributions: float) -> List[Wa
     roc = min(fund_size_mm, total_distributions)
     tiers.append(WaterfallTier(
         tier="1. Return of Paid-in Capital",
-        threshold="Up to 100% of capital returned",
+        threshold="Up to 100.0% of capital returned",
         lp_share=1.00, gp_share=0.00,
         est_timing_year=5.5,
         est_amount_mm=round(roc, 1),
@@ -242,8 +242,8 @@ def _build_waterfall(fund_size_mm: float, total_distributions: float) -> List[Wa
     preferred = fund_size_mm * 0.08 * 5    # Approximate 8% hurdle over 5 years
     pref_paid = min(remaining, preferred)
     tiers.append(WaterfallTier(
-        tier="2. LP Preferred Return (8%)",
-        threshold="Up to 8% IRR hurdle",
+        tier="2. LP Preferred Return (8.0%)",
+        threshold="Up to 8.0% IRR hurdle",
         lp_share=1.00, gp_share=0.00,
         est_timing_year=7.0,
         est_amount_mm=round(pref_paid, 1),
@@ -255,7 +255,7 @@ def _build_waterfall(fund_size_mm: float, total_distributions: float) -> List[Wa
     catchup_paid = min(remaining, catchup)
     tiers.append(WaterfallTier(
         tier="3. GP Catch-up (50/50)",
-        threshold="Until GP gets 20% of profits",
+        threshold="Until GP gets 20.0% of profits",
         lp_share=0.50, gp_share=0.50,
         est_timing_year=7.2,
         est_amount_mm=round(catchup_paid, 1),

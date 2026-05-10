@@ -213,9 +213,9 @@ def render_cms_apm_tracker(params: dict = None) -> str:
     <strong style="color:{text}">CMS APM Portfolio Summary:</strong> {r.total_programs} active CMS APMs cover {r.total_lives_covered_m:.2f}M lives and route ${r.total_apm_payments_b:.2f}B in annual Medicare payments — avg {r.avg_savings_rate_pct:.2f}% savings rate across active programs.
     Portfolio APM revenue ${r.total_portfolio_apm_revenue_m:.2f}M across {len(r.exposures)} platforms — {sum(1 for e in r.exposures if e.apm_share_of_rev_pct > 0.10)} deals at &gt;10% APM revenue share (Magnolia/MSK, Redwood/Behavioral, Cedar/Cardiology, Sage/Home Health, Linden/Behavioral).
     Risk exposure: {r.portfolio_share_at_risk_pct * 100:.1f}% of portfolio revenue materially dependent on APM outcomes — concentrated in cardiology, home health, behavioral, and MSK.
-    Policy overhang: ACO REACH sunset 2026-12-31 ($42.5B program ending), PCF sunset 2026-12-31 ($12.8B), BPCI-A sunset 2025-12-31 ($18.5B) — transition paths to MCP, MSSP, and TEAM identified.
+    Policy overhang: ACO REACH sunset 2026-12-31 ($42.50B program ending), PCF sunset 2026-12-31 ($12.80B), BPCI-A sunset 2025-12-31 ($18.50B) — transition paths to MCP, MSSP, and TEAM identified.
     Commercial MA parallel: 35 commercial MA risk-based programs cover 28.5M lives at SOFR+ tighter to equity-implied cost — major sponsor targets include Humana, Clover, Alignment, Optum Care, ChenMed.
-    -2.8% 2026 physician fee schedule cut proposes $850M portfolio pressure (gross) — offset by APM shared savings realization target $40-60M net per year.
+    -2.8% 2026 physician fee schedule cut proposes $850.00M portfolio pressure (gross) — offset by APM shared savings realization target $40-60M net per year.
   </div>
 </div>"""
 

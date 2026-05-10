@@ -219,8 +219,8 @@ def render_capex_budget(params: dict = None) -> str:
     <strong style="color:{text}">Capex Portfolio Summary:</strong> ${r.total_annual_budget_m:,.2f}M annual capex budget — ${r.total_ytd_spent_m:,.2f}M deployed YTD ({pct_deployed:.1f}%) across {r.total_projects} projects at weighted {r.weighted_avg_roi_pct * 100:.1f}% ROI.
     Portfolio capex intensity {r.portfolio_capex_ratio_pct * 100:.2f}% of revenue — tracks healthcare services benchmark (5-6%). Consumer-facing specialties (fertility 9.5%, eye care 8.2%) highest; home health (2.2%) and specialty pharma (2.5%) lowest.
     Highest-ROI categories: Clinical AI deployment (55%, 12-month payback), Route optimization (55%, 15 mo), AI platform expansion, Mohs + Laser upgrade (38%), Platform modernization.
-    De novo pipeline: 10 projects, ${denovo_budget:.2f}M budget, projected ${denovo_yr1_rev:.2f}M Year-1 revenue; Atlanta + Nashville GI ASCs (~$60M combined) deliver fastest payback (24 mo).
-    Tech investment 29% of total capex budget (${sum(t.total_budget_m for t in r.tech):.2f}M) across EHR consolidation, clinical AI, RCM automation, cybersecurity, digital front door — high-ROI with 9-24 month paybacks.
+    De novo pipeline: 10 projects, ${denovo_budget:.2f}M budget, projected ${denovo_yr1_rev:.2f}M Year-1 revenue; Atlanta + Nashville GI ASCs (~$60.00M combined) deliver fastest payback (24 mo).
+    Tech investment 29.0% of total capex budget (${sum(t.total_budget_m for t in r.tech):.2f}M) across EHR consolidation, clinical AI, RCM automation, cybersecurity, digital front door — high-ROI with 9-24 month paybacks.
     Only 1 project at risk (Redwood telehealth platform "behind" — corrective action via resource augmentation already approved by sponsor).
   </div>
 </div>"""

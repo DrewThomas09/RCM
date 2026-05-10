@@ -288,7 +288,7 @@ def render_exit_multiple(params: dict) -> str:
     kpis += ck_kpi_block("Bull MOIC", f"{bull_sc.moic:.2f}x",
                           sub=f"IRR: {bull_sc.irr*100:.1f}%")
     kpis += ck_kpi_block("MOIC/Turn Sensitivity", f"{r.moic_sensitivity_per_turn:.2f}x",
-                          sub="per 1x multiple turn")
+                          sub="per 1.00x multiple turn")
 
     chart = _scenario_chart_svg(r.scenarios, r.entry_multiple)
     decomp_svg = _decomp_svg(r.decomp)
