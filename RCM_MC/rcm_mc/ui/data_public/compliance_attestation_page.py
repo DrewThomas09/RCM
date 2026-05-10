@@ -249,9 +249,9 @@ def render_compliance_attestation(params: dict = None) -> str:
     <strong style="color:{text}">Portfolio Security Posture:</strong> {r.soc2_type_ii_count} of {r.total_portcos} portcos hold SOC 2 Type II ({r.soc2_type_ii_count / r.total_portcos * 100:.1f}%); {r.hitrust_certified_count} hold HITRUST (essentials or r2); average posture score {r.avg_posture_score:.2f}/10.
     Top-tier posture: Oak (RCM SaaS, 9.2) and Fir (Lab, 9.0) — both hold SOC 2 Type II + HITRUST r2 + ISO 27001. Laggards: Sage (Home Health, 6.5 — SOC 2 expired), Aspen (Eye Care, 6.8 — post-breach remediation).
     Penetration testing yielded {crit_findings} critical findings across {len(r.pentests)} portcos YTD; 3 have active critical remediation underway (Redwood, Aspen, Sage) with projected close by Q2 2026.
-    Vendor book: 12 tier-1 vendors account for ~70% of portfolio tech spend; Change Healthcare (post-breach tier 2), Iron Mountain (SOC 2 gap), Stericycle (SOC 2 gap) are the 3 flagged vendors — compensating controls in place.
-    Incident history YTD: 8 incidents totaling ${total_incident_cost:.2f}M cost — Aspen ransomware (Feb 2024) drives 70% of cost, all subsequent incidents medium-severity or below with contained impact.
-    Upcoming audit calendar: 10 engagements valued ~$4.5M across SOC 2, HITRUST upgrades, Type II transitions — Sage SOC 2 Type I urgent (expired) is top priority.
+    Vendor book: 12 tier-1 vendors account for ~70.0% of portfolio tech spend; Change Healthcare (post-breach tier 2), Iron Mountain (SOC 2 gap), Stericycle (SOC 2 gap) are the 3 flagged vendors — compensating controls in place.
+    Incident history YTD: 8 incidents totaling ${total_incident_cost:.2f}M cost — Aspen ransomware (Feb 2024) drives 70.0% of cost, all subsequent incidents medium-severity or below with contained impact.
+    Upcoming audit calendar: 10 engagements valued ~$4.50M across SOC 2, HITRUST upgrades, Type II transitions — Sage SOC 2 Type I urgent (expired) is top priority.
   </div>
 </div>"""
 

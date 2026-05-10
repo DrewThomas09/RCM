@@ -273,8 +273,8 @@ def _build_leverage_scenarios(
     # At +10% revenue: new EBITDA = ebitda + 10% * rev * (1 - variable_pct)
     op_lev = ((revenue_mm * 0.10 * (1 - variable_pct)) / ebitda_mm) / 0.10 if ebitda_mm else 1.0
 
-    for label, delta_pct in [("Revenue -10%", -0.10), ("Revenue Flat", 0.0),
-                              ("Revenue +10%", 0.10), ("Revenue +20%", 0.20), ("Revenue +30%", 0.30)]:
+    for label, delta_pct in [("Revenue -10.0%", -0.10), ("Revenue Flat", 0.0),
+                              ("Revenue +10.0%", 0.10), ("Revenue +20.0%", 0.20), ("Revenue +30.0%", 0.30)]:
         new_rev = revenue_mm * (1 + delta_pct)
         ebitda_delta = revenue_mm * delta_pct * (1 - variable_pct)
         new_ebitda = ebitda_mm + ebitda_delta

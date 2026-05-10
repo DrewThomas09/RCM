@@ -172,7 +172,7 @@ def _build_pricing(current_nav: float) -> List[PricingAnalysis]:
             implied_price_mm=round(current_nav * 0.96, 1),
             discount_to_nav=0.04,
             premium_to_nav=0,
-            rationale="4% discount to NAV from comp set; reflects size discount",
+            rationale="4.0% discount to NAV from comp set; reflects size discount",
         ),
         PricingAnalysis(
             methodology="Third-Party Bid Process",
@@ -199,7 +199,7 @@ def _build_lp_elections() -> List[LPElectionRow]:
             option_status_quo="Cash out at strip price",
             option_rollover="Roll into CV",
             option_sell="Sell at market",
-            typical_election="Cash out (~80% elect)",
+            typical_election="Cash out (~80.0% elect)",
         ),
         LPElectionRow(
             lp_class="Sovereign Wealth Fund",
@@ -207,7 +207,7 @@ def _build_lp_elections() -> List[LPElectionRow]:
             option_status_quo="Cash out",
             option_rollover="Roll forward",
             option_sell="Sell via GP process",
-            typical_election="Roll 50%, cash 50%",
+            typical_election="Roll 50.0%, cash 50.0%",
         ),
         LPElectionRow(
             lp_class="Endowment / Foundation",
@@ -215,7 +215,7 @@ def _build_lp_elections() -> List[LPElectionRow]:
             option_status_quo="Cash out",
             option_rollover="Roll into CV",
             option_sell="Sell at market",
-            typical_election="Roll 70%",
+            typical_election="Roll 70.0%",
         ),
         LPElectionRow(
             lp_class="Fund of Funds",
@@ -223,7 +223,7 @@ def _build_lp_elections() -> List[LPElectionRow]:
             option_status_quo="Cash out",
             option_rollover="Conditional roll",
             option_sell="Sell at market",
-            typical_election="Cash out (~85% elect)",
+            typical_election="Cash out (~85.0% elect)",
         ),
         LPElectionRow(
             lp_class="Family Office",
@@ -231,7 +231,7 @@ def _build_lp_elections() -> List[LPElectionRow]:
             option_status_quo="Cash out",
             option_rollover="Roll into CV",
             option_sell="Sell at market",
-            typical_election="Roll 60%, cash 40%",
+            typical_election="Roll 60.0%, cash 40.0%",
         ),
         LPElectionRow(
             lp_class="Insurance Company",
@@ -239,7 +239,7 @@ def _build_lp_elections() -> List[LPElectionRow]:
             option_status_quo="Cash out",
             option_rollover="Limited roll",
             option_sell="Sell at market",
-            typical_election="Cash out (~90% elect)",
+            typical_election="Cash out (~90.0% elect)",
         ),
         LPElectionRow(
             lp_class="GP Commitment",
@@ -247,7 +247,7 @@ def _build_lp_elections() -> List[LPElectionRow]:
             option_status_quo="N/A",
             option_rollover="Full roll + new commit",
             option_sell="N/A",
-            typical_election="Full rollover (100%)",
+            typical_election="Full rollover (100.0%)",
         ),
     ]
 
@@ -266,7 +266,7 @@ def _build_gp_economics() -> List[GPEconomics]:
             existing_fund_mm=0,
             cv_new_mm=18.0,
             delta_mm=18.0,
-            notes="Fresh 20% carry on go-forward gains above 8% hurdle",
+            notes="Fresh 20.0% carry on go-forward gains above 8.0% hurdle",
         ),
         GPEconomics(
             item="Annual Mgmt Fees (CV)",
@@ -280,7 +280,7 @@ def _build_gp_economics() -> List[GPEconomics]:
             existing_fund_mm=0,
             cv_new_mm=12.0,
             delta_mm=-12.0,
-            notes="GP must commit 3-5% of CV",
+            notes="GP must commit 3.0-5.0% of CV",
         ),
         GPEconomics(
             item="Transaction Advisory Fees",

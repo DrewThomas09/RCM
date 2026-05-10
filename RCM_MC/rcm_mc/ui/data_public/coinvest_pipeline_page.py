@@ -225,8 +225,8 @@ def render_coinvest_pipeline(params: dict = None) -> str:
     <strong style="color:{text}">Co-Investment Program Summary:</strong> {r.active_opportunities} active opportunities representing ${r.total_equity_pipeline_m:,.2f}M equity pipeline with ${r.total_coinvest_available_m:,.2f}M in coinvest capacity available to {r.active_lp_count} active LPs.
     Average oversubscription {avg_oversub:.2f}x across capacity-disclosed deals — demand firmly outpaces supply; allocation methodology favors cornerstone / preferred-tier LPs.
     Historical track record across 10 realized positions: {r.historical_avg_moic:.2f}x gross MOIC / {r.historical_avg_irr_pct:.1f}% gross IRR with 3.60x top decile (RCM SaaS exit). Healthcare coinvest returns continue to outperform buyout fund net returns by ~100-150bps.
-    Public pensions (CalPERS, CPPIB) and sovereign wealth (GIC, Temasek) drive 52% of total commitments; endowment / family-office activity remains selective with preference for growth-equity over buyout.
-    Fee savings via cornerstone tier ($125M realized) + no-fee/no-carry structures (${total_savings:.2f}M total) deliver ~180-220bps of net return enhancement vs standard fund participation.
+    Public pensions (CalPERS, CPPIB) and sovereign wealth (GIC, Temasek) drive 52.0% of total commitments; endowment / family-office activity remains selective with preference for growth-equity over buyout.
+    Fee savings via cornerstone tier ($125.00M realized) + no-fee/no-carry structures (${total_savings:.2f}M total) deliver ~180-220bps of net return enhancement vs standard fund participation.
     Deal pipeline skews to GI, MSK, fertility, infusion — sector concentration consistent with broader healthcare buyout market; 4 of 12 deals in marketing phase with 60-day close windows.
   </div>
 </div>"""

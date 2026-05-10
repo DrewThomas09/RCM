@@ -49,7 +49,7 @@ def _cost_stack_svg(cost_lines, ebitda_margin: float) -> str:
     )
 
     # Legend
-    legend = f'<text x="{pad_l}" y="{pad_t - 10}" fill="{P["text_dim"]}" font-size="10" font-family="Inter,sans-serif">Revenue composition (% of $1 revenue)</text>'
+    legend = f'<text x="{pad_l}" y="{pad_t - 10}" fill="{P["text_dim"]}" font-size="10" font-family="Inter,sans-serif">Revenue composition (% of $1.00 revenue)</text>'
 
     return (
         f'<svg viewBox="0 0 {w} {h}" width="100%" style="max-width:{w}px" xmlns="http://www.w3.org/2000/svg">'
@@ -144,7 +144,7 @@ def _labor_table(labor) -> str:
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(l.role_type)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{l.headcount:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${l.avg_comp_k:,.0f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${l.avg_comp_k:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${l.total_cost_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{l.pct_of_revenue * 100:.1f}%</td>',
         ]
@@ -173,7 +173,7 @@ def _scenario_table(scenarios) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{ec};font-weight:600">{s.expected_ebitda_delta_pct * 100:+.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.leverage_ratio:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.implied_ebitda_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${s.implied_ev_mm:,.1f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${s.implied_ev_mm:,.2f}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -259,7 +259,7 @@ def render_cost_structure(params: dict = None) -> str:
   </div>
 
   <div style="{cell}">
-    <div style="{h3}">Revenue Composition ($1 Waterfall)</div>
+    <div style="{h3}">Revenue Composition ($1.00 Waterfall)</div>
     {stack_svg}
   </div>
 
@@ -287,9 +287,9 @@ def render_cost_structure(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Operating Leverage Thesis:</strong>
-    {r.variable_cost_pct * 100:.1f}% variable cost structure means every $1 of incremental revenue drops
+    {r.variable_cost_pct * 100:.1f}% variable cost structure means every $1.00 of incremental revenue drops
     $${(1 - r.variable_cost_pct):.2f} to EBITDA. Current leverage coefficient {r.operating_leverage:.2f}x —
-    a 10% top-line expansion implies {r.operating_leverage * 10:.1f}% EBITDA growth without margin compression.
+    a 10.0% top-line expansion implies {r.operating_leverage * 10:.1f}% EBITDA growth without margin compression.
   </div>
 
 </div>"""

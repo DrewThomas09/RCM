@@ -206,7 +206,7 @@ def render_cyber_risk(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Cyber Risk Thesis:</strong> Overall score {r.overall_cyber_score}/100 (tier: {_html.escape(r.risk_tier)}).
     Strong controls on endpoint, data protection, and training; underinvested in SOC/SIEM, BCP/DR, and third-party risk management.
-    Ransomware readiness is strong — immutable backups, EDR everywhere, $50M cyber tower. Post-Change Healthcare (Feb 2024), the sector-wide ransomware impact benchmark is $22B — platform exposure proportional to PHI footprint and vendor density.
+    Ransomware readiness is strong — immutable backups, EDR everywhere, $50.00M cyber tower. Post-Change Healthcare (Feb 2024), the sector-wide ransomware impact benchmark is $22.00B — platform exposure proportional to PHI footprint and vendor density.
     Most material third-party risk: offshore RCM BPO (SOC 2 Type I only — upgrade required) and Salesforce Health Cloud (high-access PHI scope).
     Compliance posture solid — HIPAA, HITRUST r2, SOC 2 Type II, PCI-DSS, ISO 27001 all current.
     Remediation budget required ${total_rem:,.2f}M to close gaps over next 6-9 months.
