@@ -47,7 +47,7 @@ def _hsr_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${t.threshold_value_mm:,.2f}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{f_c};font-weight:700">{"REQUIRED" if t.filing_required else "No"}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{t.waiting_period_days}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${t.filing_fee_k:,.1f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${t.filing_fee_k:,.2f}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -118,7 +118,7 @@ def _states_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.state)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.review_trigger)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{s.notice_days}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${s.notification_fee_k:,.1f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${s.notification_fee_k:,.2f}</td>',
             f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;letter-spacing:0.06em">{_html.escape(s.state_ag_posture)}</span></td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{cr_c};font-weight:600">{s.historical_challenge_rate_pct * 100:.1f}%</td>',
         ]
@@ -219,7 +219,7 @@ def render_antitrust_screener(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Anti-Trust Thesis:</strong> ${r.deal_size_mm:,.2f}M deal triggers HSR filing; Second Request probability {r.second_request_probability * 100:.1f}% given {sum(1 for o in r.overlaps if 'severe' in o.overlap_severity)} severe market overlaps in Texas MSAs.
     Post-USAP / Welsh Carson (2023) enforcement era, FTC is scrutinizing serial-acquisition theories against PE platform sponsors — relevance score 95.
-    Recommended path: "Restructure deal (exclude 2 overlap markets)" — 92% approval probability, 6-month timeline, 25.8% deal value reduction.
+    Recommended path: "Restructure deal (exclude 2 overlap markets)" — 92.0% approval probability, 6-month timeline, 25.8% deal value reduction.
     Alternative divestiture path preserves more value but extends timeline to 12-18 months and introduces execution risk.
     California, New York, Oregon, and Massachusetts notifications required given deal size; Colorado SB 21-003 also applies.
   </div>

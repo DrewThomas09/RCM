@@ -168,10 +168,10 @@ def _build_case_law() -> List[CaseLaw]:
 
 def _build_state_reviews() -> List[StateReview]:
     return [
-        StateReview("California (Office of Health Care Affordability)", "all acquisitions >$25M", 90, 25.0, "active scrutiny", 0.18),
+        StateReview("California (Office of Health Care Affordability)", "all acquisitions >$25.00M", 90, 25.0, "active scrutiny", 0.18),
         StateReview("New York (Article 28)", "certificate of need trigger", 120, 15.0, "active scrutiny", 0.15),
         StateReview("Oregon (OHA)", "any healthcare acquisition", 180, 25.0, "active scrutiny", 0.22),
-        StateReview("Massachusetts (HPC)", "≥$15M annual net patient service", 60, 10.0, "active review", 0.12),
+        StateReview("Massachusetts (HPC)", "≥$15.00M annual net patient service", 60, 10.0, "active review", 0.12),
         StateReview("Washington (AG)", "healthcare acquisition notification", 60, 0.0, "standard review", 0.08),
         StateReview("Connecticut (AG)", "hospital & large provider acquisition", 90, 0.0, "standard review", 0.06),
         StateReview("Illinois (AG)", "healthcare acquisition notification", 45, 0.0, "standard review", 0.05),
@@ -187,7 +187,7 @@ def _build_remediations() -> List[RemediationOption]:
                           12, 38.5, 0.068, 0.85),
         RemediationOption("Behavioral remedies only", "Firewall policies, no price coordination",
                           3, 2.5, 0.005, 0.45),
-        RemediationOption("Restructure deal (exclude 2 overlap markets)", "Carve-out $125M value",
+        RemediationOption("Restructure deal (exclude 2 overlap markets)", "Carve-out $125.00M value",
                           6, 0.0, 0.258, 0.92),
         RemediationOption("Consent decree (hybrid)", "1-practice divestiture + behavioral",
                           9, 22.5, 0.042, 0.78),
