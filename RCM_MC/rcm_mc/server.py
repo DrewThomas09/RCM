@@ -14083,7 +14083,15 @@ class RCMHandler(BaseHTTPRequestHandler):
         # P3: a partner who is already authenticated has nothing to do
         # on the login form; bounce them to ``next`` (default "/").
         # Validate the redirect is same-origin to avoid an open-redirect.
-        if user and nxt.startswith("/"):
+        # Mirror the POST /api/login validator (B146 + backslash close):
+        # reject protocol-relative ``//evil``, absolute ``://`` schemes,
+        # and ``/\\evil`` browsers auto-convert to ``//``.
+        if user and (
+            nxt.startswith("/")
+            and not nxt.startswith("//")
+            and "://" not in nxt
+            and "\\" not in nxt
+        ):
             return self._redirect(nxt)
 
         demo_mode = False

@@ -601,6 +601,67 @@ class APIEndpointSmoke(unittest.TestCase):
             f"{leaks}",
         )
 
+    def test_login_get_already_authed_rejects_open_redirect(self) -> None:
+        """When an already-authenticated partner visits
+        /login?next=<url>, the handler bounces them to ``next``.
+        That same-origin check must reject the same vectors as
+        the POST /api/login validator (B146 + backslash close):
+
+        * ``//evil`` (protocol-relative)
+        * ``https://evil`` (absolute)
+        * ``/\\evil`` (browser-converts to ``//``)
+
+        Pre-fix, the GET /login validator only checked
+        ``startswith("/")`` — accepted ``//evil`` directly. This
+        guard is the regression net for that fix.
+        """
+        EVIL = [
+            "//evil.example.com",
+            "https://evil.example.com",
+            "/\\evil.example.com",
+        ]
+        SAFE = [
+            "/portfolio",
+            "/audit",
+            "/deal/foo",
+        ]
+
+        def _follow_redirect(nxt: str) -> str:
+            # cls.opener is logged in — visiting /login?next=…
+            # should redirect for an authenticated user.
+            try:
+                resp = self.opener.open(
+                    self.base + "/login?next="
+                    + urllib.parse.quote(nxt),
+                    timeout=5,
+                )
+                return resp.headers.get("Location", "") if resp else ""
+            except urllib.error.HTTPError as e:
+                return e.headers.get("Location", "")
+
+        leaks: list[str] = []
+        for nxt in EVIL:
+            loc = _follow_redirect(nxt)
+            # Acceptable: empty (no redirect — login page renders),
+            # or "/" (default fallback). Unacceptable: anything
+            # echoing the evil token.
+            if loc and "evil" in loc.lower():
+                leaks.append(
+                    f"GET /login?next={nxt!r} echoed evil "
+                    f"token in Location={loc!r}"
+                )
+            if loc and (loc.startswith("//") or "://" in loc
+                        or "\\" in loc):
+                leaks.append(
+                    f"GET /login?next={nxt!r} → suspicious "
+                    f"Location={loc!r}"
+                )
+
+        self.assertEqual(
+            leaks, [],
+            f"GET /login open-redirect vectors accepted: {leaks}",
+        )
+
     def test_login_next_param_rejects_open_redirect_vectors(self) -> None:
         """The ``next`` param on /api/login must not accept any
         URL that a browser could resolve cross-origin. Vectors
