@@ -230,10 +230,10 @@ def render_pmi_integration(params: dict = None) -> str:
     <strong style="color:{text}">PMI Scorecard Summary:</strong> {r.total_integrations} active integrations tracking ${r.total_synergy_target_m:.2f}M synergy target with {r.weighted_realization_pct * 100:.1f}% realization ({r.on_track_count} on track, {r.total_integrations - r.on_track_count} early-stage or behind).
     Best-realizing categories: Insurance consolidation (79.2%), G&A overhead (78.9%), Tax optimization (73.8%), GPO supply chain (73.0%) — low-difficulty, short-timeline wins being captured.
     Challenging categories: EHR / IT integration (45.9%), Ancillary revenue capture (44.3%), Revenue cycle automation (49.4%), Payer contract consolidation (54.4%) — longer timelines + organizational complexity.
-    Highest-synergy deals: Dallas Cardiology (Cedar, $10.5M realized / $16.5M target), Atlanta Endoscopy (Cypress, $8.5M / $12.5M), Phoenix Ortho (Magnolia, $7.2M / $9.5M).
-    Retention health: {avg_retention * 100:.1f}% average physician retention across 15 bolt-ons — Pacific Eye (Aspen) 86% is single weakest; 3 physician departures driving remediation.
+    Highest-synergy deals: Dallas Cardiology (Cedar, $10.50M realized / $16.50M target), Atlanta Endoscopy (Cypress, $8.50M / $12.50M), Phoenix Ortho (Magnolia, $7.20M / $9.50M).
+    Retention health: {avg_retention * 100:.1f}% average physician retention across 15 bolt-ons — Pacific Eye (Aspen) 86.0% is single weakest; 3 physician departures driving remediation.
     Risk profile: {high_risk} high-severity + {sum(1 for risk in r.risks if risk.severity == "medium")} medium-severity active risks; {late_milestones} late milestones — corrective action in place on all items.
-    Integration cost ${r.total_integration_cost_m:.2f}M tracks 22% of ${r.total_synergy_target_m:.2f}M target (within 20-25% industry benchmark); Pacific Eye integration cost running slightly elevated.
+    Integration cost ${r.total_integration_cost_m:.2f}M tracks 22.0% of ${r.total_synergy_target_m:.2f}M target (within 20-25% industry benchmark); Pacific Eye integration cost running slightly elevated.
   </div>
 </div>"""
 

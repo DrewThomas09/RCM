@@ -172,21 +172,21 @@ def _build_exposures() -> List[PortfolioExposureMA]:
 
 def _build_stars() -> List[StarsMetric]:
     return [
-        StarsMetric("HEDIS / HOS / CAHPS Overall", "Clinical", "5x", 3.9, 4.5, 4.1, "stable"),
-        StarsMetric("Breast Cancer Screening", "Part C", "1x", 0.72, 0.82, 0.74, "improving"),
-        StarsMetric("Colorectal Cancer Screening", "Part C", "1x", 0.78, 0.86, 0.79, "improving"),
-        StarsMetric("Osteoporosis Mgmt in Women (Frac)", "Part C", "1x", 0.41, 0.58, 0.45, "improving"),
-        StarsMetric("Medication Adherence - Diabetes", "Part D", "3x", 0.85, 0.92, 0.87, "stable"),
-        StarsMetric("Medication Adherence - RAS Antag", "Part D", "3x", 0.86, 0.93, 0.88, "stable"),
-        StarsMetric("Medication Adherence - Statins", "Part D", "3x", 0.84, 0.91, 0.86, "stable"),
-        StarsMetric("Diabetes Care - Blood Sugar", "Part C", "3x", 0.77, 0.89, 0.80, "improving"),
-        StarsMetric("Controlling Blood Pressure", "Part C", "3x", 0.72, 0.84, 0.75, "improving"),
-        StarsMetric("Rating of Health Care Quality", "CAHPS", "1.5x", 0.84, 0.90, 0.85, "stable"),
-        StarsMetric("Getting Care Quickly", "CAHPS", "1.5x", 0.76, 0.83, 0.78, "stable"),
-        StarsMetric("Care Coordination", "CAHPS", "1.5x", 0.82, 0.88, 0.83, "stable"),
-        StarsMetric("Customer Service", "CAHPS", "1.5x", 0.85, 0.91, 0.86, "stable"),
-        StarsMetric("Complaints about the Plan", "Complaints", "1.5x", 0.15, 0.08, 0.16, "watching"),
-        StarsMetric("Health Equity Index (NEW)", "Clinical", "0.4x", 0.0, 0.0, 0.0, "launching 2027"),
+        StarsMetric("HEDIS / HOS / CAHPS Overall", "Clinical", "5.00x", 3.9, 4.5, 4.1, "stable"),
+        StarsMetric("Breast Cancer Screening", "Part C", "1.00x", 0.72, 0.82, 0.74, "improving"),
+        StarsMetric("Colorectal Cancer Screening", "Part C", "1.00x", 0.78, 0.86, 0.79, "improving"),
+        StarsMetric("Osteoporosis Mgmt in Women (Frac)", "Part C", "1.00x", 0.41, 0.58, 0.45, "improving"),
+        StarsMetric("Medication Adherence - Diabetes", "Part D", "3.00x", 0.85, 0.92, 0.87, "stable"),
+        StarsMetric("Medication Adherence - RAS Antag", "Part D", "3.00x", 0.86, 0.93, 0.88, "stable"),
+        StarsMetric("Medication Adherence - Statins", "Part D", "3.00x", 0.84, 0.91, 0.86, "stable"),
+        StarsMetric("Diabetes Care - Blood Sugar", "Part C", "3.00x", 0.77, 0.89, 0.80, "improving"),
+        StarsMetric("Controlling Blood Pressure", "Part C", "3.00x", 0.72, 0.84, 0.75, "improving"),
+        StarsMetric("Rating of Health Care Quality", "CAHPS", "1.50x", 0.84, 0.90, 0.85, "stable"),
+        StarsMetric("Getting Care Quickly", "CAHPS", "1.50x", 0.76, 0.83, 0.78, "stable"),
+        StarsMetric("Care Coordination", "CAHPS", "1.50x", 0.82, 0.88, 0.83, "stable"),
+        StarsMetric("Customer Service", "CAHPS", "1.50x", 0.85, 0.91, 0.86, "stable"),
+        StarsMetric("Complaints about the Plan", "Complaints", "1.50x", 0.15, 0.08, 0.16, "watching"),
+        StarsMetric("Health Equity Index (NEW)", "Clinical", "0.40x", 0.0, 0.0, 0.0, "launching 2027"),
     ]
 
 
@@ -224,10 +224,10 @@ def _build_updates() -> List[PolicyUpdate]:
     return [
         PolicyUpdate("2027 MA Advance Notice", "2026-02-01", "Benchmark growth +3.7%; MLR floor formula update", 850.0, 32.0),
         PolicyUpdate("RADV extrapolation rule takes effect", "2026-04-01", "Contract-level extrapolation retroactive 2018-2024", 7850.0, 185.0),
-        PolicyUpdate("Health Equity Index launches", "2027-01-01", "New 0.4x weighted measure in Stars formula", 3200.0, 45.0),
+        PolicyUpdate("Health Equity Index launches", "2027-01-01", "New 0.40x weighted measure in Stars formula", 3200.0, 45.0),
         PolicyUpdate("Inflation Reduction Act Part D Redesign PY2", "2026-01-01", "Manufacturer discount restructure", 2800.0, 15.0),
         PolicyUpdate("Star Rating cut-point adjustment", "2026-10-01", "Tukey outlier removal — gentle trimming", 450.0, -8.0),
-        PolicyUpdate("Risk Adjustment V28 Phase 3", "2026-01-01", "100% implementation of V28 model", 4500.0, 58.0),
+        PolicyUpdate("Risk Adjustment V28 Step 3", "2026-01-01", "100.0% implementation of V28 model", 4500.0, 58.0),
         PolicyUpdate("2026 Marketing Rule", "2026-01-01", "Third-party marketing oversight tightened", 120.0, 0.5),
         PolicyUpdate("SDoH encounter data requirements", "2026-01-01", "Z-code submission required", 85.0, 2.5),
     ]

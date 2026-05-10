@@ -100,7 +100,7 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
             f'<td>{_html.escape(m.market_concentration[:12])}</td>'
             f'<td class="num" style="color:{inv_color};font-weight:600;">'
             f'{m.investability_score:.0f} ({m.investability_grade})</td>'
-            f'<td class="num" style="color:var(--cad-neg);">{m.distress_rate:.0%}</td>'
+            f'<td class="num" style="color:var(--cad-neg);">{m.distress_rate:.1%}</td>'
             f'</tr>'
         )
 
@@ -130,9 +130,9 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
             f'<td style="font-weight:500;">{_html.escape(q.queue_name)}</td>'
             f'<td class="num">{q.arrival_rate:.0f}/day</td>'
             f'<td class="num">{q.n_servers}</td>'
-            f'<td class="num" style="color:{util_color};font-weight:600;">{q.utilization:.0%}</td>'
+            f'<td class="num" style="color:{util_color};font-weight:600;">{q.utilization:.1%}</td>'
             f'<td class="num">{q.avg_wait_time:.1f}d</td>'
-            f'<td class="num" style="color:{sla_color};">{q.sla_breach_prob:.0%}</td>'
+            f'<td class="num" style="color:{sla_color};">{q.sla_breach_prob:.1%}</td>'
             f'<td class="num" style="font-weight:500;">{q.recommended_servers}</td>'
             f'<td>{"&#9888;" if q.bottleneck else "&#10003;"}</td>'
             f'</tr>'
@@ -174,7 +174,7 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
             f'<td class="num">{est.prior_mean:.1%}</td>'
             f'<td class="num" style="font-weight:600;">{est.posterior_mean:.1%}</td>'
             f'<td class="num">[{est.credible_interval_90[0]:.1%}, {est.credible_interval_90[1]:.1%}]</td>'
-            f'<td class="num" style="color:{shrink_color};">{est.shrinkage_factor:.0%}</td>'
+            f'<td class="num" style="color:{shrink_color};">{est.shrinkage_factor:.1%}</td>'
             f'<td style="font-size:11px;">{est.data_quality}</td>'
             f'</tr>'
         )
@@ -186,10 +186,10 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
         f'Denial rate estimation under varying data quality. With strong data, posterior converges '
         f'to observed. With weak/no data, posterior shrinks toward peer-group prior (8.5% for '
         f'medium hospitals). Shrinkage factor = how much weight goes to prior vs data. '
-        f'90% credible intervals widen with uncertainty.</p>'
+        f'90.0% credible intervals widen with uncertainty.</p>'
         f'<table class="cad-table"><thead><tr>'
         f'<th>Scenario</th><th>Observed</th><th>n</th><th>Prior</th>'
-        f'<th>Posterior</th><th>90% CI</th><th>Shrinkage</th><th>Quality</th>'
+        f'<th>Posterior</th><th>90.0% CI</th><th>Shrinkage</th><th>Quality</th>'
         f'</tr></thead><tbody>{bayes_rows}</tbody></table></div>'
     )
 
@@ -266,7 +266,7 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
     nav = (
         f'<div class="cad-card" style="display:flex;gap:8px;flex-wrap:wrap;">'
         f'<a href="/ml-insights" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">ML Insights</a>'
+        f'style="text-decoration:none;">Open ML Insights</a>'
         f'<a href="/portfolio/regression" class="cad-btn" '
         f'style="text-decoration:none;">Regression</a>'
         f'<a href="/market-data/map" class="cad-btn" '

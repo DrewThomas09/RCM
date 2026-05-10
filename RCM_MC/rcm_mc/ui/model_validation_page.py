@@ -109,7 +109,7 @@ def render_model_validation(
          "value": format_value(total_actuals, kind="count")},
         {"label": "Avg R²", "value": f"{avg_r2:.1%}",
          "tone": r2_tone},
-        {"label": "90% CI Coverage", "value": f"{avg_coverage:.0%}",
+        {"label": "90.0% CI Coverage", "value": f"{avg_coverage:.1%}",
          "tone": cov_tone},
         {"label": "Metrics Validated",
          "value": format_value(len(all_perfs), kind="count")},
@@ -129,7 +129,7 @@ def render_model_validation(
             f'<td class="num" style="color:{r2_c};font-weight:600;">{p.r2:.1%}</td>'
             f'<td class="num">{p.mae:.4f}</td>'
             f'<td class="num">{p.rmse:.4f}</td>'
-            f'<td class="num" style="color:{cov_c};">{p.coverage_rate:.0%}</td>'
+            f'<td class="num" style="color:{cov_c};">{p.coverage_rate:.1%}</td>'
             f'<td class="num">{p.mean_interval_width:.4f}</td>'
             f'<td class="num" style="color:{bias_c};">{p.bias:+.4f}</td>'
             f'<td class="num">{p.n_actuals}</td>'
@@ -142,7 +142,7 @@ def render_model_validation(
         f'<h2>Model Accuracy by Metric</h2>'
         f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:10px;">'
         f'Each metric\'s prediction accuracy measured against held-out actuals. '
-        f'R&sup2; = variance explained. Coverage = fraction of actuals within the 90% CI. '
+        f'R&sup2; = variance explained. Coverage = fraction of actuals within the 90.0% CI. '
         f'Bias = systematic over/under-prediction (positive = model overestimates). '
         f'Grade: A (R&sup2;&ge;0.7, coverage&ge;85%), B, C, D.</p>'
         f'<table class="cad-table"><thead><tr>'
@@ -208,7 +208,7 @@ def render_model_validation(
             f'<h2>Confidence Interval Calibration</h2>'
             f'{cov_kpis}'
             f'<p style="font-size:12px;color:var(--cad-text2);">'
-            f'Target: 90% of actuals should fall within the 90% CI. '
+            f'Target: 90.0% of actuals should fall within the 90.0% CI. '
             f'Over-covered intervals are too wide (conservative but wastes bandwidth). '
             f'Under-covered intervals are too narrow (overconfident — dangerous for IC). '
             f'Split conformal prediction guarantees finite-sample coverage, but calibration '
@@ -228,7 +228,7 @@ def render_model_validation(
         f'<p style="margin-top:8px;">Current state: <strong>{total_predictions:,}</strong> predictions, '
         f'<strong>{total_actuals:,}</strong> validated. Each new deal adds ~20-30 metric predictions '
         f'to the ledger. After 50+ deals, cross-deal learning kicks in — the system detects '
-        f'that it systematically overestimates denial improvement by 15% and adjusts future predictions.</p>'
+        f'that it systematically overestimates denial improvement by 15.0% and adjusts future predictions.</p>'
         f'</div></div>'
     )
 
@@ -236,7 +236,7 @@ def render_model_validation(
     nav = (
         f'<div class="cad-card" style="display:flex;gap:8px;flex-wrap:wrap;">'
         f'<a href="/quant-lab" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Quant Lab</a>'
+        f'style="text-decoration:none;">Open Quant Lab</a>'
         f'<a href="/ml-insights" class="cad-btn" '
         f'style="text-decoration:none;">ML Insights</a>'
         f'<a href="/portfolio/regression" class="cad-btn" '
@@ -255,6 +255,6 @@ def render_model_validation(
         active_nav="/model-validation",
         subtitle=(
             f"{total_predictions:,} predictions | {total_actuals:,} validated | "
-            f"Avg R\u00b2 {avg_r2:.1%} | Coverage {avg_coverage:.0%}"
+            f"Avg R\u00b2 {avg_r2:.1%} | Coverage {avg_coverage:.1%}"
         ),
     )

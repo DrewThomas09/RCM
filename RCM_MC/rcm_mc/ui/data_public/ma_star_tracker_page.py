@@ -224,10 +224,10 @@ def render_ma_star_tracker(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">MA Market Summary:</strong> {r.total_plans} tracked MA plans enroll {r.total_enrollment_m:.2f}M beneficiaries at {r.avg_star_rating:.2f}★ weighted average — {stars_up} plans improved, {stars_down} declined in 2026 cycle.
     {r.pct_4star_plus * 100:.1f}% of lives in 4+★ plans earning QBP bonuses — this is the critical threshold driving rebate eligibility and risk-adjusted revenue.
-    Portfolio MA revenue ${r.total_portfolio_ma_revenue_m:,.2f}M across 12 platforms — Cardiology (Cedar, $95M), RCM SaaS (Oak, $65M as enabler), Home Health (Sage, $68M) are the largest exposures.
-    RADV exposure: ${r.total_radv_exposure_m:,.2f}M industry-wide with DOJ actions against UHC (~$1.9B), Humana (~$1.1B), Aetna (~$725M) — extrapolation rule effective 2026-04-01 raises stakes.
-    Benchmark PMPM spans $925 (rural) to $1,420 (Manhattan) — regional variation 35%+ drives MA margin dispersion; high-bench markets (Miami, NYC) support 5-8% margins vs 2-3% in rural.
-    2026-2027 policy calendar stacks 8 material changes: +$32M portfolio tailwind from benchmark growth, offset by $58M V28 risk adjustment phase 3 drag — net positive ~$75M portfolio impact.
+    Portfolio MA revenue ${r.total_portfolio_ma_revenue_m:,.2f}M across 12 platforms — Cardiology (Cedar, $95.00M), RCM SaaS (Oak, $65.00M as enabler), Home Health (Sage, $68.00M) are the largest exposures.
+    RADV exposure: ${r.total_radv_exposure_m:,.2f}M industry-wide with DOJ actions against UHC (~$1.90B), Humana (~$1.10B), Aetna (~$725.00M) — extrapolation rule effective 2026-04-01 raises stakes.
+    Benchmark PMPM spans $925.00 (rural) to $1,420.00 (Manhattan) — regional variation 35.0%+ drives MA margin dispersion; high-bench markets (Miami, NYC) support 5-8% margins vs 2-3% in rural.
+    2026-2027 policy calendar stacks 8 material changes: +$32.00M portfolio tailwind from benchmark growth, offset by $58.00M V28 risk adjustment step 3 drag — net positive ~$75.00M portfolio impact.
   </div>
 </div>"""
 
