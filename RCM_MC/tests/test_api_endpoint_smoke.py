@@ -686,7 +686,7 @@ class APIEndpointSmoke(unittest.TestCase):
             if e.code not in (200, 303):
                 raise
 
-        ADMIN_ONLY = ["/users", "/audit"]
+        ADMIN_ONLY = ["/users", "/audit", "/api/system/info"]
         leaks: list[str] = []
         for path in ADMIN_ONLY:
             try:

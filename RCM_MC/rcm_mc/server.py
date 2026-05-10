@@ -10999,11 +10999,31 @@ class RCMHandler(BaseHTTPRequestHandler):
     # Prompt 26: onboarding wizard route handlers ──────────────────────
 
     def _route_system_info(self) -> None:
-        """GET /api/system/info — version, DB stats, Python version."""
+        """GET /api/system/info — version, DB stats, Python version.
+
+        Admin-only because the response includes the exact Python
+        version (CVE-matching surface), the host platform string,
+        and the absolute db_path — operator-class information that
+        an analyst-role user shouldn't see. Public/anonymous + non-
+        admin authenticated users get 403 here.
+        """
         import platform as _plat
         from . import __version__
         from .analysis.packet import PACKET_SCHEMA_VERSION
+        from .auth.auth import list_users
         _store = PortfolioStore(self.config.db_path)
+        # Match the gate pattern used by /users + /audit: only enforce
+        # the admin check once a user actually exists in the DB
+        # (single-user bootstrap mode skips the check).
+        current = self._current_user()
+        users_df = list_users(_store)
+        if len(users_df) > 0 and (
+            current is None or current.get("role") != "admin"
+        ):
+            return self._send_json(
+                {"error": "admin only", "code": "FORBIDDEN"},
+                status=HTTPStatus.FORBIDDEN,
+            )
         db_size_bytes = 0
         table_count = 0
         deal_count = 0
