@@ -119,16 +119,16 @@ def _build_covenants(ebitda: float, debt: float) -> List[CovenantMetric]:
 
 def _build_tranches(debt: float) -> List[FacilityTranche]:
     return [
-        FacilityTranche("Revolver ($75M commit, $12M drawn)",
+        FacilityTranche("Revolver ($75.00M commit, $12.00M drawn)",
                         round(debt * 0.04, 2), "SOFR+400", 400, 8.45, 2030, "maintenance"),
         FacilityTranche("First-Lien Term Loan",
                         round(debt * 0.62, 2), "SOFR+475", 475, 9.20, 2031, "maintenance"),
         FacilityTranche("Second-Lien Term Loan",
                         round(debt * 0.22, 2), "SOFR+825", 825, 12.70, 2032, "incurrence"),
         FacilityTranche("Mezzanine (PIK toggle)",
-                        round(debt * 0.08, 2), "Fixed 12% cash + 3% PIK", 0, 15.00, 2033, "incurrence"),
+                        round(debt * 0.08, 2), "Fixed 12.0% cash + 3.0% PIK", 0, 15.00, 2033, "incurrence"),
         FacilityTranche("Seller Note",
-                        round(debt * 0.04, 2), "Fixed 8%", 0, 8.00, 2030, "incurrence"),
+                        round(debt * 0.04, 2), "Fixed 8.0%", 0, 8.00, 2030, "incurrence"),
     ]
 
 

@@ -137,8 +137,8 @@ ROUTE_MIN_SCORES: dict[str, float] = {
     "/admin/data-sources":    1.0,
     "/capital-pacing":        1.0,
     "/capital-efficiency":    1.0,
+    "/covenant-headroom":     1.0,
     # 93% routes (number-format-clean residual on prose-heavy pages):
-    "/covenant-headroom":     0.93,
     "/cap-structure":         0.93,
     "/board-governance":      0.93,
     "/corpus-coverage":       0.93,
