@@ -82,12 +82,18 @@ _NUMBER_VIOLATIONS: list[tuple[str, str]] = [
     # $X (no decimals) and $X.X (one decimal) — money should be 2dp.
     # Match a $-prefixed integer or one-decimal value followed by
     # M/B/k/no suffix or whitespace, NOT followed by another digit.
-    # The ``,(?!\d)`` lookahead in the alternation prevents a false
-    # positive on the leading group of a well-formed ``$1,434.40M``
-    # (comma-followed-by-digit = thousands separator, not a prose
-    # terminator). Comma followed by non-digit (``$5, growing 12%``)
-    # still flags as before.
-    (r"\$\d+(?:\.\d)?(?=[MBk\s]|$|,(?!\d))",
+    # Lookahead alternation:
+    #  - ``[MBk\s]`` — common money suffixes / whitespace terminator
+    #  - ``$`` — end of string
+    #  - ``,(?!\d)`` — comma NOT followed by digit (prose comma, not
+    #    thousands separator: ``$1,434.40M`` skipped, ``$5, growing``
+    #    still flags)
+    #  - ``[-–]`` — range bound dash (``$100-300M``, ``$25–50M`` are
+    #    bucket labels, not metric values; un-flag)
+    # Lookbehind ``(?<![<>])`` un-flags range-bound prose
+    # (``<$100M`` / ``>$2B`` — already-decoded HTML entities from
+    # ``_strip_html_for_audit``).
+    (r"(?<![<>])\$\d+(?:\.\d)?(?![-–])(?=(?:[MBk](?![-–]))|\s|$|,(?!\d))",
      'money values should render with 2 decimal places (e.g. $450.25M)'),
     # Percent without a decimal. The lookbehinds prevent matching
     # the decimal portion of a well-formed value (``10.0%`` →
