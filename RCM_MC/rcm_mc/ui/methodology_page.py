@@ -8,57 +8,44 @@ from __future__ import annotations
 import html
 from typing import Any
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_panel, ck_section_header, ck_signal_badge,
+)
 from .brand import PALETTE
 
 
 def _section(code: str, title: str, content: str, *, anchor: str = "") -> str:
-    """Render a methodology section with a Bloomberg-style code chip header."""
+    """Render a methodology section. Editorial wrapper: ck_panel with
+    a ck_section_header inside (eyebrow + ck_signal_badge for the
+    Bloomberg-style code chip)."""
+    header = ck_section_header(title, eyebrow=code)
     aid = f' id="{html.escape(anchor)}"' if anchor else ""
     return (
-        f'<div class="cad-card"{aid}>'
-        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
-        f'<h2 style="margin:0;">{html.escape(title)}</h2>'
-        f'<span class="cad-section-code">{html.escape(code)}</span>'
-        f'</div>'
-        f'{content}</div>'
+        f'<div{aid}>'
+        + ck_panel(f'{header}{content}')
+        + '</div>'
     )
 
 
 def _source_card(code: str, title: str, body: str, meta: str) -> str:
-    """Render a data-source mini card with ticker-style code."""
-    return (
-        f'<div style="padding:12px 14px;border:1px solid {PALETTE["border"]};'
-        f'background:{PALETTE["bg_tertiary"]};">'
-        f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
-        f'<span class="cad-ticker-id" style="padding:2px 7px;">{html.escape(code)}</span>'
-        f'<h3 style="margin:0;font-size:12.5px;font-weight:700;letter-spacing:0.04em;'
-        f'text-transform:uppercase;color:{PALETTE["text_primary"]};">{html.escape(title)}</h3>'
-        f'</div>'
-        f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};line-height:1.6;">'
-        f'{body}</p>'
-        f'<div style="font-family:var(--cad-mono);font-size:9.5px;'
-        f'letter-spacing:0.08em;color:{PALETTE["text_muted"]};'
-        f'margin-top:8px;text-transform:uppercase;">{html.escape(meta)}</div>'
-        f'</div>'
+    """Render a data-source mini card via ck_panel.
+
+    Code → neutral signal-badge in the title row. Body + meta land
+    inside the panel as section-body text.
+    """
+    badge = ck_signal_badge(code, tone="neutral")
+    inner = (
+        f'<p class="ck-section-body">{body}</p>'
+        f'<p class="ck-eyebrow">{html.escape(meta)}</p>'
     )
+    return ck_panel(f'{badge} {inner}', title=title)
 
 
 def _model_card(code: str, title: str, body: str) -> str:
-    """Render a model mini card matching deal dashboard style."""
-    return (
-        f'<div style="padding:10px 14px;border:1px solid {PALETTE["border"]};'
-        f'background:{PALETTE["bg_tertiary"]};'
-        f'border-left:3px solid {PALETTE["brand_accent"]};">'
-        f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
-        f'<span class="cad-section-code">{html.escape(code)}</span>'
-        f'<h3 style="margin:0;font-size:12.5px;font-weight:700;letter-spacing:0.04em;'
-        f'text-transform:uppercase;color:{PALETTE["text_primary"]};">{html.escape(title)}</h3>'
-        f'</div>'
-        f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};line-height:1.6;">'
-        f'{body}</p>'
-        f'</div>'
-    )
+    """Render a model mini card via ck_panel + signal badge."""
+    badge = ck_signal_badge(code, tone="neutral")
+    inner = f'<p class="ck-section-body">{body}</p>'
+    return ck_panel(f'{badge} {inner}', title=title)
 
 
 def render_methodology() -> str:
