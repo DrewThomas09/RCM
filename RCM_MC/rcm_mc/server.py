@@ -1415,6 +1415,14 @@ class RCMHandler(BaseHTTPRequestHandler):
     # Inject config via class attribute (set by build_server)
     config: ServerConfig = ServerConfig()
 
+    # Hide the stdlib BaseHTTP/Python version from the Server header.
+    # Default value would emit ``BaseHTTP/0.6 Python/3.14.2`` — a hint
+    # an attacker can use to map known CVEs to the exact runtime. The
+    # override-pair below replaces the auto-built string with a stable
+    # ``RCM-MC`` token plus suppresses the sys-version suffix.
+    server_version = "RCM-MC"
+    sys_version = ""
+
     # Silence default noisy access-log output; users can tail server output
     # if they need it. The CLI banner already tells them the server is up.
     # B162: concise access log to stderr. Default BaseHTTPRequestHandler

@@ -1314,6 +1314,42 @@ class APIEndpointSmoke(unittest.TestCase):
             f"{broken_public}",
         )
 
+    def test_server_header_does_not_leak_runtime_version(self) -> None:
+        """The Server response header must NOT echo the stdlib
+        BaseHTTP version or the Python version. Default
+        BaseHTTPRequestHandler emits ``BaseHTTP/0.6 Python/3.14.2``
+        — an attacker uses that to map known CVEs to the exact
+        runtime. Three sample endpoints span the dispatch surface:
+
+        * /healthz (anonymous liveness)
+        * /api/system/info (authenticated JSON)
+        * /home (authenticated HTML)
+        """
+        anon = urllib.request.build_opener(_NoFollow())
+        SAMPLES = [
+            (anon, "/healthz"),
+            (self.opener, "/api/system/info"),
+            (self.opener, "/home"),
+        ]
+        leaks: list[str] = []
+        for opener, path in SAMPLES:
+            try:
+                resp = opener.open(self.base + path, timeout=5)
+            except urllib.error.HTTPError as e:
+                resp = e
+            server_h = (resp.headers.get("Server") or "").lower()
+            for marker in ("basehttp", "python/", "python "):
+                if marker in server_h:
+                    leaks.append(
+                        f"{path}: Server={server_h!r} "
+                        f"contains {marker!r}"
+                    )
+                    break
+        self.assertEqual(
+            leaks, [],
+            f"Server header leaks runtime version: {leaks}",
+        )
+
     def test_error_pages_do_not_leak_stack_traces_or_paths(self) -> None:
         """4XX / 5XX response bodies must never leak Python stack
         trace text or absolute filesystem paths. Both reveal
