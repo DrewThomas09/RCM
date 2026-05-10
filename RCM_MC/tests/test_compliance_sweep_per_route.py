@@ -57,6 +57,28 @@ REPRESENTATIVE_ROUTES = [
     "/calibration",
     "/news",
     "/source",
+    # Workflow + analytics broadening (2026-05):
+    "/cohorts",
+    "/comparables",
+    "/compare",
+    "/dashboard",
+    "/benchmarks",
+    "/backtest",
+    "/covenant-headroom",
+    "/capital-pacing",
+    "/cms-data-browser",
+    "/cap-structure",
+    "/watchlist",
+    "/admin/audit-chain",
+    "/admin/data-sources",
+    "/board-governance",
+    "/capital-efficiency",
+    "/concentration-risk",
+    "/corpus-backtest",
+    "/corpus-coverage",
+    "/corpus-dashboard",
+    "/clinical-outcomes",
+    "/aco-economics",
 ]
 
 # Per-route minimum compliance scores. Each route is pinned at
@@ -99,6 +121,29 @@ ROUTE_MIN_SCORES: dict[str, float] = {
     "/home":                  1.0,
     "/library":               1.0,
     "/market-rates":          1.0,
+    # Workflow + analytics broadening (2026-05) — 100% routes:
+    "/cohorts":               1.0,
+    "/comparables":           1.0,
+    "/compare":               1.0,
+    "/benchmarks":            1.0,
+    "/backtest":              1.0,
+    "/watchlist":             1.0,
+    "/admin/audit-chain":     1.0,
+    "/concentration-risk":    1.0,
+    "/corpus-backtest":       1.0,
+    "/corpus-dashboard":      1.0,
+    # 93% routes (number-format-clean residual on prose-heavy pages):
+    "/dashboard":             0.93,
+    "/covenant-headroom":     0.93,
+    "/capital-pacing":        0.93,
+    "/cms-data-browser":      0.93,
+    "/cap-structure":         0.93,
+    "/admin/data-sources":    0.93,
+    "/board-governance":      0.93,
+    "/capital-efficiency":    0.93,
+    "/corpus-coverage":       0.93,
+    "/clinical-outcomes":     0.93,
+    "/aco-economics":         0.93,
 
     # 92% route — /news renders editorial copy with many embedded
     # press-release financial figures ("$8.2B Sale", "12% margin")
