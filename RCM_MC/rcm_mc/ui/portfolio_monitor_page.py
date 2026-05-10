@@ -12,7 +12,10 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_kpi_block, ck_panel,
+    ck_section_intro, ck_signal_badge,
+)
 from .brand import PALETTE
 
 
@@ -27,13 +30,14 @@ def _fm(val: float) -> str:
 
 
 def _sev_badge(sev: str) -> str:
-    colors = {"on_track": "var(--cad-pos)", "lagging": "var(--cad-warn)", "off_track": "var(--cad-neg)",
-              "SAFE": "var(--cad-pos)", "TIGHT": "var(--cad-warn)", "TRIPPED": "var(--cad-neg)"}
+    tones = {
+        "on_track": "positive", "SAFE": "positive",
+        "lagging": "warning", "TIGHT": "warning",
+        "off_track": "negative", "TRIPPED": "negative",
+    }
     labels = {"on_track": "On Track", "lagging": "Lagging", "off_track": "Off Track",
               "SAFE": "Safe", "TIGHT": "Tight", "TRIPPED": "Tripped"}
-    c = colors.get(sev, "var(--cad-text3)")
-    l = labels.get(sev, sev)
-    return f'<span style="background:{c};color:#fff;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:600;">{l}</span>'
+    return ck_signal_badge(labels.get(sev, sev), tone=tones.get(sev, "neutral"))
 
 
 def render_portfolio_monitor(store: Any) -> str:
@@ -51,8 +55,12 @@ def render_portfolio_monitor(store: Any) -> str:
 
     if not deals:
         return chartis_shell(
-            '<div class="cad-card"><p style="color:var(--cad-text3);">'
-            'No active deals in portfolio. Import deals to start monitoring.</p></div>',
+            ck_section_intro(
+                eyebrow="PORTFOLIO MONITOR",
+                headline="No active deals in portfolio.",
+                italic_word="No",
+                body="Import deals to start monitoring.",
+            ),
             "Portfolio Monitor", subtitle="No active deals",
         )
 
@@ -150,22 +158,26 @@ def render_portfolio_monitor(store: Any) -> str:
     red = sum(1 for d in deal_map.values() if d["latest_health"] and d["latest_health"]["band"] == "red")
     no_health = n_deals - green - amber - red
 
-    # ── KPIs ──
+    # ── Editorial intro + KPI strip ──
+    intro = ck_section_intro(
+        eyebrow="PORTFOLIO MONITOR",
+        headline="What needs the partner's attention this week.",
+        italic_word="attention",
+        body=(
+            f"{n_deals} active deals · {n_with_actuals} with quarterly "
+            f"actuals · {green} green / {amber} amber / {red} red · "
+            f"{n_alerts} open alerts."
+        ),
+    )
     kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(6,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_deals}</div>'
-        f'<div class="cad-kpi-label">Active Deals</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_with_actuals}</div>'
-        f'<div class="cad-kpi-label">With Actuals</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-pos);">{green}</div>'
-        f'<div class="cad-kpi-label">Green</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-warn);">{amber}</div>'
-        f'<div class="cad-kpi-label">Amber</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-neg);">{red}</div>'
-        f'<div class="cad-kpi-label">Red</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-neg);">{n_alerts}</div>'
-        f'<div class="cad-kpi-label">Open Alerts</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("Active Deals", f"{n_deals}")
+        + ck_kpi_block("With Actuals", f"{n_with_actuals}")
+        + ck_kpi_block("Green", f"{green}")
+        + ck_kpi_block("Amber", f"{amber}")
+        + ck_kpi_block("Red", f"{red}")
+        + ck_kpi_block("Open Alerts", f"{n_alerts}")
+        + '</div>'
     )
 
     # ── Active alerts ──
@@ -175,23 +187,18 @@ def render_portfolio_monitor(store: Any) -> str:
         for ar in alert_rows[:10]:
             did = ar[0]
             sev = ar[1]
-            sev_color = {"red": "var(--cad-neg)", "amber": "var(--cad-warn)"}.get(sev, "var(--cad-text3)")
+            sev_cls = {"red": "cad-neg", "amber": "cad-warn"}.get(sev, "")
             name = deal_map.get(did, {}).get("name", did)
             alert_items += (
-                f'<div style="display:flex;gap:10px;padding:8px 0;'
-                f'border-bottom:1px solid var(--cad-border);font-size:12.5px;">'
-                f'<span style="color:{sev_color};font-weight:700;width:50px;'
-                f'text-transform:uppercase;font-size:10px;">{_html.escape(sev)}</span>'
-                f'<a href="/deal/{_html.escape(did)}" '
-                f'style="color:var(--cad-link);text-decoration:none;width:120px;'
-                f'font-weight:500;">{_html.escape(name[:20])}</a>'
-                f'<span style="color:var(--cad-text2);flex:1;">{_html.escape(str(ar[3] or "")[:80])}</span>'
-                f'</div>'
+                '<div class="pm-alert-row">'
+                f'<span class="pm-alert-sev {sev_cls}">{_html.escape(sev)}</span>'
+                f'<a href="/deal/{_html.escape(did)}" class="ck-link pm-alert-name">'
+                f'<strong>{_html.escape(name[:20])}</strong></a>'
+                f'<span class="pm-alert-msg">{_html.escape(str(ar[3] or "")[:80])}</span>'
+                '</div>'
             )
-        alert_html = (
-            f'<div class="cad-card" style="border-left:3px solid var(--cad-neg);">'
-            f'<h2>Active Alerts ({n_alerts})</h2>'
-            f'{alert_items}</div>'
+        alert_html = ck_panel(
+            alert_items, title=f"Active Alerts ({n_alerts})",
         )
 
     # ── Deal monitoring table ──
@@ -204,10 +211,10 @@ def render_portfolio_monitor(store: Any) -> str:
         health = ddata["latest_health"]
         if health:
             h_score = health["score"]
-            h_color = {"green": "var(--cad-pos)", "amber": "var(--cad-warn)", "red": "var(--cad-neg)"}.get(health["band"], "var(--cad-text3)")
-            health_html = f'<span style="color:{h_color};font-weight:600;">{h_score}</span>'
+            h_cls = {"green": "cad-pos", "amber": "cad-warn", "red": "cad-neg"}.get(health["band"], "")
+            health_html = f'<span class="{h_cls}"><strong>{h_score}</strong></span>'
         else:
-            health_html = '<span style="color:var(--cad-text3);">—</span>'
+            health_html = '—'
 
         # Latest actual vs plan
         variance_html = "—"
@@ -220,8 +227,8 @@ def render_portfolio_monitor(store: Any) -> str:
             ebitda_plan = plan_d.get("ebitda", 0)
             if ebitda_plan and ebitda_plan > 0:
                 var_pct = (ebitda_actual - ebitda_plan) / ebitda_plan
-                var_color = "var(--cad-pos)" if var_pct >= -0.05 else ("var(--cad-warn)" if var_pct >= -0.15 else "var(--cad-neg)")
-                variance_html = f'<span style="color:{var_color};font-weight:600;">{var_pct:+.1%}</span>'
+                var_cls = "cad-pos" if var_pct >= -0.05 else ("cad-warn" if var_pct >= -0.15 else "cad-neg")
+                variance_html = f'<span class="{var_cls}"><strong>{var_pct:+.1%}</strong></span>'
                 if var_pct >= -0.05:
                     status_html = _sev_badge("on_track")
                 elif var_pct >= -0.15:
@@ -238,16 +245,15 @@ def render_portfolio_monitor(store: Any) -> str:
 
         # Alert count
         n_deal_alerts = len(ddata["alerts"])
-        alert_badge = ""
-        if n_deal_alerts > 0:
-            alert_badge = f'<span style="background:var(--cad-neg);color:#fff;padding:0 5px;border-radius:8px;font-size:10px;">{n_deal_alerts}</span>'
+        alert_badge = (
+            f'<span class="cad-badge cad-badge-red">{n_deal_alerts}</span>'
+            if n_deal_alerts > 0 else ""
+        )
 
         deal_rows += (
             f'<tr>'
-            f'<td><a href="/deal/{_html.escape(did)}" '
-            f'style="color:var(--cad-link);text-decoration:none;font-weight:500;">'
-            f'{name}</a></td>'
-            f'<td style="font-size:11px;">{stage}</td>'
+            f'<td><a href="/deal/{_html.escape(did)}" class="ck-link"><strong>{name}</strong></a></td>'
+            f'<td>{stage}</td>'
             f'<td class="num">{health_html}</td>'
             f'<td class="num">{variance_html}</td>'
             f'<td>{status_html}</td>'
@@ -256,16 +262,15 @@ def render_portfolio_monitor(store: Any) -> str:
             f'</tr>'
         )
 
-    deal_table = (
-        f'<div class="cad-card">'
-        f'<h2>Deal Status Board</h2>'
-        f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:10px;">'
-        f'Real-time status for every active deal. Variance = latest quarterly EBITDA actual vs plan. '
-        f'Health score is composite 0-100 (green &ge;80, amber 50-79, red &lt;50).</p>'
-        f'<table class="cad-table"><thead><tr>'
-        f'<th>Deal</th><th>Stage</th><th>Health</th><th>EBITDA Var</th>'
-        f'<th>Status</th><th>Quarters</th><th>Alerts</th>'
-        f'</tr></thead><tbody>{deal_rows}</tbody></table></div>'
+    deal_table = ck_panel(
+        '<p class="ck-section-body">'
+        'Real-time status for every active deal. Variance = latest quarterly EBITDA actual vs plan. '
+        'Health score is composite 0-100 (green ≥80, amber 50-79, red &lt;50).</p>'
+        '<table class="cad-table"><thead><tr>'
+        '<th>Deal</th><th>Stage</th><th>Health</th><th>EBITDA Var</th>'
+        '<th>Status</th><th>Quarters</th><th>Alerts</th>'
+        f'</tr></thead><tbody>{deal_rows}</tbody></table>',
+        title="Deal Status Board",
     )
 
     # ── Predicted vs Actual by Metric ──
@@ -289,34 +294,33 @@ def render_portfolio_monitor(store: Any) -> str:
         pct_off = float(np.mean([1 if abs(v) >= 0.15 else 0 for v in variances]))
         n = len(variances)
 
-        avg_color = "var(--cad-pos)" if abs(avg_var) < 0.05 else ("var(--cad-warn)" if abs(avg_var) < 0.15 else "var(--cad-neg)")
+        avg_cls = "cad-pos" if abs(avg_var) < 0.05 else ("cad-warn" if abs(avg_var) < 0.15 else "cad-neg")
         labels = {"ebitda": "EBITDA", "npsr": "NPSR", "idr_blended": "Denial Rate",
                   "fwr_blended": "Write-Off Rate", "dar_clean_days": "AR Days"}
         label = labels.get(metric, metric.replace("_", " ").title())
 
         metric_rows += (
             f'<tr>'
-            f'<td style="font-weight:500;">{_html.escape(label)}</td>'
-            f'<td class="num" style="color:{avg_color};font-weight:600;">{avg_var:+.1%}</td>'
+            f'<td><strong>{_html.escape(label)}</strong></td>'
+            f'<td class="num {avg_cls}"><strong>{avg_var:+.1%}</strong></td>'
             f'<td class="num">{med_var:+.1%}</td>'
-            f'<td class="num" style="color:var(--cad-pos);">{pct_on_track:.0%}</td>'
-            f'<td class="num" style="color:var(--cad-neg);">{pct_off:.0%}</td>'
+            f'<td class="num cad-pos">{pct_on_track:.0%}</td>'
+            f'<td class="num cad-neg">{pct_off:.0%}</td>'
             f'<td class="num">{n}</td>'
             f'</tr>'
         )
 
     pred_vs_actual = ""
     if metric_rows:
-        pred_vs_actual = (
-            f'<div class="cad-card">'
-            f'<h2>Plan vs Actual by Metric (Cross-Portfolio)</h2>'
-            f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:10px;">'
-            f'Aggregated across all deals with quarterly actuals. Shows systematic over/under-performance. '
-            f'Positive variance = beating plan.</p>'
-            f'<table class="cad-table"><thead><tr>'
-            f'<th>Metric</th><th>Mean Var</th><th>Median Var</th><th>On Track</th>'
-            f'<th>Off Track</th><th>Obs</th>'
-            f'</tr></thead><tbody>{metric_rows}</tbody></table></div>'
+        pred_vs_actual = ck_panel(
+            '<p class="ck-section-body">'
+            'Aggregated across all deals with quarterly actuals. Shows systematic over/under-performance. '
+            'Positive variance = beating plan.</p>'
+            '<table class="cad-table"><thead><tr>'
+            '<th>Metric</th><th>Mean Var</th><th>Median Var</th><th>On Track</th>'
+            '<th>Off Track</th><th>Obs</th>'
+            f'</tr></thead><tbody>{metric_rows}</tbody></table>',
+            title="Plan vs Actual by Metric (Cross-Portfolio)",
         )
 
     # ── Portfolio health distribution bar ──
@@ -329,21 +333,20 @@ def render_portfolio_monitor(store: Any) -> str:
     else:
         g_pct = a_pct = r_pct = n_pct = 0
 
-    health_bar = (
-        f'<div class="cad-card">'
-        f'<h2>Portfolio Health Distribution</h2>'
-        f'<div style="display:flex;height:28px;border-radius:4px;overflow:hidden;margin-bottom:8px;">'
-        f'<div style="width:{g_pct:.0f}%;background:var(--cad-pos);" title="Green: {green}"></div>'
-        f'<div style="width:{a_pct:.0f}%;background:var(--cad-warn);" title="Amber: {amber}"></div>'
-        f'<div style="width:{r_pct:.0f}%;background:var(--cad-neg);" title="Red: {red}"></div>'
-        f'<div style="width:{n_pct:.0f}%;background:var(--cad-border);" title="Unscored: {no_health}"></div>'
-        f'</div>'
-        f'<div style="display:flex;gap:16px;font-size:12px;">'
-        f'<span style="color:var(--cad-pos);">&#9632; Green: {green}</span>'
-        f'<span style="color:var(--cad-warn);">&#9632; Amber: {amber}</span>'
-        f'<span style="color:var(--cad-neg);">&#9632; Red: {red}</span>'
-        f'<span style="color:var(--cad-text3);">&#9632; Unscored: {no_health}</span>'
-        f'</div></div>'
+    health_bar = ck_panel(
+        '<div class="pm-health-bar">'
+        f'<div class="pm-health-pos" style="width:{g_pct:.0f}%;" title="Green: {green}"></div>'
+        f'<div class="pm-health-warn" style="width:{a_pct:.0f}%;" title="Amber: {amber}"></div>'
+        f'<div class="pm-health-neg" style="width:{r_pct:.0f}%;" title="Red: {red}"></div>'
+        f'<div class="pm-health-none" style="width:{n_pct:.0f}%;" title="Unscored: {no_health}"></div>'
+        '</div>'
+        '<p class="ck-section-body">'
+        f'<span class="cad-pos">■ Green: {green}</span> &nbsp; '
+        f'<span class="cad-warn">■ Amber: {amber}</span> &nbsp; '
+        f'<span class="cad-neg">■ Red: {red}</span> &nbsp; '
+        f'<span>■ Unscored: {no_health}</span>'
+        '</p>',
+        title="Portfolio Health Distribution",
     )
 
     # ── Early warning signals ──
@@ -370,37 +373,50 @@ def render_portfolio_monitor(store: Any) -> str:
     if warnings:
         warning_items = ""
         for sev, name, msg in sorted(warnings, key=lambda w: (0 if w[0] == "red" else 1)):
-            sev_color = "var(--cad-neg)" if sev == "red" else "var(--cad-warn)"
+            sev_cls = "cad-neg" if sev == "red" else "cad-warn"
             warning_items += (
-                f'<div style="display:flex;gap:8px;padding:6px 0;'
-                f'border-bottom:1px solid var(--cad-border);font-size:12px;">'
-                f'<span style="color:{sev_color};font-weight:700;width:14px;">&#9679;</span>'
-                f'<span style="font-weight:500;width:120px;">{_html.escape(name[:20])}</span>'
-                f'<span style="color:var(--cad-text2);">{_html.escape(msg)}</span>'
-                f'</div>'
+                '<div class="pm-warn-row">'
+                f'<span class="pm-warn-sev {sev_cls}">●</span>'
+                f'<span class="pm-warn-name"><strong>{_html.escape(name[:20])}</strong></span>'
+                f'<span>{_html.escape(msg)}</span>'
+                '</div>'
             )
-        warning_html = (
-            f'<div class="cad-card" style="border-left:3px solid var(--cad-warn);">'
-            f'<h2>Early Warning Signals ({len(warnings)})</h2>'
-            f'{warning_items}</div>'
+        warning_html = ck_panel(
+            warning_items, title=f"Early Warning Signals ({len(warnings)})",
         )
 
     # ── Nav ──
-    nav = (
-        f'<div class="cad-card" style="display:flex;gap:8px;flex-wrap:wrap;">'
-        f'<a href="/portfolio" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Portfolio Overview</a>'
-        f'<a href="/alerts" class="cad-btn" style="text-decoration:none;">Alerts</a>'
-        f'<a href="/model-validation" class="cad-btn" '
-        f'style="text-decoration:none;">Model Validation</a>'
-        f'<a href="/predictive-screener" class="cad-btn" '
-        f'style="text-decoration:none;">Deal Screener</a>'
-        f'<a href="/ml-insights" class="cad-btn" '
-        f'style="text-decoration:none;">ML Insights</a>'
-        f'</div>'
+    nav = ck_panel(
+        '<p class="ck-section-body">'
+        '<a href="/portfolio" class="cad-btn cad-btn-primary">Portfolio Overview</a> '
+        '<a href="/alerts" class="cad-btn">Alerts</a> '
+        '<a href="/model-validation" class="cad-btn">Model Validation</a> '
+        '<a href="/predictive-screener" class="cad-btn">Deal Screener</a> '
+        '<a href="/ml-insights" class="cad-btn">ML Insights</a>'
+        '</p>',
+        title="Cross-links",
     )
 
-    body = f'{kpis}{alert_html}{warning_html}{health_bar}{deal_table}{pred_vs_actual}{nav}'
+    pm_styles = """
+<style>
+.pm-alert-row{display:flex;gap:10px;padding:8px 0;
+border-bottom:1px solid var(--cad-border);font-size:12.5px;}
+.pm-alert-sev{font-weight:700;width:50px;text-transform:uppercase;font-size:10px;}
+.pm-alert-name{width:120px;}
+.pm-alert-msg{flex:1;}
+.pm-warn-row{display:flex;gap:8px;padding:6px 0;
+border-bottom:1px solid var(--cad-border);font-size:12px;}
+.pm-warn-sev{font-weight:700;width:14px;}
+.pm-warn-name{width:120px;}
+.pm-health-bar{display:flex;height:28px;border-radius:4px;
+overflow:hidden;margin-bottom:8px;}
+.pm-health-pos{background:var(--cad-pos);}
+.pm-health-warn{background:var(--cad-warn);}
+.pm-health-neg{background:var(--cad-neg);}
+.pm-health-none{background:var(--cad-border);}
+</style>
+"""
+    body = f'{pm_styles}{intro}{kpis}{alert_html}{warning_html}{health_bar}{deal_table}{pred_vs_actual}{nav}'
 
     return chartis_shell(
         body, "Portfolio Monitor",
