@@ -19,7 +19,10 @@ from ..diligence.denial_prediction import (
     DenialPredictionReport, analyze_ccd,
 )
 from ..diligence.denial_prediction.model import CalibrationBucket
-from ._chartis_kit import P, chartis_shell, ck_page_title
+from ._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_page_title, ck_panel,
+    ck_section_intro,
+)
 from .power_ui import provenance, sortable_table
 
 
@@ -287,83 +290,64 @@ def _hero(report: DenialPredictionReport) -> str:
             f"— audit + appeal recovery typically 60–80% of that."
         )
 
-    return (
-        f'<div style="padding:24px 0 16px 0;border-bottom:1px solid '
-        f'{P["border"]};margin-bottom:24px;">'
-        f'<div style="font-size:11px;color:{P["text_faint"]};letter-spacing:1.5px;'
-        f'text-transform:uppercase;margin-bottom:6px;font-weight:600;">'
-        f'Denial Prediction</div>'
-        f'<div style="font-size:22px;color:{P["text"]};font-weight:600;'
-        f'margin-bottom:4px;">'
-        f'{html.escape(report.provider_id or "Provider")}</div>'
-        f'<div style="font-size:11px;color:{P["text_faint"]};">'
-        f'{report.n_claims:,} claims · {report.n_train:,} train · '
-        f'{report.n_test:,} test</div>'
-        f'<div style="background:{P["panel_alt"]};border-left:3px solid '
-        f'{P["accent"]};padding:10px 14px;margin-top:12px;'
-        f'font-size:12px;color:{P["text_dim"]};line-height:1.55;'
-        f'max-width:760px;">'
-        f'<strong style="color:{P["text"]};">What this shows: </strong>'
-        f'{html.escape(summary)}</div>'
-        f'<div style="display:grid;grid-template-columns:repeat(4,1fr);'
-        f'gap:20px;margin-top:20px;">'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1px;text-transform:uppercase;">Baseline denial rate</div>'
-        f'<div style="font-size:26px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-weight:700;color:{base_color};">'
-        f'{report.baseline_denial_rate*100:.1f}%</div>'
-        f'<div style="font-size:10px;color:{base_color};margin-top:2px;">'
-        f'{html.escape(base_label)}</div>'
-        f'<div style="font-size:9px;color:{P["text_faint"]};margin-top:1px;">'
-        f'vs HFMA peer median {PEER_DENIAL_MEDIAN*100:.0f}%</div></div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1px;text-transform:uppercase;">Model AUC</div>'
-        f'<div style="font-size:26px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-weight:700;color:{auc_color};">'
-        f'{cal.auc_rough:.3f}</div>'
-        f'<div style="font-size:10px;color:{auc_color};margin-top:2px;">'
-        f'{html.escape(auc_label)}</div>'
-        f'<div style="font-size:9px;color:{P["text_faint"]};margin-top:1px;">'
-        f'0.5 = random, 1.0 = perfect, &gt;0.7 = usable</div></div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1px;text-transform:uppercase;">Systematic misses</div>'
-        f'<div style="font-size:26px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-weight:700;color:{P["warning"] if report.systematic_miss_count > 0 else P["text_faint"]};">'
-        f'{report.systematic_miss_count}</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};margin-top:2px;">'
-        f'Claims flagged as denials but not denied</div></div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1px;text-transform:uppercase;">Recoverable (charge)</div>'
-        f'<div style="font-size:22px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-weight:700;color:{P["positive"]};">{miss_label}</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};margin-top:2px;">'
-        f'hover for source · 60–80% realistic recovery</div></div>'
-        f'</div></div>'
+    # Editorial intro + KPI strip. The bespoke 4-tile grid is replaced
+    # by ck_kpi_block calls so the metrics inherit shell typography
+    # (Source Serif label, JetBrains numerics) and the responsive
+    # tile layout. Tone-bearing labels go into the ``sub`` slot;
+    # secondary peer-comparison strings get appended via
+    # newline-separated text since ck_kpi_block sub is single-line.
+    intro = ck_section_intro(
+        eyebrow="Denial Prediction",
+        headline=(
+            f"{report.provider_id or 'Provider'} · "
+            f"{report.n_claims:,} claims · "
+            f"{report.n_train:,} train · {report.n_test:,} test"
+        ),
+        body=summary,
+        italic_word="shows",
     )
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Baseline denial rate",
+            f"{report.baseline_denial_rate*100:.1f}%",
+            sub=f"{base_label} · vs HFMA peer median {PEER_DENIAL_MEDIAN*100:.0f}%",
+        )
+        + ck_kpi_block(
+            "Model AUC",
+            f"{cal.auc_rough:.3f}",
+            sub=f"{auc_label} · 0.5 = random, 1.0 = perfect, >0.7 usable",
+        )
+        + ck_kpi_block(
+            "Systematic misses",
+            f"{report.systematic_miss_count}",
+            sub="Claims flagged as denials but not denied",
+        )
+        + ck_kpi_block(
+            "Recoverable (charge)",
+            miss_label,
+            sub="60–80% realistic recovery · hover for source",
+        )
+        + "</div>"
+    )
+    return intro + kpis
 
 
 def _calibration_block(report: DenialPredictionReport) -> str:
     c = report.calibration
-    return (
-        f'<div style="background:{P["panel"]};border:1px solid '
-        f'{P["border"]};border-radius:4px;padding:14px 20px;'
-        f'margin-bottom:16px;">'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;font-weight:700;'
-        f'margin-bottom:8px;">Calibration</div>'
-        f'<div style="display:flex;gap:24px;align-items:baseline;'
-        f'margin-bottom:12px;font-size:12px;color:{P["text_dim"]};">'
-        f'<div>Brier score: <strong style="color:{P["text"]};">'
-        f'{c.brier_score:.4f}</strong></div>'
-        f'<div>Log loss: <strong style="color:{P["text"]};">'
-        f'{c.log_loss:.4f}</strong></div>'
-        f'<div>Accuracy: <strong style="color:{P["text"]};">'
-        f'{c.accuracy*100:.1f}%</strong></div>'
-        f'<div>AUC (rough): <strong style="color:{P["text"]};">'
-        f'{c.auc_rough:.3f}</strong></div>'
-        f'</div>'
-        f'{_calibration_chart(c.buckets)}'
-        f'</div>'
+    # ck_kpi_strip for the four scalar metrics; the chart stays as
+    # rendered SVG/HTML (calibration buckets are visual, not tabular).
+    metrics = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("Brier score", f"{c.brier_score:.4f}")
+        + ck_kpi_block("Log loss", f"{c.log_loss:.4f}")
+        + ck_kpi_block("Accuracy", f"{c.accuracy*100:.1f}%")
+        + ck_kpi_block("AUC (rough)", f"{c.auc_rough:.3f}")
+        + "</div>"
+    )
+    return ck_panel(
+        f"{metrics}{_calibration_chart(c.buckets)}",
+        title="Calibration",
     )
 
 
@@ -371,58 +355,41 @@ def _bridge_card(report: DenialPredictionReport) -> str:
     b = report.bridge_input
     if b is None:
         return ""
-    conf_color = {
-        "HIGH": P["positive"],
-        "MEDIUM": P["warning"],
-        "LOW": P["negative"],
-    }.get(b.confidence, P["text_dim"])
     targets_html = "".join(
         f'<li><strong>{html.escape(t["feature"])}</strong> = '
-        f'<span class="mono" style="color:{P["text"]};">'
-        f'{html.escape(t["value"])}</span> · '
+        f'<span class="ck-cell-mono">{html.escape(t["value"])}</span> · '
         f'lift {t["lift"]:.2f}x · '
         f'{t["denial_rate"]*100:.0f}% denial rate in matching claims'
         f'</li>'
         for t in b.top_intervention_targets
     )
-    return (
-        f'<div style="margin-top:16px;background:{P["panel"]};'
-        f'border:1px solid {P["border"]};border-radius:4px;'
-        f'padding:16px 20px;position:relative;overflow:hidden;">'
-        f'<div style="position:absolute;top:0;left:0;right:0;height:2px;'
-        f'background:linear-gradient(90deg,{P["positive"]},{P["accent"]});">'
-        f'</div>'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;font-weight:700;'
-        f'margin-top:4px;">EBITDA Bridge · Denial Reduction Lever</div>'
-        f'<div style="font-size:16px;color:{P["text"]};font-weight:600;'
-        f'margin-top:2px;">Data-driven target (vs industry aggregate)</div>'
-        f'<div style="display:flex;gap:24px;align-items:baseline;'
-        f'margin-top:14px;">'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:.5px;text-transform:uppercase;">Recoverable revenue</div>'
-        f'<div style="font-size:22px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-weight:700;color:{P["positive"]};">'
-        f'${b.recoverable_revenue_usd:,.0f}</div></div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:.5px;text-transform:uppercase;">Annualised</div>'
-        f'<div style="font-size:16px;color:{P["text"]};">'
-        f'${b.annualised_usd:,.0f}</div></div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:.5px;text-transform:uppercase;">Claims flagged</div>'
-        f'<div style="font-size:16px;color:{P["text"]};">'
-        f'{b.claim_count_flagged}</div></div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:.5px;text-transform:uppercase;">Confidence</div>'
-        f'<div style="font-size:16px;color:{conf_color};font-weight:600;">'
-        f'{html.escape(b.confidence)}</div></div>'
-        f'</div>'
-        f'<div style="margin-top:16px;font-size:11px;color:{P["text_dim"]};">'
-        f'Top intervention targets:</div>'
-        f'<ul style="margin:4px 0 0 20px;font-size:11px;color:{P["text_dim"]};'
-        f'line-height:1.7;">{targets_html}</ul>'
-        f'</div>'
+    metrics = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Recoverable revenue",
+            f"${b.recoverable_revenue_usd:,.0f}",
+        )
+        + ck_kpi_block(
+            "Annualised",
+            f"${b.annualised_usd:,.0f}",
+        )
+        + ck_kpi_block(
+            "Claims flagged",
+            f"{b.claim_count_flagged}",
+        )
+        + ck_kpi_block(
+            "Confidence",
+            html.escape(b.confidence),
+        )
+        + "</div>"
     )
+    body = (
+        f'{metrics}'
+        f'<p class="ck-section-body" style="margin-top:16px;">'
+        f'Top intervention targets:</p>'
+        f'<ul class="ck-list">{targets_html}</ul>'
+    )
+    return ck_panel(body, title="EBITDA Bridge · Denial Reduction Lever")
 
 
 def render_denial_prediction_page(
