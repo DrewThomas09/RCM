@@ -1314,6 +1314,71 @@ class APIEndpointSmoke(unittest.TestCase):
             f"{broken_public}",
         )
 
+    def test_error_pages_do_not_leak_stack_traces_or_paths(self) -> None:
+        """4XX / 5XX response bodies must never leak Python stack
+        trace text or absolute filesystem paths. Both reveal
+        internal implementation:
+
+        * Stack traces tell an attacker exactly where validation
+          fires, which lines guard which checks, and what
+          libraries are imported.
+        * Absolute paths (``/Users/...``, ``site-packages``,
+          ``/Library/...``) leak deployment topology — the
+          install root, Python version, virtualenv structure.
+
+        The existing exception-leakage guard catches 200-with-
+        error-body. This one catches the symmetric case: an
+        explicit 4XX/5XX whose body still echoes the trace.
+        """
+        SCENARIOS = [
+            "/api/portfolio/regression",
+            "/api/jobs/foo",
+            "/api/deals/this-id-does-not-exist",
+            "/api/digest?since=junk",
+            "/non-existent-route",
+            "/api/non-existent-api",
+            "/deal/non-existent-deal-id",
+        ]
+        TRACE_MARKERS = (
+            "Traceback (most recent",
+            "cannot access local",
+            "TypeError: ",
+            "AttributeError: ",
+            "KeyError: ",
+            "NameError: ",
+            "UnboundLocalError",
+            ", in ",  # "line N, in func"
+        )
+        PATH_MARKERS = (
+            "/Users/",
+            "site-packages",
+            "/Library/",
+        )
+        leaks: list[str] = []
+        for path in SCENARIOS:
+            try:
+                resp = self.opener.open(self.base + path, timeout=5)
+                body = resp.read().decode("utf-8", errors="replace")
+            except urllib.error.HTTPError as e:
+                body = e.read().decode("utf-8", errors="replace")
+            for marker in TRACE_MARKERS:
+                if marker in body:
+                    leaks.append(
+                        f"{path}: stack-trace marker {marker!r} "
+                        f"in body"
+                    )
+                    break
+            for marker in PATH_MARKERS:
+                if marker in body:
+                    leaks.append(
+                        f"{path}: path marker {marker!r} in body"
+                    )
+                    break
+        self.assertEqual(
+            leaks, [],
+            f"Error responses leaking trace/path: {leaks}",
+        )
+
     def test_4xx_responses_carry_error_envelope(self) -> None:
         """Every documented 4XX scenario must return a JSON body
         with a top-level ``error`` string field. Partners writing
