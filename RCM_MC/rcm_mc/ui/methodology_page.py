@@ -9,7 +9,8 @@ import html
 from typing import Any
 
 from ._chartis_kit import (
-    chartis_shell, ck_panel, ck_section_header, ck_signal_badge,
+    chartis_shell, ck_kpi_block, ck_panel, ck_section_header,
+    ck_signal_badge,
 )
 from .brand import PALETTE
 
@@ -63,47 +64,37 @@ def render_methodology() -> str:
         ("ONT", "Metric Ontology", "toc-ontology"),
     ]
     toc_html = "".join(
-        f'<a href="#{aid}" class="cad-btn" style="text-decoration:none;">'
-        f'<span class="cad-section-code" style="margin-right:6px;">{code}</span>'
-        f'{html.escape(name)}</a>'
+        f'<a href="#{aid}" class="ck-link">'
+        f'{ck_signal_badge(code, tone="neutral")} {html.escape(name)}</a>'
         for code, name, aid in toc_items
     )
-    toc = (
-        f'<div class="cad-card" style="padding:10px 14px;">'
-        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'
-        f'<h2 style="margin:0;">Contents</h2>'
-        f'<span class="cad-section-code">TOC</span></div>'
-        f'<div style="display:flex;gap:6px;flex-wrap:wrap;">{toc_html}</div></div>'
+    toc = ck_panel(
+        f'<div class="ck-toc-list">{toc_html}</div>',
+        title="Contents",
     )
 
-    # ── Intro ──
-    intro = _section("INTRO", "Overview", (
-        f'<p style="color:{PALETTE["text_secondary"]};line-height:1.7;font-size:13px;">'
-        f'SeekingChartis combines public hospital data with proprietary analytical models '
-        f'to generate diligence-grade intelligence for healthcare PE. '
-        f'<strong>Every number on this platform traces back to a specific data source and '
-        f'calculation.</strong> This page explains each one — you should be able to audit any '
-        f'output end-to-end.</p>'
-        f'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:14px;'
-        f'border:1px solid {PALETTE["border"]};">'
-        f'<div style="padding:10px 14px;border-right:1px solid {PALETTE["border"]};">'
-        f'<div class="cad-kpi-value" style="font-size:16px;">6,123</div>'
-        f'<div class="cad-kpi-label">Hospitals Tracked</div></div>'
-        f'<div style="padding:10px 14px;border-right:1px solid {PALETTE["border"]};">'
-        f'<div class="cad-kpi-value" style="font-size:16px;">17</div>'
-        f'<div class="cad-kpi-label">Analytical Models</div></div>'
-        f'<div style="padding:10px 14px;border-right:1px solid {PALETTE["border"]};">'
-        f'<div class="cad-kpi-value" style="font-size:16px;">3,157</div>'
-        f'<div class="cad-kpi-label">Passing Tests</div></div>'
-        f'<div style="padding:10px 14px;">'
-        f'<div class="cad-kpi-value" style="font-size:16px;">52</div>'
-        f'<div class="cad-kpi-label">API Endpoints</div></div>'
-        f'</div>'
-    ), anchor="toc-intro")
+    # ── Intro ── intro stats now use ck_kpi_strip; the prose body
+    # composes via ck_section_intro for editorial typography.
+    intro_body = (
+        '<p class="ck-section-body">'
+        'SeekingChartis combines public hospital data with proprietary '
+        'analytical models to generate diligence-grade intelligence for '
+        'healthcare PE. <strong>Every number on this platform traces '
+        'back to a specific data source and calculation.</strong> '
+        'This page explains each one — you should be able to audit any '
+        'output end-to-end.</p>'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("Hospitals Tracked", "6,123")
+        + ck_kpi_block("Analytical Models", "17")
+        + ck_kpi_block("Passing Tests", "3,157")
+        + ck_kpi_block("API Endpoints", "52")
+        + '</div>'
+    )
+    intro = _section("INTRO", "Overview", intro_body, anchor="toc-intro")
 
     # ── Data sources ──
     data_sources = _section("DAT", "Data Sources", (
-        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
+        '<div class="ck-card-grid">'
         + _source_card(
             "HCRIS",
             "Hospital Cost Reports",
@@ -197,7 +188,7 @@ def render_methodology() -> str:
 
     # ── Models ──
     models = _section("MDL", "Financial Models", (
-        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
+        '<div class="ck-card-grid">'
         + _model_card(
             "DCF", "Discounted Cash Flow",
             "5-year projection of free cash flow, discounted at WACC. Inputs: revenue base, "
