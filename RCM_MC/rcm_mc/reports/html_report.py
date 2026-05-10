@@ -741,7 +741,7 @@ def generate_html_report(
         <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#64748b;margin-right:4px;vertical-align:middle;"></span>Assessment and Quick Wins</span>
         <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#0891b2;margin-right:4px;vertical-align:middle;"></span>Process Redesign</span>
         <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#059669;margin-right:4px;vertical-align:middle;"></span>Technology and Training</span>
-        <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#10b981;margin-right:4px;vertical-align:middle;"></span>Maturation</span>
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--theme-positive,#10b981);margin-right:4px;vertical-align:middle;"></span>Maturation</span>
       </div>
     </div>""")
 

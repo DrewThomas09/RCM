@@ -420,7 +420,7 @@ def render_search_bar(*, inject_css: bool = True) -> str:
         'box-sizing:border-box;font-family:system-ui;}'
         '#global-search-input::placeholder{color:#6b7280;}'
         '#global-search-input:focus{outline:none;'
-        'border-color:#60a5fa;}'
+        'border-color:var(--theme-accent,#60a5fa);}'
         '#global-search-dropdown{display:none;'
         'position:absolute;top:calc(100% + 4px);'
         'left:0;right:0;background:#0f172a;'

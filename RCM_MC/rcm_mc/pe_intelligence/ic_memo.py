@@ -328,7 +328,7 @@ def _rec_color_html(rec: str) -> str:
         "PASS": "#EF4444",
         "PROCEED_WITH_CAVEATS": "#F59E0B",
         "PROCEED": "#10B981",
-        "STRONG_PROCEED": "#1F4E78",
+        "STRONG_PROCEED": "var(--theme-accent,#1F4E78)",
     }.get(rec, "inherit")
 
 

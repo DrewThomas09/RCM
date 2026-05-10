@@ -127,7 +127,7 @@ details.pv-details > summary::-webkit-details-marker{
   font-variant-numeric:tabular-nums;}
 .pv-upstream{margin-top:10px;padding-top:8px;
   border-top:1px solid #374151;}
-.pv-upstream-label{font-size:10px;color:#60a5fa;
+.pv-upstream-label{font-size:10px;color:var(--theme-accent,#60a5fa);
   text-transform:uppercase;letter-spacing:0.06em;
   margin-bottom:4px;}
 .pv-upstream li{font-size:11px;color:#9ca3af;

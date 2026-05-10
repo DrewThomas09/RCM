@@ -390,7 +390,7 @@ _TT_CSS = """
 .metric-tt-card .tt-section{margin-top:8px;}
 .metric-tt-card .tt-section-label{font-size:10px;
   text-transform:uppercase;letter-spacing:0.06em;
-  color:#60a5fa;font-weight:600;margin-bottom:2px;}
+  color:var(--theme-accent,#60a5fa);font-weight:600;margin-bottom:2px;}
 .metric-tt-card .tt-range{display:block;margin-top:6px;
   padding-top:6px;border-top:1px solid #374151;
   color:#9ca3af;font-size:11px;}

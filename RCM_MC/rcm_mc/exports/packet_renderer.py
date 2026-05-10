@@ -1240,7 +1240,7 @@ h1 { color: #1f4e78; margin: 0 0 4px 0; }
                   align-items: baseline; margin-bottom: 6px; }
 .lp-deal-name { font-weight: 600; font-size: 15px; }
 .lp-opportunity { font-family: "JetBrains Mono", monospace;
-                   color: #10b981; font-weight: 600; }
+                   color: var(--theme-positive,#10b981); font-weight: 600; }
 .lp-badge { display: inline-block; padding: 1px 6px; border-radius: 3px;
             font-size: 10px; font-weight: 700; }
 .lp-badge-critical { background: #fee2e2; color: #991b1b; }

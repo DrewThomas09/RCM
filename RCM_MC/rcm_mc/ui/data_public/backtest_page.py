@@ -593,9 +593,9 @@ def _moic_color(v: Optional[float]) -> str:
     if v is None:
         return "var(--ck-text-faint)"
     if v < 1.0:
-        return "var(--theme-negative,var(--theme-negative,#ef4444))"
+        return "var(--theme-negative,var(--theme-negative,var(--theme-negative,#ef4444)))"
     if v >= 2.5:
-        return "var(--theme-positive,var(--theme-positive,#22c55e))"
+        return "var(--theme-positive,var(--theme-positive,var(--theme-positive,#22c55e)))"
     return "#e2e8f0"
 
 
@@ -614,7 +614,7 @@ def _fmt_pct(v: Optional[float]) -> str:
 def _error_badge(v: Optional[float]) -> str:
     if v is None:
         return '<span style="color:var(--ck-text-faint)">—</span>'
-    color = "var(--theme-positive,var(--theme-positive,#22c55e))" if abs(v) < 0.3 else ("var(--theme-warning,var(--theme-warning,#f59e0b))" if abs(v) < 0.7 else "var(--theme-negative,var(--theme-negative,#ef4444))")
+    color = "var(--theme-positive,var(--theme-positive,var(--theme-positive,#22c55e)))" if abs(v) < 0.3 else ("var(--theme-warning,var(--theme-warning,var(--theme-warning,#f59e0b)))" if abs(v) < 0.7 else "var(--theme-negative,var(--theme-negative,var(--theme-negative,#ef4444)))")
     sign = "+" if v > 0 else ""
     return (
         f'<span style="font-family:var(--ck-mono);color:{color};font-variant-numeric:tabular-nums">'
@@ -625,7 +625,7 @@ def _error_badge(v: Optional[float]) -> str:
 def _r2_badge(r2: Optional[float]) -> str:
     if r2 is None:
         return "—"
-    color = "var(--theme-positive,var(--theme-positive,#22c55e))" if r2 >= 0.5 else ("var(--theme-warning,var(--theme-warning,#f59e0b))" if r2 >= 0.25 else "var(--theme-negative,var(--theme-negative,#ef4444))")
+    color = "var(--theme-positive,var(--theme-positive,var(--theme-positive,#22c55e)))" if r2 >= 0.5 else ("var(--theme-warning,var(--theme-warning,var(--theme-warning,#f59e0b)))" if r2 >= 0.25 else "var(--theme-negative,var(--theme-negative,var(--theme-negative,#ef4444)))")
     return (
         f'<span style="font-family:var(--ck-mono);color:{color};font-size:13px;font-weight:600">'
         f'{r2:.3f}</span>'
@@ -654,7 +654,7 @@ def _kpi_bar(stats: Dict[str, Any]) -> str:
 
 
 def _calibration_panel(stats: Dict[str, Any]) -> str:
-    mae_color = "var(--theme-positive,var(--theme-positive,#22c55e))" if (stats["mae"] or 99) < 0.5 else ("var(--theme-warning,var(--theme-warning,#f59e0b))" if (stats["mae"] or 99) < 1.0 else "var(--theme-negative,var(--theme-negative,#ef4444))")
+    mae_color = "var(--theme-positive,var(--theme-positive,var(--theme-positive,#22c55e)))" if (stats["mae"] or 99) < 0.5 else ("var(--theme-warning,var(--theme-warning,var(--theme-warning,#f59e0b)))" if (stats["mae"] or 99) < 1.0 else "var(--theme-negative,var(--theme-negative,var(--theme-negative,#ef4444)))")
     rows_html = [
         f'<tr><td>Mean Absolute Error (MAE)</td><td class="mono" style="color:{mae_color}">{stats["mae"]:.3f}x</td></tr>',
         f'<tr style="background:#0f172a"><td>RMSE</td><td class="mono">{stats["rmse"]:.3f}x</td></tr>',
@@ -703,7 +703,7 @@ def _scatter_panel(
 ) -> str:
     svg_entry = _scatter_svg(
         pts_entry, "Entry EV/EBITDA (×)", "Realized MOIC",
-        x_lo=3.0, x_hi=22.0, y_lo=0.0, y_hi=6.5, color="var(--theme-accent,var(--theme-accent,#3b82f6))",
+        x_lo=3.0, x_hi=22.0, y_lo=0.0, y_hi=6.5, color="var(--theme-accent,var(--theme-accent,var(--theme-accent,#3b82f6)))",
     )
     svg_hold = _scatter_svg(
         pts_hold, "Hold Years", "Realized MOIC",
@@ -712,7 +712,7 @@ def _scatter_panel(
     svg_pred = _scatter_svg(
         pts_pred, "Predicted MOIC (corpus model)", "Realized MOIC",
         x_lo=0.5, x_hi=5.5, y_lo=0.0, y_hi=6.5, color="#06b6d4",
-        trend_color="var(--theme-warning,var(--theme-warning,#f59e0b))",
+        trend_color="var(--theme-warning,var(--theme-warning,var(--theme-warning,#f59e0b)))",
     )
     return f"""
 <div class="ck-panel">
@@ -764,8 +764,8 @@ def _sector_table_panel(rows: List[Dict[str, Any]]) -> str:
   <td class="mono" style="text-align:right;">{r['p25']:.2f}x</td>
   <td class="mono" style="text-align:right;color:{p50_color};font-weight:600;">{r['p50']:.2f}x</td>
   <td class="mono" style="text-align:right;">{r['p75']:.2f}x</td>
-  <td class="mono" style="text-align:right;color:var(--theme-negative,var(--theme-negative,#ef4444));">{r['loss_rate']*100:.1f}%</td>
-  <td class="mono" style="text-align:right;color:var(--theme-positive,var(--theme-positive,#22c55e));">{r['homerun']*100:.1f}%</td>
+  <td class="mono" style="text-align:right;color:var(--theme-negative,var(--theme-negative,var(--theme-negative,#ef4444)));">{r['loss_rate']*100:.1f}%</td>
+  <td class="mono" style="text-align:right;color:var(--theme-positive,var(--theme-positive,var(--theme-positive,#22c55e)));">{r['homerun']*100:.1f}%</td>
 </tr>""")
     return f"""
 <div class="ck-panel">

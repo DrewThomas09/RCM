@@ -60,7 +60,7 @@ def _export_rows(rows: List[Tuple[str, str, str]]) -> List[List[str]]:
     out: List[List[str]] = []
     for label, href, desc in rows:
         link = (f'<a href="{_html.escape(href)}" '
-                f'style="color:#1F4E78;font-weight:500;">'
+                f'style="color:{PALETTE["brand_accent"]};font-weight:500;">'
                 f'{_html.escape(label)}</a>')
         out.append([link, _html.escape(desc)])
     return out
@@ -113,6 +113,7 @@ def _deal_format_guide() -> str:
 
 def render_exports_index(db_path: str) -> str:
     from ._chartis_kit import chartis_shell
+    from .brand import PALETTE
 
     header = _wc.page_header(
         "Downloads",

@@ -48,7 +48,7 @@ def _exec_summary_html(packet: DealAnalysisPacket) -> str:
         "<!DOCTYPE html><html><head><meta charset='utf-8'>"
         f"<title>{packet.deal_name or packet.deal_id} — Executive Summary</title>"
         "<style>body{font-family:sans-serif;max-width:800px;margin:0 auto;padding:24px;}"
-        "h1{color:#1f4e78;} .num{font-family:monospace;} .risk{color:#ef4444;}</style></head>"
+        "h1{color:#1f4e78;} .num{font-family:monospace;} .risk{color:var(--theme-negative,#ef4444);}</style></head>"
         f"<body><h1>{packet.deal_name or packet.deal_id}</h1>"
         f"<h2>Executive Summary</h2>"
         f"<p>Total EBITDA opportunity: <span class='num'>${total_impact/1e6:,.2f}M</span></p>"

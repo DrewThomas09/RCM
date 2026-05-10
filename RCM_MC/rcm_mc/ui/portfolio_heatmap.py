@@ -132,7 +132,7 @@ def render_heatmap(
             )
         grade = (p.completeness.grade if p.completeness else "—")
         grade_color = {
-            "A": _PALETTE["good"], "B": "#3b82f6",
+            "A": _PALETTE["good"], "B": "var(--theme-accent,#3b82f6)",
             "C": _PALETTE["neutral"], "D": _PALETTE["bad"],
         }.get(grade, _PALETTE["dim"])
         rows_html.append(

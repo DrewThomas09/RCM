@@ -273,10 +273,11 @@ def render_field_error(message: str) -> str:
     'Email must be a valid address.' in red after submit fail.
     """
     import html as _html
+    from .brand import PALETTE
     if not message:
         return ""
     return (
         f'<div role="alert" '
-        f'style="color:#ef4444;font-size:12px;'
+        f'style="color:{PALETTE["negative"]};font-size:12px;'
         f'margin-top:4px;">'
         f'{_html.escape(message)}</div>')

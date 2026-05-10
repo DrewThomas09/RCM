@@ -174,7 +174,7 @@ def render_feature_importance_page(
         '<h1 style="font-size:24px;color:#f3f4f6;'
         'margin:0;">Feature Importance</h1>'
         '<a href="/models/quality" '
-        'style="color:#60a5fa;font-size:13px;">'
+        'style="color:var(--theme-accent,#60a5fa);font-size:13px;">'
         'Model quality →</a></div>'
         '<p style="color:#9ca3af;font-size:13px;'
         'margin:0 0 18px 0;max-width:720px;">'

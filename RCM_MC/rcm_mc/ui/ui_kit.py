@@ -73,7 +73,7 @@ _KIT_CSS = """
   font-size:13px;font-family:system-ui;
   box-sizing:border-box;}
 .ui-input::placeholder{color:#6b7280;}
-.ui-input:focus{outline:none;border-color:#60a5fa;}
+.ui-input:focus{outline:none;border-color:var(--theme-accent,#60a5fa);}
 
 /* ── Section header ─────────────────────────── */
 .ui-section-h{font-size:11px;text-transform:uppercase;
