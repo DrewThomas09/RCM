@@ -140,7 +140,7 @@ def seed(store: PortfolioStore, run_dir: str) -> None:
     # Notes with searchable content
     n1 = record_note(store, deal_id="ccf",
                      body="Covenant reset discussed with lender. "
-                          "Lender open to 0.5x cushion in exchange for "
+                          "Lender open to 0.50x cushion in exchange for "
                           "amendment fee.",
                      author="AT")
     add_note_tag(store, n1, "board_meeting")
