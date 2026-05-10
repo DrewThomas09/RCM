@@ -122,7 +122,7 @@ def render_pipeline(db_path: str) -> str:
         f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
         f'<h2 style="margin:0;">Saved Searches ({len(searches)})</h2>'
         f'<a href="/predictive-screener" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;font-size:11px;">New Search</a></div>'
+        f'style="text-decoration:none;font-size:11px;">Create Search</a></div>'
     )
     if search_rows:
         search_section += (
@@ -253,7 +253,7 @@ def render_pipeline(db_path: str) -> str:
     nav = (
         f'<div class="cad-card" style="display:flex;gap:8px;flex-wrap:wrap;">'
         f'<a href="/predictive-screener" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Deal Screener</a>'
+        f'style="text-decoration:none;">Run Screener</a>'
         f'<a href="/portfolio/monitor" class="cad-btn" '
         f'style="text-decoration:none;">Portfolio Monitor</a>'
         f'<a href="/ml-insights" class="cad-btn" '
