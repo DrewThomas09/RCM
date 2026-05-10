@@ -196,23 +196,23 @@ def screen_deal(
     medicaid = _payer_share(deal, "medicaid")
     if medicaid > config.max_medicaid_pct:
         fail_reasons.append(
-            f"Medicaid {medicaid:.0%} exceeds hard cap "
-            f"{config.max_medicaid_pct:.0%} (reimbursement risk)"
+            f"Medicaid {medicaid:.1%} exceeds hard cap "
+            f"{config.max_medicaid_pct:.1%} (reimbursement risk)"
         )
     elif medicaid > config.watch_medicaid_pct:
         watch_reasons.append(
-            f"Medicaid {medicaid:.0%} above watch threshold "
-            f"{config.watch_medicaid_pct:.0%}"
+            f"Medicaid {medicaid:.1%} above watch threshold "
+            f"{config.watch_medicaid_pct:.1%}"
         )
     elif 0 < medicaid <= config.watch_medicaid_pct:
-        pass_signals.append(f"Medicaid {medicaid:.0%} within acceptable range")
+        pass_signals.append(f"Medicaid {medicaid:.1%} within acceptable range")
 
     # --- Commercial-mix floor (Phase 3G) ---
     commercial = _payer_share(deal, "commercial")
     if commercial > 0 and commercial < config.min_commercial_pct_watch:
         watch_reasons.append(
-            f"Commercial mix {commercial:.0%} below "
-            f"{config.min_commercial_pct_watch:.0%} platform floor"
+            f"Commercial mix {commercial:.1%} below "
+            f"{config.min_commercial_pct_watch:.1%} platform floor"
         )
 
     # --- MERC total-loss-risk triage (Phase 3G) ---
@@ -245,7 +245,7 @@ def screen_deal(
         if ebitda_margin < config.min_ebitda_margin_watch:
             watch_reasons.append(
                 f"EBITDA margin {ebitda_margin:.1%} below "
-                f"{config.min_ebitda_margin_watch:.0%} unit-economics floor"
+                f"{config.min_ebitda_margin_watch:.1%} unit-economics floor"
             )
 
     # --- Deal size ---
@@ -286,11 +286,11 @@ def screen_deal(
     completeness = _data_completeness(deal)
     if completeness < config.min_data_completeness_watch:
         watch_reasons.append(
-            f"Data completeness {completeness:.0%} below "
-            f"{config.min_data_completeness_watch:.0%} CIM-quality floor"
+            f"Data completeness {completeness:.1%} below "
+            f"{config.min_data_completeness_watch:.1%} CIM-quality floor"
         )
     else:
-        pass_signals.append(f"Data completeness {completeness:.0%}")
+        pass_signals.append(f"Data completeness {completeness:.1%}")
 
     # --- Final decision ---
     if fail_reasons:
@@ -346,9 +346,9 @@ def screening_report(results: List[ScreeningResult], max_rows: int = 50) -> str:
         "Deal Screening Report",
         "=" * 70,
         f"  Total Screened: {len(results)}",
-        f"  PASS  : {pass_ct} ({pass_ct/max(len(results),1):.0%})",
-        f"  WATCH : {watch_ct} ({watch_ct/max(len(results),1):.0%})",
-        f"  FAIL  : {fail_ct} ({fail_ct/max(len(results),1):.0%})",
+        f"  PASS  : {pass_ct} ({pass_ct/max(len(results),1):.1%})",
+        f"  WATCH : {watch_ct} ({watch_ct/max(len(results),1):.1%})",
+        f"  FAIL  : {fail_ct} ({fail_ct/max(len(results),1):.1%})",
         "-" * 70,
     ]
     sorted_results = sorted(results, key=lambda r: (

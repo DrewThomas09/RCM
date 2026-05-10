@@ -338,14 +338,14 @@ def render_deal_screening(
         ),
         scale=(
             "ScreeningConfig defaults: risk score > 60/100 FAILs and "
-            "> 40 WATCHes; EV/EBITDA > 20.0x FAILs and > 14.0x "
-            "WATCHes; MOIC target floor 1.50x; Medicaid share > 65% "
+            "> 40 WATCHes; EV/EBITDA > 20.00x FAILs and > 14.00x "
+            "WATCHes; MOIC target floor 1.50x; Medicaid share > 65.0% "
             "WATCHes. Any hard-threshold breach rejects; soft flags "
             "accumulate into a WATCH."
         ),
         use=(
             "Tighten the sliders to run your own fund's discipline "
-            "against the corpus — a 14x max and 50% Medicaid cap will "
+            "against the corpus — a 14.00x max and 50.0% Medicaid cap will "
             "eliminate the deals you would not have bid on, and the "
             "remaining PASS cohort is a comparable population for "
             "outcome analysis."

@@ -138,15 +138,15 @@ def _build_sensitivity() -> List[SensitivityCell]:
 
 def _build_tornado() -> List[TornadoDriver]:
     return [
-        TornadoDriver("Exit Multiple", "12.0x", "14.0x", "16.0x", 2.20, 2.78, 3.38, 1.18),
-        TornadoDriver("EBITDA CAGR", "12%", "18%", "24%", 2.05, 2.78, 3.62, 1.57),
-        TornadoDriver("Initial Leverage", "5.0x", "6.0x", "6.5x", 2.92, 2.78, 2.68, -0.24),
-        TornadoDriver("Entry Multiple", "16.5x", "15.16x", "13.5x", 2.48, 2.78, 3.15, 0.67),
-        TornadoDriver("Debt Paydown (excess FCF sweep)", "15%", "25%", "35%", 2.58, 2.78, 3.00, 0.42),
-        TornadoDriver("Operating Margin (EBITDA %)", "18%", "22%", "26%", 2.25, 2.78, 3.35, 1.10),
-        TornadoDriver("Revenue CAGR", "8%", "15%", "22%", 2.35, 2.78, 3.25, 0.90),
-        TornadoDriver("Net Working Capital", "-$3M", "$0M", "+$3M", 2.72, 2.78, 2.84, 0.12),
-        TornadoDriver("Capex % of Revenue", "4%", "2.5%", "1.5%", 2.65, 2.78, 2.88, 0.23),
+        TornadoDriver("Exit Multiple", "12.00x", "14.00x", "16.00x", 2.20, 2.78, 3.38, 1.18),
+        TornadoDriver("EBITDA CAGR", "12.0%", "18.0%", "24.0%", 2.05, 2.78, 3.62, 1.57),
+        TornadoDriver("Initial Leverage", "5.00x", "6.00x", "6.50x", 2.92, 2.78, 2.68, -0.24),
+        TornadoDriver("Entry Multiple", "16.50x", "15.16x", "13.50x", 2.48, 2.78, 3.15, 0.67),
+        TornadoDriver("Debt Paydown (excess FCF sweep)", "15.0%", "25.0%", "35.0%", 2.58, 2.78, 3.00, 0.42),
+        TornadoDriver("Operating Margin (EBITDA %)", "18.0%", "22.0%", "26.0%", 2.25, 2.78, 3.35, 1.10),
+        TornadoDriver("Revenue CAGR", "8.0%", "15.0%", "22.0%", 2.35, 2.78, 3.25, 0.90),
+        TornadoDriver("Net Working Capital", "-$3.00M", "$0.00M", "+$3.00M", 2.72, 2.78, 2.84, 0.12),
+        TornadoDriver("Capex % of Revenue", "4.0%", "2.5%", "1.5%", 2.65, 2.78, 2.88, 0.23),
     ]
 
 
@@ -171,9 +171,9 @@ def _build_returns_bridge() -> List[ReturnsBridge]:
     return [
         ReturnsBridge("Entry Equity Value", 245.0, 1.00),
         ReturnsBridge("EBITDA Growth (18% CAGR)", 325.8, 1.33),
-        ReturnsBridge("Multiple Compression (15.2→14.0x)", -88.0, -0.36),
+        ReturnsBridge("Multiple Compression (15.20→14.00x)", -88.0, -0.36),
         ReturnsBridge("Debt Paydown (cash sweep)", 82.0, 0.33),
-        ReturnsBridge("Exit Value ($681M EV - $195M debt)", 486.0, 1.98),
+        ReturnsBridge("Exit Value ($681.00M EV - $195.00M debt)", 486.0, 1.98),
         ReturnsBridge("Total Equity Proceeds", 486.0, 1.98),
         ReturnsBridge("Implied MOIC (2.78x ÷ 1.00x entry)", 2.78, 2.78),
     ]
@@ -181,12 +181,12 @@ def _build_returns_bridge() -> List[ReturnsBridge]:
 
 def _build_scenarios() -> List[ScenarioOutcome]:
     return [
-        ScenarioOutcome("Downside (-25% EBITDA + 12x exit)", 55.0, 12.0, 165.0, 0.67, -0.075, 0.10),
-        ScenarioOutcome("Recession Scenario (-10% + 13x)", 66.0, 13.0, 283.0, 1.16, 0.030, 0.15),
-        ScenarioOutcome("Base Case (18% CAGR + 14x)", 73.4, 14.0, 486.0, 1.98, 0.147, 0.40),
-        ScenarioOutcome("Projected (22% CAGR + 14.5x)", 86.7, 14.5, 612.0, 2.50, 0.201, 0.20),
-        ScenarioOutcome("Upside (26% + 15.5x)", 102.0, 15.5, 787.0, 3.21, 0.263, 0.10),
-        ScenarioOutcome("Home Run (IPO / Strategic + 17x)", 115.0, 17.0, 1000.0, 4.08, 0.325, 0.05),
+        ScenarioOutcome("Downside (-25.0% EBITDA + 12.00x exit)", 55.0, 12.0, 165.0, 0.67, -0.075, 0.10),
+        ScenarioOutcome("Recession Scenario (-10.0% + 13.00x)", 66.0, 13.0, 283.0, 1.16, 0.030, 0.15),
+        ScenarioOutcome("Base Case (18.0% CAGR + 14.00x)", 73.4, 14.0, 486.0, 1.98, 0.147, 0.40),
+        ScenarioOutcome("Projected (22.0% CAGR + 14.50x)", 86.7, 14.5, 612.0, 2.50, 0.201, 0.20),
+        ScenarioOutcome("Upside (26.0% + 15.50x)", 102.0, 15.5, 787.0, 3.21, 0.263, 0.10),
+        ScenarioOutcome("Home Run (IPO / Strategic + 17.00x)", 115.0, 17.0, 1000.0, 4.08, 0.325, 0.05),
     ]
 
 

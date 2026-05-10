@@ -212,10 +212,10 @@ def render_lbo_stress(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">LBO Stress Thesis:</strong> Base case {b.projected_moic:,.2f}x MOIC / {b.projected_irr_pct * 100:.1f}% IRR over {b.projected_exit_year - 2026} years.
     Tornado analysis ranks {top_driver.driver} as the highest-sensitivity driver (swing: {top_driver.swing_moic:+.2f}x MOIC across downside-to-upside).
-    EBITDA growth trajectory (18% CAGR base case, 12-24% sensitivity range) and exit multiple (14.0x base, 12-16x range) are the primary return drivers.
+    EBITDA growth trajectory (18.0% CAGR base case, 12.0-24.0% sensitivity range) and exit multiple (14.00x base, 12-16x range) are the primary return drivers.
     Covenant path holds in compliance through year 6 at 2.15x leverage reduction; interest coverage remains >3.0x.
-    Probability-weighted expected MOIC {expected_moic:,.2f}x / IRR {expected_irr * 100:.1f}% reflects 40% base case, 25% upside, 25% downside scenarios.
-    Material downside (MOIC < 1.0x) probability 10%; Home Run IRR > 30% probability 5%.
+    Probability-weighted expected MOIC {expected_moic:,.2f}x / IRR {expected_irr * 100:.1f}% reflects 40.0% base case, 25.0% upside, 25.0% downside scenarios.
+    Material downside (MOIC < 1.00x) probability 10.0%; Home Run IRR > 30.0% probability 5.0%.
   </div>
 </div>"""
 
