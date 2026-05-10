@@ -25,6 +25,10 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
+from ._chartis_kit import (
+    ck_kpi_block, ck_panel, ck_section_intro, ck_signal_badge,
+)
+
 # Editorial port (2026-04-27): dropped imports for .colors / .loading /
 # .nav / .responsive / .theme — chartis_shell() now provides all the
 # editorial chrome + responsive layout + theme cascade. The .global_search
@@ -297,101 +301,63 @@ def _hero_strip(summary: Dict[str, Any]) -> str:
 
     health_text = (f"{health:.0f}" if health is not None
                    else "—")
-    health_color = (
-        _GREEN if (health or 0) >= 75
-        else _AMBER if (health or 0) >= 60
-        else _RED)
+    health_tone = (
+        "positive" if (health or 0) >= 75
+        else "warning" if (health or 0) >= 60
+        else "negative")
+    health_badge = ck_signal_badge(health_text, tone=health_tone)
 
-    def _kpi(label: str, value: str, color: str = _TEXT,
-             sub: str = "") -> str:
-        return (
-            f'<div style="flex:1;min-width:180px;padding:'
-            f'18px 22px;border-right:1px solid {_BORDER};">'
-            f'<div style="font-size:11px;text-transform:'
-            f'uppercase;letter-spacing:0.06em;color:'
-            f'{_TEXT_DIM};margin-bottom:8px;">'
-            f'{_esc(label)}</div>'
-            f'<div style="font-size:30px;font-weight:600;'
-            f'color:{color};font-variant-numeric:tabular-nums;">'
-            f'{_esc(value)}</div>'
-            + (f'<div style="font-size:11px;color:'
-               f'{_TEXT_DIM};margin-top:6px;">{_esc(sub)}'
-               f'</div>' if sub else "")
-            + "</div>"
-        )
-
-    return (
-        f'<section style="background:{_BG_SURFACE};border:1px '
-        f'solid {_BORDER};border-radius:10px;margin-bottom:'
-        f'24px;overflow:hidden;">'
-        f'<div style="display:flex;flex-wrap:wrap;border-bottom:'
-        f'1px solid {_BORDER};">'
-        + _kpi("Active deals",
-               f"{n_active}",
-               sub=f"of {n_deals} total")
-        + _kpi("Total NPR", _fmt_money(npr))
-        + _kpi("Current EBITDA", _fmt_money(ebitda))
-        + _kpi("Health score", health_text,
-               color=health_color, sub="weighted by NPR")
-        + '</div>'
-        f'<div style="padding:18px 22px;color:{_TEXT};'
-        f'font-size:14px;line-height:1.5;">'
-        f'{_esc(narrative)}</div></section>'
+    intro = ck_section_intro(
+        eyebrow="MORNING VIEW",
+        headline="Where the portfolio stands today.",
+        italic_word="today",
+        body=narrative,
     )
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Active deals", f"{n_active}",
+            sub=f"of {n_deals} total",
+        )
+        + ck_kpi_block("Total NPR", _fmt_money(npr))
+        + ck_kpi_block("Current EBITDA", _fmt_money(ebitda))
+        + ck_kpi_block(
+            "Health score", health_badge,
+            sub="weighted by NPR",
+        )
+        + '</div>'
+    )
+    return f'{intro}{kpis}'
 
 
 def _section_header(label: str, prose: str) -> str:
-    return (
-        f'<header style="margin:32px 0 12px 0;">'
-        f'<h2 style="font-size:13px;text-transform:uppercase;'
-        f'letter-spacing:0.10em;color:{_TEXT_DIM};margin:'
-        f'0 0 6px 0;">{_esc(label)}</h2>'
-        f'<p style="font-size:14px;color:{_TEXT};margin:0;'
-        f'max-width:720px;line-height:1.5;">{_esc(prose)}</p>'
-        f'</header>')
+    """No-op kept for back-compat; sections now ride ck_panel."""
+    return ""
 
 
 def _opportunities_section(
     opps: List[Dict[str, Any]],
 ) -> str:
     if not opps:
-        return (
-            _section_header(
-                "Top opportunities",
-                "No realized EBITDA uplift opportunities yet — "
-                "build analysis packets to populate this list.")
-            + f'<div style="background:{_BG_ELEVATED};border:'
-            f'1px solid {_BORDER};border-radius:8px;padding:'
-            f'24px;color:{_TEXT_DIM};text-align:center;'
-            f'font-size:13px;">No opportunities to rank.</div>'
+        return ck_panel(
+            '<p class="ck-section-body">'
+            'No realized EBITDA uplift opportunities yet — '
+            'build analysis packets to populate this list.</p>',
+            title="Top opportunities",
         )
 
     total_uplift = sum(o["uplift"] for o in opps)
     rows = []
     for i, opp in enumerate(opps, 1):
         deal_link = (
-            f'<a href="/deal/{_esc(opp["deal_id"])}" '
-            f'style="color:{_ACCENT};text-decoration:none;'
-            f'font-weight:500;">{_esc(opp["deal_id"])}</a>')
+            f'<a href="/deal/{_esc(opp["deal_id"])}" class="ck-link"><strong>{_esc(opp["deal_id"])}</strong></a>')
         rows.append(
-            f'<tr style="border-bottom:1px solid {_BORDER};">'
-            f'<td style="padding:12px 16px;color:{_TEXT_DIM};'
-            f'font-variant-numeric:tabular-nums;width:30px;">'
-            f'{i}.</td>'
-            f'<td style="padding:12px 16px;">{deal_link}</td>'
-            f'<td style="padding:12px 16px;text-align:right;'
-            f'color:{_GREEN};font-weight:500;'
-            f'font-variant-numeric:tabular-nums;">'
-            f'+{_fmt_money(opp["uplift"])}</td>'
-            f'<td style="padding:12px 16px;text-align:right;'
-            f'color:{_TEXT_DIM};font-variant-numeric:'
-            f'tabular-nums;">'
-            f'{_fmt_pct(opp["uplift_pct"])}</td>'
-            f'<td style="padding:12px 16px;text-align:right;'
-            f'color:{_TEXT_DIM};font-variant-numeric:'
-            f'tabular-nums;font-size:12px;">'
-            f'{_fmt_money(opp["current_ebitda"])} → '
-            f'{_fmt_money(opp["target_ebitda"])}</td>'
+            f'<tr>'
+            f'<td class="num">{i}.</td>'
+            f'<td>{deal_link}</td>'
+            f'<td class="num cad-pos"><strong>+{_fmt_money(opp["uplift"])}</strong></td>'
+            f'<td class="num">{_fmt_pct(opp["uplift_pct"])}</td>'
+            f'<td class="num">{_fmt_money(opp["current_ebitda"])} → {_fmt_money(opp["target_ebitda"])}</td>'
             f'</tr>')
     prose = (
         f"Ranked by realistic EBITDA uplift across the active "
@@ -399,34 +365,17 @@ def _opportunities_section(
         f"{_fmt_money(total_uplift)} in additional EBITDA if "
         f"value-creation plans land — start with the biggest "
         f"and work down.")
-    return (
-        _section_header("Top opportunities", prose)
-        + f'<div style="background:{_BG_SURFACE};border:'
-        f'1px solid {_BORDER};border-radius:8px;overflow:'
-        f'hidden;">'
-        + '<table style="width:100%;border-collapse:collapse;">'
-        + '<thead><tr style="background:'
-        + _BG_ELEVATED + ';">'
-        + ('<th style="padding:10px 16px;text-align:left;'
-           f'font-size:11px;text-transform:uppercase;'
-           f'letter-spacing:0.05em;color:{_TEXT_DIM};">#</th>'
-           '<th style="padding:10px 16px;text-align:left;'
-           f'font-size:11px;text-transform:uppercase;'
-           f'letter-spacing:0.05em;color:{_TEXT_DIM};">Deal</th>'
-           '<th style="padding:10px 16px;text-align:right;'
-           f'font-size:11px;text-transform:uppercase;'
-           f'letter-spacing:0.05em;color:{_TEXT_DIM};">'
-           'EBITDA Uplift</th>'
-           '<th style="padding:10px 16px;text-align:right;'
-           f'font-size:11px;text-transform:uppercase;'
-           f'letter-spacing:0.05em;color:{_TEXT_DIM};">'
-           'vs. Current</th>'
-           '<th style="padding:10px 16px;text-align:right;'
-           f'font-size:11px;text-transform:uppercase;'
-           f'letter-spacing:0.05em;color:{_TEXT_DIM};">'
-           'Bridge</th>')
-        + '</tr></thead>'
-        + f'<tbody>{"".join(rows)}</tbody></table></div>'
+    return ck_panel(
+        f'<p class="ck-section-body">{prose}</p>'
+        '<table class="cad-table">'
+        '<thead><tr>'
+        '<th>#</th><th>Deal</th>'
+        '<th class="num">EBITDA Uplift</th>'
+        '<th class="num">vs. Current</th>'
+        '<th class="num">Bridge</th>'
+        '</tr></thead>'
+        f'<tbody>{"".join(rows)}</tbody></table>',
+        title="Top opportunities",
     )
 
 
@@ -434,61 +383,44 @@ def _alerts_section(
     alerts: List[Dict[str, Any]],
 ) -> str:
     if not alerts:
-        return (
-            _section_header(
-                "Key alerts",
-                "Nothing demanding your decision today — the "
-                "portfolio is quiet.")
-            + f'<div style="background:{_BG_ELEVATED};border:'
-            f'1px solid {_BORDER};border-radius:8px;padding:'
-            f'24px;color:{_GREEN};text-align:center;font-size:'
-            f'14px;">All clear.</div>'
+        return ck_panel(
+            '<p class="ck-section-body cad-pos">All clear.</p>',
+            title="Key alerts",
         )
     n_critical = sum(1 for a in alerts
                      if str(a.get("severity")
                             ).lower()
                      in ("critical", "high"))
-    sev_color = {
-        "critical": _RED, "high": _RED,
-        "medium": _AMBER, "warning": _AMBER,
-        "low": _TEXT_DIM, "info": _TEXT_DIM,
+    sev_tone_map = {
+        "critical": "negative", "high": "negative",
+        "medium": "warning", "warning": "warning",
+        "low": "neutral", "info": "neutral",
     }
     rows = []
     for a in alerts:
         sev = str(a.get("severity") or "info").lower()
-        color = sev_color.get(sev, _TEXT_DIM)
+        badge = ck_signal_badge(sev, tone=sev_tone_map.get(sev, "neutral"))
         rows.append(
-            f'<div style="padding:14px 18px;border-bottom:'
-            f'1px solid {_BORDER};display:flex;align-items:'
-            f'center;gap:14px;">'
-            f'<span style="display:inline-block;width:8px;'
-            f'height:8px;border-radius:50%;background:'
-            f'{color};flex-shrink:0;"></span>'
-            f'<div style="flex:1;">'
-            f'<div style="color:{_TEXT};font-size:13px;">'
-            f'{_esc(a.get("message", ""))}</div>'
-            f'<div style="color:{_TEXT_DIM};font-size:11px;'
-            f'margin-top:3px;">'
+            '<div class="dv-alert-row">'
+            '<div class="dv-alert-body">'
+            f'<div class="dv-alert-msg">{_esc(a.get("message", ""))}</div>'
+            '<div class="ck-eyebrow">'
             f'{_esc(a.get("kind", ""))} · '
-            f'<a href="/deal/{_esc(a.get("deal_id", ""))}"'
-            f' style="color:{_ACCENT};">{_esc(a.get("deal_id", ""))}</a>'
-            f'</div></div>'
-            f'<span style="font-size:11px;color:{color};'
-            f'text-transform:uppercase;letter-spacing:0.05em;'
-            f'font-weight:600;">{_esc(sev)}</span></div>'
+            f'<a href="/deal/{_esc(a.get("deal_id", ""))}" class="ck-link">{_esc(a.get("deal_id", ""))}</a>'
+            '</div></div>'
+            f'<span>{badge}</span></div>'
         )
     prose = (
         f"{len(alerts)} active alert"
         f"{'s' if len(alerts) != 1 else ''}"
         + (f", {n_critical} requiring partner attention"
            if n_critical else "")
-        + ". Triage starts with red dots; amber items can wait "
+        + ". Triage starts with red badges; amber items can wait "
           "until the weekly review.")
-    return (
-        _section_header("Key alerts", prose)
-        + f'<div style="background:{_BG_SURFACE};border:'
-        f'1px solid {_BORDER};border-radius:8px;overflow:'
-        f'hidden;">{"".join(rows)}</div>'
+    return ck_panel(
+        f'<p class="ck-section-body">{prose}</p>'
+        f'{"".join(rows)}',
+        title="Key alerts",
     )
 
 
@@ -496,39 +428,27 @@ def _activity_section(
     activity: List[Dict[str, Any]],
 ) -> str:
     if not activity:
-        return (
-            _section_header(
-                "Recent activity",
-                "No changes in the last week — the portfolio "
-                "data is steady.")
-            + f'<div style="background:{_BG_ELEVATED};border:'
-            f'1px solid {_BORDER};border-radius:8px;padding:'
-            f'24px;color:{_TEXT_DIM};text-align:center;'
-            f'font-size:13px;">No recent activity.</div>'
+        return ck_panel(
+            '<p class="ck-section-body">'
+            'No changes in the last week — the portfolio data is steady.</p>',
+            title="Recent activity",
         )
     rows = []
     for a in activity:
         deal_id = a.get("deal_id", "")
         rows.append(
-            f'<div style="padding:12px 18px;border-bottom:'
-            f'1px solid {_BORDER};display:flex;align-items:'
-            f'baseline;gap:14px;">'
-            f'<a href="/deal/{_esc(deal_id)}" '
-            f'style="color:{_ACCENT};text-decoration:none;'
-            f'font-weight:500;font-size:13px;">{_esc(deal_id)}'
-            f'</a>'
-            f'<div style="flex:1;color:{_TEXT};font-size:13px;">'
-            f'{_esc(a.get("label", ""))}</div></div>')
+            '<div class="dv-activity-row">'
+            f'<a href="/deal/{_esc(deal_id)}" class="ck-link"><strong>{_esc(deal_id)}</strong></a>'
+            f'<div class="dv-activity-label">{_esc(a.get("label", ""))}</div></div>')
     prose = (
         f"{len(activity)} item"
         f"{'s' if len(activity) != 1 else ''} from the last "
         f"week. Clicking through shows what changed and "
         f"who owns it.")
-    return (
-        _section_header("Recent activity", prose)
-        + f'<div style="background:{_BG_SURFACE};border:'
-        f'1px solid {_BORDER};border-radius:8px;overflow:'
-        f'hidden;">{"".join(rows)}</div>'
+    return ck_panel(
+        f'<p class="ck-section-body">{prose}</p>'
+        f'{"".join(rows)}',
+        title="Recent activity",
     )
 
 
@@ -551,26 +471,27 @@ def render_dashboard_v3(store: Any) -> str:
     alerts = _load_alerts(store)
     activity = _load_recent_activity(store)
 
+    dv_styles = """
+<style>
+.dv-container{max-width:1100px;margin:0 auto;padding:1.5rem 1rem;}
+.dv-toplinks{display:flex;gap:14px;font-size:12px;align-items:center;
+justify-content:flex-end;margin-bottom:1.5rem;}
+.dv-alert-row{display:flex;align-items:center;gap:14px;
+padding:14px 0;border-bottom:1px solid var(--cad-border);}
+.dv-alert-body{flex:1;}
+.dv-alert-msg{font-size:13px;}
+.dv-activity-row{display:flex;align-items:baseline;gap:14px;
+padding:12px 0;border-bottom:1px solid var(--cad-border);}
+.dv-activity-label{flex:1;font-size:13px;}
+</style>
+"""
     page_body = (
-        f'<div class="rs-container" '
-        f'style="max-width:1100px;margin:0 auto;padding:1.5rem 1rem;">'
-        f'<div style="display:flex;justify-content:'
-        f'space-between;align-items:baseline;'
-        f'margin-bottom:.5rem;">'
-        f'<h1 style="font-size:1.5rem;color:{_TEXT};margin:0;'
-        f'font-family:\'Source Serif 4\',Georgia,serif;font-weight:400;">'
-        f'Morning view</h1>'
-        f'<div style="display:flex;gap:14px;font-size:12px;'
-        f'align-items:center;">'
-        f'<a href="/data/catalog?ui=v3" style="color:{_ACCENT};">'
-        f'Data →</a>'
-        f'<a href="/models/quality?ui=v3" style="color:{_ACCENT};">'
-        f'Models →</a>'
-        f'</div></div>'
-        f'<p style="color:{_TEXT_DIM};font-size:13px;'
-        f'margin:0 0 1.5rem 0;">Today\'s read on the '
-        f'portfolio — what\'s working, what needs your '
-        f'attention, what changed.</p>'
+        dv_styles
+        + '<div class="dv-container">'
+        + '<div class="dv-toplinks">'
+        + '<a href="/data/catalog?ui=v3" class="ck-link">Data →</a>'
+        + '<a href="/models/quality?ui=v3" class="ck-link">Models →</a>'
+        + '</div>'
         + _hero_strip(summary)
         + _opportunities_section(opportunities)
         + _alerts_section(alerts)
