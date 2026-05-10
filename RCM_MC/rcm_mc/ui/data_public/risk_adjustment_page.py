@@ -216,10 +216,10 @@ def render_risk_adjustment(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">RADV Audit Exposure Simulation</div>{rd_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Risk Adjustment Portfolio Summary:</strong> {r.total_ma_lives_k:,.1f}K MA lives generate ${r.total_ma_revenue_m:,.2f}M revenue at weighted RAF {r.weighted_avg_raf:.3f} — portfolio RAF elevated vs national MA average 1.02 driven by chronic-heavy portfolios (Sage 2.12, Ash 1.95).
-    Gap analysis: ${r.total_raf_gap_opportunity_m:.2f}M in unclosed HCC opportunity across 15 top-priority categories; diabetes w/ complications ($18.5M), CHF ($15.8M), COPD ($14.5M) are top three.
+    Gap analysis: ${r.total_raf_gap_opportunity_m:.2f}M in unclosed HCC opportunity across 15 top-priority categories; diabetes w/ complications ($18.50M), CHF ($15.80M), COPD ($14.50M) are top three.
     V28 phase-in impact: ${v28_total_impact:.2f}M portfolio headwind — diabetes, CHF, and SUD categories hit hardest; mitigation via specificity coding and documentation uplift.
-    Gap-closure programs capture ${program_revenue:.2f}M annual revenue — prospective chart review ($65M) and retrospective chart review ($32M) are highest-ROI programs.
-    RADV exposure ${r.radv_total_exposure_m:.2f}M max across {r.portfolio_deals_exposed} portcos — Sage ($22M), Redwood ($12.5M), Linden ($10.5M) concentrated in behavioral + home health.
+    Gap-closure programs capture ${program_revenue:.2f}M annual revenue — prospective chart review ($65.00M) and retrospective chart review ($32.00M) are highest-ROI programs.
+    RADV exposure ${r.radv_total_exposure_m:.2f}M max across {r.portfolio_deals_exposed} portcos — Sage ($22.00M), Redwood ($12.50M), Linden ($10.50M) concentrated in behavioral + home health.
     Coding intensity distribution: 4 disciplined, 4 standard, 2 high-intensity, 2 aggressive — "aggressive" profiles (Sage, Linden) raise RADV risk; coding discipline initiative scheduled Q2 2026.
   </div>
 </div>"""
