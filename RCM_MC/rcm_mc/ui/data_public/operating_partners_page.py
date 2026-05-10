@@ -167,9 +167,9 @@ def _comp_table(items) -> str:
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(c.role)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.sector)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.p25_base_k:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${c.median_base_k:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${c.p75_base_k:,.0f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.p25_base_k:,.2f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${c.median_base_k:,.2f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${c.p75_base_k:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{c.median_bonus_pct:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{c.median_equity_pct:.2f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.typical_vest_years}</td>',
@@ -229,7 +229,7 @@ def render_operating_partners(params: dict = None) -> str:
     {r.total_exec_placements} executive placements in LTM across CEO, CFO, COO, CMO, CCO, CTO, CHRO roles; average CEO comp package $1.65M base + 3.5% equity tracks top-quartile Pearl Meyer PE healthcare benchmarks.
     {r.active_searches} searches currently in flight — 3 at finalist/offer stage (Project Azalea CEO, Project Terra CGO, Project Horizon CFO); 5 in candidate sourcing for Q2-Q3 2026 closes.
     Bench roster of {r.total_bench_count} cultivated executives with average 8.6/10 willingness score; 6 available immediately across MSK, oncology, derma, HCIT, urology — meaningful reach for urgent placements.
-    Compensation benchmarks 14 role/sector combinations — CEO median $1.25M base / 4% equity for multi-specialty platforms; CFO $750K / 1.5% equity for $500M-$1B platforms; CTO $950K / 2.25% for HCIT/RCM.
+    Compensation benchmarks 14 role/sector combinations — CEO median $1.25M base / 4.0% equity for multi-specialty platforms; CFO $750K / 1.5% equity for $500.00M-$1.00B platforms; CTO $950K / 2.25% for HCIT/RCM.
   </div>
 </div>"""
 

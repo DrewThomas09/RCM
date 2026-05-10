@@ -285,7 +285,7 @@ def _build_metrics(key_persons: List[KeyPerson]) -> List[ConcentrationMetric]:
             unit="%",
             notes="Typical healthcare services: 20-25%"),
         ConcentrationMetric(
-            metric="Bus Factor (to 20% rev at risk)",
+            metric="Bus Factor (to 20.0% rev at risk)",
             value=float(bus_factor),
             threshold=3.0,
             status="high" if bus_factor <= 2 else ("medium" if bus_factor <= 4 else "low"),
@@ -319,7 +319,7 @@ def _build_mitigations(revenue_mm: float, ebitda_margin: float) -> List[Mitigati
             priority="high",
         ),
         MitigationPlan(
-            lever="Key-Person Life Insurance ($25M per exec)",
+            lever="Key-Person Life Insurance ($25.00M per exec)",
             cost_mm=0.0,
             annual_cost_mm=0.08,
             risk_reduction_pct=0.25,

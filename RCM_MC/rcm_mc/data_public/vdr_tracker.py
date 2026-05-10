@@ -219,7 +219,7 @@ def _build_critical_path() -> List[CriticalPath]:
         CriticalPath("Phase I environmental (DR-023)", "Facilities (seller)", "None",
                      "2026-04-22", "overdue", "medium - standard findings expected"),
         CriticalPath("State tax returns (DR-008)", "Tax advisor (seller)", "DR-007 done",
-                     "2026-04-22", "in progress", "medium - 72% complete"),
+                     "2026-04-22", "in progress", "medium - 72.0% complete"),
         CriticalPath("Litigation detail (DR-010)", "General Counsel (seller)", "None",
                      "2026-04-25", "in progress", "high - complaint copies still outstanding"),
         CriticalPath("IT architecture (DR-014)", "CIO (seller)", "None",
@@ -239,7 +239,7 @@ def _build_critical_path() -> List[CriticalPath]:
 
 def _build_materiality() -> List[MaterialityFlag]:
     return [
-        MaterialityFlag("BCBS payer concentration 22% — renewal 2027",
+        MaterialityFlag("BCBS payer concentration 22.0% — renewal 2027",
                         "Commercial", "material", "Price protection + 2nd payer development clause", "disclosed, mitigated"),
         MaterialityFlag("Locum MD classification: 6 workers may warrant W-2",
                         "HR / Legal", "material", "Pre-close conversion + indemnification", "in remediation"),
@@ -247,7 +247,7 @@ def _build_materiality() -> List[MaterialityFlag]:
                         "IT/Cyber", "critical", "Further DD required; R&W insurance exclusion possible", "open"),
         MaterialityFlag("OIG 2024 inquiry — closed with no action",
                         "Regulatory", "medium", "Disclosed in SPA", "resolved"),
-        MaterialityFlag("EHR end-of-life requires 2027 migration (+$2.5M)",
+        MaterialityFlag("EHR end-of-life requires 2027 migration (+$2.50M)",
                         "IT", "material", "Budget reserve + seller contribution", "disclosed"),
         MaterialityFlag("3 pending malpractice — all insured",
                         "Legal", "low", "Standard; within insurance limits", "resolved"),

@@ -187,7 +187,7 @@ def _build_levers(total_supply_mm: float) -> List[GPOLever]:
         ),
         GPOLever(
             lever="Generic / Therapeutic Substitution",
-            current_state="Brand-preferred in 40% of Rx",
+            current_state="Brand-preferred in 40.0% of Rx",
             target_state="Generic-first protocol",
             annual_savings_mm=round(total_supply_mm * 0.022, 2),
             one_time_cost_mm=0.08,
@@ -196,7 +196,7 @@ def _build_levers(total_supply_mm: float) -> List[GPOLever]:
         ),
         GPOLever(
             lever="Item Master Optimization",
-            current_state="28K SKUs, 18% duplicate",
+            current_state="28K SKUs, 18.0% duplicate",
             target_state="18K SKUs cleaned",
             annual_savings_mm=round(total_supply_mm * 0.015, 2),
             one_time_cost_mm=0.12,
