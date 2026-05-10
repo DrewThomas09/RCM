@@ -215,10 +215,10 @@ def render_litigation_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">5-Year Settlement History</div>{h_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Litigation Portfolio Summary:</strong> {r.total_matters} open matters allege ${r.total_alleged_m:.2f}M in damages; after insurance (${r.insurance_coverage_m:.2f}M) and SPA indemnity coverage, estimated net portfolio exposure is ${r.total_exposure_m:.2f}M.
-    {high_exposure} matters carry $5M+ individual exposure — Fir/Quest patent litigation ($12.0M), Sage/OIG FCA ($8.0M), FTC/Ash antitrust ($6.5M), DOJ/Basil ($6.0M) are the largest single-item drivers.
+    {high_exposure} matters carry $5.00M+ individual exposure — Fir/Quest patent litigation ($12.00M), Sage/OIG FCA ($8.00M), FTC/Ash antitrust ($6.50M), DOJ/Basil ($6.00M) are the largest single-item drivers.
     Regulatory actions aggregate ${reg_total:.2f}M in potential fines; class actions ${ca_total:.2f}M in alleged damages with ~${sum(c.settlement_estimate_m for c in r.class_actions):.2f}M probable settlement estimate.
-    Insurance tower totals ${sum(i.limit_m for i in r.insurance):.2f}M in limits at ${sum(i.premium_annual_m for i in r.insurance):.2f}M annual premium; captive malpractice ($35M limit) and cyber standalone ($50M) are the most active layers.
-    Historical settlement pattern: 2022-2025 averaging 22% paid-to-alleged ratio across 96 closed matters — indicates disciplined defense posture and material insurance recovery.
+    Insurance tower totals ${sum(i.limit_m for i in r.insurance):.2f}M in limits at ${sum(i.premium_annual_m for i in r.insurance):.2f}M annual premium; captive malpractice ($35.00M limit) and cyber standalone ($50.00M) are the most active layers.
+    Historical settlement pattern: 2022-2025 averaging 22.0% paid-to-alleged ratio across 96 closed matters — indicates disciplined defense posture and material insurance recovery.
     Recommended actions: (1) accelerate Fir/Quest claim construction to clarify exposure; (2) finalize Sage/OIG FCA settlement to unlock CIA; (3) proceed to Ash/FTC consent order on divestiture before Q2 2026 deadline.
   </div>
 </div>"""

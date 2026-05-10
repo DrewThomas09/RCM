@@ -190,17 +190,17 @@ def _build_deal_types() -> List[DealTypeBreakdown]:
 def _build_buyers() -> List[BuyerCategoryMetric]:
     return [
         BuyerCategoryMetric("Large PE (>$10B fund)", 52, 1450.0, 15.25, "Gastro, MSK, Derma, VBC",
-                            "2.25x equity, 5.5x debt, 5yr hold"),
+                            "2.25x equity, 5.50x debt, 5yr hold"),
         BuyerCategoryMetric("Middle-Market PE ($2-10B fund)", 125, 485.0, 13.85, "Multi-specialty, Derma, Dental, Behavioral",
-                            "2.35x equity, 5.0x debt, 5yr hold"),
+                            "2.35x equity, 5.00x debt, 5yr hold"),
         BuyerCategoryMetric("Lower Middle-Market PE (<$2B fund)", 95, 185.0, 12.25, "Urgent Care, Home Health, Specialty",
-                            "2.50x equity, 4.5x debt, 4-5yr hold"),
+                            "2.50x equity, 4.50x debt, 4-5yr hold"),
         BuyerCategoryMetric("Strategic (Health System)", 28, 985.0, 14.25, "Hospital-based, Post-acute",
-                            "100% equity; synergy-driven"),
+                            "100.0% equity; synergy-driven"),
         BuyerCategoryMetric("Strategic (Payer)", 18, 2850.0, 18.25, "VBC, Primary Care, Home Health",
-                            "100% equity; capability-driven"),
+                            "100.0% equity; capability-driven"),
         BuyerCategoryMetric("Strategic (Large Pharma)", 8, 1850.0, 16.50, "Specialty services, oncology",
-                            "100% equity; pipeline-driven"),
+                            "100.0% equity; pipeline-driven"),
         BuyerCategoryMetric("Sovereign Wealth / Direct", 12, 1250.0, 14.50, "VBC, Multi-specialty",
                             "minority / co-invest / infra-style"),
     ]

@@ -81,7 +81,7 @@ def _penetration_svg(curve) -> str:
         if i % 2 == 0 or i == len(curve) - 1:
             labels.append(
                 f'<text x="{x:.1f}" y="{y - 8:.1f}" fill="{P["text_dim"]}" font-size="9" '
-                f'text-anchor="middle" font-family="JetBrains Mono,monospace">${p.revenue_mm:,.0f}</text>'
+                f'text-anchor="middle" font-family="JetBrains Mono,monospace">${p.revenue_mm:,.2f}</text>'
             )
             labels.append(
                 f'<text x="{x:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" '
@@ -162,9 +162,9 @@ def _sizes_table(sizes) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.level)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.size_mm:,.0f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.size_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{s.current_capture_pct:.3f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">${s.headroom_mm:,.0f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">${s.headroom_mm:,.2f}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.definition)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -279,7 +279,7 @@ def render_growth_runway(params: dict = None) -> str:
     pos = P["positive"]; acc = P["accent"]
 
     kpi_strip = (
-        ck_kpi_block("Sector TAM", f"${r.tam_b:,.0f}B", "", "") +
+        ck_kpi_block("Sector TAM", f"${r.tam_b:,.2f}B", "", "") +
         ck_kpi_block("SAM", f"${r.sam_mm:,.2f}M", "", "") +
         ck_kpi_block("SOM", f"${r.som_mm:,.2f}M", "", "") +
         ck_kpi_block("Current Share", f"{r.current_share_pct:.3f}%", "of SAM", "") +
@@ -393,7 +393,7 @@ def render_growth_runway(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Growth Runway Thesis:</strong>
-    ${r.tam_b:,.0f}B TAM, ${r.sam_mm:,.2f}M SAM within footprint, ${r.som_mm:,.2f}M obtainable.
+    ${r.tam_b:,.2f}B TAM, ${r.sam_mm:,.2f}M SAM within footprint, ${r.som_mm:,.2f}M obtainable.
     Current {r.current_share_pct:.3f}% SAM share → target {r.target_share_pct:.2f}% implies
     ${r.total_addressable_upside_mm:,.2f}M of revenue uplift over 10 years. {r.moic_lift_from_growth:.2f}x MOIC lift
     from compounded organic + share-gain + M&amp;A. Confidence: market growth (high), M&amp;A (high),

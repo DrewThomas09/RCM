@@ -214,7 +214,7 @@ def render_peer_transactions(params: dict = None) -> str:
     <strong style="color:{text}">Peer Comparables Summary:</strong> {r.total_transactions} comparable transactions aggregate ${r.total_volume_b:.2f}B with median {r.median_ev_ebitda:.2f}x EV/EBITDA and {r.median_ev_revenue:.2f}x EV/Revenue.
     Multiple expanding in {expanding} sectors (Primary Care VBC, Infusion, Women's Health / Fertility) driven by demographic tailwinds + value-based care conviction.
     Multiple compressing in {compressing} sectors (Dermatology, Dental DSO, Home Health, Radiology, Hospital-based) as market sentiment re-rates.
-    Top-multiple transactions: ChenMed (Humana minority, 43.9x) and Privia (Blackstone secondary, 20.8x) — both VBC primary care plays with growth equity economics.
+    Top-multiple transactions: ChenMed (Humana minority, 43.90x) and Privia (Blackstone secondary, 20.80x) — both VBC primary care plays with growth equity economics.
     Most active buyers: mid-market PE (125 deals, 13.85x median), large PE (52 deals, 15.25x), lower middle-market PE (95 deals, 12.25x); strategic payers pay 18.25x premium.
     Advisor landscape: bulge bracket (Goldman, JPM, MS, BofA) dominates >$1B deals; Jefferies, Houlihan, Edgemont, Triple Tree, Cain Brothers specialty-strong in middle market.
   </div>

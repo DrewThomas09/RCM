@@ -180,19 +180,19 @@ def _build_concentration_metrics(payers: List[PayerDetail], hhi: int,
             value=round(top1, 4),
             benchmark=0.25,
             variance=round(top1 - 0.25, 4),
-            interpretation="above 40% is material concentration risk"),
+            interpretation="above 40.0% is material concentration risk"),
         ConcentrationMetric(
             metric="Top 3 Payer Share (CR3)",
             value=round(top3, 4),
             benchmark=0.60,
             variance=round(top3 - 0.60, 4),
-            interpretation="above 75% signals oligopolistic exposure"),
+            interpretation="above 75.0% signals oligopolistic exposure"),
         ConcentrationMetric(
             metric="Top 5 Payer Share (CR5)",
             value=round(top5, 4),
             benchmark=0.82,
             variance=round(top5 - 0.82, 4),
-            interpretation="above 90% is typical for mid-market HC"),
+            interpretation="above 90.0% is typical for mid-market HC"),
         ConcentrationMetric(
             metric="Herfindahl Index (HHI)",
             value=hhi,
@@ -223,7 +223,7 @@ def _build_concentration_metrics(payers: List[PayerDetail], hhi: int,
 def _build_renewals(payers: List[PayerDetail]) -> List[ContractRenewal]:
     rows = []
     for p in sorted(payers, key=lambda x: x.contract_expiry)[:10]:
-        rate_reset = "CPI+1.5% floor, max 4%" if "Commercial" in p.payer_type else ("fee schedule reset" if "Medicare" in p.payer_type else "state-set")
+        rate_reset = "CPI+1.5% floor, max 4.0%" if "Commercial" in p.payer_type else ("fee schedule reset" if "Medicare" in p.payer_type else "state-set")
         priority = "critical" if p.revenue_share_pct > 0.12 else ("high" if p.revenue_share_pct > 0.06 else "standard")
         rows.append(ContractRenewal(
             payer_name=p.payer_name,
