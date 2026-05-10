@@ -3613,6 +3613,22 @@ class RCMHandler(BaseHTTPRequestHandler):
             rollup["request_count"] = RCMHandler._request_counter
             return self._send_json(rollup)
         if path == "/api/backup":
+            # Admin-only — the response streams the entire SQLite
+            # portfolio DB. An analyst-role user obtaining this
+            # gets every deal, audit row, snapshot, override, note
+            # and tag in one download. Gate matches /users + /audit
+            # + /api/system/info.
+            from .auth.auth import list_users
+            _store = PortfolioStore(self.config.db_path)
+            current = self._current_user()
+            users_df = list_users(_store)
+            if len(users_df) > 0 and (
+                current is None or current.get("role") != "admin"
+            ):
+                return self._send_json(
+                    {"error": "admin only", "code": "FORBIDDEN"},
+                    status=HTTPStatus.FORBIDDEN,
+                )
             import sqlite3 as _sqlite3
             import io as _io
             import tempfile as _tmpf
