@@ -4140,6 +4140,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             body_b = get_openapi_json().encode("utf-8")
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-Type", "application/json")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            # Spec is auth-gated and changes only on deploy. A short
+            # private TTL keeps partner-side Swagger UI snappy without
+            # letting intermediaries cache the API surface.
+            self.send_header("Cache-Control", "private, max-age=60")
             self.send_header("Content-Length", str(len(body_b)))
             self.end_headers()
             self.wfile.write(body_b)
@@ -4404,10 +4409,17 @@ class RCMHandler(BaseHTTPRequestHandler):
             })
         # Custom metrics API.
         if path == "/api/metrics/custom":
+            import dataclasses as _dc
             from .domain.custom_metrics import list_custom_metrics
             store = PortfolioStore(self.config.db_path)
             metrics = list_custom_metrics(store)
-            return self._send_json({"metrics": metrics})
+            # CustomMetric is a dataclass; _send_json's _safe walker
+            # doesn't reach into dataclass instances, so an
+            # un-converted list raises "Object not JSON serializable"
+            # the moment any custom KPI is registered.
+            return self._send_json({
+                "metrics": [_dc.asdict(m) for m in metrics],
+            })
         if path == "/api/webhooks/test":
             store = PortfolioStore(self.config.db_path)
             from .infra.webhooks import dispatch_event as _test_dispatch
@@ -5704,7 +5716,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         if match.empty:
             return self._send_html(
                 '<h1>Hospital Not Found</h1>'
-                f'<p>CCN {html.escape(ccn)} not found in HCRIS data.</p>')
+                f'<p>CCN {html.escape(ccn)} not found in HCRIS data.</p>',
+                status=HTTPStatus.NOT_FOUND,
+            )
         hospital = match.iloc[0].to_dict()
         score = compute_caduceus_score(hospital)
         state = hospital.get("state", "")
@@ -8073,6 +8087,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         payload = _json.dumps(report.to_dict(), default=str).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        # Partner-data exposure report — never cache.
+        self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(payload)))
         self.end_headers()
         self.wfile.write(payload)
@@ -10967,6 +10984,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         body = _json.dumps(payload, indent=2, default=_safe).encode("utf-8")
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        # Mirror the nosniff header in _send_json — every JSON response
+        # path needs the same MIME-confusion guard.
+        self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-cache")
         self.send_header("ETag", etag)
@@ -11123,6 +11143,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         body = _json.dumps(payload, indent=2, default=_safe).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        # Prevent browsers from MIME-sniffing JSON as HTML — closes the
+        # content-confusion attack vector when a partner-supplied value
+        # ends up reflected in a JSON payload.
+        self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Cache-Control", "no-store")
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
@@ -11398,11 +11422,22 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_OPTIONS(self) -> None:
-        """CORS preflight handler."""
+        """CORS preflight handler.
+
+        Allow-Headers must mirror exactly what _send_json advertises
+        on real responses — partners' preflights ask for the same
+        header set the actual request will send. Including
+        Idempotency-Key here matches the POST surface in
+        _send_json (the server already accepts it; the OPTIONS
+        response was just lying about the contract).
+        """
         self.send_response(HTTPStatus.NO_CONTENT)
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token")
+        self.send_header(
+            "Access-Control-Allow-Headers",
+            "Content-Type, X-CSRF-Token, Idempotency-Key",
+        )
         self.send_header("Access-Control-Max-Age", "86400")
         self.end_headers()
 
