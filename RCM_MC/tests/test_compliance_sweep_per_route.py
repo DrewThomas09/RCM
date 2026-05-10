@@ -51,22 +51,47 @@ REPRESENTATIVE_ROUTES = [
     "/market-rates",
 ]
 
-# Per-route minimum compliance scores. After the 30+ commit moat
-# arc, all v2 routes hit 93-100%. Floors are now ratcheted UP to
-# lock in the gain — a regression to 87% on any route fails the
-# test, even if the median stays high.
+# Per-route minimum compliance scores. Each route is pinned at
+# its observed current state (rounded down slightly for floating-
+# point safety on the 15-rule denominator). Any regression on
+# *that specific route* fails the test, even if the median stays
+# high — single-route regressions can't hide behind aggregate.
 #
-# /screening/bankruptcy-survivor floats lower (27%) because it
-# uses a bespoke print layout that intentionally doesn't carry
-# the full kit chrome. Pinned at its current state.
+# Floors that should ratchet UP as routes migrate fully:
+#   - 0.92 routes (currently 14/15) have an interpretive-prose
+#     ``number-format-clean`` residual; they'd hit 100% if the
+#     prose were rephrased to avoid round-percent references.
+#   - 0.25 (bankruptcy-survivor) is a bespoke print layout — un-
+#     migrated by design.
 ROUTE_MIN_SCORES: dict[str, float] = {
+    # 100% routes — pinned at 1.0; any kit-presence regression
+    # drops a rule and fails this floor.
+    "/now":         1.0,
+    "/data":        1.0,
+    "/methodology": 1.0,
+    "/alerts":      1.0,
+    "/escalations": 1.0,
+    "/portfolio":   1.0,
+    "/lp-update":   1.0,
+    "/audit":       1.0,
+    "/team":        1.0,
+    "/settings":    1.0,
+    "/cms-sources": 1.0,
+
+    # 93% routes — interpretive prose has round-percent references.
+    "/home":                       0.92,
+    "/library":                    0.92,
+    "/diligence/checklist":        0.92,
+    "/methodology/pe_math":        0.92,
+    "/scenarios":                  0.92,
+    "/diligence/bear-case":        0.92,
+    "/market-rates":               0.92,
+
     # Bespoke print layout — un-migrated by design.
     "/screening/bankruptcy-survivor": 0.25,
 }
-# Default floor raised from 0.5 → 0.93. Every v2 route now passes
-# 14/15 rules at minimum (the one allowable miss is the
-# interpretive-prose ``number-format-clean`` residual on routes
-# with descriptive percent text).
+# Fallback for any route added without an explicit pin. Tight at
+# 0.92 so new routes have to migrate to v2 chrome to pass.
 DEFAULT_ROUTE_MIN_SCORE = 0.92
 
 # The aggregate target. With ~93% of routes at 100% and the rest
