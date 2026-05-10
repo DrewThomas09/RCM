@@ -87,8 +87,19 @@ def _isolate_chartis_ui_v2_flag():
             os.environ.pop("CHARTIS_UI_V2", None)
         else:
             os.environ["CHARTIS_UI_V2"] = _CHARTIS_UI_V2_SNAPSHOT
-        # Drop cached kit modules so the next test reads the flag fresh.
+        # Drop cached kit modules AND every UI page that imports
+        # ``chartis_shell`` at module level. Without the second
+        # part, a page module loaded under v2-off keeps its stale
+        # reference to the legacy ``chartis_shell`` function — and
+        # later tests running with v2=1 see the legacy shell render
+        # despite the env flag flip. Surfaced by the
+        # ``test_chartis_integration → test_compliance_sweep_per_route``
+        # ordering bug where /methodology dropped from 100% → 27%
+        # compliance score.
         import sys
         for name in list(sys.modules):
-            if name.startswith("rcm_mc.ui._chartis_kit"):
+            if (
+                name.startswith("rcm_mc.ui._chartis_kit")
+                or name.startswith("rcm_mc.ui.")
+            ):
                 sys.modules.pop(name, None)
