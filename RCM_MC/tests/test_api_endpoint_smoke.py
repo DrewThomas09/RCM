@@ -531,6 +531,73 @@ class APIEndpointSmoke(unittest.TestCase):
         self.assertEqual(payload["code"], "RATE_LIMITED")
         self.assertIsInstance(payload["retry_after_secs"], (int, float))
 
+    def test_options_preflight_contract(self) -> None:
+        """CORS preflight on /api/* must:
+
+        * Return 204 No Content
+        * ``Access-Control-Allow-Origin`` (any value — partners'
+          browser does the actual origin match)
+        * ``Access-Control-Allow-Methods`` listing GET, POST, OPTIONS
+        * ``Access-Control-Allow-Headers`` listing Content-Type,
+          X-CSRF-Token, AND Idempotency-Key (must mirror exactly
+          what _send_json advertises on real responses — drift
+          between the two breaks partners' preflights silently)
+        * ``Access-Control-Max-Age`` (any positive integer string)
+        """
+        anon = urllib.request.build_opener(_NoFollow())
+        targets = [
+            "/api/deals",
+            "/api/scenarios",
+            "/api/system/info",
+            "/api/login",
+        ]
+        issues: list[str] = []
+        for path in targets:
+            req = urllib.request.Request(
+                self.base + path, method="OPTIONS",
+            )
+            req.add_header("Origin", "https://partner.example.com")
+            req.add_header("Access-Control-Request-Method", "POST")
+            req.add_header(
+                "Access-Control-Request-Headers",
+                "X-CSRF-Token, Content-Type, Idempotency-Key",
+            )
+            try:
+                resp = anon.open(req, timeout=5)
+            except urllib.error.HTTPError as e:
+                issues.append(f"{path}: HTTPError {e.code}")
+                continue
+            status = getattr(resp, "status", 0)
+            if status != 204:
+                issues.append(f"{path}: status {status}, expected 204")
+                continue
+            allow_methods = (resp.headers.get("Access-Control-Allow-Methods") or "").upper()
+            for m in ("GET", "POST", "OPTIONS"):
+                if m not in allow_methods:
+                    issues.append(
+                        f"{path}: Allow-Methods missing {m} "
+                        f"(got {allow_methods!r})"
+                    )
+            allow_headers = (resp.headers.get("Access-Control-Allow-Headers") or "")
+            allow_headers_lower = allow_headers.lower()
+            for h in ("content-type", "x-csrf-token", "idempotency-key"):
+                if h not in allow_headers_lower:
+                    issues.append(
+                        f"{path}: Allow-Headers missing {h!r} "
+                        f"(got {allow_headers!r})"
+                    )
+            if not (resp.headers.get("Access-Control-Allow-Origin") or "").strip():
+                issues.append(f"{path}: Allow-Origin empty")
+            max_age = resp.headers.get("Access-Control-Max-Age", "")
+            if not (max_age.isdigit() and int(max_age) > 0):
+                issues.append(
+                    f"{path}: Max-Age={max_age!r}, expected positive integer"
+                )
+        self.assertEqual(
+            issues, [],
+            f"CORS preflight contract violations: {issues}",
+        )
+
     def test_session_cookie_is_httponly_and_samesite(self) -> None:
         """The ``rcm_session`` cookie must be ``HttpOnly`` (XSS
         can't steal it via document.cookie) and carry

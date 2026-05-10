@@ -10545,11 +10545,22 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_OPTIONS(self) -> None:
-        """CORS preflight handler."""
+        """CORS preflight handler.
+
+        Allow-Headers must mirror exactly what _send_json advertises
+        on real responses — partners' preflights ask for the same
+        header set the actual request will send. Including
+        Idempotency-Key here matches the POST surface in
+        _send_json (the server already accepts it; the OPTIONS
+        response was just lying about the contract).
+        """
         self.send_response(HTTPStatus.NO_CONTENT)
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token")
+        self.send_header(
+            "Access-Control-Allow-Headers",
+            "Content-Type, X-CSRF-Token, Idempotency-Key",
+        )
         self.send_header("Access-Control-Max-Age", "86400")
         self.end_headers()
 
