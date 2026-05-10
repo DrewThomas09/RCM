@@ -246,8 +246,8 @@ def render_deal_risk_scores(params: Dict[str, str]) -> str:
 {ck_section_header(f"Deal Risk Scores{title_suffix}", "Top 60 by composite score (descending)")}
 <div style="overflow-x:auto">{deal_table}</div>
 <p style="font-size:11px;color:var(--ck-text-faint);margin-top:12px">
-  Risk score = weighted composite: entry multiple 30%, payer concentration 20%,
-  hold duration 20%, vintage cycle 15%, deal size 15%.
+  Risk score = weighted composite: entry multiple 30.0%, payer concentration 20.0%,
+  hold duration 20.0%, vintage cycle 15.0%, deal size 15.0%.
   Tiers: Low &lt;25, Medium 25–49, High 50–69, Critical ≥70.
 </p>
 """

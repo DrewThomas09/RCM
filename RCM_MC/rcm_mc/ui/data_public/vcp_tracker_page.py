@@ -231,7 +231,7 @@ def render_vcp_tracker(params: dict = None) -> str:
     {r.on_track_pct * 100:.1f}% of levers on track or complete; 5 of 26 levers "behind" are concentrated in RCM migration (Magnolia), payer mix (Redwood), and new-market entry (Willow) — all tractable with incremental resource commitment.
     Commercial and M&A lever categories carry the largest contribution to EBITDA growth — margin expansion averaging 160bps across beat-budget deals supports thesis integrity.
     {beat_count} of {len(r.kpi_scorecards)} portfolio companies beat budget — 3 misses (Redwood, Willow, Ash) have {interv_critical} active sponsor intervention(s) and are showing early response signals.
-    Bolt-on M&A (22 deployments, 78% median realization) and back-office consolidation (19 deployments, 89% median) are the highest-reliability value creation plays.
+    Bolt-on M&A (22 deployments, 78.0% median realization) and back-office consolidation (19 deployments, 89.0% median) are the highest-reliability value creation plays.
     RCM migration, AI/digital (52-58% realization), and new-market de novo (68%) are the riskiest playbook items — budget 30-40% execution buffer.
   </div>
 </div>"""

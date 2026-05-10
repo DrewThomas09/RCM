@@ -177,7 +177,7 @@ def render_zbb_tracker(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">ZBB Thesis:</strong> Platform baseline ${r.total_baseline_mm:,.2f}M reduced to ${r.current_run_rate_mm:,.2f}M with ${r.total_savings_captured_mm:,.2f}M captured to date.
     Highest-impact captures: consulting freeze (96%), benefits renegotiation (88%), malpractice pool consolidation (88%).
-    Clinical productivity initiative is the lagging workstream at 31% capture — execution challenge requires CMO-led intervention.
+    Clinical productivity initiative is the lagging workstream at 31.0% capture — execution challenge requires CMO-led intervention.
     ${r.total_savings_potential_mm:,.2f}M in remaining opportunity — concentrated in clinical labor and contract labor categories.
     Vendor rationalization eliminated 183 redundant vendors across 8 categories, generating ${sum(v.savings_mm for v in r.vendors):,.2f}M annualized savings.
     Waste audit surfaced ${sum(w.identified_mm for w in r.waste):,.2f}M of annual recurring waste; ${sum(w.eliminated_mm for w in r.waste):,.2f}M eliminated to date.

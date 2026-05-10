@@ -151,10 +151,10 @@ def _build_milestones() -> List[DayXMilestone]:
 
 def _build_risks() -> List[IntegrationRisk]:
     return [
-        IntegrationRisk("Clinician Retention Post-Close", "MD attrition running 14% vs 9% baseline", "medium", 3.8, "in progress", "CMO"),
+        IntegrationRisk("Clinician Retention Post-Close", "MD attrition running 14.0% vs 9.0% baseline", "medium", 3.8, "in progress", "CMO"),
         IntegrationRisk("EHR Migration Delay", "Epic single-tenant migration 3 months behind", "high", 5.2, "escalated", "CIO"),
         IntegrationRisk("Payer Contract Transition", "BCBS has not ratified consolidated contract", "high", 8.5, "active negotiation", "VP Managed Care"),
-        IntegrationRisk("Cross-Sell Synergy Miss", "Cross-sell running 30% of target", "high", 2.2, "remediation plan", "CRO"),
+        IntegrationRisk("Cross-Sell Synergy Miss", "Cross-sell running 30.0% of target", "high", 2.2, "remediation plan", "CRO"),
         IntegrationRisk("Compliance Program Gaps", "Legacy acquired site missed 2 DEA recerts", "medium", 1.5, "closed", "CCO"),
         IntegrationRisk("Data Integration Complexity", "2 legacy data warehouses not yet merged", "medium", 1.8, "in progress", "CDO"),
         IntegrationRisk("Cultural Integration", "Employee NPS down 12pp at acquired co", "medium", 0.0, "active", "CHRO"),

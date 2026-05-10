@@ -188,7 +188,7 @@ def _build_interventions() -> List[SponsorIntervention]:
         SponsorIntervention("Project Cypress — GI Network", "2025-08-15", "M&A accelerated", "low",
                              "2 quick bolt-ons to hit synergy target", "synergies delivered ahead"),
         SponsorIntervention("Project Laurel — Derma", "2025-11-02", "Capital injection", "medium",
-                             "$12M follow-on for 3 bolt-ons", "transactions closed"),
+                             "$12.00M follow-on for 3 bolt-ons", "transactions closed"),
         SponsorIntervention("Project Redwood — Behavioral", "2026-03-20", "Strategic review", "high",
                              "Path-to-exit evaluation given market dynamics", "in progress"),
     ]

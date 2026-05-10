@@ -114,7 +114,7 @@ def _build_drugs() -> List[CriticalDrug]:
 
 def _build_suppliers() -> List[SupplierConcentration]:
     return [
-        SupplierConcentration("Pfizer Hospira", "Injectables / Oncology", 28.5, 0.38, "US/PR/IT", "2x FDA 483s 2023-2024", 72),
+        SupplierConcentration("Pfizer Hospira", "Injectables / Oncology", 28.5, 0.38, "US/PR/IT", "2.00x FDA 483s 2023-2024", 72),
         SupplierConcentration("Fresenius Kabi", "Sterile Injectables", 18.5, 0.24, "DE/AT/CN", "clean 3-yr", 42),
         SupplierConcentration("Baxter International", "IV Solutions / Hospital", 22.5, 0.58, "US/PR", "PR hurricane disruption 2023", 58),
         SupplierConcentration("Teva Pharmaceuticals", "Generics Oral", 12.5, 0.22, "IL/US/HU", "clean 2-yr", 45),
@@ -123,7 +123,7 @@ def _build_suppliers() -> List[SupplierConcentration]:
         SupplierConcentration("Amgen / Biosimilars", "Biologics", 32.5, 0.45, "US/PR/IE", "clean 3-yr", 28),
         SupplierConcentration("AstraZeneca", "Respiratory / Oncology", 21.5, 0.35, "UK/SE/US", "clean 3-yr", 32),
         SupplierConcentration("Merck", "Oncology / Vaccines", 38.5, 0.42, "US/IE/NL", "clean 3-yr", 25),
-        SupplierConcentration("Sun Pharma", "Generics / Derm", 8.2, 0.15, "IN/US", "1x FDA Warning Letter 2023", 65),
+        SupplierConcentration("Sun Pharma", "Generics / Derm", 8.2, 0.15, "IN/US", "1.00x FDA Warning Letter 2023", 65),
     ]
 
 
