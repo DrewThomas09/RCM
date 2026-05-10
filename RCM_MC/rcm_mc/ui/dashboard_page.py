@@ -315,7 +315,7 @@ def _since_yesterday_events(db_path: str,
             "at": r["at"] or "",
             "icon": "🔔",
             "kind": "alert",
-            "label": f'{r["severity"].upper()}: {r["title"]}'[:80],
+            "label": f'{str(r["severity"] or "").upper()}: {r["title"]}'[:80],
             "href": f"/deal/{r['deal_id']}" if r["deal_id"] else "/alerts",
             # Ack-form fields
             "alert_kind": r["kind"] or "",
