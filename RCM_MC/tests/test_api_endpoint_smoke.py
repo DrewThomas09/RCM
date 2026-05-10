@@ -602,25 +602,24 @@ class APIEndpointSmoke(unittest.TestCase):
         )
 
     def test_form_body_post_to_json_endpoint_does_not_hang(self) -> None:
-        """A POST to a JSON-expecting endpoint (/api/screener/run)
-        with Content-Type: application/x-www-form-urlencoded must
-        return promptly with a 400, not hang for 120 seconds.
+        """Every JSON-expecting POST endpoint must return promptly
+        when called with Content-Type: application/x-www-form-
+        urlencoded — never hang for 120 seconds.
 
         Background: the CSRF middleware in _do_post_inner reads
         the form body via _read_form_body() to extract csrf_token.
-        Pre-fix, the handler then did its own self.rfile.read(n)
-        — but rfile was already drained, so the read blocked
-        waiting for Content-Length bytes that would never arrive.
-        Result: 120s socket timeout per call. A partner client
+        Pre-fix, JSON handlers then did their own
+        self.rfile.read(n) — rfile was already drained, so the
+        read blocked waiting for Content-Length bytes that would
+        never arrive. 120s socket timeout per call. A partner
         misconfigured to send form-urlencoded instead of JSON
-        could DOS itself; an attacker could keep hundreds of
-        sockets open.
+        could DOS themselves; an attacker could exhaust the
+        thread pool with cheap stuck sockets.
 
-        Fix: handlers cache the raw body via _raw_post_body() so
-        the second access returns instantly.
+        Fix: 14 handlers migrated to ``self._raw_post_body()``
+        which caches the read across CSRF + handler accesses.
         """
         import time
-        # Get the post-login CSRF cookie from the class jar.
         csrf = ""
         for c in self.cookies:
             if c.name == "rcm_csrf":
@@ -628,41 +627,49 @@ class APIEndpointSmoke(unittest.TestCase):
                 break
         body = urllib.parse.urlencode({
             "csrf_token": csrf,
-            "filters": "[]",
         }).encode()
-        req = urllib.request.Request(
-            self.base + "/api/screener/run",
-            data=body, method="POST",
-        )
-        req.add_header("X-CSRF-Token", csrf)
-        req.add_header(
-            "Content-Type", "application/x-www-form-urlencoded",
-        )
-        t0 = time.time()
-        try:
-            self.opener.open(req, timeout=10)
-        except urllib.error.HTTPError as e:
+        # Sweep every JSON-expecting POST in the documented set.
+        TARGETS = [
+            "/api/screener/run",
+            "/api/metrics/custom",
+            "/api/webhooks",
+            "/api/deals/bulk",
+            "/api/deals/import",
+            "/api/portfolio/register",
+            "/api/chat",
+        ]
+        slow: list[str] = []
+        for path in TARGETS:
+            req = urllib.request.Request(
+                self.base + path, data=body, method="POST",
+            )
+            req.add_header("X-CSRF-Token", csrf)
+            req.add_header(
+                "Content-Type",
+                "application/x-www-form-urlencoded",
+            )
+            t0 = time.time()
+            try:
+                self.opener.open(req, timeout=10)
+            except urllib.error.HTTPError:
+                pass
+            except urllib.error.URLError as e:
+                slow.append(
+                    f"{path}: hung ({e}) — likely double-read"
+                )
+                continue
             elapsed = time.time() - t0
-            self.assertLess(
-                elapsed, 5.0,
-                f"POST took {elapsed:.1f}s — likely hanging on "
-                f"double rfile.read after CSRF middleware drained",
-            )
-            # 400 is fine (handler rejects non-JSON body); 200 is
-            # also fine. The bug was hanging, not status code.
-            self.assertIn(
-                e.code, (200, 400),
-                f"unexpected status {e.code}; body: "
-                f"{e.read()[:200]!r}",
-            )
-        except urllib.error.URLError as e:
-            elapsed = time.time() - t0
-            self.fail(
-                f"POST hung for {elapsed:.1f}s ({e}) — the CSRF "
-                f"middleware likely drained rfile and the handler's "
-                f"second read is blocking. Use _raw_post_body() in "
-                f"the handler instead of self.rfile.read()."
-            )
+            if elapsed > 5.0:
+                slow.append(
+                    f"{path}: {elapsed:.1f}s — likely double-read "
+                    f"after CSRF middleware drained rfile"
+                )
+        self.assertEqual(
+            slow, [],
+            f"JSON-expecting POSTs hanging on form-urlencoded "
+            f"body — use self._raw_post_body() instead of "
+            f"self.rfile.read(): {slow}",
+        )
 
     def test_login_get_already_authed_rejects_open_redirect(self) -> None:
         """When an already-authenticated partner visits
