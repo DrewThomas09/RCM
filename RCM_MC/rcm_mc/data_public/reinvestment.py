@@ -229,7 +229,7 @@ def _build_scenarios(
     sb_exit = sb_terminal * 12
     sb_equity = sb_exit - (entry_ev - entry_equity) * 0.60 + total_fcf * 0.10
     scenarios.append(CompoundingScenario(
-        scenario="Balanced (35% M&A / 20% organic)",
+        scenario="Balanced (35.0% M&A / 20.0% organic)",
         total_fcf_deployed_mm=total_fcf, boltons_acquired=3,
         organic_capex_mm=total_fcf * 0.20,
         debt_paydown_mm=total_fcf * 0.25,

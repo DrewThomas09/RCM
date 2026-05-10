@@ -238,7 +238,7 @@ def _build_service_lines() -> List[ServiceLineConcentration]:
 def _build_at_risk() -> List[AtRiskContract]:
     return [
         AtRiskContract("USAP (Horizon)", "AdventHealth", "Anesthesia",
-                       "Contract term ending Dec 2025; stipend increase pressure (+$2.5M requested)",
+                       "Contract term ending Dec 2025; stipend increase pressure (+$2.50M requested)",
                        32.0, "Value-based proposal + efficiency improvements; executive-level engagement",
                        "Sr. Partner (Horizon)", "2025-09-01"),
         AtRiskContract("Envision (Horizon)", "UHS", "Emergency Medicine",

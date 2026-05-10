@@ -94,7 +94,7 @@ def _stipends_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(s.hospital_system)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.service_line)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{s.stipend_vs_productivity_ratio * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.stipend_per_wrvu:.1f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.stipend_per_wrvu:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${s.total_stipend_m:.2f}M</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{b_c};font-weight:700">{_html.escape(s.benchmark_percentile)}</td>',
             f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{t_c};border:1px solid {t_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(s.trend)}</span></td>',
@@ -219,12 +219,12 @@ def render_hospital_anchor(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Stipend Economics</div>{st_tbl}</div>
   <div style="{cell}"><div style="{h3}">Hospital Counterparties — Credit & Strategy</div>{cp_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Hospital Anchor Contract Summary:</strong> {r.total_contracts} active contracts generate ${r.total_contract_value_m:,.2f}M annual revenue with ${r.total_stipend_m:.2f}M hospital-paid stipends — 29% stipend-to-total mix supports productivity gap during ramp / volatility.
+    <strong style="color:{text}">Hospital Anchor Contract Summary:</strong> {r.total_contracts} active contracts generate ${r.total_contract_value_m:,.2f}M annual revenue with ${r.total_stipend_m:.2f}M hospital-paid stipends — 29.0% stipend-to-total mix supports productivity gap during ramp / volatility.
     Renewal profile: {r.weighted_renewal_probability_pct * 100:.1f}% weighted renewal probability; {r.contracts_expiring_12mo} contracts expiring within 12 months (${sum(r2.revenue_at_risk_m for r2 in r.renewals if r2.months_until_expiry <= 12):.2f}M revenue at renewal).
-    Counterparty concentration: HCA Healthcare ($283M across 5 contracts) is the single largest relationship — represents 30% of contract book; diversified across anesthesia, radiology, ED, hospitalist, pathology.
-    Credit quality: 60% of contracted revenue from A-/better counterparties (HCA BBB+, Kaiser AA+, Ascension A+, CommonSpirit A-, Baylor AA-, AdventHealth AA-, Methodist AA); Tenet (B+) and UHS (BB+) at weaker end.
+    Counterparty concentration: HCA Healthcare ($283.00M across 5 contracts) is the single largest relationship — represents 30.0% of contract book; diversified across anesthesia, radiology, ED, hospitalist, pathology.
+    Credit quality: 60.0% of contracted revenue from A-/better counterparties (HCA BBB+, Kaiser AA+, Ascension A+, CommonSpirit A-, Baylor AA-, AdventHealth AA-, Methodist AA); Tenet (B+) and UHS (BB+) at weaker end.
     Stipend benchmarking: HCA contracts at P75, CommonSpirit/Ascension at P60, Tenet at P75 (under anesthesia pressure); AdventHealth stipend "tightening" flags risk ahead of Dec 2025 renewal.
-    At-risk watchlist: $149.0M revenue at risk across 5 contracts (Envision-UHS $58M, Envision-Tenet $28.5M, USAP-AdventHealth $32M, Pediatrix $18.5M, Spruce-Ascension $12M) — active mitigation in place with senior partner ownership.
+    At-risk watchlist: $149.00M revenue at risk across 5 contracts (Envision-UHS $58.00M, Envision-Tenet $28.50M, USAP-AdventHealth $32.00M, Pediatrix $18.50M, Spruce-Ascension $12.00M) — active mitigation in place with senior partner ownership.
   </div>
 </div>"""
 
