@@ -4999,7 +4999,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         if match.empty:
             return self._send_html(
                 '<h1>Hospital Not Found</h1>'
-                f'<p>CCN {html.escape(ccn)} not found in HCRIS data.</p>')
+                f'<p>CCN {html.escape(ccn)} not found in HCRIS data.</p>',
+                status=HTTPStatus.NOT_FOUND,
+            )
         hospital = match.iloc[0].to_dict()
         score = compute_caduceus_score(hospital)
         state = hospital.get("state", "")
