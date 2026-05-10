@@ -10,7 +10,9 @@ import json
 from typing import Any, Dict, List, Optional
 
 from ..portfolio.store import PortfolioStore
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_kpi_block, ck_panel, ck_section_intro,
+)
 from .brand import PALETTE
 
 
@@ -85,21 +87,26 @@ def render_pipeline(db_path: str) -> str:
     total = len(hospitals)
     active = sum(1 for h in hospitals if h.stage not in ("closed", "passed"))
 
-    # ── KPIs ──
+    # ── Editorial intro + KPI strip ──
+    intro = ck_section_intro(
+        eyebrow="DEAL PIPELINE",
+        headline="How prospects flow from screening to close.",
+        italic_word="flow",
+        body=(
+            f"{total} hospitals in pipeline · {active} active · "
+            f"{summary.get('diligence', 0)} in diligence · "
+            f"{summary.get('closed', 0)} closed · "
+            f"{len(searches)} saved searches."
+        ),
+    )
     kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{total}</div>'
-        f'<div class="cad-kpi-label">In Pipeline</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{active}</div>'
-        f'<div class="cad-kpi-label">Active</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{summary.get("diligence", 0)}</div>'
-        f'<div class="cad-kpi-label">In Diligence</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-pos);">'
-        f'{summary.get("closed", 0)}</div>'
-        f'<div class="cad-kpi-label">Closed</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(searches)}</div>'
-        f'<div class="cad-kpi-label">Saved Searches</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("In Pipeline", f"{total}")
+        + ck_kpi_block("Active", f"{active}")
+        + ck_kpi_block("In Diligence", f"{summary.get('diligence', 0)}")
+        + ck_kpi_block("Closed", f"{summary.get('closed', 0)}")
+        + ck_kpi_block("Saved Searches", f"{len(searches)}")
+        + '</div>'
     )
 
     # ── Funnel visualization ──
@@ -152,15 +159,14 @@ def render_pipeline(db_path: str) -> str:
 
     funnel = (
         f'{funnel_css}'
-        f'<div class="cad-card" style="padding:24px 28px;">'
-        f'<h2 style="margin:0 0 4px;">Pipeline Funnel</h2>'
-        f'<p style="margin:0 0 18px;font-family:var(--sc-serif,Georgia,serif);'
-        f'font-size:13.5px;color:var(--sc-text-dim,#465366);">'
-        f'How prospects flow from screening to close. '
-        f'Empty stages remain visible at low opacity so the funnel '
-        f'shape stays readable.</p>'
-        f'{funnel_bars}'
-        f'</div>'
+        + ck_panel(
+            '<p class="ck-section-body">'
+            'How prospects flow from screening to close. '
+            'Empty stages remain visible at low opacity so the funnel '
+            'shape stays readable.</p>'
+            f'{funnel_bars}',
+            title="Pipeline Funnel",
+        )
     )
 
     # ── Saved searches ──
@@ -182,27 +188,26 @@ def render_pipeline(db_path: str) -> str:
             f'</tr>'
         )
 
-    search_section = (
-        f'<div class="cad-card">'
-        f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
-        f'<h2 style="margin:0;">Saved Searches ({len(searches)})</h2>'
-        f'<a href="/predictive-screener" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;font-size:11px;">New Search</a></div>'
-    )
     if search_rows:
-        search_section += (
-            f'<table class="cad-table"><thead><tr>'
-            f'<th>Name</th><th>Filters</th><th>Results</th><th>Last Run</th>'
+        search_inner = (
+            '<p class="ck-section-body">'
+            '<a href="/predictive-screener" class="cad-btn cad-btn-primary">New Search</a></p>'
+            '<table class="cad-table"><thead><tr>'
+            '<th>Name</th><th>Filters</th><th>Results</th><th>Last Run</th>'
             f'</tr></thead><tbody>{search_rows}</tbody></table>'
         )
     else:
-        search_section += (
-            f'<p style="font-size:12px;color:var(--cad-text3);padding:8px 0;">'
-            f'No saved searches yet. Run a search in the '
-            f'<a href="/predictive-screener" style="color:var(--cad-link);">Deal Screener</a> '
-            f'and save it.</p>'
+        search_inner = (
+            '<p class="ck-section-body">'
+            'No saved searches yet. Run a search in the '
+            '<a href="/predictive-screener" class="ck-link">Deal Screener</a> '
+            'and save it.</p>'
+            '<p class="ck-section-body">'
+            '<a href="/predictive-screener" class="cad-btn cad-btn-primary">New Search</a></p>'
         )
-    search_section += '</div>'
+    search_section = ck_panel(
+        search_inner, title=f"Saved Searches ({len(searches)})",
+    )
 
     # ── Enrich pipeline hospitals with HCRIS data ──
     hcris_lookup = {}
@@ -227,7 +232,7 @@ def render_pipeline(db_path: str) -> str:
         hcris = hcris_lookup.get(h.ccn, {})
         rev = hcris.get("revenue", 0)
         margin = hcris.get("margin", 0)
-        margin_color = "var(--cad-pos)" if margin > 0.05 else ("var(--cad-warn)" if margin > 0 else "var(--cad-neg)")
+        margin_cls = "cad-pos" if margin > 0.05 else ("cad-warn" if margin > 0 else "cad-neg")
         rev_str = _fm(rev) if rev > 0 else "—"
         margin_str = f"{margin:.1%}" if rev > 0 else "—"
 
@@ -237,53 +242,43 @@ def render_pipeline(db_path: str) -> str:
         advance_links = ""
         for ns_key, ns_label, _ in next_stages:
             advance_links += (
-                f'<form method="POST" action="/pipeline/stage/{ccn}" style="display:inline;">'
+                f'<form method="POST" action="/pipeline/stage/{ccn}" class="pp-advance-form">'
                 f'<input type="hidden" name="stage" value="{ns_key}">'
-                f'<button type="submit" style="background:none;border:none;color:var(--cad-link);'
-                f'cursor:pointer;font-size:10px;padding:0;">→{ns_label[:8]}</button></form> '
+                f'<button type="submit" class="pp-advance-btn">→{ns_label[:8]}</button></form> '
             )
 
         hospital_rows += (
             f'<tr>'
             f'<td>{_priority_dot(h.priority)}</td>'
-            f'<td><a href="/hospital/{ccn}" '
-            f'style="color:var(--cad-link);text-decoration:none;font-weight:500;">'
-            f'{name}</a></td>'
+            f'<td><a href="/hospital/{ccn}" class="ck-link"><strong>{name}</strong></a></td>'
             f'<td>{_html.escape(h.state)}</td>'
             f'<td class="num">{h.beds}</td>'
             f'<td class="num">{rev_str}</td>'
-            f'<td class="num" style="color:{margin_color};">{margin_str}</td>'
+            f'<td class="num {margin_cls}">{margin_str}</td>'
             f'<td>{_stage_badge(h.stage)} {advance_links}</td>'
-            f'<td style="font-size:10px;">'
-            f'<a href="/ebitda-bridge/{ccn}" style="color:var(--cad-link);text-decoration:none;">Bridge</a> · '
-            f'<a href="/ic-memo/{ccn}" style="color:var(--cad-link);text-decoration:none;">Memo</a> · '
-            f'<a href="/data-room/{ccn}" style="color:var(--cad-link);text-decoration:none;">Data</a></td>'
+            f'<td>'
+            f'<a href="/ebitda-bridge/{ccn}" class="ck-link">Bridge</a> · '
+            f'<a href="/ic-memo/{ccn}" class="ck-link">Memo</a> · '
+            f'<a href="/data-room/{ccn}" class="ck-link">Data</a></td>'
             f'</tr>'
         )
 
-    pipeline_table = (
-        f'<div class="cad-card">'
-        f'<div style="display:flex;justify-content:space-between;align-items:center;">'
-        f'<h2 style="margin:0;">Pipeline Hospitals ({total})</h2>'
-        f'<a href="/pipeline/bridge" class="cad-btn" '
-        f'style="text-decoration:none;font-size:11px;background:var(--cad-pos);color:#fff;">'
-        f'Portfolio EBITDA Bridge</a></div>'
-    )
     if hospital_rows:
-        pipeline_table += (
-            f'<table class="cad-table"><thead><tr>'
-            f'<th></th><th>Hospital</th><th>State</th><th>Beds</th>'
-            f'<th>Revenue</th><th>Margin</th><th>Stage</th><th>Actions</th>'
-            f'</tr></thead><tbody>{hospital_rows}</tbody></table>'
+        pipeline_table = ck_panel(
+            '<p class="ck-section-body">'
+            f'<a href="/pipeline/bridge" class="cad-btn cad-btn-primary">Portfolio EBITDA Bridge</a></p>'
+            '<table class="cad-table"><thead><tr>'
+            '<th></th><th>Hospital</th><th>State</th><th>Beds</th>'
+            '<th>Revenue</th><th>Margin</th><th>Stage</th><th>Actions</th>'
+            f'</tr></thead><tbody>{hospital_rows}</tbody></table>',
+            title=f"Pipeline Hospitals ({total})",
         )
-        pipeline_table += '</div>'
     else:
         # Replace the bare "No hospitals" line with an editorial
         # empty-state card so the page reads as deliberate and gives
         # the partner a one-click path to fill it.
         from ._chartis_kit import ck_empty_state
-        pipeline_table += '</div>'
-        pipeline_table += ck_empty_state(
+        pipeline_table = ck_empty_state(
             "No hospitals in the pipeline yet.",
             body=(
                 "Run the Predictive Screener against your thesis "
@@ -308,39 +303,43 @@ def render_pipeline(db_path: str) -> str:
         else:
             text = action
         activity_items += (
-            f'<div style="display:flex;gap:8px;padding:4px 0;font-size:12px;'
-            f'border-bottom:1px solid var(--cad-border);">'
-            f'<span style="color:var(--cad-text3);width:70px;font-size:10px;">'
-            f'{a["created_at"][:10]}</span>'
-            f'<a href="/hospital/{_html.escape(a["ccn"])}" '
-            f'style="color:var(--cad-link);text-decoration:none;width:60px;">'
+            '<div class="pp-activity-row">'
+            f'<span class="pp-activity-date">{a["created_at"][:10]}</span>'
+            f'<a href="/hospital/{_html.escape(a["ccn"])}" class="ck-link pp-activity-ccn">'
             f'{_html.escape(a["ccn"])}</a>'
-            f'<span style="color:var(--cad-text2);">{_html.escape(text)}</span></div>'
+            f'<span>{_html.escape(text)}</span></div>'
         )
 
     activity_section = ""
     if activity_items:
-        activity_section = (
-            f'<div class="cad-card">'
-            f'<h2>Recent Activity</h2>'
-            f'{activity_items}</div>'
+        activity_section = ck_panel(
+            activity_items, title="Recent Activity",
         )
 
-    # ── Nav ──
-    nav = (
-        f'<div class="cad-card" style="display:flex;gap:8px;flex-wrap:wrap;">'
-        f'<a href="/predictive-screener" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Deal Screener</a>'
-        f'<a href="/portfolio/monitor" class="cad-btn" '
-        f'style="text-decoration:none;">Portfolio Monitor</a>'
-        f'<a href="/ml-insights" class="cad-btn" '
-        f'style="text-decoration:none;">ML Insights</a>'
-        f'</div>'
+    nav = ck_panel(
+        '<p class="ck-section-body">'
+        '<a href="/predictive-screener" class="cad-btn cad-btn-primary">Deal Screener</a> '
+        '<a href="/portfolio/monitor" class="cad-btn">Portfolio Monitor</a> '
+        '<a href="/ml-insights" class="cad-btn">ML Insights</a>'
+        '</p>',
+        title="Cross-links",
     )
 
+    pp_styles = """
+<style>
+.pp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.pp-advance-form{display:inline;}
+.pp-advance-btn{background:none;border:none;color:var(--cad-link);
+cursor:pointer;font-size:10px;padding:0;}
+.pp-activity-row{display:flex;gap:8px;padding:4px 0;font-size:12px;
+border-bottom:1px solid var(--cad-border);}
+.pp-activity-date{color:var(--cad-text3);width:70px;font-size:10px;}
+.pp-activity-ccn{width:60px;}
+</style>
+"""
     body = (
-        f'{kpis}'
-        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
+        f'{pp_styles}{intro}{kpis}'
+        '<div class="pp-grid">'
         f'<div>{funnel}{search_section}</div>'
         f'<div>{activity_section}</div></div>'
         f'{pipeline_table}{nav}'
