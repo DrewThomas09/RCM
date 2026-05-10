@@ -12,8 +12,8 @@ _CSS = """
   --c-bg: #0a0e17; --c-panel: #111827;
   --c-panel-alt: #0f172a; --c-border: #1e293b;
   --c-text: #e2e8f0; --c-dim: #94a3b8; --c-faint: #64748b;
-  --c-pos: #10b981; --c-neg: #ef4444; --c-warn: #f59e0b;
-  --c-watch: #eab308; --c-blue: #3b82f6;
+  --c-pos: var(--theme-positive,#10b981); --c-neg: var(--theme-negative,#ef4444); --c-warn: var(--theme-warning,#f59e0b);
+  --c-watch: #eab308; --c-blue: var(--theme-accent,#3b82f6);
   --c-mono: 'JetBrains Mono', 'SF Mono', monospace;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -181,10 +181,10 @@ def render_monitor_dashboard(
         1.0,
     )
     color_map = {
-        "outperforming": "#3b82f6",
-        "on_track": "#10b981",
+        "outperforming": "var(--theme-accent,#3b82f6)",
+        "on_track": "var(--theme-positive,#10b981)",
         "watch": "#eab308",
-        "early_warning": "#ef4444",
+        "early_warning": "var(--theme-negative,#ef4444)",
     }
     label_map = {
         "outperforming": "Outperforming (>+5%)",

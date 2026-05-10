@@ -24,6 +24,7 @@ from .._chartis_kit import (
 )
 from ._helpers import render_page_explainer
 from ._sanity import render_number
+from ..brand import PALETTE
 
 _STAGES = ("Sourcing", "Screened", "IOI", "LOI", "Diligence", "IC", "Closed")
 
@@ -559,12 +560,12 @@ def _try_the_tool_quickstart() -> str:
             f'flex-grow:1;">{_html.escape(desc)}</div>'
             f'<div style="display:flex;gap:8px;margin-top:4px;">'
             f'<a href="{_html.escape(pipeline_url)}" '
-            f'style="padding:7px 14px;background:#f59e0b;color:#0a0e17;'
+            f'style="padding:7px 14px;background:{PALETTE["warning"]};color:#0a0e17;'
             f'border:0;font-size:10px;letter-spacing:1.3px;'
             f'text-transform:uppercase;font-weight:700;text-decoration:none;'
             f'border-radius:3px;">▶ Run Pipeline</a>'
             f'<a href="{_html.escape(bench_url)}" '
-            f'style="padding:7px 14px;background:transparent;color:#3b82f6;'
+            f'style="padding:7px 14px;background:transparent;color:{PALETTE["brand_accent"]};'
             f'border:1px solid #1e293b;font-size:10px;letter-spacing:1.3px;'
             f'text-transform:uppercase;font-weight:600;text-decoration:none;'
             f'border-radius:3px;">Benchmarks Only</a>'
@@ -572,11 +573,11 @@ def _try_the_tool_quickstart() -> str:
             f'</div>'
         )
     return (
-        f'<div style="background:#111827;border:1px solid #f59e0b;'
+        f'<div style="background:#111827;border:1px solid {PALETTE["warning"]};'
         f'border-radius:4px;padding:18px 22px;margin-bottom:18px;'
         f'position:relative;overflow:hidden;">'
         f'<div style="position:absolute;top:0;left:0;right:0;height:2px;'
-        f'background:linear-gradient(90deg,#f59e0b,#10b981);"></div>'
+        f'background:linear-gradient(90deg,{PALETTE["warning"]},{PALETTE["positive"]});"></div>'
         f'<div style="display:flex;justify-content:space-between;'
         f'align-items:center;margin-bottom:6px;">'
         f'<div style="display:flex;align-items:center;gap:10px;">'
@@ -621,16 +622,16 @@ def _new_modules_index() -> str:
     tiles = [
         ("HCRIS Peer X-Ray", "/diligence/hcris-xray",
          "17,000 filed Medicare cost reports",
-         "#10b981", "◎"),
+         "var(--theme-positive,#10b981)", "◎"),
         ("Reg Calendar", "/diligence/regulatory-calendar",
          "CMS / OIG × thesis kill-switch",
-         "#ef4444", "▤"),
+         "var(--theme-negative,#ef4444)", "▤"),
         ("Covenant Stress", "/diligence/covenant-stress",
          "Capital stack × breach probability",
-         "#f59e0b", "▥"),
+         "var(--theme-warning,#f59e0b)", "▥"),
         ("Bridge Auto-Audit", "/diligence/bridge-audit",
          "Banker bridge × 21 realization priors",
-         "#3b82f6", "◉"),
+         "var(--theme-accent,#3b82f6)", "◉"),
         ("Payer Stress", "/diligence/payer-stress",
          "19-payer rate-shock MC",
          "#8b5cf6", "▤"),
@@ -668,7 +669,7 @@ def _new_modules_index() -> str:
         f'border-radius:4px;padding:14px 18px;margin-bottom:14px;'
         f'position:relative;overflow:hidden;">'
         f'<div style="position:absolute;top:0;left:0;right:0;height:2px;'
-        f'background:linear-gradient(90deg,#10b981,#3b82f6,'
+        f'background:linear-gradient(90deg,{PALETTE["positive"]},{PALETTE["brand_accent"]},'
         f'#8b5cf6,#ec4899);"></div>'
         f'<div style="display:flex;justify-content:space-between;'
         f'align-items:baseline;margin-bottom:10px;">'

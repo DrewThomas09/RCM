@@ -37,7 +37,7 @@ _RADAR_METRICS = [
     "cost_to_collect", "clean_claim_rate", "case_mix_index",
 ]
 
-_PALETTE = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"]
+_PALETTE = ["var(--theme-accent,#3b82f6)", "var(--theme-positive,#10b981)", "var(--theme-warning,#f59e0b)", "var(--theme-negative,#ef4444)"]
 
 
 def _pm_val(p: DealAnalysisPacket, metric: str) -> Optional[float]:

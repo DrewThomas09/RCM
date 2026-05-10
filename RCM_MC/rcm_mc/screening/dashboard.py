@@ -25,8 +25,8 @@ _CSS = """
 :root {
   --c-bg: #0a0e17; --c-panel: #111827; --c-panel-alt: #0f172a;
   --c-border: #1e293b; --c-text: #e2e8f0; --c-dim: #94a3b8;
-  --c-faint: #64748b; --c-accent: #3b82f6;
-  --c-pos: #10b981; --c-neg: #ef4444; --c-warn: #f59e0b;
+  --c-faint: #64748b; --c-accent: var(--theme-accent,#3b82f6);
+  --c-pos: var(--theme-positive,#10b981); --c-neg: var(--theme-negative,#ef4444); --c-warn: var(--theme-warning,#f59e0b);
   --c-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }

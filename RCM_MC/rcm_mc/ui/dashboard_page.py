@@ -1159,8 +1159,8 @@ def _render_portfolio_pulse_hero(
         'font-size:10px;color:#86efac;font-weight:600;'
         'text-transform:uppercase;letter-spacing:0.12em;">'
         '<span class="wc-pulse-dot" style="display:inline-block;'
-        'width:8px;height:8px;background:#22c55e;border-radius:50%;'
-        'box-shadow:0 0 6px #22c55e;"></span> live</span>'
+        'width:8px;height:8px;background:var(--theme-positive,#22c55e);border-radius:50%;'
+        'box-shadow:0 0 6px var(--theme-positive,#22c55e);"></span> live</span>'
         '</div>'
     )
 
@@ -1176,7 +1176,7 @@ def _render_portfolio_pulse_hero(
     return (
         pulse_anim
         + '<section style="background:linear-gradient(135deg,'
-        '#0f172a 0%,#1F4E78 100%);color:#fff;padding:22px 26px;'
+        '#0f172a 0%,var(--theme-accent,#1F4E78) 100%);color:#fff;padding:22px 26px;'
         'border-radius:12px;margin:6px 0 18px;'
         'box-shadow:0 8px 24px rgba(15,23,42,0.18);">'
         + label_row
@@ -1455,7 +1455,7 @@ def _render_saved_templates_section(db_path: str) -> str:
         desc = t.get("description") or ""
         name = t.get("name") or "unnamed"
         pinned_chip = (
-            '<span style="margin-left:6px;font-size:10px;color:#1F4E78;">'
+            '<span style="margin-left:6px;font-size:10px;color:var(--theme-accent,#1F4E78);">'
             '📌</span>'
         ) if t.get("pinned") else ""
         # Clone button — copy this template's route + params under a
@@ -1773,14 +1773,14 @@ def _moic_range_bar(p25: Optional[float],
         f'stroke="#d1d5db" stroke-width="1" stroke-dasharray="2,2"/>'
         # 2.5x "good deal" reference line
         f'<line x1="{bar_x}" y1="2" x2="{bar_x}" y2="{height-2}" '
-        f'stroke="#10b981" stroke-width="1" stroke-dasharray="2,2"/>'
+        f'stroke=PALETTE["positive"] stroke-width="1" stroke-dasharray="2,2"/>'
         # p25-p75 whisker
         f'<rect x="{p25_x}" y="{height/2 - 4}" '
         f'width="{max(2, p75_x - p25_x)}" height="8" '
-        f'fill="{PALETTE["brand_accent"]}" opacity="0.35" rx="2"/>'
+        f'fill=PALETTE["brand_accent"] opacity="0.35" rx="2"/>'
         # Median dot
         f'<circle cx="{med_x}" cy="{height/2}" r="4" '
-        f'fill="{PALETTE["brand_accent"]}" stroke="#fff" stroke-width="1.5"/>'
+        f'fill=PALETTE["brand_accent"] stroke="#fff" stroke-width="1.5"/>'
         f'</svg>'
     )
 
@@ -1985,19 +1985,19 @@ def _render_predicted_outcomes_section(
         '<rect x="0" y="3" width="20" height="4" fill="#f3f4f6"/>'
         '<line x1="3" y1="0" x2="3" y2="10" stroke="#d1d5db" '
         'stroke-width="1" stroke-dasharray="2,2"/>'
-        '<line x1="9" y1="0" x2="9" y2="10" stroke="#10b981" '
+        '<line x1="9" y1="0" x2="9" y2="10" stroke="var(--theme-positive,#10b981)" '
         'stroke-width="1" stroke-dasharray="2,2"/>'
         '</svg>scale 0–6×</span>'
         '<span style="display:inline-flex;align-items:center;gap:4px;">'
         '<span style="display:inline-block;width:14px;height:6px;'
-        'background:#1F4E78;opacity:0.35;border-radius:2px;"></span>'
+        'background:var(--theme-accent,#1F4E78);opacity:0.35;border-radius:2px;"></span>'
         'p25–p75 range</span>'
         '<span style="display:inline-flex;align-items:center;gap:4px;">'
         '<span style="display:inline-block;width:8px;height:8px;'
-        'background:#1F4E78;border-radius:50%;border:1.5px solid #fff;'
-        'box-shadow:0 0 0 1px #1F4E78;"></span>'
+        'background:var(--theme-accent,#1F4E78);border-radius:50%;border:1.5px solid #fff;'
+        'box-shadow:0 0 0 1px var(--theme-accent,#1F4E78);"></span>'
         'median predicted MOIC</span>'
-        '<span style="color:#10b981;">— —</span>'
+        '<span style="color:var(--theme-positive,#10b981);">— —</span>'
         '<span>2.5× "good deal" bar</span>'
         '</div>'
     )
@@ -2343,10 +2343,10 @@ def _render_recent_results_section(db_path: str) -> str:
         jobs = reg.list_recent(n=5)
         for j in jobs:
             badge = {
-                "done": '<span style="color:#10b981;">●</span> done',
-                "running": '<span style="color:#f59e0b;">●</span> running',
+                "done": '<span style="color:var(--theme-positive,#10b981);">●</span> done',
+                "running": '<span style="color:var(--theme-warning,#f59e0b);">●</span> running',
                 "queued": '<span style="color:#6b7280;">●</span> queued',
-                "failed": '<span style="color:#ef4444;">●</span> failed',
+                "failed": '<span style="color:var(--theme-negative,#ef4444);">●</span> failed',
             }.get(j.status, _html.escape(j.status))
             ts = _html.escape(j.created_at or "")
             job_id = _html.escape(j.job_id or "")
@@ -2365,7 +2365,7 @@ def _render_recent_results_section(db_path: str) -> str:
             '<p style="margin:0 0 8px;"><strong>No runs yet — '
             'first time here?</strong> Try one of the curated analyses '
             'above. <a href="/diligence/thesis-pipeline?dataset=hospital_04_mixed_payer" '
-            'style="color:#1F4E78;font-weight:500;">Thesis Pipeline</a> '
+            'style="color:var(--theme-accent,#1F4E78);font-weight:500;">Thesis Pipeline</a> '
             'runs in ~170 ms on a fixture and walks you through 19 '
             'diligence steps end-to-end.</p>'
             '<p style="margin:0;color:#6b7280;font-size:12px;">'
@@ -2478,7 +2478,7 @@ def _render_data_freshness_section(db_path: str) -> str:
             "Data freshness",
             '<p>No data sources registered yet. Run a data refresh via the '
             '<code>rcm-mc data refresh</code> CLI or open '
-            '<a href="/data/refresh" style="color:#1F4E78;">Data refresh</a> '
+            '<a href="/data/refresh" style="color:var(--theme-accent,#1F4E78);">Data refresh</a> '
             'and click a Refresh button.</p>',
         )
 

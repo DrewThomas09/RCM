@@ -39,9 +39,9 @@ from typing import Any, Dict, List, Optional
 
 # Status palette — used by the UI page to color chips.
 STATUS_COLORS = {
-    "CRITICAL": "#ef4444",
-    "WARNING":  "#f59e0b",
-    "PASS":     "#10b981",
+    "CRITICAL": "var(--theme-negative,#ef4444)",
+    "WARNING":  "var(--theme-warning,#f59e0b)",
+    "PASS":     "var(--theme-positive,#10b981)",
     "MISSING":  "#94a3b8",
 }
 
@@ -54,9 +54,9 @@ _STATUS_TO_PRIORITY = {
 }
 
 _PRIORITY_COLORS = {
-    "Critical": "#ef4444",
+    "Critical": "var(--theme-negative,#ef4444)",
     "High":     "#ea580c",
-    "Medium":   "#f59e0b",
+    "Medium":   "var(--theme-warning,#f59e0b)",
     "Low":      "#64748b",
 }
 

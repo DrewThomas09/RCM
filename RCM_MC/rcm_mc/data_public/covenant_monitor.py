@@ -140,10 +140,10 @@ def _implied_leverage(d: dict) -> float:
 
 def _status(headroom: float, headroom_pct: float) -> Tuple[str, str]:
     if headroom < 0:
-        return "Breach", "#ef4444"
+        return "Breach", "var(--theme-negative,#ef4444)"
     if headroom_pct < 0.15:
-        return "Watch", "#f59e0b"
-    return "Compliant", "#22c55e"
+        return "Watch", "var(--theme-warning,#f59e0b)"
+    return "Compliant", "var(--theme-positive,#22c55e)"
 
 
 def _project_leverage(
@@ -250,11 +250,11 @@ def compute_covenant_monitor(
     # Overall status
     statuses = [c.status for c in covenants]
     if "Breach" in statuses:
-        overall_status, overall_color = "Breach", "#ef4444"
+        overall_status, overall_color = "Breach", "var(--theme-negative,#ef4444)"
     elif "Watch" in statuses:
-        overall_status, overall_color = "Watch", "#f59e0b"
+        overall_status, overall_color = "Watch", "var(--theme-warning,#f59e0b)"
     else:
-        overall_status, overall_color = "Compliant", "#22c55e"
+        overall_status, overall_color = "Compliant", "var(--theme-positive,#22c55e)"
 
     # Corpus peers
     sector_deals = [d for d in corpus if sector.lower()[:6] in d.get("sector","").lower() or

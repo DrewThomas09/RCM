@@ -29,6 +29,7 @@ import html as _html
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+from rcm_mc.ui.brand import PALETTE
 
 
 @dataclass
@@ -244,8 +245,8 @@ def digest_to_html(payload: DigestPayload, *,
             "alert":    ("#fef2f2", "#991b1b"),
             "warn":     ("#fffbeb", "#92400e"),
             "positive": ("#f0fdf4", "#065f46"),
-            "neutral":  ("#f0f6fc", "#1F4E78"),
-        }.get(tone, ("#f0f6fc", "#1F4E78"))
+            "neutral":  ("#f0f6fc", "var(--theme-accent,#1F4E78)"),
+        }.get(tone, ("#f0f6fc", "var(--theme-accent,#1F4E78)"))
         href = (base_url + (ins.get("href") or "#")) if base_url else ""
         link_open = (f'<a href="{_html.escape(href)}" '
                      f'style="color:{fg};text-decoration:none;">'
@@ -275,10 +276,10 @@ def digest_to_html(payload: DigestPayload, *,
         for d in payload.needs_attention:
             href = (base_url + (d.get("href") or "")) if base_url else ""
             link_open = (f'<a href="{_html.escape(href)}" '
-                         f'style="color:#1F4E78;font-weight:500;'
+                         f'style="color:{PALETTE["brand_accent"]};font-weight:500;'
                          f'text-decoration:none;">'
                          if href else
-                         f'<span style="color:#1F4E78;font-weight:500;">')
+                         f'<span style="color:{PALETTE["brand_accent"]};font-weight:500;">')
             link_close = "</a>" if href else "</span>"
             reasons = " · ".join(
                 _html.escape(r) for r in (d.get("reasons") or []))
@@ -309,7 +310,7 @@ def digest_to_html(payload: DigestPayload, *,
                 f'color:#6b7280;">{_html.escape(d.get("deal_id") or "")}</span>'
                 f'<div style="font-size:12px;color:#374151;margin-top:2px;'
                 f'font-variant-numeric:tabular-nums;">'
-                f'<span style="color:#1F4E78;font-weight:600;">'
+                f'<span style="color:{PALETTE["brand_accent"]};font-weight:600;">'
                 f'{_fmt_moic(d.get("median_moic"))}</span> median · '
                 f'p25 {_fmt_moic(d.get("p25_moic"))} · '
                 f'p75 {_fmt_moic(d.get("p75_moic"))} · '
