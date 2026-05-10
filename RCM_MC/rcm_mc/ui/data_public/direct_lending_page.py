@@ -166,7 +166,7 @@ def render_direct_lending(params: dict = None) -> str:
     Healthcare default rate trailing overall market at ~4% (vs 3.5% all-in); peak at 2025Q2, now moderating.
     {watch_count} watch-list sectors identified — behavioral, home-health/hospice, skilled nursing, and standalone telehealth showing sub-95 marks.
     Captive lenders (KKR, Bain) maintain tightest relationships; Ares and Blue Owl are the go-to for larger deals.
-    Amend-and-extend volume has normalized at ~12%, down from 14% peak. Spread compression in largest deals (&lt;425bps for $250M+ EBITDA) signals market thaw.
+    Amend-and-extend volume has normalized at ~12%, down from 14.0% peak. Spread compression in largest deals (&lt;425bps for $250M+ EBITDA) signals market thaw.
   </div>
 </div>"""
 

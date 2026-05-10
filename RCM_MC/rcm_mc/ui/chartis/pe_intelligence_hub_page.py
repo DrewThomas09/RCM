@@ -20,7 +20,7 @@ _SEVEN_REFLEXES: List[Dict[str, str]] = [
         "n": "1",
         "title": "Sniff test before math",
         "body": (
-            "Knows what's unrealistic on the teaser — 400M rural CAH at 28% IRR, "
+            "Knows what's unrealistic on the teaser — 400M rural CAH at 28.0% IRR, "
             "dental DSO at 4× revenue, MA-will-cover-FFS without a named contract. "
             "14-pattern pre-math triage returning stop_work / senior_partner_review / "
             "proceed_with_diligence."

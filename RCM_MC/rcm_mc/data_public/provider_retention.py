@@ -221,7 +221,7 @@ def _build_at_risk() -> List[AtRiskProvider]:
 def _build_levers(revenue_mm: float, total_providers: int) -> List[RetentionLever]:
     items = [
         ("Market-Based Comp Review + Adjustment", 0.05, revenue_mm * 0.025, 0.08, int(total_providers * 0.35), "high"),
-        ("Retention Bonus (2-yr vesting, top 20%)", 0.12, revenue_mm * 0.015, 0.12, int(total_providers * 0.20), "high"),
+        ("Retention Bonus (2-yr vesting, top 20.0%)", 0.12, revenue_mm * 0.015, 0.12, int(total_providers * 0.20), "high"),
         ("Equity Participation Plan", 0.08, revenue_mm * 0.010, 0.15, int(total_providers * 0.10), "high"),
         ("EHR / Admin Burden Reduction", 0.45, 0.18, 0.05, total_providers, "medium"),
         ("Burnout Program (coaching, flex)", 0.18, 0.28, 0.06, total_providers, "medium"),

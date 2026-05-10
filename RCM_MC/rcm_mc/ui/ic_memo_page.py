@@ -399,11 +399,11 @@ def render_ic_memo(ccn: str, hcris_df: pd.DataFrame, db_path: Optional[str] = No
 
     scenarios = (
         _scenario_row("Base Case", data["base_grid"][:1]) +
-        _scenario_row("Base (11x exit)", data["base_grid"][1:2]) +
+        _scenario_row("Base (11.00x exit)", data["base_grid"][1:2]) +
         _scenario_row("Bull Case", data["bull_grid"][:1]) +
         _scenario_row("Bull (12x exit)", data["bull_grid"][1:2]) +
         _scenario_row("Bear Case", data["bear_grid"][:1], "color:var(--cad-neg);") +
-        _scenario_row("Bear (11x exit)", data["bear_grid"][1:2])
+        _scenario_row("Bear (11.00x exit)", data["bear_grid"][1:2])
     )
 
     sections.append(

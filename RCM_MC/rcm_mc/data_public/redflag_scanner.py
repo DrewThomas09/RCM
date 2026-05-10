@@ -169,7 +169,7 @@ def _build_flags(target: dict, corpus: List[dict]) -> List[RedFlag]:
             sev = _severity_from_delta(delta)
             flags.append(RedFlag(
                 category="Revenue Quality",
-                flag_name="Single-payer concentration exceeds 45%",
+                flag_name="Single-payer concentration exceeds 45.0%",
                 severity=sev,
                 score=_severity_score(sev),
                 target_value=top_payer,

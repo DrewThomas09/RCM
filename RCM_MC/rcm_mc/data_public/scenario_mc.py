@@ -302,7 +302,7 @@ def compute_scenario_mc(
         ProbabilityRow("Excellent (MOIC ≥ 3x)", round(prob_gt_3x, 3), "Upper-quartile outcome"),
         ProbabilityRow("Target (MOIC ≥ 2x)", round(prob_gt_2x, 3), "Minimum expected return"),
         ProbabilityRow("Downside (MOIC < 1x)", round(prob_loss, 3), "Principal loss scenario"),
-        ProbabilityRow("Severe Loss (MOIC < 0.5x)", round(prob_half_loss, 3), "50%+ capital loss"),
+        ProbabilityRow("Severe Loss (MOIC < 0.5x)", round(prob_half_loss, 3), "50.0%+ capital loss"),
     ]
 
     return ScenarioMCResult(

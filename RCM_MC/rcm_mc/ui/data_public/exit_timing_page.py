@@ -430,7 +430,7 @@ def _vintage_panel(vintage_data: Dict[int, Dict[str, Any]]) -> str:
     overlay = (
         f'<line x1="{pad_l}" y1="{line_y:.1f}" x2="{pad_l+pw}" y2="{line_y:.1f}" '
         f'stroke="{PALETTE["positive"]}" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.5"/>'
-        f'<text x="{pad_l+pw+2}" y="{line_y+3:.1f}" font-size="7" fill="{PALETTE["positive"]}" opacity="0.7">80%</text>'
+        f'<text x="{pad_l+pw+2}" y="{line_y+3:.1f}" font-size="7" fill="{PALETTE["positive"]}" opacity="0.7">80.0%</text>'
     )
     axes = (
         f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" y2="{pad_t+ph}" stroke="#334155" stroke-width="1"/>'
@@ -453,7 +453,7 @@ def _vintage_panel(vintage_data: Dict[int, Dict[str, Any]]) -> str:
   <div style="padding:14px 16px 10px;">
     {svg}
     <div style="margin-top:6px;font-size:9.5px;color:var(--ck-text-faint);">
-      Green = ≥80% of vintage realized · amber = 50–80% · blue = &lt;50% (recent vintages still maturing)
+      Green = ≥80.0% of vintage realized · amber = 50.0–80.0% · blue = &lt;50.0% (recent vintages still maturing)
     </div>
   </div>
 </div>"""

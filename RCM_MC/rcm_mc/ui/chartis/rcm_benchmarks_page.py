@@ -317,7 +317,7 @@ def render_rcm_benchmarks(
         use=(
             "Use this as the benchmark file when comparing a target's "
             "actuals. A target whose days-in-AR sits above P75 for its "
-            "segment is not merely 'high' — it is worse than 75% of "
+            "segment is not merely 'high' — it is worse than 75.0% of "
             "peers, which sizes the recoverable AR opportunity."
         ),
         source=(

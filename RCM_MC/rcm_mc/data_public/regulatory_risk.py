@@ -228,7 +228,7 @@ def _risk_factors_for(sector: str) -> List[RiskFactor]:
          "Compensation model audit; documented safe harbors; referral source analysis"),
         ("HIPAA Privacy & Security Rule",
          "medium",
-         "PHI breaches → OCR investigations + state AG actions. Avg breach cost $10.9M.",
+         "PHI breaches → OCR investigations + state AG actions. Avg breach cost $10.90M.",
          "SRA; encryption; BAAs; breach response playbook"),
         ("OIG Exclusion / CIA",
          "high" if sector in ("Home Health", "DME", "Hospice", "Skilled Nursing") else "low",

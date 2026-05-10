@@ -141,7 +141,7 @@ def render_playbook(deal_id: str, deal_name: str, entries: List[Dict[str, Any]])
         f'<h2>What This Means</h2>'
         f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
         f'<p>{len(entries)} initiatives totaling <strong>${total_impact/1e6:.2f}M</strong> in annual EBITDA improvement. '
-        f'At an 11x exit multiple, this represents <strong>${total_impact * 11 / 1e6:.2f}M</strong> in equity value creation.</p>'
+        f'At an 11.00x exit multiple, this represents <strong>${total_impact * 11 / 1e6:.2f}M</strong> in equity value creation.</p>'
         f'<p style="margin-top:6px;">Present this as the 100-day plan at IC. Track execution against the '
         f'<a href="/models/bridge/{html.escape(deal_id)}" style="color:{PALETTE["text_link"]};">EBITDA bridge</a> '
         f'and monitor trends via '

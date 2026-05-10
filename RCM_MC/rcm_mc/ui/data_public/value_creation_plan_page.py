@@ -335,7 +335,7 @@ def render_value_creation_plan(params: dict = None) -> str:
     <strong style="color:{text}">VCP Thesis:</strong>
     ${r.entry_ebitda_mm:,.2f}M entry EBITDA → ${r.target_ebitda_mm:,.2f}M target via ${r.total_plan_impact_mm:,.2f}M gross impact
     across {len(r.initiatives)} initiatives. Current execution score {r.execution_score:.0f}/100 at Day {r.hold_day}.
-    Plan net value ${r.plan_net_value_mm:,.2f}M translates to ~${r.plan_net_value_mm * 11:,.2f}M of EV at 11x exit.
+    Plan net value ${r.plan_net_value_mm:,.2f}M translates to ~${r.plan_net_value_mm * 11:,.2f}M of EV at 11.00x exit.
   </div>
 
 </div>"""

@@ -115,7 +115,7 @@ def render_data_dashboard(hcris_df: pd.DataFrame) -> str:
         f'<h2>Data Completeness by Field</h2>'
         f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:10px;">'
         f'Percentage of hospitals with non-null values for each core metric. '
-        f'Fields below 80% may need imputation or exclusion in analysis.</p>'
+        f'Fields below 80.0% may need imputation or exclusion in analysis.</p>'
         f'<table class="cad-table"><thead><tr>'
         f'<th>Field</th><th>Coverage</th><th></th>'
         f'</tr></thead><tbody>{comp_rows}</tbody></table></div>'
@@ -224,7 +224,7 @@ def render_data_dashboard(hcris_df: pd.DataFrame) -> str:
     nav = (
         f'<div class="cad-card" style="display:flex;gap:8px;flex-wrap:wrap;">'
         f'<a href="/quant-lab" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Quant Lab</a>'
+        f'style="text-decoration:none;">Open Quant Lab</a>'
         f'<a href="/ml-insights" class="cad-btn" '
         f'style="text-decoration:none;">ML Insights</a>'
         f'<a href="/portfolio/regression" class="cad-btn" '
