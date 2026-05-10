@@ -572,6 +572,222 @@ _SPEC: Dict[str, Any] = {
                 "responses": {"200": {"description": "Deal rows with metric columns"}},
             },
         },
+        "/api/portfolio/regression": {
+            "get": {
+                "summary": "Run regression across the portfolio",
+                "tags": ["Portfolio"],
+                "parameters": [
+                    {"name": "target", "in": "query",
+                     "schema": {"type": "string", "default": "denial_rate"}},
+                ],
+                "responses": {
+                    "200": {"description": "Regression coefficients + R^2"},
+                    "400": {"description": "Target column not numeric"},
+                },
+            },
+        },
+        "/api/portfolio/risk-scan.csv": {
+            "get": {
+                "summary": "Portfolio risk scan as CSV",
+                "tags": ["Portfolio"],
+                "responses": {"200": {"description": "CSV body, text/csv"}},
+            },
+        },
+        "/api/rollup": {
+            "get": {
+                "summary": "Portfolio-level KPI roll-up",
+                "tags": ["Portfolio"],
+                "responses": {"200": {"description": "Aggregated metrics"}},
+            },
+        },
+        "/api/digest": {
+            "get": {
+                "summary": "Change digest since a date",
+                "tags": ["Activity"],
+                "parameters": [
+                    {"name": "since", "in": "query",
+                     "schema": {"type": "string", "format": "date"}},
+                ],
+                "responses": {"200": {"description": "Event rows"}},
+            },
+        },
+        "/api/digest/morning": {
+            "get": {
+                "summary": "Morning digest payload",
+                "tags": ["Activity"],
+                "responses": {"200": {"description": "Daily digest summary"}},
+            },
+        },
+        "/api/stages": {
+            "get": {
+                "summary": "Allowed deal-stage tokens",
+                "tags": ["Deals"],
+                "responses": {"200": {"description": "List of stage names"}},
+            },
+        },
+        "/api/runs": {
+            "get": {
+                "summary": "Run history",
+                "tags": ["Simulation"],
+                "parameters": [
+                    {"name": "deal_id", "in": "query", "schema": {"type": "string"}},
+                ],
+                "responses": {"200": {"description": "Run rows"}},
+            },
+        },
+        "/api/scenarios": {
+            "get": {
+                "summary": "Scenario explorer payload",
+                "tags": ["Simulation"],
+                "responses": {"200": {"description": "Saved scenarios"}},
+            },
+        },
+        "/api/calibration/priors": {
+            "get": {
+                "summary": "Calibration priors",
+                "tags": ["Simulation"],
+                "responses": {"200": {"description": "Prior distributions"}},
+            },
+        },
+        "/api/surrogate/schema": {
+            "get": {
+                "summary": "Surrogate-model input/output schema",
+                "tags": ["Simulation"],
+                "responses": {"200": {"description": "Schema descriptor"}},
+            },
+        },
+        "/api/insights": {
+            "get": {
+                "summary": "Insights feed",
+                "tags": ["Activity"],
+                "responses": {"200": {"description": "Insight events"}},
+            },
+        },
+        "/api/insights/headline": {
+            "get": {
+                "summary": "Lead insight (one-line headline)",
+                "tags": ["Activity"],
+                "responses": {"200": {"description": "Headline payload"}},
+            },
+        },
+        "/api/global-search": {
+            "get": {
+                "summary": "Cross-entity global search",
+                "tags": ["Search"],
+                "parameters": [
+                    {"name": "q", "in": "query", "schema": {"type": "string"}},
+                ],
+                "responses": {"200": {"description": "Hit list across deals/notes/tags"}},
+            },
+        },
+        "/api/market-pulse": {
+            "get": {
+                "summary": "Market pulse summary",
+                "tags": ["Portfolio"],
+                "responses": {"200": {"description": "Market signals"}},
+            },
+        },
+        "/api/market-intel/peer-snapshot": {
+            "get": {
+                "summary": "Peer snapshot (market intel)",
+                "tags": ["Portfolio"],
+                "responses": {"200": {"description": "Peer cohort summary"}},
+            },
+        },
+        "/api/regulatory-calendar/exposure": {
+            "get": {
+                "summary": "Regulatory exposure on the calendar",
+                "tags": ["Portfolio"],
+                "responses": {"200": {"description": "Exposure rows"}},
+            },
+        },
+        "/api/screener/predefined": {
+            "get": {
+                "summary": "Predefined deal-screener filters",
+                "tags": ["Deals"],
+                "responses": {"200": {"description": "Named filter set"}},
+            },
+        },
+        "/api/diligence/comparable-outcomes": {
+            "get": {
+                "summary": "Comparable-outcome rows for diligence",
+                "tags": ["Analysis"],
+                "responses": {"200": {"description": "Outcome rows"}},
+            },
+        },
+        "/api/diligence/comparable-outcomes.csv": {
+            "get": {
+                "summary": "Comparable outcomes as CSV",
+                "tags": ["Exports"],
+                "responses": {"200": {"description": "CSV body"}},
+            },
+        },
+        "/api/diligence/comparable-outcomes.memo": {
+            "get": {
+                "summary": "Comparable outcomes as a memo",
+                "tags": ["Exports"],
+                "responses": {"200": {"description": "Markdown / HTML memo"}},
+            },
+        },
+        "/api/health": {
+            "get": {
+                "summary": "Lightweight liveness probe",
+                "tags": ["Infrastructure"],
+                "responses": {"200": {"description": "Status payload"}},
+            },
+        },
+        "/api/health/deep": {
+            "get": {
+                "summary": "Deep readiness probe (DB + filesystem)",
+                "tags": ["Infrastructure"],
+                "responses": {"200": {"description": "Subsystem status"}},
+            },
+        },
+        "/api/openapi.json": {
+            "get": {
+                "summary": "Self-describing OpenAPI 3.0 spec",
+                "tags": ["Infrastructure"],
+                "responses": {"200": {"description": "OpenAPI document"}},
+            },
+        },
+        "/api/docs": {
+            "get": {
+                "summary": "Swagger UI viewer",
+                "tags": ["Infrastructure"],
+                "responses": {"200": {"description": "Inline HTML page"}},
+            },
+        },
+        "/api/webhooks/test": {
+            "get": {
+                "summary": "Test webhook delivery",
+                "tags": ["Settings"],
+                "responses": {"200": {"description": "Test result payload"}},
+            },
+        },
+        "/api/deals/{deal_id}/variance": {
+            "get": {
+                "summary": "Quarterly variance rows for a deal",
+                "tags": ["Deals"],
+                "parameters": [{"name": "deal_id", "in": "path", "required": True, "schema": {"type": "string"}}],
+                "responses": {"200": {"description": "Variance rows"}},
+            },
+        },
+        "/api/deals/{deal_id}/initiatives": {
+            "get": {
+                "summary": "Initiative-level variance for a deal",
+                "tags": ["Deals"],
+                "parameters": [{"name": "deal_id", "in": "path", "required": True, "schema": {"type": "string"}}],
+                "responses": {"200": {"description": "Initiative rows"}},
+            },
+        },
+        "/api/deals/{deal_id}/provenance": {
+            "get": {
+                "summary": "Per-deal provenance graph",
+                "tags": ["Analysis"],
+                "parameters": [{"name": "deal_id", "in": "path", "required": True, "schema": {"type": "string"}}],
+                "responses": {"200": {"description": "Provenance edges + nodes"}},
+            },
+        },
     },
     "tags": [
         {"name": "Deals", "description": "Deal CRUD, lifecycle, validation, completeness, search, PATCH"},

@@ -248,8 +248,8 @@ class APIEndpointSmoke(unittest.TestCase):
         message pointing at the spec drift.
         """
         import json
-        OPENAPI_PATH_FLOOR = 52
-        OPENAPI_OPERATION_FLOOR = 56
+        OPENAPI_PATH_FLOOR = 80
+        OPENAPI_OPERATION_FLOOR = 84
         resp = self.opener.open(
             self.base + "/api/openapi.json", timeout=8,
         )
