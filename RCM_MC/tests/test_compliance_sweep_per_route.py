@@ -167,6 +167,13 @@ DEFAULT_ROUTE_MIN_SCORE = 1.0
 # regression that drops a kit-presence rule fails the median floor.
 AGGREGATE_FLOOR_MEDIAN = 1.0
 
+# Floor on the count of routes scoring at exactly 100%. The aggregate
+# median can stay 1.0 even if multiple routes drop to 99% (one
+# rule slip), so this guard catches a different regression mode:
+# silent erosion of the *count* of perfect routes. With 45/47
+# pinned at 1.0, any new <100% slip fails this floor.
+PERFECT_ROUTE_FLOOR = 45
+
 
 class _NoFollow(urllib.request.HTTPRedirectHandler):
     def http_error_301(self, *a, **kw): return None
@@ -298,6 +305,19 @@ class PerRouteComplianceSweep(unittest.TestCase):
                     f"{path} compliance {score:.0%} below per-route "
                     f"floor {floor:.0%}",
                 )
+
+        # Perfect-route count floor — catches silent erosion that
+        # the median + per-route pins would miss. If a route drops
+        # 100% → 93% (one kit rule slip), per-route pin catches it
+        # only if pinned at 1.0; routes pinned at 0.93 or DEFAULT
+        # would slip silently. This guard catches the count.
+        perfect = sum(1 for s in scores.values() if s >= 1.0)
+        self.assertGreaterEqual(
+            perfect, PERFECT_ROUTE_FLOOR,
+            f"only {perfect} routes at 100% — below floor "
+            f"{PERFECT_ROUTE_FLOOR}. A regression dropped one or "
+            f"more routes from 100% to <100%.",
+        )
 
 
 if __name__ == "__main__":
