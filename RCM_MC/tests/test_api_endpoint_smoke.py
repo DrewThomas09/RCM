@@ -136,6 +136,17 @@ API_SMOKE_ROUTES: list[tuple[str, int]] = [
     ("/api/analysis/smoke-a",                             200),
     ("/api/analysis/smoke-a/export",                      200),
     ("/api/diligence/synthesis/smoke-a",                  200),
+    # Additional dispatcher routes (rollup/digest/stages) and
+    # per-deal trail surfaces. These exercise the
+    # latest_per_deal / portfolio_rollup / build_digest paths and
+    # the variance/initiatives/provenance per-deal subresources.
+    ("/api/rollup",                                       200),
+    ("/api/digest",                                       200),
+    ("/api/stages",                                       200),
+    ("/api/deals/smoke-a/variance",                       200),
+    ("/api/deals/smoke-a/initiatives",                    200),
+    ("/api/deals/smoke-a/provenance",                     200),
+    ("/api/runs?deal_id=smoke-a",                         200),
 ]
 
 
