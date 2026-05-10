@@ -791,6 +791,7 @@ class PerRouteComplianceSweep(unittest.TestCase):
             "X-Frame-Options",
             "Content-Security-Policy",
             "Referrer-Policy",
+            "Permissions-Policy",
         )
         gaps: list[tuple[str, str]] = []
         for path in REPRESENTATIVE_ROUTES:
