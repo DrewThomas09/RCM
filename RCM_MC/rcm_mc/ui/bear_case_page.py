@@ -166,20 +166,15 @@ def _verdict_card(
             pct_tone = P["positive"]
             pct_label = "clears IC"
         pct_frame = (
-            f' <span style="color:{pct_tone};font-weight:700;">'
-            f'({pct_at_risk:.0f}% of run-rate — {pct_label})</span>'
+            f' <strong>({pct_at_risk:.0f}% of run-rate — {pct_label})</strong>'
         )
-        peer_chip = (
-            "<div style=\"margin-top:16px;\">"
-            + benchmark_chip(
-                value=pct_at_risk,
-                peer_low=3.0, peer_high=10.0,
-                higher_is_better=False,
-                format_spec=".0f", suffix="%",
-                label="EBITDA at risk · % of run-rate",
-                peer_label="IC-critical band",
-            )
-            + "</div>"
+        peer_chip = benchmark_chip(
+            value=pct_at_risk,
+            peer_low=3.0, peer_high=10.0,
+            higher_is_better=False,
+            format_spec=".0f", suffix="%",
+            label="EBITDA at risk · % of run-rate",
+            peer_label="IC-critical band",
         )
     intro = ck_section_intro(
         eyebrow="Bear Case · auto-synthesized",
@@ -298,12 +293,12 @@ def _evidence_by_theme(report: BearCaseReport) -> str:
         color = _THEME_COLORS.get(theme, P["text_faint"])
         narrative = report.narrative_by_theme.get(theme, "")
         cards = "".join(_evidence_card(e) for e in items)
+        theme_label = theme.title().replace("_", " ")
         blocks.append(
-            f'<div class="bc-theme-title" style="--sev:{color};">'
-            f'{theme.title().replace("_", " ")} · '
+            f'<div class="bc-theme-title">'
+            f'{theme_label} · '
             f'{len(items)} item{"s" if len(items) != 1 else ""}</div>'
-            + (f'<div class="bc-callout" style="border-left-color:{color};">'
-               f'{html.escape(narrative)}</div>'
+            + (f'<p class="ck-section-body">{html.escape(narrative)}</p>'
                if narrative else "")
             + cards
         )
@@ -312,12 +307,12 @@ def _evidence_by_theme(report: BearCaseReport) -> str:
 
 def _ic_memo_preview(report: BearCaseReport) -> str:
     return (
-        f'<div class="bc-callout" style="margin-top:0;">'
-        f'<strong style="color:{P["text"]};">IC-memo drop-in: </strong>'
-        f'Copy the block below into the IC memo. Every evidence item '
-        f'carries a citation key (R1, C1, B1...) mapped to the '
-        f'source module. Print-friendly formatting.'
-        f'</div>'
+        '<p class="ck-section-body">'
+        '<strong>IC-memo drop-in: </strong>'
+        'Copy the block below into the IC memo. Every evidence item '
+        'carries a citation key (R1, C1, B1...) mapped to the '
+        'source module. Print-friendly formatting.'
+        '</p>'
         f'<div class="bc-memo-block">{report.ic_memo_html}</div>'
     )
 
@@ -365,23 +360,26 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
   </div>
 </form>
 """
+    landing_hero = ck_section_intro(
+        eyebrow="Bear Case Auto-Generator",
+        headline="What could break this thesis?",
+        italic_word="break",
+        body=(
+            "Runs the full Thesis Pipeline and synthesizes the "
+            "counter-narrative every IC memo needs: ranked evidence "
+            "from Regulatory Calendar × Covenant Stress × Bridge "
+            "Audit × Deal MC × Deal Autopsy × Exit Timing, with "
+            "citation keys, per-theme narratives, and a print-ready "
+            "IC-memo drop-in block. What partners spend 3-5 hours "
+            "writing by hand, auto-generated in under a second."
+        ),
+    )
     body = (
         _scoped_styles()
         + '<div class="bc-wrap">'
         + deal_context_bar(qs or {}, active_surface="bear")
-        + '<div style="padding:22px 0 16px 0;">'
-        + '<div class="bc-eyebrow">Bear Case Auto-Generator</div>'
-        + '<div class="bc-h1">What could break this thesis?</div>'
-        + f'<div class="bc-callout">Runs the full Thesis Pipeline '
-        + 'and synthesizes the counter-narrative every IC memo '
-        + 'needs: ranked evidence from Regulatory Calendar × '
-        + 'Covenant Stress × Bridge Audit × Deal MC × Deal '
-        + 'Autopsy × Exit Timing, with citation keys, per-theme '
-        + 'narratives, and a print-ready IC-memo drop-in block. '
-        + 'What partners spend 3-5 hours writing by hand, '
-        + 'auto-generated in under a second.</div>'
-        + '</div>'
-        + form
+        + landing_hero
+        + ck_panel(form, title="Inputs")
         + '</div>'
     )
     return chartis_shell(
@@ -452,17 +450,19 @@ def _render_bear_case_no_ccd(
         hcris_xray=hcris_xray,
     )
 
+    fastpath_hero = ck_section_intro(
+        eyebrow="Bear Case · no CCD fixture",
+        headline=f"{html.escape(deal_name)} — fast-path bear case",
+        italic_word="bear",
+        body=(
+            f"{len(report.evidence)} evidence items across "
+            f"{len(report.sources_active)} sources (no claims "
+            f"data). Standalone modules only — for the full 7-source "
+            f"bear case supply a dataset fixture."
+        ),
+    )
     hero = (
-        f'<div style="padding:22px 0 16px 0;border-bottom:1px solid '
-        f'{P["border"]};margin-bottom:22px;">'
-        f'<div class="bc-eyebrow">Bear Case · no CCD fixture</div>'
-        f'<div class="bc-h1">{html.escape(deal_name)}</div>'
-        f'<div style="font-size:11px;color:{P["text_faint"]};'
-        f'margin-top:4px;">'
-        f'{len(report.evidence)} evidence items · '
-        f'{len(report.sources_active)} sources (no claims data) · '
-        f'fast-path bear case'
-        f'</div>'
+        fastpath_hero
         + _verdict_card(
             report,
             run_rate_ebitda_usd=fnum("ebitda_year0_usd"),
@@ -475,7 +475,6 @@ def _render_bear_case_no_ccd(
             "denial prediction, physician attrition, and Deal MC, "
             "supply a dataset fixture.", tone="warn",
         )
-        + f'</div>'
     )
 
     body = (
@@ -487,11 +486,10 @@ def _render_bear_case_no_ccd(
             f'<div class="bc-section-label">Evidence</div>'
             + _evidence_by_theme(report)
             if report.evidence else
-            f'<div class="bc-callout" '
-            f'style="border-left-color:{P["positive"]};">'
-            f'No bear-case evidence surfaced from the standalone '
-            f'sources. Supply a dataset fixture to run the full '
-            f'pipeline.</div>'
+            '<p class="ck-section-body">'
+            'No bear-case evidence surfaced from the standalone '
+            'sources. Supply a dataset fixture to run the full '
+            'pipeline.</p>'
         )
         + _ic_memo_preview(report)
         + export_json_panel(
@@ -574,30 +572,38 @@ def render_bear_case_page(
             n_runs=max(100, min(1000, fint("n_runs", 250))),
         )
     except Exception as exc:  # noqa: BLE001
+        err_intro = ck_section_intro(
+            eyebrow="Bear Case",
+            headline="Could not build pipeline input.",
+            italic_word="not",
+            body=str(exc),
+        )
         return chartis_shell(
             _scoped_styles()
-            + f'<div class="bc-wrap" style="padding:28px;">'
-            + f'<div class="bc-eyebrow">Bear Case</div>'
-            + f'<div class="bc-h1" style="color:{P["negative"]};">'
-            + f'Could not build pipeline input.</div>'
-            + f'<div class="bc-callout">{html.escape(str(exc))}</div>'
-            + f'<a href="/diligence/bear-case" '
-            + f'style="color:{P["accent"]};">← Back</a></div>',
+            + '<div class="bc-wrap">'
+            + err_intro
+            + '<p class="ck-section-body">'
+            + '<a href="/diligence/bear-case" class="ck-link">← Back</a>'
+            + '</p></div>',
             "Bear Case",
         )
 
     try:
         pipeline_report = run_thesis_pipeline(inp)
     except Exception as exc:  # noqa: BLE001
+        err_intro = ck_section_intro(
+            eyebrow="Bear Case",
+            headline="Pipeline run failed.",
+            italic_word="failed",
+            body=str(exc),
+        )
         return chartis_shell(
             _scoped_styles()
-            + f'<div class="bc-wrap" style="padding:28px;">'
-            + f'<div class="bc-eyebrow">Bear Case</div>'
-            + f'<div class="bc-h1" style="color:{P["negative"]};">'
-            + f'Pipeline run failed.</div>'
-            + f'<div class="bc-callout">{html.escape(str(exc))}</div>'
-            + f'<a href="/diligence/bear-case" '
-            + f'style="color:{P["accent"]};">← Back</a></div>',
+            + '<div class="bc-wrap">'
+            + err_intro
+            + '<p class="ck-section-body">'
+            + '<a href="/diligence/bear-case" class="ck-link">← Back</a>'
+            + '</p></div>',
             "Bear Case",
         )
 
@@ -606,23 +612,24 @@ def render_bear_case_page(
     )
 
     if not report.evidence:
+        clean_hero = ck_section_intro(
+            eyebrow="Bear Case Auto-Generator",
+            headline=f"{html.escape(deal_name)} — no thesis-breaking evidence surfaced.",
+            italic_word="no",
+            body=(
+                "Every automated source module (Regulatory Calendar, "
+                "Covenant Stress, Bridge Audit, Deal MC, Autopsy) "
+                "passed screening without flagging material thesis "
+                "risk. Partners should still write a manual "
+                "counter-narrative before IC — auto-screens are not "
+                "a substitute for partner judgment."
+            ),
+        )
         return chartis_shell(
             _scoped_styles()
             + '<div class="bc-wrap">'
-            + '<div style="padding:22px 0 16px 0;">'
-            + '<div class="bc-eyebrow">Bear Case Auto-Generator</div>'
-            + f'<div class="bc-h1">{html.escape(deal_name)}</div>'
-            + f'<div class="bc-callout" '
-            + f'style="border-left-color:{P["positive"]};">'
-            + f'<strong style="color:{P["text"]};">No bear-case '
-            + f'evidence surfaced.</strong> Every automated source '
-            + f'module (Regulatory Calendar, Covenant Stress, '
-            + f'Bridge Audit, Deal MC, Autopsy) passed screening '
-            + f'without flagging material thesis risk. Partners '
-            + f'should still write a manual counter-narrative '
-            + f'before IC — auto-screens are not a substitute '
-            + f'for partner judgment.</div>'
-            + '</div></div>',
+            + clean_hero
+            + '</div>',
             f"Bear Case — {deal_name}",
         )
 
@@ -636,18 +643,19 @@ def render_bear_case_page(
         "into the deck."
     )
 
+    runtime_ms = getattr(pipeline_report, "total_compute_ms", 0)
+    full_hero = ck_section_intro(
+        eyebrow="Bear Case · auto-generated",
+        headline=f"{html.escape(deal_name)} — counter-narrative synthesis",
+        italic_word="counter-narrative",
+        body=(
+            f"{len(report.evidence)} evidence items across "
+            f"{len(report.sources_active)} source modules · "
+            f"synthesized in {runtime_ms:.0f}ms pipeline runtime."
+        ),
+    )
     hero = (
-        f'<div style="padding:22px 0 16px 0;border-bottom:1px solid '
-        f'{P["border"]};margin-bottom:22px;">'
-        f'<div class="bc-eyebrow">Bear Case · auto-generated</div>'
-        f'<div class="bc-h1">{html.escape(deal_name)}</div>'
-        f'<div style="font-size:11px;color:{P["text_faint"]};'
-        f'margin-top:4px;">'
-        f'{len(report.evidence)} evidence items · '
-        f'{len(report.sources_active)} source modules · '
-        f'synthesized in {getattr(pipeline_report, "total_compute_ms", 0):.0f}ms '
-        f'pipeline runtime'
-        f'</div>'
+        full_hero
         + _verdict_card(
             report,
             run_rate_ebitda_usd=fnum("ebitda_year0_usd"),
@@ -655,7 +663,6 @@ def render_bear_case_page(
         + interpret_callout(
             "How to use this:", plain, tone="bad",
         )
-        + f'</div>'
     )
 
     evidence_panel = (
@@ -664,23 +671,15 @@ def render_bear_case_page(
         + _evidence_by_theme(report)
     )
 
-    memo_panel = (
-        f'<div class="bc-panel">'
-        f'<div class="bc-section-label" style="margin-top:0;">'
-        f'IC memo section · copy-paste ready</div>'
-        + _ic_memo_preview(report)
-        + f'</div>'
+    memo_panel = ck_panel(
+        _ic_memo_preview(report),
+        title="IC memo section · copy-paste ready",
     )
 
-    cross_links = (
-        f'<div class="bc-panel">'
-        f'<div class="bc-section-label" style="margin-top:0;">'
-        f'Sources cited in this bear case</div>'
-        f'<div style="font-size:13px;color:{P["text_dim"]};'
-        f'line-height:1.7;">'
+    cross_links_inner = (
+        '<p class="ck-section-body">'
         + " · ".join(
-            f'<a href="{link}" style="color:{P["accent"]};">'
-            f'{label}</a>'
+            f'<a href="{link}" class="ck-link">{label}</a>'
             for link, label in [
                 ("/diligence/regulatory-calendar", "Regulatory Calendar"),
                 ("/diligence/covenant-stress", "Covenant Stress"),
@@ -690,7 +689,11 @@ def render_bear_case_page(
                 ("/diligence/exit-timing", "Exit Timing"),
             ]
         )
-        + f'</div></div>'
+        + '</p>'
+    )
+    cross_links = ck_panel(
+        cross_links_inner,
+        title="Sources cited in this bear case",
     )
 
     body = (
