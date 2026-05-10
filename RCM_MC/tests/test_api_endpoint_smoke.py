@@ -535,24 +535,26 @@ class APIEndpointSmoke(unittest.TestCase):
         self.assertEqual(payload["code"], "RATE_LIMITED")
         self.assertIsInstance(payload["retry_after_secs"], (int, float))
 
-    def test_state_changing_post_writes_audit_entry(self) -> None:
-        """Every state-changing operation should write an audit
-        log entry. Compliance teams rely on this for SOC2 /
-        partner-facing change-tracking. Pre-fix this couldn't
-        regress silently because the audit page would render
-        nothing for the operation, but a contributor unwrapping
-        the audit hook from a handler would still see the route
-        return 200 — partner-invisible damage.
+    def test_state_changing_posts_write_audit_entries(self) -> None:
+        """Every state-changing operation must write an audit log
+        entry via self._log_audit(). Compliance teams rely on
+        this for SOC2 / partner-facing change-tracking. Catches
+        the regression class where a contributor unwraps the
+        audit hook from a handler — route still returns 200,
+        partner-visible state still updates, but the trail
+        breaks silently.
 
-        This test exercises one representative POST
-        (/api/portfolio/register) and asserts:
+        Exercises three representative state-mutating POSTs:
 
-        * The operation returns 200 with a JSON envelope.
-        * The /audit page now contains the deal_id we just used,
-          AND the action token ``portfolio.register``.
+        * /api/portfolio/register → ``portfolio.register``
+        * /api/deals/import      → ``deal.import``
+        * /api/deals/bulk archive → ``bulk.archive``
 
-        Catches the regression class: anyone removing
-        ``self._log_audit(...)`` from a handler.
+        Each must:
+        1. Return 200 from the POST.
+        2. Cause the /audit page to surface the action token AND
+           a recognisable identifier (deal_id, count) so the
+           entry is traceable.
         """
         import json
         csrf = ""
@@ -561,35 +563,87 @@ class APIEndpointSmoke(unittest.TestCase):
                 csrf = c.value
                 break
 
-        deal_id = "audit-trail-probe"
-        body = json.dumps({
-            "deal_id": deal_id,
-            "name": "Audit Trail Probe",
-            "stage": "sourced",
-        }).encode()
-        req = urllib.request.Request(
-            self.base + "/api/portfolio/register",
-            data=body, method="POST",
-        )
-        req.add_header("Content-Type", "application/json")
-        req.add_header("X-CSRF-Token", csrf)
-        resp = self.opener.open(req, timeout=8)
-        self.assertEqual(resp.status, 200)
+        def _post_json(path: str, payload) -> int:
+            req = urllib.request.Request(
+                self.base + path,
+                data=json.dumps(payload).encode(),
+                method="POST",
+            )
+            req.add_header("Content-Type", "application/json")
+            req.add_header("X-CSRF-Token", csrf)
+            try:
+                resp = self.opener.open(req, timeout=8)
+                return resp.status
+            except urllib.error.HTTPError as e:
+                return e.code
 
-        # Now read the audit page and look for the new entry.
+        SCENARIOS: list[tuple[str, object, str, str]] = [
+            (
+                "/api/portfolio/register",
+                {
+                    "deal_id": "audit-register-probe",
+                    "name": "Register Audit Probe",
+                    "stage": "sourced",
+                },
+                "portfolio.register",
+                "audit-register-probe",
+            ),
+            (
+                "/api/deals/import",
+                [{
+                    "deal_id": "audit-import-probe",
+                    "name": "Import Audit Probe",
+                    "profile": {},
+                }],
+                "deal.import",
+                "audit-import-probe",
+            ),
+            (
+                "/api/deals/bulk",
+                {
+                    "action": "archive",
+                    "deal_ids": ["audit-import-probe"],
+                },
+                "bulk.archive",
+                None,  # bulk action doesn't need deal_id in body
+            ),
+        ]
+
+        # Run all three POSTs in sequence so the audit log
+        # accumulates entries.
+        statuses = [
+            (path, _post_json(path, body))
+            for path, body, _, _ in SCENARIOS
+        ]
+        bad_status = [
+            f"{path}: {code}" for path, code in statuses
+            if code != 200
+        ]
+        self.assertEqual(
+            bad_status, [],
+            f"State-changing POSTs that should return 200: "
+            f"{bad_status}",
+        )
+
+        # Now read the audit page once and check every action.
         audit_html = self.opener.open(
             self.base + "/audit", timeout=8,
         ).read().decode("utf-8", errors="replace")
 
-        self.assertIn(
-            deal_id, audit_html,
-            f"deal_id {deal_id!r} not found in /audit body — "
-            f"register handler may be missing _log_audit() call",
-        )
-        self.assertIn(
-            "portfolio.register", audit_html,
-            "audit page missing 'portfolio.register' action — "
-            "audit hook on register may be unwired",
+        missing: list[str] = []
+        for _, _, action, identifier in SCENARIOS:
+            if action not in audit_html:
+                missing.append(
+                    f"action token {action!r} not in /audit body"
+                )
+            if identifier and identifier not in audit_html:
+                missing.append(
+                    f"identifier {identifier!r} not in /audit body"
+                )
+        self.assertEqual(
+            missing, [],
+            f"Audit hooks unwired on state-changing handlers: "
+            f"{missing}",
         )
 
     def test_admin_only_routes_reject_analyst_role(self) -> None:
