@@ -414,6 +414,64 @@ class APIEndpointSmoke(unittest.TestCase):
             f"from API_SMOKE_ROUTES with rationale.",
         )
 
+    def test_endpoints_return_expected_content_type(self) -> None:
+        """Every 200-pinned smoke endpoint must return the
+        Content-Type a partner client expects:
+
+        * ``application/json`` for /api/* JSON endpoints
+        * ``text/csv`` for /api/*.csv exports
+        * ``text/`` (any subtype) for /api/*.memo and /api/docs
+          (HTML viewers / markdown memos)
+        * ``application/x-sqlite3`` for /api/backup
+        * ``application/zip`` for /api/deals/<id>/package
+        * ``text/`` for /api/analysis/<id>/export (default HTML)
+        * ``text/plain`` for /healthz and /health liveness probes
+
+        A wrong Content-Type breaks partner-side parsers silently:
+        a Python ``response.json()`` call against a text/plain
+        body raises, and SDK regenerators key off the header.
+        """
+        EXPECTED_CTYPE = {
+            "/healthz":                          "text/plain",
+            "/health":                           "text/plain",
+            "/api/backup":                       "application/x-sqlite3",
+            "/api/deals/smoke-a/package":        "application/zip",
+            "/api/analysis/smoke-a/export":      "text/",
+            "/api/docs":                         "text/html",
+        }
+
+        def _expected(path: str) -> str:
+            override = EXPECTED_CTYPE.get(path)
+            if override:
+                return override
+            if path.endswith(".csv"):
+                return "text/csv"
+            if path.endswith(".memo"):
+                return "text/"
+            return "application/json"
+
+        issues: list[str] = []
+        for path, expected_status in API_SMOKE_ROUTES:
+            if expected_status != 200:
+                continue
+            try:
+                resp = self.opener.open(
+                    self.base + path, timeout=8,
+                )
+            except Exception:
+                continue
+            ct = resp.headers.get("Content-Type", "")
+            want = _expected(path)
+            if want.lower() not in ct.lower():
+                issues.append(
+                    f"{path}: Content-Type={ct!r}, expected to "
+                    f"contain {want!r}"
+                )
+        self.assertEqual(
+            issues, [],
+            f"Content-Type mismatches ({len(issues)}): {issues}",
+        )
+
     def test_no_endpoint_leaks_python_exceptions_in_body(self) -> None:
         """For every 200-pinned smoke endpoint, the response body
         must not contain Python-exception strings.
