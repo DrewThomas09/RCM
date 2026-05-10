@@ -152,18 +152,18 @@ def _build_thesis() -> List[InvestmentThesis]:
 
 def _build_findings() -> List[DiligenceFinding]:
     return [
-        DiligenceFinding("Financial QoE", "Management adjustments $3.2M (one-time exec severance + refinancing)",
+        DiligenceFinding("Financial QoE", "Management adjustments $3.20M (one-time exec severance + refinancing)",
                          "clean", "Independent QoE confirmed; minor normalization", "no impact"),
         DiligenceFinding("Commercial", "Top payer BCBS at 22% of revenue; renewal 2027",
                          "medium", "Price reset leverage; relationship strong", "2nd-payer development"),
         DiligenceFinding("Operational", "Anesthesia model: W-2 vs 1099 classification risk",
-                         "medium", "Transition to W-2 post-close; $0.4M annualized cost", "minor margin impact"),
+                         "medium", "Transition to W-2 post-close; $0.40M annualized cost", "minor margin impact"),
         DiligenceFinding("Regulatory", "2 OIG audits 2023 — closed no action",
                          "minor", "Audit trail clean; proactive compliance program", "no impact"),
         DiligenceFinding("Legal", "3 pending malpractice suits — all covered by insurance",
                          "minor", "Standard practice; reserves adequate", "no impact"),
         DiligenceFinding("IT / Cyber", "Epic instance at risk of mid-term migration forced by Epic EOL schedule",
-                         "medium", "Budget $2.5M for 18-month migration", "integration cost"),
+                         "medium", "Budget $2.50M for 18-month migration", "integration cost"),
         DiligenceFinding("HR", "Key-person concentration: 2 senior MDs, 35% of revenue",
                          "high", "Long-term employment + equity; rollover negotiations", "key-person risk"),
         DiligenceFinding("Antitrust", "MSA concentration clears (CR3 42% pre → 48% post)",

@@ -119,7 +119,7 @@ def _build_structures() -> List[StructureOption]:
         StructureOption("Stock-for-Stock (§368)", "Tax-free merger; seller receives buyer equity",
                         "no recognition at close; deferred until shareholder sale", "deferred",
                         "Strategic acquisitions by public buyers", "high"),
-        StructureOption("QSBS (§1202) Exclusion", "Up to $10M or 10x basis gain exclusion for qualified stock",
+        StructureOption("QSBS (§1202) Exclusion", "Up to $10.00M or 10.00x basis gain exclusion for qualified stock",
                         "capital gain excluded for qualifying sellers", "5-year hold required",
                         "Founders with qualifying small business stock", "medium"),
         StructureOption("Installment Sale (§453)", "Seller receives note; recognition over payment period",
@@ -130,7 +130,7 @@ def _build_structures() -> List[StructureOption]:
                         "deferred indefinitely for rollover portion", "GP-led CV with LP rollover option", "medium"),
         StructureOption("Up-C / Tax Receivable Agreement (TRA)", "Pre-IPO restructure: C-corp holds LLC interests + TRA",
                         "step-up at IPO; TRA payments deductible",
-                        "TRA pays 85% of tax benefit to pre-IPO holders",
+                        "TRA pays 85.0% of tax benefit to pre-IPO holders",
                         "Pre-IPO preparation; monetizes tax attributes", "high"),
     ]
 
@@ -144,18 +144,18 @@ def _build_scenarios() -> List[AfterTaxScenario]:
         AfterTaxScenario("QSBS Exclusion (50% of proceeds)", 485.0, 48.2, 14.3, 0.0, 422.5, 3.07, 0.252),
         AfterTaxScenario("Earnout + Installment (50% deferred)", 485.0, 48.2, 14.3, 0.0, 422.5, 3.07, 0.252),
         AfterTaxScenario("CV Rollover (100% tax-free on rolled)", 485.0, 0.0, 0.0, 0.0, 485.0, 3.52, 0.290),
-        AfterTaxScenario("Hybrid: 60% stock sale + 40% rollover", 485.0, 57.8, 17.1, 0.0, 410.1, 2.98, 0.245),
+        AfterTaxScenario("Hybrid: 60.0% stock sale + 40.0% rollover", 485.0, 57.8, 17.1, 0.0, 410.1, 2.98, 0.245),
     ]
 
 
 def _build_rollovers() -> List[RolloverMechanics]:
     return [
         RolloverMechanics("Management Rollover (§351)", "Pre-close C-corp rollover in exchange for buyer stock",
-                          True, 36, 0.05, "Typical 5% of sale proceeds; drag-along rights"),
+                          True, 36, 0.05, "Typical 5.0% of sale proceeds; drag-along rights"),
         RolloverMechanics("LLC / Partnership Rollover (§721)", "Sellers contribute to new LLC; defer gain",
                           True, 24, 0.08, "Typical 5-10% rollover for seller management"),
         RolloverMechanics("Stock-for-Stock Merger (§368(a))", "Target shareholders exchange for buyer stock",
-                          True, 6, 0.95, "Requires 80%+ consideration in stock"),
+                          True, 6, 0.95, "Requires 80.0%+ consideration in stock"),
         RolloverMechanics("Continuation Vehicle (§721)", "Rolled portion contributed to new LLC holding vehicle",
                           True, 36, 0.42, "Tax-deferred rollover maintained through CV structure"),
         RolloverMechanics("Earnout Structure (§453)", "Contingent consideration; tax recognition at receipt",

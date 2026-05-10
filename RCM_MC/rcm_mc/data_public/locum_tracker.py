@@ -282,7 +282,7 @@ def _build_compliance() -> List[ComplianceExposure]:
                            215.0, 45, "medium"),
         ComplianceExposure("Background Recheck Overdue", "11 contract RNs past 12-mo recheck",
                            68.0, 60, "low"),
-        ComplianceExposure("Agency Fee Markup", "Agency fee avg 19% vs 15% industry median",
+        ComplianceExposure("Agency Fee Markup", "Agency fee avg 19.0% vs 15.0% industry median",
                            488.0, 180, "medium"),
         ComplianceExposure("Wage-and-Hour Exposure", "Travel RNs stipend structure under review",
                            720.0, 150, "high"),

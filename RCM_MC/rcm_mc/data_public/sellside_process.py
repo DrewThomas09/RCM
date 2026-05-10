@@ -152,7 +152,7 @@ def _build_processes() -> List[ActiveProcess]:
 def _build_engagements() -> List[BuyerEngagement]:
     return [
         BuyerEngagement("Project Laurel — Derma", "Advent International", "Large PE", "2026-02-15", "Management meeting completed",
-                        850.0, "Bolt-on commitment + $12M incremental capex", 85),
+                        850.0, "Bolt-on commitment + $12.00M incremental capex", 85),
         BuyerEngagement("Project Laurel — Derma", "Hellman & Friedman", "Large PE", "2026-02-22", "IOI submitted",
                         780.0, "Full business + ops partners package", 72),
         BuyerEngagement("Project Laurel — Derma", "Apollo", "Large PE", "2026-03-01", "IOI submitted",

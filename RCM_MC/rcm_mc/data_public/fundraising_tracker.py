@@ -210,7 +210,7 @@ def _build_terms() -> List[FundTermsMatrix]:
     return [
         FundTermsMatrix("Management Fee", "1.75% on commitment (3-yr step-down to 1.25%)", "1.75-2.00% with step-down",
                         "agreed (cornerstone tier)", "flat"),
-        FundTermsMatrix("Carried Interest", "20% over 8% hurdle (ILPA catch-up)", "20% w/ 7-8% hurdle",
+        FundTermsMatrix("Carried Interest", "20.0% over 8.0% hurdle (ILPA catch-up)", "20.0% w/ 7.0-8.0% hurdle",
                         "agreed", "flat"),
         FundTermsMatrix("Hurdle Rate", "8% preferred return (compounded)", "7-8%", "agreed", "slight up"),
         FundTermsMatrix("GP Catch-Up", "100% (tiered)", "100% standard", "agreed", "flat"),

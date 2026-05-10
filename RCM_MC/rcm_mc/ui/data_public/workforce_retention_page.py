@@ -24,7 +24,7 @@ def _roles_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{t_c};font-weight:700">{r.annual_turnover_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{r.industry_benchmark_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{d_c};font-weight:700">{d * 100:+.1f}pp</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${r.replacement_cost_k:,.1f}K</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${r.replacement_cost_k:,.2f}K</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{r.replacement_time_days}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{cr_c};font-weight:700">{"YES" if r.critical else "—"}</td>',
         ]
@@ -205,9 +205,9 @@ def render_workforce_retention(params: dict = None) -> str:
     <strong style="color:{text}">Workforce Retention Summary:</strong> {r.total_headcount:,} portfolio employees at {r.weighted_turnover_pct * 100:.1f}% weighted turnover — 2-3pp inside industry benchmarks for most roles.
     Highest-risk roles: Housekeeping/EVS (48.5%), Food Service (42.5%), Medical Assistant (34.5%), Phlebotomy (38.5%) — all non-clinical support roles with highest replacement volume but lower unit cost.
     Critical roles to prioritize: RN bedside (22.5% turnover), behavioral tech (32.5%), OR/specialty RNs, and allied-health technicians (cath lab, echo, radiology) — replacement cost $62-135K per FTE.
-    Deal watchlist: Project Sage (Home Health, 38.5% turnover, 16.5% contract labor, $48.5M agency spend, $28.5M savings opportunity), Project Redwood (28.5%/12.5%), Project Linden (32.5%/12.5%).
-    Retention programs spending ${program_cost:.2f}M annually — top-ROI programs: flexible scheduling (-4.5pp, $0 cost), loan repayment (-4.2pp), sign-on bonus (-3.5pp for critical roles).
-    Contract labor savings opportunity ${savings_opp:.2f}M via structured agency-to-staff conversion — Sage alone $28.5M opportunity through in-home care workforce pipeline expansion.
+    Deal watchlist: Project Sage (Home Health, 38.5% turnover, 16.5% contract labor, $48.50M agency spend, $28.50M savings opportunity), Project Redwood (28.5%/12.5%), Project Linden (32.5%/12.5%).
+    Retention programs spending ${program_cost:.2f}M annually — top-ROI programs: flexible scheduling (-4.5pp, $0.00 cost), loan repayment (-4.2pp), sign-on bonus (-3.5pp for critical roles).
+    Contract labor savings opportunity ${savings_opp:.2f}M via structured agency-to-staff conversion — Sage alone $28.50M opportunity through in-home care workforce pipeline expansion.
     Benefits vs benchmarks: health insurance contribution (72% — between median/P75), 401(k) match (4% — at median), parental leave (12 weeks — between median/P75); childcare and student loan at P25 — upgrade opportunities.
   </div>
 </div>"""

@@ -80,7 +80,7 @@ def _engagements_table(items) -> str:
             f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(e.stage)}</span></td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${e.ioi_amount_m:,.2f}M</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:320px">{_html.escape(e.key_conditions)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{a_c};font-weight:700">{e.probability_advance_pct}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{a_c};font-weight:700">{e.probability_advance_pct:.1f}%</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -235,7 +235,7 @@ def render_sellside_process(params: dict = None) -> str:
     Buyer engagement book: 15 active conversations across strategic (Optum, UHG, LabCorp/Quest, Acadia, Advent), large PE (Hellman & Friedman, Apollo, Bain), and CV/sponsor structures — Laurel leads with 5 buyers active at IOI stage.
     Diligence readiness: 22 items tracked — Laurel Derma + Oak RCM complete, Cypress + Fir final prep, Magnolia + Cedar + Ash mid-diligence (35-65% complete), Willow and Aspen earliest.
     Oak RCM IPO on track for Q3 2026 pricing — S-1 confidential filing complete ahead of schedule; roadshow scheduled July 2026 with Goldman/MS syndicate.
-    Negotiation postures: Laurel bid dispersion $160M suggests active 5-way competition; Cypress $400M dispersion reflects strategic-vs-CV optionality; bidding strategy sessions scheduled weekly.
+    Negotiation postures: Laurel bid dispersion $160.00M suggests active 5-way competition; Cypress $400.00M dispersion reflects strategic-vs-CV optionality; bidding strategy sessions scheduled weekly.
   </div>
 </div>"""
 

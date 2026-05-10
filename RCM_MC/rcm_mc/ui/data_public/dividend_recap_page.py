@@ -84,7 +84,7 @@ def _timing_svg(timing) -> str:
         bars.append(
             f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" fill="{color}" opacity="0.85"/>'
             f'<text x="{x + bar_w / 2:.1f}" y="{y - 3:.1f}" fill="{P["text_dim"]}" font-size="10" '
-            f'text-anchor="middle" font-family="JetBrains Mono,monospace">${t.potential_dividend_mm:,.0f}</text>'
+            f'text-anchor="middle" font-family="JetBrains Mono,monospace">${t.potential_dividend_mm:,.2f}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="10" '
             f'text-anchor="middle" font-family="JetBrains Mono,monospace">Y{t.year}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 26}" fill="{text_faint}" font-size="9" '

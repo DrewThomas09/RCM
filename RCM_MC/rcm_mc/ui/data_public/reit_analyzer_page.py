@@ -150,7 +150,7 @@ def _mv_vs_bv_svg(assets) -> str:
         bars.append(
             f'<rect x="{x:.1f}" y="{y_m:.1f}" width="{bar_w:.1f}" height="{mh:.1f}" fill="{pos}" opacity="0.4"/>'
             f'<rect x="{x:.1f}" y="{y_b:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" fill="{text_dim}" opacity="0.85"/>'
-            f'<text x="{x + bar_w / 2:.1f}" y="{y_m - 4:.1f}" fill="{pos}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:700">${a.market_value_mm:.0f}</text>'
+            f'<text x="{x + bar_w / 2:.1f}" y="{y_m - 4:.1f}" fill="{pos}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:700">${a.market_value_mm:,.2f}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(a.asset_id)}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 26}" fill="{text_faint}" font-size="8" text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(a.asset_type[:16])}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 38}" fill="{text_faint}" font-size="8" text-anchor="middle" font-family="JetBrains Mono,monospace">{a.cap_rate_implied * 100:.2f}% cap</text>'
@@ -230,7 +230,7 @@ def render_reit_analyzer(params: dict = None) -> str:
     <strong style="color:{text}">Sale-Leaseback Thesis:</strong> {r.total_assets} owned assets carry ${r.total_market_value_mm:,.2f}M market value on ${r.total_book_value_mm:,.2f}M book,
     producing ${r.total_unrealized_gain_mm:,.2f}M hidden equity. Weighted cap rate {r.weighted_cap_rate * 100:.2f}% is sellable into public REITs (BBB-rated, 6-9% targets) or private
     real estate credit funds. Recommended scenario: <strong style="color:{text}">{_html.escape(r.recommended_scenario)}</strong>, producing ${r.max_proceeds_mm:,.2f}M proceeds.
-    Post-SLB rent coverage remains comfortably above 1.75x covenant. Proceeds deployed 42% to debt paydown, 28% to bolt-on M&A, 15% to dividend recap — producing meaningful MOIC uplift at exit.
+    Post-SLB rent coverage remains comfortably above 1.75x covenant. Proceeds deployed 42.0% to debt paydown, 28.0% to bolt-on M&A, 15.0% to dividend recap — producing meaningful MOIC uplift at exit.
     Ground-lease optionality provides a tax-advantaged hybrid alternative if full SLB creates covenant stress.
   </div>
 </div>"""

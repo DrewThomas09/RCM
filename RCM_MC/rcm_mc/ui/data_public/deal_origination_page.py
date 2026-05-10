@@ -198,7 +198,7 @@ def render_deal_origination(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Sourcing Velocity — Quarterly Trend</div>{vl_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Origination Thesis:</strong> ${r.total_pipeline_ev_mm:,.2f}M active pipeline EV weights to ${r.weighted_pipeline_ev_mm:,.2f}M probability-adjusted.
-    Top 3 banker relationships (Jefferies, Harris Williams, William Blair) represent ~42% of deal flow and 60% of closed transactions.
+    Top 3 banker relationships (Jefferies, Harris Williams, William Blair) represent ~42% of deal flow and 60.0% of closed transactions.
     Sector whitespace concentrates in Fertility / IVF, Women's Health, Behavioral, and Pediatric Therapy — lowest platform saturation.
     Win/loss skews toward price-driven losses (42 in LTM) — suggests upward multiple pressure in competitive auctions.
     Velocity stable at ~2-3 closes per quarter; conversion rate 1.4-2.0% from screen to close (industry norm).

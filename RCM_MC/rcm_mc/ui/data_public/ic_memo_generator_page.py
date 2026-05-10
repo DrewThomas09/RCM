@@ -195,7 +195,7 @@ def render_ic_memo_generator(params: dict = None) -> str:
     Base case {r.summary.projected_moic:.2f}x MOIC / {r.summary.projected_irr * 100:.1f}% IRR over {r.summary.hold_years:.1f}y hold; probability-weighted expected {r.expected_moic:.2f}x / {r.expected_irr * 100:.1f}%.
     Investment thesis validates to {sum(t.validation_score for t in r.thesis) / len(r.thesis):.0f}/100 — strong on platform positioning, operating leverage, exit optionality.
     Material findings mitigated via management transition, W-2 conversion budget, BCBS 2nd-payer development.
-    Expected value creation ${sum(lv.expected_contribution_mm for lv in r.levers):,.2f}M across 7 levers; multiple arbitrage (13x→14.5x) adds $9.2M; bolt-on M&A adds $9.4M.
+    Expected value creation ${sum(lv.expected_contribution_mm for lv in r.levers):,.2f}M across 7 levers; multiple arbitrage (13.00x→14.50x) adds $9.20M; bolt-on M&A adds $9.40M.
     Recommend proceeding to final bid with submission authorization.
   </div>
 </div>"""

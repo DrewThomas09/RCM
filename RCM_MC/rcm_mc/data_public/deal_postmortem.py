@@ -117,7 +117,7 @@ def _build_attribution() -> List[LeverAttribution]:
         LeverAttribution("Organic Revenue Growth", 12.5, 8.5, 0.68,
                          "Launched 3 new specialties successfully", "Volume below plan due to referral dependency"),
         LeverAttribution("Margin Expansion", 6.2, 4.8, 0.77,
-                         "RCM consolidation saved $3.5M", "Labor inflation ate $2.2M vs plan"),
+                         "RCM consolidation saved $3.50M", "Labor inflation ate $2.20M vs plan"),
         LeverAttribution("Bolt-On M&A", 8.5, 5.8, 0.68,
                          "Closed 8 of 12 targeted add-ons", "4 targets backed out during diligence"),
         LeverAttribution("Payer Rate Uplift", 2.8, 1.2, 0.43,
@@ -139,9 +139,9 @@ def _build_milestones() -> List[MilestoneRecord]:
         MilestoneRecord("Management transition complete", "2020-12-31", "2021-02-15", 46, "minor delay"),
         MilestoneRecord("EHR unified", "2021-06-30", "2022-01-15", 199, "material delay — 6.5 months late"),
         MilestoneRecord("First bolt-on close", "2021-09-30", "2021-10-22", 22, "on track"),
-        MilestoneRecord("$25M run-rate EBITDA", "2022-06-30", "2022-09-15", 77, "minor delay"),
+        MilestoneRecord("$25.00M run-rate EBITDA", "2022-06-30", "2022-09-15", 77, "minor delay"),
         MilestoneRecord("Payer renegotiation complete", "2022-12-31", "2023-03-30", 89, "minor delay"),
-        MilestoneRecord("$40M run-rate EBITDA", "2023-12-31", "2024-06-30", 182, "material delay"),
+        MilestoneRecord("$40.00M run-rate EBITDA", "2023-12-31", "2024-06-30", 182, "material delay"),
         MilestoneRecord("Exit process launch", "2025-01-15", "2025-09-15", 243, "market timing deferred"),
         MilestoneRecord("Signing LOI", "2025-04-30", "2025-12-15", 229, "buyer selection slower than plan"),
         MilestoneRecord("Close (exit)", "2025-07-15", "2026-03-30", 258, "closing delays"),
@@ -150,7 +150,7 @@ def _build_milestones() -> List[MilestoneRecord]:
 
 def _build_lessons() -> List[LessonLearned]:
     return [
-        LessonLearned("M&A Execution", "Bolt-on conversion rate (target → close) was 67% vs 85% model",
+        LessonLearned("M&A Execution", "Bolt-on conversion rate (target → close) was 67.0% vs 85.0% model",
                       "Reduce target list size; require earlier diligence gates", "high"),
         LessonLearned("Technology", "EHR unification routinely slips 6+ months post-close",
                       "Extend PMI timeline budget + $2M contingency", "high"),

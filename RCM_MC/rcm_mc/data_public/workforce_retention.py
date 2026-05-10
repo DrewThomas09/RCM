@@ -210,7 +210,7 @@ def _build_surveys() -> List[EngagementSurvey]:
 
 def _build_benefits() -> List[BenefitsBenchmark]:
     return [
-        BenefitsBenchmark("Health Insurance Contribution", "60% employer", "70% employer", "82% employer", "72% employer", 0.98),
+        BenefitsBenchmark("Health Insurance Contribution", "60.0% employer", "70.0% employer", "82.0% employer", "72.0% employer", 0.98),
         BenefitsBenchmark("401(k) Match", "3%", "4% (100% up to 4%)", "6% (100% up to 6%)", "4% (100% up to 4%)", 0.85),
         BenefitsBenchmark("PTO Accrual (Year 1)", "15 days", "20 days", "25 days", "22 days", 1.00),
         BenefitsBenchmark("Parental Leave (Primary)", "6 weeks", "10 weeks", "16 weeks", "12 weeks", 0.88),

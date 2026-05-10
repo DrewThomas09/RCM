@@ -302,7 +302,7 @@ def render_rollup_economics(params: dict = None) -> str:
     {r.total_addons_closed} add-ons deploying ${r.total_deployed_mm:,.2f}M in aggregate. Multiple arbitrage (${entry_mult:.2f}x → ${exit_mult:.2f}x) creates ${r.multiple_arbitrage_mm:,.2f}M of value;
     synergies add ${r.total_synergies_mm:,.2f}M run-rate. Base-case MOIC {r.base_case_moic:.2f}x / IRR {r.base_case_irr * 100:.1f}% —
     materially dependent on exit multiple. Integration cost ${total_int_cost:,.2f}M is ~{(total_int_cost / r.total_deployed_mm) * 100:.1f}% of deployed capital;
-    risks concentrated in EHR unification and cross-sell revenue synergies (high execution risk). Downside exit of 7x produces material equity erosion.
+    risks concentrated in EHR unification and cross-sell revenue synergies (high execution risk). Downside exit of 7.00x produces material equity erosion.
   </div>
 </div>"""
 

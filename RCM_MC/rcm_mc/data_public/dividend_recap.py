@@ -158,9 +158,9 @@ def _build_scenarios(
 ) -> List[RecapScenario]:
     rows = []
     scenarios_def = [
-        ("Conservative — 5.0x target", 5.0, "low"),
-        ("Market — 5.5x target", 5.5, "medium"),
-        ("Aggressive — 6.0x target", 6.0, "medium"),
+        ("Conservative — 5.00x target", 5.0, "low"),
+        ("Market — 5.50x target", 5.5, "medium"),
+        ("Aggressive — 6.00x target", 6.0, "medium"),
         ("Opportunistic — 6.5x target", 6.5, "high"),
     ]
     for label, target_lev, risk in scenarios_def:

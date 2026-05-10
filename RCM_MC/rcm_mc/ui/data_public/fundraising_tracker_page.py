@@ -228,7 +228,7 @@ def render_fundraising_tracker(params: dict = None) -> str:
     LP pipeline concentrated in existing relationships (60%+ prior-fund LPs); new LP cultivation (ADIA, MIT, KIC, OTPP, QIA) represents $1.1B+ of upside if DD progresses.
     Terms negotiation track: 12 of 14 key provisions agreed with cornerstone LPs; 2 still negotiating (LPAC composition, ESG reporting) — LP pressure manageable, no GP-unfriendly concessions.
     Placement agents: Park Hill ($1.85B sourced), Campbell Lutyens ($485.00M for CV), Jefferies ($485.00M for Growth III) — aggregate agent-sourced commitments $4.20B of ${r.total_hard_circled_b:.2f}B.
-    Credit Fund is the only AT-RISK close: $320M hard-circled vs $1.0B first-close target; cornerstone LP pursuit accelerated Q2 2026.
+    Credit Fund is the only AT-RISK close: $320.00M hard-circled vs $1.00B first-close target; cornerstone LP pursuit accelerated Q2 2026.
   </div>
 </div>"""
 

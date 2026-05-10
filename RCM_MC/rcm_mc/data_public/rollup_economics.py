@@ -311,10 +311,10 @@ def _build_exit_scenarios(exit_ebitda: float, entry_ebitda: float,
                           total_deployed: float) -> List[ExitScenario]:
     rows = []
     scenarios = [
-        ("Downside (7x)", exit_ebitda * 0.85, 7.0),
-        ("Base (10x)", exit_ebitda, 10.0),
-        ("Upside Strategic (13x)", exit_ebitda * 1.08, 13.0),
-        ("IPO / Public Comp (15x)", exit_ebitda * 1.12, 15.0),
+        ("Downside (7.00x)", exit_ebitda * 0.85, 7.0),
+        ("Base (10.00x)", exit_ebitda, 10.0),
+        ("Upside Strategic (13.00x)", exit_ebitda * 1.08, 13.0),
+        ("IPO / Public Comp (15.00x)", exit_ebitda * 1.12, 15.0),
     ]
     for name, ebit, mult in scenarios:
         ev = ebit * mult
@@ -382,7 +382,7 @@ def compute_rollup_economics(
         - platform_entry_ebitda_mm * entry_multiple
     )
 
-    # Base case = the "Base (10x)" scenario
+    # Base case = the "Base (10.00x)" scenario
     base = next((s for s in exit_scenarios if "Base" in s.scenario), exit_scenarios[1])
 
     return RollupResult(
