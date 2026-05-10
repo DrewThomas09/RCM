@@ -163,8 +163,8 @@ def _leverage_table(scenarios, optimal_lev) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:{"700" if is_opt else "400"}">{s.total_leverage:.2f}x{" ★" if is_opt else ""}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.senior_leverage:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.sub_leverage:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.debt_mm:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.equity_mm:,.1f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.debt_mm:,.2f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.equity_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.equity_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">{s.blended_cost_of_debt * 100:.2f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{s.wacc * 100:.2f}%</td>',
@@ -365,7 +365,7 @@ def render_cap_structure(params: dict = None) -> str:
     <strong style="color:{text}">Recommendation:</strong>
     {_html.escape(r.recommendation)}.
     Increasing leverage from {r.optimal_leverage - 0.5:.2f}x to {r.optimal_leverage:.2f}x lifts expected MOIC
-    meaningfully while maintaining DSCR ≥ 1.3x and covenant headroom &gt; 12%. Beyond {r.optimal_leverage + 0.5:.2f}x,
+    meaningfully while maintaining DSCR ≥ 1.30x and covenant headroom &gt; 12.0%. Beyond {r.optimal_leverage + 0.5:.2f}x,
     cost-of-debt step-ups and breach probabilities materially reduce risk-adjusted returns.
   </div>
 

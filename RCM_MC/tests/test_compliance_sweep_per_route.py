@@ -141,8 +141,8 @@ ROUTE_MIN_SCORES: dict[str, float] = {
     "/corpus-coverage":       1.0,
     "/clinical-outcomes":     1.0,
     "/aco-economics":         1.0,
+    "/cap-structure":         1.0,
     # 93% routes (number-format-clean residual on prose-heavy pages):
-    "/cap-structure":         0.93,
     "/board-governance":      0.93,
 
     # 92% route — /news renders editorial copy with many embedded
