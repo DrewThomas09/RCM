@@ -788,6 +788,143 @@ _SPEC: Dict[str, Any] = {
                 "responses": {"200": {"description": "Provenance edges + nodes"}},
             },
         },
+        "/api/corpus": {
+            "get": {
+                "summary": "Search the analysis-corpus index",
+                "tags": ["Search"],
+                "parameters": [
+                    {"name": "q", "in": "query", "schema": {"type": "string"}},
+                ],
+                "responses": {"200": {"description": "Hit list"}},
+            },
+        },
+        "/api/counterfactual": {
+            "get": {
+                "summary": "Counterfactual scenario API",
+                "tags": ["Simulation"],
+                "responses": {"200": {"description": "Counterfactual payload"}},
+            },
+        },
+        "/api/portfolio/alerts": {
+            "get": {
+                "summary": "Active alerts across the portfolio",
+                "tags": ["Portfolio"],
+                "responses": {"200": {"description": "Alert rows"}},
+            },
+        },
+        "/api/diligence/synthesis/{deal_id}": {
+            "get": {
+                "summary": "Diligence synthesis dossier (JSON variant)",
+                "tags": ["Analysis"],
+                "parameters": [{"name": "deal_id", "in": "path", "required": True, "schema": {"type": "string"}}],
+                "responses": {"200": {"description": "Synthesis payload"}},
+            },
+        },
+        "/api/jobs/{job_id}": {
+            "get": {
+                "summary": "Job status (queued, running, complete, failed)",
+                "tags": ["Infrastructure"],
+                "parameters": [{"name": "job_id", "in": "path", "required": True, "schema": {"type": "string"}}],
+                "responses": {
+                    "200": {"description": "Job descriptor"},
+                    "404": {"description": "Unknown job"},
+                },
+            },
+        },
+        "/api/login": {
+            "post": {
+                "summary": "Form login (sets session cookie)",
+                "tags": ["Infrastructure"],
+                "requestBody": {
+                    "content": {"application/x-www-form-urlencoded": {
+                        "schema": {"type": "object", "properties": {
+                            "username": {"type": "string"},
+                            "password": {"type": "string"},
+                            "csrf_token": {"type": "string"},
+                        }},
+                    }},
+                },
+                "responses": {
+                    "303": {"description": "Login succeeded; redirect"},
+                    "401": {"description": "Bad credentials"},
+                    "429": {"description": "Rate-limited"},
+                },
+            },
+        },
+        "/api/logout": {
+            "post": {
+                "summary": "Clear session cookie",
+                "tags": ["Infrastructure"],
+                "responses": {"303": {"description": "Redirect to /login"}},
+            },
+        },
+        "/api/upload-actuals": {
+            "post": {
+                "summary": "Upload quarterly actuals YAML",
+                "tags": ["Deals"],
+                "responses": {"200": {"description": "Upload acknowledged"}},
+            },
+        },
+        "/api/upload-initiatives": {
+            "post": {
+                "summary": "Upload initiatives YAML",
+                "tags": ["Deals"],
+                "responses": {"200": {"description": "Upload acknowledged"}},
+            },
+        },
+        "/api/upload-notes": {
+            "post": {
+                "summary": "Upload notes (bulk import)",
+                "tags": ["Deals"],
+                "responses": {"200": {"description": "Upload acknowledged"}},
+            },
+        },
+        "/api/screener/run": {
+            "post": {
+                "summary": "Run a saved or ad-hoc deal-screener filter",
+                "tags": ["Deals"],
+                "responses": {"200": {"description": "Matching deals"}},
+            },
+        },
+        "/api/chat": {
+            "post": {
+                "summary": "Chat with the analyst assistant",
+                "tags": ["Activity"],
+                "requestBody": {
+                    "content": {"application/json": {
+                        "schema": {"type": "object", "properties": {
+                            "message": {"type": "string"},
+                            "deal_id": {"type": "string"},
+                        }},
+                    }},
+                },
+                "responses": {"200": {"description": "Assistant reply"}},
+            },
+        },
+        "/api/portfolio/register": {
+            "post": {
+                "summary": "Register a deal into the portfolio",
+                "tags": ["Portfolio"],
+                "responses": {
+                    "200": {"description": "Registration accepted"},
+                    "400": {"description": "Validation error"},
+                },
+            },
+        },
+        "/api/deals/wizard/select": {
+            "post": {
+                "summary": "Wizard step: select target hospital / CCN",
+                "tags": ["Deals"],
+                "responses": {"200": {"description": "Selection acknowledged"}},
+            },
+        },
+        "/api/deals/wizard/launch": {
+            "post": {
+                "summary": "Wizard step: launch deal creation + simulation",
+                "tags": ["Deals"],
+                "responses": {"200": {"description": "Launch result"}},
+            },
+        },
     },
     "tags": [
         {"name": "Deals", "description": "Deal CRUD, lifecycle, validation, completeness, search, PATCH"},
