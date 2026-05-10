@@ -225,6 +225,35 @@ class APIEndpointSmoke(unittest.TestCase):
                     f"expected {expected}",
                 )
 
+    def test_deal_compare_returns_real_rows_not_unbound_store_errors(
+        self,
+    ) -> None:
+        """Regression net for the unbound-`store` bug in
+        /api/deals/compare. Before the fix the handler returned 200
+        with a body of error stubs ({"error": "cannot access local
+        variable 'store' ..."}). Now each comparison row must carry
+        completeness_grade + ebitda_impact + metrics. This test
+        catches anyone who reverts the PortfolioStore bind."""
+        import json
+        resp = self.opener.open(
+            self.base
+            + "/api/deals/compare?ids=smoke-a,smoke-b",
+            timeout=8,
+        )
+        body = json.loads(resp.read().decode("utf-8"))
+        self.assertIn("deals", body)
+        self.assertEqual(len(body["deals"]), 2)
+        for row in body["deals"]:
+            self.assertNotIn(
+                "error", row,
+                f"row {row.get('deal_id')} carries an error: "
+                f"{row.get('error')!r} — likely the unbound `store` "
+                f"bug has regressed",
+            )
+            self.assertIn("completeness_grade", row)
+            self.assertIn("ebitda_impact", row)
+            self.assertIn("metrics", row)
+
 
 if __name__ == "__main__":
     unittest.main()
