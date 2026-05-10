@@ -15,8 +15,8 @@ def _status_color(s: str) -> str:
         "in progress": P["accent"],
         "drafting": P["accent"],
         "draft complete": P["accent"],
-        "accepted ($18M)": P["positive"],
-        "accepted ($65M)": P["positive"],
+        "accepted ($18.00M)": P["positive"],
+        "accepted ($65.00M)": P["positive"],
         "responded": P["positive"],
         "approved": P["positive"],
         "discussing": P["warning"],
@@ -224,9 +224,9 @@ def render_capital_call_tracker(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Capital Flow Summary:</strong> ${r.total_committed_b:.2f}B committed across {r.total_funds} funds — {r.total_called_b / r.total_committed_b * 100 if r.total_committed_b else 0:.1f}% called to date.
     LTM activity: ${r.ltm_calls_m:,.2f}M in capital calls vs ${r.ltm_distributions_m:,.2f}M in distributions — net ${r.net_ltm_m:+,.1f}M (active deployment phase outpacing returns).
-    Call pace: 12 new calls LTM averaging $329M per call — WCAS XV ($485M) and KKR III ($525M) are the two largest drawdowns for Project Azalea and Project Ridge.
-    Distribution mix: 6 SBO exits ($1,630M), 1 IPO secondary ($545M), 1 dividend recap ($185M), 1 CV proceeds ($125M) — exit path diversification delivering LP liquidity despite strategic-sale drought.
-    {active_requests} active LP requests including side-letter disclosure (Temasek), co-invest offers (CPPIB +$65M, Yale +$18M), and secondary inquiry (Adams Street, HarbourVest) — strong LP engagement.
+    Call pace: 12 new calls LTM averaging $329.00M per call — WCAS XV ($485.00M) and KKR III ($525.00M) are the two largest drawdowns for Project Azalea and Project Ridge.
+    Distribution mix: 6 SBO exits ($1,630M), 1 IPO secondary ($545.00M), 1 dividend recap ($185.00M), 1 CV proceeds ($125.00M) — exit path diversification delivering LP liquidity despite strategic-sale drought.
+    {active_requests} active LP requests including side-letter disclosure (Temasek), co-invest offers (CPPIB +$65.00M, Yale +$18.00M), and secondary inquiry (Adams Street, HarbourVest) — strong LP engagement.
     No LP defaults or late capital calls in the past 12 months — credit quality across {sum(1 for c in r.cashflows if c.unfunded_m > 0):,} funds with unfunded commitments remains pristine.
   </div>
 </div>"""

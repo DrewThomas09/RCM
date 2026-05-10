@@ -185,17 +185,17 @@ def _build_cashflows() -> List[FundCashflow]:
 
 def _build_lp_comms() -> List[LPCommunication]:
     return [
-        LPCommunication("CalPERS", 850.0, "Capital Call Notice", "2026-03-15", "WCAS XV Call #7 — $485M", "2026-03-29", "paid"),
-        LPCommunication("CPPIB", 925.0, "Capital Call Notice", "2026-03-15", "WCAS XV Call #7 — $485M", "2026-03-29", "paid"),
-        LPCommunication("Texas Teachers", 710.0, "Distribution Notice", "2026-03-20", "WCAS XIII Dist #18 — $485M", "2026-04-05", "distributed"),
+        LPCommunication("CalPERS", 850.0, "Capital Call Notice", "2026-03-15", "WCAS XV Call #7 — $485.00M", "2026-03-29", "paid"),
+        LPCommunication("CPPIB", 925.0, "Capital Call Notice", "2026-03-15", "WCAS XV Call #7 — $485.00M", "2026-03-29", "paid"),
+        LPCommunication("Texas Teachers", 710.0, "Distribution Notice", "2026-03-20", "WCAS XIII Dist #18 — $485.00M", "2026-04-05", "distributed"),
         LPCommunication("HOOPP", 420.0, "Capital Call Notice", "2026-02-28", "Apollo HC II Call #6", "2026-03-14", "paid"),
         LPCommunication("Temasek", 1150.0, "Side Letter Request", "2026-03-01", "RADV exposure disclosure", "2026-03-15", "responded"),
         LPCommunication("GIC (Singapore)", 985.0, "GP Extension Request", "2026-02-22", "WCAS XIII 1-year extension approval", "2026-03-22", "approved"),
         LPCommunication("ADIA", 780.0, "Valuation Review", "2026-02-18", "Portfolio mark review", "2026-03-18", "responded"),
         LPCommunication("NBIM (Norway)", 685.0, "ESG Reporting", "2026-03-10", "Annual ESG scorecard", "2026-04-10", "in progress"),
         LPCommunication("Harvard Management", 285.0, "Co-Invest Offer", "2026-03-05", "Project Azalea co-invest", "2026-03-20", "declined (conflict)"),
-        LPCommunication("Yale Investments", 325.0, "Co-Invest Offer", "2026-03-05", "Project Azalea co-invest", "2026-03-20", "accepted ($18M)"),
-        LPCommunication("CPPIB", 925.0, "Co-Invest Offer", "2026-03-05", "Project Azalea co-invest", "2026-03-20", "accepted ($65M)"),
+        LPCommunication("Yale Investments", 325.0, "Co-Invest Offer", "2026-03-05", "Project Azalea co-invest", "2026-03-20", "accepted ($18.00M)"),
+        LPCommunication("CPPIB", 925.0, "Co-Invest Offer", "2026-03-05", "Project Azalea co-invest", "2026-03-20", "accepted ($65.00M)"),
         LPCommunication("Ford Foundation", 165.0, "LP Request", "2026-02-28", "Exit sequencing review", "2026-04-15", "in progress"),
         LPCommunication("Northwestern Mutual", 295.0, "Quarterly Report", "2026-03-31", "Q4 2025 report", "2026-04-14", "distributed"),
         LPCommunication("Adams Street", 465.0, "Secondary Inquiry", "2026-02-25", "LP secondary bid on WCAS XIII", "2026-03-25", "discussing"),

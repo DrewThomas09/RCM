@@ -222,11 +222,11 @@ def render_clinical_ai_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">AI Governance & Compliance</div>{g_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">AI Portfolio Summary:</strong> {r.total_systems} AI systems generate ${total_revenue:.2f}M revenue / workflow impact against ${r.total_annual_spend_m:.2f}M license cost — {total_revenue / r.total_annual_spend_m if r.total_annual_spend_m else 0:.2f}x net ROI.
-    Highest-value deployments: Notable Autopilot ($38.5M, Oak), Nuance DAX ($32.0M, Cypress), Enter ML ($28.5M, Oak), Abridge Scribe ($25.5M, Oak) — all ambient scribes + operational ML.
+    Highest-value deployments: Notable Autopilot ($38.50M, Oak), Nuance DAX ($32.00M, Cypress), Enter ML ($28.50M, Oak), Abridge Scribe ($25.50M, Oak) — all ambient scribes + operational ML.
     Radiology AI stack 3 systems (Aidoc ICH + PE, Viz.ai ANEURYSM) covering stroke + PE triage + aneurysm detection — high accuracy (91-95%) and strong time savings (12-18 min/case).
-    Adoption distribution: GI Network 94%, RCM SaaS 92%, Radiology 92% top tier; Behavioral Health 52% bottom with 18.5% override rate and 5 complaints — requires UX redesign.
+    Adoption distribution: GI Network 94.0%, RCM SaaS 92.0%, Radiology 92.0% top tier; Behavioral Health 52.0% bottom with 18.5% override rate and 5 complaints — requires UX redesign.
     FDA clearance path: 7 FDA-cleared 510(k), 3 De Novo, 1 pending (Ellipsis Voice) — all deployed systems have regulatory clearance or operational exemption.
-    9 active vendor evaluations covering ambient scribes, radiology alternatives, genomics, pathology, scribe assistants — $8M+ incremental spend probable by 2026 year-end.
+    9 active vendor evaluations covering ambient scribes, radiology alternatives, genomics, pathology, scribe assistants — $8.00M+ incremental spend probable by 2026 year-end.
     Governance: all 8 portcos with AI systems maintain bias monitoring, clinical oversight committees, and HIPAA BAAs; average compliance score 8.9/10.
   </div>
 </div>"""
