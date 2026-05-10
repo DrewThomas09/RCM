@@ -215,7 +215,7 @@ def _rates_table(rows: List[Dict[str, Any]], group_label: str) -> str:
     <th style="width:100px;padding-left:8px">Distribution</th>
     <th class="num" style="width:64px">P50 IRR</th>
     <th class="num" style="width:64px">Loss Rate</th>
-    <th class="num" style="width:64px">3x+ Rate</th>
+    <th class="num" style="width:64px">3.00x+ Rate</th>
     <th class="num" style="width:72px">Avg EV</th>
     <th class="num" style="width:64px">Avg Hold</th>
   </tr>

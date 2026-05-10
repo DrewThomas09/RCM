@@ -97,13 +97,14 @@ ROUTE_MIN_SCORES: dict[str, float] = {
     "/source":                1.0,
     "/predictive-screener":   1.0,
     "/home":                  1.0,
+    "/library":               1.0,
+    "/market-rates":          1.0,
 
-    # 92% routes — interpretive prose has round-percent or
-    # multiple references inside partner-vocab proper-noun
-    # phrases that resist rephrasing.
-    "/library":               0.92,  # "USPI 35% Stake" — historical fund description
-    "/market-rates":          0.92,  # "3x+ Rate" — column header semantics
-    "/news":                  0.92,  # editorial copy with round-percent figures
+    # 92% route — /news renders editorial copy with many embedded
+    # press-release financial figures ("$8.2B Sale", "12% margin")
+    # that read as journalistic citations, not metric values.
+    # Forcing 2dp / 1dp throughout the news feed harms readability.
+    "/news":                  0.92,
 
     # Bespoke print layout — un-migrated by design.
     "/screening/bankruptcy-survivor": 0.25,

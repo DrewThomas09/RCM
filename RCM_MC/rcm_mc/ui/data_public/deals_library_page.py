@@ -140,10 +140,10 @@ def _kpi_bar(deals: List[Dict[str, Any]], rows: List[Dict[str, Any]]) -> str:
 
 
 _MOIC_BUCKETS = {
-    "lt1":   ("MOIC < 1.0x",  lambda m: m is not None and m < 1.0),
-    "1to2":  ("1.0x – 2.0x",  lambda m: m is not None and 1.0 <= m < 2.0),
-    "2to3":  ("2.0x – 3.0x",  lambda m: m is not None and 2.0 <= m < 3.0),
-    "gte3":  ("3.0x+",         lambda m: m is not None and m >= 3.0),
+    "lt1":   ("MOIC < 1.00x", lambda m: m is not None and m < 1.0),
+    "1to2":  ("1.00x – 2.00x", lambda m: m is not None and 1.0 <= m < 2.0),
+    "2to3":  ("2.00x – 3.00x", lambda m: m is not None and 2.0 <= m < 3.0),
+    "gte3":  ("3.00x+",        lambda m: m is not None and m >= 3.0),
 }
 
 

@@ -287,7 +287,7 @@ EXTENDED_SEED_DEALS: List[Dict[str, Any]] = [
     {
         "source_id": "ext_017",
         "source": "seed",
-        "deal_name": "Welsh Carson Healthcare Platform – USPI 35% Stake",
+        "deal_name": "Welsh Carson Healthcare Platform – USPI 35.0% Stake",
         "year": 2015,
         "buyer": "Welsh Carson Anderson & Stowe",
         "seller": "United Surgical Partners International management",
