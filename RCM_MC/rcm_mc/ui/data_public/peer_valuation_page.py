@@ -50,9 +50,9 @@ def _football_field_svg(ranges) -> str:
             # Median line
             f'<line x1="{x_med:.1f}" y1="{y:.1f}" x2="{x_med:.1f}" y2="{y + bar_h:.1f}" stroke="{P["text"]}" stroke-width="2"/>'
             # Labels
-            f'<text x="{x_low:.1f}" y="{y - 3:.1f}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">${r.low_ev_mm:,.0f}</text>'
-            f'<text x="{x_med:.1f}" y="{y - 3:.1f}" fill="{P["text"]}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">${r.median_ev_mm:,.0f}</text>'
-            f'<text x="{x_high:.1f}" y="{y - 3:.1f}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">${r.high_ev_mm:,.0f}</text>'
+            f'<text x="{x_low:.1f}" y="{y - 3:.1f}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">${r.low_ev_mm:,.2f}</text>'
+            f'<text x="{x_med:.1f}" y="{y - 3:.1f}" fill="{P["text"]}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">${r.median_ev_mm:,.2f}</text>'
+            f'<text x="{x_high:.1f}" y="{y - 3:.1f}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">${r.high_ev_mm:,.2f}</text>'
         )
 
     # X-axis ticks
@@ -90,7 +90,7 @@ def _comps_table(comps) -> str:
         sc = size_colors.get(c.size_category, text_dim)
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(c.company)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${c.market_cap_mm:,.0f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${c.market_cap_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]};font-weight:600">{c.ev_ebitda:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.ev_revenue:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.pe_ratio:.2f}x</td>',
@@ -122,7 +122,7 @@ def _precedent_table(precedents) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(p.target_company)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(p.acquirer)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{p.year}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${p.ev_mm:,.1f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${p.ev_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]};font-weight:600">{p.ev_ebitda:.2f}x</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.sector)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.status)}</td>',

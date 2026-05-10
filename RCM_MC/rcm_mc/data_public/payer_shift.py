@@ -154,7 +154,7 @@ def _build_scenarios(
         # (label, description, mix_delta_dict)
         (
             "Medicare Advantage Penetration",
-            "Traditional FFS → MA shift (2% per year × 5 yrs)",
+            "Traditional FFS → MA shift (2.0% per year × 5 yrs)",
             {"medicare_fee_for_service": -0.10, "medicare_advantage": 0.10},
         ),
         (

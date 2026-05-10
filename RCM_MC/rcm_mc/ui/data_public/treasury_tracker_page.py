@@ -213,11 +213,11 @@ def render_treasury_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Intercompany Balances</div>{ic_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Treasury Portfolio Summary:</strong> ${r.total_portfolio_liquidity_m:,.2f}M total portfolio liquidity with ${r.total_revolver_drawn_m:,.2f}M drawn on ${r.total_revolver_capacity_m:,.2f}M revolver capacity — {r.weighted_revolver_utilization_pct * 100:.1f}% utilization, well inside 60-65% governance guardrails.
-    Top-liquidity platforms: Oak RCM SaaS ($139M, 245 days opex), Cypress GI Network ($86M, 95 days), Fir Lab ($79M), Cedar Cardiology ($78M), Thyme Specialty Pharm ($71M).
+    Top-liquidity platforms: Oak RCM SaaS ($139.00M, 245 days opex), Cypress GI Network ($86.00M, 95 days), Fir Lab ($79.00M), Cedar Cardiology ($78.00M), Thyme Specialty Pharm ($71.00M).
     Runway watchlist: Linden Behavioral (4.5 months — monitor closely), Sage Home Health (5.8 months), Redwood Behavioral (6.2 months), Maple Urology (7.8 months) — 4 deals with sub-8 month runway require active liquidity management.
-    Average cash yield {avg_yield:.2f}% (portfolio-weighted) — treasury sweeps across JPM, BofA, Citi, Wells Fargo + Goldman for Oak. Non-sweep accounts at Sage / Linden ($23M, 0.15%) represent $1.2M annual yield opportunity.
+    Average cash yield {avg_yield:.2f}% (portfolio-weighted) — treasury sweeps across JPM, BofA, Citi, Wells Fargo + Goldman for Oak. Non-sweep accounts at Sage / Linden ($23.00M, 0.15%) represent $1.20M annual yield opportunity.
     Hedging book: ${sum(h.notional_m for h in r.hedging):,.2f}M notional with ${hedge_mtm:+.1f}M aggregate MTM (favorable with rising rates having frozen in below-market fixed pay swaps).
-    Intercompany loans ${ic_total:.2f}M outstanding — Oak US→Ireland ($45M) largest; all in compliance with applicable transfer pricing documentation + interest rate benchmarks.
+    Intercompany loans ${ic_total:.2f}M outstanding — Oak US→Ireland ($45.00M) largest; all in compliance with applicable transfer pricing documentation + interest rate benchmarks.
   </div>
 </div>"""
 

@@ -114,7 +114,7 @@ _RISK_FACTORS: List[Tuple[str, str, str, Any, int]] = [
     ),
     (
         "mega_deal",
-        "Mega Deal (EV ≥$5B)",
+        "Mega Deal (EV ≥$5.00B)",
         "Large deal sizes compress IRR due to capital deployed / limited exit liquidity. Corpus mega-deal IRR P50 is ~12%.",
         lambda d: (d.get("ev_mm") or 0) >= 5000,
         10,
@@ -316,7 +316,7 @@ def render_rcm_red_flags(params: Dict[str, str]) -> str:
             f'<td style="padding:4px 8px;font-size:11px;font-family:{_MONO};text-align:right;color:{P["negative"] if (fp50 or 0) < 2.0 else P["warning"]};font-variant-numeric:tabular-nums">{f"{fp50:.2f}×" if fp50 else "—"}</td>'
             f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{P["text_dim"]};font-variant-numeric:tabular-nums">{f"{cp50:.2f}×" if cp50 else "—"}</td>'
             f'<td style="padding:4px 8px">{impact}</td>'
-            f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{f"{sub2:.0f}%" if sub2 is not None else "—"}</td>'
+            f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{f"{sub2:.1f}%" if sub2 is not None else "—"}</td>'
             f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{factor["weight"]}</td>'
             f'</tr>'
         )

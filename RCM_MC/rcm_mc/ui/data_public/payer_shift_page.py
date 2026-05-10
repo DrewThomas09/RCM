@@ -202,8 +202,8 @@ def _scenario_table(scenarios) -> str:
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.label)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:240px">{_html.escape(s.description)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{s.start_commercial_pct * 100:.0f}% → {s.end_commercial_pct * 100:.1f}%</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{s.start_medicaid_pct * 100:.0f}% → {s.end_medicaid_pct * 100:.1f}%</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{s.start_commercial_pct * 100:.1f}% → {s.end_commercial_pct * 100:.1f}%</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{s.start_medicaid_pct * 100:.1f}% → {s.end_medicaid_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{ec}">{s.yield_change_pct * 100:+.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{ec}">${s.revenue_impact_mm:+,.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{ec}">${s.ebitda_impact_mm:+,.2f}M</td>',

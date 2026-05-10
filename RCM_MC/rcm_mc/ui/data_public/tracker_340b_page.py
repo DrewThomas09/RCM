@@ -209,11 +209,11 @@ def render_tracker_340b(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Regulatory Outlook</div>{u_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">340B Program Summary:</strong> {r.total_entities} covered entities across portfolio generate ${r.total_annual_savings_m:,.2f}M annual savings against ${r.total_annual_spend_m:,.2f}M 340B-eligible spend — effective {r.effective_savings_rate * 100:.1f}% blended savings rate.
-    Highest-value entities: Oncology Specialty ($28.5M), Oncology Infusion Center ($32.0M), Regional Infusion Network ($22.5M) — oncology and specialty drug categories drive 80%+ of savings dollars.
-    CE-owned in-house pharmacies capture 100% savings vs 72-85% for contract pharmacy arrangements; in-house dispensing deployed across Oncology, Infusion, and Derma platforms.
+    Highest-value entities: Oncology Specialty ($28.50M), Oncology Infusion Center ($32.00M), Regional Infusion Network ($22.50M) — oncology and specialty drug categories drive 80.0%+ of savings dollars.
+    CE-owned in-house pharmacies capture 100.0% savings vs 72.0-85.0% for contract pharmacy arrangements; in-house dispensing deployed across Oncology, Infusion, and Derma platforms.
     Manufacturer restriction exposure: ${total_restriction_exposure:.2f}M annual revenue at risk from J&J, Merck, BMS, Lilly, AZ, Sanofi, Novartis, BI, Pfizer, Takeda conditions — 3rd Circuit 2025 ruling against HRSA expanded manufacturer leverage.
     Audit history clean: 11 audits YTD with ${total_audit_repayment:.2f}M total repayments (0.4% of program spend); top-quartile compliance vs industry benchmarks.
-    Regulatory outlook mixed: Medicare Part B ASP+6% reinstatement (+$3.8M benefit), state non-discrimination laws (+$7M), offset by proposed patient definition narrowing (-$3.2M) and Medicaid duplicate prohibition (-$1.5M).
+    Regulatory outlook mixed: Medicare Part B ASP+6% reinstatement (+$3.80M benefit), state non-discrimination laws (+$7.00M), offset by proposed patient definition narrowing (-$3.20M) and Medicaid duplicate prohibition (-$1.50M).
   </div>
 </div>"""
 

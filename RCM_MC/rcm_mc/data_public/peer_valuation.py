@@ -277,7 +277,7 @@ def _build_valuation_ranges(
             low_multiple=round(premium_low, 2),
             median_multiple=round(premium_mid, 2),
             high_multiple=round(premium_high, 2),
-            basis="Median trading comp + 10/20/30% control premium",
+            basis="Median trading comp + 10/20/30.0% control premium",
         ))
 
     return rows

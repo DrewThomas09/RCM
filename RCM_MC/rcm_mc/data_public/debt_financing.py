@@ -211,18 +211,18 @@ def _build_covenants() -> List[CovenantPackage]:
 
 def _build_flex() -> List[FlexAnalysis]:
     return [
-        FlexAnalysis("Project Azalea — GI Network SE", 50, 0.50, "25bps used, 25bps remaining", True, "±10% tranche sizing"),
-        FlexAnalysis("Project Magnolia — MSK Platform", 50, 0.75, "unused", True, "±10% tranche sizing"),
-        FlexAnalysis("Project Cypress — GI Network", 50, 0.50, "unused", True, "±10% tranche sizing"),
-        FlexAnalysis("Project Willow — Fertility", 75, 1.00, "25bps used", True, "±15% tranche sizing"),
-        FlexAnalysis("Project Cedar — Cardiology", 50, 0.75, "unused", True, "±10% tranche sizing"),
-        FlexAnalysis("Project Laurel — Dermatology", 50, 0.75, "unused (direct lend)", True, "±10% tranche sizing"),
-        FlexAnalysis("Project Spruce — Radiology", 50, 0.75, "unused", True, "±10% tranche sizing"),
-        FlexAnalysis("Project Aspen — Eye Care", 75, 1.00, "unused (direct lend)", True, "±15% tranche sizing"),
-        FlexAnalysis("Project Maple — Urology", 75, 1.00, "unused (in marketing)", True, "±15% tranche sizing"),
-        FlexAnalysis("Project Ash — Infusion", 50, 0.75, "12bps used", True, "±10% tranche sizing"),
-        FlexAnalysis("Project Fir — Lab / Pathology", 50, 0.50, "unused", True, "±10% tranche sizing"),
-        FlexAnalysis("Project Oak — RCM SaaS", 50, 0.75, "unused (direct lend)", True, "±10% tranche sizing"),
+        FlexAnalysis("Project Azalea — GI Network SE", 50, 0.50, "25bps used, 25bps remaining", True, "±10.0% tranche sizing"),
+        FlexAnalysis("Project Magnolia — MSK Platform", 50, 0.75, "unused", True, "±10.0% tranche sizing"),
+        FlexAnalysis("Project Cypress — GI Network", 50, 0.50, "unused", True, "±10.0% tranche sizing"),
+        FlexAnalysis("Project Willow — Fertility", 75, 1.00, "25bps used", True, "±15.0% tranche sizing"),
+        FlexAnalysis("Project Cedar — Cardiology", 50, 0.75, "unused", True, "±10.0% tranche sizing"),
+        FlexAnalysis("Project Laurel — Dermatology", 50, 0.75, "unused (direct lend)", True, "±10.0% tranche sizing"),
+        FlexAnalysis("Project Spruce — Radiology", 50, 0.75, "unused", True, "±10.0% tranche sizing"),
+        FlexAnalysis("Project Aspen — Eye Care", 75, 1.00, "unused (direct lend)", True, "±15.0% tranche sizing"),
+        FlexAnalysis("Project Maple — Urology", 75, 1.00, "unused (in marketing)", True, "±15.0% tranche sizing"),
+        FlexAnalysis("Project Ash — Infusion", 50, 0.75, "12bps used", True, "±10.0% tranche sizing"),
+        FlexAnalysis("Project Fir — Lab / Pathology", 50, 0.50, "unused", True, "±10.0% tranche sizing"),
+        FlexAnalysis("Project Oak — RCM SaaS", 50, 0.75, "unused (direct lend)", True, "±10.0% tranche sizing"),
     ]
 
 
