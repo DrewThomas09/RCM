@@ -1928,7 +1928,7 @@ def _render_predicted_outcomes_section(
         any_prediction = True
 
         bar = _moic_range_bar(p25, median, p75)
-        win_pct = f"{int(win_rate * 100)}%" if win_rate else "—"
+        win_pct = f"{win_rate * 100:.1f}%" if win_rate else "—"
         name = scan_row.get("name") or deal_id
 
         # "See why" deep-link — preserves the EXACT target profile
@@ -1968,7 +1968,7 @@ def _render_predicted_outcomes_section(
             f'{median:.2f}x</span>'
             f'<span style="color:#6b7280;"> median · '
             f'p25 {p25:.2f}x · p75 {p75:.2f}x · '
-            f'{win_pct} clear 2.5x</span>'
+            f'{win_pct} clear 2.50x</span>'
             f'</a></div>'
             f'</li>'
         )
