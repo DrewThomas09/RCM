@@ -32,7 +32,10 @@ from ..diligence.deal_autopsy import (
 )
 from ..diligence.deal_autopsy.library import outcomes_summary
 from ..diligence.deal_autopsy.matcher import FEATURE_LABELS
-from ._chartis_kit import P, chartis_shell, ck_section_intro
+from ._chartis_kit import (
+    P, chartis_shell, ck_panel,
+    ck_section_header, ck_section_intro,
+)
 from .power_ui import provenance, sortable_table
 
 
@@ -144,6 +147,46 @@ text-align:right;font-family:"JetBrains Mono",monospace;}}
 @media (max-width:720px){{.da-grid2{{grid-template-columns:1fr;}}
 .da-card__head{{flex-direction:column;}}
 .da-card__sim{{text-align:left;}}}}
+.da-killer-code{{color:{td};background:{pa};padding:1px 6px;
+border-radius:2px;}}
+.da-sources{{margin-top:12px;font-size:10px;color:{tf};}}
+.da-sources summary{{cursor:pointer;color:{td};letter-spacing:1.3px;
+text-transform:uppercase;font-weight:600;font-size:9px;}}
+.da-outcome-row{{margin-top:8px;display:flex;gap:8px;align-items:center;}}
+.da-outcome-year{{color:{tf};font-size:11px;
+font-family:"JetBrains Mono",monospace;}}
+.da-sim-pct{{font-size:18px;opacity:.7;}}
+.da-sim-label{{font-size:10.5px;margin-top:2px;font-weight:600;}}
+.da-sim-distance{{font-size:9.5px;color:{tf};margin-top:2px;
+font-family:"JetBrains Mono",monospace;}}
+.da-chart-row{{margin-top:18px;}}
+.da-warnings-block{{margin-top:16px;font-size:11.5px;color:{td};line-height:1.6;}}
+.da-warnings-block strong{{color:{tx};}}
+.da-warnings{{margin:6px 0 0 20px;}}
+.da-target-card{{margin-bottom:20px;}}
+.da-target-body{{padding-top:14px;padding-bottom:14px;}}
+.da-target-eyebrow{{margin-bottom:6px;}}
+.da-target-h2{{margin-bottom:12px;}}
+.da-fixture-tag{{font-size:10px;color:{tf};margin-left:12px;}}
+.da-lib-row{{display:flex;justify-content:space-between;padding:4px 0;
+font-size:11px;color:{td};}}
+.da-lib-count{{color:{tx};font-family:"JetBrains Mono",monospace;}}
+.da-form{{max-width:560px;}}
+.da-form-eyebrow{{font-size:10px;color:{tf};letter-spacing:1.5px;
+text-transform:uppercase;font-weight:700;margin-bottom:10px;}}
+.da-form-label{{font-size:9px;color:{tf};letter-spacing:1.5px;
+text-transform:uppercase;font-weight:600;display:block;margin-bottom:4px;}}
+.da-form-select{{width:100%;padding:6px 8px;background:{pa};color:{tx};
+border:1px solid {bd};font-family:inherit;margin-bottom:12px;}}
+.da-form-grid{{display:grid;grid-template-columns:1fr 1fr;gap:10px;}}
+.da-form-field label{{font-size:9px;color:{tf};letter-spacing:1.2px;
+text-transform:uppercase;font-weight:600;display:block;margin-bottom:2px;}}
+.da-form-field input{{width:100%;padding:5px 7px;background:{pa};
+color:{tx};border:1px solid {bd};
+font-family:"JetBrains Mono",monospace;font-size:11px;}}
+.da-form-submit{{margin-top:14px;padding:8px 20px;background:{ac};
+color:{pn};border:0;font-size:10px;letter-spacing:1.5px;
+text-transform:uppercase;font-weight:700;cursor:pointer;}}
 """.format(
         tx=P["text"], td=P["text_dim"], tf=P["text_faint"],
         pn=P["panel"], pa=P["panel_alt"],
@@ -273,7 +316,7 @@ def _signature_chart(
     )
     return (
         f'<svg viewBox="0 0 {width} {height}" width="100%" '
-        f'style="max-width:{width}px;">'
+        f'class="da-sig-svg" data-max="{width}">'
         f'{"".join(bars)}{"".join(labels)}{legend}</svg>'
     )
 
@@ -363,22 +406,18 @@ def _match_card(result: MatchResult, target: DealSignature) -> str:
     primary_killer_html = ""
     if deal.autopsy.primary_killer:
         primary_killer_html = (
-            f'<div style="font-size:10px;color:{P["text_faint"]};'
-            f'margin-top:6px;">Primary driver of failure · '
-            f'<code style="color:{P["text_dim"]};background:'
-            f'{P["panel_alt"]};padding:1px 6px;border-radius:2px;">'
-            f'{html.escape(deal.autopsy.primary_killer)}</code></div>'
+            '<p class="ck-eyebrow">'
+            'Primary driver of failure · '
+            f'<code class="da-killer-code">{html.escape(deal.autopsy.primary_killer)}</code>'
+            '</p>'
         )
 
     sources_html = ""
     if deal.sources:
         sources_html = (
-            f'<details style="margin-top:12px;font-size:10px;'
-            f'color:{P["text_faint"]};">'
-            f'<summary style="cursor:pointer;color:{P["text_dim"]};'
-            f'letter-spacing:1.3px;text-transform:uppercase;'
-            f'font-weight:600;font-size:9px;">Sources</summary>'
-            f'<ul style="margin:6px 0 0 20px;line-height:1.7;">'
+            '<details class="da-sources">'
+            '<summary>Sources</summary>'
+            '<ul class="ck-list">'
             + "".join(f'<li>{html.escape(s)}</li>' for s in deal.sources)
             + "</ul></details>"
         )
@@ -398,24 +437,18 @@ def _match_card(result: MatchResult, target: DealSignature) -> str:
         f'{html.escape(deal.sector.replace("_", " "))} · '
         f'{html.escape(deal.sponsor)} · entry {deal.entry_year}</div>'
         f'<div class="da-card__title">{html.escape(deal.name)}</div>'
-        f'<div style="margin-top:8px;display:flex;gap:8px;'
-        f'align-items:center;">'
+        f'<div class="da-outcome-row">'
         f'{_outcome_badge(deal.autopsy.outcome)}'
-        f'<span style="color:{P["text_faint"]};font-size:11px;'
-        f'font-family:\'JetBrains Mono\',monospace;">'
-        f'{deal.autopsy.outcome_year}</span></div>'
+        f'<span class="da-outcome-year">{deal.autopsy.outcome_year}</span></div>'
         f'{primary_killer_html}'
         f'</div>'
         f'<div class="da-card__sim">'
         f'<div class="da-card__meta-top">Similarity</div>'
         f'<div class="da-card__sim-val" style="color:{sim_color};">'
-        f'{sim_pct:.0f}<span style="font-size:18px;opacity:.7;">%</span>'
+        f'{sim_pct:.0f}<span class="da-sim-pct">%</span>'
         f'</div>'
-        f'<div style="font-size:10.5px;color:{sim_color};'
-        f'margin-top:2px;font-weight:600;">{html.escape(sim_label)}</div>'
-        f'<div style="font-size:9.5px;color:{P["text_faint"]};'
-        f'margin-top:2px;font-family:\'JetBrains Mono\',monospace;">'
-        f'd = {result.distance:.2f}</div>'
+        f'<div class="da-sim-label" style="color:{sim_color};">{html.escape(sim_label)}</div>'
+        f'<div class="da-sim-distance">d = {result.distance:.2f}</div>'
         f'{_similarity_spectrum(result.similarity)}'
         f'</div>'
         f'</div>'
@@ -429,14 +462,13 @@ def _match_card(result: MatchResult, target: DealSignature) -> str:
         f'{_feature_chips(result.diverging, kind="diverging")}'
         f'</div>'
         f'</div>'
-        f'<div style="margin-top:18px;">'
+        f'<div class="da-chart-row">'
         f'{_signature_chart(target, deal.signature)}'
         f'</div>'
-        f'<div style="margin-top:16px;font-size:11.5px;color:{P["text_dim"]};'
-        f'line-height:1.6;">'
-        f'<strong style="color:{P["text"]};">Early warning signs · '
+        f'<div class="da-warnings-block">'
+        f'<strong>Early warning signs · '
         f'what a diligence tool could have caught:</strong>'
-        f'<ul class="da-warnings" style="margin:6px 0 0 20px;">{warnings}</ul>'
+        f'<ul class="da-warnings">{warnings}</ul>'
         f'</div>'
         f'{lesson_html}'
         f'{quote_html}'
@@ -477,19 +509,13 @@ def _target_signature_panel(
             f'</div>'
         )
     fixture_tag = (
-        f'<span style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-left:12px;">· {html.escape(dataset_label)}</span>'
+        f' · {html.escape(dataset_label)}'
     ) if dataset_label else ""
-    return (
-        f'<div class="da-card" style="margin-bottom:20px;">'
-        f'<div class="da-card__body" style="padding-top:14px;padding-bottom:14px;">'
-        f'<div class="da-eyebrow" style="margin-bottom:6px;">'
-        f'Target signature{fixture_tag}</div>'
-        f'<div class="da-h2" style="margin-bottom:12px;">'
-        f'{html.escape(heading)}</div>'
-        f'{"".join(rows)}'
-        f'</div>'
-        f'</div>'
+    panel_title = f"Target signature — {html.escape(heading)}{fixture_tag}"
+    return ck_panel(
+        '<p class="ck-eyebrow">9-feature risk signature, range 0.0–1.0.</p>'
+        + "".join(rows),
+        title=panel_title,
     )
 
 
@@ -572,25 +598,17 @@ def _library_summary_card() -> str:
         n = counts.get(outcome, 0)
         color = P.get(tone, P["text_dim"])
         rows.append(
-            f'<div style="display:flex;justify-content:space-between;'
-            f'padding:4px 0;font-size:11px;color:{P["text_dim"]};">'
+            '<div class="da-lib-row">'
             f'<span style="color:{color};">{html.escape(label)}</span>'
-            f'<span style="color:{P["text"]};font-family:\'JetBrains Mono\',monospace;">'
-            f'{n}</span>'
-            f'</div>'
+            f'<span class="da-lib-count">{n}</span>'
+            '</div>'
         )
     total = sum(counts.values())
-    return (
-        f'<div style="background:{P["panel"]};border:1px solid '
-        f'{P["border"]};border-radius:4px;padding:14px 20px;'
-        f'margin-bottom:20px;max-width:360px;">'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;font-weight:700;'
-        f'margin-bottom:8px;">Library composition</div>'
-        f'<div style="font-size:22px;color:{P["text"]};font-weight:600;'
-        f'margin-bottom:8px;">{total} historical deals</div>'
-        f'{"".join(rows)}'
-        f'</div>'
+    return ck_panel(
+        '<p class="ck-section-body">'
+        f'<strong>{total} historical deals</strong></p>'
+        f'{"".join(rows)}',
+        title="Library composition",
     )
 
 
@@ -672,70 +690,58 @@ def _landing() -> str:
         f'<option value="{html.escape(n)}">{html.escape(l)}</option>'
         for n, l in AVAILABLE_FIXTURES
     )
-    form = (
-        f'<form method="GET" action="/diligence/deal-autopsy" '
-        f'style="max-width:560px;background:{P["panel"]};'
-        f'border:1px solid {P["border"]};border-radius:4px;'
-        f'padding:20px;margin-bottom:20px;">'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;font-weight:700;'
-        f'margin-bottom:10px;">Fixture mode — auto-build from CCD</div>'
-        f'<label style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;font-weight:600;'
-        f'display:block;margin-bottom:4px;">CCD fixture</label>'
-        f'<select name="dataset" style="width:100%;padding:6px 8px;'
-        f'background:{P["panel_alt"]};color:{P["text"]};'
-        f'border:1px solid {P["border"]};font-family:inherit;'
-        f'margin-bottom:12px;">'
-        f'<option value="">— pick a fixture (optional) —</option>'
-        f'{options}</select>'
-        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
-        + "".join(
-            f'<div><label style="font-size:9px;color:{P["text_faint"]};'
-            f'letter-spacing:1.2px;text-transform:uppercase;font-weight:600;'
-            f'display:block;margin-bottom:2px;">{html.escape(FEATURE_LABELS[name])}</label>'
-            f'<input name="{name}" placeholder="0.0 – 1.0" '
-            f'style="width:100%;padding:5px 7px;background:{P["panel_alt"]};'
-            f'color:{P["text"]};border:1px solid {P["border"]};'
-            f'font-family:\'JetBrains Mono\',monospace;font-size:11px;">'
-            f'</div>'
-            for name in FEATURE_NAMES
-        )
-        + f'</div>'
-        f'<div style="margin-top:14px;font-size:10px;color:{P["text_faint"]};'
-        f'line-height:1.5;">'
-        f'Leave signature fields blank to default to zero. Fields you '
-        f'supply override CCD-derived values.</div>'
-        f'<button type="submit" style="margin-top:14px;padding:8px 20px;'
-        f'background:{P["accent"]};color:{P["panel"]};border:0;'
-        f'font-size:10px;letter-spacing:1.5px;text-transform:uppercase;'
-        f'font-weight:700;cursor:pointer;">Run autopsy match</button>'
-        f'</form>'
+    form_fields = "".join(
+        '<div class="da-form-field">'
+        f'<label>{html.escape(FEATURE_LABELS[name])}</label>'
+        f'<input name="{name}" placeholder="0.0 – 1.0">'
+        '</div>'
+        for name in FEATURE_NAMES
     )
-    explainer = (
-        f'<div style="max-width:720px;margin-bottom:24px;'
-        f'font-size:13px;color:{P["text_dim"]};line-height:1.65;">'
-        f'The Deal Autopsy engine compares your target\'s 9-feature risk '
-        f'signature against a curated library of historical PE healthcare '
-        f'deals — bankruptcies, distressed sales, delistings, and strong '
-        f'exits — and surfaces the closest matches along with the '
-        f'partner lesson from each outcome. '
-        f'Treat it as a "you\'re about to do X again" check layered on top '
-        f'of the rest of the diligence stack.'
-        f'</div>'
+    form = (
+        '<form method="GET" action="/diligence/deal-autopsy" class="da-form">'
+        '<div class="da-form-eyebrow">'
+        'Fixture mode — auto-build from CCD</div>'
+        '<label class="da-form-label">CCD fixture</label>'
+        '<select name="dataset" class="da-form-select">'
+        '<option value="">— pick a fixture (optional) —</option>'
+        f'{options}</select>'
+        f'<div class="da-form-grid">{form_fields}</div>'
+        '<p class="ck-eyebrow">'
+        'Leave signature fields blank to default to zero. Fields you '
+        'supply override CCD-derived values.</p>'
+        '<button type="submit" class="da-form-submit">Run autopsy match</button>'
+        '</form>'
+    )
+    landing_intro = ck_section_intro(
+        eyebrow="RCM Diligence",
+        headline="Deal Autopsy — historical failure match.",
+        italic_word="failure",
+        body=(
+            "The Deal Autopsy engine compares your target's 9-feature "
+            "risk signature against a curated library of historical "
+            "PE healthcare deals — bankruptcies, distressed sales, "
+            "delistings, and strong exits — and surfaces the closest "
+            "matches along with the partner lesson from each "
+            "outcome. Treat it as a 'you're about to do X again' "
+            "check layered on top of the rest of the diligence stack."
+        ),
     )
     body = (
         _scoped_styles()
-        + f'<div class="da-wrap">'
-        + f'<div style="padding:24px 0 12px 0;">'
-        f'<div class="da-eyebrow">RCM Diligence</div>'
-        f'<div class="da-h1">Deal Autopsy — Historical Failure Match</div>'
-        f'</div>'
-        + explainer
+        + '<div class="da-wrap">'
+        + landing_intro
+        + ck_section_header(
+            "Library composition", eyebrow="HISTORICAL DEALS",
+        )
         + _library_summary_card()
-        + form
-        + f'<div class="da-section-label">Full library</div>'
-        + _library_table()
+        + ck_section_header(
+            "Run autopsy match", eyebrow="INPUTS",
+        )
+        + ck_panel(form, title="Inputs")
+        + ck_section_header(
+            "Full library", eyebrow="ALL DEALS",
+        )
+        + ck_panel(_library_table(), title="All deals")
         + '</div>'
     )
     return chartis_shell(
@@ -764,12 +770,13 @@ def render_deal_autopsy_page(
         try:
             ccd = ingest_dataset(ds_path)
         except Exception as exc:  # noqa: BLE001
-            return chartis_shell(
-                f'<div style="padding:24px;color:{P["negative"]};">'
-                f'Failed to ingest {html.escape(dataset)}: '
-                f'{html.escape(str(exc))}</div>',
-                "Deal Autopsy",
+            err_intro = ck_section_intro(
+                eyebrow="Deal Autopsy",
+                headline=f"Failed to ingest {html.escape(dataset)}.",
+                italic_word="ingest",
+                body=str(exc),
             )
+            return chartis_shell(err_intro, "Deal Autopsy")
         metadata = _metadata_from_qs(qs)
         if custom_sig is not None:
             # Merge: custom_sig overrides what CCD produced.
@@ -808,8 +815,11 @@ def render_deal_autopsy_page(
             + _target_signature_panel(
                 target, heading=heading, dataset_label=dataset_label,
             )
-            + f'<div style="padding:24px;color:{P["text_faint"]};">'
-              f'No matches found in the library.</div>'
+            + ck_panel(
+                '<p class="ck-section-body">'
+                'No matches found in the library.</p>',
+                title="Library lookup",
+            )
             + '</div>'
         )
         return chartis_shell(body, "Deal Autopsy")
@@ -824,12 +834,15 @@ def render_deal_autopsy_page(
         + _target_signature_panel(
             target, heading=heading, dataset_label=dataset_label,
         )
-        + f'<div class="da-section-label">'
-          f'Top {len(matches)} matches · ranked by similarity</div>'
+        + ck_section_header(
+            f"Top {len(matches)} matches · ranked by similarity",
+            eyebrow="LIBRARY HIT-LIST",
+        )
         + cards
-        + f'<div class="da-section-label">'
-          f'Matches · sortable + exportable</div>'
-        + _matches_table(matches)
+        + ck_panel(
+            _matches_table(matches),
+            title="Matches · sortable + exportable",
+        )
         + '</div>'
     )
     return chartis_shell(
