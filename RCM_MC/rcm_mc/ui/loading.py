@@ -64,17 +64,17 @@ _SKELETON_CSS = """
   100% { background-position: -200% 0; }
 }
 .spinner{display:inline-block;width:18px;height:18px;
-  border:2px solid #374151;border-top-color:#60a5fa;
+  border:2px solid #374151;border-top-color:var(--theme-accent,#60a5fa);
   border-radius:50%;animation:spin 0.7s linear infinite;
   vertical-align:middle;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .progress-bar{height:6px;background:#1f2937;
   border-radius:3px;overflow:hidden;position:relative;}
-.progress-bar-fill{height:100%;background:#60a5fa;
+.progress-bar-fill{height:100%;background:var(--theme-accent,#60a5fa);
   transition:width 0.3s ease-out;}
 .progress-bar-indet{height:100%;width:30%;
   background:linear-gradient(90deg,
-    transparent 0%,#60a5fa 50%,transparent 100%);
+    transparent 0%,var(--theme-accent,#60a5fa) 50%,transparent 100%);
   animation:progress-indet 1.5s ease-in-out infinite;}
 @keyframes progress-indet {
   0%   { transform: translateX(-100%); }
@@ -87,7 +87,7 @@ _SKELETON_CSS = """
 .loading-overlay-label{color:#f3f4f6;font-size:13px;
   font-family:system-ui;}
 #page-progress{position:fixed;top:0;left:0;right:0;
-  height:2px;background:#60a5fa;width:0;
+  height:2px;background:var(--theme-accent,#60a5fa);width:0;
   transition:width 0.2s ease-out;z-index:9999;}
 #page-progress.active{width:80%;}
 #page-progress.done{width:100%;opacity:0;

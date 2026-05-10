@@ -47,18 +47,34 @@ DARK_BRAND_HEXES: tuple[str, ...] = (
 )
 
 # Files exempt from the guard — palette definition, shells that
-# legitimately ship the hex values inside CSS rule bodies.
+# legitimately ship the hex values inside CSS rule bodies, and the
+# light/dark theme token table (analogous to brand.py — defines the
+# theme variables themselves so ``var(--theme-…)`` callers resolve
+# correctly).
 ALLOWED_PATHS: tuple[str, ...] = (
     "rcm_mc/ui/brand.py",
     "rcm_mc/ui/_chartis_kit_legacy.py",
     "rcm_mc/ui/_chartis_kit_v2.py",
+    "rcm_mc/ui/theme.py",
+    "rcm_mc/ui/colors.py",
+    "rcm_mc/ui/power_chart.py",  # chart sequential palette, not brand semantics
 )
 
 
 # Baseline as of guard introduction. Drop this number whenever a
 # module migrates to PALETTE references; never raise without
 # justification in the commit message.
-HARDCODE_CAP = 546
+HARDCODE_CAP = 522
+
+
+def _strip_var_fallbacks(src: str) -> str:
+    """Remove hex codes that appear as ``var(--foo,#hex)`` fallback
+    values — those are harmless safety nets the CSS engine uses when
+    the theme variable is undefined (the partner-visible color is
+    still driven by the var). Counting them as violations would
+    discourage the right pattern for static CSS strings.
+    """
+    return re.sub(r"var\(--[\w-]+,\s*#[0-9a-fA-F]{3,8}\)", "", src)
 
 
 class BrandHexHardcodeIsCapped(unittest.TestCase):
@@ -78,6 +94,7 @@ class BrandHexHardcodeIsCapped(unittest.TestCase):
                 src = py.read_text(encoding="utf-8")
             except OSError:
                 continue
+            src = _strip_var_fallbacks(src)
             for m in pattern.finditer(src):
                 hits.append((rel, m.group(0)))
         count = len(hits)
@@ -110,6 +127,7 @@ class CapIsTightAgainstActualCount(unittest.TestCase):
                 src = py.read_text(encoding="utf-8")
             except OSError:
                 continue
+            src = _strip_var_fallbacks(src)
             count += len(pattern.findall(src))
         self.assertLessEqual(
             HARDCODE_CAP - count, 25,

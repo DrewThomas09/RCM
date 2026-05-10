@@ -24,11 +24,14 @@ import html as _html
 import urllib.parse as _urlparse
 from typing import List, Tuple
 
+from .brand import PALETTE
+
 
 def _button(href: str, label: str, *, primary: bool = False) -> str:
-    bg = "#1F4E78" if primary else "#fff"
-    fg = "#fff" if primary else "#1F4E78"
-    border = "1px solid #1F4E78"
+    accent = PALETTE["brand_accent"]
+    bg = accent if primary else "#fff"
+    fg = "#fff" if primary else accent
+    border = f"1px solid {accent}"
     return (
         f'<a href="{_html.escape(href)}" '
         f'style="display:inline-block;padding:6px 14px;margin:0 6px 6px 0;'
