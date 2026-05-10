@@ -601,6 +601,74 @@ class APIEndpointSmoke(unittest.TestCase):
             f"{leaks}",
         )
 
+    def test_documented_post_happy_paths_return_200(self) -> None:
+        """Companion to the rejection guards (CSRF/auth) — every
+        documented POST must accept a properly-formed JSON body
+        with a valid CSRF token and return 200.
+
+        Without this positive test, the rejection guards (which
+        only assert 403/401) couldn't tell the difference between
+        a route that's correctly gated and one that's broken in
+        a way that ALWAYS rejects (e.g. accidentally hardcoded
+        403 in the handler). Pinning happy-paths catches that
+        regression class.
+        """
+        import json
+        csrf = ""
+        for c in self.cookies:
+            if c.name == "rcm_csrf":
+                csrf = c.value
+                break
+
+        SCENARIOS: list[tuple[str, dict]] = [
+            ("/api/metrics/custom", {
+                "metric_key": "smoke_happy_path",
+                "display_name": "Smoke Happy Path",
+                "unit": "pct",
+                "directionality": "higher_is_better",
+                "category": "custom",
+                "description": "regression test",
+            }),
+            ("/api/screener/run", {
+                "filters": [],
+                "name": "Smoke Screen",
+                "limit": 3,
+            }),
+            ("/api/chat", {"message": "ping"}),
+        ]
+        failures: list[str] = []
+        for path, body_dict in SCENARIOS:
+            req = urllib.request.Request(
+                self.base + path,
+                data=json.dumps(body_dict).encode(),
+                method="POST",
+            )
+            req.add_header("Content-Type", "application/json")
+            req.add_header("X-CSRF-Token", csrf)
+            try:
+                resp = self.opener.open(req, timeout=10)
+                code = getattr(resp, "status", 0)
+                body = resp.read().decode("utf-8", errors="replace")
+            except urllib.error.HTTPError as e:
+                code = e.code
+                body = e.read().decode("utf-8", errors="replace")
+            if code != 200:
+                failures.append(
+                    f"{path}: expected 200, got {code} "
+                    f"(body: {body[:200]!r})"
+                )
+                continue
+            try:
+                json.loads(body)
+            except Exception as e:
+                failures.append(
+                    f"{path}: 200 but body not JSON ({e!r})"
+                )
+        self.assertEqual(
+            failures, [],
+            f"Documented POST happy paths failing: {failures}",
+        )
+
     def test_form_body_post_to_json_endpoint_does_not_hang(self) -> None:
         """Every JSON-expecting POST endpoint must return promptly
         when called with Content-Type: application/x-www-form-

@@ -3665,10 +3665,19 @@ class RCMHandler(BaseHTTPRequestHandler):
             })
         # Custom metrics API.
         if path == "/api/metrics/custom":
+            import dataclasses as _dc
             from .domain.custom_metrics import list_custom_metrics
             store = PortfolioStore(self.config.db_path)
             metrics = list_custom_metrics(store)
-            return self._send_json({"metrics": metrics})
+            # CustomMetric is a dataclass; _send_json's _safe walker
+            # doesn't reach into dataclass instances, so an
+            # un-converted list raises "Object not JSON serializable"
+            # the moment any custom KPI is registered. asdict() is
+            # cheap and keeps every field in the partner-visible
+            # JSON shape.
+            return self._send_json({
+                "metrics": [_dc.asdict(m) for m in metrics],
+            })
         if path == "/api/webhooks/test":
             store = PortfolioStore(self.config.db_path)
             from .infra.webhooks import dispatch_event as _test_dispatch
