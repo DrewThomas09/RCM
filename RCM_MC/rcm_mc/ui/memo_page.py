@@ -7,7 +7,10 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_kpi_block, ck_panel,
+    ck_signal_badge,
+)
 from .models_page import _model_nav
 from .brand import PALETTE
 
@@ -18,60 +21,53 @@ def render_memo_page(deal_id: str, deal_name: str, memo: Dict[str, Any]) -> str:
     warnings = memo.get("fact_check_warnings", [])
     llm_used = memo.get("llm_used", False)
 
-    # KPIs
+    # KPIs — ck_kpi_strip
     kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(sections)}</div>'
-        f'<div class="cad-kpi-label">Memo Sections</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(warnings)}</div>'
-        f'<div class="cad-kpi-label">Fact-Check Warnings</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{"AI" if llm_used else "Template"}</div>'
-        f'<div class="cad-kpi-label">Generation Method</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("Memo Sections", f"{len(sections)}")
+        + ck_kpi_block("Fact-Check Warnings", f"{len(warnings)}")
+        + ck_kpi_block(
+            "Generation Method",
+            "AI" if llm_used else "Template",
+        )
+        + '</div>'
     )
 
-    # Sections
+    # Sections — each becomes a ck_panel
     sections_html = ""
     for sec in sections:
         title = html.escape(str(sec.get("title", sec.get("heading", ""))))
         content = html.escape(str(sec.get("content", sec.get("body", ""))))
         passed = sec.get("fact_checks_passed", True)
-        badge_cls = "cad-badge-green" if passed else "cad-badge-red"
-        badge_text = "Verified" if passed else "Check Required"
-        sections_html += (
-            f'<div class="cad-card">'
-            f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
-            f'<h2>{title}</h2>'
-            f'<span class="cad-badge {badge_cls}">{badge_text}</span>'
-            f'</div>'
-            f'<div style="font-size:13px;color:{PALETTE["text_secondary"]};line-height:1.8;'
-            f'white-space:pre-wrap;">{content}</div>'
-            f'</div>'
+        badge = ck_signal_badge(
+            "Verified" if passed else "Check Required",
+            tone="positive" if passed else "negative",
         )
+        sec_inner = (
+            f'<p class="ck-section-body">{badge}</p>'
+            f'<div class="memo-section-content">{content}</div>'
+        )
+        sections_html += ck_panel(sec_inner, title=title)
 
     # Warnings
     warning_html = ""
     if warnings:
         w_items = "".join(
-            f'<li style="margin-bottom:4px;color:{PALETTE["warning"]};">{html.escape(str(w))}</li>'
-            for w in warnings
+            f'<li>{html.escape(str(w))}</li>' for w in warnings
         )
-        warning_html = (
-            f'<div class="cad-card" style="border-left:3px solid {PALETTE["warning"]};">'
-            f'<h2>Fact-Check Warnings</h2>'
-            f'<ul style="font-size:12.5px;padding-left:20px;">{w_items}</ul></div>'
+        warning_html = ck_panel(
+            f'<ul class="ck-list">{w_items}</ul>',
+            title="Fact-Check Warnings",
         )
 
     # Actions
-    actions = (
-        f'<div class="cad-card" style="display:flex;gap:8px;flex-wrap:wrap;">'
-        f'<a href="/api/deals/{html.escape(deal_id)}/memo" class="cad-btn" '
-        f'style="text-decoration:none;">Download JSON</a>'
-        f'<a href="/models/questions/{html.escape(deal_id)}" class="cad-btn" '
-        f'style="text-decoration:none;">Diligence Questions</a>'
-        f'<a href="/deal/{html.escape(deal_id)}" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Deal Dashboard</a></div>'
+    actions = ck_panel(
+        '<p class="ck-section-body">'
+        f'<a href="/api/deals/{html.escape(deal_id)}/memo" class="cad-btn">Download JSON</a> '
+        f'<a href="/models/questions/{html.escape(deal_id)}" class="cad-btn">Diligence Questions</a> '
+        f'<a href="/deal/{html.escape(deal_id)}" class="cad-btn cad-btn-primary">Deal Dashboard</a>'
+        '</p>',
+        title="Cross-links",
     )
 
     nav = _model_nav(deal_id, "")
@@ -100,24 +96,18 @@ def render_validation_page(deal_id: str, deal_name: str, validation: Dict[str, A
     warnings = validation.get("warnings", [])
     fields = validation.get("profile_fields", 0)
 
-    status_cls = "cad-badge-green" if is_valid else "cad-badge-red"
-    status_text = "Valid" if is_valid else "Issues Found"
+    status_badge = ck_signal_badge(
+        "Valid" if is_valid else "Issues Found",
+        tone="positive" if is_valid else "negative",
+    )
 
     kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'<span class="cad-badge {status_cls}" style="font-size:14px;padding:4px 12px;">'
-        f'{status_text}</span></div>'
-        f'<div class="cad-kpi-label">Validation Status</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["negative"]};">'
-        f'{len(issues)}</div>'
-        f'<div class="cad-kpi-label">Issues</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["warning"]};">'
-        f'{len(warnings)}</div>'
-        f'<div class="cad-kpi-label">Warnings</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{fields}</div>'
-        f'<div class="cad-kpi-label">Profile Fields</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("Validation Status", status_badge)
+        + ck_kpi_block("Issues", f"{len(issues)}")
+        + ck_kpi_block("Warnings", f"{len(warnings)}")
+        + ck_kpi_block("Profile Fields", f"{fields}")
+        + '</div>'
     )
 
     issues_html = ""
@@ -127,11 +117,11 @@ def render_validation_page(deal_id: str, deal_name: str, validation: Dict[str, A
             f'<td>{html.escape(str(i))}</td></tr>'
             for i in issues
         )
-        issues_html = (
-            f'<div class="cad-card">'
-            f'<h2>Issues (must fix)</h2>'
-            f'<table class="cad-table"><thead><tr><th>Severity</th><th>Description</th>'
-            f'</tr></thead><tbody>{rows}</tbody></table></div>'
+        issues_html = ck_panel(
+            '<table class="cad-table"><thead><tr>'
+            '<th>Severity</th><th>Description</th>'
+            f'</tr></thead><tbody>{rows}</tbody></table>',
+            title="Issues (must fix)",
         )
 
     warnings_html = ""
@@ -141,11 +131,11 @@ def render_validation_page(deal_id: str, deal_name: str, validation: Dict[str, A
             f'<td>{html.escape(str(w))}</td></tr>'
             for w in warnings
         )
-        warnings_html = (
-            f'<div class="cad-card">'
-            f'<h2>Warnings (review)</h2>'
-            f'<table class="cad-table"><thead><tr><th>Severity</th><th>Description</th>'
-            f'</tr></thead><tbody>{rows}</tbody></table></div>'
+        warnings_html = ck_panel(
+            '<table class="cad-table"><thead><tr>'
+            '<th>Severity</th><th>Description</th>'
+            f'</tr></thead><tbody>{rows}</tbody></table>',
+            title="Warnings (review)",
         )
 
     nav = _model_nav(deal_id, "")
@@ -182,37 +172,41 @@ def render_completeness_page(deal_id: str, deal_name: str, completeness: Dict[st
     pct = coverage * 100 if coverage < 1 else coverage
     bar_color = PALETTE["positive"] if pct > 70 else (PALETTE["warning"] if pct > 40 else PALETTE["negative"])
 
+    grade_tone = (
+        "positive" if grade == "A"
+        else "neutral" if grade == "B"
+        else "warning" if grade == "C"
+        else "negative" if grade == "D"
+        else "neutral"
+    )
+    grade_badge = ck_signal_badge(f"Grade {grade}", tone=grade_tone)
+
     kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{grade_color};font-size:36px;">'
-        f'{grade}</div>'
-        f'<div class="cad-kpi-label">Completeness Grade</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{pct:.0f}%</div>'
-        f'<div class="cad-kpi-label">Coverage</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{present}/{total}</div>'
-        f'<div class="cad-kpi-label">Fields Populated</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("Completeness Grade", grade_badge)
+        + ck_kpi_block("Coverage", f"{pct:.0f}%")
+        + ck_kpi_block("Fields Populated", f"{present}/{total}")
+        + '</div>'
     )
 
-    bar = (
-        f'<div class="cad-card">'
-        f'<h2>Data Coverage</h2>'
-        f'<div style="background:{PALETTE["bg_tertiary"]};border-radius:6px;height:16px;margin-bottom:8px;">'
-        f'<div style="width:{pct:.0f}%;background:{bar_color};border-radius:6px;height:16px;"></div>'
-        f'</div>'
-        f'<p style="font-size:12.5px;color:{PALETTE["text_secondary"]};">'
+    bar = ck_panel(
+        '<div class="memo-coverage-bar">'
+        f'<div class="memo-coverage-fill" style="width:{pct:.0f}%;background:{bar_color};"></div>'
+        '</div>'
+        '<p class="ck-section-body">'
         f'{present} of {total} metrics in the 38-metric registry are populated. '
         f'{"Excellent coverage — ready for full analysis." if pct > 80 else "Good coverage." if pct > 60 else "Request additional data from the seller to improve analysis accuracy."}'
-        f'</p></div>'
+        '</p>',
+        title="Data Coverage",
     )
 
-    actions = (
-        f'<div class="cad-card" style="display:flex;gap:8px;flex-wrap:wrap;">'
-        f'<a href="/models/questions/{html.escape(deal_id)}" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Generate Data Request</a>'
-        f'<a href="/import" class="cad-btn" style="text-decoration:none;">Update Deal Profile</a>'
-        f'<a href="/deal/{html.escape(deal_id)}" class="cad-btn" style="text-decoration:none;">'
-        f'Deal Dashboard</a></div>'
+    actions = ck_panel(
+        '<p class="ck-section-body">'
+        f'<a href="/models/questions/{html.escape(deal_id)}" class="cad-btn cad-btn-primary">Generate Data Request</a> '
+        '<a href="/import" class="cad-btn">Update Deal Profile</a> '
+        f'<a href="/deal/{html.escape(deal_id)}" class="cad-btn">Deal Dashboard</a>'
+        '</p>',
+        title="Cross-links",
     )
 
     nav = _model_nav(deal_id, "")
