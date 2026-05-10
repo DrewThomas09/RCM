@@ -11355,8 +11355,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 and parts[3] == "profile"):
             import json as _json
             deal_id = urllib.parse.unquote(parts[2])
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 updates = _json.loads(raw.decode("utf-8") or "{}")
             except _json.JSONDecodeError:
@@ -12176,8 +12175,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         """
         import json as _json
         from .analysis.deal_overrides import set_override
-        n_bytes = int(self.headers.get("Content-Length") or 0)
-        raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+        raw = self._raw_post_body() or b"{}"
         try:
             payload = _json.loads(raw.decode("utf-8") or "{}")
         except _json.JSONDecodeError:
@@ -15746,7 +15744,11 @@ class RCMHandler(BaseHTTPRequestHandler):
 
         Cached on first call — subsequent calls within the same request
         return the same dict so the CSRF middleware and route handlers
-        share one parse.
+        share one parse. Also caches the raw bytes in
+        ``self._raw_body_cache`` so handlers that JSON-parse the body
+        (e.g. /api/screener/run) don't double-read rfile after the
+        CSRF middleware drained it — the second read would hang for
+        Content-Length seconds since the bytes are already gone.
         """
         cached = getattr(self, "_form_cache", None)
         if cached is not None:
@@ -15754,11 +15756,34 @@ class RCMHandler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length") or 0)
         if length <= 0:
             self._form_cache = {}
+            self._raw_body_cache = b""
             return self._form_cache
-        raw = self.rfile.read(length).decode("utf-8", errors="replace")
+        raw_bytes = self.rfile.read(length)
+        self._raw_body_cache = raw_bytes
+        raw = raw_bytes.decode("utf-8", errors="replace")
         parsed = urllib.parse.parse_qs(raw, keep_blank_values=True)
         self._form_cache = {k: (v[0] if v else "") for k, v in parsed.items()}
         return self._form_cache
+
+    def _raw_post_body(self) -> bytes:
+        """Return the raw POST body bytes, caching across reads.
+
+        Handlers should use this instead of ``self.rfile.read(...)``
+        because the CSRF middleware in _do_post_inner drains rfile
+        for form-urlencoded bodies. A direct rfile.read AFTER the
+        middleware would block for Content-Length seconds waiting
+        for bytes that are already consumed. With the cache, the
+        second access returns the same bytes instantly.
+        """
+        cached = getattr(self, "_raw_body_cache", None)
+        if cached is not None:
+            return cached
+        length = int(self.headers.get("Content-Length") or 0)
+        if length <= 0:
+            self._raw_body_cache = b""
+            return self._raw_body_cache
+        self._raw_body_cache = self.rfile.read(length)
+        return self._raw_body_cache
 
     def _route_api_post(self, path: str) -> None:
         """Handle form POSTs that write to the portfolio store.
@@ -15774,8 +15799,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/api/metrics/custom":
             import json as _json
             from .domain.custom_metrics import register_custom_metric, CustomMetric
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 payload = _json.loads(raw.decode("utf-8") or "{}")
             except _json.JSONDecodeError:
@@ -15803,8 +15827,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/api/webhooks":
             import json as _json
             from .infra.webhooks import register_webhook
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 payload = _json.loads(raw.decode("utf-8") or "{}")
             except _json.JSONDecodeError:
@@ -15856,8 +15879,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         # POST /api/deals/bulk — batch operations on multiple deals
         if path == "/api/deals/bulk":
             import json as _json
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 payload = _json.loads(raw.decode("utf-8") or "{}")
             except _json.JSONDecodeError:
@@ -15918,8 +15940,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         # POST /api/deals/import — import deals from JSON array
         if path == "/api/deals/import":
             import json as _json
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"[]"
+            raw = self._raw_post_body() or b"[]"
             try:
                 payload = _json.loads(raw.decode("utf-8") or "[]")
             except _json.JSONDecodeError:
@@ -15969,8 +15990,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/api/deals/import-csv":
             import csv as _csv
             import io as _io
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b""
+            raw = self._raw_post_body() or b""
             text = raw.decode("utf-8", errors="replace")
             reader = _csv.DictReader(_io.StringIO(text))
             imported = []
@@ -16005,8 +16025,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/api/screener/run":
             import json as _scrjson
             from .intelligence.screener_engine import run_screen_from_filters as _scr_run
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 payload = _scrjson.loads(raw.decode("utf-8") or "{}")
             except _scrjson.JSONDecodeError:
@@ -16025,8 +16044,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             import json as _cjson3
             from .ai.conversation import ConversationEngine
             from .ai.llm_client import LLMClient  # noqa: F401
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 payload = _cjson3.loads(raw.decode("utf-8") or "{}")
             except _cjson3.JSONDecodeError:
@@ -16052,8 +16070,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/api/portfolio/register":
             import json as _rjson
             from .portfolio.portfolio_snapshots import register_snapshot as _api_reg, DEAL_STAGES
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 payload = _rjson.loads(raw.decode("utf-8") or "{}")
             except _rjson.JSONDecodeError:
@@ -16090,8 +16107,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 and parts[3] == "duplicate"):
             import json as _json
             deal_id = urllib.parse.unquote(parts[2])
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 payload = _json.loads(raw.decode("utf-8") or "{}")
             except _json.JSONDecodeError:
@@ -16147,8 +16163,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 and parts[3] == "stage"):
             import json as _json
             deal_id = urllib.parse.unquote(parts[2])
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 payload = _json.loads(raw.decode("utf-8") or "{}")
             except _json.JSONDecodeError:
@@ -16174,8 +16189,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 and parts[3] == "comments"):
             import json as _json
             deal_id = urllib.parse.unquote(parts[2])
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 payload = _json.loads(raw.decode("utf-8") or "{}")
             except _json.JSONDecodeError:
@@ -16252,8 +16266,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         if parts == ["api", "deals"]:
             import json as _json
             from .data.auto_populate import auto_populate
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 payload = _json.loads(raw.decode("utf-8") or "{}")
             except _json.JSONDecodeError:
@@ -17015,8 +17028,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 and parts[3] == "simulate"):
             import json as _json
             deal_id = urllib.parse.unquote(parts[2])
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            body = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            body = self._raw_post_body() or b"{}"
             try:
                 payload = _json.loads(body.decode("utf-8") or "{}")
             except _json.JSONDecodeError:
