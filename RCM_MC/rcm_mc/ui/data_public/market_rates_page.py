@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import html as _html
 from typing import Any, Dict, List, Optional, Tuple
+from ..brand import PALETTE
 
 
 def _get_corpus() -> List[Dict[str, Any]]:
@@ -163,13 +164,13 @@ def _sparkline_svg(p25: Optional[float], p50: Optional[float], p75: Optional[flo
         f'<svg width="{width}" height="{height}" style="vertical-align:middle;overflow:visible">'
         # Box (IQR)
         f'<rect x="{x25}" y="{mid_y-4}" width="{max(1,x75-x25)}" height="8" '
-        f'fill="none" stroke="#3b82f6" stroke-width="1"/>'
+        f'fill="none" stroke=PALETTE["brand_accent"] stroke-width="1"/>'
         # Median line
         f'<line x1="{x50}" y1="{mid_y-5}" x2="{x50}" y2="{mid_y+5}" '
-        f'stroke="#10b981" stroke-width="1.5"/>'
+        f'stroke=PALETTE["positive"] stroke-width="1.5"/>'
         # 1.0x breakeven marker
         f'<line x1="{scale(1.0)}" y1="{mid_y-7}" x2="{scale(1.0)}" y2="{mid_y+7}" '
-        f'stroke="#ef4444" stroke-width="0.75" stroke-dasharray="2,2" opacity="0.6"/>'
+        f'stroke=PALETTE["negative"] stroke-width="0.75" stroke-dasharray="2,2" opacity="0.6"/>'
         f'</svg>'
     )
 

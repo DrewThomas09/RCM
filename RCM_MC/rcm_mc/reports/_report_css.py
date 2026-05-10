@@ -124,8 +124,8 @@ REPORT_HEAD_STYLES = """
     .mini-waterfall { display: flex; align-items: flex-end; gap: 3px; height: 120px; margin: 1rem 0; padding: 0 0.5rem; }
     .wf-bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; }
     .wf-bar { border-radius: 4px 4px 0 0; min-height: 4px; width: 100%; max-width: 60px; transition: height 0.4s ease; }
-    .wf-bar.denial { background: linear-gradient(180deg, #ef4444, #dc2626); }
-    .wf-bar.underpay { background: linear-gradient(180deg, #f59e0b, #d97706); }
+    .wf-bar.denial { background: linear-gradient(180deg, var(--theme-negative,#ef4444), #dc2626); }
+    .wf-bar.underpay { background: linear-gradient(180deg, var(--theme-warning,#f59e0b), #d97706); }
     .wf-bar.rework { background: linear-gradient(180deg, #8b5cf6, #7c3aed); }
     .wf-bar.economic { background: linear-gradient(180deg, #06b6d4, #0891b2); }
     .wf-bar.total { background: linear-gradient(180deg, #0f4c81, #1a6bb3); }
@@ -166,7 +166,7 @@ REPORT_HEAD_STYLES = """
     .tl-bar.q1 { background: linear-gradient(180deg, #94a3b8, #64748b); }
     .tl-bar.q2 { background: linear-gradient(180deg, #0891b2, #06b6d4); }
     .tl-bar.q3 { background: linear-gradient(180deg, #059669, #34d399); }
-    .tl-bar.q4 { background: linear-gradient(180deg, #059669, #10b981); }
+    .tl-bar.q4 { background: linear-gradient(180deg, #059669, var(--theme-positive,#10b981)); }
     .tl-pct { font-size: 0.7rem; font-weight: 700; color: var(--slate); margin-bottom: 2px; }
     .tl-amt { font-size: 0.6rem; font-weight: 600; color: var(--gray); margin-bottom: 1px; }
     .tl-label { font-size: 0.6rem; color: var(--gray); text-align: center; margin-top: 4px; line-height: 1.2; }

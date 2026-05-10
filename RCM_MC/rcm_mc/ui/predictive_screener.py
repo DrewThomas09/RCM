@@ -587,7 +587,7 @@ def render_predictive_screener(
         "font-size:9px;letter-spacing:0.06em;color:var(--cad-text3,#94a3b8);"
         "font-weight:400;text-transform:none;}"
         ".cad-badge-amc{margin-left:6px;padding:1px 6px;font-family:var(--cad-mono,monospace);"
-        "font-size:9px;letter-spacing:0.1em;border:1px solid #1F4E78;color:#1F4E78;"
+        "font-size:9px;letter-spacing:0.1em;border:1px solid var(--theme-accent,#1F4E78);color:var(--theme-accent,#1F4E78);"
         "border-radius:2px;text-transform:uppercase;cursor:help;}"
         ".cad-heat-na{color:var(--cad-text3,#94a3b8);font-style:italic;}"
         ".cad-sot-origin-inline{display:block;margin-top:1px;font-family:var(--cad-mono,monospace);"

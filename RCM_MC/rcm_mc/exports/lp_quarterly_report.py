@@ -12,6 +12,7 @@ import json
 import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+from rcm_mc.ui.brand import PALETTE
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +86,7 @@ def generate_lp_quarterly_html(store: Any, *, quarter: str = "") -> str:
             f'<strong>{_esc(d["name"])}</strong> '
             f'<span style="color:#64748b;">(grade {d["grade"]})</span><br>'
             f'EBITDA opportunity: {_fmt_money(d.get("ebitda_opportunity") or 0)}'
-            + (f' · <span style="color:#ef4444;">{d["high_risk_count"]} high/critical risk(s)</span>'
+            + (f' · <span style="color:{PALETTE["negative"]};">{d["high_risk_count"]} high/critical risk(s)</span>'
                if d.get("high_risk_count") else "")
             + '</div>'
         )
@@ -102,7 +103,7 @@ def generate_lp_quarterly_html(store: Any, *, quarter: str = "") -> str:
         '<div class="summary">'
         f'<div class="kpi"><div class="big">{total_deals}</div><div class="label">Active Deals</div></div>'
         f'<div class="kpi"><div class="big">{_fmt_money(total_opp)}</div><div class="label">Total Opportunity</div></div>'
-        f'<div class="kpi"><div class="big" style="color:#ef4444;">{total_risks}</div><div class="label">High/Critical Risks</div></div>'
+        f'<div class="kpi"><div class="big" style="color:{PALETTE["negative"]};">{total_risks}</div><div class="label">High/Critical Risks</div></div>'
         '</div>'
         f'<h2>Portfolio Deals</h2>{deal_cards or "<p>No deals in portfolio.</p>"}'
         f'<footer style="margin-top:40px;color:#94a3b8;font-size:12px;">'

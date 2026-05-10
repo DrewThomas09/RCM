@@ -270,7 +270,7 @@ def render_sensitivity_page(
 
       <div style="grid-column: span 3; text-align:right;">
         <button type="submit"
-                style="background:#1F4E78; color:#e2e8f0; border:none;
+                style="background:var(--theme-accent,#1F4E78); color:#e2e8f0; border:none;
                        padding:8px 20px; border-radius:4px; cursor:pointer;">
           Re-compute Grid
         </button>
@@ -355,7 +355,7 @@ table tr:hover td {
     background: #1e293b;
 }
 input[type=range] {
-    accent-color: #1F4E78;
+    accent-color: var(--theme-accent,#1F4E78);
 }
 """
 

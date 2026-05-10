@@ -26,6 +26,7 @@ from __future__ import annotations
 import html
 import json
 from typing import Any, Dict, Iterable, List, Optional, Sequence
+from .brand import PALETTE
 
 
 def benchmark_chip(
@@ -136,7 +137,7 @@ def interpret_callout(
     the reader absorbs the verdict before reading the words.
     """
     tone_colors = {
-        "info": "#1F4E78",
+        "info": "var(--theme-accent,#1F4E78)",
         "good": "#10B981",
         "warn": "#F59E0B",
         "bad": "#EF4444",
@@ -337,7 +338,7 @@ def deal_context_bar(
             f'style="color:{color};text-decoration:none;'
             f'font-size:11px;font-weight:{weight};'
             f'letter-spacing:0.3px;padding:4px 10px;'
-            f'border:1px solid {"#3b82f6" if is_active else "#334155"};'
+            f'border:1px solid {PALETTE["brand_accent"] if is_active else "#334155"};'
             f'border-radius:3px;background:'
             f'{"rgba(59,130,246,0.15)" if is_active else "transparent"};'
             f'transition:all 120ms;cursor:{cursor};" '

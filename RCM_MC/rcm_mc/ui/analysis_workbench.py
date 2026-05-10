@@ -721,9 +721,9 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
     radial_svg = (
         f'<svg width="90" height="90" viewBox="0 0 90 90">'
         f'<circle cx="45" cy="45" r="{radius}" fill="none" '
-        f'stroke="{PALETTE["border"]}" stroke-width="8"/>'
+        f'stroke=PALETTE["border"] stroke-width="8"/>'
         f'<circle cx="45" cy="45" r="{radius}" fill="none" '
-        f'stroke="{PALETTE["accent"]}" stroke-width="8" '
+        f'stroke=PALETTE["accent"] stroke-width="8" '
         f'stroke-dasharray="{dash:.1f} {circ:.1f}" stroke-linecap="round"/>'
         f'</svg>'
     )
@@ -1359,8 +1359,8 @@ def _render_histogram_svg(ps: PercentileSet) -> str:
         x_px = x * (width - 80) + 40
         lines += (
             f'<line x1="{x_px}" x2="{x_px}" y1="20" y2="{height-24}" '
-            f'stroke="{PALETTE["text_faint"]}" stroke-dasharray="3,3"/>'
-            f'<text x="{x_px}" y="{height-6}" fill="{PALETTE["text_dim"]}" '
+            f'stroke=PALETTE["text_faint"] stroke-dasharray="3,3"/>'
+            f'<text x="{x_px}" y="{height-6}" fill=PALETTE["text_dim"] '
             f'text-anchor="middle" font-size="10">{label}</text>'
         )
     # Density curve — use 5 anchors and linear interpolation for bars.
@@ -1380,12 +1380,12 @@ def _render_histogram_svg(ps: PercentileSet) -> str:
         y = height - 20 - bar_h
         bars += (
             f'<rect x="{x_px:.1f}" y="{y:.1f}" width="{bar_w:.1f}" '
-            f'height="{bar_h:.1f}" fill="{PALETTE["accent"]}" opacity="0.55"/>'
+            f'height="{bar_h:.1f}" fill=PALETTE["accent"] opacity="0.55"/>'
         )
     return (
         f'<svg viewBox="0 0 {width} {height}" preserveAspectRatio="none" '
         f'style="width:100%;height:160px;">'
-        f'<rect x="0" y="0" width="{width}" height="{height}" fill="{PALETTE["panel_alt"]}"/>'
+        f'<rect x="0" y="0" width="{width}" height="{height}" fill=PALETTE["panel_alt"]/>'
         f'{bars}{lines}'
         f'</svg>'
     )
@@ -1648,10 +1648,10 @@ def _render_scenario_overlay_svg(
     )
     axis = (
         f'<line x1="20" x2="{width - 20}" y1="{height - 20}" '
-        f'y2="{height - 20}" stroke="{PALETTE["text_faint"]}"/>'
-        f'<text x="20" y="{height - 4}" fill="{PALETTE["text_dim"]}" '
+        f'y2="{height - 20}" stroke=PALETTE["text_faint"]/>'
+        f'<text x="20" y="{height - 4}" fill=PALETTE["text_dim"] '
         f'font-size="10">{_fmt_money(x_min)}</text>'
-        f'<text x="{width - 20}" y="{height - 4}" fill="{PALETTE["text_dim"]}" '
+        f'<text x="{width - 20}" y="{height - 4}" fill=PALETTE["text_dim"] '
         f'text-anchor="end" font-size="10">{_fmt_money(x_max)}</text>'
     )
     return (
@@ -2211,7 +2211,7 @@ _EXPLAIN_JS = r"""
     titleEl.textContent = d.display_name || metric;
     var pct = d.percentile != null ? (d.percentile*100).toFixed(0)+'th' : '—';
     var barPct = d.percentile != null ? Math.round(d.percentile*100) : 50;
-    var barColor = barPct > 70 ? '#10b981' : (barPct < 30 ? '#ef4444' : '#f59e0b');
+    var barColor = barPct > 70 ? 'var(--theme-positive,#10b981)' : (barPct < 30 ? 'var(--theme-negative,#ef4444)' : 'var(--theme-warning,#f59e0b)');
     bodyEl.innerHTML =
       '<div class="ep-section"><div class="ep-label">Source</div><span style="background:#1e293b;padding:2px 8px;border-radius:3px;font-size:11px;">'+d.source+'</span></div>'+
       '<div class="ep-section"><div class="ep-label">Current value</div><div class="num" style="font-size:18px;">'+d.value.toFixed(2)+'</div></div>'+

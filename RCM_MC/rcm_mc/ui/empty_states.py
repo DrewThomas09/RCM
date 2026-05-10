@@ -37,6 +37,7 @@ from __future__ import annotations
 import html as _html
 from dataclasses import dataclass
 from typing import Optional
+from .brand import PALETTE
 
 
 @dataclass
@@ -54,7 +55,7 @@ _BG_ELEVATED = "#111827"
 _BORDER = "#374151"
 _TEXT = "#f3f4f6"
 _TEXT_DIM = "#9ca3af"
-_ACCENT = "#60a5fa"
+_ACCENT = "var(--theme-accent,#60a5fa)"
 _ACCENT_BG = "#1e3a8a"
 
 
@@ -67,7 +68,7 @@ def _css(*, inject: bool = True) -> str:
         '#374151;border-radius:8px;padding:40px 24px;'
         'text-align:center;}'
         '.es-icon{font-size:32px;line-height:1;'
-        'margin-bottom:14px;color:#60a5fa;'
+        'margin-bottom:14px;color:var(--theme-accent,#60a5fa);'
         'font-weight:300;}'
         '.es-title{color:#f3f4f6;font-size:15px;'
         'font-weight:600;margin:0 0 6px 0;}'
@@ -89,7 +90,7 @@ def _css(*, inject: bool = True) -> str:
         'font-size:13px;line-height:1.5;text-align:center;'
         'background:#111827;border:1px solid #374151;'
         'border-radius:8px;}'
-        '.es-inline a{color:#60a5fa;text-decoration:none;}'
+        '.es-inline a{color:var(--theme-accent,#60a5fa);text-decoration:none;}'
         '.es-inline a:hover{text-decoration:underline;}'
         '</style>')
 
@@ -181,7 +182,7 @@ def empty_table_row(
     if action_label and action_url:
         action_html = (
             f' <a href="{_html.escape(action_url)}" '
-            f'style="color:#60a5fa;text-decoration:none;">'
+            f'style="color:{PALETTE["brand_accent"]};text-decoration:none;">'
             f'{_html.escape(action_label)} →</a>')
     return (
         f'<tr><td colspan="{int(n_columns)}" '

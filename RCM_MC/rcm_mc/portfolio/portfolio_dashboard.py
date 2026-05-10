@@ -23,6 +23,7 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 
 from .store import PortfolioStore
+from rcm_mc.ui.brand import PALETTE
 from .portfolio_snapshots import (
     DEAL_STAGES,
     latest_per_deal,
@@ -37,7 +38,7 @@ _PALETTE = {
     "border":   "#E5E7EB",
     "text":     "#111827",
     "muted":    "#6B7280",
-    "accent":   "#1F4E78",
+    "accent":   "var(--theme-accent,#1F4E78)",
     "green":    "#10B981",
     "amber":    "#F59E0B",
     "red":      "#EF4444",
@@ -1021,7 +1022,7 @@ def _render_at_risk(df: pd.DataFrame) -> str:
 _CSS = """
 :root {
   --bg: #FAFAFA; --card: #FFFFFF; --border: #E5E7EB;
-  --text: #111827; --muted: #6B7280; --accent: #1F4E78;
+  --text: #111827; --muted: #6B7280; --accent: var(--theme-accent,#1F4E78);
   --green: #10B981; --amber: #F59E0B; --red: #EF4444;
 }
 * { box-sizing: border-box; }
@@ -1084,7 +1085,7 @@ def build_portfolio_dashboard(
     except Exception:
         archived_count = 0
     archived_badge = (
-        f' · <span style="color:#f59e0b;">{archived_count} archived</span>'
+        f' · <span style="color:{PALETTE["warning"]};">{archived_count} archived</span>'
         if archived_count > 0 else ""
     )
 
