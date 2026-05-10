@@ -25,7 +25,9 @@ from ..diligence.deal_mc.charts import (
     attribution_chart, fan_chart, moic_histogram_chart,
     sensitivity_tornado,
 )
-from ._chartis_kit import P, chartis_shell, ck_page_title
+from ._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_page_title, ck_section_intro,
+)
 from .power_ui import deal_context_bar, provenance
 
 
@@ -154,63 +156,36 @@ def _hero_stats(result: DealMCResult, scenario_name: str) -> str:
             f"changes shift the distribution meaningfully right."
         )
 
-    return (
-        f'<div style="padding:24px 0 16px 0;border-bottom:1px solid '
-        f'{P["border"]};margin-bottom:24px;">'
-        f'<div style="font-size:11px;color:{P["text_faint"]};letter-spacing:1.5px;'
-        f'text-transform:uppercase;margin-bottom:6px;font-weight:600;">'
-        f'Deal Monte Carlo</div>'
-        f'<div style="font-size:22px;color:{P["text"]};font-weight:600;'
-        f'margin-bottom:4px;">{html.escape(scenario_name)}</div>'
-        f'<div style="font-size:11px;color:{P["text_faint"]};">'
-        f'{result.n_runs:,} Monte Carlo trials · {result.hold_years}y hold</div>'
-        f'<div style="background:{P["panel_alt"]};border-left:3px solid '
-        f'{band_color(p50)};padding:10px 14px;margin-top:12px;font-size:12px;'
-        f'color:{P["text_dim"]};line-height:1.6;max-width:880px;'
-        f'border-radius:0 3px 3px 0;">'
-        f'<strong style="color:{P["text"]};">What this shows: </strong>'
-        f'{html.escape(summary)}</div>'
-        f'<div style="display:grid;grid-template-columns:repeat(6,1fr);'
-        f'gap:16px;margin-top:20px;">'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1px;text-transform:uppercase;">P25 MOIC</div>'
-        f'<div style="font-size:26px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-weight:700;color:{band_color(result.moic_p25)};">'
-        f'{result.moic_p25:.2f}x</div></div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1px;text-transform:uppercase;">P50 MOIC</div>'
-        f'<div style="font-size:30px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-weight:700;color:{band_color(result.moic_p50)};">'
-        f'{result.moic_p50:.2f}x</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">fund target 2.50× · peer median 2.20×</div>'
-        f'</div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1px;text-transform:uppercase;">P75 MOIC</div>'
-        f'<div style="font-size:26px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-weight:700;color:{band_color(result.moic_p75)};">'
-        f'{result.moic_p75:.2f}x</div></div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1px;text-transform:uppercase;">P50 IRR</div>'
-        f'<div style="font-size:26px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-weight:700;color:'
-        f'{P["positive"] if result.irr_p50 >= 0.25 else P["warning"] if result.irr_p50 >= 0.18 else P["negative"]};">'
-        f'{result.irr_p50*100:.1f}%</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">fund target 25% · hurdle 18%</div>'
-        f'</div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1px;text-transform:uppercase;">P(MOIC &lt; 1x)</div>'
-        f'<div style="font-size:22px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-weight:700;color:{prob_color(result.prob_sub_1x)};">'
-        f'{result.prob_sub_1x*100:.1f}%</div></div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1px;text-transform:uppercase;">P(MOIC &gt;= 3x)</div>'
-        f'<div style="font-size:22px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-weight:700;color:{prob_color(result.prob_over_3x, higher_is_better=True)};">'
-        f'{result.prob_over_3x*100:.1f}%</div></div>'
-        f'</div></div>'
+    intro = ck_section_intro(
+        eyebrow="Deal Monte Carlo",
+        headline=html.escape(scenario_name),
+        body=(
+            f"{result.n_runs:,} Monte Carlo trials · "
+            f"{result.hold_years}y hold · {summary}"
+        ),
+        italic_word="shows",
     )
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("P25 MOIC", f"{result.moic_p25:.2f}x")
+        + ck_kpi_block(
+            "P50 MOIC", f"{result.moic_p50:.2f}x",
+            sub="fund target 2.50× · peer median 2.20×",
+        )
+        + ck_kpi_block("P75 MOIC", f"{result.moic_p75:.2f}x")
+        + ck_kpi_block(
+            "P50 IRR", f"{result.irr_p50*100:.1f}%",
+            sub="fund target 25% · hurdle 18%",
+        )
+        + ck_kpi_block(
+            "P(MOIC < 1x)", f"{result.prob_sub_1x*100:.1f}%",
+        )
+        + ck_kpi_block(
+            "P(MOIC ≥ 3x)", f"{result.prob_over_3x*100:.1f}%",
+        )
+        + "</div>"
+    )
+    return f"{intro}{kpis}"
 
 
 def _chart_panel(

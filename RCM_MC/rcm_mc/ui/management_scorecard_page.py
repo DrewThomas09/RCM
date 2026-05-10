@@ -17,7 +17,9 @@ from ..diligence.management_scorecard import (
     ForecastHistory, ManagementReport, PriorRole, RedFlag, Role,
     analyze_team,
 )
-from ._chartis_kit import P, chartis_shell, ck_page_title
+from ._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_page_title, ck_section_intro,
+)
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
 )
@@ -387,53 +389,43 @@ def _hero(report: ManagementReport, target_name: str) -> str:
                 f'≈ ${hc.dollar_adjustment_usd:,.0f} EBITDA adjustment'
             )
 
+    intro = ck_section_intro(
+        eyebrow="Management Scorecard",
+        headline=html.escape(target_name),
+        body=(
+            f"{report.team_size} executive"
+            f"{'s' if report.team_size != 1 else ''} scored · "
+            f"{report.aggregate_confidence} confidence · "
+            f"{report.red_flag_count} red flags "
+            f"({report.critical_flag_count} critical)"
+        ),
+        italic_word="management",
+    )
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Team aggregate", f"{report.aggregate_overall} / 100",
+            sub="role-weighted (CEO 35% · CFO 25% · COO 20% · other 20%)",
+        )
+        + ck_kpi_block(
+            "Team size", f"{report.team_size}",
+            sub="C-suite profiles assembled",
+        )
+        + ck_kpi_block(
+            "Red flags", f"{report.red_flag_count}",
+            sub=f"{report.critical_flag_count} CRITICAL",
+        )
+        + ck_kpi_block(
+            "Guidance haircut", haircut_num_html,
+            sub=html.escape(haircut_detail) or "applied to FY1 EBITDA",
+        )
+        + "</div>"
+    )
     return (
-        f'<div style="padding:22px 0 16px 0;border-bottom:1px solid '
-        f'{P["border"]};margin-bottom:22px;">'
-        f'<div class="ms-eyebrow">Management Scorecard</div>'
-        f'<div class="ms-h1">{html.escape(target_name)}</div>'
-        f'<div style="font-size:11px;color:{P["text_faint"]};margin-top:4px;">'
-        f'{report.team_size} executive'
-        f'{"s" if report.team_size != 1 else ""} scored · '
-        f'{report.aggregate_confidence} confidence · '
-        f'{report.red_flag_count} red flags '
-        f'({report.critical_flag_count} critical)</div>'
+        f'{intro}'
         f'<div class="ms-callout {banner_class}">'
         f'{html.escape(report.summary)}</div>'
-        f'<div class="ms-kpi-grid">'
-        f'<div class="ms-kpi">'
-        f'<div class="ms-kpi__label">Team aggregate</div>'
-        f'<div class="ms-kpi__val" style="color:{overall_color};">'
-        f'{report.aggregate_overall}<span style="font-size:14px;opacity:.6;"> / 100</span>'
-        f'</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};margin-top:3px;">'
-        f'role-weighted (CEO 35% · CFO 25% · COO 20% · other 20%)</div>'
-        f'</div>'
-        f'<div class="ms-kpi">'
-        f'<div class="ms-kpi__label">Team size</div>'
-        f'<div class="ms-kpi__val" style="color:{P["text"]};">'
-        f'{report.team_size}</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};margin-top:3px;">'
-        f'C-suite profiles assembled</div>'
-        f'</div>'
-        f'<div class="ms-kpi">'
-        f'<div class="ms-kpi__label">Red flags</div>'
-        f'<div class="ms-kpi__val" style="color:'
-        f'{P["negative"] if report.red_flag_count > 0 else P["positive"]};">'
-        f'{report.red_flag_count}</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};margin-top:3px;">'
-        f'{report.critical_flag_count} CRITICAL</div>'
-        f'</div>'
-        f'<div class="ms-kpi">'
-        f'<div class="ms-kpi__label">Guidance haircut</div>'
-        f'<div class="ms-kpi__val" style="color:'
-        f'{P["warning"] if report.bridge_haircut and report.bridge_haircut.recommended_haircut_pct > 0.05 else P["text_faint"]};">'
-        f'{haircut_num_html}</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};margin-top:3px;">'
-        f'{html.escape(haircut_detail) or "applied to FY1 EBITDA"}</div>'
-        f'</div>'
-        f'</div>'
-        f'</div>'
+        f'{kpis}'
     )
 
 
