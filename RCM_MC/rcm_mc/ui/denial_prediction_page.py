@@ -59,7 +59,7 @@ def _landing() -> str:
         f'<label style="font-size:9px;color:{P["text_faint"]};'
         f'letter-spacing:1.5px;text-transform:uppercase;font-weight:600;'
         f'display:block;margin-top:12px;margin-bottom:4px;">'
-        f'Train fraction (0-1)</label>'
+        f'Training split (0-1)</label>'
         f'<input name="train_fraction" value="0.7" '
         f'style="width:100%;padding:6px 8px;background:{P["panel_alt"]};'
         f'color:{P["text"]};border:1px solid {P["border"]};'

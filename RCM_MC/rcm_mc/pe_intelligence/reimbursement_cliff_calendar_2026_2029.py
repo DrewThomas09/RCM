@@ -54,7 +54,7 @@ class CliffEvent:
 CLIFF_CALENDAR: List[CliffEvent] = [
     CliffEvent(
         id="obbba_medicare_cut_phase1",
-        name="OBBBA Medicare cut — phase 1",
+        name="OBBBA Medicare cut · phase 1",
         effective_year=2026,
         affected_payer="medicare",
         rate_change_bps=-300,
@@ -70,7 +70,7 @@ CLIFF_CALENDAR: List[CliffEvent] = [
     ),
     CliffEvent(
         id="obbba_medicare_cut_phase2",
-        name="OBBBA Medicare cut — phase 2",
+        name="OBBBA Medicare cut · phase 2",
         effective_year=2027,
         affected_payer="medicare",
         rate_change_bps=-200,

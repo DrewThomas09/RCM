@@ -105,7 +105,7 @@ def _landing() -> str:
         f'<label style="font-size:9px;color:{P["text_faint"]};'
         f'letter-spacing:1.5px;text-transform:uppercase;'
         f'font-weight:600;display:block;margin-bottom:4px;">'
-        f'CCD fixture</label>'
+        f'Claims dataset</label>'
         f'<select name="dataset" required style="width:100%;'
         f'padding:6px 8px;background:{P["panel_alt"]};'
         f'color:{P["text"]};border:1px solid {P["border"]};'
@@ -166,7 +166,7 @@ def _landing() -> str:
     )
     return chartis_shell(
         body, "RCM Diligence — Thesis Pipeline",
-        subtitle="13-step orchestrator · full analytic chain",
+        subtitle="Diligence pipeline · full analytic chain",
     )
 
 
@@ -634,5 +634,5 @@ def render_thesis_pipeline_page(
     return chartis_shell(
         body,
         f"Thesis Pipeline — {inp.deal_name}",
-        subtitle="13-step orchestrator · closes the loop",
+        subtitle="Diligence pipeline · closes the loop",
     )

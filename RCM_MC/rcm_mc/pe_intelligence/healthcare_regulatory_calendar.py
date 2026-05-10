@@ -81,7 +81,7 @@ CALENDAR: List[RegulatoryEvent] = [
     ),
     RegulatoryEvent(
         name="site_neutral_hopd_phase2",
-        description=("Site-neutral rulemaking phase 2: extends rate "
+        description=("Site-neutral rulemaking · phase 2: extends rate "
                       "parity to more HOPD services (evaluation + "
                       "management, specific drug administration)."),
         effective_year=2026, effective_quarter=3,

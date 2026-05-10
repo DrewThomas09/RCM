@@ -179,7 +179,7 @@ def _info_strip(text: str) -> str:
 def render_ingest_page(dataset: str = "") -> str:
     body = [
         _hero(
-            "Phase 1 — Ingestion & Normalization",
+            "Step 1 — Ingestion & Normalization",
             "Raw 837 / 835 EDI, Epic / Cerner / Athena exports, and "
             "messy Excel funnelled into a single versioned Canonical "
             "Claims Dataset (CCD). Every transformation is row-logged.",
@@ -201,7 +201,7 @@ def render_ingest_page(dataset: str = "") -> str:
             ))
     else:
         body.append(_info_strip(
-            "Pick a fixture above to run the Phase 1 ingester against "
+            "Pick a deal above to run the Step 1 ingester against "
             "canonical truth data. Each fixture ships with an "
             "expected.json contract; the regression suite locks the "
             "ingester output against those values."
@@ -325,7 +325,7 @@ def render_benchmarks_page(
         waterfall = compute_cash_waterfall(ccd.claims, as_of_date=as_of)
     except Exception as exc:
         err_body = (
-            _hero("Phase 2 — Benchmarks (error)",
+            _hero("Step 2 — Benchmarks (error)",
                   "Computation failed. See detail below.")
             + _fixture_selector("/diligence/benchmarks", dataset)
             + _err_panel(f"Pipeline error on {dataset!r}",
@@ -562,7 +562,7 @@ def _qoe_memo_landing(dataset: str, error: Optional[str] = None) -> str:
 def render_root_cause_page(dataset: str = "") -> str:
     body = [
         _hero(
-            "Phase 3 — Root Cause Analysis",
+            "Step 3 — Root Cause Analysis",
             "Pareto drivers for every off-benchmark KPI. ZBA autopsy "
             "surfaces recoverable write-offs. Every finding is one "
             "click from the underlying rows in the CCD.",
@@ -573,7 +573,7 @@ def render_root_cause_page(dataset: str = "") -> str:
     ds_path = _resolve_dataset(dataset)
     if ds_path is None:
         body.append(_info_strip(
-            "Pick a fixture above to run the denial stratification + "
+            "Pick a deal above to run the denial stratification + "
             "ZBA autopsy. Every driver row is one click from the "
             "underlying claim IDs that fed it."
         ))
@@ -695,7 +695,7 @@ def _zba_autopsy(claims) -> str:
 def render_value_page(dataset: str = "") -> str:
     body = [
         _hero(
-            "Phase 4 — Value Creation Model",
+            "Step 4 — Value Creation Model",
             "Per-root-cause recoverable EBITDA feeds the v2 value "
             "bridge. Monte Carlo on payer behavior reuses the "
             "existing two-source simulator. Contract re-pricer "
@@ -708,7 +708,7 @@ def render_value_page(dataset: str = "") -> str:
     ds_path = _resolve_dataset(dataset)
     if ds_path is None:
         body.append(_info_strip(
-            "Pick a fixture above to see the contract re-pricer's "
+            "Pick a deal above to see the contract re-pricer's "
             "derived payer leverage + a sample CMS advisory overlay. "
             "Full bridge wiring into the packet is a follow-up."
         ))
