@@ -286,5 +286,57 @@ class FStringSqlInjectionScanIsCapped(unittest.TestCase):
         )
 
 
+class DangerousPatternsAreCapped(unittest.TestCase):
+    """No code path in rcm_mc/ should reach for eval(), exec(),
+    pickle.loads, subprocess shell=True, or os.system. Each is a
+    known RCE / deserialization vulnerability vector when fed
+    untrusted input. The codebase is currently clean — this
+    guard pins that.
+
+    The text-string false-positive ``exec(s)`` in
+    pe_intelligence/tax_structure_trap_scanner.py is filtered
+    via the strict regex (requires the call form ``\\bexec\\(`` AND
+    no leading quote token); a literal-string match would still
+    trip the guard so the cap stays at 0.
+    """
+
+    def test_no_dangerous_patterns_in_python_calls(self) -> None:
+        import pathlib
+        import re
+        root = pathlib.Path(__file__).parent.parent / "rcm_mc"
+        PATTERNS: list[tuple[str, str]] = [
+            (r"\beval\(", "eval()"),
+            (r"\bexec\(", "exec()"),
+            (r"\bpickle\.loads\b", "pickle.loads"),
+            (r"\bsubprocess\.\w+\([^)]*shell=True", "subprocess shell=True"),
+            (r"\bos\.system\(", "os.system"),
+        ]
+        hits: list[str] = []
+        for py in root.rglob("*.py"):
+            src = py.read_text(errors="replace")
+            for i, line in enumerate(src.split("\n"), 1):
+                bare = line.split("#")[0]
+                # Skip inside string literals — easiest to detect by
+                # checking if the call token is preceded by a quote.
+                for pat, label in PATTERNS:
+                    m = re.search(pat, bare)
+                    if not m:
+                        continue
+                    # Reject if preceded by a quote (literal string)
+                    pos = m.start()
+                    preceding = bare[:pos]
+                    if (preceding.count('"') % 2 == 1
+                            or preceding.count("'") % 2 == 1):
+                        continue
+                    hits.append(
+                        f"{py.relative_to(root.parent)}:{i}: [{label}] "
+                        f"{line.strip()[:80]}"
+                    )
+        self.assertEqual(
+            hits, [],
+            f"Dangerous-pattern call sites found: {hits}",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
