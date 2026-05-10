@@ -291,7 +291,7 @@ def _build_vbc(profile: Dict, revenue_mm: float) -> List[VBCContract]:
             covered_lives=int(ma_lives * 0.32),
             upside_quality_pool_mm=round(revenue_mm * 0.018, 2),
             downside_risk_mm=round(revenue_mm * 0.012, 2),
-            current_performance="On track (+$1.8M YTD)",
+            current_performance="On track (+$1.80M YTD)",
             expected_payout_mm=round(revenue_mm * 0.012, 2),
         ),
         VBCContract(
