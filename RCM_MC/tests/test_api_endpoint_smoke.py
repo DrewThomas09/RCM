@@ -56,6 +56,13 @@ API_SMOKE_ROUTES: list[tuple[str, int]] = [
     ("/api/cohorts",              200),
     ("/api/watchlist",            200),
     ("/api/search?q=test",        200),
+    ("/api/tags",                 200),
+    ("/api/owners",               200),
+    # Domain APIs — corpus + analytics
+    ("/api/corpus",               200),
+    ("/api/scenarios",            200),
+    ("/api/export/portfolio.csv", 200),
+    ("/api/health",               200),
 ]
 
 
