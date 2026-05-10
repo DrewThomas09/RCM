@@ -97,12 +97,45 @@ API_SMOKE_ROUTES: list[tuple[str, int]] = [
     # /api/portfolio/regression pinned at 400 (legitimate validation
     # response when no numeric columns are present in the demo
     # dataset; status guards the validator path, not a 200 happy-
-    # path). /api/deals/compare requires ?ids= with two demo deals.
+    # path).
     ("/api/alerts/active-count",                          200),
     ("/api/data/hospitals",                               200),
     ("/api/deals",                                        200),
-    ("/api/deals/compare?ids=demo-acme,demo-baxter",      200),
+    ("/api/deals/compare?ids=smoke-a,smoke-b",            200),
     ("/api/portfolio/regression",                         400),
+    # Dynamic per-deal subpaths. The setUpClass seeds two deals
+    # (smoke-a, smoke-b) so these resolve. Each subpath exercises a
+    # distinct downstream path: peers (similarity engine), health
+    # (composite score), summary (packet renderer), checklist
+    # (IC checklist), completeness (registry+grade), timeline
+    # (audit join), counts (child-table aggregator), diffs
+    # (snapshot trail), audit (per-deal audit log), similar
+    # (numeric-distance peer search), package (export ZIP),
+    # export-links (download URL builder), notes/tags/overrides
+    # (workflow CRUD readers), validate (schema sanity).
+    # /api/deals/<id> bare returns 404 without a snapshot row. The
+    # smoke seed upserts the deal but doesn't write a snapshot, so
+    # we don't pin it. The /<id>/<sub> subpaths exercise the real
+    # handlers and resolve without snapshot data.
+    ("/api/deals/smoke-a/peers",                          200),
+    ("/api/deals/smoke-a/health",                         200),
+    ("/api/deals/smoke-a/summary",                        200),
+    ("/api/deals/smoke-a/checklist",                      200),
+    ("/api/deals/smoke-a/completeness",                   200),
+    ("/api/deals/smoke-a/timeline",                       200),
+    ("/api/deals/smoke-a/counts",                         200),
+    ("/api/deals/smoke-a/diffs",                          200),
+    ("/api/deals/smoke-a/audit",                          200),
+    ("/api/deals/smoke-a/similar",                        200),
+    ("/api/deals/smoke-a/package",                        200),
+    ("/api/deals/smoke-a/export-links",                   200),
+    ("/api/deals/smoke-a/notes",                          200),
+    ("/api/deals/smoke-a/tags",                           200),
+    ("/api/deals/smoke-a/overrides",                      200),
+    ("/api/deals/smoke-a/validate",                       200),
+    ("/api/analysis/smoke-a",                             200),
+    ("/api/analysis/smoke-a/export",                      200),
+    ("/api/diligence/synthesis/smoke-a",                  200),
 ]
 
 
@@ -122,6 +155,11 @@ class APIEndpointSmoke(unittest.TestCase):
         store = PortfolioStore(cls.db)
         create_user(store, "demo", "DemoPass!1",
                     display_name="Demo Partner", role="admin")
+        # Seed two deals so dynamic /api/deals/<id>/* probes resolve
+        # to real handler paths instead of 404s. Names mirror what
+        # API_SMOKE_ROUTES references.
+        store.upsert_deal("smoke-a", name="Smoke A", profile={})
+        store.upsert_deal("smoke-b", name="Smoke B", profile={})
 
         s = socket.socket()
         s.bind(("127.0.0.1", 0))
