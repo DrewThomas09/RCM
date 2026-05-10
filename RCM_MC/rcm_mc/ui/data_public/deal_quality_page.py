@@ -9,6 +9,7 @@ import html as _html
 import importlib
 import math
 from typing import Any, Dict, List
+from ..brand import PALETTE
 
 
 def _load_corpus() -> List[Dict[str, Any]]:
@@ -39,7 +40,7 @@ def _mini_bar(pct: float, color: str, width: int = 80) -> str:
 
 
 def _tier_badge(tier: str) -> str:
-    colors = {"A": "#22c55e", "B": "#3b82f6", "C": "#f59e0b", "D": "#ef4444"}
+    colors = {"A": "var(--theme-positive,#22c55e)", "B": "var(--theme-accent,#3b82f6)", "C": "var(--theme-warning,#f59e0b)", "D": "var(--theme-negative,#ef4444)"}
     c = colors.get(tier, "#64748b")
     return (
         f'<span style="display:inline-block;padding:1px 6px;border:1px solid {c};'
@@ -50,13 +51,13 @@ def _tier_badge(tier: str) -> str:
 
 def _severity_badge(severity: str) -> str:
     if severity == "error":
-        return '<span style="color:#ef4444;font-size:8.5px;font-family:var(--ck-mono);">ERR</span>'
-    return '<span style="color:#f59e0b;font-size:8.5px;font-family:var(--ck-mono);">WRN</span>'
+        return '<span style="color:var(--theme-negative,#ef4444);font-size:8.5px;font-family:var(--ck-mono);">ERR</span>'
+    return '<span style="color:var(--theme-warning,#f59e0b);font-size:8.5px;font-family:var(--ck-mono);">WRN</span>'
 
 
 def _tier_distribution_svg(tier_counts: Dict[str, int], total: int) -> str:
     """Horizontal stacked bar of tier distribution."""
-    tiers = [("A", "#22c55e"), ("B", "#3b82f6"), ("C", "#f59e0b"), ("D", "#ef4444")]
+    tiers = [("A", "var(--theme-positive,#22c55e)"), ("B", "var(--theme-accent,#3b82f6)"), ("C", "var(--theme-warning,#f59e0b)"), ("D", "var(--theme-negative,#ef4444)")]
     W, H = 400, 24
     segments = []
     x = 0
@@ -93,7 +94,7 @@ def _quality_histogram_svg(scores: List[float], width: int = 400, height: int = 
         bh = max(1, int(cnt / max_b * (height - 20)))
         bx = 10 + i * bar_w
         by = height - 10 - bh
-        color = "#22c55e" if i >= 7 else ("#3b82f6" if i >= 5 else ("#f59e0b" if i >= 3 else "#ef4444"))
+        color = "var(--theme-positive,#22c55e)" if i >= 7 else ("var(--theme-accent,#3b82f6)" if i >= 5 else ("var(--theme-warning,#f59e0b)" if i >= 3 else "var(--theme-negative,#ef4444)"))
         bars.append(f'<rect x="{bx}" y="{by}" width="{bar_w-2}" height="{bh}" fill="{color}"/>')
         label = f'{i*10}'
         bars.append(
@@ -162,9 +163,9 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
         '<div class="ck-kpi-grid">'
         + ck_kpi_block("Total Deals", f'<span class="mn">{total}</span>', "in corpus")
         + ck_kpi_block("Avg Quality", f'<span class="mn">{avg_q:.1f}</span>', "out of 100")
-        + ck_kpi_block("Tier A", f'<span class="mn" style="color:#22c55e">{tier_counts.get("A",0)}</span>', f'{100*tier_counts.get("A",0)/total:.1f}% of corpus')
-        + ck_kpi_block("Tier B", f'<span class="mn" style="color:#3b82f6">{tier_counts.get("B",0)}</span>', f'{100*tier_counts.get("B",0)/total:.1f}% of corpus')
-        + ck_kpi_block("Flagged", f'<span class="mn" style="color:#f59e0b">{n_flagged}</span>', f"{n_errors} errors total")
+        + ck_kpi_block("Tier A", f'<span class="mn" style="color:{PALETTE["positive"]}">{tier_counts.get("A",0)}</span>', f'{100*tier_counts.get("A",0)/total:.1f}% of corpus')
+        + ck_kpi_block("Tier B", f'<span class="mn" style="color:{PALETTE["brand_accent"]}">{tier_counts.get("B",0)}</span>', f'{100*tier_counts.get("B",0)/total:.1f}% of corpus')
+        + ck_kpi_block("Flagged", f'<span class="mn" style="color:{PALETTE["warning"]}">{n_flagged}</span>', f"{n_errors} errors total")
         + '</div>'
     )
 
@@ -193,8 +194,8 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
     # Filter bar
     tiers_nav = "".join(
         f'<a href="/deal-quality?tier={t}&sort_by={sort_by}" style="display:inline-block;margin:2px 4px;'
-        f'padding:2px 8px;border:1px solid {"#22c55e" if t=="A" else "#3b82f6" if t=="B" else "#f59e0b" if t=="C" else "#ef4444"};'
-        f'color:{"#22c55e" if t=="A" else "#3b82f6" if t=="B" else "#f59e0b" if t=="C" else "#ef4444"};'
+        f'padding:2px 8px;border:1px solid {PALETTE["positive"] if t=="A" else PALETTE["brand_accent"] if t=="B" else PALETTE["warning"] if t=="C" else PALETTE["negative"]};'
+        f'color:{PALETTE["positive"] if t=="A" else PALETTE["brand_accent"] if t=="B" else PALETTE["warning"] if t=="C" else PALETTE["negative"]};'
         f'font-family:var(--ck-mono);font-size:10px;border-radius:2px;text-decoration:none;">'
         f'Tier {t} ({tier_counts.get(t,0)})</a>'
         for t in ("A", "B", "C", "D")
@@ -212,7 +213,7 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
       <span style="font-size:9px;color:#64748b;margin-right:6px;text-transform:uppercase;letter-spacing:0.08em;">Sort</span>
       {"".join(
         f'<a href="/deal-quality?tier={tier_filter}&sort_by={s}" style="margin-right:6px;font-size:10px;'
-        f'color:{"#3b82f6" if s==sort_by else "#94a3b8"};text-decoration:none;">{s.replace("_"," ")}</a>'
+        f'color:{PALETTE["brand_accent"] if s==sort_by else "#94a3b8"};text-decoration:none;">{s.replace("_"," ")}</a>'
         for s in ("quality_score", "completeness", "credibility", "tier", "deal_name")
       )}
     </div>
@@ -265,15 +266,15 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
   </td>
   <td style="padding:5px 8px;text-align:center;">{_tier_badge(s.tier)}</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#22c55e' if s.quality_score>=75 else '#3b82f6' if s.quality_score>=55 else '#f59e0b' if s.quality_score>=35 else '#ef4444'};">
+      color:{'var(--theme-positive,#22c55e)' if s.quality_score>=75 else 'var(--theme-accent,#3b82f6)' if s.quality_score>=55 else 'var(--theme-warning,#f59e0b)' if s.quality_score>=35 else 'var(--theme-negative,#ef4444)'};">
     {s.quality_score:.1f}
   </td>
   <td style="padding:5px 8px;">
-    {_mini_bar(s.completeness_pct, '#3b82f6')}
+    {_mini_bar(s.completeness_pct, 'var(--theme-accent,#3b82f6)')}
     <span style="font-family:var(--ck-mono);font-size:9px;color:#94a3b8;margin-left:4px;">{s.completeness_pct*100:.1f}%</span>
   </td>
   <td style="padding:5px 8px;">
-    {_mini_bar(s.credibility_pct, '#22c55e' if s.credibility_pct>=0.9 else '#f59e0b' if s.credibility_pct>=0.7 else '#ef4444')}
+    {_mini_bar(s.credibility_pct, 'var(--theme-positive,#22c55e)' if s.credibility_pct>=0.9 else 'var(--theme-warning,#f59e0b)' if s.credibility_pct>=0.7 else 'var(--theme-negative,#ef4444)')}
     <span style="font-family:var(--ck-mono);font-size:9px;color:#94a3b8;margin-left:4px;">{s.credibility_pct*100:.1f}%</span>
   </td>
   <td style="padding:5px 8px;font-size:9px;">{flag_html or '<span style="color:#475569;">—</span>'}</td>
@@ -307,7 +308,7 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
     if total_pages > 1:
         parts = []
         for p in range(1, total_pages + 1):
-            color = "#3b82f6" if p == page else "#64748b"
+            color = "var(--theme-accent,#3b82f6)" if p == page else "#64748b"
             parts.append(
                 f'<a href="/deal-quality?tier={tier_filter}&sort_by={sort_by}&page={p}" '
                 f'style="margin:0 3px;font-family:var(--ck-mono);font-size:10px;color:{color};text-decoration:none;">{p}</a>'

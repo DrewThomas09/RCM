@@ -10,6 +10,7 @@ import html as _html
 import importlib
 import math
 from typing import Any, Dict, List, Optional
+from ..brand import PALETTE
 
 
 def _load_corpus() -> List[Dict[str, Any]]:
@@ -38,7 +39,7 @@ def _moic_spread_bar(p25: float, p50: float, p75: float, width: int = 120) -> st
         f'<svg width="{width}" height="12" xmlns="http://www.w3.org/2000/svg">'
         f'<rect x="0" y="4" width="{width}" height="4" rx="0" fill="#1e293b"/>'
         f'<rect x="{x25}" y="2" width="{max(1,x75-x25)}" height="8" rx="0" fill="#1e3a5c"/>'
-        f'<line x1="{x50}" y1="0" x2="{x50}" y2="12" stroke="#3b82f6" stroke-width="2"/>'
+        f'<line x1="{x50}" y1="0" x2="{x50}" y2="12" stroke="{PALETTE["brand_accent"]}" stroke-width="2"/>'
         f'</svg>'
     )
 
@@ -66,7 +67,7 @@ def _sparkline(vintage_moic: Dict[int, List[float]], width: int = 80, height: in
     coords = " ".join(f"{px(yr)},{py(m)}" for yr, m in pts)
     return (
         f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">'
-        f'<polyline points="{coords}" fill="none" stroke="#3b82f6" stroke-width="1.2"/>'
+        f'<polyline points="{coords}" fill="none" stroke="{PALETTE["brand_accent"]}" stroke-width="1.2"/>'
         f'</svg>'
     )
 
@@ -99,7 +100,7 @@ def _scatter_svg(stats: List[Any], width: int = 480, height: int = 320) -> str:
         cx = sx(s.moic_p50)
         cy = sy(s.loss_rate)
         r = max(3, min(9, int(math.sqrt(s.n_deals) * 1.5)))
-        color = "#22c55e" if s.moic_p50 >= 3.0 else ("#3b82f6" if s.moic_p50 >= 2.0 else "#f59e0b" if s.moic_p50 >= 1.5 else "#ef4444")
+        color = "var(--theme-positive,#22c55e)" if s.moic_p50 >= 3.0 else ("var(--theme-accent,#3b82f6)" if s.moic_p50 >= 2.0 else "var(--theme-warning,#f59e0b)" if s.moic_p50 >= 1.5 else "var(--theme-negative,#ef4444)")
         label = s.sector[:18].replace("_", " ")
         elements.append(
             f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{color}" opacity="0.8">'
@@ -127,10 +128,10 @@ def _scatter_svg(stats: List[Any], width: int = 480, height: int = 320) -> str:
 
 
 def _moic_color(moic: float) -> str:
-    if moic >= 3.0: return "#22c55e"
-    if moic >= 2.0: return "#3b82f6"
-    if moic >= 1.5: return "#f59e0b"
-    return "#ef4444"
+    if moic >= 3.0: return "var(--theme-positive,#22c55e)"
+    if moic >= 2.0: return "var(--theme-accent,#3b82f6)"
+    if moic >= 1.5: return "var(--theme-warning,#f59e0b)"
+    return "var(--theme-negative,#ef4444)"
 
 
 def render_sector_intel(min_deals: int = 3, sort_by: str = "moic_p50") -> str:
@@ -171,7 +172,7 @@ def render_sector_intel(min_deals: int = 3, sort_by: str = "moic_p50") -> str:
         + ck_kpi_block("Top Sector", f'<span class="mn" style="font-size:11px;">{_html.escape(top_sector[:20])}</span>',
                         f'P50 {stats[0].moic_p50:.2f}x' if stats else "—")
         + (ck_kpi_block("Highest Loss Rate",
-                        f'<span class="mn" style="color:#ef4444">{worst_loss.loss_rate*100:.1f}%</span>',
+                        f'<span class="mn" style="color:{PALETTE["negative"]}">{worst_loss.loss_rate*100:.1f}%</span>',
                         _html.escape(worst_loss.sector[:22].replace("_"," ")))
            if worst_loss else "")
         + '</div>'
@@ -194,7 +195,7 @@ def render_sector_intel(min_deals: int = 3, sort_by: str = "moic_p50") -> str:
     # Sort controls
     sort_links = "".join(
         f'<a href="/sector-intel?min_deals={min_deals}&sort_by={k}" style="margin-right:8px;font-size:10px;'
-        f'color:{"#3b82f6" if k==sort_by else "#64748b"};text-decoration:none;">{k.replace("_"," ")}</a>'
+        f'color:{PALETTE["brand_accent"] if k==sort_by else "#64748b"};text-decoration:none;">{k.replace("_"," ")}</a>'
         for k in ("moic_p50", "moic_p25", "moic_p75", "loss_rate", "n_deals", "avg_hold", "sharpe", "irr_p50")
     )
     filter_bar = f"""
@@ -208,7 +209,7 @@ def render_sector_intel(min_deals: int = 3, sort_by: str = "moic_p50") -> str:
       <span style="font-size:9px;color:#475569;text-transform:uppercase;letter-spacing:0.08em;margin-right:6px;">Min Deals</span>
       {"".join(
         f'<a href="/sector-intel?min_deals={n}&sort_by={sort_by}" style="margin-right:6px;font-size:10px;'
-        f'color:{"#3b82f6" if n==min_deals else "#64748b"};text-decoration:none;">{n}+</a>'
+        f'color:{PALETTE["brand_accent"] if n==min_deals else "#64748b"};text-decoration:none;">{n}+</a>'
         for n in (1, 3, 5, 10)
       )}
     </div>
@@ -238,10 +239,10 @@ def render_sector_intel(min_deals: int = 3, sort_by: str = "moic_p50") -> str:
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#64748b;">{s.moic_p75:.2f}x</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{s.irr_p50*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#ef4444' if s.loss_rate>0.2 else '#f59e0b' if s.loss_rate>0.1 else '#22c55e'};">{s.loss_rate*100:.1f}%</td>
+      color:{'var(--theme-negative,#ef4444)' if s.loss_rate>0.2 else 'var(--theme-warning,#f59e0b)' if s.loss_rate>0.1 else 'var(--theme-positive,#22c55e)'};">{s.loss_rate*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{s.avg_hold:.1f}y</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">${s.avg_ev_mm:.2f}M</td>
-  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#3b82f6;">{s.sharpe_proxy:.2f}</td>
+  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:var(--theme-accent,#3b82f6);">{s.sharpe_proxy:.2f}</td>
   <td style="padding:5px 8px;">{_sparkline(s.vintage_moic)}</td>
 </tr>""")
 

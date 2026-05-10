@@ -14,6 +14,7 @@ import html as _html
 import importlib
 import math
 from typing import Any, Dict, List, Optional, Tuple
+from ..brand import PALETTE
 
 
 # ---------------------------------------------------------------------------
@@ -104,8 +105,8 @@ def _hold_histogram(
             f'<line x1="{tx(p25):.1f}" y1="{pad_t}" x2="{tx(p25):.1f}" y2="{pad_t+ph}" '
             f'stroke="#64748b" stroke-width="0.8" stroke-dasharray="3,3"/>'
             f'<line x1="{tx(p50):.1f}" y1="{pad_t}" x2="{tx(p50):.1f}" y2="{pad_t+ph}" '
-            f'stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="4,3"/>'
-            f'<text x="{tx(p50)+2:.1f}" y="{pad_t+9}" font-size="7" fill="#f59e0b">P50={p50:.1f}yr</text>'
+            f'stroke="{PALETTE["warning"]}" stroke-width="1.2" stroke-dasharray="4,3"/>'
+            f'<text x="{tx(p50)+2:.1f}" y="{pad_t+9}" font-size="7" fill="{PALETTE["warning"]}">P50={p50:.1f}yr</text>'
             f'<line x1="{tx(p75):.1f}" y1="{pad_t}" x2="{tx(p75):.1f}" y2="{pad_t+ph}" '
             f'stroke="#64748b" stroke-width="0.8" stroke-dasharray="3,3"/>'
         )
@@ -146,7 +147,7 @@ def _hold_moic_scatter(
         return pad_t + (1.0 - _pct(y, y_lo, y_hi)) * ph
 
     dots = "".join(
-        f'<circle cx="{tx(x):.1f}" cy="{ty(y):.1f}" r="2.2" fill="#3b82f6" fill-opacity="0.6"/>'
+        f'<circle cx="{tx(x):.1f}" cy="{ty(y):.1f}" r="2.2" fill="{PALETTE["brand_accent"]}" fill-opacity="0.6"/>'
         for x, y in pts
         if x_lo <= x <= x_hi and y_lo <= y <= y_hi
     )
@@ -166,7 +167,7 @@ def _hold_moic_scatter(
         trend_line = (
             f'<line x1="{tx(x_lo):.1f}" y1="{ty(y1):.1f}" '
             f'x2="{tx(x_hi):.1f}" y2="{ty(y2):.1f}" '
-            f'stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="4,3"/>'
+            f'stroke="{PALETTE["warning"]}" stroke-width="1.2" stroke-dasharray="4,3"/>'
         )
 
     axes = (
@@ -177,7 +178,7 @@ def _hold_moic_scatter(
     be_y = ty(1.0)
     be_line = (
         f'<line x1="{pad_l}" y1="{be_y:.1f}" x2="{pad_l+pw}" y2="{be_y:.1f}" '
-        f'stroke="#ef4444" stroke-width="0.8" stroke-dasharray="3,4" opacity="0.4"/>'
+        f'stroke="{PALETTE["negative"]}" stroke-width="0.8" stroke-dasharray="3,4" opacity="0.4"/>'
     )
 
     x_ticks = "".join(
@@ -301,7 +302,7 @@ def _kpi_bar(stats: Dict[str, Any]) -> str:
     def moic_html(v):
         if v is None:
             return '<span class="faint">—</span>'
-        color = "#22c55e" if v >= 2.5 else ("#f59e0b" if v >= 1.5 else "#ef4444")
+        color = "var(--theme-positive,#22c55e)" if v >= 2.5 else ("var(--theme-warning,#f59e0b)" if v >= 1.5 else "var(--theme-negative,#ef4444)")
         return f'<span class="mn" style="color:{color}">{v:.2f}×</span>'
 
     return (
@@ -356,7 +357,7 @@ def _sector_table_panel(rows: List[Dict[str, Any]]) -> str:
     tbody = []
     for i, r in enumerate(rows):
         stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
-        moic_color = "#22c55e" if (r["moic_p50"] or 0) >= 2.5 else ("#f59e0b" if (r["moic_p50"] or 0) >= 1.5 else "#ef4444")
+        moic_color = "var(--theme-positive,#22c55e)" if (r["moic_p50"] or 0) >= 2.5 else ("var(--theme-warning,#f59e0b)" if (r["moic_p50"] or 0) >= 1.5 else "var(--theme-negative,#ef4444)")
         moic_html = (
             f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;color:{moic_color}">'
             f'{r["moic_p50"]:.2f}×</span>'
@@ -367,7 +368,7 @@ def _sector_table_panel(rows: List[Dict[str, Any]]) -> str:
   <td class="dim" style="font-size:11px;">{_html.escape(r['sector'])}</td>
   <td class="mono dim" style="text-align:right;">{r['n']}</td>
   <td class="mono" style="text-align:right;font-variant-numeric:tabular-nums;">{r['hold_p25']:.1f}yr</td>
-  <td class="mono" style="text-align:right;font-variant-numeric:tabular-nums;color:#f59e0b;font-weight:600;">{r['hold_p50']:.1f}yr</td>
+  <td class="mono" style="text-align:right;font-variant-numeric:tabular-nums;color:var(--theme-warning,#f59e0b);font-weight:600;">{r['hold_p50']:.1f}yr</td>
   <td class="mono" style="text-align:right;font-variant-numeric:tabular-nums;">{r['hold_p75']:.1f}yr</td>
   <td style="text-align:right;">{moic_html}</td>
 </tr>""")
@@ -414,7 +415,7 @@ def _vintage_panel(vintage_data: Dict[int, Dict[str, Any]]) -> str:
         bx = pad_l + i * (pw / len(years))
         bh = pct * ph
         by = pad_t + ph - bh
-        color = "#22c55e" if pct >= 0.80 else ("#f59e0b" if pct >= 0.50 else "#3b82f6")
+        color = "var(--theme-positive,#22c55e)" if pct >= 0.80 else ("var(--theme-warning,#f59e0b)" if pct >= 0.50 else "var(--theme-accent,#3b82f6)")
         bars.append(
             f'<rect x="{bx:.1f}" y="{by:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" '
             f'fill="{color}" opacity="0.75"/>'
@@ -428,8 +429,8 @@ def _vintage_panel(vintage_data: Dict[int, Dict[str, Any]]) -> str:
     line_y = pad_t + ph - 0.8 * ph
     overlay = (
         f'<line x1="{pad_l}" y1="{line_y:.1f}" x2="{pad_l+pw}" y2="{line_y:.1f}" '
-        f'stroke="#22c55e" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.5"/>'
-        f'<text x="{pad_l+pw+2}" y="{line_y+3:.1f}" font-size="7" fill="#22c55e" opacity="0.7">80%</text>'
+        f'stroke="{PALETTE["positive"]}" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.5"/>'
+        f'<text x="{pad_l+pw+2}" y="{line_y+3:.1f}" font-size="7" fill="{PALETTE["positive"]}" opacity="0.7">80%</text>'
     )
     axes = (
         f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" y2="{pad_t+ph}" stroke="#334155" stroke-width="1"/>'

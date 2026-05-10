@@ -9,6 +9,7 @@ from __future__ import annotations
 import html as _html
 import importlib
 from typing import Any, Dict, List, Optional
+from ..brand import PALETTE
 
 
 def _load_corpus() -> List[Dict[str, Any]]:
@@ -28,26 +29,26 @@ def _moic_color(v: Optional[float]) -> str:
     if v is None:
         return "var(--ck-text-faint)"
     if v < 1.0:
-        return "#ef4444"
+        return "var(--theme-negative,#ef4444)"
     if v >= 2.5:
-        return "#22c55e"
+        return "var(--theme-positive,#22c55e)"
     if v >= 1.5:
         return "#e2e8f0"
-    return "#f59e0b"
+    return "var(--theme-warning,#f59e0b)"
 
 
 def _loss_color(v: float) -> str:
     if v >= 0.30:
-        return "#ef4444"
+        return "var(--theme-negative,#ef4444)"
     if v >= 0.15:
-        return "#f59e0b"
-    return "#22c55e"
+        return "var(--theme-warning,#f59e0b)"
+    return "var(--theme-positive,#22c55e)"
 
 
 def _consistency_bar(score: float, width: int = 60) -> str:
     """Inline SVG consistency score bar."""
     filled = int(score / 100 * width)
-    bar_color = "#22c55e" if score >= 70 else ("#f59e0b" if score >= 45 else "#ef4444")
+    bar_color = "var(--theme-positive,#22c55e)" if score >= 70 else ("var(--theme-warning,#f59e0b)" if score >= 45 else "var(--theme-negative,#ef4444)")
     return (
         f'<svg width="{width}" height="8" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;">'
         f'<rect x="0" y="1" width="{width}" height="6" rx="1" fill="#1e293b"/>'
@@ -117,8 +118,8 @@ def _sparkline_moics(moics: List[float], width: int = 60, height: int = 14) -> s
         f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg" '
         f'style="display:inline-block;vertical-align:middle;">'
         f'<line x1="0" y1="{breakeven_y}" x2="{width}" y2="{breakeven_y}" '
-        f'stroke="#ef4444" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.5"/>'
-        f'<polyline points="{polyline}" fill="none" stroke="#3b82f6" stroke-width="1.2" opacity="0.8"/>'
+        f'stroke="{PALETTE["negative"]}" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.5"/>'
+        f'<polyline points="{polyline}" fill="none" stroke="{PALETTE["brand_accent"]}" stroke-width="1.2" opacity="0.8"/>'
         f'</svg>'
     )
 
@@ -177,7 +178,7 @@ def _build_table(records: List[Any]) -> str:
   <td style="text-align:right;padding:7px 6px;">{_fmt_moic(rec.moic_p75)}</td>
   <td style="text-align:center;padding:7px 6px;">{spark}</td>
   <td style="text-align:right;padding:7px 6px;">{_fmt_pct(rec.loss_rate, _loss_color(rec.loss_rate))}</td>
-  <td style="text-align:right;padding:7px 6px;">{_fmt_pct(rec.home_run_rate, "#22c55e" if rec.home_run_rate >= 0.30 else None)}</td>
+  <td style="text-align:right;padding:7px 6px;">{_fmt_pct(rec.home_run_rate, "var(--theme-positive,#22c55e)" if rec.home_run_rate >= 0.30 else None)}</td>
   <td style="text-align:center;padding:7px 6px;">{_consistency_bar(rec.consistency_score)}</td>
   <td style="text-align:right;padding:7px 6px;">{_fmt_ev(rec.avg_ev_mm)}</td>
   <td style="padding:7px 6px;">{_sector_pills(rec.sectors)}</td>
@@ -210,7 +211,7 @@ def _kpi_bar(records: List[Any]) -> str:
     avg_consistency = sum(r.consistency_score for r in records) / len(records) if records else 0
 
     best_html = (
-        f'<span class="mn" style="color:#22c55e">{top_moic:.2f}×</span>'
+        f'<span class="mn" style="color:{PALETTE["positive"]}">{top_moic:.2f}×</span>'
         if top_moic else '<span class="faint">—</span>'
     )
     return (

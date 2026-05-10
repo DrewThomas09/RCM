@@ -12,6 +12,7 @@ from __future__ import annotations
 import html as _html
 import math
 from typing import Any, Dict, List, Optional, Tuple
+from ..brand import PALETTE
 
 
 # ---------------------------------------------------------------------------
@@ -107,9 +108,9 @@ def _scatter_svg(
     breakeven_y = ty(1.0)
     be_line = (
         f'<line x1="{pad_l}" y1="{breakeven_y:.1f}" x2="{pad_l+pw}" y2="{breakeven_y:.1f}" '
-        f'stroke="#ef4444" stroke-width="0.8" stroke-dasharray="3,4" opacity="0.5"/>'
+        f'stroke="{PALETTE["negative"]}" stroke-width="0.8" stroke-dasharray="3,4" opacity="0.5"/>'
         f'<text x="{pad_l+pw-2}" y="{breakeven_y-3:.1f}" '
-        f'font-size="7" fill="#ef4444" text-anchor="end" opacity="0.7">1.0×</text>'
+        f'font-size="7" fill="{PALETTE["negative"]}" text-anchor="end" opacity="0.7">1.0×</text>'
     )
 
     # Tick labels
@@ -196,15 +197,15 @@ def _histogram_svg(
     be_x = tx(1.0)
     overlays += (
         f'<line x1="{be_x:.1f}" y1="{pad_t}" x2="{be_x:.1f}" y2="{pad_t+ph}" '
-        f'stroke="#ef4444" stroke-width="1" stroke-dasharray="3,3" opacity="0.7"/>'
-        f'<text x="{be_x+2:.1f}" y="{pad_t+9}" font-size="7" fill="#ef4444" opacity="0.8">1×</text>'
+        f'stroke="{PALETTE["negative"]}" stroke-width="1" stroke-dasharray="3,3" opacity="0.7"/>'
+        f'<text x="{be_x+2:.1f}" y="{pad_t+9}" font-size="7" fill="{PALETTE["negative"]}" opacity="0.8">1×</text>'
     )
     if ref_line is not None:
         rx = tx(ref_line)
         overlays += (
             f'<line x1="{rx:.1f}" y1="{pad_t}" x2="{rx:.1f}" y2="{pad_t+ph}" '
-            f'stroke="#22c55e" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>'
-            f'<text x="{rx+2:.1f}" y="{pad_t+9}" font-size="7" fill="#22c55e" opacity="0.8">{ref_line}×</text>'
+            f'stroke="{PALETTE["positive"]}" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>'
+            f'<text x="{rx+2:.1f}" y="{pad_t+9}" font-size="7" fill="{PALETTE["positive"]}" opacity="0.8">{ref_line}×</text>'
         )
 
     x_ticks = []
@@ -592,9 +593,9 @@ def _moic_color(v: Optional[float]) -> str:
     if v is None:
         return "var(--ck-text-faint)"
     if v < 1.0:
-        return "#ef4444"
+        return "var(--theme-negative,#ef4444)"
     if v >= 2.5:
-        return "#22c55e"
+        return "var(--theme-positive,#22c55e)"
     return "#e2e8f0"
 
 
@@ -613,7 +614,7 @@ def _fmt_pct(v: Optional[float]) -> str:
 def _error_badge(v: Optional[float]) -> str:
     if v is None:
         return '<span style="color:var(--ck-text-faint)">—</span>'
-    color = "#22c55e" if abs(v) < 0.3 else ("#f59e0b" if abs(v) < 0.7 else "#ef4444")
+    color = "var(--theme-positive,#22c55e)" if abs(v) < 0.3 else ("var(--theme-warning,#f59e0b)" if abs(v) < 0.7 else "var(--theme-negative,#ef4444)")
     sign = "+" if v > 0 else ""
     return (
         f'<span style="font-family:var(--ck-mono);color:{color};font-variant-numeric:tabular-nums">'
@@ -624,7 +625,7 @@ def _error_badge(v: Optional[float]) -> str:
 def _r2_badge(r2: Optional[float]) -> str:
     if r2 is None:
         return "—"
-    color = "#22c55e" if r2 >= 0.5 else ("#f59e0b" if r2 >= 0.25 else "#ef4444")
+    color = "var(--theme-positive,#22c55e)" if r2 >= 0.5 else ("var(--theme-warning,#f59e0b)" if r2 >= 0.25 else "var(--theme-negative,#ef4444)")
     return (
         f'<span style="font-family:var(--ck-mono);color:{color};font-size:13px;font-weight:600">'
         f'{r2:.3f}</span>'
@@ -653,7 +654,7 @@ def _kpi_bar(stats: Dict[str, Any]) -> str:
 
 
 def _calibration_panel(stats: Dict[str, Any]) -> str:
-    mae_color = "#22c55e" if (stats["mae"] or 99) < 0.5 else ("#f59e0b" if (stats["mae"] or 99) < 1.0 else "#ef4444")
+    mae_color = "var(--theme-positive,#22c55e)" if (stats["mae"] or 99) < 0.5 else ("var(--theme-warning,#f59e0b)" if (stats["mae"] or 99) < 1.0 else "var(--theme-negative,#ef4444)")
     rows_html = [
         f'<tr><td>Mean Absolute Error (MAE)</td><td class="mono" style="color:{mae_color}">{stats["mae"]:.3f}x</td></tr>',
         f'<tr style="background:#0f172a"><td>RMSE</td><td class="mono">{stats["rmse"]:.3f}x</td></tr>',
@@ -702,7 +703,7 @@ def _scatter_panel(
 ) -> str:
     svg_entry = _scatter_svg(
         pts_entry, "Entry EV/EBITDA (×)", "Realized MOIC",
-        x_lo=3.0, x_hi=22.0, y_lo=0.0, y_hi=6.5, color="#3b82f6",
+        x_lo=3.0, x_hi=22.0, y_lo=0.0, y_hi=6.5, color="var(--theme-accent,#3b82f6)",
     )
     svg_hold = _scatter_svg(
         pts_hold, "Hold Years", "Realized MOIC",
@@ -711,7 +712,7 @@ def _scatter_panel(
     svg_pred = _scatter_svg(
         pts_pred, "Predicted MOIC (corpus model)", "Realized MOIC",
         x_lo=0.5, x_hi=5.5, y_lo=0.0, y_hi=6.5, color="#06b6d4",
-        trend_color="#f59e0b",
+        trend_color="var(--theme-warning,#f59e0b)",
     )
     return f"""
 <div class="ck-panel">
@@ -763,8 +764,8 @@ def _sector_table_panel(rows: List[Dict[str, Any]]) -> str:
   <td class="mono" style="text-align:right;">{r['p25']:.2f}x</td>
   <td class="mono" style="text-align:right;color:{p50_color};font-weight:600;">{r['p50']:.2f}x</td>
   <td class="mono" style="text-align:right;">{r['p75']:.2f}x</td>
-  <td class="mono" style="text-align:right;color:#ef4444;">{r['loss_rate']*100:.1f}%</td>
-  <td class="mono" style="text-align:right;color:#22c55e;">{r['homerun']*100:.1f}%</td>
+  <td class="mono" style="text-align:right;color:var(--theme-negative,#ef4444);">{r['loss_rate']*100:.1f}%</td>
+  <td class="mono" style="text-align:right;color:var(--theme-positive,#22c55e);">{r['homerun']*100:.1f}%</td>
 </tr>""")
     return f"""
 <div class="ck-panel">

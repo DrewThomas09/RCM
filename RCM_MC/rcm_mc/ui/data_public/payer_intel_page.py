@@ -12,6 +12,7 @@ import html as _html
 import importlib
 import math
 from typing import Any, Dict, List
+from ..brand import PALETTE
 
 
 def _load_corpus() -> List[Dict[str, Any]]:
@@ -28,10 +29,10 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 
 def _moic_color(m: float) -> str:
-    if m >= 3.0: return "#22c55e"
-    if m >= 2.0: return "#3b82f6"
-    if m >= 1.5: return "#f59e0b"
-    return "#ef4444"
+    if m >= 3.0: return "var(--theme-positive,#22c55e)"
+    if m >= 2.0: return "var(--theme-accent,#3b82f6)"
+    if m >= 1.5: return "var(--theme-warning,#f59e0b)"
+    return "var(--theme-negative,#ef4444)"
 
 
 # ---------------------------------------------------------------------------
@@ -44,9 +45,9 @@ def _payer_pie_svg(comm: float, medicare: float, medicaid: float, self_pay: floa
     cx = cy = size // 2
     r = size // 2 - 4
     slices = [
-        (comm, "#3b82f6", "Commercial"),
-        (medicare, "#22c55e", "Medicare"),
-        (medicaid, "#f59e0b", "Medicaid"),
+        (comm, "var(--theme-accent,#3b82f6)", "Commercial"),
+        (medicare, "var(--theme-positive,#22c55e)", "Medicare"),
+        (medicaid, "var(--theme-warning,#f59e0b)", "Medicaid"),
         (self_pay, "#64748b", "Self-Pay"),
     ]
     total = sum(v for v, _, _ in slices) or 1.0
@@ -79,9 +80,9 @@ def _payer_pie_svg(comm: float, medicare: float, medicaid: float, self_pay: floa
 
 def _payer_legend(comm: float, medicare: float, medicaid: float, self_pay: float) -> str:
     items = [
-        ("#3b82f6", "Commercial", comm),
-        ("#22c55e", "Medicare",   medicare),
-        ("#f59e0b", "Medicaid",   medicaid),
+        ("var(--theme-accent,#3b82f6)", "Commercial", comm),
+        ("var(--theme-positive,#22c55e)", "Medicare",   medicare),
+        ("var(--theme-warning,#f59e0b)", "Medicaid",   medicaid),
         ("#64748b", "Self-Pay",   self_pay),
     ]
     rows = []
@@ -185,7 +186,7 @@ def render_payer_intel() -> str:
         + ck_kpi_block("Avg Medicare %",   f'<span class="mn">{profile.avg_medicare*100:.1f}%</span>', "corpus-weighted")
         + ck_kpi_block("Avg Medicaid %",   f'<span class="mn">{profile.avg_medicaid*100:.1f}%</span>', "corpus-weighted")
         + ck_kpi_block("Comm↔MOIC Corr",
-                       f'<span class="mn" style="color:{"#22c55e" if comm_corr>0.1 else "#f59e0b" if comm_corr>0 else "#ef4444"}">'
+                       f'<span class="mn" style="color:{PALETTE["positive"] if comm_corr>0.1 else PALETTE["warning"] if comm_corr>0 else PALETTE["negative"]};">'
                        f'{comm_corr:+.2f}</span>', "Spearman rank")
         + '</div>'
     )
@@ -237,7 +238,7 @@ def render_payer_intel() -> str:
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#64748b;">{r.moic_p75:.2f}x</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{r.irr_p50*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#ef4444' if r.loss_rate>0.2 else '#f59e0b' if r.loss_rate>0.1 else '#22c55e'};">{r.loss_rate*100:.1f}%</td>
+      color:{'var(--theme-negative,#ef4444)' if r.loss_rate>0.2 else 'var(--theme-warning,#f59e0b)' if r.loss_rate>0.1 else 'var(--theme-positive,#22c55e)'};">{r.loss_rate*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{r.avg_commercial_pct*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{r.avg_medicare_pct*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{r.avg_medicaid_pct*100:.1f}%</td>
@@ -274,14 +275,14 @@ def render_payer_intel() -> str:
 
     deeper_link = (
         f'<div style="background:#111827;border:1px solid #1e293b;'
-        f'border-left:3px solid #3b82f6;padding:10px 14px;margin-bottom:14px;'
+        f'border-left:3px solid {PALETTE["brand_accent"]};padding:10px 14px;margin-bottom:14px;'
         f'border-radius:3px;">'
         f'<span style="font-family:JetBrains Mono,monospace;font-size:9.5px;'
         f'letter-spacing:0.15em;color:#94a3b8;">SUMMARY VIEW</span>'
         f'<div style="color:#e2e8f0;font-size:12px;margin-top:4px;">'
         f'This is the summary. For the comprehensive payer-mix breakdown '
         f'(4 regimes, per-band MOIC distributions, correlation coefficients) '
-        f'see <a href="/payer-intelligence" style="color:#3b82f6;">'
+        f'see <a href="/payer-intelligence" style="color:{PALETTE["brand_accent"]};">'
         f'/payer-intelligence</a>.</div></div>'
     )
 
