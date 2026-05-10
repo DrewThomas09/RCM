@@ -63,6 +63,27 @@ API_SMOKE_ROUTES: list[tuple[str, int]] = [
     ("/api/scenarios",            200),
     ("/api/export/portfolio.csv", 200),
     ("/api/health",               200),
+    # Portfolio aggregations
+    ("/api/portfolio/health",       200),
+    ("/api/portfolio/alerts",       200),
+    ("/api/portfolio/summary",      200),
+    ("/api/portfolio/attribution",  200),
+    ("/api/portfolio/matrix",       200),
+    # Insights / market / digest
+    ("/api/insights",                 200),
+    ("/api/insights/headline",        200),
+    ("/api/digest/morning",           200),
+    ("/api/market-pulse",             200),
+    ("/api/global-search",            200),
+    ("/api/screener/predefined",      200),
+    ("/api/webhooks",                 200),
+    ("/api/metrics",                  200),
+    ("/api/openapi.json",             200),
+    # Diligence / market-intel
+    ("/api/market-intel/peer-snapshot",      200),
+    ("/api/regulatory-calendar/exposure",    200),
+    ("/api/surrogate/schema",                 200),
+    ("/api/diligence/comparable-outcomes",   200),
 ]
 
 

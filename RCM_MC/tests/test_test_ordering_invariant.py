@@ -104,7 +104,7 @@ class APISmokeCoverageDoesNotShrink(unittest.TestCase):
     """Same pattern for the API smoke list. Removing endpoints
     silently weakens JSON-API regression coverage."""
 
-    API_COUNT_FLOOR = 22
+    API_COUNT_FLOOR = 40
 
     def test_api_smoke_list_size(self) -> None:
         from tests.test_api_endpoint_smoke import API_SMOKE_ROUTES
