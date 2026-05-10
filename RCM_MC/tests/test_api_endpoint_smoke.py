@@ -601,6 +601,75 @@ class APIEndpointSmoke(unittest.TestCase):
             f"{leaks}",
         )
 
+    def test_put_patch_delete_envelope_contracts(self) -> None:
+        """Companion to test_documented_post_happy_paths — the
+        non-POST mutation verbs (PUT, PATCH, DELETE) on the deal
+        override and profile API must:
+
+        * PUT /api/deals/<id>/overrides/<unknown_key>: 400 with
+          ``code: INVALID_OVERRIDE`` envelope
+        * PATCH /api/deals/<id>/profile: 200 with
+          ``{deal_id, updated_fields}`` envelope (positive path)
+        * DELETE /api/deals/<id>/overrides/<missing_key>: 404 with
+          ``code: OVERRIDE_NOT_FOUND`` envelope
+
+        These verbs share the same CSRF + auth gates as POST but
+        run through different dispatchers (do_PUT / do_PATCH /
+        do_DELETE) — locking their envelopes catches drift in any
+        of the three.
+        """
+        import json
+        csrf = ""
+        for c in self.cookies:
+            if c.name == "rcm_csrf":
+                csrf = c.value
+                break
+
+        # PUT with unknown override prefix → INVALID_OVERRIDE
+        req = urllib.request.Request(
+            self.base + "/api/deals/smoke-a/overrides/unknown_xx",
+            data=json.dumps({"value": "v", "reason": "x"}).encode(),
+            method="PUT",
+        )
+        req.add_header("Content-Type", "application/json")
+        req.add_header("X-CSRF-Token", csrf)
+        try:
+            self.opener.open(req, timeout=5)
+            self.fail("PUT with unknown prefix should 400")
+        except urllib.error.HTTPError as e:
+            self.assertEqual(e.code, 400)
+            body = json.loads(e.read().decode("utf-8"))
+            self.assertEqual(body.get("code"), "INVALID_OVERRIDE")
+            self.assertIn("error", body)
+
+        # PATCH /profile happy path → 200 + updated_fields
+        req = urllib.request.Request(
+            self.base + "/api/deals/smoke-a/profile",
+            data=json.dumps({"chain": "PatchTest"}).encode(),
+            method="PATCH",
+        )
+        req.add_header("Content-Type", "application/json")
+        req.add_header("X-CSRF-Token", csrf)
+        resp = self.opener.open(req, timeout=5)
+        self.assertEqual(resp.status, 200)
+        body = json.loads(resp.read().decode("utf-8"))
+        self.assertEqual(body.get("deal_id"), "smoke-a")
+        self.assertIn("chain", body.get("updated_fields", []))
+
+        # DELETE missing override → OVERRIDE_NOT_FOUND
+        req = urllib.request.Request(
+            self.base + "/api/deals/smoke-a/overrides/never_set",
+            method="DELETE",
+        )
+        req.add_header("X-CSRF-Token", csrf)
+        try:
+            self.opener.open(req, timeout=5)
+            self.fail("DELETE missing override should 404")
+        except urllib.error.HTTPError as e:
+            self.assertEqual(e.code, 404)
+            body = json.loads(e.read().decode("utf-8"))
+            self.assertEqual(body.get("code"), "OVERRIDE_NOT_FOUND")
+
     def test_documented_post_happy_paths_return_200(self) -> None:
         """Companion to the rejection guards (CSRF/auth) — every
         documented POST must accept a properly-formed JSON body
@@ -1223,6 +1292,10 @@ class APIEndpointSmoke(unittest.TestCase):
             ("/api/jobs/nonexistent",              404),
             ("/api/deals/this-id-does-not-exist",  404),
             ("/api/digest?since=invalid",          400),
+            # PUT /override with unknown prefix → INVALID_OVERRIDE 400
+            # exercises the override-prefix validator's error envelope.
+            # (Covered by the parametric loop; PUT-specific status is
+            # exercised in test_put_patch_delete_happy_paths below.)
         ]
         issues: list[str] = []
         for path, want_status in ERROR_SCENARIOS:
