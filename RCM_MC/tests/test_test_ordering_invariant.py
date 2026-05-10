@@ -210,5 +210,81 @@ class ChartisShellEntryPointsAreLazy(unittest.TestCase):
         )
 
 
+class FStringSqlInjectionScanIsCapped(unittest.TestCase):
+    """CLAUDE.md mandates "parameterised SQL only — never f-string
+    values into SQL". Most violations have been migrated; the
+    remaining ones interpolate table or column names (which
+    SQLite's bind protocol can't bind anyway) and pull those
+    names from internal constants — they have explicit
+    ``# noqa: S608`` annotations marking them as audited safe.
+
+    This guard pins the count so a new contributor can't sneak in
+    an unannotated f-string SQL with user-controlled
+    interpolation. Drift caps at 16 (the current floor); going
+    higher trips this test with the offending file:line list so
+    the contributor refactors to bind parameters or adds an
+    explicit safety annotation.
+
+    server.py is held to a tighter floor of 0 — the dispatcher
+    is the highest-traffic surface and must stay clean.
+    """
+
+    REPO_FLOOR = 16
+    SERVER_FLOOR = 0
+
+    def _matches(self, py_path) -> list[tuple[int, str]]:
+        import re
+        src = py_path.read_text(errors="replace")
+        out: list[tuple[int, str]] = []
+        for i, line in enumerate(src.split("\n"), 1):
+            if 'f"' not in line and "f'" not in line:
+                continue
+            if not re.search(
+                r"\b(SELECT|INSERT INTO|UPDATE\s+\w+|DELETE FROM|"
+                r"CREATE TABLE|DROP TABLE|ALTER TABLE)\b",
+                line, re.IGNORECASE,
+            ):
+                continue
+            if not re.search(r"\{[^{}]+\}", line):
+                continue
+            # Skip HTML/UI false positives.
+            if re.search(
+                r"<\w+|</\w+|select name=|<option|<label|<form|<input",
+                line,
+            ):
+                continue
+            out.append((i, line.strip()))
+        return out
+
+    def test_repo_wide_count_at_or_below_floor(self) -> None:
+        import pathlib
+        root = pathlib.Path(__file__).parent.parent / "rcm_mc"
+        total: list[str] = []
+        for py in root.rglob("*.py"):
+            for ln, line in self._matches(py):
+                total.append(f"{py.relative_to(root.parent)}:{ln}: {line[:80]}")
+        self.assertLessEqual(
+            len(total), self.REPO_FLOOR,
+            f"f-string SQL count {len(total)} exceeds floor "
+            f"{self.REPO_FLOOR}. Either bind parameters / annotate "
+            f"with `# noqa: S608` after auditing, or drop the floor "
+            f"if you migrated some. Hits: {total}",
+        )
+
+    def test_server_dispatcher_is_clean(self) -> None:
+        import pathlib
+        server = (
+            pathlib.Path(__file__).parent.parent
+            / "rcm_mc" / "server.py"
+        )
+        hits = self._matches(server)
+        self.assertLessEqual(
+            len(hits), self.SERVER_FLOOR,
+            f"server.py has {len(hits)} f-string SQL hits — "
+            f"dispatcher must stay clean (floor {self.SERVER_FLOOR}). "
+            f"Hits: {hits}",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -13035,22 +13035,43 @@ class RCMHandler(BaseHTTPRequestHandler):
         """
         store = PortfolioStore(self.config.db_path)
 
-        # Counts per table (only ones that exist)
+        # Counts per table — explicit literal queries (CLAUDE.md
+        # mandates "parameterised SQL only — never f-string values
+        # into SQL"; SQLite's bind protocol can't bind table names,
+        # so the only correct alternative is one literal query per
+        # table). Loop key + query are both literals, so no
+        # injection surface exists.
+        _STATS_QUERIES: tuple[tuple[str, str, str], ...] = (
+            ("deals",
+             "SELECT COUNT(*) c FROM deals",
+             "SELECT MAX(created_at) ts FROM deals"),
+            ("deal_snapshots",
+             "SELECT COUNT(*) c FROM deal_snapshots",
+             "SELECT MAX(created_at) ts FROM deal_snapshots"),
+            ("deal_notes",
+             "SELECT COUNT(*) c FROM deal_notes",
+             "SELECT MAX(created_at) ts FROM deal_notes"),
+            ("deal_tags",
+             "SELECT COUNT(*) c FROM deal_tags",
+             "SELECT MAX(created_at) ts FROM deal_tags"),
+            ("quarterly_actuals",
+             "SELECT COUNT(*) c FROM quarterly_actuals",
+             "SELECT MAX(created_at) ts FROM quarterly_actuals"),
+            ("initiative_actuals",
+             "SELECT COUNT(*) c FROM initiative_actuals",
+             "SELECT MAX(created_at) ts FROM initiative_actuals"),
+        )
         stats: Dict[str, Any] = {}
         table_last_write: Dict[str, Optional[str]] = {}
         with store.connect() as con:
-            for tbl in ("deals", "deal_snapshots", "deal_notes",
-                        "deal_tags", "quarterly_actuals",
-                        "initiative_actuals"):
+            for tbl, q_count, q_max in _STATS_QUERIES:
                 try:
-                    c = con.execute(f"SELECT COUNT(*) c FROM {tbl}").fetchone()
+                    c = con.execute(q_count).fetchone()
                     stats[tbl] = int(c["c"]) if c else 0
                 except Exception:  # noqa: BLE001
                     stats[tbl] = 0
                 try:
-                    r = con.execute(
-                        f"SELECT MAX(created_at) ts FROM {tbl}"
-                    ).fetchone()
+                    r = con.execute(q_max).fetchone()
                     table_last_write[tbl] = (r["ts"] if r else None)
                 except Exception:  # noqa: BLE001
                     table_last_write[tbl] = None
