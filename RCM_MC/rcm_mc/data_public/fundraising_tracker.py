@@ -216,7 +216,7 @@ def _build_terms() -> List[FundTermsMatrix]:
         FundTermsMatrix("GP Catch-Up", "100.0% (tiered)", "100.0% standard", "agreed", "flat"),
         FundTermsMatrix("Deal-by-Deal vs. Whole-Fund", "Whole-fund (European waterfall)", "Whole-fund preferred",
                         "agreed (LP strong preference)", "LP favoring"),
-        FundTermsMatrix("Clawback", "100.0% + interest", "100% + interest standard", "agreed", "flat"),
+        FundTermsMatrix("Clawback", "100.0% + interest", "100.0% + interest standard", "agreed", "flat"),
         FundTermsMatrix("Investment Period", "5 years", "5-6 years", "agreed", "flat"),
         FundTermsMatrix("Fund Term", "10 years + 2.00x 1-year extensions", "10yr + 2x1 standard", "agreed", "flat"),
         FundTermsMatrix("LPAC Composition", "9 LP seats (weighted by commitment)", "7-11 LP seats", "negotiated", "LP favoring"),

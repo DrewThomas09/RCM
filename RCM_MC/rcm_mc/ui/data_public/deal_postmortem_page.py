@@ -200,10 +200,10 @@ def render_deal_postmortem(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Post-Mortem Summary:</strong> {_html.escape(r.deal_name)} — grade <strong style="color:{grade_c}">{_html.escape(r.overall_grade)}</strong>.
     Realized MOIC {r.realized_moic:.2f}x vs {r.underwritten_moic:.2f}x underwritten ({moic_delta * 100:+.0f}%); IRR {r.realized_irr * 100:.1f}% vs {r.underwritten_irr * 100:.1f}% ({irr_delta * 100:+.1f}pp).
-    Primary attribution miss: multiple arbitrage (40% capture vs 14.5x→13.2x compression) and bolt-on M&A (67.0% vs 85.0% conversion).
+    Primary attribution miss: multiple arbitrage (40.0% capture vs 14.50x→13.20x compression) and bolt-on M&A (67.0% vs 85.0% conversion).
     Organic growth and payer rate uplift underperformed but RCM/back-office/debt-paydown levers delivered at or above plan.
-    Key lessons for next deal: include labor escalator (critical); extend integration timeline +$2M contingency; model exit multiple stress case at -1.5x;
-    underwrite payer uplift at 60% of negotiated target. Best-case counterfactual ceiling: +0.78x MOIC if all levers captured at plan.
+    Key lessons for next deal: include labor escalator (critical); extend integration timeline +$2.00M contingency; model exit multiple stress case at -1.5x;
+    underwrite payer uplift at 60.0% of negotiated target. Best-case counterfactual ceiling: +0.78x MOIC if all levers captured at plan.
   </div>
 </div>"""
 

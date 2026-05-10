@@ -179,14 +179,14 @@ def _build_levers() -> List[ValueCreationLever]:
         ValueCreationLever("Payer Rate Uplift (BCBS 2027)", 1.8, 1.4, 0.62, 24, 1.1),
         ValueCreationLever("Supply Chain / GPO Consolidation", 0.85, 0.70, 0.88, 12, 0.75),
         ValueCreationLever("Operating Leverage (cost discipline)", 1.5, 1.2, 0.78, 24, 1.2),
-        ValueCreationLever("Multiple Arbitrage (13x → 14.5x exit)", 13.5, 11.0, 0.68, 60, 9.2),
+        ValueCreationLever("Multiple Arbitrage (13.00x → 14.50x exit)", 13.5, 11.0, 0.68, 60, 9.2),
     ]
 
 
 def _build_risks() -> List[RiskRegister]:
     return [
         RiskRegister("Medicare rate cut (CRS / CMS annual)", "Regulatory", "medium", 3.5,
-                     "Sensitivity built into model; 1% = $0.22M EBITDA", "residual"),
+                     "Sensitivity built into model; 1.0% = $0.22M EBITDA", "residual"),
         RiskRegister("CMS colonoscopy age-45 creates volume headwind", "Regulatory", "low", 0.5,
                      "Already reflected in CBO estimates; procedure mix shift", "minimal"),
         RiskRegister("Key MD departure", "Operational", "medium", 6.5,
@@ -215,14 +215,14 @@ def _build_scenarios() -> List[ScenarioOutcome]:
 
 def _build_structure() -> List[DealStructure]:
     return [
-        DealStructure("Purchase Price / EV", 285.0, "13.0x LTM EBITDA", "Include $2.5M WC adjustment"),
-        DealStructure("Cash at Close", 142.5, "50% of EV", "Committed financing signed"),
+        DealStructure("Purchase Price / EV", 285.0, "13.00x LTM EBITDA", "Include $2.50M WC adjustment"),
+        DealStructure("Cash at Close", 142.5, "50.0% of EV", "Committed financing signed"),
         DealStructure("First-Lien Term Loan", 114.0, "SOFR+475 / 7yr / cov-lite", "Ares Capital / Golub"),
         DealStructure("Second-Lien Term Loan", 28.5, "SOFR+825 / 7yr / cov-lite", "Owl Rock / Apollo"),
-        DealStructure("Seller Rollover", 14.25, "5% equity; 2nd closing bite", "Key MDs required"),
+        DealStructure("Seller Rollover", 14.25, "5.0% equity; 2nd closing bite", "Key MDs required"),
         DealStructure("Management Equity", 14.25, "Stub + PIK note on close", "CEO + CFO + COO"),
-        DealStructure("Earnout", 11.4, "4% over 24 months on EBITDA >$25M", "Downside protection"),
-        DealStructure("Indemnification Reserve", 11.4, "4% escrow over 18 months", "Standard R&W insurance"),
+        DealStructure("Earnout", 11.4, "4.0% over 24 months on EBITDA >$25.00M", "Downside protection"),
+        DealStructure("Indemnification Reserve", 11.4, "4.0% escrow over 18 months", "Standard R&W insurance"),
     ]
 
 

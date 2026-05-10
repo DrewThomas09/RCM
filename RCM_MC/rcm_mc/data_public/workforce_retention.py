@@ -216,7 +216,7 @@ def _build_benefits() -> List[BenefitsBenchmark]:
         BenefitsBenchmark("Parental Leave (Primary)", "6 weeks", "10 weeks", "16 weeks", "12 weeks", 0.88),
         BenefitsBenchmark("Parental Leave (Secondary)", "2 weeks", "4 weeks", "10 weeks", "6 weeks", 0.82),
         BenefitsBenchmark("Tuition Reimbursement (Annual)", "$3,500", "$5,250", "$10,000", "$5,250", 0.65),
-        BenefitsBenchmark("Student Loan Repayment", "$0", "$3,600/yr", "$10,000/yr", "$3,600/yr", 0.38),
+        BenefitsBenchmark("Student Loan Repayment", "$0.00", "$3,600/yr", "$10,000/yr", "$3,600/yr", 0.38),
         BenefitsBenchmark("Mental Health Benefit", "6 visits/yr", "12 visits + EAP", "Unlimited + EAP", "12 visits + EAP", 0.92),
         BenefitsBenchmark("Childcare Benefit", "None", "$1,500/yr", "$5,000/yr on-site", "$2,500/yr", 0.28),
         BenefitsBenchmark("Commuter Benefit", "None", "$100/mo", "$300/mo", "$150/mo", 0.45),
