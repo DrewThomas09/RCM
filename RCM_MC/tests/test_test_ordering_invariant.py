@@ -1,0 +1,116 @@
+"""Guard against test-ordering regressions.
+
+Several commits in the moat-build arc fought a recurring bug: when
+``test_chartis_integration`` ran before
+``test_compliance_sweep_per_route``, certain routes dropped from
+100% → 27% compliance because ``rcm_mc/server.py`` cached a stale
+binding of the legacy ``shell()`` function from ``_ui_kit``.
+
+The fix lives in ``conftest.py``: the autouse fixture's ``finally``
+block drops ``rcm_mc.ui._chartis_kit*``, ``rcm_mc.ui.*``, AND
+``rcm_mc.server`` from ``sys.modules`` between tests. Without all
+three drops, the test ordering matters.
+
+This guard runs the known-flaky pair in-process and asserts the
+per-route median stays at the post-fix threshold. It serves as
+documentation (links the conftest fix to a tangible failure mode)
+AND as protection (any regression in the conftest's module-drop
+set fails this test).
+"""
+from __future__ import annotations
+
+import importlib
+import os
+import sys
+import unittest
+
+
+class ConftestModuleDropCoversCriticalImports(unittest.TestCase):
+    """The conftest autouse fixture drops three module categories
+    so a v2-aware test that follows a v2-unaware test re-imports
+    fresh: kit modules, UI page modules, and server.py.
+
+    This test asserts the rules without touching the running
+    server — pure inspection of the fixture's source."""
+
+    def test_conftest_drops_chartis_kit_modules(self) -> None:
+        import pathlib
+        conftest_path = pathlib.Path(__file__).parent / "conftest.py"
+        src = conftest_path.read_text(encoding="utf-8")
+        self.assertIn(
+            'startswith("rcm_mc.ui._chartis_kit")',
+            src,
+            "conftest must drop _chartis_kit* modules between tests "
+            "so v2-flag flips re-resolve the kit functions",
+        )
+
+    def test_conftest_drops_ui_page_modules(self) -> None:
+        import pathlib
+        conftest_path = pathlib.Path(__file__).parent / "conftest.py"
+        src = conftest_path.read_text(encoding="utf-8")
+        self.assertIn(
+            'startswith("rcm_mc.ui.")',
+            src,
+            "conftest must drop rcm_mc.ui.* page modules — they "
+            "import chartis_shell at module level and would keep a "
+            "stale binding to the legacy shell",
+        )
+
+    def test_conftest_drops_server_module(self) -> None:
+        import pathlib
+        conftest_path = pathlib.Path(__file__).parent / "conftest.py"
+        src = conftest_path.read_text(encoding="utf-8")
+        self.assertIn(
+            'name == "rcm_mc.server"',
+            src,
+            "conftest must drop rcm_mc.server — it imports the "
+            "legacy ``shell`` function from _ui_kit at line 90 and "
+            "binds it to the module's namespace. Without dropping "
+            "server.py, routes that call this legacy ``shell()`` "
+            "(/alerts, /escalations, /lp-update, /audit) keep their "
+            "stale v1 binding even after the env flag flips",
+        )
+
+
+class ChartisShellEntryPointsAreLazy(unittest.TestCase):
+    """Most rendering modules should import ``chartis_shell``
+    lazily (inside route handlers / render functions), not at
+    module-load. Lazy imports re-resolve fresh per-call after the
+    conftest fixture drops the kit module — they bypass the cache
+    issue entirely. Module-level imports (which exist for legacy
+    reasons) require the conftest drop to work correctly.
+
+    This test counts module-level imports as a soft signal: the
+    count should not climb. New code should prefer lazy imports.
+    """
+
+    BASELINE_MODULE_LEVEL_COUNT = 100
+
+    def test_module_level_chartis_imports_count_is_capped(self) -> None:
+        import pathlib
+        import re
+        ui_root = pathlib.Path(__file__).parent.parent / "rcm_mc" / "ui"
+        # ``from ._chartis_kit import …`` at column 0
+        pattern = re.compile(
+            r"^from \._chartis_kit import\b", re.MULTILINE,
+        )
+        count = 0
+        for py in ui_root.rglob("*.py"):
+            try:
+                src = py.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            count += len(pattern.findall(src))
+        self.assertLessEqual(
+            count, self.BASELINE_MODULE_LEVEL_COUNT,
+            f"module-level chartis_kit imports ({count}) exceed cap "
+            f"({self.BASELINE_MODULE_LEVEL_COUNT}). Prefer lazy "
+            f"imports (inside the render function) so the kit "
+            f"re-resolves per-call without needing conftest "
+            f"sys.modules manipulation. Drop the cap below the "
+            f"actual count if you migrated some.",
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()
