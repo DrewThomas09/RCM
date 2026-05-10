@@ -26,15 +26,6 @@ def _safe_float(val, default: float = 0.0) -> float:
         return default
 
 
-def _fm(val: float) -> str:
-    """Money formatter — delegates to the kit's ``format_value``
-    so CLAUDE.md money-format spec (2dp + auto M/B suffix) is
-    enforced in one place. Thin wrapper kept to minimise churn at
-    call sites; consolidation guard test ratchets cap downward."""
-    from ._ui_kit import format_value
-    return format_value(val, kind="money")
-
-
 _METRIC_DEFS = [
     ("net_patient_revenue", "Net Patient Revenue", "dollars", "higher"),
     ("operating_margin", "Operating Margin", "pct", "higher"),
@@ -53,7 +44,7 @@ _METRIC_DEFS = [
 
 def _fmt_val(val: float, fmt: str) -> str:
     if fmt == "dollars":
-        return _fm(val)
+        return format_value(val, kind="money")
     if fmt == "pct":
         return f"{val:.1%}" if abs(val) < 2 else f"{val:.1f}%"
     if fmt == "count":
@@ -182,7 +173,7 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
 
     from ._ui_kit import format_value, kpi_strip
     kpis = kpi_strip([
-        {"label": "Net Revenue", "value": _fm(rev)},
+        {"label": "Net Revenue", "value": format_value(rev, kind="money")},
         {"label": f"Margin (P{nat_pctile:.0f})",
          "value": f"{margin:.1%}"},
         {"label": "Beds", "value": f"{beds:.0f}"},
@@ -266,10 +257,10 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
         # Estimate EBITDA impact
         if g["fmt"] == "pct" and rev > 0:
             ebitda_est = abs(gap_val) * rev
-            impact_str = f'~{_fm(ebitda_est)}'
+            impact_str = f'~{format_value(ebitda_est, kind="money")}'
         elif g["fmt"] == "dollars" and beds > 0:
             ebitda_est = abs(gap_val) * beds * 0.1
-            impact_str = f'~{_fm(ebitda_est)}'
+            impact_str = f'~{format_value(ebitda_est, kind="money")}'
         else:
             impact_str = "—"
 
@@ -323,7 +314,7 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
             f'style="color:var(--cad-link);text-decoration:none;">{p_name}</a></td>'
             f'<td>{_html.escape(p_st)}</td>'
             f'<td class="num">{p_beds:.0f}</td>'
-            f'<td class="num">{_fm(p_rev)}</td>'
+            f'<td class="num">{format_value(p_rev, kind="money")}</td>'
             f'<td class="num" style="color:{m_color};">{p_margin:.1%}</td>'
             f'<td class="num">{p_mc:.0%}</td>'
             f'</tr>'
@@ -343,7 +334,7 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
         f'<td>{_html.escape(name[:30])} (Target)</td>'
         f'<td>{_html.escape(state)}</td>'
         f'<td class="num">{beds:.0f}</td>'
-        f'<td class="num">{_fm(rev)}</td>'
+        f'<td class="num">{format_value(rev, kind="money")}</td>'
         f'<td class="num">{margin:.1%}</td>'
         f'<td class="num">{_safe_float(hospital.get("medicare_day_pct")):.0%}</td>'
         f'</tr>{peer_rows}</tbody></table></div>'

@@ -13,15 +13,6 @@ from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
-def _fm(val: float) -> str:
-    """Money formatter — delegates to the kit's ``format_value``
-    so CLAUDE.md money-format spec (2dp + auto M/B suffix) is
-    enforced in one place. Thin wrapper kept to minimise churn at
-    call sites; consolidation guard test ratchets cap downward."""
-    from ._ui_kit import format_value
-    return format_value(val, kind="money")
-
-
 def render_fund_learning(db_path: str) -> str:
     """Render the fund learning dashboard."""
     from ..ml.fund_learning import compute_fund_accuracy
@@ -57,9 +48,9 @@ def render_fund_learning(db_path: str) -> str:
     kpis = kpi_strip([
         {"label": "Deals with Data",
          "value": format_value(accuracy.n_closed_deals, kind="count")},
-        {"label": "Total Planned", "value": _fm(accuracy.total_planned)},
+        {"label": "Total Planned", "value": format_value(accuracy.total_planned, kind="money")},
         {"label": "Total Realized",
-         "value": _fm(accuracy.total_realized), "tone": r_tone},
+         "value": format_value(accuracy.total_realized, kind="money"), "tone": r_tone},
         {"label": "Fund Realization",
          "value": f"{accuracy.fund_realization_pct:.0%}",
          "tone": r_tone},
@@ -92,8 +83,8 @@ def render_fund_learning(db_path: str) -> str:
         lever_rows += (
             f'<tr>'
             f'<td style="font-weight:500;">{_html.escape(b.lever[:25])}</td>'
-            f'<td class="num">{_fm(b.planned_total)}</td>'
-            f'<td class="num">{_fm(b.actual_total)}</td>'
+            f'<td class="num">{format_value(b.planned_total, kind="money")}</td>'
+            f'<td class="num">{format_value(b.actual_total, kind="money")}</td>'
             f'<td class="num" style="color:{r_color_l};font-weight:600;">{r_pct:.0%}</td>'
             f'<td>{bias_badge}</td>'
             f'<td class="num" style="color:{adj_color};">{adj_str}</td>'

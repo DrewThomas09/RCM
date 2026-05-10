@@ -17,15 +17,6 @@ import numpy as np
 import pandas as pd
 
 
-def _fm(val: float) -> str:
-    """Money formatter — delegates to the kit's ``format_value``
-    so CLAUDE.md money-format spec (2dp + auto M/B suffix) is
-    enforced in one place. Thin wrapper kept to minimise churn at
-    call sites; consolidation guard test ratchets cap downward."""
-    from ._ui_kit import format_value
-    return format_value(val, kind="money")
-
-
 def _safe_float(val, default=0.0):
     if val is None:
         return default
@@ -138,7 +129,7 @@ def render_thesis_card(
         thesis_color = "var(--cad-neg)"
 
     if ebitda_uplift > 5e6:
-        catalysts.append(f"RCM uplift of {_fm(ebitda_uplift)} (+{margin_improvement:.0f}bps)")
+        catalysts.append(f"RCM uplift of {format_value(ebitda_uplift, kind="money")} (+{margin_improvement:.0f}bps)")
     if margin > 0.08:
         catalysts.append(f"Strong operating margin ({margin:.1%})")
     elif margin < 0 and turnaround_prob and turnaround_prob > 0.4:
@@ -214,7 +205,7 @@ def render_thesis_card(
     except Exception:
         pass
 
-    uplift_str = f"+{_fm(ebitda_uplift)}" if ebitda_uplift > 0 else "—"
+    uplift_str = f"+{format_value(ebitda_uplift, kind="money")}" if ebitda_uplift > 0 else "—"
     margin_str = f"+{margin_improvement:.0f}bps" if margin_improvement > 0 else "—"
 
     # ── Signal bars (mini analytical justification) ──
@@ -305,7 +296,7 @@ def render_thesis_card(
         f'<div><div style="font-size:14px;font-weight:700;'
         f'color:{"var(--cad-pos)" if margin > 0 else "var(--cad-neg)"};">{margin:.1%}</div>'
         f'<div style="font-size:9px;color:var(--cad-text3);">Op Margin</div></div>'
-        f'<div><div style="font-size:14px;font-weight:700;">{_fm(rev)}</div>'
+        f'<div><div style="font-size:14px;font-weight:700;">{format_value(rev, kind="money")}</div>'
         f'<div style="font-size:9px;color:var(--cad-text3);">Revenue</div></div>'
         + (f'<div><div style="font-size:14px;font-weight:700;color:{r_color};">{realization_pct:.0%}</div>'
            f'<div style="font-size:9px;color:var(--cad-text3);">Realization</div></div>'

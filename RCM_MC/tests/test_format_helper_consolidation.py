@@ -49,7 +49,7 @@ _HELPER_PATTERN = re.compile(
 # Baseline as of the consolidation guard's introduction. Drop this
 # number whenever a module migrates to ``format_value()``; never
 # raise it without explicit reason in the commit message.
-HELPER_COUNT_CAP = 47
+HELPER_COUNT_CAP = 42
 
 
 class HelperCountIsCapped(unittest.TestCase):

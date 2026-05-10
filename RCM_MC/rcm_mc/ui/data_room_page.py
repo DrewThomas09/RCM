@@ -20,21 +20,12 @@ from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
-def _fm(val: float) -> str:
-    """Money formatter — delegates to the kit's ``format_value``
-    so CLAUDE.md money-format spec (2dp + auto M/B suffix) is
-    enforced in one place. Thin wrapper kept to minimise churn at
-    call sites; consolidation guard test ratchets cap downward."""
-    from ._ui_kit import format_value
-    return format_value(val, kind="money")
-
-
 def _fmt_metric(val: float, metric_type: str) -> str:
     if metric_type == "rate":
         return f"{val:.1%}" if abs(val) < 2 else f"{val:.1f}%"
     if metric_type == "continuous":
         if abs(val) >= 1e6:
-            return _fm(val)
+            return format_value(val, kind="money")
         return f"{val:,.1f}"
     return f"{val:.3f}"
 
@@ -70,7 +61,7 @@ def render_data_room(
     # The legacy ``var(--cad-accent)`` styling on ML-only count was
     # signalling "still needs seller confirmation" — neutral tone is
     # the closest faithful mapping (warning would overstate it).
-    from ._ui_kit import kpi_strip
+    from ._ui_kit import kpi_strip, format_value
     kpis = kpi_strip([
         {"label": "Total Metrics", "value": str(n_total)},
         {"label": "Seller-Confirmed", "value": str(n_seller),
@@ -287,10 +278,10 @@ def render_data_room(
             # P26 follow-up: bridge-impact KPIs migrated to kpi_strip.
             delta_tone = "positive" if delta_uplift > 0 else "negative"
             bridge_kpis = kpi_strip([
-                {"label": "ML-Only Bridge", "value": _fm(ml_uplift)},
-                {"label": "Calibrated Bridge", "value": _fm(cal_uplift),
+                {"label": "ML-Only Bridge", "value": format_value(ml_uplift, kind="money")},
+                {"label": "Calibrated Bridge", "value": format_value(cal_uplift, kind="money"),
                  "tone": "positive"},
-                {"label": "Delta from Seller Data", "value": _fm(delta_uplift),
+                {"label": "Delta from Seller Data", "value": format_value(delta_uplift, kind="money"),
                  "tone": delta_tone},
             ])
             bridge_impact = (

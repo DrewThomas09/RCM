@@ -11,18 +11,8 @@ import sqlite3
 from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import chartis_shell
+from ._ui_kit import format_value
 from .brand import PALETTE
-
-
-def _fm(val: float) -> str:
-    """Money formatter — delegates to the kit's ``format_value``
-    so the CLAUDE.md money-format spec (2dp + auto M/B suffix) is
-    enforced in one place. Kept as a thin wrapper to avoid touching
-    every call site in this file; the consolidation guard test
-    counts ad-hoc helpers and lowers the cap as modules migrate.
-    """
-    from ._ui_kit import format_value
-    return format_value(val, kind="money")
 
 
 def _status_badge(status: str) -> str:
@@ -85,8 +75,8 @@ def render_value_tracker(
     )
     from ._ui_kit import kpi_strip
     kpis = kpi_strip([
-        {"label": "Planned Uplift", "value": _fm(total_planned)},
-        {"label": "Realized", "value": _fm(total_realized), "tone": real_tone},
+        {"label": "Planned Uplift", "value": format_value(total_planned, kind="money")},
+        {"label": "Realized", "value": format_value(total_realized, kind="money"), "tone": real_tone},
         {"label": "Realization", "value": f"{realization:.0%}", "tone": real_tone},
         {"label": "Quarters Tracked", "value": str(quarters)},
         {"label": "Levers On Track",
@@ -114,8 +104,8 @@ def render_value_tracker(
             lever_rows += (
                 f'<tr>'
                 f'<td style="font-weight:500;">{_html.escape(lev["lever"][:25])}</td>'
-                f'<td class="num">{_fm(lev["planned"])}</td>'
-                f'<td class="num" style="font-weight:600;">{_fm(lev["actual"])}</td>'
+                f'<td class="num">{format_value(lev["planned"], kind="money")}</td>'
+                f'<td class="num" style="font-weight:600;">{format_value(lev["actual"], kind="money")}</td>'
                 f'<td class="num" style="color:{bar_color};font-weight:600;">{r_pct:.0%}</td>'
                 f'<td><div style="background:var(--cad-bg3);border-radius:3px;height:10px;width:80px;">'
                 f'<div style="width:{bar_pct:.0f}%;background:{bar_color};border-radius:3px;'
@@ -146,7 +136,7 @@ def render_value_tracker(
         bridge_levers += (
             f'<tr>'
             f'<td>{_html.escape(lev["name"][:25])}</td>'
-            f'<td class="num">{_fm(lev["ebitda_impact"])}</td>'
+            f'<td class="num">{format_value(lev["ebitda_impact"], kind="money")}</td>'
             f'<td class="num">{lev["ramp_months"]}mo</td>'
             f'</tr>'
         )
@@ -214,7 +204,7 @@ def render_value_tracker(
         f"Value Tracker — {name}",
         subtitle=(
             f"{_html.escape(deal_id)} | "
-            f"Planned {_fm(total_planned)} | Realized {_fm(total_realized)} "
+            f"Planned {format_value(total_planned, kind="money")} | Realized {format_value(total_realized, kind="money")} "
             f"({realization:.0%}) | {quarters} quarters"
         ),
     )
