@@ -59,35 +59,35 @@ _CURATED_ARTICLES = [
         "severity": "warning",
     },
     {
-        "title": "Lifepoint Health Explores $8.2B Sale Process",
+        "title": "Lifepoint Health Explores $8.20B Sale Process",
         "subtitle": "PE-backed hospital chain draws interest from strategic buyers",
         "category": "ma",
         "source": "Bloomberg",
         "date": "2026-04-08",
         "body": (
             "Lifepoint Health, owned by Apollo Global Management, is exploring strategic "
-            "alternatives including a potential sale valued at $8.2B including debt. The "
-            "company operates 89 hospitals across 29 states with $10.4B in annual revenue. "
+            "alternatives including a potential sale valued at $8.20B including debt. The "
+            "company operates 89 hospitals across 29 states with $10.40B in annual revenue. "
             "Potential acquirers include HCA Healthcare and a consortium of infrastructure "
-            "investors. The implied EV/EBITDA multiple of ~11.5x sets a benchmark for "
+            "investors. The implied EV/EBITDA multiple of ~11.50x sets a benchmark for "
             "mid-market hospital valuations."
         ),
-        "impact": "Sets valuation benchmark at 11.5x EV/EBITDA",
+        "impact": "Sets valuation benchmark at 11.50x EV/EBITDA",
         "severity": "info",
     },
     {
-        "title": "RCM Outsourcing Market Reaches $22B: Consolidation Accelerates",
+        "title": "RCM Outsourcing Market Reaches $22.00B: Consolidation Accelerates",
         "subtitle": "R1 RCM, Ensemble Health, and nThrive compete for hospital contracts",
         "category": "rcm",
         "source": "McKinsey Healthcare",
         "date": "2026-04-05",
         "body": (
-            "The revenue cycle management outsourcing market reached $22B in 2025, growing "
-            "at 12% CAGR. Key drivers include labor shortages (medical coder vacancy rates "
-            "at 18%), payer complexity, and AI adoption for claims processing. Hospitals "
+            "The revenue cycle management outsourcing market reached $22.00B in 2025, growing "
+            "at 12.0% CAGR. Key drivers include labor shortages (medical coder vacancy rates "
+            "at 18.0%), payer complexity, and AI adoption for claims processing. Hospitals "
             "outsourcing RCM report average AR day reductions of 8-12 days and denial rate "
             "improvements of 3-5 percentage points. However, switching costs are high: "
-            "average contract duration is 5-7 years with $2-4M transition costs."
+            "average contract duration is 5-7 years with $2.00M-$4.00M transition costs."
         ),
         "impact": "Informs RCM improvement thesis for diligence",
         "severity": "info",
@@ -101,8 +101,8 @@ _CURATED_ARTICLES = [
         "body": (
             "The 10-year Treasury yield reached 4.31%, up 18bps over the past month. "
             "Healthcare hospital multiples show a -0.7 correlation with 10Y rates: each "
-            "100bp increase compresses EV/EBITDA by approximately 0.8x. Current hospital "
-            "transaction multiples average 10.8x, down from 12.1x at the 2021 rate trough. "
+            "100bp increase compresses EV/EBITDA by approximately 0.80x. Current hospital "
+            "transaction multiples average 10.80x, down from 12.10x at the 2021 rate trough. "
             "For LBO models, higher rates increase interest expense and reduce equity "
             "returns by 200-400bps IRR at typical leverage levels."
         ),
@@ -117,7 +117,7 @@ _CURATED_ARTICLES = [
         "date": "2026-03-28",
         "body": (
             "The post-pandemic Medicaid continuous enrollment unwinding is now complete, "
-            "with 18.4M individuals disenrolled from Medicaid/CHIP. Approximately 40% of "
+            "with 18.4M individuals disenrolled from Medicaid/CHIP. Approximately 40.0% of "
             "disenrollments were procedural (not loss of eligibility). Hospitals in states "
             "that did not expand Medicaid are seeing the largest increases in uncompensated "
             "care. Safety-net hospitals report 15-25% increases in self-pay volume. Payer "
@@ -128,34 +128,34 @@ _CURATED_ARTICLES = [
     },
     # Additional M&A
     {
-        "title": "HCA Healthcare Completes $2.1B Acquisition of Steward Health Assets",
+        "title": "HCA Healthcare Completes $2.10B Acquisition of Steward Health Assets",
         "subtitle": "Largest hospital operator expands into new markets via distressed acquisitions",
         "category": "ma",
         "source": "Modern Healthcare",
         "date": "2026-03-20",
         "body": (
             "HCA Healthcare completed the acquisition of select Steward Health Care assets "
-            "for $2.1B, adding 14 hospitals across 6 states. The transaction was structured "
+            "for $2.10B, adding 14 hospitals across 6 states. The transaction was structured "
             "as an asset purchase from bankruptcy, allowing HCA to cherry-pick the strongest "
-            "facilities. Entry multiples averaged 8.5x trailing EBITDA — below the 10-11x "
-            "market average — reflecting the distressed seller dynamics. HCA plans $400M in "
+            "facilities. Entry multiples averaged 8.50x trailing EBITDA — below the 10-11x "
+            "market average — reflecting the distressed seller dynamics. HCA plans $400.00M in "
             "capital improvements over 3 years."
         ),
         "impact": "Sets distressed-asset valuation benchmarks; watch for more Steward divestitures",
         "severity": "info",
     },
     {
-        "title": "Private Equity Hospital Deal Volume Down 22% YoY in Q1 2026",
+        "title": "Private Equity Hospital Deal Volume Down 22.0% YoY in Q1 2026",
         "subtitle": "Higher rates and regulatory scrutiny slow healthcare LBO activity",
         "category": "ma",
         "source": "Bain Healthcare Report",
         "date": "2026-04-01",
         "body": (
-            "PE-backed hospital transactions fell 22% year-over-year in Q1 2026, driven by "
+            "PE-backed hospital transactions fell 22.0% year-over-year in Q1 2026, driven by "
             "higher financing costs (+150bps vs 2021 trough) and FTC scrutiny of market "
             "concentration. Average hold periods extended to 5.8 years (vs 4.2 historically). "
             "The gap between buyer and seller price expectations remains wide: sellers anchor "
-            "to 2021-vintage 12x multiples while buyers bid 9-10x reflecting current rates."
+            "to 2021-vintage 12.00x multiples while buyers bid 9-10x reflecting current rates."
         ),
         "impact": "Buyer's market emerging; patience on entry pricing is rewarded",
         "severity": "info",
@@ -179,30 +179,30 @@ _CURATED_ARTICLES = [
     },
     # RCM
     {
-        "title": "AI-Powered Coding: Early Adopters Report 12% Accuracy Improvement",
+        "title": "AI-Powered Coding: Early Adopters Report 12.0% Accuracy Improvement",
         "subtitle": "NLP-based auto-coding reduces human coding errors and speeds claim submission",
         "category": "rcm",
         "source": "HFMA Journal",
         "date": "2026-03-10",
         "body": (
-            "Hospitals deploying AI-powered medical coding report 12% improvement in first-pass "
-            "coding accuracy and 35% reduction in coding turnaround time. Leaders include Epic's "
+            "Hospitals deploying AI-powered medical coding report 12.0% improvement in first-pass "
+            "coding accuracy and 35.0% reduction in coding turnaround time. Leaders include Epic's "
             "integrated coding assistant and standalone vendors like Nym and AGS Health. ROI is "
             "strongest for hospitals with >200 beds processing >100K annual claims. Implementation "
-            "costs range from $500K-$2M with 12-18 month payback periods."
+            "costs range from $500K-$2.00M with 12-18 month payback periods."
         ),
         "impact": "Factor AI coding into denial reduction thesis for targets with legacy coding",
         "severity": "info",
     },
     {
-        "title": "Revenue Cycle Staffing Crisis: 23% Vacancy Rate for Medical Coders",
+        "title": "Revenue Cycle Staffing Crisis: 23.0% Vacancy Rate for Medical Coders",
         "subtitle": "Labor shortage drives outsourcing and automation adoption",
         "category": "rcm",
         "source": "AAPC Workforce Survey",
         "date": "2026-02-28",
         "body": (
-            "The 2026 AAPC Workforce Survey reports a 23% vacancy rate for certified medical "
-            "coders, up from 18% in 2024. Average coder tenure has fallen to 2.3 years. "
+            "The 2026 AAPC Workforce Survey reports a 23.0% vacancy rate for certified medical "
+            "coders, up from 18.0% in 2024. Average coder tenure has fallen to 2.3 years. "
             "Hospitals respond by outsourcing (45% of facilities now use offshore coding), "
             "investing in AI automation (32%), and increasing pay (avg +8% YoY). For PE diligence, "
             "assess the target's coding workforce stability and automation readiness."
@@ -238,9 +238,9 @@ _CURATED_ARTICLES = [
         "body": (
             "A systematic review in Health Affairs analyzed 47 hospitals that implemented "
             "structured denial management programs between 2019-2024. Results: average denial "
-            "rate reduction of 4.3 percentage points (from 14.1% to 9.8%), with $2.8M average "
-            "annual revenue recovery. Programs with dedicated denial analysts showed 2x the "
-            "improvement vs technology-only approaches. ROI averaged 340% over 24 months. "
+            "rate reduction of 4.3 percentage points (from 14.1% to 9.8%), with $2.80M average "
+            "annual revenue recovery. Programs with dedicated denial analysts showed 2.00x the "
+            "improvement vs technology-only approaches. ROI averaged 340.0% over 24 months. "
             "Key success factors: executive sponsorship, root cause analytics, payer-specific "
             "intervention protocols, and monthly performance reviews."
         ),
@@ -248,18 +248,18 @@ _CURATED_ARTICLES = [
         "severity": "info",
     },
     {
-        "title": "McKinsey: The $200B RCM Automation Opportunity in US Healthcare",
+        "title": "McKinsey: The $200.00B RCM Automation Opportunity in US Healthcare",
         "subtitle": "Detailed sizing of automation potential across the revenue cycle",
         "category": "research",
         "source": "McKinsey & Company",
         "date": "2026-01-20",
         "body": (
             "McKinsey's latest healthcare operations report sizes the US RCM automation "
-            "opportunity at $200B in annual administrative waste. Breakdown: prior authorization "
-            "($42B), claims submission and follow-up ($38B), payment posting and reconciliation "
-            "($28B), patient billing ($22B), coding and documentation ($35B), and eligibility "
-            "verification ($18B). Current automation penetration is only 12%. Hospitals that "
-            "achieve 50%+ automation report 30-40% RCM cost reduction."
+            "opportunity at $200.00B in annual administrative waste. Breakdown: prior authorization "
+            "($42.00B), claims submission and follow-up ($38.00B), payment posting and reconciliation "
+            "($28.00B), patient billing ($22.00B), coding and documentation ($35.00B), and eligibility "
+            "verification ($18.00B). Current automation penetration is only 12.0%. Hospitals that "
+            "achieve 50.0%+ automation report 30-40% RCM cost reduction."
         ),
         "impact": "Sizes the total addressable market for RCM improvement thesis",
         "severity": "info",
@@ -288,11 +288,11 @@ _CURATED_ARTICLES = [
         "source": "Deloitte Center for Health Solutions",
         "date": "2025-12-15",
         "body": (
-            "Deloitte's annual CFO survey reveals shifting M&A priorities: 68% now cite 'access "
-            "to technology/analytics' as the primary acquisition driver (vs 42% citing 'market "
+            "Deloitte's annual CFO survey reveals shifting M&A priorities: 68.0% now cite 'access "
+            "to technology/analytics' as the primary acquisition driver (vs 42.0% citing 'market "
             "share' in 2020). Top technology targets: AI coding (71%), patient engagement (58%), "
             "predictive analytics (52%), and automated prior auth (49%). Average deal timeline "
-            "extended from 8 months to 14 months due to regulatory review. 45% of respondents "
+            "extended from 8 months to 14 months due to regulatory review. 45.0% of respondents "
             "expect to complete at least one acquisition in 2026."
         ),
         "impact": "Technology capabilities increasingly drive deal rationale over geographic footprint",
@@ -306,10 +306,10 @@ _CURATED_ARTICLES = [
         "source": "THC Earnings Release",
         "date": "2026-04-12",
         "body": (
-            "Tenet Healthcare reported Q1 2026 revenue of $5.4B (+8.2% YoY), driven by 4.1% "
+            "Tenet Healthcare reported Q1 2026 revenue of $5.40B (+8.2% YoY), driven by 4.1% "
             "same-hospital admission growth and favorable payer mix shift (commercial mix +2.1pp). "
             "Adjusted EBITDA margin expanded 80bps to 18.4%. Management raised full-year guidance "
-            "by $200M. Key drivers: ambulatory surgery center portfolio (45% of EBITDA, +12% YoY), "
+            "by $200.00M. Key drivers: ambulatory surgery center portfolio (45% of EBITDA, +12% YoY), "
             "reduced labor costs (-3.2% per adjusted admission), and Medicare Advantage volume growth."
         ),
         "impact": "Validates ASC growth thesis; labor cost improvement is replicable",
@@ -317,14 +317,14 @@ _CURATED_ARTICLES = [
     },
     {
         "title": "Community Health Systems Warns on Rural Hospital Viability",
-        "subtitle": "35% of CHS rural facilities operating below breakeven margin",
+        "subtitle": "35.0% of CHS rural facilities operating below breakeven margin",
         "category": "earnings",
         "source": "CYH 10-Q Filing",
         "date": "2026-04-08",
         "body": (
-            "CHS disclosed that 35% of its rural hospital portfolio (28 of 80 facilities) "
-            "operated below breakeven in Q1 2026. Contributing factors: 42% Medicare patient "
-            "mix (vs 30% system average), staffing costs +15% in rural markets, and limited "
+            "CHS disclosed that 35.0% of its rural hospital portfolio (28 of 80 facilities) "
+            "operated below breakeven in Q1 2026. Contributing factors: 42.0% Medicare patient "
+            "mix (vs 30.0% system average), staffing costs +15% in rural markets, and limited "
             "commercial payer leverage. CHS is evaluating 'strategic alternatives' for 12 "
             "underperforming rural facilities. For PE diligence: rural hospital targets require "
             "careful assessment of payer mix sustainability and labor market dynamics."
@@ -410,7 +410,7 @@ def render_news(category: str = "all") -> str:
         f'<div style="font-size:12px;line-height:2;">'
         f'<div style="display:flex;justify-content:space-between;">'
         f'<span style="color:{PALETTE["text_secondary"]};">Hospital EV/EBITDA</span>'
-        f'<span class="cad-mono">10.8x</span></div>'
+        f'<span class="cad-mono">10.80x</span></div>'
         f'<div style="display:flex;justify-content:space-between;">'
         f'<span style="color:{PALETTE["text_secondary"]};">10Y Treasury</span>'
         f'<span class="cad-mono">4.31%</span></div>'

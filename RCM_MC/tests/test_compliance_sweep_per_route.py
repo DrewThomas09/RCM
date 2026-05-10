@@ -578,11 +578,10 @@ ROUTE_MIN_SCORES: dict[str, float] = {
     "/pipeline/bridge":       1.0,
     "/settings/ai":           1.0,
 
-    # 92% route — /news renders editorial copy with many embedded
-    # press-release financial figures ("$8.2B Sale", "12% margin")
-    # that read as journalistic citations, not metric values.
-    # Forcing 2dp / 1dp throughout the news feed harms readability.
-    "/news":                  0.92,
+    # /news — editorial press-release copy, now reformatted to 2dp
+    # money / 1dp percent / 2dp multiples to match the rest of the
+    # platform. Range bounds (``5-7 years``, ``50.0%+``) preserved.
+    "/news":                  1.0,
 
     # Bespoke print layout — un-migrated by design.
     "/screening/bankruptcy-survivor": 0.25,
@@ -606,7 +605,7 @@ AGGREGATE_FLOOR_MEDIAN = 1.0
 # rule slip), so this guard catches a different regression mode:
 # silent erosion of the *count* of perfect routes. With 45/47
 # pinned at 1.0, any new <100% slip fails this floor.
-PERFECT_ROUTE_FLOOR = 262
+PERFECT_ROUTE_FLOOR = 263
 
 
 class _NoFollow(urllib.request.HTTPRedirectHandler):
