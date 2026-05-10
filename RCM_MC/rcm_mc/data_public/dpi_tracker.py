@@ -174,12 +174,12 @@ def _build_sectors() -> List[SectorDPI]:
 
 def _build_drought() -> List[ExitDroughtMetric]:
     return [
-        ExitDroughtMetric("PE HC Exit Volume (YTD)", "$38.5B", "$52.8B", "-27.1%", "elongated hold periods; DPI pressure building"),
+        ExitDroughtMetric("PE HC Exit Volume (YTD)", "$38.50B", "$52.80B", "-27.1%", "elongated hold periods; DPI pressure building"),
         ExitDroughtMetric("Median Hold Period (Realized)", "6.2 years", "5.1 years", "+1.1 years", "carry crystallization delayed; LP patience tested"),
-        ExitDroughtMetric("Secondary Buyout % of Exits", "48%", "38%", "+10 pts", "sponsor-to-sponsor market taking share from strategic"),
-        ExitDroughtMetric("Continuation Vehicle $ Volume", "$24.5B", "$11.2B", "+118.8%", "single-asset CV providing liquidity valve"),
-        ExitDroughtMetric("Dividend Recap % Increase", "+62%", "baseline", "+62%", "interim liquidity mechanism; cov headroom dependent"),
-        ExitDroughtMetric("LP Secondary Market Pricing (NAV)", "88-92%", "84-88%", "+4 pts", "LP demand strong for HC fund secondaries"),
+        ExitDroughtMetric("Secondary Buyout % of Exits", "48.0%", "38.0%", "+10 pts", "sponsor-to-sponsor market taking share from strategic"),
+        ExitDroughtMetric("Continuation Vehicle $ Volume", "$24.50B", "$11.20B", "+118.8%", "single-asset CV providing liquidity valve"),
+        ExitDroughtMetric("Dividend Recap % Increase", "+62.0%", "baseline", "+62.0%", "interim liquidity mechanism; cov headroom dependent"),
+        ExitDroughtMetric("LP Secondary Market Pricing (NAV)", "88.0-92.0%", "84.0-88.0%", "+4 pts", "LP demand strong for HC fund secondaries"),
         ExitDroughtMetric("Strategic Buyer Activity", "Moderate", "High", "Down", "health systems cautious; pharma/medtech selective"),
         ExitDroughtMetric("IPO Window (Healthcare)", "Thin", "Closed", "Modest open", "2 HC IPOs priced Q1 2026"),
     ]

@@ -103,13 +103,13 @@ def _build_billing() -> List[BillingAnomaly]:
         BillingAnomaly("MD-018", "Cardiology", "Duplicate billing (paired CPT 93458 + 93306)", 88, 98, 285.0, "high"),
         BillingAnomaly("MD-042", "Orthopedics", "Modifier 25 overutilization (37% of E/M visits)", 76, 92, 185.0, "high"),
         BillingAnomaly("MD-007", "Dermatology", "Mohs CPT 17311 billed without pathology support", 92, 99, 425.0, "critical"),
-        BillingAnomaly("MD-034", "Psychiatry", "90837 (60-min) at 78% of visits vs 35% peer median", 82, 95, 220.0, "high"),
+        BillingAnomaly("MD-034", "Psychiatry", "90837 (60-min) at 78.0% of visits vs 35.0% peer median", 82, 95, 220.0, "high"),
         BillingAnomaly("MD-056", "Pain Management", "Billing 64483 epidural injections > weekly on same patient", 95, 99, 380.0, "critical"),
         BillingAnomaly("MD-021", "GI", "Colonoscopy screening CPT 45378 + diagnostic 45380 same day", 68, 85, 145.0, "medium"),
         BillingAnomaly("MD-089", "Urology", "CPT 55700 biopsy 18+ cores per session (limit 12)", 72, 90, 95.0, "medium"),
         BillingAnomaly("MD-102", "Home Health", "LUPA (low-utilization) mix abnormally high (22%)", 58, 78, 68.0, "medium"),
         BillingAnomaly("MD-119", "PT", "Billing units > 8/day per patient (CMS MUE)", 62, 82, 45.0, "medium"),
-        BillingAnomaly("MD-134", "Family Med", "E/M 99214 at 72% of visits vs 48% peer", 68, 88, 115.0, "medium"),
+        BillingAnomaly("MD-134", "Family Med", "E/M 99214 at 72.0% of visits vs 48.0% peer", 68, 88, 115.0, "medium"),
     ]
 
 

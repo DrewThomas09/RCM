@@ -58,7 +58,7 @@ def _log_scale_scatter(points: List[Tuple[float, float, str]], width: int = 500,
         if gx < margin["l"] or gx > margin["l"] + W:
             continue
         elements.append(f'<line x1="{gx}" y1="{margin["t"]}" x2="{gx}" y2="{margin["t"]+H}" stroke="#1e293b" stroke-width="0.8"/>')
-        label = f"${ev_tick}M" if ev_tick < 1000 else f"${ev_tick//1000}B"
+        label = f"${ev_tick}.00M" if ev_tick < 1000 else f"${ev_tick//1000}.00B"
         elements.append(f'<text x="{gx}" y="{margin["t"]+H+12}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="#475569">{label}</text>')
     for m in (1.0, 2.0, 3.0, 4.0):
         if m > max_moic: break
@@ -95,7 +95,7 @@ def _ev_histogram(evs: List[float], width: int = 480, height: int = 90) -> str:
         by = height - 12 - bh
         color = "#475569" if lo < 100 else ("var(--theme-accent,#3b82f6)" if lo < 300 else ("var(--theme-warning,#f59e0b)" if lo < 1000 else "var(--theme-negative,#ef4444)"))
         elements.append(f'<rect x="{bx}" y="{by}" width="{max(1,bar_w-2)}" height="{bh}" fill="{color}" opacity="0.8"/>')
-        label = f"${int(lo)}M" if lo < 1000 else f"${int(lo)//1000}B"
+        label = f"${int(lo)}.00M" if lo < 1000 else f"${int(lo)//1000}.00B"
         elements.append(f'<text x="{bx+bar_w//2}" y="{height-1}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="6.5" fill="#475569">{label}</text>')
         if bh > 0:
             elements.append(f'<text x="{bx+bar_w//2}" y="{by-2}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="#94a3b8">{cnt}</text>')
@@ -150,7 +150,7 @@ def render_size_intel() -> str:
   <div style="padding:12px 16px;">
     {hist}
     <div style="margin-top:6px;font-size:9px;color:#475569;">
-      Gray &lt;$100M · Blue $100–300M · Amber $300M–$1B · Red &gt;$1B
+      Gray &lt;$100.00M · Blue $100.00–300.00M · Amber $300.00M–$1.00B · Red &gt;$1.00B
     </div>
   </div>
 </div>"""
@@ -161,8 +161,8 @@ def render_size_intel() -> str:
         stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
         mc = _moic_color(b.moic_p50)
         optimal_badge = f'<span style="margin-left:4px;font-size:8px;color:{PALETTE["positive"]};font-family:var(--ck-mono);">★</span>' if best_bucket and b.label == best_bucket.label else ""
-        hi_label = f"${b.ev_range[1]:.2f}M" if b.ev_range[1] < 1000 else ("$1B+" if b.ev_range[1] < 1e6 else "—")
-        lo_label = f"${b.ev_range[0]:.2f}M" if b.ev_range[0] < 1000 else f"${int(b.ev_range[0])//1000}B"
+        hi_label = f"${b.ev_range[1]:.2f}M" if b.ev_range[1] < 1000 else ("$1.00B+" if b.ev_range[1] < 1e6 else "—")
+        lo_label = f"${b.ev_range[0]:.2f}M" if b.ev_range[0] < 1000 else f"${int(b.ev_range[0])//1000}.00B"
         bucket_rows.append(f"""<tr{stripe}>
   <td style="padding:5px 8px;">
     <span style="display:inline-block;width:8px;height:8px;background:{b.color};border-radius:1px;margin-right:4px;vertical-align:middle;"></span>

@@ -69,12 +69,12 @@ def _irr_histogram(irrs: List[float], w: int = 360, h: int = 100) -> str:
         if cnt > 0:
             parts.append(f'<text x="{x+bar_w/2:.1f}" y="{y-2}" text-anchor="middle" fill="{P["text_dim"]}" font-size="7" font-family="{_MONO}">{cnt}</text>')
         if i % 2 == 0:
-            parts.append(f'<text x="{x+bar_w/2:.1f}" y="{h-5}" text-anchor="middle" fill="{P["text_faint"]}" font-size="7" font-family="{_MONO}">{lo}%</text>')
+            parts.append(f'<text x="{x+bar_w/2:.1f}" y="{h-5}" text-anchor="middle" fill="{P["text_faint"]}" font-size="7" font-family="{_MONO}">{lo:.1f}%</text>')
 
     # 20% hurdle line
     hurdle_x = pad_l + (20 - buckets[0]) / (buckets[-1] - buckets[0]) * (w - pad_l - pad_r)
     parts.append(f'<line x1="{hurdle_x:.1f}" y1="{pad_t}" x2="{hurdle_x:.1f}" y2="{h-pad_b}" stroke="{P["warning"]}" stroke-width="1.5" stroke-dasharray="3,2"/>')
-    parts.append(f'<text x="{hurdle_x+3:.1f}" y="{pad_t+10}" fill="{P["warning"]}" font-size="8" font-family="{_SANS}">20% hurdle</text>')
+    parts.append(f'<text x="{hurdle_x+3:.1f}" y="{pad_t+10}" fill="{P["warning"]}" font-size="8" font-family="{_SANS}">20.0% hurdle</text>')
 
     return f'<svg width="{w}" height="{h}">{"".join(parts)}</svg>'
 
@@ -107,7 +107,7 @@ def _irr_moic_scatter(deals: List[Dict[str, Any]], w: int = 320, h: int = 240) -
     for pct in [0, 10, 20, 30, 40, 50, 60]:
         px = xp(pct / 100)
         parts.append(f'<line x1="{px:.1f}" y1="{pad_t}" x2="{px:.1f}" y2="{h-pad_b}" stroke="{P["border_dim"]}" stroke-width="1"/>')
-        parts.append(f'<text x="{px:.1f}" y="{h-pad_b+10}" text-anchor="middle" fill="{P["text_faint"]}" font-size="7" font-family="{_MONO}">{pct}%</text>')
+        parts.append(f'<text x="{px:.1f}" y="{h-pad_b+10}" text-anchor="middle" fill="{P["text_faint"]}" font-size="7" font-family="{_MONO}">{pct:.1f}%</text>')
     for mv in [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]:
         if mv <= moic_max:
             py = yp(mv)
@@ -308,12 +308,12 @@ def render_irr_dispersion() -> str:
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
     <div style="background:{P['panel_alt']};border:1px solid {P['border']};padding:10px">
       <div style="font-size:9px;color:{P['text_dim']};font-family:{_SANS};letter-spacing:.08em;margin-bottom:8px">IRR DISTRIBUTION — 5pp BUCKETS</div>
-      <div style="font-size:9px;color:{P['text_faint']};font-family:{_SANS};margin-bottom:6px">Dashed line = 20% hurdle rate. Green = above hurdle, amber = 10–20%, red = below 10%.</div>
+      <div style="font-size:9px;color:{P['text_faint']};font-family:{_SANS};margin-bottom:6px">Dashed line = 20.0% hurdle rate. Green = above hurdle, amber = 10.0–20.0%, red = below 10.0%.</div>
       {histogram}
     </div>
     <div style="background:{P['panel_alt']};border:1px solid {P['border']};padding:10px">
       <div style="font-size:9px;color:{P['text_dim']};font-family:{_SANS};letter-spacing:.08em;margin-bottom:8px">IRR vs MOIC SCATTER — CONSISTENCY CHECK</div>
-      <div style="font-size:9px;color:{P['text_faint']};font-family:{_SANS};margin-bottom:6px">Dashed lines = 20% IRR hurdle + 2.0× MOIC threshold.</div>
+      <div style="font-size:9px;color:{P['text_faint']};font-family:{_SANS};margin-bottom:6px">Dashed lines = 20.0% IRR hurdle + 2.00× MOIC threshold.</div>
       {scatter}
     </div>
   </div>
@@ -325,7 +325,7 @@ def render_irr_dispersion() -> str:
     {sector_table}
   </div>
   <div style="margin-top:8px;font-size:10px;color:{P['text_faint']};font-family:{_SANS}">
-    IRR = realized internal rate of return at exit as disclosed. Above hurdle = IRR ≥ 20%. Corpus: 720 transactions.
+    IRR = realized internal rate of return at exit as disclosed. Above hurdle = IRR ≥ 20.0%. Corpus: 720 transactions.
   </div>
 </div>"""
 

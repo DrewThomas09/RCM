@@ -242,7 +242,7 @@ def render_escrow_earnout(params: dict = None) -> str:
     Escrow held balance ${r.total_escrow_held_m:.2f}M — claim-loss rate ${claim_loss:.2f}M (${claim_loss / r.total_escrow_held_m * 100 if r.total_escrow_held_m else 0:.1f}% of escrow held).
     Earnout expected payout ${r.total_earnout_accrued_m:.2f}M vs ${r.total_earnout_max_m:.2f}M max — probability-weighted realization {r.total_earnout_accrued_m / r.total_earnout_max_m * 100 if r.total_earnout_max_m else 0:.1f}%.
     12-month expected escrow release ${r.expected_12mo_release_m:.2f}M — driven by {sum(1 for e in r.escrows if e.months_to_release <= 12 and e.months_to_release >= 0)} deals reaching hold-period maturity.
-    Active claim count ({r.active_claims}) is manageable; 3 of 4 open items are sub-$2M and within SPA baskets. Cedar breach-of-rep claim ($2.0M) requires monitoring.
+    Active claim count ({r.active_claims}) is manageable; 3 of 4 open items are sub-$2.00M and within SPA baskets. Cedar breach-of-rep claim ($2.00M) requires monitoring.
     Coverage benchmarks: 8.5% indemnity median of purchase, 4.0% tax median, 2.5% R&W retention — tracks JAMS 2024 PE healthcare survey ±1 percentage point on every line.
   </div>
 </div>"""

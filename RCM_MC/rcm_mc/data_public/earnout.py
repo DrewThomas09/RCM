@@ -118,7 +118,7 @@ def _build_milestones(base_price: float, ebitda_mm: float) -> List[EarnoutMilest
          "Payer revenue retention", "≥ 92%",
          "Year 1", max_total * 0.12, 0.82, "seller"),
         ("Top 3 Provider Retention",
-         "Top producers remain employed", "100% of 3",
+         "Top producers remain employed", "100.0% of 3",
          "Year 2", max_total * 0.15, 0.65, "seller"),
         ("Bolt-on Integration Complete",
          "IT, EHR, HR integration", "Substantially complete",
@@ -204,7 +204,7 @@ def _build_irr_impact(base_price: float, max_earnout: float) -> List[IRRImpact]:
     half_payout = max_earnout * 0.50
     total_half = base_price + half_payout
     rows.append(IRRImpact(
-        scenario="50% earnout achieved",
+        scenario="50.0% earnout achieved",
         seller_gross_ev_mm=round(total_half, 1),
         seller_net_proceeds_mm=round(total_half * 0.80, 1),
         buyer_effective_mult=round(total_half / (base_price / 12.0), 2),

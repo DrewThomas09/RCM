@@ -136,18 +136,18 @@ def _build_escrows() -> List[EscrowPosition]:
 
 def _build_earnouts() -> List[EarnoutPosition]:
     return [
-        EarnoutPosition("Project Magnolia — MSK Platform", "MSK / Ortho", "LTM EBITDA 2026", "$72M", 0.88, 25.0, 19.0, 21.0, "2026-12-31", 8, 0.82),
-        EarnoutPosition("Project Cypress — GI Network", "Gastroenterology", "LTM revenue 2026", "$480M", 0.92, 15.0, 11.5, 13.5, "2026-12-31", 8, 0.88),
-        EarnoutPosition("Project Redwood — Behavioral Health", "Behavioral Health", "LTM EBITDA 2026", "$58M", 0.75, 30.0, 15.5, 18.5, "2026-12-31", 8, 0.70),
+        EarnoutPosition("Project Magnolia — MSK Platform", "MSK / Ortho", "LTM EBITDA 2026", "$72.00M", 0.88, 25.0, 19.0, 21.0, "2026-12-31", 8, 0.82),
+        EarnoutPosition("Project Cypress — GI Network", "Gastroenterology", "LTM revenue 2026", "$480.00M", 0.92, 15.0, 11.5, 13.5, "2026-12-31", 8, 0.88),
+        EarnoutPosition("Project Redwood — Behavioral Health", "Behavioral Health", "LTM EBITDA 2026", "$58.00M", 0.75, 30.0, 15.5, 18.5, "2026-12-31", 8, 0.70),
         EarnoutPosition("Project Laurel — Dermatology", "Dermatology", "De novo count 2026", "12 clinics", 0.83, 8.0, 5.8, 6.5, "2026-12-31", 8, 0.80),
         EarnoutPosition("Project Willow — Fertility", "Fertility / IVF", "Cycle volume 2027", "18K cycles", 0.65, 35.0, 12.5, 18.0, "2027-06-30", 14, 0.62),
-        EarnoutPosition("Project Cedar — Cardiology", "Cardiology", "LTM EBITDA 2026", "$48M", 0.94, 20.0, 16.0, 18.5, "2026-12-31", 8, 0.90),
-        EarnoutPosition("Project Spruce — Radiology", "Radiology", "Volume growth (% YoY)", "15%", 0.72, 12.0, 7.0, 8.5, "2026-12-31", 8, 0.68),
-        EarnoutPosition("Project Maple — Urology", "Urology", "Same-store growth 2026", "7%", 0.86, 10.0, 7.5, 8.5, "2026-12-31", 8, 0.82),
-        EarnoutPosition("Project Aspen — Eye Care", "Eye Care", "LTM EBITDA 2027", "$65M", 0.55, 28.0, 12.0, 15.5, "2027-03-31", 11, 0.58),
-        EarnoutPosition("Project Fir — Lab / Pathology", "Lab Services", "LTM revenue 2026", "$420M", 0.91, 18.0, 13.5, 16.0, "2026-12-31", 8, 0.86),
+        EarnoutPosition("Project Cedar — Cardiology", "Cardiology", "LTM EBITDA 2026", "$48.00M", 0.94, 20.0, 16.0, 18.5, "2026-12-31", 8, 0.90),
+        EarnoutPosition("Project Spruce — Radiology", "Radiology", "Volume growth (% YoY)", "15.0%", 0.72, 12.0, 7.0, 8.5, "2026-12-31", 8, 0.68),
+        EarnoutPosition("Project Maple — Urology", "Urology", "Same-store growth 2026", "7.0%", 0.86, 10.0, 7.5, 8.5, "2026-12-31", 8, 0.82),
+        EarnoutPosition("Project Aspen — Eye Care", "Eye Care", "LTM EBITDA 2027", "$65.00M", 0.55, 28.0, 12.0, 15.5, "2027-03-31", 11, 0.58),
+        EarnoutPosition("Project Fir — Lab / Pathology", "Lab Services", "LTM revenue 2026", "$420.00M", 0.91, 18.0, 13.5, 16.0, "2026-12-31", 8, 0.86),
         EarnoutPosition("Project Ash — Infusion", "Infusion", "Site count 2027", "95 sites", 0.48, 40.0, 14.0, 22.0, "2027-06-30", 14, 0.50),
-        EarnoutPosition("Project Oak — RCM SaaS", "RCM", "ARR growth 2026", "$85M ARR", 0.78, 22.0, 13.5, 16.0, "2026-12-31", 8, 0.75),
+        EarnoutPosition("Project Oak — RCM SaaS", "RCM", "ARR growth 2026", "$85.00M ARR", 0.78, 22.0, 13.5, 16.0, "2026-12-31", 8, 0.75),
     ]
 
 
@@ -155,7 +155,7 @@ def _build_milestones() -> List[MilestonePayment]:
     return [
         MilestonePayment("Project Laurel — Dermatology", "Add-on 3 complete", "Close 3 bolt-ons", 5.0, "2026-09-30", "on track", 0.85),
         MilestonePayment("Project Willow — Fertility", "New market entry", "2 new MSAs launched", 7.5, "2026-12-31", "on track", 0.75),
-        MilestonePayment("Project Cedar — Cardiology", "EHR migration", "Epic live at 100% locations", 4.0, "2026-10-31", "at risk", 0.55),
+        MilestonePayment("Project Cedar — Cardiology", "EHR migration", "Epic live at 100.0% locations", 4.0, "2026-10-31", "at risk", 0.55),
         MilestonePayment("Project Spruce — Radiology", "AI detection deployment", "Aidoc live at 50% hospitals", 6.0, "2026-11-30", "on track", 0.78),
         MilestonePayment("Project Aspen — Eye Care", "Add-on 2 complete", "2 regional acquisitions", 10.0, "2027-03-31", "on track", 0.80),
         MilestonePayment("Project Fir — Lab / Pathology", "Direct contracting win", "2 regional Blues contracts", 8.0, "2026-12-31", "at risk", 0.50),
