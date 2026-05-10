@@ -166,6 +166,10 @@ class APIEndpointSmoke(unittest.TestCase):
         store = PortfolioStore(cls.db)
         create_user(store, "demo", "DemoPass!1",
                     display_name="Demo Partner", role="admin")
+        # Seed a non-admin analyst so the admin-role guard can
+        # exercise the role-gating path.
+        create_user(store, "analyst", "AnalystPass!1",
+                    display_name="Test Analyst", role="analyst")
         # Seed two deals so dynamic /api/deals/<id>/* probes resolve
         # to real handler paths instead of 404s. Names mirror what
         # API_SMOKE_ROUTES references.
@@ -530,6 +534,72 @@ class APIEndpointSmoke(unittest.TestCase):
             )
         self.assertEqual(payload["code"], "RATE_LIMITED")
         self.assertIsInstance(payload["retry_after_secs"], (int, float))
+
+    def test_admin_only_routes_reject_analyst_role(self) -> None:
+        """Routes that show user-management or audit data must
+        require role=admin, not just role=any-authenticated.
+
+        Admin gating is layered: the auth-gating guard above
+        catches public-leak regressions; this guard catches a
+        different bug where a contributor accidentally widens an
+        admin route to all authenticated users (e.g. by removing
+        the role check or copy-pasting from a non-admin handler).
+        Together they form a complete RBAC contract.
+        """
+        # Login as the seeded 'analyst' user (non-admin).
+        analyst_jar = CookieJar()
+        analyst_opener = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(analyst_jar),
+            _NoFollow(),
+        )
+        analyst_opener.open(self.base + "/login", timeout=5).read()
+        csrf = ""
+        for c in analyst_jar:
+            if "csrf" in c.name.lower():
+                csrf = c.value
+                break
+        body = urllib.parse.urlencode({
+            "username": "analyst",
+            "password": "AnalystPass!1",
+            "csrf_token": csrf,
+        }).encode()
+        try:
+            analyst_opener.open(
+                urllib.request.Request(
+                    self.base + "/api/login",
+                    data=body, method="POST",
+                ),
+                timeout=5,
+            )
+        except urllib.error.HTTPError as e:
+            if e.code not in (200, 303):
+                raise
+
+        ADMIN_ONLY = ["/users", "/audit"]
+        leaks: list[str] = []
+        for path in ADMIN_ONLY:
+            try:
+                resp = analyst_opener.open(
+                    self.base + path, timeout=5,
+                )
+                code = getattr(resp, "status", 0)
+            except urllib.error.HTTPError as e:
+                code = e.code
+            # 403 (forbidden — authenticated but not authorised)
+            # is the correct response. Some installations might
+            # return 401 if the gate also re-validates the
+            # session — both are acceptable rejections.
+            if code not in (401, 403):
+                leaks.append(
+                    f"{path}: status {code} for analyst user "
+                    f"(expected 401 or 403 — admin-only route "
+                    f"accepting non-admin)"
+                )
+        self.assertEqual(
+            leaks, [],
+            f"Admin-only routes accepting non-admin users: "
+            f"{leaks}",
+        )
 
     def test_options_preflight_contract(self) -> None:
         """CORS preflight on /api/* must:
