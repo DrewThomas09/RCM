@@ -27,7 +27,8 @@ from ..diligence.payer_stress import (
     default_hospital_mix, run_payer_stress,
 )
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_section_intro, ck_signal_badge,
+    P, chartis_shell, ck_kpi_block, ck_panel,
+    ck_section_header, ck_section_intro, ck_signal_badge,
 )
 from .power_ui import (
     benchmark_chip, bookmark_hint, deal_context_bar,
@@ -105,6 +106,8 @@ text-transform:uppercase;font-weight:700;cursor:pointer;}}
 .ps-form-submit:hover{{filter:brightness(1.15);}}
 .ps-form-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
 gap:14px;}}
+.ps-mix-row{{display:flex;gap:24px;align-items:center;flex-wrap:wrap;}}
+.ps-mix-legend{{flex:1 1 260px;min-width:260px;}}
 """.format(
         tx=P["text"], td=P["text_dim"], tf=P["text_faint"],
         pn=P["panel"], pa=P["panel_alt"],
@@ -374,25 +377,16 @@ def _payer_card(row: PayerStressRow) -> str:
     if row.payer_id:
         prior = get_payer(row.payer_id)
         if prior is not None:
-            # The simulated median is a cumulative N-year move, so
-            # compare to the prior's single-period median × horizon.
-            # We approximate horizon from the NPR attributed. For
-            # 5-year horizon, expected = 5 × prior median.
-            # But since we don't know horizon here, frame directly:
-            # "library prior: μ=+1.5%, P10=-4.5% per renewal event"
             prior_context = (
-                f'<div style="font-size:10.5px;color:{P["text_faint"]};'
-                f'margin-top:4px;letter-spacing:0.3px;">'
+                '<p class="ck-eyebrow">'
                 f'Library prior per renewal: '
-                f'μ <strong style="color:{P["text_dim"]};">'
-                f'{prior.rate_move_median*100:+.1f}%</strong> · '
-                f'P25 <strong style="color:{P["negative"]};">'
+                f'μ <strong>{prior.rate_move_median*100:+.1f}%</strong> · '
+                f'P25 <strong class="cad-neg">'
                 f'{prior.rate_move_p25*100:+.1f}%</strong> · '
-                f'P75 <strong style="color:{P["positive"]};">'
+                f'P75 <strong class="cad-pos">'
                 f'{prior.rate_move_p75*100:+.1f}%</strong> · '
-                f'renewal cadence {int(prior.renewal_prob_12mo*100)}% / '
-                f'12mo'
-                f'</div>'
+                f'renewal cadence {int(prior.renewal_prob_12mo*100)}% / 12mo'
+                '</p>'
             )
     return (
         f'<div class="ps-payer-card" style="--tone:{tone};">'
@@ -410,24 +404,28 @@ def _payer_card(row: PayerStressRow) -> str:
         f'renewal: {html.escape(renewal)}'
         f'</div>'
         + prior_context
-        + f'<div class="ps-payer-stats">'
-        f'<div><div class="ps-payer-stat">Cum rate move · med</div>'
-        f'<div class="ps-payer-stat-val" style="color:{rate_color};">'
-        f'{row.median_rate_move*100:+.2f}%</div></div>'
-        f'<div><div class="ps-payer-stat">Cum rate move · P10 (tail)</div>'
-        f'<div class="ps-payer-stat-val" style="color:{tail_color};">'
-        f'{row.p10_rate_move*100:+.2f}%</div></div>'
-        f'<div><div class="ps-payer-stat">Cum rate move · P90 (upside)</div>'
-        f'<div class="ps-payer-stat-val" style="color:{P["positive"]};">'
-        f'{row.p90_rate_move*100:+.2f}%</div></div>'
-        f'<div><div class="ps-payer-stat">NPR $ · median</div>'
-        f'<div class="ps-payer-stat-val" style="color:{tone};">'
-        f'${row.median_npr_delta_usd/1e6:+,.2f}M</div></div>'
-        f'<div><div class="ps-payer-stat">NPR $ · P10</div>'
-        f'<div class="ps-payer-stat-val" '
-        f'style="color:{P["negative"]};">'
-        f'${row.p10_npr_delta_usd/1e6:+,.2f}M</div></div>'
-        f'</div>'
+        + '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Cum rate move · med",
+            f"{row.median_rate_move*100:+.2f}%",
+        )
+        + ck_kpi_block(
+            "Cum rate move · P10 (tail)",
+            f"{row.p10_rate_move*100:+.2f}%",
+        )
+        + ck_kpi_block(
+            "Cum rate move · P90 (upside)",
+            f"{row.p90_rate_move*100:+.2f}%",
+        )
+        + ck_kpi_block(
+            "NPR $ · median",
+            f"${row.median_npr_delta_usd/1e6:+,.2f}M",
+        )
+        + ck_kpi_block(
+            "NPR $ · P10",
+            f"${row.p10_npr_delta_usd/1e6:+,.2f}M",
+        )
+        + '</div>'
         f'<div class="ps-payer-narrative">'
         f'{html.escape(row.narrative)}</div>'
         f'</div>'
@@ -555,23 +553,27 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
   </div>
 </form>
 """
+    landing_hero = ck_section_intro(
+        eyebrow="Payer Mix Stress Lab",
+        headline="How fragile is your payer mix?",
+        italic_word="fragile",
+        body=(
+            "Stress-tests the target's commercial + government payer "
+            "portfolio against empirical rate-movement priors for 19 "
+            "major US payers. Produces per-payer rate shock "
+            "distributions, aggregate NPR impact cone across the "
+            "hold, concentration penalty, and a cumulative "
+            "EBITDA-at-risk headline. Data: HFMA / MGMA / AHA sector "
+            "surveys + public-comp 10-K payer-rate commentary. "
+            "Refresh priors quarterly."
+        ),
+    )
     body = (
         _scoped_styles()
         + '<div class="ps-wrap">'
         + deal_context_bar(qs or {}, active_surface="payer")
-        + '<div style="padding:22px 0 16px 0;">'
-        + '<div class="ps-eyebrow">Payer Mix Stress Lab</div>'
-        + '<div class="ps-h1">How fragile is your payer mix?</div>'
-        + f'<div class="ps-callout">Stress-tests the target\'s '
-        + 'commercial + government payer portfolio against empirical '
-        + 'rate-movement priors for 19 major US payers. Produces '
-        + 'per-payer rate shock distributions, aggregate NPR impact '
-        + 'cone across the hold, concentration penalty, and a '
-        + 'cumulative EBITDA-at-risk headline. Data: HFMA / MGMA / '
-        + 'AHA sector surveys + public-comp 10-K payer-rate '
-        + 'commentary. Refresh priors quarterly.</div>'
-        + '</div>'
-        + form
+        + landing_hero
+        + ck_panel(form, title="Payer mix inputs")
         + '</div>'
     )
     return chartis_shell(
@@ -795,18 +797,22 @@ def render_payer_stress_page(
 
     mix = _parse_mix_text(mix_text)
     if not mix:
+        err_intro = ck_section_intro(
+            eyebrow="Payer Stress",
+            headline="Could not parse any payer lines.",
+            italic_word="parse",
+            body=(
+                "Expected format: 'UnitedHealthcare, 34%' — "
+                "one line per payer."
+            ),
+        )
         return chartis_shell(
             _scoped_styles()
-            + f'<div class="ps-wrap" style="padding:28px;">'
-            + f'<div class="ps-eyebrow">Payer Stress</div>'
-            + f'<div class="ps-h1" style="color:{P["negative"]};">'
-            + 'Could not parse any payer lines.</div>'
-            + f'<div class="ps-callout">Expected format: '
-            + '<code>UnitedHealthcare, 34%</code> — one line per '
-            + 'payer.</div>'
-            + f'<div style="margin-top:18px;">'
-            + f'<a href="/diligence/payer-stress" '
-            + f'style="color:{P["accent"]};">← Back</a></div></div>',
+            + '<div class="ps-wrap">'
+            + err_intro
+            + '<p class="ck-section-body">'
+            + '<a href="/diligence/payer-stress" class="ck-link">← Back</a>'
+            + '</p></div>',
             "Payer Stress",
         )
 
@@ -853,99 +859,84 @@ def render_payer_stress_page(
             f"than single-payer shock."
         )
 
-    hero = (
-        f'<div style="padding:22px 0 16px 0;border-bottom:1px solid '
-        f'{P["border"]};margin-bottom:22px;">'
-        f'<div class="ps-eyebrow">Payer Mix Stress Lab</div>'
-        f'<div class="ps-h1">{html.escape(target_name)}</div>'
-        f'<div style="font-size:11px;color:{P["text_faint"]};'
-        f'margin-top:4px;">'
-        f'{len(mix)} payers · {report.n_paths} simulated paths · '
-        f'{horizon}-year horizon · '
-        f'${total_npr/1e6:,.0f}M total NPR'
-        + (f' · {report.unclassified_share*100:.0f}% unclassified'
-           if report.unclassified_share > 0.05 else '')
-        + f'</div>'
-        f'{_verdict_card(report)}'
-        f'</div>'
+    main_intro = ck_section_intro(
+        eyebrow="Payer Mix Stress Lab",
+        headline=f"{html.escape(target_name)} — payer concentration cliff.",
+        italic_word="concentration",
+        body=(
+            f"{len(mix)} payers · {report.n_paths} simulated paths · "
+            f"{horizon}-year horizon · "
+            f"${total_npr/1e6:,.0f}M total NPR"
+            + (f" · {report.unclassified_share*100:.0f}% unclassified."
+               if report.unclassified_share > 0.05 else ".")
+        ),
     )
+    hero = main_intro + _verdict_card(report)
 
     # Mix visualization — donut + legend
-    mix_panel = (
-        f'<div class="ps-panel">'
-        f'<div class="ps-section-label" style="margin-top:0;">'
-        f'Payer mix · concentration snapshot</div>'
-        f'<div style="display:flex;gap:24px;align-items:center;'
-        f'flex-wrap:wrap;">'
+    mix_inner = (
+        '<div class="ps-mix-row">'
         f'<div>{_mix_donut_svg(report.per_payer)}</div>'
-        f'<div style="flex:1 1 260px;min-width:260px;">'
-        f'{_legend(report.per_payer)}</div>'
-        f'</div>'
-        f'<div class="ps-callout">'
-        f'<strong style="color:{P["text"]};">How to read: </strong>'
-        f'Donut shows each payer\'s share of NPR; center shows the '
-        f'Top-1 concentration (color: <span style="color:{P["positive"]};'
-        f'">&lt;25% green</span> · <span style="color:{P["warning"]};'
-        f'">25-40% amber</span> · <span style="color:{P["negative"]};'
-        f'">&gt;40% red</span>). HHI above 2500 = concentrated. '
-        f'Concentration amplifier multiplies the aggregate '
-        f'NPR volatility.'
-        f'</div>'
-        f'</div>'
+        f'<div class="ps-mix-legend">{_legend(report.per_payer)}</div>'
+        '</div>'
+        '<p class="ck-section-body">'
+        '<strong>How to read:</strong> '
+        "Donut shows each payer's share of NPR; center shows the "
+        'Top-1 concentration '
+        '(<span class="cad-pos">&lt;25% green</span> · '
+        '<span class="cad-warn">25-40% amber</span> · '
+        '<span class="cad-neg">&gt;40% red</span>). '
+        'HHI above 2500 = concentrated. Concentration amplifier '
+        'multiplies the aggregate NPR volatility.</p>'
+    )
+    mix_panel = ck_panel(
+        mix_inner, title="Payer mix · concentration snapshot",
     )
 
-    cone_panel = (
-        f'<div class="ps-panel">'
-        f'<div class="ps-section-label" style="margin-top:0;">'
-        f'Aggregate NPR impact · P10/P50/P90 cone</div>'
-        f'{_yearly_cone_chart(report.yearly_impact)}'
+    cone_inner = (
+        _yearly_cone_chart(report.yearly_impact)
         + interpret_callout("Plain-English read:", chart_plain)
-        + f'<div class="ps-callout">'
-        f'<strong style="color:{P["text"]};">How to read: </strong>'
-        f'Shaded band is the P10-P90 spread of cumulative NPR '
-        f'dollar impact in each year; solid line is P50. '
-        f'Values above zero = rate tailwind; below = compression. '
-        f'The partner-critical reading is the P10 — the downside '
-        f'tail that should be absorbed into the Deal MC '
-        f'base-case before signing.'
-        f'</div>'
-        f'<div style="margin-top:10px;">{_yearly_table(report.yearly_impact)}</div>'
-        f'</div>'
+        + '<p class="ck-section-body">'
+        '<strong>How to read:</strong> '
+        'Shaded band is the P10-P90 spread of cumulative NPR '
+        'dollar impact in each year; solid line is P50. '
+        'Values above zero = rate tailwind; below = compression. '
+        'The partner-critical reading is the P10 — the downside '
+        'tail that should be absorbed into the Deal MC '
+        'base-case before signing.</p>'
+        f'{_yearly_table(report.yearly_impact)}'
+    )
+    cone_panel = ck_panel(
+        cone_inner, title="Aggregate NPR impact · P10/P50/P90 cone",
     )
 
     cards_panel = (
-        f'<div class="ps-section-label">'
-        f'Per-payer stress · ranked by NPR share</div>'
+        ck_section_header(
+            "Per-payer stress · ranked by NPR share",
+            eyebrow="DRILLDOWN",
+        )
         + "".join(_payer_card(p) for p in report.per_payer)
     )
 
-    table_panel = (
-        f'<div class="ps-panel">'
-        f'<div class="ps-section-label" style="margin-top:0;">'
-        f'Sortable detail · CSV-exportable</div>'
-        f'{_payer_table(report)}'
-        f'</div>'
+    table_panel = ck_panel(
+        _payer_table(report),
+        title="Sortable detail · CSV-exportable",
     )
 
-    cross_link = (
-        f'<div class="ps-panel">'
-        f'<div class="ps-section-label" style="margin-top:0;">'
-        f'Cross-reference</div>'
-        f'<div style="font-size:13px;color:{P["text_dim"]};'
-        f'line-height:1.7;">'
-        f'The P10 EBITDA drag should subtract from '
-        f'<a href="/diligence/deal-mc" '
-        f'style="color:{P["accent"]};">→ Deal MC</a> base case · '
-        f'feed the <a href="/diligence/bridge-audit" '
-        f'style="color:{P["accent"]};">→ Bridge Audit</a> '
-        f'payer-repricing lever · appear as evidence in the '
-        f'<a href="/diligence/bear-case" '
-        f'style="color:{P["accent"]};">→ Bear Case</a> · and '
-        f'stress-test the '
-        f'<a href="/diligence/covenant-stress" '
-        f'style="color:{P["accent"]};">→ Covenant Stress Lab</a> '
-        f'DSCR numerator.'
-        f'</div></div>'
+    cross_link = ck_panel(
+        '<p class="ck-section-body">'
+        'The P10 EBITDA drag should subtract from '
+        '<a href="/diligence/deal-mc" class="ck-link">→ Deal MC</a> '
+        'base case · feed the '
+        '<a href="/diligence/bridge-audit" class="ck-link">'
+        '→ Bridge Audit</a> payer-repricing lever · appear as '
+        'evidence in the '
+        '<a href="/diligence/bear-case" class="ck-link">'
+        '→ Bear Case</a> · and stress-test the '
+        '<a href="/diligence/covenant-stress" class="ck-link">'
+        '→ Covenant Stress Lab</a> DSCR numerator.'
+        '</p>',
+        title="Cross-reference",
     )
 
     body = (
