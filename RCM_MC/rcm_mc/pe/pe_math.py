@@ -33,7 +33,7 @@ class BridgeResult:
     drivers that a PE IC committee reads in order:
 
     1. ``organic_ebitda_contribution`` — growth you'd have gotten without any
-       RCM intervention (e.g., 3% annual market growth × entry multiple).
+       RCM intervention (e.g., 3.0% annual market growth × entry multiple).
     2. ``rcm_uplift_contribution`` — the modeled RCM EBITDA uplift × entry
        multiple. This is what the diligence bundle underwrites.
     3. ``multiple_expansion_contribution`` — change in exit multiple vs entry,
@@ -83,7 +83,7 @@ def value_creation_bridge(
         Incremental EBITDA from the RCM value plan *at exit*, fully ramped.
         Usually the ``ebitda_uplift`` mean from the diligence bundle.
     entry_multiple
-        EV/EBITDA multiple at entry (e.g., 9.0 for 9x). PE purchase price
+        EV/EBITDA multiple at entry (e.g., 9.0 for 9.00x). PE purchase price
         is ``entry_ebitda * entry_multiple``.
     exit_multiple
         EV/EBITDA multiple at exit. Often equals entry (no multiple
@@ -91,7 +91,7 @@ def value_creation_bridge(
     hold_years
         Holding period in years. Drives the organic growth compound.
     organic_growth_pct
-        Annual organic EBITDA growth rate (decimal, e.g., 0.03 for 3%/yr).
+        Annual organic EBITDA growth rate (decimal, e.g., 0.03 for 3.0%/yr).
         Compounds over ``hold_years``. Represents market-level growth the
         platform would have captured *without* any RCM intervention.
 
@@ -291,7 +291,7 @@ class ReturnsResult:
     exit_proceeds: float
     hold_years: float
     moic: float
-    irr: float                      # annualized, decimal (0.25 = 25% IRR)
+    irr: float                      # annualized, decimal (0.25 = 25.0% IRR)
     total_distributions: float      # exit + sum(interim)
 
 
@@ -313,7 +313,7 @@ def irr(cashflows: List[float], tol: float = 1e-7, max_iter: int = 200) -> float
     valid bracket. We verify bracket validity and raise on failure rather
     than silently returning a wrong answer.
 
-    Returns the annualized rate as a decimal (0.25 = 25%).
+    Returns the annualized rate as a decimal (0.25 = 25.0%).
     """
     if not cashflows or len(cashflows) < 2:
         raise ValueError("IRR needs at least 2 cashflows (entry + exit)")
@@ -324,7 +324,7 @@ def irr(cashflows: List[float], tol: float = 1e-7, max_iter: int = 200) -> float
     npv_lo = _npv(lo, cashflows)
     npv_hi = _npv(hi, cashflows)
     if npv_lo * npv_hi > 0:
-        # No sign change in the bracket — IRR is outside [-99%, 1000%].
+        # No sign change in the bracket — IRR is outside [-99.0%, 1000.0%].
         # For realistic PE deals this means catastrophic loss or impossibly
         # high return. Return the bracket endpoint that's closer to zero.
         return lo if abs(npv_lo) < abs(npv_hi) else hi
@@ -502,7 +502,7 @@ def hold_period_grid(
 
     Returns one row per scenario with the full bridge + returns math. This
     is what a PE IC committee actually asks for: "show me the sensitivity
-    table at 3/5/7-year exits across 8x, 9x, 10x exit multiples."
+    table at 3/5/7-year exits across 8.00x, 9.00x, 10.00x exit multiples."
 
     Parameters
     ----------
@@ -745,7 +745,7 @@ def covenant_check(
         Total funded debt subject to the covenant.
     covenant_max_leverage
         Maximum Debt/EBITDA multiple permitted by the senior credit
-        agreement (e.g., 6.0 for a 6.0x cov-lite). Must be positive.
+        agreement (e.g., 6.0 for a 6.00x cov-lite). Must be positive.
     interest_rate
         Weighted-average cost of debt (decimal). If >0, compute
         interest-coverage = EBITDA / (debt × rate). 0 disables this.
