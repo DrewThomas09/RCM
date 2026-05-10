@@ -325,16 +325,16 @@ def render_covenant_monitor(params: dict) -> str:
     kpis = ck_kpi_block("Overall Status",
                         f'<span style="color:{r.overall_color}">{r.overall_status}</span>')
     kpis += ck_kpi_block("Entry Leverage", f"{r.entry_leverage:.2f}x",
-                         unit=f"Sz bucket: {r.size_bucket}")
+                         sub=f"Sz bucket: {r.size_bucket}")
     kpis += ck_kpi_block("Current Leverage", f"{r.current_leverage:.2f}x",
-                         unit=f"Threshold: {lev_cov.threshold:.2f}x",
-                         delta=f"{lev_cov.headroom_pct * 100:.1f}% headroom")
+                         sub=f"Threshold: {lev_cov.threshold:.2f}x",
+                         trend=f"{lev_cov.headroom_pct * 100:.1f}% headroom")
     kpis += ck_kpi_block("Int. Coverage", f"{r.interest_coverage:.2f}x",
-                         unit=f"Min: {icr_cov.threshold:.2f}x",
-                         delta=f"{icr_cov.headroom_pct * 100:.1f}% headroom")
+                         sub=f"Min: {icr_cov.threshold:.2f}x",
+                         trend=f"{icr_cov.headroom_pct * 100:.1f}% headroom")
     kpis += ck_kpi_block("Sector Med. Leverage", f"{r.sector_median_leverage:.2f}x",
-                         unit=f"P75: {r.sector_p75_leverage:.2f}x")
-    kpis += ck_kpi_block("Corpus Deals", str(r.corpus_deal_count), unit="")
+                         sub=f"P75: {r.sector_p75_leverage:.2f}x")
+    kpis += ck_kpi_block("Corpus Deals", str(r.corpus_deal_count), sub="")
 
     thresholds_lev = r.covenants[0].threshold
     thresholds_icr = r.covenants[1].threshold
