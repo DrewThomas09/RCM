@@ -28,20 +28,30 @@ import unittest
 
 def _ui_modules() -> list[str]:
     """Enumerate every importable module name under rcm_mc/ui/."""
+    return _modules_under("rcm_mc/ui")
+
+
+def _all_modules() -> list[str]:
+    """Enumerate every importable module name under rcm_mc/."""
+    return _modules_under("rcm_mc")
+
+
+def _modules_under(rel_subpath: str) -> list[str]:
     pkg_root = (
         pathlib.Path(__file__).resolve().parent.parent
-        / "rcm_mc" / "ui"
+        / pathlib.Path(rel_subpath)
     )
+    repo_root = pathlib.Path(__file__).resolve().parent.parent
     names: list[str] = []
     for py in pkg_root.rglob("*.py"):
-        rel = py.relative_to(pkg_root.parent.parent)
-        # rcm_mc/ui/foo.py → rcm_mc.ui.foo
-        # rcm_mc/ui/sub/foo.py → rcm_mc.ui.sub.foo
+        rel = py.relative_to(repo_root)
         parts = list(rel.parts)
         if parts[-1] == "__init__.py":
             parts = parts[:-1]
         else:
             parts[-1] = parts[-1][:-3]
+        if "__pycache__" in parts:
+            continue
         names.append(".".join(parts))
     return sorted(names)
 
@@ -102,6 +112,29 @@ class EveryUIModuleImportsCleanly(unittest.TestCase):
         self.assertEqual(
             failures, [],
             f"{len(failures)} modules failed to import under v1:\n"
+            + "\n".join(f"  {n}: {e}" for n, e in failures[:20]),
+        )
+
+
+class WholePackageImportsCleanly(unittest.TestCase):
+    """Broader smoke — every module under ``rcm_mc/`` (not just
+    ``rcm_mc/ui/``) must import cleanly. Catches the same class
+    of latent ImportError / KeyError / NameError in non-UI
+    packages: data_public loaders, pe_intelligence, exports,
+    diligence, etc."""
+
+    def test_every_rcm_mc_module_imports(self) -> None:
+        os.environ["CHARTIS_UI_V2"] = "1"
+        _drop_ui_modules()
+        failures: list[tuple[str, str]] = []
+        for mod_name in _all_modules():
+            try:
+                importlib.import_module(mod_name)
+            except Exception as e:  # noqa: BLE001
+                failures.append((mod_name, f"{type(e).__name__}: {e}"))
+        self.assertEqual(
+            failures, [],
+            f"{len(failures)} modules failed to import:\n"
             + "\n".join(f"  {n}: {e}" for n, e in failures[:20]),
         )
 
