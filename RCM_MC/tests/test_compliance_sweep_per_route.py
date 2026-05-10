@@ -812,6 +812,37 @@ class PerRouteComplianceSweep(unittest.TestCase):
             f"({len(gaps)}): {gaps[:20]}",
         )
 
+    def test_no_route_leaks_filesystem_paths(self) -> None:
+        """No 200-returning HTML route may render an absolute
+        filesystem path (``/Users/...``, ``/var/folders/...``).
+
+        Two surfaces exposed db_path to any authenticated user:
+
+        * /deal/<id> shell subtitle (``Live view · reading <path>``)
+        * /ops storage card (``Portfolio SQLite at <code>...</code>``)
+
+        Both have been redacted; this guard pins the redaction.
+        Catches any future regression where a contributor adds a
+        helpful debug-style subtitle / footer that interpolates
+        config.db_path or os.environ paths into HTML.
+        """
+        import re
+        PATH_PAT = re.compile(
+            r"/var/folders/[^\s\"' <]+|/Users/[a-z]+/[^\s\"' <]+"
+        )
+        leaks: list[str] = []
+        for path in REPRESENTATIVE_ROUTES:
+            status, body = self._fetch(path)
+            if status != 200 or not body:
+                continue
+            m = PATH_PAT.search(body)
+            if m:
+                leaks.append(f"{path}: matched {m.group(0)!r}")
+        self.assertEqual(
+            leaks, [],
+            f"HTML routes leaking absolute filesystem paths: {leaks}",
+        )
+
     def test_no_route_leaks_python_exceptions_in_html(self) -> None:
         """For every 200-returning HTML route, the body must not
         contain Python-exception strings.

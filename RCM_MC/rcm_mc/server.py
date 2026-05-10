@@ -723,7 +723,11 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
     return shell(
         body=body,
         title=f"Deal: {deal_id}",
-        subtitle=f"Live view · reading {config.db_path}",
+        # Subtitle deliberately omits the db_path — exposing the
+        # absolute filesystem path of the SQLite store gave any
+        # analyst-role partner a free recon vector for traversal /
+        # exfil attempts. Keep the partner-visible string neutral.
+        subtitle="Live view",
         back_href="/",
     )
 
@@ -13219,7 +13223,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         <div class="card">
           <h2>Storage</h2>
           <p class="muted" style="font-size: 0.85rem;">
-            Portfolio SQLite at <code>{html.escape(self.config.db_path)}</code> · {auth_line}
+            Portfolio SQLite (size {html.escape(size_str)}) · {auth_line}
           </p>
           <table>
             <thead><tr><th>Table</th><th class="num">Rows</th>
