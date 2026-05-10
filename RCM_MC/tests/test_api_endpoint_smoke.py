@@ -1765,6 +1765,55 @@ class APIEndpointSmoke(unittest.TestCase):
             f"Content-Type mismatches ({len(issues)}): {issues}",
         )
 
+    def test_no_endpoint_leaks_filesystem_paths(self) -> None:
+        """No 200-pinned JSON body may contain absolute filesystem
+        paths. Companion to the HTML-side path-leak guard
+        (test_no_route_leaks_filesystem_paths in
+        test_compliance_sweep_per_route.py).
+
+        Routes legitimately exposing paths to admin operators are
+        skipped — /api/system/info and /api/backup are admin-only
+        post 6be7f90d/9d62c0bc, and /api/deals had its
+        ``run_dir`` column redacted in 12f8b578.
+
+        Catches any future regression that adds a debug-style field
+        leaking an absolute filesystem path to non-admin partners.
+        """
+        import re
+        PATH_PAT = re.compile(
+            r"/var/folders/[^\s\"' <]+|/Users/[a-z]+/[^\s\"' <]+|"
+            r"/tmp/[a-z_][^\s\"' <]+"
+        )
+        # Admin-only endpoints + binary blobs are exempt.
+        SKIP = {
+            "/api/system/info",       # admin-only — db_path is intentional
+            "/api/backup",            # SQLite blob with embedded paths
+            "/api/migrations",        # admin-only
+            "/api/metrics",           # admin-only
+            "/api/deals/smoke-a/package",  # ZIP with raw bytes
+            "/api/analysis/smoke-a/export",  # HTML/binary
+            "/api/docs",              # Swagger UI HTML
+            "/healthz", "/health",
+        }
+        leaks: list[str] = []
+        for path, expected_status in API_SMOKE_ROUTES:
+            if expected_status != 200:
+                continue
+            if path in SKIP:
+                continue
+            try:
+                resp = self.opener.open(self.base + path, timeout=8)
+                body = resp.read().decode("utf-8", errors="replace")
+            except Exception:
+                continue
+            m = PATH_PAT.search(body)
+            if m:
+                leaks.append(f"{path}: matched {m.group(0)[:60]!r}")
+        self.assertEqual(
+            leaks, [],
+            f"JSON endpoints leaking filesystem paths: {leaks}",
+        )
+
     def test_no_endpoint_leaks_python_exceptions_in_body(self) -> None:
         """For every 200-pinned smoke endpoint, the response body
         must not contain Python-exception strings.

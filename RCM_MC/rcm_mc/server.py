@@ -7921,6 +7921,12 @@ class RCMHandler(BaseHTTPRequestHandler):
                     ascending=(sort_dir == "asc"),
                     na_position="last",
                 )
+            # Redact internal-state columns that leak host topology.
+            # ``run_dir`` is the absolute filesystem path to the deal's
+            # PE-artifacts directory — operator-internal, not partner-
+            # visible. Dropping it here keeps the row shape stable for
+            # every other consumer of latest_per_deal.
+            df = df.drop(columns=["run_dir"], errors="ignore")
             total = len(df)
             page = df.iloc[offset:offset + limit]
             return self._send_json({
