@@ -414,6 +414,52 @@ class APIEndpointSmoke(unittest.TestCase):
             f"from API_SMOKE_ROUTES with rationale.",
         )
 
+    def test_no_endpoint_leaks_python_exceptions_in_body(self) -> None:
+        """For every 200-pinned smoke endpoint, the response body
+        must not contain Python-exception strings.
+
+        This generalises the regression-net for the unbound-`store`
+        bug fixed in 88f717e3: that bug returned HTTP 200 with
+        ``{"error": "cannot access local variable 'store' ..."}``
+        for every comparison row, so the status-only smoke missed
+        it. Any handler that swallows an exception into a JSON-200
+        envelope leaks the same pattern; this guard catches the
+        whole class.
+
+        Failures point at the path + the phrase that tripped the
+        guard so the contributor can grep the dispatcher directly.
+        """
+        bad_phrases = (
+            "cannot access local",
+            "Traceback (most recent",
+            "TypeError: ",
+            "AttributeError: ",
+            "KeyError: ",
+            "NameError: ",
+            "UnboundLocalError",
+        )
+        suspects: list[tuple[str, str]] = []
+        for path, expected in API_SMOKE_ROUTES:
+            if expected != 200:
+                continue
+            try:
+                resp = self.opener.open(
+                    self.base + path, timeout=8,
+                )
+                body = resp.read().decode("utf-8", errors="replace")
+            except Exception:
+                continue
+            for phrase in bad_phrases:
+                if phrase in body:
+                    suspects.append((path, phrase))
+                    break
+        self.assertEqual(
+            suspects, [],
+            f"Endpoints leaking Python-exception text into the "
+            f"response body (likely a swallowed-exception bug "
+            f"similar to the unbound-`store` defect): {suspects}",
+        )
+
     def test_deal_compare_returns_real_rows_not_unbound_store_errors(
         self,
     ) -> None:
