@@ -3404,6 +3404,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             body_b = get_openapi_json().encode("utf-8")
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-Type", "application/json")
+            self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("Content-Length", str(len(body_b)))
             self.end_headers()
             self.wfile.write(body_b)
@@ -7223,6 +7224,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         payload = _json.dumps(report.to_dict(), default=str).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Content-Length", str(len(payload)))
         self.end_headers()
         self.wfile.write(payload)
@@ -10117,6 +10119,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         body = _json.dumps(payload, indent=2, default=_safe).encode("utf-8")
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        # Mirror the nosniff header in _send_json — every JSON response
+        # path needs the same MIME-confusion guard.
+        self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-cache")
         self.send_header("ETag", etag)
@@ -10271,6 +10276,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         body = _json.dumps(payload, indent=2, default=_safe).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        # Prevent browsers from MIME-sniffing JSON as HTML — closes the
+        # content-confusion attack vector when a partner-supplied value
+        # ends up reflected in a JSON payload.
+        self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Cache-Control", "no-store")
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")

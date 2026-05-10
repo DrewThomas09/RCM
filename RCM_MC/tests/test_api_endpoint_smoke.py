@@ -414,6 +414,50 @@ class APIEndpointSmoke(unittest.TestCase):
             f"from API_SMOKE_ROUTES with rationale.",
         )
 
+    def test_json_endpoints_set_nosniff_header(self) -> None:
+        """Every 200-pinned JSON endpoint must set
+        ``X-Content-Type-Options: nosniff``.
+
+        Without nosniff, a browser can MIME-sniff a JSON response
+        as HTML — a partner-supplied string reflected into the body
+        could then execute as script in old browsers. The
+        application/json Content-Type alone isn't sufficient
+        protection.
+
+        Routes that legitimately return non-JSON (text/csv,
+        application/zip, application/x-sqlite3, text/plain liveness
+        probes, text/html viewer pages) are exempt.
+        """
+        SKIP_NOT_JSON = {
+            "/healthz", "/health",
+            "/api/backup",
+            "/api/deals/smoke-a/package",
+            "/api/analysis/smoke-a/export",
+            "/api/docs",
+        }
+        missing: list[str] = []
+        for path, expected_status in API_SMOKE_ROUTES:
+            if expected_status != 200:
+                continue
+            if path in SKIP_NOT_JSON:
+                continue
+            if path.endswith(".csv") or path.endswith(".memo"):
+                continue
+            try:
+                resp = self.opener.open(self.base + path, timeout=8)
+            except Exception:
+                continue
+            xcto = resp.headers.get("X-Content-Type-Options", "")
+            if xcto.lower() != "nosniff":
+                missing.append(
+                    f"{path}: X-Content-Type-Options={xcto!r}"
+                )
+        self.assertEqual(
+            missing, [],
+            f"JSON endpoints lacking X-Content-Type-Options: nosniff "
+            f"({len(missing)}): {missing}",
+        )
+
     def test_endpoints_return_expected_content_type(self) -> None:
         """Every 200-pinned smoke endpoint must return the
         Content-Type a partner client expects:
