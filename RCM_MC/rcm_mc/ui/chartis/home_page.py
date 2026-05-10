@@ -520,8 +520,8 @@ def _try_the_tool_quickstart() -> str:
          "IMMATERIAL threshold — clean QoE target.",
          "CLEAN QoR", "var(--theme-positive,#10b981)"),
         ("hospital_08_waterfall_critical", "QoR critical divergence",
-         "7% revenue overstatement — walkaway candidate",
-         "Management revenue overstates claims-side accrual by ~7%. "
+         "7.0% revenue overstatement — walkaway candidate",
+         "Management revenue overstates claims-side accrual by ~7.0%. "
          "Triggers CRITICAL QoR + IC walkaway memo.",
          "CRITICAL", "var(--theme-negative,#ef4444)"),
     ]
