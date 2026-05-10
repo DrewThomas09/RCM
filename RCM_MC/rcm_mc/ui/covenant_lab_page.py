@@ -21,7 +21,9 @@ from ..diligence.covenant_lab import (
 from ..diligence.covenant_lab.simulator import (
     QuarterlyCovenantCurve,
 )
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_section_intro, ck_signal_badge,
+)
 from .power_ui import (
     benchmark_chip, bookmark_hint, deal_context_bar,
     export_json_panel, interpret_callout, provenance, sortable_table,
@@ -380,39 +382,47 @@ def _verdict_card(res: CovenantStressResult) -> str:
         ),
     )
 
+    badge_tone = {
+        "FAIL": "negative",
+        "WATCH": "warning",
+        "PASS": "positive",
+    }.get(verdict, "neutral")
+    intro = ck_section_intro(
+        eyebrow=f"Covenant Stress · {verdict}",
+        headline=html.escape(res.headline),
+        body=html.escape(res.rationale),
+        italic_word="covenant",
+    )
+    badge = ck_signal_badge(verdict, tone=badge_tone)
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Max Breach Prob", max_prob_val,
+            sub="vs <10% bank target · <25% acceptable",
+        )
+        + ck_kpi_block(
+            "Earliest 50% Breach", early_label,
+            sub="quarter any covenant first crosses 50% breach probability",
+        )
+        + ck_kpi_block(
+            "Simulated Paths", f"{res.n_paths:,}",
+            sub="synthetic EBITDA trials",
+        )
+        + ck_kpi_block(
+            "Quarters Tested", f"{res.quarters}",
+            sub=f"{res.quarters//4}-year horizon",
+        )
+        + "</div>"
+    )
     return (
         f'<div class="cl-verdict-card cl-verdict-{verdict}">'
-        f'<div class="cl-verdict-badge">{verdict}</div>'
-        f'<div class="cl-verdict-headline">'
-        f'{html.escape(res.headline)}</div>'
-        f'<div class="cl-verdict-rationale">'
-        f'{html.escape(res.rationale)}</div>'
-        f'<div class="cl-kpi-grid">'
-        f'  <div><div class="cl-kpi__label">Max Breach Prob</div>'
-        f'       <div class="cl-kpi__val '
-        f'{"neg" if max_prob >= 0.5 else "pos" if max_prob < 0.10 else ""}">'
-        f'{max_prob_val}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">vs &lt;10% bank target '
-        f'· &lt;25% acceptable</div></div>'
-        f'  <div><div class="cl-kpi__label">Earliest 50% Breach</div>'
-        f'       <div class="cl-kpi__val">{early_label}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">quarter any covenant first crosses '
-        f'50% breach probability</div></div>'
-        f'  <div><div class="cl-kpi__label">Simulated Paths</div>'
-        f'       <div class="cl-kpi__val">{res.n_paths:,}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">synthetic EBITDA trials</div></div>'
-        f'  <div><div class="cl-kpi__label">Quarters Tested</div>'
-        f'       <div class="cl-kpi__val">{res.quarters}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">{res.quarters//4}-year horizon</div></div>'
-        f'</div>'
+        f'<p class="ck-section-body">{badge}</p>'
+        f'{intro}'
+        + kpis
         + interpret_callout(
             "Plain-English read:", breach_plain, tone=breach_tone,
         )
-        + f'</div>'
+        + '</div>'
     )
 
 

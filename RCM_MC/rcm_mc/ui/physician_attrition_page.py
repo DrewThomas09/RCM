@@ -26,7 +26,9 @@ from ..diligence.physician_attrition import (
     analyze_roster,
 )
 from ..diligence.physician_comp.comp_ingester import Provider
-from ._chartis_kit import P, chartis_shell, ck_page_title
+from ._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_page_title, ck_section_intro,
+)
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
 )
@@ -575,50 +577,50 @@ def _hero(report: AttritionReport, target_name: str) -> str:
     )
 
     kpi_row = (
-        f'<div class="pa-kpi-grid">'
-        f'<div class="pa-kpi">'
-        f'<div class="pa-kpi__label">Roster size</div>'
-        f'<div class="pa-kpi__val" style="color:{P["text"]};">'
-        f'{roster_num}</div>'
-        f'<div class="pa-kpi__band" style="color:{P["text_faint"]};">'
-        f'{crit} critical · {high} high · {report.medium_count} medium · '
-        f'{report.low_count} low</div></div>'
-        f'<div class="pa-kpi">'
-        f'<div class="pa-kpi__label">Total collections</div>'
-        f'<div class="pa-kpi__val" style="color:{P["text"]};">'
-        f'{collections_num}</div>'
-        f'<div class="pa-kpi__band" style="color:{P["text_faint"]};">'
-        f'roster annual collections · hover for source</div></div>'
-        f'<div class="pa-kpi">'
-        f'<div class="pa-kpi__label">Expected $ at risk</div>'
-        f'<div class="pa-kpi__val" style="color:{at_risk_color};">'
-        f'{at_risk_num}</div>'
-        f'<div class="pa-kpi__band" style="color:{at_risk_color};">'
-        f'{at_risk/collections*100 if collections > 0 else 0:.1f}% of roster · '
-        f'18-mo horizon</div></div>'
-        f'<div class="pa-kpi">'
-        f'<div class="pa-kpi__label">EBITDA bridge hit</div>'
-        f'<div class="pa-kpi__val" style="color:{conf_color};">'
-        f'{bridge_num}</div>'
-        f'<div class="pa-kpi__band" style="color:{conf_color};">'
-        f'{bridge.confidence} confidence · '
-        f'{bridge.realization_probability*100:.0f}% realization</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Roster size", roster_num,
+            sub=(
+                f"{crit} critical · {high} high · {report.medium_count} medium · "
+                f"{report.low_count} low"
+            ),
+        )
+        + ck_kpi_block(
+            "Total collections", collections_num,
+            sub="roster annual collections · hover for source",
+        )
+        + ck_kpi_block(
+            "Expected $ at risk", at_risk_num,
+            sub=(
+                f"{at_risk/collections*100 if collections > 0 else 0:.1f}% "
+                f"of roster · 18-mo horizon"
+            ),
+        )
+        + ck_kpi_block(
+            "EBITDA bridge hit", bridge_num,
+            sub=(
+                f"{bridge.confidence} confidence · "
+                f"{bridge.realization_probability*100:.0f}% realization"
+            ),
+        )
+        + "</div>"
     )
 
+    intro = ck_section_intro(
+        eyebrow="Physician Attrition",
+        headline=html.escape(target_name),
+        body=(
+            f"18-month flight-risk · 9-feature model · "
+            f"{roster} providers scored"
+        ),
+        italic_word="attrition",
+    )
     return (
-        f'<div style="padding:24px 0 16px 0;border-bottom:1px solid '
-        f'{P["border"]};margin-bottom:22px;">'
-        f'<div class="pa-eyebrow">Physician Attrition</div>'
-        f'<div class="pa-h1">{html.escape(target_name)}</div>'
-        f'<div style="font-size:11px;color:{P["text_faint"]};margin-top:4px;">'
-        f'18-month flight-risk · 9-feature model · {roster} providers scored</div>'
+        f'{intro}'
         f'<div class="pa-callout {banner_class}">{html.escape(banner)}</div>'
-        f'<div class="pa-callout">'
-        f'<strong style="color:{P["text"]};">What this shows: </strong>'
-        f'{summary}</div>'
+        f'<p class="ck-section-body">'
+        f'<strong>What this shows: </strong>{summary}</p>'
         f'{kpi_row}'
-        f'</div>'
     )
 
 

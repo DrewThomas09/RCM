@@ -23,7 +23,9 @@ from ..diligence.bear_case import (
     BearCaseReport, Evidence, EvidenceSeverity, EvidenceSource,
     generate_bear_case_from_pipeline,
 )
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_section_intro,
+)
 from .power_ui import (
     benchmark_chip, bookmark_hint, deal_context_bar,
     export_json_panel, interpret_callout, provenance,
@@ -178,43 +180,43 @@ def _verdict_card(
             )
             + "</div>"
         )
+    intro = ck_section_intro(
+        eyebrow="Bear Case · auto-synthesized",
+        headline=html.escape(report.headline),
+        body=html.escape(report.top_line_summary),
+        italic_word="bear",
+    )
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "EBITDA at Risk",
+            f"${report.combined_ebitda_at_risk_usd/1e6:,.1f}M{pct_frame}",
+            sub="<3% clears IC · >10% material · >25% killable",
+        )
+        + ck_kpi_block(
+            "Critical Items", f"{report.critical_count}",
+            sub="thesis-breaking on their own",
+        )
+        + ck_kpi_block(
+            "High Items", f"{report.high_count}",
+            sub="IC-level risks",
+        )
+        + ck_kpi_block(
+            "Medium Items", f"{report.medium_count}",
+            sub="worth naming in memo",
+        )
+        + ck_kpi_block(
+            "Modules Pulled", f"{len(report.sources_active)}",
+            sub="evidence sources active",
+        )
+        + "</div>"
+    )
     return (
         f'<div class="bc-verdict-card">'
-        f'<div class="bc-eyebrow">Bear Case · auto-synthesized</div>'
-        f'<div class="bc-verdict-headline" style="margin-top:6px;">'
-        f'{html.escape(report.headline)}</div>'
-        f'<div class="bc-verdict-sub">'
-        f'{html.escape(report.top_line_summary)}</div>'
+        f'{intro}'
         + peer_chip
-        + f'<div class="bc-kpi-grid">'
-        f'  <div><div class="bc-kpi__label">EBITDA at Risk</div>'
-        f'       <div class="bc-kpi__val crit">'
-        f'${report.combined_ebitda_at_risk_usd/1e6:,.1f}M{pct_frame}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">sum across evidence '
-        f'· &lt;3% clears IC · &gt;10% material · &gt;25% killable</div></div>'
-        f'  <div><div class="bc-kpi__label">Critical Items</div>'
-        f'       <div class="bc-kpi__val {tone}">'
-        f'{report.critical_count}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">thesis-breaking on their own</div></div>'
-        f'  <div><div class="bc-kpi__label">High Items</div>'
-        f'       <div class="bc-kpi__val hi">'
-        f'{report.high_count}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">IC-level risks</div></div>'
-        f'  <div><div class="bc-kpi__label">Medium Items</div>'
-        f'       <div class="bc-kpi__val">'
-        f'{report.medium_count}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">worth naming in memo</div></div>'
-        f'  <div><div class="bc-kpi__label">Modules Pulled</div>'
-        f'       <div class="bc-kpi__val">'
-        f'{len(report.sources_active)}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">evidence sources active</div></div>'
-        f'</div>'
-        f'</div>'
+        + kpis
+        + '</div>'
     )
 
 
