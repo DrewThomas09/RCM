@@ -2688,7 +2688,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             # the editorial-era / handler swallows the request before
             # _route_dashboard's v2/v3 dispatch ever runs.
             _qs_root = urllib.parse.parse_qs(parsed.query)
-            if _qs_root.get("v3") or _qs_root.get("v2"):
+            if (_qs_root.get("v3") or _qs_root.get("v2")
+                    or _qs_root.get("legacy")):
                 return self._route_dashboard()
             # Phase 13 of the UI v2 editorial rework: when
             # CHARTIS_UI_V2=1, the public marketing landing renders at
@@ -8563,22 +8564,25 @@ class RCMHandler(BaseHTTPRequestHandler):
         # ordinary browsing. Morning-standup use case opts in.
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         live_mode = bool(qs.get("live"))
-        # v3 morning view: story-driven layout (hero strip + top
-        # opportunities + alerts + recent activity). Opt-in via
-        # ?v3=1 or RCM_MC_DASHBOARD=v3.
-        use_v3 = (bool(qs.get("v3"))
-                  or os.environ.get(
-                      "RCM_MC_DASHBOARD", "").lower() == "v3")
-        if use_v3:
+        # v3 morning view (editorial Chartis layout: hero strip + top
+        # opportunities + alerts + recent activity) is the default for
+        # `/`. The legacy dashboard_page renderer remains reachable via
+        # `?legacy=1` (or RCM_MC_DASHBOARD=legacy) for partners who
+        # rely on its specific layout; v2 still opts in via `?v2=1`.
+        use_legacy = (bool(qs.get("legacy"))
+                      or os.environ.get(
+                          "RCM_MC_DASHBOARD", "").lower() == "legacy")
+        if not use_legacy and not qs.get("v2"):
             from .ui.dashboard_v3 import render_dashboard_v3
             store = PortfolioStore(self.config.db_path)
             return self._send_html(render_dashboard_v3(store))
         # Prompt 31 v2 dashboard: serve the modern dark-theme morning
         # view when the user explicitly requests it OR when the
-        # portfolio has analysis packets (the v2 layout is useless
-        # without deals, so legacy stays the default for fresh installs).
+        # portfolio has analysis packets. Skip the packet auto-detect
+        # when use_legacy is set — `?legacy=1` should reach the legacy
+        # render, not get bounced into v2.
         use_v2 = bool(qs.get("v2"))
-        if not use_v2:
+        if not use_v2 and not use_legacy:
             try:
                 from .analysis.analysis_store import list_packets
                 store = PortfolioStore(self.config.db_path)
