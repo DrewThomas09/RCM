@@ -25,7 +25,9 @@ from ..diligence.hcris_xray import (
     catalog_by_category, dataset_summary, get_target_history,
     search_hospitals, xray,
 )
-from ._chartis_kit import P, chartis_shell, ck_page_title
+from ._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_page_title, ck_section_intro,
+)
 from .power_ui import (
     bookmark_hint, deal_context_bar, export_json_panel,
     interpret_callout, provenance, sortable_table,
@@ -163,45 +165,49 @@ def _target_card(
         ),
     )
     trend_chip = _trend_signal_chip(trend_signal, history_len)
-    return (
-        f'<div class="hx-target-card">'
-        f'<div class="hx-target-ccn">CCN {html.escape(target.ccn)} · '
-        f'FY{target.fiscal_year} · '
-        f'{html.escape(target.city)}, {html.escape(target.state)}</div>'
-        f'<div class="hx-target-name">{html.escape(target.name)}'
-        f'{trend_chip}</div>'
-        f'<div class="hx-kpi-grid">'
-        f'  <div><div class="hx-kpi__label">Beds</div>'
-        f'       <div class="hx-kpi__val">{target.beds:,}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">{target.size_cohort.replace("_", " ").title()}</div></div>'
-        f'  <div><div class="hx-kpi__label">Patient Days</div>'
-        f'       <div class="hx-kpi__val">{target.total_patient_days:,.0f}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">{target.occupancy_rate*100:.1f}% occupancy</div></div>'
-        f'  <div><div class="hx-kpi__label">Medicare Day Share</div>'
-        f'       <div class="hx-kpi__val '
-        f'{"warn" if target.is_medicare_heavy else ""}">'
-        f'{target.medicare_day_pct*100:.1f}%</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">{"heavy" if target.is_medicare_heavy else "moderate"}</div></div>'
-        f'  <div><div class="hx-kpi__label">NPR (filed)</div>'
-        f'       <div class="hx-kpi__val">'
-        f'${target.net_patient_revenue/1e6:,.1f}M</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">${target.net_revenue_per_bed/1e3:,.0f}K / bed</div></div>'
-        f'  <div><div class="hx-kpi__label">Operating Margin</div>'
-        f'       <div class="hx-kpi__val" style="color:{margin_color};">'
-        f'{op_margin_val}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">{target.margin_band.title()}</div></div>'
-        f'  <div><div class="hx-kpi__label">Payer Diversity</div>'
-        f'       <div class="hx-kpi__val">{target.payer_diversity_index:.2f}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">1 − HHI of day mix</div></div>'
-        f'</div>'
-        f'</div>'
+    intro = ck_section_intro(
+        eyebrow=(
+            f"CCN {html.escape(target.ccn)} · "
+            f"FY{target.fiscal_year} · "
+            f"{html.escape(target.city)}, {html.escape(target.state)}"
+        ),
+        headline=html.escape(target.name),
+        body=None,
+        italic_word=None,
     )
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Beds", f"{target.beds:,}",
+            sub=target.size_cohort.replace("_", " ").title(),
+        )
+        + ck_kpi_block(
+            "Patient Days", f"{target.total_patient_days:,.0f}",
+            sub=f"{target.occupancy_rate*100:.1f}% occupancy",
+        )
+        + ck_kpi_block(
+            "Medicare Day Share", f"{target.medicare_day_pct*100:.1f}%",
+            sub="heavy" if target.is_medicare_heavy else "moderate",
+        )
+        + ck_kpi_block(
+            "NPR (filed)", f"${target.net_patient_revenue/1e6:,.1f}M",
+            sub=f"${target.net_revenue_per_bed/1e3:,.0f}K / bed",
+        )
+        + ck_kpi_block(
+            "Operating Margin", op_margin_val,
+            sub=target.margin_band.title(),
+        )
+        + ck_kpi_block(
+            "Payer Diversity", f"{target.payer_diversity_index:.2f}",
+            sub="1 − HHI of day mix",
+        )
+        + "</div>"
+    )
+    chip_html = (
+        f'<div class="ck-section-body">{trend_chip}</div>'
+        if trend_chip else ""
+    )
+    return f"{intro}{chip_html}{kpis}"
 
 
 def _sparkline(
