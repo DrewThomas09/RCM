@@ -142,9 +142,9 @@ def _comp_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(c.role)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${c.median_comp_k:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${c.quartile_top_k:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.quartile_bottom_k:,.1f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${c.median_comp_k:,.2f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${c.quartile_top_k:,.2f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.quartile_bottom_k:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{c.equity_pct * 100:.2f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.typical_vesting)}</td>',
         ]
@@ -201,8 +201,8 @@ def render_board_governance(params: dict = None) -> str:
     Diversity at {r.avg_diversity_pct * 100:.1f}% tracks below public-company benchmarks; remediation required for next-round diligence.
     Committee coverage gaps: ESG committee (16.7% coverage) and Cybersecurity oversight (33.3% coverage) are {critical_gaps} high-priority gaps.
     Bench of 12 recurring independent directors provides cross-pollination and governance institutional memory.
-    Sponsor + Management voting share 60% across portfolio; Independent Directors hold 28% — alignment with Delaware Chancery standards.
-    Executive compensation median CEO at $485k with 3.5% equity stake (4-year vest) aligns with MGMA / Pearl Meyer PE benchmarks.
+    Sponsor + Management voting share 60.0% across portfolio; Independent Directors hold 28.0% — alignment with Delaware Chancery standards.
+    Executive compensation median CEO at $485.00k with 3.5% equity stake (4-year vest) aligns with MGMA / Pearl Meyer PE benchmarks.
   </div>
 </div>"""
 

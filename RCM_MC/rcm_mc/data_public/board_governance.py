@@ -212,15 +212,15 @@ def _build_gaps() -> List[BestPracticeGap]:
 
 def _build_compensation() -> List[ExecCompensation]:
     return [
-        ExecCompensation("CEO", 485.0, 650.0, 385.0, 0.035, "4-year, 25% annual vest"),
-        ExecCompensation("CFO", 285.0, 385.0, 225.0, 0.018, "4-year, 25% annual vest"),
-        ExecCompensation("COO", 325.0, 425.0, 265.0, 0.022, "4-year, 25% annual vest"),
+        ExecCompensation("CEO", 485.0, 650.0, 385.0, 0.035, "4-year, 25.0% annual vest"),
+        ExecCompensation("CFO", 285.0, 385.0, 225.0, 0.018, "4-year, 25.0% annual vest"),
+        ExecCompensation("COO", 325.0, 425.0, 265.0, 0.022, "4-year, 25.0% annual vest"),
         ExecCompensation("CMO (Chief Medical Officer)", 325.0, 425.0, 285.0, 0.018, "3-year, cliff + annual"),
-        ExecCompensation("Chief Legal Officer", 245.0, 325.0, 195.0, 0.012, "4-year, 25% annual vest"),
-        ExecCompensation("CHRO", 225.0, 285.0, 185.0, 0.010, "4-year, 25% annual vest"),
-        ExecCompensation("CIO / CTO", 265.0, 365.0, 215.0, 0.015, "4-year, 25% annual vest"),
-        ExecCompensation("Chief Revenue Officer", 285.0, 385.0, 225.0, 0.015, "4-year, 25% annual vest"),
-        ExecCompensation("Chief Compliance Officer", 215.0, 285.0, 175.0, 0.008, "4-year, 25% annual vest"),
+        ExecCompensation("Chief Legal Officer", 245.0, 325.0, 195.0, 0.012, "4-year, 25.0% annual vest"),
+        ExecCompensation("CHRO", 225.0, 285.0, 185.0, 0.010, "4-year, 25.0% annual vest"),
+        ExecCompensation("CIO / CTO", 265.0, 365.0, 215.0, 0.015, "4-year, 25.0% annual vest"),
+        ExecCompensation("Chief Revenue Officer", 285.0, 385.0, 225.0, 0.015, "4-year, 25.0% annual vest"),
+        ExecCompensation("Chief Compliance Officer", 215.0, 285.0, 175.0, 0.008, "4-year, 25.0% annual vest"),
         ExecCompensation("Independent Director (Avg)", 125.0, 185.0, 85.0, 0.005, "Annual retainer + meeting fees"),
         ExecCompensation("Lead Independent Director", 185.0, 245.0, 145.0, 0.008, "Annual retainer + chair premium"),
         ExecCompensation("Committee Chair Premium", 35.0, 55.0, 25.0, 0.0, "Additional retainer"),
