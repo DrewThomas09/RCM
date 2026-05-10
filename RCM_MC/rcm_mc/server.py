@@ -14720,11 +14720,17 @@ class RCMHandler(BaseHTTPRequestHandler):
         password = form.get("password", "")
         # B146 fix: validate next-URL is a local path so ?next=https://evil
         # can't turn a successful login into an open-redirect gadget.
+        # The backslash check guards a known browser quirk: IE/Edge (and
+        # some legacy proxies) treat ``/\evil.example.com`` as the
+        # protocol-relative ``//evil.example.com`` after auto-converting
+        # the backslash to a forward slash. Reject any backslash to close
+        # that vector.
         raw_nxt = form.get("next", "") or "/"
         nxt = raw_nxt if (
             raw_nxt.startswith("/")
             and not raw_nxt.startswith("//")
             and "://" not in raw_nxt
+            and "\\" not in raw_nxt
         ) else "/"
 
         # B130 + B147: rate limit check, guarded by shared lock

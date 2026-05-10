@@ -601,6 +601,97 @@ class APIEndpointSmoke(unittest.TestCase):
             f"{leaks}",
         )
 
+    def test_login_next_param_rejects_open_redirect_vectors(self) -> None:
+        """The ``next`` param on /api/login must not accept any
+        URL that a browser could resolve cross-origin. Vectors
+        covered:
+
+        * ``https://evil`` — absolute URL → reject
+        * ``//evil`` — protocol-relative → reject
+        * ``/\\evil`` — backslash variant (IE/Edge auto-convert
+          ``/\\`` → ``//`` → external redirect) → reject
+        * ``javascript:`` — JS pseudo-scheme → reject
+        * ``/legit-path`` — same-origin path → accept
+
+        An open redirect at the login boundary is a phishing
+        gadget: an attacker links to /login?next=https://phish
+        and a partner who completes login lands on the attacker's
+        page, often without noticing the redirect.
+        """
+        anon = urllib.request.build_opener(_NoFollow())
+        # Seed CSRF.
+        try:
+            anon.open(self.base + "/login", timeout=5).read()
+        except Exception:
+            pass
+
+        EVIL = [
+            "https://evil.example.com",
+            "//evil.example.com",
+            "/\\evil.example.com",
+            "/\\\\evil.example.com",
+            "javascript:alert(1)",
+        ]
+        SAFE = [
+            "/portfolio",
+            "/audit",
+            "/deal/foo",
+        ]
+
+        def _login_with_next(nxt: str) -> str:
+            body = urllib.parse.urlencode({
+                "username": "demo",
+                "password": "DemoPass!1",
+                "csrf_token": "",
+                "next": nxt,
+            }).encode()
+            try:
+                resp = anon.open(
+                    urllib.request.Request(
+                        self.base + "/api/login",
+                        data=body, method="POST",
+                    ),
+                    timeout=5,
+                )
+                return resp.headers.get("Location", "") if resp else ""
+            except urllib.error.HTTPError as e:
+                return e.headers.get("Location", "")
+
+        leaks: list[str] = []
+        for nxt in EVIL:
+            loc = _login_with_next(nxt)
+            # Must NOT echo the evil value. Acceptable: "/" or any
+            # local path. Unacceptable: anything that contains the
+            # evil token or starts with backslash variants.
+            if (loc != "/"
+                    and not (loc.startswith("/") and "\\" not in loc
+                             and not loc.startswith("//"))):
+                leaks.append(f"next={nxt!r} → Location={loc!r}")
+            if "evil" in loc.lower() or loc.lower().startswith("javascript:"):
+                leaks.append(
+                    f"next={nxt!r} echoed dangerous payload in "
+                    f"Location={loc!r}"
+                )
+
+        broken_safe: list[str] = []
+        for nxt in SAFE:
+            loc = _login_with_next(nxt)
+            if loc != nxt:
+                broken_safe.append(
+                    f"next={nxt!r} unexpectedly rewritten to "
+                    f"Location={loc!r}"
+                )
+
+        self.assertEqual(
+            leaks, [],
+            f"Open-redirect vectors accepted at /api/login: "
+            f"{leaks}",
+        )
+        self.assertEqual(
+            broken_safe, [],
+            f"Same-origin next= paths broken: {broken_safe}",
+        )
+
     def test_options_preflight_contract(self) -> None:
         """CORS preflight on /api/* must:
 
