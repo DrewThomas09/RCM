@@ -298,6 +298,68 @@ class APIEndpointSmoke(unittest.TestCase):
             f"dispatcher (server.py) and infra/openapi.py.",
         )
 
+    def test_openapi_operations_are_structurally_complete(self) -> None:
+        """Every operation in the OpenAPI spec must carry a
+        non-empty summary, at least one tag, and at least one
+        response with a description.
+
+        The /api index handler, the Swagger UI at /api/docs, and any
+        regenerated client SDK all consume these fields. A
+        contributor who adds a path-stub (no summary, no tags) gets
+        a silent partial-render — the entry shows up but the partner
+        sees blanks. This guard fails loud with the offending path
+        instead.
+        """
+        from rcm_mc.infra.openapi import get_openapi_spec
+
+        spec = get_openapi_spec()
+        issues: list[str] = []
+        for p, methods in spec["paths"].items():
+            for method, op in methods.items():
+                head = f"{method.upper()} {p}"
+                if not op.get("summary"):
+                    issues.append(f"{head}: empty summary")
+                if not op.get("tags"):
+                    issues.append(f"{head}: missing tags")
+                responses = op.get("responses", {})
+                if not responses:
+                    issues.append(f"{head}: missing responses")
+                for code, r in responses.items():
+                    if not (isinstance(r, dict) and r.get("description")):
+                        issues.append(
+                            f"{head}: response {code} missing description",
+                        )
+        self.assertEqual(
+            issues, [],
+            f"OpenAPI structural issues ({len(issues)}): {issues}",
+        )
+
+    def test_openapi_tags_are_declared_at_top_level(self) -> None:
+        """Every tag used by an operation must appear in the
+        top-level ``tags`` list. The list drives the section
+        grouping in the Swagger UI; tags used but not declared
+        render in an "untagged" group with no description.
+
+        This catches typos (e.g. 'Portolio' vs 'Portfolio') that
+        would silently strand a tagged operation in the wrong UI
+        section.
+        """
+        from rcm_mc.infra.openapi import get_openapi_spec
+
+        spec = get_openapi_spec()
+        declared = {t["name"] for t in spec.get("tags", [])}
+        used: set[str] = set()
+        for methods in spec["paths"].values():
+            for op in methods.values():
+                used.update(op.get("tags", []))
+        undeclared = sorted(used - declared)
+        self.assertEqual(
+            undeclared, [],
+            f"Tags used in operations but not declared at top level: "
+            f"{undeclared}. Add them to _SPEC['tags'] in "
+            f"rcm_mc/infra/openapi.py.",
+        )
+
     def test_every_smoke_route_is_documented_in_openapi(self) -> None:
         """Each /api/* entry in API_SMOKE_ROUTES must be documented
         in the OpenAPI spec. Closing this loop matters because the
