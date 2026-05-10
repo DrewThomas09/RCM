@@ -458,6 +458,76 @@ class APIEndpointSmoke(unittest.TestCase):
             f"{bad}",
         )
 
+    def test_state_changing_posts_reject_without_csrf(self) -> None:
+        """Every documented state-changing POST must reject
+        authenticated requests that lack a valid CSRF token (403)
+        AND unauthenticated requests (401).
+
+        Without CSRF, a state-mutating POST is exposed to cross-
+        origin attacks: a partner browsing a malicious site while
+        logged into the dashboard would have requests forged
+        against /api/upload-actuals, /api/portfolio/register, etc.
+        Pinning both rejection codes lets a contributor see at a
+        glance whether they accidentally relaxed either gate.
+        """
+        # Build an unauthenticated opener — no cookie jar.
+        anon = urllib.request.build_opener(_NoFollow())
+
+        POST_PATHS = [
+            "/api/upload-actuals",
+            "/api/upload-initiatives",
+            "/api/upload-notes",
+            "/api/screener/run",
+            "/api/portfolio/register",
+            "/api/chat",
+            "/api/deals/wizard/select",
+            "/api/deals/wizard/launch",
+            "/api/metrics/custom",
+            "/api/webhooks",
+            "/api/deals/bulk",
+            "/api/deals/import",
+        ]
+
+        def _post(opener, path: str, body: bytes = b"") -> int:
+            try:
+                req = urllib.request.Request(
+                    self.base + path, data=body, method="POST",
+                )
+                resp = opener.open(req, timeout=8)
+            except urllib.error.HTTPError as e:
+                return e.code
+            if resp is None:
+                return 0
+            return resp.status
+
+        csrf_leaks: list[str] = []
+        auth_leaks: list[str] = []
+        for path in POST_PATHS:
+            # Authenticated, no CSRF token in body — must be 403.
+            with_auth = _post(self.opener, path)
+            if with_auth != 403:
+                csrf_leaks.append(
+                    f"{path}: status {with_auth} with auth+no-CSRF, "
+                    f"expected 403"
+                )
+            # Unauthenticated — must be 401 (auth wins over CSRF).
+            no_auth = _post(anon, path)
+            if no_auth != 401:
+                auth_leaks.append(
+                    f"{path}: status {no_auth} unauth, expected 401"
+                )
+
+        self.assertEqual(
+            csrf_leaks, [],
+            f"State-changing POSTs accepting requests without "
+            f"valid CSRF token: {csrf_leaks}",
+        )
+        self.assertEqual(
+            auth_leaks, [],
+            f"State-changing POSTs reachable to anonymous "
+            f"callers: {auth_leaks}",
+        )
+
     def test_partner_data_routes_require_auth(self) -> None:
         """Every partner-data route must reject unauthenticated
         requests with 401. A regression here is a hard data leak —
