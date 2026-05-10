@@ -573,6 +573,46 @@ class APIEndpointSmoke(unittest.TestCase):
             f"Error-envelope contract violations: {issues}",
         )
 
+    def test_json_endpoints_set_cache_control(self) -> None:
+        """Every JSON endpoint must set ``Cache-Control``. Without
+        an explicit directive, intermediaries (proxies, browsers,
+        CDNs) infer a default that may cache partner data — a
+        downstream proxy could then return one partner's deal list
+        to another partner if cookie-namespacing isn't perfect.
+
+        Most endpoints set ``no-store`` (partner-data path); a few
+        static-ish surfaces use ``private, max-age=N`` (e.g.
+        /api/openapi.json caches the spec briefly per-user). The
+        guard accepts either as long as the header is present.
+        """
+        SKIP = {
+            "/healthz", "/health",
+            "/api/backup",
+            "/api/deals/smoke-a/package",
+            "/api/analysis/smoke-a/export",
+            "/api/docs",
+        }
+        missing: list[str] = []
+        for path, expected_status in API_SMOKE_ROUTES:
+            if expected_status != 200:
+                continue
+            if path in SKIP:
+                continue
+            if path.endswith(".csv") or path.endswith(".memo"):
+                continue
+            try:
+                resp = self.opener.open(self.base + path, timeout=8)
+            except Exception:
+                continue
+            cc = resp.headers.get("Cache-Control", "")
+            if not cc:
+                missing.append(path)
+        self.assertEqual(
+            missing, [],
+            f"JSON endpoints lacking Cache-Control "
+            f"({len(missing)}): {missing}",
+        )
+
     def test_json_endpoints_set_nosniff_header(self) -> None:
         """Every 200-pinned JSON endpoint must set
         ``X-Content-Type-Options: nosniff``.

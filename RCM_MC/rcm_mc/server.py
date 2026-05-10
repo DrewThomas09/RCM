@@ -3405,6 +3405,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-Type", "application/json")
             self.send_header("X-Content-Type-Options", "nosniff")
+            # Spec is auth-gated and changes only on deploy. A short
+            # private TTL keeps partner-side Swagger UI snappy without
+            # letting intermediaries cache the API surface.
+            self.send_header("Cache-Control", "private, max-age=60")
             self.send_header("Content-Length", str(len(body_b)))
             self.end_headers()
             self.wfile.write(body_b)
@@ -7225,6 +7229,8 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("X-Content-Type-Options", "nosniff")
+        # Partner-data exposure report — never cache.
+        self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(payload)))
         self.end_headers()
         self.wfile.write(payload)
