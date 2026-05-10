@@ -414,6 +414,70 @@ class APIEndpointSmoke(unittest.TestCase):
             f"from API_SMOKE_ROUTES with rationale.",
         )
 
+    def test_partner_data_routes_require_auth(self) -> None:
+        """Every partner-data route must reject unauthenticated
+        requests with 401. A regression here is a hard data leak —
+        portfolio rows, audit log, system info, deal lists would
+        all be readable by anyone hitting the URL.
+
+        The matching public-route check guards against the inverse
+        regression: a contributor accidentally adds @auth_required
+        to /healthz and silently breaks every load-balancer probe.
+        """
+        # Build an unauthenticated opener — no cookie jar.
+        anon = urllib.request.build_opener(_NoFollow())
+
+        AUTH_REQUIRED = [
+            "/audit",
+            "/users",
+            "/api/system/info",
+            "/api/migrations",
+            "/api/backup",
+            "/api/deals/stats",
+            "/alerts",
+            "/portfolio",
+            "/home",
+            "/api/deals",
+            "/api/openapi.json",
+        ]
+        PUBLIC = [
+            "/healthz",
+            "/health",
+            "/login",
+        ]
+
+        def _fetch_anon(path: str) -> int:
+            try:
+                resp = anon.open(self.base + path, timeout=8)
+            except urllib.error.HTTPError as e:
+                return e.code
+            if resp is None:
+                return 0
+            return resp.status
+
+        leaks: list[str] = []
+        for path in AUTH_REQUIRED:
+            status = _fetch_anon(path)
+            if status != 401:
+                leaks.append(f"{path}: status {status}, expected 401")
+        broken_public: list[str] = []
+        for path in PUBLIC:
+            status = _fetch_anon(path)
+            if status not in (200, 303):
+                broken_public.append(
+                    f"{path}: status {status}, expected 200 or 303",
+                )
+        self.assertEqual(
+            leaks, [],
+            f"Partner-data routes leaking to anonymous users: "
+            f"{leaks}",
+        )
+        self.assertEqual(
+            broken_public, [],
+            f"Public routes broken (require auth now): "
+            f"{broken_public}",
+        )
+
     def test_4xx_responses_carry_error_envelope(self) -> None:
         """Every documented 4XX scenario must return a JSON body
         with a top-level ``error`` string field. Partners writing
