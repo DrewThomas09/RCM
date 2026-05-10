@@ -28,6 +28,8 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
+from .brand import PALETTE
+
 
 # ── Curated analyses catalog ───────────────────────────────────────
 # Not the full 40-module module_index — a focused subset of the
@@ -129,8 +131,12 @@ def _freshness_bucket(last_refreshed_iso: Optional[str]) -> tuple[str, str]:
 
 
 def _dot(level: str) -> str:
-    colors = {"ok": "#10b981", "stale": "#f59e0b",
-              "cold": "#ef4444", "never": "#6b7280"}
+    colors = {
+        "ok":    PALETTE["positive"],
+        "stale": PALETTE["warning"],
+        "cold":  PALETTE["negative"],
+        "never": "#6b7280",
+    }
     c = colors.get(level, "#6b7280")
     return (f'<span style="display:inline-block;width:8px;height:8px;'
             f'border-radius:50%;background:{c};margin-right:6px;"></span>')
@@ -165,13 +171,13 @@ def _render_analyses_section() -> str:
             f'style="background:transparent;border:0;color:#9ca3af;'
             f'cursor:pointer;font-size:14px;padding:0;'
             f'transition:color 0.1s;" '
-            f'onmouseover="this.style.color=\'#1F4E78\';" '
+            f'onmouseover="this.style.color=\'{PALETTE["brand_accent"]}\';" '
             f'onmouseout="this.style.color=\'#9ca3af\';">★</button>'
             f'</form>'
         )
         rows.append([
             (f'<a href="{_html.escape(a["route"])}" '
-             f'style="color:#1F4E78;font-weight:500;">'
+             f'style="color:{PALETTE["brand_accent"]};font-weight:500;">'
              f'{_html.escape(a["name"])}</a>'
              f'&nbsp;{save_form}'),
             f'<span style="color:#6b7280;">{_html.escape(a["category"])}</span>',
@@ -975,10 +981,10 @@ def _portfolio_pulse_inputs(
 def _band_color(band: str) -> str:
     """Map health bands to the visual palette for the mosaic."""
     return {
-        "great": "#10b981",
-        "good":  "#3b82f6",
-        "fair":  "#f59e0b",
-        "poor":  "#ef4444",
+        "great": PALETTE["positive"],
+        "good":  PALETTE["brand_accent"],
+        "fair":  PALETTE["warning"],
+        "poor":  PALETTE["negative"],
     }.get(band or "unknown", "#9ca3af")
 
 
@@ -1098,10 +1104,10 @@ def _render_portfolio_pulse_hero(
     legend = (
         '<div style="display:flex;gap:14px;margin-top:8px;'
         'flex-wrap:wrap;">'
-        + legend_chip("#10b981", "great", bands["great"])
-        + legend_chip("#3b82f6", "good", bands["good"])
-        + legend_chip("#f59e0b", "fair", bands["fair"])
-        + legend_chip("#ef4444", "poor", bands["poor"])
+        + legend_chip(PALETTE["positive"],     "great", bands["great"])
+        + legend_chip(PALETTE["brand_accent"], "good",  bands["good"])
+        + legend_chip(PALETTE["warning"],      "fair",  bands["fair"])
+        + legend_chip(PALETTE["negative"],     "poor",  bands["poor"])
         + '</div>'
     )
 
@@ -1207,7 +1213,7 @@ def _render_headline_insight_section(
         "alert":    ("#fef2f2", "#fee2e2", "#991b1b", "⚠"),
         "warn":     ("#fffbeb", "#fef3c7", "#92400e", "●"),
         "positive": ("#f0fdf4", "#d1fae5", "#065f46", "✓"),
-        "neutral":  ("#f0f6fc", "#d0e3f0", "#1F4E78", "◆"),
+        "neutral":  ("#f0f6fc", "#d0e3f0", PALETTE["brand_accent"], "◆"),
     }
     bg, border, fg, icon = palette.get(
         ins.get("tone", "neutral"), palette["neutral"])
@@ -1283,7 +1289,7 @@ def _render_since_yesterday_section(db_path: str) -> str:
         href = ev.get("href") or ""
         if href:
             label = (f'<a href="{_html.escape(href)}" '
-                     f'style="color:#1F4E78;text-decoration:none;">'
+                     f'style="color:{PALETTE["brand_accent"]};text-decoration:none;">'
                      f'{label}</a>')
 
         # Inline ack + snooze controls for alert rows. Two
@@ -1301,7 +1307,7 @@ def _render_since_yesterday_section(db_path: str) -> str:
             if k and d and t:
                 btn_style = (
                     "background:transparent;border:1px solid #d0e3f0;"
-                    "color:#1F4E78;padding:2px 8px;border-radius:4px;"
+                    f"color:{PALETTE['brand_accent']};padding:2px 8px;border-radius:4px;"
                     "font-size:11px;cursor:pointer;font-weight:500;"
                 )
                 hidden = (
@@ -1367,7 +1373,7 @@ def _render_since_yesterday_section(db_path: str) -> str:
 
 def _sparkline_svg(scores: List[int], *,
                    width: int = 80, height: int = 20,
-                   stroke: str = "#1F4E78") -> str:
+                   stroke: Optional[str] = None) -> str:
     """Tiny inline SVG — one score per point, oldest-first.
 
     Returns empty string when there are <2 points (a single point
@@ -1381,6 +1387,8 @@ def _sparkline_svg(scores: List[int], *,
     """
     if not scores or len(scores) < 2:
         return ""
+    if stroke is None:
+        stroke = PALETTE["brand_accent"]
     lo = min(scores)
     hi = max(scores)
     span = max(1, hi - lo)  # guard against flat line
@@ -1464,7 +1472,7 @@ def _render_saved_templates_section(db_path: str) -> str:
             f'style="background:transparent;border:0;color:#9ca3af;'
             f'cursor:pointer;font-size:14px;padding:0 6px;'
             f'transition:color 0.1s;" '
-            f'onmouseover="this.style.color=\'#1F4E78\';" '
+            f'onmouseover="this.style.color=\'{PALETTE["brand_accent"]}\';" '
             f'onmouseout="this.style.color=\'#9ca3af\';">⎘</button>'
             f'</form>'
         )
@@ -1489,7 +1497,7 @@ def _render_saved_templates_section(db_path: str) -> str:
             f'fetch(this.href,{{method:\'POST\',credentials:\'same-origin\'}})'
             f'.then(()=>window.location=\'{_html.escape(href)}\');'
             f'event.preventDefault();}}">'
-            f'<span style="font-weight:500;color:#1F4E78;">'
+            f'<span style="font-weight:500;color:{PALETTE["brand_accent"]};">'
             f'{_html.escape(name)}</span>{pinned_chip}'
             f'<div style="font-size:11px;color:#6b7280;margin-top:2px;">'
             f'{_html.escape(desc) if desc else _html.escape(href)}'
@@ -1503,7 +1511,7 @@ def _render_saved_templates_section(db_path: str) -> str:
         f'{"".join(rows)}</ul>'
         f'<p style="margin:10px 0 0;font-size:11px;color:#6b7280;">'
         f'Click any template to launch — run count updates automatically. '
-        f'<a href="/api/saved-analyses" style="color:#1F4E78;">API</a>'
+        f'<a href="/api/saved-analyses" style="color:{PALETTE["brand_accent"]};">API</a>'
         f'</p>'
     )
     return _wc.section_card(
@@ -1600,7 +1608,7 @@ def _render_needs_attention_section(
             f'color:#6b7280;text-transform:uppercase;min-width:100px;">'
             f'{_html.escape(d["deal_id"])}</span>'
             f'<a href="/deal/{_html.escape(d["deal_id"])}" '
-            f'style="flex:1;color:#1F4E78;font-weight:500;'
+            f'style="flex:1;color:{PALETTE["brand_accent"]};font-weight:500;'
             f'text-decoration:none;">{_html.escape(d["name"])}</a>'
             f'<span style="flex-shrink:0;font-size:12px;'
             f'display:flex;flex-wrap:wrap;gap:12px;">'
@@ -1611,14 +1619,14 @@ def _render_needs_attention_section(
         f'<p style="margin:10px 0 0;font-size:12px;color:#6b7280;">'
         f'Showing top 3 of {len(scored)} deals with active risk flags. '
         f'See all on <a href="/portfolio/risk-scan" '
-        f'style="color:#1F4E78;">Portfolio risk scan</a>.'
+        f'style="color:{PALETTE["brand_accent"]};">Portfolio risk scan</a>.'
         f'</p>'
         if len(scored) > 3 else
         f'<p style="margin:10px 0 0;font-size:12px;color:#6b7280;">'
         f'Showing {len(scored)} deal{"s" if len(scored) != 1 else ""} '
         f'with active risk flags. See all on '
         f'<a href="/portfolio/risk-scan" '
-        f'style="color:#1F4E78;">Portfolio risk scan</a>.'
+        f'style="color:{PALETTE["brand_accent"]};">Portfolio risk scan</a>.'
         f'</p>'
     )
     body = (
@@ -1666,7 +1674,9 @@ def _render_exposure_section(
     total = len(deals)
 
     def _bar_chart(items: Dict[str, int], *, top_n: int = 6,
-                   color: str = "#1F4E78") -> str:
+                   color: Optional[str] = None) -> str:
+        if color is None:
+            color = PALETTE["brand_accent"]
         if not items:
             return (
                 '<p style="margin:0;color:#9ca3af;font-size:12px;'
@@ -1705,7 +1715,7 @@ def _render_exposure_section(
         '<div style="font-size:11px;font-weight:600;color:#374151;'
         'text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">'
         'By sector</div>'
-        + _bar_chart(sector_counts, color="#1F4E78")
+        + _bar_chart(sector_counts, color=PALETTE["brand_accent"])
     )
     chain_block = (
         '<div style="font-size:11px;font-weight:600;color:#374151;'
@@ -1767,10 +1777,10 @@ def _moic_range_bar(p25: Optional[float],
         # p25-p75 whisker
         f'<rect x="{p25_x}" y="{height/2 - 4}" '
         f'width="{max(2, p75_x - p25_x)}" height="8" '
-        f'fill="#1F4E78" opacity="0.35" rx="2"/>'
+        f'fill="{PALETTE["brand_accent"]}" opacity="0.35" rx="2"/>'
         # Median dot
         f'<circle cx="{med_x}" cy="{height/2}" r="4" '
-        f'fill="#1F4E78" stroke="#fff" stroke-width="1.5"/>'
+        f'fill="{PALETTE["brand_accent"]}" stroke="#fff" stroke-width="1.5"/>'
         f'</svg>'
     )
 
@@ -1942,7 +1952,7 @@ def _render_predicted_outcomes_section(
             f'<a href="/deal/{_html.escape(deal_id)}" '
             f'style="color:#1f2937;text-decoration:none;'
             f'min-width:160px;flex-shrink:0;">'
-            f'<div style="font-weight:500;color:#1F4E78;font-size:13px;">'
+            f'<div style="font-weight:500;color:{PALETTE["brand_accent"]};font-size:13px;">'
             f'{_html.escape(name)}</div>'
             f'<div style="font-family:monospace;font-size:10px;'
             f'color:#6b7280;text-transform:uppercase;margin-top:2px;">'
@@ -1953,8 +1963,8 @@ def _render_predicted_outcomes_section(
             f'<a href="{_html.escape(comp_href)}" '
             f'title="See the comparable deals that drove this prediction" '
             f'style="text-decoration:none;color:inherit;">'
-            f'<span style="font-weight:600;color:#1F4E78;'
-            f'font-size:14px;border-bottom:1px dotted #1F4E78;">'
+            f'<span style="font-weight:600;color:{PALETTE["brand_accent"]};'
+            f'font-size:14px;border-bottom:1px dotted {PALETTE["brand_accent"]};">'
             f'{median:.2f}x</span>'
             f'<span style="color:#6b7280;"> median · '
             f'p25 {p25:.2f}x · p75 {p75:.2f}x · '
@@ -2114,7 +2124,7 @@ def _render_quiet_too_long_section(db_path: str) -> str:
             f'<li style="padding:8px 0;border-bottom:1px solid #f3f4f6;'
             f'display:flex;align-items:center;gap:14px;">'
             f'<a href="/deal/{_html.escape(d["deal_id"])}" '
-            f'style="flex:1;color:#1F4E78;font-weight:500;'
+            f'style="flex:1;color:{PALETTE["brand_accent"]};font-weight:500;'
             f'text-decoration:none;font-family:monospace;font-size:12px;'
             f'text-transform:uppercase;letter-spacing:0.03em;">'
             f'{_html.escape(d["deal_id"])}</a>'
@@ -2309,7 +2319,7 @@ def _render_workflow_shortcuts_section(db_path: str) -> str:
     for label, href, desc, badge in items:
         rows.append([
             (f'<a href="{_html.escape(href)}" '
-             f'style="color:#1F4E78;font-weight:500;">'
+             f'style="color:{PALETTE["brand_accent"]};font-weight:500;">'
              f'{_html.escape(label)}</a>{badge}'),
             f'<span style="color:#6b7280;">{_html.escape(desc)}</span>',
         ])
@@ -2459,7 +2469,7 @@ def _render_data_freshness_section(db_path: str) -> str:
             f'<p>Status table unavailable '
             f'(<code>{_html.escape(type(exc).__name__)}</code>). '
             f'Run <code>rcm-mc data refresh</code> to populate, or open '
-            f'<a href="/data/refresh" style="color:#1F4E78;">'
+            f'<a href="/data/refresh" style="color:{PALETTE["brand_accent"]};">'
             f'Data refresh</a>.</p>',
         )
 
