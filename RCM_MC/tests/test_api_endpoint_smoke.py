@@ -1461,6 +1461,44 @@ class APIEndpointSmoke(unittest.TestCase):
             f"Server header leaks runtime version: {leaks}",
         )
 
+    def test_responses_carry_x_request_id_header(self) -> None:
+        """Every JSON response (200 + 4XX + 5XX) must carry an
+        ``X-Request-Id`` header. Partner SDKs and our own log
+        correlation depend on this — without it, an operator
+        debugging a 4XX has no way to find the matching log
+        line in the access log.
+
+        The body-level ``request_id`` field varies by handler
+        (some use _send_error which adds it, some build their
+        own envelope without). The header is the canonical
+        correlation key.
+        """
+        SAMPLES = [
+            ("/api/system/info",                     200),
+            ("/api/portfolio/regression",            400),
+            ("/api/jobs/foo",                        404),
+            ("/api/digest?since=junk",               400),
+            ("/api/deals/this-id-does-not-exist",    404),
+        ]
+        missing: list[str] = []
+        for path, _ in SAMPLES:
+            try:
+                resp = self.opener.open(self.base + path, timeout=5)
+                headers = resp.headers
+            except urllib.error.HTTPError as e:
+                headers = e.headers
+            rid = headers.get("X-Request-Id", "").strip()
+            if not rid:
+                missing.append(f"{path}: X-Request-Id missing")
+            elif len(rid) < 8:
+                missing.append(
+                    f"{path}: X-Request-Id={rid!r} suspiciously short"
+                )
+        self.assertEqual(
+            missing, [],
+            f"X-Request-Id correlation gaps: {missing}",
+        )
+
     def test_error_pages_do_not_leak_stack_traces_or_paths(self) -> None:
         """4XX / 5XX response bodies must never leak Python stack
         trace text or absolute filesystem paths. Both reveal
