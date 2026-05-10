@@ -304,7 +304,7 @@ def _build_cyber_metrics() -> List[CyberMetric]:
                     "Missing framework alignment", 0.35, "high"),
         CyberMetric("Penetration Testing", "Annual (vendor)", "Quarterly",
                     "Frequency gap", 0.08, "medium"),
-        CyberMetric("Cyber Insurance Coverage", "$15M tower", "$50M tower",
+        CyberMetric("Cyber Insurance Coverage", "$15.00M tower", "$50.00M tower",
                     "Underinsured for current risk profile", 0.22, "high"),
         CyberMetric("Endpoint Detection & Response", "CrowdStrike deployed", "Full coverage + MDR",
                     "No 24/7 managed detection", 0.15, "medium"),

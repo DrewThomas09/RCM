@@ -144,7 +144,7 @@ def _build_state_incentives() -> List[StateIncentive]:
         StateIncentive("Project Cedar — Cardiology", "Arizona", "Arizona Angel Investment Credit", "Investment credit", 0.85, 3, 0.28,
                        "Minority-owned capital partner participation", "active"),
         StateIncentive("Project Laurel — Derma", "North Carolina", "NC Job Development Investment Grant", "Payroll refund", 2.5, 5, 0.50,
-                       "Maintain 180 jobs + $12M capital investment", "active"),
+                       "Maintain 180 jobs + $12.00M capital investment", "active"),
         StateIncentive("Project Willow — Fertility", "Colorado", "Colorado Strategic Fund", "Performance grant", 1.2, 3, 0.40,
                        "Open Denver IVF center + hire 45 FTEs", "pending"),
         StateIncentive("Project Ash — Infusion", "Massachusetts", "MA Life Sciences Tax Incentive", "Jobs credit + ITC", 3.5, 5, 0.70,
@@ -158,7 +158,7 @@ def _build_state_incentives() -> List[StateIncentive]:
         StateIncentive("Project Thyme — Specialty Pharm", "New Jersey", "NJ NewJersey ERG / Emerge Program", "Income tax credit", 4.5, 7, 0.64,
                        "Maintain 185 jobs in Newark tract + capital commit", "active"),
         StateIncentive("Project Fir — Lab / Pathology", "Illinois", "IL EDGE Credit", "Income tax credit", 2.8, 5, 0.56,
-                       "Maintain 150 jobs + $25M investment", "active"),
+                       "Maintain 150 jobs + $25.00M investment", "active"),
     ]
 
 

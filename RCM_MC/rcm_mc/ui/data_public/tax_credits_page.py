@@ -161,7 +161,7 @@ def _pipeline_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(p.credit_type)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${p.estimated_annual_benefit_m:.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${p.implementation_cost_m:.2f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pr_c};font-weight:700">{p.probability_pct}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pr_c};font-weight:700">{p.probability_pct:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{p.timeline_months}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -215,12 +215,12 @@ def render_tax_credits(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Credit Pipeline / Opportunities</div>{p_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Tax Credit Portfolio Summary:</strong> ${r.total_credits_gross_m:.2f}M in claimed federal + state credits across {r.total_deals} deals; ${r.total_credits_remaining_m:.2f}M in carryforward/remaining credits available for future use.
-    Largest federal claimants: Project Oak RCM SaaS (R&D $8.5M + $9.8M across 2 years — 20-year carryforward), Project Thyme Specialty Pharm ($3.2M R&D), Project Fir Lab ($2.5M R&D).
+    Largest federal claimants: Project Oak RCM SaaS (R&D $8.50M + $9.80M across 2 years — 20-year carryforward), Project Thyme Specialty Pharm ($3.20M R&D), Project Fir Lab ($2.50M R&D).
     State incentive annual flow ${r.total_state_incentives_annual_m:.2f}M: MA Life Sciences ($0.70M/yr), GA Quality Jobs (Cypress $0.90M/yr), NJ Emerge (Thyme $0.64M/yr), NC JDIG (Laurel $0.50M/yr) — largest.
     QOZ investments ${sum(z.invested_m for z in r.opportunity_zones):.2f}M invested across 9 projects with ${qoz_deferred:.2f}M deferred gain; step-up basis to take effect 2027-2029 (10-year holding requirement).
-    WOTC captures ${sum(w.annual_credit_m for w in r.wotc):.2f}M annual credits across 8 deals; Sage Home Health ($2.8M) and Basil Dental ($1.5M) are largest — driven by target-group new-hire profiles.
+    WOTC captures ${sum(w.annual_credit_m for w in r.wotc):.2f}M annual credits across 8 deals; Sage Home Health ($2.80M) and Basil Dental ($1.50M) are largest — driven by target-group new-hire profiles.
     Transfer pricing ${sum(t.annual_tax_benefit_m for t in r.transfer_pricing):.2f}M annual benefit — all structures in contemporaneous documentation status; Oak RCM IP licensing structure most actively discussed with IRS (APA pending).
-    Pipeline: 10 opportunities with ${pipeline_annual:.2f}M probability-weighted annual benefit — R&D retroactive studies (Cedar + Magnolia, $5.3M combined) and ERC retroactive claims ($3.8M × 60%) top value.
+    Pipeline: 10 opportunities with ${pipeline_annual:.2f}M probability-weighted annual benefit — R&D retroactive studies (Cedar + Magnolia, $5.30M combined) and ERC retroactive claims ($3.80M × 60.0%) top value.
   </div>
 </div>"""
 

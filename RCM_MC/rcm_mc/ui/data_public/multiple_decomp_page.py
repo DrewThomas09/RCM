@@ -145,7 +145,7 @@ def _peer_table(peers: List[Dict[str, Any]]) -> str:
             f"<td>{_html.escape(d.get('company_name') or d.get('deal_name') or '—')}</td>"
             f"<td>{_html.escape(d.get('sector') or '—')}</td>"
             f"<td class='r mn'>{d.get('year', '—')}</td>"
-            f"<td class='r mn'>{'$' + str(int(float(ev))) + 'M' if ev else '—'}</td>"
+            f"<td class='r mn'>{f'${float(ev):,.2f}M' if ev else '—'}</td>"
             f"<td class='r mn'>{f'{ee:.1f}×' if ee else '—'}</td>"
             f"<td class='r mn' style='color:{moic_color}'>"
             f"{f'{m:.2f}×' if m else '—'}</td>"
