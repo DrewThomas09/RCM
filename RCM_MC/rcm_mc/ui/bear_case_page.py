@@ -24,7 +24,8 @@ from ..diligence.bear_case import (
     generate_bear_case_from_pipeline,
 )
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_section_intro,
+    P, chartis_shell, ck_kpi_block, ck_panel,
+    ck_section_intro, ck_signal_badge,
 )
 from .power_ui import (
     benchmark_chip, bookmark_hint, deal_context_bar,
@@ -254,25 +255,30 @@ def _evidence_card(ev: Evidence) -> str:
             f"Match: {ev.metadata['matched_deal']}"
         )
     link_html = (
-        f'<a href="{html.escape(ev.source_link)}" '
-        f'style="color:{P["accent"]};text-decoration:none;'
-        f'font-size:11px;font-weight:600;">Open source →</a>'
+        f'<a href="{html.escape(ev.source_link)}" class="ck-link">'
+        f'Open source →</a>'
         if ev.source_link else ""
     )
+    sev_tone = {
+        "CRITICAL": "negative",
+        "HIGH": "negative",
+        "MEDIUM": "warning",
+        "LOW": "neutral",
+    }.get(ev.severity.value, "neutral")
+    badge = ck_signal_badge(
+        f"[{ev.citation_key}] {ev.severity.value}", tone=sev_tone,
+    )
+    head = (
+        f'<p class="ck-section-body">'
+        f'{badge} <strong>{html.escape(ev.title)}</strong> {impact_html}</p>'
+    )
+    meta = f'<p class="ck-eyebrow">{" · ".join(meta_parts)}</p>'
+    body = f'<p class="ck-section-body">{html.escape(ev.narrative)}</p>'
+    foot = f'<p class="ck-section-body">{link_html}</p>' if link_html else ""
     return (
         f'<div class="bc-evidence-card bc-sev-{ev.severity.value}">'
-        f'<div class="bc-ev-head">'
-        f'<span class="bc-ev-citation">[{ev.citation_key}] '
-        f'{ev.severity.value}</span>'
-        f'<div class="bc-ev-title">{html.escape(ev.title)}</div>'
-        f'{impact_html}'
-        f'</div>'
-        f'<div class="bc-ev-meta">'
-        f'{" · ".join(meta_parts)}'
-        f'</div>'
-        f'<div class="bc-ev-narrative">{html.escape(ev.narrative)}</div>'
-        f'<div style="margin-top:10px;">{link_html}</div>'
-        f'</div>'
+        + ck_panel(head + meta + body + foot)
+        + '</div>'
     )
 
 

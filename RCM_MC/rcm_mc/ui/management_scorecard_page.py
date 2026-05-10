@@ -432,61 +432,36 @@ def _hero(report: ManagementReport, target_name: str) -> str:
 def _bridge_haircut_block(haircut: Optional[BridgeHaircutInput]) -> str:
     if haircut is None or haircut.recommended_haircut_pct <= 0.01:
         return ""
-    conf_color = {
-        "HIGH": P["positive"], "MEDIUM": P["warning"],
-        "LOW": P["negative"],
-    }.get(haircut.confidence, P["text_dim"])
-    dollar_html = (
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.2px;text-transform:uppercase;'
-        f'font-weight:600;">Dollar adjustment</div>'
-        f'<div style="font-size:22px;color:{P["negative"]};'
-        f'font-family:\'JetBrains Mono\',monospace;font-weight:700;">'
-        f'${haircut.dollar_adjustment_usd:,.0f}</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};">'
-        f'applied to FY1 EBITDA guidance</div></div>'
-    ) if haircut.dollar_adjustment_usd else ""
-    return (
-        f'<div class="ms-haircut">'
-        f'<div class="ms-eyebrow">EBITDA Bridge · Management-Reliability Lever</div>'
-        f'<div style="font-size:16px;color:{P["text"]};font-weight:600;'
-        f'margin-top:2px;">Forecast haircut recommendation</div>'
-        f'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));'
-        f'gap:18px;margin-top:14px;">'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.2px;text-transform:uppercase;'
-        f'font-weight:600;">Recommended haircut</div>'
-        f'<div style="font-size:28px;color:{P["warning"]};'
-        f'font-family:\'JetBrains Mono\',monospace;font-weight:700;">'
-        f'{haircut.recommended_haircut_pct*100:.1f}%</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};">'
-        f'of FY1 EBITDA guidance</div></div>'
-        f'{dollar_html}'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.2px;text-transform:uppercase;'
-        f'font-weight:600;">Source executives</div>'
-        f'<div style="font-size:14px;color:{P["text"]};'
-        f'font-weight:600;margin-top:4px;">'
-        f'{html.escape(", ".join(haircut.source_executives) or "—")}</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};">'
-        f'historical miss rate</div></div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.2px;text-transform:uppercase;'
-        f'font-weight:600;">Confidence</div>'
-        f'<div style="font-size:18px;color:{conf_color};font-weight:600;'
-        f'margin-top:4px;">{html.escape(haircut.confidence)}</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};">'
-        f'data breadth</div></div>'
-        f'</div>'
-        f'<div style="margin-top:14px;padding:10px 14px;'
-        f'background:{P["panel_alt"]};border-left:2px solid '
-        f'{P["accent"]};border-radius:0 3px 3px 0;'
-        f'font-size:11.5px;color:{P["text_dim"]};line-height:1.6;'
-        f'max-width:880px;">'
-        f'<strong style="color:{P["text"]};">How to use: </strong>'
-        f'{html.escape(haircut.narrative)}'
-        f'</div></div>'
+    intro = ck_section_intro(
+        eyebrow="EBITDA Bridge · Management-Reliability Lever",
+        headline="Forecast haircut recommendation",
+        body=html.escape(haircut.narrative),
+        italic_word="haircut",
     )
+    kpis = ['<div class="ck-kpi-strip">']
+    kpis.append(ck_kpi_block(
+        "Recommended haircut",
+        f"{haircut.recommended_haircut_pct*100:.1f}%",
+        sub="of FY1 EBITDA guidance",
+    ))
+    if haircut.dollar_adjustment_usd:
+        kpis.append(ck_kpi_block(
+            "Dollar adjustment",
+            f"${haircut.dollar_adjustment_usd:,.0f}",
+            sub="applied to FY1 EBITDA guidance",
+        ))
+    kpis.append(ck_kpi_block(
+        "Source executives",
+        html.escape(", ".join(haircut.source_executives) or "—"),
+        sub="historical miss rate",
+    ))
+    kpis.append(ck_kpi_block(
+        "Confidence",
+        html.escape(haircut.confidence),
+        sub="data breadth",
+    ))
+    kpis.append("</div>")
+    return f'<div class="ms-haircut">{intro}{"".join(kpis)}</div>'
 
 
 def render_management_scorecard_page(

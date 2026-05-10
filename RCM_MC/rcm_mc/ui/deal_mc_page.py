@@ -26,7 +26,8 @@ from ..diligence.deal_mc.charts import (
     sensitivity_tornado,
 )
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_page_title, ck_section_intro,
+    P, chartis_shell, ck_kpi_block, ck_page_title, ck_panel,
+    ck_section_intro,
 )
 from .power_ui import deal_context_bar, provenance
 
@@ -192,39 +193,24 @@ def _chart_panel(
     title: str, svg: str, note: str = "",
     how_to_read: str = "",
 ) -> str:
-    """Render a chart with a title + optional note + optional
-    plain-English 'How to read' panel that spells out axes + glyphs
-    + what a partner should look for first."""
+    """Render a chart in a ck_panel with optional partner-voice
+    'How to read' callout + supplementary note. Both auxiliary
+    blocks render as ck-section-body paragraphs with editorial
+    typography rather than bespoke flexbox + inline styles."""
     how_to_read_html = ""
     if how_to_read:
         how_to_read_html = (
-            f'<div style="margin-top:10px;padding:8px 12px;'
-            f'background:{P["panel_alt"]};border-left:2px solid '
-            f'{P["accent"]};border-radius:0 3px 3px 0;'
-            f'font-size:11px;color:{P["text_dim"]};line-height:1.6;'
-            f'max-width:720px;">'
-            f'<strong style="color:{P["text"]};font-size:9px;'
-            f'letter-spacing:1.2px;text-transform:uppercase;'
-            f'margin-right:4px;">How to read:</strong>'
-            f'{html.escape(how_to_read)}</div>'
+            '<p class="ck-section-body">'
+            '<strong>How to read: </strong>'
+            f'{html.escape(how_to_read)}</p>'
         )
     note_html = (
-        f'<div style="font-size:11px;color:{P["text_faint"]};'
-        f'line-height:1.5;margin-top:8px;max-width:640px;">'
-        f'{html.escape(note)}</div>'
+        f'<p class="ck-section-body ck-muted">{html.escape(note)}</p>'
         if note else ""
     )
-    return (
-        f'<div style="background:{P["panel"]};border:1px solid '
-        f'{P["border"]};border-radius:4px;padding:14px 20px;'
-        f'margin-bottom:16px;">'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;font-weight:700;'
-        f'margin-bottom:8px;">{html.escape(title)}</div>'
-        f'{svg}'
-        f'{how_to_read_html}'
-        f'{note_html}'
-        f'</div>'
+    return ck_panel(
+        f"{svg}{how_to_read_html}{note_html}",
+        title=title,
     )
 
 
