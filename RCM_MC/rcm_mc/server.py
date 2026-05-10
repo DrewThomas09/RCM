@@ -4558,6 +4558,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                     {"error": "provide at least 2 deal IDs via ?ids=a,b"},
                     status=HTTPStatus.BAD_REQUEST,
                 )
+            store = PortfolioStore(self.config.db_path)
             from .analysis.analysis_store import get_or_build_packet
             comparisons = []
             for did in deal_ids:

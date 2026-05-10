@@ -93,6 +93,16 @@ API_SMOKE_ROUTES: list[tuple[str, int]] = [
     ("/api/portfolio/risk-scan.csv",             200),
     ("/api/search",                              200),
     ("/api/webhooks/test",                       200),
+    # Newly probed — partner-visible alerts + data + deal listing.
+    # /api/portfolio/regression pinned at 400 (legitimate validation
+    # response when no numeric columns are present in the demo
+    # dataset; status guards the validator path, not a 200 happy-
+    # path). /api/deals/compare requires ?ids= with two demo deals.
+    ("/api/alerts/active-count",                          200),
+    ("/api/data/hospitals",                               200),
+    ("/api/deals",                                        200),
+    ("/api/deals/compare?ids=demo-acme,demo-baxter",      200),
+    ("/api/portfolio/regression",                         400),
 ]
 
 
