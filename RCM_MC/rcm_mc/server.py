@@ -1826,6 +1826,14 @@ class RCMHandler(BaseHTTPRequestHandler):
     # Inject config via class attribute (set by build_server)
     config: ServerConfig = ServerConfig()
 
+    # Hide the stdlib BaseHTTP/Python version from the Server header.
+    # Default value would emit ``BaseHTTP/0.6 Python/3.14.2`` — a hint
+    # an attacker can use to map known CVEs to the exact runtime. The
+    # override-pair below replaces the auto-built string with a stable
+    # ``RCM-MC`` token plus suppresses the sys-version suffix.
+    server_version = "RCM-MC"
+    sys_version = ""
+
     # Silence default noisy access-log output; users can tail server output
     # if they need it. The CLI banner already tells them the server is up.
     # B162: concise access log to stderr. Default BaseHTTPRequestHandler
@@ -5306,6 +5314,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                     {"error": "provide at least 2 deal IDs via ?ids=a,b"},
                     status=HTTPStatus.BAD_REQUEST,
                 )
+            store = PortfolioStore(self.config.db_path)
             from .analysis.analysis_store import get_or_build_packet
             comparisons = []
             for did in deal_ids:
@@ -11006,6 +11015,8 @@ class RCMHandler(BaseHTTPRequestHandler):
         }).encode("utf-8")
         self.send_response(HTTPStatus.TOO_MANY_REQUESTS)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Retry-After", str(retry))
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -15525,11 +15536,17 @@ class RCMHandler(BaseHTTPRequestHandler):
         password = form.get("password", "")
         # B146 fix: validate next-URL is a local path so ?next=https://evil
         # can't turn a successful login into an open-redirect gadget.
+        # The backslash check guards a known browser quirk: IE/Edge (and
+        # some legacy proxies) treat ``/\evil.example.com`` as the
+        # protocol-relative ``//evil.example.com`` after auto-converting
+        # the backslash to a forward slash. Reject any backslash to close
+        # that vector.
         raw_nxt = form.get("next", "") or "/"
         nxt = raw_nxt if (
             raw_nxt.startswith("/")
             and not raw_nxt.startswith("//")
             and "://" not in raw_nxt
+            and "\\" not in raw_nxt
         ) else "/"
 
         # B130 + B147: rate limit check, guarded by shared lock
@@ -15540,12 +15557,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             log = self._login_fail_log.setdefault(client_ip, [])
             log[:] = [t for t in log if t > cutoff]
             over_limit = len(log) >= self._LOGIN_FAIL_MAX
-        if over_limit:
-            return self._send_json(
-                {"error": "too many failed login attempts; wait a minute",
-                 "code": "RATE_LIMITED"},
-                status=HTTPStatus.TOO_MANY_REQUESTS,
+            # Wait time = how long until the oldest in-window failure
+            # rolls out, restoring one quota slot. Compute under the
+            # lock so log[0] is stable.
+            oldest = log[0] if log else now
+            wait_secs = max(
+                1.0,
+                self._LOGIN_FAIL_WINDOW_SECS - (now - oldest),
             )
+        if over_limit:
+            return self._send_rate_limited(wait_secs)
 
         if not verify_password(store, username, password):
             with self._login_fail_lock:
