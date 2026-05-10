@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import chartis_shell, ck_kpi_block
 from .brand import PALETTE
 
 
@@ -254,20 +254,14 @@ def _kpi_summary(stats: List[Dict[str, Any]]) -> str:
     avg_medicare = float(np.mean([s["medicare_pct"] for s in stats])) if stats else 0
 
     return (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{total_hospitals:,}</div>'
-        f'<div class="cad-kpi-label">Total Hospitals (HCRIS)</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{total_beds:,}</div>'
-        f'<div class="cad-kpi-label">Total Licensed Beds</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${total_rev/1e12:.1f}T</div>'
-        f'<div class="cad-kpi-label">Total Net Patient Revenue</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{avg_margin:.1%}</div>'
-        f'<div class="cad-kpi-label">Avg Operating Margin</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{avg_hhi:,.0f}</div>'
-        f'<div class="cad-kpi-label">Avg State HHI</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{avg_medicare:.0%}</div>'
-        f'<div class="cad-kpi-label">Avg Medicare Mix</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("Total Hospitals (HCRIS)", f"{total_hospitals:,}")
+        + ck_kpi_block("Total Licensed Beds", f"{total_beds:,}")
+        + ck_kpi_block("Total Net Patient Revenue", f"${total_rev/1e12:.1f}T")
+        + ck_kpi_block("Avg Operating Margin", f"{avg_margin:.1%}")
+        + ck_kpi_block("Avg State HHI", f"{avg_hhi:,.0f}")
+        + ck_kpi_block("Avg Medicare Mix", f"{avg_medicare:.0%}")
+        + "</div>"
     )
 
 

@@ -32,7 +32,7 @@ from ..diligence.deal_autopsy import (
 )
 from ..diligence.deal_autopsy.library import outcomes_summary
 from ..diligence.deal_autopsy.matcher import FEATURE_LABELS
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import P, chartis_shell, ck_section_intro
 from .power_ui import provenance, sortable_table
 
 
@@ -550,16 +550,18 @@ def _summary_hero(
         f'{html.escape(dataset_label)}</span>'
     ) if dataset_label else ""
 
+    eyebrow_text = "Deal Autopsy"
+    if dataset_label:
+        eyebrow_text += f" · {html.escape(dataset_label)}"
+    intro = ck_section_intro(
+        eyebrow=eyebrow_text,
+        headline="Historical Failure-Pattern Match",
+        body=summary,
+        italic_word="failure",
+    )
     return (
-        f'<div style="padding:24px 0 16px 0;border-bottom:1px solid '
-        f'{P["border"]};margin-bottom:24px;">'
-        f'<div class="da-eyebrow">Deal Autopsy{fixture_tag}</div>'
-        f'<div class="da-h1">Historical Failure-Pattern Match</div>'
+        f'{intro}'
         f'<div class="da-callout {banner_class}">{html.escape(banner)}</div>'
-        f'<div class="da-callout">'
-        f'<strong style="color:{P["text"]};">What this shows: </strong>'
-        f'{summary}</div>'
-        f'</div>'
     )
 
 
