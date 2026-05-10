@@ -4341,6 +4341,21 @@ class RCMHandler(BaseHTTPRequestHandler):
             rollup["request_count"] = RCMHandler._request_counter
             return self._send_json(rollup)
         if path == "/api/backup":
+            # Admin-only — the response streams the entire SQLite
+            # portfolio DB. An analyst-role user obtaining this
+            # gets every deal, audit row, snapshot, override, note
+            # and tag in one download.
+            from .auth.auth import list_users
+            _store = PortfolioStore(self.config.db_path)
+            current = self._current_user()
+            users_df = list_users(_store)
+            if len(users_df) > 0 and (
+                current is None or current.get("role") != "admin"
+            ):
+                return self._send_json(
+                    {"error": "admin only", "code": "FORBIDDEN"},
+                    status=HTTPStatus.FORBIDDEN,
+                )
             import io as _io
             import tempfile as _tmpf
             store = PortfolioStore(self.config.db_path)
@@ -4513,8 +4528,20 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path in ("/health", "/healthz"):
             return self._send_text("ok")
         if path == "/api/migrations":
+            # Admin-only — schema migration names leak DB internals
+            # an analyst-role user has no operational need to see.
+            from .auth.auth import list_users
             from .infra.migrations import list_applied, _MIGRATIONS
             store = PortfolioStore(self.config.db_path)
+            current = self._current_user()
+            users_df = list_users(store)
+            if len(users_df) > 0 and (
+                current is None or current.get("role") != "admin"
+            ):
+                return self._send_json(
+                    {"error": "admin only", "code": "FORBIDDEN"},
+                    status=HTTPStatus.FORBIDDEN,
+                )
             applied = list_applied(store)
             total = len(_MIGRATIONS)
             return self._send_json({
@@ -11858,11 +11885,27 @@ class RCMHandler(BaseHTTPRequestHandler):
     # Prompt 26: onboarding wizard route handlers ──────────────────────
 
     def _route_system_info(self) -> None:
-        """GET /api/system/info — version, DB stats, Python version."""
+        """GET /api/system/info — version, DB stats, Python version.
+
+        Admin-only because the response includes the exact Python
+        version (CVE-matching surface), the host platform string,
+        and the absolute db_path — operator-class information that
+        an analyst-role user shouldn't see.
+        """
         import platform as _plat
         from . import __version__
         from .analysis.packet import PACKET_SCHEMA_VERSION
+        from .auth.auth import list_users
         _store = PortfolioStore(self.config.db_path)
+        current = self._current_user()
+        users_df = list_users(_store)
+        if len(users_df) > 0 and (
+            current is None or current.get("role") != "admin"
+        ):
+            return self._send_json(
+                {"error": "admin only", "code": "FORBIDDEN"},
+                status=HTTPStatus.FORBIDDEN,
+            )
         db_size_bytes = 0
         table_count = 0
         deal_count = 0
@@ -11895,7 +11938,21 @@ class RCMHandler(BaseHTTPRequestHandler):
         })
 
     def _route_metrics(self) -> None:
-        """GET /api/metrics — request timing percentiles."""
+        """GET /api/metrics — request timing percentiles. Admin-only:
+        per-endpoint latency percentiles are operator data, useful
+        for capacity planning and SLO tracking but not partner-
+        facing."""
+        from .auth.auth import list_users
+        store = PortfolioStore(self.config.db_path)
+        current = self._current_user()
+        users_df = list_users(store)
+        if len(users_df) > 0 and (
+            current is None or current.get("role") != "admin"
+        ):
+            return self._send_json(
+                {"error": "admin only", "code": "FORBIDDEN"},
+                status=HTTPStatus.FORBIDDEN,
+            )
         rt = list(RCMHandler._response_times)
         n = len(rt)
         if n > 0:
