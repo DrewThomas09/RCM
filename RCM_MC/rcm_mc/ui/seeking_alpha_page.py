@@ -59,10 +59,16 @@ max-width:900px;margin-top:12px;}}
 text-transform:uppercase;font-weight:600;margin-bottom:4px;}}
 .ck-sa-filter-input{{width:100%;background:{pa};color:{tx};border:1px solid {bd};
 padding:8px 10px;border-radius:3px;
-font-family:"JetBrains Mono",monospace;font-size:12px;}}
+font-family:"JetBrains Mono",monospace;font-size:12px;
+transition:border-color 120ms ease, box-shadow 120ms ease;}}
+.ck-sa-filter-input:focus{{outline:none;border-color:{ac};
+box-shadow:0 0 0 2px {ac}33;}}
 .ck-sa-filter-btn{{padding:10px 18px;background:{ac};color:#fff;border:0;
 border-radius:3px;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;
-font-weight:700;cursor:pointer;}}
+font-weight:700;cursor:pointer;
+transition:background 120ms ease, transform 120ms ease;}}
+.ck-sa-filter-btn:hover{{filter:brightness(1.08);transform:translateY(-1px);}}
+.ck-sa-filter-btn:active{{transform:translateY(0);filter:brightness(0.95);}}
 .ck-sa-ticker-grid{{display:grid;
 grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
 gap:12px;margin-top:10px;}}

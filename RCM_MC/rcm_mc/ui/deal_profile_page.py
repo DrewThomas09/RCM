@@ -719,13 +719,17 @@ overflow:hidden;margin:8px 0 4px 0;}}
 .ck-dp-saved-actions{{display:flex;gap:6px;flex-wrap:wrap;}}
 .ck-dp-saved-btn,.ck-dp-saved-btn-secondary,.ck-dp-saved-btn-danger
 {{padding:5px 10px;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;
-font-weight:700;border-radius:3px;}}
+font-weight:700;border-radius:3px;
+transition:filter 120ms ease, border-color 120ms ease;}}
 .ck-dp-saved-btn{{background:var(--teal);color:var(--bg);border:0;
 text-decoration:none;}}
+.ck-dp-saved-btn:hover{{filter:brightness(1.08);}}
 .ck-dp-saved-btn-secondary{{background:transparent;color:var(--teal);
 border:1px solid var(--paper-pure);cursor:pointer;font-weight:600;}}
+.ck-dp-saved-btn-secondary:hover{{border-color:var(--teal);}}
 .ck-dp-saved-btn-danger{{background:transparent;color:var(--red);
 border:1px solid var(--paper-pure);cursor:pointer;font-weight:600;}}
+.ck-dp-saved-btn-danger:hover{{border-color:var(--red);}}
 </style>
 """
 
