@@ -45,7 +45,7 @@ from .power_ui import bookmark_hint
 # field — shown as chips on the form so analysts see the impact of
 # each field.
 _FIELDS = [
-    ("dataset", "CCD fixture", "hospital_08_waterfall_critical",
+    ("dataset", "Claims dataset", "hospital_08_waterfall_critical",
      "select", ["Benchmarks", "Counterfactual", "QoE Memo",
                 "IC Packet", "Denial Prediction", "Compare"]),
     ("deal_name", "Deal name", "Project Aurora", "text",

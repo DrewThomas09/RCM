@@ -6,7 +6,7 @@ their outcome + partner lesson.
 
 The page works in three modes:
 
-    1. **Fixture mode** — pick a CCD fixture; signature is auto-built
+    1. **Fixture mode** — pick a claims dataset; signature is auto-built
        from the CCD plus optional metadata query params.
 
     2. **Custom signature mode** — paste in 9 values directly.
@@ -680,12 +680,12 @@ def _landing() -> str:
         f'margin-bottom:10px;">Fixture mode — auto-build from CCD</div>'
         f'<label style="font-size:9px;color:{P["text_faint"]};'
         f'letter-spacing:1.5px;text-transform:uppercase;font-weight:600;'
-        f'display:block;margin-bottom:4px;">CCD fixture</label>'
+        f'display:block;margin-bottom:4px;">Claims dataset</label>'
         f'<select name="dataset" style="width:100%;padding:6px 8px;'
         f'background:{P["panel_alt"]};color:{P["text"]};'
         f'border:1px solid {P["border"]};font-family:inherit;'
         f'margin-bottom:12px;">'
-        f'<option value="">— pick a fixture (optional) —</option>'
+        f'<option value="">— pick a deal (optional) —</option>'
         f'{options}</select>'
         f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
         + "".join(

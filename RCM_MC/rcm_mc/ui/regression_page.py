@@ -465,7 +465,7 @@ def render_regression_page(
         f'*** p&lt;0.001, ** p&lt;0.01, * p&lt;0.05.</p>'
         f'<table class="cad-table"><thead><tr>'
         f'<th>Variable</th><th>Strength</th><th>t</th><th>p-value</th>'
-        f'<th>Sig</th><th>95% CI</th><th>Impact</th>'
+        f'<th>Sig</th><th>95.0% CI</th><th>Impact</th>'
         f'</tr></thead><tbody>{coef_rows}</tbody></table></div>'
     )
 

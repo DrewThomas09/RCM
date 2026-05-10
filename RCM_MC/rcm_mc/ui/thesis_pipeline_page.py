@@ -110,7 +110,7 @@ def _landing() -> str:
         f'padding:6px 8px;background:{P["panel_alt"]};'
         f'color:{P["text"]};border:1px solid {P["border"]};'
         f'font-family:inherit;margin-bottom:12px;">'
-        f'<option value="">— pick a fixture —</option>'
+        f'<option value="">— pick a deal —</option>'
         f'{options}</select>'
         f'<div style="display:grid;grid-template-columns:1fr 1fr;'
         f'gap:12px;">'

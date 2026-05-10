@@ -456,7 +456,7 @@ def _landing_page() -> str:
         + '</div>'
         + '<form method="GET" action="/diligence/counterfactual" class="cf-form">'
         + '<label class="cf-form-label">Dataset</label>'
-        + f'<select name="dataset" required><option value="">— pick a CCD fixture —</option>{options}</select>'
+        + f'<select name="dataset" required><option value="">— pick a claims dataset —</option>{options}</select>'
         + '<label class="cf-form-label">Structure (optional)</label>'
         + '<select name="legal_structure">'
         + '<option value="">(none)</option>'

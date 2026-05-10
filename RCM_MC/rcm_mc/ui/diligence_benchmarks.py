@@ -111,7 +111,7 @@ def render_benchmarks_page(
     return chartis_shell(
         body,
         "RCM Diligence — Benchmarks",
-        subtitle=f"Phase 2 of 4 · as-of {bundle.as_of_date.isoformat()}",
+        subtitle=f"Step 2 of 4 · as-of {bundle.as_of_date.isoformat()}",
     )
 
 
@@ -132,7 +132,7 @@ def _placeholder_page() -> str:
         f'</div>'
     )
     return chartis_shell(body, "RCM Diligence — Benchmarks",
-                        subtitle="Phase 2 of 4")
+                        subtitle="Step 2 of 4")
 
 
 def _hero(bundle: KPIBundle) -> str:

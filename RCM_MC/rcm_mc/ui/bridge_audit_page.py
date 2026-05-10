@@ -596,7 +596,7 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
     <div style="font-size:12px;color:{P["text_dim"]};line-height:1.6;
                 margin-bottom:12px;max-width:820px;">
       One lever per line. Format: <code>name, $amount</code> or
-      <code>name: $amount</code>. Amounts accept <code>$4.2M</code>,
+      <code>name: $amount</code>. Amounts accept <code>$4.20M</code>,
       <code>4,200,000</code>, or plain numbers. Lines starting with
       <code>#</code> are comments.
     </div>

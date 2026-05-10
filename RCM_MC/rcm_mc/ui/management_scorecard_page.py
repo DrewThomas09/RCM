@@ -407,7 +407,7 @@ def _hero(report: ManagementReport, target_name: str) -> str:
         f'{report.aggregate_overall}<span style="font-size:14px;opacity:.6;"> / 100</span>'
         f'</div>'
         f'<div style="font-size:10px;color:{P["text_faint"]};margin-top:3px;">'
-        f'role-weighted (CEO 35% · CFO 25% · COO 20% · other 20%)</div>'
+        f'role-weighted (CEO 35.0% · CFO 25.0% · COO 20.0% · other 20.0%)</div>'
         f'</div>'
         f'<div class="ms-kpi">'
         f'<div class="ms-kpi__label">Team size</div>'

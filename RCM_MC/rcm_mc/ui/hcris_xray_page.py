@@ -753,7 +753,7 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
         <input name="peer_k" value="25"/>
       </div>
       <div class="hx-form-field">
-        <label>Bed band ± (default 30%)</label>
+        <label>Bed band ± (default 30.0%)</label>
         <input name="bed_band_pct" value="0.30"/>
       </div>
     </div>

@@ -4,7 +4,7 @@ Phase 14 of the UI v2 editorial rework wires every tab to live
 backends. Each tab accepts a ``?dataset=<fixture_name>`` query param;
 when set, the page runs the real pipeline (ingest → KPI → cohort →
 waterfall → advisory) and renders the results under the editorial
-shell. With no param, each tab renders a minimal "pick a fixture"
+shell. With no param, each tab renders a minimal "pick a deal"
 selector so the analyst can drive without leaving the page.
 
 Available datasets (shipped as kpi_truth fixtures under
@@ -87,7 +87,7 @@ def _fixture_selector(current_tab_route: str, current_dataset: str = "") -> str:
         f'border:1px solid {PALETTE["border"]};background:{PALETTE["panel"]};'
         f'color:{PALETTE["text"]};font-size:12px;font-family:inherit;'
         f'min-width:320px;">'
-        f'<option value="">— pick a fixture —</option>{options}'
+        f'<option value="">— pick a deal —</option>{options}'
         f'</select>'
         f'<button type="submit" style="padding:6px 14px;'
         f'background:{PALETTE["brand_primary"]};color:{PALETTE["panel"]};'
@@ -208,7 +208,7 @@ def render_ingest_page(dataset: str = "") -> str:
         ))
     return chartis_shell(
         "\n".join(body), "RCM Diligence — Ingestion",
-        subtitle="Phase 1 of 4 · Canonical Claims Dataset",
+        subtitle="Step 1 of 4 · Canonical Claims Dataset",
     )
 
 
@@ -333,7 +333,7 @@ def render_benchmarks_page(
         )
         return chartis_shell(
             err_body, "RCM Diligence — Benchmarks",
-            subtitle="Phase 2 of 4",
+            subtitle="Step 2 of 4",
         )
 
     live_html = _render(bundle=bundle, cohort_report=cohort,
@@ -592,7 +592,7 @@ def render_root_cause_page(dataset: str = "") -> str:
             ))
     return chartis_shell(
         "\n".join(body), "RCM Diligence — Root Cause",
-        subtitle="Phase 3 of 4",
+        subtitle="Step 3 of 4",
     )
 
 
@@ -725,7 +725,7 @@ def render_value_page(dataset: str = "") -> str:
             ))
     return chartis_shell(
         "\n".join(body), "RCM Diligence — Value Creation",
-        subtitle="Phase 4 of 4",
+        subtitle="Step 4 of 4",
     )
 
 

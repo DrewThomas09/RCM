@@ -62,7 +62,7 @@ def _landing() -> str:
         f'<select name="dataset" required style="width:100%;padding:6px 8px;'
         f'background:{P["panel_alt"]};color:{P["text"]};'
         f'border:1px solid {P["border"]};font-family:inherit;">'
-        f'<option value="">— pick a CCD fixture —</option>{options}'
+        f'<option value="">— pick a claims dataset —</option>{options}'
         f'</select></div>'
     )
     for name, label, placeholder in [

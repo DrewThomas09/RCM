@@ -543,7 +543,7 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
         <input name="total_ebitda_usd" value="67500000"/></div>
       <div class="ps-form-field"><label>Horizon (years)</label>
         <input name="horizon_years" value="5"/></div>
-      <div class="ps-form-field"><label>Simulation paths</label>
+      <div class="ps-form-field"><label>Number of simulations</label>
         <input name="n_paths" value="500"/></div>
       <div class="ps-form-field"><label>EBITDA pass-through (0-1)</label>
         <input name="ebitda_pass_through" value="0.70"/></div>

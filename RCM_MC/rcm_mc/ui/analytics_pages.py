@@ -64,7 +64,7 @@ def render_causal_page(deal_id: str, deal_name: str, estimates: List[Dict[str, A
         f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:10px;">'
         f'Three causal inference methods applied to each initiative.</p>'
         f'<table class="cad-table"><thead><tr>'
-        f'<th>Method</th><th>Effect</th><th>95% CI</th><th>p-value</th><th>Confidence</th>'
+        f'<th>Method</th><th>Effect</th><th>95.0% CI</th><th>p-value</th><th>Confidence</th>'
         f'</tr></thead><tbody>{rows}</tbody></table></div>'
         f'{interp}'
     )
