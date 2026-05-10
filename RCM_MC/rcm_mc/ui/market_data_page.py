@@ -11,7 +11,10 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from ._chartis_kit import chartis_shell, ck_kpi_block
+from ._chartis_kit import (
+    chartis_shell, ck_kpi_block, ck_panel,
+    ck_section_header, ck_section_intro, ck_signal_badge,
+)
 from .brand import PALETTE
 
 
@@ -205,37 +208,33 @@ def _regression_section(stats: List[Dict[str, Any]]) -> str:
             direction = "+" if coef > 0 else ""
             magnitude = abs(coef)
             bar_width = min(100, magnitude / max(abs(beta[1:]).max(), 0.001) * 100)
-            bar_color = PALETTE["positive"] if coef > 0 else PALETTE["negative"]
+            coef_cls = "cad-pos" if coef > 0 else "cad-neg"
             coef_rows += (
                 f'<tr>'
                 f'<td>{html.escape(feat.replace("_", " ").title())}</td>'
-                f'<td class="num" style="color:{bar_color};">{direction}{coef:.4f}</td>'
-                f'<td><div style="background:{PALETTE["bg_tertiary"]};border-radius:4px;height:8px;">'
-                f'<div style="width:{bar_width:.0f}%;background:{bar_color};'
-                f'border-radius:4px;height:8px;"></div></div></td>'
+                f'<td class="num {coef_cls}"><strong>{direction}{coef:.4f}</strong></td>'
+                f'<td><div class="md-coef-track">'
+                f'<div class="md-coef-fill" style="width:{bar_width:.0f}%;'
+                f'background:var(--cad-{"pos" if coef > 0 else "neg"});"></div></div></td>'
                 f'</tr>'
             )
 
-        return (
-            f'<div class="cad-card">'
-            f'<h2>Regression: What Predicts Hospital Margins?</h2>'
-            f'<div style="display:flex;gap:16px;margin-bottom:12px;">'
-            f'<div class="cad-kpi" style="flex:1;">'
-            f'<div class="cad-kpi-value">{r2:.2%}</div>'
-            f'<div class="cad-kpi-label">R-Squared</div></div>'
-            f'<div class="cad-kpi" style="flex:1;">'
-            f'<div class="cad-kpi-value">{len(stats)}</div>'
-            f'<div class="cad-kpi-label">States Analyzed</div></div>'
-            f'<div class="cad-kpi" style="flex:1;">'
-            f'<div class="cad-kpi-value">{len(available)}</div>'
-            f'<div class="cad-kpi-label">Features</div></div>'
-            f'</div>'
-            f'<p style="color:{PALETTE["text_secondary"]};font-size:12.5px;margin-bottom:12px;">'
-            f'OLS regression of state-level average hospital operating margin on market '
-            f'structure variables. Standardized coefficients shown.</p>'
-            f'<table class="cad-table"><thead><tr>'
-            f'<th>Variable</th><th>Coefficient</th><th>Magnitude</th>'
-            f'</tr></thead><tbody>{coef_rows}</tbody></table></div>'
+        kpi_strip = (
+            '<div class="ck-kpi-strip">'
+            + ck_kpi_block("R-Squared", f"{r2:.2%}")
+            + ck_kpi_block("States Analyzed", f"{len(stats)}")
+            + ck_kpi_block("Features", f"{len(available)}")
+            + '</div>'
+        )
+        return ck_panel(
+            f'{kpi_strip}'
+            '<p class="ck-section-body">'
+            'OLS regression of state-level average hospital operating margin on market '
+            'structure variables. Standardized coefficients shown.</p>'
+            '<table class="cad-table"><thead><tr>'
+            '<th>Variable</th><th>Coefficient</th><th>Magnitude</th>'
+            f'</tr></thead><tbody>{coef_rows}</tbody></table>',
+            title="Regression: What Predicts Hospital Margins?",
         )
     except Exception:
         return ""
@@ -287,25 +286,19 @@ def render_market_data(
     heatmap = _state_heatmap_table(stats, metric)
     regression = _regression_section(stats)
 
-    data_source = (
-        f'<div class="cad-card" style="font-size:12px;">'
-        f'<h2>Data Sources</h2>'
-        f'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">'
-        f'<div>'
-        f'<div style="font-weight:600;color:{PALETTE["text_secondary"]};">HCRIS</div>'
-        f'<div style="color:{PALETTE["text_muted"]};">CMS Hospital Cost Reports</div>'
-        f'<div style="color:{PALETTE["text_muted"]};">~6,000 hospitals, annual</div>'
-        f'</div>'
-        f'<div>'
-        f'<div style="font-weight:600;color:{PALETTE["text_secondary"]};">FRED</div>'
-        f'<div style="color:{PALETTE["text_muted"]};">Federal Reserve Economic Data</div>'
-        f'<div style="color:{PALETTE["text_muted"]};">Treasury yields, macro indicators</div>'
-        f'</div>'
-        f'<div>'
-        f'<div style="font-weight:600;color:{PALETTE["text_secondary"]};">Capital IQ</div>'
-        f'<div style="color:{PALETTE["text_muted"]};">Transaction multiples</div>'
-        f'<div style="color:{PALETTE["text_muted"]};">Public hospital comps</div>'
-        f'</div></div></div>'
+    data_source = ck_panel(
+        '<div class="ck-card-grid">'
+        '<div><strong>HCRIS</strong><br>'
+        'CMS Hospital Cost Reports<br>'
+        '<em>~6,000 hospitals, annual</em></div>'
+        '<div><strong>FRED</strong><br>'
+        'Federal Reserve Economic Data<br>'
+        '<em>Treasury yields, macro indicators</em></div>'
+        '<div><strong>Capital IQ</strong><br>'
+        'Transaction multiples<br>'
+        '<em>Public hospital comps</em></div>'
+        '</div>',
+        title="Data Sources",
     )
 
     # Top markets by revenue
@@ -329,34 +322,32 @@ def render_market_data(
             f'<td><span class="cad-badge {conc_cls}">{conc_label}</span></td>'
             f'</tr>'
         )
-    top_markets = (
-        f'<div class="cad-card">'
-        f'<h2>Top 10 Markets by Revenue</h2>'
-        f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:8px;">'
+    top_markets = ck_panel(
+        '<p class="ck-section-body">'
         f'Top 10 states account for {cumulative_pct:.0f}% of national hospital revenue.</p>'
-        f'<table class="cad-table"><thead><tr>'
-        f'<th>State</th><th>Total NPR</th><th>% National</th><th>Cumulative</th>'
-        f'<th>Hospitals</th><th>Margin</th><th>Concentration</th>'
-        f'</tr></thead><tbody>{top_markets_rows}</tbody></table></div>'
+        '<table class="cad-table"><thead><tr>'
+        '<th>State</th><th>Total NPR</th><th>% National</th><th>Cumulative</th>'
+        '<th>Hospitals</th><th>Margin</th><th>Concentration</th>'
+        f'</tr></thead><tbody>{top_markets_rows}</tbody></table>',
+        title="Top 10 Markets by Revenue",
     ) if top_markets_rows else ""
 
     # Margin health distribution
     profitable = sum(1 for s in stats if s["avg_margin"] > 0)
     struggling = len(stats) - profitable
-    margin_dist = (
-        f'<div class="cad-card">'
-        f'<h2>Market Health</h2>'
-        f'<div style="display:flex;gap:4px;height:24px;border-radius:6px;overflow:hidden;margin-bottom:8px;">'
-        f'<div style="width:{profitable/max(len(stats),1)*100:.0f}%;background:{PALETTE["positive"]};" '
-        f'title="Positive margin: {profitable}"></div>'
-        f'<div style="width:{struggling/max(len(stats),1)*100:.0f}%;background:{PALETTE["negative"]};" '
-        f'title="Negative margin: {struggling}"></div></div>'
-        f'<div style="font-size:12px;display:flex;gap:16px;">'
-        f'<span style="color:{PALETTE["positive"]};">&#9632; Positive margin: {profitable} states</span>'
-        f'<span style="color:{PALETTE["negative"]};">&#9632; Negative margin: {struggling} states</span></div>'
-        f'<p style="font-size:11px;color:{PALETTE["text_muted"]};margin-top:4px;">'
-        f'Margins from HCRIS cost reports (median per state). Negative margins common '
-        f'in states with high uncompensated care.</p></div>'
+    pos_pct = profitable/max(len(stats),1)*100
+    neg_pct = struggling/max(len(stats),1)*100
+    margin_dist = ck_panel(
+        '<div class="md-margin-bar">'
+        f'<div class="md-margin-pos" style="width:{pos_pct:.0f}%;"></div>'
+        f'<div class="md-margin-neg" style="width:{neg_pct:.0f}%;"></div></div>'
+        '<p class="ck-section-body">'
+        f'<span class="cad-pos">&#9632; Positive margin: {profitable} states</span> &nbsp; '
+        f'<span class="cad-neg">&#9632; Negative margin: {struggling} states</span></p>'
+        '<p class="ck-eyebrow">'
+        'Margins from HCRIS cost reports (median per state). Negative margins common '
+        'in states with high uncompensated care.</p>',
+        title="Market Health",
     ) if stats else ""
 
     # Medicare concentration
@@ -364,28 +355,50 @@ def render_market_data(
     med_rows = ""
     for s in high_med:
         med_rows += (
-            f'<tr><td><a href="/market-data/state/{s["state"]}">{s["state"]}</a></td>'
+            f'<tr><td><a href="/market-data/state/{s["state"]}" class="ck-link">{s["state"]}</a></td>'
             f'<td class="num">{s["medicare_pct"]:.0%}</td>'
             f'<td class="num">{s["medicaid_pct"]:.0%}</td>'
             f'<td class="num">{s["commercial_pct"]:.0%}</td>'
             f'<td class="num">{s["avg_margin"]:.1%}</td></tr>'
         )
-    payer_section = (
-        f'<div class="cad-card">'
-        f'<h2>Highest Medicare Dependency</h2>'
-        f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:8px;">'
-        f'Most exposed to CMS rate changes.</p>'
-        f'<table class="cad-table"><thead><tr>'
-        f'<th>State</th><th>Medicare</th><th>Medicaid</th><th>Commercial</th><th>Margin</th>'
-        f'</tr></thead><tbody>{med_rows}</tbody></table></div>'
+    payer_section = ck_panel(
+        '<p class="ck-section-body">Most exposed to CMS rate changes.</p>'
+        '<table class="cad-table"><thead><tr>'
+        '<th>State</th><th>Medicare</th><th>Medicaid</th><th>Commercial</th><th>Margin</th>'
+        f'</tr></thead><tbody>{med_rows}</tbody></table>',
+        title="Highest Medicare Dependency",
     ) if med_rows else ""
 
+    intro = ck_section_intro(
+        eyebrow="MARKET DATA",
+        headline="National hospital market intelligence.",
+        italic_word="market",
+        body=(
+            "HCRIS-derived state-level operating margin, payer mix, "
+            "concentration (HHI), and revenue distribution across "
+            "all 50 states + DC. Heatmap on margin / HHI / Medicare "
+            "lets partners spot the markets most exposed to rate "
+            "compression, payer concentration, or pricing power."
+        ),
+    )
+    md_styles = """
+<style>
+.md-margin-bar{display:flex;gap:4px;height:24px;border-radius:6px;
+overflow:hidden;margin-bottom:8px;}
+.md-margin-pos{background:var(--cad-pos);}
+.md-margin-neg{background:var(--cad-neg);}
+.md-coef-track{background:var(--cad-bg3);border-radius:4px;height:8px;}
+.md-coef-fill{border-radius:4px;height:8px;}
+</style>
+"""
     body = (
+        f'{md_styles}'
+        f'{intro}'
         f'{kpi_section}'
         f'{margin_dist}'
         f'{top_markets}'
-        f'<div class="cad-card"><h2>State Market Heatmap</h2>{heatmap}</div>'
-        f'{regression}'
+        + ck_panel(heatmap, title="State Market Heatmap")
+        + f'{regression}'
         f'{payer_section}'
         f'{data_source}'
     )
@@ -425,19 +438,17 @@ def render_state_detail(
         opex = float(h.get("operating_expenses", 0))
         margin = (rev - opex) / rev if rev > 1e5 and opex > 0 else 0
         margin = max(-1.0, min(1.0, margin))
-        margin_color = PALETTE["positive"] if margin > 0.05 else (PALETTE["warning"] if margin > 0 else PALETTE["negative"])
+        margin_cls = "cad-pos" if margin > 0.05 else ("cad-warn" if margin > 0 else "cad-neg")
 
         rows += (
             f'<tr>'
-            f'<td><a href="/hospital/{ccn}" style="font-weight:500;">{name}</a></td>'
+            f'<td><a href="/hospital/{ccn}" class="ck-link"><strong>{name}</strong></a></td>'
             f'<td class="num">{beds}</td>'
             f'<td class="num">${rev/1e6:,.0f}M</td>'
-            f'<td class="num" style="color:{margin_color};">{margin:.1%}</td>'
-            f'<td style="white-space:nowrap;">'
-            f'<a href="/hospital/{ccn}" class="cad-badge cad-badge-blue" '
-            f'style="text-decoration:none;">Profile</a> '
-            f'<a href="/models/dcf/{ccn}" class="cad-badge cad-badge-muted" '
-            f'style="text-decoration:none;">DCF</a></td>'
+            f'<td class="num {margin_cls}">{margin:.1%}</td>'
+            f'<td>'
+            f'<a href="/hospital/{ccn}" class="cad-badge cad-badge-blue">Profile</a> '
+            f'<a href="/models/dcf/{ccn}" class="cad-badge cad-badge-muted">DCF</a></td>'
             f'</tr>'
         )
 
@@ -446,29 +457,34 @@ def render_state_detail(
     total_rev = float(sdf[rev_col].fillna(0).sum()) if rev_col in sdf.columns else 0
 
     kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n}</div>'
-        f'<div class="cad-kpi-label">Hospitals</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{total_beds:,}</div>'
-        f'<div class="cad-kpi-label">Total Beds</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${total_rev/1e9:.1f}B</div>'
-        f'<div class="cad-kpi-label">Total NPR</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("Hospitals", f"{n}")
+        + ck_kpi_block("Total Beds", f"{total_beds:,}")
+        + ck_kpi_block("Total NPR", f"${total_rev/1e9:.1f}B")
+        + '</div>'
     )
 
-    body = (
-        f'{kpis}'
-        f'<div class="cad-card">'
-        f'<h2>Hospitals in {html.escape(state_upper)} ({n})</h2>'
-        f'<table class="cad-table"><thead><tr>'
-        f'<th>Hospital</th><th>Beds</th><th>NPR</th><th>Margin</th><th>Actions</th>'
-        f'</tr></thead><tbody>{rows}</tbody></table></div>'
-        f'<div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">'
-        f'<a href="/screen?state={html.escape(state_upper)}" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Screen {html.escape(state_upper)} Hospitals</a>'
-        f'<a href="/market-data/map" class="cad-btn" style="text-decoration:none;">'
-        f'&larr; National View</a></div>'
+    intro = ck_section_intro(
+        eyebrow=f"MARKET — {html.escape(state_upper)}",
+        headline=f"Hospitals in {html.escape(state_upper)}.",
+        italic_word=html.escape(state_upper),
+        body=f"{n} HCRIS-filed hospitals · ${total_rev/1e9:.1f}B total NPR.",
     )
+    table_panel = ck_panel(
+        '<table class="cad-table"><thead><tr>'
+        '<th>Hospital</th><th>Beds</th><th>NPR</th><th>Margin</th><th>Actions</th>'
+        f'</tr></thead><tbody>{rows}</tbody></table>',
+        title=f"Hospitals in {html.escape(state_upper)} ({n})",
+    )
+    actions = ck_panel(
+        '<p class="ck-section-body">'
+        f'<a href="/screen?state={html.escape(state_upper)}" class="cad-btn cad-btn-primary">'
+        f'Screen {html.escape(state_upper)} Hospitals</a> '
+        '<a href="/market-data/map" class="cad-btn">&larr; National View</a>'
+        '</p>',
+        title="Cross-links",
+    )
+    body = f'{intro}{kpis}{table_panel}{actions}'
 
     return chartis_shell(
         body, f"Market: {state_upper}",

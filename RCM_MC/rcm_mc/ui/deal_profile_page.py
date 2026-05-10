@@ -33,7 +33,10 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import urlencode
 
 from ..diligence._pages import AVAILABLE_FIXTURES
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import (
+    P, chartis_shell, ck_panel,
+    ck_section_header, ck_section_intro, ck_signal_badge,
+)
 from .power_ui import bookmark_hint
 
 
@@ -596,29 +599,147 @@ _LANDING_JS = r"""<script>
 </script>"""
 
 
+_DP_STYLES = f"""
+<style>
+.dp-slug-form{{max-width:480px;}}
+.dp-recent-deals{{margin-top:1.75rem;max-width:960px;}}
+.dp-tool-chip{{font-size:8px;letter-spacing:.5px;text-transform:uppercase;
+color:{P["text_faint"]};background:{P["panel_alt"]};padding:1px 5px;
+border-radius:2px;margin-right:3px;}}
+.dp-input{{width:100%;padding:6px 8px;background:{P["panel_alt"]};
+color:{P["text"]};border:1px solid {P["border"]};
+font-family:inherit;font-size:11px;}}
+.dp-field-label{{font-size:9px;color:{P["text_faint"]};letter-spacing:1px;
+text-transform:uppercase;font-weight:600;display:block;margin-bottom:3px;}}
+.dp-field-chips{{margin-top:3px;line-height:1.5;}}
+.dp-form{{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 16px;
+background:{P["panel"]};border:1px solid {P["border"]};border-radius:4px;
+padding:16px 20px;margin-bottom:24px;}}
+.dp-form-actions{{grid-column:span 3;display:flex;gap:10px;align-items:center;
+margin-top:6px;}}
+.dp-btn-save{{padding:8px 18px;background:{P["accent"]};color:{P["panel"]};
+border:0;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+font-weight:700;cursor:pointer;}}
+.dp-btn-clear{{padding:8px 18px;background:transparent;color:{P["text_dim"]};
+border:1px solid {P["border"]};font-size:10px;letter-spacing:1.5px;
+text-transform:uppercase;font-weight:600;cursor:pointer;}}
+.dp-saved-at{{font-size:10px;color:{P["text_faint"]};margin-left:10px;letter-spacing:.5px;}}
+.dp-card{{display:block;background:{P["panel"]};border:1px solid {P["border"]};
+border-radius:4px;padding:14px 16px;text-decoration:none;
+transition:transform 140ms ease,border-color 140ms ease,box-shadow 140ms ease;}}
+.dp-card:hover{{transform:translateY(-1px);border-color:{P["text_faint"]};
+box-shadow:0 6px 18px rgba(0,0,0,0.30);}}
+.dp-card-head{{display:flex;justify-content:space-between;align-items:baseline;
+margin-bottom:6px;}}
+.dp-card-title{{font-size:13px;color:{P["text"]};font-weight:600;letter-spacing:-.1px;}}
+.dp-card-badge{{font-size:8px;letter-spacing:1.1px;text-transform:uppercase;
+color:{P["text_faint"]};background:{P["panel_alt"]};padding:2px 6px;
+border-radius:2px;font-weight:700;}}
+.dp-card-detail{{font-size:11px;color:{P["text_dim"]};line-height:1.55;}}
+.dp-card-preview{{font-size:10px;color:{P["text_faint"]};margin-top:8px;
+font-family:"JetBrains Mono",monospace;letter-spacing:.3px;word-break:break-all;}}
+.dp-phase-section{{margin-bottom:22px;}}
+.dp-phase-head{{display:flex;align-items:baseline;gap:12px;
+margin-bottom:10px;padding-left:10px;border-left:3px solid {P["text_dim"]};}}
+.dp-phase-label{{font-size:11px;color:{P["text"]};font-weight:700;
+letter-spacing:1.2px;text-transform:uppercase;}}
+.dp-phase-subtitle{{font-size:10px;color:{P["text_faint"]};font-style:italic;}}
+.dp-phase-spacer{{flex:1;}}
+.dp-phase-count{{font-size:10px;color:{P["text_faint"]};
+letter-spacing:1px;font-variant-numeric:tabular-nums;}}
+.dp-card-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}}
+.dp-thesis-card{{margin-bottom:20px;background:{P["panel"]};
+border:1px solid {P["border"]};border-radius:4px;padding:18px 22px;
+position:relative;overflow:hidden;}}
+.dp-thesis-card::before{{content:"";position:absolute;top:0;left:0;right:0;
+height:2px;background:linear-gradient(90deg,{P["accent"]},{P["positive"]});}}
+.dp-thesis-head{{display:flex;justify-content:space-between;
+align-items:baseline;margin-bottom:14px;}}
+.dp-thesis-eyebrow{{font-size:10px;color:{P["text_faint"]};
+letter-spacing:1.5px;text-transform:uppercase;font-weight:700;}}
+.dp-thesis-narrative{{font-size:13px;color:{P["text_dim"]};
+line-height:1.55;margin-top:4px;max-width:720px;}}
+.dp-thesis-badge{{font-size:9px;letter-spacing:1.3px;text-transform:uppercase;
+font-weight:700;color:{P["text_faint"]};border:1px solid {P["border"]};
+padding:3px 10px;border-radius:3px;}}
+.dp-thesis-tiles{{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+gap:14px;margin-bottom:14px;}}
+.dp-thesis-tile-label{{font-size:9px;color:{P["text_faint"]};
+letter-spacing:1.4px;text-transform:uppercase;font-weight:600;margin-bottom:4px;}}
+.dp-thesis-tile-val{{font-size:22px;color:{P["text"]};font-weight:700;
+font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;}}
+.dp-thesis-tile-sub{{font-size:10px;color:{P["text_faint"]};margin-top:2px;}}
+.dp-thesis-struct{{margin-top:6px;}}
+.dp-thesis-struct-head{{display:flex;justify-content:space-between;
+align-items:baseline;margin-bottom:5px;}}
+.dp-thesis-struct-label{{font-size:9px;color:{P["text_faint"]};
+letter-spacing:1.4px;text-transform:uppercase;font-weight:600;}}
+.dp-thesis-struct-legend{{font-size:10px;color:{P["text_faint"]};
+font-family:"JetBrains Mono",monospace;}}
+.dp-thesis-struct-bar{{height:8px;background:{P["panel_alt"]};
+border-radius:4px;overflow:hidden;display:flex;}}
+.dp-thesis-equity-bar{{height:100%;width:0%;background:{P["positive"]};
+transition:width 250ms ease;}}
+.dp-thesis-debt-bar{{height:100%;width:0%;background:{P["warning"]};
+transition:width 250ms ease;}}
+.dp-market-card{{margin-bottom:20px;background:{P["panel"]};
+border:1px solid {P["border"]};border-radius:4px;padding:16px 20px;
+position:relative;overflow:hidden;display:none;}}
+.dp-market-card::before{{content:"";position:absolute;top:0;left:0;right:0;
+height:2px;background:linear-gradient(90deg,{P["accent"]},{P["warning"]});}}
+.dp-market-head{{display:flex;justify-content:space-between;
+align-items:baseline;margin-bottom:10px;gap:12px;}}
+.dp-market-eyebrow{{font-size:10px;color:{P["text_faint"]};
+letter-spacing:1.5px;text-transform:uppercase;font-weight:700;}}
+.dp-market-summary{{font-size:12.5px;color:{P["text_dim"]};
+line-height:1.6;margin-top:4px;max-width:720px;}}
+.dp-market-assessment{{font-size:10px;letter-spacing:1.3px;
+text-transform:uppercase;font-weight:700;padding:4px 10px;
+border:1px solid currentColor;border-radius:3px;
+color:{P["text_faint"]};white-space:nowrap;}}
+.dp-market-tiles{{display:grid;
+grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+gap:12px;margin-top:6px;}}
+.dp-market-tile-label{{font-size:9px;color:{P["text_faint"]};
+letter-spacing:1.3px;text-transform:uppercase;font-weight:600;margin-bottom:3px;}}
+.dp-market-tile-val{{font-size:20px;color:{P["text"]};font-weight:700;
+font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;}}
+.dp-market-tile-sub{{font-size:9.5px;color:{P["text_faint"]};margin-top:2px;}}
+.dp-market-peers{{font-size:12px;color:{P["text"]};line-height:1.5;
+font-family:"JetBrains Mono",monospace;}}
+.dp-lifecycle{{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap;}}
+.dp-life-seg{{flex:1;padding:12px 14px;background:{P["panel"]};
+border:1px solid {P["border"]};border-left:3px solid {P["text_dim"]};
+border-radius:4px;position:relative;}}
+.dp-life-seg-head{{display:flex;justify-content:space-between;
+align-items:baseline;margin-bottom:2px;}}
+.dp-life-seg-num{{font-size:9px;color:{P["text_faint"]};letter-spacing:1.2px;
+font-family:"JetBrains Mono",monospace;font-weight:700;}}
+.dp-life-seg-count{{font-size:9px;color:{P["text_faint"]};letter-spacing:1px;}}
+.dp-life-seg-label{{font-size:11.5px;color:{P["text"]};font-weight:700;letter-spacing:.2px;}}
+.dp-life-seg-subtitle{{font-size:10px;color:{P["text_faint"]};line-height:1.4;margin-top:2px;}}
+</style>
+"""
+
+
 def _landing_slugs() -> str:
     """Editorial deal-profile landing — eyebrow + serif h2 + intro,
     then a slug-entry card and (JS-populated) recent-deals grid.
-    Lifted to match the .sect + cad-card patterns used across /app.
     """
-    body = (
-        # Editorial section header — matches .sect pattern in chartis.css
-        '<div class="sect">'
-        '<div>'
-        '<div class="micro">DEAL PROFILE</div>'
-        '<h2>One source of truth<br/><em>per deal</em>.</h2>'
-        '</div>'
-        '<p class="desc">'
-        'Each deal gets a unique URL — <code>/diligence/deal/&lt;slug&gt;</code>. '
-        'Pick a slug (e.g., <code>aurora</code>), enter the deal parameters '
-        'once, and every downstream analytic opens with them pre-filled. '
-        'Deal state persists locally so a refresh or returning tomorrow '
-        'picks up where you left off.'
-        '</p>'
-        '</div>'
-        # Slug-entry card — editorial cad-card pattern
-        '<form class="cad-card" '
-        'style="max-width:480px;"'
+    intro = ck_section_intro(
+        eyebrow="DEAL PROFILE",
+        headline="One source of truth per deal.",
+        italic_word="truth",
+        body=(
+            "Each deal gets a unique URL — /diligence/deal/<slug>. "
+            "Pick a slug (e.g., 'aurora'), enter the deal parameters "
+            "once, and every downstream analytic opens with them "
+            "pre-filled. Deal state persists locally so a refresh "
+            "or returning tomorrow picks up where you left off."
+        ),
+    )
+    form_inner = (
+        '<form class="dp-slug-form" '
         'onsubmit="const slug = this.slug.value.trim().toLowerCase()'
         ".replace(/[^a-z0-9-]/g, '-'); if (slug) "
         'window.location.href = \'/diligence/deal/\' + slug; return false;">'
@@ -627,18 +748,18 @@ def _landing_slugs() -> str:
         '<input class="cad-input" name="slug" required '
         'placeholder="e.g. aurora" pattern="[a-zA-Z0-9-]+">'
         '</div>'
-        '<div style="font-size:.78rem;color:var(--muted);'
-        'font-family:\'Inter\',sans-serif;margin-top:.5rem;line-height:1.5;">'
+        '<p class="ck-eyebrow">'
         'Letters, digits, and hyphens only. Bookmarkable. Open the same '
-        'slug from any browser to pick up your profile.'
-        '</div>'
-        '<button type="submit" class="cad-btn cad-btn-primary" '
-        'style="margin-top:1rem;">Open profile</button>'
+        'slug from any browser to pick up your profile.</p>'
+        '<button type="submit" class="cad-btn cad-btn-primary">Open profile</button>'
         '</form>'
-        # Recent deals block — JS populates from localStorage.
-        '<div style="margin-top:1.75rem;max-width:960px;" '
-        'data-rcm-recent-deals></div>'
-        f'{_LANDING_JS}'
+    )
+    body = (
+        _DP_STYLES
+        + intro
+        + ck_panel(form_inner, title="New profile")
+        + '<div data-rcm-recent-deals class="dp-recent-deals"></div>'
+        + f'{_LANDING_JS}'
     )
     return chartis_shell(
         body, "RCM Diligence — Deal Profile",
@@ -659,63 +780,39 @@ def _render_form(slug: str, seed_values: Dict[str, str]) -> str:
     for key, label, placeholder, input_type, tools in _FIELDS:
         seeded = html.escape(seed_values.get(key, ""), quote=True)
         chips = "".join(
-            f'<span style="font-size:8px;letter-spacing:.5px;'
-            f'text-transform:uppercase;color:{P["text_faint"]};'
-            f'background:{P["panel_alt"]};padding:1px 5px;'
-            f'border-radius:2px;margin-right:3px;">'
-            f'{html.escape(t)}</span>'
+            f'<span class="dp-tool-chip">{html.escape(t)}</span>'
             for t in tools
         )
         if input_type == "select" and key == "dataset":
             input_html = (
-                f'<select name="{key}" data-rcm-deal-field="{key}" '
-                f'style="width:100%;padding:6px 8px;background:{P["panel_alt"]};'
-                f'color:{P["text"]};border:1px solid {P["border"]};'
-                f'font-family:inherit;font-size:11px;">'
+                f'<select name="{key}" data-rcm-deal-field="{key}" class="dp-input">'
                 f'<option value="">— none —</option>{fixture_options}'
-                f'</select>'
+                '</select>'
             )
         else:
             input_html = (
                 f'<input name="{key}" data-rcm-deal-field="{key}" '
                 f'placeholder="{html.escape(placeholder, quote=True)}" '
-                f'value="{seeded}" '
-                f'style="width:100%;padding:6px 8px;background:{P["panel_alt"]};'
-                f'color:{P["text"]};border:1px solid {P["border"]};'
-                f'font-family:inherit;font-size:11px;">'
+                f'value="{seeded}" class="dp-input">'
             )
         fields_html.append(
-            f'<div>'
-            f'<label style="font-size:9px;color:{P["text_faint"]};'
-            f'letter-spacing:1px;text-transform:uppercase;font-weight:600;'
-            f'display:block;margin-bottom:3px;">'
-            f'{html.escape(label)}</label>'
+            '<div class="dp-field">'
+            f'<label class="dp-field-label">{html.escape(label)}</label>'
             f'{input_html}'
-            f'<div style="margin-top:3px;line-height:1.5;">{chips}</div>'
-            f'</div>'
+            f'<div class="dp-field-chips">{chips}</div>'
+            '</div>'
         )
     return (
         f'<form data-rcm-deal-form data-rcm-deal-slug="{html.escape(slug)}" '
-        f'style="display:grid;grid-template-columns:repeat(3,1fr);'
-        f'gap:12px 16px;background:{P["panel"]};border:1px solid '
-        f'{P["border"]};border-radius:4px;padding:16px 20px;'
-        f'margin-bottom:24px;">'
+        f'class="dp-form">'
         f'{"".join(fields_html)}'
-        f'<div style="grid-column:span 3;display:flex;gap:10px;'
-        f'align-items:center;margin-top:6px;">'
-        f'<button type="button" data-rcm-deal-save '
-        f'style="padding:8px 18px;background:{P["accent"]};color:{P["panel"]};'
-        f'border:0;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;'
-        f'font-weight:700;cursor:pointer;">Save Profile</button>'
-        f'<button type="button" data-rcm-deal-clear '
-        f'style="padding:8px 18px;background:transparent;color:{P["text_dim"]};'
-        f'border:1px solid {P["border"]};font-size:10px;letter-spacing:1.5px;'
-        f'text-transform:uppercase;font-weight:600;cursor:pointer;">'
-        f'Clear</button>'
-        f'<span data-rcm-deal-saved-at style="font-size:10px;'
-        f'color:{P["text_faint"]};margin-left:10px;letter-spacing:.5px;">'
-        f'</span>'
-        f'</div></form>'
+        '<div class="dp-form-actions">'
+        '<button type="button" data-rcm-deal-save class="dp-btn-save">'
+        'Save Profile</button>'
+        '<button type="button" data-rcm-deal-clear class="dp-btn-clear">'
+        'Clear</button>'
+        '<span data-rcm-deal-saved-at class="dp-saved-at"></span>'
+        '</div></form>'
     )
 
 
@@ -766,40 +863,20 @@ def _analytic_card(slug: str, a: Dict[str, Any]) -> str:
         "params": params, "aliases": aliases, "extra_qs": extra_qs,
     })
     badge = a.get("badge", "")
+    badge_html = ck_signal_badge(html.escape(badge), tone="neutral") if badge else ""
     return (
         f'<a data-rcm-deal-link '
         f'data-rcm-deal-href-base="{html.escape(a["href"], quote=True)}" '
         f'data-rcm-deal-params="{html.escape(params_json, quote=True)}" '
         f'data-rcm-deal-slug="{html.escape(slug)}" '
-        f'href="{html.escape(a["href"])}" '
-        f'style="display:block;background:{P["panel"]};border:1px solid '
-        f'{P["border"]};border-radius:4px;padding:14px 16px;'
-        f'text-decoration:none;transition:transform 140ms ease, '
-        f'border-color 140ms ease, box-shadow 140ms ease;" '
-        f'onmouseover="this.style.transform=\'translateY(-1px)\';'
-        f'this.style.borderColor=\'{P["text_faint"]}\';'
-        f'this.style.boxShadow=\'0 6px 18px rgba(0,0,0,0.30)\';" '
-        f'onmouseout="this.style.transform=\'translateY(0)\';'
-        f'this.style.borderColor=\'{P["border"]}\';'
-        f'this.style.boxShadow=\'none\';">'
-        f'<div style="display:flex;justify-content:space-between;'
-        f'align-items:baseline;margin-bottom:6px;">'
-        f'<div style="font-size:13px;color:{P["text"]};font-weight:600;'
-        f'letter-spacing:-.1px;">'
-        f'{html.escape(a["label"])}</div>'
-        + (f'<span style="font-size:8px;letter-spacing:1.1px;'
-           f'text-transform:uppercase;color:{P["text_faint"]};'
-           f'background:{P["panel_alt"]};padding:2px 6px;'
-           f'border-radius:2px;font-weight:700;">{html.escape(badge)}</span>'
-           if badge else "")
-        + f'</div>'
-        f'<div style="font-size:11px;color:{P["text_dim"]};'
-        f'line-height:1.55;">{html.escape(a["detail"])}</div>'
-        f'<div data-rcm-deal-preview style="font-size:10px;'
-        f'color:{P["text_faint"]};margin-top:8px;font-family:'
-        f'\'JetBrains Mono\',monospace;letter-spacing:.3px;'
-        f'word-break:break-all;"></div>'
-        f'</a>'
+        f'href="{html.escape(a["href"])}" class="dp-card">'
+        '<div class="dp-card-head">'
+        f'<div class="dp-card-title">{html.escape(a["label"])}</div>'
+        f'{badge_html}'
+        '</div>'
+        f'<div class="dp-card-detail">{html.escape(a["detail"])}</div>'
+        '<div data-rcm-deal-preview class="dp-card-preview"></div>'
+        '</a>'
     )
 
 
@@ -823,138 +900,60 @@ def _render_analytics_grid(slug: str) -> str:
         tile_htmls = [
             _analytic_card(slug, a) for a in by_phase[phase]
         ]
+        n_count = len(by_phase[phase])
+        eyebrow = (
+            f"{html.escape(meta['label']).upper()} · "
+            f"{n_count} {'ANALYTIC' if n_count == 1 else 'ANALYTICS'}"
+        )
         sections.append(
-            f'<div style="margin-bottom:22px;">'
-            f'<div style="display:flex;align-items:baseline;gap:12px;'
-            f'margin-bottom:10px;padding-left:10px;'
-            f'border-left:3px solid {tone_color};">'
-            f'<div style="font-size:11px;color:{P["text"]};font-weight:700;'
-            f'letter-spacing:1.2px;text-transform:uppercase;">'
-            f'{html.escape(meta["label"])}</div>'
-            f'<div style="font-size:10px;color:{P["text_faint"]};'
-            f'font-style:italic;">{html.escape(meta["subtitle"])}</div>'
-            f'<div style="flex:1;"></div>'
-            f'<div style="font-size:10px;color:{P["text_faint"]};'
-            f'letter-spacing:1px;font-variant-numeric:tabular-nums;">'
-            f'{len(by_phase[phase])} '
-            f'{"analytic" if len(by_phase[phase]) == 1 else "analytics"}'
-            f'</div>'
-            f'</div>'
-            f'<div style="display:grid;grid-template-columns:repeat(auto-fill,'
-            f'minmax(280px,1fr));gap:12px;">'
+            ck_section_header(
+                html.escape(meta["subtitle"]) or html.escape(meta["label"]),
+                eyebrow=eyebrow,
+            )
+            + '<div class="dp-card-grid">'
             + "".join(tile_htmls) +
-            f'</div>'
-            f'</div>'
+            '</div>'
         )
     return "".join(sections)
 
 
 def _render_thesis_snapshot(slug: str) -> str:
-    """The visual investment story — live-updated from localStorage.
-
-    Shows 4 KPI tiles (EV / Revenue / EBITDA / Implied EV/EBITDA),
-    a deal-structure bar (equity vs debt), and a one-sentence
-    auto-thesis.  All values are populated by the inline JS from
-    localStorage; empty-state shows "Enter deal parameters below".
-    """
+    """The visual investment story — live-updated from localStorage."""
+    def _tile(attr: str, label: str, sub_attr: str) -> str:
+        return (
+            '<div class="dp-thesis-tile">'
+            f'<div class="dp-thesis-tile-label">{label}</div>'
+            f'<div data-{attr} class="dp-thesis-tile-val">—</div>'
+            f'<div class="dp-thesis-tile-sub" data-{sub_attr}></div>'
+            '</div>'
+        )
     return (
-        f'<div data-rcm-thesis-snapshot style="margin-bottom:20px;'
-        f'background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-radius:4px;padding:18px 22px;position:relative;'
-        f'overflow:hidden;">'
-        f'<div style="position:absolute;top:0;left:0;right:0;height:2px;'
-        f'background:linear-gradient(90deg,{P["accent"]},{P["positive"]});">'
-        f'</div>'
-        f'<div style="display:flex;justify-content:space-between;'
-        f'align-items:baseline;margin-bottom:14px;">'
-        f'<div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;font-weight:700;">'
-        f'Investment Thesis</div>'
-        f'<div style="font-size:13px;color:{P["text_dim"]};'
-        f'line-height:1.55;margin-top:4px;max-width:720px;" '
-        f'data-rcm-thesis-narrative>'
-        f'Enter deal parameters below to populate the thesis snapshot.'
-        f'</div>'
-        f'</div>'
-        f'<div data-rcm-thesis-badge style="font-size:9px;'
-        f'letter-spacing:1.3px;text-transform:uppercase;font-weight:700;'
-        f'color:{P["text_faint"]};border:1px solid {P["border"]};'
-        f'padding:3px 10px;border-radius:3px;">Awaiting inputs</div>'
-        f'</div>'
-        f'<div style="display:grid;grid-template-columns:repeat(auto-fit,'
-        f'minmax(160px,1fr));gap:14px;margin-bottom:14px;">'
-        # EV tile
-        f'<div>'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.4px;text-transform:uppercase;font-weight:600;'
-        f'margin-bottom:4px;">Enterprise value</div>'
-        f'<div data-rcm-thesis-ev '
-        f'style="font-size:22px;color:{P["text"]};font-weight:700;'
-        f'font-family:\'JetBrains Mono\',monospace;'
-        f'font-variant-numeric:tabular-nums;">—</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:2px;" data-rcm-thesis-ev-sub></div>'
-        f'</div>'
-        # Revenue tile
-        f'<div>'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.4px;text-transform:uppercase;font-weight:600;'
-        f'margin-bottom:4px;">Revenue Y0</div>'
-        f'<div data-rcm-thesis-revenue '
-        f'style="font-size:22px;color:{P["text"]};font-weight:700;'
-        f'font-family:\'JetBrains Mono\',monospace;'
-        f'font-variant-numeric:tabular-nums;">—</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:2px;" data-rcm-thesis-rev-sub></div>'
-        f'</div>'
-        # EBITDA tile
-        f'<div>'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.4px;text-transform:uppercase;font-weight:600;'
-        f'margin-bottom:4px;">EBITDA Y0</div>'
-        f'<div data-rcm-thesis-ebitda '
-        f'style="font-size:22px;color:{P["text"]};font-weight:700;'
-        f'font-family:\'JetBrains Mono\',monospace;'
-        f'font-variant-numeric:tabular-nums;">—</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:2px;" data-rcm-thesis-margin-sub></div>'
-        f'</div>'
-        # Multiple tile
-        f'<div>'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.4px;text-transform:uppercase;font-weight:600;'
-        f'margin-bottom:4px;">Entry EV / EBITDA</div>'
-        f'<div data-rcm-thesis-multiple '
-        f'style="font-size:22px;color:{P["text"]};font-weight:700;'
-        f'font-family:\'JetBrains Mono\',monospace;'
-        f'font-variant-numeric:tabular-nums;">—</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:2px;" data-rcm-thesis-mult-sub></div>'
-        f'</div>'
-        f'</div>'
-        # Equity / Debt structure bar
-        f'<div style="margin-top:6px;">'
-        f'<div style="display:flex;justify-content:space-between;'
-        f'align-items:baseline;margin-bottom:5px;">'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.4px;text-transform:uppercase;font-weight:600;">'
-        f'Capital structure</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'font-family:\'JetBrains Mono\',monospace;" '
-        f'data-rcm-thesis-struct-legend>— equity · — debt</div>'
-        f'</div>'
-        f'<div style="height:8px;background:{P["panel_alt"]};'
-        f'border-radius:4px;overflow:hidden;display:flex;">'
-        f'<div data-rcm-thesis-equity-bar '
-        f'style="height:100%;width:0%;background:{P["positive"]};'
-        f'transition:width 250ms ease;"></div>'
-        f'<div data-rcm-thesis-debt-bar '
-        f'style="height:100%;width:0%;background:{P["warning"]};'
-        f'transition:width 250ms ease;"></div>'
-        f'</div>'
-        f'</div>'
-        f'</div>'
+        '<div data-rcm-thesis-snapshot class="dp-thesis-card">'
+        '<div class="dp-thesis-head">'
+        '<div>'
+        '<div class="dp-thesis-eyebrow">Investment Thesis</div>'
+        '<div class="dp-thesis-narrative" data-rcm-thesis-narrative>'
+        'Enter deal parameters below to populate the thesis snapshot.'
+        '</div>'
+        '</div>'
+        '<div data-rcm-thesis-badge class="dp-thesis-badge">Awaiting inputs</div>'
+        '</div>'
+        '<div class="dp-thesis-tiles">'
+        + _tile("rcm-thesis-ev", "Enterprise value", "rcm-thesis-ev-sub")
+        + _tile("rcm-thesis-revenue", "Revenue Y0", "rcm-thesis-rev-sub")
+        + _tile("rcm-thesis-ebitda", "EBITDA Y0", "rcm-thesis-margin-sub")
+        + _tile("rcm-thesis-multiple", "Entry EV / EBITDA", "rcm-thesis-mult-sub")
+        + '</div>'
+        '<div class="dp-thesis-struct">'
+        '<div class="dp-thesis-struct-head">'
+        '<div class="dp-thesis-struct-label">Capital structure</div>'
+        '<div class="dp-thesis-struct-legend" data-rcm-thesis-struct-legend>'
+        '— equity · — debt</div>'
+        '</div>'
+        '<div class="dp-thesis-struct-bar">'
+        '<div data-rcm-thesis-equity-bar class="dp-thesis-equity-bar"></div>'
+        '<div data-rcm-thesis-debt-bar class="dp-thesis-debt-bar"></div>'
+        '</div></div></div>'
     )
 
 
@@ -965,73 +964,35 @@ def _render_market_context(slug: str) -> str:
     fields.  Surfaces target-vs-peer multiple delta + named top peers
     + sentiment + assessment band."""
     return (
-        f'<div data-rcm-market-context style="margin-bottom:20px;'
-        f'background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-radius:4px;padding:16px 20px;position:relative;'
-        f'overflow:hidden;display:none;">'
-        f'<div style="position:absolute;top:0;left:0;right:0;height:2px;'
-        f'background:linear-gradient(90deg,{P["accent"]},{P["warning"]});">'
-        f'</div>'
-        f'<div style="display:flex;justify-content:space-between;'
-        f'align-items:baseline;margin-bottom:10px;gap:12px;">'
-        f'<div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;font-weight:700;">'
-        f'Market Context · live from public comps</div>'
-        f'<div data-rcm-market-summary '
-        f'style="font-size:12.5px;color:{P["text_dim"]};line-height:1.6;'
-        f'margin-top:4px;max-width:720px;"></div>'
-        f'</div>'
-        f'<div data-rcm-market-assessment style="font-size:10px;'
-        f'letter-spacing:1.3px;text-transform:uppercase;font-weight:700;'
-        f'padding:4px 10px;border:1px solid currentColor;border-radius:3px;'
-        f'color:{P["text_faint"]};white-space:nowrap;">—</div>'
-        f'</div>'
-        f'<div style="display:grid;grid-template-columns:repeat(auto-fit,'
-        f'minmax(140px,1fr));gap:12px;margin-top:6px;">'
-        f'<div>'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.3px;text-transform:uppercase;font-weight:600;'
-        f'margin-bottom:3px;">Target implied</div>'
-        f'<div data-rcm-market-target-mult '
-        f'style="font-size:20px;color:{P["text"]};font-weight:700;'
-        f'font-family:\'JetBrains Mono\',monospace;'
-        f'font-variant-numeric:tabular-nums;">—</div>'
-        f'<div style="font-size:9.5px;color:{P["text_faint"]};'
-        f'margin-top:2px;">EV / EBITDA</div>'
-        f'</div>'
-        f'<div>'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.3px;text-transform:uppercase;font-weight:600;'
-        f'margin-bottom:3px;">Peer median</div>'
-        f'<div data-rcm-market-peer-median '
-        f'style="font-size:20px;color:{P["text"]};font-weight:700;'
-        f'font-family:\'JetBrains Mono\',monospace;'
-        f'font-variant-numeric:tabular-nums;">—</div>'
-        f'<div style="font-size:9.5px;color:{P["text_faint"]};'
-        f'margin-top:2px;" data-rcm-market-band-range></div>'
-        f'</div>'
-        f'<div>'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.3px;text-transform:uppercase;font-weight:600;'
-        f'margin-bottom:3px;">Delta vs peer</div>'
-        f'<div data-rcm-market-delta '
-        f'style="font-size:20px;font-weight:700;'
-        f'font-family:\'JetBrains Mono\',monospace;'
-        f'font-variant-numeric:tabular-nums;">—</div>'
-        f'<div style="font-size:9.5px;color:{P["text_faint"]};'
-        f'margin-top:2px;">turns of EBITDA</div>'
-        f'</div>'
-        f'<div>'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.3px;text-transform:uppercase;font-weight:600;'
-        f'margin-bottom:3px;">Closest peers</div>'
-        f'<div data-rcm-market-peers '
-        f'style="font-size:12px;color:{P["text"]};line-height:1.5;'
-        f'font-family:\'JetBrains Mono\',monospace;">—</div>'
-        f'</div>'
-        f'</div>'
-        f'</div>'
+        '<div data-rcm-market-context class="dp-market-card">'
+        '<div class="dp-market-head">'
+        '<div>'
+        '<div class="dp-market-eyebrow">Market Context · live from public comps</div>'
+        '<div data-rcm-market-summary class="dp-market-summary"></div>'
+        '</div>'
+        '<div data-rcm-market-assessment class="dp-market-assessment">—</div>'
+        '</div>'
+        '<div class="dp-market-tiles">'
+        '<div>'
+        '<div class="dp-market-tile-label">Target implied</div>'
+        '<div data-rcm-market-target-mult class="dp-market-tile-val">—</div>'
+        '<div class="dp-market-tile-sub">EV / EBITDA</div>'
+        '</div>'
+        '<div>'
+        '<div class="dp-market-tile-label">Peer median</div>'
+        '<div data-rcm-market-peer-median class="dp-market-tile-val">—</div>'
+        '<div class="dp-market-tile-sub" data-rcm-market-band-range></div>'
+        '</div>'
+        '<div>'
+        '<div class="dp-market-tile-label">Delta vs peer</div>'
+        '<div data-rcm-market-delta class="dp-market-tile-val">—</div>'
+        '<div class="dp-market-tile-sub">turns of EBITDA</div>'
+        '</div>'
+        '<div>'
+        '<div class="dp-market-tile-label">Closest peers</div>'
+        '<div data-rcm-market-peers class="dp-market-peers">—</div>'
+        '</div>'
+        '</div></div>'
     )
 
 
@@ -1055,30 +1016,18 @@ def _render_lifecycle_ribbon(slug: str) -> str:
         tone_color = P.get(meta["tone"], P["text_dim"])
         count = per_phase.get(phase, 0)
         segments.append(
-            f'<div data-rcm-phase="{phase}" '
-            f'style="flex:1;padding:12px 14px;background:{P["panel"]};'
-            f'border:1px solid {P["border"]};border-left:3px solid {tone_color};'
-            f'border-radius:4px;position:relative;">'
-            f'<div style="display:flex;justify-content:space-between;'
-            f'align-items:baseline;margin-bottom:2px;">'
-            f'<div style="font-size:9px;color:{P["text_faint"]};'
-            f'letter-spacing:1.2px;font-family:\'JetBrains Mono\',monospace;'
-            f'font-weight:700;">{i + 1:02d}</div>'
-            f'<div style="font-size:9px;color:{P["text_faint"]};'
-            f'letter-spacing:1px;">{count} '
+            f'<div data-rcm-phase="{phase}" class="dp-life-seg" '
+            f'style="border-left-color:{tone_color};">'
+            '<div class="dp-life-seg-head">'
+            f'<div class="dp-life-seg-num">{i + 1:02d}</div>'
+            f'<div class="dp-life-seg-count">{count} '
             f'{"analytic" if count == 1 else "analytics"}</div>'
-            f'</div>'
-            f'<div style="font-size:11.5px;color:{P["text"]};font-weight:700;'
-            f'letter-spacing:.2px;">{html.escape(meta["label"])}</div>'
-            f'<div style="font-size:10px;color:{P["text_faint"]};'
-            f'line-height:1.4;margin-top:2px;">'
-            f'{html.escape(meta["subtitle"])}</div>'
-            f'</div>'
+            '</div>'
+            f'<div class="dp-life-seg-label">{html.escape(meta["label"])}</div>'
+            f'<div class="dp-life-seg-subtitle">{html.escape(meta["subtitle"])}</div>'
+            '</div>'
         )
-    return (
-        f'<div style="display:flex;gap:8px;margin-bottom:22px;'
-        f'flex-wrap:wrap;">{"".join(segments)}</div>'
-    )
+    return f'<div class="dp-lifecycle">{"".join(segments)}</div>'
 
 
 def _inline_js(slug: str) -> str:
@@ -1448,87 +1397,57 @@ def render_deal_profile_page(
             if val:
                 seed_values[key] = val
 
-    hero = (
-        f'<div style="padding:24px 0 12px 0;border-bottom:1px solid '
-        f'{P["border"]};margin-bottom:24px;">'
-        f'<div style="font-size:11px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;'
-        f'font-weight:600;">Deal Profile</div>'
-        f'<div style="display:flex;justify-content:space-between;'
-        f'align-items:baseline;gap:16px;">'
-        f'<div><div style="font-size:22px;color:{P["text"]};'
-        f'font-weight:600;margin-bottom:4px;">'
-        f'<span data-rcm-deal-display-name>{html.escape(slug)}</span>'
-        f'</div>'
-        f'<div style="font-size:11px;color:{P["text_faint"]};'
-        f'font-family:\'JetBrains Mono\',monospace;">'
-        f'slug: {html.escape(slug)} · persisted to browser localStorage'
-        f'</div></div>'
-        f'<a href="/diligence/deal" style="font-size:10px;'
-        f'color:{P["accent"]};letter-spacing:1px;text-transform:uppercase;'
-        f'border:1px solid {P["border"]};padding:6px 12px;border-radius:3px;'
-        f'text-decoration:none;">Pick Another Slug →</a>'
-        f'</div></div>'
-    )
-    intro = (
-        f'<div style="font-size:12px;color:{P["text_dim"]};'
-        f'max-width:760px;line-height:1.6;margin-bottom:18px;">'
-        f'Enter deal parameters once. <strong style="color:{P["text"]};">'
-        f'Save Profile</strong> stores them in your browser. Every '
-        f'analytic link below pre-fills the relevant parameters — '
-        f'click any card and the tool opens with your deal context '
-        f'already populated. Press '
-        f'<kbd style="padding:1px 5px;border:1px solid currentColor;'
-        f'border-radius:2px;font-family:inherit;">b</kbd> to bookmark '
-        f'this profile to your Saved Views.</div>'
+    hero = ck_section_intro(
+        eyebrow="DEAL PROFILE",
+        headline=(
+            f'<span data-rcm-deal-display-name>{html.escape(slug)}</span>'
+        ),
+        italic_word=html.escape(slug),
+        body=(
+            f"slug: {html.escape(slug)} · persisted to browser "
+            "localStorage. Enter deal parameters once. Save Profile "
+            "stores them in your browser. Every analytic link below "
+            "pre-fills the relevant parameters — click any card and "
+            "the tool opens with your deal context already populated."
+        ),
+    ) + (
+        '<p class="ck-section-body">'
+        '<a href="/diligence/deal" class="cad-btn">Pick Another Slug →</a>'
+        '</p>'
     )
     # Prominent "Run Full Pipeline" CTA — the single highest-leverage
-    # button on the page.  Inline JS reads localStorage for this
-    # slug and builds the pipeline URL with all fields pre-seeded.
-    pipeline_cta = (
-        f'<div style="background:{P["panel"]};border:1px solid '
-        f'{P["accent"]};border-radius:4px;padding:16px 20px;'
-        f'margin-bottom:20px;display:flex;justify-content:space-between;'
-        f'align-items:center;gap:16px;flex-wrap:wrap;position:relative;'
-        f'overflow:hidden;">'
-        f'<div style="position:absolute;top:0;left:0;right:0;height:2px;'
-        f'background:linear-gradient(90deg,{P["positive"]},{P["accent"]});">'
-        f'</div>'
-        f'<div>'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;font-weight:700;">'
-        f'Thesis Pipeline</div>'
-        f'<div style="font-size:16px;color:{P["text"]};font-weight:600;'
-        f'margin-top:2px;">One-button full diligence chain</div>'
-        f'<div style="font-size:11px;color:{P["text_dim"]};margin-top:4px;'
-        f'line-height:1.5;max-width:600px;">'
-        f'Runs bankruptcy scan → CCD ingest → HFMA benchmarks → denial '
-        f'prediction → PPAM → counterfactual → Steward → cyber → '
-        f'deal autopsy → Deal MC in one step. Feeds IC Packet with '
-        f'every headline number.</div>'
-        f'</div>'
-        f'<a data-rcm-run-pipeline href="/diligence/thesis-pipeline" '
-        f'style="padding:12px 22px;background:{P["accent"]};'
-        f'color:{P["panel"]};border:0;font-size:11px;letter-spacing:1.5px;'
-        f'text-transform:uppercase;font-weight:700;cursor:pointer;'
-        f'border-radius:3px;text-decoration:none;white-space:nowrap;">'
-        f'▶ Run Full Pipeline</a>'
-        f'</div>'
+    # button on the page.
+    pipeline_cta = ck_panel(
+        '<p class="ck-section-body">'
+        '<strong>One-button full diligence chain.</strong> '
+        'Runs bankruptcy scan → CCD ingest → HFMA benchmarks → denial '
+        'prediction → PPAM → counterfactual → Steward → cyber → '
+        'deal autopsy → Deal MC in one step. Feeds IC Packet with '
+        'every headline number.</p>'
+        '<p class="ck-section-body">'
+        '<a data-rcm-run-pipeline href="/diligence/thesis-pipeline" '
+        'class="cad-btn cad-btn-primary">▶ Run Full Pipeline</a>'
+        '</p>',
+        title="Thesis Pipeline",
     )
     thesis_snapshot = _render_thesis_snapshot(slug)
     market_context = _render_market_context(slug)
     lifecycle = _render_lifecycle_ribbon(slug)
     form = _render_form(slug, seed_values)
     grid = _render_analytics_grid(slug)
-    grid_header = (
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;font-weight:700;'
-        f'margin-bottom:14px;margin-top:10px;">'
-        f'Open in Analytic · grouped by lifecycle phase</div>'
+    grid_header = ck_section_header(
+        "Open in Analytic · grouped by lifecycle phase",
+        eyebrow="ANALYTICS",
     )
+    thesis_panel = ck_panel(thesis_snapshot, title="Investment thesis")
+    market_panel = ck_panel(market_context, title="Market context")
+    lifecycle_panel = ck_panel(
+        lifecycle, title="Diligence lifecycle",
+    )
+    form_panel = ck_panel(form, title="Deal parameters")
     return chartis_shell(
-        hero + intro + thesis_snapshot + market_context + pipeline_cta
-        + lifecycle + form + grid_header + grid
+        _DP_STYLES + hero + thesis_panel + market_panel + pipeline_cta
+        + lifecycle_panel + form_panel + grid_header + grid
         + bookmark_hint() + _inline_js(slug),
         f"Deal Profile — {slug}",
         active_nav="/diligence/deal",
