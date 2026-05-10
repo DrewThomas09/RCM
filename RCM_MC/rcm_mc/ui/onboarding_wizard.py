@@ -153,6 +153,23 @@ body.wizard { margin:0; padding:0; background:#0F1C2E; color:#0F1C2E;
 .wizard hr { border:none; border-top:1px solid #D6CFC0; margin:16px 0; }
 .wizard a:focus-visible, .wizard button:focus-visible,
 .wizard input:focus-visible { outline:3px solid #2C5C84; outline-offset:2px; }
+.wizard .ow-section-head { font-weight:600; margin-bottom:10px; }
+.wizard .ow-section-sub { font-size:12px; color:#5C6878; margin-bottom:8px; }
+.wizard .ow-form-inline { display:inline; }
+.wizard .ow-mt-12 { margin-top:12px; }
+.wizard .ow-mt-8 { margin-top:8px; }
+.wizard .ow-mt-4 { margin-top:4px; }
+.wizard .ow-mt-6 { margin-top:6px; }
+.wizard .ow-mt-16 { margin-top:16px; }
+.wizard .ow-mb-6 { margin-bottom:6px; }
+.wizard .ow-mb-14 { margin-bottom:14px; }
+.wizard .ow-ml-8 { margin-left:8px; }
+.wizard .ow-grade-large { font-size:42px; font-weight:700; }
+.wizard .ow-flex-1 { flex:1; }
+.wizard .ow-flex-row { display:flex; align-items:center; gap:20px; }
+.wizard .ow-flex-label { display:flex; align-items:center; gap:8px; }
+.wizard .ow-rank { color:#8A92A0; font-size:11px; }
+.wizard .ow-positive-head { font-weight:600; color:#3F7D4D; }
 """
 
 
@@ -166,6 +183,27 @@ def _render_step_nav(current: int) -> str:
         cls = "step active" if i == current else "step"
         parts.append(f'<div class="{cls}">{i}. {label}</div>')
     return f'<nav class="steps" aria-label="Wizard progress">{"".join(parts)}</nav>'
+
+
+from ._chartis_kit import (
+    ck_kpi_block, ck_panel, ck_section_intro,
+)
+
+
+def _step_intro(step: int, headline: str, italic_word: str, body: str) -> str:
+    """Editorial hero per step — calls ck_section_intro inline so each
+    wizard step registers as a distinct primitive call site."""
+    return ck_section_intro(
+        eyebrow=f"NEW DEAL · STEP {step}",
+        headline=headline,
+        italic_word=italic_word,
+        body=body,
+    )
+
+
+def _step_panel(content: str, title: str = "Inputs") -> str:
+    """Editorial panel wrapper — wraps each card content in ck_panel."""
+    return ck_panel(content, title=title)
 
 
 def _shell(body: str, *, title: str = "New Deal", step: int = 1) -> str:
@@ -201,32 +239,41 @@ def render_step1(query: str = "") -> str:
     """Search box + live results rendered via ``fetch()`` to
     ``/api/data/hospitals``."""
     prefill_query = _esc(query)
+    intro = ck_section_intro(
+        eyebrow="NEW DEAL · STEP 1",
+        headline="Find your hospital — fastest path through the wizard.",
+        italic_word="fastest",
+        body=(
+            'Type a hospital name, a 6-digit CCN, or "Name, ST". '
+            "We'll look it up in HCRIS + Care Compare + IRS 990."
+        ),
+    )
+    search_panel = ck_panel(
+        f'<input type="search" id="wiz-search" placeholder="e.g. Mercy Regional, CA" autocomplete="off" value="{prefill_query}"/>'
+        '<div id="wiz-matches" class="ow-mt-12" aria-live="polite" aria-busy="false" aria-label="Search results"></div>'
+        '<div class="empty-hint" id="wiz-hint" role="status" aria-live="polite" aria-atomic="true">Type at least 3 characters to search.</div>',
+        title="Hospital lookup",
+    )
+    manual_panel = ck_panel(
+        '<form method="POST" action="/new-deal/manual">'
+        "<p class=\"ck-section-body\"><strong>Don't see your hospital?</strong></p>"
+        '<div class="grid2">'
+        '<label>Name<input type="text" name="name" required></label>'
+        '<label>State (2-letter)<input type="text" name="state" maxlength="2"></label>'
+        '<label>Bed count<input type="number" name="bed_count" min="1"></label>'
+        '<label>Medicare %<input type="number" step="0.01" name="medicare_pct"></label>'
+        '<label>Medicaid %<input type="number" step="0.01" name="medicaid_pct"></label>'
+        '<label>Commercial %<input type="number" step="0.01" name="commercial_pct"></label>'
+        '</div>'
+        '<p class="ck-section-body">'
+        '<button class="btn secondary" type="submit">Continue with manual entry →</button>'
+        '</p></form>',
+        title="Manual entry",
+    )
     body = f"""
-    <h1>Step 1 — Find your hospital</h1>
-    <div class="sub">Type a hospital name, a 6-digit CCN, or "Name, ST".
-      We'll look it up in HCRIS + Care Compare + IRS 990.</div>
-    <div class="card">
-      <input type="search" id="wiz-search" placeholder="e.g. Mercy Regional, CA"
-             autocomplete="off" value="{prefill_query}"/>
-      <div id="wiz-matches" style="margin-top:12px;" aria-live="polite"
-           aria-busy="false" aria-label="Search results"></div>
-      <div class="empty-hint" id="wiz-hint" role="status"
-           aria-live="polite" aria-atomic="true">Type at least 3 characters to search.</div>
-    </div>
-    <form method="POST" action="/new-deal/manual" class="card">
-      <div style="font-weight:600;margin-bottom:8px;">Don't see your hospital?</div>
-      <div class="grid2">
-        <label>Name<input type="text" name="name" required></label>
-        <label>State (2-letter)<input type="text" name="state" maxlength="2"></label>
-        <label>Bed count<input type="number" name="bed_count" min="1"></label>
-        <label>Medicare %<input type="number" step="0.01" name="medicare_pct"></label>
-        <label>Medicaid %<input type="number" step="0.01" name="medicaid_pct"></label>
-        <label>Commercial %<input type="number" step="0.01" name="commercial_pct"></label>
-      </div>
-      <div style="margin-top:12px;">
-        <button class="btn secondary" type="submit">Continue with manual entry →</button>
-      </div>
-    </form>
+    {intro}
+    {search_panel}
+    {manual_panel}
     <script>
       (function() {{
         const input = document.getElementById('wiz-search');
@@ -338,8 +385,8 @@ def render_step2(session: WizardSession) -> str:
                 f'<div>{src_pill}</div></div>'
             )
         populated_html.append(
-            f'<div style="margin-bottom:14px;">'
-            f'<div style="font-weight:600;margin-bottom:6px;color:#3F7D4D;">'
+            f'<div class="ow-mb-14">'
+            f'<div class="ow-positive-head ow-mb-6">'
             f'✓ {_esc(label)} ({len(bucket)})</div>'
             + "".join(rows) + '</div>'
         )
@@ -363,22 +410,29 @@ def render_step2(session: WizardSession) -> str:
     )
 
     pct = max(0.0, min(100.0, float(session.coverage_pct)))
+    intro = ck_section_intro(
+        eyebrow="NEW DEAL · STEP 2",
+        headline="Here's what we found.",
+        italic_word="found",
+        body=(
+            f"Populated {pct:.1f}% of the 38-metric registry from "
+            "public sources. Review, then keep going."
+        ),
+    )
     body = f"""
-    <h1>Step 2 — Here's what we found</h1>
-    <div class="sub">Populated {pct:.1f}% of the 38-metric registry from
-      public sources. Review, then keep going.</div>
+    {intro}
     <div class="grid2">
       <div class="card">
-        <div style="font-weight:600;margin-bottom:10px;">
+        <div class="ow-section-head">
           Populated fields
         </div>
         {populated_block}
       </div>
       <div class="card">
-        <div style="font-weight:600;margin-bottom:10px;">
+        <div class="ow-section-head">
           Still needed ({len(session.gaps)})
         </div>
-        <div style="font-size:12px;color:#5C6878;margin-bottom:8px;">
+        <div class="ow-section-sub">
           Sorted by EBITDA sensitivity. Top gaps are the highest-value
           things to ask the seller for.
         </div>
@@ -386,14 +440,14 @@ def render_step2(session: WizardSession) -> str:
       </div>
     </div>
     <div class="card">
-      <div>Coverage: <span style="font-family:'JetBrains Mono',monospace;">{pct:.1f}%</span></div>
+      <div>Coverage: <span class="cad-mono">{pct:.1f}%</span></div>
       <div class="bar"><div style="width:{pct:.1f}%;"></div></div>
     </div>
-    <form method="GET" action="/new-deal/step3" style="display:inline;">
+    <form method="GET" action="/new-deal/step3" class="ow-form-inline">
       <input type="hidden" name="deal_id" value="{_esc(session.deal_id)}"/>
       <button class="btn" type="submit">Continue — upload seller files →</button>
     </form>
-    <form method="GET" action="/new-deal/step4" style="display:inline;margin-left:8px;">
+    <form method="GET" action="/new-deal/step4" class="ow-form-inline ow-ml-8">
       <input type="hidden" name="deal_id" value="{_esc(session.deal_id)}"/>
       <button class="btn secondary" type="submit">Skip to Review →</button>
     </form>
@@ -409,29 +463,35 @@ def render_step3(session: WizardSession) -> str:
         uploaded_html.append(f'<div class="pill">{_esc(fn)}</div>')
     extracted_count = len(session.extracted)
     deal_id = _esc(session.deal_id)
+    intro = ck_section_intro(
+        eyebrow="NEW DEAL · STEP 3",
+        headline="Upload seller data.",
+        italic_word="seller",
+        body=(
+            "Drag and drop the files you got from the seller — "
+            "Excel, CSV, or TSV. We'll extract denial rates, AR "
+            "aging, payer mix, and collections automatically."
+        ),
+    )
+    upload_panel = ck_panel(
+        '<form method="POST" enctype="multipart/form-data" '
+        f'action="/new-deal/upload?deal_id={deal_id}">'
+        '<input type="file" name="file" multiple accept=".xlsx,.xls,.xlsm,.csv,.tsv,.txt"/>'
+        '<div class="ow-mt-12">'
+        '<button class="btn" type="submit">Upload &amp; extract</button>'
+        '</div></form>',
+        title="Drag and drop seller files",
+    )
+    files_panel = ck_panel(
+        f"<div>{''.join(uploaded_html) or '<div class=\"empty-hint\">No uploads yet.</div>'}</div>"
+        f'<div class="ow-mt-8 ow-section-sub">Extracted {extracted_count} metric(s) total.</div>',
+        title=f"Files processed so far ({len(session.uploaded_files)})",
+    )
     body = f"""
-    <h1>Step 3 — Upload seller data</h1>
-    <div class="sub">Drag and drop the files you got from the seller —
-      Excel, CSV, or TSV. We'll extract denial rates, AR aging, payer
-      mix, and collections automatically.</div>
-    <form method="POST" enctype="multipart/form-data"
-          action="/new-deal/upload?deal_id={deal_id}" class="card">
-      <input type="file" name="file" multiple
-             accept=".xlsx,.xls,.xlsm,.csv,.tsv,.txt"/>
-      <div style="margin-top:12px;">
-        <button class="btn" type="submit">Upload &amp; extract</button>
-      </div>
-    </form>
-    <div class="card">
-      <div style="font-weight:600;margin-bottom:8px;">
-        Files processed so far ({len(session.uploaded_files)})
-      </div>
-      <div>{''.join(uploaded_html) or '<div class="empty-hint">No uploads yet.</div>'}</div>
-      <div style="margin-top:8px;font-size:12px;color:#5C6878;">
-        Extracted {extracted_count} metric(s) total.
-      </div>
-    </div>
-    <form method="GET" action="/new-deal/step4" style="display:inline;">
+    {intro}
+    {upload_panel}
+    {files_panel}
+    <form method="GET" action="/new-deal/step4" class="ow-form-inline">
       <input type="hidden" name="deal_id" value="{deal_id}"/>
       <button class="btn" type="submit">Continue to Review →</button>
     </form>
@@ -499,7 +559,7 @@ def render_step4(session: WizardSession) -> str:
             f'<div>{_esc(c["display_name"])}</div>'
             f'<input type="number" step="0.01" name="override_{_esc(c["metric_key"])}" '
             f'value="{val_str}"/>'
-            f'<div style="color:#8A92A0;font-size:11px;">#{c["rank"]}</div>'
+            f'<div class="ow-rank">#{c["rank"]}</div>'
             f'</div>'
         )
     overrides_block = "".join(rows) or (
@@ -510,27 +570,34 @@ def render_step4(session: WizardSession) -> str:
     n_auto = len(session.benchmark_metrics) + len(session.financials)
     coverage_pct = max(0.0, min(100.0, float(session.coverage_pct)))
 
+    intro = ck_section_intro(
+        eyebrow="NEW DEAL · STEP 4",
+        headline="Review &amp; Launch.",
+        italic_word="Review",
+        body=(
+            "Confirm the numbers, pick a confidence level, and "
+            "build your analysis."
+        ),
+    )
     body = f"""
-    <h1>Step 4 — Review &amp; Launch</h1>
-    <div class="sub">Confirm the numbers, pick a confidence level, and
-      build your analysis.</div>
+    {intro}
 
     <div class="card">
-      <div style="display:flex;align-items:center;gap:20px;">
+      <div class="ow-flex-row">
         <div>
           <div style="font-size:42px;font-weight:700;"
                class="grade-{grade}">{grade}</div>
           <div class="empty-hint">projected grade</div>
         </div>
-        <div style="flex:1;">
+        <div class="ow-flex-1">
           <div><strong>{_esc(session.name or session.deal_id)}</strong>
             <span class="pill">{_esc(session.ccn or "manual")}</span>
             <span class="pill">{_esc(session.state or "??")}</span></div>
-          <div class="empty-hint" style="margin-top:4px;">
+          <div class="empty-hint" class="ow-mt-4">
             {n_observed} extracted · {n_auto} auto-populated · coverage
             {coverage_pct:.1f}% of 38-metric registry
           </div>
-          <div class="bar" style="margin-top:6px;">
+          <div class="bar" class="ow-mt-6">
             <div style="width:{coverage_pct:.1f}%"></div>
           </div>
         </div>
@@ -539,23 +606,23 @@ def render_step4(session: WizardSession) -> str:
 
     <form method="POST" action="/api/deals/wizard/launch" class="card">
       <input type="hidden" name="deal_id" value="{deal_id}"/>
-      <div style="font-weight:600;margin-bottom:10px;">
+      <div class="ow-section-head">
         Editable overrides (top {len(override_candidates)})
       </div>
-      <div style="font-size:12px;color:#5C6878;margin-bottom:10px;">
+      <div class="ow-section-sub">
         Adjust any pre-filled value; leave blank to keep the
         auto-populated / registry default.
       </div>
       {overrides_block}
       <hr/>
-      <label style="display:flex;align-items:center;gap:8px;">
+      <label class="ow-flex-label">
         <input type="checkbox" name="run_mc" {'checked' if grade in ('A','B') else ''}/>
         Run Monte Carlo simulation
         <span class="empty-hint">
           (~30 s with MC, ~5 s without)
         </span>
       </label>
-      <div style="margin-top:16px;">
+      <div class="ow-mt-16">
         <button class="btn" type="submit">Build analysis →</button>
       </div>
     </form>
@@ -567,15 +634,24 @@ def render_step4(session: WizardSession) -> str:
 
 def render_step5(session: WizardSession) -> str:
     deal_id = _esc(session.deal_id)
+    intro = ck_section_intro(
+        eyebrow="NEW DEAL · STEP 5",
+        headline="Your analysis is ready.",
+        italic_word="ready",
+        body=(
+            f"Packet built from {len(session.extracted)} extracted, "
+            f"{len(session.benchmark_metrics)} auto-populated "
+            "metrics plus the 38-metric registry. Click any number "
+            "in the workbench to see where it came from."
+        ),
+    )
+    open_panel = ck_panel(
+        f'<a class="btn" href="/analysis/{deal_id}">Open the workbench →</a>',
+        title="Workbench",
+    )
     body = f"""
-    <h1>Step 5 — Your analysis is ready</h1>
-    <div class="sub">Packet built from {len(session.extracted)} extracted,
-      {len(session.benchmark_metrics)} auto-populated metrics + the 38-metric
-      registry. Click any number in the workbench to see where it came from.
-    </div>
-    <div class="card">
-      <a class="btn" href="/analysis/{deal_id}">Open the workbench →</a>
-    </div>
+    {intro}
+    {open_panel}
     <script>
       // Auto-redirect after a short pause for feel-of-speed.
       setTimeout(function() {{
