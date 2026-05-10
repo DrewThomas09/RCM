@@ -93,7 +93,9 @@ _NUMBER_VIOLATIONS: list[tuple[str, str]] = [
     # Lookbehind ``(?<![<>])`` un-flags range-bound prose
     # (``<$100M`` / ``>$2B`` — already-decoded HTML entities from
     # ``_strip_html_for_audit``).
-    (r"(?<![<>])\$\d+(?:\.\d)?(?![-–])(?=(?:[MBk](?![-–]))|\s|$|,(?!\d))",
+    (r"(?<![<>])(?<!> )(?<!< )(?<!≥ )(?<!≤ )"
+     r"\$\d+(?:\.\d)?(?![-–])"
+     r"(?=(?:[MBk](?![-–+]))|\s|$|,(?!\d))",
      'money values should render with 2 decimal places (e.g. $450.25M)'),
     # Percent without a decimal. The lookbehinds prevent matching
     # the decimal portion of a well-formed value (``10.0%`` →
@@ -107,13 +109,17 @@ _NUMBER_VIOLATIONS: list[tuple[str, str]] = [
     #
     # The trailing ``(?=[^.\d-])`` rejects ``-`` to skip range
     # continuations like ``11-14x`` and ``8-12%``.
-    (r"(?<!\.)(?<!\d)(?<![(+\-<>=~≤≥–−])\b\d+%(?=[^.\d\-])",
+    (r"(?<!\.)(?<!\d)(?<![(+\-<>=~≤≥–−])"
+     r"(?<!> )(?<!< )(?<!≥ )(?<!≤ )"
+     r"\b\d+%(?=[^.\d\-])",
      'percent values should render with 1 decimal place (e.g. 15.3%)'),
     # Multiples like "2.5x" / "2x" — should be 2dp. The negative
     # lookbehinds prevent matching inside a longer number ("2.80x"
     # contains "80x" starting at a word-boundary). Also skip prose
     # range bounds ("11-14x") and signed prose values ("+2x", "<5x").
-    (r"(?<!\d)(?<!\.)(?<![+\-<>=~])\d+(?:\.\d)?x\b",
+    (r"(?<!\d)(?<!\.)(?<![+\-<>=~≤≥–−])"
+     r"(?<!> )(?<!< )(?<!≥ )(?<!≤ )"
+     r"\d+(?:\.\d)?x\b",
      'multiples should render with 2 decimal places (e.g. 2.80x)'),
 ]
 
