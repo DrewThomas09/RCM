@@ -620,7 +620,7 @@ class APIEndpointSmoke(unittest.TestCase):
                 csrf = c.value
                 break
 
-        SCENARIOS: list[tuple[str, dict]] = [
+        SCENARIOS: list[tuple[str, object]] = [
             ("/api/metrics/custom", {
                 "metric_key": "smoke_happy_path",
                 "display_name": "Smoke Happy Path",
@@ -635,12 +635,33 @@ class APIEndpointSmoke(unittest.TestCase):
                 "limit": 3,
             }),
             ("/api/chat", {"message": "ping"}),
+            ("/api/webhooks", {
+                "url": "https://partner.example.com/hook",
+                "event": "deal.update",
+                "description": "regression test",
+            }),
+            # /api/deals/import takes an array, not an object —
+            # tested in its own clause below.
+            ("/api/deals/import", [{
+                "deal_id": "smoke-import-happy",
+                "name": "Smoke Import Happy",
+                "profile": {},
+            }]),
+            ("/api/deals/bulk", {
+                "action": "archive",
+                "deal_ids": ["smoke-import-happy"],
+            }),
+            ("/api/portfolio/register", {
+                "deal_id": "smoke-register-happy",
+                "name": "Register Smoke",
+                "stage": "sourced",
+            }),
         ]
         failures: list[str] = []
-        for path, body_dict in SCENARIOS:
+        for path, body_payload in SCENARIOS:
             req = urllib.request.Request(
                 self.base + path,
-                data=json.dumps(body_dict).encode(),
+                data=json.dumps(body_payload).encode(),
                 method="POST",
             )
             req.add_header("Content-Type", "application/json")
