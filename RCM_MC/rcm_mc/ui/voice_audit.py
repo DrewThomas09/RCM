@@ -107,7 +107,7 @@ _NUMBER_VIOLATIONS: list[tuple[str, str]] = [
     #
     # The trailing ``(?=[^.\d-])`` rejects ``-`` to skip range
     # continuations like ``11-14x`` and ``8-12%``.
-    (r"(?<!\.)(?<!\d)(?<![(+\-<>=~])\b\d+%(?=[^.\d\-])",
+    (r"(?<!\.)(?<!\d)(?<![(+\-<>=~≤≥–−])\b\d+%(?=[^.\d\-])",
      'percent values should render with 1 decimal place (e.g. 15.3%)'),
     # Multiples like "2.5x" / "2x" — should be 2dp. The negative
     # lookbehinds prevent matching inside a longer number ("2.80x"
