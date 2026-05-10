@@ -58,10 +58,14 @@ def _scatter_svg(
     x_hi: float = 20.0,
     y_lo: float = 0.0,
     y_hi: float = 6.0,
-    color: str = "#3b82f6",
-    trend_color: str = "#f59e0b",
+    color: Optional[str] = None,
+    trend_color: Optional[str] = None,
 ) -> str:
     """Scatter plot with linear trend line, inline SVG."""
+    if color is None:
+        color = PALETTE["brand_accent"]
+    if trend_color is None:
+        trend_color = PALETTE["warning"]
     pad_l, pad_r, pad_t, pad_b = 38, 12, 10, 26
     pw = width - pad_l - pad_r
     ph = height - pad_t - pad_b

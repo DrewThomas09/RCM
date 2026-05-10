@@ -14,6 +14,8 @@ from __future__ import annotations
 import html as _html
 from typing import Any, Dict, List, Optional, Tuple
 
+from .brand import PALETTE
+
 
 # ── Source definitions ──
 
@@ -30,7 +32,7 @@ class Source:
 _SOURCE_META = {
     Source.HCRIS: {
         "label": "HCRIS",
-        "color": "#2d6ba4",
+        "color": PALETTE["brand_accent"],
         "bg": "rgba(45,107,164,0.15)",
         "description": "CMS Cost Report public filing",
         "trust": "high",

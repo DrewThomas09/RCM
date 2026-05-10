@@ -308,12 +308,12 @@ CONFERENCES = [
 ]
 
 CATEGORY_COLORS = {
-    "Investment": PALETTE.get("brand_accent", "#2d6ba4"),
-    "PE/M&A": PALETTE.get("positive", "#2ecc71"),
-    "Policy": PALETTE.get("warning", "#f39c12"),
-    "Operations": PALETTE.get("text_link", "#5b9bd5"),
-    "Finance": PALETTE.get("text_secondary", "#a0aec0"),
-    "Health IT": PALETTE.get("negative", "#e74c3c"),
+    "Investment": PALETTE["brand_accent"],
+    "PE/M&A":     PALETTE["positive"],
+    "Policy":     PALETTE["warning"],
+    "Operations": PALETTE["text_link"],
+    "Finance":    PALETTE["text_secondary"],
+    "Health IT":  PALETTE["negative"],
 }
 
 TIER_BADGE = {

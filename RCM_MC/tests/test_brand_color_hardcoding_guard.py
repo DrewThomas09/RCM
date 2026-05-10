@@ -61,10 +61,21 @@ ALLOWED_PATHS: tuple[str, ...] = (
 )
 
 
-# Baseline as of guard introduction. Drop this number whenever a
-# module migrates to PALETTE references; never raise without
-# justification in the commit message.
-HARDCODE_CAP = 4
+# Moat is fully closed: no module under rcm_mc/ outside the
+# ALLOWED_PATHS list may emit a dark-mode brand-hex literal.
+# Adding a NEW occurrence FAILS this test.
+#
+# Migration history (this guard's value across the consolidation):
+#   575 → 562 → 546 → 522 → 511 → 497 → 464 → 421 → 281 →
+#   188 → 97 → 50 → 32 → 4 → 0  (12 ratchet commits)
+#
+# Three migration patterns supported (all accepted by the guard):
+#   1. ``f"…{PALETTE['key']}…"``  — Python f-string interpolation
+#   2. ``var(--theme-token,#hex)`` — CSS-variable with fallback
+#                                     (the var() reverter strips the
+#                                     hex from the count)
+#   3. ``PALETTE["key"]`` in module-level dicts / function defaults
+HARDCODE_CAP = 0
 
 
 def _strip_var_fallbacks(src: str) -> str:
