@@ -58,7 +58,7 @@ def _source_row(source_name: str, status: Dict[str, Any]) -> str:
         f'<td class="job-status" style="font-size:12px;">—</td>'
         f'<td style="text-align:right;">'
         f'<button class="refresh-btn" data-source="{name}" '
-        f'style="background:#1F4E78;color:#fff;border:none;padding:5px 12px;'
+        f'style="background:var(--theme-accent,#1F4E78);color:#fff;border:none;padding:5px 12px;'
         f'border-radius:4px;font-size:12px;cursor:pointer;">Refresh</button>'
         f'</td>'
         f'</tr>'
@@ -88,17 +88,17 @@ _CLIENT_JS = r"""
                     setStatus(row, '<span style="color:#6b7280;">● queued</span>');
                     setTimeout(() => poll(jobId, row), 2000);
                 } else if (j.status === 'running') {
-                    setStatus(row, '<span style="color:#f59e0b;">● running</span>');
+                    setStatus(row, '<span style="color:var(--theme-warning,#f59e0b);">● running</span>');
                     setTimeout(() => poll(jobId, row), 2000);
                 } else if (j.status === 'done') {
                     const rc = (j.result && j.result.total_records) || 0;
-                    setStatus(row, '<span style="color:#10b981;">✓ done — ' + rc.toLocaleString() + ' rows</span>');
+                    setStatus(row, '<span style="color:var(--theme-positive,#10b981);">✓ done — ' + rc.toLocaleString() + ' rows</span>');
                     enableButton(row);
                     // Reload freshness chip after 1 s so the table shows the fresh timestamp
                     setTimeout(() => window.location.reload(), 1200);
                 } else if (j.status === 'failed') {
                     const err = (j.error || '').split('\n')[0].slice(0, 80);
-                    setStatus(row, '<span style="color:#ef4444;" title="' + err.replace(/"/g, '&quot;') + '">✗ failed</span>');
+                    setStatus(row, '<span style="color:var(--theme-negative,#ef4444);" title="' + err.replace(/"/g, '&quot;') + '">✗ failed</span>');
                     enableButton(row);
                 } else {
                     setStatus(row, '<span style="color:#6b7280;">' + j.status + '</span>');
@@ -106,7 +106,7 @@ _CLIENT_JS = r"""
                 }
             })
             .catch(err => {
-                setStatus(row, '<span style="color:#ef4444;">poll error</span>');
+                setStatus(row, '<span style="color:var(--theme-negative,#ef4444);">poll error</span>');
                 enableButton(row);
             });
     }
@@ -124,15 +124,15 @@ _CLIENT_JS = r"""
                     disableButton(row, 'refreshing…');
                     poll(body.job_id, row);
                 } else if (status === 429) {
-                    setStatus(row, '<span style="color:#f59e0b;">rate limited (' + (body.detail?.retry_after_seconds || '?') + 's)</span>');
+                    setStatus(row, '<span style="color:var(--theme-warning,#f59e0b);">rate limited (' + (body.detail?.retry_after_seconds || '?') + 's)</span>');
                     enableButton(row);
                 } else {
-                    setStatus(row, '<span style="color:#ef4444;">' + (body.error || 'error') + '</span>');
+                    setStatus(row, '<span style="color:var(--theme-negative,#ef4444);">' + (body.error || 'error') + '</span>');
                     enableButton(row);
                 }
             })
             .catch(err => {
-                setStatus(row, '<span style="color:#ef4444;">network error</span>');
+                setStatus(row, '<span style="color:var(--theme-negative,#ef4444);">network error</span>');
                 enableButton(row);
             });
     }

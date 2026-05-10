@@ -502,8 +502,8 @@ _LANDING_JS = r"""<script>
     }
     var cards = deals.map(function(d) {
       var completion = Math.min(100, Math.round(d.filled / 24 * 100));
-      var barColor = completion >= 75 ? '#10b981' :
-        completion >= 40 ? '#f59e0b' : '#94a3b8';
+      var barColor = completion >= 75 ? 'var(--theme-positive,#10b981)' :
+        completion >= 40 ? 'var(--theme-warning,#f59e0b)' : '#94a3b8';
       var name = (d.name || d.slug).replace(/</g, '&lt;');
       var slug = d.slug.replace(/</g, '&lt;');
       var safeSlug = encodeURIComponent(d.slug);
@@ -533,17 +533,17 @@ _LANDING_JS = r"""<script>
         d.filled + ' of 24 fields · ' + completion + '% complete</div>' +
         '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
         '<a href="/diligence/deal/' + safeSlug + '" ' +
-        'style="padding:5px 10px;background:#3b82f6;color:#0a0e17;' +
+        'style="padding:5px 10px;background:var(--theme-accent,#3b82f6);color:#0a0e17;' +
         'border:0;font-size:9px;letter-spacing:1.2px;' +
         'text-transform:uppercase;font-weight:700;text-decoration:none;' +
         'border-radius:3px;">Open</a>' +
         '<button type="button" data-rcm-duplicate="' + safeSlug + '" ' +
-        'style="padding:5px 10px;background:transparent;color:#3b82f6;' +
+        'style="padding:5px 10px;background:transparent;color:var(--theme-accent,#3b82f6);' +
         'border:1px solid #1e293b;font-size:9px;letter-spacing:1.2px;' +
         'text-transform:uppercase;font-weight:600;cursor:pointer;' +
         'border-radius:3px;">Duplicate</button>' +
         '<button type="button" data-rcm-delete="' + safeSlug + '" ' +
-        'style="padding:5px 10px;background:transparent;color:#ef4444;' +
+        'style="padding:5px 10px;background:transparent;color:var(--theme-negative,#ef4444);' +
         'border:1px solid #1e293b;font-size:9px;letter-spacing:1.2px;' +
         'text-transform:uppercase;font-weight:600;cursor:pointer;' +
         'border-radius:3px;">Delete</button>' +
@@ -1223,12 +1223,12 @@ def _inline_js(slug: str) -> str:
         badge.style.borderColor = '#1e293b';
       } else if (ev != null && rev != null && ebitda != null) {
         badge.textContent = 'Ready for pipeline';
-        badge.style.color = '#10b981';
-        badge.style.borderColor = '#10b981';
+        badge.style.color = 'var(--theme-positive,#10b981)';
+        badge.style.borderColor = 'var(--theme-positive,#10b981)';
       } else {
         badge.textContent = completion + ' of 24 fields';
-        badge.style.color = '#f59e0b';
-        badge.style.borderColor = '#f59e0b';
+        badge.style.color = 'var(--theme-warning,#f59e0b)';
+        badge.style.borderColor = 'var(--theme-warning,#f59e0b)';
       }
     }
   }
@@ -1310,8 +1310,8 @@ def _inline_js(slug: str) -> str:
       } else {
         var dv = snap.delta_vs_median_turns;
         deltaEl.textContent = (dv > 0 ? '+' : '') + dv.toFixed(2) + 'x';
-        deltaEl.style.color = dv > 0.5 ? '#ef4444'
-          : dv < -0.5 ? '#10b981' : '#94a3b8';
+        deltaEl.style.color = dv > 0.5 ? 'var(--theme-negative,#ef4444)'
+          : dv < -0.5 ? 'var(--theme-positive,#10b981)' : '#94a3b8';
       }
     }
     var peerNames = (snap.peers || []).map(function(p) {
@@ -1323,9 +1323,9 @@ def _inline_js(slug: str) -> str:
     if (asEl) {
       asEl.textContent = snap.assessment || '—';
       asEl.style.color = {
-        'DISCOUNT': '#10b981',
-        'IN-LINE': '#3b82f6',
-        'PREMIUM': '#ef4444',
+        'DISCOUNT': 'var(--theme-positive,#10b981)',
+        'IN-LINE': 'var(--theme-accent,#3b82f6)',
+        'PREMIUM': 'var(--theme-negative,#ef4444)',
       }[snap.assessment] || '#94a3b8';
     }
   }

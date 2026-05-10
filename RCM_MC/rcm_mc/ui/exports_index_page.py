@@ -20,6 +20,7 @@ import html as _html
 from typing import List, Tuple
 
 from . import _web_components as _wc
+from .brand import PALETTE
 
 
 # ── Static catalog ─────────────────────────────────────────────────
@@ -113,7 +114,6 @@ def _deal_format_guide() -> str:
 
 def render_exports_index(db_path: str) -> str:
     from ._chartis_kit import chartis_shell
-    from .brand import PALETTE
 
     header = _wc.page_header(
         "Downloads",
