@@ -45,7 +45,7 @@ def _tracks_table(tracks) -> str:
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(t.track)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{t.beneficiaries:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${t.benchmark_pmpm:,.0f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${t.benchmark_pmpm:,.2f}</td>',
             f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{rc};border:1px solid {rc};border-radius:2px;letter-spacing:0.06em">{_html.escape(t.risk_level)}</span></td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">{t.upside_cap_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["negative"] if t.downside_cap_pct else text_dim}">{t.downside_cap_pct * 100:.1f}%</td>',
@@ -67,7 +67,7 @@ def _benchmark_table(benchmark) -> str:
         is_total = "Complete" in b.component
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:{"700" if is_total else "400"}">{_html.escape(b.component)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"] if is_total else text};font-weight:{"700" if is_total else "400"}">${b.value_pmpm:,.0f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"] if is_total else text};font-weight:{"700" if is_total else "400"}">${b.value_pmpm:,.2f}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(b.basis)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -85,7 +85,7 @@ def _savings_table(savings) -> str:
         sav_c = pos if s.savings_pct > 0 else P["negative"]
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.scenario)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.actual_pmpm:,.0f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.actual_pmpm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{sav_c};font-weight:600">{s.savings_pct * 100:+.2f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${s.gross_savings_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.quality_multiplier:.2f}</td>',
@@ -180,7 +180,7 @@ def render_aco_economics(params: dict = None) -> str:
 
     kpi_strip = (
         ck_kpi_block("Beneficiaries", f"{r.total_beneficiaries:,}", "", "") +
-        ck_kpi_block("Benchmark PMPM", f"${r.blended_benchmark_pmpm:,.0f}", "", "") +
+        ck_kpi_block("Benchmark PMPM", f"${r.blended_benchmark_pmpm:,.2f}", "", "") +
         ck_kpi_block("Quality Score", f"{r.quality_score:.3f}", "", "") +
         ck_kpi_block("Expected Savings", f"${r.expected_shared_savings_mm:,.2f}M", "", "") +
         ck_kpi_block("Total Annual Value", f"${r.total_annual_value_mm:,.2f}M", "", "") +
@@ -223,7 +223,7 @@ def render_aco_economics(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Infrastructure Investment Portfolio</div>{infra_tbl}</div>
   <div style="{cell}"><div style="{h3}">Full-Risk Transition Path</div>{risk_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">ACO Thesis:</strong> {r.total_beneficiaries:,} attributed lives at ${r.blended_benchmark_pmpm:,.0f} PMPM benchmark.
+    <strong style="color:{text}">ACO Thesis:</strong> {r.total_beneficiaries:,} attributed lives at ${r.blended_benchmark_pmpm:,.2f} PMPM benchmark.
     Quality score {r.quality_score:.3f} unlocks full savings share. Expected ${r.expected_shared_savings_mm:,.2f}M shared savings
     + ${r.total_annual_value_mm - r.expected_shared_savings_mm:,.2f}M capitation/MA margin = ${r.total_annual_value_mm:,.2f}M total value.
     Transition to full-risk over 4 years unlocks material margin expansion.
