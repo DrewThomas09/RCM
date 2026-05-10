@@ -26,7 +26,10 @@ from ..diligence.benchmarks import (
     QOR_THRESHOLD_IMMATERIAL, QOR_THRESHOLD_WATCH,
     WaterfallCohort, WaterfallStep,
 )
-from ._chartis_kit import P, chartis_shell, ck_page_title
+from ._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_page_title, ck_panel,
+    ck_section_header, ck_section_intro, ck_signal_badge,
+)
 
 
 # HFMA benchmark bands. Ranges are partner-facing; sourced from HFMA
@@ -80,6 +83,29 @@ _BENCHMARKS: Dict[str, Dict[str, Any]] = {
 
 # ── Public entry points ─────────────────────────────────────────────
 
+_DB_STYLES = f"""
+<style>
+.db-card-grid{{display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}}
+.db-kpi-card{{background:{P["panel"]};border:1px solid {P["border"]};
+border-radius:4px;padding:14px 16px;}}
+.db-kpi-label{{font-size:10px;color:{P["text_faint"]};letter-spacing:.5px;
+text-transform:uppercase;margin-bottom:10px;}}
+.db-kpi-value{{font-family:"JetBrains Mono",monospace;
+font-variant-numeric:tabular-nums;font-size:26px;line-height:1;}}
+.db-kpi-band{{font-size:10px;margin-top:6px;font-weight:600;}}
+.db-kpi-peer{{font-size:10px;margin-top:3px;color:{P["text_faint"]};}}
+.db-kpi-reason{{font-size:10px;color:{P["text_faint"]};margin-top:4px;}}
+.db-lag-extra{{font-size:10px;color:{P["text_dim"]};margin-top:6px;}}
+.db-pareto-row{{margin-bottom:8px;}}
+.db-pareto-meta{{display:flex;justify-content:space-between;
+font-size:11px;color:{P["text_dim"]};margin-bottom:2px;}}
+.db-pareto-track{{background:{P["panel_alt"]};height:4px;border-radius:2px;overflow:hidden;}}
+.db-pareto-fill{{background:{P["accent"]};height:100%;}}
+</style>
+"""
+
+
 def render_benchmarks_page(
     bundle: Optional[KPIBundle] = None,
     cohort_report: Optional[CohortLiquidationReport] = None,
@@ -108,7 +134,8 @@ def render_benchmarks_page(
         ),
     )
     body = (
-        page_title
+        _DB_STYLES
+        + page_title
         + _hero(bundle)
         + _cash_waterfall_section(cash_waterfall)
         + _kpi_scorecard(bundle)
@@ -127,18 +154,21 @@ def render_benchmarks_page(
 # ── Section builders ────────────────────────────────────────────────
 
 def _placeholder_page() -> str:
-    body = (
-        f'<div style="padding:24px 0 12px 0;">'
-        f'  <div style="font-size:11px;color:{P["text_faint"]};letter-spacing:.75px;'
-        f'text-transform:uppercase;margin-bottom:6px;">RCM Diligence Workspace</div>'
-        f'  <div style="font-size:20px;color:{P["text"]};font-weight:600;'
-        f'margin-bottom:8px;">Phase 2 — KPI Benchmarking & Stress Testing</div>'
-        f'  <div style="font-size:13px;color:{P["text_dim"]};max-width:720px;'
-        f'line-height:1.55;">Attach a Canonical Claims Dataset in '
-        f'<a href="/diligence/ingest" style="color:{P["accent"]};">Phase 1</a> '
-        f'to populate the KPI scorecard, cohort liquidation curves, and denial '
-        f'stratification Pareto on this tab.</div>'
-        f'</div>'
+    intro = ck_section_intro(
+        eyebrow="RCM Diligence Workspace",
+        headline="Phase 2 — KPI Benchmarking & Stress Testing.",
+        italic_word="Stress",
+        body=(
+            "Attach a Canonical Claims Dataset in Phase 1 to "
+            "populate the KPI scorecard, cohort liquidation curves, "
+            "and denial stratification Pareto on this tab."
+        ),
+    )
+    body = intro + ck_panel(
+        '<p class="ck-section-body">'
+        '<a href="/diligence/ingest" class="cad-btn cad-btn-primary">'
+        '→ Phase 1: Ingest a CCD</a></p>',
+        title="Next step",
     )
     return chartis_shell(body, "RCM Diligence — Benchmarks",
                         subtitle="Phase 2 of 4")
@@ -201,36 +231,21 @@ def _hero(bundle: KPIBundle) -> str:
         )
 
     summary_html = (
-        f'<div style="background:{P["panel_alt"]};border-left:3px solid '
-        f'{P["accent"]};padding:10px 14px;margin-top:14px;'
-        f'font-size:12.5px;color:{P["text_dim"]};line-height:1.6;'
-        f'max-width:760px;border-radius:0 3px 3px 0;">'
-        f'<strong style="color:{P["text"]};">What this shows: </strong>'
-        f'{html.escape(summary)}</div>'
+        '<p class="ck-section-body">'
+        f'<strong>What this shows: </strong>{html.escape(summary)}</p>'
     ) if summary else ""
 
-    return (
-        f'<div style="padding:32px 0 16px 0;">'
-        f'  <div style="font-size:10px;color:{P["text_faint"]};letter-spacing:1px;'
-        f'text-transform:uppercase;margin-bottom:12px;">Primary KPI · Days in A/R</div>'
-        f'  <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">'
-        f'    <div style="font-size:56px;color:{color};font-weight:300;'
-        f'font-family:\'JetBrains Mono\',monospace;font-variant-numeric:tabular-nums;line-height:1;">'
-        f'{primary_num}</div>'
-        f'    <div style="font-size:14px;color:{P["text_dim"]};">'
-        f'{primary_unit} · {html.escape(dar.citation)}</div>'
-        f'  </div>'
-        f'  <div style="font-size:11px;color:{color};margin-top:6px;font-weight:600;">'
-        f'{html.escape(band_label)}'
-        + (f' · <span style="color:{P["text_faint"]};font-weight:400;">'
-           f'{html.escape(delta_txt)}</span>' if delta_txt else '')
-        + f'</div>'
-        f'  <div style="font-size:11px;color:{P["text_faint"]};margin-top:3px;">'
-        f'  n={dar.sample_size} claims · {html.escape(dar.reason or "")}'
-        f'  </div>'
-        f'{summary_html}'
-        f'</div>'
+    intro = ck_section_intro(
+        eyebrow="Primary KPI · Days in A/R",
+        headline=f"{primary_num} {primary_unit}.",
+        italic_word=primary_unit,
+        body=(
+            f"{html.escape(band_label)}"
+            + (f" · {html.escape(delta_txt)}" if delta_txt else "")
+            + f" · n={dar.sample_size} claims · {html.escape(dar.reason or '')}"
+        ),
     )
+    return f"{intro}{summary_html}"
 
 
 def _kpi_scorecard(bundle: KPIBundle) -> str:
@@ -244,10 +259,8 @@ def _kpi_scorecard(bundle: KPIBundle) -> str:
         _lag_card(bundle.lag_bill_to_cash, "Bill → Cash Lag"),
     ]
     return (
-        f'<h2 style="font-size:11px;letter-spacing:1px;text-transform:uppercase;'
-        f'color:{P["text_dim"]};margin:32px 0 12px 0;">KPI Scorecard</h2>'
-        f'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));'
-        f'gap:12px;">{"".join(cards)}</div>'
+        ck_section_header("KPI Scorecard", eyebrow="PHASE 2")
+        + f'<div class="db-card-grid">{"".join(cards)}</div>'
     )
 
 
@@ -295,29 +308,22 @@ def _kpi_card(key: str, kpi: KPIResult) -> str:
             else:
                 arrow = "●"
                 favorable = True
-            arrow_color = P["positive"] if favorable else P["negative"]
+            arrow_cls = "cad-pos" if favorable else "cad-neg"
             peer_line = (
-                f'<div style="font-size:10px;margin-top:3px;'
-                f'color:{P["text_faint"]};">'
-                f'<span style="color:{arrow_color};">{arrow}</span> '
+                '<div class="db-kpi-peer">'
+                f'<span class="{arrow_cls}">{arrow}</span> '
                 f'{html.escape(delta_txt)} vs {html.escape(peer_txt)}</div>'
             )
         else:
             peer_line = ""
     return (
-        f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-radius:4px;padding:14px 16px;">'
-        f'  <div style="font-size:10px;color:{P["text_faint"]};letter-spacing:.5px;'
-        f'text-transform:uppercase;margin-bottom:10px;">{html.escape(label)}</div>'
-        f'  <div style="font-family:\'JetBrains Mono\',monospace;'
-        f'font-variant-numeric:tabular-nums;font-size:26px;color:{color};'
-        f'line-height:1;">{value_str}</div>'
-        f'  <div style="font-size:10px;color:{color};margin-top:6px;'
-        f'font-weight:600;">{html.escape(band_label)}</div>'
-        f'  {peer_line}'
-        f'  <div style="font-size:10px;color:{P["text_faint"]};margin-top:4px;">'
-        f'{html.escape(reason)}</div>'
-        f'</div>'
+        '<div class="db-kpi-card">'
+        f'<div class="db-kpi-label">{html.escape(label)}</div>'
+        f'<div class="db-kpi-value" style="color:{color};">{value_str}</div>'
+        f'<div class="db-kpi-band" style="color:{color};">{html.escape(band_label)}</div>'
+        f'{peer_line}'
+        f'<div class="db-kpi-reason">{html.escape(reason)}</div>'
+        '</div>'
     )
 
 
@@ -330,15 +336,11 @@ def _lag_card(kpi: KPIResult, label: str) -> str:
         color = P["text"]
         extra = f"p25={kpi.numerator:,.0f}d  p75={kpi.denominator:,.0f}d  n={kpi.sample_size}"
     return (
-        f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-radius:4px;padding:14px 16px;">'
-        f'  <div style="font-size:10px;color:{P["text_faint"]};letter-spacing:.5px;'
-        f'text-transform:uppercase;margin-bottom:10px;">{html.escape(label)}</div>'
-        f'  <div style="font-family:\'JetBrains Mono\',monospace;'
-        f'font-variant-numeric:tabular-nums;font-size:26px;color:{color};">{value_str}</div>'
-        f'  <div style="font-size:10px;color:{P["text_dim"]};margin-top:6px;">'
-        f'{html.escape(extra)}</div>'
-        f'</div>'
+        '<div class="db-kpi-card">'
+        f'<div class="db-kpi-label">{html.escape(label)}</div>'
+        f'<div class="db-kpi-value" style="color:{color};">{value_str}</div>'
+        f'<div class="db-lag-extra">{html.escape(extra)}</div>'
+        '</div>'
     )
 
 
@@ -421,28 +423,24 @@ def _cohort_section(report: Optional[CohortLiquidationReport]) -> str:
             f'{html.escape(cell.reason or "")}</td>'
             '</tr>'
         )
-    return (
-        f'<h2 style="font-size:11px;letter-spacing:1px;text-transform:uppercase;'
-        f'color:{P["text_dim"]};margin:36px 0 12px 0;">Cohort Liquidation</h2>'
-        f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-radius:4px;padding:12px 16px;">'
-        f'<div style="font-size:11px;color:{P["text_faint"]};margin-bottom:8px;">'
+    return ck_panel(
+        '<p class="ck-eyebrow">'
         f'Mature cohorts: {len(all_mature)}  ·  '
         f'In-flight (censored): {len(censored)}  ·  '
         f'Windows: {", ".join(str(w) + "d" for w in report.window_days)}'
-        f'</div>'
-        f'<table style="width:100%;border-collapse:collapse;font-size:11px;">'
-        f'<thead><tr style="color:{P["text_dim"]};">'
-        f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Cohort</th>'
-        f'<th style="text-align:right;padding:6px 8px;border-bottom:1px solid {P["border"]};">Window</th>'
-        f'<th style="text-align:right;padding:6px 8px;border-bottom:1px solid {P["border"]};">Claims</th>'
-        f'<th style="text-align:right;padding:6px 8px;border-bottom:1px solid {P["border"]};">Liquidation</th>'
-        f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Status</th>'
-        f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Note</th>'
-        f'</tr></thead>'
+        '</p>'
+        '<table class="cad-table">'
+        '<thead><tr>'
+        '<th>Cohort</th>'
+        '<th class="num">Window</th>'
+        '<th class="num">Claims</th>'
+        '<th class="num">Liquidation</th>'
+        '<th>Status</th>'
+        '<th>Note</th>'
+        '</tr></thead>'
         f'<tbody>{"".join(rows_html)}</tbody>'
-        f'</table>'
-        f'</div>'
+        '</table>',
+        title="Cohort Liquidation",
     )
 
 
@@ -456,31 +454,25 @@ def _denial_pareto(rows: Iterable[DenialStratRow]) -> str:
         pct = r.dollars_denied / total
         bar_width = max(pct * 100, 2)
         items.append(
-            f'<div style="margin-bottom:8px;">'
-            f'<div style="display:flex;justify-content:space-between;'
-            f'font-size:11px;color:{P["text_dim"]};margin-bottom:2px;">'
+            '<div class="db-pareto-row">'
+            '<div class="db-pareto-meta">'
             f'<span>{html.escape(r.category)}</span>'
             f'<span class="mono">${r.dollars_denied:,.0f}  ·  '
             f'{r.count} claims  ·  {r.pct_of_total_denied*100:,.1f}%</span>'
-            f'</div>'
-            f'<div style="background:{P["panel_alt"]};height:4px;border-radius:2px;'
-            f'overflow:hidden;">'
-            f'<div style="background:{P["accent"]};height:100%;width:{bar_width}%;"></div>'
-            f'</div>'
-            f'</div>'
+            '</div>'
+            '<div class="db-pareto-track">'
+            f'<div class="db-pareto-fill" style="width:{bar_width}%;"></div>'
+            '</div>'
+            '</div>'
         )
-    return (
-        f'<h2 style="font-size:11px;letter-spacing:1px;text-transform:uppercase;'
-        f'color:{P["text_dim"]};margin:36px 0 12px 0;">Denial Stratification</h2>'
-        f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-radius:4px;padding:14px 16px;">'
-        f'<div style="font-size:11px;color:{P["text_faint"]};margin-bottom:12px;">'
-        f'ANSI CARC categories by dollar impact. Drill-through to underlying '
-        f'claim rows is available via <a href="/diligence/root-cause" '
-        f'style="color:{P["accent"]};">Phase 3 — Root Cause</a>.'
-        f'</div>'
-        f'{"".join(items)}'
-        f'</div>'
+    return ck_panel(
+        '<p class="ck-eyebrow">'
+        'ANSI CARC categories by dollar impact. Drill-through to underlying '
+        'claim rows is available via '
+        '<a href="/diligence/root-cause" class="ck-link">Phase 3 — Root Cause</a>.'
+        '</p>'
+        f'{"".join(items)}',
+        title="Denial Stratification",
     )
 
 
@@ -514,17 +506,17 @@ def _cash_waterfall_section(report: Optional[CashWaterfallReport]) -> str:
         if report.total_realization_rate is not None else "—"
     )
     topline = (
-        f'<div style="display:flex;align-items:baseline;gap:16px;margin:12px 0 8px 0;">'
-        f'  <div style="font-size:10px;color:{P["text_faint"]};letter-spacing:.5px;'
-        f'text-transform:uppercase;">Realization Rate</div>'
-        f'  <div style="font-size:24px;color:{P["text"]};'
-        f'font-family:\'JetBrains Mono\',monospace;font-variant-numeric:tabular-nums;'
-        f'font-weight:500;">{realization_str}</div>'
-        f'  <div style="font-size:11px;color:{P["text_faint"]};">'
-        f'${report.total_realized_cash_usd:,.0f} of ${report.total_gross_charges_usd:,.0f} '
-        f'gross · {len(mature)} mature cohort(s)'
-        f'{", " + str(len(censored)) + " in-flight" if censored else ""}</div>'
-        f'</div>'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Realization Rate", realization_str,
+            sub=(
+                f'${report.total_realized_cash_usd:,.0f} of '
+                f'${report.total_gross_charges_usd:,.0f} gross · '
+                f'{len(mature)} mature cohort(s)'
+                + (f", {len(censored)} in-flight" if censored else "")
+            ),
+        )
+        + '</div>'
     )
 
     # Cascade table. One row per cohort × step; ALL-payers roll-up.
@@ -579,34 +571,28 @@ def _cash_waterfall_section(report: Optional[CashWaterfallReport]) -> str:
 
     per_class = _per_payer_class_table(report)
 
-    return (
-        f'<h2 style="font-size:11px;letter-spacing:1px;text-transform:uppercase;'
-        f'color:{P["text_dim"]};margin:32px 0 12px 0;">Quality of Revenue (Cash Waterfall)</h2>'
-        f'{mgmt_card}'
-        f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-radius:4px;padding:14px 16px;margin-top:12px;">'
-        f'  <div style="font-size:11px;color:{P["text_faint"]};margin-bottom:4px;">'
-        f'  Claim-level cascade from gross charges to realized cash, cohorted '
-        f'by date of service. Cohorts younger than '
+    cascade_panel = ck_panel(
+        '<p class="ck-eyebrow">'
+        'Claim-level cascade from gross charges to realized cash, cohorted '
+        'by date of service. Cohorts younger than '
         f'{report.realization_window_days} days are marked '
-        f'<em>insufficient data</em> — never fabricated. Drill-through to '
-        f'underlying claim_ids is available in '
-        f'<a href="/diligence/root-cause" style="color:{P["accent"]};">Phase 3</a>.'
-        f'  </div>'
-        f'  {topline}'
-        f'  <table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;">'
-        f'    <thead><tr style="color:{P["text_dim"]};">'
-        f'      <th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Cohort</th>'
-        f'      <th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Step</th>'
-        f'      <th style="text-align:right;padding:6px 8px;border-bottom:1px solid {P["border"]};">Amount</th>'
-        f'      <th style="text-align:right;padding:6px 8px;border-bottom:1px solid {P["border"]};">Running</th>'
-        f'      <th style="text-align:right;padding:6px 8px;border-bottom:1px solid {P["border"]};">n</th>'
-        f'    </tr></thead>'
-        f'    <tbody>{body_rows}</tbody>'
-        f'  </table>'
-        f'</div>'
-        f'{per_class}'
+        '<em>insufficient data</em> — never fabricated. Drill-through to '
+        'underlying claim_ids is available in '
+        '<a href="/diligence/root-cause" class="ck-link">Phase 3</a>.'
+        '</p>'
+        f'{topline}'
+        '<table class="cad-table">'
+        '<thead><tr>'
+        '<th>Cohort</th><th>Step</th>'
+        '<th class="num">Amount</th>'
+        '<th class="num">Running</th>'
+        '<th class="num">n</th>'
+        '</tr></thead>'
+        f'<tbody>{body_rows}</tbody>'
+        '</table>',
+        title="Quality of Revenue (Cash Waterfall)",
     )
+    return f"{mgmt_card}{cascade_panel}{per_class}"
 
 
 # ── QoR helpers ─────────────────────────────────────────────────────
@@ -660,43 +646,35 @@ def _management_reconciliation_card(report: CashWaterfallReport) -> str:
     delta = report.total_qor_divergence_usd
     pct = report.total_qor_divergence_pct
 
+    status_tone = {
+        DivergenceStatus.IMMATERIAL.value: "positive",
+        DivergenceStatus.WATCH.value: "warning",
+        DivergenceStatus.CRITICAL.value: "negative",
+    }.get(status, "neutral")
+    status_badge = ck_signal_badge(html.escape(status), tone=status_tone)
     if status == DivergenceStatus.UNKNOWN.value or mgmt is None:
         numbers_html = (
-            f'<div style="font-size:11px;color:{P["text_faint"]};">'
-            f'Waterfall accrual: <span class="mono" style="color:{P["text_dim"]};">'
-            f'${(accrual or 0):,.0f}</span>'
-            f'</div>'
+            '<p class="ck-eyebrow">'
+            'Waterfall accrual: '
+            f'<span class="mono">${(accrual or 0):,.0f}</span></p>'
         )
     else:
         pct_str = f"{pct*100:+.1f}%" if pct is not None else "n/a"
         delta_str = f"{'+' if (delta or 0) >= 0 else '−'}${abs(delta or 0):,.0f}"
         numbers_html = (
-            f'<div style="display:flex;gap:20px;flex-wrap:wrap;font-size:11px;'
-            f'color:{P["text_dim"]};margin-top:2px;">'
-            f'  <div>Waterfall accrual '
-            f'<span class="mono" style="color:{P["text"]};">${accrual:,.0f}</span></div>'
-            f'  <div>Management accrual '
-            f'<span class="mono" style="color:{P["text"]};">${mgmt:,.0f}</span></div>'
-            f'  <div>Delta '
-            f'<span class="mono" style="color:{colour};">{delta_str} '
-            f'({pct_str})</span></div>'
-            f'</div>'
+            '<div class="ck-kpi-strip">'
+            + ck_kpi_block("Waterfall accrual", f"${accrual:,.0f}")
+            + ck_kpi_block("Management accrual", f"${mgmt:,.0f}")
+            + ck_kpi_block("Delta", f"{delta_str} ({pct_str})")
+            + '</div>'
         )
 
-    return (
-        f'<div style="background:{tint};border:1px solid {colour};'
-        f'border-left:3px solid {colour};border-radius:4px;'
-        f'padding:14px 18px;margin-top:4px;">'
-        f'  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">'
-        f'    <div style="font-size:10px;color:{colour};font-weight:700;'
-        f'letter-spacing:1.5px;text-transform:uppercase;">{html.escape(status)}</div>'
-        f'    <div style="font-size:15px;color:{P["text"]};font-weight:600;">'
-        f'{html.escape(title)}</div>'
-        f'  </div>'
-        f'  <div style="font-size:12px;color:{P["text_dim"]};max-width:780px;'
-        f'line-height:1.5;">{html.escape(copy)}</div>'
-        f'  {numbers_html}'
-        f'</div>'
+    return ck_panel(
+        '<p class="ck-section-body">'
+        f'{status_badge} <strong>{html.escape(title)}</strong></p>'
+        f'<p class="ck-section-body">{html.escape(copy)}</p>'
+        f'{numbers_html}',
+        title="Management reconciliation",
     )
 
 
