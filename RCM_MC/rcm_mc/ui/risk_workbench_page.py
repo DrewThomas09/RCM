@@ -74,7 +74,10 @@ from ..diligence.working_capital import (
     compute_normalized_peg, detect_pre_close_pull_forward,
     estimate_dnfb,
 )
-from ._chartis_kit import P, chartis_shell, ck_page_title
+from ._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_page_title, ck_panel,
+    ck_section_header, ck_section_intro, ck_signal_badge,
+)
 
 
 # ── Input dataclass ────────────────────────────────────────────────
@@ -173,13 +176,18 @@ _SEVERITY_COLOR = {
 }
 
 
+_SEV_TONE_MAP = {
+    "RED": "negative", "CRITICAL": "negative", "HIGH": "negative",
+    "YELLOW": "warning", "AMBER": "warning", "MEDIUM": "warning",
+    "GREEN": "positive", "LOW": "positive",
+    "UNKNOWN": "neutral",
+}
+
+
 def _badge(label: str, sev: str) -> str:
-    color = _SEVERITY_COLOR.get(sev.upper(), P["text_dim"])
-    return (
-        f'<span style="background:{P["panel_alt"]};color:{color};'
-        f'padding:2px 10px;border-radius:3px;font-size:10px;'
-        f'font-weight:700;letter-spacing:.5px;text-transform:uppercase;">'
-        f'{html.escape(label)} · {html.escape(sev)}</span>'
+    tone = _SEV_TONE_MAP.get(sev.upper(), "neutral")
+    return ck_signal_badge(
+        f"{html.escape(label)} · {html.escape(sev)}", tone=tone,
     )
 
 
@@ -188,30 +196,19 @@ def _panel(
     badge: Optional[str] = None,
     explanation: Optional[str] = None,
 ) -> str:
-    head = (
-        f'<div style="display:flex;justify-content:space-between;'
-        f'align-items:center;margin-bottom:8px;">'
-        f'<div style="font-size:11px;color:{P["text_dim"]};'
-        f'letter-spacing:1px;text-transform:uppercase;font-weight:600;">'
-        f'{html.escape(title)}</div>'
-        f'{badge or ""}</div>'
+    badge_row = (
+        f'<p class="ck-section-body">{badge}</p>' if badge else ""
     )
     footer = ""
     if explanation:
         footer = (
-            f'<div style="margin-top:10px;padding:8px 10px;'
-            f'background:{P["panel_alt"]};border-left:2px solid '
-            f'{P["accent"]};font-size:11px;color:{P["text_dim"]};'
-            f'line-height:1.55;border-radius:0 3px 3px 0;">'
-            f'<strong style="color:{P["text"]};font-size:9px;'
-            f'text-transform:uppercase;letter-spacing:1.2px;'
-            f'margin-right:4px;">What this shows:</strong>'
-            f'{explanation}</div>'
+            '<p class="ck-section-body">'
+            '<strong>What this shows: </strong>'
+            f'{explanation}</p>'
         )
-    return (
-        f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-radius:4px;padding:14px 16px;margin-bottom:12px;">'
-        f'{head}{body}{footer}</div>'
+    return ck_panel(
+        f'{badge_row}{body}{footer}',
+        title=title,
     )
 
 
@@ -284,8 +281,7 @@ def _explain_for(band_or_tier: str) -> Optional[str]:
 
 def _not_supplied(reason: str) -> str:
     return (
-        f'<div style="font-size:11px;color:{P["text_faint"]};'
-        f'font-style:italic;">Not supplied — {html.escape(reason)}</div>'
+        f'<p class="ck-eyebrow"><em>Not supplied — {html.escape(reason)}</em></p>'
     )
 
 
@@ -301,24 +297,21 @@ def _kv_row(
     like Benchmarks KPI cards (e.g., "peer median 1.30x"). Keep it
     short; this row is shown in a two-column grid.
     """
-    c = color or P["text"]
+    color_attr = f' style="color:{color};"' if color else ""
     if peer:
         return (
-            f'<div style="display:flex;justify-content:space-between;'
-            f'align-items:baseline;font-size:11px;margin:2px 0;">'
-            f'<span style="color:{P["text_dim"]};">{html.escape(label)}</span>'
-            f'<span style="text-align:right;">'
-            f'<span class="mono" style="color:{c};">{html.escape(value)}</span>'
-            f'<span style="font-size:9.5px;color:{P["text_faint"]};'
-            f'display:block;">{html.escape(peer)}</span>'
-            f'</span></div>'
+            '<div class="rw-kv">'
+            f'<span class="rw-kv-label">{html.escape(label)}</span>'
+            '<span class="rw-kv-rhs">'
+            f'<span class="mono"{color_attr}>{html.escape(value)}</span>'
+            f'<span class="rw-kv-peer">{html.escape(peer)}</span>'
+            '</span></div>'
         )
     return (
-        f'<div style="display:flex;justify-content:space-between;'
-        f'font-size:11px;margin:2px 0;">'
-        f'<span style="color:{P["text_dim"]};">{html.escape(label)}</span>'
-        f'<span class="mono" style="color:{c};">{html.escape(value)}</span>'
-        f'</div>'
+        '<div class="rw-kv">'
+        f'<span class="rw-kv-label">{html.escape(label)}</span>'
+        f'<span class="mono"{color_attr}>{html.escape(value)}</span>'
+        '</div>'
     )
 
 
@@ -346,8 +339,8 @@ def _panel_bankruptcy_survivor(inp: WorkbenchInput) -> str:
                 _SEVERITY_COLOR.get(scan.verdict.value, P["text"]))
         + _kv_row("Patterns hit",
                   f"{scan.patterns_hit} / 12 ({scan.critical_hits} critical)")
-        + f'<div style="margin-top:8px;"><a href="/screening/bankruptcy-survivor" '
-          f'style="color:{P["accent"]};font-size:11px;">Open full scan →</a></div>'
+        + '<div class="rw-link-row"><a href="/screening/bankruptcy-survivor" '
+          'class="rw-link">Open full scan →</a></div>'
     )
     # Partner-speak explainer keyed off verdict.
     scan_explainer = {
@@ -635,9 +628,8 @@ def _panel_physician_comp(inp: WorkbenchInput) -> str:
                      f"{b.realization_probability*100:.0f}% realization",
             ))
             rows.append(
-                f'<div style="margin-top:6px;"><a href="/diligence/physician-attrition" '
-                f'style="color:{P["accent"]};font-size:11px;">'
-                f'Open Physician Attrition page →</a></div>'
+                '<div class="rw-link-row"><a href="/diligence/physician-attrition" '
+                'class="rw-link">Open Physician Attrition page →</a></div>'
             )
 
     # Layer attrition into the explanation when CRITICAL/HIGH providers
@@ -1120,123 +1112,119 @@ def _counterfactual_section(inp: WorkbenchInput) -> str:
         }.get(cf.feasibility, P["text"])
         if cf.estimated_dollar_impact_usd > 0:
             dollar_html = (
-                f'<span class="mono" style="color:{P["positive"]};'
-                f'font-weight:700;font-size:14px;">'
+                '<span class="mono cf-dollar">'
                 f'${cf.estimated_dollar_impact_usd:,.0f}</span>'
             )
         else:
             dollar_html = (
-                f'<span style="color:{P["text_faint"]};'
-                f'font-style:italic;font-size:11px;">qualitative</span>'
+                '<span class="cf-dollar-qual"><em>qualitative</em></span>'
             )
-        rows.append(
-            f'<div style="background:{P["panel"]};'
-            f'border:1px solid {P["border"]};'
-            f'border-left:4px solid {target_color};border-radius:4px;'
-            f'padding:12px 16px;margin-bottom:10px;">'
-            f'  <div style="display:flex;justify-content:space-between;'
-            f'gap:16px;align-items:flex-start;">'
-            f'    <div style="flex:1;min-width:0;">'
-            f'      <div style="font-size:9px;color:{P["text_faint"]};'
-            f'letter-spacing:1.5px;text-transform:uppercase;font-weight:600;'
-            f'margin-bottom:2px;">{html.escape(cf.module)}</div>'
-            f'      <div style="font-size:13px;color:{P["text"]};'
-            f'font-weight:600;line-height:1.4;">'
-            f'{html.escape(cf.change_description)}</div>'
-            f'      <div style="margin-top:6px;display:flex;gap:6px;'
-            f'align-items:center;flex-wrap:wrap;">'
-            f'        <span style="font-size:9px;letter-spacing:1px;'
-            f'text-transform:uppercase;font-weight:700;padding:2px 6px;'
-            f'background:{P["panel_alt"]};color:{orig_color};'
-            f'border-radius:2px;">{html.escape(cf.original_band)}</span>'
-            f'        <span style="color:{P["text_dim"]};font-size:11px;">→</span>'
-            f'        <span style="font-size:9px;letter-spacing:1px;'
-            f'text-transform:uppercase;font-weight:700;padding:2px 6px;'
-            f'background:{P["panel_alt"]};color:{target_color};'
-            f'border-radius:2px;">{html.escape(cf.target_band)}</span>'
-            f'        <span style="font-size:9px;letter-spacing:1px;'
-            f'text-transform:uppercase;font-weight:600;color:{feas_color};'
-            f'margin-left:6px;">feasibility {html.escape(cf.feasibility)}</span>'
-            f'      </div>'
-            f'    </div>'
-            f'    <div style="text-align:right;min-width:120px;">'
-            f'      <div style="font-size:9px;color:{P["text_faint"]};'
-            f'letter-spacing:1px;text-transform:uppercase;'
-            f'margin-bottom:2px;">Savings</div>'
-            f'      {dollar_html}'
-            f'    </div>'
-            f'  </div>'
-            f'  <div style="font-size:11px;color:{P["text_dim"]};'
-            f'line-height:1.55;margin-top:8px;">'
-            f'{html.escape(cf.narrative)}</div>'
-            f'  <div style="font-size:10px;color:{P["text_faint"]};'
-            f'line-height:1.55;margin-top:8px;padding-top:6px;'
-            f'border-top:1px solid {P["border"]};">'
-            f'<span style="color:{P["text_dim"]};font-weight:600;'
-            f'letter-spacing:.5px;text-transform:uppercase;'
-            f'margin-right:4px;">Deal:</span>'
-            f'{html.escape(cf.deal_structure_implication)}</div>'
-            f'</div>'
+        orig_badge = ck_signal_badge(
+            html.escape(cf.original_band),
+            tone=_SEV_TONE_MAP.get(cf.original_band.upper(), "neutral"),
         )
+        target_badge = ck_signal_badge(
+            html.escape(cf.target_band),
+            tone=_SEV_TONE_MAP.get(cf.target_band.upper(), "neutral"),
+        )
+        feas_tone = {
+            "HIGH": "positive", "MEDIUM": "warning", "LOW": "negative",
+        }.get(cf.feasibility, "neutral")
+        feas_badge = ck_signal_badge(
+            f"feasibility {html.escape(cf.feasibility)}",
+            tone=feas_tone,
+        )
+        cf_inner = (
+            '<p class="ck-eyebrow">'
+            f'{html.escape(cf.module)}</p>'
+            '<p class="ck-section-body">'
+            f'<strong>{html.escape(cf.change_description)}</strong></p>'
+            '<p class="ck-section-body">'
+            f'{orig_badge} → {target_badge} &nbsp; {feas_badge}'
+            f' &nbsp; · &nbsp; Savings: {dollar_html}'
+            '</p>'
+            f'<p class="ck-section-body">{html.escape(cf.narrative)}</p>'
+            '<p class="ck-eyebrow">'
+            f'<strong>Deal:</strong> {html.escape(cf.deal_structure_implication)}'
+            '</p>'
+        )
+        rows.append(ck_panel(cf_inner))
     largest = cfs.largest_lever
     header_note = ""
     if largest:
         header_note = (
-            f'<div style="font-size:11px;color:{P["text_dim"]};'
-            f'margin-bottom:12px;max-width:760px;line-height:1.55;">'
-            f'<strong style="color:{P["text"]};">'
-            f'{cfs.critical_findings_addressed}</strong> RED/CRITICAL '
+            '<p class="ck-section-body">'
+            f'<strong>{cfs.critical_findings_addressed}</strong> RED/CRITICAL '
             f'finding(s) have a counterfactual that flips the band. '
-            f'Largest lever: <strong style="color:{P["text"]};">'
-            f'{html.escape(largest.module)}</strong> · '
-            f'{html.escape(largest.lever)}.</div>'
+            f'Largest lever: <strong>{html.escape(largest.module)}</strong> · '
+            f'{html.escape(largest.lever)}.</p>'
         )
-    return (
-        f'<div style="margin-top:28px;padding:16px 20px;'
-        f'background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-radius:4px;position:relative;overflow:hidden;">'
-        f'  <div style="position:absolute;top:0;left:0;right:0;height:2px;'
-        f'background:linear-gradient(90deg,{P["positive"]},{P["accent"]});"></div>'
-        f'  <div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;font-weight:600;'
-        f'margin-top:4px;margin-bottom:4px;">'
-        f'What Would Change Your Mind</div>'
-        f'  <div style="font-size:18px;color:{P["text"]};font-weight:600;'
-        f'margin-bottom:10px;">Counterfactual Advisor</div>'
-        f'  {header_note}'
-        f'  {"".join(rows)}'
-        f'</div>'
+    return ck_panel(
+        f'{header_note}{"".join(rows)}',
+        title="Counterfactual Advisor — what would change your mind",
     )
 
 
+_RW_CSS = f"""
+<style>
+.rw-kv{{display:flex;justify-content:space-between;
+font-size:11px;margin:2px 0;align-items:baseline;}}
+.rw-kv-label{{color:{P["text_dim"]};}}
+.rw-kv-rhs{{text-align:right;}}
+.rw-kv-peer{{font-size:9.5px;color:{P["text_faint"]};display:block;}}
+.rw-link{{color:{P["accent"]};font-size:11px;}}
+.rw-link-row{{margin-top:8px;}}
+.rw-grid-2col{{display:grid;grid-template-columns:1fr 1fr;gap:12px;}}
+.cf-dollar{{color:{P["positive"]};font-weight:700;font-size:14px;}}
+.cf-dollar-qual{{color:{P["text_faint"]};font-size:11px;}}
+</style>
+"""
+
+
 def render_risk_workbench(inp: WorkbenchInput) -> str:
-    hero = (
-        f'<div style="padding:24px 0 12px 0;">'
-        f'  <div style="font-size:11px;color:{P["text_faint"]};'
-        f'letter-spacing:.75px;text-transform:uppercase;margin-bottom:6px;">'
-        f'Regulatory Risk Workbench</div>'
-        f'  <div style="font-size:22px;color:{P["text"]};font-weight:600;'
-        f'margin-bottom:4px;">{html.escape(inp.target_name)}</div>'
-        f'  <div style="font-size:12px;color:{P["text_dim"]};max-width:760px;'
-        f'line-height:1.55;">Live panels for the 9 Tier-1/2/3 diligence '
-        f'subpackages (Prompts G-O). Each panel runs its engine against '
-        f'the supplied inputs; panels without inputs render '
-        f'<em>not supplied</em> rather than fabricating numbers.</div>'
-        f'  <div style="background:{P["panel_alt"]};border-left:3px solid '
-        f'{P["accent"]};padding:10px 14px;margin-top:14px;font-size:12px;'
-        f'color:{P["text_dim"]};line-height:1.6;max-width:880px;'
-        f'border-radius:0 3px 3px 0;">'
-        f'<strong style="color:{P["text"]};">How to read these panels: </strong>'
-        f'Each panel shows the target\'s standing in one of the nine '
-        f'diligence subpackages plus a <em>what this shows</em> '
-        f'explanation of what the band means in partner-speak. '
-        f'<span style="color:{P["positive"]};">GREEN</span> = in-line with peer norms; '
-        f'<span style="color:{P["warning"]};">YELLOW</span> = manageable but watch; '
-        f'<span style="color:{P["negative"]};">RED</span> / '
-        f'<span style="color:{P["critical"]};">CRITICAL</span> = thesis-breaking without '
-        f'offer-shape modification. Counterfactual Advisor at the bottom '
-        f'quantifies every RED/CRITICAL lever.</div>'
-        f'</div>'
+    hero = _RW_CSS + ck_section_intro(
+        eyebrow="Regulatory Risk Workbench",
+        headline=f"{html.escape(inp.target_name)} — nine-panel risk panorama.",
+        italic_word="risk",
+        body=(
+            "Live panels for the 9 Tier-1/2/3 diligence subpackages "
+            "(Prompts G-O). Each panel runs its engine against the "
+            "supplied inputs; panels without inputs render "
+            "'not supplied' rather than fabricating numbers."
+        ),
+    ) + ck_panel(
+        '<p class="ck-section-body">'
+        '<strong>How to read these panels:</strong> '
+        "Each panel shows the target's standing in one of the nine "
+        "diligence subpackages plus a 'what this shows' "
+        "explanation of what the band means in partner-speak. "
+        '<strong class="cad-pos">GREEN</strong> = in-line with peer norms; '
+        '<strong class="cad-warn">YELLOW</strong> = manageable but watch; '
+        '<strong class="cad-neg">RED / CRITICAL</strong> = thesis-breaking without '
+        "offer-shape modification. Counterfactual Advisor at the bottom "
+        "quantifies every RED/CRITICAL lever."
+        '</p>',
+        title="Reading guide",
+    )
+    # Run summary strip — partner sees inputs supplied at a glance.
+    summary_strip = (
+        ck_section_header(
+            "Diligence panorama", eyebrow="9-PANEL RISK READ",
+        )
+        + '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "States", str(len(inp.states)) if inp.states else "—",
+        )
+        + ck_kpi_block(
+            "Specialty", inp.specialty or "—",
+        )
+        + ck_kpi_block(
+            "Legal structure", inp.legal_structure or "—",
+        )
+        + ck_kpi_block(
+            "Landlord", inp.landlord or "—",
+        )
+        + '</div>'
     )
     body = (
         ck_page_title(
@@ -1245,7 +1233,12 @@ def render_risk_workbench(inp: WorkbenchInput) -> str:
             meta="9-panel risk panorama · counterfactual advisor below",
         )
         + hero
-        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
+        + summary_strip
+        + ck_section_header(
+            "Tier 1-3 diligence panels",
+            eyebrow="LIVE ENGINES",
+        )
+        + '<div class="rw-grid-2col">'
         + _panel_bankruptcy_survivor(inp)
         + _panel_regulatory(inp)
         + _panel_real_estate(inp)
