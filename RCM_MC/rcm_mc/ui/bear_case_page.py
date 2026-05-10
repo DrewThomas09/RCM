@@ -190,7 +190,9 @@ font-family:"Helvetica Neue",Arial,sans-serif;}}
 _THEME_COLORS = {
     "REGULATORY":  P["negative"],
     "CREDIT":      P["warning"],
-    "OPERATIONAL": P["brand_accent"],
+    # ``accent`` is in both legacy and v2 P; ``brand_accent`` is the
+    # v2 alias only — use the common key for cross-shell compat.
+    "OPERATIONAL": P["accent"],
     "MARKET":      "#8b5cf6",
     "STRUCTURAL":  "#64748b",
     "PATTERN":     "#ec4899",

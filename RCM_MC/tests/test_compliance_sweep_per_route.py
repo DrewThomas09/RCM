@@ -74,14 +74,17 @@ ROUTE_MIN_SCORES: dict[str, float] = {
     "/portfolio":   1.0,
     "/lp-update":   1.0,
     "/audit":       1.0,
-    "/team":        1.0,
-    "/settings":    1.0,
-    "/cms-sources": 1.0,
+    "/team":                1.0,
+    "/settings":            1.0,
+    "/cms-sources":         1.0,
+    "/diligence/checklist": 1.0,
 
-    # 93% routes — interpretive prose has round-percent references.
+    # 93% routes — interpretive prose has round-percent or
+    # multiple references (e.g. "20% improvement", "11x exit").
+    # Future polish: rephrase prose to avoid round-number lit
+    # references and ratchet these to 1.0.
     "/home":                       0.92,
     "/library":                    0.92,
-    "/diligence/checklist":        0.92,
     "/methodology/pe_math":        0.92,
     "/scenarios":                  0.92,
     "/diligence/bear-case":        0.92,

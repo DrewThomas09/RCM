@@ -35,7 +35,12 @@ _SAAS_PHRASES: list[tuple[str, str]] = [
      'fixture is internal vocab; say "pick a deal"'),
     (r"\bccd fixture\b",
      'CCD is internal vocab; say "claims dataset"'),
-    (r"\bphase\s+[0-9]+\b",
+    # ``Phase N`` is internal-vocab when used in build-plan context
+    # ("Phase 2 of the migration"). Allow it when used as a product-
+    # taxonomy label followed by a separator (·, :, —) and a name —
+    # those are partner-facing section headers like
+    # ``Phase 1 · Pre-NDA screening``.
+    (r"\bphase\s+[0-9]+\b(?!\s*[·:—])",
      'Phase N is internal vocab; use the user-facing module name'),
     (r"\btrain fraction\b",
      'Train Fraction is internal vocab; say "training split"'),
