@@ -31,7 +31,9 @@ from http.cookiejar import CookieJar
 REPRESENTATIVE_ROUTES = [
     "/login",
     "/now",
+    "/home",
     "/library",
+    "/data",
     "/diligence/checklist",
     "/methodology",
     "/methodology/pe_math",
@@ -40,34 +42,37 @@ REPRESENTATIVE_ROUTES = [
     "/portfolio",
     "/lp-update",
     "/audit",
+    "/scenarios",
+    "/team",
+    "/settings",
     "/diligence/bear-case",
     "/screening/bankruptcy-survivor",
     "/cms-sources",
     "/market-rates",
 ]
 
-# Per-route minimum compliance scores. Most routes pass 12/12;
-# pages with bespoke chrome (the legacy bankruptcy-survivor PDF
-# layout, the marketing page) intentionally don't carry the full
-# kit and float lower. These per-route floors prevent the median
-# floor from masking a single-page regression.
+# Per-route minimum compliance scores. After the 30+ commit moat
+# arc, all v2 routes hit 93-100%. Floors are now ratcheted UP to
+# lock in the gain — a regression to 87% on any route fails the
+# test, even if the median stays high.
+#
+# /screening/bankruptcy-survivor floats lower (27%) because it
+# uses a bespoke print layout that intentionally doesn't carry
+# the full kit chrome. Pinned at its current state.
 ROUTE_MIN_SCORES: dict[str, float] = {
-    "/screening/bankruptcy-survivor": 0.0,  # bespoke print layout
-    # /alerts, /escalations, /lp-update, /audit currently render
-    # without the v2 kit chrome — they only emit basic HTML and
-    # score 2/13 (cmd-K palette + number-format-clean). Pin the
-    # floor at their current state so the test passes on these
-    # known-un-migrated routes; raise the floor as each migrates.
-    "/alerts": 0.1,
-    "/escalations": 0.1,
-    "/lp-update": 0.1,
-    "/audit": 0.1,
+    # Bespoke print layout — un-migrated by design.
+    "/screening/bankruptcy-survivor": 0.25,
 }
-DEFAULT_ROUTE_MIN_SCORE = 0.5  # un-migrated route still picks up kit CSS
+# Default floor raised from 0.5 → 0.93. Every v2 route now passes
+# 14/15 rules at minimum (the one allowable miss is the
+# interpretive-prose ``number-format-clean`` residual on routes
+# with descriptive percent text).
+DEFAULT_ROUTE_MIN_SCORE = 0.92
 
-# The aggregate target. Starts low; raise as the broader Phase-3
-# sweep migrates more pages to the kit primitives.
-AGGREGATE_FLOOR_MEDIAN = 0.7
+# The aggregate target. With ~93% of routes at 100% and the rest
+# at 93%, the median is 100%. Pin tightly: any regression in the
+# kit-presence rules drops a route to ~87% and shifts the median.
+AGGREGATE_FLOOR_MEDIAN = 0.95
 
 
 class _NoFollow(urllib.request.HTTPRedirectHandler):

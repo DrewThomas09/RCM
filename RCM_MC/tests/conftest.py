@@ -87,19 +87,21 @@ def _isolate_chartis_ui_v2_flag():
             os.environ.pop("CHARTIS_UI_V2", None)
         else:
             os.environ["CHARTIS_UI_V2"] = _CHARTIS_UI_V2_SNAPSHOT
-        # Drop cached kit modules AND every UI page that imports
-        # ``chartis_shell`` at module level. Without the second
-        # part, a page module loaded under v2-off keeps its stale
-        # reference to the legacy ``chartis_shell`` function — and
-        # later tests running with v2=1 see the legacy shell render
-        # despite the env flag flip. Surfaced by the
+        # Drop cached kit modules, every UI page (which import
+        # chartis_shell at module level), AND server.py (which
+        # imports legacy ``shell`` from ``_ui_kit`` at module load
+        # — line 90). Without dropping server.py, routes like
+        # /alerts that call the legacy ``shell()`` keep their
+        # stale binding to the v1 shell function even after the
+        # env flag flips to v2. Surfaced by the
         # ``test_chartis_integration → test_compliance_sweep_per_route``
-        # ordering bug where /methodology dropped from 100% → 27%
-        # compliance score.
+        # ordering bug where /methodology and 4 other routes
+        # dropped from 100% → 27% compliance score.
         import sys
         for name in list(sys.modules):
             if (
                 name.startswith("rcm_mc.ui._chartis_kit")
                 or name.startswith("rcm_mc.ui.")
+                or name == "rcm_mc.server"
             ):
                 sys.modules.pop(name, None)
