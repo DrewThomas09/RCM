@@ -298,7 +298,7 @@ def render_rollup_economics(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Year-by-Year EBITDA Walk Detail</div>{walk_tbl}</div>
   <div style="{cell}"><div style="{h3}">Exit Scenario Matrix — Downside, Base, Upside, IPO</div>{exit_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Roll-Up Thesis:</strong> 4x EBITDA growth from ${r.platform_entry_ebitda_mm:,.2f}M → ${r.platform_exit_ebitda_mm:,.2f}M via
+    <strong style="color:{text}">Roll-Up Thesis:</strong> 4.00x EBITDA growth from ${r.platform_entry_ebitda_mm:,.2f}M → ${r.platform_exit_ebitda_mm:,.2f}M via
     {r.total_addons_closed} add-ons deploying ${r.total_deployed_mm:,.2f}M in aggregate. Multiple arbitrage (${entry_mult:.2f}x → ${exit_mult:.2f}x) creates ${r.multiple_arbitrage_mm:,.2f}M of value;
     synergies add ${r.total_synergies_mm:,.2f}M run-rate. Base-case MOIC {r.base_case_moic:.2f}x / IRR {r.base_case_irr * 100:.1f}% —
     materially dependent on exit multiple. Integration cost ${total_int_cost:,.2f}M is ~{(total_int_cost / r.total_deployed_mm) * 100:.1f}% of deployed capital;

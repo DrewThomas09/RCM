@@ -161,7 +161,7 @@ def _build_scenarios(
         ("Conservative — 5.00x target", 5.0, "low"),
         ("Market — 5.50x target", 5.5, "medium"),
         ("Aggressive — 6.00x target", 6.0, "medium"),
-        ("Opportunistic — 6.5x target", 6.5, "high"),
+        ("Opportunistic — 6.50x target", 6.5, "high"),
     ]
     for label, target_lev, risk in scenarios_def:
         max_debt = current_ebitda * target_lev

@@ -211,7 +211,7 @@ def _build_surveys() -> List[EngagementSurvey]:
 def _build_benefits() -> List[BenefitsBenchmark]:
     return [
         BenefitsBenchmark("Health Insurance Contribution", "60.0% employer", "70.0% employer", "82.0% employer", "72.0% employer", 0.98),
-        BenefitsBenchmark("401(k) Match", "3%", "4% (100% up to 4%)", "6% (100% up to 6%)", "4% (100% up to 4%)", 0.85),
+        BenefitsBenchmark("401(k) Match", "3.0%", "4.0% (100.0% up to 4.0%)", "6.0% (100.0% up to 6.0%)", "4.0% (100.0% up to 4.0%)", 0.85),
         BenefitsBenchmark("PTO Accrual (Year 1)", "15 days", "20 days", "25 days", "22 days", 1.00),
         BenefitsBenchmark("Parental Leave (Primary)", "6 weeks", "10 weeks", "16 weeks", "12 weeks", 0.88),
         BenefitsBenchmark("Parental Leave (Secondary)", "2 weeks", "4 weeks", "10 weeks", "6 weeks", 0.82),
@@ -221,7 +221,7 @@ def _build_benefits() -> List[BenefitsBenchmark]:
         BenefitsBenchmark("Childcare Benefit", "None", "$1,500/yr", "$5,000/yr on-site", "$2,500/yr", 0.28),
         BenefitsBenchmark("Commuter Benefit", "None", "$100/mo", "$300/mo", "$150/mo", 0.45),
         BenefitsBenchmark("Wellness Stipend", "None", "$500/yr", "$1,500/yr", "$500/yr", 0.55),
-        BenefitsBenchmark("Short-Term Disability", "60% / 13 wk", "70% / 26 wk", "100% / 26 wk", "70% / 26 wk", 0.95),
+        BenefitsBenchmark("Short-Term Disability", "60.0% / 13 wk", "70.0% / 26 wk", "100.0% / 26 wk", "70.0% / 26 wk", 0.95),
     ]
 
 

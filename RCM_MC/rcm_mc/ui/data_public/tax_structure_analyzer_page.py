@@ -188,7 +188,7 @@ def render_tax_structure_analyzer(params: dict = None) -> str:
     Stock-for-stock merger ({r.recommended_structure}) delivers fully tax-deferred treatment — best for non-cash strategic exits.
     CV rollover approach offers similar tax efficiency with continuation vehicle benefits.
     F-reorg pre-close allows S-corp sellers to optimize; 338(h)(10) best when buyer wants step-up and seller is C-corp.
-    State-level nexus diligence is material in multi-state operations — California, Illinois, and New Jersey burden rates exceed 9%; Texas and Nevada favorable for holding structures.
+    State-level nexus diligence is material in multi-state operations — California, Illinois, and New Jersey burden rates exceed 9.0%; Texas and Nevada favorable for holding structures.
     SOR checklist requires 30-180 day pre-close lead time across 10 workstreams; most time-consuming is TRA structure (180 days) if pursuing IPO path.
   </div>
 </div>"""

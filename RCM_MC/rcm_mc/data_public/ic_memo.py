@@ -137,9 +137,9 @@ def _build_thesis() -> List[InvestmentThesis]:
                          "moderate", 72),
         InvestmentThesis("Clinical Differentiation", "Top-quartile quality metrics vs peers; anesthesia JV",
                          "strong", 85),
-        InvestmentThesis("Payer Mix Quality", "62% commercial; BCBS renewal 2027 provides price runway",
+        InvestmentThesis("Payer Mix Quality", "62.0% commercial; BCBS renewal 2027 provides price runway",
                          "moderate", 70),
-        InvestmentThesis("Operating Leverage", "22.5% EBITDA margin vs 18.5% sector P50 — upside to 26%",
+        InvestmentThesis("Operating Leverage", "22.5% EBITDA margin vs 18.5% sector P50 — upside to 26.0%",
                          "strong", 82),
         InvestmentThesis("Value Creation", "RCM / scheduling / anesthesia JV optimizations quantified",
                          "strong", 80),
@@ -154,7 +154,7 @@ def _build_findings() -> List[DiligenceFinding]:
     return [
         DiligenceFinding("Financial QoE", "Management adjustments $3.20M (one-time exec severance + refinancing)",
                          "clean", "Independent QoE confirmed; minor normalization", "no impact"),
-        DiligenceFinding("Commercial", "Top payer BCBS at 22% of revenue; renewal 2027",
+        DiligenceFinding("Commercial", "Top payer BCBS at 22.0% of revenue; renewal 2027",
                          "medium", "Price reset leverage; relationship strong", "2nd-payer development"),
         DiligenceFinding("Operational", "Anesthesia model: W-2 vs 1099 classification risk",
                          "medium", "Transition to W-2 post-close; $0.40M annualized cost", "minor margin impact"),
@@ -164,10 +164,10 @@ def _build_findings() -> List[DiligenceFinding]:
                          "minor", "Standard practice; reserves adequate", "no impact"),
         DiligenceFinding("IT / Cyber", "Epic instance at risk of mid-term migration forced by Epic EOL schedule",
                          "medium", "Budget $2.50M for 18-month migration", "integration cost"),
-        DiligenceFinding("HR", "Key-person concentration: 2 senior MDs, 35% of revenue",
+        DiligenceFinding("HR", "Key-person concentration: 2 senior MDs, 35.0% of revenue",
                          "high", "Long-term employment + equity; rollover negotiations", "key-person risk"),
-        DiligenceFinding("Antitrust", "MSA concentration clears (CR3 42% pre → 48% post)",
-                         "clean", "Below 50% CR3 safety zone", "no impact"),
+        DiligenceFinding("Antitrust", "MSA concentration clears (CR3 42.0% pre → 48.0% post)",
+                         "clean", "Below 50.0% CR3 safety zone", "no impact"),
     ]
 
 

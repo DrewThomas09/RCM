@@ -162,7 +162,7 @@ def _build_engagements() -> List[BuyerEngagement]:
         BuyerEngagement("Project Laurel — Derma", "Morgan Stanley Infrastructure", "Infra-style PE", "2026-03-15", "Management meeting completed",
                         755.0, "Long-hold + lower leverage", 35),
         BuyerEngagement("Project Cypress — GI Network", "UnitedHealth Group (Optum)", "Strategic", "2026-03-10", "NDA signed + CIM reviewed",
-                        2350.0, "Full business + 20% insider option", 62),
+                        2350.0, "Full business + 20.0% insider option", 62),
         BuyerEngagement("Project Cypress — GI Network", "Welsh Carson XIV", "Existing sponsor (CV)", "2026-01-15", "Structuring",
                         1950.0, "Single-asset continuation vehicle", 75),
         BuyerEngagement("Project Cypress — GI Network", "Bain Capital", "Large PE", "2026-03-20", "NDA signed + CIM reviewed",

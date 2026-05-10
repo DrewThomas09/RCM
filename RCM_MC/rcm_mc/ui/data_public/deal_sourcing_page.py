@@ -213,8 +213,8 @@ def render_deal_sourcing(params: dict = None) -> str:
     <strong style="color:{text}">Deal Sourcing Summary:</strong> 485 annualized-leads pipeline converts at {r.weighted_close_rate_pct * 100:.2f}% to closed deals — {r.total_closed_ltm} transactions / ${r.total_closed_value_m:,.2f}M aggregate value LTM.
     Proprietary deals represent {prop_pct * 100:.1f}% of closed count (${prop_value:,.2f}M value) — operating partner rolodex, portfolio introductions, and sponsor direct sourcing drive higher-conviction proprietary wins.
     Intermediary performance: Edgemont (healthcare specialist) and Jefferies (middle market) top the league table — 3 and 2 closes respectively; 13+ shown by each with strong relationship tenure.
-    Funnel conversion: Initial screen → Preliminary DD 48.0%, Preliminary → IOI 44.0%, IOI → MP 37.0%, MP → Confirmatory 51%, Confirmatory → Close 75% — reasonable conversion profile; top-of-funnel quality remains key.
-    Active proprietary pipeline ${sum(p.estimated_size_m for p in r.proprietary):,.2f}M total; probability-weighted ${sum(p.estimated_size_m * (p.probability_pct / 100.0) for p in r.proprietary):,.2f}M — Aspen-adjacent Southeast Ophthalmology (72% × $185M) is highest-conviction next close.
+    Funnel conversion: Initial screen → Preliminary DD 48.0%, Preliminary → IOI 44.0%, IOI → MP 37.0%, MP → Confirmatory 51.0%, Confirmatory → Close 75.0% — reasonable conversion profile; top-of-funnel quality remains key.
+    Active proprietary pipeline ${sum(p.estimated_size_m for p in r.proprietary):,.2f}M total; probability-weighted ${sum(p.estimated_size_m * (p.probability_pct / 100.0) for p in r.proprietary):,.2f}M — Aspen-adjacent Southeast Ophthalmology (72.0% × $185.00M) is highest-conviction next close.
     Team productivity: Sr. Partner 1 leads with 3 closes / $1,450M value; Sr. Partner 3 (healthtech) carries highest proprietary rate (55%); Directors are high-activity at screening but have not yet converted in LTM.
   </div>
 </div>"""

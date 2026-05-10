@@ -189,7 +189,7 @@ def _build_state_diligence() -> List[StateTaxDiligence]:
         StateTaxDiligence("New York", "Corporate Franchise Tax", 0.0765, "single sales factor",
                           "Multi-state apportionment complex; NY MTA surcharge"),
         StateTaxDiligence("Texas", "Franchise Tax (Margin Tax)", 0.00375, "single sales factor",
-                          "Low rate; minimum $1M revenue threshold"),
+                          "Low rate; minimum $1.00M revenue threshold"),
         StateTaxDiligence("Florida", "Corporate Income Tax", 0.055, "apportionment",
                           "Standard rate; no individual income tax attractive to rollovers"),
         StateTaxDiligence("Illinois", "Corporate Income + Replacement Tax", 0.095, "single sales factor",
