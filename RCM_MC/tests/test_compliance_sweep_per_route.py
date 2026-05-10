@@ -583,8 +583,11 @@ ROUTE_MIN_SCORES: dict[str, float] = {
     # platform. Range bounds (``5-7 years``, ``50.0%+``) preserved.
     "/news":                  1.0,
 
-    # Bespoke print layout — un-migrated by design.
-    "/screening/bankruptcy-survivor": 0.25,
+    # Migrated to v2 chrome. The result page (POST → printable PDF)
+    # stays bespoke because the editorial chrome would carry into
+    # the print layout, but the GET landing form now wraps in
+    # chartis_shell and scores 100%.
+    "/screening/bankruptcy-survivor": 1.0,
 }
 # Fallback for any route added without an explicit pin. Tight at
 # 1.0 — every existing pinned route is at 100% (or one of the two
@@ -605,7 +608,7 @@ AGGREGATE_FLOOR_MEDIAN = 1.0
 # rule slip), so this guard catches a different regression mode:
 # silent erosion of the *count* of perfect routes. With 45/47
 # pinned at 1.0, any new <100% slip fails this floor.
-PERFECT_ROUTE_FLOOR = 263
+PERFECT_ROUTE_FLOOR = 264
 
 
 class _NoFollow(urllib.request.HTTPRedirectHandler):

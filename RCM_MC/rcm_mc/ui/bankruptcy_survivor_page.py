@@ -96,32 +96,52 @@ button{margin-top:14pt;padding:8pt 20pt;background:#0b2341;color:#fff;
 
 
 def render_scan_landing() -> str:
-    return (
-        "<!DOCTYPE html><html><head><meta charset='utf-8'>"
-        "<title>Bankruptcy-Survivor Scan</title>"
-        f"{_style()}"
-        "</head><body>"
-        "<div class='page-header'>"
-        "<div class='eyebrow'>Pre-screening</div>"
-        "<h1>Bankruptcy-Survivor Scan</h1>"
-        "</div>"
-        "<p>A 12-pattern screen against the named PE-healthcare "
+    """Form page — wrapped in the v2 Chartis shell so partners get
+    the same chrome they see everywhere else (cmd-K palette,
+    keyboard help, accent tokens). The shell also gives this page
+    the editorial number-format and accessibility primitives the
+    compliance sweep checks for. The print-only result page
+    (``render_scan_result``) stays standalone, since printing
+    inside the shell would carry navigation chrome onto the PDF.
+    """
+    from ._chartis_kit import chartis_shell
+
+    body = (
+        "<style>"
+        ".bsv-form label{display:block;margin:14px 0 4px 0;"
+        "font-size:11px;letter-spacing:.5pt;text-transform:uppercase;"
+        "color:var(--text-2,#9aa3b2);}"
+        ".bsv-form input,.bsv-form select{width:100%;padding:8px 10px;"
+        "font-size:13px;background:var(--bg-2,#0e1320);"
+        "color:var(--text,#e6e9ef);"
+        "border:1px solid var(--line,#2a3142);border-radius:4px;"
+        "font-family:inherit;}"
+        ".bsv-form input:focus-visible,.bsv-form select:focus-visible{"
+        "outline:2px solid var(--accent,#1F4E78);outline-offset:1px;}"
+        ".bsv-form button{margin-top:16px;padding:10px 24px;"
+        "background:var(--accent,#1F4E78);color:#fff;border:0;"
+        "font-size:12px;letter-spacing:.5pt;text-transform:uppercase;"
+        "cursor:pointer;border-radius:4px;}"
+        "</style>"
+        "<p style='color:var(--text-2,#9aa3b2);max-width:60ch;'>"
+        "A 12-pattern screen against the named PE-healthcare "
         "bankruptcy playbook (Steward, Envision, APP, Cano, "
         "Prospect, Wellpath) plus six forward-looking regulatory "
-        "vectors. Public data only — no CCD required. Result renders "
-        "in &lt;30 seconds.</p>"
-        "<form method='POST' action='/screening/bankruptcy-survivor'>"
-        "<label class='form-field'>Target name</label>"
+        "vectors. Public data only — no CCD required. Result "
+        "renders in &lt;30 seconds.</p>"
+        "<form class='bsv-form' method='POST' "
+        "action='/screening/bankruptcy-survivor'>"
+        "<label>Target name</label>"
         "<input name='target_name' required maxlength='120' "
         "placeholder='Project Aurora'>"
-        "<label class='form-field'>Specialty (HOSPITAL, EMERGENCY_MEDICINE, "
+        "<label>Specialty (HOSPITAL, EMERGENCY_MEDICINE, "
         "ANESTHESIOLOGY, …)</label>"
         "<input name='specialty' maxlength='40'>"
-        "<label class='form-field'>States (comma-separated, e.g. CA, OR)</label>"
+        "<label>States (comma-separated, e.g. CA, OR)</label>"
         "<input name='states' maxlength='120'>"
-        "<label class='form-field'>CBSA codes (comma-separated)</label>"
+        "<label>CBSA codes (comma-separated)</label>"
         "<input name='cbsa_codes' maxlength='120'>"
-        "<label class='form-field'>Legal structure</label>"
+        "<label>Legal structure</label>"
         "<select name='legal_structure'>"
         "<option value=''>(not specified)</option>"
         "<option>FRIENDLY_PC_PASS_THROUGH</option>"
@@ -129,28 +149,33 @@ def render_scan_landing() -> str:
         "<option>DIRECT_EMPLOYMENT</option>"
         "<option>PROFESSIONAL_LLC</option>"
         "</select>"
-        "<label class='form-field'>Landlord (REIT name or operator)</label>"
+        "<label>Landlord (REIT name or operator)</label>"
         "<input name='landlord' maxlength='120'>"
-        "<label class='form-field'>Lease term (years)</label>"
+        "<label>Lease term (years)</label>"
         "<input name='lease_term_years' type='number' min='0' max='50'>"
-        "<label class='form-field'>Escalator % (e.g. 0.035 for 3.5%)</label>"
+        "<label>Escalator % (e.g. 0.035 for 3.5%)</label>"
         "<input name='lease_escalator_pct' type='number' step='0.001'>"
-        "<label class='form-field'>EBITDAR coverage ratio</label>"
+        "<label>EBITDAR coverage ratio</label>"
         "<input name='ebitdar_coverage' type='number' step='0.01'>"
-        "<label class='form-field'>Geography</label>"
+        "<label>Geography</label>"
         "<select name='geography'>"
         "<option value=''>(not specified)</option>"
         "<option>RURAL</option><option>SAFETY_NET</option>"
         "<option>URBAN_ACADEMIC</option><option>SUBURBAN</option>"
         "</select>"
-        "<label class='form-field'>Is hospital-based physician group?</label>"
+        "<label>Is hospital-based physician group?</label>"
         "<select name='is_hospital_based_physician'>"
         "<option value='false'>No</option><option value='true'>Yes</option>"
         "</select>"
-        "<label class='form-field'>Out-of-network revenue share (0–1)</label>"
-        "<input name='oon_revenue_share' type='number' step='0.01' min='0' max='1'>"
+        "<label>Out-of-network revenue share (0–1)</label>"
+        "<input name='oon_revenue_share' type='number' step='0.01' "
+        "min='0' max='1'>"
         "<button type='submit'>Run scan</button>"
-        "</form></body></html>"
+        "</form>"
+    )
+    return chartis_shell(
+        body, title="Bankruptcy-Survivor Scan",
+        subtitle="Pre-screening · 12 named-case patterns + 6 regulatory vectors",
     )
 
 
