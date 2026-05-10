@@ -10,6 +10,8 @@ import html
 import math
 from typing import Any, Dict, List, Optional, Tuple
 
+from .brand import PALETTE
+
 
 def _esc(s: Any) -> str:
     return html.escape("" if s is None else str(s))
@@ -30,11 +32,11 @@ def _project(lat: float, lon: float) -> Tuple[float, float]:
 _CON_FILL = {True: "#1e293b", False: "#0f172a"}
 
 _STAGE_COLORS = {
-    "pipeline": "#64748b",
-    "diligence": "#3b82f6",
-    "ic": "#f59e0b",
-    "hold": "#10b981",
-    "exit": "#8b5cf6",
+    "pipeline":  "#64748b",
+    "diligence": PALETTE["brand_accent"],
+    "ic":        PALETTE["warning"],
+    "hold":      PALETTE["positive"],
+    "exit":      "#8b5cf6",
 }
 
 
@@ -84,7 +86,7 @@ def render_portfolio_map(
         ebitda = float(d.get("ebitda_opportunity") or 0)
         radius = max(6, min(20, 6 + ebitda / 5e6))
         stage = str(d.get("stage") or "diligence")
-        color = _STAGE_COLORS.get(stage, "#3b82f6")
+        color = _STAGE_COLORS.get(stage, PALETTE["brand_accent"])
         name = _esc(d.get("name") or d.get("deal_id") or "")
         markers += (
             f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{radius:.0f}" '

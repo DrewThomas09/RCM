@@ -123,7 +123,7 @@ def _empty_state_html() -> str:
         'margin-bottom:8px;">No data sources loaded yet</div>'
         '<div style="font-size:13px;">'
         'Run <code>rcm-mc data refresh</code> or visit '
-        '<a href="/data/refresh" style="color:#60a5fa;">'
+        '<a href="/data/refresh" style="color:var(--theme-accent,#60a5fa);">'
         '/data/refresh</a> to load public-data sources.'
         '</div></div>')
 
@@ -221,7 +221,7 @@ def render_data_catalog_page(store: Any) -> str:
         'align-items:baseline;margin-bottom:16px;">'
         '<h1 style="font-size:24px;color:#f3f4f6;'
         'margin:0;">Data Catalog</h1>'
-        '<a href="/data/refresh" style="color:#60a5fa;'
+        '<a href="/data/refresh" style="color:var(--theme-accent,#60a5fa);'
         'font-size:13px;">Refresh sources →</a>'
         '</div>'
         '<p style="color:#9ca3af;font-size:13px;'

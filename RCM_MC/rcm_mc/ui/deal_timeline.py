@@ -16,19 +16,21 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
+from .brand import PALETTE
+
 logger = logging.getLogger(__name__)
 
 
 # ── Event model ────────────────────────────────────────────────────
 
 _EVENT_COLORS = {
-    "analysis": "#3b82f6",
-    "alert": "#f59e0b",
-    "export": "#10b981",
-    "note": "#94a3b8",
+    "analysis": PALETTE["brand_accent"],
+    "alert":    PALETTE["warning"],
+    "export":   PALETTE["positive"],
+    "note":     "#94a3b8",
     "override": "#8b5cf6",
-    "mc_run": "#14b8a6",
-    "other": "#64748b",
+    "mc_run":   "#14b8a6",
+    "other":    "#64748b",
 }
 
 
