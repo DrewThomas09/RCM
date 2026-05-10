@@ -267,6 +267,19 @@ REPRESENTATIVE_ROUTES = [
     "/lbo-stress",
     "/specialty-benchmarks",
     "/deal-screening",
+    "/diligence/comparable-outcomes",
+    "/diligence/compare",
+    "/diligence/covenant-stress",
+    "/diligence/deal-mc",
+    "/diligence/deal",
+    "/diligence/exit-timing",
+    "/diligence/physician-attrition",
+    "/diligence/regulatory-calendar",
+    "/diligence/risk-workbench",
+    "/diligence/sponsor-detail",
+    "/portfolio/heatmap",
+    "/portfolio/map",
+    "/portfolio/risk-scan",
 ]
 
 # Per-route minimum compliance scores. Each route is pinned at
@@ -519,6 +532,19 @@ ROUTE_MIN_SCORES: dict[str, float] = {
     "/lbo-stress":            1.0,
     "/specialty-benchmarks":  1.0,
     "/deal-screening":        1.0,
+    "/diligence/comparable-outcomes": 1.0,
+    "/diligence/compare":     1.0,
+    "/diligence/covenant-stress": 1.0,
+    "/diligence/deal-mc":     1.0,
+    "/diligence/deal":        1.0,
+    "/diligence/exit-timing": 1.0,
+    "/diligence/physician-attrition": 1.0,
+    "/diligence/regulatory-calendar": 1.0,
+    "/diligence/risk-workbench": 1.0,
+    "/diligence/sponsor-detail": 1.0,
+    "/portfolio/heatmap":     1.0,
+    "/portfolio/map":         1.0,
+    "/portfolio/risk-scan":   1.0,
 
     # 92% route — /news renders editorial copy with many embedded
     # press-release financial figures ("$8.2B Sale", "12% margin")
@@ -548,7 +574,7 @@ AGGREGATE_FLOOR_MEDIAN = 1.0
 # rule slip), so this guard catches a different regression mode:
 # silent erosion of the *count* of perfect routes. With 45/47
 # pinned at 1.0, any new <100% slip fails this floor.
-PERFECT_ROUTE_FLOOR = 233
+PERFECT_ROUTE_FLOOR = 246
 
 
 class _NoFollow(urllib.request.HTTPRedirectHandler):
