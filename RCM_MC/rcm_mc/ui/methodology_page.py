@@ -133,22 +133,22 @@ def render_methodology() -> str:
 
     # ── Scoring ──
     scoring = _section("SCR", "SeekingChartis Score (0-100)", (
-        f'<p style="font-size:12.5px;color:{PALETTE["text_secondary"]};margin-bottom:10px;line-height:1.6;">'
+        f'<p class="ck-section-body">'
         f'Every hospital gets a composite investability score from 0 to 100, graded A+ to F. '
         f'The score combines four weighted components:</p>'
         f'<table class="cad-table"><thead><tr>'
         f'<th>Component</th><th>Weight</th><th>Max Pts</th><th>What It Measures</th>'
         f'</tr></thead><tbody>'
-        f'<tr><td style="font-weight:600;">Market Position</td>'
+        f'<tr><td><strong>Market Position</strong></td>'
         f'<td class="num cad-heat-2">35%</td><td class="num">35</td>'
         f'<td>Bed count (small/mid/large) + net patient revenue (scale advantage)</td></tr>'
-        f'<tr><td style="font-weight:600;">Financial Health</td>'
+        f'<tr><td><strong>Financial Health</strong></td>'
         f'<td class="num cad-heat-3">25%</td><td class="num">25</td>'
         f'<td>Operating margin: strong (&gt;10%), moderate (5-10%), thin (0-5%), negative</td></tr>'
-        f'<tr><td style="font-weight:600;">Operational Quality</td>'
+        f'<tr><td><strong>Operational Quality</strong></td>'
         f'<td class="num cad-heat-3">20%</td><td class="num">20</td>'
         f'<td>Denial rate (&lt;8% excellent, 8-12% good, &gt;12% concerning) + AR days (&lt;42 excellent)</td></tr>'
-        f'<tr><td style="font-weight:600;">Competitive Moat</td>'
+        f'<tr><td><strong>Competitive Moat</strong></td>'
         f'<td class="num cad-heat-3">20%</td><td class="num">20</td>'
         f'<td>Scale vs market avg, HHI concentration, margin premium (Mauboussin framework)</td></tr>'
         f'</tbody></table>'
@@ -166,19 +166,19 @@ def render_methodology() -> str:
         f'<table class="cad-table"><thead><tr>'
         f'<th>Indicator</th><th>Source</th><th>What It Means</th>'
         f'</tr></thead><tbody>'
-        f'<tr><td style="font-weight:600;">Hospital EV/EBITDA</td>'
+        f'<tr><td><strong>Hospital EV/EBITDA</strong></td>'
         f'<td><span class="cad-ticker-id" style="padding:1px 5px;">TXN</span></td>'
         f'<td>Median enterprise-value-to-EBITDA multiple for recent acute care hospital transactions. '
         f'Higher = more expensive market. Current: ~11.2x.</td></tr>'
-        f'<tr><td style="font-weight:600;">10Y Treasury</td>'
+        f'<tr><td><strong>10Y Treasury</strong></td>'
         f'<td><span class="cad-ticker-id" style="padding:1px 5px;">FRED</span></td>'
         f'<td>Risk-free rate benchmark. Drives WACC and discount rates. Higher rates compress '
         f'hospital valuations (~0.8x per 100bp increase).</td></tr>'
-        f'<tr><td style="font-weight:600;">S&amp;P Healthcare</td>'
+        f'<tr><td><strong>S&amp;P Healthcare</strong></td>'
         f'<td><span class="cad-ticker-id" style="padding:1px 5px;">SP500</span></td>'
         f'<td>Sector index level. Tracks public healthcare equity sentiment. Not hospital-specific '
         f'but directionally indicative.</td></tr>'
-        f'<tr><td style="font-weight:600;">Market Sentiment</td>'
+        f'<tr><td><strong>Market Sentiment</strong></td>'
         f'<td><span class="cad-ticker-id" style="padding:1px 5px;">COMP</span></td>'
         f'<td>Composite score 0-1. Weights: treasury direction, deal flow volume, '
         f'reimbursement trend signals. Labels: Bullish (&gt;0.7), Slightly Positive (0.4-0.7), '
@@ -221,16 +221,16 @@ def render_methodology() -> str:
 
     # ── Regression ──
     regression = _section("REG", "Regression Analysis", (
-        f'<p style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.6;">'
+        f'<p class="ck-section-body">'
         f'Ordinary Least Squares (OLS) regression implemented in pure NumPy (no sklearn). '
         f'Features are standardized (zero mean, unit variance) before fitting so coefficients '
         f'are comparable across variables with different scales.</p>'
-        f'<p style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.6;margin-top:8px;">'
+        f'<p class="ck-section-body">'
         f'<strong>Outputs:</strong> R-squared (% of variance explained), adjusted R-squared '
         f'(penalized for feature count), standardized coefficients with t-statistics, '
         f'significance levels (*p&lt;0.05, **p&lt;0.01, ***p&lt;0.001), and pairwise '
         f'correlation matrix.</p>'
-        f'<p style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.6;margin-top:8px;">'
+        f'<p class="ck-section-body">'
         f'<strong>Data sources:</strong> HCRIS national (~6,000 hospitals) or portfolio deals. '
         f'HCRIS regressions identify which state-level factors predict margins. Portfolio '
         f'regressions identify what drives denial rates or other KPIs across your specific deals.</p>'
@@ -238,7 +238,7 @@ def render_methodology() -> str:
 
     # ── Margins ──
     margins = _section("MRG", "Margin Calculations", (
-        f'<p style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.6;">'
+        f'<p class="ck-section-body">'
         f'<strong>Operating margin</strong> = (Net Patient Revenue − Operating Expenses) / '
         f'Net Patient Revenue. Computed from HCRIS cost report fields. Guards applied:</p>'
         f'<ul style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.8;'
@@ -273,7 +273,7 @@ def render_methodology() -> str:
                 name = defn.display_name if hasattr(defn, "display_name") else mk.replace("_", " ").title()
                 ont_rows += (
                     f'<tr>'
-                    f'<td style="font-weight:600;">{html.escape(name)}</td>'
+                    f'<td><strong>{html.escape(name)}</strong></td>'
                     f'<td style="font-size:11.5px;">{html.escape(str(defn.definition)[:100] if hasattr(defn, "definition") else "")}</td>'
                     f'<td><span class="cad-badge cad-badge-blue">'
                     f'{html.escape(str(defn.domain.value) if hasattr(defn, "domain") else "")}</span></td>'
@@ -284,8 +284,7 @@ def render_methodology() -> str:
                 pass
         if ont_rows:
             ontology_section = _section("ONT", "Metric Definitions & Causal Chains", (
-                f'<p style="font-size:12.5px;color:{PALETTE["text_secondary"]};'
-                f'margin-bottom:10px;line-height:1.6;">'
+                f'<p class="ck-section-body">'
                 f'Every metric in SeekingChartis has a formal definition, domain classification, '
                 f'and causal chain explaining how it affects EBITDA. From the healthcare '
                 f'economic ontology.</p>'

@@ -347,32 +347,26 @@ def _counter_bid_card(report: BridgeAuditReport) -> str:
         or report.price_reduction_usd < 1_000_000
     ):
         return ""
-    return (
-        f'<div class="ba-counter-card">'
-        f'<div style="font-size:11px;letter-spacing:1.5px;'
-        f'text-transform:uppercase;color:{P["text_faint"]};'
-        f'font-weight:700;">Counter-bid recommendation</div>'
-        f'<div class="ba-counter-num">'
-        f'${report.counter_offer_usd/1e6:,.0f}M</div>'
-        f'<div class="ba-counter-sub">'
-        f'Banker asking '
-        f'<strong style="color:{P["text"]};">'
-        f'${report.asking_price_usd/1e6:,.0f}M</strong> at '
-        f'{report.entry_multiple:.1f}× — our audit shows '
-        f'${report.gap_usd/1e6:,.1f}M of realistic bridge gap. '
-        f'At the entry multiple, that prices out to '
-        f'<strong style="color:{P["negative"]};">'
-        f'${report.price_reduction_usd/1e6:,.1f}M of overpayment</strong>. '
-        f'Counter at '
-        f'<strong style="color:{P["positive"]};">'
-        f'${report.counter_offer_usd/1e6:,.0f}M</strong>, or structure '
-        f'<strong>${(report.earn_out_target_usd or 0)/1e6:,.1f}M as a 24-month '
-        f'earn-out</strong> triggered at '
-        f'<strong>${(report.earn_out_trigger_usd or 0)/1e6:,.1f}M</strong> '
-        f'LTM EBITDA to preserve bid competitiveness while shifting '
-        f'the realization risk back to the seller.'
-        f'</div></div>'
+    body = (
+        f"Banker asking <strong>${report.asking_price_usd/1e6:,.0f}M</strong> "
+        f"at {report.entry_multiple:.1f}× — our audit shows "
+        f"<strong>${report.gap_usd/1e6:,.1f}M of realistic bridge gap</strong>. "
+        f"At the entry multiple, that prices out to "
+        f"<strong>${report.price_reduction_usd/1e6:,.1f}M of overpayment</strong>. "
+        f"Counter at <strong>${report.counter_offer_usd/1e6:,.0f}M</strong>, "
+        f"or structure <strong>${(report.earn_out_target_usd or 0)/1e6:,.1f}M "
+        f"as a 24-month earn-out</strong> triggered at "
+        f"<strong>${(report.earn_out_trigger_usd or 0)/1e6:,.1f}M</strong> "
+        f"LTM EBITDA to preserve bid competitiveness while shifting "
+        f"the realization risk back to the seller."
     )
+    intro = ck_section_intro(
+        eyebrow="Counter-bid recommendation",
+        headline=f"${report.counter_offer_usd/1e6:,.0f}M",
+        body=body,
+        italic_word="counter",
+    )
+    return f'<div class="ba-counter-card">{intro}</div>'
 
 
 def _per_lever_table(report: BridgeAuditReport) -> str:

@@ -343,34 +343,25 @@ def _comments_section(
 ) -> str:
     items: List[str] = []
     for c in comments:
-        badge = ""
+        badge_html = ""
         if c.is_internal:
-            badge = (
-                f' <span style="background:rgba(245,158,11,.14);'
-                f'color:{P["warning"]};padding:1px 6px;border-radius:3px;'
-                f'font-size:9px;letter-spacing:.5px;text-transform:uppercase;'
-                f'font-weight:600;">internal</span>'
+            badge_html = (
+                ' '
+                + ck_signal_badge("internal", tone="warning")
             )
-        items.append(
-            f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-            f'border-radius:4px;padding:10px 14px;margin-bottom:8px;">'
-            f'  <div style="display:flex;gap:8px;align-items:baseline;'
-            f'font-size:11px;color:{P["text_dim"]};margin-bottom:4px;">'
-            f'    <span class="mono" style="color:{P["text"]};font-weight:600;">'
-            f'{html.escape(c.author)}</span>'
-            f'    <span style="font-size:10px;color:{P["text_faint"]};">'
-            f'{html.escape(c.posted_at[:19])}</span>'
-            f'    <span style="font-size:10px;color:{P["text_faint"]};">'
-            f'on {html.escape(c.target)}</span>'
-            f'{badge}'
-            f'  </div>'
-            f'  <div style="font-size:12px;color:{P["text"]};white-space:pre-wrap;">'
-            f'{html.escape(c.body)}</div>'
-            f'</div>'
+        meta = (
+            f'<p class="ck-eyebrow">'
+            f'<strong>{html.escape(c.author)}</strong> · '
+            f'{html.escape(c.posted_at[:19])} · '
+            f'on {html.escape(c.target)}{badge_html}</p>'
         )
+        body = (
+            f'<p class="ck-section-body" style="white-space:pre-wrap;">'
+            f'{html.escape(c.body)}</p>'
+        )
+        items.append(ck_panel(meta + body))
     empty = (
-        f'<div style="padding:10px;color:{P["text_faint"]};'
-        f'font-style:italic;font-size:11px;">No comments yet.</div>'
+        '<p class="ck-section-body ck-muted">No comments yet.</p>'
         if not items else ""
     )
     form = ""
@@ -415,9 +406,8 @@ def _comments_section(
             f'Post</button></div></form>'
         )
     return (
-        f'<h2 style="font-size:11px;letter-spacing:1px;text-transform:uppercase;'
-        f'color:{P["text_dim"]};margin:28px 0 10px 0;">Comments</h2>'
-        f'{"".join(items)}{empty}{form}'
+        ck_section_header("Comments")
+        + "".join(items) + empty + form
     )
 
 
