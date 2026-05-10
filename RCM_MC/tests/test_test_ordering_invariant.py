@@ -72,6 +72,34 @@ class ConftestModuleDropCoversCriticalImports(unittest.TestCase):
         )
 
 
+class PerRouteCoverageDoesNotShrink(unittest.TestCase):
+    """The per-route compliance sweep covers a list of partner-
+    facing routes. Each route is a regression net — removing one
+    silently weakens the safety net.
+
+    This guard pins the route count at the current size. Adding a
+    new route is fine (the count grows). Removing one fails this
+    test, forcing the contributor to either restore the route or
+    update ROUTE_COUNT_FLOOR with a justified rationale.
+    """
+
+    ROUTE_COUNT_FLOOR = 26
+
+    def test_per_route_list_size(self) -> None:
+        from tests.test_compliance_sweep_per_route import (
+            REPRESENTATIVE_ROUTES,
+        )
+        actual = len(REPRESENTATIVE_ROUTES)
+        self.assertGreaterEqual(
+            actual, self.ROUTE_COUNT_FLOOR,
+            f"REPRESENTATIVE_ROUTES has {actual} entries — below "
+            f"floor of {self.ROUTE_COUNT_FLOOR}. Removing routes "
+            f"weakens the per-route compliance safety net. Either "
+            f"restore the route or update ROUTE_COUNT_FLOOR with "
+            f"justification.",
+        )
+
+
 class ChartisShellEntryPointsAreLazy(unittest.TestCase):
     """Most rendering modules should import ``chartis_shell``
     lazily (inside route handlers / render functions), not at
