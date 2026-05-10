@@ -65,7 +65,7 @@ def _input_form(qs: Dict[str, Any]) -> str:
         'style="padding:6px 8px;border:1px solid #e5e7eb;'
         'border-radius:4px;font-size:13px;width:200px;"></div>'
         '<button type="submit" '
-        'style="padding:8px 16px;background:var(--theme-accent,#1F4E78);color:#fff;'
+        'style="padding:8px 16px;background:var(--theme-accent,#1f4e78);color:#fff;'
         'border:0;border-radius:4px;font-size:13px;font-weight:500;'
         'cursor:pointer;">Find comparables</button>'
         '</form>'
@@ -343,7 +343,7 @@ def render_comparable_outcomes_page(
         'text-transform:uppercase;letter-spacing:0.05em;">'
         'Match-score bar</span>'
         '<span><span style="display:inline-block;width:10px;'
-        'height:8px;background:var(--theme-accent,#1F4E78);margin-right:4px;'
+        'height:8px;background:var(--theme-accent,#1f4e78);margin-right:4px;'
         'vertical-align:middle;"></span>sector (35)</span>'
         '<span><span style="display:inline-block;width:10px;'
         'height:8px;background:var(--theme-accent,#3b82f6);margin-right:4px;'
@@ -372,7 +372,7 @@ def render_comparable_outcomes_page(
     btn_style = (
         "display:inline-flex;align-items:center;gap:6px;"
         "padding:8px 14px;border:1px solid #d1d5db;border-radius:6px;"
-        "background:#fff;color:var(--theme-accent,#1F4E78);font-size:13px;font-weight:600;"
+        "background:#fff;color:var(--theme-accent,#1f4e78);font-size:13px;font-weight:600;"
         "text-decoration:none;cursor:pointer;"
     )
     export_bar = (

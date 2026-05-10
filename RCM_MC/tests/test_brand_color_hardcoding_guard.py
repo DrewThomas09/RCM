@@ -93,8 +93,12 @@ class BrandHexHardcodeIsCapped(unittest.TestCase):
 
     def test_count_does_not_exceed_cap(self) -> None:
         repo_root = pathlib.Path(__file__).resolve().parent.parent
+        # CSS hex colors are case-insensitive (``#EF4444`` and
+        # ``#ef4444`` render identically). The guard catches both
+        # casings so contributors can't sidestep by uppercasing.
         pattern = re.compile(
             "|".join(re.escape(h) for h in DARK_BRAND_HEXES),
+            re.IGNORECASE,
         )
         hits: list[tuple[str, str]] = []
         for py in (repo_root / "rcm_mc").rglob("*.py"):
@@ -128,6 +132,7 @@ class CapIsTightAgainstActualCount(unittest.TestCase):
         repo_root = pathlib.Path(__file__).resolve().parent.parent
         pattern = re.compile(
             "|".join(re.escape(h) for h in DARK_BRAND_HEXES),
+            re.IGNORECASE,
         )
         count = 0
         for py in (repo_root / "rcm_mc").rglob("*.py"):

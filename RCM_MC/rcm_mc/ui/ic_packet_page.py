@@ -571,8 +571,8 @@ def _render_regulatory_block(report: Any) -> str:
         ImpactVerdict,
     )
     verdict_color = {
-        "PASS": "#10B981", "CAUTION": "#F59E0B",
-        "WARNING": "#F59E0B", "FAIL": "#EF4444",
+        "PASS": "var(--theme-positive,#10b981)", "CAUTION": "var(--theme-warning,#f59e0b)",
+        "WARNING": "var(--theme-warning,#f59e0b)", "FAIL": "var(--theme-negative,#ef4444)",
     }.get(report.verdict.value, "#64748b")
 
     killed_rows: List[str] = []
@@ -580,7 +580,7 @@ def _render_regulatory_block(report: Any) -> str:
         if tl.worst_verdict.value == "UNAFFECTED":
             continue
         tone = {
-            "KILLED": "#EF4444", "DAMAGED": "#F59E0B",
+            "KILLED": "var(--theme-negative,#ef4444)", "DAMAGED": "var(--theme-warning,#f59e0b)",
         }.get(tl.worst_verdict.value, "#94a3b8")
         killed_rows.append(
             f'<tr>'
@@ -600,7 +600,7 @@ def _render_regulatory_block(report: Any) -> str:
 
     overlay_rows: List[str] = []
     for o in report.ebitda_overlay:
-        cls = "color:#EF4444;" if o.ebitda_delta_usd < 0 else "color:#10B981;"
+        cls = "color:var(--theme-negative,#ef4444);" if o.ebitda_delta_usd < 0 else "color:var(--theme-positive,#10b981);"
         overlay_rows.append(
             f'<tr>'
             f'<td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;">'
@@ -670,7 +670,7 @@ def _render_regulatory_block(report: Any) -> str:
             f'<tr style="border-top:2px solid #1a1a1a;font-weight:700;">'
             f'<td style="padding:6px 10px;">TOTAL</td>'
             f'<td style="padding:6px 10px;font-family:monospace;'
-            f'color:{"#EF4444" if total_eb < 0 else "#10B981"};">'
+            f'color:{"var(--theme-negative,#ef4444)" if total_eb < 0 else "var(--theme-positive,#10b981)"};">'
             f'${total_eb:+,.0f}</td><td></td></tr>'
             f'</tbody></table>'
             if overlay_rows else ''

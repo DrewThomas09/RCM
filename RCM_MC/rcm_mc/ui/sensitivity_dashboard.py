@@ -155,14 +155,14 @@ def compute_sensitivity_grid(params: SensitivityParams) -> SensitivityResult:
 def _moic_color(moic: float) -> str:
     """Color-code MOIC cells: green > 2x, amber 1-2x, red < 1x."""
     if moic >= 3.0:
-        return "#10B981"
+        return "var(--theme-positive,#10b981)"
     if moic >= 2.0:
         return "#34D399"
     if moic >= 1.5:
-        return "#F59E0B"
+        return "var(--theme-warning,#f59e0b)"
     if moic >= 1.0:
         return "#FB923C"
-    return "#EF4444"
+    return "var(--theme-negative,#ef4444)"
 
 
 def render_sensitivity_page(
@@ -270,7 +270,7 @@ def render_sensitivity_page(
 
       <div style="grid-column: span 3; text-align:right;">
         <button type="submit"
-                style="background:var(--theme-accent,#1F4E78); color:#e2e8f0; border:none;
+                style="background:var(--theme-accent,#1f4e78); color:#e2e8f0; border:none;
                        padding:8px 20px; border-radius:4px; cursor:pointer;">
           Re-compute Grid
         </button>
@@ -355,7 +355,7 @@ table tr:hover td {
     background: #1e293b;
 }
 input[type=range] {
-    accent-color: var(--theme-accent,#1F4E78);
+    accent-color: var(--theme-accent,#1f4e78);
 }
 """
 

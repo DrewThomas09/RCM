@@ -117,8 +117,8 @@ gap:14px;}}
 # ────────────────────────────────────────────────────────────────────
 
 _DONUT_COLORS = [
-    "var(--theme-accent,#1F4E78)", "#2563eb", "#0891b2", "#10B981",
-    "#8b5cf6", "#ec4899", "#F59E0B", "var(--theme-negative,#ef4444)",
+    "var(--theme-accent,#1f4e78)", "#2563eb", "#0891b2", "var(--theme-positive,#10b981)",
+    "#8b5cf6", "#ec4899", "var(--theme-warning,#f59e0b)", "var(--theme-negative,#ef4444)",
     "#64748b", "#334155", "#475569", "#71717a",
 ]
 

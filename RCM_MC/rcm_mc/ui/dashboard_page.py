@@ -1176,7 +1176,7 @@ def _render_portfolio_pulse_hero(
     return (
         pulse_anim
         + '<section style="background:linear-gradient(135deg,'
-        '#0f172a 0%,var(--theme-accent,#1F4E78) 100%);color:#fff;padding:22px 26px;'
+        '#0f172a 0%,var(--theme-accent,#1f4e78) 100%);color:#fff;padding:22px 26px;'
         'border-radius:12px;margin:6px 0 18px;'
         'box-shadow:0 8px 24px rgba(15,23,42,0.18);">'
         + label_row
@@ -1455,7 +1455,7 @@ def _render_saved_templates_section(db_path: str) -> str:
         desc = t.get("description") or ""
         name = t.get("name") or "unnamed"
         pinned_chip = (
-            '<span style="margin-left:6px;font-size:10px;color:var(--theme-accent,#1F4E78);">'
+            '<span style="margin-left:6px;font-size:10px;color:var(--theme-accent,#1f4e78);">'
             '📌</span>'
         ) if t.get("pinned") else ""
         # Clone button — copy this template's route + params under a
@@ -1990,12 +1990,12 @@ def _render_predicted_outcomes_section(
         '</svg>scale 0–6×</span>'
         '<span style="display:inline-flex;align-items:center;gap:4px;">'
         '<span style="display:inline-block;width:14px;height:6px;'
-        'background:var(--theme-accent,#1F4E78);opacity:0.35;border-radius:2px;"></span>'
+        'background:var(--theme-accent,#1f4e78);opacity:0.35;border-radius:2px;"></span>'
         'p25–p75 range</span>'
         '<span style="display:inline-flex;align-items:center;gap:4px;">'
         '<span style="display:inline-block;width:8px;height:8px;'
-        'background:var(--theme-accent,#1F4E78);border-radius:50%;border:1.5px solid #fff;'
-        'box-shadow:0 0 0 1px var(--theme-accent,#1F4E78);"></span>'
+        'background:var(--theme-accent,#1f4e78);border-radius:50%;border:1.5px solid #fff;'
+        'box-shadow:0 0 0 1px var(--theme-accent,#1f4e78);"></span>'
         'median predicted MOIC</span>'
         '<span style="color:var(--theme-positive,#10b981);">— —</span>'
         '<span>2.5× "good deal" bar</span>'
@@ -2365,7 +2365,7 @@ def _render_recent_results_section(db_path: str) -> str:
             '<p style="margin:0 0 8px;"><strong>No runs yet — '
             'first time here?</strong> Try one of the curated analyses '
             'above. <a href="/diligence/thesis-pipeline?dataset=hospital_04_mixed_payer" '
-            'style="color:var(--theme-accent,#1F4E78);font-weight:500;">Thesis Pipeline</a> '
+            'style="color:var(--theme-accent,#1f4e78);font-weight:500;">Thesis Pipeline</a> '
             'runs in ~170 ms on a fixture and walks you through 19 '
             'diligence steps end-to-end.</p>'
             '<p style="margin:0;color:#6b7280;font-size:12px;">'
@@ -2478,7 +2478,7 @@ def _render_data_freshness_section(db_path: str) -> str:
             "Data freshness",
             '<p>No data sources registered yet. Run a data refresh via the '
             '<code>rcm-mc data refresh</code> CLI or open '
-            '<a href="/data/refresh" style="color:var(--theme-accent,#1F4E78);">Data refresh</a> '
+            '<a href="/data/refresh" style="color:var(--theme-accent,#1f4e78);">Data refresh</a> '
             'and click a Refresh button.</p>',
         )
 

@@ -73,7 +73,7 @@ def _exit_memo_html(
         f"<title>{title}</title>"
         "<style>"
         "body{font-family:sans-serif;max-width:900px;margin:0 auto;padding:24px;}"
-        "h1{color:#1f4e78;} .num{font-family:monospace;font-variant-numeric:tabular-nums;}"
+        "h1{color:var(--theme-accent,#1f4e78);} .num{font-family:monospace;font-variant-numeric:tabular-nums;}"
         "table{border-collapse:collapse;width:100%;margin:16px 0;}"
         "th,td{border:1px solid #ccc;padding:6px 10px;text-align:left;}"
         "th{background:#f0f4f8;}"

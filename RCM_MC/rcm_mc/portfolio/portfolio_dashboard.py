@@ -38,11 +38,11 @@ _PALETTE = {
     "border":   "#E5E7EB",
     "text":     "#111827",
     "muted":    "#6B7280",
-    "accent":   "var(--theme-accent,#1F4E78)",
-    "green":    "#10B981",
-    "amber":    "#F59E0B",
-    "red":      "#EF4444",
-    "blue":     "#3B82F6",
+    "accent":   "var(--theme-accent,#1f4e78)",
+    "green":    "var(--theme-positive,#10b981)",
+    "amber":    "var(--theme-warning,#f59e0b)",
+    "red":      "var(--theme-negative,#ef4444)",
+    "blue":     "var(--theme-accent,#3b82f6)",
 }
 
 
@@ -600,22 +600,22 @@ _FILTER_JS = """
     var fmtP = function(v){ return isFinite(v) ? ((v*100).toFixed(1) + '%') : '—'; };
     var colorMoic = function(v){
       if (!isFinite(v)) return '#6B7280';
-      if (v >= 2.5) return '#10B981';
-      if (v >= 2.0) return '#F59E0B';
-      return '#EF4444';
+      if (v >= 2.5) return 'var(--theme-positive,#10b981)';
+      if (v >= 2.0) return 'var(--theme-warning,#f59e0b)';
+      return 'var(--theme-negative,#ef4444)';
     };
     var colorIrr = function(v){
       if (!isFinite(v)) return '#6B7280';
-      if (v >= 0.25) return '#10B981';
-      if (v >= 0.18) return '#F59E0B';
-      return '#EF4444';
+      if (v >= 0.25) return 'var(--theme-positive,#10b981)';
+      if (v >= 0.18) return 'var(--theme-warning,#f59e0b)';
+      return 'var(--theme-negative,#ef4444)';
     };
     var wMoic = totalEv > 0 ? wMoicNum / totalEv : NaN;
     var wIrr  = totalEv > 0 ? wIrrNum  / totalEv : NaN;
     setText('kpi-weighted-moic', fmtX(wMoic), colorMoic(wMoic));
     setText('kpi-weighted-irr', fmtP(wIrr), colorIrr(wIrr));
     setText('kpi-at-risk', String(atRisk),
-            atRisk ? '#EF4444' : '#10B981');
+            atRisk ? 'var(--theme-negative,#ef4444)' : 'var(--theme-positive,#10b981)');
 
     // B96: save filter state (debounced trivially via last-wins)
     persist();
@@ -703,9 +703,9 @@ def _render_mini_sparkline(
     if ld is None or ld != ld:
         stroke = "#6B7280"  # muted
     elif ld > 0.02:
-        stroke = "#10B981"  # green
+        stroke = "var(--theme-positive,#10b981)"  # green
     elif ld < -0.02:
-        stroke = "#EF4444"  # red
+        stroke = "var(--theme-negative,#ef4444)"  # red
     else:
         stroke = "#6B7280"
 
@@ -1022,8 +1022,8 @@ def _render_at_risk(df: pd.DataFrame) -> str:
 _CSS = """
 :root {
   --bg: #FAFAFA; --card: #FFFFFF; --border: #E5E7EB;
-  --text: #111827; --muted: #6B7280; --accent: var(--theme-accent,#1F4E78);
-  --green: #10B981; --amber: #F59E0B; --red: #EF4444;
+  --text: #111827; --muted: #6B7280; --accent: var(--theme-accent,#1f4e78);
+  --green: var(--theme-positive,#10b981); --amber: var(--theme-warning,#f59e0b); --red: var(--theme-negative,#ef4444);
 }
 * { box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;

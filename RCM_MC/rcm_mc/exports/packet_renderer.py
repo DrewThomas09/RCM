@@ -1195,7 +1195,7 @@ def _fmt_cell_num(v: Optional[float]) -> str:
 # ── Minimal CSS for memo / LP update ────────────────────────────────
 
 _MEMO_CSS = """
-:root { --bg:#fafbfc; --fg:#1a1f2c; --muted:#6b7280; --border:#e5e7eb; --accent:#1f4e78; }
+:root { --bg:#fafbfc; --fg:#1a1f2c; --muted:#6b7280; --border:#e5e7eb; --accent:var(--theme-accent,#1f4e78); }
 body { margin: 0; background: var(--bg); color: var(--fg);
        font-family: -apple-system, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.55; }
 .memo-body { max-width: 820px; margin: 32px auto; padding: 24px;
@@ -1222,7 +1222,7 @@ _LP_CSS = """
 body { margin: 0; padding: 24px;
        background: #fafbfc; color: #1a1f2c;
        font-family: -apple-system, "Segoe UI", sans-serif; }
-h1 { color: #1f4e78; margin: 0 0 4px 0; }
+h1 { color: var(--theme-accent,#1f4e78); margin: 0 0 4px 0; }
 .lp-muted { color: #6b7280; font-size: 12px; }
 .lp-headline { display: flex; gap: 18px; margin: 20px 0; }
 .lp-headline > div {

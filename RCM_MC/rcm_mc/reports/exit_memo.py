@@ -40,8 +40,8 @@ from ..portfolio.portfolio_snapshots import list_snapshots
 # ── Shared palette (matches partner brief + dashboard) ──
 _PALETTE = {
     "bg": "#FAFAFA", "card": "#FFFFFF", "border": "#E5E7EB",
-    "text": "#111827", "muted": "#6B7280", "accent": "var(--theme-accent,#1F4E78)",
-    "green": "#10B981", "amber": "#F59E0B", "red": "#EF4444",
+    "text": "#111827", "muted": "#6B7280", "accent": "var(--theme-accent,#1f4e78)",
+    "green": "var(--theme-positive,#10b981)", "amber": "var(--theme-warning,#f59e0b)", "red": "var(--theme-negative,#ef4444)",
 }
 
 
@@ -281,8 +281,8 @@ def _render_risk_factors(snapshot: pd.Series) -> str:
 
 _CSS = """
 :root { --bg: #FAFAFA; --card: #FFFFFF; --border: #E5E7EB;
-        --text: #111827; --muted: #6B7280; --accent: var(--theme-accent,#1F4E78);
-        --green: #10B981; --amber: #F59E0B; --red: #EF4444; }
+        --text: #111827; --muted: #6B7280; --accent: var(--theme-accent,#1f4e78);
+        --green: var(--theme-positive,#10b981); --amber: var(--theme-warning,#f59e0b); --red: var(--theme-negative,#ef4444); }
 * { box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
        margin: 0; padding: 2rem; background: var(--bg); color: var(--text); }

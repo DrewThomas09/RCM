@@ -508,22 +508,22 @@ def _try_the_tool_quickstart() -> str:
          "Healthy reference hospital",
          "Baseline profile — denial rate ~4%, A/R ~42 days. "
          "Run this first to see a clean output.",
-         "BASELINE", "#10B981"),
+         "BASELINE", "var(--theme-positive,#10b981)"),
         ("hospital_02_denial_heavy", "Denial-heavy outpatient",
          "High audit-recovery opportunity",
          "Denial rate ~20%, systematic-misses drive the bridge. "
          "Shows denial prediction + counterfactual in action.",
-         "OPPORTUNITY", "#F59E0B"),
+         "OPPORTUNITY", "var(--theme-warning,#f59e0b)"),
         ("hospital_07_waterfall_concordant", "QoR concordant",
          "Low-divergence reference",
          "Management revenue agrees with claims-side accrual within "
          "IMMATERIAL threshold — clean QoE target.",
-         "CLEAN QoR", "#10B981"),
+         "CLEAN QoR", "var(--theme-positive,#10b981)"),
         ("hospital_08_waterfall_critical", "QoR critical divergence",
          "7% revenue overstatement — walkaway candidate",
          "Management revenue overstates claims-side accrual by ~7%. "
          "Triggers CRITICAL QoR + IC walkaway memo.",
-         "CRITICAL", "#EF4444"),
+         "CRITICAL", "var(--theme-negative,#ef4444)"),
     ]
     base_qs = (
         "&deal_name=Demo+Target&specialty=HOSPITAL&states=TX"

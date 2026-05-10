@@ -124,7 +124,7 @@ body.dashboard-v2 { margin:0; padding:0; background:#0a0e17; color:#e2e8f0;
 .grade-C { background:var(--theme-warning,#f59e0b); color:#fff; }
 .grade-D { background:var(--theme-negative,#ef4444); color:#fff; }
 .dash-actions { display:flex; gap:8px; margin-bottom:20px; }
-.dash-actions a { background:#1f4e78; color:#fff; padding:8px 16px;
+.dash-actions a { background:var(--theme-accent,#1f4e78); color:#fff; padding:8px 16px;
   border-radius:3px; text-decoration:none; font-weight:600; font-size:13px; }
 .dash-actions a:hover { background:#2563eb; }
 .dash-empty { text-align:center; padding:40px; color:#94a3b8; }

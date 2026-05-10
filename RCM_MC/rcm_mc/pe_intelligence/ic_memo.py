@@ -325,10 +325,10 @@ def render_html(review: PartnerReview) -> str:
 
 def _rec_color_html(rec: str) -> str:
     return {
-        "PASS": "#EF4444",
-        "PROCEED_WITH_CAVEATS": "#F59E0B",
-        "PROCEED": "#10B981",
-        "STRONG_PROCEED": "var(--theme-accent,#1F4E78)",
+        "PASS": "var(--theme-negative,#ef4444)",
+        "PROCEED_WITH_CAVEATS": "var(--theme-warning,#f59e0b)",
+        "PROCEED": "var(--theme-positive,#10b981)",
+        "STRONG_PROCEED": "var(--theme-accent,#1f4e78)",
     }.get(rec, "inherit")
 
 

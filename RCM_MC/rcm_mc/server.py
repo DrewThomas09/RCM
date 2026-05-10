@@ -179,8 +179,8 @@ def _render_health_sparkline(
     # Band-colored dot at the newest point
     last_score = series[-1][1]
     last_color = (
-        "#10B981" if last_score >= 80 else
-        "#F59E0B" if last_score >= 50 else "#EF4444"
+        "var(--theme-positive,#10b981)" if last_score >= 80 else
+        "var(--theme-warning,#f59e0b)" if last_score >= 50 else "var(--theme-negative,#ef4444)"
     )
     # 80 and 50 threshold lines for visual reference
     y80, y50 = _y(80), _y(50)
@@ -188,12 +188,12 @@ def _render_health_sparkline(
         f'<svg width="{width}" height="{height}" '
         f'style="display: block; margin-top: 0.3rem;">'
         f'<line x1="{pad}" x2="{width - pad}" y1="{y80:.1f}" y2="{y80:.1f}" '
-        f'stroke="#10B981" stroke-width="1" stroke-dasharray="2,3" '
+        f'stroke="var(--theme-positive,#10b981)" stroke-width="1" stroke-dasharray="2,3" '
         f'opacity="0.5"/>'
         f'<line x1="{pad}" x2="{width - pad}" y1="{y50:.1f}" y2="{y50:.1f}" '
-        f'stroke="#EF4444" stroke-width="1" stroke-dasharray="2,3" '
+        f'stroke="var(--theme-negative,#ef4444)" stroke-width="1" stroke-dasharray="2,3" '
         f'opacity="0.5"/>'
-        f'<polyline fill="none" stroke="var(--theme-accent,#1F4E78)" stroke-width="1.5" '
+        f'<polyline fill="none" stroke="var(--theme-accent,#1f4e78)" stroke-width="1.5" '
         f'stroke-linejoin="round" points="{pts}"/>'
         f'<circle cx="{_x(n - 1):.1f}" cy="{_y(last_score):.1f}" r="3" '
         f'fill="{last_color}"/>'
@@ -921,7 +921,7 @@ def _render_deal_notes(store: PortfolioStore, deal_id: str) -> str:
 def _inject_live_banner(dashboard_html: str) -> str:
     """Insert a small 'Live • auto-refreshing' banner at the top of the dashboard."""
     banner = (
-        '<div style="background: #FEF3C7; border: 1px solid #F59E0B; '
+        '<div style="background: #FEF3C7; border: 1px solid var(--theme-warning,#f59e0b); '
         'border-radius: 6px; padding: 0.4rem 0.75rem; margin-bottom: 1rem; '
         'font-size: 0.82rem; color: #92400E; display: flex; '
         'justify-content: space-between; align-items: center;">'
@@ -1149,9 +1149,9 @@ def _render_ebitda_sparkline(var_df, width: int = 600, height: int = 180) -> str
         return height - pad - ((v - vmin) / (vmax - vmin)) * chart_h
 
     sev_color = {
-        "on_track":  "#10B981",
-        "lagging":   "#F59E0B",
-        "off_track": "#EF4444",
+        "on_track":  "var(--theme-positive,#10b981)",
+        "lagging":   "var(--theme-warning,#f59e0b)",
+        "off_track": "var(--theme-negative,#ef4444)",
     }
 
     # Build polyline paths
@@ -1204,7 +1204,7 @@ def _render_ebitda_sparkline(var_df, width: int = 600, height: int = 180) -> str
         f'<line x1="{pad}" y1="{height - pad}" x2="{width - pad}" '
         f'y2="{height - pad}" stroke="#E5E7EB" stroke-width="1"/>'
         f'{plan_path}'
-        f'<polyline points="{actual_pts}" fill="none" stroke="var(--theme-accent,#1F4E78)" stroke-width="2.5"/>'
+        f'<polyline points="{actual_pts}" fill="none" stroke="var(--theme-accent,#1f4e78)" stroke-width="2.5"/>'
         f'{dots}'
         f'{labels}'
         f'{y_labels}'
@@ -4510,7 +4510,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "start_url": "/",
                 "display": "standalone",
                 "background_color": "#0F172A",
-                "theme_color": "var(--theme-accent,#1F4E78)",
+                "theme_color": "var(--theme-accent,#1f4e78)",
             }
             body = _json.dumps(manifest, indent=2).encode("utf-8")
             self.send_response(HTTPStatus.OK)

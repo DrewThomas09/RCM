@@ -92,7 +92,7 @@ body.wizard { margin:0; padding:0; background:#0a0e17; color:#e2e8f0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
   font-size: 14px; line-height: 1.5; }
 .wizard .skip-link { position:absolute; left:16px; top:-48px; z-index:1000;
-  background:#1f4e78; color:#fff; padding:10px 14px; border-radius:4px;
+  background:var(--theme-accent,#1f4e78); color:#fff; padding:10px 14px; border-radius:4px;
   text-decoration:none; font-weight:600; }
 .wizard .skip-link:focus { top:16px; }
 .wizard .wrap { max-width:960px; margin:0 auto; padding:32px 24px; }
@@ -100,8 +100,8 @@ body.wizard { margin:0; padding:0; background:#0a0e17; color:#e2e8f0;
   font-size: 11px; text-transform:uppercase; letter-spacing:.08em; }
 .wizard .steps .step { padding:6px 12px; border:1px solid #1e293b;
   border-radius:3px; color:#64748b; }
-.wizard .steps .step.active { background:#1f4e78; color:#fff;
-  border-color:#1f4e78; }
+.wizard .steps .step.active { background:var(--theme-accent,#1f4e78); color:#fff;
+  border-color:var(--theme-accent,#1f4e78); }
 .wizard h1 { font-size: 22px; font-weight:600; margin: 0 0 6px; }
 .wizard .sub { color:#94a3b8; margin-bottom: 24px; font-size: 13px; }
 .wizard .card { background:#111827; border:1px solid #1e293b;
@@ -120,7 +120,7 @@ body.wizard { margin:0; padding:0; background:#0a0e17; color:#e2e8f0;
   padding:8px 12px; font-size:14px; border-radius:3px;
   font-family:inherit; width:100%; box-sizing:border-box; }
 .wizard input[type=file] { color:#e2e8f0; padding:8px 0; }
-.wizard .btn { background:#1f4e78; color:#fff; border:none;
+.wizard .btn { background:var(--theme-accent,#1f4e78); color:#fff; border:none;
   padding:10px 18px; border-radius:3px; cursor:pointer;
   font-weight:600; font-size:13px; }
 .wizard .btn.secondary { background:#0f172a; border:1px solid #1e293b;

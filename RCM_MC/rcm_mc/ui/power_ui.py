@@ -80,23 +80,23 @@ def benchmark_chip(
     if peer_low is not None and peer_high is not None:
         if higher_is_better:
             if value >= peer_high:
-                color = "#10B981"
+                color = "var(--theme-positive,#10b981)"
                 verdict = f"above {band_str}"
             elif value <= peer_low:
-                color = "#EF4444"
+                color = "var(--theme-negative,#ef4444)"
                 verdict = f"below {band_str}"
             else:
-                color = "#F59E0B"
+                color = "var(--theme-warning,#f59e0b)"
                 verdict = f"inside {band_str}"
         else:
             if value <= peer_low:
-                color = "#10B981"
+                color = "var(--theme-positive,#10b981)"
                 verdict = f"better than {band_str}"
             elif value >= peer_high:
-                color = "#EF4444"
+                color = "var(--theme-negative,#ef4444)"
                 verdict = f"worse than {band_str}"
             else:
-                color = "#F59E0B"
+                color = "var(--theme-warning,#f59e0b)"
                 verdict = f"inside {band_str}"
 
     lbl_html = ""
@@ -137,10 +137,10 @@ def interpret_callout(
     the reader absorbs the verdict before reading the words.
     """
     tone_colors = {
-        "info": "var(--theme-accent,#1F4E78)",
-        "good": "#10B981",
-        "warn": "#F59E0B",
-        "bad": "#EF4444",
+        "info": "var(--theme-accent,#1f4e78)",
+        "good": "var(--theme-positive,#10b981)",
+        "warn": "var(--theme-warning,#f59e0b)",
+        "bad": "var(--theme-negative,#ef4444)",
     }
     border = tone_colors.get(tone, tone_colors["info"])
     return (

@@ -232,9 +232,9 @@ def _sparkline(
     if abs(delta) < abs(v_max) * 0.02:
         color = "#94a3b8"                 # flat
     elif (delta > 0) == higher_is_better:
-        color = "#10B981"                 # improving
+        color = "var(--theme-positive,#10b981)"                 # improving
     else:
-        color = "#EF4444"                 # deteriorating
+        color = "var(--theme-negative,#ef4444)"                 # deteriorating
     path_d = "M " + " L ".join(pts)
     # Latest-value marker dot
     last_x, last_y = pts[-1].split(",")
@@ -316,11 +316,11 @@ def _box_plot(
         tx = x(target_value)
         # Color: green if target better than median per polarity
         if target_value > p75:
-            color = "#10B981" if higher_is_better else "#EF4444"
+            color = "var(--theme-positive,#10b981)" if higher_is_better else "var(--theme-negative,#ef4444)"
         elif target_value < p25:
-            color = "#EF4444" if higher_is_better else "#10B981"
+            color = "var(--theme-negative,#ef4444)" if higher_is_better else "var(--theme-positive,#10b981)"
         else:
-            color = "#F59E0B"
+            color = "var(--theme-warning,#f59e0b)"
         target_mark = (
             f'<polygon points="'
             f'{tx:.1f},{mid_y - 7} '

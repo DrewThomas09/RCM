@@ -245,8 +245,8 @@ def digest_to_html(payload: DigestPayload, *,
             "alert":    ("#fef2f2", "#991b1b"),
             "warn":     ("#fffbeb", "#92400e"),
             "positive": ("#f0fdf4", "#065f46"),
-            "neutral":  ("#f0f6fc", "var(--theme-accent,#1F4E78)"),
-        }.get(tone, ("#f0f6fc", "var(--theme-accent,#1F4E78)"))
+            "neutral":  ("#f0f6fc", "var(--theme-accent,#1f4e78)"),
+        }.get(tone, ("#f0f6fc", "var(--theme-accent,#1f4e78)"))
         href = (base_url + (ins.get("href") or "#")) if base_url else ""
         link_open = (f'<a href="{_html.escape(href)}" '
                      f'style="color:{fg};text-decoration:none;">'

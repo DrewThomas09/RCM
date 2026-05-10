@@ -36,9 +36,9 @@ from ...data_public.distress_models import (
 
 
 _BAND_COLORS = {
-    "safe":        PALETTE.get("positive", "#10B981"),
-    "watch":       PALETTE.get("warning", "#F59E0B"),
-    "distressed":  PALETTE.get("negative", "#EF4444"),
+    "safe":        PALETTE.get("positive", "var(--theme-positive,#10b981)"),
+    "watch":       PALETTE.get("warning", "var(--theme-warning,#f59e0b)"),
+    "distressed":  PALETTE.get("negative", "var(--theme-negative,#ef4444)"),
     "critical":    "#7C1D1D",
 }
 
@@ -218,7 +218,7 @@ def render_distress(
     band_filter_chips = ""
     for b in ["all", "critical", "distressed", "watch", "safe"]:
         active = b == band_filter
-        color = _BAND_COLORS.get(b, "#666") if b != "all" else "var(--theme-accent,#1F4E78)"
+        color = _BAND_COLORS.get(b, "#666") if b != "all" else "var(--theme-accent,#1f4e78)"
         bg = color if active else "transparent"
         fg = "#fff" if active else color
         label = "All" if b == "all" else _BAND_LABELS.get(b, b)
@@ -272,7 +272,7 @@ def render_distress(
     table_html = (
         '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
         '<thead>'
-        '<tr style="background:#f5f1ea;border-bottom:2px solid var(--theme-accent,#1F4E78);">'
+        '<tr style="background:#f5f1ea;border-bottom:2px solid var(--theme-accent,#1f4e78);">'
         '<th style="padding:8px;text-align:left;font-size:10px;letter-spacing:0.08em;'
         'text-transform:uppercase;color:#666;">CCN</th>'
         '<th style="padding:8px;text-align:left;font-size:10px;letter-spacing:0.08em;'
@@ -306,7 +306,7 @@ def render_distress(
 
     methodology = (
         '<details style="margin-top:18px;font-size:11px;color:#666;">'
-        '<summary style="cursor:pointer;font-weight:600;color:var(--theme-accent,#1F4E78);">'
+        '<summary style="cursor:pointer;font-weight:600;color:var(--theme-accent,#1f4e78);">'
         'Methodology &amp; proxied inputs</summary>'
         '<div style="padding:8px 0;line-height:1.5;">'
         '<p><b>Altman Z\' (1983 private-firm)</b> = '
