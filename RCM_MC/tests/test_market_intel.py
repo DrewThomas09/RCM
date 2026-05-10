@@ -210,7 +210,11 @@ class NavTest(unittest.TestCase):
     def test_market_intel_link_in_sidebar(self):
         from rcm_mc.ui._chartis_kit import chartis_shell
         rendered = chartis_shell("<p>x</p>", "Test")
-        self.assertIn('href="/market-intel"', rendered)
+        # Market Intel is reachable from chartis_shell via the Cmd+K
+        # command palette. The v3 editorial rework moved sub-routes
+        # from sidebar hrefs into the palette JSON, so the assertion
+        # checks the route path rather than a specific anchor.
+        self.assertIn("/market-intel", rendered)
 
 
 # ────────────────────────────────────────────────────────────────────

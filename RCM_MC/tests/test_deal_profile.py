@@ -107,7 +107,13 @@ class ProfilePageTests(unittest.TestCase):
     def test_nav_link_in_sidebar(self):
         from rcm_mc.ui._chartis_kit import chartis_shell
         rendered = chartis_shell("<p>x</p>", "Test")
-        self.assertIn('href="/diligence/deal"', rendered)
+        # Deal Profile is reachable from chartis_shell via the Cmd+K
+        # command palette (every analytic surface is registered in
+        # _DEFAULT_PALETTE_MODULES). The exact rendered shape changed
+        # from a sidebar href to a palette JSON entry as part of the
+        # v3 editorial rework, so we assert the route path rather
+        # than a specific anchor attribute.
+        self.assertIn("/diligence/deal", rendered)
 
 
 class AnalyticMappingTests(unittest.TestCase):
