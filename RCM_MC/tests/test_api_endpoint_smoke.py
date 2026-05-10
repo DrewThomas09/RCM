@@ -458,6 +458,96 @@ class APIEndpointSmoke(unittest.TestCase):
             f"{bad}",
         )
 
+    def test_session_cookie_is_httponly_and_samesite(self) -> None:
+        """The ``rcm_session`` cookie must be ``HttpOnly`` (XSS
+        can't steal it via document.cookie) and carry
+        ``SameSite=Lax`` (mitigates CSRF on top-level navigations).
+
+        The companion ``rcm_csrf`` cookie must be ``SameSite=Lax``
+        but explicitly NOT ``HttpOnly`` — it has to be JS-readable
+        so the auto-injected form patcher can put the token in a
+        hidden input. This is the documented design.
+        """
+        anon = urllib.request.build_opener(_NoFollow())
+        # Trigger login to capture Set-Cookie header.
+        body = urllib.parse.urlencode({
+            "username": "demo",
+            "password": "DemoPass!1",
+            "csrf_token": "",
+        }).encode()
+        try:
+            anon.open(self.base + "/login", timeout=5).read()
+        except Exception:
+            pass
+        try:
+            anon.open(
+                urllib.request.Request(
+                    self.base + "/api/login",
+                    data=body, method="POST",
+                ),
+                timeout=5,
+            )
+        except urllib.error.HTTPError as e:
+            # A bad-CSRF login replies 403, but Set-Cookie still
+            # carries the rcm_csrf seed. We accept any code that
+            # surfaces the cookies.
+            if e.code not in (200, 303, 401, 403):
+                raise
+
+        # /api/login replies 303 on success — must NOT follow the
+        # redirect, otherwise we capture headers from the GET /
+        # follow-up (which is 401 with no Set-Cookie). Use the
+        # no-follow opener and read its first response directly.
+        req = urllib.request.Request(
+            self.base + "/api/login", data=body, method="POST",
+        )
+        try:
+            resp = anon.open(req, timeout=5)
+            headers = resp.headers if resp else None
+        except urllib.error.HTTPError as e:
+            headers = e.headers
+        self.assertIsNotNone(
+            headers,
+            "login response had no headers (no-follow opener "
+            "returned None)",
+        )
+        set_cookies = headers.get_all("Set-Cookie") or []
+        session = next(
+            (c for c in set_cookies if c.startswith("rcm_session=")),
+            None,
+        )
+        csrf = next(
+            (c for c in set_cookies if c.startswith("rcm_csrf=")),
+            None,
+        )
+        self.assertIsNotNone(
+            session,
+            f"no rcm_session Set-Cookie on login response "
+            f"(headers: {set_cookies})",
+        )
+        self.assertIsNotNone(
+            csrf,
+            f"no rcm_csrf Set-Cookie on login response "
+            f"(headers: {set_cookies})",
+        )
+        # Required flags on the session cookie.
+        for flag in ("HttpOnly", "SameSite=Lax"):
+            self.assertIn(
+                flag, session,
+                f"rcm_session cookie missing {flag!r}: {session!r}",
+            )
+        # CSRF cookie: SameSite=Lax yes, HttpOnly intentionally no.
+        self.assertIn(
+            "SameSite=Lax", csrf,
+            f"rcm_csrf cookie missing SameSite=Lax: {csrf!r}",
+        )
+        self.assertNotIn(
+            "HttpOnly", csrf,
+            f"rcm_csrf cookie unexpectedly HttpOnly — the auto "
+            f"form-patcher needs to read it via document.cookie: "
+            f"{csrf!r}",
+        )
+
     def test_state_changing_posts_reject_without_csrf(self) -> None:
         """Every documented state-changing POST must reject
         authenticated requests that lack a valid CSRF token (403)
