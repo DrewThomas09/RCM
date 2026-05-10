@@ -58,7 +58,7 @@ ALLOWED_PATHS: tuple[str, ...] = (
 # Baseline as of guard introduction. Drop this number whenever a
 # module migrates to PALETTE references; never raise without
 # justification in the commit message.
-HARDCODE_CAP = 562
+HARDCODE_CAP = 546
 
 
 class BrandHexHardcodeIsCapped(unittest.TestCase):

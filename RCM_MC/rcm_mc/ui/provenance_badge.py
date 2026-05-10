@@ -40,6 +40,8 @@ import html as _html
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
+from .brand import PALETTE
+
 
 # Icon per Source. Single-glyph Unicode keeps deployments
 # portable (no SVG asset bundling).
@@ -78,12 +80,13 @@ def _confidence_kind(conf: Optional[float]) -> str:
 
 
 def _confidence_color(conf: Optional[float]) -> str:
-    """Hex color matching the kind."""
+    """Hex color matching the kind — resolved through PALETTE so
+    the editorial light variant picks up paper-friendly hexes."""
     return {
-        "positive": "#10b981",
-        "watch": "#f59e0b",
-        "negative": "#ef4444",
-        "neutral": "#9ca3af",
+        "positive": PALETTE["positive"],
+        "watch":    PALETTE["warning"],
+        "negative": PALETTE["negative"],
+        "neutral":  "#9ca3af",
     }[_confidence_kind(conf)]
 
 

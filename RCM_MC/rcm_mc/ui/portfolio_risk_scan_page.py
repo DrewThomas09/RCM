@@ -37,6 +37,8 @@ import sqlite3
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
+from .brand import PALETTE
+
 
 def _safe_int(v: Any, default: int = 0) -> int:
     try:
@@ -348,11 +350,11 @@ def render_portfolio_risk_scan(db_path: str) -> str:
 
     if not deals:
         empty = (
-            '<p>No active deals in the portfolio store yet. '
-            'Add deals via the <a href="/new-deal" '
-            'style="color:#1F4E78;">new deal wizard</a> or import '
-            'via <a href="/import" style="color:#1F4E78;">Quick '
-            'import</a>, then this scan will populate.</p>'
+            f'<p>No active deals in the portfolio store yet. '
+            f'Add deals via the <a href="/new-deal" '
+            f'style="color:{PALETTE["brand_accent"]};">new deal wizard</a> or import '
+            f'via <a href="/import" style="color:{PALETTE["brand_accent"]};">Quick '
+            f'import</a>, then this scan will populate.</p>'
         )
         body = (
             _wc.web_styles()
@@ -368,25 +370,25 @@ def render_portfolio_risk_scan(db_path: str) -> str:
     # Color legend — tells a first-time user what each chip means
     # before they have to hover or click to discover it.
     legend = (
-        '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;'
-        'margin:12px 0 4px;padding:10px 12px;background:#fafbfc;'
-        'border:1px solid #f3f4f6;border-radius:6px;'
-        'font-size:11px;color:#6b7280;">'
-        '<span style="font-weight:600;color:#374151;'
-        'text-transform:uppercase;letter-spacing:0.05em;">Key</span>'
-        '<span><span style="display:inline-block;width:10px;height:10px;'
-        'background:#10b981;border-radius:50%;margin-right:6px;'
-        'vertical-align:middle;"></span>safe / fresh / excellent</span>'
-        '<span><span style="display:inline-block;width:10px;height:10px;'
-        'background:#f59e0b;border-radius:50%;margin-right:6px;'
-        'vertical-align:middle;"></span>tight / stale / fair</span>'
-        '<span><span style="display:inline-block;width:10px;height:10px;'
-        'background:#ef4444;border-radius:50%;margin-right:6px;'
-        'vertical-align:middle;"></span>tripped / cold / poor / overdue</span>'
-        '<span><span style="display:inline-block;width:10px;height:10px;'
-        'background:#d1d5db;border-radius:50%;margin-right:6px;'
-        'vertical-align:middle;"></span>no data / zero</span>'
-        '</div>'
+        f'<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;'
+        f'margin:12px 0 4px;padding:10px 12px;background:#fafbfc;'
+        f'border:1px solid #f3f4f6;border-radius:6px;'
+        f'font-size:11px;color:#6b7280;">'
+        f'<span style="font-weight:600;color:#374151;'
+        f'text-transform:uppercase;letter-spacing:0.05em;">Key</span>'
+        f'<span><span style="display:inline-block;width:10px;height:10px;'
+        f'background:{PALETTE["positive"]};border-radius:50%;margin-right:6px;'
+        f'vertical-align:middle;"></span>safe / fresh / excellent</span>'
+        f'<span><span style="display:inline-block;width:10px;height:10px;'
+        f'background:{PALETTE["warning"]};border-radius:50%;margin-right:6px;'
+        f'vertical-align:middle;"></span>tight / stale / fair</span>'
+        f'<span><span style="display:inline-block;width:10px;height:10px;'
+        f'background:{PALETTE["negative"]};border-radius:50%;margin-right:6px;'
+        f'vertical-align:middle;"></span>tripped / cold / poor / overdue</span>'
+        f'<span><span style="display:inline-block;width:10px;height:10px;'
+        f'background:#d1d5db;border-radius:50%;margin-right:6px;'
+        f'vertical-align:middle;"></span>no data / zero</span>'
+        f'</div>'
     )
 
     # Summary strip: counts across the portfolio for the 3
@@ -433,7 +435,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         deal_id = d["deal_id"]
         name_link = (
             f'<a href="/deal/{_html.escape(deal_id)}" '
-            f'style="color:#1F4E78;font-weight:500;text-decoration:none;">'
+            f'style="color:{PALETTE["brand_accent"]};font-weight:500;text-decoration:none;">'
             f'{_html.escape(d["name"])}</a>'
             f'<div style="font-family:monospace;font-size:10px;'
             f'color:#6b7280;margin-top:2px;text-transform:uppercase;">'
@@ -486,7 +488,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         '<a href="/api/portfolio/risk-scan.csv" '
         'download style="display:inline-block;margin:0 0 12px;'
         'padding:6px 12px;background:#fff;border:1px solid #d0e3f0;'
-        'color:#1F4E78;border-radius:4px;font-size:12px;'
+        f'color:{PALETTE["brand_accent"]};border-radius:4px;font-size:12px;'
         'font-weight:500;text-decoration:none;'
         'transition:background 0.1s;" '
         'onmouseover="this.style.background=\'#f0f6fc\';" '
