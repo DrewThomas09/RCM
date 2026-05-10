@@ -22,13 +22,36 @@ from datetime import date
 from typing import Any, Dict, List, Optional
 
 from ..diligence._pages import AVAILABLE_FIXTURES, _resolve_dataset
-from ._chartis_kit import P, chartis_shell, ck_panel, ck_section_intro
+from ._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_panel,
+    ck_section_header, ck_section_intro, ck_signal_badge,
+)
 
 
 _HOSPITAL_BASED_SPECIALTIES = {
     "EMERGENCY_MEDICINE", "ANESTHESIOLOGY", "RADIOLOGY",
     "PATHOLOGY", "NEONATOLOGY", "HOSPITALIST",
 }
+
+
+_FORM_CSS = f"""
+<style>
+.ic-form{{display:grid;grid-template-columns:1fr 1fr;gap:12px;
+max-width:720px;margin-top:20px;background:{P["panel"]};
+border:1px solid {P["border"]};border-radius:4px;padding:20px;}}
+.ic-form .ic-form-full{{grid-column:span 2;}}
+.ic-form label{{font-size:9px;color:{P["text_faint"]};
+letter-spacing:1.5px;text-transform:uppercase;font-weight:600;
+display:block;margin-bottom:4px;}}
+.ic-form input,.ic-form select{{width:100%;padding:6px 8px;
+background:{P["panel_alt"]};color:{P["text"]};
+border:1px solid {P["border"]};font-family:inherit;}}
+.ic-form .ic-form-submit{{grid-column:span 2;justify-self:start;
+margin-top:6px;padding:8px 20px;background:{P["accent"]};
+color:{P["panel"]};border:0;font-size:10px;letter-spacing:1.5px;
+text-transform:uppercase;font-weight:700;cursor:pointer;}}
+</style>
+"""
 
 
 def _landing() -> str:
@@ -49,21 +72,13 @@ def _landing() -> str:
         ),
         italic_word="memo",
     )
-    body = (
-        f'{intro}'
-        f'<form method="GET" action="/diligence/ic-packet" '
-        f'style="display:grid;grid-template-columns:1fr 1fr;gap:12px;'
-        f'max-width:720px;margin-top:20px;background:{P["panel"]};'
-        f'border:1px solid {P["border"]};border-radius:4px;padding:20px;">'
-        f'<div style="grid-column:span 2;">'
-        f'<label style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;font-weight:600;'
-        f'display:block;margin-bottom:4px;">Dataset</label>'
-        f'<select name="dataset" required style="width:100%;padding:6px 8px;'
-        f'background:{P["panel_alt"]};color:{P["text"]};'
-        f'border:1px solid {P["border"]};font-family:inherit;">'
+    form = (
+        '<form method="GET" action="/diligence/ic-packet" class="ic-form">'
+        '<div class="ic-form-full">'
+        '<label>Dataset</label>'
+        '<select name="dataset" required>'
         f'<option value="">— pick a CCD fixture —</option>{options}'
-        f'</select></div>'
+        '</select></div>'
     )
     for name, label, placeholder in [
         ("deal_name", "Deal name", "Project Aurora"),
@@ -77,23 +92,16 @@ def _landing() -> str:
         ("cbsa_codes", "CBSA codes (comma-sep)", ""),
         ("msas", "MSAs (comma-sep)", ""),
     ]:
-        body += (
-            f'<div><label style="font-size:9px;color:{P["text_faint"]};'
-            f'letter-spacing:1.5px;text-transform:uppercase;'
-            f'font-weight:600;display:block;margin-bottom:4px;">'
-            f'{html.escape(label)}</label>'
-            f'<input name="{name}" placeholder="{html.escape(placeholder)}" '
-            f'style="width:100%;padding:6px 8px;background:{P["panel_alt"]};'
-            f'color:{P["text"]};border:1px solid {P["border"]};'
-            f'font-family:inherit;"></div>'
+        form += (
+            f'<div><label>{html.escape(label)}</label>'
+            f'<input name="{name}" placeholder="{html.escape(placeholder)}">'
+            f'</div>'
         )
-    body += (
-        f'<button type="submit" style="grid-column:span 2;justify-self:start;'
-        f'margin-top:6px;padding:8px 20px;background:{P["accent"]};'
-        f'color:{P["panel"]};border:0;font-size:10px;letter-spacing:1.5px;'
-        f'text-transform:uppercase;font-weight:700;cursor:pointer;">'
-        f'Assemble IC Packet</button></form>'
+    form += (
+        '<button type="submit" class="ic-form-submit">'
+        'Assemble IC Packet</button></form>'
     )
+    body = f'{_FORM_CSS}{intro}' + ck_panel(form, title="Inputs")
     return chartis_shell(
         body, "RCM Diligence — IC Packet Assembler",
         subtitle="One-click IC deliverable",
@@ -190,12 +198,13 @@ def render_ic_packet_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
     try:
         ccd = ingest_dataset(ds_path)
     except Exception as exc:  # noqa: BLE001
-        return chartis_shell(
-            f'<div style="padding:24px;color:{P["negative"]};">'
-            f'Ingest failed for {html.escape(dataset)}: '
-            f'{html.escape(str(exc))}</div>',
-            "IC Packet",
+        err_intro = ck_section_intro(
+            eyebrow="IC Packet",
+            headline=f"Ingest failed for {html.escape(dataset)}.",
+            italic_word="failed",
+            body=str(exc),
         )
+        return chartis_shell(err_intro, "IC Packet")
     as_of = date(2025, 1, 1)
     try:
         bundle = compute_kpis(ccd, as_of_date=as_of, provider_id=dataset)
@@ -588,8 +597,54 @@ def render_ic_packet_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
     )
     inner_body = body_match.group(1) if body_match else html_str
     extra_css = style_match.group(1) if style_match else None
+
+    # Editorial header strip — partner sees which modules ran at a
+    # glance before scrolling into the packet itself.
+    modules_run = sum([
+        bundle is not None,
+        waterfall is not None,
+        scan is not None,
+        cfs is not None,
+        steward is not None,
+        cyber is not None,
+        bool(public_comps) or transaction_band is not None,
+        bool(autopsy_matches),
+        reg_exposure is not None,
+        bool(bear_block_html),
+    ])
+    rec_label = (meta.recommendation or "").replace("_", " ")
+    rec_tone = (
+        "negative" if "WALK" in (meta.recommendation or "")
+        else "positive" if "PROCEED" in (meta.recommendation or "")
+        else "warning"
+    )
+    runtime_header = (
+        ck_section_header(
+            "Modules assembled into this packet",
+            eyebrow="IC packet · runtime",
+        )
+        + '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Recommendation",
+            ck_signal_badge(rec_label or "—", tone=rec_tone),
+            sub="partner-set; override in the URL",
+        )
+        + ck_kpi_block("Modules run", f"{modules_run} / 10")
+        + ck_kpi_block(
+            "Bear-case",
+            "yes" if bear_block_html else "skipped",
+            sub="auto-synthesized counter-narrative",
+        )
+        + ck_kpi_block(
+            "Regulatory timeline",
+            "yes" if reg_block_html else "skipped",
+            sub="kill-date overlay attached" if reg_block_html else "no exposure data",
+        )
+        + '</div>'
+    )
+
     return chartis_shell(
-        inner_body,
+        runtime_header + inner_body,
         title=f"IC Packet — {meta.deal_name}",
         active_nav="/pe-intelligence",
         extra_css=extra_css,
@@ -605,6 +660,36 @@ def render_ic_packet_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             ),
         },
     )
+
+
+_REG_BLOCK_CSS = """
+<style>
+.ic-reg-block{page-break-before:always;padding:28px 32px;
+font-family:Georgia,serif;color:#1a1a1a;}
+.ic-reg-block .ic-reg-eyebrow{font-size:11px;letter-spacing:1.6px;
+text-transform:uppercase;color:#64748b;font-weight:600;}
+.ic-reg-block h2{font-size:22px;margin:4px 0 10px 0;}
+.ic-reg-block h3{font-size:14px;margin:16px 0 8px 0;}
+.ic-reg-block .ic-reg-verdict{padding:12px 16px;background:#f8fafc;
+border-left:4px solid var(--vcol);border-radius:0 3px 3px 0;margin:12px 0;}
+.ic-reg-block .ic-reg-verdict-label{font-size:11px;font-weight:700;
+letter-spacing:1.2px;color:var(--vcol);text-transform:uppercase;}
+.ic-reg-block .ic-reg-headline{font-size:14px;margin-top:6px;font-weight:600;}
+.ic-reg-block .ic-reg-rationale{font-size:12px;color:#475569;
+margin-top:6px;line-height:1.6;}
+.ic-reg-block table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.ic-reg-block thead tr{background:#f1f5f9;}
+.ic-reg-block th{padding:6px 10px;text-align:left;border-bottom:2px solid #cbd5e1;}
+.ic-reg-block td{padding:6px 10px;border-bottom:1px solid #e5e7eb;}
+.ic-reg-block td.mono{font-family:monospace;}
+.ic-reg-block td.tone-killed{color:#EF4444;font-weight:600;}
+.ic-reg-block td.tone-damaged{color:#F59E0B;font-weight:600;}
+.ic-reg-block td.delta-neg{color:#EF4444;}
+.ic-reg-block td.delta-pos{color:#10B981;}
+.ic-reg-block tr.ic-reg-total{border-top:2px solid #1a1a1a;font-weight:700;}
+.ic-reg-block p.ic-reg-empty{font-size:13px;color:#475569;}
+</style>
+"""
 
 
 def _render_regulatory_block(report: Any) -> str:
@@ -623,103 +708,72 @@ def _render_regulatory_block(report: Any) -> str:
     for tl in report.driver_timelines:
         if tl.worst_verdict.value == "UNAFFECTED":
             continue
-        tone = {
-            "KILLED": "#EF4444", "DAMAGED": "#F59E0B",
-        }.get(tl.worst_verdict.value, "#94a3b8")
+        tone_cls = {
+            "KILLED": "tone-killed", "DAMAGED": "tone-damaged",
+        }.get(tl.worst_verdict.value, "")
         killed_rows.append(
             f'<tr>'
-            f'<td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;">'
-            f'{html.escape(tl.driver_label)}</td>'
-            f'<td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;'
-            f'color:{tone};font-weight:600;">'
-            f'{tl.worst_verdict.value}</td>'
-            f'<td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;'
-            f'font-family:monospace;">'
-            f'{tl.first_kill_date or "—"}</td>'
-            f'<td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;">'
-            f'{tl.residual_lift_pct*100:.2f} pp of '
+            f'<td>{html.escape(tl.driver_label)}</td>'
+            f'<td class="{tone_cls}">{tl.worst_verdict.value}</td>'
+            f'<td class="mono">{tl.first_kill_date or "—"}</td>'
+            f'<td>{tl.residual_lift_pct*100:.2f} pp of '
             f'{tl.expected_lift_pct*100:.2f} pp claimed</td>'
             f'</tr>'
         )
 
     overlay_rows: List[str] = []
     for o in report.ebitda_overlay:
-        cls = "color:#EF4444;" if o.ebitda_delta_usd < 0 else "color:#10B981;"
+        delta_cls = (
+            "delta-neg" if o.ebitda_delta_usd < 0 else "delta-pos"
+        )
         overlay_rows.append(
             f'<tr>'
-            f'<td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;">'
-            f'{o.year}</td>'
-            f'<td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;'
-            f'font-family:monospace;{cls}">${o.ebitda_delta_usd:+,.0f}</td>'
-            f'<td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;'
-            f'color:#64748b;">{o.margin_delta_pp:+.2f} pp margin '
+            f'<td>{o.year}</td>'
+            f'<td class="mono {delta_cls}">${o.ebitda_delta_usd:+,.0f}</td>'
+            f'<td>{o.margin_delta_pp:+.2f} pp margin '
             f'· {len(o.driving_events)} event'
             f'{"s" if len(o.driving_events) != 1 else ""}</td>'
             f'</tr>'
         )
     total_eb = sum(o.ebitda_delta_usd for o in report.ebitda_overlay)
+    total_cls = "delta-neg" if total_eb < 0 else "delta-pos"
 
     return (
-        f'<section class="ic-section" '
-        f'style="page-break-before:always;padding:28px 32px;'
-        f'font-family:Georgia,serif;color:#1a1a1a;">'
-        f'<div style="font-size:11px;letter-spacing:1.6px;'
-        f'text-transform:uppercase;color:#64748b;'
-        f'font-weight:600;">Regulatory Calendar × Kill-Switch</div>'
-        f'<h2 style="font-size:22px;margin:4px 0 10px 0;">'
-        f'Thesis timeline — which drivers die, and when</h2>'
-        f'<div style="padding:12px 16px;background:#f8fafc;'
-        f'border-left:4px solid {verdict_color};'
-        f'border-radius:0 3px 3px 0;margin:12px 0;">'
-        f'<div style="font-size:11px;font-weight:700;letter-spacing:1.2px;'
-        f'color:{verdict_color};text-transform:uppercase;">'
-        f'Verdict: {report.verdict.value}</div>'
-        f'<div style="font-size:14px;margin-top:6px;font-weight:600;">'
-        f'{html.escape(report.headline)}</div>'
-        f'<div style="font-size:12px;color:#475569;margin-top:6px;'
-        f'line-height:1.6;">{html.escape(report.rationale)}</div>'
-        f'</div>'
+        _REG_BLOCK_CSS
+        + f'<section class="ic-reg-block ic-section" '
+        f'style="--vcol:{verdict_color};">'
+        '<div class="ic-reg-eyebrow">Regulatory Calendar × Kill-Switch</div>'
+        '<h2>Thesis timeline — which drivers die, and when</h2>'
+        '<div class="ic-reg-verdict">'
+        f'<div class="ic-reg-verdict-label">Verdict: {report.verdict.value}</div>'
+        f'<div class="ic-reg-headline">{html.escape(report.headline)}</div>'
+        f'<div class="ic-reg-rationale">{html.escape(report.rationale)}</div>'
+        '</div>'
         + (
-            f'<h3 style="font-size:14px;margin:16px 0 8px 0;">'
-            f'Impaired thesis drivers</h3>'
-            f'<table style="width:100%;border-collapse:collapse;'
-            f'font-size:12.5px;">'
-            f'<thead><tr style="background:#f1f5f9;">'
-            f'<th style="padding:6px 10px;text-align:left;'
-            f'border-bottom:2px solid #cbd5e1;">Driver</th>'
-            f'<th style="padding:6px 10px;text-align:left;'
-            f'border-bottom:2px solid #cbd5e1;">Verdict</th>'
-            f'<th style="padding:6px 10px;text-align:left;'
-            f'border-bottom:2px solid #cbd5e1;">First Kill Date</th>'
-            f'<th style="padding:6px 10px;text-align:left;'
-            f'border-bottom:2px solid #cbd5e1;">Residual Lift</th>'
+            '<h3>Impaired thesis drivers</h3>'
+            '<table>'
+            '<thead><tr>'
+            '<th>Driver</th><th>Verdict</th>'
+            '<th>First Kill Date</th><th>Residual Lift</th>'
             f'</tr></thead><tbody>{"".join(killed_rows)}</tbody></table>'
             if killed_rows else
-            '<p style="font-size:13px;color:#475569;">'
+            '<p class="ic-reg-empty">'
             'No thesis drivers impaired within the 24-month horizon.</p>'
         )
         + (
-            f'<h3 style="font-size:14px;margin:20px 0 8px 0;">'
-            f'EBITDA bridge overlay</h3>'
-            f'<table style="width:100%;border-collapse:collapse;'
-            f'font-size:12.5px;">'
-            f'<thead><tr style="background:#f1f5f9;">'
-            f'<th style="padding:6px 10px;text-align:left;'
-            f'border-bottom:2px solid #cbd5e1;">Year</th>'
-            f'<th style="padding:6px 10px;text-align:left;'
-            f'border-bottom:2px solid #cbd5e1;">EBITDA Δ (USD)</th>'
-            f'<th style="padding:6px 10px;text-align:left;'
-            f'border-bottom:2px solid #cbd5e1;">Notes</th>'
+            '<h3>EBITDA bridge overlay</h3>'
+            '<table>'
+            '<thead><tr>'
+            '<th>Year</th><th>EBITDA Δ (USD)</th><th>Notes</th>'
             f'</tr></thead><tbody>{"".join(overlay_rows)}'
-            f'<tr style="border-top:2px solid #1a1a1a;font-weight:700;">'
-            f'<td style="padding:6px 10px;">TOTAL</td>'
-            f'<td style="padding:6px 10px;font-family:monospace;'
-            f'color:{"#EF4444" if total_eb < 0 else "#10B981"};">'
-            f'${total_eb:+,.0f}</td><td></td></tr>'
-            f'</tbody></table>'
+            '<tr class="ic-reg-total">'
+            '<td>TOTAL</td>'
+            f'<td class="mono {total_cls}">${total_eb:+,.0f}</td>'
+            '<td></td></tr>'
+            '</tbody></table>'
             if overlay_rows else ''
         )
-        + f'</section>'
+        + '</section>'
     )
 
 
