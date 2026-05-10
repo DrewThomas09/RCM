@@ -100,6 +100,59 @@ class PerRouteCoverageDoesNotShrink(unittest.TestCase):
         )
 
 
+class RepresentativeRoutesAreAllDeclared(unittest.TestCase):
+    """Every route in ``REPRESENTATIVE_ROUTES`` must be declared
+    somewhere in ``rcm_mc/server.py``. Otherwise the per-route
+    compliance sweep silently skips it (status != 200), still
+    passes its assertions, and the moat develops a blind spot.
+
+    A typo'd route (e.g. ``/scennarios``) would 404 in the sweep,
+    get added to the ``skipped`` list, and the sweep would still
+    pass — leaving the impression that ``/scenarios`` is covered
+    when it isn't. This guard catches that.
+    """
+
+    def test_every_representative_route_exists_in_server(self) -> None:
+        import pathlib
+        import re
+        from tests.test_compliance_sweep_per_route import (
+            REPRESENTATIVE_ROUTES,
+        )
+
+        server_src = (
+            pathlib.Path(__file__).parent.parent
+            / "rcm_mc" / "server.py"
+        ).read_text(encoding="utf-8")
+
+        # Match ``path == "/..."`` and ``path.startswith("/...")``
+        declared: set[str] = set()
+        for m in re.finditer(
+            r'(?:path == |path\.startswith\()"(/[^"]+)"',
+            server_src,
+        ):
+            declared.add(m.group(1))
+
+        missing: list[str] = []
+        for route in REPRESENTATIVE_ROUTES:
+            if route in declared:
+                continue
+            # Allow prefix-handled routes (e.g. /diligence/checklist
+            # might dispatch via /diligence/<sub>)
+            if any(
+                route.startswith(d) and len(d) > 3
+                for d in declared
+            ):
+                continue
+            missing.append(route)
+
+        self.assertEqual(
+            missing, [],
+            f"REPRESENTATIVE_ROUTES contains routes that are NOT "
+            f"declared in server.py: {missing}. The compliance sweep "
+            f"would silently skip these as 404s, hiding the gap.",
+        )
+
+
 class APISmokeCoverageDoesNotShrink(unittest.TestCase):
     """Same pattern for the API smoke list. Removing endpoints
     silently weakens JSON-API regression coverage."""
