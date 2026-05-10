@@ -19,7 +19,10 @@ from ..diligence.physician_eu import (
     analyze_roster_eu,
 )
 from ..diligence.physician_comp.comp_ingester import Provider
-from ._chartis_kit import P, chartis_shell, ck_page_title
+from ._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_page_title, ck_panel,
+    ck_section_intro, ck_signal_badge,
+)
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
 )
@@ -241,70 +244,60 @@ def _hero(
     )
 
     kpi_row = (
-        f'<div class="peu-kpi-grid">'
-        f'<div class="peu-kpi">'
-        f'<div class="peu-kpi__label">Roster collections</div>'
-        f'<div class="peu-kpi__val" style="color:{P["text"]};">'
-        f'{coll_num}</div>'
-        f'<div class="peu-kpi__band" style="color:{P["text_faint"]};">'
-        f'{report.roster_size} providers · sum annual</div></div>'
-        f'<div class="peu-kpi">'
-        f'<div class="peu-kpi__label">Total comp</div>'
-        f'<div class="peu-kpi__val" style="color:{P["text"]};">'
-        f'{comp_num}</div>'
-        f'<div class="peu-kpi__band" style="color:{P["text_faint"]};">'
-        f'{total_comp/total_coll*100 if total_coll > 0 else 0:.1f}% '
-        f'of revenue</div></div>'
-        f'<div class="peu-kpi">'
-        f'<div class="peu-kpi__label">Aggregate contribution</div>'
-        f'<div class="peu-kpi__val" style="color:{margin_color};">'
-        f'{contrib_num}</div>'
-        f'<div class="peu-kpi__band" style="color:{margin_color};">'
-        f'{margin_num} margin · peer norm 30-40%</div></div>'
-        f'<div class="peu-kpi">'
-        f'<div class="peu-kpi__label">Loss-makers</div>'
-        f'<div class="peu-kpi__val" style="color:'
-        f'{P["negative"] if report.loss_makers_at_fmv_comp > 0 else P["warning"] if report.loss_makers_at_current_comp > 0 else P["positive"]};">'
-        f'{report.loss_makers_at_current_comp}</div>'
-        f'<div class="peu-kpi__band" style="color:{P["text_faint"]};">'
-        f'observed · {report.loss_makers_at_fmv_comp} @ FMV</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Roster collections", coll_num,
+            sub=f"{report.roster_size} providers · sum annual",
+        )
+        + ck_kpi_block(
+            "Total comp", comp_num,
+            sub=f"{total_comp/total_coll*100 if total_coll > 0 else 0:.1f}% of revenue",
+        )
+        + ck_kpi_block(
+            "Aggregate contribution", contrib_num,
+            sub=f"{margin_num} margin · peer norm 30-40%",
+        )
+        + ck_kpi_block(
+            "Loss-makers", f"{report.loss_makers_at_current_comp}",
+            sub=f"observed · {report.loss_makers_at_fmv_comp} @ FMV",
+        )
+        + '</div>'
     )
 
-    return (
-        f'<div style="padding:22px 0 16px 0;border-bottom:1px solid '
-        f'{P["border"]};margin-bottom:22px;">'
-        f'<div class="peu-eyebrow">Physician Economic Units</div>'
-        f'<div class="peu-h1">{html.escape(target_name)}</div>'
-        f'<div style="font-size:11px;color:{P["text_faint"]};margin-top:4px;">'
-        f'Per-provider P&L · {report.overhead_method.replace("_", " ")} '
-        f'overhead allocation · {report.overhead_pct*100:.0f}% of revenue</div>'
-        f'<div class="peu-callout {banner_class}">{html.escape(banner)}</div>'
-        f'<div class="peu-callout">'
-        f'<strong style="color:{P["text"]};">What this shows: </strong>'
-        f'{summary}</div>'
-        f'{kpi_row}'
-        f'</div>'
+    intro = ck_section_intro(
+        eyebrow="PHYSICIAN ECONOMIC UNITS",
+        headline=f"{html.escape(target_name)} — per-provider P&L.",
+        italic_word="per-provider",
+        body=(
+            f"{html.escape(banner)} "
+            f"Overhead allocation: {report.overhead_method.replace('_', ' ')} "
+            f"at {report.overhead_pct*100:.0f}% of revenue."
+        ),
     )
+    explainer = ck_panel(
+        f'<p class="ck-section-body"><strong>What this shows:</strong> {summary}</p>',
+        title="Methodology",
+    )
+    return f'{intro}{explainer}{kpi_row}'
 
 
 def _optimization_block(opt: RosterOptimization) -> str:
     """The partner-action block — which providers to drop + $."""
     if not opt.candidates:
-        return (
-            f'<div class="peu-callout good" style="margin-top:16px;">'
-            f'<strong>No drop candidates.</strong> All providers '
-            f'generate positive contribution when comp is restructured '
-            f'to specialty p50 FMV. No roster-level optimization '
-            f'action required — restructure over-paid providers via '
-            f'earn-out; keep the roster intact.'
-            f'</div>'
+        return ck_panel(
+            '<p class="ck-section-body">'
+            '<strong>No drop candidates.</strong> All providers '
+            'generate positive contribution when comp is restructured '
+            'to specialty p50 FMV. No roster-level optimization '
+            'action required — restructure over-paid providers via '
+            'earn-out; keep the roster intact.</p>',
+            title="Roster Optimization",
         )
 
-    conf_color = {
-        "HIGH": P["positive"], "MEDIUM": P["warning"],
-        "LOW": P["negative"],
-    }.get(opt.confidence, P["text_dim"])
+    conf_tone = {
+        "HIGH": "positive", "MEDIUM": "warning", "LOW": "negative",
+    }.get(opt.confidence, "neutral")
+    conf_badge = ck_signal_badge(html.escape(opt.confidence), tone=conf_tone)
 
     candidate_rows = []
     for c in opt.candidates:
@@ -324,66 +317,49 @@ def _optimization_block(opt: RosterOptimization) -> str:
             f'contribution ${c.contribution_usd:,.0f} @ current · '
             f'${c.fmv_neutral_contribution_usd or 0:,.0f} @ FMV</span>'
             f'</div>'
-            f'<div style="margin-top:4px;">'
+            '<p class="ck-section-body">'
             f'Collections ${c.collections_annual_usd:,.0f} · '
             f'comp ${c.total_comp_usd:,.0f} ({html.escape(fmv_text)}) · '
             f'overhead ${c.allocated_overhead_usd:,.0f}. '
-            f'Negative contribution persists even when comp is cut to '
-            f'specialty FMV — structurally uneconomic at any comp.'
-            f'</div>'
+            'Negative contribution persists even when comp is cut to '
+            'specialty FMV — structurally uneconomic at any comp.'
+            '</p>'
             f'</div>'
         )
 
-    return (
-        f'<div class="peu-opt">'
-        f'<div class="peu-eyebrow">Roster Optimization · EBITDA uplift lever</div>'
-        f'<div style="font-size:16px;color:{P["text"]};font-weight:600;'
-        f'margin-top:2px;">Drop named loss-makers at close</div>'
-        f'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));'
-        f'gap:18px;margin-top:14px;">'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:.5px;text-transform:uppercase;">EBITDA uplift</div>'
-        f'<div style="font-size:22px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-weight:700;color:{P["positive"]};">'
-        f'${opt.ebitda_uplift_usd:,.0f}</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};">'
-        f'{opt.ebitda_uplift_pct_of_roster*100:.1f}% of roster baseline</div>'
-        f'</div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:.5px;text-transform:uppercase;">Drop candidates</div>'
-        f'<div style="font-size:22px;color:{P["text"]};">'
-        f'{len(opt.candidates)}</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};">'
-        f'structurally uneconomic @ FMV</div></div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:.5px;text-transform:uppercase;">Revenue forgone</div>'
-        f'<div style="font-size:18px;color:{P["text"]};">'
-        f'${opt.total_revenue_forgone_usd:,.0f}</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};">'
-        f'collections lost at drop</div></div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:.5px;text-transform:uppercase;">Confidence</div>'
-        f'<div style="font-size:18px;color:{conf_color};font-weight:600;">'
-        f'{html.escape(opt.confidence)}</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};">'
-        f'realization likelihood</div></div>'
-        f'</div>'
-        f'<div style="margin-top:16px;">'
-        + "".join(candidate_rows) +
-        f'</div>'
-        f'<div style="margin-top:14px;padding:10px 14px;'
-        f'background:{P["panel_alt"]};border-left:2px solid '
-        f'{P["accent"]};border-radius:0 3px 3px 0;font-size:11.5px;'
-        f'color:{P["text_dim"]};line-height:1.55;max-width:880px;">'
-        f'<strong style="color:{P["text"]};">How to use: </strong>'
-        f'Quote the EBITDA uplift as an offer-shape modification in '
-        f'the bid ("our bid includes a 2-year retention structure '
+    inner = (
+        '<p class="ck-section-body">'
+        '<strong>Drop named loss-makers at close.</strong></p>'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "EBITDA uplift", f"${opt.ebitda_uplift_usd:,.0f}",
+            sub=f"{opt.ebitda_uplift_pct_of_roster*100:.1f}% of roster baseline",
+        )
+        + ck_kpi_block(
+            "Drop candidates", f"{len(opt.candidates)}",
+            sub="structurally uneconomic @ FMV",
+        )
+        + ck_kpi_block(
+            "Revenue forgone", f"${opt.total_revenue_forgone_usd:,.0f}",
+            sub="collections lost at drop",
+        )
+        + ck_kpi_block(
+            "Confidence", conf_badge,
+            sub="realization likelihood",
+        )
+        + '</div>'
+        + "".join(candidate_rows)
+        + '<p class="ck-section-body">'
+        '<strong>How to use: </strong>'
+        'Quote the EBITDA uplift as an offer-shape modification in '
+        'the bid ("our bid includes a 2-year retention structure '
         f'that drops {len(opt.candidates)} named underperformers for '
         f'a ${opt.ebitda_uplift_usd/1e6:,.1f}M EBITDA lift"). Combined '
-        f'with PPAM (who\'s likely to leave), this is the complete '
-        f'physician-portfolio optimization view.'
-        f'</div>'
-        f'</div>'
+        "with PPAM (who's likely to leave), this is the complete "
+        'physician-portfolio optimization view.</p>'
+    )
+    return ck_panel(
+        inner, title="Roster Optimization · EBITDA uplift lever",
     )
 
 
@@ -484,19 +460,15 @@ def render_physician_eu_page(
     )
 
     # Cross-link to PPAM (flight risk) and physician comp panel
-    crosslink = (
-        f'<div style="margin:14px 0;padding:12px 16px;'
-        f'background:{P["panel_alt"]};border-left:2px solid '
-        f'{P["accent"]};border-radius:0 3px 3px 0;'
-        f'font-size:11.5px;color:{P["text_dim"]};line-height:1.6;">'
-        f'<strong style="color:{P["text"]};">Related analytics: </strong>'
-        f'<a href="/diligence/physician-attrition" '
-        f'style="color:{P["accent"]};text-decoration:none;">'
-        f'Physician Attrition (PPAM) →</a> '
-        f'tells you who\'s LIKELY to leave. This page tells you who '
-        f'SHOULD leave. Together they form the complete physician-'
-        f'portfolio optimization view.'
-        f'</div>'
+    crosslink = ck_panel(
+        '<p class="ck-section-body">'
+        '<strong>Related analytics: </strong>'
+        '<a href="/diligence/physician-attrition" class="ck-link">'
+        'Physician Attrition (PPAM) →</a> '
+        "tells you who's LIKELY to leave. This page tells you who "
+        'SHOULD leave. Together they form the complete physician-'
+        'portfolio optimization view.</p>',
+        title="Cross-reference",
     )
 
     title = ck_page_title(
@@ -510,10 +482,10 @@ def render_physician_eu_page(
         + '<div class="peu-wrap">'
         + hero_and_opt
         + crosslink
-        + f'<div class="peu-section-label">'
-          f'Full roster · ranked by contribution · sortable + '
-          f'CSV export</div>'
-        + _roster_table(report)
+        + ck_panel(
+            _roster_table(report),
+            title="Full roster · ranked by contribution · sortable + CSV export",
+        )
         + '</div>'
         + bookmark_hint()
     )
