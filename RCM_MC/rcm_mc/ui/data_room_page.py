@@ -15,7 +15,9 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_kpi_block, ck_panel, ck_section_intro,
+)
 from ._glossary_link import metric_label_link
 from ._provenance_tooltip import provenance_tooltip
 from ..portfolio.store import PortfolioStore
@@ -73,22 +75,25 @@ def render_data_room(
     n_ml_only = sum(1 for c in calibrations if c.data_quality == "ml_only")
     n_total = len(calibrations)
 
-    # ── KPIs ──
+    intro = ck_section_intro(
+        eyebrow=f"DATA ROOM · CCN {_html.escape(ccn)}",
+        headline=f"{_html.escape(hospital_name)} — where seller data meets ML.",
+        italic_word="meets",
+        body=(
+            f"{n_seller} seller-confirmed · {n_ml_only} ML-only · "
+            f"{len(entries)} data points entered. Each entry triggers "
+            "Bayesian recalibration: ML priors update, confidence "
+            "intervals narrow, and the EBITDA bridge recalculates."
+        ),
+    )
     kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_total}</div>'
-        f'<div class="cad-kpi-label">Total Metrics</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-pos);">'
-        f'{n_seller}</div>'
-        f'<div class="cad-kpi-label">Seller-Confirmed</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-accent);">'
-        f'{n_ml_only}</div>'
-        f'<div class="cad-kpi-label">ML-Predicted Only</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(entries)}</div>'
-        f'<div class="cad-kpi-label">Data Points Entered</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(_METRIC_DEFINITIONS)}</div>'
-        f'<div class="cad-kpi-label">Available Metrics</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("Total Metrics", f"{n_total}")
+        + ck_kpi_block("Seller-Confirmed", f"{n_seller}")
+        + ck_kpi_block("ML-Predicted Only", f"{n_ml_only}")
+        + ck_kpi_block("Data Points Entered", f"{len(entries)}")
+        + ck_kpi_block("Available Metrics", f"{len(_METRIC_DEFINITIONS)}")
+        + '</div>'
     )
 
     # ── Data entry form ──
@@ -96,49 +101,31 @@ def render_data_room(
     for key, defn in sorted(_METRIC_DEFINITIONS.items(), key=lambda x: x[1]["label"]):
         metric_options += f'<option value="{key}">{_html.escape(defn["label"])} ({defn["unit"]})</option>'
 
-    entry_form = (
-        f'<div class="cad-card" style="border-left:3px solid var(--cad-accent);">'
-        f'<h2>Enter Seller Data</h2>'
-        f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:12px;">'
-        f'Enter actual KPIs from the seller data room. Each entry triggers Bayesian '
-        f'recalibration — our ML predictions update, confidence intervals narrow, '
-        f'and the EBITDA bridge recalculates automatically.</p>'
-        f'<form method="POST" action="/data-room/{_html.escape(ccn)}/add" '
-        f'style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">'
-        f'<div>'
-        f'<label style="font-size:11px;color:var(--cad-text3);display:block;margin-bottom:4px;">'
-        f'Metric</label>'
-        f'<select name="metric" required style="width:100%;padding:7px 10px;'
-        f'border:1px solid var(--cad-border);border-radius:4px;background:var(--cad-bg3);'
-        f'color:var(--cad-text);font-size:12px;">{metric_options}</select></div>'
-        f'<div>'
-        f'<label style="font-size:11px;color:var(--cad-text3);display:block;margin-bottom:4px;">'
-        f'Value (rates as decimal: 0.12 = 12%)</label>'
-        f'<input type="number" name="value" step="any" required '
-        f'style="width:100%;padding:7px 10px;border:1px solid var(--cad-border);border-radius:4px;'
-        f'background:var(--cad-bg3);color:var(--cad-text);font-size:12px;box-sizing:border-box;"></div>'
-        f'<div>'
-        f'<label style="font-size:11px;color:var(--cad-text3);display:block;margin-bottom:4px;">'
-        f'Sample Size (claims/months)</label>'
-        f'<input type="number" name="sample_size" value="100" min="0" '
-        f'style="width:100%;padding:7px 10px;border:1px solid var(--cad-border);border-radius:4px;'
-        f'background:var(--cad-bg3);color:var(--cad-text);font-size:12px;box-sizing:border-box;"></div>'
-        f'<div>'
-        f'<label style="font-size:11px;color:var(--cad-text3);display:block;margin-bottom:4px;">'
-        f'Source</label>'
-        f'<input type="text" name="source" placeholder="e.g. Seller Q4 2025 report" '
-        f'style="width:100%;padding:7px 10px;border:1px solid var(--cad-border);border-radius:4px;'
-        f'background:var(--cad-bg3);color:var(--cad-text);font-size:12px;box-sizing:border-box;"></div>'
-        f'<div>'
-        f'<label style="font-size:11px;color:var(--cad-text3);display:block;margin-bottom:4px;">'
-        f'Analyst</label>'
-        f'<input type="text" name="analyst" placeholder="Your initials" '
-        f'style="width:100%;padding:7px 10px;border:1px solid var(--cad-border);border-radius:4px;'
-        f'background:var(--cad-bg3);color:var(--cad-text);font-size:12px;box-sizing:border-box;"></div>'
-        f'<div style="display:flex;align-items:flex-end;">'
-        f'<button type="submit" class="cad-btn cad-btn-primary" style="width:100%;">'
-        f'Add Data Point</button></div>'
-        f'</form></div>'
+    entry_form = ck_panel(
+        '<p class="ck-section-body">'
+        'Enter actual KPIs from the seller data room. Each entry triggers Bayesian '
+        'recalibration — our ML predictions update, confidence intervals narrow, '
+        'and the EBITDA bridge recalculates automatically.</p>'
+        f'<form method="POST" action="/data-room/{_html.escape(ccn)}/add" class="dr-entry-form">'
+        '<div>'
+        '<label class="dr-entry-label">Metric</label>'
+        f'<select name="metric" required class="dr-entry-input">{metric_options}</select></div>'
+        '<div>'
+        '<label class="dr-entry-label">Value (rates as decimal: 0.12 = 12%)</label>'
+        '<input type="number" name="value" step="any" required class="dr-entry-input"></div>'
+        '<div>'
+        '<label class="dr-entry-label">Sample Size (claims/months)</label>'
+        '<input type="number" name="sample_size" value="100" min="0" class="dr-entry-input"></div>'
+        '<div>'
+        '<label class="dr-entry-label">Source</label>'
+        '<input type="text" name="source" placeholder="e.g. Seller Q4 2025 report" class="dr-entry-input"></div>'
+        '<div>'
+        '<label class="dr-entry-label">Analyst</label>'
+        '<input type="text" name="analyst" placeholder="Your initials" class="dr-entry-input"></div>'
+        '<div class="dr-entry-submit">'
+        '<button type="submit" class="cad-btn cad-btn-primary dr-entry-btn">Add Data Point</button></div>'
+        '</form>',
+        title="Enter Seller Data",
     )
 
     # Phase 4C: build a ProvenanceGraph for the calibration
@@ -235,18 +222,17 @@ def render_data_room(
             f'</tr>'
         )
 
-    cal_section = (
-        f'<div class="cad-card">'
-        f'<h2>Calibrated Metrics — ML Prediction vs Seller Data</h2>'
-        f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:10px;">'
-        f'Each metric shows three values: our ML prediction (prior), the seller\'s reported value, '
-        f'and the Bayesian posterior that blends both. With strong seller data (n &gt; 100), '
-        f'the posterior converges to seller. With weak data, it stays near the ML prediction. '
-        f'The shrinkage bar shows the weight: green = seller data, amber = ML prior.</p>'
-        f'<table class="cad-table"><thead><tr>'
-        f'<th>Metric</th><th>ML Predicted</th><th>Seller</th><th>Calibrated</th>'
-        f'<th>90% CI</th><th>Delta</th><th>Data/Prior</th><th>Source</th>'
-        f'</tr></thead><tbody>{cal_rows}</tbody></table></div>'
+    cal_section = ck_panel(
+        '<p class="ck-section-body">'
+        "Each metric shows three values: our ML prediction (prior), the seller's reported value, "
+        'and the Bayesian posterior that blends both. With strong seller data (n &gt; 100), '
+        'the posterior converges to seller. With weak data, it stays near the ML prediction. '
+        'The shrinkage bar shows the weight: green = seller data, amber = ML prior.</p>'
+        '<table class="cad-table"><thead><tr>'
+        '<th>Metric</th><th>ML Predicted</th><th>Seller</th><th>Calibrated</th>'
+        '<th>90% CI</th><th>Delta</th><th>Data/Prior</th><th>Source</th>'
+        f'</tr></thead><tbody>{cal_rows}</tbody></table>',
+        title="Calibrated Metrics — ML Prediction vs Seller Data",
     )
 
     # ── Surprises ──
@@ -255,22 +241,20 @@ def render_data_room(
         surprise_items = ""
         for label, delta, direction in sorted(surprises, key=lambda s: -abs(s[1])):
             icon = "&#9650;" if direction == "better" else "&#9660;"
-            color = "var(--cad-pos)" if direction == "better" else "var(--cad-neg)"
+            cls = "cad-pos" if direction == "better" else "cad-neg"
             surprise_items += (
-                f'<div style="display:flex;gap:8px;padding:6px 0;'
-                f'border-bottom:1px solid var(--cad-border);font-size:12.5px;">'
-                f'<span style="color:{color};">{icon}</span>'
-                f'<span style="font-weight:500;">{_html.escape(label)}</span>'
-                f'<span style="color:{color};">Seller data is {direction} than predicted '
+                '<div class="dr-surprise-row">'
+                f'<span class="{cls}">{icon}</span>'
+                f'<span><strong>{_html.escape(label)}</strong></span>'
+                f'<span class="{cls}">Seller data is {direction} than predicted '
                 f'({delta:+.1%} delta)</span></div>'
             )
-        surprise_html = (
-            f'<div class="cad-card" style="border-left:3px solid var(--cad-warn);">'
-            f'<h2>Prediction Surprises ({len(surprises)})</h2>'
-            f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:8px;">'
-            f'Metrics where seller data differs from ML prediction by &gt;15%. '
-            f'These are the diligence findings that change the investment thesis.</p>'
-            f'{surprise_items}</div>'
+        surprise_html = ck_panel(
+            '<p class="ck-section-body">'
+            'Metrics where seller data differs from ML prediction by &gt;15%. '
+            'These are the diligence findings that change the investment thesis.</p>'
+            f'{surprise_items}',
+            title=f"Prediction Surprises ({len(surprises)})",
         )
 
     # ── Entry history ──
@@ -291,12 +275,11 @@ def render_data_room(
 
     history_section = ""
     if history_rows:
-        history_section = (
-            f'<div class="cad-card">'
-            f'<h2>Entry History</h2>'
-            f'<table class="cad-table"><thead><tr>'
-            f'<th>Metric</th><th>Value</th><th>n</th><th>Source</th><th>Analyst</th><th>Date</th>'
-            f'</tr></thead><tbody>{history_rows}</tbody></table></div>'
+        history_section = ck_panel(
+            '<table class="cad-table"><thead><tr>'
+            '<th>Metric</th><th>Value</th><th>n</th><th>Source</th><th>Analyst</th><th>Date</th>'
+            f'</tr></thead><tbody>{history_rows}</tbody></table>',
+            title="Entry History",
         )
 
     # ── Bridge impact ──
@@ -321,42 +304,46 @@ def render_data_room(
             cal_uplift = bridge_cal["total_ebitda_impact"]
             delta_uplift = cal_uplift - ml_uplift
 
-            delta_color = "var(--cad-pos)" if delta_uplift > 0 else "var(--cad-neg)"
-            bridge_impact = (
-                f'<div class="cad-card" style="border-left:3px solid var(--cad-pos);">'
-                f'<h2>EBITDA Bridge Impact</h2>'
-                f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:10px;">'
-                f'Seller data changes the EBITDA bridge calculation. Current values from '
-                f'seller reports replace ML predictions in the bridge.</p>'
-                f'<div class="cad-kpi-grid" style="grid-template-columns:1fr 1fr 1fr;">'
-                f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(ml_uplift)}</div>'
-                f'<div class="cad-kpi-label">ML-Only Bridge</div></div>'
-                f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-pos);">'
-                f'{_fm(cal_uplift)}</div>'
-                f'<div class="cad-kpi-label">Calibrated Bridge</div></div>'
-                f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{delta_color};">'
-                f'{_fm(delta_uplift)}</div>'
-                f'<div class="cad-kpi-label">Delta from Seller Data</div></div>'
-                f'</div></div>'
+            bridge_impact = ck_panel(
+                '<p class="ck-section-body">'
+                'Seller data changes the EBITDA bridge calculation. Current values from '
+                'seller reports replace ML predictions in the bridge.</p>'
+                '<div class="ck-kpi-strip">'
+                + ck_kpi_block("ML-Only Bridge", _fm(ml_uplift))
+                + ck_kpi_block("Calibrated Bridge", _fm(cal_uplift))
+                + ck_kpi_block("Delta from Seller Data", _fm(delta_uplift))
+                + '</div>',
+                title="EBITDA Bridge Impact",
             )
 
     # ── Nav ──
-    nav = (
-        f'<div class="cad-card" style="display:flex;gap:8px;flex-wrap:wrap;">'
-        f'<a href="/hospital/{_html.escape(ccn)}" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Hospital Profile</a>'
-        f'<a href="/ebitda-bridge/{_html.escape(ccn)}" class="cad-btn" '
-        f'style="text-decoration:none;">EBITDA Bridge</a>'
-        f'<a href="/ic-memo/{_html.escape(ccn)}" class="cad-btn" '
-        f'style="text-decoration:none;">IC Memo</a>'
-        f'<a href="/competitive-intel/{_html.escape(ccn)}" class="cad-btn" '
-        f'style="text-decoration:none;">Competitive Intel</a>'
-        f'<a href="/ml-insights/hospital/{_html.escape(ccn)}" class="cad-btn" '
-        f'style="text-decoration:none;">ML Analysis</a>'
-        f'</div>'
+    nav = ck_panel(
+        '<p class="ck-section-body">'
+        f'<a href="/hospital/{_html.escape(ccn)}" class="cad-btn cad-btn-primary">Hospital Profile</a> '
+        f'<a href="/ebitda-bridge/{_html.escape(ccn)}" class="cad-btn">EBITDA Bridge</a> '
+        f'<a href="/ic-memo/{_html.escape(ccn)}" class="cad-btn">IC Memo</a> '
+        f'<a href="/competitive-intel/{_html.escape(ccn)}" class="cad-btn">Competitive Intel</a> '
+        f'<a href="/ml-insights/hospital/{_html.escape(ccn)}" class="cad-btn">ML Analysis</a>'
+        '</p>',
+        title="Cross-links",
     )
 
-    body = f'{kpis}{entry_form}{surprise_html}{bridge_impact}{cal_section}{history_section}{nav}'
+    dr_styles = """
+<style>
+.dr-entry-form{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.dr-entry-label{font-size:11px;color:var(--cad-text3);
+display:block;margin-bottom:4px;}
+.dr-entry-input{width:100%;padding:7px 10px;
+border:1px solid var(--cad-border);border-radius:4px;
+background:var(--cad-bg3);color:var(--cad-text);
+font-size:12px;box-sizing:border-box;}
+.dr-entry-submit{display:flex;align-items:flex-end;}
+.dr-entry-btn{width:100%;}
+.dr-surprise-row{display:flex;gap:8px;padding:6px 0;
+border-bottom:1px solid var(--cad-border);font-size:12.5px;}
+</style>
+"""
+    body = f'{dr_styles}{intro}{kpis}{entry_form}{surprise_html}{bridge_impact}{cal_section}{history_section}{nav}'
 
     return chartis_shell(
         body,
