@@ -34,7 +34,7 @@ from urllib.parse import urlencode
 
 from ..diligence._pages import AVAILABLE_FIXTURES
 from ._chartis_kit import (
-    P, chartis_shell, ck_panel,
+    P, chartis_shell, ck_eyebrow, ck_panel,
     ck_section_header, ck_section_intro, ck_signal_badge,
 )
 from .power_ui import bookmark_hint
@@ -495,10 +495,7 @@ _LANDING_JS = r"""<script>
     var deals = loadSavedDeals();
     if (deals.length === 0) {
       root.innerHTML =
-        '<div style="padding:1rem 1.25rem;background:var(--paper);' +
-        'border:1px dashed var(--border);border-radius:3px;' +
-        'color:var(--muted);font-size:.85rem;line-height:1.5;' +
-        'font-family:\'Source Serif 4\',Georgia,serif;font-style:italic;">' +
+        '<div class="ck-dp-saved-empty">' +
         'No saved deals yet. Enter a slug above to ' +
         'create your first profile — it will appear here on subsequent ' +
         'visits.</div>';
@@ -512,55 +509,32 @@ _LANDING_JS = r"""<script>
       var slug = d.slug.replace(/</g, '&lt;');
       var safeSlug = encodeURIComponent(d.slug);
       return (
-        '<div style="background:var(--bg);border:1px solid var(--paper-pure);' +
-        'border-radius:4px;padding:14px 16px;' +
-        'transition:border-color 140ms ease, box-shadow 140ms ease;" ' +
-        'onmouseover="this.style.borderColor=\'var(--muted)\';' +
-        'this.style.boxShadow=\'0 4px 14px rgba(0,0,0,0.35)\'" ' +
-        'onmouseout="this.style.borderColor=\'var(--paper-pure)\';' +
-        'this.style.boxShadow=\'none\'">' +
-        '<div style="display:flex;justify-content:space-between;' +
-        'align-items:baseline;gap:10px;margin-bottom:6px;">' +
-        '<div style="font-size:9px;color:var(--muted);letter-spacing:1.3px;' +
-        'text-transform:uppercase;font-family:\'JetBrains Mono\',monospace;">' +
-        slug + '</div>' +
-        '<div style="font-size:9px;color:var(--muted);">' +
-        fmtRelative(d.saved_at) + '</div>' +
+        '<div class="ck-dp-saved-card">' +
+        '<div class="ck-dp-saved-row">' +
+        '<div class="ck-dp-saved-slug">' + slug + '</div>' +
+        '<div class="ck-dp-saved-rel">' + fmtRelative(d.saved_at) + '</div>' +
         '</div>' +
-        '<div style="font-size:15px;color:var(--ink);font-weight:600;' +
-        'line-height:1.25;margin-bottom:8px;">' + name + '</div>' +
-        '<div style="height:4px;background:var(--ink);border-radius:2px;' +
-        'overflow:hidden;margin:8px 0 4px 0;">' +
-        '<div style="height:100%;width:' + completion + '%;' +
-        'background:' + barColor + ';"></div></div>' +
-        '<div style="font-size:10px;color:var(--muted);margin-bottom:10px;">' +
-        d.filled + ' of 24 fields · ' + completion + '% complete</div>' +
-        '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+        '<div class="ck-dp-saved-name">' + name + '</div>' +
+        '<div class="ck-dp-saved-bar">' +
+        '<div class="ck-dp-saved-bar-fill" style="width:' + completion +
+        '%;--bar-tone:' + barColor + ';"></div></div>' +
+        '<div class="ck-dp-saved-progress">' + d.filled +
+        ' of 24 fields · ' + completion + '% complete</div>' +
+        '<div class="ck-dp-saved-actions">' +
         '<a href="/diligence/deal/' + safeSlug + '" ' +
-        'style="padding:5px 10px;background:var(--teal);color:var(--bg);' +
-        'border:0;font-size:9px;letter-spacing:1.2px;' +
-        'text-transform:uppercase;font-weight:700;text-decoration:none;' +
-        'border-radius:3px;">Open</a>' +
+        'class="ck-dp-saved-btn">Open</a>' +
         '<button type="button" data-rcm-duplicate="' + safeSlug + '" ' +
-        'style="padding:5px 10px;background:transparent;color:var(--teal);' +
-        'border:1px solid var(--paper-pure);font-size:9px;letter-spacing:1.2px;' +
-        'text-transform:uppercase;font-weight:600;cursor:pointer;' +
-        'border-radius:3px;">Duplicate</button>' +
+        'class="ck-dp-saved-btn-secondary">Duplicate</button>' +
         '<button type="button" data-rcm-delete="' + safeSlug + '" ' +
-        'style="padding:5px 10px;background:transparent;color:var(--red);' +
-        'border:1px solid var(--paper-pure);font-size:9px;letter-spacing:1.2px;' +
-        'text-transform:uppercase;font-weight:600;cursor:pointer;' +
-        'border-radius:3px;">Delete</button>' +
+        'class="ck-dp-saved-btn-danger">Delete</button>' +
         '</div></div>'
       );
     }).join('');
     root.innerHTML =
-      '<div style="font-size:10px;color:var(--muted);' +
-      'letter-spacing:1.5px;text-transform:uppercase;font-weight:700;' +
-      'margin-bottom:10px;">Your saved deals · ' + deals.length +
-      ' local profile' + (deals.length === 1 ? '' : 's') + '</div>' +
-      '<div style="display:grid;grid-template-columns:' +
-      'repeat(auto-fill,minmax(240px,1fr));gap:10px;">' + cards + '</div>';
+      '<div class="ck-dp-saved-header">Your saved deals · ' +
+      deals.length + ' local profile' +
+      (deals.length === 1 ? '' : 's') + '</div>' +
+      '<div class="ck-dp-saved-grid">' + cards + '</div>';
   }
 
   document.addEventListener('DOMContentLoaded', render);
@@ -601,123 +575,157 @@ _LANDING_JS = r"""<script>
 
 _DP_STYLES = f"""
 <style>
-.dp-slug-form{{max-width:480px;}}
-.dp-recent-deals{{margin-top:1.75rem;max-width:960px;}}
-.dp-tool-chip{{font-size:8px;letter-spacing:.5px;text-transform:uppercase;
+.ck-dp-slug-form{{max-width:480px;}}
+.ck-dp-recent-deals{{margin-top:1.75rem;max-width:960px;}}
+.ck-dp-tool-chip{{font-size:8px;letter-spacing:.5px;text-transform:uppercase;
 color:{P["text_faint"]};background:{P["panel_alt"]};padding:1px 5px;
 border-radius:2px;margin-right:3px;}}
-.dp-input{{width:100%;padding:6px 8px;background:{P["panel_alt"]};
+.ck-dp-input{{width:100%;padding:6px 8px;background:{P["panel_alt"]};
 color:{P["text"]};border:1px solid {P["border"]};
 font-family:inherit;font-size:11px;}}
-.dp-field-label{{font-size:9px;color:{P["text_faint"]};letter-spacing:1px;
+.ck-dp-field-label{{font-size:9px;color:{P["text_faint"]};letter-spacing:1px;
 text-transform:uppercase;font-weight:600;display:block;margin-bottom:3px;}}
-.dp-field-chips{{margin-top:3px;line-height:1.5;}}
-.dp-form{{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 16px;
+.ck-dp-field-chips{{margin-top:3px;line-height:1.5;}}
+.ck-dp-form{{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 16px;
 background:{P["panel"]};border:1px solid {P["border"]};border-radius:4px;
 padding:16px 20px;margin-bottom:24px;}}
-.dp-form-actions{{grid-column:span 3;display:flex;gap:10px;align-items:center;
+.ck-dp-form-actions{{grid-column:span 3;display:flex;gap:10px;align-items:center;
 margin-top:6px;}}
-.dp-btn-save{{padding:8px 18px;background:{P["accent"]};color:{P["panel"]};
+.ck-dp-btn-save{{padding:8px 18px;background:{P["accent"]};color:{P["panel"]};
 border:0;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
 font-weight:700;cursor:pointer;}}
-.dp-btn-clear{{padding:8px 18px;background:transparent;color:{P["text_dim"]};
+.ck-dp-btn-clear{{padding:8px 18px;background:transparent;color:{P["text_dim"]};
 border:1px solid {P["border"]};font-size:10px;letter-spacing:1.5px;
 text-transform:uppercase;font-weight:600;cursor:pointer;}}
-.dp-saved-at{{font-size:10px;color:{P["text_faint"]};margin-left:10px;letter-spacing:.5px;}}
-.dp-card{{display:block;background:{P["panel"]};border:1px solid {P["border"]};
+.ck-dp-saved-at{{font-size:10px;color:{P["text_faint"]};margin-left:10px;letter-spacing:.5px;}}
+.ck-dp-card{{display:block;background:{P["panel"]};border:1px solid {P["border"]};
 border-radius:4px;padding:14px 16px;text-decoration:none;
 transition:transform 140ms ease,border-color 140ms ease,box-shadow 140ms ease;}}
-.dp-card:hover{{transform:translateY(-1px);border-color:{P["text_faint"]};
+.ck-dp-card:hover{{transform:translateY(-1px);border-color:{P["text_faint"]};
 box-shadow:0 6px 18px rgba(0,0,0,0.30);}}
-.dp-card-head{{display:flex;justify-content:space-between;align-items:baseline;
+.ck-dp-card-head{{display:flex;justify-content:space-between;align-items:baseline;
 margin-bottom:6px;}}
-.dp-card-title{{font-size:13px;color:{P["text"]};font-weight:600;letter-spacing:-.1px;}}
-.dp-card-badge{{font-size:8px;letter-spacing:1.1px;text-transform:uppercase;
+.ck-dp-card-title{{font-size:13px;color:{P["text"]};font-weight:600;letter-spacing:-.1px;}}
+.ck-dp-card-badge{{font-size:8px;letter-spacing:1.1px;text-transform:uppercase;
 color:{P["text_faint"]};background:{P["panel_alt"]};padding:2px 6px;
 border-radius:2px;font-weight:700;}}
-.dp-card-detail{{font-size:11px;color:{P["text_dim"]};line-height:1.55;}}
-.dp-card-preview{{font-size:10px;color:{P["text_faint"]};margin-top:8px;
+.ck-dp-card-detail{{font-size:11px;color:{P["text_dim"]};line-height:1.55;}}
+.ck-dp-card-preview{{font-size:10px;color:{P["text_faint"]};margin-top:8px;
 font-family:"JetBrains Mono",monospace;letter-spacing:.3px;word-break:break-all;}}
-.dp-phase-section{{margin-bottom:22px;}}
-.dp-phase-head{{display:flex;align-items:baseline;gap:12px;
+.ck-dp-phase-section{{margin-bottom:22px;}}
+.ck-dp-phase-head{{display:flex;align-items:baseline;gap:12px;
 margin-bottom:10px;padding-left:10px;border-left:3px solid {P["text_dim"]};}}
-.dp-phase-label{{font-size:11px;color:{P["text"]};font-weight:700;
+.ck-dp-phase-label{{font-size:11px;color:{P["text"]};font-weight:700;
 letter-spacing:1.2px;text-transform:uppercase;}}
-.dp-phase-subtitle{{font-size:10px;color:{P["text_faint"]};font-style:italic;}}
-.dp-phase-spacer{{flex:1;}}
-.dp-phase-count{{font-size:10px;color:{P["text_faint"]};
+.ck-dp-phase-subtitle{{font-size:10px;color:{P["text_faint"]};font-style:italic;}}
+.ck-dp-phase-spacer{{flex:1;}}
+.ck-dp-phase-count{{font-size:10px;color:{P["text_faint"]};
 letter-spacing:1px;font-variant-numeric:tabular-nums;}}
-.dp-card-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}}
-.dp-thesis-card{{margin-bottom:20px;background:{P["panel"]};
+.ck-dp-card-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}}
+.ck-dp-thesis-card{{margin-bottom:20px;background:{P["panel"]};
 border:1px solid {P["border"]};border-radius:4px;padding:18px 22px;
 position:relative;overflow:hidden;}}
-.dp-thesis-card::before{{content:"";position:absolute;top:0;left:0;right:0;
+.ck-dp-thesis-card::before{{content:"";position:absolute;top:0;left:0;right:0;
 height:2px;background:linear-gradient(90deg,{P["accent"]},{P["positive"]});}}
-.dp-thesis-head{{display:flex;justify-content:space-between;
+.ck-dp-thesis-head{{display:flex;justify-content:space-between;
 align-items:baseline;margin-bottom:14px;}}
-.dp-thesis-eyebrow{{font-size:10px;color:{P["text_faint"]};
+.ck-dp-thesis-eyebrow{{font-size:10px;color:{P["text_faint"]};
 letter-spacing:1.5px;text-transform:uppercase;font-weight:700;}}
-.dp-thesis-narrative{{font-size:13px;color:{P["text_dim"]};
+.ck-dp-thesis-narrative{{font-size:13px;color:{P["text_dim"]};
 line-height:1.55;margin-top:4px;max-width:720px;}}
-.dp-thesis-badge{{font-size:9px;letter-spacing:1.3px;text-transform:uppercase;
+.ck-dp-thesis-badge{{font-size:9px;letter-spacing:1.3px;text-transform:uppercase;
 font-weight:700;color:{P["text_faint"]};border:1px solid {P["border"]};
 padding:3px 10px;border-radius:3px;}}
-.dp-thesis-tiles{{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+.ck-dp-thesis-tiles{{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
 gap:14px;margin-bottom:14px;}}
-.dp-thesis-tile-label{{font-size:9px;color:{P["text_faint"]};
+.ck-dp-thesis-tile-label{{font-size:9px;color:{P["text_faint"]};
 letter-spacing:1.4px;text-transform:uppercase;font-weight:600;margin-bottom:4px;}}
-.dp-thesis-tile-val{{font-size:22px;color:{P["text"]};font-weight:700;
+.ck-dp-thesis-tile-val{{font-size:22px;color:{P["text"]};font-weight:700;
 font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;}}
-.dp-thesis-tile-sub{{font-size:10px;color:{P["text_faint"]};margin-top:2px;}}
-.dp-thesis-struct{{margin-top:6px;}}
-.dp-thesis-struct-head{{display:flex;justify-content:space-between;
+.ck-dp-thesis-tile-sub{{font-size:10px;color:{P["text_faint"]};margin-top:2px;}}
+.ck-dp-thesis-struct{{margin-top:6px;}}
+.ck-dp-thesis-struct-head{{display:flex;justify-content:space-between;
 align-items:baseline;margin-bottom:5px;}}
-.dp-thesis-struct-label{{font-size:9px;color:{P["text_faint"]};
+.ck-dp-thesis-struct-label{{font-size:9px;color:{P["text_faint"]};
 letter-spacing:1.4px;text-transform:uppercase;font-weight:600;}}
-.dp-thesis-struct-legend{{font-size:10px;color:{P["text_faint"]};
+.ck-dp-thesis-struct-legend{{font-size:10px;color:{P["text_faint"]};
 font-family:"JetBrains Mono",monospace;}}
-.dp-thesis-struct-bar{{height:8px;background:{P["panel_alt"]};
+.ck-dp-thesis-struct-bar{{height:8px;background:{P["panel_alt"]};
 border-radius:4px;overflow:hidden;display:flex;}}
-.dp-thesis-equity-bar{{height:100%;width:0%;background:{P["positive"]};
+.ck-dp-thesis-equity-bar{{height:100%;width:0%;background:{P["positive"]};
 transition:width 250ms ease;}}
-.dp-thesis-debt-bar{{height:100%;width:0%;background:{P["warning"]};
+.ck-dp-thesis-debt-bar{{height:100%;width:0%;background:{P["warning"]};
 transition:width 250ms ease;}}
-.dp-market-card{{margin-bottom:20px;background:{P["panel"]};
+.ck-dp-market-card{{margin-bottom:20px;background:{P["panel"]};
 border:1px solid {P["border"]};border-radius:4px;padding:16px 20px;
 position:relative;overflow:hidden;display:none;}}
-.dp-market-card::before{{content:"";position:absolute;top:0;left:0;right:0;
+.ck-dp-market-card::before{{content:"";position:absolute;top:0;left:0;right:0;
 height:2px;background:linear-gradient(90deg,{P["accent"]},{P["warning"]});}}
-.dp-market-head{{display:flex;justify-content:space-between;
+.ck-dp-market-head{{display:flex;justify-content:space-between;
 align-items:baseline;margin-bottom:10px;gap:12px;}}
-.dp-market-eyebrow{{font-size:10px;color:{P["text_faint"]};
+.ck-dp-market-eyebrow{{font-size:10px;color:{P["text_faint"]};
 letter-spacing:1.5px;text-transform:uppercase;font-weight:700;}}
-.dp-market-summary{{font-size:12.5px;color:{P["text_dim"]};
+.ck-dp-market-summary{{font-size:12.5px;color:{P["text_dim"]};
 line-height:1.6;margin-top:4px;max-width:720px;}}
-.dp-market-assessment{{font-size:10px;letter-spacing:1.3px;
+.ck-dp-market-assessment{{font-size:10px;letter-spacing:1.3px;
 text-transform:uppercase;font-weight:700;padding:4px 10px;
 border:1px solid currentColor;border-radius:3px;
 color:{P["text_faint"]};white-space:nowrap;}}
-.dp-market-tiles{{display:grid;
+.ck-dp-market-tiles{{display:grid;
 grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
 gap:12px;margin-top:6px;}}
-.dp-market-tile-label{{font-size:9px;color:{P["text_faint"]};
+.ck-dp-market-tile-label{{font-size:9px;color:{P["text_faint"]};
 letter-spacing:1.3px;text-transform:uppercase;font-weight:600;margin-bottom:3px;}}
-.dp-market-tile-val{{font-size:20px;color:{P["text"]};font-weight:700;
+.ck-dp-market-tile-val{{font-size:20px;color:{P["text"]};font-weight:700;
 font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;}}
-.dp-market-tile-sub{{font-size:9.5px;color:{P["text_faint"]};margin-top:2px;}}
-.dp-market-peers{{font-size:12px;color:{P["text"]};line-height:1.5;
+.ck-dp-market-tile-sub{{font-size:9.5px;color:{P["text_faint"]};margin-top:2px;}}
+.ck-dp-market-peers{{font-size:12px;color:{P["text"]};line-height:1.5;
 font-family:"JetBrains Mono",monospace;}}
-.dp-lifecycle{{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap;}}
-.dp-life-seg{{flex:1;padding:12px 14px;background:{P["panel"]};
+.ck-dp-lifecycle{{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap;}}
+.ck-dp-life-seg{{flex:1;padding:12px 14px;background:{P["panel"]};
 border:1px solid {P["border"]};border-left:3px solid {P["text_dim"]};
 border-radius:4px;position:relative;}}
-.dp-life-seg-head{{display:flex;justify-content:space-between;
+.ck-dp-life-seg-head{{display:flex;justify-content:space-between;
 align-items:baseline;margin-bottom:2px;}}
-.dp-life-seg-num{{font-size:9px;color:{P["text_faint"]};letter-spacing:1.2px;
+.ck-dp-life-seg-num{{font-size:9px;color:{P["text_faint"]};letter-spacing:1.2px;
 font-family:"JetBrains Mono",monospace;font-weight:700;}}
-.dp-life-seg-count{{font-size:9px;color:{P["text_faint"]};letter-spacing:1px;}}
-.dp-life-seg-label{{font-size:11.5px;color:{P["text"]};font-weight:700;letter-spacing:.2px;}}
-.dp-life-seg-subtitle{{font-size:10px;color:{P["text_faint"]};line-height:1.4;margin-top:2px;}}
+.ck-dp-life-seg-count{{font-size:9px;color:{P["text_faint"]};letter-spacing:1px;}}
+.ck-dp-life-seg-label{{font-size:11.5px;color:{P["text"]};font-weight:700;letter-spacing:.2px;}}
+.ck-dp-life-seg-subtitle{{font-size:10px;color:{P["text_faint"]};line-height:1.4;margin-top:2px;}}
+.ck-dp-saved-empty{{padding:1rem 1.25rem;background:var(--paper);
+border:1px dashed var(--border);border-radius:3px;color:var(--muted);
+font-size:.85rem;line-height:1.5;
+font-family:"Source Serif 4",Georgia,serif;font-style:italic;}}
+.ck-dp-saved-header{{font-size:10px;color:var(--muted);letter-spacing:1.5px;
+text-transform:uppercase;font-weight:700;margin-bottom:10px;}}
+.ck-dp-saved-grid{{display:grid;
+grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;}}
+.ck-dp-saved-card{{background:var(--bg);border:1px solid var(--paper-pure);
+border-radius:4px;padding:14px 16px;
+transition:border-color 140ms ease, box-shadow 140ms ease;}}
+.ck-dp-saved-card:hover{{border-color:var(--muted);
+box-shadow:0 4px 14px rgba(0,0,0,0.35);}}
+.ck-dp-saved-row{{display:flex;justify-content:space-between;
+align-items:baseline;gap:10px;margin-bottom:6px;}}
+.ck-dp-saved-slug{{font-size:9px;color:var(--muted);letter-spacing:1.3px;
+text-transform:uppercase;font-family:"JetBrains Mono",monospace;}}
+.ck-dp-saved-rel{{font-size:9px;color:var(--muted);}}
+.ck-dp-saved-name{{font-size:15px;color:var(--ink);font-weight:600;
+line-height:1.25;margin-bottom:8px;}}
+.ck-dp-saved-bar{{height:4px;background:var(--ink);border-radius:2px;
+overflow:hidden;margin:8px 0 4px 0;}}
+.ck-dp-saved-bar-fill{{height:100%;background:var(--bar-tone, var(--muted));}}
+.ck-dp-saved-progress{{font-size:10px;color:var(--muted);margin-bottom:10px;}}
+.ck-dp-saved-actions{{display:flex;gap:6px;flex-wrap:wrap;}}
+.ck-dp-saved-btn,.ck-dp-saved-btn-secondary,.ck-dp-saved-btn-danger
+{{padding:5px 10px;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;
+font-weight:700;border-radius:3px;}}
+.ck-dp-saved-btn{{background:var(--teal);color:var(--bg);border:0;
+text-decoration:none;}}
+.ck-dp-saved-btn-secondary{{background:transparent;color:var(--teal);
+border:1px solid var(--paper-pure);cursor:pointer;font-weight:600;}}
+.ck-dp-saved-btn-danger{{background:transparent;color:var(--red);
+border:1px solid var(--paper-pure);cursor:pointer;font-weight:600;}}
 </style>
 """
 
@@ -739,7 +747,7 @@ def _landing_slugs() -> str:
         ),
     )
     form_inner = (
-        '<form class="dp-slug-form" '
+        '<form class="ck-dp-slug-form" '
         'onsubmit="const slug = this.slug.value.trim().toLowerCase()'
         ".replace(/[^a-z0-9-]/g, '-'); if (slug) "
         'window.location.href = \'/diligence/deal/\' + slug; return false;">'
@@ -758,7 +766,7 @@ def _landing_slugs() -> str:
         _DP_STYLES
         + intro
         + ck_panel(form_inner, title="New profile")
-        + '<div data-rcm-recent-deals class="dp-recent-deals"></div>'
+        + '<div data-rcm-recent-deals class="ck-dp-recent-deals"></div>'
         + f'{_LANDING_JS}'
     )
     return chartis_shell(
@@ -780,12 +788,12 @@ def _render_form(slug: str, seed_values: Dict[str, str]) -> str:
     for key, label, placeholder, input_type, tools in _FIELDS:
         seeded = html.escape(seed_values.get(key, ""), quote=True)
         chips = "".join(
-            f'<span class="dp-tool-chip">{html.escape(t)}</span>'
+            f'<span class="ck-dp-tool-chip">{html.escape(t)}</span>'
             for t in tools
         )
         if input_type == "select" and key == "dataset":
             input_html = (
-                f'<select name="{key}" data-rcm-deal-field="{key}" class="dp-input">'
+                f'<select name="{key}" data-rcm-deal-field="{key}" class="ck-dp-input">'
                 f'<option value="">— none —</option>{fixture_options}'
                 '</select>'
             )
@@ -793,25 +801,25 @@ def _render_form(slug: str, seed_values: Dict[str, str]) -> str:
             input_html = (
                 f'<input name="{key}" data-rcm-deal-field="{key}" '
                 f'placeholder="{html.escape(placeholder, quote=True)}" '
-                f'value="{seeded}" class="dp-input">'
+                f'value="{seeded}" class="ck-dp-input">'
             )
         fields_html.append(
-            '<div class="dp-field">'
-            f'<label class="dp-field-label">{html.escape(label)}</label>'
+            '<div class="ck-dp-field">'
+            f'<label class="ck-dp-field-label">{html.escape(label)}</label>'
             f'{input_html}'
-            f'<div class="dp-field-chips">{chips}</div>'
+            f'<div class="ck-dp-field-chips">{chips}</div>'
             '</div>'
         )
     return (
         f'<form data-rcm-deal-form data-rcm-deal-slug="{html.escape(slug)}" '
-        f'class="dp-form">'
+        f'class="ck-dp-form">'
         f'{"".join(fields_html)}'
-        '<div class="dp-form-actions">'
-        '<button type="button" data-rcm-deal-save class="dp-btn-save">'
+        '<div class="ck-dp-form-actions">'
+        '<button type="button" data-rcm-deal-save class="ck-dp-btn-save">'
         'Save Profile</button>'
-        '<button type="button" data-rcm-deal-clear class="dp-btn-clear">'
+        '<button type="button" data-rcm-deal-clear class="ck-dp-btn-clear">'
         'Clear</button>'
-        '<span data-rcm-deal-saved-at class="dp-saved-at"></span>'
+        '<span data-rcm-deal-saved-at class="ck-dp-saved-at"></span>'
         '</div></form>'
     )
 
@@ -869,13 +877,13 @@ def _analytic_card(slug: str, a: Dict[str, Any]) -> str:
         f'data-rcm-deal-href-base="{html.escape(a["href"], quote=True)}" '
         f'data-rcm-deal-params="{html.escape(params_json, quote=True)}" '
         f'data-rcm-deal-slug="{html.escape(slug)}" '
-        f'href="{html.escape(a["href"])}" class="dp-card">'
-        '<div class="dp-card-head">'
-        f'<div class="dp-card-title">{html.escape(a["label"])}</div>'
+        f'href="{html.escape(a["href"])}" class="ck-dp-card">'
+        '<div class="ck-dp-card-head">'
+        f'<div class="ck-dp-card-title">{html.escape(a["label"])}</div>'
         f'{badge_html}'
         '</div>'
-        f'<div class="dp-card-detail">{html.escape(a["detail"])}</div>'
-        '<div data-rcm-deal-preview class="dp-card-preview"></div>'
+        f'<div class="ck-dp-card-detail">{html.escape(a["detail"])}</div>'
+        '<div data-rcm-deal-preview class="ck-dp-card-preview"></div>'
         '</a>'
     )
 
@@ -910,7 +918,7 @@ def _render_analytics_grid(slug: str) -> str:
                 html.escape(meta["subtitle"]) or html.escape(meta["label"]),
                 eyebrow=eyebrow,
             )
-            + '<div class="dp-card-grid">'
+            + '<div class="ck-dp-card-grid">'
             + "".join(tile_htmls) +
             '</div>'
         )
@@ -921,38 +929,38 @@ def _render_thesis_snapshot(slug: str) -> str:
     """The visual investment story — live-updated from localStorage."""
     def _tile(attr: str, label: str, sub_attr: str) -> str:
         return (
-            '<div class="dp-thesis-tile">'
-            f'<div class="dp-thesis-tile-label">{label}</div>'
-            f'<div data-{attr} class="dp-thesis-tile-val">—</div>'
-            f'<div class="dp-thesis-tile-sub" data-{sub_attr}></div>'
+            '<div class="ck-dp-thesis-tile">'
+            f'<div class="ck-dp-thesis-tile-label">{label}</div>'
+            f'<div data-{attr} class="ck-dp-thesis-tile-val">—</div>'
+            f'<div class="ck-dp-thesis-tile-sub" data-{sub_attr}></div>'
             '</div>'
         )
     return (
-        '<div data-rcm-thesis-snapshot class="dp-thesis-card">'
-        '<div class="dp-thesis-head">'
+        '<div data-rcm-thesis-snapshot class="ck-dp-thesis-card">'
+        '<div class="ck-dp-thesis-head">'
         '<div>'
-        '<div class="dp-thesis-eyebrow">Investment Thesis</div>'
-        '<div class="dp-thesis-narrative" data-rcm-thesis-narrative>'
+        + ck_eyebrow("Investment Thesis")
+        + '<div class="ck-dp-thesis-narrative" data-rcm-thesis-narrative>'
         'Enter deal parameters below to populate the thesis snapshot.'
         '</div>'
         '</div>'
-        '<div data-rcm-thesis-badge class="dp-thesis-badge">Awaiting inputs</div>'
+        '<div data-rcm-thesis-badge class="ck-dp-thesis-badge">Awaiting inputs</div>'
         '</div>'
-        '<div class="dp-thesis-tiles">'
+        '<div class="ck-dp-thesis-tiles">'
         + _tile("rcm-thesis-ev", "Enterprise value", "rcm-thesis-ev-sub")
         + _tile("rcm-thesis-revenue", "Revenue Y0", "rcm-thesis-rev-sub")
         + _tile("rcm-thesis-ebitda", "EBITDA Y0", "rcm-thesis-margin-sub")
         + _tile("rcm-thesis-multiple", "Entry EV / EBITDA", "rcm-thesis-mult-sub")
         + '</div>'
-        '<div class="dp-thesis-struct">'
-        '<div class="dp-thesis-struct-head">'
-        '<div class="dp-thesis-struct-label">Capital structure</div>'
-        '<div class="dp-thesis-struct-legend" data-rcm-thesis-struct-legend>'
+        '<div class="ck-dp-thesis-struct">'
+        '<div class="ck-dp-thesis-struct-head">'
+        '<div class="ck-dp-thesis-struct-label">Capital structure</div>'
+        '<div class="ck-dp-thesis-struct-legend" data-rcm-thesis-struct-legend>'
         '— equity · — debt</div>'
         '</div>'
-        '<div class="dp-thesis-struct-bar">'
-        '<div data-rcm-thesis-equity-bar class="dp-thesis-equity-bar"></div>'
-        '<div data-rcm-thesis-debt-bar class="dp-thesis-debt-bar"></div>'
+        '<div class="ck-dp-thesis-struct-bar">'
+        '<div data-rcm-thesis-equity-bar class="ck-dp-thesis-equity-bar"></div>'
+        '<div data-rcm-thesis-debt-bar class="ck-dp-thesis-debt-bar"></div>'
         '</div></div></div>'
     )
 
@@ -964,33 +972,34 @@ def _render_market_context(slug: str) -> str:
     fields.  Surfaces target-vs-peer multiple delta + named top peers
     + sentiment + assessment band."""
     return (
-        '<div data-rcm-market-context class="dp-market-card">'
-        '<div class="dp-market-head">'
+        '<div data-rcm-market-context class="ck-dp-market-card">'
+        '<div class="ck-dp-market-head">'
         '<div>'
-        '<div class="dp-market-eyebrow">Market Context · live from public comps</div>'
-        '<div data-rcm-market-summary class="dp-market-summary"></div>'
+        + ck_eyebrow("Market Context · live from public comps")
+        +
+        '<div data-rcm-market-summary class="ck-dp-market-summary"></div>'
         '</div>'
-        '<div data-rcm-market-assessment class="dp-market-assessment">—</div>'
+        '<div data-rcm-market-assessment class="ck-dp-market-assessment">—</div>'
         '</div>'
-        '<div class="dp-market-tiles">'
+        '<div class="ck-dp-market-tiles">'
         '<div>'
-        '<div class="dp-market-tile-label">Target implied</div>'
-        '<div data-rcm-market-target-mult class="dp-market-tile-val">—</div>'
-        '<div class="dp-market-tile-sub">EV / EBITDA</div>'
-        '</div>'
-        '<div>'
-        '<div class="dp-market-tile-label">Peer median</div>'
-        '<div data-rcm-market-peer-median class="dp-market-tile-val">—</div>'
-        '<div class="dp-market-tile-sub" data-rcm-market-band-range></div>'
+        '<div class="ck-dp-market-tile-label">Target implied</div>'
+        '<div data-rcm-market-target-mult class="ck-dp-market-tile-val">—</div>'
+        '<div class="ck-dp-market-tile-sub">EV / EBITDA</div>'
         '</div>'
         '<div>'
-        '<div class="dp-market-tile-label">Delta vs peer</div>'
-        '<div data-rcm-market-delta class="dp-market-tile-val">—</div>'
-        '<div class="dp-market-tile-sub">turns of EBITDA</div>'
+        '<div class="ck-dp-market-tile-label">Peer median</div>'
+        '<div data-rcm-market-peer-median class="ck-dp-market-tile-val">—</div>'
+        '<div class="ck-dp-market-tile-sub" data-rcm-market-band-range></div>'
         '</div>'
         '<div>'
-        '<div class="dp-market-tile-label">Closest peers</div>'
-        '<div data-rcm-market-peers class="dp-market-peers">—</div>'
+        '<div class="ck-dp-market-tile-label">Delta vs peer</div>'
+        '<div data-rcm-market-delta class="ck-dp-market-tile-val">—</div>'
+        '<div class="ck-dp-market-tile-sub">turns of EBITDA</div>'
+        '</div>'
+        '<div>'
+        '<div class="ck-dp-market-tile-label">Closest peers</div>'
+        '<div data-rcm-market-peers class="ck-dp-market-peers">—</div>'
         '</div>'
         '</div></div>'
     )
@@ -1016,18 +1025,18 @@ def _render_lifecycle_ribbon(slug: str) -> str:
         tone_color = P.get(meta["tone"], P["text_dim"])
         count = per_phase.get(phase, 0)
         segments.append(
-            f'<div data-rcm-phase="{phase}" class="dp-life-seg" '
+            f'<div data-rcm-phase="{phase}" class="ck-dp-life-seg" '
             f'style="border-left-color:{tone_color};">'
-            '<div class="dp-life-seg-head">'
-            f'<div class="dp-life-seg-num">{i + 1:02d}</div>'
-            f'<div class="dp-life-seg-count">{count} '
+            '<div class="ck-dp-life-seg-head">'
+            f'<div class="ck-dp-life-seg-num">{i + 1:02d}</div>'
+            f'<div class="ck-dp-life-seg-count">{count} '
             f'{"analytic" if count == 1 else "analytics"}</div>'
             '</div>'
-            f'<div class="dp-life-seg-label">{html.escape(meta["label"])}</div>'
-            f'<div class="dp-life-seg-subtitle">{html.escape(meta["subtitle"])}</div>'
+            f'<div class="ck-dp-life-seg-label">{html.escape(meta["label"])}</div>'
+            f'<div class="ck-dp-life-seg-subtitle">{html.escape(meta["subtitle"])}</div>'
             '</div>'
         )
-    return f'<div class="dp-lifecycle">{"".join(segments)}</div>'
+    return f'<div class="ck-dp-lifecycle">{"".join(segments)}</div>'
 
 
 def _inline_js(slug: str) -> str:
