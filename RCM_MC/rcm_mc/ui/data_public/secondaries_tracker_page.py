@@ -151,7 +151,7 @@ def render_secondaries_tracker(params: dict = None) -> str:
     pos = P["positive"]; acc = P["accent"]; neg = P["negative"]
 
     kpi_strip = (
-        ck_kpi_block("GP-Led 2024", f"${r.total_gp_led_volume_2024_b:.0f}B", "", "") +
+        ck_kpi_block("GP-Led 2024", f"${r.total_gp_led_volume_2024_b:.2f}B", "", "") +
         ck_kpi_block("Single-Asset CV Share", f"{r.single_asset_cv_share_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Avg NAV Discount", f"{r.typical_nav_premium_discount_pct * 100:+.1f}%", "", "") +
         ck_kpi_block("Active Transactions", str(len(r.transactions)), "", "") +
@@ -188,8 +188,8 @@ def render_secondaries_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Active GP-Led Deal Calendar</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Market Trends 2020-2024</div>{tr_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Secondaries Thesis:</strong> GP-led market has grown from ~$48B (2020) to ~$98B (2024);
-    single-asset CVs now dominate 52% of GP-led volume vs 22% in 2020. Average NAV discount {r.typical_nav_premium_discount_pct * 100:+.1f}% across the sample set.
+    <strong style="color:{text}">Secondaries Thesis:</strong> GP-led market has grown from ~$48.00B (2020) to ~$98.00B (2024);
+    single-asset CVs now dominate 52.0% of GP-led volume vs 22.0% in 2020. Average NAV discount {r.typical_nav_premium_discount_pct * 100:+.1f}% across the sample set.
     Healthcare is ~28% of total GP-led activity — dialysis, HCIT/SaaS, behavioral, specialty pharmacy leading sectors.
     CV structures allow sponsors to extend hold on winning assets while providing existing LPs liquidity optionality (roll/sell/strip).
     Fairness opinions now standard; LPAC consent required for {lpac_required} of {len(r.conflicts)} material conflict areas.

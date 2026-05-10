@@ -166,7 +166,7 @@ def render_diligence_vendors(params: dict = None) -> str:
     <strong style="color:{text}">Vendor Directory Thesis:</strong> 30 active vendors across 14 categories; ${r.total_spend_ltm_mm:,.2f}M spend LTM at average NPS {r.avg_nps}.
     Tier 1 partners (A&M, FTI, Chartis, Kirkland, Ropes) carry premium pricing but deliver on-time at 92-95%.
     Mid-market QoE firms (BDO, CohnReznick) offer 40-60% cost savings for lower-mid deals with comparable quality.
-    Pipeline of 7 new vendors in vetting; highest-likelihood adds: Charles River Associates (regulatory) at 78%, WTW (HR/benefits, switch from Aon) at 68%, Riveron (QoE alternative to A&M) at 65%.
+    Pipeline of 7 new vendors in vetting; highest-likelihood adds: Charles River Associates (regulatory) at 78.0%, WTW (HR/benefits, switch from Aon) at 68.0%, Riveron (QoE alternative to A&M) at 65.0%.
     Deep diligence phase (pre-SPA) is primary spend concentration at ${r.phase_spend[1].typical_spend_mm:,.2f}M over 6 weeks with 6+ concurrent workstreams.
   </div>
 </div>"""

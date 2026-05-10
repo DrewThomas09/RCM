@@ -84,7 +84,7 @@ def _quality_table(pools) -> str:
 def _sims_table(sims) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
-    cols = [("Scenario","left"),("Top 10% ($k)","right"),("Median ($k)","right"),("Bottom 10% ($k)","right"),
+    cols = [("Scenario","left"),("Top 10.0% ($k)","right"),("Median ($k)","right"),("Bottom 10.0% ($k)","right"),
             ("Total Pool ($M)","right"),("Retention","right"),("Recruit Score","right")]
     ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
     trs = []
@@ -155,9 +155,9 @@ def _pool_stacked_svg(sims) -> str:
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 26}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">ret {s.retention_projected_pct * 100:.1f}%</text>'
         )
     legend = (
-        f'<rect x="10" y="{h - 18}" width="10" height="10" fill="{pos}"/><text x="24" y="{h - 9}" fill="{text_dim}" font-size="9" font-family="JetBrains Mono,monospace">top 10%</text>'
+        f'<rect x="10" y="{h - 18}" width="10" height="10" fill="{pos}"/><text x="24" y="{h - 9}" fill="{text_dim}" font-size="9" font-family="JetBrains Mono,monospace">top 10.0%</text>'
         f'<rect x="90" y="{h - 18}" width="10" height="10" fill="{acc}"/><text x="104" y="{h - 9}" fill="{text_dim}" font-size="9" font-family="JetBrains Mono,monospace">median</text>'
-        f'<rect x="170" y="{h - 18}" width="10" height="10" fill="{text_dim}"/><text x="184" y="{h - 9}" fill="{text_dim}" font-size="9" font-family="JetBrains Mono,monospace">bottom 10%</text>'
+        f'<rect x="170" y="{h - 18}" width="10" height="10" fill="{text_dim}"/><text x="184" y="{h - 9}" fill="{text_dim}" font-size="9" font-family="JetBrains Mono,monospace">bottom 10.0%</text>'
     )
     return (f'<svg viewBox="0 0 {w} {h}" width="100%" style="max-width:{w}px" xmlns="http://www.w3.org/2000/svg">'
             f'<rect width="{w}" height="{h}" fill="{bg}"/>{"".join(bars)}{legend}'

@@ -139,7 +139,7 @@ def _load_corpus() -> List[dict]:
 def _build_models() -> List[CompPlanModel]:
     return [
         CompPlanModel(
-            plan_type="100% Base Salary (W-2)",
+            plan_type="100.0% Base Salary (W-2)",
             base_salary_pct=1.00, productivity_bonus_pct=0,
             quality_bonus_pct=0, call_pay_pct=0, signing_bonus_pct=0.05,
             ramp_period_months=6,
@@ -235,9 +235,9 @@ def _build_quality_pools() -> List[QualityPool]:
                     0.04, "Currently 72hr median"),
         QualityPool("Care Gap Closure", 0.15, "<5 open gaps per 1000 = full",
                     0.05, "Currently 12 per 1000"),
-        QualityPool("Follow-up Compliance", 0.10, "88%+ = full", 0.03, "Currently 78%"),
-        QualityPool("Medication Adherence (PDC)", 0.05, ">80% PDC = full", 0.02, "Currently 74%"),
-        QualityPool("Readmission Rate", 0.05, "<benchmark = full", 0.02, "Currently 11%"),
+        QualityPool("Follow-up Compliance", 0.10, "88.0%+ = full", 0.03, "Currently 78.0%"),
+        QualityPool("Medication Adherence (PDC)", 0.05, ">80.0% PDC = full", 0.02, "Currently 74.0%"),
+        QualityPool("Readmission Rate", 0.05, "<benchmark = full", 0.02, "Currently 11.0%"),
     ]
 
 
