@@ -31,6 +31,7 @@ import logging
 import threading
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
+from .brand import PALETTE
 
 logger = logging.getLogger(__name__)
 
@@ -108,11 +109,11 @@ body.wizard { margin:0; padding:0; background:#0a0e17; color:#e2e8f0;
 .wizard .match-card { background:#0f172a; border:1px solid #1e293b;
   padding:12px 14px; margin-bottom:8px; cursor:pointer;
   border-radius:3px; transition:border-color 0.1s; }
-.wizard .match-card:hover { border-color:#3b82f6; }
-.wizard .match-card:focus-visible { border-color:#3b82f6; outline:3px solid #3b82f6; outline-offset:2px; }
+.wizard .match-card:hover { border-color:var(--theme-accent,#3b82f6); }
+.wizard .match-card:focus-visible { border-color:var(--theme-accent,#3b82f6); outline:3px solid var(--theme-accent,#3b82f6); outline-offset:2px; }
 .wizard .match-name { font-weight:600; }
 .wizard .match-meta { color:#94a3b8; font-size:12px; margin-top:2px; }
-.wizard .match-conf { float:right; color:#10b981;
+.wizard .match-conf { float:right; color:var(--theme-positive,#10b981);
   font-family: "JetBrains Mono", monospace; }
 .wizard input[type=text], .wizard input[type=number], .wizard input[type=search] {
   background:#0f172a; color:#e2e8f0; border:1px solid #1e293b;
@@ -136,15 +137,15 @@ body.wizard { margin:0; padding:0; background:#0a0e17; color:#e2e8f0;
 .wizard .gap-row { display:grid; grid-template-columns:40px 1fr;
   gap:10px; padding:6px 0; border-bottom:1px solid #1e293b;
   font-size:12px; }
-.wizard .gap-rank { color:#f59e0b; font-family: "JetBrains Mono", monospace; }
+.wizard .gap-rank { color:var(--theme-warning,#f59e0b); font-family: "JetBrains Mono", monospace; }
 .wizard .gap-why { color:#94a3b8; font-size:11px; margin-top:2px; }
 .wizard .bar { background:#0f172a; height:6px; border-radius:3px;
   overflow:hidden; margin-top:6px; }
-.wizard .bar > div { background:#10b981; height:100%; }
-.wizard .grade-A { color:#10b981; }
-.wizard .grade-B { color:#3b82f6; }
-.wizard .grade-C { color:#f59e0b; }
-.wizard .grade-D { color:#ef4444; }
+.wizard .bar > div { background:var(--theme-positive,#10b981); height:100%; }
+.wizard .grade-A { color:var(--theme-positive,#10b981); }
+.wizard .grade-B { color:var(--theme-accent,#3b82f6); }
+.wizard .grade-C { color:var(--theme-warning,#f59e0b); }
+.wizard .grade-D { color:var(--theme-negative,#ef4444); }
 .wizard .pill { display:inline-block; padding:2px 8px;
   font-size:11px; border-radius:2px; background:#1e293b;
   color:#94a3b8; margin-right:6px; text-transform:uppercase;
@@ -152,7 +153,7 @@ body.wizard { margin:0; padding:0; background:#0a0e17; color:#e2e8f0;
 .wizard .empty-hint { color:#94a3b8; padding:8px; font-size:12px; }
 .wizard hr { border:none; border-top:1px solid #1e293b; margin:16px 0; }
 .wizard a:focus-visible, .wizard button:focus-visible,
-.wizard input:focus-visible { outline:3px solid #3b82f6; outline-offset:2px; }
+.wizard input:focus-visible { outline:3px solid var(--theme-accent,#3b82f6); outline-offset:2px; }
 """
 
 
@@ -326,7 +327,7 @@ def render_step2(session: WizardSession) -> str:
             )
         populated_html.append(
             f'<div style="margin-bottom:14px;">'
-            f'<div style="font-weight:600;margin-bottom:6px;color:#10b981;">'
+            f'<div style="font-weight:600;margin-bottom:6px;color:{PALETTE["positive"]};">'
             f'✓ {_esc(label)} ({len(bucket)})</div>'
             + "".join(rows) + '</div>'
         )

@@ -12,6 +12,7 @@ from __future__ import annotations
 import html as _html
 import urllib.parse as _urlparse
 from typing import Any, Dict, List, Optional  # noqa: F401
+from .brand import PALETTE
 
 
 def _input_form(qs: Dict[str, Any]) -> str:
@@ -64,7 +65,7 @@ def _input_form(qs: Dict[str, Any]) -> str:
         'style="padding:6px 8px;border:1px solid #e5e7eb;'
         'border-radius:4px;font-size:13px;width:200px;"></div>'
         '<button type="submit" '
-        'style="padding:8px 16px;background:#1F4E78;color:#fff;'
+        'style="padding:8px 16px;background:var(--theme-accent,#1F4E78);color:#fff;'
         'border:0;border-radius:4px;font-size:13px;font-weight:500;'
         'cursor:pointer;">Find comparables</button>'
         '</form>'
@@ -111,7 +112,7 @@ def _outcome_strip(summary: Dict[str, Any]) -> str:
             f'<div style="font-size:10px;color:#6b7280;font-weight:600;'
             f'text-transform:uppercase;letter-spacing:0.05em;">'
             f'{label}</div>'
-            f'<div style="font-size:24px;font-weight:700;color:#1F4E78;'
+            f'<div style="font-size:24px;font-weight:700;color:{PALETTE["brand_accent"]};'
             f'margin-top:4px;font-variant-numeric:tabular-nums;">{big}</div>'
             f'<div style="font-size:11px;color:#6b7280;margin-top:4px;'
             f'font-variant-numeric:tabular-nums;">{sub}</div>'
@@ -139,10 +140,10 @@ def _breakdown_bar(breakdown: Dict[str, float]) -> str:
     if not breakdown:
         return ""
     feature_palette = {
-        "sector":     "#1F4E78",  # navy — the heaviest weight
-        "size":       "#3b82f6",  # blue
-        "year":       "#10b981",  # green
-        "payer_mix":  "#f59e0b",  # amber
+        "sector":     PALETTE["brand_accent"],   # heaviest weight
+        "size":       PALETTE["brand_accent"],   # same family
+        "year":       PALETTE["positive"],
+        "payer_mix":  PALETTE["warning"],
         "buyer_type": "#8b5cf6",  # purple
     }
     feature_max = {
@@ -342,16 +343,16 @@ def render_comparable_outcomes_page(
         'text-transform:uppercase;letter-spacing:0.05em;">'
         'Match-score bar</span>'
         '<span><span style="display:inline-block;width:10px;'
-        'height:8px;background:#1F4E78;margin-right:4px;'
+        'height:8px;background:var(--theme-accent,#1F4E78);margin-right:4px;'
         'vertical-align:middle;"></span>sector (35)</span>'
         '<span><span style="display:inline-block;width:10px;'
-        'height:8px;background:#3b82f6;margin-right:4px;'
+        'height:8px;background:var(--theme-accent,#3b82f6);margin-right:4px;'
         'vertical-align:middle;"></span>size (20)</span>'
         '<span><span style="display:inline-block;width:10px;'
-        'height:8px;background:#10b981;margin-right:4px;'
+        'height:8px;background:var(--theme-positive,#10b981);margin-right:4px;'
         'vertical-align:middle;"></span>year (20)</span>'
         '<span><span style="display:inline-block;width:10px;'
-        'height:8px;background:#f59e0b;margin-right:4px;'
+        'height:8px;background:var(--theme-warning,#f59e0b);margin-right:4px;'
         'vertical-align:middle;"></span>payer mix (15)</span>'
         '<span><span style="display:inline-block;width:10px;'
         'height:8px;background:#8b5cf6;margin-right:4px;'
@@ -371,7 +372,7 @@ def render_comparable_outcomes_page(
     btn_style = (
         "display:inline-flex;align-items:center;gap:6px;"
         "padding:8px 14px;border:1px solid #d1d5db;border-radius:6px;"
-        "background:#fff;color:#1F4E78;font-size:13px;font-weight:600;"
+        "background:#fff;color:var(--theme-accent,#1F4E78);font-size:13px;font-weight:600;"
         "text-decoration:none;cursor:pointer;"
     )
     export_bar = (
