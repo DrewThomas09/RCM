@@ -28,7 +28,10 @@ from ..diligence.thesis_pipeline import (
 )
 from ..diligence._pages import AVAILABLE_FIXTURES, _resolve_dataset
 from ..diligence.checklist import compute_status, DealObservations
-from ._chartis_kit import P, chartis_shell, ck_page_title
+from ._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_page_title, ck_panel,
+    ck_section_intro,
+)
 from .power_ui import (
     bookmark_hint, deal_context_bar, export_json_panel,
     provenance, sortable_table,
@@ -85,35 +88,26 @@ def _landing() -> str:
         f'<option value="{html.escape(n)}">{html.escape(l)}</option>'
         for n, l in AVAILABLE_FIXTURES
     )
-    explainer = (
-        f'<div style="max-width:720px;margin-bottom:20px;'
-        f'font-size:13px;color:{P["text_dim"]};line-height:1.65;">'
-        f'Runs the full 13-step diligence chain — bankruptcy scan, '
-        f'CCD ingest, HFMA benchmarks, denial prediction, physician '
-        f'attrition, counterfactual advisor, Steward score, cyber '
-        f'score, deal autopsy, market intel — against a target and '
-        f'returns a populated Deal MC scenario plus every headline '
-        f'number IC Packet needs. One button replaces running the '
-        f'analytics by hand.'
-        f'</div>'
+    intro = ck_section_intro(
+        eyebrow="RCM Diligence",
+        headline="Thesis Pipeline — close the loop.",
+        italic_word="loop",
+        body=(
+            "Runs the full 13-step diligence chain — bankruptcy "
+            "scan, CCD ingest, HFMA benchmarks, denial prediction, "
+            "physician attrition, counterfactual advisor, Steward "
+            "score, cyber score, deal autopsy, market intel — and "
+            "returns a populated Deal MC scenario plus every "
+            "headline number the IC Packet needs."
+        ),
     )
     form = (
-        f'<form method="GET" action="/diligence/thesis-pipeline" '
-        f'style="max-width:640px;background:{P["panel"]};'
-        f'border:1px solid {P["border"]};border-radius:4px;'
-        f'padding:20px;margin-bottom:20px;">'
-        f'<label style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;'
-        f'font-weight:600;display:block;margin-bottom:4px;">'
-        f'CCD fixture</label>'
-        f'<select name="dataset" required style="width:100%;'
-        f'padding:6px 8px;background:{P["panel_alt"]};'
-        f'color:{P["text"]};border:1px solid {P["border"]};'
-        f'font-family:inherit;margin-bottom:12px;">'
-        f'<option value="">— pick a fixture —</option>'
+        '<form method="GET" action="/diligence/thesis-pipeline" class="tp-form">'
+        '<label class="tp-form-label">CCD fixture</label>'
+        '<select name="dataset" required class="tp-form-select">'
+        '<option value="">— pick a fixture —</option>'
         f'{options}</select>'
-        f'<div style="display:grid;grid-template-columns:1fr 1fr;'
-        f'gap:12px;">'
+        '<div class="tp-form-grid">'
     )
     for label, name, placeholder in [
         ("Deal name", "deal_name", "300-Bed Community Hospital"),
@@ -134,34 +128,43 @@ def _landing() -> str:
         ("OON rev share", "oon_revenue_share", "0.08"),
     ]:
         form += (
-            f'<div><label style="font-size:9px;color:{P["text_faint"]};'
-            f'letter-spacing:1.2px;text-transform:uppercase;'
-            f'font-weight:600;display:block;margin-bottom:2px;">'
-            f'{html.escape(label)}</label>'
-            f'<input name="{name}" placeholder="{html.escape(placeholder)}" '
-            f'style="width:100%;padding:5px 7px;background:{P["panel_alt"]};'
-            f'color:{P["text"]};border:1px solid {P["border"]};'
-            f'font-family:\'JetBrains Mono\',monospace;font-size:11px;">'
-            f'</div>'
+            '<div class="tp-form-field">'
+            f'<label>{html.escape(label)}</label>'
+            f'<input name="{name}" placeholder="{html.escape(placeholder)}">'
+            '</div>'
         )
     form += (
-        f'</div>'
-        f'<button type="submit" style="margin-top:16px;padding:10px 24px;'
-        f'background:{P["accent"]};color:{P["panel"]};border:0;'
-        f'font-size:11px;letter-spacing:1.5px;text-transform:uppercase;'
-        f'font-weight:700;cursor:pointer;border-radius:3px;">'
-        f'▶ Run Full Pipeline</button>'
-        f'</form>'
+        '</div>'
+        '<button type="submit" class="cad-btn cad-btn-primary tp-form-submit">'
+        '▶ Run Full Pipeline</button>'
+        '</form>'
     )
+    tp_styles = f"""
+<style>
+.tp-form{{max-width:640px;}}
+.tp-form-label{{font-size:9px;color:{P["text_faint"]};
+letter-spacing:1.5px;text-transform:uppercase;font-weight:600;
+display:block;margin-bottom:4px;}}
+.tp-form-select{{width:100%;padding:6px 8px;background:{P["panel_alt"]};
+color:{P["text"]};border:1px solid {P["border"]};
+font-family:inherit;margin-bottom:12px;}}
+.tp-form-grid{{display:grid;grid-template-columns:1fr 1fr;gap:12px;}}
+.tp-form-field label{{font-size:9px;color:{P["text_faint"]};
+letter-spacing:1.2px;text-transform:uppercase;font-weight:600;
+display:block;margin-bottom:2px;}}
+.tp-form-field input{{width:100%;padding:5px 7px;
+background:{P["panel_alt"]};color:{P["text"]};
+border:1px solid {P["border"]};
+font-family:"JetBrains Mono",monospace;font-size:11px;}}
+.tp-form-submit{{margin-top:16px;}}
+</style>
+"""
     body = (
         _scoped_styles()
+        + tp_styles
         + '<div class="tp-wrap">'
-        + f'<div style="padding:24px 0 12px 0;">'
-        + f'<div class="tp-eyebrow">RCM Diligence</div>'
-        + f'<div class="tp-h1">Thesis Pipeline — close the loop</div>'
-        + f'</div>'
-        + explainer
-        + form
+        + intro
+        + ck_panel(form, title="Pipeline inputs")
         + '</div>'
     )
     return chartis_shell(
@@ -236,72 +239,38 @@ def _headline_grid(report: ThesisPipelineReport) -> str:
         formula="expected_collections_lost × ebitda_margin",
         detail="Physician-attrition EBITDA hit (PPAM rolled up).",
     )
+    sim_pct = (
+        f' <span class="ck-eyebrow">{int(report.top_autopsy_similarity*100)}%</span>'
+        if report.top_autopsy_similarity else ''
+    )
     return (
-        f'<div class="tp-kpi-grid">'
-        f'<div class="tp-kpi">'
-        f'<div class="tp-kpi__label">P50 MOIC</div>'
-        f'<div class="tp-kpi__val" style="color:{moic_color};">'
-        f'{moic_num}</div>'
-        f'<div class="tp-kpi__note">3000 trials · pipeline-driven</div>'
-        f'</div>'
-        f'<div class="tp-kpi">'
-        f'<div class="tp-kpi__label">P(MOIC &lt; 1x)</div>'
-        f'<div class="tp-kpi__val" style="color:{downside_color};">'
-        f'{downside_num}</div>'
-        f'<div class="tp-kpi__note">capital-loss probability</div>'
-        f'</div>'
-        f'<div class="tp-kpi">'
-        f'<div class="tp-kpi__label">Top variance driver</div>'
-        f'<div class="tp-kpi__val" style="color:{P["text"]};'
-        f'font-size:16px;">{html.escape(report.top_variance_driver or "—")}</div>'
-        f'<div class="tp-kpi__note">stress-test first</div>'
-        f'</div>'
-        f'<div class="tp-kpi">'
-        f'<div class="tp-kpi__label">Historical analogue</div>'
-        f'<div class="tp-kpi__val" style="color:{P["text"]};'
-        f'font-size:14px;">'
-        f'{html.escape(report.top_autopsy_match or "—")}'
-        + (
-            f' <span style="color:{P["text_faint"]};font-size:12px;">'
-            f'{int(report.top_autopsy_similarity*100)}%</span>'
-            if report.top_autopsy_similarity else ''
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("P50 MOIC", moic_num, sub="3000 trials · pipeline-driven")
+        + ck_kpi_block("P(MOIC < 1x)", downside_num, sub="capital-loss probability")
+        + ck_kpi_block(
+            "Top variance driver",
+            html.escape(report.top_variance_driver or "—"),
+            sub="stress-test first",
         )
-        + f'</div>'
-        f'<div class="tp-kpi__note">signature match</div>'
-        f'</div>'
-        f'<div class="tp-kpi">'
-        f'<div class="tp-kpi__label">Denial recoverable</div>'
-        f'<div class="tp-kpi__val" style="color:{P["positive"]};">'
-        f'{denial_num}</div>'
-        f'<div class="tp-kpi__note">audit + appeal opportunity</div>'
-        f'</div>'
-        f'<div class="tp-kpi">'
-        f'<div class="tp-kpi__label">Attrition EBITDA @ risk</div>'
-        f'<div class="tp-kpi__val" style="color:{P["negative"]};">'
-        f'{attr_num}</div>'
-        f'<div class="tp-kpi__note">PPAM 18-month horizon</div>'
-        f'</div>'
-        f'<div class="tp-kpi">'
-        f'<div class="tp-kpi__label">Counterfactual lever</div>'
-        f'<div class="tp-kpi__val" style="color:{P["positive"]};">'
-        f'{cf_num}</div>'
-        f'<div class="tp-kpi__note">largest offer-shape fix</div>'
-        f'</div>'
-        f'<div class="tp-kpi">'
-        f'<div class="tp-kpi__label">Bankruptcy verdict</div>'
-        f'<div class="tp-kpi__val" style="color:{verdict_color};'
-        f'font-size:18px;">'
-        f'{html.escape(report.bankruptcy_verdict or "—")}</div>'
-        f'<div class="tp-kpi__note">12-pattern scan</div>'
-        f'</div>'
-        f'<div class="tp-kpi">'
-        f'<div class="tp-kpi__label">Steward tier</div>'
-        f'<div class="tp-kpi__val" style="color:{steward_color};'
-        f'font-size:14px;">'
-        f'{html.escape(report.steward_tier or "—")}</div>'
-        f'<div class="tp-kpi__note">sale-leaseback risk</div>'
-        f'</div>'
-        f'</div>'
+        + ck_kpi_block(
+            "Historical analogue",
+            html.escape(report.top_autopsy_match or "—") + sim_pct,
+            sub="signature match",
+        )
+        + ck_kpi_block("Denial recoverable", denial_num, sub="audit + appeal opportunity")
+        + ck_kpi_block("Attrition EBITDA @ risk", attr_num, sub="PPAM 18-month horizon")
+        + ck_kpi_block("Counterfactual lever", cf_num, sub="largest offer-shape fix")
+        + ck_kpi_block(
+            "Bankruptcy verdict",
+            html.escape(report.bankruptcy_verdict or "—"),
+            sub="12-pattern scan",
+        )
+        + ck_kpi_block(
+            "Steward tier",
+            html.escape(report.steward_tier or "—"),
+            sub="sale-leaseback risk",
+        )
+        + '</div>'
     )
 
 
@@ -592,30 +561,28 @@ def render_thesis_pipeline_page(
         report = run_thesis_pipeline(inp)
     except Exception as exc:  # noqa: BLE001
         return chartis_shell(
-            f'<div style="padding:24px;color:{P["negative"]};">'
-            f'Pipeline failed: {html.escape(str(exc))}</div>',
+            ck_section_intro(
+                eyebrow="Thesis Pipeline",
+                headline="Pipeline failed.",
+                italic_word="failed",
+                body=str(exc),
+            ),
             "Thesis Pipeline",
         )
 
     # Hero
-    hero = (
-        f'<div style="padding:22px 0 12px 0;border-bottom:1px solid '
-        f'{P["border"]};margin-bottom:22px;">'
-        f'<div class="tp-eyebrow">Thesis Pipeline · {html.escape(dataset)}</div>'
-        f'<div class="tp-h1">{html.escape(inp.deal_name)}</div>'
-        f'<div style="font-size:11px;color:{P["text_faint"]};margin-top:4px;">'
-        f'{len(report.step_log)} steps · '
-        f'{report.total_compute_ms:.0f}ms total compute</div>'
-        f'<div class="tp-callout">'
-        f'<strong style="color:{P["text"]};">What this shows: </strong>'
-        f'Every analytic output + populated Deal MC scenario + IC '
-        f'headline numbers, auto-computed from the CCD and your '
-        f'supplied metadata. The Deal Profile localStorage writeback '
-        f'and Deal MC hydration both read this report.'
-        f'</div>'
-        f'{_checklist_preview(report)}'
-        f'</div>'
-    )
+    hero = ck_section_intro(
+        eyebrow=f"Thesis Pipeline · {html.escape(dataset)}",
+        headline=f"{html.escape(inp.deal_name)} — full diligence chain.",
+        italic_word="diligence",
+        body=(
+            f"{len(report.step_log)} steps · "
+            f"{report.total_compute_ms:.0f}ms total compute. "
+            "Every analytic output + populated Deal MC scenario + IC "
+            "headline numbers, auto-computed from the CCD and your "
+            "supplied metadata."
+        ),
+    ) + _checklist_preview(report)
 
     body = (
         _scoped_styles()
