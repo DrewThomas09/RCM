@@ -10176,6 +10176,8 @@ class RCMHandler(BaseHTTPRequestHandler):
         }).encode("utf-8")
         self.send_response(HTTPStatus.TOO_MANY_REQUESTS)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Retry-After", str(retry))
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -14701,12 +14703,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             log = self._login_fail_log.setdefault(client_ip, [])
             log[:] = [t for t in log if t > cutoff]
             over_limit = len(log) >= self._LOGIN_FAIL_MAX
-        if over_limit:
-            return self._send_json(
-                {"error": "too many failed login attempts; wait a minute",
-                 "code": "RATE_LIMITED"},
-                status=HTTPStatus.TOO_MANY_REQUESTS,
+            # Wait time = how long until the oldest in-window failure
+            # rolls out, restoring one quota slot. Compute under the
+            # lock so log[0] is stable.
+            oldest = log[0] if log else now
+            wait_secs = max(
+                1.0,
+                self._LOGIN_FAIL_WINDOW_SECS - (now - oldest),
             )
+        if over_limit:
+            return self._send_rate_limited(wait_secs)
 
         if not verify_password(store, username, password):
             with self._login_fail_lock:

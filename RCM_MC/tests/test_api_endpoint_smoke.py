@@ -458,6 +458,79 @@ class APIEndpointSmoke(unittest.TestCase):
             f"{bad}",
         )
 
+    def test_zzz_login_rate_limit_returns_full_429_envelope(self) -> None:
+        """After ``_LOGIN_FAIL_MAX`` failed logins from one IP the
+        server must return a complete 429 envelope:
+
+        * Status 429
+        * ``Retry-After`` header (seconds, integer-string)
+        * ``X-Content-Type-Options: nosniff``
+        * ``Cache-Control: no-store``
+        * Body: ``{"error": str, "code": "RATE_LIMITED",
+                  "retry_after_secs": float, "request_id": str}``
+
+        Without Retry-After, well-behaved clients (SDK retry
+        loops, partner pipelines) hammer the endpoint with no
+        backoff. Without nosniff/Cache-Control, the 429 inherits
+        the default headers from the underlying HTTP server,
+        which omit both.
+        """
+        import json
+        anon = urllib.request.build_opener(_NoFollow())
+        # Seed the CSRF cookie.
+        try:
+            anon.open(self.base + "/login", timeout=5).read()
+        except Exception:
+            pass
+
+        body = urllib.parse.urlencode({
+            "username": "rate-limit-probe-user",  # nonexistent
+            "password": "WrongPass!1",
+            "csrf_token": "",
+        }).encode()
+
+        last_resp = None
+        for _ in range(8):
+            try:
+                req = urllib.request.Request(
+                    self.base + "/api/login", data=body, method="POST",
+                )
+                last_resp = anon.open(req, timeout=5)
+            except urllib.error.HTTPError as e:
+                last_resp = e
+                if e.code == 429:
+                    break
+
+        self.assertIsNotNone(last_resp, "no response captured")
+        self.assertEqual(
+            getattr(last_resp, "code", getattr(last_resp, "status", 0)),
+            429,
+            "expected 429 after failed-login burst",
+        )
+        headers = last_resp.headers
+        self.assertEqual(
+            headers.get("X-Content-Type-Options", "").lower(),
+            "nosniff",
+        )
+        self.assertEqual(
+            headers.get("Cache-Control", ""), "no-store",
+        )
+        retry_after = headers.get("Retry-After", "")
+        self.assertTrue(
+            retry_after.isdigit() and int(retry_after) >= 1,
+            f"Retry-After must be integer seconds ≥ 1, got "
+            f"{retry_after!r}",
+        )
+
+        payload = json.loads(last_resp.read().decode("utf-8"))
+        for key in ("error", "code", "retry_after_secs", "request_id"):
+            self.assertIn(
+                key, payload,
+                f"429 body missing key {key!r}: {payload}",
+            )
+        self.assertEqual(payload["code"], "RATE_LIMITED")
+        self.assertIsInstance(payload["retry_after_secs"], (int, float))
+
     def test_session_cookie_is_httponly_and_samesite(self) -> None:
         """The ``rcm_session`` cookie must be ``HttpOnly`` (XSS
         can't steal it via document.cookie) and carry
