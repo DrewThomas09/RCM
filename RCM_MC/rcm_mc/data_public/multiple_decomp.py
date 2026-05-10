@@ -228,7 +228,7 @@ def compute_multiple_decomp(
             "Payer Mix Adjustment",
             round(payer_adj, 2),
             _pct(payer_adj),
-            f"Commercial-payer premium at {comm_pct*100:.0f}%" if comm_pct else "N/A (no payer data)",
+            f"Commercial-payer premium at {comm_pct*100:.1f}%" if comm_pct else "N/A (no payer data)",
         ),
         MultipleComponent(
             "Unexplained Premium",

@@ -166,7 +166,7 @@ def trace_op_migration(inputs: OPMigrationInputs) -> OPMigrationReport:
     steps.append(OPMigrationStep(
         step=5, name="site_neutral_risk",
         description=(f"Site-neutral HOPD haircut at "
-                     f"{inputs.site_neutral_haircut_pct*100:.0f}%"),
+                     f"{inputs.site_neutral_haircut_pct*100:.1f}%"),
         value=round(-site_neutral_ebitda_hit, 2), unit="$M",
         partner_note=(
             f"${site_neutral_ebitda_hit:,.2f}M EBITDA exposed to "

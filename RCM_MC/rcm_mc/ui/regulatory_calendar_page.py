@@ -266,7 +266,7 @@ def _timeline_svg(
                 f"{event_title}\\n"
                 f"{imp.verdict.value} {tl.driver_label}\\n"
                 f"{d.isoformat()} · impairment "
-                f"{imp.impairment_pct*100:.0f}%"
+                f"{imp.impairment_pct*100:.1f}%"
             )
             marks.append(
                 f'<circle cx="{xc:.1f}" cy="{yc:.1f}" r="{r}" '

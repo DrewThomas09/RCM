@@ -193,7 +193,7 @@ def render_pmi_integration(params: dict = None) -> str:
         ck_kpi_block("Integrations", str(r.total_integrations), "", "") +
         ck_kpi_block("Synergy Target", f"${r.total_synergy_target_m:.2f}M", "", "") +
         ck_kpi_block("Realized", f"${r.total_synergy_realized_m:.2f}M", "", "") +
-        ck_kpi_block("Realization", f"{r.weighted_realization_pct * 100:.0f}%", "", "") +
+        ck_kpi_block("Realization", f"{r.weighted_realization_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Integration Cost", f"${r.total_integration_cost_m:.2f}M", "", "") +
         ck_kpi_block("On Track", f"{r.on_track_count}/{r.total_integrations}", "", "") +
         ck_kpi_block("Active Risks", str(len(r.risks)), "", "") +

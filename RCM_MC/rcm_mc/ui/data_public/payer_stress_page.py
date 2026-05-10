@@ -260,7 +260,7 @@ def render_payer_stress(params: Dict[str, str]) -> str:
         + ck_kpi_block(
             "Base MOIC Estimate",
             ck_fmt_moic(result.base_moic_estimate),
-            f"comm {base_comm*100:.1f}% / mcare {base_mcare*100:.1f}% / mcaid {base_mcaid*100:.0f}%",
+            f"comm {base_comm*100:.1f}% / mcare {base_mcare*100:.1f}% / mcaid {base_mcaid*100:.1f}%",
         )
         + ck_kpi_block(
             "Corpus P50 MOIC",

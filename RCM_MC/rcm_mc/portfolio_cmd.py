@@ -71,7 +71,7 @@ def _format_latest_table(df) -> str:
         moic_v = _clean(r.get("moic"))
         irr_v = _clean(r.get("irr"))
         moic = "—" if moic_v is None else f"{float(moic_v):.2f}x"
-        irr = "—" if irr_v is None else f"{float(irr_v)*100:.0f}%"
+        irr = "—" if irr_v is None else f"{float(irr_v)*100:.1f}%"
         cov = _clean(r.get("covenant_status")) or "—"
         nc_v = _clean(r.get("concerning_signals"))
         nf_v = _clean(r.get("favorable_signals"))

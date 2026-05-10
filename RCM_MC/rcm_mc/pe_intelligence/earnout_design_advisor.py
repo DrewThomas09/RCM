@@ -204,7 +204,7 @@ def render_earnout_markdown(r: EarnoutReport) -> str:
         f"- Driver quality: **{r.driver_quality}**",
         f"- Should propose: **{'yes' if s.should_propose else 'no'}**",
         f"- Earn-out size: ${s.earnout_size_m:,.2f}M",
-        f"- % of price gap covered: {s.earnout_pct_of_gap*100:.0f}%",
+        f"- % of price gap covered: {s.earnout_pct_of_gap*100:.1f}%",
         f"- Trigger: {s.trigger}",
         f"- Vesting window: {s.vesting_window_months} months",
         f"- Pro-rata achievable: "

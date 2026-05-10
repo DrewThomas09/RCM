@@ -323,7 +323,7 @@ def _build_recommendation(
 ) -> str:
     """Plain-English recommendation string."""
     parts = []
-    pct = f"{success_rate * 100:.0f}%"
+    pct = f"{success_rate * 100:.1f}%"
     parts.append(
         f"Historical success rate for {lever} in {pattern} hospitals: {pct}."
     )

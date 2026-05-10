@@ -86,7 +86,7 @@ def trace_labor_cascade(
     steps.append(LaborCascadeStep(
         step=1, name="turnover_delta",
         description=(f"Turnover {inputs.baseline_turnover_pct*100:.1f}% "
-                     f"→ {inputs.current_turnover_pct*100:.0f}%"),
+                     f"→ {inputs.current_turnover_pct*100:.1f}%"),
         value=round(delta_turnover * 100, 2), unit="pp",
         partner_note=(
             f"{delta_turnover*100:.1f}pp above baseline. "

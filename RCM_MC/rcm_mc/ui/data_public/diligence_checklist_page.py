@@ -79,7 +79,7 @@ def _checklist_section(category: str, items: list) -> str:
         rf_badge = (f'<span style="color:{P["negative"]};font-size:9px;'
                     f'border:1px solid {P["negative"]};padding:1px 4px;margin-left:6px">RED FLAG</span>'
                     if item.is_red_flag else "")
-        fail_pct = f"{item.corpus_fail_rate * 100:.0f}%"
+        fail_pct = f"{item.corpus_fail_rate * 100:.1f}%"
         rows.append(
             f'<tr style="background:{rbg}">'
             f'<td style="padding:5px 8px;width:90px">'

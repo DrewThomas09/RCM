@@ -143,7 +143,7 @@ def render_zbb_tracker(params: dict = None) -> str:
         ck_kpi_block("Target Run-Rate", f"${r.target_run_rate_mm:,.2f}M", "", "") +
         ck_kpi_block("Savings Captured", f"${r.total_savings_captured_mm:,.2f}M", "", "") +
         ck_kpi_block("Savings Remaining", f"${r.total_savings_potential_mm:,.2f}M", "", "") +
-        ck_kpi_block("Capture Rate", f"{r.capture_rate_pct * 100:.0f}%", "", "") +
+        ck_kpi_block("Capture Rate", f"{r.capture_rate_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Initiatives", str(len(r.initiatives)), "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )

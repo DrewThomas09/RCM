@@ -180,7 +180,7 @@ def render_medical_realestate(params: dict = None) -> str:
         ck_kpi_block("Total Value", f"${r.total_value_b:.2f}B", "", "") +
         ck_kpi_block("Weighted Cap", f"{r.weighted_cap_rate_pct:.2f}%", "", "") +
         ck_kpi_block("Weighted Lease", f"{r.weighted_lease_years:.1f}y", "", "") +
-        ck_kpi_block("NNN %", f"{r.nnn_pct * 100:.0f}%", "", "") +
+        ck_kpi_block("NNN %", f"{r.nnn_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 

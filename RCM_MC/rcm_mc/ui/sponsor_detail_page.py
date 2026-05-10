@@ -96,7 +96,7 @@ def _fmt_moic(v: Optional[float]) -> str:
 
 
 def _fmt_pct(v: Optional[float]) -> str:
-    return f"{v * 100:.0f}%" if v is not None else "—"
+    return f"{v * 100:.1f}%" if v is not None else "—"
 
 
 def _fmt_money(v: Optional[float]) -> str:

@@ -173,12 +173,12 @@ def _quality_kpi_grid(corpus: List[Dict]) -> str:
         ("TOTAL DEALS",    str(n),                       P["text"]),
         ("SECTORS",        str(sectors),                 P["text"]),
         ("VINTAGE YEARS",  str(years),                   P["text"]),
-        ("MOIC COVERAGE",  f"{has_moic/n*100:.0f}%",     P["positive"] if has_moic/n >= 0.7 else P["warning"]),
-        ("IRR COVERAGE",   f"{has_irr/n*100:.0f}%",      P["positive"] if has_irr/n >= 0.7 else P["warning"]),
-        ("PAYER COVERAGE", f"{has_payer/n*100:.0f}%",    P["positive"] if has_payer/n >= 0.7 else P["warning"]),
-        ("EV COVERAGE",    f"{has_ev/n*100:.0f}%",       P["positive"] if has_ev/n >= 0.7 else P["warning"]),
-        ("SECTOR COVERAGE",f"{has_sector/n*100:.0f}%",   P["positive"] if has_sector/n >= 0.8 else P["warning"]),
-        ("AVG COMPLETENESS",f"{avg_completeness:.0f}%",  P["positive"] if avg_completeness >= 70 else P["warning"]),
+        ("MOIC COVERAGE",  f"{has_moic/n*100:.1f}%",     P["positive"] if has_moic/n >= 0.7 else P["warning"]),
+        ("IRR COVERAGE",   f"{has_irr/n*100:.1f}%",      P["positive"] if has_irr/n >= 0.7 else P["warning"]),
+        ("PAYER COVERAGE", f"{has_payer/n*100:.1f}%",    P["positive"] if has_payer/n >= 0.7 else P["warning"]),
+        ("EV COVERAGE",    f"{has_ev/n*100:.1f}%",       P["positive"] if has_ev/n >= 0.7 else P["warning"]),
+        ("SECTOR COVERAGE",f"{has_sector/n*100:.1f}%",   P["positive"] if has_sector/n >= 0.8 else P["warning"]),
+        ("AVG COMPLETENESS",f"{avg_completeness:.1f}%",  P["positive"] if avg_completeness >= 70 else P["warning"]),
     ]
 
     return "".join(

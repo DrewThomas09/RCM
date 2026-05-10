@@ -354,7 +354,7 @@ def generate_html_report(
         ev_p90_str = pretty_money(ebitda_p90 * ev_multiple)
         denom = float(annual_revenue or 0) * float(ebitda_margin) * float(ev_multiple)
         ev_uplift_pct = (ev_mean / denom * 100) if denom and denom > 0 else 0
-        ev_uplift_str = f"{ev_uplift_pct:.0f}%" if ev_uplift_pct > 0 else ""
+        ev_uplift_str = f"{ev_uplift_pct:.1f}%" if ev_uplift_pct > 0 else ""
         active_title = f"Inherent RCM Inefficiencies Represent a {ebitda_str} EBITDA Recovery Opportunity"
         if ev_uplift_str:
             active_title += f" and {ev_uplift_str} EV Uplift"
@@ -497,7 +497,7 @@ def generate_html_report(
 
         def _pct_of_total(v: float) -> str:
             if total_v == 0: return ""
-            return f"{abs(v)/abs(total_v)*100:.0f}%"
+            return f"{abs(v)/abs(total_v)*100:.1f}%"
 
         html_parts.append(f"""
     <div class="card">

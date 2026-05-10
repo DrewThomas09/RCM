@@ -447,7 +447,7 @@ def render_failures_markdown(matches: List[FailureMatch]) -> str:
         lines.append(f"- **Thesis at entry:** {p.thesis_at_entry}")
         lines.append(f"- **What went wrong:** {p.what_went_wrong}")
         lines.append(f"- **EBITDA destruction:** "
-                     f"~{p.ebitda_destruction_pct*100:.0f}%")
+                     f"~{p.ebitda_destruction_pct*100:.1f}%")
         lines.append(f"- **Partner lesson:** {p.partner_lesson}")
         lines.append("")
     return "\n".join(lines)

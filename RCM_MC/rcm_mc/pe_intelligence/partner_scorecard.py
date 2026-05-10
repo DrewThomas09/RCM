@@ -144,10 +144,10 @@ def run_scorecard(inputs: ScorecardInputs) -> ScorecardReport:
         dimension="unit_economics",
         passed=unit_econ_ok,
         actual=(f"margin {inputs.ebitda_margin*100:.1f}%, "
-                f"cash conv {inputs.cash_conversion*100:.0f}%"),
+                f"cash conv {inputs.cash_conversion*100:.1f}%"),
         floor=(f"margin ≥ "
                 f"{inputs.peer_median_margin*100*0.85:.1f}% AND cash "
-                f"≥ {inputs.cash_conversion_floor*100:.0f}%"),
+                f"≥ {inputs.cash_conversion_floor*100:.1f}%"),
         rationale=("A good story does not fix bad unit economics."),
     ))
 

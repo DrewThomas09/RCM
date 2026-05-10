@@ -460,7 +460,7 @@ def _eval_payer(deal: Dict[str, Any]) -> List[ChecklistItem]:
         title="Payer mix documented",
         description="Payer mix drives reimbursement risk.",
         status="PASS",
-        detail=", ".join(f"{k} {v*100:.0f}%" for k, v in pm.items()),
+        detail=", ".join(f"{k} {v*100:.1f}%" for k, v in pm.items()),
     ))
 
     # Single-payer concentration
@@ -475,7 +475,7 @@ def _eval_payer(deal: Dict[str, Any]) -> List[ChecklistItem]:
                 f"{max_payer} {max_share*100:.1f}% — elevated")
         else:
             s, det = "PASS", (
-                f"top payer {max_payer} {max_share*100:.0f}%")
+                f"top payer {max_payer} {max_share*100:.1f}%")
         out.append(ChecklistItem(
             id="pay_002", section=_SEC_PAYER,
             title="Single-payer concentration",

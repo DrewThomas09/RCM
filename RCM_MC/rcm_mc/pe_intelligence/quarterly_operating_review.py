@@ -87,7 +87,7 @@ def _numbers_block(ctx: QoRContext) -> QoRBlock:
             "billing cadence review.")
     bullets.append(f"Cash runway: {ctx.cash_runway_months:.0f} months")
     bullets.append(
-        f"Covenant headroom: {ctx.covenant_headroom_pct*100:.0f}%")
+        f"Covenant headroom: {ctx.covenant_headroom_pct*100:.1f}%")
     if ctx.ebitda_vs_plan_pct < -0.05:
         focus = ("Partner pushes HARD on the EBITDA miss — specific "
                  "named driver, not 'timing issues.'")

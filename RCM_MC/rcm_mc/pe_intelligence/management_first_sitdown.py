@@ -131,7 +131,7 @@ def _name_risks(ctx: SitdownContext) -> List[AgendaItem]:
         items.append(AgendaItem(
             block="risks", minutes=5,
             topic=(f"Top payer concentration "
-                   f"{ctx.top_payer_share*100:.0f}%"),
+                   f"{ctx.top_payer_share*100:.1f}%"),
             question=("If your top payer walked, what is the 12-month "
                       "plan?"),
             probe=("No answer = they haven't considered it. Partners "

@@ -370,7 +370,7 @@ def _verdict_card(res: CovenantStressResult) -> str:
     )
 
     max_prob_val = provenance(
-        f"{max_prob*100:.0f}%",
+        f"{max_prob*100:.1f}%",
         source="Covenant stress simulator",
         formula="max across covenants × quarters of breach probability",
         detail=(
@@ -497,12 +497,12 @@ def _covenant_detail_table(res: CovenantStressResult) -> str:
             cure_display = cure_str_raw
 
         breach_frac_str = (
-            f"{ec.breach_path_fraction*100:.0f}%"
+            f"{ec.breach_path_fraction*100:.1f}%"
             if ec else "—"
         )
         rows.append([
             html.escape(name),
-            _colored(f"{pct*100:.0f}%", pct_color),
+            _colored(f"{pct*100:.1f}%", pct_color),
             f"Y{peak.year}Q{peak.quarter_idx%4+1}",
             q50_display, q25_lbl, cure_display,
             breach_frac_str,
@@ -1097,6 +1097,6 @@ def render_covenant_lab_page(
         body, "RCM Diligence — Covenant Stress",
         subtitle=(
             f"{deal_name} · max breach "
-            f"{res.max_breach_probability*100:.0f}%"
+            f"{res.max_breach_probability*100:.1f}%"
         ),
     )

@@ -271,7 +271,7 @@ def render_irr_dispersion() -> str:
             ("IRR P25",          f"{irr_p25*100:.1f}%" if irr_p25 else "—",          P["text"]),
             ("IRR P50",          f"{irr_p50*100:.1f}%" if irr_p50 else "—",          P["positive"] if (irr_p50 or 0) >= 0.20 else P["warning"]),
             ("IRR P75",          f"{irr_p75*100:.1f}%" if irr_p75 else "—",          P["text"]),
-            ("≥20% HURDLE RATE", f"{above_hurdle:.0f}%",                              P["positive"] if above_hurdle >= 50 else P["warning"]),
+            ("≥20% HURDLE RATE", f"{above_hurdle:.1f}%",                              P["positive"] if above_hurdle >= 50 else P["warning"]),
         ]
     )
     kpi_strip = f'<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:8px">{kpis}</div>'

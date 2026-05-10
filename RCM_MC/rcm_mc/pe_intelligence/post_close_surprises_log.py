@@ -173,7 +173,7 @@ def render_miss_rate_markdown(r: MissRateReport) -> str:
         "",
         f"- Total items: {r.total_items}",
         f"- Missed (not known at close): {r.missed_items}",
-        f"- Overall miss rate: {r.overall_miss_rate*100:.0f}%",
+        f"- Overall miss rate: {r.overall_miss_rate*100:.1f}%",
         f"- Missed EBITDA impact: "
         f"${r.overall_missed_impact_m:,.2f}M",
         f"- Worst category: {r.worst_category}",

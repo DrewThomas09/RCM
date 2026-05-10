@@ -65,7 +65,7 @@ def render_ifrs_s1(
             f"Composite governance score: "
             f"{governance.composite:.2f} / 1.00",
             f"Board independence: "
-            f"{governance.board_independence*100:.0f}%",
+            f"{governance.board_independence*100:.1f}%",
             f"Audit / compliance score: "
             f"{governance.audit_compliance:.2f} / 1.00",
         ])

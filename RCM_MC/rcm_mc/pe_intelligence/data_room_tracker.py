@@ -201,7 +201,7 @@ def render_data_room_markdown(report: DataRoomReport) -> str:
         "",
     ]
     for cat, pct in sorted(report.completeness_by_category.items()):
-        lines.append(f"- {cat}: {pct*100:.0f}%")
+        lines.append(f"- {cat}: {pct*100:.1f}%")
     if report.p0_missing:
         lines.extend(["", "## P0 gaps", ""])
         for m in report.p0_missing:

@@ -61,7 +61,7 @@ def _payer_phrase(payer_mix: Optional[Dict[str, float]]) -> str:
         norm = {k: v / 100.0 for k, v in norm.items()}
     # largest payer
     name, share = max(norm.items(), key=lambda kv: kv[1])
-    return f"{str(name).title()} {share*100:.0f}%"
+    return f"{str(name).title()} {share*100:.1f}%"
 
 
 # ── Analyst-brief style ─────────────────────────────────────────────

@@ -60,7 +60,7 @@ def build_cheatsheet(review: PartnerReview) -> Dict[str, Any]:
         norm = {str(k): float(v) for k, v in mix.items() if v is not None}
         if norm:
             top = max(norm.items(), key=lambda kv: kv[1])
-            top_facts.append(f"Top payer: {top[0].title()} {top[1]*100:.0f}%")
+            top_facts.append(f"Top payer: {top[0].title()} {top[1]*100:.1f}%")
     if ctx.get("hold_years"):
         top_facts.append(f"Hold: {ctx['hold_years']} years")
     if ctx.get("state"):

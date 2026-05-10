@@ -261,7 +261,7 @@ def render_dividend_recap(params: dict = None) -> str:
         ck_kpi_block("Current Leverage", f"{r.current_leverage:.2f}x", "", "") +
         ck_kpi_block("Invested Equity", f"${r.total_invested_equity_mm:,.2f}M", "", "") +
         ck_kpi_block("Recap Dividend", f"${r.max_recap_dividend_mm:,.2f}M", "", "") +
-        ck_kpi_block("Cash Return", f"{r.cash_multiple_from_recap * 100:.0f}%", "of equity", "")
+        ck_kpi_block("Cash Return", f"{r.cash_multiple_from_recap * 100:.1f}%", "of equity", "")
     )
 
     scen_svg = _scenarios_svg(r.scenarios)

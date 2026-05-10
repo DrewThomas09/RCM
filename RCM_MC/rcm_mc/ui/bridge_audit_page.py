@@ -411,8 +411,8 @@ def _per_lever_table(report: BridgeAuditReport) -> str:
             f"${a.claimed_usd/1e6:,.2f}M",
             f"${a.realistic_median_usd/1e6:,.2f}M",
             _colored(f"${a.gap_usd/1e6:+,.2f}M", gap_color),
-            _colored(f"{realization_pct:.0f}%", realization_color),
-            _colored(f"{fail_pct:.0f}%", fail_color),
+            _colored(f"{realization_pct:.1f}%", realization_color),
+            _colored(f"{fail_pct:.1f}%", fail_color),
             str(a.duration_months_median),
         ])
         sort_keys.append([
@@ -551,7 +551,7 @@ def _lever_library_panel() -> str:
             html.escape(p.label),
             f'<span style="color:{realization_color};font-weight:700;">'
             f'{p.realization_median*100:.1f}%</span>',
-            f"{p.realization_p25*100:.1f}% – {p.realization_p75*100:.0f}%",
+            f"{p.realization_p25*100:.1f}% – {p.realization_p75*100:.1f}%",
             f'<span style="color:{fail_color};font-weight:700;">'
             f'{p.failure_rate*100:.1f}%</span>',
             f"{p.realization_n_samples:,}",

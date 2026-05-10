@@ -175,7 +175,7 @@ def render_qod_markdown(r: QoDReport) -> str:
         "",
         f"_{r.partner_note}_",
         "",
-        f"- Overall completion: {r.overall_pct*100:.0f}%",
+        f"- Overall completion: {r.overall_pct*100:.1f}%",
         f"- IC-ready: **{'yes' if r.ic_ready else 'no'}**",
         f"- Weakest dimension: {r.weakest_dimension}",
         "",

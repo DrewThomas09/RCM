@@ -152,7 +152,7 @@ def render_secondaries_tracker(params: dict = None) -> str:
 
     kpi_strip = (
         ck_kpi_block("GP-Led 2024", f"${r.total_gp_led_volume_2024_b:.0f}B", "", "") +
-        ck_kpi_block("Single-Asset CV Share", f"{r.single_asset_cv_share_pct * 100:.0f}%", "", "") +
+        ck_kpi_block("Single-Asset CV Share", f"{r.single_asset_cv_share_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Avg NAV Discount", f"{r.typical_nav_premium_discount_pct * 100:+.1f}%", "", "") +
         ck_kpi_block("Active Transactions", str(len(r.transactions)), "", "") +
         ck_kpi_block("Active Buyers", str(len(r.buyers)), "", "") +

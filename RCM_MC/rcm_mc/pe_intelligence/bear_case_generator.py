@@ -343,7 +343,7 @@ def render_bear_case_markdown(r: BearCaseReport) -> str:
         f"_{r.partner_note}_",
         "",
         f"- Cumulative EBITDA shock: "
-        f"{r.cumulative_ebitda_shock_pct*100:.0f}%",
+        f"{r.cumulative_ebitda_shock_pct*100:.1f}%",
         f"- Bear EBITDA: ${r.bear_ebitda_m:,.2f}M",
         f"- Bear exit multiple: {r.bear_exit_multiple:.2f}x",
         f"- Bear MOIC: {r.bear_moic:.2f}x",

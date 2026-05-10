@@ -159,7 +159,7 @@ def _fmt_moic(v: Optional[float]) -> str:
 
 
 def _fmt_pct(v: Optional[float]) -> str:
-    return f"{v * 100:.0f}%" if v is not None else "—"
+    return f"{v * 100:.1f}%" if v is not None else "—"
 
 
 def digest_to_text(payload: DigestPayload, *,

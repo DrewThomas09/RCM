@@ -70,7 +70,7 @@ def _retention_levers(ex: Executive) -> List[str]:
         out.append("Increase rollover equity above 20% threshold")
     else:
         out.append(f"Rollover equity already at "
-                   f"{ex.rollover_equity_pct*100:.0f}%")
+                   f"{ex.rollover_equity_pct*100:.1f}%")
     if ex.tenure_years < 3:
         out.append("Stay-bonus over 3-year cliff to lock retention")
     if ex.has_pe_experience:

@@ -585,7 +585,7 @@ def render_failures_v2_markdown(
         lines.append(f"- **What went wrong:** {p.what_went_wrong}")
         lines.append(
             f"- **EBITDA destruction:** "
-            f"~{p.ebitda_destruction_pct*100:.0f}%"
+            f"~{p.ebitda_destruction_pct*100:.1f}%"
         )
         lines.append(f"- **Partner lesson:** {p.partner_lesson}")
         lines.append("")

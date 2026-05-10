@@ -203,7 +203,7 @@ def render_partner_economics(params: dict = None) -> str:
         ck_kpi_block("Practice EBITDA", f"${r.practice_ebitda_mm:,.2f}M", "", "") +
         ck_kpi_block("Partners", str(r.total_partners), "", "") +
         ck_kpi_block("Avg Comp", f"${r.avg_partner_comp_k:,.0f}K", "", "") +
-        ck_kpi_block("Phys Equity Pool", f"{r.physician_equity_pool_pct * 100:.0f}%", "", "") +
+        ck_kpi_block("Phys Equity Pool", f"{r.physician_equity_pool_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Annual GP Cost", f"${r.annual_gp_cost_mm:,.2f}M", "", "") +
         ck_kpi_block("Tiers", str(len(r.tiers)), "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")

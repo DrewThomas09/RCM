@@ -262,7 +262,7 @@ def render_checklist_markdown(r: ChecklistReport) -> str:
         f"- Needs third-party: {r.third_party_open_count}",
         f"- Stale: {r.stale_count}",
         f"- Missing: {r.missing_count}",
-        f"- IC-ready: {r.ic_ready_pct*100:.0f}%",
+        f"- IC-ready: {r.ic_ready_pct*100:.1f}%",
         "",
         "| Item | Category | Source | Status | Detail |",
         "|---|---|---|---|---|",

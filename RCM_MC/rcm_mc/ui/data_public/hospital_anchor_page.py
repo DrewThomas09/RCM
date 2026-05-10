@@ -188,7 +188,7 @@ def render_hospital_anchor(params: dict = None) -> str:
         ck_kpi_block("Contracts", str(r.total_contracts), "", "") +
         ck_kpi_block("Contract Value", f"${r.total_contract_value_m:,.2f}M", "", "") +
         ck_kpi_block("Stipend", f"${r.total_stipend_m:.2f}M", "", "") +
-        ck_kpi_block("Renewal Prob", f"{r.weighted_renewal_probability_pct * 100:.0f}%", "", "") +
+        ck_kpi_block("Renewal Prob", f"{r.weighted_renewal_probability_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Exclusive %", f"{r.exclusive_contracts}/{r.total_contracts}", "", "") +
         ck_kpi_block("Expiring ≤12 mo", str(r.contracts_expiring_12mo), "", "") +
         ck_kpi_block("At Risk", f"${r.at_risk_revenue_m:.2f}M", "", "") +

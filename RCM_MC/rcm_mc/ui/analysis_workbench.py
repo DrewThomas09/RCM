@@ -555,7 +555,7 @@ def _fmt_pct(v: Optional[float], *, one_dp: bool = True) -> str:
         f = float(v)
     except (TypeError, ValueError):
         return "—"
-    fmt = "{:.1f}%" if one_dp else "{:.0f}%"
+    fmt = "{:.1f}%" if one_dp else "{:.1f}%"
     return fmt.format(f)
 
 

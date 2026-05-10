@@ -147,7 +147,7 @@ def render_rollover_markdown(
         "",
         f"- Target range: "
         f"{r.target_rollover_pct_low*100:.0f}%-"
-        f"{r.target_rollover_pct_high*100:.0f}%",
+        f"{r.target_rollover_pct_high*100:.1f}%",
         f"- Target rollover (midpoint): "
         f"${r.target_rollover_m:,.2f}M",
         f"- Proposed rollover: ${r.proposed_rollover_m:,.2f}M",

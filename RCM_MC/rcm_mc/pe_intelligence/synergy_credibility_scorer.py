@@ -130,7 +130,7 @@ def _score_synergy(c: SynergyClaim) -> SynergyAssessment:
 
     # Rationale.
     bits = [f"Category '{c.category}' base realization "
-            f"{base*100:.0f}%"]
+            f"{base*100:.1f}%"]
     if c.has_signed_contract:
         bits.append("signed contract boosts credibility")
     if c.has_action_already_executed:
@@ -202,7 +202,7 @@ def render_synergy_report_markdown(r: SynergyReport) -> str:
         "",
         f"- Total claimed: ${r.total_claimed_m:,.2f}M",
         f"- Partner-prudent credit: ${r.total_partner_credit_m:,.2f}M",
-        f"- Overall realization: {r.overall_realization_pct*100:.0f}%",
+        f"- Overall realization: {r.overall_realization_pct*100:.1f}%",
         f"- Synergies vs entry EBITDA: "
         f"{r.vs_entry_ebitda_pct*100:.1f}%",
         "",

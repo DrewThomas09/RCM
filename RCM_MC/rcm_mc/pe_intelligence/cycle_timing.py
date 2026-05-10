@@ -194,7 +194,7 @@ def render_cycle_markdown(result: CycleResult) -> str:
         "# Market cycle timing",
         "",
         f"**Phase:** {result.phase}  ",
-        f"**Confidence:** {result.confidence*100:.0f}%",
+        f"**Confidence:** {result.confidence*100:.1f}%",
         "",
         f"_{result.partner_note}_",
         "",

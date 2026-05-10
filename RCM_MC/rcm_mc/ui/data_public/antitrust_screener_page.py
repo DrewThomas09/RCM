@@ -172,7 +172,7 @@ def render_antitrust_screener(params: dict = None) -> str:
     kpi_strip = (
         ck_kpi_block("Deal Size", f"${r.deal_size_mm:,.2f}M", "", "") +
         ck_kpi_block("HSR Required", "YES" if r.hsr_required else "NO", "", "") +
-        ck_kpi_block("2R Probability", f"{r.second_request_probability * 100:.0f}%", "", "") +
+        ck_kpi_block("2R Probability", f"{r.second_request_probability * 100:.1f}%", "", "") +
         ck_kpi_block("Overall Risk", f"{r.overall_risk_score}/100", "", "") +
         ck_kpi_block("Timeline (mo)", str(r.recommended_timeline_months), "", "") +
         ck_kpi_block("Markets Screened", str(len(r.hhi_analysis)), "", "") +

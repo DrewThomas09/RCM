@@ -150,7 +150,7 @@ def stress_volume_down(inputs: StressInputs, pct: float = 0.07) -> StressResult:
     if inputs.base_ebitda is None or inputs.base_revenue is None:
         return StressResult(
             scenario="volume_down",
-            description=f"Volume decline {pct*100:.0f}%",
+            description=f"Volume decline {pct*100:.1f}%",
             partner_note="Cannot run — base EBITDA or revenue missing.",
         )
     lost_rev = inputs.base_revenue * pct
@@ -260,7 +260,7 @@ def stress_labor_shock(inputs: StressInputs, pct: float = 0.12) -> StressResult:
     if inputs.base_ebitda is None or inputs.contract_labor_spend is None:
         return StressResult(
             scenario="labor_shock",
-            description=f"Agency labor +{pct*100:.0f}%",
+            description=f"Agency labor +{pct*100:.1f}%",
             partner_note="Cannot run — base EBITDA or contract labor spend missing.",
         )
     shock_dollars = inputs.contract_labor_spend * pct
@@ -274,7 +274,7 @@ def stress_labor_shock(inputs: StressInputs, pct: float = 0.12) -> StressResult:
     )
     return StressResult(
         scenario="labor_shock",
-        description=f"Agency labor +{pct*100:.0f}%",
+        description=f"Agency labor +{pct*100:.1f}%",
         base_ebitda=inputs.base_ebitda,
         shocked_ebitda=shocked,
         ebitda_delta_pct=_delta_pct(inputs.base_ebitda, shocked),

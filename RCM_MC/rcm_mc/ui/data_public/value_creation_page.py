@@ -66,7 +66,7 @@ def _bridge_svg(r) -> str:
                      f'fill="{c}" opacity="0.75"/>')
         lines.append(f'<text x="{pad_l - 4}" y="{y + bar_h - 5}" text-anchor="end" '
                      f'fill="{P["text_dim"]}">{lev.label[:22]}</text>')
-        pct_s = f"+{lev.contribution_pct*100:.0f}%"
+        pct_s = f"+{lev.contribution_pct*100:.1f}%"
         lines.append(f'<text x="{end_x + 4:.1f}" y="{y + bar_h - 5}" fill="{c}">{pct_s}</text>')
         running += lev.ev_contribution_mm
 

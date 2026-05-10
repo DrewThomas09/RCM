@@ -120,7 +120,7 @@ def shock_340b_reduction(
         note = "Limited exposure — budget item."
     return StressShock(
         scenario="340b_reduction",
-        rule=f"340B benefit cut by {reduction_pct*100:.0f}%",
+        rule=f"340B benefit cut by {reduction_pct*100:.1f}%",
         dollar_ebitda_impact=impact,
         pct_of_ebitda_impact=pct,
         partner_note=note,
@@ -141,7 +141,7 @@ def shock_site_neutral(
             "rate premium as a forward assumption.")
     return StressShock(
         scenario="site_neutral",
-        rule=f"HOPD rate compression by {hopd_rate_compression_pct*100:.0f}%",
+        rule=f"HOPD rate compression by {hopd_rate_compression_pct*100:.1f}%",
         dollar_ebitda_impact=impact,
         pct_of_ebitda_impact=pct,
         partner_note=note,

@@ -56,7 +56,7 @@ def render_lp_disclosure(scorecard: EDCIScorecard) -> str:
         if "board_independence" in scorecard.metrics:
             lines.append(
                 f"- Board independence: "
-                f"{scorecard.metrics['board_independence']*100:.0f}%")
+                f"{scorecard.metrics['board_independence']*100:.1f}%")
         lines.append("")
 
     if scorecard.metrics.get("cybersecurity_attestation"):

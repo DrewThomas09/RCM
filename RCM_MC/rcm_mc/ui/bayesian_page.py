@@ -45,7 +45,7 @@ def render_bayesian_profile(
     kpis = kpi_strip([
         {"label": "Data Quality Grade", "value": grade, "tone": grade_tone},
         {"label": "Completeness",
-         "value": f"{data_score['completeness_pct']:.0f}%"},
+         "value": f"{data_score['completeness_pct']:.1f}%"},
         {"label": "Metrics Provided",
          "value": f"{data_score['present_count']}/{data_score['total_metrics']}"},
         {"label": "Missing (Imputed)", "value": str(data_score["missing_count"])},

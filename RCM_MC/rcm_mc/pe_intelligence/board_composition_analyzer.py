@@ -166,7 +166,7 @@ def render_board_markdown(r: BoardReport) -> str:
         f"{r.independent_seats} independent, {r.management_seats} mgmt)",
         f"- Independent %: {r.independent_pct*100:.1f}%",
         f"- Diverse %: {r.diverse_pct*100:.1f}%",
-        f"- Experience coverage: {r.experience_coverage_pct*100:.0f}%",
+        f"- Experience coverage: {r.experience_coverage_pct*100:.1f}%",
     ]
     if r.missing_committees:
         lines.append(f"- Missing committees: {', '.join(r.missing_committees)}")

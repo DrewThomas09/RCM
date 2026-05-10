@@ -212,10 +212,10 @@ def render_service_lines_markdown(portfolio: ServiceLinePortfolio) -> str:
         f"**Verdict:** {portfolio.portfolio_verdict}  ",
         f"**Partner note:** {portfolio.partner_note}",
         "",
-        f"- Top-line share: {portfolio.concentration_top_line*100:.0f}%",
-        f"- Top-3 share: {portfolio.concentration_top_3*100:.0f}%",
+        f"- Top-line share: {portfolio.concentration_top_line*100:.1f}%",
+        f"- Top-3 share: {portfolio.concentration_top_3*100:.1f}%",
         f"- Service-line HHI: {portfolio.service_line_hhi:.0f}",
-        f"- Top EBITDA-contributor share: {portfolio.top_ebitda_contributor_share*100:.0f}%",
+        f"- Top EBITDA-contributor share: {portfolio.top_ebitda_contributor_share*100:.1f}%",
         "",
         "## Per-line",
         "",
@@ -225,7 +225,7 @@ def render_service_lines_markdown(portfolio: ServiceLinePortfolio) -> str:
     for r in portfolio.per_line:
         m = (f"{r.line.ebitda_margin*100:.1f}%"
              if r.line.ebitda_margin is not None else "n/a")
-        contrib = (f"{(r.ebitda_contribution_share or 0)*100:.0f}%"
+        contrib = (f"{(r.ebitda_contribution_share or 0)*100:.1f}%"
                    if r.ebitda_contribution_share is not None else "—")
         lines.append(
             f"| {r.line.name} | {r.line.revenue_share*100:.1f}% | "

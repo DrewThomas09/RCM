@@ -466,7 +466,7 @@ def _payer_table(report: PayerStressReport) -> str:
         rows.append([
             html.escape(r.payer_name),
             (r.category or "").replace("_", " ").title(),
-            f"{r.share_of_npr*100:.0f}%",
+            f"{r.share_of_npr*100:.1f}%",
             f"${r.npr_attributed_usd/1e6:,.2f}M",
             _colored(f"{r.median_rate_move*100:+.2f}%", rate_color),
             _colored(f"{r.p10_rate_move*100:+.2f}%", tail_color),
@@ -504,7 +504,7 @@ def _payer_table(report: PayerStressReport) -> str:
 
 def _default_mix_text() -> str:
     return "\n".join(
-        f"{e.payer_name}, {e.share_of_npr*100:.0f}%"
+        f"{e.payer_name}, {e.share_of_npr*100:.1f}%"
         + (f", {e.contract_renewal_date}"
            if e.contract_renewal_date and
            e.contract_renewal_date != "annual" else "")

@@ -251,8 +251,8 @@ def render_payer_rate_trends() -> str:
         for lbl, val in [
             ("CORPUS N",          str(len(corpus))),
             ("WITH PAYER DATA",   str(len(with_payer))),
-            ("COMM% P50",         f"{comm_p50*100:.0f}%" if comm_p50 else "—"),
-            ("GOV% P50",          f"{gov_p50*100:.0f}%"  if gov_p50  else "—"),
+            ("COMM% P50",         f"{comm_p50*100:.1f}%" if comm_p50 else "—"),
+            ("GOV% P50",          f"{gov_p50*100:.1f}%"  if gov_p50  else "—"),
         ]
     )
     kpi_strip = f'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px">{kpis}</div>'

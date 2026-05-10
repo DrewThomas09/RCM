@@ -133,7 +133,7 @@ def _p_medicare_margin_compression(ctx: HeuristicContext) -> Optional[BearPatter
             "hoping CMS is nice to us — and they rarely are."
         ),
         signals_matched=[
-            f"Medicare {medicare*100:.0f}%",
+            f"Medicare {medicare*100:.1f}%",
             f"Margin expansion {ctx.margin_expansion_bps_per_yr:.0f} bps/yr",
         ],
     )
@@ -342,8 +342,8 @@ def _p_rural_single_payer_cliff(ctx: HeuristicContext) -> Optional[BearPatternHi
             "don't price this deal."
         ),
         signals_matched=[
-            f"Medicare {mix.get('medicare', 0)*100:.0f}%",
-            f"Medicaid {mix.get('medicaid', 0)*100:.0f}%",
+            f"Medicare {mix.get('medicare', 0)*100:.1f}%",
+            f"Medicaid {mix.get('medicaid', 0)*100:.1f}%",
         ],
     )
 

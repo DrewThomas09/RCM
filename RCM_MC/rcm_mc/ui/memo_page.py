@@ -166,7 +166,7 @@ def render_completeness_page(deal_id: str, deal_name: str, completeness: Dict[st
     kpis = kpi_strip([
         {"label": "Completeness Grade",
          "value": grade, "tone": grade_tone},
-        {"label": "Coverage", "value": f"{pct:.0f}%"},
+        {"label": "Coverage", "value": f"{pct:.1f}%"},
         {"label": "Fields Populated",
          "value": f"{present}/{total}"},
     ])

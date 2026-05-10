@@ -148,7 +148,7 @@ def _fmt_payer_mix_md(mix: Dict[str, float]) -> str:
     if total > 1.5:
         norm = {k: v / 100.0 for k, v in norm.items()}
     for payer, share in sorted(norm.items(), key=lambda kv: -kv[1]):
-        parts.append(f"{str(payer).title()} {share*100:.0f}%")
+        parts.append(f"{str(payer).title()} {share*100:.1f}%")
     return ", ".join(parts)
 
 

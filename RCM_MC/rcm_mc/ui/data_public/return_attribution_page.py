@@ -131,7 +131,7 @@ def _slice_table(slices: list, corpus_p50: Optional[float] = None) -> str:
         p75_s = f"{s.moic_p75:.2f}×" if s.moic_p75 else "—"
         spr_s = f"{s.moic_spread:.2f}×" if s.moic_spread else "—"
         irr_s = f"{s.irr_p50*100:.1f}%" if s.irr_p50 else "—"
-        win_s = f"{s.win_rate*100:.0f}%" if s.win_rate is not None else "—"
+        win_s = f"{s.win_rate*100:.1f}%" if s.win_rate is not None else "—"
 
         rows += f"""<tr style="background:{bg}">
   <td style="padding:4px 8px;font-size:11px;white-space:nowrap">{html.escape(s.label)}</td>

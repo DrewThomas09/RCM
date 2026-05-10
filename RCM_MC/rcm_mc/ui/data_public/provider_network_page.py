@@ -107,7 +107,7 @@ def _regime_table(regime_stats) -> str:
     for i, rs in enumerate(regime_stats):
         rbg = bg2 if i % 2 else bg
         mult_c = P["positive"] if rs.moic_mult >= 1.0 else P["negative"]
-        mult_str = f"+{(rs.moic_mult-1)*100:.0f}%" if rs.moic_mult >= 1.0 else f"{(rs.moic_mult-1)*100:.0f}%"
+        mult_str = f"+{(rs.moic_mult-1)*100:.1f}%" if rs.moic_mult >= 1.0 else f"{(rs.moic_mult-1)*100:.1f}%"
         rows.append(
             f'<tr style="background:{rbg}">'
             f'<td style="padding:5px 8px;color:{tprim}">{rs.label[:40]}</td>'

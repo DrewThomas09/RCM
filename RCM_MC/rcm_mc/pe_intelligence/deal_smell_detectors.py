@@ -155,9 +155,9 @@ def _ebitda_pulled_forward(
             pattern=("Smells like EBITDA pulled forward to hit the "
                       "bid deadline."),
             trigger_signals=[
-                f"recent_ebitda_jump={ctx.recent_ebitda_jump_pct*100:.0f}%",
+                f"recent_ebitda_jump={ctx.recent_ebitda_jump_pct*100:.1f}%",
                 f"close_in={ctx.close_deadline_weeks}wks",
-                f"pro_forma={ctx.pro_forma_addbacks_pct*100:.0f}%",
+                f"pro_forma={ctx.pro_forma_addbacks_pct*100:.1f}%",
             ],
             partner_commentary=(
                 "Late-stage EBITDA jumps + aggressive pro-forma "
@@ -179,7 +179,7 @@ def _covenant_close_to_trip(
                       "trouble on day 1."),
             trigger_signals=[
                 f"leverage={ctx.leverage:.2f}x",
-                f"headroom={ctx.covenant_headroom_pct*100:.0f}%",
+                f"headroom={ctx.covenant_headroom_pct*100:.1f}%",
             ],
             partner_commentary=(
                 "Thin covenant headroom at entry + high leverage "

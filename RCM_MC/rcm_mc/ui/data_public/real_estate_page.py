@@ -209,7 +209,7 @@ def render_real_estate(params: dict = None) -> str:
     kpi_strip = (
         ck_kpi_block("Locations", str(len(r.assets)), "", "") +
         ck_kpi_block("Total Sqft", f"{r.total_sqft:,}", "", "") +
-        ck_kpi_block("Owned %", f"{r.owned_sqft / r.total_sqft * 100:.0f}%" if r.total_sqft else "0%", "", "") +
+        ck_kpi_block("Owned %", f"{r.owned_sqft / r.total_sqft * 100:.1f}%" if r.total_sqft else "0%", "", "") +
         ck_kpi_block("Avg Cap Rate", f"{r.weighted_avg_cap_rate * 100:.2f}%", "", "") +
         ck_kpi_block("Realizable RE", f"${r.realizable_re_value_mm:,.2f}M", "", "") +
         ck_kpi_block("Annual Rent", f"${r.current_annual_rent_mm:,.2f}M", "", "") +

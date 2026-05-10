@@ -145,8 +145,8 @@ def render_gp_benchmarking(params: Dict[str, str]) -> str:
                 ("MOIC P50", f"{gp_p50:.2f}×" if gp_p50 else "—", P["positive"] if (gp_p50 or 0) >= 2.5 else P["warning"]),
                 ("CORPUS MOIC P50", f"{corp_p50:.2f}×" if corp_p50 else "—", P["text_dim"]),
                 ("IRR P50", f"{gp_irr50*100:.1f}%" if gp_irr50 else "—", P["text"]),
-                ("WIN RATE", f"{win_rate:.0f}%" if win_rate is not None else "—", P["positive"] if (win_rate or 0) >= 60 else P["warning"]),
-                ("LOSS RATE", f"{loss_rate:.0f}%" if loss_rate is not None else "—", P["negative"] if (loss_rate or 0) >= 20 else P["text"]),
+                ("WIN RATE", f"{win_rate:.1f}%" if win_rate is not None else "—", P["positive"] if (win_rate or 0) >= 60 else P["warning"]),
+                ("LOSS RATE", f"{loss_rate:.1f}%" if loss_rate is not None else "—", P["negative"] if (loss_rate or 0) >= 20 else P["text"]),
             ]
             kpi_strip = "".join(
                 f'<div style="background:{P["panel_alt"]};border:1px solid {P["border"]};padding:8px 12px">'

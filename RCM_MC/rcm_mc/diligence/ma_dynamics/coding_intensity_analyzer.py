@@ -105,7 +105,7 @@ def analyze_coding_intensity(
         )
     if wellness_visit_hcc_rate is not None and wellness_visit_hcc_rate >= 0.5:
         parts.append(
-            f"Wellness-visit HCC capture {wellness_visit_hcc_rate*100:.0f}%"
+            f"Wellness-visit HCC capture {wellness_visit_hcc_rate*100:.1f}%"
         )
     narrative = "; ".join(parts)
     if sev == "CRITICAL":

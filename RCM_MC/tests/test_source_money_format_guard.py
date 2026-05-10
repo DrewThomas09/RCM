@@ -50,8 +50,10 @@ _CSS_LAYOUT_RE = re.compile(
 
 # Text-context ``:.0f}%`` pattern — Python f-string formatting for
 # integer percent. Match only if the next char is NOT a digit, dot,
-# dash, semicolon, or quote (those rule out continuation forms).
-_PERCENT_FMT_RE = re.compile(r':\.0f\}%[^.\d\-;"]')
+# dash, or semicolon (those rule out continuation forms / CSS).
+# Quotes (``"`` or ``'``) DO indicate end-of-f-string and ARE
+# partner-rendered output — those should be flagged.
+_PERCENT_FMT_RE = re.compile(r':\.0f\}%[^.\d\-;]')
 
 
 # Format-string substrings that violate the CLAUDE.md money/multiple

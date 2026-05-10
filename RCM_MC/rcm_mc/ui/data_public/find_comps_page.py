@@ -207,7 +207,7 @@ def _comp_row(i: int, d: Dict, sim: float, corpus_moic_p50: Optional[float]) -> 
     hold_str = f"{hold:.1f}y" if hold else "—"
     moic_col = P["positive"] if (moic or 0) >= 2.5 else (P["warning"] if (moic or 0) >= 2.0 else P["text"])
     pm = d.get("payer_mix")
-    comm_s = f"{pm.get('commercial',0)*100:.0f}%" if isinstance(pm, dict) else "—"
+    comm_s = f"{pm.get('commercial',0)*100:.1f}%" if isinstance(pm, dict) else "—"
 
     # similarity bar
     sim_bar_w = int(min(sim / 85.0, 1.0) * 60)

@@ -134,7 +134,7 @@ def _inputs_table(inputs) -> str:
                 return f"{v * 100:+.1f}pp"
             if u == "x":
                 return f"{v:.2f}x"
-            return f"{v * 100:.0f}%"
+            return f"{v * 100:.1f}%"
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(inp.driver)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_fmt(inp.base_case, inp.unit)}</td>',

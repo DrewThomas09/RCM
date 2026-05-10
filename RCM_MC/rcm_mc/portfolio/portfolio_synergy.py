@@ -202,8 +202,8 @@ def format_synergy(result: SynergyResult) -> str:
         f"  Portfolio deal count:         {result.deal_count}",
         f"  Platforms contributing:       {result.platforms_in_scope}",
         f"  Total RCM cost base:          {_fmt_money(result.platform_baseline_rcm_cost)}",
-        f"  Shared-service %:             {result.shared_service_pct*100:.0f}%",
-        f"  Savings rate on shared:       {result.savings_pct*100:.0f}%",
+        f"  Shared-service %:             {result.shared_service_pct*100:.1f}%",
+        f"  Savings rate on shared:       {result.savings_pct*100:.1f}%",
         f"  Annual synergy EBITDA:        {_fmt_money(result.synergy_ebitda)}",
     ]
     if result.per_platform:

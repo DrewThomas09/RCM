@@ -196,7 +196,7 @@ def render_entry_multiple() -> str:
             ("EV/EBITDA P25",   f"{p25:.1f}×" if p25 else "—",              P["text"]),
             ("EV/EBITDA P50",   f"{p50:.1f}×" if p50 else "—",              P["positive"] if (p50 or 0) < 12 else P["warning"]),
             ("EV/EBITDA P75",   f"{p75:.1f}×" if p75 else "—",              P["text"]),
-            ("≥14× (RICH)",     f"{above14:.0f}%",                           P["negative"] if above14 > 20 else P["text"]),
+            ("≥14× (RICH)",     f"{above14:.1f}%",                           P["negative"] if above14 > 20 else P["text"]),
         ]
     )
     kpi_strip = f'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:16px">{kpis}</div>'

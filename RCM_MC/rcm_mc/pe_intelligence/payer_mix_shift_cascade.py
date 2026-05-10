@@ -127,7 +127,7 @@ def trace_mix_shift(inputs: MixShiftInputs) -> MixShiftReport:
         step=1, name="mix_shift_magnitude",
         description=(f"Commercial share "
                      f"{inputs.current_commercial_pct*100:.1f}% → "
-                     f"{inputs.target_commercial_pct*100:.0f}%"),
+                     f"{inputs.target_commercial_pct*100:.1f}%"),
         value=round(commercial_shift_pp, 2), unit="pp",
         partner_note=(
             f"{commercial_shift_pp:.1f}pp shift over "

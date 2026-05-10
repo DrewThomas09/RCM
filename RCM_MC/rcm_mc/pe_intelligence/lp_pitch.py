@@ -194,7 +194,7 @@ def _format_payer_mix(mix: Dict[str, float]) -> str:
     total = sum(norm.values())
     if total > 1.5:
         norm = {k: v / 100.0 for k, v in norm.items()}
-    parts = [f"{str(k).title()} {v*100:.0f}%"
+    parts = [f"{str(k).title()} {v*100:.1f}%"
              for k, v in sorted(norm.items(), key=lambda kv: -kv[1])]
     return ", ".join(parts)
 

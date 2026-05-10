@@ -193,7 +193,7 @@ def simulate_productivity_drift(
         ramp_months=ramp_months,
         narrative=(
             f"Buyer capitulates — comp ratio drifts up by "
-            f"{buyer_proposed_reduction_pct*100:.0f}%"
+            f"{buyer_proposed_reduction_pct*100:.1f}%"
             + (f" + {wrvu_inflation_pct*100:.1f}% wRVU inflation "
                f"(CY 2021 echo)" if wrvu_inflation_pct > 0 else "")
             + f". Annual drag: ${capitulate_loss:,.0f}."
