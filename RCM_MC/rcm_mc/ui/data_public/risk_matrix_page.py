@@ -13,6 +13,7 @@ import html as _html
 import importlib
 import math
 from typing import Any, Dict, List, Optional, Tuple
+from ..brand import PALETTE
 
 
 def _load_corpus() -> List[Dict[str, Any]]:
@@ -61,7 +62,7 @@ def _entry_risk_score(deal: Dict[str, Any], corpus: Optional[List[Dict[str, Any]
 
 # Sector color palette (Bloomberg style — no bright colors)
 _SECTOR_COLORS = {
-    "Physician Practice": "#3b82f6",
+    "Physician Practice": "var(--theme-accent,#3b82f6)",
     "Behavioral Health": "#8b5cf6",
     "Ambulatory Surgery Centers": "#06b6d4",
     "Dental": "#0891b2",
@@ -121,7 +122,7 @@ def _risk_return_scatter(
         f'<line x1="{pad_l}" y1="{q_moic_y:.1f}" x2="{pad_l+pw}" y2="{q_moic_y:.1f}" '
         f'stroke="#334155" stroke-width="1.2" stroke-dasharray="5,4"/>'
         f'<line x1="{pad_l}" y1="{be_y:.1f}" x2="{pad_l+pw}" y2="{be_y:.1f}" '
-        f'stroke="#ef4444" stroke-width="0.8" stroke-dasharray="3,4" opacity="0.4"/>'
+        f'stroke=PALETTE["negative"] stroke-width="0.8" stroke-dasharray="3,4" opacity="0.4"/>'
     )
 
     # Quadrant labels
@@ -171,7 +172,7 @@ def _risk_return_scatter(
 
     # Breakeven label
     be_lbl = (
-        f'<text x="{pad_l+pw-2}" y="{be_y-3:.1f}" font-size="7" fill="#ef4444" text-anchor="end" opacity="0.6">1.0×</text>'
+        f'<text x="{pad_l+pw-2}" y="{be_y-3:.1f}" font-size="7" fill=PALETTE["negative"] text-anchor="end" opacity="0.6">1.0×</text>'
     )
 
     return (
@@ -187,15 +188,15 @@ def _sector_risk_heatmap(rows: List[Dict[str, Any]]) -> str:
     tbody = []
     for i, r in enumerate(rows):
         stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
-        risk_color = "#ef4444" if r["avg_risk"] >= 65 else ("#f59e0b" if r["avg_risk"] >= 40 else "#22c55e")
-        moic_color = "#ef4444" if (r["p50_moic"] or 0) < 1.0 else ("#22c55e" if (r["p50_moic"] or 0) >= 2.5 else "#e2e8f0")
+        risk_color = "var(--theme-negative,#ef4444)" if r["avg_risk"] >= 65 else ("var(--theme-warning,#f59e0b)" if r["avg_risk"] >= 40 else "var(--theme-positive,#22c55e)")
+        moic_color = "var(--theme-negative,#ef4444)" if (r["p50_moic"] or 0) < 1.0 else ("var(--theme-positive,#22c55e)" if (r["p50_moic"] or 0) >= 2.5 else "#e2e8f0")
         tbody.append(f"""
 <tr{stripe}>
   <td class="dim" style="font-size:11px;">{_html.escape(r['sector'])}</td>
   <td class="mono dim" style="text-align:right;">{r['n']}</td>
   <td style="text-align:right;"><span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;color:{risk_color}">{r['avg_risk']:.0f}</span></td>
   <td style="text-align:right;"><span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;color:{moic_color};font-weight:600">{r['p50_moic']:.2f}×</span></td>
-  <td class="mono" style="text-align:right;color:#ef4444;">{r['loss_rate']*100:.1f}%</td>
+  <td class="mono" style="text-align:right;color:var(--theme-negative,#ef4444);">{r['loss_rate']*100:.1f}%</td>
 </tr>""")
 
     return f"""

@@ -9,6 +9,7 @@ import html as _html
 import importlib
 import math
 from typing import Any, Dict, List, Tuple
+from ..brand import PALETTE
 
 
 def _load_corpus() -> List[Dict[str, Any]]:
@@ -25,10 +26,10 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 
 def _moic_color(m: float) -> str:
-    if m >= 3.0: return "#22c55e"
-    if m >= 2.0: return "#3b82f6"
-    if m >= 1.5: return "#f59e0b"
-    return "#ef4444"
+    if m >= 3.0: return "var(--theme-positive,#22c55e)"
+    if m >= 2.0: return "var(--theme-accent,#3b82f6)"
+    if m >= 1.5: return "var(--theme-warning,#f59e0b)"
+    return "var(--theme-negative,#ef4444)"
 
 
 def _log_scale_scatter(points: List[Tuple[float, float, str]], width: int = 500, height: int = 260) -> str:
@@ -92,7 +93,7 @@ def _ev_histogram(evs: List[float], width: int = 480, height: int = 90) -> str:
         bh = max(0, int(cnt / max_n * (height - 20)))
         bx = 10 + i * bar_w
         by = height - 12 - bh
-        color = "#475569" if lo < 100 else ("#3b82f6" if lo < 300 else ("#f59e0b" if lo < 1000 else "#ef4444"))
+        color = "#475569" if lo < 100 else ("var(--theme-accent,#3b82f6)" if lo < 300 else ("var(--theme-warning,#f59e0b)" if lo < 1000 else "var(--theme-negative,#ef4444)"))
         elements.append(f'<rect x="{bx}" y="{by}" width="{max(1,bar_w-2)}" height="{bh}" fill="{color}" opacity="0.8"/>')
         label = f"${int(lo)}M" if lo < 1000 else f"${int(lo)//1000}B"
         elements.append(f'<text x="{bx+bar_w//2}" y="{height-1}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="6.5" fill="#475569">{label}</text>')
@@ -122,7 +123,7 @@ def render_size_intel() -> str:
         + ck_kpi_block("EV P50", f'<span class="mn">${profile.ev_p50:.2f}M</span>', "median deal size")
         + ck_kpi_block("EV P75", f'<span class="mn">${profile.ev_p75:.2f}M</span>', "75th percentile")
         + ck_kpi_block("Size↔MOIC Corr",
-                       f'<span class="mn" style="color:{"#22c55e" if corr>0.1 else "#ef4444" if corr<-0.1 else "#f59e0b"}">{corr:+.2f}</span>',
+                       f'<span class="mn" style="color:{PALETTE["positive"] if corr>0.1 else PALETTE["negative"] if corr<-0.1 else PALETTE["warning"]}">{corr:+.2f}</span>',
                        "Spearman ρ")
         + (ck_kpi_block("Best Size Bucket", f'<span class="mn">{_html.escape(best_bucket.label)}</span>', f'P50 {best_bucket.moic_p50:.2f}x') if best_bucket else "")
         + '</div>'
@@ -159,7 +160,7 @@ def render_size_intel() -> str:
     for i, b in enumerate(profile.buckets):
         stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
         mc = _moic_color(b.moic_p50)
-        optimal_badge = f'<span style="margin-left:4px;font-size:8px;color:#22c55e;font-family:var(--ck-mono);">★</span>' if best_bucket and b.label == best_bucket.label else ""
+        optimal_badge = f'<span style="margin-left:4px;font-size:8px;color:{PALETTE["positive"]};font-family:var(--ck-mono);">★</span>' if best_bucket and b.label == best_bucket.label else ""
         hi_label = f"${b.ev_range[1]:.2f}M" if b.ev_range[1] < 1000 else ("$1B+" if b.ev_range[1] < 1e6 else "—")
         lo_label = f"${b.ev_range[0]:.2f}M" if b.ev_range[0] < 1000 else f"${int(b.ev_range[0])//1000}B"
         bucket_rows.append(f"""<tr{stripe}>
@@ -176,7 +177,7 @@ def render_size_intel() -> str:
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{b.irr_p50*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{b.avg_hold:.1f}y</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#ef4444' if b.loss_rate>0.2 else '#f59e0b' if b.loss_rate>0.1 else '#22c55e'};">{b.loss_rate*100:.1f}%</td>
+      color:{'var(--theme-negative,#ef4444)' if b.loss_rate>0.2 else 'var(--theme-warning,#f59e0b)' if b.loss_rate>0.1 else 'var(--theme-positive,#22c55e)'};">{b.loss_rate*100:.1f}%</td>
 </tr>""")
 
     bucket_table = f"""

@@ -9,6 +9,7 @@ import html as _html
 import importlib
 import math
 from typing import Any, Dict, List
+from ..brand import PALETTE
 
 
 def _load_corpus() -> List[Dict[str, Any]]:
@@ -25,10 +26,10 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 
 def _moic_color(moic: float) -> str:
-    if moic >= 3.0: return "#22c55e"
-    if moic >= 2.0: return "#3b82f6"
-    if moic >= 1.5: return "#f59e0b"
-    return "#ef4444"
+    if moic >= 3.0: return "var(--theme-positive,#22c55e)"
+    if moic >= 2.0: return "var(--theme-accent,#3b82f6)"
+    if moic >= 1.5: return "var(--theme-warning,#f59e0b)"
+    return "var(--theme-negative,#ef4444)"
 
 
 # ---------------------------------------------------------------------------
@@ -58,7 +59,7 @@ def _moic_bar_chart(stats: List[Any], width: int = 600, height: int = 160) -> st
         elements.append(f'<text x="{gx}" y="{margin["t"]+row_h*len(stats)+12}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{m:.2f}x</text>')
     # 1x reference
     ref_x = px(1.0)
-    elements.append(f'<line x1="{ref_x}" y1="{margin["t"]}" x2="{ref_x}" y2="{margin["t"]+row_h*len(stats)}" stroke="#ef4444" stroke-width="0.8" stroke-dasharray="3,3"/>')
+    elements.append(f'<line x1="{ref_x}" y1="{margin["t"]}" x2="{ref_x}" y2="{margin["t"]+row_h*len(stats)}" stroke=PALETTE["negative"] stroke-width="0.8" stroke-dasharray="3,3"/>')
 
     for i, s in enumerate(stats):
         y = margin["t"] + i * row_h
@@ -161,8 +162,8 @@ def render_vintage_perf() -> str:
         + ck_kpi_block("Vintages", f'<span class="mn">{total_yrs}</span>', f"{stats[0].year}–{stats[-1].year}")
         + ck_kpi_block("Total Deals", f'<span class="mn">{total_deals}</span>', "across all vintages")
         + ck_kpi_block("Avg P50 MOIC", f'<span class="mn" style="color:{_moic_color(avg_p50)}">{avg_p50:.2f}x</span>', "vintage-weighted")
-        + ck_kpi_block("Best Vintage", f'<span class="mn" style="color:#22c55e">{best.year}</span>', f"P50 {best.moic_p50:.2f}x")
-        + ck_kpi_block("Worst Vintage", f'<span class="mn" style="color:#ef4444">{worst.year}</span>', f"P50 {worst.moic_p50:.2f}x")
+        + ck_kpi_block("Best Vintage", f'<span class="mn" style="color:{PALETTE["positive"]}">{best.year}</span>', f"P50 {best.moic_p50:.2f}x")
+        + ck_kpi_block("Worst Vintage", f'<span class="mn" style="color:{PALETTE["negative"]}">{worst.year}</span>', f"P50 {worst.moic_p50:.2f}x")
         + '</div>'
     )
 
@@ -217,7 +218,7 @@ def render_vintage_perf() -> str:
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{s.irr_p50*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{s.avg_hold:.1f}y</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#ef4444' if s.loss_rate>0.2 else '#f59e0b' if s.loss_rate>0.1 else '#22c55e'};">{s.loss_rate*100:.1f}%</td>
+      color:{'var(--theme-negative,#ef4444)' if s.loss_rate>0.2 else 'var(--theme-warning,#f59e0b)' if s.loss_rate>0.1 else 'var(--theme-positive,#22c55e)'};">{s.loss_rate*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">${s.avg_ev_mm:.2f}M</td>
   <td style="padding:5px 8px;">{sectors_html}</td>
 </tr>""")

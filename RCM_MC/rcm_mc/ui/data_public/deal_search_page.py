@@ -10,6 +10,7 @@ import html as _html
 import importlib
 import math
 from typing import Any, Dict, List, Optional
+from ..brand import PALETTE
 
 
 def _load_corpus() -> List[Dict[str, Any]]:
@@ -26,10 +27,10 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 
 def _moic_color(m: float) -> str:
-    if m >= 3.0: return "#22c55e"
-    if m >= 2.0: return "#3b82f6"
-    if m >= 1.5: return "#f59e0b"
-    return "#ef4444"
+    if m >= 3.0: return "var(--theme-positive,#22c55e)"
+    if m >= 2.0: return "var(--theme-accent,#3b82f6)"
+    if m >= 1.5: return "var(--theme-warning,#f59e0b)"
+    return "var(--theme-negative,#ef4444)"
 
 
 def _match_deal(deal: Dict[str, Any], query: str, sector: str, yr_lo: Optional[int],
@@ -101,9 +102,9 @@ def _payer_mini(pm: Any) -> str:
     w_d = max(0, W - w_c - w_m)
     return (
         f'<svg width="{W}" height="6" xmlns="http://www.w3.org/2000/svg">'
-        f'<rect x="0" y="0" width="{w_c}" height="6" fill="#3b82f6"/>'
-        f'<rect x="{w_c}" y="0" width="{w_m}" height="6" fill="#22c55e"/>'
-        f'<rect x="{w_c+w_m}" y="0" width="{w_d}" height="6" fill="#f59e0b"/>'
+        f'<rect x="0" y="0" width="{w_c}" height="6" fill=PALETTE["brand_accent"]/>'
+        f'<rect x="{w_c}" y="0" width="{w_m}" height="6" fill=PALETTE["positive"]/>'
+        f'<rect x="{w_c+w_m}" y="0" width="{w_d}" height="6" fill=PALETTE["warning"]/>'
         f'</svg>'
     )
 
@@ -344,7 +345,7 @@ def render_deal_search(
             return "&".join(parts)
         link_parts = []
         for p in range(1, min(total_pages + 1, 20)):
-            color = "#3b82f6" if p == page else "#64748b"
+            color = "var(--theme-accent,#3b82f6)" if p == page else "#64748b"
             link_parts.append(f'<a href="{_page_url(p)}" style="margin:0 3px;font-family:var(--ck-mono);font-size:10px;color:{color};text-decoration:none;">{p}</a>')
         if total_pages > 20:
             link_parts.append(f'<span style="color:#475569;font-size:10px;">… {total_pages}</span>')

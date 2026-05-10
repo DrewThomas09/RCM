@@ -16,6 +16,7 @@ import html as _html
 import importlib
 import math
 from typing import Any, Dict, List, Optional
+from ..brand import PALETTE
 
 
 def _load_corpus() -> List[Dict[str, Any]]:
@@ -47,10 +48,10 @@ def _percentile(vals: List[float], p: float) -> float:
 def _hhi_signal(hhi: float) -> str:
     """HHI signal color (0=minimum concentration, 1=monopoly)."""
     if hhi < 0.15:
-        return "#22c55e", "Low"
+        return "var(--theme-positive,#22c55e)", "Low"
     if hhi < 0.25:
-        return "#f59e0b", "Moderate"
-    return "#ef4444", "High"
+        return "var(--theme-warning,#f59e0b)", "Moderate"
+    return "var(--theme-negative,#ef4444)", "High"
 
 
 def _hhi_bar(hhi: float, label: str, width: int = 200) -> str:
@@ -66,7 +67,7 @@ def _hhi_bar(hhi: float, label: str, width: int = 200) -> str:
         f'<rect x="0" y="1" width="{width}" height="8" rx="1" fill="#1e293b"/>'
         f'<rect x="0" y="1" width="{filled}" height="8" rx="1" fill="{color}"/>'
         f'<line x1="{int(0.25*width)}" y1="0" x2="{int(0.25*width)}" y2="10" stroke="#334155" stroke-width="1"/>'
-        f'<line x1="{int(0.15*width)}" y1="0" x2="{int(0.15*width)}" y2="10" stroke="#22c55e" stroke-width="0.8" stroke-dasharray="2,2"/>'
+        f'<line x1="{int(0.15*width)}" y1="0" x2="{int(0.15*width)}" y2="10" stroke=PALETTE["positive"] stroke-width="0.8" stroke-dasharray="2,2"/>'
         f'</svg>'
         f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;font-size:10px;color:{color}">'
         f'{hhi:.3f} — {level}</span>'
@@ -119,7 +120,7 @@ def _sector_weight_panel(composition: Any) -> str:
     for sector, weight in items:
         w_pct = weight * 100
         filled = int(weight * 200)
-        color = "#3b82f6" if w_pct <= 20 else ("#f59e0b" if w_pct <= 35 else "#ef4444")
+        color = "var(--theme-accent,#3b82f6)" if w_pct <= 20 else ("var(--theme-warning,#f59e0b)" if w_pct <= 35 else "var(--theme-negative,#ef4444)")
         bars.append(
             f'<div style="margin:4px 0;display:flex;align-items:center;gap:8px;">'
             f'<div style="width:160px;font-size:10px;color:#94a3b8;text-align:right;'
