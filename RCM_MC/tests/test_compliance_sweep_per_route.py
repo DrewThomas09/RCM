@@ -49,6 +49,14 @@ REPRESENTATIVE_ROUTES = [
     "/screening/bankruptcy-survivor",
     "/cms-sources",
     "/market-rates",
+    # Added — broader workflow coverage:
+    "/import",
+    "/verticals",
+    "/predictive-screener",
+    "/runs",
+    "/calibration",
+    "/news",
+    "/source",
 ]
 
 # Per-route minimum compliance scores. Each route is pinned at
@@ -81,13 +89,21 @@ ROUTE_MIN_SCORES: dict[str, float] = {
     "/scenarios":             1.0,
     "/diligence/bear-case":   1.0,
     "/methodology/pe_math":   1.0,
+    # Added in the broader-workflow batch:
+    "/import":                1.0,
+    "/verticals":             1.0,
+    "/runs":                  1.0,
+    "/calibration":           1.0,
+    "/source":                1.0,
 
     # 92% routes — interpretive prose has round-percent or
     # multiple references inside partner-vocab proper-noun
     # phrases that resist rephrasing.
-    "/home":         0.92,  # "7% revenue overstatement" partner alert copy
-    "/library":      0.92,  # "USPI 35% Stake" — historical fund description
-    "/market-rates": 0.92,  # "3x+ Rate" — column header semantics
+    "/home":                  0.92,  # "7% revenue overstatement" partner alert copy
+    "/library":               0.92,  # "USPI 35% Stake" — historical fund description
+    "/market-rates":          0.92,  # "3x+ Rate" — column header semantics
+    "/news":                  0.92,  # editorial copy with round-percent figures
+    "/predictive-screener":   0.85,  # number-format + voice residuals on empty store
 
     # Bespoke print layout — un-migrated by design.
     "/screening/bankruptcy-survivor": 0.25,
