@@ -23,7 +23,9 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_kpi_block, ck_section_intro,
+)
 from .brand import PALETTE
 
 
@@ -180,31 +182,27 @@ def render_ic_memo(ccn: str, hcris_df: pd.DataFrame, db_path: Optional[str] = No
         "C": "#E8B97E", "D": "#E89478",
     }
     grade_color = grade_tone_map.get(invest_grade, "rgba(250, 247, 240, 0.55)")
+    intro = ck_section_intro(
+        eyebrow=(
+            f"INVESTMENT COMMITTEE MEMORANDUM · CCN {_html.escape(ccn)}"
+        ),
+        headline=_html.escape(data["name"]),
+        body=(
+            f"{_html.escape(data['county'])}, {_html.escape(data['state'])} · "
+            f"{data['beds']:.0f} beds · As of {_html.escape(ts)}"
+        ),
+        italic_word="committee",
+    )
+    grade_kpi = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Investability", _html.escape(invest_grade),
+            sub="composite grade A–D",
+        )
+        + "</div>"
+    )
+    sections.append(intro + grade_kpi)
     sections.append(
-        '<div class="ic-hero">'
-        '<div class="ic-hero-inner">'
-        '<div class="ic-hero-eyebrow">'
-        f'INVESTMENT COMMITTEE MEMORANDUM &nbsp;·&nbsp; CCN {_html.escape(ccn)}'
-        '</div>'
-        '<div class="ic-hero-row">'
-        '<div class="ic-hero-name-block">'
-        f'<h1 class="ic-hero-name">{_html.escape(data["name"])}</h1>'
-        '<div class="ic-hero-meta">'
-        '<span class="m-key">LOCATION</span>'
-        f'<span class="m-val">{_html.escape(data["county"])}, {_html.escape(data["state"])}</span>'
-        '<span class="m-sep">·</span>'
-        f'<span class="m-key">BEDS</span><span class="m-val">{data["beds"]:.0f}</span>'
-        '<span class="m-sep">·</span>'
-        f'<span class="m-key">AS OF</span><span class="m-val">{_html.escape(ts)}</span>'
-        '</div>'
-        '</div>'
-        '<div class="ic-hero-grade">'
-        f'<div class="ic-grade-val" style="color:{grade_color};">{_html.escape(invest_grade)}</div>'
-        '<div class="ic-grade-label">INVESTABILITY</div>'
-        '</div>'
-        '</div>'
-        '</div>'
-        '</div>'
         '<div class="ic-utility no-print">'
         '<div class="ic-utility-inner">'
         '<button onclick="window.print()" class="cad-btn cad-btn-primary">'
