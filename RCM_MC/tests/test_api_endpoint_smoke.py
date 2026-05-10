@@ -414,6 +414,57 @@ class APIEndpointSmoke(unittest.TestCase):
             f"from API_SMOKE_ROUTES with rationale.",
         )
 
+    def test_4xx_responses_carry_error_envelope(self) -> None:
+        """Every documented 4XX scenario must return a JSON body
+        with a top-level ``error`` string field. Partners writing
+        SDKs against the API depend on this envelope to surface
+        actionable error text — a 4XX with a missing or
+        non-string ``error`` field would crash their client.
+
+        The fixture-list below covers each distinct validator path
+        in the dispatcher: missing-required-param, out-of-range
+        target, unknown-id (deal + job), and invalid-format query.
+        """
+        import json
+        ERROR_SCENARIOS = [
+            # (path, expected_status)
+            ("/api/portfolio/regression",          400),
+            ("/api/deals/compare",                 400),
+            ("/api/counterfactual",                400),
+            ("/api/jobs/nonexistent",              404),
+            ("/api/deals/this-id-does-not-exist",  404),
+            ("/api/digest?since=invalid",          400),
+        ]
+        issues: list[str] = []
+        for path, want_status in ERROR_SCENARIOS:
+            try:
+                resp = self.opener.open(self.base + path, timeout=8)
+                actual = resp.status
+                body = resp.read()
+            except urllib.error.HTTPError as e:
+                actual = e.code
+                body = e.read()
+            if actual != want_status:
+                issues.append(
+                    f"{path}: status {actual}, expected {want_status}"
+                )
+                continue
+            try:
+                parsed = json.loads(body.decode("utf-8"))
+            except Exception as e:
+                issues.append(f"{path}: body not JSON ({e!r})")
+                continue
+            err = parsed.get("error") if isinstance(parsed, dict) else None
+            if not isinstance(err, str) or not err:
+                issues.append(
+                    f"{path}: missing/non-string 'error' field "
+                    f"(body keys: {list(parsed.keys()) if isinstance(parsed, dict) else type(parsed).__name__})"
+                )
+        self.assertEqual(
+            issues, [],
+            f"Error-envelope contract violations: {issues}",
+        )
+
     def test_json_endpoints_set_nosniff_header(self) -> None:
         """Every 200-pinned JSON endpoint must set
         ``X-Content-Type-Options: nosniff``.
