@@ -154,8 +154,12 @@ ROUTE_MIN_SCORES: dict[str, float] = {
     "/screening/bankruptcy-survivor": 0.25,
 }
 # Fallback for any route added without an explicit pin. Tight at
-# 0.92 so new routes have to migrate to v2 chrome to pass.
-DEFAULT_ROUTE_MIN_SCORE = 0.92
+# 1.0 — every existing pinned route is at 100% (or one of the two
+# explicit residual exceptions /news, /bankruptcy-survivor). A new
+# route added to ``REPRESENTATIVE_ROUTES`` without an explicit
+# pin must therefore score 100% from the start, or its addition
+# would be the regression that fails this floor.
+DEFAULT_ROUTE_MIN_SCORE = 1.0
 
 # The aggregate target. With 45/47 routes at 100% (only /news at
 # 0.92 and /screening/bankruptcy-survivor at 0.25 are intentional
