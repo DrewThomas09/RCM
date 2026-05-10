@@ -772,6 +772,45 @@ class PerRouteComplianceSweep(unittest.TestCase):
             f"more routes from 100% to <100%.",
         )
 
+    def test_html_routes_set_required_security_headers(self) -> None:
+        """Every 200-returning HTML route must set the four
+        baseline browser-security headers:
+
+        * X-Content-Type-Options: nosniff (MIME-confusion guard)
+        * X-Frame-Options: DENY (clickjacking guard)
+        * Content-Security-Policy (XSS / injection guard)
+        * Referrer-Policy (cross-origin leak guard)
+
+        Regressing any of these is silent in normal use — the page
+        still renders, but a partner's browser loses a layer of
+        defence-in-depth. Pre-flight scan: 0/264 routes had a gap;
+        this guard locks that state in.
+        """
+        REQUIRED = (
+            "X-Content-Type-Options",
+            "X-Frame-Options",
+            "Content-Security-Policy",
+            "Referrer-Policy",
+        )
+        gaps: list[tuple[str, str]] = []
+        for path in REPRESENTATIVE_ROUTES:
+            try:
+                resp = self.opener.open(
+                    self.base + path, timeout=8,
+                )
+            except Exception:
+                continue
+            if resp.status != 200:
+                continue
+            for h in REQUIRED:
+                if not resp.headers.get(h):
+                    gaps.append((path, h))
+        self.assertEqual(
+            gaps, [],
+            f"HTML routes lacking baseline security headers "
+            f"({len(gaps)}): {gaps[:20]}",
+        )
+
     def test_no_route_leaks_python_exceptions_in_html(self) -> None:
         """For every 200-returning HTML route, the body must not
         contain Python-exception strings.
