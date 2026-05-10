@@ -216,10 +216,10 @@ def render_dpi_tracker(params: dict = None) -> str:
     <strong style="color:{text}">DPI Report Card:</strong> Weighted {r.weighted_dpi:.2f}x DPI across {r.total_funds} tracked funds — below the 1.20x needed at 7-year average hold to deliver median vintage returns.
     {r.below_benchmark_funds} of {r.total_funds} funds below their vintage DPI benchmark ({r.below_benchmark_funds / r.total_funds * 100:.1f}%) — concentrated in 2021-2023 vintages as exit market compressed.
     {q1q2_count} of {r.total_funds} tracked funds are top-half performers by TVPI — defensibility of healthcare alpha intact despite drought.
-    {r.total_distributions_b:.2f}B in LTM distributions across portfolio — 48.0% secondary-buyout, 22.0% strategic sale, 18.0% dividend recap, 12.0% continuation vehicle — secondary/CV taking growing share vs historical 30% share.
+    {r.total_distributions_b:.2f}B in LTM distributions across portfolio — 48.0% secondary-buyout, 22.0% strategic sale, 18.0% dividend recap, 12.0% continuation vehicle — secondary/CV taking growing share vs historical 30.0% share.
     {active_requests} LP liquidity requests active; GPs responding with mix of continuation vehicles, dividend recaps, and accelerated exit sequencing — granular LP engagement is elevated.
     Pending path-to-exit pipeline ${r.pending_exits_m:,.2f}M projected value at weighted 2.55x MOIC; {high_conf_exits} of {len(r.exit_paths)} classified high-confidence — supports 2026-2027 distribution recovery thesis.
-    Exit drought watchlist: dividend recaps +62% YoY (interim liquidity valve); secondary-buyout 48% (up 10pts); continuation vehicle $24.5B (up 119%) — mechanism mix shifts away from strategic sale.
+    Exit drought watchlist: dividend recaps +62.0% YoY (interim liquidity valve); secondary-buyout 48.0% (up 10pts); continuation vehicle $24.50B (up 119.0%) — mechanism mix shifts away from strategic sale.
   </div>
 </div>"""
 

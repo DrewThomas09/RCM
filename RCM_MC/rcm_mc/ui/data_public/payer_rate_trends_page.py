@@ -94,7 +94,7 @@ def _vintage_payer_trend_svg(corpus: List[Dict], w: int = 500, h: int = 180) -> 
     for pct in [0.2, 0.4, 0.6, 0.8]:
         py = yp(pct)
         parts.append(f'<line x1="{pad_l}" y1="{py:.1f}" x2="{w-pad_r}" y2="{py:.1f}" stroke="{P["border_dim"]}" stroke-width="1"/>')
-        parts.append(f'<text x="{pad_l-3}" y="{py+3:.1f}" text-anchor="end" fill="{P["text_faint"]}" font-size="8" font-family="{_MONO}" font-variant-numeric="tabular-nums">{int(pct*100)}%</text>')
+        parts.append(f'<text x="{pad_l-3}" y="{py+3:.1f}" text-anchor="end" fill="{P["text_faint"]}" font-size="8" font-family="{_MONO}" font-variant-numeric="tabular-nums">{pct*100:.1f}%</text>')
 
     for yr in range(yr_min, yr_max + 1, 2):
         px = xp(yr)
@@ -148,7 +148,7 @@ def _comm_moic_scatter(corpus: List[Dict], w: int = 320, h: int = 200) -> str:
     for pct in [0, 0.2, 0.4, 0.6, 0.8, 1.0]:
         px = xp(pct)
         parts.append(f'<line x1="{px:.1f}" y1="{pad_t}" x2="{px:.1f}" y2="{h-pad_b}" stroke="{P["border_dim"]}" stroke-width="1"/>')
-        parts.append(f'<text x="{px:.1f}" y="{h-pad_b+10}" text-anchor="middle" fill="{P["text_faint"]}" font-size="7" font-family="{_MONO}">{int(pct*100)}%</text>')
+        parts.append(f'<text x="{px:.1f}" y="{h-pad_b+10}" text-anchor="middle" fill="{P["text_faint"]}" font-size="7" font-family="{_MONO}">{pct*100:.1f}%</text>')
 
     for mv in [1.0, 2.0, 3.0, 4.0]:
         if mv <= moic_max:
@@ -223,7 +223,7 @@ def _payer_regime_shift_table(corpus: List[Dict]) -> str:
             cnt = bucket_regime[b][r]
             pct = cnt / total * 100 if total > 0 else 0
             col = P["accent"] if r == "Commercial" and pct >= 30 else (P["warning"] if r == "Medicare-Heavy" and pct >= 30 else P["text_dim"])
-            row += f"<td style='padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{col};font-variant-numeric:tabular-nums'>{f'{pct:.0f}%' if cnt > 0 else '—'}</td>"
+            row += f"<td style='padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{col};font-variant-numeric:tabular-nums'>{f'{pct:.1f}%' if cnt > 0 else '—'}</td>"
         rows += row + "</tr>"
 
     return f"""<div style="border:1px solid {P['border']};overflow-x:auto">

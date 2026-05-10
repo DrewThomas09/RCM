@@ -158,7 +158,7 @@ def _mip_table(tranches) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]
     cols = [("Tranche","left"),("Allocation","right"),("Vesting","left"),("Hurdle","left"),
-            ("Payout @ 2x","right"),("Payout @ 3x","right")]
+            ("Payout @ 2.00x","right"),("Payout @ 3.00x","right")]
     ths = "".join(
         f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};'
         f'font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols

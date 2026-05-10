@@ -219,7 +219,7 @@ def render_medicaid_unwinding(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Medicaid Unwinding Portfolio Summary:</strong> {r.total_disenrolled_m:.2f}M disenrolled from {r.total_medicaid_lives_pre_phe_m:.2f}M pre-PHE Medicaid lives — portfolio net revenue impact ${r.total_revenue_impact_m:.2f}M across {r.total_deals_exposed} portcos.
     Highest-exposure deals: Project Sage (Home Health, $18.50M revenue drag, 28.5K patients lost), Project Redwood (Behavioral, $12.50M, 18.5K), Project Linden (Behavioral, $10.50M, 18.2K).
-    Coverage shift pattern: 42.0% to ACA (subsidized/favorable), 18.0% to commercial employer ($485.00/patient lift), 28-45% to self-pay ($650/patient drop), 12% back to Medicaid after outreach.
+    Coverage shift pattern: 42.0% to ACA (subsidized/favorable), 18.0% to commercial employer ($485.00/patient lift), 28-45% to self-pay ($650.00/patient drop), 12.0% back to Medicaid after outreach.
     Retention programs have preserved ~${revenue_preserved:.2f}M portfolio revenue — back-to-Medicaid re-enrollment ($22.50M preserved) and in-house enrollment assistance ($18.50M) are top performers.
     State dispersion: {accel_states} states accelerated (TX, FL, GA, AZ with high procedural disenrollment); NY, IL, MA slow + pro-beneficiary; CA moderating after initial acceleration.
     Operational pressure: Sage self-pay AR at 115 days / 32.5% collection rate; behavioral portfolio (Redwood, Linden) bad debt growth 35-43% — requires targeted remediation Q2 2026.

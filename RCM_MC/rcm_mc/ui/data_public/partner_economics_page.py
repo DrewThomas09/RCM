@@ -26,7 +26,7 @@ def _tier_svg(tiers) -> str:
             f'<rect x="{pad_l}" y="{y}" width="{bw_total:.1f}" height="{bh}" fill="{acc}" opacity="0.55"/>'
             # Salary (base) bar
             f'<rect x="{pad_l}" y="{y}" width="{bw_salary:.1f}" height="{bh}" fill="{pos}" opacity="0.85"/>'
-            f'<text x="{pad_l + bw_total + 4:.1f}" y="{y + bh - 2}" fill="{P["text_dim"]}" font-size="10" font-family="JetBrains Mono,monospace">${t.annual_total_comp_k:,.0f}K</text>'
+            f'<text x="{pad_l + bw_total + 4:.1f}" y="{y + bh - 2}" fill="{P["text_dim"]}" font-size="10" font-family="JetBrains Mono,monospace">${t.annual_total_comp_k:,.2f}K</text>'
         )
     return (f'<svg viewBox="0 0 {w} {h}" width="100%" style="max-width:{w}px" xmlns="http://www.w3.org/2000/svg">'
             f'<rect width="{w}" height="{h}" fill="{bg}"/>{"".join(bars)}'
@@ -202,7 +202,7 @@ def render_partner_economics(params: dict = None) -> str:
         ck_kpi_block("Practice Revenue", f"${r.practice_revenue_mm:,.2f}M", "", "") +
         ck_kpi_block("Practice EBITDA", f"${r.practice_ebitda_mm:,.2f}M", "", "") +
         ck_kpi_block("Partners", str(r.total_partners), "", "") +
-        ck_kpi_block("Avg Comp", f"${r.avg_partner_comp_k:,.0f}K", "", "") +
+        ck_kpi_block("Avg Comp", f"${r.avg_partner_comp_k:,.2f}K", "", "") +
         ck_kpi_block("Phys Equity Pool", f"{r.physician_equity_pool_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Annual GP Cost", f"${r.annual_gp_cost_mm:,.2f}M", "", "") +
         ck_kpi_block("Tiers", str(len(r.tiers)), "", "") +
@@ -247,7 +247,7 @@ def render_partner_economics(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Recruitment Pathway Economics</div>{rec_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Partner Thesis:</strong> {r.total_partners} partners with {r.physician_equity_pool_pct * 100:.1f}% equity pool.
-    Avg partner comp ${r.avg_partner_comp_k:,.0f}K (salary + distributions). Mid-tier buy-in ${r.tiers[1].buy_in_value_mm if len(r.tiers) > 1 else 0:,.2f}M.
+    Avg partner comp ${r.avg_partner_comp_k:,.2f}K (salary + distributions). Mid-tier buy-in ${r.tiers[1].buy_in_value_mm if len(r.tiers) > 1 else 0:,.2f}M.
     Annual partner economics total ${r.annual_gp_cost_mm:,.2f}M — critical to structure correctly for recruitment AND retention.
   </div>
 </div>"""

@@ -206,7 +206,7 @@ def render_lp_reporting(params: dict = None) -> str:
     <strong style="color:{text}">LP Reporting Thesis:</strong> ${r.total_aum_mm:,.2f}M AUM across {r.fund_count} funds;
     blended TVPI {r.blended_tvpi:.2f}x / DPI {r.blended_dpi:.2f}x / IRR {r.blended_irr_pct:.1f}%.
     {top_quartile} of {r.fund_count} funds tracking top-quartile vs PitchBook benchmarks.
-    Q1 2026 value change driven primarily by EBITDA growth (54%) and multiple expansion (22%); realization gains added $45M from two exits.
+    Q1 2026 value change driven primarily by EBITDA growth (54%) and multiple expansion (22%); realization gains added $45.00M from two exits.
     Upcoming LP communications: Q1 2026 audited financials (in progress), Q2 portfolio review call scheduled May 2026.
     Watch list: Everest Behavioral Health (negative YTD mark, strategic review in progress), Harbor Urgent Care (flat trajectory).
     Kestrel Fertility exit closing Q2 2026 will materially move Fund IV DPI.

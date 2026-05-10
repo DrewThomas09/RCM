@@ -283,15 +283,15 @@ def _public_comps_section(
         if price_target:
             analyst_html += (
                 f' <span style="color:{P["text_faint"]};'
-                f'font-size:10px;">PT ${price_target:,.0f}</span>'
+                f'font-size:10px;">PT ${price_target:,.2f}</span>'
             )
         rows.append([
             c["ticker"],
             c["name"],
             c["category"],
-            f"${c['market_cap_usd_bn']:,.1f}",
+            f"${c['market_cap_usd_bn']:,.2f}",
             provenance(
-                f"${c['enterprise_value_usd_bn']:,.1f}",
+                f"${c['enterprise_value_usd_bn']:,.2f}",
                 source=f"{c['ticker']} 10-K filing, TTM balance sheet",
                 formula="market_cap + total_debt - cash",
             ),

@@ -214,26 +214,26 @@ def _build_mip_tranches(bucket: str) -> List[MIPTranche]:
             expected_payout_moic3=round(mip_total_pct * 0.30 * 200, 2),
         ),
         MIPTranche(
-            tranche="Perf-Vest 2x MOIC",
+            tranche="Perf-Vest 2.00x MOIC",
             allocation_pct=round(mip_total_pct * 0.35, 4),
             vesting_type="Cliff + threshold",
-            hurdle="2.0x MOIC to sponsor",
+            hurdle="2.00x MOIC to sponsor",
             expected_payout_moic2=round(mip_total_pct * 0.35 * 100, 2),
             expected_payout_moic3=round(mip_total_pct * 0.35 * 200, 2),
         ),
         MIPTranche(
-            tranche="Perf-Vest 3x MOIC",
+            tranche="Perf-Vest 3.00x MOIC",
             allocation_pct=round(mip_total_pct * 0.25, 4),
             vesting_type="Cliff + threshold",
-            hurdle="3.0x MOIC to sponsor",
+            hurdle="3.00x MOIC to sponsor",
             expected_payout_moic2=0.0,    # threshold not met
             expected_payout_moic3=round(mip_total_pct * 0.25 * 200, 2),
         ),
         MIPTranche(
-            tranche="IRR Kicker (25% IRR)",
+            tranche="IRR Kicker (25.0% IRR)",
             allocation_pct=round(mip_total_pct * 0.10, 4),
             vesting_type="Cliff",
-            hurdle="25% IRR to sponsor",
+            hurdle="25.0% IRR to sponsor",
             expected_payout_moic2=0.0,
             expected_payout_moic3=round(mip_total_pct * 0.10 * 200, 2),
         ),
@@ -250,7 +250,7 @@ def _build_exit_scenarios(
     total_rollover = sum(e.rollover_value_mm for e in executives)
     total_option_pct = sum(e.options_pct for e in executives)
 
-    for label, moic in [("2x MOIC", 2.0), ("3x MOIC", 3.0), ("4x MOIC", 4.0)]:
+    for label, moic in [("2.00x MOIC", 2.0), ("3.00x MOIC", 3.0), ("4.00x MOIC", 4.0)]:
         exit_equity = equity_mm * moic
         gain = exit_equity - equity_mm
         # LP/GP split: 20% carry above 8% hurdle

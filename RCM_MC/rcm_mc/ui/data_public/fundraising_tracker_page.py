@@ -224,10 +224,10 @@ def render_fundraising_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Placement Agent Performance</div>{a_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Fundraising Summary:</strong> ${r.total_target_b:.2f}B aggregate target across {r.active_funds} active funds; ${r.total_hard_circled_b:.2f}B hard-circled ({r.pct_fundraised * 100:.1f}% complete) with additional ${hard_circle - r.total_hard_circled_b * 1000:,.2f}M in advanced-DD pipeline.
-    Fund VI leading with $5.1B hard-circled against $6.0B target — tracking above plan and should reach target at second close (June 2026).
+    Fund VI leading with $5.10B hard-circled against $6.00B target — tracking above plan and should reach target at second close (June 2026).
     LP pipeline concentrated in existing relationships (60%+ prior-fund LPs); new LP cultivation (ADIA, MIT, KIC, OTPP, QIA) represents $1.1B+ of upside if DD progresses.
     Terms negotiation track: 12 of 14 key provisions agreed with cornerstone LPs; 2 still negotiating (LPAC composition, ESG reporting) — LP pressure manageable, no GP-unfriendly concessions.
-    Placement agents: Park Hill ($1.85B sourced), Campbell Lutyens ($485M for CV), Jefferies ($485M for Growth III) — aggregate agent-sourced commitments $4.2B of ${r.total_hard_circled_b:.2f}B.
+    Placement agents: Park Hill ($1.85B sourced), Campbell Lutyens ($485.00M for CV), Jefferies ($485.00M for Growth III) — aggregate agent-sourced commitments $4.20B of ${r.total_hard_circled_b:.2f}B.
     Credit Fund is the only AT-RISK close: $320M hard-circled vs $1.0B first-close target; cornerstone LP pursuit accelerated Q2 2026.
   </div>
 </div>"""

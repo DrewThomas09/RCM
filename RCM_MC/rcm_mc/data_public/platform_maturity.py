@@ -90,9 +90,9 @@ def _load_corpus() -> List[dict]:
 def _build_dimensions() -> List[MaturityDimension]:
     items = [
         ("Financial Reporting Maturity", 75, 90, 80, 72, "Big 4 audit in place; GAAP quarterly; need SOX 404-ready"),
-        ("Revenue Predictability (Recurring %)", 78, 85, 72, 65, "Strong, but 12% long-tail churn in smaller contracts"),
+        ("Revenue Predictability (Recurring %)", 78, 85, 72, 65, "Strong, but 12.0% long-tail churn in smaller contracts"),
         ("Management Team Depth", 72, 85, 75, 68, "CFO transitioning; COO solid; need Chief Legal Officer"),
-        ("Customer/Payer Concentration", 68, 85, 70, 65, "Top payer at 22% — below risk threshold but monitoring"),
+        ("Customer/Payer Concentration", 68, 85, 70, 65, "Top payer at 22.0% — below risk threshold but monitoring"),
         ("Data &amp; Tech Infrastructure", 82, 90, 78, 72, "Consolidated EHR complete; analytics platform ramping"),
         ("Compliance / Legal", 85, 92, 85, 80, "Clean audit trail; no active DOJ/OIG matters"),
         ("Clinical Quality Metrics", 78, 85, 78, 72, "Top-quartile on 6 of 8 HEDIS measures"),
@@ -139,7 +139,7 @@ def _build_remediations() -> List[RemediationAction]:
                           "critical for IPO", 2.4, 9, 8),
         RemediationAction("Management Team", "Hire Chief Legal Officer from public-co experience",
                           "high", 0.85, 4, 5),
-        RemediationAction("Payer Diversification", "2nd-payer contract ramp to reduce top-payer to <18%",
+        RemediationAction("Payer Diversification", "2nd-payer contract ramp to reduce top-payer to <18.0%",
                           "high", 1.2, 12, 6),
         RemediationAction("ESG Reporting", "Build SDOH outcomes measurement + TCFD-aligned reporting",
                           "medium", 0.65, 8, 7),
@@ -156,14 +156,14 @@ def _build_remediations() -> List[RemediationAction]:
 
 def _build_financial() -> List[FinancialProfile]:
     return [
-        FinancialProfile("LTM Revenue ($M)", "$485M", ">$400M", ">$250M", "exceeds IPO threshold"),
-        FinancialProfile("Revenue Growth YoY", "+18%", ">+20%", ">+15%", "just below IPO sweet spot"),
-        FinancialProfile("LTM EBITDA Margin", "22.4%", ">22%", ">18%", "at IPO benchmark"),
-        FinancialProfile("Free Cash Flow Conversion", "72%", ">75%", ">65%", "slight gap to IPO"),
-        FinancialProfile("Net Debt / LTM EBITDA", "4.2x", "<3.5x", "<5.5x", "need paydown for IPO"),
-        FinancialProfile("Gross Margin", "58.5%", ">55%", ">50%", "at IPO benchmark"),
-        FinancialProfile("Net Revenue Retention", "108%", ">110%", ">100%", "slight gap to premium IPO"),
-        FinancialProfile("Operating Cash Flow ($M)", "$112M", ">$100M", ">$50M", "exceeds IPO threshold"),
+        FinancialProfile("LTM Revenue ($M)", "$485.00M", ">$400.00M", ">$250.00M", "exceeds IPO threshold"),
+        FinancialProfile("Revenue Growth YoY", "+18.0%", ">+20.0%", ">+15.0%", "just below IPO sweet spot"),
+        FinancialProfile("LTM EBITDA Margin", "22.4%", ">22.0%", ">18.0%", "at IPO benchmark"),
+        FinancialProfile("Free Cash Flow Conversion", "72.0%", ">75.0%", ">65.0%", "slight gap to IPO"),
+        FinancialProfile("Net Debt / LTM EBITDA", "4.20x", "<3.50x", "<5.50x", "need paydown for IPO"),
+        FinancialProfile("Gross Margin", "58.5%", ">55.0%", ">50.0%", "at IPO benchmark"),
+        FinancialProfile("Net Revenue Retention", "108.0%", ">110.0%", ">100.0%", "slight gap to premium IPO"),
+        FinancialProfile("Operating Cash Flow ($M)", "$112.00M", ">$100.00M", ">$50.00M", "exceeds IPO threshold"),
     ]
 
 

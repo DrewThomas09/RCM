@@ -156,7 +156,7 @@ def _build_milestones() -> List[MilestonePayment]:
         MilestonePayment("Project Laurel — Dermatology", "Add-on 3 complete", "Close 3 bolt-ons", 5.0, "2026-09-30", "on track", 0.85),
         MilestonePayment("Project Willow — Fertility", "New market entry", "2 new MSAs launched", 7.5, "2026-12-31", "on track", 0.75),
         MilestonePayment("Project Cedar — Cardiology", "EHR migration", "Epic live at 100.0% locations", 4.0, "2026-10-31", "at risk", 0.55),
-        MilestonePayment("Project Spruce — Radiology", "AI detection deployment", "Aidoc live at 50% hospitals", 6.0, "2026-11-30", "on track", 0.78),
+        MilestonePayment("Project Spruce — Radiology", "AI detection deployment", "Aidoc live at 50.0% hospitals", 6.0, "2026-11-30", "on track", 0.78),
         MilestonePayment("Project Aspen — Eye Care", "Add-on 2 complete", "2 regional acquisitions", 10.0, "2027-03-31", "on track", 0.80),
         MilestonePayment("Project Fir — Lab / Pathology", "Direct contracting win", "2 regional Blues contracts", 8.0, "2026-12-31", "at risk", 0.50),
         MilestonePayment("Project Ash — Infusion", "FDA approval milestone", "2 new infusion drugs approved", 12.0, "2027-06-30", "pending", 0.65),

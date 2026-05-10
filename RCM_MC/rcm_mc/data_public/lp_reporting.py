@@ -174,9 +174,9 @@ def _build_companies() -> List[PortfolioCompanyUpdate]:
 def _build_communications() -> List[LPCommunication]:
     return [
         LPCommunication("2025-04-15", "Quarterly Report", "Q1 2026 Mid-Year Update", "sent", 48),
-        LPCommunication("2025-03-28", "Fund Notice", "Distribution Notice - $385M", "sent", 48),
+        LPCommunication("2025-03-28", "Fund Notice", "Distribution Notice - $385.00M", "sent", 48),
         LPCommunication("2025-03-15", "Portfolio Update", "Azalea Exit Closing Notice", "sent", 48),
-        LPCommunication("2025-02-28", "Cap Call Notice", "Fund V Capital Call #12 - $225M", "sent", 28),
+        LPCommunication("2025-02-28", "Cap Call Notice", "Fund V Capital Call #12 - $225.00M", "sent", 28),
         LPCommunication("2025-02-15", "Annual Meeting", "Annual LP Meeting - NYC", "completed", 48),
         LPCommunication("2025-01-15", "Year-End Letter", "2024 Year-End Letter + Audited Financials", "sent", 48),
         LPCommunication("2024-12-15", "Portfolio Update", "Kestrel IPO Filing Notice", "sent", 48),

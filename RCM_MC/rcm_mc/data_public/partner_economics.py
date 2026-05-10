@@ -248,18 +248,18 @@ def _build_emp_vs_partner(partner_total_comp: float) -> List[EmployeeVsPartner]:
     return [
         EmployeeVsPartner(
             "Annual Cash Comp (Year 1)",
-            "$350K W-2", f"${partner_total_comp:,.0f} mixed",
-            f"${partner_total_comp - 350:,.0f} in favor of partner",
+            "$350.00K W-2", f"${partner_total_comp:,.2f} mixed",
+            f"${partner_total_comp - 350:,.2f} in favor of partner",
             "partner",
         ),
         EmployeeVsPartner(
             "Exit Equity Participation",
-            "Stock options ($200K-500K)", "Full equity share (~3-8%)",
+            "Stock options ($200K-500K)", "Full equity share (~3.0-8.0%)",
             "~3-10x more value at exit", "partner",
         ),
         EmployeeVsPartner(
             "Buy-in Capital Required",
-            "$0 — 0.25% option pool", "$800K - $2.5M cash / financed",
+            "$0.00 — 0.25% option pool", "$800K - $2.50M cash / financed",
             "Significant capital requirement", "employee",
         ),
         EmployeeVsPartner(

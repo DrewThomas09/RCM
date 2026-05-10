@@ -242,8 +242,8 @@ def _build_agents() -> List[PlacementAgent]:
 def _build_schedule() -> List[CloseSchedule]:
     return [
         CloseSchedule("Fund VI", "First Close", "2026-03-31", 3500.0, 3850.0, True, "on track; exceeded target"),
-        CloseSchedule("Fund VI", "Second Close", "2026-06-30", 5000.0, 0.0, True, "pipeline of $1.5B in DD-complete stage"),
-        CloseSchedule("Fund VI", "Final Close", "2026-12-31", 6000.0, 0.0, True, "$1.2B in early DD for top-up"),
+        CloseSchedule("Fund VI", "Second Close", "2026-06-30", 5000.0, 0.0, True, "pipeline of $1.50B in DD-complete stage"),
+        CloseSchedule("Fund VI", "Final Close", "2026-12-31", 6000.0, 0.0, True, "$1.20B in early DD for top-up"),
         CloseSchedule("Growth III", "First Close", "2026-05-31", 850.0, 650.0, True, "cornerstones committed; building momentum"),
         CloseSchedule("Growth III", "Final Close", "2026-12-31", 1500.0, 0.0, True, "strong pipeline; on track"),
         CloseSchedule("Continuation Vehicle (MSK)", "Final Close", "2026-08-31", 850.0, 485.0, True, "pricing in progress"),

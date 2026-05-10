@@ -28,7 +28,7 @@ items:
     url: https://www.modernhealthcare.com/2026/04/cms-site-neutral-final
     summary: |
       CMS finalised the CY2026 OPPS rule locking drug-administration
-      reimbursement in grandfathered off-campus HOPDs at 40% of the
+      reimbursement in grandfathered off-campus HOPDs at 40.0% of the
       on-campus rate. Affected hospital operators face ~$200-400M
       annual revenue erosion industry-wide.
     tickers: [HCA, THC, CYH, UHS]
@@ -37,7 +37,7 @@ items:
     tags: [site_neutral, opps, regulatory]
 
   - date: 2026-04-14
-    title: "Aetna/CVS $117.7M DOJ settlement over retrospective MA coding"
+    title: "Aetna/CVS $117.70M DOJ settlement over retrospective MA coding"
     source: STAT
     url: https://www.statnews.com/2026/04/aetna-doj-settlement
     summary: |
@@ -63,7 +63,7 @@ items:
     tags: [team, bundled_payment, regulatory]
 
   - date: 2026-03-27
-    title: "Envision successor-vehicle raises $2.1B; no PE sponsor"
+    title: "Envision successor-vehicle raises $2.10B; no PE sponsor"
     source: Reuters
     url: https://www.reuters.com/2026/03/envision-successor-fund
     summary: |
@@ -77,7 +77,7 @@ items:
     tags: [nsa, bankruptcy_emergence, emergency_medicine]
 
   - date: 2026-03-15
-    title: "HCA Q1 2026: EV/EBITDA compressed to 8.9x on rate fears"
+    title: "HCA Q1 2026: EV/EBITDA compressed to 8.90x on rate fears"
     source: Seeking Alpha
     url: https://seekingalpha.com/article/hca-q1-2026
     summary: |
@@ -103,12 +103,12 @@ items:
     tags: [sale_leaseback, regulatory, reit, connecticut]
 
   - date: 2026-02-28
-    title: "Steward Trustee releases $4.8B MPT lease claim analysis"
+    title: "Steward Trustee releases $4.80B MPT lease claim analysis"
     source: Modern Healthcare
     url: https://www.modernhealthcare.com/steward-trustee-mpt
     summary: |
       Liquidating trustee quantifies MPT master-lease exposure at
-      $4.8B. Industry data-point: REIT sale-leaseback + PE
+      $4.80B. Industry data-point: REIT sale-leaseback + PE
       ownership structurally correlated with bankruptcy outcome.
     tickers: [MPW]
     specialty: ACUTE_HOSPITAL
@@ -116,7 +116,7 @@ items:
     tags: [steward, sale_leaseback, bankruptcy, mpt]
 
   - date: 2026-02-18
-    title: "Ophthalmology MSO roll-ups rebound: $2.1B EV deal clears"
+    title: "Ophthalmology MSO roll-ups rebound: $2.10B EV deal clears"
     source: Mertz Taggart
     url: https://mertztaggart.com/ophth-2026-q1
     summary: |
@@ -129,7 +129,7 @@ items:
     tags: [rollup, msa, opht]
 
   - date: 2026-02-04
-    title: "Cano Health Ch. 11 exit: $3.4B EV writedown, new owner"
+    title: "Cano Health Ch. 11 exit: $3.40B EV writedown, new owner"
     source: KFF Health News
     url: https://kffhealthnews.org/cano-exit-march-2026
     summary: |
@@ -162,7 +162,7 @@ items:
       Tenet posted $3.22 EPS vs $2.98 consensus, driven by the
       USPI ambulatory surgery segment. Management raised FY26
       EBITDA guidance 3-5%. Sell-side consensus price target
-      lifted to $182 average.
+      lifted to $182.00 average.
     tickers: [THC]
     specialty: AMBULATORY_SURGERY
     sentiment: positive
@@ -176,7 +176,7 @@ items:
       CMS published the final V28 HCC mapping for CY2027. Aggregate
       risk-score reduction projected at 3.12% — aligns with CY2025
       pilot data. Providers with >60% MA mix should model $8-15M
-      revenue compression per $500M NPR.
+      revenue compression per $500.00M NPR.
     tickers: [HCA, UHS, DVA]
     specialty: MA_RISK_PRIMARY_CARE
     sentiment: negative
@@ -187,7 +187,7 @@ items:
     source: Reuters
     url: https://www.reuters.com/2026/04/lhc-uhg-close
     summary: |
-      UnitedHealth's $8.3B LHC acquisition cleared HSR review with
+      UnitedHealth's $8.30B LHC acquisition cleared HSR review with
       no second request. Closing expected Q2 2026. Signal: home-
       health remains HSR-clean for vertical integration; contrast
       with USPI and NovaHealth precedents.
@@ -218,7 +218,7 @@ items:
       Three sell-side shops upgraded DaVita following CMS CY2027
       ESRD PPS preliminary rate release — 1.8% rate increase with
       no Medicare Advantage carveouts. Consensus price target moved
-      from $145 to $165.
+      from $145.00 to $165.00.
     tickers: [DVA]
     specialty: DIALYSIS
     sentiment: positive
@@ -231,7 +231,7 @@ items:
     summary: |
       Three mid-cap emergency medicine groups secured BCBS-TX par
       status 14 months after the broad OON termination cycle. ED
-      groups' collections recovery averaging 58% of pre-termination
+      groups' collections recovery averaging 58.0% of pre-termination
       run-rate — suggesting NSA pressure is bounded, not terminal.
     tickers: []
     specialty: EMERGENCY_MEDICINE
@@ -307,11 +307,11 @@ items:
     tags: [cyber, change, reserves, diligence]
 
   - date: 2025-12-18
-    title: "Hospice roll-up: BrightSpring $1.6B EV clears"
+    title: "Hospice roll-up: BrightSpring $1.60B EV clears"
     source: Modern Healthcare
     url: https://www.modernhealthcare.com/brightspring-hospice-2025
     summary: |
-      BrightSpring Health closed $1.6B EV hospice acquisition,
+      BrightSpring Health closed $1.60B EV hospice acquisition,
       keeping hospice roll-up multiples at 13-15x EV/EBITDA.
       Favorable payer mix + demographic tailwind continue to support
       sector premium.
