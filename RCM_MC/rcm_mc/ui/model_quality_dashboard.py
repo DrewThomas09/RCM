@@ -230,7 +230,7 @@ def render_model_quality_dashboard(
         'align-items:baseline;margin-bottom:16px;">'
         '<h1 style="font-size:24px;color:#f3f4f6;margin:0;">'
         'Model Quality</h1>'
-        '<a href="/data/catalog" style="color:#60a5fa;'
+        '<a href="/data/catalog" style="color:var(--theme-accent,#60a5fa);'
         'font-size:13px;">Data sources →</a></div>'
         '<p style="color:#9ca3af;font-size:13px;'
         'margin:0 0 18px 0;max-width:720px;">'

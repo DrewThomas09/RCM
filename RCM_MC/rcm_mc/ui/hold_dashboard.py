@@ -11,6 +11,8 @@ import json
 import logging
 from typing import Any, Dict, List, Optional
 
+from .brand import PALETTE
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,12 +29,12 @@ def _fmt_money(v: float) -> str:
 
 
 _STATUS_COLORS = {
-    "completed": "#10b981",
-    "on_track": "#3b82f6",
-    "in_progress": "#f59e0b",
-    "at_risk": "#ef4444",
+    "completed":   PALETTE["positive"],
+    "on_track":    PALETTE["brand_accent"],
+    "in_progress": PALETTE["warning"],
+    "at_risk":     PALETTE["negative"],
     "not_started": "#64748b",
-    "abandoned": "#374151",
+    "abandoned":   "#374151",
 }
 
 _HOLD_CSS = """
@@ -153,7 +155,11 @@ def _render_ebitda_chart(actuals_list: List[Dict[str, Any]]) -> str:
         a1, a2 = actuals[i], actuals[i + 1]
         p1, p2 = plans[i], plans[i + 1]
         above = (a1 + a2) / 2 >= (p1 + p2) / 2
-        color = "#10b98130" if above else "#ef444430"
+        # Variance shading uses brand semantics (positive/negative)
+        # with a 30%-opacity hex suffix for soft-fill polygon look.
+        # PALETTE values are 6-char hex, so concatenating ``30``
+        # yields the 8-char #RRGGBBAA form.
+        color = (PALETTE["positive"] + "30") if above else (PALETTE["negative"] + "30")
         pts = f"{x1},{_y(a1)} {x2},{_y(a2)} {x2},{_y(p2)} {x1},{_y(p1)}"
         shading += f'<polygon points="{pts}" fill="{color}"/>'
 
@@ -174,10 +180,10 @@ def _render_ebitda_chart(actuals_list: List[Dict[str, Any]]) -> str:
         f'{shading}'
         f'<polyline points="{plan_pts}" fill="none" stroke="#64748b" '
         f'stroke-dasharray="4,3" stroke-width="1.5"/>'
-        f'<polyline points="{actual_pts}" fill="none" stroke="#3b82f6" '
+        f'<polyline points="{actual_pts}" fill="none" stroke="{PALETTE["brand_accent"]}" '
         f'stroke-width="2"/>'
         f'{labels}'
-        f'<text x="{w - pad_x}" y="14" text-anchor="end" fill="#3b82f6" '
+        f'<text x="{w - pad_x}" y="14" text-anchor="end" fill="{PALETTE["brand_accent"]}" '
         f'font-size="10">Actual</text>'
         f'<text x="{w - pad_x}" y="26" text-anchor="end" fill="#64748b" '
         f'font-size="10">Plan</text>'
@@ -201,14 +207,14 @@ def _render_scorecard(actuals_list: List[Dict[str, Any]]) -> str:
                 cells.append('<td class="dim">—</td>')
                 continue
             icon = "✓"
-            color = "#10b981"
+            color = PALETTE["positive"]
             if plan_val is not None:
                 try:
                     var = (float(actual) - float(plan_val)) / max(abs(float(plan_val)), 1e-9)
                     if abs(var) > 0.15:
-                        icon = "✗"; color = "#ef4444"
+                        icon = "✗"; color = PALETTE["negative"]
                     elif abs(var) > 0.05:
-                        icon = "⚠"; color = "#f59e0b"
+                        icon = "⚠"; color = PALETTE["warning"]
                 except (TypeError, ValueError):
                     pass
             cells.append(
@@ -242,7 +248,7 @@ def render_hold_dashboard(
         f'<div class="hold-wrap">'
         f'<div class="hold-header">'
         f'<span class="dim">{quarters_held} quarter(s) held</span>'
-        f'<a href="/analysis/{_esc(deal_id)}" style="color:#3b82f6;'
+        f'<a href="/analysis/{_esc(deal_id)}" style="color:{PALETTE["brand_accent"]};'
         f'text-decoration:none;margin-left:auto;">← Workbench</a>'
         f'</div>'
         f'<div class="hold-grid">'

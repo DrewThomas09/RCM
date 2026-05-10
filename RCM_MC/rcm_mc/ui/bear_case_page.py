@@ -188,12 +188,12 @@ font-family:"Helvetica Neue",Arial,sans-serif;}}
 # ────────────────────────────────────────────────────────────────────
 
 _THEME_COLORS = {
-    "REGULATORY": "#EF4444",
-    "CREDIT": "#F59E0B",
-    "OPERATIONAL": "#1F4E78",
-    "MARKET": "#8b5cf6",
-    "STRUCTURAL": "#64748b",
-    "PATTERN": "#ec4899",
+    "REGULATORY":  P["negative"],
+    "CREDIT":      P["warning"],
+    "OPERATIONAL": P["brand_accent"],
+    "MARKET":      "#8b5cf6",
+    "STRUCTURAL":  "#64748b",
+    "PATTERN":     "#ec4899",
 }
 
 

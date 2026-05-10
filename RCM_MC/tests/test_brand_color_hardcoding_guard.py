@@ -64,7 +64,7 @@ ALLOWED_PATHS: tuple[str, ...] = (
 # Baseline as of guard introduction. Drop this number whenever a
 # module migrates to PALETTE references; never raise without
 # justification in the commit message.
-HARDCODE_CAP = 511
+HARDCODE_CAP = 497
 
 
 def _strip_var_fallbacks(src: str) -> str:
