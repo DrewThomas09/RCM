@@ -22,7 +22,9 @@ from ..diligence.bridge_audit import (
     BridgeAuditReport, BridgeLever, LEVER_PRIORS, LeverAudit,
     LeverVerdict, audit_bridge, parse_bridge_text,
 )
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_section_intro, ck_signal_badge,
+)
 from .power_ui import (
     benchmark_chip, bookmark_hint, deal_context_bar,
     export_json_panel, interpret_callout, provenance, sortable_table,
@@ -285,41 +287,55 @@ def _verdict_card(report: BridgeAuditReport) -> str:
         ),
     )
 
+    badge_tone = {
+        "MATERIAL": "negative",
+        "GAP": "warning",
+        "OK": "positive",
+    }.get(verdict, "neutral")
+    intro = ck_section_intro(
+        eyebrow=f"Bridge Audit · {verdict}",
+        headline=html.escape(report.headline),
+        body=html.escape(report.rationale),
+        italic_word="bridge",
+    )
+    badge = ck_signal_badge(verdict, tone=badge_tone)
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Banker Claim",
+            f"${report.claimed_bridge_usd/1e6:.1f}M",
+            sub="total sell-side bridge",
+        )
+        + ck_kpi_block(
+            "Realistic (P50)",
+            f"${report.realistic_bridge_usd/1e6:.1f}M",
+            sub=(
+                f"P25 ${report.realistic_bridge_p25_usd/1e6:.1f}M – "
+                f"P75 ${report.realistic_bridge_p75_usd/1e6:.1f}M"
+            ),
+        )
+        + ck_kpi_block(
+            "Gap", gap_val,
+            sub=f"{report.gap_pct*100:+.0f}% of claim",
+        )
+        + ck_kpi_block(
+            "Levers Audited", f"{len(report.per_lever)}",
+            sub=(
+                f"{report.overstated_count} overstated · "
+                f"{report.unsupported_count} unsupported · "
+                f"{report.realistic_count} realistic"
+            ),
+        )
+        + "</div>"
+    )
     return (
         f'<div class="ba-verdict-card ba-verdict-{verdict}">'
-        f'<div class="ba-verdict-badge">{verdict}</div>'
-        f'<div class="ba-verdict-headline">'
-        f'{html.escape(report.headline)}</div>'
-        f'<div class="ba-verdict-rationale">'
-        f'{html.escape(report.rationale)}</div>'
+        f'<p class="ck-section-body">{badge}</p>'
+        f'{intro}'
         + interpret_callout("Plain-English read:", plain, tone=plain_tone)
-        + f'<div style="margin-top:16px;">{realization_chip}</div>'
-        + f'<div class="ba-kpi-grid">'
-        f'  <div><div class="ba-kpi__label">Banker Claim</div>'
-        f'       <div class="ba-kpi__val">'
-        f'${report.claimed_bridge_usd/1e6:.1f}M</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">total sell-side bridge</div></div>'
-        f'  <div><div class="ba-kpi__label">Realistic (P50)</div>'
-        f'       <div class="ba-kpi__val pos">'
-        f'${report.realistic_bridge_usd/1e6:.1f}M</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">P25 ${report.realistic_bridge_p25_usd/1e6:.1f}M – '
-        f'P75 ${report.realistic_bridge_p75_usd/1e6:.1f}M</div></div>'
-        f'  <div><div class="ba-kpi__label">Gap</div>'
-        f'       <div class="ba-kpi__val '
-        f'{"neg" if report.gap_usd > 0 else "pos"}">{gap_val}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">{report.gap_pct*100:+.0f}% of claim</div></div>'
-        f'  <div><div class="ba-kpi__label">Levers Audited</div>'
-        f'       <div class="ba-kpi__val">{len(report.per_lever)}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">'
-        f'{report.overstated_count} overstated · '
-        f'{report.unsupported_count} unsupported · '
-        f'{report.realistic_count} realistic</div></div>'
-        f'</div>'
-        f'</div>'
+        + f'<p class="ck-section-body">{realization_chip}</p>'
+        + kpis
+        + '</div>'
     )
 
 

@@ -26,7 +26,9 @@ from ..diligence.payer_stress import (
     PayerStressRow, PayerStressVerdict, YearlyNPRImpact,
     default_hospital_mix, run_payer_stress,
 )
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_section_intro, ck_signal_badge,
+)
 from .power_ui import (
     benchmark_chip, bookmark_hint, deal_context_bar,
     export_json_panel, interpret_callout, provenance, sortable_table,
@@ -656,48 +658,55 @@ def _verdict_card(report: PayerStressReport) -> str:
                  "material earn-out.", "bad"),
     }
     plain, tone = plain_map.get(verdict, plain_map["CAUTION"])
+    badge_tone = {
+        "PASS": "positive",
+        "CAUTION": "warning",
+        "WARNING": "warning",
+        "FAIL": "negative",
+    }.get(verdict, "neutral")
+    intro = ck_section_intro(
+        eyebrow=f"Payer Stress · {verdict}",
+        headline=html.escape(report.headline),
+        body=html.escape(report.rationale),
+        italic_word="payer",
+    )
+    badge = ck_signal_badge(verdict, tone=badge_tone)
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Risk Score", risk_val, sub="0-100 · lower = safer",
+        )
+        + ck_kpi_block(
+            "Top-1 Share", f"{report.top_1_share*100:.0f}%",
+            sub="flag at >30%",
+        )
+        + ck_kpi_block(
+            "Top-3 Share", f"{report.top_3_share*100:.0f}%",
+            sub="flag at >70%",
+        )
+        + ck_kpi_block(
+            "HHI", f"{report.hhi_index:.0f}",
+            sub=">2500 = concentrated",
+        )
+        + ck_kpi_block(
+            "Conc. Amplifier", f"{report.concentration_amplifier:.2f}×",
+            sub="volatility multiplier",
+        )
+        + ck_kpi_block(
+            "P10 EBITDA Impact",
+            f"${report.p10_cumulative_ebitda_impact_usd/1e6:+,.1f}M",
+            sub=f"cumulative {report.horizon_years}-yr",
+        )
+        + "</div>"
+    )
     return (
         f'<div class="ps-verdict-card ps-verdict-{verdict}">'
-        f'<div class="ps-verdict-badge">{verdict}</div>'
-        f'<div class="ps-verdict-headline">'
-        f'{html.escape(report.headline)}</div>'
-        f'<div class="ps-verdict-rationale">'
-        f'{html.escape(report.rationale)}</div>'
+        f'<p class="ck-section-body">{badge}</p>'
+        f'{intro}'
         + interpret_callout("Partner action:", plain, tone=tone)
-        + f'<div style="margin-top:16px;">{top1_chip}</div>'
-        + f'<div class="ps-kpi-grid">'
-        f'  <div><div class="ps-kpi__label">Risk Score</div>'
-        f'       <div class="ps-kpi__val">{risk_val}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">0-100 · lower = safer</div></div>'
-        f'  <div><div class="ps-kpi__label">Top-1 Share</div>'
-        f'       <div class="ps-kpi__val '
-        f'{"neg" if report.top_1_share > 0.30 else ""}">'
-        f'{report.top_1_share*100:.0f}%</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">flag at &gt;30%</div></div>'
-        f'  <div><div class="ps-kpi__label">Top-3 Share</div>'
-        f'       <div class="ps-kpi__val">'
-        f'{report.top_3_share*100:.0f}%</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">flag at &gt;70%</div></div>'
-        f'  <div><div class="ps-kpi__label">HHI</div>'
-        f'       <div class="ps-kpi__val">'
-        f'{report.hhi_index:.0f}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">&gt;2500 = concentrated</div></div>'
-        f'  <div><div class="ps-kpi__label">Conc. Amplifier</div>'
-        f'       <div class="ps-kpi__val">'
-        f'{report.concentration_amplifier:.2f}×</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">volatility multiplier</div></div>'
-        f'  <div><div class="ps-kpi__label">P10 EBITDA Impact</div>'
-        f'       <div class="ps-kpi__val neg">'
-        f'${report.p10_cumulative_ebitda_impact_usd/1e6:+,.1f}M</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">cumulative {report.horizon_years}-yr</div></div>'
-        f'</div>'
-        f'</div>'
+        + f'<p class="ck-section-body">{top1_chip}</p>'
+        + kpis
+        + '</div>'
     )
 
 
