@@ -84,7 +84,17 @@ API_SMOKE_ROUTES: list[tuple[str, int]] = [
     ("/api/regulatory-calendar/exposure",    200),
     ("/api/surrogate/schema",                 200),
     ("/api/diligence/comparable-outcomes",   200),
+    # Additional endpoints (subpath / file extensions)
+    ("/api/deals/search",                        200),
+    ("/api/diligence/comparable-outcomes.csv",   200),
+    ("/api/diligence/comparable-outcomes.memo",  200),
+    ("/api/docs",                                200),
+    ("/api/metrics/custom",                      200),
+    ("/api/portfolio/risk-scan.csv",             200),
+    ("/api/search",                              200),
+    ("/api/webhooks/test",                       200),
 ]
+
 
 
 class APIEndpointSmoke(unittest.TestCase):
