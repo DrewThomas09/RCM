@@ -925,6 +925,49 @@ _SPEC: Dict[str, Any] = {
                 "responses": {"200": {"description": "Launch result"}},
             },
         },
+        "/api/deadlines": {
+            "get": {
+                "summary": "Upcoming deadlines across the portfolio",
+                "tags": ["Activity"],
+                "responses": {"200": {"description": "Deadline rows"}},
+            },
+        },
+        "/api/cohorts": {
+            "get": {
+                "summary": "Saved cohorts (deal slices)",
+                "tags": ["Portfolio"],
+                "responses": {"200": {"description": "Cohort definitions + counts"}},
+            },
+        },
+        "/api/watchlist": {
+            "get": {
+                "summary": "Starred deals (per-user watchlist)",
+                "tags": ["Portfolio"],
+                "responses": {"200": {"description": "Starred deal rows"}},
+            },
+        },
+        "/api/tags": {
+            "get": {
+                "summary": "Tag catalog (all tags in use)",
+                "tags": ["Activity"],
+                "responses": {"200": {"description": "Tag rows + usage counts"}},
+            },
+        },
+        "/api/owners": {
+            "get": {
+                "summary": "Deal-owner directory",
+                "tags": ["Activity"],
+                "responses": {"200": {"description": "Owner rows + deal counts"}},
+            },
+        },
+        "/api/deals/{deal_id}/peers": {
+            "get": {
+                "summary": "Peer comparables for a deal",
+                "tags": ["Deals"],
+                "parameters": [{"name": "deal_id", "in": "path", "required": True, "schema": {"type": "string"}}],
+                "responses": {"200": {"description": "Peer rows"}},
+            },
+        },
     },
     "tags": [
         {"name": "Deals", "description": "Deal CRUD, lifecycle, validation, completeness, search, PATCH"},

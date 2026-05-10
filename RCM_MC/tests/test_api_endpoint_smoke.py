@@ -248,8 +248,8 @@ class APIEndpointSmoke(unittest.TestCase):
         message pointing at the spec drift.
         """
         import json
-        OPENAPI_PATH_FLOOR = 95
-        OPENAPI_OPERATION_FLOOR = 99
+        OPENAPI_PATH_FLOOR = 101
+        OPENAPI_OPERATION_FLOOR = 105
         resp = self.opener.open(
             self.base + "/api/openapi.json", timeout=8,
         )
@@ -296,6 +296,60 @@ class APIEndpointSmoke(unittest.TestCase):
             f"handler walks the spec — divergence means the walker "
             f"skipped or duplicated operations. Check the /api "
             f"dispatcher (server.py) and infra/openapi.py.",
+        )
+
+    def test_every_smoke_route_is_documented_in_openapi(self) -> None:
+        """Each /api/* entry in API_SMOKE_ROUTES must be documented
+        in the OpenAPI spec. Closing this loop matters because the
+        smoke list IS the partner-visible regression net — if a
+        route is critical enough to smoke-test, it's critical
+        enough to publish in the API docs.
+
+        Allowed exceptions: the auth-free liveness probes
+        /healthz, /health, /ready (these are operations-team paths,
+        not partner-developer surfaces).
+        """
+        from rcm_mc.infra.openapi import get_openapi_spec
+
+        documented = set(get_openapi_spec()["paths"].keys())
+
+        def _normalize(p: str) -> str:
+            # Strip query string and re-symbolise concrete demo IDs
+            # back to OpenAPI placeholders.
+            p = p.split("?", 1)[0]
+            parts = p.split("/")
+            out = []
+            for i, part in enumerate(parts):
+                prev = parts[i - 1] if i > 0 else ""
+                if prev == "deals" and part not in (
+                    "search", "stats", "compare", "bulk", "import",
+                    "import-csv", "wizard",
+                ):
+                    out.append("{deal_id}")
+                elif prev == "analysis" and part not in ("export",):
+                    out.append("{deal_id}")
+                elif prev == "synthesis":
+                    out.append("{deal_id}")
+                elif prev == "jobs":
+                    out.append("{job_id}")
+                else:
+                    out.append(part)
+            return "/".join(out)
+
+        skip = {"/healthz", "/health", "/ready"}
+        missing: list[str] = []
+        for path, _ in API_SMOKE_ROUTES:
+            if path in skip:
+                continue
+            n = _normalize(path)
+            if n in documented:
+                continue
+            missing.append(f"{path} (normalised: {n})")
+        self.assertEqual(
+            missing, [],
+            f"Smoke entries not documented in OpenAPI: {missing}. "
+            f"Either add them to rcm_mc/infra/openapi.py or remove "
+            f"from API_SMOKE_ROUTES with rationale.",
         )
 
     def test_deal_compare_returns_real_rows_not_unbound_store_errors(
