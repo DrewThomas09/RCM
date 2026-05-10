@@ -3800,8 +3800,21 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path in ("/health", "/healthz"):
             return self._send_text("ok")
         if path == "/api/migrations":
+            # Admin-only — schema migration names leak the database
+            # internals an analyst-role user has no operational
+            # need to see. Same gate as /users + /audit + /api/system/info.
+            from .auth.auth import list_users
             from .infra.migrations import list_applied, _MIGRATIONS
             store = PortfolioStore(self.config.db_path)
+            current = self._current_user()
+            users_df = list_users(store)
+            if len(users_df) > 0 and (
+                current is None or current.get("role") != "admin"
+            ):
+                return self._send_json(
+                    {"error": "admin only", "code": "FORBIDDEN"},
+                    status=HTTPStatus.FORBIDDEN,
+                )
             applied = list_applied(store)
             total = len(_MIGRATIONS)
             return self._send_json({
@@ -11072,7 +11085,22 @@ class RCMHandler(BaseHTTPRequestHandler):
         })
 
     def _route_metrics(self) -> None:
-        """GET /api/metrics — request timing percentiles."""
+        """GET /api/metrics — request timing percentiles. Admin-only:
+        per-endpoint latency percentiles are operator data, useful
+        for capacity planning and SLO tracking but not partner-
+        facing. Gated to match /api/system/info + /api/migrations
+        + /api/backup."""
+        from .auth.auth import list_users
+        store = PortfolioStore(self.config.db_path)
+        current = self._current_user()
+        users_df = list_users(store)
+        if len(users_df) > 0 and (
+            current is None or current.get("role") != "admin"
+        ):
+            return self._send_json(
+                {"error": "admin only", "code": "FORBIDDEN"},
+                status=HTTPStatus.FORBIDDEN,
+            )
         rt = list(RCMHandler._response_times)
         n = len(rt)
         if n > 0:

@@ -689,6 +689,7 @@ class APIEndpointSmoke(unittest.TestCase):
         ADMIN_ONLY = [
             "/users", "/audit",
             "/api/system/info", "/api/backup",
+            "/api/migrations", "/api/metrics",
         ]
         leaks: list[str] = []
         for path in ADMIN_ONLY:
