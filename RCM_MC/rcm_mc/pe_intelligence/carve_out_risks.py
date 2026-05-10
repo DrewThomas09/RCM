@@ -116,7 +116,7 @@ def assess_carve_out(inputs: CarveOutInputs) -> CarveOutAssessment:
             severity=sev,
             estimated_cost_m=inputs.change_of_control_contracts_pct * 5.0,
             estimated_months=9,
-            description=(f"{inputs.change_of_control_contracts_pct*100:.0f}% "
+            description=(f"{inputs.change_of_control_contracts_pct*100:.1f}% "
                          "of revenue carries CoC clauses — customers can "
                          "re-price or exit."),
             mitigation=("Pre-close consent outreach; prioritize top-20 "
@@ -190,7 +190,7 @@ def assess_carve_out(inputs: CarveOutInputs) -> CarveOutAssessment:
                       else "medium"),
             estimated_cost_m=5.0,
             estimated_months=6,
-            description=(f"Only {inputs.key_employees_retained_pct*100:.0f}% "
+            description=(f"Only {inputs.key_employees_retained_pct*100:.1f}% "
                          "of key employees expected to stay post-close — "
                          "operational continuity at risk."),
             mitigation=("Retention bonuses; MIP equity offers; "

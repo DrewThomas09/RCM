@@ -84,7 +84,7 @@ def evaluate_ic_readiness(
     data_cov = review.context_summary.get("data_coverage_pct")
     if data_cov is not None and data_cov < minimum_data_coverage:
         blockers.append(
-            f"Data coverage {data_cov*100:.0f}% < required {minimum_data_coverage*100:.1f}%."
+            f"Data coverage {data_cov*100:.1f}% < required {minimum_data_coverage*100:.1f}%."
         )
 
     # 4. P0 diligence items

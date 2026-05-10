@@ -149,7 +149,7 @@ def render_vintage_curve_markdown(curve: VintageCurve) -> str:
     ]
     for p in curve.points:
         lines.append(
-            f"| {p.fund_year} | {p.called_pct*100:.0f}% | "
+            f"| {p.fund_year} | {p.called_pct*100:.1f}% | "
             f"{p.dpi:.2f} | {p.tvpi:.2f} |"
         )
     return "\n".join(lines)

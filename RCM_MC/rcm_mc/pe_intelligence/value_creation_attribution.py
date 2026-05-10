@@ -199,12 +199,12 @@ def attribute_value_creation(
     flags: List[str] = []
     if multiple_share > 30:
         flags.append(
-            f"Multiple-expansion share {multiple_share:.0f}% "
+            f"Multiple-expansion share {multiple_share:.1f}% "
             "> 30% — cycle-dependent."
         )
     if ma_share > 40:
         flags.append(
-            f"M&A share {ma_share:.0f}% > 40% — roll-up "
+            f"M&A share {ma_share:.1f}% > 40% — roll-up "
             "thesis; must be priced accordingly."
         )
     if (organic_share + margin_share) < 20:
@@ -216,7 +216,7 @@ def attribute_value_creation(
     # Partner note.
     if multiple_share > 40:
         note = (
-            f"MOIC {moic:.2f}x with {multiple_share:.0f}% "
+            f"MOIC {moic:.2f}x with {multiple_share:.1f}% "
             "from multiple expansion. Partner: this is a "
             "bet on the cycle, not the plan."
         )

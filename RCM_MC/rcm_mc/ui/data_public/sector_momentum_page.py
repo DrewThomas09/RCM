@@ -199,7 +199,7 @@ def render_sector_momentum(recent_years: int = 5) -> str:
                 )
             else:
                 sign = "+" if change > 0 else ""
-                pct_cell = f'{sign}{change:.0f}%'
+                pct_cell = f'{sign}{change:.1f}%'
             # MOIC cells reflect the Bayesian-smoothed estimate; a
             # small "shrunk N%" badge shows how much weight the prior
             # got, so the partner can tell when a P50 is mostly the

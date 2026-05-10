@@ -184,7 +184,7 @@ def render_miss_rate_markdown(r: MissRateReport) -> str:
     for c in r.category_stats:
         lines.append(
             f"| {c.category} | {c.total_items} | {c.missed_items} | "
-            f"{c.miss_rate*100:.0f}% | "
+            f"{c.miss_rate*100:.1f}% | "
             f"${c.avg_impact_missed_m:,.2f}M | "
             f"{c.partner_commentary} |"
         )

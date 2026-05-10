@@ -120,11 +120,11 @@ def check_bench_depth(inputs: BenchDepthInputs) -> BenchDepthReport:
         name="ceo_rollover_pct",
         passed=ceo_ok,
         partner_comment=(
-            f"CEO rollover {inputs.ceo_rollover_pct*100:.0f}% "
+            f"CEO rollover {inputs.ceo_rollover_pct*100:.1f}% "
             "is meaningful skin-in-the-game."
             if ceo_ok else
             f"CEO rollover only "
-            f"{inputs.ceo_rollover_pct*100:.0f}% — partner "
+            f"{inputs.ceo_rollover_pct*100:.1f}% — partner "
             "wants ≥ 15% for alignment."
         ),
     ))

@@ -141,7 +141,7 @@ def render_workstream_report_markdown(
     lines = [
         "# Integration workstream status",
         "",
-        f"**Overall completion:** {report.overall_completion*100:.0f}%  ",
+        f"**Overall completion:** {report.overall_completion*100:.1f}%  ",
         f"**Milestones:** {report.completed_milestones}/{report.total_milestones}  ",
         f"**Delayed:** {report.delayed_count}",
         "",
@@ -155,6 +155,6 @@ def render_workstream_report_markdown(
     for w in report.workstreams:
         lines.append(
             f"| {w.name} | {w.lead or '—'} | {w.health} | "
-            f"{w.completion_pct()*100:.0f}% |"
+            f"{w.completion_pct()*100:.1f}% |"
         )
     return "\n".join(lines)

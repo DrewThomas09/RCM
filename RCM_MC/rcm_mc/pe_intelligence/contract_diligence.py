@@ -189,7 +189,7 @@ def analyze_contract_portfolio(
             "stagger renewals pre-close.")
     if portfolio_concentration >= 0.70:
         actions.append(
-            f"Top-3 payer concentration {portfolio_concentration*100:.0f}% — "
+            f"Top-3 payer concentration {portfolio_concentration*100:.1f}% — "
             "diversify or price in single-payer risk.")
     high_risk_actions = [
         f"Renegotiate {r.contract.payer_name} pre-close."
@@ -236,7 +236,7 @@ def render_contract_diligence_markdown(portfolio: ContractPortfolio) -> str:
         c = r.contract
         expiry = f"{c.expiry_years:.1f}yr" if c.expiry_years is not None else "n/a"
         lines.append(
-            f"| {c.payer_name} | {c.revenue_share*100:.0f}% | "
+            f"| {c.payer_name} | {c.revenue_share*100:.1f}% | "
             f"{expiry} | {r.score:.2f} | {r.action} |"
         )
     if portfolio.actions_needed:

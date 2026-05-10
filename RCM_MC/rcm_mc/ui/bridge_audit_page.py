@@ -475,7 +475,7 @@ def _per_lever_narrative_block(report: BridgeAuditReport) -> str:
             f'font-weight:700;margin-bottom:3px;">'
             f'<span>Claim vs peer median</span>'
             f'<span style="color:{bar_color};">'
-            f'{pct_vs_median:.0f}% · {pct_verdict_text}</span>'
+            f'{pct_vs_median:.1f}% · {pct_verdict_text}</span>'
             f'</div>'
             f'<div style="background:{P["panel_alt"]};'
             f'border-radius:3px;height:8px;position:relative;'
@@ -513,7 +513,7 @@ def _per_lever_narrative_block(report: BridgeAuditReport) -> str:
             f'text-transform:uppercase;letter-spacing:1.1px;'
             f'margin-top:4px;">'
             f'{html.escape(a.category_label)} · '
-            f'median realization {a.adjusted_realization_median*100:.0f}% · '
+            f'median realization {a.adjusted_realization_median*100:.1f}% · '
             f'{a.failure_rate*100:.1f}% fail rate · '
             f'{a.duration_months_median}-month ramp</div>'
             + vs_bar
@@ -551,7 +551,7 @@ def _lever_library_panel() -> str:
             html.escape(p.label),
             f'<span style="color:{realization_color};font-weight:700;">'
             f'{p.realization_median*100:.1f}%</span>',
-            f"{p.realization_p25*100:.0f}% – {p.realization_p75*100:.0f}%",
+            f"{p.realization_p25*100:.1f}% – {p.realization_p75*100:.0f}%",
             f'<span style="color:{fail_color};font-weight:700;">'
             f'{p.failure_rate*100:.1f}%</span>',
             f"{p.realization_n_samples:,}",

@@ -170,7 +170,7 @@ def simulate_productivity_drift(
         p90_attrition_pct=p90_attrition,
         ramp_months=ramp_months,
         narrative=(
-            f"Buyer holds firm on {buyer_proposed_reduction_pct*100:.0f}% "
+            f"Buyer holds firm on {buyer_proposed_reduction_pct*100:.1f}% "
             f"comp reduction. Median attrition {med_attrition*100:.0f}%; "
             f"p90 {p90_attrition*100:.1f}%. EBITDA at median: "
             f"${med_ebitda_loss:,.0f}."

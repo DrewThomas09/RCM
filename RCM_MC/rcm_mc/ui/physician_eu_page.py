@@ -174,7 +174,7 @@ def _hero(
             f"or above the physician-group peer norm (30-40%). "
             f"No structural comp restructure needed; no drop "
             f"candidates. Revenue concentration in the top-10% "
-            f"of providers is {report.top_decile_contribution_share*100:.0f}% "
+            f"of providers is {report.top_decile_contribution_share*100:.1f}% "
             f"of positive contribution."
         )
     else:

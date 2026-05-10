@@ -181,7 +181,7 @@ def _breach_probability_chart(
         for p in pts:
             tip = (
                 f"{name} Y{p.year}Q{p.quarter_idx%4+1}\\n"
-                f"Breach prob {p.breach_probability*100:.0f}%\\n"
+                f"Breach prob {p.breach_probability*100:.1f}%\\n"
                 f"Median metric {p.median_metric:.2f} vs "
                 f"threshold {p.threshold:.2f}"
             )

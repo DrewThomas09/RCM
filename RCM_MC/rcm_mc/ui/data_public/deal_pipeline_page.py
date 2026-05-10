@@ -44,7 +44,7 @@ def _funnel_svg(stages) -> str:
             f'text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">{s.count:,} deals</text>'
             # Conversion on right
             f'<text x="{w - pad_r + 4}" y="{y + bar_h / 2 + 4:.1f}" fill="{text_faint}" font-size="10" '
-            f'font-family="JetBrains Mono,monospace">{s.conversion_from_prior * 100:.0f}% · {s.avg_days_in_stage}d</text>'
+            f'font-family="JetBrains Mono,monospace">{s.conversion_from_prior * 100:.1f}% · {s.avg_days_in_stage}d</text>'
         )
 
     return (

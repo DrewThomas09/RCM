@@ -334,7 +334,7 @@ def render_physician_comp_norm_markdown(
     for a in r.adjustments:
         lines.append(
             f"| {a.category} | ${a.amount_m:,.2f}M | "
-            f"{a.expected_survival_pct*100:.0f}% | "
+            f"{a.expected_survival_pct*100:.1f}% | "
             f"${a.expected_surviving_m:,.2f}M | "
             f"${a.expected_haircut_m:,.2f}M | "
             f"{a.partner_commentary} |"

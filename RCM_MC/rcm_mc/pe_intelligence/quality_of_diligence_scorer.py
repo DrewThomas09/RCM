@@ -152,7 +152,7 @@ def score_diligence(completed: DiligenceCompleted) -> QoDReport:
                 f"{weakest.completion_pct*100:.1f}%.")
     elif weakest.completion_pct < 0.50:
         note = (f"Diligence is NOT IC-ready. {weakest.dimension} is "
-                f"at {weakest.completion_pct*100:.0f}% — thin enough "
+                f"at {weakest.completion_pct*100:.1f}% — thin enough "
                 "that the partner should decline to recommend "
                 "without more work. Pull IC back 2-3 weeks.")
     else:
@@ -188,6 +188,6 @@ def render_qod_markdown(r: QoDReport) -> str:
                         if d.missing_items else "—")
         lines.append(
             f"| {d.dimension} | {d.completed} | {d.required} | "
-            f"{d.completion_pct*100:.0f}% | {missing_str} |"
+            f"{d.completion_pct*100:.1f}% | {missing_str} |"
         )
     return "\n".join(lines)

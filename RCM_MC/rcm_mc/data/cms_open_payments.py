@@ -328,7 +328,7 @@ def compute_npi_aggregates(
         if top_share >= 0.80 and total > 50_000.0:
             flags.append(
                 f"Single-manufacturer concentration "
-                f"{top_share*100:.0f}% — alignment risk")
+                f"{top_share*100:.1f}% — alignment risk")
 
         out[npi] = NpiAggregate(
             npi=npi,

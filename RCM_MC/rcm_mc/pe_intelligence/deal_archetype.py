@@ -358,7 +358,7 @@ def _score_growth_equity(ctx: ArchetypeContext) -> ArchetypeHit:
         signals.append("Minority investment.")
     if ctx.ownership_pct is not None and ctx.ownership_pct < 0.50:
         score += 0.20
-        signals.append(f"Ownership {ctx.ownership_pct*100:.0f}% — below control.")
+        signals.append(f"Ownership {ctx.ownership_pct*100:.1f}% — below control.")
     if ctx.revenue_growth_pct and ctx.revenue_growth_pct >= 0.20:
         score += 0.20
         signals.append("Rapid revenue growth — growth-equity profile.")

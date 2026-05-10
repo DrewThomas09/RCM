@@ -78,7 +78,7 @@ def _referral_section(payload: Any) -> str:
     crit = risk.get("critical_count", 0)
     out.append(
         f"- Key-person risk: **{crit}** external referrer(s) "
-        f"above the {risk.get('critical_threshold_pct', 0.2)*100:.0f}% "
+        f"above the {risk.get('critical_threshold_pct', 0.2)*100:.1f}% "
         f"threshold")
     if risk.get("referrers"):
         top = risk["referrers"][0]

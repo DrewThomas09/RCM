@@ -98,9 +98,9 @@ def _check_payer_mix(commercial_pct: Optional[float]) -> Optional[Tuple[bool, st
     if commercial_pct is None:
         return None
     if commercial_pct >= 0.40:
-        return (True, f"Commercial payer mix {commercial_pct*100:.0f}% — strong in-network revenue")
+        return (True, f"Commercial payer mix {commercial_pct*100:.1f}% — strong in-network revenue")
     if commercial_pct <= 0.15:
-        return (False, f"Commercial mix only {commercial_pct*100:.0f}% — Medicare-dependent")
+        return (False, f"Commercial mix only {commercial_pct*100:.1f}% — Medicare-dependent")
     return None
 
 
@@ -129,9 +129,9 @@ def _check_concentration(top_1_payer_share: Optional[float]) -> Optional[Tuple[b
     if top_1_payer_share is None:
         return None
     if top_1_payer_share <= 0.25:
-        return (True, f"Top-1 payer share {top_1_payer_share*100:.0f}% — diversified")
+        return (True, f"Top-1 payer share {top_1_payer_share*100:.1f}% — diversified")
     if top_1_payer_share > 0.40:
-        return (False, f"Top-1 payer share {top_1_payer_share*100:.0f}% — concentration risk")
+        return (False, f"Top-1 payer share {top_1_payer_share*100:.1f}% — concentration risk")
     return None
 
 

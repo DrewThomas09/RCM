@@ -416,7 +416,7 @@ def analyze_regulatory_exposure(
             f"Thesis driver \"{killed_first.driver_label}\" dies "
             f"on {killed_first.first_kill_date} — "
             f"{driving_event_title} impairs "
-            f"{killed_first.cumulative_impairment_pct*100:.0f}% "
+            f"{killed_first.cumulative_impairment_pct*100:.1f}% "
             f"of its claimed "
             f"{killed_first.expected_lift_pct*100:.1f} pp lift."
         )

@@ -247,7 +247,7 @@ def _top_payer_contingency(
     if ctx.top_payer_share >= 0.40:
         return PlanAction(
             week_latest=9, workstream="commercial",
-            action=(f"Top-payer contingency plan. {ctx.top_payer_share*100:.0f}% "
+            action=(f"Top-payer contingency plan. {ctx.top_payer_share*100:.1f}% "
                     "concentration is an operational risk — map a 12-"
                     "month diversification plan."),
             owner="Chief Commercial Officer",

@@ -172,7 +172,7 @@ def score_synergies(
                 "When synergies are a huge share of the thesis, "
                 "diligence the TOP 3 by owner, not the list.")
     elif overall_real < 0.40:
-        note = (f"Overall realization {overall_real*100:.0f}% — "
+        note = (f"Overall realization {overall_real*100:.1f}% — "
                 "thin. The synergy slide is aspirational, not "
                 "operational. Underwrite heavily haircut.")
     elif overall_real >= 0.70:
@@ -213,7 +213,7 @@ def render_synergy_report_markdown(r: SynergyReport) -> str:
         lines.append(
             f"| {a.name} | {a.category} | ${a.claimed_m:,.2f}M | "
             f"{a.credibility_0_100}/100 | "
-            f"{a.realization_pct*100:.0f}% | "
+            f"{a.realization_pct*100:.1f}% | "
             f"${a.partner_credit_m:,.2f}M |"
         )
     return "\n".join(lines)

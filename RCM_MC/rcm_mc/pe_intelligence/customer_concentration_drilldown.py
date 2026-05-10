@@ -98,7 +98,7 @@ def _churn_probability(c: CustomerRecord) -> float:
 def _flags(c: CustomerRecord, share: float, churn_p: float) -> List[str]:
     flags: List[str] = []
     if share >= 0.15:
-        flags.append(f"Single-customer concentration {share*100:.0f}% "
+        flags.append(f"Single-customer concentration {share*100:.1f}% "
                      "— diversification priority.")
     if c.known_at_risk:
         flags.append("Known at-risk customer — active mitigation required.")
@@ -109,7 +109,7 @@ def _flags(c: CustomerRecord, share: float, churn_p: float) -> List[str]:
         flags.append(f"Top-tier customer renewing in "
                      f"{c.months_until_renewal} months.")
     if churn_p >= 0.50:
-        flags.append(f"Churn probability {churn_p*100:.0f}% — high.")
+        flags.append(f"Churn probability {churn_p*100:.1f}% — high.")
     return flags
 
 

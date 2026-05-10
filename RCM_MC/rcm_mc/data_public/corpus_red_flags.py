@@ -222,7 +222,7 @@ def _flag_payer_mix(
             est_risk = float(ebitda_mm) * medicaid * 0.12 if ebitda_mm else None
             flags.append(CorpusRedFlag(
                 "PAYER", "high",
-                f"Medicaid concentration {medicaid*100:.0f}% — policy cliff risk (OBBBA)",
+                f"Medicaid concentration {medicaid*100:.1f}% — policy cliff risk (OBBBA)",
                 detail, est_risk, 0.25, medicaid, "%"
             ))
 
@@ -303,7 +303,7 @@ def _flag_sector_loss_rate(
         )
         return CorpusRedFlag(
             "SECTOR", "medium",
-            f"{sector} sector loss rate {loss_rate*100:.0f}% — above-average baseline",
+            f"{sector} sector loss rate {loss_rate*100:.1f}% — above-average baseline",
             detail, None, loss_rate, loss_rate, "%"
         )
     return None

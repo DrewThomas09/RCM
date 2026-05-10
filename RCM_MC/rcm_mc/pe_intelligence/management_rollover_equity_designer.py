@@ -111,7 +111,7 @@ def design_rollover(
                 "signal.")
     elif grade == "adequate":
         note = (f"Adequate rollover at "
-                f"{ctx.proposed_rollover_pct*100:.0f}% (target "
+                f"{ctx.proposed_rollover_pct*100:.1f}% (target "
                 f"{low*100:.0f}-{high*100:.1f}%). Aligned enough "
                 "for partner comfort.")
     else:

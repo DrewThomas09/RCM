@@ -153,7 +153,7 @@ def compute_thesis_break_price(
             pct=pct,
             dollars_m=round(base * pct, 2),
             partner_rationale=(
-                f"{inputs.multiple_expansion_share_pct*100:.0f}% "
+                f"{inputs.multiple_expansion_share_pct*100:.1f}% "
                 "of MOIC from multiple expansion — cycle-"
                 "dependent; partner haircuts."
             ),
@@ -191,7 +191,7 @@ def compute_thesis_break_price(
 
     if total_pct >= 0.25:
         note = (
-            f"Cumulative haircut {total_pct*100:.0f}% "
+            f"Cumulative haircut {total_pct*100:.1f}% "
             f"(${total_dollars:,.2f}M off base "
             f"${base:,.2f}M). Partner: walk-away "
             f"${walk_away:,.2f}M. If seller won't accept, "
@@ -199,7 +199,7 @@ def compute_thesis_break_price(
         )
     elif total_pct >= 0.10:
         note = (
-            f"Haircut {total_pct*100:.0f}% "
+            f"Haircut {total_pct*100:.1f}% "
             f"(${total_dollars:,.2f}M). Walk-away "
             f"${walk_away:,.2f}M — use as LOI target, "
             "not ask-match."

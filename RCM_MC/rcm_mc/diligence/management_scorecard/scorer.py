@@ -158,7 +158,7 @@ def score_forecast_reliability(
             f"Management guidance is unreliable: average miss "
             f"{avg_miss*100:.1f}% · worst {max_miss*100:.1f}%. Treat "
             f"their forecast as a narrative, not a basis. Haircut "
-            f"{haircut*100:.0f}% + build independent projection."
+            f"{haircut*100:.1f}% + build independent projection."
         )
     return score, reason, haircut
 

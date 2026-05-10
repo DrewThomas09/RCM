@@ -94,19 +94,19 @@ def _identify_risk_factors(c: DealCandidate) -> List[str]:
     out: List[str] = []
     if c.payer_concentration > 0.55:
         out.append(
-            f"Payer concentration {c.payer_concentration*100:.0f}% — "
+            f"Payer concentration {c.payer_concentration*100:.1f}% — "
             "single-payer dependency")
     if c.physician_concentration > 0.40:
         out.append(
             f"Physician concentration "
-            f"{c.physician_concentration*100:.0f}% — key-person risk")
+            f"{c.physician_concentration*100:.1f}% — key-person risk")
     if c.out_of_network_share > 0.10:
         out.append(
-            f"OON revenue {c.out_of_network_share*100:.0f}% — No "
+            f"OON revenue {c.out_of_network_share*100:.1f}% — No "
             "Surprises Act exposure")
     if c.cash_pay_share > 0.20:
         out.append(
-            f"Cash-pay share {c.cash_pay_share*100:.0f}% — non-"
+            f"Cash-pay share {c.cash_pay_share*100:.1f}% — non-"
             "recurring revenue risk")
     if c.ebitda_margin < 0.10:
         out.append(

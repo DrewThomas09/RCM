@@ -79,30 +79,30 @@ def assess_pricing_power(inputs: PricingPowerInputs) -> PricingPowerReport:
     # Payer concentration (inverted — high share of top payer = weak).
     if inputs.top_payer_share_pct >= 0.50:
         pc_score = 20
-        pc_r = (f"Top payer {inputs.top_payer_share_pct*100:.0f}% — "
+        pc_r = (f"Top payer {inputs.top_payer_share_pct*100:.1f}% — "
                 "severe concentration, payer dictates rate.")
     elif inputs.top_payer_share_pct >= 0.30:
         pc_score = 45
-        pc_r = (f"Top payer {inputs.top_payer_share_pct*100:.0f}% — "
+        pc_r = (f"Top payer {inputs.top_payer_share_pct*100:.1f}% — "
                 "moderate concentration.")
     else:
         pc_score = 75
-        pc_r = (f"Top payer {inputs.top_payer_share_pct*100:.0f}% — "
+        pc_r = (f"Top payer {inputs.top_payer_share_pct*100:.1f}% — "
                 "diversified payer base.")
     findings.append(PricingFinding("payer_concentration", pc_score, pc_r))
 
     # Market share.
     if inputs.local_market_share_pct >= 0.40:
         ms_score = 90
-        ms_r = (f"Local market share {inputs.local_market_share_pct*100:.0f}% "
+        ms_r = (f"Local market share {inputs.local_market_share_pct*100:.1f}% "
                 "— must-have provider, strong pricing leverage.")
     elif inputs.local_market_share_pct >= 0.20:
         ms_score = 65
-        ms_r = (f"Local market share {inputs.local_market_share_pct*100:.0f}% "
+        ms_r = (f"Local market share {inputs.local_market_share_pct*100:.1f}% "
                 "— material position.")
     else:
         ms_score = 35
-        ms_r = (f"Local market share {inputs.local_market_share_pct*100:.0f}% "
+        ms_r = (f"Local market share {inputs.local_market_share_pct*100:.1f}% "
                 "— marginal position; limited negotiating leverage.")
     findings.append(PricingFinding("market_share", ms_score, ms_r))
 
@@ -128,8 +128,8 @@ def assess_pricing_power(inputs: PricingPowerInputs) -> PricingPowerReport:
                 int(inputs.contract_mix_value_based_pct * 100 * 0.8) +
                 int(inputs.contract_mix_fee_for_service_pct * 100 * 0.3))
     cs_score = min(100, cs_score)
-    cs_r = (f"FFS {inputs.contract_mix_fee_for_service_pct*100:.0f}% / "
-            f"Cap {inputs.contract_mix_capitation_pct*100:.0f}% / "
+    cs_r = (f"FFS {inputs.contract_mix_fee_for_service_pct*100:.1f}% / "
+            f"Cap {inputs.contract_mix_capitation_pct*100:.1f}% / "
             f"VBC {inputs.contract_mix_value_based_pct*100:.1f}% mix.")
     findings.append(PricingFinding("contract_structure", cs_score, cs_r))
 
@@ -137,14 +137,14 @@ def assess_pricing_power(inputs: PricingPowerInputs) -> PricingPowerReport:
     commercial = inputs.commercial_payer_pct
     if commercial >= 0.60:
         pm_score = 85
-        pm_r = (f"Commercial {commercial*100:.0f}% — strong "
+        pm_r = (f"Commercial {commercial*100:.1f}% — strong "
                 "pricing exposure.")
     elif commercial >= 0.40:
         pm_score = 60
-        pm_r = (f"Commercial {commercial*100:.0f}% — balanced.")
+        pm_r = (f"Commercial {commercial*100:.1f}% — balanced.")
     else:
         pm_score = 30
-        pm_r = (f"Commercial only {commercial*100:.0f}% — Medicare/Medicaid "
+        pm_r = (f"Commercial only {commercial*100:.1f}% — Medicare/Medicaid "
                 "dominant, no pricing power on the dominant book.")
     findings.append(PricingFinding("payer_mix", pm_score, pm_r))
 

@@ -121,7 +121,7 @@ def track_exit_timing(ctx: ExitTimingContext) -> ExitTimingReport:
     if ctx.peer_multiples_vs_entry >= 0.05:
         signals.append(ExitSignal(
             "peer_multiples", "green",
-            f"Peer comps {ctx.peer_multiples_vs_entry*100:.0f}% "
+            f"Peer comps {ctx.peer_multiples_vs_entry*100:.1f}% "
             "above entry — comp-supported premium."))
     elif ctx.peer_multiples_vs_entry >= -0.05:
         signals.append(ExitSignal(
@@ -130,7 +130,7 @@ def track_exit_timing(ctx: ExitTimingContext) -> ExitTimingReport:
     else:
         signals.append(ExitSignal(
             "peer_multiples", "red",
-            f"Peer multiples {ctx.peer_multiples_vs_entry*100:.0f}% "
+            f"Peer multiples {ctx.peer_multiples_vs_entry*100:.1f}% "
             "below entry — multiple-compression headwind."))
 
     # 5. Management stability.

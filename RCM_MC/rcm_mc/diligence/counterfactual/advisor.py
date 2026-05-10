@@ -166,7 +166,7 @@ def for_nsa(exposure: NSAExposure) -> Optional[Counterfactual]:
         change_description=(
             f"Contract top payers to move {reduction_pp*100:.1f} "
             f"percentage points of volume from OON to in-network. "
-            f"Current OON share {current_share*100:.0f}% → "
+            f"Current OON share {current_share*100:.1f}% → "
             f"target ≤{_NSA_WATCH_SHARE*100:.1f}%."
         ),
         estimated_dollar_impact_usd=savings,

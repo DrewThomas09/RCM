@@ -148,7 +148,7 @@ def analyze_staffing(roles: List[RoleState]) -> StaffingReport:
             findings.append(StaffingFinding(
                 role=role.role, severity="high",
                 message=(f"{role.role} attrition "
-                         f"{role.quarterly_attrition_rate*100:.0f}%/qtr "
+                         f"{role.quarterly_attrition_rate*100:.1f}%/qtr "
                          "is elevated — investigate root cause."),
             ))
         if role.pipeline_candidates < 2 * role.open_reqs:

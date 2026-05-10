@@ -1173,7 +1173,7 @@ def _checklist_coverage_section(
         )
     return (
         '<h2>Diligence Coverage</h2>'
-        f'<p><strong>P0 coverage:</strong> {p0_cov*100:.0f}% · '
+        f'<p><strong>P0 coverage:</strong> {p0_cov*100:.1f}% · '
         f'<strong>Total done:</strong> {done}/{total} · '
         f'<strong>Open P0:</strong> {open_p0} · '
         f'<strong>Open P1:</strong> {open_p1}</p>'

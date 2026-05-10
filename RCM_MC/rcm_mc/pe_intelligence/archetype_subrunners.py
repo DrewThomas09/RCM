@@ -92,7 +92,7 @@ def payer_mix_shift_review(ctx: ArchetypeContext) -> ArchetypeReport:
         warnings.append(ArchetypeWarning(
             "payer_mix_shift", "high",
             (f"Medicaid {ctx.medicaid_pct*100:.1f}% vs commercial "
-             f"{ctx.commercial_pct*100:.0f}% — shifting requires "
+             f"{ctx.commercial_pct*100:.1f}% — shifting requires "
              "commercial payer leverage the asset may not have.")
         ))
     # FFS → VBC thesis needs mature VBC infrastructure.
@@ -184,7 +184,7 @@ def outpatient_migration_review(ctx: ArchetypeContext) -> ArchetypeReport:
     if ctx.inpatient_revenue_share > 0.60:
         warnings.append(ArchetypeWarning(
             "outpatient_migration", "medium",
-            (f"Inpatient revenue {ctx.inpatient_revenue_share*100:.0f}% "
+            (f"Inpatient revenue {ctx.inpatient_revenue_share*100:.1f}% "
              "— 60%+ migration to outpatient in 5 years would "
              "disrupt the physical plant utilization thesis.")
         ))
@@ -238,7 +238,7 @@ def capacity_expansion_review(ctx: ArchetypeContext) -> ArchetypeReport:
     if ctx.utilization_pct < 0.65:
         warnings.append(ArchetypeWarning(
             "capacity_expansion", "high",
-            (f"Existing utilization {ctx.utilization_pct*100:.0f}% — "
+            (f"Existing utilization {ctx.utilization_pct*100:.1f}% — "
              "adding capacity before filling current is value-destructive.")
         ))
     if ctx.new_sites_planned >= 5:

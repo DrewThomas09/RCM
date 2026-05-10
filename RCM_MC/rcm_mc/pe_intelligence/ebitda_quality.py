@@ -156,7 +156,7 @@ def assess_ebitda_quality(
                 "reported; haircut before pricing.")
     else:
         verdict = "implausible"
-        note = (f"Reported EBITDA is materially inflated — {ratio*100:.0f}% "
+        note = (f"Reported EBITDA is materially inflated — {ratio*100:.1f}% "
                 "add-backs, a large share of which are phantom. Use "
                 "partner-EBITDA for pricing.")
 
@@ -192,6 +192,6 @@ def render_ebitda_quality_markdown(report: EBITDAQualityReport) -> str:
         lines.append(
             f"| {a.name} | ${a.amount:,.0f} | {a.category} | "
             f"{a.evidence or 'n/a'} | {f.classification} | "
-            f"{f.haircut_pct*100:.0f}% | {f.partner_note} |"
+            f"{f.haircut_pct*100:.1f}% | {f.partner_note} |"
         )
     return "\n".join(lines)

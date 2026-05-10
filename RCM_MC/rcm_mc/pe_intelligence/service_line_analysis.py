@@ -190,7 +190,7 @@ def analyze_service_lines(
             )
     if concentration_top >= 0.40:
         actions.append(
-            f"Single-line share {concentration_top*100:.0f}% — model a "
+            f"Single-line share {concentration_top*100:.1f}% — model a "
             "reimbursement-shock scenario specifically for this line.")
 
     return ServiceLinePortfolio(
@@ -228,7 +228,7 @@ def render_service_lines_markdown(portfolio: ServiceLinePortfolio) -> str:
         contrib = (f"{(r.ebitda_contribution_share or 0)*100:.0f}%"
                    if r.ebitda_contribution_share is not None else "—")
         lines.append(
-            f"| {r.line.name} | {r.line.revenue_share*100:.0f}% | "
+            f"| {r.line.name} | {r.line.revenue_share*100:.1f}% | "
             f"{m} | {contrib} | {r.risk_score:.2f} | {'; '.join(r.flags)} |"
         )
     if portfolio.actions_needed:

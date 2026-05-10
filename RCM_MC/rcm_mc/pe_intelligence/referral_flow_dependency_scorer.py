@@ -132,7 +132,7 @@ def score_referral_flow_dependency(
         triggered=top5_flag,
         partner_comment=(
             f"Top-5 referrers "
-            f"{inputs.top_5_referrer_pct*100:.0f}% — "
+            f"{inputs.top_5_referrer_pct*100:.1f}% — "
             "concentrated base; small group sets "
             "volume."
             if top5_flag else
@@ -214,7 +214,7 @@ def score_referral_flow_dependency(
         tier = "single_point_of_failure"
         note = (
             f"Top-1 referrer "
-            f"{inputs.top_1_referrer_pct*100:.0f}% + "
+            f"{inputs.top_1_referrer_pct*100:.1f}% + "
             "flight-risk factor → single point of "
             "failure. Partner: walk or require signed "
             "referring-physician contract as closing "

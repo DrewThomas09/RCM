@@ -207,7 +207,7 @@ def render_antitrust_screener(params: dict = None) -> str:
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {score_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Screening Verdict</div>
-    <div style="color:{score_c};font-weight:700;font-size:14px">Risk {r.overall_risk_score}/100 · Second Request probability {r.second_request_probability * 100:.0f}% · Recommended timeline {r.recommended_timeline_months} months</div>
+    <div style="color:{score_c};font-weight:700;font-size:14px">Risk {r.overall_risk_score}/100 · Second Request probability {r.second_request_probability * 100:.1f}% · Recommended timeline {r.recommended_timeline_months} months</div>
     <div style="color:{text_dim};font-size:11px;margin-top:4px">Recommended remediation: <strong style="color:{text}">{_html.escape(best_remediation.option)}</strong></div>
   </div>
   <div style="{cell}"><div style="{h3}">HHI / Market Concentration Analysis (MSA-Level)</div>{h_tbl}</div>

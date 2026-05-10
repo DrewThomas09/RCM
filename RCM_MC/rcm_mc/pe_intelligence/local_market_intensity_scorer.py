@@ -130,7 +130,7 @@ def score_local_market_intensity(
         triggered=dominant,
         partner_comment=(
             f"Dominant local payer "
-            f"{inputs.dominant_payer_share_local*100:.0f}% "
+            f"{inputs.dominant_payer_share_local*100:.1f}% "
             "share — provider is a price-taker."
             if dominant else
             "Local payer mix diversified; provider has "

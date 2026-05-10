@@ -213,7 +213,7 @@ def _check_rollover(inputs: CompPlanInputs) -> Optional[CompFinding]:
         )
     return CompFinding(
         area="ceo_rollover", status="standard",
-        detail=f"CEO rollover {v*100:.0f}% — within alignment range.",
+        detail=f"CEO rollover {v*100:.1f}% — within alignment range.",
     )
 
 
@@ -251,19 +251,19 @@ def _check_perf_vesting(inputs: CompPlanInputs) -> Optional[CompFinding]:
         return CompFinding(
             area="performance_vesting",
             status="light",
-            detail=f"Performance-vesting {v*100:.0f}% — below 25-50% peer range.",
+            detail=f"Performance-vesting {v*100:.1f}% — below 25-50% peer range.",
             remediation="Tie more of the grant to lever-specific metrics.",
         )
     if v > 0.70:
         return CompFinding(
             area="performance_vesting",
             status="aggressive",
-            detail=f"Performance-vesting {v*100:.0f}% — retention risk.",
+            detail=f"Performance-vesting {v*100:.1f}% — retention risk.",
             remediation="Balance against time-vesting to retain in tough cycles.",
         )
     return CompFinding(
         area="performance_vesting", status="standard",
-        detail=f"Performance-vesting {v*100:.0f}% — within peer range.",
+        detail=f"Performance-vesting {v*100:.1f}% — within peer range.",
     )
 
 

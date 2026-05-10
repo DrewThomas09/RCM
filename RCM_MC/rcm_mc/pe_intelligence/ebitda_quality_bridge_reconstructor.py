@@ -171,7 +171,7 @@ def build_ebitda_quality_bridge(
                 f"Y1 claimed gain "
                 f"${inputs.y1_claimed_ebitda_gain_m:,.2f}M "
                 f"is "
-                f"{inputs.cash_release_share_in_y1_gain*100:.0f}% "
+                f"{inputs.cash_release_share_in_y1_gain*100:.1f}% "
                 "cash release; strip half — exit "
                 "multiple only applies to recurring."
             ),

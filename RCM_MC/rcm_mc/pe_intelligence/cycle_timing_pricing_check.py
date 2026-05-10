@@ -105,7 +105,7 @@ def check_cycle_pricing(inputs: CyclePricingInputs) -> CyclePricingReport:
     if double_peak:
         note = (
             f"**Peak × peak trap**: entry multiple "
-            f"{inputs.entry_multiple:.2f}x is {mult_premium*100:.0f}% "
+            f"{inputs.entry_multiple:.2f}x is {mult_premium*100:.1f}% "
             f"above cycle average; entry EBITDA is "
             f"{ebitda_premium*100:.1f}% above trailing average. "
             "Both at peak compound. Haircut entry multiple by "

@@ -101,7 +101,7 @@ def _lp_led_discount_bps(inputs: SecondarySaleInputs) -> tuple:
         base_bps += add
         drivers.append(
             f"Top-asset concentration "
-            f"{inputs.concentration_in_top_asset_pct*100:.0f}% → "
+            f"{inputs.concentration_in_top_asset_pct*100:.1f}% → "
             f"+{add} bps (concentrated book).")
 
     return base_bps, drivers

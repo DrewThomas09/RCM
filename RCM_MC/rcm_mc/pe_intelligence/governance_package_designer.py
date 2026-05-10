@@ -313,7 +313,7 @@ def design_governance_package(
 
     if inputs.rollover_equity_pct >= 0.20:
         rollover_phrase = (
-            f"Rollover {inputs.rollover_equity_pct*100:.0f}% "
+            f"Rollover {inputs.rollover_equity_pct*100:.1f}% "
             "requires full protection package (tag / drag / "
             "preemption / info / liquidity)."
         )

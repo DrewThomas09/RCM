@@ -125,7 +125,7 @@ def _decide_action(tranche: DebtTranche, ctx: RefiContext) -> RefiRecommendation
     if tranche.covenant_headroom_pct < 0.15:
         return RefiRecommendation(
             tranche_name=tranche.name, action="wait",
-            rationale=(f"Covenant headroom {tranche.covenant_headroom_pct*100:.0f}% "
+            rationale=(f"Covenant headroom {tranche.covenant_headroom_pct*100:.1f}% "
                        "too thin — build EBITDA cushion before approaching lenders."),
             years_to_maturity=years_to_mat, rate_delta_bps=rate_delta_bps,
         )

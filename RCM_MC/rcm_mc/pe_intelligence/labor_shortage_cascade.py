@@ -85,7 +85,7 @@ def trace_labor_cascade(
     delta_turnover = inputs.current_turnover_pct - inputs.baseline_turnover_pct
     steps.append(LaborCascadeStep(
         step=1, name="turnover_delta",
-        description=(f"Turnover {inputs.baseline_turnover_pct*100:.0f}% "
+        description=(f"Turnover {inputs.baseline_turnover_pct*100:.1f}% "
                      f"→ {inputs.current_turnover_pct*100:.0f}%"),
         value=round(delta_turnover * 100, 2), unit="pp",
         partner_note=(
@@ -169,7 +169,7 @@ def trace_labor_cascade(
                 f"{post_cov:.2f}x. Not tolerable given base posture.")
     elif total_ebitda_hit / max(0.01, inputs.current_ebitda_m) >= 0.15:
         note = (f"Labor cascade is material (${total_ebitda_hit:,.2f}M, "
-                f"{total_ebitda_hit/inputs.current_ebitda_m*100:.0f}% "
+                f"{total_ebitda_hit/inputs.current_ebitda_m*100:.1f}% "
                 "of base EBITDA). Focus diligence on retention plan + "
                 "agency contract terms.")
     elif total_ebitda_hit > 0:

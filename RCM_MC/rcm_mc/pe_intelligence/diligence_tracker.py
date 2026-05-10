@@ -246,7 +246,7 @@ def render_board_markdown(board: DiligenceBoard) -> str:
     lines: List[str] = [
         f"# Diligence Board — {name}",
         "",
-        f"**Completion:** {board.completion_pct()*100:.0f}%  ",
+        f"**Completion:** {board.completion_pct()*100:.1f}%  ",
         f"**Critical open:** {len(board.critical_open())}  ",
         f"**Blockers:** {len(board.blockers())}  ",
         f"**IC-ready:** {'yes' if board.is_ic_ready() else 'no'}",

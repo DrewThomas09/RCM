@@ -469,10 +469,10 @@ def _eval_payer(deal: Dict[str, Any]) -> List[ChecklistItem]:
         max_share = pm[max_payer]
         if max_share > 0.65:
             s, det = "CRITICAL", (
-                f"{max_payer} {max_share*100:.0f}% — concentration risk")
+                f"{max_payer} {max_share*100:.1f}% — concentration risk")
         elif max_share > 0.55:
             s, det = "WARNING", (
-                f"{max_payer} {max_share*100:.0f}% — elevated")
+                f"{max_payer} {max_share*100:.1f}% — elevated")
         else:
             s, det = "PASS", (
                 f"top payer {max_payer} {max_share*100:.0f}%")

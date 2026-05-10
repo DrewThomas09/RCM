@@ -100,11 +100,11 @@ def score_specialty_mix_stress(
         triggered=top_specialty,
         partner_comment=(
             f"Top specialty "
-            f"{inputs.top_specialty_revenue_pct*100:.0f}% "
+            f"{inputs.top_specialty_revenue_pct*100:.1f}% "
             "of revenue — single-service-line exposure."
             if top_specialty else
             f"Top specialty "
-            f"{inputs.top_specialty_revenue_pct*100:.0f}% "
+            f"{inputs.top_specialty_revenue_pct*100:.1f}% "
             "of revenue — diversified."
         ),
     ))
@@ -116,7 +116,7 @@ def score_specialty_mix_stress(
         triggered=top_proc,
         partner_comment=(
             f"Top procedure "
-            f"{inputs.top_procedure_revenue_pct*100:.0f}% "
+            f"{inputs.top_procedure_revenue_pct*100:.1f}% "
             "of revenue — single-CPT / single-procedure "
             "exposure."
             if top_proc else
@@ -149,7 +149,7 @@ def score_specialty_mix_stress(
         triggered=medicare_heavy,
         partner_comment=(
             f"Top specialty Medicare-heavy "
-            f"({(1 - inputs.top_specialty_commercial_pct)*100:.0f}% "
+            f"({(1 - inputs.top_specialty_commercial_pct)*100:.1f}% "
             "non-commercial) — reimbursement exposure "
             "concentrates in the concentration."
             if medicare_heavy else

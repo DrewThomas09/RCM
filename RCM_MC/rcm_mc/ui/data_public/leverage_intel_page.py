@@ -104,9 +104,9 @@ def _scatter_svg(points: List[Any], width: int = 440, height: int = 240) -> str:
         color = _moic_color(p.moic)
         shape = "circle" if p.is_direct else "rect"
         if p.is_direct:
-            elements.append(f'<circle cx="{cx}" cy="{cy}" r="3.5" fill="{color}" opacity="0.85"><title>{_html.escape(p.deal_name[:40])} · lev {p.leverage_pct*100:.0f}% · {p.moic:.2f}x (direct)</title></circle>')
+            elements.append(f'<circle cx="{cx}" cy="{cy}" r="3.5" fill="{color}" opacity="0.85"><title>{_html.escape(p.deal_name[:40])} · lev {p.leverage_pct*100:.1f}% · {p.moic:.2f}x (direct)</title></circle>')
         else:
-            elements.append(f'<rect x="{cx-2}" y="{cy-2}" width="4" height="4" fill="{color}" opacity="0.5"><title>{_html.escape(p.deal_name[:40])} · lev {p.leverage_pct*100:.0f}% · {p.moic:.2f}x (proxy)</title></rect>')
+            elements.append(f'<rect x="{cx-2}" y="{cy-2}" width="4" height="4" fill="{color}" opacity="0.5"><title>{_html.escape(p.deal_name[:40])} · lev {p.leverage_pct*100:.1f}% · {p.moic:.2f}x (proxy)</title></rect>')
 
     elements.append(f'<text x="{margin["l"]+W//2}" y="{height-2}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#64748b">Leverage %</text>')
     elements.append(f'<text x="9" y="{margin["t"]+H//2}" text-anchor="middle" transform="rotate(-90,9,{margin["t"]+H//2})" font-family="JetBrains Mono,monospace" font-size="9" fill="#64748b">Realized MOIC</text>')

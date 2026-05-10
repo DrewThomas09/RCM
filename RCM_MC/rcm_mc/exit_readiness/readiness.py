@@ -31,7 +31,7 @@ def identify_readiness_gaps(target: ExitTarget) -> List[ReadinessGap]:
             archetype=ExitArchetype.STRATEGIC,
             title="Diversify payer mix",
             description=(
-                f"Top payer {target.payer_concentration*100:.0f}% — "
+                f"Top payer {target.payer_concentration*100:.1f}% — "
                 f"strategics discount this. Add 1-2 contracts under "
                 f"30% each over 12 months."),
             months_to_remediate=12, severity="high"))

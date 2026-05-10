@@ -303,7 +303,7 @@ def read_deal_source(
     if profile.name == "distressed_forced_sale":
         note = (
             f"Distressed sale — expected "
-            f"{abs(profile.typical_price_premium_pct)*100:.0f}% "
+            f"{abs(profile.typical_price_premium_pct)*100:.1f}% "
             "discount. Partner: lean in on clean-liability "
             "assets; R&W essential; speed is a real edge."
         )

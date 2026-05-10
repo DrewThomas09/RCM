@@ -189,7 +189,7 @@ def _medicare_heavy_with_high_margin(
                 name="government_heavy_high_margin_implausible",
                 severity="medium",
                 claim=(f"{margin*100:.1f}% margin with "
-                       f"{(inputs.medicare_pct+inputs.medicaid_pct)*100:.0f}% "
+                       f"{(inputs.medicare_pct+inputs.medicaid_pct)*100:.1f}% "
                        "government payer mix."),
                 reality=("Government payers price at or below cost on "
                          "many services. 70%+ government mix caps "

@@ -304,7 +304,7 @@ def _hero(state: DealChecklistState) -> str:
         else P["negative"]
     )
     cov_num = provenance(
-        f'{state.p0_coverage*100:.0f}%',
+        f'{state.p0_coverage*100:.1f}%',
         source="compute_status()",
         formula="count(items where priority=P0 AND status=DONE) / count(P0 items)",
         detail=(

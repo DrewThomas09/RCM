@@ -183,7 +183,7 @@ def score_synergy_sequencing(
     if haircut_pct >= 0.30:
         note = (
             f"Synergy timing is off by "
-            f"{haircut_pct*100:.0f}% — "
+            f"{haircut_pct*100:.1f}% — "
             f"${haircut_total:,.2f}M of seller's claim is "
             "mis-sequenced. Partner: rebuild the synergy "
             "ramp with realistic per-category landing."
@@ -242,7 +242,7 @@ def render_synergy_sequencing_markdown(
             f"| {a.category} | Y{a.claimed_year} | "
             f"Y{a.typical_min_year}-Y{a.typical_max_year} | "
             f"${a.amount_m:,.2f}M | "
-            f"{a.haircut_pct*100:.0f}% | "
+            f"{a.haircut_pct*100:.1f}% | "
             f"${a.realized_m:,.2f}M | "
             f"{a.partner_commentary} |"
         )

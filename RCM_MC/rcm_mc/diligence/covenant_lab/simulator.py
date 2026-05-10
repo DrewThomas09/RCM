@@ -540,7 +540,7 @@ def run_covenant_stress(
             continue
         peak = max(q_curves, key=lambda c: c.breach_probability)
         rationale_parts.append(
-            f"{cov.name}: peak {peak.breach_probability*100:.0f}% "
+            f"{cov.name}: peak {peak.breach_probability*100:.1f}% "
             f"in Y{peak.year}Q{peak.quarter_idx % 4 + 1} "
             f"(median metric {peak.median_metric:.2f} vs "
             f"threshold {peak.threshold:.2f})"

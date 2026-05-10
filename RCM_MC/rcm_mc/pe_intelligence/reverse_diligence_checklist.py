@@ -116,7 +116,7 @@ def build_reverse_diligence(
         items.append(DisclosureItem(
             category="price_haircut", name="pro_forma_overstatement",
             description=(f"Pro-forma add-backs "
-                         f"{ctx.pro_forma_addbacks_pct*100:.0f}% — "
+                         f"{ctx.pro_forma_addbacks_pct*100:.1f}% — "
                          "buyers haircut; document realized "
                          "synergies before sale."),
             fix_by_months=9, fix_difficulty="medium",
@@ -150,7 +150,7 @@ def build_reverse_diligence(
         items.append(DisclosureItem(
             category="price_haircut", name="top_payer_concentration",
             description=(f"Top payer "
-                         f"{ctx.concentration_top_payer*100:.0f}% — "
+                         f"{ctx.concentration_top_payer*100:.1f}% — "
                          "document renewal terms + diversification "
                          "plan; concentrated books get discounted."),
             fix_by_months=9, fix_difficulty="medium",
@@ -159,7 +159,7 @@ def build_reverse_diligence(
         items.append(DisclosureItem(
             category="price_haircut", name="top_customer_concentration",
             description=(f"Top customer "
-                         f"{ctx.concentration_top_customer*100:.0f}% — "
+                         f"{ctx.concentration_top_customer*100:.1f}% — "
                          "diversify or lock multi-year term before "
                          "sale."),
             fix_by_months=9, fix_difficulty="medium",
@@ -177,7 +177,7 @@ def build_reverse_diligence(
         items.append(DisclosureItem(
             category="price_haircut",
             name="incomplete_integration",
-            description=(f"{ctx.incomplete_integration_pct*100:.0f}% "
+            description=(f"{ctx.incomplete_integration_pct*100:.1f}% "
                          "of acquisitions not integrated — buyers "
                          "discount pro-forma. Finish the integration "
                          "PMO work 9 months pre-sale."),

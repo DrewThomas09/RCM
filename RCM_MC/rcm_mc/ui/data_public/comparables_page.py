@@ -108,7 +108,7 @@ def _payer_bars(pm: Optional[Dict[str, float]]) -> str:
         f'<rect x="{cx+mx+ax:.1f}" y="1" width="{sx:.1f}" height="6" fill="#475569"/>'
         f'</svg>'
         f'<span style="font-family:var(--ck-mono);font-size:8.5px;color:#64748b;margin-left:3px;">'
-        f'{comm*100:.0f}%C</span>'
+        f'{comm*100:.1f}%C</span>'
     )
 
 

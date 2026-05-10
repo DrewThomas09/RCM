@@ -119,7 +119,7 @@ def analyze_board(inputs: BoardInputs) -> BoardReport:
     if diverse_pct < 0.20:
         gaps.append(BoardGap(
             area="diversity", severity="medium",
-            description=(f"Diverse representation {diverse_pct*100:.0f}% — "
+            description=(f"Diverse representation {diverse_pct*100:.1f}% — "
                          "LP reporting threshold often 25%."),
         ))
     for area in req - covered:

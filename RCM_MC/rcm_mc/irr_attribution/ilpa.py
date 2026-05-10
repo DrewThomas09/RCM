@@ -106,8 +106,8 @@ def render_lp_narrative(result: AttributionResult) -> str:
         lines.append(
             f"- Revenue growth contributed **${revenue_total:.2f}M** "
             f"({rev_share*100:.1f}% of value), "
-            f"of which **{organic_share*100:.0f}%** organic and "
-            f"**{(1-organic_share)*100:.0f}%** from add-on M&A.")
+            f"of which **{organic_share*100:.1f}%** organic and "
+            f"**{(1-organic_share)*100:.1f}%** from add-on M&A.")
 
     if c.margin_expansion_mm > 0:
         lines.append(

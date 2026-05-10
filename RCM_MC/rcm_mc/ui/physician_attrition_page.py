@@ -800,7 +800,7 @@ def _bridge_card(report: AttritionReport) -> str:
         f'<code style="color:{P["text_dim"]};">physician_attrition_pct</code> '
         f'driver instead of the industry-default 5%. The bridge EBITDA-hit '
         f'assumes a {b.ebitda_margin_assumed*100:.1f}% EBITDA margin on '
-        f'physician-group collections and a {b.realization_probability*100:.0f}% '
+        f'physician-group collections and a {b.realization_probability*100:.1f}% '
         f'realization rate over the 18-month horizon given a standard '
         f'earn-out structure.</div>'
         f'</div>'

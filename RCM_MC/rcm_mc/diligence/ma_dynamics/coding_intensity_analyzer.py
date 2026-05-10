@@ -100,7 +100,7 @@ def analyze_coding_intensity(
     )
     if add_only_retrospective_pct >= 0.75:
         parts.append(
-            f"Add-only retrospective share {add_only_retrospective_pct*100:.0f}% "
+            f"Add-only retrospective share {add_only_retrospective_pct*100:.1f}% "
             "— Aetna/CVS pattern"
         )
     if wellness_visit_hcc_rate is not None and wellness_visit_hcc_rate >= 0.5:

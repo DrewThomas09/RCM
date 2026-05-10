@@ -264,7 +264,7 @@ def cross_check(
         if v is not None and abs(v) >= variance_threshold:
             direction = "higher" if v > 0 else "lower"
             report.flags.append(
-                f"{metric}: 990 is {abs(v)*100:.0f}% {direction} than HCRIS "
+                f"{metric}: 990 is {abs(v)*100:.1f}% {direction} than HCRIS "
                 f"({irs_vals[metric]:,.0f} vs {hcris_vals[metric]:,.0f})"
             )
 
