@@ -217,11 +217,11 @@ def render_vintage_cohorts(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Vintage Cohort Summary:</strong> ${r.total_deployed_b:.2f}B deployed across {r.vintages_tracked} vintages — {q1q2} cohorts top-half of Cambridge Associates healthcare buyout benchmarks.
     Vintage {r.best_vintage} leads at 2.69x TVPI / 19.5% net IRR — healthcare rollup wave pre-COVID captured accretive multiple arbitrage + mature exit environment.
-    2021-2022 vintages pressured by peak entry multiples (16.8x-14.2x EV/EBITDA) + subsequent multiple compression — mid-cycle reset now working through portfolio (Q2/Q3 quartile positioning).
+    2021-2022 vintages pressured by peak entry multiples (16.80x-14.20x EV/EBITDA) + subsequent multiple compression — mid-cycle reset now working through portfolio (Q2/Q3 quartile positioning).
     2020 pandemic vintage (Q2 position) deployed opportunistically through COVID — defensive sector tilt (home health, behavioral, infusion) delivered 2.04x TVPI / 15.2% net IRR.
     Exit mix evolution: 2015-2017 vintages favored strategic sale (55-60%); 2018-2020 saw secondary buyout rise to 35-40%; 2021+ continuation vehicle + dividend recap emerge as liquidity alternatives given exit drought.
     Hold period extension: 5.5yr (2015) → 6.5yr (2019) → 4.5yr (2021 — too early to exit); median hold running 1.0-1.5 years above target across 2017-2019 cohorts — driving DPI pressure.
-    2025 deployment running 52% of target (${r.cohorts[-1].total_deployed_m:,.2f}M vs $3,000M) reflects deal flow recovery still early + sponsor discipline; easing cycle begins deployment pickup.
+    2025 deployment running 52.0% of target (${r.cohorts[-1].total_deployed_m:,.2f}M vs $3,000M) reflects deal flow recovery still early + sponsor discipline; easing cycle begins deployment pickup.
   </div>
 </div>"""
 

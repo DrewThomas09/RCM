@@ -137,7 +137,7 @@ def render_direct_employer(params: dict = None) -> str:
         ck_kpi_block("Employers", str(r.total_employers), "", "") +
         ck_kpi_block("Covered Lives", f"{r.total_lives:,}", "", "") +
         ck_kpi_block("Annual Revenue", f"${r.total_annual_revenue_mm:,.2f}M", "", "") +
-        ck_kpi_block("Blended PMPY", f"${r.blended_pmpy:,.0f}", "", "") +
+        ck_kpi_block("Blended PMPY", f"${r.blended_pmpy:,.2f}", "", "") +
         ck_kpi_block("COE Margin", f"{r.coe_margin_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Onsite Capacity", f"{r.onsite_capacity_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Pipeline Markets", str(len(r.pipeline)), "", "") +
@@ -167,7 +167,7 @@ def render_direct_employer(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">ERISA Structural Considerations</div>{er_tbl}</div>
   <div style="{cell}"><div style="{h3}">RFP Pipeline — Direct-Primary-Care Market Expansion</div>{pp_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Direct-Employer Thesis:</strong> {r.total_employers} employer contracts covering {r.total_lives:,} lives produce ${r.total_annual_revenue_mm:,.2f}M annual revenue at ${r.blended_pmpy:,.0f} PMPY.
+    <strong style="color:{text}">Direct-Employer Thesis:</strong> {r.total_employers} employer contracts covering {r.total_lives:,} lives produce ${r.total_annual_revenue_mm:,.2f}M annual revenue at ${r.blended_pmpy:,.2f} PMPY.
     COE bundled pricing delivers {r.coe_margin_pct * 100:.1f}% gross margin vs fee-for-service benchmark — a premium the employer captures as overall plan cost savings.
     Onsite clinic capacity averages {r.onsite_capacity_pct * 100:.1f}% utilization; additional ${pipeline_value:,.2f}M in expected revenue from active RFP pipeline.
     Direct-to-employer is a durable revenue stream (3-5 year contracts, low churn for high-performing providers) with ERISA preemption protecting against state-mandated network rules.

@@ -200,7 +200,7 @@ def render_denovo_expansion(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">De Novo Thesis:</strong> {r.total_sites_planned} sites planned across {len(r.markets)} markets requires ${r.total_investment_committed_mm:,.2f}M investment for ${r.expected_stabilized_ebitda_mm:,.2f}M stabilized EBITDA —
     portfolio payback {r.portfolio_payback_years:.2f} years. De novo is a lower-multiple alternative to bolt-on M&A (2.5-3.0x vs 8-10x) but has longer ramp.
-    Sun Belt markets (Austin, Phoenix, Nashville, Raleigh) show strongest demand scores and lowest competitor density. ASC de novo is the highest-margin site type at 4.2x payback at scale.
+    Sun Belt markets (Austin, Phoenix, Nashville, Raleigh) show strongest demand scores and lowest competitor density. ASC de novo is the highest-margin site type at 4.20x payback at scale.
     Lease-to-own structures are most attractive for de novos — preserves capital during ramp and enables sale-leaseback at stabilization.
   </div>
 </div>"""

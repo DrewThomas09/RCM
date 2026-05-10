@@ -213,9 +213,9 @@ def render_medical_realestate(params: dict = None) -> str:
     <strong style="color:{text}">Medical Real Estate Summary:</strong> {r.total_properties} properties totaling {r.total_sqft_mm:.2f}MM sqft generate ${r.total_annual_rent_m:.2f}M annual rent on ${r.total_value_b:.2f}B portfolio value.
     Weighted {r.weighted_cap_rate_pct:.2f}% cap rate at {r.weighted_lease_years:.1f}y average remaining lease — tracks NAREIT Healthcare Sub-Index ±25bps; {r.nnn_pct * 100:.1f}% NNN share limits OpEx volatility.
     Investment-grade rent base ~${ig_rent:.2f}M ({ig_rent / r.total_annual_rent_m * 100:.1f}% of portfolio) anchored by Piedmont (A1), Quest (BBB+), Accredo/Cigna (A), HCA CareNow (A3).
-    2027-2031 lease expirations manageable at 9 leases / $13.6M total — embedded mark-to-market upside of 3-5% on renewal at prevailing MOB rents.
+    2027-2031 lease expirations manageable at 9 leases / $13.60M total — embedded mark-to-market upside of 3-5% on renewal at prevailing MOB rents.
     Cap rate trend: widening 15-50bps across property types YTD reflecting broader CRE dynamics; behavioral health and SNF widest at 40-50bps; IG MOB and specialty pharma tightest at 15bps.
-    PropCo/OpCo separation strategy in flight on 5 platforms ($1,150M property value, ~$1,072M target proceeds) — provides deleveraging + recap optionality at 2.5x OpCo rent coverage.
+    PropCo/OpCo separation strategy in flight on 5 platforms ($1,150M property value, ~$1,072M target proceeds) — provides deleveraging + recap optionality at 2.50x OpCo rent coverage.
   </div>
 </div>"""
 

@@ -132,7 +132,7 @@ def _input_form(params: Dict[str, str]) -> str:
     <div style="margin-top:14px;">
       <button type="submit" class="ck-btn">Run Underwriting</button>
       <span style="margin-left:12px;font-size:10px;color:var(--ck-text-faint);">
-        Assumes 7.5% interest rate · 3% annual debt amortization · 2% transaction fees
+        Assumes 7.5% interest rate · 3.0% annual debt amortization · 2.0% transaction fees
       </span>
     </div>
   </form>

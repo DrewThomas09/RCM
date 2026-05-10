@@ -258,7 +258,7 @@ def render_esg_impact(params: dict = None) -> str:
     <strong style="color:{text}">ESG Portfolio Summary:</strong> Portfolio-wide ESG composite {r.avg_composite_score:.2f}/10 — YoY improvement of +{r.prior_year_delta:.2f} driven primarily by social score gains (patient access + clinical quality).
     Community benefit: ${r.total_charity_care_m:.2f}M in uninsured/charity care LTM; {medicaid_ge20} of {len(r.access)} portcos serve ≥20% Medicaid patients — strong access alignment with healthcare-as-social-infrastructure thesis.
     Clinical outcomes: HEDIS composite range 0.81-0.90; 2 sentinel events YTD (Sage, Linden) both fully investigated and root-cause remediated.
-    Workforce: DEI strong on gender (68% female workforce average); POC representation 47% workforce / 41% leadership — tracks above S&P 500 healthcare benchmarks ±3pp.
+    Workforce: DEI strong on gender (68% female workforce average); POC representation 47.0% workforce / 41.0% leadership — tracks above S&P 500 healthcare benchmarks ±3pp.
     Climate: {sbti_validated} portcos with SBTi-validated targets, 5 committed, 3 not yet committed — Fund VI fundraising materials commit to full SBTi coverage by 2027.
     Frameworks: 14/16 PRI-compliant; 15/16 SASB-aligned; CSRD applies to 3 EU-exposure portcos (2 compliant, 1 in progress); SEC climate rule on hold pending litigation.
   </div>

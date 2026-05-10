@@ -181,7 +181,7 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
       <div class="ck-section-label" style="margin-bottom:6px;">Tier Breakdown</div>
       {dist_svg}
       <div style="margin-top:8px;font-size:9px;color:#64748b;">
-        A≥75 · B≥55 · C≥35 · D&lt;35 &nbsp;|&nbsp; composite = 55% completeness + 45% credibility
+        A≥75 · B≥55 · C≥35 · D&lt;35 &nbsp;|&nbsp; composite = 55.0% completeness + 45.0% credibility
       </div>
     </div>
     <div>

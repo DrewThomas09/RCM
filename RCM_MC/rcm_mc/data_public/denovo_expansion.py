@@ -166,7 +166,7 @@ def _build_lease_buy() -> List[LeaseVsBuy]:
         LeaseVsBuy("Lease (market rate, 10-year)", 0.45, 0.48, 10, -3.65, 85, 0.0),
         LeaseVsBuy("Lease-to-Own", 1.85, 0.28, 15, -1.85, 72, 3.85),
         LeaseVsBuy("Own (cash purchase)", 8.5, 0.12, 99, 5.85, 45, 9.8),
-        LeaseVsBuy("Own (debt-financed 70%)", 2.55, 0.52, 99, 4.12, 52, 9.8),
+        LeaseVsBuy("Own (debt-financed 70.0%)", 2.55, 0.52, 99, 4.12, 52, 9.8),
         LeaseVsBuy("Sale-Leaseback (post-buildout)", -8.5, 0.52, 20, -0.85, 78, 0.0),
     ]
 
