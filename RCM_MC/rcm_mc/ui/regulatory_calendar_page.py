@@ -30,7 +30,7 @@ from ..diligence.regulatory_calendar.killswitch import (
 )
 from ._chartis_kit import (
     P, chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip,
+    ck_provenance_tooltip, ck_section_intro, ck_signal_badge,
 )
 from .power_ui import (
     benchmark_chip, bookmark_hint, deal_context_bar,
@@ -412,41 +412,43 @@ def _verdict_card(report: RegulatoryExposureReport) -> str:
         peer_label="screened-deal band",
     )
 
+    badge_tone = {
+        "FAIL": "negative",
+        "WARNING": "warning",
+        "PASS": "positive",
+    }.get(verdict, "neutral")
+    intro = ck_section_intro(
+        eyebrow=f"Regulatory Calendar · {verdict}",
+        headline=headline,
+        body=rationale,
+        italic_word="regulatory",
+    )
+    badge = ck_signal_badge(verdict, tone=badge_tone)
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Risk Score", risk_val,
+            sub=(
+                f"PE norm {_REG_RISK_PEER_LOW:.0f}-"
+                f"{_REG_RISK_PEER_HIGH:.0f} · median "
+                f"{_REG_RISK_PEER_MEDIAN:.0f}"
+            ),
+        )
+        + ck_kpi_block("Drivers Killed", killed_val)
+        + ck_kpi_block("Drivers Damaged", damaged_val)
+        + ck_kpi_block("Events In Horizon", f"{len(report.events)}")
+        + ck_kpi_block("Margin Impact Σ", margin_val)
+        + ck_kpi_block("Revenue Impact Σ", rev_val)
+        + "</div>"
+    )
     return (
         f'<div class="rc-verdict-card rc-verdict-{verdict}">'
-        f'<div class="rc-verdict-badge">{verdict}</div>'
-        f'<div class="rc-verdict-headline">{headline}</div>'
-        f'<div class="rc-verdict-rationale">{rationale}</div>'
+        f'<p class="ck-section-body">{badge}</p>'
+        f'{intro}'
         + interpret_callout("What partners do here:", plain, tone=plain_tone)
-        + f'<div style="margin-top:16px;">{risk_chip}</div>'
-        f'<div class="rc-kpi-grid">'
-        f'  <div><div class="rc-kpi__label">Risk Score</div>'
-        f'       <div class="rc-kpi__val {score_class}">'
-        f'{risk_val}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">PE norm {_REG_RISK_PEER_LOW:.0f}-'
-        f'{_REG_RISK_PEER_HIGH:.0f} · median '
-        f'{_REG_RISK_PEER_MEDIAN:.0f}</div></div>'
-        f'  <div><div class="rc-kpi__label">Drivers Killed</div>'
-        f'       <div class="rc-kpi__val '
-        f'{"neg" if report.killed_driver_count else ""}">'
-        f'{killed_val}</div></div>'
-        f'  <div><div class="rc-kpi__label">Drivers Damaged</div>'
-        f'       <div class="rc-kpi__val '
-        f'{"neg" if report.damaged_driver_count else ""}">'
-        f'{damaged_val}</div></div>'
-        f'  <div><div class="rc-kpi__label">Events In Horizon</div>'
-        f'       <div class="rc-kpi__val">{len(report.events)}</div></div>'
-        f'  <div><div class="rc-kpi__label">Margin Impact Σ</div>'
-        f'       <div class="rc-kpi__val '
-        f'{"neg" if report.total_expected_margin_impact_pp < 0 else "pos"}">'
-        f'{margin_val}</div></div>'
-        f'  <div><div class="rc-kpi__label">Revenue Impact Σ</div>'
-        f'       <div class="rc-kpi__val '
-        f'{"neg" if report.total_expected_revenue_impact_pct < 0 else "pos"}">'
-        f'{rev_val}</div></div>'
-        f'</div>'
-        f'</div>'
+        + f'<p class="ck-section-body">{risk_chip}</p>'
+        + kpis
+        + '</div>'
     )
 
 
