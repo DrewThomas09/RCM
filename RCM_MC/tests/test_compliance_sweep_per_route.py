@@ -157,10 +157,11 @@ ROUTE_MIN_SCORES: dict[str, float] = {
 # 0.92 so new routes have to migrate to v2 chrome to pass.
 DEFAULT_ROUTE_MIN_SCORE = 0.92
 
-# The aggregate target. With ~93% of routes at 100% and the rest
-# at 93%, the median is 100%. Pin tightly: any regression in the
-# kit-presence rules drops a route to ~87% and shifts the median.
-AGGREGATE_FLOOR_MEDIAN = 0.95
+# The aggregate target. With 45/47 routes at 100% (only /news at
+# 0.92 and /screening/bankruptcy-survivor at 0.25 are intentional
+# residuals), the median is 100%. Pin tightly: any single-route
+# regression that drops a kit-presence rule fails the median floor.
+AGGREGATE_FLOOR_MEDIAN = 1.0
 
 
 class _NoFollow(urllib.request.HTTPRedirectHandler):
