@@ -100,6 +100,23 @@ class PerRouteCoverageDoesNotShrink(unittest.TestCase):
         )
 
 
+class APISmokeCoverageDoesNotShrink(unittest.TestCase):
+    """Same pattern for the API smoke list. Removing endpoints
+    silently weakens JSON-API regression coverage."""
+
+    API_COUNT_FLOOR = 16
+
+    def test_api_smoke_list_size(self) -> None:
+        from tests.test_api_endpoint_smoke import API_SMOKE_ROUTES
+        actual = len(API_SMOKE_ROUTES)
+        self.assertGreaterEqual(
+            actual, self.API_COUNT_FLOOR,
+            f"API_SMOKE_ROUTES has {actual} entries — below "
+            f"floor of {self.API_COUNT_FLOOR}. Either restore the "
+            f"endpoint or update API_COUNT_FLOOR with rationale.",
+        )
+
+
 class ChartisShellEntryPointsAreLazy(unittest.TestCase):
     """Most rendering modules should import ``chartis_shell``
     lazily (inside route handlers / render functions), not at

@@ -43,12 +43,19 @@ API_SMOKE_ROUTES: list[tuple[str, int]] = [
     ("/api/health/deep",          200),
     ("/api/system/info",          200),
     ("/api/migrations",           200),
-    # Domain APIs
+    ("/api/backup",               200),
+    ("/api",                      200),  # API index
+    # Domain APIs — deals
     ("/api/calibration/priors",   200),
     ("/api/runs",                 200),
     ("/api/deals/stats",          200),
     ("/api/deals/search?q=test",  200),
     ("/api/deadlines",            200),
+    # Domain APIs — workflows
+    ("/api/automations",          200),
+    ("/api/cohorts",              200),
+    ("/api/watchlist",            200),
+    ("/api/search?q=test",        200),
 ]
 
 
