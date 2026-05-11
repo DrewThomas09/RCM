@@ -593,6 +593,89 @@ def ck_help_tooltip(
     )
 
 
+def ck_sparkline(
+    values: Sequence[float],
+    *,
+    label: Optional[str] = None,
+    last_value: Optional[str] = None,
+    tone: Optional[str] = None,
+    width: int = 72,
+    height: int = 22,
+) -> str:
+    """Inline editorial sparkline — small SVG trend with optional
+    serif label and mono numeric end-value, tinted with the
+    severity-palette tone the caller specifies.
+
+    ``values`` is a sequence of points (length 2+ to render; 0 or 1
+    points return an empty string so callers can blindly hand off
+    sparse data). When ``tone`` is not given, the helper picks
+    positive when the last value >= first, negative when below
+    first, neutral otherwise — same heuristic the older
+    portfolio_overview._sparkline_svg used, but on the desaturated
+    editorial palette instead of vibrant Tailwind.
+
+    ``last_value`` (e.g. "$24.4M") renders to the right of the
+    spark in JetBrains Mono with tabular-nums.
+
+    ``label`` (e.g. "Health 12-wk") renders to the left in Inter
+    Tight 9px caps with letter-spacing.
+
+    The whole composition is one ``<span class="ck-spark">`` so it
+    can sit inline in table cells or beside KPI values.
+    """
+    if not values or len(values) < 2:
+        return ""
+    try:
+        nums = [float(v) for v in values]
+    except (TypeError, ValueError):
+        return ""
+    mn, mx = min(nums), max(nums)
+    rng = mx - mn if mx != mn else 1.0
+    pts = []
+    for i, v in enumerate(nums):
+        x = i / (len(nums) - 1) * width
+        y = height - ((v - mn) / rng) * height
+        pts.append(f"{x:.1f},{y:.1f}")
+    poly = " ".join(pts)
+    # Editorial palette — desaturated for print.
+    palette = {
+        "positive": "#0a8a5f",
+        "warning":  "#b8732a",
+        "negative": "#b5321e",
+        "neutral":  "#155752",
+    }
+    if tone not in palette:
+        # Auto-pick by trend direction
+        tone = ("positive" if nums[-1] > nums[0]
+                else "negative" if nums[-1] < nums[0]
+                else "neutral")
+    stroke = palette[tone]
+    label_html = (
+        f'<span class="ck-spark-lbl">{_esc(label)}</span>'
+        if label else ""
+    )
+    value_html = (
+        f'<span class="ck-spark-val">{_esc(last_value)}</span>'
+        if last_value else ""
+    )
+    svg = (
+        f'<svg class="ck-spark-svg" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" role="img" '
+        f'aria-label="trend sparkline">'
+        f'<polyline points="{poly}" fill="none" stroke="{stroke}" '
+        f'stroke-width="1.5" stroke-linecap="round" '
+        f'stroke-linejoin="round"/>'
+        '</svg>'
+    )
+    return (
+        '<span class="ck-spark">'
+        + label_html
+        + svg
+        + value_html
+        + '</span>'
+    )
+
+
 def ck_progress_checklist(items: Sequence[Mapping[str, str]]) -> str:
     """Editorial 'your platform journey' progress checklist.
 
@@ -2526,6 +2609,30 @@ _CSS_INLINE_FALLBACK = """
   .ck-section-intro a:not([class]):hover {
     border-bottom-color: var(--sc-teal-ink);
   }
+  /* Inline editorial sparkline — small SVG trend with optional
+   * caps label + mono numeric end-value. Used in deals tables,
+   * KPI strips, and anywhere a single inline trend needs to read
+   * as part of running prose. */
+  .ck-spark {
+    display: inline-flex; align-items: center; gap: 8px;
+    vertical-align: middle;
+  }
+  .ck-spark-svg { display: block; }
+  .ck-spark-lbl {
+    font-family: "Inter Tight", sans-serif; font-size: 9px;
+    font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--sc-text-faint, #6e7787);
+  }
+  .ck-spark-val {
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    font-weight: 600; font-variant-numeric: tabular-nums;
+    color: var(--sc-text, #1a2332);
+  }
+  @media print {
+    .ck-spark-svg polyline { stroke: #000 !important; }
+  }
+
   /* Progress checklist — "your platform journey" editorial roster.
    * Numbered serif rows with a circular state marker that fills with
    * a positive-tone check when JS confirms the underlying condition

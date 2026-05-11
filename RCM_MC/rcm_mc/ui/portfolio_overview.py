@@ -42,24 +42,13 @@ def _health_badge(score: float) -> str:
 
 
 def _sparkline_svg(values: List[float], width: int = 60, height: int = 20) -> str:
-    """Tiny inline SVG sparkline."""
-    if not values or len(values) < 2:
-        return ""
-    mn, mx = min(values), max(values)
-    rng = mx - mn if mx != mn else 1
-    points = []
-    for i, v in enumerate(values):
-        x = i / (len(values) - 1) * width
-        y = height - ((v - mn) / rng) * height
-        points.append(f"{x:.1f},{y:.1f}")
-    poly = " ".join(points)
-    color = PALETTE["positive"] if values[-1] >= values[0] else PALETTE["negative"]
-    return (
-        f'<svg width="{width}" height="{height}" viewBox="0 0 {width} {height}" '
-        f'style="vertical-align:middle;">'
-        f'<polyline points="{poly}" fill="none" stroke="{color}" stroke-width="1.5"/>'
-        f'</svg>'
-    )
+    """Tiny inline SVG sparkline. Delegates to ck_sparkline so the
+    portfolio overview table picks up the editorial palette
+    (positive=#0a8a5f / negative=#b5321e) and lands on the same
+    primitive as every other inline trend on the platform.
+    """
+    from ._chartis_kit import ck_sparkline
+    return ck_sparkline(values, width=width, height=height)
 
 
 def _fmt_money(val: Any, scale: float = 1e6) -> str:
