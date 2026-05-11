@@ -26,8 +26,8 @@ from ..diligence.hcris_xray import (
     search_hospitals, xray,
 )
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_page_title, ck_panel,
-    ck_section_header, ck_section_intro, ck_signal_badge,
+    P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
+    ck_panel, ck_section_header, ck_section_intro, ck_signal_badge,
 )
 from .power_ui import (
     bookmark_hint, deal_context_bar, export_json_panel,
@@ -1078,6 +1078,12 @@ def render_hcris_xray_page(
             name=f"hcris_xray_{target.ccn}",
         )
         + bookmark_hint()
+        + ck_next_section(
+            "Move into the Risk Workbench",
+            "/diligence/risk-workbench",
+            eyebrow="Continue —",
+            italic_word="Risk",
+        )
         + '</div>'
     )
     return chartis_shell(

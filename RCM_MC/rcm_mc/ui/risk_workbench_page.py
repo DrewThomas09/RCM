@@ -75,8 +75,9 @@ from ..diligence.working_capital import (
     estimate_dnfb,
 )
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_page_title, ck_panel,
-    ck_section_header, ck_section_intro, ck_signal_badge,
+    P, chartis_shell, ck_kpi_block, ck_next_section,
+    ck_page_title, ck_panel, ck_section_header, ck_section_intro,
+    ck_signal_badge,
 )
 
 
@@ -1262,6 +1263,12 @@ def render_risk_workbench(inp: WorkbenchInput) -> str:
         + _panel_patient_pay_reputational(inp)
         + '</div>'
         + _counterfactual_section(inp)
+        + ck_next_section(
+            "Stage the bear case for IC",
+            "/diligence/bear-case",
+            eyebrow="Continue —",
+            italic_word="bear",
+        )
     )
     return chartis_shell(
         body, "RCM Diligence — Risk Workbench",

@@ -14,7 +14,7 @@ import pandas as pd
 
 from ..portfolio.store import PortfolioStore
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_panel,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
     ck_section_intro, ck_signal_badge,
 )
 from .brand import PALETTE
@@ -275,7 +275,16 @@ def render_model_validation(
         title="Cross-links",
     )
 
-    body = f'{intro}{kpis}{metric_section}{cov_analysis}{recent_section}{flywheel}{nav}'
+    next_up = ck_next_section(
+        "Calibrate predictions against priors",
+        "/calibration",
+        eyebrow="Continue —",
+        italic_word="priors",
+    )
+    body = (
+        f'{intro}{kpis}{metric_section}{cov_analysis}'
+        f'{recent_section}{flywheel}{nav}{next_up}'
+    )
 
     _pstore_cm.__exit__(None, None, None)
 

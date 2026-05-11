@@ -24,7 +24,7 @@ from ..diligence.bear_case import (
     generate_bear_case_from_pipeline,
 )
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_panel,
+    P, chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
     ck_section_intro, ck_signal_badge,
 )
 from .power_ui import (
@@ -535,6 +535,12 @@ def _render_bear_case_no_ccd(
             name=f"bear_case_nocc_{deal_name.replace(' ', '_')}",
         )
         + bookmark_hint()
+        + ck_next_section(
+            "Assemble the IC packet",
+            "/diligence/ic-packet",
+            eyebrow="Continue —",
+            italic_word="packet",
+        )
         + '</div>'
     )
     return chartis_shell(

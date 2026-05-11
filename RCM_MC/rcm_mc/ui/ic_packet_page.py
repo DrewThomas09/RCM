@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Optional
 
 from ..diligence._pages import AVAILABLE_FIXTURES, _resolve_dataset
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_panel,
+    P, chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
     ck_section_header, ck_section_intro, ck_signal_badge,
     ck_sticky_toc,
 )
@@ -744,6 +744,12 @@ def render_ic_packet_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             + '<div class="ck-toc-content">'
             + anchored_body
             + '</div></div>'
+            + ck_next_section(
+                "Return to the portfolio",
+                "/portfolio",
+                eyebrow="Continue —",
+                italic_word="portfolio",
+            )
         )
     else:
         body_with_toc = (
@@ -752,6 +758,12 @@ def render_ic_packet_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             'Preview print version →</a>'
             '</div>'
             + runtime_header + inner_body
+            + ck_next_section(
+                "Return to the portfolio",
+                "/portfolio",
+                eyebrow="Continue —",
+                italic_word="portfolio",
+            )
         )
 
     return chartis_shell(

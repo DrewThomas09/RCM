@@ -22,7 +22,7 @@ from ..diligence.covenant_lab.simulator import (
     QuarterlyCovenantCurve,
 )
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_panel,
+    P, chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
     ck_section_header, ck_section_intro, ck_signal_badge,
 )
 from .power_ui import (
@@ -1085,6 +1085,12 @@ def render_covenant_lab_page(
             name=f"covenant_stress_{deal_name.replace(' ', '_')}",
         )
         + bookmark_hint()
+        + ck_next_section(
+            "Stage the bear case",
+            "/diligence/bear-case",
+            eyebrow="Continue —",
+            italic_word="bear",
+        )
         + '</div>'
     )
     return chartis_shell(

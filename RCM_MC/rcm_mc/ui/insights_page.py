@@ -146,9 +146,17 @@ def render_insights_page(db_path: str) -> str:
         + summary_strip
         + "".join(cards)
     )
+    from ._chartis_kit import ck_next_section
+    next_up = ck_next_section(
+        "Open the day-one Monday brief",
+        "/day-one",
+        eyebrow="Continue —",
+        italic_word="day",
+    )
     body = (
         _wc.web_styles()
         + _wc.responsive_container(inner)
+        + next_up
     )
     return chartis_shell(
         body, "All insights", active_nav="/insights",

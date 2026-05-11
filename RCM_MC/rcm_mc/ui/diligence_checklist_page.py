@@ -27,8 +27,8 @@ from ..diligence.checklist import (
 )
 from ..diligence.checklist.items import build_checklist
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_page_title, ck_panel,
-    ck_section_header, ck_section_intro,
+    P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
+    ck_panel, ck_section_header, ck_section_intro,
 )
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
@@ -572,6 +572,12 @@ def render_diligence_checklist_page(
         )
         + '</div>'
         + bookmark_hint()
+        + ck_next_section(
+            "Open the deal profile",
+            "/diligence/deal",
+            eyebrow="Continue —",
+            italic_word="deal",
+        )
     )
     return chartis_shell(
         body, "RCM Diligence — Checklist",
