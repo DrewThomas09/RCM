@@ -35,7 +35,7 @@ from typing import Any, Dict, List, Optional
 from ..infra.run_history import list_runs
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip,
+    ck_next_section, ck_provenance_tooltip,
 )
 from ._ui_kit import fmt_iso_date, fmt_num
 
@@ -209,6 +209,12 @@ def render_cli_runs_page(
         'shows the same hash pair.</p>'
         + catalog_body
         + '</section>'
+        + ck_next_section(
+            "Open the calibration view",
+            "/calibration",
+            eyebrow="Continue —",
+            italic_word="calibration",
+        )
     )
 
     return chartis_shell(

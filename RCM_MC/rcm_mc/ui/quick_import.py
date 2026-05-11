@@ -10,7 +10,7 @@ from typing import Any
 
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip,
+    ck_next_section, ck_provenance_tooltip,
 )
 from .brand import PALETTE
 
@@ -210,8 +210,14 @@ def render_quick_import(success_msg: str = "", error_msg: str = "") -> str:
   });
 })();
 """
+    next_up = ck_next_section(
+        "Open the pipeline",
+        "/pipeline",
+        eyebrow="Continue —",
+        italic_word="pipeline",
+    )
     return chartis_shell(
-        form, "Import Deals",
+        form + next_up, "Import Deals",
         subtitle="Create deals directly in your browser",
         extra_js=comma_js,
         editorial_intro={

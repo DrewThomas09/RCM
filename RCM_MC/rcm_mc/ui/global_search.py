@@ -465,7 +465,7 @@ def render_global_search_page(
     import html as _html
     from ._chartis_kit import (
         chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-        ck_provenance_tooltip,
+        ck_next_section, ck_provenance_tooltip,
     )
     from collections import Counter
 
@@ -577,6 +577,12 @@ def render_global_search_page(
     .hit .sub { font-size: .8rem; color: var(--muted); }
     """
 
+    body = body + ck_next_section(
+        "Open the diligence-questions ledger",
+        "/diligence/questions",
+        eyebrow="Continue —",
+        italic_word="questions",
+    )
     return chartis_shell(
         body,
         title=f"Search · {query}" if query else "Search",
