@@ -12,7 +12,8 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_panel, ck_section_intro,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_intro,
 )
 from .brand import PALETTE
 
@@ -415,7 +416,16 @@ def render_hospital_history(
 border-bottom:1px solid {PALETTE['border']};}}
 </style>
 """
-    body = f'{hh_styles}{intro}{kpis}{timeline_table}{covid_section}{trend_section}{peer_section}{proj_section}{actions}'
+    next_up = ck_next_section(
+        "Back to the hospital profile",
+        f"/hospital/{ccn_esc}",
+        eyebrow="Continue —",
+        italic_word="profile",
+    )
+    body = (
+        f'{hh_styles}{intro}{kpis}{timeline_table}{covid_section}'
+        f'{trend_section}{peer_section}{proj_section}{actions}{next_up}'
+    )
 
     return chartis_shell(
         body, f"{name_esc} — History",

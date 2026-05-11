@@ -27,8 +27,8 @@ from ..diligence.physician_attrition import (
 )
 from ..diligence.physician_comp.comp_ingester import Provider
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_page_title, ck_panel,
-    ck_section_header, ck_section_intro, ck_signal_badge,
+    P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
+    ck_panel, ck_section_header, ck_section_intro, ck_signal_badge,
 )
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
@@ -1112,6 +1112,12 @@ def render_physician_attrition_page(
         + _roster_table(filtered, providers_by_id)
         + '</div>'
         + bookmark_hint()
+        + ck_next_section(
+            "Open the provider economics surface",
+            "/diligence/physician-eu",
+            eyebrow="Continue —",
+            italic_word="economics",
+        )
     )
 
     return chartis_shell(

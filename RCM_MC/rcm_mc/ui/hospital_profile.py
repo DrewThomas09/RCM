@@ -9,7 +9,7 @@ import html
 from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_panel,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
     ck_section_intro, ck_signal_badge,
 )
 from ._provenance_tooltip import provenance_tooltip
@@ -427,7 +427,17 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
         except Exception:
             pass
 
-    body = f'{hp_styles}{header}{thesis_html}{system_badge}{fundamentals}{payer_mix}{quality_section}{score_card}{comp_html}{comments_html}{actions}'
+    next_up = ck_next_section(
+        "Open the hospital's history",
+        f"/hospital/{ccn}/history",
+        eyebrow="Continue —",
+        italic_word="history",
+    )
+    body = (
+        f'{hp_styles}{header}{thesis_html}{system_badge}{fundamentals}'
+        f'{payer_mix}{quality_section}{score_card}{comp_html}'
+        f'{comments_html}{actions}{next_up}'
+    )
 
     return chartis_shell(
         body, name,
