@@ -26,7 +26,8 @@ from ..data.catalog import (
     inventory_data_sources,
 )
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+    chartis_shell, ck_fmt_num, ck_kpi_block, ck_next_section,
+    ck_provenance_tooltip,
 )
 from ._ui_kit import fmt_num
 
@@ -238,6 +239,12 @@ def render_data_catalog_page(store: Any) -> str:
         + kpi_html
         + catalog_body
         + '</section>'
+        + ck_next_section(
+            "Refresh the public-data loaders",
+            "/data-refresh",
+            eyebrow="Continue —",
+            italic_word="loaders",
+        )
     )
 
     return chartis_shell(

@@ -9,8 +9,8 @@ import html
 from typing import Any
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_panel, ck_section_header,
-    ck_section_intro, ck_signal_badge,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_header, ck_section_intro, ck_signal_badge,
 )
 from .brand import PALETTE
 
@@ -317,9 +317,15 @@ def render_methodology() -> str:
         page_key="methodology-calculations",
     )
 
+    next_up = ck_next_section(
+        "Open the metric glossary",
+        "/metric-glossary",
+        eyebrow="Continue —",
+        italic_word="glossary",
+    )
     body = (
         f'{explainer}{toc}{intro}{data_sources}{scoring}{market_pulse}{models}'
-        f'{regression}{margins}{ontology_section}{related_links}'
+        f'{regression}{margins}{ontology_section}{related_links}{next_up}'
     )
 
     return chartis_shell(

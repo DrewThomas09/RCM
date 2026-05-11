@@ -34,7 +34,7 @@ import pandas as pd
 
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip,
+    ck_next_section, ck_provenance_tooltip,
 )
 
 
@@ -213,6 +213,12 @@ def render_calibration_page(store: Any) -> str:
         f'underlying analysis cache is the source of truth.</p>'
         + sliders
         + '</section>'
+        + ck_next_section(
+            "Open the simulation run history",
+            "/runs",
+            eyebrow="Continue —",
+            italic_word="runs",
+        )
     )
 
     return chartis_shell(

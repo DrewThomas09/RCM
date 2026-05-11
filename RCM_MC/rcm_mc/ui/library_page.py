@@ -11,7 +11,7 @@ from typing import Any, Dict, List
 
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip,
+    ck_next_section, ck_provenance_tooltip,
 )
 from .brand import PALETTE
 
@@ -342,7 +342,13 @@ def render_library() -> str:
     )
     api_link = extra_links
 
-    body = f'{explainer}{sections}{api_link}'
+    next_up = ck_next_section(
+        "Open the metric glossary",
+        "/metric-glossary",
+        eyebrow="Continue —",
+        italic_word="glossary",
+    )
+    body = f'{explainer}{sections}{api_link}{next_up}'
 
     return chartis_shell(
         body, "Methodology",
