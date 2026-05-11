@@ -2769,6 +2769,35 @@ _CSS_INLINE_FALLBACK = """
   .ck-user-chip { width:34px; height:34px; border-radius:50%; background:var(--sc-teal); color:var(--sc-navy); display:flex; align-items:center; justify-content:center; font-family:var(--sc-sans); font-weight:700; font-size:12px; letter-spacing:0.04em; cursor:pointer; border:0; padding:0; }
   .ck-user-chip:hover { background:var(--sc-teal-2,var(--sc-teal)); }
   .ck-search-form { margin:0; }
+  /* Portfolio-wide diligence-questions pill in the topbar. JS
+   * hydrates from rcm_deal_*_questions on DOMContentLoaded; hidden
+   * when zero open across the portfolio. Warning-tone numeric +
+   * italic Source-Serif label, matches the row-level Q-chips on
+   * the recently-viewed rails so partners read the signal the same
+   * way wherever they encounter it. */
+  .ck-topbar-qpill {
+    display:inline-flex; align-items:baseline; gap:6px;
+    padding:5px 10px;
+    background:transparent;
+    border:1px solid var(--sc-warning, #b8732a);
+    border-radius:999px;
+    text-decoration:none;
+    color:var(--sc-warning, #b8732a);
+    transition:background 120ms ease, color 120ms ease;
+  }
+  .ck-topbar-qpill[hidden] { display:none !important; }
+  .ck-topbar-qpill:hover {
+    background:var(--sc-warning, #b8732a); color:#fff;
+  }
+  .ck-topbar-qpill-num {
+    font-family:var(--sc-mono); font-weight:700; font-size:11px;
+    font-variant-numeric:tabular-nums;
+    letter-spacing:0.04em;
+  }
+  .ck-topbar-qpill-label {
+    font-family:var(--sc-serif); font-style:italic; font-size:11px;
+  }
+  @media print { .ck-topbar-qpill { display:none !important; } }
   .ck-user-menu { position:relative; }
   .ck-user-dropdown { position:absolute; top:calc(100% + 10px); right:0; min-width:200px; background:#fff; border:1px solid var(--sc-rule); box-shadow:var(--sc-shadow-2,0 8px 24px rgba(11,32,55,0.14)); border-radius:2px; padding:6px 0; z-index:60; }
   .ck-user-dropdown[hidden] { display:none !important; }
@@ -3453,6 +3482,49 @@ _INTRO_DISMISS_JS = """
 """
 
 
+_QPILL_JS = """
+<script>
+/* Topbar diligence-questions pill — counts opens across every
+ * rcm_deal_*_questions entry in localStorage and surfaces the
+ * total as a single editorial chip in the topbar. Hidden when zero
+ * so a fresh partner never sees an empty pill. Click navigates to
+ * the portfolio question ledger. Repaints every 30s so partners
+ * leaving the tab on a page see the chip update in the background. */
+(function() {
+  function paintQpill() {
+    var el = document.querySelector("[data-ck-qpill]");
+    if (!el) return;
+    var num = el.querySelector("[data-ck-qpill-num]");
+    var total = 0;
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (!k || !/_questions$/.test(k)) continue;
+        if (!/^rcm_deal_/.test(k)) continue;
+        try {
+          var rows = JSON.parse(localStorage.getItem(k) || "[]");
+          if (!Array.isArray(rows)) continue;
+          for (var j = 0; j < rows.length; j++) {
+            if (rows[j] && !rows[j].asked) total += 1;
+          }
+        } catch (e) { /* skip malformed row */ }
+      }
+    } catch (e) { /* storage disabled — leave hidden */ return; }
+    if (total <= 0) { el.hidden = true; return; }
+    if (num) num.textContent = String(total);
+    el.hidden = false;
+  }
+  document.addEventListener("DOMContentLoaded", paintQpill);
+  // Repaint when the partner returns to the tab — quick-capture
+  // from another tab is unlikely but cheap to support.
+  document.addEventListener("visibilitychange", function() {
+    if (!document.hidden) paintQpill();
+  });
+}());
+</script>
+"""
+
+
 _USER_MENU_JS = """
 <script>
 /* User dropdown — click chip to open, click-outside or Escape to close.
@@ -3748,6 +3820,14 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '</a>'
         f'<nav class="ck-nav" aria-label="Primary">{links}</nav>'
         '<div class="ck-topbar-right">'
+        # Portfolio-wide diligence-questions pill. JS-hydrated from
+        # all rcm_deal_*_questions entries on DOMContentLoaded;
+        # hidden when zero open across the portfolio. Click → ledger.
+        '<a class="ck-topbar-qpill" data-ck-qpill href="/diligence/questions" '
+        'aria-label="Open diligence questions ledger" hidden>'
+        '<span class="ck-topbar-qpill-num" data-ck-qpill-num>0</span>'
+        '<span class="ck-topbar-qpill-label">open Qs</span>'
+        '</a>'
         '<form class="ck-search-form" action="/search" method="get" role="search">'
         '<input class="ck-search" type="search" name="q" '
         'placeholder="Search deals, hospitals, routes — ⌘K" '
@@ -3947,6 +4027,7 @@ def chartis_shell(
         f"{ck_quick_capture()}"
         f"{_CSRF_JS}"
         f"{_USER_MENU_JS}"
+        f"{_QPILL_JS}"
         f"{_INTRO_DISMISS_JS}"
         f"{_PALETTE_JS}"
         f"{_SHORTCUTS_JS}"
