@@ -114,7 +114,7 @@ def _deal_format_guide() -> str:
 def render_exports_index(db_path: str) -> str:
     from ._chartis_kit import (
         chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-        ck_provenance_tooltip,
+        ck_next_section, ck_provenance_tooltip,
     )
 
     header = _wc.page_header(
@@ -180,10 +180,17 @@ def render_exports_index(db_path: str) -> str:
         + portfolio_card
         + corpus_card
     )
+    next_up = ck_next_section(
+        "Open the LP update",
+        "/lp-update",
+        eyebrow="Continue —",
+        italic_word="LP",
+    )
     body = (
         _wc.web_styles()
         + _wc.responsive_container(inner)
         + _wc.sortable_table_js()
+        + next_up
     )
     return chartis_shell(body, "Downloads", active_nav="/exports",
         editorial_intro={

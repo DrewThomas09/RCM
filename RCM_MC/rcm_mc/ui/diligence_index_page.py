@@ -21,7 +21,7 @@ import html as _html
 from typing import List, Mapping
 
 from ._chartis_kit import (
-    chartis_shell, ck_page_title, ck_panel,
+    chartis_shell, ck_next_section, ck_page_title, ck_panel,
     ck_section_intro,
 )
 
@@ -256,6 +256,12 @@ def render_diligence_index() -> str:
         '</style>'
     )
 
+    next_up = ck_next_section(
+        "Open the portfolio-wide question ledger",
+        "/diligence/questions",
+        eyebrow="Continue —",
+        italic_word="questions",
+    )
     body = (
         f"{css}"
         f"{title}"
@@ -263,6 +269,7 @@ def render_diligence_index() -> str:
         '<div class="ck-dil-grid">'
         + "".join(pillars_html)
         + '</div>'
+        + next_up
     )
 
     return chartis_shell(

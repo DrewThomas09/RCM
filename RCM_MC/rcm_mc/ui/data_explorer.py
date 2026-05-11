@@ -12,7 +12,7 @@ import pandas as pd
 
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip,
+    ck_next_section, ck_provenance_tooltip,
 )
 from .brand import PALETTE
 
@@ -275,7 +275,16 @@ def render_data_explorer(
         + '</div>'
     )
 
-    body = ck_eyebrow("Data Explorer") + kpi_strip + f'{source_cards}{modules_section}{pipeline}'
+    next_up = ck_next_section(
+        "Open the data catalog",
+        "/data",
+        eyebrow="Continue —",
+        italic_word="catalog",
+    )
+    body = (
+        ck_eyebrow("Data Explorer") + kpi_strip
+        + f'{source_cards}{modules_section}{pipeline}{next_up}'
+    )
 
     return chartis_shell(
         body, "Data Explorer",
