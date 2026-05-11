@@ -697,9 +697,28 @@ transition:border-color 120ms ease, color 120ms ease;}}
 background:{P["positive"]};color:#fff;border-color:{P["positive"]};}}
 .ck-dp-qs-row-btn-remove:hover{{
 border-color:{P["negative"]};color:{P["negative"]};}}
-.ck-dp-qs-meta{{margin-top:14px;font-family:"Source Serif 4",serif;
+.ck-dp-qs-meta-row{{display:flex;align-items:baseline;
+justify-content:space-between;gap:14px;flex-wrap:wrap;
+margin-top:14px;padding-top:12px;
+border-top:1px solid {P["border"]};}}
+.ck-dp-qs-meta-row[hidden]{{display:none !important;}}
+.ck-dp-qs-meta{{font-family:"Source Serif 4",serif;
 font-style:italic;font-size:11px;color:{P["text_faint"]};}}
-.ck-dp-qs-meta[hidden]{{display:none !important;}}
+.ck-dp-qs-export{{display:flex;align-items:baseline;
+gap:6px;flex-wrap:wrap;}}
+.ck-dp-qs-export-btn{{background:none;border:1px solid {P["border"]};
+border-radius:3px;padding:5px 10px;cursor:pointer;
+font-family:"Source Serif 4",serif;font-size:11.5px;
+font-style:italic;color:{P["text_dim"]};
+transition:border-color 120ms ease, color 120ms ease;}}
+.ck-dp-qs-export-btn:hover{{border-color:{P["accent"]};
+color:{P["accent"]};}}
+.ck-dp-qs-export-toast{{font-family:"Source Serif 4",serif;
+font-style:italic;font-size:11.5px;color:{P["positive"]};
+margin-left:6px;align-self:center;
+opacity:0;transition:opacity 200ms ease;}}
+.ck-dp-qs-export-toast.is-visible{{opacity:1;}}
+.ck-dp-qs-export-toast[hidden]{{display:none !important;}}
 @media print {{.ck-dp-qs{{display:none !important;}}}}
 
 /* "Compare with…" disclosure on the deal-profile hero. Editorial
@@ -1392,7 +1411,19 @@ def _render_diligence_questions(slug: str) -> str:
         '</p>'
         '</div>'
         '<ol class="ck-dp-qs-list" data-rcm-qs-list></ol>'
-        '<div class="ck-dp-qs-meta" data-rcm-qs-meta hidden></div>'
+        '<div class="ck-dp-qs-meta-row" data-rcm-qs-meta-row hidden>'
+        '<div class="ck-dp-qs-meta" data-rcm-qs-meta></div>'
+        '<div class="ck-dp-qs-export">'
+        '<button type="button" class="ck-dp-qs-export-btn" '
+        'data-rcm-qs-copy-md>Copy as Markdown</button>'
+        '<button type="button" class="ck-dp-qs-export-btn" '
+        'data-rcm-qs-copy-md-open>Copy open only</button>'
+        '<button type="button" class="ck-dp-qs-export-btn" '
+        'data-rcm-qs-csv>Download CSV</button>'
+        '<span class="ck-dp-qs-export-toast" '
+        'data-rcm-qs-toast hidden></span>'
+        '</div>'
+        '</div>'
         '</div>'
     )
 
@@ -1923,7 +1954,8 @@ def _inline_js(slug: str) -> str:
     if (rows.length === 0) {
       list.innerHTML = "";
       if (empty) empty.hidden = false;
-      if (meta) meta.hidden = true;
+      var metaRow0 = root.querySelector("[data-rcm-qs-meta-row]");
+      if (metaRow0) metaRow0.hidden = true;
       return;
     }
     if (empty) empty.hidden = true;
@@ -1955,6 +1987,7 @@ def _inline_js(slug: str) -> str:
         '</span></li>';
     }).join("");
     var nOpen = rows.filter(function(r) { return !r.asked; }).length;
+    var metaRow = root.querySelector("[data-rcm-qs-meta-row]");
     if (meta) {
       // Editorial meta line: "5 total · 2 still open · 3 Fin · 1 Clin · 1 Reg"
       var counts = {};
@@ -1971,8 +2004,8 @@ def _inline_js(slug: str) -> str:
       meta.textContent = catParts.length
         ? head + " · " + catParts.join(" · ")
         : head;
-      meta.hidden = false;
     }
+    if (metaRow) metaRow.hidden = false;
   }
   document.addEventListener("DOMContentLoaded", paintQs);
   document.addEventListener("submit", function(e) {
@@ -1998,6 +2031,112 @@ def _inline_js(slug: str) -> str:
     // last set it instead of resetting to the default.
     paintQs();
   });
+  // ── Export handlers ──
+  // Three small editorial buttons next to the meta line let
+  // partners hand the question list off to the seller as Markdown
+  // (default, all rows) or just the open subset, or download a
+  // CSV with category + status + timestamp columns. All client-
+  // side via Blob + clipboard APIs — no server roundtrip.
+  function qsToast(msg) {
+    var t = document.querySelector("[data-rcm-qs-toast]");
+    if (!t) return;
+    t.textContent = msg;
+    t.hidden = false;
+    t.classList.add("is-visible");
+    setTimeout(function() {
+      t.classList.remove("is-visible");
+      setTimeout(function() { t.hidden = true; }, 220);
+    }, 1600);
+  }
+  function qsCsvCell(v) {
+    var s = String(v == null ? "" : v);
+    if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+  function qsBuildMarkdown(openOnly) {
+    var rows = loadQs();
+    if (openOnly) rows = rows.filter(function(r) { return !r.asked; });
+    if (rows.length === 0) return "";
+    var CAT_LABELS_FULL = {
+      financial: "Financial", clinical: "Clinical",
+      regulatory: "Regulatory", legal: "Legal",
+      operational: "Operational", other: "Other",
+    };
+    var lines = [
+      "# Diligence questions — " + slug,
+      "",
+      "_" + rows.length + " question" + (rows.length === 1 ? "" : "s") +
+        (openOnly ? " (open only)" : "") + ", exported " +
+        new Date().toISOString().slice(0, 10) + "._",
+      "",
+    ];
+    rows.forEach(function(r, i) {
+      var c = (r.category || "financial").toLowerCase();
+      if (!CAT_LABELS_FULL[c]) c = "other";
+      var asked = r.asked ? " ✓ asked" : "";
+      lines.push(
+        (i + 1) + ". **[" + CAT_LABELS_FULL[c] + "]**" + asked + " — " +
+        r.text
+      );
+    });
+    return lines.join("\n");
+  }
+  function qsBuildCsv() {
+    var rows = loadQs();
+    var header = "slug,category,status,question,added_at";
+    var body = rows.map(function(r) {
+      var c = (r.category || "financial").toLowerCase();
+      var status = r.asked ? "asked" : "open";
+      var iso = new Date(r.ts || 0).toISOString();
+      return [
+        qsCsvCell(slug), qsCsvCell(c), qsCsvCell(status),
+        qsCsvCell(r.text || ""), qsCsvCell(iso),
+      ].join(",");
+    });
+    return header + "\n" + body.join("\n");
+  }
+  function qsCopyToClipboard(text) {
+    if (!text) { qsToast("Nothing to copy."); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function() {
+        qsToast("Copied to clipboard.");
+      }).catch(function() { qsToast("Copy failed."); });
+    } else {
+      // Old-browser fallback
+      var ta = document.createElement("textarea");
+      ta.value = text; document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); qsToast("Copied to clipboard."); }
+      catch (e) { qsToast("Copy failed."); }
+      document.body.removeChild(ta);
+    }
+  }
+  function qsDownloadCsv() {
+    var csv = qsBuildCsv();
+    if (!csv || csv.split("\n").length < 2) {
+      qsToast("Nothing to export."); return;
+    }
+    var blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "diligence-questions-" + slug + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+    qsToast("CSV downloaded.");
+  }
+  document.addEventListener("click", function(e) {
+    if (e.target.closest && e.target.closest("[data-rcm-qs-copy-md]")) {
+      qsCopyToClipboard(qsBuildMarkdown(false));
+    } else if (e.target.closest && e.target.closest("[data-rcm-qs-copy-md-open]")) {
+      qsCopyToClipboard(qsBuildMarkdown(true));
+    } else if (e.target.closest && e.target.closest("[data-rcm-qs-csv]")) {
+      qsDownloadCsv();
+    }
+  });
+
   document.addEventListener("click", function(e) {
     var row = e.target.closest && e.target.closest("[data-rcm-qs-id]");
     if (!row) return;
