@@ -18,7 +18,8 @@ from ..diligence.management_scorecard import (
     analyze_team,
 )
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_page_title, ck_section_intro,
+    P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
+    ck_section_intro,
 )
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
@@ -526,6 +527,12 @@ def render_management_scorecard_page(
         + focus_cards
         + '</div>'
         + bookmark_hint()
+        + ck_next_section(
+            "Take this read into the IC packet",
+            "/diligence/ic-packet",
+            eyebrow="Continue —",
+            italic_word="IC",
+        )
     )
     return chartis_shell(
         body,

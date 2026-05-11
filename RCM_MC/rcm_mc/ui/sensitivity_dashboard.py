@@ -329,7 +329,13 @@ def render_sensitivity_page(
     # + the standalone <!DOCTYPE> fallback. chartis_shell() handles
     # both modes via the dispatcher (editorial when CHARTIS_UI_V2=1,
     # legacy otherwise) — no per-page fallback needed.
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import chartis_shell, ck_next_section
+    body = body + ck_next_section(
+        "Pressure-test in the Risk Workbench",
+        "/diligence/risk-workbench?demo=steward",
+        eyebrow="Continue —",
+        italic_word="Workbench",
+    )
     return chartis_shell(
         body,
         title=f"Sensitivity Analysis{' · ' + deal_id if deal_id else ''}",

@@ -8,7 +8,8 @@ import html
 from typing import Any, Dict, List
 
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+    chartis_shell, ck_fmt_num, ck_kpi_block, ck_next_section,
+    ck_provenance_tooltip,
 )
 from .brand import PALETTE
 
@@ -207,7 +208,13 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
         f'</div>'
     )
 
-    body = f'{kpis}{prevalence_section}{stick_section}{elas_section}{tw_section}{interp}{actions}'
+    next_up = ck_next_section(
+        "Open the market analysis",
+        f"/models/market/{ccn}",
+        eyebrow="Continue —",
+        italic_word="market",
+    )
+    body = f'{kpis}{prevalence_section}{stick_section}{elas_section}{tw_section}{interp}{actions}{next_up}'
 
     return chartis_shell(
         body, f"Demand Analysis — {name}",

@@ -8,7 +8,8 @@ import html
 from typing import Any, Dict, List
 
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+    chartis_shell, ck_fmt_num, ck_kpi_block, ck_next_section,
+    ck_provenance_tooltip,
 )
 from .models_page import _model_nav
 from .brand import PALETTE
@@ -145,7 +146,13 @@ def render_denial_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -
     )
 
     nav = _model_nav(deal_id, "denial")
-    body = f'{nav}{kpis}{drivers_section}{interp}{rec_html}{actions}'
+    next_up = ck_next_section(
+        "Open the EBITDA bridge",
+        f"/models/bridge/{html.escape(deal_id)}",
+        eyebrow="Continue —",
+        italic_word="bridge",
+    )
+    body = f'{nav}{kpis}{drivers_section}{interp}{rec_html}{actions}{next_up}'
 
     return chartis_shell(
         body, f"Denial Drivers — {html.escape(deal_name)}",

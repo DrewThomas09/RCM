@@ -8,7 +8,7 @@ import pandas as pd
 
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip,
+    ck_next_section, ck_provenance_tooltip,
 )
 from .brand import PALETTE
 
@@ -110,7 +110,13 @@ def render_pressure_page(
             f'style="text-decoration:none;">Denial Drivers</a></div>'
         )
 
-    body = ck_eyebrow("Pressure Test") + form + results_html
+    next_up = ck_next_section(
+        "Pressure-test in the Risk Workbench",
+        "/diligence/risk-workbench?demo=steward",
+        eyebrow="Continue —",
+        italic_word="Workbench",
+    )
+    body = ck_eyebrow("Pressure Test") + form + results_html + next_up
 
     subtitle = f"Pressure test: {selected_deal_id}" if selected_deal_id else "Stress scenarios with risk flags"
     return chartis_shell(body, "Pressure Test", subtitle=subtitle,
