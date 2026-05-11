@@ -58,6 +58,7 @@ from ._chartis_kit import (
     ck_affirm_empty,
     ck_arrow_link,
     ck_kpi_block,
+    ck_next_section,
     ck_page_title,
     ck_provenance_tooltip,
 )
@@ -413,6 +414,12 @@ def render_alerts(
             + kpi_html
             + filter_row
             + "".join(blocks)
+            + ck_next_section(
+                "Open the portfolio for context",
+                "/portfolio",
+                eyebrow="Continue —",
+                italic_word="portfolio",
+            )
         )
 
     return chartis_shell(

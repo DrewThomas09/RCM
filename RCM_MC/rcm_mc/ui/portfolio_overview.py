@@ -481,7 +481,17 @@ def render_portfolio_overview(
         '</div>'
     )
 
-    body = f'{page_head}{kpis}{health_bar}{opportunity}{synergy_section}{table}{regression}{nav_links}'
+    from ._chartis_kit import ck_next_section
+    next_up = ck_next_section(
+        "Open Day One — the Monday brief",
+        "/day-one",
+        eyebrow="Continue —",
+        italic_word="Day",
+    )
+    body = (
+        f'{page_head}{kpis}{health_bar}{opportunity}'
+        f'{synergy_section}{table}{regression}{nav_links}{next_up}'
+    )
 
     return chartis_shell(
         body, "Portfolio",

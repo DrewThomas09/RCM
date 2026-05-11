@@ -15,7 +15,8 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_panel, ck_section_intro,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_intro,
 )
 from .brand import PALETTE
 
@@ -400,7 +401,16 @@ transition:filter 120ms ease;}
 .ps-save-field{flex:1;}
 </style>
 """
-    body = f'{ps_styles}{intro}{form}{kpis}{table}{save_form}{quick}'
+    next_up = ck_next_section(
+        "Open a deal profile to act on the shortlist",
+        "/diligence/deal",
+        eyebrow="Continue —",
+        italic_word="deal",
+    )
+    body = (
+        f'{ps_styles}{intro}{form}{kpis}{table}{save_form}'
+        f'{quick}{next_up}'
+    )
 
     return chartis_shell(
         body, "Predictive Deal Screener",

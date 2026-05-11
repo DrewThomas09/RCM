@@ -13,7 +13,8 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_panel, ck_section_intro,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_intro,
 )
 from .brand import PALETTE
 
@@ -671,11 +672,17 @@ box-shadow:0 0 0 2px rgba(21,87,82,0.18);}
 .rg-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 </style>
 """
+    next_up = ck_next_section(
+        "Open the portfolio for context",
+        "/portfolio",
+        eyebrow="Continue —",
+        italic_word="portfolio",
+    )
     body = (
         f'{rg_styles}{intro}{source_selector}{kpis}{intercept_section}'
         '<div class="rg-grid">'
         f'<div>{left_col}</div><div>{right_col}</div></div>'
-        f'{nav_section}'
+        f'{nav_section}{next_up}'
     )
 
     sig_count = sum(1 for c in result["coefficients"] if c["significance"])

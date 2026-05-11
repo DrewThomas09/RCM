@@ -16,7 +16,8 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_panel, ck_section_intro,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_intro,
 )
 from ._glossary_link import metric_label_link
 from ._provenance_tooltip import provenance_tooltip
@@ -346,7 +347,16 @@ box-shadow:0 0 0 2px rgba(21,87,82,0.18);}
 border-bottom:1px solid var(--cad-border);font-size:12.5px;}
 </style>
 """
-    body = f'{dr_styles}{intro}{kpis}{entry_form}{surprise_html}{bridge_impact}{cal_section}{history_section}{nav}'
+    next_up = ck_next_section(
+        "Run the diligence checklist",
+        "/diligence/checklist",
+        eyebrow="Continue —",
+        italic_word="checklist",
+    )
+    body = (
+        f'{dr_styles}{intro}{kpis}{entry_form}{surprise_html}'
+        f'{bridge_impact}{cal_section}{history_section}{nav}{next_up}'
+    )
 
     return chartis_shell(
         body,
