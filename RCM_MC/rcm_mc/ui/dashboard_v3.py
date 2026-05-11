@@ -1212,7 +1212,13 @@ padding:12px 0;border-bottom:1px solid var(--cad-border);}
         + '</div>'
     )
 
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import chartis_shell, ck_next_section
+    page_body = page_body + ck_next_section(
+        "Open the Monday brief",
+        "/day-one",
+        eyebrow="Continue —",
+        italic_word="Monday",
+    )
     return chartis_shell(
         page_body,
         title="Portfolio · Morning view",

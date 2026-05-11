@@ -34,8 +34,8 @@ from urllib.parse import urlencode
 
 from ..diligence._pages import AVAILABLE_FIXTURES
 from ._chartis_kit import (
-    P, chartis_shell, ck_eyebrow, ck_help_tooltip, ck_panel,
-    ck_section_header, ck_section_intro, ck_signal_badge,
+    P, chartis_shell, ck_eyebrow, ck_help_tooltip, ck_next_section,
+    ck_panel, ck_section_header, ck_section_intro, ck_signal_badge,
     ck_sticky_toc,
 )
 from .power_ui import bookmark_hint
@@ -2531,6 +2531,12 @@ def render_deal_profile_page(
         f'<section id="dp-analytics">{grid_header}{grid}</section>'
     )
     pulse = _render_diligence_pulse(slug)
+    next_up = ck_next_section(
+        "Open the diligence checklist",
+        "/diligence/checklist",
+        eyebrow="Continue —",
+        italic_word="checklist",
+    )
     return chartis_shell(
         _DP_STYLES + hero + pulse
         + '<div class="ck-toc-layout">'
@@ -2539,7 +2545,7 @@ def render_deal_profile_page(
         + thesis_panel + market_panel + pipeline_block
         + lifecycle_panel + form_panel + questions_panel + grid_block
         + '</div></div>'
-        + bookmark_hint() + _inline_js(slug),
+        + bookmark_hint() + next_up + _inline_js(slug),
         f"Deal Profile — {slug}",
         active_nav="/diligence/deal",
         subtitle="One source of truth",

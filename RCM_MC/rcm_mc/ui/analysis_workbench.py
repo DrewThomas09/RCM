@@ -3025,7 +3025,7 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
     the tab layout + explain-panel styling persists; _WORKBENCH_JS
     and _EXPLAIN_JS go through extra_js.
     """
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import chartis_shell, ck_next_section
     override_count = len(packet.analyst_overrides or {})
     header = _render_header(packet)
     nav = _render_tab_nav(override_count)
@@ -3051,9 +3051,15 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
         f'<script id="wb-explain-data" type="application/json">'
         f'{_esc(explain_data)}</script>'
     )
+    next_up = ck_next_section(
+        "Back to the deal profile",
+        f"/deal/{packet.deal_id}",
+        eyebrow="Continue —",
+        italic_word="profile",
+    )
     shell_body = (
         f'<div class="analysis-workbench">{header}{nav}{body_inner}'
-        f'{explain_panel}</div>'
+        f'{explain_panel}</div>{next_up}'
     )
     return chartis_shell(
         shell_body,
