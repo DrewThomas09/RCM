@@ -10,7 +10,8 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+    chartis_shell, ck_fmt_num, ck_kpi_block, ck_next_section,
+    ck_provenance_tooltip,
 )
 from .brand import PALETTE
 
@@ -470,6 +471,12 @@ def render_news(category: str = "all") -> str:
         + '</div>'
     )
 
+    next_up = ck_next_section(
+        "Open the research hub",
+        "/research",
+        eyebrow="Continue —",
+        italic_word="research",
+    )
     body = (
         kpi_strip
         + f'{tab_bar}'
@@ -477,6 +484,7 @@ def render_news(category: str = "all") -> str:
         f'<div>{cards}</div>'
         f'<div>{sidebar}</div>'
         f'</div>'
+        + next_up
     )
 
     return chartis_shell(

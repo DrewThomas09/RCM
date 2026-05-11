@@ -13,6 +13,7 @@ from ._chartis_kit import (
     chartis_shell,
     ck_eyebrow,
     ck_kpi_block,
+    ck_next_section,
     ck_provenance_tooltip,
 )
 from .brand import PALETTE
@@ -336,7 +337,13 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
     )
 
     nav = _model_nav(deal_id, "dcf")
-    body = f'{nav}{kpis}{proj_table}{interp}{sens_html}{assume_section}{actions}'
+    next_up = ck_next_section(
+        "Open the LBO model",
+        f"/models/lbo/{html.escape(deal_id)}",
+        eyebrow="Continue —",
+        italic_word="LBO",
+    )
+    body = f'{nav}{kpis}{proj_table}{interp}{sens_html}{assume_section}{actions}{next_up}'
     return chartis_shell(body, f"DCF — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"Enterprise Value: {_fmt_m(ev)}",
@@ -539,7 +546,13 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
     )
 
     nav = _model_nav(deal_id, "lbo")
-    body = f'{nav}{kpis}{su_html}{annual_html}{interp}{waterfall_html}{actions}'
+    next_up = ck_next_section(
+        "Open the returns waterfall",
+        f"/models/waterfall/{html.escape(deal_id)}",
+        eyebrow="Continue —",
+        italic_word="waterfall",
+    )
+    body = f'{nav}{kpis}{su_html}{annual_html}{interp}{waterfall_html}{actions}{next_up}'
     return chartis_shell(body, f"LBO — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"IRR: {_fmt_pct(irr)} | MOIC: {_fmt_x(moic)}",
@@ -661,7 +674,13 @@ def render_financials_page(deal_id: str, deal_name: str, model: Dict[str, Any]) 
     )
 
     nav = _model_nav(deal_id, "financials")
-    body = f'{nav}{kpis}{is_section}{bs_section}{interp}{cf_section}{actions}'
+    next_up = ck_next_section(
+        "Open the DCF model",
+        f"/models/dcf/{html.escape(deal_id)}",
+        eyebrow="Continue —",
+        italic_word="DCF",
+    )
+    body = f'{nav}{kpis}{is_section}{bs_section}{interp}{cf_section}{actions}{next_up}'
     return chartis_shell(body, f"Financials — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle="3-statement model reconstructed from HCRIS + deal profile",

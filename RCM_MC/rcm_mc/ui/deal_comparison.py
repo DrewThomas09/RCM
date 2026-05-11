@@ -123,7 +123,9 @@ def _render_radar(packets: List[DealAnalysisPacket]) -> str:
 
 def render_comparison(packets: List[DealAnalysisPacket]) -> str:
     """Column-per-deal table + radar chart. Used by ``GET /compare``."""
-    from ._chartis_kit import chartis_shell, ck_kpi_block, ck_panel
+    from ._chartis_kit import (
+        chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    )
 
     if not packets:
         body = (
@@ -221,6 +223,12 @@ def render_comparison(packets: List[DealAnalysisPacket]) -> str:
         )
         + ck_panel(table_html, title="Dimension table")
         + actions
+        + ck_next_section(
+            "Open the IC packet",
+            "/diligence/ic-packet",
+            eyebrow="Continue —",
+            italic_word="IC",
+        )
     )
     return chartis_shell(
         body, "Deal Comparison",
