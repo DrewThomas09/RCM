@@ -481,6 +481,90 @@ def _activity_section(
     )
 
 
+def _pinned_tools_rail() -> str:
+    """Editorial 'Pinned tools' rail — partner-curated favorites.
+
+    Reads ``rcm_pinned_tools`` from localStorage (an array of
+    ``{href, label, phase}`` rows that the deal-profile pin button
+    writes). Renders nothing on first load — JS populates the rail
+    on DOMContentLoaded. Stays hidden until at least one tool is
+    pinned, so the section never feels half-empty.
+
+    Each tile is a serif arrow-link with a JetBrains-Mono phase
+    eyebrow ("WORKSPACE", "DILIGENCE", "RISK", etc.) so partners
+    see the lifecycle context next to the analytic label.
+    """
+    return """
+<style>
+.dv-pinned{margin:18px 0 0;padding:18px 0;
+border-top:1px solid var(--sc-rule,#d8d3c8);}
+.dv-pinned[hidden]{display:none !important;}
+.dv-pinned-head{display:flex;align-items:baseline;
+justify-content:space-between;gap:14px;margin-bottom:12px;}
+.dv-pinned-eyebrow{font-family:"Inter Tight",sans-serif;
+font-size:10px;font-weight:700;letter-spacing:1.4px;
+text-transform:uppercase;color:var(--sc-text-faint,#6e7787);}
+.dv-pinned-meta{font-family:"Source Serif 4",serif;font-style:italic;
+font-size:12px;color:var(--sc-text-faint,#6e7787);}
+.dv-pinned-grid{display:grid;
+grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+.dv-pinned-tile{display:block;padding:14px 16px;
+background:var(--sc-bone,#f5f1ea);
+border:1px solid var(--sc-rule,#d8d3c8);border-radius:3px;
+text-decoration:none;color:inherit;
+transition:transform 140ms ease, border-color 140ms ease,
+box-shadow 140ms ease;}
+.dv-pinned-tile:hover{transform:translateY(-1px);
+border-color:var(--sc-teal,#155752);
+box-shadow:0 4px 14px rgba(11,35,65,0.06);}
+.dv-pinned-phase{font-family:"JetBrains Mono",monospace;
+font-size:9px;letter-spacing:1.3px;text-transform:uppercase;
+color:var(--sc-teal-ink,#0e3e3a);margin-bottom:6px;}
+.dv-pinned-label{font-family:"Source Serif 4",serif;font-size:15px;
+font-weight:500;color:var(--sc-navy,#0b2341);line-height:1.25;}
+.dv-pinned-label::after{content:" →";
+color:var(--sc-text-faint,#6e7787);
+transition:color 120ms ease;}
+.dv-pinned-tile:hover .dv-pinned-label::after{
+color:var(--sc-teal-ink,#0e3e3a);}
+@media print{.dv-pinned{display:none !important;}}
+</style>
+<section class="dv-pinned" data-rcm-pinned-rail hidden>
+  <div class="dv-pinned-head">
+    <span class="dv-pinned-eyebrow">Pinned tools</span>
+    <span class="dv-pinned-meta" data-rcm-pinned-meta>—</span>
+  </div>
+  <div class="dv-pinned-grid" data-rcm-pinned-grid></div>
+</section>
+<script>
+(function(){
+  function esc(s){var d=document.createElement("div");
+    d.textContent=String(s||"");return d.innerHTML;}
+  function paint(){
+    var rail=document.querySelector("[data-rcm-pinned-rail]");
+    if(!rail)return;
+    var grid=rail.querySelector("[data-rcm-pinned-grid]");
+    var meta=rail.querySelector("[data-rcm-pinned-meta]");
+    var rows=[];try{rows=JSON.parse(localStorage.getItem("rcm_pinned_tools")||"[]");}
+    catch(e){rows=[];}
+    rows=(Array.isArray(rows)?rows:[]).filter(function(r){return r&&r.href&&r.label;});
+    if(rows.length===0){rail.hidden=true;return;}
+    grid.innerHTML=rows.map(function(r){
+      var phase=esc(r.phase||"DILIGENCE");
+      return '<a class="dv-pinned-tile" href="'+esc(r.href)+'">'+
+        '<div class="dv-pinned-phase">'+phase+'</div>'+
+        '<div class="dv-pinned-label">'+esc(r.label)+'</div></a>';
+    }).join("");
+    if(meta){meta.textContent=rows.length+(rows.length===1?" tool":" tools")+
+      " · pin or unpin from any deal profile";}
+    rail.hidden=false;
+  }
+  document.addEventListener("DOMContentLoaded",paint);
+}());
+</script>
+"""
+
+
 def _recently_viewed_rail() -> str:
     """Editorial 'Recently viewed' deals rail.
 
@@ -838,6 +922,7 @@ padding:12px 0;border-bottom:1px solid var(--cad-border);}
         + tour_banner
         + _hero_strip(summary)
         + start_here
+        + _pinned_tools_rail()
         + _opportunities_section(opportunities)
         + _alerts_section(alerts)
         + _activity_section(activity)

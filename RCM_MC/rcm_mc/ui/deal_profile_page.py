@@ -617,6 +617,17 @@ display:flex;align-items:baseline;gap:6px;}}
 .ck-dp-card-state[hidden]{{display:none !important;}}
 .ck-dp-card-state-dot{{width:5px;height:5px;border-radius:50%;
 background:{P["accent"]};display:inline-block;flex-shrink:0;}}
+.ck-dp-card{{position:relative;}}
+.ck-dp-card-pin{{position:absolute;top:8px;right:8px;
+background:none;border:0;padding:4px 6px;cursor:pointer;
+font-size:14px;line-height:1;color:{P["text_faint"]};
+transition:color 120ms ease, transform 120ms ease;
+z-index:2;}}
+.ck-dp-card-pin:hover{{color:{P["accent"]};transform:scale(1.1);}}
+.ck-dp-card-pin[aria-pressed="true"]{{color:{P["accent"]};}}
+.ck-dp-card-pin[aria-pressed="true"] .ck-dp-card-pin-icon::before{{content:"★";}}
+.ck-dp-card-pin[aria-pressed="true"] .ck-dp-card-pin-icon{{font-size:0;}}
+@media print {{.ck-dp-card-pin{{display:none !important;}}}}
 .ck-dp-card-preview{{font-size:10px;color:{P["text_faint"]};margin-top:8px;
 font-family:"JetBrains Mono",monospace;letter-spacing:.3px;word-break:break-all;}}
 .ck-dp-phase-section{{margin-bottom:22px;}}
@@ -902,6 +913,21 @@ def _analytic_card(slug: str, a: Dict[str, Any]) -> str:
     # partner returns to a deal they were working on. Use the href
     # as the stable identifier (one tool ↔ one href).
     tool_key = a["href"]
+    # Pin button — partners curate frequently-used tools into
+    # localStorage["rcm_pinned_tools"]; the /app dashboard reads
+    # this list and renders a "Pinned tools" rail above the
+    # opportunities section. The button is styled as an editorial
+    # star (☆ unpinned / ★ pinned) and JS toggles class + state.
+    pin_button = (
+        '<button type="button" class="ck-dp-card-pin" '
+        f'data-rcm-pin-toggle '
+        f'data-rcm-pin-href="{html.escape(a["href"], quote=True)}" '
+        f'data-rcm-pin-label="{html.escape(a["label"], quote=True)}" '
+        f'data-rcm-pin-phase="{html.escape(a.get("phase", "DILIGENCE"))}" '
+        'aria-label="Pin this analytic" aria-pressed="false">'
+        '<span aria-hidden="true" class="ck-dp-card-pin-icon">☆</span>'
+        '</button>'
+    )
     return (
         f'<a data-rcm-deal-link '
         f'data-rcm-deal-href-base="{html.escape(a["href"], quote=True)}" '
@@ -909,6 +935,7 @@ def _analytic_card(slug: str, a: Dict[str, Any]) -> str:
         f'data-rcm-deal-slug="{html.escape(slug)}" '
         f'data-rcm-tool-key="{html.escape(tool_key, quote=True)}" '
         f'href="{html.escape(a["href"])}" class="ck-dp-card">'
+        f'{pin_button}'
         '<div class="ck-dp-card-head">'
         f'<div class="ck-dp-card-title">{html.escape(a["label"])}</div>'
         f'{badge_html}'
@@ -1572,6 +1599,54 @@ def _inline_js(slug: str) -> str:
       rows[key] = Date.now();
       localStorage.setItem(visitedKey, JSON.stringify(rows));
     } catch (err) { /* quota / disabled — ignore */ }
+  });
+
+  // Pinned tools — partner-curated favorites stored in
+  // localStorage["rcm_pinned_tools"] as [{href, label, phase}] and
+  // rendered by the /app dashboard's pinned-tools rail. The pin
+  // button in each analytic card toggles membership; clicking the
+  // star NEVER navigates (preventDefault) so partners can pin
+  // without leaving the deal profile.
+  var PIN_KEY = "rcm_pinned_tools";
+  var PIN_MAX = 6;
+  function loadPins() {
+    try {
+      var raw = localStorage.getItem(PIN_KEY);
+      var rows = raw ? JSON.parse(raw) : [];
+      return Array.isArray(rows) ? rows : [];
+    } catch (e) { return []; }
+  }
+  function savePins(rows) {
+    try { localStorage.setItem(PIN_KEY, JSON.stringify(rows)); }
+    catch (e) { /* quota — ignore */ }
+  }
+  function paintPins() {
+    var pinned = loadPins();
+    var pinnedHrefs = {};
+    pinned.forEach(function(p) { if (p && p.href) pinnedHrefs[p.href] = true; });
+    document.querySelectorAll("[data-rcm-pin-toggle]").forEach(function(btn) {
+      var href = btn.getAttribute("data-rcm-pin-href");
+      btn.setAttribute("aria-pressed", pinnedHrefs[href] ? "true" : "false");
+    });
+  }
+  document.addEventListener("DOMContentLoaded", paintPins);
+  document.addEventListener("click", function(e) {
+    var btn = e.target.closest && e.target.closest("[data-rcm-pin-toggle]");
+    if (!btn) return;
+    // Stop link navigation — clicking the star pins, doesn't open
+    e.preventDefault();
+    e.stopPropagation();
+    var href = btn.getAttribute("data-rcm-pin-href");
+    var label = btn.getAttribute("data-rcm-pin-label");
+    var phase = btn.getAttribute("data-rcm-pin-phase") || "DILIGENCE";
+    var rows = loadPins().filter(function(p) { return p && p.href !== href; });
+    var isUnpin = btn.getAttribute("aria-pressed") === "true";
+    if (!isUnpin) {
+      rows.unshift({ href: href, label: label, phase: phase });
+      if (rows.length > PIN_MAX) rows = rows.slice(0, PIN_MAX);
+    }
+    savePins(rows);
+    paintPins();
   });
 
   // Push this slug onto the "recently viewed" deals index so the /app

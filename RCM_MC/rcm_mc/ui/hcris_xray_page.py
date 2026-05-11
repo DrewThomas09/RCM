@@ -752,6 +752,14 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
         + ck_kpi_block(
             "Hospital-year filings",
             f"{summary['total_rows']:,}",
+            help={
+                "definition": (
+                    "Total hospital × fiscal-year rows in the loaded "
+                    "HCRIS universe. Each row is one hospital's full "
+                    "cost-report filing for one fiscal year."
+                ),
+                "citation": "CMS HCRIS",
+            },
         )
         + ck_kpi_block(
             "States",
@@ -764,6 +772,14 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
         + ck_kpi_block(
             "Community + regional",
             f"{summary['cohorts'].get('COMMUNITY', 0) + summary['cohorts'].get('REGIONAL', 0):,}",
+            help={
+                "definition": (
+                    "Combined count of community and regional "
+                    "hospitals — the size cohorts most PE deals "
+                    "target. Excludes academic medical centers and "
+                    "rural critical-access hospitals."
+                ),
+            },
         )
         + '</div>'
         + '<p class="ck-section-body">'
