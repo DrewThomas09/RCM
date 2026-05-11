@@ -864,6 +864,15 @@ font-weight:500;color:var(--sc-navy,#0b2341);line-height:1.25;
 margin-bottom:6px;}
 .dv-recent-ts{font-family:"Source Serif 4",serif;font-style:italic;
 font-size:11px;color:var(--sc-text-faint,#6e7787);}
+.dv-recent-foot{display:flex;align-items:baseline;
+justify-content:space-between;gap:8px;margin-top:6px;}
+.dv-recent-q{font-family:"Inter Tight",sans-serif;font-size:9px;
+font-weight:700;letter-spacing:0.14em;text-transform:uppercase;
+color:var(--sc-text-faint,#6e7787);
+border:1px solid currentColor;border-radius:2px;
+padding:1px 6px;}
+.dv-recent-q.is-open{color:var(--sc-warning,#b8732a);}
+.dv-recent-q[hidden]{display:none !important;}
 @media print{.dv-recent{display:none !important;}}
 </style>
 <section class="dv-recent" data-rcm-recent-rail hidden>
@@ -895,12 +904,29 @@ font-size:11px;color:var(--sc-text-faint,#6e7787);}
     catch(e){rows=[];}
     if(!Array.isArray(rows)||rows.length===0){rail.hidden=true;return;}
     rows=rows.filter(function(r){return r&&r.slug;}).slice(0,5);
+    function openQuestions(slug){
+      try{
+        var raw=localStorage.getItem("rcm_deal_"+slug+"_questions");
+        if(!raw)return 0;
+        var qs=JSON.parse(raw);
+        if(!Array.isArray(qs))return 0;
+        return qs.filter(function(q){return q&&!q.asked;}).length;
+      }catch(e){return 0;}
+    }
     grid.innerHTML=rows.map(function(r){
+      var qOpen=openQuestions(r.slug);
+      var qChip=qOpen>0
+        ?'<span class="dv-recent-q is-open">'+qOpen+' open '+
+          (qOpen===1?'q':'qs')+'</span>'
+        :'';
       return '<a class="dv-recent-tile" href="/diligence/deal/'+
         encodeURIComponent(r.slug)+'">'+
         '<div class="dv-recent-slug">'+esc(r.slug)+'</div>'+
         '<div class="dv-recent-name">'+esc(r.name||r.slug)+'</div>'+
-        '<div class="dv-recent-ts">'+fmtRel(r.ts)+'</div></a>';
+        '<div class="dv-recent-foot">'+
+        '<span class="dv-recent-ts">'+fmtRel(r.ts)+'</span>'+
+        qChip+
+        '</div></a>';
     }).join("");
     rail.hidden=false;
   }
