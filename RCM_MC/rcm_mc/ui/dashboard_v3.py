@@ -481,6 +481,108 @@ def _activity_section(
     )
 
 
+def _recently_viewed_rail() -> str:
+    """Editorial 'Recently viewed' deals rail.
+
+    Reads ``rcm_recent_deals`` from localStorage (a JSON array of
+    ``{slug, name, ts}`` rows the deal-profile JS pushes whenever a
+    partner opens a deal). Renders nothing on first load — JS
+    populates the rail from storage on DOMContentLoaded so partners
+    returning to /app see their last 5 deals as serif arrow-links.
+
+    The deal_profile_page already keeps ``rcm_deal_<slug>`` entries
+    per deal; this rail layers a small index on top so the partner
+    has one-click re-entry to whatever they were last working on
+    without searching the pipeline.
+    """
+    return """
+<style>
+.dv-recent{margin:24px 0 8px;padding:18px 0;
+border-top:1px solid var(--sc-rule,#d8d3c8);}
+.dv-recent[hidden]{display:none !important;}
+.dv-recent-head{display:flex;align-items:baseline;
+justify-content:space-between;gap:14px;margin-bottom:12px;}
+.dv-recent-eyebrow{font-family:"Inter Tight",sans-serif;
+font-size:10px;font-weight:700;letter-spacing:1.4px;
+text-transform:uppercase;color:var(--sc-text-faint,#6e7787);}
+.dv-recent-clear{font-family:"Source Serif 4",serif;
+font-style:italic;font-size:12px;
+color:var(--sc-text-faint,#6e7787);background:none;
+border:0;cursor:pointer;padding:0;
+text-decoration:underline;text-decoration-color:transparent;
+transition:text-decoration-color 120ms ease;}
+.dv-recent-clear:hover{text-decoration-color:var(--sc-text-faint,#6e7787);}
+.dv-recent-grid{display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}
+.dv-recent-tile{display:block;padding:14px 16px;
+background:var(--sc-bone,#f5f1ea);
+border:1px solid var(--sc-rule,#d8d3c8);border-radius:3px;
+text-decoration:none;color:inherit;
+transition:transform 140ms ease, border-color 140ms ease,
+box-shadow 140ms ease;}
+.dv-recent-tile:hover{transform:translateY(-1px);
+border-color:var(--sc-teal,#155752);
+box-shadow:0 4px 14px rgba(11,35,65,0.06);}
+.dv-recent-slug{font-family:"JetBrains Mono",monospace;
+font-size:10px;letter-spacing:1.2px;text-transform:uppercase;
+color:var(--sc-text-faint,#6e7787);margin-bottom:4px;}
+.dv-recent-name{font-family:"Source Serif 4",serif;font-size:16px;
+font-weight:500;color:var(--sc-navy,#0b2341);line-height:1.25;
+margin-bottom:6px;}
+.dv-recent-ts{font-family:"Source Serif 4",serif;font-style:italic;
+font-size:11px;color:var(--sc-text-faint,#6e7787);}
+@media print{.dv-recent{display:none !important;}}
+</style>
+<section class="dv-recent" data-rcm-recent-rail hidden>
+  <div class="dv-recent-head">
+    <span class="dv-recent-eyebrow">Recently viewed</span>
+    <button type="button" class="dv-recent-clear"
+            data-rcm-recent-clear>Clear list</button>
+  </div>
+  <div class="dv-recent-grid" data-rcm-recent-grid></div>
+</section>
+<script>
+(function(){
+  var STORE="rcm_recent_deals";
+  function fmtRel(ts){
+    if(!ts)return"";
+    var d=Math.round((Date.now()-ts)/60000);
+    if(d<1)return"just now";
+    if(d<60)return d+" min ago";
+    if(d<1440)return Math.round(d/60)+" hr ago";
+    return Math.round(d/1440)+" d ago";
+  }
+  function esc(s){var d=document.createElement("div");
+    d.textContent=String(s||"");return d.innerHTML;}
+  function paint(){
+    var rail=document.querySelector("[data-rcm-recent-rail]");
+    if(!rail)return;
+    var grid=rail.querySelector("[data-rcm-recent-grid]");
+    var rows=[];try{rows=JSON.parse(localStorage.getItem(STORE)||"[]");}
+    catch(e){rows=[];}
+    if(!Array.isArray(rows)||rows.length===0){rail.hidden=true;return;}
+    rows=rows.filter(function(r){return r&&r.slug;}).slice(0,5);
+    grid.innerHTML=rows.map(function(r){
+      return '<a class="dv-recent-tile" href="/diligence/deal/'+
+        encodeURIComponent(r.slug)+'">'+
+        '<div class="dv-recent-slug">'+esc(r.slug)+'</div>'+
+        '<div class="dv-recent-name">'+esc(r.name||r.slug)+'</div>'+
+        '<div class="dv-recent-ts">'+fmtRel(r.ts)+'</div></a>';
+    }).join("");
+    rail.hidden=false;
+  }
+  document.addEventListener("DOMContentLoaded",paint);
+  document.addEventListener("click",function(e){
+    var btn=e.target.closest&&e.target.closest("[data-rcm-recent-clear]");
+    if(!btn)return;
+    if(confirm("Clear recently-viewed deals list?")){
+      localStorage.removeItem(STORE);paint();}
+  });
+}());
+</script>
+"""
+
+
 def _keyboard_hint_footer() -> str:
     """Small editorial footer on /app surfacing the keyboard shortcuts
     and tour entry points. Three monospace `kbd` chips with a serif
@@ -738,6 +840,7 @@ padding:12px 0;border-bottom:1px solid var(--cad-border);}
         + _opportunities_section(opportunities)
         + _alerts_section(alerts)
         + _activity_section(activity)
+        + _recently_viewed_rail()
         + _keyboard_hint_footer()
         + '</div>'
     )

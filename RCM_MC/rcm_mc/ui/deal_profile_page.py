@@ -34,7 +34,7 @@ from urllib.parse import urlencode
 
 from ..diligence._pages import AVAILABLE_FIXTURES
 from ._chartis_kit import (
-    P, chartis_shell, ck_eyebrow, ck_panel,
+    P, chartis_shell, ck_eyebrow, ck_help_tooltip, ck_panel,
     ck_section_header, ck_section_intro, ck_signal_badge,
 )
 from .power_ui import bookmark_hint
@@ -945,10 +945,55 @@ def _render_analytics_grid(slug: str) -> str:
 
 def _render_thesis_snapshot(slug: str) -> str:
     """The visual investment story — live-updated from localStorage."""
+    # Jargon glosses for each tile label — partners new to PE finance
+    # see [?] next to "Entry EV / EBITDA" and get the editorial gloss
+    # rather than needing a separate glossary.
+    _TILE_HELP = {
+        "Enterprise value": {
+            "definition": (
+                "Total cost to buy the company free of capital "
+                "structure — equity check plus assumed debt minus "
+                "cash. The headline number the seller asks for."
+            ),
+        },
+        "Revenue Y0": {
+            "definition": (
+                "Net Patient Revenue at close — billed services "
+                "minus contractual allowances, bad debt, charity "
+                "care. The cash-realisable top line on day one."
+            ),
+            "citation": "HFMA Glossary",
+        },
+        "EBITDA Y0": {
+            "definition": (
+                "Earnings before interest, taxes, depreciation, "
+                "amortization at close. The operating cash-flow "
+                "proxy PE partners price against."
+            ),
+        },
+        "Entry EV / EBITDA": {
+            "definition": (
+                "The deal's entry multiple — enterprise value "
+                "divided by Year-0 EBITDA. Compare to the public-"
+                "comp band on /market-intel/seeking-alpha and the "
+                "PE-transaction band for the specialty."
+            ),
+        },
+    }
+
     def _tile(attr: str, label: str, sub_attr: str) -> str:
+        help_meta = _TILE_HELP.get(label)
+        if help_meta:
+            label_html = ck_help_tooltip(
+                label,
+                help_meta["definition"],
+                citation=help_meta.get("citation"),
+            )
+        else:
+            label_html = html.escape(label)
         return (
             '<div class="ck-dp-thesis-tile">'
-            f'<div class="ck-dp-thesis-tile-label">{label}</div>'
+            f'<div class="ck-dp-thesis-tile-label">{label_html}</div>'
             f'<div data-{attr} class="ck-dp-thesis-tile-val">—</div>'
             f'<div class="ck-dp-thesis-tile-sub" data-{sub_attr}></div>'
             '</div>'
@@ -1444,6 +1489,31 @@ def _inline_js(slug: str) -> str:
     paintLifecycle();
   });
   document.addEventListener("DOMContentLoaded", paintLifecycle);
+
+  // Push this slug onto the "recently viewed" deals index so the /app
+  // recently-viewed rail can show one-click re-entry to deals in
+  // progress. Keep the most recent 8 entries; the rail itself slices
+  // to 5 visible — a small buffer protects against accidental clears.
+  function pushRecent() {
+    try {
+      var idxKey = "rcm_recent_deals";
+      var raw = localStorage.getItem(idxKey);
+      var rows = [];
+      if (raw) { try { rows = JSON.parse(raw); } catch (e) { rows = []; } }
+      if (!Array.isArray(rows)) rows = [];
+      var profile = localStorage.getItem(storageKey);
+      var name = slug;
+      if (profile) {
+        try { var p = JSON.parse(profile); if (p && p.deal_name) name = p.deal_name; }
+        catch (e) {}
+      }
+      rows = rows.filter(function(r) { return r && r.slug !== slug; });
+      rows.unshift({ slug: slug, name: name, ts: Date.now() });
+      if (rows.length > 8) rows = rows.slice(0, 8);
+      localStorage.setItem(idxKey, JSON.stringify(rows));
+    } catch (e) { /* quota / disabled storage — ignore */ }
+  }
+  document.addEventListener("DOMContentLoaded", pushRecent);
 })();
 </script>""".replace("%SLUG%", safe_slug)
 
