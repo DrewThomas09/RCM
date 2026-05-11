@@ -26,6 +26,7 @@ import pandas as pd
 from ._chartis_kit import (
     chartis_shell, ck_kpi_block, ck_panel,
     ck_section_header, ck_section_intro, ck_signal_badge,
+    ck_sticky_toc,
 )
 from .brand import PALETTE
 
@@ -255,6 +256,7 @@ def render_ic_memo(ccn: str, hcris_df: pd.DataFrame, db_path: Optional[str] = No
     sections.append(ck_panel(
         section1_inner,
         title="1. Target Overview & Investment Thesis",
+        anchor_id="s1-overview",
     ))
 
     # ── 2. MARKET CONTEXT ──
@@ -290,6 +292,7 @@ def render_ic_memo(ccn: str, hcris_df: pd.DataFrame, db_path: Optional[str] = No
     sections.append(ck_panel(
         section2_inner,
         title="2. Market Context & Competitive Position",
+        anchor_id="s2-market",
     ))
 
     # ── 3. RCM PERFORMANCE ANALYSIS WITH COMPS ──
@@ -327,6 +330,7 @@ def render_ic_memo(ccn: str, hcris_df: pd.DataFrame, db_path: Optional[str] = No
     sections.append(ck_panel(
         section3_inner,
         title="3. RCM Performance Analysis — Comparable Hospitals",
+        anchor_id="s3-rcm",
     ))
 
     # ── 4. PREDICTED IMPROVEMENT OPPORTUNITIES ──
@@ -358,6 +362,7 @@ def render_ic_memo(ccn: str, hcris_df: pd.DataFrame, db_path: Optional[str] = No
     sections.append(ck_panel(
         section4_inner,
         title="4. Predicted Improvement Opportunities",
+        anchor_id="s4-predicted",
     ))
 
     # ── 5. EBITDA BRIDGE ──
@@ -394,7 +399,10 @@ def render_ic_memo(ccn: str, hcris_df: pd.DataFrame, db_path: Optional[str] = No
         f'<tr><td>WC Released (1x)</td><td class="num">{_fm(data["bridge"]["total_wc_released"])}</td></tr>'
         '</table></div></div>'
     )
-    sections.append(ck_panel(section5_inner, title="5. EBITDA Bridge"))
+    sections.append(ck_panel(
+        section5_inner, title="5. EBITDA Bridge",
+        anchor_id="s5-bridge",
+    ))
 
     # ── 6. RETURNS ANALYSIS ──
     def _scenario_row(label, grid, row_cls=""):
@@ -440,6 +448,7 @@ def render_ic_memo(ccn: str, hcris_df: pd.DataFrame, db_path: Optional[str] = No
     )
     sections.append(ck_panel(
         section6_inner, title="6. Returns Analysis — Scenario Matrix",
+        anchor_id="s6-returns",
     ))
 
     # ── 7. KEY RISKS & MITIGANTS ──
@@ -481,6 +490,7 @@ def render_ic_memo(ccn: str, hcris_df: pd.DataFrame, db_path: Optional[str] = No
     )
     sections.append(ck_panel(
         section7_inner, title="7. Key Risks & Mitigants",
+        anchor_id="s7-risks",
     ))
 
     # ── 8. DATA SOURCES & METHODOLOGY ──
@@ -526,6 +536,7 @@ def render_ic_memo(ccn: str, hcris_df: pd.DataFrame, db_path: Optional[str] = No
     sections.append(ck_panel(
         section8_inner,
         title="8. Data Sources & Methodology Appendix",
+        anchor_id="s8-methodology",
     ))
 
     # ── ACTIONS ──
@@ -538,9 +549,32 @@ def render_ic_memo(ccn: str, hcris_df: pd.DataFrame, db_path: Optional[str] = No
         '<a href="/predictive-screener" class="cad-btn">Deal Screener</a>'
         '</p>'
     )
-    sections.append(ck_panel(actions_inner, title="Cross-links"))
+    sections.append(ck_panel(
+        actions_inner, title="Cross-links",
+        anchor_id="s9-crosslinks",
+    ))
 
-    body = "\n".join(sections)
+    # Sticky right-rail table of contents — the IC memo runs ~9
+    # sections and partners commonly jump to a specific chapter
+    # (Risks, Returns, Bridge) rather than reading top-to-bottom.
+    toc = ck_sticky_toc([
+        {"id": "s1-overview",    "title": "1. Target Overview"},
+        {"id": "s2-market",      "title": "2. Market Context"},
+        {"id": "s3-rcm",         "title": "3. RCM Performance"},
+        {"id": "s4-predicted",   "title": "4. Improvement Opportunities"},
+        {"id": "s5-bridge",      "title": "5. EBITDA Bridge"},
+        {"id": "s6-returns",     "title": "6. Returns Analysis"},
+        {"id": "s7-risks",       "title": "7. Key Risks & Mitigants"},
+        {"id": "s8-methodology", "title": "8. Methodology"},
+        {"id": "s9-crosslinks",  "title": "Cross-links"},
+    ])
+    body = (
+        '<div class="ck-toc-layout">'
+        + toc
+        + '<div class="ck-toc-content">'
+        + "\n".join(sections)
+        + '</div></div>'
+    )
 
     return chartis_shell(
         body,

@@ -481,6 +481,46 @@ def _activity_section(
     )
 
 
+def _keyboard_hint_footer() -> str:
+    """Small editorial footer on /app surfacing the keyboard shortcuts
+    and tour entry points. Three monospace `kbd` chips with a serif
+    legend — discoverable without being interruptive. Hidden in print.
+    """
+    return """
+<style>
+.dv-kb-hint{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;
+margin:32px 0 12px;padding:14px 18px;
+border-top:1px solid var(--sc-rule,#d8d3c8);
+font-family:"Source Serif 4",serif;font-size:13px;
+color:var(--sc-text-faint,#6e7787);}
+.dv-kb-hint-eyebrow{font-family:"Inter Tight",sans-serif;font-size:10px;
+font-weight:700;letter-spacing:1.4px;text-transform:uppercase;
+color:var(--sc-text-faint,#6e7787);}
+.dv-kb-hint-row{display:inline-flex;align-items:baseline;gap:6px;}
+.dv-kb-hint kbd{display:inline-flex;align-items:center;justify-content:center;
+min-width:20px;padding:1px 6px;
+background:var(--sc-bone,#f5f1ea);
+border:1px solid var(--sc-rule,#d8d3c8);border-radius:3px;
+font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:600;
+color:var(--sc-text,#1a2332);line-height:1.4;}
+.dv-kb-hint em{font-style:italic;color:var(--sc-teal-ink,#0e3e3a);}
+@media print{.dv-kb-hint{display:none !important;}}
+</style>
+<div class="dv-kb-hint">
+<span class="dv-kb-hint-eyebrow">Keyboard</span>
+<span class="dv-kb-hint-row">
+Press <kbd>&#8984;</kbd><kbd>K</kbd> for the command palette.
+</span>
+<span class="dv-kb-hint-row">
+<kbd>?</kbd> for all shortcuts.
+</span>
+<span class="dv-kb-hint-row">
+<kbd>T</kbd> to open <em>The Atlas</em>.
+</span>
+</div>
+"""
+
+
 def _tour_banner_styles() -> str:
     """Scoped styles for the first-time tour banner.
 
@@ -698,6 +738,7 @@ padding:12px 0;border-bottom:1px solid var(--cad-border);}
         + _opportunities_section(opportunities)
         + _alerts_section(alerts)
         + _activity_section(activity)
+        + _keyboard_hint_footer()
         + '</div>'
     )
 

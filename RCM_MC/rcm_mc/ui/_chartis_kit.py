@@ -301,8 +301,21 @@ def _esc(x) -> str:
     return _html.escape(str(x), quote=True)
 
 
-def ck_panel(body_html: str, *, title: Optional[str] = None, code: Optional[str] = None) -> str:
-    """White panel with navy header strip and optional [CODE] tag."""
+def ck_panel(
+    body_html: str,
+    *,
+    title: Optional[str] = None,
+    code: Optional[str] = None,
+    anchor_id: Optional[str] = None,
+) -> str:
+    """White panel with navy header strip and optional [CODE] tag.
+
+    ``anchor_id`` adds an ``id="..."`` to the wrapping ``<section>`` so
+    ``ck_sticky_toc`` can link directly to this panel via ``#<id>``.
+    Pages with sticky TOCs pass slugified versions of their section
+    titles ("1-target-overview"); ck_panel emits the id literally so
+    callers control the URL fragment.
+    """
     head = ""
     if title or code:
         # Pre-build the code chip outside the f-string so the
@@ -321,7 +334,12 @@ def ck_panel(body_html: str, *, title: Optional[str] = None, code: Optional[str]
             f'{code_chip}'
             "</div>"
         )
-    return f'<section class="ck-panel">{head}<div class="ck-panel-body">{body_html}</div></section>'
+    id_attr = f' id="{_esc(anchor_id)}"' if anchor_id else ""
+    return (
+        f'<section class="ck-panel"{id_attr}>'
+        f'{head}<div class="ck-panel-body">{body_html}</div>'
+        '</section>'
+    )
 
 
 def ck_section_header(
@@ -461,6 +479,70 @@ def ck_kpi_block(
 def ck_signal_badge(text: str, *, tone: str = "neutral") -> str:
     tone = tone if tone in ("positive", "warning", "negative", "critical", "neutral") else "neutral"
     return f'<span class="ck-badge tone-{tone}">{_esc(text)}</span>'
+
+
+def ck_sticky_toc(
+    sections: Sequence[Mapping[str, str]],
+    *,
+    eyebrow: str = "Contents",
+) -> str:
+    """Editorial right-rail Table of Contents.
+
+    ``sections`` is an ordered sequence of mappings with two keys:
+
+      - ``id``:    the anchor id, matches ``ck_panel(anchor_id=...)``
+      - ``title``: the link label (will be html-escaped)
+
+    Renders a sticky-positioned aside with an eyebrow + numbered list
+    of section anchors. Inline JS attaches an IntersectionObserver so
+    the link of the currently-visible section gets the ``is-active``
+    state class. Hidden on screens narrower than 1100px (the editorial
+    layout collapses to single-column there).
+
+    Usage from a page renderer::
+
+        sections = [
+            {"id": "1-overview",  "title": "1. Target Overview"},
+            {"id": "2-market",    "title": "2. Market Context"},
+            ...
+        ]
+        toc = ck_sticky_toc(sections)
+        body = '<div class="ck-toc-layout">' + toc + (
+            '<div class="ck-toc-content">'
+            + ck_panel(s1_html, title="1. Target Overview",
+                       anchor_id="1-overview")
+            + ...
+            + '</div></div>'
+        )
+    """
+    items = "".join(
+        '<li class="ck-toc-item">'
+        f'<a class="ck-toc-link" href="#{_esc(s["id"])}" '
+        f'data-ck-toc-target="{_esc(s["id"])}">'
+        f'{_esc(s["title"])}'
+        '</a></li>'
+        for s in sections
+    )
+    return (
+        '<aside class="ck-toc" role="navigation" '
+        'aria-label="Page contents">'
+        f'<div class="ck-toc-eyebrow">{_esc(eyebrow)}</div>'
+        f'<ol class="ck-toc-list">{items}</ol>'
+        '</aside>'
+        '<script>'
+        '(function(){var links=document.querySelectorAll('
+        '"[data-ck-toc-target]");if(!links.length||!("IntersectionObserver" '
+        'in window))return;var byId={};links.forEach(function(a){'
+        'byId[a.getAttribute("data-ck-toc-target")]=a;});'
+        'var io=new IntersectionObserver(function(entries){'
+        'entries.forEach(function(e){var a=byId[e.target.id];if(!a)return;'
+        'if(e.isIntersecting){links.forEach(function(x){'
+        'x.classList.remove("is-active");});a.classList.add("is-active");}'
+        '});},{rootMargin:"-30% 0px -55% 0px",threshold:0});'
+        'Object.keys(byId).forEach(function(id){var el=document.getElementById(id);'
+        'if(el)io.observe(el);});}());'
+        '</script>'
+    )
 
 
 def ck_help_tooltip(
@@ -2072,6 +2154,62 @@ _CSS_INLINE_FALLBACK = """
   .ck-section-intro a:not([class]):hover {
     border-bottom-color: var(--sc-teal-ink);
   }
+  /* Sticky right-rail table of contents — editorial chapter index.
+   * The host page wraps its panels in .ck-toc-layout > .ck-toc-content
+   * and the aside sits next to them, sticking to the viewport while
+   * the partner scrolls. IntersectionObserver flips the .is-active
+   * link as sections scroll into the upper third of the viewport. */
+  .ck-toc-layout {
+    display: grid; grid-template-columns: 240px 1fr;
+    gap: var(--sc-s-7); align-items: start;
+  }
+  .ck-toc-content { min-width: 0; }
+  .ck-toc {
+    position: sticky; top: 90px;
+    max-height: calc(100vh - 110px); overflow-y: auto;
+    padding: 18px 4px 24px;
+    font-family: "Inter Tight", sans-serif;
+  }
+  .ck-toc-eyebrow {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--sc-text-faint, #6e7787);
+    padding: 0 14px 10px;
+    border-bottom: 1px solid var(--sc-rule, #d8d3c8);
+    margin-bottom: 8px;
+  }
+  .ck-toc-list {
+    list-style: none; margin: 0; padding: 0;
+    counter-reset: ck-toc-counter;
+  }
+  .ck-toc-item { margin: 0; padding: 0;
+                 counter-increment: ck-toc-counter; }
+  .ck-toc-link {
+    display: block; position: relative;
+    padding: 8px 14px 8px 18px;
+    font-family: "Source Serif 4", serif;
+    font-size: 13px; font-weight: 400; line-height: 1.4;
+    color: var(--sc-text-dim, #37495e);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    transition: color 120ms ease, border-color 120ms ease,
+                background 120ms ease;
+  }
+  .ck-toc-link:hover {
+    color: var(--sc-text, #1a2332);
+    background: var(--sc-bone, #f5f1ea);
+  }
+  .ck-toc-link.is-active {
+    color: var(--sc-teal-ink, #0e3e3a);
+    border-left-color: var(--sc-teal-ink, #0e3e3a);
+    font-weight: 500;
+  }
+  @media (max-width: 1100px) {
+    .ck-toc-layout { display: block; }
+    .ck-toc { display: none; }
+  }
+  @media print { .ck-toc { display: none; } }
+
   /* Inline help affordance — `term [?]` opens an editorial popover */
   .ck-help {
     position: relative; display: inline-flex; align-items: baseline;
@@ -2693,9 +2831,11 @@ _SHORTCUTS_HTML = """
         </dl>
       </section>
       <section>
-        <h3>This dialog</h3>
+        <h3>Discovery</h3>
         <dl>
           <dt><kbd>?</kbd></dt><dd>Show / hide this list</dd>
+          <dt><kbd>T</kbd></dt>
+            <dd>Open <em>The Atlas</em> &mdash; the editorial tour</dd>
         </dl>
       </section>
     </div>
@@ -2769,6 +2909,14 @@ _SHORTCUTS_JS = """
       if (dlg.hidden) show(); else hide();
     }
     if (e.key === 'Escape' && !dlg.hidden) { e.preventDefault(); hide(); }
+    /* "T" launches the editorial tour. Hide the shortcuts dialog
+     * first so the tour modal isn't stacked on top of it. */
+    if ((e.key === 't' || e.key === 'T') && !e.shiftKey
+        && window.ckTour && typeof window.ckTour.open === 'function') {
+      e.preventDefault();
+      if (!dlg.hidden) hide();
+      window.ckTour.open(1);
+    }
   });
   /* Close button + click-outside */
   var close = dlg.querySelector('.ck-shortcuts-close');
