@@ -4489,6 +4489,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             )
             body = (
                 '<div class="cad-kpi-grid">'
+                '<a href="/?tour=1" class="cad-card" '
+                'style="text-decoration:none;color:inherit;">'
+                '<h3>Platform Tutorial</h3>'
+                f'<div class="cad-muted">Seven volumes covering '
+                'pipeline, diligence, risk, monte carlo, portfolio, '
+                'delivery, and settings — a friendly editorial tour '
+                'of every surface.</div></a>'
                 '<a href="/settings/ai" class="cad-card" '
                 'style="text-decoration:none;color:inherit;">'
                 f'<h3>AI Assistant (Claude){_ai_badge}</h3>'

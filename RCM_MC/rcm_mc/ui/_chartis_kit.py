@@ -22,8 +22,9 @@ palette, CSS block, top-bar markup, and panel chrome change.
 from __future__ import annotations
 
 import html as _html
+import json
 import os
-from typing import Any, Iterable, Mapping, Optional, Sequence
+from typing import Any, Iterable, List, Mapping, Optional, Sequence
 
 # ---------------------------------------------------------------------------
 # Feature flag — set CHARTIS_UI_V2=0 to fall back to the legacy dark shell.
@@ -544,6 +545,525 @@ def ck_next_section(
         '</a>'
         '</div>'
     )
+
+
+# ---------------------------------------------------------------------------
+# Editorial tour overlay — "The Atlas"
+# ---------------------------------------------------------------------------
+#
+# A guided walkthrough of the platform rendered as an editorial modal
+# rather than a SaaS spotlight overlay. Each volume is a chapter with
+# an eyebrow + serif title + body copy + optional "Try it" link to
+# the matching feature. Reads / writes ``localStorage["rcm_tour_v1"]``
+# so dismissals persist across sessions.
+#
+# Entry points:
+#   - ``?tour=1`` query param on any page (opens at volume 1, or the
+#     value of ``?tour=N`` for direct volume jump)
+#   - JS: ``window.ckTour.open(volumeIndex)``
+#   - Settings → "Restart tour"
+#
+# Storage shape:
+#   { "version": 1, "completed": [1,2,3], "lastViewed": 3,
+#     "skipped": false }
+
+
+def ck_tour_overlay(volumes: List[Dict[str, Any]]) -> str:
+    """Editorial tour overlay primitive.
+
+    ``volumes`` is an ordered list of dicts with these keys:
+
+      - ``eyebrow``: short caps label e.g. "Volume I"
+      - ``title``: serif headline (italic word marked with ``<em>``
+        in the source string is honoured)
+      - ``body``: long-form HTML (paragraphs welcome, will not be
+        escaped — author is responsible for clean markup)
+      - ``try_it``: optional dict ``{"label": "...", "href": "/..."}``
+        rendering a primary CTA that lands the partner in the feature
+
+    Returns a self-contained block: scoped CSS, hidden markup, and
+    the JS controller. Drop into ``chartis_shell``'s body or any
+    page that wants the tour. Safe to inject on every page — the
+    controller only opens when ``?tour`` is present or
+    ``ckTour.open()`` is called.
+    """
+    if not volumes:
+        return ""
+    volumes_json = json.dumps(volumes, ensure_ascii=False)
+    total = len(volumes)
+    return (
+        _CK_TOUR_CSS
+        + (
+            '<div class="ck-tour" id="ck-tour" hidden role="dialog" '
+            'aria-modal="true" aria-labelledby="ck-tour-title">'
+            '<div class="ck-tour-backdrop" data-ck-tour-close></div>'
+            '<div class="ck-tour-card" role="document">'
+            '<button class="ck-tour-close" data-ck-tour-close '
+            'aria-label="Close tour" type="button">&times;</button>'
+            '<div class="ck-tour-progress">'
+            '<span id="ck-tour-progress-current">I</span>'
+            f' of {_roman(total)}'
+            '</div>'
+            '<div class="ck-tour-eyebrow" id="ck-tour-eyebrow"></div>'
+            '<h2 class="ck-tour-title" id="ck-tour-title"></h2>'
+            '<div class="ck-tour-body" id="ck-tour-body"></div>'
+            '<div class="ck-tour-footer">'
+            '<button class="ck-tour-skip" data-ck-tour-skip '
+            'type="button">Skip the tour</button>'
+            '<div class="ck-tour-nav">'
+            '<button class="ck-tour-prev" data-ck-tour-prev '
+            'type="button">← Back</button>'
+            '<button class="ck-tour-next" data-ck-tour-next '
+            'type="button">Continue →</button>'
+            '</div>'
+            '</div>'
+            '<a class="ck-tour-tryit" id="ck-tour-tryit" hidden '
+            'href="#">Try it now →</a>'
+            '</div>'
+            '</div>'
+        )
+        + f'<script>window.CK_TOUR_VOLUMES={volumes_json};</script>'
+        + _CK_TOUR_JS
+    )
+
+
+def _roman(n: int) -> str:
+    """Convert 1..20 to Roman numerals for editorial pagination."""
+    table = [
+        (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I"),
+    ]
+    out = ""
+    for value, sym in table:
+        while n >= value:
+            out += sym
+            n -= value
+    return out
+
+
+_CK_TOUR_CSS = """
+<style>
+.ck-tour { position: fixed; inset: 0; z-index: 10000; }
+.ck-tour[hidden] { display: none !important; }
+.ck-tour-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(11, 35, 65, 0.42);
+  backdrop-filter: blur(2px);
+}
+.ck-tour-card {
+  position: relative; max-width: 640px; width: calc(100% - 32px);
+  margin: 7vh auto; background: var(--sc-bone, #f5f1ea);
+  border: 1px solid var(--sc-rule, #d8d3c8); border-radius: 4px;
+  padding: 44px 48px 32px; box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+  font-family: "Source Serif 4", Georgia, serif;
+  color: var(--sc-text, #1a2332); line-height: 1.55;
+}
+.ck-tour-close {
+  position: absolute; top: 14px; right: 16px;
+  background: none; border: 0; cursor: pointer; padding: 4px 8px;
+  font-size: 24px; line-height: 1; color: var(--sc-text-faint, #6e7787);
+  transition: color 120ms ease;
+}
+.ck-tour-close:hover { color: var(--sc-text, #1a2332); }
+.ck-tour-progress {
+  font-family: "JetBrains Mono", monospace; font-size: 10px;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--sc-text-faint, #6e7787); margin-bottom: 16px;
+}
+.ck-tour-eyebrow {
+  font-family: "Inter Tight", sans-serif; font-size: 11px;
+  font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--sc-teal-ink, #0e3e3a); margin-bottom: 10px;
+}
+.ck-tour-title {
+  font-family: "Source Serif 4", serif; font-weight: 400;
+  font-size: clamp(28px, 4vw, 36px); line-height: 1.1;
+  letter-spacing: -0.018em; color: var(--sc-navy, #0b2341);
+  margin: 0 0 18px;
+}
+.ck-tour-title em {
+  font-style: italic; color: var(--sc-teal-ink, #0e3e3a);
+  font-weight: 400;
+}
+.ck-tour-body {
+  font-size: 15px; line-height: 1.65;
+  color: var(--sc-text-dim, #37495e); max-width: 56ch;
+}
+.ck-tour-body p { margin: 0 0 14px; }
+.ck-tour-body p:last-child { margin-bottom: 0; }
+.ck-tour-body em {
+  font-style: italic; color: var(--sc-teal-ink, #0e3e3a);
+}
+.ck-tour-body strong {
+  color: var(--sc-navy, #0b2341); font-weight: 600;
+}
+.ck-tour-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; margin-top: 28px; padding-top: 18px;
+  border-top: 1px solid var(--sc-rule, #d8d3c8);
+}
+.ck-tour-skip {
+  background: none; border: 0; cursor: pointer; padding: 0;
+  font-family: "Source Serif 4", serif; font-style: italic;
+  font-size: 13px; color: var(--sc-text-faint, #6e7787);
+  text-decoration: underline; text-underline-offset: 3px;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 120ms ease;
+}
+.ck-tour-skip:hover {
+  text-decoration-color: var(--sc-text-faint, #6e7787);
+}
+.ck-tour-nav { display: flex; gap: 8px; }
+.ck-tour-prev, .ck-tour-next {
+  font-family: "Inter Tight", sans-serif; font-weight: 600;
+  font-size: 12px; letter-spacing: 0.04em;
+  padding: 8px 14px; border-radius: 2px; cursor: pointer;
+  transition: filter 120ms ease, border-color 120ms ease;
+}
+.ck-tour-prev {
+  background: transparent; color: var(--sc-text-dim, #37495e);
+  border: 1px solid var(--sc-rule, #d8d3c8);
+}
+.ck-tour-prev:hover { border-color: var(--sc-text, #1a2332); }
+.ck-tour-prev[disabled] { opacity: 0.4; cursor: not-allowed; }
+.ck-tour-next {
+  background: var(--sc-navy, #0b2341); color: #fff; border: 0;
+}
+.ck-tour-next:hover { filter: brightness(1.12); }
+.ck-tour-tryit {
+  display: block; margin-top: 14px; text-align: right;
+  font-family: "Inter Tight", sans-serif; font-size: 12px;
+  font-weight: 600; letter-spacing: 0.04em;
+  color: var(--sc-teal-ink, #0e3e3a); text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 120ms ease;
+}
+.ck-tour-tryit:hover {
+  border-bottom-color: var(--sc-teal-ink, #0e3e3a);
+}
+.ck-tour-tryit[hidden] { display: none !important; }
+@media (max-width: 540px) {
+  .ck-tour-card { padding: 32px 24px 24px; margin: 4vh auto; }
+  .ck-tour-title { font-size: 24px; }
+  .ck-tour-footer { flex-direction: column; align-items: stretch; }
+  .ck-tour-nav { justify-content: space-between; }
+}
+@media print { .ck-tour { display: none !important; } }
+</style>
+"""
+
+_CK_TOUR_JS = """
+<script>
+(function() {
+  var STORAGE_KEY = "rcm_tour_v1";
+  var ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII",
+               "IX", "X", "XI", "XII"];
+  var volumes = window.CK_TOUR_VOLUMES || [];
+  if (!volumes.length) return;
+  var idx = 0;
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return { version: 1, completed: [], lastViewed: 0,
+                         skipped: false };
+      var s = JSON.parse(raw);
+      if (s.version !== 1) {
+        return { version: 1, completed: [], lastViewed: 0,
+                 skipped: false };
+      }
+      return s;
+    } catch (e) {
+      return { version: 1, completed: [], lastViewed: 0,
+               skipped: false };
+    }
+  }
+  function saveState(s) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
+    catch (e) { /* quota / disabled storage — ignore */ }
+  }
+  function paint() {
+    var vol = volumes[idx];
+    if (!vol) return;
+    var $ = document.getElementById.bind(document);
+    $("ck-tour-progress-current").textContent = ROMAN[idx + 1] || (idx + 1);
+    $("ck-tour-eyebrow").textContent = vol.eyebrow || "";
+    $("ck-tour-title").innerHTML = vol.title || "";
+    $("ck-tour-body").innerHTML = vol.body || "";
+    var prev = document.querySelector("[data-ck-tour-prev]");
+    if (prev) prev.disabled = (idx === 0);
+    var next = document.querySelector("[data-ck-tour-next]");
+    if (next) {
+      next.textContent = (idx === volumes.length - 1)
+        ? "Finish ✓" : "Continue →";
+    }
+    var tryit = $("ck-tour-tryit");
+    if (vol.try_it && vol.try_it.label && vol.try_it.href) {
+      tryit.textContent = vol.try_it.label + " →";
+      tryit.href = vol.try_it.href;
+      tryit.hidden = false;
+    } else {
+      tryit.hidden = true;
+    }
+  }
+  function open(volumeIdx) {
+    idx = Math.max(0, Math.min(volumes.length - 1, (volumeIdx || 1) - 1));
+    paint();
+    var el = document.getElementById("ck-tour");
+    if (el) {
+      el.hidden = false;
+      var s = loadState();
+      s.lastViewed = idx + 1;
+      s.skipped = false;
+      saveState(s);
+    }
+  }
+  function close() {
+    var el = document.getElementById("ck-tour");
+    if (el) el.hidden = true;
+  }
+  function next() {
+    var s = loadState();
+    if (!s.completed.includes(idx + 1)) s.completed.push(idx + 1);
+    saveState(s);
+    if (idx >= volumes.length - 1) {
+      close();
+      return;
+    }
+    idx += 1;
+    paint();
+    s = loadState(); s.lastViewed = idx + 1; saveState(s);
+  }
+  function prev() {
+    if (idx === 0) return;
+    idx -= 1;
+    paint();
+    var s = loadState(); s.lastViewed = idx + 1; saveState(s);
+  }
+  function skip() {
+    var s = loadState(); s.skipped = true; saveState(s);
+    close();
+  }
+  window.ckTour = {
+    open: open, close: close, next: next, prev: prev, skip: skip,
+  };
+  document.addEventListener("click", function(e) {
+    var t = e.target;
+    if (!t.closest) return;
+    if (t.closest("[data-ck-tour-close]")) { close(); }
+    if (t.closest("[data-ck-tour-skip]"))  { skip();  }
+    if (t.closest("[data-ck-tour-next]"))  { next();  }
+    if (t.closest("[data-ck-tour-prev]"))  { prev();  }
+  });
+  document.addEventListener("keydown", function(e) {
+    var el = document.getElementById("ck-tour");
+    if (!el || el.hidden) return;
+    if (e.key === "Escape")     { close(); }
+    if (e.key === "ArrowRight" || e.key === "Enter") { next(); }
+    if (e.key === "ArrowLeft")  { prev();  }
+  });
+  // Auto-open via ?tour=1 (or ?tour=N for direct volume jump)
+  document.addEventListener("DOMContentLoaded", function() {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var t = params.get("tour");
+      if (t !== null) {
+        var n = parseInt(t, 10);
+        open(isNaN(n) || n < 1 ? 1 : n);
+      }
+    } catch (e) { /* old browsers — ignore */ }
+  });
+})();
+</script>
+"""
+
+
+# Default tour content — seven editorial volumes covering every
+# surface a partner needs to navigate. Stored as module-level data so
+# chartis_shell can inject the tour on every page without each
+# renderer authoring its own. Each volume reads as a short research
+# note rather than SaaS onboarding copy.
+_TOUR_VOLUMES: List[Dict[str, Any]] = [
+    {
+        "eyebrow": "Volume I",
+        "title": "The <em>Pipeline</em>.",
+        "body": (
+            "<p>Every engagement begins at the same surface — the "
+            "deal pipeline. Hospitals enter as candidates from "
+            "screening; advance through outreach, LOI, diligence, "
+            "and IC; exit either to your portfolio or to the "
+            "watchlist for next quarter.</p>"
+            "<p>Click any deal to open its <strong>profile</strong> "
+            "— the single source of truth for every analytic on "
+            "the platform. The profile carries your deal parameters "
+            "(NPR, EBITDA, specialty, state) into every downstream "
+            "tool so you never re-type them.</p>"
+            "<p>The funnel on the left of <strong>/app</strong> "
+            "shows stage counts at a glance. The activity panel on "
+            "the right shows what changed in the last seven days.</p>"
+        ),
+        "try_it": {"label": "Open the pipeline", "href": "/pipeline"},
+    },
+    {
+        "eyebrow": "Volume II",
+        "title": "<em>Diligence</em>.",
+        "body": (
+            "<p>The diligence layer is where the platform earns its "
+            "keep. Six analytics ladder up to a complete RCM and PE "
+            "picture:</p>"
+            "<p><strong>CCD ingestion</strong> converts the seller's "
+            "data room into structured records. <strong>HFMA "
+            "benchmarks</strong> compare every initiative to "
+            "industry priors with conformal confidence bands. "
+            "<strong>Denial prediction</strong> projects per-payer "
+            "write-off rates against the seller's actuals.</p>"
+            "<p><strong>HCRIS Peer X-Ray</strong> surfaces what "
+            "cost-report data says about competitive position. "
+            "<strong>Counterfactual analysis</strong> answers "
+            "<em>what would EBITDA have been without this "
+            "initiative</em>. The <strong>diligence checklist</strong> "
+            "gates IC approval — items must be cleared before the "
+            "deal advances.</p>"
+            "<p>Click any tool from the deal profile and your deal "
+            "parameters pre-fill. No re-typing.</p>"
+        ),
+        "try_it": {
+            "label": "Open the diligence index",
+            "href": "/diligence",
+        },
+    },
+    {
+        "eyebrow": "Volume III",
+        "title": "The <em>Risk</em> Workbench.",
+        "body": (
+            "<p>The Risk Workbench groups every risk surface into "
+            "three tiers of attention.</p>"
+            "<p><strong>Tier 1</strong> — bankruptcy survival, "
+            "covenant headroom, payer concentration. Existential "
+            "risks that kill deals at IC.</p>"
+            "<p><strong>Tier 2</strong> — physician attrition, "
+            "denial rate, regulatory exposure, cyber posture. "
+            "Material risks that erode EBITDA.</p>"
+            "<p><strong>Tier 3</strong> — management bench depth, "
+            "IT modernization debt, M&amp;A integration drag. "
+            "Slow-burn risks that show up in year three.</p>"
+            "<p>Each panel cites its source — HCRIS, CMS, public "
+            "filings — so you can audit the chain from claim to "
+            "conclusion.</p>"
+        ),
+        "try_it": {
+            "label": "Open the risk workbench",
+            "href": "/diligence/risk-workbench",
+        },
+    },
+    {
+        "eyebrow": "Volume IV",
+        "title": "Financial <em>Synthesis</em>.",
+        "body": (
+            "<p>Once diligence is complete, the platform synthesises "
+            "a financial story:</p>"
+            "<p>The <strong>7-lever EBITDA bridge</strong> "
+            "decomposes year-0 to year-3 EBITDA into "
+            "initiative-specific contributions. The <strong>two-"
+            "source Monte Carlo</strong> runs N=1,000+ paths "
+            "combining historical claim variance and forward-looking "
+            "initiative impact, returning P10/P50/P90 EBITDA "
+            "distributions.</p>"
+            "<p><strong>Public-market overlay</strong> pulls "
+            "EV/EBITDA bands from healthcare peers and prices your "
+            "deal against the band. <strong>Covenant headroom math</strong> "
+            "projects the post-close credit stack against bank "
+            "covenants with stress paths.</p>"
+            "<p>Every number on the synthesis pages carries a "
+            "provenance tooltip showing which inputs produced it.</p>"
+        ),
+        "try_it": {
+            "label": "Open the EBITDA bridge",
+            "href": "/diligence/ebitda-bridge",
+        },
+    },
+    {
+        "eyebrow": "Volume V",
+        "title": "The <em>Portfolio</em>.",
+        "body": (
+            "<p>After close, deals move to the portfolio surface. "
+            "<strong>Alerts</strong> fire when covenant headroom "
+            "narrows, EBITDA misses plan, or initiative variance "
+            "crosses thresholds. Acknowledge them, snooze them, or "
+            "escalate to the partner.</p>"
+            "<p><strong>Watchlists</strong> slice the portfolio by "
+            "sector, vintage, owner, or arbitrary tag. The "
+            "<strong>health score</strong> is a composite 0-100 per "
+            "deal with a trend sparkline. The "
+            "<strong>/my/&lt;owner&gt;</strong> page shows your "
+            "personal queue.</p>"
+            "<p><strong>Cohorts</strong> group deals by structural "
+            "similarity so you can ask <em>how have all my friendly "
+            "PC deals performed since 2024</em> and see the answer "
+            "in one chart.</p>"
+        ),
+        "try_it": {
+            "label": "Open the portfolio",
+            "href": "/portfolio",
+        },
+    },
+    {
+        "eyebrow": "Volume VI",
+        "title": "<em>Delivery</em>.",
+        "body": (
+            "<p>Every engagement ends in deliverables. The platform "
+            "generates IC packets, exit memos, and LP digests as "
+            "editorial HTML — partner-ready, print-friendly, "
+            "share-friendly.</p>"
+            "<p><strong>IC memos</strong> pull from the analysis "
+            "packet automatically. The <strong>bear case</strong> is "
+            "generated from the risk workbench. The "
+            "<strong>LP digest</strong> aggregates portfolio-level "
+            "performance into a quarterly narrative.</p>"
+            "<p>Exports are CSV (sanitised against Excel formula "
+            "injection), HTML, JSON, or — for the IC memo and "
+            "packet — print-PDF. Every export caps the chain of "
+            "citation so the LP can audit any number back to its "
+            "source.</p>"
+        ),
+        "try_it": {
+            "label": "Open the LP digest",
+            "href": "/lp-update",
+        },
+    },
+    {
+        "eyebrow": "Volume VII",
+        "title": "Settings &amp; <em>Workflow</em>.",
+        "body": (
+            "<p>A handful of details that compound over time:</p>"
+            "<p><strong>Cmd+K</strong> opens the command palette — "
+            "every analytic surface is one keystroke away. The "
+            "<strong>deal slug</strong> (e.g. "
+            "<em>/diligence/deal/aurora</em>) is bookmarkable and "
+            "shareable; deal parameters persist in your browser "
+            "localStorage so a refresh or returning tomorrow picks "
+            "up where you left off.</p>"
+            "<p>State-changing actions <strong>flash a toast</strong> "
+            "so you have confirmation. The <strong>?legacy=1</strong> "
+            "query parameter falls back to the legacy dashboard if "
+            "you preferred it; <strong>?v2=1</strong> the older "
+            "modern view.</p>"
+            "<p>You can restart this tour any time from "
+            "<strong>Settings → Platform Tutorial</strong>. "
+            "Welcome to the platform.</p>"
+        ),
+        "try_it": {
+            "label": "Open settings",
+            "href": "/settings",
+        },
+    },
+]
+
+
+def ck_default_tour() -> str:
+    """Return the editorial tour overlay rendered with the seven
+    default volumes. Injected by ``chartis_shell`` so the tour
+    works on every page via ``?tour=1`` or ``window.ckTour.open()``.
+    """
+    return ck_tour_overlay(_TOUR_VOLUMES)
 
 
 def ck_empty_state(
@@ -2688,6 +3208,7 @@ def chartis_shell(
         f"{palette_html}"
         f"{_SHORTCUTS_HTML}"
         f"{_TOAST_HTML}"
+        f"{ck_default_tour()}"
         f"{_CSRF_JS}"
         f"{_USER_MENU_JS}"
         f"{_INTRO_DISMISS_JS}"
