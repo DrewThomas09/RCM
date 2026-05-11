@@ -157,14 +157,40 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
         + ck_kpi_block(
             "Net Patient Revenue",
             provenance_tooltip(label="Net Patient Revenue", value=f"${npr/1e6:,.1f}M", graph=prov_graph, metric_key="net_patient_revenue"),
+            help={
+                "definition": (
+                    "Net Patient Revenue — billed services minus "
+                    "contractual allowances, bad debt, and charity "
+                    "care. The cash-realisable top line."
+                ),
+                "citation": "HFMA Glossary",
+            },
         )
         + ck_kpi_block(
             "Operating Margin",
             provenance_tooltip(label="Operating Margin", value=f"{margin:.1%}", graph=prov_graph, metric_key="operating_margin"),
+            help={
+                "definition": (
+                    "Operating income divided by total revenue. "
+                    "Community-hospital margins typically run 2-4%; "
+                    "regional hospitals 4-7%; academic medical "
+                    "centers can run negative on operations and "
+                    "make it back on research / grants."
+                ),
+            },
         )
         + ck_kpi_block(
             "Net Income",
             provenance_tooltip(label="Net Income", value=f"${ni/1e6:,.1f}M", graph=prov_graph, metric_key="net_income"),
+            help={
+                "definition": (
+                    "Bottom-line earnings after operating income, "
+                    "interest, taxes, and non-operating items. "
+                    "Differs from EBITDA — which strips out the "
+                    "below-the-line items PE partners model "
+                    "separately in the bridge."
+                ),
+            },
         )
         + ck_kpi_block(
             "Licensed Beds",
@@ -173,6 +199,15 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
         + ck_kpi_block(
             "Revenue per Bed",
             provenance_tooltip(label="Revenue per Bed", value=f"${rev_per_bed/1e3:,.0f}K", graph=prov_graph, metric_key="revenue_per_bed"),
+            help={
+                "definition": (
+                    "Productivity proxy — NPR per licensed bed. "
+                    "Compares throughput and case mix across "
+                    "hospitals of different sizes. Community "
+                    "hospitals run $1.2-1.8M/bed; specialty "
+                    "centers can run $3-5M/bed."
+                ),
+            },
         )
         + ck_kpi_block(
             "Operating Expenses",

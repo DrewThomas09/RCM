@@ -609,10 +609,28 @@ def _hero(report: AttritionReport, target_name: str) -> str:
                 f"{crit} critical · {high} high · {report.medium_count} medium · "
                 f"{report.low_count} low"
             ),
+            help={
+                "definition": (
+                    "Total physician count in the practice or "
+                    "facility being underwritten. Each provider "
+                    "carries a flight-risk score from low to "
+                    "critical; the four counts in the sub-line "
+                    "show the distribution."
+                ),
+            },
         )
         + ck_kpi_block(
             "Total collections", collections_num,
             sub="roster annual collections · hover for source",
+            help={
+                "definition": (
+                    "Sum of annual collections across the roster. "
+                    "Used as the denominator for the at-risk "
+                    "percentage — partners read this as 'if every "
+                    "high-risk provider walked, how much would "
+                    "stop coming in'."
+                ),
+            },
         )
         + ck_kpi_block(
             "Expected $ at risk", at_risk_num,
@@ -620,6 +638,17 @@ def _hero(report: AttritionReport, target_name: str) -> str:
                 f"{at_risk/collections*100 if collections > 0 else 0:.1f}% "
                 f"of roster · 18-mo horizon"
             ),
+            help={
+                "definition": (
+                    "Probability-weighted dollar collections at risk "
+                    "over an 18-month horizon. Equal to the sum "
+                    "across providers of (departure probability × "
+                    "annual collections × retention sensitivity). "
+                    "Compare to the bridge's EBITDA-improvement "
+                    "ask to see whether retention drag eats the "
+                    "thesis."
+                ),
+            },
         )
         + ck_kpi_block(
             "EBITDA bridge hit", bridge_num,
@@ -627,6 +656,16 @@ def _hero(report: AttritionReport, target_name: str) -> str:
                 f"{bridge.confidence} confidence · "
                 f"{bridge.realization_probability*100:.0f}% realization"
             ),
+            help={
+                "definition": (
+                    "Direct EBITDA hit if expected attrition plays "
+                    "out — calculated as $ at risk × contribution "
+                    "margin × realization probability. The "
+                    "confidence tag reflects how much of the "
+                    "input data is provider-specific vs. roster-"
+                    "level averages."
+                ),
+            },
         )
         + "</div>"
     )
