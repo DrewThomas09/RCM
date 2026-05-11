@@ -1266,6 +1266,292 @@ _TOUR_VOLUMES: List[Dict[str, Any]] = [
 ]
 
 
+def ck_quick_capture() -> str:
+    """Global 'Quick capture' modal — Shift+Q anywhere on the
+    platform pops a small editorial overlay where a partner can jot
+    a diligence question without leaving the surface they're on.
+
+    The modal:
+      - Auto-fills the deal slug from rcm_recent_deals[0] so the
+        most-recent deal is the default target. Slug is editable.
+      - Carries the same six categories as the deal-profile
+        question editor (financial / clinical / regulatory / legal
+        / operational / other).
+      - Persists onto rcm_deal_<slug>_questions in the same shape
+        as the deal-profile editor — partners see the captured
+        question next time they open that deal's profile.
+
+    Auto-injected by chartis_shell so the shortcut works on every
+    page. Esc closes; submit saves + closes. No server roundtrip.
+    """
+    return _CK_QC_CSS + _CK_QC_HTML + _CK_QC_JS
+
+
+_CK_QC_CSS = """
+<style>
+.ck-qc { position: fixed; inset: 0; z-index: 10001; }
+.ck-qc[hidden] { display: none !important; }
+.ck-qc-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(11, 35, 65, 0.42);
+  backdrop-filter: blur(2px);
+}
+.ck-qc-card {
+  position: relative; max-width: 520px; width: calc(100% - 32px);
+  margin: 14vh auto; background: var(--sc-bone, #f5f1ea);
+  border: 1px solid var(--sc-rule, #d8d3c8); border-radius: 4px;
+  padding: 32px 36px 24px; box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+  font-family: "Source Serif 4", Georgia, serif;
+  color: var(--sc-text, #1a2332);
+}
+.ck-qc-eyebrow {
+  font-family: "Inter Tight", sans-serif;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sc-teal-ink, #0e3e3a); margin-bottom: 8px;
+}
+.ck-qc-title {
+  font-family: "Source Serif 4", serif; font-weight: 400;
+  font-size: 24px; line-height: 1.15; letter-spacing: -0.012em;
+  color: var(--sc-navy, #0b2341); margin: 0 0 6px;
+}
+.ck-qc-title em {
+  font-style: italic; color: var(--sc-teal-ink, #0e3e3a);
+}
+.ck-qc-prose {
+  font-family: "Source Serif 4", serif; font-style: italic;
+  font-size: 13px; line-height: 1.5;
+  color: var(--sc-text-dim, #37495e); margin: 0 0 16px;
+}
+.ck-qc-row {
+  display: grid; grid-template-columns: 1fr 130px;
+  gap: 10px; margin-bottom: 12px;
+}
+.ck-qc-field { display: flex; flex-direction: column; gap: 4px; }
+.ck-qc-label {
+  font-family: "Inter Tight", sans-serif; font-size: 9px;
+  font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--sc-text-faint, #6e7787);
+}
+.ck-qc-input, .ck-qc-textarea, .ck-qc-select {
+  background: #fff; color: var(--sc-text, #1a2332);
+  border: 1px solid var(--sc-rule, #d8d3c8); border-radius: 3px;
+  padding: 8px 10px; font-size: 13px;
+  font-family: "Source Serif 4", serif;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.ck-qc-select {
+  font-family: "Inter Tight", sans-serif; font-size: 11px;
+  font-weight: 600; letter-spacing: 0.06em;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%236e7787' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center;
+  padding-right: 26px;
+}
+.ck-qc-textarea { min-height: 84px; resize: vertical; }
+.ck-qc-input:focus, .ck-qc-textarea:focus, .ck-qc-select:focus {
+  outline: none; border-color: var(--sc-teal-ink, #0e3e3a);
+  box-shadow: 0 0 0 2px rgba(21,87,82,0.18);
+}
+.ck-qc-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; margin-top: 18px; padding-top: 14px;
+  border-top: 1px solid var(--sc-rule, #d8d3c8);
+}
+.ck-qc-hint {
+  font-family: "Source Serif 4", serif; font-style: italic;
+  font-size: 11px; color: var(--sc-text-faint, #6e7787);
+}
+.ck-qc-hint kbd {
+  display: inline-block; padding: 1px 5px;
+  background: #fff; border: 1px solid var(--sc-rule, #d8d3c8);
+  border-radius: 2px; font-family: "JetBrains Mono", monospace;
+  font-size: 10px; font-style: normal; color: var(--sc-text, #1a2332);
+  vertical-align: 1px;
+}
+.ck-qc-actions { display: flex; gap: 8px; }
+.ck-qc-cancel, .ck-qc-save {
+  font-family: "Inter Tight", sans-serif; font-weight: 600;
+  font-size: 12px; letter-spacing: 0.04em;
+  padding: 8px 14px; border-radius: 2px; cursor: pointer;
+  transition: filter 120ms ease, border-color 120ms ease;
+}
+.ck-qc-cancel {
+  background: transparent; color: var(--sc-text-dim, #37495e);
+  border: 1px solid var(--sc-rule, #d8d3c8);
+}
+.ck-qc-cancel:hover { border-color: var(--sc-text, #1a2332); }
+.ck-qc-save {
+  background: var(--sc-navy, #0b2341); color: #fff; border: 0;
+}
+.ck-qc-save:hover { filter: brightness(1.12); }
+.ck-qc-toast {
+  position: absolute; bottom: -36px; left: 0; right: 0;
+  text-align: center;
+  font-family: "Source Serif 4", serif; font-style: italic;
+  font-size: 12px; color: var(--sc-positive, #0a8a5f);
+  opacity: 0; transition: opacity 200ms ease;
+}
+.ck-qc-toast.is-visible { opacity: 1; }
+@media print { .ck-qc { display: none !important; } }
+</style>
+"""
+
+_CK_QC_HTML = """
+<div class="ck-qc" id="ck-qc" hidden role="dialog" aria-modal="true"
+     aria-labelledby="ck-qc-title">
+  <div class="ck-qc-backdrop" data-ck-qc-close></div>
+  <div class="ck-qc-card" role="document">
+    <div class="ck-qc-eyebrow">Quick capture · Shift+Q</div>
+    <h2 class="ck-qc-title" id="ck-qc-title">
+      Jot a <em>diligence</em> question.
+    </h2>
+    <p class="ck-qc-prose">
+      Saves to the deal's question list. You'll see it next time
+      you open that deal profile.
+    </p>
+    <form data-ck-qc-form>
+      <div class="ck-qc-row">
+        <div class="ck-qc-field">
+          <label class="ck-qc-label" for="ck-qc-slug">Deal slug</label>
+          <input class="ck-qc-input" id="ck-qc-slug"
+                 data-ck-qc-slug autocomplete="off"/>
+        </div>
+        <div class="ck-qc-field">
+          <label class="ck-qc-label" for="ck-qc-cat">Category</label>
+          <select class="ck-qc-select" id="ck-qc-cat" data-ck-qc-cat>
+            <option value="financial">Financial</option>
+            <option value="clinical">Clinical</option>
+            <option value="regulatory">Regulatory</option>
+            <option value="legal">Legal</option>
+            <option value="operational">Operational</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="ck-qc-field">
+        <label class="ck-qc-label" for="ck-qc-text">Question</label>
+        <textarea class="ck-qc-textarea" id="ck-qc-text"
+                  data-ck-qc-text maxlength="280"
+                  placeholder="e.g. What share of NPR comes from out-of-network rates?"></textarea>
+      </div>
+      <div class="ck-qc-footer">
+        <span class="ck-qc-hint">
+          <kbd>Esc</kbd> close · <kbd>⌘</kbd><kbd>Enter</kbd> save
+        </span>
+        <div class="ck-qc-actions">
+          <button type="button" class="ck-qc-cancel"
+                  data-ck-qc-close>Cancel</button>
+          <button type="submit" class="ck-qc-save"
+                  data-ck-qc-save>Save question →</button>
+        </div>
+      </div>
+    </form>
+    <div class="ck-qc-toast" data-ck-qc-toast></div>
+  </div>
+</div>
+"""
+
+_CK_QC_JS = """
+<script>
+(function() {
+  function el(sel) { return document.querySelector(sel); }
+  function open() {
+    var qc = el("#ck-qc"); if (!qc) return;
+    var slugIn = qc.querySelector("[data-ck-qc-slug]");
+    var textIn = qc.querySelector("[data-ck-qc-text]");
+    if (slugIn && !slugIn.value) {
+      // Auto-fill from rcm_recent_deals[0] so the most-recent deal
+      // is the default target. Partner can edit before saving.
+      try {
+        var raw = localStorage.getItem("rcm_recent_deals");
+        var rows = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(rows) && rows.length && rows[0].slug) {
+          slugIn.value = rows[0].slug;
+        }
+      } catch (e) { /* ignore */ }
+    }
+    qc.hidden = false;
+    if (textIn) setTimeout(function() { textIn.focus(); }, 0);
+  }
+  function close() {
+    var qc = el("#ck-qc"); if (qc) qc.hidden = true;
+  }
+  function toast(msg, tone) {
+    var t = el("[data-ck-qc-toast]"); if (!t) return;
+    t.textContent = msg;
+    t.style.color = (tone === "neg") ? "#b5321e" : "";
+    t.classList.add("is-visible");
+    setTimeout(function() { t.classList.remove("is-visible"); }, 1500);
+  }
+  function save() {
+    var qc = el("#ck-qc"); if (!qc) return;
+    var slug = (qc.querySelector("[data-ck-qc-slug]").value || "")
+      .trim().toLowerCase();
+    var text = (qc.querySelector("[data-ck-qc-text]").value || "").trim();
+    var cat = qc.querySelector("[data-ck-qc-cat]").value || "financial";
+    if (!slug) { toast("Need a deal slug.", "neg"); return; }
+    if (!text) { toast("Need a question.", "neg"); return; }
+    try {
+      var key = "rcm_deal_" + slug + "_questions";
+      var raw = localStorage.getItem(key);
+      var rows = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(rows)) rows = [];
+      rows.unshift({
+        id: "q" + Date.now() + Math.random().toString(36).slice(2, 6),
+        text: text, ts: Date.now(), asked: false, category: cat,
+      });
+      localStorage.setItem(key, JSON.stringify(rows));
+      toast("Saved to " + slug + ".");
+      qc.querySelector("[data-ck-qc-text]").value = "";
+      // Auto-close after a beat so partner sees the confirmation
+      setTimeout(close, 850);
+    } catch (e) { toast("Save failed.", "neg"); }
+  }
+  window.ckQuickCapture = { open: open, close: close };
+  document.addEventListener("keydown", function(e) {
+    if (e.target && (e.target.tagName === "INPUT"
+        || e.target.tagName === "TEXTAREA"
+        || e.target.isContentEditable)) {
+      // While the QC modal is open we DO want keystrokes to flow
+      // into the inputs, but ⌘+Enter must still save and Esc must
+      // still close.
+      var qc = el("#ck-qc");
+      if (qc && !qc.hidden) {
+        if (e.key === "Escape") { e.preventDefault(); close(); }
+        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+          e.preventDefault(); save();
+        }
+      }
+      return;
+    }
+    if (e.shiftKey && (e.key === "Q" || e.key === "q")
+        && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      e.preventDefault();
+      var qcEl = el("#ck-qc");
+      if (qcEl && qcEl.hidden) open(); else close();
+    }
+    if (e.key === "Escape") {
+      var qc2 = el("#ck-qc");
+      if (qc2 && !qc2.hidden) { e.preventDefault(); close(); }
+    }
+  });
+  document.addEventListener("click", function(e) {
+    if (e.target.closest && e.target.closest("[data-ck-qc-close]")) {
+      close();
+    }
+  });
+  document.addEventListener("submit", function(e) {
+    if (e.target.closest && e.target.closest("[data-ck-qc-form]")) {
+      e.preventDefault();
+      save();
+    }
+  });
+}());
+</script>
+"""
+
+
 def ck_default_tour() -> str:
     """Return the editorial tour overlay rendered with the seven
     default volumes. Injected by ``chartis_shell`` so the tour
@@ -3000,6 +3286,9 @@ _SHORTCUTS_HTML = """
           <dt><kbd>?</kbd></dt><dd>Show / hide this list</dd>
           <dt><kbd>T</kbd></dt>
             <dd>Open <em>The Atlas</em> &mdash; the editorial tour</dd>
+          <dt><kbd>Shift</kbd><kbd>Q</kbd></dt>
+            <dd>Quick capture &mdash; jot a diligence question
+                without leaving the page</dd>
         </dl>
       </section>
     </div>
@@ -3652,6 +3941,7 @@ def chartis_shell(
         f"{_SHORTCUTS_HTML}"
         f"{_TOAST_HTML}"
         f"{ck_default_tour()}"
+        f"{ck_quick_capture()}"
         f"{_CSRF_JS}"
         f"{_USER_MENU_JS}"
         f"{_INTRO_DISMISS_JS}"

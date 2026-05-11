@@ -832,6 +832,9 @@ Press <kbd>&#8984;</kbd><kbd>K</kbd> for the command palette.
 <span class="dv-kb-hint-row">
 <kbd>T</kbd> to open <em>The Atlas</em>.
 </span>
+<span class="dv-kb-hint-row">
+<kbd>Shift</kbd><kbd>Q</kbd> to jot a diligence question.
+</span>
 </div>
 """
 
