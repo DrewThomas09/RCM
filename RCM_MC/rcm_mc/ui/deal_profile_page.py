@@ -759,6 +759,11 @@ transition:background 120ms ease;}}
 .ck-dp-cmpw-link-name{{font-size:14px;color:{P["text"]};
 font-weight:500;}}
 .ck-dp-cmpw-link-name em{{font-style:italic;color:{P["accent"]};}}
+.ck-dp-cmpw-q{{font-family:"Inter Tight",sans-serif;font-size:9px;
+font-weight:700;letter-spacing:0.14em;text-transform:uppercase;
+color:{P["warning"]};border:1px solid currentColor;border-radius:2px;
+padding:1px 6px;margin-left:8px;vertical-align:1px;
+white-space:nowrap;}}
 .ck-dp-cmpw-link-slug{{font-family:"JetBrains Mono",monospace;
 font-size:10px;letter-spacing:0.12em;text-transform:uppercase;
 color:{P["text_faint"]};}}
@@ -2215,10 +2220,30 @@ def _inline_js(slug: str) -> str:
       } else {
         href = "/diligence/compare";
       }
+      // Open-questions chip — surface Q load on candidate compare
+      // targets so partners see "Hawthorne · 5 open qs" before
+      // committing to the comparison. Same shape as the /app
+      // recently-viewed rail's chip; chip omitted when the candidate
+      // deal has zero open questions.
+      var qOpen = 0;
+      try {
+        var qRaw = localStorage.getItem("rcm_deal_" + r.slug + "_questions");
+        if (qRaw) {
+          var qList = JSON.parse(qRaw);
+          if (Array.isArray(qList)) {
+            qOpen = qList.filter(function(q) { return q && !q.asked; }).length;
+          }
+        }
+      } catch (e) { qOpen = 0; }
+      var qChip = qOpen > 0
+        ? '<span class="ck-dp-cmpw-q">' + qOpen + ' open ' +
+            (qOpen === 1 ? 'q' : 'qs') + '</span>'
+        : '';
       return '<li class="ck-dp-cmpw-row">' +
         '<a class="ck-dp-cmpw-link" href="' + escHtml(href) + '">' +
         '<span class="ck-dp-cmpw-link-name">' +
         '<em>' + escHtml(r.name || r.slug) + '</em>' +
+        qChip +
         '</span>' +
         '<span class="ck-dp-cmpw-link-slug">' + escHtml(r.slug) +
         '</span>' +

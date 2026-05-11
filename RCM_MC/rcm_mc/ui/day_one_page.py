@@ -436,6 +436,13 @@ def _journey_section() -> str:
         'unlocks the next surface — by the time the bar is full, '
         'you\'ve touched every diligence tool that matters.'
         '</p>'
+        # State-conditional one-liner — partners see different
+        # editorial copy based on where they are in the journey.
+        # Server-emits the placeholder; inline JS picks the line
+        # from rcm_tour_v1 + any *_visited entries.
+        '<p class="do-prose do-journey-state" data-rcm-journey-state '
+        'style="font-style:italic;font-size:13px;'
+        'color:var(--sc-teal-ink,#0e3e3a);">—</p>'
         + checklist
         + '<a href="/diligence/questions" class="do-link" '
         'style="margin-right:18px;">'
@@ -444,6 +451,37 @@ def _journey_section() -> str:
         '<a href="/settings" class="do-link">'
         'Open settings for the full journey'
         '</a>'
+        # Inline JS picks the contextual line. Quiet defaults when
+        # localStorage is empty, encouraging when partially through,
+        # congratulatory when complete.
+        '<script>'
+        '(function(){var el=document.querySelector('
+        '"[data-rcm-journey-state]");if(!el)return;'
+        'function tour(){try{var r=localStorage.getItem("rcm_tour_v1");'
+        'return r?JSON.parse(r):null;}catch(e){return null;}}'
+        'function recentN(){try{var r=JSON.parse(localStorage.getItem('
+        '"rcm_recent_deals")||"[]");return Array.isArray(r)?r.length:0;}'
+        'catch(e){return 0;}}'
+        'function anyTool(){try{for(var i=0;i<localStorage.length;i++){'
+        'var k=localStorage.key(i);if(k&&/_visited$/.test(k)){'
+        'var v=JSON.parse(localStorage.getItem(k)||"{}");'
+        'if(v&&Object.keys(v).length)return true;}}return false;}'
+        'catch(e){return false;}}'
+        'var s=tour();var done=(s&&s.completed)?s.completed.length:0;'
+        'var n=recentN();var line;'
+        'if(done>=7){line="All seven volumes complete \\u2014 the '
+        'tour is yours to <em>restart</em> any time from Settings.";}'
+        'else if(done>0){line="Volume "+done+" of VII complete \\u2014 '
+        '<em>press T</em> anywhere to pick up where you left off.";}'
+        'else if(anyTool()){line="You\\u2019re using the platform '
+        'already \\u2014 the tour fills in the <em>why</em>. '
+        'Press T to start Volume I.";}'
+        'else if(n>0){line="You opened a deal \\u2014 try the '
+        '<em>tour</em> (press T) to see what every analytic does.";}'
+        'else{line="Everything begins at the pipeline. Open a deal, '
+        'or <em>press T</em> for the seven-volume tour.";}'
+        'el.innerHTML=line;}());'
+        '</script>'
         + '</section>'
     )
 
