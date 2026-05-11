@@ -12945,6 +12945,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             '</style>'
         )
 
+        from .ui._chartis_kit import ck_next_section
+        next_up = ck_next_section(
+            "Open the portfolio for the full view",
+            "/portfolio",
+            eyebrow="Continue —",
+            italic_word="portfolio",
+        )
         body = (
             f"{title_html}"
             f"{kpi_html}"
@@ -12958,6 +12965,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             '</tr></thead>'
             f'<tbody>{"".join(rows)}</tbody>'
             '</table></div>'
+            f'{next_up}'
         )
 
         self._send_html(shell(

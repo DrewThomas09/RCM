@@ -3199,6 +3199,11 @@ _CSS_INLINE_FALLBACK = """
   .ck-palette-list { list-style:none; margin:0; padding:0; max-height:52vh; overflow:auto; }
   .ck-palette-list li { display:flex; justify-content:space-between; padding:10px 20px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--sc-bone); }
   .ck-palette-list li:hover { background:var(--sc-bone); }
+  .ck-palette-list li.is-highlighted {
+    background:var(--sc-bone);
+    box-shadow:inset 3px 0 0 var(--sc-teal-ink);
+  }
+  .ck-palette-list li.is-highlighted .cp-route { color:var(--sc-teal-ink); }
   .ck-palette-list li.cp-section { display:block; padding:10px 20px 6px; cursor:default; background:transparent; border-bottom:0; font-family:var(--sc-mono); font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--sc-text-faint); }
   .ck-palette-list li.cp-section:hover { background:transparent; }
   .ck-palette-list li.cp-recent { background:linear-gradient(90deg, rgba(21,87,82,0.04) 0%, transparent 100%); }
@@ -3815,18 +3820,71 @@ _PALETTE_JS = """
       li.style.display = t.indexOf(q) >= 0 ? '' : 'none';
     });
   }
-  input.addEventListener('input', function(e){ filter(e.target.value); });
+  function visibleItems(){
+    return Array.from(p.querySelectorAll('li:not([style*="display: none"])'))
+      .filter(function(li){ return !li.classList.contains('cp-section'); });
+  }
+  function highlightAt(idx){
+    var items = visibleItems();
+    items.forEach(function(li, i){
+      if (i === idx) {
+        li.classList.add('is-highlighted');
+        /* Keep highlighted row in view inside the scrollable list */
+        if (li.scrollIntoView) {
+          li.scrollIntoView({ block: 'nearest' });
+        }
+      } else {
+        li.classList.remove('is-highlighted');
+      }
+    });
+  }
+  function moveHighlight(delta){
+    var items = visibleItems();
+    if (!items.length) return;
+    var cur = items.findIndex(function(li){
+      return li.classList.contains('is-highlighted');
+    });
+    var next = ((cur < 0 ? 0 : cur + delta) + items.length) % items.length;
+    highlightAt(next);
+  }
+  function pickHighlighted(){
+    var items = visibleItems();
+    var hit = items.find(function(li){
+      return li.classList.contains('is-highlighted');
+    }) || items[0];
+    if (hit) navTo(hit);
+  }
+  input.addEventListener('input', function(e){
+    filter(e.target.value);
+    /* Reset highlight to first visible after any filter change */
+    highlightAt(0);
+  });
   allItems.forEach(function(li){
     li.addEventListener('click', function(){ navTo(li); });
+    li.addEventListener('mouseenter', function(){
+      var items = visibleItems();
+      highlightAt(items.indexOf(li));
+    });
   });
   document.addEventListener('keydown', function(e){
-    if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); show(); }
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      show();
+      /* Highlight first visible on open so Enter has a target */
+      setTimeout(function(){ highlightAt(0); }, 0);
+    }
     if (e.key === 'Escape' && !p.hidden) { e.preventDefault(); hide(); }
-    if (e.key === 'Enter' && !p.hidden) {
-      /* Pick first visible item */
-      var first = Array.from(p.querySelectorAll('li:not([style*="display: none"])'))
-        .find(function(li){ return !li.classList.contains('cp-section'); });
-      if (first) { e.preventDefault(); navTo(first); }
+    if (!p.hidden) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        moveHighlight(1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        moveHighlight(-1);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        pickHighlighted();
+      }
     }
   });
 })();
