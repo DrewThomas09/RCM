@@ -27,6 +27,7 @@ from ._chartis_kit import (
 )
 from .dashboard_v3 import (
     _load_alerts, _load_portfolio_summary, _load_recent_activity,
+    _load_recent_packets,
 )
 
 
@@ -364,8 +365,18 @@ def _recent_section() -> str:
 """
 
 
-def _activity_section(activity: List[Dict[str, Any]]) -> str:
-    """Section IV — what changed in the last 7 days."""
+def _activity_section(
+    activity: List[Dict[str, Any]],
+    packets: Optional[List[Dict[str, Any]]] = None,
+) -> str:
+    """Section IV — what changed in the last 7 days.
+
+    ``packets`` is the optional Phase U recent-packets cohort
+    (analysis_runs server-side, last 14 days, dedup'd per deal).
+    When present, the section renders a small inline 'Built this
+    fortnight' rail below the prose so partners see the specific
+    deals + scenarios in the Monday brief without bouncing to /app.
+    """
     n_changes = len(activity)
     if n_changes == 0:
         prose = (
@@ -381,6 +392,57 @@ def _activity_section(activity: List[Dict[str, Any]]) -> str:
             "deals that advanced, the new entries, and the packet "
             "rebuilds."
         )
+    # Inline 'Built this fortnight' tile strip — surfaces the
+    # Phase U server-side packet roster directly in the Monday
+    # brief so partners scan recent IC-ready deals without
+    # leaving the page.
+    packet_html = ""
+    if packets:
+        tiles = []
+        for p in packets[:4]:
+            did = _html.escape(str(p.get("deal_id", "—")))
+            scn = _html.escape(str(p.get("scenario_id") or "base").upper())
+            days = p.get("days", 0) or 0
+            rel = ("today" if days <= 0
+                   else "yesterday" if days == 1
+                   else f"{days} d ago")
+            tiles.append(
+                f'<a class="do-packet-tile" href="/analysis/{did}">'
+                f'<div class="do-packet-scn">{scn}</div>'
+                f'<div class="do-packet-name">{did}</div>'
+                f'<div class="do-packet-ts">{rel}</div>'
+                '</a>'
+            )
+        packet_html = (
+            '<style>'
+            '.do-packet-strip{display:grid;'
+            'grid-template-columns:repeat(auto-fill,minmax(190px,1fr));'
+            'gap:10px;margin:12px 0 8px;}'
+            '.do-packet-tile{display:block;padding:12px 14px;'
+            'background:var(--sc-bone,#f5f1ea);'
+            'border:1px solid var(--sc-rule,#d8d3c8);'
+            'border-radius:3px;text-decoration:none;color:inherit;'
+            'transition:transform 140ms ease, border-color 140ms ease, '
+            'box-shadow 140ms ease;}'
+            '.do-packet-tile:hover{transform:translateY(-1px);'
+            'border-color:var(--sc-teal,#155752);'
+            'box-shadow:0 4px 14px rgba(11,35,65,0.06);}'
+            '.do-packet-scn{font-family:"JetBrains Mono",monospace;'
+            'font-size:9px;letter-spacing:1.3px;text-transform:uppercase;'
+            'color:var(--sc-teal-ink,#0e3e3a);margin-bottom:5px;}'
+            '.do-packet-name{font-family:"Source Serif 4",serif;'
+            'font-size:14px;font-weight:500;'
+            'color:var(--sc-navy,#0b2341);line-height:1.25;}'
+            '.do-packet-ts{font-family:"Source Serif 4",serif;'
+            'font-style:italic;font-size:11px;'
+            'color:var(--sc-text-faint,#6e7787);margin-top:4px;}'
+            '@media print{.do-packet-strip{display:none !important;}}'
+            '</style>'
+            '<div class="ck-eyebrow" style="margin:10px 0 4px;">'
+            f'Built this fortnight · {len(packets)} '
+            f'packet{"s" if len(packets) != 1 else ""}</div>'
+            '<div class="do-packet-strip">' + "".join(tiles) + '</div>'
+        )
     return (
         '<section class="do-section">'
         '<div class="do-eyebrow-wrap">'
@@ -389,6 +451,7 @@ def _activity_section(activity: List[Dict[str, Any]]) -> str:
         + '</div>'
         '<h2 class="do-h2">What <em>moved</em> in seven days.</h2>'
         f'<p class="do-prose">{prose}</p>'
+        + packet_html +
         '<a href="/pipeline" class="do-link">'
         'Open the pipeline funnel</a>'
         '</section>'
@@ -496,6 +559,7 @@ def render_day_one(store: Any) -> str:
     summary = _load_portfolio_summary(store)
     alerts = _load_alerts(store, limit=8)
     activity = _load_recent_activity(store, lookback_days=7)
+    recent_packets = _load_recent_packets(store, limit=4)
 
     intro = ck_section_intro(
         eyebrow="MONDAY MORNING",
@@ -523,7 +587,7 @@ def render_day_one(store: Any) -> str:
             _alerts_section(alerts)
             + _health_section(summary)
             + _recent_section()
-            + _activity_section(activity)
+            + _activity_section(activity, recent_packets)
             + _journey_section(),
             title="The Monday brief",
         )

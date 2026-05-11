@@ -1471,6 +1471,22 @@ _CK_QC_JS = """
         }
       } catch (e) { /* ignore */ }
     }
+    // Restore the last-used category so partners doing several
+    // captures in the same area (e.g. four Regulatory questions
+    // in a row) don't reset to Financial each time. localStorage
+    // key persists across sessions.
+    var catIn = qc.querySelector("[data-ck-qc-cat]");
+    if (catIn) {
+      try {
+        var last = localStorage.getItem("rcm_qc_last_cat");
+        if (last) {
+          var opts = catIn.options;
+          for (var i = 0; i < opts.length; i++) {
+            if (opts[i].value === last) { catIn.value = last; break; }
+          }
+        }
+      } catch (e) { /* ignore */ }
+    }
     qc.hidden = false;
     if (textIn) setTimeout(function() { textIn.focus(); }, 0);
   }
@@ -1502,6 +1518,10 @@ _CK_QC_JS = """
         text: text, ts: Date.now(), asked: false, category: cat,
       });
       localStorage.setItem(key, JSON.stringify(rows));
+      // Persist last-used category so the next Quick-capture
+      // opens with it pre-selected.
+      try { localStorage.setItem("rcm_qc_last_cat", cat); }
+      catch (e) { /* ignore */ }
       toast("Saved to " + slug + ".");
       qc.querySelector("[data-ck-qc-text]").value = "";
       // Auto-close after a beat so partner sees the confirmation
