@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_panel,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
     ck_section_intro, ck_signal_badge,
 )
 from .brand import PALETTE
@@ -476,7 +476,16 @@ overflow:hidden;margin-bottom:8px;}
 .pm-health-none{background:var(--cad-border);}
 </style>
 """
-    body = f'{pm_styles}{intro}{kpis}{alert_html}{warning_html}{health_bar}{deal_table}{pred_vs_actual}{nav}'
+    next_up = ck_next_section(
+        "Open the portfolio risk scan",
+        "/portfolio/risk-scan",
+        eyebrow="Continue —",
+        italic_word="risk",
+    )
+    body = (
+        f'{pm_styles}{intro}{kpis}{alert_html}{warning_html}'
+        f'{health_bar}{deal_table}{pred_vs_actual}{nav}{next_up}'
+    )
 
     return chartis_shell(
         body, "Portfolio Monitor",

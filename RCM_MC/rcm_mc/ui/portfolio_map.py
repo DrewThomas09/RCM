@@ -46,7 +46,7 @@ def render_portfolio_map(
     """Full-page HTML with an inline SVG US map + deal markers."""
     from ._chartis_kit import (
         chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-        ck_provenance_tooltip,
+        ck_next_section, ck_provenance_tooltip,
     )
 
     # State background rectangles (simplified — just shade CON vs non-CON).
@@ -157,6 +157,12 @@ def render_portfolio_map(
         + '</div>'
     )
 
+    next_up = ck_next_section(
+        "Open the portfolio heatmap",
+        "/portfolio/heatmap",
+        eyebrow="Continue —",
+        italic_word="heatmap",
+    )
     body = f"""
     {ck_eyebrow("Portfolio Map")}
     <h2>Portfolio Map</h2>
@@ -166,6 +172,7 @@ def render_portfolio_map(
       Color = deal stage.
     </div>
     <div class="map-wrap">{svg}</div>
+    {next_up}
     """
     return chartis_shell(body, "Portfolio Map",
                     active_nav="/portfolio",

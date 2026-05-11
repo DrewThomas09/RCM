@@ -17,7 +17,8 @@ import pandas as pd
 
 from ..portfolio.store import PortfolioStore
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_panel, ck_section_intro,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_intro,
 )
 from .brand import PALETTE
 from .provenance import source_tag, Source, data_freshness_footer
@@ -324,12 +325,18 @@ padding-right:4px;font-size:10px;color:#fff;font-weight:600;min-width:35px;}
 .pb-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 </style>
 """
+    next_up = ck_next_section(
+        "Open the portfolio monitor",
+        "/portfolio/monitor",
+        eyebrow="Continue —",
+        italic_word="monitor",
+    )
     body = (
         f'{pb_styles}{intro}{kpis}'
         '<div class="pb-grid">'
         f'<div>{deal_section}</div>'
         f'<div>{lever_section}{returns_section}</div></div>'
-        f'{nav}{freshness}'
+        f'{nav}{freshness}{next_up}'
     )
 
     return chartis_shell(
