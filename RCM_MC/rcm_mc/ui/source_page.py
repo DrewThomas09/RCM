@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip,
+    ck_next_section, ck_provenance_tooltip,
 )
 from .brand import PALETTE
 
@@ -112,7 +112,13 @@ def render_source_page(
         + ck_kpi_block("HCRIS Universe", "~6,000", "hospital corpus")
         + '</div>'
     )
-    body = ck_eyebrow("Deal Sourcing") + kpi_strip + body
+    next_up = ck_next_section(
+        "Open the hospital screener",
+        "/screen",
+        eyebrow="Continue —",
+        italic_word="screener",
+    )
+    body = ck_eyebrow("Deal Sourcing") + kpi_strip + body + next_up
 
     sub = f"{n} matches found" if results else "Thesis-driven deal origination from HCRIS"
     return chartis_shell(body, "Deal Sourcing", subtitle=sub,

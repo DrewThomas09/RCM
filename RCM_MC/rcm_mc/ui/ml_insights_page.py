@@ -19,6 +19,7 @@ from ._chartis_kit import (
     ck_fmt_num,
     ck_fmt_pct,
     ck_kpi_block,
+    ck_next_section,
     ck_provenance_tooltip,
 )
 from .brand import PALETTE
@@ -256,7 +257,13 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
         f'</div>'
     )
 
-    body = f'{kpis}{cluster_section}{distress_section}{rcm_screen}{methodology}{nav}'
+    next_up = ck_next_section(
+        "Open the feature importance view",
+        "/feature-importance",
+        eyebrow="Continue —",
+        italic_word="features",
+    )
+    body = f'{kpis}{cluster_section}{distress_section}{rcm_screen}{methodology}{nav}{next_up}'
 
     return chartis_shell(
         body,

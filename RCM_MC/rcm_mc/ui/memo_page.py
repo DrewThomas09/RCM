@@ -8,7 +8,7 @@ import html
 from typing import Any, Dict, List
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_panel,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
     ck_signal_badge,
 )
 from .models_page import _model_nav
@@ -71,7 +71,13 @@ def render_memo_page(deal_id: str, deal_name: str, memo: Dict[str, Any]) -> str:
     )
 
     nav = _model_nav(deal_id, "")
-    body = f'{nav}{kpis}{sections_html}{warning_html}{actions}'
+    next_up = ck_next_section(
+        "Open the IC packet",
+        "/diligence/ic-packet",
+        eyebrow="Continue —",
+        italic_word="packet",
+    )
+    body = f'{nav}{kpis}{sections_html}{warning_html}{actions}{next_up}'
 
     return chartis_shell(body, f"IC Memo — {html.escape(deal_name)}",
                     active_nav="/analysis",

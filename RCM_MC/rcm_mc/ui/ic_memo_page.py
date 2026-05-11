@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_panel,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
     ck_section_header, ck_section_intro, ck_signal_badge,
     ck_sticky_toc,
 )
@@ -611,6 +611,12 @@ def render_ic_memo(
             + '<div class="ck-toc-content">'
             + "\n".join(sections)
             + '</div></div>'
+            + ck_next_section(
+                "Open the IC packet",
+                "/diligence/ic-packet",
+                eyebrow="Continue —",
+                italic_word="packet",
+            )
         )
 
     return chartis_shell(
