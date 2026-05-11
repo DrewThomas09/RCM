@@ -4560,6 +4560,14 @@ class RCMHandler(BaseHTTPRequestHandler):
             body = (
                 checklist_section +
                 '<div class="cad-kpi-grid">'
+                '<a href="/day-one" class="cad-card" '
+                'style="text-decoration:none;color:inherit;">'
+                '<h3>Day One · Monday brief</h3>'
+                f'<div class="cad-muted">A curated five-volume '
+                'morning ritual — alerts, portfolio health, where '
+                'you left off, this week\'s pipeline, your journey. '
+                'Live editorial composition, not another dashboard.'
+                '</div></a>'
                 '<a href="/?tour=1" class="cad-card" '
                 'data-ck-tour-settings-tile '
                 'style="text-decoration:none;color:inherit;">'
@@ -5799,6 +5807,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_portfolio_overview()
         if path == "/portfolio/monitor":
             return self._route_portfolio_monitor()
+        if path == "/day-one":
+            from .ui.day_one_page import render_day_one
+            from .portfolio.store import PortfolioStore as _PS
+            store = _PS(self.config.db_path)
+            return self._send_html(render_day_one(store))
         if path.startswith("/models/dcf/"):
             deal_id = urllib.parse.unquote(path[len("/models/dcf/"):]).strip("/")
             return self._route_model_dcf(deal_id)

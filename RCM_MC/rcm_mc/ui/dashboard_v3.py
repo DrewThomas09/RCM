@@ -831,6 +831,7 @@ padding:12px 0;border-bottom:1px solid var(--cad-border);}
         + _tour_banner_styles()
         + '<div class="dv-container">'
         + '<div class="dv-toplinks">'
+        + '<a href="/day-one" class="ck-link">Today\'s brief →</a>'
         + '<a href="/data/catalog?ui=v3" class="ck-link">Data →</a>'
         + '<a href="/models/quality?ui=v3" class="ck-link">Models →</a>'
         + '</div>'
