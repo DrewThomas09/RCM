@@ -26,8 +26,8 @@ from ..diligence.deal_mc.charts import (
     sensitivity_tornado,
 )
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_page_title, ck_panel,
-    ck_section_intro,
+    P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
+    ck_panel, ck_section_intro,
 )
 from .power_ui import deal_context_bar, provenance
 
@@ -168,21 +168,72 @@ def _hero_stats(result: DealMCResult, scenario_name: str) -> str:
     )
     kpis = (
         '<div class="ck-kpi-strip">'
-        + ck_kpi_block("P25 MOIC", f"{result.moic_p25:.2f}x")
+        + ck_kpi_block(
+            "P25 MOIC", f"{result.moic_p25:.2f}x",
+            help={
+                "definition": (
+                    "25th percentile multiple on invested capital — "
+                    "the downside reasonable case. Partners should "
+                    "underwrite to P25 ≥ 1.5× in healthcare PE."
+                ),
+            },
+        )
         + ck_kpi_block(
             "P50 MOIC", f"{result.moic_p50:.2f}x",
             sub="fund target 2.50× · peer median 2.20×",
+            help={
+                "definition": (
+                    "Median multiple on invested capital across "
+                    "the Monte Carlo cone. The base case partners "
+                    "carry into IC. Fund targets typically 2.50×; "
+                    "peer median across healthcare PE deals 2.20×."
+                ),
+            },
         )
-        + ck_kpi_block("P75 MOIC", f"{result.moic_p75:.2f}x")
+        + ck_kpi_block(
+            "P75 MOIC", f"{result.moic_p75:.2f}x",
+            help={
+                "definition": (
+                    "75th percentile multiple — the upside reasonable "
+                    "case. Read alongside P25 to see the cone width: "
+                    "narrow (P75-P25 < 1.0×) = tight thesis, wide "
+                    "(> 2.0×) = thesis sensitive to execution."
+                ),
+            },
+        )
         + ck_kpi_block(
             "P50 IRR", f"{result.irr_p50*100:.1f}%",
             sub="fund target 25% · hurdle 18%",
+            help={
+                "definition": (
+                    "Median internal rate of return across the cone. "
+                    "Hurdle (18%) is the LPs' floor; fund target "
+                    "(25%) is the GP's promise. Below hurdle the "
+                    "deal can't carry; above target it's a winner."
+                ),
+            },
         )
         + ck_kpi_block(
             "P(MOIC < 1x)", f"{result.prob_sub_1x*100:.1f}%",
+            help={
+                "definition": (
+                    "Probability of losing capital — share of Monte "
+                    "Carlo paths where the deal returns less than "
+                    "1.0× invested equity. Anything above 10% gets "
+                    "an IC explanation; above 25% kills the deal."
+                ),
+            },
         )
         + ck_kpi_block(
             "P(MOIC ≥ 3x)", f"{result.prob_over_3x*100:.1f}%",
+            help={
+                "definition": (
+                    "Probability of a 3.0× home run — share of paths "
+                    "where the deal delivers 3.0× or better. Helps "
+                    "partners see whether the thesis has a real "
+                    "upside or is just a base-case story."
+                ),
+            },
         )
         + "</div>"
     )
@@ -573,6 +624,12 @@ def render_deal_mc_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         + exit_cta
         + _scenario_inputs_table(scn)
         + json_btn
+        + ck_next_section(
+            "Assemble the IC packet",
+            "/diligence/ic-packet",
+            eyebrow="Continue —",
+            italic_word="packet",
+        )
     )
     return chartis_shell(
         body, f"Deal MC — {scenario_name}",
