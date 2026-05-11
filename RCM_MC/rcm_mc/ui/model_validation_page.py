@@ -116,10 +116,46 @@ def render_model_validation(
         '<div class="ck-kpi-strip">'
         + ck_kpi_block("Predictions Made", f"{total_predictions:,}")
         + ck_kpi_block("Actuals Recorded", f"{total_actuals:,}")
-        + ck_kpi_block("Avg R²", f"{avg_r2:.1%}")
-        + ck_kpi_block("90% CI Coverage", f"{avg_coverage:.0%}")
+        + ck_kpi_block(
+            "Avg R²", f"{avg_r2:.1%}",
+            help={
+                "definition": (
+                    "Coefficient of determination — the share of "
+                    "variance in actual outcomes the predictor "
+                    "explains, averaged across all 38 metrics in "
+                    "the registry. 100% is perfect prediction; "
+                    "anything above ~60% is publishable in this "
+                    "domain."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "90% CI Coverage", f"{avg_coverage:.0%}",
+            help={
+                "definition": (
+                    "Conformal-prediction coverage — the share of "
+                    "actuals that fell inside the predictor's "
+                    "90% confidence band. A well-calibrated model "
+                    "lands at 90% ± a few points. Lower means the "
+                    "bands are too tight; higher means they're "
+                    "too generous."
+                ),
+                "citation": "rcm_mc/ml/conformal.py",
+            },
+        )
         + ck_kpi_block("Metrics Validated", f"{len(all_perfs)}")
-        + ck_kpi_block("Weakest Grade", _grade_badge(top_grade))
+        + ck_kpi_block(
+            "Weakest Grade", _grade_badge(top_grade),
+            help={
+                "definition": (
+                    "Lowest letter grade across all validated "
+                    "metrics. A-D maps to deciles of combined R² "
+                    "and CI calibration. The weakest grade is the "
+                    "first thing to fix before partners trust the "
+                    "predictor across the board."
+                ),
+            },
+        )
         + '</div>'
     )
 

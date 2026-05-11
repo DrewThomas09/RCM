@@ -18,6 +18,7 @@ URL-reproducible.
 from __future__ import annotations
 
 import html
+import urllib.parse
 from datetime import date
 from typing import Any, Dict, List, Optional
 
@@ -697,11 +698,47 @@ def render_ic_packet_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
     # modules skip when their inputs are missing) so we generate
     # the TOC from the rewritten body, not a hardcoded list.
     anchored_body, titles = _inject_h2_anchors(inner_body)
-    if titles:
+    # Print preview — partners frequently want to see the LP-facing
+    # version before they hit Cmd+P. ?print=1 wraps the packet body
+    # in .ck-print-preview (defined globally in chartis_shell CSS)
+    # which shrinks to an 880px centered card with a bone-toned
+    # control bar at top; the bar + the "Preview print version →"
+    # link in the default view both display:none in @media print.
+    preview = bool(qs.get("print"))
+    # Build the URL the "Exit preview" link points back to — same
+    # qs without the print flag — and the inverse URL the "Preview
+    # print version →" link uses from the default view.
+    base_qs = {k: v for k, v in qs.items() if k != "print"}
+    pq = urllib.parse.urlencode(
+        [(k, v[0] if isinstance(v, list) else v)
+         for k, v in base_qs.items()],
+        doseq=False,
+    )
+    preview_url = f"/diligence/ic-packet?{pq}&print=1"
+    exit_url = f"/diligence/ic-packet?{pq}"
+
+    if preview:
+        body_with_toc = (
+            '<div class="ck-print-preview">'
+            '<div class="ck-print-preview-bar">'
+            f'<span class="ck-print-preview-meta">Print preview · '
+            f'{html.escape(meta.deal_name)}</span>'
+            f'<a href="{html.escape(exit_url)}" '
+            'class="ck-print-preview-exit">Exit preview</a>'
+            '</div>'
+            + runtime_header
+            + anchored_body
+            + '</div>'
+        )
+    elif titles:
         toc_sections = [{"id": s, "title": t} for (s, t) in titles]
         toc = ck_sticky_toc(toc_sections)
         body_with_toc = (
-            runtime_header
+            '<div class="ck-print-preview-cta">'
+            f'<a href="{html.escape(preview_url)}" class="ck-link">'
+            'Preview print version →</a>'
+            '</div>'
+            + runtime_header
             + '<div class="ck-toc-layout">'
             + toc
             + '<div class="ck-toc-content">'
@@ -709,7 +746,13 @@ def render_ic_packet_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             + '</div></div>'
         )
     else:
-        body_with_toc = runtime_header + inner_body
+        body_with_toc = (
+            '<div class="ck-print-preview-cta">'
+            f'<a href="{html.escape(preview_url)}" class="ck-link">'
+            'Preview print version →</a>'
+            '</div>'
+            + runtime_header + inner_body
+        )
 
     return chartis_shell(
         body_with_toc,

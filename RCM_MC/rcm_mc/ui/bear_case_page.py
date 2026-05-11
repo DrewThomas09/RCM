@@ -188,14 +188,41 @@ def _verdict_card(
             "EBITDA at Risk",
             f"${report.combined_ebitda_at_risk_usd/1e6:,.1f}M{pct_frame}",
             sub="<3% clears IC · >10% material · >25% killable",
+            help={
+                "definition": (
+                    "Aggregated dollar EBITDA exposure across every "
+                    "critical and high bear-case item — not a sum "
+                    "of independent risks but a probability-"
+                    "weighted upper bound on what could be lost if "
+                    "the bear thesis plays out. Compare to the "
+                    "base-case EBITDA in the bridge."
+                ),
+            },
         )
         + ck_kpi_block(
             "Critical Items", f"{report.critical_count}",
             sub="thesis-breaking on their own",
+            help={
+                "definition": (
+                    "Risks severe enough that ANY one of them, on "
+                    "its own, kills the investment thesis. Examples: "
+                    "covenant default risk in Y1, payer "
+                    "concentration > 70% with a single payer at "
+                    "renegotiation, key-physician departure."
+                ),
+            },
         )
         + ck_kpi_block(
             "High Items", f"{report.high_count}",
             sub="IC-level risks",
+            help={
+                "definition": (
+                    "Material risks that an IC will discuss at "
+                    "length but won't kill the deal. Usually "
+                    "addressed via earn-outs, escrows, reps & "
+                    "warranties, or 100-day-plan mitigants."
+                ),
+            },
         )
         + ck_kpi_block(
             "Medium Items", f"{report.medium_count}",
@@ -204,6 +231,15 @@ def _verdict_card(
         + ck_kpi_block(
             "Modules Pulled", f"{len(report.sources_active)}",
             sub="evidence sources active",
+            help={
+                "definition": (
+                    "Number of platform analytics that contributed "
+                    "evidence to this bear case — covenant lab, "
+                    "denial prediction, regulatory calendar, "
+                    "bankruptcy scan, etc. More modules = a more "
+                    "defensible bear case at IC."
+                ),
+            },
         )
         + "</div>"
     )
