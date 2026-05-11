@@ -281,11 +281,52 @@ def render_scenario_modeler(
     )
     kpis = (
         '<div class="ck-kpi-strip">'
-        + ck_kpi_block("Net Revenue", _fm(rev))
-        + ck_kpi_block("Current EBITDA", _fm(ebitda))
-        + ck_kpi_block("Current Margin", f"{current_margin:.1%}")
+        + ck_kpi_block(
+            "Net Revenue", _fm(rev),
+            help={
+                "definition": (
+                    "Pre-shock NPR — the baseline against which every "
+                    "scenario in the comparison table is differenced. "
+                    "Each column shows how the scenario moves this "
+                    "number under its assumed shocks."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Current EBITDA", _fm(ebitda),
+            help={
+                "definition": (
+                    "Pre-shock Y0 EBITDA. Compare to the per-scenario "
+                    "EBITDA columns below to see absolute and "
+                    "percentage delta under each stress."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Current Margin", f"{current_margin:.1%}",
+            help={
+                "definition": (
+                    "Operating margin at baseline (EBITDA / NPR). "
+                    "Bank covenants test margins around base; the "
+                    "scenarios compress this number — partners read "
+                    "the column with the lowest margin as the "
+                    "covenant-stress case."
+                ),
+            },
+        )
         + ck_kpi_block("Beds", f"{beds:.0f}")
-        + ck_kpi_block("Medicare %", f"{mc_pct:.0%}")
+        + ck_kpi_block(
+            "Medicare %", f"{mc_pct:.0%}",
+            help={
+                "definition": (
+                    "Share of inpatient days paid by Medicare. "
+                    "Drives sensitivity to CMS rate updates and to "
+                    "the regulatory-calendar scenarios — higher "
+                    "Medicare = more exposure to federal reimbursement "
+                    "changes."
+                ),
+            },
+        )
         + '</div>'
     )
 

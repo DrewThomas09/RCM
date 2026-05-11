@@ -171,12 +171,72 @@ def render_portfolio_monitor(store: Any) -> str:
     )
     kpis = (
         '<div class="ck-kpi-strip">'
-        + ck_kpi_block("Active Deals", f"{n_deals}")
-        + ck_kpi_block("With Actuals", f"{n_with_actuals}")
-        + ck_kpi_block("Green", f"{green}")
-        + ck_kpi_block("Amber", f"{amber}")
-        + ck_kpi_block("Red", f"{red}")
-        + ck_kpi_block("Open Alerts", f"{n_alerts}")
+        + ck_kpi_block(
+            "Active Deals", f"{n_deals}",
+            help={
+                "definition": (
+                    "Deals still in hold — excludes exited / "
+                    "archived. The portfolio surface tracks each "
+                    "one's variance vs plan; the bands below split "
+                    "them by health."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "With Actuals", f"{n_with_actuals}",
+            help={
+                "definition": (
+                    "Deals with at least one quarter of actuals "
+                    "loaded. Variance bands only apply to these — "
+                    "deals with no actuals yet show neutral until "
+                    "Q1 reports."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Green", f"{green}",
+            help={
+                "definition": (
+                    "Deals tracking within 5% of plan on the "
+                    "composite health score. No partner action "
+                    "needed; the watchlist surfaces these as "
+                    "background."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Amber", f"{amber}",
+            help={
+                "definition": (
+                    "Deals tracking 5-15% below plan. Partner sees "
+                    "the variance, no escalation required yet — "
+                    "the alerts panel below explains the cohort "
+                    "drift."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Red", f"{red}",
+            help={
+                "definition": (
+                    "Deals tracking >15% below plan OR covenant-"
+                    "headroom narrowing. Triggers escalation to "
+                    "the deal-owning partner; LP digest carries a "
+                    "narrative on each."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Open Alerts", f"{n_alerts}",
+            help={
+                "definition": (
+                    "Active alerts across the portfolio not yet "
+                    "acked or snoozed. Click into /alerts to "
+                    "triage — each carries severity, age, and the "
+                    "ack form."
+                ),
+            },
+        )
         + '</div>'
     )
 
