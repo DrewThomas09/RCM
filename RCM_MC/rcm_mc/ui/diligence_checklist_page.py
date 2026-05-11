@@ -28,7 +28,7 @@ from ..diligence.checklist import (
 from ..diligence.checklist.items import build_checklist
 from ._chartis_kit import (
     P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
-    ck_panel, ck_section_header, ck_section_intro,
+    ck_panel, ck_section_header, ck_section_intro, ck_sticky_toc,
 )
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
@@ -556,20 +556,37 @@ def render_diligence_checklist_page(
             "auto-tracked from live analytics"
         ),
     )
+    # Sticky right-rail TOC — the checklist has three vertical
+    # sections (the hero + open questions, the phase-grouped item
+    # list, and the flat sortable table). Partners come back to a
+    # specific phase mid-diligence; the TOC lets them jump.
+    toc = ck_sticky_toc([
+        {"id": "dc-hero",   "title": "Open questions"},
+        {"id": "dc-phases", "title": "Items by phase"},
+        {"id": "dc-flat",   "title": "Flat view · CSV"},
+    ])
     body = (
         _scoped_styles()
         + title
         + '<div class="dc-wrap">'
-        + hero_and_oq
+        + '<div class="ck-toc-layout">'
+        + toc
+        + '<div class="ck-toc-content">'
+        + f'<section id="dc-hero">{hero_and_oq}</section>'
+        + '<section id="dc-phases">'
         + ck_section_header(
             "Items by phase · click an evidence link to drill in",
             eyebrow="PHASES",
         )
         + phase_html
+        + '</section>'
+        + '<section id="dc-flat">'
         + ck_panel(
             _flat_checklist_table(state),
             title="Flat view · sortable · filterable · CSV export",
         )
+        + '</section>'
+        + '</div></div>'
         + '</div>'
         + bookmark_hint()
         + ck_next_section(

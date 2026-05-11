@@ -481,16 +481,38 @@ def render_portfolio_overview(
         '</div>'
     )
 
-    from ._chartis_kit import ck_next_section
+    from ._chartis_kit import ck_next_section, ck_sticky_toc
     next_up = ck_next_section(
         "Open Day One — the Monday brief",
         "/day-one",
         eyebrow="Continue —",
         italic_word="Day",
     )
+    # Sticky right-rail TOC — the portfolio page has six distinct
+    # vertical sections; partners commonly jump straight to the deals
+    # table or the regression instead of scrolling past the KPIs.
+    toc = ck_sticky_toc([
+        {"id": "po-kpis",        "title": "Headline numbers"},
+        {"id": "po-health",      "title": "Health mosaic"},
+        {"id": "po-opportunity", "title": "Opportunity ranking"},
+        {"id": "po-synergy",     "title": "Cross-portfolio synergies"},
+        {"id": "po-table",       "title": "Deals table"},
+        {"id": "po-regression",  "title": "Cross-deal regression"},
+    ])
     body = (
-        f'{page_head}{kpis}{health_bar}{opportunity}'
-        f'{synergy_section}{table}{regression}{nav_links}{next_up}'
+        page_head
+        + '<div class="ck-toc-layout">'
+        + toc
+        + '<div class="ck-toc-content">'
+        + f'<section id="po-kpis">{kpis}</section>'
+        + f'<section id="po-health">{health_bar}</section>'
+        + f'<section id="po-opportunity">{opportunity}</section>'
+        + f'<section id="po-synergy">{synergy_section}</section>'
+        + f'<section id="po-table">{table}</section>'
+        + f'<section id="po-regression">{regression}</section>'
+        + f'{nav_links}'
+        + '</div></div>'
+        + next_up
     )
 
     return chartis_shell(
