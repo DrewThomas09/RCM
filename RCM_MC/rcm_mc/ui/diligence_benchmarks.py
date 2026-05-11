@@ -522,8 +522,8 @@ def _cash_waterfall_section(report: Optional[CashWaterfallReport]) -> str:
     # Cascade table. One row per cohort × step; ALL-payers roll-up.
     if not mature:
         body_rows = (
-            f'<tr><td colspan="5" style="padding:12px;color:{P["text_faint"]};'
-            f'font-style:italic;">No mature cohorts at as-of '
+            '<tr><td colspan="5" class="ck-empty-row">'
+            '<em>No mature cohorts</em> at as-of '
             f'{report.as_of_date.isoformat()}.</td></tr>'
         )
     else:
@@ -727,8 +727,9 @@ def _per_payer_class_table(report: CashWaterfallReport) -> str:
             rows.append(
                 '<tr>'
                 f'<td class="mono" style="color:{P["text"]};">{html.escape(pc)}</td>'
-                f'<td colspan="6" style="color:{P["text_faint"]};font-style:italic;">'
-                f'{in_flight} cohort(s) in-flight — insufficient data'
+                f'<td colspan="6" class="ck-empty-row">'
+                f'<em>{in_flight} cohort(s) in-flight</em> — '
+                'insufficient data'
                 f'</td>'
                 '</tr>'
             )

@@ -343,7 +343,13 @@ def render_find_comps(params: Dict[str, str]) -> str:
         rows = "".join(_comp_row(i, d, scores[id(d)], None) for i, d in enumerate(comps))
 
         if not comps:
-            rows = f'<tr><td colspan="12" style="padding:20px;text-align:center;color:{P["text_dim"]};font-size:12px">No comparables found. Try broadening the sector or removing some filters.</td></tr>'
+            rows = (
+                '<tr><td colspan="12" class="ck-empty-row" '
+                'style="text-align:center;">'
+                '<em>No comparables found.</em> '
+                'Try broadening the sector or removing some filters.'
+                '</td></tr>'
+            )
 
         result_html = f"""
 {benchmark}
