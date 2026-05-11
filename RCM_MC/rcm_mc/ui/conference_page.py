@@ -10,7 +10,8 @@ import urllib.parse as _urlparse
 from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+    chartis_shell, ck_fmt_num, ck_kpi_block, ck_next_section,
+    ck_provenance_tooltip,
 )
 from .brand import PALETTE
 
@@ -403,12 +404,19 @@ def render_conference_roadmap(category: str = "all") -> str:
         f'</ul></div>'
     )
 
+    next_up = ck_next_section(
+        "Open the deal sourcing surface",
+        "/source",
+        eyebrow="Continue —",
+        italic_word="sourcing",
+    )
     body = (
         f'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">{cat_tabs}</div>'
         f'<div style="display:grid;grid-template-columns:1fr 300px;gap:16px;">'
         f'<div>{timeline_html}</div>'
         f'<div>{summary}{planning_tips}</div>'
         f'</div>'
+        f'{next_up}'
     )
 
     return chartis_shell(

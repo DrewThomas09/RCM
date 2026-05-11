@@ -13,7 +13,8 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_num, ck_fmt_pct, ck_kpi_block, ck_provenance_tooltip,
+    chartis_shell, ck_fmt_num, ck_fmt_pct, ck_kpi_block, ck_next_section,
+    ck_provenance_tooltip,
 )
 from ._glossary_link import metric_label_link
 from ._provenance_tooltip import provenance_tooltip
@@ -413,7 +414,13 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
         f'</div>'
     )
 
-    body = f'{kpis}{percentile_section}{gap_section}{peer_section}{nav}'
+    next_up = ck_next_section(
+        "Take this peer view back into the deal profile",
+        f"/deal/{_html.escape(ccn)}",
+        eyebrow="Continue —",
+        italic_word="profile",
+    )
+    body = f'{kpis}{percentile_section}{gap_section}{peer_section}{nav}{next_up}'
 
     return chartis_shell(
         body,

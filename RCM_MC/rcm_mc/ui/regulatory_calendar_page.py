@@ -30,7 +30,8 @@ from ..diligence.regulatory_calendar.killswitch import (
 )
 from ._chartis_kit import (
     P, chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip, ck_section_intro, ck_signal_badge,
+    ck_next_section, ck_provenance_tooltip, ck_section_intro,
+    ck_signal_badge,
 )
 from .power_ui import (
     benchmark_chip, bookmark_hint, deal_context_bar,
@@ -1195,6 +1196,12 @@ def render_regulatory_calendar_page(
         )
         + bookmark_hint()
         + '</div>'
+        + ck_next_section(
+            "Stress-test these dates against the bridge",
+            "/diligence/bridge-audit",
+            eyebrow="Continue —",
+            italic_word="bridge",
+        )
     )
     return chartis_shell(
         body, "RCM Diligence — Regulatory Calendar",
