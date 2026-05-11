@@ -8,7 +8,8 @@ import html
 from typing import Any, Dict, List
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_panel, ck_section_intro,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_intro,
 )
 from .models_page import _model_nav
 from .brand import PALETTE
@@ -142,7 +143,13 @@ def render_value_bridge(deal_id: str, deal_name: str, bridge: Dict[str, Any]) ->
     )
 
     nav = _model_nav(deal_id, "bridge")
-    body = f'{_PE_STYLES}{nav}{intro}{kpis}{bridge_section}{interp}{actions}'
+    next_up = ck_next_section(
+        "Open the playbook",
+        f"/models/playbook/{html.escape(deal_id)}",
+        eyebrow="Continue —",
+        italic_word="playbook",
+    )
+    body = f'{_PE_STYLES}{nav}{intro}{kpis}{bridge_section}{interp}{actions}{next_up}'
     return chartis_shell(body, f"Value Bridge — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"Current ${current/1e6:.0f}M → Target ${(current+total_impact)/1e6:.0f}M (+${total_impact/1e6:.1f}M)")
@@ -196,6 +203,12 @@ def render_comparable_hospitals(deal_id: str, deal_name: str,
             f'<a href="/analysis/{html.escape(deal_id)}" class="cad-btn cad-btn-primary">Full Analysis</a>'
             '</p>',
             title="Cross-links",
+        )
+        + ck_next_section(
+            "Open the market analysis",
+            f"/models/market/{html.escape(deal_id)}",
+            eyebrow="Continue —",
+            italic_word="market",
         )
     )
 
@@ -262,6 +275,12 @@ def render_anomaly_report(deal_id: str, deal_name: str,
             '</p>',
             title="Cross-links",
         )
+        + ck_next_section(
+            "Open the diligence questions",
+            f"/models/questions/{html.escape(deal_id)}",
+            eyebrow="Continue —",
+            italic_word="questions",
+        )
     )
 
     return chartis_shell(body, f"Anomaly Report — {html.escape(deal_name)}",
@@ -326,6 +345,12 @@ def render_service_lines(deal_id: str, deal_name: str,
             f'<a href="/analysis/{html.escape(deal_id)}" class="cad-btn cad-btn-primary">Full Analysis</a>'
             '</p>',
             title="Cross-links",
+        )
+        + ck_next_section(
+            "Open denial drivers",
+            f"/models/denial/{html.escape(deal_id)}",
+            eyebrow="Continue —",
+            italic_word="denial",
         )
     )
 

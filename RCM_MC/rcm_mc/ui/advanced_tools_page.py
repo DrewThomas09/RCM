@@ -8,7 +8,7 @@ import html
 from typing import Any, Dict, List
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_panel,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
     ck_section_intro, ck_signal_badge,
 )
 from .models_page import _model_nav
@@ -92,7 +92,13 @@ def render_debt_model(deal_id: str, deal_name: str, debt: Dict[str, Any]) -> str
     ) if entry_leverage > 0 else ""
 
     nav = _model_nav(deal_id, "debt")
-    body = f'{nav}{intro}{kpis}{table}{interp}{actions}'
+    next_up = ck_next_section(
+        "Open returns & covenant",
+        f"/models/returns/{html.escape(deal_id)}",
+        eyebrow="Continue —",
+        italic_word="returns",
+    )
+    body = f'{nav}{intro}{kpis}{table}{interp}{actions}{next_up}'
     return chartis_shell(body, f"Debt Model — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"Leverage: {entry_leverage:.1f}x entry → {exit_leverage:.1f}x exit")
@@ -162,7 +168,13 @@ def render_challenge_solver(deal_id: str, deal_name: str, result: Dict[str, Any]
         )
 
     nav = _model_nav(deal_id, "challenge")
-    body = f'{nav}{intro}{kpis}{table}{interp}'
+    next_up = ck_next_section(
+        "Open the pressure test",
+        f"/pressure?deal_id={html.escape(deal_id)}",
+        eyebrow="Continue —",
+        italic_word="pressure",
+    )
+    body = f'{nav}{intro}{kpis}{table}{interp}{next_up}'
     return chartis_shell(body, f"Challenge Solver — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle="Reverse solver: what breaks the deal?")
@@ -300,6 +312,12 @@ def render_trend_forecast(deal_id: str, deal_name: str, trends: List[Dict[str, A
             f'<a href="/deal/{html.escape(deal_id)}" class="cad-btn cad-btn-primary">Deal Dashboard</a>'
             '</p>',
             title="Cross-links",
+        )
+        + ck_next_section(
+            "Open anomaly detection",
+            f"/models/anomalies/{html.escape(deal_id)}",
+            eyebrow="Continue —",
+            italic_word="anomaly",
         )
     )
 

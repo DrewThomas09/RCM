@@ -25,7 +25,7 @@ from ..engagement import (
     Comment, Deliverable, Engagement, EngagementMember, EngagementRole,
 )
 from ._chartis_kit import (
-    P, chartis_shell, ck_panel, ck_section_header,
+    P, chartis_shell, ck_next_section, ck_panel, ck_section_header,
     ck_section_intro, ck_signal_badge,
 )
 
@@ -117,6 +117,12 @@ def render_engagement_list(
         f'</tr></thead>'
         f'<tbody>{"".join(rows)}{empty_msg}</tbody></table>'
         f'{create_form}'
+        + ck_next_section(
+            "Open the diligence checklist",
+            "/diligence/checklist",
+            eyebrow="Continue —",
+            italic_word="checklist",
+        )
     )
     return chartis_shell(
         body, "RCM Diligence — Engagements",
@@ -163,6 +169,12 @@ def render_engagement_detail(
             can_comment=can_comment,
         )
     )
+    body_parts.append(ck_next_section(
+        "Back to all engagements",
+        "/engagements",
+        eyebrow="Continue —",
+        italic_word="engagements",
+    ))
     return chartis_shell(
         "\n".join(body_parts),
         f"Engagement — {engagement.engagement_id}",

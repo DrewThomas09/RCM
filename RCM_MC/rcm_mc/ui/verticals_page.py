@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip,
+    ck_next_section, ck_provenance_tooltip,
 )
 from ..verticals.asc.ontology import ASC_METRIC_REGISTRY  # noqa: F401
 from ..verticals.behavioral_health.ontology import BH_METRIC_REGISTRY  # noqa: F401
@@ -189,6 +189,12 @@ def render_verticals() -> str:
         + '</div>'
     )
 
+    next_up = ck_next_section(
+        "Open the metric glossary",
+        "/metric-glossary",
+        eyebrow="Continue —",
+        italic_word="metrics",
+    )
     body = (
         ck_eyebrow("Healthcare Verticals")
         + kpi_strip
@@ -199,6 +205,7 @@ def render_verticals() -> str:
         f'</div>'
         f'{cards}'
         f'{registry_html}'
+        + next_up
     )
 
     return chartis_shell(
