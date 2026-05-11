@@ -617,6 +617,53 @@ display:flex;align-items:baseline;gap:6px;}}
 .ck-dp-card-state[hidden]{{display:none !important;}}
 .ck-dp-card-state-dot{{width:5px;height:5px;border-radius:50%;
 background:{P["accent"]};display:inline-block;flex-shrink:0;}}
+/* "Compare with…" disclosure on the deal-profile hero. Editorial
+   native <details>/<summary> styled with a serif label + JetBrains-
+   Mono caret + parchment menu surface. JS populates the inner list
+   from rcm_recent_deals (minus the current slug) on every open. */
+.ck-dp-cmpw{{position:relative;display:inline-block;}}
+.ck-dp-cmpw-summary{{list-style:none;cursor:pointer;
+font-family:"Source Serif 4",serif;font-size:13.5px;
+color:{P["accent"]};padding:6px 12px;border:1px solid {P["border"]};
+border-radius:3px;background:{P["panel"]};
+display:inline-flex;align-items:baseline;gap:6px;
+transition:border-color 120ms ease, background 120ms ease;
+user-select:none;}}
+.ck-dp-cmpw-summary::-webkit-details-marker{{display:none;}}
+.ck-dp-cmpw-summary:hover{{border-color:{P["accent"]};
+background:{P["panel_alt"]};}}
+.ck-dp-cmpw-caret{{font-family:"JetBrains Mono",monospace;
+font-size:10px;color:{P["text_faint"]};
+transition:transform 160ms ease;}}
+.ck-dp-cmpw[open] .ck-dp-cmpw-caret{{transform:rotate(180deg);}}
+.ck-dp-cmpw-menu{{position:absolute;top:calc(100% + 6px);left:0;
+min-width:300px;max-width:400px;
+background:{P["panel"]};border:1px solid {P["border"]};
+border-radius:3px;box-shadow:0 12px 32px rgba(11,35,65,0.12);
+padding:10px 0;z-index:20;
+font-family:"Source Serif 4",serif;}}
+.ck-dp-cmpw-empty{{padding:12px 16px;font-style:italic;
+font-size:13px;color:{P["text_faint"]};max-width:34ch;
+line-height:1.5;}}
+.ck-dp-cmpw-list{{list-style:none;margin:0;padding:0;}}
+.ck-dp-cmpw-row{{}}
+.ck-dp-cmpw-link{{display:flex;align-items:baseline;
+justify-content:space-between;gap:14px;
+padding:10px 16px;text-decoration:none;color:inherit;
+transition:background 120ms ease;}}
+.ck-dp-cmpw-link:hover{{background:{P["panel_alt"]};}}
+.ck-dp-cmpw-link-name{{font-size:14px;color:{P["text"]};
+font-weight:500;}}
+.ck-dp-cmpw-link-name em{{font-style:italic;color:{P["accent"]};}}
+.ck-dp-cmpw-link-slug{{font-family:"JetBrains Mono",monospace;
+font-size:10px;letter-spacing:0.12em;text-transform:uppercase;
+color:{P["text_faint"]};}}
+.ck-dp-cmpw-disabled{{padding:10px 16px;font-style:italic;
+font-size:12px;color:{P["text_faint"]};
+border-top:1px solid {P["border"]};margin-top:4px;
+max-width:34ch;line-height:1.5;}}
+@media print{{.ck-dp-cmpw{{display:none !important;}}}}
+
 .ck-dp-pulse{{margin:16px 0 22px;padding:18px 22px;
 background:{P["panel_alt"]};border:1px solid {P["border"]};
 border-radius:4px;}}
@@ -1693,6 +1740,98 @@ def _inline_js(slug: str) -> str:
     } catch (err) { /* quota / disabled — ignore */ }
   });
 
+  // "Compare with…" disclosure — populate the menu from
+  // rcm_recent_deals every time the disclosure opens so newly-viewed
+  // deals show up immediately. Each row links to /diligence/compare
+  // with both datasets when available; falls back to the picker
+  // when either side is missing a dataset. The current slug is
+  // excluded from the list (no compare-to-self).
+  function escHtml(s) {
+    var d = document.createElement("div");
+    d.textContent = String(s || "");
+    return d.innerHTML;
+  }
+  function paintCompareWith() {
+    var details = document.querySelector("[data-rcm-cmpw]");
+    if (!details) return;
+    var thisSlug = details.getAttribute("data-rcm-cmpw-slug") || slug;
+    var list = details.querySelector("[data-rcm-cmpw-list]");
+    var empty = details.querySelector("[data-rcm-cmpw-empty]");
+    if (!list) return;
+    var rows = [];
+    try {
+      var raw = localStorage.getItem("rcm_recent_deals");
+      rows = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(rows)) rows = [];
+    } catch (e) { rows = []; }
+    rows = rows.filter(function(r) {
+      return r && r.slug && r.slug !== thisSlug;
+    }).slice(0, 5);
+    var thisDataset = "";
+    try {
+      var prof = localStorage.getItem("rcm_deal_" + thisSlug);
+      if (prof) {
+        var p = JSON.parse(prof);
+        thisDataset = (p && p.dataset) ? p.dataset : "";
+      }
+    } catch (e) { thisDataset = ""; }
+    if (rows.length === 0) {
+      if (empty) empty.hidden = false;
+      list.innerHTML = "";
+      return;
+    }
+    if (empty) empty.hidden = true;
+    list.innerHTML = rows.map(function(r) {
+      var dsRight = "";
+      try {
+        var raw2 = localStorage.getItem("rcm_deal_" + r.slug);
+        if (raw2) {
+          var p2 = JSON.parse(raw2);
+          dsRight = (p2 && p2.dataset) ? p2.dataset : "";
+        }
+      } catch (e) { dsRight = ""; }
+      var href;
+      if (thisDataset && dsRight) {
+        href = "/diligence/compare?left=" +
+          encodeURIComponent(thisDataset) + "&right=" +
+          encodeURIComponent(dsRight);
+      } else {
+        href = "/diligence/compare";
+      }
+      return '<li class="ck-dp-cmpw-row">' +
+        '<a class="ck-dp-cmpw-link" href="' + escHtml(href) + '">' +
+        '<span class="ck-dp-cmpw-link-name">' +
+        '<em>' + escHtml(r.name || r.slug) + '</em>' +
+        '</span>' +
+        '<span class="ck-dp-cmpw-link-slug">' + escHtml(r.slug) +
+        '</span>' +
+        '</a></li>';
+    }).join("");
+    // If THIS deal has no dataset stored, show a small italic
+    // editorial note explaining the picker fallback.
+    if (!thisDataset) {
+      var existing = details.querySelector(".ck-dp-cmpw-disabled");
+      if (!existing) {
+        var note = document.createElement("div");
+        note.className = "ck-dp-cmpw-disabled";
+        note.textContent =
+          "Save the deal-profile dataset to enable direct " +
+          "side-by-side. Without it, the comparison opens the picker.";
+        details.querySelector("[data-rcm-cmpw-menu]").appendChild(note);
+      }
+    }
+  }
+  // Repaint every time the disclosure opens (rcm_recent_deals can
+  // change between visits to the deal-profile)
+  var cmpwDetails = document.querySelector("[data-rcm-cmpw]");
+  if (cmpwDetails) {
+    cmpwDetails.addEventListener("toggle", function() {
+      if (cmpwDetails.open) paintCompareWith();
+    });
+    // Paint once on load so the keyboard-only path also works
+    document.addEventListener("DOMContentLoaded", paintCompareWith);
+  }
+
   // Diligence pulse — hydrate from the same visited map. Three
   // tiles: tools opened, last touched (label + relative ts),
   // progress bar (count / total). Section stays hidden until at
@@ -1854,8 +1993,30 @@ def render_deal_profile_page(
             "the tool opens with your deal context already populated."
         ),
     ) + (
-        '<p class="ck-section-body">'
-        '<a href="/diligence/deal" class="cad-btn">Pick Another Slug →</a>'
+        '<p class="ck-section-body" style="display:flex;gap:14px;'
+        'align-items:baseline;flex-wrap:wrap;">'
+        '<a href="/diligence/deal" class="cad-btn">'
+        'Pick Another Slug →</a>'
+        # "Compare with…" disclosure — partners pick a recently-
+        # viewed deal as the right-hand side of a side-by-side
+        # comparison without leaving the profile. JS populates the
+        # list from rcm_recent_deals on every open so newly-viewed
+        # deals show up immediately. The current slug is filtered
+        # out of the list so partners can't compare a deal to
+        # itself.
+        '<details class="ck-dp-cmpw" '
+        f'data-rcm-cmpw data-rcm-cmpw-slug="{html.escape(slug)}">'
+        '<summary class="ck-dp-cmpw-summary">'
+        'Compare with… '
+        '<span aria-hidden="true" class="ck-dp-cmpw-caret">▾</span>'
+        '</summary>'
+        '<div class="ck-dp-cmpw-menu" data-rcm-cmpw-menu>'
+        '<div class="ck-dp-cmpw-empty" data-rcm-cmpw-empty hidden>'
+        'No other deals open yet. Visit a second deal to enable '
+        'side-by-side.</div>'
+        '<ol class="ck-dp-cmpw-list" data-rcm-cmpw-list></ol>'
+        '</div>'
+        '</details>'
         '</p>'
     )
     # Prominent "Run Full Pipeline" CTA — the single highest-leverage
