@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip,
+    ck_next_section, ck_provenance_tooltip,
 )
 from ..portfolio.store import PortfolioStore
 from .brand import PALETTE
@@ -142,11 +142,19 @@ def render_team_dashboard(db_path: str) -> str:
         f'</div>'
     )
 
+    next_up = ck_next_section(
+        "Open the portfolio for context",
+        "/portfolio",
+        eyebrow="Continue —",
+        italic_word="portfolio",
+    )
+
     body = (
         f'{kpis}'
         f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
         f'<div>{feed_section}</div><div>{pipe_section}</div></div>'
         f'{nav}'
+        f'{next_up}'
     )
 
     return chartis_shell(

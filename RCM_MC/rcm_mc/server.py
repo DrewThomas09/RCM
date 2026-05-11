@@ -12701,6 +12701,13 @@ class RCMHandler(BaseHTTPRequestHandler):
                 f'<th>Avg health</th><th></th>'
                 f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
             )
+        from .ui._chartis_kit import ck_next_section
+        body = body + ck_next_section(
+            "Open the portfolio for context",
+            "/portfolio",
+            eyebrow="Continue —",
+            italic_word="portfolio",
+        )
         self._send_html(shell(
             body=body, title="Owners",
             subtitle="Deal assignments",
