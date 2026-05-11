@@ -232,17 +232,54 @@ def render_hospital_history(
         + ck_kpi_block(
             f"Latest Revenue (FY{int(years[-1]) if years else '?'})",
             _fmt_m(revs[-1]) if revs else "—",
+            help={
+                "definition": (
+                    "Most-recent fiscal-year revenue from CMS HCRIS. "
+                    "Lags the calendar by ~18 months due to filing "
+                    "cadence; treat as a structural baseline, not a "
+                    "current quarter."
+                ),
+                "citation": "CMS HCRIS",
+            },
         )
         + ck_kpi_block(
             f"Revenue CAGR ({n_years}yr)", f"{rev_cagr:+.1%}",
+            help={
+                "definition": (
+                    "Compound annual growth rate of revenue across "
+                    "the available HCRIS years. Healthcare margins "
+                    "are tight — partners look for 3-6% organic "
+                    "growth in community hospitals; >10% usually "
+                    "means a step-change (acquisition, service-line "
+                    "launch) worth understanding separately."
+                ),
+            },
         )
         + ck_kpi_block(
             "Latest Margin",
             f"{margins[-1]:.1%}" if margins else "—",
+            help={
+                "definition": (
+                    "Operating margin in the most-recent fiscal "
+                    "year. Read alongside the trend line below — a "
+                    "high latest margin on a declining slope is "
+                    "different from a stable mediocre margin."
+                ),
+            },
         )
         + ck_kpi_block(
             "COVID Resilience", f"{covid_score}/100",
             sub=html.escape(covid_label),
+            help={
+                "definition": (
+                    "Composite score measuring how the hospital "
+                    "weathered the 2020-2022 disruption. Reads "
+                    "margin recovery speed, revenue trough depth, "
+                    "and post-COVID re-baseline. 80+ = stress-"
+                    "tested; <40 = the hospital is structurally "
+                    "weaker than its peers."
+                ),
+            },
         )
         + '</div>'
     )

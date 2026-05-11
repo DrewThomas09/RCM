@@ -306,6 +306,14 @@ def _verdict_card(report: BridgeAuditReport) -> str:
             "Banker Claim",
             f"${report.claimed_bridge_usd/1e6:.1f}M",
             sub="total sell-side bridge",
+            help={
+                "definition": (
+                    "Sum of all EBITDA uplift claimed in the "
+                    "seller's CIM bridge. Partners read this as "
+                    "the asking number; the audit below splits it "
+                    "into what realistically realises."
+                ),
+            },
         )
         + ck_kpi_block(
             "Realistic (P50)",
@@ -314,10 +322,31 @@ def _verdict_card(report: BridgeAuditReport) -> str:
                 f"P25 ${report.realistic_bridge_p25_usd/1e6:.1f}M – "
                 f"P75 ${report.realistic_bridge_p75_usd/1e6:.1f}M"
             ),
+            help={
+                "definition": (
+                    "Realisation-probability-weighted bridge — each "
+                    "lever's claim discounted by historical "
+                    "achievement rates for that lever type. The "
+                    "P25-P75 band shows the range across reasonable "
+                    "execution paths; partners price the deal off "
+                    "P25, not the banker claim."
+                ),
+                "citation": "rcm_mc/pe/rcm_ebitda_bridge.py "
+                            "realization priors",
+            },
         )
         + ck_kpi_block(
             "Gap", gap_val,
             sub=f"{report.gap_pct*100:+.0f}% of claim",
+            help={
+                "definition": (
+                    "Realistic minus Banker Claim — usually "
+                    "negative. Above -20% the bridge is credible; "
+                    "-20% to -40% requires structural mitigants; "
+                    "below -40% the bridge is largely unsupported "
+                    "and the deal needs to reprice."
+                ),
+            },
         )
         + ck_kpi_block(
             "Levers Audited", f"{len(report.per_lever)}",
@@ -326,6 +355,15 @@ def _verdict_card(report: BridgeAuditReport) -> str:
                 f"{report.unsupported_count} unsupported · "
                 f"{report.realistic_count} realistic"
             ),
+            help={
+                "definition": (
+                    "Count of individual bridge items the audit "
+                    "scored. Overstated = claim above the realistic "
+                    "P75; unsupported = no evidence in the CIM; "
+                    "realistic = claim sits inside P25-P75. Each "
+                    "is a discrete negotiation lever."
+                ),
+            },
         )
         + "</div>"
     )

@@ -248,18 +248,50 @@ def _hero(
         + ck_kpi_block(
             "Roster collections", coll_num,
             sub=f"{report.roster_size} providers · sum annual",
+            help={
+                "definition": (
+                    "Sum of annual professional collections across "
+                    "the roster. The denominator for contribution "
+                    "margin and the comp-to-revenue ratio."
+                ),
+            },
         )
         + ck_kpi_block(
             "Total comp", comp_num,
             sub=f"{total_comp/total_coll*100 if total_coll > 0 else 0:.1f}% of revenue",
+            help={
+                "definition": (
+                    "Sum of physician compensation (base + RVU + "
+                    "bonus). Peer-norm comp-to-revenue runs 45-55% "
+                    "for hospital-based specialties; >60% signals "
+                    "under-leveraged practice economics."
+                ),
+            },
         )
         + ck_kpi_block(
             "Aggregate contribution", contrib_num,
             sub=f"{margin_num} margin · peer norm 30-40%",
+            help={
+                "definition": (
+                    "Collections minus comp minus practice expenses "
+                    "= contribution to facility/management. Peer "
+                    "norm 30-40%; below 20% the practice is on the "
+                    "edge of subsidising its own roster."
+                ),
+            },
         )
         + ck_kpi_block(
             "Loss-makers", f"{report.loss_makers_at_current_comp}",
             sub=f"observed · {report.loss_makers_at_fmv_comp} @ FMV",
+            help={
+                "definition": (
+                    "Count of providers whose comp exceeds their "
+                    "personal collections — they cost the practice "
+                    "money. The 'at FMV' column shows how many "
+                    "would still be loss-makers if comp were "
+                    "renegotiated to fair-market-value benchmark."
+                ),
+            },
         )
         + '</div>'
     )
