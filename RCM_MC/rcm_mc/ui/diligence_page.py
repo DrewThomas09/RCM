@@ -9,7 +9,8 @@ import html
 from typing import Any, Dict, List
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_panel, ck_section_header,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_header,
 )
 from .models_page import _model_nav
 from .brand import PALETTE
@@ -89,6 +90,12 @@ def render_diligence_questions(deal_id: str, deal_name: str, questions: List[Dic
         + ck_panel(questions_table, title="Diligence Questions")
         + ck_panel(how_to_use, title="How to Use This")
         + ck_panel(actions, title="Next steps")
+        + ck_next_section(
+            "Open the portfolio-wide question ledger",
+            "/diligence/questions",
+            eyebrow="Continue —",
+            italic_word="ledger",
+        )
     )
 
     return chartis_shell(body, f"Diligence Questions — {html.escape(deal_name)}",

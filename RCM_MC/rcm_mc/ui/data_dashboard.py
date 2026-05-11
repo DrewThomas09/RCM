@@ -13,7 +13,8 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+    chartis_shell, ck_fmt_num, ck_kpi_block, ck_next_section,
+    ck_provenance_tooltip,
 )
 from .brand import PALETTE
 
@@ -261,11 +262,18 @@ def render_data_dashboard(hcris_df: pd.DataFrame) -> str:
     left = f'{comp_section}{bed_section}{fy_section}'
     right = f'{state_section}{rev_section}'
 
+    next_up = ck_next_section(
+        "Refresh the public-data loaders",
+        "/data-refresh",
+        eyebrow="Continue —",
+        italic_word="refresh",
+    )
     body = (
         f'{kpis}{sources}'
         f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
         f'<div>{left}</div><div>{right}</div></div>'
         f'{nav}'
+        f'{next_up}'
     )
 
     return chartis_shell(

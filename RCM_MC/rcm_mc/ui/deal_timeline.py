@@ -203,7 +203,7 @@ def render_timeline(
     """Full-page timeline HTML."""
     from ._chartis_kit import (
         chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-        ck_provenance_tooltip,
+        ck_next_section, ck_provenance_tooltip,
     )
 
     if not events:
@@ -280,8 +280,14 @@ def render_timeline(
         + '</div>'
     )
 
+    next_up = ck_next_section(
+        "Back to the deal profile",
+        f"/deal/{_esc(deal_id)}",
+        eyebrow="Continue —",
+        italic_word="profile",
+    )
     return chartis_shell(
-        ck_eyebrow("Activity Timeline") + kpi_strip + f'<div>{"".join(cards)}</div>',
+        ck_eyebrow("Activity Timeline") + kpi_strip + f'<div>{"".join(cards)}</div>' + next_up,
         f"{deal_name} — Timeline",
         subtitle=f"{len(events)} events",
         extra_css=css,

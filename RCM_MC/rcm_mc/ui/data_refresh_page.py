@@ -150,7 +150,7 @@ _CLIENT_JS = r"""
 def render_data_refresh_page(db_path: str) -> str:
     from ._chartis_kit import (
         chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-        ck_provenance_tooltip,
+        ck_next_section, ck_provenance_tooltip,
     )
     from . import _web_components as _wc
 
@@ -239,12 +239,19 @@ def render_data_refresh_page(db_path: str) -> str:
         + '</div>'
     )
 
+    next_up = ck_next_section(
+        "Open the data catalog",
+        "/data",
+        eyebrow="Continue —",
+        italic_word="catalog",
+    )
     body = (
         _wc.web_styles()
         + _wc.responsive_container(ck_eyebrow("Data Refresh") + kpi_strip + header + sources_card)
         + _wc.sortable_table_js()
         + _wc.spinner_js()
         + f'<script>{_CLIENT_JS}</script>'
+        + next_up
     )
     return chartis_shell(body, "Data refresh",
                          active_nav="/data/refresh",

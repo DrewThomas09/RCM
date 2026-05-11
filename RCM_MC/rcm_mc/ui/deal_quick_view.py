@@ -10,7 +10,8 @@ import html
 from typing import Any, Dict, Optional
 
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+    chartis_shell, ck_fmt_num, ck_kpi_block, ck_next_section,
+    ck_provenance_tooltip,
 )
 from .brand import PALETTE
 
@@ -165,7 +166,13 @@ def render_deal_quick_view(
         f'</div></div>'
     )
 
-    body = f'{error_html}{profile_section}{completeness}{models_section}{export_section}'
+    next_up = ck_next_section(
+        "Open the full deal profile",
+        f"/deal/{did}",
+        eyebrow="Continue —",
+        italic_word="profile",
+    )
+    body = f'{error_html}{profile_section}{completeness}{models_section}{export_section}{next_up}'
 
     return chartis_shell(
         body, name,
