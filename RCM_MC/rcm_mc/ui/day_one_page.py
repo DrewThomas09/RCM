@@ -412,7 +412,11 @@ def _journey_section() -> str:
         'you\'ve touched every diligence tool that matters.'
         '</p>'
         + checklist
-        + '<a href="/settings" class="do-link">'
+        + '<a href="/diligence/questions" class="do-link" '
+        'style="margin-right:18px;">'
+        'Open the portfolio question ledger'
+        '</a>'
+        '<a href="/settings" class="do-link">'
         'Open settings for the full journey'
         '</a>'
         + '</section>'

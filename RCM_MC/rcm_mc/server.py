@@ -4568,6 +4568,13 @@ class RCMHandler(BaseHTTPRequestHandler):
                 'you left off, this week\'s pipeline, your journey. '
                 'Live editorial composition, not another dashboard.'
                 '</div></a>'
+                '<a href="/diligence/questions" class="cad-card" '
+                'style="text-decoration:none;color:inherit;">'
+                '<h3>Diligence questions · portfolio ledger</h3>'
+                f'<div class="cad-muted">Every question across '
+                'every deal you\'ve opened. Filter by category and '
+                'status; copy as Markdown or CSV for hand-off to '
+                'sellers and IC binders.</div></a>'
                 '<a href="/?tour=1" class="cad-card" '
                 'data-ck-tour-settings-tile '
                 'style="text-decoration:none;color:inherit;">'
@@ -5812,6 +5819,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .portfolio.store import PortfolioStore as _PS
             store = _PS(self.config.db_path)
             return self._send_html(render_day_one(store))
+        if path == "/diligence/questions":
+            from .ui.questions_aggregator_page import (
+                render_questions_aggregator,
+            )
+            return self._send_html(render_questions_aggregator())
         if path.startswith("/models/dcf/"):
             deal_id = urllib.parse.unquote(path[len("/models/dcf/"):]).strip("/")
             return self._route_model_dcf(deal_id)
