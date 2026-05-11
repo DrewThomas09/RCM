@@ -2561,7 +2561,15 @@ def ck_command_palette(modules: Iterable[Mapping[str, str]]) -> str:
         '<div class="ck-palette" id="ck-palette" hidden>'
         '<div class="ck-palette-box">'
         '<input class="ck-palette-input" type="text" placeholder="Jump to… (⌘K)" />'
-        f'<ul class="ck-palette-list">{items}</ul>'
+        f'<ul class="ck-palette-list">{items}'
+        # Editorial empty state when filter matches nothing —
+        # surfaced by _PALETTE_JS toggling the [hidden] flag.
+        '<li class="cp-noresults" data-rcm-palette-empty hidden>'
+        '<span class="cp-noresults-text">'
+        '<em>Nothing matched.</em> Try a shorter prefix, or '
+        '<kbd>Esc</kbd> to close.'
+        '</span></li>'
+        '</ul>'
         "</div></div>"
     )
 
@@ -3204,6 +3212,24 @@ _CSS_INLINE_FALLBACK = """
     box-shadow:inset 3px 0 0 var(--sc-teal-ink);
   }
   .ck-palette-list li.is-highlighted .cp-route { color:var(--sc-teal-ink); }
+  .ck-palette-list li.cp-noresults {
+    display:flex; justify-content:flex-start; padding:18px 20px;
+    font-family:var(--sc-serif); font-size:13px;
+    color:var(--sc-text-dim); cursor:default;
+    background:var(--sc-bone);
+  }
+  .ck-palette-list li.cp-noresults:hover { background:var(--sc-bone); }
+  .ck-palette-list li.cp-noresults em {
+    font-style:italic; color:var(--sc-teal-ink);
+  }
+  .ck-palette-list li.cp-noresults kbd {
+    display:inline-block; padding:1px 5px;
+    background:#fff; border:1px solid var(--sc-rule);
+    border-radius:2px; font-family:var(--sc-mono);
+    font-size:10px; color:var(--sc-text);
+    vertical-align:1px;
+  }
+  .ck-palette-list li.cp-noresults[hidden] { display:none !important; }
   .ck-palette-list li.cp-section { display:block; padding:10px 20px 6px; cursor:default; background:transparent; border-bottom:0; font-family:var(--sc-mono); font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--sc-text-faint); }
   .ck-palette-list li.cp-section:hover { background:transparent; }
   .ck-palette-list li.cp-recent { background:linear-gradient(90deg, rgba(21,87,82,0.04) 0%, transparent 100%); }
@@ -3464,6 +3490,8 @@ _SHORTCUTS_HTML = """
         <h3>Discovery</h3>
         <dl>
           <dt><kbd>?</kbd></dt><dd>Show / hide this list</dd>
+          <dt><kbd>/</kbd></dt>
+            <dd>Focus the topbar search field</dd>
           <dt><kbd>T</kbd></dt>
             <dd>Open <em>The Atlas</em> &mdash; the editorial tour</dd>
           <dt><kbd>Shift</kbd><kbd>Q</kbd></dt>
@@ -3540,6 +3568,15 @@ _SHORTCUTS_JS = """
     if (e.key === '?' || (e.shiftKey && e.key === '/')) {
       e.preventDefault();
       if (dlg.hidden) show(); else hide();
+    }
+    /* "/" (without Shift) focuses the topbar search input — common
+     * Stripe/Linear/GitHub pattern. Skipped when the dialog is
+     * open (since "/" is the underlying char of "?") and when
+     * an input is already focused. */
+    if (e.key === '/' && !e.shiftKey && !e.metaKey && !e.ctrlKey
+        && !e.altKey && dlg.hidden) {
+      var search = document.querySelector(".ck-search");
+      if (search) { e.preventDefault(); search.focus(); search.select(); }
     }
     if (e.key === 'Escape' && !dlg.hidden) { e.preventDefault(); hide(); }
     /* "T" launches the editorial tour. Hide the shortcuts dialog
@@ -3810,19 +3847,30 @@ _PALETTE_JS = """
   function hide(){ p.hidden = true; input.value = ''; filter(''); }
   function filter(q){
     q = (q || '').toLowerCase();
+    var anyVisible = false;
     Array.from(p.querySelectorAll('li')).forEach(function(li){
+      if (li.classList.contains('cp-noresults')) return;
       if (li.classList.contains('cp-section')) {
         /* Show the "Recent" header only when no query is active */
         li.style.display = q ? 'none' : '';
         return;
       }
       var t = li.textContent.toLowerCase();
-      li.style.display = t.indexOf(q) >= 0 ? '' : 'none';
+      var match = t.indexOf(q) >= 0;
+      li.style.display = match ? '' : 'none';
+      if (match) anyVisible = true;
     });
+    /* Toggle the "Nothing matched" row — only when partner has
+     * typed something and zero items are visible. */
+    var empty = p.querySelector('[data-rcm-palette-empty]');
+    if (empty) empty.hidden = !(q && !anyVisible);
   }
   function visibleItems(){
     return Array.from(p.querySelectorAll('li:not([style*="display: none"])'))
-      .filter(function(li){ return !li.classList.contains('cp-section'); });
+      .filter(function(li){
+        return !li.classList.contains('cp-section')
+            && !li.classList.contains('cp-noresults');
+      });
   }
   function highlightAt(idx){
     var items = visibleItems();
