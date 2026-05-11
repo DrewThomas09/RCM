@@ -407,6 +407,7 @@ def ck_kpi_block(
     code: Optional[str] = None,
     unit: Optional[str] = None,    # legacy alias for ``sub``
     delta: Optional[str] = None,   # legacy alias for ``trend``
+    help: Optional[Mapping[str, str]] = None,
 ) -> str:
     """Editorial KPI block — label / value / optional sub / optional trend.
 
@@ -422,6 +423,12 @@ def ck_kpi_block(
     ``sub=``/``trend=`` (cycle 40-45 prod-bug fixes). Accept both so a
     forgotten file doesn't 500 the page — sub/trend take precedence
     when both are provided.
+
+    ``help`` is an optional mapping with keys ``definition`` (required
+    when help is set) and ``citation`` (optional). When provided, the
+    KPI label is wrapped in ``ck_help_tooltip`` so partners hovering
+    or focusing the ``[?]`` affordance see an editorial gloss. Use it
+    on jargon-heavy labels (NPR, EV/EBITDA TTM, conformal band).
     """
     if sub is None and unit is not None:
         sub = unit
@@ -433,10 +440,18 @@ def ck_kpi_block(
         trend_html = f'<span class="ck-kpi-trend tone-{tone}">{_esc(trend)}</span>'
     sub_html = f'<div class="ck-kpi-sub">{_esc(sub)}</div>' if sub else ""
     code_html = f'<div class="ck-kpi-code">[{_esc(code)}]</div>' if code else ""
+    if help and help.get("definition"):
+        label_html = ck_help_tooltip(
+            label,
+            help["definition"],
+            citation=help.get("citation"),
+        )
+    else:
+        label_html = _esc(label)
     return (
         '<div class="ck-kpi">'
         f'{code_html}'
-        f'<div class="ck-kpi-label">{_esc(label)}</div>'
+        f'<div class="ck-kpi-label">{label_html}</div>'
         f'<div class="ck-kpi-value sc-num">{_esc(value)}{trend_html}</div>'
         f'{sub_html}'
         "</div>"
@@ -446,6 +461,54 @@ def ck_kpi_block(
 def ck_signal_badge(text: str, *, tone: str = "neutral") -> str:
     tone = tone if tone in ("positive", "warning", "negative", "critical", "neutral") else "neutral"
     return f'<span class="ck-badge tone-{tone}">{_esc(text)}</span>'
+
+
+def ck_help_tooltip(
+    term: str,
+    definition: str,
+    *,
+    citation: Optional[str] = None,
+) -> str:
+    """Inline editorial help affordance — ``term [?]`` that opens a
+    small popover with a serif definition and optional citation.
+
+    Use it to gloss jargon partners may not know on first encounter
+    (covenant headroom, conformal band, EV/EBITDA TTM, P10/P50/P90).
+    The popover is purely CSS-driven (focus-within + click-toggle
+    via ck-help-open class) so it works without JS and doesn't
+    require any state machine on the page.
+
+    Rendered shape::
+
+        <span class="ck-help">
+          term
+          <button class="ck-help-trigger" aria-expanded="false">?</button>
+          <span class="ck-help-popover" role="tooltip">
+            <span class="ck-help-term">term</span>
+            <span class="ck-help-def">definition prose</span>
+            <span class="ck-help-cite">— citation</span>
+          </span>
+        </span>
+
+    Pages can opt out of the inline ``term`` rendering and just emit
+    the popover by themselves; this helper is the canonical version.
+    """
+    cite_html = (
+        f'<span class="ck-help-cite">— {_esc(citation)}</span>'
+        if citation else ""
+    )
+    return (
+        '<span class="ck-help">'
+        f'{_esc(term)}'
+        '<button type="button" class="ck-help-trigger" '
+        'aria-expanded="false" tabindex="0">?</button>'
+        '<span class="ck-help-popover" role="tooltip">'
+        f'<span class="ck-help-term">{_esc(term)}</span>'
+        f'<span class="ck-help-def">{_esc(definition)}</span>'
+        f'{cite_html}'
+        '</span>'
+        '</span>'
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -2009,6 +2072,74 @@ _CSS_INLINE_FALLBACK = """
   .ck-section-intro a:not([class]):hover {
     border-bottom-color: var(--sc-teal-ink);
   }
+  /* Inline help affordance — `term [?]` opens an editorial popover */
+  .ck-help {
+    position: relative; display: inline-flex; align-items: baseline;
+    gap: 4px; white-space: nowrap;
+  }
+  .ck-help-trigger {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px;
+    background: transparent;
+    border: 1px solid var(--sc-rule, #d8d3c8); border-radius: 50%;
+    color: var(--sc-text-faint, #6e7787);
+    font-family: "Inter Tight", sans-serif;
+    font-size: 10px; font-weight: 700; line-height: 1;
+    cursor: pointer; padding: 0;
+    transition: border-color 120ms ease, color 120ms ease,
+                background 120ms ease;
+  }
+  .ck-help-trigger:hover,
+  .ck-help-trigger:focus,
+  .ck-help-trigger[aria-expanded="true"] {
+    background: var(--sc-teal-ink, #0e3e3a); color: #fff;
+    border-color: var(--sc-teal-ink, #0e3e3a); outline: none;
+  }
+  .ck-help-popover {
+    position: absolute; bottom: calc(100% + 8px); left: 50%;
+    transform: translateX(-50%);
+    min-width: 260px; max-width: 360px;
+    padding: 14px 16px;
+    background: var(--sc-bone, #f5f1ea);
+    border: 1px solid var(--sc-rule, #d8d3c8);
+    border-radius: 3px;
+    box-shadow: 0 12px 28px rgba(11, 35, 65, 0.18);
+    z-index: 50;
+    font-family: "Source Serif 4", serif;
+    white-space: normal; text-align: left;
+    opacity: 0; visibility: hidden;
+    transition: opacity 120ms ease, visibility 120ms ease;
+    pointer-events: none;
+  }
+  .ck-help:focus-within .ck-help-popover,
+  .ck-help:hover .ck-help-popover {
+    opacity: 1; visibility: visible; pointer-events: auto;
+  }
+  .ck-help-popover::after {
+    content: ""; position: absolute; top: 100%; left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--sc-bone, #f5f1ea);
+  }
+  .ck-help-term {
+    display: block;
+    font-family: "Inter Tight", sans-serif;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--sc-teal-ink, #0e3e3a); margin-bottom: 6px;
+  }
+  .ck-help-def {
+    display: block;
+    font-size: 13px; line-height: 1.55;
+    color: var(--sc-text-dim, #37495e);
+  }
+  .ck-help-cite {
+    display: block; margin-top: 8px;
+    font-family: "Source Serif 4", serif; font-style: italic;
+    font-size: 11px; color: var(--sc-text-faint, #6e7787);
+  }
+  @media print { .ck-help-trigger { display: none; }
+                 .ck-help-popover { display: none; } }
   /* Up next — editorial chapter footer */
   .ck-next-section {
     padding: 28px 24px;

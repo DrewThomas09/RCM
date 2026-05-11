@@ -319,11 +319,40 @@ def _hero_strip(summary: Dict[str, Any]) -> str:
             "Active deals", f"{n_active}",
             sub=f"of {n_deals} total",
         )
-        + ck_kpi_block("Total NPR", _fmt_money(npr))
-        + ck_kpi_block("Current EBITDA", _fmt_money(ebitda))
+        + ck_kpi_block(
+            "Total NPR", _fmt_money(npr),
+            help={
+                "definition": (
+                    "Net Patient Revenue — billed services minus "
+                    "contractual allowances, bad debt, and charity "
+                    "care. The cash-realisable top line."
+                ),
+                "citation": "HFMA Glossary",
+            },
+        )
+        + ck_kpi_block(
+            "Current EBITDA", _fmt_money(ebitda),
+            help={
+                "definition": (
+                    "Earnings before interest, taxes, depreciation, "
+                    "and amortization. The operating cash-flow proxy "
+                    "PE partners price deals against."
+                ),
+            },
+        )
         + ck_kpi_block(
             "Health score", health_badge,
             sub="weighted by NPR",
+            help={
+                "definition": (
+                    "Composite 0–100 score per deal combining "
+                    "covenant headroom, EBITDA variance vs plan, "
+                    "denial-rate drift, and management bench depth. "
+                    "Weighted by Net Patient Revenue at the "
+                    "portfolio level."
+                ),
+                "citation": "rcm_mc/deals/health_score.py",
+            },
         )
         + '</div>'
     )
@@ -452,6 +481,52 @@ def _activity_section(
     )
 
 
+def _tour_banner_styles() -> str:
+    """Scoped styles for the first-time tour banner.
+
+    Sits at the top of /app for new partners. Editorial parchment
+    surface with teal accent rule on the left; eyebrow + prose +
+    serif arrow-link CTA; small dismiss ×. Never modal, never
+    interruptive — just a quiet invitation.
+    """
+    return """
+<style>
+.dv-tour-banner{display:flex;align-items:center;gap:18px;
+padding:14px 20px;margin-bottom:18px;
+background:var(--sc-bone,#f5f1ea);
+border:1px solid var(--sc-rule,#d8d3c8);
+border-left:3px solid var(--sc-teal,#155752);
+border-radius:3px;position:relative;}
+.dv-tour-banner[hidden]{display:none !important;}
+.dv-tour-banner-eyebrow{font-family:"Inter Tight",sans-serif;
+font-size:10px;font-weight:700;letter-spacing:1.6px;
+text-transform:uppercase;color:var(--sc-teal-ink,#0e3e3a);
+flex-shrink:0;}
+.dv-tour-banner-body{flex:1;display:flex;align-items:baseline;
+gap:18px;flex-wrap:wrap;}
+.dv-tour-banner-prose{font-family:"Source Serif 4",serif;
+font-size:14px;line-height:1.55;color:var(--sc-text-dim,#37495e);}
+.dv-tour-banner-prose em{font-style:italic;
+color:var(--sc-teal-ink,#0e3e3a);}
+.dv-tour-banner-cta{font-family:"Source Serif 4",serif;
+font-size:15px;font-weight:400;
+color:var(--sc-teal-ink,#0e3e3a);text-decoration:none;
+border-bottom:1px solid transparent;
+transition:border-color 120ms ease;white-space:nowrap;}
+.dv-tour-banner-cta:hover{border-bottom-color:var(--sc-teal-ink,#0e3e3a);}
+.dv-tour-banner-close{background:none;border:0;cursor:pointer;
+padding:4px 8px;font-size:20px;line-height:1;
+color:var(--sc-text-faint,#6e7787);
+transition:color 120ms ease;}
+.dv-tour-banner-close:hover{color:var(--sc-text,#1a2332);}
+@media (max-width:640px){.dv-tour-banner{flex-direction:column;
+align-items:flex-start;}.dv-tour-banner-close{position:absolute;
+top:8px;right:8px;}}
+@media print{.dv-tour-banner{display:none !important;}}
+</style>
+"""
+
+
 def _start_here_styles() -> str:
     """Scoped styles for the empty-portfolio 'Start here' panel.
 
@@ -561,14 +636,63 @@ padding:12px 0;border-bottom:1px solid var(--cad-border);}
             '</div></section>'
         )
 
+    # First-time tour banner. Renders for portfolios that already
+    # have deals (the empty-state "Start here" panel handles the
+    # zero-deal case) and is hidden by default. Inline JS toggles
+    # visibility on DOMContentLoaded if localStorage shows no prior
+    # tour interaction — first-time partners see a soft editorial
+    # nudge at the top of /app without it interrupting returning
+    # partners. Dismissal writes to localStorage so it never replays.
+    tour_banner = ""
+    if summary.get("n_deals", 0) > 0:
+        tour_banner = (
+            '<aside class="dv-tour-banner" data-ck-tour-firstcheck '
+            'hidden role="complementary">'
+            '<div class="dv-tour-banner-eyebrow">New here?</div>'
+            '<div class="dv-tour-banner-body">'
+            '<span class="dv-tour-banner-prose">'
+            'Take a two-minute walkthrough of every surface on '
+            'the platform — pipeline, diligence, risk, monte '
+            'carlo, portfolio, delivery. <em>The Atlas</em>, '
+            'seven volumes.'
+            '</span>'
+            '<a class="dv-tour-banner-cta" href="/?tour=1">'
+            'Begin the tour <span aria-hidden="true">→</span>'
+            '</a>'
+            '</div>'
+            '<button type="button" class="dv-tour-banner-close" '
+            'data-ck-tour-banner-dismiss '
+            'aria-label="Dismiss tour banner">&times;</button>'
+            '</aside>'
+            '<script>'
+            '(function(){var b=document.querySelector('
+            '"[data-ck-tour-firstcheck]");if(!b)return;try{'
+            'var raw=localStorage.getItem("rcm_tour_v1");'
+            'if(!raw){b.hidden=false;}else{var s=JSON.parse(raw);'
+            'if(!s||(!s.completed||s.completed.length===0)&&'
+            '!s.skipped&&!s.banner_dismissed){b.hidden=false;}}'
+            '}catch(e){b.hidden=false;}'
+            'document.addEventListener("click",function(e){'
+            'if(e.target.closest&&e.target.closest('
+            '"[data-ck-tour-banner-dismiss]")){b.hidden=true;'
+            'try{var raw=localStorage.getItem("rcm_tour_v1");'
+            'var s=raw?JSON.parse(raw):{version:1,completed:[],'
+            'lastViewed:0,skipped:false};s.banner_dismissed=true;'
+            'localStorage.setItem("rcm_tour_v1",JSON.stringify(s));'
+            '}catch(e){}}});}());'
+            '</script>'
+        )
+
     page_body = (
         dv_styles
         + _start_here_styles()
+        + _tour_banner_styles()
         + '<div class="dv-container">'
         + '<div class="dv-toplinks">'
         + '<a href="/data/catalog?ui=v3" class="ck-link">Data →</a>'
         + '<a href="/models/quality?ui=v3" class="ck-link">Models →</a>'
         + '</div>'
+        + tour_banner
         + _hero_strip(summary)
         + start_here
         + _opportunities_section(opportunities)
