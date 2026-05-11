@@ -481,6 +481,135 @@ def _activity_section(
     )
 
 
+def _compare_rail() -> str:
+    """Editorial 'Side-by-side' compare rail.
+
+    Reads the top two slugs out of ``localStorage["rcm_recent_deals"]``
+    and, when both have a stored ``dataset`` field in their per-deal
+    profiles (``rcm_deal_<slug>``), composes a direct link to
+    ``/diligence/compare?left=…&right=…``. Falls back to the picker
+    when datasets are missing. Stays hidden until at least two
+    deals have been opened.
+
+    The composition reads as a serif headline + an editorial
+    "vs" between two deal names + an arrow-link CTA — a single
+    line of running prose, not a tile grid. Partners reading the
+    dashboard naturally pick up the cue.
+    """
+    return """
+<style>
+.dv-compare {
+  display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+  margin: 18px 0 0; padding: 16px 20px;
+  background: var(--sc-bone, #f5f1ea);
+  border: 1px solid var(--sc-rule, #d8d3c8);
+  border-left: 3px solid var(--sc-teal, #155752);
+  border-radius: 3px;
+  font-family: "Source Serif 4", serif;
+}
+.dv-compare[hidden] { display: none !important; }
+.dv-compare-eyebrow {
+  font-family: "Inter Tight", sans-serif;
+  font-size: 10px; font-weight: 700; letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--sc-text-faint, #6e7787);
+  flex-shrink: 0;
+}
+.dv-compare-prose {
+  font-size: 14px; line-height: 1.55;
+  color: var(--sc-text-dim, #37495e); flex: 1;
+}
+.dv-compare-name {
+  font-weight: 500; color: var(--sc-navy, #0b2341);
+  font-style: italic;
+}
+.dv-compare-vs {
+  display: inline-block; margin: 0 8px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px; letter-spacing: 0.16em;
+  color: var(--sc-text-faint, #6e7787);
+  text-transform: uppercase; vertical-align: 1px;
+}
+.dv-compare-cta {
+  font-family: "Source Serif 4", serif;
+  font-size: 14px; font-weight: 400;
+  color: var(--sc-teal-ink, #0e3e3a);
+  text-decoration: none; white-space: nowrap;
+  border-bottom: 1px solid transparent;
+  transition: border-color 120ms ease;
+}
+.dv-compare-cta:hover {
+  border-bottom-color: var(--sc-teal-ink, #0e3e3a);
+}
+@media print { .dv-compare { display: none !important; } }
+</style>
+<aside class="dv-compare" data-rcm-compare-rail hidden
+       role="complementary" aria-label="Compare recent deals">
+  <span class="dv-compare-eyebrow">Side-by-side</span>
+  <span class="dv-compare-prose"
+        data-rcm-compare-prose>—</span>
+  <a class="dv-compare-cta" data-rcm-compare-cta href="/diligence/compare">
+    Open the comparison <span aria-hidden="true">→</span>
+  </a>
+</aside>
+<script>
+(function() {
+  function esc(s) {
+    var d = document.createElement("div");
+    d.textContent = String(s || "");
+    return d.innerHTML;
+  }
+  function loadRecent() {
+    try {
+      var raw = localStorage.getItem("rcm_recent_deals");
+      var rows = raw ? JSON.parse(raw) : [];
+      return Array.isArray(rows) ? rows : [];
+    } catch (e) { return []; }
+  }
+  function datasetFor(slug) {
+    try {
+      var raw = localStorage.getItem("rcm_deal_" + slug);
+      if (!raw) return "";
+      var p = JSON.parse(raw);
+      return (p && p.dataset) ? p.dataset : "";
+    } catch (e) { return ""; }
+  }
+  document.addEventListener("DOMContentLoaded", function() {
+    var rail = document.querySelector("[data-rcm-compare-rail]");
+    if (!rail) return;
+    var rows = loadRecent().filter(function(r) {
+      return r && r.slug;
+    });
+    if (rows.length < 2) { rail.hidden = true; return; }
+    var a = rows[0], b = rows[1];
+    var prose = rail.querySelector("[data-rcm-compare-prose]");
+    if (prose) {
+      prose.innerHTML =
+        'You opened ' +
+        '<span class="dv-compare-name">' + esc(a.name || a.slug) +
+        '</span>' +
+        '<span class="dv-compare-vs">vs</span>' +
+        '<span class="dv-compare-name">' + esc(b.name || b.slug) +
+        '</span> recently. ' +
+        'Run them through the editorial diff.';
+    }
+    var cta = rail.querySelector("[data-rcm-compare-cta]");
+    if (cta) {
+      var dsA = datasetFor(a.slug);
+      var dsB = datasetFor(b.slug);
+      if (dsA && dsB) {
+        cta.href = "/diligence/compare?left=" +
+          encodeURIComponent(dsA) + "&right=" +
+          encodeURIComponent(dsB);
+      }
+    }
+    rail.hidden = false;
+  });
+}());
+</script>
+"""
+
+
 def _pinned_tools_rail() -> str:
     """Editorial 'Pinned tools' rail — partner-curated favorites.
 
@@ -923,6 +1052,7 @@ padding:12px 0;border-bottom:1px solid var(--cad-border);}
         + _hero_strip(summary)
         + start_here
         + _pinned_tools_rail()
+        + _compare_rail()
         + _opportunities_section(opportunities)
         + _alerts_section(alerts)
         + _activity_section(activity)
