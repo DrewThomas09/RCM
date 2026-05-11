@@ -8,7 +8,8 @@ import html
 from typing import Any, Dict, List
 
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_pct, ck_kpi_block, ck_provenance_tooltip,
+    chartis_shell, ck_fmt_pct, ck_kpi_block, ck_next_section,
+    ck_provenance_tooltip,
 )
 from .models_page import _model_nav
 from .brand import PALETTE
@@ -133,7 +134,13 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
     )
 
     nav = _model_nav(deal_id, "")
-    body = f'{nav}{kpis}{interp}{cov_section}{actions}'
+    next_up = ck_next_section(
+        "Pressure-test these returns",
+        "/diligence/risk-workbench?demo=steward",
+        eyebrow="Continue —",
+        italic_word="pressure-test",
+    )
+    body = f'{nav}{kpis}{interp}{cov_section}{actions}{next_up}'
 
     return chartis_shell(body, f"Returns & Covenant — {html.escape(deal_name)}",
                     active_nav="/analysis",

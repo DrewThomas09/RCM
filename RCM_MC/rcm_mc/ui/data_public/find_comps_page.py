@@ -27,7 +27,8 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 from rcm_mc.ui._chartis_kit import (
     P, _MONO, _SANS, chartis_shell, ck_fmt_moic, ck_fmt_num,
-    ck_kpi_block, ck_provenance_tooltip, ck_section_header,
+    ck_kpi_block, ck_next_section, ck_provenance_tooltip,
+    ck_section_header,
 )
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
@@ -393,8 +394,14 @@ def render_find_comps(params: Dict[str, str]) -> str:
         source="data_public/find_comps.py (similarity scoring).",
         page_key="find-comps",
     )
+    next_up = ck_next_section(
+        "Open the comparable outcomes view",
+        "/diligence/comparable-outcomes",
+        eyebrow="Continue —",
+        italic_word="outcomes",
+    )
     subtitle = f"Searching {n:,} deals" if has_inputs else "Find deal comparables"
-    return chartis_shell(explainer + body, "Find Comps", active_nav="/find-comps", subtitle=subtitle,
+    return chartis_shell(explainer + body + next_up, "Find Comps", active_nav="/find-comps", subtitle=subtitle,
         editorial_intro={
             "eyebrow": "FIND COMPS",
             "headline": "Where the closest realized deals live.",

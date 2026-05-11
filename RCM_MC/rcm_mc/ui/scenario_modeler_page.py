@@ -23,7 +23,8 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_panel, ck_section_intro,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_intro,
 )
 from .brand import PALETTE
 from .ebitda_bridge_page import _compute_bridge, _compute_returns_grid, _fm, _safe_float, _load_data_room_overrides
@@ -474,7 +475,16 @@ padding:4px 0;cursor:pointer;}
 .sm-total-row td{border-top:1px solid var(--cad-border);}
 </style>
 """
-    body = f'{sm_styles}{intro}{selector}{kpis}{comparison}{bridge_section}{timing_section}{nav}'
+    next_up = ck_next_section(
+        "Open the EBITDA bridge for this CCN",
+        f"/ebitda-bridge/{_html.escape(ccn)}",
+        eyebrow="Continue —",
+        italic_word="bridge",
+    )
+    body = (
+        f'{sm_styles}{intro}{selector}{kpis}{comparison}'
+        f'{bridge_section}{timing_section}{nav}{next_up}'
+    )
 
     best = max(results, key=lambda r: r["irr"])
     return chartis_shell(

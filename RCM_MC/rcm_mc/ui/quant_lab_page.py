@@ -13,7 +13,8 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_panel, ck_section_intro,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_intro,
 )
 from .brand import PALETTE
 
@@ -268,7 +269,16 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
         title="Cross-links",
     )
 
-    body = f'{intro}{kpis}{stack}{bayes_section}{eff_section}{mkt_section}{queue_section}{nav}'
+    next_up = ck_next_section(
+        "Open the methodology reference",
+        "/methodology",
+        eyebrow="Continue —",
+        italic_word="methodology",
+    )
+    body = (
+        f'{intro}{kpis}{stack}{bayes_section}{eff_section}'
+        f'{mkt_section}{queue_section}{nav}{next_up}'
+    )
 
     return chartis_shell(
         body, "Quant Lab",
