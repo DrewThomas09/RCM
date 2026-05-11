@@ -36,6 +36,7 @@ from ..diligence._pages import AVAILABLE_FIXTURES
 from ._chartis_kit import (
     P, chartis_shell, ck_eyebrow, ck_help_tooltip, ck_panel,
     ck_section_header, ck_section_intro, ck_signal_badge,
+    ck_sticky_toc,
 )
 from .power_ui import bookmark_hint
 
@@ -1059,17 +1060,40 @@ def _render_market_context(slug: str) -> str:
         '</div>'
         '<div class="ck-dp-market-tiles">'
         '<div>'
-        '<div class="ck-dp-market-tile-label">Target implied</div>'
+        '<div class="ck-dp-market-tile-label">'
+        + ck_help_tooltip(
+            "Target implied",
+            "The implied entry multiple for this deal — "
+            "enterprise value divided by Year-0 EBITDA. Compare "
+            "to the peer median on the right tile.",
+        )
+        + '</div>'
         '<div data-rcm-market-target-mult class="ck-dp-market-tile-val">—</div>'
         '<div class="ck-dp-market-tile-sub">EV / EBITDA</div>'
         '</div>'
         '<div>'
-        '<div class="ck-dp-market-tile-label">Peer median</div>'
+        '<div class="ck-dp-market-tile-label">'
+        + ck_help_tooltip(
+            "Peer median",
+            "Median EV/EBITDA across public-comp hospitals in the "
+            "same sub-sector. The band shown below the value spans "
+            "the 25th-75th percentile.",
+            citation="rcm_mc/market_intel/category_bands",
+        )
+        + '</div>'
         '<div data-rcm-market-peer-median class="ck-dp-market-tile-val">—</div>'
         '<div class="ck-dp-market-tile-sub" data-rcm-market-band-range></div>'
         '</div>'
         '<div>'
-        '<div class="ck-dp-market-tile-label">Delta vs peer</div>'
+        '<div class="ck-dp-market-tile-label">'
+        + ck_help_tooltip(
+            "Delta vs peer",
+            "Target implied multiple minus the peer median. Positive "
+            "= paying a premium; negative = paying a discount. Each "
+            "turn of EBITDA is one multiple point — so +1.0x on a "
+            "$10M EBITDA deal is $10M of extra purchase price.",
+        )
+        + '</div>'
         '<div data-rcm-market-delta class="ck-dp-market-tile-val">—</div>'
         '<div class="ck-dp-market-tile-sub">turns of EBITDA</div>'
         '</div>'
@@ -1644,15 +1668,51 @@ def render_deal_profile_page(
         "Open in Analytic · grouped by lifecycle phase",
         eyebrow="ANALYTICS",
     )
-    thesis_panel = ck_panel(thesis_snapshot, title="Investment thesis")
-    market_panel = ck_panel(market_context, title="Market context")
+    thesis_panel = ck_panel(
+        thesis_snapshot, title="Investment thesis",
+        anchor_id="dp-thesis",
+    )
+    market_panel = ck_panel(
+        market_context, title="Market context",
+        anchor_id="dp-market",
+    )
     lifecycle_panel = ck_panel(
         lifecycle, title="Diligence lifecycle",
+        anchor_id="dp-lifecycle",
     )
-    form_panel = ck_panel(form, title="Deal parameters")
+    form_panel = ck_panel(
+        form, title="Deal parameters",
+        anchor_id="dp-params",
+    )
+    # Sticky right-rail table of contents — the deal profile is the
+    # central diligence surface partners return to, with 6 distinct
+    # vertical sections. The TOC lets them jump straight to
+    # Analytics or Deal parameters without scrolling past the hero.
+    toc = ck_sticky_toc([
+        {"id": "dp-thesis",    "title": "Investment thesis"},
+        {"id": "dp-market",    "title": "Market context"},
+        {"id": "dp-pipeline",  "title": "Thesis Pipeline"},
+        {"id": "dp-lifecycle", "title": "Diligence lifecycle"},
+        {"id": "dp-params",    "title": "Deal parameters"},
+        {"id": "dp-analytics", "title": "Analytics"},
+    ])
+    # Wrap pipeline_cta + grid_header so they pick up anchors too —
+    # they're not ck_panels but partners still expect "Thesis Pipeline"
+    # and "Analytics" to be jump targets.
+    pipeline_block = (
+        f'<section id="dp-pipeline">{pipeline_cta}</section>'
+    )
+    grid_block = (
+        f'<section id="dp-analytics">{grid_header}{grid}</section>'
+    )
     return chartis_shell(
-        _DP_STYLES + hero + thesis_panel + market_panel + pipeline_cta
-        + lifecycle_panel + form_panel + grid_header + grid
+        _DP_STYLES + hero
+        + '<div class="ck-toc-layout">'
+        + toc
+        + '<div class="ck-toc-content">'
+        + thesis_panel + market_panel + pipeline_block
+        + lifecycle_panel + form_panel + grid_block
+        + '</div></div>'
         + bookmark_hint() + _inline_js(slug),
         f"Deal Profile — {slug}",
         active_nav="/diligence/deal",
