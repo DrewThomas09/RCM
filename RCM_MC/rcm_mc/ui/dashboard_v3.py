@@ -481,6 +481,126 @@ def _activity_section(
     )
 
 
+def _load_recent_packets(
+    store: Any, *, limit: int = 6, lookback_days: int = 14,
+) -> List[Dict[str, Any]]:
+    """Most-recently-built analysis packets across the portfolio.
+
+    Pulls from analysis_runs — the same table that powers the
+    Phase B-era recent-activity panel — but returns enough row
+    detail (deal_id, scenario_id, created_at) for the editorial
+    rail to render serif headlines + italic relative timestamps.
+
+    Dedupes on deal_id so a deal with multiple recent rebuilds
+    shows up once with its most-recent timestamp.
+    """
+    try:
+        from ..analysis.analysis_store import list_packets
+        rows = list_packets(store) or []
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("recent packets list failed: %s", exc)
+        return []
+    seen = set()
+    out: List[Dict[str, Any]] = []
+    for r in rows:
+        did = r.get("deal_id") or "—"
+        if did in seen:
+            continue
+        ts = r.get("created_at") or r.get("as_of")
+        days = _days_since(ts)
+        if days is None or days > lookback_days:
+            continue
+        seen.add(did)
+        out.append({
+            "id": r.get("id"),
+            "deal_id": did,
+            "scenario_id": r.get("scenario_id") or "base",
+            "created_at": ts,
+            "days": days,
+        })
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _recent_packets_rail(packets: List[Dict[str, Any]]) -> str:
+    """Editorial 'Built this fortnight' rail of recent analysis packets.
+
+    Server-pulled (unlike the Phase E recently-viewed deals rail
+    which is JS-hydrated from localStorage). One tile per recent
+    deal_id, dedup'd to the most-recent packet build per deal.
+    Each tile is a serif arrow-link to /analysis/<deal_id> with
+    JetBrains-Mono caps scenario eyebrow + italic relative
+    timestamp.
+
+    Stays hidden when no packets were built in the last 14 days
+    so a fresh install never shows an empty rail.
+    """
+    if not packets:
+        return ""
+    tiles = []
+    for p in packets:
+        did = _esc(p["deal_id"])
+        scn = _esc((p["scenario_id"] or "base").upper())
+        days = p.get("days", 0)
+        rel = ("today" if days <= 0
+               else "yesterday" if days == 1
+               else f"{days} d ago")
+        tiles.append(
+            '<a class="dv-rp-tile" '
+            f'href="/analysis/{did}">'
+            f'<div class="dv-rp-scn">{scn}</div>'
+            f'<div class="dv-rp-name">{did}</div>'
+            f'<div class="dv-rp-ts">{rel}</div>'
+            '</a>'
+        )
+    return (
+        '<style>'
+        '.dv-rp{margin:18px 0 0;padding:18px 0;'
+        'border-top:1px solid var(--sc-rule,#d8d3c8);}'
+        '.dv-rp-head{display:flex;align-items:baseline;'
+        'justify-content:space-between;gap:14px;margin-bottom:12px;}'
+        '.dv-rp-eyebrow{font-family:"Inter Tight",sans-serif;'
+        'font-size:10px;font-weight:700;letter-spacing:1.4px;'
+        'text-transform:uppercase;color:var(--sc-text-faint,#6e7787);}'
+        '.dv-rp-meta{font-family:"Source Serif 4",serif;'
+        'font-style:italic;font-size:12px;'
+        'color:var(--sc-text-faint,#6e7787);}'
+        '.dv-rp-grid{display:grid;'
+        'grid-template-columns:repeat(auto-fill,minmax(220px,1fr));'
+        'gap:12px;}'
+        '.dv-rp-tile{display:block;padding:14px 16px;'
+        'background:var(--sc-bone,#f5f1ea);'
+        'border:1px solid var(--sc-rule,#d8d3c8);border-radius:3px;'
+        'text-decoration:none;color:inherit;'
+        'transition:transform 140ms ease, border-color 140ms ease, '
+        'box-shadow 140ms ease;}'
+        '.dv-rp-tile:hover{transform:translateY(-1px);'
+        'border-color:var(--sc-teal,#155752);'
+        'box-shadow:0 4px 14px rgba(11,35,65,0.06);}'
+        '.dv-rp-scn{font-family:"JetBrains Mono",monospace;'
+        'font-size:9px;letter-spacing:1.3px;text-transform:uppercase;'
+        'color:var(--sc-teal-ink,#0e3e3a);margin-bottom:6px;}'
+        '.dv-rp-name{font-family:"Source Serif 4",serif;font-size:15px;'
+        'font-weight:500;color:var(--sc-navy,#0b2341);'
+        'line-height:1.25;}'
+        '.dv-rp-ts{font-family:"Source Serif 4",serif;font-style:italic;'
+        'font-size:11px;color:var(--sc-text-faint,#6e7787);'
+        'margin-top:6px;}'
+        '@media print{.dv-rp{display:none !important;}}'
+        '</style>'
+        '<section class="dv-rp">'
+        '<div class="dv-rp-head">'
+        '<span class="dv-rp-eyebrow">Built this fortnight</span>'
+        f'<span class="dv-rp-meta">{len(packets)} analysis '
+        f'packet{"s" if len(packets) != 1 else ""} · '
+        'click for the workbench</span>'
+        '</div>'
+        f'<div class="dv-rp-grid">{"".join(tiles)}</div>'
+        '</section>'
+    )
+
+
 def _compare_rail() -> str:
     """Editorial 'Side-by-side' compare rail.
 
@@ -937,6 +1057,7 @@ def render_dashboard_v3(store: Any) -> str:
     opportunities = _load_top_opportunities(store)
     alerts = _load_alerts(store)
     activity = _load_recent_activity(store)
+    recent_packets = _load_recent_packets(store)
 
     dv_styles = """
 <style>
@@ -1058,6 +1179,7 @@ padding:12px 0;border-bottom:1px solid var(--cad-border);}
         + _compare_rail()
         + _opportunities_section(opportunities)
         + _alerts_section(alerts)
+        + _recent_packets_rail(recent_packets)
         + _activity_section(activity)
         + _recently_viewed_rail()
         + _keyboard_hint_footer()
