@@ -677,27 +677,78 @@ def _verdict_card(report: PayerStressReport) -> str:
         '<div class="ck-kpi-strip">'
         + ck_kpi_block(
             "Risk Score", risk_val, sub="0-100 · lower = safer",
+            help={
+                "definition": (
+                    "Composite payer-concentration risk score. "
+                    "Combines top-1 share, HHI, the concentration "
+                    "amplifier, and EBITDA tail impact. <30 is "
+                    "investable; 30-60 needs mitigants; >60 is a "
+                    "thesis-breaker without renegotiation leverage."
+                ),
+            },
         )
         + ck_kpi_block(
             "Top-1 Share", f"{report.top_1_share*100:.0f}%",
             sub="flag at >30%",
+            help={
+                "definition": (
+                    "NPR share of the largest payer. Above 30% the "
+                    "deal carries single-counterparty risk; renewal "
+                    "negotiations become deal-makers or deal-breakers."
+                ),
+            },
         )
         + ck_kpi_block(
             "Top-3 Share", f"{report.top_3_share*100:.0f}%",
             sub="flag at >70%",
+            help={
+                "definition": (
+                    "Combined NPR share of the three largest payers. "
+                    "Above 70% means three counterparties effectively "
+                    "set the entire revenue line — partners need a "
+                    "diversification plan in the 100-day plan."
+                ),
+            },
         )
         + ck_kpi_block(
             "HHI", f"{report.hhi_index:.0f}",
             sub=">2500 = concentrated",
+            help={
+                "definition": (
+                    "Herfindahl-Hirschman Index — sum of squared "
+                    "payer NPR shares (basis points). 0 = perfectly "
+                    "fragmented; 10,000 = single payer. DOJ thresholds: "
+                    "<1500 unconcentrated, 1500-2500 moderately, "
+                    ">2500 highly concentrated."
+                ),
+                "citation": "DOJ/FTC HHI thresholds",
+            },
         )
         + ck_kpi_block(
-            "Conc. Amplifier", f"{report.concentration_amplifier:.2f}×",
+            "Conc. Amplifier",
+            f"{report.concentration_amplifier:.2f}×",
             sub="volatility multiplier",
+            help={
+                "definition": (
+                    "Multiplier on EBITDA volatility from payer "
+                    "concentration. 1.0× = average; 1.5× = your "
+                    "EBITDA swings 50% wider on rate changes than a "
+                    "diversified peer. Drives the P10 tail below."
+                ),
+            },
         )
         + ck_kpi_block(
             "P10 EBITDA Impact",
             f"${report.p10_cumulative_ebitda_impact_usd/1e6:+,.1f}M",
             sub=f"cumulative {report.horizon_years}-yr",
+            help={
+                "definition": (
+                    "10th-percentile cumulative EBITDA impact across "
+                    "the simulated rate-move cone. The reasonable "
+                    "downside — partners underwrite knowing this is "
+                    "what they lose if rate negotiations go badly."
+                ),
+            },
         )
         + "</div>"
     )

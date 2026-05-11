@@ -433,12 +433,66 @@ def _verdict_card(report: RegulatoryExposureReport) -> str:
                 f"{_REG_RISK_PEER_HIGH:.0f} · median "
                 f"{_REG_RISK_PEER_MEDIAN:.0f}"
             ),
+            help={
+                "definition": (
+                    "Composite regulatory-exposure score. Combines "
+                    "the count of upcoming CMS / state / specialty "
+                    "events times their probability-weighted impact "
+                    "on thesis drivers. Calibrated so the PE peer-"
+                    "median deal lands at the citation band."
+                ),
+            },
         )
-        + ck_kpi_block("Drivers Killed", killed_val)
-        + ck_kpi_block("Drivers Damaged", damaged_val)
+        + ck_kpi_block(
+            "Drivers Killed", killed_val,
+            help={
+                "definition": (
+                    "Count of thesis drivers materially invalidated "
+                    "by at least one upcoming regulation in horizon. "
+                    "These are kill-switches: if the rule passes, "
+                    "the deal's investment case stops working as "
+                    "underwritten. Each kill is a deal-killer absent "
+                    "structural mitigants (carve-outs, indemnities)."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Drivers Damaged", damaged_val,
+            help={
+                "definition": (
+                    "Count of thesis drivers materially impaired "
+                    "(>20% EBITDA effect) by upcoming regulations "
+                    "without being killed outright. The 100-day plan "
+                    "needs to address each one with mitigation."
+                ),
+            },
+        )
         + ck_kpi_block("Events In Horizon", f"{len(report.events)}")
-        + ck_kpi_block("Margin Impact Σ", margin_val)
-        + ck_kpi_block("Revenue Impact Σ", rev_val)
+        + ck_kpi_block(
+            "Margin Impact Σ", margin_val,
+            help={
+                "definition": (
+                    "Sum of probability-weighted margin impact in "
+                    "basis points across all events. Negative = "
+                    "compression. Compare to the bridge's projected "
+                    "margin improvement to see how much regulatory "
+                    "headwind the bridge has to overcome."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Revenue Impact Σ", rev_val,
+            help={
+                "definition": (
+                    "Sum of probability-weighted revenue impact "
+                    "across all events ($M). Read alongside Margin "
+                    "Impact: revenue compression at constant margin "
+                    "is different from margin compression at "
+                    "constant revenue — both flow to EBITDA but "
+                    "via different operational responses."
+                ),
+            },
+        )
         + "</div>"
     )
     return (
