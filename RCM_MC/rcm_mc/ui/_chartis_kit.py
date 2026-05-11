@@ -2609,6 +2609,22 @@ _CSS_INLINE_FALLBACK = """
   .ck-section-intro a:not([class]):hover {
     border-bottom-color: var(--sc-teal-ink);
   }
+  /* Empty-row cell — partner-visible empty states inside data
+   * tables that don't fit the block-level ck_empty_state component.
+   * Italic Source-Serif framing with a soft bone tint pulls the row
+   * out of the prose stream without shouting. */
+  .ck-empty-row {
+    padding: 14px 16px;
+    background: var(--sc-bone, #f5f1ea);
+    font-family: "Source Serif 4", serif;
+    font-size: 13px;
+    color: var(--sc-text-dim, #37495e);
+    line-height: 1.55;
+  }
+  .ck-empty-row em {
+    font-style: italic;
+    color: var(--sc-teal-ink, #0e3e3a);
+  }
   /* Inline editorial sparkline — small SVG trend with optional
    * caps label + mono numeric end-value. Used in deals tables,
    * KPI strips, and anywhere a single inline trend needs to read

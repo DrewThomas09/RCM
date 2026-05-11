@@ -61,7 +61,15 @@ from ._chartis_kit import (
     ck_next_section,
     ck_page_title,
     ck_provenance_tooltip,
+    ck_signal_badge,
 )
+
+
+_SEV_TO_TONE = {
+    "red":   "negative",
+    "amber": "warning",
+    "info":  "neutral",
+}
 
 
 _SEV_META = {
@@ -233,8 +241,13 @@ def _row(a, name_map: Dict[str, str]) -> str:
         'title="Returned after snooze expired">↩ returning</span>'
         if getattr(a, "returning", False) else ""
     )
-    sev_color = _SEV_TONE_COLOR.get(
-        a.severity, "var(--sc-text-faint,#7a8699)",
+    # Editorial severity badge — drops the inline `style="color:…"`
+    # in favor of ck_signal_badge with the shared tone palette so
+    # the alerts row reads like every other badge on the platform
+    # (positive / warning / negative / neutral).
+    sev_badge = ck_signal_badge(
+        a.severity.upper(),
+        tone=_SEV_TO_TONE.get(a.severity, "neutral"),
     )
     deal_name = name_map.get(a.deal_id, a.deal_id)
     deal_link = (
@@ -273,8 +286,7 @@ def _row(a, name_map: Dict[str, str]) -> str:
     )
     return (
         '<li class="ck-alert-row">'
-        f'<span class="ck-alert-sev" style="color:{sev_color};">'
-        f'{html.escape(a.severity.upper())}</span>'
+        f'<span class="ck-alert-sev">{sev_badge}</span>'
         f'{deal_link}'
         f'{slug_html}'
         f'<span class="ck-alert-title">{html.escape(a.title)}</span>'

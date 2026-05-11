@@ -49,8 +49,8 @@ def render_engagement_list(
             '</tr>'
         )
     empty_msg = (
-        f'<tr><td colspan="5" style="padding:14px;color:{P["text_faint"]};'
-        f'font-style:italic;">No engagements yet. Create one below.</td></tr>'
+        '<tr><td colspan="5" class="ck-empty-row">'
+        'No engagements yet. <em>Create one below.</em></td></tr>'
         if not rows else ""
     )
     create_form = (
@@ -248,9 +248,9 @@ def _members_section(members: Iterable[EngagementMember]) -> str:
             '</tr>'
         )
     empty = (
-        f'<tr><td colspan="4" style="padding:10px;color:{P["text_faint"]};'
-        f'font-style:italic;">No members. Add the partner + lead + '
-        f'analyst before working on this engagement.</td></tr>'
+        '<tr><td colspan="4" class="ck-empty-row">'
+        '<em>No members.</em> Add the partner + lead + '
+        'analyst before working on this engagement.</td></tr>'
         if not rows else ""
     )
     table = (
@@ -319,8 +319,8 @@ def _deliverables_section(
             '</tr>'
         )
     empty = (
-        f'<tr><td colspan="5" style="padding:10px;color:{P["text_faint"]};'
-        f'font-style:italic;">No deliverables yet.</td></tr>'
+        '<tr><td colspan="5" class="ck-empty-row">'
+        '<em>No deliverables yet.</em></td></tr>'
         if not rows else ""
     )
     table = (

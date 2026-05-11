@@ -27,8 +27,9 @@ from ..diligence.checklist import (
 )
 from ..diligence.checklist.items import build_checklist
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
-    ck_panel, ck_section_header, ck_section_intro, ck_sticky_toc,
+    P, chartis_shell, ck_help_tooltip, ck_kpi_block, ck_next_section,
+    ck_page_title, ck_panel, ck_section_header, ck_section_intro,
+    ck_sticky_toc,
 )
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
@@ -201,6 +202,40 @@ _PHASE_TITLES = {
     3: "Phase 3 · Risk workbench + manual diligence",
     4: "Phase 4 · Financial synthesis",
     5: "Phase 5 · Partner deliverables",
+}
+
+# Editorial glosses surfaced via ck_help_tooltip [?] on each phase
+# header. Partners encountering an unfamiliar phase label get the
+# what-belongs-here + when-this-runs framing inline.
+_PHASE_HELP = {
+    1: (
+        "Pre-NDA screening. Public-data sourcing + size / sub-sector "
+        "filters before a signed NDA opens the data room. Predictive "
+        "screener + market-intel comp band sit here."
+    ),
+    2: (
+        "CCD benchmarks + predictive. The seller's data room becomes "
+        "structured records (CCD ingest); HFMA benchmarks compare "
+        "every initiative to industry priors; denial-rate predictor "
+        "lands a forward-looking write-off projection."
+    ),
+    3: (
+        "Risk workbench + manual diligence. Tier 1-3 risk panels run "
+        "alongside partner-led checklist items (legal reps, payer "
+        "contract review, management interviews). Bear case assembles "
+        "from this layer."
+    ),
+    4: (
+        "Financial synthesis. The 7-lever EBITDA bridge, the two-"
+        "source Monte Carlo, and the public-market overlay turn "
+        "diligence findings into investment math. Covenant headroom "
+        "math runs against the post-close credit stack."
+    ),
+    5: (
+        "Partner deliverables. IC memo, IC packet, LP digest, "
+        "exit memo. Every export caps the chain of citation so the "
+        "LP can audit any number back to its source."
+    ),
 }
 
 
@@ -413,11 +448,17 @@ def _phase_section(
             f'{note_html}'
             f'</div>'
         )
+    phase_title = _PHASE_TITLES.get(phase, f"Phase {phase}")
+    phase_help = _PHASE_HELP.get(phase)
+    title_html = (
+        ck_help_tooltip(phase_title, phase_help)
+        if phase_help else html.escape(phase_title)
+    )
     return (
         f'<div class="dc-phase">'
         f'<div class="dc-phase__head">'
         f'<div class="dc-phase__title">'
-        f'{html.escape(_PHASE_TITLES.get(phase, f"Phase {phase}"))}</div>'
+        f'{title_html}</div>'
         f'<div class="dc-phase__count">{n_done}/{n_total} done · '
         f'{pct:.0f}%</div>'
         f'</div>'
