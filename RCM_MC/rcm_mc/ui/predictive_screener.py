@@ -393,7 +393,9 @@ def render_predictive_screener(
 .ps-input-md{width:92px;}
 .ps-input-lg{width:120px;}
 .ps-pipe-form{display:inline;margin:0;}
-.ps-pipe-btn{padding:2px 8px;font-size:10px;cursor:pointer;}
+.ps-pipe-btn{padding:2px 8px;font-size:10px;cursor:pointer;
+transition:filter 120ms ease;}
+.ps-pipe-btn:hover{filter:brightness(1.08);}
 .ps-save-form{display:flex;gap:8px;align-items:flex-end;}
 .ps-save-field{flex:1;}
 </style>

@@ -612,7 +612,10 @@ def render_regression_page(
 .rg-selector-label{font-size:12px;color:var(--cad-text2);
 display:block;margin-bottom:4px;}
 .rg-selector-input{padding:7px 12px;border:1px solid var(--cad-border);
-border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;}
+border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;
+transition:border-color 120ms ease, box-shadow 120ms ease;}
+.rg-selector-input:focus{outline:none;border-color:var(--cad-link);
+box-shadow:0 0 0 2px rgba(21,87,82,0.18);}
 .rg-selector-submit{align-self:flex-end;}
 .rg-bar-track{background:var(--cad-bg3);border-radius:4px;height:10px;}
 .rg-bar-track-sm{height:8px;width:120px;}

@@ -59,7 +59,8 @@ padding:18px 22px;margin-top:14px;}}
 .hx-target-name{{font-size:20px;color:{tx};font-weight:600;
 letter-spacing:-.2px;}}
 .hx-target-ccn{{font-family:"JetBrains Mono",monospace;font-size:11px;
-color:{tf};letter-spacing:0.5px;}}
+color:{tf};letter-spacing:0.5px;
+font-variant-numeric:tabular-nums;}}
 .hx-kpi-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
 gap:14px;margin-top:14px;}}
 .hx-kpi__label{{font-size:9px;letter-spacing:1.3px;text-transform:uppercase;
@@ -77,8 +78,10 @@ text-transform:uppercase;font-weight:700;border-bottom:2px solid {bd};}}
 .hx-metric-name{{color:{tx};font-weight:600;}}
 .hx-metric-help{{font-size:10px;color:{tf};margin-top:2px;
 font-weight:400;line-height:1.4;}}
-.hx-metric-val{{font-family:"JetBrains Mono",monospace;font-weight:700;}}
-.hx-metric-peer{{font-family:"JetBrains Mono",monospace;color:{td};}}
+.hx-metric-val{{font-family:"JetBrains Mono",monospace;font-weight:700;
+font-variant-numeric:tabular-nums;}}
+.hx-metric-peer{{font-family:"JetBrains Mono",monospace;color:{td};
+font-variant-numeric:tabular-nums;}}
 .hx-cat-title{{font-size:11px;color:{tf};letter-spacing:1.4px;
 text-transform:uppercase;font-weight:700;margin:18px 0 6px 0;
 padding-bottom:4px;border-bottom:1px solid {bd};}}
@@ -114,7 +117,8 @@ text-align:right;}}
 .hx-metric-val{{color:{tx};}}
 .hx-metric-peer-median{{color:{tx};font-weight:700;}}
 .hx-metric-var-cell{{text-align:right;}}
-.hx-metric-var{{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:12px;}}
+.hx-metric-var{{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:12px;
+font-variant-numeric:tabular-nums;}}
 .hx-metric-chip-row{{margin-top:2px;}}
 .hx-metric-var-head{{text-align:right;}}
 """.format(

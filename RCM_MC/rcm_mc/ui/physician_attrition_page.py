@@ -106,7 +106,8 @@ gap:18px;margin-top:14px;}}
 .pa-card__sim{{text-align:left;}}}}
 .pa-card__band-row{{margin-top:6px;display:flex;gap:8px;align-items:center;}}
 .pa-card__collections{{color:{tf};font-size:11px;
-font-family:"JetBrains Mono",monospace;}}
+font-family:"JetBrains Mono",monospace;
+font-variant-numeric:tabular-nums;}}
 .pa-driver-label{{font-size:9px;color:{tf};letter-spacing:1.2px;
 text-transform:uppercase;font-weight:600;margin-bottom:4px;}}
 .pa-sim-pct{{font-size:16px;opacity:.7;}}
@@ -119,8 +120,10 @@ text-transform:uppercase;font-weight:600;margin-bottom:4px;}}
 gap:10px;align-items:baseline;padding:4px 0;
 border-bottom:1px solid {bdim};font-size:11px;}}
 .pa-fv-name{{color:{td};}}
-.pa-fv-val{{font-family:"JetBrains Mono",monospace;color:{tx};text-align:right;}}
-.pa-fv-contrib{{font-family:"JetBrains Mono",monospace;text-align:right;}}
+.pa-fv-val{{font-family:"JetBrains Mono",monospace;color:{tx};text-align:right;
+font-variant-numeric:tabular-nums;}}
+.pa-fv-contrib{{font-family:"JetBrains Mono",monospace;text-align:right;
+font-variant-numeric:tabular-nums;}}
 .pa-fv-source{{color:{tf};font-size:10px;}}
 .pa-fv-details{{margin-top:12px;}}
 .pa-fv-details summary{{cursor:pointer;color:{td};letter-spacing:1.2px;

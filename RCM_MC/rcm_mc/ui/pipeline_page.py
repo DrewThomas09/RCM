@@ -330,7 +330,12 @@ def render_pipeline(db_path: str) -> str:
 .pp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .pp-advance-form{display:inline;}
 .pp-advance-btn{background:none;border:none;color:var(--cad-link);
-cursor:pointer;font-size:10px;padding:0;}
+cursor:pointer;font-size:10px;padding:0;
+transition:color 120ms ease, text-decoration-color 120ms ease;
+text-decoration:underline;text-decoration-color:transparent;
+text-underline-offset:2px;}
+.pp-advance-btn:hover{color:var(--cad-text);
+text-decoration-color:var(--cad-link);}
 .pp-activity-row{display:flex;gap:8px;padding:4px 0;font-size:12px;
 border-bottom:1px solid var(--cad-border);}
 .pp-activity-date{color:var(--cad-text3);width:70px;font-size:10px;}

@@ -336,7 +336,10 @@ display:block;margin-bottom:4px;}
 .dr-entry-input{width:100%;padding:7px 10px;
 border:1px solid var(--cad-border);border-radius:4px;
 background:var(--cad-bg3);color:var(--cad-text);
-font-size:12px;box-sizing:border-box;}
+font-size:12px;box-sizing:border-box;
+transition:border-color 120ms ease, box-shadow 120ms ease;}
+.dr-entry-input:focus{outline:none;border-color:var(--cad-link);
+box-shadow:0 0 0 2px rgba(21,87,82,0.18);}
 .dr-entry-submit{display:flex;align-items:flex-end;}
 .dr-entry-btn{width:100%;}
 .dr-surprise-row{display:flex;gap:8px;padding:6px 0;
