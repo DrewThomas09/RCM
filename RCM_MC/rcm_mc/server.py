@@ -6447,14 +6447,25 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._error_page("Scenario Error", f"CCN {ccn}: {str(exc)[:200]}")
 
     def _route_ic_memo(self, ccn: str) -> None:
-        """GET /ic-memo/{ccn} — one-click IC memo generation."""
+        """GET /ic-memo/{ccn} — one-click IC memo generation.
+
+        Honours ``?print=1`` by rendering the print-preview shell —
+        partners see the LP-facing deliverable before they hit Cmd+P.
+        """
         ccn = self._sanitize_ccn(ccn)
         try:
+            qs = urllib.parse.parse_qs(
+                urllib.parse.urlparse(self.path).query)
+            preview = bool(qs.get("print"))
             from .data.hcris import _get_latest_per_ccn
             from .ui.ic_memo_page import render_ic_memo
             from .ui.regression_page import _add_computed_features
             hcris = _add_computed_features(_get_latest_per_ccn())
-            return self._send_html(render_ic_memo(ccn, hcris, db_path=self.config.db_path))
+            return self._send_html(render_ic_memo(
+                ccn, hcris,
+                db_path=self.config.db_path,
+                print_preview=preview,
+            ))
         except Exception as exc:
             return self._error_page("IC Memo Error", f"CCN {ccn}: {str(exc)[:200]}")
 

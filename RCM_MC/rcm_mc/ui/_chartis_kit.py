@@ -2774,6 +2774,48 @@ _CSS_INLINE_FALLBACK = """
   /* Main content frame */
   .ck-main { padding:var(--sc-s-7); max-width:1720px; margin:0 auto; }
 
+  /* Print preview mode — partners hit ?print=1 to see the LP-facing
+   * deliverable before they print. Hides shell chrome inside the
+   * wrapper so the page reads exactly like the print pathway. */
+  .ck-print-preview {
+    max-width: 880px; margin: 0 auto; padding: 32px 24px;
+    background: #fff;
+    box-shadow: 0 0 0 1px var(--sc-rule, #d8d3c8),
+                0 8px 28px rgba(11, 35, 65, 0.08);
+  }
+  .ck-print-preview-bar {
+    display: flex; align-items: baseline;
+    justify-content: space-between; gap: 14px;
+    padding: 8px 14px; margin: -32px -24px 24px;
+    background: var(--sc-bone, #f5f1ea);
+    border-bottom: 1px solid var(--sc-rule, #d8d3c8);
+    font-family: "Inter Tight", sans-serif;
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .ck-print-preview-meta {
+    color: var(--sc-text-faint, #6e7787); font-weight: 700;
+  }
+  .ck-print-preview-exit {
+    color: var(--sc-teal-ink, #0e3e3a); text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 120ms ease;
+  }
+  .ck-print-preview-exit:hover {
+    border-bottom-color: var(--sc-teal-ink, #0e3e3a);
+  }
+  .ck-print-preview-cta {
+    text-align: right; margin: 0 0 12px;
+    font-family: "Source Serif 4", serif; font-style: italic;
+    font-size: 13px;
+  }
+  @media print {
+    .ck-print-preview-bar { display: none; }
+    .ck-print-preview-cta { display: none; }
+    .ck-print-preview {
+      max-width: none; margin: 0; padding: 0; box-shadow: none;
+    }
+  }
+
   /* Print — for /memo/<id>, /ic-packet/<id>. Partners save these as
    * PDFs to share with LPs / IC; the editorial layout should survive
    * the print path with chrome stripped, panels kept whole, and the

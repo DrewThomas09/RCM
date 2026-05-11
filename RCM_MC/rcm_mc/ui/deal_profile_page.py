@@ -617,6 +617,40 @@ display:flex;align-items:baseline;gap:6px;}}
 .ck-dp-card-state[hidden]{{display:none !important;}}
 .ck-dp-card-state-dot{{width:5px;height:5px;border-radius:50%;
 background:{P["accent"]};display:inline-block;flex-shrink:0;}}
+.ck-dp-pulse{{margin:16px 0 22px;padding:18px 22px;
+background:{P["panel_alt"]};border:1px solid {P["border"]};
+border-radius:4px;}}
+.ck-dp-pulse[hidden]{{display:none !important;}}
+.ck-dp-pulse-head{{display:flex;align-items:baseline;
+justify-content:space-between;gap:14px;margin-bottom:14px;}}
+.ck-dp-pulse-eyebrow{{font-family:"Inter Tight",sans-serif;
+font-size:10px;font-weight:700;letter-spacing:1.4px;
+text-transform:uppercase;color:{P["text_faint"]};}}
+.ck-dp-pulse-meta{{font-family:"Source Serif 4",serif;
+font-style:italic;font-size:12px;color:{P["text_faint"]};}}
+.ck-dp-pulse-grid{{display:grid;
+grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:24px;
+align-items:end;}}
+.ck-dp-pulse-tile{{}}
+.ck-dp-pulse-val{{font-family:"JetBrains Mono",monospace;
+font-size:26px;font-weight:700;color:{P["text"]};line-height:1;
+font-variant-numeric:tabular-nums;margin-bottom:8px;}}
+.ck-dp-pulse-val-serif{{font-family:"Source Serif 4",serif;
+font-weight:500;font-size:18px;letter-spacing:-0.005em;
+color:{P["text"]};}}
+.ck-dp-pulse-lbl{{font-family:"Inter Tight",sans-serif;
+font-size:10px;font-weight:700;letter-spacing:1.4px;
+text-transform:uppercase;color:{P["text_faint"]};margin-bottom:4px;}}
+.ck-dp-pulse-sub{{font-family:"Source Serif 4",serif;font-style:italic;
+font-size:11px;color:{P["text_faint"]};}}
+.ck-dp-pulse-bar{{height:8px;background:{P["panel"]};
+border:1px solid {P["border"]};border-radius:4px;overflow:hidden;
+margin-bottom:8px;}}
+.ck-dp-pulse-bar-fill{{height:100%;width:0%;
+background:{P["accent"]};
+transition:width 320ms ease;}}
+@media print{{.ck-dp-pulse{{display:none !important;}}}}
+
 .ck-dp-card{{position:relative;}}
 .ck-dp-card-pin{{position:absolute;top:8px;right:8px;
 background:none;border:0;padding:4px 6px;cursor:pointer;
@@ -1174,6 +1208,60 @@ def _render_lifecycle_ribbon(slug: str) -> str:
     return f'<div class="ck-dp-lifecycle">{"".join(segments)}</div>'
 
 
+def _render_diligence_pulse(slug: str) -> str:
+    """Server-emitted placeholder for the diligence pulse composite.
+
+    Renders a hidden parchment section with three tiles — tools
+    opened, last touched, progress bar — that inline JS hydrates
+    from ``rcm_deal_<slug>_visited`` on DOMContentLoaded. The pulse
+    only appears once a partner has actually opened at least one
+    analytic on this deal; first-time visits see nothing extra.
+
+    The label for "Last touched" needs to map an href back to a
+    human-readable analytic title. That map is computed at render
+    time from ``_ANALYTICS`` (the deal-profile's tool catalog) and
+    inlined as ``window.RCM_DP_TOOL_LABELS`` so the JS can resolve
+    href → label without a round-trip.
+    """
+    # Build href → label + total count from the analytics list
+    tool_labels = {a["href"]: a["label"] for a in _ANALYTICS}
+    return (
+        '<section class="ck-dp-pulse" data-rcm-dp-pulse hidden>'
+        '<div class="ck-dp-pulse-head">'
+        '<span class="ck-dp-pulse-eyebrow">Diligence pulse</span>'
+        '<span class="ck-dp-pulse-meta" data-rcm-pulse-meta></span>'
+        '</div>'
+        '<div class="ck-dp-pulse-grid">'
+        '<div class="ck-dp-pulse-tile">'
+        '<div class="ck-dp-pulse-val" data-rcm-pulse-count>0</div>'
+        '<div class="ck-dp-pulse-lbl">Tools opened</div>'
+        f'<div class="ck-dp-pulse-sub">of {len(_ANALYTICS)} analytics</div>'
+        '</div>'
+        '<div class="ck-dp-pulse-tile">'
+        '<div class="ck-dp-pulse-val ck-dp-pulse-val-serif" '
+        'data-rcm-pulse-last>—</div>'
+        '<div class="ck-dp-pulse-lbl">Last touched</div>'
+        '<div class="ck-dp-pulse-sub" '
+        'data-rcm-pulse-last-ts></div>'
+        '</div>'
+        '<div class="ck-dp-pulse-tile">'
+        '<div class="ck-dp-pulse-bar">'
+        '<div class="ck-dp-pulse-bar-fill" '
+        'data-rcm-pulse-bar-fill></div>'
+        '</div>'
+        '<div class="ck-dp-pulse-lbl">Diligence progress</div>'
+        '<div class="ck-dp-pulse-sub" '
+        'data-rcm-pulse-pct>0%</div>'
+        '</div>'
+        '</div>'
+        '</section>'
+        '<script>window.RCM_DP_TOOL_LABELS='
+        + json.dumps(tool_labels)
+        + f';window.RCM_DP_TOOL_TOTAL={len(_ANALYTICS)};'
+        '</script>'
+    )
+
+
 def _inline_js(slug: str) -> str:
     """Small script — reads/writes localStorage under rcm_deal_<slug>
     and hydrates form + link hrefs."""
@@ -1590,6 +1678,10 @@ def _inline_js(slug: str) -> str:
   document.addEventListener("click", function(e) {
     var card = e.target.closest && e.target.closest("[data-rcm-tool-key]");
     if (!card) return;
+    // The pin button lives inside the card link — don't record a
+    // visit when the partner is pinning, only when they click the
+    // card itself to navigate.
+    if (e.target.closest("[data-rcm-pin-toggle]")) return;
     var key = card.getAttribute("data-rcm-tool-key");
     if (!key) return;
     try {
@@ -1600,6 +1692,53 @@ def _inline_js(slug: str) -> str:
       localStorage.setItem(visitedKey, JSON.stringify(rows));
     } catch (err) { /* quota / disabled — ignore */ }
   });
+
+  // Diligence pulse — hydrate from the same visited map. Three
+  // tiles: tools opened, last touched (label + relative ts),
+  // progress bar (count / total). Section stays hidden until at
+  // least one tool has been visited.
+  function paintDiligencePulse() {
+    var sec = document.querySelector("[data-rcm-dp-pulse]");
+    if (!sec) return;
+    var rows = {};
+    try {
+      var raw = localStorage.getItem(visitedKey);
+      if (raw) rows = JSON.parse(raw) || {};
+    } catch (e) { rows = {}; }
+    var entries = Object.keys(rows).map(function(href) {
+      return { href: href, ts: rows[href] };
+    });
+    if (!entries.length) { sec.hidden = true; return; }
+    var count = entries.length;
+    var total = (window.RCM_DP_TOOL_TOTAL || 22);
+    var labels = (window.RCM_DP_TOOL_LABELS || {});
+    entries.sort(function(a, b) { return b.ts - a.ts; });
+    var lastTs = entries[0].ts;
+    var lastLabel = labels[entries[0].href] || entries[0].href;
+    var d = Math.round((Date.now() - lastTs) / 60000);
+    var rel = d < 1 ? "just now"
+      : d < 60 ? d + " min ago"
+      : d < 1440 ? Math.round(d / 60) + " hr ago"
+      : Math.round(d / 1440) + " d ago";
+    var pct = Math.round((count / total) * 100);
+    var pctClamped = Math.max(0, Math.min(100, pct));
+    var cnt = sec.querySelector("[data-rcm-pulse-count]");
+    if (cnt) cnt.textContent = String(count);
+    var lastEl = sec.querySelector("[data-rcm-pulse-last]");
+    if (lastEl) lastEl.textContent = lastLabel;
+    var lastTsEl = sec.querySelector("[data-rcm-pulse-last-ts]");
+    if (lastTsEl) lastTsEl.textContent = rel;
+    var pctEl = sec.querySelector("[data-rcm-pulse-pct]");
+    if (pctEl) pctEl.textContent = pct + "% of " + total;
+    var fill = sec.querySelector("[data-rcm-pulse-bar-fill]");
+    if (fill) fill.style.width = pctClamped + "%";
+    var meta = sec.querySelector("[data-rcm-pulse-meta]");
+    if (meta) {
+      meta.textContent = "from your visit history on " + slug;
+    }
+    sec.hidden = false;
+  }
+  document.addEventListener("DOMContentLoaded", paintDiligencePulse);
 
   // Pinned tools — partner-curated favorites stored in
   // localStorage["rcm_pinned_tools"] as [{href, label, phase}] and
@@ -1780,8 +1919,9 @@ def render_deal_profile_page(
     grid_block = (
         f'<section id="dp-analytics">{grid_header}{grid}</section>'
     )
+    pulse = _render_diligence_pulse(slug)
     return chartis_shell(
-        _DP_STYLES + hero
+        _DP_STYLES + hero + pulse
         + '<div class="ck-toc-layout">'
         + toc
         + '<div class="ck-toc-content">'

@@ -153,8 +153,22 @@ def _build_memo_data(ccn: str, hcris_df: pd.DataFrame, db_path: Optional[str] = 
     }
 
 
-def render_ic_memo(ccn: str, hcris_df: pd.DataFrame, db_path: Optional[str] = None) -> str:
-    """Render a complete IC memo for a hospital."""
+def render_ic_memo(
+    ccn: str,
+    hcris_df: pd.DataFrame,
+    db_path: Optional[str] = None,
+    *,
+    print_preview: bool = False,
+) -> str:
+    """Render a complete IC memo for a hospital.
+
+    ``print_preview`` (set when the route handler sees ``?print=1``)
+    applies the ``ck-print-preview`` class to the body, which the
+    chartis shell's CSS uses to render the page exactly as it would
+    print: hides the topnav, breadcrumbs, TOC, palette, and the
+    tour overlay so the partner sees the LP-facing deliverable
+    before hitting Cmd+P.
+    """
     from .provenance import source_tag, Source
 
     def _src_tag(src: str) -> str:
@@ -568,13 +582,36 @@ def render_ic_memo(ccn: str, hcris_df: pd.DataFrame, db_path: Optional[str] = No
         {"id": "s8-methodology", "title": "8. Methodology"},
         {"id": "s9-crosslinks",  "title": "Cross-links"},
     ])
-    body = (
-        '<div class="ck-toc-layout">'
-        + toc
-        + '<div class="ck-toc-content">'
-        + "\n".join(sections)
-        + '</div></div>'
-    )
+    # Print-preview affordance — partners often want to see the LP-
+    # facing deliverable before hitting Cmd+P. ?print=1 wraps the
+    # memo in .ck-print-preview which the chartis shell CSS uses to
+    # hide chrome, max-width the page, and lighten the panel borders
+    # so the on-screen render matches the printed PDF. A small
+    # editorial "Exit preview" link sits at the top-right.
+    if print_preview:
+        body = (
+            '<div class="ck-print-preview">'
+            '<div class="ck-print-preview-bar">'
+            f'<span class="ck-print-preview-meta">Print preview · '
+            f'CCN {_html.escape(ccn)}</span>'
+            f'<a href="/ic-memo/{_html.escape(ccn)}" '
+            'class="ck-print-preview-exit">Exit preview</a>'
+            '</div>'
+            + "\n".join(sections)
+            + '</div>'
+        )
+    else:
+        body = (
+            f'<div class="ck-print-preview-cta">'
+            f'<a href="/ic-memo/{_html.escape(ccn)}?print=1" '
+            'class="ck-link">Preview print version →</a>'
+            '</div>'
+            '<div class="ck-toc-layout">'
+            + toc
+            + '<div class="ck-toc-content">'
+            + "\n".join(sections)
+            + '</div></div>'
+        )
 
     return chartis_shell(
         body,
