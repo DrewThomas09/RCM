@@ -14736,6 +14736,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             f"{hint_panel}"
             f"{page_css}"
         )
+        from .ui._chartis_kit import ck_next_section
+        body = body + ck_next_section(
+            "Or open the command palette — ⌘K",
+            "/?v3=1",
+            eyebrow="Continue —",
+            italic_word="palette",
+        )
         self._send_html(chartis_shell(
             body, "Search",
             active_nav="/search",
