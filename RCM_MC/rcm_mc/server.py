@@ -5823,7 +5823,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.questions_aggregator_page import (
                 render_questions_aggregator,
             )
-            return self._send_html(render_questions_aggregator())
+            qs_qaq = urllib.parse.parse_qs(
+                urllib.parse.urlparse(self.path).query)
+            preview = bool(qs_qaq.get("print"))
+            return self._send_html(render_questions_aggregator(
+                print_preview=preview))
         if path.startswith("/models/dcf/"):
             deal_id = urllib.parse.unquote(path[len("/models/dcf/"):]).strip("/")
             return self._route_model_dcf(deal_id)

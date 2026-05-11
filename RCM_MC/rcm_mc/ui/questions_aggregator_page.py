@@ -462,10 +462,22 @@ _AGG_JS = """
 """
 
 
-def render_questions_aggregator(store: Any = None) -> str:  # noqa: ARG001
+def render_questions_aggregator(
+    store: Any = None,  # noqa: ARG001
+    *,
+    print_preview: bool = False,
+) -> str:
     """Render the cross-deal aggregator. ``store`` is accepted to
     match the route-handler signature in server.py but the page is
-    purely client-hydrated — every row lives in localStorage."""
+    purely client-hydrated — every row lives in localStorage.
+
+    ``print_preview`` (set when the route handler sees ``?print=1``)
+    wraps the body in ``ck-print-preview`` so partners see the LP-
+    facing question binder before they hit Cmd+P. Toolbar and
+    filter chips stay visible in preview so the partner can adjust
+    the cut before printing, but ``@media print`` hides them so
+    the printed PDF shows only the question lists.
+    """
     intro = ck_section_intro(
         eyebrow="DILIGENCE QUESTIONS · PORTFOLIO",
         headline="Every question, every deal, one ledger.",
@@ -535,16 +547,37 @@ def render_questions_aggregator(store: Any = None) -> str:  # noqa: ARG001
         italic_word="Shift",
     )
 
-    body = (
-        _AGG_STYLES
-        + intro
-        + ck_panel(
-            toolbar_html + chips_html + list_html,
-            title="Cross-deal question ledger",
+    if print_preview:
+        body = (
+            _AGG_STYLES
+            + '<div class="ck-print-preview">'
+            '<div class="ck-print-preview-bar">'
+            '<span class="ck-print-preview-meta">'
+            'Print preview · portfolio question ledger'
+            '</span>'
+            '<a href="/diligence/questions" '
+            'class="ck-print-preview-exit">Exit preview</a>'
+            '</div>'
+            + intro
+            + toolbar_html + chips_html + list_html
+            + '</div>'
+            + _AGG_JS
         )
-        + next_up
-        + _AGG_JS
-    )
+    else:
+        body = (
+            _AGG_STYLES
+            + '<div class="ck-print-preview-cta">'
+            '<a href="/diligence/questions?print=1" '
+            'class="ck-link">Preview print version →</a>'
+            '</div>'
+            + intro
+            + ck_panel(
+                toolbar_html + chips_html + list_html,
+                title="Cross-deal question ledger",
+            )
+            + next_up
+            + _AGG_JS
+        )
 
     return chartis_shell(
         body,

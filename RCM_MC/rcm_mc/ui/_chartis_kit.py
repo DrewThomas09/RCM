@@ -2366,10 +2366,13 @@ def ck_affirm_empty(
 _DEFAULT_PALETTE_MODULES = [
     # Home + ops
     {"id": "home",        "title": "Command Center",       "route": "/app"},
+    {"id": "day-one",     "title": "Day One · Monday brief", "route": "/day-one"},
     {"id": "my",          "title": "My Dashboard",         "route": "/my/AT"},
     {"id": "alerts",      "title": "Alerts",               "route": "/alerts"},
     {"id": "escalations", "title": "Escalations",          "route": "/escalations"},
     {"id": "watchlist",   "title": "Watchlist",            "route": "/watchlist"},
+    {"id": "questions-ledger", "title": "Diligence Questions · ledger",
+        "route": "/diligence/questions"},
     # Pipeline / sourcing
     {"id": "pipeline",    "title": "Pipeline",             "route": "/pipeline"},
     {"id": "source",      "title": "Deal Sourcing",        "route": "/source"},
