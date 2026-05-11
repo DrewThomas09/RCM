@@ -4487,7 +4487,78 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "Claude-backed memos, Q&A, chat — not yet configured. "
                 "Click to connect via ANTHROPIC_API_KEY."
             )
+            # Editorial onboarding checklist — "your platform
+            # journey". JS-hydrated from localStorage so partners see
+            # which milestones they've crossed.
+            from .ui._chartis_kit import ck_progress_checklist
+            checklist = ck_progress_checklist([
+                {
+                    "id": "j1",
+                    "title": "Open your first deal profile",
+                    "body": (
+                        "Pick a slug (e.g. 'aurora') and enter "
+                        "your deal parameters once — every "
+                        "downstream tool then pre-fills."
+                    ),
+                    "check": "recent_deals",
+                },
+                {
+                    "id": "j2",
+                    "title": "Start The Atlas — the editorial tour",
+                    "body": (
+                        "Seven volumes covering every surface. Begins "
+                        "with Volume I — The Pipeline. Press "
+                        "T anywhere on the platform."
+                    ),
+                    "check": "tour_started",
+                },
+                {
+                    "id": "j3",
+                    "title": "Run your first analytic",
+                    "body": (
+                        "Click any card from a deal profile. The "
+                        "tool opens with your deal context pre-"
+                        "filled — no re-typing."
+                    ),
+                    "check": "any_tool_visited",
+                },
+                {
+                    "id": "j4",
+                    "title": "Open an IC memo or packet",
+                    "body": (
+                        "Auto-assembled from the analysis packet — "
+                        "thesis, base case, bear case, exit path, "
+                        "and the questions partners expect."
+                    ),
+                    "check": "ic_memo_visited",
+                },
+                {
+                    "id": "j5",
+                    "title": "Complete the full tour",
+                    "body": (
+                        "All seven volumes — and you've seen every "
+                        "surface a partner needs."
+                    ),
+                    "check": "tour_completed",
+                },
+            ])
+            checklist_section = (
+                '<section style="margin-bottom:24px;">'
+                '<div class="ck-eyebrow" '
+                'style="margin-bottom:8px;">Your platform journey</div>'
+                '<h2 style="font-family:\'Source Serif 4\',serif;'
+                'font-weight:400;font-size:24px;line-height:1.2;'
+                'letter-spacing:-0.012em;color:var(--sc-navy,#0b2341);'
+                'margin:0 0 12px;">'
+                'Five milestones, one editorial <em '
+                'style="font-style:italic;color:var(--sc-teal-ink,#0e3e3a);">'
+                'arc</em>.</h2>'
+                + checklist
+                + '</section>'
+            )
+
             body = (
+                checklist_section +
                 '<div class="cad-kpi-grid">'
                 '<a href="/?tour=1" class="cad-card" '
                 'data-ck-tour-settings-tile '

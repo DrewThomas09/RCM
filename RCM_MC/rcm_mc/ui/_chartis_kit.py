@@ -593,6 +593,69 @@ def ck_help_tooltip(
     )
 
 
+def ck_progress_checklist(items: Sequence[Mapping[str, str]]) -> str:
+    """Editorial 'your platform journey' progress checklist.
+
+    Each item is a mapping with these keys:
+
+      - ``id``:    a stable identifier, used as the storage-check key
+      - ``title``: serif heading for the row
+      - ``body``:  short editorial paragraph (optional)
+      - ``check``: one of ``"recent_deals"``, ``"tour_started"``,
+                   ``"tour_completed"``, ``"any_tool_visited"``,
+                   ``"ic_memo_visited"``, ``"any"``. Inline JS
+                   evaluates the check on DOMContentLoaded and flips
+                   the row into the ``is-done`` state when satisfied.
+
+    The checklist renders as a serif numbered list with a small
+    circular state marker on each row — empty circle for incomplete,
+    filled with a positive-tone check for done. Hidden in print.
+    """
+    rows = []
+    for i, item in enumerate(items, start=1):
+        rows.append(
+            f'<li class="ck-checklist-row" data-ck-check="{_esc(item["check"])}">'
+            f'<span class="ck-checklist-marker" aria-hidden="true"></span>'
+            '<span class="ck-checklist-number">'
+            + f"{i:02d}"
+            + '</span>'
+            '<div class="ck-checklist-body">'
+            f'<div class="ck-checklist-title">{_esc(item["title"])}</div>'
+            + (
+                f'<div class="ck-checklist-prose">{_esc(item["body"])}</div>'
+                if item.get("body") else ""
+            )
+            + '</div>'
+            '</li>'
+        )
+    return (
+        '<div class="ck-checklist-wrap">'
+        '<ol class="ck-checklist">'
+        + "".join(rows)
+        + '</ol>'
+        '</div>'
+        '<script>'
+        '(function(){'
+        'function hasTour(){try{var s=JSON.parse(localStorage.getItem("rcm_tour_v1")||"null");return s||null;}catch(e){return null;}}'
+        'function recentCount(){try{var r=JSON.parse(localStorage.getItem("rcm_recent_deals")||"[]");return Array.isArray(r)?r.length:0;}catch(e){return 0;}}'
+        'function anyToolVisited(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&/_visited$/.test(k)){var v=JSON.parse(localStorage.getItem(k)||"{}");if(v&&Object.keys(v).length)return true;}}return false;}catch(e){return false;}}'
+        'function icMemoVisited(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&/_visited$/.test(k)){var v=JSON.parse(localStorage.getItem(k)||"{}");for(var t in v){if(/ic-memo/i.test(t)||/ic-packet/i.test(t))return true;}}}return false;}catch(e){return false;}}'
+        'function checkRow(row){var c=row.getAttribute("data-ck-check");'
+        'if(c==="recent_deals")return recentCount()>0;'
+        'var s=hasTour();'
+        'if(c==="tour_started")return !!(s&&(s.lastViewed>0||(s.completed&&s.completed.length>0)));'
+        'if(c==="tour_completed")return !!(s&&s.completed&&s.completed.length>=7);'
+        'if(c==="any_tool_visited")return anyToolVisited();'
+        'if(c==="ic_memo_visited")return icMemoVisited();'
+        'return false;}'
+        'function paint(){document.querySelectorAll("[data-ck-check]").forEach(function(row){'
+        'if(checkRow(row))row.classList.add("is-done");else row.classList.remove("is-done");});}'
+        'document.addEventListener("DOMContentLoaded",paint);'
+        '}());'
+        '</script>'
+    )
+
+
 # ---------------------------------------------------------------------------
 # Editorial primitives — eyebrow, section intro, arrow link, image card.
 # These mirror the patterns on chartis.com so partner-facing pages
@@ -2154,6 +2217,65 @@ _CSS_INLINE_FALLBACK = """
   .ck-section-intro a:not([class]):hover {
     border-bottom-color: var(--sc-teal-ink);
   }
+  /* Progress checklist — "your platform journey" editorial roster.
+   * Numbered serif rows with a circular state marker that fills with
+   * a positive-tone check when JS confirms the underlying condition
+   * (recent deals, tour progress, tools visited) from localStorage. */
+  .ck-checklist-wrap {
+    background: var(--sc-bone, #f5f1ea);
+    border: 1px solid var(--sc-rule, #d8d3c8); border-radius: 3px;
+    padding: 20px 24px; margin-bottom: var(--sc-s-5);
+  }
+  .ck-checklist { list-style: none; margin: 0; padding: 0; }
+  .ck-checklist-row {
+    display: grid; grid-template-columns: 24px 32px 1fr;
+    gap: 14px; align-items: baseline;
+    padding: 12px 0; border-bottom: 1px solid var(--sc-rule, #d8d3c8);
+    font-family: "Source Serif 4", serif;
+  }
+  .ck-checklist-row:last-child { border-bottom: 0; }
+  .ck-checklist-marker {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 1.5px solid var(--sc-text-faint, #6e7787);
+    background: transparent;
+    transition: background 160ms ease, border-color 160ms ease;
+    align-self: center;
+  }
+  .ck-checklist-row.is-done .ck-checklist-marker {
+    background: var(--sc-positive, #0a8a5f);
+    border-color: var(--sc-positive, #0a8a5f);
+    position: relative;
+  }
+  .ck-checklist-row.is-done .ck-checklist-marker::after {
+    content: "✓"; position: absolute; top: -1px; left: 2px;
+    font-size: 12px; color: #fff; font-weight: 700; line-height: 1;
+    font-family: "Inter Tight", sans-serif;
+  }
+  .ck-checklist-number {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+    color: var(--sc-text-faint, #6e7787);
+    align-self: center;
+  }
+  .ck-checklist-row.is-done .ck-checklist-number {
+    color: var(--sc-positive, #0a8a5f);
+  }
+  .ck-checklist-title {
+    font-size: 15px; font-weight: 500; line-height: 1.3;
+    color: var(--sc-navy, #0b2341); margin-bottom: 2px;
+  }
+  .ck-checklist-row.is-done .ck-checklist-title {
+    color: var(--sc-text-dim, #37495e);
+  }
+  .ck-checklist-prose {
+    font-size: 13px; line-height: 1.55;
+    color: var(--sc-text-dim, #37495e); max-width: 60ch;
+  }
+  .ck-checklist-prose em {
+    font-style: italic; color: var(--sc-teal-ink, #0e3e3a);
+  }
+  @media print { .ck-checklist-wrap { display: none; } }
+
   /* Sticky right-rail table of contents — editorial chapter index.
    * The host page wraps its panels in .ck-toc-layout > .ck-toc-content
    * and the aside sits next to them, sticking to the viewport while

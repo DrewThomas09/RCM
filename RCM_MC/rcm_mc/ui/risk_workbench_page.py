@@ -1238,6 +1238,18 @@ def render_risk_workbench(inp: WorkbenchInput) -> str:
             "Tier 1-3 diligence panels",
             eyebrow="LIVE ENGINES",
         )
+        + (
+            '<p class="ck-section-body" style="margin-top:-8px;'
+            'margin-bottom:12px;font-style:italic;'
+            'color:var(--sc-text-faint,#6e7787);font-size:12px;">'
+            'Tier 1 — existential risks that kill deals at IC '
+            '(bankruptcy, covenants, payer concentration). '
+            'Tier 2 — material risks that erode EBITDA (physician '
+            'attrition, denial rate, regulatory). '
+            'Tier 3 — slow-burn risks that surface in year three '
+            '(management bench, IT debt, integration drag).'
+            '</p>'
+        )
         + '<div class="rw-grid-2col">'
         + _panel_bankruptcy_survivor(inp)
         + _panel_regulatory(inp)
