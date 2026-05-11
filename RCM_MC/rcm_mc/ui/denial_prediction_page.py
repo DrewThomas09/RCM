@@ -20,8 +20,8 @@ from ..diligence.denial_prediction import (
 )
 from ..diligence.denial_prediction.model import CalibrationBucket
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_page_title, ck_panel,
-    ck_section_intro,
+    P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
+    ck_panel, ck_section_intro,
 )
 from .power_ui import provenance, sortable_table
 
@@ -439,6 +439,12 @@ def render_denial_prediction_page(
           f'margin:24px 0 8px 0;">FLAGGED CLAIMS</div>'
         + _flagged_claims_table(report)
         + _bridge_card(report)
+        + ck_next_section(
+            "Bridge these denials to the EBITDA impact",
+            "/diligence/bridge-audit",
+            eyebrow="Continue —",
+            italic_word="bridge",
+        )
     )
     return chartis_shell(
         body, f"Denial Prediction — {dataset}",

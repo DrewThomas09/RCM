@@ -18,8 +18,8 @@ from ..diligence.exit_timing import (
     analyze_exit_timing,
 )
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_provenance_tooltip,
-    ck_section_intro,
+    P, chartis_shell, ck_kpi_block, ck_next_section,
+    ck_provenance_tooltip, ck_section_intro,
 )
 from .power_ui import (
     bookmark_hint, deal_context_bar, export_json_panel, provenance,
@@ -857,6 +857,12 @@ def render_exit_timing_page(
         + _buyer_fit_cards(report.buyer_fit)
         + '</div>'
         + bookmark_hint()
+        + ck_next_section(
+            "Take this timing back into the IC packet",
+            "/diligence/ic-packet",
+            eyebrow="Continue —",
+            italic_word="IC",
+        )
     )
     return chartis_shell(
         body, f"Exit Timing — {target_name}",

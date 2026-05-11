@@ -27,7 +27,7 @@ from ..diligence.payer_stress import (
     default_hospital_mix, run_payer_stress,
 )
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_panel,
+    P, chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
     ck_section_header, ck_section_intro, ck_signal_badge,
 )
 from .power_ui import (
@@ -1008,6 +1008,12 @@ def render_payer_stress_page(
         )
         + bookmark_hint()
         + '</div>'
+        + ck_next_section(
+            "Stress-test the bridge against these payer shifts",
+            "/diligence/bridge-audit",
+            eyebrow="Continue —",
+            italic_word="bridge",
+        )
     )
     return chartis_shell(
         body, f"Payer Stress — {target_name}",

@@ -33,7 +33,7 @@ from ..diligence.deal_autopsy import (
 from ..diligence.deal_autopsy.library import outcomes_summary
 from ..diligence.deal_autopsy.matcher import FEATURE_LABELS
 from ._chartis_kit import (
-    P, chartis_shell, ck_panel,
+    P, chartis_shell, ck_next_section, ck_panel,
     ck_section_header, ck_section_intro,
 )
 from .power_ui import provenance, sortable_table
@@ -844,6 +844,12 @@ def render_deal_autopsy_page(
             title="Matches · sortable + exportable",
         )
         + '</div>'
+        + ck_next_section(
+            "Cross-check against named bear cases",
+            "/bear-cases",
+            eyebrow="Continue —",
+            italic_word="bear",
+        )
     )
     return chartis_shell(
         body, f"Deal Autopsy — {heading}",

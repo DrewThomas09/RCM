@@ -29,8 +29,8 @@ from ..diligence.thesis_pipeline import (
 from ..diligence._pages import AVAILABLE_FIXTURES, _resolve_dataset
 from ..diligence.checklist import compute_status, DealObservations
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_page_title, ck_panel,
-    ck_section_intro,
+    P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
+    ck_panel, ck_section_intro,
 )
 from .power_ui import (
     bookmark_hint, deal_context_bar, export_json_panel,
@@ -602,6 +602,12 @@ def render_thesis_pipeline_page(
         + _deeplinks_block(report, inp)
         + '</div>'
         + bookmark_hint()
+        + ck_next_section(
+            "Open the diligence checklist",
+            "/diligence/checklist",
+            eyebrow="Continue —",
+            italic_word="checklist",
+        )
     )
     return chartis_shell(
         body,
