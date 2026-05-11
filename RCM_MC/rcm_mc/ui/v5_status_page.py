@@ -20,7 +20,7 @@ from pathlib import Path
 
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_fmt_pct,
-    ck_kpi_block, ck_provenance_tooltip,
+    ck_kpi_block, ck_next_section, ck_provenance_tooltip,
 )
 from ._ui_kit import fmt_num, fmt_pct
 from .v3_status_page import _empty_counts, _kpi_card, parse_inventory
@@ -144,6 +144,12 @@ def render_v5_status() -> str:
         + packet_section
         + foot
         + "</section>"
+        + ck_next_section(
+            "Open the v3 fidelity status",
+            "/v3-status",
+            eyebrow="Continue —",
+            italic_word="v3",
+        )
     )
 
     return chartis_shell(

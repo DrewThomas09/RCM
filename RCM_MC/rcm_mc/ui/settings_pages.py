@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip,
+    ck_next_section, ck_provenance_tooltip,
 )
 from .brand import PALETTE
 
@@ -76,6 +76,12 @@ def render_custom_kpis_page(store: Any) -> str:
         f'<div style="margin-top:16px;">'
         f'<a href="/api/metrics/custom" class="cad-btn" style="text-decoration:none;">'
         f'API: GET /api/metrics/custom</a></div></div>'
+        + ck_next_section(
+            "Open automation rules",
+            "/settings/automations",
+            eyebrow="Continue —",
+            italic_word="automation",
+        )
     )
     return chartis_shell(body, "Custom KPIs", active_nav="/settings",
                     subtitle="Define custom metrics for your fund",
@@ -133,6 +139,12 @@ def render_automations_page(store: Any) -> str:
         f'<div style="margin-top:16px;">'
         f'<a href="/api/automations" class="cad-btn" style="text-decoration:none;">'
         f'API: GET /api/automations</a></div></div>'
+        + ck_next_section(
+            "Open integrations",
+            "/settings/integrations",
+            eyebrow="Continue —",
+            italic_word="integrations",
+        )
     )
     return chartis_shell(body, "Automation Rules", active_nav="/settings",
                     subtitle="Event-driven workflow automation",
@@ -259,6 +271,12 @@ def render_integrations_page(store: Any) -> str:
         f'Download Portfolio CSV</a>'
         f'<a href="/api/webhooks" class="cad-btn" style="text-decoration:none;">'
         f'API: GET /api/webhooks</a></div>'
+        + ck_next_section(
+            "Open custom KPIs",
+            "/settings/custom-kpis",
+            eyebrow="Continue —",
+            italic_word="KPIs",
+        )
     )
     return chartis_shell(body, "Integrations", active_nav="/settings",
                     subtitle="Webhooks, exports & third-party connections",

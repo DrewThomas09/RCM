@@ -36,7 +36,7 @@ from typing import NamedTuple
 
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip,
+    ck_next_section, ck_provenance_tooltip,
 )
 from ._ui_kit import fmt_num, fmt_pct
 
@@ -243,6 +243,12 @@ def render_v3_status() -> str:
         + packet_section
         + foot
         + '</section>'
+        + ck_next_section(
+            "Open the v5 transformation status",
+            "/v5-status",
+            eyebrow="Continue —",
+            italic_word="v5",
+        )
     )
 
     return chartis_shell(
