@@ -617,6 +617,65 @@ display:flex;align-items:baseline;gap:6px;}}
 .ck-dp-card-state[hidden]{{display:none !important;}}
 .ck-dp-card-state-dot{{width:5px;height:5px;border-radius:50%;
 background:{P["accent"]};display:inline-block;flex-shrink:0;}}
+/* Diligence-questions inline editor. Partner-curated list inside a
+ * ck_panel on the deal profile. Editorial: parchment surface +
+ * serif italic body + mono caps timestamp + small inline form.
+ * Hidden in @media print so working notes don't end up on LP
+ * deliverables. */
+.ck-dp-qs{{}}
+.ck-dp-qs-intro{{margin-bottom:14px;}}
+.ck-dp-qs-form{{display:flex;gap:10px;align-items:stretch;
+margin-bottom:14px;}}
+.ck-dp-qs-input{{flex:1;padding:9px 12px;
+background:{P["panel_alt"]};color:{P["text"]};
+border:1px solid {P["border"]};border-radius:3px;
+font-family:"Source Serif 4",serif;font-size:13px;
+transition:border-color 120ms ease, box-shadow 120ms ease;}}
+.ck-dp-qs-input:focus{{outline:none;
+border-color:{P["accent"]};
+box-shadow:0 0 0 2px rgba(21,87,82,0.18);}}
+.ck-dp-qs-add{{padding:9px 16px;
+background:{P["accent"]};color:#fff;border:0;border-radius:3px;
+font-family:"Inter Tight",sans-serif;font-size:11px;font-weight:700;
+letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;
+transition:filter 120ms ease;white-space:nowrap;}}
+.ck-dp-qs-add:hover{{filter:brightness(1.08);}}
+.ck-dp-qs-empty[hidden]{{display:none !important;}}
+.ck-dp-qs-list{{list-style:none;margin:0;padding:0;}}
+.ck-dp-qs-row{{display:grid;
+grid-template-columns:24px 1fr auto auto;gap:12px;
+align-items:baseline;padding:12px 0;
+border-bottom:1px solid {P["border"]};}}
+.ck-dp-qs-row:last-child{{border-bottom:0;}}
+.ck-dp-qs-row-num{{font-family:"JetBrains Mono",monospace;
+font-size:10px;font-weight:700;letter-spacing:0.12em;
+color:{P["text_faint"]};text-align:right;
+align-self:center;}}
+.ck-dp-qs-row-text{{font-family:"Source Serif 4",serif;
+font-size:14px;line-height:1.5;color:{P["text"]};
+font-style:italic;}}
+.ck-dp-qs-row.is-asked .ck-dp-qs-row-text{{
+text-decoration:line-through;color:{P["text_faint"]};}}
+.ck-dp-qs-row-ts{{font-family:"Source Serif 4",serif;font-style:italic;
+font-size:11px;color:{P["text_faint"]};
+align-self:center;white-space:nowrap;}}
+.ck-dp-qs-row-actions{{display:flex;gap:6px;align-self:center;}}
+.ck-dp-qs-row-btn{{background:none;border:1px solid {P["border"]};
+border-radius:3px;padding:3px 8px;cursor:pointer;
+font-family:"Inter Tight",sans-serif;font-size:9px;
+font-weight:600;letter-spacing:0.12em;text-transform:uppercase;
+color:{P["text_dim"]};
+transition:border-color 120ms ease, color 120ms ease;}}
+.ck-dp-qs-row-btn:hover{{border-color:{P["text"]};color:{P["text"]};}}
+.ck-dp-qs-row-btn-asked.is-active{{
+background:{P["positive"]};color:#fff;border-color:{P["positive"]};}}
+.ck-dp-qs-row-btn-remove:hover{{
+border-color:{P["negative"]};color:{P["negative"]};}}
+.ck-dp-qs-meta{{margin-top:14px;font-family:"Source Serif 4",serif;
+font-style:italic;font-size:11px;color:{P["text_faint"]};}}
+.ck-dp-qs-meta[hidden]{{display:none !important;}}
+@media print {{.ck-dp-qs{{display:none !important;}}}}
+
 /* "Compare with…" disclosure on the deal-profile hero. Editorial
    native <details>/<summary> styled with a serif label + JetBrains-
    Mono caret + parchment menu surface. JS populates the inner list
@@ -1255,6 +1314,54 @@ def _render_lifecycle_ribbon(slug: str) -> str:
     return f'<div class="ck-dp-lifecycle">{"".join(segments)}</div>'
 
 
+def _render_diligence_questions(slug: str) -> str:
+    """Inline diligence-questions editor — partner-curated list of
+    questions to ask the seller, persisted to
+    ``rcm_deal_<slug>_questions`` localStorage.
+
+    Each row carries:
+      - serif italic question text
+      - editorial timestamp
+      - mark-asked toggle (strikethrough in done state)
+      - remove button
+    Plus an inline `<input>` + "Add question →" CTA at the top.
+
+    No server round-trip — purely a partner-side memo system. Stays
+    editorial: parchment surface, serif body, italic accents,
+    Source-Serif italic for empty state. Hidden in print so the
+    LP-facing IC deliverables don't carry working notes.
+    """
+    return (
+        '<div class="ck-dp-qs" data-rcm-dp-qs '
+        f'data-rcm-qs-slug="{html.escape(slug)}">'
+        '<div class="ck-dp-qs-intro">'
+        '<p class="ck-section-body">'
+        'Questions you want answered before IC. Persists in your '
+        'browser, one list per deal. Mark each <em>asked</em> when '
+        'the seller responds; remove items that get answered in '
+        'follow-up documents.'
+        '</p>'
+        '</div>'
+        '<form class="ck-dp-qs-form" data-rcm-qs-form>'
+        '<input class="ck-dp-qs-input" data-rcm-qs-input '
+        'placeholder="e.g. What share of NPR comes from out-of-network rates?" '
+        'maxlength="280" autocomplete="off"/>'
+        '<button type="submit" class="ck-dp-qs-add" '
+        'data-rcm-qs-add>Add question →</button>'
+        '</form>'
+        '<div class="ck-dp-qs-empty" data-rcm-qs-empty hidden>'
+        '<p class="ck-section-body" style="font-style:italic;">'
+        'No questions yet. Diligence is a conversation — start by '
+        'noting one thing you\'d need to hear from the seller '
+        'before underwriting.'
+        '</p>'
+        '</div>'
+        '<ol class="ck-dp-qs-list" data-rcm-qs-list></ol>'
+        '<div class="ck-dp-qs-meta" data-rcm-qs-meta hidden></div>'
+        '</div>'
+    )
+
+
 def _render_diligence_pulse(slug: str) -> str:
     """Server-emitted placeholder for the diligence pulse composite.
 
@@ -1740,6 +1847,115 @@ def _inline_js(slug: str) -> str:
     } catch (err) { /* quota / disabled — ignore */ }
   });
 
+  // Diligence questions — partner-curated list of questions to
+  // ask the seller, persisted to rcm_deal_<slug>_questions
+  // localStorage. Add via form submit; toggle-asked + remove via
+  // small buttons; relative timestamp in italic Source-Serif.
+  // No server round-trip — purely a partner-side memo system.
+  var qsKey = "rcm_deal_" + slug + "_questions";
+  function loadQs() {
+    try {
+      var raw = localStorage.getItem(qsKey);
+      var rows = raw ? JSON.parse(raw) : [];
+      return Array.isArray(rows) ? rows : [];
+    } catch (e) { return []; }
+  }
+  function saveQs(rows) {
+    try { localStorage.setItem(qsKey, JSON.stringify(rows)); }
+    catch (e) { /* quota — ignore */ }
+  }
+  function qsRel(ts) {
+    if (!ts) return "";
+    var d = Math.round((Date.now() - ts) / 60000);
+    if (d < 1) return "just now";
+    if (d < 60) return d + " min ago";
+    if (d < 1440) return Math.round(d / 60) + " hr ago";
+    return Math.round(d / 1440) + " d ago";
+  }
+  function escQ(s) {
+    var d = document.createElement("div");
+    d.textContent = String(s || "");
+    return d.innerHTML;
+  }
+  function paintQs() {
+    var root = document.querySelector("[data-rcm-dp-qs]");
+    if (!root) return;
+    var list = root.querySelector("[data-rcm-qs-list]");
+    var empty = root.querySelector("[data-rcm-qs-empty]");
+    var meta = root.querySelector("[data-rcm-qs-meta]");
+    if (!list) return;
+    var rows = loadQs();
+    if (rows.length === 0) {
+      list.innerHTML = "";
+      if (empty) empty.hidden = false;
+      if (meta) meta.hidden = true;
+      return;
+    }
+    if (empty) empty.hidden = true;
+    list.innerHTML = rows.map(function(r, i) {
+      var stateCls = r.asked ? " is-asked" : "";
+      var btnCls = r.asked ? " is-active" : "";
+      return '<li class="ck-dp-qs-row' + stateCls + '" ' +
+        'data-rcm-qs-id="' + escQ(r.id) + '">' +
+        '<span class="ck-dp-qs-row-num">' +
+        String(i + 1).padStart(2, "0") + '</span>' +
+        '<span class="ck-dp-qs-row-text">' + escQ(r.text) + '</span>' +
+        '<span class="ck-dp-qs-row-ts">' + qsRel(r.ts) + '</span>' +
+        '<span class="ck-dp-qs-row-actions">' +
+        '<button type="button" class="ck-dp-qs-row-btn ' +
+        'ck-dp-qs-row-btn-asked' + btnCls + '" ' +
+        'data-rcm-qs-ask>' + (r.asked ? "Asked ✓" : "Mark asked") +
+        '</button>' +
+        '<button type="button" class="ck-dp-qs-row-btn ' +
+        'ck-dp-qs-row-btn-remove" data-rcm-qs-remove>Remove</button>' +
+        '</span></li>';
+    }).join("");
+    var nOpen = rows.filter(function(r) { return !r.asked; }).length;
+    if (meta) {
+      meta.textContent =
+        rows.length + " total · " + nOpen +
+        (nOpen === 1 ? " still open" : " still open");
+      meta.hidden = false;
+    }
+  }
+  document.addEventListener("DOMContentLoaded", paintQs);
+  document.addEventListener("submit", function(e) {
+    var form = e.target.closest && e.target.closest("[data-rcm-qs-form]");
+    if (!form) return;
+    e.preventDefault();
+    var input = form.querySelector("[data-rcm-qs-input]");
+    if (!input) return;
+    var text = (input.value || "").trim();
+    if (!text) return;
+    var rows = loadQs();
+    rows.unshift({
+      id: "q" + Date.now() + Math.random().toString(36).slice(2, 6),
+      text: text, ts: Date.now(), asked: false,
+    });
+    saveQs(rows);
+    input.value = "";
+    paintQs();
+  });
+  document.addEventListener("click", function(e) {
+    var row = e.target.closest && e.target.closest("[data-rcm-qs-id]");
+    if (!row) return;
+    var id = row.getAttribute("data-rcm-qs-id");
+    var ask = e.target.closest("[data-rcm-qs-ask]");
+    var rem = e.target.closest("[data-rcm-qs-remove]");
+    if (!ask && !rem) return;
+    var rows = loadQs();
+    if (ask) {
+      rows = rows.map(function(r) {
+        if (r.id === id) r.asked = !r.asked;
+        return r;
+      });
+    } else if (rem) {
+      rows = rows.filter(function(r) { return r.id !== id; });
+    }
+    saveQs(rows);
+    paintQs();
+  });
+
   // "Compare with…" disclosure — populate the menu from
   // rcm_recent_deals every time the disclosure opens so newly-viewed
   // deals show up immediately. Each row links to /diligence/compare
@@ -2059,16 +2275,24 @@ def render_deal_profile_page(
         form, title="Deal parameters",
         anchor_id="dp-params",
     )
+    questions_panel = ck_panel(
+        _render_diligence_questions(slug),
+        title="Diligence questions",
+        anchor_id="dp-questions",
+    )
     # Sticky right-rail table of contents — the deal profile is the
-    # central diligence surface partners return to, with 6 distinct
-    # vertical sections. The TOC lets them jump straight to
-    # Analytics or Deal parameters without scrolling past the hero.
+    # central diligence surface partners return to. The TOC lets
+    # them jump straight to Analytics or Deal parameters without
+    # scrolling past the hero. Questions panel was added in Phase O
+    # between Deal parameters and Analytics so partners curate
+    # questions adjacent to where they entered the deal context.
     toc = ck_sticky_toc([
         {"id": "dp-thesis",    "title": "Investment thesis"},
         {"id": "dp-market",    "title": "Market context"},
         {"id": "dp-pipeline",  "title": "Thesis Pipeline"},
         {"id": "dp-lifecycle", "title": "Diligence lifecycle"},
         {"id": "dp-params",    "title": "Deal parameters"},
+        {"id": "dp-questions", "title": "Diligence questions"},
         {"id": "dp-analytics", "title": "Analytics"},
     ])
     # Wrap pipeline_cta + grid_header so they pick up anchors too —
@@ -2087,7 +2311,7 @@ def render_deal_profile_page(
         + toc
         + '<div class="ck-toc-content">'
         + thesis_panel + market_panel + pipeline_block
-        + lifecycle_panel + form_panel + grid_block
+        + lifecycle_panel + form_panel + questions_panel + grid_block
         + '</div></div>'
         + bookmark_hint() + _inline_js(slug),
         f"Deal Profile — {slug}",
