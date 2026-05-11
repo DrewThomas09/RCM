@@ -634,12 +634,38 @@ transition:border-color 120ms ease, box-shadow 120ms ease;}}
 .ck-dp-qs-input:focus{{outline:none;
 border-color:{P["accent"]};
 box-shadow:0 0 0 2px rgba(21,87,82,0.18);}}
+.ck-dp-qs-cat{{padding:9px 10px;
+background:{P["panel_alt"]};color:{P["text"]};
+border:1px solid {P["border"]};border-radius:3px;
+font-family:"Inter Tight",sans-serif;font-size:11px;font-weight:600;
+letter-spacing:0.06em;cursor:pointer;
+appearance:none;-webkit-appearance:none;
+background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%236e7787' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+background-repeat:no-repeat;background-position:right 8px center;
+padding-right:26px;}}
+.ck-dp-qs-cat:focus{{outline:none;border-color:{P["accent"]};
+box-shadow:0 0 0 2px rgba(21,87,82,0.18);}}
 .ck-dp-qs-add{{padding:9px 16px;
 background:{P["accent"]};color:#fff;border:0;border-radius:3px;
 font-family:"Inter Tight",sans-serif;font-size:11px;font-weight:700;
 letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;
 transition:filter 120ms ease;white-space:nowrap;}}
 .ck-dp-qs-add:hover{{filter:brightness(1.08);}}
+/* Category pill — small caps chip rendered before the question
+ * text on each row. Six categories map to editorial tones from the
+ * shared palette; "Other" stays neutral so unfamiliar inputs don't
+ * grab visual weight. */
+.ck-dp-qs-pill{{display:inline-block;padding:1px 7px;margin-right:8px;
+font-family:"Inter Tight",sans-serif;font-size:9px;font-weight:700;
+letter-spacing:0.16em;text-transform:uppercase;
+border-radius:2px;vertical-align:1px;
+border:1px solid currentColor;}}
+.ck-dp-qs-pill.cat-financial{{color:{P["accent"]};}}
+.ck-dp-qs-pill.cat-clinical{{color:{P["positive"]};}}
+.ck-dp-qs-pill.cat-regulatory{{color:{P["warning"]};}}
+.ck-dp-qs-pill.cat-legal{{color:{P["text_dim"]};}}
+.ck-dp-qs-pill.cat-operational{{color:{P["text"]};}}
+.ck-dp-qs-pill.cat-other{{color:{P["text_faint"]};}}
 .ck-dp-qs-empty[hidden]{{display:none !important;}}
 .ck-dp-qs-list{{list-style:none;margin:0;padding:0;}}
 .ck-dp-qs-row{{display:grid;
@@ -1346,6 +1372,15 @@ def _render_diligence_questions(slug: str) -> str:
         '<input class="ck-dp-qs-input" data-rcm-qs-input '
         'placeholder="e.g. What share of NPR comes from out-of-network rates?" '
         'maxlength="280" autocomplete="off"/>'
+        '<select class="ck-dp-qs-cat" data-rcm-qs-cat '
+        'aria-label="Question category">'
+        '<option value="financial">Financial</option>'
+        '<option value="clinical">Clinical</option>'
+        '<option value="regulatory">Regulatory</option>'
+        '<option value="legal">Legal</option>'
+        '<option value="operational">Operational</option>'
+        '<option value="other">Other</option>'
+        '</select>'
         '<button type="submit" class="ck-dp-qs-add" '
         'data-rcm-qs-add>Add question →</button>'
         '</form>'
@@ -1892,14 +1927,23 @@ def _inline_js(slug: str) -> str:
       return;
     }
     if (empty) empty.hidden = true;
+    var CAT_LABELS = {
+      financial: "Fin", clinical: "Clin", regulatory: "Reg",
+      legal: "Leg", operational: "Ops", other: "Other",
+    };
     list.innerHTML = rows.map(function(r, i) {
       var stateCls = r.asked ? " is-asked" : "";
       var btnCls = r.asked ? " is-active" : "";
+      var cat = (r.category || "financial").toLowerCase();
+      if (!CAT_LABELS[cat]) cat = "other";
+      var pill = '<span class="ck-dp-qs-pill cat-' + cat + '">' +
+        escQ(CAT_LABELS[cat]) + '</span>';
       return '<li class="ck-dp-qs-row' + stateCls + '" ' +
         'data-rcm-qs-id="' + escQ(r.id) + '">' +
         '<span class="ck-dp-qs-row-num">' +
         String(i + 1).padStart(2, "0") + '</span>' +
-        '<span class="ck-dp-qs-row-text">' + escQ(r.text) + '</span>' +
+        '<span class="ck-dp-qs-row-text">' + pill +
+        escQ(r.text) + '</span>' +
         '<span class="ck-dp-qs-row-ts">' + qsRel(r.ts) + '</span>' +
         '<span class="ck-dp-qs-row-actions">' +
         '<button type="button" class="ck-dp-qs-row-btn ' +
@@ -1912,9 +1956,21 @@ def _inline_js(slug: str) -> str:
     }).join("");
     var nOpen = rows.filter(function(r) { return !r.asked; }).length;
     if (meta) {
-      meta.textContent =
-        rows.length + " total · " + nOpen +
-        (nOpen === 1 ? " still open" : " still open");
+      // Editorial meta line: "5 total · 2 still open · 3 Fin · 1 Clin · 1 Reg"
+      var counts = {};
+      rows.forEach(function(r) {
+        var c = (r.category || "financial").toLowerCase();
+        if (!CAT_LABELS[c]) c = "other";
+        counts[c] = (counts[c] || 0) + 1;
+      });
+      var catParts = Object.keys(counts).map(function(c) {
+        return counts[c] + " " + CAT_LABELS[c];
+      });
+      var openPhrase = nOpen + " still open";
+      var head = rows.length + " total · " + openPhrase;
+      meta.textContent = catParts.length
+        ? head + " · " + catParts.join(" · ")
+        : head;
       meta.hidden = false;
     }
   }
@@ -1924,16 +1980,22 @@ def _inline_js(slug: str) -> str:
     if (!form) return;
     e.preventDefault();
     var input = form.querySelector("[data-rcm-qs-input]");
+    var catSel = form.querySelector("[data-rcm-qs-cat]");
     if (!input) return;
     var text = (input.value || "").trim();
     if (!text) return;
+    var category = (catSel && catSel.value) ? catSel.value : "financial";
     var rows = loadQs();
     rows.unshift({
       id: "q" + Date.now() + Math.random().toString(36).slice(2, 6),
       text: text, ts: Date.now(), asked: false,
+      category: category,
     });
     saveQs(rows);
     input.value = "";
+    // Keep the category sticky — partners often add several
+    // questions in the same area, so leave the select where they
+    // last set it instead of resetting to the default.
     paintQs();
   });
   document.addEventListener("click", function(e) {
