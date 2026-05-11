@@ -20,8 +20,8 @@ import pandas as pd
 
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_panel, ck_provenance_tooltip, ck_section_header,
-    ck_section_intro, ck_signal_badge,
+    ck_next_section, ck_panel, ck_provenance_tooltip,
+    ck_section_header, ck_section_intro, ck_signal_badge,
 )
 from ._provenance_tooltip import provenance_tooltip
 from .brand import PALETTE
@@ -611,16 +611,79 @@ def render_ebitda_bridge(
     )
     kpis = (
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(6,1fr);">'
-        + ck_kpi_block("Net Revenue", _fm(rev),
-                       f"HCRIS FY2022 {source_tag(Source.HCRIS, 'FY2022')}")
-        + ck_kpi_block("Current EBITDA", _fm(bridge["current_ebitda"]),
-                       f"computed {source_tag(Source.COMPUTED)}")
-        + ck_kpi_block("RCM Uplift", uplift_value, "7-lever bridge")
-        + ck_kpi_block("Pro Forma EBITDA", f'<span style="color:var(--cad-pos);">{_fm(bridge["new_ebitda"])}</span>',
-                       "post-RCM")
-        + ck_kpi_block("Margin Improvement", bps_value, "of net revenue")
-        + ck_kpi_block("WC Released", _fm(bridge["total_wc_released"]),
-                       "1x cash benefit")
+        + ck_kpi_block(
+            "Net Revenue", _fm(rev),
+            f"HCRIS FY2022 {source_tag(Source.HCRIS, 'FY2022')}",
+            help={
+                "definition": (
+                    "Net Patient Revenue — billed services minus "
+                    "contractual allowances, bad debt, and charity "
+                    "care. The cash-realisable top line the bridge "
+                    "operates on."
+                ),
+                "citation": "HFMA / CMS HCRIS",
+            },
+        )
+        + ck_kpi_block(
+            "Current EBITDA", _fm(bridge["current_ebitda"]),
+            f"computed {source_tag(Source.COMPUTED)}",
+            help={
+                "definition": (
+                    "Year-0 operating earnings before interest, "
+                    "taxes, depreciation, and amortization. The base "
+                    "case from which RCM levers compound."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "RCM Uplift", uplift_value, "7-lever bridge",
+            help={
+                "definition": (
+                    "Total EBITDA uplift across the seven RCM levers "
+                    "(charge capture, contract optimization, denial "
+                    "rework, collections, write-off discipline, "
+                    "underpayment recovery, DSO compression). Each "
+                    "lever has its own conformal confidence band."
+                ),
+                "citation": "rcm_mc/pe/rcm_ebitda_bridge.py",
+            },
+        )
+        + ck_kpi_block(
+            "Pro Forma EBITDA",
+            f'<span style="color:var(--cad-pos);">'
+            f'{_fm(bridge["new_ebitda"])}</span>',
+            "post-RCM",
+            help={
+                "definition": (
+                    "Current EBITDA + RCM uplift — the projected "
+                    "year-3 EBITDA after the bridge fully realises. "
+                    "Compare against Monte Carlo P50 for sensitivity."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Margin Improvement", bps_value, "of net revenue",
+            help={
+                "definition": (
+                    "Operating-margin lift in basis points (1 bps = "
+                    "0.01%). For a $100M NPR deal, 200 bps = $2M of "
+                    "EBITDA. Bank-loan margin tests usually require "
+                    "300-500 bps of credible improvement."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "WC Released", _fm(bridge["total_wc_released"]),
+            "1x cash benefit",
+            help={
+                "definition": (
+                    "Working-capital cash released from the bridge — "
+                    "primarily DSO compression converting A/R to "
+                    "cash. One-time benefit at the year of release, "
+                    "NOT recurring like EBITDA uplift."
+                ),
+            },
+        )
         + '</div>'
     )
 
@@ -1054,6 +1117,12 @@ def render_ebitda_bridge(
         f'<div>{achievement_section}</div>'
         f'<div>{peer_section}</div></div>'
         f'{method}{nav}{freshness}'
+        + ck_next_section(
+            "Run the bridge through Monte Carlo",
+            "/diligence/deal-mc",
+            eyebrow="Continue —",
+            italic_word="Monte",
+        )
     )
 
     return chartis_shell(
