@@ -1428,6 +1428,23 @@ _CSS_INLINE_FALLBACK = """
   .ck-panel-title { font-family:var(--sc-sans); font-weight:600; font-size:13px; letter-spacing:0.04em; text-transform:uppercase; }
   .ck-panel-code { font-family:var(--sc-mono); font-size:10px; letter-spacing:0.1em; color:var(--sc-on-navy-dim); }
   .ck-panel-body { padding:var(--sc-s-6); }
+  /* Default link affordance inside editorial chrome — every <a> nested
+   * in a panel body or section-intro body picks up teal-ink + hover
+   * underline so dozens of inline-styled anchors still feel clickable
+   * without each page hand-rolling its own. cad-link/ck-link explicit
+   * classes still win via specificity. */
+  .ck-panel-body a:not([class]),
+  .ck-section-body a:not([class]),
+  .ck-section-intro a:not([class]) {
+    color: var(--sc-teal-ink); text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 120ms ease, color 120ms ease;
+  }
+  .ck-panel-body a:not([class]):hover,
+  .ck-section-body a:not([class]):hover,
+  .ck-section-intro a:not([class]):hover {
+    border-bottom-color: var(--sc-teal-ink);
+  }
   .ck-table { width:100%; border-collapse:collapse; font-size:13px; }
   .ck-table thead th { background:var(--sc-bone); color:var(--sc-text-dim); font-family:var(--sc-sans); font-weight:600; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; padding:8px 12px; border-bottom:1px solid var(--sc-rule); text-align:left; }
   .ck-table tbody td { padding:8px 12px; border-bottom:1px solid var(--sc-rule); }
@@ -1769,12 +1786,27 @@ _CSS_INLINE_FALLBACK = """
   /* Main content frame */
   .ck-main { padding:var(--sc-s-7); max-width:1720px; margin:0 auto; }
 
-  /* Print — for /memo/<id>, /ic-packet/<id> */
+  /* Print — for /memo/<id>, /ic-packet/<id>. Partners save these as
+   * PDFs to share with LPs / IC; the editorial layout should survive
+   * the print path with chrome stripped, panels kept whole, and the
+   * cadence headings staying with their following body copy. */
   @media print {
-    .ck-topbar, .ck-breadcrumbs, .ck-palette { display:none !important; }
-    body { background:#fff !important; }
-    .ck-panel { box-shadow:none; break-inside:avoid; page-break-inside:avoid; }
+    .ck-topbar, .ck-breadcrumbs, .ck-palette,
+    .ck-sidebar, .ck-toast, .no-print { display:none !important; }
+    body { background:#fff !important; color:#000 !important;
+           font-size:11pt; }
+    a { color:inherit !important; text-decoration:none !important; }
+    .ck-panel { box-shadow:none; break-inside:avoid;
+                page-break-inside:avoid;
+                border:1px solid #cfcec7; }
+    .ck-panel-head { background:#f5f1ea !important;
+                     color:#0b2341 !important; }
+    .ck-section-intro, .ck-section-header,
+    .ck-kpi-strip { break-inside:avoid; page-break-inside:avoid; }
+    h1, h2, h3 { break-after:avoid; page-break-after:avoid; }
     .ck-main { max-width:none; padding:0; }
+    /* Legacy cad-* chrome hide for pages still on the legacy shell */
+    .cad-nav, .cad-topbar, .cad-ticker { display:none !important; }
   }
 </style>
 """
