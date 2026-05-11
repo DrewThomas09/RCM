@@ -401,12 +401,59 @@ def render_regression_page(
     )
     kpis = (
         '<div class="ck-kpi-strip">'
-        + ck_kpi_block("R²", f"{result['r2']:.1%}")
-        + ck_kpi_block("Adj R²", f"{result['adj_r2']:.1%}")
+        + ck_kpi_block(
+            "R²", f"{result['r2']:.1%}",
+            help={
+                "definition": (
+                    "Coefficient of determination — the share of "
+                    "variance in the target the regression explains. "
+                    "100% is perfect fit; 0% is no better than the "
+                    "mean. >60% is publishable in healthcare RCM; "
+                    "above 80% on cross-hospital data warrants "
+                    "skepticism (possible leakage)."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Adj R²", f"{result['adj_r2']:.1%}",
+            help={
+                "definition": (
+                    "R² penalised for the number of features in the "
+                    "model. Always lower than R²; rises only when a "
+                    "new feature contributes more than chance. Use "
+                    "this — not raw R² — when comparing model "
+                    "specifications side-by-side."
+                ),
+            },
+        )
         + ck_kpi_block("Observations", f"{result['n']:,}")
         + ck_kpi_block("Features", f"{result['p']}")
-        + ck_kpi_block("F-Statistic", f"{min(result['f_stat'], 9999):.1f}")
-        + ck_kpi_block("RMSE (avg error)", _fmt_num(result["rmse"]))
+        + ck_kpi_block(
+            "F-Statistic", f"{min(result['f_stat'], 9999):.1f}",
+            help={
+                "definition": (
+                    "Joint significance of all features taken "
+                    "together vs the null model (intercept only). "
+                    "Higher F means the regression as a whole is "
+                    "statistically meaningful. Compare to the F "
+                    "p-value below — F is the test statistic, the "
+                    "p-value is the verdict."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "RMSE (avg error)", _fmt_num(result["rmse"]),
+            help={
+                "definition": (
+                    "Root-mean-square error — the standard deviation "
+                    "of residuals in target units. Read as 'the "
+                    "average miss the regression makes when "
+                    "predicting one hospital.' RMSE around or below "
+                    "the target's natural variability suggests the "
+                    "model is well-calibrated."
+                ),
+            },
+        )
         + '</div>'
     )
 

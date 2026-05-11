@@ -93,10 +93,19 @@ _DAY_ONE_STYLES = """
   font-size: 14px; color: var(--sc-text-faint, #6e7787);
 }
 .do-recent-row {
-  display: grid; grid-template-columns: 110px 1fr 90px;
-  gap: 14px; align-items: baseline;
+  display: grid; grid-template-columns: 110px 1fr 85px 90px;
+  gap: 12px; align-items: baseline;
   padding: 10px 0; border-bottom: 1px solid var(--sc-rule, #d8d3c8);
 }
+.do-recent-q {
+  font-family: "Inter Tight", sans-serif; font-size: 9px;
+  font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--sc-warning, #b8732a);
+  border: 1px solid currentColor; border-radius: 2px;
+  padding: 1px 6px; align-self: center;
+  white-space: nowrap;
+}
+.do-recent-q[hidden] { display: none !important; }
 .do-recent-row:last-child { border-bottom: 0; }
 .do-recent-slug {
   font-family: "JetBrains Mono", monospace; font-size: 10.5px;
@@ -324,12 +333,28 @@ def _recent_section() -> str:
       if (empty) empty.hidden = false;
       return;
     }
+    function openQuestions(slug) {
+      try {
+        var raw = localStorage.getItem(
+          "rcm_deal_" + slug + "_questions");
+        if (!raw) return 0;
+        var qs = JSON.parse(raw);
+        if (!Array.isArray(qs)) return 0;
+        return qs.filter(function(q) { return q && !q.asked; }).length;
+      } catch (e) { return 0; }
+    }
     list.innerHTML = rows.map(function(r) {
+      var qOpen = openQuestions(r.slug);
+      var qChip = qOpen > 0
+        ? '<span class="do-recent-q">' + qOpen + ' open ' +
+            (qOpen === 1 ? 'q' : 'qs') + '</span>'
+        : '<span></span>';
       return '<li class="do-recent-row">' +
         '<span class="do-recent-slug">' + esc(r.slug) + '</span>' +
         '<a class="do-recent-name" href="/diligence/deal/' +
           encodeURIComponent(r.slug) + '">' +
           esc(r.name || r.slug) + '</a>' +
+        qChip +
         '<span class="do-recent-ts">' + relTime(r.ts) + '</span>' +
       '</li>';
     }).join("");
