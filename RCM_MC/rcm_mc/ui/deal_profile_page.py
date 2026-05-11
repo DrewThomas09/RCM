@@ -684,7 +684,21 @@ font-family:"JetBrains Mono",monospace;}}
 .ck-dp-lifecycle{{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap;}}
 .ck-dp-life-seg{{flex:1;padding:12px 14px;background:{P["panel"]};
 border:1px solid {P["border"]};border-left:3px solid {P["text_dim"]};
-border-radius:4px;position:relative;}}
+border-radius:4px;position:relative;cursor:pointer;
+transition:background 140ms ease, transform 140ms ease, box-shadow 140ms ease;}}
+.ck-dp-life-seg:hover{{transform:translateY(-1px);
+box-shadow:0 4px 12px rgba(0,0,0,0.06);}}
+/* Lifecycle state markers: pending (faded), current (highlighted),
+   done (muted-positive). The first phase renders as is-current by
+   default; inline JS flips state classes from rcm_deal_<slug>_phase
+   in localStorage so the partner's progression persists. */
+.ck-dp-life-seg.is-pending{{opacity:.62;}}
+.ck-dp-life-seg.is-current{{background:{P["panel_alt"]};
+border-color:{P["accent"]};box-shadow:0 0 0 1px {P["accent"]} inset;}}
+.ck-dp-life-seg.is-current .ck-dp-life-seg-num{{color:{P["accent"]};}}
+.ck-dp-life-seg.is-done{{opacity:.78;}}
+.ck-dp-life-seg.is-done::after{{content:"✓";position:absolute;
+top:8px;right:10px;font-size:11px;color:{P["positive"]};font-weight:700;}}
 .ck-dp-life-seg-head{{display:flex;justify-content:space-between;
 align-items:baseline;margin-bottom:2px;}}
 .ck-dp-life-seg-num{{font-size:9px;color:{P["text_faint"]};letter-spacing:1.2px;
@@ -1013,11 +1027,15 @@ def _render_lifecycle_ribbon(slug: str) -> str:
     """5-phase lifecycle progress visual.
 
     Segments: Screening → Diligence → Risk → Financial → Delivery.
-    Each segment shows the phase name, subtitle, and analytic count.
-    Inline JS can later color-code based on checklist coverage.
+
+    The first phase renders with the ``is-current`` state class so
+    partners see a default progression marker on a fresh deal. The
+    inline JS (``_inline_js``) reads ``rcm_deal_<slug>_phase`` from
+    localStorage and shifts the marker forward when the partner
+    flags a phase as complete, giving a manual but persistent sense
+    of progress across sessions.
     """
     order = ("SCREENING", "DILIGENCE", "RISK", "FINANCIAL", "DELIVERY")
-    # Count analytics per phase for the badge
     per_phase: Dict[str, int] = {}
     for a in _ANALYTICS:
         per_phase[a.get("phase", "DILIGENCE")] = (
@@ -1028,8 +1046,12 @@ def _render_lifecycle_ribbon(slug: str) -> str:
         meta = _PHASE_META[phase]
         tone_color = P.get(meta["tone"], P["text_dim"])
         count = per_phase.get(phase, 0)
+        # Default state classes: first phase = current, rest = pending.
+        # JS will overwrite based on localStorage after page load.
+        state_cls = " is-current" if i == 0 else " is-pending"
         segments.append(
-            f'<div data-rcm-phase="{phase}" class="ck-dp-life-seg" '
+            f'<div data-rcm-phase="{phase}" '
+            f'class="ck-dp-life-seg{state_cls}" '
             f'style="border-left-color:{tone_color};">'
             '<div class="ck-dp-life-seg-head">'
             f'<div class="ck-dp-life-seg-num">{i + 1:02d}</div>'
@@ -1382,6 +1404,46 @@ def _inline_js(slug: str) -> str:
       }
     }
   });
+
+  // ── Lifecycle ribbon: read/write current phase to localStorage ──
+  // Each click on a phase tile cycles its state pending → current →
+  // done → pending. The current phase is also written to
+  // `rcm_deal_<slug>_phase` so the partner's progress persists
+  // across sessions and other surfaces can read it.
+  var phaseKey = "rcm_deal_" + slug + "_phase";
+  var phaseOrder = ["SCREENING","DILIGENCE","RISK","FINANCIAL","DELIVERY"];
+  function paintLifecycle() {
+    var current = localStorage.getItem(phaseKey) || "SCREENING";
+    var currentIdx = phaseOrder.indexOf(current);
+    if (currentIdx < 0) currentIdx = 0;
+    document.querySelectorAll("[data-rcm-phase]").forEach(function(el) {
+      var phase = el.getAttribute("data-rcm-phase");
+      var idx = phaseOrder.indexOf(phase);
+      el.classList.remove("is-pending","is-current","is-done");
+      if (idx < currentIdx)        el.classList.add("is-done");
+      else if (idx === currentIdx) el.classList.add("is-current");
+      else                          el.classList.add("is-pending");
+    });
+  }
+  document.addEventListener("click", function(e) {
+    var tile = e.target.closest && e.target.closest("[data-rcm-phase]");
+    if (!tile) return;
+    var phase = tile.getAttribute("data-rcm-phase");
+    var current = localStorage.getItem(phaseKey) || "SCREENING";
+    // Clicking the current phase advances; clicking any other phase
+    // jumps directly to it. Lets partners move forward (most common)
+    // or back-fill if they skipped a step.
+    if (phase === current) {
+      var nextIdx = phaseOrder.indexOf(current) + 1;
+      if (nextIdx < phaseOrder.length) {
+        localStorage.setItem(phaseKey, phaseOrder[nextIdx]);
+      }
+    } else {
+      localStorage.setItem(phaseKey, phase);
+    }
+    paintLifecycle();
+  });
+  document.addEventListener("DOMContentLoaded", paintLifecycle);
 })();
 </script>""".replace("%SLUG%", safe_slug)
 

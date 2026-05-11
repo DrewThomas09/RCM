@@ -26,7 +26,8 @@ from ..market_intel import (
 )
 from ..market_intel.news_feed import NewsItem, _all_items
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_panel, ck_section_intro,
+    P, chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_intro,
 )
 from .power_ui import (
     benchmark_chip, bookmark_hint, deal_context_bar,
@@ -648,6 +649,12 @@ def render_seeking_alpha_page(
             name="seeking_alpha_snapshot",
         )
         + bookmark_hint()
+        + ck_next_section(
+            "Apply this market read to a deal",
+            "/diligence/deal",
+            eyebrow="Continue —",
+            italic_word="deal",
+        )
         + '</div>'
     )
     return chartis_shell(

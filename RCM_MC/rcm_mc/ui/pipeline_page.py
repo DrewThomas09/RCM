@@ -11,7 +11,8 @@ from typing import Any, Dict, List, Optional
 
 from ..portfolio.store import PortfolioStore
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_panel, ck_section_intro,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_intro,
 )
 from .brand import PALETTE
 
@@ -342,12 +343,18 @@ border-bottom:1px solid var(--cad-border);}
 .pp-activity-ccn{width:60px;}
 </style>
 """
+    next_up = ck_next_section(
+        "Open a deal profile",
+        "/diligence/deal",
+        eyebrow="Continue —",
+        italic_word="deal",
+    )
     body = (
         f'{pp_styles}{intro}{kpis}'
         '<div class="pp-grid">'
         f'<div>{funnel}{search_section}</div>'
         f'<div>{activity_section}</div></div>'
-        f'{pipeline_table}{nav}'
+        f'{pipeline_table}{next_up}{nav}'
     )
 
     return chartis_shell(

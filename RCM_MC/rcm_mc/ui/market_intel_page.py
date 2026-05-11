@@ -31,7 +31,8 @@ from ..market_intel import (
     sector_sentiment, transaction_multiple,
 )
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_panel, ck_section_intro,
+    P, chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_intro,
 )
 from .power_ui import provenance, sortable_table
 
@@ -592,6 +593,12 @@ def render_market_intel_page(
     tickers: Optional[List[str]] = None,
     tags: Optional[List[str]] = None,
 ) -> str:
+    next_up = ck_next_section(
+        "Dig into public-comp + PE deal flow",
+        "/market-intel/seeking-alpha",
+        eyebrow="Continue —",
+        italic_word="deal",
+    )
     body = (
         _MI_STYLES
         + _hero(category, specialty)
@@ -601,6 +608,7 @@ def render_market_intel_page(
         + _transaction_multiples_section(specialty, ev_usd)
         + _earnings_calendar_section()
         + _news_section(specialty, tickers, tags)
+        + next_up
     )
     return chartis_shell(
         body, "RCM Diligence — Market Intelligence",

@@ -502,6 +502,50 @@ def ck_section_intro(
     )
 
 
+def ck_next_section(
+    label: str,
+    href: str,
+    *,
+    eyebrow: str = "Up next",
+    italic_word: Optional[str] = None,
+) -> str:
+    """Editorial 'Up next' footer — eyebrow + serif arrow-link.
+
+    Sits below the last section on a page and points partners at the
+    next logical step in the diligence flow. The cadence mirrors
+    chartis.com's chapter footers (eyebrow + italic emphasis word +
+    arrow). Use it instead of bare "Back to dashboard" links so a
+    partner walking through diligence chronologically has a footer
+    rail to follow:
+
+      Pipeline → Screening → Diligence → Risk → Financial → Delivery
+
+    If ``italic_word`` is provided it is wrapped in ``<em>`` inside
+    the link label, e.g.::
+
+        ck_next_section("Continue to the Risk Workbench",
+                        "/diligence/risk-workbench",
+                        italic_word="Risk")
+    """
+    label_html = _esc(label)
+    if italic_word:
+        for cand in (italic_word, italic_word.capitalize(), italic_word.upper()):
+            e_cand = _esc(cand)
+            if e_cand in label_html:
+                label_html = label_html.replace(
+                    e_cand, f"<em>{e_cand}</em>", 1)
+                break
+    return (
+        '<div class="ck-next-section">'
+        f'<div class="ck-next-eyebrow">{_esc(eyebrow)}</div>'
+        f'<a class="ck-next-link" href="{_esc(href)}">'
+        f'{label_html}'
+        ' <span class="ck-next-arrow" aria-hidden="true">→</span>'
+        '</a>'
+        '</div>'
+    )
+
+
 def ck_empty_state(
     title: str,
     body: Optional[str] = None,
@@ -1444,6 +1488,39 @@ _CSS_INLINE_FALLBACK = """
   .ck-section-body a:not([class]):hover,
   .ck-section-intro a:not([class]):hover {
     border-bottom-color: var(--sc-teal-ink);
+  }
+  /* Up next — editorial chapter footer */
+  .ck-next-section {
+    padding: 28px 24px;
+    margin: 28px 0 0;
+    border-top: 1px solid var(--sc-rule);
+    text-align: center;
+  }
+  .ck-next-eyebrow {
+    font-family: var(--sc-sans); font-size: 10px; font-weight: 700;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--sc-text-faint); margin-bottom: 10px;
+  }
+  .ck-next-link {
+    display: inline-block;
+    font-family: var(--sc-serif); font-weight: 400; font-size: 22px;
+    line-height: 1.2; letter-spacing: -0.005em;
+    color: var(--sc-teal-ink); text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 120ms ease;
+  }
+  .ck-next-link em {
+    font-style: italic; color: var(--sc-teal-ink); font-weight: 400;
+  }
+  .ck-next-link:hover {
+    border-bottom-color: var(--sc-teal-ink);
+  }
+  .ck-next-arrow {
+    display: inline-block; margin-left: 6px;
+    transition: transform 160ms ease;
+  }
+  .ck-next-link:hover .ck-next-arrow {
+    transform: translateX(4px);
   }
   .ck-table { width:100%; border-collapse:collapse; font-size:13px; }
   .ck-table thead th { background:var(--sc-bone); color:var(--sc-text-dim); font-family:var(--sc-sans); font-weight:600; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; padding:8px 12px; border-bottom:1px solid var(--sc-rule); text-align:left; }

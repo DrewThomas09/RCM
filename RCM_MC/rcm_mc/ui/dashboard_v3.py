@@ -452,6 +452,40 @@ def _activity_section(
     )
 
 
+def _start_here_styles() -> str:
+    """Scoped styles for the empty-portfolio 'Start here' panel.
+
+    Three editorial cards in a grid: each a parchment-toned tile
+    with an eyebrow + serif title + body description. Hover lifts
+    the tile and brightens the border to flag it as clickable.
+    """
+    return """
+<style>
+.dv-start-here{margin-top:16px;}
+.dv-start-grid{display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:14px;margin-top:16px;}
+.dv-start-tile{display:block;padding:18px 20px;
+background:var(--sc-bone,#f5f1ea);
+border:1px solid var(--sc-rule,#d8d3c8);border-radius:3px;
+text-decoration:none;color:inherit;
+transition:transform 140ms ease, border-color 140ms ease,
+box-shadow 140ms ease;}
+.dv-start-tile:hover{transform:translateY(-2px);
+border-color:var(--sc-teal,#155752);
+box-shadow:0 6px 18px rgba(11,35,65,0.08);}
+.dv-start-eyebrow{font-family:"Inter Tight",sans-serif;font-size:10px;
+font-weight:700;letter-spacing:1.4px;text-transform:uppercase;
+color:var(--sc-teal-ink,#0e3e3a);margin-bottom:8px;}
+.dv-start-title{font-family:"Source Serif 4",serif;
+font-size:22px;font-weight:400;line-height:1.15;letter-spacing:-0.01em;
+color:var(--sc-navy,#0b2341);margin-bottom:8px;}
+.dv-start-sub{font-family:"Source Serif 4",serif;font-size:13.5px;
+line-height:1.55;color:var(--sc-text-dim,#37495e);}
+</style>
+"""
+
+
 # ── Main render ─────────────────────────────────────────────
 
 def render_dashboard_v3(store: Any) -> str:
@@ -485,14 +519,58 @@ padding:12px 0;border-bottom:1px solid var(--cad-border);}
 .dv-activity-label{flex:1;font-size:13px;}
 </style>
 """
+    # "Start here" panel — first-load orientation when the portfolio
+    # is empty. Gives a fresh partner three concrete next steps
+    # (import a deal, screen hospitals, take the tour) instead of an
+    # ambiguous "0 deals" hero strip with no direction.
+    start_here = ""
+    if summary.get("n_deals", 0) == 0:
+        start_here = (
+            '<section class="ck-panel dv-start-here">'
+            '<div class="ck-panel-head">'
+            '<div class="ck-panel-title">Start here</div>'
+            '</div>'
+            '<div class="ck-panel-body">'
+            '<p class="ck-section-body">'
+            'A fresh portfolio. Three ways to get the platform '
+            'working with your <em>actual</em> deal pipeline:'
+            '</p>'
+            '<div class="dv-start-grid">'
+            '<a href="/import" class="dv-start-tile">'
+            '<div class="dv-start-eyebrow">1 · Import</div>'
+            '<div class="dv-start-title">Add a deal</div>'
+            '<div class="dv-start-sub">'
+            'Upload a CSV or paste a JSON profile. Required '
+            'fields: name, NPR, EBITDA, specialty, state.'
+            '</div></a>'
+            '<a href="/screen" class="dv-start-tile">'
+            '<div class="dv-start-eyebrow">2 · Screen</div>'
+            '<div class="dv-start-title">Find hospitals</div>'
+            '<div class="dv-start-sub">'
+            'Filter the HCRIS universe by sub-sector, size, '
+            'and margin band. Add candidates to the watchlist.'
+            '</div></a>'
+            '<a href="/?tour=1" class="dv-start-tile">'
+            '<div class="dv-start-eyebrow">3 · Tutorial</div>'
+            '<div class="dv-start-title">Take the tour</div>'
+            '<div class="dv-start-sub">'
+            'Seven volumes covering pipeline, diligence, risk, '
+            'monte carlo, portfolio, delivery, and settings.'
+            '</div></a>'
+            '</div>'
+            '</div></section>'
+        )
+
     page_body = (
         dv_styles
+        + _start_here_styles()
         + '<div class="dv-container">'
         + '<div class="dv-toplinks">'
         + '<a href="/data/catalog?ui=v3" class="ck-link">Data →</a>'
         + '<a href="/models/quality?ui=v3" class="ck-link">Models →</a>'
         + '</div>'
         + _hero_strip(summary)
+        + start_here
         + _opportunities_section(opportunities)
         + _alerts_section(alerts)
         + _activity_section(activity)
