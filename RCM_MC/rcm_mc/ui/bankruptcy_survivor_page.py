@@ -155,7 +155,8 @@ def render_scan_landing() -> str:
     )
     # Cycle 43 — KPI strip primitives at the top + chartis chrome.
     from ._chartis_kit import (
-        ck_eyebrow, ck_kpi_block, ck_provenance_tooltip, ck_section_header,
+        ck_eyebrow, ck_kpi_block, ck_next_section, ck_provenance_tooltip,
+        ck_section_header,
     )
     patterns_value = ck_provenance_tooltip(
         "Patterns in the screen",
@@ -193,6 +194,12 @@ def render_scan_landing() -> str:
         )
         + kpi_strip
         + body
+        + ck_next_section(
+            "Cross-check against named bear cases",
+            "/bear-cases",
+            eyebrow="Continue —",
+            italic_word="bear",
+        )
     )
     return chartis_shell(body, "Bankruptcy-Survivor Scan",
                          subtitle="12-pattern PE-healthcare playbook screen",

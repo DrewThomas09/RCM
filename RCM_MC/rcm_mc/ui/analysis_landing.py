@@ -15,6 +15,7 @@ from ._chartis_kit import (
     ck_eyebrow,
     ck_fmt_num,
     ck_kpi_block,
+    ck_next_section,
     ck_provenance_tooltip,
 )
 from .brand import PALETTE
@@ -203,7 +204,13 @@ def render_analysis_landing(
         '</div>'
     )
 
-    body = f'{page_head}{kpi_strip}{deals_section}{market_tools}'
+    next_up = ck_next_section(
+        "Open the diligence checklist",
+        "/diligence/checklist",
+        eyebrow="Continue —",
+        italic_word="checklist",
+    )
+    body = f'{page_head}{kpi_strip}{deals_section}{market_tools}{next_up}'
 
     return chartis_shell(
         body, "Analysis",

@@ -24,7 +24,7 @@ from ..diligence.counterfactual import (
 from ..diligence._pages import AVAILABLE_FIXTURES, _resolve_dataset
 from ._chartis_kit import (
     P, chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_page_title, ck_provenance_tooltip,
+    ck_next_section, ck_page_title, ck_provenance_tooltip,
 )
 from .power_ui import diff_badge
 
@@ -389,8 +389,14 @@ def _render_comparison(
         eyebrow="RCM DILIGENCE",
         meta=f"{left['name']} vs {right['name']} · side-by-side",
     )
+    next_up = ck_next_section(
+        "Take this comparison into the IC packet",
+        "/diligence/ic-packet",
+        eyebrow="Continue —",
+        italic_word="IC",
+    )
     return chartis_shell(
-        title_html + hero + table_html + grid,
+        title_html + hero + table_html + grid + next_up,
         f"Compare — {left['name']} vs {right['name']}",
         active_nav="/diligence/compare",
         subtitle="Side-by-side",

@@ -31,7 +31,7 @@ from ..diligence.counterfactual import (
 )
 from ._chartis_kit import (
     P, chartis_shell, ck_eyebrow, ck_fmt_currency, ck_fmt_num,
-    ck_kpi_block, ck_provenance_tooltip,
+    ck_kpi_block, ck_next_section, ck_provenance_tooltip,
 )
 
 
@@ -839,6 +839,12 @@ def render_counterfactual_page(
         + _render_ccd_summary(ccd_summary)
         + _render_counterfactuals(cf_set)
         + _render_bridge_lever(lever)
+        + ck_next_section(
+            "Pressure-test these levers in the Risk Workbench",
+            "/diligence/risk-workbench?demo=steward",
+            eyebrow="Continue —",
+            italic_word="Workbench",
+        )
     )
     return chartis_shell(
         body,

@@ -23,7 +23,7 @@ from ..diligence.bridge_audit import (
     LeverVerdict, audit_bridge, parse_bridge_text,
 )
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_panel,
+    P, chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
     ck_section_header, ck_section_intro, ck_signal_badge,
 )
 from .power_ui import (
@@ -945,6 +945,12 @@ def render_bridge_audit_page(
         )
         + bookmark_hint()
         + '</div>'
+        + ck_next_section(
+            "Pressure-test the bridge in the Risk Workbench",
+            "/diligence/risk-workbench?demo=steward",
+            eyebrow="Continue —",
+            italic_word="Workbench",
+        )
     )
     return chartis_shell(
         body, "RCM Diligence — Bridge Auto-Auditor",
