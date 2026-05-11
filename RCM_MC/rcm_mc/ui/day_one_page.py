@@ -18,6 +18,7 @@ italic-accent headline + body + arrow-link per section.
 from __future__ import annotations
 
 import html as _html
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import (
@@ -33,6 +34,27 @@ from .dashboard_v3 import (
 
 _DAY_ONE_STYLES = """
 <style>
+.do-datestamp {
+  display: flex; align-items: baseline; gap: 14px;
+  margin: 0 0 18px;
+  padding: 12px 0 14px;
+  border-bottom: 1px solid var(--sc-rule, #d8d3c8);
+}
+.do-datestamp-day {
+  font-family: "Source Serif 4", serif; font-style: italic;
+  font-weight: 400; font-size: 18px;
+  color: var(--sc-teal-ink, #0e3e3a);
+}
+.do-datestamp-date {
+  font-family: "Source Serif 4", serif; font-weight: 500;
+  font-size: 18px; color: var(--sc-navy, #0b2341);
+}
+.do-datestamp-week {
+  font-family: "JetBrains Mono", monospace; font-size: 10px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--sc-text-faint, #6e7787);
+  margin-left: auto;
+}
 .do-section { margin-bottom: 28px; }
 .do-eyebrow-wrap {
   display: flex; align-items: baseline; gap: 10px;
@@ -561,6 +583,22 @@ def render_day_one(store: Any) -> str:
     activity = _load_recent_activity(store, lookback_days=7)
     recent_packets = _load_recent_packets(store, limit=4)
 
+    # Date stamp — partners glance at the brief and immediately
+    # know which Monday it covers. Calendar date + weekday + ISO
+    # week number gives them three reads on temporal context.
+    now = datetime.now(timezone.utc)
+    weekday = now.strftime("%A")
+    iso_week = now.isocalendar()[1]
+    date_stamp = (
+        '<div class="do-datestamp">'
+        f'<span class="do-datestamp-day">{weekday}</span>'
+        f'<span class="do-datestamp-date">'
+        f'{now.strftime("%B")} '
+        f'{now.day}, {now.year}</span>'
+        f'<span class="do-datestamp-week">Week {iso_week:02d} · '
+        f'{now.strftime("%Y-%m-%d")}</span>'
+        '</div>'
+    )
     intro = ck_section_intro(
         eyebrow="MONDAY MORNING",
         headline="Where to start your week.",
@@ -582,6 +620,7 @@ def render_day_one(store: Any) -> str:
 
     body = (
         _DAY_ONE_STYLES
+        + date_stamp
         + intro
         + ck_panel(
             _alerts_section(alerts)
