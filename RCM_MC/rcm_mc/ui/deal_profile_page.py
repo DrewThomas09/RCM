@@ -610,6 +610,12 @@ margin-bottom:6px;}}
 color:{P["text_faint"]};background:{P["panel_alt"]};padding:2px 6px;
 border-radius:2px;font-weight:700;}}
 .ck-dp-card-detail{{font-size:11px;color:{P["text_dim"]};line-height:1.55;}}
+.ck-dp-card-state{{margin-top:8px;font-family:"Source Serif 4",serif;
+font-style:italic;font-size:10.5px;color:{P["text_faint"]};
+display:flex;align-items:baseline;gap:6px;}}
+.ck-dp-card-state[hidden]{{display:none !important;}}
+.ck-dp-card-state-dot{{width:5px;height:5px;border-radius:50%;
+background:{P["accent"]};display:inline-block;flex-shrink:0;}}
 .ck-dp-card-preview{{font-size:10px;color:{P["text_faint"]};margin-top:8px;
 font-family:"JetBrains Mono",monospace;letter-spacing:.3px;word-break:break-all;}}
 .ck-dp-phase-section{{margin-bottom:22px;}}
@@ -890,17 +896,24 @@ def _analytic_card(slug: str, a: Dict[str, Any]) -> str:
     })
     badge = a.get("badge", "")
     badge_html = ck_signal_badge(html.escape(badge), tone="neutral") if badge else ""
+    # tool_key — used as the localStorage entry per (deal, analytic)
+    # so the state badge can show "Last viewed N hr ago" when a
+    # partner returns to a deal they were working on. Use the href
+    # as the stable identifier (one tool ↔ one href).
+    tool_key = a["href"]
     return (
         f'<a data-rcm-deal-link '
         f'data-rcm-deal-href-base="{html.escape(a["href"], quote=True)}" '
         f'data-rcm-deal-params="{html.escape(params_json, quote=True)}" '
         f'data-rcm-deal-slug="{html.escape(slug)}" '
+        f'data-rcm-tool-key="{html.escape(tool_key, quote=True)}" '
         f'href="{html.escape(a["href"])}" class="ck-dp-card">'
         '<div class="ck-dp-card-head">'
         f'<div class="ck-dp-card-title">{html.escape(a["label"])}</div>'
         f'{badge_html}'
         '</div>'
         f'<div class="ck-dp-card-detail">{html.escape(a["detail"])}</div>'
+        '<div data-rcm-tool-state class="ck-dp-card-state" hidden></div>'
         '<div data-rcm-deal-preview class="ck-dp-card-preview"></div>'
         '</a>'
     )
@@ -1489,6 +1502,53 @@ def _inline_js(slug: str) -> str:
     paintLifecycle();
   });
   document.addEventListener("DOMContentLoaded", paintLifecycle);
+
+  // Analytic-card state badges — read per-tool last-viewed timestamps
+  // from rcm_deal_<slug>_visited and paint each card's state line.
+  // Click on a card records the visit so subsequent loads of the
+  // deal-profile show "Last viewed N min ago" right under the title.
+  // Gives partners visible recency context per analytic without
+  // needing them to leave the profile to check.
+  var visitedKey = "rcm_deal_" + slug + "_visited";
+  function relTime(ts) {
+    if (!ts) return "";
+    var d = Math.round((Date.now() - ts) / 60000);
+    if (d < 1) return "just now";
+    if (d < 60) return d + " min ago";
+    if (d < 1440) return Math.round(d / 60) + " hr ago";
+    return Math.round(d / 1440) + " d ago";
+  }
+  function paintToolStates() {
+    var raw;
+    try { raw = localStorage.getItem(visitedKey); } catch (e) { raw = null; }
+    var rows = {};
+    if (raw) { try { rows = JSON.parse(raw) || {}; } catch (e) { rows = {}; } }
+    document.querySelectorAll("[data-rcm-tool-key]").forEach(function(card) {
+      var key = card.getAttribute("data-rcm-tool-key");
+      var state = card.querySelector("[data-rcm-tool-state]");
+      if (!state) return;
+      var ts = rows[key];
+      if (!ts) { state.hidden = true; return; }
+      state.innerHTML =
+        '<span class="ck-dp-card-state-dot" aria-hidden="true"></span>'
+        + 'Last viewed ' + relTime(ts);
+      state.hidden = false;
+    });
+  }
+  document.addEventListener("DOMContentLoaded", paintToolStates);
+  document.addEventListener("click", function(e) {
+    var card = e.target.closest && e.target.closest("[data-rcm-tool-key]");
+    if (!card) return;
+    var key = card.getAttribute("data-rcm-tool-key");
+    if (!key) return;
+    try {
+      var raw = localStorage.getItem(visitedKey);
+      var rows = raw ? JSON.parse(raw) : {};
+      if (!rows || typeof rows !== "object") rows = {};
+      rows[key] = Date.now();
+      localStorage.setItem(visitedKey, JSON.stringify(rows));
+    } catch (err) { /* quota / disabled — ignore */ }
+  });
 
   // Push this slug onto the "recently viewed" deals index so the /app
   // recently-viewed rail can show one-click re-entry to deals in

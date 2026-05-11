@@ -401,14 +401,42 @@ def _verdict_card(res: CovenantStressResult) -> str:
         + ck_kpi_block(
             "Max Breach Prob", max_prob_val,
             sub="vs <10% bank target · <25% acceptable",
+            help={
+                "definition": (
+                    "Highest probability across simulated paths "
+                    "that ANY covenant (DSCR, leverage, fixed-"
+                    "charge) breaches in any quarter of the test "
+                    "horizon. Banks typically want this below 10%; "
+                    "25% is the deal-killer threshold for most "
+                    "credit committees."
+                ),
+            },
         )
         + ck_kpi_block(
             "Earliest 50% Breach", early_label,
             sub="quarter any covenant first crosses 50% breach probability",
+            help={
+                "definition": (
+                    "First quarter where breach probability for any "
+                    "covenant exceeds 50% — the moment the credit "
+                    "agreement starts forcing decisions (waiver, "
+                    "amendment, or default). Earlier is worse."
+                ),
+            },
         )
         + ck_kpi_block(
             "Simulated Paths", f"{res.n_paths:,}",
             sub="synthetic EBITDA trials",
+            help={
+                "definition": (
+                    "Number of forward EBITDA paths the stress "
+                    "simulator generated. Each path is a complete "
+                    "quarter-by-quarter realization combining the "
+                    "deal's historical EBITDA variance with "
+                    "forward-looking initiative impact."
+                ),
+                "citation": "rcm_mc/mc/ebitda_mc.py",
+            },
         )
         + ck_kpi_block(
             "Quarters Tested", f"{res.quarters}",
