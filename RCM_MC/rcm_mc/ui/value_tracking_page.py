@@ -10,7 +10,8 @@ import html as _html
 from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_num, ck_fmt_pct, ck_kpi_block, ck_provenance_tooltip,
+    chartis_shell, ck_fmt_num, ck_fmt_pct, ck_kpi_block,
+    ck_next_section, ck_provenance_tooltip,
 )
 from ._glossary_link import metric_label_link
 from ._provenance_tooltip import provenance_tooltip
@@ -277,7 +278,13 @@ def render_value_tracker(
         f'</div>'
     )
 
-    body = f'{kpis}{ramp_banner}{lever_table}{entry_form}{plan_section}{nav}'
+    next_up = ck_next_section(
+        "Open the EBITDA bridge",
+        f"/ebitda-bridge/{ccn}",
+        eyebrow="Continue —",
+        italic_word="bridge",
+    )
+    body = f'{kpis}{ramp_banner}{lever_table}{entry_form}{plan_section}{nav}{next_up}'
 
     return chartis_shell(
         body,

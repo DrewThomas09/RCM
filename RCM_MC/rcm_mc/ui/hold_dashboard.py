@@ -231,7 +231,7 @@ def render_hold_dashboard(
 ) -> str:
     from ._chartis_kit import (
         chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-        ck_provenance_tooltip,
+        ck_next_section, ck_provenance_tooltip,
     )
     plan = _load_plan(store, deal_id)
     actuals = _load_actuals(store, deal_id)
@@ -294,6 +294,12 @@ def render_hold_dashboard(
            f'<div class="hold-card-title">EBITDA: Actual vs Plan</div>'
            f'{ebitda_chart}</div>' if ebitda_chart else '') +
         '</div>'
+        + ck_next_section(
+            "Open the value tracker",
+            f"/value-tracker/{deal_id}",
+            eyebrow="Continue —",
+            italic_word="value",
+        )
     )
     return chartis_shell(
         body,

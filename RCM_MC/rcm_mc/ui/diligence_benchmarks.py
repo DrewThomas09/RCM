@@ -27,8 +27,8 @@ from ..diligence.benchmarks import (
     WaterfallCohort, WaterfallStep,
 )
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_page_title, ck_panel,
-    ck_section_header, ck_section_intro, ck_signal_badge,
+    P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
+    ck_panel, ck_section_header, ck_section_intro, ck_signal_badge,
 )
 
 
@@ -142,6 +142,12 @@ def render_benchmarks_page(
         + _cohort_section(cohort_report)
         + _denial_pareto(bundle.denial_stratification)
         + _provenance_footer(bundle)
+        + ck_next_section(
+            "Open the bridge auditor",
+            "/diligence/bridge-audit",
+            eyebrow="Continue —",
+            italic_word="bridge",
+        )
     )
     return chartis_shell(
         body,

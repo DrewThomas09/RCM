@@ -193,7 +193,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
     from . import _web_components as _wc
     from ._chartis_kit import (
         chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-        ck_provenance_tooltip,
+        ck_next_section, ck_provenance_tooltip,
     )
     from ..data_public.deals_corpus import DealsCorpus
     from ..data_public.sponsor_track_record import (
@@ -479,10 +479,17 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
         )
     )
 
+    next_up = ck_next_section(
+        "Open the comparable outcomes view",
+        "/diligence/comparable-outcomes",
+        eyebrow="Continue —",
+        italic_word="outcomes",
+    )
     body = (
         _wc.web_styles()
         + _wc.responsive_container(inner)
         + _wc.sortable_table_js()
+        + next_up
     )
     return chartis_shell(body, "Sponsor track record",
                          active_nav="/diligence/sponsor-detail",

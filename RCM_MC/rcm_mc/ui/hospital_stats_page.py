@@ -14,7 +14,7 @@ import pandas as pd
 
 from ._chartis_kit import (
     chartis_shell, ck_fmt_num, ck_fmt_pct, ck_kpi_block,
-    ck_provenance_tooltip,
+    ck_next_section, ck_provenance_tooltip,
 )
 from .brand import PALETTE
 from .regression_page import _add_computed_features, _fmt_num, _COLLINEAR_PAIRS
@@ -275,7 +275,13 @@ def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
         f'</div>'
     )
 
-    body = f'{kpis}{flags_html}{metrics_section}{residual_section}{actions}'
+    next_up = ck_next_section(
+        "Open the hospital profile",
+        f"/hospital/{_html.escape(ccn)}",
+        eyebrow="Continue —",
+        italic_word="profile",
+    )
+    body = f'{kpis}{flags_html}{metrics_section}{residual_section}{actions}{next_up}'
 
     return chartis_shell(
         body,

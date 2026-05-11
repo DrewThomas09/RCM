@@ -9,7 +9,8 @@ import html
 from typing import Any, Dict, List
 
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_pct, ck_kpi_block, ck_provenance_tooltip,
+    chartis_shell, ck_fmt_pct, ck_kpi_block, ck_next_section,
+    ck_provenance_tooltip,
 )
 from .models_page import _model_nav
 from .brand import PALETTE
@@ -137,7 +138,13 @@ def render_waterfall_page(deal_id: str, deal_name: str, result: Dict[str, Any]) 
     )
 
     nav = _model_nav(deal_id, "waterfall")
-    body = f'{nav}{kpis}{split}{interp}{tier_section}{actions}'
+    next_up = ck_next_section(
+        "Open the returns & covenant view",
+        f"/models/returns/{html.escape(deal_id)}",
+        eyebrow="Continue —",
+        italic_word="returns",
+    )
+    body = f'{nav}{kpis}{split}{interp}{tier_section}{actions}{next_up}'
 
     return chartis_shell(body, f"Returns Waterfall — {html.escape(deal_name)}",
                     active_nav="/analysis",
