@@ -3921,6 +3921,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path.startswith("/hospital/") and path.endswith("/history"):
             ccn = path.replace("/hospital/", "").replace("/history", "").strip("/")
             return self._route_hospital_history(ccn)
+        if path.startswith("/hospital/") and path.endswith("/providers"):
+            ccn = path.replace("/hospital/", "").replace("/providers", "").strip("/")
+            return self._route_hospital_providers(ccn)
         if path.startswith("/hospital/") and path.endswith("/start-diligence"):
             pass  # handled in POST
         elif path.startswith("/hospital/"):
@@ -11921,6 +11924,42 @@ class RCMHandler(BaseHTTPRequestHandler):
 
         return self._send_html(render_hospital_history(
             ccn, name, trend, state=state, peer_avg=peer_avg, projections=projections))
+
+    def _route_hospital_providers(self, ccn: str) -> None:
+        """GET /hospital/{ccn}/providers — NPPES provider directory.
+
+        Reads from the nppes_live_cache (rcm_mc.data_public.nppes_cache);
+        renders the empty/refresh state when the cache is cold so partner
+        sees the CLI command they need to run.
+
+        No inline NPPES API call — single-machine deployment + NPPES
+        rate-limiting both argue for fetch-and-cache via explicit
+        refresh, not per-render.
+        """
+        from .data_public.nppes_cache import ensure_table
+        from .ui.hospital_providers_page import render_hospital_providers
+
+        # Pull hospital name + state from HCRIS for the empty-state CLI cmd
+        hospital_name = ""
+        state = ""
+        try:
+            from .data.hcris import _get_latest_per_ccn
+            row = _get_latest_per_ccn(ccn)
+            if row is not None:
+                hospital_name = str(row.get("name", "")) or ""
+                state = str(row.get("state", "")) or ""
+        except Exception:
+            pass
+
+        store = self.store_for_request()
+        with store.connect() as con:
+            ensure_table(con)
+            html_out = render_hospital_providers(
+                con, ccn,
+                hospital_name=hospital_name,
+                state=state,
+            )
+        return self._send_html(html_out)
 
     def _route_start_diligence_from_hospital(self, ccn: str) -> None:
         """POST /hospital/{ccn}/start-diligence — create deal from HCRIS and redirect."""

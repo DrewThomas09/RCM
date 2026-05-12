@@ -355,6 +355,7 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
             (f"/ml-insights/hospital/{ccn}", "ML Analysis"),
             (f"/hospital/{ccn}/demand", "Demand"),
             (f"/hospital/{ccn}/history", "3-Year History"),
+            (f"/hospital/{ccn}/providers", "Providers"),
             (f"/portfolio/regression/hospital/{ccn}", "Stats"),
             (f"/bayesian/hospital/{ccn}", "Bayesian"),
         ])
