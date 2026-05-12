@@ -24,16 +24,32 @@ def _field(
     type_: str = "text",
     step: str = "",
     maxlength: str = "",
+    hint: str = "",
+    pattern: str = "",
+    min_: str = "",
+    max_: str = "",
 ) -> str:
     req = " required" if required else ""
     req_mark = ' <span style="color:var(--cad-amber);">*</span>' if required else ""
     ml = f' maxlength="{maxlength}"' if maxlength else ""
     st = f' step="{step}"' if step else ""
+    pat = f' pattern="{html.escape(pattern)}"' if pattern else ""
+    mn = f' min="{min_}"' if min_ else ""
+    mx = f' max="{max_}"' if max_ else ""
+    # Format-hint line below the input. Renders in muted mono so it
+    # reads as a tooltip-like aside rather than a label suffix.
+    hint_html = (
+        f'<div style="font-family:var(--cad-mono);font-size:10px;'
+        f'color:var(--cad-text-faint,#9aa3ad);letter-spacing:0.03em;'
+        f'margin-top:3px;">{html.escape(hint)}</div>'
+        if hint else ""
+    )
     return (
         f'<div class="cad-field">'
         f'<label>{html.escape(label)}{req_mark}</label>'
         f'<input class="cad-input" type="{type_}" name="{name}" '
-        f'placeholder="{html.escape(placeholder)}"{req}{st}{ml}>'
+        f'placeholder="{html.escape(placeholder)}"{req}{st}{ml}{pat}{mn}{mx}>'
+        f'{hint_html}'
         f'</div>'
     )
 
@@ -72,8 +88,21 @@ def render_quick_import(success_msg: str = "", error_msg: str = "") -> str:
         f'text-transform:uppercase;color:{PALETTE["text_primary"]};">Required Identity</h3>'
         f'<span class="cad-section-code">IDN</span></div>'
         f'<div class="cad-form-row" style="margin-bottom:18px;">'
-        + _field("deal_id", "Deal ID", placeholder="e.g. southeast_health", required=True)
-        + _field("name", "Hospital Name", placeholder="e.g. Southeast Health Medical Ctr", required=True)
+        + _field(
+            "deal_id", "Deal ID",
+            placeholder="e.g. southeast_health",
+            required=True,
+            pattern="[a-z0-9_-]+",
+            hint="Lowercase, digits, _ or - only. Becomes part of the URL.",
+            maxlength="64",
+        )
+        + _field(
+            "name", "Hospital Name",
+            placeholder="e.g. Southeast Health Medical Ctr",
+            required=True,
+            hint="Free text — appears in headlines and IC memo.",
+            maxlength="200",
+        )
         + '</div>'
     )
 
@@ -86,12 +115,41 @@ def render_quick_import(success_msg: str = "", error_msg: str = "") -> str:
         f'letter-spacing:0.1em;color:{PALETTE["text_muted"]};text-transform:uppercase;">Optional</span>'
         f'</div>'
         f'<div class="cad-form-row" style="margin-bottom:18px;">'
-        + _field("denial_rate", "Denial Rate (%)", placeholder="14.2", type_="number", step="0.1")
-        + _field("days_in_ar", "Days in AR", placeholder="52", type_="number", step="1")
-        + _field("net_collection_rate", "Net Collection (%)", placeholder="94.5", type_="number", step="0.1")
-        + _field("clean_claim_rate", "Clean Claim (%)", placeholder="88", type_="number", step="0.1")
-        + _field("cost_to_collect", "Cost to Collect (%)", placeholder="5.1", type_="number", step="0.1")
-        + _field("claims_volume", "Claims Volume", placeholder="180,000", type_="text")
+        + _field(
+            "denial_rate", "Denial Rate (%)",
+            placeholder="14.2", type_="number", step="0.1",
+            min_="0", max_="100",
+            hint="As a percent (14.2 not 0.142). HFMA peer median ~10%.",
+        )
+        + _field(
+            "days_in_ar", "Days in AR",
+            placeholder="52", type_="number", step="1",
+            min_="0", max_="500",
+            hint="Integer days. PE healthcare median 45-55; >75 flags AR drag.",
+        )
+        + _field(
+            "net_collection_rate", "Net Collection (%)",
+            placeholder="94.5", type_="number", step="0.1",
+            min_="0", max_="100",
+            hint="Realized cash ÷ allowable charges. PE target 92-95%.",
+        )
+        + _field(
+            "clean_claim_rate", "Clean Claim (%)",
+            placeholder="88", type_="number", step="0.1",
+            min_="0", max_="100",
+            hint="First-pass clean claims. PE target 85-92%.",
+        )
+        + _field(
+            "cost_to_collect", "Cost to Collect (%)",
+            placeholder="5.1", type_="number", step="0.1",
+            min_="0", max_="100",
+            hint="RCM operating cost ÷ net collected. PE target 3-5%.",
+        )
+        + _field(
+            "claims_volume", "Claims Volume",
+            placeholder="180,000", type_="text",
+            hint="Annual count. Commas are stripped on submit.",
+        )
         + '</div>'
     )
 
