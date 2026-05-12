@@ -200,7 +200,10 @@ def render_sensitivity_page(
     from ._chartis_kit import (
         ck_eyebrow, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
     )
-    n_cells = len(result.grid) * len(result.grid[0]) if result.grid else 0
+    # `grid` is a flat List[GridCell]; len(grid[0]) would TypeError
+    # because GridCell isn't iterable. The cell count is just the
+    # list length.
+    n_cells = len(result.grid)
     cells_value = ck_provenance_tooltip(
         "Grid cells computed",
         ck_fmt_num(n_cells),
