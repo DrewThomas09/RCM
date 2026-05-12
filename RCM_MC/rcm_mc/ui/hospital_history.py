@@ -13,7 +13,7 @@ import pandas as pd
 
 from ._chartis_kit import (
     chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
-    ck_section_intro,
+    ck_section_intro, ck_sparkline,
 )
 from .brand import PALETTE
 
@@ -228,11 +228,17 @@ def render_hospital_history(
             "side-by-side."
         ),
     )
+    # Sparklines for the trajectory KPIs — both have time-series
+    # data already on hand. ck_sparkline returns empty for <2 points
+    # so it self-suppresses on thin datasets.
+    rev_spark = ck_sparkline(revs) if revs else None
+    margin_spark = ck_sparkline(margins) if margins else None
     kpis = (
         '<div class="ck-kpi-strip">'
         + ck_kpi_block(
             f"Latest Revenue (FY{int(years[-1]) if years else '?'})",
             _fmt_m(revs[-1]) if revs else "—",
+            chart=rev_spark,
             help={
                 "definition": (
                     "Most-recent fiscal-year revenue from CMS HCRIS. "
@@ -245,6 +251,7 @@ def render_hospital_history(
         )
         + ck_kpi_block(
             f"Revenue CAGR ({n_years}yr)", f"{rev_cagr:+.1%}",
+            chart=rev_spark,
             help={
                 "definition": (
                     "Compound annual growth rate of revenue across "
@@ -259,6 +266,7 @@ def render_hospital_history(
         + ck_kpi_block(
             "Latest Margin",
             f"{margins[-1]:.1%}" if margins else "—",
+            chart=margin_spark,
             help={
                 "definition": (
                     "Operating margin in the most-recent fiscal "

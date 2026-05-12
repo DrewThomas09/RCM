@@ -435,6 +435,7 @@ def ck_kpi_block(
     unit: Optional[str] = None,    # legacy alias for ``sub``
     delta: Optional[str] = None,   # legacy alias for ``trend``
     help: Optional[Mapping[str, str]] = None,
+    chart: Optional[str] = None,
 ) -> str:
     """Editorial KPI block — label / value / optional sub / optional trend.
 
@@ -456,6 +457,11 @@ def ck_kpi_block(
     KPI label is wrapped in ``ck_help_tooltip`` so partners hovering
     or focusing the ``[?]`` affordance see an editorial gloss. Use it
     on jargon-heavy labels (NPR, EV/EBITDA TTM, conformal band).
+
+    ``chart`` is optional pre-rendered HTML (typically a ``ck_sparkline``
+    call) that renders below the value/sub. Use on KPIs where the
+    trajectory matters as much as the headline number (revenue CAGR,
+    margin trend, denial-rate slope).
     """
     if sub is None and unit is not None:
         sub = unit
@@ -475,12 +481,16 @@ def ck_kpi_block(
         )
     else:
         label_html = _esc(label)
+    chart_html = (
+        f'<div class="ck-kpi-chart">{chart}</div>' if chart else ""
+    )
     return (
         '<div class="ck-kpi">'
         f'{code_html}'
         f'<div class="ck-kpi-label">{label_html}</div>'
         f'<div class="ck-kpi-value sc-num">{_esc(value)}{trend_html}</div>'
         f'{sub_html}'
+        f'{chart_html}'
         "</div>"
     )
 
