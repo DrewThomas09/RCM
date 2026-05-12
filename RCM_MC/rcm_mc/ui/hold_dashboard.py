@@ -268,8 +268,30 @@ def render_hold_dashboard(
     )
     kpi_strip = (
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;">'
-        + ck_kpi_block("Quarters Held", quarters_value, "actuals filed")
-        + ck_kpi_block("Initiatives", initiatives_value, "in plan")
+        + ck_kpi_block(
+            "Quarters Held", quarters_value, "actuals filed",
+            help={
+                "definition": (
+                    "Quarters since close where the operating team has "
+                    "filed actuals — the basis for comparing planned "
+                    "vs. realized on the value-creation curve. Q1 of "
+                    "ownership rarely has clean numbers (transition "
+                    "costs); the trend stabilizes around Q4."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Initiatives", initiatives_value, "in plan",
+            help={
+                "definition": (
+                    "Active 100-day-plan + value-creation-plan "
+                    "initiatives the operating team is executing. "
+                    "Each ships with a planned EBITDA contribution + "
+                    "a quarterly milestone; the scorecard below "
+                    "tracks each one's pacing vs. plan."
+                ),
+            },
+        )
         + '</div>'
     )
 

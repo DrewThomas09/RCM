@@ -116,13 +116,46 @@ def render_value_tracker(
     )
     kpis = (
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
-        + ck_kpi_block("Planned Uplift", _fm(total_planned), "underwriting target")
+        + ck_kpi_block(
+            "Planned Uplift", _fm(total_planned), "underwriting target",
+            help={
+                "definition": (
+                    "Aggregate annualized EBITDA the value-creation "
+                    "plan underwrote at close — sum across every "
+                    "RCM lever (rate, denial, AR, contract terms, "
+                    "labor, supply). Becomes the denominator for "
+                    "realization tracking."
+                ),
+            },
+        )
         + ck_kpi_block("Realized", f'<span style="color:{real_color};">{_fm(total_realized)}</span>',
                        "actual EBITDA")
-        + ck_kpi_block("Realization", realization_value, "% of plan")
+        + ck_kpi_block(
+            "Realization", realization_value, "% of plan",
+            help={
+                "definition": (
+                    "Realized ÷ planned uplift. Above 100% means the "
+                    "team beat underwriting; below 70% at year 3 is "
+                    "an LP-update talking point. Plot the trajectory "
+                    "via the quarterly scorecard below."
+                ),
+            },
+        )
         + ck_kpi_block("Quarters Tracked", ck_fmt_num(quarters), "of hold")
-        + ck_kpi_block("Levers On Track", ck_fmt_num(summary.on_track_count if summary else 0),
-                       "ahead/on plan")
+        + ck_kpi_block(
+            "Levers On Track", ck_fmt_num(summary.on_track_count if summary else 0),
+            "ahead/on plan",
+            help={
+                "definition": (
+                    "Count of value-creation levers currently "
+                    "tracking ahead or on the underwriting curve. "
+                    "Healthier than realization alone — a deal "
+                    "could be 'on plan' aggregate but with 1 lever "
+                    "carrying 3 underperforming ones (high "
+                    "concentration risk on the hold)."
+                ),
+            },
+        )
         + '</div>'
     )
 
