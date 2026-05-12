@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import time
 import json
 import os
 import sys
@@ -1148,6 +1149,25 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
     s = sub.add_parser("status", help="Show freshness of each data source")
     s.add_argument("--db", default="portfolio.db", help="Path to SQLite store")
 
+    # NPPES has a different shape — per-CCN, not bulk — so it gets its
+    # own subcommand rather than fitting awkwardly into --source.
+    n = sub.add_parser(
+        "refresh-nppes",
+        help="Refresh NPPES provider roster for one CCN (live CMS API)",
+    )
+    n.add_argument("--db", default="portfolio.db", help="Path to SQLite store")
+    n.add_argument("--ccn", required=True, help="CMS Certification Number")
+    n.add_argument("--name", default="",
+                   help="Hospital name (for organization NPI lookup)")
+    n.add_argument("--state", default="",
+                   help="Two-letter state code (narrows the lookup)")
+    n.add_argument("--city", default="",
+                   help="Practice city (used for address-based individual lookup)")
+    n.add_argument("--postal-code", default="",
+                   help="Practice postal code (refines address lookup)")
+    n.add_argument("--limit", type=int, default=200,
+                   help="Max individuals to fetch per address (NPPES caps at 200)")
+
     args = ap.parse_args(argv)
     from .portfolio.store import PortfolioStore
     from .data import data_refresh as dr
@@ -1170,6 +1190,42 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
                 f"{row.get('last_refresh_at') or '—':<27}  "
                 f"{row.get('next_refresh_at') or '—'}\n"
             )
+        return 0
+
+    if args.action == "refresh-nppes":
+        # Single-CCN live-API refresh. Hits NPPES NPI Registry and
+        # writes to the nppes_live_cache table. No bulk-load — partner
+        # invokes this per-deal during commercial DD.
+        from .data_public.nppes_cache import (
+            ensure_table, refresh_org_roster,
+        )
+        from .data_public.nppes_api_client import NppesApiError
+
+        ccn = str(args.ccn).strip()
+        if not ccn:
+            sys.stderr.write("--ccn is required\n")
+            return 2
+        try:
+            with store.connect() as con:
+                ensure_table(con)
+                t0 = time.monotonic()
+                n_providers = refresh_org_roster(
+                    con,
+                    ccn=ccn,
+                    hospital_name=args.name or "",
+                    state=args.state or "",
+                    city=args.city or "",
+                    postal_code=args.postal_code or "",
+                    individual_limit=int(args.limit),
+                )
+                dt = time.monotonic() - t0
+        except NppesApiError as exc:
+            sys.stderr.write(f"[FAIL] NPPES API error: {exc}\n")
+            return 1
+        sys.stdout.write(
+            f"[OK] nppes ccn={ccn}: {n_providers} providers cached "
+            f"in {dt:.1f}s\n"
+        )
         return 0
 
     # refresh

@@ -110,7 +110,7 @@ def render_hospital_providers(
             f'<pre style="background:var(--cad-panel-alt);padding:12px;'
             f'font-family:var(--cad-mono);font-size:12px;border-radius:3px;'
             f'border-left:3px solid var(--cad-accent);overflow-x:auto;">'
-            f'rcm-mc data refresh nppes --ccn {ccn_safe} '
+            f'rcm-mc data refresh-nppes --ccn {ccn_safe} '
             f'--name "{_html.escape(hospital_name or "Hospital")}" '
             f'--state {_html.escape(state or "—")}'
             f'</pre>'
