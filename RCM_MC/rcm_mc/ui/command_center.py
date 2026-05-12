@@ -22,6 +22,7 @@ from ._chartis_kit import (
     chartis_shell,
     ck_eyebrow,
     ck_kpi_block,
+    ck_next_section,
     ck_provenance_tooltip,
 )
 from .brand import PALETTE
@@ -437,7 +438,12 @@ def render_command_center(
         f'</span></div>'
     )
 
-    body = "\n".join(sections)
+    body = "\n".join(sections) + ck_next_section(
+        "Open the morning dashboard",
+        "/dashboard",
+        eyebrow="Continue —",
+        italic_word="dashboard",
+    )
 
     return chartis_shell(
         body, "SeekingChartis",

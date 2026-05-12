@@ -10,7 +10,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_currency, ck_fmt_num,
-    ck_fmt_pct, ck_kpi_block, ck_provenance_tooltip,
+    ck_fmt_pct, ck_kpi_block, ck_next_section,
+    ck_provenance_tooltip,
 )
 from .brand import PALETTE
 
@@ -411,9 +412,15 @@ def render_deal_dashboard(
         + ck_kpi_block("Active Models", ck_fmt_num(17), "click any tile")
         + '</div>'
     )
+    next_up = ck_next_section(
+        "Open the full deal profile",
+        f"/deal/{deal_id}",
+        eyebrow="Continue —",
+        italic_word="profile",
+    )
     body = (
         ck_eyebrow("Deal Dashboard")
-        + f'{header}{profile_section}{estimate_strip}{model_grid}{exports}'
+        + f'{header}{profile_section}{estimate_strip}{model_grid}{exports}{next_up}'
     )
 
     return chartis_shell(
