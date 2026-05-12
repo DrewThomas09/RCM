@@ -62,7 +62,6 @@ jobs:
           REMOTE_EOF
 
       # ── 3. Verify the public URL returns 200 or 303 ──
-      #    Retries up to 5 times with 5-second sleeps.
       - name: Health check (public URL)
         run: |
           set -euo pipefail
@@ -98,24 +97,3 @@ jobs:
           | **Duration** | ${MINUTES}m ${SECONDS}s |
           | **Actor** | @$GITHUB_ACTOR |
           EOF
-
-      # ── 5. (Optional) Slack / Discord notification ──
-      #    Uncomment and fill in the webhook URL to enable.
-      #
-      # - name: Notify Slack
-      #   if: always()
-      #   uses: slackapi/slack-github-action@v1.27.0
-      #   with:
-      #     payload: |
-      #       {
-      #         "text": "Deploy ${{ job.status }}: `${{ github.sha }}` to pedesk.app by @${{ github.actor }}"
-      #       }
-      #   env:
-      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      #
-      # - name: Notify Discord
-      #   if: always()
-      #   run: |
-      #     curl -H "Content-Type: application/json" \
-      #       -d '{"content":"Deploy ${{ job.status }}: `${{ github.sha }}` to pedesk.app by @${{ github.actor }}"}' \
-      #       "${{ secrets.DISCORD_WEBHOOK_URL }}"
