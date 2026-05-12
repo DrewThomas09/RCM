@@ -2078,6 +2078,12 @@ def render_insights_page(
                         header
       - ``intro``     — optional ``{eyebrow, headline, ...}`` kwargs
                         passed to ``ck_section_intro``
+      - ``next_section_html`` — optional pre-rendered ``ck_next_section``
+                        HTML appended after the rail layout, before
+                        the shell. Lets insights-helper callers (e.g.
+                        /research, /notes) join the Up-next cue ladder
+                        — without it, the cue would land outside the
+                        body since this helper wraps ``chartis_shell``.
 
     For each active facet (state value present), a chip is added
     to the results header whose ``remove_href`` reconstructs the
