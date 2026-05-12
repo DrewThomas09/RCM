@@ -99,8 +99,8 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
         )
     body += (
         f'<button type="submit" style="grid-column:span 3;justify-self:start;'
-        f'margin-top:6px;padding:8px 20px;background:{P["accent"]};'
-        f'color:{P["panel"]};border:0;font-size:10px;letter-spacing:1.5px;'
+        f'margin-top:6px;padding:8px 20px;background:{P["navy"]};'
+        f'color:#fff;border:0;font-size:10px;letter-spacing:1.5px;'
         f'text-transform:uppercase;font-weight:700;cursor:pointer;">'
         f'Run Monte Carlo</button></form>'
     )

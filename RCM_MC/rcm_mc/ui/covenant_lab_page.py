@@ -107,7 +107,7 @@ letter-spacing:1.2px;text-transform:uppercase;font-weight:600;margin-bottom:4px;
 .cl-form-field input,.cl-form-field select{{width:100%;
 background:{pa};color:{tx};border:1px solid {bd};padding:8px 10px;
 border-radius:3px;font-family:"JetBrains Mono",monospace;font-size:13px;}}
-.cl-form-submit{{margin-top:18px;padding:10px 20px;background:{ac};
+.cl-form-submit{{margin-top:18px;padding:10px 20px;background:{bp};
 color:#fff;border:0;border-radius:3px;font-size:12px;letter-spacing:1.3px;
 text-transform:uppercase;font-weight:700;cursor:pointer;}}
 .cl-form-submit:hover{{filter:brightness(1.15);}}
@@ -115,7 +115,7 @@ text-transform:uppercase;font-weight:700;cursor:pointer;}}
 """.format(
         tx=P["text"], td=P["text_dim"], tf=P["text_faint"],
         pn=P["panel"], pa=P["panel_alt"],
-        bd=P["border"], ac=P["accent"],
+        bd=P["border"], ac=P["accent"], bp=P["navy"],
         po=P["positive"], wn=P["warning"], ne=P["negative"],
     )
     return f"<style>{css}</style>"
