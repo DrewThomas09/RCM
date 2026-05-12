@@ -91,10 +91,57 @@ def render_methodology() -> str:
     intro_body = (
         f'{intro_hero}'
         '<div class="ck-kpi-strip">'
-        + ck_kpi_block("Hospitals Tracked", "6,123")
-        + ck_kpi_block("Analytical Models", "17")
-        + ck_kpi_block("Passing Tests", "3,157")
-        + ck_kpi_block("API Endpoints", "52")
+        + ck_kpi_block(
+            "Hospitals Tracked", "6,123",
+            help={
+                "definition": (
+                    "Every short-term acute, CAH, IRF, LTCH, and psych "
+                    "hospital that filed a CMS HCRIS cost report in "
+                    "the most-recent fiscal year. Used as the "
+                    "denominator behind every percentile rank — a "
+                    "hospital at P75 outperforms ~4,592 peers."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Analytical Models", "17",
+            help={
+                "definition": (
+                    "Per-deal analytical models the platform runs: "
+                    "RCM regression, denial drivers, EBITDA bridge, "
+                    "Monte Carlo simulation, scenario layering, "
+                    "Bayesian calibration, conformal bands, "
+                    "comparable-deal matching, sensitivity sweep, "
+                    "and 8 more. Each documented in its own section "
+                    "below."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Passing Tests", "3,157",
+            help={
+                "definition": (
+                    "Tests in the unittest suite that pass on every "
+                    "commit — the regression gate. Run via "
+                    "`pytest -q`. Each model has a dedicated "
+                    "test_<feature>.py file + bug-fix regression "
+                    "asserts so a partner can verify the platform "
+                    "behaves on their machine before trusting outputs."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "API Endpoints", "52",
+            help={
+                "definition": (
+                    "Documented HTTP API routes (52 paths across 56 "
+                    "method/path combos) covered by the OpenAPI spec "
+                    "at /api/docs. Every UI page has a JSON-API "
+                    "equivalent so partners can script + automate "
+                    "anything the editorial UI does."
+                ),
+            },
+        )
         + '</div>'
     )
     intro = _section("INTRO", "Overview", intro_body, anchor="toc-intro")

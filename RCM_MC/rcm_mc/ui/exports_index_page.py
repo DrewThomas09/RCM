@@ -167,8 +167,31 @@ def render_exports_index(db_path: str) -> str:
     )
     kpi_strip = (
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;">'
-        + ck_kpi_block("Portfolio Exports", portfolio_value, "across active deals")
-        + ck_kpi_block("Corpus Browsers", corpus_value, "public-data sources")
+        + ck_kpi_block(
+            "Portfolio Exports", portfolio_value, "across active deals",
+            help={
+                "definition": (
+                    "Exports that aggregate across the active portfolio "
+                    "— LP update, portfolio risk scan, owner roll-ups. "
+                    "Use these for LP letters and partner-level "
+                    "reporting; for deal-specific data, use the export "
+                    "menu inside each deal page."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Corpus Browsers", corpus_value, "public-data sources",
+            help={
+                "definition": (
+                    "Public-data exports that ship the raw HCRIS / "
+                    "IRS 990 / Care Compare slices behind the "
+                    "platform's benchmarks. CSV-format, defanged "
+                    "for Excel formula injection (= ‒ + @ in front "
+                    "of a cell becomes '=). Use for spreadsheet "
+                    "workflows + audit reproducibility."
+                ),
+            },
+        )
         + '</div>'
     )
 
