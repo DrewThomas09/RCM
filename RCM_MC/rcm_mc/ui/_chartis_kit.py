@@ -255,6 +255,15 @@ def ck_fmt_currency(v: Optional[float], *, precision: int = 0, dash: str = "—"
 
 
 def ck_fmt_percent(v: Optional[float], *, precision: int = 1, dash: str = "—") -> str:
+    """Format a RATIO as a percent string. ``0.05`` → ``"5.0%"``.
+
+    NOTE the semantic split with ``_ui_kit.fmt_pct`` — that helper
+    treats its input as already-percent-scaled (``5.0`` → ``"5.0%"``).
+    If a page mixes the two on the same value, partners will see the
+    metric rendered 100× off in one cell. Use ``ck_fmt_percent`` for
+    raw ratios; reach for ``fmt_pct`` only when you already have a
+    pre-multiplied percent value in hand.
+    """
     if v is None:
         return dash
     try:

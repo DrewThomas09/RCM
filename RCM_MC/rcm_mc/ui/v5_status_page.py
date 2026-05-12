@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ._chartis_kit import (
-    chartis_shell, ck_eyebrow, ck_fmt_num, ck_fmt_pct,
+    chartis_shell, ck_eyebrow, ck_fmt_num,
     ck_kpi_block, ck_next_section, ck_provenance_tooltip,
 )
 from ._ui_kit import fmt_num, fmt_pct
