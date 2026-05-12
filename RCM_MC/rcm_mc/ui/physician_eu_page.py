@@ -508,10 +508,35 @@ def render_physician_eu_page(
         eyebrow="RCM DILIGENCE",
         meta=f"Target: {target_name} · per-provider P&L",
     )
+    # Demo-data disclosure. The page renders against a fixed
+    # 8-provider demonstration roster (_demo_roster above) on every
+    # visit — there is no CIM ingest, NPPES pull, or comp-data
+    # import yet. Without this banner partners can read the
+    # contribution-margin verdict as if it applied to the target deal.
+    demo_banner = (
+        f'<div style="background:#fef6e8;border:1px solid #b8732a;'
+        f'border-left:4px solid #b8732a;padding:12px 18px;'
+        f'border-radius:0 3px 3px 0;margin-bottom:14px;'
+        f'font-size:13px;color:#5a3a13;line-height:1.55;max-width:880px;">'
+        f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;'
+        f'letter-spacing:1.6px;text-transform:uppercase;font-weight:700;'
+        f'color:#b8732a;margin-bottom:4px;">Demo data</div>'
+        f'<strong style="color:#2d1d05;">The 8 providers ranked below '
+        f'are a demonstration roster.</strong> Provider IDs, '
+        f'specialties, comp, and collections numbers are '
+        f'illustrative — they do not reflect the target deal. The '
+        f'economic-unit model (per-provider contribution margin, '
+        f'overhead allocation, FMV optimization) is real and runs '
+        f'against any roster supplied. NPPES + CIM-ingest hookup are '
+        f'the next inputs to wire up.'
+        f'</div>'
+    )
+
     body = (
         _scoped_styles()
         + title
         + '<div class="peu-wrap">'
+        + demo_banner
         + hero_and_opt
         + crosslink
         + ck_panel(

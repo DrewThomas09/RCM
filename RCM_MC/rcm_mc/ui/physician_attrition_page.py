@@ -1093,6 +1093,29 @@ def render_physician_attrition_page(
             title="Roster focus",
         )
 
+    # Demo-data disclosure. The page currently scores a fixed
+    # demonstration roster (_demo_roster above) on every visit —
+    # there is no CIM-ingest or NPPES-pull path yet. Without this
+    # banner partners can mistake the flight-risk scores for findings
+    # on the target deal.
+    demo_banner = (
+        f'<div style="background:#fef6e8;border:1px solid #b8732a;'
+        f'border-left:4px solid #b8732a;padding:12px 18px;'
+        f'border-radius:0 3px 3px 0;margin-bottom:14px;'
+        f'font-size:13px;color:#5a3a13;line-height:1.55;max-width:880px;">'
+        f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;'
+        f'letter-spacing:1.6px;text-transform:uppercase;font-weight:700;'
+        f'color:#b8732a;margin-bottom:4px;">Demo data</div>'
+        f'<strong style="color:#2d1d05;">The providers scored below '
+        f'are a demonstration roster.</strong> Names, specialties, '
+        f'tenure, and collections histories are illustrative — they '
+        f'do not reflect the target deal. The flight-risk model '
+        f'(predictive churn analytic) is real and runs against any '
+        f'roster supplied. NPPES + CIM-ingest hookup are the next '
+        f'inputs to wire up.'
+        f'</div>'
+    )
+
     body = (
         _scoped_styles()
         + ck_page_title(
@@ -1101,6 +1124,7 @@ def render_physician_attrition_page(
             meta=f"Target: {target_name} · predictive churn analytic",
         )
         + '<div class="pa-wrap">'
+        + demo_banner
         + hero_and_bridge
         + crosslink
         + _band_filter_chips(band_filter)
