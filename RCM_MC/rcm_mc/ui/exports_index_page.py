@@ -114,7 +114,7 @@ def _deal_format_guide() -> str:
 def render_exports_index(db_path: str) -> str:
     from ._chartis_kit import (
         chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-        ck_provenance_tooltip,
+        ck_next_section, ck_provenance_tooltip,
     )
 
     header = _wc.page_header(
@@ -167,8 +167,31 @@ def render_exports_index(db_path: str) -> str:
     )
     kpi_strip = (
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;">'
-        + ck_kpi_block("Portfolio Exports", portfolio_value, "across active deals")
-        + ck_kpi_block("Corpus Browsers", corpus_value, "public-data sources")
+        + ck_kpi_block(
+            "Portfolio Exports", portfolio_value, "across active deals",
+            help={
+                "definition": (
+                    "Exports that aggregate across the active portfolio "
+                    "— LP update, portfolio risk scan, owner roll-ups. "
+                    "Use these for LP letters and partner-level "
+                    "reporting; for deal-specific data, use the export "
+                    "menu inside each deal page."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Corpus Browsers", corpus_value, "public-data sources",
+            help={
+                "definition": (
+                    "Public-data exports that ship the raw HCRIS / "
+                    "IRS 990 / Care Compare slices behind the "
+                    "platform's benchmarks. CSV-format, defanged "
+                    "for Excel formula injection (= ‒ + @ in front "
+                    "of a cell becomes '=). Use for spreadsheet "
+                    "workflows + audit reproducibility."
+                ),
+            },
+        )
         + '</div>'
     )
 
@@ -180,10 +203,17 @@ def render_exports_index(db_path: str) -> str:
         + portfolio_card
         + corpus_card
     )
+    next_up = ck_next_section(
+        "Open the LP update",
+        "/lp-update",
+        eyebrow="Continue —",
+        italic_word="LP",
+    )
     body = (
         _wc.web_styles()
         + _wc.responsive_container(inner)
         + _wc.sortable_table_js()
+        + next_up
     )
     return chartis_shell(body, "Downloads", active_nav="/exports",
         editorial_intro={

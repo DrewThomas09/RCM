@@ -22,8 +22,9 @@ palette, CSS block, top-bar markup, and panel chrome change.
 from __future__ import annotations
 
 import html as _html
+import json
 import os
-from typing import Any, Iterable, Mapping, Optional, Sequence
+from typing import Any, Iterable, List, Mapping, Optional, Sequence
 
 # ---------------------------------------------------------------------------
 # Feature flag — set CHARTIS_UI_V2=0 to fall back to the legacy dark shell.
@@ -254,6 +255,15 @@ def ck_fmt_currency(v: Optional[float], *, precision: int = 0, dash: str = "—"
 
 
 def ck_fmt_percent(v: Optional[float], *, precision: int = 1, dash: str = "—") -> str:
+    """Format a RATIO as a percent string. ``0.05`` → ``"5.0%"``.
+
+    NOTE the semantic split with ``_ui_kit.fmt_pct`` — that helper
+    treats its input as already-percent-scaled (``5.0`` → ``"5.0%"``).
+    If a page mixes the two on the same value, partners will see the
+    metric rendered 100× off in one cell. Use ``ck_fmt_percent`` for
+    raw ratios; reach for ``fmt_pct`` only when you already have a
+    pre-multiplied percent value in hand.
+    """
     if v is None:
         return dash
     try:
@@ -300,8 +310,21 @@ def _esc(x) -> str:
     return _html.escape(str(x), quote=True)
 
 
-def ck_panel(body_html: str, *, title: Optional[str] = None, code: Optional[str] = None) -> str:
-    """White panel with navy header strip and optional [CODE] tag."""
+def ck_panel(
+    body_html: str,
+    *,
+    title: Optional[str] = None,
+    code: Optional[str] = None,
+    anchor_id: Optional[str] = None,
+) -> str:
+    """White panel with navy header strip and optional [CODE] tag.
+
+    ``anchor_id`` adds an ``id="..."`` to the wrapping ``<section>`` so
+    ``ck_sticky_toc`` can link directly to this panel via ``#<id>``.
+    Pages with sticky TOCs pass slugified versions of their section
+    titles ("1-target-overview"); ck_panel emits the id literally so
+    callers control the URL fragment.
+    """
     head = ""
     if title or code:
         # Pre-build the code chip outside the f-string so the
@@ -320,7 +343,12 @@ def ck_panel(body_html: str, *, title: Optional[str] = None, code: Optional[str]
             f'{code_chip}'
             "</div>"
         )
-    return f'<section class="ck-panel">{head}<div class="ck-panel-body">{body_html}</div></section>'
+    id_attr = f' id="{_esc(anchor_id)}"' if anchor_id else ""
+    return (
+        f'<section class="ck-panel"{id_attr}>'
+        f'{head}<div class="ck-panel-body">{body_html}</div>'
+        '</section>'
+    )
 
 
 def ck_section_header(
@@ -406,6 +434,8 @@ def ck_kpi_block(
     code: Optional[str] = None,
     unit: Optional[str] = None,    # legacy alias for ``sub``
     delta: Optional[str] = None,   # legacy alias for ``trend``
+    help: Optional[Mapping[str, str]] = None,
+    chart: Optional[str] = None,
 ) -> str:
     """Editorial KPI block — label / value / optional sub / optional trend.
 
@@ -421,6 +451,17 @@ def ck_kpi_block(
     ``sub=``/``trend=`` (cycle 40-45 prod-bug fixes). Accept both so a
     forgotten file doesn't 500 the page — sub/trend take precedence
     when both are provided.
+
+    ``help`` is an optional mapping with keys ``definition`` (required
+    when help is set) and ``citation`` (optional). When provided, the
+    KPI label is wrapped in ``ck_help_tooltip`` so partners hovering
+    or focusing the ``[?]`` affordance see an editorial gloss. Use it
+    on jargon-heavy labels (NPR, EV/EBITDA TTM, conformal band).
+
+    ``chart`` is optional pre-rendered HTML (typically a ``ck_sparkline``
+    call) that renders below the value/sub. Use on KPIs where the
+    trajectory matters as much as the headline number (revenue CAGR,
+    margin trend, denial-rate slope).
     """
     if sub is None and unit is not None:
         sub = unit
@@ -432,12 +473,24 @@ def ck_kpi_block(
         trend_html = f'<span class="ck-kpi-trend tone-{tone}">{_esc(trend)}</span>'
     sub_html = f'<div class="ck-kpi-sub">{_esc(sub)}</div>' if sub else ""
     code_html = f'<div class="ck-kpi-code">[{_esc(code)}]</div>' if code else ""
+    if help and help.get("definition"):
+        label_html = ck_help_tooltip(
+            label,
+            help["definition"],
+            citation=help.get("citation"),
+        )
+    else:
+        label_html = _esc(label)
+    chart_html = (
+        f'<div class="ck-kpi-chart">{chart}</div>' if chart else ""
+    )
     return (
         '<div class="ck-kpi">'
         f'{code_html}'
-        f'<div class="ck-kpi-label">{_esc(label)}</div>'
+        f'<div class="ck-kpi-label">{label_html}</div>'
         f'<div class="ck-kpi-value sc-num">{_esc(value)}{trend_html}</div>'
         f'{sub_html}'
+        f'{chart_html}'
         "</div>"
     )
 
@@ -445,6 +498,303 @@ def ck_kpi_block(
 def ck_signal_badge(text: str, *, tone: str = "neutral") -> str:
     tone = tone if tone in ("positive", "warning", "negative", "critical", "neutral") else "neutral"
     return f'<span class="ck-badge tone-{tone}">{_esc(text)}</span>'
+
+
+def ck_confidence_band(
+    point: str,
+    lo: Optional[str] = None,
+    hi: Optional[str] = None,
+    *,
+    label: str = "P10–P90",
+    low_confidence: bool = False,
+) -> str:
+    """Editorial confidence-band render for predictive outputs.
+
+    Shape: ``2.5x [1.8x – 3.2x P10–P90]`` — the point estimate in
+    headline weight, the band in muted mono with a label naming the
+    interval shape (P10-P90, 95% CI, ±1σ, etc.).
+
+    When ``low_confidence=True`` (e.g. AUC < 0.70, n < 20 calibration
+    samples, or wide band relative to point), the band renders in
+    warning tone to flag that the partner should verify externally
+    before relying on the headline number.
+
+    Both ``lo`` and ``hi`` must be pre-formatted strings (the caller
+    knows the units — $M, x, %, days, etc.). Pass ``None`` for either
+    bound to render only the point with no bracket.
+    """
+    if lo is None or hi is None:
+        return f'<span class="ck-conf">{_esc(point)}</span>'
+    tone = "warning" if low_confidence else "neutral"
+    return (
+        f'<span class="ck-conf tone-{tone}">'
+        f'{_esc(point)}'
+        f' <span class="ck-conf-band" style="font-family:var(--sc-mono,monospace);'
+        f'font-size:0.85em;color:var(--sc-text-faint,#6e7787);'
+        f'letter-spacing:0.02em;font-weight:400;">'
+        f'[{_esc(lo)} – {_esc(hi)} <span class="ck-conf-label" '
+        f'style="font-size:0.85em;letter-spacing:0.06em;'
+        f'text-transform:uppercase;">{_esc(label)}</span>]'
+        f'</span></span>'
+    )
+
+
+def ck_sticky_toc(
+    sections: Sequence[Mapping[str, str]],
+    *,
+    eyebrow: str = "Contents",
+) -> str:
+    """Editorial right-rail Table of Contents.
+
+    ``sections`` is an ordered sequence of mappings with two keys:
+
+      - ``id``:    the anchor id, matches ``ck_panel(anchor_id=...)``
+      - ``title``: the link label (will be html-escaped)
+
+    Renders a sticky-positioned aside with an eyebrow + numbered list
+    of section anchors. Inline JS attaches an IntersectionObserver so
+    the link of the currently-visible section gets the ``is-active``
+    state class. Hidden on screens narrower than 1100px (the editorial
+    layout collapses to single-column there).
+
+    Usage from a page renderer::
+
+        sections = [
+            {"id": "1-overview",  "title": "1. Target Overview"},
+            {"id": "2-market",    "title": "2. Market Context"},
+            ...
+        ]
+        toc = ck_sticky_toc(sections)
+        body = '<div class="ck-toc-layout">' + toc + (
+            '<div class="ck-toc-content">'
+            + ck_panel(s1_html, title="1. Target Overview",
+                       anchor_id="1-overview")
+            + ...
+            + '</div></div>'
+        )
+    """
+    items = "".join(
+        '<li class="ck-toc-item">'
+        f'<a class="ck-toc-link" href="#{_esc(s["id"])}" '
+        f'data-ck-toc-target="{_esc(s["id"])}">'
+        f'{_esc(s["title"])}'
+        '</a></li>'
+        for s in sections
+    )
+    return (
+        '<aside class="ck-toc" role="navigation" '
+        'aria-label="Page contents">'
+        f'<div class="ck-toc-eyebrow">{_esc(eyebrow)}</div>'
+        f'<ol class="ck-toc-list">{items}</ol>'
+        '</aside>'
+        '<script>'
+        '(function(){var links=document.querySelectorAll('
+        '"[data-ck-toc-target]");if(!links.length||!("IntersectionObserver" '
+        'in window))return;var byId={};links.forEach(function(a){'
+        'byId[a.getAttribute("data-ck-toc-target")]=a;});'
+        'var io=new IntersectionObserver(function(entries){'
+        'entries.forEach(function(e){var a=byId[e.target.id];if(!a)return;'
+        'if(e.isIntersecting){links.forEach(function(x){'
+        'x.classList.remove("is-active");});a.classList.add("is-active");}'
+        '});},{rootMargin:"-30% 0px -55% 0px",threshold:0});'
+        'Object.keys(byId).forEach(function(id){var el=document.getElementById(id);'
+        'if(el)io.observe(el);});}());'
+        '</script>'
+    )
+
+
+def ck_help_tooltip(
+    term: str,
+    definition: str,
+    *,
+    citation: Optional[str] = None,
+) -> str:
+    """Inline editorial help affordance — ``term [?]`` that opens a
+    small popover with a serif definition and optional citation.
+
+    Use it to gloss jargon partners may not know on first encounter
+    (covenant headroom, conformal band, EV/EBITDA TTM, P10/P50/P90).
+    The popover is purely CSS-driven (focus-within + click-toggle
+    via ck-help-open class) so it works without JS and doesn't
+    require any state machine on the page.
+
+    Rendered shape::
+
+        <span class="ck-help">
+          term
+          <button class="ck-help-trigger" aria-expanded="false">?</button>
+          <span class="ck-help-popover" role="tooltip">
+            <span class="ck-help-term">term</span>
+            <span class="ck-help-def">definition prose</span>
+            <span class="ck-help-cite">— citation</span>
+          </span>
+        </span>
+
+    Pages can opt out of the inline ``term`` rendering and just emit
+    the popover by themselves; this helper is the canonical version.
+    """
+    cite_html = (
+        f'<span class="ck-help-cite">— {_esc(citation)}</span>'
+        if citation else ""
+    )
+    return (
+        '<span class="ck-help">'
+        f'{_esc(term)}'
+        '<button type="button" class="ck-help-trigger" '
+        'aria-expanded="false" tabindex="0">?</button>'
+        '<span class="ck-help-popover" role="tooltip">'
+        f'<span class="ck-help-term">{_esc(term)}</span>'
+        f'<span class="ck-help-def">{_esc(definition)}</span>'
+        f'{cite_html}'
+        '</span>'
+        '</span>'
+    )
+
+
+def ck_sparkline(
+    values: Sequence[float],
+    *,
+    label: Optional[str] = None,
+    last_value: Optional[str] = None,
+    tone: Optional[str] = None,
+    width: int = 72,
+    height: int = 22,
+) -> str:
+    """Inline editorial sparkline — small SVG trend with optional
+    serif label and mono numeric end-value, tinted with the
+    severity-palette tone the caller specifies.
+
+    ``values`` is a sequence of points (length 2+ to render; 0 or 1
+    points return an empty string so callers can blindly hand off
+    sparse data). When ``tone`` is not given, the helper picks
+    positive when the last value >= first, negative when below
+    first, neutral otherwise — same heuristic the older
+    portfolio_overview._sparkline_svg used, but on the desaturated
+    editorial palette instead of vibrant Tailwind.
+
+    ``last_value`` (e.g. "$24.4M") renders to the right of the
+    spark in JetBrains Mono with tabular-nums.
+
+    ``label`` (e.g. "Health 12-wk") renders to the left in Inter
+    Tight 9px caps with letter-spacing.
+
+    The whole composition is one ``<span class="ck-spark">`` so it
+    can sit inline in table cells or beside KPI values.
+    """
+    if not values or len(values) < 2:
+        return ""
+    try:
+        nums = [float(v) for v in values]
+    except (TypeError, ValueError):
+        return ""
+    mn, mx = min(nums), max(nums)
+    rng = mx - mn if mx != mn else 1.0
+    pts = []
+    for i, v in enumerate(nums):
+        x = i / (len(nums) - 1) * width
+        y = height - ((v - mn) / rng) * height
+        pts.append(f"{x:.1f},{y:.1f}")
+    poly = " ".join(pts)
+    # Editorial palette — desaturated for print.
+    palette = {
+        "positive": "#0a8a5f",
+        "warning":  "#b8732a",
+        "negative": "#b5321e",
+        "neutral":  "#155752",
+    }
+    if tone not in palette:
+        # Auto-pick by trend direction
+        tone = ("positive" if nums[-1] > nums[0]
+                else "negative" if nums[-1] < nums[0]
+                else "neutral")
+    stroke = palette[tone]
+    label_html = (
+        f'<span class="ck-spark-lbl">{_esc(label)}</span>'
+        if label else ""
+    )
+    value_html = (
+        f'<span class="ck-spark-val">{_esc(last_value)}</span>'
+        if last_value else ""
+    )
+    svg = (
+        f'<svg class="ck-spark-svg" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" role="img" '
+        f'aria-label="trend sparkline">'
+        f'<polyline points="{poly}" fill="none" stroke="{stroke}" '
+        f'stroke-width="1.5" stroke-linecap="round" '
+        f'stroke-linejoin="round"/>'
+        '</svg>'
+    )
+    return (
+        '<span class="ck-spark">'
+        + label_html
+        + svg
+        + value_html
+        + '</span>'
+    )
+
+
+def ck_progress_checklist(items: Sequence[Mapping[str, str]]) -> str:
+    """Editorial 'your platform journey' progress checklist.
+
+    Each item is a mapping with these keys:
+
+      - ``id``:    a stable identifier, used as the storage-check key
+      - ``title``: serif heading for the row
+      - ``body``:  short editorial paragraph (optional)
+      - ``check``: one of ``"recent_deals"``, ``"tour_started"``,
+                   ``"tour_completed"``, ``"any_tool_visited"``,
+                   ``"ic_memo_visited"``, ``"any"``. Inline JS
+                   evaluates the check on DOMContentLoaded and flips
+                   the row into the ``is-done`` state when satisfied.
+
+    The checklist renders as a serif numbered list with a small
+    circular state marker on each row — empty circle for incomplete,
+    filled with a positive-tone check for done. Hidden in print.
+    """
+    rows = []
+    for i, item in enumerate(items, start=1):
+        rows.append(
+            f'<li class="ck-checklist-row" data-ck-check="{_esc(item["check"])}">'
+            f'<span class="ck-checklist-marker" aria-hidden="true"></span>'
+            '<span class="ck-checklist-number">'
+            + f"{i:02d}"
+            + '</span>'
+            '<div class="ck-checklist-body">'
+            f'<div class="ck-checklist-title">{_esc(item["title"])}</div>'
+            + (
+                f'<div class="ck-checklist-prose">{_esc(item["body"])}</div>'
+                if item.get("body") else ""
+            )
+            + '</div>'
+            '</li>'
+        )
+    return (
+        '<div class="ck-checklist-wrap">'
+        '<ol class="ck-checklist">'
+        + "".join(rows)
+        + '</ol>'
+        '</div>'
+        '<script>'
+        '(function(){'
+        'function hasTour(){try{var s=JSON.parse(localStorage.getItem("rcm_tour_v1")||"null");return s||null;}catch(e){return null;}}'
+        'function recentCount(){try{var r=JSON.parse(localStorage.getItem("rcm_recent_deals")||"[]");return Array.isArray(r)?r.length:0;}catch(e){return 0;}}'
+        'function anyToolVisited(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&/_visited$/.test(k)){var v=JSON.parse(localStorage.getItem(k)||"{}");if(v&&Object.keys(v).length)return true;}}return false;}catch(e){return false;}}'
+        'function icMemoVisited(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&/_visited$/.test(k)){var v=JSON.parse(localStorage.getItem(k)||"{}");for(var t in v){if(/ic-memo/i.test(t)||/ic-packet/i.test(t))return true;}}}return false;}catch(e){return false;}}'
+        'function checkRow(row){var c=row.getAttribute("data-ck-check");'
+        'if(c==="recent_deals")return recentCount()>0;'
+        'var s=hasTour();'
+        'if(c==="tour_started")return !!(s&&(s.lastViewed>0||(s.completed&&s.completed.length>0)));'
+        'if(c==="tour_completed")return !!(s&&s.completed&&s.completed.length>=7);'
+        'if(c==="any_tool_visited")return anyToolVisited();'
+        'if(c==="ic_memo_visited")return icMemoVisited();'
+        'return false;}'
+        'function paint(){document.querySelectorAll("[data-ck-check]").forEach(function(row){'
+        'if(checkRow(row))row.classList.add("is-done");else row.classList.remove("is-done");});}'
+        'document.addEventListener("DOMContentLoaded",paint);'
+        '}());'
+        '</script>'
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -500,6 +850,875 @@ def ck_section_intro(
         f'{body_html}'
         '</div>'
     )
+
+
+def ck_next_section(
+    label: str,
+    href: str,
+    *,
+    eyebrow: str = "Up next",
+    italic_word: Optional[str] = None,
+) -> str:
+    """Editorial 'Up next' footer — eyebrow + serif arrow-link.
+
+    Sits below the last section on a page and points partners at the
+    next logical step in the diligence flow. The cadence mirrors
+    chartis.com's chapter footers (eyebrow + italic emphasis word +
+    arrow). Use it instead of bare "Back to dashboard" links so a
+    partner walking through diligence chronologically has a footer
+    rail to follow:
+
+      Pipeline → Screening → Diligence → Risk → Financial → Delivery
+
+    If ``italic_word`` is provided it is wrapped in ``<em>`` inside
+    the link label, e.g.::
+
+        ck_next_section("Continue to the Risk Workbench",
+                        "/diligence/risk-workbench",
+                        italic_word="Risk")
+    """
+    label_html = _esc(label)
+    if italic_word:
+        for cand in (italic_word, italic_word.capitalize(), italic_word.upper()):
+            e_cand = _esc(cand)
+            if e_cand in label_html:
+                label_html = label_html.replace(
+                    e_cand, f"<em>{e_cand}</em>", 1)
+                break
+    return (
+        '<div class="ck-next-section">'
+        f'<div class="ck-next-eyebrow">{_esc(eyebrow)}</div>'
+        f'<a class="ck-next-link" href="{_esc(href)}">'
+        f'{label_html}'
+        ' <span class="ck-next-arrow" aria-hidden="true">→</span>'
+        '</a>'
+        '</div>'
+    )
+
+
+# ---------------------------------------------------------------------------
+# Editorial tour overlay — "The Atlas"
+# ---------------------------------------------------------------------------
+#
+# A guided walkthrough of the platform rendered as an editorial modal
+# rather than a SaaS spotlight overlay. Each volume is a chapter with
+# an eyebrow + serif title + body copy + optional "Try it" link to
+# the matching feature. Reads / writes ``localStorage["rcm_tour_v1"]``
+# so dismissals persist across sessions.
+#
+# Entry points:
+#   - ``?tour=1`` query param on any page (opens at volume 1, or the
+#     value of ``?tour=N`` for direct volume jump)
+#   - JS: ``window.ckTour.open(volumeIndex)``
+#   - Settings → "Restart tour"
+#
+# Storage shape:
+#   { "version": 1, "completed": [1,2,3], "lastViewed": 3,
+#     "skipped": false }
+
+
+def ck_tour_overlay(volumes: List[Dict[str, Any]]) -> str:
+    """Editorial tour overlay primitive.
+
+    ``volumes`` is an ordered list of dicts with these keys:
+
+      - ``eyebrow``: short caps label e.g. "Volume I"
+      - ``title``: serif headline (italic word marked with ``<em>``
+        in the source string is honoured)
+      - ``body``: long-form HTML (paragraphs welcome, will not be
+        escaped — author is responsible for clean markup)
+      - ``try_it``: optional dict ``{"label": "...", "href": "/..."}``
+        rendering a primary CTA that lands the partner in the feature
+
+    Returns a self-contained block: scoped CSS, hidden markup, and
+    the JS controller. Drop into ``chartis_shell``'s body or any
+    page that wants the tour. Safe to inject on every page — the
+    controller only opens when ``?tour`` is present or
+    ``ckTour.open()`` is called.
+    """
+    if not volumes:
+        return ""
+    volumes_json = json.dumps(volumes, ensure_ascii=False)
+    total = len(volumes)
+    return (
+        _CK_TOUR_CSS
+        + (
+            '<div class="ck-tour" id="ck-tour" hidden role="dialog" '
+            'aria-modal="true" aria-labelledby="ck-tour-title">'
+            '<div class="ck-tour-backdrop" data-ck-tour-close></div>'
+            '<div class="ck-tour-card" role="document">'
+            '<button class="ck-tour-close" data-ck-tour-close '
+            'aria-label="Close tour" type="button">&times;</button>'
+            '<div class="ck-tour-progress">'
+            '<span id="ck-tour-progress-current">I</span>'
+            f' of {_roman(total)}'
+            '</div>'
+            '<div class="ck-tour-eyebrow" id="ck-tour-eyebrow"></div>'
+            '<h2 class="ck-tour-title" id="ck-tour-title"></h2>'
+            '<div class="ck-tour-body" id="ck-tour-body"></div>'
+            '<div class="ck-tour-footer">'
+            '<button class="ck-tour-skip" data-ck-tour-skip '
+            'type="button">Skip the tour</button>'
+            '<div class="ck-tour-nav">'
+            '<button class="ck-tour-prev" data-ck-tour-prev '
+            'type="button">← Back</button>'
+            '<button class="ck-tour-next" data-ck-tour-next '
+            'type="button">Continue →</button>'
+            '</div>'
+            '</div>'
+            '<a class="ck-tour-tryit" id="ck-tour-tryit" hidden '
+            'href="#">Try it now →</a>'
+            '</div>'
+            '</div>'
+        )
+        + f'<script>window.CK_TOUR_VOLUMES={volumes_json};</script>'
+        + _CK_TOUR_JS
+    )
+
+
+def _roman(n: int) -> str:
+    """Convert 1..20 to Roman numerals for editorial pagination."""
+    table = [
+        (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I"),
+    ]
+    out = ""
+    for value, sym in table:
+        while n >= value:
+            out += sym
+            n -= value
+    return out
+
+
+_CK_TOUR_CSS = """
+<style>
+.ck-tour { position: fixed; inset: 0; z-index: 10000; }
+.ck-tour[hidden] { display: none !important; }
+.ck-tour-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(11, 35, 65, 0.42);
+  backdrop-filter: blur(2px);
+}
+.ck-tour-card {
+  position: relative; max-width: 640px; width: calc(100% - 32px);
+  margin: 7vh auto; background: var(--sc-bone, #f5f1ea);
+  border: 1px solid var(--sc-rule, #d8d3c8); border-radius: 4px;
+  padding: 44px 48px 32px; box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+  font-family: "Source Serif 4", Georgia, serif;
+  color: var(--sc-text, #1a2332); line-height: 1.55;
+}
+.ck-tour-close {
+  position: absolute; top: 14px; right: 16px;
+  background: none; border: 0; cursor: pointer; padding: 4px 8px;
+  font-size: 24px; line-height: 1; color: var(--sc-text-faint, #6e7787);
+  transition: color 120ms ease;
+}
+.ck-tour-close:hover { color: var(--sc-text, #1a2332); }
+.ck-tour-progress {
+  font-family: "JetBrains Mono", monospace; font-size: 10px;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--sc-text-faint, #6e7787); margin-bottom: 16px;
+}
+.ck-tour-eyebrow {
+  font-family: "Inter Tight", sans-serif; font-size: 11px;
+  font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--sc-teal-ink, #0e3e3a); margin-bottom: 10px;
+}
+.ck-tour-title {
+  font-family: "Source Serif 4", serif; font-weight: 400;
+  font-size: clamp(28px, 4vw, 36px); line-height: 1.1;
+  letter-spacing: -0.018em; color: var(--sc-navy, #0b2341);
+  margin: 0 0 18px;
+}
+.ck-tour-title em {
+  font-style: italic; color: var(--sc-teal-ink, #0e3e3a);
+  font-weight: 400;
+}
+.ck-tour-body {
+  font-size: 15px; line-height: 1.65;
+  color: var(--sc-text-dim, #37495e); max-width: 56ch;
+}
+.ck-tour-body p { margin: 0 0 14px; }
+.ck-tour-body p:last-child { margin-bottom: 0; }
+.ck-tour-body em {
+  font-style: italic; color: var(--sc-teal-ink, #0e3e3a);
+}
+.ck-tour-body strong {
+  color: var(--sc-navy, #0b2341); font-weight: 600;
+}
+.ck-tour-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; margin-top: 28px; padding-top: 18px;
+  border-top: 1px solid var(--sc-rule, #d8d3c8);
+}
+.ck-tour-skip {
+  background: none; border: 0; cursor: pointer; padding: 0;
+  font-family: "Source Serif 4", serif; font-style: italic;
+  font-size: 13px; color: var(--sc-text-faint, #6e7787);
+  text-decoration: underline; text-underline-offset: 3px;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 120ms ease;
+}
+.ck-tour-skip:hover {
+  text-decoration-color: var(--sc-text-faint, #6e7787);
+}
+.ck-tour-nav { display: flex; gap: 8px; }
+.ck-tour-prev, .ck-tour-next {
+  font-family: "Inter Tight", sans-serif; font-weight: 600;
+  font-size: 12px; letter-spacing: 0.04em;
+  padding: 8px 14px; border-radius: 2px; cursor: pointer;
+  transition: filter 120ms ease, border-color 120ms ease;
+}
+.ck-tour-prev {
+  background: transparent; color: var(--sc-text-dim, #37495e);
+  border: 1px solid var(--sc-rule, #d8d3c8);
+}
+.ck-tour-prev:hover { border-color: var(--sc-text, #1a2332); }
+.ck-tour-prev[disabled] { opacity: 0.4; cursor: not-allowed; }
+.ck-tour-next {
+  background: var(--sc-navy, #0b2341); color: #fff; border: 0;
+}
+.ck-tour-next:hover { filter: brightness(1.12); }
+.ck-tour-tryit {
+  display: block; margin-top: 14px; text-align: right;
+  font-family: "Inter Tight", sans-serif; font-size: 12px;
+  font-weight: 600; letter-spacing: 0.04em;
+  color: var(--sc-teal-ink, #0e3e3a); text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 120ms ease;
+}
+.ck-tour-tryit:hover {
+  border-bottom-color: var(--sc-teal-ink, #0e3e3a);
+}
+.ck-tour-tryit[hidden] { display: none !important; }
+@media (max-width: 540px) {
+  .ck-tour-card { padding: 32px 24px 24px; margin: 4vh auto; }
+  .ck-tour-title { font-size: 24px; }
+  .ck-tour-footer { flex-direction: column; align-items: stretch; }
+  .ck-tour-nav { justify-content: space-between; }
+}
+@media print { .ck-tour { display: none !important; } }
+</style>
+"""
+
+_CK_TOUR_JS = """
+<script>
+(function() {
+  var STORAGE_KEY = "rcm_tour_v1";
+  var ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII",
+               "IX", "X", "XI", "XII"];
+  var volumes = window.CK_TOUR_VOLUMES || [];
+  if (!volumes.length) return;
+  var idx = 0;
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return { version: 1, completed: [], lastViewed: 0,
+                         skipped: false };
+      var s = JSON.parse(raw);
+      if (s.version !== 1) {
+        return { version: 1, completed: [], lastViewed: 0,
+                 skipped: false };
+      }
+      return s;
+    } catch (e) {
+      return { version: 1, completed: [], lastViewed: 0,
+               skipped: false };
+    }
+  }
+  function saveState(s) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
+    catch (e) { /* quota / disabled storage — ignore */ }
+  }
+  function paint() {
+    var vol = volumes[idx];
+    if (!vol) return;
+    var $ = document.getElementById.bind(document);
+    $("ck-tour-progress-current").textContent = ROMAN[idx + 1] || (idx + 1);
+    $("ck-tour-eyebrow").textContent = vol.eyebrow || "";
+    $("ck-tour-title").innerHTML = vol.title || "";
+    $("ck-tour-body").innerHTML = vol.body || "";
+    var prev = document.querySelector("[data-ck-tour-prev]");
+    if (prev) prev.disabled = (idx === 0);
+    var next = document.querySelector("[data-ck-tour-next]");
+    if (next) {
+      next.textContent = (idx === volumes.length - 1)
+        ? "Finish ✓" : "Continue →";
+    }
+    var tryit = $("ck-tour-tryit");
+    if (vol.try_it && vol.try_it.label && vol.try_it.href) {
+      tryit.textContent = vol.try_it.label + " →";
+      tryit.href = vol.try_it.href;
+      tryit.hidden = false;
+    } else {
+      tryit.hidden = true;
+    }
+  }
+  function open(volumeIdx) {
+    idx = Math.max(0, Math.min(volumes.length - 1, (volumeIdx || 1) - 1));
+    paint();
+    var el = document.getElementById("ck-tour");
+    if (el) {
+      el.hidden = false;
+      var s = loadState();
+      s.lastViewed = idx + 1;
+      s.skipped = false;
+      saveState(s);
+    }
+  }
+  function close() {
+    var el = document.getElementById("ck-tour");
+    if (el) el.hidden = true;
+  }
+  function next() {
+    var s = loadState();
+    if (!s.completed.includes(idx + 1)) s.completed.push(idx + 1);
+    saveState(s);
+    if (idx >= volumes.length - 1) {
+      close();
+      return;
+    }
+    idx += 1;
+    paint();
+    s = loadState(); s.lastViewed = idx + 1; saveState(s);
+  }
+  function prev() {
+    if (idx === 0) return;
+    idx -= 1;
+    paint();
+    var s = loadState(); s.lastViewed = idx + 1; saveState(s);
+  }
+  function skip() {
+    var s = loadState(); s.skipped = true; saveState(s);
+    close();
+  }
+  window.ckTour = {
+    open: open, close: close, next: next, prev: prev, skip: skip,
+  };
+  document.addEventListener("click", function(e) {
+    var t = e.target;
+    if (!t.closest) return;
+    if (t.closest("[data-ck-tour-close]")) { close(); }
+    if (t.closest("[data-ck-tour-skip]"))  { skip();  }
+    if (t.closest("[data-ck-tour-next]"))  { next();  }
+    if (t.closest("[data-ck-tour-prev]"))  { prev();  }
+  });
+  document.addEventListener("keydown", function(e) {
+    var el = document.getElementById("ck-tour");
+    if (!el || el.hidden) return;
+    if (e.key === "Escape")     { close(); }
+    if (e.key === "ArrowRight" || e.key === "Enter") { next(); }
+    if (e.key === "ArrowLeft")  { prev();  }
+  });
+  // Auto-open via ?tour=1 (or ?tour=N for direct volume jump)
+  document.addEventListener("DOMContentLoaded", function() {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var t = params.get("tour");
+      if (t !== null) {
+        var n = parseInt(t, 10);
+        open(isNaN(n) || n < 1 ? 1 : n);
+      }
+    } catch (e) { /* old browsers — ignore */ }
+  });
+})();
+</script>
+"""
+
+
+# Default tour content — seven editorial volumes covering every
+# surface a partner needs to navigate. Stored as module-level data so
+# chartis_shell can inject the tour on every page without each
+# renderer authoring its own. Each volume reads as a short research
+# note rather than SaaS onboarding copy.
+_TOUR_VOLUMES: List[Dict[str, Any]] = [
+    {
+        "eyebrow": "Volume I",
+        "title": "The <em>Pipeline</em>.",
+        "body": (
+            "<p>Every engagement begins at the same surface — the "
+            "deal pipeline. Hospitals enter as candidates from "
+            "screening; advance through outreach, LOI, diligence, "
+            "and IC; exit either to your portfolio or to the "
+            "watchlist for next quarter.</p>"
+            "<p>Click any deal to open its <strong>profile</strong> "
+            "— the single source of truth for every analytic on "
+            "the platform. The profile carries your deal parameters "
+            "(NPR, EBITDA, specialty, state) into every downstream "
+            "tool so you never re-type them.</p>"
+            "<p>The funnel on the left of <strong>/app</strong> "
+            "shows stage counts at a glance. The activity panel on "
+            "the right shows what changed in the last seven days.</p>"
+        ),
+        "try_it": {"label": "Open the pipeline", "href": "/pipeline"},
+    },
+    {
+        "eyebrow": "Volume II",
+        "title": "<em>Diligence</em>.",
+        "body": (
+            "<p>The diligence layer is where the platform earns its "
+            "keep. Six analytics ladder up to a complete RCM and PE "
+            "picture:</p>"
+            "<p><strong>CCD ingestion</strong> converts the seller's "
+            "data room into structured records. <strong>HFMA "
+            "benchmarks</strong> compare every initiative to "
+            "industry priors with conformal confidence bands. "
+            "<strong>Denial prediction</strong> projects per-payer "
+            "write-off rates against the seller's actuals.</p>"
+            "<p><strong>HCRIS Peer X-Ray</strong> surfaces what "
+            "cost-report data says about competitive position. "
+            "<strong>Counterfactual analysis</strong> answers "
+            "<em>what would EBITDA have been without this "
+            "initiative</em>. The <strong>diligence checklist</strong> "
+            "gates IC approval — items must be cleared before the "
+            "deal advances.</p>"
+            "<p>Click any tool from the deal profile and your deal "
+            "parameters pre-fill. No re-typing.</p>"
+        ),
+        "try_it": {
+            "label": "Open the diligence index",
+            "href": "/diligence",
+        },
+    },
+    {
+        "eyebrow": "Volume III",
+        "title": "The <em>Risk</em> Workbench.",
+        "body": (
+            "<p>The Risk Workbench groups every risk surface into "
+            "three tiers of attention.</p>"
+            "<p><strong>Tier 1</strong> — bankruptcy survival, "
+            "covenant headroom, payer concentration. Existential "
+            "risks that kill deals at IC.</p>"
+            "<p><strong>Tier 2</strong> — physician attrition, "
+            "denial rate, regulatory exposure, cyber posture. "
+            "Material risks that erode EBITDA.</p>"
+            "<p><strong>Tier 3</strong> — management bench depth, "
+            "IT modernization debt, M&amp;A integration drag. "
+            "Slow-burn risks that show up in year three.</p>"
+            "<p>Each panel cites its source — HCRIS, CMS, public "
+            "filings — so you can audit the chain from claim to "
+            "conclusion.</p>"
+        ),
+        "try_it": {
+            "label": "Open the risk workbench",
+            "href": "/diligence/risk-workbench",
+        },
+    },
+    {
+        "eyebrow": "Volume IV",
+        "title": "Financial <em>Synthesis</em>.",
+        "body": (
+            "<p>Once diligence is complete, the platform synthesises "
+            "a financial story:</p>"
+            "<p>The <strong>7-lever EBITDA bridge</strong> "
+            "decomposes year-0 to year-3 EBITDA into "
+            "initiative-specific contributions. The <strong>two-"
+            "source Monte Carlo</strong> runs N=1,000+ paths "
+            "combining historical claim variance and forward-looking "
+            "initiative impact, returning P10/P50/P90 EBITDA "
+            "distributions.</p>"
+            "<p><strong>Public-market overlay</strong> pulls "
+            "EV/EBITDA bands from healthcare peers and prices your "
+            "deal against the band. <strong>Covenant headroom math</strong> "
+            "projects the post-close credit stack against bank "
+            "covenants with stress paths.</p>"
+            "<p>Every number on the synthesis pages carries a "
+            "provenance tooltip showing which inputs produced it.</p>"
+        ),
+        "try_it": {
+            "label": "Open the EBITDA bridge",
+            "href": "/diligence/ebitda-bridge",
+        },
+    },
+    {
+        "eyebrow": "Volume V",
+        "title": "The <em>Portfolio</em>.",
+        "body": (
+            "<p>After close, deals move to the portfolio surface. "
+            "<strong>Alerts</strong> fire when covenant headroom "
+            "narrows, EBITDA misses plan, or initiative variance "
+            "crosses thresholds. Acknowledge them, snooze them, or "
+            "escalate to the partner.</p>"
+            "<p><strong>Watchlists</strong> slice the portfolio by "
+            "sector, vintage, owner, or arbitrary tag. The "
+            "<strong>health score</strong> is a composite 0-100 per "
+            "deal with a trend sparkline. The "
+            "<strong>/my/&lt;owner&gt;</strong> page shows your "
+            "personal queue.</p>"
+            "<p><strong>Cohorts</strong> group deals by structural "
+            "similarity so you can ask <em>how have all my friendly "
+            "PC deals performed since 2024</em> and see the answer "
+            "in one chart.</p>"
+        ),
+        "try_it": {
+            "label": "Open the portfolio",
+            "href": "/portfolio",
+        },
+    },
+    {
+        "eyebrow": "Volume VI",
+        "title": "<em>Delivery</em>.",
+        "body": (
+            "<p>Every engagement ends in deliverables. The platform "
+            "generates IC packets, exit memos, and LP digests as "
+            "editorial HTML — partner-ready, print-friendly, "
+            "share-friendly.</p>"
+            "<p><strong>IC memos</strong> pull from the analysis "
+            "packet automatically. The <strong>bear case</strong> is "
+            "generated from the risk workbench. The "
+            "<strong>LP digest</strong> aggregates portfolio-level "
+            "performance into a quarterly narrative.</p>"
+            "<p>Exports are CSV (sanitised against Excel formula "
+            "injection), HTML, JSON, or — for the IC memo and "
+            "packet — print-PDF. Every export caps the chain of "
+            "citation so the LP can audit any number back to its "
+            "source.</p>"
+        ),
+        "try_it": {
+            "label": "Open the LP digest",
+            "href": "/lp-update",
+        },
+    },
+    {
+        "eyebrow": "Volume VII",
+        "title": "Settings &amp; <em>Workflow</em>.",
+        "body": (
+            "<p>A handful of details that compound over time:</p>"
+            "<p><strong>Cmd+K</strong> opens the command palette — "
+            "every analytic surface is one keystroke away. The "
+            "<strong>deal slug</strong> (e.g. "
+            "<em>/diligence/deal/aurora</em>) is bookmarkable and "
+            "shareable; deal parameters persist in your browser "
+            "localStorage so a refresh or returning tomorrow picks "
+            "up where you left off.</p>"
+            "<p>State-changing actions <strong>flash a toast</strong> "
+            "so you have confirmation. The <strong>?legacy=1</strong> "
+            "query parameter falls back to the legacy dashboard if "
+            "you preferred it; <strong>?v2=1</strong> the older "
+            "modern view.</p>"
+            "<p>You can restart this tour any time from "
+            "<strong>Settings → Platform Tutorial</strong>. "
+            "Welcome to the platform.</p>"
+        ),
+        "try_it": {
+            "label": "Open settings",
+            "href": "/settings",
+        },
+    },
+]
+
+
+def ck_quick_capture() -> str:
+    """Global 'Quick capture' modal — Shift+Q anywhere on the
+    platform pops a small editorial overlay where a partner can jot
+    a diligence question without leaving the surface they're on.
+
+    The modal:
+      - Auto-fills the deal slug from rcm_recent_deals[0] so the
+        most-recent deal is the default target. Slug is editable.
+      - Carries the same six categories as the deal-profile
+        question editor (financial / clinical / regulatory / legal
+        / operational / other).
+      - Persists onto rcm_deal_<slug>_questions in the same shape
+        as the deal-profile editor — partners see the captured
+        question next time they open that deal's profile.
+
+    Auto-injected by chartis_shell so the shortcut works on every
+    page. Esc closes; submit saves + closes. No server roundtrip.
+    """
+    return _CK_QC_CSS + _CK_QC_HTML + _CK_QC_JS
+
+
+_CK_QC_CSS = """
+<style>
+.ck-qc { position: fixed; inset: 0; z-index: 10001; }
+.ck-qc[hidden] { display: none !important; }
+.ck-qc-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(11, 35, 65, 0.42);
+  backdrop-filter: blur(2px);
+}
+.ck-qc-card {
+  position: relative; max-width: 520px; width: calc(100% - 32px);
+  margin: 14vh auto; background: var(--sc-bone, #f5f1ea);
+  border: 1px solid var(--sc-rule, #d8d3c8); border-radius: 4px;
+  padding: 32px 36px 24px; box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+  font-family: "Source Serif 4", Georgia, serif;
+  color: var(--sc-text, #1a2332);
+}
+.ck-qc-eyebrow {
+  font-family: "Inter Tight", sans-serif;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sc-teal-ink, #0e3e3a); margin-bottom: 8px;
+}
+.ck-qc-title {
+  font-family: "Source Serif 4", serif; font-weight: 400;
+  font-size: 24px; line-height: 1.15; letter-spacing: -0.012em;
+  color: var(--sc-navy, #0b2341); margin: 0 0 6px;
+}
+.ck-qc-title em {
+  font-style: italic; color: var(--sc-teal-ink, #0e3e3a);
+}
+.ck-qc-prose {
+  font-family: "Source Serif 4", serif; font-style: italic;
+  font-size: 13px; line-height: 1.5;
+  color: var(--sc-text-dim, #37495e); margin: 0 0 16px;
+}
+.ck-qc-row {
+  display: grid; grid-template-columns: 1fr 130px;
+  gap: 10px; margin-bottom: 12px;
+}
+.ck-qc-field { display: flex; flex-direction: column; gap: 4px; }
+.ck-qc-label {
+  font-family: "Inter Tight", sans-serif; font-size: 9px;
+  font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--sc-text-faint, #6e7787);
+}
+.ck-qc-input, .ck-qc-textarea, .ck-qc-select {
+  background: #fff; color: var(--sc-text, #1a2332);
+  border: 1px solid var(--sc-rule, #d8d3c8); border-radius: 3px;
+  padding: 8px 10px; font-size: 13px;
+  font-family: "Source Serif 4", serif;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.ck-qc-select {
+  font-family: "Inter Tight", sans-serif; font-size: 11px;
+  font-weight: 600; letter-spacing: 0.06em;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%236e7787' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center;
+  padding-right: 26px;
+}
+.ck-qc-textarea { min-height: 84px; resize: vertical; }
+.ck-qc-input:focus, .ck-qc-textarea:focus, .ck-qc-select:focus {
+  outline: none; border-color: var(--sc-teal-ink, #0e3e3a);
+  box-shadow: 0 0 0 2px rgba(21,87,82,0.18);
+}
+.ck-qc-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; margin-top: 18px; padding-top: 14px;
+  border-top: 1px solid var(--sc-rule, #d8d3c8);
+}
+.ck-qc-hint {
+  font-family: "Source Serif 4", serif; font-style: italic;
+  font-size: 11px; color: var(--sc-text-faint, #6e7787);
+}
+.ck-qc-hint kbd {
+  display: inline-block; padding: 1px 5px;
+  background: #fff; border: 1px solid var(--sc-rule, #d8d3c8);
+  border-radius: 2px; font-family: "JetBrains Mono", monospace;
+  font-size: 10px; font-style: normal; color: var(--sc-text, #1a2332);
+  vertical-align: 1px;
+}
+.ck-qc-actions { display: flex; gap: 8px; }
+.ck-qc-cancel, .ck-qc-save {
+  font-family: "Inter Tight", sans-serif; font-weight: 600;
+  font-size: 12px; letter-spacing: 0.04em;
+  padding: 8px 14px; border-radius: 2px; cursor: pointer;
+  transition: filter 120ms ease, border-color 120ms ease;
+}
+.ck-qc-cancel {
+  background: transparent; color: var(--sc-text-dim, #37495e);
+  border: 1px solid var(--sc-rule, #d8d3c8);
+}
+.ck-qc-cancel:hover { border-color: var(--sc-text, #1a2332); }
+.ck-qc-save {
+  background: var(--sc-navy, #0b2341); color: #fff; border: 0;
+}
+.ck-qc-save:hover { filter: brightness(1.12); }
+.ck-qc-toast {
+  position: absolute; bottom: -36px; left: 0; right: 0;
+  text-align: center;
+  font-family: "Source Serif 4", serif; font-style: italic;
+  font-size: 12px; color: var(--sc-positive, #0a8a5f);
+  opacity: 0; transition: opacity 200ms ease;
+}
+.ck-qc-toast.is-visible { opacity: 1; }
+@media print { .ck-qc { display: none !important; } }
+</style>
+"""
+
+_CK_QC_HTML = """
+<div class="ck-qc" id="ck-qc" hidden role="dialog" aria-modal="true"
+     aria-labelledby="ck-qc-title">
+  <div class="ck-qc-backdrop" data-ck-qc-close></div>
+  <div class="ck-qc-card" role="document">
+    <div class="ck-qc-eyebrow">Quick capture · Shift+Q</div>
+    <h2 class="ck-qc-title" id="ck-qc-title">
+      Jot a <em>diligence</em> question.
+    </h2>
+    <p class="ck-qc-prose">
+      Saves to the deal's question list. You'll see it next time
+      you open that deal profile.
+    </p>
+    <form data-ck-qc-form>
+      <div class="ck-qc-row">
+        <div class="ck-qc-field">
+          <label class="ck-qc-label" for="ck-qc-slug">Deal slug</label>
+          <input class="ck-qc-input" id="ck-qc-slug"
+                 data-ck-qc-slug autocomplete="off"/>
+        </div>
+        <div class="ck-qc-field">
+          <label class="ck-qc-label" for="ck-qc-cat">Category</label>
+          <select class="ck-qc-select" id="ck-qc-cat" data-ck-qc-cat>
+            <option value="financial">Financial</option>
+            <option value="clinical">Clinical</option>
+            <option value="regulatory">Regulatory</option>
+            <option value="legal">Legal</option>
+            <option value="operational">Operational</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="ck-qc-field">
+        <label class="ck-qc-label" for="ck-qc-text">Question</label>
+        <textarea class="ck-qc-textarea" id="ck-qc-text"
+                  data-ck-qc-text maxlength="280"
+                  placeholder="e.g. What share of NPR comes from out-of-network rates?"></textarea>
+      </div>
+      <div class="ck-qc-footer">
+        <span class="ck-qc-hint">
+          <kbd>Esc</kbd> close · <kbd>⌘</kbd><kbd>Enter</kbd> save
+        </span>
+        <div class="ck-qc-actions">
+          <button type="button" class="ck-qc-cancel"
+                  data-ck-qc-close>Cancel</button>
+          <button type="submit" class="ck-qc-save"
+                  data-ck-qc-save>Save question →</button>
+        </div>
+      </div>
+    </form>
+    <div class="ck-qc-toast" data-ck-qc-toast></div>
+  </div>
+</div>
+"""
+
+_CK_QC_JS = """
+<script>
+(function() {
+  function el(sel) { return document.querySelector(sel); }
+  function open() {
+    var qc = el("#ck-qc"); if (!qc) return;
+    var slugIn = qc.querySelector("[data-ck-qc-slug]");
+    var textIn = qc.querySelector("[data-ck-qc-text]");
+    if (slugIn && !slugIn.value) {
+      // Auto-fill from rcm_recent_deals[0] so the most-recent deal
+      // is the default target. Partner can edit before saving.
+      try {
+        var raw = localStorage.getItem("rcm_recent_deals");
+        var rows = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(rows) && rows.length && rows[0].slug) {
+          slugIn.value = rows[0].slug;
+        }
+      } catch (e) { /* ignore */ }
+    }
+    // Restore the last-used category so partners doing several
+    // captures in the same area (e.g. four Regulatory questions
+    // in a row) don't reset to Financial each time. localStorage
+    // key persists across sessions.
+    var catIn = qc.querySelector("[data-ck-qc-cat]");
+    if (catIn) {
+      try {
+        var last = localStorage.getItem("rcm_qc_last_cat");
+        if (last) {
+          var opts = catIn.options;
+          for (var i = 0; i < opts.length; i++) {
+            if (opts[i].value === last) { catIn.value = last; break; }
+          }
+        }
+      } catch (e) { /* ignore */ }
+    }
+    qc.hidden = false;
+    if (textIn) setTimeout(function() { textIn.focus(); }, 0);
+  }
+  function close() {
+    var qc = el("#ck-qc"); if (qc) qc.hidden = true;
+  }
+  function toast(msg, tone) {
+    var t = el("[data-ck-qc-toast]"); if (!t) return;
+    t.textContent = msg;
+    t.style.color = (tone === "neg") ? "#b5321e" : "";
+    t.classList.add("is-visible");
+    setTimeout(function() { t.classList.remove("is-visible"); }, 1500);
+  }
+  function save() {
+    var qc = el("#ck-qc"); if (!qc) return;
+    var slug = (qc.querySelector("[data-ck-qc-slug]").value || "")
+      .trim().toLowerCase();
+    var text = (qc.querySelector("[data-ck-qc-text]").value || "").trim();
+    var cat = qc.querySelector("[data-ck-qc-cat]").value || "financial";
+    if (!slug) { toast("Need a deal slug.", "neg"); return; }
+    if (!text) { toast("Need a question.", "neg"); return; }
+    try {
+      var key = "rcm_deal_" + slug + "_questions";
+      var raw = localStorage.getItem(key);
+      var rows = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(rows)) rows = [];
+      rows.unshift({
+        id: "q" + Date.now() + Math.random().toString(36).slice(2, 6),
+        text: text, ts: Date.now(), asked: false, category: cat,
+      });
+      localStorage.setItem(key, JSON.stringify(rows));
+      // Persist last-used category so the next Quick-capture
+      // opens with it pre-selected.
+      try { localStorage.setItem("rcm_qc_last_cat", cat); }
+      catch (e) { /* ignore */ }
+      toast("Saved to " + slug + ".");
+      qc.querySelector("[data-ck-qc-text]").value = "";
+      // Auto-close after a beat so partner sees the confirmation
+      setTimeout(close, 850);
+    } catch (e) { toast("Save failed.", "neg"); }
+  }
+  window.ckQuickCapture = { open: open, close: close };
+  document.addEventListener("keydown", function(e) {
+    if (e.target && (e.target.tagName === "INPUT"
+        || e.target.tagName === "TEXTAREA"
+        || e.target.isContentEditable)) {
+      // While the QC modal is open we DO want keystrokes to flow
+      // into the inputs, but ⌘+Enter must still save and Esc must
+      // still close.
+      var qc = el("#ck-qc");
+      if (qc && !qc.hidden) {
+        if (e.key === "Escape") { e.preventDefault(); close(); }
+        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+          e.preventDefault(); save();
+        }
+      }
+      return;
+    }
+    if (e.shiftKey && (e.key === "Q" || e.key === "q")
+        && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      e.preventDefault();
+      var qcEl = el("#ck-qc");
+      if (qcEl && qcEl.hidden) open(); else close();
+    }
+    if (e.key === "Escape") {
+      var qc2 = el("#ck-qc");
+      if (qc2 && !qc2.hidden) { e.preventDefault(); close(); }
+    }
+  });
+  document.addEventListener("click", function(e) {
+    if (e.target.closest && e.target.closest("[data-ck-qc-close]")) {
+      close();
+    }
+  });
+  document.addEventListener("submit", function(e) {
+    if (e.target.closest && e.target.closest("[data-ck-qc-form]")) {
+      e.preventDefault();
+      save();
+    }
+  });
+}());
+</script>
+"""
+
+
+def ck_default_tour() -> str:
+    """Return the editorial tour overlay rendered with the seven
+    default volumes. Injected by ``chartis_shell`` so the tour
+    works on every page via ``?tour=1`` or ``window.ckTour.open()``.
+    """
+    return ck_tour_overlay(_TOUR_VOLUMES)
 
 
 def ck_empty_state(
@@ -897,6 +2116,7 @@ def render_insights_page(
     omit_auto_chips: Optional[Sequence[str]] = None,
     prelude_html: str = "",
     prelude_position: str = "after",
+    next_section_html: str = "",
 ) -> str:
     """Compose the chartis Insights triplet around a body of items.
 
@@ -916,6 +2136,12 @@ def render_insights_page(
                         header
       - ``intro``     — optional ``{eyebrow, headline, ...}`` kwargs
                         passed to ``ck_section_intro``
+      - ``next_section_html`` — optional pre-rendered ``ck_next_section``
+                        HTML appended after the rail layout, before
+                        the shell. Lets insights-helper callers (e.g.
+                        /research, /notes) join the Up-next cue ladder
+                        — without it, the cue would land outside the
+                        body since this helper wraps ``chartis_shell``.
 
     For each active facet (state value present), a chip is added
     to the results header whose ``remove_href`` reconstructs the
@@ -1050,6 +2276,8 @@ def render_insights_page(
         full_body = (
             intro_html + search_hero + prelude_html + rail_layout
         )
+
+    full_body = full_body + next_section_html
 
     return chartis_shell(
         full_body,
@@ -1308,10 +2536,13 @@ def ck_affirm_empty(
 _DEFAULT_PALETTE_MODULES = [
     # Home + ops
     {"id": "home",        "title": "Command Center",       "route": "/app"},
+    {"id": "day-one",     "title": "Day One · Monday brief", "route": "/day-one"},
     {"id": "my",          "title": "My Dashboard",         "route": "/my/AT"},
     {"id": "alerts",      "title": "Alerts",               "route": "/alerts"},
     {"id": "escalations", "title": "Escalations",          "route": "/escalations"},
     {"id": "watchlist",   "title": "Watchlist",            "route": "/watchlist"},
+    {"id": "questions-ledger", "title": "Diligence Questions · ledger",
+        "route": "/diligence/questions"},
     # Pipeline / sourcing
     {"id": "pipeline",    "title": "Pipeline",             "route": "/pipeline"},
     {"id": "source",      "title": "Deal Sourcing",        "route": "/source"},
@@ -1397,7 +2628,15 @@ def ck_command_palette(modules: Iterable[Mapping[str, str]]) -> str:
         '<div class="ck-palette" id="ck-palette" hidden>'
         '<div class="ck-palette-box">'
         '<input class="ck-palette-input" type="text" placeholder="Jump to… (⌘K)" />'
-        f'<ul class="ck-palette-list">{items}</ul>'
+        f'<ul class="ck-palette-list">{items}'
+        # Editorial empty state when filter matches nothing —
+        # surfaced by _PALETTE_JS toggling the [hidden] flag.
+        '<li class="cp-noresults" data-rcm-palette-empty hidden>'
+        '<span class="cp-noresults-text">'
+        '<em>Nothing matched.</em> Try a shorter prefix, or '
+        '<kbd>Esc</kbd> to close.'
+        '</span></li>'
+        '</ul>'
         "</div></div>"
     )
 
@@ -1428,6 +2667,279 @@ _CSS_INLINE_FALLBACK = """
   .ck-panel-title { font-family:var(--sc-sans); font-weight:600; font-size:13px; letter-spacing:0.04em; text-transform:uppercase; }
   .ck-panel-code { font-family:var(--sc-mono); font-size:10px; letter-spacing:0.1em; color:var(--sc-on-navy-dim); }
   .ck-panel-body { padding:var(--sc-s-6); }
+  /* Default link affordance inside editorial chrome — every <a> nested
+   * in a panel body or section-intro body picks up teal-ink + hover
+   * underline so dozens of inline-styled anchors still feel clickable
+   * without each page hand-rolling its own. cad-link/ck-link explicit
+   * classes still win via specificity. */
+  .ck-panel-body a:not([class]),
+  .ck-section-body a:not([class]),
+  .ck-section-intro a:not([class]) {
+    color: var(--sc-teal-ink); text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 120ms ease, color 120ms ease;
+  }
+  .ck-panel-body a:not([class]):hover,
+  .ck-section-body a:not([class]):hover,
+  .ck-section-intro a:not([class]):hover {
+    border-bottom-color: var(--sc-teal-ink);
+  }
+  /* Empty-row cell — partner-visible empty states inside data
+   * tables that don't fit the block-level ck_empty_state component.
+   * Italic Source-Serif framing with a soft bone tint pulls the row
+   * out of the prose stream without shouting. */
+  .ck-empty-row {
+    padding: 14px 16px;
+    background: var(--sc-bone, #f5f1ea);
+    font-family: "Source Serif 4", serif;
+    font-size: 13px;
+    color: var(--sc-text-dim, #37495e);
+    line-height: 1.55;
+  }
+  .ck-empty-row em {
+    font-style: italic;
+    color: var(--sc-teal-ink, #0e3e3a);
+  }
+  /* Inline editorial sparkline — small SVG trend with optional
+   * caps label + mono numeric end-value. Used in deals tables,
+   * KPI strips, and anywhere a single inline trend needs to read
+   * as part of running prose. */
+  .ck-spark {
+    display: inline-flex; align-items: center; gap: 8px;
+    vertical-align: middle;
+  }
+  .ck-spark-svg { display: block; }
+  .ck-spark-lbl {
+    font-family: "Inter Tight", sans-serif; font-size: 9px;
+    font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--sc-text-faint, #6e7787);
+  }
+  .ck-spark-val {
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    font-weight: 600; font-variant-numeric: tabular-nums;
+    color: var(--sc-text, #1a2332);
+  }
+  @media print {
+    .ck-spark-svg polyline { stroke: #000 !important; }
+  }
+
+  /* Progress checklist — "your platform journey" editorial roster.
+   * Numbered serif rows with a circular state marker that fills with
+   * a positive-tone check when JS confirms the underlying condition
+   * (recent deals, tour progress, tools visited) from localStorage. */
+  .ck-checklist-wrap {
+    background: var(--sc-bone, #f5f1ea);
+    border: 1px solid var(--sc-rule, #d8d3c8); border-radius: 3px;
+    padding: 20px 24px; margin-bottom: var(--sc-s-5);
+  }
+  .ck-checklist { list-style: none; margin: 0; padding: 0; }
+  .ck-checklist-row {
+    display: grid; grid-template-columns: 24px 32px 1fr;
+    gap: 14px; align-items: baseline;
+    padding: 12px 0; border-bottom: 1px solid var(--sc-rule, #d8d3c8);
+    font-family: "Source Serif 4", serif;
+  }
+  .ck-checklist-row:last-child { border-bottom: 0; }
+  .ck-checklist-marker {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 1.5px solid var(--sc-text-faint, #6e7787);
+    background: transparent;
+    transition: background 160ms ease, border-color 160ms ease;
+    align-self: center;
+  }
+  .ck-checklist-row.is-done .ck-checklist-marker {
+    background: var(--sc-positive, #0a8a5f);
+    border-color: var(--sc-positive, #0a8a5f);
+    position: relative;
+  }
+  .ck-checklist-row.is-done .ck-checklist-marker::after {
+    content: "✓"; position: absolute; top: -1px; left: 2px;
+    font-size: 12px; color: #fff; font-weight: 700; line-height: 1;
+    font-family: "Inter Tight", sans-serif;
+  }
+  .ck-checklist-number {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+    color: var(--sc-text-faint, #6e7787);
+    align-self: center;
+  }
+  .ck-checklist-row.is-done .ck-checklist-number {
+    color: var(--sc-positive, #0a8a5f);
+  }
+  .ck-checklist-title {
+    font-size: 15px; font-weight: 500; line-height: 1.3;
+    color: var(--sc-navy, #0b2341); margin-bottom: 2px;
+  }
+  .ck-checklist-row.is-done .ck-checklist-title {
+    color: var(--sc-text-dim, #37495e);
+  }
+  .ck-checklist-prose {
+    font-size: 13px; line-height: 1.55;
+    color: var(--sc-text-dim, #37495e); max-width: 60ch;
+  }
+  .ck-checklist-prose em {
+    font-style: italic; color: var(--sc-teal-ink, #0e3e3a);
+  }
+  @media print { .ck-checklist-wrap { display: none; } }
+
+  /* Sticky right-rail table of contents — editorial chapter index.
+   * The host page wraps its panels in .ck-toc-layout > .ck-toc-content
+   * and the aside sits next to them, sticking to the viewport while
+   * the partner scrolls. IntersectionObserver flips the .is-active
+   * link as sections scroll into the upper third of the viewport. */
+  .ck-toc-layout {
+    display: grid; grid-template-columns: 240px 1fr;
+    gap: var(--sc-s-7); align-items: start;
+  }
+  .ck-toc-content { min-width: 0; }
+  .ck-toc {
+    position: sticky; top: 90px;
+    max-height: calc(100vh - 110px); overflow-y: auto;
+    padding: 18px 4px 24px;
+    font-family: "Inter Tight", sans-serif;
+  }
+  .ck-toc-eyebrow {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--sc-text-faint, #6e7787);
+    padding: 0 14px 10px;
+    border-bottom: 1px solid var(--sc-rule, #d8d3c8);
+    margin-bottom: 8px;
+  }
+  .ck-toc-list {
+    list-style: none; margin: 0; padding: 0;
+    counter-reset: ck-toc-counter;
+  }
+  .ck-toc-item { margin: 0; padding: 0;
+                 counter-increment: ck-toc-counter; }
+  .ck-toc-link {
+    display: block; position: relative;
+    padding: 8px 14px 8px 18px;
+    font-family: "Source Serif 4", serif;
+    font-size: 13px; font-weight: 400; line-height: 1.4;
+    color: var(--sc-text-dim, #37495e);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    transition: color 120ms ease, border-color 120ms ease,
+                background 120ms ease;
+  }
+  .ck-toc-link:hover {
+    color: var(--sc-text, #1a2332);
+    background: var(--sc-bone, #f5f1ea);
+  }
+  .ck-toc-link.is-active {
+    color: var(--sc-teal-ink, #0e3e3a);
+    border-left-color: var(--sc-teal-ink, #0e3e3a);
+    font-weight: 500;
+  }
+  @media (max-width: 1100px) {
+    .ck-toc-layout { display: block; }
+    .ck-toc { display: none; }
+  }
+  @media print { .ck-toc { display: none; } }
+
+  /* Inline help affordance — `term [?]` opens an editorial popover */
+  .ck-help {
+    position: relative; display: inline-flex; align-items: baseline;
+    gap: 4px; white-space: nowrap;
+  }
+  .ck-help-trigger {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px;
+    background: transparent;
+    border: 1px solid var(--sc-rule, #d8d3c8); border-radius: 50%;
+    color: var(--sc-text-faint, #6e7787);
+    font-family: "Inter Tight", sans-serif;
+    font-size: 10px; font-weight: 700; line-height: 1;
+    cursor: pointer; padding: 0;
+    transition: border-color 120ms ease, color 120ms ease,
+                background 120ms ease;
+  }
+  .ck-help-trigger:hover,
+  .ck-help-trigger:focus,
+  .ck-help-trigger[aria-expanded="true"] {
+    background: var(--sc-teal-ink, #0e3e3a); color: #fff;
+    border-color: var(--sc-teal-ink, #0e3e3a); outline: none;
+  }
+  .ck-help-popover {
+    position: absolute; bottom: calc(100% + 8px); left: 50%;
+    transform: translateX(-50%);
+    min-width: 260px; max-width: 360px;
+    padding: 14px 16px;
+    background: var(--sc-bone, #f5f1ea);
+    border: 1px solid var(--sc-rule, #d8d3c8);
+    border-radius: 3px;
+    box-shadow: 0 12px 28px rgba(11, 35, 65, 0.18);
+    z-index: 50;
+    font-family: "Source Serif 4", serif;
+    white-space: normal; text-align: left;
+    opacity: 0; visibility: hidden;
+    transition: opacity 120ms ease, visibility 120ms ease;
+    pointer-events: none;
+  }
+  .ck-help:focus-within .ck-help-popover,
+  .ck-help:hover .ck-help-popover {
+    opacity: 1; visibility: visible; pointer-events: auto;
+  }
+  .ck-help-popover::after {
+    content: ""; position: absolute; top: 100%; left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--sc-bone, #f5f1ea);
+  }
+  .ck-help-term {
+    display: block;
+    font-family: "Inter Tight", sans-serif;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--sc-teal-ink, #0e3e3a); margin-bottom: 6px;
+  }
+  .ck-help-def {
+    display: block;
+    font-size: 13px; line-height: 1.55;
+    color: var(--sc-text-dim, #37495e);
+  }
+  .ck-help-cite {
+    display: block; margin-top: 8px;
+    font-family: "Source Serif 4", serif; font-style: italic;
+    font-size: 11px; color: var(--sc-text-faint, #6e7787);
+  }
+  @media print { .ck-help-trigger { display: none; }
+                 .ck-help-popover { display: none; } }
+  /* Up next — editorial chapter footer */
+  .ck-next-section {
+    padding: 28px 24px;
+    margin: 28px 0 0;
+    border-top: 1px solid var(--sc-rule);
+    text-align: center;
+  }
+  .ck-next-eyebrow {
+    font-family: var(--sc-sans); font-size: 10px; font-weight: 700;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--sc-text-faint); margin-bottom: 10px;
+  }
+  .ck-next-link {
+    display: inline-block;
+    font-family: var(--sc-serif); font-weight: 400; font-size: 22px;
+    line-height: 1.2; letter-spacing: -0.005em;
+    color: var(--sc-teal-ink); text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 120ms ease;
+  }
+  .ck-next-link em {
+    font-style: italic; color: var(--sc-teal-ink); font-weight: 400;
+  }
+  .ck-next-link:hover {
+    border-bottom-color: var(--sc-teal-ink);
+  }
+  .ck-next-arrow {
+    display: inline-block; margin-left: 6px;
+    transition: transform 160ms ease;
+  }
+  .ck-next-link:hover .ck-next-arrow {
+    transform: translateX(4px);
+  }
   .ck-table { width:100%; border-collapse:collapse; font-size:13px; }
   .ck-table thead th { background:var(--sc-bone); color:var(--sc-text-dim); font-family:var(--sc-sans); font-weight:600; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; padding:8px 12px; border-bottom:1px solid var(--sc-rule); text-align:left; }
   .ck-table tbody td { padding:8px 12px; border-bottom:1px solid var(--sc-rule); }
@@ -1475,6 +2987,35 @@ _CSS_INLINE_FALLBACK = """
   .ck-user-chip { width:34px; height:34px; border-radius:50%; background:var(--sc-teal); color:var(--sc-navy); display:flex; align-items:center; justify-content:center; font-family:var(--sc-sans); font-weight:700; font-size:12px; letter-spacing:0.04em; cursor:pointer; border:0; padding:0; }
   .ck-user-chip:hover { background:var(--sc-teal-2,var(--sc-teal)); }
   .ck-search-form { margin:0; }
+  /* Portfolio-wide diligence-questions pill in the topbar. JS
+   * hydrates from rcm_deal_*_questions on DOMContentLoaded; hidden
+   * when zero open across the portfolio. Warning-tone numeric +
+   * italic Source-Serif label, matches the row-level Q-chips on
+   * the recently-viewed rails so partners read the signal the same
+   * way wherever they encounter it. */
+  .ck-topbar-qpill {
+    display:inline-flex; align-items:baseline; gap:6px;
+    padding:5px 10px;
+    background:transparent;
+    border:1px solid var(--sc-warning, #b8732a);
+    border-radius:999px;
+    text-decoration:none;
+    color:var(--sc-warning, #b8732a);
+    transition:background 120ms ease, color 120ms ease;
+  }
+  .ck-topbar-qpill[hidden] { display:none !important; }
+  .ck-topbar-qpill:hover {
+    background:var(--sc-warning, #b8732a); color:#fff;
+  }
+  .ck-topbar-qpill-num {
+    font-family:var(--sc-mono); font-weight:700; font-size:11px;
+    font-variant-numeric:tabular-nums;
+    letter-spacing:0.04em;
+  }
+  .ck-topbar-qpill-label {
+    font-family:var(--sc-serif); font-style:italic; font-size:11px;
+  }
+  @media print { .ck-topbar-qpill { display:none !important; } }
   .ck-user-menu { position:relative; }
   .ck-user-dropdown { position:absolute; top:calc(100% + 10px); right:0; min-width:200px; background:#fff; border:1px solid var(--sc-rule); box-shadow:var(--sc-shadow-2,0 8px 24px rgba(11,32,55,0.14)); border-radius:2px; padding:6px 0; z-index:60; }
   .ck-user-dropdown[hidden] { display:none !important; }
@@ -1733,6 +3274,29 @@ _CSS_INLINE_FALLBACK = """
   .ck-palette-list { list-style:none; margin:0; padding:0; max-height:52vh; overflow:auto; }
   .ck-palette-list li { display:flex; justify-content:space-between; padding:10px 20px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--sc-bone); }
   .ck-palette-list li:hover { background:var(--sc-bone); }
+  .ck-palette-list li.is-highlighted {
+    background:var(--sc-bone);
+    box-shadow:inset 3px 0 0 var(--sc-teal-ink);
+  }
+  .ck-palette-list li.is-highlighted .cp-route { color:var(--sc-teal-ink); }
+  .ck-palette-list li.cp-noresults {
+    display:flex; justify-content:flex-start; padding:18px 20px;
+    font-family:var(--sc-serif); font-size:13px;
+    color:var(--sc-text-dim); cursor:default;
+    background:var(--sc-bone);
+  }
+  .ck-palette-list li.cp-noresults:hover { background:var(--sc-bone); }
+  .ck-palette-list li.cp-noresults em {
+    font-style:italic; color:var(--sc-teal-ink);
+  }
+  .ck-palette-list li.cp-noresults kbd {
+    display:inline-block; padding:1px 5px;
+    background:#fff; border:1px solid var(--sc-rule);
+    border-radius:2px; font-family:var(--sc-mono);
+    font-size:10px; color:var(--sc-text);
+    vertical-align:1px;
+  }
+  .ck-palette-list li.cp-noresults[hidden] { display:none !important; }
   .ck-palette-list li.cp-section { display:block; padding:10px 20px 6px; cursor:default; background:transparent; border-bottom:0; font-family:var(--sc-mono); font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--sc-text-faint); }
   .ck-palette-list li.cp-section:hover { background:transparent; }
   .ck-palette-list li.cp-recent { background:linear-gradient(90deg, rgba(21,87,82,0.04) 0%, transparent 100%); }
@@ -1769,12 +3333,69 @@ _CSS_INLINE_FALLBACK = """
   /* Main content frame */
   .ck-main { padding:var(--sc-s-7); max-width:1720px; margin:0 auto; }
 
-  /* Print — for /memo/<id>, /ic-packet/<id> */
+  /* Print preview mode — partners hit ?print=1 to see the LP-facing
+   * deliverable before they print. Hides shell chrome inside the
+   * wrapper so the page reads exactly like the print pathway. */
+  .ck-print-preview {
+    max-width: 880px; margin: 0 auto; padding: 32px 24px;
+    background: #fff;
+    box-shadow: 0 0 0 1px var(--sc-rule, #d8d3c8),
+                0 8px 28px rgba(11, 35, 65, 0.08);
+  }
+  .ck-print-preview-bar {
+    display: flex; align-items: baseline;
+    justify-content: space-between; gap: 14px;
+    padding: 8px 14px; margin: -32px -24px 24px;
+    background: var(--sc-bone, #f5f1ea);
+    border-bottom: 1px solid var(--sc-rule, #d8d3c8);
+    font-family: "Inter Tight", sans-serif;
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .ck-print-preview-meta {
+    color: var(--sc-text-faint, #6e7787); font-weight: 700;
+  }
+  .ck-print-preview-exit {
+    color: var(--sc-teal-ink, #0e3e3a); text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 120ms ease;
+  }
+  .ck-print-preview-exit:hover {
+    border-bottom-color: var(--sc-teal-ink, #0e3e3a);
+  }
+  .ck-print-preview-cta {
+    text-align: right; margin: 0 0 12px;
+    font-family: "Source Serif 4", serif; font-style: italic;
+    font-size: 13px;
+  }
   @media print {
-    .ck-topbar, .ck-breadcrumbs, .ck-palette { display:none !important; }
-    body { background:#fff !important; }
-    .ck-panel { box-shadow:none; break-inside:avoid; page-break-inside:avoid; }
+    .ck-print-preview-bar { display: none; }
+    .ck-print-preview-cta { display: none; }
+    .ck-print-preview {
+      max-width: none; margin: 0; padding: 0; box-shadow: none;
+    }
+  }
+
+  /* Print — for /memo/<id>, /ic-packet/<id>. Partners save these as
+   * PDFs to share with LPs / IC; the editorial layout should survive
+   * the print path with chrome stripped, panels kept whole, and the
+   * cadence headings staying with their following body copy. */
+  @media print {
+    .ck-topbar, .ck-breadcrumbs, .ck-palette,
+    .ck-sidebar, .ck-toast, .no-print { display:none !important; }
+    body { background:#fff !important; color:#000 !important;
+           font-size:11pt; }
+    a { color:inherit !important; text-decoration:none !important; }
+    .ck-panel { box-shadow:none; break-inside:avoid;
+                page-break-inside:avoid;
+                border:1px solid #cfcec7; }
+    .ck-panel-head { background:#f5f1ea !important;
+                     color:#0b2341 !important; }
+    .ck-section-intro, .ck-section-header,
+    .ck-kpi-strip { break-inside:avoid; page-break-inside:avoid; }
+    h1, h2, h3 { break-after:avoid; page-break-after:avoid; }
     .ck-main { max-width:none; padding:0; }
+    /* Legacy cad-* chrome hide for pages still on the legacy shell */
+    .cad-nav, .cad-topbar, .cad-ticker { display:none !important; }
   }
 </style>
 """
@@ -1933,9 +3554,16 @@ _SHORTCUTS_HTML = """
         </dl>
       </section>
       <section>
-        <h3>This dialog</h3>
+        <h3>Discovery</h3>
         <dl>
           <dt><kbd>?</kbd></dt><dd>Show / hide this list</dd>
+          <dt><kbd>/</kbd></dt>
+            <dd>Focus the topbar search field</dd>
+          <dt><kbd>T</kbd></dt>
+            <dd>Open <em>The Atlas</em> &mdash; the editorial tour</dd>
+          <dt><kbd>Shift</kbd><kbd>Q</kbd></dt>
+            <dd>Quick capture &mdash; jot a diligence question
+                without leaving the page</dd>
         </dl>
       </section>
     </div>
@@ -2008,7 +3636,24 @@ _SHORTCUTS_JS = """
       e.preventDefault();
       if (dlg.hidden) show(); else hide();
     }
+    /* "/" (without Shift) focuses the topbar search input — common
+     * Stripe/Linear/GitHub pattern. Skipped when the dialog is
+     * open (since "/" is the underlying char of "?") and when
+     * an input is already focused. */
+    if (e.key === '/' && !e.shiftKey && !e.metaKey && !e.ctrlKey
+        && !e.altKey && dlg.hidden) {
+      var search = document.querySelector(".ck-search");
+      if (search) { e.preventDefault(); search.focus(); search.select(); }
+    }
     if (e.key === 'Escape' && !dlg.hidden) { e.preventDefault(); hide(); }
+    /* "T" launches the editorial tour. Hide the shortcuts dialog
+     * first so the tour modal isn't stacked on top of it. */
+    if ((e.key === 't' || e.key === 'T') && !e.shiftKey
+        && window.ckTour && typeof window.ckTour.open === 'function') {
+      e.preventDefault();
+      if (!dlg.hidden) hide();
+      window.ckTour.open(1);
+    }
   });
   /* Close button + click-outside */
   var close = dlg.querySelector('.ck-shortcuts-close');
@@ -2085,6 +3730,49 @@ _INTRO_DISMISS_JS = """
                                 : 'Tutorial intros: off';
   }
 })();
+</script>
+"""
+
+
+_QPILL_JS = """
+<script>
+/* Topbar diligence-questions pill — counts opens across every
+ * rcm_deal_*_questions entry in localStorage and surfaces the
+ * total as a single editorial chip in the topbar. Hidden when zero
+ * so a fresh partner never sees an empty pill. Click navigates to
+ * the portfolio question ledger. Repaints every 30s so partners
+ * leaving the tab on a page see the chip update in the background. */
+(function() {
+  function paintQpill() {
+    var el = document.querySelector("[data-ck-qpill]");
+    if (!el) return;
+    var num = el.querySelector("[data-ck-qpill-num]");
+    var total = 0;
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (!k || !/_questions$/.test(k)) continue;
+        if (!/^rcm_deal_/.test(k)) continue;
+        try {
+          var rows = JSON.parse(localStorage.getItem(k) || "[]");
+          if (!Array.isArray(rows)) continue;
+          for (var j = 0; j < rows.length; j++) {
+            if (rows[j] && !rows[j].asked) total += 1;
+          }
+        } catch (e) { /* skip malformed row */ }
+      }
+    } catch (e) { /* storage disabled — leave hidden */ return; }
+    if (total <= 0) { el.hidden = true; return; }
+    if (num) num.textContent = String(total);
+    el.hidden = false;
+  }
+  document.addEventListener("DOMContentLoaded", paintQpill);
+  // Repaint when the partner returns to the tab — quick-capture
+  // from another tab is unlikely but cheap to support.
+  document.addEventListener("visibilitychange", function() {
+    if (!document.hidden) paintQpill();
+  });
+}());
 </script>
 """
 
@@ -2226,28 +3914,92 @@ _PALETTE_JS = """
   function hide(){ p.hidden = true; input.value = ''; filter(''); }
   function filter(q){
     q = (q || '').toLowerCase();
+    var anyVisible = false;
     Array.from(p.querySelectorAll('li')).forEach(function(li){
+      if (li.classList.contains('cp-noresults')) return;
       if (li.classList.contains('cp-section')) {
         /* Show the "Recent" header only when no query is active */
         li.style.display = q ? 'none' : '';
         return;
       }
       var t = li.textContent.toLowerCase();
-      li.style.display = t.indexOf(q) >= 0 ? '' : 'none';
+      var match = t.indexOf(q) >= 0;
+      li.style.display = match ? '' : 'none';
+      if (match) anyVisible = true;
+    });
+    /* Toggle the "Nothing matched" row — only when partner has
+     * typed something and zero items are visible. */
+    var empty = p.querySelector('[data-rcm-palette-empty]');
+    if (empty) empty.hidden = !(q && !anyVisible);
+  }
+  function visibleItems(){
+    return Array.from(p.querySelectorAll('li:not([style*="display: none"])'))
+      .filter(function(li){
+        return !li.classList.contains('cp-section')
+            && !li.classList.contains('cp-noresults');
+      });
+  }
+  function highlightAt(idx){
+    var items = visibleItems();
+    items.forEach(function(li, i){
+      if (i === idx) {
+        li.classList.add('is-highlighted');
+        /* Keep highlighted row in view inside the scrollable list */
+        if (li.scrollIntoView) {
+          li.scrollIntoView({ block: 'nearest' });
+        }
+      } else {
+        li.classList.remove('is-highlighted');
+      }
     });
   }
-  input.addEventListener('input', function(e){ filter(e.target.value); });
+  function moveHighlight(delta){
+    var items = visibleItems();
+    if (!items.length) return;
+    var cur = items.findIndex(function(li){
+      return li.classList.contains('is-highlighted');
+    });
+    var next = ((cur < 0 ? 0 : cur + delta) + items.length) % items.length;
+    highlightAt(next);
+  }
+  function pickHighlighted(){
+    var items = visibleItems();
+    var hit = items.find(function(li){
+      return li.classList.contains('is-highlighted');
+    }) || items[0];
+    if (hit) navTo(hit);
+  }
+  input.addEventListener('input', function(e){
+    filter(e.target.value);
+    /* Reset highlight to first visible after any filter change */
+    highlightAt(0);
+  });
   allItems.forEach(function(li){
     li.addEventListener('click', function(){ navTo(li); });
+    li.addEventListener('mouseenter', function(){
+      var items = visibleItems();
+      highlightAt(items.indexOf(li));
+    });
   });
   document.addEventListener('keydown', function(e){
-    if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); show(); }
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      show();
+      /* Highlight first visible on open so Enter has a target */
+      setTimeout(function(){ highlightAt(0); }, 0);
+    }
     if (e.key === 'Escape' && !p.hidden) { e.preventDefault(); hide(); }
-    if (e.key === 'Enter' && !p.hidden) {
-      /* Pick first visible item */
-      var first = Array.from(p.querySelectorAll('li:not([style*="display: none"])'))
-        .find(function(li){ return !li.classList.contains('cp-section'); });
-      if (first) { e.preventDefault(); navTo(first); }
+    if (!p.hidden) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        moveHighlight(1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        moveHighlight(-1);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        pickHighlighted();
+      }
     }
   });
 })();
@@ -2384,6 +4136,14 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '</a>'
         f'<nav class="ck-nav" aria-label="Primary">{links}</nav>'
         '<div class="ck-topbar-right">'
+        # Portfolio-wide diligence-questions pill. JS-hydrated from
+        # all rcm_deal_*_questions entries on DOMContentLoaded;
+        # hidden when zero open across the portfolio. Click → ledger.
+        '<a class="ck-topbar-qpill" data-ck-qpill href="/diligence/questions" '
+        'aria-label="Open diligence questions ledger" hidden>'
+        '<span class="ck-topbar-qpill-num" data-ck-qpill-num>0</span>'
+        '<span class="ck-topbar-qpill-label">open Qs</span>'
+        '</a>'
         '<form class="ck-search-form" action="/search" method="get" role="search">'
         '<input class="ck-search" type="search" name="q" '
         'placeholder="Search deals, hospitals, routes — ⌘K" '
@@ -2579,8 +4339,11 @@ def chartis_shell(
         f"{palette_html}"
         f"{_SHORTCUTS_HTML}"
         f"{_TOAST_HTML}"
+        f"{ck_default_tour()}"
+        f"{ck_quick_capture()}"
         f"{_CSRF_JS}"
         f"{_USER_MENU_JS}"
+        f"{_QPILL_JS}"
         f"{_INTRO_DISMISS_JS}"
         f"{_PALETTE_JS}"
         f"{_SHORTCUTS_JS}"

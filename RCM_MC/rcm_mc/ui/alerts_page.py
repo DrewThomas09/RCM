@@ -58,9 +58,18 @@ from ._chartis_kit import (
     ck_affirm_empty,
     ck_arrow_link,
     ck_kpi_block,
+    ck_next_section,
     ck_page_title,
     ck_provenance_tooltip,
+    ck_signal_badge,
 )
+
+
+_SEV_TO_TONE = {
+    "red":   "negative",
+    "amber": "warning",
+    "info":  "neutral",
+}
 
 
 _SEV_META = {
@@ -124,6 +133,12 @@ _ALERTS_CSS = """
     flex-basis:100%;margin-top:4px;}
   .ck-alert-age{font-family:var(--sc-mono,monospace);font-size:10.5px;
     color:var(--sc-text-faint,#7a8699);letter-spacing:0.04em;}
+  .ck-alert-q{font-family:"Inter Tight",sans-serif;font-size:9px;
+    font-weight:700;letter-spacing:0.14em;text-transform:uppercase;
+    color:var(--sc-warning,#b8732a);
+    border:1px solid currentColor;border-radius:2px;
+    padding:1px 6px;white-space:nowrap;}
+  .ck-alert-q[hidden]{display:none !important;}
   .ck-alert-returning{font-family:var(--sc-mono,monospace);font-size:10px;
     letter-spacing:0.08em;text-transform:uppercase;
     color:var(--sc-warning,#b8732a);font-weight:700;}
@@ -226,8 +241,13 @@ def _row(a, name_map: Dict[str, str]) -> str:
         'title="Returned after snooze expired">↩ returning</span>'
         if getattr(a, "returning", False) else ""
     )
-    sev_color = _SEV_TONE_COLOR.get(
-        a.severity, "var(--sc-text-faint,#7a8699)",
+    # Editorial severity badge — drops the inline `style="color:…"`
+    # in favor of ck_signal_badge with the shared tone palette so
+    # the alerts row reads like every other badge on the platform
+    # (positive / warning / negative / neutral).
+    sev_badge = ck_signal_badge(
+        a.severity.upper(),
+        tone=_SEV_TO_TONE.get(a.severity, "neutral"),
     )
     deal_name = name_map.get(a.deal_id, a.deal_id)
     deal_link = (
@@ -256,14 +276,22 @@ def _row(a, name_map: Dict[str, str]) -> str:
         f'<button type="submit" class="ck-alert-go">Apply</button>'
         f'</form>'
     )
+    # Open-questions chip — JS hydrates from
+    # rcm_deal_<deal_id>_questions on DOMContentLoaded; chip shows
+    # only when the deal has at least one unasked question. Partners
+    # triaging alerts see Q-load inline.
+    q_chip = (
+        '<span class="ck-alert-q" '
+        f'data-rcm-alert-q-deal="{html.escape(a.deal_id)}" hidden></span>'
+    )
     return (
         '<li class="ck-alert-row">'
-        f'<span class="ck-alert-sev" style="color:{sev_color};">'
-        f'{html.escape(a.severity.upper())}</span>'
+        f'<span class="ck-alert-sev">{sev_badge}</span>'
         f'{deal_link}'
         f'{slug_html}'
         f'<span class="ck-alert-title">{html.escape(a.title)}</span>'
         f'{returning_html}'
+        f'{q_chip}'
         f'{age_html}'
         f'{ack_form}'
         f'<div class="ck-alert-detail">{html.escape(a.detail)}</div>'
@@ -323,14 +351,42 @@ def render_alerts(
         + ck_kpi_block(
             "Critical", f"{n_red}",
             sub="covenant trip / breach",
+            help={
+                "definition": (
+                    "Red-severity alerts that require partner action "
+                    "this week — covenant trips, payer-contract "
+                    "breaches, key-physician departures. Anything red "
+                    "past 30 days appears on /escalations and should "
+                    "have an owner + decision plan before the next "
+                    "LP update."
+                ),
+            },
         )
         + ck_kpi_block(
             "Warning", f"{n_amber}",
             sub="tight covenant / EBITDA miss",
+            help={
+                "definition": (
+                    "Amber-severity alerts — material issues that "
+                    "aren't critical but warrant IC-discussion at "
+                    "the next monthly review. Common: covenant "
+                    "headroom < 15%, quarterly EBITDA miss, "
+                    "physician productivity below underwriting."
+                ),
+            },
         )
         + ck_kpi_block(
             "Info", f"{n_info}",
             sub="stage advance / new note",
+            help={
+                "definition": (
+                    "Informational signals — stage advances on "
+                    "pipeline deals, new partner notes, new audit "
+                    "log entries. Useful for context but rarely "
+                    "actionable on their own. Filter these out when "
+                    "scanning for risk."
+                ),
+            },
         )
         + '</div>'
     )
@@ -407,12 +463,45 @@ def render_alerts(
                 f'<ul class="ck-alerts-list">{rows}</ul>'
                 '</section>'
             )
+        # JS hydrator — reads rcm_deal_<deal_id>_questions for each
+        # alert row and shows a warning-tone open-Qs chip when the
+        # deal has unasked questions. Same shape as the row chip on
+        # the recently-viewed rail (Phase V).
+        q_chip_js = """
+<script>
+(function(){
+  function paint(){
+    document.querySelectorAll("[data-rcm-alert-q-deal]").forEach(function(el){
+      var deal=el.getAttribute("data-rcm-alert-q-deal");
+      var n=0;
+      try{
+        var raw=localStorage.getItem("rcm_deal_"+deal+"_questions");
+        if(raw){var rows=JSON.parse(raw);
+          if(Array.isArray(rows)){
+            n=rows.filter(function(r){return r&&!r.asked;}).length;
+          }}
+      }catch(e){n=0;}
+      if(n>0){el.textContent=n+" open "+(n===1?"q":"qs");el.hidden=false;}
+      else{el.hidden=true;}
+    });
+  }
+  document.addEventListener("DOMContentLoaded",paint);
+}());
+</script>
+"""
         body = (
             _ALERTS_CSS
             + title_html
             + kpi_html
             + filter_row
             + "".join(blocks)
+            + q_chip_js
+            + ck_next_section(
+                "Open the portfolio for context",
+                "/portfolio",
+                eyebrow="Continue —",
+                italic_word="portfolio",
+            )
         )
 
     return chartis_shell(

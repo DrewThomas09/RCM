@@ -150,7 +150,7 @@ _CLIENT_JS = r"""
 def render_data_refresh_page(db_path: str) -> str:
     from ._chartis_kit import (
         chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-        ck_provenance_tooltip,
+        ck_next_section, ck_provenance_tooltip,
     )
     from . import _web_components as _wc
 
@@ -234,17 +234,47 @@ def render_data_refresh_page(db_path: str) -> str:
     )
     kpi_strip = (
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;">'
-        + ck_kpi_block("Sources Tracked", sources_value, "in pipeline")
-        + ck_kpi_block("Refresh Cadence", "1/hr/source", "rate-limited")
+        + ck_kpi_block(
+            "Sources Tracked", sources_value, "in pipeline",
+            help={
+                "definition": (
+                    "Public-data sources the platform pulls from — "
+                    "CMS HCRIS, CMS Care Compare, IRS 990, ACO REACH, "
+                    "FQHC UDS. Each ships with its own freshness "
+                    "threshold (HCRIS quarterly, Care Compare "
+                    "monthly, 990 annual) + a refresh handler."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Refresh Cadence", "1/hr/source", "rate-limited",
+            help={
+                "definition": (
+                    "Per-source rate limit on refresh triggers. "
+                    "Prevents accidental hammering of CMS endpoints "
+                    "(which would 429 the partner) and gives the "
+                    "background job time to finish. Refreshes are "
+                    "queued + run async; trigger one, walk away, "
+                    "the status chip below updates when it lands."
+                ),
+            },
+        )
         + '</div>'
     )
 
+    next_up = ck_next_section(
+        "Open the data catalog",
+        "/data",
+        eyebrow="Continue —",
+        italic_word="catalog",
+    )
     body = (
         _wc.web_styles()
         + _wc.responsive_container(ck_eyebrow("Data Refresh") + kpi_strip + header + sources_card)
         + _wc.sortable_table_js()
         + _wc.spinner_js()
         + f'<script>{_CLIENT_JS}</script>'
+        + next_up
     )
     return chartis_shell(body, "Data refresh",
                          active_nav="/data/refresh",

@@ -25,6 +25,10 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
+from ._chartis_kit import (
+    ck_kpi_block, ck_panel, ck_section_intro, ck_signal_badge,
+)
+
 # Editorial port (2026-04-27): dropped imports for .colors / .loading /
 # .nav / .responsive / .theme — chartis_shell() now provides all the
 # editorial chrome + responsive layout + theme cascade. The .global_search
@@ -297,101 +301,92 @@ def _hero_strip(summary: Dict[str, Any]) -> str:
 
     health_text = (f"{health:.0f}" if health is not None
                    else "—")
-    health_color = (
-        _GREEN if (health or 0) >= 75
-        else _AMBER if (health or 0) >= 60
-        else _RED)
+    health_tone = (
+        "positive" if (health or 0) >= 75
+        else "warning" if (health or 0) >= 60
+        else "negative")
+    health_badge = ck_signal_badge(health_text, tone=health_tone)
 
-    def _kpi(label: str, value: str, color: str = _TEXT,
-             sub: str = "") -> str:
-        return (
-            f'<div style="flex:1;min-width:180px;padding:'
-            f'18px 22px;border-right:1px solid {_BORDER};">'
-            f'<div style="font-size:11px;text-transform:'
-            f'uppercase;letter-spacing:0.06em;color:'
-            f'{_TEXT_DIM};margin-bottom:8px;">'
-            f'{_esc(label)}</div>'
-            f'<div style="font-size:30px;font-weight:600;'
-            f'color:{color};font-variant-numeric:tabular-nums;">'
-            f'{_esc(value)}</div>'
-            + (f'<div style="font-size:11px;color:'
-               f'{_TEXT_DIM};margin-top:6px;">{_esc(sub)}'
-               f'</div>' if sub else "")
-            + "</div>"
-        )
-
-    return (
-        f'<section style="background:{_BG_SURFACE};border:1px '
-        f'solid {_BORDER};border-radius:10px;margin-bottom:'
-        f'24px;overflow:hidden;">'
-        f'<div style="display:flex;flex-wrap:wrap;border-bottom:'
-        f'1px solid {_BORDER};">'
-        + _kpi("Active deals",
-               f"{n_active}",
-               sub=f"of {n_deals} total")
-        + _kpi("Total NPR", _fmt_money(npr))
-        + _kpi("Current EBITDA", _fmt_money(ebitda))
-        + _kpi("Health score", health_text,
-               color=health_color, sub="weighted by NPR")
-        + '</div>'
-        f'<div style="padding:18px 22px;color:{_TEXT};'
-        f'font-size:14px;line-height:1.5;">'
-        f'{_esc(narrative)}</div></section>'
+    intro = ck_section_intro(
+        eyebrow="MORNING VIEW",
+        headline="Where the portfolio stands today.",
+        italic_word="today",
+        body=narrative,
     )
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Active deals", f"{n_active}",
+            sub=f"of {n_deals} total",
+        )
+        + ck_kpi_block(
+            "Total NPR", _fmt_money(npr),
+            help={
+                "definition": (
+                    "Net Patient Revenue — billed services minus "
+                    "contractual allowances, bad debt, and charity "
+                    "care. The cash-realisable top line."
+                ),
+                "citation": "HFMA Glossary",
+            },
+        )
+        + ck_kpi_block(
+            "Current EBITDA", _fmt_money(ebitda),
+            help={
+                "definition": (
+                    "Earnings before interest, taxes, depreciation, "
+                    "and amortization. The operating cash-flow proxy "
+                    "PE partners price deals against."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Health score", health_badge,
+            sub="weighted by NPR",
+            help={
+                "definition": (
+                    "Composite 0–100 score per deal combining "
+                    "covenant headroom, EBITDA variance vs plan, "
+                    "denial-rate drift, and management bench depth. "
+                    "Weighted by Net Patient Revenue at the "
+                    "portfolio level."
+                ),
+                "citation": "rcm_mc/deals/health_score.py",
+            },
+        )
+        + '</div>'
+    )
+    return f'{intro}{kpis}'
 
 
 def _section_header(label: str, prose: str) -> str:
-    return (
-        f'<header style="margin:32px 0 12px 0;">'
-        f'<h2 style="font-size:13px;text-transform:uppercase;'
-        f'letter-spacing:0.10em;color:{_TEXT_DIM};margin:'
-        f'0 0 6px 0;">{_esc(label)}</h2>'
-        f'<p style="font-size:14px;color:{_TEXT};margin:0;'
-        f'max-width:720px;line-height:1.5;">{_esc(prose)}</p>'
-        f'</header>')
+    """No-op kept for back-compat; sections now ride ck_panel."""
+    return ""
 
 
 def _opportunities_section(
     opps: List[Dict[str, Any]],
 ) -> str:
     if not opps:
-        return (
-            _section_header(
-                "Top opportunities",
-                "No realized EBITDA uplift opportunities yet — "
-                "build analysis packets to populate this list.")
-            + f'<div style="background:{_BG_ELEVATED};border:'
-            f'1px solid {_BORDER};border-radius:8px;padding:'
-            f'24px;color:{_TEXT_DIM};text-align:center;'
-            f'font-size:13px;">No opportunities to rank.</div>'
+        return ck_panel(
+            '<p class="ck-section-body">'
+            'No realized EBITDA uplift opportunities yet — '
+            'build analysis packets to populate this list.</p>',
+            title="Top opportunities",
         )
 
     total_uplift = sum(o["uplift"] for o in opps)
     rows = []
     for i, opp in enumerate(opps, 1):
         deal_link = (
-            f'<a href="/deal/{_esc(opp["deal_id"])}" '
-            f'style="color:{_ACCENT};text-decoration:none;'
-            f'font-weight:500;">{_esc(opp["deal_id"])}</a>')
+            f'<a href="/deal/{_esc(opp["deal_id"])}" class="ck-link"><strong>{_esc(opp["deal_id"])}</strong></a>')
         rows.append(
-            f'<tr style="border-bottom:1px solid {_BORDER};">'
-            f'<td style="padding:12px 16px;color:{_TEXT_DIM};'
-            f'font-variant-numeric:tabular-nums;width:30px;">'
-            f'{i}.</td>'
-            f'<td style="padding:12px 16px;">{deal_link}</td>'
-            f'<td style="padding:12px 16px;text-align:right;'
-            f'color:{_GREEN};font-weight:500;'
-            f'font-variant-numeric:tabular-nums;">'
-            f'+{_fmt_money(opp["uplift"])}</td>'
-            f'<td style="padding:12px 16px;text-align:right;'
-            f'color:{_TEXT_DIM};font-variant-numeric:'
-            f'tabular-nums;">'
-            f'{_fmt_pct(opp["uplift_pct"])}</td>'
-            f'<td style="padding:12px 16px;text-align:right;'
-            f'color:{_TEXT_DIM};font-variant-numeric:'
-            f'tabular-nums;font-size:12px;">'
-            f'{_fmt_money(opp["current_ebitda"])} → '
-            f'{_fmt_money(opp["target_ebitda"])}</td>'
+            f'<tr>'
+            f'<td class="num">{i}.</td>'
+            f'<td>{deal_link}</td>'
+            f'<td class="num cad-pos"><strong>+{_fmt_money(opp["uplift"])}</strong></td>'
+            f'<td class="num">{_fmt_pct(opp["uplift_pct"])}</td>'
+            f'<td class="num">{_fmt_money(opp["current_ebitda"])} → {_fmt_money(opp["target_ebitda"])}</td>'
             f'</tr>')
     prose = (
         f"Ranked by realistic EBITDA uplift across the active "
@@ -399,34 +394,17 @@ def _opportunities_section(
         f"{_fmt_money(total_uplift)} in additional EBITDA if "
         f"value-creation plans land — start with the biggest "
         f"and work down.")
-    return (
-        _section_header("Top opportunities", prose)
-        + f'<div style="background:{_BG_SURFACE};border:'
-        f'1px solid {_BORDER};border-radius:8px;overflow:'
-        f'hidden;">'
-        + '<table style="width:100%;border-collapse:collapse;">'
-        + '<thead><tr style="background:'
-        + _BG_ELEVATED + ';">'
-        + ('<th style="padding:10px 16px;text-align:left;'
-           f'font-size:11px;text-transform:uppercase;'
-           f'letter-spacing:0.05em;color:{_TEXT_DIM};">#</th>'
-           '<th style="padding:10px 16px;text-align:left;'
-           f'font-size:11px;text-transform:uppercase;'
-           f'letter-spacing:0.05em;color:{_TEXT_DIM};">Deal</th>'
-           '<th style="padding:10px 16px;text-align:right;'
-           f'font-size:11px;text-transform:uppercase;'
-           f'letter-spacing:0.05em;color:{_TEXT_DIM};">'
-           'EBITDA Uplift</th>'
-           '<th style="padding:10px 16px;text-align:right;'
-           f'font-size:11px;text-transform:uppercase;'
-           f'letter-spacing:0.05em;color:{_TEXT_DIM};">'
-           'vs. Current</th>'
-           '<th style="padding:10px 16px;text-align:right;'
-           f'font-size:11px;text-transform:uppercase;'
-           f'letter-spacing:0.05em;color:{_TEXT_DIM};">'
-           'Bridge</th>')
-        + '</tr></thead>'
-        + f'<tbody>{"".join(rows)}</tbody></table></div>'
+    return ck_panel(
+        f'<p class="ck-section-body">{prose}</p>'
+        '<table class="cad-table">'
+        '<thead><tr>'
+        '<th>#</th><th>Deal</th>'
+        '<th class="num">EBITDA Uplift</th>'
+        '<th class="num">vs. Current</th>'
+        '<th class="num">Bridge</th>'
+        '</tr></thead>'
+        f'<tbody>{"".join(rows)}</tbody></table>',
+        title="Top opportunities",
     )
 
 
@@ -434,61 +412,44 @@ def _alerts_section(
     alerts: List[Dict[str, Any]],
 ) -> str:
     if not alerts:
-        return (
-            _section_header(
-                "Key alerts",
-                "Nothing demanding your decision today — the "
-                "portfolio is quiet.")
-            + f'<div style="background:{_BG_ELEVATED};border:'
-            f'1px solid {_BORDER};border-radius:8px;padding:'
-            f'24px;color:{_GREEN};text-align:center;font-size:'
-            f'14px;">All clear.</div>'
+        return ck_panel(
+            '<p class="ck-section-body cad-pos">All clear.</p>',
+            title="Key alerts",
         )
     n_critical = sum(1 for a in alerts
                      if str(a.get("severity")
                             ).lower()
                      in ("critical", "high"))
-    sev_color = {
-        "critical": _RED, "high": _RED,
-        "medium": _AMBER, "warning": _AMBER,
-        "low": _TEXT_DIM, "info": _TEXT_DIM,
+    sev_tone_map = {
+        "critical": "negative", "high": "negative",
+        "medium": "warning", "warning": "warning",
+        "low": "neutral", "info": "neutral",
     }
     rows = []
     for a in alerts:
         sev = str(a.get("severity") or "info").lower()
-        color = sev_color.get(sev, _TEXT_DIM)
+        badge = ck_signal_badge(sev, tone=sev_tone_map.get(sev, "neutral"))
         rows.append(
-            f'<div style="padding:14px 18px;border-bottom:'
-            f'1px solid {_BORDER};display:flex;align-items:'
-            f'center;gap:14px;">'
-            f'<span style="display:inline-block;width:8px;'
-            f'height:8px;border-radius:50%;background:'
-            f'{color};flex-shrink:0;"></span>'
-            f'<div style="flex:1;">'
-            f'<div style="color:{_TEXT};font-size:13px;">'
-            f'{_esc(a.get("message", ""))}</div>'
-            f'<div style="color:{_TEXT_DIM};font-size:11px;'
-            f'margin-top:3px;">'
+            '<div class="dv-alert-row">'
+            '<div class="dv-alert-body">'
+            f'<div class="dv-alert-msg">{_esc(a.get("message", ""))}</div>'
+            '<div class="ck-eyebrow">'
             f'{_esc(a.get("kind", ""))} · '
-            f'<a href="/deal/{_esc(a.get("deal_id", ""))}"'
-            f' style="color:{_ACCENT};">{_esc(a.get("deal_id", ""))}</a>'
-            f'</div></div>'
-            f'<span style="font-size:11px;color:{color};'
-            f'text-transform:uppercase;letter-spacing:0.05em;'
-            f'font-weight:600;">{_esc(sev)}</span></div>'
+            f'<a href="/deal/{_esc(a.get("deal_id", ""))}" class="ck-link">{_esc(a.get("deal_id", ""))}</a>'
+            '</div></div>'
+            f'<span>{badge}</span></div>'
         )
     prose = (
         f"{len(alerts)} active alert"
         f"{'s' if len(alerts) != 1 else ''}"
         + (f", {n_critical} requiring partner attention"
            if n_critical else "")
-        + ". Triage starts with red dots; amber items can wait "
+        + ". Triage starts with red badges; amber items can wait "
           "until the weekly review.")
-    return (
-        _section_header("Key alerts", prose)
-        + f'<div style="background:{_BG_SURFACE};border:'
-        f'1px solid {_BORDER};border-radius:8px;overflow:'
-        f'hidden;">{"".join(rows)}</div>'
+    return ck_panel(
+        f'<p class="ck-section-body">{prose}</p>'
+        f'{"".join(rows)}',
+        title="Key alerts",
     )
 
 
@@ -496,40 +457,612 @@ def _activity_section(
     activity: List[Dict[str, Any]],
 ) -> str:
     if not activity:
-        return (
-            _section_header(
-                "Recent activity",
-                "No changes in the last week — the portfolio "
-                "data is steady.")
-            + f'<div style="background:{_BG_ELEVATED};border:'
-            f'1px solid {_BORDER};border-radius:8px;padding:'
-            f'24px;color:{_TEXT_DIM};text-align:center;'
-            f'font-size:13px;">No recent activity.</div>'
+        return ck_panel(
+            '<p class="ck-section-body">'
+            'No changes in the last week — the portfolio data is steady.</p>',
+            title="Recent activity",
         )
     rows = []
     for a in activity:
         deal_id = a.get("deal_id", "")
         rows.append(
-            f'<div style="padding:12px 18px;border-bottom:'
-            f'1px solid {_BORDER};display:flex;align-items:'
-            f'baseline;gap:14px;">'
-            f'<a href="/deal/{_esc(deal_id)}" '
-            f'style="color:{_ACCENT};text-decoration:none;'
-            f'font-weight:500;font-size:13px;">{_esc(deal_id)}'
-            f'</a>'
-            f'<div style="flex:1;color:{_TEXT};font-size:13px;">'
-            f'{_esc(a.get("label", ""))}</div></div>')
+            '<div class="dv-activity-row">'
+            f'<a href="/deal/{_esc(deal_id)}" class="ck-link"><strong>{_esc(deal_id)}</strong></a>'
+            f'<div class="dv-activity-label">{_esc(a.get("label", ""))}</div></div>')
     prose = (
         f"{len(activity)} item"
         f"{'s' if len(activity) != 1 else ''} from the last "
         f"week. Clicking through shows what changed and "
         f"who owns it.")
-    return (
-        _section_header("Recent activity", prose)
-        + f'<div style="background:{_BG_SURFACE};border:'
-        f'1px solid {_BORDER};border-radius:8px;overflow:'
-        f'hidden;">{"".join(rows)}</div>'
+    return ck_panel(
+        f'<p class="ck-section-body">{prose}</p>'
+        f'{"".join(rows)}',
+        title="Recent activity",
     )
+
+
+def _load_recent_packets(
+    store: Any, *, limit: int = 6, lookback_days: int = 14,
+) -> List[Dict[str, Any]]:
+    """Most-recently-built analysis packets across the portfolio.
+
+    Pulls from analysis_runs — the same table that powers the
+    Phase B-era recent-activity panel — but returns enough row
+    detail (deal_id, scenario_id, created_at) for the editorial
+    rail to render serif headlines + italic relative timestamps.
+
+    Dedupes on deal_id so a deal with multiple recent rebuilds
+    shows up once with its most-recent timestamp.
+    """
+    try:
+        from ..analysis.analysis_store import list_packets
+        rows = list_packets(store) or []
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("recent packets list failed: %s", exc)
+        return []
+    seen = set()
+    out: List[Dict[str, Any]] = []
+    for r in rows:
+        did = r.get("deal_id") or "—"
+        if did in seen:
+            continue
+        ts = r.get("created_at") or r.get("as_of")
+        days = _days_since(ts)
+        if days is None or days > lookback_days:
+            continue
+        seen.add(did)
+        out.append({
+            "id": r.get("id"),
+            "deal_id": did,
+            "scenario_id": r.get("scenario_id") or "base",
+            "created_at": ts,
+            "days": days,
+        })
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _recent_packets_rail(packets: List[Dict[str, Any]]) -> str:
+    """Editorial 'Built this fortnight' rail of recent analysis packets.
+
+    Server-pulled (unlike the Phase E recently-viewed deals rail
+    which is JS-hydrated from localStorage). One tile per recent
+    deal_id, dedup'd to the most-recent packet build per deal.
+    Each tile is a serif arrow-link to /analysis/<deal_id> with
+    JetBrains-Mono caps scenario eyebrow + italic relative
+    timestamp.
+
+    Stays hidden when no packets were built in the last 14 days
+    so a fresh install never shows an empty rail.
+    """
+    if not packets:
+        return ""
+    tiles = []
+    for p in packets:
+        did = _esc(p["deal_id"])
+        scn = _esc((p["scenario_id"] or "base").upper())
+        days = p.get("days", 0)
+        rel = ("today" if days <= 0
+               else "yesterday" if days == 1
+               else f"{days} d ago")
+        tiles.append(
+            '<a class="dv-rp-tile" '
+            f'href="/analysis/{did}">'
+            f'<div class="dv-rp-scn">{scn}</div>'
+            f'<div class="dv-rp-name">{did}</div>'
+            f'<div class="dv-rp-ts">{rel}</div>'
+            '</a>'
+        )
+    return (
+        '<style>'
+        '.dv-rp{margin:18px 0 0;padding:18px 0;'
+        'border-top:1px solid var(--sc-rule,#d8d3c8);}'
+        '.dv-rp-head{display:flex;align-items:baseline;'
+        'justify-content:space-between;gap:14px;margin-bottom:12px;}'
+        '.dv-rp-eyebrow{font-family:"Inter Tight",sans-serif;'
+        'font-size:10px;font-weight:700;letter-spacing:1.4px;'
+        'text-transform:uppercase;color:var(--sc-text-faint,#6e7787);}'
+        '.dv-rp-meta{font-family:"Source Serif 4",serif;'
+        'font-style:italic;font-size:12px;'
+        'color:var(--sc-text-faint,#6e7787);}'
+        '.dv-rp-grid{display:grid;'
+        'grid-template-columns:repeat(auto-fill,minmax(220px,1fr));'
+        'gap:12px;}'
+        '.dv-rp-tile{display:block;padding:14px 16px;'
+        'background:var(--sc-bone,#f5f1ea);'
+        'border:1px solid var(--sc-rule,#d8d3c8);border-radius:3px;'
+        'text-decoration:none;color:inherit;'
+        'transition:transform 140ms ease, border-color 140ms ease, '
+        'box-shadow 140ms ease;}'
+        '.dv-rp-tile:hover{transform:translateY(-1px);'
+        'border-color:var(--sc-teal,#155752);'
+        'box-shadow:0 4px 14px rgba(11,35,65,0.06);}'
+        '.dv-rp-scn{font-family:"JetBrains Mono",monospace;'
+        'font-size:9px;letter-spacing:1.3px;text-transform:uppercase;'
+        'color:var(--sc-teal-ink,#0e3e3a);margin-bottom:6px;}'
+        '.dv-rp-name{font-family:"Source Serif 4",serif;font-size:15px;'
+        'font-weight:500;color:var(--sc-navy,#0b2341);'
+        'line-height:1.25;}'
+        '.dv-rp-ts{font-family:"Source Serif 4",serif;font-style:italic;'
+        'font-size:11px;color:var(--sc-text-faint,#6e7787);'
+        'margin-top:6px;}'
+        '@media print{.dv-rp{display:none !important;}}'
+        '</style>'
+        '<section class="dv-rp">'
+        '<div class="dv-rp-head">'
+        '<span class="dv-rp-eyebrow">Built this fortnight</span>'
+        f'<span class="dv-rp-meta">{len(packets)} analysis '
+        f'packet{"s" if len(packets) != 1 else ""} · '
+        'click for the workbench</span>'
+        '</div>'
+        f'<div class="dv-rp-grid">{"".join(tiles)}</div>'
+        '</section>'
+    )
+
+
+def _compare_rail() -> str:
+    """Editorial 'Side-by-side' compare rail.
+
+    Reads the top two slugs out of ``localStorage["rcm_recent_deals"]``
+    and, when both have a stored ``dataset`` field in their per-deal
+    profiles (``rcm_deal_<slug>``), composes a direct link to
+    ``/diligence/compare?left=…&right=…``. Falls back to the picker
+    when datasets are missing. Stays hidden until at least two
+    deals have been opened.
+
+    The composition reads as a serif headline + an editorial
+    "vs" between two deal names + an arrow-link CTA — a single
+    line of running prose, not a tile grid. Partners reading the
+    dashboard naturally pick up the cue.
+    """
+    return """
+<style>
+.dv-compare {
+  display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+  margin: 18px 0 0; padding: 16px 20px;
+  background: var(--sc-bone, #f5f1ea);
+  border: 1px solid var(--sc-rule, #d8d3c8);
+  border-left: 3px solid var(--sc-teal, #155752);
+  border-radius: 3px;
+  font-family: "Source Serif 4", serif;
+}
+.dv-compare[hidden] { display: none !important; }
+.dv-compare-eyebrow {
+  font-family: "Inter Tight", sans-serif;
+  font-size: 10px; font-weight: 700; letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--sc-text-faint, #6e7787);
+  flex-shrink: 0;
+}
+.dv-compare-prose {
+  font-size: 14px; line-height: 1.55;
+  color: var(--sc-text-dim, #37495e); flex: 1;
+}
+.dv-compare-name {
+  font-weight: 500; color: var(--sc-navy, #0b2341);
+  font-style: italic;
+}
+.dv-compare-vs {
+  display: inline-block; margin: 0 8px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px; letter-spacing: 0.16em;
+  color: var(--sc-text-faint, #6e7787);
+  text-transform: uppercase; vertical-align: 1px;
+}
+.dv-compare-cta {
+  font-family: "Source Serif 4", serif;
+  font-size: 14px; font-weight: 400;
+  color: var(--sc-teal-ink, #0e3e3a);
+  text-decoration: none; white-space: nowrap;
+  border-bottom: 1px solid transparent;
+  transition: border-color 120ms ease;
+}
+.dv-compare-cta:hover {
+  border-bottom-color: var(--sc-teal-ink, #0e3e3a);
+}
+@media print { .dv-compare { display: none !important; } }
+</style>
+<aside class="dv-compare" data-rcm-compare-rail hidden
+       role="complementary" aria-label="Compare recent deals">
+  <span class="dv-compare-eyebrow">Side-by-side</span>
+  <span class="dv-compare-prose"
+        data-rcm-compare-prose>—</span>
+  <a class="dv-compare-cta" data-rcm-compare-cta href="/diligence/compare">
+    Open the comparison <span aria-hidden="true">→</span>
+  </a>
+</aside>
+<script>
+(function() {
+  function esc(s) {
+    var d = document.createElement("div");
+    d.textContent = String(s || "");
+    return d.innerHTML;
+  }
+  function loadRecent() {
+    try {
+      var raw = localStorage.getItem("rcm_recent_deals");
+      var rows = raw ? JSON.parse(raw) : [];
+      return Array.isArray(rows) ? rows : [];
+    } catch (e) { return []; }
+  }
+  function datasetFor(slug) {
+    try {
+      var raw = localStorage.getItem("rcm_deal_" + slug);
+      if (!raw) return "";
+      var p = JSON.parse(raw);
+      return (p && p.dataset) ? p.dataset : "";
+    } catch (e) { return ""; }
+  }
+  document.addEventListener("DOMContentLoaded", function() {
+    var rail = document.querySelector("[data-rcm-compare-rail]");
+    if (!rail) return;
+    var rows = loadRecent().filter(function(r) {
+      return r && r.slug;
+    });
+    if (rows.length < 2) { rail.hidden = true; return; }
+    var a = rows[0], b = rows[1];
+    var prose = rail.querySelector("[data-rcm-compare-prose]");
+    if (prose) {
+      prose.innerHTML =
+        'You opened ' +
+        '<span class="dv-compare-name">' + esc(a.name || a.slug) +
+        '</span>' +
+        '<span class="dv-compare-vs">vs</span>' +
+        '<span class="dv-compare-name">' + esc(b.name || b.slug) +
+        '</span> recently. ' +
+        'Run them through the editorial diff.';
+    }
+    var cta = rail.querySelector("[data-rcm-compare-cta]");
+    if (cta) {
+      var dsA = datasetFor(a.slug);
+      var dsB = datasetFor(b.slug);
+      if (dsA && dsB) {
+        cta.href = "/diligence/compare?left=" +
+          encodeURIComponent(dsA) + "&right=" +
+          encodeURIComponent(dsB);
+      }
+    }
+    rail.hidden = false;
+  });
+}());
+</script>
+"""
+
+
+def _pinned_tools_rail() -> str:
+    """Editorial 'Pinned tools' rail — partner-curated favorites.
+
+    Reads ``rcm_pinned_tools`` from localStorage (an array of
+    ``{href, label, phase}`` rows that the deal-profile pin button
+    writes). Renders nothing on first load — JS populates the rail
+    on DOMContentLoaded. Stays hidden until at least one tool is
+    pinned, so the section never feels half-empty.
+
+    Each tile is a serif arrow-link with a JetBrains-Mono phase
+    eyebrow ("WORKSPACE", "DILIGENCE", "RISK", etc.) so partners
+    see the lifecycle context next to the analytic label.
+    """
+    return """
+<style>
+.dv-pinned{margin:18px 0 0;padding:18px 0;
+border-top:1px solid var(--sc-rule,#d8d3c8);}
+.dv-pinned[hidden]{display:none !important;}
+.dv-pinned-head{display:flex;align-items:baseline;
+justify-content:space-between;gap:14px;margin-bottom:12px;}
+.dv-pinned-eyebrow{font-family:"Inter Tight",sans-serif;
+font-size:10px;font-weight:700;letter-spacing:1.4px;
+text-transform:uppercase;color:var(--sc-text-faint,#6e7787);}
+.dv-pinned-meta{font-family:"Source Serif 4",serif;font-style:italic;
+font-size:12px;color:var(--sc-text-faint,#6e7787);}
+.dv-pinned-grid{display:grid;
+grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+.dv-pinned-tile{display:block;padding:14px 16px;
+background:var(--sc-bone,#f5f1ea);
+border:1px solid var(--sc-rule,#d8d3c8);border-radius:3px;
+text-decoration:none;color:inherit;
+transition:transform 140ms ease, border-color 140ms ease,
+box-shadow 140ms ease;}
+.dv-pinned-tile:hover{transform:translateY(-1px);
+border-color:var(--sc-teal,#155752);
+box-shadow:0 4px 14px rgba(11,35,65,0.06);}
+.dv-pinned-phase{font-family:"JetBrains Mono",monospace;
+font-size:9px;letter-spacing:1.3px;text-transform:uppercase;
+color:var(--sc-teal-ink,#0e3e3a);margin-bottom:6px;}
+.dv-pinned-label{font-family:"Source Serif 4",serif;font-size:15px;
+font-weight:500;color:var(--sc-navy,#0b2341);line-height:1.25;}
+.dv-pinned-label::after{content:" →";
+color:var(--sc-text-faint,#6e7787);
+transition:color 120ms ease;}
+.dv-pinned-tile:hover .dv-pinned-label::after{
+color:var(--sc-teal-ink,#0e3e3a);}
+@media print{.dv-pinned{display:none !important;}}
+</style>
+<section class="dv-pinned" data-rcm-pinned-rail hidden>
+  <div class="dv-pinned-head">
+    <span class="dv-pinned-eyebrow">Pinned tools</span>
+    <span class="dv-pinned-meta" data-rcm-pinned-meta>—</span>
+  </div>
+  <div class="dv-pinned-grid" data-rcm-pinned-grid></div>
+</section>
+<script>
+(function(){
+  function esc(s){var d=document.createElement("div");
+    d.textContent=String(s||"");return d.innerHTML;}
+  function paint(){
+    var rail=document.querySelector("[data-rcm-pinned-rail]");
+    if(!rail)return;
+    var grid=rail.querySelector("[data-rcm-pinned-grid]");
+    var meta=rail.querySelector("[data-rcm-pinned-meta]");
+    var rows=[];try{rows=JSON.parse(localStorage.getItem("rcm_pinned_tools")||"[]");}
+    catch(e){rows=[];}
+    rows=(Array.isArray(rows)?rows:[]).filter(function(r){return r&&r.href&&r.label;});
+    if(rows.length===0){rail.hidden=true;return;}
+    grid.innerHTML=rows.map(function(r){
+      var phase=esc(r.phase||"DILIGENCE");
+      return '<a class="dv-pinned-tile" href="'+esc(r.href)+'">'+
+        '<div class="dv-pinned-phase">'+phase+'</div>'+
+        '<div class="dv-pinned-label">'+esc(r.label)+'</div></a>';
+    }).join("");
+    if(meta){meta.textContent=rows.length+(rows.length===1?" tool":" tools")+
+      " · pin or unpin from any deal profile";}
+    rail.hidden=false;
+  }
+  document.addEventListener("DOMContentLoaded",paint);
+}());
+</script>
+"""
+
+
+def _recently_viewed_rail() -> str:
+    """Editorial 'Recently viewed' deals rail.
+
+    Reads ``rcm_recent_deals`` from localStorage (a JSON array of
+    ``{slug, name, ts}`` rows the deal-profile JS pushes whenever a
+    partner opens a deal). Renders nothing on first load — JS
+    populates the rail from storage on DOMContentLoaded so partners
+    returning to /app see their last 5 deals as serif arrow-links.
+
+    The deal_profile_page already keeps ``rcm_deal_<slug>`` entries
+    per deal; this rail layers a small index on top so the partner
+    has one-click re-entry to whatever they were last working on
+    without searching the pipeline.
+    """
+    return """
+<style>
+.dv-recent{margin:24px 0 8px;padding:18px 0;
+border-top:1px solid var(--sc-rule,#d8d3c8);}
+.dv-recent[hidden]{display:none !important;}
+.dv-recent-head{display:flex;align-items:baseline;
+justify-content:space-between;gap:14px;margin-bottom:12px;}
+.dv-recent-eyebrow{font-family:"Inter Tight",sans-serif;
+font-size:10px;font-weight:700;letter-spacing:1.4px;
+text-transform:uppercase;color:var(--sc-text-faint,#6e7787);}
+.dv-recent-clear{font-family:"Source Serif 4",serif;
+font-style:italic;font-size:12px;
+color:var(--sc-text-faint,#6e7787);background:none;
+border:0;cursor:pointer;padding:0;
+text-decoration:underline;text-decoration-color:transparent;
+transition:text-decoration-color 120ms ease;}
+.dv-recent-clear:hover{text-decoration-color:var(--sc-text-faint,#6e7787);}
+.dv-recent-grid{display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}
+.dv-recent-tile{display:block;padding:14px 16px;
+background:var(--sc-bone,#f5f1ea);
+border:1px solid var(--sc-rule,#d8d3c8);border-radius:3px;
+text-decoration:none;color:inherit;
+transition:transform 140ms ease, border-color 140ms ease,
+box-shadow 140ms ease;}
+.dv-recent-tile:hover{transform:translateY(-1px);
+border-color:var(--sc-teal,#155752);
+box-shadow:0 4px 14px rgba(11,35,65,0.06);}
+.dv-recent-slug{font-family:"JetBrains Mono",monospace;
+font-size:10px;letter-spacing:1.2px;text-transform:uppercase;
+color:var(--sc-text-faint,#6e7787);margin-bottom:4px;}
+.dv-recent-name{font-family:"Source Serif 4",serif;font-size:16px;
+font-weight:500;color:var(--sc-navy,#0b2341);line-height:1.25;
+margin-bottom:6px;}
+.dv-recent-ts{font-family:"Source Serif 4",serif;font-style:italic;
+font-size:11px;color:var(--sc-text-faint,#6e7787);}
+.dv-recent-foot{display:flex;align-items:baseline;
+justify-content:space-between;gap:8px;margin-top:6px;}
+.dv-recent-q{font-family:"Inter Tight",sans-serif;font-size:9px;
+font-weight:700;letter-spacing:0.14em;text-transform:uppercase;
+color:var(--sc-text-faint,#6e7787);
+border:1px solid currentColor;border-radius:2px;
+padding:1px 6px;}
+.dv-recent-q.is-open{color:var(--sc-warning,#b8732a);}
+.dv-recent-q[hidden]{display:none !important;}
+@media print{.dv-recent{display:none !important;}}
+</style>
+<section class="dv-recent" data-rcm-recent-rail hidden>
+  <div class="dv-recent-head">
+    <span class="dv-recent-eyebrow">Recently viewed</span>
+    <button type="button" class="dv-recent-clear"
+            data-rcm-recent-clear>Clear list</button>
+  </div>
+  <div class="dv-recent-grid" data-rcm-recent-grid></div>
+</section>
+<script>
+(function(){
+  var STORE="rcm_recent_deals";
+  function fmtRel(ts){
+    if(!ts)return"";
+    var d=Math.round((Date.now()-ts)/60000);
+    if(d<1)return"just now";
+    if(d<60)return d+" min ago";
+    if(d<1440)return Math.round(d/60)+" hr ago";
+    return Math.round(d/1440)+" d ago";
+  }
+  function esc(s){var d=document.createElement("div");
+    d.textContent=String(s||"");return d.innerHTML;}
+  function paint(){
+    var rail=document.querySelector("[data-rcm-recent-rail]");
+    if(!rail)return;
+    var grid=rail.querySelector("[data-rcm-recent-grid]");
+    var rows=[];try{rows=JSON.parse(localStorage.getItem(STORE)||"[]");}
+    catch(e){rows=[];}
+    if(!Array.isArray(rows)||rows.length===0){rail.hidden=true;return;}
+    rows=rows.filter(function(r){return r&&r.slug;}).slice(0,5);
+    function openQuestions(slug){
+      try{
+        var raw=localStorage.getItem("rcm_deal_"+slug+"_questions");
+        if(!raw)return 0;
+        var qs=JSON.parse(raw);
+        if(!Array.isArray(qs))return 0;
+        return qs.filter(function(q){return q&&!q.asked;}).length;
+      }catch(e){return 0;}
+    }
+    grid.innerHTML=rows.map(function(r){
+      var qOpen=openQuestions(r.slug);
+      var qChip=qOpen>0
+        ?'<span class="dv-recent-q is-open">'+qOpen+' open '+
+          (qOpen===1?'q':'qs')+'</span>'
+        :'';
+      return '<a class="dv-recent-tile" href="/diligence/deal/'+
+        encodeURIComponent(r.slug)+'">'+
+        '<div class="dv-recent-slug">'+esc(r.slug)+'</div>'+
+        '<div class="dv-recent-name">'+esc(r.name||r.slug)+'</div>'+
+        '<div class="dv-recent-foot">'+
+        '<span class="dv-recent-ts">'+fmtRel(r.ts)+'</span>'+
+        qChip+
+        '</div></a>';
+    }).join("");
+    rail.hidden=false;
+  }
+  document.addEventListener("DOMContentLoaded",paint);
+  document.addEventListener("click",function(e){
+    var btn=e.target.closest&&e.target.closest("[data-rcm-recent-clear]");
+    if(!btn)return;
+    if(confirm("Clear recently-viewed deals list?")){
+      localStorage.removeItem(STORE);paint();}
+  });
+}());
+</script>
+"""
+
+
+def _keyboard_hint_footer() -> str:
+    """Small editorial footer on /app surfacing the keyboard shortcuts
+    and tour entry points. Three monospace `kbd` chips with a serif
+    legend — discoverable without being interruptive. Hidden in print.
+    """
+    return """
+<style>
+.dv-kb-hint{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;
+margin:32px 0 12px;padding:14px 18px;
+border-top:1px solid var(--sc-rule,#d8d3c8);
+font-family:"Source Serif 4",serif;font-size:13px;
+color:var(--sc-text-faint,#6e7787);}
+.dv-kb-hint-eyebrow{font-family:"Inter Tight",sans-serif;font-size:10px;
+font-weight:700;letter-spacing:1.4px;text-transform:uppercase;
+color:var(--sc-text-faint,#6e7787);}
+.dv-kb-hint-row{display:inline-flex;align-items:baseline;gap:6px;}
+.dv-kb-hint kbd{display:inline-flex;align-items:center;justify-content:center;
+min-width:20px;padding:1px 6px;
+background:var(--sc-bone,#f5f1ea);
+border:1px solid var(--sc-rule,#d8d3c8);border-radius:3px;
+font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:600;
+color:var(--sc-text,#1a2332);line-height:1.4;}
+.dv-kb-hint em{font-style:italic;color:var(--sc-teal-ink,#0e3e3a);}
+@media print{.dv-kb-hint{display:none !important;}}
+</style>
+<div class="dv-kb-hint">
+<span class="dv-kb-hint-eyebrow">Keyboard</span>
+<span class="dv-kb-hint-row">
+Press <kbd>&#8984;</kbd><kbd>K</kbd> for the command palette.
+</span>
+<span class="dv-kb-hint-row">
+<kbd>?</kbd> for all shortcuts.
+</span>
+<span class="dv-kb-hint-row">
+<kbd>T</kbd> to open <em>The Atlas</em>.
+</span>
+<span class="dv-kb-hint-row">
+<kbd>Shift</kbd><kbd>Q</kbd> to jot a diligence question.
+</span>
+</div>
+"""
+
+
+def _tour_banner_styles() -> str:
+    """Scoped styles for the first-time tour banner.
+
+    Sits at the top of /app for new partners. Editorial parchment
+    surface with teal accent rule on the left; eyebrow + prose +
+    serif arrow-link CTA; small dismiss ×. Never modal, never
+    interruptive — just a quiet invitation.
+    """
+    return """
+<style>
+.dv-tour-banner{display:flex;align-items:center;gap:18px;
+padding:14px 20px;margin-bottom:18px;
+background:var(--sc-bone,#f5f1ea);
+border:1px solid var(--sc-rule,#d8d3c8);
+border-left:3px solid var(--sc-teal,#155752);
+border-radius:3px;position:relative;}
+.dv-tour-banner[hidden]{display:none !important;}
+.dv-tour-banner-eyebrow{font-family:"Inter Tight",sans-serif;
+font-size:10px;font-weight:700;letter-spacing:1.6px;
+text-transform:uppercase;color:var(--sc-teal-ink,#0e3e3a);
+flex-shrink:0;}
+.dv-tour-banner-body{flex:1;display:flex;align-items:baseline;
+gap:18px;flex-wrap:wrap;}
+.dv-tour-banner-prose{font-family:"Source Serif 4",serif;
+font-size:14px;line-height:1.55;color:var(--sc-text-dim,#37495e);}
+.dv-tour-banner-prose em{font-style:italic;
+color:var(--sc-teal-ink,#0e3e3a);}
+.dv-tour-banner-cta{font-family:"Source Serif 4",serif;
+font-size:15px;font-weight:400;
+color:var(--sc-teal-ink,#0e3e3a);text-decoration:none;
+border-bottom:1px solid transparent;
+transition:border-color 120ms ease;white-space:nowrap;}
+.dv-tour-banner-cta:hover{border-bottom-color:var(--sc-teal-ink,#0e3e3a);}
+.dv-tour-banner-close{background:none;border:0;cursor:pointer;
+padding:4px 8px;font-size:20px;line-height:1;
+color:var(--sc-text-faint,#6e7787);
+transition:color 120ms ease;}
+.dv-tour-banner-close:hover{color:var(--sc-text,#1a2332);}
+@media (max-width:640px){.dv-tour-banner{flex-direction:column;
+align-items:flex-start;}.dv-tour-banner-close{position:absolute;
+top:8px;right:8px;}}
+@media print{.dv-tour-banner{display:none !important;}}
+</style>
+"""
+
+
+def _start_here_styles() -> str:
+    """Scoped styles for the empty-portfolio 'Start here' panel.
+
+    Three editorial cards in a grid: each a parchment-toned tile
+    with an eyebrow + serif title + body description. Hover lifts
+    the tile and brightens the border to flag it as clickable.
+    """
+    return """
+<style>
+.dv-start-here{margin-top:16px;}
+.dv-start-grid{display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:14px;margin-top:16px;}
+.dv-start-tile{display:block;padding:18px 20px;
+background:var(--sc-bone,#f5f1ea);
+border:1px solid var(--sc-rule,#d8d3c8);border-radius:3px;
+text-decoration:none;color:inherit;
+transition:transform 140ms ease, border-color 140ms ease,
+box-shadow 140ms ease;}
+.dv-start-tile:hover{transform:translateY(-2px);
+border-color:var(--sc-teal,#155752);
+box-shadow:0 6px 18px rgba(11,35,65,0.08);}
+.dv-start-eyebrow{font-family:"Inter Tight",sans-serif;font-size:10px;
+font-weight:700;letter-spacing:1.4px;text-transform:uppercase;
+color:var(--sc-teal-ink,#0e3e3a);margin-bottom:8px;}
+.dv-start-title{font-family:"Source Serif 4",serif;
+font-size:22px;font-weight:400;line-height:1.15;letter-spacing:-0.01em;
+color:var(--sc-navy,#0b2341);margin-bottom:8px;}
+.dv-start-sub{font-family:"Source Serif 4",serif;font-size:13.5px;
+line-height:1.55;color:var(--sc-text-dim,#37495e);}
+</style>
+"""
 
 
 # ── Main render ─────────────────────────────────────────────
@@ -550,35 +1083,142 @@ def render_dashboard_v3(store: Any) -> str:
     opportunities = _load_top_opportunities(store)
     alerts = _load_alerts(store)
     activity = _load_recent_activity(store)
+    recent_packets = _load_recent_packets(store)
+
+    dv_styles = """
+<style>
+.dv-container{max-width:1100px;margin:0 auto;padding:1.5rem 1rem;}
+.dv-toplinks{display:flex;gap:14px;font-size:12px;align-items:center;
+justify-content:flex-end;margin-bottom:1.5rem;}
+.dv-alert-row{display:flex;align-items:center;gap:14px;
+padding:14px 0;border-bottom:1px solid var(--cad-border);}
+.dv-alert-body{flex:1;}
+.dv-alert-msg{font-size:13px;}
+.dv-activity-row{display:flex;align-items:baseline;gap:14px;
+padding:12px 0;border-bottom:1px solid var(--cad-border);}
+.dv-activity-label{flex:1;font-size:13px;}
+</style>
+"""
+    # "Start here" panel — first-load orientation when the portfolio
+    # is empty. Gives a fresh partner three concrete next steps
+    # (import a deal, screen hospitals, take the tour) instead of an
+    # ambiguous "0 deals" hero strip with no direction.
+    start_here = ""
+    if summary.get("n_deals", 0) == 0:
+        start_here = (
+            '<section class="ck-panel dv-start-here">'
+            '<div class="ck-panel-head">'
+            '<div class="ck-panel-title">Start here</div>'
+            '</div>'
+            '<div class="ck-panel-body">'
+            '<p class="ck-section-body">'
+            'A fresh portfolio. Three ways to get the platform '
+            'working with your <em>actual</em> deal pipeline:'
+            '</p>'
+            '<div class="dv-start-grid">'
+            '<a href="/import" class="dv-start-tile">'
+            '<div class="dv-start-eyebrow">1 · Import</div>'
+            '<div class="dv-start-title">Add a deal</div>'
+            '<div class="dv-start-sub">'
+            'Upload a CSV or paste a JSON profile. Required '
+            'fields: name, NPR, EBITDA, specialty, state.'
+            '</div></a>'
+            '<a href="/screen" class="dv-start-tile">'
+            '<div class="dv-start-eyebrow">2 · Screen</div>'
+            '<div class="dv-start-title">Find hospitals</div>'
+            '<div class="dv-start-sub">'
+            'Filter the HCRIS universe by sub-sector, size, '
+            'and margin band. Add candidates to the watchlist.'
+            '</div></a>'
+            '<a href="/?tour=1" class="dv-start-tile">'
+            '<div class="dv-start-eyebrow">3 · Tutorial</div>'
+            '<div class="dv-start-title">Take the tour</div>'
+            '<div class="dv-start-sub">'
+            'Seven volumes covering pipeline, diligence, risk, '
+            'monte carlo, portfolio, delivery, and settings.'
+            '</div></a>'
+            '</div>'
+            '</div></section>'
+        )
+
+    # First-time tour banner. Renders for portfolios that already
+    # have deals (the empty-state "Start here" panel handles the
+    # zero-deal case) and is hidden by default. Inline JS toggles
+    # visibility on DOMContentLoaded if localStorage shows no prior
+    # tour interaction — first-time partners see a soft editorial
+    # nudge at the top of /app without it interrupting returning
+    # partners. Dismissal writes to localStorage so it never replays.
+    tour_banner = ""
+    if summary.get("n_deals", 0) > 0:
+        tour_banner = (
+            '<aside class="dv-tour-banner" data-ck-tour-firstcheck '
+            'hidden role="complementary">'
+            '<div class="dv-tour-banner-eyebrow">New here?</div>'
+            '<div class="dv-tour-banner-body">'
+            '<span class="dv-tour-banner-prose">'
+            'Take a two-minute walkthrough of every surface on '
+            'the platform — pipeline, diligence, risk, monte '
+            'carlo, portfolio, delivery. <em>The Atlas</em>, '
+            'seven volumes.'
+            '</span>'
+            '<a class="dv-tour-banner-cta" href="/?tour=1">'
+            'Begin the tour <span aria-hidden="true">→</span>'
+            '</a>'
+            '</div>'
+            '<button type="button" class="dv-tour-banner-close" '
+            'data-ck-tour-banner-dismiss '
+            'aria-label="Dismiss tour banner">&times;</button>'
+            '</aside>'
+            '<script>'
+            '(function(){var b=document.querySelector('
+            '"[data-ck-tour-firstcheck]");if(!b)return;try{'
+            'var raw=localStorage.getItem("rcm_tour_v1");'
+            'if(!raw){b.hidden=false;}else{var s=JSON.parse(raw);'
+            'if(!s||(!s.completed||s.completed.length===0)&&'
+            '!s.skipped&&!s.banner_dismissed){b.hidden=false;}}'
+            '}catch(e){b.hidden=false;}'
+            'document.addEventListener("click",function(e){'
+            'if(e.target.closest&&e.target.closest('
+            '"[data-ck-tour-banner-dismiss]")){b.hidden=true;'
+            'try{var raw=localStorage.getItem("rcm_tour_v1");'
+            'var s=raw?JSON.parse(raw):{version:1,completed:[],'
+            'lastViewed:0,skipped:false};s.banner_dismissed=true;'
+            'localStorage.setItem("rcm_tour_v1",JSON.stringify(s));'
+            '}catch(e){}}});}());'
+            '</script>'
+        )
 
     page_body = (
-        f'<div class="rs-container" '
-        f'style="max-width:1100px;margin:0 auto;padding:1.5rem 1rem;">'
-        f'<div style="display:flex;justify-content:'
-        f'space-between;align-items:baseline;'
-        f'margin-bottom:.5rem;">'
-        f'<h1 style="font-size:1.5rem;color:{_TEXT};margin:0;'
-        f'font-family:\'Source Serif 4\',Georgia,serif;font-weight:400;">'
-        f'Morning view</h1>'
-        f'<div style="display:flex;gap:14px;font-size:12px;'
-        f'align-items:center;">'
-        f'<a href="/data/catalog?ui=v3" style="color:{_ACCENT};">'
-        f'Data →</a>'
-        f'<a href="/models/quality?ui=v3" style="color:{_ACCENT};">'
-        f'Models →</a>'
-        f'</div></div>'
-        f'<p style="color:{_TEXT_DIM};font-size:13px;'
-        f'margin:0 0 1.5rem 0;">Today\'s read on the '
-        f'portfolio — what\'s working, what needs your '
-        f'attention, what changed.</p>'
+        dv_styles
+        + _start_here_styles()
+        + _tour_banner_styles()
+        + '<div class="dv-container">'
+        + '<div class="dv-toplinks">'
+        + '<a href="/day-one" class="ck-link">Today\'s brief →</a>'
+        + '<a href="/data/catalog?ui=v3" class="ck-link">Data →</a>'
+        + '<a href="/models/quality?ui=v3" class="ck-link">Models →</a>'
+        + '</div>'
+        + tour_banner
         + _hero_strip(summary)
+        + start_here
+        + _pinned_tools_rail()
+        + _compare_rail()
         + _opportunities_section(opportunities)
         + _alerts_section(alerts)
+        + _recent_packets_rail(recent_packets)
         + _activity_section(activity)
+        + _recently_viewed_rail()
+        + _keyboard_hint_footer()
         + '</div>'
     )
 
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import chartis_shell, ck_next_section
+    page_body = page_body + ck_next_section(
+        "Open the Monday brief",
+        "/day-one",
+        eyebrow="Continue —",
+        italic_word="Monday",
+    )
     return chartis_shell(
         page_body,
         title="Portfolio · Morning view",

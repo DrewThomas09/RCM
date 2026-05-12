@@ -347,7 +347,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
     from . import _web_components as _wc
     from ._chartis_kit import (
         chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-        ck_provenance_tooltip,
+        ck_next_section, ck_provenance_tooltip,
     )
 
     deals = _gather_per_deal(db_path)
@@ -561,10 +561,17 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         )
     )
 
+    next_up = ck_next_section(
+        "Open the LP update",
+        "/lp-update",
+        eyebrow="Continue —",
+        italic_word="LP",
+    )
     body = (
         _wc.web_styles()
         + _wc.responsive_container(inner)
         + _wc.sortable_table_js()
+        + next_up
     )
     return chartis_shell(body, "Portfolio risk scan",
                          active_nav="/portfolio/risk-scan",

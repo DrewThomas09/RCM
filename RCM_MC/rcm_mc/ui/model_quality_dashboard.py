@@ -27,7 +27,8 @@ from typing import Any, Dict, List
 
 from ..ml.model_quality import ModelBacktestResult
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+    chartis_shell, ck_fmt_num, ck_kpi_block, ck_next_section,
+    ck_provenance_tooltip,
 )
 from ._ui_kit import fmt_num
 from .colors import STATUS
@@ -263,6 +264,12 @@ def render_model_quality_dashboard(
         + kpi_html
         + table_html
         + '</section>'
+        + ck_next_section(
+            "Open the feature importance view",
+            "/models/importance",
+            eyebrow="Continue —",
+            italic_word="feature",
+        )
     )
 
     return chartis_shell(

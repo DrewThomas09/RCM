@@ -24,7 +24,7 @@ from ..diligence.counterfactual import (
 from ..diligence._pages import AVAILABLE_FIXTURES, _resolve_dataset
 from ._chartis_kit import (
     P, chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_page_title, ck_provenance_tooltip,
+    ck_next_section, ck_page_title, ck_provenance_tooltip,
 )
 from .power_ui import diff_badge
 
@@ -48,8 +48,31 @@ def _landing_compare() -> str:
     )
     kpi_strip = (
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:8px;margin:14px 0;">'
-        + ck_kpi_block("Fixtures Available", fixtures_value, "for comparison")
-        + ck_kpi_block("Comparison Dims", "4", "KPIs / QoR / CF / bridge")
+        + ck_kpi_block(
+            "Fixtures Available", fixtures_value, "for comparison",
+            help={
+                "definition": (
+                    "Pre-built deal-fixture datasets bundled with the "
+                    "platform — each one is a complete CCD (canonical "
+                    "claims dataset) ready to feed the diligence "
+                    "engines. Use these to dry-run comparisons before "
+                    "wiring a real target."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Comparison Dims", "4", "KPIs / QoR / CF / bridge",
+            help={
+                "definition": (
+                    "Four orthogonal lenses each deal is read on: "
+                    "RCM KPIs (denial, DAR, NPR), QoR (quality-of-"
+                    "revenue), CF (cash flow timing), and value-"
+                    "creation bridge. Two deals diverging across all "
+                    "four are genuinely different bets; deals "
+                    "diverging on only one are usually fixable."
+                ),
+            },
+        )
         + '</div>'
     )
 
@@ -389,8 +412,14 @@ def _render_comparison(
         eyebrow="RCM DILIGENCE",
         meta=f"{left['name']} vs {right['name']} · side-by-side",
     )
+    next_up = ck_next_section(
+        "Take this comparison into the IC packet",
+        "/diligence/ic-packet",
+        eyebrow="Continue —",
+        italic_word="IC",
+    )
     return chartis_shell(
-        title_html + hero + table_html + grid,
+        title_html + hero + table_html + grid + next_up,
         f"Compare — {left['name']} vs {right['name']}",
         active_nav="/diligence/compare",
         subtitle="Side-by-side",

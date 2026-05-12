@@ -1826,6 +1826,14 @@ class RCMHandler(BaseHTTPRequestHandler):
     # Inject config via class attribute (set by build_server)
     config: ServerConfig = ServerConfig()
 
+    # Hide the stdlib BaseHTTP/Python version from the Server header.
+    # Default value would emit ``BaseHTTP/0.6 Python/3.14.2`` — a hint
+    # an attacker can use to map known CVEs to the exact runtime. The
+    # override-pair below replaces the auto-built string with a stable
+    # ``RCM-MC`` token plus suppresses the sys-version suffix.
+    server_version = "RCM-MC"
+    sys_version = ""
+
     # Silence default noisy access-log output; users can tail server output
     # if they need it. The CLI banner already tells them the server is up.
     # B162: concise access log to stderr. Default BaseHTTPRequestHandler
@@ -2680,7 +2688,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             # the editorial-era / handler swallows the request before
             # _route_dashboard's v2/v3 dispatch ever runs.
             _qs_root = urllib.parse.parse_qs(parsed.query)
-            if _qs_root.get("v3") or _qs_root.get("v2"):
+            if (_qs_root.get("v3") or _qs_root.get("v2")
+                    or _qs_root.get("legacy")):
                 return self._route_dashboard()
             # Phase 13 of the UI v2 editorial rework: when
             # CHARTIS_UI_V2=1, the public marketing landing renders at
@@ -3912,6 +3921,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path.startswith("/hospital/") and path.endswith("/history"):
             ccn = path.replace("/hospital/", "").replace("/history", "").strip("/")
             return self._route_hospital_history(ccn)
+        if path.startswith("/hospital/") and path.endswith("/providers"):
+            ccn = path.replace("/hospital/", "").replace("/providers", "").strip("/")
+            return self._route_hospital_providers(ccn)
         if path.startswith("/hospital/") and path.endswith("/start-diligence"):
             pass  # handled in POST
         elif path.startswith("/hospital/"):
@@ -4132,6 +4144,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             body_b = get_openapi_json().encode("utf-8")
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-Type", "application/json")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            # Spec is auth-gated and changes only on deploy. A short
+            # private TTL keeps partner-side Swagger UI snappy without
+            # letting intermediaries cache the API surface.
+            self.send_header("Cache-Control", "private, max-age=60")
             self.send_header("Content-Length", str(len(body_b)))
             self.end_headers()
             self.wfile.write(body_b)
@@ -4328,6 +4345,21 @@ class RCMHandler(BaseHTTPRequestHandler):
             rollup["request_count"] = RCMHandler._request_counter
             return self._send_json(rollup)
         if path == "/api/backup":
+            # Admin-only — the response streams the entire SQLite
+            # portfolio DB. An analyst-role user obtaining this
+            # gets every deal, audit row, snapshot, override, note
+            # and tag in one download.
+            from .auth.auth import list_users
+            _store = PortfolioStore(self.config.db_path)
+            current = self._current_user()
+            users_df = list_users(_store)
+            if len(users_df) > 0 and (
+                current is None or current.get("role") != "admin"
+            ):
+                return self._send_json(
+                    {"error": "admin only", "code": "FORBIDDEN"},
+                    status=HTTPStatus.FORBIDDEN,
+                )
             import io as _io
             import tempfile as _tmpf
             store = PortfolioStore(self.config.db_path)
@@ -4396,10 +4428,17 @@ class RCMHandler(BaseHTTPRequestHandler):
             })
         # Custom metrics API.
         if path == "/api/metrics/custom":
+            import dataclasses as _dc
             from .domain.custom_metrics import list_custom_metrics
             store = PortfolioStore(self.config.db_path)
             metrics = list_custom_metrics(store)
-            return self._send_json({"metrics": metrics})
+            # CustomMetric is a dataclass; _send_json's _safe walker
+            # doesn't reach into dataclass instances, so an
+            # un-converted list raises "Object not JSON serializable"
+            # the moment any custom KPI is registered.
+            return self._send_json({
+                "metrics": [_dc.asdict(m) for m in metrics],
+            })
         if path == "/api/webhooks/test":
             store = PortfolioStore(self.config.db_path)
             from .infra.webhooks import dispatch_event as _test_dispatch
@@ -4451,8 +4490,121 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "Claude-backed memos, Q&A, chat — not yet configured. "
                 "Click to connect via ANTHROPIC_API_KEY."
             )
+            # Editorial onboarding checklist — "your platform
+            # journey". JS-hydrated from localStorage so partners see
+            # which milestones they've crossed.
+            from .ui._chartis_kit import ck_progress_checklist
+            checklist = ck_progress_checklist([
+                {
+                    "id": "j1",
+                    "title": "Open your first deal profile",
+                    "body": (
+                        "Pick a slug (e.g. 'aurora') and enter "
+                        "your deal parameters once — every "
+                        "downstream tool then pre-fills."
+                    ),
+                    "check": "recent_deals",
+                },
+                {
+                    "id": "j2",
+                    "title": "Start The Atlas — the editorial tour",
+                    "body": (
+                        "Seven volumes covering every surface. Begins "
+                        "with Volume I — The Pipeline. Press "
+                        "T anywhere on the platform."
+                    ),
+                    "check": "tour_started",
+                },
+                {
+                    "id": "j3",
+                    "title": "Run your first analytic",
+                    "body": (
+                        "Click any card from a deal profile. The "
+                        "tool opens with your deal context pre-"
+                        "filled — no re-typing."
+                    ),
+                    "check": "any_tool_visited",
+                },
+                {
+                    "id": "j4",
+                    "title": "Open an IC memo or packet",
+                    "body": (
+                        "Auto-assembled from the analysis packet — "
+                        "thesis, base case, bear case, exit path, "
+                        "and the questions partners expect."
+                    ),
+                    "check": "ic_memo_visited",
+                },
+                {
+                    "id": "j5",
+                    "title": "Complete the full tour",
+                    "body": (
+                        "All seven volumes — and you've seen every "
+                        "surface a partner needs."
+                    ),
+                    "check": "tour_completed",
+                },
+            ])
+            checklist_section = (
+                '<section style="margin-bottom:24px;">'
+                '<div class="ck-eyebrow" '
+                'style="margin-bottom:8px;">Your platform journey</div>'
+                '<h2 style="font-family:\'Source Serif 4\',serif;'
+                'font-weight:400;font-size:24px;line-height:1.2;'
+                'letter-spacing:-0.012em;color:var(--sc-navy,#0b2341);'
+                'margin:0 0 12px;">'
+                'Five milestones, one editorial <em '
+                'style="font-style:italic;color:var(--sc-teal-ink,#0e3e3a);">'
+                'arc</em>.</h2>'
+                + checklist
+                + '</section>'
+            )
+
             body = (
+                checklist_section +
                 '<div class="cad-kpi-grid">'
+                '<a href="/day-one" class="cad-card" '
+                'style="text-decoration:none;color:inherit;">'
+                '<h3>Day One · Monday brief</h3>'
+                f'<div class="cad-muted">A curated five-volume '
+                'morning ritual — alerts, portfolio health, where '
+                'you left off, this week\'s pipeline, your journey. '
+                'Live editorial composition, not another dashboard.'
+                '</div></a>'
+                '<a href="/diligence/questions" class="cad-card" '
+                'style="text-decoration:none;color:inherit;">'
+                '<h3>Diligence questions · portfolio ledger</h3>'
+                f'<div class="cad-muted">Every question across '
+                'every deal you\'ve opened. Filter by category and '
+                'status; copy as Markdown or CSV for hand-off to '
+                'sellers and IC binders.</div></a>'
+                '<a href="/?tour=1" class="cad-card" '
+                'data-ck-tour-settings-tile '
+                'style="text-decoration:none;color:inherit;">'
+                '<h3>Platform Tutorial '
+                '<span class="cad-badge cad-badge-muted" '
+                'data-ck-tour-progress '
+                'style="margin-left:8px;font-size:9px;'
+                'letter-spacing:1.2px;">NOT STARTED</span></h3>'
+                f'<div class="cad-muted">Seven volumes covering '
+                'pipeline, diligence, risk, monte carlo, portfolio, '
+                'delivery, and settings — a friendly editorial tour '
+                'of every surface.</div></a>'
+                '<script>'
+                '(function(){var el=document.querySelector('
+                '"[data-ck-tour-progress]");if(!el)return;try{'
+                'var raw=localStorage.getItem("rcm_tour_v1");'
+                'if(!raw)return;var s=JSON.parse(raw);'
+                'var done=(s&&s.completed)?s.completed.length:0;'
+                'var ROMAN=["","I","II","III","IV","V","VI","VII"];'
+                'if(done===0&&s&&s.skipped){'
+                'el.textContent="SKIPPED · RESTART";return;}'
+                'if(done===0)return;'
+                'if(done>=7){el.textContent="COMPLETE ✓";'
+                'el.className="cad-badge cad-badge-green";return;}'
+                'el.textContent="VOL "+ROMAN[done]+" OF VII";'
+                '}catch(e){}}());'
+                '</script>'
                 '<a href="/settings/ai" class="cad-card" '
                 'style="text-decoration:none;color:inherit;">'
                 f'<h3>AI Assistant (Claude){_ai_badge}</h3>'
@@ -4493,8 +4645,20 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path in ("/health", "/healthz"):
             return self._send_text("ok")
         if path == "/api/migrations":
+            # Admin-only — schema migration names leak DB internals
+            # an analyst-role user has no operational need to see.
+            from .auth.auth import list_users
             from .infra.migrations import list_applied, _MIGRATIONS
             store = PortfolioStore(self.config.db_path)
+            current = self._current_user()
+            users_df = list_users(store)
+            if len(users_df) > 0 and (
+                current is None or current.get("role") != "admin"
+            ):
+                return self._send_json(
+                    {"error": "admin only", "code": "FORBIDDEN"},
+                    status=HTTPStatus.FORBIDDEN,
+                )
             applied = list_applied(store)
             total = len(_MIGRATIONS)
             return self._send_json({
@@ -5306,6 +5470,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                     {"error": "provide at least 2 deal IDs via ?ids=a,b"},
                     status=HTTPStatus.BAD_REQUEST,
                 )
+            store = PortfolioStore(self.config.db_path)
             from .analysis.analysis_store import get_or_build_packet
             comparisons = []
             for did in deal_ids:
@@ -5652,6 +5817,20 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_portfolio_overview()
         if path == "/portfolio/monitor":
             return self._route_portfolio_monitor()
+        if path == "/day-one":
+            from .ui.day_one_page import render_day_one
+            from .portfolio.store import PortfolioStore as _PS
+            store = _PS(self.config.db_path)
+            return self._send_html(render_day_one(store))
+        if path == "/diligence/questions":
+            from .ui.questions_aggregator_page import (
+                render_questions_aggregator,
+            )
+            qs_qaq = urllib.parse.parse_qs(
+                urllib.parse.urlparse(self.path).query)
+            preview = bool(qs_qaq.get("print"))
+            return self._send_html(render_questions_aggregator(
+                print_preview=preview))
         if path.startswith("/models/dcf/"):
             deal_id = urllib.parse.unquote(path[len("/models/dcf/"):]).strip("/")
             return self._route_model_dcf(deal_id)
@@ -5695,7 +5874,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         if match.empty:
             return self._send_html(
                 '<h1>Hospital Not Found</h1>'
-                f'<p>CCN {html.escape(ccn)} not found in HCRIS data.</p>')
+                f'<p>CCN {html.escape(ccn)} not found in HCRIS data.</p>',
+                status=HTTPStatus.NOT_FOUND,
+            )
         hospital = match.iloc[0].to_dict()
         score = compute_caduceus_score(hospital)
         state = hospital.get("state", "")
@@ -6285,14 +6466,25 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._error_page("Scenario Error", f"CCN {ccn}: {str(exc)[:200]}")
 
     def _route_ic_memo(self, ccn: str) -> None:
-        """GET /ic-memo/{ccn} — one-click IC memo generation."""
+        """GET /ic-memo/{ccn} — one-click IC memo generation.
+
+        Honours ``?print=1`` by rendering the print-preview shell —
+        partners see the LP-facing deliverable before they hit Cmd+P.
+        """
         ccn = self._sanitize_ccn(ccn)
         try:
+            qs = urllib.parse.parse_qs(
+                urllib.parse.urlparse(self.path).query)
+            preview = bool(qs.get("print"))
             from .data.hcris import _get_latest_per_ccn
             from .ui.ic_memo_page import render_ic_memo
             from .ui.regression_page import _add_computed_features
             hcris = _add_computed_features(_get_latest_per_ccn())
-            return self._send_html(render_ic_memo(ccn, hcris, db_path=self.config.db_path))
+            return self._send_html(render_ic_memo(
+                ccn, hcris,
+                db_path=self.config.db_path,
+                print_preview=preview,
+            ))
         except Exception as exc:
             return self._error_page("IC Memo Error", f"CCN {ccn}: {str(exc)[:200]}")
 
@@ -8064,6 +8256,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         payload = _json.dumps(report.to_dict(), default=str).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        # Partner-data exposure report — never cache.
+        self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(payload)))
         self.end_headers()
         self.wfile.write(payload)
@@ -8354,7 +8549,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             inp = WorkbenchInput(
                 target_name=(qs.get("target_name") or ["Unnamed Target"])[0],
             )
-        self._send_html(render_risk_workbench(inp))
+        print_preview = (qs.get("print") or [""])[0] == "1"
+        self._send_html(render_risk_workbench(inp, print_preview=print_preview))
 
     # ── Bankruptcy-Survivor Scan ─────────────────────────────────────
 
@@ -8510,22 +8706,25 @@ class RCMHandler(BaseHTTPRequestHandler):
         # ordinary browsing. Morning-standup use case opts in.
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         live_mode = bool(qs.get("live"))
-        # v3 morning view: story-driven layout (hero strip + top
-        # opportunities + alerts + recent activity). Opt-in via
-        # ?v3=1 or RCM_MC_DASHBOARD=v3.
-        use_v3 = (bool(qs.get("v3"))
-                  or os.environ.get(
-                      "RCM_MC_DASHBOARD", "").lower() == "v3")
-        if use_v3:
+        # v3 morning view (editorial Chartis layout: hero strip + top
+        # opportunities + alerts + recent activity) is the default for
+        # `/`. The legacy dashboard_page renderer remains reachable via
+        # `?legacy=1` (or RCM_MC_DASHBOARD=legacy) for partners who
+        # rely on its specific layout; v2 still opts in via `?v2=1`.
+        use_legacy = (bool(qs.get("legacy"))
+                      or os.environ.get(
+                          "RCM_MC_DASHBOARD", "").lower() == "legacy")
+        if not use_legacy and not qs.get("v2"):
             from .ui.dashboard_v3 import render_dashboard_v3
             store = PortfolioStore(self.config.db_path)
             return self._send_html(render_dashboard_v3(store))
         # Prompt 31 v2 dashboard: serve the modern dark-theme morning
         # view when the user explicitly requests it OR when the
-        # portfolio has analysis packets (the v2 layout is useless
-        # without deals, so legacy stays the default for fresh installs).
+        # portfolio has analysis packets. Skip the packet auto-detect
+        # when use_legacy is set — `?legacy=1` should reach the legacy
+        # render, not get bounced into v2.
         use_v2 = bool(qs.get("v2"))
-        if not use_v2:
+        if not use_v2 and not use_legacy:
             try:
                 from .analysis.analysis_store import list_packets
                 store = PortfolioStore(self.config.db_path)
@@ -8702,6 +8901,12 @@ class RCMHandler(BaseHTTPRequestHandler):
                     ascending=(sort_dir == "asc"),
                     na_position="last",
                 )
+            # Redact internal-state columns that leak host topology.
+            # ``run_dir`` is the absolute filesystem path to the deal's
+            # PE-artifacts directory — operator-internal, not partner-
+            # visible. Drop here so other consumers of latest_per_deal
+            # (dashboard, /portfolio) still see it.
+            df = df.drop(columns=["run_dir"], errors="ignore")
             total = len(df)
             page = df.iloc[offset:offset + limit]
             return self._send_json({
@@ -10958,6 +11163,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         body = _json.dumps(payload, indent=2, default=_safe).encode("utf-8")
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        # Mirror the nosniff header in _send_json — every JSON response
+        # path needs the same MIME-confusion guard.
+        self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-cache")
         self.send_header("ETag", etag)
@@ -11006,6 +11214,8 @@ class RCMHandler(BaseHTTPRequestHandler):
         }).encode("utf-8")
         self.send_response(HTTPStatus.TOO_MANY_REQUESTS)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Retry-After", str(retry))
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -11112,6 +11322,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         body = _json.dumps(payload, indent=2, default=_safe).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        # Prevent browsers from MIME-sniffing JSON as HTML — closes the
+        # content-confusion attack vector when a partner-supplied value
+        # ends up reflected in a JSON payload.
+        self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Cache-Control", "no-store")
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
@@ -11344,8 +11558,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 and parts[3] == "profile"):
             import json as _json
             deal_id = urllib.parse.unquote(parts[2])
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 updates = _json.loads(raw.decode("utf-8") or "{}")
             except _json.JSONDecodeError:
@@ -11388,11 +11601,22 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_OPTIONS(self) -> None:
-        """CORS preflight handler."""
+        """CORS preflight handler.
+
+        Allow-Headers must mirror exactly what _send_json advertises
+        on real responses — partners' preflights ask for the same
+        header set the actual request will send. Including
+        Idempotency-Key here matches the POST surface in
+        _send_json (the server already accepts it; the OPTIONS
+        response was just lying about the contract).
+        """
         self.send_response(HTTPStatus.NO_CONTENT)
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token")
+        self.send_header(
+            "Access-Control-Allow-Headers",
+            "Content-Type, X-CSRF-Token, Idempotency-Key",
+        )
         self.send_header("Access-Control-Max-Age", "86400")
         self.end_headers()
 
@@ -11701,6 +11925,42 @@ class RCMHandler(BaseHTTPRequestHandler):
         return self._send_html(render_hospital_history(
             ccn, name, trend, state=state, peer_avg=peer_avg, projections=projections))
 
+    def _route_hospital_providers(self, ccn: str) -> None:
+        """GET /hospital/{ccn}/providers — NPPES provider directory.
+
+        Reads from the nppes_live_cache (rcm_mc.data_public.nppes_cache);
+        renders the empty/refresh state when the cache is cold so partner
+        sees the CLI command they need to run.
+
+        No inline NPPES API call — single-machine deployment + NPPES
+        rate-limiting both argue for fetch-and-cache via explicit
+        refresh, not per-render.
+        """
+        from .data_public.nppes_cache import ensure_table
+        from .ui.hospital_providers_page import render_hospital_providers
+
+        # Pull hospital name + state from HCRIS for the empty-state CLI cmd
+        hospital_name = ""
+        state = ""
+        try:
+            from .data.hcris import _get_latest_per_ccn
+            row = _get_latest_per_ccn(ccn)
+            if row is not None:
+                hospital_name = str(row.get("name", "")) or ""
+                state = str(row.get("state", "")) or ""
+        except Exception:
+            pass
+
+        store = self.store_for_request()
+        with store.connect() as con:
+            ensure_table(con)
+            html_out = render_hospital_providers(
+                con, ccn,
+                hospital_name=hospital_name,
+                state=state,
+            )
+        return self._send_html(html_out)
+
     def _route_start_diligence_from_hospital(self, ccn: str) -> None:
         """POST /hospital/{ccn}/start-diligence — create deal from HCRIS and redirect."""
         import json as _sdj
@@ -11813,11 +12073,27 @@ class RCMHandler(BaseHTTPRequestHandler):
     # Prompt 26: onboarding wizard route handlers ──────────────────────
 
     def _route_system_info(self) -> None:
-        """GET /api/system/info — version, DB stats, Python version."""
+        """GET /api/system/info — version, DB stats, Python version.
+
+        Admin-only because the response includes the exact Python
+        version (CVE-matching surface), the host platform string,
+        and the absolute db_path — operator-class information that
+        an analyst-role user shouldn't see.
+        """
         import platform as _plat
         from . import __version__
         from .analysis.packet import PACKET_SCHEMA_VERSION
+        from .auth.auth import list_users
         _store = PortfolioStore(self.config.db_path)
+        current = self._current_user()
+        users_df = list_users(_store)
+        if len(users_df) > 0 and (
+            current is None or current.get("role") != "admin"
+        ):
+            return self._send_json(
+                {"error": "admin only", "code": "FORBIDDEN"},
+                status=HTTPStatus.FORBIDDEN,
+            )
         db_size_bytes = 0
         table_count = 0
         deal_count = 0
@@ -11850,7 +12126,21 @@ class RCMHandler(BaseHTTPRequestHandler):
         })
 
     def _route_metrics(self) -> None:
-        """GET /api/metrics — request timing percentiles."""
+        """GET /api/metrics — request timing percentiles. Admin-only:
+        per-endpoint latency percentiles are operator data, useful
+        for capacity planning and SLO tracking but not partner-
+        facing."""
+        from .auth.auth import list_users
+        store = PortfolioStore(self.config.db_path)
+        current = self._current_user()
+        users_df = list_users(store)
+        if len(users_df) > 0 and (
+            current is None or current.get("role") != "admin"
+        ):
+            return self._send_json(
+                {"error": "admin only", "code": "FORBIDDEN"},
+                status=HTTPStatus.FORBIDDEN,
+            )
         rt = list(RCMHandler._response_times)
         n = len(rt)
         if n > 0:
@@ -12165,8 +12455,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         """
         import json as _json
         from .analysis.deal_overrides import set_override
-        n_bytes = int(self.headers.get("Content-Length") or 0)
-        raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+        raw = self._raw_post_body() or b"{}"
         try:
             payload = _json.loads(raw.decode("utf-8") or "{}")
         except _json.JSONDecodeError:
@@ -12452,6 +12741,13 @@ class RCMHandler(BaseHTTPRequestHandler):
                 f'<th>Avg health</th><th></th>'
                 f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
             )
+        from .ui._chartis_kit import ck_next_section
+        body = body + ck_next_section(
+            "Open the portfolio for context",
+            "/portfolio",
+            eyebrow="Continue —",
+            italic_word="portfolio",
+        )
         self._send_html(shell(
             body=body, title="Owners",
             subtitle="Deal assignments",
@@ -12696,6 +12992,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             '</style>'
         )
 
+        from .ui._chartis_kit import ck_next_section
+        next_up = ck_next_section(
+            "Open the portfolio for the full view",
+            "/portfolio",
+            eyebrow="Continue —",
+            italic_word="portfolio",
+        )
         body = (
             f"{title_html}"
             f"{kpi_html}"
@@ -12709,6 +13012,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             '</tr></thead>'
             f'<tbody>{"".join(rows)}</tbody>'
             '</table></div>'
+            f'{next_up}'
         )
 
         self._send_html(shell(
@@ -13616,22 +13920,43 @@ class RCMHandler(BaseHTTPRequestHandler):
         """
         store = PortfolioStore(self.config.db_path)
 
-        # Counts per table (only ones that exist)
+        # Counts per table — explicit literal queries (CLAUDE.md
+        # mandates "parameterised SQL only — never f-string values
+        # into SQL"; SQLite's bind protocol can't bind table names,
+        # so the only correct alternative is one literal query per
+        # table). Loop key + query are both literals, so no
+        # injection surface exists.
+        _STATS_QUERIES: tuple[tuple[str, str, str], ...] = (
+            ("deals",
+             "SELECT COUNT(*) c FROM deals",
+             "SELECT MAX(created_at) ts FROM deals"),
+            ("deal_snapshots",
+             "SELECT COUNT(*) c FROM deal_snapshots",
+             "SELECT MAX(created_at) ts FROM deal_snapshots"),
+            ("deal_notes",
+             "SELECT COUNT(*) c FROM deal_notes",
+             "SELECT MAX(created_at) ts FROM deal_notes"),
+            ("deal_tags",
+             "SELECT COUNT(*) c FROM deal_tags",
+             "SELECT MAX(created_at) ts FROM deal_tags"),
+            ("quarterly_actuals",
+             "SELECT COUNT(*) c FROM quarterly_actuals",
+             "SELECT MAX(created_at) ts FROM quarterly_actuals"),
+            ("initiative_actuals",
+             "SELECT COUNT(*) c FROM initiative_actuals",
+             "SELECT MAX(created_at) ts FROM initiative_actuals"),
+        )
         stats: Dict[str, Any] = {}
         table_last_write: Dict[str, Optional[str]] = {}
         with store.connect() as con:
-            for tbl in ("deals", "deal_snapshots", "deal_notes",
-                        "deal_tags", "quarterly_actuals",
-                        "initiative_actuals"):
+            for tbl, q_count, q_max in _STATS_QUERIES:
                 try:
-                    c = con.execute(f"SELECT COUNT(*) c FROM {tbl}").fetchone()
+                    c = con.execute(q_count).fetchone()
                     stats[tbl] = int(c["c"]) if c else 0
                 except Exception:  # noqa: BLE001
                     stats[tbl] = 0
                 try:
-                    r = con.execute(
-                        f"SELECT MAX(created_at) ts FROM {tbl}"
-                    ).fetchone()
+                    r = con.execute(q_max).fetchone()
                     table_last_write[tbl] = (r["ts"] if r else None)
                 except Exception:  # noqa: BLE001
                     table_last_write[tbl] = None
@@ -13698,7 +14023,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         <div class="card">
           <h2>Storage</h2>
           <p class="muted" style="font-size: 0.85rem;">
-            Portfolio SQLite at <code>{html.escape(self.config.db_path)}</code> · {auth_line}
+            Portfolio SQLite (size {html.escape(size_str)}) · {auth_line}
           </p>
           <table>
             <thead><tr><th>Table</th><th class="num">Rows</th>
@@ -14457,6 +14782,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             f"{empty_panel}"
             f"{hint_panel}"
             f"{page_css}"
+        )
+        from .ui._chartis_kit import ck_next_section
+        body = body + ck_next_section(
+            "Or open the command palette — ⌘K",
+            "/?v3=1",
+            eyebrow="Continue —",
+            italic_word="palette",
         )
         self._send_html(chartis_shell(
             body, "Search",
@@ -15525,11 +15857,17 @@ class RCMHandler(BaseHTTPRequestHandler):
         password = form.get("password", "")
         # B146 fix: validate next-URL is a local path so ?next=https://evil
         # can't turn a successful login into an open-redirect gadget.
+        # The backslash check guards a known browser quirk: IE/Edge (and
+        # some legacy proxies) treat ``/\evil.example.com`` as the
+        # protocol-relative ``//evil.example.com`` after auto-converting
+        # the backslash to a forward slash. Reject any backslash to close
+        # that vector.
         raw_nxt = form.get("next", "") or "/"
         nxt = raw_nxt if (
             raw_nxt.startswith("/")
             and not raw_nxt.startswith("//")
             and "://" not in raw_nxt
+            and "\\" not in raw_nxt
         ) else "/"
 
         # B130 + B147: rate limit check, guarded by shared lock
@@ -15540,12 +15878,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             log = self._login_fail_log.setdefault(client_ip, [])
             log[:] = [t for t in log if t > cutoff]
             over_limit = len(log) >= self._LOGIN_FAIL_MAX
-        if over_limit:
-            return self._send_json(
-                {"error": "too many failed login attempts; wait a minute",
-                 "code": "RATE_LIMITED"},
-                status=HTTPStatus.TOO_MANY_REQUESTS,
+            # Wait time = how long until the oldest in-window failure
+            # rolls out, restoring one quota slot. Compute under the
+            # lock so log[0] is stable.
+            oldest = log[0] if log else now
+            wait_secs = max(
+                1.0,
+                self._LOGIN_FAIL_WINDOW_SECS - (now - oldest),
             )
+        if over_limit:
+            return self._send_rate_limited(wait_secs)
 
         if not verify_password(store, username, password):
             with self._login_fail_lock:
@@ -15725,7 +16067,11 @@ class RCMHandler(BaseHTTPRequestHandler):
 
         Cached on first call — subsequent calls within the same request
         return the same dict so the CSRF middleware and route handlers
-        share one parse.
+        share one parse. Also caches the raw bytes in
+        ``self._raw_body_cache`` so handlers that JSON-parse the body
+        (e.g. /api/screener/run) don't double-read rfile after the
+        CSRF middleware drained it — the second read would hang for
+        Content-Length seconds since the bytes are already gone.
         """
         cached = getattr(self, "_form_cache", None)
         if cached is not None:
@@ -15733,11 +16079,34 @@ class RCMHandler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length") or 0)
         if length <= 0:
             self._form_cache = {}
+            self._raw_body_cache = b""
             return self._form_cache
-        raw = self.rfile.read(length).decode("utf-8", errors="replace")
+        raw_bytes = self.rfile.read(length)
+        self._raw_body_cache = raw_bytes
+        raw = raw_bytes.decode("utf-8", errors="replace")
         parsed = urllib.parse.parse_qs(raw, keep_blank_values=True)
         self._form_cache = {k: (v[0] if v else "") for k, v in parsed.items()}
         return self._form_cache
+
+    def _raw_post_body(self) -> bytes:
+        """Return the raw POST body bytes, caching across reads.
+
+        Handlers should use this instead of ``self.rfile.read(...)``
+        because the CSRF middleware in _do_post_inner drains rfile
+        for form-urlencoded bodies. A direct rfile.read AFTER the
+        middleware would block for Content-Length seconds waiting
+        for bytes that are already consumed. With the cache, the
+        second access returns the same bytes instantly.
+        """
+        cached = getattr(self, "_raw_body_cache", None)
+        if cached is not None:
+            return cached
+        length = int(self.headers.get("Content-Length") or 0)
+        if length <= 0:
+            self._raw_body_cache = b""
+            return self._raw_body_cache
+        self._raw_body_cache = self.rfile.read(length)
+        return self._raw_body_cache
 
     def _route_api_post(self, path: str) -> None:
         """Handle form POSTs that write to the portfolio store.
@@ -15753,8 +16122,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/api/metrics/custom":
             import json as _json
             from .domain.custom_metrics import register_custom_metric, CustomMetric
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 payload = _json.loads(raw.decode("utf-8") or "{}")
             except _json.JSONDecodeError:
@@ -15782,8 +16150,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/api/webhooks":
             import json as _json
             from .infra.webhooks import register_webhook
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 payload = _json.loads(raw.decode("utf-8") or "{}")
             except _json.JSONDecodeError:
@@ -15835,8 +16202,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         # POST /api/deals/bulk — batch operations on multiple deals
         if path == "/api/deals/bulk":
             import json as _json
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 payload = _json.loads(raw.decode("utf-8") or "{}")
             except _json.JSONDecodeError:
@@ -15897,8 +16263,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         # POST /api/deals/import — import deals from JSON array
         if path == "/api/deals/import":
             import json as _json
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"[]"
+            raw = self._raw_post_body() or b"[]"
             try:
                 payload = _json.loads(raw.decode("utf-8") or "[]")
             except _json.JSONDecodeError:
@@ -15948,8 +16313,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/api/deals/import-csv":
             import csv as _csv
             import io as _io
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b""
+            raw = self._raw_post_body() or b""
             text = raw.decode("utf-8", errors="replace")
             reader = _csv.DictReader(_io.StringIO(text))
             imported = []
@@ -15984,8 +16348,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/api/screener/run":
             import json as _scrjson
             from .intelligence.screener_engine import run_screen_from_filters as _scr_run
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 payload = _scrjson.loads(raw.decode("utf-8") or "{}")
             except _scrjson.JSONDecodeError:
@@ -16004,8 +16367,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             import json as _cjson3
             from .ai.conversation import ConversationEngine
             from .ai.llm_client import LLMClient  # noqa: F401
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 payload = _cjson3.loads(raw.decode("utf-8") or "{}")
             except _cjson3.JSONDecodeError:
@@ -16031,8 +16393,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/api/portfolio/register":
             import json as _rjson
             from .portfolio.portfolio_snapshots import register_snapshot as _api_reg, DEAL_STAGES
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 payload = _rjson.loads(raw.decode("utf-8") or "{}")
             except _rjson.JSONDecodeError:
@@ -16069,8 +16430,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 and parts[3] == "duplicate"):
             import json as _json
             deal_id = urllib.parse.unquote(parts[2])
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 payload = _json.loads(raw.decode("utf-8") or "{}")
             except _json.JSONDecodeError:
@@ -16126,8 +16486,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 and parts[3] == "stage"):
             import json as _json
             deal_id = urllib.parse.unquote(parts[2])
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 payload = _json.loads(raw.decode("utf-8") or "{}")
             except _json.JSONDecodeError:
@@ -16153,8 +16512,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 and parts[3] == "comments"):
             import json as _json
             deal_id = urllib.parse.unquote(parts[2])
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 payload = _json.loads(raw.decode("utf-8") or "{}")
             except _json.JSONDecodeError:
@@ -16231,8 +16589,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         if parts == ["api", "deals"]:
             import json as _json
             from .data.auto_populate import auto_populate
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            raw = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            raw = self._raw_post_body() or b"{}"
             try:
                 payload = _json.loads(raw.decode("utf-8") or "{}")
             except _json.JSONDecodeError:
@@ -16994,8 +17351,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 and parts[3] == "simulate"):
             import json as _json
             deal_id = urllib.parse.unquote(parts[2])
-            n_bytes = int(self.headers.get("Content-Length") or 0)
-            body = self.rfile.read(n_bytes) if n_bytes > 0 else b"{}"
+            body = self._raw_post_body() or b"{}"
             try:
                 payload = _json.loads(body.decode("utf-8") or "{}")
             except _json.JSONDecodeError:

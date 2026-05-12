@@ -20,7 +20,8 @@ import pandas as pd
 
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip,
+    ck_next_section, ck_panel, ck_provenance_tooltip,
+    ck_section_header, ck_section_intro, ck_signal_badge,
 )
 from ._provenance_tooltip import provenance_tooltip
 from .brand import PALETTE
@@ -434,7 +435,10 @@ def render_ebitda_bridge(
     match = hcris_df[hcris_df["ccn"] == ccn]
     if match.empty:
         return chartis_shell(
-            f'<div class="cad-card"><p>Hospital {_html.escape(ccn)} not found.</p></div>',
+            ck_panel(
+                f'<p class="ck-section-body">Hospital {_html.escape(ccn)} not found.</p>',
+                title="EBITDA Bridge",
+            ),
             "EBITDA Bridge",
         )
 
@@ -448,7 +452,10 @@ def render_ebitda_bridge(
 
     if rev < 1e6:
         return chartis_shell(
-            f'<div class="cad-card"><p>Insufficient revenue data for {_html.escape(name)}.</p></div>',
+            ck_panel(
+                f'<p class="ck-section-body">Insufficient revenue data for {_html.escape(name)}.</p>',
+                title="EBITDA Bridge",
+            ),
             "EBITDA Bridge",
         )
 
@@ -511,16 +518,15 @@ def render_ebitda_bridge(
     provenance_banner = ""
     if has_seller_data:
         n_overrides = len(dr_overrides)
-        provenance_banner = (
-            f'<div class="cad-card" style="border-left:3px solid #e67e22;padding:10px 16px;">'
-            f'<div style="display:flex;justify-content:space-between;align-items:center;">'
-            f'<div style="font-size:12.5px;">'
-            f'<strong style="color:#e67e22;">Seller Data Active</strong> — '
-            f'{n_overrides} metric(s) from the Data Room are overriding ML defaults. '
-            f'Bridge calculations reflect Bayesian-calibrated values.</div>'
-            f'<a href="/data-room/{_html.escape(ccn)}" class="cad-btn" '
-            f'style="text-decoration:none;font-size:11px;">View Data Room</a>'
-            f'</div></div>'
+        seller_badge = ck_signal_badge("Seller Data Active", tone="warning")
+        provenance_banner = ck_panel(
+            '<p class="ck-section-body">'
+            f'{seller_badge} — {n_overrides} metric(s) from the Data Room are '
+            'overriding ML defaults. Bridge calculations reflect '
+            'Bayesian-calibrated values. '
+            f'<a href="/data-room/{_html.escape(ccn)}" class="ck-link">View Data Room →</a>'
+            '</p>',
+            title="Data Room provenance",
         )
 
     # ── Realization prediction ──
@@ -544,30 +550,30 @@ def render_ebitda_bridge(
                     f'<span style="color:var(--cad-text2);">{_html.escape(f.explanation[:50])}</span></div>'
                 )
 
-            realization_section = (
-                f'<div class="cad-card" style="border-left:3px solid {rp_color};">'
-                f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
-                f'<div>'
-                f'<h2 style="margin:0;">Bridge Realization Estimate</h2>'
-                f'<p style="font-size:11px;color:var(--cad-text3);margin-top:2px;">'
-                f'ML model predicts what fraction of the bridge is achievable (accuracy: {rp.model_accuracy:.0%}, '
-                f'n={rp.n_training:,})</p></div>'
-                f'<div style="text-align:center;">'
-                f'<div style="font-size:24px;font-weight:700;color:{rp_color};font-family:var(--cad-mono);">'
-                f'{rp.expected_realization:.0%}</div>'
-                f'<div style="font-size:9px;color:var(--cad-text3);">Realization ({rp.grade})</div></div></div>'
-                f'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px;">'
-                f'<div><div style="font-size:14px;font-weight:600;">{_fm(rp.raw_uplift)}</div>'
-                f'<div style="font-size:10px;color:var(--cad-text3);">Modeled Uplift</div></div>'
-                f'<div><div style="font-size:14px;font-weight:600;color:var(--cad-pos);">'
-                f'{_fm(rp.risk_adjusted_uplift)}</div>'
-                f'<div style="font-size:10px;color:var(--cad-text3);">Risk-Adjusted</div></div>'
-                f'<div><div style="font-size:14px;font-weight:600;color:var(--cad-neg);">'
-                f'-{_fm(rp.discount)}</div>'
-                f'<div style="font-size:10px;color:var(--cad-text3);">Execution Discount</div></div></div>'
-                f'{factor_rows}'
-                f'<p style="font-size:11.5px;color:var(--cad-text2);margin-top:6px;line-height:1.6;">'
-                f'{_html.escape(rp.narrative)}</p></div>'
+            real_tone = (
+                "positive" if rp.grade in ("A", "B")
+                else "warning" if rp.grade == "C"
+                else "negative"
+            )
+            real_badge = ck_signal_badge(
+                f"Grade {rp.grade} · {rp.expected_realization:.0%} realization",
+                tone=real_tone,
+            )
+            real_inner = (
+                '<p class="ck-eyebrow">'
+                f'ML model predicts what fraction of the bridge is achievable '
+                f'(accuracy: {rp.model_accuracy:.0%}, n={rp.n_training:,}).</p>'
+                f'<p class="ck-section-body">{real_badge}</p>'
+                '<div class="ck-kpi-strip">'
+                + ck_kpi_block("Modeled Uplift", _fm(rp.raw_uplift))
+                + ck_kpi_block("Risk-Adjusted", _fm(rp.risk_adjusted_uplift))
+                + ck_kpi_block("Execution Discount", f"-{_fm(rp.discount)}")
+                + '</div>'
+                + factor_rows
+                + f'<p class="ck-section-body">{_html.escape(rp.narrative)}</p>'
+            )
+            realization_section = ck_panel(
+                real_inner, title="Bridge Realization Estimate",
             )
     except Exception:
         pass
@@ -605,16 +611,79 @@ def render_ebitda_bridge(
     )
     kpis = (
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(6,1fr);">'
-        + ck_kpi_block("Net Revenue", _fm(rev),
-                       f"HCRIS FY2022 {source_tag(Source.HCRIS, 'FY2022')}")
-        + ck_kpi_block("Current EBITDA", _fm(bridge["current_ebitda"]),
-                       f"computed {source_tag(Source.COMPUTED)}")
-        + ck_kpi_block("RCM Uplift", uplift_value, "7-lever bridge")
-        + ck_kpi_block("Pro Forma EBITDA", f'<span style="color:var(--cad-pos);">{_fm(bridge["new_ebitda"])}</span>',
-                       "post-RCM")
-        + ck_kpi_block("Margin Improvement", bps_value, "of net revenue")
-        + ck_kpi_block("WC Released", _fm(bridge["total_wc_released"]),
-                       "1x cash benefit")
+        + ck_kpi_block(
+            "Net Revenue", _fm(rev),
+            f"HCRIS FY2022 {source_tag(Source.HCRIS, 'FY2022')}",
+            help={
+                "definition": (
+                    "Net Patient Revenue — billed services minus "
+                    "contractual allowances, bad debt, and charity "
+                    "care. The cash-realisable top line the bridge "
+                    "operates on."
+                ),
+                "citation": "HFMA / CMS HCRIS",
+            },
+        )
+        + ck_kpi_block(
+            "Current EBITDA", _fm(bridge["current_ebitda"]),
+            f"computed {source_tag(Source.COMPUTED)}",
+            help={
+                "definition": (
+                    "Year-0 operating earnings before interest, "
+                    "taxes, depreciation, and amortization. The base "
+                    "case from which RCM levers compound."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "RCM Uplift", uplift_value, "7-lever bridge",
+            help={
+                "definition": (
+                    "Total EBITDA uplift across the seven RCM levers "
+                    "(charge capture, contract optimization, denial "
+                    "rework, collections, write-off discipline, "
+                    "underpayment recovery, DSO compression). Each "
+                    "lever has its own conformal confidence band."
+                ),
+                "citation": "rcm_mc/pe/rcm_ebitda_bridge.py",
+            },
+        )
+        + ck_kpi_block(
+            "Pro Forma EBITDA",
+            f'<span style="color:var(--cad-pos);">'
+            f'{_fm(bridge["new_ebitda"])}</span>',
+            "post-RCM",
+            help={
+                "definition": (
+                    "Current EBITDA + RCM uplift — the projected "
+                    "year-3 EBITDA after the bridge fully realises. "
+                    "Compare against Monte Carlo P50 for sensitivity."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Margin Improvement", bps_value, "of net revenue",
+            help={
+                "definition": (
+                    "Operating-margin lift in basis points (1 bps = "
+                    "0.01%). For a $100M NPR deal, 200 bps = $2M of "
+                    "EBITDA. Bank-loan margin tests usually require "
+                    "300-500 bps of credible improvement."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "WC Released", _fm(bridge["total_wc_released"]),
+            "1x cash benefit",
+            help={
+                "definition": (
+                    "Working-capital cash released from the bridge — "
+                    "primarily DSO compression converting A/R to "
+                    "cash. One-time benefit at the year of release, "
+                    "NOT recurring like EBITDA uplift."
+                ),
+            },
+        )
         + '</div>'
     )
 
@@ -648,19 +717,18 @@ def render_ebitda_bridge(
             f'</div></div>'
         )
 
-    waterfall_section = (
-        f'<div class="cad-card">'
-        f'<h2>EBITDA Bridge — 7 RCM Levers</h2>'
-        f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:12px;">'
-        f'Each bar shows the annual EBITDA impact at full run-rate. Revenue levers increase '
-        f'top-line; cost levers reduce operating expense; cash acceleration releases working capital. '
-        f'Calibrated to published research bands (Denial 12%→5% = $8-15M on $400M NPR).</p>'
+    waterfall_inner = (
+        '<p class="ck-section-body">'
+        'Each bar shows the annual EBITDA impact at full run-rate. Revenue levers increase '
+        'top-line; cost levers reduce operating expense; cash acceleration releases working capital. '
+        'Calibrated to published research bands (Denial 12%→5% = $8-15M on $400M NPR).</p>'
         f'{waterfall_bars}'
-        f'<div style="display:flex;justify-content:space-between;padding:10px 0;font-weight:600;'
-        f'border-top:2px solid var(--cad-border);margin-top:4px;">'
-        f'<span>Total EBITDA Impact</span>'
-        f'<span style="color:var(--cad-pos);">{_fm(bridge["total_ebitda_impact"])}</span></div>'
-        f'</div>'
+        '<p class="ck-section-body">'
+        f'<strong>Total EBITDA Impact</strong> &nbsp; '
+        f'<span class="cad-pos">{_fm(bridge["total_ebitda_impact"])}</span></p>'
+    )
+    waterfall_section = ck_panel(
+        waterfall_inner, title="EBITDA Bridge — 7 RCM Levers",
     )
 
     # ── Lever detail table ──
@@ -700,19 +768,18 @@ def render_ebitda_bridge(
             f'</tr>'
         )
 
-    detail_section = (
-        f'<div class="cad-card">'
-        f'<h2>Lever Detail</h2>'
-        f'<p style="font-size:11px;color:var(--cad-text3);margin-bottom:8px;">'
-        f'Each value shows its data source. '
+    detail_inner = (
+        '<p class="ck-eyebrow">'
+        'Each value shows its data source. '
         f'{source_tag(Source.SELLER)} = seller data room, '
         f'{source_tag(Source.DEFAULT)} = model default, '
         f'{source_tag(Source.BENCHMARK)} = P75 peer benchmark.</p>'
-        f'<table class="cad-table"><thead><tr>'
-        f'<th>Lever</th><th>Current</th><th>Target</th><th>Revenue</th>'
-        f'<th>Cost</th><th>EBITDA</th><th>WC</th><th>Ramp</th>'
-        f'</tr></thead><tbody>{detail_rows}</tbody></table></div>'
+        '<table class="cad-table"><thead><tr>'
+        '<th>Lever</th><th>Current</th><th>Target</th><th>Revenue</th>'
+        '<th>Cost</th><th>EBITDA</th><th>WC</th><th>Ramp</th>'
+        f'</tr></thead><tbody>{detail_rows}</tbody></table>'
     )
+    detail_section = ck_panel(detail_inner, title="Lever Detail")
 
     # ── Timing curve ──
     months = [0, 3, 6, 9, 12, 18, 24, 36]
@@ -738,15 +805,14 @@ def render_ebitda_bridge(
         timing_rows += f'<td class="num" style="color:var(--cad-pos);">{_fm(cumulative[m])}</td>'
     timing_rows += "</tr>"
 
-    timing_section = (
-        f'<div class="cad-card">'
-        f'<h2>Implementation Timing Curve</h2>'
-        f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:10px;">'
-        f'Linear ramp to full run-rate per lever. Month 0 = close date. '
-        f'Partners should expect 60-70% of total uplift realized by month 12.</p>'
+    timing_inner = (
+        '<p class="ck-section-body">'
+        'Linear ramp to full run-rate per lever. Month 0 = close date. '
+        'Partners should expect 60-70% of total uplift realized by month 12.</p>'
         f'<table class="cad-table"><thead><tr>{timing_header}'
-        f'</tr></thead><tbody>{timing_rows}</tbody></table></div>'
+        f'</tr></thead><tbody>{timing_rows}</tbody></table>'
     )
+    timing_section = ck_panel(timing_inner, title="Implementation Timing Curve")
 
     # ── Returns sensitivity grid ──
     entry_multiples = [8.0, 9.0, 10.0, 11.0, 12.0]
@@ -785,16 +851,15 @@ def render_ebitda_bridge(
                 grid_rows += '<td>—</td>'
         grid_rows += '</tr>'
 
-    grid_section = (
-        f'<div class="cad-card">'
-        f'<h2>Returns Sensitivity (IRR / MOIC)</h2>'
-        f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:10px;">'
-        f'5-year hold, 5.5x leverage, 3% organic growth, 10%/yr debt paydown. '
-        f'Green = exceeds 20% IRR hurdle. Amber = 15-20%. Red = below hurdle or loss. '
+    grid_inner = (
+        '<p class="ck-section-body">'
+        '5-year hold, 5.5x leverage, 3% organic growth, 10%/yr debt paydown. '
+        'Green = exceeds 20% IRR hurdle. Amber = 15-20%. Red = below hurdle or loss. '
         f'RCM uplift of {_fm(bridge["total_ebitda_impact"])} is added at exit.</p>'
         f'<table class="cad-table"><thead><tr>{grid_header}'
-        f'</tr></thead><tbody>{grid_rows}</tbody></table></div>'
+        f'</tr></thead><tbody>{grid_rows}</tbody></table>'
     )
+    grid_section = ck_panel(grid_inner, title="Returns Sensitivity (IRR / MOIC)")
 
     # ── Covenant headroom ──
     base_multiple = 10.0
@@ -805,39 +870,82 @@ def render_ebitda_bridge(
     headroom = 6.5 - pro_forma_lev
     cushion = (bridge["new_ebitda"] - entry_debt / 6.5) / bridge["new_ebitda"] if bridge["new_ebitda"] > 0 else 0
 
-    cov_color = "var(--cad-pos)" if headroom > 1.0 else ("var(--cad-warn)" if headroom > 0.5 else "var(--cad-neg)")
-    covenant_section = (
-        f'<div class="cad-card">'
-        f'<h2>Covenant Headroom (at 10x Entry, 6.5x Max Leverage)</h2>'
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(4,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{actual_lev:.1f}x</div>'
-        f'<div class="cad-kpi-label">Entry Leverage</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{cov_color};">'
-        f'{pro_forma_lev:.1f}x</div>'
-        f'<div class="cad-kpi-label">Pro Forma Leverage</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{cov_color};">'
-        f'{headroom:.1f}x</div>'
-        f'<div class="cad-kpi-label">Headroom (turns)</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{cushion:.0%}</div>'
-        f'<div class="cad-kpi-label">EBITDA Cushion</div></div>'
-        f'</div>'
-        f'<p style="font-size:12px;color:var(--cad-text2);margin-top:8px;">'
+    cov_tone = (
+        "positive" if headroom > 1.0
+        else "warning" if headroom > 0.5
+        else "negative"
+    )
+    cov_badge = ck_signal_badge(
+        f"{headroom:.1f}x headroom", tone=cov_tone,
+    )
+    covenant_inner = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Entry Leverage", f"{actual_lev:.1f}x",
+            help={
+                "definition": (
+                    "Debt-to-EBITDA at close. PE healthcare deals "
+                    "typically come in at 5.5-6.5x; above 7x signals "
+                    "an aggressive cap structure that needs strong "
+                    "deleveraging or EBITDA growth to clear covenants."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Pro Forma Leverage", f"{pro_forma_lev:.1f}x",
+            help={
+                "definition": (
+                    "Debt-to-EBITDA after the RCM uplift lands. The "
+                    "gap from Entry → Pro Forma is the deleveraging "
+                    "story — narrower gap = the deal relies more on "
+                    "exit-multiple expansion than operational "
+                    "improvement."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Headroom (turns)", f"{headroom:.1f}x", sub=cov_badge,
+            help={
+                "definition": (
+                    "Distance to the leverage covenant in EBITDA "
+                    "turns. >1.0x = comfortable; 0.5-1.0x = watch "
+                    "list (one bad quarter trips it); <0.5x = covenant "
+                    "renegotiation likely before plan completes."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "EBITDA Cushion", f"{cushion:.0%}",
+            help={
+                "definition": (
+                    "Percent EBITDA can decline before the leverage "
+                    "covenant trips. 20%+ = robust; 10-20% = managed "
+                    "tightly; <10% = one quarter of weakness ends "
+                    "the hold thesis."
+                ),
+            },
+        )
+        + '</div>'
+        + '<p class="ck-section-body">'
         f'Pro forma EBITDA can decline {cushion:.0%} before the 6.5x covenant trips. '
         f'RCM uplift reduces leverage from {actual_lev:.1f}x to {pro_forma_lev:.1f}x, '
-        f'adding {headroom - (6.5 - actual_lev):.1f} turns of cushion.</p></div>'
+        f'adding {headroom - (6.5 - actual_lev):.1f} turns of cushion.</p>'
+    )
+    covenant_section = ck_panel(
+        covenant_inner,
+        title="Covenant Headroom (at 10x Entry, 6.5x Max Leverage)",
     )
 
     # ── Methodology ──
-    method = (
-        f'<div class="cad-card" style="border-left:3px solid var(--cad-accent);">'
-        f'<h2 style="font-size:13px;">Bridge Methodology</h2>'
-        f'<p style="font-size:12px;color:var(--cad-text2);line-height:1.7;">'
-        f'Coefficients calibrated to published research bands: denial 12%→5% = $8-15M on $400M NPR. '
-        f'Current metrics estimated from HCRIS public data and ML predictions. Target metrics set at '
-        f'P75 peer benchmarks with 60% gap closure assumption. Revenue levers use NPR × delta × '
-        f'avoidable share. Cost levers use claims volume × cost per reworked claim. '
-        f'Working capital from AR reduction is one-time cash (not included in recurring EBITDA). '
-        f'Returns assume 5.5x leverage, 3% organic growth, 10%/yr debt paydown.</p></div>'
+    method = ck_panel(
+        '<p class="ck-section-body">'
+        'Coefficients calibrated to published research bands: denial 12%→5% = $8-15M on $400M NPR. '
+        'Current metrics estimated from HCRIS public data and ML predictions. Target metrics set at '
+        'P75 peer benchmarks with 60% gap closure assumption. Revenue levers use NPR × delta × '
+        'avoidable share. Cost levers use claims volume × cost per reworked claim. '
+        'Working capital from AR reduction is one-time cash (not included in recurring EBITDA). '
+        'Returns assume 5.5x leverage, 3% organic growth, 10%/yr debt paydown.</p>',
+        title="Bridge Methodology",
     )
 
     # ── Achievement sensitivity ──
@@ -859,14 +967,15 @@ def render_ebitda_bridge(
         ach_rows += f'<td class="num" style="color:var(--cad-pos);">{_fm(ach_totals[pct])}</td>'
     ach_rows += '</tr>'
 
-    achievement_section = (
-        f'<div class="cad-card">'
-        f'<h2>Achievement Sensitivity</h2>'
-        f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:8px;">'
-        f'What if we only achieve a fraction of each lever? 50% = conservative, '
-        f'75% = base management case, 100% = plan, 120% = stretch.</p>'
+    achievement_inner = (
+        '<p class="ck-section-body">'
+        'What if we only achieve a fraction of each lever? 50% = conservative, '
+        '75% = base management case, 100% = plan, 120% = stretch.</p>'
         f'<table class="cad-table"><thead><tr>{ach_header}'
-        f'</tr></thead><tbody>{ach_rows}</tbody></table></div>'
+        f'</tr></thead><tbody>{ach_rows}</tbody></table>'
+    )
+    achievement_section = ck_panel(
+        achievement_inner, title="Achievement Sensitivity",
     )
 
     # ── 5-year cumulative value creation ──
@@ -886,13 +995,17 @@ def render_ebitda_bridge(
         rcm_this = total_uplift * ramp_pct
         cum_rcm = rcm_this  # annual run-rate, not cumulative
         total_yr = entry_ebitda * (1 + organic_growth) ** yr + rcm_this
+        margin_cell = (
+            f'<td class="num">{total_yr / rev:.1%}</td>' if rev
+            else '<td class="num">—</td>'
+        )
         year_rows += (
             f'<tr>'
             f'<td class="num">Year {yr}</td>'
             f'<td class="num">{_fm(entry_ebitda * (1 + organic_growth) ** yr)}</td>'
             f'<td class="num" style="color:var(--cad-pos);">+{_fm(rcm_this)}</td>'
             f'<td class="num" style="font-weight:600;">{_fm(total_yr)}</td>'
-            f'<td class="num">{total_yr / rev:.1%}</td>'
+            f'{margin_cell}'
             f'</tr>'
         )
 
@@ -906,43 +1019,100 @@ def render_ebitda_bridge(
     vc_rcm = total_uplift * 10
     vc_multiple = exit_ebitda_5y * 1  # 1 turn expansion
 
-    value_creation = (
-        f'<div class="cad-card">'
-        f'<h2>5-Year Value Creation Waterfall</h2>'
-        f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:8px;">'
-        f'EBITDA trajectory: 3% organic growth + RCM uplift ramp (full run-rate at month 18).</p>'
-        f'<table class="cad-table"><thead><tr>'
-        f'<th></th><th>Base EBITDA</th><th>RCM Uplift</th><th>Total</th><th>Margin</th>'
-        f'</tr></thead><tbody>'
-        f'<tr style="color:var(--cad-text3);"><td>Entry</td>'
+    entry_margin_cell = (
+        f'<td class="num">{entry_ebitda / rev:.1%}</td>' if rev
+        else '<td class="num">—</td>'
+    )
+    value_inner = (
+        '<p class="ck-section-body">'
+        'EBITDA trajectory: 3% organic growth + RCM uplift ramp (full run-rate at month 18).</p>'
+        '<table class="cad-table"><thead><tr>'
+        '<th></th><th>Base EBITDA</th><th>RCM Uplift</th><th>Total</th><th>Margin</th>'
+        '</tr></thead><tbody>'
+        '<tr><td>Entry</td>'
         f'<td class="num">{_fm(entry_ebitda)}</td>'
-        f'<td class="num">—</td>'
+        '<td class="num">—</td>'
         f'<td class="num">{_fm(entry_ebitda)}</td>'
-        f'<td class="num">{entry_ebitda / rev:.1%}</td></tr>'
+        f'{entry_margin_cell}</tr>'
         f'{year_rows}'
-        f'</tbody></table>'
-        f'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px;'
-        f'padding-top:10px;border-top:1px solid var(--cad-border);">'
-        f'<div><div style="font-size:14px;font-weight:600;">{_fm(entry_ev_10x)}</div>'
-        f'<div style="font-size:10px;color:var(--cad-text3);">Entry EV (10x)</div></div>'
-        f'<div><div style="font-size:14px;font-weight:600;color:var(--cad-pos);">{_fm(exit_ev_11x)}</div>'
-        f'<div style="font-size:10px;color:var(--cad-text3);">Exit EV (11x)</div></div>'
-        f'<div><div style="font-size:14px;font-weight:600;color:var(--cad-pos);">{_fm(value_created)}</div>'
-        f'<div style="font-size:10px;color:var(--cad-text3);">Value Created</div></div>'
-        f'<div><div style="font-size:14px;font-weight:600;">{_fm(exit_ebitda_5y)}</div>'
-        f'<div style="font-size:10px;color:var(--cad-text3);">Exit EBITDA</div></div>'
-        f'</div>'
-        f'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;">'
-        f'<div style="text-align:center;padding:6px;background:var(--cad-bg3);border-radius:4px;">'
-        f'<div style="font-size:12px;font-weight:600;">{_fm(vc_organic)}</div>'
-        f'<div style="font-size:9px;color:var(--cad-text3);">Organic Growth</div></div>'
-        f'<div style="text-align:center;padding:6px;background:var(--cad-bg3);border-radius:4px;">'
-        f'<div style="font-size:12px;font-weight:600;color:var(--cad-pos);">{_fm(vc_rcm)}</div>'
-        f'<div style="font-size:9px;color:var(--cad-text3);">RCM Value Creation</div></div>'
-        f'<div style="text-align:center;padding:6px;background:var(--cad-bg3);border-radius:4px;">'
-        f'<div style="font-size:12px;font-weight:600;">{_fm(vc_multiple)}</div>'
-        f'<div style="font-size:9px;color:var(--cad-text3);">Multiple Expansion</div></div>'
-        f'</div></div>'
+        '</tbody></table>'
+        + '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Entry EV (10x)", _fm(entry_ev_10x),
+            help={
+                "definition": (
+                    "Enterprise value at acquisition, assuming a 10x "
+                    "EBITDA entry multiple — the PE healthcare "
+                    "midpoint. Underwrite at 9-10x for community "
+                    "hospitals, 11-12x for specialty platforms."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Exit EV (11x)", _fm(exit_ev_11x),
+            help={
+                "definition": (
+                    "Modeled EV at exit assuming a one-turn multiple "
+                    "expansion (10x → 11x). Conservative — PE buyers "
+                    "in healthcare have historically paid 0.5-1.5 "
+                    "turns above acquirer multiples for de-risked "
+                    "platforms."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Value Created", _fm(value_created),
+            help={
+                "definition": (
+                    "Total dollar value creation over the 5-year hold: "
+                    "Exit EV - Entry EV. The sum that translates into "
+                    "LP/GP distributions via the waterfall. The three "
+                    "KPIs below decompose this number by source."
+                ),
+            },
+        )
+        + ck_kpi_block("Exit EBITDA", _fm(exit_ebitda_5y))
+        + '</div>'
+        + '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Organic Growth", _fm(vc_organic),
+            help={
+                "definition": (
+                    "Value from EBITDA compounding at the 3% organic "
+                    "growth rate. The 'do nothing' component — what "
+                    "this deal would have created without any RCM "
+                    "intervention or multiple expansion."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "RCM Value Creation", _fm(vc_rcm),
+            help={
+                "definition": (
+                    "Value attributable to the RCM levers the platform "
+                    "underwrites (rate, denial, AR, contract terms, "
+                    "labor, supply). This is the operational alpha — "
+                    "the partner's claim that this PE sponsor adds "
+                    "value beyond market-trend exposure."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Multiple Expansion", _fm(vc_multiple),
+            help={
+                "definition": (
+                    "Value from the assumed one-turn multiple "
+                    "expansion at exit. Treat as the most speculative "
+                    "component — exit multiples drift with the buyer "
+                    "market, which the sponsor doesn't control. "
+                    "Healthier deals lean less on this number."
+                ),
+            },
+        )
+        + '</div>'
+    )
+    value_creation = ck_panel(
+        value_inner, title="5-Year Value Creation Waterfall",
     )
 
     # ── Peer context for levers ──
@@ -1001,44 +1171,35 @@ def render_ebitda_bridge(
     peer_section = ""
     if peer_context_rows:
         n_peers = len(peers) if 'peers' in dir() else 0
-        peer_section = (
-            f'<div class="cad-card">'
-            f'<h2>Peer Context — Where This Hospital Sits</h2>'
-            f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:8px;">'
+        peer_inner = (
+            '<p class="ck-section-body">'
             f'Key metrics vs {n_peers} size-matched peers. Low percentile on margin/efficiency '
-            f'metrics = more room for improvement = larger bridge opportunity.</p>'
-            f'<table class="cad-table"><thead><tr>'
-            f'<th>Metric</th><th>Hospital</th><th>P25</th><th>P50</th><th>P75</th><th>Percentile</th>'
-            f'</tr></thead><tbody>{peer_context_rows}</tbody></table></div>'
+            'metrics = more room for improvement = larger bridge opportunity.</p>'
+            '<table class="cad-table"><thead><tr>'
+            '<th>Metric</th><th>Hospital</th><th>P25</th><th>P50</th><th>P75</th><th>Percentile</th>'
+            f'</tr></thead><tbody>{peer_context_rows}</tbody></table>'
+        )
+        peer_section = ck_panel(
+            peer_inner, title="Peer Context — Where This Hospital Sits",
         )
 
     # ── Navigation ──
-    nav = (
-        f'<div class="cad-card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">'
-        f'<form method="POST" action="/value-tracker/{_html.escape(ccn)}/freeze" style="display:inline;">'
-        f'<button type="submit" class="cad-btn" style="cursor:pointer;border:none;'
-        f'background:var(--cad-pos);color:#fff;font-weight:600;">Freeze as Value Plan</button></form>'
-        f'<a href="/export/bridge/{_html.escape(ccn)}" class="cad-btn" '
-        f'style="text-decoration:none;background:#1a3a5c;color:#fff;font-weight:600;">'
-        f'&#128196; Download Excel</a>'
-        f'<a href="/value-tracker/{_html.escape(ccn)}" class="cad-btn" '
-        f'style="text-decoration:none;">Value Tracker</a>'
-        f'<a href="/fund-learning" class="cad-btn" '
-        f'style="text-decoration:none;">Fund Learning</a>'
-        f'<a href="/hospital/{_html.escape(ccn)}" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Hospital Profile</a>'
-        f'<a href="/ml-insights/hospital/{_html.escape(ccn)}" class="cad-btn" '
-        f'style="text-decoration:none;">ML Analysis</a>'
-        f'<a href="/models/returns/{_html.escape(ccn)}" class="cad-btn" '
-        f'style="text-decoration:none;">PE Returns</a>'
-        f'<a href="/models/dcf/{_html.escape(ccn)}" class="cad-btn" '
-        f'style="text-decoration:none;">DCF</a>'
-        f'<a href="/models/lbo/{_html.escape(ccn)}" class="cad-btn" '
-        f'style="text-decoration:none;">LBO Model</a>'
-        f'<a href="/predictive-screener" class="cad-btn" '
-        f'style="text-decoration:none;">Deal Screener</a>'
-        f'</div>'
+    nav_inner = (
+        '<p class="ck-section-body">'
+        f'<form method="POST" action="/value-tracker/{_html.escape(ccn)}/freeze" class="ic-bridge-inline-form">'
+        '<button type="submit" class="cad-btn cad-btn-primary">Freeze as Value Plan</button></form> '
+        f'<a href="/export/bridge/{_html.escape(ccn)}" class="cad-btn">Download Excel</a> '
+        f'<a href="/value-tracker/{_html.escape(ccn)}" class="cad-btn">Value Tracker</a> '
+        '<a href="/fund-learning" class="cad-btn">Fund Learning</a> '
+        f'<a href="/hospital/{_html.escape(ccn)}" class="cad-btn cad-btn-primary">Hospital Profile</a> '
+        f'<a href="/ml-insights/hospital/{_html.escape(ccn)}" class="cad-btn">ML Analysis</a> '
+        f'<a href="/models/returns/{_html.escape(ccn)}" class="cad-btn">PE Returns</a> '
+        f'<a href="/models/dcf/{_html.escape(ccn)}" class="cad-btn">DCF</a> '
+        f'<a href="/models/lbo/{_html.escape(ccn)}" class="cad-btn">LBO Model</a> '
+        '<a href="/predictive-screener" class="cad-btn">Deal Screener</a>'
+        '</p>'
     )
+    nav = ck_panel(nav_inner, title="Cross-links")
 
     freshness = data_freshness_footer(
         hcris_year=2022, n_hospitals=6123,
@@ -1047,19 +1208,16 @@ def render_ebitda_bridge(
     )
 
     # Editorial section header — eyebrow + serif h2 + lede above the body.
-    page_head = (
-        '<div class="sect">'
-        '<div>'
-        f'<div class="micro">EBITDA BRIDGE &nbsp;·&nbsp; CCN {_html.escape(ccn)}</div>'
-        f'<h2>{_html.escape(name)}<br/><em>value-creation walk</em>.</h2>'
-        '</div>'
-        '<p class="desc">'
-        '7-lever RCM bridge from current EBITDA to pro-forma — denial / '
-        'underpay / DAR / coding / contract / cost discipline / cash '
-        'acceleration. Each lever shows current vs benchmark target with '
-        'data provenance.'
-        '</p>'
-        '</div>'
+    page_head = ck_section_intro(
+        eyebrow=f"EBITDA BRIDGE · CCN {_html.escape(ccn)}",
+        headline=f"{_html.escape(name)} — value-creation walk.",
+        italic_word="walk",
+        body=(
+            "7-lever RCM bridge from current EBITDA to pro-forma — "
+            "denial / underpay / DAR / coding / contract / cost "
+            "discipline / cash acceleration. Each lever shows "
+            "current vs benchmark target with data provenance."
+        ),
     )
     body = (
         f'{page_head}{provenance_banner}{kpis}{realization_section}{waterfall_section}'
@@ -1071,6 +1229,12 @@ def render_ebitda_bridge(
         f'<div>{achievement_section}</div>'
         f'<div>{peer_section}</div></div>'
         f'{method}{nav}{freshness}'
+        + ck_next_section(
+            "Run the bridge through Monte Carlo",
+            "/diligence/deal-mc",
+            eyebrow="Continue —",
+            italic_word="Monte",
+        )
     )
 
     return chartis_shell(

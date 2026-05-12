@@ -9,6 +9,7 @@ from ._chartis_kit import (
     ck_eyebrow,
     ck_fmt_num,
     ck_kpi_block,
+    ck_next_section,
     ck_provenance_tooltip,
 )
 from .brand import PALETTE
@@ -104,6 +105,12 @@ def render_scenarios_page(presets: List[Dict[str, Any]]) -> str:
         f'Analysis Workbench</a>'
         f'<a href="/models/challenge/se" class="cad-btn" style="text-decoration:none;">'
         f'Challenge Solver</a></div>'
+        + ck_next_section(
+            "Apply a scenario to a deal",
+            "/diligence/deal",
+            eyebrow="Continue —",
+            italic_word="deal",
+        )
     )
     return chartis_shell(body, "Scenario Explorer",
                     subtitle=f"{len(presets)} preset shock scenarios",

@@ -162,7 +162,8 @@ def render_heatmap(
     )
     # Cycle 46 — KPI strip + provenance + chartis chrome.
     from ._chartis_kit import (
-        ck_eyebrow, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+        ck_eyebrow, ck_fmt_num, ck_kpi_block, ck_next_section,
+        ck_provenance_tooltip,
     )
     grade_counts = {"A": 0, "B": 0, "C": 0, "D": 0}
     for p in packets:
@@ -205,6 +206,12 @@ def render_heatmap(
         ck_eyebrow("Portfolio Heatmap")
         + kpi_strip
         + f'<div class="cad-card">{table}</div>'
+        + ck_next_section(
+            "Open the portfolio map",
+            "/portfolio/map",
+            eyebrow="Continue —",
+            italic_word="map",
+        )
     )
     return chartis_shell(body, "Portfolio Heatmap",
                     active_nav="/portfolio",

@@ -10,7 +10,8 @@ import html as _html
 from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_num, ck_fmt_pct, ck_kpi_block, ck_provenance_tooltip,
+    chartis_shell, ck_fmt_num, ck_fmt_pct, ck_kpi_block,
+    ck_next_section, ck_provenance_tooltip,
 )
 from .brand import PALETTE
 
@@ -157,7 +158,13 @@ def render_fund_learning(db_path: str) -> str:
         f'</div>'
     )
 
-    body = f'{kpis}{narrative}{lever_section}{flywheel}{nav}'
+    next_up = ck_next_section(
+        "Open the model validation surface",
+        "/model-validation",
+        eyebrow="Continue —",
+        italic_word="validation",
+    )
+    body = f'{kpis}{narrative}{lever_section}{flywheel}{nav}{next_up}'
 
     return chartis_shell(
         body, "Fund Learning",

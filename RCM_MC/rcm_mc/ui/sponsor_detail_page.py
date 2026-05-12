@@ -193,7 +193,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
     from . import _web_components as _wc
     from ._chartis_kit import (
         chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-        ck_provenance_tooltip,
+        ck_next_section, ck_provenance_tooltip,
     )
     from ..data_public.deals_corpus import DealsCorpus
     from ..data_public.sponsor_track_record import (
@@ -457,8 +457,30 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
     )
     kpi_strip = (
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;">'
-        + ck_kpi_block("Sponsors Tracked", sponsors_value, "in corpus")
-        + ck_kpi_block("Sponsor Deals", deals_value, "realized")
+        + ck_kpi_block(
+            "Sponsors Tracked", sponsors_value, "in corpus",
+            help={
+                "definition": (
+                    "Distinct PE sponsors whose realized healthcare "
+                    "exits the platform has indexed. Each contributes "
+                    "one or more deals into the realized-MOIC "
+                    "distribution. Broader coverage = more credible "
+                    "benchmarks when reading a new sponsor's pitch."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Sponsor Deals", deals_value, "realized",
+            help={
+                "definition": (
+                    "Closed/exited deals from this sponsor in the "
+                    "corpus — not their full track record, but the "
+                    "subset where realized MOIC + hold-period data "
+                    "is available. Use this count to weight the "
+                    "median MOIC: thin counts swing on a single exit."
+                ),
+            },
+        )
         + '</div>'
     )
 
@@ -479,10 +501,17 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
         )
     )
 
+    next_up = ck_next_section(
+        "Open the comparable outcomes view",
+        "/diligence/comparable-outcomes",
+        eyebrow="Continue —",
+        italic_word="outcomes",
+    )
     body = (
         _wc.web_styles()
         + _wc.responsive_container(inner)
         + _wc.sortable_table_js()
+        + next_up
     )
     return chartis_shell(body, "Sponsor track record",
                          active_nav="/diligence/sponsor-detail",

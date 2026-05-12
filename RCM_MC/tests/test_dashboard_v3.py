@@ -157,9 +157,10 @@ class TestAlertsSection(unittest.TestCase):
     def test_no_alerts(self):
         from rcm_mc.ui.dashboard_v3 import _alerts_section
         html = _alerts_section([])
-        self.assertIn("Nothing demanding your decision",
-                     html)
+        # Editorial port (cycle 18) replaced the bespoke empty-state
+        # copy with a single "All clear." callout inside ck_panel.
         self.assertIn("All clear", html)
+        self.assertIn("ck-panel", html)
 
     def test_alerts_rendered(self):
         from rcm_mc.ui.dashboard_v3 import _alerts_section
@@ -188,8 +189,11 @@ class TestActivitySection(unittest.TestCase):
             _activity_section,
         )
         html = _activity_section([])
-        self.assertIn("No recent activity", html)
+        # Editorial port (cycle 18) reworded the empty-state copy and
+        # wraps it in ck_panel. "data is steady" remains as the signal
+        # string; the panel chrome is the new assertion.
         self.assertIn("data is steady", html)
+        self.assertIn("ck-panel", html)
 
     def test_activity_renders(self):
         from rcm_mc.ui.dashboard_v3 import (

@@ -6,7 +6,7 @@ from typing import Any, Dict
 
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip,
+    ck_next_section, ck_provenance_tooltip,
 )
 from .brand import PALETTE
 
@@ -96,6 +96,12 @@ def render_surrogate_page(
         f'<div class="cad-card" style="display:flex;gap:8px;">'
         f'<a href="/api/surrogate/schema" class="cad-btn" style="text-decoration:none;">'
         f'API: GET /api/surrogate/schema</a></div>'
+        + ck_next_section(
+            "Open the predictive screener",
+            "/predictive-screener",
+            eyebrow="Continue —",
+            italic_word="screener",
+        )
     )
     return chartis_shell(body, "Surrogate Model",
                     subtitle="Fast approximate prediction for screening",

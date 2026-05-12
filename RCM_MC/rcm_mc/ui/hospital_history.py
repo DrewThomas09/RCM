@@ -11,7 +11,10 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_intro, ck_sparkline,
+)
 from .brand import PALETTE
 
 
@@ -155,8 +158,8 @@ def render_hospital_history(
                 o = float(row.get(opex_col, 0))
                 val = (r - o) / r if r > 1e5 and o > 0 else 0
                 val = max(-1, min(1, val))
-                color = PALETTE["positive"] if val > 0.02 else (PALETTE["negative"] if val < -0.02 else PALETTE["text_muted"])
-                cells += f'<td class="num" style="color:{color};">{val:.1%}</td>'
+                cls = "cad-pos" if val > 0.02 else ("cad-neg" if val < -0.02 else "")
+                cells += f'<td class="num {cls}">{val:.1%}</td>'
                 values.append(val)
             elif is_money:
                 val = float(row.get(key, 0))
@@ -181,19 +184,19 @@ def render_hospital_history(
         cagr_cell = ""
         if n_years >= 2 and len(values) >= 2:
             yoy_str, yoy_color = _growth(values[-1], values[-2])
-            yoy_cell = f'<td class="num" style="color:{yoy_color};font-weight:600;">{yoy_str}</td>'
+            yoy_cls = "cad-pos" if yoy_color == PALETTE["positive"] else ("cad-neg" if yoy_color == PALETTE["negative"] else "")
+            yoy_cell = f'<td class="num {yoy_cls}"><strong>{yoy_str}</strong></td>'
             cagr_val = _cagr(values[0], values[-1], n_years - 1) if values[0] != 0 else 0
-            cagr_color = PALETTE["positive"] if cagr_val > 0.01 else (PALETTE["negative"] if cagr_val < -0.01 else PALETTE["text_muted"])
-            cagr_cell = f'<td class="num" style="color:{cagr_color};">{cagr_val:+.1%}</td>'
+            cagr_cls = "cad-pos" if cagr_val > 0.01 else ("cad-neg" if cagr_val < -0.01 else "")
+            cagr_cell = f'<td class="num {cagr_cls}">{cagr_val:+.1%}</td>'
 
-        table_rows += f'<tr><td style="font-weight:500;">{html.escape(label)}</td>{cells}{yoy_cell}{cagr_cell}</tr>'
+        table_rows += f'<tr><td><strong>{html.escape(label)}</strong></td>{cells}{yoy_cell}{cagr_cell}</tr>'
 
-    timeline_table = (
-        f'<div class="cad-card">'
-        f'<h2>Financial Timeline</h2>'
-        f'<table class="cad-table"><thead><tr>'
+    timeline_table = ck_panel(
+        '<table class="cad-table"><thead><tr>'
         f'<th>Metric</th>{header}'
-        f'</tr></thead><tbody>{table_rows}</tbody></table></div>'
+        f'</tr></thead><tbody>{table_rows}</tbody></table>',
+        title="Financial Timeline",
     )
 
     # === KPI Summary ===
@@ -214,19 +217,80 @@ def render_hospital_history(
     covid_score, covid_label = _covid_resilience_score(trend_df)
     covid_color = PALETTE["positive"] if covid_score >= 65 else (PALETTE["warning"] if covid_score >= 45 else PALETTE["negative"])
 
+    intro = ck_section_intro(
+        eyebrow=f"HOSPITAL HISTORY · CCN {ccn_esc}",
+        headline=f"{name_esc} — multi-year financial timeline.",
+        italic_word="timeline",
+        body=(
+            f"{n_years}-year revenue, margin, payer-mix, and bed "
+            "trajectory. Treats the hospital like a stock: CAGR, "
+            "YoY growth, COVID resilience, and peer comparison "
+            "side-by-side."
+        ),
+    )
+    # Sparklines for the trajectory KPIs — both have time-series
+    # data already on hand. ck_sparkline returns empty for <2 points
+    # so it self-suppresses on thin datasets.
+    rev_spark = ck_sparkline(revs) if revs else None
+    margin_spark = ck_sparkline(margins) if margins else None
     kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(revs[-1]) if revs else "—"}</div>'
-        f'<div class="cad-kpi-label">Latest Revenue (FY{int(years[-1]) if years else "?"})</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{rev_color};">{rev_cagr:+.1%}</div>'
-        f'<div class="cad-kpi-label">Revenue CAGR ({n_years}yr)</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{margin_color};">'
-        f'{margins[-1]:.1%}</div>' if margins else f'—</div>'
-        f'<div class="cad-kpi-label">Latest Margin</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{covid_color};">'
-        f'{covid_score}/100</div>'
-        f'<div class="cad-kpi-label">COVID Resilience</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            f"Latest Revenue (FY{int(years[-1]) if years else '?'})",
+            _fmt_m(revs[-1]) if revs else "—",
+            chart=rev_spark,
+            help={
+                "definition": (
+                    "Most-recent fiscal-year revenue from CMS HCRIS. "
+                    "Lags the calendar by ~18 months due to filing "
+                    "cadence; treat as a structural baseline, not a "
+                    "current quarter."
+                ),
+                "citation": "CMS HCRIS",
+            },
+        )
+        + ck_kpi_block(
+            f"Revenue CAGR ({n_years}yr)", f"{rev_cagr:+.1%}",
+            chart=rev_spark,
+            help={
+                "definition": (
+                    "Compound annual growth rate of revenue across "
+                    "the available HCRIS years. Healthcare margins "
+                    "are tight — partners look for 3-6% organic "
+                    "growth in community hospitals; >10% usually "
+                    "means a step-change (acquisition, service-line "
+                    "launch) worth understanding separately."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Latest Margin",
+            f"{margins[-1]:.1%}" if margins else "—",
+            chart=margin_spark,
+            help={
+                "definition": (
+                    "Operating margin in the most-recent fiscal "
+                    "year. Read alongside the trend line below — a "
+                    "high latest margin on a declining slope is "
+                    "different from a stable mediocre margin."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "COVID Resilience", f"{covid_score}/100",
+            sub=html.escape(covid_label),
+            help={
+                "definition": (
+                    "Composite score measuring how the hospital "
+                    "weathered the 2020-2022 disruption. Reads "
+                    "margin recovery speed, revenue trough depth, "
+                    "and post-COVID re-baseline. 80+ = stress-"
+                    "tested; <40 = the hospital is structurally "
+                    "weaker than its peers."
+                ),
+            },
+        )
+        + '</div>'
     )
 
     # === COVID Impact Analysis ===
@@ -240,17 +304,18 @@ def render_hospital_history(
             rev_latest = float(latest.get(rev_col, 0))
             recovery = (rev_latest - rev_20) / rev_20 if rev_20 > 0 else 0
 
-            covid_section = (
-                f'<div class="cad-card" style="border-left:3px solid {covid_color};">'
-                f'<h2>COVID Impact & Recovery</h2>'
-                f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
-                f'<p><strong>Resilience Score: {covid_score}/100</strong> — {html.escape(covid_label)}</p>'
-                f'<p>Revenue recovery from FY2020 to FY{int(years[-1])}: '
-                f'<strong style="color:{PALETTE["positive"] if recovery > 0 else PALETTE["negative"]};">'
-                f'{recovery:+.1%}</strong> ({_fmt_m(rev_20)} → {_fmt_m(rev_latest)})</p>'
-                f'<p style="margin-top:6px;">FY2020 captured the initial COVID shock. '
+            recovery_cls = "cad-pos" if recovery > 0 else "cad-neg"
+            covid_section = ck_panel(
+                '<p class="ck-section-body">'
+                f'<strong>Resilience Score: {covid_score}/100</strong> — {html.escape(covid_label)}</p>'
+                '<p class="ck-section-body">'
+                f'Revenue recovery from FY2020 to FY{int(years[-1])}: '
+                f'<strong class="{recovery_cls}">{recovery:+.1%}</strong> '
+                f'({_fmt_m(rev_20)} → {_fmt_m(rev_latest)}).</p>'
+                '<p class="ck-section-body">FY2020 captured the initial COVID shock. '
                 f'{"Strong recovery indicates operational resilience and payer diversification." if recovery > 0.05 else "Slow recovery suggests structural challenges beyond COVID."}'
-                f'</p></div></div>'
+                '</p>',
+                title="COVID Impact & Recovery",
             )
 
     # === Trend Direction Summary ===
@@ -270,17 +335,15 @@ def render_hospital_history(
         if len(vals) < 2:
             continue
         arrow, color = _trend_arrow(vals if not invert else [-v for v in vals])
+        cls = "cad-pos" if color == PALETTE["positive"] else ("cad-neg" if color == PALETTE["negative"] else "")
         trend_items += (
-            f'<div style="display:flex;justify-content:space-between;padding:6px 0;'
-            f'border-bottom:1px solid {PALETTE["border"]};">'
+            '<div class="hh-trend-row">'
             f'<span>{html.escape(label)}</span>'
-            f'<span style="color:{color};">{arrow}</span></div>'
+            f'<span class="{cls}">{arrow}</span></div>'
         )
 
-    trend_section = (
-        f'<div class="cad-card">'
-        f'<h2>Trend Summary</h2>'
-        f'{trend_items}</div>'
+    trend_section = ck_panel(
+        trend_items, title="Trend Summary",
     ) if trend_items else ""
 
     # === Peer Comparison ===
@@ -289,28 +352,31 @@ def render_hospital_history(
         peer_revs = peer_avg.get("revenue", [])
         peer_margins = peer_avg.get("margin", [])
         if peer_revs and peer_margins:
-            peer_section = (
-                f'<div class="cad-card">'
-                f'<h2>vs State Average ({state_esc})</h2>'
-                f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">'
-                f'<div>'
-                f'<div style="font-size:12px;color:{PALETTE["text_muted"]};margin-bottom:4px;">Revenue Growth</div>'
-                f'<div style="display:flex;gap:12px;">'
-                f'<div><span class="cad-mono" style="font-size:16px;">{rev_cagr:+.1%}</span>'
-                f'<div style="font-size:10px;color:{PALETTE["text_muted"]};">This Hospital</div></div>'
-                f'<div><span class="cad-mono" style="font-size:16px;">'
-                f'{_cagr(peer_revs[0], peer_revs[-1], len(peer_revs)-1):+.1%}</span>'
-                f'<div style="font-size:10px;color:{PALETTE["text_muted"]};">State Avg</div></div>'
-                f'</div></div>'
-                f'<div>'
-                f'<div style="font-size:12px;color:{PALETTE["text_muted"]};margin-bottom:4px;">Latest Margin</div>'
-                f'<div style="display:flex;gap:12px;">'
-                f'<div><span class="cad-mono" style="font-size:16px;">{margins[-1]:.1%}</span>'
-                f'<div style="font-size:10px;color:{PALETTE["text_muted"]};">This Hospital</div></div>'
-                f'<div><span class="cad-mono" style="font-size:16px;">{peer_margins[-1]:.1%}</span>'
-                f'<div style="font-size:10px;color:{PALETTE["text_muted"]};">State Avg</div></div>'
-                f'</div></div>'
-                f'</div></div>'
+            peer_inner = (
+                '<div class="ck-kpi-strip">'
+                + ck_kpi_block(
+                    f"Revenue Growth — {state_esc}",
+                    f"{rev_cagr:+.1%}",
+                    sub="this hospital",
+                )
+                + ck_kpi_block(
+                    "State Avg Growth",
+                    f"{_cagr(peer_revs[0], peer_revs[-1], len(peer_revs)-1):+.1%}",
+                    sub="state median",
+                )
+                + ck_kpi_block(
+                    "Latest Margin — this hospital",
+                    f"{margins[-1]:.1%}",
+                )
+                + ck_kpi_block(
+                    "Latest Margin — state avg",
+                    f"{peer_margins[-1]:.1%}",
+                )
+                + '</div>'
+            )
+            peer_section = ck_panel(
+                peer_inner,
+                title=f"vs State Average ({state_esc})",
             )
 
     # === Projections ===
@@ -330,31 +396,44 @@ def render_hospital_history(
                     f'<td class="num">{pm:.1%}</td>'
                     f'</tr>'
                 )
-            proj_section = (
-                f'<div class="cad-card">'
-                f'<h2>Projections (FY{int(years[-1])+1 if years else 2023}-{int(years[-1])+3 if years else 2025})</h2>'
-                f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:8px;">'
+            proj_section = ck_panel(
+                '<p class="ck-section-body">'
                 f'Extrapolated from {n_years}-year trend using linear projection. '
-                f'Does not account for regulatory or market changes.</p>'
-                f'<table class="cad-table"><thead><tr>'
-                f'<th>Year</th><th>Revenue (proj)</th><th>Margin (proj)</th>'
-                f'</tr></thead><tbody>{proj_rows}</tbody></table></div>'
+                'Does not account for regulatory or market changes.</p>'
+                '<table class="cad-table"><thead><tr>'
+                '<th>Year</th><th>Revenue (proj)</th><th>Margin (proj)</th>'
+                f'</tr></thead><tbody>{proj_rows}</tbody></table>',
+                title=f"Projections (FY{int(years[-1])+1 if years else 2023}-{int(years[-1])+3 if years else 2025})",
             )
 
     # === Actions ===
-    actions = (
-        f'<div class="cad-card" style="display:flex;gap:8px;flex-wrap:wrap;">'
-        f'<a href="/hospital/{ccn_esc}" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Hospital Profile</a>'
-        f'<a href="/models/dcf/{ccn_esc}" class="cad-btn" style="text-decoration:none;">DCF Model</a>'
-        f'<a href="/models/market/{ccn_esc}" class="cad-btn" style="text-decoration:none;">Market Analysis</a>'
-        f'<a href="/models/comparables/{ccn_esc}" class="cad-btn" style="text-decoration:none;">Comparables</a>'
-        f'<a href="/market-data/state/{state_esc}" class="cad-btn" style="text-decoration:none;">'
-        f'{state_esc} Market</a>'
-        f'</div>'
+    actions = ck_panel(
+        '<p class="ck-section-body">'
+        f'<a href="/hospital/{ccn_esc}" class="cad-btn cad-btn-primary">Hospital Profile</a> '
+        f'<a href="/models/dcf/{ccn_esc}" class="cad-btn">DCF Model</a> '
+        f'<a href="/models/market/{ccn_esc}" class="cad-btn">Market Analysis</a> '
+        f'<a href="/models/comparables/{ccn_esc}" class="cad-btn">Comparables</a> '
+        f'<a href="/market-data/state/{state_esc}" class="cad-btn">{state_esc} Market</a>'
+        '</p>',
+        title="Cross-links",
     )
 
-    body = f'{kpis}{timeline_table}{covid_section}{trend_section}{peer_section}{proj_section}{actions}'
+    hh_styles = f"""
+<style>
+.hh-trend-row{{display:flex;justify-content:space-between;padding:6px 0;
+border-bottom:1px solid {PALETTE['border']};}}
+</style>
+"""
+    next_up = ck_next_section(
+        "Back to the hospital profile",
+        f"/hospital/{ccn_esc}",
+        eyebrow="Continue —",
+        italic_word="profile",
+    )
+    body = (
+        f'{hh_styles}{intro}{kpis}{timeline_table}{covid_section}'
+        f'{trend_section}{peer_section}{proj_section}{actions}{next_up}'
+    )
 
     return chartis_shell(
         body, f"{name_esc} — History",

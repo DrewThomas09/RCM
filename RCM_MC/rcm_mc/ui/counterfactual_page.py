@@ -31,7 +31,7 @@ from ..diligence.counterfactual import (
 )
 from ._chartis_kit import (
     P, chartis_shell, ck_eyebrow, ck_fmt_currency, ck_fmt_num,
-    ck_kpi_block, ck_provenance_tooltip,
+    ck_kpi_block, ck_next_section, ck_provenance_tooltip,
 )
 
 
@@ -562,9 +562,42 @@ def _render_hero(
     )
     kpi_strip = (
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0;">'
-        + ck_kpi_block("Counterfactuals", cf_value, "offer-shape levers")
-        + ck_kpi_block("Critical Addressed", crit_value, "RED/CRITICAL flipped")
-        + ck_kpi_block("Bridge EBITDA", bridge_value, "aggregate impact")
+        + ck_kpi_block(
+            "Counterfactuals", cf_value, "offer-shape levers",
+            help={
+                "definition": (
+                    "Smallest shifts in each input lever (rate, denial, "
+                    "AR) that would flip the model's verdict. Use them "
+                    "as the 'what we're waiting for' surface during "
+                    "diligence — if you can't credibly move that lever, "
+                    "the current verdict holds."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Critical Addressed", crit_value, "RED/CRITICAL flipped",
+            help={
+                "definition": (
+                    "How many red-severity findings the counterfactual "
+                    "levers would address if executed. Higher = a "
+                    "richer set of fixable issues. Zero means the deal's "
+                    "criticals aren't reachable by lever adjustment — "
+                    "they're structural."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Bridge EBITDA", bridge_value, "aggregate impact",
+            help={
+                "definition": (
+                    "Total EBITDA that would shift if every counterfactual "
+                    "lever moved to its flip-threshold. Sets the upper "
+                    "bound on what RCM levers alone can recover; "
+                    "structural issues (sector decline, payer mix) "
+                    "require non-RCM action."
+                ),
+            },
+        )
         + '</div>'
     )
     return (
@@ -839,6 +872,12 @@ def render_counterfactual_page(
         + _render_ccd_summary(ccd_summary)
         + _render_counterfactuals(cf_set)
         + _render_bridge_lever(lever)
+        + ck_next_section(
+            "Pressure-test these levers in the Risk Workbench",
+            "/diligence/risk-workbench?demo=steward",
+            eyebrow="Continue —",
+            italic_word="Workbench",
+        )
     )
     return chartis_shell(
         body,

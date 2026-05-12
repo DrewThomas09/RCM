@@ -8,7 +8,10 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_intro,
+)
 from .models_page import _model_nav
 from .brand import PALETTE
 
@@ -24,11 +27,11 @@ def render_causal_page(deal_id: str, deal_name: str, estimates: List[Dict[str, A
         conf = e.get("confidence", "low")
         p_val = e.get("p_value", 1.0)
         conf_cls = {"high": "cad-badge-green", "medium": "cad-badge-amber"}.get(conf, "cad-badge-muted")
-        eff_color = PALETTE["positive"] if effect > 0 else PALETTE["negative"]
+        eff_cls = "cad-pos" if effect > 0 else "cad-neg"
         rows += (
             f'<tr>'
-            f'<td style="font-weight:500;">{method}</td>'
-            f'<td class="num" style="color:{eff_color};">{effect:+.2f}</td>'
+            f'<td><strong>{method}</strong></td>'
+            f'<td class="num {eff_cls}">{effect:+.2f}</td>'
             f'<td class="num">[{ci_low:.2f}, {ci_high:.2f}]</td>'
             f'<td class="num">{p_val:.3f}</td>'
             f'<td><span class="cad-badge {conf_cls}">{html.escape(conf)}</span></td>'
@@ -37,34 +40,52 @@ def render_causal_page(deal_id: str, deal_name: str, estimates: List[Dict[str, A
 
     sig_count = sum(1 for e in estimates if float(e.get("p_value", 1)) < 0.05)
 
-    interp = (
-        f'<div class="cad-card" style="border-left:3px solid {PALETTE["brand_accent"]};">'
-        f'<h2>What This Means</h2>'
-        f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
-        f'<p>{sig_count} of {len(estimates)} estimates are statistically significant (p&lt;0.05). '
+    intro = ck_section_intro(
+        eyebrow="CAUSAL INFERENCE",
+        headline=f"{html.escape(deal_name)} — what actually moved the needle.",
+        italic_word="moved",
+        body=(
+            f"{len(estimates)} initiative-level estimates run through "
+            "three causal methods (interrupted time series, "
+            "difference-in-differences, pre-post). The scorecard "
+            "below shows the effect size, 95% CI, p-value, and "
+            "confidence band per estimate."
+        ),
+    )
+
+    interp = ck_panel(
+        '<p class="ck-section-body">'
+        f'{sig_count} of {len(estimates)} estimates are statistically significant (p&lt;0.05). '
         f'{"Strong evidence of initiative impact — include in IC memo." if sig_count > len(estimates) // 2 else "Limited statistical evidence — more data points needed."}</p>'
-        f'<p style="margin-top:6px;">Methods: Interrupted Time Series (trend break), '
-        f'Difference-in-Differences (vs control), and Pre-Post comparison with CIs.</p>'
-        f'</div></div>'
+        '<p class="ck-section-body">Methods: Interrupted Time Series (trend break), '
+        'Difference-in-Differences (vs control), and Pre-Post comparison with CIs.</p>',
+        title="What This Means",
+    )
+
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("Causal Estimates", f"{len(estimates)}")
+        + ck_kpi_block("Significant (p<0.05)", f"{sig_count}")
+        + '</div>'
     )
 
     nav = _model_nav(deal_id, "")
     body = (
-        f'{nav}'
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(estimates)}</div>'
-        f'<div class="cad-kpi-label">Causal Estimates</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{sig_count}</div>'
-        f'<div class="cad-kpi-label">Significant (p&lt;0.05)</div></div>'
-        f'</div>'
-        f'<div class="cad-card">'
-        f'<h2>Initiative Impact Estimates</h2>'
-        f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:10px;">'
-        f'Three causal inference methods applied to each initiative.</p>'
-        f'<table class="cad-table"><thead><tr>'
-        f'<th>Method</th><th>Effect</th><th>95% CI</th><th>p-value</th><th>Confidence</th>'
-        f'</tr></thead><tbody>{rows}</tbody></table></div>'
-        f'{interp}'
+        f'{nav}{intro}{kpis}'
+        + ck_panel(
+            '<p class="ck-section-body">Three causal inference methods applied to each initiative.</p>'
+            '<table class="cad-table"><thead><tr>'
+            '<th>Method</th><th>Effect</th><th>95% CI</th><th>p-value</th><th>Confidence</th>'
+            f'</tr></thead><tbody>{rows}</tbody></table>',
+            title="Initiative Impact Estimates",
+        )
+        + interp
+        + ck_next_section(
+            "Open the counterfactual view",
+            f"/models/counterfactual/{html.escape(deal_id)}",
+            eyebrow="Continue —",
+            italic_word="counterfactual",
+        )
     )
 
     return chartis_shell(body, f"Causal Inference — {html.escape(deal_name)}",
@@ -83,49 +104,70 @@ def render_counterfactual_page(deal_id: str, deal_name: str, result: Dict[str, A
     # Period comparison table
     rows = ""
     for i, (a, c, d) in enumerate(zip(actual, counter, delta)):
-        color = PALETTE["positive"] if d > 0 else PALETTE["negative"]
+        cls = "cad-pos" if d > 0 else "cad-neg"
         rows += (
             f'<tr>'
             f'<td class="num">Period {i+1}</td>'
             f'<td class="num">${float(a)/1e6:.1f}M</td>'
             f'<td class="num">${float(c)/1e6:.1f}M</td>'
-            f'<td class="num" style="color:{color};">${float(d)/1e6:.1f}M</td>'
+            f'<td class="num {cls}">${float(d)/1e6:.1f}M</td>'
             f'</tr>'
         )
 
-    cum_color = PALETTE["positive"] if cumulative > 0 else PALETTE["negative"]
+    cum_cls = "cad-pos" if cumulative > 0 else "cad-neg"
 
-    interp = (
-        f'<div class="cad-card" style="border-left:3px solid {cum_color};">'
-        f'<h2>What This Means</h2>'
-        f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
-        f'<p>Without the initiative, EBITDA would have been <strong>${abs(cumulative)/1e6:.1f}M '
+    intro = ck_section_intro(
+        eyebrow="COUNTERFACTUAL",
+        headline=f"{html.escape(deal_name)} — what would have happened without it.",
+        italic_word="without",
+        body=(
+            "Side-by-side actual vs counterfactual EBITDA "
+            "trajectory. The cumulative delta is the initiative's "
+            "attributable value-creation; pair with causal inference "
+            "for statistical significance."
+        ),
+    )
+
+    interp = ck_panel(
+        '<p class="ck-section-body">'
+        f'Without the initiative, EBITDA would have been <strong>${abs(cumulative)/1e6:.1f}M '
         f'{"higher" if cumulative < 0 else "lower"}</strong> over the period. '
         f'{"The initiative clearly created value." if cumulative > 0 else "The initiative did not deliver expected results."}</p>'
-        f'<p style="margin-top:6px;">Methodology: {html.escape(method)}. '
-        f'See <a href="/models/causal/{html.escape(deal_id)}" style="color:{PALETTE["text_link"]};">'
-        f'causal inference</a> for statistical significance.</p>'
-        f'</div></div>'
+        '<p class="ck-section-body">Methodology: '
+        f'{html.escape(method)}. '
+        f'See <a href="/models/causal/{html.escape(deal_id)}" class="ck-link">'
+        'causal inference</a> for statistical significance.</p>',
+        title="What This Means",
+    )
+
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Cumulative Initiative Impact",
+            f'<span class="{cum_cls}">${cumulative/1e6:.1f}M</span>',
+        )
+        + ck_kpi_block("Periods Analyzed", f"{len(actual)}")
+        + '</div>'
     )
 
     nav = _model_nav(deal_id, "")
     body = (
-        f'{nav}'
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{cum_color};">'
-        f'${cumulative/1e6:.1f}M</div>'
-        f'<div class="cad-kpi-label">Cumulative Initiative Impact</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(actual)}</div>'
-        f'<div class="cad-kpi-label">Periods Analyzed</div></div>'
-        f'</div>'
-        f'<div class="cad-card">'
-        f'<h2>Actual vs Counterfactual</h2>'
-        f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:10px;">'
-        f'"What would EBITDA be if we hadn\'t done this initiative?"</p>'
-        f'<table class="cad-table"><thead><tr>'
-        f'<th>Period</th><th>Actual</th><th>Counterfactual</th><th>Delta</th>'
-        f'</tr></thead><tbody>{rows}</tbody></table></div>'
-        f'{interp}'
+        f'{nav}{intro}{kpis}'
+        + ck_panel(
+            '<p class="ck-section-body">'
+            '"What would EBITDA be if we hadn\'t done this initiative?"</p>'
+            '<table class="cad-table"><thead><tr>'
+            '<th>Period</th><th>Actual</th><th>Counterfactual</th><th>Delta</th>'
+            f'</tr></thead><tbody>{rows}</tbody></table>',
+            title="Actual vs Counterfactual",
+        )
+        + interp
+        + ck_next_section(
+            "Open the causal inference view",
+            f"/models/causal/{html.escape(deal_id)}",
+            eyebrow="Continue —",
+            italic_word="causal",
+        )
     )
 
     return chartis_shell(body, f"Counterfactual — {html.escape(deal_name)}",
@@ -152,43 +194,55 @@ def render_benchmark_drift(drifts: List[Dict[str, Any]]) -> str:
             dir_cls = "cad-badge-red"
         else:
             dir_cls = "cad-badge-muted"
-        drift_color = PALETTE["positive"] if drift > 0 else (PALETTE["negative"] if drift < 0 else PALETTE["text_muted"])
+        drift_cls = "cad-pos" if drift > 0 else ("cad-neg" if drift < 0 else "")
         rows += (
             f'<tr>'
-            f'<td style="font-weight:500;">{metric}</td>'
+            f'<td><strong>{metric}</strong></td>'
             f'<td class="num">{float(prior):.2f}</td>'
             f'<td class="num">{float(current):.2f}</td>'
-            f'<td class="num" style="color:{drift_color};">{float(drift):+.2f}pp</td>'
+            f'<td class="num {drift_cls}">{float(drift):+.2f}pp</td>'
             f'<td><span class="cad-badge {dir_cls}">{html.escape(direction.replace("_", " ").title())}</span></td>'
             f'</tr>'
         )
 
+    intro = ck_section_intro(
+        eyebrow="BENCHMARK EVOLUTION",
+        headline="How the bar is moving on you, year over year.",
+        italic_word="moving",
+        body=(
+            "Industry P50 drift across the metrics that drive the "
+            "bridge. When benchmarks shift, your deal's relative "
+            "position changes even without operational improvement "
+            "— factor this into target-margin assumptions before IC."
+        ),
+    )
+
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("Benchmarks Tracked", f"{len(drifts)}")
+        + ck_kpi_block("Industry Improving", f"{improving}")
+        + ck_kpi_block("Industry Declining", f"{declining}")
+        + '</div>'
+    )
+
     body = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(drifts)}</div>'
-        f'<div class="cad-kpi-label">Benchmarks Tracked</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["positive"]};">'
-        f'{improving}</div><div class="cad-kpi-label">Industry Improving</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["negative"]};">'
-        f'{declining}</div><div class="cad-kpi-label">Industry Declining</div></div>'
-        f'</div>'
-
-        f'<div class="cad-card">'
-        f'<h2>Benchmark Evolution</h2>'
-        f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:10px;">'
-        f'How industry P50 benchmarks are shifting year-over-year. '
-        f'Drifts &gt;1pp trigger automatic target re-marking.</p>'
-        f'<table class="cad-table"><thead><tr>'
-        f'<th>Metric</th><th>Prior P50</th><th>Current P50</th><th>Drift</th><th>Direction</th>'
-        f'</tr></thead><tbody>{rows}</tbody></table></div>'
-
-        f'<div class="cad-card" style="border-left:3px solid {PALETTE["brand_accent"]};">'
-        f'<h2>What This Means</h2>'
-        f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
-        f'<p>{improving} benchmarks are improving industry-wide (the bar is rising), '
-        f'{declining} are declining. When benchmarks shift, your deal\'s relative position changes '
-        f'even without operational improvement. Factor this into your bridge assumptions.</p>'
-        f'</div></div>'
+        f'{intro}{kpis}'
+        + ck_panel(
+            '<p class="ck-section-body">'
+            'How industry P50 benchmarks are shifting year-over-year. '
+            'Drifts &gt;1pp trigger automatic target re-marking.</p>'
+            '<table class="cad-table"><thead><tr>'
+            '<th>Metric</th><th>Prior P50</th><th>Current P50</th><th>Drift</th><th>Direction</th>'
+            f'</tr></thead><tbody>{rows}</tbody></table>',
+            title="Benchmark Evolution",
+        )
+        + ck_panel(
+            '<p class="ck-section-body">'
+            f'{improving} benchmarks are improving industry-wide (the bar is rising), '
+            f'{declining} are declining. When benchmarks shift, your deal\'s relative position changes '
+            'even without operational improvement. Factor this into your bridge assumptions.</p>',
+            title="What This Means",
+        )
     )
 
     return chartis_shell(body, "Benchmark Evolution",
@@ -210,55 +264,62 @@ def render_predicted_vs_actual(deal_id: str, deal_name: str,
         actual = c.get("actual_now", 0)
         variance = c.get("variance_pct", 0)
         within = c.get("within_ci", False)
-        var_color = PALETTE["positive"] if abs(variance) < 10 else (
-            PALETTE["warning"] if abs(variance) < 25 else PALETTE["negative"])
+        var_cls = "cad-pos" if abs(variance) < 10 else (
+            "cad-warn" if abs(variance) < 25 else "cad-neg")
         ci_badge = "cad-badge-green" if within else "cad-badge-red"
         rows += (
             f'<tr>'
-            f'<td style="font-weight:500;">{metric}</td>'
+            f'<td><strong>{metric}</strong></td>'
             f'<td class="num">{float(predicted):.2f}</td>'
             f'<td class="num">{float(actual):.2f}</td>'
-            f'<td class="num" style="color:{var_color};">{float(variance):+.1f}%</td>'
+            f'<td class="num {var_cls}">{float(variance):+.1f}%</td>'
             f'<td><span class="cad-badge {ci_badge}">{"In CI" if within else "Outside CI"}</span></td>'
             f'</tr>'
         )
 
-    accuracy_color = PALETTE["positive"] if pct_ci > 0.7 else (
-        PALETTE["warning"] if pct_ci > 0.5 else PALETTE["negative"])
+    intro = ck_section_intro(
+        eyebrow="PREDICTED VS ACTUAL",
+        headline=f"{html.escape(deal_name)} — how the diligence-era forecast aged.",
+        italic_word="aged",
+        body=(
+            f"{n_metrics} metrics from the original analysis packet "
+            "compared against current operational data. Within-CI "
+            "rate measures model calibration; variance % flags the "
+            "metrics that drifted most since underwriting."
+        ),
+    )
 
-    interp = (
-        f'<div class="cad-card" style="border-left:3px solid {accuracy_color};">'
-        f'<h2>What This Means</h2>'
-        f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
-        f'<p>{pct_ci:.0%} of predictions fell within their confidence intervals — '
+    interp = ck_panel(
+        '<p class="ck-section-body">'
+        f'{pct_ci:.0%} of predictions fell within their confidence intervals — '
         f'{"strong prediction accuracy, our models are well-calibrated." if pct_ci > 0.7 else "moderate accuracy, consider widening CIs or improving feature set." if pct_ci > 0.5 else "low accuracy — review model assumptions and data quality."}</p>'
-        f'<p style="margin-top:6px;">Mean absolute error: {mae:.2f}. '
-        f'Metrics outside CI may indicate either data quality issues or genuine operational changes '
-        f'since diligence.</p>'
-        f'</div></div>'
+        '<p class="ck-section-body">'
+        f'Mean absolute error: {mae:.2f}. '
+        'Metrics outside CI may indicate either data quality issues or genuine operational changes '
+        'since diligence.</p>',
+        title="What This Means",
+    )
+
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("Within Confidence Interval", f"{pct_ci:.0%}")
+        + ck_kpi_block("Mean Absolute Error", f"{mae:.2f}")
+        + ck_kpi_block("Metrics Compared", f"{n_metrics}")
+        + '</div>'
     )
 
     nav = _model_nav(deal_id, "")
     body = (
-        f'{nav}'
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{accuracy_color};">'
-        f'{pct_ci:.0%}</div>'
-        f'<div class="cad-kpi-label">Within Confidence Interval</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{mae:.2f}</div>'
-        f'<div class="cad-kpi-label">Mean Absolute Error</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_metrics}</div>'
-        f'<div class="cad-kpi-label">Metrics Compared</div></div>'
-        f'</div>'
-
-        f'<div class="cad-card">'
-        f'<h2>Predicted at Diligence vs Actual</h2>'
-        f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:10px;">'
-        f'How accurate were our predictions? Compares the earliest analysis packet against current data.</p>'
-        f'<table class="cad-table"><thead><tr>'
-        f'<th>Metric</th><th>Predicted</th><th>Actual</th><th>Variance</th><th>In CI?</th>'
-        f'</tr></thead><tbody>{rows}</tbody></table></div>'
-        f'{interp}'
+        f'{nav}{intro}{kpis}'
+        + ck_panel(
+            '<p class="ck-section-body">'
+            'How accurate were our predictions? Compares the earliest analysis packet against current data.</p>'
+            '<table class="cad-table"><thead><tr>'
+            '<th>Metric</th><th>Predicted</th><th>Actual</th><th>Variance</th><th>In CI?</th>'
+            f'</tr></thead><tbody>{rows}</tbody></table>',
+            title="Predicted at Diligence vs Actual",
+        )
+        + interp
     )
 
     return chartis_shell(body, f"Predicted vs Actual — {html.escape(deal_name)}",

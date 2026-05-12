@@ -21,7 +21,10 @@ from ..diligence.covenant_lab import (
 from ..diligence.covenant_lab.simulator import (
     QuarterlyCovenantCurve,
 )
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_header, ck_section_intro, ck_signal_badge,
+)
 from .power_ui import (
     benchmark_chip, bookmark_hint, deal_context_bar,
     export_json_panel, interpret_callout, provenance, sortable_table,
@@ -108,6 +111,7 @@ border-radius:3px;font-family:"JetBrains Mono",monospace;font-size:13px;}}
 color:#fff;border:0;border-radius:3px;font-size:12px;letter-spacing:1.3px;
 text-transform:uppercase;font-weight:700;cursor:pointer;}}
 .cl-form-submit:hover{{filter:brightness(1.15);}}
+.cl-chips-row{{display:flex;gap:24px;flex-wrap:wrap;margin-top:16px;}}
 """.format(
         tx=P["text"], td=P["text_dim"], tf=P["text_faint"],
         pn=P["panel"], pa=P["panel_alt"],
@@ -380,39 +384,75 @@ def _verdict_card(res: CovenantStressResult) -> str:
         ),
     )
 
+    badge_tone = {
+        "FAIL": "negative",
+        "WATCH": "warning",
+        "PASS": "positive",
+    }.get(verdict, "neutral")
+    intro = ck_section_intro(
+        eyebrow=f"Covenant Stress · {verdict}",
+        headline=html.escape(res.headline),
+        body=html.escape(res.rationale),
+        italic_word="covenant",
+    )
+    badge = ck_signal_badge(verdict, tone=badge_tone)
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Max Breach Prob", max_prob_val,
+            sub="vs <10% bank target · <25% acceptable",
+            help={
+                "definition": (
+                    "Highest probability across simulated paths "
+                    "that ANY covenant (DSCR, leverage, fixed-"
+                    "charge) breaches in any quarter of the test "
+                    "horizon. Banks typically want this below 10%; "
+                    "25% is the deal-killer threshold for most "
+                    "credit committees."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Earliest 50% Breach", early_label,
+            sub="quarter any covenant first crosses 50% breach probability",
+            help={
+                "definition": (
+                    "First quarter where breach probability for any "
+                    "covenant exceeds 50% — the moment the credit "
+                    "agreement starts forcing decisions (waiver, "
+                    "amendment, or default). Earlier is worse."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Simulated Paths", f"{res.n_paths:,}",
+            sub="synthetic EBITDA trials",
+            help={
+                "definition": (
+                    "Number of forward EBITDA paths the stress "
+                    "simulator generated. Each path is a complete "
+                    "quarter-by-quarter realization combining the "
+                    "deal's historical EBITDA variance with "
+                    "forward-looking initiative impact."
+                ),
+                "citation": "rcm_mc/mc/ebitda_mc.py",
+            },
+        )
+        + ck_kpi_block(
+            "Quarters Tested", f"{res.quarters}",
+            sub=f"{res.quarters//4}-year horizon",
+        )
+        + "</div>"
+    )
     return (
         f'<div class="cl-verdict-card cl-verdict-{verdict}">'
-        f'<div class="cl-verdict-badge">{verdict}</div>'
-        f'<div class="cl-verdict-headline">'
-        f'{html.escape(res.headline)}</div>'
-        f'<div class="cl-verdict-rationale">'
-        f'{html.escape(res.rationale)}</div>'
-        f'<div class="cl-kpi-grid">'
-        f'  <div><div class="cl-kpi__label">Max Breach Prob</div>'
-        f'       <div class="cl-kpi__val '
-        f'{"neg" if max_prob >= 0.5 else "pos" if max_prob < 0.10 else ""}">'
-        f'{max_prob_val}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">vs &lt;10% bank target '
-        f'· &lt;25% acceptable</div></div>'
-        f'  <div><div class="cl-kpi__label">Earliest 50% Breach</div>'
-        f'       <div class="cl-kpi__val">{early_label}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">quarter any covenant first crosses '
-        f'50% breach probability</div></div>'
-        f'  <div><div class="cl-kpi__label">Simulated Paths</div>'
-        f'       <div class="cl-kpi__val">{res.n_paths:,}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">synthetic EBITDA trials</div></div>'
-        f'  <div><div class="cl-kpi__label">Quarters Tested</div>'
-        f'       <div class="cl-kpi__val">{res.quarters}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">{res.quarters//4}-year horizon</div></div>'
-        f'</div>'
+        f'<p class="ck-section-body">{badge}</p>'
+        f'{intro}'
+        + kpis
         + interpret_callout(
             "Plain-English read:", breach_plain, tone=breach_tone,
         )
-        + f'</div>'
+        + '</div>'
     )
 
 
@@ -573,61 +613,36 @@ def _equity_cure_panel(res: CovenantStressResult) -> str:
         )
         rows.append(
             f'<tr>'
-            f'<td style="padding:6px 10px;color:{P["text"]};">'
-            f'{html.escape(ec.covenant_name)}</td>'
-            f'<td style="padding:6px 10px;font-family:monospace;">'
-            f'{q_lbl}</td>'
-            f'<td style="padding:6px 10px;font-family:monospace;'
-            f'color:{P["negative"]};">'
-            f'${ec.median_cure_usd/1e6:.2f}M</td>'
-            f'<td style="padding:6px 10px;font-family:monospace;'
-            f'color:{P["warning"]};">'
-            f'${ec.p75_cure_usd/1e6:.2f}M</td>'
-            f'<td style="padding:6px 10px;">'
-            f'{ec.breach_path_fraction*100:.0f}% of paths</td>'
+            f'<td>{html.escape(ec.covenant_name)}</td>'
+            f'<td class="mono">{q_lbl}</td>'
+            f'<td class="mono cad-neg">${ec.median_cure_usd/1e6:.2f}M</td>'
+            f'<td class="mono cad-warn">${ec.p75_cure_usd/1e6:.2f}M</td>'
+            f'<td>{ec.breach_path_fraction*100:.0f}% of paths</td>'
             f'</tr>'
         )
     if not rows:
-        return (
-            f'<div class="cl-panel">'
-            f'<div class="cl-section-label" style="margin-top:0;">'
-            f'Equity cure sizing</div>'
-            f'<div style="font-size:13px;color:{P["text_dim"]};">'
-            f'No covenant breaches across the simulated paths — '
-            f'equity cure not required in any scenario.</div>'
-            f'</div>'
+        return ck_panel(
+            '<p class="ck-section-body">'
+            'No covenant breaches across the simulated paths — '
+            'equity cure not required in any scenario.</p>',
+            title="Equity cure sizing",
         )
-    return (
-        f'<div class="cl-panel">'
-        f'<div class="cl-section-label" style="margin-top:0;">'
-        f'Equity cure sizing · partner sponsor capital required</div>'
-        f'<table style="width:100%;border-collapse:collapse;'
-        f'font-size:12.5px;color:{P["text_dim"]};">'
-        f'<thead><tr style="color:{P["text_faint"]};font-size:10px;'
-        f'letter-spacing:1.2px;text-transform:uppercase;'
-        f'font-weight:700;">'
-        f'<th style="padding:6px 10px;text-align:left;'
-        f'border-bottom:2px solid {P["border"]};">Covenant</th>'
-        f'<th style="padding:6px 10px;text-align:left;'
-        f'border-bottom:2px solid {P["border"]};">First Cure Q</th>'
-        f'<th style="padding:6px 10px;text-align:left;'
-        f'border-bottom:2px solid {P["border"]};">Median Cure</th>'
-        f'<th style="padding:6px 10px;text-align:left;'
-        f'border-bottom:2px solid {P["border"]};">P75 Cure</th>'
-        f'<th style="padding:6px 10px;text-align:left;'
-        f'border-bottom:2px solid {P["border"]};">Breach Path %</th>'
+    return ck_panel(
+        '<table class="cad-table"><thead><tr>'
+        '<th>Covenant</th><th>First Cure Q</th>'
+        '<th>Median Cure</th><th>P75 Cure</th>'
+        '<th>Breach Path %</th>'
         f'</tr></thead><tbody>{"".join(rows)}</tbody></table>'
-        f'<div class="cl-callout">'
-        f'<strong style="color:{P["text"]};">How to read: </strong>'
-        f'For leverage covenants the cure equals the debt paydown '
-        f'that drops leverage to threshold; for coverage covenants '
-        f'it\'s the synthetic EBITDA add allowed by the credit '
-        f'agreement ("yank-the-bank" provision, capped at ~25% of '
-        f'LTM EBITDA).  P75 shows the right-tail scenario — the '
-        f'partner should underwrite equity capacity for at least '
-        f'P75.'
-        f'</div>'
-        f'</div>'
+        '<p class="ck-section-body">'
+        '<strong>How to read:</strong> '
+        'For leverage covenants the cure equals the debt paydown '
+        'that drops leverage to threshold; for coverage covenants '
+        'it\'s the synthetic EBITDA add allowed by the credit '
+        'agreement ("yank-the-bank" provision, capped at ~25% of '
+        'LTM EBITDA). P75 shows the right-tail scenario — the '
+        'partner should underwrite equity capacity for at least '
+        'P75.</p>',
+        title="Equity cure sizing · partner sponsor capital required",
     )
 
 
@@ -678,22 +693,26 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
   </div>
 </form>
 """
+    landing_hero = ck_section_intro(
+        eyebrow="Covenant & Capital Stack Stress Lab",
+        headline="When does your thesis hit a covenant cliff?",
+        italic_word="cliff",
+        body=(
+            "Takes the Deal MC EBITDA cone, overlays your capital "
+            "stack and covenant package, and produces per-quarter "
+            "breach-probability curves for each covenant. Optionally "
+            "applies the Regulatory Calendar overlay so partners see "
+            "exactly how a V28 cut in CY2027 tightens the 2027 "
+            "leverage covenant. Output names the first breach "
+            "quarter and sizes the equity cure."
+        ),
+    )
     body = (
         _scoped_styles()
         + '<div class="cl-wrap">'
         + deal_context_bar(qs or {}, active_surface="covenant")
-        + '<div style="padding:22px 0 16px 0;">'
-        + '<div class="cl-eyebrow">Covenant &amp; Capital Stack Stress Lab</div>'
-        + '<div class="cl-h1">When does your thesis hit a covenant cliff?</div>'
-        + f'<div class="cl-callout">Takes the Deal MC EBITDA cone, '
-        + 'overlays your capital stack and covenant package, and '
-        + 'produces per-quarter breach-probability curves for each '
-        + 'covenant.  Optionally applies the Regulatory Calendar '
-        + 'overlay so partners see exactly how a V28 cut in CY2027 '
-        + 'tightens the 2027 leverage covenant.  Output names the '
-        + 'first breach quarter and sizes the equity cure.</div>'
-        + '</div>'
-        + form
+        + landing_hero
+        + ck_panel(form, title="Stack and covenant inputs")
         + '</div>'
     )
     return chartis_shell(
@@ -743,28 +762,28 @@ def render_covenant_lab_page(
     # X-Ray on a negative-margin hospital, we'd otherwise produce
     # a nonsensical "FAIL" verdict on empty math.
     if ebitda_y0 <= 0 or total_debt <= 0:
+        err_intro = ck_section_intro(
+            eyebrow="Covenant Stress Lab",
+            headline="Cannot run stress on this input.",
+            italic_word="this",
+            body=(
+                f"Covenant stress requires positive Y0 EBITDA and "
+                f"non-zero total debt. You supplied EBITDA "
+                f"${ebitda_y0/1e6:,.1f}M and debt ${total_debt/1e6:,.0f}M. "
+                "Targets with negative operating margins cannot "
+                "service covenant-bearing debt — partners should "
+                "underwrite either a restructured target or a "
+                "higher equity check before running this module."
+            ),
+        )
         return chartis_shell(
             _scoped_styles()
-            + f'<div class="cl-wrap">'
+            + '<div class="cl-wrap">'
             + deal_context_bar(qs, active_surface="covenant")
-            + f'<div style="padding:28px;">'
-            + f'<div class="cl-eyebrow">Covenant Stress Lab</div>'
-            + f'<div class="cl-h1" style="color:{P["negative"]};">'
-            + 'Cannot run stress on this input.</div>'
-            + f'<div class="cl-callout">'
-            + f'Covenant stress requires <strong>positive Y0 EBITDA'
-            + '</strong> and <strong>non-zero total debt</strong>. '
-            + f'You supplied EBITDA <code>${ebitda_y0/1e6:,.1f}M</code> '
-            + f'and debt <code>${total_debt/1e6:,.0f}M</code>. '
-            + f'Targets with negative operating margins cannot '
-            + f'service covenant-bearing debt — partners should '
-            + f'underwrite either a restructured target or a '
-            + f'higher equity check before running this module.'
-            + f'</div>'
-            + f'<div style="margin-top:14px;">'
-            + f'<a href="/diligence/covenant-stress" '
-            + f'style="color:{P["accent"]};">← Back to form</a>'
-            + f'</div></div></div>',
+            + err_intro
+            + '<p class="ck-section-body">'
+            + '<a href="/diligence/covenant-stress" class="ck-link">'
+            + '← Back to form</a></p></div>',
             "Covenant Stress — invalid inputs",
         )
     revolver = fnum("revolver_usd", 0.0) or 0.0
@@ -883,25 +902,23 @@ def render_covenant_lab_page(
         peer_label="bank-acceptable band",
     )
 
-    hero = (
-        f'<div style="padding:22px 0 16px 0;border-bottom:1px solid '
-        f'{P["border"]};margin-bottom:22px;">'
-        f'<div class="cl-eyebrow">Covenant Stress Lab</div>'
-        f'<div class="cl-h1">{html.escape(deal_name)}</div>'
-        f'<div style="font-size:11px;color:{P["text_faint"]};'
-        f'margin-top:4px;">'
-        f'{len(stack.tranches)} tranches · '
-        f'${stack.total_funded_usd/1e6:.0f}M funded · '
-        f'{len(custom_cov)} covenants tested · '
-        f'{res.n_paths:,} simulated paths'
-        f'</div>'
-        f'<div style="display:flex;gap:24px;flex-wrap:wrap;'
-        f'margin-top:16px;">'
-        f'{leverage_chip}{rate_chip}{max_prob_chip}'
-        f'</div>'
-        f'{_verdict_card(res)}'
-        f'</div>'
+    main_intro = ck_section_intro(
+        eyebrow="Covenant Stress Lab",
+        headline=f"{html.escape(deal_name)} — capital-stack covenant cliff.",
+        italic_word="cliff",
+        body=(
+            f"{len(stack.tranches)} tranches · "
+            f"${stack.total_funded_usd/1e6:.0f}M funded · "
+            f"{len(custom_cov)} covenants tested · "
+            f"{res.n_paths:,} simulated paths."
+        ),
     )
+    chips_strip = (
+        '<div class="cl-chips-row">'
+        f'{leverage_chip}{rate_chip}{max_prob_chip}'
+        '</div>'
+    )
+    hero = main_intro + chips_strip + _verdict_card(res)
 
     # Derive a plain-English headline for the breach chart: the
     # earliest covenant to cross each threshold.
@@ -944,34 +961,28 @@ def render_covenant_lab_page(
         )
     chart_plain = "".join(chart_plain_parts)
 
-    breach_panel = (
-        f'<div class="cl-panel">'
-        f'<div class="cl-section-label" style="margin-top:0;">'
-        f'Per-quarter breach probability — all covenants</div>'
-        f'{_breach_probability_chart(res.per_covenant_curves, quarters)}'
-        f'<div style="display:flex;gap:14px;flex-wrap:wrap;'
-        f'margin-top:12px;font-size:11px;color:{P["text_dim"]};">'
-        f'<span><span style="color:{P["positive"]};">●</span> '
-        f'&lt;10% breach — bank comfortable</span>'
-        f'<span><span style="color:{P["warning"]};">●</span> '
-        f'10-25% — tight but bankable</span>'
-        f'<span><span style="color:{P["warning"]};">●</span> '
-        f'25-50% — negotiate cushion</span>'
-        f'<span><span style="color:{P["negative"]};">●</span> '
-        f'≥50% — re-price or walk</span>'
-        f'</div>'
+    breach_inner = (
+        _breach_probability_chart(res.per_covenant_curves, quarters)
+        + '<p class="ck-eyebrow">'
+        '<span class="cad-pos">● &lt;10% breach — bank comfortable</span> &nbsp; '
+        '<span class="cad-warn">● 10-25% — tight but bankable</span> &nbsp; '
+        '<span class="cad-warn">● 25-50% — negotiate cushion</span> &nbsp; '
+        '<span class="cad-neg">● ≥50% — re-price or walk</span>'
+        '</p>'
         + interpret_callout("Plain-English read:", chart_plain)
-        + f'<div class="cl-callout">'
-        f'<strong style="color:{P["text"]};">How to read: </strong>'
-        f'Each line is one covenant.  Y-axis is probability of '
-        f'breach across simulated EBITDA paths in that quarter; '
-        f'X-axis is quarters from close.  Dashed lines mark 25%, '
-        f'50%, 75% probability thresholds.  Hover any dot for the '
-        f'exact metric value.  A line rising sharply through 50% '
-        f'is the covenant to negotiate at the LOI — reset, cushion, '
-        f'or step-down deferral.'
-        f'</div>'
-        f'</div>'
+        + '<p class="ck-section-body">'
+        '<strong>How to read:</strong> '
+        'Each line is one covenant. Y-axis is probability of '
+        'breach across simulated EBITDA paths in that quarter; '
+        'X-axis is quarters from close. Dashed lines mark 25%, '
+        '50%, 75% probability thresholds. Hover any dot for the '
+        'exact metric value. A line rising sharply through 50% '
+        'is the covenant to negotiate at the LOI — reset, cushion, '
+        'or step-down deferral.</p>'
+    )
+    breach_panel = ck_panel(
+        breach_inner,
+        title="Per-quarter breach probability — all covenants",
     )
 
     # Plain-English read of the debt-service cliff: identify the
@@ -999,77 +1010,60 @@ def render_covenant_lab_page(
             f'in that quarter to stay inside the covenant.'
         )
 
-    ds_panel = (
-        f'<div class="cl-panel">'
-        f'<div class="cl-section-label" style="margin-top:0;">'
-        f'Debt service cliff — quarterly stack</div>'
-        f'{_debt_service_chart(res.debt_schedule)}'
+    ds_inner = (
+        _debt_service_chart(res.debt_schedule)
         + (interpret_callout("Plain-English read:", ds_plain)
            if ds_plain else "")
-        + f'<div class="cl-callout">'
-        f'<strong style="color:{P["text"]};">How to read: </strong>'
-        f'Each bar is one quarter of debt service.  Red is '
-        f'interest on outstanding balance; amber is scheduled '
-        f'amortization.  TLB/unitranche bullets concentrate '
-        f'amortization in the final year — that spike is where '
-        f'refinance risk concentrates.  Flat interest early = '
-        f'floating-rate base stable; steepening = rate-path stress.'
-        f'</div>'
-        f'</div>'
+        + '<p class="ck-section-body">'
+        '<strong>How to read:</strong> '
+        'Each bar is one quarter of debt service. Red is '
+        'interest on outstanding balance; amber is scheduled '
+        'amortization. TLB/unitranche bullets concentrate '
+        'amortization in the final year — that spike is where '
+        'refinance risk concentrates. Flat interest early = '
+        'floating-rate base stable; steepening = rate-path stress.</p>'
+    )
+    ds_panel = ck_panel(
+        ds_inner, title="Debt service cliff — quarterly stack",
     )
 
-    cov_detail = (
-        f'<div class="cl-panel">'
-        f'<div class="cl-section-label" style="margin-top:0;">'
-        f'Covenant detail — peak breach + first-at</div>'
-        f'{_covenant_detail_table(res)}'
-        f'</div>'
+    cov_detail = ck_panel(
+        _covenant_detail_table(res),
+        title="Covenant detail — peak breach + first-at",
     )
 
-    stack_detail = (
-        f'<div class="cl-panel">'
-        f'<div class="cl-section-label" style="margin-top:0;">'
-        f'Capital stack detail</div>'
-        f'{_capital_stack_table(res)}'
-        f'</div>'
+    stack_detail = ck_panel(
+        _capital_stack_table(res),
+        title="Capital stack detail",
     )
 
     reg_note = ""
     if overlay and any(x != 0 for x in overlay):
         total_reg = sum(overlay)
-        reg_note = (
-            f'<div class="cl-panel" style="border-left:3px solid '
-            f'{P["negative"]};">'
-            f'<div class="cl-section-label" style="margin-top:0;">'
-            f'Regulatory calendar overlay applied</div>'
-            f'<div style="font-size:13px;color:{P["text_dim"]};'
-            f'line-height:1.65;">'
+        reg_inner = (
+            '<p class="ck-section-body">'
             f'Applied ${total_reg/1e6:+.2f}M cumulative EBITDA '
             f'drag from the Regulatory Calendar across the '
-            f'{len(overlay)}-year horizon.  Year-by-year overlay: '
+            f'{len(overlay)}-year horizon. Year-by-year overlay: '
             + ", ".join(f"Y{i+1} ${x/1e6:+.2f}M" for i, x in enumerate(overlay))
-            + '.  These drags subtract from EBITDA *before* '
-            + 'covenant testing — partners see the compounded '
-            + 'regulatory × covenant stress in one view.'
-            + '</div></div>'
+            + '. These drags subtract from EBITDA before '
+            'covenant testing — partners see the compounded '
+            'regulatory × covenant stress in one view.</p>'
+        )
+        reg_note = ck_panel(
+            reg_inner, title="Regulatory calendar overlay applied",
         )
 
-    cross_link = (
-        f'<div class="cl-panel">'
-        f'<div class="cl-section-label" style="margin-top:0;">'
-        f'Cross-reference</div>'
-        f'<div style="font-size:13px;color:{P["text_dim"]};'
-        f'line-height:1.65;">'
-        f'<a href="/diligence/deal-mc" '
-        f'style="color:{P["accent"]};">→ Deal MC</a> produced the '
-        f'EBITDA cone that feeds this lab · '
-        f'<a href="/diligence/regulatory-calendar" '
-        f'style="color:{P["accent"]};">→ Regulatory Calendar</a> '
-        f'produced the overlay applied above · '
-        f'<a href="/diligence/exit-timing" '
-        f'style="color:{P["accent"]};">→ Exit Timing</a> '
-        f'uses the same leverage path for refinance feasibility.'
-        f'</div></div>'
+    cross_link = ck_panel(
+        '<p class="ck-section-body">'
+        '<a href="/diligence/deal-mc" class="ck-link">→ Deal MC</a> '
+        'produced the EBITDA cone that feeds this lab · '
+        '<a href="/diligence/regulatory-calendar" class="ck-link">'
+        '→ Regulatory Calendar</a> produced the overlay applied '
+        'above · <a href="/diligence/exit-timing" class="ck-link">'
+        '→ Exit Timing</a> uses the same leverage path for '
+        'refinance feasibility.</p>',
+        title="Cross-reference",
     )
 
     body = (
@@ -1091,6 +1085,12 @@ def render_covenant_lab_page(
             name=f"covenant_stress_{deal_name.replace(' ', '_')}",
         )
         + bookmark_hint()
+        + ck_next_section(
+            "Stage the bear case",
+            "/diligence/bear-case",
+            eyebrow="Continue —",
+            italic_word="bear",
+        )
         + '</div>'
     )
     return chartis_shell(

@@ -218,12 +218,15 @@ class TestMoneyFormatter(unittest.TestCase):
         self.assertEqual(_format_money_compact(None), "—")
 
     def test_band_color(self):
+        # Editorial Chartis palette (CLAUDE.md): desaturated for print.
+        # The mosaic colors moved from the vibrant Tailwind defaults
+        # to the Chartis tokens during the v3 rework.
         from rcm_mc.ui.dashboard_page import _band_color
-        self.assertEqual(_band_color("great"), "#10b981")
-        self.assertEqual(_band_color("good"), "#3b82f6")
-        self.assertEqual(_band_color("fair"), "#f59e0b")
-        self.assertEqual(_band_color("poor"), "#ef4444")
-        self.assertEqual(_band_color("unknown"), "#9ca3af")
+        self.assertEqual(_band_color("great"), "#3F7D4D")
+        self.assertEqual(_band_color("good"), "#2C5C84")
+        self.assertEqual(_band_color("fair"), "#B7791F")
+        self.assertEqual(_band_color("poor"), "#A53A2D")
+        self.assertEqual(_band_color("unknown"), "#8A92A0")
 
 
 class TestDashboardIntegration(unittest.TestCase):

@@ -7,7 +7,10 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_intro, ck_signal_badge,
+)
 from .models_page import _model_nav
 from .brand import PALETTE
 
@@ -20,16 +23,56 @@ def render_debt_model(deal_id: str, deal_name: str, debt: Dict[str, Any]) -> str
     exit_leverage = summary.get("exit_leverage", debt.get("exit_leverage", 0))
     total_debt = summary.get("total_debt", debt.get("total_debt", 0))
 
+    intro = ck_section_intro(
+        eyebrow="DEBT MODEL",
+        headline=f"{html.escape(deal_name)} — annual leverage trajectory.",
+        italic_word="trajectory",
+        body=(
+            f"Entry {entry_leverage:.1f}x → exit {exit_leverage:.1f}x. "
+            "Annual debt balance, mandatory repayment, interest "
+            "expense, and leverage path through the hold."
+        ),
+    )
     kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{entry_leverage:.1f}x</div>'
-        f'<div class="cad-kpi-label">Entry Leverage</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["positive"]};">'
-        f'{exit_leverage:.1f}x</div>'
-        f'<div class="cad-kpi-label">Exit Leverage</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${total_debt/1e6:.0f}M</div>'
-        f'<div class="cad-kpi-label">Total Debt at Entry</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Entry Leverage", f"{entry_leverage:.1f}x",
+            help={
+                "definition": (
+                    "Total debt ÷ EBITDA at acquisition close. PE "
+                    "healthcare deals cluster at 5.5-6.5x; above 7x "
+                    "signals an aggressive capital structure that "
+                    "needs strong deleveraging or EBITDA growth to "
+                    "clear covenants."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Exit Leverage", f"{exit_leverage:.1f}x",
+            help={
+                "definition": (
+                    "Modeled debt-to-EBITDA at exit. Entry → Exit "
+                    "gap is the deleveraging story. A 2-turn drop "
+                    "(6.0x → 4.0x) over a 5-year hold is the typical "
+                    "PE healthcare path; less = the deal leans more "
+                    "on multiple expansion than operational delevering."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Total Debt at Entry", f"${total_debt/1e6:.0f}M",
+            help={
+                "definition": (
+                    "Aggregate debt across senior, second-lien, and "
+                    "mezz tranches at close. Determines the equity "
+                    "check size given an enterprise value — and "
+                    "determines covenant covenants. Compare against "
+                    "the deal's annual EBITDA × 6.5 for a quick "
+                    "leverage-headroom read."
+                ),
+            },
+        )
+        + '</div>'
     )
 
     rows = ""
@@ -39,53 +82,57 @@ def render_debt_model(deal_id: str, deal_name: str, debt: Dict[str, Any]) -> str
         payment = yr.get("payment", yr.get("principal", 0))
         interest = yr.get("interest", yr.get("interest_expense", 0))
         leverage = yr.get("leverage", yr.get("net_debt_ebitda", 0))
-        lev_color = PALETTE["positive"] if float(leverage) < 4 else (
-            PALETTE["warning"] if float(leverage) < 6 else PALETTE["negative"])
+        lev_cls = "cad-pos" if float(leverage) < 4 else (
+            "cad-warn" if float(leverage) < 6 else "cad-neg")
         rows += (
             f'<tr>'
-            f'<td class="num" style="font-weight:600;">Year {year}</td>'
+            f'<td class="num"><strong>Year {year}</strong></td>'
             f'<td class="num">${float(balance)/1e6:.1f}M</td>'
             f'<td class="num">${float(payment)/1e6:.1f}M</td>'
             f'<td class="num">${float(interest)/1e6:.1f}M</td>'
-            f'<td class="num" style="color:{lev_color};">{float(leverage):.1f}x</td>'
+            f'<td class="num {lev_cls}">{float(leverage):.1f}x</td>'
             f'</tr>'
         )
 
-    table = (
-        f'<div class="cad-card">'
-        f'<h2>Debt Schedule</h2>'
-        f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:10px;">'
-        f'Annual debt balance, mandatory repayment, interest expense, and leverage trajectory.</p>'
-        f'<table class="cad-table"><thead><tr>'
-        f'<th>Year</th><th>Balance</th><th>Principal</th><th>Interest</th><th>Leverage</th>'
-        f'</tr></thead><tbody>{rows}</tbody></table></div>'
+    table = ck_panel(
+        '<p class="ck-section-body">'
+        'Annual debt balance, mandatory repayment, interest expense, and leverage trajectory.</p>'
+        '<table class="cad-table"><thead><tr>'
+        '<th>Year</th><th>Balance</th><th>Principal</th><th>Interest</th><th>Leverage</th>'
+        f'</tr></thead><tbody>{rows}</tbody></table>',
+        title="Debt Schedule",
     ) if rows else ""
 
-    actions = (
-        f'<div class="cad-card" style="display:flex;gap:8px;">'
-        f'<a href="/models/lbo/{html.escape(deal_id)}" class="cad-btn" style="text-decoration:none;">LBO</a>'
-        f'<a href="/models/waterfall/{html.escape(deal_id)}" class="cad-btn" style="text-decoration:none;">Waterfall</a>'
-        f'<a href="/deal/{html.escape(deal_id)}" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Deal Dashboard</a></div>'
+    actions = ck_panel(
+        '<p class="ck-section-body">'
+        f'<a href="/models/lbo/{html.escape(deal_id)}" class="cad-btn">LBO</a> '
+        f'<a href="/models/waterfall/{html.escape(deal_id)}" class="cad-btn">Waterfall</a> '
+        f'<a href="/deal/{html.escape(deal_id)}" class="cad-btn cad-btn-primary">Deal Dashboard</a>'
+        '</p>',
+        title="Cross-links",
     )
 
     # Interpretation
     deleverage = entry_leverage - exit_leverage
-    interp = (
-        f'<div class="cad-card" style="border-left:3px solid {PALETTE["brand_accent"]};">'
-        f'<h2>What This Means</h2>'
-        f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
-        f'<p>Entry leverage of {entry_leverage:.1f}x deleverages to {exit_leverage:.1f}x '
+    interp = ck_panel(
+        '<p class="ck-section-body">'
+        f'Entry leverage of {entry_leverage:.1f}x deleverages to {exit_leverage:.1f}x '
         f'over the hold period — a {deleverage:.1f}x reduction. '
         f'{"Strong deleveraging — equity returns benefit from debt paydown." if deleverage > 2 else "Moderate deleveraging." if deleverage > 1 else "Limited deleveraging — returns must come from EBITDA growth."}</p>'
-        f'<p style="margin-top:6px;">Check the '
-        f'<a href="/models/returns/{html.escape(deal_id)}" style="color:{PALETTE["text_link"]};">returns & covenant</a> '
-        f'page to see how leverage affects covenant headroom.</p>'
-        f'</div></div>'
+        '<p class="ck-section-body">Check the '
+        f'<a href="/models/returns/{html.escape(deal_id)}" class="ck-link">returns & covenant</a> '
+        'page to see how leverage affects covenant headroom.</p>',
+        title="What This Means",
     ) if entry_leverage > 0 else ""
 
     nav = _model_nav(deal_id, "debt")
-    body = f'{nav}{kpis}{table}{interp}{actions}'
+    next_up = ck_next_section(
+        "Open returns & covenant",
+        f"/models/returns/{html.escape(deal_id)}",
+        eyebrow="Continue —",
+        italic_word="returns",
+    )
+    body = f'{nav}{intro}{kpis}{table}{interp}{actions}{next_up}'
     return chartis_shell(body, f"Debt Model — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"Leverage: {entry_leverage:.1f}x entry → {exit_leverage:.1f}x exit")
@@ -96,13 +143,45 @@ def render_challenge_solver(deal_id: str, deal_name: str, result: Dict[str, Any]
     target = result.get("target_ebitda_drag", result.get("target", 0))
     solutions = result.get("solutions", result.get("assumptions", []))
 
+    intro = ck_section_intro(
+        eyebrow="CHALLENGE SOLVER",
+        headline=f"{html.escape(deal_name)} — what would have to be true.",
+        italic_word="have",
+        body=(
+            "Reverse-solve: which KPI assumptions would have to "
+            "hold to produce the target EBITDA drag? Frames the "
+            "downside case in 'we believe X is unlikely' terms."
+        ),
+    )
     kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${abs(float(target))/1e6:.1f}M</div>'
-        f'<div class="cad-kpi-label">Target EBITDA Drag</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(solutions)}</div>'
-        f'<div class="cad-kpi-label">Assumption Sets Found</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Target EBITDA Drag", f"${abs(float(target))/1e6:.1f}M",
+            help={
+                "definition": (
+                    "EBITDA drag level the challenge solver was asked "
+                    "to reverse-engineer. The solver finds combinations "
+                    "of input assumptions that would produce this "
+                    "specific outcome — used to surface the 'what "
+                    "breaks the deal?' scenarios partners want to "
+                    "stress-test at IC."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Assumption Sets Found", f"{len(solutions)}",
+            help={
+                "definition": (
+                    "Distinct assumption combinations that produce "
+                    "the target outcome. Few sets = the failure mode "
+                    "has a narrow trigger (one or two inputs); many "
+                    "sets = the deal is broadly fragile and many "
+                    "things could go wrong at once. The latter is "
+                    "the harder bear case to refute."
+                ),
+            },
+        )
+        + '</div>'
     )
 
     rows = ""
@@ -113,22 +192,21 @@ def render_challenge_solver(deal_id: str, deal_name: str, result: Dict[str, Any]
         current = s.get("current_value", s.get("current", 0))
         rows += (
             f'<tr>'
-            f'<td style="font-weight:500;">{desc or kpi}</td>'
+            f'<td><strong>{desc or kpi}</strong></td>'
             f'<td class="num">{float(current):.2f}</td>'
-            f'<td class="num" style="color:{PALETTE["warning"]};">{float(required):.2f}</td>'
+            f'<td class="num cad-warn">{float(required):.2f}</td>'
             f'<td class="num">{abs(float(required)-float(current)):.2f}</td>'
             f'</tr>'
         )
 
-    table = (
-        f'<div class="cad-card">'
-        f'<h2>Reverse Challenge: What Hits the Target?</h2>'
-        f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:10px;">'
-        f'Shows what KPI assumptions would need to be true to produce the target EBITDA drag. '
-        f'Useful for IC presentations: "the deal fails only if denial rate exceeds X%."</p>'
-        f'<table class="cad-table"><thead><tr>'
-        f'<th>Assumption</th><th>Current</th><th>Required</th><th>Gap</th>'
-        f'</tr></thead><tbody>{rows}</tbody></table></div>'
+    table = ck_panel(
+        '<p class="ck-section-body">'
+        'Shows what KPI assumptions would need to be true to produce the target EBITDA drag. '
+        'Useful for IC presentations: "the deal fails only if denial rate exceeds X%."</p>'
+        '<table class="cad-table"><thead><tr>'
+        '<th>Assumption</th><th>Current</th><th>Required</th><th>Gap</th>'
+        f'</tr></thead><tbody>{rows}</tbody></table>',
+        title="Reverse Challenge: What Hits the Target?",
     ) if rows else ""
 
     # Interpretation
@@ -136,21 +214,25 @@ def render_challenge_solver(deal_id: str, deal_name: str, result: Dict[str, Any]
     if solutions:
         biggest = max(solutions, key=lambda s: abs(float(s.get("required_value", 0)) - float(s.get("current_value", 0))))
         biggest_kpi = str(biggest.get("description", biggest.get("kpi", "")))
-        interp = (
-            f'<div class="cad-card" style="border-left:3px solid {PALETTE["warning"]};">'
-            f'<h2>What This Means</h2>'
-            f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
-            f'<p><strong>IC talking point:</strong> "The deal fails only if {html.escape(biggest_kpi.lower())}. '
-            f'We believe this scenario is unlikely because [your thesis here]."</p>'
-            f'<p style="margin-top:6px;">Use this analysis to frame the downside case in your IC memo. '
-            f'See <a href="/models/denial/{html.escape(deal_id)}" style="color:{PALETTE["text_link"]};">denial drivers</a> '
-            f'for root cause analysis and <a href="/pressure?deal_id={html.escape(deal_id)}" '
-            f'style="color:{PALETTE["text_link"]};">pressure test</a> for stress scenarios.</p>'
-            f'</div></div>'
+        interp = ck_panel(
+            '<p class="ck-section-body">'
+            f'<strong>IC talking point:</strong> "The deal fails only if {html.escape(biggest_kpi.lower())}. '
+            'We believe this scenario is unlikely because [your thesis here]."</p>'
+            '<p class="ck-section-body">Use this analysis to frame the downside case in your IC memo. '
+            f'See <a href="/models/denial/{html.escape(deal_id)}" class="ck-link">denial drivers</a> '
+            f'for root cause analysis and <a href="/pressure?deal_id={html.escape(deal_id)}" class="ck-link">'
+            'pressure test</a> for stress scenarios.</p>',
+            title="What This Means",
         )
 
     nav = _model_nav(deal_id, "challenge")
-    body = f'{nav}{kpis}{table}{interp}'
+    next_up = ck_next_section(
+        "Open the pressure test",
+        f"/pressure?deal_id={html.escape(deal_id)}",
+        eyebrow="Continue —",
+        italic_word="pressure",
+    )
+    body = f'{nav}{intro}{kpis}{table}{interp}{next_up}'
     return chartis_shell(body, f"Challenge Solver — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle="Reverse solver: what breaks the deal?")
@@ -163,25 +245,32 @@ def render_irs990_crosscheck(deal_id: str, deal_name: str, data: Dict[str, Any])
     is_nonprofit = data.get("is_nonprofit", False)
 
     status = "Non-Profit (990 Filed)" if is_nonprofit else "For-Profit or No 990 Found"
-    status_cls = "cad-badge-green" if is_nonprofit else "cad-badge-muted"
+    status_badge = ck_signal_badge(
+        status, tone="positive" if is_nonprofit else "neutral",
+    )
 
-    kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'<span class="cad-badge {status_cls}" style="font-size:13px;padding:4px 12px;">'
-        f'{status}</span></div>'
-        f'<div class="cad-kpi-label">Tax Status</div></div>'
+    intro = ck_section_intro(
+        eyebrow="IRS 990 CROSS-CHECK",
+        headline=f"{html.escape(deal_name)} — non-profit reconciliation.",
+        italic_word="reconciliation",
+        body=(
+            "Compares HCRIS cost-report figures against IRS Form 990 "
+            "filings. Large discrepancies (>25%) flag either data "
+            "quality issues or genuine timing differences."
+        ),
+    )
+    kpi_inner = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("Tax Status", status_badge)
     )
     if match:
         rev_990 = match.get("total_revenue", 0)
         assets = match.get("total_assets", 0)
-        kpis += (
-            f'<div class="cad-kpi"><div class="cad-kpi-value">${float(rev_990)/1e6:.0f}M</div>'
-            f'<div class="cad-kpi-label">990 Total Revenue</div></div>'
-            f'<div class="cad-kpi"><div class="cad-kpi-value">${float(assets)/1e6:.0f}M</div>'
-            f'<div class="cad-kpi-label">990 Total Assets</div></div>'
+        kpi_inner += (
+            ck_kpi_block("990 Total Revenue", f"${float(rev_990)/1e6:.0f}M")
+            + ck_kpi_block("990 Total Assets", f"${float(assets)/1e6:.0f}M")
         )
-    kpis += '</div>'
+    kpis = kpi_inner + '</div>'
 
     comp_rows = ""
     for c in comparisons:
@@ -189,32 +278,32 @@ def render_irs990_crosscheck(deal_id: str, deal_name: str, data: Dict[str, Any])
         hcris_val = c.get("hcris_value", 0)
         irs_val = c.get("irs_value", 0)
         diff = c.get("difference_pct", 0)
-        color = PALETTE["positive"] if abs(float(diff)) < 10 else (
-            PALETTE["warning"] if abs(float(diff)) < 25 else PALETTE["negative"])
+        cls = "cad-pos" if abs(float(diff)) < 10 else (
+            "cad-warn" if abs(float(diff)) < 25 else "cad-neg")
         comp_rows += (
             f'<tr><td>{field}</td>'
             f'<td class="num">${float(hcris_val)/1e6:.1f}M</td>'
             f'<td class="num">${float(irs_val)/1e6:.1f}M</td>'
-            f'<td class="num" style="color:{color};">{float(diff):+.1f}%</td></tr>'
+            f'<td class="num {cls}">{float(diff):+.1f}%</td></tr>'
         )
 
-    comp_table = (
-        f'<div class="cad-card">'
-        f'<h2>HCRIS vs IRS 990 Cross-Check</h2>'
-        f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:10px;">'
-        f'Compares HCRIS cost report figures against IRS Form 990 filings. '
-        f'Large discrepancies (&gt;25%) may indicate data quality issues or timing differences.</p>'
-        f'<table class="cad-table"><thead><tr>'
-        f'<th>Field</th><th>HCRIS</th><th>IRS 990</th><th>Difference</th>'
-        f'</tr></thead><tbody>{comp_rows}</tbody></table></div>'
-    ) if comp_rows else (
-        f'<div class="cad-card"><p style="color:{PALETTE["text_muted"]};">'
-        f'No IRS 990 data available for cross-checking. '
-        f'This hospital may be for-profit or the 990 has not been filed/loaded.</p></div>'
+    comp_table = ck_panel(
+        '<p class="ck-section-body">'
+        'Compares HCRIS cost report figures against IRS Form 990 filings. '
+        'Large discrepancies (&gt;25%) may indicate data quality issues or timing differences.</p>'
+        '<table class="cad-table"><thead><tr>'
+        '<th>Field</th><th>HCRIS</th><th>IRS 990</th><th>Difference</th>'
+        f'</tr></thead><tbody>{comp_rows}</tbody></table>',
+        title="HCRIS vs IRS 990 Cross-Check",
+    ) if comp_rows else ck_panel(
+        '<p class="ck-section-body">'
+        'No IRS 990 data available for cross-checking. '
+        'This hospital may be for-profit or the 990 has not been filed/loaded.</p>',
+        title="IRS 990 Cross-Check",
     )
 
     nav = _model_nav(deal_id, "irs990")
-    body = f'{nav}{kpis}{comp_table}'
+    body = f'{nav}{intro}{kpis}{comp_table}'
     return chartis_shell(body, f"IRS 990 Cross-Check — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle="Non-profit hospital financial verification")
@@ -229,14 +318,14 @@ def render_trend_forecast(deal_id: str, deal_name: str, trends: List[Dict[str, A
         slope = t.get("slope", t.get("change_per_quarter", 0))
         forecast = t.get("forecast_next", t.get("predicted", 0))
         confidence = t.get("confidence", t.get("r2", 0))
-        dir_color = PALETTE["positive"] if "improv" in str(direction).lower() or slope > 0 else (
-            PALETTE["negative"] if "deteri" in str(direction).lower() or slope < 0 else PALETTE["text_muted"])
+        dir_cls = "cad-pos" if "improv" in str(direction).lower() or slope > 0 else (
+            "cad-neg" if "deteri" in str(direction).lower() or slope < 0 else "")
         dir_icon = "&#9650;" if slope > 0 else ("&#9660;" if slope < 0 else "&#9654;")
         rows += (
             f'<tr>'
-            f'<td style="font-weight:500;">{metric}</td>'
-            f'<td style="color:{dir_color};">{dir_icon} {html.escape(str(direction))}</td>'
-            f'<td class="num" style="color:{dir_color};">{float(slope):+.3f}/qtr</td>'
+            f'<td><strong>{metric}</strong></td>'
+            f'<td class="{dir_cls}">{dir_icon} {html.escape(str(direction))}</td>'
+            f'<td class="num {dir_cls}">{float(slope):+.3f}/qtr</td>'
             f'<td class="num">{float(forecast):.2f}</td>'
             f'<td class="num">{float(confidence):.0%}</td>'
             f'</tr>'
@@ -245,32 +334,74 @@ def render_trend_forecast(deal_id: str, deal_name: str, trends: List[Dict[str, A
     improving = sum(1 for t in trends if float(t.get("slope", 0)) > 0)
     declining = sum(1 for t in trends if float(t.get("slope", 0)) < 0)
 
+    intro = ck_section_intro(
+        eyebrow="TREND FORECAST",
+        headline=f"{html.escape(deal_name)} — where the metrics are heading.",
+        italic_word="heading",
+        body=(
+            f"{len(trends)} time-series trends detected · {improving} improving, "
+            f"{declining} declining. Per-metric slope, direction, "
+            "and short-horizon forecast against the latest priors."
+        ),
+    )
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("Metrics Tracked", f"{len(trends)}")
+        + ck_kpi_block(
+            "Improving", f"{improving}",
+            help={
+                "definition": (
+                    "Metrics with positive slope across the most-"
+                    "recent four quarters. The 'winds at our back' "
+                    "set — if improving outnumbers declining 2:1, "
+                    "the operating team is executing; 1:1 = mixed "
+                    "performance; declining-dominant = a turnaround "
+                    "story the partner is still mid-execution."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Declining", f"{declining}",
+            help={
+                "definition": (
+                    "Metrics with negative slope across the most-"
+                    "recent four quarters. Watch the table below for "
+                    "which specific KPIs are dragging — a few "
+                    "concentrated declines (say, denial rate + AR "
+                    "days) signal a fixable RCM issue, while broad "
+                    "declines across margin + volume + payer mix "
+                    "signal structural sector exposure."
+                ),
+            },
+        )
+        + '</div>'
+    )
+
     nav = _model_nav(deal_id, "trends")
     body = (
-        f'{nav}'
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(trends)}</div>'
-        f'<div class="cad-kpi-label">Metrics Tracked</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["positive"]};">'
-        f'{improving}</div><div class="cad-kpi-label">Improving</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["negative"]};">'
-        f'{declining}</div><div class="cad-kpi-label">Declining</div></div>'
-        f'</div>'
-
-        f'<div class="cad-card">'
-        f'<h2>Trend Detection &amp; Forecast</h2>'
-        f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:10px;">'
-        f'Per-metric time-series trend detection with short-horizon forecasts. '
-        f'Direction and slope estimated from historical data points.</p>'
-        f'<table class="cad-table"><thead><tr>'
-        f'<th>Metric</th><th>Direction</th><th>Slope</th><th>Next Forecast</th><th>Confidence</th>'
-        f'</tr></thead><tbody>{rows}</tbody></table></div>'
-
-        f'<div class="cad-card" style="display:flex;gap:8px;">'
-        f'<a href="/models/anomalies/{html.escape(deal_id)}" class="cad-btn" style="text-decoration:none;">'
-        f'Anomaly Detection</a>'
-        f'<a href="/deal/{html.escape(deal_id)}" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Deal Dashboard</a></div>'
+        f'{nav}{intro}{kpis}'
+        + ck_panel(
+            '<p class="ck-section-body">'
+            'Per-metric time-series trend detection with short-horizon forecasts. '
+            'Direction and slope estimated from historical data points.</p>'
+            '<table class="cad-table"><thead><tr>'
+            '<th>Metric</th><th>Direction</th><th>Slope</th><th>Next Forecast</th><th>Confidence</th>'
+            f'</tr></thead><tbody>{rows}</tbody></table>',
+            title="Trend Detection & Forecast",
+        )
+        + ck_panel(
+            '<p class="ck-section-body">'
+            f'<a href="/models/anomalies/{html.escape(deal_id)}" class="cad-btn">Anomaly Detection</a> '
+            f'<a href="/deal/{html.escape(deal_id)}" class="cad-btn cad-btn-primary">Deal Dashboard</a>'
+            '</p>',
+            title="Cross-links",
+        )
+        + ck_next_section(
+            "Open anomaly detection",
+            f"/models/anomalies/{html.escape(deal_id)}",
+            eyebrow="Continue —",
+            italic_word="anomaly",
+        )
     )
 
     return chartis_shell(body, f"Trend Forecast — {html.escape(deal_name)}",

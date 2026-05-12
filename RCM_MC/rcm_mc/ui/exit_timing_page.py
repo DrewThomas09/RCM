@@ -17,7 +17,10 @@ from ..diligence.exit_timing import (
     ExitRecommendation, ExitTimingReport,
     analyze_exit_timing,
 )
-from ._chartis_kit import P, chartis_shell, ck_provenance_tooltip
+from ._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_next_section,
+    ck_provenance_tooltip, ck_section_intro,
+)
 from .power_ui import (
     bookmark_hint, deal_context_bar, export_json_panel, provenance,
 )
@@ -371,44 +374,56 @@ def _recommendation_block(rec: Optional[ExitRecommendation]) -> str:
         ),
     )
 
-    return (
-        f'<div class="et-rec-card">'
-        f'<div class="et-eyebrow">Recommended exit path</div>'
-        f'<div style="font-size:20px;color:{P["text"]};font-weight:600;'
-        f'margin-top:4px;">{html.escape(rec.summary)}</div>'
-        f'<div class="et-kpi-grid">'
-        f'<div><div class="et-kpi__label">Year</div>'
-        f'<div class="et-kpi__val" style="color:{P["text"]};">'
-        f'{year_num}</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">optimal hold</div></div>'
-        f'<div><div class="et-kpi__label">Expected MOIC</div>'
-        f'<div class="et-kpi__val" style="color:{moic_color};">'
-        f'{moic_num}</div>'
-        f'<div style="font-size:10px;color:{moic_color};margin-top:3px;">'
-        f'{"below hurdle" if rec.expected_moic < 1.5 else "acceptable" if rec.expected_moic < 2.5 else "top quintile"}'
-        f'</div></div>'
-        f'<div><div class="et-kpi__label">Expected IRR</div>'
-        f'<div class="et-kpi__val" style="color:{irr_color};">'
-        f'{irr_num}</div>'
-        f'<div style="font-size:10px;color:{irr_color};margin-top:3px;">'
-        f'vs 15% peer base · 20% strong'
-        f'</div></div>'
-        f'<div><div class="et-kpi__label">Prob-weighted proceeds</div>'
-        f'<div class="et-kpi__val" style="color:{P["text"]};">'
-        f'{proceeds_num}</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};margin-top:3px;">'
-        f'expected $, hover for detail</div></div>'
-        f'</div>'
-        f'<div style="margin-top:14px;padding:10px 14px;'
-        f'background:{P["panel_alt"]};border-left:2px solid '
-        f'{P["accent"]};border-radius:0 3px 3px 0;font-size:12px;'
-        f'color:{P["text_dim"]};line-height:1.6;max-width:880px;">'
-        f'<strong style="color:{P["text"]};">Why this choice: </strong>'
-        f'{html.escape(rec.rationale)}'
-        f'</div>'
-        f'</div>'
+    moic_label = (
+        "below hurdle" if rec.expected_moic < 1.5
+        else "acceptable" if rec.expected_moic < 2.5
+        else "top quintile"
     )
+    intro = ck_section_intro(
+        eyebrow="Recommended exit path",
+        headline=html.escape(rec.summary),
+        body=html.escape(rec.rationale),
+        italic_word="exit",
+    )
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("Year", year_num, sub="optimal hold")
+        + ck_kpi_block(
+            "Expected MOIC", moic_num, sub=moic_label,
+            help={
+                "definition": (
+                    "Multiple on invested capital. 2.0x = doubles your money; "
+                    "2.5x is typical PE healthcare; 3.0x+ is a strong outcome."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Expected IRR", irr_num,
+            sub="vs 15% peer base · 20% strong",
+            help={
+                "definition": (
+                    "Internal rate of return — annualized return that "
+                    "discounts the cash flows back to the entry equity. "
+                    "Sensitive to hold period; shorter holds with same MOIC "
+                    "produce higher IRR."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Prob-weighted proceeds", proceeds_num,
+            sub="expected $, hover for detail",
+            help={
+                "definition": (
+                    "Expected exit proceeds across all candidate years, "
+                    "weighted by each year's probability of clearing a "
+                    "buyer bid. Lower than the peak-year proceeds; "
+                    "captures the deal's downside path too."
+                ),
+            },
+        )
+        + "</div>"
+    )
+    return f'<div class="et-rec-card">{intro}{kpis}</div>'
 
 
 def _score_band_legend() -> str:
@@ -864,6 +879,12 @@ def render_exit_timing_page(
         + _buyer_fit_cards(report.buyer_fit)
         + '</div>'
         + bookmark_hint()
+        + ck_next_section(
+            "Take this timing back into the IC packet",
+            "/diligence/ic-packet",
+            eyebrow="Continue —",
+            italic_word="IC",
+        )
     )
     return chartis_shell(
         body, f"Exit Timing — {target_name}",

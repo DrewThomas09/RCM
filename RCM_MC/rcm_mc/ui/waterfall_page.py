@@ -9,7 +9,8 @@ import html
 from typing import Any, Dict, List
 
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_pct, ck_kpi_block, ck_provenance_tooltip,
+    chartis_shell, ck_fmt_pct, ck_kpi_block, ck_next_section,
+    ck_provenance_tooltip,
 )
 from .models_page import _model_nav
 from .brand import PALETTE
@@ -56,8 +57,28 @@ def render_waterfall_page(deal_id: str, deal_name: str, result: Dict[str, Any]) 
     )
     kpis = (
         '<div class="ck-kpi-grid">'
-        + ck_kpi_block("Gross IRR", irr_value, "before fees")
-        + ck_kpi_block("Gross MOIC", moic_value, "before fees")
+        + ck_kpi_block(
+            "Gross IRR", irr_value, "before fees",
+            help={
+                "definition": (
+                    "Deal-level IRR before management fees and carry "
+                    "are deducted. The 'before fees' read; LP IRR will "
+                    "be 200-400 bps lower depending on fee structure "
+                    "and carry waterfall mechanics."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Gross MOIC", moic_value, "before fees",
+            help={
+                "definition": (
+                    "Multiple on invested capital before fees + carry. "
+                    "Gross 3.0x typically becomes LP-net 2.4-2.6x "
+                    "after a standard 2-and-20 fee structure across a "
+                    "5-year hold."
+                ),
+            },
+        )
         + ck_kpi_block("Invested", f"${invested/1e6:.0f}M", "equity check")
         + ck_kpi_block("Exit Proceeds", f"${exit_proceeds/1e6:.0f}M", "total return")
         + ck_kpi_block("Hold Period", f"{hold_years:.1f}yr", "exit year - entry")
@@ -137,7 +158,13 @@ def render_waterfall_page(deal_id: str, deal_name: str, result: Dict[str, Any]) 
     )
 
     nav = _model_nav(deal_id, "waterfall")
-    body = f'{nav}{kpis}{split}{interp}{tier_section}{actions}'
+    next_up = ck_next_section(
+        "Open the returns & covenant view",
+        f"/models/returns/{html.escape(deal_id)}",
+        eyebrow="Continue —",
+        italic_word="returns",
+    )
+    body = f'{nav}{kpis}{split}{interp}{tier_section}{actions}{next_up}'
 
     return chartis_shell(body, f"Returns Waterfall — {html.escape(deal_name)}",
                     active_nav="/analysis",

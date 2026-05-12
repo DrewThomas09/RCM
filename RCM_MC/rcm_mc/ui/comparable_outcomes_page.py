@@ -238,7 +238,7 @@ def render_comparable_outcomes_page(
     from . import _web_components as _wc
     from ._chartis_kit import (
         chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-        ck_provenance_tooltip,
+        ck_next_section, ck_provenance_tooltip,
     )
     from ..diligence.comparable_outcomes import benchmark_deal
     from ..data_public.deals_corpus import DealsCorpus
@@ -420,29 +420,89 @@ def render_comparable_outcomes_page(
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
         + ck_kpi_block("Comparables", comp_value, "matched")
         + ck_kpi_block("Comp P50 MOIC", moic_value, "median realized")
-        + ck_kpi_block("Win Rate (2.5x+)",
-                       f"{win_rate*100:.0f}%" if win_rate else "—",
-                       "share above 2.5x")
+        + ck_kpi_block(
+            "Win Rate (2.5x+)",
+            f"{win_rate*100:.0f}%" if win_rate else "—",
+            "share above 2.5x",
+            help={
+                "definition": (
+                    "Share of matched comparable deals that returned "
+                    "≥ 2.5x MOIC. 2.5x is the conventional PE "
+                    "healthcare 'good outcome' threshold; below 30% "
+                    "win-rate in your comp set signals a sector "
+                    "where strong outcomes are tail events, not the "
+                    "expected case."
+                ),
+            },
+        )
         + '</div>'
     )
 
-    inner = (
-        ck_eyebrow("Comparable Outcomes")
-        + kpi_strip
-        + header
-        + form
-        + _outcome_strip(summary)
-        + export_bar
-        + _wc.section_card(
-            f"Top {len(rows)} comparables — sorted by match score",
-            table + breakdown_legend, pad=False,
+    # Phase QQQ: print-preview affordance — partners print this
+    # surface as their corpus-comparable benchmark for IC. ?print=1
+    # hides the input form, export bar, kpi strip, and Up-next; keeps
+    # just the outcome strip + comparables table.
+    import urllib.parse as _urlparse
+    print_preview = str(qs.get("print") or "") == "1"
+    if print_preview:
+        exit_qs = {k: v for k, v in qs.items() if k != "print"}
+        exit_qstr = "?" + _urlparse.urlencode(exit_qs, doseq=True) if exit_qs else ""
+        inner = (
+            '<div class="ck-print-preview-bar">'
+            '<span class="ck-print-preview-meta">Print preview · '
+            'Comparable outcomes</span>'
+            f'<a href="/diligence/comparable-outcomes{_html.escape(exit_qstr)}" '
+            'class="ck-print-preview-exit">Exit preview</a>'
+            '</div>'
+            + ck_eyebrow("Comparable Outcomes")
+            + header
+            + _outcome_strip(summary)
+            + _wc.section_card(
+                f"Top {len(rows)} comparables — sorted by match score",
+                table + breakdown_legend, pad=False,
+            )
         )
-    )
-    body = (
-        _wc.web_styles()
-        + _wc.responsive_container(inner)
-        + _wc.sortable_table_js()
-    )
+        body = (
+            '<div class="ck-print-preview">'
+            + _wc.web_styles()
+            + _wc.responsive_container(inner)
+            + _wc.sortable_table_js()
+            + '</div>'
+        )
+    else:
+        print_qs = {**{k: v for k, v in qs.items() if k != "print"}, "print": "1"}
+        print_qstr = "?" + _urlparse.urlencode(print_qs, doseq=True)
+        print_cta = (
+            '<div class="ck-print-preview-cta" style="padding:8px 16px;">'
+            f'<a href="/diligence/comparable-outcomes{_html.escape(print_qstr)}" '
+            'class="ck-link">Preview print version →</a>'
+            '</div>'
+        )
+        inner = (
+            ck_eyebrow("Comparable Outcomes")
+            + kpi_strip
+            + header
+            + form
+            + print_cta
+            + _outcome_strip(summary)
+            + export_bar
+            + _wc.section_card(
+                f"Top {len(rows)} comparables — sorted by match score",
+                table + breakdown_legend, pad=False,
+            )
+        )
+        next_up = ck_next_section(
+            "Cross-check against named bear cases",
+            "/bear-cases",
+            eyebrow="Continue —",
+            italic_word="bear",
+        )
+        body = (
+            _wc.web_styles()
+            + _wc.responsive_container(inner)
+            + _wc.sortable_table_js()
+            + next_up
+        )
     return chartis_shell(body, "Comparable outcomes",
                          active_nav="/diligence/comparable-outcomes",
         editorial_intro={

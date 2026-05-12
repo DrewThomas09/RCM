@@ -8,7 +8,8 @@ import html
 from typing import Any, Dict, List
 
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+    chartis_shell, ck_fmt_num, ck_kpi_block, ck_next_section,
+    ck_provenance_tooltip,
 )
 from .brand import PALETTE
 
@@ -57,10 +58,57 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
     )
     kpis = (
         '<div class="ck-kpi-grid">'
-        + ck_kpi_block("Disease Density Index", density_value, "structural demand")
-        + ck_kpi_block("Demand Stickiness", f'<span style="color:{stick_color};">{stickiness:.0f}/100</span>', "switching cost")
-        + ck_kpi_block(f"Price Elasticity", elasticity_value, elas_label)
-        + ck_kpi_block("Tailwind Score", f'<span style="color:{tw_color};">{tailwind:+.0f}</span>', "secular trend")
+        + ck_kpi_block(
+            "Disease Density Index", density_value, "structural demand",
+            help={
+                "definition": (
+                    "Composite score combining county-level prevalence "
+                    "of the conditions this hospital treats with the "
+                    "size of the catchment population. High = lots of "
+                    "patients who need the service close to where the "
+                    "hospital sits; low = hospital is a destination "
+                    "center pulling patients from outside."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Demand Stickiness", f'<span style="color:{stick_color};">{stickiness:.0f}/100</span>', "switching cost",
+            help={
+                "definition": (
+                    "How hard it is for patients to switch to a "
+                    "competitor — proximity, network ties, surgeon "
+                    "loyalty, payer-network exclusivity. Above 70 "
+                    "= moat-like; below 40 = patients churn easily "
+                    "and the hospital must compete on price/service."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            f"Price Elasticity", elasticity_value, elas_label,
+            help={
+                "definition": (
+                    "How patient demand responds to price changes. "
+                    "Negative + close to 0 = inelastic (people need "
+                    "the care regardless of price — usually acute "
+                    "or specialty); large negative = elastic (people "
+                    "shop or delay care — common in elective "
+                    "outpatient)."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Tailwind Score", f'<span style="color:{tw_color};">{tailwind:+.0f}</span>', "secular trend",
+            help={
+                "definition": (
+                    "Net of secular demand drivers (aging, chronic "
+                    "disease growth, MA penetration) and headwinds "
+                    "(site-of-service shift, telehealth substitution). "
+                    "Positive = the wind is at this service's back; "
+                    "negative = the partner is underwriting against "
+                    "the long-term trend."
+                ),
+            },
+        )
         + '</div>'
     )
 
@@ -207,7 +255,13 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
         f'</div>'
     )
 
-    body = f'{kpis}{prevalence_section}{stick_section}{elas_section}{tw_section}{interp}{actions}'
+    next_up = ck_next_section(
+        "Open the market analysis",
+        f"/models/market/{ccn}",
+        eyebrow="Continue —",
+        italic_word="market",
+    )
+    body = f'{kpis}{prevalence_section}{stick_section}{elas_section}{tw_section}{interp}{actions}{next_up}'
 
     return chartis_shell(
         body, f"Demand Analysis — {name}",

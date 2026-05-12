@@ -20,7 +20,10 @@ from __future__ import annotations
 import html as _html
 from typing import List, Mapping
 
-from ._chartis_kit import chartis_shell, ck_page_title
+from ._chartis_kit import (
+    chartis_shell, ck_next_section, ck_page_title, ck_panel,
+    ck_section_intro,
+)
 
 
 _PILLARS: List[Mapping[str, object]] = [
@@ -177,8 +180,7 @@ def render_diligence_index() -> str:
                 f'{_html.escape(link["blurb"])}</div>'
                 '</a>'
             )
-        pillars_html.append(
-            '<section class="ck-dil-pillar">'
+        pillar_inner = (
             '<header class="ck-dil-pillar-head">'
             f'<div class="ck-eyebrow">{_html.escape(p["eyebrow"])}</div>'
             f'<h2 class="ck-dil-pillar-title">{_html.escape(p["title"])}</h2>'
@@ -187,7 +189,9 @@ def render_diligence_index() -> str:
             '<div class="ck-dil-link-list">'
             + "".join(link_rows)
             + '</div>'
-            '</section>'
+        )
+        pillars_html.append(
+            ck_panel(pillar_inner)
         )
 
     title = ck_page_title(
@@ -196,6 +200,20 @@ def render_diligence_index() -> str:
         meta=(
             f"{sum(len(p['links']) for p in _PILLARS)} surfaces · "
             "grouped into four pillars"
+        ),
+    )
+    intro = ck_section_intro(
+        eyebrow="RCM DILIGENCE PLAYBOOK",
+        headline=(
+            "Where the diligence work actually lives."
+        ),
+        italic_word="lives",
+        body=(
+            "Twenty-four diligence surfaces grouped into the four "
+            "pillars a partner mentally walks: profile the target, "
+            "frame the thesis, stress the assumptions, then "
+            "synthesize for IC. Each tile names the surface and the "
+            "one-line job it does."
         ),
     )
 
@@ -238,12 +256,20 @@ def render_diligence_index() -> str:
         '</style>'
     )
 
+    next_up = ck_next_section(
+        "Open the portfolio-wide question ledger",
+        "/diligence/questions",
+        eyebrow="Continue —",
+        italic_word="question",
+    )
     body = (
         f"{css}"
         f"{title}"
+        f"{intro}"
         '<div class="ck-dil-grid">'
         + "".join(pillars_html)
         + '</div>'
+        + next_up
     )
 
     return chartis_shell(

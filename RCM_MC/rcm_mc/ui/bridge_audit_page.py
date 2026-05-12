@@ -22,7 +22,10 @@ from ..diligence.bridge_audit import (
     BridgeAuditReport, BridgeLever, LEVER_PRIORS, LeverAudit,
     LeverVerdict, audit_bridge, parse_bridge_text,
 )
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_header, ck_section_intro, ck_signal_badge,
+)
 from .power_ui import (
     benchmark_chip, bookmark_hint, deal_context_bar,
     export_json_panel, interpret_callout, provenance, sortable_table,
@@ -285,41 +288,93 @@ def _verdict_card(report: BridgeAuditReport) -> str:
         ),
     )
 
+    badge_tone = {
+        "MATERIAL": "negative",
+        "GAP": "warning",
+        "OK": "positive",
+    }.get(verdict, "neutral")
+    intro = ck_section_intro(
+        eyebrow=f"Bridge Audit · {verdict}",
+        headline=html.escape(report.headline),
+        body=html.escape(report.rationale),
+        italic_word="bridge",
+    )
+    badge = ck_signal_badge(verdict, tone=badge_tone)
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Banker Claim",
+            f"${report.claimed_bridge_usd/1e6:.1f}M",
+            sub="total sell-side bridge",
+            help={
+                "definition": (
+                    "Sum of all EBITDA uplift claimed in the "
+                    "seller's CIM bridge. Partners read this as "
+                    "the asking number; the audit below splits it "
+                    "into what realistically realises."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Realistic (P50)",
+            f"${report.realistic_bridge_usd/1e6:.1f}M",
+            sub=(
+                f"P25 ${report.realistic_bridge_p25_usd/1e6:.1f}M – "
+                f"P75 ${report.realistic_bridge_p75_usd/1e6:.1f}M"
+            ),
+            help={
+                "definition": (
+                    "Realisation-probability-weighted bridge — each "
+                    "lever's claim discounted by historical "
+                    "achievement rates for that lever type. The "
+                    "P25-P75 band shows the range across reasonable "
+                    "execution paths; partners price the deal off "
+                    "P25, not the banker claim."
+                ),
+                "citation": "rcm_mc/pe/rcm_ebitda_bridge.py "
+                            "realization priors",
+            },
+        )
+        + ck_kpi_block(
+            "Gap", gap_val,
+            sub=f"{report.gap_pct*100:+.0f}% of claim",
+            help={
+                "definition": (
+                    "Realistic minus Banker Claim — usually "
+                    "negative. Above -20% the bridge is credible; "
+                    "-20% to -40% requires structural mitigants; "
+                    "below -40% the bridge is largely unsupported "
+                    "and the deal needs to reprice."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Levers Audited", f"{len(report.per_lever)}",
+            sub=(
+                f"{report.overstated_count} overstated · "
+                f"{report.unsupported_count} unsupported · "
+                f"{report.realistic_count} realistic"
+            ),
+            help={
+                "definition": (
+                    "Count of individual bridge items the audit "
+                    "scored. Overstated = claim above the realistic "
+                    "P75; unsupported = no evidence in the CIM; "
+                    "realistic = claim sits inside P25-P75. Each "
+                    "is a discrete negotiation lever."
+                ),
+            },
+        )
+        + "</div>"
+    )
     return (
         f'<div class="ba-verdict-card ba-verdict-{verdict}">'
-        f'<div class="ba-verdict-badge">{verdict}</div>'
-        f'<div class="ba-verdict-headline">'
-        f'{html.escape(report.headline)}</div>'
-        f'<div class="ba-verdict-rationale">'
-        f'{html.escape(report.rationale)}</div>'
+        f'<p class="ck-section-body">{badge}</p>'
+        f'{intro}'
         + interpret_callout("Plain-English read:", plain, tone=plain_tone)
-        + f'<div style="margin-top:16px;">{realization_chip}</div>'
-        + f'<div class="ba-kpi-grid">'
-        f'  <div><div class="ba-kpi__label">Banker Claim</div>'
-        f'       <div class="ba-kpi__val">'
-        f'${report.claimed_bridge_usd/1e6:.1f}M</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">total sell-side bridge</div></div>'
-        f'  <div><div class="ba-kpi__label">Realistic (P50)</div>'
-        f'       <div class="ba-kpi__val pos">'
-        f'${report.realistic_bridge_usd/1e6:.1f}M</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">P25 ${report.realistic_bridge_p25_usd/1e6:.1f}M – '
-        f'P75 ${report.realistic_bridge_p75_usd/1e6:.1f}M</div></div>'
-        f'  <div><div class="ba-kpi__label">Gap</div>'
-        f'       <div class="ba-kpi__val '
-        f'{"neg" if report.gap_usd > 0 else "pos"}">{gap_val}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">{report.gap_pct*100:+.0f}% of claim</div></div>'
-        f'  <div><div class="ba-kpi__label">Levers Audited</div>'
-        f'       <div class="ba-kpi__val">{len(report.per_lever)}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">'
-        f'{report.overstated_count} overstated · '
-        f'{report.unsupported_count} unsupported · '
-        f'{report.realistic_count} realistic</div></div>'
-        f'</div>'
-        f'</div>'
+        + f'<p class="ck-section-body">{realization_chip}</p>'
+        + kpis
+        + '</div>'
     )
 
 
@@ -331,32 +386,26 @@ def _counter_bid_card(report: BridgeAuditReport) -> str:
         or report.price_reduction_usd < 1_000_000
     ):
         return ""
-    return (
-        f'<div class="ba-counter-card">'
-        f'<div style="font-size:11px;letter-spacing:1.5px;'
-        f'text-transform:uppercase;color:{P["text_faint"]};'
-        f'font-weight:700;">Counter-bid recommendation</div>'
-        f'<div class="ba-counter-num">'
-        f'${report.counter_offer_usd/1e6:,.0f}M</div>'
-        f'<div class="ba-counter-sub">'
-        f'Banker asking '
-        f'<strong style="color:{P["text"]};">'
-        f'${report.asking_price_usd/1e6:,.0f}M</strong> at '
-        f'{report.entry_multiple:.1f}× — our audit shows '
-        f'${report.gap_usd/1e6:,.1f}M of realistic bridge gap. '
-        f'At the entry multiple, that prices out to '
-        f'<strong style="color:{P["negative"]};">'
-        f'${report.price_reduction_usd/1e6:,.1f}M of overpayment</strong>. '
-        f'Counter at '
-        f'<strong style="color:{P["positive"]};">'
-        f'${report.counter_offer_usd/1e6:,.0f}M</strong>, or structure '
-        f'<strong>${(report.earn_out_target_usd or 0)/1e6:,.1f}M as a 24-month '
-        f'earn-out</strong> triggered at '
-        f'<strong>${(report.earn_out_trigger_usd or 0)/1e6:,.1f}M</strong> '
-        f'LTM EBITDA to preserve bid competitiveness while shifting '
-        f'the realization risk back to the seller.'
-        f'</div></div>'
+    body = (
+        f"Banker asking <strong>${report.asking_price_usd/1e6:,.0f}M</strong> "
+        f"at {report.entry_multiple:.1f}× — our audit shows "
+        f"<strong>${report.gap_usd/1e6:,.1f}M of realistic bridge gap</strong>. "
+        f"At the entry multiple, that prices out to "
+        f"<strong>${report.price_reduction_usd/1e6:,.1f}M of overpayment</strong>. "
+        f"Counter at <strong>${report.counter_offer_usd/1e6:,.0f}M</strong>, "
+        f"or structure <strong>${(report.earn_out_target_usd or 0)/1e6:,.1f}M "
+        f"as a 24-month earn-out</strong> triggered at "
+        f"<strong>${(report.earn_out_trigger_usd or 0)/1e6:,.1f}M</strong> "
+        f"LTM EBITDA to preserve bid competitiveness while shifting "
+        f"the realization risk back to the seller."
     )
+    intro = ck_section_intro(
+        eyebrow="Counter-bid recommendation",
+        headline=f"${report.counter_offer_usd/1e6:,.0f}M",
+        body=body,
+        italic_word="counter",
+    )
+    return f'<div class="ba-counter-card">{intro}</div>'
 
 
 def _per_lever_table(report: BridgeAuditReport) -> str:
@@ -639,23 +688,27 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
   </div>
 </form>
 """
+    landing_hero = ck_section_intro(
+        eyebrow="EBITDA Bridge Auto-Auditor",
+        headline="Is the banker's bridge credible?",
+        italic_word="credible",
+        body=(
+            "Paste the banker's sell-side EBITDA bridge; our engine "
+            "classifies each lever, pulls realization priors from "
+            "~3,000 historical RCM initiatives, adjusts for target "
+            "characteristics (denial rate, payer mix, regulatory "
+            "exposure), and returns a risk-adjusted bridge with "
+            "counter-bid math. Median realization across categories "
+            "ranges 35-92%; the auditor surfaces exactly which "
+            "claims are stretching and by how much."
+        ),
+    )
     body = (
         _scoped_styles()
         + '<div class="ba-wrap">'
         + deal_context_bar(qs or {}, active_surface="bridge")
-        + '<div style="padding:22px 0 16px 0;">'
-        + '<div class="ba-eyebrow">EBITDA Bridge Auto-Auditor</div>'
-        + '<div class="ba-h1">Is the banker\'s bridge credible?</div>'
-        + f'<div class="ba-callout">Paste the banker\'s sell-side '
-        + 'EBITDA bridge; our engine classifies each lever, pulls '
-        + 'realization priors from ~3,000 historical RCM initiatives, '
-        + 'adjusts for target characteristics (denial rate, payer '
-        + 'mix, regulatory exposure), and returns a risk-adjusted '
-        + 'bridge with counter-bid math. Median realization across '
-        + 'categories ranges 35-92%; the auditor surfaces exactly '
-        + 'which claims are stretching and by how much.</div>'
-        + '</div>'
-        + form
+        + landing_hero
+        + ck_panel(form, title="Bridge inputs")
         + '</div>'
     )
     return chartis_shell(
@@ -734,19 +787,22 @@ def render_bridge_audit_page(
 
     levers = parse_bridge_text(bridge_text)
     if not levers:
+        err_intro = ck_section_intro(
+            eyebrow="Bridge Audit",
+            headline="Could not parse any lever rows.",
+            italic_word="parse",
+            body=(
+                "Expected format: 'Denial workflow, $4.2M' — one "
+                "line per lever. Check punctuation or paste again."
+            ),
+        )
         return chartis_shell(
             _scoped_styles()
-            + f'<div class="ba-wrap" style="padding:28px;">'
-            + f'<div class="ba-eyebrow">Bridge Audit</div>'
-            + f'<div class="ba-h1" style="color:{P["negative"]};">'
-            + 'Could not parse any lever rows.</div>'
-            + f'<div class="ba-callout">Expected format: '
-            + '<code>Denial workflow, $4.2M</code> — one line per '
-            + 'lever. Check punctuation or paste again.</div>'
-            + f'<div style="margin-top:18px;">'
-            + f'<a href="/diligence/bridge-audit" '
-            + f'style="color:{P["accent"]};">← Back to audit form</a>'
-            + '</div></div>',
+            + '<div class="ba-wrap">'
+            + err_intro
+            + '<p class="ck-section-body">'
+            + '<a href="/diligence/bridge-audit" class="ck-link">'
+            + '← Back to audit form</a></p></div>',
             "RCM Diligence — Bridge Auto-Auditor",
         )
 
@@ -803,87 +859,72 @@ def render_bridge_audit_page(
         )
     chart_plain = " ".join(chart_plain_parts)
 
+    main_intro = ck_section_intro(
+        eyebrow="EBITDA Bridge Auto-Auditor",
+        headline=f"{html.escape(target_name)} — bridge × realization priors",
+        italic_word="bridge",
+        body=(
+            f"{len(report.per_lever)} levers audited · "
+            f"${report.claimed_bridge_usd/1e6:.1f}M claimed · "
+            f"${report.realistic_bridge_usd/1e6:.1f}M realistic."
+        ),
+    )
     hero = (
-        f'<div style="padding:22px 0 16px 0;border-bottom:1px solid '
-        f'{P["border"]};margin-bottom:22px;">'
-        f'<div class="ba-eyebrow">EBITDA Bridge Auto-Auditor</div>'
-        f'<div class="ba-h1">{html.escape(target_name)}</div>'
-        f'<div style="font-size:11px;color:{P["text_faint"]};'
-        f'margin-top:4px;">'
-        f'{len(report.per_lever)} levers audited · '
-        f'${report.claimed_bridge_usd/1e6:.1f}M claimed · '
-        f'${report.realistic_bridge_usd/1e6:.1f}M realistic'
-        f'</div>'
-        f'{_verdict_card(report)}'
-        f'{_counter_bid_card(report)}'
-        f'</div>'
+        main_intro
+        + _verdict_card(report)
+        + _counter_bid_card(report)
     )
 
-    chart_panel = (
-        f'<div class="ba-panel">'
-        f'<div class="ba-section-label" style="margin-top:0;">'
-        f'Claimed vs realistic — lever by lever</div>'
-        f'{_bridge_comparison_chart(report)}'
+    chart_panel = ck_panel(
+        _bridge_comparison_chart(report)
         + interpret_callout("Plain-English read:", chart_plain)
-        + f'<div class="ba-callout">'
-        f'<strong style="color:{P["text"]};">How to read: </strong>'
-        f'Each row is one lever.  The grey bar on top is what the '
-        f'banker claimed; the colored band below is the P25-P75 '
-        f'realistic range drawn from our library of '
-        f'~3,000 similar initiatives.  The vertical tick is the '
-        f'median realized outcome.  Bars where the grey sticks out '
-        f'past the colored band are overstated.'
-        f'</div>'
-        f'</div>'
+        + '<p class="ck-section-body">'
+        '<strong>How to read: </strong>'
+        'Each row is one lever.  The grey bar on top is what the '
+        'banker claimed; the colored band below is the P25-P75 '
+        'realistic range drawn from our library of '
+        '~3,000 similar initiatives.  The vertical tick is the '
+        'median realized outcome.  Bars where the grey sticks out '
+        'past the colored band are overstated.</p>',
+        title="Claimed vs realistic — lever by lever",
     )
 
-    detail_panel = (
-        f'<div class="ba-panel">'
-        f'<div class="ba-section-label" style="margin-top:0;">'
-        f'Per-lever audit · sortable detail grid</div>'
-        f'{_per_lever_table(report)}'
-        f'</div>'
+    detail_panel = ck_panel(
+        _per_lever_table(report),
+        title="Per-lever audit · sortable detail grid",
     )
 
     narrative_panel = (
-        f'<div class="ba-section-label">'
-        f'Per-lever narrative — ordered by gap</div>'
-        f'{_per_lever_narrative_block(report)}'
+        ck_section_header(
+            "Per-lever narrative — ordered by gap",
+            eyebrow="DETAIL",
+        )
+        + _per_lever_narrative_block(report)
     )
 
-    library_panel = (
-        f'<div class="ba-panel">'
-        f'<div class="ba-section-label" style="margin-top:0;">'
-        f'Lever library — realization priors powering this audit</div>'
-        f'<div style="font-size:12px;color:{P["text_dim"]};'
-        f'line-height:1.6;margin-bottom:10px;max-width:860px;">'
-        f'Every lever in the audit above is scored against one of '
-        f'these category priors. Realization % is the median '
-        f'claimed→realized ratio; fail rate is the fraction of '
-        f'deals that captured &lt;50% of claim; N is the sample '
-        f'size behind each prior.'
-        f'</div>'
-        f'{_lever_library_panel()}'
-        f'</div>'
+    library_panel = ck_panel(
+        '<p class="ck-section-body">'
+        'Every lever in the audit above is scored against one of '
+        'these category priors. Realization % is the median '
+        'claimed→realized ratio; fail rate is the fraction of '
+        'deals that captured &lt;50% of claim; N is the sample '
+        'size behind each prior.'
+        '</p>'
+        + _lever_library_panel(),
+        title="Lever library — realization priors powering this audit",
     )
 
-    cross_link = (
-        f'<div class="ba-panel">'
-        f'<div class="ba-section-label" style="margin-top:0;">'
-        f'Cross-reference</div>'
-        f'<div style="font-size:13px;color:{P["text_dim"]};'
-        f'line-height:1.65;">'
-        f'The realistic bridge feeds directly into '
-        f'<a href="/diligence/deal-mc" '
-        f'style="color:{P["accent"]};">→ Deal MC</a> as the '
-        f'base-case EBITDA uplift, into '
-        f'<a href="/diligence/covenant-stress" '
-        f'style="color:{P["accent"]};">→ Covenant Stress</a> as '
-        f'the stressed DSCR numerator, and into '
-        f'<a href="/diligence/ic-packet" '
-        f'style="color:{P["accent"]};">→ IC Packet</a> as the '
-        f'partner-signed synergy commitment.'
-        f'</div></div>'
+    cross_link = ck_panel(
+        '<p class="ck-section-body">'
+        'The realistic bridge feeds directly into '
+        '<a href="/diligence/deal-mc" class="ck-link">→ Deal MC</a> '
+        'as the base-case EBITDA uplift, into '
+        '<a href="/diligence/covenant-stress" class="ck-link">'
+        '→ Covenant Stress</a> as the stressed DSCR numerator, and '
+        'into <a href="/diligence/ic-packet" class="ck-link">'
+        '→ IC Packet</a> as the partner-signed synergy commitment.'
+        '</p>',
+        title="Cross-reference",
     )
 
     body = (
@@ -904,6 +945,12 @@ def render_bridge_audit_page(
         )
         + bookmark_hint()
         + '</div>'
+        + ck_next_section(
+            "Pressure-test the bridge in the Risk Workbench",
+            "/diligence/risk-workbench?demo=steward",
+            eyebrow="Continue —",
+            italic_word="Workbench",
+        )
     )
     return chartis_shell(
         body, "RCM Diligence — Bridge Auto-Auditor",

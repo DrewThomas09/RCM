@@ -15,10 +15,12 @@ import pandas as pd
 
 from ._chartis_kit import (
     chartis_shell,
+    ck_confidence_band,
     ck_eyebrow,
     ck_fmt_num,
     ck_fmt_pct,
     ck_kpi_block,
+    ck_next_section,
     ck_provenance_tooltip,
 )
 from .brand import PALETTE
@@ -93,10 +95,58 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
     kpis = (
         f'<div class="ck-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
         + ck_kpi_block("Hospitals Analyzed", ck_fmt_num(n_hospitals), "HCRIS corpus")
-        + ck_kpi_block("Archetypes", ck_fmt_num(n_clusters), "k-means clusters")
-        + ck_kpi_block("High Distress Risk", distress_value, "predicted >threshold")
-        + ck_kpi_block("Distress Model AUC", auc_value, "held-out test")
-        + ck_kpi_block("Median Op Margin", ck_fmt_pct(avg_margin), "credible filings")
+        + ck_kpi_block(
+            "Archetypes", ck_fmt_num(n_clusters), "k-means clusters",
+            help={
+                "definition": (
+                    "Hospitals grouped into structural archetypes by "
+                    "k-means clustering on revenue / margin / payer "
+                    "mix / bed size. Use the archetype to set "
+                    "expectations: a deal in the 'fragile rural' "
+                    "cluster has different risk and exit options than "
+                    "one in the 'urban specialty platform' cluster."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "High Distress Risk", distress_value, "predicted >threshold",
+            help={
+                "definition": (
+                    "Hospitals the distress-prediction model flags as "
+                    "above the alert threshold (typically P{1-yr "
+                    "default} > 5%). Treat as a watch list, not a "
+                    "verdict — false-positive rate on this rare-event "
+                    "model runs ~20-30%, so confirm with operating "
+                    "data before acting."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Distress Model AUC", auc_value, "held-out test",
+            help={
+                "definition": (
+                    "Discriminatory power of the distress predictor on "
+                    "the held-out test set. 0.50 = coin flip; 0.75 = "
+                    "usable for ranking; 0.85+ = strong. Healthcare-"
+                    "specific distress models top out around 0.85-"
+                    "0.90 because the underlying signal is noisy."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Median Op Margin", ck_fmt_pct(avg_margin), "credible filings",
+            help={
+                "definition": (
+                    "Median operating margin across the universe of "
+                    "credibility-filtered HCRIS filings. PE healthcare "
+                    "underwriting target is 7-12% for community "
+                    "hospitals, 15-20% for specialty platforms. The "
+                    "median runs ~3-5% — most hospitals don't make "
+                    "money operationally and survive on Medicare DSH "
+                    "/ supplemental payments."
+                ),
+            },
+        )
         + f'</div>'
     )
 
@@ -256,7 +306,13 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
         f'</div>'
     )
 
-    body = f'{kpis}{cluster_section}{distress_section}{rcm_screen}{methodology}{nav}'
+    next_up = ck_next_section(
+        "Open the feature importance view",
+        "/models/importance",
+        eyebrow="Continue —",
+        italic_word="feature",
+    )
+    body = f'{kpis}{cluster_section}{distress_section}{rcm_screen}{methodology}{nav}{next_up}'
 
     return chartis_shell(
         body,
@@ -554,17 +610,26 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
     if rcm_perf:
         pred_rows = ""
         for p in rcm_perf.predictions:
-            val_str = f"{p.predicted_value:.1%}" if p.predicted_value < 2 else f"{p.predicted_value:.1f}"
-            ci_str = (
-                f"[{p.confidence_interval[0]:.1%}, {p.confidence_interval[1]:.1%}]"
-                if p.predicted_value < 2 else
-                f"[{p.confidence_interval[0]:.1f}, {p.confidence_interval[1]:.1f}]"
+            # Phase A1: replace bare [lo, hi] with ck_confidence_band
+            # so the predicted value + CI read as one unit. Tail-
+            # percentile predictions (P<5 or P>95) get low_confidence
+            # tone since extreme positions usually warrant external
+            # verification.
+            if p.predicted_value < 2:
+                fmt = lambda v: f"{v:.1%}"
+            else:
+                fmt = lambda v: f"{v:.1f}"
+            val_band = ck_confidence_band(
+                fmt(p.predicted_value),
+                fmt(p.confidence_interval[0]),
+                fmt(p.confidence_interval[1]),
+                label="90% CI",
+                low_confidence=(p.peer_percentile < 5 or p.peer_percentile > 95),
             )
             pred_rows += (
                 f'<tr>'
                 f'<td style="font-weight:500;">{_html.escape(p.metric)}</td>'
-                f'<td class="num" style="font-weight:600;">{val_str}</td>'
-                f'<td class="num" style="font-size:11px;color:var(--cad-text2);">{ci_str}</td>'
+                f'<td class="num" style="font-weight:600;">{val_band}</td>'
                 f'<td class="num">P{p.peer_percentile:.0f}</td>'
                 f'<td style="font-size:11px;">{_html.escape(p.interpretation[:60])}</td>'
                 f'</tr>'
@@ -586,7 +651,7 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:8px;">'
             f'{_html.escape(rcm_perf.screening_recommendation)}</p>'
             f'<table class="cad-table"><thead><tr>'
-            f'<th>Metric</th><th>Predicted</th><th>90% CI</th><th>Percentile</th><th>Assessment</th>'
+            f'<th>Metric</th><th>Predicted [90% CI]</th><th>Percentile</th><th>Assessment</th>'
             f'</tr></thead><tbody>{pred_rows}</tbody></table></div>'
         )
 

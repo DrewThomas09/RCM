@@ -16,7 +16,7 @@ from typing import List
 
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip,
+    ck_next_section, ck_provenance_tooltip,
 )
 from .metric_glossary import (
     MetricDefinition,
@@ -133,6 +133,12 @@ def render_metric_glossary() -> str:
         + kpi_strip
         + _toc(keys)
         + "".join(cards)
+        + ck_next_section(
+            "Open the methodology reference",
+            "/methodology",
+            eyebrow="Continue —",
+            italic_word="methodology",
+        )
     )
 
     return chartis_shell(

@@ -200,7 +200,10 @@ def render_sensitivity_page(
     from ._chartis_kit import (
         ck_eyebrow, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
     )
-    n_cells = len(result.grid) * len(result.grid[0]) if result.grid else 0
+    # `grid` is a flat List[GridCell]; len(grid[0]) would TypeError
+    # because GridCell isn't iterable. The cell count is just the
+    # list length.
+    n_cells = len(result.grid)
     cells_value = ck_provenance_tooltip(
         "Grid cells computed",
         ck_fmt_num(n_cells),
@@ -224,9 +227,42 @@ def render_sensitivity_page(
     )
     kpi_strip = (
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
-        + ck_kpi_block("Grid Cells", cells_value, "(hold x mult)")
-        + ck_kpi_block("Entry EBITDA", eb_value, "anchor")
-        + ck_kpi_block("Planned Uplift", f"${params.planned_uplift/1e6:.1f}M", "over hold")
+        + ck_kpi_block(
+            "Grid Cells", cells_value, "(hold x mult)",
+            help={
+                "definition": (
+                    "Hold-period × exit-multiple combinations being "
+                    "swept. Denser grids surface non-linearities (e.g. "
+                    "MOIC degrades faster past year 6) that a "
+                    "single-point check misses; sparse grids are "
+                    "faster but blur the boundaries."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Entry EBITDA", eb_value, "anchor",
+            help={
+                "definition": (
+                    "EBITDA at close — the multiplier that turns "
+                    "lever-driven margin gains into enterprise-value "
+                    "shifts at each exit-multiple. Sensitivity is "
+                    "linear in entry EBITDA; double the anchor, "
+                    "double every cell's $ outcome."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Planned Uplift", f"${params.planned_uplift/1e6:.1f}M", "over hold",
+            help={
+                "definition": (
+                    "Cumulative EBITDA the value-creation plan "
+                    "underwrites across the hold. Each cell shows "
+                    "what % of this uplift would be needed to clear "
+                    "the IRR target at that hold/multiple combo — "
+                    "the sensitivity is the partner's reality check."
+                ),
+            },
+        )
         + '</div>'
     )
 
@@ -329,7 +365,13 @@ def render_sensitivity_page(
     # + the standalone <!DOCTYPE> fallback. chartis_shell() handles
     # both modes via the dispatcher (editorial when CHARTIS_UI_V2=1,
     # legacy otherwise) — no per-page fallback needed.
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import chartis_shell, ck_next_section
+    body = body + ck_next_section(
+        "Pressure-test in the Risk Workbench",
+        "/diligence/risk-workbench?demo=steward",
+        eyebrow="Continue —",
+        italic_word="Workbench",
+    )
     return chartis_shell(
         body,
         title=f"Sensitivity Analysis{' · ' + deal_id if deal_id else ''}",

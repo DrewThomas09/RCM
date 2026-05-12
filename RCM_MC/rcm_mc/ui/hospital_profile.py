@@ -8,7 +8,10 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List, Optional
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_intro, ck_signal_badge,
+)
 from ._provenance_tooltip import provenance_tooltip
 from .brand import PALETTE
 from .provenance import build_provenance_graph
@@ -78,38 +81,55 @@ def render_hospital_profile(
         f'<span class="ident-val" style="color:{grade_color};">{margin:.1%}</span>'
     )
 
-    header = (
-        f'<style>'
-        f'.cad-deal-ident{{font-family:var(--cad-mono);font-size:10.5px;'
-        f'letter-spacing:0.12em;color:{PALETTE["text_muted"]};text-transform:uppercase;}}'
-        f'.cad-deal-ident .ident-key{{color:{PALETTE["text_muted"]};}}'
-        f'.cad-deal-ident .ident-val{{color:{PALETTE["text_primary"]};font-weight:600;}}'
-        f'.cad-deal-ident .ident-sep{{color:{PALETTE["border_light"]};padding:0 8px;}}'
-        f'.cad-grade-block{{display:flex;flex-direction:column;align-items:center;'
-        f'padding:12px 22px;border:1px solid {PALETTE["border_light"]};'
-        f'background:#03050a;min-width:120px;}}'
-        f'.cad-grade-val{{font-family:var(--cad-mono);font-size:32px;font-weight:700;'
-        f'line-height:1;letter-spacing:-0.02em;}}'
-        f'.cad-grade-label{{font-family:var(--cad-mono);font-size:10.5px;letter-spacing:0.18em;'
-        f'text-transform:uppercase;margin-top:4px;}}'
-        f'.cad-grade-sub{{font-family:var(--cad-mono);font-size:9px;letter-spacing:0.12em;'
-        f'text-transform:uppercase;color:{PALETTE["text_muted"]};margin-top:3px;}}'
-        f'</style>'
-        f'<div class="cad-card" style="padding:14px 18px;">'
-        f'<div style="display:flex;justify-content:space-between;align-items:center;gap:20px;">'
-        f'<div style="flex:1;min-width:0;">'
-        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'
-        f'<span class="cad-section-code">HOSP</span>'
-        f'<h1 style="margin:0;font-size:17px;font-weight:700;letter-spacing:0.06em;'
-        f'text-transform:uppercase;color:{PALETTE["text_primary"]};">{name}</h1>'
-        f'</div>'
+    hp_styles = f"""
+<style>
+.cad-deal-ident{{font-family:var(--cad-mono);font-size:10.5px;
+letter-spacing:0.12em;color:{PALETTE["text_muted"]};text-transform:uppercase;}}
+.cad-deal-ident .ident-key{{color:{PALETTE["text_muted"]};}}
+.cad-deal-ident .ident-val{{color:{PALETTE["text_primary"]};font-weight:600;}}
+.cad-deal-ident .ident-sep{{color:{PALETTE["border_light"]};padding:0 8px;}}
+.hp-grade-block{{display:flex;flex-direction:column;align-items:center;
+padding:12px 22px;border:1px solid {PALETTE["border_light"]};
+background:#03050a;min-width:120px;}}
+.hp-grade-val{{font-family:var(--cad-mono);font-size:32px;font-weight:700;
+line-height:1;letter-spacing:-0.02em;}}
+.hp-grade-label{{font-family:var(--cad-mono);font-size:10.5px;letter-spacing:0.18em;
+text-transform:uppercase;margin-top:4px;}}
+.hp-grade-sub{{font-family:var(--cad-mono);font-size:9px;letter-spacing:0.12em;
+text-transform:uppercase;color:{PALETTE["text_muted"]};margin-top:3px;}}
+.hp-header-row{{display:flex;justify-content:space-between;align-items:center;gap:20px;}}
+.hp-payer-bar{{display:flex;gap:0;height:14px;overflow:hidden;
+margin-bottom:8px;border:1px solid {PALETTE["border"]};}}
+.hp-payer-legend{{display:flex;gap:20px;font-family:var(--cad-mono);
+font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;}}
+.hp-comment-row{{padding:6px 0;border-bottom:1px solid var(--cad-border);font-size:12px;}}
+.hp-action-group{{display:flex;align-items:center;gap:10px;margin:10px 0 6px;}}
+.hp-action-btns{{display:flex;gap:6px;flex-wrap:wrap;}}
+.hp-action-bottom{{border-top:1px solid {PALETTE["border"]};padding-top:12px;
+margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
+.hp-comment-form{{margin-top:12px;}}
+.hp-comment-author{{width:72px;}}
+.hp-comment-body{{flex:1;min-width:200px;}}
+</style>
+"""
+    header = ck_section_intro(
+        eyebrow=f"HOSPITAL PROFILE · CCN {ccn}",
+        headline=f"{name} — {city}, {state}.",
+        italic_word=name,
+        body=(
+            f"{beds:,} licensed beds · ${npr/1e6:,.1f}M net patient "
+            f"revenue · {margin:.1%} operating margin · "
+            f"SeekingChartis score {score_val}/100 (grade {grade})."
+        ),
+    ) + ck_panel(
+        '<div class="hp-header-row">'
         f'<div class="cad-deal-ident">{ident}</div>'
-        f'</div>'
-        f'<div class="cad-grade-block">'
-        f'<div class="cad-grade-val" style="color:{grade_color};">{score_val}</div>'
-        f'<div class="cad-grade-label" style="color:{grade_color};">{grade}</div>'
-        f'<div class="cad-grade-sub">SeekingChartis Score</div>'
-        f'</div></div></div>'
+        '<div class="hp-grade-block">'
+        f'<div class="hp-grade-val" style="color:{grade_color};">{score_val}</div>'
+        f'<div class="hp-grade-label" style="color:{grade_color};">{grade}</div>'
+        '<div class="hp-grade-sub">SeekingChartis Score</div>'
+        '</div></div>',
+        title="Identity",
     )
 
     # Additional metrics from HCRIS
@@ -123,67 +143,92 @@ def render_hospital_profile(
     # System affiliation
     system_badge = ""
     if system and system != "None" and system != "":
-        system_badge = (
-            f'<div class="cad-card" style="padding:12px 16px;">'
-            f'<div style="display:flex;justify-content:space-between;align-items:center;">'
-            f'<div>'
-            f'<div style="font-size:11px;color:{PALETTE["text_muted"]};text-transform:uppercase;">System Affiliation</div>'
-            f'<div style="font-weight:600;">{system}</div></div>'
-            f'<span class="cad-badge cad-badge-blue">Health System</span></div></div>'
+        system_badge = ck_panel(
+            '<p class="ck-section-body">'
+            f'<strong>{system}</strong> {ck_signal_badge("Health System", tone="neutral")}'
+            '</p>',
+            title="System Affiliation",
         )
 
-    # Fundamentals — two rows of KPIs
+    # Fundamentals — KPI strip
     rev_per_bed = npr / beds if beds > 0 else 0
     fundamentals = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{provenance_tooltip(label="Net Patient Revenue", value=f"${npr/1e6:,.1f}M", graph=prov_graph, metric_key="net_patient_revenue")}'
-        f'</div>'
-        f'<div class="cad-kpi-label">Net Patient Revenue</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{provenance_tooltip(label="Operating Margin", value=f"{margin:.1%}", graph=prov_graph, metric_key="operating_margin")}'
-        f'</div>'
-        f'<div class="cad-kpi-label">Operating Margin</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{provenance_tooltip(label="Net Income", value=f"${ni/1e6:,.1f}M", graph=prov_graph, metric_key="net_income")}'
-        f'</div>'
-        f'<div class="cad-kpi-label">Net Income</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{provenance_tooltip(label="Licensed Beds", value=f"{beds}", graph=prov_graph, metric_key="beds")}'
-        f'</div>'
-        f'<div class="cad-kpi-label">Licensed Beds</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{provenance_tooltip(label="Revenue per Bed", value=f"${rev_per_bed/1e3:,.0f}K", graph=prov_graph, metric_key="revenue_per_bed")}'
-        f'</div>'
-        f'<div class="cad-kpi-label">Revenue per Bed</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{provenance_tooltip(label="Operating Expenses", value=f"${opex/1e6:,.1f}M", graph=prov_graph, metric_key="operating_expenses")}'
-        f'</div>'
-        f'<div class="cad-kpi-label">Operating Expenses</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Net Patient Revenue",
+            provenance_tooltip(label="Net Patient Revenue", value=f"${npr/1e6:,.1f}M", graph=prov_graph, metric_key="net_patient_revenue"),
+            help={
+                "definition": (
+                    "Net Patient Revenue — billed services minus "
+                    "contractual allowances, bad debt, and charity "
+                    "care. The cash-realisable top line."
+                ),
+                "citation": "HFMA Glossary",
+            },
+        )
+        + ck_kpi_block(
+            "Operating Margin",
+            provenance_tooltip(label="Operating Margin", value=f"{margin:.1%}", graph=prov_graph, metric_key="operating_margin"),
+            help={
+                "definition": (
+                    "Operating income divided by total revenue. "
+                    "Community-hospital margins typically run 2-4%; "
+                    "regional hospitals 4-7%; academic medical "
+                    "centers can run negative on operations and "
+                    "make it back on research / grants."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Net Income",
+            provenance_tooltip(label="Net Income", value=f"${ni/1e6:,.1f}M", graph=prov_graph, metric_key="net_income"),
+            help={
+                "definition": (
+                    "Bottom-line earnings after operating income, "
+                    "interest, taxes, and non-operating items. "
+                    "Differs from EBITDA — which strips out the "
+                    "below-the-line items PE partners model "
+                    "separately in the bridge."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Licensed Beds",
+            provenance_tooltip(label="Licensed Beds", value=f"{beds}", graph=prov_graph, metric_key="beds"),
+        )
+        + ck_kpi_block(
+            "Revenue per Bed",
+            provenance_tooltip(label="Revenue per Bed", value=f"${rev_per_bed/1e3:,.0f}K", graph=prov_graph, metric_key="revenue_per_bed"),
+            help={
+                "definition": (
+                    "Productivity proxy — NPR per licensed bed. "
+                    "Compares throughput and case mix across "
+                    "hospitals of different sizes. Community "
+                    "hospitals run $1.2-1.8M/bed; specialty "
+                    "centers can run $3-5M/bed."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Operating Expenses",
+            provenance_tooltip(label="Operating Expenses", value=f"${opex/1e6:,.1f}M", graph=prov_graph, metric_key="operating_expenses"),
+        )
+        + '</div>'
     )
 
     # Payer Mix
-    payer_mix = (
-        f'<div class="cad-card">'
-        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
-        f'<h2 style="margin:0;">Payer Mix</h2>'
-        f'<span class="cad-section-code">PYR</span></div>'
-        f'<div style="display:flex;gap:0;height:14px;overflow:hidden;margin-bottom:8px;'
-        f'border:1px solid {PALETTE["border"]};">'
-        f'<div style="width:{med_pct*100:.0f}%;background:{PALETTE["brand_accent"]};" '
-        f'title="Medicare {med_pct:.0%}"></div>'
-        f'<div style="width:{mcd_pct*100:.0f}%;background:{PALETTE["warning"]};" '
-        f'title="Medicaid {mcd_pct:.0%}"></div>'
-        f'<div style="width:{comm_pct*100:.0f}%;background:{PALETTE["positive"]};" '
-        f'title="Commercial {comm_pct:.0%}"></div>'
-        f'</div>'
-        f'<div style="display:flex;gap:20px;font-family:var(--cad-mono);font-size:10.5px;'
-        f'letter-spacing:0.06em;text-transform:uppercase;">'
-        f'<span style="color:{PALETTE["brand_accent"]};">&#9632; MEDICARE · {med_pct:.0%}</span>'
-        f'<span style="color:{PALETTE["warning"]};">&#9632; MEDICAID · {mcd_pct:.0%}</span>'
-        f'<span style="color:{PALETTE["positive"]};">&#9632; COMMERCIAL · {comm_pct:.0%}</span>'
-        f'</div></div>'
+    payer_mix = ck_panel(
+        '<div class="hp-payer-bar">'
+        f'<div style="width:{med_pct*100:.0f}%;background:{PALETTE["brand_accent"]};"></div>'
+        f'<div style="width:{mcd_pct*100:.0f}%;background:{PALETTE["warning"]};"></div>'
+        f'<div style="width:{comm_pct*100:.0f}%;background:{PALETTE["positive"]};"></div>'
+        '</div>'
+        '<div class="hp-payer-legend">'
+        f'<span style="color:{PALETTE["brand_accent"]};">■ MEDICARE · {med_pct:.0%}</span>'
+        f'<span style="color:{PALETTE["warning"]};">■ MEDICAID · {mcd_pct:.0%}</span>'
+        f'<span style="color:{PALETTE["positive"]};">■ COMMERCIAL · {comm_pct:.0%}</span>'
+        '</div>',
+        title="Payer Mix",
     )
 
     # Quality metrics (from CMS Care Compare when available)
@@ -215,15 +260,10 @@ def render_hospital_profile(
                 f'<div class="cad-kpi"><div class="cad-kpi-value">{float(hcahps):.1f}/5</div>'
                 f'<div class="cad-kpi-label">Patient Experience</div></div>'
             )
-        quality_section = (
-            f'<div class="cad-card">'
-            f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
-            f'<h2 style="margin:0;">Quality Metrics</h2>'
-            f'<span class="cad-section-code">QLT</span>'
-            f'<span style="font-family:var(--cad-mono);font-size:9.5px;'
-            f'letter-spacing:0.1em;color:{PALETTE["text_muted"]};text-transform:uppercase;">'
-            f'Source · CMS Care Compare</span></div>'
-            f'<div class="cad-kpi-grid">{q_items}</div></div>'
+        quality_section = ck_panel(
+            '<p class="ck-eyebrow">Source · CMS Care Compare</p>'
+            f'<div class="ck-kpi-strip">{q_items}</div>',
+            title="Quality Metrics",
         )
 
     # Score Breakdown
@@ -256,17 +296,12 @@ def render_hospital_profile(
             f'</div></td></tr>'
         )
 
-    score_card = (
-        f'<div class="cad-card">'
-        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
-        f'<h2 style="margin:0;">Score Breakdown</h2>'
-        f'<span class="cad-section-code">SC</span>'
-        f'<span style="font-family:var(--cad-mono);font-size:10px;letter-spacing:0.06em;'
-        f'color:{PALETTE["text_muted"]};text-transform:uppercase;margin-left:auto;">'
-        f'Composite · {score_val}/100</span></div>'
-        f'<table class="cad-table"><thead><tr><th>Component</th>'
-        f'<th>Score</th><th>Max</th><th>%</th><th>Distribution</th></tr></thead>'
-        f'<tbody>{breakdown_rows}</tbody></table></div>'
+    score_card = ck_panel(
+        f'<p class="ck-eyebrow">Composite · {score_val}/100</p>'
+        '<table class="cad-table"><thead><tr><th>Component</th>'
+        '<th>Score</th><th>Max</th><th>%</th><th>Distribution</th></tr></thead>'
+        f'<tbody>{breakdown_rows}</tbody></table>',
+        title="Score Breakdown",
     )
 
     # Comparables
@@ -288,35 +323,28 @@ def render_hospital_profile(
                 f'<td class="num">{c_beds:,}</td>'
                 f'<td class="num">${c_rev/1e6:,.0f}M</td></tr>'
             )
-        comp_html = (
-            f'<div class="cad-card cad-table-sticky">'
-            f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
-            f'<h2 style="margin:0;">Comparable Hospitals</h2>'
-            f'<span class="cad-section-code">CMP</span></div>'
-            f'<table class="cad-table crosshair"><thead><tr>'
-            f'<th>CCN</th><th>Hospital</th><th>Beds</th><th>NPR</th></tr></thead>'
-            f'<tbody>{comp_rows}</tbody></table></div>'
+        comp_html = ck_panel(
+            '<table class="cad-table crosshair"><thead><tr>'
+            '<th>CCN</th><th>Hospital</th><th>Beds</th><th>NPR</th></tr></thead>'
+            f'<tbody>{comp_rows}</tbody></table>',
+            title="Comparable Hospitals",
         )
 
     # Actions — diligence workflow, deep analysis, financial models
     def _group(code: str, label: str, links):
         items = "".join(
-            f'<a href="{href}" class="cad-btn" style="text-decoration:none;">{html.escape(txt)}</a>'
+            f'<a href="{href}" class="cad-btn">{html.escape(txt)}</a> '
             for href, txt in links
         )
         return (
-            f'<div style="display:flex;align-items:center;gap:10px;margin:10px 0 6px;">'
+            '<div class="hp-action-group">'
             f'<span class="cad-section-code">{code}</span>'
             f'<span class="cad-label">{label}</span></div>'
-            f'<div style="display:flex;gap:6px;flex-wrap:wrap;">{items}</div>'
+            f'<div class="hp-action-btns">{items}</div>'
         )
 
-    actions = (
-        f'<div class="cad-card">'
-        f'<div style="display:flex;align-items:center;gap:10px;">'
-        f'<h2 style="margin:0;">Actions</h2>'
-        f'<span class="cad-section-code">ACT</span></div>'
-        + _group("WF", "Diligence Workflow", [
+    actions = ck_panel(
+        _group("WF", "Diligence Workflow", [
             (f"/competitive-intel/{ccn}", "Competitive Intel"),
             (f"/ebitda-bridge/{ccn}", "EBITDA Bridge"),
             (f"/data-room/{ccn}", "Data Room"),
@@ -327,6 +355,7 @@ def render_hospital_profile(
             (f"/ml-insights/hospital/{ccn}", "ML Analysis"),
             (f"/hospital/{ccn}/demand", "Demand"),
             (f"/hospital/{ccn}/history", "3-Year History"),
+            (f"/hospital/{ccn}/providers", "Providers"),
             (f"/portfolio/regression/hospital/{ccn}", "Stats"),
             (f"/bayesian/hospital/{ccn}", "Bayesian"),
         ])
@@ -338,23 +367,19 @@ def render_hospital_profile(
             (f"/models/market/{ccn}", "Market"),
             (f"/models/denial/{ccn}", "Denial"),
         ])
-        + f'<div style="border-top:1px solid {PALETTE["border"]};padding-top:12px;margin-top:14px;'
-          f'display:flex;gap:8px;align-items:center;flex-wrap:wrap;">'
+        + '<div class="hp-action-bottom">'
         + f'<form method="POST" action="/hospital/{ccn}/start-diligence" style="margin:0;">'
-        + f'<button type="submit" class="cad-btn cad-btn-primary" style="cursor:pointer;">'
-          f'Start Diligence &rarr;</button></form>'
-        + f'<form method="POST" action="/pipeline/add" style="margin:0;">'
+        + '<button type="submit" class="cad-btn cad-btn-primary">'
+          'Start Diligence &rarr;</button></form>'
+        + '<form method="POST" action="/pipeline/add" style="margin:0;">'
         + f'<input type="hidden" name="ccn" value="{ccn}">'
         + f'<input type="hidden" name="name" value="{html.escape(name)}">'
         + f'<input type="hidden" name="state" value="{html.escape(state)}">'
         + f'<input type="hidden" name="beds" value="{int(beds)}">'
-        + f'<button type="submit" class="cad-btn" style="cursor:pointer;">+ PIPELINE</button></form>'
-        + f'<a href="/screen?state={state}" class="cad-btn" style="text-decoration:none;">'
-          f'MORE IN {state}</a>'
-        + f'<span style="font-family:var(--cad-mono);font-size:9.5px;'
-          f'letter-spacing:0.1em;color:{PALETTE["text_muted"]};text-transform:uppercase;'
-          f'margin-left:auto;">Start Diligence · creates a deal from HCRIS</span>'
-        + f'</div></div>'
+        + '<button type="submit" class="cad-btn">+ PIPELINE</button></form>'
+        + f'<a href="/screen?state={state}" class="cad-btn">MORE IN {state}</a>'
+        + '</div>',
+        title="Actions",
     )
 
     # Investment thesis card (synthesizes all ML models)
@@ -380,40 +405,40 @@ def render_hospital_profile(
             comment_items = ""
             for c in comments:
                 comment_items += (
-                    f'<div style="padding:6px 0;border-bottom:1px solid var(--cad-border);font-size:12px;">'
-                    f'<span style="font-weight:600;color:var(--cad-text);">{html.escape(c.author[:10])}</span>'
-                    f'<span style="color:var(--cad-text3);font-size:10px;margin-left:6px;">'
-                    f'{c.created_at[:16]}</span>'
-                    f'<div style="color:var(--cad-text2);margin-top:2px;">{html.escape(c.body[:200])}</div>'
-                    f'</div>'
+                    '<div class="hp-comment-row">'
+                    f'<strong>{html.escape(c.author[:10])}</strong> '
+                    f'<span class="ck-eyebrow">{c.created_at[:16]}</span>'
+                    f'<div>{html.escape(c.body[:200])}</div>'
+                    '</div>'
                 )
 
-            comments_html = (
-                f'<div class="cad-card">'
-                f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
-                f'<h2 style="margin:0;">Team Notes</h2>'
-                f'<span class="cad-section-code">NOTE</span>'
-                f'<span style="font-family:var(--cad-mono);font-size:9.5px;'
-                f'letter-spacing:0.1em;color:var(--cad-text3);text-transform:uppercase;">'
-                f'{len(comments)} entries</span></div>'
+            comments_html = ck_panel(
+                f'<p class="ck-eyebrow">{len(comments)} entries</p>'
                 f'{comment_items}'
-                f'<form method="POST" action="/team/comment" '
-                f'class="cad-form-row" style="margin-top:12px;">'
+                f'<form method="POST" action="/team/comment" class="cad-form-row hp-comment-form">'
                 f'<input type="hidden" name="entity_type" value="hospital">'
                 f'<input type="hidden" name="entity_id" value="{ccn}">'
                 f'<input type="hidden" name="redirect" value="/hospital/{ccn}">'
-                f'<input class="cad-input" type="text" name="author" placeholder="INITS" '
-                f'style="width:72px;">'
-                f'<input class="cad-input" type="text" name="body" placeholder="Add a note..." '
-                f'required style="flex:1;min-width:200px;">'
-                f'<button type="submit" class="cad-btn cad-btn-primary" '
-                f'style="cursor:pointer;">Post &rarr;</button>'
-                f'</form></div>'
+                f'<input class="cad-input hp-comment-author" type="text" name="author" placeholder="INITS">'
+                f'<input class="cad-input hp-comment-body" type="text" name="body" placeholder="Add a note..." required>'
+                f'<button type="submit" class="cad-btn cad-btn-primary">Post &rarr;</button>'
+                f'</form>',
+                title="Team Notes",
             )
         except Exception:
             pass
 
-    body = f'{header}{thesis_html}{system_badge}{fundamentals}{payer_mix}{quality_section}{score_card}{comp_html}{comments_html}{actions}'
+    next_up = ck_next_section(
+        "Open the hospital's history",
+        f"/hospital/{ccn}/history",
+        eyebrow="Continue —",
+        italic_word="history",
+    )
+    body = (
+        f'{hp_styles}{header}{thesis_html}{system_badge}{fundamentals}'
+        f'{payer_mix}{quality_section}{score_card}{comp_html}'
+        f'{comments_html}{actions}{next_up}'
+    )
 
     return chartis_shell(
         body, name,

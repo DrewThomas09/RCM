@@ -33,7 +33,11 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import urlencode
 
 from ..diligence._pages import AVAILABLE_FIXTURES
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import (
+    P, chartis_shell, ck_eyebrow, ck_help_tooltip, ck_next_section,
+    ck_panel, ck_section_header, ck_section_intro, ck_signal_badge,
+    ck_sticky_toc,
+)
 from .power_ui import bookmark_hint
 
 
@@ -95,6 +99,27 @@ _FIELDS = [
     ("entry_multiple", "Entry EV/EBITDA", "10.0", "number",
      ["Deal MC"]),
 ]
+
+
+# Per-field format hints. Render below the input in muted mono so a
+# partner can see the expected value shape at a glance. Skip fields
+# where the placeholder already self-documents.
+_FIELD_HINTS: Dict[str, str] = {
+    "specialty": "ALL_CAPS_WITH_UNDERSCORES (matches the registry).",
+    "states": "Two-letter codes, comma-separated.",
+    "cbsa_codes": "5-digit CBSA codes, comma-separated.",
+    "lease_term_years": "Integer years remaining on the lease.",
+    "lease_escalator_pct": "As decimal (0.035 = 3.5%/yr).",
+    "ebitdar_coverage": "EBITDAR ÷ rent. >1.5x healthy, <1.2x tight.",
+    "annual_rent_usd": "USD, no commas. e.g. 15000000.",
+    "portfolio_ebitdar_usd": "USD, no commas.",
+    "revenue_usd": "USD net patient revenue, no commas.",
+    "ebitda_usd": "USD trailing twelve months, no commas.",
+    "enterprise_value_usd": "USD, no commas. Equity + debt at close.",
+    "equity_usd": "USD LP equity check at close.",
+    "debt_usd": "USD total debt across senior + 2nd-lien + mezz.",
+    "entry_multiple": "EV ÷ TTM EBITDA. PE healthcare typical 9-11x.",
+}
 
 
 # Analytics to launch from the profile. Each entry: (label,
@@ -492,10 +517,7 @@ _LANDING_JS = r"""<script>
     var deals = loadSavedDeals();
     if (deals.length === 0) {
       root.innerHTML =
-        '<div style="padding:1rem 1.25rem;background:var(--paper);' +
-        'border:1px dashed var(--border);border-radius:3px;' +
-        'color:var(--muted);font-size:.85rem;line-height:1.5;' +
-        'font-family:\'Source Serif 4\',Georgia,serif;font-style:italic;">' +
+        '<div class="ck-dp-saved-empty">' +
         'No saved deals yet. Enter a slug above to ' +
         'create your first profile — it will appear here on subsequent ' +
         'visits.</div>';
@@ -509,55 +531,32 @@ _LANDING_JS = r"""<script>
       var slug = d.slug.replace(/</g, '&lt;');
       var safeSlug = encodeURIComponent(d.slug);
       return (
-        '<div style="background:var(--bg);border:1px solid var(--paper-pure);' +
-        'border-radius:4px;padding:14px 16px;' +
-        'transition:border-color 140ms ease, box-shadow 140ms ease;" ' +
-        'onmouseover="this.style.borderColor=\'var(--muted)\';' +
-        'this.style.boxShadow=\'0 4px 14px rgba(0,0,0,0.35)\'" ' +
-        'onmouseout="this.style.borderColor=\'var(--paper-pure)\';' +
-        'this.style.boxShadow=\'none\'">' +
-        '<div style="display:flex;justify-content:space-between;' +
-        'align-items:baseline;gap:10px;margin-bottom:6px;">' +
-        '<div style="font-size:9px;color:var(--muted);letter-spacing:1.3px;' +
-        'text-transform:uppercase;font-family:\'JetBrains Mono\',monospace;">' +
-        slug + '</div>' +
-        '<div style="font-size:9px;color:var(--muted);">' +
-        fmtRelative(d.saved_at) + '</div>' +
+        '<div class="ck-dp-saved-card">' +
+        '<div class="ck-dp-saved-row">' +
+        '<div class="ck-dp-saved-slug">' + slug + '</div>' +
+        '<div class="ck-dp-saved-rel">' + fmtRelative(d.saved_at) + '</div>' +
         '</div>' +
-        '<div style="font-size:15px;color:var(--ink);font-weight:600;' +
-        'line-height:1.25;margin-bottom:8px;">' + name + '</div>' +
-        '<div style="height:4px;background:var(--ink);border-radius:2px;' +
-        'overflow:hidden;margin:8px 0 4px 0;">' +
-        '<div style="height:100%;width:' + completion + '%;' +
-        'background:' + barColor + ';"></div></div>' +
-        '<div style="font-size:10px;color:var(--muted);margin-bottom:10px;">' +
-        d.filled + ' of 24 fields · ' + completion + '% complete</div>' +
-        '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+        '<div class="ck-dp-saved-name">' + name + '</div>' +
+        '<div class="ck-dp-saved-bar">' +
+        '<div class="ck-dp-saved-bar-fill" style="width:' + completion +
+        '%;--bar-tone:' + barColor + ';"></div></div>' +
+        '<div class="ck-dp-saved-progress">' + d.filled +
+        ' of 24 fields · ' + completion + '% complete</div>' +
+        '<div class="ck-dp-saved-actions">' +
         '<a href="/diligence/deal/' + safeSlug + '" ' +
-        'style="padding:5px 10px;background:var(--teal);color:var(--bg);' +
-        'border:0;font-size:9px;letter-spacing:1.2px;' +
-        'text-transform:uppercase;font-weight:700;text-decoration:none;' +
-        'border-radius:3px;">Open</a>' +
+        'class="ck-dp-saved-btn">Open</a>' +
         '<button type="button" data-rcm-duplicate="' + safeSlug + '" ' +
-        'style="padding:5px 10px;background:transparent;color:var(--teal);' +
-        'border:1px solid var(--paper-pure);font-size:9px;letter-spacing:1.2px;' +
-        'text-transform:uppercase;font-weight:600;cursor:pointer;' +
-        'border-radius:3px;">Duplicate</button>' +
+        'class="ck-dp-saved-btn-secondary">Duplicate</button>' +
         '<button type="button" data-rcm-delete="' + safeSlug + '" ' +
-        'style="padding:5px 10px;background:transparent;color:var(--red);' +
-        'border:1px solid var(--paper-pure);font-size:9px;letter-spacing:1.2px;' +
-        'text-transform:uppercase;font-weight:600;cursor:pointer;' +
-        'border-radius:3px;">Delete</button>' +
+        'class="ck-dp-saved-btn-danger">Delete</button>' +
         '</div></div>'
       );
     }).join('');
     root.innerHTML =
-      '<div style="font-size:10px;color:var(--muted);' +
-      'letter-spacing:1.5px;text-transform:uppercase;font-weight:700;' +
-      'margin-bottom:10px;">Your saved deals · ' + deals.length +
-      ' local profile' + (deals.length === 1 ? '' : 's') + '</div>' +
-      '<div style="display:grid;grid-template-columns:' +
-      'repeat(auto-fill,minmax(240px,1fr));gap:10px;">' + cards + '</div>';
+      '<div class="ck-dp-saved-header">Your saved deals · ' +
+      deals.length + ' local profile' +
+      (deals.length === 1 ? '' : 's') + '</div>' +
+      '<div class="ck-dp-saved-grid">' + cards + '</div>';
   }
 
   document.addEventListener('DOMContentLoaded', render);
@@ -596,29 +595,406 @@ _LANDING_JS = r"""<script>
 </script>"""
 
 
+_DP_STYLES = f"""
+<style>
+.ck-dp-slug-form{{max-width:480px;}}
+.ck-dp-recent-deals{{margin-top:1.75rem;max-width:960px;}}
+.ck-dp-tool-chip{{font-size:8px;letter-spacing:.5px;text-transform:uppercase;
+color:{P["text_faint"]};background:{P["panel_alt"]};padding:1px 5px;
+border-radius:2px;margin-right:3px;}}
+.ck-dp-input{{width:100%;padding:6px 8px;background:{P["panel_alt"]};
+color:{P["text"]};border:1px solid {P["border"]};
+font-family:inherit;font-size:11px;}}
+.ck-dp-field-label{{font-size:9px;color:{P["text_faint"]};letter-spacing:1px;
+text-transform:uppercase;font-weight:600;display:block;margin-bottom:3px;}}
+.ck-dp-field-chips{{margin-top:3px;line-height:1.5;}}
+.ck-dp-form{{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 16px;
+background:{P["panel"]};border:1px solid {P["border"]};border-radius:4px;
+padding:16px 20px;margin-bottom:24px;}}
+.ck-dp-form-actions{{grid-column:span 3;display:flex;gap:10px;align-items:center;
+margin-top:6px;}}
+.ck-dp-btn-save{{padding:8px 18px;background:{P["accent"]};color:{P["panel"]};
+border:0;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+font-weight:700;cursor:pointer;}}
+.ck-dp-btn-clear{{padding:8px 18px;background:transparent;color:{P["text_dim"]};
+border:1px solid {P["border"]};font-size:10px;letter-spacing:1.5px;
+text-transform:uppercase;font-weight:600;cursor:pointer;}}
+.ck-dp-saved-at{{font-size:10px;color:{P["text_faint"]};margin-left:10px;letter-spacing:.5px;}}
+.ck-dp-card{{display:block;background:{P["panel"]};border:1px solid {P["border"]};
+border-radius:4px;padding:14px 16px;text-decoration:none;
+transition:transform 140ms ease,border-color 140ms ease,box-shadow 140ms ease;}}
+.ck-dp-card:hover{{transform:translateY(-1px);border-color:{P["text_faint"]};
+box-shadow:0 6px 18px rgba(0,0,0,0.30);}}
+.ck-dp-card-head{{display:flex;justify-content:space-between;align-items:baseline;
+margin-bottom:6px;}}
+.ck-dp-card-title{{font-size:13px;color:{P["text"]};font-weight:600;letter-spacing:-.1px;}}
+.ck-dp-card-badge{{font-size:8px;letter-spacing:1.1px;text-transform:uppercase;
+color:{P["text_faint"]};background:{P["panel_alt"]};padding:2px 6px;
+border-radius:2px;font-weight:700;}}
+.ck-dp-card-detail{{font-size:11px;color:{P["text_dim"]};line-height:1.55;}}
+.ck-dp-card-state{{margin-top:8px;font-family:"Source Serif 4",serif;
+font-style:italic;font-size:10.5px;color:{P["text_faint"]};
+display:flex;align-items:baseline;gap:6px;}}
+.ck-dp-card-state[hidden]{{display:none !important;}}
+.ck-dp-card-state-dot{{width:5px;height:5px;border-radius:50%;
+background:{P["accent"]};display:inline-block;flex-shrink:0;}}
+/* Diligence-questions inline editor. Partner-curated list inside a
+ * ck_panel on the deal profile. Editorial: parchment surface +
+ * serif italic body + mono caps timestamp + small inline form.
+ * Hidden in @media print so working notes don't end up on LP
+ * deliverables. */
+.ck-dp-qs{{}}
+.ck-dp-qs-intro{{margin-bottom:14px;}}
+.ck-dp-qs-form{{display:flex;gap:10px;align-items:stretch;
+margin-bottom:14px;}}
+.ck-dp-qs-input{{flex:1;padding:9px 12px;
+background:{P["panel_alt"]};color:{P["text"]};
+border:1px solid {P["border"]};border-radius:3px;
+font-family:"Source Serif 4",serif;font-size:13px;
+transition:border-color 120ms ease, box-shadow 120ms ease;}}
+.ck-dp-qs-input:focus{{outline:none;
+border-color:{P["accent"]};
+box-shadow:0 0 0 2px rgba(21,87,82,0.18);}}
+.ck-dp-qs-cat{{padding:9px 10px;
+background:{P["panel_alt"]};color:{P["text"]};
+border:1px solid {P["border"]};border-radius:3px;
+font-family:"Inter Tight",sans-serif;font-size:11px;font-weight:600;
+letter-spacing:0.06em;cursor:pointer;
+appearance:none;-webkit-appearance:none;
+background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%236e7787' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+background-repeat:no-repeat;background-position:right 8px center;
+padding-right:26px;}}
+.ck-dp-qs-cat:focus{{outline:none;border-color:{P["accent"]};
+box-shadow:0 0 0 2px rgba(21,87,82,0.18);}}
+.ck-dp-qs-add{{padding:9px 16px;
+background:{P["accent"]};color:#fff;border:0;border-radius:3px;
+font-family:"Inter Tight",sans-serif;font-size:11px;font-weight:700;
+letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;
+transition:filter 120ms ease;white-space:nowrap;}}
+.ck-dp-qs-add:hover{{filter:brightness(1.08);}}
+/* Category pill — small caps chip rendered before the question
+ * text on each row. Six categories map to editorial tones from the
+ * shared palette; "Other" stays neutral so unfamiliar inputs don't
+ * grab visual weight. */
+.ck-dp-qs-pill{{display:inline-block;padding:1px 7px;margin-right:8px;
+font-family:"Inter Tight",sans-serif;font-size:9px;font-weight:700;
+letter-spacing:0.16em;text-transform:uppercase;
+border-radius:2px;vertical-align:1px;
+border:1px solid currentColor;}}
+.ck-dp-qs-pill.cat-financial{{color:{P["accent"]};}}
+.ck-dp-qs-pill.cat-clinical{{color:{P["positive"]};}}
+.ck-dp-qs-pill.cat-regulatory{{color:{P["warning"]};}}
+.ck-dp-qs-pill.cat-legal{{color:{P["text_dim"]};}}
+.ck-dp-qs-pill.cat-operational{{color:{P["text"]};}}
+.ck-dp-qs-pill.cat-other{{color:{P["text_faint"]};}}
+.ck-dp-qs-empty[hidden]{{display:none !important;}}
+.ck-dp-qs-list{{list-style:none;margin:0;padding:0;}}
+.ck-dp-qs-row{{display:grid;
+grid-template-columns:24px 1fr auto auto;gap:12px;
+align-items:baseline;padding:12px 0;
+border-bottom:1px solid {P["border"]};}}
+.ck-dp-qs-row:last-child{{border-bottom:0;}}
+.ck-dp-qs-row-num{{font-family:"JetBrains Mono",monospace;
+font-size:10px;font-weight:700;letter-spacing:0.12em;
+color:{P["text_faint"]};text-align:right;
+align-self:center;}}
+.ck-dp-qs-row-text{{font-family:"Source Serif 4",serif;
+font-size:14px;line-height:1.5;color:{P["text"]};
+font-style:italic;}}
+.ck-dp-qs-row.is-asked .ck-dp-qs-row-text{{
+text-decoration:line-through;color:{P["text_faint"]};}}
+.ck-dp-qs-row-ts{{font-family:"Source Serif 4",serif;font-style:italic;
+font-size:11px;color:{P["text_faint"]};
+align-self:center;white-space:nowrap;}}
+.ck-dp-qs-row-actions{{display:flex;gap:6px;align-self:center;}}
+.ck-dp-qs-row-btn{{background:none;border:1px solid {P["border"]};
+border-radius:3px;padding:3px 8px;cursor:pointer;
+font-family:"Inter Tight",sans-serif;font-size:9px;
+font-weight:600;letter-spacing:0.12em;text-transform:uppercase;
+color:{P["text_dim"]};
+transition:border-color 120ms ease, color 120ms ease;}}
+.ck-dp-qs-row-btn:hover{{border-color:{P["text"]};color:{P["text"]};}}
+.ck-dp-qs-row-btn-asked.is-active{{
+background:{P["positive"]};color:#fff;border-color:{P["positive"]};}}
+.ck-dp-qs-row-btn-remove:hover{{
+border-color:{P["negative"]};color:{P["negative"]};}}
+.ck-dp-qs-meta-row{{display:flex;align-items:baseline;
+justify-content:space-between;gap:14px;flex-wrap:wrap;
+margin-top:14px;padding-top:12px;
+border-top:1px solid {P["border"]};}}
+.ck-dp-qs-meta-row[hidden]{{display:none !important;}}
+.ck-dp-qs-meta{{font-family:"Source Serif 4",serif;
+font-style:italic;font-size:11px;color:{P["text_faint"]};}}
+.ck-dp-qs-export{{display:flex;align-items:baseline;
+gap:6px;flex-wrap:wrap;}}
+.ck-dp-qs-export-btn{{background:none;border:1px solid {P["border"]};
+border-radius:3px;padding:5px 10px;cursor:pointer;
+font-family:"Source Serif 4",serif;font-size:11.5px;
+font-style:italic;color:{P["text_dim"]};
+transition:border-color 120ms ease, color 120ms ease;}}
+.ck-dp-qs-export-btn:hover{{border-color:{P["accent"]};
+color:{P["accent"]};}}
+.ck-dp-qs-export-toast{{font-family:"Source Serif 4",serif;
+font-style:italic;font-size:11.5px;color:{P["positive"]};
+margin-left:6px;align-self:center;
+opacity:0;transition:opacity 200ms ease;}}
+.ck-dp-qs-export-toast.is-visible{{opacity:1;}}
+.ck-dp-qs-export-toast[hidden]{{display:none !important;}}
+@media print {{.ck-dp-qs{{display:none !important;}}}}
+
+/* "Compare with…" disclosure on the deal-profile hero. Editorial
+   native <details>/<summary> styled with a serif label + JetBrains-
+   Mono caret + parchment menu surface. JS populates the inner list
+   from rcm_recent_deals (minus the current slug) on every open. */
+.ck-dp-cmpw{{position:relative;display:inline-block;}}
+.ck-dp-cmpw-summary{{list-style:none;cursor:pointer;
+font-family:"Source Serif 4",serif;font-size:13.5px;
+color:{P["accent"]};padding:6px 12px;border:1px solid {P["border"]};
+border-radius:3px;background:{P["panel"]};
+display:inline-flex;align-items:baseline;gap:6px;
+transition:border-color 120ms ease, background 120ms ease;
+user-select:none;}}
+.ck-dp-cmpw-summary::-webkit-details-marker{{display:none;}}
+.ck-dp-cmpw-summary:hover{{border-color:{P["accent"]};
+background:{P["panel_alt"]};}}
+.ck-dp-cmpw-caret{{font-family:"JetBrains Mono",monospace;
+font-size:10px;color:{P["text_faint"]};
+transition:transform 160ms ease;}}
+.ck-dp-cmpw[open] .ck-dp-cmpw-caret{{transform:rotate(180deg);}}
+.ck-dp-cmpw-menu{{position:absolute;top:calc(100% + 6px);left:0;
+min-width:300px;max-width:400px;
+background:{P["panel"]};border:1px solid {P["border"]};
+border-radius:3px;box-shadow:0 12px 32px rgba(11,35,65,0.12);
+padding:10px 0;z-index:20;
+font-family:"Source Serif 4",serif;}}
+.ck-dp-cmpw-empty{{padding:12px 16px;font-style:italic;
+font-size:13px;color:{P["text_faint"]};max-width:34ch;
+line-height:1.5;}}
+.ck-dp-cmpw-list{{list-style:none;margin:0;padding:0;}}
+.ck-dp-cmpw-row{{}}
+.ck-dp-cmpw-link{{display:flex;align-items:baseline;
+justify-content:space-between;gap:14px;
+padding:10px 16px;text-decoration:none;color:inherit;
+transition:background 120ms ease;}}
+.ck-dp-cmpw-link:hover{{background:{P["panel_alt"]};}}
+.ck-dp-cmpw-link-name{{font-size:14px;color:{P["text"]};
+font-weight:500;}}
+.ck-dp-cmpw-link-name em{{font-style:italic;color:{P["accent"]};}}
+.ck-dp-cmpw-q{{font-family:"Inter Tight",sans-serif;font-size:9px;
+font-weight:700;letter-spacing:0.14em;text-transform:uppercase;
+color:{P["warning"]};border:1px solid currentColor;border-radius:2px;
+padding:1px 6px;margin-left:8px;vertical-align:1px;
+white-space:nowrap;}}
+.ck-dp-cmpw-link-slug{{font-family:"JetBrains Mono",monospace;
+font-size:10px;letter-spacing:0.12em;text-transform:uppercase;
+color:{P["text_faint"]};}}
+.ck-dp-cmpw-disabled{{padding:10px 16px;font-style:italic;
+font-size:12px;color:{P["text_faint"]};
+border-top:1px solid {P["border"]};margin-top:4px;
+max-width:34ch;line-height:1.5;}}
+@media print{{.ck-dp-cmpw{{display:none !important;}}}}
+
+.ck-dp-pulse{{margin:16px 0 22px;padding:18px 22px;
+background:{P["panel_alt"]};border:1px solid {P["border"]};
+border-radius:4px;}}
+.ck-dp-pulse[hidden]{{display:none !important;}}
+.ck-dp-pulse-head{{display:flex;align-items:baseline;
+justify-content:space-between;gap:14px;margin-bottom:14px;}}
+.ck-dp-pulse-eyebrow{{font-family:"Inter Tight",sans-serif;
+font-size:10px;font-weight:700;letter-spacing:1.4px;
+text-transform:uppercase;color:{P["text_faint"]};}}
+.ck-dp-pulse-meta{{font-family:"Source Serif 4",serif;
+font-style:italic;font-size:12px;color:{P["text_faint"]};}}
+.ck-dp-pulse-grid{{display:grid;
+grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:24px;
+align-items:end;}}
+.ck-dp-pulse-tile{{}}
+.ck-dp-pulse-val{{font-family:"JetBrains Mono",monospace;
+font-size:26px;font-weight:700;color:{P["text"]};line-height:1;
+font-variant-numeric:tabular-nums;margin-bottom:8px;}}
+.ck-dp-pulse-val-serif{{font-family:"Source Serif 4",serif;
+font-weight:500;font-size:18px;letter-spacing:-0.005em;
+color:{P["text"]};}}
+.ck-dp-pulse-lbl{{font-family:"Inter Tight",sans-serif;
+font-size:10px;font-weight:700;letter-spacing:1.4px;
+text-transform:uppercase;color:{P["text_faint"]};margin-bottom:4px;}}
+.ck-dp-pulse-sub{{font-family:"Source Serif 4",serif;font-style:italic;
+font-size:11px;color:{P["text_faint"]};}}
+.ck-dp-pulse-bar{{height:8px;background:{P["panel"]};
+border:1px solid {P["border"]};border-radius:4px;overflow:hidden;
+margin-bottom:8px;}}
+.ck-dp-pulse-bar-fill{{height:100%;width:0%;
+background:{P["accent"]};
+transition:width 320ms ease;}}
+@media print{{.ck-dp-pulse{{display:none !important;}}}}
+
+.ck-dp-card{{position:relative;}}
+.ck-dp-card-pin{{position:absolute;top:8px;right:8px;
+background:none;border:0;padding:4px 6px;cursor:pointer;
+font-size:14px;line-height:1;color:{P["text_faint"]};
+transition:color 120ms ease, transform 120ms ease;
+z-index:2;}}
+.ck-dp-card-pin:hover{{color:{P["accent"]};transform:scale(1.1);}}
+.ck-dp-card-pin[aria-pressed="true"]{{color:{P["accent"]};}}
+.ck-dp-card-pin[aria-pressed="true"] .ck-dp-card-pin-icon::before{{content:"★";}}
+.ck-dp-card-pin[aria-pressed="true"] .ck-dp-card-pin-icon{{font-size:0;}}
+@media print {{.ck-dp-card-pin{{display:none !important;}}}}
+.ck-dp-card-preview{{font-size:10px;color:{P["text_faint"]};margin-top:8px;
+font-family:"JetBrains Mono",monospace;letter-spacing:.3px;word-break:break-all;}}
+.ck-dp-phase-section{{margin-bottom:22px;}}
+.ck-dp-phase-head{{display:flex;align-items:baseline;gap:12px;
+margin-bottom:10px;padding-left:10px;border-left:3px solid {P["text_dim"]};}}
+.ck-dp-phase-label{{font-size:11px;color:{P["text"]};font-weight:700;
+letter-spacing:1.2px;text-transform:uppercase;}}
+.ck-dp-phase-subtitle{{font-size:10px;color:{P["text_faint"]};font-style:italic;}}
+.ck-dp-phase-spacer{{flex:1;}}
+.ck-dp-phase-count{{font-size:10px;color:{P["text_faint"]};
+letter-spacing:1px;font-variant-numeric:tabular-nums;}}
+.ck-dp-card-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}}
+.ck-dp-thesis-card{{margin-bottom:20px;background:{P["panel"]};
+border:1px solid {P["border"]};border-radius:4px;padding:18px 22px;
+position:relative;overflow:hidden;}}
+.ck-dp-thesis-card::before{{content:"";position:absolute;top:0;left:0;right:0;
+height:2px;background:linear-gradient(90deg,{P["accent"]},{P["positive"]});}}
+.ck-dp-thesis-head{{display:flex;justify-content:space-between;
+align-items:baseline;margin-bottom:14px;}}
+.ck-dp-thesis-eyebrow{{font-size:10px;color:{P["text_faint"]};
+letter-spacing:1.5px;text-transform:uppercase;font-weight:700;}}
+.ck-dp-thesis-narrative{{font-size:13px;color:{P["text_dim"]};
+line-height:1.55;margin-top:4px;max-width:720px;}}
+.ck-dp-thesis-badge{{font-size:9px;letter-spacing:1.3px;text-transform:uppercase;
+font-weight:700;color:{P["text_faint"]};border:1px solid {P["border"]};
+padding:3px 10px;border-radius:3px;}}
+.ck-dp-thesis-tiles{{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+gap:14px;margin-bottom:14px;}}
+.ck-dp-thesis-tile-label{{font-size:9px;color:{P["text_faint"]};
+letter-spacing:1.4px;text-transform:uppercase;font-weight:600;margin-bottom:4px;}}
+.ck-dp-thesis-tile-val{{font-size:22px;color:{P["text"]};font-weight:700;
+font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;}}
+.ck-dp-thesis-tile-sub{{font-size:10px;color:{P["text_faint"]};margin-top:2px;}}
+.ck-dp-thesis-struct{{margin-top:6px;}}
+.ck-dp-thesis-struct-head{{display:flex;justify-content:space-between;
+align-items:baseline;margin-bottom:5px;}}
+.ck-dp-thesis-struct-label{{font-size:9px;color:{P["text_faint"]};
+letter-spacing:1.4px;text-transform:uppercase;font-weight:600;}}
+.ck-dp-thesis-struct-legend{{font-size:10px;color:{P["text_faint"]};
+font-family:"JetBrains Mono",monospace;}}
+.ck-dp-thesis-struct-bar{{height:8px;background:{P["panel_alt"]};
+border-radius:4px;overflow:hidden;display:flex;}}
+.ck-dp-thesis-equity-bar{{height:100%;width:0%;background:{P["positive"]};
+transition:width 250ms ease;}}
+.ck-dp-thesis-debt-bar{{height:100%;width:0%;background:{P["warning"]};
+transition:width 250ms ease;}}
+.ck-dp-market-card{{margin-bottom:20px;background:{P["panel"]};
+border:1px solid {P["border"]};border-radius:4px;padding:16px 20px;
+position:relative;overflow:hidden;display:none;}}
+.ck-dp-market-card::before{{content:"";position:absolute;top:0;left:0;right:0;
+height:2px;background:linear-gradient(90deg,{P["accent"]},{P["warning"]});}}
+.ck-dp-market-head{{display:flex;justify-content:space-between;
+align-items:baseline;margin-bottom:10px;gap:12px;}}
+.ck-dp-market-eyebrow{{font-size:10px;color:{P["text_faint"]};
+letter-spacing:1.5px;text-transform:uppercase;font-weight:700;}}
+.ck-dp-market-summary{{font-size:12.5px;color:{P["text_dim"]};
+line-height:1.6;margin-top:4px;max-width:720px;}}
+.ck-dp-market-assessment{{font-size:10px;letter-spacing:1.3px;
+text-transform:uppercase;font-weight:700;padding:4px 10px;
+border:1px solid currentColor;border-radius:3px;
+color:{P["text_faint"]};white-space:nowrap;}}
+.ck-dp-market-tiles{{display:grid;
+grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+gap:12px;margin-top:6px;}}
+.ck-dp-market-tile-label{{font-size:9px;color:{P["text_faint"]};
+letter-spacing:1.3px;text-transform:uppercase;font-weight:600;margin-bottom:3px;}}
+.ck-dp-market-tile-val{{font-size:20px;color:{P["text"]};font-weight:700;
+font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;}}
+.ck-dp-market-tile-sub{{font-size:9.5px;color:{P["text_faint"]};margin-top:2px;}}
+.ck-dp-market-peers{{font-size:12px;color:{P["text"]};line-height:1.5;
+font-family:"JetBrains Mono",monospace;}}
+.ck-dp-lifecycle{{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap;}}
+.ck-dp-life-seg{{flex:1;padding:12px 14px;background:{P["panel"]};
+border:1px solid {P["border"]};border-left:3px solid {P["text_dim"]};
+border-radius:4px;position:relative;cursor:pointer;
+transition:background 140ms ease, transform 140ms ease, box-shadow 140ms ease;}}
+.ck-dp-life-seg:hover{{transform:translateY(-1px);
+box-shadow:0 4px 12px rgba(0,0,0,0.06);}}
+/* Lifecycle state markers: pending (faded), current (highlighted),
+   done (muted-positive). The first phase renders as is-current by
+   default; inline JS flips state classes from rcm_deal_<slug>_phase
+   in localStorage so the partner's progression persists. */
+.ck-dp-life-seg.is-pending{{opacity:.62;}}
+.ck-dp-life-seg.is-current{{background:{P["panel_alt"]};
+border-color:{P["accent"]};box-shadow:0 0 0 1px {P["accent"]} inset;}}
+.ck-dp-life-seg.is-current .ck-dp-life-seg-num{{color:{P["accent"]};}}
+.ck-dp-life-seg.is-done{{opacity:.78;}}
+.ck-dp-life-seg.is-done::after{{content:"✓";position:absolute;
+top:8px;right:10px;font-size:11px;color:{P["positive"]};font-weight:700;}}
+.ck-dp-life-seg-head{{display:flex;justify-content:space-between;
+align-items:baseline;margin-bottom:2px;}}
+.ck-dp-life-seg-num{{font-size:9px;color:{P["text_faint"]};letter-spacing:1.2px;
+font-family:"JetBrains Mono",monospace;font-weight:700;}}
+.ck-dp-life-seg-count{{font-size:9px;color:{P["text_faint"]};letter-spacing:1px;}}
+.ck-dp-life-seg-label{{font-size:11.5px;color:{P["text"]};font-weight:700;letter-spacing:.2px;}}
+.ck-dp-life-seg-subtitle{{font-size:10px;color:{P["text_faint"]};line-height:1.4;margin-top:2px;}}
+.ck-dp-saved-empty{{padding:1rem 1.25rem;background:var(--paper);
+border:1px dashed var(--border);border-radius:3px;color:var(--muted);
+font-size:.85rem;line-height:1.5;
+font-family:"Source Serif 4",Georgia,serif;font-style:italic;}}
+.ck-dp-saved-header{{font-size:10px;color:var(--muted);letter-spacing:1.5px;
+text-transform:uppercase;font-weight:700;margin-bottom:10px;}}
+.ck-dp-saved-grid{{display:grid;
+grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;}}
+.ck-dp-saved-card{{background:var(--bg);border:1px solid var(--paper-pure);
+border-radius:4px;padding:14px 16px;
+transition:border-color 140ms ease, box-shadow 140ms ease;}}
+.ck-dp-saved-card:hover{{border-color:var(--muted);
+box-shadow:0 4px 14px rgba(0,0,0,0.35);}}
+.ck-dp-saved-row{{display:flex;justify-content:space-between;
+align-items:baseline;gap:10px;margin-bottom:6px;}}
+.ck-dp-saved-slug{{font-size:9px;color:var(--muted);letter-spacing:1.3px;
+text-transform:uppercase;font-family:"JetBrains Mono",monospace;}}
+.ck-dp-saved-rel{{font-size:9px;color:var(--muted);}}
+.ck-dp-saved-name{{font-size:15px;color:var(--ink);font-weight:600;
+line-height:1.25;margin-bottom:8px;}}
+.ck-dp-saved-bar{{height:4px;background:var(--ink);border-radius:2px;
+overflow:hidden;margin:8px 0 4px 0;}}
+.ck-dp-saved-bar-fill{{height:100%;background:var(--bar-tone, var(--muted));}}
+.ck-dp-saved-progress{{font-size:10px;color:var(--muted);margin-bottom:10px;}}
+.ck-dp-saved-actions{{display:flex;gap:6px;flex-wrap:wrap;}}
+.ck-dp-saved-btn,.ck-dp-saved-btn-secondary,.ck-dp-saved-btn-danger
+{{padding:5px 10px;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;
+font-weight:700;border-radius:3px;
+transition:filter 120ms ease, border-color 120ms ease;}}
+.ck-dp-saved-btn{{background:var(--teal);color:var(--bg);border:0;
+text-decoration:none;}}
+.ck-dp-saved-btn:hover{{filter:brightness(1.08);}}
+.ck-dp-saved-btn-secondary{{background:transparent;color:var(--teal);
+border:1px solid var(--paper-pure);cursor:pointer;font-weight:600;}}
+.ck-dp-saved-btn-secondary:hover{{border-color:var(--teal);}}
+.ck-dp-saved-btn-danger{{background:transparent;color:var(--red);
+border:1px solid var(--paper-pure);cursor:pointer;font-weight:600;}}
+.ck-dp-saved-btn-danger:hover{{border-color:var(--red);}}
+</style>
+"""
+
+
 def _landing_slugs() -> str:
     """Editorial deal-profile landing — eyebrow + serif h2 + intro,
     then a slug-entry card and (JS-populated) recent-deals grid.
-    Lifted to match the .sect + cad-card patterns used across /app.
     """
-    body = (
-        # Editorial section header — matches .sect pattern in chartis.css
-        '<div class="sect">'
-        '<div>'
-        '<div class="micro">DEAL PROFILE</div>'
-        '<h2>One source of truth<br/><em>per deal</em>.</h2>'
-        '</div>'
-        '<p class="desc">'
-        'Each deal gets a unique URL — <code>/diligence/deal/&lt;slug&gt;</code>. '
-        'Pick a slug (e.g., <code>aurora</code>), enter the deal parameters '
-        'once, and every downstream analytic opens with them pre-filled. '
-        'Deal state persists locally so a refresh or returning tomorrow '
-        'picks up where you left off.'
-        '</p>'
-        '</div>'
-        # Slug-entry card — editorial cad-card pattern
-        '<form class="cad-card" '
-        'style="max-width:480px;"'
+    intro = ck_section_intro(
+        eyebrow="DEAL PROFILE",
+        headline="One source of truth per deal.",
+        italic_word="truth",
+        body=(
+            "Each deal gets a unique URL — /diligence/deal/<slug>. "
+            "Pick a slug (e.g., 'aurora'), enter the deal parameters "
+            "once, and every downstream analytic opens with them "
+            "pre-filled. Deal state persists locally so a refresh "
+            "or returning tomorrow picks up where you left off."
+        ),
+    )
+    form_inner = (
+        '<form class="ck-dp-slug-form" '
         'onsubmit="const slug = this.slug.value.trim().toLowerCase()'
         ".replace(/[^a-z0-9-]/g, '-'); if (slug) "
         'window.location.href = \'/diligence/deal/\' + slug; return false;">'
@@ -627,18 +1003,18 @@ def _landing_slugs() -> str:
         '<input class="cad-input" name="slug" required '
         'placeholder="e.g. aurora" pattern="[a-zA-Z0-9-]+">'
         '</div>'
-        '<div style="font-size:.78rem;color:var(--muted);'
-        'font-family:\'Inter\',sans-serif;margin-top:.5rem;line-height:1.5;">'
+        '<p class="ck-eyebrow">'
         'Letters, digits, and hyphens only. Bookmarkable. Open the same '
-        'slug from any browser to pick up your profile.'
-        '</div>'
-        '<button type="submit" class="cad-btn cad-btn-primary" '
-        'style="margin-top:1rem;">Open profile</button>'
+        'slug from any browser to pick up your profile.</p>'
+        '<button type="submit" class="cad-btn cad-btn-primary">Open profile</button>'
         '</form>'
-        # Recent deals block — JS populates from localStorage.
-        '<div style="margin-top:1.75rem;max-width:960px;" '
-        'data-rcm-recent-deals></div>'
-        f'{_LANDING_JS}'
+    )
+    body = (
+        _DP_STYLES
+        + intro
+        + ck_panel(form_inner, title="New profile")
+        + '<div data-rcm-recent-deals class="ck-dp-recent-deals"></div>'
+        + f'{_LANDING_JS}'
     )
     return chartis_shell(
         body, "RCM Diligence — Deal Profile",
@@ -659,63 +1035,47 @@ def _render_form(slug: str, seed_values: Dict[str, str]) -> str:
     for key, label, placeholder, input_type, tools in _FIELDS:
         seeded = html.escape(seed_values.get(key, ""), quote=True)
         chips = "".join(
-            f'<span style="font-size:8px;letter-spacing:.5px;'
-            f'text-transform:uppercase;color:{P["text_faint"]};'
-            f'background:{P["panel_alt"]};padding:1px 5px;'
-            f'border-radius:2px;margin-right:3px;">'
-            f'{html.escape(t)}</span>'
+            f'<span class="ck-dp-tool-chip">{html.escape(t)}</span>'
             for t in tools
         )
         if input_type == "select" and key == "dataset":
             input_html = (
-                f'<select name="{key}" data-rcm-deal-field="{key}" '
-                f'style="width:100%;padding:6px 8px;background:{P["panel_alt"]};'
-                f'color:{P["text"]};border:1px solid {P["border"]};'
-                f'font-family:inherit;font-size:11px;">'
+                f'<select name="{key}" data-rcm-deal-field="{key}" class="ck-dp-input">'
                 f'<option value="">— none —</option>{fixture_options}'
-                f'</select>'
+                '</select>'
             )
         else:
             input_html = (
                 f'<input name="{key}" data-rcm-deal-field="{key}" '
                 f'placeholder="{html.escape(placeholder, quote=True)}" '
-                f'value="{seeded}" '
-                f'style="width:100%;padding:6px 8px;background:{P["panel_alt"]};'
-                f'color:{P["text"]};border:1px solid {P["border"]};'
-                f'font-family:inherit;font-size:11px;">'
+                f'value="{seeded}" class="ck-dp-input">'
             )
+        hint_text = _FIELD_HINTS.get(key, "")
+        hint_html = (
+            f'<div class="ck-dp-field-hint" style="font-family:var(--cad-mono,monospace);'
+            f'font-size:10px;color:var(--cad-text-faint,#9aa3ad);letter-spacing:0.03em;'
+            f'margin-top:3px;">{html.escape(hint_text)}</div>'
+            if hint_text else ""
+        )
         fields_html.append(
-            f'<div>'
-            f'<label style="font-size:9px;color:{P["text_faint"]};'
-            f'letter-spacing:1px;text-transform:uppercase;font-weight:600;'
-            f'display:block;margin-bottom:3px;">'
-            f'{html.escape(label)}</label>'
+            '<div class="ck-dp-field">'
+            f'<label class="ck-dp-field-label">{html.escape(label)}</label>'
             f'{input_html}'
-            f'<div style="margin-top:3px;line-height:1.5;">{chips}</div>'
-            f'</div>'
+            f'{hint_html}'
+            f'<div class="ck-dp-field-chips">{chips}</div>'
+            '</div>'
         )
     return (
         f'<form data-rcm-deal-form data-rcm-deal-slug="{html.escape(slug)}" '
-        f'style="display:grid;grid-template-columns:repeat(3,1fr);'
-        f'gap:12px 16px;background:{P["panel"]};border:1px solid '
-        f'{P["border"]};border-radius:4px;padding:16px 20px;'
-        f'margin-bottom:24px;">'
+        f'class="ck-dp-form">'
         f'{"".join(fields_html)}'
-        f'<div style="grid-column:span 3;display:flex;gap:10px;'
-        f'align-items:center;margin-top:6px;">'
-        f'<button type="button" data-rcm-deal-save '
-        f'style="padding:8px 18px;background:{P["accent"]};color:{P["panel"]};'
-        f'border:0;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;'
-        f'font-weight:700;cursor:pointer;">Save Profile</button>'
-        f'<button type="button" data-rcm-deal-clear '
-        f'style="padding:8px 18px;background:transparent;color:{P["text_dim"]};'
-        f'border:1px solid {P["border"]};font-size:10px;letter-spacing:1.5px;'
-        f'text-transform:uppercase;font-weight:600;cursor:pointer;">'
-        f'Clear</button>'
-        f'<span data-rcm-deal-saved-at style="font-size:10px;'
-        f'color:{P["text_faint"]};margin-left:10px;letter-spacing:.5px;">'
-        f'</span>'
-        f'</div></form>'
+        '<div class="ck-dp-form-actions">'
+        '<button type="button" data-rcm-deal-save class="ck-dp-btn-save">'
+        'Save Profile</button>'
+        '<button type="button" data-rcm-deal-clear class="ck-dp-btn-clear">'
+        'Clear</button>'
+        '<span data-rcm-deal-saved-at class="ck-dp-saved-at"></span>'
+        '</div></form>'
     )
 
 
@@ -766,40 +1126,43 @@ def _analytic_card(slug: str, a: Dict[str, Any]) -> str:
         "params": params, "aliases": aliases, "extra_qs": extra_qs,
     })
     badge = a.get("badge", "")
+    badge_html = ck_signal_badge(html.escape(badge), tone="neutral") if badge else ""
+    # tool_key — used as the localStorage entry per (deal, analytic)
+    # so the state badge can show "Last viewed N hr ago" when a
+    # partner returns to a deal they were working on. Use the href
+    # as the stable identifier (one tool ↔ one href).
+    tool_key = a["href"]
+    # Pin button — partners curate frequently-used tools into
+    # localStorage["rcm_pinned_tools"]; the /app dashboard reads
+    # this list and renders a "Pinned tools" rail above the
+    # opportunities section. The button is styled as an editorial
+    # star (☆ unpinned / ★ pinned) and JS toggles class + state.
+    pin_button = (
+        '<button type="button" class="ck-dp-card-pin" '
+        f'data-rcm-pin-toggle '
+        f'data-rcm-pin-href="{html.escape(a["href"], quote=True)}" '
+        f'data-rcm-pin-label="{html.escape(a["label"], quote=True)}" '
+        f'data-rcm-pin-phase="{html.escape(a.get("phase", "DILIGENCE"))}" '
+        'aria-label="Pin this analytic" aria-pressed="false">'
+        '<span aria-hidden="true" class="ck-dp-card-pin-icon">☆</span>'
+        '</button>'
+    )
     return (
         f'<a data-rcm-deal-link '
         f'data-rcm-deal-href-base="{html.escape(a["href"], quote=True)}" '
         f'data-rcm-deal-params="{html.escape(params_json, quote=True)}" '
         f'data-rcm-deal-slug="{html.escape(slug)}" '
-        f'href="{html.escape(a["href"])}" '
-        f'style="display:block;background:{P["panel"]};border:1px solid '
-        f'{P["border"]};border-radius:4px;padding:14px 16px;'
-        f'text-decoration:none;transition:transform 140ms ease, '
-        f'border-color 140ms ease, box-shadow 140ms ease;" '
-        f'onmouseover="this.style.transform=\'translateY(-1px)\';'
-        f'this.style.borderColor=\'{P["text_faint"]}\';'
-        f'this.style.boxShadow=\'0 6px 18px rgba(0,0,0,0.30)\';" '
-        f'onmouseout="this.style.transform=\'translateY(0)\';'
-        f'this.style.borderColor=\'{P["border"]}\';'
-        f'this.style.boxShadow=\'none\';">'
-        f'<div style="display:flex;justify-content:space-between;'
-        f'align-items:baseline;margin-bottom:6px;">'
-        f'<div style="font-size:13px;color:{P["text"]};font-weight:600;'
-        f'letter-spacing:-.1px;">'
-        f'{html.escape(a["label"])}</div>'
-        + (f'<span style="font-size:8px;letter-spacing:1.1px;'
-           f'text-transform:uppercase;color:{P["text_faint"]};'
-           f'background:{P["panel_alt"]};padding:2px 6px;'
-           f'border-radius:2px;font-weight:700;">{html.escape(badge)}</span>'
-           if badge else "")
-        + f'</div>'
-        f'<div style="font-size:11px;color:{P["text_dim"]};'
-        f'line-height:1.55;">{html.escape(a["detail"])}</div>'
-        f'<div data-rcm-deal-preview style="font-size:10px;'
-        f'color:{P["text_faint"]};margin-top:8px;font-family:'
-        f'\'JetBrains Mono\',monospace;letter-spacing:.3px;'
-        f'word-break:break-all;"></div>'
-        f'</a>'
+        f'data-rcm-tool-key="{html.escape(tool_key, quote=True)}" '
+        f'href="{html.escape(a["href"])}" class="ck-dp-card">'
+        f'{pin_button}'
+        '<div class="ck-dp-card-head">'
+        f'<div class="ck-dp-card-title">{html.escape(a["label"])}</div>'
+        f'{badge_html}'
+        '</div>'
+        f'<div class="ck-dp-card-detail">{html.escape(a["detail"])}</div>'
+        '<div data-rcm-tool-state class="ck-dp-card-state" hidden></div>'
+        '<div data-rcm-deal-preview class="ck-dp-card-preview"></div>'
+        '</a>'
     )
 
 
@@ -823,138 +1186,105 @@ def _render_analytics_grid(slug: str) -> str:
         tile_htmls = [
             _analytic_card(slug, a) for a in by_phase[phase]
         ]
+        n_count = len(by_phase[phase])
+        eyebrow = (
+            f"{html.escape(meta['label']).upper()} · "
+            f"{n_count} {'ANALYTIC' if n_count == 1 else 'ANALYTICS'}"
+        )
         sections.append(
-            f'<div style="margin-bottom:22px;">'
-            f'<div style="display:flex;align-items:baseline;gap:12px;'
-            f'margin-bottom:10px;padding-left:10px;'
-            f'border-left:3px solid {tone_color};">'
-            f'<div style="font-size:11px;color:{P["text"]};font-weight:700;'
-            f'letter-spacing:1.2px;text-transform:uppercase;">'
-            f'{html.escape(meta["label"])}</div>'
-            f'<div style="font-size:10px;color:{P["text_faint"]};'
-            f'font-style:italic;">{html.escape(meta["subtitle"])}</div>'
-            f'<div style="flex:1;"></div>'
-            f'<div style="font-size:10px;color:{P["text_faint"]};'
-            f'letter-spacing:1px;font-variant-numeric:tabular-nums;">'
-            f'{len(by_phase[phase])} '
-            f'{"analytic" if len(by_phase[phase]) == 1 else "analytics"}'
-            f'</div>'
-            f'</div>'
-            f'<div style="display:grid;grid-template-columns:repeat(auto-fill,'
-            f'minmax(280px,1fr));gap:12px;">'
+            ck_section_header(
+                html.escape(meta["subtitle"]) or html.escape(meta["label"]),
+                eyebrow=eyebrow,
+            )
+            + '<div class="ck-dp-card-grid">'
             + "".join(tile_htmls) +
-            f'</div>'
-            f'</div>'
+            '</div>'
         )
     return "".join(sections)
 
 
 def _render_thesis_snapshot(slug: str) -> str:
-    """The visual investment story — live-updated from localStorage.
+    """The visual investment story — live-updated from localStorage."""
+    # Jargon glosses for each tile label — partners new to PE finance
+    # see [?] next to "Entry EV / EBITDA" and get the editorial gloss
+    # rather than needing a separate glossary.
+    _TILE_HELP = {
+        "Enterprise value": {
+            "definition": (
+                "Total cost to buy the company free of capital "
+                "structure — equity check plus assumed debt minus "
+                "cash. The headline number the seller asks for."
+            ),
+        },
+        "Revenue Y0": {
+            "definition": (
+                "Net Patient Revenue at close — billed services "
+                "minus contractual allowances, bad debt, charity "
+                "care. The cash-realisable top line on day one."
+            ),
+            "citation": "HFMA Glossary",
+        },
+        "EBITDA Y0": {
+            "definition": (
+                "Earnings before interest, taxes, depreciation, "
+                "amortization at close. The operating cash-flow "
+                "proxy PE partners price against."
+            ),
+        },
+        "Entry EV / EBITDA": {
+            "definition": (
+                "The deal's entry multiple — enterprise value "
+                "divided by Year-0 EBITDA. Compare to the public-"
+                "comp band on /market-intel/seeking-alpha and the "
+                "PE-transaction band for the specialty."
+            ),
+        },
+    }
 
-    Shows 4 KPI tiles (EV / Revenue / EBITDA / Implied EV/EBITDA),
-    a deal-structure bar (equity vs debt), and a one-sentence
-    auto-thesis.  All values are populated by the inline JS from
-    localStorage; empty-state shows "Enter deal parameters below".
-    """
+    def _tile(attr: str, label: str, sub_attr: str) -> str:
+        help_meta = _TILE_HELP.get(label)
+        if help_meta:
+            label_html = ck_help_tooltip(
+                label,
+                help_meta["definition"],
+                citation=help_meta.get("citation"),
+            )
+        else:
+            label_html = html.escape(label)
+        return (
+            '<div class="ck-dp-thesis-tile">'
+            f'<div class="ck-dp-thesis-tile-label">{label_html}</div>'
+            f'<div data-{attr} class="ck-dp-thesis-tile-val">—</div>'
+            f'<div class="ck-dp-thesis-tile-sub" data-{sub_attr}></div>'
+            '</div>'
+        )
     return (
-        f'<div data-rcm-thesis-snapshot style="margin-bottom:20px;'
-        f'background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-radius:4px;padding:18px 22px;position:relative;'
-        f'overflow:hidden;">'
-        f'<div style="position:absolute;top:0;left:0;right:0;height:2px;'
-        f'background:linear-gradient(90deg,{P["accent"]},{P["positive"]});">'
-        f'</div>'
-        f'<div style="display:flex;justify-content:space-between;'
-        f'align-items:baseline;margin-bottom:14px;">'
-        f'<div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;font-weight:700;">'
-        f'Investment Thesis</div>'
-        f'<div style="font-size:13px;color:{P["text_dim"]};'
-        f'line-height:1.55;margin-top:4px;max-width:720px;" '
-        f'data-rcm-thesis-narrative>'
-        f'Enter deal parameters below to populate the thesis snapshot.'
-        f'</div>'
-        f'</div>'
-        f'<div data-rcm-thesis-badge style="font-size:9px;'
-        f'letter-spacing:1.3px;text-transform:uppercase;font-weight:700;'
-        f'color:{P["text_faint"]};border:1px solid {P["border"]};'
-        f'padding:3px 10px;border-radius:3px;">Awaiting inputs</div>'
-        f'</div>'
-        f'<div style="display:grid;grid-template-columns:repeat(auto-fit,'
-        f'minmax(160px,1fr));gap:14px;margin-bottom:14px;">'
-        # EV tile
-        f'<div>'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.4px;text-transform:uppercase;font-weight:600;'
-        f'margin-bottom:4px;">Enterprise value</div>'
-        f'<div data-rcm-thesis-ev '
-        f'style="font-size:22px;color:{P["text"]};font-weight:700;'
-        f'font-family:\'JetBrains Mono\',monospace;'
-        f'font-variant-numeric:tabular-nums;">—</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:2px;" data-rcm-thesis-ev-sub></div>'
-        f'</div>'
-        # Revenue tile
-        f'<div>'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.4px;text-transform:uppercase;font-weight:600;'
-        f'margin-bottom:4px;">Revenue Y0</div>'
-        f'<div data-rcm-thesis-revenue '
-        f'style="font-size:22px;color:{P["text"]};font-weight:700;'
-        f'font-family:\'JetBrains Mono\',monospace;'
-        f'font-variant-numeric:tabular-nums;">—</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:2px;" data-rcm-thesis-rev-sub></div>'
-        f'</div>'
-        # EBITDA tile
-        f'<div>'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.4px;text-transform:uppercase;font-weight:600;'
-        f'margin-bottom:4px;">EBITDA Y0</div>'
-        f'<div data-rcm-thesis-ebitda '
-        f'style="font-size:22px;color:{P["text"]};font-weight:700;'
-        f'font-family:\'JetBrains Mono\',monospace;'
-        f'font-variant-numeric:tabular-nums;">—</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:2px;" data-rcm-thesis-margin-sub></div>'
-        f'</div>'
-        # Multiple tile
-        f'<div>'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.4px;text-transform:uppercase;font-weight:600;'
-        f'margin-bottom:4px;">Entry EV / EBITDA</div>'
-        f'<div data-rcm-thesis-multiple '
-        f'style="font-size:22px;color:{P["text"]};font-weight:700;'
-        f'font-family:\'JetBrains Mono\',monospace;'
-        f'font-variant-numeric:tabular-nums;">—</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:2px;" data-rcm-thesis-mult-sub></div>'
-        f'</div>'
-        f'</div>'
-        # Equity / Debt structure bar
-        f'<div style="margin-top:6px;">'
-        f'<div style="display:flex;justify-content:space-between;'
-        f'align-items:baseline;margin-bottom:5px;">'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.4px;text-transform:uppercase;font-weight:600;">'
-        f'Capital structure</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'font-family:\'JetBrains Mono\',monospace;" '
-        f'data-rcm-thesis-struct-legend>— equity · — debt</div>'
-        f'</div>'
-        f'<div style="height:8px;background:{P["panel_alt"]};'
-        f'border-radius:4px;overflow:hidden;display:flex;">'
-        f'<div data-rcm-thesis-equity-bar '
-        f'style="height:100%;width:0%;background:{P["positive"]};'
-        f'transition:width 250ms ease;"></div>'
-        f'<div data-rcm-thesis-debt-bar '
-        f'style="height:100%;width:0%;background:{P["warning"]};'
-        f'transition:width 250ms ease;"></div>'
-        f'</div>'
-        f'</div>'
-        f'</div>'
+        '<div data-rcm-thesis-snapshot class="ck-dp-thesis-card">'
+        '<div class="ck-dp-thesis-head">'
+        '<div>'
+        + ck_eyebrow("Investment Thesis")
+        + '<div class="ck-dp-thesis-narrative" data-rcm-thesis-narrative>'
+        'Enter deal parameters below to populate the thesis snapshot.'
+        '</div>'
+        '</div>'
+        '<div data-rcm-thesis-badge class="ck-dp-thesis-badge">Awaiting inputs</div>'
+        '</div>'
+        '<div class="ck-dp-thesis-tiles">'
+        + _tile("rcm-thesis-ev", "Enterprise value", "rcm-thesis-ev-sub")
+        + _tile("rcm-thesis-revenue", "Revenue Y0", "rcm-thesis-rev-sub")
+        + _tile("rcm-thesis-ebitda", "EBITDA Y0", "rcm-thesis-margin-sub")
+        + _tile("rcm-thesis-multiple", "Entry EV / EBITDA", "rcm-thesis-mult-sub")
+        + '</div>'
+        '<div class="ck-dp-thesis-struct">'
+        '<div class="ck-dp-thesis-struct-head">'
+        '<div class="ck-dp-thesis-struct-label">Capital structure</div>'
+        '<div class="ck-dp-thesis-struct-legend" data-rcm-thesis-struct-legend>'
+        '— equity · — debt</div>'
+        '</div>'
+        '<div class="ck-dp-thesis-struct-bar">'
+        '<div data-rcm-thesis-equity-bar class="ck-dp-thesis-equity-bar"></div>'
+        '<div data-rcm-thesis-debt-bar class="ck-dp-thesis-debt-bar"></div>'
+        '</div></div></div>'
     )
 
 
@@ -965,73 +1295,59 @@ def _render_market_context(slug: str) -> str:
     fields.  Surfaces target-vs-peer multiple delta + named top peers
     + sentiment + assessment band."""
     return (
-        f'<div data-rcm-market-context style="margin-bottom:20px;'
-        f'background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-radius:4px;padding:16px 20px;position:relative;'
-        f'overflow:hidden;display:none;">'
-        f'<div style="position:absolute;top:0;left:0;right:0;height:2px;'
-        f'background:linear-gradient(90deg,{P["accent"]},{P["warning"]});">'
-        f'</div>'
-        f'<div style="display:flex;justify-content:space-between;'
-        f'align-items:baseline;margin-bottom:10px;gap:12px;">'
-        f'<div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;font-weight:700;">'
-        f'Market Context · live from public comps</div>'
-        f'<div data-rcm-market-summary '
-        f'style="font-size:12.5px;color:{P["text_dim"]};line-height:1.6;'
-        f'margin-top:4px;max-width:720px;"></div>'
-        f'</div>'
-        f'<div data-rcm-market-assessment style="font-size:10px;'
-        f'letter-spacing:1.3px;text-transform:uppercase;font-weight:700;'
-        f'padding:4px 10px;border:1px solid currentColor;border-radius:3px;'
-        f'color:{P["text_faint"]};white-space:nowrap;">—</div>'
-        f'</div>'
-        f'<div style="display:grid;grid-template-columns:repeat(auto-fit,'
-        f'minmax(140px,1fr));gap:12px;margin-top:6px;">'
-        f'<div>'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.3px;text-transform:uppercase;font-weight:600;'
-        f'margin-bottom:3px;">Target implied</div>'
-        f'<div data-rcm-market-target-mult '
-        f'style="font-size:20px;color:{P["text"]};font-weight:700;'
-        f'font-family:\'JetBrains Mono\',monospace;'
-        f'font-variant-numeric:tabular-nums;">—</div>'
-        f'<div style="font-size:9.5px;color:{P["text_faint"]};'
-        f'margin-top:2px;">EV / EBITDA</div>'
-        f'</div>'
-        f'<div>'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.3px;text-transform:uppercase;font-weight:600;'
-        f'margin-bottom:3px;">Peer median</div>'
-        f'<div data-rcm-market-peer-median '
-        f'style="font-size:20px;color:{P["text"]};font-weight:700;'
-        f'font-family:\'JetBrains Mono\',monospace;'
-        f'font-variant-numeric:tabular-nums;">—</div>'
-        f'<div style="font-size:9.5px;color:{P["text_faint"]};'
-        f'margin-top:2px;" data-rcm-market-band-range></div>'
-        f'</div>'
-        f'<div>'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.3px;text-transform:uppercase;font-weight:600;'
-        f'margin-bottom:3px;">Delta vs peer</div>'
-        f'<div data-rcm-market-delta '
-        f'style="font-size:20px;font-weight:700;'
-        f'font-family:\'JetBrains Mono\',monospace;'
-        f'font-variant-numeric:tabular-nums;">—</div>'
-        f'<div style="font-size:9.5px;color:{P["text_faint"]};'
-        f'margin-top:2px;">turns of EBITDA</div>'
-        f'</div>'
-        f'<div>'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.3px;text-transform:uppercase;font-weight:600;'
-        f'margin-bottom:3px;">Closest peers</div>'
-        f'<div data-rcm-market-peers '
-        f'style="font-size:12px;color:{P["text"]};line-height:1.5;'
-        f'font-family:\'JetBrains Mono\',monospace;">—</div>'
-        f'</div>'
-        f'</div>'
-        f'</div>'
+        '<div data-rcm-market-context class="ck-dp-market-card">'
+        '<div class="ck-dp-market-head">'
+        '<div>'
+        + ck_eyebrow("Market Context · live from public comps")
+        +
+        '<div data-rcm-market-summary class="ck-dp-market-summary"></div>'
+        '</div>'
+        '<div data-rcm-market-assessment class="ck-dp-market-assessment">—</div>'
+        '</div>'
+        '<div class="ck-dp-market-tiles">'
+        '<div>'
+        '<div class="ck-dp-market-tile-label">'
+        + ck_help_tooltip(
+            "Target implied",
+            "The implied entry multiple for this deal — "
+            "enterprise value divided by Year-0 EBITDA. Compare "
+            "to the peer median on the right tile.",
+        )
+        + '</div>'
+        '<div data-rcm-market-target-mult class="ck-dp-market-tile-val">—</div>'
+        '<div class="ck-dp-market-tile-sub">EV / EBITDA</div>'
+        '</div>'
+        '<div>'
+        '<div class="ck-dp-market-tile-label">'
+        + ck_help_tooltip(
+            "Peer median",
+            "Median EV/EBITDA across public-comp hospitals in the "
+            "same sub-sector. The band shown below the value spans "
+            "the 25th-75th percentile.",
+            citation="rcm_mc/market_intel/category_bands",
+        )
+        + '</div>'
+        '<div data-rcm-market-peer-median class="ck-dp-market-tile-val">—</div>'
+        '<div class="ck-dp-market-tile-sub" data-rcm-market-band-range></div>'
+        '</div>'
+        '<div>'
+        '<div class="ck-dp-market-tile-label">'
+        + ck_help_tooltip(
+            "Delta vs peer",
+            "Target implied multiple minus the peer median. Positive "
+            "= paying a premium; negative = paying a discount. Each "
+            "turn of EBITDA is one multiple point — so +1.0x on a "
+            "$10M EBITDA deal is $10M of extra purchase price.",
+        )
+        + '</div>'
+        '<div data-rcm-market-delta class="ck-dp-market-tile-val">—</div>'
+        '<div class="ck-dp-market-tile-sub">turns of EBITDA</div>'
+        '</div>'
+        '<div>'
+        '<div class="ck-dp-market-tile-label">Closest peers</div>'
+        '<div data-rcm-market-peers class="ck-dp-market-peers">—</div>'
+        '</div>'
+        '</div></div>'
     )
 
 
@@ -1039,11 +1355,15 @@ def _render_lifecycle_ribbon(slug: str) -> str:
     """5-phase lifecycle progress visual.
 
     Segments: Screening → Diligence → Risk → Financial → Delivery.
-    Each segment shows the phase name, subtitle, and analytic count.
-    Inline JS can later color-code based on checklist coverage.
+
+    The first phase renders with the ``is-current`` state class so
+    partners see a default progression marker on a fresh deal. The
+    inline JS (``_inline_js``) reads ``rcm_deal_<slug>_phase`` from
+    localStorage and shifts the marker forward when the partner
+    flags a phase as complete, giving a manual but persistent sense
+    of progress across sessions.
     """
     order = ("SCREENING", "DILIGENCE", "RISK", "FINANCIAL", "DELIVERY")
-    # Count analytics per phase for the badge
     per_phase: Dict[str, int] = {}
     for a in _ANALYTICS:
         per_phase[a.get("phase", "DILIGENCE")] = (
@@ -1054,30 +1374,145 @@ def _render_lifecycle_ribbon(slug: str) -> str:
         meta = _PHASE_META[phase]
         tone_color = P.get(meta["tone"], P["text_dim"])
         count = per_phase.get(phase, 0)
+        # Default state classes: first phase = current, rest = pending.
+        # JS will overwrite based on localStorage after page load.
+        state_cls = " is-current" if i == 0 else " is-pending"
         segments.append(
             f'<div data-rcm-phase="{phase}" '
-            f'style="flex:1;padding:12px 14px;background:{P["panel"]};'
-            f'border:1px solid {P["border"]};border-left:3px solid {tone_color};'
-            f'border-radius:4px;position:relative;">'
-            f'<div style="display:flex;justify-content:space-between;'
-            f'align-items:baseline;margin-bottom:2px;">'
-            f'<div style="font-size:9px;color:{P["text_faint"]};'
-            f'letter-spacing:1.2px;font-family:\'JetBrains Mono\',monospace;'
-            f'font-weight:700;">{i + 1:02d}</div>'
-            f'<div style="font-size:9px;color:{P["text_faint"]};'
-            f'letter-spacing:1px;">{count} '
+            f'class="ck-dp-life-seg{state_cls}" '
+            f'style="border-left-color:{tone_color};">'
+            '<div class="ck-dp-life-seg-head">'
+            f'<div class="ck-dp-life-seg-num">{i + 1:02d}</div>'
+            f'<div class="ck-dp-life-seg-count">{count} '
             f'{"analytic" if count == 1 else "analytics"}</div>'
-            f'</div>'
-            f'<div style="font-size:11.5px;color:{P["text"]};font-weight:700;'
-            f'letter-spacing:.2px;">{html.escape(meta["label"])}</div>'
-            f'<div style="font-size:10px;color:{P["text_faint"]};'
-            f'line-height:1.4;margin-top:2px;">'
-            f'{html.escape(meta["subtitle"])}</div>'
-            f'</div>'
+            '</div>'
+            f'<div class="ck-dp-life-seg-label">{html.escape(meta["label"])}</div>'
+            f'<div class="ck-dp-life-seg-subtitle">{html.escape(meta["subtitle"])}</div>'
+            '</div>'
         )
+    return f'<div class="ck-dp-lifecycle">{"".join(segments)}</div>'
+
+
+def _render_diligence_questions(slug: str) -> str:
+    """Inline diligence-questions editor — partner-curated list of
+    questions to ask the seller, persisted to
+    ``rcm_deal_<slug>_questions`` localStorage.
+
+    Each row carries:
+      - serif italic question text
+      - editorial timestamp
+      - mark-asked toggle (strikethrough in done state)
+      - remove button
+    Plus an inline `<input>` + "Add question →" CTA at the top.
+
+    No server round-trip — purely a partner-side memo system. Stays
+    editorial: parchment surface, serif body, italic accents,
+    Source-Serif italic for empty state. Hidden in print so the
+    LP-facing IC deliverables don't carry working notes.
+    """
     return (
-        f'<div style="display:flex;gap:8px;margin-bottom:22px;'
-        f'flex-wrap:wrap;">{"".join(segments)}</div>'
+        '<div class="ck-dp-qs" data-rcm-dp-qs '
+        f'data-rcm-qs-slug="{html.escape(slug)}">'
+        '<div class="ck-dp-qs-intro">'
+        '<p class="ck-section-body">'
+        'Questions you want answered before IC. Persists in your '
+        'browser, one list per deal. Mark each <em>asked</em> when '
+        'the seller responds; remove items that get answered in '
+        'follow-up documents.'
+        '</p>'
+        '</div>'
+        '<form class="ck-dp-qs-form" data-rcm-qs-form>'
+        '<input class="ck-dp-qs-input" data-rcm-qs-input '
+        'placeholder="e.g. What share of NPR comes from out-of-network rates?" '
+        'maxlength="280" autocomplete="off"/>'
+        '<select class="ck-dp-qs-cat" data-rcm-qs-cat '
+        'aria-label="Question category">'
+        '<option value="financial">Financial</option>'
+        '<option value="clinical">Clinical</option>'
+        '<option value="regulatory">Regulatory</option>'
+        '<option value="legal">Legal</option>'
+        '<option value="operational">Operational</option>'
+        '<option value="other">Other</option>'
+        '</select>'
+        '<button type="submit" class="ck-dp-qs-add" '
+        'data-rcm-qs-add>Add question →</button>'
+        '</form>'
+        '<div class="ck-dp-qs-empty" data-rcm-qs-empty hidden>'
+        '<p class="ck-section-body" style="font-style:italic;">'
+        'No questions yet. Diligence is a conversation — start by '
+        'noting one thing you\'d need to hear from the seller '
+        'before underwriting.'
+        '</p>'
+        '</div>'
+        '<ol class="ck-dp-qs-list" data-rcm-qs-list></ol>'
+        '<div class="ck-dp-qs-meta-row" data-rcm-qs-meta-row hidden>'
+        '<div class="ck-dp-qs-meta" data-rcm-qs-meta></div>'
+        '<div class="ck-dp-qs-export">'
+        '<button type="button" class="ck-dp-qs-export-btn" '
+        'data-rcm-qs-copy-md>Copy as Markdown</button>'
+        '<button type="button" class="ck-dp-qs-export-btn" '
+        'data-rcm-qs-copy-md-open>Copy open only</button>'
+        '<button type="button" class="ck-dp-qs-export-btn" '
+        'data-rcm-qs-csv>Download CSV</button>'
+        '<span class="ck-dp-qs-export-toast" '
+        'data-rcm-qs-toast hidden></span>'
+        '</div>'
+        '</div>'
+        '</div>'
+    )
+
+
+def _render_diligence_pulse(slug: str) -> str:
+    """Server-emitted placeholder for the diligence pulse composite.
+
+    Renders a hidden parchment section with three tiles — tools
+    opened, last touched, progress bar — that inline JS hydrates
+    from ``rcm_deal_<slug>_visited`` on DOMContentLoaded. The pulse
+    only appears once a partner has actually opened at least one
+    analytic on this deal; first-time visits see nothing extra.
+
+    The label for "Last touched" needs to map an href back to a
+    human-readable analytic title. That map is computed at render
+    time from ``_ANALYTICS`` (the deal-profile's tool catalog) and
+    inlined as ``window.RCM_DP_TOOL_LABELS`` so the JS can resolve
+    href → label without a round-trip.
+    """
+    # Build href → label + total count from the analytics list
+    tool_labels = {a["href"]: a["label"] for a in _ANALYTICS}
+    return (
+        '<section class="ck-dp-pulse" data-rcm-dp-pulse hidden>'
+        '<div class="ck-dp-pulse-head">'
+        '<span class="ck-dp-pulse-eyebrow">Diligence pulse</span>'
+        '<span class="ck-dp-pulse-meta" data-rcm-pulse-meta></span>'
+        '</div>'
+        '<div class="ck-dp-pulse-grid">'
+        '<div class="ck-dp-pulse-tile">'
+        '<div class="ck-dp-pulse-val" data-rcm-pulse-count>0</div>'
+        '<div class="ck-dp-pulse-lbl">Tools opened</div>'
+        f'<div class="ck-dp-pulse-sub">of {len(_ANALYTICS)} analytics</div>'
+        '</div>'
+        '<div class="ck-dp-pulse-tile">'
+        '<div class="ck-dp-pulse-val ck-dp-pulse-val-serif" '
+        'data-rcm-pulse-last>—</div>'
+        '<div class="ck-dp-pulse-lbl">Last touched</div>'
+        '<div class="ck-dp-pulse-sub" '
+        'data-rcm-pulse-last-ts></div>'
+        '</div>'
+        '<div class="ck-dp-pulse-tile">'
+        '<div class="ck-dp-pulse-bar">'
+        '<div class="ck-dp-pulse-bar-fill" '
+        'data-rcm-pulse-bar-fill></div>'
+        '</div>'
+        '<div class="ck-dp-pulse-lbl">Diligence progress</div>'
+        '<div class="ck-dp-pulse-sub" '
+        'data-rcm-pulse-pct>0%</div>'
+        '</div>'
+        '</div>'
+        '</section>'
+        '<script>window.RCM_DP_TOOL_LABELS='
+        + json.dumps(tool_labels)
+        + f';window.RCM_DP_TOOL_TOTAL={len(_ANALYTICS)};'
+        '</script>'
     )
 
 
@@ -1420,6 +1855,573 @@ def _inline_js(slug: str) -> str:
       }
     }
   });
+
+  // ── Lifecycle ribbon: read/write current phase to localStorage ──
+  // Each click on a phase tile cycles its state pending → current →
+  // done → pending. The current phase is also written to
+  // `rcm_deal_<slug>_phase` so the partner's progress persists
+  // across sessions and other surfaces can read it.
+  var phaseKey = "rcm_deal_" + slug + "_phase";
+  var phaseOrder = ["SCREENING","DILIGENCE","RISK","FINANCIAL","DELIVERY"];
+  function paintLifecycle() {
+    var current = localStorage.getItem(phaseKey) || "SCREENING";
+    var currentIdx = phaseOrder.indexOf(current);
+    if (currentIdx < 0) currentIdx = 0;
+    document.querySelectorAll("[data-rcm-phase]").forEach(function(el) {
+      var phase = el.getAttribute("data-rcm-phase");
+      var idx = phaseOrder.indexOf(phase);
+      el.classList.remove("is-pending","is-current","is-done");
+      if (idx < currentIdx)        el.classList.add("is-done");
+      else if (idx === currentIdx) el.classList.add("is-current");
+      else                          el.classList.add("is-pending");
+    });
+  }
+  document.addEventListener("click", function(e) {
+    var tile = e.target.closest && e.target.closest("[data-rcm-phase]");
+    if (!tile) return;
+    var phase = tile.getAttribute("data-rcm-phase");
+    var current = localStorage.getItem(phaseKey) || "SCREENING";
+    // Clicking the current phase advances; clicking any other phase
+    // jumps directly to it. Lets partners move forward (most common)
+    // or back-fill if they skipped a step.
+    if (phase === current) {
+      var nextIdx = phaseOrder.indexOf(current) + 1;
+      if (nextIdx < phaseOrder.length) {
+        localStorage.setItem(phaseKey, phaseOrder[nextIdx]);
+      }
+    } else {
+      localStorage.setItem(phaseKey, phase);
+    }
+    paintLifecycle();
+  });
+  document.addEventListener("DOMContentLoaded", paintLifecycle);
+
+  // Analytic-card state badges — read per-tool last-viewed timestamps
+  // from rcm_deal_<slug>_visited and paint each card's state line.
+  // Click on a card records the visit so subsequent loads of the
+  // deal-profile show "Last viewed N min ago" right under the title.
+  // Gives partners visible recency context per analytic without
+  // needing them to leave the profile to check.
+  var visitedKey = "rcm_deal_" + slug + "_visited";
+  function relTime(ts) {
+    if (!ts) return "";
+    var d = Math.round((Date.now() - ts) / 60000);
+    if (d < 1) return "just now";
+    if (d < 60) return d + " min ago";
+    if (d < 1440) return Math.round(d / 60) + " hr ago";
+    return Math.round(d / 1440) + " d ago";
+  }
+  function paintToolStates() {
+    var raw;
+    try { raw = localStorage.getItem(visitedKey); } catch (e) { raw = null; }
+    var rows = {};
+    if (raw) { try { rows = JSON.parse(raw) || {}; } catch (e) { rows = {}; } }
+    document.querySelectorAll("[data-rcm-tool-key]").forEach(function(card) {
+      var key = card.getAttribute("data-rcm-tool-key");
+      var state = card.querySelector("[data-rcm-tool-state]");
+      if (!state) return;
+      var ts = rows[key];
+      if (!ts) { state.hidden = true; return; }
+      state.innerHTML =
+        '<span class="ck-dp-card-state-dot" aria-hidden="true"></span>'
+        + 'Last viewed ' + relTime(ts);
+      state.hidden = false;
+    });
+  }
+  document.addEventListener("DOMContentLoaded", paintToolStates);
+  document.addEventListener("click", function(e) {
+    var card = e.target.closest && e.target.closest("[data-rcm-tool-key]");
+    if (!card) return;
+    // The pin button lives inside the card link — don't record a
+    // visit when the partner is pinning, only when they click the
+    // card itself to navigate.
+    if (e.target.closest("[data-rcm-pin-toggle]")) return;
+    var key = card.getAttribute("data-rcm-tool-key");
+    if (!key) return;
+    try {
+      var raw = localStorage.getItem(visitedKey);
+      var rows = raw ? JSON.parse(raw) : {};
+      if (!rows || typeof rows !== "object") rows = {};
+      rows[key] = Date.now();
+      localStorage.setItem(visitedKey, JSON.stringify(rows));
+    } catch (err) { /* quota / disabled — ignore */ }
+  });
+
+  // Diligence questions — partner-curated list of questions to
+  // ask the seller, persisted to rcm_deal_<slug>_questions
+  // localStorage. Add via form submit; toggle-asked + remove via
+  // small buttons; relative timestamp in italic Source-Serif.
+  // No server round-trip — purely a partner-side memo system.
+  var qsKey = "rcm_deal_" + slug + "_questions";
+  function loadQs() {
+    try {
+      var raw = localStorage.getItem(qsKey);
+      var rows = raw ? JSON.parse(raw) : [];
+      return Array.isArray(rows) ? rows : [];
+    } catch (e) { return []; }
+  }
+  function saveQs(rows) {
+    try { localStorage.setItem(qsKey, JSON.stringify(rows)); }
+    catch (e) { /* quota — ignore */ }
+  }
+  function qsRel(ts) {
+    if (!ts) return "";
+    var d = Math.round((Date.now() - ts) / 60000);
+    if (d < 1) return "just now";
+    if (d < 60) return d + " min ago";
+    if (d < 1440) return Math.round(d / 60) + " hr ago";
+    return Math.round(d / 1440) + " d ago";
+  }
+  function escQ(s) {
+    var d = document.createElement("div");
+    d.textContent = String(s || "");
+    return d.innerHTML;
+  }
+  function paintQs() {
+    var root = document.querySelector("[data-rcm-dp-qs]");
+    if (!root) return;
+    var list = root.querySelector("[data-rcm-qs-list]");
+    var empty = root.querySelector("[data-rcm-qs-empty]");
+    var meta = root.querySelector("[data-rcm-qs-meta]");
+    if (!list) return;
+    var rows = loadQs();
+    if (rows.length === 0) {
+      list.innerHTML = "";
+      if (empty) empty.hidden = false;
+      var metaRow0 = root.querySelector("[data-rcm-qs-meta-row]");
+      if (metaRow0) metaRow0.hidden = true;
+      return;
+    }
+    if (empty) empty.hidden = true;
+    var CAT_LABELS = {
+      financial: "Fin", clinical: "Clin", regulatory: "Reg",
+      legal: "Leg", operational: "Ops", other: "Other",
+    };
+    list.innerHTML = rows.map(function(r, i) {
+      var stateCls = r.asked ? " is-asked" : "";
+      var btnCls = r.asked ? " is-active" : "";
+      var cat = (r.category || "financial").toLowerCase();
+      if (!CAT_LABELS[cat]) cat = "other";
+      var pill = '<span class="ck-dp-qs-pill cat-' + cat + '">' +
+        escQ(CAT_LABELS[cat]) + '</span>';
+      return '<li class="ck-dp-qs-row' + stateCls + '" ' +
+        'data-rcm-qs-id="' + escQ(r.id) + '">' +
+        '<span class="ck-dp-qs-row-num">' +
+        String(i + 1).padStart(2, "0") + '</span>' +
+        '<span class="ck-dp-qs-row-text">' + pill +
+        escQ(r.text) + '</span>' +
+        '<span class="ck-dp-qs-row-ts">' + qsRel(r.ts) + '</span>' +
+        '<span class="ck-dp-qs-row-actions">' +
+        '<button type="button" class="ck-dp-qs-row-btn ' +
+        'ck-dp-qs-row-btn-asked' + btnCls + '" ' +
+        'data-rcm-qs-ask>' + (r.asked ? "Asked ✓" : "Mark asked") +
+        '</button>' +
+        '<button type="button" class="ck-dp-qs-row-btn ' +
+        'ck-dp-qs-row-btn-remove" data-rcm-qs-remove>Remove</button>' +
+        '</span></li>';
+    }).join("");
+    var nOpen = rows.filter(function(r) { return !r.asked; }).length;
+    var metaRow = root.querySelector("[data-rcm-qs-meta-row]");
+    if (meta) {
+      // Editorial meta line: "5 total · 2 still open · 3 Fin · 1 Clin · 1 Reg"
+      var counts = {};
+      rows.forEach(function(r) {
+        var c = (r.category || "financial").toLowerCase();
+        if (!CAT_LABELS[c]) c = "other";
+        counts[c] = (counts[c] || 0) + 1;
+      });
+      var catParts = Object.keys(counts).map(function(c) {
+        return counts[c] + " " + CAT_LABELS[c];
+      });
+      var openPhrase = nOpen + " still open";
+      var head = rows.length + " total · " + openPhrase;
+      meta.textContent = catParts.length
+        ? head + " · " + catParts.join(" · ")
+        : head;
+    }
+    if (metaRow) metaRow.hidden = false;
+  }
+  document.addEventListener("DOMContentLoaded", paintQs);
+  document.addEventListener("submit", function(e) {
+    var form = e.target.closest && e.target.closest("[data-rcm-qs-form]");
+    if (!form) return;
+    e.preventDefault();
+    var input = form.querySelector("[data-rcm-qs-input]");
+    var catSel = form.querySelector("[data-rcm-qs-cat]");
+    if (!input) return;
+    var text = (input.value || "").trim();
+    if (!text) return;
+    var category = (catSel && catSel.value) ? catSel.value : "financial";
+    var rows = loadQs();
+    rows.unshift({
+      id: "q" + Date.now() + Math.random().toString(36).slice(2, 6),
+      text: text, ts: Date.now(), asked: false,
+      category: category,
+    });
+    saveQs(rows);
+    input.value = "";
+    // Keep the category sticky — partners often add several
+    // questions in the same area, so leave the select where they
+    // last set it instead of resetting to the default.
+    paintQs();
+  });
+  // ── Export handlers ──
+  // Three small editorial buttons next to the meta line let
+  // partners hand the question list off to the seller as Markdown
+  // (default, all rows) or just the open subset, or download a
+  // CSV with category + status + timestamp columns. All client-
+  // side via Blob + clipboard APIs — no server roundtrip.
+  function qsToast(msg) {
+    var t = document.querySelector("[data-rcm-qs-toast]");
+    if (!t) return;
+    t.textContent = msg;
+    t.hidden = false;
+    t.classList.add("is-visible");
+    setTimeout(function() {
+      t.classList.remove("is-visible");
+      setTimeout(function() { t.hidden = true; }, 220);
+    }, 1600);
+  }
+  function qsCsvCell(v) {
+    var s = String(v == null ? "" : v);
+    if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+  function qsBuildMarkdown(openOnly) {
+    var rows = loadQs();
+    if (openOnly) rows = rows.filter(function(r) { return !r.asked; });
+    if (rows.length === 0) return "";
+    var CAT_LABELS_FULL = {
+      financial: "Financial", clinical: "Clinical",
+      regulatory: "Regulatory", legal: "Legal",
+      operational: "Operational", other: "Other",
+    };
+    var lines = [
+      "# Diligence questions — " + slug,
+      "",
+      "_" + rows.length + " question" + (rows.length === 1 ? "" : "s") +
+        (openOnly ? " (open only)" : "") + ", exported " +
+        new Date().toISOString().slice(0, 10) + "._",
+      "",
+    ];
+    rows.forEach(function(r, i) {
+      var c = (r.category || "financial").toLowerCase();
+      if (!CAT_LABELS_FULL[c]) c = "other";
+      var asked = r.asked ? " ✓ asked" : "";
+      lines.push(
+        (i + 1) + ". **[" + CAT_LABELS_FULL[c] + "]**" + asked + " — " +
+        r.text
+      );
+    });
+    return lines.join("\n");
+  }
+  function qsBuildCsv() {
+    var rows = loadQs();
+    var header = "slug,category,status,question,added_at";
+    var body = rows.map(function(r) {
+      var c = (r.category || "financial").toLowerCase();
+      var status = r.asked ? "asked" : "open";
+      var iso = new Date(r.ts || 0).toISOString();
+      return [
+        qsCsvCell(slug), qsCsvCell(c), qsCsvCell(status),
+        qsCsvCell(r.text || ""), qsCsvCell(iso),
+      ].join(",");
+    });
+    return header + "\n" + body.join("\n");
+  }
+  function qsCopyToClipboard(text) {
+    if (!text) { qsToast("Nothing to copy."); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function() {
+        qsToast("Copied to clipboard.");
+      }).catch(function() { qsToast("Copy failed."); });
+    } else {
+      // Old-browser fallback
+      var ta = document.createElement("textarea");
+      ta.value = text; document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); qsToast("Copied to clipboard."); }
+      catch (e) { qsToast("Copy failed."); }
+      document.body.removeChild(ta);
+    }
+  }
+  function qsDownloadCsv() {
+    var csv = qsBuildCsv();
+    if (!csv || csv.split("\n").length < 2) {
+      qsToast("Nothing to export."); return;
+    }
+    var blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "diligence-questions-" + slug + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+    qsToast("CSV downloaded.");
+  }
+  document.addEventListener("click", function(e) {
+    if (e.target.closest && e.target.closest("[data-rcm-qs-copy-md]")) {
+      qsCopyToClipboard(qsBuildMarkdown(false));
+    } else if (e.target.closest && e.target.closest("[data-rcm-qs-copy-md-open]")) {
+      qsCopyToClipboard(qsBuildMarkdown(true));
+    } else if (e.target.closest && e.target.closest("[data-rcm-qs-csv]")) {
+      qsDownloadCsv();
+    }
+  });
+
+  document.addEventListener("click", function(e) {
+    var row = e.target.closest && e.target.closest("[data-rcm-qs-id]");
+    if (!row) return;
+    var id = row.getAttribute("data-rcm-qs-id");
+    var ask = e.target.closest("[data-rcm-qs-ask]");
+    var rem = e.target.closest("[data-rcm-qs-remove]");
+    if (!ask && !rem) return;
+    var rows = loadQs();
+    if (ask) {
+      rows = rows.map(function(r) {
+        if (r.id === id) r.asked = !r.asked;
+        return r;
+      });
+    } else if (rem) {
+      rows = rows.filter(function(r) { return r.id !== id; });
+    }
+    saveQs(rows);
+    paintQs();
+  });
+
+  // "Compare with…" disclosure — populate the menu from
+  // rcm_recent_deals every time the disclosure opens so newly-viewed
+  // deals show up immediately. Each row links to /diligence/compare
+  // with both datasets when available; falls back to the picker
+  // when either side is missing a dataset. The current slug is
+  // excluded from the list (no compare-to-self).
+  function escHtml(s) {
+    var d = document.createElement("div");
+    d.textContent = String(s || "");
+    return d.innerHTML;
+  }
+  function paintCompareWith() {
+    var details = document.querySelector("[data-rcm-cmpw]");
+    if (!details) return;
+    var thisSlug = details.getAttribute("data-rcm-cmpw-slug") || slug;
+    var list = details.querySelector("[data-rcm-cmpw-list]");
+    var empty = details.querySelector("[data-rcm-cmpw-empty]");
+    if (!list) return;
+    var rows = [];
+    try {
+      var raw = localStorage.getItem("rcm_recent_deals");
+      rows = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(rows)) rows = [];
+    } catch (e) { rows = []; }
+    rows = rows.filter(function(r) {
+      return r && r.slug && r.slug !== thisSlug;
+    }).slice(0, 5);
+    var thisDataset = "";
+    try {
+      var prof = localStorage.getItem("rcm_deal_" + thisSlug);
+      if (prof) {
+        var p = JSON.parse(prof);
+        thisDataset = (p && p.dataset) ? p.dataset : "";
+      }
+    } catch (e) { thisDataset = ""; }
+    if (rows.length === 0) {
+      if (empty) empty.hidden = false;
+      list.innerHTML = "";
+      return;
+    }
+    if (empty) empty.hidden = true;
+    list.innerHTML = rows.map(function(r) {
+      var dsRight = "";
+      try {
+        var raw2 = localStorage.getItem("rcm_deal_" + r.slug);
+        if (raw2) {
+          var p2 = JSON.parse(raw2);
+          dsRight = (p2 && p2.dataset) ? p2.dataset : "";
+        }
+      } catch (e) { dsRight = ""; }
+      var href;
+      if (thisDataset && dsRight) {
+        href = "/diligence/compare?left=" +
+          encodeURIComponent(thisDataset) + "&right=" +
+          encodeURIComponent(dsRight);
+      } else {
+        href = "/diligence/compare";
+      }
+      // Open-questions chip — surface Q load on candidate compare
+      // targets so partners see "Hawthorne · 5 open qs" before
+      // committing to the comparison. Same shape as the /app
+      // recently-viewed rail's chip; chip omitted when the candidate
+      // deal has zero open questions.
+      var qOpen = 0;
+      try {
+        var qRaw = localStorage.getItem("rcm_deal_" + r.slug + "_questions");
+        if (qRaw) {
+          var qList = JSON.parse(qRaw);
+          if (Array.isArray(qList)) {
+            qOpen = qList.filter(function(q) { return q && !q.asked; }).length;
+          }
+        }
+      } catch (e) { qOpen = 0; }
+      var qChip = qOpen > 0
+        ? '<span class="ck-dp-cmpw-q">' + qOpen + ' open ' +
+            (qOpen === 1 ? 'q' : 'qs') + '</span>'
+        : '';
+      return '<li class="ck-dp-cmpw-row">' +
+        '<a class="ck-dp-cmpw-link" href="' + escHtml(href) + '">' +
+        '<span class="ck-dp-cmpw-link-name">' +
+        '<em>' + escHtml(r.name || r.slug) + '</em>' +
+        qChip +
+        '</span>' +
+        '<span class="ck-dp-cmpw-link-slug">' + escHtml(r.slug) +
+        '</span>' +
+        '</a></li>';
+    }).join("");
+    // If THIS deal has no dataset stored, show a small italic
+    // editorial note explaining the picker fallback.
+    if (!thisDataset) {
+      var existing = details.querySelector(".ck-dp-cmpw-disabled");
+      if (!existing) {
+        var note = document.createElement("div");
+        note.className = "ck-dp-cmpw-disabled";
+        note.textContent =
+          "Save the deal-profile dataset to enable direct " +
+          "side-by-side. Without it, the comparison opens the picker.";
+        details.querySelector("[data-rcm-cmpw-menu]").appendChild(note);
+      }
+    }
+  }
+  // Repaint every time the disclosure opens (rcm_recent_deals can
+  // change between visits to the deal-profile)
+  var cmpwDetails = document.querySelector("[data-rcm-cmpw]");
+  if (cmpwDetails) {
+    cmpwDetails.addEventListener("toggle", function() {
+      if (cmpwDetails.open) paintCompareWith();
+    });
+    // Paint once on load so the keyboard-only path also works
+    document.addEventListener("DOMContentLoaded", paintCompareWith);
+  }
+
+  // Diligence pulse — hydrate from the same visited map. Three
+  // tiles: tools opened, last touched (label + relative ts),
+  // progress bar (count / total). Section stays hidden until at
+  // least one tool has been visited.
+  function paintDiligencePulse() {
+    var sec = document.querySelector("[data-rcm-dp-pulse]");
+    if (!sec) return;
+    var rows = {};
+    try {
+      var raw = localStorage.getItem(visitedKey);
+      if (raw) rows = JSON.parse(raw) || {};
+    } catch (e) { rows = {}; }
+    var entries = Object.keys(rows).map(function(href) {
+      return { href: href, ts: rows[href] };
+    });
+    if (!entries.length) { sec.hidden = true; return; }
+    var count = entries.length;
+    var total = (window.RCM_DP_TOOL_TOTAL || 22);
+    var labels = (window.RCM_DP_TOOL_LABELS || {});
+    entries.sort(function(a, b) { return b.ts - a.ts; });
+    var lastTs = entries[0].ts;
+    var lastLabel = labels[entries[0].href] || entries[0].href;
+    var d = Math.round((Date.now() - lastTs) / 60000);
+    var rel = d < 1 ? "just now"
+      : d < 60 ? d + " min ago"
+      : d < 1440 ? Math.round(d / 60) + " hr ago"
+      : Math.round(d / 1440) + " d ago";
+    var pct = Math.round((count / total) * 100);
+    var pctClamped = Math.max(0, Math.min(100, pct));
+    var cnt = sec.querySelector("[data-rcm-pulse-count]");
+    if (cnt) cnt.textContent = String(count);
+    var lastEl = sec.querySelector("[data-rcm-pulse-last]");
+    if (lastEl) lastEl.textContent = lastLabel;
+    var lastTsEl = sec.querySelector("[data-rcm-pulse-last-ts]");
+    if (lastTsEl) lastTsEl.textContent = rel;
+    var pctEl = sec.querySelector("[data-rcm-pulse-pct]");
+    if (pctEl) pctEl.textContent = pct + "% of " + total;
+    var fill = sec.querySelector("[data-rcm-pulse-bar-fill]");
+    if (fill) fill.style.width = pctClamped + "%";
+    var meta = sec.querySelector("[data-rcm-pulse-meta]");
+    if (meta) {
+      meta.textContent = "from your visit history on " + slug;
+    }
+    sec.hidden = false;
+  }
+  document.addEventListener("DOMContentLoaded", paintDiligencePulse);
+
+  // Pinned tools — partner-curated favorites stored in
+  // localStorage["rcm_pinned_tools"] as [{href, label, phase}] and
+  // rendered by the /app dashboard's pinned-tools rail. The pin
+  // button in each analytic card toggles membership; clicking the
+  // star NEVER navigates (preventDefault) so partners can pin
+  // without leaving the deal profile.
+  var PIN_KEY = "rcm_pinned_tools";
+  var PIN_MAX = 6;
+  function loadPins() {
+    try {
+      var raw = localStorage.getItem(PIN_KEY);
+      var rows = raw ? JSON.parse(raw) : [];
+      return Array.isArray(rows) ? rows : [];
+    } catch (e) { return []; }
+  }
+  function savePins(rows) {
+    try { localStorage.setItem(PIN_KEY, JSON.stringify(rows)); }
+    catch (e) { /* quota — ignore */ }
+  }
+  function paintPins() {
+    var pinned = loadPins();
+    var pinnedHrefs = {};
+    pinned.forEach(function(p) { if (p && p.href) pinnedHrefs[p.href] = true; });
+    document.querySelectorAll("[data-rcm-pin-toggle]").forEach(function(btn) {
+      var href = btn.getAttribute("data-rcm-pin-href");
+      btn.setAttribute("aria-pressed", pinnedHrefs[href] ? "true" : "false");
+    });
+  }
+  document.addEventListener("DOMContentLoaded", paintPins);
+  document.addEventListener("click", function(e) {
+    var btn = e.target.closest && e.target.closest("[data-rcm-pin-toggle]");
+    if (!btn) return;
+    // Stop link navigation — clicking the star pins, doesn't open
+    e.preventDefault();
+    e.stopPropagation();
+    var href = btn.getAttribute("data-rcm-pin-href");
+    var label = btn.getAttribute("data-rcm-pin-label");
+    var phase = btn.getAttribute("data-rcm-pin-phase") || "DILIGENCE";
+    var rows = loadPins().filter(function(p) { return p && p.href !== href; });
+    var isUnpin = btn.getAttribute("aria-pressed") === "true";
+    if (!isUnpin) {
+      rows.unshift({ href: href, label: label, phase: phase });
+      if (rows.length > PIN_MAX) rows = rows.slice(0, PIN_MAX);
+    }
+    savePins(rows);
+    paintPins();
+  });
+
+  // Push this slug onto the "recently viewed" deals index so the /app
+  // recently-viewed rail can show one-click re-entry to deals in
+  // progress. Keep the most recent 8 entries; the rail itself slices
+  // to 5 visible — a small buffer protects against accidental clears.
+  function pushRecent() {
+    try {
+      var idxKey = "rcm_recent_deals";
+      var raw = localStorage.getItem(idxKey);
+      var rows = [];
+      if (raw) { try { rows = JSON.parse(raw); } catch (e) { rows = []; } }
+      if (!Array.isArray(rows)) rows = [];
+      var profile = localStorage.getItem(storageKey);
+      var name = slug;
+      if (profile) {
+        try { var p = JSON.parse(profile); if (p && p.deal_name) name = p.deal_name; }
+        catch (e) {}
+      }
+      rows = rows.filter(function(r) { return r && r.slug !== slug; });
+      rows.unshift({ slug: slug, name: name, ts: Date.now() });
+      if (rows.length > 8) rows = rows.slice(0, 8);
+      localStorage.setItem(idxKey, JSON.stringify(rows));
+    } catch (e) { /* quota / disabled storage — ignore */ }
+  }
+  document.addEventListener("DOMContentLoaded", pushRecent);
 })();
 </script>""".replace("%SLUG%", safe_slug)
 
@@ -1431,6 +2433,7 @@ def render_deal_profile_page(
     slug = (slug or "").strip().lower()
     if not slug:
         return _landing_slugs()
+    print_preview = bool(qs and qs.get("print") == ["1"])
     # Sanitise slug.
     safe = "".join(
         c for c in slug if c.isalnum() or c == "-"
@@ -1448,88 +2451,164 @@ def render_deal_profile_page(
             if val:
                 seed_values[key] = val
 
-    hero = (
-        f'<div style="padding:24px 0 12px 0;border-bottom:1px solid '
-        f'{P["border"]};margin-bottom:24px;">'
-        f'<div style="font-size:11px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;'
-        f'font-weight:600;">Deal Profile</div>'
-        f'<div style="display:flex;justify-content:space-between;'
-        f'align-items:baseline;gap:16px;">'
-        f'<div><div style="font-size:22px;color:{P["text"]};'
-        f'font-weight:600;margin-bottom:4px;">'
-        f'<span data-rcm-deal-display-name>{html.escape(slug)}</span>'
-        f'</div>'
-        f'<div style="font-size:11px;color:{P["text_faint"]};'
-        f'font-family:\'JetBrains Mono\',monospace;">'
-        f'slug: {html.escape(slug)} · persisted to browser localStorage'
-        f'</div></div>'
-        f'<a href="/diligence/deal" style="font-size:10px;'
-        f'color:{P["accent"]};letter-spacing:1px;text-transform:uppercase;'
-        f'border:1px solid {P["border"]};padding:6px 12px;border-radius:3px;'
-        f'text-decoration:none;">Pick Another Slug →</a>'
-        f'</div></div>'
-    )
-    intro = (
-        f'<div style="font-size:12px;color:{P["text_dim"]};'
-        f'max-width:760px;line-height:1.6;margin-bottom:18px;">'
-        f'Enter deal parameters once. <strong style="color:{P["text"]};">'
-        f'Save Profile</strong> stores them in your browser. Every '
-        f'analytic link below pre-fills the relevant parameters — '
-        f'click any card and the tool opens with your deal context '
-        f'already populated. Press '
-        f'<kbd style="padding:1px 5px;border:1px solid currentColor;'
-        f'border-radius:2px;font-family:inherit;">b</kbd> to bookmark '
-        f'this profile to your Saved Views.</div>'
+    hero = ck_section_intro(
+        eyebrow="DEAL PROFILE",
+        headline=(
+            f'<span data-rcm-deal-display-name>{html.escape(slug)}</span>'
+        ),
+        italic_word=html.escape(slug),
+        body=(
+            f"slug: {html.escape(slug)} · persisted to browser "
+            "localStorage. Enter deal parameters once. Save Profile "
+            "stores them in your browser. Every analytic link below "
+            "pre-fills the relevant parameters — click any card and "
+            "the tool opens with your deal context already populated."
+        ),
+    ) + (
+        '<p class="ck-section-body" style="display:flex;gap:14px;'
+        'align-items:baseline;flex-wrap:wrap;">'
+        '<a href="/diligence/deal" class="cad-btn">'
+        'Pick Another Slug →</a>'
+        # "Compare with…" disclosure — partners pick a recently-
+        # viewed deal as the right-hand side of a side-by-side
+        # comparison without leaving the profile. JS populates the
+        # list from rcm_recent_deals on every open so newly-viewed
+        # deals show up immediately. The current slug is filtered
+        # out of the list so partners can't compare a deal to
+        # itself.
+        '<details class="ck-dp-cmpw" '
+        f'data-rcm-cmpw data-rcm-cmpw-slug="{html.escape(slug)}">'
+        '<summary class="ck-dp-cmpw-summary">'
+        'Compare with… '
+        '<span aria-hidden="true" class="ck-dp-cmpw-caret">▾</span>'
+        '</summary>'
+        '<div class="ck-dp-cmpw-menu" data-rcm-cmpw-menu>'
+        '<div class="ck-dp-cmpw-empty" data-rcm-cmpw-empty hidden>'
+        'No other deals open yet. Visit a second deal to enable '
+        'side-by-side.</div>'
+        '<ol class="ck-dp-cmpw-list" data-rcm-cmpw-list></ol>'
+        '</div>'
+        '</details>'
+        '</p>'
     )
     # Prominent "Run Full Pipeline" CTA — the single highest-leverage
-    # button on the page.  Inline JS reads localStorage for this
-    # slug and builds the pipeline URL with all fields pre-seeded.
-    pipeline_cta = (
-        f'<div style="background:{P["panel"]};border:1px solid '
-        f'{P["accent"]};border-radius:4px;padding:16px 20px;'
-        f'margin-bottom:20px;display:flex;justify-content:space-between;'
-        f'align-items:center;gap:16px;flex-wrap:wrap;position:relative;'
-        f'overflow:hidden;">'
-        f'<div style="position:absolute;top:0;left:0;right:0;height:2px;'
-        f'background:linear-gradient(90deg,{P["positive"]},{P["accent"]});">'
-        f'</div>'
-        f'<div>'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;font-weight:700;">'
-        f'Thesis Pipeline</div>'
-        f'<div style="font-size:16px;color:{P["text"]};font-weight:600;'
-        f'margin-top:2px;">One-button full diligence chain</div>'
-        f'<div style="font-size:11px;color:{P["text_dim"]};margin-top:4px;'
-        f'line-height:1.5;max-width:600px;">'
-        f'Runs bankruptcy scan → CCD ingest → HFMA benchmarks → denial '
-        f'prediction → PPAM → counterfactual → Steward → cyber → '
-        f'deal autopsy → Deal MC in one step. Feeds IC Packet with '
-        f'every headline number.</div>'
-        f'</div>'
-        f'<a data-rcm-run-pipeline href="/diligence/thesis-pipeline" '
-        f'style="padding:12px 22px;background:{P["accent"]};'
-        f'color:{P["panel"]};border:0;font-size:11px;letter-spacing:1.5px;'
-        f'text-transform:uppercase;font-weight:700;cursor:pointer;'
-        f'border-radius:3px;text-decoration:none;white-space:nowrap;">'
-        f'▶ Run Full Pipeline</a>'
-        f'</div>'
+    # button on the page.
+    pipeline_cta = ck_panel(
+        '<p class="ck-section-body">'
+        '<strong>One-button full diligence chain.</strong> '
+        'Runs bankruptcy scan → CCD ingest → HFMA benchmarks → denial '
+        'prediction → PPAM → counterfactual → Steward → cyber → '
+        'deal autopsy → Deal MC in one step. Feeds IC Packet with '
+        'every headline number.</p>'
+        '<p class="ck-section-body">'
+        '<a data-rcm-run-pipeline href="/diligence/thesis-pipeline" '
+        'class="cad-btn cad-btn-primary">▶ Run Full Pipeline</a>'
+        '</p>',
+        title="Thesis Pipeline",
     )
     thesis_snapshot = _render_thesis_snapshot(slug)
     market_context = _render_market_context(slug)
     lifecycle = _render_lifecycle_ribbon(slug)
     form = _render_form(slug, seed_values)
     grid = _render_analytics_grid(slug)
-    grid_header = (
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;font-weight:700;'
-        f'margin-bottom:14px;margin-top:10px;">'
-        f'Open in Analytic · grouped by lifecycle phase</div>'
+    grid_header = ck_section_header(
+        "Open in Analytic · grouped by lifecycle phase",
+        eyebrow="ANALYTICS",
     )
+    thesis_panel = ck_panel(
+        thesis_snapshot, title="Investment thesis",
+        anchor_id="dp-thesis",
+    )
+    market_panel = ck_panel(
+        market_context, title="Market context",
+        anchor_id="dp-market",
+    )
+    lifecycle_panel = ck_panel(
+        lifecycle, title="Diligence lifecycle",
+        anchor_id="dp-lifecycle",
+    )
+    form_panel = ck_panel(
+        form, title="Deal parameters",
+        anchor_id="dp-params",
+    )
+    questions_panel = ck_panel(
+        _render_diligence_questions(slug),
+        title="Diligence questions",
+        anchor_id="dp-questions",
+    )
+    # Sticky right-rail table of contents — the deal profile is the
+    # central diligence surface partners return to. The TOC lets
+    # them jump straight to Analytics or Deal parameters without
+    # scrolling past the hero. Questions panel was added in Phase O
+    # between Deal parameters and Analytics so partners curate
+    # questions adjacent to where they entered the deal context.
+    toc = ck_sticky_toc([
+        {"id": "dp-thesis",    "title": "Investment thesis"},
+        {"id": "dp-market",    "title": "Market context"},
+        {"id": "dp-pipeline",  "title": "Thesis Pipeline"},
+        {"id": "dp-lifecycle", "title": "Diligence lifecycle"},
+        {"id": "dp-params",    "title": "Deal parameters"},
+        {"id": "dp-questions", "title": "Diligence questions"},
+        {"id": "dp-analytics", "title": "Analytics"},
+    ])
+    # Wrap pipeline_cta + grid_header so they pick up anchors too —
+    # they're not ck_panels but partners still expect "Thesis Pipeline"
+    # and "Analytics" to be jump targets.
+    pipeline_block = (
+        f'<section id="dp-pipeline">{pipeline_cta}</section>'
+    )
+    grid_block = (
+        f'<section id="dp-analytics">{grid_header}{grid}</section>'
+    )
+    pulse = _render_diligence_pulse(slug)
+    next_up = ck_next_section(
+        "Open the diligence checklist",
+        "/diligence/checklist",
+        eyebrow="Continue —",
+        italic_word="checklist",
+    )
+    # Phase MMM: print-preview affordance — partners often want a
+    # one-page deal snapshot to bring into IC. ?print=1 wraps the body
+    # in .ck-print-preview (chartis-shell CSS hides chrome + max-widths
+    # the page for Cmd+P). The "Preview print version →" link sits at
+    # the top of the regular view; in preview mode it becomes "Exit
+    # preview" at top-right.
+    import html as _html
+    if print_preview:
+        slug_esc = _html.escape(slug)
+        body = (
+            '<div class="ck-print-preview">'
+            '<div class="ck-print-preview-bar">'
+            f'<span class="ck-print-preview-meta">Print preview · '
+            f'{slug_esc}</span>'
+            f'<a href="/diligence/deal/{slug_esc}" '
+            'class="ck-print-preview-exit">Exit preview</a>'
+            '</div>'
+            + _DP_STYLES + hero + pulse
+            + thesis_panel + market_panel + pipeline_block
+            + lifecycle_panel + form_panel + questions_panel + grid_block
+            + '</div>'
+        )
+    else:
+        slug_esc = _html.escape(slug)
+        print_cta = (
+            f'<div class="ck-print-preview-cta">'
+            f'<a href="/diligence/deal/{slug_esc}?print=1" '
+            'class="ck-link">Preview print version →</a>'
+            '</div>'
+        )
+        body = (
+            _DP_STYLES + hero + pulse + print_cta
+            + '<div class="ck-toc-layout">'
+            + toc
+            + '<div class="ck-toc-content">'
+            + thesis_panel + market_panel + pipeline_block
+            + lifecycle_panel + form_panel + questions_panel + grid_block
+            + '</div></div>'
+            + bookmark_hint() + next_up + _inline_js(slug)
+        )
     return chartis_shell(
-        hero + intro + thesis_snapshot + market_context + pipeline_cta
-        + lifecycle + form + grid_header + grid
-        + bookmark_hint() + _inline_js(slug),
+        body,
         f"Deal Profile — {slug}",
         active_nav="/diligence/deal",
         subtitle="One source of truth",

@@ -22,7 +22,10 @@ from urllib.parse import parse_qs
 import numpy as np
 import pandas as pd
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_intro,
+)
 from .brand import PALETTE
 from .ebitda_bridge_page import _compute_bridge, _compute_returns_grid, _fm, _safe_float, _load_data_room_overrides
 
@@ -198,7 +201,10 @@ def render_scenario_modeler(
     match = hcris_df[hcris_df["ccn"] == ccn]
     if match.empty:
         return chartis_shell(
-            f'<div class="cad-card"><p>Hospital {_html.escape(ccn)} not found.</p></div>',
+            ck_panel(
+                f'<p class="ck-section-body">Hospital {_html.escape(ccn)} not found.</p>',
+                title="Scenario Modeler",
+            ),
             "Scenario Modeler",
         )
 
@@ -213,7 +219,10 @@ def render_scenario_modeler(
 
     if rev < 1e6:
         return chartis_shell(
-            f'<div class="cad-card"><p>Insufficient data for {_html.escape(name)}.</p></div>',
+            ck_panel(
+                f'<p class="ck-section-body">Insufficient data for {_html.escape(name)}.</p>',
+                title="Scenario Modeler",
+            ),
             "Scenario Modeler",
         )
 
@@ -239,45 +248,87 @@ def render_scenario_modeler(
     for sc in _PRESET_SCENARIOS:
         checked = "checked" if sc["id"] in selected_ids else ""
         selector_opts += (
-            f'<label style="display:flex;align-items:center;gap:6px;font-size:12px;'
-            f'padding:4px 0;cursor:pointer;">'
+            '<label class="sm-scenario-opt">'
             f'<input type="checkbox" name="s" value="{sc["id"]}" {checked}> '
             f'{_html.escape(sc["name"])}'
-            f'<span style="color:var(--cad-text3);font-size:10px;">— {_html.escape(sc["description"][:50])}</span>'
+            f'<span class="sm-scenario-desc">— {_html.escape(sc["description"][:50])}</span>'
             f'</label>'
         )
 
-    selector = (
-        f'<div class="cad-card">'
-        f'<form method="GET" action="/scenarios/{_html.escape(ccn)}" '
-        f'style="display:flex;gap:16px;align-items:flex-start;">'
-        f'<div style="flex:1;">'
-        f'<h2 style="font-size:13px;margin-bottom:6px;">Select Scenarios</h2>'
-        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">'
-        f'{selector_opts}</div></div>'
-        f'<div style="align-self:flex-end;">'
-        f'<button type="submit" class="cad-btn cad-btn-primary" '
+    selector = ck_panel(
+        f'<form method="GET" action="/scenarios/{_html.escape(ccn)}" class="sm-scenario-form">'
+        '<div class="sm-scenario-list">'
+        f'<div class="sm-scenario-grid">{selector_opts}</div></div>'
+        '<div class="sm-scenario-submit">'
+        '<button type="submit" class="cad-btn cad-btn-primary" '
         f'onclick="var cs=this.form.querySelectorAll(\'input[name=s]:checked\');'
         f'var v=Array.from(cs).map(function(c){{return c.value;}}).join(\',\');'
         f'this.form.action=\'/scenarios/{_html.escape(ccn)}?scenarios=\'+v;'
-        f'return true;">Compare</button>'
-        f'</div></form></div>'
+        'return true;">Compare</button>'
+        '</div></form>',
+        title="Select Scenarios",
     )
 
-    # ── Baseline KPIs ──
+    intro = ck_section_intro(
+        eyebrow=f"SCENARIO MODELER · CCN {_html.escape(ccn)}",
+        headline=f"{_html.escape(name)} — adjust assumptions, compare returns.",
+        italic_word="compare",
+        body=(
+            f"{len(selected)} scenarios running against the same "
+            f"baseline ({_fm(rev)} revenue · {_fm(ebitda)} current "
+            "EBITDA). Each scenario flows through the bridge + "
+            "returns engine and surfaces side-by-side."
+        ),
+    )
     kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(rev)}</div>'
-        f'<div class="cad-kpi-label">Net Revenue</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(ebitda)}</div>'
-        f'<div class="cad-kpi-label">Current EBITDA</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{current_margin:.1%}</div>'
-        f'<div class="cad-kpi-label">Current Margin</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{beds:.0f}</div>'
-        f'<div class="cad-kpi-label">Beds</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{mc_pct:.0%}</div>'
-        f'<div class="cad-kpi-label">Medicare %</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Net Revenue", _fm(rev),
+            help={
+                "definition": (
+                    "Pre-shock NPR — the baseline against which every "
+                    "scenario in the comparison table is differenced. "
+                    "Each column shows how the scenario moves this "
+                    "number under its assumed shocks."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Current EBITDA", _fm(ebitda),
+            help={
+                "definition": (
+                    "Pre-shock Y0 EBITDA. Compare to the per-scenario "
+                    "EBITDA columns below to see absolute and "
+                    "percentage delta under each stress."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Current Margin", f"{current_margin:.1%}",
+            help={
+                "definition": (
+                    "Operating margin at baseline (EBITDA / NPR). "
+                    "Bank covenants test margins around base; the "
+                    "scenarios compress this number — partners read "
+                    "the column with the lowest margin as the "
+                    "covenant-stress case."
+                ),
+            },
+        )
+        + ck_kpi_block("Beds", f"{beds:.0f}")
+        + ck_kpi_block(
+            "Medicare %", f"{mc_pct:.0%}",
+            help={
+                "definition": (
+                    "Share of inpatient days paid by Medicare. "
+                    "Drives sensitivity to CMS rate updates and to "
+                    "the regulatory-calendar scenarios — higher "
+                    "Medicare = more exposure to federal reimbursement "
+                    "changes."
+                ),
+            },
+        )
+        + '</div>'
     )
 
     # ── Side-by-side comparison table ──
@@ -285,35 +336,35 @@ def render_scenario_modeler(
     cols = f'grid-template-columns:180px repeat({n},1fr);'
 
     def _row(label: str, values: list, fmt_fn=_fm, bold: bool = False) -> str:
-        weight = "font-weight:600;" if bold else ""
-        cells = "".join(f'<td class="num" style="{weight}">{fmt_fn(v)}</td>' for v in values)
-        return f'<tr><td style="color:var(--cad-text3);{weight}">{_html.escape(label)}</td>{cells}</tr>'
+        wt_open = "<strong>" if bold else ""
+        wt_close = "</strong>" if bold else ""
+        cells = "".join(f'<td class="num">{wt_open}{fmt_fn(v)}{wt_close}</td>' for v in values)
+        return f'<tr><td>{wt_open}{_html.escape(label)}{wt_close}</td>{cells}</tr>'
 
     def _color_row(label: str, values: list, fmt_fn=_fm, good_fn=None) -> str:
         cells = ""
         for v in values:
-            color = ""
+            cls = ""
             if good_fn:
-                color = f'color:{"var(--cad-pos)" if good_fn(v) else "var(--cad-neg)"};'
-            cells += f'<td class="num" style="{color}font-weight:600;">{fmt_fn(v)}</td>'
-        return f'<tr><td style="color:var(--cad-text3);">{_html.escape(label)}</td>{cells}</tr>'
+                cls = "cad-pos" if good_fn(v) else "cad-neg"
+            cells += f'<td class="num {cls}"><strong>{fmt_fn(v)}</strong></td>'
+        return f'<tr><td>{_html.escape(label)}</td>{cells}</tr>'
 
     header = '<th></th>' + ''.join(
-        f'<th style="font-size:12px;">{_html.escape(r["scenario"]["name"])}</th>' for r in results)
+        f'<th>{_html.escape(r["scenario"]["name"])}</th>' for r in results)
 
     pct = lambda v: f"{v:.1%}"
     moic_fmt = lambda v: f"{v:.2f}x"
 
-    comparison = (
-        f'<div class="cad-card">'
-        f'<h2>Scenario Comparison</h2>'
-        f'<table class="cad-table"><thead><tr>{header}</tr></thead><tbody>'
+    comparison = ck_panel(
+        '<table class="cad-table"><thead><tr>'
+        f'{header}</tr></thead><tbody>'
         + _row("Adj. Revenue", [r["adj_revenue"] for r in results])
         + _row("EBITDA Uplift", [r["adj_uplift"] for r in results])
         + _row("Pro Forma EBITDA", [r["new_ebitda"] for r in results], bold=True)
         + _color_row("Pro Forma Margin", [r["new_margin"] for r in results],
                       fmt_fn=pct, good_fn=lambda v: v > current_margin)
-        + '<tr><td colspan="99" style="border-top:2px solid var(--cad-border);"></td></tr>'
+        + '<tr><td colspan="99" class="sm-divider"></td></tr>'
         + _row("Entry Multiple", [r["scenario"]["entry_multiple"] for r in results],
                fmt_fn=lambda v: f"{v:.1f}x")
         + _row("Exit Multiple", [r["scenario"]["exit_multiple"] for r in results],
@@ -326,7 +377,8 @@ def render_scenario_modeler(
                       fmt_fn=moic_fmt, good_fn=lambda v: v >= 2.0)
         + _color_row("IRR", [r["irr"] for r in results],
                       fmt_fn=pct, good_fn=lambda v: v >= 0.20)
-        + f'</tbody></table></div>'
+        + '</tbody></table>',
+        title="Scenario Comparison",
     )
 
     # ── Per-scenario EBITDA bridge breakdown ──
@@ -341,44 +393,37 @@ def render_scenario_modeler(
             adj_impact = lev["ebitda_impact"] * sc.get("uplift_factor", 1.0)
             lever_rows += (
                 f'<tr>'
-                f'<td style="font-size:11px;">{_html.escape(lev["name"][:20])}</td>'
-                f'<td class="num" style="font-size:11px;color:var(--cad-pos);">{_fm(adj_impact)}</td>'
+                f'<td>{_html.escape(lev["name"][:20])}</td>'
+                f'<td class="num cad-pos">{_fm(adj_impact)}</td>'
                 f'</tr>'
             )
 
         irr = r["irr"]
-        irr_color = "var(--cad-pos)" if irr >= 0.20 else ("var(--cad-warn)" if irr >= 0.15 else "var(--cad-neg)")
+        irr_cls = "cad-pos" if irr >= 0.20 else ("cad-warn" if irr >= 0.15 else "cad-neg")
 
-        bridge_panels += (
-            f'<div class="cad-card" style="padding:12px;">'
-            f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
-            f'<h3 style="font-size:12px;margin:0;">{_html.escape(sc["name"])}</h3>'
-            f'<div style="text-align:right;">'
-            f'<span style="font-size:16px;font-weight:700;color:{irr_color};'
-            f'font-family:var(--cad-mono);">{irr:.0%}</span>'
-            f'<span style="font-size:10px;color:var(--cad-text3);margin-left:4px;">IRR</span>'
-            f'</div></div>'
-            f'<p style="font-size:10px;color:var(--cad-text3);margin-bottom:6px;">'
+        bridge_panels += ck_panel(
+            '<p class="ck-section-body">'
+            f'<strong class="{irr_cls}">{irr:.0%}</strong> IRR &nbsp; · &nbsp; '
             f'{_html.escape(sc["description"])}</p>'
-            f'<table class="cad-table" style="font-size:11px;">'
+            '<table class="cad-table">'
             f'{lever_rows}'
-            f'<tr style="border-top:1px solid var(--cad-border);font-weight:600;">'
-            f'<td>Total Uplift</td>'
-            f'<td class="num" style="color:var(--cad-pos);">{_fm(r["adj_uplift"])}</td>'
-            f'</tr></table></div>'
+            '<tr class="sm-total-row">'
+            '<td><strong>Total Uplift</strong></td>'
+            f'<td class="num cad-pos"><strong>{_fm(r["adj_uplift"])}</strong></td>'
+            '</tr></table>',
+            title=_html.escape(sc["name"]),
         )
 
-    bridge_section = (
-        f'<div class="cad-card">'
-        f'<h2>Per-Scenario EBITDA Bridge</h2>'
-        f'<div style="display:grid;grid-template-columns:repeat({min(n, 4)},1fr);gap:8px;">'
-        f'{bridge_panels}</div></div>'
+    bridge_section = ck_panel(
+        f'<div class="sm-bridge-grid sm-bridge-grid-{min(n, 4)}">'
+        f'{bridge_panels}</div>',
+        title="Per-Scenario EBITDA Bridge",
     )
 
     # ── Timing comparison ──
     months = [0, 6, 12, 18, 24, 36]
     timing_header = '<th>Month</th>' + ''.join(
-        f'<th style="font-size:11px;">{_html.escape(r["scenario"]["name"][:15])}</th>' for r in results)
+        f'<th>{_html.escape(r["scenario"]["name"][:15])}</th>' for r in results)
     timing_rows = ""
     for m in months:
         timing_rows += f'<tr><td class="num">M{m}</td>'
@@ -388,36 +433,58 @@ def render_scenario_modeler(
                 ramp = lev["ramp_months"]
                 pct = min(1.0, m / ramp) if ramp > 0 else 1.0
                 cumulative += lev["ebitda_impact"] * pct * r["scenario"].get("uplift_factor", 1.0)
-            color = "var(--cad-pos)" if cumulative > 0 else "var(--cad-text3)"
-            timing_rows += f'<td class="num" style="color:{color};font-size:11px;">{_fm(cumulative)}</td>'
+            cls = "cad-pos" if cumulative > 0 else ""
+            timing_rows += f'<td class="num {cls}">{_fm(cumulative)}</td>'
         timing_rows += '</tr>'
 
-    timing_section = (
-        f'<div class="cad-card">'
-        f'<h2>Implementation Timing Comparison</h2>'
-        f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:8px;">'
-        f'Cumulative EBITDA uplift at each milestone across scenarios.</p>'
-        f'<table class="cad-table"><thead><tr>{timing_header}'
-        f'</tr></thead><tbody>{timing_rows}</tbody></table></div>'
+    timing_section = ck_panel(
+        '<p class="ck-section-body">'
+        'Cumulative EBITDA uplift at each milestone across scenarios.</p>'
+        '<table class="cad-table"><thead><tr>'
+        f'{timing_header}</tr></thead><tbody>{timing_rows}</tbody></table>',
+        title="Implementation Timing Comparison",
     )
 
     # ── Nav ──
-    nav = (
-        f'<div class="cad-card" style="display:flex;gap:8px;flex-wrap:wrap;">'
-        f'<a href="/ebitda-bridge/{_html.escape(ccn)}" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Full EBITDA Bridge</a>'
-        f'<a href="/ic-memo/{_html.escape(ccn)}" class="cad-btn" '
-        f'style="text-decoration:none;">IC Memo</a>'
-        f'<a href="/hospital/{_html.escape(ccn)}" class="cad-btn" '
-        f'style="text-decoration:none;">Hospital Profile</a>'
-        f'<a href="/ml-insights/hospital/{_html.escape(ccn)}" class="cad-btn" '
-        f'style="text-decoration:none;">ML Analysis</a>'
-        f'<a href="/predictive-screener" class="cad-btn" '
-        f'style="text-decoration:none;">Deal Screener</a>'
-        f'</div>'
+    nav = ck_panel(
+        '<p class="ck-section-body">'
+        f'<a href="/ebitda-bridge/{_html.escape(ccn)}" class="cad-btn cad-btn-primary">Full EBITDA Bridge</a> '
+        f'<a href="/ic-memo/{_html.escape(ccn)}" class="cad-btn">IC Memo</a> '
+        f'<a href="/hospital/{_html.escape(ccn)}" class="cad-btn">Hospital Profile</a> '
+        f'<a href="/ml-insights/hospital/{_html.escape(ccn)}" class="cad-btn">ML Analysis</a> '
+        '<a href="/predictive-screener" class="cad-btn">Deal Screener</a>'
+        '</p>',
+        title="Cross-links",
     )
 
-    body = f'{selector}{kpis}{comparison}{bridge_section}{timing_section}{nav}'
+    sm_styles = """
+<style>
+.sm-scenario-form{display:flex;gap:16px;align-items:flex-start;}
+.sm-scenario-list{flex:1;}
+.sm-scenario-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;}
+.sm-scenario-opt{display:flex;align-items:center;gap:6px;font-size:12px;
+padding:4px 0;cursor:pointer;}
+.sm-scenario-desc{color:var(--cad-text3);font-size:10px;}
+.sm-scenario-submit{align-self:flex-end;}
+.sm-divider{border-top:2px solid var(--cad-border);}
+.sm-bridge-grid{display:grid;gap:8px;}
+.sm-bridge-grid-1{grid-template-columns:1fr;}
+.sm-bridge-grid-2{grid-template-columns:repeat(2,1fr);}
+.sm-bridge-grid-3{grid-template-columns:repeat(3,1fr);}
+.sm-bridge-grid-4{grid-template-columns:repeat(4,1fr);}
+.sm-total-row td{border-top:1px solid var(--cad-border);}
+</style>
+"""
+    next_up = ck_next_section(
+        "Open the EBITDA bridge for this CCN",
+        f"/ebitda-bridge/{_html.escape(ccn)}",
+        eyebrow="Continue —",
+        italic_word="bridge",
+    )
+    body = (
+        f'{sm_styles}{intro}{selector}{kpis}{comparison}'
+        f'{bridge_section}{timing_section}{nav}{next_up}'
+    )
 
     best = max(results, key=lambda r: r["irr"])
     return chartis_shell(

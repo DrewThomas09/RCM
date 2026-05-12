@@ -24,7 +24,10 @@ from typing import Iterable, List, Optional
 from ..engagement import (
     Comment, Deliverable, Engagement, EngagementMember, EngagementRole,
 )
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import (
+    P, chartis_shell, ck_next_section, ck_panel, ck_section_header,
+    ck_section_intro, ck_signal_badge,
+)
 
 
 # ── List ───────────────────────────────────────────────────────────
@@ -46,8 +49,8 @@ def render_engagement_list(
             '</tr>'
         )
     empty_msg = (
-        f'<tr><td colspan="5" style="padding:14px;color:{P["text_faint"]};'
-        f'font-style:italic;">No engagements yet. Create one below.</td></tr>'
+        '<tr><td colspan="5" class="ck-empty-row">'
+        'No engagements yet. <em>Create one below.</em></td></tr>'
         if not rows else ""
     )
     create_form = (
@@ -114,6 +117,12 @@ def render_engagement_list(
         f'</tr></thead>'
         f'<tbody>{"".join(rows)}{empty_msg}</tbody></table>'
         f'{create_form}'
+        + ck_next_section(
+            "Open the diligence checklist",
+            "/diligence/checklist",
+            eyebrow="Continue —",
+            italic_word="checklist",
+        )
     )
     return chartis_shell(
         body, "RCM Diligence — Engagements",
@@ -160,6 +169,12 @@ def render_engagement_detail(
             can_comment=can_comment,
         )
     )
+    body_parts.append(ck_next_section(
+        "Back to all engagements",
+        "/engagements",
+        eyebrow="Continue —",
+        italic_word="engagements",
+    ))
     return chartis_shell(
         "\n".join(body_parts),
         f"Engagement — {engagement.engagement_id}",
@@ -206,28 +221,21 @@ def _add_member_form(engagement_id: str) -> str:
 
 
 def _detail_hero(e: Engagement) -> str:
-    status_colour = (
-        P["positive"] if e.status == "ACTIVE"
-        else P["text_faint"]
+    status_tone = "positive" if e.status == "ACTIVE" else "neutral"
+    badge = ck_signal_badge(e.status, tone=status_tone)
+    intro = ck_section_intro(
+        eyebrow=f"Engagement · {html.escape(e.engagement_id)}",
+        headline=html.escape(e.name),
+        body=(
+            f"Client: {html.escape(e.client_name)} · "
+            f"Created {html.escape(e.created_at[:10])} by "
+            f"{html.escape(e.created_by)}"
+        ),
+        italic_word="engagement",
     )
     return (
-        f'<div style="padding:24px 0 12px 0;">'
-        f'  <div style="font-size:11px;color:{P["text_faint"]};letter-spacing:.75px;'
-        f'text-transform:uppercase;margin-bottom:6px;">Engagement</div>'
-        f'  <div style="display:flex;align-items:baseline;gap:12px;">'
-        f'    <div style="font-size:22px;color:{P["text"]};font-weight:600;">'
-        f'{html.escape(e.name)}</div>'
-        f'    <div class="mono" style="color:{P["text_dim"]};font-size:12px;">'
-        f'{html.escape(e.engagement_id)}</div>'
-        f'    <div style="background:{P["panel_alt"]};color:{status_colour};'
-        f'padding:2px 10px;border-radius:3px;font-size:10px;font-weight:600;'
-        f'letter-spacing:.5px;text-transform:uppercase;">{html.escape(e.status)}</div>'
-        f'  </div>'
-        f'  <div style="font-size:12px;color:{P["text_dim"]};margin-top:4px;">'
-        f'Client: {html.escape(e.client_name)}  ·  '
-        f'Created {html.escape(e.created_at[:10])} by '
-        f'{html.escape(e.created_by)}</div>'
-        f'</div>'
+        f'<p class="ck-section-body">{badge}</p>'
+        f'{intro}'
     )
 
 
@@ -252,23 +260,19 @@ def _members_section(members: Iterable[EngagementMember]) -> str:
             '</tr>'
         )
     empty = (
-        f'<tr><td colspan="4" style="padding:10px;color:{P["text_faint"]};'
-        f'font-style:italic;">No members. Add the partner + lead + '
-        f'analyst before working on this engagement.</td></tr>'
+        '<tr><td colspan="4" class="ck-empty-row">'
+        '<em>No members.</em> Add the partner + lead + '
+        'analyst before working on this engagement.</td></tr>'
         if not rows else ""
     )
-    return (
-        f'<h2 style="font-size:11px;letter-spacing:1px;text-transform:uppercase;'
-        f'color:{P["text_dim"]};margin:28px 0 10px 0;">Members</h2>'
-        f'<table style="width:100%;border-collapse:collapse;font-size:11px;">'
-        f'<thead><tr style="color:{P["text_dim"]};">'
-        f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">User</th>'
-        f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Role</th>'
-        f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Added</th>'
-        f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">By</th>'
+    table = (
+        f'<table class="ck-table">'
+        f'<thead><tr>'
+        f'<th>User</th><th>Role</th><th>Added</th><th>By</th>'
         f'</tr></thead>'
         f'<tbody>{"".join(rows)}{empty}</tbody></table>'
     )
+    return ck_section_header("Members") + table
 
 
 def _deliverables_section(
@@ -327,23 +331,19 @@ def _deliverables_section(
             '</tr>'
         )
     empty = (
-        f'<tr><td colspan="5" style="padding:10px;color:{P["text_faint"]};'
-        f'font-style:italic;">No deliverables yet.</td></tr>'
+        '<tr><td colspan="5" class="ck-empty-row">'
+        '<em>No deliverables yet.</em></td></tr>'
         if not rows else ""
     )
-    return (
-        f'<h2 style="font-size:11px;letter-spacing:1px;text-transform:uppercase;'
-        f'color:{P["text_dim"]};margin:28px 0 10px 0;">Deliverables</h2>'
-        f'<table style="width:100%;border-collapse:collapse;font-size:11px;">'
-        f'<thead><tr style="color:{P["text_dim"]};">'
-        f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">#</th>'
-        f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Title</th>'
-        f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Kind</th>'
-        f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Status</th>'
-        f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Action / Published</th>'
+    table = (
+        f'<table class="ck-table">'
+        f'<thead><tr>'
+        f'<th>#</th><th>Title</th><th>Kind</th>'
+        f'<th>Status</th><th>Action / Published</th>'
         f'</tr></thead>'
         f'<tbody>{"".join(rows)}{empty}</tbody></table>'
     )
+    return ck_section_header("Deliverables") + table
 
 
 def _comments_section(
@@ -355,34 +355,25 @@ def _comments_section(
 ) -> str:
     items: List[str] = []
     for c in comments:
-        badge = ""
+        badge_html = ""
         if c.is_internal:
-            badge = (
-                f' <span style="background:rgba(245,158,11,.14);'
-                f'color:{P["warning"]};padding:1px 6px;border-radius:3px;'
-                f'font-size:9px;letter-spacing:.5px;text-transform:uppercase;'
-                f'font-weight:600;">internal</span>'
+            badge_html = (
+                ' '
+                + ck_signal_badge("internal", tone="warning")
             )
-        items.append(
-            f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-            f'border-radius:4px;padding:10px 14px;margin-bottom:8px;">'
-            f'  <div style="display:flex;gap:8px;align-items:baseline;'
-            f'font-size:11px;color:{P["text_dim"]};margin-bottom:4px;">'
-            f'    <span class="mono" style="color:{P["text"]};font-weight:600;">'
-            f'{html.escape(c.author)}</span>'
-            f'    <span style="font-size:10px;color:{P["text_faint"]};">'
-            f'{html.escape(c.posted_at[:19])}</span>'
-            f'    <span style="font-size:10px;color:{P["text_faint"]};">'
-            f'on {html.escape(c.target)}</span>'
-            f'{badge}'
-            f'  </div>'
-            f'  <div style="font-size:12px;color:{P["text"]};white-space:pre-wrap;">'
-            f'{html.escape(c.body)}</div>'
-            f'</div>'
+        meta = (
+            f'<p class="ck-eyebrow">'
+            f'<strong>{html.escape(c.author)}</strong> · '
+            f'{html.escape(c.posted_at[:19])} · '
+            f'on {html.escape(c.target)}{badge_html}</p>'
         )
+        body = (
+            f'<p class="ck-section-body" style="white-space:pre-wrap;">'
+            f'{html.escape(c.body)}</p>'
+        )
+        items.append(ck_panel(meta + body))
     empty = (
-        f'<div style="padding:10px;color:{P["text_faint"]};'
-        f'font-style:italic;font-size:11px;">No comments yet.</div>'
+        '<p class="ck-section-body ck-muted">No comments yet.</p>'
         if not items else ""
     )
     form = ""
@@ -427,9 +418,8 @@ def _comments_section(
             f'Post</button></div></form>'
         )
     return (
-        f'<h2 style="font-size:11px;letter-spacing:1px;text-transform:uppercase;'
-        f'color:{P["text_dim"]};margin:28px 0 10px 0;">Comments</h2>'
-        f'{"".join(items)}{empty}{form}'
+        ck_section_header("Comments")
+        + "".join(items) + empty + form
     )
 
 

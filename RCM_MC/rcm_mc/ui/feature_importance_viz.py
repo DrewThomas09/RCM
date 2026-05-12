@@ -27,7 +27,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from ..ml.feature_importance import FeatureImportance
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip,
+    ck_next_section, ck_provenance_tooltip,
 )
 from .colors import STATUS
 
@@ -239,6 +239,12 @@ def render_feature_importance_page(
         '</p>'
         + catalog_body
         + '</section>'
+        + ck_next_section(
+            "Open the model quality view",
+            "/models/quality",
+            eyebrow="Continue —",
+            italic_word="quality",
+        )
     )
 
     return chartis_shell(

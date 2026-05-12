@@ -13,7 +13,8 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_num, ck_fmt_pct, ck_kpi_block, ck_provenance_tooltip,
+    chartis_shell, ck_fmt_num, ck_fmt_pct, ck_kpi_block, ck_next_section,
+    ck_provenance_tooltip,
 )
 from ._glossary_link import metric_label_link
 from ._provenance_tooltip import provenance_tooltip
@@ -199,11 +200,42 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
     )
     kpis = (
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
-        + ck_kpi_block("Net Revenue", _fm(rev), "annual NPR")
-        + ck_kpi_block(f"Margin (P{nat_pctile:.0f})", margin_value, "national rank")
+        + ck_kpi_block(
+            "Net Revenue", _fm(rev), "annual NPR",
+            help={
+                "definition": (
+                    "Net Patient Revenue — gross patient charges less "
+                    "contractual allowances, charity care, and bad "
+                    "debt. The top-line number every hospital CFO "
+                    "reports; HCRIS Worksheet G-3 line 3."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            f"Margin (P{nat_pctile:.0f})", margin_value, "national rank",
+            help={
+                "definition": (
+                    "Operating margin percentile within the HCRIS "
+                    "national universe. P75 = better than 75% of "
+                    "peers; P25 means three-quarters of hospitals "
+                    "perform better. PE healthcare buyers usually "
+                    "target P50+ at entry."
+                ),
+            },
+        )
         + ck_kpi_block("Beds", ck_fmt_num(int(beds)), "licensed")
         + ck_kpi_block("National Universe", ck_fmt_num(len(df)), "HCRIS hospitals")
-        + ck_kpi_block("Peer Groups", ck_fmt_num(len(peer_groups)), "comparison sets")
+        + ck_kpi_block(
+            "Peer Groups", ck_fmt_num(len(peer_groups)), "comparison sets",
+            help={
+                "definition": (
+                    "Number of peer cohorts this hospital is compared "
+                    "against — typically size-banded (similar beds), "
+                    "state, region, and teaching status. More groups "
+                    "= a more robust percentile read."
+                ),
+            },
+        )
         + '</div>'
     )
 
@@ -413,7 +445,13 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
         f'</div>'
     )
 
-    body = f'{kpis}{percentile_section}{gap_section}{peer_section}{nav}'
+    next_up = ck_next_section(
+        "Take this peer view back into the deal profile",
+        f"/deal/{_html.escape(ccn)}",
+        eyebrow="Continue —",
+        italic_word="profile",
+    )
+    body = f'{kpis}{percentile_section}{gap_section}{peer_section}{nav}{next_up}'
 
     return chartis_shell(
         body,

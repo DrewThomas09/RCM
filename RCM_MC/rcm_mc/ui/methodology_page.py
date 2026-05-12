@@ -8,57 +8,45 @@ from __future__ import annotations
 import html
 from typing import Any
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_header, ck_section_intro, ck_signal_badge,
+)
 from .brand import PALETTE
 
 
 def _section(code: str, title: str, content: str, *, anchor: str = "") -> str:
-    """Render a methodology section with a Bloomberg-style code chip header."""
+    """Render a methodology section. Editorial wrapper: ck_panel with
+    a ck_section_header inside (eyebrow + ck_signal_badge for the
+    Bloomberg-style code chip)."""
+    header = ck_section_header(title, eyebrow=code)
     aid = f' id="{html.escape(anchor)}"' if anchor else ""
     return (
-        f'<div class="cad-card"{aid}>'
-        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
-        f'<h2 style="margin:0;">{html.escape(title)}</h2>'
-        f'<span class="cad-section-code">{html.escape(code)}</span>'
-        f'</div>'
-        f'{content}</div>'
+        f'<div{aid}>'
+        + ck_panel(f'{header}{content}')
+        + '</div>'
     )
 
 
 def _source_card(code: str, title: str, body: str, meta: str) -> str:
-    """Render a data-source mini card with ticker-style code."""
-    return (
-        f'<div style="padding:12px 14px;border:1px solid {PALETTE["border"]};'
-        f'background:{PALETTE["bg_tertiary"]};">'
-        f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
-        f'<span class="cad-ticker-id" style="padding:2px 7px;">{html.escape(code)}</span>'
-        f'<h3 style="margin:0;font-size:12.5px;font-weight:700;letter-spacing:0.04em;'
-        f'text-transform:uppercase;color:{PALETTE["text_primary"]};">{html.escape(title)}</h3>'
-        f'</div>'
-        f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};line-height:1.6;">'
-        f'{body}</p>'
-        f'<div style="font-family:var(--cad-mono);font-size:9.5px;'
-        f'letter-spacing:0.08em;color:{PALETTE["text_muted"]};'
-        f'margin-top:8px;text-transform:uppercase;">{html.escape(meta)}</div>'
-        f'</div>'
+    """Render a data-source mini card via ck_panel.
+
+    Code → neutral signal-badge in the title row. Body + meta land
+    inside the panel as section-body text.
+    """
+    badge = ck_signal_badge(code, tone="neutral")
+    inner = (
+        f'<p class="ck-section-body">{body}</p>'
+        f'<p class="ck-eyebrow">{html.escape(meta)}</p>'
     )
+    return ck_panel(f'{badge} {inner}', title=title)
 
 
 def _model_card(code: str, title: str, body: str) -> str:
-    """Render a model mini card matching deal dashboard style."""
-    return (
-        f'<div style="padding:10px 14px;border:1px solid {PALETTE["border"]};'
-        f'background:{PALETTE["bg_tertiary"]};'
-        f'border-left:3px solid {PALETTE["brand_accent"]};">'
-        f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
-        f'<span class="cad-section-code">{html.escape(code)}</span>'
-        f'<h3 style="margin:0;font-size:12.5px;font-weight:700;letter-spacing:0.04em;'
-        f'text-transform:uppercase;color:{PALETTE["text_primary"]};">{html.escape(title)}</h3>'
-        f'</div>'
-        f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};line-height:1.6;">'
-        f'{body}</p>'
-        f'</div>'
-    )
+    """Render a model mini card via ck_panel + signal badge."""
+    badge = ck_signal_badge(code, tone="neutral")
+    inner = f'<p class="ck-section-body">{body}</p>'
+    return ck_panel(f'{badge} {inner}', title=title)
 
 
 def render_methodology() -> str:
@@ -76,47 +64,91 @@ def render_methodology() -> str:
         ("ONT", "Metric Ontology", "toc-ontology"),
     ]
     toc_html = "".join(
-        f'<a href="#{aid}" class="cad-btn" style="text-decoration:none;">'
-        f'<span class="cad-section-code" style="margin-right:6px;">{code}</span>'
-        f'{html.escape(name)}</a>'
+        f'<a href="#{aid}" class="ck-link">'
+        f'{ck_signal_badge(code, tone="neutral")} {html.escape(name)}</a>'
         for code, name, aid in toc_items
     )
-    toc = (
-        f'<div class="cad-card" style="padding:10px 14px;">'
-        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'
-        f'<h2 style="margin:0;">Contents</h2>'
-        f'<span class="cad-section-code">TOC</span></div>'
-        f'<div style="display:flex;gap:6px;flex-wrap:wrap;">{toc_html}</div></div>'
+    toc = ck_panel(
+        f'<div class="ck-toc-list">{toc_html}</div>',
+        title="Contents",
     )
 
-    # ── Intro ──
-    intro = _section("INTRO", "Overview", (
-        f'<p style="color:{PALETTE["text_secondary"]};line-height:1.7;font-size:13px;">'
-        f'SeekingChartis combines public hospital data with proprietary analytical models '
-        f'to generate diligence-grade intelligence for healthcare PE. '
-        f'<strong>Every number on this platform traces back to a specific data source and '
-        f'calculation.</strong> This page explains each one — you should be able to audit any '
-        f'output end-to-end.</p>'
-        f'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:14px;'
-        f'border:1px solid {PALETTE["border"]};">'
-        f'<div style="padding:10px 14px;border-right:1px solid {PALETTE["border"]};">'
-        f'<div class="cad-kpi-value" style="font-size:16px;">6,123</div>'
-        f'<div class="cad-kpi-label">Hospitals Tracked</div></div>'
-        f'<div style="padding:10px 14px;border-right:1px solid {PALETTE["border"]};">'
-        f'<div class="cad-kpi-value" style="font-size:16px;">17</div>'
-        f'<div class="cad-kpi-label">Analytical Models</div></div>'
-        f'<div style="padding:10px 14px;border-right:1px solid {PALETTE["border"]};">'
-        f'<div class="cad-kpi-value" style="font-size:16px;">3,157</div>'
-        f'<div class="cad-kpi-label">Passing Tests</div></div>'
-        f'<div style="padding:10px 14px;">'
-        f'<div class="cad-kpi-value" style="font-size:16px;">52</div>'
-        f'<div class="cad-kpi-label">API Endpoints</div></div>'
-        f'</div>'
-    ), anchor="toc-intro")
+    # ── Intro ── ck_section_intro provides the italic-serif "audit"
+    # cadence; intro stats sit below in a ck_kpi_strip.
+    intro_hero = ck_section_intro(
+        eyebrow="METHODOLOGY",
+        headline="How every number on the platform can be audited.",
+        italic_word="audited",
+        body=(
+            "SeekingChartis combines public hospital data with "
+            "proprietary analytical models to generate diligence-grade "
+            "intelligence for healthcare PE. Every number on this "
+            "platform traces back to a specific data source and "
+            "calculation — you should be able to audit any output "
+            "end-to-end."
+        ),
+    )
+    intro_body = (
+        f'{intro_hero}'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Hospitals Tracked", "6,123",
+            help={
+                "definition": (
+                    "Every short-term acute, CAH, IRF, LTCH, and psych "
+                    "hospital that filed a CMS HCRIS cost report in "
+                    "the most-recent fiscal year. Used as the "
+                    "denominator behind every percentile rank — a "
+                    "hospital at P75 outperforms ~4,592 peers."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Analytical Models", "17",
+            help={
+                "definition": (
+                    "Per-deal analytical models the platform runs: "
+                    "RCM regression, denial drivers, EBITDA bridge, "
+                    "Monte Carlo simulation, scenario layering, "
+                    "Bayesian calibration, conformal bands, "
+                    "comparable-deal matching, sensitivity sweep, "
+                    "and 8 more. Each documented in its own section "
+                    "below."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Passing Tests", "3,157",
+            help={
+                "definition": (
+                    "Tests in the unittest suite that pass on every "
+                    "commit — the regression gate. Run via "
+                    "`pytest -q`. Each model has a dedicated "
+                    "test_<feature>.py file + bug-fix regression "
+                    "asserts so a partner can verify the platform "
+                    "behaves on their machine before trusting outputs."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "API Endpoints", "52",
+            help={
+                "definition": (
+                    "Documented HTTP API routes (52 paths across 56 "
+                    "method/path combos) covered by the OpenAPI spec "
+                    "at /api/docs. Every UI page has a JSON-API "
+                    "equivalent so partners can script + automate "
+                    "anything the editorial UI does."
+                ),
+            },
+        )
+        + '</div>'
+    )
+    intro = _section("INTRO", "Overview", intro_body, anchor="toc-intro")
 
     # ── Data sources ──
     data_sources = _section("DAT", "Data Sources", (
-        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
+        '<div class="ck-card-grid">'
         + _source_card(
             "HCRIS",
             "Hospital Cost Reports",
@@ -155,32 +187,29 @@ def render_methodology() -> str:
 
     # ── Scoring ──
     scoring = _section("SCR", "SeekingChartis Score (0-100)", (
-        f'<p style="font-size:12.5px;color:{PALETTE["text_secondary"]};margin-bottom:10px;line-height:1.6;">'
+        f'<p class="ck-section-body">'
         f'Every hospital gets a composite investability score from 0 to 100, graded A+ to F. '
         f'The score combines four weighted components:</p>'
         f'<table class="cad-table"><thead><tr>'
         f'<th>Component</th><th>Weight</th><th>Max Pts</th><th>What It Measures</th>'
         f'</tr></thead><tbody>'
-        f'<tr><td style="font-weight:600;">Market Position</td>'
+        f'<tr><td><strong>Market Position</strong></td>'
         f'<td class="num cad-heat-2">35%</td><td class="num">35</td>'
         f'<td>Bed count (small/mid/large) + net patient revenue (scale advantage)</td></tr>'
-        f'<tr><td style="font-weight:600;">Financial Health</td>'
+        f'<tr><td><strong>Financial Health</strong></td>'
         f'<td class="num cad-heat-3">25%</td><td class="num">25</td>'
         f'<td>Operating margin: strong (&gt;10%), moderate (5-10%), thin (0-5%), negative</td></tr>'
-        f'<tr><td style="font-weight:600;">Operational Quality</td>'
+        f'<tr><td><strong>Operational Quality</strong></td>'
         f'<td class="num cad-heat-3">20%</td><td class="num">20</td>'
         f'<td>Denial rate (&lt;8% excellent, 8-12% good, &gt;12% concerning) + AR days (&lt;42 excellent)</td></tr>'
-        f'<tr><td style="font-weight:600;">Competitive Moat</td>'
+        f'<tr><td><strong>Competitive Moat</strong></td>'
         f'<td class="num cad-heat-3">20%</td><td class="num">20</td>'
         f'<td>Scale vs market avg, HHI concentration, margin premium (Mauboussin framework)</td></tr>'
         f'</tbody></table>'
-        f'<div style="margin-top:12px;padding:10px 12px;border:1px solid {PALETTE["border"]};'
-        f'background:{PALETTE["bg_tertiary"]};font-family:var(--cad-mono);'
-        f'font-size:10.5px;letter-spacing:0.06em;color:{PALETTE["text_secondary"]};'
-        f'text-transform:uppercase;">'
-        f'<strong style="color:{PALETTE["accent_amber"]};">Grade Scale</strong> &nbsp; '
+        f'<p class="ck-eyebrow" style="margin-top:12px;">'
+        f'<strong>Grade Scale</strong> &nbsp; '
         f'A+ (90+) · A (85+) · A- (80+) · B+ (75+) · B (70+) · B- (65+) · C+ (60+) · '
-        f'C (55+) · C- (50+) · D (40+) · F (&lt;40)</div>'
+        f'C (55+) · C- (50+) · D (40+) · F (&lt;40)</p>'
     ), anchor="toc-scoring")
 
     # ── Market pulse ──
@@ -188,20 +217,20 @@ def render_methodology() -> str:
         f'<table class="cad-table"><thead><tr>'
         f'<th>Indicator</th><th>Source</th><th>What It Means</th>'
         f'</tr></thead><tbody>'
-        f'<tr><td style="font-weight:600;">Hospital EV/EBITDA</td>'
-        f'<td><span class="cad-ticker-id" style="padding:1px 5px;">TXN</span></td>'
+        f'<tr><td><strong>Hospital EV/EBITDA</strong></td>'
+        f'<td><span class="cad-ticker-id">TXN</span></td>'
         f'<td>Median enterprise-value-to-EBITDA multiple for recent acute care hospital transactions. '
         f'Higher = more expensive market. Current: ~11.2x.</td></tr>'
-        f'<tr><td style="font-weight:600;">10Y Treasury</td>'
-        f'<td><span class="cad-ticker-id" style="padding:1px 5px;">FRED</span></td>'
+        f'<tr><td><strong>10Y Treasury</strong></td>'
+        f'<td><span class="cad-ticker-id">FRED</span></td>'
         f'<td>Risk-free rate benchmark. Drives WACC and discount rates. Higher rates compress '
         f'hospital valuations (~0.8x per 100bp increase).</td></tr>'
-        f'<tr><td style="font-weight:600;">S&amp;P Healthcare</td>'
-        f'<td><span class="cad-ticker-id" style="padding:1px 5px;">SP500</span></td>'
+        f'<tr><td><strong>S&amp;P Healthcare</strong></td>'
+        f'<td><span class="cad-ticker-id">SP500</span></td>'
         f'<td>Sector index level. Tracks public healthcare equity sentiment. Not hospital-specific '
         f'but directionally indicative.</td></tr>'
-        f'<tr><td style="font-weight:600;">Market Sentiment</td>'
-        f'<td><span class="cad-ticker-id" style="padding:1px 5px;">COMP</span></td>'
+        f'<tr><td><strong>Market Sentiment</strong></td>'
+        f'<td><span class="cad-ticker-id">COMP</span></td>'
         f'<td>Composite score 0-1. Weights: treasury direction, deal flow volume, '
         f'reimbursement trend signals. Labels: Bullish (&gt;0.7), Slightly Positive (0.4-0.7), '
         f'Neutral (-0.1 to 0.4), Bearish (&lt;-0.1).</td></tr>'
@@ -210,7 +239,7 @@ def render_methodology() -> str:
 
     # ── Models ──
     models = _section("MDL", "Financial Models", (
-        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
+        '<div class="ck-card-grid">'
         + _model_card(
             "DCF", "Discounted Cash Flow",
             "5-year projection of free cash flow, discounted at WACC. Inputs: revenue base, "
@@ -243,16 +272,16 @@ def render_methodology() -> str:
 
     # ── Regression ──
     regression = _section("REG", "Regression Analysis", (
-        f'<p style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.6;">'
+        f'<p class="ck-section-body">'
         f'Ordinary Least Squares (OLS) regression implemented in pure NumPy (no sklearn). '
         f'Features are standardized (zero mean, unit variance) before fitting so coefficients '
         f'are comparable across variables with different scales.</p>'
-        f'<p style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.6;margin-top:8px;">'
+        f'<p class="ck-section-body">'
         f'<strong>Outputs:</strong> R-squared (% of variance explained), adjusted R-squared '
         f'(penalized for feature count), standardized coefficients with t-statistics, '
         f'significance levels (*p&lt;0.05, **p&lt;0.01, ***p&lt;0.001), and pairwise '
         f'correlation matrix.</p>'
-        f'<p style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.6;margin-top:8px;">'
+        f'<p class="ck-section-body">'
         f'<strong>Data sources:</strong> HCRIS national (~6,000 hospitals) or portfolio deals. '
         f'HCRIS regressions identify which state-level factors predict margins. Portfolio '
         f'regressions identify what drives denial rates or other KPIs across your specific deals.</p>'
@@ -260,23 +289,20 @@ def render_methodology() -> str:
 
     # ── Margins ──
     margins = _section("MRG", "Margin Calculations", (
-        f'<p style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.6;">'
+        f'<p class="ck-section-body">'
         f'<strong>Operating margin</strong> = (Net Patient Revenue − Operating Expenses) / '
         f'Net Patient Revenue. Computed from HCRIS cost report fields. Guards applied:</p>'
-        f'<ul style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.8;'
-        f'padding-left:20px;margin-top:6px;">'
+        f'<ul class="ck-list">'
         f'<li>Revenue must exceed $100K (filters cost-report stubs and accounting artifacts)</li>'
         f'<li>Margins clamped to [−100%, +100%] (no hospital truly has a −1,000% margin)</li>'
         f'<li>State-level averages use <strong>median</strong> not mean (robust to outliers)</li>'
         f'<li>HCRIS data quality varies: some reports have mismatched periods or reclassifications</li>'
         f'</ul>'
-        f'<div style="margin-top:12px;padding:10px 12px;border-left:3px solid {PALETTE["brand_accent"]};'
-        f'background:{PALETTE["bg_tertiary"]};font-size:12px;color:{PALETTE["text_secondary"]};'
-        f'line-height:1.6;">'
-        f'<strong style="color:{PALETTE["text_primary"]};">Industry context:</strong> '
+        f'<p class="ck-section-body">'
+        f'<strong>Industry context:</strong> '
         f'Median US hospital operating margin is approximately −5% to +5%. For-profit chains '
         f'average higher (5-12%) due to case mix and payer optimization. Safety-net and '
-        f'critical access hospitals often operate at negative margins.</div>'
+        f'critical access hospitals often operate at negative margins.</p>'
     ), anchor="toc-margins")
 
     # ── Ontology ──
@@ -295,19 +321,18 @@ def render_methodology() -> str:
                 name = defn.display_name if hasattr(defn, "display_name") else mk.replace("_", " ").title()
                 ont_rows += (
                     f'<tr>'
-                    f'<td style="font-weight:600;">{html.escape(name)}</td>'
-                    f'<td style="font-size:11.5px;">{html.escape(str(defn.definition)[:100] if hasattr(defn, "definition") else "")}</td>'
+                    f'<td><strong>{html.escape(name)}</strong></td>'
+                    f'<td>{html.escape(str(defn.definition)[:100] if hasattr(defn, "definition") else "")}</td>'
                     f'<td><span class="cad-badge cad-badge-blue">'
                     f'{html.escape(str(defn.domain.value) if hasattr(defn, "domain") else "")}</span></td>'
-                    f'<td style="font-size:11.5px;color:{PALETTE["text_secondary"]};">{html.escape(causal[:80])}</td>'
+                    f'<td>{html.escape(causal[:80])}</td>'
                     f'</tr>'
                 )
             except Exception:
                 pass
         if ont_rows:
             ontology_section = _section("ONT", "Metric Definitions & Causal Chains", (
-                f'<p style="font-size:12.5px;color:{PALETTE["text_secondary"]};'
-                f'margin-bottom:10px;line-height:1.6;">'
+                f'<p class="ck-section-body">'
                 f'Every metric in SeekingChartis has a formal definition, domain classification, '
                 f'and causal chain explaining how it affects EBITDA. From the healthcare '
                 f'economic ontology.</p>'
@@ -318,18 +343,15 @@ def render_methodology() -> str:
     except Exception:
         pass
 
-    related_links = (
-        f'<div class="cad-card" style="padding:10px 14px;">'
-        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'
-        f'<h2 style="margin:0;">Related References</h2>'
-        f'<span class="cad-section-code">REF</span></div>'
-        f'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
-        f'<a href="/verticals" class="cad-btn" style="text-decoration:none;">Healthcare Verticals</a>'
-        f'<a href="/methodology" class="cad-btn" style="text-decoration:none;">Reference Library</a>'
-        f'<a href="/conferences" class="cad-btn" style="text-decoration:none;">Conference Roadmap</a>'
-        f'<a href="/data-intelligence" class="cad-btn" style="text-decoration:none;">Data Intelligence</a>'
-        f'<a href="/model-validation" class="cad-btn" style="text-decoration:none;">Model Validation</a>'
-        f'</div></div>'
+    related_links = ck_panel(
+        '<p class="ck-section-body">'
+        '<a href="/verticals" class="cad-btn">Healthcare Verticals</a> '
+        '<a href="/methodology" class="cad-btn">Reference Library</a> '
+        '<a href="/conferences" class="cad-btn">Conference Roadmap</a> '
+        '<a href="/data-intelligence" class="cad-btn">Data Intelligence</a> '
+        '<a href="/model-validation" class="cad-btn">Model Validation</a>'
+        '</p>',
+        title="Related References",
     )
 
     from rcm_mc.ui.chartis._helpers import render_page_explainer
@@ -342,9 +364,15 @@ def render_methodology() -> str:
         page_key="methodology-calculations",
     )
 
+    next_up = ck_next_section(
+        "Open the metric glossary",
+        "/metric-glossary",
+        eyebrow="Continue —",
+        italic_word="glossary",
+    )
     body = (
         f'{explainer}{toc}{intro}{data_sources}{scoring}{market_pulse}{models}'
-        f'{regression}{margins}{ontology_section}{related_links}'
+        f'{regression}{margins}{ontology_section}{related_links}{next_up}'
     )
 
     return chartis_shell(

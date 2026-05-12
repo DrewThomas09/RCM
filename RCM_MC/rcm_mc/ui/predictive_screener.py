@@ -14,7 +14,10 @@ from urllib.parse import parse_qs, urlparse
 import numpy as np
 import pandas as pd
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_intro,
+)
 from .brand import PALETTE
 
 
@@ -206,35 +209,32 @@ def render_predictive_screener(
     def _sel(opt_val, current):
         return ' selected' if opt_val == current else ''
 
-    form = (
-        f'<div class="cad-card">'
-        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
-        f'<h2 style="margin:0;">Screen Filters</h2>'
-        f'<span class="cad-section-code">FLT</span></div>'
-        f'<form method="GET" action="/predictive-screener" class="cad-form-row">'
-        f'<div class="cad-field">'
-        f'<label>Region</label>'
-        f'<select name="region" class="cad-select" style="min-width:140px;">{region_opts}</select>'
-        f'</div>'
-        f'<div class="cad-field"><label>Min Beds</label>'
-        f'<input class="cad-input" type="number" name="min_beds" value="{min_beds}" min="0" style="width:82px;"></div>'
-        f'<div class="cad-field"><label>Max Beds</label>'
-        f'<input class="cad-input" type="number" name="max_beds" value="{max_beds if max_beds < 9999 else ""}" placeholder="9999" style="width:82px;"></div>'
-        f'<div class="cad-field"><label>Max Margin</label>'
-        f'<input class="cad-input" type="number" name="max_margin" value="{max_margin if max_margin < 1 else ""}" step="0.01" placeholder="0.05" style="width:92px;"></div>'
-        f'<div class="cad-field"><label>Min Uplift ($)</label>'
-        f'<input class="cad-input" type="number" name="min_uplift" value="{int(min_uplift) if min_uplift > 0 else ""}" placeholder="3000000" style="width:120px;"></div>'
-        f'<div class="cad-field"><label>Sort By</label>'
-        f'<select name="sort" class="cad-select" style="min-width:140px;">'
+    form = ck_panel(
+        '<form method="GET" action="/predictive-screener" class="cad-form-row">'
+        '<div class="cad-field">'
+        '<label>Region</label>'
+        f'<select name="region" class="cad-select ps-select-md">{region_opts}</select>'
+        '</div>'
+        '<div class="cad-field"><label>Min Beds</label>'
+        f'<input class="cad-input ps-input-sm" type="number" name="min_beds" value="{min_beds}" min="0"></div>'
+        '<div class="cad-field"><label>Max Beds</label>'
+        f'<input class="cad-input ps-input-sm" type="number" name="max_beds" value="{max_beds if max_beds < 9999 else ""}" placeholder="9999"></div>'
+        '<div class="cad-field"><label>Max Margin</label>'
+        f'<input class="cad-input ps-input-md" type="number" name="max_margin" value="{max_margin if max_margin < 1 else ""}" step="0.01" placeholder="0.05"></div>'
+        '<div class="cad-field"><label>Min Uplift ($)</label>'
+        f'<input class="cad-input ps-input-lg" type="number" name="min_uplift" value="{int(min_uplift) if min_uplift > 0 else ""}" placeholder="3000000"></div>'
+        '<div class="cad-field"><label>Sort By</label>'
+        '<select name="sort" class="cad-select ps-select-md">'
         f'<option value="est_uplift"{_sel("est_uplift", sort_by)}>Est. Uplift</option>'
         f'<option value="est_denial"{_sel("est_denial", sort_by)}>Denial Rate</option>'
         f'<option value="est_ar_days"{_sel("est_ar_days", sort_by)}>AR Days</option>'
         f'<option value="operating_margin"{_sel("operating_margin", sort_by)}>Margin</option>'
         f'<option value="beds"{_sel("beds", sort_by)}>Bed Count</option>'
-        f'</select></div>'
-        f'<div class="cad-field"><label>&nbsp;</label>'
-        f'<button type="submit" class="cad-btn cad-btn-primary">Run Screen &rarr;</button></div>'
-        f'</form></div>'
+        '</select></div>'
+        '<div class="cad-field"><label>&nbsp;</label>'
+        '<button type="submit" class="cad-btn cad-btn-primary">Run Screen &rarr;</button></div>'
+        '</form>',
+        title="Screen Filters",
     )
 
     # ── KPIs ──
@@ -254,19 +254,24 @@ def render_predictive_screener(
             return f"${v/1e6:.0f}M"
         return f"${v:,.0f}"
 
+    intro = ck_section_intro(
+        eyebrow="PREDICTIVE SCREENER",
+        headline="Where the next deal hides in the universe.",
+        italic_word="hides",
+        body=(
+            f"{total_matches:,} hospitals match your filters out of "
+            f"{len(hcris_df):,} in the universe. Total estimated "
+            f"RCM uplift across matches: {_fm(total_uplift)}."
+        ),
+    )
     kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{total_matches:,}</div>'
-        f'<div class="cad-kpi-label">Matching Hospitals</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(total_uplift)}</div>'
-        f'<div class="cad-kpi-label">Total Est. Uplift</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{avg_denial:.1%}</div>'
-        f'<div class="cad-kpi-label">Avg Est. Denial Rate</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{avg_margin:.1%}</div>'
-        f'<div class="cad-kpi-label">Avg Margin</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(hcris_df):,}</div>'
-        f'<div class="cad-kpi-label">Universe</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("Matching Hospitals", f"{total_matches:,}")
+        + ck_kpi_block("Total Est. Uplift", _fm(total_uplift))
+        + ck_kpi_block("Avg Est. Denial Rate", f"{avg_denial:.1%}")
+        + ck_kpi_block("Avg Margin", f"{avg_margin:.1%}")
+        + ck_kpi_block("Universe", f"{len(hcris_df):,}")
+        + '</div>'
     )
 
     # ── Results table ──
@@ -316,94 +321,96 @@ def render_predictive_screener(
             uplift = 0 if uplift != uplift else uplift
         except (ValueError, TypeError):
             uplift = 0
-        uplift_color = "var(--cad-pos)" if uplift > 3e6 else ("var(--cad-warn)" if uplift > 1e6 else "var(--cad-text2)")
+        uplift_cls = "cad-pos" if uplift > 3e6 else ("cad-warn" if uplift > 1e6 else "")
 
         raw_name = str(row.get("name", ""))[:40]
         result_rows += (
             f'<tr>'
-            f'<td><a href="/hospital/{_html.escape(ccn)}" class="cad-ticker-id" '
-            f'style="text-decoration:none;">{_html.escape(ccn)}</a></td>'
-            f'<td><a href="/hospital/{_html.escape(ccn)}" '
-            f'style="color:var(--cad-text);text-decoration:none;">'
+            f'<td><a href="/hospital/{_html.escape(ccn)}" class="cad-ticker-id ck-link">{_html.escape(ccn)}</a></td>'
+            f'<td><a href="/hospital/{_html.escape(ccn)}" class="ck-link">'
             f'{name}</a></td>'
             f'<td>{state}</td>'
             f'<td class="num">{beds}</td>'
             f'<td class="num">{_fm(rev)}</td>'
             f'<td class="num {margin_heat}">{margin:.1%}</td>'
             f'<td class="num">{denial:.1%}</td>'
-            f'<td class="num" style="color:{uplift_color};">'
-            f'<a href="/ebitda-bridge/{_html.escape(ccn)}" '
-            f'style="color:{uplift_color};text-decoration:none;">{_fm(uplift)}</a></td>'
+            f'<td class="num {uplift_cls}">'
+            f'<a href="/ebitda-bridge/{_html.escape(ccn)}" class="ck-link">{_fm(uplift)}</a></td>'
             f'<td>'
-            f'<form method="POST" action="/pipeline/add" style="display:inline;margin:0;">'
+            f'<form method="POST" action="/pipeline/add" class="ps-pipe-form">'
             f'<input type="hidden" name="ccn" value="{_html.escape(ccn)}">'
             f'<input type="hidden" name="name" value="{_html.escape(raw_name)}">'
             f'<input type="hidden" name="state" value="{_html.escape(str(row.get("state", "")))}">'
             f'<input type="hidden" name="beds" value="{beds}">'
-            f'<button type="submit" class="cad-btn" '
-            f'style="padding:2px 8px;font-size:10px;cursor:pointer;">+ PIPE</button></form></td>'
+            f'<button type="submit" class="cad-btn ps-pipe-btn">+ PIPE</button></form></td>'
             f'</tr>'
         )
 
-    table = (
-        f'<div class="cad-card cad-table-sticky">'
-        f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
-        f'<div style="display:flex;align-items:center;gap:10px;">'
-        f'<h2 style="margin:0;">Screening Results</h2>'
-        f'<span class="cad-section-code">RES · {total_matches:,}</span>'
-        f'</div>'
-        f'<span style="font-family:var(--cad-mono);font-size:10px;letter-spacing:0.08em;'
-        f'color:var(--cad-text3);text-transform:uppercase;">'
-        f'Showing top {min(50, total_matches)} of {total_matches:,}</span>'
-        f'</div>'
-        f'<table class="cad-table crosshair"><thead><tr>'
-        f'<th>CCN</th><th>Hospital</th><th>State</th><th>Beds</th><th>Revenue</th>'
-        f'<th>Margin</th><th>Est. Denial</th><th>Est. Uplift</th><th>&nbsp;</th>'
-        f'</tr></thead><tbody>{result_rows}</tbody></table></div>'
+    table = ck_panel(
+        '<p class="ck-eyebrow">'
+        f'Showing top {min(50, total_matches)} of {total_matches:,}'
+        '</p>'
+        '<table class="cad-table crosshair"><thead><tr>'
+        '<th>CCN</th><th>Hospital</th><th>State</th><th>Beds</th><th>Revenue</th>'
+        '<th>Margin</th><th>Est. Denial</th><th>Est. Uplift</th><th>&nbsp;</th>'
+        f'</tr></thead><tbody>{result_rows}</tbody></table>',
+        title=f"Screening Results ({total_matches:,})",
     )
 
     # ── Quick screens ──
-    quick = (
-        f'<div class="cad-card" style="padding:8px 14px;">'
-        f'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">'
-        f'<span class="cad-section-code" style="margin-right:4px;">QS</span>'
-        f'<span class="cad-label">Quick Screens</span>'
-        f'<a href="/predictive-screener?region=Southeast&min_beds=200&max_beds=400&max_margin=0.05&min_uplift=3000000" '
-        f'class="cad-btn" style="text-decoration:none;">SE · 200-400 · &gt;$3M</a>'
-        f'<a href="/predictive-screener?min_beds=100&max_margin=0&sort=est_uplift" '
-        f'class="cad-btn" style="text-decoration:none;">Neg margin · 100+</a>'
-        f'<a href="/predictive-screener?region=Midwest&min_beds=50&max_beds=200&sort=est_denial" '
-        f'class="cad-btn" style="text-decoration:none;">Midwest · small</a>'
-        f'<a href="/predictive-screener?min_beds=300&sort=est_uplift" '
-        f'class="cad-btn" style="text-decoration:none;">Large · max uplift</a>'
-        f'<a href="/predictive-screener?max_margin=-0.05&sort=operating_margin" '
-        f'class="cad-btn" style="text-decoration:none;">Distressed · &lt;-5%</a>'
-        f'</div></div>'
+    quick = ck_panel(
+        '<p class="ck-section-body">'
+        '<a href="/predictive-screener?region=Southeast&min_beds=200&max_beds=400&max_margin=0.05&min_uplift=3000000" class="cad-btn">SE · 200-400 · &gt;$3M</a> '
+        '<a href="/predictive-screener?min_beds=100&max_margin=0&sort=est_uplift" class="cad-btn">Neg margin · 100+</a> '
+        '<a href="/predictive-screener?region=Midwest&min_beds=50&max_beds=200&sort=est_denial" class="cad-btn">Midwest · small</a> '
+        '<a href="/predictive-screener?min_beds=300&sort=est_uplift" class="cad-btn">Large · max uplift</a> '
+        '<a href="/predictive-screener?max_margin=-0.05&sort=operating_margin" class="cad-btn">Distressed · &lt;-5%</a>'
+        '</p>',
+        title="Quick Screens",
     )
 
     # Save search form
-    save_form = (
-        f'<div class="cad-card">'
-        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
-        f'<h2 style="margin:0;">Save Screen</h2>'
-        f'<span class="cad-section-code">SAV</span></div>'
-        f'<form method="POST" action="/pipeline/save-search" '
-        f'style="display:flex;gap:8px;align-items:flex-end;">'
+    save_form = ck_panel(
+        '<form method="POST" action="/pipeline/save-search" class="ps-save-form">'
         f'<input type="hidden" name="region" value="{_html.escape(str(region))}">'
         f'<input type="hidden" name="min_beds" value="{min_beds}">'
         f'<input type="hidden" name="max_beds" value="{max_beds}">'
         f'<input type="hidden" name="max_margin" value="{max_margin}">'
         f'<input type="hidden" name="min_uplift" value="{min_uplift}">'
         f'<input type="hidden" name="sort" value="{_html.escape(str(sort_by))}">'
-        f'<div class="cad-field" style="flex:1;">'
-        f'<label>Name this screen</label>'
-        f'<input class="cad-input" type="text" name="name" placeholder="e.g. SE turnarounds" required></div>'
-        f'<button type="submit" class="cad-btn cad-btn-primary">Save &rarr;</button>'
-        f'<a href="/pipeline" class="cad-btn" style="text-decoration:none;">Pipeline</a>'
-        f'</form></div>'
+        '<div class="cad-field ps-save-field">'
+        '<label>Name this screen</label>'
+        '<input class="cad-input" type="text" name="name" placeholder="e.g. SE turnarounds" required></div>'
+        '<button type="submit" class="cad-btn cad-btn-primary">Save &rarr;</button>'
+        '<a href="/pipeline" class="cad-btn">Pipeline</a>'
+        '</form>',
+        title="Save Screen",
     )
 
-    body = f'{form}{kpis}{table}{save_form}{quick}'
+    ps_styles = """
+<style>
+.ps-select-md{min-width:140px;}
+.ps-input-sm{width:82px;}
+.ps-input-md{width:92px;}
+.ps-input-lg{width:120px;}
+.ps-pipe-form{display:inline;margin:0;}
+.ps-pipe-btn{padding:2px 8px;font-size:10px;cursor:pointer;
+transition:filter 120ms ease;}
+.ps-pipe-btn:hover{filter:brightness(1.08);}
+.ps-save-form{display:flex;gap:8px;align-items:flex-end;}
+.ps-save-field{flex:1;}
+</style>
+"""
+    next_up = ck_next_section(
+        "Open a deal profile to act on the shortlist",
+        "/diligence/deal",
+        eyebrow="Continue —",
+        italic_word="deal",
+    )
+    body = (
+        f'{ps_styles}{intro}{form}{kpis}{table}{save_form}'
+        f'{quick}{next_up}'
+    )
 
     return chartis_shell(
         body, "Predictive Deal Screener",

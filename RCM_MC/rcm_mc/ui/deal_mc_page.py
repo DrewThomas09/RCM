@@ -25,7 +25,10 @@ from ..diligence.deal_mc.charts import (
     attribution_chart, fan_chart, moic_histogram_chart,
     sensitivity_tornado,
 )
-from ._chartis_kit import P, chartis_shell, ck_page_title
+from ._chartis_kit import (
+    P, chartis_shell, ck_confidence_band, ck_kpi_block,
+    ck_next_section, ck_page_title, ck_panel, ck_section_intro,
+)
 from .power_ui import deal_context_bar, provenance
 
 
@@ -154,102 +157,127 @@ def _hero_stats(result: DealMCResult, scenario_name: str) -> str:
             f"changes shift the distribution meaningfully right."
         )
 
-    return (
-        f'<div style="padding:24px 0 16px 0;border-bottom:1px solid '
-        f'{P["border"]};margin-bottom:24px;">'
-        f'<div style="font-size:11px;color:{P["text_faint"]};letter-spacing:1.5px;'
-        f'text-transform:uppercase;margin-bottom:6px;font-weight:600;">'
-        f'Deal Monte Carlo</div>'
-        f'<div style="font-size:22px;color:{P["text"]};font-weight:600;'
-        f'margin-bottom:4px;">{html.escape(scenario_name)}</div>'
-        f'<div style="font-size:11px;color:{P["text_faint"]};">'
-        f'{result.n_runs:,} Monte Carlo trials · {result.hold_years}y hold</div>'
-        f'<div style="background:{P["panel_alt"]};border-left:3px solid '
-        f'{band_color(p50)};padding:10px 14px;margin-top:12px;font-size:12px;'
-        f'color:{P["text_dim"]};line-height:1.6;max-width:880px;'
-        f'border-radius:0 3px 3px 0;">'
-        f'<strong style="color:{P["text"]};">What this shows: </strong>'
-        f'{html.escape(summary)}</div>'
-        f'<div style="display:grid;grid-template-columns:repeat(6,1fr);'
-        f'gap:16px;margin-top:20px;">'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1px;text-transform:uppercase;">P25 MOIC</div>'
-        f'<div style="font-size:26px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-weight:700;color:{band_color(result.moic_p25)};">'
-        f'{result.moic_p25:.2f}x</div></div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1px;text-transform:uppercase;">P50 MOIC</div>'
-        f'<div style="font-size:30px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-weight:700;color:{band_color(result.moic_p50)};">'
-        f'{result.moic_p50:.2f}x</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">fund target 2.50× · peer median 2.20×</div>'
-        f'</div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1px;text-transform:uppercase;">P75 MOIC</div>'
-        f'<div style="font-size:26px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-weight:700;color:{band_color(result.moic_p75)};">'
-        f'{result.moic_p75:.2f}x</div></div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1px;text-transform:uppercase;">P50 IRR</div>'
-        f'<div style="font-size:26px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-weight:700;color:'
-        f'{P["positive"] if result.irr_p50 >= 0.25 else P["warning"] if result.irr_p50 >= 0.18 else P["negative"]};">'
-        f'{result.irr_p50*100:.1f}%</div>'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">fund target 25% · hurdle 18%</div>'
-        f'</div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1px;text-transform:uppercase;">P(MOIC &lt; 1x)</div>'
-        f'<div style="font-size:22px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-weight:700;color:{prob_color(result.prob_sub_1x)};">'
-        f'{result.prob_sub_1x*100:.1f}%</div></div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1px;text-transform:uppercase;">P(MOIC &gt;= 3x)</div>'
-        f'<div style="font-size:22px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-weight:700;color:{prob_color(result.prob_over_3x, higher_is_better=True)};">'
-        f'{result.prob_over_3x*100:.1f}%</div></div>'
-        f'</div></div>'
+    intro = ck_section_intro(
+        eyebrow="Deal Monte Carlo",
+        headline=html.escape(scenario_name),
+        body=(
+            f"{result.n_runs:,} Monte Carlo trials · "
+            f"{result.hold_years}y hold · {summary}"
+        ),
+        italic_word="shows",
     )
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "P25 MOIC", f"{result.moic_p25:.2f}x",
+            help={
+                "definition": (
+                    "25th percentile multiple on invested capital — "
+                    "the downside reasonable case. Partners should "
+                    "underwrite to P25 ≥ 1.5× in healthcare PE."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "P50 MOIC", f"{result.moic_p50:.2f}x",
+            sub="fund target 2.50× · peer median 2.20×",
+            chart=ck_confidence_band(
+                f"{result.moic_p50:.2f}x",
+                f"{result.moic_p25:.2f}x",
+                f"{result.moic_p75:.2f}x",
+                label="P25–P75",
+            ),
+            help={
+                "definition": (
+                    "Median multiple on invested capital across "
+                    "the Monte Carlo cone, shown alongside the "
+                    "P25–P75 band so the cone width is visible at "
+                    "the headline. Cone narrower than 1.0× = tight "
+                    "thesis; wider than 2.0× = thesis sensitive to "
+                    "execution. Fund targets typically 2.50×."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "P75 MOIC", f"{result.moic_p75:.2f}x",
+            help={
+                "definition": (
+                    "75th percentile multiple — the upside reasonable "
+                    "case. Read alongside P25 to see the cone width: "
+                    "narrow (P75-P25 < 1.0×) = tight thesis, wide "
+                    "(> 2.0×) = thesis sensitive to execution."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "P50 IRR", f"{result.irr_p50*100:.1f}%",
+            sub="fund target 25% · hurdle 18%",
+            chart=ck_confidence_band(
+                f"{result.irr_p50*100:.1f}%",
+                f"{result.irr_p25*100:.1f}%",
+                f"{result.irr_p75*100:.1f}%",
+                label="P25–P75",
+            ),
+            help={
+                "definition": (
+                    "Median internal rate of return across the cone, "
+                    "with the P25–P75 band shown inline so the cone "
+                    "width is visible. Hurdle (18%) is the LPs' "
+                    "floor; fund target (25%) is the GP's promise. "
+                    "Below hurdle the deal can't carry; above target "
+                    "it's a winner."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "P(MOIC < 1x)", f"{result.prob_sub_1x*100:.1f}%",
+            help={
+                "definition": (
+                    "Probability of losing capital — share of Monte "
+                    "Carlo paths where the deal returns less than "
+                    "1.0× invested equity. Anything above 10% gets "
+                    "an IC explanation; above 25% kills the deal."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "P(MOIC ≥ 3x)", f"{result.prob_over_3x*100:.1f}%",
+            help={
+                "definition": (
+                    "Probability of a 3.0× home run — share of paths "
+                    "where the deal delivers 3.0× or better. Helps "
+                    "partners see whether the thesis has a real "
+                    "upside or is just a base-case story."
+                ),
+            },
+        )
+        + "</div>"
+    )
+    return f"{intro}{kpis}"
 
 
 def _chart_panel(
     title: str, svg: str, note: str = "",
     how_to_read: str = "",
 ) -> str:
-    """Render a chart with a title + optional note + optional
-    plain-English 'How to read' panel that spells out axes + glyphs
-    + what a partner should look for first."""
+    """Render a chart in a ck_panel with optional partner-voice
+    'How to read' callout + supplementary note. Both auxiliary
+    blocks render as ck-section-body paragraphs with editorial
+    typography rather than bespoke flexbox + inline styles."""
     how_to_read_html = ""
     if how_to_read:
         how_to_read_html = (
-            f'<div style="margin-top:10px;padding:8px 12px;'
-            f'background:{P["panel_alt"]};border-left:2px solid '
-            f'{P["accent"]};border-radius:0 3px 3px 0;'
-            f'font-size:11px;color:{P["text_dim"]};line-height:1.6;'
-            f'max-width:720px;">'
-            f'<strong style="color:{P["text"]};font-size:9px;'
-            f'letter-spacing:1.2px;text-transform:uppercase;'
-            f'margin-right:4px;">How to read:</strong>'
-            f'{html.escape(how_to_read)}</div>'
+            '<p class="ck-section-body">'
+            '<strong>How to read: </strong>'
+            f'{html.escape(how_to_read)}</p>'
         )
     note_html = (
-        f'<div style="font-size:11px;color:{P["text_faint"]};'
-        f'line-height:1.5;margin-top:8px;max-width:640px;">'
-        f'{html.escape(note)}</div>'
+        f'<p class="ck-section-body ck-muted">{html.escape(note)}</p>'
         if note else ""
     )
-    return (
-        f'<div style="background:{P["panel"]};border:1px solid '
-        f'{P["border"]};border-radius:4px;padding:14px 20px;'
-        f'margin-bottom:16px;">'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;font-weight:700;'
-        f'margin-bottom:8px;">{html.escape(title)}</div>'
-        f'{svg}'
-        f'{how_to_read_html}'
-        f'{note_html}'
-        f'</div>'
+    return ck_panel(
+        f"{svg}{how_to_read_html}{note_html}",
+        title=title,
     )
 
 
@@ -612,6 +640,12 @@ def render_deal_mc_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         + exit_cta
         + _scenario_inputs_table(scn)
         + json_btn
+        + ck_next_section(
+            "Assemble the IC packet",
+            "/diligence/ic-packet",
+            eyebrow="Continue —",
+            italic_word="packet",
+        )
     )
     return chartis_shell(
         body, f"Deal MC — {scenario_name}",

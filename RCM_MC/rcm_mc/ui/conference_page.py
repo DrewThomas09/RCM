@@ -10,7 +10,8 @@ import urllib.parse as _urlparse
 from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+    chartis_shell, ck_fmt_num, ck_kpi_block, ck_next_section,
+    ck_provenance_tooltip,
 )
 from .brand import PALETTE
 
@@ -386,7 +387,19 @@ def render_conference_roadmap(category: str = "all") -> str:
         f'<h2 style="font-size:13px;margin-bottom:8px;">Event Summary</h2>'
         f'<div class="ck-kpi-grid" style="grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">'
         + ck_kpi_block("Total Events", ck_fmt_num(total), "in roadmap")
-        + ck_kpi_block("Flagship", flagship_value, "must-attend")
+        + ck_kpi_block(
+            "Flagship", flagship_value, "must-attend",
+            help={
+                "definition": (
+                    "The two-or-three events that move the needle on "
+                    "deal sourcing: J.P. Morgan Healthcare (January), "
+                    "HLTH (October), Becker's HRC. Missing a flagship "
+                    "year-over-year is the single biggest sourcing "
+                    "self-own — book travel + meeting slots 6-8 "
+                    "weeks ahead."
+                ),
+            },
+        )
         + f'</div>'
         f'{cat_breakdown}</div>'
     )
@@ -403,12 +416,19 @@ def render_conference_roadmap(category: str = "all") -> str:
         f'</ul></div>'
     )
 
+    next_up = ck_next_section(
+        "Open the deal sourcing surface",
+        "/source",
+        eyebrow="Continue —",
+        italic_word="sourcing",
+    )
     body = (
         f'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">{cat_tabs}</div>'
         f'<div style="display:grid;grid-template-columns:1fr 300px;gap:16px;">'
         f'<div>{timeline_html}</div>'
         f'<div>{summary}{planning_tips}</div>'
         f'</div>'
+        f'{next_up}'
     )
 
     return chartis_shell(

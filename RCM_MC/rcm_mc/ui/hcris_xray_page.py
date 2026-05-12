@@ -25,7 +25,10 @@ from ..diligence.hcris_xray import (
     catalog_by_category, dataset_summary, get_target_history,
     search_hospitals, xray,
 )
-from ._chartis_kit import P, chartis_shell, ck_page_title
+from ._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
+    ck_panel, ck_section_header, ck_section_intro, ck_signal_badge,
+)
 from .power_ui import (
     bookmark_hint, deal_context_bar, export_json_panel,
     interpret_callout, provenance, sortable_table,
@@ -56,7 +59,8 @@ padding:18px 22px;margin-top:14px;}}
 .hx-target-name{{font-size:20px;color:{tx};font-weight:600;
 letter-spacing:-.2px;}}
 .hx-target-ccn{{font-family:"JetBrains Mono",monospace;font-size:11px;
-color:{tf};letter-spacing:0.5px;}}
+color:{tf};letter-spacing:0.5px;
+font-variant-numeric:tabular-nums;}}
 .hx-kpi-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
 gap:14px;margin-top:14px;}}
 .hx-kpi__label{{font-size:9px;letter-spacing:1.3px;text-transform:uppercase;
@@ -74,8 +78,10 @@ text-transform:uppercase;font-weight:700;border-bottom:2px solid {bd};}}
 .hx-metric-name{{color:{tx};font-weight:600;}}
 .hx-metric-help{{font-size:10px;color:{tf};margin-top:2px;
 font-weight:400;line-height:1.4;}}
-.hx-metric-val{{font-family:"JetBrains Mono",monospace;font-weight:700;}}
-.hx-metric-peer{{font-family:"JetBrains Mono",monospace;color:{td};}}
+.hx-metric-val{{font-family:"JetBrains Mono",monospace;font-weight:700;
+font-variant-numeric:tabular-nums;}}
+.hx-metric-peer{{font-family:"JetBrains Mono",monospace;color:{td};
+font-variant-numeric:tabular-nums;}}
 .hx-cat-title{{font-size:11px;color:{tf};letter-spacing:1.4px;
 text-transform:uppercase;font-weight:700;margin:18px 0 6px 0;
 padding-bottom:4px;border-bottom:1px solid {bd};}}
@@ -107,6 +113,14 @@ color:{tf};}}
 .hx-search-result .nm{{color:{tx};font-weight:600;}}
 .hx-search-result .right{{font-family:"JetBrains Mono",monospace;
 text-align:right;}}
+.hx-single-year{{font-size:9.5px;color:{tf};}}
+.hx-metric-val{{color:{tx};}}
+.hx-metric-peer-median{{color:{tx};font-weight:700;}}
+.hx-metric-var-cell{{text-align:right;}}
+.hx-metric-var{{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:12px;
+font-variant-numeric:tabular-nums;}}
+.hx-metric-chip-row{{margin-top:2px;}}
+.hx-metric-var-head{{text-align:right;}}
 """.format(
         tx=P["text"], td=P["text_dim"], tf=P["text_faint"],
         pn=P["panel"], pa=P["panel_alt"],
@@ -163,45 +177,49 @@ def _target_card(
         ),
     )
     trend_chip = _trend_signal_chip(trend_signal, history_len)
-    return (
-        f'<div class="hx-target-card">'
-        f'<div class="hx-target-ccn">CCN {html.escape(target.ccn)} · '
-        f'FY{target.fiscal_year} · '
-        f'{html.escape(target.city)}, {html.escape(target.state)}</div>'
-        f'<div class="hx-target-name">{html.escape(target.name)}'
-        f'{trend_chip}</div>'
-        f'<div class="hx-kpi-grid">'
-        f'  <div><div class="hx-kpi__label">Beds</div>'
-        f'       <div class="hx-kpi__val">{target.beds:,}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">{target.size_cohort.replace("_", " ").title()}</div></div>'
-        f'  <div><div class="hx-kpi__label">Patient Days</div>'
-        f'       <div class="hx-kpi__val">{target.total_patient_days:,.0f}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">{target.occupancy_rate*100:.1f}% occupancy</div></div>'
-        f'  <div><div class="hx-kpi__label">Medicare Day Share</div>'
-        f'       <div class="hx-kpi__val '
-        f'{"warn" if target.is_medicare_heavy else ""}">'
-        f'{target.medicare_day_pct*100:.1f}%</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">{"heavy" if target.is_medicare_heavy else "moderate"}</div></div>'
-        f'  <div><div class="hx-kpi__label">NPR (filed)</div>'
-        f'       <div class="hx-kpi__val">'
-        f'${target.net_patient_revenue/1e6:,.1f}M</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">${target.net_revenue_per_bed/1e3:,.0f}K / bed</div></div>'
-        f'  <div><div class="hx-kpi__label">Operating Margin</div>'
-        f'       <div class="hx-kpi__val" style="color:{margin_color};">'
-        f'{op_margin_val}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">{target.margin_band.title()}</div></div>'
-        f'  <div><div class="hx-kpi__label">Payer Diversity</div>'
-        f'       <div class="hx-kpi__val">{target.payer_diversity_index:.2f}</div>'
-        f'       <div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:3px;">1 − HHI of day mix</div></div>'
-        f'</div>'
-        f'</div>'
+    intro = ck_section_intro(
+        eyebrow=(
+            f"CCN {html.escape(target.ccn)} · "
+            f"FY{target.fiscal_year} · "
+            f"{html.escape(target.city)}, {html.escape(target.state)}"
+        ),
+        headline=html.escape(target.name),
+        body=None,
+        italic_word=None,
     )
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Beds", f"{target.beds:,}",
+            sub=target.size_cohort.replace("_", " ").title(),
+        )
+        + ck_kpi_block(
+            "Patient Days", f"{target.total_patient_days:,.0f}",
+            sub=f"{target.occupancy_rate*100:.1f}% occupancy",
+        )
+        + ck_kpi_block(
+            "Medicare Day Share", f"{target.medicare_day_pct*100:.1f}%",
+            sub="heavy" if target.is_medicare_heavy else "moderate",
+        )
+        + ck_kpi_block(
+            "NPR (filed)", f"${target.net_patient_revenue/1e6:,.1f}M",
+            sub=f"${target.net_revenue_per_bed/1e3:,.0f}K / bed",
+        )
+        + ck_kpi_block(
+            "Operating Margin", op_margin_val,
+            sub=target.margin_band.title(),
+        )
+        + ck_kpi_block(
+            "Payer Diversity", f"{target.payer_diversity_index:.2f}",
+            sub="1 − HHI of day mix",
+        )
+        + "</div>"
+    )
+    chip_html = (
+        f'<div class="ck-section-body">{trend_chip}</div>'
+        if trend_chip else ""
+    )
+    return f"{intro}{chip_html}{kpis}"
 
 
 def _sparkline(
@@ -390,8 +408,7 @@ def _metric_row(
         trend_html = _sparkline(vals, hib)
     else:
         trend_html = (
-            f'<span style="font-size:9.5px;color:{P["text_faint"]};">'
-            f'single year</span>'
+            '<span class="hx-single-year">single year</span>'
         )
 
     # Distribution box-plot target vs peers
@@ -407,17 +424,16 @@ def _metric_row(
         f'<div class="hx-metric-name">{html.escape(bm.spec.label)}</div>'
         f'<div class="hx-metric-help">{html.escape(bm.spec.unit_help)}</div>'
         f'</div>'
-        f'<div class="hx-metric-val" style="color:{P["text"]};">'
+        f'<div class="hx-metric-val">'
         f'{bm.spec.fmt(bm.target_value)}</div>'
         f'<div class="hx-metric-peer">{bm.spec.fmt(bm.peer_p25)}</div>'
-        f'<div class="hx-metric-peer" style="color:{P["text"]};'
-        f'font-weight:700;">{bm.spec.fmt(bm.peer_median)}</div>'
+        f'<div class="hx-metric-peer hx-metric-peer-median">'
+        f'{bm.spec.fmt(bm.peer_median)}</div>'
         f'<div class="hx-metric-peer">{bm.spec.fmt(bm.peer_p75)}</div>'
-        f'<div style="text-align:right;">'
-        f'<div style="font-family:\'JetBrains Mono\',monospace;'
-        f'font-weight:700;color:{var_color};font-size:12px;">'
+        f'<div class="hx-metric-var-cell">'
+        f'<div class="hx-metric-var" style="color:{var_color};">'
         f'{bm.variance_vs_median_pct*100:+.1f}%</div>'
-        f'<div style="margin-top:2px;">{_variance_chip(bm)}</div>'
+        f'<div class="hx-metric-chip-row">{_variance_chip(bm)}</div>'
         f'</div>'
         f'<div>{trend_html}{boxplot_html}</div>'
         f'</div>'
@@ -441,7 +457,7 @@ def _metrics_by_category(report: XRayReport) -> str:
         f'<div>Peer P25</div>'
         f'<div>Peer Median</div>'
         f'<div>Peer P75</div>'
-        f'<div style="text-align:right;">Variance</div>'
+        f'<div class="hx-metric-var-head">Variance</div>'
         f'<div>Trend · Distribution</div>'
         f'</div>'
     )
@@ -530,77 +546,51 @@ def _public_comp_context(target: HospitalMetrics) -> str:
         key=lambda c: -(c.operating_margin or 0),
     )[:6]:
         mg = c.operating_margin or 0.0
-        mg_color = (
-            P["positive"] if mg > 0.10
-            else P["warning"] if mg > 0.02
-            else P["negative"]
+        mg_cls = (
+            "cad-pos" if mg > 0.10
+            else "cad-warn" if mg > 0.02
+            else "cad-neg"
         )
         delta = target_margin - mg
         rows.append(
-            f'<tr>'
-            f'<td style="padding:4px 8px;font-family:\'JetBrains Mono\','
-            f'monospace;color:{P["accent"]};">'
-            f'{html.escape(c.ticker)}</td>'
-            f'<td style="padding:4px 8px;color:{P["text_dim"]};">'
-            f'{html.escape(c.name)}</td>'
-            f'<td style="padding:4px 8px;text-align:right;'
-            f'font-family:\'JetBrains Mono\',monospace;'
-            f'color:{mg_color};font-weight:700;">'
-            f'{mg*100:+.1f}%</td>'
-            f'<td style="padding:4px 8px;text-align:right;'
-            f'font-family:\'JetBrains Mono\',monospace;'
-            f'color:{P["text_dim"]};">'
-            f'{delta*100:+.1f}pp</td>'
-            f'<td style="padding:4px 8px;font-family:\'JetBrains Mono\','
-            f'monospace;color:{P["text_faint"]};font-size:10px;">'
-            f'{c.ev_ebitda_multiple:.1f}×</td>'
-            f'</tr>'
+            '<tr>'
+            f'<td class="num"><strong>{html.escape(c.ticker)}</strong></td>'
+            f'<td>{html.escape(c.name)}</td>'
+            f'<td class="num {mg_cls}"><strong>{mg*100:+.1f}%</strong></td>'
+            f'<td class="num">{delta*100:+.1f}pp</td>'
+            f'<td class="num">{c.ev_ebitda_multiple:.1f}×</td>'
+            '</tr>'
         )
     verdict = (
         "beats" if target_margin > public_median_margin
         else "trails"
     )
     delta = abs(target_margin - public_median_margin) * 100
-    return (
-        f'<div class="hx-panel">'
-        f'<div class="hx-section-label" style="margin-top:0;">'
-        f'Public market context · Seeking Alpha hospital comps</div>'
-        f'<div style="font-size:13px;color:{P["text_dim"]};'
-        f'line-height:1.6;margin-bottom:12px;max-width:900px;">'
-        f'Target operating margin '
-        f'<strong style="color:{P["text"]};">'
-        f'{target_margin*100:+.1f}%</strong> '
+    inner = (
+        '<p class="ck-section-body">'
+        f'Target operating margin <strong>{target_margin*100:+.1f}%</strong> '
         f'{verdict} public-comp median '
-        f'<strong style="color:{P["text"]};">'
-        f'{public_median_margin*100:+.1f}%</strong> by '
+        f'<strong>{public_median_margin*100:+.1f}%</strong> by '
         f'{delta:.1f} pp. Public comps trade at a median '
-        f'EV/EBITDA of ~9x; target-implied multiple should '
-        f'adjust for the margin delta + size discount.'
-        f'</div>'
-        f'<table style="width:100%;border-collapse:collapse;'
-        f'font-size:12px;">'
-        f'<thead><tr style="color:{P["text_faint"]};font-size:10px;'
-        f'letter-spacing:1.2px;text-transform:uppercase;font-weight:700;">'
-        f'<th style="padding:6px 8px;text-align:left;'
-        f'border-bottom:2px solid {P["border"]};">Ticker</th>'
-        f'<th style="padding:6px 8px;text-align:left;'
-        f'border-bottom:2px solid {P["border"]};">Company</th>'
-        f'<th style="padding:6px 8px;text-align:right;'
-        f'border-bottom:2px solid {P["border"]};">Op Margin</th>'
-        f'<th style="padding:6px 8px;text-align:right;'
-        f'border-bottom:2px solid {P["border"]};">Target Δ</th>'
-        f'<th style="padding:6px 8px;text-align:left;'
-        f'border-bottom:2px solid {P["border"]};">EV/EBITDA</th>'
+        'EV/EBITDA of ~9x; target-implied multiple should '
+        'adjust for the margin delta + size discount.</p>'
+        '<table class="cad-table"><thead><tr>'
+        '<th>Ticker</th><th>Company</th>'
+        '<th class="num">Op Margin</th>'
+        '<th class="num">Target Δ</th>'
+        '<th class="num">EV/EBITDA</th>'
         f'</tr></thead><tbody>{"".join(rows)}</tbody></table>'
-        f'<div class="hx-callout">'
-        f'Public-hospital comps are curated from 10-K / analyst '
-        f'consensus via '
-        f'<a href="/market-intel/seeking-alpha" '
-        f'style="color:{P["accent"]};">→ Seeking Alpha Market Intel</a>. '
-        f'Margin delta × $ of NPR ≈ the EBITDA gap between the '
-        f'target and the public bench.'
-        f'</div>'
-        f'</div>'
+        '<p class="ck-section-body">'
+        'Public-hospital comps are curated from 10-K / analyst '
+        'consensus via '
+        '<a href="/market-intel/seeking-alpha" class="ck-link">'
+        '→ Seeking Alpha Market Intel</a>. '
+        'Margin delta × $ of NPR ≈ the EBITDA gap between the '
+        'target and the public bench.</p>'
+    )
+    return ck_panel(
+        inner,
+        title="Public market context · Seeking Alpha hospital comps",
     )
 
 
@@ -687,7 +677,7 @@ def _search_results(hits: List[HospitalMetrics]) -> str:
             f'<a class="hx-search-result" href="{url}">'
             f'<span class="ccn">{html.escape(h.ccn)}</span>'
             f'<span class="nm">{html.escape(h.name)}</span>'
-            f'<span style="text-align:right;">{html.escape(h.state)}</span>'
+            f'<span class="right">{html.escape(h.state)}</span>'
             f'<span class="right">{h.beds:,}</span>'
             f'<span class="right">{h.fiscal_year}</span>'
             f'</a>'
@@ -712,13 +702,9 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
             q, limit=20,
             state=state_filter or None,
         )
-        search_block = (
-            f'<div class="hx-panel">'
-            f'<div class="hx-section-label" style="margin-top:0;">'
-            f'Search results · {len(hits)} matches'
-            f'</div>'
-            f'{_search_results(hits)}'
-            f'</div>'
+        search_block = ck_panel(
+            _search_results(hits),
+            title=f"Search results · {len(hits)} matches",
         )
 
     search_form = f"""
@@ -761,47 +747,73 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
   </div>
 </form>
 """
-    stats = (
-        f'<div class="hx-panel">'
-        f'<div class="hx-section-label" style="margin-top:0;">'
-        f'Dataset coverage</div>'
-        f'<div style="display:flex;gap:24px;flex-wrap:wrap;'
-        f'font-size:12.5px;color:{P["text_dim"]};line-height:1.65;">'
-        f'<div><strong style="color:{P["text"]};">'
-        f'{summary["total_rows"]:,}</strong> hospital-year filings</div>'
-        f'<div><strong style="color:{P["text"]};">'
-        f'{len(summary["states"])}</strong> states</div>'
-        f'<div><strong style="color:{P["text"]};">'
-        f'{len(summary["years"])}</strong> fiscal years</div>'
-        f'<div><strong style="color:{P["text"]};">'
-        f'{summary["cohorts"].get("COMMUNITY", 0) + summary["cohorts"].get("REGIONAL", 0):,}</strong> '
-        f'community + regional-size hospitals</div>'
-        f'</div>'
-        f'<div class="hx-callout">'
-        f'HCRIS is CMS\'s filed Medicare cost-report dataset — '
-        f'every Medicare-participating hospital files annually with '
-        f'2,500+ fields covering bed count, payer-day mix, patient '
-        f'revenue, allowances, operating expenses, and net income. '
-        f'The X-Ray engine finds the 25-50 true peer hospitals for '
-        f'any target (matched on size cohort, state, payer mix, and '
-        f'fiscal year), computes 15 derived RCM / cost / margin '
-        f'metrics, and flags where the target lies inside, above, '
-        f'or below the peer P25-P75 band.'
-        f'</div>'
-        f'</div>'
+    stats_inner = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Hospital-year filings",
+            f"{summary['total_rows']:,}",
+            help={
+                "definition": (
+                    "Total hospital × fiscal-year rows in the loaded "
+                    "HCRIS universe. Each row is one hospital's full "
+                    "cost-report filing for one fiscal year."
+                ),
+                "citation": "CMS HCRIS",
+            },
+        )
+        + ck_kpi_block(
+            "States",
+            f"{len(summary['states'])}",
+        )
+        + ck_kpi_block(
+            "Fiscal years",
+            f"{len(summary['years'])}",
+        )
+        + ck_kpi_block(
+            "Community + regional",
+            f"{summary['cohorts'].get('COMMUNITY', 0) + summary['cohorts'].get('REGIONAL', 0):,}",
+            help={
+                "definition": (
+                    "Combined count of community and regional "
+                    "hospitals — the size cohorts most PE deals "
+                    "target. Excludes academic medical centers and "
+                    "rural critical-access hospitals."
+                ),
+            },
+        )
+        + '</div>'
+        + '<p class="ck-section-body">'
+        "HCRIS is CMS's filed Medicare cost-report dataset — "
+        'every Medicare-participating hospital files annually with '
+        '2,500+ fields covering bed count, payer-day mix, patient '
+        'revenue, allowances, operating expenses, and net income. '
+        'The X-Ray engine finds the 25-50 true peer hospitals for '
+        'any target (matched on size cohort, state, payer mix, and '
+        'fiscal year), computes 15 derived RCM / cost / margin '
+        'metrics, and flags where the target lies inside, above, '
+        'or below the peer P25-P75 band.</p>'
     )
+    stats = ck_panel(stats_inner, title="Dataset coverage")
 
+    landing_intro = ck_section_intro(
+        eyebrow="HCRIS-Native Peer X-Ray",
+        headline="Benchmark any hospital against its true peers.",
+        italic_word="true",
+        body=(
+            "Find the 25-50 true peer hospitals for any target on "
+            "size, state, payer mix, and fiscal year, then surface "
+            "where it lies inside, above, or below the peer "
+            "P25-P75 band on 15 RCM / cost / margin metrics."
+        ),
+    )
     body = (
         _scoped_styles()
         + '<div class="hx-wrap">'
         + deal_context_bar(qs, active_surface="hcris")
-        + '<div style="padding:22px 0 16px 0;">'
-        + '<div class="hx-eyebrow">HCRIS-Native Peer X-Ray</div>'
-        + '<div class="hx-h1">Benchmark any hospital against its true peers.</div>'
-        + '</div>'
-        + search_form
+        + landing_intro
+        + ck_panel(search_form, title="Find a hospital")
         + search_block
-        + direct_form
+        + ck_panel(direct_form, title="Direct X-Ray by CCN")
         + stats
         + '</div>'
     )
@@ -863,19 +875,22 @@ def render_hcris_xray_page(
         peer_k=peer_k, bed_band_pct=bed_band,
     )
     if report is None:
+        err_intro = ck_section_intro(
+            eyebrow="HCRIS X-Ray",
+            headline="Hospital not found.",
+            italic_word="not",
+            body=(
+                f"No HCRIS filing matched '{html.escape(ccn or name)}'. "
+                "Try searching instead."
+            ),
+        )
         return chartis_shell(
             _scoped_styles()
-            + f'<div class="hx-wrap" style="padding:28px;">'
-            + f'<div class="hx-eyebrow">HCRIS X-Ray</div>'
-            + f'<div class="hx-h1" style="color:{P["negative"]};">'
-            + 'Hospital not found.</div>'
-            + f'<div class="hx-callout">No HCRIS filing matched '
-            + f'<code>{html.escape(ccn or name)}</code>. Try '
-            + f'searching instead.</div>'
-            + f'<div style="margin-top:14px;">'
-            + f'<a href="/diligence/hcris-xray" '
-            + f'style="color:{P["accent"]};">← Back to search</a>'
-            + '</div></div>',
+            + '<div class="hx-wrap">'
+            + err_intro
+            + '<p class="ck-section-body">'
+            + '<a href="/diligence/hcris-xray" class="ck-link">'
+            + '← Back to search</a></p></div>',
             "HCRIS X-Ray — not found",
         )
 
@@ -937,51 +952,52 @@ def render_hcris_xray_page(
         )
     chart_plain = " ".join(chart_plain_parts)
 
+    main_intro = ck_section_intro(
+        eyebrow="HCRIS-Native Peer X-Ray",
+        headline=f"{html.escape(target.name)} — peer benchmark.",
+        italic_word="peer",
+        body=(
+            f"{len(report.peers)} peers · {report.peer_filter_used} · "
+            f"benchmarked on {len(report.metrics)} metrics."
+        ),
+    )
     hero = (
-        f'<div style="padding:22px 0 16px 0;border-bottom:1px solid '
-        f'{P["border"]};margin-bottom:22px;">'
-        f'<div class="hx-eyebrow">HCRIS-Native Peer X-Ray</div>'
-        f'<div class="hx-h1">{html.escape(target.name)}</div>'
-        f'<div style="font-size:11px;color:{P["text_faint"]};'
-        f'margin-top:4px;">'
-        f'{len(report.peers)} peers · {report.peer_filter_used} · '
-        f'benchmarked on {len(report.metrics)} metrics'
-        f'</div>'
-        f'{_target_card(target, trend_signal=report.trend_signal, history_len=len(report.target_history))}'
+        main_intro
+        + _target_card(
+            target,
+            trend_signal=report.trend_signal,
+            history_len=len(report.target_history),
+        )
         + interpret_callout(
             "Plain-English read:", chart_plain,
             tone="bad" if top_under else "good",
         )
-        + f'</div>'
     )
 
-    metrics_panel = (
-        f'<div class="hx-panel">'
-        f'<div class="hx-section-label" style="margin-top:0;">'
-        f'Peer benchmark · target vs P25 / median / P75 · '
-        f'{report.peer_filter_used}</div>'
-        f'{_metrics_by_category(report)}'
-        f'<div class="hx-callout">'
-        f'<strong style="color:{P["text"]};">How to read: </strong>'
-        f'Target column is the filed value from the hospital\'s '
-        f'most recent Medicare cost report. P25 / median / P75 are '
+    metrics_inner = (
+        _metrics_by_category(report)
+        + '<p class="ck-section-body">'
+        '<strong>How to read:</strong> '
+        "Target column is the filed value from the hospital's "
+        'most recent Medicare cost report. P25 / median / P75 are '
         f'drawn from the {len(report.peers)} peer hospitals matched '
-        f'on size cohort, state, payer mix, and fiscal year. '
-        f'Variance is signed % vs peer median; '
-        f'<span style="color:{P["positive"]};">green chip</span> '
-        f'= better than peers on this metric; '
-        f'<span style="color:{P["negative"]};">red chip</span> '
-        f'= worse than peers; amber/neutral = inside the P25-P75 band.'
-        f'</div>'
-        f'</div>'
+        'on size cohort, state, payer mix, and fiscal year. '
+        'Variance is signed % vs peer median; '
+        '<span class="cad-pos">green chip</span> = better than peers; '
+        '<span class="cad-neg">red chip</span> = worse than peers; '
+        'amber/neutral = inside the P25-P75 band.</p>'
+    )
+    metrics_panel = ck_panel(
+        metrics_inner,
+        title=(
+            f"Peer benchmark · target vs P25 / median / P75 · "
+            f"{report.peer_filter_used}"
+        ),
     )
 
-    peers_panel = (
-        f'<div class="hx-panel">'
-        f'<div class="hx-section-label" style="margin-top:0;">'
-        f'Peer roster</div>'
-        f'{_peer_table(report.peers)}'
-        f'</div>'
+    peers_panel = ck_panel(
+        _peer_table(report.peers),
+        title="Peer roster",
     )
 
     # Real EBITDA from HCRIS when positive; fallback to 10% placeholder
@@ -1018,60 +1034,96 @@ def render_hcris_xray_page(
     debt_str = f"{default_debt:.0f}"
     # Pass target CCN through so the Bear Case pipeline auto-runs HCRIS
     ccn = target.ccn
-    cross_link = (
-        f'<div class="hx-panel">'
-        f'<div class="hx-section-label" style="margin-top:0;">'
-        f'Cross-reference · pre-seeded with HCRIS-filed NPR, '
-        f'operating margin + peer-median 9.0× entry cap structure</div>'
-        f'<div style="font-size:13px;color:{P["text_dim"]};'
-        f'line-height:1.7;">'
-        f'<a href="{_link("/diligence/deal-mc", {"deal_name": target.name, "revenue_usd": npr, "ebitda_usd": eb, "ev_usd": ev_str, "equity_usd": equity_str, "debt_usd": debt_str, "entry_multiple": f"{default_entry_multiple:.1f}"})}" '
-        f'style="color:{P["accent"]};">→ Deal MC</a> · '
-        f'<a href="{_link("/diligence/payer-stress", {"target_name": target.name, "total_npr_usd": npr, "total_ebitda_usd": eb})}" '
-        f'style="color:{P["accent"]};">→ Payer Stress</a> · '
-        f'<a href="{_link("/diligence/covenant-stress", {"deal_name": target.name, "ebitda_y0": eb, "total_debt_usd": debt_str})}" '
-        f'style="color:{P["accent"]};">→ Covenant Stress</a> · '
-        f'<a href="{_link("/diligence/regulatory-calendar", {"target_name": target.name, "specialty": "HOSPITAL", "revenue_usd": npr, "ebitda_usd": eb})}" '
-        f'style="color:{P["accent"]};">→ Regulatory Calendar</a> · '
-        f'<a href="{_link("/diligence/bear-case", {"deal_name": target.name, "specialty": "HOSPITAL", "revenue_year0_usd": npr, "ebitda_year0_usd": eb, "enterprise_value_usd": ev_str, "equity_check_usd": equity_str, "debt_usd": debt_str, "hcris_ccn": ccn})}" '
-        f'style="color:{P["accent"]};">→ Bear Case</a>'
-        f'</div>'
-        f'<div style="font-size:10.5px;color:{P["text_faint"]};'
-        f'margin-top:8px;letter-spacing:0.3px;">'
+    cross_link = ck_panel(
+        '<p class="ck-section-body">'
+        f'<a href="{_link("/diligence/deal-mc", {"deal_name": target.name, "revenue_usd": npr, "ebitda_usd": eb, "ev_usd": ev_str, "equity_usd": equity_str, "debt_usd": debt_str, "entry_multiple": f"{default_entry_multiple:.1f}"})}" class="ck-link">→ Deal MC</a> · '
+        f'<a href="{_link("/diligence/payer-stress", {"target_name": target.name, "total_npr_usd": npr, "total_ebitda_usd": eb})}" class="ck-link">→ Payer Stress</a> · '
+        f'<a href="{_link("/diligence/covenant-stress", {"deal_name": target.name, "ebitda_y0": eb, "total_debt_usd": debt_str})}" class="ck-link">→ Covenant Stress</a> · '
+        f'<a href="{_link("/diligence/regulatory-calendar", {"target_name": target.name, "specialty": "HOSPITAL", "revenue_usd": npr, "ebitda_usd": eb})}" class="ck-link">→ Regulatory Calendar</a> · '
+        f'<a href="{_link("/diligence/bear-case", {"deal_name": target.name, "specialty": "HOSPITAL", "revenue_year0_usd": npr, "ebitda_year0_usd": eb, "enterprise_value_usd": ev_str, "equity_check_usd": equity_str, "debt_usd": debt_str, "hcris_ccn": ccn})}" class="ck-link">→ Bear Case</a>'
+        '</p>'
+        '<p class="ck-eyebrow">'
         f'EV <code>${default_ev/1e6:,.0f}M</code> (9.0× '
         f'${actual_ebitda/1e6:,.1f}M EBITDA) · Equity '
         f'<code>${default_equity/1e6:,.0f}M</code> · Debt '
         f'<code>${default_debt/1e6:,.0f}M</code> · override '
-        f'any of these on the destination page.'
-        f'</div></div>'
+        'any of these on the destination page.</p>',
+        title=(
+            "Cross-reference · pre-seeded with HCRIS-filed NPR, "
+            "operating margin + peer-median 9.0× entry cap structure"
+        ),
     )
 
-    body = (
-        _scoped_styles()
-        + ck_page_title(
-            "HCRIS X-Ray",
-            eyebrow="RCM DILIGENCE",
-            meta=(
-                f"Target: {target.name} · CCN {target.ccn} · "
-                f"FY{target.fiscal_year}"
-            ),
+    # Phase PPP: print-preview affordance — HCRIS X-Ray is the
+    # canonical peer-percentile snapshot partners bring to IC for
+    # "is this hospital normal?" framing. ?print=1 hides chrome
+    # (page title eyebrow, deal context bar, JSON export, bookmark
+    # hint, Up-next cue) and keeps just hero + metrics + comps +
+    # peers panels.
+    import urllib.parse as _urlparse
+    import html as _html
+    print_preview = (qs.get("print") or [""])[0] == "1"
+    if print_preview:
+        exit_qs = {k: v for k, v in qs.items() if k != "print"}
+        exit_qstr = "?" + _urlparse.urlencode(exit_qs, doseq=True) if exit_qs else ""
+        body = (
+            _scoped_styles()
+            + '<div class="ck-print-preview">'
+            '<div class="ck-print-preview-bar">'
+            f'<span class="ck-print-preview-meta">Print preview · '
+            f'CCN {_html.escape(target.ccn)}</span>'
+            f'<a href="/diligence/hcris-xray{_html.escape(exit_qstr)}" '
+            'class="ck-print-preview-exit">Exit preview</a>'
+            '</div>'
+            + '<div class="hx-wrap">'
+            + hero
+            + metrics_panel
+            + public_comp_block
+            + peers_panel
+            + '</div></div>'
         )
-        + '<div class="hx-wrap">'
-        + deal_context_bar(qs, active_surface="hcris")
-        + hero
-        + metrics_panel
-        + public_comp_block
-        + peers_panel
-        + cross_link
-        + export_json_panel(
-            '<div class="hx-section-label" style="margin-top:22px;">'
-            'JSON export — full X-Ray payload</div>',
-            payload=report.to_dict(),
-            name=f"hcris_xray_{target.ccn}",
+    else:
+        print_qs = {**{k: v for k, v in qs.items() if k != "print"}, "print": ["1"]}
+        print_qstr = "?" + _urlparse.urlencode(print_qs, doseq=True)
+        print_cta = (
+            '<div class="ck-print-preview-cta">'
+            f'<a href="/diligence/hcris-xray{_html.escape(print_qstr)}" '
+            'class="ck-link">Preview print version →</a>'
+            '</div>'
         )
-        + bookmark_hint()
-        + '</div>'
-    )
+        body = (
+            _scoped_styles()
+            + ck_page_title(
+                "HCRIS X-Ray",
+                eyebrow="RCM DILIGENCE",
+                meta=(
+                    f"Target: {target.name} · CCN {target.ccn} · "
+                    f"FY{target.fiscal_year}"
+                ),
+            )
+            + '<div class="hx-wrap">'
+            + deal_context_bar(qs, active_surface="hcris")
+            + print_cta
+            + hero
+            + metrics_panel
+            + public_comp_block
+            + peers_panel
+            + cross_link
+            + export_json_panel(
+                '<div class="hx-section-label" style="margin-top:22px;">'
+                'JSON export — full X-Ray payload</div>',
+                payload=report.to_dict(),
+                name=f"hcris_xray_{target.ccn}",
+            )
+            + bookmark_hint()
+            + ck_next_section(
+                "Move into the Risk Workbench",
+                "/diligence/risk-workbench",
+                eyebrow="Continue —",
+                italic_word="Risk",
+            )
+            + '</div>'
+        )
     return chartis_shell(
         body, f"HCRIS X-Ray — {target.name}",
         active_nav="/diligence/hcris-xray",

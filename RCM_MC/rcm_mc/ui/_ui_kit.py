@@ -127,13 +127,16 @@ def fmt_money(
 def fmt_pct(
     value: object, *, signed: bool = False, decimals: int = 1,
 ) -> str:
-    """Format a percentage as ``15.3%`` in tabular-nums.
+    """Format a PERCENT-POINT value as ``15.3%`` in tabular-nums.
 
-    CLAUDE.md spec: percentages at 1 decimal. ``signed=True`` forces
-    a leading sign so beat/miss reads ``+4.1%`` / ``-4.1%``. Input
-    may be either a fraction (``0.153`` → ``15.3%``) or a percentage
-    point already (``15.3`` → ``15.3%``); the helper does NOT guess.
-    Callers pass the percentage point value directly.
+    Input is the percent-point value already (``15.3`` → ``"15.3%"``);
+    the helper does NOT scale. If you have a raw ratio (``0.153``),
+    multiply by 100 first or use ``_chartis_kit.ck_fmt_percent``
+    which takes the ratio directly — mixing the two on the same value
+    will render the metric 100× off.
+
+    ``signed=True`` forces a leading sign so beat/miss reads
+    ``+4.1%`` / ``-4.1%``. CLAUDE.md spec: 1 decimal.
     """
     n = _coerce_float(value)
     if n is None:

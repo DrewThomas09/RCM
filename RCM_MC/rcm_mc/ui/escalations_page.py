@@ -34,6 +34,7 @@ def render_escalations(
         chartis_shell, ck_search_hero, ck_filter_sidebar,
         ck_results_header, ck_section_header, ck_section_intro,
         ck_severity_panel, ck_affirm_empty, ck_provenance_tooltip,
+        ck_next_section,
     )
     from rcm_mc.alerts.alert_acks import is_acked
     from rcm_mc.alerts.alert_history import days_red
@@ -200,7 +201,13 @@ def render_escalations(
         ),
     )
 
-    body = intro + search_hero + rail_layout
+    next_up = ck_next_section(
+        "Open the alerts triage view",
+        "/alerts",
+        eyebrow="Continue —",
+        italic_word="alerts",
+    )
+    body = intro + search_hero + rail_layout + next_up
     return chartis_shell(
         body,
         title="Escalations",

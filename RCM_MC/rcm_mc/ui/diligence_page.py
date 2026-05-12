@@ -8,7 +8,10 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    ck_section_header,
+)
 from .models_page import _model_nav
 from .brand import PALETTE
 
@@ -44,46 +47,55 @@ def render_diligence_questions(deal_id: str, deal_name: str, questions: List[Dic
     )
 
     nav = _model_nav(deal_id, "questions")
+    kpi_strip = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("Questions Generated", f"{len(questions)}")
+        + ck_kpi_block("Categories", f"{len(by_category)}")
+        + "</div>"
+    )
+    questions_table = (
+        '<p class="ck-section-body">'
+        'Auto-generated from deal profile and risk flags. Export as CSV '
+        'for the data room request.</p>'
+        '<table class="ck-table"><thead><tr>'
+        '<th>#</th><th>Priority</th><th>Category</th>'
+        '<th>Question</th><th>Rationale</th>'
+        f'</tr></thead><tbody>{rows}</tbody></table>'
+    )
+    how_to_use = (
+        f'<p class="ck-section-body">'
+        f'Send these {len(questions)} questions to the seller as your '
+        f'initial data room request. High-priority items should be '
+        f'addressed before the IC meeting. Download as CSV and paste '
+        f'into your standard diligence tracker.</p>'
+        f'<p class="ck-section-body">'
+        f'Once you have answers, update the deal profile via '
+        f'<a href="/import" class="ck-link">Import</a> and re-run the '
+        f'<a href="/models/denial/{html.escape(deal_id)}" class="ck-link">'
+        f'denial analysis</a> with actual payer-level data.</p>'
+    )
+    actions = (
+        '<p class="ck-section-body">'
+        f'<a href="/api/analysis/{html.escape(deal_id)}/diligence-questions" '
+        f'class="cad-btn cad-btn-primary">Download CSV for Data Room</a> '
+        f'<a href="/models/playbook/{html.escape(deal_id)}" class="cad-btn">'
+        f'Value Creation Playbook</a> '
+        f'<a href="/analysis/{html.escape(deal_id)}" class="cad-btn">'
+        f'Full Analysis</a></p>'
+    )
     body = (
-        f'{nav}'
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(questions)}</div>'
-        f'<div class="cad-kpi-label">Questions Generated</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(by_category)}</div>'
-        f'<div class="cad-kpi-label">Categories</div></div>'
-        f'</div>'
-
-        f'<div class="cad-card">'
-        f'<h2>Categories</h2>'
-        f'<div>{cat_badges}</div></div>'
-
-        f'<div class="cad-card">'
-        f'<h2>Diligence Questions</h2>'
-        f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:10px;">'
-        f'Auto-generated from deal profile and risk flags. Export as CSV for the data room request.</p>'
-        f'<table class="cad-table"><thead><tr>'
-        f'<th>#</th><th>Priority</th><th>Category</th><th>Question</th><th>Rationale</th>'
-        f'</tr></thead><tbody>{rows}</tbody></table></div>'
-
-        f'<div class="cad-card" style="border-left:3px solid {PALETTE["brand_accent"]};">'
-        f'<h2>How to Use This</h2>'
-        f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
-        f'<p>Send these {len(questions)} questions to the seller as your initial data room request. '
-        f'High-priority items should be addressed before the IC meeting. '
-        f'Download as CSV and paste into your standard diligence tracker.</p>'
-        f'<p style="margin-top:6px;">Once you have answers, update the deal profile via '
-        f'<a href="/import" style="color:{PALETTE["text_link"]};">Import</a> and re-run the '
-        f'<a href="/models/denial/{html.escape(deal_id)}" style="color:{PALETTE["text_link"]};">denial analysis</a> '
-        f'with actual payer-level data.</p>'
-        f'</div></div>'
-
-        f'<div class="cad-card" style="display:flex;gap:8px;flex-wrap:wrap;">'
-        f'<a href="/api/analysis/{html.escape(deal_id)}/diligence-questions" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Download CSV for Data Room</a>'
-        f'<a href="/models/playbook/{html.escape(deal_id)}" class="cad-btn" '
-        f'style="text-decoration:none;">Value Creation Playbook</a>'
-        f'<a href="/analysis/{html.escape(deal_id)}" class="cad-btn" '
-        f'style="text-decoration:none;">Full Analysis</a></div>'
+        f"{nav}"
+        + kpi_strip
+        + ck_panel(cat_badges, title="Categories")
+        + ck_panel(questions_table, title="Diligence Questions")
+        + ck_panel(how_to_use, title="How to Use This")
+        + ck_panel(actions, title="Next steps")
+        + ck_next_section(
+            "Open the portfolio-wide question ledger",
+            "/diligence/questions",
+            eyebrow="Continue —",
+            italic_word="ledger",
+        )
     )
 
     return chartis_shell(body, f"Diligence Questions — {html.escape(deal_name)}",

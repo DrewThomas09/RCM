@@ -26,7 +26,10 @@ from ..diligence.physician_attrition import (
     analyze_roster,
 )
 from ..diligence.physician_comp.comp_ingester import Provider
-from ._chartis_kit import P, chartis_shell, ck_page_title
+from ._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
+    ck_panel, ck_section_header, ck_section_intro, ck_signal_badge,
+)
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
 )
@@ -101,10 +104,59 @@ height:2px;background:linear-gradient(90deg,{po},{ac});}}
 gap:18px;margin-top:14px;}}
 @media (max-width:720px){{.pa-card__head{{flex-direction:column;}}
 .pa-card__sim{{text-align:left;}}}}
+.pa-card__band-row{{margin-top:6px;display:flex;gap:8px;align-items:center;}}
+.pa-card__collections{{color:{tf};font-size:11px;
+font-family:"JetBrains Mono",monospace;
+font-variant-numeric:tabular-nums;}}
+.pa-driver-label{{font-size:9px;color:{tf};letter-spacing:1.2px;
+text-transform:uppercase;font-weight:600;margin-bottom:4px;}}
+.pa-sim-pct{{font-size:16px;opacity:.7;}}
+.pa-sim-sub{{font-size:10px;margin-top:2px;font-weight:600;}}
+.pa-rec{{margin-top:14px;font-size:12px;color:{td};line-height:1.6;}}
+.pa-rec strong{{color:{tx};}}
+.pa-compare{{margin-top:10px;font-size:10px;color:{tf};}}
+.pa-compare-link{{color:{ac};text-decoration:none;}}
+.pa-fv-row{{display:grid;grid-template-columns:180px 70px 70px 1fr;
+gap:10px;align-items:baseline;padding:4px 0;
+border-bottom:1px solid {bdim};font-size:11px;}}
+.pa-fv-name{{color:{td};}}
+.pa-fv-val{{font-family:"JetBrains Mono",monospace;color:{tx};text-align:right;
+font-variant-numeric:tabular-nums;}}
+.pa-fv-contrib{{font-family:"JetBrains Mono",monospace;text-align:right;
+font-variant-numeric:tabular-nums;}}
+.pa-fv-source{{color:{tf};font-size:10px;}}
+.pa-fv-details{{margin-top:12px;}}
+.pa-fv-details summary{{cursor:pointer;color:{td};letter-spacing:1.2px;
+text-transform:uppercase;font-weight:600;font-size:10px;padding:6px 0;}}
+.pa-fv-body{{margin-top:8px;}}
+.pa-fv-header{{display:grid;grid-template-columns:180px 70px 70px 1fr;
+gap:10px;padding:4px 0;border-bottom:1px solid {bd};
+font-size:9px;letter-spacing:1.2px;text-transform:uppercase;
+color:{tf};font-weight:700;}}
+.pa-fv-th-right{{text-align:right;}}
+.pa-band-chip{{display:inline-block;padding:4px 12px;margin-right:6px;
+font-size:10px;letter-spacing:1.2px;text-transform:uppercase;
+font-weight:600;border:1px solid currentColor;border-radius:3px;
+text-decoration:none;transition:all 120ms ease;}}
+.pa-band-chip-row{{margin:18px 0 12px 0;display:flex;align-items:center;
+gap:12px;flex-wrap:wrap;}}
+.pa-band-chip-label{{font-size:9px;color:{tf};letter-spacing:1.3px;
+text-transform:uppercase;font-weight:600;}}
+.pa-band-chip-spacer{{flex:1;}}
+.pa-band-chip-hint{{font-size:10px;color:{tf};font-style:italic;}}
+.pa-band-chip-kbd{{padding:1px 5px;border:1px solid currentColor;border-radius:2px;}}
+.pa-mini-row{{display:flex;align-items:center;gap:8px;margin:3px 0;font-size:10.5px;}}
+.pa-mini-label{{min-width:140px;color:{td};}}
+.pa-mini-track{{flex:1;height:6px;background:{bdim};border-radius:3px;overflow:hidden;}}
+.pa-mini-fill{{display:block;height:100%;opacity:0.75;}}
+.pa-mini-value{{min-width:44px;text-align:right;
+font-family:"JetBrains Mono",monospace;
+font-variant-numeric:tabular-nums;}}
 """.format(
         tx=P["text"], td=P["text_dim"], tf=P["text_faint"],
         pn=P["panel"], pa=P["panel_alt"],
-        bd=P["border"], ac=P["accent"],
+        bd=P["border"], bdim=P.get("border_dim", P["border"]),
+        ac=P["accent"],
         po=P["positive"], wn=P["warning"], ne=P["negative"],
     )
     return f"<style>{css}</style>"
@@ -283,31 +335,23 @@ def _band_filter_chips(current: str = "") -> str:
     for key, label, tone in bands:
         color = P.get(tone, P["text_dim"])
         is_active = (key == active)
+        active_cls = " pa-band-chip-active" if is_active else ""
+        bg = color if is_active else "transparent"
+        fg = "#0a0e17" if is_active else color
         out.append(
             f'<a href="/diligence/physician-attrition?band={key}" '
-            f'style="display:inline-block;padding:4px 12px;'
-            f'margin-right:6px;font-size:10px;letter-spacing:1.2px;'
-            f'text-transform:uppercase;font-weight:600;'
-            f'border:1px solid {color};border-radius:3px;'
-            f'color:{"#0a0e17" if is_active else color};'
-            f'background:{color if is_active else "transparent"};'
-            f'text-decoration:none;transition:all 120ms ease;">'
+            f'class="pa-band-chip{active_cls}" '
+            f'style="border-color:{color};color:{fg};background:{bg};">'
             f'{html.escape(label)}</a>'
         )
     return (
-        f'<div style="margin:18px 0 12px 0;display:flex;'
-        f'align-items:center;gap:12px;flex-wrap:wrap;">'
-        f'<span style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.3px;text-transform:uppercase;'
-        f'font-weight:600;">Quick filter:</span>'
+        '<div class="pa-band-chip-row">'
+        '<span class="pa-band-chip-label">Quick filter:</span>'
         + "".join(out)
-        + f'<span style="flex:1;"></span>'
-        f'<span style="font-size:10px;color:{P["text_faint"]};'
-        f'font-style:italic;">Use the search box below for fine '
-        f'filtering, or press '
-        f'<kbd style="padding:1px 5px;border:1px solid currentColor;'
-        f'border-radius:2px;">/</kbd> to focus it.</span>'
-        f'</div>'
+        + '<span class="pa-band-chip-spacer"></span>'
+        '<span class="pa-band-chip-hint">Use the search box below for fine '
+        'filtering, or press <kbd class="pa-band-chip-kbd">/</kbd> to focus it.</span>'
+        '</div>'
     )
 
 
@@ -331,41 +375,29 @@ def _feature_vector_drilldown(score: ProviderAttritionScore) -> str:
             else P["text_faint"]
         )
         rows.append(
-            f'<div style="display:grid;grid-template-columns:180px 70px 70px 1fr;'
-            f'gap:10px;align-items:baseline;padding:4px 0;'
-            f'border-bottom:1px solid {P["border_dim"]};font-size:11px;">'
-            f'<span style="color:{P["text_dim"]};" '
-            f'title="{html.escape(tooltip)}">'
+            '<div class="pa-fv-row">'
+            f'<span class="pa-fv-name" title="{html.escape(tooltip)}">'
             f'{html.escape(_driver_readable(name))}</span>'
-            f'<span style="font-family:\'JetBrains Mono\',monospace;'
-            f'color:{P["text"]};text-align:right;">{value:.3f}</span>'
-            f'<span style="font-family:\'JetBrains Mono\',monospace;'
-            f'color:{contrib_color};text-align:right;">{contribution:+.2f}</span>'
-            f'<span style="color:{P["text_faint"]};font-size:10px;">'
-            f'{html.escape(source)}</span></div>'
+            f'<span class="pa-fv-val">{value:.3f}</span>'
+            f'<span class="pa-fv-contrib" style="color:{contrib_color};">'
+            f'{contribution:+.2f}</span>'
+            f'<span class="pa-fv-source">{html.escape(source)}</span></div>'
         )
     return (
-        f'<details style="margin-top:12px;">'
-        f'<summary style="cursor:pointer;color:{P["text_dim"]};'
-        f'letter-spacing:1.2px;text-transform:uppercase;'
-        f'font-weight:600;font-size:10px;padding:6px 0;">'
-        f'Full feature vector · click to expand</summary>'
-        f'<div style="margin-top:8px;">'
-        f'<div style="display:grid;grid-template-columns:180px 70px 70px 1fr;'
-        f'gap:10px;padding:4px 0;border-bottom:1px solid {P["border"]};'
-        f'font-size:9px;letter-spacing:1.2px;text-transform:uppercase;'
-        f'color:{P["text_faint"]};font-weight:700;">'
-        f'<span>Feature</span>'
-        f'<span style="text-align:right;">Value</span>'
-        f'<span style="text-align:right;">β·x</span>'
-        f'<span>Source</span></div>'
+        '<details class="pa-fv-details">'
+        '<summary>Full feature vector · click to expand</summary>'
+        '<div class="pa-fv-body">'
+        '<div class="pa-fv-header">'
+        '<span>Feature</span>'
+        '<span class="pa-fv-th-right">Value</span>'
+        '<span class="pa-fv-th-right">β·x</span>'
+        '<span>Source</span></div>'
         f'{"".join(rows)}'
-        f'<div style="margin-top:8px;font-size:10px;'
-        f'color:{P["text_faint"]};line-height:1.55;">'
-        f'Features in [0, 1] · β·x is the feature\'s contribution to '
-        f'log-odds of flight (red raises probability, green lowers). '
-        f'Sum + intercept (−3.2) = log-odds; sigmoid → probability.</div>'
-        f'</div></details>'
+        '<p class="ck-eyebrow">'
+        'Features in [0, 1] · β·x is the feature\'s contribution to '
+        'log-odds of flight (red raises probability, green lowers). '
+        'Sum + intercept (−3.2) = log-odds; sigmoid → probability.</p>'
+        '</div></details>'
     )
 
 
@@ -394,20 +426,15 @@ def _contribution_mini_bar(
         label = _driver_readable(name)
         tooltip = _DRIVER_EXPLAINER.get(name, "")
         rows.append(
-            f'<div style="display:flex;align-items:center;gap:8px;'
-            f'margin:3px 0;font-size:10.5px;">'
-            f'<span style="min-width:140px;color:{P["text_dim"]};" '
-            f'title="{html.escape(tooltip)}">'
+            '<div class="pa-mini-row">'
+            f'<span class="pa-mini-label" title="{html.escape(tooltip)}">'
             f'{html.escape(label)}</span>'
-            f'<span style="flex:1;height:6px;background:{P["border_dim"]};'
-            f'border-radius:3px;overflow:hidden;">'
-            f'<span style="display:block;height:100%;width:{pct:.1f}%;'
-            f'background:{band_color};opacity:0.75;"></span></span>'
-            f'<span style="min-width:44px;text-align:right;'
-            f'color:{band_color};font-family:\'JetBrains Mono\',monospace;'
-            f'font-variant-numeric:tabular-nums;">'
+            '<span class="pa-mini-track">'
+            f'<span class="pa-mini-fill" '
+            f'style="width:{pct:.1f}%;background:{band_color};"></span></span>'
+            f'<span class="pa-mini-value" style="color:{band_color};">'
             f'{val:+.2f}</span>'
-            f'</div>'
+            '</div>'
         )
     return (
         f'<div style="margin-top:12px;padding:10px 12px;'
@@ -575,50 +602,89 @@ def _hero(report: AttritionReport, target_name: str) -> str:
     )
 
     kpi_row = (
-        f'<div class="pa-kpi-grid">'
-        f'<div class="pa-kpi">'
-        f'<div class="pa-kpi__label">Roster size</div>'
-        f'<div class="pa-kpi__val" style="color:{P["text"]};">'
-        f'{roster_num}</div>'
-        f'<div class="pa-kpi__band" style="color:{P["text_faint"]};">'
-        f'{crit} critical · {high} high · {report.medium_count} medium · '
-        f'{report.low_count} low</div></div>'
-        f'<div class="pa-kpi">'
-        f'<div class="pa-kpi__label">Total collections</div>'
-        f'<div class="pa-kpi__val" style="color:{P["text"]};">'
-        f'{collections_num}</div>'
-        f'<div class="pa-kpi__band" style="color:{P["text_faint"]};">'
-        f'roster annual collections · hover for source</div></div>'
-        f'<div class="pa-kpi">'
-        f'<div class="pa-kpi__label">Expected $ at risk</div>'
-        f'<div class="pa-kpi__val" style="color:{at_risk_color};">'
-        f'{at_risk_num}</div>'
-        f'<div class="pa-kpi__band" style="color:{at_risk_color};">'
-        f'{at_risk/collections*100 if collections > 0 else 0:.1f}% of roster · '
-        f'18-mo horizon</div></div>'
-        f'<div class="pa-kpi">'
-        f'<div class="pa-kpi__label">EBITDA bridge hit</div>'
-        f'<div class="pa-kpi__val" style="color:{conf_color};">'
-        f'{bridge_num}</div>'
-        f'<div class="pa-kpi__band" style="color:{conf_color};">'
-        f'{bridge.confidence} confidence · '
-        f'{bridge.realization_probability*100:.0f}% realization</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "Roster size", roster_num,
+            sub=(
+                f"{crit} critical · {high} high · {report.medium_count} medium · "
+                f"{report.low_count} low"
+            ),
+            help={
+                "definition": (
+                    "Total physician count in the practice or "
+                    "facility being underwritten. Each provider "
+                    "carries a flight-risk score from low to "
+                    "critical; the four counts in the sub-line "
+                    "show the distribution."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Total collections", collections_num,
+            sub="roster annual collections · hover for source",
+            help={
+                "definition": (
+                    "Sum of annual collections across the roster. "
+                    "Used as the denominator for the at-risk "
+                    "percentage — partners read this as 'if every "
+                    "high-risk provider walked, how much would "
+                    "stop coming in'."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Expected $ at risk", at_risk_num,
+            sub=(
+                f"{at_risk/collections*100 if collections > 0 else 0:.1f}% "
+                f"of roster · 18-mo horizon"
+            ),
+            help={
+                "definition": (
+                    "Probability-weighted dollar collections at risk "
+                    "over an 18-month horizon. Equal to the sum "
+                    "across providers of (departure probability × "
+                    "annual collections × retention sensitivity). "
+                    "Compare to the bridge's EBITDA-improvement "
+                    "ask to see whether retention drag eats the "
+                    "thesis."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "EBITDA bridge hit", bridge_num,
+            sub=(
+                f"{bridge.confidence} confidence · "
+                f"{bridge.realization_probability*100:.0f}% realization"
+            ),
+            help={
+                "definition": (
+                    "Direct EBITDA hit if expected attrition plays "
+                    "out — calculated as $ at risk × contribution "
+                    "margin × realization probability. The "
+                    "confidence tag reflects how much of the "
+                    "input data is provider-specific vs. roster-"
+                    "level averages."
+                ),
+            },
+        )
+        + "</div>"
     )
 
+    intro = ck_section_intro(
+        eyebrow="Physician Attrition",
+        headline=html.escape(target_name),
+        body=(
+            f"18-month flight-risk · 9-feature model · "
+            f"{roster} providers scored"
+        ),
+        italic_word="attrition",
+    )
     return (
-        f'<div style="padding:24px 0 16px 0;border-bottom:1px solid '
-        f'{P["border"]};margin-bottom:22px;">'
-        f'<div class="pa-eyebrow">Physician Attrition</div>'
-        f'<div class="pa-h1">{html.escape(target_name)}</div>'
-        f'<div style="font-size:11px;color:{P["text_faint"]};margin-top:4px;">'
-        f'18-month flight-risk · 9-feature model · {roster} providers scored</div>'
+        f'{intro}'
         f'<div class="pa-callout {banner_class}">{html.escape(banner)}</div>'
-        f'<div class="pa-callout">'
-        f'<strong style="color:{P["text"]};">What this shows: </strong>'
-        f'{summary}</div>'
+        f'<p class="ck-section-body">'
+        f'<strong>What this shows: </strong>{summary}</p>'
         f'{kpi_row}'
-        f'</div>'
     )
 
 
@@ -642,12 +708,12 @@ def _card(
     bond_html = ""
     if rec.suggested_bond_usd:
         bond_html = (
-            f'<div class="pa-bond">'
-            f'<strong style="color:{P["text"]};">Retention bond sizing: </strong>'
+            '<div class="pa-bond">'
+            '<strong>Retention bond sizing: </strong>'
             f'<span class="pa-bond__num">${rec.suggested_bond_usd:,.0f}</span> '
             f'({rec.retention_years}y lockup) — bonds this provider to the '
             f'target through year-{rec.retention_years}.'
-            f'</div>'
+            '</div>'
         )
     return (
         f'<div class="pa-card">'
@@ -659,41 +725,33 @@ def _card(
         f'{html.escape(score.specialty.replace("_", " "))} · '
         f'{html.escape(score.npi or "no NPI")}</div>'
         f'<div class="pa-card__title">{html.escape(score.provider_id)}</div>'
-        f'<div style="margin-top:6px;display:flex;gap:8px;'
-        f'align-items:center;">'
+        f'<div class="pa-card__band-row">'
         f'{_band_badge(score.band)}'
-        f'<span style="color:{P["text_faint"]};font-size:11px;'
-        f'font-family:\'JetBrains Mono\',monospace;">'
+        f'<span class="pa-card__collections">'
         f'${score.collections_annual_usd:,.0f} annual collections'
         f'</span></div>'
         f'<div class="pa-driver-chips">'
-        f'<div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.2px;text-transform:uppercase;'
-        f'font-weight:600;margin-bottom:4px;">Top drivers</div>'
+        f'<div class="pa-driver-label">Top drivers</div>'
         f'{drivers_html}</div>'
         f'</div>'
         f'<div class="pa-card__sim">'
         f'<div class="pa-card__top">18-mo flight probability</div>'
         f'<div class="pa-card__sim-val" style="color:{band_color};">'
-        f'{score.probability*100:.0f}<span style="font-size:16px;opacity:.7;">%</span>'
+        f'{score.probability*100:.0f}<span class="pa-sim-pct">%</span>'
         f'</div>'
-        f'<div style="font-size:10px;color:{band_color};margin-top:2px;'
-        f'font-weight:600;">'
+        f'<div class="pa-sim-sub" style="color:{band_color};">'
         f'~${score.expected_collections_at_risk_usd:,.0f} at risk</div>'
         f'</div>'
         f'</div>'
         f'{mini_bar}'
-        f'<div style="margin-top:14px;font-size:12px;color:{P["text_dim"]};'
-        f'line-height:1.6;">'
-        f'<strong style="color:{P["text"]};">Partner recommendation: </strong>'
+        f'<div class="pa-rec">'
+        f'<strong>Partner recommendation: </strong>'
         f'{html.escape(rec.recommendation)}</div>'
         f'{bond_html}'
         f'{_feature_vector_drilldown(score)}'
-        f'<div style="margin-top:10px;font-size:10px;'
-        f'color:{P["text_faint"]};">'
+        f'<div class="pa-compare">'
         f'<a href="/diligence/physician-attrition?compare={html.escape(score.provider_id)}" '
-        f'style="color:{P["accent"]};text-decoration:none;">'
-        f'Add to compare →</a>'
+        f'class="pa-compare-link">Add to compare →</a>'
         f'</div>'
         f'</div>'
         f'</div>'
@@ -763,47 +821,37 @@ def _bridge_card(report: AttritionReport) -> str:
     b = report.bridge_input
     if b is None:
         return ""
-    conf_color = {
-        "HIGH": P["positive"], "MEDIUM": P["warning"],
-        "LOW": P["negative"],
-    }.get(b.confidence, P["text_dim"])
-    return (
-        f'<div class="pa-bridge">'
-        f'<div class="pa-eyebrow">EBITDA Bridge · Physician-Attrition Lever</div>'
-        f'<div style="font-size:16px;color:{P["text"]};font-weight:600;'
-        f'margin-top:2px;">Data-driven input for Deal MC</div>'
-        f'<div class="pa-bridge__grid">'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:.5px;text-transform:uppercase;">EBITDA at risk</div>'
-        f'<div style="font-size:22px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-weight:700;color:{P["negative"]};">'
-        f'${b.ebitda_at_risk_usd:,.0f}</div></div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:.5px;text-transform:uppercase;">'
-        f'Collections lost (projected)</div>'
-        f'<div style="font-size:18px;color:{P["text"]};">'
-        f'${b.expected_collections_lost_usd:,.0f}</div></div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:.5px;text-transform:uppercase;">'
-        f'Attrition as % collections</div>'
-        f'<div style="font-size:18px;color:{P["text"]};">'
-        f'{b.attrition_pct_of_collections*100:.1f}%</div></div>'
-        f'<div><div style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:.5px;text-transform:uppercase;">Confidence</div>'
-        f'<div style="font-size:18px;color:{conf_color};font-weight:600;">'
-        f'{html.escape(b.confidence)}</div></div>'
-        f'</div>'
-        f'<div style="margin-top:14px;font-size:11.5px;color:{P["text_dim"]};'
-        f'line-height:1.6;max-width:880px;">'
-        f'<strong style="color:{P["text"]};">How to use: </strong>'
-        f'Feed the attrition-pct-of-collections value into the Deal MC '
-        f'<code style="color:{P["text_dim"]};">physician_attrition_pct</code> '
-        f'driver instead of the industry-default 5%. The bridge EBITDA-hit '
+    conf_tone = {
+        "HIGH": "positive", "MEDIUM": "warning", "LOW": "negative",
+    }.get(b.confidence, "neutral")
+    conf_badge = ck_signal_badge(html.escape(b.confidence), tone=conf_tone)
+    bridge_inner = (
+        '<p class="ck-section-body">Data-driven input for Deal MC.</p>'
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("EBITDA at risk", f"${b.ebitda_at_risk_usd:,.0f}")
+        + ck_kpi_block(
+            "Collections lost (projected)",
+            f"${b.expected_collections_lost_usd:,.0f}",
+        )
+        + ck_kpi_block(
+            "Attrition as % collections",
+            f"{b.attrition_pct_of_collections*100:.1f}%",
+        )
+        + ck_kpi_block("Confidence", conf_badge)
+        + '</div>'
+        + '<p class="ck-section-body">'
+        '<strong>How to use:</strong> '
+        'Feed the attrition-pct-of-collections value into the Deal MC '
+        '<code>physician_attrition_pct</code> '
+        'driver instead of the industry-default 5%. The bridge EBITDA-hit '
         f'assumes a {b.ebitda_margin_assumed*100:.0f}% EBITDA margin on '
-        f'physician-group collections and a {b.realization_probability*100:.0f}% '
-        f'realization rate over the 18-month horizon given a standard '
-        f'earn-out structure.</div>'
-        f'</div>'
+        'physician-group collections and a '
+        f'{b.realization_probability*100:.0f}% realization rate over the '
+        '18-month horizon given a standard earn-out structure.</p>'
+    )
+    return ck_panel(
+        bridge_inner,
+        title="EBITDA Bridge · Physician-Attrition Lever",
     )
 
 
@@ -827,126 +875,82 @@ def _compare_view(
     score_by_id = {s.provider_id: s for s in report.scores}
     resolved = [score_by_id[pid] for pid in compare_ids if pid in score_by_id]
     if not resolved:
-        return (
-            '<div class="pa-callout warn" style="margin-top:16px;">'
+        return ck_panel(
+            '<p class="ck-section-body">'
             'None of the provided provider IDs were found in the '
             'current roster. Check the ?compare= parameter against '
-            'the roster table below.</div>'
+            'the roster table below.</p>',
+            title="Compare providers — no matches",
         )
 
-    # Build feature-by-feature comparison matrix.
-    rows: List[str] = []
+    # Build feature-by-feature comparison table.
+    feature_cols = "".join(
+        f'<th class="num">{html.escape(s.provider_id)}<br>'
+        f'<span class="pa-cmp-spec">{html.escape(s.specialty.replace("_", " "))}</span></th>'
+        for s in resolved
+    )
+    sim_cells_html = "".join(
+        f'<td class="num"><strong>{s.probability*100:.0f}%</strong></td>'
+        for s in resolved
+    )
+    band_cells_html = "".join(
+        f'<td class="num">{_band_badge(s.band)}</td>' for s in resolved
+    )
+    bond_cells_html = "".join(
+        f'<td class="num">'
+        f'{"$" + format(int(s.recommendation.suggested_bond_usd or 0), ",") if (s.recommendation.suggested_bond_usd or 0) > 0 else "—"}'
+        f'{" / " + str(s.recommendation.retention_years) + "y" if s.recommendation.retention_years else ""}'
+        '</td>'
+        for s in resolved
+    )
+
+    feature_rows: List[str] = []
     for name in resolved[0].features.FEATURE_NAMES:
-        cells = [
-            f'<div style="color:{P["text_dim"]};" '
-            f'title="{html.escape(_DRIVER_EXPLAINER.get(name, ""))}">'
-            f'{html.escape(_driver_readable(name))}</div>'
-        ]
         vals = [getattr(s.features, name) for s in resolved]
         max_v = max(vals) if vals else 0.0
+        cells = []
         for v in vals:
-            # Highlight the worst (highest) feature value across
-            # providers — that's the one drivin the delta.
             is_max = (abs(v - max_v) < 1e-9 and max_v > 0.01)
-            cells.append(
-                f'<div style="text-align:right;'
-                f'font-family:\'JetBrains Mono\',monospace;'
-                f'color:{P["negative"] if is_max else P["text"]};'
-                f'font-weight:{"700" if is_max else "400"};">'
-                f'{v:.3f}</div>'
-            )
-        rows.append(
-            f'<div style="display:grid;grid-template-columns:'
-            f'220px repeat({len(resolved)}, 1fr);gap:14px;'
-            f'padding:5px 0;border-bottom:1px solid {P["border_dim"]};'
-            f'font-size:11.5px;">'
+            cls = "num cad-neg" if is_max else "num"
+            wt = "<strong>" if is_max else ""
+            wt_close = "</strong>" if is_max else ""
+            cells.append(f'<td class="{cls}">{wt}{v:.3f}{wt_close}</td>')
+        feature_rows.append(
+            '<tr>'
+            f'<td title="{html.escape(_DRIVER_EXPLAINER.get(name, ""))}">'
+            f'{html.escape(_driver_readable(name))}</td>'
             + "".join(cells)
-            + f'</div>'
+            + '</tr>'
         )
 
-    header_cells = [
-        f'<div style="color:{P["text_faint"]};font-size:9px;'
-        f'letter-spacing:1.3px;text-transform:uppercase;'
-        f'font-weight:700;">Feature</div>'
-    ]
-    sim_cells = [
-        f'<div style="color:{P["text_faint"]};font-size:9px;'
-        f'letter-spacing:1.3px;text-transform:uppercase;'
-        f'font-weight:700;">Probability</div>'
-    ]
-    band_cells = [
-        f'<div style="color:{P["text_faint"]};font-size:9px;'
-        f'letter-spacing:1.3px;text-transform:uppercase;'
-        f'font-weight:700;">Band</div>'
-    ]
-    bond_cells = [
-        f'<div style="color:{P["text_faint"]};font-size:9px;'
-        f'letter-spacing:1.3px;text-transform:uppercase;'
-        f'font-weight:700;">Suggested bond</div>'
-    ]
-    for s in resolved:
-        band_color = P.get(_BAND_COLOR[s.band], P["text_dim"])
-        header_cells.append(
-            f'<div style="text-align:right;color:{P["text"]};'
-            f'font-weight:700;font-size:14px;">'
-            f'{html.escape(s.provider_id)}<br>'
-            f'<span style="font-size:10px;color:{P["text_faint"]};'
-            f'font-weight:400;">'
-            f'{html.escape(s.specialty.replace("_", " "))}</span></div>'
-        )
-        sim_cells.append(
-            f'<div style="text-align:right;color:{band_color};'
-            f'font-family:\'JetBrains Mono\',monospace;'
-            f'font-weight:700;font-size:18px;">'
-            f'{s.probability*100:.0f}%</div>'
-        )
-        band_cells.append(
-            f'<div style="text-align:right;">'
-            f'{_band_badge(s.band)}</div>'
-        )
-        bond = s.recommendation.suggested_bond_usd or 0.0
-        bond_cells.append(
-            f'<div style="text-align:right;color:{P["text"]};'
-            f'font-family:\'JetBrains Mono\',monospace;">'
-            f'{"$" + format(int(bond), ",") if bond > 0 else "—"}'
-            f'{" / " + str(s.recommendation.retention_years) + "y" if s.recommendation.retention_years else ""}'
-            f'</div>'
-        )
-
-    tpl = 'display:grid;grid-template-columns:220px repeat({n}, 1fr);gap:14px;'
-    grid = tpl.format(n=len(resolved))
-
+    intro = ck_section_intro(
+        eyebrow="Compare providers",
+        headline=f"{html.escape(target_name)} · {len(resolved)}-way comparison.",
+        italic_word="comparison",
+        body=(
+            "Column per provider. Feature rows highlight the worst "
+            "(highest-value) cell in red. Use this to answer "
+            "'which provider needs the bigger bond' or 'which driver "
+            "is actually different between these two?'"
+        ),
+    )
+    table_html = (
+        '<table class="cad-table">'
+        '<thead><tr><th>Feature</th>'
+        f'{feature_cols}</tr></thead>'
+        '<tbody>'
+        f'<tr><td><strong>Probability</strong></td>{sim_cells_html}</tr>'
+        f'<tr><td><strong>Band</strong></td>{band_cells_html}</tr>'
+        f'<tr><td><strong>Suggested bond</strong></td>{bond_cells_html}</tr>'
+        + "".join(feature_rows)
+        + '</tbody></table>'
+    )
     return (
-        f'<div style="padding:20px 0 16px 0;border-bottom:1px solid '
-        f'{P["border"]};margin-bottom:22px;">'
-        f'<div class="pa-eyebrow">Compare providers</div>'
-        f'<div class="pa-h1">{html.escape(target_name)} · '
-        f'{len(resolved)}-way comparison</div>'
-        f'<div class="pa-callout">'
-        f'<strong style="color:{P["text"]};">How to read: </strong>'
-        f'Column per provider. Feature rows highlight the worst '
-        f'(highest-value) cell in red. Use this to answer '
-        f'"which provider needs the bigger bond" or "which driver '
-        f'is actually different between these two?"</div>'
-        f'<div style="margin-top:18px;padding:16px 20px;'
-        f'background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-radius:4px;">'
-        f'<div style="{grid}padding:8px 0;border-bottom:2px solid {P["border"]};">'
-        + "".join(header_cells) + "</div>"
-        f'<div style="{grid}padding:10px 0;border-bottom:1px solid {P["border"]};">'
-        + "".join(sim_cells) + "</div>"
-        f'<div style="{grid}padding:8px 0;">'
-        + "".join(band_cells) + "</div>"
-        f'<div style="{grid}padding:8px 0;border-bottom:2px solid {P["border"]};">'
-        + "".join(bond_cells) + "</div>"
-        f'<div style="margin-top:10px;">'
-        + "".join(rows) + "</div>"
-        f'</div>'
-        f'<div style="margin-top:14px;">'
-        f'<a href="/diligence/physician-attrition" '
-        f'style="color:{P["accent"]};font-size:11px;">'
-        f'← Back to full roster</a></div>'
-        f'</div>'
+        intro
+        + ck_panel(table_html, title=f"{len(resolved)}-way comparison")
+        + '<p class="ck-section-body">'
+        + '<a href="/diligence/physician-attrition" class="ck-link">'
+        + '← Back to full roster</a></p>'
     )
 
 
@@ -1061,20 +1065,33 @@ def render_physician_attrition_page(
 
     # Cross-link to Physician Economic Units — PPAM tells you who's
     # likely to leave; EU tells you who should.
-    crosslink = (
-        f'<div style="margin-top:14px;padding:10px 14px;'
-        f'background:{P["panel_alt"]};border-left:2px solid '
-        f'{P["accent"]};border-radius:0 3px 3px 0;font-size:11.5px;'
-        f'color:{P["text_dim"]};line-height:1.6;">'
-        f'<strong style="color:{P["text"]};">Related: </strong>'
-        f'<a href="/diligence/physician-eu" '
-        f'style="color:{P["accent"]};text-decoration:none;">'
-        f'Physician Economic Units →</a> '
-        f'tells you who SHOULD leave (per-provider P&L + loss-maker '
-        f'tail). Together with this flight-risk view, the complete '
-        f'physician-portfolio optimization picture.'
-        f'</div>'
+    crosslink = ck_panel(
+        '<p class="ck-section-body">'
+        '<strong>Related: </strong>'
+        '<a href="/diligence/physician-eu" class="ck-link">'
+        'Physician Economic Units →</a> '
+        'tells you who SHOULD leave (per-provider P&L + loss-maker '
+        'tail). Together with this flight-risk view, the complete '
+        'physician-portfolio optimization picture.</p>',
+        title="Cross-reference",
     )
+
+    if focus_scores:
+        focus_block = (
+            ck_section_header(
+                f"High + critical providers · {len(focus_scores)} "
+                "shown · retention action required",
+                eyebrow="ROSTER FOCUS",
+            )
+            + cards
+        )
+    else:
+        focus_block = ck_panel(
+            '<p class="ck-section-body">'
+            f'No providers are in the {html.escape((band_filter or "HIGH/CRITICAL").upper())} '
+            'band. No retention bonds required for the filtered view.</p>',
+            title="Roster focus",
+        )
 
     body = (
         _scoped_styles()
@@ -1087,22 +1104,20 @@ def render_physician_attrition_page(
         + hero_and_bridge
         + crosslink
         + _band_filter_chips(band_filter)
-        + (
-            f'<div class="pa-section-label">'
-            f'High + critical providers · {len(focus_scores)} '
-            f'shown · retention action required</div>'
-            + cards
-            if focus_scores
-            else f'<div class="pa-callout good" style="margin-top:16px;">'
-                 f'No providers are in the '
-                 f'{html.escape((band_filter or "HIGH/CRITICAL").upper())} '
-                 f'band. No retention bonds required for the filtered view.</div>'
+        + focus_block
+        + ck_section_header(
+            "Full roster · sortable · filterable · CSV export",
+            eyebrow="ALL PROVIDERS",
         )
-        + '<div class="pa-section-label">'
-          'Full roster · sortable · filterable · CSV export</div>'
         + _roster_table(filtered, providers_by_id)
         + '</div>'
         + bookmark_hint()
+        + ck_next_section(
+            "Open the provider economics surface",
+            "/diligence/physician-eu",
+            eyebrow="Continue —",
+            italic_word="economics",
+        )
     )
 
     return chartis_shell(

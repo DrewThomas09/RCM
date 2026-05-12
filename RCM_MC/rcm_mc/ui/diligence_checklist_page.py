@@ -26,7 +26,11 @@ from ..diligence.checklist import (
     summarize_coverage,
 )
 from ..diligence.checklist.items import build_checklist
-from ._chartis_kit import P, chartis_shell, ck_page_title
+from ._chartis_kit import (
+    P, chartis_shell, ck_help_tooltip, ck_kpi_block, ck_next_section,
+    ck_page_title, ck_panel, ck_section_header, ck_section_intro,
+    ck_sticky_toc,
+)
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
 )
@@ -200,6 +204,40 @@ _PHASE_TITLES = {
     5: "Phase 5 · Partner deliverables",
 }
 
+# Editorial glosses surfaced via ck_help_tooltip [?] on each phase
+# header. Partners encountering an unfamiliar phase label get the
+# what-belongs-here + when-this-runs framing inline.
+_PHASE_HELP = {
+    1: (
+        "Pre-NDA screening. Public-data sourcing + size / sub-sector "
+        "filters before a signed NDA opens the data room. Predictive "
+        "screener + market-intel comp band sit here."
+    ),
+    2: (
+        "CCD benchmarks + predictive. The seller's data room becomes "
+        "structured records (CCD ingest); HFMA benchmarks compare "
+        "every initiative to industry priors; denial-rate predictor "
+        "lands a forward-looking write-off projection."
+    ),
+    3: (
+        "Risk workbench + manual diligence. Tier 1-3 risk panels run "
+        "alongside partner-led checklist items (legal reps, payer "
+        "contract review, management interviews). Bear case assembles "
+        "from this layer."
+    ),
+    4: (
+        "Financial synthesis. The 7-lever EBITDA bridge, the two-"
+        "source Monte Carlo, and the public-market overlay turn "
+        "diligence findings into investment math. Covenant headroom "
+        "math runs against the post-close credit stack."
+    ),
+    5: (
+        "Partner deliverables. IC memo, IC packet, LP digest, "
+        "exit memo. Every export caps the chain of citation so the "
+        "LP can audit any number back to its source."
+    ),
+}
+
 
 def _parse_id_set(qs: Dict[str, List[str]], key: str) -> Set[str]:
     raw = qs.get(key) or []
@@ -318,50 +356,48 @@ def _hero(state: DealChecklistState) -> str:
         formula="count(items where status=DONE)",
         detail="Total items covered across all phases and priorities.",
     )
-    return (
-        f'<div style="padding:22px 0 16px 0;border-bottom:1px solid '
-        f'{P["border"]};margin-bottom:22px;">'
-        f'<div class="dc-eyebrow">Diligence Checklist</div>'
-        f'<div class="dc-h1">Coverage + Open Questions</div>'
-        f'<div style="font-size:11px;color:{P["text_faint"]};'
-        f'margin-top:4px;">Auto-tracked from live analytics · '
-        f'partner overrides via URL</div>'
-        f'<div class="dc-callout {banner_class}">{html.escape(banner)}</div>'
-        f'<div class="dc-callout">'
-        f'<strong style="color:{P["text"]};">How to read: </strong>'
-        f'P0 coverage is the single go/no-go gauge for IC. Items '
-        f'tied to analytics auto-mark DONE when the analytic is run. '
-        f'Manual items (management references, legal review) need an '
-        f'explicit override — "Mark done" link on each row. All '
-        f'overrides are URL-encoded so you can share a state snapshot '
-        f'by copying the URL.</div>'
-        f'<div class="dc-kpi-grid">'
-        f'<div class="dc-kpi">'
-        f'<div class="dc-kpi__label">P0 coverage</div>'
-        f'<div class="dc-kpi__val" style="color:{cov_color};">{cov_num}</div>'
-        f'<div class="dc-kpi__band" style="color:{cov_color};">'
-        f'{"Ready for IC" if state.p0_coverage >= 1.0 else "Blocking IC"}'
-        f'</div></div>'
-        f'<div class="dc-kpi">'
-        f'<div class="dc-kpi__label">Total done</div>'
-        f'<div class="dc-kpi__val" style="color:{P["text"]};">{done_num}</div>'
-        f'<div class="dc-kpi__band" style="color:{P["text_faint"]};">'
-        f'{state.total_coverage*100:.0f}% of all items</div></div>'
-        f'<div class="dc-kpi">'
-        f'<div class="dc-kpi__label">Open P0</div>'
-        f'<div class="dc-kpi__val" style="color:{p0_color};">'
-        f'{state.open_p0}</div>'
-        f'<div class="dc-kpi__band" style="color:{p0_color};">'
-        f'must close before IC</div></div>'
-        f'<div class="dc-kpi">'
-        f'<div class="dc-kpi__label">Open P1</div>'
-        f'<div class="dc-kpi__val" style="color:{p1_color};">'
-        f'{state.open_p1}</div>'
-        f'<div class="dc-kpi__band" style="color:{p1_color};">'
-        f'assign owners</div></div>'
-        f'</div>'
-        f'</div>'
+    intro = ck_section_intro(
+        eyebrow="DILIGENCE CHECKLIST",
+        headline="Coverage + open questions for IC.",
+        italic_word="open",
+        body=(
+            f"{html.escape(banner)} Auto-tracked from live analytics; "
+            "partner overrides URL-encoded so you can share a state "
+            "snapshot by copying the link."
+        ),
     )
+    explainer = ck_panel(
+        '<p class="ck-section-body">'
+        '<strong>How to read:</strong> '
+        'P0 coverage is the single go/no-go gauge for IC. Items '
+        'tied to analytics auto-mark DONE when the analytic is run. '
+        'Manual items (management references, legal review) need an '
+        'explicit override — "Mark done" link on each row. All '
+        'overrides are URL-encoded so you can share a state snapshot '
+        'by copying the URL.</p>',
+        title="Coverage rules",
+    )
+    kpis = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block(
+            "P0 coverage", cov_num,
+            sub="Ready for IC" if state.p0_coverage >= 1.0 else "Blocking IC",
+        )
+        + ck_kpi_block(
+            "Total done", done_num,
+            sub=f"{state.total_coverage*100:.0f}% of all items",
+        )
+        + ck_kpi_block(
+            "Open P0", f"{state.open_p0}",
+            sub="must close before IC",
+        )
+        + ck_kpi_block(
+            "Open P1", f"{state.open_p1}",
+            sub="assign owners",
+        )
+        + '</div>'
+    )
+    return f'{intro}{explainer}{kpis}'
 
 
 def _phase_section(
@@ -412,11 +448,17 @@ def _phase_section(
             f'{note_html}'
             f'</div>'
         )
+    phase_title = _PHASE_TITLES.get(phase, f"Phase {phase}")
+    phase_help = _PHASE_HELP.get(phase)
+    title_html = (
+        ck_help_tooltip(phase_title, phase_help)
+        if phase_help else html.escape(phase_title)
+    )
     return (
         f'<div class="dc-phase">'
         f'<div class="dc-phase__head">'
         f'<div class="dc-phase__title">'
-        f'{html.escape(_PHASE_TITLES.get(phase, f"Phase {phase}"))}</div>'
+        f'{title_html}</div>'
         f'<div class="dc-phase__count">{n_done}/{n_total} done · '
         f'{pct:.0f}%</div>'
         f'</div>'
@@ -431,39 +473,34 @@ def _phase_section(
 def _open_questions_block(state: DealChecklistState) -> str:
     qs = open_questions_for_ic_packet(state)
     if not qs:
-        return (
-            f'<div class="dc-callout good">'
-            f'All diligence items covered — no open questions for IC.'
-            f'</div>'
+        return ck_panel(
+            '<p class="ck-section-body">'
+            'All diligence items covered — no open questions for IC.'
+            '</p>',
+            title="Open questions for IC",
         )
     rows: List[str] = []
     for q in qs:
-        color = (
-            P["negative"] if q.priority == "P0"
-            else P["warning"] if q.priority == "P1"
-            else P["text_faint"]
+        cls = (
+            "cad-neg" if q.priority == "P0"
+            else "cad-warn" if q.priority == "P1"
+            else ""
         )
         rows.append(
             f'<div class="dc-oq-row">'
-            f'<span class="dc-oq-row__prio" style="color:{color};">'
+            f'<span class="dc-oq-row__prio {cls}">'
             f'{q.priority}</span>'
             f'<span>{html.escape(q.question)}</span>'
             f'<span class="dc-oq-row__owner">{html.escape(q.owner)}</span>'
             f'</div>'
         )
-    return (
-        f'<div style="background:{P["panel"]};border:1px solid '
-        f'{P["border"]};border-radius:4px;padding:16px 20px;'
-        f'margin-bottom:18px;">'
-        f'<div class="dc-eyebrow">Open questions for IC '
-        f'({len(qs)})</div>'
-        f'<div style="font-size:11.5px;color:{P["text_dim"]};'
-        f'margin-top:4px;line-height:1.55;max-width:880px;">'
-        f'Every P0/P1 item that remains OPEN or BLOCKED. This list '
-        f'is what the IC Packet "Open Questions" section prints — '
-        f'close the loop on each before the memo ships.</div>'
-        f'<div style="margin-top:12px;">{"".join(rows)}</div>'
-        f'</div>'
+    return ck_panel(
+        '<p class="ck-section-body">'
+        'Every P0/P1 item that remains OPEN or BLOCKED. This list '
+        'is what the IC Packet "Open Questions" section prints — '
+        'close the loop on each before the memo ships.</p>'
+        f'{"".join(rows)}',
+        title=f"Open questions for IC ({len(qs)})",
     )
 
 
@@ -560,19 +597,45 @@ def render_diligence_checklist_page(
             "auto-tracked from live analytics"
         ),
     )
+    # Sticky right-rail TOC — the checklist has three vertical
+    # sections (the hero + open questions, the phase-grouped item
+    # list, and the flat sortable table). Partners come back to a
+    # specific phase mid-diligence; the TOC lets them jump.
+    toc = ck_sticky_toc([
+        {"id": "dc-hero",   "title": "Open questions"},
+        {"id": "dc-phases", "title": "Items by phase"},
+        {"id": "dc-flat",   "title": "Flat view · CSV"},
+    ])
     body = (
         _scoped_styles()
         + title
         + '<div class="dc-wrap">'
-        + hero_and_oq
-        + '<div class="dc-section-label">'
-          'Items by phase · click an evidence link to drill in</div>'
+        + '<div class="ck-toc-layout">'
+        + toc
+        + '<div class="ck-toc-content">'
+        + f'<section id="dc-hero">{hero_and_oq}</section>'
+        + '<section id="dc-phases">'
+        + ck_section_header(
+            "Items by phase · click an evidence link to drill in",
+            eyebrow="PHASES",
+        )
         + phase_html
-        + '<div class="dc-section-label">'
-          'Flat view · sortable · filterable · CSV export</div>'
-        + _flat_checklist_table(state)
+        + '</section>'
+        + '<section id="dc-flat">'
+        + ck_panel(
+            _flat_checklist_table(state),
+            title="Flat view · sortable · filterable · CSV export",
+        )
+        + '</section>'
+        + '</div></div>'
         + '</div>'
         + bookmark_hint()
+        + ck_next_section(
+            "Open the deal profile",
+            "/diligence/deal",
+            eyebrow="Continue —",
+            italic_word="deal",
+        )
     )
     return chartis_shell(
         body, "RCM Diligence — Checklist",

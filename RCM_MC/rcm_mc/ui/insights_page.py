@@ -36,17 +36,25 @@ def render_insights_page(db_path: str) -> str:
     )
 
     if not insights:
+        from ._chartis_kit import ck_empty_state, ck_next_section
         body_html = (
-            _wc.web_styles()
-            + _wc.responsive_container(
-                header
-                + _wc.section_card(
-                    "Quiet morning",
-                    '<p>No portfolio-wide signals firing right now. '
-                    'When deals start flagging covenants, alerts pile '
-                    'up, or chain concentration grows, the cards will '
-                    'populate here.</p>',
-                )
+            ck_empty_state(
+                title="Quiet morning.",
+                eyebrow="INSIGHTS",
+                body=(
+                    "No portfolio-wide signals firing right now. "
+                    "When deals start flagging covenants, alerts "
+                    "pile up, or chain concentration grows, the "
+                    "cards will populate here."
+                ),
+                cta_label="Open the Monday brief",
+                cta_href="/day-one",
+            )
+            + ck_next_section(
+                "Open the v3 dashboard for the full data view",
+                "/?v3=1",
+                eyebrow="Continue —",
+                italic_word="data",
             )
         )
         return chartis_shell(body_html, "All insights",
@@ -146,9 +154,17 @@ def render_insights_page(db_path: str) -> str:
         + summary_strip
         + "".join(cards)
     )
+    from ._chartis_kit import ck_next_section
+    next_up = ck_next_section(
+        "Open the day-one Monday brief",
+        "/day-one",
+        eyebrow="Continue —",
+        italic_word="day",
+    )
     body = (
         _wc.web_styles()
         + _wc.responsive_container(inner)
+        + next_up
     )
     return chartis_shell(
         body, "All insights", active_nav="/insights",

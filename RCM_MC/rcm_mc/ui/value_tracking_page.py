@@ -10,7 +10,8 @@ import html as _html
 from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_num, ck_fmt_pct, ck_kpi_block, ck_provenance_tooltip,
+    chartis_shell, ck_fmt_num, ck_fmt_pct, ck_kpi_block,
+    ck_next_section, ck_provenance_tooltip,
 )
 from ._glossary_link import metric_label_link
 from ._provenance_tooltip import provenance_tooltip
@@ -115,13 +116,46 @@ def render_value_tracker(
     )
     kpis = (
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
-        + ck_kpi_block("Planned Uplift", _fm(total_planned), "underwriting target")
+        + ck_kpi_block(
+            "Planned Uplift", _fm(total_planned), "underwriting target",
+            help={
+                "definition": (
+                    "Aggregate annualized EBITDA the value-creation "
+                    "plan underwrote at close — sum across every "
+                    "RCM lever (rate, denial, AR, contract terms, "
+                    "labor, supply). Becomes the denominator for "
+                    "realization tracking."
+                ),
+            },
+        )
         + ck_kpi_block("Realized", f'<span style="color:{real_color};">{_fm(total_realized)}</span>',
                        "actual EBITDA")
-        + ck_kpi_block("Realization", realization_value, "% of plan")
+        + ck_kpi_block(
+            "Realization", realization_value, "% of plan",
+            help={
+                "definition": (
+                    "Realized ÷ planned uplift. Above 100% means the "
+                    "team beat underwriting; below 70% at year 3 is "
+                    "an LP-update talking point. Plot the trajectory "
+                    "via the quarterly scorecard below."
+                ),
+            },
+        )
         + ck_kpi_block("Quarters Tracked", ck_fmt_num(quarters), "of hold")
-        + ck_kpi_block("Levers On Track", ck_fmt_num(summary.on_track_count if summary else 0),
-                       "ahead/on plan")
+        + ck_kpi_block(
+            "Levers On Track", ck_fmt_num(summary.on_track_count if summary else 0),
+            "ahead/on plan",
+            help={
+                "definition": (
+                    "Count of value-creation levers currently "
+                    "tracking ahead or on the underwriting curve. "
+                    "Healthier than realization alone — a deal "
+                    "could be 'on plan' aggregate but with 1 lever "
+                    "carrying 3 underperforming ones (high "
+                    "concentration risk on the hold)."
+                ),
+            },
+        )
         + '</div>'
     )
 
@@ -277,7 +311,13 @@ def render_value_tracker(
         f'</div>'
     )
 
-    body = f'{kpis}{ramp_banner}{lever_table}{entry_form}{plan_section}{nav}'
+    next_up = ck_next_section(
+        "Open the EBITDA bridge",
+        f"/ebitda-bridge/{ccn}",
+        eyebrow="Continue —",
+        italic_word="bridge",
+    )
+    body = f'{kpis}{ramp_banner}{lever_table}{entry_form}{plan_section}{nav}{next_up}'
 
     return chartis_shell(
         body,
