@@ -224,9 +224,42 @@ def render_sensitivity_page(
     )
     kpi_strip = (
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
-        + ck_kpi_block("Grid Cells", cells_value, "(hold x mult)")
-        + ck_kpi_block("Entry EBITDA", eb_value, "anchor")
-        + ck_kpi_block("Planned Uplift", f"${params.planned_uplift/1e6:.1f}M", "over hold")
+        + ck_kpi_block(
+            "Grid Cells", cells_value, "(hold x mult)",
+            help={
+                "definition": (
+                    "Hold-period × exit-multiple combinations being "
+                    "swept. Denser grids surface non-linearities (e.g. "
+                    "MOIC degrades faster past year 6) that a "
+                    "single-point check misses; sparse grids are "
+                    "faster but blur the boundaries."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Entry EBITDA", eb_value, "anchor",
+            help={
+                "definition": (
+                    "EBITDA at close — the multiplier that turns "
+                    "lever-driven margin gains into enterprise-value "
+                    "shifts at each exit-multiple. Sensitivity is "
+                    "linear in entry EBITDA; double the anchor, "
+                    "double every cell's $ outcome."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Planned Uplift", f"${params.planned_uplift/1e6:.1f}M", "over hold",
+            help={
+                "definition": (
+                    "Cumulative EBITDA the value-creation plan "
+                    "underwrites across the hold. Each cell shows "
+                    "what % of this uplift would be needed to clear "
+                    "the IRR target at that hold/multiple combo — "
+                    "the sensitivity is the partner's reality check."
+                ),
+            },
+        )
         + '</div>'
     )
 

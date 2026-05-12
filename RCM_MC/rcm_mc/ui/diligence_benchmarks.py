@@ -521,6 +521,16 @@ def _cash_waterfall_section(report: Optional[CashWaterfallReport]) -> str:
                 f'{len(mature)} mature cohort(s)'
                 + (f", {len(censored)} in-flight" if censored else "")
             ),
+            help={
+                "definition": (
+                    "Realized cash ÷ gross charges across mature "
+                    "claim cohorts. The single number that summarizes "
+                    "RCM performance — what % of what the hospital "
+                    "billed actually became cash. PE healthcare median "
+                    "is ~92-95%; below 88% flags structural RCM issues."
+                ),
+                "citation": "HFMA MAP Key 2021",
+            },
         )
         + '</div>'
     )
