@@ -31,13 +31,30 @@ jobs:
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
+          # Pass the workflow's auto-issued token through so the VM's
+          # git pull doesn't depend on any persistent credential on
+          # the box. Bypass any interactive credential prompt — there's
+          # no TTY on an SSH-piped heredoc and the deploy will hang
+          # otherwise (saw this fire as "could not read Username for
+          # 'https://github.com'" on PR-26's first deploy attempt).
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          ssh -o StrictHostKeyChecking=no -T "$SSH_USER@$SSH_HOST" << 'REMOTE_EOF'
+          ssh -o StrictHostKeyChecking=no -T \
+              "$SSH_USER@$SSH_HOST" \
+              "GH_TOKEN='$GH_TOKEN' GH_REPO='$GH_REPO' bash -s" << 'REMOTE_EOF'
           set -euo pipefail
+          export GIT_TERMINAL_PROMPT=0
           echo "==> Pulling latest code"
           cd /opt/rcm-mc
-          sudo git fetch origin main
+          # Rewrite the remote to embed the short-lived workflow token,
+          # then immediately scrub it back to the public URL so the
+          # token doesn't linger in .git/config between deploys.
+          sudo git remote set-url origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git"
+          sudo -E git fetch origin main
           sudo git reset --hard origin/main
+          sudo git remote set-url origin "https://github.com/${GH_REPO}.git"
           echo "==> Rebuilding containers (profile=tls)"
           cd RCM_MC/deploy
           sudo DOMAIN=pedesk.app docker compose --profile tls up -d --build
