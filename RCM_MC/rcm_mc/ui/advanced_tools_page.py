@@ -35,9 +35,43 @@ def render_debt_model(deal_id: str, deal_name: str, debt: Dict[str, Any]) -> str
     )
     kpis = (
         '<div class="ck-kpi-strip">'
-        + ck_kpi_block("Entry Leverage", f"{entry_leverage:.1f}x")
-        + ck_kpi_block("Exit Leverage", f"{exit_leverage:.1f}x")
-        + ck_kpi_block("Total Debt at Entry", f"${total_debt/1e6:.0f}M")
+        + ck_kpi_block(
+            "Entry Leverage", f"{entry_leverage:.1f}x",
+            help={
+                "definition": (
+                    "Total debt ÷ EBITDA at acquisition close. PE "
+                    "healthcare deals cluster at 5.5-6.5x; above 7x "
+                    "signals an aggressive capital structure that "
+                    "needs strong deleveraging or EBITDA growth to "
+                    "clear covenants."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Exit Leverage", f"{exit_leverage:.1f}x",
+            help={
+                "definition": (
+                    "Modeled debt-to-EBITDA at exit. Entry → Exit "
+                    "gap is the deleveraging story. A 2-turn drop "
+                    "(6.0x → 4.0x) over a 5-year hold is the typical "
+                    "PE healthcare path; less = the deal leans more "
+                    "on multiple expansion than operational delevering."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Total Debt at Entry", f"${total_debt/1e6:.0f}M",
+            help={
+                "definition": (
+                    "Aggregate debt across senior, second-lien, and "
+                    "mezz tranches at close. Determines the equity "
+                    "check size given an enterprise value — and "
+                    "determines covenant covenants. Compare against "
+                    "the deal's annual EBITDA × 6.5 for a quick "
+                    "leverage-headroom read."
+                ),
+            },
+        )
         + '</div>'
     )
 
@@ -121,8 +155,32 @@ def render_challenge_solver(deal_id: str, deal_name: str, result: Dict[str, Any]
     )
     kpis = (
         '<div class="ck-kpi-strip">'
-        + ck_kpi_block("Target EBITDA Drag", f"${abs(float(target))/1e6:.1f}M")
-        + ck_kpi_block("Assumption Sets Found", f"{len(solutions)}")
+        + ck_kpi_block(
+            "Target EBITDA Drag", f"${abs(float(target))/1e6:.1f}M",
+            help={
+                "definition": (
+                    "EBITDA drag level the challenge solver was asked "
+                    "to reverse-engineer. The solver finds combinations "
+                    "of input assumptions that would produce this "
+                    "specific outcome — used to surface the 'what "
+                    "breaks the deal?' scenarios partners want to "
+                    "stress-test at IC."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Assumption Sets Found", f"{len(solutions)}",
+            help={
+                "definition": (
+                    "Distinct assumption combinations that produce "
+                    "the target outcome. Few sets = the failure mode "
+                    "has a narrow trigger (one or two inputs); many "
+                    "sets = the deal is broadly fragile and many "
+                    "things could go wrong at once. The latter is "
+                    "the harder bear case to refute."
+                ),
+            },
+        )
         + '</div>'
     )
 
@@ -289,8 +347,33 @@ def render_trend_forecast(deal_id: str, deal_name: str, trends: List[Dict[str, A
     kpis = (
         '<div class="ck-kpi-strip">'
         + ck_kpi_block("Metrics Tracked", f"{len(trends)}")
-        + ck_kpi_block("Improving", f"{improving}")
-        + ck_kpi_block("Declining", f"{declining}")
+        + ck_kpi_block(
+            "Improving", f"{improving}",
+            help={
+                "definition": (
+                    "Metrics with positive slope across the most-"
+                    "recent four quarters. The 'winds at our back' "
+                    "set — if improving outnumbers declining 2:1, "
+                    "the operating team is executing; 1:1 = mixed "
+                    "performance; declining-dominant = a turnaround "
+                    "story the partner is still mid-execution."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Declining", f"{declining}",
+            help={
+                "definition": (
+                    "Metrics with negative slope across the most-"
+                    "recent four quarters. Watch the table below for "
+                    "which specific KPIs are dragging — a few "
+                    "concentrated declines (say, denial rate + AR "
+                    "days) signal a fixable RCM issue, while broad "
+                    "declines across margin + volume + payer mix "
+                    "signal structural sector exposure."
+                ),
+            },
+        )
         + '</div>'
     )
 
