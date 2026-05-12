@@ -500,6 +500,45 @@ def ck_signal_badge(text: str, *, tone: str = "neutral") -> str:
     return f'<span class="ck-badge tone-{tone}">{_esc(text)}</span>'
 
 
+def ck_confidence_band(
+    point: str,
+    lo: Optional[str] = None,
+    hi: Optional[str] = None,
+    *,
+    label: str = "P10–P90",
+    low_confidence: bool = False,
+) -> str:
+    """Editorial confidence-band render for predictive outputs.
+
+    Shape: ``2.5x [1.8x – 3.2x P10–P90]`` — the point estimate in
+    headline weight, the band in muted mono with a label naming the
+    interval shape (P10-P90, 95% CI, ±1σ, etc.).
+
+    When ``low_confidence=True`` (e.g. AUC < 0.70, n < 20 calibration
+    samples, or wide band relative to point), the band renders in
+    warning tone to flag that the partner should verify externally
+    before relying on the headline number.
+
+    Both ``lo`` and ``hi`` must be pre-formatted strings (the caller
+    knows the units — $M, x, %, days, etc.). Pass ``None`` for either
+    bound to render only the point with no bracket.
+    """
+    if lo is None or hi is None:
+        return f'<span class="ck-conf">{_esc(point)}</span>'
+    tone = "warning" if low_confidence else "neutral"
+    return (
+        f'<span class="ck-conf tone-{tone}">'
+        f'{_esc(point)}'
+        f' <span class="ck-conf-band" style="font-family:var(--sc-mono,monospace);'
+        f'font-size:0.85em;color:var(--sc-text-faint,#6e7787);'
+        f'letter-spacing:0.02em;font-weight:400;">'
+        f'[{_esc(lo)} – {_esc(hi)} <span class="ck-conf-label" '
+        f'style="font-size:0.85em;letter-spacing:0.06em;'
+        f'text-transform:uppercase;">{_esc(label)}</span>]'
+        f'</span></span>'
+    )
+
+
 def ck_sticky_toc(
     sections: Sequence[Mapping[str, str]],
     *,

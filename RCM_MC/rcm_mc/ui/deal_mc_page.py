@@ -26,8 +26,8 @@ from ..diligence.deal_mc.charts import (
     sensitivity_tornado,
 )
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
-    ck_panel, ck_section_intro,
+    P, chartis_shell, ck_confidence_band, ck_kpi_block,
+    ck_next_section, ck_page_title, ck_panel, ck_section_intro,
 )
 from .power_ui import deal_context_bar, provenance
 
@@ -181,12 +181,20 @@ def _hero_stats(result: DealMCResult, scenario_name: str) -> str:
         + ck_kpi_block(
             "P50 MOIC", f"{result.moic_p50:.2f}x",
             sub="fund target 2.50× · peer median 2.20×",
+            chart=ck_confidence_band(
+                f"{result.moic_p50:.2f}x",
+                f"{result.moic_p25:.2f}x",
+                f"{result.moic_p75:.2f}x",
+                label="P25–P75",
+            ),
             help={
                 "definition": (
                     "Median multiple on invested capital across "
-                    "the Monte Carlo cone. The base case partners "
-                    "carry into IC. Fund targets typically 2.50×; "
-                    "peer median across healthcare PE deals 2.20×."
+                    "the Monte Carlo cone, shown alongside the "
+                    "P25–P75 band so the cone width is visible at "
+                    "the headline. Cone narrower than 1.0× = tight "
+                    "thesis; wider than 2.0× = thesis sensitive to "
+                    "execution. Fund targets typically 2.50×."
                 ),
             },
         )
@@ -204,12 +212,20 @@ def _hero_stats(result: DealMCResult, scenario_name: str) -> str:
         + ck_kpi_block(
             "P50 IRR", f"{result.irr_p50*100:.1f}%",
             sub="fund target 25% · hurdle 18%",
+            chart=ck_confidence_band(
+                f"{result.irr_p50*100:.1f}%",
+                f"{result.irr_p25*100:.1f}%",
+                f"{result.irr_p75*100:.1f}%",
+                label="P25–P75",
+            ),
             help={
                 "definition": (
-                    "Median internal rate of return across the cone. "
-                    "Hurdle (18%) is the LPs' floor; fund target "
-                    "(25%) is the GP's promise. Below hurdle the "
-                    "deal can't carry; above target it's a winner."
+                    "Median internal rate of return across the cone, "
+                    "with the P25–P75 band shown inline so the cone "
+                    "width is visible. Hurdle (18%) is the LPs' "
+                    "floor; fund target (25%) is the GP's promise. "
+                    "Below hurdle the deal can't carry; above target "
+                    "it's a winner."
                 ),
             },
         )
