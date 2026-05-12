@@ -245,30 +245,126 @@ def _headline_grid(report: ThesisPipelineReport) -> str:
     )
     return (
         '<div class="ck-kpi-strip">'
-        + ck_kpi_block("P50 MOIC", moic_num, sub="3000 trials · pipeline-driven")
-        + ck_kpi_block("P(MOIC < 1x)", downside_num, sub="capital-loss probability")
+        + ck_kpi_block(
+            "P50 MOIC", moic_num, sub="3000 trials · pipeline-driven",
+            help={
+                "definition": (
+                    "Median MOIC across 3000 Monte Carlo trials seeded "
+                    "by the 13-step pipeline. Read alongside P(MOIC<1x) "
+                    "below — same median can hide very different "
+                    "tail-risk profiles. Above 2.5x median signals "
+                    "a deal worth IC time."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "P(MOIC < 1x)", downside_num, sub="capital-loss probability",
+            help={
+                "definition": (
+                    "Probability the deal returns less than the LP's "
+                    "original equity check. Below 5% = robust; "
+                    "5-15% = expected for PE healthcare; >25% = the "
+                    "downside profile dominates and IC will dig hard."
+                ),
+            },
+        )
         + ck_kpi_block(
             "Top variance driver",
             html.escape(report.top_variance_driver or "—"),
             sub="stress-test first",
+            help={
+                "definition": (
+                    "Input lever contributing the most variance to the "
+                    "MOIC distribution. Stress this one first in IC — "
+                    "if the top driver is something the sponsor can "
+                    "credibly hedge (rate, denial), the deal narrows; "
+                    "if it's structural (payer mix, regulation), the "
+                    "deal carries unhedgeable risk."
+                ),
+            },
         )
         + ck_kpi_block(
             "Historical analogue",
             html.escape(report.top_autopsy_match or "—") + sim_pct,
             sub="signature match",
+            help={
+                "definition": (
+                    "Closest realized deal in the corpus by profile "
+                    "signature (sector, size, payer mix, capital "
+                    "structure). Use the analogue's actual exit "
+                    "outcome as a reality check on the underwriting — "
+                    "if the analogue lost money, ask why this deal "
+                    "won't."
+                ),
+            },
         )
-        + ck_kpi_block("Denial recoverable", denial_num, sub="audit + appeal opportunity")
-        + ck_kpi_block("Attrition EBITDA @ risk", attr_num, sub="PPAM 18-month horizon")
-        + ck_kpi_block("Counterfactual lever", cf_num, sub="largest offer-shape fix")
+        + ck_kpi_block(
+            "Denial recoverable", denial_num,
+            sub="audit + appeal opportunity",
+            help={
+                "definition": (
+                    "Annual EBITDA recoverable if the denial-driver "
+                    "model's flags become appeals. 60-80% realism "
+                    "haircut is already baked in; treat as upper "
+                    "bound of RCM-only uplift."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Attrition EBITDA @ risk", attr_num,
+            sub="PPAM 18-month horizon",
+            help={
+                "definition": (
+                    "EBITDA at risk if predicted-physician-attrition "
+                    "(PPAM) flags become actual departures over the "
+                    "next 18 months. The metric to watch when the "
+                    "deal's economics depend on a small set of "
+                    "named providers."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Counterfactual lever", cf_num,
+            sub="largest offer-shape fix",
+            help={
+                "definition": (
+                    "Largest single lever that would flip the deal's "
+                    "verdict from no to yes — the 'what we're waiting "
+                    "for' input to negotiate on. If the counterfactual "
+                    "is bigger than what's plausibly achievable, the "
+                    "thesis holds without movement."
+                ),
+            },
+        )
         + ck_kpi_block(
             "Bankruptcy verdict",
             html.escape(report.bankruptcy_verdict or "—"),
             sub="12-pattern scan",
+            help={
+                "definition": (
+                    "Output of the 12-pattern bankruptcy-survivor "
+                    "scan. GREEN = no critical pattern matches; "
+                    "YELLOW = patterns flagged for review; "
+                    "RED/CRITICAL = the deal signature matches a "
+                    "documented PE healthcare collapse, so this is "
+                    "the bear case at IC."
+                ),
+            },
         )
         + ck_kpi_block(
             "Steward tier",
             html.escape(report.steward_tier or "—"),
             sub="sale-leaseback risk",
+            help={
+                "definition": (
+                    "Risk tier from the Steward-specific bankruptcy "
+                    "checklist (sale-leaseback dependency, "
+                    "Medical Properties Trust exposure, multi-state "
+                    "complexity). Tier 1 = exhibits multiple Steward "
+                    "structural signals; lower tiers = less "
+                    "Steward-like risk profile."
+                ),
+            },
         )
         + '</div>'
     )
