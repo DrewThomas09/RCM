@@ -256,10 +256,58 @@ def _kpi_summary(stats: List[Dict[str, Any]]) -> str:
         '<div class="ck-kpi-strip">'
         + ck_kpi_block("Total Hospitals (HCRIS)", f"{total_hospitals:,}")
         + ck_kpi_block("Total Licensed Beds", f"{total_beds:,}")
-        + ck_kpi_block("Total Net Patient Revenue", f"${total_rev/1e12:.1f}T")
-        + ck_kpi_block("Avg Operating Margin", f"{avg_margin:.1%}")
-        + ck_kpi_block("Avg State HHI", f"{avg_hhi:,.0f}")
-        + ck_kpi_block("Avg Medicare Mix", f"{avg_medicare:.0%}")
+        + ck_kpi_block(
+            "Total Net Patient Revenue", f"${total_rev/1e12:.1f}T",
+            help={
+                "definition": (
+                    "Aggregate net patient revenue across every "
+                    "HCRIS-filing hospital. Runs ~$1.3T US-wide in a "
+                    "normal year; growth tracks healthcare CPI + "
+                    "utilization shifts. The denominator behind every "
+                    "national margin / DAR / denial benchmark."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Avg Operating Margin", f"{avg_margin:.1%}",
+            help={
+                "definition": (
+                    "Mean operating margin across the credibility-"
+                    "filtered HCRIS universe. Runs ~3-5% — most "
+                    "hospitals don't make money operationally and "
+                    "survive on Medicare DSH / 340B / supplemental "
+                    "payments. PE underwriting needs to clear this "
+                    "operational floor to make economic sense."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Avg State HHI", f"{avg_hhi:,.0f}",
+            help={
+                "definition": (
+                    "Herfindahl-Hirschman Index averaged across "
+                    "states — sum of squared market shares × 10,000. "
+                    "DOJ thresholds: <1,500 = unconcentrated, "
+                    "1,500-2,500 = moderately concentrated, "
+                    ">2,500 = highly concentrated. Most US hospital "
+                    "markets are concentrated (>2,500); regulatory "
+                    "review of bolt-ons gets harder above 3,500."
+                ),
+                "citation": "DOJ Horizontal Merger Guidelines",
+            },
+        )
+        + ck_kpi_block(
+            "Avg Medicare Mix", f"{avg_medicare:.0%}",
+            help={
+                "definition": (
+                    "Share of total inpatient days from Medicare "
+                    "patients. US average ~45%; above 60% = the "
+                    "hospital is structurally exposed to CMS rate "
+                    "decisions; below 30% = unusual (often a "
+                    "specialty platform or pediatric center)."
+                ),
+            },
+        )
         + "</div>"
     )
 

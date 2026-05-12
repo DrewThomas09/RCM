@@ -94,10 +94,58 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
     kpis = (
         f'<div class="ck-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
         + ck_kpi_block("Hospitals Analyzed", ck_fmt_num(n_hospitals), "HCRIS corpus")
-        + ck_kpi_block("Archetypes", ck_fmt_num(n_clusters), "k-means clusters")
-        + ck_kpi_block("High Distress Risk", distress_value, "predicted >threshold")
-        + ck_kpi_block("Distress Model AUC", auc_value, "held-out test")
-        + ck_kpi_block("Median Op Margin", ck_fmt_pct(avg_margin), "credible filings")
+        + ck_kpi_block(
+            "Archetypes", ck_fmt_num(n_clusters), "k-means clusters",
+            help={
+                "definition": (
+                    "Hospitals grouped into structural archetypes by "
+                    "k-means clustering on revenue / margin / payer "
+                    "mix / bed size. Use the archetype to set "
+                    "expectations: a deal in the 'fragile rural' "
+                    "cluster has different risk and exit options than "
+                    "one in the 'urban specialty platform' cluster."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "High Distress Risk", distress_value, "predicted >threshold",
+            help={
+                "definition": (
+                    "Hospitals the distress-prediction model flags as "
+                    "above the alert threshold (typically P{1-yr "
+                    "default} > 5%). Treat as a watch list, not a "
+                    "verdict — false-positive rate on this rare-event "
+                    "model runs ~20-30%, so confirm with operating "
+                    "data before acting."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Distress Model AUC", auc_value, "held-out test",
+            help={
+                "definition": (
+                    "Discriminatory power of the distress predictor on "
+                    "the held-out test set. 0.50 = coin flip; 0.75 = "
+                    "usable for ranking; 0.85+ = strong. Healthcare-"
+                    "specific distress models top out around 0.85-"
+                    "0.90 because the underlying signal is noisy."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Median Op Margin", ck_fmt_pct(avg_margin), "credible filings",
+            help={
+                "definition": (
+                    "Median operating margin across the universe of "
+                    "credibility-filtered HCRIS filings. PE healthcare "
+                    "underwriting target is 7-12% for community "
+                    "hospitals, 15-20% for specialty platforms. The "
+                    "median runs ~3-5% — most hospitals don't make "
+                    "money operationally and survive on Medicare DSH "
+                    "/ supplemental payments."
+                ),
+            },
+        )
         + f'</div>'
     )
 
