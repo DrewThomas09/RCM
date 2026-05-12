@@ -234,8 +234,31 @@ def render_data_refresh_page(db_path: str) -> str:
     )
     kpi_strip = (
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;">'
-        + ck_kpi_block("Sources Tracked", sources_value, "in pipeline")
-        + ck_kpi_block("Refresh Cadence", "1/hr/source", "rate-limited")
+        + ck_kpi_block(
+            "Sources Tracked", sources_value, "in pipeline",
+            help={
+                "definition": (
+                    "Public-data sources the platform pulls from — "
+                    "CMS HCRIS, CMS Care Compare, IRS 990, ACO REACH, "
+                    "FQHC UDS. Each ships with its own freshness "
+                    "threshold (HCRIS quarterly, Care Compare "
+                    "monthly, 990 annual) + a refresh handler."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Refresh Cadence", "1/hr/source", "rate-limited",
+            help={
+                "definition": (
+                    "Per-source rate limit on refresh triggers. "
+                    "Prevents accidental hammering of CMS endpoints "
+                    "(which would 429 the partner) and gives the "
+                    "background job time to finish. Refreshes are "
+                    "queued + run async; trigger one, walk away, "
+                    "the status chip below updates when it lands."
+                ),
+            },
+        )
         + '</div>'
     )
 

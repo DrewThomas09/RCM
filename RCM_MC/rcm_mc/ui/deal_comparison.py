@@ -184,10 +184,58 @@ def render_comparison(packets: List[DealAnalysisPacket]) -> str:
         did = _esc(p.deal_id)
         metrics = (
             '<div class="ck-kpi-strip">'
-            + ck_kpi_block("Denial Rate", _fmt(dr))
-            + ck_kpi_block("AR Days", _fmt(ar))
-            + ck_kpi_block("Risks", str(risk_count))
-            + ck_kpi_block("Grade", grade)
+            + ck_kpi_block(
+                "Denial Rate", _fmt(dr),
+                help={
+                    "definition": (
+                        "Initial-denial rate as a share of total "
+                        "claims. PE healthcare median ~10-12%; above "
+                        "15% signals a structural denial issue (often "
+                        "payer-mix or charge-capture). Below 7% on a "
+                        "claims volume large enough to matter is "
+                        "best-in-class."
+                    ),
+                },
+            )
+            + ck_kpi_block(
+                "AR Days", _fmt(ar),
+                help={
+                    "definition": (
+                        "Days in accounts receivable. PE healthcare "
+                        "median is 45-55 days; above 75 days means "
+                        "cash is sitting on the books instead of in "
+                        "the bank. Below 35 is unusual (either "
+                        "best-in-class or a posting policy that "
+                        "front-loads adjustments)."
+                    ),
+                },
+            )
+            + ck_kpi_block(
+                "Risks", str(risk_count),
+                help={
+                    "definition": (
+                        "Count of risk flags fired by the diligence "
+                        "engines on this packet. Zero is unusual "
+                        "(every deal has something); 3-5 is typical "
+                        "before mitigants; 10+ is a structurally "
+                        "broken deal that should not have made it to "
+                        "this stage."
+                    ),
+                },
+            )
+            + ck_kpi_block(
+                "Grade", grade,
+                help={
+                    "definition": (
+                        "Completeness grade A-F for this deal's "
+                        "underlying data. A = full HCRIS + claims + "
+                        "operating data; D-F = heavy imputation, so "
+                        "downstream numbers carry wider conformal "
+                        "bands. Compare grades when reading two "
+                        "deals — same KPI, different confidence."
+                    ),
+                },
+            )
             + "</div>"
         )
         nav_links = (
