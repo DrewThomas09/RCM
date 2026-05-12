@@ -49,10 +49,57 @@ def render_denial_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -
     )
     kpis = (
         '<div class="ck-kpi-grid">'
-        + ck_kpi_block("Current Denial Rate", current_value, "initial denial rate")
-        + ck_kpi_block("Target Denial Rate", f"{target_rate:.1f}%", "post-uplift goal")
-        + ck_kpi_block("Recoverable Revenue", impact_value, "annual EBITDA")
-        + ck_kpi_block("Root Causes", ck_fmt_num(len(drivers)), "drivers identified")
+        + ck_kpi_block(
+            "Current Denial Rate", current_value, "initial denial rate",
+            help={
+                "definition": (
+                    "Share of submitted claims initially denied by "
+                    "payers before any appeals. The starting line for "
+                    "any RCM uplift — every other lever (clean DAR, "
+                    "final write-off, cash conversion) downstream of "
+                    "denial reduction."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Target Denial Rate", f"{target_rate:.1f}%", "post-uplift goal",
+            help={
+                "definition": (
+                    "Denial rate this hospital should hit post-RCM "
+                    "intervention, based on its peer cohort's P75. "
+                    "The recoverable-revenue figure assumes the "
+                    "hospital reaches this target on a 24-month "
+                    "ramp; aggressive plans front-load to 12 months."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Recoverable Revenue", impact_value, "annual EBITDA",
+            help={
+                "definition": (
+                    "Annual EBITDA recoverable if denial rate moves "
+                    "from current → target. Computed by applying the "
+                    "denial-rate delta to net patient revenue, "
+                    "discounting for appeals that already recover "
+                    "some denied claims. Use this as the upper bound "
+                    "of denial-driver-only RCM uplift."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Root Causes", ck_fmt_num(len(drivers)), "drivers identified",
+            help={
+                "definition": (
+                    "Distinct denial-driver categories (eligibility, "
+                    "authorization, medical-necessity, coding, "
+                    "duplicate claim, etc.) the model identified for "
+                    "this hospital. More drivers = scattered issues "
+                    "needing broad workflow fixes; fewer = a specific "
+                    "structural problem that targeted intervention "
+                    "could solve."
+                ),
+            },
+        )
         + '</div>'
     )
 
