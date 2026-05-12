@@ -19,9 +19,21 @@ from ._chartis_kit import (
     P,
     chartis_shell,
     ck_kpi_block,
-    ck_related_views,
+    ck_next_section,
+    ck_panel,
     ck_section_header,
 )
+
+
+def _related_views(items: List[tuple]) -> str:
+    links = " · ".join(
+        f'<a class="ck-link" href="{_html.escape(u)}">{_html.escape(l)}</a>'
+        for l, u in items
+    )
+    return ck_panel(
+        f'<p class="ck-section-body">{links}</p>',
+        title="Related views",
+    )
 
 
 # Latest Claude model ids as of Anthropic's current lineup. The
@@ -252,7 +264,7 @@ def render_ai_settings(store: Any) -> str:
     )
     kpi_strip = f'<div class="ck-kpi-grid">{kpis}</div>'
 
-    related = ck_related_views([
+    related = _related_views([
         ("Integrations",      "/settings/integrations"),
         ("Automation Rules",  "/settings/automations"),
         ("API Docs",          "/api/docs"),
@@ -270,6 +282,12 @@ def render_ai_settings(store: Any) -> str:
         + ck_section_header("SETUP", "how to connect your key")
         + _setup_instructions()
         + related
+        + ck_next_section(
+            "Back to settings",
+            "/settings",
+            eyebrow="Continue —",
+            italic_word="settings",
+        )
     )
     return chartis_shell(
         body,
