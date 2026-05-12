@@ -181,9 +181,42 @@ def render_scan_landing() -> str:
     )
     kpi_strip = (
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
-        + ck_kpi_block("Patterns", patterns_value, "in screen")
-        + ck_kpi_block("Case Studies", case_studies_value, "named precedents")
-        + ck_kpi_block("Severity Tiers", "3", "critical / high / med")
+        + ck_kpi_block(
+            "Patterns", patterns_value, "in screen",
+            help={
+                "definition": (
+                    "Twelve falsifiable structural patterns drawn from "
+                    "PE-healthcare bankruptcy precedents (Steward, "
+                    "Envision, Mednax). Each pattern is a specific "
+                    "claim a partner can either confirm or rule out — "
+                    "not a vague risk theme."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Case Studies", case_studies_value, "named precedents",
+            help={
+                "definition": (
+                    "Documented PE-healthcare collapses the screen "
+                    "tests against. Each case ships with its dated "
+                    "trigger events, sponsor identity, and what the "
+                    "early-warning structural signal was so the "
+                    "partner can pattern-match the target deal."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Severity Tiers", "3", "critical / high / med",
+            help={
+                "definition": (
+                    "How findings are ranked. CRITICAL = thesis-killing "
+                    "on its own (covenant default at Y1, payer "
+                    "concentration > 70%). HIGH = IC-level discussion "
+                    "with mitigants. MEDIUM = name in memo but doesn't "
+                    "block the deal."
+                ),
+            },
+        )
         + '</div>'
     )
     body = (
