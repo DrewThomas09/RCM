@@ -36,8 +36,9 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Run go-live test subset
-        # Targeted subset (~160 tests, ~20s) covering smoke, auth, exports,
-        # resilience, full pipeline, and the README link checker. Full suite
+        # Targeted subset (~175 tests, ~20s) covering smoke, auth, exports,
+        # resilience, full pipeline, the README link checker, and the
+        # NPPES provider directory (14 tests; HTTP mocked). Full suite
         # is large; run via `pytest tests/` locally before tagging a release.
         run: |
           pytest \
@@ -53,7 +54,8 @@ jobs:
             tests/test_csrf.py \
             tests/test_portfolio.py \
             tests/test_alerts.py \
-            tests/test_health_score.py
+            tests/test_health_score.py \
+            tests/test_nppes_api_client.py
 
       - name: Smoke-test server boot + /health
         run: |
