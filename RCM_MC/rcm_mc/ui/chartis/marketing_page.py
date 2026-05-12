@@ -133,7 +133,7 @@ def _hero() -> str:
             "6,024 HCRIS hospitals and thousands of regression tests.")
         + '<div style="height:36px;"></div>'
         + '<div style="display:flex;gap:16px;align-items:center;">'
-        + _cta_primary("/home", "Open Platform")
+        + _cta_primary("/login?next=/app", "Open Platform")
         + _cta_ghost("/methodology", "Methodology")
         + '</div>'
         + '</div>'
@@ -360,7 +360,7 @@ def _cta_strip() -> str:
         + '</div>'
         '<div style="display:flex;flex-direction:column;gap:14px;'
         'align-items:flex-start;">'
-        + _cta_primary("/home", "Open Platform")
+        + _cta_primary("/login?next=/app", "Open Platform")
         + _cta_ghost("/library", "Browse Library", on_navy=True)
         + '</div>'
         '</div></div></section>'
@@ -421,7 +421,7 @@ def _marketing_topnav() -> str:
         '<a href="/methodology" style="font-family:\"Inter Tight\", -apple-system, sans-serif;'
         'font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;'
         'color:#a5b4ca;text-decoration:none;">Methodology</a>'
-        '<a href="/home" style="font-family:\"Inter Tight\", -apple-system, sans-serif;'
+        '<a href="/login?next=/app" style="font-family:\"Inter Tight\", -apple-system, sans-serif;'
         'font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;'
         'color:#0b2341;background:#2fb3ad;'
         'padding:10px 18px;border-radius:2px;text-decoration:none;'
