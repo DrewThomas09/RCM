@@ -57,8 +57,28 @@ def render_waterfall_page(deal_id: str, deal_name: str, result: Dict[str, Any]) 
     )
     kpis = (
         '<div class="ck-kpi-grid">'
-        + ck_kpi_block("Gross IRR", irr_value, "before fees")
-        + ck_kpi_block("Gross MOIC", moic_value, "before fees")
+        + ck_kpi_block(
+            "Gross IRR", irr_value, "before fees",
+            help={
+                "definition": (
+                    "Deal-level IRR before management fees and carry "
+                    "are deducted. The 'before fees' read; LP IRR will "
+                    "be 200-400 bps lower depending on fee structure "
+                    "and carry waterfall mechanics."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Gross MOIC", moic_value, "before fees",
+            help={
+                "definition": (
+                    "Multiple on invested capital before fees + carry. "
+                    "Gross 3.0x typically becomes LP-net 2.4-2.6x "
+                    "after a standard 2-and-20 fee structure across a "
+                    "5-year hold."
+                ),
+            },
+        )
         + ck_kpi_block("Invested", f"${invested/1e6:.0f}M", "equity check")
         + ck_kpi_block("Exit Proceeds", f"${exit_proceeds/1e6:.0f}M", "total return")
         + ck_kpi_block("Hold Period", f"{hold_years:.1f}yr", "exit year - entry")

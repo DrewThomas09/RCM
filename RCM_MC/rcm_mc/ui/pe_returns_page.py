@@ -53,12 +53,66 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
     )
     kpis = (
         '<div class="ck-kpi-grid">'
-        + ck_kpi_block("IRR", irr_value, "to equity")
-        + ck_kpi_block("MOIC", moic_value, "exit/entry")
-        + ck_kpi_block("Entry Equity", f"${entry_eq/1e6:.0f}M", "LP check")
+        + ck_kpi_block(
+            "IRR", irr_value, "to equity",
+            help={
+                "definition": (
+                    "Internal rate of return on the LP equity check. "
+                    "The 20% hurdle is the conventional PE healthcare "
+                    "underwriting target; below 15% is below-par for "
+                    "the sector and risks LP push-back on the next "
+                    "fund raise."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "MOIC", moic_value, "exit/entry",
+            help={
+                "definition": (
+                    "Multiple on invested capital — exit proceeds plus "
+                    "interim distributions divided by entry equity. "
+                    "Less hold-period-sensitive than IRR; 2.5x in 5 "
+                    "years and 2.5x in 7 years tell different IRR "
+                    "stories but the same dollar-return story."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Entry Equity", f"${entry_eq/1e6:.0f}M", "LP check",
+            help={
+                "definition": (
+                    "Total equity the LPs put up at close, after debt "
+                    "financing. This is the denominator for both IRR "
+                    "and MOIC — bigger entry checks need bigger exit "
+                    "proceeds to hit the same multiple."
+                ),
+            },
+        )
         + ck_kpi_block("Exit Proceeds", f"${exit_proc/1e6:.0f}M", "terminal")
-        + ck_kpi_block("Total Distributions", f"${total_dist/1e6:.0f}M", "interim + exit")
-        + ck_kpi_block("Hold Period", f"{hold:.1f}yr", "exit - entry")
+        + ck_kpi_block(
+            "Total Distributions", f"${total_dist/1e6:.0f}M", "interim + exit",
+            help={
+                "definition": (
+                    "All cash returned to LPs over the hold — exit "
+                    "proceeds plus any interim dividends, recaps, or "
+                    "tax distributions. Used for IRR/MOIC calc; "
+                    "interim distributions front-load the cash flow "
+                    "and lift IRR vs. a back-loaded exit."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Hold Period", f"{hold:.1f}yr", "exit - entry",
+            help={
+                "definition": (
+                    "Years from acquisition close to exit. PE "
+                    "healthcare median is 5–6 years; below 4 is a "
+                    "quick flip (often distressed or strategic "
+                    "premium); above 7 typically means the thesis "
+                    "took longer than planned."
+                ),
+            },
+        )
         + '</div>'
     )
 
