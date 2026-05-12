@@ -259,7 +259,7 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
 
     next_up = ck_next_section(
         "Open the feature importance view",
-        "/feature-importance",
+        "/models/importance",
         eyebrow="Continue —",
         italic_word="feature",
     )

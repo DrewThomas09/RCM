@@ -264,7 +264,7 @@ def render_data_dashboard(hcris_df: pd.DataFrame) -> str:
 
     next_up = ck_next_section(
         "Refresh the public-data loaders",
-        "/data-refresh",
+        "/data/refresh",
         eyebrow="Continue —",
         italic_word="refresh",
     )

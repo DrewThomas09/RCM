@@ -241,7 +241,7 @@ def render_data_catalog_page(store: Any) -> str:
         + '</section>'
         + ck_next_section(
             "Refresh the public-data loaders",
-            "/data-refresh",
+            "/data/refresh",
             eyebrow="Continue —",
             italic_word="loaders",
         )
