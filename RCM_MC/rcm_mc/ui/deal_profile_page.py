@@ -101,6 +101,27 @@ _FIELDS = [
 ]
 
 
+# Per-field format hints. Render below the input in muted mono so a
+# partner can see the expected value shape at a glance. Skip fields
+# where the placeholder already self-documents.
+_FIELD_HINTS: Dict[str, str] = {
+    "specialty": "ALL_CAPS_WITH_UNDERSCORES (matches the registry).",
+    "states": "Two-letter codes, comma-separated.",
+    "cbsa_codes": "5-digit CBSA codes, comma-separated.",
+    "lease_term_years": "Integer years remaining on the lease.",
+    "lease_escalator_pct": "As decimal (0.035 = 3.5%/yr).",
+    "ebitdar_coverage": "EBITDAR ÷ rent. >1.5x healthy, <1.2x tight.",
+    "annual_rent_usd": "USD, no commas. e.g. 15000000.",
+    "portfolio_ebitdar_usd": "USD, no commas.",
+    "revenue_usd": "USD net patient revenue, no commas.",
+    "ebitda_usd": "USD trailing twelve months, no commas.",
+    "enterprise_value_usd": "USD, no commas. Equity + debt at close.",
+    "equity_usd": "USD LP equity check at close.",
+    "debt_usd": "USD total debt across senior + 2nd-lien + mezz.",
+    "entry_multiple": "EV ÷ TTM EBITDA. PE healthcare typical 9-11x.",
+}
+
+
 # Analytics to launch from the profile. Each entry: (label,
 # href_template, param_mapping, description).
 # The href_template may contain %KEY% placeholders the renderer
@@ -1029,10 +1050,18 @@ def _render_form(slug: str, seed_values: Dict[str, str]) -> str:
                 f'placeholder="{html.escape(placeholder, quote=True)}" '
                 f'value="{seeded}" class="ck-dp-input">'
             )
+        hint_text = _FIELD_HINTS.get(key, "")
+        hint_html = (
+            f'<div class="ck-dp-field-hint" style="font-family:var(--cad-mono,monospace);'
+            f'font-size:10px;color:var(--cad-text-faint,#9aa3ad);letter-spacing:0.03em;'
+            f'margin-top:3px;">{html.escape(hint_text)}</div>'
+            if hint_text else ""
+        )
         fields_html.append(
             '<div class="ck-dp-field">'
             f'<label class="ck-dp-field-label">{html.escape(label)}</label>'
             f'{input_html}'
+            f'{hint_html}'
             f'<div class="ck-dp-field-chips">{chips}</div>'
             '</div>'
         )
