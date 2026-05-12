@@ -954,13 +954,17 @@ def render_ebitda_bridge(
         rcm_this = total_uplift * ramp_pct
         cum_rcm = rcm_this  # annual run-rate, not cumulative
         total_yr = entry_ebitda * (1 + organic_growth) ** yr + rcm_this
+        margin_cell = (
+            f'<td class="num">{total_yr / rev:.1%}</td>' if rev
+            else '<td class="num">—</td>'
+        )
         year_rows += (
             f'<tr>'
             f'<td class="num">Year {yr}</td>'
             f'<td class="num">{_fm(entry_ebitda * (1 + organic_growth) ** yr)}</td>'
             f'<td class="num" style="color:var(--cad-pos);">+{_fm(rcm_this)}</td>'
             f'<td class="num" style="font-weight:600;">{_fm(total_yr)}</td>'
-            f'<td class="num">{total_yr / rev:.1%}</td>'
+            f'{margin_cell}'
             f'</tr>'
         )
 
@@ -974,6 +978,10 @@ def render_ebitda_bridge(
     vc_rcm = total_uplift * 10
     vc_multiple = exit_ebitda_5y * 1  # 1 turn expansion
 
+    entry_margin_cell = (
+        f'<td class="num">{entry_ebitda / rev:.1%}</td>' if rev
+        else '<td class="num">—</td>'
+    )
     value_inner = (
         '<p class="ck-section-body">'
         'EBITDA trajectory: 3% organic growth + RCM uplift ramp (full run-rate at month 18).</p>'
@@ -984,7 +992,7 @@ def render_ebitda_bridge(
         f'<td class="num">{_fm(entry_ebitda)}</td>'
         '<td class="num">—</td>'
         f'<td class="num">{_fm(entry_ebitda)}</td>'
-        f'<td class="num">{entry_ebitda / rev:.1%}</td></tr>'
+        f'{entry_margin_cell}</tr>'
         f'{year_rows}'
         '</tbody></table>'
         + '<div class="ck-kpi-strip">'
