@@ -420,9 +420,21 @@ def render_comparable_outcomes_page(
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
         + ck_kpi_block("Comparables", comp_value, "matched")
         + ck_kpi_block("Comp P50 MOIC", moic_value, "median realized")
-        + ck_kpi_block("Win Rate (2.5x+)",
-                       f"{win_rate*100:.0f}%" if win_rate else "—",
-                       "share above 2.5x")
+        + ck_kpi_block(
+            "Win Rate (2.5x+)",
+            f"{win_rate*100:.0f}%" if win_rate else "—",
+            "share above 2.5x",
+            help={
+                "definition": (
+                    "Share of matched comparable deals that returned "
+                    "≥ 2.5x MOIC. 2.5x is the conventional PE "
+                    "healthcare 'good outcome' threshold; below 30% "
+                    "win-rate in your comp set signals a sector "
+                    "where strong outcomes are tail events, not the "
+                    "expected case."
+                ),
+            },
+        )
         + '</div>'
     )
 
