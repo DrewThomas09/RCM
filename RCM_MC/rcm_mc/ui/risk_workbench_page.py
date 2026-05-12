@@ -1182,7 +1182,11 @@ font-size:11px;margin:2px 0;align-items:baseline;}}
 """
 
 
-def render_risk_workbench(inp: WorkbenchInput) -> str:
+def render_risk_workbench(
+    inp: WorkbenchInput,
+    *,
+    print_preview: bool = False,
+) -> str:
     hero = _RW_CSS + ck_section_intro(
         eyebrow="Regulatory Risk Workbench",
         headline=f"{html.escape(inp.target_name)} — nine-panel risk panorama.",
@@ -1227,31 +1231,13 @@ def render_risk_workbench(inp: WorkbenchInput) -> str:
         )
         + '</div>'
     )
-    body = (
-        ck_page_title(
-            "Risk Workbench",
-            eyebrow="RCM DILIGENCE",
-            meta="9-panel risk panorama · counterfactual advisor below",
-        )
-        + hero
-        + summary_strip
-        + ck_section_header(
-            "Tier 1-3 diligence panels",
-            eyebrow="LIVE ENGINES",
-        )
-        + (
-            '<p class="ck-section-body" style="margin-top:-8px;'
-            'margin-bottom:12px;font-style:italic;'
-            'color:var(--sc-text-faint,#6e7787);font-size:12px;">'
-            'Tier 1 — existential risks that kill deals at IC '
-            '(bankruptcy, covenants, payer concentration). '
-            'Tier 2 — material risks that erode EBITDA (physician '
-            'attrition, denial rate, regulatory). '
-            'Tier 3 — slow-burn risks that surface in year three '
-            '(management bench, IT debt, integration drag).'
-            '</p>'
-        )
-        + '<div class="rw-grid-2col">'
+    # Phase OOO: print-preview affordance — partners use this page
+    # as their canonical "what could go wrong" review in IC. ?print=1
+    # hides chrome (page title, section header tier-1/2/3 intro,
+    # counterfactual section, Up-next) and just shows hero +
+    # summary strip + the 9 panel grid.
+    panels = (
+        '<div class="rw-grid-2col">'
         + _panel_bankruptcy_survivor(inp)
         + _panel_regulatory(inp)
         + _panel_real_estate(inp)
@@ -1262,14 +1248,62 @@ def render_risk_workbench(inp: WorkbenchInput) -> str:
         + _panel_labor_referral(inp)
         + _panel_patient_pay_reputational(inp)
         + '</div>'
-        + _counterfactual_section(inp)
-        + ck_next_section(
-            "Stage the bear case for IC",
-            "/diligence/bear-case",
-            eyebrow="Continue —",
-            italic_word="bear",
-        )
     )
+    if print_preview:
+        body = (
+            '<div class="ck-print-preview">'
+            '<div class="ck-print-preview-bar">'
+            f'<span class="ck-print-preview-meta">Print preview · '
+            f'{html.escape(inp.target_name)}</span>'
+            '<a href="/diligence/risk-workbench" '
+            'class="ck-print-preview-exit">Exit preview</a>'
+            '</div>'
+            + hero
+            + summary_strip
+            + panels
+            + '</div>'
+        )
+    else:
+        print_cta = (
+            '<div class="ck-print-preview-cta">'
+            '<a href="/diligence/risk-workbench?print=1" '
+            'class="ck-link">Preview print version →</a>'
+            '</div>'
+        )
+        body = (
+            ck_page_title(
+                "Risk Workbench",
+                eyebrow="RCM DILIGENCE",
+                meta="9-panel risk panorama · counterfactual advisor below",
+            )
+            + hero
+            + print_cta
+            + summary_strip
+            + ck_section_header(
+                "Tier 1-3 diligence panels",
+                eyebrow="LIVE ENGINES",
+            )
+            + (
+                '<p class="ck-section-body" style="margin-top:-8px;'
+                'margin-bottom:12px;font-style:italic;'
+                'color:var(--sc-text-faint,#6e7787);font-size:12px;">'
+                'Tier 1 — existential risks that kill deals at IC '
+                '(bankruptcy, covenants, payer concentration). '
+                'Tier 2 — material risks that erode EBITDA (physician '
+                'attrition, denial rate, regulatory). '
+                'Tier 3 — slow-burn risks that surface in year three '
+                '(management bench, IT debt, integration drag).'
+                '</p>'
+            )
+            + panels
+            + _counterfactual_section(inp)
+            + ck_next_section(
+                "Stage the bear case for IC",
+                "/diligence/bear-case",
+                eyebrow="Continue —",
+                italic_word="bear",
+            )
+        )
     return chartis_shell(
         body, "RCM Diligence — Risk Workbench",
         subtitle="Tier 1-3 + Counterfactual Advisor",

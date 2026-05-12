@@ -8546,7 +8546,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             inp = WorkbenchInput(
                 target_name=(qs.get("target_name") or ["Unnamed Target"])[0],
             )
-        self._send_html(render_risk_workbench(inp))
+        print_preview = (qs.get("print") or [""])[0] == "1"
+        self._send_html(render_risk_workbench(inp, print_preview=print_preview))
 
     # ── Bankruptcy-Survivor Scan ─────────────────────────────────────
 
