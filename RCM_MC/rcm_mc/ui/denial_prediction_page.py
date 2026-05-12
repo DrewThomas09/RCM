@@ -312,21 +312,60 @@ def _hero(report: DenialPredictionReport) -> str:
             "Baseline denial rate",
             f"{report.baseline_denial_rate*100:.1f}%",
             sub=f"{base_label} · vs HFMA peer median {PEER_DENIAL_MEDIAN*100:.0f}%",
+            help={
+                "definition": (
+                    "Share of submitted claims that get denied "
+                    "before any appeals. HFMA peer median ~10%; "
+                    "above 15% is a structural denial issue (often "
+                    "payer mix or charge-capture); below 7% on real "
+                    "volume is best-in-class."
+                ),
+                "citation": "HFMA MAP Key 2021",
+            },
         )
         + ck_kpi_block(
             "Model AUC",
             f"{cal.auc_rough:.3f}",
             sub=f"{auc_label} · 0.5 = random, 1.0 = perfect, >0.7 usable",
+            help={
+                "definition": (
+                    "Area-under-curve — how well the model separates "
+                    "denied from paid claims. 0.5 = coin flip; 0.7-0.8 "
+                    "= usable for prioritization; 0.9+ = the model "
+                    "rarely confuses the two classes. Below 0.7 the "
+                    "model is too noisy to act on at the claim level."
+                ),
+            },
         )
         + ck_kpi_block(
             "Systematic misses",
             f"{report.systematic_miss_count}",
             sub="Claims flagged as denials but not denied",
+            help={
+                "definition": (
+                    "Claims the model flagged as high-denial-risk "
+                    "but that ultimately got paid. Each represents a "
+                    "false alarm — wasted appeals effort. High count "
+                    "(>5% of flags) means the model is too eager; "
+                    "tune the threshold before automating workflow."
+                ),
+            },
         )
         + ck_kpi_block(
             "Recoverable (charge)",
             miss_label,
             sub="60–80% realistic recovery · hover for source",
+            help={
+                "definition": (
+                    "Dollar charge value of denied claims that the "
+                    "model says are recoverable. The 60-80% realism "
+                    "haircut accounts for appeals that drag past "
+                    "timely-filing deadlines or end in adverse "
+                    "decisions. Use this number as an upper bound on "
+                    "RCM uplift attributable to denial-driver-only "
+                    "interventions."
+                ),
+            },
         )
         + "</div>"
     )
@@ -339,10 +378,57 @@ def _calibration_block(report: DenialPredictionReport) -> str:
     # rendered SVG/HTML (calibration buckets are visual, not tabular).
     metrics = (
         '<div class="ck-kpi-strip">'
-        + ck_kpi_block("Brier score", f"{c.brier_score:.4f}")
-        + ck_kpi_block("Log loss", f"{c.log_loss:.4f}")
-        + ck_kpi_block("Accuracy", f"{c.accuracy*100:.1f}%")
-        + ck_kpi_block("AUC (rough)", f"{c.auc_rough:.3f}")
+        + ck_kpi_block(
+            "Brier score", f"{c.brier_score:.4f}",
+            help={
+                "definition": (
+                    "Mean squared error between predicted "
+                    "probability and observed outcome. 0 = perfect "
+                    "calibration; 0.25 = no-better-than-random. "
+                    "Below 0.10 is a well-calibrated probability "
+                    "model; above 0.20 means the probabilities aren't "
+                    "trustworthy as decision inputs."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Log loss", f"{c.log_loss:.4f}",
+            help={
+                "definition": (
+                    "Cross-entropy between predicted probabilities "
+                    "and observed labels. Penalizes confident wrong "
+                    "predictions more than uncertain wrong ones. "
+                    "Lower = better; compare against the baseline log "
+                    "loss (predicting the base rate alone) to know "
+                    "if the model adds value."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Accuracy", f"{c.accuracy*100:.1f}%",
+            help={
+                "definition": (
+                    "Share of claims where the model's most-likely "
+                    "class matches reality. Misleading on imbalanced "
+                    "data — a 90%-paid base rate makes "
+                    "'predict-everything-paid' 90% accurate while "
+                    "being useless. Read with AUC + Brier for the "
+                    "real signal."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "AUC (rough)", f"{c.auc_rough:.3f}",
+            help={
+                "definition": (
+                    "Rough discriminatory power, computed at the "
+                    "decile level. Faster than full AUC; close enough "
+                    "for IC discussion. For an audit-grade number, "
+                    "run the full sklearn-style AUC on the holdout "
+                    "set."
+                ),
+            },
+        )
         + "</div>"
     )
     return ck_panel(
