@@ -200,11 +200,42 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
     )
     kpis = (
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
-        + ck_kpi_block("Net Revenue", _fm(rev), "annual NPR")
-        + ck_kpi_block(f"Margin (P{nat_pctile:.0f})", margin_value, "national rank")
+        + ck_kpi_block(
+            "Net Revenue", _fm(rev), "annual NPR",
+            help={
+                "definition": (
+                    "Net Patient Revenue — gross patient charges less "
+                    "contractual allowances, charity care, and bad "
+                    "debt. The top-line number every hospital CFO "
+                    "reports; HCRIS Worksheet G-3 line 3."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            f"Margin (P{nat_pctile:.0f})", margin_value, "national rank",
+            help={
+                "definition": (
+                    "Operating margin percentile within the HCRIS "
+                    "national universe. P75 = better than 75% of "
+                    "peers; P25 means three-quarters of hospitals "
+                    "perform better. PE healthcare buyers usually "
+                    "target P50+ at entry."
+                ),
+            },
+        )
         + ck_kpi_block("Beds", ck_fmt_num(int(beds)), "licensed")
         + ck_kpi_block("National Universe", ck_fmt_num(len(df)), "HCRIS hospitals")
-        + ck_kpi_block("Peer Groups", ck_fmt_num(len(peer_groups)), "comparison sets")
+        + ck_kpi_block(
+            "Peer Groups", ck_fmt_num(len(peer_groups)), "comparison sets",
+            help={
+                "definition": (
+                    "Number of peer cohorts this hospital is compared "
+                    "against — typically size-banded (similar beds), "
+                    "state, region, and teaching status. More groups "
+                    "= a more robust percentile read."
+                ),
+            },
+        )
         + '</div>'
     )
 

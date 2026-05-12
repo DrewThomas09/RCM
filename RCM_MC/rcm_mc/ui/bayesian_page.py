@@ -50,11 +50,49 @@ def render_bayesian_profile(
     )
     kpis = (
         '<div class="ck-kpi-grid">'
-        + ck_kpi_block("Data Quality Grade", grade_value, "blended posterior")
-        + ck_kpi_block("Completeness", f"{data_score['completeness_pct']:.0f}%", "fields populated")
-        + ck_kpi_block("Metrics Provided", f"{data_score['present_count']}/{data_score['total_metrics']}", "vs. expected")
-        + ck_kpi_block("Missing (Imputed)", ck_fmt_num(data_score["missing_count"]), "from prior")
-        + ck_kpi_block("Suspicious Values", ck_fmt_num(len(data_score["suspicious_values"])), "outliers flagged")
+        + ck_kpi_block(
+            "Data Quality Grade", grade_value, "blended posterior",
+            help={
+                "definition": (
+                    "Composite A–F grade reflecting how confident the "
+                    "Bayesian model is in this hospital's underlying "
+                    "metrics, given completeness and outlier flags. "
+                    "A = full data, no flags; D-F = heavy imputation "
+                    "from priors so downstream numbers carry "
+                    "explicit uncertainty bands."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Completeness", f"{data_score['completeness_pct']:.0f}%", "fields populated",
+        )
+        + ck_kpi_block(
+            "Metrics Provided", f"{data_score['present_count']}/{data_score['total_metrics']}", "vs. expected",
+        )
+        + ck_kpi_block(
+            "Missing (Imputed)", ck_fmt_num(data_score["missing_count"]), "from prior",
+            help={
+                "definition": (
+                    "Fields the hospital didn't report; the model "
+                    "fills them with the Bayesian prior — the "
+                    "population-level expected value for hospitals of "
+                    "this size/state/teaching status. More imputed "
+                    "values = more reliance on priors over actuals."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Suspicious Values", ck_fmt_num(len(data_score["suspicious_values"])), "outliers flagged",
+            help={
+                "definition": (
+                    "Reported values that fall outside the expected "
+                    "range for peers (>3σ from the prior). Could be "
+                    "true outliers, data-entry errors, or HCRIS lag "
+                    "artifacts; partner should sanity-check each "
+                    "before relying on downstream comparisons."
+                ),
+            },
+        )
         + '</div>'
     )
 
