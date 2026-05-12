@@ -9,8 +9,8 @@ import html as _html
 from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_num, ck_kpi_block, ck_next_section,
-    ck_provenance_tooltip,
+    chartis_shell, ck_confidence_band, ck_fmt_num, ck_kpi_block,
+    ck_next_section, ck_provenance_tooltip,
 )
 from .brand import PALETTE
 
@@ -148,15 +148,25 @@ def render_bayesian_profile(
         is_rate = est.posterior_mean <= 1 and est.prior_mean <= 1
         fmt_fn = (lambda v: f"{v:.1%}") if is_rate else (lambda v: f"{v:.1f}")
 
+        # Phase A1: replace the bare [lo, hi] cell with the editorial
+        # ck_confidence_band primitive so the posterior + band read as
+        # one unit. ``prior_only`` quality means we're below the
+        # threshold for trusting the observed data — band gets the
+        # warning tone so partners see the soft-data signal.
+        post_band = ck_confidence_band(
+            fmt_fn(est.posterior_mean),
+            fmt_fn(est.credible_interval_90[0]),
+            fmt_fn(est.credible_interval_90[1]),
+            label="90% CI",
+            low_confidence=(est.data_quality in ("weak", "prior_only")),
+        )
         est_rows += (
             f'<tr>'
             f'<td style="font-weight:500;">'
             f'{_html.escape(est.metric.replace("_", " ").title())}</td>'
             f'<td class="num">{fmt_fn(est.prior_mean)}</td>'
             f'<td class="num">{fmt_fn(est.observed_mean) if est.observed_n > 0 else "—"}</td>'
-            f'<td class="num" style="font-weight:600;">{fmt_fn(est.posterior_mean)}</td>'
-            f'<td class="num" style="font-size:11px;">'
-            f'[{fmt_fn(est.credible_interval_90[0])}, {fmt_fn(est.credible_interval_90[1])}]</td>'
+            f'<td class="num" style="font-weight:600;">{post_band}</td>'
             f'<td class="num" style="color:{shrink_color};">{shrink:.0%}</td>'
             f'<td>{bar}</td>'
             f'<td><span style="color:{quality_badge[0]};font-size:10px;font-weight:600;">'
@@ -172,8 +182,9 @@ def render_bayesian_profile(
         f'with observed data. Shrinkage shows the weight given to prior vs observed: '
         f'0% = all data, 100% = all prior. Green bar = data weight, amber = prior weight.</p>'
         f'<table class="cad-table"><thead><tr>'
-        f'<th>Metric</th><th>Prior</th><th>Observed</th><th>Posterior</th>'
-        f'<th>90% CI</th><th>Shrinkage</th><th>Data vs Prior</th><th>Quality</th>'
+        f'<th>Metric</th><th>Prior</th><th>Observed</th>'
+        f'<th>Posterior [90% CI]</th>'
+        f'<th>Shrinkage</th><th>Data vs Prior</th><th>Quality</th>'
         f'</tr></thead><tbody>{est_rows}</tbody></table></div>'
     )
 
