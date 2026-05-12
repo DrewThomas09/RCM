@@ -24,11 +24,45 @@ def render_memo_page(deal_id: str, deal_name: str, memo: Dict[str, Any]) -> str:
     # KPIs — ck_kpi_strip
     kpis = (
         '<div class="ck-kpi-strip">'
-        + ck_kpi_block("Memo Sections", f"{len(sections)}")
-        + ck_kpi_block("Fact-Check Warnings", f"{len(warnings)}")
+        + ck_kpi_block(
+            "Memo Sections", f"{len(sections)}",
+            help={
+                "definition": (
+                    "Distinct sections in the assembled IC memo — "
+                    "thesis, market, comparables, risks, financial "
+                    "model summary, value-creation plan, exit plan. "
+                    "A complete memo runs 7-9 sections; partial "
+                    "memos are draft-state and should be flagged at IC."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Fact-Check Warnings", f"{len(warnings)}",
+            help={
+                "definition": (
+                    "Statements in the memo that the validator could "
+                    "not confirm against the underlying packet data. "
+                    "Common: claims with no source citation, numbers "
+                    "that differ between memo and packet, or "
+                    "narratives that contradict packet flags. Resolve "
+                    "every warning before sending the memo to IC — "
+                    "untraceable claims kill credibility."
+                ),
+            },
+        )
         + ck_kpi_block(
             "Generation Method",
             "AI" if llm_used else "Template",
+            help={
+                "definition": (
+                    "AI = LLM-drafted from the packet (faster, varied "
+                    "phrasing, requires read-through). Template = "
+                    "deterministic from packet fields (repeatable, "
+                    "no hallucination risk, but stiffer prose). Both "
+                    "use the same underlying numbers — only the "
+                    "narrative wrapping differs."
+                ),
+            },
         )
         + '</div>'
     )
@@ -109,9 +143,44 @@ def render_validation_page(deal_id: str, deal_name: str, validation: Dict[str, A
 
     kpis = (
         '<div class="ck-kpi-strip">'
-        + ck_kpi_block("Validation Status", status_badge)
-        + ck_kpi_block("Issues", f"{len(issues)}")
-        + ck_kpi_block("Warnings", f"{len(warnings)}")
+        + ck_kpi_block(
+            "Validation Status", status_badge,
+            help={
+                "definition": (
+                    "Aggregate state of the deal's data + assumption "
+                    "checks. Valid = no issues, ready for IC; Issues "
+                    "Found = at least one blocker (missing required "
+                    "field, contradictory inputs, out-of-band "
+                    "assumption). Resolve issues before IC; warnings "
+                    "can be acknowledged but should be named in the "
+                    "memo."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Issues", f"{len(issues)}",
+            help={
+                "definition": (
+                    "Blocking validation failures — missing required "
+                    "fields, contradictory inputs, assumption values "
+                    "outside the band (e.g. terminal growth > 5%). "
+                    "Cannot send to IC with unresolved issues; the "
+                    "memo's downstream numbers are unreliable."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Warnings", f"{len(warnings)}",
+            help={
+                "definition": (
+                    "Non-blocking but reviewable — assumption values "
+                    "near band edges, fields populated from defaults, "
+                    "comparables thinner than usual. Acknowledge each "
+                    "in the IC discussion; partners shouldn't be "
+                    "surprised by them mid-meeting."
+                ),
+            },
+        )
         + ck_kpi_block("Profile Fields", f"{fields}")
         + '</div>'
     )
@@ -189,9 +258,45 @@ def render_completeness_page(deal_id: str, deal_name: str, completeness: Dict[st
 
     kpis = (
         '<div class="ck-kpi-strip">'
-        + ck_kpi_block("Completeness Grade", grade_badge)
-        + ck_kpi_block("Coverage", f"{pct:.0f}%")
-        + ck_kpi_block("Fields Populated", f"{present}/{total}")
+        + ck_kpi_block(
+            "Completeness Grade", grade_badge,
+            help={
+                "definition": (
+                    "A-F letter grade rolled up from coverage + "
+                    "data-source-quality + cross-field consistency. "
+                    "A = ready for IC; B = workable, name gaps in "
+                    "memo; C = partial, escalate to deal team; D-F = "
+                    "do not send to IC, the underlying analysis won't "
+                    "hold up to scrutiny."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Coverage", f"{pct:.0f}%",
+            help={
+                "definition": (
+                    "Share of the 38-metric canonical registry "
+                    "populated for this deal. Above 80% = strong "
+                    "diligence posture; 60-80% = workable with "
+                    "imputation; below 60% = imputation dominates "
+                    "and the downstream packet carries wide conformal "
+                    "bands."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Fields Populated", f"{present}/{total}",
+            help={
+                "definition": (
+                    "Absolute count of registry fields with real "
+                    "(non-imputed) values. The 38-metric registry is "
+                    "the platform's canonical KPI surface — every "
+                    "missing field becomes a Bayesian-prior fallback "
+                    "downstream, widening uncertainty bands on the "
+                    "MOIC / IRR distribution."
+                ),
+            },
+        )
         + '</div>'
     )
 
