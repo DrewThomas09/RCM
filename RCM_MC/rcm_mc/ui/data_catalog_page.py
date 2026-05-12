@@ -179,11 +179,45 @@ def render_data_catalog_page(store: Any) -> str:
         '<div class="ck-kpi-grid" style="display:flex;gap:.75rem;flex-wrap:wrap;margin:.75rem 0 1.25rem 0;">'
         + ck_kpi_block("Sources", ck_fmt_num(summary["n_sources"]), "in catalog")
         + ck_kpi_block("Total Records", ck_fmt_num(summary["total_records"]), "across sources")
-        + ck_kpi_block("Avg Quality", quality_value, "composite 0-1")
-        + ck_kpi_block("Fresh", fresh_value, "loaded <=30d")
-        + ck_kpi_block("Stale",
-                        f"{summary['stale_sources']} / {summary['n_sources']}",
-                        "loaded >90d")
+        + ck_kpi_block(
+            "Avg Quality", quality_value, "composite 0-1",
+            help={
+                "definition": (
+                    "Composite of three signals per source: volume "
+                    "(row count vs. expected), coverage (states + "
+                    "fiscal years populated), and freshness (days since "
+                    "last refresh). 1.0 = ideal; below 0.6 = the "
+                    "source is missing rows, lagging, or both."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Fresh", fresh_value, "loaded <=30d",
+            help={
+                "definition": (
+                    "Sources refreshed within the last 30 days. CMS "
+                    "HCRIS and Care Compare both refresh quarterly, "
+                    "so 'fresh' usually means a recent quarterly "
+                    "pull. Below 30d is the green band; partner can "
+                    "trust the numbers downstream."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Stale",
+            f"{summary['stale_sources']} / {summary['n_sources']}",
+            "loaded >90d",
+            help={
+                "definition": (
+                    "Sources past their refresh cadence. Stale data "
+                    "means stale benchmarks — peer percentiles and "
+                    "comparables computed against stale sources may "
+                    "miss recent shifts (e.g. payer-mix swings, "
+                    "wage-index updates). Click any stale row to "
+                    "trigger a refresh."
+                ),
+            },
+        )
         + '</div>'
     )
 
