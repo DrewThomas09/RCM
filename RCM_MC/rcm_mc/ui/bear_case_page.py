@@ -738,23 +738,64 @@ def render_bear_case_page(
         title="Sources cited in this bear case",
     )
 
-    body = (
-        _scoped_styles()
-        + '<div class="bc-wrap">'
-        + deal_context_bar(qs, active_surface="bear")
-        + hero
-        + evidence_panel
-        + memo_panel
-        + cross_links
-        + export_json_panel(
-            '<div class="bc-section-label" style="margin-top:22px;">'
-            'JSON export — full bear-case payload</div>',
-            payload=report.to_dict(),
-            name=f"bear_case_{deal_name.replace(' ', '_')}",
+    # Phase NNN: print-preview affordance — partners often bring the
+    # bear-case page into IC as a one-page risk snapshot. ?print=1
+    # wraps the body in .ck-print-preview (chartis_shell CSS hides
+    # chrome and max-widths the page for Cmd+P).
+    import html as _html
+    import urllib.parse as _urlparse
+    print_preview = (qs.get("print") or [""])[0] == "1"
+    if print_preview:
+        # Strip 'print' from qs for the exit link
+        exit_qs = {k: v for k, v in qs.items() if k != "print"}
+        exit_qstr = "?" + _urlparse.urlencode(exit_qs, doseq=True) if exit_qs else ""
+        print_bar = (
+            '<div class="ck-print-preview-bar">'
+            f'<span class="ck-print-preview-meta">Print preview · '
+            f'{_html.escape(deal_name)}</span>'
+            f'<a href="/diligence/bear-case{_html.escape(exit_qstr)}" '
+            'class="ck-print-preview-exit">Exit preview</a>'
+            '</div>'
         )
-        + bookmark_hint()
-        + '</div>'
-    )
+        body = (
+            '<div class="ck-print-preview">'
+            + print_bar
+            + _scoped_styles()
+            + '<div class="bc-wrap">'
+            + hero
+            + evidence_panel
+            + memo_panel
+            + cross_links
+            + '</div></div>'
+        )
+    else:
+        # Build the print-mode URL by adding ?print=1 to the current qs
+        print_qs = {**{k: v for k, v in qs.items() if k != "print"}, "print": ["1"]}
+        print_qstr = "?" + _urlparse.urlencode(print_qs, doseq=True)
+        print_cta = (
+            f'<div class="ck-print-preview-cta">'
+            f'<a href="/diligence/bear-case{_html.escape(print_qstr)}" '
+            'class="ck-link">Preview print version →</a>'
+            '</div>'
+        )
+        body = (
+            _scoped_styles()
+            + '<div class="bc-wrap">'
+            + deal_context_bar(qs, active_surface="bear")
+            + print_cta
+            + hero
+            + evidence_panel
+            + memo_panel
+            + cross_links
+            + export_json_panel(
+                '<div class="bc-section-label" style="margin-top:22px;">'
+                'JSON export — full bear-case payload</div>',
+                payload=report.to_dict(),
+                name=f"bear_case_{deal_name.replace(' ', '_')}",
+            )
+            + bookmark_hint()
+            + '</div>'
+        )
     return chartis_shell(
         body, f"Bear Case — {deal_name}",
         active_nav="/bear-cases",
