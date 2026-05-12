@@ -268,7 +268,7 @@ def render_model_quality_dashboard(
             "Open the feature importance view",
             "/feature-importance",
             eyebrow="Continue —",
-            italic_word="features",
+            italic_word="feature",
         )
     )
 

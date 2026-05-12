@@ -255,6 +255,6 @@ def render_notes_search(
             "Open the portfolio-wide question ledger",
             "/diligence/questions",
             eyebrow="Continue —",
-            italic_word="questions",
+            italic_word="question",
         ),
     )

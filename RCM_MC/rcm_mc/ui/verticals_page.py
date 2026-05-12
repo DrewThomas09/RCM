@@ -193,7 +193,7 @@ def render_verticals() -> str:
         "Open the metric glossary",
         "/metric-glossary",
         eyebrow="Continue —",
-        italic_word="metrics",
+        italic_word="metric",
     )
     body = (
         ck_eyebrow("Healthcare Verticals")

@@ -217,7 +217,7 @@ def render_calibration_page(store: Any) -> str:
             "Open the simulation run history",
             "/runs",
             eyebrow="Continue —",
-            italic_word="runs",
+            italic_word="run",
         )
     )
 

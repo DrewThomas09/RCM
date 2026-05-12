@@ -260,7 +260,7 @@ def render_diligence_index() -> str:
         "Open the portfolio-wide question ledger",
         "/diligence/questions",
         eyebrow="Continue —",
-        italic_word="questions",
+        italic_word="question",
     )
     body = (
         f"{css}"
