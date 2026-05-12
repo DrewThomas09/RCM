@@ -48,6 +48,27 @@ _VERDICT_COPY = {
 }
 
 
+def _landing_form_style() -> str:
+    """Form-only styles for the landing page, scoped under .bsv-landing
+    so they cannot leak into chartis_shell's body / h1 / h2 / table /
+    button rules (which is what broke the entire page layout when this
+    landing was rendered inside the shell — user-reported as "the
+    Bankruptcy tab makes my entire view get augmented and spacing is
+    messed up"). _style() below stays unscoped because render_scan_result
+    is intentionally standalone (no shell) for print/PDF export."""
+    return """<style>
+.bsv-landing .form-field{display:block;margin:10pt 0 4pt 0;font-size:10pt;
+   color:#6b5d3c;letter-spacing:.5pt;text-transform:uppercase;
+   font-family:'Helvetica Neue',Arial,sans-serif;}
+.bsv-landing input,.bsv-landing select{width:100%;padding:6pt 8pt;
+   font-size:11pt;border:1px solid #c9b98a;font-family:inherit;}
+.bsv-landing button{margin-top:14pt;padding:8pt 20pt;background:#0b2341;
+   color:#fff;border:0;font-size:11pt;letter-spacing:.5pt;
+   text-transform:uppercase;cursor:pointer;
+   font-family:'Helvetica Neue',Arial,sans-serif;}
+</style>"""
+
+
 def _style() -> str:
     return """<style>
 body{font-family:Georgia,'Times New Roman',serif;font-size:11pt;
@@ -103,9 +124,8 @@ def render_scan_landing() -> str:
     from ._chartis_kit import chartis_shell
 
     body = (
-        f"{_style()}"
-        "<div class='eyebrow'>Pre-screening</div>"
-        "<h1>Bankruptcy-Survivor Scan</h1>"
+        f"{_landing_form_style()}"
+        "<div class='bsv-landing'>"
         "<p>A 12-pattern screen against the named PE-healthcare "
         "bankruptcy playbook (Steward, Envision, APP, Cano, "
         "Prospect, Wellpath) plus six forward-looking regulatory "
@@ -152,6 +172,7 @@ def render_scan_landing() -> str:
         "<input name='oon_revenue_share' type='number' step='0.01' min='0' max='1'>"
         "<button type='submit'>Run scan</button>"
         "</form>"
+        "</div>"  # close .bsv-landing
     )
     # Cycle 43 — KPI strip primitives at the top + chartis chrome.
     from ._chartis_kit import (
