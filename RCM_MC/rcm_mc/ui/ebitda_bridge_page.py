@@ -880,10 +880,51 @@ def render_ebitda_bridge(
     )
     covenant_inner = (
         '<div class="ck-kpi-strip">'
-        + ck_kpi_block("Entry Leverage", f"{actual_lev:.1f}x")
-        + ck_kpi_block("Pro Forma Leverage", f"{pro_forma_lev:.1f}x")
-        + ck_kpi_block("Headroom (turns)", f"{headroom:.1f}x", sub=cov_badge)
-        + ck_kpi_block("EBITDA Cushion", f"{cushion:.0%}")
+        + ck_kpi_block(
+            "Entry Leverage", f"{actual_lev:.1f}x",
+            help={
+                "definition": (
+                    "Debt-to-EBITDA at close. PE healthcare deals "
+                    "typically come in at 5.5-6.5x; above 7x signals "
+                    "an aggressive cap structure that needs strong "
+                    "deleveraging or EBITDA growth to clear covenants."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Pro Forma Leverage", f"{pro_forma_lev:.1f}x",
+            help={
+                "definition": (
+                    "Debt-to-EBITDA after the RCM uplift lands. The "
+                    "gap from Entry → Pro Forma is the deleveraging "
+                    "story — narrower gap = the deal relies more on "
+                    "exit-multiple expansion than operational "
+                    "improvement."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Headroom (turns)", f"{headroom:.1f}x", sub=cov_badge,
+            help={
+                "definition": (
+                    "Distance to the leverage covenant in EBITDA "
+                    "turns. >1.0x = comfortable; 0.5-1.0x = watch "
+                    "list (one bad quarter trips it); <0.5x = covenant "
+                    "renegotiation likely before plan completes."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "EBITDA Cushion", f"{cushion:.0%}",
+            help={
+                "definition": (
+                    "Percent EBITDA can decline before the leverage "
+                    "covenant trips. 20%+ = robust; 10-20% = managed "
+                    "tightly; <10% = one quarter of weakness ends "
+                    "the hold thesis."
+                ),
+            },
+        )
         + '</div>'
         + '<p class="ck-section-body">'
         f'Pro forma EBITDA can decline {cushion:.0%} before the 6.5x covenant trips. '
@@ -996,15 +1037,78 @@ def render_ebitda_bridge(
         f'{year_rows}'
         '</tbody></table>'
         + '<div class="ck-kpi-strip">'
-        + ck_kpi_block("Entry EV (10x)", _fm(entry_ev_10x))
-        + ck_kpi_block("Exit EV (11x)", _fm(exit_ev_11x))
-        + ck_kpi_block("Value Created", _fm(value_created))
+        + ck_kpi_block(
+            "Entry EV (10x)", _fm(entry_ev_10x),
+            help={
+                "definition": (
+                    "Enterprise value at acquisition, assuming a 10x "
+                    "EBITDA entry multiple — the PE healthcare "
+                    "midpoint. Underwrite at 9-10x for community "
+                    "hospitals, 11-12x for specialty platforms."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Exit EV (11x)", _fm(exit_ev_11x),
+            help={
+                "definition": (
+                    "Modeled EV at exit assuming a one-turn multiple "
+                    "expansion (10x → 11x). Conservative — PE buyers "
+                    "in healthcare have historically paid 0.5-1.5 "
+                    "turns above acquirer multiples for de-risked "
+                    "platforms."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Value Created", _fm(value_created),
+            help={
+                "definition": (
+                    "Total dollar value creation over the 5-year hold: "
+                    "Exit EV - Entry EV. The sum that translates into "
+                    "LP/GP distributions via the waterfall. The three "
+                    "KPIs below decompose this number by source."
+                ),
+            },
+        )
         + ck_kpi_block("Exit EBITDA", _fm(exit_ebitda_5y))
         + '</div>'
         + '<div class="ck-kpi-strip">'
-        + ck_kpi_block("Organic Growth", _fm(vc_organic))
-        + ck_kpi_block("RCM Value Creation", _fm(vc_rcm))
-        + ck_kpi_block("Multiple Expansion", _fm(vc_multiple))
+        + ck_kpi_block(
+            "Organic Growth", _fm(vc_organic),
+            help={
+                "definition": (
+                    "Value from EBITDA compounding at the 3% organic "
+                    "growth rate. The 'do nothing' component — what "
+                    "this deal would have created without any RCM "
+                    "intervention or multiple expansion."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "RCM Value Creation", _fm(vc_rcm),
+            help={
+                "definition": (
+                    "Value attributable to the RCM levers the platform "
+                    "underwrites (rate, denial, AR, contract terms, "
+                    "labor, supply). This is the operational alpha — "
+                    "the partner's claim that this PE sponsor adds "
+                    "value beyond market-trend exposure."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Multiple Expansion", _fm(vc_multiple),
+            help={
+                "definition": (
+                    "Value from the assumed one-turn multiple "
+                    "expansion at exit. Treat as the most speculative "
+                    "component — exit multiples drift with the buyer "
+                    "market, which the sponsor doesn't control. "
+                    "Healthier deals lean less on this number."
+                ),
+            },
+        )
         + '</div>'
     )
     value_creation = ck_panel(
