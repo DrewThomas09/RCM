@@ -390,14 +390,36 @@ def _recommendation_block(rec: Optional[ExitRecommendation]) -> str:
         + ck_kpi_block("Year", year_num, sub="optimal hold")
         + ck_kpi_block(
             "Expected MOIC", moic_num, sub=moic_label,
+            help={
+                "definition": (
+                    "Multiple on invested capital. 2.0x = doubles your money; "
+                    "2.5x is typical PE healthcare; 3.0x+ is a strong outcome."
+                ),
+            },
         )
         + ck_kpi_block(
             "Expected IRR", irr_num,
             sub="vs 15% peer base · 20% strong",
+            help={
+                "definition": (
+                    "Internal rate of return — annualized return that "
+                    "discounts the cash flows back to the entry equity. "
+                    "Sensitive to hold period; shorter holds with same MOIC "
+                    "produce higher IRR."
+                ),
+            },
         )
         + ck_kpi_block(
             "Prob-weighted proceeds", proceeds_num,
             sub="expected $, hover for detail",
+            help={
+                "definition": (
+                    "Expected exit proceeds across all candidate years, "
+                    "weighted by each year's probability of clearing a "
+                    "buyer bid. Lower than the peak-year proceeds; "
+                    "captures the deal's downside path too."
+                ),
+            },
         )
         + "</div>"
     )
