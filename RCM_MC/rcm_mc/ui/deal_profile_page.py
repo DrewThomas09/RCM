@@ -2404,6 +2404,7 @@ def render_deal_profile_page(
     slug = (slug or "").strip().lower()
     if not slug:
         return _landing_slugs()
+    print_preview = bool(qs and qs.get("print") == ["1"])
     # Sanitise slug.
     safe = "".join(
         c for c in slug if c.isalnum() or c == "-"
@@ -2537,15 +2538,48 @@ def render_deal_profile_page(
         eyebrow="Continue —",
         italic_word="checklist",
     )
+    # Phase MMM: print-preview affordance — partners often want a
+    # one-page deal snapshot to bring into IC. ?print=1 wraps the body
+    # in .ck-print-preview (chartis-shell CSS hides chrome + max-widths
+    # the page for Cmd+P). The "Preview print version →" link sits at
+    # the top of the regular view; in preview mode it becomes "Exit
+    # preview" at top-right.
+    import html as _html
+    if print_preview:
+        slug_esc = _html.escape(slug)
+        body = (
+            '<div class="ck-print-preview">'
+            '<div class="ck-print-preview-bar">'
+            f'<span class="ck-print-preview-meta">Print preview · '
+            f'{slug_esc}</span>'
+            f'<a href="/diligence/deal/{slug_esc}" '
+            'class="ck-print-preview-exit">Exit preview</a>'
+            '</div>'
+            + _DP_STYLES + hero + pulse
+            + thesis_panel + market_panel + pipeline_block
+            + lifecycle_panel + form_panel + questions_panel + grid_block
+            + '</div>'
+        )
+    else:
+        slug_esc = _html.escape(slug)
+        print_cta = (
+            f'<div class="ck-print-preview-cta">'
+            f'<a href="/diligence/deal/{slug_esc}?print=1" '
+            'class="ck-link">Preview print version →</a>'
+            '</div>'
+        )
+        body = (
+            _DP_STYLES + hero + pulse + print_cta
+            + '<div class="ck-toc-layout">'
+            + toc
+            + '<div class="ck-toc-content">'
+            + thesis_panel + market_panel + pipeline_block
+            + lifecycle_panel + form_panel + questions_panel + grid_block
+            + '</div></div>'
+            + bookmark_hint() + next_up + _inline_js(slug)
+        )
     return chartis_shell(
-        _DP_STYLES + hero + pulse
-        + '<div class="ck-toc-layout">'
-        + toc
-        + '<div class="ck-toc-content">'
-        + thesis_panel + market_panel + pipeline_block
-        + lifecycle_panel + form_panel + questions_panel + grid_block
-        + '</div></div>'
-        + bookmark_hint() + next_up + _inline_js(slug),
+        body,
         f"Deal Profile — {slug}",
         active_nav="/diligence/deal",
         subtitle="One source of truth",
