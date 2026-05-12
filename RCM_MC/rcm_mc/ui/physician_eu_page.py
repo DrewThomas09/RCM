@@ -20,7 +20,7 @@ from ..diligence.physician_eu import (
 )
 from ..diligence.physician_comp.comp_ingester import Provider
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
+    P, SafeHtml, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
     ck_panel, ck_section_intro, ck_signal_badge,
 )
 from .power_ui import (
@@ -270,7 +270,7 @@ def _hero(
         )
         + ck_kpi_block(
             "Aggregate contribution", contrib_num,
-            sub=f"{margin_num} margin · peer norm 30-40%",
+            sub=SafeHtml(f"{margin_num} margin · peer norm 30-40%"),
             help={
                 "definition": (
                     "Collections minus comp minus practice expenses "

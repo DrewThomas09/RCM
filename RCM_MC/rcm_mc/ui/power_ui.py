@@ -397,11 +397,19 @@ def provenance(
     tag: str = "span",
     extra_class: str = "",
     extra_style: str = "",
-) -> str:
+):
     """Wrap ``value`` in a span with a hover tooltip exposing the
     provenance (source, formula, detail). Cursor becomes `help`,
     underline is dotted — discoverable without being distracting.
+
+    Returns a ``SafeHtml`` (str subclass) so that callers passing the
+    result through ``_esc``-applying primitives (notably
+    ``ck_kpi_block``'s ``value`` arg) don't double-escape the inner
+    tags — that bug surfaced on /diligence/management as the literal
+    ``<span data-provenance="...">11.5%</span>`` markup visible on the
+    Guidance Haircut KPI tile.
     """
+    from ._chartis_kit import SafeHtml
     attrs = [
         f'data-provenance="{html.escape(source, quote=True)}"',
     ]
@@ -418,7 +426,7 @@ def provenance(
     if extra_style:
         attrs.append(f'style="{html.escape(extra_style, quote=True)}"')
     attrs.append("tabindex=\"0\"")
-    return (
+    return SafeHtml(
         f"<{tag} {' '.join(attrs)}>{html.escape(value)}</{tag}>"
     )
 
