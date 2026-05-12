@@ -184,8 +184,30 @@ def render_analysis_landing(
     kpi_strip = (
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">'
         + ck_kpi_block("Deals", deal_count_value, "in workspace")
-        + ck_kpi_block("Recent Runs", runs_value, "cached analyses")
-        + ck_kpi_block("Models Available", "7", "per deal")
+        + ck_kpi_block(
+            "Recent Runs", runs_value, "cached analyses",
+            help={
+                "definition": (
+                    "Analysis packets built and cached in the past 14 "
+                    "days. Each is a full DealAnalysisPacket — running "
+                    "from scratch takes ~30 seconds; opening a cached "
+                    "one is instant. Click any deal below to see its "
+                    "cached vs. stale state."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Models Available", "7", "per deal",
+            help={
+                "definition": (
+                    "Seven analytical models the workbench runs per "
+                    "deal: RCM profile, EBITDA bridge, Monte Carlo, "
+                    "scenarios, risk diligence, provenance, "
+                    "assumptions. Each gets its own tab inside the "
+                    "/analysis/<deal_id> workbench."
+                ),
+            },
+        )
         + '</div>'
     )
 

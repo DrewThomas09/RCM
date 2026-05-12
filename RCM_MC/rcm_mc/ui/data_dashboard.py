@@ -111,11 +111,33 @@ def render_data_dashboard(hcris_df: pd.DataFrame) -> str:
     )
     kpis = (
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(6,1fr);">'
-        + ck_kpi_block("Hospitals", hospitals_value, "in HCRIS")
+        + ck_kpi_block(
+            "Hospitals", hospitals_value, "in HCRIS",
+            help={
+                "definition": (
+                    "Every hospital that filed an HCRIS cost report "
+                    "with CMS. Includes short-term acute, CAH, IRF, "
+                    "LTCH, and psych. Filing lag means the most "
+                    "recent fiscal year is ~12-18 months behind."
+                ),
+                "citation": "CMS HCRIS public cost reports",
+            },
+        )
         + ck_kpi_block("States and Territories", ck_fmt_num(n_states), "national coverage")
         + ck_kpi_block("Fiscal Years", ck_fmt_num(n_years), "of filings")
         + ck_kpi_block("Total Beds", ck_fmt_num(total_beds), "licensed")
-        + ck_kpi_block("Total NPSR", npsr_value, "annual aggregate")
+        + ck_kpi_block(
+            "Total NPSR", npsr_value, "annual aggregate",
+            help={
+                "definition": (
+                    "Net Patient Service Revenue aggregated across "
+                    "every HCRIS-filing hospital. Roughly $1.3T US-wide "
+                    "in a normal year; growth tracks healthcare CPI "
+                    "+ utilization shifts. The denominator behind "
+                    "every margin / DAR / denial benchmark."
+                ),
+            },
+        )
         + ck_kpi_block("Core Metrics", ck_fmt_num(len(key_cols)), "tracked fields")
         + '</div>'
     )
