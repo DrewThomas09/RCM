@@ -1054,38 +1054,76 @@ def render_hcris_xray_page(
         ),
     )
 
-    body = (
-        _scoped_styles()
-        + ck_page_title(
-            "HCRIS X-Ray",
-            eyebrow="RCM DILIGENCE",
-            meta=(
-                f"Target: {target.name} · CCN {target.ccn} · "
-                f"FY{target.fiscal_year}"
-            ),
+    # Phase PPP: print-preview affordance — HCRIS X-Ray is the
+    # canonical peer-percentile snapshot partners bring to IC for
+    # "is this hospital normal?" framing. ?print=1 hides chrome
+    # (page title eyebrow, deal context bar, JSON export, bookmark
+    # hint, Up-next cue) and keeps just hero + metrics + comps +
+    # peers panels.
+    import urllib.parse as _urlparse
+    import html as _html
+    print_preview = (qs.get("print") or [""])[0] == "1"
+    if print_preview:
+        exit_qs = {k: v for k, v in qs.items() if k != "print"}
+        exit_qstr = "?" + _urlparse.urlencode(exit_qs, doseq=True) if exit_qs else ""
+        body = (
+            _scoped_styles()
+            + '<div class="ck-print-preview">'
+            '<div class="ck-print-preview-bar">'
+            f'<span class="ck-print-preview-meta">Print preview · '
+            f'CCN {_html.escape(target.ccn)}</span>'
+            f'<a href="/diligence/hcris-xray{_html.escape(exit_qstr)}" '
+            'class="ck-print-preview-exit">Exit preview</a>'
+            '</div>'
+            + '<div class="hx-wrap">'
+            + hero
+            + metrics_panel
+            + public_comp_block
+            + peers_panel
+            + '</div></div>'
         )
-        + '<div class="hx-wrap">'
-        + deal_context_bar(qs, active_surface="hcris")
-        + hero
-        + metrics_panel
-        + public_comp_block
-        + peers_panel
-        + cross_link
-        + export_json_panel(
-            '<div class="hx-section-label" style="margin-top:22px;">'
-            'JSON export — full X-Ray payload</div>',
-            payload=report.to_dict(),
-            name=f"hcris_xray_{target.ccn}",
+    else:
+        print_qs = {**{k: v for k, v in qs.items() if k != "print"}, "print": ["1"]}
+        print_qstr = "?" + _urlparse.urlencode(print_qs, doseq=True)
+        print_cta = (
+            '<div class="ck-print-preview-cta">'
+            f'<a href="/diligence/hcris-xray{_html.escape(print_qstr)}" '
+            'class="ck-link">Preview print version →</a>'
+            '</div>'
         )
-        + bookmark_hint()
-        + ck_next_section(
-            "Move into the Risk Workbench",
-            "/diligence/risk-workbench",
-            eyebrow="Continue —",
-            italic_word="Risk",
+        body = (
+            _scoped_styles()
+            + ck_page_title(
+                "HCRIS X-Ray",
+                eyebrow="RCM DILIGENCE",
+                meta=(
+                    f"Target: {target.name} · CCN {target.ccn} · "
+                    f"FY{target.fiscal_year}"
+                ),
+            )
+            + '<div class="hx-wrap">'
+            + deal_context_bar(qs, active_surface="hcris")
+            + print_cta
+            + hero
+            + metrics_panel
+            + public_comp_block
+            + peers_panel
+            + cross_link
+            + export_json_panel(
+                '<div class="hx-section-label" style="margin-top:22px;">'
+                'JSON export — full X-Ray payload</div>',
+                payload=report.to_dict(),
+                name=f"hcris_xray_{target.ccn}",
+            )
+            + bookmark_hint()
+            + ck_next_section(
+                "Move into the Risk Workbench",
+                "/diligence/risk-workbench",
+                eyebrow="Continue —",
+                italic_word="Risk",
+            )
+            + '</div>'
         )
-        + '</div>'
-    )
     return chartis_shell(
         body, f"HCRIS X-Ray — {target.name}",
         active_nav="/diligence/hcris-xray",
