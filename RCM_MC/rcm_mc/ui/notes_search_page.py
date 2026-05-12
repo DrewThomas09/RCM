@@ -77,7 +77,7 @@ def render_notes_search(
     keyword chip, Clear all, intro) the helper builds for free.
     """
     from rcm_mc.ui._chartis_kit import (
-        render_insights_page, ck_provenance_tooltip,
+        ck_next_section, ck_provenance_tooltip, render_insights_page,
     )
     from rcm_mc.deals.deal_notes import search_notes
     from rcm_mc.deals.note_tags import tags_for_notes, all_note_tags
@@ -250,5 +250,11 @@ def render_notes_search(
         subtitle=(
             f'{count:,} match{"es" if count != 1 else ""}'
             + (f' for "{q}"' if q else "")
+        ),
+        next_section_html=ck_next_section(
+            "Open the portfolio-wide question ledger",
+            "/diligence/questions",
+            eyebrow="Continue —",
+            italic_word="questions",
         ),
     )

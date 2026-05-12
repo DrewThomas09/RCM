@@ -2058,6 +2058,7 @@ def render_insights_page(
     omit_auto_chips: Optional[Sequence[str]] = None,
     prelude_html: str = "",
     prelude_position: str = "after",
+    next_section_html: str = "",
 ) -> str:
     """Compose the chartis Insights triplet around a body of items.
 
@@ -2211,6 +2212,8 @@ def render_insights_page(
         full_body = (
             intro_html + search_hero + prelude_html + rail_layout
         )
+
+    full_body = full_body + next_section_html
 
     return chartis_shell(
         full_body,

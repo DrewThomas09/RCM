@@ -134,7 +134,8 @@ def render_research(
     is composed by ``render_insights_page``.
     """
     from rcm_mc.ui._chartis_kit import (
-        render_insights_page, ck_arrow_link, ck_provenance_tooltip,
+        render_insights_page, ck_arrow_link, ck_next_section,
+        ck_provenance_tooltip,
     )
 
     def _matches(entry: Dict[str, str]) -> bool:
@@ -247,4 +248,10 @@ def render_research(
             ),
         },
         subtitle=f"{len(filtered)} of {len(RESEARCH_ENTRIES)} research notes",
+        next_section_html=ck_next_section(
+            "Open the metric glossary",
+            "/metric-glossary",
+            eyebrow="Continue —",
+            italic_word="metric",
+        ),
     )
