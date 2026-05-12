@@ -186,15 +186,68 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
     )
     kpis = (
         f'<div class="ck-kpi-grid">'
-        + ck_kpi_block("Enterprise Value", ev_value, "PV of FCF + terminal")
+        + ck_kpi_block(
+            "Enterprise Value", ev_value, "PV of FCF + terminal",
+            help={
+                "definition": (
+                    "DCF-derived enterprise value = present value of "
+                    "explicit-period free cash flows + present value "
+                    "of the terminal-value chunk. The sum every PE "
+                    "underwriting compares to the entry multiple × "
+                    "trailing EBITDA."
+                ),
+            },
+        )
         + ck_kpi_block("PV of Cash Flows", _fmt_m(pv_cf), "explicit period")
-        + ck_kpi_block("PV of Terminal", _fmt_m(pv_term), "Gordon growth")
-        + ck_kpi_block("Terminal Value", _fmt_m(tv), "exit-year FCF / (WACC - g)")
-        + ck_kpi_block("WACC", wacc_value, "discount rate")
+        + ck_kpi_block(
+            "PV of Terminal", _fmt_m(pv_term), "Gordon growth",
+            help={
+                "definition": (
+                    "Present value of the terminal lump — what the "
+                    "business is worth after year 5/10. Healthy DCFs "
+                    "have <70% of EV in the terminal; >80% means "
+                    "you're underwriting the exit multiple, not the "
+                    "explicit-period cash flows."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Terminal Value", _fmt_m(tv), "exit-year FCF / (WACC - g)",
+            help={
+                "definition": (
+                    "Undiscounted terminal — exit-year free cash flow "
+                    "÷ (WACC − terminal growth). Sensitive: a 50bp "
+                    "shift in either input swings terminal by 10-15%. "
+                    "Worth checking against trading-comp multiples "
+                    "for sanity."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "WACC", wacc_value, "discount rate",
+            help={
+                "definition": (
+                    "Weighted average cost of capital — blended cost "
+                    "of equity and debt. PE healthcare typically uses "
+                    "9-11% for community hospitals, 11-13% for "
+                    "specialty platforms. Below 8% in current rate "
+                    "environment is hard to defend."
+                ),
+            },
+        )
         + ck_kpi_block(
             "Terminal Growth",
             _fmt_pct(assumptions.get("terminal_growth")),
             "perpetual FCF growth",
+            help={
+                "definition": (
+                    "Assumed perpetual FCF growth past the explicit "
+                    "period. Cap at long-run nominal GDP (2.5-3%); "
+                    "above 4% implies the business grows faster than "
+                    "the economy forever, which is implausible for "
+                    "any mature business."
+                ),
+            },
         )
         + f'</div>'
     )
@@ -400,11 +453,63 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
     )
     kpis = (
         f'<div class="ck-kpi-grid">'
-        + ck_kpi_block("IRR", irr_value, "to equity over hold")
-        + ck_kpi_block("MOIC", moic_value, "exit / entry equity")
-        + ck_kpi_block("Entry EV", _fmt_m(entry_ev), "sources of capital")
-        + ck_kpi_block("Exit EV", _fmt_m(exit_ev), "year-{hold} terminal".replace('{hold}', str(hold_years)))
-        + ck_kpi_block("Equity Invested", _fmt_m(equity_invested), "LP check")
+        + ck_kpi_block(
+            "IRR", irr_value, "to equity over hold",
+            help={
+                "definition": (
+                    "LBO-modeled internal rate of return on the equity "
+                    "check. PE healthcare target is 20%+ at the gross "
+                    "level; below 15% won't clear the hurdle. Sensitive "
+                    "to hold period — short holds need higher MOIC to "
+                    "hit the same IRR."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "MOIC", moic_value, "exit / entry equity",
+            help={
+                "definition": (
+                    "Multiple on invested capital — exit proceeds ÷ "
+                    "entry equity check. Less sensitive to hold period "
+                    "than IRR; a 2.5x in 5yrs and 2.5x in 7yrs return "
+                    "the same dollars to the LP but very different "
+                    "IRRs."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Entry EV", _fmt_m(entry_ev), "sources of capital",
+            help={
+                "definition": (
+                    "Total enterprise value at acquisition — debt + "
+                    "equity sources. The check the deal pays for the "
+                    "business; structured at the entry-multiple × "
+                    "trailing EBITDA."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Exit EV", _fmt_m(exit_ev), "year-{hold} terminal".replace('{hold}', str(hold_years)),
+            help={
+                "definition": (
+                    "Modeled enterprise value at exit, year " + str(hold_years) +
+                    ". Built from exit-year EBITDA × exit multiple. "
+                    "Healthier LBOs grow EBITDA enough that even with "
+                    "no multiple expansion, the equity multiplies."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Equity Invested", _fmt_m(equity_invested), "LP check",
+            help={
+                "definition": (
+                    "Total LP equity at close — the denominator for "
+                    "both IRR and MOIC. Typical PE healthcare deal "
+                    "puts in 30-40% equity, with the rest from senior + "
+                    "second-lien debt."
+                ),
+            },
+        )
         + f'</div>'
     )
 
