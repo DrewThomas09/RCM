@@ -11939,19 +11939,23 @@ class RCMHandler(BaseHTTPRequestHandler):
         from .data_public.nppes_cache import ensure_table
         from .ui.hospital_providers_page import render_hospital_providers
 
-        # Pull hospital name + state from HCRIS for the empty-state CLI cmd
+        # Pull hospital name + state from HCRIS for the empty-state CLI cmd.
+        # _get_latest_per_ccn() returns one row per CCN; filter by ccn here
+        # rather than relying on a per-ccn overload that doesn't exist.
         hospital_name = ""
         state = ""
         try:
             from .data.hcris import _get_latest_per_ccn
-            row = _get_latest_per_ccn(ccn)
-            if row is not None:
-                hospital_name = str(row.get("name", "")) or ""
-                state = str(row.get("state", "")) or ""
+            hdf = _get_latest_per_ccn()
+            match = hdf[hdf["ccn"] == ccn]
+            if not match.empty:
+                row = match.iloc[0]
+                hospital_name = str(row.get("name", "") or "")
+                state = str(row.get("state", "") or "")
         except Exception:
             pass
 
-        store = self.store_for_request()
+        store = PortfolioStore(self.config.db_path)
         with store.connect() as con:
             ensure_table(con)
             html_out = render_hospital_providers(
