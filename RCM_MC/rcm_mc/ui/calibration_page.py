@@ -187,9 +187,42 @@ def render_calibration_page(store: Any) -> str:
     )
     kpi_strip = (
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
-        + ck_kpi_block("Runs Aggregated", runs_value, "calibration sources")
-        + ck_kpi_block("Payers", payers_value, "with priors")
-        + ck_kpi_block("Primitives Tracked", "3", "IDR / FWR / DAR")
+        + ck_kpi_block(
+            "Runs Aggregated", runs_value, "calibration sources",
+            help={
+                "definition": (
+                    "Count of analysis-run cache entries the calibration "
+                    "model has digested to fit these priors. More runs = "
+                    "tighter posterior bands; below ~20 runs the priors "
+                    "are still pulled mostly from population defaults."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Payers", payers_value, "with priors",
+            help={
+                "definition": (
+                    "Distinct payer types (Medicare, Medicaid, Commercial, "
+                    "Self-Pay, Managed Medicare/Medicaid, etc.) for which "
+                    "the simulator carries per-payer prior distributions. "
+                    "Each gets its own initial-denial-rate (IDR), final "
+                    "write-off (FWR), and Days in A/R (DAR) prior."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Primitives Tracked", "3", "IDR / FWR / DAR",
+            help={
+                "definition": (
+                    "The three RCM revenue-cycle primitives the simulator "
+                    "calibrates per payer:  IDR (initial denial rate), "
+                    "FWR (final write-off — share of charges never "
+                    "collected after appeals), and DAR (Days in A/R — "
+                    "time to cash). These three drive every downstream "
+                    "EBITDA bridge."
+                ),
+            },
+        )
         + '</div>'
     )
 
