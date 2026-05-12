@@ -387,7 +387,19 @@ def render_conference_roadmap(category: str = "all") -> str:
         f'<h2 style="font-size:13px;margin-bottom:8px;">Event Summary</h2>'
         f'<div class="ck-kpi-grid" style="grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">'
         + ck_kpi_block("Total Events", ck_fmt_num(total), "in roadmap")
-        + ck_kpi_block("Flagship", flagship_value, "must-attend")
+        + ck_kpi_block(
+            "Flagship", flagship_value, "must-attend",
+            help={
+                "definition": (
+                    "The two-or-three events that move the needle on "
+                    "deal sourcing: J.P. Morgan Healthcare (January), "
+                    "HLTH (October), Becker's HRC. Missing a flagship "
+                    "year-over-year is the single biggest sourcing "
+                    "self-own — book travel + meeting slots 6-8 "
+                    "weeks ahead."
+                ),
+            },
+        )
         + f'</div>'
         f'{cat_breakdown}</div>'
     )

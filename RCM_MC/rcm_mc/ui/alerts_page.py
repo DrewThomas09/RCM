@@ -351,14 +351,42 @@ def render_alerts(
         + ck_kpi_block(
             "Critical", f"{n_red}",
             sub="covenant trip / breach",
+            help={
+                "definition": (
+                    "Red-severity alerts that require partner action "
+                    "this week — covenant trips, payer-contract "
+                    "breaches, key-physician departures. Anything red "
+                    "past 30 days appears on /escalations and should "
+                    "have an owner + decision plan before the next "
+                    "LP update."
+                ),
+            },
         )
         + ck_kpi_block(
             "Warning", f"{n_amber}",
             sub="tight covenant / EBITDA miss",
+            help={
+                "definition": (
+                    "Amber-severity alerts — material issues that "
+                    "aren't critical but warrant IC-discussion at "
+                    "the next monthly review. Common: covenant "
+                    "headroom < 15%, quarterly EBITDA miss, "
+                    "physician productivity below underwriting."
+                ),
+            },
         )
         + ck_kpi_block(
             "Info", f"{n_info}",
             sub="stage advance / new note",
+            help={
+                "definition": (
+                    "Informational signals — stage advances on "
+                    "pipeline deals, new partner notes, new audit "
+                    "log entries. Useful for context but rarely "
+                    "actionable on their own. Filter these out when "
+                    "scanning for risk."
+                ),
+            },
         )
         + '</div>'
     )
