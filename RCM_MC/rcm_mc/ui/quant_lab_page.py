@@ -208,10 +208,43 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
         '<div class="ck-kpi-strip">'
         + ck_kpi_block("Hospitals", f"{len(hcris_df):,}")
         + ck_kpi_block("Markets", f"{len(markets)}")
-        + ck_kpi_block("Frontier Hospitals", f"{frontier_count}")
-        + ck_kpi_block("Distress AUC", f"{auc:.3f}")
+        + ck_kpi_block(
+            "Frontier Hospitals", f"{frontier_count}",
+            help={
+                "definition": (
+                    "Hospitals on the efficiency frontier — those whose "
+                    "margin/quality combination isn't dominated by any "
+                    "peer in the same size band. Use these as the "
+                    "operational targets when underwriting: 'what does "
+                    "best-in-class look like in this sub-market?'"
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Distress AUC", f"{auc:.3f}",
+            help={
+                "definition": (
+                    "Area-under-curve of the distress-prediction model "
+                    "on the labeled corpus — how well it separates "
+                    "distressed from healthy hospitals. 0.50 = no "
+                    "better than coin flip; 0.80+ = strong; 0.90+ = "
+                    "the model rarely confuses the two classes."
+                ),
+            },
+        )
         + ck_kpi_block("Quant Models", "12")
-        + ck_kpi_block("External Deps", "0")
+        + ck_kpi_block(
+            "External Deps", "0",
+            help={
+                "definition": (
+                    "Zero third-party Python packages beyond stdlib + "
+                    "numpy/pandas/matplotlib. No PyTorch, no scikit "
+                    "ensemble wrappers, no Bayesian frameworks — every "
+                    "model is implemented in-house so the platform "
+                    "stays auditable + supply-chain-safe."
+                ),
+            },
+        )
         + '</div>'
     )
 
