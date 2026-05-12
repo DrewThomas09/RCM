@@ -63,7 +63,7 @@ def render_my_dashboard(
     from rcm_mc.ui._chartis_kit import (
         chartis_shell, ck_section_intro, ck_kpi_block,
         ck_severity_panel, ck_affirm_empty, ck_arrow_link,
-        ck_provenance_tooltip,
+        ck_next_section, ck_provenance_tooltip,
     )
     from rcm_mc.alerts.alerts import evaluate_active
     from rcm_mc.deals.deal_deadlines import overdue, upcoming
@@ -347,6 +347,12 @@ def render_my_dashboard(
         + alerts_html
         + deadlines_html
         + deals_html
+        + ck_next_section(
+            "Open the Monday brief",
+            "/day-one",
+            eyebrow="Continue —",
+            italic_word="Monday",
+        )
     )
     return chartis_shell(
         body,
