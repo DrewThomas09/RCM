@@ -617,7 +617,7 @@ def _landing() -> str:
         f'</select></div>'
         f'</div>'
         f'<button type="submit" style="margin-top:14px;padding:8px 20px;'
-        f'background:{P["accent"]};color:{P["panel"]};border:0;'
+        f'background:{P["navy"]};color:#fff;border:0;'
         f'font-size:10px;letter-spacing:1.5px;text-transform:uppercase;'
         f'font-weight:700;cursor:pointer;border-radius:3px;">'
         f'Compute exit path</button>'
