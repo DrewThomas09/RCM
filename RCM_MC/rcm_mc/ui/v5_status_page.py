@@ -131,9 +131,10 @@ def render_v5_status() -> str:
         f"page migration to refresh these numbers.</p>"
     )
 
+    # Title comes from chartis_shell(editorial_intro=...); removed
+    # the duplicate ck_eyebrow that stacked another mini-title here.
     body = (
         '<section style="max-width:62rem;">'
-        + ck_eyebrow("v5 Chartis Campaign")
         + '<p class="micro">v5 Chartis campaign — '
         "<strong>saving-seeking-chartis</strong> branch</p>"
         '<h1 style="margin-top:.25rem;">v5 status</h1>'

@@ -281,8 +281,10 @@ def render_data_explorer(
         eyebrow="Continue —",
         italic_word="catalog",
     )
+    # Title comes from chartis_shell(editorial_intro=...); removed
+    # the duplicate ck_eyebrow that stacked another mini-title here.
     body = (
-        ck_eyebrow("Data Explorer") + kpi_strip
+        kpi_strip
         + f'{source_cards}{modules_section}{pipeline}{next_up}'
     )
 

@@ -226,9 +226,10 @@ def render_calibration_page(store: Any) -> str:
         + '</div>'
     )
 
+    # Title comes from chartis_shell(editorial_intro=...); removed
+    # the duplicate ck_eyebrow that stacked another mini-title here.
     body = (
-        ck_eyebrow("Calibration")
-        + kpi_strip
+        kpi_strip
         + '<section style="max-width:80rem;">'
         '<div style="display:flex;justify-content:space-between;'
         'align-items:baseline;margin-bottom:.75rem;">'

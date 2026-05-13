@@ -168,8 +168,9 @@ def render_command_center(
         + ck_kpi_block("Distressed", distressed_value, "margin &lt; -5%")
         + ck_kpi_block("Active Deals", f"{len(deals)}", "in portfolio")
     )
+    # Title comes from chartis_shell(editorial_intro=...); removed
+    # the duplicate ck_eyebrow that stacked another mini-title here.
     sections.append(
-        f'{ck_eyebrow("Command Center")}'
         f'<div class="ck-kpi-grid" style="grid-template-columns:repeat(6,1fr);">'
         f'{hero_kpis}'
         f'</div>'

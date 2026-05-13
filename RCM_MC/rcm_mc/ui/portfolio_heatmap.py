@@ -202,9 +202,13 @@ def render_heatmap(
         + '</div>'
     )
 
+    # Note: the page title comes from chartis_shell(editorial_intro=...)
+    # below — repeating it as ck_eyebrow here gave us a stacked
+    # "PORTFOLIO HEATMAP / Where the deals... / Portfolio Heatmap"
+    # block at the top of the page (user-reported as "weird title
+    # design" on heatmap and most pages).
     body = (
-        ck_eyebrow("Portfolio Heatmap")
-        + kpi_strip
+        kpi_strip
         + f'<div class="cad-card">{table}</div>'
         + ck_next_section(
             "Open the portfolio map",
