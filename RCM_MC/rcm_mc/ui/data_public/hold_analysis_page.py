@@ -42,10 +42,16 @@ def _percentile(vals: List[float], p: float) -> Optional[float]:
 
 def _scatter_svg(
     deals: List[Dict[str, Any]],
-    w: int = 440,
-    h: int = 280,
+    w: int = 640,
+    h: int = 400,
 ) -> str:
-    """Hold years (x) vs realized MOIC (y) scatter."""
+    """Hold years (x) vs realized MOIC (y) scatter.
+
+    Default 640×400 — user feedback (issue #14) said the prior
+    440×280 felt cramped. Wider canvas + larger axis-label fonts
+    make the dot cloud and threshold reference line readable
+    without having to zoom.
+    """
     points = [
         (d["hold_years"], d["realized_moic"], d.get("sector"), d.get("deal_name", ""))
         for d in deals
@@ -54,7 +60,7 @@ def _scatter_svg(
     if not points:
         return ""
 
-    pad_l, pad_r, pad_t, pad_b = 42, 16, 12, 28
+    pad_l, pad_r, pad_t, pad_b = 52, 18, 14, 34
     cw, ch = w - pad_l - pad_r, h - pad_t - pad_b
 
     hold_max = max(p[0] for p in points) * 1.05
@@ -74,13 +80,13 @@ def _scatter_svg(
         if v <= hold_max:
             px = xp(v)
             parts.append(f'<line x1="{px:.1f}" y1="{pad_t}" x2="{px:.1f}" y2="{h-pad_b}" stroke="{P["border_dim"]}" stroke-width="1"/>')
-            parts.append(f'<text x="{px:.1f}" y="{h-pad_b+10}" text-anchor="middle" fill="{P["text_faint"]}" font-size="8" font-family="{_MONO}">{v}y</text>')
+            parts.append(f'<text x="{px:.1f}" y="{h-pad_b+14}" text-anchor="middle" fill="{P["text_faint"]}" font-size="10" font-family="{_MONO}">{v}y</text>')
 
     for v in [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]:
         if v <= moic_max:
             py = yp(v)
             parts.append(f'<line x1="{pad_l}" y1="{py:.1f}" x2="{w-pad_r}" y2="{py:.1f}" stroke="{P["border_dim"]}" stroke-width="1"/>')
-            parts.append(f'<text x="{pad_l-4}" y="{py+3:.1f}" text-anchor="end" fill="{P["text_faint"]}" font-size="8" font-family="{_MONO}" font-variant-numeric="tabular-nums">{v:.1f}×</text>')
+            parts.append(f'<text x="{pad_l-6}" y="{py+4:.1f}" text-anchor="end" fill="{P["text_faint"]}" font-size="10" font-family="{_MONO}" font-variant-numeric="tabular-nums">{v:.1f}×</text>')
 
     # 2.0x line
     if moic_min <= 2.0 <= moic_max:
@@ -93,19 +99,26 @@ def _scatter_svg(
         cy = yp(moic)
         col = P["positive"] if moic >= 2.5 else (P["warning"] if moic >= 2.0 else P["negative"])
         parts.append(
-            f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="4" fill="{col}" fill-opacity="0.7" stroke="{col}" stroke-width="1">'
+            f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="5" fill="{col}" fill-opacity="0.7" stroke="{col}" stroke-width="1">'
             f'<title>{html.escape(name[:40])}: hold {hold:.1f}y, MOIC {moic:.2f}×</title>'
             f'</circle>'
         )
 
     # axis labels
-    parts.append(f'<text x="{pad_l + cw//2}" y="{h-1}" text-anchor="middle" fill="{P["text_dim"]}" font-size="9" font-family="{_SANS}">Hold (years)</text>')
-    parts.append(f'<text x="10" y="{pad_t + ch//2}" text-anchor="middle" fill="{P["text_dim"]}" font-size="9" font-family="{_SANS}" transform="rotate(-90,10,{pad_t + ch//2})">MOIC</text>')
+    parts.append(f'<text x="{pad_l + cw//2}" y="{h-3}" text-anchor="middle" fill="{P["text_dim"]}" font-size="11" font-family="{_SANS}" font-weight="600">Hold (years)</text>')
+    parts.append(f'<text x="14" y="{pad_t + ch//2}" text-anchor="middle" fill="{P["text_dim"]}" font-size="11" font-family="{_SANS}" font-weight="600" transform="rotate(-90,14,{pad_t + ch//2})">MOIC</text>')
 
     return f'<svg width="{w}" height="{h}">{"".join(parts)}</svg>'
 
 
-def _hold_histogram(deals: List[Dict[str, Any]], w: int = 340, h: int = 90) -> str:
+def _hold_histogram(deals: List[Dict[str, Any]], w: int = 480, h: int = 140) -> str:
+    """Distribution of hold-period buckets.
+
+    Default 480×140 — bumped from 340×90 to match the scatter
+    proportions and fit the wider grid layout. Bigger bars give
+    the count labels room to breathe; partner can read the
+    distribution at a glance.
+    """
     holds = [d["hold_years"] for d in deals if d.get("hold_years") is not None]
     if not holds:
         return ""
@@ -117,8 +130,8 @@ def _hold_histogram(deals: List[Dict[str, Any]], w: int = 340, h: int = 90) -> s
         counts.append((lbl, n))
 
     max_n = max(c for _, c in counts) if counts else 1
-    pad_l, pad_r, pad_t, pad_b = 8, 8, 8, 22
-    bar_w = (w - pad_l - pad_r) // len(counts) - 4
+    pad_l, pad_r, pad_t, pad_b = 12, 12, 14, 28
+    bar_w = (w - pad_l - pad_r) // len(counts) - 6
 
     parts: List[str] = []
     for i, (lbl, n) in enumerate(counts):
@@ -126,9 +139,9 @@ def _hold_histogram(deals: List[Dict[str, Any]], w: int = 340, h: int = 90) -> s
         x = pad_l + i * ((w - pad_l - pad_r) // len(counts))
         y = h - pad_b - bh
         col = P["accent"]
-        parts.append(f'<rect x="{x+2}" y="{y}" width="{bar_w}" height="{bh}" fill="{col}"/>')
-        parts.append(f'<text x="{x+2+bar_w//2}" y="{y-2}" text-anchor="middle" fill="{P["text_dim"]}" font-size="9" font-family="{_MONO}" font-variant-numeric="tabular-nums">{n}</text>')
-        parts.append(f'<text x="{x+2+bar_w//2}" y="{h-5}" text-anchor="middle" fill="{P["text_dim"]}" font-size="8" font-family="{_SANS}">{lbl}</text>')
+        parts.append(f'<rect x="{x+3}" y="{y}" width="{bar_w}" height="{bh}" fill="{col}"/>')
+        parts.append(f'<text x="{x+3+bar_w//2}" y="{y-4}" text-anchor="middle" fill="{P["text_dim"]}" font-size="11" font-family="{_MONO}" font-variant-numeric="tabular-nums" font-weight="600">{n}</text>')
+        parts.append(f'<text x="{x+3+bar_w//2}" y="{h-8}" text-anchor="middle" fill="{P["text_dim"]}" font-size="10" font-family="{_SANS}">{lbl}</text>')
 
     return f'<svg width="{w}" height="{h}">{"".join(parts)}</svg>'
 
