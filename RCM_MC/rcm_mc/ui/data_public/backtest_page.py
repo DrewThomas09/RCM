@@ -460,14 +460,19 @@ def _r2_badge(r2: Optional[float]) -> str:
 
 def _kpi_bar(stats: Dict[str, Any]) -> str:
     from rcm_mc.ui._chartis_kit import (
-        ck_fmt_moic, ck_fmt_pct, ck_kpi_block, ck_provenance_tooltip,
+        SafeHtml, ck_fmt_moic, ck_fmt_pct, ck_kpi_block,
+        ck_provenance_tooltip,
     )
 
     moic_p50 = stats["moic_p50"]
     moic_color = _moic_color(moic_p50)
+    # _r2_badge returns pre-rendered HTML (a colored span); wrap in
+    # SafeHtml so ck_provenance_tooltip's _esc-pass doesn't escape
+    # the inner <span> to literal &lt;span&gt;... text.
+    r2_raw = _r2_badge(stats["r2"]) if stats["r2"] is not None else "—"
     r2_value = ck_provenance_tooltip(
         "Model R-squared",
-        _r2_badge(stats["r2"]) if stats["r2"] is not None else "—",
+        SafeHtml(r2_raw) if stats["r2"] is not None else r2_raw,
         explainer=(
             f"Coefficient of determination on the predicted-vs-"
             f"realized MOIC pairs ({stats['pairs_n']} calibrated). "
@@ -477,7 +482,7 @@ def _kpi_bar(stats: Dict[str, Any]) -> str:
     )
     moic_value = ck_provenance_tooltip(
         "Corpus P50 MOIC",
-        f'<span class="mn" style="color:{moic_color}">{ck_fmt_moic(moic_p50)}</span>',
+        SafeHtml(f'<span class="mn" style="color:{moic_color}">{ck_fmt_moic(moic_p50)}</span>'),
         explainer=(
             "Median realized MOIC across the calibration corpus. "
             "Color encodes regime: green >2.5x (strong), amber "
