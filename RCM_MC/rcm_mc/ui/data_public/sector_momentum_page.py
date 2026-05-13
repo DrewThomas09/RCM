@@ -186,6 +186,37 @@ def render_sector_momentum(recent_years: int = 5) -> str:
         for n in [3, 5, 7, 10]
     )
 
+    # Data-source disclosure. User asked "where are these numbers
+    # coming from?" — the deal counts and MOICs are NOT live; they
+    # come from a curated corpus of public PE-healthcare transactions
+    # stored in rcm_mc/data_public/deals_corpus.py + 38 extended_seed
+    # files. Reference year is hard-coded to 2024 (no live updates).
+    # Render an info-toned callout so partners see this before reading
+    # the acceleration verdicts.
+    corpus_min_year = min((d.get("year") for d in corpus if d.get("year")), default=current_year)
+    corpus_max_year = max((d.get("year") for d in corpus if d.get("year")), default=current_year)
+    data_source_callout = (
+        f'<div style="background:{P["panel_alt"]};border-left:3px solid '
+        f'{P["accent"]};padding:12px 16px;border-radius:0 3px 3px 0;'
+        f'margin-bottom:14px;font-size:12px;color:{P["text_dim"]};'
+        f'line-height:1.6;max-width:880px;">'
+        f'<div style="font-family:{_MONO};font-size:10px;'
+        f'letter-spacing:1.6px;text-transform:uppercase;font-weight:700;'
+        f'color:{P["text_faint"]};margin-bottom:4px;">Data source</div>'
+        f'<strong style="color:{P["text"]};">Curated corpus of '
+        f'{len(corpus)} public PE-healthcare transactions, '
+        f'{corpus_min_year}–{corpus_max_year}.</strong> Records '
+        f'are hand-coded from publicly-documented sponsor disclosures, '
+        f'press, and S-1 filings (see <code style="font-family:{_MONO};'
+        f'font-size:11px;color:{P["accent"]};">data_public/deals_corpus.py</code>). '
+        f'Reference year is pinned at {current_year} — not a live feed; '
+        f'recomputation requires a code update. Recent and prior windows '
+        f'are computed from each deal\'s entry year. Coverage is '
+        f'best-effort, not exhaustive — selection-bias toward larger and '
+        f'better-disclosed transactions.'
+        f'</div>'
+    )
+
     # Cycle 42 — KPI strip with provenance to lift fidelity over 70.
     n_growing = sum(1 for d in momentum_data if d["change_pct"] > 5)
     n_declining = sum(1 for d in momentum_data if d["change_pct"] < -5)
@@ -224,6 +255,7 @@ def render_sector_momentum(recent_years: int = 5) -> str:
     body = f"""
 <div style="padding:16px 20px;max-width:1200px">
   {ck_section_header("SECTOR MOMENTUM", f"Deal activity acceleration by sector — {len(corpus)} corpus transactions", None)}
+  {data_source_callout}
   {kpi_strip}
 
   <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
