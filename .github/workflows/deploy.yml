@@ -5,6 +5,16 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Serialize deploys: only one job runs at a time. If a new push arrives
+# while a deploy is in flight, the in-flight one is cancelled and the
+# newer one takes its place. Prevents the rapid-fire-batch failure mode
+# (N concurrent deploys collide on .git/index.lock and on the
+# docker-compose container name "deploy-rcm-mc-1", leaving orphan
+# containers that block subsequent deploys until SSH cleanup).
+concurrency:
+  group: deploy-pedesk
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -57,7 +67,11 @@ jobs:
           sudo git remote set-url origin "https://github.com/${GH_REPO}.git"
           echo "==> Rebuilding containers (profile=tls)"
           cd RCM_MC/deploy
-          sudo DOMAIN=pedesk.app docker compose --profile tls up -d --build
+          # --remove-orphans self-heals from leftover containers a prior
+          # failed/concurrent deploy may have left behind. Without it,
+          # a stale "deploy-rcm-mc-1" can block every subsequent deploy
+          # with a name-conflict error that needs SSH cleanup.
+          sudo DOMAIN=pedesk.app docker compose --profile tls up -d --build --remove-orphans
           echo "==> Deploy script finished on VM"
           REMOTE_EOF
 
