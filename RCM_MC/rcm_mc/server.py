@@ -11987,8 +11987,22 @@ class RCMHandler(BaseHTTPRequestHandler):
         opex = float(row.get("operating_expenses", 0))
         rev = float(row.get(rev_col, 0))
         if rev > 1e5 and opex > 0:
-            margin = max(-1, min(1, (rev - opex) / rev))
-            profile["ebitda_margin"] = round(margin, 4)
+            # Operating margin from HCRIS G-3 (revenue minus total
+            # operating expenses) is the only EBITDA-shaped signal the
+            # cost report exposes. It's a proxy, not a true EBITDA —
+            # excludes the depreciation add-back and treats research /
+            # education costs as opex. For an academic medical center
+            # like Mass General (CCN 220071) where research costs make
+            # opex exceed net patient revenue, the raw formula produces
+            # a negative margin that surfaces on the deal page as
+            # nonsensical "EBITDA -$175M". Clamp to a partner-sensible
+            # band [2%, 30%]; outside that, leave the field unset so
+            # render falls back to the industry-median 10% estimate
+            # and the partner can edit explicitly if they have real
+            # numbers from the CIM.
+            raw_margin = (rev - opex) / rev
+            if 0.02 <= raw_margin <= 0.30:
+                profile["ebitda_margin"] = round(raw_margin, 4)
         med = row.get("medicare_day_pct")
         if med is not None:
             profile["medicare_pct"] = float(med)
