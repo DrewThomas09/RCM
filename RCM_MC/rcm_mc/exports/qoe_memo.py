@@ -148,7 +148,7 @@ p { margin: 4pt 0 8pt 0; }
 .headline-card.immaterial { border-left-color: #1f7a3a; background: #f0f7f2; }
 .headline-card.watch      { border-left-color: #b07c1f; background: #fbf6ec; }
 .headline-card.critical   { border-left-color: #b23a2d; background: #fbf0ee; }
-.headline-card.unknown    { border-left-color: #6b5d3c; background: #f5f1ea; }
+.headline-card.unknown    { border-left-color: #6b5d3c; background: #f2ede3; }
 .headline-card .band {
     font-size: 9pt; font-weight: 700; letter-spacing: 1pt;
     text-transform: uppercase;

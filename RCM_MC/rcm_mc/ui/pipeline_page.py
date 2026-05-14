@@ -25,7 +25,7 @@ def _stage_badge(stage: str) -> str:
     (loi/diligence/ic), navy/positive/negative for terminal states.
     """
     tone_map = {
-        "screening": ("var(--sc-bone,#ece6db)",  "var(--sc-navy,#0b2341)"),
+        "screening": ("var(--sc-bone,#ece5d6)",  "var(--sc-navy,#0b2341)"),
         "outreach":  ("var(--sc-teal-2,#3d7d77)", "#fff"),
         "loi":       ("var(--sc-teal,#155752)",  "#fff"),
         "diligence": ("var(--sc-navy-3,#1d3c69)","#fff"),
@@ -33,7 +33,7 @@ def _stage_badge(stage: str) -> str:
         "closed":    ("var(--sc-positive,#0a8a5f)", "#fff"),
         "passed":    ("var(--sc-text-faint,#7a8699)", "#fff"),
     }
-    bg, fg = tone_map.get(stage, ("var(--sc-bone,#ece6db)", "var(--sc-navy,#0b2341)"))
+    bg, fg = tone_map.get(stage, ("var(--sc-bone,#ece5d6)", "var(--sc-navy,#0b2341)"))
     return (
         f'<span style="background:{bg};color:{fg};padding:4px 10px;'
         f'border-radius:2px;font-family:var(--sc-sans);'
@@ -141,13 +141,13 @@ def render_pipeline(db_path: str) -> str:
         '<style>'
         '.ck-funnel-row{display:grid;grid-template-columns:230px 1fr 56px;'
         'align-items:center;gap:18px;padding:12px 4px;'
-        'border-bottom:1px solid var(--sc-rule,#d6cfc3);}'
+        'border-bottom:1px solid var(--sc-rule,#d6cfc0);}'
         '.ck-funnel-row:last-child{border-bottom:0;}'
         '.ck-funnel-stage{display:flex;flex-direction:column;gap:4px;}'
         '.ck-funnel-stage-desc{font-family:var(--sc-serif,Georgia,serif);'
         'font-size:12.5px;color:var(--sc-text-dim,#465366);line-height:1.35;}'
         '.ck-funnel-track{position:relative;height:28px;'
-        'background:var(--sc-bone,#ece6db);border-radius:2px;overflow:hidden;}'
+        'background:var(--sc-bone,#ece5d6);border-radius:2px;overflow:hidden;}'
         '.ck-funnel-fill{position:absolute;top:0;left:0;height:100%;'
         'border-radius:2px;transition:width 0.25s ease-out;}'
         '.ck-funnel-count{font-family:var(--sc-mono,JetBrains Mono,monospace);'
