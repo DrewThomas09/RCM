@@ -71,6 +71,7 @@ from ._app_initiative_tracker import render_initiative_tracker
 from ._app_kpi_strip import render_kpi_strip
 from ._app_metric_catalog import render_metric_catalog
 from ._app_pipeline_funnel import render_pipeline_funnel
+from ._app_quick_access import render_quick_access
 from ._app_what_block import render_what_block
 
 
@@ -187,6 +188,11 @@ def render_app_page(
         ),
         # Top: portfolio rollup
         render_kpi_strip(rollup, deals_df=deals_df),
+        # Quick-access row — six curated cards to the surfaces a
+        # returning partner opens most. Ported from the Claude Design
+        # home handoff (QuickAccessRow). Static block — no store, no
+        # queries — so it does not touch the 3-query perf budget.
+        render_quick_access(),
         # Cross-reference catalog — every number on this page, with its
         # source level (FUND / DEAL).
         render_metric_catalog(
