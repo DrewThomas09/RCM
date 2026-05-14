@@ -1,4 +1,4 @@
-"""SeekingChartis Waterfall — returns waterfall visualization.
+"""PE Desk Waterfall — returns waterfall visualization.
 
 Connects pe/waterfall.py to the browser. Shows LP/GP split,
 tier-by-tier allocation, IRR, and MOIC.

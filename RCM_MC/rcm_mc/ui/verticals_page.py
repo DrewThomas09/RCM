@@ -1,4 +1,4 @@
-"""SeekingChartis Verticals — ASC, Behavioral Health, MSO bridges.
+"""PE Desk Verticals — ASC, Behavioral Health, MSO bridges.
 
 Shows sub-sector capabilities beyond acute care hospitals.
 """
@@ -27,7 +27,7 @@ def render_verticals() -> str:
             "status": "Full Coverage",
             "status_cls": "cad-badge-green",
             "description": (
-                "The core SeekingChartis capability. 6,000+ hospitals from HCRIS with "
+                "The core PE Desk capability. 6,000+ hospitals from HCRIS with "
                 "complete financial profiles, market analysis, and diligence tools."
             ),
             "metrics": "38-metric registry: denial rate, AR days, net collection, clean claim rate, "
@@ -200,7 +200,7 @@ def render_verticals() -> str:
         + kpi_strip
         + f'<div class="cad-card">'
         f'<p style="color:{PALETTE["text_secondary"]};font-size:12.5px;">'
-        f'SeekingChartis supports multiple healthcare sub-sectors beyond acute care. '
+        f'PE Desk supports multiple healthcare sub-sectors beyond acute care. '
         f'Each vertical has its own metric registry, value bridge model, and diligence framework.</p>'
         f'</div>'
         f'{cards}'

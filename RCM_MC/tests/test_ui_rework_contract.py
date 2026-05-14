@@ -695,7 +695,7 @@ class TestUIReworkContract(unittest.TestCase):
         )
 
     def test_v3_brand_link_preserves_editorial_flag(self) -> None:
-        """The SeekingChartis logo on any v3 page must NOT drop the user
+        """The PE Desk logo on any v3 page must NOT drop the user
         back into the legacy shell when clicked.
 
         Discovered during local testing 2026-04-25 (§1 in

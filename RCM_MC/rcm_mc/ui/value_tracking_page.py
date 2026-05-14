@@ -1,4 +1,4 @@
-"""SeekingChartis Value Creation Tracker — actual vs plan, lever by lever.
+"""PE Desk Value Creation Tracker — actual vs plan, lever by lever.
 
 Shows the frozen EBITDA bridge plan alongside quarterly actuals.
 Computes realization rates, detects ramp deviations, and feeds

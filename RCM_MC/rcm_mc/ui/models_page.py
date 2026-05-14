@@ -1,4 +1,4 @@
-"""SeekingChartis Financial Models — browser-rendered DCF, LBO, 3-Statement.
+"""PE Desk Financial Models — browser-rendered DCF, LBO, 3-Statement.
 
 Renders financial model outputs as rich HTML tables instead of raw JSON.
 Accessed via /models/dcf/<deal_id>, /models/lbo/<deal_id>, /models/financials/<deal_id>.

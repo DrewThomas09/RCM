@@ -1,4 +1,4 @@
-"""SeekingChartis Composite Score: 0-100 rating for any hospital.
+"""PE Desk Composite Score: 0-100 rating for any hospital.
 
 Combines market position (35%), financial health (25%), operational
 quality (20%), and competitive moat (20%) into a single investability
@@ -50,7 +50,7 @@ def compute_caduceus_score(
     profile: Dict[str, Any],
     market_data: Optional[Dict[str, Any]] = None,
 ) -> ChartisScore:
-    """Compute the SeekingChartis score for a hospital.
+    """Compute the PE Desk score for a hospital.
 
     Scoring is continuous (not stair-step) so the HCRIS long tail
     doesn't pile up at a single default value. Small hospitals with

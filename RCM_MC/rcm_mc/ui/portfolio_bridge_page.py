@@ -1,4 +1,4 @@
-"""SeekingChartis Portfolio EBITDA Bridge — aggregate value creation.
+"""PE Desk Portfolio EBITDA Bridge — aggregate value creation.
 
 Runs the EBITDA bridge for every hospital in the pipeline and
 aggregates the results. Shows total uplift, per-deal breakdown,

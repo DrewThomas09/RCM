@@ -1,6 +1,6 @@
 # UI
 
-Server-rendered HTML pages for the SeekingChartis web app. The
+Server-rendered HTML pages for the PE Desk web app. The
 v5 editorial design system replaces the legacy Bloomberg dark
 shell — every partner-facing page builds against `_chartis_kit.py`
 and renders through `chartis_shell()`. No external JS framework;

@@ -1,6 +1,6 @@
 # HIPAA Readiness Inventory
 
-Inventory of how the RCM-MC / SeekingChartis platform maps to the
+Inventory of how the RCM-MC / PE Desk platform maps to the
 three HIPAA Safeguard categories (45 CFR 164.308/.310/.312) when
 handling PHI during a diligence engagement.
 

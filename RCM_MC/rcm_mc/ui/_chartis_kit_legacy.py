@@ -1789,7 +1789,7 @@ def chartis_shell(
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{_html.escape(title)} — SeekingChartis Corpus</title>
+<title>{_html.escape(title)} — PE Desk Corpus</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/power_ui.css">
@@ -1803,7 +1803,7 @@ def chartis_shell(
 </head>
 <body>
 <div class="ck-bar">
-  <span class="ck-bar-logo">SeekingChartis</span>
+  <span class="ck-bar-logo">PE Desk</span>
   <span class="ck-bar-section">Corpus Intelligence</span>
   <span class="ck-bar-title">{_html.escape(title)}</span>
   <span class="ck-bar-time">{now}</span>

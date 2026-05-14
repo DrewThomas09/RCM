@@ -79,7 +79,7 @@ class TestVersionFooter(unittest.TestCase):
         from rcm_mc import __version__
         self.assertIsNotNone(__version__)
         html_str = shell("<p>test</p>", "Test")
-        self.assertIn("SeekingChartis", html_str)
+        self.assertIn("PE Desk", html_str)
 
 
 class TestManifest(unittest.TestCase):

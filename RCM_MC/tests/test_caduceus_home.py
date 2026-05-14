@@ -1,7 +1,7 @@
-"""Tests for SeekingChartis home page, market pulse, and insights.
+"""Tests for PE Desk home page, market pulse, and insights.
 
 HOME PAGE:
- 1. GET / renders SeekingChartis home with market pulse.
+ 1. GET / renders PE Desk home with market pulse.
  2. Home page has market indicators.
  3. Home page has deal table.
  4. Empty portfolio shows create-deal link.
@@ -52,7 +52,7 @@ class TestHomePage(unittest.TestCase):
                     f"http://127.0.0.1:{port}/home",
                 ) as r:
                     body = r.read().decode()
-                self.assertIn("SeekingChartis", body)
+                self.assertIn("PE Desk", body)
                 # Terminal-shell chrome: top bar + side nav. The
                 # earlier editorial reskin used `ck-topbar`; the
                 # revert restored the original `ck-bar` class.

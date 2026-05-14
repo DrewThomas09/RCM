@@ -58,7 +58,7 @@ class AlertsPageE2ETests(unittest.TestCase):
                 server.server_close()
 
     def test_alerts_renders_through_chartis_shell(self) -> None:
-        """The chartis_shell adds a SeekingChartis title suffix and
+        """The chartis_shell adds a PE Desk title suffix and
         the ck-main wrapper. Both should be present after the
         migration; their absence means the legacy shell crept back."""
         with tempfile.TemporaryDirectory() as tmp:
@@ -66,7 +66,7 @@ class AlertsPageE2ETests(unittest.TestCase):
             try:
                 with _u.urlopen(f"http://127.0.0.1:{port}/alerts") as r:
                     body = r.read().decode("utf-8")
-                self.assertIn("Alerts · SeekingChartis", body)
+                self.assertIn("Alerts · PE Desk", body)
                 self.assertIn("ck-main", body)
             finally:
                 server.shutdown()
@@ -143,7 +143,7 @@ class AlertsPageRendererTests(unittest.TestCase):
             self.assertIsInstance(html, str)
             self.assertGreater(len(html), 100)
             self.assertIn("<!doctype html>", html)
-            self.assertIn("Alerts · SeekingChartis", html)
+            self.assertIn("Alerts · PE Desk", html)
 
     def test_owner_filter_value_is_html_escaped(self) -> None:
         """User-supplied owner filter must be HTML-escaped to prevent

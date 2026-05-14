@@ -1,4 +1,4 @@
-"""SeekingChartis ML Insights — proprietary machine learning analysis.
+"""PE Desk ML Insights — proprietary machine learning analysis.
 
 Surfaces hospital clustering, distress prediction, RCM opportunity scoring,
 and statistical analysis in a single unified view. This is the platform's

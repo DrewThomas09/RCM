@@ -1,4 +1,4 @@
-"""SeekingChartis Hospital History — multi-year financial timeline.
+"""PE Desk Hospital History — multi-year financial timeline.
 
 Treats each hospital like a stock: historical financials, YoY growth,
 COVID resilience, peer comparison, and trend projections.

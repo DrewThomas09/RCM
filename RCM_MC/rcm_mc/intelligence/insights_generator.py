@@ -1,4 +1,4 @@
-"""Platform-generated insights: SeekingChartis Research articles.
+"""Platform-generated insights: PE Desk Research articles.
 
 Scans the portfolio for patterns and generates Seeking Alpha-style
 insight cards for the home page. Each insight is data-backed and
@@ -30,7 +30,7 @@ class Insight:
             "related_deal_ids": self.related_deal_ids,
             "severity": self.severity,
             "reading_time_minutes": self.reading_time_minutes,
-            "author": "SeekingChartis Research",
+            "author": "PE Desk Research",
             "published_at": datetime.now(timezone.utc).isoformat(),
         }
 

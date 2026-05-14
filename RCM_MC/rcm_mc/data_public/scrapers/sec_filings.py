@@ -27,7 +27,7 @@ from typing import Any, Dict, List, Optional
 
 
 _EDGAR_EFTS = "https://efts.sec.gov/LATEST/search-index"
-_USER_AGENT = "SeekingChartis/1.0 data@seekingchartis.com"  # EDGAR requires contact info
+_USER_AGENT = "PE Desk/1.0 data@seekingchartis.com"  # EDGAR requires contact info
 _RATE_LIMIT_S = 0.15  # 10 req/s safe margin
 
 _HEALTH_KEYWORDS = [

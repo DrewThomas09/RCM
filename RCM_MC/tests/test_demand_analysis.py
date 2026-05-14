@@ -196,7 +196,7 @@ class TestDemandPage(unittest.TestCase):
             "explanations": {"density": "High", "stickiness": "Good", "elasticity": "Low", "tailwind": "Positive"},
         }
         html = render_demand_analysis(profile)
-        self.assertIn("SeekingChartis", html)
+        self.assertIn("PE Desk", html)
         self.assertIn("Disease Density", html)
         self.assertIn("Stickiness", html)
         self.assertIn("Heart Failure", html)

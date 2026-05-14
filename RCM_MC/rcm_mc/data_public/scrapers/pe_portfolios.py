@@ -29,7 +29,7 @@ import urllib.request
 from typing import Any, Dict, List, Optional
 
 
-_USER_AGENT = "SeekingChartis/1.0 data@seekingchartis.com"
+_USER_AGENT = "PE Desk/1.0 data@seekingchartis.com"
 _TIMEOUT = 15
 _RATE_LIMIT_S = 0.5
 

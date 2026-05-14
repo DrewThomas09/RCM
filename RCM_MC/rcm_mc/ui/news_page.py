@@ -1,4 +1,4 @@
-"""SeekingChartis News — healthcare PE market news aggregator.
+"""PE Desk News — healthcare PE market news aggregator.
 
 Curates healthcare industry news, regulatory updates, and deal
 activity into a Seeking Alpha-style article feed.
@@ -377,7 +377,7 @@ def _article_card(article: Dict[str, Any]) -> str:
 
 
 def render_news(category: str = "all") -> str:
-    """Render the SeekingChartis news page."""
+    """Render the PE Desk news page."""
     # Category filter tabs
     tabs = []
     for label, cat in _NEWS_CATEGORIES:

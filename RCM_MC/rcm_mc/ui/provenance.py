@@ -1,4 +1,4 @@
-"""SeekingChartis Provenance System — source attribution for every number.
+"""PE Desk Provenance System — source attribution for every number.
 
 Every metric in the platform has a source: HCRIS public filing, ML
 prediction, seller data room, Bayesian calibration, benchmark default,

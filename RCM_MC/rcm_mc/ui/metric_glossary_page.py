@@ -1,4 +1,4 @@
-"""SeekingChartis Metric Glossary — canonical reference page.
+"""PE Desk Metric Glossary — canonical reference page.
 
 Renders every registered metric in `metric_glossary._GLOSSARY`
 as an anchor-linkable card. Phase 4A of the v3 transformation

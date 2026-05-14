@@ -1,4 +1,4 @@
-"""SeekingChartis Competitive Intelligence — peer rankings & gap analysis.
+"""PE Desk Competitive Intelligence — peer rankings & gap analysis.
 
 For any hospital, shows percentile rank on every metric across four
 peer groups: national, state, size-matched, and system type. Gaps to

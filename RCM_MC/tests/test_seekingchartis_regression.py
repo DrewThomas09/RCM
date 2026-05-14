@@ -1,4 +1,4 @@
-"""Tests for SeekingChartis regression page and migrated pages.
+"""Tests for PE Desk regression page and migrated pages.
 
 REGRESSION:
  1. GET /portfolio/regression renders with HCRIS data.
@@ -58,7 +58,7 @@ class TestRegressionPage(unittest.TestCase):
                 ) as r:
                     body = r.read().decode()
                 self.assertIn("Regression Analysis", body)
-                self.assertIn("SeekingChartis", body)
+                self.assertIn("PE Desk", body)
                 self.assertIn("R&sup2;", body)
                 self.assertIn("Coefficients", body)
             finally:
@@ -112,7 +112,7 @@ class TestMigratedPages(unittest.TestCase):
                 ) as r:
                     body = r.read().decode()
                 self.assertIn("Run History", body)
-                self.assertIn("SeekingChartis", body)
+                self.assertIn("PE Desk", body)
                 self.assertIn("ck-topbar", body)
             finally:
                 server.shutdown(); server.server_close()
@@ -130,7 +130,7 @@ class TestMigratedPages(unittest.TestCase):
                 ) as r:
                     body = r.read().decode()
                 self.assertIn("Calibration", body)
-                self.assertIn("SeekingChartis", body)
+                self.assertIn("PE Desk", body)
                 self.assertIn("ck-topbar", body)
             finally:
                 server.shutdown(); server.server_close()
@@ -148,7 +148,7 @@ class TestMigratedPages(unittest.TestCase):
                 ) as r:
                     body = r.read().decode()
                 self.assertIn("Scenario Explorer", body)
-                self.assertIn("SeekingChartis", body)
+                self.assertIn("PE Desk", body)
                 self.assertIn("ck-topbar", body)
             finally:
                 server.shutdown(); server.server_close()
@@ -166,7 +166,7 @@ class TestMigratedPages(unittest.TestCase):
                 ) as r:
                     body = r.read().decode()
                 self.assertIn("Deal Sourcing", body)
-                self.assertIn("SeekingChartis", body)
+                self.assertIn("PE Desk", body)
                 self.assertIn("ck-topbar", body)
             finally:
                 server.shutdown(); server.server_close()

@@ -1,4 +1,4 @@
-"""SeekingChartis Investment Thesis Card — 30-second deal answer.
+"""PE Desk Investment Thesis Card — 30-second deal answer.
 
 Synthesizes all ML models into a single card that answers:
 "Should I pursue this hospital?" Shows investability grade,

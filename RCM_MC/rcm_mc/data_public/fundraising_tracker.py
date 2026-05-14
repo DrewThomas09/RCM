@@ -107,13 +107,13 @@ def _load_corpus() -> List[dict]:
 
 def _build_targets() -> List[FundTarget]:
     return [
-        FundTarget("Seeking Chartis Healthcare Fund VI", 6.0, 7.5, "Healthcare Buyout",
+        FundTarget("PE Desk Healthcare Fund VI", 6.0, 7.5, "Healthcare Buyout",
                    "2025-11-15", "2026-03-31", "2026-12-31", 4250.0, 5100.0, "active fundraising"),
-        FundTarget("Seeking Chartis Growth Equity III", 1.5, 2.0, "Healthcare Growth",
+        FundTarget("PE Desk Growth Equity III", 1.5, 2.0, "Healthcare Growth",
                    "2026-01-15", "2026-05-31", "2026-12-31", 650.0, 825.0, "early fundraising"),
-        FundTarget("Seeking Chartis Continuation Vehicle (MSK)", 0.85, 1.0, "Single-asset CV",
+        FundTarget("PE Desk Continuation Vehicle (MSK)", 0.85, 1.0, "Single-asset CV",
                    "2026-02-22", "2026-05-31", "2026-08-31", 485.0, 620.0, "in pricing"),
-        FundTarget("Seeking Chartis Opportunistic Credit Fund", 2.2, 2.5, "Healthcare Credit",
+        FundTarget("PE Desk Opportunistic Credit Fund", 2.2, 2.5, "Healthcare Credit",
                    "2026-02-28", "2026-08-31", "2026-12-31", 320.0, 485.0, "early fundraising"),
     ]
 

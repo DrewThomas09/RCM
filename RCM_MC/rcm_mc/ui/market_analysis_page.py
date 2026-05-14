@@ -1,4 +1,4 @@
-"""SeekingChartis Market Analysis — browser-rendered competitive analysis.
+"""PE Desk Market Analysis — browser-rendered competitive analysis.
 
 Renders the market analysis (HHI, moat, competitors) as a visual page.
 """

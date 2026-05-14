@@ -32,7 +32,7 @@ class TestQuantLabPage(unittest.TestCase):
         from rcm_mc.ui.regression_page import _add_computed_features
         df = _add_computed_features(_sample_hcris(200))
         html = render_quant_lab(df)
-        self.assertIn("SeekingChartis", html)
+        self.assertIn("PE Desk", html)
         self.assertIn("Quant Lab", html)
         self.assertIn("Efficiency Frontier", html)
         self.assertIn("Market Intelligence", html)

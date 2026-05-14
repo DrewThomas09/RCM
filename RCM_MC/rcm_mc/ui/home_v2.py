@@ -1,4 +1,4 @@
-"""SeekingChartis Home Page — market-first dashboard.
+"""PE Desk Home Page — market-first dashboard.
 
 Seeking Alpha-inspired: market pulse, insights, active deals,
 data freshness. Portfolio data is one section, not the whole page.
@@ -60,7 +60,7 @@ def _insight_card(insight: Dict[str, Any]) -> str:
         f'<p style="margin-bottom:8px;">{html.escape(insight.get("body", ""))}</p>'
         f'<div style="display:flex;gap:6px;align-items:center;">'
         f'<span style="font-size:11px;color:{PALETTE["text_muted"]};">'
-        f'By {html.escape(insight.get("author", "SeekingChartis Research"))}</span>'
+        f'By {html.escape(insight.get("author", "PE Desk Research"))}</span>'
         f'{deal_links}</div></div>'
     )
 
@@ -272,7 +272,7 @@ def render_home(
     deals: pd.DataFrame,
     store: Any = None,
 ) -> str:
-    """Render the SeekingChartis home page."""
+    """Render the PE Desk home page."""
 
     # Market Pulse KPIs
     pulse_cards = ""
@@ -305,7 +305,7 @@ def render_home(
         insights_section = (
             f'<div style="margin-bottom:24px;">'
             f'<h2 class="cad-h1" style="font-size:16px;margin-bottom:12px;">'
-            f'Insights from SeekingChartis</h2>'
+            f'Insights from PE Desk</h2>'
             f'{cards}</div>'
         )
 

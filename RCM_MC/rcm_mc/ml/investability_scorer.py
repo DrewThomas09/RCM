@@ -10,7 +10,7 @@ Components:
 - Demand Defensibility (15pts): disease density, stickiness, elasticity
 - Operational Efficiency (15pts): occupancy, revenue/bed, expense discipline
 
-This is the flagship moat metric — the single number that SeekingChartis
+This is the flagship moat metric — the single number that PE Desk
 produces that no other platform can replicate.
 """
 from __future__ import annotations

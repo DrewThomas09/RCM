@@ -1,4 +1,4 @@
-"""SeekingChartis Command Center — the page that answers 'what should I do today?'
+"""PE Desk Command Center — the page that answers 'what should I do today?'
 
 For new users (no deals): screening-focused with hospital universe stats,
 quick-screen buttons, and market intelligence highlights.
@@ -447,7 +447,7 @@ def render_command_center(
     )
 
     return chartis_shell(
-        body, "SeekingChartis",
+        body, "PE Desk",
         active_nav="/home",
         subtitle=(
             f"{n_hospitals:,} hospitals | {n_pe_targets:,} PE targets | "

@@ -114,7 +114,7 @@ class TestDataRoomServer(unittest.TestCase):
                     body = r.read().decode()
                 self.assertIn("Data Room", body)
                 self.assertIn("Enter Seller Data", body)
-                self.assertIn("SeekingChartis", body)
+                self.assertIn("PE Desk", body)
             finally:
                 server.shutdown()
                 server.server_close()

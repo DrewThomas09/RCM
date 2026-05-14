@@ -1,4 +1,4 @@
-"""SeekingChartis Deal Pipeline — saved searches and hospital tracking.
+"""PE Desk Deal Pipeline — saved searches and hospital tracking.
 
 The workflow platform: analysts save screener filters, add hospitals to
 the pipeline, track them through stages, and see the funnel at a glance.

@@ -1,6 +1,6 @@
-"""Tests for SeekingChartis navigation — every nav item should render.
+"""Tests for PE Desk navigation — every nav item should render.
 
-Verifies that all 8 nav items return 200 and contain SeekingChartis branding.
+Verifies that all 8 nav items return 200 and contain PE Desk branding.
 Also tests the analysis landing and portfolio overview pages.
 """
 from __future__ import annotations
@@ -53,7 +53,7 @@ class TestAnalysisLanding(unittest.TestCase):
                 ) as r:
                     body = r.read().decode()
                 self.assertIn("Analysis", body)
-                self.assertIn("SeekingChartis", body)
+                self.assertIn("PE Desk", body)
                 self.assertIn("Import Deals", body)
                 self.assertIn("Market Heatmap", body)
                 self.assertIn("Regression", body)
@@ -131,7 +131,7 @@ class TestPortfolioOverview(unittest.TestCase):
 
 
 class TestAllNavItemsRender(unittest.TestCase):
-    """Every nav item should return 200 and contain SeekingChartis."""
+    """Every nav item should return 200 and contain PE Desk."""
 
     def test_all_nav_items_return_200(self):
         tf = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
@@ -178,8 +178,8 @@ class TestAllNavItemsRender(unittest.TestCase):
                             f"http://127.0.0.1:{port}{path}",
                         ) as r:
                             body = r.read().decode()
-                            self.assertIn("SeekingChartis", body,
-                                          f"{path} missing SeekingChartis branding")
+                            self.assertIn("PE Desk", body,
+                                          f"{path} missing PE Desk branding")
                 self.assertIn("ck-topbar", body,
                                           f"{path} missing topbar")
             finally:

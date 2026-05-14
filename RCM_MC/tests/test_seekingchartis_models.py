@@ -1,9 +1,9 @@
-"""Tests for SeekingChartis browser-rendered financial models.
+"""Tests for PE Desk browser-rendered financial models.
 
  1. /models/dcf/<deal_id> renders DCF page.
  2. /models/lbo/<deal_id> renders LBO page.
  3. /models/financials/<deal_id> renders 3-statement page.
- 4. All model pages have SeekingChartis branding.
+ 4. All model pages have PE Desk branding.
 """
 from __future__ import annotations
 
@@ -67,7 +67,7 @@ class TestModelPages(unittest.TestCase):
             body = r.read().decode()
         self.assertIn("DCF", body)
         self.assertIn("Enterprise Value", body)
-        self.assertIn("SeekingChartis", body)
+        self.assertIn("PE Desk", body)
         self.assertIn("ck-topbar", body)
 
     def test_lbo_page(self):
@@ -78,7 +78,7 @@ class TestModelPages(unittest.TestCase):
         self.assertIn("LBO", body)
         self.assertIn("IRR", body)
         self.assertIn("MOIC", body)
-        self.assertIn("SeekingChartis", body)
+        self.assertIn("PE Desk", body)
 
     def test_financials_page(self):
         with urllib.request.urlopen(
@@ -86,7 +86,7 @@ class TestModelPages(unittest.TestCase):
         ) as r:
             body = r.read().decode()
         self.assertIn("Financials", body)
-        self.assertIn("SeekingChartis", body)
+        self.assertIn("PE Desk", body)
         self.assertIn("ck-topbar", body)
 
     def test_dcf_has_projections(self):

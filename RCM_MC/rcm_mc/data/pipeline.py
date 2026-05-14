@@ -1,6 +1,6 @@
 """Deal pipeline — saved searches and hospital tracking through deal stages.
 
-Converts SeekingChartis from a screening tool into a workflow platform.
+Converts PE Desk from a screening tool into a workflow platform.
 Analysts save screener filters, track hospitals through pipeline stages,
 and get notified when new hospitals match saved searches.
 

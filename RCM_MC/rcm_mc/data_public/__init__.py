@@ -1,4 +1,4 @@
-"""Public deals corpus and calibration data for SeekingChartis.
+"""Public deals corpus and calibration data for PE Desk.
 
 Submodules:
     deals_corpus      – SQLite schema + CRUD for public_deals table (55 seed deals)

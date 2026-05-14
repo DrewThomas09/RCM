@@ -1,4 +1,4 @@
-"""SeekingChartis Methodology — how every number is calculated.
+"""PE Desk Methodology — how every number is calculated.
 
 Builds trust with users by explaining data sources, scoring models,
 and analytical approaches in plain language.
@@ -80,7 +80,7 @@ def render_methodology() -> str:
         headline="How every number on the platform can be audited.",
         italic_word="audited",
         body=(
-            "SeekingChartis combines public hospital data with "
+            "PE Desk combines public hospital data with "
             "proprietary analytical models to generate diligence-grade "
             "intelligence for healthcare PE. Every number on this "
             "platform traces back to a specific data source and "
@@ -154,14 +154,14 @@ def render_methodology() -> str:
             "Hospital Cost Reports",
             "Hospital Cost Report Information System from CMS. Every Medicare-certified hospital "
             "files an annual cost report containing revenue, expenses, bed counts, patient days, "
-            "and payer mix. SeekingChartis loads the latest report per hospital (~6,000 active "
+            "and payer mix. PE Desk loads the latest report per hospital (~6,000 active "
             "hospitals). Data has a ~12-18 month lag from filing date.",
             "Source data.cms.gov · Update Annual · Fields ~50 per hospital",
         )
         + _source_card(
             "FRED",
             "Federal Reserve Economic Data",
-            "Treasury yields and macro indicators from the St. Louis Fed. SeekingChartis pulls "
+            "Treasury yields and macro indicators from the St. Louis Fed. PE Desk pulls "
             "the 10-year Treasury rate (DGS10) as a key input for discount rates (WACC) and "
             "market sentiment. Falls back to last known value on API failure.",
             "Source api.stlouisfed.org · Update Daily · Used in DCF, Market Pulse",
@@ -186,7 +186,7 @@ def render_methodology() -> str:
     ), anchor="toc-data")
 
     # ── Scoring ──
-    scoring = _section("SCR", "SeekingChartis Score (0-100)", (
+    scoring = _section("SCR", "PE Desk Score (0-100)", (
         f'<p class="ck-section-body">'
         f'Every hospital gets a composite investability score from 0 to 100, graded A+ to F. '
         f'The score combines four weighted components:</p>'
@@ -333,7 +333,7 @@ def render_methodology() -> str:
         if ont_rows:
             ontology_section = _section("ONT", "Metric Definitions & Causal Chains", (
                 f'<p class="ck-section-body">'
-                f'Every metric in SeekingChartis has a formal definition, domain classification, '
+                f'Every metric in PE Desk has a formal definition, domain classification, '
                 f'and causal chain explaining how it affects EBITDA. From the healthcare '
                 f'economic ontology.</p>'
                 f'<table class="cad-table"><thead><tr>'

@@ -22,7 +22,7 @@ class TestPortfolioMonitor(unittest.TestCase):
     def test_renders_empty_portfolio(self):
         from rcm_mc.ui.portfolio_monitor_page import render_portfolio_monitor
         html = render_portfolio_monitor(self.store)
-        self.assertIn("SeekingChartis", html)
+        self.assertIn("PE Desk", html)
         self.assertIn("No active deals", html)
 
     def test_renders_with_deals(self):

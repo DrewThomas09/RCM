@@ -1,4 +1,4 @@
-"""SeekingChartis Analysis Landing — hub for all analytical tools.
+"""PE Desk Analysis Landing — hub for all analytical tools.
 
 When the user clicks "Analysis" in the nav without a deal selected,
 this page shows deals with one-click access to every model.

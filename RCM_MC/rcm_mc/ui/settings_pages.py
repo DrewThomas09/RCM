@@ -1,7 +1,7 @@
 """Settings pages: custom KPIs, automations, integrations.
 
 Route: GET /settings/custom-kpis, /settings/automations, /settings/integrations.
-All use chartis_shell for consistent SeekingChartis branding.
+All use chartis_shell for consistent PE Desk branding.
 """
 from __future__ import annotations
 

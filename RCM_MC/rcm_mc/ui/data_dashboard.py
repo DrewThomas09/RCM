@@ -1,4 +1,4 @@
-"""SeekingChartis Data Intelligence Dashboard.
+"""PE Desk Data Intelligence Dashboard.
 
 Shows the full data estate: HCRIS coverage, benchmark freshness,
 multi-year trends, state-level gaps, and data quality metrics.

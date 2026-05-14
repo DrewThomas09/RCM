@@ -1,4 +1,4 @@
-"""SeekingChartis Portfolio Overview — unified portfolio intelligence page.
+"""PE Desk Portfolio Overview — unified portfolio intelligence page.
 
 Replaces the heatmap as the default portfolio view with a comprehensive
 overview: KPI summary, health distribution, deal table with inline

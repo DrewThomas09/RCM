@@ -100,7 +100,7 @@ class TestEBITDABridgePage(unittest.TestCase):
         from rcm_mc.ui.ebitda_bridge_page import render_ebitda_bridge
         df = _sample_hcris()
         html = render_ebitda_bridge("000001", df)
-        self.assertIn("SeekingChartis", html)
+        self.assertIn("PE Desk", html)
         self.assertIn("EBITDA Bridge", html)
         self.assertIn("Lever Detail", html)
         self.assertIn("Timing Curve", html)

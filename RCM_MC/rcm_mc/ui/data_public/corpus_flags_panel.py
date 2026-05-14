@@ -195,7 +195,7 @@ def render_corpus_flags_panel(deal: Dict[str, Any]) -> str:
         f'from {615} realized corpus deals'
         f'</div>'
         f'{flags_html}'
-        f'<div class="ckf-meta">Source: SeekingChartis corpus · {615} deals · '
+        f'<div class="ckf-meta">Source: PE Desk corpus · {615} deals · '
         f'corpus-OLS calibration · flags are indicative, not dispositive</div>'
         f'</div>'
     )
