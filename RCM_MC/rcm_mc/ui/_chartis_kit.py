@@ -500,6 +500,135 @@ def ck_signal_badge(text: str, *, tone: str = "neutral") -> str:
     return f'<span class="ck-badge tone-{tone}">{_esc(text)}</span>'
 
 
+# ── Claude Design handoff primitives ────────────────────────────────
+# Ported from the marketing / home / module-directory handoffs
+# (React/JSX prototypes). These three are the composition primitives
+# the handoffs introduce — DataPanel chrome, the BarRow, and the
+# signature paired-viz+dataset block. They read existing --sc-* CSS
+# vars so they inherit any later palette refinement automatically.
+
+
+def ck_data_panel(
+    code: str,
+    title: str,
+    body: str,
+    *,
+    live: bool = True,
+) -> str:
+    """Bordered data panel with a navy header — the platform's
+    signature surface chrome (3-letter mono code + title + LIVE badge).
+
+    Ported from the Claude Design ``DataPanel`` primitive in the
+    home / module-directory handoffs. ``body`` is pre-rendered HTML
+    (the panel's content); ``code`` is the short mono identifier
+    shown in teal at the header's left edge (e.g. ``FNL``, ``ALR``).
+    """
+    live_html = (
+        '<span class="ck-data-panel-live">LIVE</span>' if live else ""
+    )
+    return (
+        '<section class="ck-data-panel">'
+        '<header class="ck-data-panel-head">'
+        f'<span class="ck-data-panel-code">{_esc(code)}</span>'
+        f'<span class="ck-data-panel-title">{_esc(title)}</span>'
+        f'{live_html}'
+        '</header>'
+        f'<div class="ck-data-panel-body">{body}</div>'
+        '</section>'
+    )
+
+
+def ck_bar_row(
+    label: str,
+    value: str,
+    pct: float,
+    *,
+    tone: str = "teal",
+    unit: str = "",
+) -> str:
+    """Compact labelled bar row — label, value, proportional bar, %.
+
+    Ported from the Claude Design ``BarRow`` primitive. ``pct`` is
+    0-100; ``tone`` ∈ {teal, positive, warning, negative, navy}. The
+    bar floors at 2% width so a near-zero value still reads as a row.
+    """
+    tone_var = {
+        "teal": "var(--sc-teal)",
+        "positive": "var(--sc-positive)",
+        "warning": "var(--sc-warning)",
+        "negative": "var(--sc-negative)",
+        "navy": "var(--sc-navy)",
+    }.get(tone, "var(--sc-teal)")
+    pct_clamped = max(0.0, min(100.0, pct))
+    return (
+        '<div class="ck-bar-row">'
+        f'<span class="ck-bar-row-label">{_esc(label)}</span>'
+        f'<span class="ck-bar-row-value">{_esc(value)}{_esc(unit)}</span>'
+        '<span class="ck-bar-row-track">'
+        f'<span class="ck-bar-row-fill" '
+        f'style="width:{max(2.0, pct_clamped):.1f}%;background:{tone_var};">'
+        '</span></span>'
+        f'<span class="ck-bar-row-pct">{pct_clamped:.1f}%</span>'
+        '</div>'
+    )
+
+
+def ck_paired_block(
+    viz_html: str,
+    *,
+    data_label: str,
+    headers: Sequence[str],
+    rows: Sequence[Sequence[str]],
+    data_source: str = "",
+    hot_rows: Sequence[int] = (),
+) -> str:
+    """The signature paired viz + dataset block — a chart on the left,
+    its raw dataset on the right, both inside one outer rule.
+
+    Ported from the Claude Design "paired viz + dataset" pattern in
+    the marketing handoff. ``viz_html`` is pre-rendered (SVG chart,
+    funnel, etc.). ``headers`` is the column labels — the first column
+    left-aligns as a label, the rest right-align as values. ``rows``
+    is the table body, one sequence of cells per row, same column
+    order as ``headers``. ``hot_rows`` marks row indices to highlight
+    (left amber rule + tinted background).
+
+    Per the handoff convention: a chart without its paired dataset
+    is not considered done.
+    """
+    hot = set(hot_rows)
+    head_cells = "".join(
+        f'<th>{_esc(h)}</th>' if i == 0
+        else f'<th class="ck-pair-r">{_esc(h)}</th>'
+        for i, h in enumerate(headers)
+    )
+    body_rows = ""
+    for ridx, row in enumerate(rows):
+        row_cls = ' class="ck-pair-hot"' if ridx in hot else ""
+        cells = "".join(
+            f'<td class="ck-pair-lbl">{_esc(c)}</td>' if i == 0
+            else f'<td class="ck-pair-r">{_esc(c)}</td>'
+            for i, c in enumerate(row)
+        )
+        body_rows += f'<tr{row_cls}>{cells}</tr>'
+    src_html = (
+        f'<span class="ck-pair-src">{_esc(data_source)}</span>'
+        if data_source else ""
+    )
+    return (
+        '<div class="ck-pair">'
+        f'<div class="ck-pair-viz">{viz_html}</div>'
+        '<div class="ck-pair-data">'
+        '<div class="ck-pair-data-h">'
+        f'<span>{_esc(data_label)}</span>{src_html}'
+        '</div>'
+        f'<table><thead><tr>{head_cells}</tr></thead>'
+        f'<tbody>{body_rows}</tbody></table>'
+        '</div>'
+        '</div>'
+    )
+
+
 def ck_confidence_band(
     point: str,
     lo: Optional[str] = None,
@@ -3396,6 +3525,61 @@ _CSS_INLINE_FALLBACK = """
     .ck-main { max-width:none; padding:0; }
     /* Legacy cad-* chrome hide for pages still on the legacy shell */
     .cad-nav, .cad-topbar, .cad-ticker { display:none !important; }
+  }
+
+  /* ---- Claude Design handoff primitives ---- */
+  /* DataPanel — bordered surface, navy header w/ mono code + LIVE badge */
+  .ck-data-panel { background:#fff; border:1px solid var(--sc-rule);
+    border-radius:2px; margin:0 0 var(--sc-s-5); }
+  .ck-data-panel-head { background:var(--sc-navy); color:var(--sc-on-navy);
+    padding:9px 14px; display:flex; align-items:center; gap:10px;
+    font-family:var(--sc-mono); font-size:10.5px; letter-spacing:0.14em;
+    text-transform:uppercase; }
+  .ck-data-panel-code { color:var(--sc-teal-2); font-weight:700; flex:0 0 auto; }
+  .ck-data-panel-title { color:var(--sc-on-navy); flex:1 1 auto; min-width:0;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ck-data-panel-live { color:var(--sc-on-navy-faint); font-size:9px; flex:0 0 auto; }
+  .ck-data-panel-body { padding:14px; }
+
+  /* BarRow — label / value / proportional bar / pct */
+  .ck-bar-row { display:grid; grid-template-columns:120px 48px 1fr 56px;
+    gap:10px; align-items:center; padding:5px 0; font-size:12px;
+    font-family:var(--sc-mono); font-variant-numeric:tabular-nums; }
+  .ck-bar-row-label { color:var(--sc-text-dim); overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap; }
+  .ck-bar-row-value { text-align:right; color:var(--sc-text); font-weight:600; }
+  .ck-bar-row-track { height:5px; background:var(--sc-bone); position:relative; }
+  .ck-bar-row-fill { position:absolute; left:0; top:0; bottom:0; }
+  .ck-bar-row-pct { text-align:right; color:var(--sc-text-faint); font-size:11px; }
+
+  /* Paired viz + dataset — the signature block (chart left, data right) */
+  .ck-pair { display:grid; grid-template-columns:1.4fr 1fr; gap:0;
+    background:#fff; border:1px solid var(--sc-rule-2); margin:var(--sc-s-5) 0; }
+  .ck-pair-viz { padding:var(--sc-s-7); border-right:1px solid var(--sc-rule); }
+  .ck-pair-data { background:var(--sc-parchment); }
+  .ck-pair-data-h { padding:14px 20px; border-bottom:1px solid var(--sc-rule);
+    font-family:var(--sc-sans); font-size:10.5px; font-weight:700;
+    letter-spacing:0.14em; text-transform:uppercase; color:var(--sc-text-dim);
+    display:flex; justify-content:space-between; align-items:center; }
+  .ck-pair-src { font-family:var(--sc-mono); text-transform:none;
+    letter-spacing:0; color:var(--sc-teal-ink); font-size:11px; }
+  .ck-pair table { width:100%; border-collapse:collapse;
+    font-family:var(--sc-mono); font-size:12.5px; }
+  .ck-pair th { text-align:left; padding:8px 20px; color:var(--sc-text-faint);
+    font-weight:600; font-size:9.5px; letter-spacing:0.12em;
+    text-transform:uppercase; border-bottom:1px solid var(--sc-rule);
+    font-family:var(--sc-sans); }
+  .ck-pair td { padding:8px 20px; border-bottom:1px solid var(--sc-rule);
+    color:var(--sc-text); font-variant-numeric:tabular-nums; }
+  .ck-pair tr:last-child td { border-bottom:none; }
+  .ck-pair th.ck-pair-r, .ck-pair td.ck-pair-r { text-align:right; }
+  .ck-pair td.ck-pair-lbl { color:var(--sc-text-dim);
+    font-family:var(--sc-sans); font-size:13px; }
+  .ck-pair tr.ck-pair-hot td { background:var(--sc-bone); }
+  .ck-pair tr.ck-pair-hot td:first-child { border-left:2px solid var(--sc-warning); }
+  @media (max-width:1100px) {
+    .ck-pair { grid-template-columns:1fr; }
+    .ck-pair-viz { border-right:none; border-bottom:1px solid var(--sc-rule); }
   }
 </style>
 """
