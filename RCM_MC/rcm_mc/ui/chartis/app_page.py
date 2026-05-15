@@ -70,6 +70,7 @@ from ._app_focused_deal_bar import render_focused_deal_bar
 from ._app_initiative_tracker import render_initiative_tracker
 from ._app_kpi_strip import render_kpi_strip
 from ._app_metric_catalog import render_metric_catalog
+from ._app_morning_brief import render_morning_brief
 from ._app_pipeline_funnel import render_pipeline_funnel
 from ._app_quick_access import render_quick_access
 from ._app_what_block import render_what_block
@@ -193,6 +194,13 @@ def render_app_page(
         # home handoff (QuickAccessRow). Static block — no store, no
         # queries — so it does not touch the 3-query perf budget.
         render_quick_access(),
+        # Morning-brief panel grid — glance-level FNL / CVN / SIG
+        # panels from the Claude Design home handoff, built with the
+        # ck_data_panel + ck_bar_row primitives. Pure presentation of
+        # the already-computed `rollup` — no extra query. Summary-
+        # then-detail: the detailed funnel / covenant / signal blocks
+        # remain below as the drill-down.
+        render_morning_brief(rollup),
         # Cross-reference catalog — every number on this page, with its
         # source level (FUND / DEAL).
         render_metric_catalog(
