@@ -88,18 +88,19 @@ def _landing() -> str:
         f'<option value="{html.escape(n)}">{html.escape(l)}</option>'
         for n, l in AVAILABLE_FIXTURES
     )
-    intro = ck_section_intro(
-        eyebrow="RCM Diligence",
-        headline="Thesis Pipeline — close the loop.",
-        italic_word="loop",
-        body=(
-            "Runs the full 13-step diligence chain — bankruptcy "
-            "scan, CCD ingest, HFMA benchmarks, denial prediction, "
-            "physician attrition, counterfactual advisor, Steward "
-            "score, cyber score, deal autopsy, market intel — and "
-            "returns a populated Deal MC scenario plus every "
-            "headline number the IC Packet needs."
-        ),
+    title = ck_page_title(
+        "Thesis Pipeline",
+        eyebrow="DILIGENCE · 13-STEP ORCHESTRATOR",
+    )
+    explainer = (
+        '<p class="tp-explainer">'
+        '<em>Close the loop.</em> '
+        "Runs the full 13-step diligence chain — bankruptcy scan, CCD "
+        "ingest, HFMA benchmarks, denial prediction, physician attrition, "
+        "counterfactual advisor, Steward score, cyber score, deal autopsy, "
+        "market intel — and returns a populated Deal MC scenario plus "
+        "every headline number the IC Packet needs."
+        '</p>'
     )
     form = (
         '<form method="GET" action="/diligence/thesis-pipeline" class="tp-form">'
@@ -141,6 +142,10 @@ def _landing() -> str:
     )
     tp_styles = f"""
 <style>
+.tp-explainer{{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;
+margin:var(--sc-s-4) 0 var(--sc-s-6);}}
+.tp-explainer em{{color:var(--sc-teal-ink);font-style:italic;}}
 .tp-form{{max-width:640px;}}
 .tp-form-label{{font-size:9px;color:{P["text_faint"]};
 letter-spacing:1.5px;text-transform:uppercase;font-weight:600;
@@ -163,13 +168,13 @@ font-family:"JetBrains Mono",monospace;font-size:11px;}}
         _scoped_styles()
         + tp_styles
         + '<div class="tp-wrap">'
-        + intro
+        + title
+        + explainer
         + ck_panel(form, title="Pipeline inputs")
         + '</div>'
     )
     return chartis_shell(
         body, "RCM Diligence — Thesis Pipeline",
-        subtitle="13-step orchestrator · full analytic chain",
     )
 
 
