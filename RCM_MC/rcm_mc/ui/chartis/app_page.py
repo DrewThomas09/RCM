@@ -194,13 +194,13 @@ def render_app_page(
         # home handoff (QuickAccessRow). Static block — no store, no
         # queries — so it does not touch the 3-query perf budget.
         render_quick_access(),
-        # Morning-brief panel grid — glance-level FNL / CVN / SIG
+        # Morning-brief panel grid — glance-level FNL / CVN / SIG / DLS
         # panels from the Claude Design home handoff, built with the
         # ck_data_panel + ck_bar_row primitives. Pure presentation of
-        # the already-computed `rollup` — no extra query. Summary-
-        # then-detail: the detailed funnel / covenant / signal blocks
-        # remain below as the drill-down.
-        render_morning_brief(rollup),
+        # the already-computed `rollup` + `deals_df` — no extra query.
+        # Summary-then-detail: the detailed funnel / covenant / signal
+        # / deals blocks remain below as the drill-down.
+        render_morning_brief(rollup, deals_df),
         # Cross-reference catalog — every number on this page, with its
         # source level (FUND / DEAL).
         render_metric_catalog(
