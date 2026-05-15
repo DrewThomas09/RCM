@@ -100,14 +100,14 @@ _DILIGENCE_CSS = """
     margin: 0 0 18px; max-width: 72ch; }
   .ck-diligence-fixture { display: flex; align-items: center; gap: 12px;
     padding: 12px 16px; margin: 0 0 22px;
-    background: #fff; border: 1px solid var(--sc-rule, #d6cfc3);
+    background: #fff; border: 1px solid var(--sc-rule, #d6cfc0);
     border-radius: 2px; box-shadow: var(--sc-shadow-1);
     flex-wrap: wrap; }
   .ck-diligence-fixture-label { font-family: var(--sc-mono, monospace);
     font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em;
     text-transform: uppercase; color: var(--sc-text-dim, #465366); }
   .ck-diligence-fixture-select { padding: 7px 12px; min-width: 320px;
-    border: 1px solid var(--sc-rule, #d6cfc3); background: #fff;
+    border: 1px solid var(--sc-rule, #d6cfc0); background: #fff;
     color: var(--sc-text, #1a2332);
     font-family: var(--sc-sans, Inter, sans-serif); font-size: 13px;
     border-radius: 2px; }
@@ -120,13 +120,13 @@ _DILIGENCE_CSS = """
     cursor: pointer; border-radius: 2px; }
   .ck-diligence-fixture-go:hover { background: var(--sc-teal, #155752); }
   .ck-diligence-info { padding: 14px 18px; margin: 0 0 18px;
-    background: #fff; border: 1px solid var(--sc-rule, #d6cfc3);
+    background: #fff; border: 1px solid var(--sc-rule, #d6cfc0);
     border-left: 3px solid var(--sc-teal, #155752); border-radius: 2px;
     font-family: var(--sc-serif, Georgia, serif); font-size: 13.5px;
     line-height: 1.6; color: var(--sc-text-dim, #465366);
     max-width: 72ch; }
   .ck-diligence-error { padding: 14px 18px; margin: 0 0 18px;
-    background: #fff; border: 1px solid var(--sc-rule, #d6cfc3);
+    background: #fff; border: 1px solid var(--sc-rule, #d6cfc0);
     border-left: 3px solid var(--sc-negative, #b5321e); border-radius: 2px; }
   .ck-diligence-error h3 { font-family: var(--sc-mono, monospace);
     font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
@@ -579,7 +579,7 @@ def _qoe_memo_landing(dataset: str, error: Optional[str] = None) -> str:
         'font-size:11px;font-weight:700;letter-spacing:0.1em;'
         'text-transform:uppercase;color:var(--sc-text-dim,#465366);}'
         '.qoe-form select,.qoe-form input{width:100%;padding:9px 12px;'
-        'font-size:13.5px;border:1px solid var(--sc-rule,#d6cfc3);'
+        'font-size:13.5px;border:1px solid var(--sc-rule,#d6cfc0);'
         'background:#fff;color:var(--sc-text,#1a2332);border-radius:2px;'
         'font-family:var(--sc-sans,Inter,sans-serif);}'
         '.qoe-form select:focus,.qoe-form input:focus{outline:none;'

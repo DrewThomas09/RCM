@@ -2,7 +2,40 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import (
+    P, chartis_shell, ck_data_cell, ck_kpi_block, ck_paired_block,
+)
+
+
+def _stress_paired_rows(items) -> tuple:
+    """Stress-scenarios data for the stress-SVG's paired dataset.
+
+    Returns ``(headers, rows, hot_rows)`` for ``ck_paired_block``.
+    Six columns mirror the old _stress_table. ``hot_rows`` marks the
+    worst scenario (lowest headroom_pct) — the row a partner needs
+    to see first. Superseded the pre-rendered _stress_table when
+    /covenant-headroom adopted the handoff's paired primitive.
+    """
+    headers = [
+        "Scenario", "EBITDA Delta", "Projected EBITDA ($M)",
+        "Projected Leverage", "Status", "Headroom",
+    ]
+    rows: list = []
+    headrooms: list = []
+    for s in items:
+        rows.append([
+            s.scenario,
+            f"{s.ebitda_delta_pct * 100:+.1f}%",
+            f"${s.projected_ebitda_mm:,.2f}",
+            f"{s.projected_leverage:,.2f}x",
+            s.covenant_status,
+            f"{s.headroom_pct * 100:+.1f}%",
+        ])
+        headrooms.append(s.headroom_pct)
+    hot = (
+        [headrooms.index(min(headrooms))] if headrooms else []
+    )
+    return headers, rows, hot
 
 
 def _covenants_table(items) -> str:
@@ -47,31 +80,6 @@ def _tranches_table(items) -> str:
             f'{ck_data_cell(f"""{t.all_in_rate_pct:,.2f}%""", align="right", mono=True, tone="neg", weight=600)}',
             f'{ck_data_cell(f"""{t.maturity_year}""", align="right", mono=True, tone="acc")}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(t.covenant_type)}</td>',
-        ]
-        trs.append(f'<tr>{"".join(cells)}</tr>')
-    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
-            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
-
-
-def _stress_table(items) -> str:
-    bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
-    text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
-    cols = [("Scenario","left"),("EBITDA Delta","right"),("Projected EBITDA ($M)","right"),
-            ("Projected Leverage","right"),("Status","center"),("Headroom","right")]
-    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
-    trs = []
-    status_c = {"in compliance": pos, "tight / monitoring": warn, "technical breach": warn, "material breach": neg}
-    for i, s in enumerate(items):
-        rb = panel_alt if i % 2 == 0 else bg
-        sc = status_c.get(s.covenant_status, text_dim)
-        hr_c = pos if s.headroom_pct > 0.15 else (warn if s.headroom_pct > 0 else neg)
-        cells = [
-            f'{ck_data_cell(f"""{_html.escape(s.scenario)}""", mono=True, weight=600)}',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg if s.ebitda_delta_pct < 0 else text_dim}">{s.ebitda_delta_pct * 100:+.1f}%</td>',
-            f'{ck_data_cell(f"""${s.projected_ebitda_mm:,.2f}""", align="right", mono=True)}',
-            f'{ck_data_cell(f"""{s.projected_leverage:,.2f}x""", align="right", mono=True, weight=700)}',
-            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(s.covenant_status)}</span>""", align="center")}',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{hr_c};font-weight:600">{s.headroom_pct * 100:+.1f}%</td>',
         ]
         trs.append(f'<tr>{"".join(cells)}</tr>')
     return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
@@ -186,9 +194,29 @@ def render_covenant_headroom(params: dict = None) -> str:
     svg = _stress_svg(r.stress_scenarios)
     cov_tbl = _covenants_table(r.covenants)
     tr_tbl = _tranches_table(r.tranches)
-    st_tbl = _stress_table(r.stress_scenarios)
     cu_tbl = _cure_table(r.cure_rights)
     am_tbl = _amort_table(r.amort_schedule)
+
+    # Signature paired viz+dataset: the stress-test leverage SVG on
+    # the left, the same scenarios as a table on the right, one rule.
+    # hot_rows marks the worst-headroom scenario — the row that
+    # actually trips covenants under stress.
+    stress_viz = (
+        f'<div style="font-size:9px;color:{P["text_dim"]};'
+        f'font-family:JetBrains Mono,monospace;letter-spacing:0.1em;'
+        f'text-transform:uppercase;font-weight:700;margin-bottom:8px;">'
+        'Stress-test leverage vs covenant</div>'
+        f'{svg}'
+    )
+    st_headers, st_rows, st_hot = _stress_paired_rows(r.stress_scenarios)
+    stress_paired = ck_paired_block(
+        stress_viz,
+        data_label="EBITDA stress scenarios &middot; covenant impact",
+        data_source="data_public/covenant_headroom.py",
+        headers=st_headers,
+        rows=st_rows,
+        hot_rows=st_hot,
+    )
 
     form = f"""
 <form method="GET" action="/covenant-headroom" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
@@ -208,10 +236,9 @@ def render_covenant_headroom(params: dict = None) -> str:
   </div>
   {form}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Stress-Test Leverage vs Covenant</div>{svg}</div>
+  {stress_paired}
   <div style="{cell}"><div style="{h3}">Covenant Compliance Matrix</div>{cov_tbl}</div>
   <div style="{cell}"><div style="{h3}">Capital Structure — Tranche by Tranche</div>{tr_tbl}</div>
-  <div style="{cell}"><div style="{h3}">EBITDA Stress Scenarios — Covenant Impact</div>{st_tbl}</div>
   <div style="{cell}"><div style="{h3}">Cure Rights Available</div>{cu_tbl}</div>
   <div style="{cell}"><div style="{h3}">Debt Amortization Schedule</div>{am_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {status_c};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">

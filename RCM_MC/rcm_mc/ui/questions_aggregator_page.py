@@ -28,7 +28,7 @@ _AGG_STYLES = """
 .qa-toolbar {
   display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap;
   padding: 14px 18px; margin-bottom: 18px;
-  background: var(--sc-bone, #f5f1ea);
+  background: var(--sc-bone, #f2ede3);
   border: 1px solid var(--sc-rule, #d8d3c8); border-radius: 3px;
   font-family: "Source Serif 4", serif;
 }
@@ -91,7 +91,7 @@ _AGG_STYLES = """
 
 .qa-empty {
   padding: 22px 26px; max-width: 60ch;
-  background: var(--sc-bone, #f5f1ea);
+  background: var(--sc-bone, #f2ede3);
   border-left: 3px solid var(--sc-teal, #155752);
   border-radius: 0 3px 3px 0;
   font-family: "Source Serif 4", serif; font-style: italic;

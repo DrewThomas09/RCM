@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 from rcm_mc.ui._chartis_kit import (
-    P, chartis_shell, ck_fmt_moic, ck_kpi_block, ck_provenance_tooltip,
+    P, chartis_shell, ck_fmt_moic, ck_kpi_block, ck_paired_block,
+    ck_provenance_tooltip,
 )
 
 
@@ -97,48 +98,30 @@ def _decomp_svg(decomp) -> str:
 # Table helpers
 # ---------------------------------------------------------------------------
 
-def _scenario_table(scenarios) -> str:
-    bg = P["bg"]
-    bg2 = P["panel"]
-    border = P["border"]
-    tdim = P["text_dim"]
-    tprim = P["text"]
-
-    rows = []
-    for i, s in enumerate(scenarios):
-        rbg = bg2 if i % 2 else bg
-        c = _SCENARIO_COLORS.get(s.label, P["accent"])
-        exp_str = f"+{s.multiple_expansion:.1f}x" if s.multiple_expansion >= 0 else f"{s.multiple_expansion:.1f}x"
-        exp_c = P["positive"] if s.multiple_expansion >= 0 else P["negative"]
-        rows.append(
-            f'<tr style="background:{rbg}">'
-            f'<td style="padding:5px 8px;color:{c};font-weight:600">{s.label}</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{s.exit_multiple:.1f}x</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{exp_c}">{exp_str}</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${s.ev_at_exit_mm:.0f}M</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{s.moic:.2f}x</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{s.irr*100:.1f}%</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">{s.probability*100:.0f}%</td>'
-            f'</tr>'
+def _scenario_paired_rows(scenarios) -> tuple:
+    headers = [
+        "Scenario", "Exit EV/EBITDA", "Multiple Exp.",
+        "Exit EV", "MOIC", "IRR", "Prob.",
+    ]
+    rows: list = []
+    probs: list = []
+    for s in scenarios:
+        exp_str = (
+            f"+{s.multiple_expansion:.1f}x" if s.multiple_expansion >= 0
+            else f"{s.multiple_expansion:.1f}x"
         )
-
-    hdr_r = f'style="padding:5px 8px;text-align:right;color:{tdim};font-size:10px;border-bottom:1px solid {border};background:{bg}"'
-    hdr_l = f'style="padding:5px 8px;text-align:left;color:{tdim};font-size:10px;border-bottom:1px solid {border};background:{bg}"'
-
-    return (
-        f'<table style="width:100%;border-collapse:collapse;font-family:\'JetBrains Mono\',monospace;font-size:11px">'
-        f'<thead><tr>'
-        f'<th {hdr_l}>Scenario</th>'
-        f'<th {hdr_r}>Exit EV/EBITDA</th>'
-        f'<th {hdr_r}>Multiple Exp.</th>'
-        f'<th {hdr_r}>Exit EV</th>'
-        f'<th {hdr_r}>MOIC</th>'
-        f'<th {hdr_r}>IRR</th>'
-        f'<th {hdr_r}>Prob.</th>'
-        f'</tr></thead>'
-        f'<tbody>{"".join(rows)}</tbody>'
-        f'</table>'
-    )
+        rows.append([
+            s.label,
+            f"{s.exit_multiple:.1f}x",
+            exp_str,
+            f"${s.ev_at_exit_mm:.0f}M",
+            f"{s.moic:.2f}x",
+            f"{s.irr * 100:.1f}%",
+            f"{s.probability * 100:.0f}%",
+        ])
+        probs.append(s.probability)
+    hot = [probs.index(max(probs))] if probs else []
+    return headers, rows, hot
 
 
 def _comps_table(comparables) -> str:
@@ -316,7 +299,15 @@ def render_exit_multiple(params: dict) -> str:
 
     chart = _scenario_chart_svg(r.scenarios, r.entry_multiple)
     decomp_svg = _decomp_svg(r.decomp)
-    sc_tbl = _scenario_table(r.scenarios)
+    sc_headers, sc_rows, sc_hot = _scenario_paired_rows(r.scenarios)
+    scenario_paired = ck_paired_block(
+        chart,
+        data_label="Exit Scenario Range",
+        headers=sc_headers,
+        rows=sc_rows,
+        data_source=f"{len(r.scenarios)} scenarios · highest-probability row marked",
+        hot_rows=sc_hot,
+    )
     comp_tbl = _comps_table(r.comparables)
 
     bg_sec = P["panel"]
@@ -332,29 +323,16 @@ def render_exit_multiple(params: dict) -> str:
 {kpis}
 </div>
 
+<div style="margin-top:12px">
+  {scenario_paired}
+</div>
+
 <div style="margin-top:12px;background:{bg_sec};border:1px solid {border};padding:12px">
   <div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:{tdim};
     text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">
-    Exit Scenario Range
+    Multiple Expansion Decomposition
   </div>
-  {chart}
-</div>
-
-<div style="display:grid;grid-template-columns:3fr 2fr;gap:12px;margin-top:12px">
-  <div style="background:{bg_sec};border:1px solid {border};padding:12px">
-    <div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:{tdim};
-      text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">
-      Scenario Detail
-    </div>
-    {sc_tbl}
-  </div>
-  <div style="background:{bg_sec};border:1px solid {border};padding:12px">
-    <div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:{tdim};
-      text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">
-      Multiple Expansion Decomposition
-    </div>
-    {decomp_svg}
-  </div>
+  {decomp_svg}
 </div>
 
 <div style="margin-top:12px;background:{bg_sec};border:1px solid {border};padding:12px">

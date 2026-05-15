@@ -27,7 +27,8 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 from rcm_mc.ui._chartis_kit import (
     P, _MONO, _SANS, SafeHtml, chartis_shell, ck_fmt_num, ck_fmt_pct,
-    ck_kpi_block, ck_provenance_tooltip, ck_section_header,
+    ck_kpi_block, ck_paired_block, ck_provenance_tooltip,
+    ck_section_header,
 )
 
 
@@ -108,7 +109,7 @@ def _irr_histogram(irrs: List[float], w: int = 720, h: int = 260) -> str:
     label_x = max(pad_l, min(hurdle_x - label_w / 2, w - pad_r - label_w))
     parts.append(
         f'<rect x="{label_x:.1f}" y="6" width="{label_w}" height="18" '
-        f'rx="2" fill="#ece6db" stroke="{P["warning"]}" stroke-width="1"/>'
+        f'rx="2" fill="#ece5d6" stroke="{P["warning"]}" stroke-width="1"/>'
     )
     parts.append(
         f'<text x="{label_x + label_w/2:.1f}" y="19" text-anchor="middle" '
@@ -223,49 +224,43 @@ def _irr_moic_scatter(deals: List[Dict[str, Any]], w: int = 720, h: int = 460) -
     )
 
 
-def _sector_irr_table(corpus: List[Dict[str, Any]]) -> str:
+def _sector_irr_rows(corpus: List[Dict[str, Any]]) -> tuple:
+    """Sector-IRR data for the IRR histogram's paired dataset.
+
+    Returns ``(headers, rows, hot_rows)`` for ``ck_paired_block``.
+    Filters to sectors with >=3 realized-IRR observations and sorts
+    by P50 IRR descending — so ``hot_rows=[0]`` marks the top sector.
+    Caps at 20 rows (same cap as the prior table). Superseded the
+    pre-rendered ``_sector_irr_table`` when /irr-dispersion adopted
+    the handoff's paired viz+dataset primitive.
+    """
     sectors: Dict[str, List[float]] = defaultdict(list)
     for d in corpus:
         if d.get("sector") and d.get("realized_irr") is not None:
             sectors[d["sector"]].append(d["realized_irr"])
-
     rows_data = [
         (sec, irrs) for sec, irrs in sectors.items() if len(irrs) >= 3
     ]
     rows_data.sort(key=lambda x: -(_percentile(x[1], 50) or 0))
 
-    rows = ""
-    for i, (sec, irrs) in enumerate(rows_data[:20]):
-        bg = P["row_stripe"] if i % 2 else P["panel"]
-        p50 = _percentile(irrs, 50)
+    headers = [
+        "Sector", "N", "IRR P25", "IRR P50", "IRR P75", ">20% hurdle",
+    ]
+    rows: list = []
+    for sec, irrs in rows_data[:20]:
         p25 = _percentile(irrs, 25)
+        p50 = _percentile(irrs, 50)
         p75 = _percentile(irrs, 75)
-        above_hurdle = sum(1 for v in irrs if v >= 0.20) / len(irrs) * 100
-        col = P["positive"] if (p50 or 0) >= 0.20 else (P["warning"] if (p50 or 0) >= 0.12 else P["negative"])
-        rows += (
-            f'<tr>'
-            f'<td style="padding:4px 8px;font-size:11px">{html.escape(sec[:30])}</td>'
-            f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{len(irrs)}</td>'
-            f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{P["text_dim"]};font-variant-numeric:tabular-nums">{f"{p25*100:.1f}%" if p25 else "—"}</td>'
-            f'<td style="padding:4px 8px;font-size:12px;font-family:{_MONO};text-align:right;font-weight:700;color:{col};font-variant-numeric:tabular-nums">{f"{p50*100:.1f}%" if p50 else "—"}</td>'
-            f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{P["text_dim"]};font-variant-numeric:tabular-nums">{f"{p75*100:.1f}%" if p75 else "—"}</td>'
-            f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{above_hurdle:.0f}%</td>'
-            f'</tr>'
-        )
-
-    th = f"padding:4px 8px;font-size:9px;letter-spacing:.08em;color:{P['text_dim']};font-family:{_SANS};border-bottom:1px solid {P['border']}"
-    return f"""<div style="border:1px solid {P['border']};overflow-x:auto">
-<table style="width:100%;border-collapse:collapse">
-<thead><tr style="background:{P['panel_alt']}">
-  <th style="{th}">SECTOR</th>
-  <th style="{th};text-align:right">N</th>
-  <th style="{th};text-align:right">IRR P25</th>
-  <th style="{th};text-align:right">IRR P50</th>
-  <th style="{th};text-align:right">IRR P75</th>
-  <th style="{th};text-align:right">&gt;20% HURDLE</th>
-</tr></thead>
-<tbody>{rows}</tbody>
-</table></div>"""
+        above = sum(1 for v in irrs if v >= 0.20) / len(irrs) * 100
+        rows.append([
+            sec[:30],
+            str(len(irrs)),
+            f"{p25 * 100:.1f}%" if p25 else "—",
+            f"{p50 * 100:.1f}%" if p50 else "—",
+            f"{p75 * 100:.1f}%" if p75 else "—",
+            f"{above:.0f}%",
+        ])
+    return headers, rows, ([0] if rows else [])
 
 
 def render_irr_dispersion() -> str:
@@ -317,7 +312,30 @@ def render_irr_dispersion() -> str:
 
     histogram = _irr_histogram(irrs)
     scatter = _irr_moic_scatter(has_both)
-    sector_table = _sector_irr_table(corpus)
+    # Signature paired viz+dataset block: IRR distribution (viz) on
+    # the left, its per-sector breakdown on the right, one rule. The
+    # histogram is the overall corpus distribution; the sector table
+    # is the same corpus sliced — the handoff's pairing intent.
+    hist_viz = (
+        '<div style="font-family:var(--sc-mono);font-size:9px;'
+        'letter-spacing:0.1em;text-transform:uppercase;'
+        'color:var(--sc-text-faint);margin-bottom:8px;">'
+        'IRR distribution &middot; 5pp buckets</div>'
+        f'{histogram}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;">'
+        'Dashed = 20% hurdle. Green = above hurdle, '
+        'amber 10&ndash;20%, red &lt;10%.</div>'
+    )
+    sec_headers, sec_rows, sec_hot = _sector_irr_rows(corpus)
+    irr_paired = ck_paired_block(
+        hist_viz,
+        data_label="IRR by sector &middot; >=3 realized deals",
+        data_source="deals corpus",
+        headers=sec_headers,
+        rows=sec_rows,
+        hot_rows=sec_hot,
+    )
 
     chart_card_style = (
         f"background:{P['panel_alt']};border:1px solid {P['border']};"
@@ -337,24 +355,12 @@ def render_irr_dispersion() -> str:
   {ck_section_header("IRR DISPERSION ANALYSIS", f"Realized IRR distribution — {len(corpus)} corpus transactions", None)}
   {kpi_strip}
 
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:20px;margin-bottom:24px">
-    <div style="{chart_card_style}">
-      <div style="{chart_eyebrow_style}">IRR DISTRIBUTION — 5PP BUCKETS</div>
-      <div style="{chart_caption_style}">Dashed line marks the 20% hurdle. Green bars sit above hurdle, amber 10-20%, red below 10%.</div>
-      {histogram}
-    </div>
-    <div style="{chart_card_style}">
-      <div style="{chart_eyebrow_style}">IRR vs MOIC SCATTER — CONSISTENCY CHECK</div>
-      <div style="{chart_caption_style}">Dashed lines mark the 20% IRR hurdle and 2.0× MOIC threshold.</div>
-      {scatter}
-    </div>
-  </div>
+  {irr_paired}
 
-  <div>
-    <div style="font-size:11px;color:{P['text_dim']};font-family:{_MONO};letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin-bottom:8px;border-bottom:1px solid {P['border']};padding-bottom:6px">
-      IRR BY SECTOR — P25 / P50 / P75 (min 3 deals with disclosed IRR)
-    </div>
-    {sector_table}
+  <div style="{chart_card_style};margin-top:24px;">
+    <div style="{chart_eyebrow_style}">IRR vs MOIC SCATTER — CONSISTENCY CHECK</div>
+    <div style="{chart_caption_style}">Dashed lines mark the 20% IRR hurdle and 2.0× MOIC threshold.</div>
+    {scatter}
   </div>
   <div style="margin-top:14px;font-size:11px;color:{P['text_faint']};font-family:{_SANS};line-height:1.5">
     IRR = realized internal rate of return at exit as disclosed. Above hurdle = IRR ≥ 20%. Corpus: {len(corpus)} transactions.

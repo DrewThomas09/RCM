@@ -27,7 +27,7 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 from rcm_mc.ui._chartis_kit import (
     P, _MONO, _SANS, chartis_shell, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip, ck_section_header,
+    ck_paired_block, ck_provenance_tooltip, ck_section_header,
 )
 
 
@@ -146,52 +146,56 @@ def _hold_histogram(deals: List[Dict[str, Any]], w: int = 480, h: int = 140) -> 
     return f'<svg width="{w}" height="{h}">{"".join(parts)}</svg>'
 
 
-def _bucket_table(deals: List[Dict[str, Any]]) -> str:
+def _bucket_rows(
+    deals: List[Dict[str, Any]],
+) -> tuple:
+    """Hold-bucket data for the scatter's paired dataset.
+
+    Returns ``(headers, rows, hot_rows)`` for ``ck_paired_block`` —
+    one row per hold bucket (N, MOIC P25/P50/P75, IRR P50, win-rate).
+    ``hot_rows`` marks the bucket with the strongest median MOIC.
+    Superseded the old pre-rendered ``_bucket_table`` when this page
+    adopted the handoff's paired viz+dataset primitive.
+    """
     buckets = [
         ("Short (<3y)",    0,  3),
-        ("Medium (3–5y)",  3,  5),
-        ("Long (5–7y)",    5,  7),
+        ("Medium (3-5y)",  3,  5),
+        ("Long (5-7y)",    5,  7),
         ("Extended (7y+)", 7, 99),
     ]
-
-    rows = ""
+    rows: List[List[str]] = []
+    p50s: List[float] = []
     for lbl, lo, hi in buckets:
-        group = [d for d in deals if d.get("hold_years") is not None and lo <= d["hold_years"] < hi]
+        group = [
+            d for d in deals
+            if d.get("hold_years") is not None and lo <= d["hold_years"] < hi
+        ]
         moics = [d["realized_moic"] for d in group if d.get("realized_moic") is not None]
-        irrs  = [d["realized_irr"]  for d in group if d.get("realized_irr")  is not None]
+        irrs = [d["realized_irr"] for d in group if d.get("realized_irr") is not None]
         p25 = _percentile(moics, 25)
         p50 = _percentile(moics, 50)
         p75 = _percentile(moics, 75)
         irr50 = _percentile(irrs, 50)
-        win = sum(1 for m in moics if m >= 2.0) / len(moics) * 100 if moics else None
-
-        col = P["positive"] if (p50 or 0) >= 2.5 else (P["warning"] if (p50 or 0) >= 2.0 else P["text"])
-        rows += (
-            f'<tr style="background:{P["row_stripe"] if buckets.index((lbl,lo,hi))%2 else P["panel"]}">'
-            f'<td style="padding:5px 8px;font-size:11px">{html.escape(lbl)}</td>'
-            f'<td style="padding:5px 8px;font-size:11px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{len(group)}</td>'
-            f'<td style="padding:5px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{P["text_dim"]};font-variant-numeric:tabular-nums">{f"{p25:.2f}×" if p25 else "—"}</td>'
-            f'<td style="padding:5px 8px;font-size:12px;font-family:{_MONO};text-align:right;font-weight:700;color:{col};font-variant-numeric:tabular-nums">{f"{p50:.2f}×" if p50 else "—"}</td>'
-            f'<td style="padding:5px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{P["text_dim"]};font-variant-numeric:tabular-nums">{f"{p75:.2f}×" if p75 else "—"}</td>'
-            f'<td style="padding:5px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{f"{irr50*100:.1f}%" if irr50 else "—"}</td>'
-            f'<td style="padding:5px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{f"{win:.0f}%" if win is not None else "—"}</td>'
-            f'</tr>'
+        win = (
+            sum(1 for m in moics if m >= 2.0) / len(moics) * 100
+            if moics else None
         )
-
-    th = f"padding:4px 8px;font-size:9px;letter-spacing:.08em;color:{P['text_dim']};font-family:{_SANS};font-weight:600;border-bottom:1px solid {P['border']}"
-    return f"""<div style="border:1px solid {P['border']};overflow-x:auto">
-<table style="width:100%;border-collapse:collapse">
-<thead><tr style="background:{P['panel_alt']}">
-  <th style="{th}">HOLD BUCKET</th>
-  <th style="{th};text-align:right">N</th>
-  <th style="{th};text-align:right">MOIC P25</th>
-  <th style="{th};text-align:right">MOIC P50</th>
-  <th style="{th};text-align:right">MOIC P75</th>
-  <th style="{th};text-align:right">IRR P50</th>
-  <th style="{th};text-align:right">WIN%</th>
-</tr></thead>
-<tbody>{rows}</tbody>
-</table></div>"""
+        p50s.append(p50 or 0.0)
+        rows.append([
+            lbl,
+            str(len(group)),
+            f"{p25:.2f}x" if p25 else "—",
+            f"{p50:.2f}x" if p50 else "—",
+            f"{p75:.2f}x" if p75 else "—",
+            f"{irr50 * 100:.1f}%" if irr50 else "—",
+            f"{win:.0f}%" if win is not None else "—",
+        ])
+    hot = [p50s.index(max(p50s))] if any(p50s) else []
+    headers = [
+        "Hold bucket", "N", "MOIC P25", "MOIC P50",
+        "MOIC P75", "IRR P50", "Win%",
+    ]
+    return headers, rows, hot
 
 
 def _outliers_table(deals: List[Dict[str, Any]]) -> str:
@@ -278,28 +282,40 @@ def render_hold_analysis() -> str:
 
     scatter = _scatter_svg(has_both)
     histogram = _hold_histogram(has_hold)
-    table = _bucket_table(has_both)
     outlier_table = _outliers_table(has_both)
+
+    # The signature paired viz+dataset block from the Claude Design
+    # handoff: the hold-vs-MOIC scatter on the left, its bucketed
+    # dataset on the right, both inside one outer rule. The scatter
+    # caption sits above the chart inside the viz cell.
+    scatter_viz = (
+        f'<div style="font-size:9px;color:{P["text_faint"]};'
+        f'font-family:{_SANS};margin-bottom:8px;">'
+        'Dashed line = 2.0&times; MOIC threshold. '
+        'Green &ge;2.5&times;, amber 2.0&ndash;2.5&times;, '
+        'red &lt;2.0&times;.</div>'
+        f'{scatter}'
+    )
+    bk_headers, bk_rows, bk_hot = _bucket_rows(has_both)
+    paired = ck_paired_block(
+        scatter_viz,
+        data_label="MOIC by hold bucket",
+        data_source="deals corpus",
+        headers=bk_headers,
+        rows=bk_rows,
+        hot_rows=bk_hot,
+    )
 
     body = f"""
 <div style="padding:16px 20px;max-width:1200px">
   {ck_section_header("HOLD DURATION ANALYSIS", f"Hold period vs return relationship — {len(corpus)} corpus transactions", None)}
   {kpi_strip}
 
-  <div style="display:grid;grid-template-columns:auto 1fr;gap:16px;margin-bottom:20px">
-    <div style="background:{P['panel_alt']};border:1px solid {P['border']};padding:10px">
-      <div style="font-size:9px;color:{P['text_dim']};font-family:{_SANS};letter-spacing:.08em;margin-bottom:8px">HOLD (YEARS) vs REALIZED MOIC — SCATTER</div>
-      <div style="font-size:9px;color:{P['text_faint']};font-family:{_SANS};margin-bottom:6px">Dashed line = 2.0× MOIC threshold. Green ≥2.5×, amber 2.0–2.5×, red &lt;2.0×.</div>
-      {scatter}
-    </div>
-    <div>
-      <div style="background:{P['panel_alt']};border:1px solid {P['border']};padding:10px;margin-bottom:12px">
-        <div style="font-size:9px;color:{P['text_dim']};font-family:{_SANS};letter-spacing:.08em;margin-bottom:8px">HOLD DURATION DISTRIBUTION</div>
-        {histogram}
-      </div>
-      <div style="font-size:9px;color:{P['text_dim']};font-family:{_SANS};letter-spacing:.08em;margin-bottom:6px">MOIC BY HOLD BUCKET</div>
-      {table}
-    </div>
+  {paired}
+
+  <div style="background:{P['panel_alt']};border:1px solid {P['border']};padding:10px;margin:20px 0">
+    <div style="font-size:9px;color:{P['text_dim']};font-family:{_SANS};letter-spacing:.08em;margin-bottom:8px">HOLD DURATION DISTRIBUTION</div>
+    {histogram}
   </div>
 
   <div>
