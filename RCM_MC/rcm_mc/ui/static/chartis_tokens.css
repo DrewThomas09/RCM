@@ -12,13 +12,13 @@
   /* Accent (teal, per reference) */
   --sc-teal:       #2fb3ad;
   --sc-teal-2:     #66c8c3;
-  --sc-teal-ink:   #0f5e5a;     /* dark teal text on light */
+  --sc-teal-ink:   #155752;     /* dark teal text on light */
 
   /* Warm neutrals */
-  --sc-parchment:  #f5f1ea;     /* warm off-white page bg */
-  --sc-bone:       #ecE6db;     /* alt tonal bg */
-  --sc-rule:       #d6cfc3;     /* hairline rules on parchment */
-  --sc-rule-2:     #c5bdae;
+  --sc-parchment:  #f2ede3;     /* warm off-white page bg */
+  --sc-bone:       #ece5d6;     /* alt tonal bg */
+  --sc-rule:       #d6cfc0;     /* hairline rules on parchment */
+  --sc-rule-2:     #bfb6a2;
 
   /* Text on light */
   --sc-text:       #1a2332;

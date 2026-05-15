@@ -43,15 +43,15 @@ UI_V2_ENABLED = True
 
 P = {
     # Surfaces
-    "bg":          "#f5f1ea",   # parchment page bg
+    "bg":          "#f2ede3",   # parchment page bg
     "panel":       "#ffffff",   # white data panels
-    "panel_alt":   "#ece6db",   # bone tint
+    "panel_alt":   "#ece5d6",   # bone tint
     "navy":        "#0b2341",   # primary dark
     "ink":         "#061626",   # deepest
     "navy_2":      "#132e53",   # hover / elevated
     "navy_3":      "#1d3c69",   # divider on navy
-    "rule":        "#d6cfc3",   # hairline on parchment
-    "rule_2":      "#c5bdae",
+    "rule":        "#d6cfc0",   # hairline on parchment
+    "rule_2":      "#bfb6a2",
 
     # Text on light
     "text":        "#1a2332",
@@ -66,7 +66,7 @@ P = {
     # Accent
     "teal":     "#2fb3ad",
     "teal_2":   "#66c8c3",
-    "teal_ink": "#0f5e5a",
+    "teal_ink": "#155752",
 
     # Status
     "positive": "#0a8a5f",
@@ -1129,7 +1129,7 @@ _CK_TOUR_CSS = """
 }
 .ck-tour-card {
   position: relative; max-width: 640px; width: calc(100% - 32px);
-  margin: 7vh auto; background: var(--sc-bone, #f5f1ea);
+  margin: 7vh auto; background: var(--sc-bone, #f2ede3);
   border: 1px solid var(--sc-rule, #d8d3c8); border-radius: 4px;
   padding: 44px 48px 32px; box-shadow: 0 24px 60px rgba(0,0,0,0.2);
   font-family: "Source Serif 4", Georgia, serif;
@@ -1568,7 +1568,7 @@ _CK_QC_CSS = """
 }
 .ck-qc-card {
   position: relative; max-width: 520px; width: calc(100% - 32px);
-  margin: 14vh auto; background: var(--sc-bone, #f5f1ea);
+  margin: 14vh auto; background: var(--sc-bone, #f2ede3);
   border: 1px solid var(--sc-rule, #d8d3c8); border-radius: 4px;
   padding: 32px 36px 24px; box-shadow: 0 24px 60px rgba(0,0,0,0.2);
   font-family: "Source Serif 4", Georgia, serif;
@@ -2819,7 +2819,7 @@ _CSS_INLINE_FALLBACK = """
    * out of the prose stream without shouting. */
   .ck-empty-row {
     padding: 14px 16px;
-    background: var(--sc-bone, #f5f1ea);
+    background: var(--sc-bone, #f2ede3);
     font-family: "Source Serif 4", serif;
     font-size: 13px;
     color: var(--sc-text-dim, #37495e);
@@ -2858,7 +2858,7 @@ _CSS_INLINE_FALLBACK = """
    * a positive-tone check when JS confirms the underlying condition
    * (recent deals, tour progress, tools visited) from localStorage. */
   .ck-checklist-wrap {
-    background: var(--sc-bone, #f5f1ea);
+    background: var(--sc-bone, #f2ede3);
     border: 1px solid var(--sc-rule, #d8d3c8); border-radius: 3px;
     padding: 20px 24px; margin-bottom: var(--sc-s-5);
   }
@@ -2955,7 +2955,7 @@ _CSS_INLINE_FALLBACK = """
   }
   .ck-toc-link:hover {
     color: var(--sc-text, #1a2332);
-    background: var(--sc-bone, #f5f1ea);
+    background: var(--sc-bone, #f2ede3);
   }
   .ck-toc-link.is-active {
     color: var(--sc-teal-ink, #0e3e3a);
@@ -2996,7 +2996,7 @@ _CSS_INLINE_FALLBACK = """
     transform: translateX(-50%);
     min-width: 260px; max-width: 360px;
     padding: 14px 16px;
-    background: var(--sc-bone, #f5f1ea);
+    background: var(--sc-bone, #f2ede3);
     border: 1px solid var(--sc-rule, #d8d3c8);
     border-radius: 3px;
     box-shadow: 0 12px 28px rgba(11, 35, 65, 0.18);
@@ -3015,7 +3015,7 @@ _CSS_INLINE_FALLBACK = """
     content: ""; position: absolute; top: 100%; left: 50%;
     transform: translateX(-50%);
     border: 6px solid transparent;
-    border-top-color: var(--sc-bone, #f5f1ea);
+    border-top-color: var(--sc-bone, #f2ede3);
   }
   .ck-help-term {
     display: block;
@@ -3149,7 +3149,7 @@ _CSS_INLINE_FALLBACK = """
   .ck-user-dropdown { position:absolute; top:calc(100% + 10px); right:0; min-width:200px; background:#fff; border:1px solid var(--sc-rule); box-shadow:var(--sc-shadow-2,0 8px 24px rgba(11,32,55,0.14)); border-radius:2px; padding:6px 0; z-index:60; }
   .ck-user-dropdown[hidden] { display:none !important; }
   .ck-user-dropdown-item { display:block; width:100%; text-align:left; padding:9px 16px; font-family:var(--sc-sans); font-size:13px; color:var(--sc-text); text-decoration:none; background:transparent; border:0; cursor:pointer; letter-spacing:0; text-transform:none; font-weight:500; }
-  .ck-user-dropdown-item:hover { background:var(--sc-bone,#f5f1ea); color:var(--sc-teal-ink); }
+  .ck-user-dropdown-item:hover { background:var(--sc-bone,#f2ede3); color:var(--sc-teal-ink); }
   .ck-user-dropdown-divider { height:1px; background:var(--sc-rule); margin:4px 0; }
   .ck-user-recent { padding:6px 0 4px; border-bottom:1px solid var(--sc-rule); margin-bottom:4px; }
   .ck-user-recent[hidden] { display:none !important; }
@@ -3165,7 +3165,7 @@ _CSS_INLINE_FALLBACK = """
    * just below the navy topbar. Lets a partner click into a common
    * second-level page (Alerts, Heatmap, Find Comps, etc.) without
    * landing on a section index first. */
-  .ck-subnav { background:var(--sc-bone,#f5f1ea); border-bottom:1px solid var(--sc-rule); position:sticky; top:60px; z-index:40; }
+  .ck-subnav { background:var(--sc-bone,#f2ede3); border-bottom:1px solid var(--sc-rule); position:sticky; top:60px; z-index:40; }
   .ck-subnav-inner { display:flex; gap:var(--sc-s-5); align-items:center; padding:10px var(--sc-s-7); max-width:1720px; margin:0 auto; overflow-x:auto; }
   .ck-subnav-link { font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.04em; color:var(--sc-text-dim); text-decoration:none; padding:5px 10px; border-radius:2px; white-space:nowrap; transition:color 0.15s, background 0.15s; }
   .ck-subnav-link:hover { color:var(--sc-teal-ink); background:#fff; }
@@ -3197,7 +3197,7 @@ _CSS_INLINE_FALLBACK = """
   .ck-section-intro h2 em { font-style:italic; font-weight:400; color:var(--sc-teal-ink); }
   .ck-section-intro .ck-section-body { font-family:var(--sc-serif); font-size:14px; line-height:1.55; color:var(--sc-text-dim); margin-top:var(--sc-s-3); max-width:64ch; }
   .ck-section-intro-dismiss { position:absolute; top:0; right:0; width:24px; height:24px; padding:0; background:transparent; border:0; color:var(--sc-text-faint); font-size:20px; line-height:1; cursor:pointer; border-radius:50%; transition:color 0.12s, background 0.12s; }
-  .ck-section-intro-dismiss:hover { color:var(--sc-navy); background:var(--sc-bone,#ece6db); }
+  .ck-section-intro-dismiss:hover { color:var(--sc-navy); background:var(--sc-bone,#ece5d6); }
   .ck-section-intro[hidden] { display:none !important; }
   .ck-arrow { display:inline-flex; align-items:center; gap:6px; font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--sc-teal-ink); text-decoration:none; }
   .ck-arrow::after { content:'\\2197'; font-size:14px; line-height:1; }
@@ -3355,7 +3355,7 @@ _CSS_INLINE_FALLBACK = """
   .ck-data-table-scroll { overflow-x:auto; margin-top:12px; }
   .ck-data-table { width:100%; border-collapse:collapse; font-size:11px; }
   .ck-data-table thead tr { background:var(--sc-bone); }
-  .ck-data-table tbody tr:nth-child(even) { background:var(--sc-panel-alt, #ece6db); }
+  .ck-data-table tbody tr:nth-child(even) { background:var(--sc-panel-alt, #ece5d6); }
   .ck-data-table-head { padding:6px 10px; border-bottom:1px solid var(--sc-rule); font-size:10px; color:var(--sc-text-dim); letter-spacing:0.05em; font-weight:600; text-transform:uppercase; }
 
   /* Personal dashboard /my/<owner> — pulse strip uses the existing
@@ -3475,7 +3475,7 @@ _CSS_INLINE_FALLBACK = """
     display: flex; align-items: baseline;
     justify-content: space-between; gap: 14px;
     padding: 8px 14px; margin: -32px -24px 24px;
-    background: var(--sc-bone, #f5f1ea);
+    background: var(--sc-bone, #f2ede3);
     border-bottom: 1px solid var(--sc-rule, #d8d3c8);
     font-family: "Inter Tight", sans-serif;
     font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
@@ -3517,7 +3517,7 @@ _CSS_INLINE_FALLBACK = """
     .ck-panel { box-shadow:none; break-inside:avoid;
                 page-break-inside:avoid;
                 border:1px solid #cfcec7; }
-    .ck-panel-head { background:#f5f1ea !important;
+    .ck-panel-head { background:#f2ede3 !important;
                      color:#0b2341 !important; }
     .ck-section-intro, .ck-section-header,
     .ck-kpi-strip { break-inside:avoid; page-break-inside:avoid; }

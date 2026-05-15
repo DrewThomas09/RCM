@@ -244,7 +244,7 @@ def _render_deal_rerun(store: PortfolioStore, deal_id: str) -> str:
         font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
         color:var(--sc-text-dim,#465366);}
       .ck-deal-rerun-form input{padding:6px 10px;
-        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        border:1px solid var(--sc-rule,#d6cfc0);background:#fff;
         font-family:var(--sc-sans,Inter,sans-serif);font-size:12.5px;
         color:var(--sc-text,#1a2332);border-radius:2px;width:5rem;}
       .ck-deal-rerun-form input:focus{outline:none;
@@ -263,17 +263,17 @@ def _render_deal_rerun(store: PortfolioStore, deal_id: str) -> str:
       .ck-deal-rerun-paths form{display:grid;gap:6px;margin-top:8px;
         max-width:40rem;}
       .ck-deal-rerun-paths input{padding:6px 10px;
-        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        border:1px solid var(--sc-rule,#d6cfc0);background:#fff;
         font-family:var(--sc-mono,monospace);font-size:11.5px;
         color:var(--sc-text,#1a2332);border-radius:2px;width:100%;
         box-sizing:border-box;}
       .ck-deal-rerun-paths button{justify-self:start;
         padding:5px 12px;background:#fff;
-        border:1px solid var(--sc-rule,#d6cfc3);
+        border:1px solid var(--sc-rule,#d6cfc0);
         font-family:var(--sc-sans,Inter,sans-serif);font-size:10.5px;
         font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
         color:var(--sc-navy,#0b2341);cursor:pointer;border-radius:2px;}
-      .ck-deal-rerun-paths button:hover{background:var(--sc-bone,#ece6db);
+      .ck-deal-rerun-paths button:hover{background:var(--sc-bone,#ece5d6);
         border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
       .ck-deal-rerun-empty{font-family:var(--sc-serif,Georgia,serif);
         font-size:13.5px;color:var(--sc-text-dim,#465366);
@@ -416,20 +416,20 @@ def _render_deal_deadlines(store: PortfolioStore, deal_id: str) -> str:
       .ck-deal-deadlines-head{{display:flex;align-items:baseline;
         justify-content:space-between;gap:12px;
         padding:18px 22px 12px;
-        border-bottom:1px solid var(--sc-rule,#d6cfc3);}}
+        border-bottom:1px solid var(--sc-rule,#d6cfc0);}}
       .ck-deal-deadlines-head h2{{font-family:var(--sc-serif,Georgia,serif);
         font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);
         margin:0;letter-spacing:-0.01em;}}
       .ck-deal-deadlines-meta{{font-family:var(--sc-mono,monospace);
         font-size:11px;color:var(--sc-text-faint,#7a8699);
         letter-spacing:0.08em;text-transform:uppercase;}}
-      .ck-deal-deadlines-meta a{{color:var(--sc-teal-ink,#0f5e5a);
+      .ck-deal-deadlines-meta a{{color:var(--sc-teal-ink,#155752);
         text-decoration:none;}}
       .ck-deal-deadlines-meta a:hover{{color:var(--sc-navy,#0b2341);}}
       .ck-deal-deadline-list{{list-style:none;padding:0;margin:0;}}
       .ck-deal-deadline-row{{display:flex;align-items:center;gap:14px;
         padding:11px 22px;
-        border-bottom:1px solid var(--sc-rule,#d6cfc3);font-size:13px;}}
+        border-bottom:1px solid var(--sc-rule,#d6cfc0);font-size:13px;}}
       .ck-deal-deadline-row:last-child{{border-bottom:0;}}
       .ck-deal-deadline-label{{color:var(--sc-text,#1a2332);font-weight:600;}}
       .ck-deal-deadline-owner{{font-family:var(--sc-mono,monospace);
@@ -437,17 +437,17 @@ def _render_deal_deadlines(store: PortfolioStore, deal_id: str) -> str:
       .ck-deal-deadline-due{{font-family:var(--sc-mono,monospace);font-size:12px;
         color:var(--sc-text-dim,#465366);letter-spacing:0.04em;}}
       .ck-deal-deadline-done{{padding:4px 10px;
-        background:#fff;border:1px solid var(--sc-rule,#d6cfc3);
+        background:#fff;border:1px solid var(--sc-rule,#d6cfc0);
         color:var(--sc-positive,#0a8a5f);font-weight:700;cursor:pointer;
         font-size:14px;line-height:1;border-radius:2px;}}
       .ck-deal-deadline-done:hover{{background:var(--sc-positive,#0a8a5f);
         color:#fff;border-color:var(--sc-positive,#0a8a5f);}}
       .ck-deal-deadline-form{{padding:14px 22px;
-        border-top:1px solid var(--sc-rule,#d6cfc3);
-        background:var(--sc-bone,#ece6db);
+        border-top:1px solid var(--sc-rule,#d6cfc0);
+        background:var(--sc-bone,#ece5d6);
         display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
       .ck-deal-deadline-form input{{padding:7px 10px;
-        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        border:1px solid var(--sc-rule,#d6cfc0);background:#fff;
         font-family:var(--sc-sans,Inter,sans-serif);font-size:12.5px;
         color:var(--sc-text,#1a2332);border-radius:2px;}}
       .ck-deal-deadline-form input:focus{{outline:none;
@@ -548,20 +548,20 @@ def _render_deal_alerts(store: PortfolioStore, deal_id: str) -> str:
       .ck-deal-alerts-head{{display:flex;align-items:baseline;
         justify-content:space-between;gap:12px;
         padding:18px 22px 12px;
-        border-bottom:1px solid var(--sc-rule,#d6cfc3);}}
+        border-bottom:1px solid var(--sc-rule,#d6cfc0);}}
       .ck-deal-alerts-head h2{{font-family:var(--sc-serif,Georgia,serif);
         font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);
         margin:0;letter-spacing:-0.01em;}}
       .ck-deal-alerts-meta{{font-family:var(--sc-mono,monospace);
         font-size:11px;color:var(--sc-text-faint,#7a8699);
         letter-spacing:0.08em;text-transform:uppercase;}}
-      .ck-deal-alerts-meta a{{color:var(--sc-teal-ink,#0f5e5a);
+      .ck-deal-alerts-meta a{{color:var(--sc-teal-ink,#155752);
         text-decoration:none;}}
       .ck-deal-alerts-meta a:hover{{color:var(--sc-navy,#0b2341);}}
       .ck-deal-alerts-list{{list-style:none;padding:0;margin:0;}}
       .ck-deal-alert-row{{display:flex;align-items:center;gap:12px;
         padding:11px 22px;flex-wrap:wrap;
-        border-bottom:1px solid var(--sc-rule,#d6cfc3);font-size:13px;}}
+        border-bottom:1px solid var(--sc-rule,#d6cfc0);font-size:13px;}}
       .ck-deal-alert-row:last-child{{border-bottom:0;}}
       .ck-deal-alert-sev{{font-family:var(--sc-mono,monospace);
         font-weight:700;font-size:10.5px;letter-spacing:0.1em;
@@ -578,15 +578,15 @@ def _render_deal_alerts(store: PortfolioStore, deal_id: str) -> str:
       .ck-deal-alert-ack-form{{display:inline-flex;gap:6px;align-items:center;
         margin:0 0 0 auto;}}
       .ck-deal-alert-snooze{{padding:5px 8px;
-        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        border:1px solid var(--sc-rule,#d6cfc0);background:#fff;
         font-family:var(--sc-sans,Inter,sans-serif);font-size:11.5px;
         color:var(--sc-text,#1a2332);border-radius:2px;}}
       .ck-deal-alert-go{{padding:5px 12px;background:#fff;
-        border:1px solid var(--sc-rule,#d6cfc3);
+        border:1px solid var(--sc-rule,#d6cfc0);
         font-family:var(--sc-sans,Inter,sans-serif);font-size:10.5px;
         font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
         color:var(--sc-navy,#0b2341);cursor:pointer;border-radius:2px;}}
-      .ck-deal-alert-go:hover{{background:var(--sc-bone,#ece6db);
+      .ck-deal-alert-go:hover{{background:var(--sc-bone,#ece5d6);
         border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}}
     </style>
     <section class="cad-card ck-deal-alerts-card">
@@ -890,7 +890,7 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         '.ck-deal-action-row{display:flex;align-items:center;gap:14px;'
         'margin:0 0 24px;flex-wrap:wrap;}'
         '.ck-deal-owner-form{display:inline-flex;align-items:center;gap:8px;'
-        'margin:0;background:#fff;border:1px solid var(--sc-rule,#d6cfc3);'
+        'margin:0;background:#fff;border:1px solid var(--sc-rule,#d6cfc0);'
         'border-radius:2px;padding:6px 10px;}'
         '.ck-deal-owner-label{font-family:var(--sc-mono,monospace);'
         'font-size:10.5px;font-weight:700;letter-spacing:0.1em;'
@@ -899,12 +899,12 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         'font-family:var(--sc-sans,Inter,sans-serif);font-size:13px;'
         'background:transparent;color:var(--sc-text,#1a2332);width:6rem;outline:none;}'
         '.ck-deal-action{padding:7px 14px;background:#fff;'
-        'border:1px solid var(--sc-rule,#d6cfc3);border-radius:2px;'
+        'border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;'
         'font-family:var(--sc-sans,Inter,sans-serif);font-size:11.5px;'
         'font-weight:700;letter-spacing:0.08em;text-transform:uppercase;'
         'color:var(--sc-navy,#0b2341);cursor:pointer;text-decoration:none;'
         'display:inline-flex;align-items:center;}'
-        '.ck-deal-action:hover{background:var(--sc-bone,#ece6db);'
+        '.ck-deal-action:hover{background:var(--sc-bone,#ece5d6);'
         'border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}'
         '.ck-deal-action-star.is-on{background:var(--sc-teal,#155752);'
         'color:#fff;border-color:var(--sc-teal,#155752);}'
@@ -915,7 +915,7 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         '.ck-deal-section{padding:0;overflow:hidden;margin:0 0 20px;}'
         '.ck-deal-section-head{display:flex;align-items:baseline;'
         'justify-content:space-between;gap:12px;'
-        'padding:18px 22px 12px;border-bottom:1px solid var(--sc-rule,#d6cfc3);}'
+        'padding:18px 22px 12px;border-bottom:1px solid var(--sc-rule,#d6cfc0);}'
         '.ck-deal-section-head h2{font-family:var(--sc-serif,Georgia,serif);'
         'font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);'
         'margin:0;letter-spacing:-0.01em;}'
@@ -928,15 +928,15 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         'font-family:var(--sc-mono,monospace);font-size:10.5px;'
         'font-weight:700;letter-spacing:0.1em;text-transform:uppercase;'
         'color:var(--sc-text-dim,#465366);padding:10px 22px;'
-        'background:var(--sc-bone,#ece6db);'
-        'border-bottom:1px solid var(--sc-rule,#d6cfc3);}'
+        'background:var(--sc-bone,#ece5d6);'
+        'border-bottom:1px solid var(--sc-rule,#d6cfc0);}'
         '.ck-deal-table thead th.r{text-align:right;}'
         '.ck-deal-table tbody td{padding:11px 22px;'
-        'border-bottom:1px solid var(--sc-rule,#d6cfc3);'
+        'border-bottom:1px solid var(--sc-rule,#d6cfc0);'
         'font-size:13px;color:var(--sc-text,#1a2332);vertical-align:middle;}'
         '.ck-deal-table tbody td.r{text-align:right;}'
         '.ck-deal-table tbody tr:last-child td{border-bottom:0;}'
-        '.ck-deal-table tbody tr:hover td{background:var(--sc-bone,#ece6db);}'
+        '.ck-deal-table tbody tr:hover td{background:var(--sc-bone,#ece5d6);}'
         '.ck-deal-mono{font-family:var(--sc-mono,monospace);'
         'font-variant-numeric:tabular-nums;color:var(--sc-text-dim,#465366);'
         'font-size:12.5px;}'
@@ -1075,8 +1075,8 @@ def _render_deal_tags(store: PortfolioStore, deal_id: str) -> str:
         text-transform:uppercase;color:var(--sc-text-dim,#465366);
         margin-right:4px;}}
       .ck-deal-tag-pill{{display:inline-flex;align-items:center;gap:4px;
-        padding:4px 10px;background:var(--sc-bone,#ece6db);
-        border:1px solid var(--sc-rule,#d6cfc3);border-radius:2px;
+        padding:4px 10px;background:var(--sc-bone,#ece5d6);
+        border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;
         font-family:var(--sc-sans,Inter,sans-serif);font-size:11.5px;
         font-weight:600;color:var(--sc-navy,#0b2341);
         letter-spacing:0.04em;}}
@@ -1088,7 +1088,7 @@ def _render_deal_tags(store: PortfolioStore, deal_id: str) -> str:
         font-size:13px;color:var(--sc-text-faint,#7a8699);font-style:italic;}}
       .ck-deal-tag-form{{display:inline-flex;gap:6px;margin-left:auto;}}
       .ck-deal-tag-form input{{padding:5px 10px;
-        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        border:1px solid var(--sc-rule,#d6cfc0);background:#fff;
         font-family:var(--sc-sans,Inter,sans-serif);font-size:12px;
         color:var(--sc-text,#1a2332);border-radius:2px;}}
       .ck-deal-tag-form input:focus{{outline:none;
@@ -1213,7 +1213,7 @@ def _render_deal_notes(store: PortfolioStore, deal_id: str) -> str:
       .ck-deal-notes-head{{display:flex;align-items:baseline;
         justify-content:space-between;gap:12px;
         padding:18px 22px 12px;
-        border-bottom:1px solid var(--sc-rule,#d6cfc3);}}
+        border-bottom:1px solid var(--sc-rule,#d6cfc0);}}
       .ck-deal-notes-head h2{{font-family:var(--sc-serif,Georgia,serif);
         font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);
         margin:0;letter-spacing:-0.01em;}}
@@ -1222,7 +1222,7 @@ def _render_deal_notes(store: PortfolioStore, deal_id: str) -> str:
         letter-spacing:0.08em;text-transform:uppercase;}}
       .ck-deal-notes-list{{list-style:none;padding:0;margin:0;}}
       .ck-deal-note{{padding:14px 22px;
-        border-bottom:1px solid var(--sc-rule,#d6cfc3);}}
+        border-bottom:1px solid var(--sc-rule,#d6cfc0);}}
       .ck-deal-note:last-child{{border-bottom:0;}}
       .ck-deal-note-head{{display:flex;align-items:baseline;gap:10px;
         margin-bottom:6px;font-size:12px;}}
@@ -1243,11 +1243,11 @@ def _render_deal_notes(store: PortfolioStore, deal_id: str) -> str:
         font-family:var(--sc-serif,Georgia,serif);font-style:italic;
         font-size:13.5px;color:var(--sc-text-dim,#465366);}}
       .ck-deal-note-form{{padding:18px 22px;
-        border-top:1px solid var(--sc-rule,#d6cfc3);
-        display:grid;gap:10px;background:var(--sc-bone,#ece6db);}}
+        border-top:1px solid var(--sc-rule,#d6cfc0);
+        display:grid;gap:10px;background:var(--sc-bone,#ece5d6);}}
       .ck-deal-note-form input,
       .ck-deal-note-form textarea{{padding:9px 12px;
-        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        border:1px solid var(--sc-rule,#d6cfc0);background:#fff;
         font-family:var(--sc-sans,Inter,sans-serif);font-size:13px;
         color:var(--sc-text,#1a2332);border-radius:2px;width:100%;
         box-sizing:border-box;}}
@@ -1615,7 +1615,7 @@ def _deal_action_forms(deal_id: str) -> str:
         text-transform:uppercase;color:var(--sc-text-dim,#465366);}
       .ck-deal-action-grid input,
       .ck-deal-action-grid select{padding:7px 10px;
-        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        border:1px solid var(--sc-rule,#d6cfc0);background:#fff;
         font-family:var(--sc-sans,Inter,sans-serif);font-size:12.5px;
         color:var(--sc-text,#1a2332);border-radius:2px;width:100%;
         box-sizing:border-box;}
@@ -1634,7 +1634,7 @@ def _deal_action_forms(deal_id: str) -> str:
         font-size:10.5px;font-weight:700;letter-spacing:0.1em;
         text-transform:uppercase;color:var(--sc-text-dim,#465366);}
       .ck-deal-remark-form input{padding:7px 10px;
-        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        border:1px solid var(--sc-rule,#d6cfc0);background:#fff;
         font-family:var(--sc-sans,Inter,sans-serif);font-size:12.5px;
         color:var(--sc-text,#1a2332);border-radius:2px;max-width:200px;}
     </style>
@@ -6116,9 +6116,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             '.ck-err-home:hover{background:var(--sc-teal,#155752);'
             'border-color:var(--sc-teal,#155752);}'
             '.ck-err-back{color:var(--sc-navy,#0b2341);background:#fff;'
-            'border-color:var(--sc-rule,#d6cfc3);}'
+            'border-color:var(--sc-rule,#d6cfc0);}'
             '.ck-err-back:hover{border-color:var(--sc-navy,#0b2341);}'
-            '.ck-err-msg{background:#fff;border:1px solid var(--sc-rule,#d6cfc3);'
+            '.ck-err-msg{background:#fff;border:1px solid var(--sc-rule,#d6cfc0);'
             'border-left:3px solid var(--sc-warning,#b8732a);'
             'border-radius:2px;padding:14px 18px;margin:0 0 28px;'
             'max-width:760px;}'
@@ -6132,7 +6132,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             'grid-template-columns:repeat(auto-fit,minmax(220px,1fr));'
             'gap:14px;margin:0 0 24px;}'
             '.ck-err-chip{display:block;text-decoration:none;color:inherit;'
-            'background:#fff;border:1px solid var(--sc-rule,#d6cfc3);'
+            'background:#fff;border:1px solid var(--sc-rule,#d6cfc0);'
             'border-radius:2px;padding:18px 20px;'
             'transition:border-color 0.12s,transform 0.12s;}'
             '.ck-err-chip:hover{border-color:var(--sc-teal,#155752);'
@@ -12996,15 +12996,15 @@ class RCMHandler(BaseHTTPRequestHandler):
             'font-family:var(--sc-mono,JetBrains Mono,monospace);'
             'font-size:10.5px;font-weight:700;letter-spacing:0.1em;'
             'text-transform:uppercase;color:var(--sc-text-dim,#465366);'
-            'padding:10px 14px;border-bottom:1px solid var(--sc-rule,#d6cfc3);}'
+            'padding:10px 14px;border-bottom:1px solid var(--sc-rule,#d6cfc0);}'
             '.ck-watchlist-table thead th.r{text-align:right;}'
             '.ck-watchlist-table tbody td{padding:14px;'
-            'border-bottom:1px solid var(--sc-rule,#d6cfc3);'
+            'border-bottom:1px solid var(--sc-rule,#d6cfc0);'
             'font-size:13.5px;color:var(--sc-text,#1a2332);'
             'vertical-align:middle;}'
             '.ck-watchlist-table tbody tr:last-child td{border-bottom:0;}'
             '.ck-watchlist-table tbody tr:hover td{'
-            'background:var(--sc-bone,#ece6db);}'
+            'background:var(--sc-bone,#ece5d6);}'
             '.ck-watchlist-table .num{text-align:right;'
             'font-family:var(--sc-mono,monospace);}'
             '</style>'
@@ -13414,7 +13414,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             'font-size:11px;font-weight:700;letter-spacing:0.1em;'
             'text-transform:uppercase;color:var(--sc-text-dim,#465366);}'
             '.ck-lp-window-select{font-family:var(--sc-sans,Inter,sans-serif);'
-            'font-size:13px;padding:7px 12px;border:1px solid var(--sc-rule,#d6cfc3);'
+            'font-size:13px;padding:7px 12px;border:1px solid var(--sc-rule,#d6cfc0);'
             'background:#fff;color:var(--sc-text,#1a2332);border-radius:2px;'
             'cursor:pointer;}'
             '.ck-lp-window-select:focus{outline:none;'
@@ -13443,7 +13443,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             '.ck-lp-alert{display:grid;'
             'grid-template-columns:62px 1fr 1.5fr 2fr;gap:14px;'
             'align-items:baseline;padding:12px 0;'
-            'border-top:1px solid var(--sc-rule,#d6cfc3);'
+            'border-top:1px solid var(--sc-rule,#d6cfc0);'
             'font-size:13px;}'
             '.ck-lp-alert:first-child{border-top:0;}'
             '.ck-lp-alert-sev{font-family:var(--sc-mono,monospace);'
@@ -13457,16 +13457,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             'font-family:var(--sc-mono,monospace);'
             'font-size:10.5px;font-weight:700;letter-spacing:0.1em;'
             'text-transform:uppercase;color:var(--sc-text-dim,#465366);'
-            'padding:10px 22px;border-bottom:1px solid var(--sc-rule,#d6cfc3);'
-            'background:var(--sc-bone,#ece6db);}'
+            'padding:10px 22px;border-bottom:1px solid var(--sc-rule,#d6cfc0);'
+            'background:var(--sc-bone,#ece5d6);}'
             '.ck-lp-table thead th.r{text-align:right;}'
             '.ck-lp-table tbody td{padding:12px 22px;'
-            'border-bottom:1px solid var(--sc-rule,#d6cfc3);'
+            'border-bottom:1px solid var(--sc-rule,#d6cfc0);'
             'font-size:13px;color:var(--sc-text,#1a2332);'
             'vertical-align:middle;}'
             '.ck-lp-table tbody td.r{text-align:right;}'
             '.ck-lp-table tbody tr:last-child td{border-bottom:0;}'
-            '.ck-lp-table tbody tr:hover td{background:var(--sc-bone,#ece6db);}'
+            '.ck-lp-table tbody tr:hover td{background:var(--sc-bone,#ece5d6);}'
             '.ck-lp-mono{font-family:var(--sc-mono,monospace);'
             'font-variant-numeric:tabular-nums;'
             'color:var(--sc-text-dim,#465366);font-size:12.5px;}'
@@ -14747,7 +14747,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         empty_panel = (
             '<section class="cad-card ck-lp-section">'
             '<p class="ck-lp-empty">No matches. Try a shorter query — '
-            'or open the <a href="/" style="color:var(--sc-teal-ink,#0f5e5a);">dashboard</a> '
+            'or open the <a href="/" style="color:var(--sc-teal-ink,#155752);">dashboard</a> '
             'to browse.</p></section>'
         ) if q and not (deal_hits or note_hits) else ""
         hint_panel = (
@@ -14763,7 +14763,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             '.ck-search-page-form{display:flex;gap:12px;margin:0 0 24px;}'
             '.ck-search-page-input{flex:1;padding:14px 18px;'
             'font-family:var(--sc-serif,Georgia,serif);font-size:18px;'
-            'background:#fff;border:1px solid var(--sc-rule,#d6cfc3);'
+            'background:#fff;border:1px solid var(--sc-rule,#d6cfc0);'
             'color:var(--sc-text,#1a2332);border-radius:2px;'
             'box-shadow:var(--sc-shadow-1);}'
             '.ck-search-page-input:focus{outline:none;'
@@ -14775,7 +14775,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             '.ck-search-page-submit:hover{background:var(--sc-teal,#155752);}'
             '.ck-search-hits{list-style:none;padding:0;margin:0;}'
             '.ck-search-hit{padding:14px 0;'
-            'border-top:1px solid var(--sc-rule,#d6cfc3);}'
+            'border-top:1px solid var(--sc-rule,#d6cfc0);}'
             '.ck-search-hit:first-child{border-top:0;}'
             '.ck-search-hit-title{display:flex;align-items:baseline;gap:10px;'
             'margin-bottom:4px;}'
@@ -17704,13 +17704,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             'letter-spacing:0.08em;text-transform:uppercase;}'
             '.ck-tool-list{display:grid;'
             'grid-template-columns:repeat(auto-fit,minmax(320px,1fr));'
-            'gap:0;border-top:1px solid var(--sc-rule,#d6cfc3);}'
+            'gap:0;border-top:1px solid var(--sc-rule,#d6cfc0);}'
             '.ck-tool-row{display:flex;align-items:baseline;'
             'justify-content:space-between;gap:18px;padding:11px 14px;'
-            'border-bottom:1px solid var(--sc-rule,#d6cfc3);'
+            'border-bottom:1px solid var(--sc-rule,#d6cfc0);'
             'text-decoration:none;color:var(--sc-text,#1a2332);'
             'font-family:var(--sc-sans,Inter,sans-serif);font-size:13.5px;}'
-            '.ck-tool-row:hover{background:var(--sc-bone,#ece6db);}'
+            '.ck-tool-row:hover{background:var(--sc-bone,#ece5d6);}'
             '.ck-tool-title{font-weight:600;color:var(--sc-navy,#0b2341);}'
             '.ck-tool-route{font-family:var(--sc-mono,monospace);'
             'font-size:11px;color:var(--sc-text-faint,#7a8699);}'

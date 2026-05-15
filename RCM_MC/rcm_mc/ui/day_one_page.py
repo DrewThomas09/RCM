@@ -105,7 +105,7 @@ _DAY_ONE_STYLES = """
   font-size: 14px; color: var(--sc-text-dim, #37495e);
   padding: 14px 18px;
   border-left: 3px solid var(--sc-positive, #0a8a5f);
-  background: var(--sc-bone, #f5f1ea);
+  background: var(--sc-bone, #f2ede3);
   margin: 8px 0 12px;
 }
 .do-recent { margin: 8px 0 12px; }
@@ -441,7 +441,7 @@ def _activity_section(
             'grid-template-columns:repeat(auto-fill,minmax(190px,1fr));'
             'gap:10px;margin:12px 0 8px;}'
             '.do-packet-tile{display:block;padding:12px 14px;'
-            'background:var(--sc-bone,#f5f1ea);'
+            'background:var(--sc-bone,#f2ede3);'
             'border:1px solid var(--sc-rule,#d8d3c8);'
             'border-radius:3px;text-decoration:none;color:inherit;'
             'transition:transform 140ms ease, border-color 140ms ease, '

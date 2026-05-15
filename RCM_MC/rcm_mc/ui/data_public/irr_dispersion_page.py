@@ -108,7 +108,7 @@ def _irr_histogram(irrs: List[float], w: int = 720, h: int = 260) -> str:
     label_x = max(pad_l, min(hurdle_x - label_w / 2, w - pad_r - label_w))
     parts.append(
         f'<rect x="{label_x:.1f}" y="6" width="{label_w}" height="18" '
-        f'rx="2" fill="#ece6db" stroke="{P["warning"]}" stroke-width="1"/>'
+        f'rx="2" fill="#ece5d6" stroke="{P["warning"]}" stroke-width="1"/>'
     )
     parts.append(
         f'<text x="{label_x + label_w/2:.1f}" y="19" text-anchor="middle" '

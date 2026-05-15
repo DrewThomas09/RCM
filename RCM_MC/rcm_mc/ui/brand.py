@@ -106,16 +106,16 @@ _PALETTE_LEGACY: Dict[str, str] = {
 
 _PALETTE_V2: Dict[str, str] = {
     # Surfaces — flip completely: dark → parchment/white
-    "bg":           "#f5f1ea",   # parchment
-    "bg_secondary": "#ece6db",   # bone tint
+    "bg":           "#f2ede3",   # parchment
+    "bg_secondary": "#ece5d6",   # bone tint
     "bg_tertiary":  "#ffffff",   # white panels
-    "border":       "#d6cfc3",   # hairline on parchment
-    "border_light": "#c5bdae",
+    "border":       "#d6cfc0",   # hairline on parchment
+    "border_light": "#bfb6a2",
     # Text — dark text on light now
     "text_primary":   "#1a2332",   # near-ink
     "text_secondary": "#465366",
     "text_muted":     "#7a8699",
-    "text_link":      "#0f5e5a",   # dark teal
+    "text_link":      "#155752",   # dark teal
     # Brand — navy + teal
     "brand_primary":  "#0b2341",   # navy
     "brand_accent":   "#155752",   # teal
@@ -137,11 +137,11 @@ _PALETTE_V2: Dict[str, str] = {
     # editorial tokens so the same hex-free renderer flips with
     # the flag.
     "panel":         "#ffffff",   # white panels (was dark #111827)
-    "panel_alt":     "#ece6db",   # bone tint     (was very dark #0f172a)
+    "panel_alt":     "#ece5d6",   # bone tint     (was very dark #0f172a)
     "text":          "#1a2332",   # near-ink      (was light #e2e8f0)
     "text_dim":      "#465366",   # (was #94a3b8)
     "text_faint":    "#7a8699",   # (was #64748b)
-    "accent":        "#0f5e5a",   # dark teal link (was blue #3b82f6)
+    "accent":        "#155752",   # dark teal link (was blue #3b82f6)
     "accent_bright": "#155752",   # bright teal (was #66c8c3 — same family)
 }
 
