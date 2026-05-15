@@ -534,19 +534,24 @@ def _calibration_panel(stats: Dict[str, Any]) -> str:
 </div>"""
 
 
-def _moic_histogram_panel(moics: List[float]) -> str:
+def _moic_histogram_viz(moics: List[float]) -> str:
+    """Bare MOIC-distribution histogram + caption for the viz half of
+    the paired block. (Superseded the panel-wrapped
+    ``_moic_histogram_panel`` when /backtest adopted ck_paired_block.)
+    """
     svg = _histogram_svg(moics, x_lo=0.0, x_hi=6.0, bins=30, width=680, height=160,
                          bar_color="#1d4ed8", ref_line=2.5)
-    return f"""
-<div class="ck-panel">
-  <div class="ck-panel-title">Realized MOIC Distribution — Full Corpus (n={len(moics)})</div>
-  <div style="padding:14px 16px 10px;">
-    {svg}
-    <div style="margin-top:6px;font-size:10px;color:var(--ck-text-faint);">
-      Red dashed = 1.0× breakeven &nbsp;·&nbsp; Green dashed = 2.5× threshold &nbsp;·&nbsp; Each bar = 0.2× bin
-    </div>
-  </div>
-</div>"""
+    return (
+        '<div style="font-family:var(--sc-mono);font-size:9px;'
+        'letter-spacing:0.1em;text-transform:uppercase;'
+        'color:var(--sc-text-faint);margin-bottom:8px;">'
+        f'Realized MOIC distribution &middot; full corpus (n={len(moics)})</div>'
+        f'{svg}'
+        '<div style="margin-top:6px;font-size:10px;color:var(--sc-text-faint);">'
+        'Red dashed = 1.0&times; breakeven &middot; '
+        'Green dashed = 2.5&times; threshold &middot; each bar = 0.2&times; bin'
+        '</div>'
+    )
 
 
 def _scatter_panel(
@@ -605,45 +610,31 @@ def _scatter_panel(
 </div>"""
 
 
-def _sector_table_panel(rows: List[Dict[str, Any]]) -> str:
-    tbody = []
-    for i, r in enumerate(rows):
-        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
-        p50_color = _moic_color(r["p50"])
-        tbody.append(f"""
-<tr{stripe}>
-  <td class="dim" style="font-size:11px;">{_html.escape(r['sector'])}</td>
-  <td class="mono dim" style="text-align:right;">{r['n']}</td>
-  <td class="mono" style="text-align:right;">{r['p25']:.2f}x</td>
-  <td class="mono" style="text-align:right;color:{p50_color};font-weight:600;">{r['p50']:.2f}x</td>
-  <td class="mono" style="text-align:right;">{r['p75']:.2f}x</td>
-  <td class="mono" style="text-align:right;color:#ef4444;">{r['loss_rate']*100:.1f}%</td>
-  <td class="mono" style="text-align:right;color:#22c55e;">{r['homerun']*100:.1f}%</td>
-</tr>""")
-    return f"""
-<div class="ck-panel">
-  <div class="ck-panel-title">Sector-Level MOIC Distribution (≥3 realized deals)</div>
-  <div class="ck-table-wrap">
-    <table class="ck-table" style="table-layout:fixed;">
-      <colgroup>
-        <col style="width:200px"><col style="width:50px">
-        <col style="width:80px"><col style="width:80px"><col style="width:80px">
-        <col style="width:80px"><col style="width:80px">
-      </colgroup>
-      <thead>
-        <tr>
-          <th>Sector</th><th style="text-align:right;">N</th>
-          <th style="text-align:right;">P25 MOIC</th>
-          <th style="text-align:right;">P50 MOIC</th>
-          <th style="text-align:right;">P75 MOIC</th>
-          <th style="text-align:right;">Loss%</th>
-          <th style="text-align:right;">3×+%</th>
-        </tr>
-      </thead>
-      <tbody>{''.join(tbody)}</tbody>
-    </table>
-  </div>
-</div>"""
+def _sector_rows(rows: List[Dict[str, Any]]) -> tuple:
+    """Sector-calibration data for the paired block's dataset half.
+
+    Returns ``(headers, data_rows, hot_rows)`` for ``ck_paired_block``.
+    ``rows`` arrives pre-sorted by P50 MOIC descending, so ``hot_rows``
+    just marks row 0 — the strongest sector. (Superseded the
+    pre-rendered ``_sector_table_panel`` when /backtest adopted the
+    handoff's paired viz+dataset primitive.)
+    """
+    headers = [
+        "Sector", "N", "P25 MOIC", "P50 MOIC", "P75 MOIC", "Loss%", "3x+%",
+    ]
+    data_rows = [
+        [
+            r["sector"],
+            str(r["n"]),
+            f"{r['p25']:.2f}x",
+            f"{r['p50']:.2f}x",
+            f"{r['p75']:.2f}x",
+            f"{r['loss_rate'] * 100:.1f}%",
+            f"{r['homerun'] * 100:.1f}%",
+        ]
+        for r in rows
+    ]
+    return headers, data_rows, ([0] if data_rows else [])
 
 
 # ---------------------------------------------------------------------------
@@ -651,7 +642,9 @@ def _sector_table_panel(rows: List[Dict[str, Any]]) -> str:
 # ---------------------------------------------------------------------------
 
 def render_backtest() -> str:
-    from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header
+    from rcm_mc.ui._chartis_kit import (
+        chartis_shell, ck_paired_block, ck_section_header,
+    )
 
     deals = _load_corpus()
     stats = _calibration_stats(deals)
@@ -662,25 +655,35 @@ def render_backtest() -> str:
     sector_rows = _sector_calibration(deals)
 
     kpis = _kpi_bar(stats)
-    section_dist = ck_section_header("MOIC DISTRIBUTION", "realized corpus outcomes")
-    hist_panel = _moic_histogram_panel(stats["moics"])
+    # Signature paired viz+dataset block: the realized-MOIC histogram
+    # on the left, its per-sector breakdown on the right, one rule.
+    # The histogram is the overall distribution; the sector table is
+    # the same corpus sliced — exactly the handoff's pairing intent.
+    sec_headers, sec_rows, sec_hot = _sector_rows(sector_rows)
+    dist_paired = ck_paired_block(
+        _moic_histogram_viz(stats["moics"]),
+        data_label="MOIC by sector · ≥3 realized deals",
+        data_source="deals corpus",
+        headers=sec_headers,
+        rows=sec_rows,
+        hot_rows=sec_hot,
+    )
     section_scatter = ck_section_header("ENTRY SIGNAL CALIBRATION", "entry characteristics vs realized outcomes")
     scatter_panel = _scatter_panel(pts_entry, pts_hold, pts_pred)
     section_cal = ck_section_header("MODEL STATISTICS", "corpus OLS calibration accuracy")
     cal_panel = _calibration_panel(stats)
-    section_sector = ck_section_header("SECTOR BENCHMARKS", "P50 MOIC by healthcare sector")
-    sector_panel = _sector_table_panel(sector_rows)
 
     body = (
         kpis
-        + section_dist
-        + hist_panel
+        + ck_section_header(
+            "MOIC DISTRIBUTION × SECTOR",
+            "realized corpus outcomes, paired with the per-sector dataset",
+        )
+        + dist_paired
         + section_scatter
         + scatter_panel
         + section_cal
         + cal_panel
-        + section_sector
-        + sector_panel
     )
 
     return chartis_shell(
