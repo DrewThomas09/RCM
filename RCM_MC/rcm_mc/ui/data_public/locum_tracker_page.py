@@ -2,36 +2,33 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block
 
 
-def _roles_table(roles) -> str:
-    bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
-    text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; acc = P["accent"]
-    cols = [("Role","left"),("FTE","right"),("Hrs/mo","right"),("Locum $/hr","right"),
-            ("Perm $/hr","right"),("Premium %","right"),("Agency Fee","right"),
-            ("Monthly ($k)","right"),("Annual ($M)","right"),("Convert","center")]
-    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
-    trs = []
-    for i, r in enumerate(roles):
-        rb = panel_alt if i % 2 == 0 else bg
-        prem_c = neg if r.rate_premium_pct > 0.70 else (P["warning"] if r.rate_premium_pct > 0.50 else text_dim)
-        conv_c = pos if r.conversion_viable else text_dim
-        cells = [
-            f'{ck_data_cell(f"""{_html.escape(r.role)}""", mono=True, weight=600)}',
-            f'{ck_data_cell(f"""{r.headcount_fte:.1f}""", align="right", mono=True)}',
-            f'{ck_data_cell(f"""{r.hours_per_month}""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${r.locum_rate_per_hour:,.2f}""", align="right", mono=True, tone="neg")}',
-            f'{ck_data_cell(f"""${r.perm_equiv_rate:,.2f}""", align="right", mono=True, tone="dim")}',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{prem_c};font-weight:600">{r.rate_premium_pct * 100:.1f}%</td>',
-            f'{ck_data_cell(f"""{r.agency_fee_pct * 100:.1f}%""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${r.monthly_spend_k:,.1f}""", align="right", mono=True)}',
-            f'{ck_data_cell(f"""${r.annual_spend_mm:,.2f}""", align="right", mono=True, tone="acc", weight=700)}',
-            f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{conv_c};font-weight:600">{"YES" if r.conversion_viable else "—"}</td>',
-        ]
-        trs.append(f'<tr>{"".join(cells)}</tr>')
-    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
-            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+def _roles_paired_rows(roles) -> tuple:
+    headers = [
+        "Role", "FTE", "Hrs/mo", "Locum $/hr", "Perm $/hr",
+        "Premium %", "Agency Fee", "Monthly ($k)",
+        "Annual ($M)", "Convert",
+    ]
+    rows: list = []
+    spends: list = []
+    for r in roles:
+        rows.append([
+            r.role,
+            f"{r.headcount_fte:.1f}",
+            str(r.hours_per_month),
+            f"${r.locum_rate_per_hour:,.2f}",
+            f"${r.perm_equiv_rate:,.2f}",
+            f"{r.rate_premium_pct * 100:.1f}%",
+            f"{r.agency_fee_pct * 100:.1f}%",
+            f"${r.monthly_spend_k:,.1f}",
+            f"${r.annual_spend_mm:,.2f}",
+            "YES" if r.conversion_viable else "—",
+        ])
+        spends.append(r.annual_spend_mm)
+    hot = [spends.index(max(spends))] if spends else []
+    return headers, rows, hot
 
 
 def _gaps_table(gaps) -> str:
@@ -196,7 +193,15 @@ def render_locum_tracker(params: dict = None) -> str:
     )
 
     svg = _role_spend_svg(r.roles)
-    roles_tbl = _roles_table(r.roles)
+    role_headers, role_rows, role_hot = _roles_paired_rows(r.roles)
+    roles_paired = ck_paired_block(
+        svg,
+        data_label="Locum Spend by Role · Rate, FTE, Spend, Agency Fee",
+        headers=role_headers,
+        rows=role_rows,
+        data_source=f"{len(r.roles)} contract roles · highest-spend role marked",
+        hot_rows=role_hot,
+    )
     gaps_tbl = _gaps_table(r.gaps)
     conv_tbl = _convert_table(r.conversions)
     comp_tbl = _compliance_table(r.compliance)
@@ -227,8 +232,7 @@ def render_locum_tracker(params: dict = None) -> str:
   </div>
   {form}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Locum Spend by Role</div>{svg}</div>
-  <div style="{cell}"><div style="{h3}">Contract Role Detail — Rate, FTE, Spend, Agency Fee</div>{roles_tbl}</div>
+  {roles_paired}
   <div style="{cell}"><div style="{h3}">Coverage Gap Inventory — Revenue At Risk</div>{gaps_tbl}</div>
   <div style="{cell}"><div style="{h3}">Permanent Conversion Pipeline</div>{conv_tbl}</div>
   <div style="{cell}"><div style="{h3}">Compliance Exposure — 1099 / Credentialing / Contract Drift</div>{comp_tbl}</div>
