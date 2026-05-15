@@ -2,7 +2,38 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import (
+    P, chartis_shell, ck_data_cell, ck_kpi_block, ck_paired_block,
+)
+
+
+def _leaders_paired_rows(leaders) -> tuple:
+    """Sector-leaders data for the heatmap's paired dataset.
+
+    Returns ``(headers, rows, hot_rows)`` for ``ck_paired_block``.
+    Each row is one sector with its top sponsor + runner-up — the
+    interpretation of the bright cells the heatmap shows. ``leaders``
+    arrives sorted (by top-sponsor MOIC desc, per compute_sponsor_heatmap),
+    so ``hot_rows=[0]`` highlights the best sector-leader pair.
+    Caps at 20 rows to match the right-side width of the paired block.
+    """
+    headers = [
+        "Sector", "Top Sponsor", "Top MOIC", "Top IRR",
+        "Deals", "Runner Up", "Runner MOIC",
+    ]
+    rows: list = [
+        [
+            ld.sector,
+            ld.top_sponsor,
+            f"{ld.top_moic:.2f}x",
+            f"{ld.top_irr * 100:.1f}%",
+            str(ld.deal_count),
+            ld.runner_up,
+            f"{ld.runner_up_moic:.2f}x",
+        ]
+        for ld in leaders[:20]
+    ]
+    return headers, rows, ([0] if rows else [])
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
@@ -65,30 +96,6 @@ def _profiles_table(profiles) -> str:
             f'{ck_data_cell(f"""{_html.escape(p.top_sector[:24])}""", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{conc_c}">{p.sector_concentration_pct * 100:.0f}%</td>',
             f'{ck_data_cell(f"""{p.realized_pct * 100:.0f}%""", align="right", mono=True)}',
-        ]
-        trs.append(f'<tr>{"".join(cells)}</tr>')
-    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
-            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
-
-
-def _leaders_table(leaders) -> str:
-    bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
-    text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
-    cols = [("Sector","left"),("Top Sponsor","left"),("Top MOIC","right"),
-            ("Top IRR","right"),("Deals","right"),("Runner Up","left"),("Runner MOIC","right")]
-    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
-    trs = []
-    for i, lead in enumerate(leaders[:40]):
-        rb = panel_alt if i % 2 == 0 else bg
-        moic_c = pos if lead.top_moic >= 2.8 else (acc if lead.top_moic >= 2.0 else text_dim)
-        cells = [
-            f'{ck_data_cell(f"""{_html.escape(lead.sector)}""", mono=True)}',
-            f'{ck_data_cell(f"""{_html.escape(lead.top_sponsor)}""", mono=True, weight=700)}',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{moic_c};font-weight:700">{lead.top_moic:.2f}x</td>',
-            f'{ck_data_cell(f"""{lead.top_irr * 100:.1f}%""", align="right", mono=True)}',
-            f'{ck_data_cell(f"""{lead.deal_count}""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""{_html.escape(lead.runner_up)}""", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""{lead.runner_up_moic:.2f}x""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr>{"".join(cells)}</tr>')
     return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
@@ -231,9 +238,31 @@ def render_sponsor_heatmap(params: dict = None) -> str:
     svg = _heatmap_svg(r.matrix_cells, r.top_sponsors, r.sector_leaders)
     cells_tbl = _cells_table(r.matrix_cells)
     profiles_tbl = _profiles_table(r.top_sponsors)
-    leaders_tbl = _leaders_table(r.sector_leaders)
     vintage_tbl = _vintage_table(r.vintage_cuts)
     hold_tbl = _hold_table(r.hold_strat)
+
+    # Signature paired viz+dataset block from the handoff: the
+    # sponsor × sector heatmap on the left, the per-sector leaders
+    # (top sponsor + runner-up) on the right, one outer rule. The
+    # leaders are the literal interpretation of the heatmap's bright
+    # cells — the pair turns "look at this color grid" into "and here
+    # is who's winning each row."
+    heatmap_viz = (
+        f'<div style="font-size:9px;color:{P["text_dim"]};'
+        f'font-family:JetBrains Mono,monospace;letter-spacing:0.1em;'
+        f'text-transform:uppercase;font-weight:700;margin-bottom:8px;">'
+        'Sponsor &times; sector MOIC heatmap</div>'
+        f'{svg}'
+    )
+    lead_headers, lead_rows, lead_hot = _leaders_paired_rows(r.sector_leaders)
+    heatmap_paired = ck_paired_block(
+        heatmap_viz,
+        data_label="Sector leaders &middot; top sponsor + runner-up",
+        data_source="data_public/sponsor_heatmap.py",
+        headers=lead_headers,
+        rows=lead_rows,
+        hot_rows=lead_hot,
+    )
 
     form = f"""
 <form method="GET" action="/sponsor-heatmap" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
@@ -253,10 +282,9 @@ def render_sponsor_heatmap(params: dict = None) -> str:
   </div>
   {form}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Sponsor × Sector MOIC Heatmap</div>{svg}</div>
+  {heatmap_paired}
   <div style="{cell}"><div style="{h3}">Sponsor × Sector Matrix Detail (top 50)</div>{cells_tbl}</div>
   <div style="{cell}"><div style="{h3}">Top Sponsor Profiles</div>{profiles_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Sector-Level Leaders</div>{leaders_tbl}</div>
   <div style="{cell}"><div style="{h3}">Vintage Cuts — 2016-2019 vs 2020-2024</div>{vintage_tbl}</div>
   <div style="{cell}"><div style="{h3}">Hold-Period Stratification</div>{hold_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
