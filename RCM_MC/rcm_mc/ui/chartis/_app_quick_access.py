@@ -43,6 +43,8 @@ _STYLE = """
 .app-qa { background:#fff; border-top:1px solid var(--sc-rule);
   border-bottom:1px solid var(--sc-rule); padding:32px 0 36px;
   margin:0 0 var(--sc-s-5); }
+.app-qa-inner { max-width:1720px; margin:0 auto;
+  padding:0 var(--sc-s-7); }
 .app-qa-head { display:flex; align-items:baseline;
   justify-content:space-between; margin-bottom:20px; gap:12px;
   flex-wrap:wrap; }
@@ -96,6 +98,7 @@ def render_quick_access() -> str:
     return (
         _STYLE
         + '<section class="app-qa">'
+        '<div class="app-qa-inner">'
         '<div class="app-qa-head">'
         '<div>'
         '<div class="app-qa-eyebrow">Quick access &middot; '
@@ -105,5 +108,6 @@ def render_quick_access() -> str:
         '<a class="app-qa-all" href="/module-index">All surfaces &rarr;</a>'
         '</div>'
         f'<div class="app-qa-grid">{cards}</div>'
+        '</div>'
         '</section>'
     )
