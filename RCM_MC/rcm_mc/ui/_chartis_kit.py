@@ -3098,10 +3098,9 @@ _CSS_INLINE_FALLBACK = """
   /* Top bar — navy + white + teal accent rule, mirrors chartis.com */
   .ck-topbar { position:sticky; top:0; z-index:50; background:var(--sc-navy); border-bottom:2px solid var(--sc-teal); }
   .ck-topbar-inner { display:flex; align-items:center; gap:var(--sc-s-6); padding:18px var(--sc-s-7); max-width:1720px; margin:0 auto; }
-  .ck-wordmark { display:flex; align-items:center; gap:10px; font-family:var(--sc-serif); font-weight:500; font-size:19px; color:var(--sc-on-navy); letter-spacing:-0.005em; text-decoration:none; }
-  .ck-wordmark em { font-style:italic; font-weight:400; color:var(--sc-teal-2); }
-  .ck-wordmark-mark { width:28px; height:28px; border-radius:50%; background:transparent; border:1.5px solid var(--sc-on-navy); position:relative; flex-shrink:0; }
-  .ck-wordmark-mark::after { content:''; position:absolute; inset:5px; border:2px solid var(--sc-teal); border-right-color:transparent; border-bottom-color:transparent; border-radius:50%; transform:rotate(-45deg); }
+  .ck-wordmark { display:inline-flex; align-items:baseline; font-family:var(--sc-serif); font-weight:500; font-size:22px; color:var(--sc-on-navy); letter-spacing:-0.018em; text-decoration:none; line-height:1; }
+  .ck-wordmark em { font-style:italic; font-weight:400; color:var(--sc-teal-2); margin-left:0.22em; }
+  .ck-wordmark:hover em { color:var(--sc-on-navy); }
   .ck-nav { display:flex; gap:var(--sc-s-7); margin-left:var(--sc-s-6); }
   .ck-nav a { font-family:var(--sc-sans); font-size:13px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--sc-on-navy-dim); padding:6px 0; border-bottom:2px solid transparent; text-decoration:none; transition:color 0.15s; }
   .ck-nav a:hover { color:var(--sc-on-navy); }
@@ -4315,8 +4314,7 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '<header class="ck-topbar">'
         '<div class="ck-topbar-inner">'
         '<a href="/" class="ck-wordmark" aria-label="PE Desk home">'
-        '<span class="ck-wordmark-mark"></span>'
-        '<span class="ck-wordmark-text">PE <em>Desk</em></span>'
+        'PE<em>Desk</em>'
         '</a>'
         f'<nav class="ck-nav" aria-label="Primary">{links}</nav>'
         '<div class="ck-topbar-right">'
