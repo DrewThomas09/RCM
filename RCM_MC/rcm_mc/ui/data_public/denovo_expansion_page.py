@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block
 
 
 def _sites_table(items) -> str:
@@ -56,28 +56,26 @@ def _markets_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
-def _ramp_table(items) -> str:
-    bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
-    text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; acc = P["accent"]
-    cols = [("Month","right"),("Visits/Day","right"),("Revenue ($M)","right"),("Expense ($M)","right"),
-            ("EBITDA ($M)","right"),("Cumulative FCF ($M)","right")]
-    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
-    trs = []
+def _ramp_paired_rows(items) -> tuple:
+    headers = [
+        "Month", "Visits/Day", "Revenue ($M)", "Expense ($M)",
+        "EBITDA ($M)", "Cumulative FCF ($M)",
+    ]
+    rows: list = []
+    be_idx: int | None = None
     for i, r in enumerate(items):
-        rb = panel_alt if i % 2 == 0 else bg
-        e_c = pos if r.ebitda_mm > 0 else (neg if r.ebitda_mm < -0.05 else text_dim)
-        fcf_c = pos if r.cumulative_fcf_mm > 0 else (neg if r.cumulative_fcf_mm < -5 else text_dim)
-        cells = [
-            f'{ck_data_cell(f"""{r.month}""", align="right", mono=True, weight=600)}',
-            f'{ck_data_cell(f"""{r.visits_per_day}""", align="right", mono=True, tone="acc")}',
-            f'{ck_data_cell(f"""${r.revenue_mm:,.3f}""", align="right", mono=True)}',
-            f'{ck_data_cell(f"""${r.expense_mm:,.3f}""", align="right", mono=True, tone="neg")}',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{e_c};font-weight:700">${r.ebitda_mm:+,.3f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{fcf_c};font-weight:700">${r.cumulative_fcf_mm:+,.2f}</td>',
-        ]
-        trs.append(f'<tr>{"".join(cells)}</tr>')
-    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
-            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        rows.append([
+            str(r.month),
+            str(r.visits_per_day),
+            f"${r.revenue_mm:,.3f}",
+            f"${r.expense_mm:,.3f}",
+            f"${r.ebitda_mm:+,.3f}",
+            f"${r.cumulative_fcf_mm:+,.2f}",
+        ])
+        if be_idx is None and r.cumulative_fcf_mm >= 0:
+            be_idx = i
+    hot = [be_idx] if be_idx is not None else []
+    return headers, rows, hot
 
 
 def _lease_table(items) -> str:
@@ -175,9 +173,17 @@ def render_denovo_expansion(params: dict = None) -> str:
     )
 
     svg = _ramp_svg(r.ramp)
+    rp_headers, rp_rows, rp_hot = _ramp_paired_rows(r.ramp)
+    ramp_paired = ck_paired_block(
+        svg,
+        data_label="De Novo ASC Ramp · 24-Month Window",
+        headers=rp_headers,
+        rows=rp_rows,
+        data_source=f"{len(r.ramp)} months · break-even month marked",
+        hot_rows=rp_hot,
+    )
     st_tbl = _sites_table(r.site_types)
     mk_tbl = _markets_table(r.markets)
-    rp_tbl = _ramp_table(r.ramp)
     lb_tbl = _lease_table(r.lease_buy)
     bl_tbl = _blend_table(r.blend)
 
@@ -191,10 +197,9 @@ def render_denovo_expansion(params: dict = None) -> str:
     <p class="ck-page-sub">Greenfield buildout economics · site-type unit economics · market expansion queue · ramp curves · lease vs buy · organic/inorganic blend — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">De Novo ASC Ramp Curve</div>{svg}</div>
+  {ramp_paired}
   <div style="{cell}"><div style="{h3}">Site-Type Unit Economics</div>{st_tbl}</div>
   <div style="{cell}"><div style="{h3}">Market Expansion Queue</div>{mk_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Month-by-Month Ramp — Representative ASC</div>{rp_tbl}</div>
   <div style="{cell}"><div style="{h3}">Lease vs Buy Decision Matrix (10-Year NPV)</div>{lb_tbl}</div>
   <div style="{cell}"><div style="{h3}">Organic vs Inorganic Growth Blend</div>{bl_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">

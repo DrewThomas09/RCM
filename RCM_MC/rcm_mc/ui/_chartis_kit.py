@@ -43,15 +43,15 @@ UI_V2_ENABLED = True
 
 P = {
     # Surfaces
-    "bg":          "#f5f1ea",   # parchment page bg
+    "bg":          "#f2ede3",   # parchment page bg
     "panel":       "#ffffff",   # white data panels
-    "panel_alt":   "#ece6db",   # bone tint
+    "panel_alt":   "#ece5d6",   # bone tint
     "navy":        "#0b2341",   # primary dark
     "ink":         "#061626",   # deepest
     "navy_2":      "#132e53",   # hover / elevated
     "navy_3":      "#1d3c69",   # divider on navy
-    "rule":        "#d6cfc3",   # hairline on parchment
-    "rule_2":      "#c5bdae",
+    "rule":        "#d6cfc0",   # hairline on parchment
+    "rule_2":      "#bfb6a2",
 
     # Text on light
     "text":        "#1a2332",
@@ -66,7 +66,7 @@ P = {
     # Accent
     "teal":     "#2fb3ad",
     "teal_2":   "#66c8c3",
-    "teal_ink": "#0f5e5a",
+    "teal_ink": "#155752",
 
     # Status
     "positive": "#0a8a5f",
@@ -498,6 +498,135 @@ def ck_kpi_block(
 def ck_signal_badge(text: str, *, tone: str = "neutral") -> str:
     tone = tone if tone in ("positive", "warning", "negative", "critical", "neutral") else "neutral"
     return f'<span class="ck-badge tone-{tone}">{_esc(text)}</span>'
+
+
+# ── Claude Design handoff primitives ────────────────────────────────
+# Ported from the marketing / home / module-directory handoffs
+# (React/JSX prototypes). These three are the composition primitives
+# the handoffs introduce — DataPanel chrome, the BarRow, and the
+# signature paired-viz+dataset block. They read existing --sc-* CSS
+# vars so they inherit any later palette refinement automatically.
+
+
+def ck_data_panel(
+    code: str,
+    title: str,
+    body: str,
+    *,
+    live: bool = True,
+) -> str:
+    """Bordered data panel with a navy header — the platform's
+    signature surface chrome (3-letter mono code + title + LIVE badge).
+
+    Ported from the Claude Design ``DataPanel`` primitive in the
+    home / module-directory handoffs. ``body`` is pre-rendered HTML
+    (the panel's content); ``code`` is the short mono identifier
+    shown in teal at the header's left edge (e.g. ``FNL``, ``ALR``).
+    """
+    live_html = (
+        '<span class="ck-data-panel-live">LIVE</span>' if live else ""
+    )
+    return (
+        '<section class="ck-data-panel">'
+        '<header class="ck-data-panel-head">'
+        f'<span class="ck-data-panel-code">{_esc(code)}</span>'
+        f'<span class="ck-data-panel-title">{_esc(title)}</span>'
+        f'{live_html}'
+        '</header>'
+        f'<div class="ck-data-panel-body">{body}</div>'
+        '</section>'
+    )
+
+
+def ck_bar_row(
+    label: str,
+    value: str,
+    pct: float,
+    *,
+    tone: str = "teal",
+    unit: str = "",
+) -> str:
+    """Compact labelled bar row — label, value, proportional bar, %.
+
+    Ported from the Claude Design ``BarRow`` primitive. ``pct`` is
+    0-100; ``tone`` ∈ {teal, positive, warning, negative, navy}. The
+    bar floors at 2% width so a near-zero value still reads as a row.
+    """
+    tone_var = {
+        "teal": "var(--sc-teal)",
+        "positive": "var(--sc-positive)",
+        "warning": "var(--sc-warning)",
+        "negative": "var(--sc-negative)",
+        "navy": "var(--sc-navy)",
+    }.get(tone, "var(--sc-teal)")
+    pct_clamped = max(0.0, min(100.0, pct))
+    return (
+        '<div class="ck-bar-row">'
+        f'<span class="ck-bar-row-label">{_esc(label)}</span>'
+        f'<span class="ck-bar-row-value">{_esc(value)}{_esc(unit)}</span>'
+        '<span class="ck-bar-row-track">'
+        f'<span class="ck-bar-row-fill" '
+        f'style="width:{max(2.0, pct_clamped):.1f}%;background:{tone_var};">'
+        '</span></span>'
+        f'<span class="ck-bar-row-pct">{pct_clamped:.1f}%</span>'
+        '</div>'
+    )
+
+
+def ck_paired_block(
+    viz_html: str,
+    *,
+    data_label: str,
+    headers: Sequence[str],
+    rows: Sequence[Sequence[str]],
+    data_source: str = "",
+    hot_rows: Sequence[int] = (),
+) -> str:
+    """The signature paired viz + dataset block — a chart on the left,
+    its raw dataset on the right, both inside one outer rule.
+
+    Ported from the Claude Design "paired viz + dataset" pattern in
+    the marketing handoff. ``viz_html`` is pre-rendered (SVG chart,
+    funnel, etc.). ``headers`` is the column labels — the first column
+    left-aligns as a label, the rest right-align as values. ``rows``
+    is the table body, one sequence of cells per row, same column
+    order as ``headers``. ``hot_rows`` marks row indices to highlight
+    (left amber rule + tinted background).
+
+    Per the handoff convention: a chart without its paired dataset
+    is not considered done.
+    """
+    hot = set(hot_rows)
+    head_cells = "".join(
+        f'<th>{_esc(h)}</th>' if i == 0
+        else f'<th class="ck-pair-r">{_esc(h)}</th>'
+        for i, h in enumerate(headers)
+    )
+    body_rows = ""
+    for ridx, row in enumerate(rows):
+        row_cls = ' class="ck-pair-hot"' if ridx in hot else ""
+        cells = "".join(
+            f'<td class="ck-pair-lbl">{_esc(c)}</td>' if i == 0
+            else f'<td class="ck-pair-r">{_esc(c)}</td>'
+            for i, c in enumerate(row)
+        )
+        body_rows += f'<tr{row_cls}>{cells}</tr>'
+    src_html = (
+        f'<span class="ck-pair-src">{_esc(data_source)}</span>'
+        if data_source else ""
+    )
+    return (
+        '<div class="ck-pair">'
+        f'<div class="ck-pair-viz">{viz_html}</div>'
+        '<div class="ck-pair-data">'
+        '<div class="ck-pair-data-h">'
+        f'<span>{_esc(data_label)}</span>{src_html}'
+        '</div>'
+        f'<table><thead><tr>{head_cells}</tr></thead>'
+        f'<tbody>{body_rows}</tbody></table>'
+        '</div>'
+        '</div>'
+    )
 
 
 def ck_confidence_band(
@@ -1000,7 +1129,7 @@ _CK_TOUR_CSS = """
 }
 .ck-tour-card {
   position: relative; max-width: 640px; width: calc(100% - 32px);
-  margin: 7vh auto; background: var(--sc-bone, #f5f1ea);
+  margin: 7vh auto; background: var(--sc-bone, #f2ede3);
   border: 1px solid var(--sc-rule, #d8d3c8); border-radius: 4px;
   padding: 44px 48px 32px; box-shadow: 0 24px 60px rgba(0,0,0,0.2);
   font-family: "Source Serif 4", Georgia, serif;
@@ -1439,7 +1568,7 @@ _CK_QC_CSS = """
 }
 .ck-qc-card {
   position: relative; max-width: 520px; width: calc(100% - 32px);
-  margin: 14vh auto; background: var(--sc-bone, #f5f1ea);
+  margin: 14vh auto; background: var(--sc-bone, #f2ede3);
   border: 1px solid var(--sc-rule, #d8d3c8); border-radius: 4px;
   padding: 32px 36px 24px; box-shadow: 0 24px 60px rgba(0,0,0,0.2);
   font-family: "Source Serif 4", Georgia, serif;
@@ -2690,7 +2819,7 @@ _CSS_INLINE_FALLBACK = """
    * out of the prose stream without shouting. */
   .ck-empty-row {
     padding: 14px 16px;
-    background: var(--sc-bone, #f5f1ea);
+    background: var(--sc-bone, #f2ede3);
     font-family: "Source Serif 4", serif;
     font-size: 13px;
     color: var(--sc-text-dim, #37495e);
@@ -2729,7 +2858,7 @@ _CSS_INLINE_FALLBACK = """
    * a positive-tone check when JS confirms the underlying condition
    * (recent deals, tour progress, tools visited) from localStorage. */
   .ck-checklist-wrap {
-    background: var(--sc-bone, #f5f1ea);
+    background: var(--sc-bone, #f2ede3);
     border: 1px solid var(--sc-rule, #d8d3c8); border-radius: 3px;
     padding: 20px 24px; margin-bottom: var(--sc-s-5);
   }
@@ -2826,7 +2955,7 @@ _CSS_INLINE_FALLBACK = """
   }
   .ck-toc-link:hover {
     color: var(--sc-text, #1a2332);
-    background: var(--sc-bone, #f5f1ea);
+    background: var(--sc-bone, #f2ede3);
   }
   .ck-toc-link.is-active {
     color: var(--sc-teal-ink, #0e3e3a);
@@ -2867,7 +2996,7 @@ _CSS_INLINE_FALLBACK = """
     transform: translateX(-50%);
     min-width: 260px; max-width: 360px;
     padding: 14px 16px;
-    background: var(--sc-bone, #f5f1ea);
+    background: var(--sc-bone, #f2ede3);
     border: 1px solid var(--sc-rule, #d8d3c8);
     border-radius: 3px;
     box-shadow: 0 12px 28px rgba(11, 35, 65, 0.18);
@@ -2886,7 +3015,7 @@ _CSS_INLINE_FALLBACK = """
     content: ""; position: absolute; top: 100%; left: 50%;
     transform: translateX(-50%);
     border: 6px solid transparent;
-    border-top-color: var(--sc-bone, #f5f1ea);
+    border-top-color: var(--sc-bone, #f2ede3);
   }
   .ck-help-term {
     display: block;
@@ -3020,7 +3149,7 @@ _CSS_INLINE_FALLBACK = """
   .ck-user-dropdown { position:absolute; top:calc(100% + 10px); right:0; min-width:200px; background:#fff; border:1px solid var(--sc-rule); box-shadow:var(--sc-shadow-2,0 8px 24px rgba(11,32,55,0.14)); border-radius:2px; padding:6px 0; z-index:60; }
   .ck-user-dropdown[hidden] { display:none !important; }
   .ck-user-dropdown-item { display:block; width:100%; text-align:left; padding:9px 16px; font-family:var(--sc-sans); font-size:13px; color:var(--sc-text); text-decoration:none; background:transparent; border:0; cursor:pointer; letter-spacing:0; text-transform:none; font-weight:500; }
-  .ck-user-dropdown-item:hover { background:var(--sc-bone,#f5f1ea); color:var(--sc-teal-ink); }
+  .ck-user-dropdown-item:hover { background:var(--sc-bone,#f2ede3); color:var(--sc-teal-ink); }
   .ck-user-dropdown-divider { height:1px; background:var(--sc-rule); margin:4px 0; }
   .ck-user-recent { padding:6px 0 4px; border-bottom:1px solid var(--sc-rule); margin-bottom:4px; }
   .ck-user-recent[hidden] { display:none !important; }
@@ -3036,7 +3165,7 @@ _CSS_INLINE_FALLBACK = """
    * just below the navy topbar. Lets a partner click into a common
    * second-level page (Alerts, Heatmap, Find Comps, etc.) without
    * landing on a section index first. */
-  .ck-subnav { background:var(--sc-bone,#f5f1ea); border-bottom:1px solid var(--sc-rule); position:sticky; top:60px; z-index:40; }
+  .ck-subnav { background:var(--sc-bone,#f2ede3); border-bottom:1px solid var(--sc-rule); position:sticky; top:60px; z-index:40; }
   .ck-subnav-inner { display:flex; gap:var(--sc-s-5); align-items:center; padding:10px var(--sc-s-7); max-width:1720px; margin:0 auto; overflow-x:auto; }
   .ck-subnav-link { font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.04em; color:var(--sc-text-dim); text-decoration:none; padding:5px 10px; border-radius:2px; white-space:nowrap; transition:color 0.15s, background 0.15s; }
   .ck-subnav-link:hover { color:var(--sc-teal-ink); background:#fff; }
@@ -3068,7 +3197,7 @@ _CSS_INLINE_FALLBACK = """
   .ck-section-intro h2 em { font-style:italic; font-weight:400; color:var(--sc-teal-ink); }
   .ck-section-intro .ck-section-body { font-family:var(--sc-serif); font-size:14px; line-height:1.55; color:var(--sc-text-dim); margin-top:var(--sc-s-3); max-width:64ch; }
   .ck-section-intro-dismiss { position:absolute; top:0; right:0; width:24px; height:24px; padding:0; background:transparent; border:0; color:var(--sc-text-faint); font-size:20px; line-height:1; cursor:pointer; border-radius:50%; transition:color 0.12s, background 0.12s; }
-  .ck-section-intro-dismiss:hover { color:var(--sc-navy); background:var(--sc-bone,#ece6db); }
+  .ck-section-intro-dismiss:hover { color:var(--sc-navy); background:var(--sc-bone,#ece5d6); }
   .ck-section-intro[hidden] { display:none !important; }
   .ck-arrow { display:inline-flex; align-items:center; gap:6px; font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--sc-teal-ink); text-decoration:none; }
   .ck-arrow::after { content:'\\2197'; font-size:14px; line-height:1; }
@@ -3226,7 +3355,7 @@ _CSS_INLINE_FALLBACK = """
   .ck-data-table-scroll { overflow-x:auto; margin-top:12px; }
   .ck-data-table { width:100%; border-collapse:collapse; font-size:11px; }
   .ck-data-table thead tr { background:var(--sc-bone); }
-  .ck-data-table tbody tr:nth-child(even) { background:var(--sc-panel-alt, #ece6db); }
+  .ck-data-table tbody tr:nth-child(even) { background:var(--sc-panel-alt, #ece5d6); }
   .ck-data-table-head { padding:6px 10px; border-bottom:1px solid var(--sc-rule); font-size:10px; color:var(--sc-text-dim); letter-spacing:0.05em; font-weight:600; text-transform:uppercase; }
 
   /* Personal dashboard /my/<owner> — pulse strip uses the existing
@@ -3346,7 +3475,7 @@ _CSS_INLINE_FALLBACK = """
     display: flex; align-items: baseline;
     justify-content: space-between; gap: 14px;
     padding: 8px 14px; margin: -32px -24px 24px;
-    background: var(--sc-bone, #f5f1ea);
+    background: var(--sc-bone, #f2ede3);
     border-bottom: 1px solid var(--sc-rule, #d8d3c8);
     font-family: "Inter Tight", sans-serif;
     font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
@@ -3388,7 +3517,7 @@ _CSS_INLINE_FALLBACK = """
     .ck-panel { box-shadow:none; break-inside:avoid;
                 page-break-inside:avoid;
                 border:1px solid #cfcec7; }
-    .ck-panel-head { background:#f5f1ea !important;
+    .ck-panel-head { background:#f2ede3 !important;
                      color:#0b2341 !important; }
     .ck-section-intro, .ck-section-header,
     .ck-kpi-strip { break-inside:avoid; page-break-inside:avoid; }
@@ -3396,6 +3525,61 @@ _CSS_INLINE_FALLBACK = """
     .ck-main { max-width:none; padding:0; }
     /* Legacy cad-* chrome hide for pages still on the legacy shell */
     .cad-nav, .cad-topbar, .cad-ticker { display:none !important; }
+  }
+
+  /* ---- Claude Design handoff primitives ---- */
+  /* DataPanel — bordered surface, navy header w/ mono code + LIVE badge */
+  .ck-data-panel { background:#fff; border:1px solid var(--sc-rule);
+    border-radius:2px; margin:0 0 var(--sc-s-5); }
+  .ck-data-panel-head { background:var(--sc-navy); color:var(--sc-on-navy);
+    padding:9px 14px; display:flex; align-items:center; gap:10px;
+    font-family:var(--sc-mono); font-size:10.5px; letter-spacing:0.14em;
+    text-transform:uppercase; }
+  .ck-data-panel-code { color:var(--sc-teal-2); font-weight:700; flex:0 0 auto; }
+  .ck-data-panel-title { color:var(--sc-on-navy); flex:1 1 auto; min-width:0;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ck-data-panel-live { color:var(--sc-on-navy-faint); font-size:9px; flex:0 0 auto; }
+  .ck-data-panel-body { padding:14px; }
+
+  /* BarRow — label / value / proportional bar / pct */
+  .ck-bar-row { display:grid; grid-template-columns:120px 48px 1fr 56px;
+    gap:10px; align-items:center; padding:5px 0; font-size:12px;
+    font-family:var(--sc-mono); font-variant-numeric:tabular-nums; }
+  .ck-bar-row-label { color:var(--sc-text-dim); overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap; }
+  .ck-bar-row-value { text-align:right; color:var(--sc-text); font-weight:600; }
+  .ck-bar-row-track { height:5px; background:var(--sc-bone); position:relative; }
+  .ck-bar-row-fill { position:absolute; left:0; top:0; bottom:0; }
+  .ck-bar-row-pct { text-align:right; color:var(--sc-text-faint); font-size:11px; }
+
+  /* Paired viz + dataset — the signature block (chart left, data right) */
+  .ck-pair { display:grid; grid-template-columns:1.4fr 1fr; gap:0;
+    background:#fff; border:1px solid var(--sc-rule-2); margin:var(--sc-s-5) 0; }
+  .ck-pair-viz { padding:var(--sc-s-7); border-right:1px solid var(--sc-rule); }
+  .ck-pair-data { background:var(--sc-parchment); }
+  .ck-pair-data-h { padding:14px 20px; border-bottom:1px solid var(--sc-rule);
+    font-family:var(--sc-sans); font-size:10.5px; font-weight:700;
+    letter-spacing:0.14em; text-transform:uppercase; color:var(--sc-text-dim);
+    display:flex; justify-content:space-between; align-items:center; }
+  .ck-pair-src { font-family:var(--sc-mono); text-transform:none;
+    letter-spacing:0; color:var(--sc-teal-ink); font-size:11px; }
+  .ck-pair table { width:100%; border-collapse:collapse;
+    font-family:var(--sc-mono); font-size:12.5px; }
+  .ck-pair th { text-align:left; padding:8px 20px; color:var(--sc-text-faint);
+    font-weight:600; font-size:9.5px; letter-spacing:0.12em;
+    text-transform:uppercase; border-bottom:1px solid var(--sc-rule);
+    font-family:var(--sc-sans); }
+  .ck-pair td { padding:8px 20px; border-bottom:1px solid var(--sc-rule);
+    color:var(--sc-text); font-variant-numeric:tabular-nums; }
+  .ck-pair tr:last-child td { border-bottom:none; }
+  .ck-pair th.ck-pair-r, .ck-pair td.ck-pair-r { text-align:right; }
+  .ck-pair td.ck-pair-lbl { color:var(--sc-text-dim);
+    font-family:var(--sc-sans); font-size:13px; }
+  .ck-pair tr.ck-pair-hot td { background:var(--sc-bone); }
+  .ck-pair tr.ck-pair-hot td:first-child { border-left:2px solid var(--sc-warning); }
+  @media (max-width:1100px) {
+    .ck-pair { grid-template-columns:1fr; }
+    .ck-pair-viz { border-right:none; border-bottom:1px solid var(--sc-rule); }
   }
 </style>
 """

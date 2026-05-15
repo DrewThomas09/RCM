@@ -90,9 +90,9 @@ body.analysis-workbench {{
  * the chartis_shell navy chrome. */
 .analysis-workbench .wb-hero {{
   background: var(--sc-navy, #0b2341);
-  color: var(--sc-on-navy, #f5f1ea);
+  color: var(--sc-on-navy, #f2ede3);
   padding: 1.25rem 0 1.5rem;
-  border-bottom: 3px solid var(--sc-teal, var(--sc-teal-deep, #0f5e5a));
+  border-bottom: 3px solid var(--sc-teal, var(--sc-teal-deep, #155752));
 }}
 .analysis-workbench .wb-hero-inner {{
   max-width: 1720px; margin: 0 auto; padding: 0 2rem;
@@ -105,7 +105,7 @@ body.analysis-workbench {{
   margin-bottom: .85rem;
 }}
 .analysis-workbench .wb-hero-eyebrow::before {{
-  content: ""; width: 28px; height: 2px; background: var(--sc-teal, var(--sc-teal-deep, #0f5e5a)); display: inline-block;
+  content: ""; width: 28px; height: 2px; background: var(--sc-teal, var(--sc-teal-deep, #155752)); display: inline-block;
 }}
 .analysis-workbench .wb-hero-row {{
   display: grid; grid-template-columns: 1fr auto;
@@ -114,7 +114,7 @@ body.analysis-workbench {{
 .analysis-workbench .wb-hero-name {{
   font-family: "Source Serif 4", Georgia, serif;
   font-size: 1.85rem; font-weight: 500; line-height: 1.1;
-  letter-spacing: -0.015em; margin: 0; color: var(--sc-on-navy, #f5f1ea);
+  letter-spacing: -0.015em; margin: 0; color: var(--sc-on-navy, #f2ede3);
 }}
 .analysis-workbench .wb-hero-meta {{
   margin-top: .75rem;
@@ -130,7 +130,7 @@ body.analysis-workbench {{
   font-size: .62rem; font-weight: 600;
 }}
 .analysis-workbench .wb-hero-meta .m-val {{
-  color: var(--sc-on-navy, #f5f1ea); font-weight: 600;
+  color: var(--sc-on-navy, #f2ede3); font-weight: 600;
 }}
 .analysis-workbench .wb-hero-meta .m-sep {{
   color: rgba(250, 247, 240, 0.30); margin: 0 .15rem;
@@ -139,17 +139,17 @@ body.analysis-workbench {{
   display: flex; gap: .65rem; align-items: end;
 }}
 .analysis-workbench .wb-cta-primary {{
-  background: var(--sc-teal, var(--sc-teal-deep, #0f5e5a)); color: #FFFFFF;
+  background: var(--sc-teal, var(--sc-teal-deep, #155752)); color: #FFFFFF;
   border: none; cursor: pointer;
   padding: .85rem 1.4rem;
   font-family: "Inter", sans-serif; font-size: .72rem; font-weight: 700;
   letter-spacing: .14em; text-transform: uppercase;
   text-decoration: none; display: inline-block;
 }}
-.analysis-workbench .wb-cta-primary:hover {{ background: var(--sc-teal-deep, #0f5e5a); }}
+.analysis-workbench .wb-cta-primary:hover {{ background: var(--sc-teal-deep, #155752); }}
 .analysis-workbench .wb-cta-ghost {{
   background: transparent;
-  color: var(--sc-on-navy, #f5f1ea);
+  color: var(--sc-on-navy, #f2ede3);
   border: 1px solid rgba(250, 247, 240, 0.35);
   padding: .85rem 1.4rem;
   font-family: "Inter", sans-serif; font-size: .72rem; font-weight: 700;
@@ -219,9 +219,9 @@ body.analysis-workbench {{
 
 /* Partner review — dark navy footer band, mirrors hero band treatment */
 .analysis-workbench .wb-partner-review {{
-  background: var(--sc-navy, #0b2341); color: var(--sc-on-navy, #f5f1ea);
+  background: var(--sc-navy, #0b2341); color: var(--sc-on-navy, #f2ede3);
   padding: 2.5rem 0; margin-top: 3rem;
-  border-top: 4px solid var(--sc-teal, var(--sc-teal-deep, #0f5e5a));
+  border-top: 4px solid var(--sc-teal, var(--sc-teal-deep, #155752));
 }}
 .analysis-workbench .wb-pr-inner {{
   max-width: 1720px; margin: 0 auto; padding: 0 2rem;
@@ -234,12 +234,12 @@ body.analysis-workbench {{
   margin-bottom: 1.25rem;
 }}
 .analysis-workbench .wb-pr-eyebrow::before {{
-  content: ""; width: 28px; height: 2px; background: var(--sc-teal, var(--sc-teal-deep, #0f5e5a)); display: inline-block;
+  content: ""; width: 28px; height: 2px; background: var(--sc-teal, var(--sc-teal-deep, #155752)); display: inline-block;
 }}
 .analysis-workbench .wb-pr-quote {{
   font-family: "Source Serif 4", Georgia, serif;
   font-size: 1.45rem; line-height: 1.45;
-  color: var(--sc-on-navy, #f5f1ea); margin: 0 0 1.5rem 0;
+  color: var(--sc-on-navy, #f2ede3); margin: 0 0 1.5rem 0;
   max-width: 1100px; font-style: italic;
 }}
 .analysis-workbench .wb-pr-meta {{
@@ -256,7 +256,7 @@ body.analysis-workbench {{
   color: rgba(250, 247, 240, 0.45);
 }}
 .analysis-workbench .wb-pr-meta .m-val {{
-  font-size: .82rem; color: var(--sc-on-navy, #f5f1ea); font-weight: 600;
+  font-size: .82rem; color: var(--sc-on-navy, #f2ede3); font-weight: 600;
   font-variant-numeric: tabular-nums;
 }}
 

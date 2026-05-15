@@ -144,7 +144,7 @@ p { margin: 6pt 0 10pt 0; }
 .band-card.immaterial, .band-card.green { border-left-color: #1f7a3a; background: #f0f7f2; }
 .band-card.watch, .band-card.yellow { border-left-color: #b07c1f; background: #fbf6ec; }
 .band-card.critical, .band-card.red { border-left-color: #b23a2d; background: #fbf0ee; }
-.band-card.unknown { border-left-color: #6b5d3c; background: #f5f1ea; }
+.band-card.unknown { border-left-color: #6b5d3c; background: #f2ede3; }
 .band-card .band {
     font-size: 9pt; font-weight: 700;
     letter-spacing: 1.5pt; text-transform: uppercase;

@@ -2,37 +2,34 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block
 
 
-def _cashflow_table(items) -> str:
-    bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
-    text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; acc = P["accent"]
-    cols = [("Year","left"),("Called ($M)","right"),("Cum Called ($M)","right"),
-            ("Deployed ($M)","right"),("Distributions ($M)","right"),("Cum Dist ($M)","right"),
-            ("NAV ($M)","right"),("Total Value ($M)","right"),("DPI","right"),("TVPI","right"),("Interim IRR","right")]
-    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
-    trs = []
-    for i, cf in enumerate(items):
-        rb = panel_alt if i % 2 == 0 else bg
-        irr_c = pos if cf.interim_irr >= 0.15 else (acc if cf.interim_irr >= 0.08 else (text_dim if cf.interim_irr >= 0 else neg))
-        tvpi_c = pos if cf.tvpi >= 1.5 else (acc if cf.tvpi >= 1.0 else neg)
-        cells = [
-            f'{ck_data_cell(f"""{cf.year}""", mono=True, weight=700)}',
-            f'{ck_data_cell(f"""${cf.capital_called_mm:,.2f}""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${cf.cumulative_called_mm:,.2f}""", align="right", mono=True)}',
-            f'{ck_data_cell(f"""${cf.deployed_mm:,.2f}""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${cf.distributions_mm:,.2f}""", align="right", mono=True, tone="pos")}',
-            f'{ck_data_cell(f"""${cf.cumulative_distributions_mm:,.2f}""", align="right", mono=True, tone="pos", weight=600)}',
-            f'{ck_data_cell(f"""${cf.unrealized_nav_mm:,.2f}""", align="right", mono=True, tone="acc")}',
-            f'{ck_data_cell(f"""${cf.total_value_mm:,.2f}""", align="right", mono=True, weight=700)}',
-            f'{ck_data_cell(f"""{cf.dpi:.3f}""", align="right", mono=True, tone="pos")}',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{tvpi_c};font-weight:700">{cf.tvpi:.3f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{irr_c};font-weight:700">{cf.interim_irr * 100:+.1f}%</td>',
-        ]
-        trs.append(f'<tr>{"".join(cells)}</tr>')
-    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
-            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+def _cashflow_paired_rows(items) -> tuple:
+    headers = [
+        "Year", "Called ($M)", "Cum Called ($M)", "Deployed ($M)",
+        "Distributions ($M)", "Cum Dist ($M)", "NAV ($M)",
+        "Total Value ($M)", "DPI", "TVPI", "Interim IRR",
+    ]
+    rows: list = []
+    irrs: list = []
+    for cf in items:
+        rows.append([
+            str(cf.year),
+            f"${cf.capital_called_mm:,.2f}",
+            f"${cf.cumulative_called_mm:,.2f}",
+            f"${cf.deployed_mm:,.2f}",
+            f"${cf.distributions_mm:,.2f}",
+            f"${cf.cumulative_distributions_mm:,.2f}",
+            f"${cf.unrealized_nav_mm:,.2f}",
+            f"${cf.total_value_mm:,.2f}",
+            f"{cf.dpi:.3f}",
+            f"{cf.tvpi:.3f}",
+            f"{cf.interim_irr * 100:+.1f}%",
+        ])
+        irrs.append(cf.interim_irr)
+    hot = [irrs.index(min(irrs))] if irrs else []
+    return headers, rows, hot
 
 
 def _investments_table(items) -> str:
@@ -185,7 +182,15 @@ def render_capital_pacing(params: dict = None) -> str:
     )
 
     svg = _jcurve_svg(r.cashflows)
-    cf_tbl = _cashflow_table(r.cashflows)
+    cf_headers, cf_rows, cf_hot = _cashflow_paired_rows(r.cashflows)
+    jcurve_paired = ck_paired_block(
+        svg,
+        data_label="Fund J-Curve · Year-by-Year Cashflows",
+        headers=cf_headers,
+        rows=cf_rows,
+        data_source=f"{len(r.cashflows)} fund-years · trough year marked",
+        hot_rows=cf_hot,
+    )
     inv_tbl = _investments_table(r.investments)
     vp_tbl = _vintage_table(r.vintage_peers, r.vintage_year)
     cmt_tbl = _commitments_table(r.commitments)
@@ -209,8 +214,7 @@ def render_capital_pacing(params: dict = None) -> str:
   </div>
   {form}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Fund J-Curve — Interim IRR Trajectory</div>{svg}</div>
-  <div style="{cell}"><div style="{h3}">Year-by-Year Cashflow &amp; Value Evolution</div>{cf_tbl}</div>
+  {jcurve_paired}
   <div style="{cell}"><div style="{h3}">Portfolio Investments</div>{inv_tbl}</div>
   <div style="{cell}"><div style="{h3}">Vintage Year Peer Comparison</div>{vp_tbl}</div>
   <div style="{cell}"><div style="{h3}">Commitment Utilization — Deployment Status</div>{cmt_tbl}</div>

@@ -2,35 +2,34 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block
 
 
-def _assets_table(items) -> str:
-    bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
-    text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
-    cols = [("ID","left"),("Asset Type","left"),("Location","left"),("SqFt","right"),
-            ("NOI ($M)","right"),("Cap Rate","right"),("Market ($M)","right"),
-            ("Book ($M)","right"),("Unrealized Gain ($M)","right"),("Occupancy","right"),("Status","center")]
-    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
-    trs = []
-    for i, a in enumerate(items):
-        rb = panel_alt if i % 2 == 0 else bg
-        cells = [
-            f'{ck_data_cell(f"""{_html.escape(a.asset_id)}""", mono=True, weight=600)}',
-            f'{ck_data_cell(f"""{_html.escape(a.asset_type)}""", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""{_html.escape(a.location)}""", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""{a.building_sqft:,}""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${a.annual_noi_mm:,.2f}""", align="right", mono=True)}',
-            f'{ck_data_cell(f"""{a.cap_rate_implied * 100:.2f}%""", align="right", mono=True, tone="acc", weight=600)}',
-            f'{ck_data_cell(f"""${a.market_value_mm:,.2f}""", align="right", mono=True, weight=700)}',
-            f'{ck_data_cell(f"""${a.book_value_mm:,.2f}""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${a.unrealized_gain_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
-            f'{ck_data_cell(f"""{a.occupancy_pct * 100:.1f}%""", align="right", mono=True)}',
-            f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(a.lease_status)}</td>',
-        ]
-        trs.append(f'<tr>{"".join(cells)}</tr>')
-    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
-            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+def _assets_paired_rows(items) -> tuple:
+    headers = [
+        "ID", "Asset Type", "Location", "SqFt", "NOI ($M)",
+        "Cap Rate", "Market ($M)", "Book ($M)",
+        "Unrealized Gain ($M)", "Occupancy", "Status",
+    ]
+    rows: list = []
+    gains: list = []
+    for a in items:
+        rows.append([
+            a.asset_id,
+            a.asset_type,
+            a.location,
+            f"{a.building_sqft:,}",
+            f"${a.annual_noi_mm:,.2f}",
+            f"{a.cap_rate_implied * 100:.2f}%",
+            f"${a.market_value_mm:,.2f}",
+            f"${a.book_value_mm:,.2f}",
+            f"${a.unrealized_gain_mm:,.2f}",
+            f"{a.occupancy_pct * 100:.1f}%",
+            a.lease_status,
+        ])
+        gains.append(a.unrealized_gain_mm)
+    hot = [gains.index(max(gains))] if gains else []
+    return headers, rows, hot
 
 
 def _scenarios_table(items) -> str:
@@ -193,7 +192,15 @@ def render_reit_analyzer(params: dict = None) -> str:
     )
 
     svg = _mv_vs_bv_svg(r.assets)
-    assets_tbl = _assets_table(r.assets)
+    a_headers, a_rows, a_hot = _assets_paired_rows(r.assets)
+    assets_paired = ck_paired_block(
+        svg,
+        data_label="Real Estate Portfolio · Hidden Equity by Asset",
+        headers=a_headers,
+        rows=a_rows,
+        data_source=f"{len(r.assets)} owned assets · largest unrealized-gain marked",
+        hot_rows=a_hot,
+    )
     scen_tbl = _scenarios_table(r.scenarios)
     buy_tbl = _buyers_table(r.reit_buyers)
     cov_tbl = _coverage_table(r.rent_coverage)
@@ -220,8 +227,7 @@ def render_reit_analyzer(params: dict = None) -> str:
   </div>
   {form}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Market vs Book Value — Hidden Equity by Asset</div>{svg}</div>
-  <div style="{cell}"><div style="{h3}">Real Estate Portfolio Roster</div>{assets_tbl}</div>
+  {assets_paired}
   <div style="{cell}"><div style="{h3}">Sale-Leaseback Scenario Matrix</div>{scen_tbl}</div>
   <div style="{cell}"><div style="{h3}">REIT Buyer Landscape — Public + Private Capital</div>{buy_tbl}</div>
   <div style="{cell}"><div style="{h3}">Rent Coverage &amp; Covenant Impact</div>{cov_tbl}</div>
