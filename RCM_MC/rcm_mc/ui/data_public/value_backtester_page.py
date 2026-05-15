@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
@@ -55,27 +55,25 @@ def _buckets_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
-def _calibration_table(items) -> str:
-    bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
-    text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
-    cols = [("Predicted MOIC","right"),("Realized P25","right"),("Realized P50","right"),
-            ("Realized P75","right"),("N Deals","right"),("Calibration Error","right")]
-    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
-    trs = []
-    for i, c in enumerate(items):
-        rb = panel_alt if i % 2 == 0 else bg
-        err_c = pos if abs(c.calibration_error) < 0.10 else (warn if abs(c.calibration_error) < 0.25 else neg)
-        cells = [
-            f'{ck_data_cell(f"""{c.predicted_moic:.2f}x""", align="right", mono=True, weight=700)}',
-            f'{ck_data_cell(f"""{c.realized_moic_p25:.2f}x""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""{c.realized_moic_p50:.2f}x""", align="right", mono=True, tone="pos", weight=700)}',
-            f'{ck_data_cell(f"""{c.realized_moic_p75:.2f}x""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""{c.n_deals}""", align="right", mono=True)}',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{err_c};font-weight:600">{c.calibration_error * 100:+.1f}%</td>',
-        ]
-        trs.append(f'<tr>{"".join(cells)}</tr>')
-    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
-            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+def _calibration_paired_rows(items) -> tuple:
+    headers = [
+        "Predicted MOIC", "Realized P25", "Realized P50",
+        "Realized P75", "N Deals", "Calibration Error",
+    ]
+    rows: list = []
+    errs: list = []
+    for c in items:
+        rows.append([
+            f"{c.predicted_moic:.2f}x",
+            f"{c.realized_moic_p25:.2f}x",
+            f"{c.realized_moic_p50:.2f}x",
+            f"{c.realized_moic_p75:.2f}x",
+            str(c.n_deals),
+            f"{c.calibration_error * 100:+.1f}%",
+        ])
+        errs.append(abs(c.calibration_error))
+    hot = [errs.index(max(errs))] if errs else []
+    return headers, rows, hot
 
 
 def _attribution_table(items) -> str:
@@ -212,9 +210,17 @@ def render_value_backtester(params: dict = None) -> str:
     )
 
     svg = _calibration_svg(r.calibration_points)
+    cal_headers, cal_rows, cal_hot = _calibration_paired_rows(r.calibration_points)
+    calibration_paired = ck_paired_block(
+        svg,
+        data_label="MOIC Calibration · Predicted vs Realized",
+        headers=cal_headers,
+        rows=cal_rows,
+        data_source=f"{len(r.calibration_points)} buckets · worst-calibrated marked",
+        hot_rows=cal_hot,
+    )
     lv_tbl = _levers_table(r.levers)
     bk_tbl = _buckets_table(r.buckets)
-    cal_tbl = _calibration_table(r.calibration_points)
     at_tbl = _attribution_table(r.attribution)
     comp_tbl = _comparables_table(r.comparables)
 
@@ -265,10 +271,9 @@ def render_value_backtester(params: dict = None) -> str:
     <div style="color:{rec_c};font-weight:700;font-size:14px">{_html.escape(r.recommendation)}</div>
     <div style="color:{text_dim};font-size:11px;margin-top:4px">Predicted {r.target_predicted_moic:.2f}x vs sector P50 realized {r.realized_base_rate_p50:.2f}x (gap {r.calibration_gap_pct * 100:+.1f}%)</div>
   </div>
-  <div style="{cell}"><div style="{h3}">Calibration Chart — Predicted vs Realized MOIC</div>{svg}</div>
+  {calibration_paired}
   <div style="{cell}"><div style="{h3}">Value-Creation Lever Attribution — Target vs Base Rate</div>{lv_tbl}</div>
   <div style="{cell}"><div style="{h3}">Corpus Base-Rate Buckets — Sector × Vintage × Size</div>{bk_tbl}</div>
-  <div style="{cell}"><div style="{h3}">MOIC Calibration Detail</div>{cal_tbl}</div>
   <div style="{cell}"><div style="{h3}">Driver Attribution — What Predicts Realized MOIC</div>{at_tbl}</div>
   <div style="{cell}"><div style="{h3}">Most Similar Corpus Deals</div>{comp_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
