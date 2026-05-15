@@ -2146,7 +2146,13 @@ class RCMHandler(BaseHTTPRequestHandler):
         # `/forgot` is the editorial password-recovery page — like /login it
         # must be reachable without auth (the user has no creds when they
         # land on it).
-        if pure_path in ("/health", "/healthz", "/login", "/forgot"):
+        # `/` is the public marketing landing — the route handler at
+        # do_GET picks between marketing page (anonymous) and /app
+        # redirect (authed). Without the bypass, the auth gate 401s
+        # anonymous visitors before they reach the route handler,
+        # masking the design intent and pushing first-time visitors
+        # to /login instead of the marketing splash.
+        if pure_path in ("/", "/health", "/healthz", "/login", "/forgot"):
             return True
         if pure_path == "/api/login":
             return True
