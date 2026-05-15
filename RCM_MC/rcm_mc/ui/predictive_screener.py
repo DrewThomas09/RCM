@@ -1,4 +1,4 @@
-"""SeekingChartis Predictive Screener — deal sourcing via ML on public data.
+"""PE Desk Predictive Screener — deal sourcing via ML on public data.
 
 The killer feature: filter 6,000+ hospitals by predicted RCM performance,
 estimated EBITDA uplift, distress probability, market position, and

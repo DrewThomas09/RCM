@@ -1,4 +1,4 @@
-"""Tests for SeekingChartis platform features: hospital profiles, screener, scores.
+"""Tests for PE Desk platform features: hospital profiles, screener, scores.
 
 HOSPITAL PROFILE:
  1. GET /hospital/<ccn> renders profile page.
@@ -57,7 +57,7 @@ class TestHospitalProfile(unittest.TestCase):
                 ) as r:
                     body = r.read().decode()
                 self.assertIn("SOUTHEAST HEALTH", body)
-                self.assertIn("SeekingChartis Score", body)
+                self.assertIn("PE Desk Score", body)
                 # Terminal-shell chrome: top bar (`ck-bar` after the
                 # editorial-reskin revert) + side nav.
                 self.assertIn("ck-bar", body)

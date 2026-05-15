@@ -1,4 +1,4 @@
-"""SeekingChartis Denial Drivers — browser-rendered denial analysis.
+"""PE Desk Denial Drivers — browser-rendered denial analysis.
 
 Renders the denial driver decomposition as a visual page instead of raw JSON.
 """

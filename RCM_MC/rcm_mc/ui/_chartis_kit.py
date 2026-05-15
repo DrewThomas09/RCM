@@ -1,4 +1,4 @@
-"""SeekingChartis — Chartis Kit (UI v2, editorial rework).
+"""PE Desk — Chartis Kit (UI v2, editorial rework).
 
 Drop-in replacement for ``rcm_mc/ui/_chartis_kit.py``.
 
@@ -4130,9 +4130,9 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
     return (
         '<header class="ck-topbar">'
         '<div class="ck-topbar-inner">'
-        '<a href="/" class="ck-wordmark" aria-label="SeekingChartis home">'
+        '<a href="/" class="ck-wordmark" aria-label="PE Desk home">'
         '<span class="ck-wordmark-mark"></span>'
-        '<span class="ck-wordmark-text">Seeking<em>Chartis</em></span>'
+        '<span class="ck-wordmark-text">PE <em>Desk</em></span>'
         '</a>'
         f'<nav class="ck-nav" aria-label="Primary">{links}</nav>'
         '<div class="ck-topbar-right">'
@@ -4271,7 +4271,7 @@ def chartis_shell(
     if body_html is None:
         body_html = ""
     if title is None:
-        title = "SeekingChartis"
+        title = "PE Desk"
 
     fonts = (
         '<link rel="preconnect" href="https://fonts.googleapis.com">'
@@ -4328,7 +4328,7 @@ def chartis_shell(
         '<html lang="en"><head>'
         '<meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
-        f"<title>{_esc(title)} · SeekingChartis</title>"
+        f"<title>{_esc(title)} · PE Desk</title>"
         f"{fonts}"
         f"{_CSS_LINK}"
         f"{_CSS_INLINE_FALLBACK}"

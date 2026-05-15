@@ -1,4 +1,4 @@
-"""SeekingChartis EBITDA Bridge Engine — best-in-class PE returns math.
+"""PE Desk EBITDA Bridge Engine — best-in-class PE returns math.
 
 For any hospital, auto-generates:
 - 7-lever RCM EBITDA bridge with revenue/cost/WC breakdown

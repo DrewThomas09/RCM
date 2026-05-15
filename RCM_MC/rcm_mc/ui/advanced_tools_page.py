@@ -1,4 +1,4 @@
-"""SeekingChartis Advanced Tools — debt model, challenge solver, IRS 990, trends.
+"""PE Desk Advanced Tools — debt model, challenge solver, IRS 990, trends.
 
 Connects remaining high-value backend modules to browser pages.
 """

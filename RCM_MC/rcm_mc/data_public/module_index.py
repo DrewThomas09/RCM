@@ -1,6 +1,6 @@
-"""Seeking Chartis Module Index.
+"""PE Desk Module Index.
 
-Consolidated directory of every analytical module in Seeking Chartis —
+Consolidated directory of every analytical module in PE Desk —
 searchable catalog with category, description, deal lifecycle phase,
 primary persona, and route. The index is the platform's own map of itself.
 """

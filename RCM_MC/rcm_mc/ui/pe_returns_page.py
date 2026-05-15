@@ -1,4 +1,4 @@
-"""SeekingChartis PE Returns & Covenant — connects pe/pe_math.py to browser.
+"""PE Desk PE Returns & Covenant — connects pe/pe_math.py to browser.
 
 Shows computed returns (IRR, MOIC) and covenant headroom analysis.
 """

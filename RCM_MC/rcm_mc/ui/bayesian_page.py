@@ -1,4 +1,4 @@
-"""SeekingChartis Bayesian Calibration page — per-hospital calibrated KPIs.
+"""PE Desk Bayesian Calibration page — per-hospital calibrated KPIs.
 
 Shows the Bayesian posterior estimates for all RCM metrics, with
 shrinkage visualization, credible intervals, and data quality scoring.

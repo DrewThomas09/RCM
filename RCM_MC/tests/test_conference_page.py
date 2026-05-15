@@ -9,7 +9,7 @@ class TestConferenceRoadmap(unittest.TestCase):
     def test_renders_all_conferences(self):
         from rcm_mc.ui.conference_page import render_conference_roadmap, CONFERENCES
         html = render_conference_roadmap()
-        self.assertIn("SeekingChartis", html)
+        self.assertIn("PE Desk", html)
         self.assertIn("Conference Roadmap", html)
         self.assertIn("J.P. Morgan", html)
         self.assertIn("HIMSS", html)

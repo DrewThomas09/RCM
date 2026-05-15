@@ -1,4 +1,4 @@
-"""SeekingChartis Data Explorer — browse and explore all public data sources.
+"""PE Desk Data Explorer — browse and explore all public data sources.
 
 Connects cms_care_compare, cms_utilization, system_network, benchmark_evolution,
 irs990, and sec_edgar to a unified browsable interface.
@@ -144,7 +144,7 @@ def render_data_explorer(
         f'<div class="cad-card">'
         f'<h2>Data Pipeline</h2>'
         f'<p style="font-size:12.5px;color:{PALETTE["text_secondary"]};margin-bottom:12px;">'
-        f'SeekingChartis ingests public data from CMS, IRS, FRED, and SEC. '
+        f'PE Desk ingests public data from CMS, IRS, FRED, and SEC. '
         f'Data flows through validation, scrubbing, and normalization before being available '
         f'for analysis. Every number in the platform traces back to one of these sources.</p>'
         f'<div style="display:flex;gap:12px;flex-wrap:wrap;">'
@@ -195,7 +195,7 @@ def render_data_explorer(
         ("Hospital Screener", "rcm_mc.intelligence.screener_engine", "/screen"),
         ("Market Pulse", "rcm_mc.intelligence.market_pulse", "/home"),
         ("Insights Generator", "rcm_mc.intelligence.insights_generator", "/home"),
-        ("SeekingChartis Score", "rcm_mc.intelligence.caduceus_score", "/hospital/010001"),
+        ("PE Desk Score", "rcm_mc.intelligence.caduceus_score", "/hospital/010001"),
         ("Economic Ontology", "rcm_mc.domain.econ_ontology", "/methodology"),
         ("CMS Care Compare", "rcm_mc.data.cms_care_compare", "/hospital/010001"),
         ("CMS Utilization", "rcm_mc.data.cms_utilization", "/hospital/010001"),
@@ -238,7 +238,7 @@ def render_data_explorer(
         f'<div class="cad-card">'
         f'<h2>Analytical Modules ({loaded}/{len(module_checks)} loaded)</h2>'
         f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:10px;">'
-        f'Every Python module powering SeekingChartis analysis. Click "View" to see the output.</p>'
+        f'Every Python module powering PE Desk analysis. Click "View" to see the output.</p>'
         f'<table class="cad-table"><thead><tr>'
         f'<th>Module</th><th>Package</th><th>Status</th><th>Page</th>'
         f'</tr></thead><tbody>{mod_rows}</tbody></table></div>'

@@ -1,7 +1,7 @@
 """IC Memo Generator.
 
 Produces a standardized investment committee memo synthesizing data
-from multiple Seeking Chartis modules (base rates, redflag scanner,
+from multiple PE Desk modules (base rates, redflag scanner,
 antitrust, payer concentration, etc.) into an IC-ready recommendation.
 
 The IC memo is the output artifact that partners present to committee —

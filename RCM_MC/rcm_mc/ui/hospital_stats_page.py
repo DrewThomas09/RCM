@@ -1,4 +1,4 @@
-"""SeekingChartis Hospital Statistics — per-hospital regression profile.
+"""PE Desk Hospital Statistics — per-hospital regression profile.
 
 Shows where a single hospital falls across every variable relative to
 national and state peers, with z-scores, percentiles, and regression

@@ -1,4 +1,4 @@
-"""Tests for SeekingChartis v2 features: methodology, denial, market, dashboard.
+"""Tests for PE Desk v2 features: methodology, denial, market, dashboard.
 
  1. /methodology renders.
  2. /models/denial/<deal> renders denial analysis.
@@ -56,9 +56,9 @@ class TestMethodology(unittest.TestCase):
                 ) as r:
                     body = r.read().decode()
                 self.assertIn("Methodology", body)
-                self.assertIn("SeekingChartis", body)
+                self.assertIn("PE Desk", body)
                 self.assertIn("HCRIS", body)
-                self.assertIn("SeekingChartis Score", body)
+                self.assertIn("PE Desk Score", body)
                 self.assertIn("Regression", body)
             finally:
                 server.shutdown(); server.server_close()
@@ -91,7 +91,7 @@ class TestDealModels(unittest.TestCase):
         ) as r:
             body = r.read().decode()
         self.assertIn("Denial", body)
-        self.assertIn("SeekingChartis", body)
+        self.assertIn("PE Desk", body)
         self.assertIn("ck-topbar", body)
 
     def test_market_page(self):

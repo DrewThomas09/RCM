@@ -1,4 +1,4 @@
-"""SeekingChartis Conference Roadmap — healthcare PE events calendar.
+"""PE Desk Conference Roadmap — healthcare PE events calendar.
 
 Curated calendar of healthcare investment conferences, PE summits, and
 industry events relevant to hospital M&A diligence teams.

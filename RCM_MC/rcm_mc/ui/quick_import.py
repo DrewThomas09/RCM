@@ -1,4 +1,4 @@
-"""SeekingChartis Quick Import — create deals directly from the browser.
+"""PE Desk Quick Import — create deals directly from the browser.
 
 Renders a form that POSTs to /api/deals/import, so users never
 need to use curl or edit files.

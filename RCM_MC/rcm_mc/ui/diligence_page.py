@@ -1,4 +1,4 @@
-"""SeekingChartis Diligence Tools — questions, playbook, challenge solver.
+"""PE Desk Diligence Tools — questions, playbook, challenge solver.
 
 Connects analysis/diligence_questions.py, analysis/playbook.py, and
 analysis/challenge.py to the browser.

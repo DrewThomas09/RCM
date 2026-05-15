@@ -1,4 +1,4 @@
-"""SeekingChartis Model Validation Dashboard.
+"""PE Desk Model Validation Dashboard.
 
 Shows prediction accuracy by metric, coverage calibration, bias trends,
 and per-cohort breakdowns. Builds trust and demonstrates the compounding

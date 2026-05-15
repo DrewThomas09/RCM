@@ -1,4 +1,4 @@
-"""SeekingChartis Deal Dashboard — unified single-deal view.
+"""PE Desk Deal Dashboard — unified single-deal view.
 
 Shows all available information and models for a deal in one page
 with clear navigation to every model output.

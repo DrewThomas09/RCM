@@ -7,7 +7,7 @@
 | File | Purpose |
 |------|---------|
 | `__init__.py` | Package marker. |
-| `caduceus_score.py` | **SeekingChartis Composite Score 0-100** — single rating per hospital. Weighted: market position (35%) + financial health (25%) + operational (20%) + RCM opportunity (15%) + cyber/regulatory (5%). |
+| `caduceus_score.py` | **PE Desk Composite Score 0-100** — single rating per hospital. Weighted: market position (35%) + financial health (25%) + operational (20%) + RCM opportunity (15%) + cyber/regulatory (5%). |
 | `insights_generator.py` | **Platform-generated Seeking Alpha-style research articles.** Scans the portfolio for patterns → generates named insights like "Three hospitals in your watchlist hit PASS on covenant stress but FAIL on regulatory calendar." |
 | `market_pulse.py` | **Daily healthcare-PE market-pulse indicators** — composite signals from public data + portfolio state. Drives the `home_v2.py` market-pulse panel. |
 | `screener_engine.py` | **Hospital screener over 17,000+ hospitals.** Seeking Alpha stock-screener equivalent. Analysts build custom filters on any metric combination (denial rate × occupancy × margin × payer mix × etc.). |

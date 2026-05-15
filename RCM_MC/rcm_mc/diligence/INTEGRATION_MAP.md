@@ -1,4 +1,4 @@
-# SeekingChartis — Full Integration Map
+# PE Desk — Full Integration Map
 
 How the pieces fit together across the three sessions, the sibling
 projects on disk, and the existing PE Intelligence / packet / bridge

@@ -40,11 +40,11 @@ class TestNavLinks(unittest.TestCase):
 
     def test_nav_has_runs(self):
         html_str = shell("<p>test</p>", "Test")
-        self.assertIn("SeekingChartis", html_str)
+        self.assertIn("PE Desk", html_str)
 
     def test_nav_has_scenarios(self):
         html_str = shell("<p>test</p>", "Test")
-        self.assertIn("SeekingChartis", html_str)
+        self.assertIn("PE Desk", html_str)
 
 
 class TestAlertSummary(unittest.TestCase):

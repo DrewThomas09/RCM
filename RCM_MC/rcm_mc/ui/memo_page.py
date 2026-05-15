@@ -1,4 +1,4 @@
-"""SeekingChartis IC Memo — browser-rendered investment committee memo.
+"""PE Desk IC Memo — browser-rendered investment committee memo.
 
 Renders the auto-generated IC memo with sections and fact-check status.
 """

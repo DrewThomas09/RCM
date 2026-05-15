@@ -1,4 +1,4 @@
-"""SeekingChartis Portfolio Monitor — actual vs predicted, early warnings.
+"""PE Desk Portfolio Monitor — actual vs predicted, early warnings.
 
 Unified view: predicted vs actual by metric, plan tracking, comp-relative
 trends, projected vs actual EBITDA bridge, and early warning signals

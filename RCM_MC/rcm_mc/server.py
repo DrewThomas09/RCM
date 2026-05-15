@@ -2238,9 +2238,9 @@ class RCMHandler(BaseHTTPRequestHandler):
                 m = _re_title.search(
                     r"<h1[^>]*>([^<]+)</h1>", body[:500],
                 )
-                title = m.group(1) if m else "SeekingChartis"
+                title = m.group(1) if m else "PE Desk"
                 if status >= 400:
-                    title = f"{status} · {title}" if title != "SeekingChartis" else f"{status} · SeekingChartis"
+                    title = f"{status} · {title}" if title != "PE Desk" else f"{status} · PE Desk"
                 body = chartis_shell(body, title=title)
             except Exception:  # noqa: BLE001 — never let this safety net 500
                 pass
@@ -5938,7 +5938,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             hcris_df=hdf, db_path=self.config.db_path))
 
     def _route_seekingchartis_home(self) -> None:
-        """GET /home — SeekingChartis home page with market pulse + insights."""
+        """GET /home — PE Desk home page with market pulse + insights."""
         from .intelligence.market_pulse import compute_market_pulse
         from .intelligence.insights_generator import generate_daily_insights
         from .ui.home_v2 import render_home
@@ -15144,7 +15144,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         ))
 
     def _route_login_page_legacy(self) -> None:
-        """Bloomberg-style terminal login — the SeekingChartis trust gate.
+        """Bloomberg-style terminal login — the PE Desk trust gate.
 
         Dark near-black background, amber accent, security/trust indicators,
         monospace inputs. Demo credentials surfaced when the seeded demo
@@ -15377,7 +15377,7 @@ class RCMHandler(BaseHTTPRequestHandler):
 
         top_bar = (
             '<div class="sc-login-bar">'
-            '<span><span class="live-dot"></span>SeekingChartis · Terminal</span>'
+            '<span><span class="live-dot"></span>PE Desk · Terminal</span>'
             '<span id="sc-utc">—</span>'
             '</div>'
         )
@@ -15417,7 +15417,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             '<div class="sc-brand">'
             f'{LOGO_SVG}'
             '<div>'
-            '<div class="sc-brand-word">SeekingChartis</div>'
+            '<div class="sc-brand-word">PE Desk</div>'
             '<div class="sc-brand-sub">Healthcare PE · Instrument-grade diligence</div>'
             '</div>'
             '</div>'
@@ -15490,7 +15490,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             '<!DOCTYPE html>'
             '<html lang="en"><head><meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width,initial-scale=1">'
-            '<title>Sign In — SeekingChartis</title>'
+            '<title>Sign In — PE Desk</title>'
             '<link rel="preconnect" href="https://fonts.googleapis.com">'
             '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
             '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&'

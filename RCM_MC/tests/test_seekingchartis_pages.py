@@ -1,4 +1,4 @@
-"""Tests for SeekingChartis new pages: news, market data, library.
+"""Tests for PE Desk new pages: news, market data, library.
 
 NEWS:
  1. GET /news renders news page with articles.
@@ -63,7 +63,7 @@ class TestNewsPage(unittest.TestCase):
                 ) as r:
                     body = r.read().decode()
                 self.assertIn("News &amp; Research", body)
-                self.assertIn("SeekingChartis", body)
+                self.assertIn("PE Desk", body)
                 self.assertIn("ck-topbar", body)
                 self.assertIn("CMS Finalizes", body)
                 self.assertIn("Diligence Impact", body)
@@ -103,7 +103,7 @@ class TestMarketDataPage(unittest.TestCase):
                 ) as r:
                     body = r.read().decode()
                 self.assertIn("Market Data", body)
-                self.assertIn("SeekingChartis", body)
+                self.assertIn("PE Desk", body)
                 self.assertIn("ck-topbar", body)
                 self.assertIn("State Market Heatmap", body)
                 self.assertIn("HCRIS", body)
@@ -176,7 +176,7 @@ class TestLibraryPage(unittest.TestCase):
                 ) as r:
                     body = r.read().decode()
                 self.assertIn("Library", body)
-                self.assertIn("SeekingChartis", body)
+                self.assertIn("PE Desk", body)
                 self.assertIn("ck-topbar", body)
             finally:
                 server.shutdown(); server.server_close()
@@ -194,7 +194,7 @@ class TestLibraryPage(unittest.TestCase):
                 ) as r:
                     body = r.read().decode()
                 # /library is now the 655-deal healthcare-PE corpus browser
-                self.assertIn("SeekingChartis", body)
+                self.assertIn("PE Desk", body)
                 self.assertIn("deals", body)
                 self.assertIn("sector", body.lower())
             finally:
@@ -215,7 +215,7 @@ class TestSeekingChartisAlias(unittest.TestCase):
                     f"http://127.0.0.1:{port}/seekingchartis",
                 ) as r:
                     body = r.read().decode()
-                self.assertIn("SeekingChartis", body)
+                self.assertIn("PE Desk", body)
             finally:
                 server.shutdown(); server.server_close()
         finally:

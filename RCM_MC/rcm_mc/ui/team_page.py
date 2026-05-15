@@ -1,4 +1,4 @@
-"""SeekingChartis Team Dashboard — activity feed and assignments.
+"""PE Desk Team Dashboard — activity feed and assignments.
 
 Shows who is working on what, recent activity across the fund,
 and comment threads on pipeline hospitals.

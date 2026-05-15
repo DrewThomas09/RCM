@@ -1,4 +1,4 @@
-"""SeekingChartis Market Data — national hospital market intelligence.
+"""PE Desk Market Data — national hospital market intelligence.
 
 Renders market heatmaps, regression analysis, state comparisons,
 and hospital density maps. The primary data-exploration page.
@@ -316,7 +316,7 @@ def render_market_data(
     hcris_df: Optional[pd.DataFrame] = None,
     metric: str = "avg_margin",
 ) -> str:
-    """Render the SeekingChartis market data page."""
+    """Render the PE Desk market data page."""
     if hcris_df is None:
         try:
             from ..data.hcris import _get_latest_per_ccn

@@ -1,4 +1,4 @@
-"""SeekingChartis PE Tools — value bridge, debt model, predicted vs actual.
+"""PE Desk PE Tools — value bridge, debt model, predicted vs actual.
 
 Connects pe/ modules to browser-rendered pages.
 """

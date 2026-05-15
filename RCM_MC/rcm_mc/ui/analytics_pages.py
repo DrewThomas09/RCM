@@ -1,4 +1,4 @@
-"""SeekingChartis Analytics — causal inference, counterfactual, benchmarks, scenario comparison.
+"""PE Desk Analytics — causal inference, counterfactual, benchmarks, scenario comparison.
 
 Connects analytics/, pe/predicted_vs_actual, data/benchmark_evolution, and
 mc/scenario_comparison to browser pages.

@@ -1,6 +1,6 @@
 # tests/
 
-Test suite for the RCM-MC / SeekingChartis platform. **339 files** — mostly 1:1 test-per-feature with the rest being numbered regression tests + end-to-end integration tests.
+Test suite for the RCM-MC / PE Desk platform. **339 files** — mostly 1:1 test-per-feature with the rest being numbered regression tests + end-to-end integration tests.
 
 ## Running
 

@@ -119,7 +119,7 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
         body=(
             f"{beds:,} licensed beds · ${npr/1e6:,.1f}M net patient "
             f"revenue · {margin:.1%} operating margin · "
-            f"SeekingChartis score {score_val}/100 (grade {grade})."
+            f"PE Desk score {score_val}/100 (grade {grade})."
         ),
     ) + ck_panel(
         '<div class="hp-header-row">'
@@ -127,7 +127,7 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
         '<div class="hp-grade-block">'
         f'<div class="hp-grade-val" style="color:{grade_color};">{score_val}</div>'
         f'<div class="hp-grade-label" style="color:{grade_color};">{grade}</div>'
-        '<div class="hp-grade-sub">SeekingChartis Score</div>'
+        '<div class="hp-grade-sub">PE Desk Score</div>'
         '</div></div>',
         title="Identity",
     )

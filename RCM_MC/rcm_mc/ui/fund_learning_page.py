@@ -1,4 +1,4 @@
-"""SeekingChartis Fund Learning Dashboard — cross-deal accuracy.
+"""PE Desk Fund Learning Dashboard — cross-deal accuracy.
 
 Shows the compounding moat: every closed deal improves the next
 underwrite. Displays fund-level bridge realization, per-lever bias,

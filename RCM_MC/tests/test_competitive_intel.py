@@ -33,7 +33,7 @@ class TestCompetitiveIntel(unittest.TestCase):
         self.assertIn("Percentile Rankings", html)
         self.assertIn("Value Creation Gaps", html)
         self.assertIn("Size-Matched Peers", html)
-        self.assertIn("SeekingChartis", html)
+        self.assertIn("PE Desk", html)
 
     def test_multiple_peer_groups(self):
         from rcm_mc.ui.competitive_intel_page import render_competitive_intel

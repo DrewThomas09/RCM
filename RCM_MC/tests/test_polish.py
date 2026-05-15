@@ -25,7 +25,7 @@ from rcm_mc.ui._ui_kit import shell
 
 # v2-shell-only assertions: "Main navigation" + aria-label were added
 # during the editorial reskin; the revert at d8bfac4 dropped them. The
-# legacy shell still ships /pipeline + /library + SeekingChartis links,
+# legacy shell still ships /pipeline + /library + PE Desk links,
 # but the assertions below were written against v2 markers — gated on
 # the env flag so they re-activate when v2 ships again.
 @unittest.skipUnless(
@@ -39,7 +39,7 @@ class TestGlobalNav(unittest.TestCase):
         self.assertIn("Main navigation", html)
         self.assertIn("/pipeline", html)
         self.assertIn("/library", html)
-        self.assertIn("SeekingChartis", html)
+        self.assertIn("PE Desk", html)
 
     def test_nav_links_accessible(self):
         html = shell("<p>test</p>", "Test Page")

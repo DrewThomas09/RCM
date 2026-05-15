@@ -1,4 +1,4 @@
-"""SeekingChartis brand system — single source of truth for all visual identity.
+"""PE Desk brand system — single source of truth for all visual identity.
 
 Healthcare PE diligence platform. Every page, export, and audit trail
 references this module for brand consistency.
@@ -21,11 +21,11 @@ from typing import Any, Dict
 
 
 BRAND = {
-    "name": "SeekingChartis",
+    "name": "PE Desk",
     "tagline": "Healthcare diligence, instrument-grade",
     "version": "1.0.0",
-    "copyright": "SeekingChartis",
-    "footer_text": "SeekingChartis v1.0.0 — Healthcare diligence, instrument-grade",
+    "copyright": "PE Desk",
+    "footer_text": "PE Desk v1.0.0 — Healthcare diligence, instrument-grade",
 }
 
 LOGO_SVG = (
@@ -43,7 +43,7 @@ LOGO_SVG = (
 WORDMARK_SVG = (
     '<svg viewBox="0 0 200 24" width="200" height="24" xmlns="http://www.w3.org/2000/svg">'
     '<text x="0" y="18" font-family="Source Serif Pro, Georgia, serif" '
-    'font-size="20" font-weight="600" fill="#e2e8f0" letter-spacing="0.5">SeekingChartis</text>'
+    'font-size="20" font-weight="600" fill="#e2e8f0" letter-spacing="0.5">PE Desk</text>'
     '</svg>'
 )
 

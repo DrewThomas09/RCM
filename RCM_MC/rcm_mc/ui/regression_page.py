@@ -1,4 +1,4 @@
-"""SeekingChartis Regression Page — interactive statistical analysis.
+"""PE Desk Regression Page — interactive statistical analysis.
 
 Full-featured OLS regression with per-hospital residual analysis,
 state-level breakdowns, feature importance ranking, variance inflation

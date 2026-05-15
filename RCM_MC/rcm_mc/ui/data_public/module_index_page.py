@@ -116,7 +116,7 @@ def render_module_index(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   <div class="ck-page-head">
-    <h1 class="ck-page-h1">Seeking Chartis Module Index</h1>
+    <h1 class="ck-page-h1">PE Desk Module Index</h1>
     <p class="ck-page-sub">{r.total_modules} analytical modules across {r.categories} categories · searchable catalog mapping route, category, lifecycle phase, and persona — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>

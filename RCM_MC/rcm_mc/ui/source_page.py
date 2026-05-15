@@ -73,7 +73,7 @@ def render_source_page(
             f'<h2>How Thesis Matching Works</h2>'
             f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
             f'<p>Each investment thesis defines target criteria: bed count range, revenue range, '
-            f'payer mix thresholds, and geographic focus. SeekingChartis searches all ~6,000 HCRIS '
+            f'payer mix thresholds, and geographic focus. PE Desk searches all ~6,000 HCRIS '
             f'hospitals and ranks matches by fit score.</p>'
             f'<p style="margin-top:6px;">For custom screening (by specific metrics), use the '
             f'<a href="/screen" style="color:{PALETTE["text_link"]};">Hospital Screener</a> instead.</p>'

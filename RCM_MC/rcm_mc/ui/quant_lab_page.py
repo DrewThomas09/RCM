@@ -1,4 +1,4 @@
-"""SeekingChartis Quant Lab — full quant stack in browser.
+"""PE Desk Quant Lab — full quant stack in browser.
 
 Surfaces Bayesian calibration, DEA efficiency frontier, queueing theory,
 survival analysis, market intelligence, causal inference, and cross-deal
@@ -288,7 +288,7 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
         '<li>Correlated lever draws</li>'
         '<li>P10/P50/P90 EBITDA/MOIC/IRR</li></ul></div>'
         '</div>',
-        title="SeekingChartis Quant Stack",
+        title="PE Desk Quant Stack",
     )
 
     nav = ck_panel(

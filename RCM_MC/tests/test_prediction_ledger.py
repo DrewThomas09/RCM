@@ -170,7 +170,7 @@ class TestModelValidationPage(unittest.TestCase):
         tf.close()
         try:
             html = render_model_validation(tf.name, hcris_df=df)
-            self.assertIn("SeekingChartis", html)
+            self.assertIn("PE Desk", html)
             self.assertIn("Model Validation", html)
             self.assertIn("Compounding", html)
         finally:

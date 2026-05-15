@@ -1,4 +1,4 @@
-"""Tests for SeekingChartis quick import and final shell_v2 migration.
+"""Tests for PE Desk quick import and final shell_v2 migration.
 
 QUICK IMPORT:
  1. GET /import renders form with shell_v2.
@@ -59,7 +59,7 @@ class TestQuickImport(unittest.TestCase):
                 ) as r:
                     body = r.read().decode()
                 self.assertIn("Import Deals", body)
-                self.assertIn("SeekingChartis", body)
+                self.assertIn("PE Desk", body)
                 self.assertIn("ck-topbar", body)
                 self.assertIn("deal_id", body)
                 self.assertIn("denial_rate", body)
@@ -156,8 +156,8 @@ class TestAllPagesShellV2(unittest.TestCase):
                             body = r.read().decode()
                             self.assertIn("ck-topbar", body,
                                           f"{path} missing cad-topbar")
-                            self.assertIn("SeekingChartis", body,
-                                          f"{path} missing SeekingChartis")
+                            self.assertIn("PE Desk", body,
+                                          f"{path} missing PE Desk")
             finally:
                 server.shutdown(); server.server_close()
         finally:

@@ -1,4 +1,4 @@
-"""SeekingChartis Data Room — merge seller data with ML predictions.
+"""PE Desk Data Room — merge seller data with ML predictions.
 
 The differentiating feature: analysts enter actual KPIs from seller
 reports, the system Bayesian-updates every prediction, recalculates

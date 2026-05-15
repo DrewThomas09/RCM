@@ -1,4 +1,4 @@
-"""SeekingChartis — public marketing landing page.
+"""PE Desk — public marketing landing page.
 
 Phase 13 of the UI v2 editorial rework. New page at ``GET /``
 (under ``CHARTIS_UI_V2=1``); the legacy dashboard stays at ``/``
@@ -127,7 +127,7 @@ def _hero() -> str:
         + _h_display("Purpose-built<br/>to codify partner<br/>judgment at scale.")
         + '<div style="height:32px;"></div>'
         + _lead(
-            "SeekingChartis is the diligence and portfolio-operations "
+            "PE Desk is the diligence and portfolio-operations "
             "platform for healthcare-focused private equity. From "
             "screening to exit, 278 partner-reflex modules run on "
             "6,024 HCRIS hospitals and thousands of regression tests.")
@@ -240,7 +240,7 @@ def _capabilities() -> str:
         '<p style="font-family:\"Source Serif 4\", Georgia, serif;font-size:19px;'
         'line-height:1.6;color:var(--muted);padding-top:40px;'
         'margin:0;max-width:46ch;">'
-        "SeekingChartis / RCM-MC compresses the least-leveraged hours "
+        "PE Desk / RCM-MC compresses the least-leveraged hours "
         "of healthcare PE diligence. Dozens of API endpoints, hundreds "
         "of source files, thousands of passing tests, one SQLite file."
         '</p>'
@@ -377,7 +377,7 @@ def _footer() -> str:
         'display:flex;justify-content:space-between;align-items:center;">'
         '<div style="font-family:\"Source Serif 4\", Georgia, serif;font-size:18px;'
         'font-weight:500;color:var(--paper);letter-spacing:-0.005em;">'
-        'Seeking<em style="font-weight:400;color:var(--teal-soft);">Chartis</em></div>'
+        'PE <em style="font-weight:400;color:var(--teal-soft);">Desk</em></div>'
         '<div style="font-family:\"JetBrains Mono\", monospace;font-size:11px;'
         'letter-spacing:0.1em;">© 2026 — Healthcare PE diligence, '
         'instrument-grade</div>'
@@ -414,8 +414,8 @@ def _marketing_topnav() -> str:
         '<path d="M24 42 L29 33 L24 36 L19 33 Z" fill="#e9eef5"/>'
         '<path d="M6 24 L15 29 L12 24 L15 19 Z" fill="#e9eef5"/>'
         '</svg>'
-        'Seeking<em style="font-weight:400;font-style:italic;color:#66c8c3;">'
-        'Chartis</em></a>'
+        'PE <em style="font-weight:400;font-style:italic;color:#66c8c3;">'
+        'Desk</em></a>'
         # Right-side actions
         '<div style="display:flex;align-items:center;gap:18px;">'
         '<a href="/methodology" style="font-family:\"Inter Tight\", -apple-system, sans-serif;'
@@ -452,9 +452,9 @@ def render_marketing_page() -> str:
         '<!doctype html><html lang="en"><head>'
         '<meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
-        '<title>SeekingChartis — Healthcare PE Diligence Platform</title>'
+        '<title>PE Desk — Healthcare PE Diligence Platform</title>'
         '<meta name="description" content="'
-        'SeekingChartis is the diligence and portfolio-operations '
+        'PE Desk is the diligence and portfolio-operations '
         'platform for healthcare-focused private equity. From screening '
         'to exit, partner-reflex modules on 6,024 HCRIS hospitals.">'
         + fonts +

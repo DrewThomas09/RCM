@@ -1,4 +1,4 @@
-"""SeekingChartis Demand Analysis — disease density, stickiness, elasticity.
+"""PE Desk Demand Analysis — disease density, stickiness, elasticity.
 
 Renders the demand defensibility analysis for a hospital's operating region.
 """

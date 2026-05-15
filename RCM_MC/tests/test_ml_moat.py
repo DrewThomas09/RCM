@@ -150,7 +150,7 @@ class TestMLInsightsPage(unittest.TestCase):
         from rcm_mc.ui.regression_page import _add_computed_features
         df = _add_computed_features(_sample_hcris(200))
         html = render_ml_insights(df)
-        self.assertIn("SeekingChartis", html)
+        self.assertIn("PE Desk", html)
         self.assertIn("Archetype", html)
         self.assertIn("Distress", html)
 
@@ -159,7 +159,7 @@ class TestMLInsightsPage(unittest.TestCase):
         from rcm_mc.ui.regression_page import _add_computed_features
         df = _add_computed_features(_sample_hcris(200))
         html = render_hospital_ml("000001", df)
-        self.assertIn("SeekingChartis", html)
+        self.assertIn("PE Desk", html)
         self.assertIn("RCM", html)
 
 

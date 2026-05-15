@@ -1,4 +1,4 @@
-"""SeekingChartis — Chartis Kit (editorial port).
+"""PE Desk — Chartis Kit (editorial port).
 
 The editorial-style replacement for the dark Bloomberg shell in
 ``_chartis_kit_legacy``. Produces parchment + serif + teal markup
@@ -269,7 +269,7 @@ def editorial_link(path: str) -> str:
     """Build a v3-aware URL for internal anchors inside the editorial chrome.
 
     Per "Discovered during local testing 2026-04-25" §1 in
-    ``docs/UI_REWORK_PLAN.md``: clicking the SeekingChartis logo from
+    ``docs/UI_REWORK_PLAN.md``: clicking the PE Desk logo from
     ``/app?ui=v3`` was dropping users back into the legacy shell
     because every internal anchor rebuilt its href without the
     ``?ui=v3`` flag.
@@ -396,7 +396,7 @@ def editorial_topbar(active_nav: Optional[str] = None) -> str:
         '<header class="topbar">'
         '<a href="/app?ui=v3" class="brand">'
         '<div class="brand-mark">SC</div>'
-        '<div class="brand-name">Seeking<em>Chartis</em></div>'
+        '<div class="brand-name">PE <em>Desk</em></div>'
         '</a>'
         f'<nav class="topnav">{nav_html}</nav>'
         '<div class="topbar-right">'
@@ -814,7 +814,7 @@ def chartis_shell(
                   means no banner, even when show_phi_banner is True.
                   This keeps env reads in handlers, not helpers.
     """
-    safe_title = _html.escape(title or "SeekingChartis")
+    safe_title = _html.escape(title or "PE Desk")
     chrome = (
         editorial_topbar(active_nav)
         if show_chrome else (
@@ -825,7 +825,7 @@ def chartis_shell(
             '<header class="topbar">'
             '<a href="/?ui=v3" class="brand">'
             '<div class="brand-mark">SC</div>'
-            '<div class="brand-name">Seeking<em>Chartis</em></div>'
+            '<div class="brand-name">PE <em>Desk</em></div>'
             '</a>'
             '</header>'
         )
@@ -869,7 +869,7 @@ def chartis_shell(
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{safe_title} — SeekingChartis</title>
+<title>{safe_title} — PE Desk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="/static/v3/chartis.css">

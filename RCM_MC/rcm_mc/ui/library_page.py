@@ -1,4 +1,4 @@
-"""SeekingChartis Methodology Hub — research library and reference materials.
+"""PE Desk Methodology Hub — research library and reference materials.
 
 Central hub for PE diligence frameworks, benchmark data, model
 documentation, and methodology references. Served at /methodology.
@@ -87,7 +87,7 @@ _LIBRARY_SECTIONS = [
                 "endpoint": "/screen",
                 "doc": "5 predefined screens (value, turnaround, large cap, small cap, margin "
                        "expansion) plus custom filter builder. Returns ranked results with "
-                       "SeekingChartis Score for each match.",
+                       "PE Desk Score for each match.",
                 "badge": "Screener",
             },
             {
@@ -166,10 +166,10 @@ _LIBRARY_SECTIONS = [
                 "badge": "Data Source",
             },
             {
-                "title": "SeekingChartis Score",
+                "title": "PE Desk Score",
                 "description": "Composite 0-100 rating: market (35%) + financial (25%) + operational (20%) + moat (20%)",
                 "endpoint": "/hospital/010001",
-                "doc": "Every hospital gets a SeekingChartis Score computed from HCRIS data. "
+                "doc": "Every hospital gets a PE Desk Score computed from HCRIS data. "
                        "Market position (beds, revenue scale), financial health (margin), "
                        "operational quality (denial rate, AR days), and competitive moat "
                        "(HHI, switching costs). Grade scale: A+ to F.",
@@ -281,7 +281,7 @@ def _library_section(section: Dict[str, Any]) -> str:
 
 
 def render_library() -> str:
-    """Render the SeekingChartis research library page."""
+    """Render the PE Desk research library page."""
     from rcm_mc.ui.chartis._helpers import render_page_explainer
     explainer = render_page_explainer(
         what=(

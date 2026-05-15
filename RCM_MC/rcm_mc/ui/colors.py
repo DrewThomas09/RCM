@@ -8,7 +8,7 @@ negative change / bad, amber for watch / approaching threshold.
 
 Why a separate module:
 
-  - Brand is identity: 'this is SeekingChartis'.
+  - Brand is identity: 'this is PE Desk'.
   - Status is information: 'this number is good vs that number'.
     Status colors stay constant across brand modes — green for
     positive is a universal cue that doesn't depend on whether

@@ -1,4 +1,4 @@
-"""SeekingChartis Deal Quick View — fallback when full analysis unavailable.
+"""PE Desk Deal Quick View — fallback when full analysis unavailable.
 
 Shows deal profile data with direct links to all available models.
 Used when a deal is freshly created and hasn't been through the full

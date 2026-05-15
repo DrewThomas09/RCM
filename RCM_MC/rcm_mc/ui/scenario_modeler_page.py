@@ -1,4 +1,4 @@
-"""SeekingChartis Scenario Modeler — adjust assumptions, see returns impact.
+"""PE Desk Scenario Modeler — adjust assumptions, see returns impact.
 
 Partners can create named scenarios by adjusting RCM levers, payer mix,
 volume, and macro assumptions. Each scenario flows through the EBITDA bridge

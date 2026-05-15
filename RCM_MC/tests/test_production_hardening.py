@@ -149,7 +149,7 @@ class TestInputValidation(unittest.TestCase):
         # Bad numeric params should not crash
         html = render_predictive_screener(df, "min_beds=abc&max_margin=xyz")
         self.assertIsInstance(html, str)
-        self.assertIn("SeekingChartis", html)
+        self.assertIn("PE Desk", html)
 
     def test_screener_negative_beds(self):
         from rcm_mc.ui.predictive_screener import render_predictive_screener
@@ -199,7 +199,7 @@ class TestServerErrorPages(unittest.TestCase):
                     f"http://127.0.0.1:{port}/ic-memo/999999"
                 ) as r:
                     body = r.read().decode()
-                self.assertIn("SeekingChartis", body)
+                self.assertIn("PE Desk", body)
             finally:
                 server.shutdown()
                 server.server_close()

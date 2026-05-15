@@ -1,4 +1,4 @@
-"""SeekingChartis Home — seven-panel partner landing.
+"""PE Desk Home — seven-panel partner landing.
 
 Panels: pipeline funnel, active alerts, portfolio health distribution,
 recent deals, upcoming deadlines, PE intelligence highlights (top-3

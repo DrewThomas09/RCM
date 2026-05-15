@@ -176,7 +176,7 @@ class TestNavAlertBadge(unittest.TestCase):
         html = shell("<p>test</p>", "Test Page")
         # Editorial shell uses ck-topbar; alert count badge is route-injected, not in base shell
         self.assertIn("ck-topbar", html)
-        self.assertIn("SeekingChartis", html)
+        self.assertIn("PE Desk", html)
 
     def test_active_count_endpoint(self):
         tf = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
