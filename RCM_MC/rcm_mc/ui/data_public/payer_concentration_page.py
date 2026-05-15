@@ -2,7 +2,49 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import (
+    P, chartis_shell, ck_data_cell, ck_kpi_block, ck_paired_block,
+)
+
+
+def _metrics_paired_rows(items) -> tuple:
+    """Concentration-metrics data for the share-SVG's paired dataset.
+
+    Returns ``(headers, rows, hot_rows)`` for ``ck_paired_block``.
+    Mirrors the formatting of the old _metrics_table (now removed):
+    percent metrics get pp variance, integer metrics get a comma
+    format, others get .1f. ``hot_rows`` marks the worst-variance
+    concentration metric — the one most worth a partner's attention.
+    """
+    headers = ["Metric", "Value", "Benchmark", "Variance", "Interpretation"]
+    pct_metrics = {
+        "Top Payer Share", "Top 3 Payer Share (CR3)",
+        "Top 5 Payer Share (CR5)", "Weighted Denial Rate",
+    }
+    int_metrics = {"Herfindahl Index (HHI)", "Payer Count"}
+    rows: list = []
+    bad_scores: list = []
+    for m in items:
+        if m.metric in pct_metrics:
+            val = f"{m.value * 100:.2f}%"
+            bench = f"{m.benchmark * 100:.2f}%"
+            var = f"{m.variance * 100:+.2f}pp"
+        elif m.metric in int_metrics:
+            val = f"{m.value:,.0f}"
+            bench = f"{m.benchmark:,.0f}"
+            var = f"{m.variance:+,.0f}"
+        else:
+            val = f"{m.value:,.1f}"
+            bench = f"{m.benchmark:,.1f}"
+            var = f"{m.variance:+,.1f}"
+        # "Worse" for concentration = higher variance; for Payer Count
+        # = lower variance (more payers is better). Score by signed
+        # severity so hot_rows picks the most-concerning row.
+        sev = -m.variance if m.metric == "Payer Count" else m.variance
+        bad_scores.append(sev)
+        rows.append([m.metric, val, bench, var, m.interpretation])
+    hot = [bad_scores.index(max(bad_scores))] if bad_scores else []
+    return headers, rows, hot
 
 
 def _payers_table(payers) -> str:
@@ -30,36 +72,6 @@ def _payers_table(payers) -> str:
             f'{ck_data_cell(f"""{p.days_in_ar}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{risk_c};font-weight:600">{p.renewal_risk_score}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(p.status)}</td>',
-        ]
-        trs.append(f'<tr>{"".join(cells)}</tr>')
-    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
-            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
-
-
-def _metrics_table(items) -> str:
-    bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
-    text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
-    cols = [("Metric","left"),("Value","right"),("Benchmark","right"),("Variance","right"),("Interpretation","left")]
-    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
-    trs = []
-    for i, m in enumerate(items):
-        rb = panel_alt if i % 2 == 0 else bg
-        is_pct = m.metric in ("Top Payer Share", "Top 3 Payer Share (CR3)", "Top 5 Payer Share (CR5)",
-                              "Weighted Denial Rate")
-        val_disp = f"{m.value * 100:.2f}%" if is_pct else f"{m.value:,.0f}" if m.metric in ("Herfindahl Index (HHI)", "Payer Count") else f"{m.value:,.1f}"
-        bench_disp = f"{m.benchmark * 100:.2f}%" if is_pct else f"{m.benchmark:,.0f}" if m.metric in ("Herfindahl Index (HHI)", "Payer Count") else f"{m.benchmark:,.1f}"
-        var_disp = f"{m.variance * 100:+.2f}pp" if is_pct else f"{m.variance:+,.0f}" if m.metric in ("Herfindahl Index (HHI)", "Payer Count") else f"{m.variance:+,.1f}"
-        # Worse-than-bench = higher (for concentration metrics) except Payer Count where higher is better
-        if m.metric == "Payer Count":
-            var_c = pos if m.variance > 0 else neg
-        else:
-            var_c = neg if m.variance > 0 else pos
-        cells = [
-            f'{ck_data_cell(f"""{_html.escape(m.metric)}""", mono=True, weight=600)}',
-            f'{ck_data_cell(f"""{val_disp}""", align="right", mono=True, weight=700)}',
-            f'{ck_data_cell(f"""{bench_disp}""", align="right", mono=True, tone="dim")}',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{var_c};font-weight:600">{var_disp}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(m.interpretation)}</td>',
         ]
         trs.append(f'<tr>{"".join(cells)}</tr>')
     return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
@@ -197,10 +209,32 @@ def render_payer_concentration(params: dict = None) -> str:
 
     svg = _payer_share_svg(r.payers)
     payers_tbl = _payers_table(r.payers)
-    metrics_tbl = _metrics_table(r.concentration_metrics)
     renewals_tbl = _renewals_table(r.renewals)
     denials_tbl = _denials_table(r.denials)
     oon_tbl = _oon_table(r.oon_exposure)
+
+    # Signature paired viz+dataset: the payer-share SVG (overall
+    # distribution) on the left, the concentration metrics vs
+    # benchmark on the right, one outer rule. The SVG shows how
+    # concentrated the payer mix is; the table reads the numbers
+    # against industry benchmarks. The worst-variance row is
+    # highlighted via hot_rows.
+    share_viz = (
+        f'<div style="font-size:9px;color:{P["text_dim"]};'
+        f'font-family:JetBrains Mono,monospace;letter-spacing:0.1em;'
+        f'text-transform:uppercase;font-weight:700;margin-bottom:8px;">'
+        'Payer revenue share distribution</div>'
+        f'{svg}'
+    )
+    met_headers, met_rows, met_hot = _metrics_paired_rows(r.concentration_metrics)
+    concentration_paired = ck_paired_block(
+        share_viz,
+        data_label="Concentration metrics vs benchmark",
+        data_source="data_public/payer_concentration.py",
+        headers=met_headers,
+        rows=met_rows,
+        hot_rows=met_hot,
+    )
 
     form = f"""
 <form method="GET" action="/payer-concentration" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
@@ -223,9 +257,8 @@ def render_payer_concentration(params: dict = None) -> str:
   </div>
   {form}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Payer Revenue Share Distribution</div>{svg}</div>
+  {concentration_paired}
   <div style="{cell}"><div style="{h3}">Payer Roster — Share, YoY, Contract Expiry, Denials, Renewal Risk</div>{payers_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Concentration Metrics vs Benchmark</div>{metrics_tbl}</div>
   <div style="{cell}"><div style="{h3}">Contract Renewal Calendar — Priority &amp; Exposure</div>{renewals_tbl}</div>
   <div style="{cell}"><div style="{h3}">Payer-Level Denials Analysis — Write-Off Exposure</div>{denials_tbl}</div>
   <div style="{cell}"><div style="{h3}">Out-of-Network Exposure by Service Line — No Surprises Act</div>{oon_tbl}</div>
