@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block
 
 
 def _sensitivity_table(items) -> str:
@@ -30,30 +30,28 @@ def _sensitivity_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
-def _tornado_table(items) -> str:
-    bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
-    text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; acc = P["accent"]
-    cols = [("Driver","left"),("Downside","center"),("Base","center"),("Upside","center"),
-            ("Down MOIC","right"),("Base MOIC","right"),("Up MOIC","right"),("Swing MOIC","right")]
-    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
-    trs = []
+def _tornado_paired_rows(items) -> tuple:
+    headers = [
+        "Driver", "Downside", "Base", "Upside",
+        "Down MOIC", "Base MOIC", "Up MOIC", "Swing MOIC",
+    ]
+    rows: list = []
+    swings: list = []
     sorted_items = sorted(items, key=lambda t: abs(t.swing_moic), reverse=True)
-    for i, t in enumerate(sorted_items):
-        rb = panel_alt if i % 2 == 0 else bg
-        s_c = pos if abs(t.swing_moic) <= 0.50 else (acc if abs(t.swing_moic) <= 1.0 else neg)
-        cells = [
-            f'{ck_data_cell(f"""{_html.escape(t.driver)}""", mono=True, weight=700)}',
-            f'{ck_data_cell(f"""{_html.escape(t.downside_value)}""", align="center", mono=True, tone="neg")}',
-            f'{ck_data_cell(f"""{_html.escape(t.base_value)}""", align="center", mono=True, tone="acc", weight=700)}',
-            f'{ck_data_cell(f"""{_html.escape(t.upside_value)}""", align="center", mono=True, tone="pos")}',
-            f'{ck_data_cell(f"""{t.downside_moic:.2f}x""", align="right", mono=True, tone="neg")}',
-            f'{ck_data_cell(f"""{t.base_moic:.2f}x""", align="right", mono=True, weight=700)}',
-            f'{ck_data_cell(f"""{t.upside_moic:.2f}x""", align="right", mono=True, tone="pos")}',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{s_c};font-weight:700">{t.swing_moic:+.2f}x</td>',
-        ]
-        trs.append(f'<tr>{"".join(cells)}</tr>')
-    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
-            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+    for t in sorted_items:
+        rows.append([
+            t.driver,
+            t.downside_value,
+            t.base_value,
+            t.upside_value,
+            f"{t.downside_moic:.2f}x",
+            f"{t.base_moic:.2f}x",
+            f"{t.upside_moic:.2f}x",
+            f"{t.swing_moic:+.2f}x",
+        ])
+        swings.append(abs(t.swing_moic))
+    hot = [swings.index(max(swings))] if swings else []
+    return headers, rows, hot
 
 
 def _covenant_table(items) -> str:
@@ -186,8 +184,16 @@ def render_lbo_stress(params: dict = None) -> str:
     )
 
     svg = _tornado_svg(r.tornado)
+    t_headers, t_rows, t_hot = _tornado_paired_rows(r.tornado)
+    tornado_paired = ck_paired_block(
+        svg,
+        data_label="Driver MOIC Sensitivity",
+        headers=t_headers,
+        rows=t_rows,
+        data_source=f"{len(r.tornado)} drivers · sorted by swing magnitude",
+        hot_rows=t_hot,
+    )
     s_tbl = _sensitivity_table(r.sensitivity_grid)
-    t_tbl = _tornado_table(r.tornado)
     c_tbl = _covenant_table(r.covenant_path)
     b_tbl = _bridge_table(r.returns_bridge)
     sc_tbl = _scenarios_table(r.scenarios)
@@ -203,9 +209,8 @@ def render_lbo_stress(params: dict = None) -> str:
     <p class="ck-page-sub">Sensitivity analysis · tornado drivers · covenant path · returns bridge · scenario probability weighting — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Tornado Chart — MOIC Sensitivity by Driver</div>{svg}</div>
+  {tornado_paired}
   <div style="{cell}"><div style="{h3}">Exit Multiple Sensitivity Grid</div>{s_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Driver Sensitivity Detail</div>{t_tbl}</div>
   <div style="{cell}"><div style="{h3}">Covenant Compliance Path</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Returns Bridge — Entry Equity to Exit Proceeds</div>{b_tbl}</div>
   <div style="{cell}"><div style="{h3}">Scenario Outcomes &amp; Probability Weighting</div>{sc_tbl}</div>
