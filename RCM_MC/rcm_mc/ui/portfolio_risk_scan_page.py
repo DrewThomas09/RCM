@@ -341,27 +341,46 @@ def _priority_rank(deal: Dict[str, Any]) -> int:
     return score
 
 
+# Pattern A — durable title + italic explainer (mirrors PR #68 /deal-profile,
+# PR #73 /portfolio/heatmap). Replaces three competing title elements:
+# the dismissible editorial_intro, a stray ck_eyebrow, and a bespoke
+# _wc.page_header H1 that didn't match editorial typography.
+_EXPLAINER_CSS = """
+.ck-rs-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;
+margin:var(--sc-s-4) 0 var(--sc-s-6);}
+.ck-rs-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+"""
+
+
 # ── Page renderer ──────────────────────────────────────────────────
 
 def render_portfolio_risk_scan(db_path: str) -> str:
     from . import _web_components as _wc
     from ._chartis_kit import (
-        chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+        chartis_shell, ck_fmt_num, ck_kpi_block, ck_page_title,
         ck_next_section, ck_provenance_tooltip,
     )
 
     deals = _gather_per_deal(db_path)
 
-    header = _wc.page_header(
-        "Portfolio risk scan",
-        subtitle=(
-            "One-screen scan across every active deal — health score, "
-            "covenant, alerts, snapshot freshness, deadlines. Rows "
-            "sorted highest-priority first so attention-required "
-            "deals surface without clicking a column."
+    title_block = ck_page_title(
+        "Portfolio Risk Scan",
+        eyebrow="PORTFOLIO RISK SCAN",
+        meta=(
+            f"{len(deals)} active deals · sorted highest-priority first"
+            if deals else "no active deals yet"
         ),
-        crumbs=[("Dashboard", "/dashboard"),
-                ("Portfolio risk scan", None)],
+    )
+    explainer = (
+        '<p class="ck-rs-explainer">'
+        '<em>Where portfolio risk concentrates.</em> '
+        "One-screen scan across every active deal — covenant headroom, "
+        "alerts, snapshot freshness, deadlines, and distress "
+        "probabilities. Rows sort highest-priority first, so deals "
+        "that show up across multiple risk dimensions surface without "
+        "clicking a column."
+        '</p>'
     )
 
     if not deals:
@@ -375,10 +394,12 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         body = (
             _wc.web_styles()
             + _wc.responsive_container(
-                header + _wc.section_card("No deals yet", empty))
+                title_block + explainer
+                + _wc.section_card("No deals yet", empty))
         )
         return chartis_shell(body, "Portfolio risk scan",
-                             active_nav="/portfolio/risk-scan")
+                             active_nav="/portfolio/risk-scan",
+                             extra_css=_EXPLAINER_CSS)
 
     # Priority-sort so the worst deals float to the top
     deals.sort(key=_priority_rank, reverse=True)
@@ -549,9 +570,9 @@ def render_portfolio_risk_scan(db_path: str) -> str:
     )
 
     inner = (
-        ck_eyebrow("Portfolio Risk Scan")
+        title_block
+        + explainer
         + kpi_strip
-        + header
         + summary_strip
         + legend
         + csv_link
@@ -575,15 +596,4 @@ def render_portfolio_risk_scan(db_path: str) -> str:
     )
     return chartis_shell(body, "Portfolio risk scan",
                          active_nav="/portfolio/risk-scan",
-        editorial_intro={
-            "eyebrow": "PORTFOLIO RISK SCAN",
-            "headline": "Where portfolio risk concentrates.",
-            "italic_word": "concentrates",
-            "body": (
-                "Portfolio-level risk view: covenant headroom, "
-                "concentration exposures, distress probabilities, "
-                "and exit-window timing. The deals that show up "
-                "across multiple risk dimensions are the ones "
-                "that need partner attention this quarter."
-            ),
-        })
+                         extra_css=_EXPLAINER_CSS)
