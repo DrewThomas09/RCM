@@ -43,6 +43,17 @@ _LOWER_IS_BETTER = frozenset({
 })
 
 
+# Pattern A — durable title + italic explainer (mirrors PR #68 /deal-profile).
+# Replaces the dismissible editorial_intro that previously left the page
+# without a title or purpose statement once a partner clicked ×.
+_EXPLAINER_CSS = """
+.ck-ph-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;
+margin:var(--sc-s-4) 0 var(--sc-s-6);}
+.ck-ph-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+"""
+
+
 def _esc(s: Any) -> str:
     return html.escape("" if s is None else str(s))
 
@@ -94,15 +105,34 @@ def render_heatmap(
     ``deltas`` maps ``deal_id`` → ``{metric: value_change}`` from
     :func:`rcm_mc.portfolio.portfolio_monitor.compute_deltas`.
     """
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import chartis_shell, ck_page_title
+
+    title_block = ck_page_title(
+        "Portfolio Heatmap",
+        eyebrow="PORTFOLIO HEATMAP",
+        meta=(
+            f"{len(packets)} deals · percentile rank vs corpus"
+            if packets else "no deals yet"
+        ),
+    )
+    explainer = (
+        '<p class="ck-ph-explainer">'
+        '<em>Where the deals stand against benchmarks.</em> '
+        "Per-deal RCM metrics colored by percentile rank against the "
+        "corpus benchmark — read across a row to find a deal's weak "
+        "spots; read down a column to find the portfolio's "
+        "concentration risk on that metric."
+        '</p>'
+    )
 
     if not packets:
         return chartis_shell(
-            '<div class="cad-card"><p style="color:var(--cad-text3);">No deals to display. '
+            title_block + explainer
+            + '<div class="cad-card"><p style="color:var(--cad-text3);">No deals to display. '
             '<a href="/import" style="color:var(--cad-link);">Create your first deal &rarr;</a></p></div>',
             "Portfolio Heatmap",
             active_nav="/portfolio",
-            subtitle="No deals yet",
+            extra_css=_EXPLAINER_CSS,
         )
 
     deltas = deltas or {}
@@ -202,13 +232,10 @@ def render_heatmap(
         + '</div>'
     )
 
-    # Note: the page title comes from chartis_shell(editorial_intro=...)
-    # below — repeating it as ck_eyebrow here gave us a stacked
-    # "PORTFOLIO HEATMAP / Where the deals... / Portfolio Heatmap"
-    # block at the top of the page (user-reported as "weird title
-    # design" on heatmap and most pages).
     body = (
-        kpi_strip
+        title_block
+        + explainer
+        + kpi_strip
         + f'<div class="cad-card">{table}</div>'
         + ck_next_section(
             "Open the portfolio map",
@@ -219,18 +246,4 @@ def render_heatmap(
     )
     return chartis_shell(body, "Portfolio Heatmap",
                     active_nav="/portfolio",
-                    subtitle=f"{len(packets)} deals — cells coloured by percentile rank",
-                    extra_css=css,
-                    editorial_intro={
-                        "eyebrow": "PORTFOLIO HEATMAP",
-                        "headline": "Where the deals stand against benchmarks.",
-                        "italic_word": "stand",
-                        "body": (
-                            "Per-deal RCM metrics colored by "
-                            "percentile rank against the corpus "
-                            "benchmark. Read across a row to find "
-                            "the deal's weak spots; read down a "
-                            "column to find the portfolio's "
-                            "concentration risk on that metric."
-                        ),
-                    })
+                    extra_css=css + _EXPLAINER_CSS)
