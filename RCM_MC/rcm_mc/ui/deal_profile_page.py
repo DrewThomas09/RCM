@@ -35,8 +35,8 @@ from urllib.parse import urlencode
 from ..diligence._pages import AVAILABLE_FIXTURES
 from ._chartis_kit import (
     P, chartis_shell, ck_eyebrow, ck_help_tooltip, ck_next_section,
-    ck_panel, ck_section_header, ck_section_intro, ck_signal_badge,
-    ck_sticky_toc,
+    ck_page_title, ck_panel, ck_section_header, ck_section_intro,
+    ck_signal_badge, ck_sticky_toc,
 )
 from .power_ui import bookmark_hint
 
@@ -597,6 +597,13 @@ _LANDING_JS = r"""<script>
 
 _DP_STYLES = f"""
 <style>
+.ck-dp-explainer{{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;
+margin:var(--sc-s-4) 0 var(--sc-s-6);}}
+.ck-dp-explainer em{{color:var(--sc-teal-ink);font-style:italic;}}
+.ck-dp-explainer code{{font-family:var(--sc-mono);font-size:13px;
+background:var(--sc-bone);padding:1px 5px;border-radius:2px;
+color:var(--sc-text);}}
 .ck-dp-slug-form{{max-width:480px;}}
 .ck-dp-recent-deals{{margin-top:1.75rem;max-width:960px;}}
 .ck-dp-tool-chip{{font-size:8px;letter-spacing:.5px;text-transform:uppercase;
@@ -978,20 +985,29 @@ border:1px solid var(--paper-pure);cursor:pointer;font-weight:600;}}
 
 
 def _landing_slugs() -> str:
-    """Editorial deal-profile landing — eyebrow + serif h2 + intro,
-    then a slug-entry card and (JS-populated) recent-deals grid.
+    """Editorial deal-profile landing — ck_page_title (durable H1) +
+    non-dismissible italic explainer, then a slug-entry card and
+    (JS-populated) recent-deals grid.
+
+    The earlier version used ck_section_intro for the headline + body;
+    that primitive is dismissible (× → localStorage), so once a partner
+    clicked × the page lost its identity entirely. ck_page_title is
+    permanent and matches the convention used by /diligence (index),
+    /alerts, /watchlist, /compare, etc.
     """
-    intro = ck_section_intro(
-        eyebrow="DEAL PROFILE",
-        headline="One source of truth per deal.",
-        italic_word="truth",
-        body=(
-            "Each deal gets a unique URL — /diligence/deal/<slug>. "
-            "Pick a slug (e.g., 'aurora'), enter the deal parameters "
-            "once, and every downstream analytic opens with them "
-            "pre-filled. Deal state persists locally so a refresh "
-            "or returning tomorrow picks up where you left off."
-        ),
+    title = ck_page_title(
+        "Deal Profile",
+        eyebrow="DILIGENCE · DEAL CONTEXT",
+    )
+    explainer = (
+        '<p class="ck-dp-explainer">'
+        '<em>One source of truth per deal.</em> '
+        "Each deal gets a unique URL — <code>/diligence/deal/&lt;slug&gt;</code>. "
+        "Pick a slug (e.g., <em>aurora</em>), enter the deal parameters "
+        "once, and every downstream analytic opens with them pre-filled. "
+        "Deal state persists locally so a refresh or returning tomorrow "
+        "picks up where you left off."
+        '</p>'
     )
     form_inner = (
         '<form class="ck-dp-slug-form" '
@@ -1011,14 +1027,14 @@ def _landing_slugs() -> str:
     )
     body = (
         _DP_STYLES
-        + intro
+        + title
+        + explainer
         + ck_panel(form_inner, title="New profile")
         + '<div data-rcm-recent-deals class="ck-dp-recent-deals"></div>'
         + f'{_LANDING_JS}'
     )
     return chartis_shell(
         body, "RCM Diligence — Deal Profile",
-        subtitle="One source of truth per deal",
     )
 
 
