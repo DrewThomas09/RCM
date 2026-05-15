@@ -27,8 +27,35 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 from rcm_mc.ui._chartis_kit import (
     P, _MONO, _SANS, chartis_shell, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip, ck_section_header,
+    ck_paired_block, ck_provenance_tooltip, ck_section_header,
 )
+
+
+def _paired_sector_rows(items: list) -> tuple:
+    """Accelerating-sector data for the paired block's dataset half.
+
+    Returns ``(headers, rows, hot_rows)`` for ``ck_paired_block``.
+    ``items`` arrives sorted by change_pct desc, so ``hot_rows`` just
+    marks row 0 — the top grower. Six columns: sector, recent count,
+    prior count, % change, MOIC P50 recent, MOIC P50 prior.
+    """
+    headers = [
+        "Sector", "Recent", "Prior", "Change",
+        "MOIC P50 R", "MOIC P50 P",
+    ]
+    rows: list = []
+    for d in items:
+        chg = d.get("change_pct", 0.0)
+        sign = "+" if chg >= 0 else ""
+        rows.append([
+            (d.get("sector") or "")[:30],
+            str(d.get("recent", 0)),
+            str(d.get("prior", 0)),
+            f"{sign}{chg:.0f}%",
+            f"{d['moic_recent']:.2f}x" if d.get("moic_recent") else "—",
+            f"{d['moic_prior']:.2f}x" if d.get("moic_prior") else "—",
+        ])
+    return headers, rows, ([0] if rows else [])
 
 
 def _percentile(vals: List[float], p: float) -> Optional[float]:
@@ -252,6 +279,33 @@ def render_sector_momentum(recent_years: int = 5) -> str:
         + '</div>'
     )
 
+    # Signature paired viz+dataset block from the Claude Design
+    # handoff: the recent-vs-prior momentum bars on the left, the
+    # accelerating-sectors table on the right, one outer rule. The
+    # bar SVG sits inside a caption frame on the viz side; the table
+    # is built from top_growing via _paired_sector_rows. hot_rows
+    # marks the strongest grower (sorted desc, so row 0).
+    bar_viz = (
+        f'<div style="font-size:9px;color:{P["text_dim"]};'
+        f'font-family:{_SANS};letter-spacing:.08em;'
+        f'text-transform:uppercase;margin-bottom:8px;">'
+        'Recent vs prior deal count &mdash; growing sectors '
+        '(solid = recent, gray = prior)</div>'
+        f'{_momentum_bar_svg(bar_data_growing)}'
+        if bar_data_growing else
+        '<div style="font-size:11px;color:var(--sc-text-faint);">'
+        'No accelerating sectors in this window.</div>'
+    )
+    grow_headers, grow_rows, grow_hot = _paired_sector_rows(top_growing)
+    paired_growing = ck_paired_block(
+        bar_viz,
+        data_label=f"Accelerating sectors &middot; top 10 ({window_label})",
+        data_source="deals corpus",
+        headers=grow_headers,
+        rows=grow_rows,
+        hot_rows=grow_hot,
+    )
+
     body = f"""
 <div style="padding:16px 20px;max-width:1200px">
   {ck_section_header("SECTOR MOMENTUM", f"Deal activity acceleration by sector — {len(corpus)} corpus transactions", None)}
@@ -268,12 +322,11 @@ def render_sector_momentum(recent_years: int = 5) -> str:
     "Recent" = {recent_cutoff}–{current_year-1}. "Prior" = {prior_cutoff}–{recent_cutoff-1}. Change = (recent − prior) / prior. ▲▲ = &gt;50% growth, ▲ = 10–50%, — = flat, ▼ = 10–50% decline, ▼▼ = &gt;50% decline.
   </div>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-    {_table(top_growing, f"ACCELERATING SECTORS — TOP 10 BY DEAL GROWTH ({window_label})")}
+  {paired_growing}
+
+  <div style="margin-top:24px;">
     {_table(top_declining, f"DECELERATING SECTORS — TOP 10 BY DEAL DECLINE ({window_label})")}
   </div>
-
-  {"<div style='background:" + P['panel_alt'] + ";border:1px solid " + P['border'] + ";padding:12px;margin-top:8px'><div style='font-size:9px;color:" + P['text_dim'] + ";font-family:" + _SANS + ";letter-spacing:.08em;margin-bottom:8px'>RECENT vs PRIOR DEAL COUNT — GROWING SECTORS (bar: recent=solid, prior=gray)</div>" + _momentum_bar_svg(bar_data_growing) + "</div>" if bar_data_growing else ""}
 </div>"""
 
     return chartis_shell(body, "Sector Momentum", active_nav="/sector-momentum",
