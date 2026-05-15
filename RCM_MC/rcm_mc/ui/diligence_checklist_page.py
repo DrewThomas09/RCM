@@ -78,7 +78,7 @@ overflow:hidden;margin-top:6px;}}
 .dc-progress__fill{{height:100%;background:{po};}}
 .dc-progress__partial{{background:{wn};}}
 .dc-progress__low{{background:{ne};}}
-.dc-item{{display:grid;grid-template-columns:80px 70px 1fr 110px 90px 70px;
+.dc-item{{display:grid;grid-template-columns:80px 70px 1fr 110px 90px 240px;
 gap:10px;align-items:baseline;padding:9px 2px;
 border-bottom:1px solid {bdim};font-size:12px;}}
 .dc-item:last-child{{border-bottom:0;}}
@@ -94,9 +94,12 @@ border-radius:3px;}}
 text-transform:uppercase;font-weight:600;}}
 .dc-item__category{{color:{tf};font-size:10px;letter-spacing:1px;
 text-transform:uppercase;}}
-.dc-item__action{{text-align:right;}}
+.dc-item__action{{text-align:right;white-space:nowrap;
+font-size:10px;color:{tf};letter-spacing:0.04em;}}
 .dc-item__action a{{color:{ac};font-size:10px;text-decoration:none;
-font-weight:600;margin-left:6px;}}
+font-weight:600;white-space:nowrap;}}
+.dc-item__action a + a{{margin-left:4px;
+padding-left:8px;border-left:1px solid {bdim};}}
 .dc-item__action a:hover{{text-decoration:underline;}}
 .dc-item__note{{grid-column:3 / -1;font-size:11px;color:{tf};
 font-style:italic;margin-top:4px;}}
