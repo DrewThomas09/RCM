@@ -171,9 +171,13 @@ class TestAuthHttp(unittest.TestCase):
             create_user(store, "at", "supersecret1")
             server, port = self._start(tmp)
             try:
-                # Browser-style GET (Accept: text/html) → 303 to /login
+                # Browser-style GET (Accept: text/html) on a protected
+                # path → 303 to /login. `/dashboard` is gated; `/` is
+                # the public marketing landing and stays reachable
+                # anonymously (route handler renders the marketing
+                # splash for the no-session case — see do_GET).
                 req = _u.Request(
-                    f"http://127.0.0.1:{port}/",
+                    f"http://127.0.0.1:{port}/dashboard",
                     headers={"Accept": "text/html"},
                 )
                 # urllib follows redirects by default; disable redirect
