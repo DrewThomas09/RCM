@@ -600,7 +600,7 @@ def render_day_one(store: Any) -> str:
         '</div>'
     )
     intro = ck_section_intro(
-        eyebrow="MONDAY MORNING",
+        eyebrow=f"{weekday.upper()} BRIEF",
         headline="Where to start your week.",
         italic_word="start",
         body=(
