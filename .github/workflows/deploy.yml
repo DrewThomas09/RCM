@@ -79,7 +79,12 @@ jobs:
       - name: Health check (public URL)
         run: |
           set -euo pipefail
-          URL="https://pedesk.app/"
+          # Hit /healthz, not /. The auth gate (server.py:_auth_ok) opens
+          # / only when no users exist (single-user laptop mode). Once
+          # the first user is created the server switches to multi-user
+          # mode and / requires auth → anonymous health check 401s.
+          # /healthz is in the auth bypass list and always returns 200.
+          URL="https://pedesk.app/healthz"
           for i in 1 2 3 4 5; do
             HTTP_CODE=$(curl -sk -o /dev/null -w '%{http_code}' "$URL") || true
             echo "Attempt $i: HTTP $HTTP_CODE"
