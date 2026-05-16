@@ -317,7 +317,13 @@ def _merge_rcm_profile(
             return None
         n = len(vals)
         below = sum(1 for x in vals if x < v)
-        return below / n
+        # `below / n` is mathematically in [0, 1] today: `below` counts
+        # at most `n` items via strict less-than, and `n >= 1` here
+        # (the empty-vals case is guarded at line 316). Clamp anyway —
+        # if a future change introduces weighted counts, a non-strict
+        # predicate, or any path that breaks the [0, 1] invariant, the
+        # UI must never render >100% / <0% percentile to a partner.
+        return max(0.0, min(1.0, below / n))
 
     for k, om in observed.items():
         merged[k] = ProfileMetric(
