@@ -221,7 +221,7 @@ class DenialPredictionPageTests(unittest.TestCase):
             render_denial_prediction_page,
         )
         h = render_denial_prediction_page()
-        self.assertIn("Claim-Level Denial Prediction", h)
+        self.assertIn("PREDICTIVE DENIAL MODEL", h)
         self.assertIn("Run prediction", h)
 
     def test_live_render_includes_interpretability_elements(self):
