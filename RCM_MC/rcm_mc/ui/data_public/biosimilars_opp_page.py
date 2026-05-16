@@ -2,7 +2,14 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+
+_EXPLAINER_CSS = """<style>
+.ck-bio-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-bio-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 
 
 def _waves_table(items) -> str:
@@ -150,12 +157,25 @@ def render_biosimilars(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
-    body = f"""
+    page_title = ck_page_title(
+        "Biosimilars Opportunity Analyzer",
+        eyebrow="BIOSIMILARS OPP",
+        meta=(
+            f"{r.total_loe_waves} LoE waves · "
+            f"${r.total_reference_sales_b:,.1f}B reference sales · "
+            f"{r.corpus_deal_count:,} corpus deals"
+        ),
+    )
+    bio_explainer = (
+        '<p class="ck-bio-explainer">'
+        "<em>What the biosimilars opportunity reveals on this deal.</em> "
+        "LoE wave schedule, ASP+6% economics, provider margin capture, "
+        "interchangeable status, and competitive dynamics across the platform's "
+        "infusion and dispensing sites."
+        "</p>"
+    )
+    body = page_title + bio_explainer + f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Biosimilars Opportunity Analyzer</h1>
-    <p class="ck-page-sub">LoE waves · ASP+6% economics · provider margin capture · interchangeable status · competitive dynamics — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">LoE Wave Schedule &amp; Adoption Curves</div>{w_tbl}</div>
   <div style="{cell}"><div style="{h3}">Per-Drug Economics — Reference vs Biosimilar</div>{e_tbl}</div>
@@ -172,8 +192,4 @@ def render_biosimilars(params: dict = None) -> str:
 </div>"""
 
     return chartis_shell(body, "Biosimilars", active_nav="/biosimilars",
-        editorial_intro={
-            "eyebrow": "BIOSIMILARS OPP",
-            "headline": "What the biosimilars opp page reveals on this deal.",
-            "italic_word": "reveals",
-        })
+        extra_css=_EXPLAINER_CSS)
