@@ -19,12 +19,19 @@ from .._chartis_kit import (
     P,
     chartis_shell,
     ck_kpi_block,
+    ck_page_title,
     ck_section_header,
-    ck_section_intro,
     ck_signal_badge,
 )
 from ._helpers import render_page_explainer
 from ._sanity import render_number
+
+_EXPLAINER_CSS = """<style>
+.ck-home-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-home-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 
 _STAGES = ("Sourcing", "Screened", "IOI", "LOI", "Diligence", "IC", "Closed")
 
@@ -685,19 +692,19 @@ def _new_modules_index() -> str:
 
 def render_home(store: Any, db_path: str, current_user: Optional[str] = None) -> str:
     """Render the seven-panel home landing page."""
-    # Editorial intro — italic-serif headline above the panels so the
-    # partner's first read on /home matches the chartis.com cadence
-    # ("Reasons to *believe* in better"). Sits above the page-explainer
-    # and KPI strip so the editorial signal is the first thing the eye
-    # lands on, before the data-dense panels below.
-    intro = ck_section_intro(
+    intro = ck_page_title(
+        "Home",
         eyebrow="PARTNER LANDING",
-        headline="Where the portfolio reveals what to read first.",
-        italic_word="reveals",
-        body=(
-            "Pipeline, alerts, health distribution, and the seven "
-            "partner-reflex verdicts your team relies on, in one read."
+        meta=(
+            f"Signed in as {_html.escape(current_user)}"
+            if current_user else "Pipeline · alerts · PE brain verdicts"
         ),
+    ) + (
+        '<p class="ck-home-explainer">'
+        "<em>Where the portfolio reveals what to read first.</em> "
+        "Pipeline, alerts, health distribution, and the seven "
+        "partner-reflex verdicts your team relies on, in one read."
+        "</p>"
     )
     explainer = render_page_explainer(
         what=(
@@ -729,27 +736,12 @@ def render_home(store: Any, db_path: str, current_user: Optional[str] = None) ->
         f'</div>'
         + _panel("Corpus Insights", _corpus_insights(), code="CPS")
     )
-    subtitle = (
-        f"Signed in as {_html.escape(current_user)}"
-        if current_user else "Partner landing — pipeline, alerts, PE brain verdicts"
-    )
     return chartis_shell(
         intro + explainer + kpi + quickstart + new_modules + panels,
         title="Home",
         active_nav="/home",
-        subtitle=subtitle,
         breadcrumbs=[
             ("Home", None),
         ],
-        editorial_intro={
-            "eyebrow": "HOME",
-            "headline": "Where the partner reads the day first.",
-            "italic_word": "reads",
-            "body": (
-                "Pipeline, active alerts, deals on watch, and the "
-                "PE-brain verdicts the platform produced overnight. "
-                "Numbers carry hover-card provenance so the "
-                "methodology stays one click away."
-            ),
-        }
+        extra_css=_EXPLAINER_CSS,
     )
