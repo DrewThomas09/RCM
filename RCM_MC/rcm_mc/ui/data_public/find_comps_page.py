@@ -27,10 +27,16 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 from rcm_mc.ui._chartis_kit import (
     P, _MONO, _SANS, chartis_shell, ck_fmt_moic, ck_fmt_num,
-    ck_kpi_block, ck_next_section, ck_provenance_tooltip,
+    ck_kpi_block, ck_next_section, ck_page_title, ck_provenance_tooltip,
     ck_section_header,
 )
-from rcm_mc.ui.chartis._helpers import render_page_explainer
+
+_EXPLAINER_CSS = """
+.ck-fc-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;
+margin:var(--sc-s-4) 0 var(--sc-s-6);}
+.ck-fc-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+"""
 
 
 def _percentile_rank(val: float, vals: List[float]) -> float:
@@ -383,16 +389,19 @@ def render_find_comps(params: Dict[str, str]) -> str:
   {result_html}
 </div>"""
 
-    explainer = render_page_explainer(
-        what=(
-            "Takes target-deal inputs (sector, size, payer mix, hold, "
-            "thesis) and returns the closest corpus comparables ranked "
-            "by composite similarity score, with percentile ranks and "
-            "a summary benchmark block. More focused than the IC-Memo "
-            "generator — purely peer identification."
-        ),
-        source="data_public/find_comps.py (similarity scoring).",
-        page_key="find-comps",
+    title_block = ck_page_title(
+        "Find Comps", eyebrow="FIND COMPS",
+        meta=f"{n:,} corpus deals · profile-distance similarity",
+    )
+    explainer_html = (
+        '<p class="ck-fc-explainer">'
+        '<em>Where the closest realized deals live.</em> '
+        "Profile-distance similarity search across the corpus — "
+        "enter sector, EV size, EV/EBITDA, commercial payer %, and "
+        "vintage year to surface ranked comparables with similarity "
+        "scores, peer benchmark medians, and a direct link into the "
+        "comparable outcomes view."
+        '</p>'
     )
     next_up = ck_next_section(
         "Open the comparable outcomes view",
@@ -400,17 +409,8 @@ def render_find_comps(params: Dict[str, str]) -> str:
         eyebrow="Continue —",
         italic_word="outcomes",
     )
-    subtitle = f"Searching {n:,} deals" if has_inputs else "Find deal comparables"
-    return chartis_shell(explainer + body + next_up, "Find Comps", active_nav="/find-comps", subtitle=subtitle,
-        editorial_intro={
-            "eyebrow": "FIND COMPS",
-            "headline": "Where the closest realized deals live.",
-            "italic_word": "live",
-            "body": (
-                "Profile-distance similarity search across the "
-                "realized corpus. Tighter weights surface the "
-                "closest neighbors; looser weights expand the "
-                "comparable pool. Use match scores above 0.7 as "
-                "the underwriting reality check."
-            ),
-        })
+    return chartis_shell(
+        title_block + explainer_html + body + next_up,
+        "Find Comps", active_nav="/find-comps",
+        extra_css=_EXPLAINER_CSS,
+    )
