@@ -500,6 +500,81 @@ def ck_signal_badge(text: str, *, tone: str = "neutral") -> str:
     return f'<span class="ck-badge tone-{tone}">{_esc(text)}</span>'
 
 
+# ── Action button primitive ─────────────────────────────────────────
+#
+# Single editorial primary-action button for the workbench. Emits
+# markup that consumes the existing ``.cad-btn .cad-btn-primary``
+# class pair from ``/static/v3/chartis.css`` (the brighter teal
+# ``#1F7A75`` already used by Deal Profile and the rest of the
+# authenticated surface).
+#
+# Why a primitive rather than direct ``class="cad-btn cad-btn-primary"``
+# in every page: four pages (compare, counterfactual, denial-prediction,
+# deal-autopsy) previously emitted bespoke inline-styled buttons with
+# ``background:P["accent"]`` (``#155752``) — a *third* color that
+# matched neither the workbench teal nor the marketing near-black-navy.
+# Each used a different pattern (inline style, page-scoped class).
+# The primitive gives every future page one obvious call-site to use,
+# stops the four-pages-invent-a-fifth-pattern drift, and lets later
+# variants (secondary / destructive) land as a dict addition rather
+# than a call-site sweep.
+#
+# Color scope of this PR: ``variant="primary"`` maps to the existing
+# ``.cad-btn .cad-btn-primary`` workbench teal (``#1F7A75``). The
+# marketing ``.cta-btn`` near-black-navy stays untouched — the
+# marketing/workbench color split is intentional (formal entry vs.
+# active interior) and the cross-surface unification is a separate
+# Tier B ticket ("button primitive unification — pick one design").
+
+_ACTION_BUTTON_VARIANT_CLASS: Dict[str, str] = {
+    # Today: only "primary". Reserve slots for future variants so
+    # adding them is a one-line dict addition, not a call-site
+    # refactor. Each future entry needs (a) the CSS class pair it
+    # emits, (b) the color/semantic intent, (c) a TODO marker so
+    # future agents know the slot is reserved-but-not-shipped.
+    "primary":     "cad-btn cad-btn-primary",   # workbench teal #1F7A75
+    # "secondary":   "cad-btn",                  # neutral outline, no fill — TODO ship when first caller needs it
+    # "destructive": "cad-btn cad-btn-destructive",  # red TBD; needs new CSS class — TODO design + ship together
+}
+
+
+def ck_action_button(
+    text: str,
+    *,
+    type: str = "submit",
+    form_target: Optional[str] = None,
+    variant: str = "primary",
+) -> str:
+    """Editorial primary-action button.
+
+    Args:
+        text: Visible label. HTML-escaped before rendering.
+        type: ``"submit"`` (default) or ``"button"``. Anything else
+            falls back to ``"submit"`` so a typo doesn't break form
+            submission silently.
+        form_target: Optional ``form`` attribute value when the button
+            sits OUTSIDE the form it submits (HTML5 form-association).
+            Omit for the common case of a button nested inside its form.
+        variant: ``"primary"`` (default). Unknown variants fall back
+            to ``"primary"`` — a typo renders a styled button rather
+            than an unstyled one, so the visual mistake is loud.
+
+    Why no ``onclick`` / ``href`` parameters: this primitive is for
+    form-submit buttons (the case the four-page regression covered).
+    For navigation, use an ``<a class="cad-btn cad-btn-primary">``
+    or wait for the ``ck_action_link`` sibling primitive when that
+    pattern is canonicalized.
+    """
+    if type not in ("submit", "button"):
+        type = "submit"
+    cls = _ACTION_BUTTON_VARIANT_CLASS.get(variant) \
+        or _ACTION_BUTTON_VARIANT_CLASS["primary"]
+    attrs = [f'type="{type}"', f'class="{cls}"']
+    if form_target:
+        attrs.append(f'form="{_esc(form_target)}"')
+    return f'<button {" ".join(attrs)}>{_esc(text)}</button>'
+
+
 # ── Prediction diagnostic chip ──────────────────────────────────────
 #
 # Renders the visual signal for ``PredictedMetric.failure_reason``

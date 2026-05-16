@@ -23,7 +23,7 @@ from ..diligence.counterfactual import (
 )
 from ..diligence._pages import AVAILABLE_FIXTURES, _resolve_dataset
 from ._chartis_kit import (
-    P, chartis_shell, ck_fmt_num, ck_kpi_block,
+    P, chartis_shell, ck_action_button, ck_fmt_num, ck_kpi_block,
     ck_next_section, ck_page_title, ck_provenance_tooltip,
 )
 from .power_ui import diff_badge
@@ -115,9 +115,7 @@ def _landing_compare() -> str:
         f'background:{P["panel_alt"]};color:{P["text"]};'
         f'border:1px solid {P["border"]};font-family:inherit;">'
         f'<option value="">—</option>{options}</select></div>'
-        f'<button type="submit" style="padding:8px 20px;background:{P["accent"]};'
-        f'color:{P["panel"]};border:0;font-size:10px;letter-spacing:1.5px;'
-        f'text-transform:uppercase;font-weight:700;cursor:pointer;">Compare</button>'
+        f'{ck_action_button("Compare")}'
         f'</form>'
     )
     return chartis_shell(

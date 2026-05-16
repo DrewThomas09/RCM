@@ -33,8 +33,8 @@ from ..diligence.deal_autopsy import (
 from ..diligence.deal_autopsy.library import outcomes_summary
 from ..diligence.deal_autopsy.matcher import FEATURE_LABELS
 from ._chartis_kit import (
-    P, chartis_shell, ck_next_section, ck_page_title, ck_panel,
-    ck_section_header,
+    P, chartis_shell, ck_action_button, ck_next_section, ck_page_title,
+    ck_panel, ck_section_header,
 )
 from .power_ui import provenance, sortable_table
 
@@ -190,9 +190,7 @@ text-transform:uppercase;font-weight:600;display:block;margin-bottom:2px;}}
 .da-form-field input{{width:100%;padding:5px 7px;background:{pa};
 color:{tx};border:1px solid {bd};
 font-family:"JetBrains Mono",monospace;font-size:11px;}}
-.da-form-submit{{margin-top:14px;padding:8px 20px;background:{ac};
-color:{pn};border:0;font-size:10px;letter-spacing:1.5px;
-text-transform:uppercase;font-weight:700;cursor:pointer;}}
+.da-form-submit-wrap{{margin-top:14px;}}
 """.format(
         tx=P["text"], td=P["text_dim"], tf=P["text_faint"],
         pn=P["panel"], pa=P["panel_alt"],
@@ -719,7 +717,7 @@ def _landing() -> str:
         '<p class="ck-eyebrow">'
         'Leave signature fields blank to default to zero. Fields you '
         'supply override CCD-derived values.</p>'
-        '<button type="submit" class="da-form-submit">Run autopsy match</button>'
+        f'<div class="da-form-submit-wrap">{ck_action_button("Run autopsy match")}</div>'
         '</form>'
     )
     title_block = ck_page_title(
