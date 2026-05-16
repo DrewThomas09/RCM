@@ -7,8 +7,14 @@ by sector, size bucket, vintage year, commercial-payer-share bucket.
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
-from rcm_mc.ui.chartis._helpers import render_page_explainer
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+
+_EXPLAINER_CSS = """<style>
+.ck-br-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-br-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 
 
 def _fmt(v, kind):
@@ -255,12 +261,24 @@ def render_base_rates(params: dict = None) -> str:
     p75v = p50_mult.p75 if p50_mult else 14.0
     p90v = p50_mult.p90 if p50_mult else 16.0
 
-    body = f"""
+    page_title = ck_page_title(
+        "Base-Rate Engine",
+        eyebrow="BASE RATES",
+        meta=(
+            f"P25/P50/P75/P90 across EV/EBITDA, margin, MOIC, IRR · "
+            f"{r.total_matching:,} matching deals · {r.corpus_deal_count:,} corpus deals"
+        ),
+    )
+    br_explainer = (
+        '<p class="ck-br-explainer">'
+        "<em>What the base rates reveal on this deal.</em> "
+        "Multi-dimensional percentile cuts across EV/EBITDA, EBITDA margin, MOIC, and IRR — "
+        "filterable by sector, size, and region, with roll-ups by sector, size bucket, "
+        "vintage, and commercial-payer-share bucket."
+        "</p>"
+    )
+    body = page_title + br_explainer + f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Base-Rate Engine</h1>
-    <p class="ck-page-sub">P25/P50/P75/P90 percentile cuts across EV/EBITDA, margin, MOIC, IRR — filterable by sector / size / region — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
   {form}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};padding:10px 14px;margin-bottom:16px;font-size:11px;font-family:JetBrains Mono,monospace;color:{text_dim}">
@@ -281,20 +299,5 @@ def render_base_rates(params: dict = None) -> str:
   </div>
 </div>"""
 
-    explainer = render_page_explainer(
-        what=(
-            "Multi-dimensional P25/P50/P75/P90 cuts across EV/EBITDA, "
-            "EBITDA margin, MOIC, IRR, and hold years over the 655-deal "
-            "corpus. Filterable by sector, size, and region, with "
-            "roll-ups by sector, size bucket, vintage, and commercial-"
-            "payer-share bucket."
-        ),
-        source="data_public/base_rates.py (corpus percentile engine).",
-        page_key="base-rates",
-    )
-    return chartis_shell(explainer + body, "Base Rates", active_nav="/base-rates",
-        editorial_intro={
-            "eyebrow": "BASE RATES",
-            "headline": "What the base rates page reveals on this deal.",
-            "italic_word": "reveals",
-        })
+    return chartis_shell(body, "Base Rates", active_nav="/base-rates",
+        extra_css=_EXPLAINER_CSS)
