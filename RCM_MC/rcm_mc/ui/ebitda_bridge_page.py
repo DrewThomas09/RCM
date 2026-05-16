@@ -20,9 +20,16 @@ import pandas as pd
 
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_next_section, ck_panel, ck_provenance_tooltip,
-    ck_section_header, ck_section_intro, ck_signal_badge,
+    ck_next_section, ck_page_title, ck_panel, ck_provenance_tooltip,
+    ck_section_header, ck_signal_badge,
 )
+
+_EXPLAINER_CSS = """<style>
+.ck-eb-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-eb-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 from ._provenance_tooltip import provenance_tooltip
 from .brand import PALETTE
 from .provenance import build_provenance_graph
@@ -1207,20 +1214,22 @@ def render_ebitda_bridge(
         n_seller_metrics=len(dr_overrides),
     )
 
-    # Editorial section header — eyebrow + serif h2 + lede above the body.
-    page_head = ck_section_intro(
+    page_title = ck_page_title(
+        "EBITDA Bridge",
         eyebrow=f"EBITDA BRIDGE · CCN {_html.escape(ccn)}",
-        headline=f"{_html.escape(name)} — value-creation walk.",
-        italic_word="walk",
-        body=(
-            "7-lever RCM bridge from current EBITDA to pro-forma — "
-            "denial / underpay / DAR / coding / contract / cost "
-            "discipline / cash acceleration. Each lever shows "
-            "current vs benchmark target with data provenance."
-        ),
+        meta=f"{_html.escape(name)} — {_html.escape(state)} · {beds:.0f} beds",
+    )
+    explainer_html = (
+        '<p class="ck-eb-explainer">'
+        f'<em>{_html.escape(name)}.</em> '
+        "7-lever RCM bridge from current EBITDA to pro-forma — "
+        "denial / underpay / DAR / coding / contract / cost "
+        "discipline / cash acceleration. Each lever shows "
+        "current vs benchmark target with data provenance."
+        '</p>'
     )
     body = (
-        f'{page_head}{provenance_banner}{kpis}{realization_section}{waterfall_section}'
+        f'{page_title}{explainer_html}{provenance_banner}{kpis}{realization_section}{waterfall_section}'
         f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
         f'<div>{detail_section}{timing_section}</div>'
         f'<div>{grid_section}{covenant_section}</div></div>'
@@ -1240,22 +1249,5 @@ def render_ebitda_bridge(
     return chartis_shell(
         body,
         f"EBITDA Bridge — {_html.escape(name)}",
-        subtitle=(
-            f"CCN {_html.escape(ccn)} | {_html.escape(state)} | {beds:.0f} beds | "
-            f"Current EBITDA {_fm(bridge['current_ebitda'])} → "
-            f"Pro Forma {_fm(bridge['new_ebitda'])} "
-            f"(+{_fm(bridge['total_ebitda_impact'])})"
-        ),
-        editorial_intro={
-            "eyebrow": "EBITDA BRIDGE",
-            "headline": "Where the value creation comes from.",
-            "italic_word": "from",
-            "body": (
-                "7-lever EBITDA decomposition: denials, AR, "
-                "write-offs, RCM operations, payer mix, and "
-                "structural levers. Each lever cites the data "
-                "source and a confidence band so the partner "
-                "knows what's hard signal vs. ML estimate."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS,
     )
