@@ -19,8 +19,17 @@ from .._chartis_kit import (
     P,
     chartis_shell,
     ck_kpi_block,
+    ck_page_title,
     ck_section_header,
 )
+
+_EXPLAINER_CSS = """<style>
+.ck-rf-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-rf-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
+
 from ._helpers import render_page_explainer
 from ._sanity import REGISTRY as _METRIC_REGISTRY, render_number
 
@@ -440,8 +449,27 @@ def render_red_flags(
         page_key="deal-red-flags",
     )
 
+    n_hits = len(review.heuristic_hits or [])
+    page_title = ck_page_title(
+        "Red Flags",
+        eyebrow=f"RED FLAGS · {_html.escape(deal_id)}",
+        meta=(
+            f"{_html.escape(label)} · {n_hits} hits · "
+            f"{review.generated_at:%Y-%m-%d %H:%M UTC}"
+        ),
+    )
+    rf_explainer = (
+        '<p class="ck-rf-explainer">'
+        f'<em>{_html.escape(label)}.</em> '
+        "The catalog of bear-thesis triggers that fired against this deal. "
+        "Each is a falsifiable claim with evidence — the partner's job is to "
+        "confirm or refute, not to explain away."
+        "</p>"
+    )
     body = (
-        explainer
+        page_title
+        + rf_explainer
+        + explainer
         + _header_links(deal_id)
         + _severity_banner(review)
         + _kpi_strip(review)
@@ -453,7 +481,7 @@ def render_red_flags(
         + _claude_status_card(review)
         + ck_section_header(
             "FINDINGS", "sorted by severity",
-            count=len(review.heuristic_hits or []),
+            count=n_hits,
         )
         + crit_section
         + high_section
@@ -465,10 +493,6 @@ def render_red_flags(
         + violations
     )
 
-    subtitle = (
-        f"{label} · {len(review.heuristic_hits or [])} hits · "
-        f"{review.generated_at:%Y-%m-%d %H:%M UTC}"
-    )
     return chartis_shell(
         body,
         title=f"Red Flags · {label}",
@@ -478,16 +502,5 @@ def render_red_flags(
             ("Deals", "/deals"),
             ("Red Flags", None),
         ],
-        subtitle=subtitle,
-        editorial_intro={
-            "eyebrow": "RED FLAGS",
-            "headline": "What would make you walk away.",
-            "italic_word": "walk",
-            "body": (
-                "The catalog of bear-thesis triggers that fired "
-                "against this deal. Each is a falsifiable claim with "
-                "evidence — the partner's job is to confirm or "
-                "refute, not to explain away."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS,
     )
