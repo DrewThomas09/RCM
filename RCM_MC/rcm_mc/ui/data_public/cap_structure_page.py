@@ -6,7 +6,14 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+
+_EXPLAINER_CSS = """<style>
+.ck-cs-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-cs-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 
 
 def _moic_curve_svg(ret_scenarios, lev_scenarios, optimal_lev: float) -> str:
@@ -318,15 +325,24 @@ def render_cap_structure(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
-    body = f"""
+    page_title = ck_page_title(
+        "Capital Structure Optimizer",
+        eyebrow="CAP STRUCTURE",
+        meta=(
+            f"optimal leverage {r.optimal_leverage:.1f}x · "
+            f"MOIC / WACC / DSCR / covenant headroom · "
+            f"{r.corpus_deal_count:,} corpus deals"
+        ),
+    )
+    cs_explainer = (
+        '<p class="ck-cs-explainer">'
+        "<em>What the capital structure optimizer reveals on this deal.</em> "
+        "Leverage sensitivity analysis across MOIC, WACC, DSCR, covenant headroom, "
+        "and breach probabilities — with optimal leverage recommendation."
+        "</p>"
+    )
+    body = page_title + cs_explainer + f"""
 <div class="ck-page-wrap">
-
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Capital Structure Optimizer</h1>
-    <p class="ck-page-sub">
-      Leverage sensitivity analysis — MOIC / WACC / DSCR / covenant headroom / breach probabilities — {r.corpus_deal_count:,} corpus deals
-    </p>
-  </div>
 
   {form}
 
@@ -372,8 +388,4 @@ def render_cap_structure(params: dict = None) -> str:
 </div>"""
 
     return chartis_shell(body, "Capital Structure", active_nav="/cap-structure",
-        editorial_intro={
-            "eyebrow": "CAP STRUCTURE",
-            "headline": "What the cap structure page reveals on this deal.",
-            "italic_word": "reveals",
-        })
+        extra_css=_EXPLAINER_CSS)
