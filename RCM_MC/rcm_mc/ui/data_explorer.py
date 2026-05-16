@@ -11,10 +11,17 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 
 from ._chartis_kit import (
-    chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_next_section, ck_provenance_tooltip,
+    chartis_shell, ck_fmt_num, ck_kpi_block,
+    ck_next_section, ck_page_title, ck_provenance_tooltip,
 )
 from .brand import PALETTE
+
+_EXPLAINER_CSS = """<style>
+.ck-de-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-de-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 
 
 def render_data_explorer(
@@ -281,25 +288,27 @@ def render_data_explorer(
         eyebrow="Continue —",
         italic_word="catalog",
     )
-    # Title comes from chartis_shell(editorial_intro=...); removed
-    # the duplicate ck_eyebrow that stacked another mini-title here.
+    page_title = ck_page_title(
+        "Data Explorer",
+        eyebrow="DATA EXPLORER",
+        meta=f"{loaded} modules loaded · {hcris_count:,} hospital profiles · {n_sources} sources",
+    )
+    de_explainer = (
+        '<p class="ck-de-explainer">'
+        "<em>Where the underlying data lives.</em> "
+        "Inventory of every public-data source the platform ingests — "
+        "HCRIS, IRS 990, sector reference data, FRED macro indicators. "
+        "Use this to confirm a number's provenance before citing it."
+        "</p>"
+    )
     body = (
-        kpi_strip
+        page_title
+        + de_explainer
+        + kpi_strip
         + f'{source_cards}{modules_section}{pipeline}{next_up}'
     )
 
     return chartis_shell(
         body, "Data Explorer",
-        subtitle=f"{loaded} analytical modules | {hcris_count:,} hospital profiles",
-        editorial_intro={
-            "eyebrow": "DATA EXPLORER",
-            "headline": "Where the underlying data lives.",
-            "italic_word": "lives",
-            "body": (
-                "Inventory of every public-data source the platform "
-                "ingests - HCRIS, IRS 990, sector reference data, "
-                "FRED macro indicators. Use this to confirm a "
-                "specific number's provenance before citing it."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS,
     )
