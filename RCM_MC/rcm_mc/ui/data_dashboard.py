@@ -14,9 +14,16 @@ import pandas as pd
 
 from ._chartis_kit import (
     chartis_shell, ck_fmt_num, ck_kpi_block, ck_next_section,
-    ck_provenance_tooltip,
+    ck_page_title, ck_provenance_tooltip,
 )
 from .brand import PALETTE
+
+_EXPLAINER_CSS = """<style>
+.ck-di-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-di-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 
 
 def render_data_dashboard(hcris_df: pd.DataFrame) -> str:
@@ -290,8 +297,26 @@ def render_data_dashboard(hcris_df: pd.DataFrame) -> str:
         eyebrow="Continue —",
         italic_word="refresh",
     )
+    page_title = ck_page_title(
+        "Data Intelligence",
+        eyebrow="DATA INTELLIGENCE",
+        meta=(
+            f"{n_hospitals:,} hospitals · {n_states} states · "
+            f"{n_years} fiscal years · {_fmt_money(total_rev)} total NPSR"
+        ),
+    )
+    di_explainer = (
+        '<p class="ck-di-explainer">'
+        "<em>Where the platform's data estate lives.</em> "
+        "Aggregate view of every public-data source the platform indexes: "
+        "HCRIS hospitals, completeness by metric, sector breakdowns, and "
+        "freshness. The canonical answer to 'what does the platform know?'"
+        "</p>"
+    )
     body = (
-        f'{kpis}{sources}'
+        page_title
+        + di_explainer
+        + f'{kpis}{sources}'
         f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
         f'<div>{left}</div><div>{right}</div></div>'
         f'{nav}'
@@ -301,20 +326,5 @@ def render_data_dashboard(hcris_df: pd.DataFrame) -> str:
     return chartis_shell(
         body, "Data Intelligence",
         active_nav="/data",
-        subtitle=(
-            f"{n_hospitals:,} hospitals | {n_states} states | "
-            f"{n_years} fiscal years | {_fmt_money(total_rev)} total NPSR"
-        ),
-        editorial_intro={
-            "eyebrow": "DATA INTELLIGENCE",
-            "headline": "Where the platform's data estate lives.",
-            "italic_word": "lives",
-            "body": (
-                "Aggregate view of every public-data source the "
-                "platform indexes: HCRIS hospitals, completeness "
-                "by metric, sector breakdowns, and freshness. "
-                "Use this as the canonical 'what does the platform "
-                "know' answer."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS,
     )
