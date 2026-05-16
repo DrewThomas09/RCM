@@ -6,7 +6,13 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+
+_EXPLAINER_CSS = """
+.ck-co-explainer{font-size:13px;line-height:1.6;color:var(--ck-text-dim);
+  max-width:720px;margin:0 0 24px}
+.ck-co-explainer em{color:var(--ck-text);font-style:italic}
+"""
 
 
 def _star_trajectory_svg(progression) -> str:
@@ -271,15 +277,21 @@ def render_clinical_outcomes(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
-    body = f"""
-<div class="ck-page-wrap">
+    page_title = ck_page_title(
+        "Clinical Outcomes Tracker",
+        eyebrow="CLINICAL OUTCOMES",
+        meta=f"MA Stars · readmissions · complications · VBC contracts · quality ROI · {_html.escape(sector)} · {r.corpus_deal_count:,} corpus deals",
+    )
+    co_explainer = (
+        '<p class="ck-co-explainer">'
+        "<em>What the clinical outcomes page reveals on this deal.</em> "
+        "MA Stars trajectory, readmission and complication benchmarks, value-based care contracts, "
+        "and quality-initiative ROI — drawn from corpus deal history."
+        "</p>"
+    )
 
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Clinical Outcomes Tracker</h1>
-    <p class="ck-page-sub">
-      MA Stars, readmissions, complications, VBC contracts, quality ROI for {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals
-    </p>
-  </div>
+    body = page_title + co_explainer + f"""
+<div class="ck-page-wrap">
 
   {form}
 
@@ -329,8 +341,4 @@ def render_clinical_outcomes(params: dict = None) -> str:
 </div>"""
 
     return chartis_shell(body, "Clinical Outcomes", active_nav="/clinical-outcomes",
-        editorial_intro={
-            "eyebrow": "CLINICAL OUTCOMES",
-            "headline": "What the clinical outcomes page reveals on this deal.",
-            "italic_word": "reveals",
-        })
+        extra_css=_EXPLAINER_CSS)
