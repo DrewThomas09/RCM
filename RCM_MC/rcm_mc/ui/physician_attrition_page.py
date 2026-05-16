@@ -28,11 +28,17 @@ from ..diligence.physician_attrition import (
 from ..diligence.physician_comp.comp_ingester import Provider
 from ._chartis_kit import (
     P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
-    ck_panel, ck_section_header, ck_section_intro, ck_signal_badge,
+    ck_panel, ck_section_header, ck_signal_badge,
 )
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
 )
+
+_EXPLAINER_CSS = """
+.ck-pa-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;margin:var(--sc-s-4) 0 var(--sc-s-6);}
+.ck-pa-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+"""
 
 
 # ────────────────────────────────────────────────────────────────────
@@ -670,17 +676,7 @@ def _hero(report: AttritionReport, target_name: str) -> str:
         + "</div>"
     )
 
-    intro = ck_section_intro(
-        eyebrow="Physician Attrition",
-        headline=html.escape(target_name),
-        body=(
-            f"18-month flight-risk · 9-feature model · "
-            f"{roster} providers scored"
-        ),
-        italic_word="attrition",
-    )
     return (
-        f'{intro}'
         f'<div class="pa-callout {banner_class}">{html.escape(banner)}</div>'
         f'<p class="ck-section-body">'
         f'<strong>What this shows: </strong>{summary}</p>'
@@ -923,16 +919,13 @@ def _compare_view(
             + '</tr>'
         )
 
-    intro = ck_section_intro(
-        eyebrow="Compare providers",
-        headline=f"{html.escape(target_name)} · {len(resolved)}-way comparison.",
-        italic_word="comparison",
-        body=(
-            "Column per provider. Feature rows highlight the worst "
-            "(highest-value) cell in red. Use this to answer "
-            "'which provider needs the bigger bond' or 'which driver "
-            "is actually different between these two?'"
-        ),
+    intro = (
+        '<p class="ck-section-body">'
+        f'<strong>{html.escape(target_name)} · {len(resolved)}-way comparison.</strong> '
+        "Column per provider. Feature rows highlight the worst "
+        "(highest-value) cell in red. Use this to answer "
+        '"which provider needs the bigger bond" or "which driver '
+        'is actually different between these two?"</p>'
     )
     table_html = (
         '<table class="cad-table">'
@@ -1024,8 +1017,14 @@ def render_physician_attrition_page(
     # Compare mode takes precedence — it's a separate view.
     compare_ids = _parse_compare_ids(qs)
     if compare_ids:
+        compare_title = ck_page_title(
+            "Physician Attrition · Compare",
+            eyebrow="PHYSICIAN ATTRITION",
+            meta=f"Target: {html.escape(target_name)} · {len(compare_ids)}-way provider comparison",
+        )
         body = (
             _scoped_styles()
+            + compare_title
             + '<div class="pa-wrap">'
             + _compare_view(
                 report, providers_by_id, compare_ids, target_name,
@@ -1035,8 +1034,9 @@ def render_physician_attrition_page(
         )
         return chartis_shell(
             body,
-            f"Physician Attrition · Compare — {target_name}",
-            subtitle="Predictive RCM analytic",
+            f"Physician Attrition · Compare — {html.escape(target_name)}",
+            active_nav="/diligence/physician-attrition",
+            extra_css=_EXPLAINER_CSS,
         )
 
     # Normal view — possibly with a band filter applied.
@@ -1116,13 +1116,23 @@ def render_physician_attrition_page(
         f'</div>'
     )
 
+    explainer_html = (
+        '<p class="ck-pa-explainer">'
+        '<em>Which physicians are most likely to leave — and what it costs.</em> '
+        "9-feature flight-risk model (comp gap vs FMV, tenure, age inflection, "
+        "productivity trend, local competitor density, Stark overlap, employment "
+        "status, revenue concentration, specialty mobility) scored per provider "
+        "over an 18-month horizon. Retention bonds sized where needed."
+        "</p>"
+    )
     body = (
         _scoped_styles()
         + ck_page_title(
             "Physician Attrition",
-            eyebrow="RCM DILIGENCE",
-            meta=f"Target: {target_name} · predictive churn analytic",
+            eyebrow="PHYSICIAN ATTRITION",
+            meta=f"Target: {html.escape(target_name)} · predictive churn analytic",
         )
+        + explainer_html
         + '<div class="pa-wrap">'
         + demo_banner
         + hero_and_bridge
@@ -1145,7 +1155,7 @@ def render_physician_attrition_page(
     )
 
     return chartis_shell(
-        body, f"Physician Attrition — {target_name}",
+        body, f"Physician Attrition — {html.escape(target_name)}",
         active_nav="/diligence/physician-attrition",
-        subtitle="Predictive RCM analytic",
+        extra_css=_EXPLAINER_CSS,
     )
