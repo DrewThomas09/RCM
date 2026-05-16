@@ -11,9 +11,16 @@ from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import (
     chartis_shell, ck_fmt_num, ck_kpi_block, ck_next_section,
-    ck_provenance_tooltip,
+    ck_page_title, ck_provenance_tooltip,
 )
 from .brand import PALETTE
+
+_EXPLAINER_CSS = """
+.ck-cr-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;
+margin:var(--sc-s-4) 0 var(--sc-s-6);}
+.ck-cr-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+"""
 
 CONFERENCES = [
     {
@@ -431,31 +438,32 @@ def render_conference_roadmap(category: str = "all") -> str:
         f'{next_up}'
     )
 
+    title_block = ck_page_title(
+        "Conference Roadmap", eyebrow="CONFERENCE ROADMAP",
+        meta=f"{len(events)} events · healthcare PE diligence calendar",
+    )
+    explainer_html = (
+        '<p class="ck-cr-explainer">'
+        '<em>Where the deal flow surfaces.</em> '
+        "Healthcare PE conference calendar — JPM, HLTH, specialty "
+        "events, and partner-attendance planning. Conferences are "
+        "where bankers introduce buy-side and where the next "
+        "quarter's deal flow gets previewed."
+        '</p>'
+    )
+    tab_css = (
+        ".cad-tab{display:inline-block;padding:6px 14px;font-size:12px;"
+        "color:var(--cad-text2);border:1px solid var(--cad-border);border-radius:3px;"
+        "cursor:pointer;transition:all 0.15s;}"
+        ".cad-tab:hover{border-color:var(--cad-accent);color:var(--cad-text);}"
+        ".cad-tab-active{background:var(--cad-accent);color:#fff;border-color:var(--cad-accent);}"
+        ".cad-badge-green{background:var(--cad-pos);color:#fff;}"
+        ".cad-badge-blue{background:var(--cad-accent);color:#fff;}"
+        ".cad-badge-muted{background:var(--cad-border);color:var(--cad-text2);}"
+    )
     return chartis_shell(
-        body,
+        title_block + explainer_html + body,
         "Conference Roadmap",
         active_nav="/conferences",
-        subtitle=f"{len(events)} events | Healthcare PE diligence conference calendar",
-        extra_css=(
-            ".cad-tab{display:inline-block;padding:6px 14px;font-size:12px;"
-            "color:var(--cad-text2);border:1px solid var(--cad-border);border-radius:3px;"
-            "cursor:pointer;transition:all 0.15s;}"
-            ".cad-tab:hover{border-color:var(--cad-accent);color:var(--cad-text);}"
-            ".cad-tab-active{background:var(--cad-accent);color:#fff;border-color:var(--cad-accent);}"
-            ".cad-badge-green{background:var(--cad-pos);color:#fff;}"
-            ".cad-badge-blue{background:var(--cad-accent);color:#fff;}"
-            ".cad-badge-muted{background:var(--cad-border);color:var(--cad-text2);}"
-        ),
-        editorial_intro={
-            "eyebrow": "CONFERENCE ROADMAP",
-            "headline": "Where the deal flow surfaces.",
-            "italic_word": "surfaces",
-            "body": (
-                "Healthcare PE conference calendar - JPM, HLTH, "
-                "specialty events, and partner-attendance plan. "
-                "Conferences are where bankers introduce buy-side "
-                "and where the next quarter's deal flow gets "
-                "previewed."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS + tab_css,
     )
