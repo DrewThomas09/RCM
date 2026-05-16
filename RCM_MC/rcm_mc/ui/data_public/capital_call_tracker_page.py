@@ -2,7 +2,14 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+
+_EXPLAINER_CSS = """<style>
+.ck-cc-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-cc-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 
 
 def _status_color(s: str) -> str:
@@ -208,12 +215,23 @@ def render_capital_call_tracker(params: dict = None) -> str:
 
     pending_reports = sum(1 for r2 in r.reporting if r2.completion_status not in ("distributed",))
     active_requests = sum(1 for c in r.lp_comms if c.status in ("in progress", "discussing", "in review"))
-    body = f"""
+    page_title = ck_page_title(
+        "Capital Call / LP Communication Tracker",
+        eyebrow="CAPITAL CALL TRACKER",
+        meta=(
+            f"{r.total_funds} funds · ${r.total_committed_b:.2f}B committed · "
+            f"${r.total_called_b:.2f}B called · {r.corpus_deal_count:,} corpus deals"
+        ),
+    )
+    cc_explainer = (
+        '<p class="ck-cc-explainer">'
+        "<em>What the capital call tracker reveals on this deal.</em> "
+        "Fund cashflow roll-up, recent capital calls and distributions, LP communications, "
+        "reporting schedule, and treasury movements across the fund portfolio."
+        "</p>"
+    )
+    body = page_title + cc_explainer + f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Capital Call / LP Communication Tracker</h1>
-    <p class="ck-page-sub">{r.total_funds} active funds · ${r.total_committed_b:.2f}B committed · ${r.total_called_b:.2f}B called · ${r.total_distributed_b:.2f}B distributed · LTM net ${r.net_ltm_m:+,.1f}M · {pending_reports} reports pending · {active_requests} LP requests active — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Fund Cashflow Roll-up</div>{cf_tbl}</div>
   <div style="{cell}"><div style="{h3}">Recent Capital Calls (LTM)</div>{cal_tbl}</div>
@@ -232,8 +250,4 @@ def render_capital_call_tracker(params: dict = None) -> str:
 </div>"""
 
     return chartis_shell(body, "Capital Call Tracker", active_nav="/capital-call",
-        editorial_intro={
-            "eyebrow": "CAPITAL CALL TRACKER",
-            "headline": "What the capital call tracker page reveals on this deal.",
-            "italic_word": "reveals",
-        })
+        extra_css=_EXPLAINER_CSS)
