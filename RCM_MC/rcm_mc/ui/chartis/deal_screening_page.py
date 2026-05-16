@@ -25,17 +25,32 @@ from .._chartis_kit import (
     P,
     chartis_shell,
     ck_kpi_block,
+    ck_page_title,
     ck_section_header,
 )
 from ._helpers import (
     empty_note,
     fmt_pct,
     load_corpus_deals,
-    render_page_explainer,
     small_panel,
     verdict_badge,
 )
 from ._sanity import render_number
+
+_EXPLAINER_CSS = """
+.ck-ds-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;
+margin:var(--sc-s-4) 0 var(--sc-s-6);}
+.ck-ds-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+"""
+
+
+def _title(n_pass: int = 0, n_watch: int = 0, n_fail: int = 0, total: int = 0) -> str:
+    if total:
+        meta = f"{n_pass} pass · {n_watch} watch · {n_fail} fail · {total} deals"
+    else:
+        meta = "PASS / WATCH / FAIL decision per corpus deal"
+    return ck_page_title("Deal Screening", eyebrow="DEAL SCREENING", meta=meta)
 
 
 _DECISION_COLORS = {
@@ -217,14 +232,9 @@ def render_deal_screening(
             code="ERR",
         )
         return chartis_shell(
-            body, title="Deal Screening",
+            _title() + body, title="Deal Screening",
             active_nav="/deal-screening",
-            breadcrumbs=[
-                ("Home", "/app"),
-                ("Deals", "/deals"),
-                ("Screening", None),
-            ],
-            subtitle="Module unavailable",
+            extra_css=_EXPLAINER_CSS,
         )
 
     corpus = load_corpus_deals()
@@ -235,14 +245,9 @@ def render_deal_screening(
             code="NIL",
         )
         return chartis_shell(
-            body, title="Deal Screening",
+            _title() + body, title="Deal Screening",
             active_nav="/deal-screening",
-            breadcrumbs=[
-                ("Home", "/app"),
-                ("Deals", "/deals"),
-                ("Screening", None),
-            ],
-            subtitle="Corpus unavailable",
+            extra_css=_EXPLAINER_CSS,
         )
 
     params = _urlparse.parse_qs(query or "")
@@ -258,14 +263,9 @@ def render_deal_screening(
             code="ERR",
         )
         return chartis_shell(
-            body, title="Deal Screening",
+            _title() + body, title="Deal Screening",
             active_nav="/deal-screening",
-            breadcrumbs=[
-                ("Home", "/app"),
-                ("Deals", "/deals"),
-                ("Screening", None),
-            ],
-            subtitle="Screen raised",
+            extra_css=_EXPLAINER_CSS,
         )
 
     counts = Counter(r.decision.upper() for r in results)
@@ -332,49 +332,24 @@ def render_deal_screening(
         f'<tbody>{rows}</tbody></table></div>'
     )
 
-    intro = (
-        f'<p style="color:{P["text_dim"]};font-size:12px;line-height:1.6;'
-        f'margin-bottom:10px;">'
-        f'Runs every corpus deal through <code style="color:{P["accent"]};'
-        f'font-family:var(--ck-mono);">screen_corpus(deals, config)</code> and '
-        f'returns one of PASS / WATCH / FAIL per deal. Tighten thresholds below '
-        f'to see the decision mix shift, or filter to a specific decision. '
-        f'Sortable by any column.</p>'
+    title_block = _title(
+        counts.get("PASS", 0), counts.get("WATCH", 0),
+        counts.get("FAIL", 0), len(results),
     )
-
-    explainer = render_page_explainer(
-        what=(
-            "Runs every corpus deal through a rules-based screen "
-            "combining composite risk score, EV/EBITDA multiple, MOIC "
-            "floor, Medicaid exposure, EBITDA-positivity, hold-period "
-            "window, and a heuristic signal, emitting PASS, WATCH, or "
-            "FAIL. Interactive — thresholds are adjustable via form "
-            "controls and the decision mix re-renders live."
-        ),
-        scale=(
-            "ScreeningConfig defaults: risk score > 60/100 FAILs and "
-            "> 40 WATCHes; EV/EBITDA > 20.0x FAILs and > 14.0x "
-            "WATCHes; MOIC target floor 1.50x; Medicaid share > 65% "
-            "WATCHes. Any hard-threshold breach rejects; soft flags "
-            "accumulate into a WATCH."
-        ),
-        use=(
-            "Tighten the sliders to run your own fund's discipline "
-            "against the corpus — a 14x max and 50% Medicaid cap will "
-            "eliminate the deals you would not have bid on, and the "
-            "remaining PASS cohort is a comparable population for "
-            "outcome analysis."
-        ),
-        source=(
-            "data_public/deal_screening_engine.py::screen_corpus; "
-            "ScreeningConfig dataclass (threshold defaults)."
-        ),
-        page_key="deal-screening",
+    explainer_html = (
+        '<p class="ck-ds-explainer">'
+        '<em>What the deal screen reveals on the corpus.</em> '
+        "Runs every corpus deal through a rules-based screen — composite "
+        "risk score, EV/EBITDA multiple, MOIC floor, Medicaid exposure, "
+        "and heuristic signal — and returns PASS, WATCH, or FAIL. "
+        "Tighten thresholds below to shift the decision mix; filter to a "
+        "specific decision to narrow the comparable population."
+        '</p>'
     )
 
     body = (
-        explainer
-        + intro
+        title_block
+        + explainer_html
         + kpi_strip
         + form_panel
         + ck_section_header(
@@ -400,16 +375,5 @@ def render_deal_screening(
         body,
         title="Deal Screening",
         active_nav="/deal-screening",
-        subtitle=f"{counts.get('PASS',0)} pass · {counts.get('WATCH',0)} watch · "
-                 f"{counts.get('FAIL',0)} fail · {len(results)} total",
-        breadcrumbs=[
-            ("Home", "/app"),
-            ("Deals", "/deals"),
-            ("Screening", None),
-        ],
-        editorial_intro={
-            "eyebrow": "DEAL SCREENING",
-            "headline": "What the deal screening reveals on this deal.",
-            "italic_word": "reveals",
-        }
+        extra_css=_EXPLAINER_CSS,
     )
