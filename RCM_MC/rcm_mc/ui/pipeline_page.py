@@ -11,10 +11,17 @@ from typing import Any, Dict, List, Optional
 
 from ..portfolio.store import PortfolioStore
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
-    ck_section_intro,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_page_title, ck_panel,
 )
 from .brand import PALETTE
+
+
+_EXPLAINER_CSS = """
+.ck-pp-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;
+margin:var(--sc-s-4) 0 var(--sc-s-6);}
+.ck-pp-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+"""
 
 
 def _stage_badge(stage: str) -> str:
@@ -88,17 +95,24 @@ def render_pipeline(db_path: str) -> str:
     total = len(hospitals)
     active = sum(1 for h in hospitals if h.stage not in ("closed", "passed"))
 
-    # ── Editorial intro + KPI strip ──
-    intro = ck_section_intro(
+    # ── Page title + KPI strip ──
+    title_block = ck_page_title(
+        "Deal Pipeline",
         eyebrow="DEAL PIPELINE",
-        headline="How prospects flow from screening to close.",
-        italic_word="flow",
-        body=(
-            f"{total} hospitals in pipeline · {active} active · "
+        meta=(
+            f"{total} hospitals · {active} active · "
             f"{summary.get('diligence', 0)} in diligence · "
-            f"{summary.get('closed', 0)} closed · "
-            f"{len(searches)} saved searches."
+            f"{len(searches)} saved searches"
         ),
+    )
+    explainer_html = (
+        '<p class="ck-pp-explainer">'
+        '<em>How prospects flow from screening to close.</em> '
+        "Track hospitals from first screen through LOI, diligence, "
+        "IC, and close. Saved searches re-run against the corpus; "
+        "pipeline hospitals carry stage, priority, and HCRIS revenue "
+        "and margin for quick-glance sizing."
+        '</p>'
     )
     kpis = (
         '<div class="ck-kpi-strip">'
@@ -350,15 +364,15 @@ border-bottom:1px solid var(--cad-border);}
         italic_word="deal",
     )
     body = (
-        f'{pp_styles}{intro}{kpis}'
-        '<div class="pp-grid">'
-        f'<div>{funnel}{search_section}</div>'
-        f'<div>{activity_section}</div></div>'
-        f'{pipeline_table}{next_up}{nav}'
+        pp_styles + title_block + explainer_html + kpis
+        + '<div class="pp-grid">'
+        + f'<div>{funnel}{search_section}</div>'
+        + f'<div>{activity_section}</div></div>'
+        + f'{pipeline_table}{next_up}{nav}'
     )
 
     return chartis_shell(
         body, "Deal Pipeline",
         active_nav="/pipeline",
-        subtitle=f"{total} hospitals | {active} active | {len(searches)} saved searches",
+        extra_css=_EXPLAINER_CSS,
     )
