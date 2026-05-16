@@ -13,6 +13,13 @@ import html as _html
 import math
 from typing import Any, Dict, List, Optional, Tuple
 
+_EXPLAINER_CSS = """<style>
+.ck-bt-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-bt-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
+
 
 # ---------------------------------------------------------------------------
 # Corpus loader
@@ -643,7 +650,7 @@ def _sector_rows(rows: List[Dict[str, Any]]) -> tuple:
 
 def render_backtest() -> str:
     from rcm_mc.ui._chartis_kit import (
-        chartis_shell, ck_paired_block, ck_section_header,
+        chartis_shell, ck_page_title, ck_paired_block, ck_section_header,
     )
 
     deals = _load_corpus()
@@ -673,8 +680,28 @@ def render_backtest() -> str:
     section_cal = ck_section_header("MODEL STATISTICS", "corpus OLS calibration accuracy")
     cal_panel = _calibration_panel(stats)
 
+    page_title = ck_page_title(
+        "Model Calibration / Backtest",
+        eyebrow="BACKTEST",
+        meta=(
+            f"{stats['realized_n']} realized deals · "
+            f"P50 MOIC {stats['moic_p50']:.2f}x · "
+            f"Model R² {stats['r2']:.3f} · "
+            f"MAE {stats['mae']:.3f}x"
+        ) if stats["r2"] is not None else f"{stats['realized_n']} realized deals",
+    )
+    bt_explainer = (
+        '<p class="ck-bt-explainer">'
+        "<em>How well the model retrodicts the corpus.</em> "
+        "Predicted vs. realized MOIC across the calibration corpus, sliced by sector. "
+        "R-squared and MAE tell you whether the model is earning its place; "
+        "the residual cloud tells you where it isn't."
+        "</p>"
+    )
     body = (
-        kpis
+        page_title
+        + bt_explainer
+        + kpis
         + ck_section_header(
             "MOIC DISTRIBUTION × SECTOR",
             "realized corpus outcomes, paired with the per-sector dataset",
@@ -690,21 +717,5 @@ def render_backtest() -> str:
         body,
         title="Model Calibration / Backtest",
         active_nav="/backtest",
-        subtitle=(
-            f"{stats['realized_n']} realized deals · "
-            f"P50 MOIC {stats['moic_p50']:.2f}x · "
-            f"Model R² {stats['r2']:.3f} · "
-            f"MAE {stats['mae']:.3f}x"
-        ) if stats["r2"] is not None else f"{stats['realized_n']} realized deals",
-        editorial_intro={
-            "eyebrow": "BACKTEST",
-            "headline": "How well the model retrodicts the corpus.",
-            "italic_word": "retrodicts",
-            "body": (
-                "Predicted vs. realized MOIC across the calibration "
-                "corpus, sliced by sector. R-squared and MAE tell "
-                "you whether the model is earning its place; the "
-                "residual cloud tells you where it isn't."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS,
     )
