@@ -25,8 +25,16 @@ from .._chartis_kit import (
     P,
     chartis_shell,
     ck_kpi_block,
+    ck_page_title,
     ck_section_header,
 )
+_EXPLAINER_CSS = """<style>
+.ck-arch-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-arch-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
+
 from ._helpers import (
     bullet_list,
     deal_header_nav,
@@ -399,8 +407,23 @@ def render_archetype(
         page_key="deal-archetype",
     )
 
+    page_title = ck_page_title(
+        "Archetype",
+        eyebrow=f"ARCHETYPE · {_html.escape(deal_id)}",
+        meta=f"{_html.escape(label)} · archetype match + regime classification",
+    )
+    arch_explainer = (
+        '<p class="ck-arch-explainer">'
+        f'<em>{_html.escape(label)}.</em> '
+        "Profile-distance match against the corpus archetype library + regime "
+        "classification. Once you know the archetype, the realized-MOIC "
+        "distribution + the stress patterns come for free."
+        "</p>"
+    )
     body = (
-        explainer
+        page_title
+        + arch_explainer
+        + explainer
         + header
         + kpi_strip
         + archetype_header
@@ -419,16 +442,5 @@ def render_archetype(
             ("Deals", "/deals"),
             ("Archetype", None),
         ],
-        subtitle=f"{label} · archetype match + regime classification",
-        editorial_intro={
-            "eyebrow": "ARCHETYPE",
-            "headline": "Which kind of deal this really is.",
-            "italic_word": "is",
-            "body": (
-                "Profile-distance match against the corpus archetype "
-                "library + regime classification. Once you know the "
-                "archetype, the realized-MOIC distribution + the "
-                "stress patterns come for free."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS,
     )
