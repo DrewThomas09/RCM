@@ -27,9 +27,16 @@ from ..data.catalog import (
 )
 from ._chartis_kit import (
     chartis_shell, ck_fmt_num, ck_kpi_block, ck_next_section,
-    ck_provenance_tooltip,
+    ck_page_title, ck_provenance_tooltip,
 )
 from ._ui_kit import fmt_num
+
+_EXPLAINER_CSS = """<style>
+.ck-dc-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-dc-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 
 
 _CATEGORY_ORDER = [
@@ -255,21 +262,30 @@ def render_data_catalog_page(store: Any) -> str:
             )
         catalog_body = "".join(sections)
 
+    page_title = ck_page_title(
+        "Data Catalog",
+        eyebrow="DATA CATALOG",
+        meta=f"{summary['n_sources']} sources · {summary['total_records']:,} records",
+    )
+    dc_explainer = (
+        '<p class="ck-dc-explainer">'
+        "<em>Where every dataset is registered.</em> "
+        "Inventory of public-data sources the platform ingests, with row counts, "
+        "freshness, and a composite quality score (volume × coverage × freshness). "
+        "Auto-discovered from live SQL — the canonical answer to "
+        "‘where does X come from?’ before citing a metric."
+        "</p>"
+    )
     body = (
-        '<section style="max-width:80rem;">'
+        page_title
+        + dc_explainer
+        + '<section style="max-width:80rem;">'
         '<div style="display:flex;justify-content:space-between;'
         'align-items:baseline;margin-bottom:.75rem;">'
-        '<h1 style="margin:0;">Data Catalog</h1>'
         '<a href="/data/refresh" class="micro" style="font-weight:400;'
         'letter-spacing:.04em;text-transform:none;">'
         'Refresh sources →</a>'
         '</div>'
-        '<p style="max-width:48rem;color:var(--muted,#9ca3af);'
-        'margin:0 0 1rem 0;">'
-        'Every public-data source the platform ingests, with live '
-        'record counts, refresh dates, and a composite quality score '
-        '(volume × coverage × freshness). Auto-discovered from live '
-        'SQL — no hand-maintained registry to drift.</p>'
         + kpi_html
         + catalog_body
         + '</section>'
@@ -284,17 +300,5 @@ def render_data_catalog_page(store: Any) -> str:
     return chartis_shell(
         body,
         "Data Catalog",
-        subtitle="public-data inventory",
-        editorial_intro={
-            "eyebrow": "DATA CATALOG",
-            "headline": "Where every dataset is registered.",
-            "italic_word": "every",
-            "body": (
-                "Inventory of public-data sources the platform "
-                "ingests, with row counts, freshness, and the "
-                "loader path. Use this as the canonical answer "
-                "to 'where does X come from?' before citing a "
-                "metric in a partner conversation."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS,
     )
