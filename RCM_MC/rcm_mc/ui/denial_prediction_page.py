@@ -25,31 +25,35 @@ from ._chartis_kit import (
 )
 from .power_ui import provenance, sortable_table
 
+_EXPLAINER_CSS = """
+.ck-dp-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;margin:var(--sc-s-4) 0 var(--sc-s-6);}
+.ck-dp-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+"""
+
 
 def _landing() -> str:
     options = "".join(
         f'<option value="{html.escape(n)}">{html.escape(l)}</option>'
         for n, l in AVAILABLE_FIXTURES
     )
+    title_block = ck_page_title(
+        "Predictive Denial Model", eyebrow="PREDICTIVE DENIAL MODEL",
+        meta=f"{len(AVAILABLE_FIXTURES)} fixtures · Naive Bayes · claim-level",
+    )
+    explainer_html = (
+        '<p class="ck-dp-explainer">'
+        '<em>Where the denial revenue hides in the CCD.</em> '
+        "Trains a per-claim Naive Bayes model on the CCD, scores the "
+        "held-out split, and flags systematic misses — recoverable "
+        "revenue the model says shouldn't have been denied. Feeds the "
+        "EBITDA bridge denial-reduction lever with a data-driven target."
+        "</p>"
+    )
     body = (
-        f'<div style="padding:24px 0 12px 0;">'
-        f'<div style="font-size:11px;color:{P["text_faint"]};letter-spacing:1.5px;'
-        f'text-transform:uppercase;margin-bottom:6px;font-weight:600;">'
-        f'Claim-Level Denial Prediction</div>'
-        f'<div style="font-size:22px;color:{P["text"]};font-weight:600;'
-        f'margin-bottom:4px;">Predictive Denial Model</div>'
-        f'<div style="font-size:12px;color:{P["text_dim"]};max-width:720px;'
-        f'line-height:1.55;">Trains a per-claim Naive Bayes model on the '
-        f'CCD, scores the held-out split, and flags '
-        f'<strong>systematic misses</strong> — claims the model '
-        f'predicts should be denied but were paid (recoverable '
-        f'revenue opportunity) and <strong>systematic false '
-        f'positives</strong> — denied claims the model thinks '
-        f'should have paid. Feeds the EBITDA bridge denial-reduction '
-        f'lever with a data-driven target instead of an industry '
-        f'aggregate.</div>'
-        f'</div>'
-        f'<form method="GET" action="/diligence/denial-prediction" '
+        title_block
+        + explainer_html
+        + f'<form method="GET" action="/diligence/denial-prediction" '
         f'style="max-width:480px;margin-top:20px;background:{P["panel"]};'
         f'border:1px solid {P["border"]};border-radius:4px;padding:20px;">'
         f'<label style="font-size:9px;color:{P["text_faint"]};'
@@ -73,8 +77,9 @@ def _landing() -> str:
         f'font-weight:700;cursor:pointer;">Run prediction</button></form>'
     )
     return chartis_shell(
-        body, "RCM Diligence — Denial Prediction",
-        subtitle="Claim-level predictive analytic",
+        body, "Predictive Denial Model",
+        active_nav="/diligence/denial-prediction",
+        extra_css=_EXPLAINER_CSS,
     )
 
 
@@ -535,5 +540,5 @@ def render_denial_prediction_page(
     return chartis_shell(
         body, f"Denial Prediction — {dataset}",
         active_nav="/diligence/denial-prediction",
-        subtitle="Predictive RCM analytic",
+        extra_css=_EXPLAINER_CSS,
     )
