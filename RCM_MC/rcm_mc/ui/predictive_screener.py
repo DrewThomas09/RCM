@@ -15,9 +15,15 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
-    ck_section_intro,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_page_title, ck_panel,
 )
+
+_EXPLAINER_CSS = """
+.ck-ps-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;
+margin:var(--sc-s-4) 0 var(--sc-s-6);}
+.ck-ps-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+"""
 from .brand import PALETTE
 
 
@@ -254,15 +260,19 @@ def render_predictive_screener(
             return f"${v/1e6:.0f}M"
         return f"${v:,.0f}"
 
-    intro = ck_section_intro(
-        eyebrow="PREDICTIVE SCREENER",
-        headline="Where the next deal hides in the universe.",
-        italic_word="hides",
-        body=(
-            f"{total_matches:,} hospitals match your filters out of "
-            f"{len(hcris_df):,} in the universe. Total estimated "
-            f"RCM uplift across matches: {_fm(total_uplift)}."
-        ),
+    title_block = ck_page_title(
+        "Predictive Deal Screener", eyebrow="PREDICTIVE SCREENER",
+        meta=f"{total_matches:,} matches · {len(hcris_df):,} hospitals in universe",
+    )
+    explainer_html = (
+        '<p class="ck-ps-explainer">'
+        '<em>Where the next deal hides in the universe.</em> '
+        "ML-scored filter over the public HCRIS universe — set region, "
+        "bed count, margin, and minimum uplift to surface candidates. "
+        "Each match carries an estimated RCM denial rate, AR days, and "
+        "total EBITDA uplift opportunity derived from the quant stack. "
+        "Save a screen to re-run it from the pipeline rail."
+        '</p>'
     )
     kpis = (
         '<div class="ck-kpi-strip">'
@@ -408,15 +418,12 @@ transition:filter 120ms ease;}
         italic_word="deal",
     )
     body = (
-        f'{ps_styles}{intro}{form}{kpis}{table}{save_form}'
-        f'{quick}{next_up}'
+        ps_styles + title_block + explainer_html + form
+        + kpis + table + save_form + quick + next_up
     )
 
     return chartis_shell(
         body, "Predictive Deal Screener",
         active_nav="/predictive-screener",
-        subtitle=(
-            f"{total_matches:,} matches from {len(hcris_df):,} hospitals | "
-            f"ML-powered screening on public CMS data"
-        ),
+        extra_css=_EXPLAINER_CSS,
     )
