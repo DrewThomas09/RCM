@@ -27,8 +27,16 @@ from .._chartis_kit import (
     P,
     chartis_shell,
     ck_kpi_block,
+    ck_page_title,
     ck_section_header,
 )
+_EXPLAINER_CSS = """<style>
+.ck-rcmb-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-rcmb-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
+
 from ._helpers import (
     empty_note,
     render_page_explainer,
@@ -345,8 +353,14 @@ def render_rcm_benchmarks(
         page_key="rcm-benchmarks",
     )
 
+    page_title = ck_page_title(
+        "RCM Benchmarks",
+        eyebrow="RCM BENCHMARKS",
+        meta=f"{n_segments} segments · {len(_METRICS)} metrics · HFMA / Advisory Board priors",
+    )
     body = (
-        explainer
+        page_title
+        + explainer
         + intro
         + kpi_strip
         + jump_strip
@@ -372,10 +386,5 @@ def render_rcm_benchmarks(
             ("Tools", "/methodology"),
             ("RCM Benchmarks", None),
         ],
-        subtitle=f"{n_segments} segments · {len(_METRICS)} metrics · HFMA / Advisory Board priors",
-        editorial_intro={
-            "eyebrow": "RCM BENCHMARKS",
-            "headline": "What the rcm benchmarks reveals on this deal.",
-            "italic_word": "reveals",
-        }
+        extra_css=_EXPLAINER_CSS,
     )
