@@ -2,7 +2,14 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+
+_EXPLAINER_CSS = """<style>
+.ck-cin-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-cin-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 
 
 def _providers_table(items) -> str:
@@ -208,12 +215,23 @@ def render_cin_analyzer(params: dict = None) -> str:
     total_comp_exp = sum(c.exposure_mm for c in r.compliance)
     total_q_upside = sum(q.financial_impact_mm for q in r.quality_measures)
 
-    body = f"""
+    page_title = ck_page_title(
+        "Clinical Integration Network Analyzer",
+        eyebrow="CIN ANALYZER",
+        meta=(
+            f"{r.total_providers:,} providers · {r.total_attributed_lives:,} attributed lives · "
+            f"quality {r.weighted_quality_score:.3f} · {r.corpus_deal_count:,} corpus deals"
+        ),
+    )
+    cin_explainer = (
+        '<p class="ck-cin-explainer">'
+        "<em>What the CIN analyzer reveals on this deal.</em> "
+        "Provider roster, payer contracts, quality measures vs. HEDIS/STARS benchmarks, "
+        "network adequacy, distribution cohorts, and regulatory compliance exposure."
+        "</p>"
+    )
+    body = page_title + cin_explainer + f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Clinical Integration Network Analyzer</h1>
-    <p class="ck-page-sub">Provider roster · payer contracts · quality measures · network adequacy · compliance — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
   {form}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Provider Member Roster — Specialty, Lives, Quality, Engagement</div>{pv_tbl}</div>
@@ -234,8 +252,4 @@ def render_cin_analyzer(params: dict = None) -> str:
 </div>"""
 
     return chartis_shell(body, "CIN Analyzer", active_nav="/cin-analyzer",
-        editorial_intro={
-            "eyebrow": "CIN ANALYZER",
-            "headline": "What the cin analyzer page reveals on this deal.",
-            "italic_word": "reveals",
-        })
+        extra_css=_EXPLAINER_CSS)
