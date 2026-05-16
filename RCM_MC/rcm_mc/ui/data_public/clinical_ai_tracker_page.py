@@ -2,7 +2,14 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+
+_EXPLAINER_CSS = """<style>
+.ck-cai-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-cai-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 
 
 def _fda_color(s: str) -> str:
@@ -207,12 +214,23 @@ def render_clinical_ai_tracker(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     total_revenue = sum(o.revenue_impact_m for o in r.outcomes)
-    body = f"""
+    page_title = ck_page_title(
+        "Clinical AI / ML Deployment Tracker",
+        eyebrow="CLINICAL AI TRACKER",
+        meta=(
+            f"{r.total_systems} AI systems · {r.total_deals_with_ai} portcos · "
+            f"${r.total_annual_spend_m:.1f}M license spend · {r.corpus_deal_count:,} corpus deals"
+        ),
+    )
+    cai_explainer = (
+        '<p class="ck-cai-explainer">'
+        "<em>What the clinical AI tracker reveals on this deal.</em> "
+        "AI systems in production, clinical outcomes and ROI, adoption metrics, "
+        "FDA clearances, vendor evaluation pipeline, and governance compliance."
+        "</p>"
+    )
+    body = page_title + cai_explainer + f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Clinical AI / ML Deployment Tracker</h1>
-    <p class="ck-page-sub">{r.total_systems} AI systems deployed across {r.total_deals_with_ai} portcos · ${r.total_annual_spend_m:.1f}M annual license spend · {r.total_cases_monthly_k:,}K monthly case volume · {r.avg_adoption_pct * 100:.1f}% daily usage · {r.avg_accuracy_pct * 100:.1f}% avg accuracy — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">AI Systems in Production</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Clinical Outcomes & ROI</div>{o_tbl}</div>
@@ -232,8 +250,4 @@ def render_clinical_ai_tracker(params: dict = None) -> str:
 </div>"""
 
     return chartis_shell(body, "Clinical AI Tracker", active_nav="/clinical-ai",
-        editorial_intro={
-            "eyebrow": "CLINICAL AI TRACKER",
-            "headline": "What the clinical ai tracker page reveals on this deal.",
-            "italic_word": "reveals",
-        })
+        extra_css=_EXPLAINER_CSS)
