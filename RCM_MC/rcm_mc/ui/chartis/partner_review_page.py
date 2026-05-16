@@ -29,9 +29,17 @@ from .._chartis_kit import (
     chartis_shell,
     ck_fmt_num,
     ck_kpi_block,
+    ck_page_title,
     ck_provenance_tooltip,
     ck_section_header,
 )
+_EXPLAINER_CSS = """<style>
+.ck-pr-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-pr-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
+
 from ._helpers import related_views_panel, render_page_explainer
 from ._sanity import REGISTRY as _METRIC_REGISTRY, render_number
 
@@ -711,8 +719,27 @@ def render_partner_review(
         page_key="deal-partner-review",
     )
 
+    page_title = ck_page_title(
+        "Partner Review",
+        eyebrow=f"PARTNER REVIEW · {_html.escape(deal_id)}",
+        meta=(
+            f"{_html.escape(deal_label)} · 278-module brain run · "
+            f"{review.generated_at:%Y-%m-%d %H:%M UTC}"
+        ),
+    )
+    pr_explainer = (
+        '<p class="ck-pr-explainer">'
+        f'<em>{_html.escape(deal_label)}.</em> '
+        "The senior-PE judgment layer's full read on this deal — "
+        "covenant patterns, bear cases, regulatory items, secondary analytics, "
+        "and related deals. Each verdict is falsifiable; the partner's job is "
+        "to confirm or refute, not to explain away."
+        "</p>"
+    )
     body = (
-        explainer
+        page_title
+        + pr_explainer
+        + explainer
         + header_links
         + banner
         + kpi_strip
@@ -729,27 +756,14 @@ def render_partner_review(
         + related
     )
 
-    subtitle = f"{deal_label} · 278-module brain run · {review.generated_at:%Y-%m-%d %H:%M UTC}"
     return chartis_shell(
         body,
         title=f"Partner Review · {deal_label}",
         active_nav="/pe-intelligence",
-        subtitle=subtitle,
         breadcrumbs=[
             ("Home", "/app"),
             ("Analysis", "/analysis"),
             ("Partner Review", None),
         ],
-        editorial_intro={
-            "eyebrow": "PARTNER REVIEW",
-            "headline": "What the 278-module brain decided.",
-            "italic_word": "decided",
-            "body": (
-                "The senior-PE judgment layer's full read on this "
-                "deal — covenant covenants, bear patterns, regulatory "
-                "items, secondary analytics, and related deals. "
-                "Each verdict is falsifiable; the partner's job is "
-                "to confirm or refute, not to explain away."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS,
     )
