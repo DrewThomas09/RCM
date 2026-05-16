@@ -28,8 +28,16 @@ from .._chartis_kit import (
     P,
     chartis_shell,
     ck_kpi_block,
+    ck_page_title,
     ck_section_header,
 )
+_EXPLAINER_CSS = """<style>
+.ck-inv-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-inv-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
+
 from ._helpers import (
     bullet_list,
     deal_header_nav,
@@ -347,8 +355,26 @@ def render_investability(
         page_key="deal-investability",
     )
 
+    page_title = ck_page_title(
+        "Investability",
+        eyebrow=f"INVESTABILITY · {_html.escape(deal_id)}",
+        meta=(
+            f"{_html.escape(label)} · composite {score}/100 · "
+            f"exit {_html.escape(exit_verdict.replace('_', ' '))}"
+        ),
+    )
+    inv_explainer = (
+        '<p class="ck-inv-explainer">'
+        f'<em>{_html.escape(label)}.</em> '
+        "A 0-100 composite that reads like a verdict — the five inputs and their "
+        "weights are right below the score so the partner can see what would "
+        "change it."
+        "</p>"
+    )
     body = (
-        explainer
+        page_title
+        + inv_explainer
+        + explainer
         + header
         + kpi_strip
         + small_panel(
@@ -381,15 +407,5 @@ def render_investability(
             ("Deals", "/deals"),
             ("Investability", None),
         ],
-        subtitle=f"{label} · composite {score}/100 · exit {exit_verdict.replace('_', ' ')}",
-        editorial_intro={
-            "eyebrow": "INVESTABILITY",
-            "headline": "Whether the deal earns the partner's hour.",
-            "italic_word": "earns",
-            "body": (
-                "A 0-100 composite that reads like a verdict — the "
-                "five inputs and their weights are right below the "
-                "score so the partner can see what would change it."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS,
     )
