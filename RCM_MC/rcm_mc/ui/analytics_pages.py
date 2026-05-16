@@ -9,9 +9,16 @@ import html
 from typing import Any, Dict, List
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_page_title, ck_panel,
     ck_section_intro,
 )
+
+_BENCH_EXPLAINER_CSS = """
+.ck-be-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;
+margin:var(--sc-s-4) 0 var(--sc-s-6);}
+.ck-be-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+"""
 from .models_page import _model_nav
 from .brand import PALETTE
 
@@ -205,16 +212,18 @@ def render_benchmark_drift(drifts: List[Dict[str, Any]]) -> str:
             f'</tr>'
         )
 
-    intro = ck_section_intro(
-        eyebrow="BENCHMARK EVOLUTION",
-        headline="How the bar is moving on you, year over year.",
-        italic_word="moving",
-        body=(
-            "Industry P50 drift across the metrics that drive the "
-            "bridge. When benchmarks shift, your deal's relative "
-            "position changes even without operational improvement "
-            "— factor this into target-margin assumptions before IC."
-        ),
+    title_block = ck_page_title(
+        "Benchmark Evolution", eyebrow="BENCHMARK EVOLUTION",
+        meta=f"{len(drifts)} benchmarks · {improving} improving · {declining} declining",
+    )
+    explainer_html = (
+        '<p class="ck-be-explainer">'
+        '<em>How the bar is moving on you, year over year.</em> '
+        "Industry P50 drift across the metrics that drive the bridge. "
+        "When benchmarks shift, a deal's relative position changes even "
+        "without operational improvement — factor this into "
+        "target-margin assumptions before IC."
+        '</p>'
     )
 
     kpis = (
@@ -226,7 +235,7 @@ def render_benchmark_drift(drifts: List[Dict[str, Any]]) -> str:
     )
 
     body = (
-        f'{intro}{kpis}'
+        title_block + explainer_html + kpis
         + ck_panel(
             '<p class="ck-section-body">'
             'How industry P50 benchmarks are shifting year-over-year. '
@@ -245,8 +254,11 @@ def render_benchmark_drift(drifts: List[Dict[str, Any]]) -> str:
         )
     )
 
-    return chartis_shell(body, "Benchmark Evolution",
-                    subtitle=f"{len(drifts)} benchmarks tracked | {improving} improving, {declining} declining")
+    return chartis_shell(
+        body, "Benchmark Evolution",
+        active_nav="/benchmarks",
+        extra_css=_BENCH_EXPLAINER_CSS,
+    )
 
 
 def render_predicted_vs_actual(deal_id: str, deal_name: str,
