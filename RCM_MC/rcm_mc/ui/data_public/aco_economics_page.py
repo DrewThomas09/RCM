@@ -2,7 +2,14 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+
+_EXPLAINER_CSS = """<style>
+.ck-ao-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-ao-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 
 
 def _savings_waterfall_svg(savings) -> str:
@@ -207,12 +214,20 @@ def render_aco_economics(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
-    body = f"""
+    page_title = ck_page_title(
+        "ACO Economics",
+        eyebrow="ACO ECONOMICS",
+        meta=f"{r.corpus_deal_count:,} corpus deals · {r.total_beneficiaries:,} beneficiaries · ${r.blended_benchmark_pmpm:,.0f}/PMPM bench",
+    )
+    ao_explainer = (
+        '<p class="ck-ao-explainer">'
+        "<em>MSSP, ACO REACH, MA capitation.</em> "
+        "Shared savings, quality scoring, and full-risk transition — "
+        "what the ACO economics reveal on this deal."
+        "</p>"
+    )
+    body = page_title + ao_explainer + f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">ACO Economics Analyzer</h1>
-    <p class="ck-page-sub">MSSP, ACO REACH, MA capitation — shared savings, quality, full-risk transition — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
   {form}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Shared Savings Performance Scenarios</div>{savings_svg}</div>
@@ -231,8 +246,4 @@ def render_aco_economics(params: dict = None) -> str:
 </div>"""
 
     return chartis_shell(body, "ACO Economics", active_nav="/aco-economics",
-        editorial_intro={
-            "eyebrow": "ACO ECONOMICS",
-            "headline": "What the aco economics page reveals on this deal.",
-            "italic_word": "reveals",
-        })
+        extra_css=_EXPLAINER_CSS)
