@@ -24,7 +24,7 @@ from __future__ import annotations
 import html as _html
 import json
 import os
-from typing import Any, Iterable, List, Mapping, Optional, Sequence
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 # ---------------------------------------------------------------------------
 # Feature flag — set CHARTIS_UI_V2=0 to fall back to the legacy dark shell.
@@ -498,6 +498,77 @@ def ck_kpi_block(
 def ck_signal_badge(text: str, *, tone: str = "neutral") -> str:
     tone = tone if tone in ("positive", "warning", "negative", "critical", "neutral") else "neutral"
     return f'<span class="ck-badge tone-{tone}">{_esc(text)}</span>'
+
+
+# ── Prediction diagnostic chip ──────────────────────────────────────
+#
+# Renders the visual signal for ``PredictedMetric.failure_reason``
+# (the enum defined in :mod:`rcm_mc.ml.ridge_predictor`). Three chip
+# variants map onto three mental models the partner needs:
+#
+#   - INSUFFICIENT_DATA (gray)   → "data doesn't support a prediction"
+#   - UNSTABLE_FIT (amber)       → "model ran, don't lean on it hard"
+#   - FIT_ERROR (red)            → "math broke, don't use this number"
+#
+# A.1 scope: chip renders all three variants but only UNSTABLE_FIT
+# fires from real predictor paths today. INSUFFICIENT_DATA and
+# FIT_ERROR are wired here in anticipation of the Tier B orchestrator
+# refactor that will emit them on fallback / hard-failure paths. The
+# helper is intentionally tolerant of the wider taxonomy now so the
+# Tier B PR is a one-line predictor change, not a chip rewrite.
+
+# Map of FailureReason string values → (tone, label, default tooltip).
+# Kept as plain strings (not the Enum) so this module doesn't import
+# from rcm_mc.ml — the enum's value attribute is the wire format.
+_PREDICTION_CHIP_MAP: Dict[str, Tuple[str, str, str]] = {
+    "insufficient_comparables": ("na",    "— insufficient comparables", "No prediction — too few peer hospitals to fit a model."),
+    "target_features_missing":  ("na",    "— missing input features",    "Target hospital missing one or more required input metrics."),
+    "no_benchmark":             ("na",    "— no benchmark available",    "No registry fallback for this metric; nothing to render."),
+    "pinv_fallback":            ("warn",  "⚠ fit unstable",              "Ridge solver fell back to pseudoinverse — coefficients unstable."),
+    "ci_unstable":              ("warn",  "⚠ fit unstable",              "Confidence interval wider than 2× point estimate — signal is noise-dominated."),
+    "r2_negative":              ("warn",  "⚠ fit unstable",              "Cross-validated R² is negative — model predicts worse than the cohort mean."),
+    "fit_exception":            ("error", "✕ prediction failed",          "Predictor raised an exception that could not be recovered. Treat the displayed value as unavailable."),
+}
+
+
+def ck_prediction_chip(pm: Any) -> str:
+    """Render a diagnostic chip for a PredictedMetric whose value should
+    NOT be trusted as-is.
+
+    Returns ``''`` (empty string) for None / for predictions with
+    ``failure_reason is None`` — clean fits don't render a chip.
+
+    Accepts any object with a ``failure_reason`` attribute (works for
+    both the local ridge-flavor PredictedMetric and the packet
+    PredictedMetric; the former stores the Enum, the latter stores
+    its string value). Defensive against unexpected reason values —
+    falls back to the FIT_ERROR rendering with the raw reason in the
+    tooltip so a typo or new enum variant degrades gracefully.
+
+    Audit-history note: the original audit framed this as "remove
+    silent zero-fill" on r_squared. Grep revealed the actual bug is
+    that 0.0 is used as a "method N/A" sentinel by weighted_median
+    and benchmark_fallback paths, and is therefore indistinguishable
+    from a genuine R²=0. ``failure_reason`` is the authoritative
+    diagnostic channel that resolves the conflation downstream; the
+    chip is its visual manifestation. The numeric-default refactor is
+    deferred to Tier B as a separate logical change.
+    """
+    if pm is None:
+        return ""
+    fr = getattr(pm, "failure_reason", None)
+    if fr is None:
+        return ""
+    # Normalize: enum → its string value; anything else → str(fr)
+    fr_key = fr.value if hasattr(fr, "value") else str(fr)
+    tone, label, tip = _PREDICTION_CHIP_MAP.get(
+        fr_key,
+        ("error", "✕ prediction failed", f"Unknown failure reason: {fr_key}"),
+    )
+    return (
+        f'<span class="ck-pred-chip ck-pred-chip-{tone}" '
+        f'title="{_esc(tip)}">{_esc(label)}</span>'
+    )
 
 
 # ── Claude Design handoff primitives ────────────────────────────────
@@ -3091,6 +3162,17 @@ _CSS_INLINE_FALLBACK = """
   .ck-badge.tone-negative { color:var(--sc-negative); }
   .ck-badge.tone-critical { color:var(--sc-critical); }
   .ck-badge.tone-neutral  { color:var(--sc-text-dim); }
+  /* Prediction diagnostic chip — visual signal for
+   * PredictedMetric.failure_reason. Three variants keyed by tone:
+   * na = muted gray ("data doesn't support a prediction"),
+   * warn = amber ("model ran, don't lean on it hard"),
+   * error = red ("math broke, don't use this number").
+   * Smaller and less visually loud than ck-badge — these sit next to
+   * a numeric value, not on a card eyebrow. */
+  .ck-pred-chip { display:inline-flex; align-items:center; gap:4px; margin-left:6px; padding:1px 6px; font-family:var(--sc-sans); font-size:10.5px; font-weight:500; letter-spacing:0.02em; border:1px solid transparent; border-radius:2px; vertical-align:middle; cursor:help; }
+  .ck-pred-chip-na    { color:var(--sc-text-dim); background:transparent; border-color:var(--sc-rule); }
+  .ck-pred-chip-warn  { color:var(--sc-warning);  background:rgba(184,115,42,0.06); border-color:var(--sc-warning); }
+  .ck-pred-chip-error { color:var(--sc-critical); background:rgba(181,50,30,0.06);  border-color:var(--sc-critical); }
   .ck-section-header { display:flex; align-items:flex-end; justify-content:space-between; gap:var(--sc-s-5); margin:var(--sc-s-8) 0 var(--sc-s-5); }
   .ck-section-code { font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); letter-spacing:0.1em; }
   .ck-section-count { display:inline-block; font-family:var(--sc-mono); font-size:13px; font-weight:500; color:var(--sc-text-faint); margin-left:12px; vertical-align:baseline; letter-spacing:0.04em; }
