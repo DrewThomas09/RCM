@@ -2,7 +2,14 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+
+_EXPLAINER_CSS = """<style>
+.ck-cx-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-cx-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 
 
 def _status_color(s: str) -> str:
@@ -202,12 +209,25 @@ def render_capex_budget(params: dict = None) -> str:
     pct_deployed = r.total_ytd_spent_m / r.total_annual_budget_m * 100 if r.total_annual_budget_m else 0
     denovo_budget = sum(d.budget_m for d in r.denovo)
     denovo_yr1_rev = sum(d.projected_year_1_revenue_m for d in r.denovo)
-    body = f"""
+    page_title = ck_page_title(
+        "Capex Planning / Capital Budget Tracker",
+        eyebrow="CAPEX BUDGET",
+        meta=(
+            f"${r.total_annual_budget_m:,.1f}M budget · "
+            f"{r.total_projects} projects · "
+            f"weighted {r.weighted_avg_roi_pct * 100:.1f}% ROI · "
+            f"{r.corpus_deal_count:,} corpus deals"
+        ),
+    )
+    cx_explainer = (
+        '<p class="ck-cx-explainer">'
+        "<em>What the capex budget reveals on this deal.</em> "
+        "Active projects, category rollups, deal-level budget mix, tech investment, "
+        "and de novo construction pipeline — with deployment pacing and ROI benchmarks."
+        "</p>"
+    )
+    body = page_title + cx_explainer + f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Capex Planning / Capital Budget Tracker</h1>
-    <p class="ck-page-sub">${r.total_annual_budget_m:,.1f}M annual budget · ${r.total_ytd_spent_m:,.1f}M deployed ({pct_deployed:.0f}%) · {r.total_projects} projects · weighted {r.weighted_avg_roi_pct * 100:.1f}% ROI · {r.portfolio_capex_ratio_pct * 100:.2f}% avg capex / revenue — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Active Capex Projects</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Category Rollup</div>{c_tbl}</div>
@@ -226,8 +246,4 @@ def render_capex_budget(params: dict = None) -> str:
 </div>"""
 
     return chartis_shell(body, "Capex Budget", active_nav="/capex-budget",
-        editorial_intro={
-            "eyebrow": "CAPEX BUDGET",
-            "headline": "What the capex budget page reveals on this deal.",
-            "italic_word": "reveals",
-        })
+        extra_css=_EXPLAINER_CSS)
