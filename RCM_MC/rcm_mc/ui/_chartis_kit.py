@@ -24,6 +24,7 @@ from __future__ import annotations
 import html as _html
 import json
 import os
+from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 # ---------------------------------------------------------------------------
@@ -607,27 +608,40 @@ _PREDICTION_CHIP_MAP: Dict[str, Tuple[str, str, str]] = {
 
 
 def ck_prediction_chip(pm: Any) -> str:
-    """Render a diagnostic chip for a PredictedMetric whose value should
-    NOT be trusted as-is.
+    """Render a diagnostic chip for a PredictedMetric (or anything with a
+    ``failure_reason`` attribute) whose value should NOT be trusted as-is.
 
-    Returns ``''`` (empty string) for None / for predictions with
+    Returns ``''`` (empty string) for None / for sources with
     ``failure_reason is None`` — clean fits don't render a chip.
 
-    Accepts any object with a ``failure_reason`` attribute (works for
-    both the local ridge-flavor PredictedMetric and the packet
-    PredictedMetric; the former stores the Enum, the latter stores
-    its string value). Defensive against unexpected reason values —
-    falls back to the FIT_ERROR rendering with the raw reason in the
-    tooltip so a typo or new enum variant degrades gracefully.
+    Accepts any object with a ``failure_reason`` attribute. Works for
+    three shapes today:
 
-    Audit-history note: the original audit framed this as "remove
+      - ridge-flavor :class:`PredictedMetric` (enum-valued ``failure_reason``)
+      - packet :class:`PredictedMetric` (string-valued ``failure_reason``)
+      - :class:`AggregatedFailure` from A.10 (string-valued
+        ``failure_reason`` + ``contributing_sources`` list)
+
+    When the input is an ``AggregatedFailure`` carrying contributing
+    sources, the tooltip is enhanced with the per-source detail so a
+    partner hovering the chip sees which specific upstream prediction
+    drove the diagnostic state (e.g. "Fit unstable — denial_rate
+    (ci_unstable); payer_mix (pinv_fallback)"). For single-source
+    inputs the default tooltip stays unchanged.
+
+    Defensive against unexpected reason values — falls back to the
+    FIT_ERROR rendering with the raw reason in the tooltip so a typo
+    or new enum variant degrades gracefully rather than silently.
+
+    Audit-history note: original A.1 audit framed this as "remove
     silent zero-fill" on r_squared. Grep revealed the actual bug is
     that 0.0 is used as a "method N/A" sentinel by weighted_median
-    and benchmark_fallback paths, and is therefore indistinguishable
-    from a genuine R²=0. ``failure_reason`` is the authoritative
-    diagnostic channel that resolves the conflation downstream; the
-    chip is its visual manifestation. The numeric-default refactor is
-    deferred to Tier B as a separate logical change.
+    and benchmark_fallback paths, indistinguishable from a genuine
+    R²=0. ``failure_reason`` is the authoritative diagnostic channel
+    that resolves the conflation; the chip is its visual manifestation.
+    A.10 extends that channel one architectural seam further down
+    (PredictedMetric → ProfileMetric), where the conversion in
+    ``_merge_rcm_profile`` had been silently dropping the field.
     """
     if pm is None:
         return ""
@@ -636,13 +650,144 @@ def ck_prediction_chip(pm: Any) -> str:
         return ""
     # Normalize: enum → its string value; anything else → str(fr)
     fr_key = fr.value if hasattr(fr, "value") else str(fr)
-    tone, label, tip = _PREDICTION_CHIP_MAP.get(
+    tone, label, default_tip = _PREDICTION_CHIP_MAP.get(
         fr_key,
         ("error", "✕ prediction failed", f"Unknown failure reason: {fr_key}"),
     )
+    # A.10 — when the source is an AggregatedFailure with named
+    # contributors, surface them in the tooltip so the partner can
+    # see which specific upstream prediction caused the chip. Falls
+    # back to the default tip for non-aggregated inputs.
+    sources = getattr(pm, "contributing_sources", None)
+    if sources:
+        tip = f"{default_tip} — Sources: " + "; ".join(str(s) for s in sources)
+    else:
+        tip = default_tip
     return (
         f'<span class="ck-pred-chip ck-pred-chip-{tone}" '
         f'title="{_esc(tip)}">{_esc(label)}</span>'
+    )
+
+
+# ── A.10 chip propagation — aggregator pattern ──────────────────────
+#
+# When a single KPI consumes multiple upstream predictions, the chip
+# must reflect the *worst* diagnostic state across all of them — and
+# the tooltip should name which specific upstream caused the chip,
+# so the partner can debug actionably rather than guess.
+#
+# Severity ordering (locked in this PR; future variants land in the
+# tier map below):
+#
+#   Tier 3 (worst): FIT_EXCEPTION              → red ✕ "math broke"
+#   Tier 2:         PINV_FALLBACK,
+#                   CI_UNSTABLE,
+#                   R2_NEGATIVE                → amber ⚠ "fit suspect"
+#   Tier 1:         INSUFFICIENT_COMPARABLES,
+#                   TARGET_FEATURES_MISSING,
+#                   NO_BENCHMARK               → gray — "no model fit"
+#   Tier 0 (clean): None                       → (no chip)
+#
+# Aggregator returns the highest tier seen. ck_prediction_chip already
+# accepts anything with a ``failure_reason`` attribute, so the
+# AggregatedFailure dataclass composes naturally:
+#
+#     chip = ck_prediction_chip(ck_aggregate(pm_a, pm_b, pm_c))
+#
+# Scope note: only Tier 2 reasons fire from real predictor paths
+# today. Tier 1 / Tier 3 are wired but require the orchestrator-emit
+# refactor (Tier B item) to be load-bearing in production. Partners
+# will see only amber chips on pedesk.app until that lands.
+
+_FAILURE_REASON_TIER: Dict[str, int] = {
+    # Tier 3 — math broke
+    "fit_exception":            3,
+    # Tier 2 — fit ran but diagnostics flag it
+    "pinv_fallback":            2,
+    "ci_unstable":              2,
+    "r2_negative":              2,
+    # Tier 1 — no model fit; what's shown is a fallback
+    "insufficient_comparables": 1,
+    "target_features_missing":  1,
+    "no_benchmark":             1,
+}
+
+
+@dataclass
+class AggregatedFailure:
+    """Output of :func:`ck_aggregate` — composes across multiple PMs.
+
+    Shaped like a PredictedMetric for ``ck_prediction_chip`` to accept
+    it without a separate code path. Carries:
+
+    - ``failure_reason``: string value of the worst-tier reason seen
+      across inputs, or ``None`` if every input is clean.
+    - ``tier``: numeric severity tier (0 = clean, 3 = worst). Useful
+      for callers that want to gate rendering on severity (e.g.
+      "only show chip for tier ≥ 2").
+    - ``contributing_sources``: per-input "label (reason_key)" strings
+      for tooltip context. Empty when no input contributed a failure.
+
+    The shape is intentionally minimal — no methods, no behavior. The
+    aggregator does the work; AggregatedFailure is just a data carrier.
+    """
+    failure_reason: Optional[str] = None
+    tier: int = 0
+    contributing_sources: List[str] = field(default_factory=list)
+
+
+def ck_aggregate(
+    *sources: Any,
+    labels: Optional[Sequence[str]] = None,
+) -> AggregatedFailure:
+    """Aggregate ``failure_reason`` from multiple PM-shaped inputs.
+
+    Each ``source`` is anything with a ``failure_reason`` attribute, OR
+    ``None``. None inputs are skipped (no PM = no failure contribution).
+
+    Severity is composed by taking the max tier across inputs per the
+    ordering documented above. Within a tier, the first-seen reason
+    wins for the ``failure_reason`` field; ``contributing_sources``
+    lists every non-clean input so the tooltip can name them all.
+
+    ``labels`` is an optional sequence of human-readable names, one
+    per source. When provided, ``contributing_sources`` uses
+    ``"<label> (<reason>)"``. When omitted, contributors are labeled
+    ``"source[<index>] (<reason>)"`` so the tooltip still parses.
+
+    Returns an :class:`AggregatedFailure` with ``failure_reason=None``,
+    ``tier=0``, and empty ``contributing_sources`` if every input is
+    clean / None — ``ck_prediction_chip`` then renders no chip.
+
+    Unknown reason values are defensively treated as Tier 3 (worst-
+    case) so a typo or new enum variant doesn't accidentally pass
+    through as Tier 0 / clean.
+    """
+    worst_tier = 0
+    worst_reason: Optional[str] = None
+    contributing: List[str] = []
+
+    for i, src in enumerate(sources):
+        if src is None:
+            continue
+        fr = getattr(src, "failure_reason", None)
+        if fr is None:
+            continue
+        fr_key = fr.value if hasattr(fr, "value") else str(fr)
+        tier = _FAILURE_REASON_TIER.get(fr_key, 3)
+        label = (
+            labels[i] if (labels is not None and i < len(labels))
+            else f"source[{i}]"
+        )
+        contributing.append(f"{label} ({fr_key})")
+        if tier > worst_tier:
+            worst_tier = tier
+            worst_reason = fr_key
+
+    return AggregatedFailure(
+        failure_reason=worst_reason,
+        tier=worst_tier,
+        contributing_sources=contributing,
     )
 
 

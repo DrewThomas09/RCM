@@ -589,6 +589,17 @@ class ProfileMetric:
     financial_pathway: Optional[str] = None
     causal_path_summary: Optional[str] = None
     mechanism_tags: List[str] = field(default_factory=list)
+    #: A.10 propagation field. When the underlying source was a
+    #: ``PredictedMetric`` with ``failure_reason`` set (PINV_FALLBACK,
+    #: CI_UNSTABLE, R2_NEGATIVE), the conversion in
+    #: ``_merge_rcm_profile`` propagates the string value here so every
+    #: downstream UI consumer reading ``ProfileMetric`` can render a
+    #: diagnostic chip via ``ck_prediction_chip``. ``None`` for OBSERVED
+    #: / AUTO_POPULATED sources (those branches have no predictor to
+    #: inherit a failure from) and on clean PREDICTED rows. Stored as a
+    #: string so packet JSON round-trip stays plain text — same shape
+    #: as ``PredictedMetric.failure_reason`` per A.1.
+    failure_reason: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -599,6 +610,7 @@ class ProfileMetric:
             "quality": self.quality,
             "ci_low": _json_safe(self.ci_low),
             "ci_high": _json_safe(self.ci_high),
+            "failure_reason": self.failure_reason,
             "domain": self.domain,
             "financial_pathway": self.financial_pathway,
             "causal_path_summary": self.causal_path_summary,
@@ -607,6 +619,11 @@ class ProfileMetric:
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "ProfileMetric":
+        # ``failure_reason`` is read defensively — packets serialized
+        # before A.10 won't have the key. Same back-compat pattern as
+        # PredictedMetric.from_dict per A.1.
+        fr = d.get("failure_reason")
+        failure_reason = str(fr) if fr is not None else None
         return cls(
             value=float(d.get("value") or 0.0),
             source=MetricSource(d.get("source") or "UNKNOWN"),
@@ -616,6 +633,7 @@ class ProfileMetric:
             quality=d.get("quality"),
             ci_low=(float(d["ci_low"]) if d.get("ci_low") is not None else None),
             ci_high=(float(d["ci_high"]) if d.get("ci_high") is not None else None),
+            failure_reason=failure_reason,
             domain=d.get("domain"),
             financial_pathway=d.get("financial_pathway"),
             causal_path_summary=d.get("causal_path_summary"),
