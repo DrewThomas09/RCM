@@ -8,7 +8,14 @@ from __future__ import annotations
 import html as _html
 from typing import List
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+
+_EXPLAINER_CSS = """<style>
+.ck-ba-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-ba-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 
 
 def _ebitda_bridge_svg(projections) -> str:
@@ -359,15 +366,23 @@ def render_bolton_analyzer(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
-    body = f"""
+    page_title = ck_page_title(
+        "Bolt-on M&A Analyzer",
+        eyebrow="BOLTON ANALYZER",
+        meta=(
+            f"platform + {n_boltons} bolt-ons · {hold_years}y hold · "
+            f"{_html.escape(sector)} · {r.corpus_deal_count:,} corpus deals"
+        ),
+    )
+    ba_explainer = (
+        '<p class="ck-ba-explainer">'
+        "<em>What the bolt-on analyzer reveals on this deal.</em> "
+        "Buy-and-build roll-up economics: multiple arbitrage, EBITDA bridge, "
+        "return scenarios with and without bolt-ons, and year-by-year EBITDA build."
+        "</p>"
+    )
+    body = page_title + ba_explainer + f"""
 <div class="ck-page-wrap">
-
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Bolt-on M&amp;A Analyzer</h1>
-    <p class="ck-page-sub">
-      Buy-and-build roll-up economics — platform + {n_boltons} bolt-ons across {hold_years} years in {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals
-    </p>
-  </div>
 
   {form}
 
@@ -412,8 +427,4 @@ def render_bolton_analyzer(params: dict = None) -> str:
 </div>"""
 
     return chartis_shell(body, "Bolt-on M&A Analyzer", active_nav="/bolton-analyzer",
-        editorial_intro={
-            "eyebrow": "BOLTON ANALYZER",
-            "headline": "What the bolton analyzer page reveals on this deal.",
-            "italic_word": "reveals",
-        })
+        extra_css=_EXPLAINER_CSS)
