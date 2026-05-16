@@ -10,9 +10,16 @@ from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import (
     chartis_shell, ck_confidence_band, ck_fmt_num, ck_kpi_block,
-    ck_next_section, ck_provenance_tooltip,
+    ck_next_section, ck_page_title, ck_provenance_tooltip,
 )
 from .brand import PALETTE
+
+_EXPLAINER_CSS = """<style>
+.ck-bay-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-bay-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 
 
 def render_bayesian_profile(
@@ -221,26 +228,29 @@ def render_bayesian_profile(
         eyebrow="Continue —",
         italic_word="profile",
     )
-    body = f'{kpis}{missing_warning}{estimates_section}{method}{actions}{next_up}'
+    page_title = ck_page_title(
+        "Bayesian Calibration",
+        eyebrow=f"BAYESIAN CALIBRATION · CCN {_html.escape(ccn)}",
+        meta=(
+            f"Data quality: {data_score['grade']} "
+            f"({data_score['completeness_pct']:.0f}% complete) · "
+            f"{data_score['present_count']}/{data_score['total_metrics']} metrics"
+        ),
+    )
+    explainer_html = (
+        '<p class="ck-bay-explainer">'
+        f'<em>{_html.escape(hospital_name)}.</em> '
+        "Per-metric Bayesian posteriors blending sector "
+        "prior + this hospital's signal. Lower data quality "
+        "means tighter prior weight; higher data quality "
+        "shifts toward the observed value. Use this to "
+        "see what the platform knows vs. is inferring."
+        '</p>'
+    )
+    body = f'{page_title}{explainer_html}{kpis}{missing_warning}{estimates_section}{method}{actions}{next_up}'
 
     return chartis_shell(
         body,
         f"Bayesian Calibration — {_html.escape(hospital_name)}",
-        subtitle=(
-            f"CCN {_html.escape(ccn)} | Data quality: {data_score['grade']} "
-            f"({data_score['completeness_pct']:.0f}% complete) | "
-            f"{data_score['present_count']}/{data_score['total_metrics']} metrics"
-        ),
-        editorial_intro={
-            "eyebrow": "BAYESIAN CALIBRATION",
-            "headline": "Where the model's beliefs come from.",
-            "italic_word": "from",
-            "body": (
-                "Per-metric Bayesian posteriors blending sector "
-                "prior + this hospital's signal. Lower data quality "
-                "means tighter prior weight; higher data quality "
-                "shifts toward the observed value. Use this to "
-                "see what the platform 'knows' vs. is inferring."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS,
     )
