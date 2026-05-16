@@ -91,6 +91,13 @@ def _needs_attention(cards: List[Dict[str, Any]]) -> List[Dict[str, str]]:
 
 # ── Renderer ───────────────────────────────────────────────────────
 
+_EXPLAINER_CSS = """<style>
+.ck-db-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-db-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
+
 _DASHBOARD_CSS = """
 body.dashboard-v2 { margin:0; padding:0; background:var(--bg); color:var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
@@ -209,8 +216,8 @@ def render_dashboard_v2(store: Any) -> str:
         )
 
     from ._chartis_kit import (
-        chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-        ck_provenance_tooltip,
+        chartis_shell, ck_fmt_num, ck_kpi_block,
+        ck_page_title, ck_provenance_tooltip,
     )
     # Cycle 48 — KPI strip with provenance.
     critical_value = ck_provenance_tooltip(
@@ -242,8 +249,21 @@ def render_dashboard_v2(store: Any) -> str:
         + ck_kpi_block("Needs Attention", attention_value, "operational")
         + '</div>'
     )
+    page_title = ck_page_title(
+        "Portfolio Dashboard",
+        eyebrow="PORTFOLIO DASHBOARD",
+        meta=f"{total_deals} active deals · {_fmt_money(total_opp)} EBITDA opp",
+    )
+    db_explainer = (
+        '<p class="ck-db-explainer">'
+        "<em>Where the partner reads the portfolio.</em> "
+        "Active deals, attention items, and aggregate metrics in one canvas. "
+        "The attention strip lifts the things that need a partner decision today."
+        "</p>"
+    )
     body = (
-        ck_eyebrow("Portfolio Dashboard")
+        page_title
+        + db_explainer
         + kpi_strip
         + '<div class="dash-wrap">'
         + actions + strip + attention_html + grid
@@ -252,16 +272,5 @@ def render_dashboard_v2(store: Any) -> str:
     return chartis_shell(
         body,
         "Portfolio Dashboard",
-        extra_css=_DASHBOARD_CSS,
-        editorial_intro={
-            "eyebrow": "PORTFOLIO DASHBOARD",
-            "headline": "Where the partner reads the portfolio.",
-            "italic_word": "reads",
-            "body": (
-                "Active deals, attention items, and aggregate "
-                "metrics in one canvas. The attention strip lifts "
-                "the things that need a partner decision today; "
-                "everything else is context."
-            ),
-        },
+        extra_css=_DASHBOARD_CSS + _EXPLAINER_CSS,
     )
