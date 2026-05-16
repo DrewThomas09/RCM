@@ -14,8 +14,14 @@ import pandas as pd
 
 from ._chartis_kit import (
     chartis_shell, ck_fmt_num, ck_fmt_pct, ck_kpi_block, ck_next_section,
-    ck_provenance_tooltip,
+    ck_page_title, ck_provenance_tooltip,
 )
+_EXPLAINER_CSS = """<style>
+.ck-ci-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-ci-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 from ._glossary_link import metric_label_link
 from ._provenance_tooltip import provenance_tooltip
 from .brand import PALETTE
@@ -451,25 +457,27 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
         eyebrow="Continue —",
         italic_word="profile",
     )
-    body = f'{kpis}{percentile_section}{gap_section}{peer_section}{nav}{next_up}'
+    page_title = ck_page_title(
+        "Competitive Intelligence",
+        eyebrow=f"COMPETITIVE INTELLIGENCE · {_html.escape(ccn)}",
+        meta=(
+            f"{_html.escape(name)} · {_html.escape(state)} · {beds:.0f} beds · "
+            f"nat'l margin P{nat_pctile:.0f} · {len(gap_opportunities)} gaps to P75"
+        ),
+    )
+    ci_explainer = (
+        '<p class="ck-ci-explainer">'
+        f"<em>{_html.escape(name)}.</em> "
+        "Per-metric percentile ranks against state and national benchmarks, "
+        "with named gap opportunities that would lift this hospital to P75 "
+        "of its cohort. Read the gap rows as the value-creation thesis the "
+        "deal needs to support."
+        "</p>"
+    )
+    body = page_title + ci_explainer + f'{kpis}{percentile_section}{gap_section}{peer_section}{nav}{next_up}'
 
     return chartis_shell(
         body,
         f"Competitive Intelligence — {_html.escape(name)}",
-        subtitle=(
-            f"CCN {_html.escape(ccn)} | {_html.escape(state)} | {beds:.0f} beds | "
-            f"Nat'l margin P{nat_pctile:.0f} | {len(gap_opportunities)} gaps to P75"
-        ),
-        editorial_intro={
-            "eyebrow": "COMPETITIVE INTELLIGENCE",
-            "headline": "Where this hospital wins or loses vs. peers.",
-            "italic_word": "wins",
-            "body": (
-                "Per-metric percentile ranks against state and "
-                "national benchmarks, with named gap opportunities "
-                "that would lift this hospital to P75 of its "
-                "cohort. Read the gap rows as the value-creation "
-                "thesis the deal needs to support."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS,
     )
