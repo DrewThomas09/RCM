@@ -20,8 +20,8 @@ from ..diligence.denial_prediction import (
 )
 from ..diligence.denial_prediction.model import CalibrationBucket
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
-    ck_panel, ck_section_intro,
+    P, chartis_shell, ck_action_button, ck_kpi_block, ck_next_section,
+    ck_page_title, ck_panel, ck_section_intro,
 )
 from .power_ui import provenance, sortable_table
 
@@ -71,10 +71,8 @@ def _landing() -> str:
         f'style="width:100%;padding:6px 8px;background:{P["panel_alt"]};'
         f'color:{P["text"]};border:1px solid {P["border"]};'
         f'font-family:inherit;">'
-        f'<button type="submit" style="margin-top:16px;padding:8px 20px;'
-        f'background:{P["accent"]};color:{P["panel"]};border:0;'
-        f'font-size:10px;letter-spacing:1.5px;text-transform:uppercase;'
-        f'font-weight:700;cursor:pointer;">Run prediction</button></form>'
+        f'<div style="margin-top:16px;">{ck_action_button("Run prediction")}</div>'
+        f'</form>'
     )
     return chartis_shell(
         body, "Predictive Denial Model",

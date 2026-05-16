@@ -30,8 +30,9 @@ from ..diligence.counterfactual import (
     summarize_ccd_inputs,
 )
 from ._chartis_kit import (
-    P, chartis_shell, ck_eyebrow, ck_fmt_currency, ck_fmt_num,
-    ck_kpi_block, ck_next_section, ck_page_title, ck_provenance_tooltip,
+    P, chartis_shell, ck_action_button, ck_eyebrow, ck_fmt_currency,
+    ck_fmt_num, ck_kpi_block, ck_next_section, ck_page_title,
+    ck_provenance_tooltip,
 )
 
 _EXPLAINER_CSS = """
@@ -425,19 +426,6 @@ def _page_style() -> str:
 }}
 .cf-form button {{
     margin-top: {S[4]}px;
-    padding: {S[3]}px {S[5]}px;
-    background: {P["accent"]};
-    color: {P["panel"]};
-    border: 0;
-    font-size: 10px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    font-weight: 700;
-    cursor: pointer;
-    transition: transform 0.15s ease;
-}}
-.cf-form button:hover {{
-    transform: translateY(-1px);
 }}
 </style>"""
 
@@ -484,7 +472,7 @@ def _landing_page() -> str:
         + '<input name="specialty" placeholder="EMERGENCY_MEDICINE">'
         + '<label class="cf-form-label">Landlord (optional — enables Steward)</label>'
         + '<input name="landlord" placeholder="Medical Properties Trust">'
-        + '<button type="submit">Run advisor</button>'
+        + ck_action_button("Run advisor")
         + '</form>'
     )
     return chartis_shell(
