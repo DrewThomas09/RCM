@@ -27,8 +27,16 @@ from .._chartis_kit import (
     P,
     chartis_shell,
     ck_kpi_block,
+    ck_page_title,
     ck_section_header,
 )
+_EXPLAINER_CSS = """<style>
+.ck-ws-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-ws-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
+
 from ._helpers import (
     deal_header_nav,
     empty_note,
@@ -304,8 +312,25 @@ def render_white_space(
         page_key="deal-white-space",
     )
 
+    page_title = ck_page_title(
+        "White Space",
+        eyebrow=f"WHITE SPACE · {_html.escape(deal_id)}",
+        meta=(
+            f"{_html.escape(label)} · {len(opportunities)} opportunities · "
+            f"top: {_html.escape(str(top_dim or '—'))}"
+        ),
+    )
+    ws_explainer = (
+        '<p class="ck-ws-explainer">'
+        f'<em>{_html.escape(label)}.</em> '
+        "What the white space reveals on this deal — geographic, segment, "
+        "and channel opportunities ranked by the brain."
+        "</p>"
+    )
     body = (
-        explainer
+        page_title
+        + ws_explainer
+        + explainer
         + header
         + kpi_strip
         + ck_section_header(
@@ -330,10 +355,5 @@ def render_white_space(
             ("Market", "/market-intel"),
             ("White Space", None),
         ],
-        subtitle=f"{label} · {len(opportunities)} opportunities · top: {top_dim or '—'}",
-        editorial_intro={
-            "eyebrow": "WHITE SPACE",
-            "headline": "What the white space reveals on this deal.",
-            "italic_word": "reveals",
-        }
+        extra_css=_EXPLAINER_CSS,
     )
