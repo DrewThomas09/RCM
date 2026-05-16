@@ -2,7 +2,14 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+
+_EXPLAINER_CSS = """<style>
+.ck-as-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-as-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 
 
 def _hhi_table(items) -> str:
@@ -197,12 +204,24 @@ def render_antitrust_screener(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     best_remediation = min(r.remediations, key=lambda x: x.timeline_months + x.financial_cost_mm * 0.5 + x.deal_value_impact_pct * 100 - x.probability_of_approval * 50)
-    body = f"""
+    page_title = ck_page_title(
+        "Anti-Trust / FTC Review Screener",
+        eyebrow="ANTITRUST SCREENER",
+        meta=(
+            f"Risk score {r.overall_risk_score}/100 · "
+            f"Second Request probability {r.second_request_probability * 100:.0f}% · "
+            f"{r.corpus_deal_count:,} corpus deals"
+        ),
+    )
+    as_explainer = (
+        '<p class="ck-as-explainer">'
+        "<em>What the antitrust screener reveals on this deal.</em> "
+        "HSR thresholds, HHI/CR3 concentration, market overlap, FTC case law, "
+        "state-AG posture, and remediation options — drawn from corpus deal history."
+        "</p>"
+    )
+    body = page_title + as_explainer + f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Anti-Trust / FTC Review Screener</h1>
-    <p class="ck-page-sub">HSR thresholds · HHI / CR3 concentration · market overlap · FTC case law · state-AG posture · remediation options — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
   {form}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {score_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
@@ -226,8 +245,4 @@ def render_antitrust_screener(params: dict = None) -> str:
 </div>"""
 
     return chartis_shell(body, "Anti-Trust Screener", active_nav="/antitrust-screener",
-        editorial_intro={
-            "eyebrow": "ANTITRUST SCREENER",
-            "headline": "What the antitrust screener page reveals on this deal.",
-            "italic_word": "reveals",
-        })
+        extra_css=_EXPLAINER_CSS)
