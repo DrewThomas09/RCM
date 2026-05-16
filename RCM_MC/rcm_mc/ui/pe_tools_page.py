@@ -8,9 +8,15 @@ import html
 from typing import Any, Dict, List
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
-    ck_section_intro,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_page_title, ck_panel,
 )
+
+_EXPLAINER_CSS = """<style>
+.ck-pet-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-pet-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 from .models_page import _model_nav
 from .brand import PALETTE
 
@@ -40,16 +46,18 @@ def render_value_bridge(deal_id: str, deal_name: str, bridge: Dict[str, Any]) ->
     target = bridge.get("target_ebitda", bridge.get("total_ebitda", 0))
     total_impact = bridge.get("total_ebitda_impact", bridge.get("total_impact", 0))
 
-    intro = ck_section_intro(
-        eyebrow="VALUE BRIDGE",
-        headline=f"{html.escape(deal_name)} — where the EBITDA uplift comes from.",
-        italic_word="comes",
-        body=(
-            f"7-lever EBITDA bridge from current ${current/1e6:.0f}M "
-            f"to target ${(current+total_impact)/1e6:.0f}M. Each "
-            "lever shows gross impact, probability of achievement, "
-            "and probability-weighted contribution."
-        ),
+    intro = ck_page_title(
+        "Value Bridge",
+        eyebrow=f"VALUE BRIDGE · {html.escape(deal_name)}",
+        meta=f"Current ${current/1e6:.0f}M → Target ${(current+total_impact)/1e6:.0f}M",
+    ) + (
+        '<p class="ck-pet-explainer">'
+        f'<em>{html.escape(deal_name)}.</em> '
+        f"7-lever EBITDA bridge from current ${current/1e6:.0f}M "
+        f"to target ${(current+total_impact)/1e6:.0f}M. Each "
+        "lever shows gross impact, probability of achievement, "
+        "and probability-weighted contribution."
+        '</p>'
     )
 
     kpis = (
@@ -150,9 +158,11 @@ def render_value_bridge(deal_id: str, deal_name: str, bridge: Dict[str, Any]) ->
         italic_word="playbook",
     )
     body = f'{_PE_STYLES}{nav}{intro}{kpis}{bridge_section}{interp}{actions}{next_up}'
-    return chartis_shell(body, f"Value Bridge — {html.escape(deal_name)}",
-                    active_nav="/analysis",
-                    subtitle=f"Current ${current/1e6:.0f}M → Target ${(current+total_impact)/1e6:.0f}M (+${total_impact/1e6:.1f}M)")
+    return chartis_shell(
+        body, f"Value Bridge — {html.escape(deal_name)}",
+        active_nav="/analysis",
+        extra_css=_EXPLAINER_CSS,
+    )
 
 
 def render_comparable_hospitals(deal_id: str, deal_name: str,
@@ -178,16 +188,16 @@ def render_comparable_hospitals(deal_id: str, deal_name: str,
             f'</tr>'
         )
 
-    intro = ck_section_intro(
-        eyebrow="COMPARABLE HOSPITALS",
-        headline=f"{html.escape(deal_name)} — closest peers by profile distance.",
-        italic_word="closest",
-        body=(
-            f"{len(comparables)} hospitals most similar to "
-            f"{html.escape(deal_name)} on bed count, revenue, "
-            "margins, and payer mix. Use as a base-rate sanity "
-            "check for the bridge."
-        ),
+    intro = ck_page_title(
+        "Comparable Hospitals",
+        eyebrow=f"COMPARABLE HOSPITALS · {html.escape(deal_name)}",
+        meta=f"{len(comparables)} hospitals by profile distance",
+    ) + (
+        '<p class="ck-pet-explainer">'
+        f'<em>Closest peers to {html.escape(deal_name)}.</em> '
+        f"{len(comparables)} hospitals most similar on bed count, revenue, "
+        "margins, and payer mix. Use as a base-rate sanity check for the bridge."
+        '</p>'
     )
     body = (
         intro
@@ -212,9 +222,11 @@ def render_comparable_hospitals(deal_id: str, deal_name: str,
         )
     )
 
-    return chartis_shell(body, f"Comparables — {html.escape(deal_name)}",
-                    active_nav="/analysis",
-                    subtitle=f"{len(comparables)} comparable hospitals found")
+    return chartis_shell(
+        body, f"Comparables — {html.escape(deal_name)}",
+        active_nav="/analysis",
+        extra_css=_EXPLAINER_CSS,
+    )
 
 
 def render_anomaly_report(deal_id: str, deal_name: str,
@@ -240,15 +252,17 @@ def render_anomaly_report(deal_id: str, deal_name: str,
 
     n_high = sum(1 for a in anomalies if abs(float(a.get("z_score", a.get("deviation", 0)))) > 3)
 
-    intro = ck_section_intro(
-        eyebrow="ANOMALY REPORT",
-        headline=f"{html.escape(deal_name)} — metrics that don't match the cohort.",
-        italic_word="don't",
-        body=(
-            f"{len(anomalies)} anomalies detected vs HCRIS "
-            "benchmarks. High-severity (>3σ) flags either data "
-            "quality issues or genuine outliers worth a follow-up."
-        ),
+    intro = ck_page_title(
+        "Anomaly Report",
+        eyebrow=f"ANOMALY REPORT · {html.escape(deal_name)}",
+        meta=f"{len(anomalies)} anomalies · {n_high} high severity",
+    ) + (
+        '<p class="ck-pet-explainer">'
+        "<em>Metrics that don't match the cohort.</em> "
+        f"{len(anomalies)} anomalies detected vs HCRIS benchmarks. "
+        "High-severity (&gt;3σ) flags either data quality issues "
+        "or genuine outliers worth a follow-up."
+        '</p>'
     )
     kpis = (
         '<div class="ck-kpi-strip">'
@@ -283,9 +297,11 @@ def render_anomaly_report(deal_id: str, deal_name: str,
         )
     )
 
-    return chartis_shell(body, f"Anomaly Report — {html.escape(deal_name)}",
-                    active_nav="/analysis",
-                    subtitle=f"{len(anomalies)} anomalies, {n_high} high severity")
+    return chartis_shell(
+        body, f"Anomaly Report — {html.escape(deal_name)}",
+        active_nav="/analysis",
+        extra_css=_EXPLAINER_CSS,
+    )
 
 
 def render_service_lines(deal_id: str, deal_name: str,
@@ -310,16 +326,17 @@ def render_service_lines(deal_id: str, deal_name: str,
             f'</tr>'
         )
 
-    intro = ck_section_intro(
-        eyebrow="SERVICE LINES",
-        headline=f"{html.escape(deal_name)} — where value is actually created.",
-        italic_word="actually",
-        body=(
-            f"{len(lines)} service lines · ${total_rev/1e6:.0f}M "
-            "total revenue. Identifies which lines drive margin "
-            "and where operational improvement has the highest "
-            "impact."
-        ),
+    intro = ck_page_title(
+        "Service Lines",
+        eyebrow=f"SERVICE LINES · {html.escape(deal_name)}",
+        meta=f"{len(lines)} service lines · ${total_rev/1e6:.0f}M total revenue",
+    ) + (
+        '<p class="ck-pet-explainer">'
+        f'<em>{html.escape(deal_name)}.</em> '
+        f"{len(lines)} service lines · ${total_rev/1e6:.0f}M total revenue. "
+        "Identifies which lines drive margin and where operational "
+        "improvement has the highest impact."
+        '</p>'
     )
     kpis = (
         '<div class="ck-kpi-strip">'
@@ -354,6 +371,8 @@ def render_service_lines(deal_id: str, deal_name: str,
         )
     )
 
-    return chartis_shell(body, f"Service Lines — {html.escape(deal_name)}",
-                    active_nav="/analysis",
-                    subtitle=f"{len(lines)} service lines | ${total_rev/1e6:.0f}M total revenue")
+    return chartis_shell(
+        body, f"Service Lines — {html.escape(deal_name)}",
+        active_nav="/analysis",
+        extra_css=_EXPLAINER_CSS,
+    )
