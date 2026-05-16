@@ -10,8 +10,15 @@ from typing import Any, Dict, List, Optional
 
 from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_section_header, ck_kpi_block, ck_fmt_moic,
-    ck_provenance_tooltip,
+    ck_page_title, ck_provenance_tooltip,
 )
+
+_EXPLAINER_CSS = """<style>
+.ck-at-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-at-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 
 CYCLE_COLORS = {
     "Peak":       "#ef4444",
@@ -315,7 +322,19 @@ def render_acq_timing(params: Dict[str, str]) -> str:
     year_table = _year_table(result.by_year)
     quin_table = _quintile_table(result.quintiles)
 
-    body = f"""
+    page_title = ck_page_title(
+        "Acquisition Timing",
+        eyebrow="ACQUISITION TIMING",
+        meta=f"{result.n_total} corpus deals · entry EV/EBITDA vs. realized MOIC · vintage cycle timing",
+    )
+    at_explainer = (
+        '<p class="ck-at-explainer">'
+        "<em>When the cycle pays you for vintage discipline.</em> "
+        "Entry multiple vs. MOIC cycle analysis — how buying at different "
+        "points in the valuation cycle affects realized returns, by quintile."
+        "</p>"
+    )
+    body = page_title + at_explainer + f"""
 {kpi_grid}
 {ck_section_header("Entry Multiple & MOIC by Vintage Year", "Blue = EV/EBITDA P50 (left), Green dashed = MOIC P50 (right). Red shading = cycle peak years.")}
 <div style="overflow-x:auto;margin-bottom:24px">{dual_chart}</div>
@@ -333,10 +352,5 @@ def render_acq_timing(params: Dict[str, str]) -> str:
         body,
         title="Acquisition Timing Analyzer",
         active_nav="/acq-timing",
-        subtitle="Entry EV/EBITDA vs. realized MOIC by vintage year — cycle timing impact",
-        editorial_intro={
-            "eyebrow": "ACQUISITION TIMING",
-            "headline": "When the cycle pays you for vintage discipline.",
-            "italic_word": "pays",
-        },
+        extra_css=_EXPLAINER_CSS,
     )
