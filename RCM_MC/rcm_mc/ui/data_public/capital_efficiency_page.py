@@ -10,8 +10,15 @@ import html as _html
 from typing import Any, Dict, List, Optional
 
 from rcm_mc.ui._chartis_kit import (
-    P, chartis_shell, ck_section_header, ck_kpi_block, ck_fmt_moic,
+    P, chartis_shell, ck_page_title, ck_section_header, ck_kpi_block, ck_fmt_moic,
 )
+
+_EXPLAINER_CSS = """<style>
+.ck-ce-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-ce-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 
 
 def _eff_color(v: Optional[float], corpus_p50: float) -> str:
@@ -237,7 +244,23 @@ def render_capital_efficiency(params: Dict[str, str]) -> str:
         result.by_payer_regime, "moic_eff_p50", "MOIC Efficiency by Payer Regime"
     )
 
-    body = f"""
+    page_title = ck_page_title(
+        "Capital Efficiency Analysis",
+        eyebrow="CAPITAL EFFICIENCY",
+        meta=(
+            f"{result.total_deals} deals analyzed · "
+            f"corpus MOIC Eff. P50 {cp50:.4f} · "
+            f"return density per unit of entry multiple"
+        ),
+    )
+    ce_explainer = (
+        '<p class="ck-ce-explainer">'
+        "<em>How much return each entry dollar bought.</em> "
+        "MOIC efficiency (realized MOIC ÷ entry EV/EBITDA) sliced by sector, size, "
+        "payer regime, and vintage cohort — with top and bottom performers."
+        "</p>"
+    )
+    body = page_title + ce_explainer + f"""
 {kpi_grid}
 {ck_section_header("By Sector", "P50 MOIC Efficiency = MOIC ÷ EV/EBITDA")}
 <div style="overflow-x:auto;margin-bottom:8px">{sec_chart}</div>
@@ -272,10 +295,5 @@ def render_capital_efficiency(params: Dict[str, str]) -> str:
         body,
         title="Capital Efficiency Analysis",
         active_nav="/capital-efficiency",
-        subtitle="Return density per unit of entry multiple — corpus-wide and by segment",
-        editorial_intro={
-            "eyebrow": "CAPITAL EFFICIENCY",
-            "headline": "How much return each entry dollar bought.",
-            "italic_word": "bought",
-        },
+        extra_css=_EXPLAINER_CSS,
     )
