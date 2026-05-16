@@ -11,8 +11,22 @@ from __future__ import annotations
 import html as _html
 from typing import Any, Dict, List, Optional
 
-from .._chartis_kit import P, chartis_shell, ck_kpi_block, ck_section_header
-from ._helpers import render_page_explainer
+from .._chartis_kit import P, chartis_shell, ck_kpi_block, ck_page_title, ck_section_header
+
+_EXPLAINER_CSS = """
+.ck-pei-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;
+margin:var(--sc-s-4) 0 var(--sc-s-6);}
+.ck-pei-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+"""
+
+
+def _title(current_user: "Optional[str]") -> str:
+    meta = (
+        f"Signed in as {_html.escape(current_user)} · 278 modules · 7 reflexes"
+        if current_user else "278 modules · 2,970 tests · 7 partner reflexes"
+    )
+    return ck_page_title("PE Intelligence", eyebrow="PE INTELLIGENCE", meta=meta)
 
 
 _SEVEN_REFLEXES: List[Dict[str, str]] = [
@@ -252,28 +266,19 @@ def render_pe_intelligence_hub(
     current_user: Optional[str] = None,
 ) -> str:
     """Render the PE Intelligence Brain landing page."""
-    explainer = render_page_explainer(
-        what=(
-            "Entry point into the codified PE-partner judgment layer "
-            "— 278 modules organised around 7 partner reflexes, plus a "
-            "catalog of per-deal routes that exercise the brain on a "
-            "specific packet."
-        ),
-        scale=(
-            "The 7 reflexes: sniff test before math; archetype on "
-            "sight; named-failure pattern match; dot-connect packet "
-            "signals; recurring vs one-time discipline; specific "
-            "regulatory dollar-impact; partner voice."
-        ),
-        use=(
-            "Open a deal and follow the Partner Review link on the "
-            "deal dashboard to run the full brain. Use this hub to "
-            "jump to an inventory (reasonableness matrix, bear book, "
-            "archetype library) when you want context before a specific "
-            "per-deal read."
-        ),
-        source="pe_intelligence/README.md (seven reflex definitions).",
-        page_key="pe-intelligence",
+    title_block = _title(current_user)
+    explainer_html = (
+        '<p class="ck-pei-explainer">'
+        '<em>Where senior-PE judgment is codified.</em> '
+        "278 modules organised around 7 partner reflexes — sniff test "
+        "before math, archetype on sight, named-failure pattern match, "
+        "dot-connect packet signals, recurring vs one-time discipline, "
+        "specific regulatory dollar-impact, and partner voice. "
+        "Open any deal and follow Partner Review to run the full brain "
+        "against that packet; use this hub to jump to an inventory "
+        "(reasonableness matrix, bear book, archetype library) before a "
+        "specific per-deal read."
+        '</p>'
     )
     kpis = (
         ck_kpi_block("Modules", "278", "partner reflexes codified")
@@ -282,21 +287,6 @@ def render_pe_intelligence_hub(
         + ck_kpi_block("Exports", "1,455+", "public symbols")
     )
     kpi_strip = f'<div class="ck-kpi-grid">{kpis}</div>'
-
-    intro = (
-        f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-radius:3px;padding:14px;margin-bottom:14px;">'
-        f'<p style="color:{P["text_dim"]};font-size:12px;line-height:1.6;">'
-        f'A senior-PE-healthcare-partner judgment layer. Reads a '
-        f'<code style="color:{P["accent"]};font-family:var(--ck-mono);">'
-        f'DealAnalysisPacket</code> and answers the questions a partner actually '
-        f'asks in IC — not a taxonomy of features but a library of partner '
-        f'reflexes. Partner Review now also surfaces supplemental healthcare '
-        f'checks and a Claude second-look confirmation card. Open any deal and click '
-        f'<a href="#" style="color:{P["accent"]};">Partner Review</a> on the '
-        f'deal dashboard to exercise the brain against that packet.'
-        f'</p></div>'
-    )
 
     # Seven reflexes grid (2 columns)
     reflex_header = ck_section_header(
@@ -366,34 +356,14 @@ def render_pe_intelligence_hub(
     )
 
     body = (
-        explainer + kpi_strip + intro + reflex_header + reflex_grid
+        title_block + explainer_html + kpi_strip + reflex_header + reflex_grid
         + links_header + links_grid
         + catalog_header + catalog + cta
     )
 
-    subtitle = (
-        f"Signed in as {_html.escape(current_user)} · 278 modules · 7 reflexes"
-        if current_user else "278 modules · 2,970 tests · the senior-PE judgment layer"
-    )
     return chartis_shell(
         body,
         title="PE Intelligence",
         active_nav="/pe-intelligence",
-        subtitle=subtitle,
-        breadcrumbs=[
-            ("Home", "/app"),
-            ("Analysis", "/analysis"),
-            ("PE Intelligence", None),
-        ],
-        editorial_intro={
-            "eyebrow": "PE INTELLIGENCE",
-            "headline": "Where senior-PE judgment is codified.",
-            "italic_word": "codified",
-            "body": (
-                "278 partner-reflex modules covering screening, "
-                "diligence, structuring, value creation, and exit. "
-                "Each one a falsifiable claim with regression "
-                "tests — the platform's reasoning, in the open."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS,
     )
