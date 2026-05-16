@@ -351,6 +351,14 @@ def _merge_rcm_profile(
             quality=("high" if pm.r_squared >= 0.5
                      else "medium" if pm.r_squared >= 0.2
                      else "low"),
+            # A.10 — propagate the diagnostic channel. A.1 wired
+            # failure_reason on PredictedMetric; without this one-line
+            # propagation, every downstream UI consumer reading
+            # ProfileMetric (analysis workbench, portfolio heatmap,
+            # risk-flag triggers, diligence-question generator)
+            # silently lost the signal. The string value is what packet
+            # PMs already carry; pass it straight through.
+            failure_reason=pm.failure_reason,
         )
 
     # Decorate each ProfileMetric with its economic-ontology context
