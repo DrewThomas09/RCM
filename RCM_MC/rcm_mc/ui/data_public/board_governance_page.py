@@ -2,7 +2,14 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+
+_EXPLAINER_CSS = """<style>
+.ck-bg-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-bg-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 
 
 def _holdcos_table(items) -> str:
@@ -183,12 +190,24 @@ def render_board_governance(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     critical_gaps = sum(1 for g in r.gaps if g.priority == "high")
-    body = f"""
+    page_title = ck_page_title(
+        "Board of Directors / Governance",
+        eyebrow="BOARD GOVERNANCE",
+        meta=(
+            f"{r.total_holdcos} holdco boards · {r.total_directors} director seats · "
+            f"independence {r.avg_independence_pct * 100:.1f}% · "
+            f"{r.corpus_deal_count:,} corpus deals"
+        ),
+    )
+    bg_explainer = (
+        '<p class="ck-bg-explainer">'
+        "<em>What the board governance analysis reveals on this deal.</em> "
+        "Holdco board composition, director bench, committee coverage, sponsor representation, "
+        "governance gaps, and executive compensation benchmarks across the portfolio."
+        "</p>"
+    )
+    body = page_title + bg_explainer + f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Board of Directors / Governance</h1>
-    <p class="ck-page-sub">{r.total_holdcos} holdco boards · {r.total_directors} director seats · independence {r.avg_independence_pct * 100:.1f}% · diversity {r.avg_diversity_pct * 100:.1f}% — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Holdco Board Composition</div>{h_tbl}</div>
   <div style="{cell}"><div style="{h3}">Bench of Independent Directors</div>{d_tbl}</div>
@@ -207,8 +226,4 @@ def render_board_governance(params: dict = None) -> str:
 </div>"""
 
     return chartis_shell(body, "Board Governance", active_nav="/board-governance",
-        editorial_intro={
-            "eyebrow": "BOARD GOVERNANCE",
-            "headline": "What the board governance page reveals on this deal.",
-            "italic_word": "reveals",
-        })
+        extra_css=_EXPLAINER_CSS)
