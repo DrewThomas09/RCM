@@ -34,8 +34,15 @@ import pandas as pd
 
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_next_section, ck_provenance_tooltip,
+    ck_next_section, ck_page_title, ck_provenance_tooltip,
 )
+
+_EXPLAINER_CSS = """<style>
+.ck-cal-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-cal-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 
 
 def _aggregate_payers(runs_df: pd.DataFrame) -> Dict[str, Dict[str, float]]:
@@ -226,25 +233,30 @@ def render_calibration_page(store: Any) -> str:
         + '</div>'
     )
 
-    # Title comes from chartis_shell(editorial_intro=...); removed
-    # the duplicate ck_eyebrow that stacked another mini-title here.
+    page_title = ck_page_title(
+        "Calibration",
+        eyebrow="CALIBRATION",
+        meta=f"{n_runs} run(s) · {len(payers)} payer(s) · per-payer IDR / FWR / DAR priors",
+    )
+    cal_explainer = (
+        '<p class="ck-cal-explainer">'
+        "<em>Where the model's priors come from.</em> "
+        f"Per-payer prior calibration. Aggregates IDR / FWR / DAR primitives "
+        f"across {n_runs} run(s) spanning {len(payers)} payer(s). "
+        "Sliders are read-only — the underlying analysis cache is the source of truth."
+        "</p>"
+    )
     body = (
-        kpi_strip
+        page_title
+        + cal_explainer
+        + kpi_strip
         + '<section style="max-width:80rem;">'
         '<div style="display:flex;justify-content:space-between;'
         'align-items:baseline;margin-bottom:.75rem;">'
-        '<h1 style="margin:0;">Calibration</h1>'
         '<a href="/api/calibration/priors" class="micro" '
         'style="font-weight:400;letter-spacing:.04em;'
         'text-transform:none;">JSON API →</a>'
         '</div>'
-        '<p style="max-width:48rem;color:var(--muted,#9ca3af);'
-        'margin:0 0 1rem 0;">'
-        f'Per-payer prior calibration. Aggregates IDR / FWR / DAR '
-        f'primitives across <span class="num">{n_runs}</span> run(s) '
-        f'spanning <span class="num">{len(payers)}</span> payer(s). '
-        f'Drag a slider to explore priors; values are read-only — the '
-        f'underlying analysis cache is the source of truth.</p>'
         + sliders
         + '</section>'
         + ck_next_section(
@@ -258,17 +270,5 @@ def render_calibration_page(store: Any) -> str:
     return chartis_shell(
         body,
         "Calibration",
-        subtitle="per-payer prior calibration",
-        editorial_intro={
-            "eyebrow": "CALIBRATION",
-            "headline": "Where the model's priors come from.",
-            "italic_word": "from",
-            "body": (
-                "Per-payer IDR / FWR / DAR priors aggregated "
-                "across the analysis-run cache. The sliders are "
-                "read-only - they show the priors the simulator "
-                "actually uses; tune them by running more analyses, "
-                "not by dragging."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS,
     )
