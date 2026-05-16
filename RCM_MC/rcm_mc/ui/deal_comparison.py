@@ -298,6 +298,14 @@ def render_comparison(packets: List[DealAnalysisPacket]) -> str:
 
 # ── Screening page ────────────────────────────────────────────────
 
+_EXPLAINER_CSS = """
+.ck-hs-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;
+margin:var(--sc-s-4) 0 var(--sc-s-6);}
+.ck-hs-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+"""
+
+
 def render_screen_page(
     results: Optional[List[Dict[str, Any]]] = None,
     filters: Optional[Dict[str, str]] = None,
@@ -305,7 +313,7 @@ def render_screen_page(
     total_scanned: int = 0,
 ) -> str:
     """GET /screen — metric-based hospital screener."""
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import chartis_shell, ck_page_title
     from .brand import PALETTE
 
     filters = filters or {}
@@ -401,18 +409,25 @@ def render_screen_page(
             f'<tbody>{rows_html}</tbody></table></div>'
         )
 
-    body = f'{form}{results_block}'
     n = len(results) if results else 0
-    sub = f"{n} matches from {total_scanned:,} hospitals" if results else f"Screen {total_scanned:,} HCRIS hospitals by metrics"
-    return chartis_shell(body, "Hospital Screener", active_nav="/screen", subtitle=sub,
-        editorial_intro={
-            "eyebrow": "HOSPITAL SCREENER",
-            "headline": "Where the universe filters down to candidates.",
-            "italic_word": "filters",
-            "body": (
-                "Filter the HCRIS universe by bed count, revenue, "
-                "margins, payer mix, and ML predictions. Use "
-                "this to source new deals or to find peers for "
-                "an existing target."
-            ),
-        })
+    meta = (
+        f"{n} matches · {total_scanned:,} hospitals scanned"
+        if results else f"{total_scanned:,} HCRIS hospitals"
+    )
+    title_block = ck_page_title(
+        "Hospital Screener", eyebrow="HOSPITAL SCREENER", meta=meta,
+    )
+    explainer_html = (
+        '<p class="ck-hs-explainer">'
+        '<em>Where the universe filters down to candidates.</em> '
+        "Filter the HCRIS universe by bed count, revenue, margins, "
+        "and state to source new deals or find peers for an existing "
+        "target. Use a preset screen or build custom criteria — each "
+        "match links directly to the hospital profile and diligence flow."
+        '</p>'
+    )
+    body = title_block + explainer_html + form + results_block
+    return chartis_shell(
+        body, "Hospital Screener", active_nav="/screen",
+        extra_css=_EXPLAINER_CSS,
+    )
