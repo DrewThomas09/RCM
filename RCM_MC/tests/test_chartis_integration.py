@@ -306,7 +306,7 @@ class TestChartisPhase2CPortfolioRoutes(unittest.TestCase):
         self._assert_renders(
             "/payer-intelligence",
             expect_title="Payer Intelligence",
-            expect_substrings=("PAYER-MIX REGIMES", "COMPREHENSIVE VIEW"),
+            expect_substrings=("PAYER-MIX REGIMES", "PAYER INTELLIGENCE"),
         )
 
     def test_payer_intel_summary_links_to_payer_intelligence(self):

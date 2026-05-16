@@ -25,6 +25,7 @@ from .._chartis_kit import (
     P,
     chartis_shell,
     ck_kpi_block,
+    ck_page_title,
     ck_section_header,
 )
 from ._helpers import (
@@ -32,11 +33,18 @@ from ._helpers import (
     fmt_multiple,
     fmt_pct,
     load_corpus_deals,
-    render_page_explainer,
     small_panel,
     verdict_badge,
 )
 from ._sanity import render_number
+
+
+_EXPLAINER_CSS = """
+.ck-pi-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;
+margin:var(--sc-s-4) 0 var(--sc-s-6);}
+.ck-pi-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+"""
 
 
 _REGIME_COLORS = {
@@ -172,6 +180,23 @@ def render_payer_intelligence(
     store: Any = None,
     current_user: Optional[str] = None,
 ) -> str:
+    def _title(meta: str) -> str:
+        return ck_page_title(
+            "Payer Intelligence",
+            eyebrow="PAYER INTELLIGENCE",
+            meta=meta,
+        )
+    explainer_html = (
+        '<p class="ck-pi-explainer">'
+        '<em>What the payer mix is really telling you.</em> '
+        "Corpus-wide payer-mix averages, commercial-share × MOIC "
+        "correlations, and a four-regime breakdown (Gov-heavy / "
+        "Balanced / Commercial-mix / Commercial) with per-band MOIC "
+        "quartiles, IRR, and loss rate. Use this to read whether a "
+        "deal's payer mix is load-bearing or incidental to the thesis."
+        '</p>'
+    )
+
     try:
         from ...data_public.payer_intelligence import compute_payer_intelligence
     except Exception as exc:  # noqa: BLE001
@@ -181,14 +206,10 @@ def render_payer_intelligence(
             code="ERR",
         )
         return chartis_shell(
-            body, title="Payer Intelligence",
+            _title("module unavailable") + explainer_html + body,
+            title="Payer Intelligence",
             active_nav="/payer-intelligence",
-        breadcrumbs=[
-            ("Home", "/app"),
-            ("Market", "/market-intel"),
-            ("Payer Intelligence", None),
-        ],
-            subtitle="Module unavailable",
+            extra_css=_EXPLAINER_CSS,
         )
 
     corpus = load_corpus_deals()
@@ -199,14 +220,10 @@ def render_payer_intelligence(
             code="NIL",
         )
         return chartis_shell(
-            body, title="Payer Intelligence",
+            _title("no corpus available") + explainer_html + body,
+            title="Payer Intelligence",
             active_nav="/payer-intelligence",
-        breadcrumbs=[
-            ("Home", "/app"),
-            ("Market", "/market-intel"),
-            ("Payer Intelligence", None),
-        ],
-            subtitle="Corpus unavailable",
+            extra_css=_EXPLAINER_CSS,
         )
 
     try:
@@ -218,14 +235,10 @@ def render_payer_intelligence(
             code="ERR",
         )
         return chartis_shell(
-            body, title="Payer Intelligence",
+            _title("analysis raised an error") + explainer_html + body,
+            title="Payer Intelligence",
             active_nav="/payer-intelligence",
-        breadcrumbs=[
-            ("Home", "/app"),
-            ("Market", "/market-intel"),
-            ("Payer Intelligence", None),
-        ],
-            subtitle="Analysis raised",
+            extra_css=_EXPLAINER_CSS,
         )
 
     commercial = float(pi.avg_commercial or 0)
@@ -233,22 +246,6 @@ def render_payer_intelligence(
     medicaid = float(pi.avg_medicaid or 0)
     self_pay = float(pi.avg_self_pay or 0)
 
-    intro = (
-        f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-left:4px solid {P["accent"]};border-radius:3px;'
-        f'padding:12px 16px;margin-bottom:14px;">'
-        f'<div style="font-family:var(--ck-mono);font-size:9.5px;'
-        f'letter-spacing:0.15em;color:{P["accent"]};margin-bottom:4px;">'
-        f'COMPREHENSIVE VIEW</div>'
-        f'<div style="color:{P["text"]};font-size:12px;line-height:1.6;">'
-        f'Full output of <code style="color:{P["accent"]};'
-        f'font-family:var(--ck-mono);">data_public/payer_intelligence.py</code>. '
-        f'For the thinner summary view, see '
-        f'<a href="/payer-intel" style="color:{P["accent"]};">/payer-intel</a>. '
-        f'This page is the 4-regime breakdown with MOIC correlations, payer-mix '
-        f'bands, and loss-rate by payer-concentration.'
-        f'</div></div>'
-    )
 
     kpis = (
         ck_kpi_block("Commercial %", fmt_pct(commercial), "corpus average")
@@ -314,37 +311,13 @@ def render_payer_intelligence(
         code="REG",
     )
 
-    explainer = render_page_explainer(
-        what=(
-            "Corpus-wide payer-mix averages, three payer-share × MOIC "
-            "correlations (commercial, medicaid, self-pay), and a "
-            "four-regime breakdown with per-regime MOIC P25/P50/P75, "
-            "median IRR, deal count, and loss rate."
-        ),
-        scale=(
-            "Payer regimes are keyed on commercial-share thresholds: "
-            "Gov-heavy < 30% commercial, Balanced 30–50%, Commercial-mix "
-            "50–70%, Commercial ≥ 70%. Correlations are Pearson r over "
-            "realized deals in the corpus."
-        ),
-        use=(
-            "Reach past the 'payer mix matters' headline. A commercial "
-            "MOIC correlation near zero says mix alone is weak signal "
-            "in this corpus; a strong negative medicaid correlation "
-            "says underwriting should haircut high-medicaid targets "
-            "versus the benchmark."
-        ),
-        source=(
-            "data_public/payer_intelligence.py::compute_payer_intelligence; "
-            "REGIME_BUCKETS constant defines the four commercial-share "
-            "bands."
-        ),
-        page_key="payer-intelligence",
+    meta = (
+        f"{len(corpus)} corpus deals · {len(pi.regime_stats)} regimes · "
+        f"commercial-MOIC corr {pi.commercial_moic_corr:.3f}"
     )
-
     body = (
-        explainer
-        + intro
+        _title(meta)
+        + explainer_html
         + kpi_strip
         + ck_section_header(
             "PAYER MIX — CORPUS AVERAGE",
@@ -368,22 +341,5 @@ def render_payer_intelligence(
         body,
         title="Payer Intelligence",
         active_nav="/payer-intelligence",
-        breadcrumbs=[
-            ("Home", "/app"),
-            ("Market", "/market-intel"),
-            ("Payer Intelligence", None),
-        ],
-        subtitle=f"{len(corpus)} corpus deals · {len(pi.regime_stats)} regimes · "
-                 f"commercial-MOIC corr {pi.commercial_moic_corr:.3f}",
-        editorial_intro={
-            "eyebrow": "PAYER INTELLIGENCE",
-            "headline": "What the payer mix is really telling you.",
-            "italic_word": "telling",
-            "body": (
-                "Commercial-share regimes, payer concentration, and "
-                "their realized-MOIC fingerprints across the corpus. "
-                "Use this to read whether the deal's payer mix is "
-                "load-bearing or incidental to the thesis."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS,
     )
