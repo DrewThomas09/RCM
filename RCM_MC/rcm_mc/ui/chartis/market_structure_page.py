@@ -24,8 +24,16 @@ from .._chartis_kit import (
     P,
     chartis_shell,
     ck_kpi_block,
+    ck_page_title,
     ck_section_header,
 )
+_EXPLAINER_CSS = """<style>
+.ck-mkt-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-mkt-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
+
 from ._helpers import (
     deal_header_nav,
     empty_note,
@@ -275,8 +283,22 @@ def render_market_structure(
         page_key="deal-market-structure",
     )
 
+    page_title = ck_page_title(
+        "Market Structure",
+        eyebrow=f"MARKET STRUCTURE · {_html.escape(deal_id)}",
+        meta=f"{_html.escape(label)} · HHI {hhi:,.0f} · {_html.escape(verdict)}",
+    )
+    mkt_explainer = (
+        '<p class="ck-mkt-explainer">'
+        f'<em>{_html.escape(label)}.</em> '
+        "What the market structure reveals on this deal — HHI concentration, "
+        "player shares, and fragmentation verdict."
+        "</p>"
+    )
     body = (
-        explainer
+        page_title
+        + mkt_explainer
+        + explainer
         + header
         + kpi_strip
         + ck_section_header(
@@ -296,10 +318,5 @@ def render_market_structure(
             ("Market", "/market-intel"),
             ("Structure", None),
         ],
-        subtitle=f"{label} · HHI {hhi:,.0f} · {verdict}",
-        editorial_intro={
-            "eyebrow": "MARKET STRUCTURE",
-            "headline": "What the market structure reveals on this deal.",
-            "italic_word": "reveals",
-        }
+        extra_css=_EXPLAINER_CSS,
     )
