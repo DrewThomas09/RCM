@@ -24,6 +24,7 @@ from .._chartis_kit import (
     P,
     chartis_shell,
     ck_kpi_block,
+    ck_page_title,
     ck_section_header,
 )
 from ._helpers import (
@@ -31,12 +32,18 @@ from ._helpers import (
     fmt_multiple,
     fmt_pct,
     load_corpus_deals,
-    render_page_explainer,
     small_panel,
     verdict_badge,
 )
 from ._sanity import render_number
 
+
+_EXPLAINER_CSS = """
+.ck-str-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;
+margin:var(--sc-s-4) 0 var(--sc-s-6);}
+.ck-str-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+"""
 
 _CONSISTENCY_BANDS = [
     (0.70, P["positive"], "HIGH"),
@@ -131,6 +138,23 @@ def render_sponsor_track_record(
     store: Any = None,
     current_user: Optional[str] = None,
 ) -> str:
+    def _title(meta: str) -> str:
+        return ck_page_title(
+            "Sponsor Track Record",
+            eyebrow="SPONSOR TRACK RECORD",
+            meta=meta,
+        )
+    explainer_html = (
+        '<p class="ck-str-explainer">'
+        '<em>What the sponsor track record reveals.</em> '
+        "Sortable league table of every PE sponsor in the 655-deal "
+        "corpus: MOIC quartiles, IRR, hold years, loss rate, home-run "
+        "rate, and a 0–1 consistency score blending MOIC + IRR "
+        "dispersion. A high median MOIC with low consistency is a "
+        "lottery sponsor; tight quartiles signal a compounder."
+        '</p>'
+    )
+
     try:
         from ...data_public.sponsor_track_record import (
             sponsor_league_table, sector_specialization,
@@ -142,14 +166,10 @@ def render_sponsor_track_record(
             code="ERR",
         )
         return chartis_shell(
-            body, title="Sponsor Track Record",
+            _title("module unavailable") + explainer_html + body,
+            title="Sponsor Track Record",
             active_nav="/sponsor-track-record",
-        breadcrumbs=[
-            ("Home", "/app"),
-            ("Market", "/market-intel"),
-            ("Sponsor Track Record", None),
-        ],
-            subtitle="Module unavailable",
+            extra_css=_EXPLAINER_CSS,
         )
 
     corpus = load_corpus_deals()
@@ -164,14 +184,10 @@ def render_sponsor_track_record(
             code="NIL",
         )
         return chartis_shell(
-            body, title="Sponsor Track Record",
+            _title("no corpus available") + explainer_html + body,
+            title="Sponsor Track Record",
             active_nav="/sponsor-track-record",
-        breadcrumbs=[
-            ("Home", "/app"),
-            ("Market", "/market-intel"),
-            ("Sponsor Track Record", None),
-        ],
-            subtitle="Corpus unavailable",
+            extra_css=_EXPLAINER_CSS,
         )
 
     records = sponsor_league_table(corpus, min_deals=2)
@@ -250,53 +266,13 @@ def render_sponsor_track_record(
         f'{"".join(top5_cards)}</div>'
     )
 
-    intro = (
-        f'<p style="color:{P["text_dim"]};font-size:12px;line-height:1.6;'
-        f'margin-bottom:10px;">'
-        f'Complement to <a href="/sponsor-heatmap" style="color:{P["accent"]};">'
-        f'/sponsor-heatmap</a> (sector × sponsor MOIC grid) and '
-        f'<a href="/sponsor-league" style="color:{P["accent"]};">/sponsor-league</a> '
-        f'(top-25 by MOIC). This page surfaces the full '
-        f'<code style="color:{P["accent"]};font-family:var(--ck-mono);">'
-        f'sponsor_track_record</code> module — consistency scoring, '
-        f'loss + home-run rates, and per-sponsor sector specialization from '
-        f'the corpus.'
-        f'</p>'
+    meta = (
+        f"{total_sponsors} sponsors · {total_deals} deals · "
+        f"{realized} realized"
     )
-
-    explainer = render_page_explainer(
-        what=(
-            "Sortable league table of every PE sponsor in the 655-deal "
-            "corpus with deal count, MOIC quartiles, median IRR, median "
-            "hold, loss rate, home-run rate, and a 0–100 consistency "
-            "score blending MOIC dispersion, IRR dispersion, and deal "
-            "count."
-        ),
-        scale=(
-            "Loss deals are realized MOIC < 1.0x; home-runs are realized "
-            "MOIC > 3.0x. Consistency ≥ 0.70 is HIGH band, 0.45–0.70 "
-            "MEDIUM, below 0.45 LOW. League default sort is median MOIC "
-            "descending, filtered to sponsors with ≥ 2 tracked deals."
-        ),
-        use=(
-            "Compare sponsors before relying on their league-table "
-            "headline. A high median MOIC with low consistency is a "
-            "lottery sponsor; a lower median with tight quartiles is a "
-            "compounder. Loss rate + home-run rate together show the "
-            "shape of their distribution, not just the midpoint."
-        ),
-        source=(
-            "data_public/sponsor_track_record.py::sponsor_league_table "
-            "(thresholds at MOIC <1.0x loss, >3.0x home-run); "
-            "sponsor_consistency_score_raw (MOIC + IRR dispersion + "
-            "deal-count composite)."
-        ),
-        page_key="sponsor-track-record",
-    )
-
     body = (
-        explainer
-        + intro
+        _title(meta)
+        + explainer_html
         + kpi_strip
         + ck_section_header("TOP 5 BY MEDIAN MOIC", "highest realized returns")
         + top5_strip
@@ -312,16 +288,5 @@ def render_sponsor_track_record(
         body,
         title="Sponsor Track Record",
         active_nav="/sponsor-track-record",
-        breadcrumbs=[
-            ("Home", "/app"),
-            ("Market", "/market-intel"),
-            ("Sponsor Track Record", None),
-        ],
-        subtitle=f"{total_sponsors} sponsors · {total_deals} deals · "
-                 f"{realized} realized",
-        editorial_intro={
-            "eyebrow": "SPONSOR TRACK RECORD",
-            "headline": "What the sponsor track record reveals on this deal.",
-            "italic_word": "reveals",
-        }
+        extra_css=_EXPLAINER_CSS,
     )
