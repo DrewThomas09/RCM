@@ -6,7 +6,14 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+
+_EXPLAINER_CSS = """<style>
+.ck-csch-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-csch-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 
 
 def _jcurve_svg(quarters) -> str:
@@ -291,15 +298,23 @@ def render_capital_schedule(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
-    body = f"""
+    page_title = ck_page_title(
+        "Capital Call & Distribution Schedule",
+        eyebrow="CAPITAL SCHEDULE",
+        meta=(
+            f"${r.fund_size_mm:,.0f}M fund · TVPI {r.final_tvpi:.2f}x · "
+            f"net IRR {r.net_irr * 100:.1f}% · {r.corpus_deal_count:,} corpus deals"
+        ),
+    )
+    csch_explainer = (
+        '<p class="ck-csch-explainer">'
+        "<em>What the capital schedule reveals on this deal.</em> "
+        "Fund lifecycle cash flows: J-curve, DPI/TVPI trajectory, annual capital schedule, "
+        "LP investor base, and European waterfall."
+        "</p>"
+    )
+    body = page_title + csch_explainer + f"""
 <div class="ck-page-wrap">
-
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Capital Call &amp; Distribution Schedule</h1>
-    <p class="ck-page-sub">
-      Fund lifecycle cash flows — J-curve, DPI/TVPI trajectory, LP waterfall — ${r.fund_size_mm:,.0f}M fund / {r.corpus_deal_count:,} corpus deals
-    </p>
-  </div>
 
   {form}
 
@@ -346,8 +361,4 @@ def render_capital_schedule(params: dict = None) -> str:
 </div>"""
 
     return chartis_shell(body, "Capital Schedule", active_nav="/capital-schedule",
-        editorial_intro={
-            "eyebrow": "CAPITAL SCHEDULE",
-            "headline": "What the capital schedule page reveals on this deal.",
-            "italic_word": "reveals",
-        })
+        extra_css=_EXPLAINER_CSS)
