@@ -13,6 +13,13 @@ import html as _html
 import urllib.parse as _urlparse
 from typing import Any, Dict, List, Optional  # noqa: F401
 
+_EXPLAINER_CSS = """<style>
+.ck-co-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-co-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
+
 
 def _input_form(qs: Dict[str, Any]) -> str:
     """Form so a partner can re-run with different inputs without
@@ -238,7 +245,7 @@ def render_comparable_outcomes_page(
     from . import _web_components as _wc
     from ._chartis_kit import (
         chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-        ck_next_section, ck_provenance_tooltip,
+        ck_next_section, ck_page_title, ck_provenance_tooltip,
     )
     from ..diligence.comparable_outcomes import benchmark_deal
     from ..data_public.deals_corpus import DealsCorpus
@@ -478,10 +485,25 @@ def render_comparable_outcomes_page(
             'class="ck-link">Preview print version →</a>'
             '</div>'
         )
+        sector_label = _html.escape(str(target.get("sector") or ""))
+        page_title_block = ck_page_title(
+            "Comparable Outcomes",
+            eyebrow="COMPARABLE OUTCOMES",
+            meta=f"{n_comp} matched · {sector_label}" if sector_label else f"{n_comp} matched",
+        )
+        explainer_html = (
+            '<p class="ck-co-explainer">'
+            '<em>What deals like this actually returned.</em> '
+            "Realized-MOIC distribution across corpus deals matched on "
+            "profile distance — sector, size, vintage, payer mix. Use "
+            "the bands as the underwriting reality check; the bear case "
+            "should land near the corpus P25."
+            '</p>'
+        )
         inner = (
-            ck_eyebrow("Comparable Outcomes")
+            page_title_block
+            + explainer_html
             + kpi_strip
-            + header
             + form
             + print_cta
             + _outcome_strip(summary)
@@ -503,17 +525,8 @@ def render_comparable_outcomes_page(
             + _wc.sortable_table_js()
             + next_up
         )
-    return chartis_shell(body, "Comparable outcomes",
-                         active_nav="/diligence/comparable-outcomes",
-        editorial_intro={
-            "eyebrow": "COMPARABLE OUTCOMES",
-            "headline": "What deals like this actually returned.",
-            "italic_word": "actually",
-            "body": (
-                "Realized-MOIC distribution across corpus deals "
-                "matched on profile distance - sector, size, "
-                "vintage, payer mix. Use the bands as the "
-                "underwriting reality check; the bear case "
-                "should land near the corpus P25."
-            ),
-        })
+    return chartis_shell(
+        body, "Comparable outcomes",
+        active_nav="/diligence/comparable-outcomes",
+        extra_css=_EXPLAINER_CSS,
+    )
