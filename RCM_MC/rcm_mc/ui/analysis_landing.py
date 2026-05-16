@@ -16,8 +16,16 @@ from ._chartis_kit import (
     ck_fmt_num,
     ck_kpi_block,
     ck_next_section,
+    ck_page_title,
     ck_provenance_tooltip,
 )
+
+_EXPLAINER_CSS = """<style>
+.ck-al-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-al-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 from .brand import PALETTE
 
 
@@ -211,19 +219,17 @@ def render_analysis_landing(
         + '</div>'
     )
 
-    # Editorial section header — eyebrow + serif h2 + descriptor
-    page_head = (
-        '<div class="sect">'
-        '<div>'
-        f'{ck_eyebrow("Analysis Hub")}'
-        '<h2>Pick a deal,<br/><em>run any model</em>.</h2>'
-        '</div>'
-        '<p class="desc">'
+    page_head = ck_page_title(
+        "Analysis Hub",
+        eyebrow="ANALYSIS",
+        meta=f"{deals_label} — click any model to run it instantly",
+    ) + (
+        '<p class="ck-al-explainer">'
+        '<em>Every model, one click away.</em> '
         f'{deals_label} in the workspace. Click a model badge for a single '
         'analysis, or <strong>Full Analysis</strong> to open the 7-tab '
         'workbench. Market tools below run without a selected deal.'
         '</p>'
-        '</div>'
     )
 
     next_up = ck_next_section(
@@ -237,16 +243,5 @@ def render_analysis_landing(
     return chartis_shell(
         body, "Analysis",
         active_nav="/analysis",
-        subtitle=f"{deals_label} — click any model to run it instantly",
-        editorial_intro={
-            "eyebrow": "ANALYSIS",
-            "headline": "Where every model is one click away.",
-            "italic_word": "every",
-            "body": (
-                "The hub between deal and model. Pick a deal, "
-                "then run any of the seven analyses (DCF, LBO, "
-                "3-statement, market, denial, scenarios, exit) "
-                "without re-entering the data."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS,
     )
