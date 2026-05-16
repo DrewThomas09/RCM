@@ -18,9 +18,17 @@ from .._chartis_kit import (
     P,
     chartis_shell,
     ck_kpi_block,
+    ck_page_title,
     ck_provenance_tooltip,
     ck_section_header,
 )
+_EXPLAINER_CSS = """<style>
+.ck-stress-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-stress-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
+
 from ._helpers import (
     deal_header_nav,
     empty_note,
@@ -263,8 +271,26 @@ def render_stress(
         page_key="deal-stress",
     )
 
+    page_title = ck_page_title(
+        "Stress Grid",
+        eyebrow=f"STRESS GRID · {_html.escape(deal_id)}",
+        meta=(
+            f"{_html.escape(label)} · grade {_html.escape(grade)} · "
+            f"{pass_rate*100:.0f}% downside pass · "
+            f"{n_breaches} breach{'es' if n_breaches != 1 else ''}"
+        ),
+    )
+    stress_explainer = (
+        '<p class="ck-stress-explainer">'
+        f'<em>{_html.escape(label)}.</em> '
+        "Where the deal breaks under pressure — downside, upside, baseline, "
+        "and regulatory scenarios run against the live packet."
+        "</p>"
+    )
     body = (
-        explainer
+        page_title
+        + stress_explainer
+        + explainer
         + header
         + _grade_banner(grade, pass_rate, n_breaches, partner_summary)
         + kpi_strip
@@ -287,13 +313,7 @@ def render_stress(
             ("Deals", "/deals"),
             ("Stress Grid", None),
         ],
-        subtitle=f"{label} · grade {grade} · {pass_rate*100:.0f}% downside pass · "
-                 f"{n_breaches} breach{'es' if n_breaches != 1 else ''}",
-        editorial_intro={
-            "eyebrow": "STRESS GRID",
-            "headline": "Where the deal breaks under pressure.",
-            "italic_word": "breaks",
-        },
+        extra_css=_EXPLAINER_CSS,
     )
 
 
