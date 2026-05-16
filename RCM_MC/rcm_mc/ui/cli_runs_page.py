@@ -35,8 +35,15 @@ from typing import Any, Dict, List, Optional
 from ..infra.run_history import list_runs
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_next_section, ck_provenance_tooltip,
+    ck_next_section, ck_page_title, ck_provenance_tooltip,
 )
+
+_EXPLAINER_CSS = """<style>
+.ck-clr-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-clr-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 from ._ui_kit import fmt_iso_date, fmt_num
 
 
@@ -188,25 +195,30 @@ def render_cli_runs_page(
         + '</div>'
     )
 
+    page_title = ck_page_title(
+        "CLI Run History",
+        eyebrow="CLI RUN HISTORY",
+        meta=f"{len(runs)} runs · most recent first · limit {limit}",
+    )
+    clr_explainer = (
+        '<p class="ck-clr-explainer">'
+        "<em>Where every CLI simulation lands.</em> "
+        "Per-run audit log of <code>rcm-mc</code> CLI simulations — "
+        "input hashes, EBITDA-drag percentiles, output directory. "
+        "Re-running with identical configs shows the same hash pair, "
+        "so you can spot bit-for-bit reproducibility regressions."
+        "</p>"
+    )
     body = (
-        ck_eyebrow("CLI Run History")
+        page_title
+        + clr_explainer
         + kpi_strip
         + '<section style="max-width:80rem;">'
-        '<div style="display:flex;justify-content:space-between;'
-        'align-items:baseline;margin-bottom:.75rem;">'
-        '<h1 style="margin:0;">CLI Run History</h1>'
+        f'<div style="text-align:right;margin-bottom:.75rem;">'
         f'<span class="micro" style="color:var(--muted,#9ca3af);">'
         f'{fmt_num(len(runs))} runs · most recent first · '
         f'limit {fmt_num(limit)}</span>'
         '</div>'
-        '<p style="max-width:48rem;color:var(--muted,#9ca3af);'
-        'margin:0 0 1rem 0;">'
-        'Every <code>rcm-mc</code> simulation run logged in '
-        '<code>&lt;outdir&gt;/runs.sqlite</code>. Drag mean / P10 / P90 '
-        'are the EBITDA-drag percentiles from the run\'s Monte Carlo '
-        'distribution; hashes truncate the SHA-256 of the actual.yaml / '
-        'benchmark.yaml at run time so a re-run of identical configs '
-        'shows the same hash pair.</p>'
         + catalog_body
         + '</section>'
         + ck_next_section(
@@ -220,17 +232,5 @@ def render_cli_runs_page(
     return chartis_shell(
         body,
         "CLI Run History",
-        subtitle="rcm-mc simulation log",
-        editorial_intro={
-            "eyebrow": "CLI RUN HISTORY",
-            "headline": "Where every CLI simulation lands.",
-            "italic_word": "every",
-            "body": (
-                "Per-run audit log of rcm-mc CLI simulations - "
-                "input hashes, EBITDA-drag percentiles, output "
-                "directory. Re-running with identical configs "
-                "shows the same hash pair, so you can spot "
-                "bit-for-bit reproducibility regressions."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS,
     )
