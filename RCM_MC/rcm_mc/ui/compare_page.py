@@ -23,10 +23,16 @@ from ..diligence.counterfactual import (
 )
 from ..diligence._pages import AVAILABLE_FIXTURES, _resolve_dataset
 from ._chartis_kit import (
-    P, chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+    P, chartis_shell, ck_fmt_num, ck_kpi_block,
     ck_next_section, ck_page_title, ck_provenance_tooltip,
 )
 from .power_ui import diff_badge
+
+_EXPLAINER_CSS = """
+.ck-cp-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;margin:var(--sc-s-4) 0 var(--sc-s-6);}
+.ck-cp-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+"""
 
 
 def _landing_compare() -> str:
@@ -76,22 +82,23 @@ def _landing_compare() -> str:
         + '</div>'
     )
 
+    title_block = ck_page_title(
+        "Compare Deals", eyebrow="DEAL COMPARE",
+        meta=f"{len(AVAILABLE_FIXTURES)} fixtures · KPIs / QoR / CF / bridge",
+    )
+    explainer_html = (
+        '<p class="ck-cp-explainer">'
+        '<em>Where the deals stand against each other.</em> '
+        "Side-by-side comparison of two diligence fixtures across CCD-derived "
+        "KPIs, QoR reconciliation, counterfactuals, and bridge-lever impact. "
+        "Delta badges show which target wins on each dimension."
+        "</p>"
+    )
     body = (
-        ck_eyebrow("Side-by-side Compare")
+        title_block
+        + explainer_html
         + kpi_strip
-        + f'<div style="padding:24px 0 12px 0;">'
-        f'<div style="font-size:11px;color:{P["text_faint"]};letter-spacing:1.5px;'
-        f'text-transform:uppercase;margin-bottom:6px;font-weight:600;">'
-        f'Side-by-side Compare</div>'
-        f'<div style="font-size:22px;color:{P["text"]};font-weight:600;'
-        f'margin-bottom:4px;">Pick two fixtures</div>'
-        f'<div style="font-size:12px;color:{P["text_dim"]};max-width:680px;'
-        f'line-height:1.6;">Compare CCD-derived KPIs, QoR reconciliation, '
-        f'counterfactuals, and bridge-lever impact between any two '
-        f'targets. Delta badges show which side wins on each '
-        f'dimension.</div>'
-        f'</div>'
-        f'<form method="GET" action="/diligence/compare" '
+        + f'<form method="GET" action="/diligence/compare" '
         f'style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;'
         f'align-items:end;max-width:760px;margin-top:20px;">'
         f'<div><label style="font-size:9px;color:{P["text_faint"]};'
@@ -113,20 +120,11 @@ def _landing_compare() -> str:
         f'text-transform:uppercase;font-weight:700;cursor:pointer;">Compare</button>'
         f'</form>'
     )
-    return chartis_shell(body, "RCM Diligence — Compare",
-                        subtitle="Side-by-side comparison",
-        editorial_intro={
-            "eyebrow": "COMPARE DEALS",
-            "headline": "Where the deals stand against each other.",
-            "italic_word": "stand",
-            "body": (
-                "Side-by-side comparison of two or three deals "
-                "across the standard analysis dimensions - "
-                "economics, RCM, market, exit. Use this when "
-                "you're choosing between competing opportunities "
-                "or pattern-matching to a recently closed peer."
-            ),
-        })
+    return chartis_shell(
+        body, "Compare Deals",
+        active_nav="/diligence/compare",
+        extra_css=_EXPLAINER_CSS,
+    )
 
 
 def _analyse_fixture(name: str) -> Optional[Dict[str, Any]]:
@@ -422,18 +420,7 @@ def _render_comparison(
         title_html + hero + table_html + grid + next_up,
         f"Compare — {left['name']} vs {right['name']}",
         active_nav="/diligence/compare",
-        subtitle="Side-by-side",
-        editorial_intro={
-            "eyebrow": "DEAL COMPARE",
-            "headline": "Where these two deals diverge.",
-            "italic_word": "diverge",
-            "body": (
-                "Side-by-side metrics + radar across analysis "
-                "dimensions. Press 'b' to bookmark; the deal "
-                "you ultimately choose anchors the IC discussion "
-                "on the gaps between the two profiles."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS,
     )
 
 

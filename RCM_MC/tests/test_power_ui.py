@@ -132,7 +132,7 @@ class ComparePageTests(unittest.TestCase):
 
     def test_landing_renders_picker_form(self):
         h = render_compare_page()
-        self.assertIn("Side-by-side Compare", h)
+        self.assertIn("DEAL COMPARE", h)
         self.assertIn('name="left"', h)
         self.assertIn('name="right"', h)
 
