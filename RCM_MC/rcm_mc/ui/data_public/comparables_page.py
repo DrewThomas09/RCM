@@ -19,6 +19,13 @@ import html as _html
 import importlib
 from typing import Any, Dict, List, Optional, Tuple
 
+_EXPLAINER_CSS = """<style>
+.ck-comps-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-comps-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
+
 
 def _load_corpus() -> List[Dict[str, Any]]:
     from rcm_mc.data_public.deals_corpus import _SEED_DEALS
@@ -290,7 +297,9 @@ def render_comparables(
     search: str = "",
     n: int = 20,
 ) -> str:
-    from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_kpi_block
+    from rcm_mc.ui._chartis_kit import (
+        chartis_shell, ck_kpi_block, ck_page_title, ck_section_header,
+    )
     from rcm_mc.data_public.deal_comparables_enhanced import find_enhanced_comps
 
     corpus = _load_corpus()
@@ -362,32 +371,28 @@ def render_comparables(
     if has_query and comps:
         peer_panel = _peer_stats_panel(comps, query_deal)
 
-    body = kpis + form + (peer_panel + section + comps_table if peer_panel else section + comps_table)
-
-    entry_multiple_str = ""
-    if ev_mm and ebitda_mm and ebitda_mm > 0:
-        mult = ev_mm / ebitda_mm
-        entry_multiple_str = f" · {mult:.1f}× entry multiple"
+    page_title = ck_page_title(
+        "Corpus Comparables",
+        eyebrow="COMPARABLES",
+        meta=f"{total_corpus} deals · {realized_n} realized",
+    )
+    explainer_html = (
+        '<p class="ck-comps-explainer">'
+        '<em>Which deals look like this one.</em> '
+        "Profile-distance match against the realized corpus "
+        "— sector, size, entry multiple, payer mix. The "
+        "bands you see at MOIC P25/P50/P75 anchor what "
+        "good and bad outcomes look like for this archetype."
+        '</p>'
+    )
+    body = (
+        page_title + explainer_html + kpis + form
+        + (peer_panel + section + comps_table if peer_panel else section + comps_table)
+    )
 
     return chartis_shell(
         body,
         title="Corpus Comparables",
         active_nav="/comparables",
-        subtitle=(
-            f"{len(comps)} comparables" +
-            (f" · {sector}" if sector else "") +
-            (f" · EV ${ev_mm:,.0f}M" if ev_mm else "") +
-            entry_multiple_str
-        ) if has_query else f"{total_corpus} deals · {realized_n} realized",
-        editorial_intro={
-            "eyebrow": "COMPARABLES",
-            "headline": "Which deals look like this one.",
-            "italic_word": "look",
-            "body": (
-                "Profile-distance match against the realized corpus "
-                "— sector, size, entry multiple, payer mix. The "
-                "bands you see at MOIC P25/P50/P75 anchor what "
-                "good and bad outcomes look like for this archetype."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS,
     )
