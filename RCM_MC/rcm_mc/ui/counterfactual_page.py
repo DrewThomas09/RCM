@@ -31,8 +31,15 @@ from ..diligence.counterfactual import (
 )
 from ._chartis_kit import (
     P, chartis_shell, ck_eyebrow, ck_fmt_currency, ck_fmt_num,
-    ck_kpi_block, ck_next_section, ck_provenance_tooltip,
+    ck_kpi_block, ck_next_section, ck_page_title, ck_provenance_tooltip,
 )
+
+_EXPLAINER_CSS = """
+.ck-cf-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;
+margin:var(--sc-s-4) 0 var(--sc-s-6);}
+.ck-cf-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+"""
 
 
 # ── Design system primitives ──────────────────────────────────────
@@ -443,20 +450,24 @@ def _landing_page() -> str:
         f'<option value="{html.escape(name)}">{html.escape(label)}</option>'
         for name, label in AVAILABLE_FIXTURES
     )
+    title_block = ck_page_title(
+        "Counterfactual Advisor", eyebrow="COUNTERFACTUAL ADVISOR",
+        meta="What would change your mind on this deal",
+    )
+    explainer_html = (
+        '<p class="ck-cf-explainer">'
+        '<em>What would change your mind on this deal.</em> '
+        "For every RED / CRITICAL finding, the advisor back-solves the "
+        "minimum input change that flips the band — the answer to the "
+        "partner question: is there an offer modification that fixes "
+        "this? Runs across CPOM, NSA, Steward Score, TEAM, antitrust, "
+        "cyber, and site-neutral."
+        '</p>'
+    )
     body = (
         _page_style()
-        + '<div class="cf-hero">'
-        + '<div class="cf-eyebrow">Counterfactual Advisor</div>'
-        + '<div class="cf-title">What Would Change Our Mind?</div>'
-        + f'<div style="font-size:13px;color:{P["text_dim"]};'
-        + f'max-width:720px;line-height:1.6;margin-top:{S[3]}px;">'
-        + 'For every RED / CRITICAL finding, the advisor back-solves '
-        + 'the minimum input change that flips the band — the answer '
-        + 'to the partner question: <em style="color:'
-        + f'{P["text"]};">is there an offer modification that fixes '
-        + 'this?</em> Runs across CPOM, NSA, Steward Score, TEAM, '
-        + 'antitrust, cyber, and site-neutral.</div>'
-        + '</div>'
+        + title_block
+        + explainer_html
         + '<form method="GET" action="/diligence/counterfactual" class="cf-form">'
         + '<label class="cf-form-label">Dataset</label>'
         + f'<select name="dataset" required><option value="">— pick a CCD fixture —</option>{options}</select>'
@@ -477,8 +488,9 @@ def _landing_page() -> str:
         + '</form>'
     )
     return chartis_shell(
-        body, "RCM Diligence — Counterfactual Advisor",
-        subtitle="What Would Change Your Mind",
+        body, "Counterfactual Advisor",
+        active_nav="/diligence/counterfactual",
+        extra_css=_EXPLAINER_CSS,
     )
 
 
@@ -866,8 +878,23 @@ def render_counterfactual_page(
     download_url = (
         f"/api/counterfactual/{dataset}?{urlencode(download_qs)}"
     )
+    results_title = ck_page_title(
+        "Counterfactual Advisor", eyebrow="COUNTERFACTUAL ADVISOR",
+        meta=f"Dataset: {html.escape(dataset)}",
+    )
+    results_explainer = (
+        '<p class="ck-cf-explainer">'
+        '<em>What would change your mind on this deal.</em> '
+        "For each lever (rate, denial, AR), the smallest shift that "
+        "flips the verdict. If you can't move that lever, the verdict "
+        "holds — use this as the 'what we're waiting for' surface "
+        "during diligence."
+        '</p>'
+    )
     body = (
         _page_style()
+        + results_title
+        + results_explainer
         + _render_hero(dataset, cf_set, lever, download_url)
         + _render_ccd_summary(ccd_summary)
         + _render_counterfactuals(cf_set)
@@ -881,18 +908,7 @@ def render_counterfactual_page(
     )
     return chartis_shell(
         body,
-        f"Counterfactual Advisor — {dataset}",
-        subtitle="What Would Change Your Mind",
-        editorial_intro={
-            "eyebrow": "COUNTERFACTUAL ADVISOR",
-            "headline": "What would change your mind on this deal.",
-            "italic_word": "change",
-            "body": (
-                "For each lever (rate, denial, AR), the smallest "
-                "shift that would flip the verdict. Use this as "
-                "the 'what we're waiting for' surface during "
-                "diligence - if you can't move that lever, the "
-                "verdict holds."
-            ),
-        },
+        f"Counterfactual Advisor — {html.escape(dataset)}",
+        active_nav="/diligence/counterfactual",
+        extra_css=_EXPLAINER_CSS,
     )
