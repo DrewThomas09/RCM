@@ -20,6 +20,12 @@ from ..diligence.screening import (
 )
 
 
+_EXPLAINER_CSS = """
+.ck-bs-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;margin:var(--sc-s-4) 0 var(--sc-s-6);}
+.ck-bs-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+"""
+
 _VERDICT_COLOR = {
     BankruptcySurvivorVerdict.GREEN:    "#1f7a3a",
     BankruptcySurvivorVerdict.YELLOW:   "#b07c1f",
@@ -174,10 +180,8 @@ def render_scan_landing() -> str:
         "</form>"
         "</div>"  # close .bsv-landing
     )
-    # Cycle 43 — KPI strip primitives at the top + chartis chrome.
     from ._chartis_kit import (
-        ck_eyebrow, ck_kpi_block, ck_next_section, ck_provenance_tooltip,
-        ck_section_header,
+        ck_kpi_block, ck_next_section, ck_page_title, ck_provenance_tooltip,
     )
     patterns_value = ck_provenance_tooltip(
         "Patterns in the screen",
@@ -240,12 +244,22 @@ def render_scan_landing() -> str:
         )
         + '</div>'
     )
+    title_block = ck_page_title(
+        "Bankruptcy-Survivor Scan", eyebrow="BANKRUPTCY SURVIVOR",
+        meta="12 patterns · Steward / Envision / Mednax precedents",
+    )
+    explainer_html = (
+        '<p class="ck-bs-explainer">'
+        '<em>Whether the deal survives the playbook.</em> '
+        "12 patterns drawn from PE-healthcare bankruptcies (Steward, "
+        "Envision, Mednax) — a rapid pre-screen against the structural "
+        "moves that have already broken deals. Each fired pattern is a "
+        "falsifiable claim, not a verdict."
+        "</p>"
+    )
     body = (
-        ck_eyebrow("Pre-screening")
-        + ck_section_header(
-            "Bankruptcy-Survivor Scan",
-            eyebrow="STRUCTURAL PATTERNS",
-        )
+        title_block
+        + explainer_html
         + kpi_strip
         + body
         + ck_next_section(
@@ -255,20 +269,11 @@ def render_scan_landing() -> str:
             italic_word="bear",
         )
     )
-    return chartis_shell(body, "Bankruptcy-Survivor Scan",
-                         subtitle="12-pattern PE-healthcare playbook screen",
-        editorial_intro={
-            "eyebrow": "BANKRUPTCY SURVIVOR",
-            "headline": "Whether the deal survives the playbook.",
-            "italic_word": "survives",
-            "body": (
-                "12 patterns drawn from PE-healthcare bankruptcies "
-                "(Steward, Envision, Mednax) — a rapid screen "
-                "against the moves that have already broken "
-                "deals. Each fired pattern is a falsifiable "
-                "claim, not a verdict."
-            ),
-        })
+    return chartis_shell(
+        body, "Bankruptcy-Survivor Scan",
+        active_nav="/screening/bankruptcy-survivor",
+        extra_css=_EXPLAINER_CSS,
+    )
 
 
 def render_scan_result(scan: BankruptcySurvivorScan) -> str:
@@ -299,7 +304,22 @@ def render_scan_result(scan: BankruptcySurvivorScan) -> str:
     # chartis_shell so it inherits the navy topbar + parchment palette
     # + italic-serif headings instead of standing alone in the legacy
     # _style() doctype.
-    from ._chartis_kit import chartis_shell, ck_kpi_block, ck_provenance_tooltip
+    from ._chartis_kit import (
+        chartis_shell, ck_kpi_block, ck_page_title, ck_provenance_tooltip,
+    )
+    result_title = ck_page_title(
+        f"Bankruptcy-Survivor Scan — {html.escape(scan.target_name)}",
+        eyebrow="BANKRUPTCY SURVIVOR",
+        meta=f"{scan.patterns_hit}/12 patterns hit · {scan.critical_hits} critical",
+    )
+    result_explainer = (
+        '<p class="ck-bs-explainer">'
+        f'<em>Verdict: {html.escape(scan.verdict.value)}.</em> '
+        f"{html.escape(_VERDICT_COPY[scan.verdict])} "
+        "Each fired pattern cites a falsifiable historical precedent — "
+        "refute or confirm before proceeding."
+        "</p>"
+    )
     body = (
         f"<p style='font-size:13pt;color:#2a2a2a;'>{html.escape(scan.target_name)}</p>"
         f"<div class='verdict' style='border-color:{color};'>"
@@ -325,18 +345,8 @@ def render_scan_result(scan: BankruptcySurvivorScan) -> str:
         f"<div class='caveat'>Computed {html.escape(scan.computed_at)}.</div>"
     )
     return chartis_shell(
-        body,
-        title=f"Bankruptcy-Survivor Scan — {scan.target_name}",
-        subtitle=f"{scan.patterns_hit}/12 patterns hit · {scan.critical_hits} critical matches",
-        extra_css=_style(),
-        editorial_intro={
-            "eyebrow": "BANKRUPTCY SURVIVOR",
-            "headline": f"Whether {scan.target_name} survives the playbook.",
-            "italic_word": "survives",
-            "body": (
-                f"Verdict: {scan.verdict.value}. {copy} "
-                "Each fired pattern cites a falsifiable historical "
-                "precedent — refute or confirm before proceeding."
-            ),
-        },
+        result_title + result_explainer + body,
+        title=f"Bankruptcy-Survivor Scan — {html.escape(scan.target_name)}",
+        active_nav="/screening/bankruptcy-survivor",
+        extra_css=_EXPLAINER_CSS + _style(),
     )
