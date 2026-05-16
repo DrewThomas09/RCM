@@ -521,6 +521,13 @@ class PredictedMetric:
     #: ``ridge_regression`` / ``knn`` / ``weighted_median``. Empty
     #: string on older packets (back-compat).
     model_selection: str = ""
+    #: A.1 — diagnostic channel. Set by the ridge predictor when the
+    #: fit was recoverable-but-suspect (pinv fallback, 200%-relative
+    #: CI width, negative LOO R²). Stored as the string value of
+    #: :class:`rcm_mc.ml.ridge_predictor.FailureReason` so the packet
+    #: JSON wire stays plain text. ``None`` on a clean fit and on
+    #: older packets that predate this field.
+    failure_reason: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -535,10 +542,18 @@ class PredictedMetric:
             "coverage_target": _json_safe(self.coverage_target),
             "reliability_grade": self.reliability_grade,
             "model_selection": self.model_selection,
+            "failure_reason": self.failure_reason,
         }
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "PredictedMetric":
+        # ``failure_reason`` is read defensively — older packets won't
+        # have the key at all; newer packets store the string value of
+        # the enum. We don't validate against the enum here to keep
+        # packet.py free of an import on rcm_mc.ml.ridge_predictor
+        # (which would create a cycle).
+        fr = d.get("failure_reason")
+        failure_reason = str(fr) if fr is not None else None
         return cls(
             value=float(d.get("value") or 0.0),
             ci_low=float(d.get("ci_low") or 0.0),
@@ -551,6 +566,7 @@ class PredictedMetric:
             coverage_target=float(d.get("coverage_target") or 0.0),
             reliability_grade=str(d.get("reliability_grade") or ""),
             model_selection=str(d.get("model_selection") or ""),
+            failure_reason=failure_reason,
         )
 
 

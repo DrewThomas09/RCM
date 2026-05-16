@@ -28,6 +28,7 @@ from __future__ import annotations
 import logging
 import math
 from dataclasses import dataclass, field, asdict
+from enum import Enum
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
@@ -53,6 +54,47 @@ _MIN_FOR_MEDIAN = 5
 _RIDGE_ALPHA = 1.0
 _DEFAULT_COVERAGE = 0.90
 
+# Relative-CI-width threshold for the CI_UNSTABLE chip. A fit lands here
+# when (ci_high - ci_low) > _CI_UNSTABLE_REL_WIDTH × |point|. The 2.0
+# value is a 200%-relative-width rule of thumb calibrated for unitless
+# rate metrics (denial_rate, ncr, etc.). It over-fires when |point| is
+# near zero — the abs(value) > 1e-9 guard in the caller avoids the
+# worst pathology, but partner should treat near-zero predictions with
+# extra care anyway. Tier B will replace this with a principled
+# normalized stability metric (CV against per-metric baseline, or CI
+# half-width / pooled residual SE). Logged in TODO_TIER_B.md.
+_CI_UNSTABLE_REL_WIDTH = 2.0
+
+
+# ── FailureReason — diagnostic channel for PredictedMetric ───────────
+
+
+class FailureReason(Enum):
+    """Why a PredictedMetric is diagnostically suspect.
+
+    Set on ``PredictedMetric.failure_reason`` when the predictor's
+    internal fit hit a recoverable issue or a hard data-shape failure.
+    The UI chip helper (``ck_prediction_chip`` in
+    :mod:`rcm_mc.ui._chartis_kit`) renders one of three visual variants
+    keyed off this enum.
+
+    A.1 scope: the ridge predictor sets ``PINV_FALLBACK`` /
+    ``CI_UNSTABLE`` / ``R2_NEGATIVE`` (the three diagnostic-on-success
+    triggers). The other reasons (``INSUFFICIENT_COMPARABLES``,
+    ``TARGET_FEATURES_MISSING``, ``NO_BENCHMARK``, ``FIT_EXCEPTION``)
+    are reserved for the Tier B orchestrator refactor that will tag
+    fallback-method PMs with the upstream reason their preferred method
+    couldn't run, and emit a sentinel PM on hard failure instead of
+    returning ``None`` from the orchestrator.
+    """
+    INSUFFICIENT_COMPARABLES = "insufficient_comparables"  # n too small for chosen method
+    TARGET_FEATURES_MISSING  = "target_features_missing"   # can't build x_target vector
+    NO_BENCHMARK             = "no_benchmark"               # registry has no P50 fallback
+    PINV_FALLBACK            = "pinv_fallback"              # singular matrix → pinv recovery
+    CI_UNSTABLE              = "ci_unstable"                # 200%+ relative CI width
+    R2_NEGATIVE              = "r2_negative"                # LOO R² < 0 (worse than mean)
+    FIT_EXCEPTION            = "fit_exception"              # non-recoverable solver raise
+
 
 # ── PredictedMetric (ridge-flavor) ───────────────────────────────────
 
@@ -72,9 +114,25 @@ class PredictedMetric:
     r_squared: float = 0.0
     feature_importances: Dict[str, float] = field(default_factory=dict)
     reliability_grade: str = "D"
+    #: Diagnostic channel — set when the fit had a recoverable issue
+    #: (e.g. pinv fallback) or unstable diagnostics (wide CI, negative
+    #: LOO R²). Renders as a chip via ``ck_prediction_chip``. ``None``
+    #: on a clean fit. See :class:`FailureReason`. Audit-corrected
+    #: framing: the original "silent zero-fill on r_squared" framing
+    #: was incomplete — the actual bug is that ``0.0`` is used as a
+    #: "method N/A" sentinel by weighted_median + benchmark_fallback
+    #: and is indistinguishable from a genuine zero. ``failure_reason``
+    #: is the authoritative diagnostic channel; the numeric-default
+    #: refactor is deferred to Tier B as a separate logical change.
+    failure_reason: Optional[FailureReason] = None
 
     def to_dict(self) -> Dict[str, Any]:
-        return asdict(self)
+        d = asdict(self)
+        # asdict() preserves the Enum object — coerce to its string
+        # value so JSON round-trip stays clean.
+        if self.failure_reason is not None:
+            d["failure_reason"] = self.failure_reason.value
+        return d
 
 
 # ── Ridge core (closed-form, numpy) ──────────────────────────────────
@@ -92,6 +150,11 @@ class _RidgeModel:
         self.intercept_: float = 0.0
         self.feature_mu_: np.ndarray = np.asarray([])
         self.feature_sd_: np.ndarray = np.asarray([])
+        # Set to True in ``fit`` if the normal-equation solve raised
+        # ``np.linalg.LinAlgError`` and we recovered via ``pinv``.
+        # Read by ``_predict_ridge`` to flag PINV_FALLBACK on the
+        # outgoing PredictedMetric. Reset per ``fit`` call below.
+        self.used_pinv: bool = False
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> "_RidgeModel":
         X = np.asarray(X, dtype=float)
@@ -112,10 +175,17 @@ class _RidgeModel:
         y_mean = float(y.mean())
         yc = y - y_mean
         A = Xz.T @ Xz + self.alpha * np.eye(Xz.shape[1])
+        self.used_pinv = False
         try:
             w = np.linalg.solve(A, Xz.T @ yc)
         except np.linalg.LinAlgError:
+            # Singular / near-singular design matrix. Pinv recovers
+            # numerically but the resulting coefficients are unstable;
+            # callers should surface this as a diagnostic chip (the
+            # PINV_FALLBACK FailureReason) rather than silently use
+            # the recovered fit.
             w = np.linalg.pinv(A) @ (Xz.T @ yc)
+            self.used_pinv = True
         self.coef_ = w
         self.intercept_ = y_mean
         self.feature_mu_ = mu
@@ -310,6 +380,30 @@ def _predict_ridge(
     total = float(abs_c.sum()) or 1.0
     importances = {f: float(abs_c[i] / total) for i, f in enumerate(features)}
 
+    # ── Diagnostic-failure detection ──
+    # Priority order: PINV_FALLBACK > CI_UNSTABLE > R2_NEGATIVE.
+    # Chosen because numerical-stability failures (pinv) compound
+    # into the other diagnostics — a pinv-recovered fit's CIs and
+    # R² are downstream of the same instability, so surfacing pinv
+    # first names the root cause rather than its consequences.
+    # Single-reason field; multi-reason exposure (e.g. a chip that
+    # shows all triggered reasons in its tooltip) is a Tier B item.
+    failure_reason: Optional[FailureReason] = None
+    if getattr(cp.base_model, "used_pinv", False):
+        failure_reason = FailureReason.PINV_FALLBACK
+    elif abs(value) > 1e-9 and (ci_high - ci_low) > _CI_UNSTABLE_REL_WIDTH * abs(value):
+        # See _CI_UNSTABLE_REL_WIDTH module-constant docstring above
+        # for the rule-of-thumb provenance and the Tier B replacement
+        # path. The abs(value) > 1e-9 guard prevents division-by-zero-
+        # style over-firing when the point estimate is near zero.
+        failure_reason = FailureReason.CI_UNSTABLE
+    elif r2 < 0:
+        # LOO R² < 0 means the ridge fit predicts worse than the cohort
+        # mean — the model is anti-informative. The point estimate may
+        # still be in the right ballpark but the cohort doesn't support
+        # learning the metric from features.
+        failure_reason = FailureReason.R2_NEGATIVE
+
     return PredictedMetric(
         value=value,
         method="ridge_regression",
@@ -320,6 +414,7 @@ def _predict_ridge(
         r_squared=float(r2),
         feature_importances=importances,
         reliability_grade=_grade("ridge_regression", int(X.shape[0]), r2),
+        failure_reason=failure_reason,
     )
 
 
@@ -495,6 +590,13 @@ def to_packet_predicted_metric(
     model_selection = str(
         getattr(rp, "_model_selection", "") or rp.method or ""
     )
+    # Propagate the diagnostic channel — packet stores the enum's
+    # string value (not the Enum itself) for clean JSON round-trip.
+    # Older packets serialized before A.1 won't have this field;
+    # packet PredictedMetric.from_dict defaults it to None.
+    failure_reason_str = (
+        rp.failure_reason.value if rp.failure_reason is not None else None
+    )
     return PacketPM(
         value=float(rp.value),
         ci_low=float(rp.ci_low),
@@ -507,4 +609,5 @@ def to_packet_predicted_metric(
         coverage_target=float(rp.coverage_target),
         reliability_grade=str(rp.reliability_grade),
         model_selection=model_selection,
+        failure_reason=failure_reason_str,
     )
