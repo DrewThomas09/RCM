@@ -18,6 +18,7 @@ from .._chartis_kit import (
     P,
     chartis_shell,
     ck_kpi_block,
+    ck_page_title,
     ck_section_header,
 )
 from ._helpers import (
@@ -25,7 +26,6 @@ from ._helpers import (
     fmt_multiple,
     fmt_pct,
     load_corpus_deals,
-    render_page_explainer,
     small_panel,
     verdict_badge,
 )
@@ -342,10 +342,42 @@ def _outlier_panel(corpus: List[Dict[str, Any]]) -> str:
     )
 
 
+_EXPLAINER_CSS = """
+.ck-pa-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;
+margin:var(--sc-s-4) 0 var(--sc-s-6);}
+.ck-pa-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+"""
+
+
 def render_portfolio_analytics(
     store: Any = None,
     current_user: Optional[str] = None,
 ) -> str:
+    # Pattern A — durable title + italic explainer (mirrors PR #68 deal-profile,
+    # PR #73 portfolio-heatmap, PR #74 portfolio-risk-scan). Replaces three
+    # stacked title elements that were on this page: dismissible
+    # editorial_intro, render_page_explainer mega-block, and a bespoke grey
+    # <p> intro. Copy is "corpus-wide" not "portfolio-wide" to label the
+    # semantic-confusion bug honestly while the Pattern D rename is pending.
+    def _title(meta: str) -> str:
+        return ck_page_title(
+            "Portfolio Analytics",
+            eyebrow="PORTFOLIO ANALYTICS",
+            meta=meta,
+        )
+    explainer_html = (
+        '<p class="ck-pa-explainer">'
+        '<em>Where the corpus tells you what worked.</em> '
+        "Corpus-wide views across the 655-deal universe: scorecard "
+        "(MOIC/IRR quartiles, home-run rate, loss rate), vintage "
+        "cohorts, deal-type mix, sector/geography/sponsor "
+        "concentration, and realized-MOIC outliers. Read the cohort "
+        "for pacing; read concentration to stress-test single-point "
+        "risk before committing a new deal."
+        '</p>'
+    )
+
     try:
         from ...data_public.portfolio_analytics import (
             corpus_scorecard, vintage_cohort_summary, deals_by_type,
@@ -357,14 +389,10 @@ def render_portfolio_analytics(
             code="ERR",
         )
         return chartis_shell(
-            body, title="Portfolio Analytics",
+            _title("module unavailable") + explainer_html + body,
+            title="Portfolio Analytics",
             active_nav="/portfolio-analytics",
-        breadcrumbs=[
-            ("Home", "/app"),
-            ("Portfolio", None),
-            ("Analytics", None),
-        ],
-            subtitle="Module unavailable",
+            extra_css=_EXPLAINER_CSS,
         )
 
     corpus = load_corpus_deals()
@@ -375,14 +403,10 @@ def render_portfolio_analytics(
             code="NIL",
         )
         return chartis_shell(
-            body, title="Portfolio Analytics",
+            _title("no corpus available") + explainer_html + body,
+            title="Portfolio Analytics",
             active_nav="/portfolio-analytics",
-        breadcrumbs=[
-            ("Home", "/app"),
-            ("Portfolio", None),
-            ("Analytics", None),
-        ],
-            subtitle="Corpus unavailable",
+            extra_css=_EXPLAINER_CSS,
         )
 
     try:
@@ -396,28 +420,11 @@ def render_portfolio_analytics(
             code="ERR",
         )
         return chartis_shell(
-            body, title="Portfolio Analytics",
+            _title("analysis raised an error") + explainer_html + body,
+            title="Portfolio Analytics",
             active_nav="/portfolio-analytics",
-        breadcrumbs=[
-            ("Home", "/app"),
-            ("Portfolio", None),
-            ("Analytics", None),
-        ],
-            subtitle="Analysis raised",
+            extra_css=_EXPLAINER_CSS,
         )
-
-    intro = (
-        f'<p style="color:{P["text_dim"]};font-size:12px;line-height:1.6;'
-        f'margin-bottom:10px;">'
-        f'Portfolio-scope views across the 655-deal corpus. Combines '
-        f'<code style="color:{P["accent"]};font-family:var(--ck-mono);">'
-        f'portfolio_analytics</code> (scorecard, vintages, return distribution) '
-        f'with concentration analysis across subsector, geography, and sponsor. '
-        f'For per-sponsor depth see <a href="/sponsor-track-record" '
-        f'style="color:{P["accent"]};">/sponsor-track-record</a>; for payer-mix '
-        f'depth see <a href="/payer-intelligence" style="color:{P["accent"]};">'
-        f'/payer-intelligence</a>.</p>'
-    )
 
     kpis = (
         ck_kpi_block("Total Deals", str(sc.get("total_deals", 0)), "corpus size")
@@ -455,37 +462,16 @@ def render_portfolio_analytics(
         _outlier_panel(corpus), code="OUT",
     )
 
-    explainer = render_page_explainer(
-        what=(
-            "Portfolio-scope analytics over the 655-deal corpus: "
-            "scorecard (deal count, EV, MOIC/IRR quartiles, loss + "
-            "home-run rates), vintage cohort breakdown, deal-type "
-            "mix, subsector / geography / sponsor concentration, and "
-            "realized-MOIC outliers."
-        ),
-        scale=(
-            "Home-run deals are realized MOIC ≥ 3.0x; loss deals are "
-            "< 1.0x. Vintage and deal-type medians are colored green "
-            "≥ 2.50x, amber ≥ 1.50x, red below. Outliers are deals "
-            "with |z| ≥ 2 on the realized-MOIC distribution."
-        ),
-        use=(
-            "Use the vintage cohort to time pacing decisions (which "
-            "years the corpus is over-weight in) and the concentration "
-            "panel to stress-test subsector or sponsor single-point "
-            "risk before committing a new deal."
-        ),
-        source=(
-            "data_public/portfolio_analytics.py::corpus_scorecard, "
-            "vintage_cohort_summary, deals_by_type, outlier_deals "
-            "(z-score threshold 2.0)."
-        ),
-        page_key="portfolio-analytics",
+    meta = (
+        f"{sc.get('total_deals',0)} corpus deals · "
+        f"median {fmt_multiple(sc.get('moic_p50'))} · "
+        f"HR {fmt_pct(sc.get('home_run_rate'))} · "
+        f"loss {fmt_pct(sc.get('loss_rate'))}"
     )
 
     body = (
-        explainer
-        + intro
+        _title(meta)
+        + explainer_html
         + kpi_strip
         + ck_section_header(
             "CORPUS SCORECARD",
@@ -515,24 +501,5 @@ def render_portfolio_analytics(
         body,
         title="Portfolio Analytics",
         active_nav="/portfolio-analytics",
-        breadcrumbs=[
-            ("Home", "/app"),
-            ("Portfolio", None),
-            ("Analytics", None),
-        ],
-        subtitle=f"{sc.get('total_deals',0)} deals · "
-                 f"median {fmt_multiple(sc.get('moic_p50'))} · "
-                 f"HR {fmt_pct(sc.get('home_run_rate'))} · "
-                 f"loss {fmt_pct(sc.get('loss_rate'))}",
-        editorial_intro={
-            "eyebrow": "PORTFOLIO ANALYTICS",
-            "headline": "Where the corpus tells you what worked.",
-            "italic_word": "worked",
-            "body": (
-                "MOIC distribution, home-run rate, and loss rate "
-                "across the full deal corpus — sliced by sector, "
-                "vintage, and exit channel so the partner can read "
-                "the pattern, not just the average."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS,
     )
