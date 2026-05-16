@@ -33,10 +33,16 @@ from ..diligence.deal_autopsy import (
 from ..diligence.deal_autopsy.library import outcomes_summary
 from ..diligence.deal_autopsy.matcher import FEATURE_LABELS
 from ._chartis_kit import (
-    P, chartis_shell, ck_next_section, ck_panel,
-    ck_section_header, ck_section_intro,
+    P, chartis_shell, ck_next_section, ck_page_title, ck_panel,
+    ck_section_header,
 )
 from .power_ui import provenance, sortable_table
+
+_EXPLAINER_CSS = """
+.ck-da-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;margin:var(--sc-s-4) 0 var(--sc-s-6);}
+.ck-da-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+"""
 
 
 # Outcome → (label, color-key) for badge rendering.
@@ -576,18 +582,22 @@ def _summary_hero(
         f'{html.escape(dataset_label)}</span>'
     ) if dataset_label else ""
 
-    eyebrow_text = "Deal Autopsy"
-    if dataset_label:
-        eyebrow_text += f" · {html.escape(dataset_label)}"
-    intro = ck_section_intro(
-        eyebrow=eyebrow_text,
-        headline="Historical Failure-Pattern Match",
-        body=summary,
-        italic_word="failure",
+    meta = (
+        f"Dataset: {dataset_label}" if dataset_label
+        else f"{n_library} deals · 9-feature signature match"
+    )
+    page_title = ck_page_title(
+        "Deal Autopsy", eyebrow="DEAL AUTOPSY", meta=meta,
+    )
+    explainer_html = (
+        '<p class="ck-da-explainer">'
+        f'<em>Historical failure-pattern match.</em> {html.escape(summary)}'
+        '</p>'
     )
     return (
-        f'{intro}'
-        f'<div class="da-callout {banner_class}">{html.escape(banner)}</div>'
+        page_title
+        + explainer_html
+        + f'<div class="da-callout {banner_class}">{html.escape(banner)}</div>'
     )
 
 
@@ -712,24 +722,26 @@ def _landing() -> str:
         '<button type="submit" class="da-form-submit">Run autopsy match</button>'
         '</form>'
     )
-    landing_intro = ck_section_intro(
-        eyebrow="RCM Diligence",
-        headline="Deal Autopsy — historical failure match.",
-        italic_word="failure",
-        body=(
-            "The Deal Autopsy engine compares your target's 9-feature "
-            "risk signature against a curated library of historical "
-            "PE healthcare deals — bankruptcies, distressed sales, "
-            "delistings, and strong exits — and surfaces the closest "
-            "matches along with the partner lesson from each "
-            "outcome. Treat it as a 'you're about to do X again' "
-            "check layered on top of the rest of the diligence stack."
-        ),
+    title_block = ck_page_title(
+        "Deal Autopsy", eyebrow="DEAL AUTOPSY",
+        meta=f"{len(historical_library())} historical deals · 9-feature signature match",
+    )
+    explainer_html = (
+        '<p class="ck-da-explainer">'
+        '<em>Where the failure pattern rhymes with history.</em> '
+        "The Deal Autopsy engine compares your target's 9-feature risk "
+        "signature against a curated library of historical PE healthcare "
+        "deals — bankruptcies, distressed sales, delistings, and strong "
+        "exits — and surfaces the closest matches with the partner lesson "
+        "from each outcome. Treat it as a 'you're about to do X again' "
+        "check layered on top of the rest of the diligence stack."
+        "</p>"
     )
     body = (
         _scoped_styles()
         + '<div class="da-wrap">'
-        + landing_intro
+        + title_block
+        + explainer_html
         + ck_section_header(
             "Library composition", eyebrow="HISTORICAL DEALS",
         )
@@ -745,8 +757,9 @@ def _landing() -> str:
         + '</div>'
     )
     return chartis_shell(
-        body, "RCM Diligence — Deal Autopsy",
-        subtitle="Historical failure-pattern match",
+        body, "Deal Autopsy",
+        active_nav="/diligence/deal-autopsy",
+        extra_css=_EXPLAINER_CSS,
     )
 
 
@@ -770,13 +783,17 @@ def render_deal_autopsy_page(
         try:
             ccd = ingest_dataset(ds_path)
         except Exception as exc:  # noqa: BLE001
-            err_intro = ck_section_intro(
-                eyebrow="Deal Autopsy",
-                headline=f"Failed to ingest {html.escape(dataset)}.",
-                italic_word="ingest",
-                body=str(exc),
+            err_title = ck_page_title(
+                "Deal Autopsy", eyebrow="DEAL AUTOPSY",
+                meta=f"Failed to ingest {html.escape(dataset)}",
             )
-            return chartis_shell(err_intro, "Deal Autopsy")
+            return chartis_shell(
+                err_title
+                + f'<p class="ck-da-explainer">{html.escape(str(exc))}</p>',
+                "Deal Autopsy",
+                active_nav="/diligence/deal-autopsy",
+                extra_css=_EXPLAINER_CSS,
+            )
         metadata = _metadata_from_qs(qs)
         if custom_sig is not None:
             # Merge: custom_sig overrides what CCD produced.
@@ -822,7 +839,11 @@ def render_deal_autopsy_page(
             )
             + '</div>'
         )
-        return chartis_shell(body, "Deal Autopsy")
+        return chartis_shell(
+            body, "Deal Autopsy",
+            active_nav="/diligence/deal-autopsy",
+            extra_css=_EXPLAINER_CSS,
+        )
 
     cards = "".join(
         _match_card(m, target) for m in matches
@@ -853,5 +874,6 @@ def render_deal_autopsy_page(
     )
     return chartis_shell(
         body, f"Deal Autopsy — {heading}",
-        subtitle="Historical failure-pattern match",
+        active_nav="/diligence/deal-autopsy",
+        extra_css=_EXPLAINER_CSS,
     )
