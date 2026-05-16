@@ -38,6 +38,14 @@ _STAGE_COLORS = {
 }
 
 
+_EXPLAINER_CSS = """
+.ck-pm-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;
+margin:var(--sc-s-4) 0 var(--sc-s-6);}
+.ck-pm-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+"""
+
+
 def render_portfolio_map(
     deals: List[Dict[str, Any]],
     *,
@@ -45,8 +53,8 @@ def render_portfolio_map(
 ) -> str:
     """Full-page HTML with an inline SVG US map + deal markers."""
     from ._chartis_kit import (
-        chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-        ck_next_section, ck_provenance_tooltip,
+        chartis_shell, ck_fmt_num, ck_kpi_block,
+        ck_next_section, ck_page_title, ck_provenance_tooltip,
     )
 
     # State background rectangles (simplified — just shade CON vs non-CON).
@@ -163,30 +171,31 @@ def render_portfolio_map(
         eyebrow="Continue —",
         italic_word="heatmap",
     )
-    body = f"""
-    {ck_eyebrow("Portfolio Map")}
-    <h2>Portfolio Map</h2>
-    {kpi_strip}
-    <div class="muted" style="margin-bottom:12px;">
-      {len(deals)} deal(s) plotted. Circle size = EBITDA opportunity.
-      Color = deal stage.
-    </div>
-    <div class="map-wrap">{svg}</div>
-    {next_up}
-    """
+    title_block = ck_page_title(
+        "Portfolio Map",
+        eyebrow="PORTFOLIO MAP",
+        meta=(
+            f"{len(deals)} deals · {n_states} states · {n_con} CON jurisdictions"
+            if deals else "no deals yet"
+        ),
+    )
+    explainer_html = (
+        '<p class="ck-pm-explainer">'
+        '<em>Where the portfolio sits on the map.</em> '
+        "Each circle is one deal, positioned at the state centroid. "
+        "Circle size encodes EBITDA opportunity; color encodes deal "
+        "stage (pipeline / diligence / IC / hold / exit). "
+        "Faint background rings mark Certificate-of-Need (CON) states "
+        "— markets where new entry requires regulatory approval."
+        '</p>'
+    )
+    body = (
+        title_block
+        + explainer_html
+        + kpi_strip
+        + f'<div class="map-wrap">{svg}</div>'
+        + next_up
+    )
     return chartis_shell(body, "Portfolio Map",
                     active_nav="/portfolio",
-                    subtitle=f"{len(deals)} deals mapped",
-                    extra_css=css,
-                    editorial_intro={
-                        "eyebrow": "PORTFOLIO MAP",
-                        "headline": "Where the portfolio actually is.",
-                        "italic_word": "where",
-                        "body": (
-                            "Geographic distribution of active deals. "
-                            "Use the map to read regulatory exposure "
-                            "(CON jurisdictions) and to spot "
-                            "concentration risk in single-payer "
-                            "regimes."
-                        ),
-                    })
+                    extra_css=css + _EXPLAINER_CSS)
