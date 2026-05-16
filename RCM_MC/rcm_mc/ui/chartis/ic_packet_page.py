@@ -29,8 +29,16 @@ from .._chartis_kit import (  # ck_provenance_tooltip added cycle 41
     P,
     chartis_shell,
     ck_kpi_block,
+    ck_page_title,
     ck_section_header,
 )
+_EXPLAINER_CSS = """<style>
+.ck-ic-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-ic-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
+
 from ._helpers import (
     bullet_list,
     deal_header_nav,
@@ -572,8 +580,24 @@ def render_ic_packet(
         page_key="deal-ic-packet",
     )
 
+    page_title = ck_page_title(
+        "IC Packet",
+        eyebrow=f"IC PACKET · {_html.escape(deal_id)}",
+        meta=f"{_html.escape(label)} · {_html.escape(rec)} · {populated}/{len(_SECTION_DEFS)} sections",
+    )
+    ic_explainer = (
+        '<p class="ck-ic-explainer">'
+        f'<em>{_html.escape(label)}.</em> '
+        "Every section the IC needs to read on this deal — thesis, base case, "
+        "bear case, comparables, exit path, and the questions a partner expects "
+        "to be asked. Generated against the live packet, so the version on "
+        "screen is the version in the room."
+        "</p>"
+    )
     body = (
-        explainer
+        page_title
+        + ic_explainer
+        + explainer
         + header
         + banner
         + kpi_strip
@@ -599,22 +623,10 @@ def render_ic_packet(
         body,
         title=f"IC Packet · {label}",
         active_nav="/pe-intelligence",
-        subtitle=f"{label} · {rec} · {populated}/{len(_SECTION_DEFS)} sections",
         breadcrumbs=[
             ("Home", "/app"),
             ("Deals", "/deals"),
             ("IC Packet", None),
         ],
-        editorial_intro={
-            "eyebrow": "IC PACKET",
-            "headline": "What the committee actually decides on.",
-            "italic_word": "decides",
-            "body": (
-                "Every section the IC needs to read on this deal — "
-                "thesis, base case, bear case, comparables, exit "
-                "path, and the questions a partner expects to be "
-                "asked. Generated against the live packet, so the "
-                "version on screen is the version in the room."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS,
     )
