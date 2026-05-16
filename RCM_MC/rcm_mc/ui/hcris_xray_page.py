@@ -29,6 +29,13 @@ from ._chartis_kit import (
     P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
     ck_panel, ck_section_header, ck_section_intro, ck_signal_badge,
 )
+
+_EXPLAINER_CSS = """
+.ck-hx-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
+color:var(--sc-text-dim);max-width:68ch;
+margin:var(--sc-s-4) 0 var(--sc-s-6);}
+.ck-hx-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+"""
 from .power_ui import (
     bookmark_hint, deal_context_bar, export_json_panel,
     interpret_callout, provenance, sortable_table,
@@ -795,22 +802,25 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
     )
     stats = ck_panel(stats_inner, title="Dataset coverage")
 
-    landing_intro = ck_section_intro(
-        eyebrow="HCRIS-Native Peer X-Ray",
-        headline="Benchmark any hospital against its true peers.",
-        italic_word="true",
-        body=(
-            "Find the 25-50 true peer hospitals for any target on "
-            "size, state, payer mix, and fiscal year, then surface "
-            "where it lies inside, above, or below the peer "
-            "P25-P75 band on 15 RCM / cost / margin metrics."
-        ),
+    landing_title = ck_page_title(
+        "HCRIS X-Ray", eyebrow="HCRIS-NATIVE PEER X-RAY",
+        meta=f"{summary['total_rows']:,} Medicare cost reports · 15 metrics",
+    )
+    landing_explainer = (
+        '<p class="ck-hx-explainer">'
+        '<em>Benchmark any hospital against its true peers.</em> '
+        "Find the 25–50 true peer hospitals for any target on size "
+        "cohort, state, payer mix, and fiscal year, then see where "
+        "it sits inside, above, or below the peer P25–P75 band on "
+        "15 RCM / cost / margin metrics derived from CMS cost reports."
+        '</p>'
     )
     body = (
         _scoped_styles()
+        + landing_title
+        + landing_explainer
         + '<div class="hx-wrap">'
         + deal_context_bar(qs, active_surface="hcris")
-        + landing_intro
         + ck_panel(search_form, title="Find a hospital")
         + search_block
         + ck_panel(direct_form, title="Direct X-Ray by CCN")
@@ -819,7 +829,7 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
     )
     return chartis_shell(
         body, "HCRIS X-Ray",
-        subtitle=f"{summary['total_rows']:,} Medicare cost reports · 15 metrics",
+        extra_css=_EXPLAINER_CSS,
     )
 
 
@@ -875,23 +885,22 @@ def render_hcris_xray_page(
         peer_k=peer_k, bed_band_pct=bed_band,
     )
     if report is None:
-        err_intro = ck_section_intro(
-            eyebrow="HCRIS X-Ray",
-            headline="Hospital not found.",
-            italic_word="not",
-            body=(
-                f"No HCRIS filing matched '{html.escape(ccn or name)}'. "
-                "Try searching instead."
-            ),
+        err_title = ck_page_title(
+            "HCRIS X-Ray", eyebrow="HCRIS-NATIVE PEER X-RAY",
+            meta="Hospital not found",
         )
         return chartis_shell(
             _scoped_styles()
+            + err_title
             + '<div class="hx-wrap">'
-            + err_intro
+            + f'<p class="ck-section-body">No HCRIS filing matched '
+            + f'<strong>{html.escape(ccn or name)}</strong>. '
+            + 'Try searching instead.</p>'
             + '<p class="ck-section-body">'
             + '<a href="/diligence/hcris-xray" class="ck-link">'
             + '← Back to search</a></p></div>',
             "HCRIS X-Ray — not found",
+            extra_css=_EXPLAINER_CSS,
         )
 
     # Plain-English read
@@ -1127,8 +1136,5 @@ def render_hcris_xray_page(
     return chartis_shell(
         body, f"HCRIS X-Ray — {target.name}",
         active_nav="/diligence/hcris-xray",
-        subtitle=(
-            f"CCN {target.ccn} · {target.beds} beds · "
-            f"FY{target.fiscal_year}"
-        ),
+        extra_css=_EXPLAINER_CSS,
     )
