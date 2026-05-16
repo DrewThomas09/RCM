@@ -2,7 +2,14 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title
+
+_EXPLAINER_CSS = """<style>
+.ck-cp-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-cp-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 
 
 def _cashflow_paired_rows(items) -> tuple:
@@ -206,12 +213,23 @@ def render_capital_pacing(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
-    body = f"""
+    page_title = ck_page_title(
+        "Capital Call Pacing Model",
+        eyebrow="CAPITAL PACING",
+        meta=(
+            f"vintage {r.vintage_year} · ${r.fund_size_mm:,.0f}M fund · "
+            f"TVPI {r.current_tvpi:.2f}x · {r.corpus_deal_count:,} corpus deals"
+        ),
+    )
+    cp_explainer = (
+        '<p class="ck-cp-explainer">'
+        "<em>What the capital pacing model reveals on this deal.</em> "
+        "Fund-level cashflow, J-curve, DPI/TVPI/RVPI evolution, vintage peer comparison, "
+        "and commitment utilization across the deployment lifecycle."
+        "</p>"
+    )
+    body = page_title + cp_explainer + f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Capital Call Pacing Model</h1>
-    <p class="ck-page-sub">Fund-level cashflow · J-curve · DPI/TVPI/RVPI evolution · vintage comparison · commitment utilization — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
   {form}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   {jcurve_paired}
@@ -228,8 +246,4 @@ def render_capital_pacing(params: dict = None) -> str:
 </div>"""
 
     return chartis_shell(body, "Capital Pacing", active_nav="/capital-pacing",
-        editorial_intro={
-            "eyebrow": "CAPITAL PACING",
-            "headline": "What the capital pacing page reveals on this deal.",
-            "italic_word": "reveals",
-        })
+        extra_css=_EXPLAINER_CSS)
