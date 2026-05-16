@@ -23,8 +23,16 @@ from ._chartis_kit import (
     ck_eyebrow,
     ck_kpi_block,
     ck_next_section,
+    ck_page_title,
     ck_provenance_tooltip,
 )
+
+_EXPLAINER_CSS = """<style>
+.ck-cc-explainer{font-family:var(--sc-serif,'Georgia',serif);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
+.ck-cc-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+</style>"""
 from .brand import PALETTE
 from .provenance import source_tag, Source
 
@@ -126,7 +134,22 @@ def render_command_center(
     ]
     n_pe_targets = len(pe_targets)
 
-    sections = []
+    page_title = ck_page_title(
+        "PE Desk",
+        eyebrow="COMMAND CENTER",
+        meta=(
+            f"{n_hospitals:,} hospitals · {n_pe_targets:,} PE targets · "
+            f"{len(deals)} active deals"
+        ),
+    )
+    cc_explainer = (
+        '<p class="ck-cc-explainer">'
+        "<em>What you should do today.</em> "
+        "The day-one screen — universe stats, pipeline, active alerts, "
+        "and market pulse, in the order a partner reads them."
+        "</p>"
+    )
+    sections = [page_title + cc_explainer]
 
     # ── Hero KPIs — editorial-chartis kit ──
     # Cycle 37 — port Bloomberg-era cad-kpi cards to ck_kpi_block,
@@ -168,8 +191,6 @@ def render_command_center(
         + ck_kpi_block("Distressed", distressed_value, "margin &lt; -5%")
         + ck_kpi_block("Active Deals", f"{len(deals)}", "in portfolio")
     )
-    # Title comes from chartis_shell(editorial_intro=...); removed
-    # the duplicate ck_eyebrow that stacked another mini-title here.
     sections.append(
         f'<div class="ck-kpi-grid" style="grid-template-columns:repeat(6,1fr);">'
         f'{hero_kpis}'
@@ -449,20 +470,6 @@ def render_command_center(
     return chartis_shell(
         body, "PE Desk",
         active_nav="/home",
-        subtitle=(
-            f"{n_hospitals:,} hospitals | {n_pe_targets:,} PE targets | "
-            f"{len(deals)} active deals"
-        ),
         show_ticker=True,
-        editorial_intro={
-            "eyebrow": "COMMAND CENTER",
-            "headline": "What you should do today.",
-            "italic_word": "do",
-            "body": (
-                "The day-one screen — universe stats, pipeline, "
-                "active alerts, and market pulse, in the order a "
-                "partner reads them. Numbers carry hover-card "
-                "provenance so the methodology stays one click away."
-            ),
-        },
+        extra_css=_EXPLAINER_CSS,
     )
