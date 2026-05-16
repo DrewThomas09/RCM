@@ -3323,7 +3323,7 @@ _CSS_INLINE_FALLBACK = """
    * landing on a section index first. */
   .ck-subnav { background:var(--sc-bone,#f2ede3); border-bottom:1px solid var(--sc-rule); position:sticky; top:60px; z-index:40; }
   .ck-subnav-inner { display:flex; gap:var(--sc-s-5); align-items:center; padding:10px var(--sc-s-7); max-width:1720px; margin:0 auto; overflow-x:auto; }
-  .ck-subnav-link { font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.04em; color:var(--sc-text-dim); text-decoration:none; padding:5px 10px; border-radius:2px; white-space:nowrap; transition:color 0.15s, background 0.15s; }
+  .ck-subnav-link { font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.08em; color:var(--sc-text-dim); text-decoration:none; padding:5px 10px; border-radius:2px; white-space:nowrap; transition:color 0.15s, background 0.15s; }
   .ck-subnav-link:hover { color:var(--sc-teal-ink); background:#fff; }
   .ck-subnav-link.active { color:var(--sc-navy); background:#fff; box-shadow:inset 0 -2px 0 var(--sc-teal); }
   .ck-breadcrumbs { display:flex; gap:8px; padding:14px var(--sc-s-7); max-width:1720px; margin:0 auto; font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); letter-spacing:0.08em; text-transform:uppercase; border-bottom:1px solid var(--sc-rule); }
