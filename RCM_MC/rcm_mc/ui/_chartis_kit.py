@@ -3385,7 +3385,7 @@ _CSS_INLINE_FALLBACK = """
   .ck-table .align-center { text-align:center; }
   .ck-kpi { padding:var(--sc-s-4) 0; border-top:1px solid var(--sc-rule); position:relative; }
   .ck-kpi-label { font-family:var(--sc-sans); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--sc-text-dim); margin-bottom:4px; }
-  .ck-kpi-value { font-family:var(--sc-serif); font-size:28px; font-weight:500; color:var(--sc-navy); display:flex; align-items:baseline; gap:8px; }
+  .ck-kpi-value { font-family:var(--sc-serif); font-size:24px; font-weight:500; color:var(--sc-navy); display:flex; align-items:baseline; gap:8px; }
   .ck-kpi-trend { font-family:var(--sc-mono); font-size:12px; }
   .ck-kpi-trend.tone-positive { color:var(--sc-positive); }
   .ck-kpi-trend.tone-negative { color:var(--sc-negative); }
