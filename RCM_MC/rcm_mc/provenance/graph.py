@@ -386,6 +386,12 @@ def _add_predicted_nodes(g: ProvenanceGraph, packet: Any) -> None:
                 "coverage_target": float(pm.coverage_target or 0.9),
                 "reliability_grade": pm.reliability_grade or "",
                 "feature_importances": dict(pm.feature_importances or {}),
+                # A.10 PR B — surface failure_reason in the provenance
+                # node so the /provenance/<deal> explorer can render
+                # the chip alongside the prediction node. Renders as
+                # None for clean fits; non-None values map to the
+                # chip variants per the FailureReason tier table.
+                "failure_reason": pm.failure_reason,
             },
         ))
         # Edge from the cohort selection node.

@@ -221,11 +221,13 @@ class TestRawDataSheet(unittest.TestCase):
         wb = load_workbook(path)
         ws = wb["Raw Data"]
         headers = [ws.cell(row=1, column=c).value for c in range(1, ws.max_column + 1)]
-        # Mirror the CSV-export columns verbatim.
+        # Mirror the CSV-export columns verbatim. A.10 PR B added
+        # failure_reason to both exports in lockstep so the
+        # diagnostic signal isn't stripped on download.
         self.assertEqual(headers, [
             "metric_key", "display_name", "current_value", "source",
             "benchmark_p50", "predicted_value", "ci_low", "ci_high",
-            "ebitda_impact", "risk_flags",
+            "ebitda_impact", "risk_flags", "failure_reason",
         ])
 
 

@@ -157,9 +157,17 @@ def render_heatmap(
             bg = _cell_color(m, pct)
             val = f"{pm.value:.1f}"
             arrow = _trend_arrow(m, deal_deltas)
+            # A.10 PR B — chip render when the underlying prediction
+            # was diagnostically suspect. Inline with the value so
+            # the partner sees the chip on the same heatmap cell that
+            # carries the number, not in a separate sidebar. Empty
+            # chip for clean / observed metrics — no visual impact
+            # on the common case.
+            from ._chartis_kit import ck_prediction_chip
+            chip_html = ck_prediction_chip(pm)
             cells.append(
                 f'<td style="background:{bg}20;color:{_PALETTE["text"]};">'
-                f'{val}{arrow}</td>'
+                f'{val}{arrow}{chip_html}</td>'
             )
         grade = (p.completeness.grade if p.completeness else "—")
         grade_color = {

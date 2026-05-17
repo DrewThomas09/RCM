@@ -34,6 +34,11 @@ from ..analysis.packet import (
     RiskSeverity,
     SectionStatus,
 )
+# A.10 PR B — chip propagation on the surfaces consuming ProfileMetric.
+# Module-level import (not call-time) because the chip helper is used
+# on hot render paths (metric table, risk flags, diligence questions)
+# where a function-scope import would re-resolve on every row.
+from ._chartis_kit import ck_aggregate, ck_prediction_chip
 
 
 # ── Palette & CSS ────────────────────────────────────────────────────
@@ -1087,9 +1092,30 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
     key_findings = []
     for rf in packet.risk_flags[:5]:
         sev = rf.severity.value if hasattr(rf.severity, "value") else str(rf.severity)
+        # A.10 PR B — chip placement per user spec: the chip belongs
+        # to the SOURCE (the ProfileMetric that triggered the flag),
+        # not the flag itself. The flag's severity badge stays loud
+        # ("HIGH"); the chip indicates the underlying number is
+        # suspect.
+        #
+        # Tooltip attribution (per PR B Amendment 2): wrap the source
+        # PM through ck_aggregate with the trigger-metric name as
+        # label, so the chip tooltip explicitly names the source
+        # ("Sources: denial_rate (pinv_fallback)") rather than the
+        # ambiguous default ("Fit unstable" — which could be misread
+        # as "the flag itself is unstable"). The visual proximity of
+        # chip-to-flag-text makes this attribution clarity load-bearing.
+        source_pm = (packet.rcm_profile.get(rf.trigger_metric)
+                     if rf.trigger_metric else None)
+        if source_pm is not None and rf.trigger_metric:
+            source_chip = ck_prediction_chip(
+                ck_aggregate(source_pm, labels=[rf.trigger_metric])
+            )
+        else:
+            source_chip = ""
         key_findings.append(
             f'<li><span class="wb-badge wb-badge-{sev.lower()}">{sev}</span> '
-            f'{_esc(rf.title or rf.detail[:80])}</li>'
+            f'{_esc(rf.title or rf.detail[:80])}{source_chip}</li>'
         )
     findings_html = "\n".join(key_findings) or '<li class="dim">no risk flags</li>'
 
@@ -1436,10 +1462,18 @@ def _render_rcm_profile(packet: DealAnalysisPacket) -> str:
                     f'title="{_esc(a.get("explanation") or "")}">⚠</span>'
                 )
                 break
+            # A.10 PR B — render diagnostic chip inline with the
+            # value when the underlying prediction was suspect. The
+            # chip is empty for clean / non-predicted (OBSERVED /
+            # AUTO_POPULATED) ProfileMetrics, so this is no-op for
+            # the common case. Tier 2 (UNSTABLE_FIT) is the only
+            # variant that fires today from real predictor paths;
+            # Tier 1 / Tier 3 wait on the orchestrator-emit refactor.
+            chip_html = ck_prediction_chip(pm)
             parts.append(
                 '<tr>'
                 f'<td><a href="#prov-{_esc(metric_key)}" class="dim" style="text-decoration:none;">{_esc(metric_key)}</a>{anomaly_html}{trend_html}</td>'
-                f'<td class="num {cell_class}">{value_fmt}</td>'
+                f'<td class="num {cell_class}">{value_fmt}{chip_html}</td>'
                 f'<td class="center" title="{_esc(pm.source.value)}">'
                 f'<span role="img" aria-label="{_esc(pm.source.value)}">{src_icon}</span></td>'
                 f'<td class="num dim">{_fmt_num(p25, dp=1) if p25 is not None else "—"}</td>'
@@ -2333,11 +2367,26 @@ def _render_risk_diligence(packet: DealAnalysisPacket) -> str:
     dq_by_priority: Dict[str, List[str]] = {"P0": [], "P1": [], "P2": []}
     for q in packet.diligence_questions:
         pri = q.priority.value if hasattr(q.priority, "value") else str(q.priority)
+        # A.10 PR B — same chip-on-source pattern as risk flags,
+        # including the tooltip-attribution refinement (Amendment 2):
+        # tooltip explicitly names the source metric rather than the
+        # ambiguous default. Question text stays as-is; the chip on
+        # the trigger metric tells the partner that the underlying
+        # number prompting this question is diagnostically suspect,
+        # so they can weigh the question priority accordingly.
+        source_pm = (packet.rcm_profile.get(q.trigger_metric)
+                     if q.trigger_metric else None)
+        if source_pm is not None and q.trigger_metric:
+            source_chip = ck_prediction_chip(
+                ck_aggregate(source_pm, labels=[q.trigger_metric])
+            )
+        else:
+            source_chip = ""
         dq_by_priority.setdefault(pri, []).append(
             f'<div class="dq-card">'
             f'<span class="dq-priority dq-{pri}">{pri}</span>'
             f'<span class="wb-badge wb-badge-low" style="margin-right:6px;">{_esc(q.category or "—")}</span>'
-            f'<div style="margin-top:4px;">{_esc(q.question)}</div>'
+            f'<div style="margin-top:4px;">{_esc(q.question)}{source_chip}</div>'
             + (f'<div class="dim" style="font-size:11px;margin-top:3px;">Trigger: {_esc(q.trigger or q.trigger_reason)}</div>'
                if (q.trigger or q.trigger_reason) else "")
             + '</div>'
@@ -2827,6 +2876,11 @@ def _build_explain_data(packet: DealAnalysisPacket) -> str:
             "ebitda_impact": impact,
             "category": meta.get("category") or "",
             "diligence_question": question,
+            # A.10 PR B — surface failure_reason in the JSON payload
+            # so any JS-side renderer consuming this endpoint can
+            # apply its own chip / styling. Mirrors the DOM-chip
+            # treatment on the workbench HTML render.
+            "failure_reason": pm.failure_reason,
         }
     return _json.dumps(data, default=str)
 

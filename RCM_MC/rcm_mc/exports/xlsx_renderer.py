@@ -388,10 +388,12 @@ def _sheet_raw_data(wb, packet: DealAnalysisPacket) -> None:
     from ..analysis.completeness import RCM_METRIC_REGISTRY
 
     ws = wb.create_sheet("Raw Data")
+    # A.10 PR B — failure_reason column kept in lockstep with the
+    # CSV export so consumers of either path see the same schema.
     cols = [
         "metric_key", "display_name", "current_value", "source",
         "benchmark_p50", "predicted_value", "ci_low", "ci_high",
-        "ebitda_impact", "risk_flags",
+        "ebitda_impact", "risk_flags", "failure_reason",
     ]
     _apply_header_row(ws, 1, cols)
 
@@ -440,6 +442,15 @@ def _sheet_raw_data(wb, packet: DealAnalysisPacket) -> None:
                 and pred.ci_high is not None else None)
         ws.cell(row=i, column=9, value=impact_by_metric.get(k))
         ws.cell(row=i, column=10, value="; ".join(risks_by_metric.get(k, [])))
+        # A.10 PR B — failure_reason from ProfileMetric (post-PR-A
+        # propagation) with PredictedMetric fallback when no profile
+        # row exists. Matches the CSV export's failure-reason lookup.
+        failure_reason = (
+            (pm.failure_reason if pm is not None else None)
+            or (pred.failure_reason if pred is not None else None)
+            or ""
+        )
+        ws.cell(row=i, column=11, value=failure_reason)
     ws.freeze_panes = "A2"
     _autosize(ws, cols)
 
