@@ -726,6 +726,91 @@ def _grade(
 
 # ── Per-metric prediction branches ───────────────────────────────────
 
+def _compose_failure_reason(
+    X: np.ndarray, y: np.ndarray, alpha: float,
+    *,
+    diag: DiagnosticReport,
+    used_pinv: bool,
+    alpha_at_boundary: bool,
+    r2: float,
+    value: float,
+    ci_low: float,
+    ci_high: float,
+) -> Tuple[Optional[FailureReason], List[str]]:
+    """Apply the D2 priority chain to derive (failure_reason, contributing_sources).
+
+    Extracted from ``_predict_ridge`` so the EnsemblePredictor path
+    can call the same composition logic when its chosen base model is
+    ridge — without this extraction the same metric would get
+    diagnostic chips through ``_predict_ridge`` but no chips through
+    ``predict_metric_ensemble``, even though both ran the same ridge
+    fit at the same α. Symmetric chip behavior across both predictor
+    paths is a partner-defensibility requirement (you can be a
+    thick-cohort deal one day, a thin-cohort deal the next — same
+    methodology rigor either way).
+
+    Priority chain (D2 lock):
+      1. PINV_FALLBACK         (numerical instability — root cause)
+      2. R2_NEGATIVE + Cook's D verify-not-assume guardrail:
+         - if R²<0 AND Cook's D fires: recompute LOO R² without
+           the high-Cook's-D row.
+           - if R² recovers ≥0 → INFLUENTIAL_OUTLIER (single)
+           - else → DIAGNOSTIC_SUSPECT(R2_NEGATIVE,
+             INFLUENTIAL_OUTLIER)
+         - if R²<0 alone → R2_NEGATIVE
+      3. ALPHA_AT_BOUNDARY     (search grid too narrow)
+      4. Multi-flag composition from diagnostics:
+         - 0 fired → continue
+         - 1 fired → that specific reason
+         - ≥2 fired → DIAGNOSTIC_SUSPECT + contributing_sources
+      5. CI_UNSTABLE           (sanity floor)
+
+    The R2_NEGATIVE-and-Cook's-D verification (step 2) implements
+    the D2 refinement: don't ASSUME the outlier caused the negative
+    R²; ACTUALLY recompute without it and verify. One extra LOO fit
+    in the rare double-fire case, partner-defensibility improves
+    materially. See test_b1_ridge_predictor.py fixtures 4A/4B.
+    """
+    failure_reason: Optional[FailureReason] = None
+    contributing_sources: List[str] = []
+    n, p = X.shape
+    diag_fired = diag.failure_reasons_at(n, p)
+
+    if used_pinv:
+        failure_reason = FailureReason.PINV_FALLBACK
+    elif r2 < 0:
+        cooks_thresh = 4.0 / max(n, 1)
+        if diag.max_cooks_d > cooks_thresh and diag.cooks_d_argmax >= 0:
+            # Verify: recompute LOO R² without the high-Cook's-D row
+            mask = np.ones(n, dtype=bool)
+            mask[diag.cooks_d_argmax] = False
+            r2_no_outlier = _loo_r_squared_shortcut(X[mask], y[mask], alpha)
+            if r2_no_outlier >= 0:
+                # Hypothesis held — outlier caused negative R²
+                failure_reason = FailureReason.INFLUENTIAL_OUTLIER
+            else:
+                # Scenario B: both true. Multi-flag composition.
+                failure_reason = FailureReason.DIAGNOSTIC_SUSPECT
+                contributing_sources = [
+                    FailureReason.R2_NEGATIVE.value,
+                    FailureReason.INFLUENTIAL_OUTLIER.value,
+                ]
+        else:
+            failure_reason = FailureReason.R2_NEGATIVE
+    elif alpha_at_boundary:
+        failure_reason = FailureReason.ALPHA_AT_BOUNDARY
+    elif len(diag_fired) >= 2:
+        failure_reason = FailureReason.DIAGNOSTIC_SUSPECT
+        contributing_sources = [fr.value for fr in diag_fired]
+    elif len(diag_fired) == 1:
+        failure_reason = diag_fired[0]
+    elif abs(value) > 1e-9 and (ci_high - ci_low) > _CI_UNSTABLE_REL_WIDTH * abs(value):
+        # CI_UNSTABLE as sanity floor — see _CI_UNSTABLE_REL_WIDTH docs
+        failure_reason = FailureReason.CI_UNSTABLE
+
+    return failure_reason, contributing_sources
+
+
 def _predict_ridge(
     target: str,
     known: Dict[str, Any],
@@ -801,65 +886,21 @@ def _predict_ridge(
 
     # ── Step 6: B.1 diagnostics on full X/y ──
     diag = _compute_diagnostics(X, y, alpha_selected)
-    diag_fired = diag.failure_reasons_at(X.shape[0], X.shape[1])
 
-    # ── Step 7: failure_reason composition (D2 priority chain) ──
-    #
-    # Priority order (D2 lock):
-    #   1. PINV_FALLBACK         (numerical instability — root cause)
-    #   2. R2_NEGATIVE + Cook's D verify-not-assume guardrail:
-    #      - if R2 < 0 AND Cook's D fires:
-    #          recompute LOO R² without the high-Cook's-D row
-    #          if R² recovers ≥ 0 → INFLUENTIAL_OUTLIER (single)
-    #          else → DIAGNOSTIC_SUSPECT(R2_NEGATIVE, INFLUENTIAL_OUTLIER)
-    #      - if R2 < 0 alone → R2_NEGATIVE
-    #   3. ALPHA_AT_BOUNDARY     (search grid too narrow)
-    #   4. Multi-flag composition from diagnostics:
-    #      - 0 fired → continue
-    #      - 1 fired → that specific reason
-    #      - ≥2 fired → DIAGNOSTIC_SUSPECT + contributing_sources
-    #   5. CI_UNSTABLE           (sanity floor)
-    #
-    # The R2_NEGATIVE-and-Cook's-D verification (step 2) implements the
-    # D2 refinement: don't assume the outlier caused the negative R²;
-    # ACTUALLY recompute without it and verify. One extra LOO fit in
-    # the rare double-fire case, partner-defensibility improves
-    # materially. See test_ridge_predictor.py fixtures 4A/4B.
-    failure_reason: Optional[FailureReason] = None
-    contributing_sources: List[str] = []
-    n, p = X.shape
-
-    if getattr(cp.base_model, "used_pinv", False):
-        failure_reason = FailureReason.PINV_FALLBACK
-    elif r2 < 0:
-        cooks_thresh = 4.0 / max(n, 1)
-        if diag.max_cooks_d > cooks_thresh and diag.cooks_d_argmax >= 0:
-            # Verify: recompute LOO R² without the high-Cook's-D row
-            mask = np.ones(n, dtype=bool)
-            mask[diag.cooks_d_argmax] = False
-            r2_no_outlier = _loo_r_squared_shortcut(X[mask], y[mask], alpha_selected)
-            if r2_no_outlier >= 0:
-                # Hypothesis held — outlier caused negative R²
-                failure_reason = FailureReason.INFLUENTIAL_OUTLIER
-            else:
-                # Scenario B: both true. Multi-flag composition.
-                failure_reason = FailureReason.DIAGNOSTIC_SUSPECT
-                contributing_sources = [
-                    FailureReason.R2_NEGATIVE.value,
-                    FailureReason.INFLUENTIAL_OUTLIER.value,
-                ]
-        else:
-            failure_reason = FailureReason.R2_NEGATIVE
-    elif alpha_at_boundary:
-        failure_reason = FailureReason.ALPHA_AT_BOUNDARY
-    elif len(diag_fired) >= 2:
-        failure_reason = FailureReason.DIAGNOSTIC_SUSPECT
-        contributing_sources = [fr.value for fr in diag_fired]
-    elif len(diag_fired) == 1:
-        failure_reason = diag_fired[0]
-    elif abs(value) > 1e-9 and (ci_high - ci_low) > _CI_UNSTABLE_REL_WIDTH * abs(value):
-        # CI_UNSTABLE as sanity floor — see _CI_UNSTABLE_REL_WIDTH docs
-        failure_reason = FailureReason.CI_UNSTABLE
+    # ── Step 7: failure_reason composition via shared helper ──
+    # Same _compose_failure_reason() runs from EnsemblePredictor when
+    # its chosen base model is ridge — symmetric chip behavior across
+    # both predictor paths per D4 partner-defensibility lock.
+    failure_reason, contributing_sources = _compose_failure_reason(
+        X, y, alpha_selected,
+        diag=diag,
+        used_pinv=bool(getattr(cp.base_model, "used_pinv", False)),
+        alpha_at_boundary=alpha_at_boundary,
+        r2=r2,
+        value=value,
+        ci_low=ci_low,
+        ci_high=ci_high,
+    )
 
     return PredictedMetric(
         value=value,

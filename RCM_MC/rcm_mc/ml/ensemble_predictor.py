@@ -349,12 +349,16 @@ def predict_metric_ensemble(
     matrix is degenerate.
     """
     # B.1: EnsemblePredictor now tunes α per-cohort via RidgeCV LOO
-    # (D4 primary-scope addition). Both predictor paths (_predict_ridge
-    # and predict_metric_ensemble) must use the same RidgeCV path so
-    # the same metric doesn't report different R² depending on which
-    # branch ran it — see D4 partner-facing-consistency requirement.
+    # AND surfaces the same diagnostic chips as _predict_ridge when
+    # the ensemble's chosen base model is ridge. Both predictor paths
+    # (_predict_ridge and predict_metric_ensemble) must use the same
+    # RidgeCV path AND apply the same composition rule so the same
+    # metric doesn't report different R² OR different chips depending
+    # on which branch ran it. D4 cross-path consistency + composition-
+    # helper extraction lock.
     from .ridge_predictor import (
-        _assemble_xy, _feature_keys, _grade, _is_finite_number,
+        _assemble_xy, _compose_failure_reason, _compute_diagnostics,
+        _feature_keys, _grade, _is_finite_number,
         _loo_r_squared, _loo_r_squared_shortcut, _loo_select_alpha,
     )
     from .conformal import split_train_calibration
@@ -368,7 +372,7 @@ def predict_metric_ensemble(
         return None
 
     # ── B.1: cohort-tuned α via RidgeCV LOO ──
-    alpha_selected, _alpha_at_boundary = _loo_select_alpha(X, y)
+    alpha_selected, alpha_at_boundary = _loo_select_alpha(X, y)
 
     X_tr, y_tr, X_cal, y_cal = split_train_calibration(
         X, y, cal_fraction=0.30, random_state=seed,
@@ -410,6 +414,30 @@ def predict_metric_ensemble(
             f: float(abs_c[i] / total) for i, f in enumerate(features)
         }
 
+    # ── B.1: failure_reason composition when ridge wins ──
+    # Diagnostics + composition fire only when the ensemble picked
+    # ridge as the winning base model. For k-NN / weighted-median,
+    # the chips don't describe the chosen estimator (the diagnostics
+    # are about the ridge fit's behavior, not the alternative's),
+    # so we leave failure_reason=None for those branches. This is
+    # the partner-defensibility symmetry the user pushed for in the
+    # diff review: chip behavior matches across _predict_ridge and
+    # predict_metric_ensemble when both run the same ridge math.
+    failure_reason = None
+    contributing_sources: List[str] = []
+    if selection.chosen_model == "ridge_regression":
+        diag = _compute_diagnostics(X, y, alpha_selected)
+        failure_reason, contributing_sources = _compose_failure_reason(
+            X, y, alpha_selected,
+            diag=diag,
+            used_pinv=bool(getattr(ep._ridge, "used_pinv", False)),
+            alpha_at_boundary=alpha_at_boundary,
+            r2=r2,
+            value=float(value),
+            ci_low=float(lo),
+            ci_high=float(hi),
+        )
+
     pred = _LocalPredictedMetric(
         value=float(value),
         method=selection.chosen_model,
@@ -436,6 +464,8 @@ def predict_metric_ensemble(
             float(alpha_selected) if selection.chosen_model == "ridge_regression"
             else None
         ),
+        failure_reason=failure_reason,
+        contributing_sources=contributing_sources,
     )
     # Stash the ensemble selection name on the returned object via an
     # ad-hoc attribute; the builder picks it up when converting to the

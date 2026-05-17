@@ -3114,6 +3114,31 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
     override_count = len(packet.analyst_overrides or {})
     header = _render_header(packet)
     nav = _render_tab_nav(override_count)
+    # B.1 — calibration-in-progress banner. Auto-removes after the
+    # one-week observation window (review-pushback Decision 3:
+    # partner-perception safeguard for the placeholder thresholds in
+    # rcm_mc/analysis/thresholds.py — distribution-preserving
+    # recalibration runs after a week of production observation, at
+    # which point the badge auto-vanishes and updated thresholds
+    # land in a follow-up PR). Same transparency-as-safeguard pattern
+    # as the α-disclosure on the metric cells.
+    from datetime import date
+    calibration_banner = ""
+    if date.today() < date(2026, 5, 25):
+        calibration_banner = (
+            '<div style="margin:8px 0 14px 0;padding:10px 14px;'
+            'background:#fff8e1;border:1px solid #b8732a;'
+            'border-left:3px solid #b8732a;border-radius:2px;'
+            'font-family:var(--sc-mono,monospace);font-size:11px;'
+            'color:#5c3a0d;line-height:1.5;">'
+            '<strong>Methodology calibration in progress.</strong> '
+            "Quality labels may shift slightly while thresholds tune "
+            "to the new R² distribution. Updated thresholds land "
+            'week of 2026-05-25. <a href="/docs/methodology-ridge" '
+            'style="color:#b8732a;text-decoration:underline;">'
+            'See the methodology update →</a>'
+            '</div>'
+        )
     body_inner = (
         _render_overview(packet)
         + _render_rcm_profile(packet)
@@ -3143,8 +3168,8 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
         italic_word="profile",
     )
     shell_body = (
-        f'<div class="analysis-workbench">{header}{nav}{body_inner}'
-        f'{explain_panel}</div>{next_up}'
+        f'<div class="analysis-workbench">{header}{calibration_banner}'
+        f'{nav}{body_inner}{explain_panel}</div>{next_up}'
     )
     return chartis_shell(
         shell_body,

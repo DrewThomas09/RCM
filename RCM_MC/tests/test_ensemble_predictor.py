@@ -462,6 +462,59 @@ class TestEnsembleAlphaWiring(unittest.TestCase):
                     f"ensemble={pm_ensemble.r_squared}",
             )
 
+    def test_cross_path_failure_reason_parity_when_ridge_wins(self):
+        """B.1 partner-defensibility (review pushback): when the
+        ensemble picks ridge as the winning base model, the
+        ensemble-returned PM must surface the same failure_reason
+        chip as a direct _predict_ridge call on the same X/y.
+
+        Without symmetric chip behavior, partners running diligence
+        on a thick-cohort deal (ensemble path) vs a thin-cohort deal
+        (ridge fallback) would see inconsistent diagnostic depth on
+        the same workflow — same methodology, different chip
+        coverage, depending on which branch ran the fit.
+        """
+        from rcm_mc.ml.ridge_predictor import _predict_ridge
+        # Use a fixture where we expect ALPHA_AT_BOUNDARY to fire:
+        # the smoke test earlier confirmed our typical synthetic
+        # cohort picks α=0.001 (grid minimum), which fires the
+        # boundary chip on both paths.
+        rng = np.random.default_rng(7)
+        peers = self._build_peers(rng, n=25)
+        known = {"bed_count": 120.0, "payer_mix_medicare": 0.50}
+        pm_ridge = _predict_ridge(
+            target="denial_rate", known=known, comparables=peers,
+            coverage=0.90, seed=42,
+        )
+        pm_ensemble = predict_metric_ensemble(
+            target="denial_rate", known=known, comparables=peers,
+            coverage=0.90, seed=42,
+        )
+        self.assertIsNotNone(pm_ridge)
+        self.assertIsNotNone(pm_ensemble)
+        # Skip parity assertion if ensemble picked non-ridge — the
+        # chips don't describe the chosen estimator in that case.
+        if pm_ensemble.method != "ridge_regression":
+            self.skipTest(
+                f"ensemble picked {pm_ensemble.method}, not ridge; "
+                "chip parity assertion N/A"
+            )
+        # The fired failure_reason should match (both ran the same
+        # composition helper with the same X/y/α inputs).
+        self.assertEqual(
+            pm_ridge.failure_reason, pm_ensemble.failure_reason,
+            f"Chip-parity failure: _predict_ridge fired "
+            f"{pm_ridge.failure_reason}, ensemble fired "
+            f"{pm_ensemble.failure_reason}. Both should match when "
+            "ensemble picked ridge as the base model."
+        )
+        # contributing_sources should also match
+        self.assertEqual(
+            sorted(pm_ridge.contributing_sources),
+            sorted(pm_ensemble.contributing_sources),
+            "contributing_sources mismatch between predictor paths",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
