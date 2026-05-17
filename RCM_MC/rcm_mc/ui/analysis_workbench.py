@@ -3134,7 +3134,9 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
             '<strong>Methodology calibration in progress.</strong> '
             "Quality labels may shift slightly while thresholds tune "
             "to the new R² distribution. Updated thresholds land "
-            'week of 2026-05-25. <a href="/docs/methodology-ridge" '
+            'week of 2026-05-25. <a href="https://github.com/'
+            'DrewThomas09/RCM/blob/main/RCM_MC/docs/METHODOLOGY_RIDGE.md" '
+            'target="_blank" rel="noopener" '
             'style="color:#b8732a;text-decoration:underline;">'
             'See the methodology update →</a>'
             '</div>'
