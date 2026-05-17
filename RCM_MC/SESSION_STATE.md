@@ -28,9 +28,16 @@ This document is insurance against context rot in long sessions. It does NOT rep
 
 These are durable across sessions. Most have been demonstrated multiple times.
 
-### 2.1 Discipline gate — verify the named target actually behaves as claimed
+### 2.1 Discipline gate — verify the named target actually behaves as claimed (symmetric)
 
-When an audit / earlier PR claims `X is broken at file:line`, **verify with grep + DOM/runtime evidence before accepting the framing**. Audit findings are starting points for investigation, not file:line specs. This pattern has now caught framing errors 5+ times: silent zero-fill → sentinel conflation; `_phi_banner_html` → already-shipping editorial copy; three-mechanism PHI inventory → only one working; "remove silent zero-fill" → unreached defaults; "in-sample R²" → already LOO.
+When an audit / earlier PR / current message claims `X is broken at file:line` or `X has property Y`, **verify with grep + DOM/runtime evidence before accepting the framing**. Audit findings are starting points for investigation, not file:line specs.
+
+**The gate is symmetric.** Apply it equally to:
+- Claims in published audits (caught: silent zero-fill → sentinel conflation; `_phi_banner_html` → already-shipping editorial copy; three-mechanism PHI inventory → only one working; "remove silent zero-fill" → unreached defaults; "in-sample R²" → already LOO)
+- Claims in the user's own real-time prompts (caught: "9 failure_reasons" claim during SESSION_STATE.md construction → actually 7 verified by reading `_FAILURE_REASON_TIER`)
+- The agent's own prior statements when memory-based rather than verification-based
+
+Either side of the conversation can drift. Both sides surface verification before accepting claims as facts. The most valuable signal in the SESSION_STATE.md exchange was the agent catching a user-side memory miscount and surfacing it explicitly rather than papering over.
 
 ### 2.2 Surface inventories cover BOTH UI rendering AND API JSON paths
 
@@ -77,6 +84,10 @@ Observed in three places: shell trio (chartis_shell / editorial_chartis_shell al
 
 Two modes for design docs. Premier-ML: every choice justified with reasoning + literature reference where applicable; bikeshed-marked sub-choices called out explicitly. Practical-engineering: defensible defaults with 2-3 sentences each. B.1 ML methodology work is premier-ML mode.
 
+### 2.13 Constants need provenance + categorization before they get refreshed
+
+The deeper principle behind the BENCHMARKS T1/T2/T3 artifact (section 4): hardcoded numeric constants in the codebase are not all the same. Some are dated historical anchors that MUST NOT be refreshed (modifying them corrupts the analytical model). Some are live benchmarks that MUST be refreshed on a cadence. Some are partner-asserted priors that should be labeled as priors, not data. Before any "refresh stale benchmarks" PR can ship, the constants under refresh need their category locked + their provenance documented. Otherwise the refresh either breaks the model (modifying T1) or silently promotes a prior to a "benchmark" (modifying T3 as if T2). BENCHMARKS.md is the artifact that captures the locked categorization; the principle is broader than the artifact.
+
 ---
 
 ## 3. Chip taxonomy — current state
@@ -90,7 +101,7 @@ Two modes for design docs. Premier-ML: every choice justified with reasoning + l
 | 1 | `INSUFFICIENT_DATA` | gray `— insufficient comparables` | "data doesn't support a prediction" | `insufficient_comparables`, `target_features_missing`, `no_benchmark` |
 | 0 | (no chip) | — | clean | `None` |
 
-**Current failure_reason count: 7.** (User's "9" in the most recent prompt is a small miscount — verified by reading `_FAILURE_REASON_TIER` directly. Worth flagging because it's exactly the kind of drift this document is designed to surface.)
+**Current failure_reason count: 7.** Verified by reading `_FAILURE_REASON_TIER` directly. (A user-side miscount of "9" in the SESSION_STATE.md construction prompt was caught + resolved through this verification — the discipline gate acting symmetrically per section 2.1. The "9" was carried forward from yesterday's chip taxonomy discussion rather than re-grepped against current code state. Resolution: 7 is correct.)
 
 ### Production-rendering note (carry into every B.* PR description)
 
