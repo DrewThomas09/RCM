@@ -30,11 +30,19 @@ def _grade_badge(grade: str) -> str:
 def render_model_validation(
     db_path: str,
     hcris_df: Optional[pd.DataFrame] = None,
+    *,
+    include_legacy: bool = False,
 ) -> str:
     """Render the model validation dashboard.
 
     If no predictions exist yet, runs a synthetic backtest on HCRIS data
     to seed the validation system.
+
+    B.1: defaults to showing only B.1 tuned-α predictions
+    (``methodology_version='b1-tuned-alpha'``) per D6 lock 1. Pass
+    ``include_legacy=True`` to also include pre-B.1 rows in the
+    aggregate KPIs and per-metric stats. The badge on the page header
+    names which view is active and links to the alternative.
     """
     from ..ml.prediction_ledger import (
         _ensure_tables,
@@ -43,6 +51,11 @@ def render_model_validation(
         get_predictions_with_actuals,
         run_synthetic_backtest,
     )
+    from ..analysis.thresholds import validation_color_class_for
+
+    # B.1: methodology_version filter — None when including legacy
+    # rows in the aggregate; otherwise 'b1-tuned-alpha' only.
+    mv_filter: Optional[str] = None if include_legacy else "b1-tuned-alpha"
 
     # Route through PortfolioStore (campaign target 4E) so the
     # connection inherits PRAGMA foreign_keys=ON, busy_timeout=
@@ -65,24 +78,47 @@ def render_model_validation(
     else:
         performances = {}
 
-    # Get metrics that have actuals
-    metrics_with_actuals = con.execute(
-        "SELECT DISTINCT p.metric, COUNT(*) as n "
-        "FROM predictions p "
-        "JOIN prediction_actuals pa ON pa.prediction_id = p.id "
-        "GROUP BY p.metric ORDER BY n DESC"
-    ).fetchall()
+    # Get metrics that have actuals — filter by methodology_version
+    # when the dashboard is on the default tuned-only view.
+    if mv_filter is not None:
+        metrics_with_actuals = con.execute(
+            "SELECT DISTINCT p.metric, COUNT(*) as n "
+            "FROM predictions p "
+            "JOIN prediction_actuals pa ON pa.prediction_id = p.id "
+            "WHERE p.methodology_version = ? "
+            "GROUP BY p.metric ORDER BY n DESC",
+            (mv_filter,),
+        ).fetchall()
+        total_predictions = con.execute(
+            "SELECT COUNT(*) FROM predictions WHERE methodology_version = ?",
+            (mv_filter,),
+        ).fetchone()[0]
+        total_actuals = con.execute(
+            "SELECT COUNT(*) FROM prediction_actuals pa "
+            "JOIN predictions p ON p.id = pa.prediction_id "
+            "WHERE p.methodology_version = ?",
+            (mv_filter,),
+        ).fetchone()[0]
+    else:
+        metrics_with_actuals = con.execute(
+            "SELECT DISTINCT p.metric, COUNT(*) as n "
+            "FROM predictions p "
+            "JOIN prediction_actuals pa ON pa.prediction_id = p.id "
+            "GROUP BY p.metric ORDER BY n DESC"
+        ).fetchall()
+        total_predictions = count
+        total_actuals = con.execute(
+            "SELECT COUNT(*) FROM prediction_actuals"
+        ).fetchone()[0]
 
-    total_predictions = count
-    total_actuals = con.execute(
-        "SELECT COUNT(*) FROM prediction_actuals"
-    ).fetchone()[0]
-
-    # Compute performance for each metric
+    # Compute performance for each metric — pass the same filter so
+    # the per-metric stats match the aggregate KPIs above.
     all_perfs = []
     for row in metrics_with_actuals:
         metric = row[0]
-        perf = compute_metric_performance(con, metric)
+        perf = compute_metric_performance(
+            con, metric, methodology_version=mv_filter,
+        )
         if perf:
             all_perfs.append(perf)
 
@@ -111,6 +147,31 @@ def render_model_validation(
             "number is reproducible from the prediction ledger."
         ),
     )
+
+    # B.1 — methodology badge + legacy toggle (D6 lock 1: dashboard
+    # defaults to b1-tuned-alpha only; opt-in toggle includes legacy).
+    # Date-anchored label per D4 partner-facing-strings principle.
+    if include_legacy:
+        methodology_badge = (
+            '<div style="font-family:var(--sc-mono);font-size:11px;'
+            'color:var(--sc-text-dim);margin:6px 0 14px 0;">'
+            'Showing all predictions (cohort-tuned + pre-2026-05 legacy, '
+            f'N={total_predictions:,}). '
+            '<a href="/models/validation" '
+            'style="color:var(--sc-teal-ink);text-decoration:underline;">'
+            '← Hide legacy</a>'
+            '</div>'
+        )
+    else:
+        methodology_badge = (
+            '<div style="font-family:var(--sc-mono);font-size:11px;'
+            'color:var(--sc-text-dim);margin:6px 0 14px 0;">'
+            f'Showing cohort-tuned predictions only (N={total_predictions:,}). '
+            '<a href="/models/validation?include_legacy=1" '
+            'style="color:var(--sc-teal-ink);text-decoration:underline;">'
+            'Include pre-2026-05 legacy →</a>'
+            '</div>'
+        )
 
     kpis = (
         '<div class="ck-kpi-strip">'
@@ -160,9 +221,16 @@ def render_model_validation(
     )
 
     # ── Per-metric performance table ──
+    # B.1: r2_cls lookup goes through validation_color_class_for so
+    # the color bins are methodology-versioned alongside the grade
+    # thresholds. mv_for_color picks the right table — when
+    # include_legacy aggregates across eras, fall back to the most-
+    # recent thresholds (b1-tuned-alpha) since the aggregate R²
+    # reflects mostly post-B.1 predictions in steady state.
+    mv_for_color = mv_filter or "b1-tuned-alpha"
     metric_rows = ""
     for p in sorted(all_perfs, key=lambda x: -x.r2):
-        r2_cls = "cad-pos" if p.r2 > 0.5 else ("cad-warn" if p.r2 > 0.3 else "cad-neg")
+        r2_cls = validation_color_class_for(p.r2, mv_for_color)
         cov_cls = "cad-pos" if p.coverage_rate > 0.85 else ("cad-warn" if p.coverage_rate > 0.75 else "cad-neg")
         bias_cls = "cad-pos" if abs(p.bias) < p.mae * 0.3 else "cad-warn"
 
@@ -194,7 +262,12 @@ def render_model_validation(
     ) if metric_rows else ""
 
     # ── Recent predictions with actuals ──
-    recent = get_predictions_with_actuals(con, limit=30)
+    # B.1: filter the recent-predictions table by the same
+    # methodology_version so the partner sees rows consistent with
+    # the aggregate KPIs above.
+    recent = get_predictions_with_actuals(
+        con, limit=30, methodology_version=mv_filter,
+    )
     recent_rows = ""
     for r in recent[:20]:
         if r.error is None:
@@ -282,7 +355,7 @@ def render_model_validation(
         italic_word="priors",
     )
     body = (
-        f'{intro}{kpis}{metric_section}{cov_analysis}'
+        f'{intro}{methodology_badge}{kpis}{metric_section}{cov_analysis}'
         f'{recent_section}{flywheel}{nav}{next_up}'
     )
 

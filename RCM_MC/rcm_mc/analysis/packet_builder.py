@@ -345,26 +345,35 @@ def _merge_rcm_profile(
             quality="medium",
         )
 
+    # B.1: methodology_version is sourced from the predicted PM's
+    # cohort_alpha presence — if cohort_alpha is None, the PM came
+    # from a legacy path (pre-B.1) and gets the old threshold table;
+    # otherwise it's a B.1 RidgeCV prediction and gets the new table.
+    # methodology_version flows through to ProfileMetric so the
+    # workbench can render α-disclosure conditionally and downstream
+    # threshold lookups (validation grade, color cell) pick the right
+    # cutpoints per packet.
+    from .thresholds import quality_label_for
     for k, pm in predicted.items():
         if k in merged:
             continue
+        methodology_version = (
+            "b1-tuned-alpha" if getattr(pm, "cohort_alpha", None) is not None
+            else "pre-b1"
+        )
         merged[k] = ProfileMetric(
             value=pm.value,
             source=MetricSource.PREDICTED,
             benchmark_percentile=_percentile(k, pm.value),
             ci_low=pm.ci_low,
             ci_high=pm.ci_high,
-            quality=("high" if pm.r_squared >= 0.5
-                     else "medium" if pm.r_squared >= 0.2
-                     else "low"),
-            # A.10 — propagate the diagnostic channel. A.1 wired
-            # failure_reason on PredictedMetric; without this one-line
-            # propagation, every downstream UI consumer reading
-            # ProfileMetric (analysis workbench, portfolio heatmap,
-            # risk-flag triggers, diligence-question generator)
-            # silently lost the signal. The string value is what packet
-            # PMs already carry; pass it straight through.
+            quality=quality_label_for(pm.r_squared, methodology_version),
+            # A.10 — propagate the diagnostic channel.
             failure_reason=pm.failure_reason,
+            # B.1 — α-disclosure + multi-flag tooltip + version tag
+            cohort_alpha=getattr(pm, "cohort_alpha", None),
+            methodology_version=methodology_version,
+            contributing_sources=list(getattr(pm, "contributing_sources", []) or []),
         )
 
     # Decorate each ProfileMetric with its economic-ontology context

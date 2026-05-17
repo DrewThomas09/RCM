@@ -1,5 +1,62 @@
 # Changelog
 
+## v1.1.0 (2026-05-17) — Ridge predictor: per-cohort α tuning + diagnostic chips
+
+The ridge regression predictor moves from a fixed demo-grade penalty
+(`α = 1.0`) to per-cohort RidgeCV with leave-one-out cross-validation.
+Adds five orthogonal post-fit diagnostics with literature-anchored
+thresholds, surfaces α-disclosure on the analysis workbench, and
+versions the prediction ledger so threshold recalibration stays clean
+across the methodology cutover. See [`docs/METHODOLOGY_RIDGE.md`](docs/METHODOLOGY_RIDGE.md)
+for the partner-facing reference.
+
+- **HIGH**: Per-cohort RidgeCV (was fixed α=1.0); LOO via hat-matrix
+  shortcut (Allen 1974 / Hastie ESL §7.10 eq 7.65); alpha grid
+  `logspace(-3, 3, 25)`. `EnsemblePredictor` uses the same path so the
+  two predictor branches report the same R² (and the same diagnostic
+  chips) on the same metric. Cross-validated R² shifts upward
+  ~5-15% on most metrics; categorical signals (quality bars,
+  reliability grades, validation letter grades) have had their
+  thresholds recalibrated to preserve the partner-facing label
+  distribution across the methodology change.
+- **HIGH**: Five new diagnostic chips fire on per-cohort ridge fits
+  when partner-relevant failure modes are detected: `MULTICOLLINEAR`
+  (max VIF > 10), `INFLUENTIAL_OUTLIER` (max Cook's D > 4/N),
+  `HETEROSCEDASTIC` (Breusch-Pagan p < 0.05, computed via
+  Wilson-Hilferty χ² survival without a scipy dependency),
+  `HIGH_LEVERAGE` (max hat > 2p/N), `NONLINEAR_PATTERN` (RESET-style
+  resid-vs-fitted² t-slope). Multi-fire composes to
+  `DIAGNOSTIC_SUSPECT` with all reasons listed in the chip tooltip
+  (tier-severity ordered). `R2_NEGATIVE` + Cook's D actually
+  recomputes LOO R² without the high-Cook's-D row to verify whether
+  the outlier caused the negative R² (rather than assuming).
+- **HIGH**: `ALPHA_AT_BOUNDARY` chip fires when RidgeCV picks the
+  grid's lowest or highest α AND y has non-trivial variance —
+  signals the search grid was too narrow for the cohort. Near-constant
+  y legitimately picks the maximum α (over-regularize to mean) and
+  correctly does NOT fire the chip.
+- **MEDIUM**: α-disclosure inline with the quality bar on workbench
+  metric cells (`α=0.43` adjacent to the bar, tooltip carries the
+  one-line methodology explanation). Renders only for tuned-α
+  predictions; legacy pre-cutover PMs and observed/auto-populated
+  sources show nothing extra.
+- **MEDIUM**: `methodology_version` column on `predictions` table;
+  `_THRESHOLDS_BY_METHODOLOGY` dispatch in
+  `rcm_mc/analysis/thresholds.py` routes quality/grade/validation/color
+  cutoffs through methodology_version lookup so future
+  threshold adjustments touch one file. `/models/validation`
+  dashboard defaults to tuned-α only with an opt-in toggle for
+  pre-2026-05 legacy rows.
+- **MEDIUM**: One-week-TTL calibration-in-progress banner on
+  `/analysis/<deal>` while the placeholder thresholds tune to the
+  new R² distribution. Auto-removes after 2026-05-25 (date check
+  at render time).
+- **LOW**: Wilson-Hilferty chi-squared survival approximation
+  (Johnson-Kotz-Balakrishnan 1994 §17.6) added inline in
+  `rcm_mc/ml/ridge_predictor.py`; precision verified to ±0.01
+  p-value against `scipy.stats.chi2.sf` in
+  `tests/test_b1_bp_precision.py` (scipy-gated; CI runs it).
+
 ## v1.0.0 (2026-04-26) — Reconcile version + audit/fix loop hardening
 
 Brings the CHANGELOG in line with the install-time and runtime sources of truth: `pyproject.toml` and `rcm_mc/__init__.py` both already pin `1.0.0`. Substantive changes since v0.6.1:

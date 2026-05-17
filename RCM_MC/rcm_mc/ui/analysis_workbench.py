@@ -89,6 +89,21 @@ body.analysis-workbench {{
   font-variant-numeric: tabular-nums;
 }}
 
+/* B.1 — α-disclosure inline with the quality bar. Small mono-font
+ * label, faint color, sits to the right of the bar in the same cell.
+ * Always visible (D4 refinement 1a: discoverable by accident); the
+ * tooltip carries the methodology context for any partner who hovers.
+ */
+.analysis-workbench .ck-cohort-alpha {{
+  font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas,
+               "Liberation Mono", monospace;
+  font-size: 10px;
+  color: var(--wb-text-faint);
+  margin-left: 6px;
+  vertical-align: middle;
+  cursor: help;
+}}
+
 /* Editorial hero band — dark navy ink with parchment text. Slimmer
  * than the original (1.25/1.5rem instead of 2/2.25rem) so it reads
  * as a deal-context strip rather than a second topbar stacked under
@@ -1442,6 +1457,22 @@ def _render_rcm_profile(packet: DealAnalysisPacket) -> str:
             src_icon = _SOURCE_ICON.get(pm.source, "·")
             quality = pm.quality or ""
             conf_bar = _quality_bar(quality)
+            # B.1 — α-disclosure for cohort-tuned ridge fits. Renders
+            # only when this PM came from the new RidgeCV path (D4
+            # locked surface: workbench metric cell adjacent to quality
+            # bar, persistent text, not behind hover). The two-word
+            # "cohort-tuned" in the tooltip carries the methodology
+            # change for any partner who hovers — see D4 refinement 1b.
+            alpha_html = ""
+            cohort_alpha = getattr(pm, "cohort_alpha", None)
+            methodology_version = getattr(pm, "methodology_version", None)
+            if (cohort_alpha is not None
+                    and methodology_version == "b1-tuned-alpha"):
+                alpha_html = (
+                    f'<span class="ck-cohort-alpha" '
+                    f'title="Ridge penalty tuned per-cohort via RidgeCV LOO — see methodology doc">'
+                    f'α={cohort_alpha:.2f}</span>'
+                )
             # Prompt 27: inline trend arrow + sparkline for metrics
             # with uploaded history.
             forecast = (packet.metric_forecasts or {}).get(metric_key)
@@ -1480,7 +1511,7 @@ def _render_rcm_profile(packet: DealAnalysisPacket) -> str:
                 f'<td class="num dim">{_fmt_num(p50, dp=1) if p50 is not None else "—"}</td>'
                 f'<td class="num dim">{_fmt_num(p75, dp=1) if p75 is not None else "—"}</td>'
                 f'<td class="num {cell_class}">{_fmt_signed_pct(delta) if delta is not None else "—"}</td>'
-                f'<td>{conf_bar}</td>'
+                f'<td>{conf_bar}{alpha_html}</td>'
                 '</tr>'
             )
     parts.append('</tbody></table>')
@@ -3083,6 +3114,33 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
     override_count = len(packet.analyst_overrides or {})
     header = _render_header(packet)
     nav = _render_tab_nav(override_count)
+    # B.1 — calibration-in-progress banner. Auto-removes after the
+    # one-week observation window (review-pushback Decision 3:
+    # partner-perception safeguard for the placeholder thresholds in
+    # rcm_mc/analysis/thresholds.py — distribution-preserving
+    # recalibration runs after a week of production observation, at
+    # which point the badge auto-vanishes and updated thresholds
+    # land in a follow-up PR). Same transparency-as-safeguard pattern
+    # as the α-disclosure on the metric cells.
+    from datetime import date
+    calibration_banner = ""
+    if date.today() < date(2026, 5, 25):
+        calibration_banner = (
+            '<div style="margin:8px 0 14px 0;padding:10px 14px;'
+            'background:#fff8e1;border:1px solid #b8732a;'
+            'border-left:3px solid #b8732a;border-radius:2px;'
+            'font-family:var(--sc-mono,monospace);font-size:11px;'
+            'color:#5c3a0d;line-height:1.5;">'
+            '<strong>Methodology calibration in progress.</strong> '
+            "Quality labels may shift slightly while thresholds tune "
+            "to the new R² distribution. Updated thresholds land "
+            'week of 2026-05-25. <a href="https://github.com/'
+            'DrewThomas09/RCM/blob/main/RCM_MC/docs/METHODOLOGY_RIDGE.md" '
+            'target="_blank" rel="noopener" '
+            'style="color:#b8732a;text-decoration:underline;">'
+            'See the methodology update →</a>'
+            '</div>'
+        )
     body_inner = (
         _render_overview(packet)
         + _render_rcm_profile(packet)
@@ -3112,8 +3170,8 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
         italic_word="profile",
     )
     shell_body = (
-        f'<div class="analysis-workbench">{header}{nav}{body_inner}'
-        f'{explain_panel}</div>{next_up}'
+        f'<div class="analysis-workbench">{header}{calibration_banner}'
+        f'{nav}{body_inner}{explain_panel}</div>{next_up}'
     )
     return chartis_shell(
         shell_body,
