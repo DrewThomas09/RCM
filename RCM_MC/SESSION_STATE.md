@@ -88,6 +88,12 @@ Two modes for design docs. Premier-ML: every choice justified with reasoning + l
 
 The deeper principle behind the BENCHMARKS T1/T2/T3 artifact (section 4): hardcoded numeric constants in the codebase are not all the same. Some are dated historical anchors that MUST NOT be refreshed (modifying them corrupts the analytical model). Some are live benchmarks that MUST be refreshed on a cadence. Some are partner-asserted priors that should be labeled as priors, not data. Before any "refresh stale benchmarks" PR can ship, the constants under refresh need their category locked + their provenance documented. Otherwise the refresh either breaks the model (modifying T1) or silently promotes a prior to a "benchmark" (modifying T3 as if T2). BENCHMARKS.md is the artifact that captures the locked categorization; the principle is broader than the artifact.
 
+### 2.14 Verify branch state after every rebase — the reflog is not a strategy
+
+`git rebase --onto` with wrong syntax can drop commits silently. The B.1 code-branch rebase against post-PR-#144 main hit this exact failure mode: `git rebase --onto origin/main ea8bcb18 feat/b1-ridge-defensibility` replayed only commits AFTER `ea8bcb18` (there were none), wiping the B.1 commit history entirely from the branch. Recovery via `git reflog` worked, but that's recovery from a near-miss, not a strategy.
+
+**Always verify branch state with `git log --oneline` immediately after a rebase. Never push until the log matches expectations.** The reflog saved B.1's work; future rebases under time pressure might not. Applies double for interactive rebases that drop commits — the conflict resolution step is easy to misread, and a wrong "accept theirs" can silently insert or drop content vs the intended end state.
+
 ---
 
 ## 3. Chip taxonomy — current state
