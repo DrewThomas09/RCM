@@ -22,22 +22,21 @@ import numpy as np
 from .comparable_finder import find_comparables
 from .rcm_predictor import RCM_METRICS, predict_missing
 
-# R² → letter grade. Thresholds match what partners tolerate on a
-# model card: A ≥ .75 is "cite it"; below .50 is "directionally useful
-# only"; < .20 is don't ship.
-_GRADE_CUTS = [
-    (0.75, "A"),
-    (0.60, "B"),
-    (0.45, "C"),
-    (0.25, "D"),
-]
-
-
-def _grade(r_squared: float) -> str:
-    for cut, letter in _GRADE_CUTS:
-        if r_squared >= cut:
-            return letter
-    return "F"
+# R² → letter grade. B.1: thresholds moved into the central
+# rcm_mc.analysis.thresholds module so backtest_predictions() (B.1-
+# affected; tunes α per-cohort via RidgeCV) and backtest() (Phase-1
+# legacy; routes through rcm_predictor.predict_missing with hardcoded
+# α) each get the correctly-calibrated cutpoints.
+#
+# Default ``methodology_version='b1-tuned-alpha'`` matches the
+# B.1-affected backtest_predictions() callers; the legacy backtest()
+# path passes 'pre-b1' explicitly to retain its original thresholds.
+def _grade(
+    r_squared: float,
+    methodology_version: str = "b1-tuned-alpha",
+) -> str:
+    from ..analysis.thresholds import backtest_grade_for
+    return backtest_grade_for(r_squared, methodology_version)
 
 
 @dataclass
@@ -140,6 +139,10 @@ def backtest(
             pairs[metric][1].append(float(pm.value))
             n_preds += 1
 
+    # backtest() routes through rcm_predictor.predict_missing — the
+    # Phase-1 legacy predictor that B.1 doesn't touch (γ verdict).
+    # Use pre-b1 thresholds so this path's grades stay distribution-
+    # comparable to historical values.
     per_metric: Dict[str, Dict[str, float]] = {}
     for metric, (y_true, y_pred) in pairs.items():
         r2 = _r2(y_true, y_pred)
@@ -148,7 +151,7 @@ def backtest(
             "r2": r2,
             "mape": _mape(y_true, y_pred),
             "n": len(y_true),
-            "grade": _grade(r2),
+            "grade": _grade(r2, methodology_version="pre-b1"),
         }
 
     overall_r2 = (
@@ -157,7 +160,7 @@ def backtest(
     )
     return BacktestResult(
         per_metric=per_metric,
-        overall_grade=_grade(overall_r2),
+        overall_grade=_grade(overall_r2, methodology_version="pre-b1"),
         n_hospitals=n,
         n_predictions=n_preds,
     )

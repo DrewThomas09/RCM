@@ -604,6 +604,14 @@ _PREDICTION_CHIP_MAP: Dict[str, Tuple[str, str, str]] = {
     "ci_unstable":              ("warn",  "⚠ fit unstable",              "Confidence interval wider than 2× point estimate — signal is noise-dominated."),
     "r2_negative":              ("warn",  "⚠ fit unstable",              "Cross-validated R² is negative — model predicts worse than the cohort mean."),
     "fit_exception":            ("error", "✕ prediction failed",          "Predictor raised an exception that could not be recovered. Treat the displayed value as unavailable."),
+    # ── B.1 diagnostic variants (all Tier 2 / amber) ──
+    "multicollinear":           ("warn",  "⚠ multicollinear features",   "Features are linearly redundant (max VIF > 10). Top-driver attribution may be misleading — multiple features jointly carry the signal."),
+    "influential_outlier":      ("warn",  "⚠ outlier-driven fit",        "One peer hospital exerts outsized influence on the fit (Cook's D > 4/N). Verify the outlier is a genuine peer; consider excluding it for robustness."),
+    "heteroscedastic":          ("warn",  "⚠ uncalibrated CI width",     "Residual variance depends on feature values (Breusch-Pagan p < 0.05). The confidence interval is sized correctly on average but may be too tight or too loose at this specific prediction point."),
+    "high_leverage":            ("warn",  "⚠ high-leverage peer",        "One peer hospital sits at the edge of the cohort's feature space (max hat > 2p/N). Predictions extrapolating toward that peer are less trustworthy."),
+    "nonlinear_pattern":        ("warn",  "⚠ nonlinear residuals",       "Residuals show systematic structure vs fitted values (|t-slope| > 2). The linear ridge is missing curvature — predictions at the high or low end may be biased."),
+    "diagnostic_suspect":       ("warn",  "⚠ multiple diagnostic flags", "Two or more diagnostics flagged this fit. Each individually is recoverable; together they suggest the cohort or feature set isn't well-suited to ridge regression here."),
+    "alpha_at_boundary":        ("warn",  "⚠ α at search boundary",      "RidgeCV picked the lowest or highest α in the search grid — the cohort may need a wider regularization range than the current grid covers."),
 }
 
 
@@ -706,6 +714,14 @@ _FAILURE_REASON_TIER: Dict[str, int] = {
     "pinv_fallback":            2,
     "ci_unstable":              2,
     "r2_negative":              2,
+    # ── B.1 additions (all Tier 2) ──
+    "multicollinear":           2,
+    "influential_outlier":      2,
+    "heteroscedastic":          2,
+    "high_leverage":            2,
+    "nonlinear_pattern":        2,
+    "diagnostic_suspect":       2,
+    "alpha_at_boundary":        2,
     # Tier 1 — no model fit; what's shown is a fallback
     "insufficient_comparables": 1,
     "target_features_missing":  1,

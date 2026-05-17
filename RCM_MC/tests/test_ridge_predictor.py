@@ -373,11 +373,33 @@ class TestReliabilityGrade(unittest.TestCase):
         self.assertEqual(_grade("weighted_median", 10, 0.0), "B")
         self.assertEqual(_grade("weighted_median", 6, 0.0), "C")
 
-    def test_ridge_thresholds(self):
-        self.assertEqual(_grade("ridge_regression", 30, 0.62), "A")
-        self.assertEqual(_grade("ridge_regression", 20, 0.50), "B")
-        self.assertEqual(_grade("ridge_regression", 15, 0.30), "C")
-        self.assertEqual(_grade("ridge_regression", 15, 0.10), "D")
+    def test_ridge_thresholds_pre_b1(self):
+        """Pre-B.1 thresholds: A needs r²≥0.60 at n≥30."""
+        self.assertEqual(
+            _grade("ridge_regression", 30, 0.62,
+                   methodology_version="pre-b1"), "A")
+        self.assertEqual(
+            _grade("ridge_regression", 20, 0.50,
+                   methodology_version="pre-b1"), "B")
+        self.assertEqual(
+            _grade("ridge_regression", 15, 0.30,
+                   methodology_version="pre-b1"), "C")
+        self.assertEqual(
+            _grade("ridge_regression", 15, 0.10,
+                   methodology_version="pre-b1"), "D")
+
+    def test_ridge_thresholds_b1_tuned_alpha(self):
+        """B.1 default: A needs r²≥0.65 at n≥30 (recalibrated +0.05)."""
+        self.assertEqual(
+            _grade("ridge_regression", 30, 0.66), "A")
+        self.assertEqual(
+            _grade("ridge_regression", 30, 0.62), "B")
+        self.assertEqual(
+            _grade("ridge_regression", 20, 0.52), "B")
+        self.assertEqual(
+            _grade("ridge_regression", 15, 0.32), "C")
+        self.assertEqual(
+            _grade("ridge_regression", 15, 0.10), "D")
 
 
 # ── Packet integration ──────────────────────────────────────────────

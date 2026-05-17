@@ -527,7 +527,24 @@ class PredictedMetric:
     #: :class:`rcm_mc.ml.ridge_predictor.FailureReason` so the packet
     #: JSON wire stays plain text. ``None`` on a clean fit and on
     #: older packets that predate this field.
+    #:
+    #: B.1 extends with six additional Tier 2 diagnostic variants
+    #: (MULTICOLLINEAR, INFLUENTIAL_OUTLIER, HETEROSCEDASTIC,
+    #: HIGH_LEVERAGE, NONLINEAR_PATTERN, DIAGNOSTIC_SUSPECT) plus
+    #: ALPHA_AT_BOUNDARY for the RidgeCV search-grid guardrail.
     failure_reason: Optional[str] = None
+    #: B.1 — cohort-tuned ridge penalty (α) selected by RidgeCV LOO
+    #: for this specific fit. ``None`` for non-ridge methods
+    #: (weighted_median, benchmark_fallback) and for legacy
+    #: pre-B.1 packets. Rendered as α-disclosure on the analysis
+    #: workbench's quality bar cell.
+    cohort_alpha: Optional[float] = None
+    #: B.1 — when ``failure_reason == "diagnostic_suspect"``, names
+    #: the specific diagnostic variants that fired together
+    #: (ordered tier-severity then within-tier signal strength).
+    #: Empty for single-reason fits. Renders into the chip tooltip
+    #: via the AggregatedFailure-style pattern from A.10.
+    contributing_sources: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -543,6 +560,8 @@ class PredictedMetric:
             "reliability_grade": self.reliability_grade,
             "model_selection": self.model_selection,
             "failure_reason": self.failure_reason,
+            "cohort_alpha": _json_safe(self.cohort_alpha),
+            "contributing_sources": list(self.contributing_sources),
         }
 
     @classmethod
@@ -554,6 +573,8 @@ class PredictedMetric:
         # (which would create a cycle).
         fr = d.get("failure_reason")
         failure_reason = str(fr) if fr is not None else None
+        ca = d.get("cohort_alpha")
+        cohort_alpha = float(ca) if ca is not None else None
         return cls(
             value=float(d.get("value") or 0.0),
             ci_low=float(d.get("ci_low") or 0.0),
@@ -567,6 +588,8 @@ class PredictedMetric:
             reliability_grade=str(d.get("reliability_grade") or ""),
             model_selection=str(d.get("model_selection") or ""),
             failure_reason=failure_reason,
+            cohort_alpha=cohort_alpha,
+            contributing_sources=list(d.get("contributing_sources") or []),
         )
 
 
@@ -600,6 +623,22 @@ class ProfileMetric:
     #: string so packet JSON round-trip stays plain text — same shape
     #: as ``PredictedMetric.failure_reason`` per A.1.
     failure_reason: Optional[str] = None
+    #: B.1 — cohort-tuned ridge α propagated from PredictedMetric.
+    #: Used by the analysis workbench to render α-disclosure inline
+    #: with the quality bar. ``None`` for OBSERVED / AUTO_POPULATED /
+    #: legacy-pre-B.1 PREDICTED rows.
+    cohort_alpha: Optional[float] = None
+    #: B.1 — methodology version tag. ``"b1-tuned-alpha"`` for
+    #: predictions made under the per-cohort RidgeCV path; ``"pre-b1"``
+    #: for predictions made under the legacy hardcoded-α path; ``None``
+    #: on OBSERVED / AUTO_POPULATED sources (not a prediction). Drives
+    #: threshold-table lookup in :mod:`rcm_mc.analysis.thresholds`.
+    methodology_version: Optional[str] = None
+    #: B.1 — when ``failure_reason == "diagnostic_suspect"``, names
+    #: which diagnostic variants fired together. Picked up by
+    #: ``ck_prediction_chip`` to enhance the chip tooltip with the
+    #: specific reasons.
+    contributing_sources: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -611,6 +650,9 @@ class ProfileMetric:
             "ci_low": _json_safe(self.ci_low),
             "ci_high": _json_safe(self.ci_high),
             "failure_reason": self.failure_reason,
+            "cohort_alpha": _json_safe(self.cohort_alpha),
+            "methodology_version": self.methodology_version,
+            "contributing_sources": list(self.contributing_sources),
             "domain": self.domain,
             "financial_pathway": self.financial_pathway,
             "causal_path_summary": self.causal_path_summary,
@@ -624,6 +666,8 @@ class ProfileMetric:
         # PredictedMetric.from_dict per A.1.
         fr = d.get("failure_reason")
         failure_reason = str(fr) if fr is not None else None
+        ca = d.get("cohort_alpha")
+        cohort_alpha = float(ca) if ca is not None else None
         return cls(
             value=float(d.get("value") or 0.0),
             source=MetricSource(d.get("source") or "UNKNOWN"),
@@ -634,6 +678,9 @@ class ProfileMetric:
             ci_low=(float(d["ci_low"]) if d.get("ci_low") is not None else None),
             ci_high=(float(d["ci_high"]) if d.get("ci_high") is not None else None),
             failure_reason=failure_reason,
+            cohort_alpha=cohort_alpha,
+            methodology_version=d.get("methodology_version"),
+            contributing_sources=list(d.get("contributing_sources") or []),
             domain=d.get("domain"),
             financial_pathway=d.get("financial_pathway"),
             causal_path_summary=d.get("causal_path_summary"),

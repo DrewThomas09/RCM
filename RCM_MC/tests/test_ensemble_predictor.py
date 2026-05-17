@@ -382,5 +382,86 @@ class TestPredictMissingMetricsRouting(unittest.TestCase):
         ))
 
 
+# ── B.1 Category 8 — EnsemblePredictor α-wiring ───────────────────
+
+
+class TestEnsembleAlphaWiring(unittest.TestCase):
+    """B.1: ``predict_metric_ensemble`` must tune α per-cohort via the
+    same RidgeCV LOO path as ``_predict_ridge``. Without this wiring,
+    the two predictor paths would report different R² for the same
+    metric (D4 partner-facing-consistency violation).
+    """
+
+    def _build_peers(self, rng, n=25):
+        """Constructive cohort that will route to ensemble (n≥15)."""
+        peers = []
+        for i in range(n):
+            bed = 50.0 + 10.0 * i
+            payer = 0.4 + 0.005 * i
+            denial = 5.0 + 0.02 * bed + 1.5 * payer + rng.normal(scale=0.5)
+            peers.append({
+                "id": f"p{i}",
+                "bed_count": bed,
+                "payer_mix_medicare": payer,
+                "denial_rate": denial,
+                "similarity_score": 1.0,
+            })
+        return peers
+
+    def test_ensemble_pm_carries_cohort_alpha_when_ridge_wins(self):
+        """When the ensemble picks Ridge, the returned PM should carry
+        cohort_alpha (the RidgeCV-selected α). Verifies the new wiring
+        plumbs through end-to-end."""
+        rng = np.random.default_rng(7)
+        peers = self._build_peers(rng, n=25)
+        known = {"bed_count": 120.0, "payer_mix_medicare": 0.50}
+        pm = predict_metric_ensemble(
+            target="denial_rate", known=known, comparables=peers,
+            coverage=0.90, seed=42,
+        )
+        self.assertIsNotNone(pm, "Expected ensemble to produce a prediction")
+        # When ridge wins, cohort_alpha should be set
+        if pm.method == "ridge_regression":
+            self.assertIsNotNone(
+                pm.cohort_alpha,
+                "ridge_regression PM should carry cohort_alpha when "
+                "ensemble wired through RidgeCV",
+            )
+            # And it should be one of the search-grid values
+            from rcm_mc.ml.ridge_predictor import _ALPHA_SEARCH_GRID
+            self.assertIn(
+                float(pm.cohort_alpha),
+                [float(a) for a in _ALPHA_SEARCH_GRID],
+                "cohort_alpha should be a value from _ALPHA_SEARCH_GRID",
+            )
+
+    def test_cross_path_r2_consistency(self):
+        """Per D4 partner-facing-consistency requirement: the same
+        metric run through ``_predict_ridge`` vs ``predict_metric_ensemble``
+        must agree on R² to ±0.005 (both should now use the same
+        RidgeCV-tuned α on the same X/y).
+        """
+        from rcm_mc.ml.ridge_predictor import _predict_ridge
+        rng = np.random.default_rng(11)
+        peers = self._build_peers(rng, n=20)
+        known = {"bed_count": 120.0, "payer_mix_medicare": 0.50}
+        pm_ridge = _predict_ridge(
+            target="denial_rate", known=known, comparables=peers,
+            coverage=0.90, seed=42,
+        )
+        pm_ensemble = predict_metric_ensemble(
+            target="denial_rate", known=known, comparables=peers,
+            coverage=0.90, seed=42,
+        )
+        if (pm_ridge is not None and pm_ensemble is not None
+                and pm_ensemble.method == "ridge_regression"):
+            self.assertAlmostEqual(
+                pm_ridge.r_squared, pm_ensemble.r_squared, delta=0.005,
+                msg=f"Cross-path R² disagreement: "
+                    f"_predict_ridge={pm_ridge.r_squared}, "
+                    f"ensemble={pm_ensemble.r_squared}",
+            )
+
+
 if __name__ == "__main__":
     unittest.main()

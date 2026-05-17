@@ -24,6 +24,15 @@ _MIGRATIONS: List[Tuple[str, str]] = [
      "ALTER TABLE deal_notes ADD COLUMN deleted_at TEXT"),
     ("deal_deadlines_owner",
      "ALTER TABLE deal_deadlines ADD COLUMN owner TEXT NOT NULL DEFAULT ''"),
+    # B.1 — methodology versioning on the prediction ledger.
+    # Existing rows backfill to 'pre-b1' via the DEFAULT clause.
+    # New rows tagged 'b1-tuned-alpha' by record_prediction() default.
+    # See rcm_mc/analysis/thresholds.py for the version-keyed threshold
+    # tables and rcm_mc/ml/prediction_ledger.py for the write path.
+    ("predictions_methodology_version",
+     "ALTER TABLE predictions ADD COLUMN methodology_version TEXT DEFAULT 'pre-b1'"),
+    ("predictions_cohort_alpha",
+     "ALTER TABLE predictions ADD COLUMN cohort_alpha REAL"),
 ]
 
 

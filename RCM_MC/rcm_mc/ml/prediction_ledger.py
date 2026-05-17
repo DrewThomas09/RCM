@@ -34,11 +34,14 @@ CREATE TABLE IF NOT EXISTS predictions (
     model_r2 REAL,
     coverage_target REAL DEFAULT 0.90,
     features_json TEXT,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    methodology_version TEXT DEFAULT 'pre-b1',
+    cohort_alpha REAL
 );
 CREATE INDEX IF NOT EXISTS ix_pred_ccn ON predictions(ccn);
 CREATE INDEX IF NOT EXISTS ix_pred_metric ON predictions(metric);
 CREATE INDEX IF NOT EXISTS ix_pred_created ON predictions(created_at);
+CREATE INDEX IF NOT EXISTS ix_pred_methodology ON predictions(methodology_version);
 
 CREATE TABLE IF NOT EXISTS prediction_actuals (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -113,18 +116,30 @@ def record_prediction(
     method: Optional[str] = None,
     model_r2: Optional[float] = None,
     features: Optional[Dict[str, float]] = None,
+    *,
+    methodology_version: str = "b1-tuned-alpha",
+    cohort_alpha: Optional[float] = None,
 ) -> int:
-    """Record a prediction in the ledger. Returns prediction_id."""
+    """Record a prediction in the ledger. Returns prediction_id.
+
+    B.1: ``methodology_version`` defaults to ``'b1-tuned-alpha'`` —
+    new predictions are tagged with the live methodology automatically.
+    Legacy callers that bypass the RidgeCV path (e.g. the synthetic
+    HCRIS backtest at line ~370) explicitly pass ``'pre-b1'`` to tag
+    their rows correctly. ``cohort_alpha`` is set on B.1 ridge fits
+    so the validation page can show per-prediction α (Tier B follow-up).
+    """
     _ensure_tables(con)
     now = datetime.now(timezone.utc).isoformat()
     features_json = json.dumps(features) if features else None
     cur = con.execute(
         "INSERT INTO predictions "
         "(ccn, metric, predicted_value, ci_low, ci_high, method, model_r2, "
-        " coverage_target, features_json, created_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, 0.90, ?, ?)",
+        " coverage_target, features_json, created_at, methodology_version, "
+        " cohort_alpha) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, 0.90, ?, ?, ?, ?)",
         (ccn, metric, predicted_value, ci_low, ci_high, method, model_r2,
-         features_json, now),
+         features_json, now, methodology_version, cohort_alpha),
     )
     return cur.lastrowid
 
@@ -149,7 +164,11 @@ def record_batch_predictions(
     con: sqlite3.Connection,
     predictions: List[Dict[str, Any]],
 ) -> List[int]:
-    """Record multiple predictions at once. Each dict needs ccn, metric, predicted_value."""
+    """Record multiple predictions at once. Each dict needs ccn, metric,
+    predicted_value. Optional dict keys ``methodology_version`` (default
+    ``'b1-tuned-alpha'``) and ``cohort_alpha`` (default None) thread
+    the same per-row methodology metadata as :func:`record_prediction`.
+    """
     _ensure_tables(con)
     now = datetime.now(timezone.utc).isoformat()
     ids = []
@@ -157,11 +176,13 @@ def record_batch_predictions(
         cur = con.execute(
             "INSERT INTO predictions "
             "(ccn, metric, predicted_value, ci_low, ci_high, method, model_r2, "
-            " coverage_target, created_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, 0.90, ?)",
+            " coverage_target, created_at, methodology_version, cohort_alpha) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, 0.90, ?, ?, ?)",
             (p["ccn"], p["metric"], p["predicted_value"],
              p.get("ci_low"), p.get("ci_high"), p.get("method"),
-             p.get("model_r2"), now),
+             p.get("model_r2"), now,
+             p.get("methodology_version", "b1-tuned-alpha"),
+             p.get("cohort_alpha")),
         )
         ids.append(cur.lastrowid)
     return ids
@@ -171,8 +192,16 @@ def get_predictions_with_actuals(
     con: sqlite3.Connection,
     metric: Optional[str] = None,
     limit: int = 500,
+    *,
+    methodology_version: Optional[str] = None,
 ) -> List[PredictionRecord]:
-    """Get predictions that have matching actuals (for validation)."""
+    """Get predictions that have matching actuals (for validation).
+
+    B.1: ``methodology_version`` filters to the matching tag when set.
+    The default ``None`` returns all rows (legacy behavior); the
+    validation page passes ``'b1-tuned-alpha'`` by default with an
+    opt-in toggle to include legacy. See D6 lock 1.
+    """
     _ensure_tables(con)
     query = (
         "SELECT p.id, p.ccn, p.metric, p.predicted_value, p.ci_low, p.ci_high, "
@@ -181,9 +210,15 @@ def get_predictions_with_actuals(
         "JOIN prediction_actuals pa ON pa.prediction_id = p.id "
     )
     params: list = []
+    where_clauses: list = []
     if metric:
-        query += "WHERE p.metric = ? "
+        where_clauses.append("p.metric = ?")
         params.append(metric)
+    if methodology_version is not None:
+        where_clauses.append("p.methodology_version = ?")
+        params.append(methodology_version)
+    if where_clauses:
+        query += "WHERE " + " AND ".join(where_clauses) + " "
     query += "ORDER BY p.created_at DESC LIMIT ?"
     params.append(limit)
 
@@ -209,9 +244,26 @@ def compute_metric_performance(
     con: sqlite3.Connection,
     metric: str,
     cohort: str = "all",
+    *,
+    methodology_version: Optional[str] = "b1-tuned-alpha",
 ) -> Optional[MetricPerformance]:
-    """Compute validation stats for a specific metric."""
-    records = get_predictions_with_actuals(con, metric=metric)
+    """Compute validation stats for a specific metric.
+
+    B.1: filters to ``methodology_version`` by default (matches the
+    /models/validation page's default-tuned-with-toggle UX from D6).
+    Pass ``methodology_version=None`` to aggregate across all eras
+    (for the legacy toggle); pass a specific version to compare.
+
+    The A/B/C/D letter grade thresholds are looked up via
+    :func:`rcm_mc.analysis.thresholds.validation_grade_for` keyed on
+    methodology_version so the categorical signal stays
+    distribution-preserving across the methodology cutover.
+    """
+    from ..analysis.thresholds import validation_grade_for
+
+    records = get_predictions_with_actuals(
+        con, metric=metric, methodology_version=methodology_version,
+    )
     if len(records) < 3:
         return None
 
@@ -234,14 +286,13 @@ def compute_metric_performance(
     ss_tot = sum((a - np.mean(actuals)) ** 2 for a in actuals)
     r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0
 
-    if r2 >= 0.7 and coverage >= 0.85:
-        grade = "A"
-    elif r2 >= 0.5 and coverage >= 0.75:
-        grade = "B"
-    elif r2 >= 0.3:
-        grade = "C"
-    else:
-        grade = "D"
+    # B.1 — version-aware threshold lookup. When methodology_version
+    # is None (all-eras aggregate), fall back to most-recent thresholds
+    # rather than crashing — the lookup function handles unknown values.
+    grade = validation_grade_for(
+        r2, coverage,
+        methodology_version or "b1-tuned-alpha",
+    )
 
     return MetricPerformance(
         metric=metric, mae=round(mae, 6), rmse=round(rmse, 6),
@@ -365,12 +416,16 @@ def run_synthetic_backtest(
             ci_lo = float(peer_vals.quantile(0.05))
             ci_hi = float(peer_vals.quantile(0.95))
 
-            # Record
+            # Record — methodology_version='pre-b1' because this
+            # synthetic backtest uses peer-median, not the B.1 ridge
+            # path. Tagging it accurately keeps the validation
+            # dashboard's default-tuned-with-toggle filter honest.
             pid = record_prediction(
                 con, ccn, metric, predicted,
                 ci_low=ci_lo, ci_high=ci_hi,
                 method="peer_median_backtest",
                 model_r2=None,
+                methodology_version="pre-b1",
             )
             record_actual(con, pid, actual, source="hcris_backtest")
 

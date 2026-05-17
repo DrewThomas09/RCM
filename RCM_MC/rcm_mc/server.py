@@ -6495,14 +6495,26 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._error_page("IC Memo Error", f"CCN {ccn}: {str(exc)[:200]}")
 
     def _route_model_validation(self) -> None:
-        """GET /model-validation — prediction accuracy dashboard."""
+        """GET /model-validation — prediction accuracy dashboard.
+
+        B.1: ``?include_legacy=1`` toggles the dashboard to include
+        pre-B.1 predictions in aggregate KPIs + per-metric stats.
+        Default view shows only B.1 tuned-α rows (D6 lock 1).
+        """
         try:
             from .data.hcris import _get_latest_per_ccn
             from .ui.model_validation_page import render_model_validation
             from .ui.regression_page import _add_computed_features
+            import urllib.parse
             hcris = _add_computed_features(_get_latest_per_ccn())
+            # Parse ?include_legacy=1 from the URL
+            parsed = urllib.parse.urlparse(self.path)
+            qs = urllib.parse.parse_qs(parsed.query)
+            include_legacy = qs.get("include_legacy", ["0"])[0] == "1"
             return self._send_html(render_model_validation(
-                self.config.db_path, hcris_df=hcris))
+                self.config.db_path, hcris_df=hcris,
+                include_legacy=include_legacy,
+            ))
         except Exception as exc:
             return self._error_page("Model Validation Error", str(exc)[:200])
 

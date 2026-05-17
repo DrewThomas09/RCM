@@ -100,6 +100,70 @@ class TestChipRenderingPerVariant(unittest.TestCase):
         self.assertIn("ck-pred-chip-error", chip)
         self.assertIn("prediction failed", chip)
 
+    # ── B.1 variants (all Tier 2 amber) ──
+
+    def test_multicollinear_is_warn(self):
+        chip = ck_prediction_chip(self._build(FailureReason.MULTICOLLINEAR))
+        self.assertIn("ck-pred-chip-warn", chip)
+        self.assertIn("multicollinear features", chip)
+        self.assertIn("VIF", chip)
+
+    def test_influential_outlier_is_warn(self):
+        chip = ck_prediction_chip(self._build(FailureReason.INFLUENTIAL_OUTLIER))
+        self.assertIn("ck-pred-chip-warn", chip)
+        self.assertIn("outlier-driven fit", chip)
+        self.assertIn("Cook", chip)
+
+    def test_heteroscedastic_is_warn(self):
+        chip = ck_prediction_chip(self._build(FailureReason.HETEROSCEDASTIC))
+        self.assertIn("ck-pred-chip-warn", chip)
+        self.assertIn("uncalibrated CI width", chip)
+        self.assertIn("Breusch-Pagan", chip)
+
+    def test_high_leverage_is_warn(self):
+        chip = ck_prediction_chip(self._build(FailureReason.HIGH_LEVERAGE))
+        self.assertIn("ck-pred-chip-warn", chip)
+        self.assertIn("high-leverage peer", chip)
+
+    def test_nonlinear_pattern_is_warn(self):
+        chip = ck_prediction_chip(self._build(FailureReason.NONLINEAR_PATTERN))
+        self.assertIn("ck-pred-chip-warn", chip)
+        self.assertIn("nonlinear residuals", chip)
+
+    def test_diagnostic_suspect_is_warn(self):
+        chip = ck_prediction_chip(self._build(FailureReason.DIAGNOSTIC_SUSPECT))
+        self.assertIn("ck-pred-chip-warn", chip)
+        self.assertIn("multiple diagnostic flags", chip)
+
+    def test_alpha_at_boundary_is_warn(self):
+        chip = ck_prediction_chip(self._build(FailureReason.ALPHA_AT_BOUNDARY))
+        self.assertIn("ck-pred-chip-warn", chip)
+        self.assertIn("search boundary", chip)
+
+
+class TestB1ChipTierMap(unittest.TestCase):
+    """B.1: all six new diagnostic variants (+ ALPHA_AT_BOUNDARY) are
+    registered as Tier 2 in _FAILURE_REASON_TIER so the AggregatedFailure
+    aggregator from A.10 ranks them correctly when composing across
+    upstream PMs."""
+
+    def test_all_b1_variants_at_tier_2(self):
+        from rcm_mc.ui._chartis_kit import _FAILURE_REASON_TIER
+        for reason_key in (
+            "multicollinear",
+            "influential_outlier",
+            "heteroscedastic",
+            "high_leverage",
+            "nonlinear_pattern",
+            "diagnostic_suspect",
+            "alpha_at_boundary",
+        ):
+            self.assertEqual(
+                _FAILURE_REASON_TIER.get(reason_key), 2,
+                f"{reason_key} should be registered at Tier 2 in "
+                "_FAILURE_REASON_TIER",
+            )
+
 
 class TestChipEdgeCases(unittest.TestCase):
     def test_none_pm_renders_empty(self):
