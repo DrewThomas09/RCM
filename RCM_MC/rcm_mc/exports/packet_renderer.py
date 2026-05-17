@@ -364,10 +364,15 @@ class PacketRenderer:
         path = self.out_dir / f"{_safe_stem(packet)}.csv"
         with open(path, "w", newline="", encoding="utf-8") as fh:
             w = csv.writer(fh)
+            # A.10 PR B — failure_reason column carries the diagnostic
+            # signal from the prediction layer through the exported
+            # artifact. Partners downloading the CSV see the same
+            # signal the on-screen chip surfaces, so a printed export
+            # doesn't silently strip the "this number is suspect" flag.
             w.writerow([
                 "metric_key", "display_name", "current_value", "source",
                 "benchmark_p50", "predicted_value", "ci_low", "ci_high",
-                "ebitda_impact", "risk_flags",
+                "ebitda_impact", "risk_flags", "failure_reason",
             ])
             # Union of all metrics we know about for this deal: rcm_profile
             # + predicted + registry defaults. Keeps the CSV stable row
@@ -393,6 +398,16 @@ class PacketRenderer:
                 ci_high = pred.ci_high if pred is not None else None
                 ebitda_impact = impact_by_metric.get(k)
                 risks = "; ".join(risks_by_metric.get(k, []))
+                # A.10 PR B — pull failure_reason from BOTH layers:
+                # the ProfileMetric carries it post-A.10 PR A
+                # propagation; the PredictedMetric is the source of
+                # truth when there's no ProfileMetric row (predicted-
+                # only metric, no value yet observed).
+                failure_reason = (
+                    (pm.failure_reason if pm is not None else None)
+                    or (pred.failure_reason if pred is not None else None)
+                    or ""
+                )
                 w.writerow([
                     k, display,
                     _fmt_cell_num(value), source,
@@ -402,6 +417,7 @@ class PacketRenderer:
                     _fmt_cell_num(ci_high),
                     _fmt_cell_num(ebitda_impact),
                     risks,
+                    failure_reason,
                 ])
             # Trailing comment rows for provenance.
             footer = _footer_for(packet, inputs_hash)
