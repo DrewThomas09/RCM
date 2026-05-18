@@ -391,11 +391,15 @@ def render_portfolio_risk_scan(db_path: str) -> str:
             'via <a href="/import" style="color:var(--sc-navy);">Quick '
             'import</a>, then this scan will populate.</p>'
         )
+        # Drop the legacy `_wc.responsive_container` wrap (max-width
+        # 1100px) so the page uses the same shell-default page width
+        # as /portfolio/heatmap and other editorial pages. `web_styles`
+        # stays because `section_card` below still relies on its
+        # `.wc-section-card-*` rules.
         body = (
             _wc.web_styles()
-            + _wc.responsive_container(
-                title_block + explainer
-                + _wc.section_card("No deals yet", empty))
+            + title_block + explainer
+            + _wc.section_card("No deals yet", empty)
         )
         return chartis_shell(body, "Portfolio risk scan",
                              active_nav="/portfolio/risk-scan",
@@ -588,9 +592,15 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         eyebrow="Continue —",
         italic_word="LP",
     )
+    # Drop the legacy `_wc.responsive_container` wrap (max-width
+    # 1100px) — see the empty-branch comment above. The page now uses
+    # `chartis_shell`'s default page width to match /portfolio/heatmap
+    # and the rest of the editorial portfolio surfaces. `web_styles`
+    # and `sortable_table_js` stay because `_wc.section_card` and the
+    # per-deal sortable table still rely on them.
     body = (
         _wc.web_styles()
-        + _wc.responsive_container(inner)
+        + inner
         + _wc.sortable_table_js()
         + next_up
     )
