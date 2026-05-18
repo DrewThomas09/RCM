@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _dscr_trend_svg(schedule) -> str:
@@ -291,6 +291,7 @@ def render_debt_service(params: dict = None) -> str:
 
     total_debt = sum(t.principal_mm for t in r.tranches)
     current_dscr = r.coverage_schedule[0].dscr if r.coverage_schedule else 0
+    stress_breaches = sum(1 for s in r.stress_scenarios if s.breach)
 
     kpi_strip = (
         ck_kpi_block("EV", f"${r.ev_mm:,.0f}M", "", "") +
@@ -300,7 +301,7 @@ def render_debt_service(params: dict = None) -> str:
         ck_kpi_block("Equity %", f"{r.equity_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Blended Rate", f"{r.blended_rate_pct:.2f}%", "", "") +
         ck_kpi_block("Entry DSCR", f"{current_dscr:.2f}x", "", "") +
-        ck_kpi_block("Stress Breaches", str(sum(1 for s in r.stress_scenarios if s.breach)), "", "")
+        ck_kpi_block("Stress Breaches", str(stress_breaches), "", "")
     )
 
     dscr_svg = _dscr_trend_svg(r.coverage_schedule)
@@ -345,15 +346,16 @@ def render_debt_service(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    page_title = ck_page_title(
+        "Debt Service Coverage Tracker",
+        eyebrow="DEBT SERVICE",
+        meta=f"${r.ev_mm:,.0f}M deal at {r.entry_multiple:.1f}x · ${total_debt:,.0f}M debt at {r.blended_rate_pct:.2f}% blended rate · {current_dscr:.2f}x entry DSCR · {stress_breaches} of {len(r.stress_scenarios)} stress scenarios breach",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Debt Service Coverage Tracker</h1>
-    <p class="ck-page-sub">
-      DSCR, interest coverage, covenant headroom, and stress testing — ${r.ev_mm:,.0f}M deal at {r.entry_multiple:.1f}x — {r.corpus_deal_count:,} corpus deals
-    </p>
-  </div>
+  {page_title}
 
   {form}
 
