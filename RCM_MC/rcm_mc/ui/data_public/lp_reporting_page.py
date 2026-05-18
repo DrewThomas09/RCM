@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _funds_table(items) -> str:
@@ -189,12 +189,15 @@ def render_lp_reporting(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     top_quartile = sum(1 for f in r.funds if f.quartile == "top quartile")
+    page_title = ck_page_title(
+        "LP Reporting Dashboard",
+        eyebrow="LP REPORTING",
+        meta=f"{r.reporting_quarter} · {r.fund_count} funds at ${r.total_aum_mm:,.0f}M AUM · blended {r.blended_tvpi:.2f}x TVPI / {r.blended_dpi:.2f}x DPI at {r.blended_irr_pct:.1f}% IRR · {top_quartile} of {r.fund_count} funds tracking top-quartile vs PitchBook",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">LP Reporting Dashboard</h1>
-    <p class="ck-page-sub">{_html.escape(r.reporting_quarter)} · {r.fund_count} active funds · ${r.total_aum_mm:,.0f}M AUM · blended {r.blended_tvpi:.2f}x TVPI — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Fund-Level Performance Summary</div>{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">Quarterly NAV Evolution (9 quarters)</div>{m_tbl}</div>
