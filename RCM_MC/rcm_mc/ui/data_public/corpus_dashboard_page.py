@@ -101,7 +101,7 @@ def _nav_tile(title: str, href: str, subtitle: str, value: str, value_color: str
 
 
 def render_corpus_dashboard() -> str:
-    from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_kpi_block
+    from rcm_mc.ui._chartis_kit import chartis_shell, ck_kpi_block, ck_page_title, ck_section_header
     from rcm_mc.ui.chartis._helpers import render_page_explainer
     from rcm_mc.data_public.sector_intelligence import compute_sector_stats
     from rcm_mc.data_public.vintage_analytics import compute_vintage_stats
@@ -333,8 +333,25 @@ def render_corpus_dashboard() -> str:
         source="data_public/corpus_dashboard.py; data_public/deal_quality_score.py.",
         page_key="corpus-dashboard",
     )
+    # B11 — pre-fix, this page had no h1 page title. The editorial_intro
+    # kwarg provided a dismissible intro block but no permanent
+    # editorial anchor at the top of the page. ck_page_title gives
+    # partners landing on /corpus-dashboard a clear "Corpus Intelligence
+    # Dashboard" h1 anchored above the explainer + KPI grid. Meta line
+    # uses the most-load-bearing top-line stats (deal count + median
+    # MOIC + sector breadth) — keeps the partner-facing identity short
+    # while signaling the corpus is non-trivial. editorial_intro kwarg
+    # left in place to preserve the dismissible intro UX; if it reads
+    # as redundant with the new h1 post-deploy, a follow-up B11.x can
+    # remove it (the "on this deal" headline is also stale copy for
+    # what's actually a corpus-wide page — flag for that follow-up).
+    page_title = ck_page_title(
+        "Corpus Intelligence Dashboard",
+        eyebrow="CORPUS",
+        meta=f"{n:,} deals · {n_sectors} sectors · P50 MOIC {moic_p50:.2f}x",
+    )
     return chartis_shell(
-        explainer + body,
+        page_title + explainer + body,
         title="Corpus Dashboard",
         active_nav="/corpus-dashboard",
         subtitle=(
