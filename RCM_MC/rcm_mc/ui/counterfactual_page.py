@@ -32,8 +32,7 @@ from ..diligence.counterfactual import (
 from ._chartis_kit import (
     P, chartis_shell, ck_action_button, ck_eyebrow, ck_fmt_currency,
     ck_fmt_num, ck_kpi_block, ck_next_section, ck_page_title,
-    ck_provenance_tooltip,
-)
+    ck_provenance_tooltip, ck_page_explainer)
 
 _EXPLAINER_CSS = """
 .ck-cf-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
@@ -438,9 +437,16 @@ def _landing_page() -> str:
         f'<option value="{html.escape(name)}">{html.escape(label)}</option>'
         for name, label in AVAILABLE_FIXTURES
     )
-    title_block = ck_page_title(
+    title_block = (
+        ck_page_title(
         "Counterfactual Advisor", eyebrow="COUNTERFACTUAL ADVISOR",
         meta="What would change your mind on this deal",
+    )
+        + ck_page_explainer(
+            'What would change your mind on this deal?',
+            'Inverts the regression: instead of "what does the model predict," asks "what would the inputs need to look like for the model to flip the recommendation." Used during diligence to surface the assumptions that the thesis is most sensitive to before signing.',
+            source='Deal packet + counterfactual generator (live).',
+        )
     )
     explainer_html = (
         '<p class="ck-cf-explainer">'

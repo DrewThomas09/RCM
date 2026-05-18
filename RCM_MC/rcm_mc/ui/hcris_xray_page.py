@@ -27,8 +27,7 @@ from ..diligence.hcris_xray import (
 )
 from ._chartis_kit import (
     P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
-    ck_panel, ck_section_header, ck_section_intro, ck_signal_badge,
-)
+    ck_panel, ck_section_header, ck_section_intro, ck_signal_badge, ck_page_explainer)
 
 _EXPLAINER_CSS = """
 .ck-hx-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
@@ -802,9 +801,16 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
     )
     stats = ck_panel(stats_inner, title="Dataset coverage")
 
-    landing_title = ck_page_title(
+    landing_title = (
+        ck_page_title(
         "HCRIS X-Ray", eyebrow="HCRIS-NATIVE PEER X-RAY",
         meta=f"{summary['total_rows']:,} Medicare cost reports · 15 metrics",
+    )
+        + ck_page_explainer(
+            'HCRIS peer benchmarking, native to the cost report.',
+            'Pulls CMS HCRIS (Form 2552-10) cost-report rollups for the focal hospital and the matched peer set, then surfaces where the target sits vs comparators on occupancy, case-mix-adjusted cost, payer mix, and margin. Used during diligence to size the operational gap behind the EBITDA delta.',
+            source='CMS HCRIS — refreshed quarterly from cms.gov',
+        )
     )
     landing_explainer = (
         '<p class="ck-hx-explainer">'

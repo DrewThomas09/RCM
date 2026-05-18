@@ -2269,6 +2269,45 @@ def ck_page_title(
     )
 
 
+def ck_page_explainer(
+    headline: str,
+    body: str,
+    *,
+    source: Optional[str] = None,
+) -> str:
+    """Editorial explainer paragraph rendered below ck_page_title.
+
+    Mirrors the Portfolio Heatmap style: italic teal headline
+    sentence followed by a body paragraph. Use this on data /
+    analysis pages where the partner needs to know (a) what data
+    drives the page, (b) what the page is telling them, (c) what
+    they'd use it for, and (d) whether the data is live or
+    illustrative.
+
+    ``headline`` becomes the italic teal lead sentence.
+    ``body`` is the explainer paragraph proper.
+    ``source`` (optional) appends a small mono "Source: …" line —
+    useful for naming the upstream dataset (HCRIS, CMS-MA, APCD,
+    synthetic fixture, etc.).
+
+    All three parameters are HTML-escaped — pass plain text only.
+    Styling comes from ``.ck-page-explainer`` in the shared
+    chartis stylesheet (no extra_css needed).
+    """
+    source_html = (
+        f'<span class="ck-page-explainer-source">'
+        f'Source: {_esc(source)}</span>'
+        if source else ""
+    )
+    return (
+        '<p class="ck-page-explainer">'
+        f'<em>{_esc(headline)}</em> '
+        f'{_esc(body)}'
+        f'{source_html}'
+        '</p>'
+    )
+
+
 def ck_image_card(
     *,
     image_html: str,
@@ -3614,6 +3653,14 @@ _CSS_INLINE_FALLBACK = """
   .ck-page-title h1 { font-family:var(--sc-serif); font-weight:400; font-size:clamp(28px, 3.4vw, 40px); line-height:1.1; letter-spacing:-0.015em; color:var(--sc-navy); margin:0; }
   .ck-page-title h1 em { font-style:italic; font-weight:400; color:var(--sc-teal-ink); }
   .ck-page-title-meta { font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); letter-spacing:0.08em; text-transform:uppercase; }
+  /* Page explainer — italic-teal lead + serif body, rendered below
+   * ck_page_title. Mirrors the Portfolio Heatmap intro. */
+  .ck-page-explainer { font-family:var(--sc-serif); font-size:15px; line-height:1.6;
+    color:var(--sc-text-dim); max-width:72ch; margin:var(--sc-s-4) 0 var(--sc-s-6); }
+  .ck-page-explainer em { color:var(--sc-teal-ink); font-style:italic; }
+  .ck-page-explainer-source { display:block; margin-top:8px;
+    font-family:var(--sc-mono); font-size:10.5px; letter-spacing:0.06em;
+    color:var(--sc-text-faint); text-transform:uppercase; }
 
   /* Search hero — full-bleed navy panel with italic-serif label and
    * teal chevron. Sits in the page-header stack, between the KPI

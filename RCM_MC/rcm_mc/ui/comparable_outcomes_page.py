@@ -245,8 +245,7 @@ def render_comparable_outcomes_page(
     from . import _web_components as _wc
     from ._chartis_kit import (
         chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-        ck_next_section, ck_page_title, ck_provenance_tooltip,
-    )
+        ck_next_section, ck_page_title, ck_provenance_tooltip, ck_page_explainer)
     from ..diligence.comparable_outcomes import benchmark_deal
     from ..data_public.deals_corpus import DealsCorpus
 
@@ -486,10 +485,17 @@ def render_comparable_outcomes_page(
             '</div>'
         )
         sector_label = _html.escape(str(target.get("sector") or ""))
-        page_title_block = ck_page_title(
+        page_title_block = (
+            ck_page_title(
             "Comparable Outcomes",
             eyebrow="COMPARABLE OUTCOMES",
             meta=f"{n_comp} matched · {sector_label}" if sector_label else f"{n_comp} matched",
+        )
+            + ck_page_explainer(
+                'Realized outcomes on comparable deals.',
+                'Pulls the realized MOIC / IRR / exit-multiple distributions from the platform corpus filtered to comparables of the focused deal (sector × size × hold × exit channel). Used as a sanity check on bid pricing and to set the IC narrative on "what funds like ours have actually done with deals like this."',
+                source='Platform corpus of historical deals.',
+            )
         )
         explainer_html = (
             '<p class="ck-co-explainer">'

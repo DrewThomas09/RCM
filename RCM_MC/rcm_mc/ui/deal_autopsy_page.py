@@ -34,8 +34,7 @@ from ..diligence.deal_autopsy.library import outcomes_summary
 from ..diligence.deal_autopsy.matcher import FEATURE_LABELS
 from ._chartis_kit import (
     P, chartis_shell, ck_action_button, ck_next_section, ck_page_title,
-    ck_panel, ck_section_header,
-)
+    ck_panel, ck_section_header, ck_page_explainer)
 from .power_ui import provenance, sortable_table
 
 _EXPLAINER_CSS = """
@@ -584,8 +583,15 @@ def _summary_hero(
         f"Dataset: {dataset_label}" if dataset_label
         else f"{n_library} deals · 9-feature signature match"
     )
-    page_title = ck_page_title(
+    page_title = (
+        ck_page_title(
         "Deal Autopsy", eyebrow="DEAL AUTOPSY", meta=meta,
+    )
+        + ck_page_explainer(
+            '"You\'re about to do Steward again."',
+            "Matches the live deal against the corpus of historical PE-healthcare failures (Steward, Envision, others) on a multi-dimensional similarity score. Used during diligence to flag pattern-match risks the bull case isn't covering.",
+            source='Curated failure case library + similarity scorer (live).',
+        )
     )
     explainer_html = (
         '<p class="ck-da-explainer">'
