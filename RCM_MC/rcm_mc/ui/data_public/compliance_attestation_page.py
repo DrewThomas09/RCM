@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title
 
 
 def _sev_color(s: str) -> str:
@@ -232,12 +232,27 @@ def render_compliance_attestation(params: dict = None) -> str:
     crit_findings = sum(p.critical_findings for p in r.pentests)
     total_incident_cost = sum(i.cost_m for i in r.incidents)
 
+    # B11 sweep batch 2 PR 7/10 — bespoke .ck-page-h1 → ck_page_title.
+    # Portfolio-wide compliance posture page. Pre-fix sub-line was
+    # 6+ stats; trimmed to 4 most-load-bearing: portfolio scope
+    # (total portcos), the two name-brand attestation counts
+    # (SOC 2 Type II + HITRUST — the certifications partners
+    # actually ask about), and the average posture score. The
+    # dropped stats (audits-in-progress + elevated-risk vendors)
+    # remain visible in the KPI strip below.
+    page_title = ck_page_title(
+        "Compliance Attestation / Security Posture Tracker",
+        eyebrow="COMPLIANCE",
+        meta=(
+            f"{r.total_portcos} portcos · "
+            f"{r.soc2_type_ii_count} SOC 2 Type II · "
+            f"{r.hitrust_certified_count} HITRUST certified · "
+            f"avg {r.avg_posture_score:.2f}/10 posture"
+        ),
+    )
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Compliance Attestation / Security Posture Tracker</h1>
-    <p class="ck-page-sub">{r.total_portcos} portcos · {r.soc2_type_ii_count} SOC 2 Type II · {r.hitrust_certified_count} HITRUST certified · avg {r.avg_posture_score:.2f}/10 posture · {r.audits_in_progress} audits in progress · {r.high_risk_vendors} vendors elevated risk — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Attestation Status — SOC 2, HITRUST, HIPAA, PCI, ISO</div>{a_tbl}</div>
   <div style="{cell}"><div style="{h3}">Penetration Test Findings</div>{p_tbl}</div>
