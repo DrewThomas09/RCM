@@ -17643,26 +17643,25 @@ class RCMHandler(BaseHTTPRequestHandler):
         """GET /tools — full platform tool index grouped by section.
 
         Discoverability fallback for partners who haven't learned the
-        Cmd+K palette yet. Groups every editorial surface by its
-        section (Home / Pipeline / Diligence / Library / Research /
-        Portfolio / Admin) and renders each as a cad-card panel with
-        link rows. Same source-of-truth as the Cmd+K palette
-        (_DEFAULT_PALETTE_MODULES + _SUB_NAV) so the lists stay in
-        sync.
+        Cmd+K palette yet. Lists *every* GET-renderable route in
+        server.py, not just the curated Cmd+K palette — earlier the
+        page only surfaced ``_DEFAULT_PALETTE_MODULES`` (71 entries)
+        while server.py actually serves ~355 user-facing routes, so
+        partners had no way to find pages that hadn't been wired into
+        the palette (and we couldn't review a buggy surface popping
+        up mid-flow). Auto-discovery runs once per request against
+        the cached source text — cheap (~ms) and means a new route
+        appears on /tools the moment its handler ships.
+
+        The palette still wins for *titles* (so the curated tools
+        keep their hand-written labels); orphan routes get a
+        slug-derived title and a heuristic section assignment so
+        nothing is dropped on the floor.
         """
         from .ui._chartis_kit import (
             chartis_shell, ck_page_title, _DEFAULT_PALETTE_MODULES,
             _resolve_sub_section,
         )
-        # Bucket palette entries by their resolved section. Uses the
-        # same _resolve_sub_section that the subnav highlight uses,
-        # so a tool's section here matches what the partner sees in
-        # the active subnav pill.
-        sections: Dict[str, List[Dict[str, str]]] = {
-            "home": [], "pipeline": [], "diligence": [],
-            "library": [], "research": [], "portfolio": [],
-            "other": [],
-        }
         section_labels = {
             "home":      "Home & Operations",
             "pipeline":  "Pipeline & Sourcing",
@@ -17671,24 +17670,74 @@ class RCMHandler(BaseHTTPRequestHandler):
             "research":  "Research & Backtesting",
             "portfolio": "Portfolio & LP",
             "other":     "Admin & System",
+            "more":      "More Surfaces",
         }
+        # 1. Auto-discover every route handler in this module so the
+        #    catalog stays in sync with server.py without manual
+        #    curation. Cached on the class so we only read+parse
+        #    once per process.
+        discovered = self._discover_all_routes()
+        # 2. Build per-route metadata: prefer palette title (curated)
+        #    over auto-slug. Track which routes were palette-defined
+        #    so we can show curated entries first within a section.
+        palette_by_route = {m["route"]: m for m in _DEFAULT_PALETTE_MODULES}
+        entries_by_route: Dict[str, Dict[str, str]] = {}
+        # Seed with palette so any palette route appears even if it
+        # isn't a literal `path == "/foo"` (e.g. /my/AT which is
+        # under a startswith handler).
         for m in _DEFAULT_PALETTE_MODULES:
-            section = _resolve_sub_section(m["route"]) or "other"
-            sections.setdefault(section, []).append(m)
-        # Build cards in canonical order
+            entries_by_route[m["route"]] = {
+                "route": m["route"],
+                "title": m["title"],
+                "curated": True,
+            }
+        for route in discovered:
+            if route in entries_by_route:
+                continue
+            entries_by_route[route] = {
+                "route": route,
+                "title": self._title_from_route(route),
+                "curated": False,
+            }
+        # 3. Classify each route into a section — palette assignment
+        #    via _resolve_sub_section first, then URL-prefix +
+        #    name-pattern heuristics for the orphans.
+        sections: Dict[str, List[Dict[str, str]]] = {
+            k: [] for k in section_labels
+        }
+        for route, meta in entries_by_route.items():
+            sec = (_resolve_sub_section(route)
+                   or self._heuristic_section(route))
+            sections.setdefault(sec, []).append(meta)
+        # 4. Render each section in canonical order; curated
+        #    entries first, then alpha by title.
         cards = []
         order = ["home", "pipeline", "diligence", "library",
-                 "research", "portfolio", "other"]
+                 "research", "portfolio", "other", "more"]
+        total = 0
         for sec in order:
             entries = sections.get(sec, [])
             if not entries:
                 continue
+            entries.sort(
+                key=lambda e: (0 if e["curated"] else 1,
+                               e["title"].lower())
+            )
             rows = []
             for m in entries:
+                badge = "" if m["curated"] else (
+                    '<span class="ck-tool-orphan-badge" '
+                    'title="Auto-discovered route — not yet in the '
+                    'curated palette. Title generated from the URL '
+                    'slug.">auto</span>'
+                )
                 rows.append(
-                    f'<a href="{html.escape(m["route"], quote=True)}" class="ck-tool-row">'
-                    f'<span class="ck-tool-title">{html.escape(m["title"])}</span>'
-                    f'<span class="ck-tool-route">{html.escape(m["route"])}</span>'
+                    f'<a href="{html.escape(m["route"], quote=True)}" '
+                    'class="ck-tool-row">'
+                    f'<span class="ck-tool-title">'
+                    f'{html.escape(m["title"])}{badge}</span>'
+                    f'<span class="ck-tool-route">'
+                    f'{html.escape(m["route"])}</span>'
                     '</a>'
                 )
             cards.append(
@@ -17700,12 +17749,13 @@ class RCMHandler(BaseHTTPRequestHandler):
                 f'<div class="ck-tool-list">{"".join(rows)}</div>'
                 '</section>'
             )
+            total += len(entries)
 
         title_html = ck_page_title(
             "Tools",
             eyebrow="PLATFORM INDEX",
             meta=(
-                f"{len(_DEFAULT_PALETTE_MODULES)} surfaces · "
+                f"{total} surfaces · "
                 "press Cmd+K anywhere to jump to one"
             ),
         )
@@ -17732,16 +17782,251 @@ class RCMHandler(BaseHTTPRequestHandler):
             '.ck-tool-title{font-weight:600;color:var(--sc-navy,#0b2341);}'
             '.ck-tool-route{font-family:var(--sc-mono,monospace);'
             'font-size:11px;color:var(--sc-text-faint,#7a8699);}'
+            '.ck-tool-orphan-badge{display:inline-block;margin-left:8px;'
+            'padding:1px 6px;font-family:var(--sc-mono,monospace);'
+            'font-size:9px;font-weight:600;letter-spacing:0.08em;'
+            'text-transform:uppercase;color:var(--sc-text-faint,#7a8699);'
+            'background:var(--sc-parchment,#f2ede3);'
+            'border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;}'
             '</style>'
         )
         body = f"{title_html}{page_css}{''.join(cards)}"
         self._send_html(chartis_shell(
             body, "Tools",
             active_nav="/tools",
-            subtitle=(
-                f"All {len(_DEFAULT_PALETTE_MODULES)} platform surfaces"
-            ),
+            subtitle=f"All {total} platform surfaces",
         ))
+
+    # Cache for the discovered route list — server.py source is read
+    # once on first /tools hit and the parsed result is kept on the
+    # handler class so subsequent requests are O(1).
+    _CACHED_ROUTES: Optional[List[str]] = None
+
+    # Routes that exist as handlers but should be hidden from the
+    # tools index: they are auth flows, form POST endpoints, deep
+    # links that need a path parameter, redirect aliases, or
+    # internal/system surfaces. Listed explicitly so partners don't
+    # see "click here" links that lead to a 400 / 404 / redirect.
+    _TOOLS_HIDDEN_ROUTES = frozenset({
+        # Auth & session flows (not surfaces)
+        "/login", "/logout", "/register", "/forgot", "/csrf-token",
+        # Form/POST-only handlers (no GET render)
+        "/team/comment", "/engagements/create", "/pipeline/add",
+        "/pipeline/save-search", "/new-deal/manual", "/new-deal/upload",
+        "/data/refresh", "/quick-import", "/quick-import-json",
+        "/export/bridge", "/exports/lp-update", "/calibrate", "/upload",
+        "/digest/morning",
+        # Routes that require a path parameter; bare slug 404s
+        "/hospital", "/deal", "/initiative", "/owner", "/cohort",
+        "/bayesian/hospital", "/ml-insights/hospital",
+        "/portfolio/regression/hospital",
+        # Redirect aliases (resolve to a different canonical route)
+        "/home", "/dashboard", "/portal", "/index.html", "/ready",
+        # Internal/legacy
+        "/seekingchartis", "/caduceus",
+        # Source-parser false positives + test/scratch routes
+        "/pressure?", "/diligence/", "/static", "/api",
+        "/X", "/foo",
+        # The tools index itself
+        "/tools",
+    })
+
+    @classmethod
+    def _discover_all_routes(cls) -> List[str]:
+        """Parse this module's source for every `path == "/X"` and
+        `path.startswith("/X/")` literal, returning the de-duped,
+        filtered list of user-facing GET routes. Cheap (~ms) and
+        cached on the class after first call. The alternative
+        (maintaining a separate registry) drifts; parsing the
+        source keeps the catalog automatic and complete.
+        """
+        if cls._CACHED_ROUTES is not None:
+            return cls._CACHED_ROUTES
+        import re as _re
+        try:
+            with open(__file__, "r", encoding="utf-8") as f:
+                src = f.read()
+        except OSError:
+            cls._CACHED_ROUTES = []
+            return []
+        exact = _re.findall(r"""path\s*==\s*['"](/[^'"]+)['"]""", src)
+        prefix = _re.findall(
+            r"""path\.startswith\(\s*['"](/[^'"]+)['"]""", src
+        )
+        routes = set(exact) | {p.rstrip("/") for p in prefix}
+        # Filter system / API / static / hidden
+        keep = []
+        for r in sorted(routes):
+            if r in cls._TOOLS_HIDDEN_ROUTES:
+                continue
+            if r.startswith(("/api/", "/static/", "/oauth/",
+                             "/.well-known/")):
+                continue
+            if r in {"/favicon.ico", "/robots.txt", "/healthz",
+                     "/manifest.json", "/sw.js", "/openapi.json",
+                     "/openapi.yaml", "/swagger"}:
+                continue
+            keep.append(r)
+        cls._CACHED_ROUTES = keep
+        return keep
+
+    @staticmethod
+    def _title_from_route(route: str) -> str:
+        """Derive a human title from a route slug for orphan entries.
+
+        ``/aco-economics`` → "ACO Economics",
+        ``/methodology/calculations`` → "Methodology · Calculations".
+        Placeholder until the route gets a curated palette entry;
+        Title Case with known acronyms upper-cased keeps the
+        catalog readable instead of full of raw URL slugs.
+        """
+        # Known acronyms / domain abbreviations to upper-case so they
+        # don't render as "Aco", "Hcit", "Lp", etc.
+        acronyms = {
+            "aco", "ai", "api", "apm", "cms", "ebitda", "esg", "fda",
+            "fwa", "gp", "gpo", "hcit", "ic", "irr", "irs", "lbo",
+            "lp", "ma", "mc", "ml", "moic", "msa", "nsa", "pe",
+            "pmi", "qoe", "rcm", "reit", "rfp", "roi", "rw", "tam",
+            "vdr", "zbb", "340b", "mc", "mc-", "ehr", "ev",
+        }
+
+        def _title_chunk(chunk: str) -> str:
+            words = chunk.replace("-", " ").split()
+            titled = []
+            for w in words:
+                lw = w.lower()
+                if lw in acronyms:
+                    titled.append(lw.upper())
+                else:
+                    titled.append(w.capitalize())
+            return " ".join(titled)
+
+        slug = route.lstrip("/")
+        if not slug:
+            return route
+        parts = [_title_chunk(p) for p in slug.split("/") if p]
+        return " · ".join(parts)
+
+    @staticmethod
+    def _heuristic_section(route: str) -> str:
+        """Classify a route into a /tools section by URL pattern.
+
+        Used for routes that aren't claimed by the palette's own
+        _resolve_sub_section. URL prefix wins first, then name
+        patterns (sponsor/banker/broker → sourcing; covenant/payer/
+        capex → diligence; lp-/fund-/portfolio- → portfolio). The
+        default fallback is "more" so unrecognised routes still
+        render rather than disappearing.
+        """
+        r = route.lower()
+        # ── Prefix-based (most reliable) ──────────────────────────
+        if r.startswith("/diligence/") or r in (
+            "/diligence", "/diligence-checklist", "/diligence-vendors",
+        ):
+            return "diligence"
+        if r.startswith("/portfolio/") or r.startswith("/lp-") or r in (
+            "/portfolio", "/portfolio-optimizer", "/portfolio-sim",
+            "/portfolio-analytics", "/lp-dashboard", "/lp-reporting",
+            "/cohorts", "/hold", "/initiatives", "/owners",
+            "/corpus-coverage", "/corpus-dashboard", "/engagements",
+        ):
+            return "portfolio"
+        if r.startswith("/pipeline") or r.startswith("/screening") or r in (
+            "/pipeline", "/deal-pipeline", "/deal-flow-heatmap",
+            "/deal-origination", "/deal-search", "/deal-sourcing",
+            "/deal-quality", "/deal-postmortem", "/deal-risk-scores",
+            "/deal-screening", "/deals", "/find-comps", "/import",
+            "/new-deal", "/predictive-screener", "/screen", "/source",
+            "/sponsor-heatmap", "/sponsor-league", "/pe-intelligence",
+            "/conferences",
+        ):
+            return "pipeline"
+        if r.startswith("/admin/") or r.startswith("/settings") or r in (
+            "/jobs", "/runs", "/cli-runs", "/v3-status", "/v5-status",
+            "/exports", "/outputs", "/team", "/users", "/audit",
+            "/variance",
+        ):
+            return "other"
+        if r.startswith("/models/") or r in (
+            "/calibration", "/scenarios", "/scenario-mc",
+            "/backtester", "/quant-lab", "/surrogate",
+            "/model-validation", "/data-intelligence",
+            "/ml-insights", "/insights", "/bear-cases",
+            "/comparable-outcomes",
+        ):
+            return "research"
+        if r.startswith("/library") or r in (
+            "/benchmarks", "/methodology", "/methodology/calculations",
+            "/comparables", "/market-rates", "/base-rates",
+            "/cms-data-browser", "/cms-sources", "/data/catalog",
+            "/data-room", "/news", "/data", "/deals-library",
+            "/metric-glossary", "/module-index",
+        ):
+            return "library"
+        if r in ("/alerts", "/escalations", "/watchlist", "/deadlines",
+                 "/activity", "/ops", "/operations", "/digest",
+                 "/global-search", "/search", "/query", "/my",
+                 "/app", "/day-one", "/pressure"):
+            return "home"
+        # ── Name-pattern fallback ─────────────────────────────────
+        if any(k in r for k in (
+            "sponsor", "banker", "broker", "bolton", "deal-flow",
+            "sourcing", "screen",
+        )):
+            return "pipeline"
+        if any(k in r for k in (
+            "vintage", "vcp", "dpi-", "nav-", "fund-", "fundraising",
+            "continuation", "secondary", "coinvest", "dividend-recap",
+            "operating-partner", "exit-", "monitoring", "hold-",
+            "portfolio-", "lp-", "board-",
+        )):
+            return "portfolio"
+        if any(k in r for k in (
+            "market", "sector", "geo-", "competitive", "peer-",
+            "benchmark", "glossary", "catalog",
+        )):
+            return "library"
+        if any(k in r for k in (
+            "research", "notes", "scenario", "model", "backtest",
+            "calibrat", "validation", "ml-", "insight", "anomal",
+            "regression", "monte-carlo", "bayesian", "ai-",
+        )):
+            return "research"
+        # Diligence catches a wide net — most uncategorised platform
+        # routes are workbench / analysis surfaces used during
+        # diligence. Anything still uncaught after this falls to
+        # "more" honestly.
+        if any(k in r for k in (
+            "payer", "covenant", "ebitda", "lbo", "moic", "irr",
+            "capex", "debt", "cap-", "capital-", "earnout", "escrow",
+            "valuation", "qoe-", "denial", "antitrust", "fraud",
+            "cyber", "regulatory", "compliance", "litigation",
+            "hcris", "bridge", "ic-memo", "ic-packet", "physician",
+            "clinical", "phys-", "provider", "patient", "quality",
+            "workforce", "mgmt-", "tax-", "treasury", "leverage",
+            "underwriting", "unit-econ", "rollup", "denovo",
+            "pmi-", "zbb-", "vdr-", "value-creation", "value-tracker",
+            "transition-services", "key-person", "esg", "cin-",
+            "growth-runway", "platform-maturity", "real-estate",
+            "realestate", "reit-", "insurance-", "tech-stack",
+            "hospital-anchor", "trial-site", "telehealth",
+            "ma-contracts", "ma-star", "drug-", "biosimilars",
+            "aco-", "apm", "hcit", "supply-chain", "gpo-",
+            "ref-pricing", "risk-", "revenue-leakage",
+            "concentration", "cost-structure", "acq-",
+            "msa-", "multiple-", "entry-multiple", "exit-multiple",
+            "demand-forecast", "digital-front-door", "direct-employer",
+            "direct-lending", "medical-", "medicaid", "nsa-",
+            "rcm-", "redflag", "refi-", "reinvest", "rollover",
+            "rw-", "sellside", "size-intel", "transition",
+            "verticals", "working-capital", "return-attribution",
+            "tracker-340b", "locum-tracker", "rev-", "partner-econ",
+            "mgmt-fee", "secondaries-", "analysis", "compare",
+            "investability", "ingest", "exit-readiness", "deal-mc",
+            "health-equity",
+        )):
+            return "diligence"
+        return "more"
 
     def _redirect(self, location: str) -> None:
         """See Other redirect — browser re-GETs the target after form POST.
