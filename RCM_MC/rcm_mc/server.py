@@ -6893,6 +6893,8 @@ class RCMHandler(BaseHTTPRequestHandler):
         drop_leakage = (
             (qs.get("drop_leakage") or ["0"])[0] in ("1", "true", "on")
         )
+        # Phase 4: k-fold cross-validation (computes mean OOS R²)
+        cv = (qs.get("cv") or ["0"])[0] in ("1", "true", "on")
         hcris_df = _get_latest_per_ccn()
         store = PortfolioStore(self.config.db_path)
         try:
@@ -6906,6 +6908,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             log_target=log_target,
             segmented=segmented,
             drop_leakage=drop_leakage,
+            cv=cv,
         ))
 
     def _route_hospital_regression(self, ccn: str) -> None:

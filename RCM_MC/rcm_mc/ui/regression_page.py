@@ -25,6 +25,11 @@ from ..finance.leakage import (
     audit_features as _audit_leakage,
     forecasting_safe_features as _safe_features,
 )
+from ..finance.cross_validation import run_cv_regression as _run_cv
+from ..finance.influence import (
+    classify_influence_point as _classify_influence,
+    compute_influence as _compute_influence,
+)
 
 
 _AVAILABLE_METRICS = [
@@ -252,7 +257,31 @@ def _run_ols(
 
         # Residual analysis — top outliers
         std_resid = resid / rmse if rmse > 0 else resid
-        outlier_idx = np.argsort(-np.abs(std_resid))[:20]
+
+        # Phase 4B: compute leverage + Cook's D for every row so we
+        # can both (a) rank by influence (the academic-medical-
+        # centre signal the rebuild plan calls for) and (b) classify
+        # each high-residual row as legitimate_but_different_class /
+        # data_issue / high_influence / possible_opportunity rather
+        # than just "big σ".
+        try:
+            leverage_arr, _stud_arr, cooks_arr = _compute_influence(
+                X, y, y_hat,
+            )
+        except Exception:
+            leverage_arr = np.full(len(y), np.nan)
+            cooks_arr = np.full(len(y), np.nan)
+
+        # Rank by Cook's D when it's available, else fall back to
+        # |std residual| as before
+        if np.any(np.isfinite(cooks_arr)):
+            rank_key = np.where(
+                np.isfinite(cooks_arr), -cooks_arr, np.inf,
+            )
+            outlier_idx = np.argsort(rank_key)[:20]
+        else:
+            outlier_idx = np.argsort(-np.abs(std_resid))[:20]
+
         outliers = []
         ccn_col = "ccn" if "ccn" in clean.columns else None
         name_col = "name" if "name" in clean.columns else None
@@ -272,12 +301,27 @@ def _run_ols(
             predicted_disp = (
                 float(np.exp(y_hat[idx])) if log_target else float(y_hat[idx])
             )
+            row_segment = (
+                str(clean.iloc[idx].get("segment_label", ""))
+                if segment_col else None
+            )
+            cls, sev = _classify_influence(
+                float(leverage_arr[idx]),
+                float(std_resid[idx]),
+                float(cooks_arr[idx]),
+                n=n, p=p,
+                segment=row_segment,
+            )
             row_data = {
                 "index": int(idx),
                 "actual": actual_disp,
                 "predicted": predicted_disp,
                 "residual": float(resid[idx]),
                 "std_residual": float(std_resid[idx]),
+                "leverage": float(leverage_arr[idx]),
+                "cooks_d": float(cooks_arr[idx]),
+                "influence_class": cls,
+                "influence_severity": sev,
             }
             if ccn_col:
                 row_data["ccn"] = str(clean.iloc[idx].get("ccn", ""))
@@ -286,9 +330,7 @@ def _run_ols(
             if state_col:
                 row_data["state"] = str(clean.iloc[idx].get("state", ""))
             if segment_col:
-                row_data["segment"] = str(
-                    clean.iloc[idx].get("segment_label", "")
-                )
+                row_data["segment"] = row_segment or ""
             outliers.append(row_data)
 
         # State-level R² (if state column exists)
@@ -383,6 +425,7 @@ def render_regression_page(
     log_target: bool = False,
     segmented: bool = False,
     drop_leakage: bool = False,
+    cv: bool = False,
 ) -> str:
     """Render the interactive regression analysis page.
 
@@ -436,6 +479,8 @@ def render_regression_page(
             href_params.append("segmented=1")
         if drop_leakage:
             href_params.append("drop_leakage=1")
+        if cv:
+            href_params.append("cv=1")
         href = "/portfolio/regression?" + "&amp;".join(href_params)
         universe_pills += (
             f'<a href="{href}" class="rg-pill {active}">'
@@ -481,6 +526,10 @@ def render_regression_page(
         f'<input type="checkbox" name="drop_leakage" value="1" '
         f'{"checked" if drop_leakage else ""}> Drop leakage features '
         '(forecasting-safe only)'
+        '</label>'
+        '<label class="rg-selector-checkbox">'
+        f'<input type="checkbox" name="cv" value="1" '
+        f'{"checked" if cv else ""}> Cross-validate (5-fold OOS R²)'
         '</label>'
         '</div>'
         '<div class="rg-selector-submit">'
@@ -770,6 +819,27 @@ def render_regression_page(
     has_segments = bool(
         result["outliers"] and "segment" in result["outliers"][0]
     )
+    # Phase-4B: per-row influence classification + Cook's D /
+    # leverage columns.
+    _CLS_BADGE = {
+        "legitimate_but_different_class": "rg-influence-legitimate",
+        "possible_opportunity":           "rg-influence-opportunity",
+        "data_issue":                     "rg-influence-data-issue",
+        "high_influence":                 "rg-influence-high",
+        "in_band":                        "rg-influence-ok",
+        "unknown":                        "rg-influence-info",
+    }
+    _CLS_DISPLAY = {
+        "legitimate_but_different_class": "diff. regime",
+        "possible_opportunity":           "opportunity",
+        "data_issue":                     "data issue?",
+        "high_influence":                 "high influence",
+        "in_band":                        "in band",
+        "unknown":                        "—",
+    }
+    has_influence = bool(
+        result["outliers"] and "cooks_d" in result["outliers"][0]
+    )
     outlier_rows = ""
     for o in result["outliers"][:15]:
         resid_val = o["std_residual"]
@@ -783,6 +853,29 @@ def render_regression_page(
             f'{_html.escape(o.get("segment", ""))}</span></td>'
             if has_segments else ""
         )
+        cooks_cell = ""
+        cls_cell = ""
+        if has_influence:
+            cooks = o.get("cooks_d", float("nan"))
+            cooks_disp = (
+                f'{cooks:.3f}' if isinstance(cooks, float)
+                and cooks == cooks else '—'
+            )
+            cooks_cls = (
+                "cad-neg" if isinstance(cooks, float) and cooks > 1.0
+                else "cad-warn" if isinstance(cooks, float) and cooks > 0.5
+                else ""
+            )
+            cooks_cell = (
+                f'<td class="num {cooks_cls}">{cooks_disp}</td>'
+            )
+            inf_cls = o.get("influence_class", "unknown")
+            badge_cls = _CLS_BADGE.get(inf_cls, "rg-influence-info")
+            cls_cell = (
+                f'<td><span class="rg-influence-badge {badge_cls}">'
+                f'{_html.escape(_CLS_DISPLAY.get(inf_cls, inf_cls))}'
+                '</span></td>'
+            )
         outlier_rows += (
             f'<tr>'
             f'<td>{link}</td>'
@@ -791,10 +884,15 @@ def render_regression_page(
             f'<td class="num">{_fmt_num(o["actual"])}</td>'
             f'<td class="num">{_fmt_num(o["predicted"])}</td>'
             f'<td class="num {resid_cls}"><strong>{resid_val:+.2f}σ</strong></td>'
+            f'{cooks_cell}'
+            f'{cls_cell}'
             f'</tr>'
         )
 
     seg_header = '<th>Segment</th>' if has_segments else ''
+    influence_headers = (
+        '<th>Cook\'s D</th><th>Class</th>' if has_influence else ''
+    )
     # Make the residual-space-vs-display-space contract explicit
     # when log mode is on: residuals (and the σ ranking) are
     # computed in log space because that's what the model fits;
@@ -823,9 +921,23 @@ def render_regression_page(
             if has_segments else
             f'Investigate for deal opportunities or data quality issues.{log_note}</p>'
         )
+        + (
+            ' Rows are ranked by <strong>Cook\'s distance</strong> '
+            '(combines leverage and residual) — Cook\'s D &gt; 1 '
+            '= definitely influential. The <strong>Class</strong> '
+            'column labels each row: <em>diff. regime</em> = '
+            'academic/specialty hospital that\'s influential because '
+            'it lives at the top of the distribution, not a data '
+            'error (don\'t delete). <em>opportunity</em> = community/CAH '
+            'with large positive residual — actuals beat the model. '
+            '<em>data issue?</em> = big residual without high '
+            'leverage — investigate the entry.'
+            if has_influence else ''
+        )
         + '<table class="cad-table"><thead><tr>'
         f'<th>Hospital</th>{seg_header}<th>State</th>'
         '<th>Actual</th><th>Predicted</th><th>Residual</th>'
+        f'{influence_headers}'
         f'</tr></thead><tbody>{outlier_rows}</tbody></table>',
         title="Hospital Outliers (Residual Analysis)",
     ) if outlier_rows else ""
@@ -839,10 +951,11 @@ def render_regression_page(
     # "Dropped from fit" section). Same registry-driven verdicts
     # the tests pin in test_leakage_audit.py.
     _LEAK_BADGE_CLASS = {
-        "LEAKS":   "rg-leak-critical",
-        "SELF":    "rg-leak-critical",
-        "SAFE":    "rg-leak-ok",
-        "UNKNOWN": "rg-leak-info",
+        "LEAKS":           "rg-leak-critical",
+        "SELF":            "rg-leak-critical",
+        "FORMULA_RELATED": "rg-leak-warning",
+        "SAFE":            "rg-leak-ok",
+        "UNKNOWN":         "rg-leak-info",
     }
     leak_rows = []
     # Order: critical first (LEAKS / SELF), then info (UNKNOWN),
@@ -894,16 +1007,108 @@ def render_regression_page(
         '<strong>LEAKS</strong> = feature is mathematically derived '
         'from the target (or vice-versa) per its registered formula '
         '— fitting target ~ this feature inflates R² without '
-        'predicting anything. <strong>SAFE</strong> = no algebraic '
-        'path. <strong>SELF</strong> = feature IS the target. '
-        '<strong>UNKNOWN</strong> = no provenance record (caller '
-        'decides; defaults to staying in the fit).</p>'
+        'predicting anything. <strong>FORMULA_RELATED</strong> = '
+        'feature and target are accounting-identity cousins (they '
+        'share underlying inputs but neither contains the other) — '
+        'softer warning; kept by default. <strong>SAFE</strong> = '
+        'no algebraic path. <strong>SELF</strong> = feature IS the '
+        'target. <strong>UNKNOWN</strong> = no provenance record '
+        '(caller decides; defaults to staying in the fit).</p>'
         '<table class="cad-table"><thead><tr>'
         '<th>Feature</th><th>Verdict</th>'
         '<th>Reason</th><th>Status</th>'
         f'</tr></thead><tbody>{"".join(leak_rows)}</tbody></table>',
         title="Feature Leakage Audit",
     )
+
+    # ── Cross-validation panel (Phase 4A) ──
+    # Only computed when the partner explicitly toggles
+    # "Cross-validate". CV is expensive (~k × baseline fit cost)
+    # so we don't run it by default. Result is the OOS R² + RMSE
+    # the diagnostic banner says we don't yet have without CV.
+    cv_section = ""
+    if cv:
+        try:
+            cv_res = _run_cv(
+                df, target, result["features"],
+                k=5, log_transform_target=log_target,
+                random_state=42,
+            )
+        except ValueError as exc:
+            cv_section = ck_panel(
+                f'<p class="ck-section-body cad-warn">'
+                f'Cross-validation could not run: '
+                f'{_html.escape(str(exc))}</p>',
+                title="Cross-Validation (5-fold)",
+            )
+            cv_res = None
+
+        if cv_res is not None:
+            # Per-fold rows
+            fold_rows = ""
+            for f in cv_res.folds:
+                fold_rows += (
+                    f'<tr>'
+                    f'<td class="num"><strong>{f.fold + 1}</strong></td>'
+                    f'<td class="num">{f.n_train:,}</td>'
+                    f'<td class="num">{f.n_test:,}</td>'
+                    f'<td class="num">{f.train_r_squared:.1%}</td>'
+                    f'<td class="num">{f.test_r_squared:.1%}</td>'
+                    f'<td class="num">{f.test_rmse:.3f}</td>'
+                    f'</tr>'
+                )
+
+            gap = cv_res.overfit_gap
+            if gap > 0.15:
+                gap_cls = "cad-neg"
+                gap_note = (
+                    " — substantial overfit signal; in-sample R² is "
+                    "reading off noise, leakage, or high-influence rows."
+                )
+            elif gap > 0.05:
+                gap_cls = "cad-warn"
+                gap_note = (
+                    " — modest overfit; consider dropping leakage "
+                    "features or running segmented."
+                )
+            else:
+                gap_cls = "cad-pos"
+                gap_note = (
+                    " — small gap; the in-sample fit generalises "
+                    "to held-out folds."
+                )
+            cv_section = ck_panel(
+                '<p class="ck-section-body">'
+                'k=5 random-fold cross-validation, seed = 42 '
+                '(deterministic — same input → same OOS numbers). '
+                'Test R² is the average across folds of the R² '
+                'measured on the held-out 20% of rows after fitting '
+                'on the rest. Big gap between in-sample R² and mean '
+                f'test R² = overfit signal.{gap_note}</p>'
+                '<div class="ck-kpi-strip">'
+                + ck_kpi_block(
+                    "In-sample R²",
+                    f"{cv_res.baseline_in_sample_r2:.1%}",
+                )
+                + ck_kpi_block(
+                    "Mean test R² (OOS)",
+                    f"{cv_res.mean_test_r2:.1%}",
+                )
+                + ck_kpi_block(
+                    "Test R² std",
+                    f"±{cv_res.std_test_r2:.1%}",
+                )
+                + ck_kpi_block(
+                    "Overfit gap",
+                    f"{gap * 100:+.1f}pp",
+                )
+                + '</div>'
+                '<table class="cad-table"><thead><tr>'
+                '<th>Fold</th><th>n train</th><th>n test</th>'
+                '<th>Train R²</th><th>Test R²</th><th>Test RMSE</th>'
+                f'</tr></thead><tbody>{fold_rows}</tbody></table>',
+                title="Cross-Validation (5-fold)",
+            )
 
     # ── Segmented comparison panel (Phase 2) ──
     # Only built when the partner explicitly toggles "Segmented
@@ -1160,8 +1365,24 @@ font-family:var(--sc-mono,monospace);font-size:10px;font-weight:700;
 letter-spacing:0.08em;border-radius:2px;border:1px solid transparent;}
 .rg-leak-critical{color:#b5321e;background:#fff;
 border-color:#b5321e;}
+.rg-leak-warning{color:#b8732a;background:#fff;border-color:#b8732a;}
 .rg-leak-ok{color:#0a8a5f;background:#fff;border-color:#0a8a5f;}
 .rg-leak-info{color:var(--sc-text-faint,#7a8699);background:#fff;
+border-color:var(--sc-rule,#d6cfc0);}
+.rg-influence-badge{display:inline-block;padding:2px 8px;
+font-family:var(--sc-mono,monospace);font-size:10px;font-weight:600;
+letter-spacing:0.04em;border-radius:2px;border:1px solid transparent;}
+.rg-influence-legitimate{color:var(--sc-teal-ink,#155752);
+background:#fff;border-color:var(--sc-teal-ink,#155752);}
+.rg-influence-opportunity{color:#0a8a5f;background:#fff;
+border-color:#0a8a5f;}
+.rg-influence-data-issue{color:#b5321e;background:#fff;
+border-color:#b5321e;}
+.rg-influence-high{color:#b8732a;background:#fff;
+border-color:#b8732a;}
+.rg-influence-ok{color:var(--sc-text-faint,#7a8699);background:#fff;
+border-color:var(--sc-rule,#d6cfc0);}
+.rg-influence-info{color:var(--sc-text-faint,#7a8699);background:#fff;
 border-color:var(--sc-rule,#d6cfc0);}
 .rg-subhead{font-family:var(--sc-sans,Inter);font-size:13px;font-weight:600;
 letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
@@ -1180,7 +1401,8 @@ letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
     )
     body = (
         f'{rg_styles}{intro}{diagnostic_banner}{source_selector}'
-        f'{leakage_section}{segmented_section}{kpis}{intercept_section}'
+        f'{leakage_section}{cv_section}{segmented_section}'
+        f'{kpis}{intercept_section}'
         '<div class="rg-grid">'
         f'<div>{left_col}</div><div>{right_col}</div></div>'
         f'{nav_section}{next_up}'
@@ -1201,6 +1423,8 @@ letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
         subtitle_bits.append("+segmented")
     if drop_leakage:
         subtitle_bits.append("+leakage-filtered")
+    if cv:
+        subtitle_bits.append("+CV")
     subtitle_bits.append(f"{sig_count} significant")
     return chartis_shell(
         body, "Regression Analysis",
