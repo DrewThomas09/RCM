@@ -355,7 +355,7 @@ def _hold_distribution_panel(stats: Dict[str, Any]) -> str:
 def _sector_table_panel(rows: List[Dict[str, Any]]) -> str:
     tbody = []
     for i, r in enumerate(rows):
-        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
+        stripe = ' style="background:var(--sc-bone)"' if i % 2 == 1 else ""
         moic_color = "#22c55e" if (r["moic_p50"] or 0) >= 2.5 else ("#f59e0b" if (r["moic_p50"] or 0) >= 1.5 else "#ef4444")
         moic_html = (
             f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;color:{moic_color}">'

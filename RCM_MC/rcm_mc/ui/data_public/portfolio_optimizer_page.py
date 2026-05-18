@@ -150,7 +150,7 @@ def _optimal_weights_panel(optimal: Dict[str, float]) -> str:
     items = sorted(optimal.items(), key=lambda x: -x[1])[:15]
     rows = []
     for i, (sector, w) in enumerate(items):
-        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
+        stripe = ' style="background:var(--sc-bone)"' if i % 2 == 1 else ""
         rows.append(
             f'<tr{stripe}><td class="dim" style="font-size:10.5px;">{_html.escape(sector[:30])}</td>'
             f'<td class="mono" style="text-align:right;font-variant-numeric:tabular-nums;">{w*100:.1f}%</td></tr>'

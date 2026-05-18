@@ -517,9 +517,9 @@ def _calibration_panel(stats: Dict[str, Any]) -> str:
     mae_color = "#22c55e" if (stats["mae"] or 99) < 0.5 else ("#f59e0b" if (stats["mae"] or 99) < 1.0 else "#ef4444")
     rows_html = [
         f'<tr><td>Mean Absolute Error (MAE)</td><td class="mono" style="color:{mae_color}">{stats["mae"]:.3f}x</td></tr>',
-        f'<tr style="background:#0f172a"><td>RMSE</td><td class="mono">{stats["rmse"]:.3f}x</td></tr>',
+        f'<tr style="background:var(--sc-bone)"><td>RMSE</td><td class="mono">{stats["rmse"]:.3f}x</td></tr>',
         f'<tr><td>Mean Bias (predicted – realized)</td><td>{_error_badge(stats["mean_error"])}</td></tr>',
-        f'<tr style="background:#0f172a"><td>R² (corpus regression)</td><td>{_r2_badge(stats["r2"])}</td></tr>',
+        f'<tr style="background:var(--sc-bone)"><td>R² (corpus regression)</td><td>{_r2_badge(stats["r2"])}</td></tr>',
         f'<tr><td>Calibrated pairs (with entry multiple + hold)</td><td class="mono">{stats["pairs_n"]}</td></tr>',
     ] if all(v is not None for v in [stats["mae"], stats["rmse"]]) else [
         '<tr><td colspan="2" class="dim">Insufficient data for calibration statistics.</td></tr>'

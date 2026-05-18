@@ -157,7 +157,7 @@ def render_size_intel() -> str:
     # Size bucket table
     bucket_rows = []
     for i, b in enumerate(profile.buckets):
-        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
+        stripe = ' style="background:var(--sc-bone)"' if i % 2 == 1 else ""
         mc = _moic_color(b.moic_p50)
         optimal_badge = f'<span style="margin-left:4px;font-size:8px;color:#22c55e;font-family:var(--ck-mono);">★</span>' if best_bucket and b.label == best_bucket.label else ""
         hi_label = f"${b.ev_range[1]:.0f}M" if b.ev_range[1] < 1000 else ("$1B+" if b.ev_range[1] < 1e6 else "—")

@@ -225,7 +225,7 @@ def render_sector_intel(min_deals: int = 3, sort_by: str = "moic_p50") -> str:
 
     rows = []
     for i, s in enumerate(stats):
-        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
+        stripe = ' style="background:var(--sc-bone)"' if i % 2 == 1 else ""
         mc = _moic_color(s.moic_p50)
         rows.append(f"""<tr{stripe}>
   <td style="padding:5px 8px;font-size:10px;white-space:nowrap;">{_html.escape(s.sector[:40].replace('_',' '))}</td>

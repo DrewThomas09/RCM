@@ -286,7 +286,7 @@ def render_deal_search(
     # Results table
     rows = []
     for i, d in enumerate(page_deals):
-        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
+        stripe = ' style="background:var(--sc-bone)"' if i % 2 == 1 else ""
         moic = d.get("realized_moic")
         irr  = d.get("realized_irr")
         ev   = d.get("ev_mm")
