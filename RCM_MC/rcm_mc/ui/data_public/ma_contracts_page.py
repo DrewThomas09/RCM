@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _plans_table(plans) -> str:
@@ -244,12 +244,15 @@ def render_ma_contracts(params: dict = None) -> str:
     raf_opportunity = sum(x.incremental_revenue_mm for x in r.raf)
     star_opportunity = sum(x.bonus_revenue_mm for x in r.stars)
 
+    page_title = ck_page_title(
+        "Medicare Advantage Contract Analyzer",
+        eyebrow="MA CONTRACTS",
+        meta=f"{r.total_enrollment:,} MA lives at ${r.blended_bid_pmpm:,.0f} bid PMPM (benchmark ${r.blended_benchmark_pmpm:,.0f}) · ${r.annual_revenue_mm:,.0f}M revenue / ${r.annual_margin_mm:,.0f}M margin at {r.margin_pct * 100:.1f}% · {r.weighted_star_rating:.2f}★ Stars · {r.blended_mlr * 100:.1f}% MLR · ${r.v28_net_impact_mm:+,.1f}M V28 headwind offset by ${raf_opportunity:,.1f}M RAF + ${star_opportunity:,.1f}M Star bonus opportunity",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Medicare Advantage Contract Analyzer</h1>
-    <p class="ck-page-sub">Bid/benchmark · RAF optimization · Stars · MLR · V28 transition · supplementals — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   {form}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Revenue vs Margin by MA Plan</div>{svg}</div>
