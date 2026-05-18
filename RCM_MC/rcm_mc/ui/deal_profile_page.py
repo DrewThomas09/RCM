@@ -605,6 +605,7 @@ margin:var(--sc-s-4) 0 var(--sc-s-6);}}
 background:var(--sc-bone);padding:1px 5px;border-radius:2px;
 color:var(--sc-text);}}
 .ck-dp-slug-form{{max-width:480px;}}
+.ck-dp-slug-form .ck-eyebrow{{margin:var(--sc-s-4) 0 var(--sc-s-3);}}
 .ck-dp-recent-deals{{margin-top:1.75rem;max-width:960px;}}
 .ck-dp-tool-chip{{font-size:8px;letter-spacing:.5px;text-transform:uppercase;
 color:{P["text_faint"]};background:{P["panel_alt"]};padding:1px 5px;
