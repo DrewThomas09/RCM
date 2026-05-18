@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title
 
 
 def _status_color(status: str) -> str:
@@ -208,12 +208,29 @@ def render_coinvest_pipeline(params: dict = None) -> str:
     avg_oversub = sum(c.oversubscribed for c in r.capacity) / len(r.capacity) if r.capacity else 0
     total_savings = sum(f.realized_savings_m for f in r.fees)
 
+    # B11 sweep batch 2 PR 2/10 — replace bespoke .ck-page-h1 inline
+    # HTML with editorial-kit ck_page_title primitive. Pre-fix sub-line
+    # was 6 stats long ("X active · $YM pipeline · $ZM capacity · N LPs
+    # · historical Mx MOIC / I% IRR — N corpus deals") — denser than
+    # the editorial register meta typically carries. Trimmed to 4
+    # most-load-bearing: pipeline-side count + dollar volume +
+    # coinvest capacity + LP count. Historical performance stats
+    # drop from meta — partners can read them in the KPI strip
+    # below.
+    page_title = ck_page_title(
+        "Co-Investment Pipeline / LP Allocation Tracker",
+        eyebrow="CO-INVEST PIPELINE",
+        meta=(
+            f"{r.active_opportunities} active opportunities · "
+            f"${r.total_equity_pipeline_m:,.1f}M equity pipeline · "
+            f"${r.total_coinvest_available_m:,.1f}M coinvest capacity · "
+            f"{r.active_lp_count} active LPs"
+        ),
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Co-Investment Pipeline / LP Allocation Tracker</h1>
-    <p class="ck-page-sub">{r.active_opportunities} active opportunities · ${r.total_equity_pipeline_m:,.1f}M equity pipeline · ${r.total_coinvest_available_m:,.1f}M coinvest capacity · {r.active_lp_count} active LPs · historical {r.historical_avg_moic:.2f}x MOIC / {r.historical_avg_irr_pct:.1f}% IRR — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Active Pipeline — {r.active_opportunities} Opportunities</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Deal Capacity & LP Demand</div>{c_tbl}</div>
