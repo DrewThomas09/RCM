@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title
 
 
 def _domains_table(items) -> str:
@@ -185,12 +185,27 @@ def render_cyber_risk(params: dict = None) -> str:
 
     total_rem = sum(c.remediation_cost_mm for c in r.compliance)
     hhs_incidents = sum(1 for inc in r.incidents if inc.hhs_reportable)
+    # B11 sweep batch 2 PR 8/10 — bespoke .ck-page-h1 → ck_page_title.
+    # Cybersecurity scorecard page. Pre-fix sub-line described what the
+    # page COVERS (12-domain maturity, incidents, ransomware, threats,
+    # compliance, vendors) — useful as a TOC, but doesn't read at-a-
+    # glance for a partner who already knows what the page is.
+    # Replaced with score + risk tier + records-in-scope (the
+    # quantitative read on cyber risk magnitude) which is what
+    # partners scanning the page actually want to see.
+    page_title = ck_page_title(
+        "Cybersecurity / HIPAA Risk Scorecard",
+        eyebrow="CYBER RISK",
+        meta=(
+            f"cyber score {r.overall_cyber_score}/100 · "
+            f"risk tier {r.risk_tier.upper()} · "
+            f"{r.total_records_in_scope:,} records in scope · "
+            f"${r.cyber_insurance_coverage_mm:,.0f}M insurance"
+        ),
+    )
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Cybersecurity / HIPAA Risk Scorecard</h1>
-    <p class="ck-page-sub">12-domain control maturity · incident history · ransomware preparedness · threat vectors · compliance frameworks · 3P vendor risk — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {tier_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Cyber Posture</div>
