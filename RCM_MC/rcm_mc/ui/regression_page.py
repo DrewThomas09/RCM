@@ -463,7 +463,7 @@ def render_regression_page(
         '<div class="rg-selector-toggles">'
         '<label class="rg-selector-checkbox">'
         f'<input type="checkbox" name="log" value="1" '
-        f'{"checked" if log_target else ""}> Predict log(target)'
+        f'{"checked" if log_target else ""}> Fit ln(target)'
         '</label>'
         '<label class="rg-selector-checkbox">'
         f'<input type="checkbox" name="segmented" value="1" '
@@ -774,6 +774,20 @@ def render_regression_page(
         )
 
     seg_header = '<th>Segment</th>' if has_segments else ''
+    # Make the residual-space-vs-display-space contract explicit
+    # when log mode is on: residuals (and the σ ranking) are
+    # computed in log space because that's what the model fits;
+    # the Actual / Predicted columns are back-transformed to raw
+    # target units so the partner reads dollars / etc. instead of
+    # log values.
+    log_note = (
+        ' <strong>Log mode:</strong> the residual σ ranking is '
+        'computed in <em>log space</em> (where the model fits); '
+        'Actual and Predicted are back-transformed to raw '
+        f'<em>{_html.escape(target.replace("_", " "))}</em> units '
+        'so the rows read in their natural scale.'
+        if log_target else ''
+    )
     outlier_section = ck_panel(
         '<p class="ck-section-body">'
         'Hospitals with the largest standardized residuals. &gt;2σ = model underpredicts/overpredicts. '
@@ -784,9 +798,9 @@ def render_regression_page(
             'follows a different revenue equation than the baseline, '
             'not that the rows are errors. Try toggling '
             '<em>Segmented regression</em> to fit a separate model per '
-            'regime.</p>'
+            f'regime.{log_note}</p>'
             if has_segments else
-            'Investigate for deal opportunities or data quality issues.</p>'
+            f'Investigate for deal opportunities or data quality issues.{log_note}</p>'
         )
         + '<table class="cad-table"><thead><tr>'
         f'<th>Hospital</th>{seg_header}<th>State</th>'
@@ -820,10 +834,20 @@ def render_regression_page(
             seg_res = None
 
         if seg_res is not None:
-            # Header row = baseline
+            # Header row = pooled baseline on the CURRENTLY SELECTED
+            # universe (not the global "all hospitals" baseline). If
+            # the partner has filtered to e.g. acquisition_targets,
+            # this row is the pooled OLS fit on that subset. Labeling
+            # it ambiguously would let a reader think the comparison
+            # is segment-vs-global, when in fact it's segment-vs-
+            # this-universe.
+            universe_disp = (
+                "all hospitals" if universe == "all"
+                else f"universe = {universe}"
+            )
             seg_rows = (
                 '<tr class="rg-seg-baseline">'
-                '<td><strong>baseline (all)</strong></td>'
+                f'<td><strong>baseline (pooled · {_html.escape(universe_disp)})</strong></td>'
                 f'<td class="num">{seg_res.baseline.n_observations:,}</td>'
                 f'<td class="num"><strong>{seg_res.baseline.r_squared:.1%}</strong></td>'
                 f'<td class="num">{seg_res.baseline.rmse:.3f}</td>'
