@@ -29,7 +29,7 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 from rcm_mc.ui._chartis_kit import (
     P, _MONO, _SANS, chartis_shell, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip, ck_section_header,
+    ck_page_title, ck_provenance_tooltip, ck_section_header,
 )
 
 
@@ -249,9 +249,27 @@ def render_corpus_coverage() -> str:
   </div>
 </div>"""
 
+    # B11 — same shape as concentration_risk (PR #165): page used
+    # ck_section_header as a de-facto title. ck_section_header is an
+    # h2-level section primitive, not a page-level h1. Adding
+    # ck_page_title and removing the now-redundant ck_section_header
+    # to avoid the visual "CORPUS COVERAGE REPORT" duplication. Meta
+    # surfaces the trust_grade + MOIC coverage % since those are the
+    # load-bearing institutional-credibility signals the page
+    # exists to communicate (and they appear visually in the big
+    # 48px trust_panel right below — meta gives a one-line read
+    # for partners scanning quickly).
+    page_title = ck_page_title(
+        "Corpus Coverage Report",
+        eyebrow="CORPUS COVERAGE",
+        meta=(
+            f"{n:,} deals · trust grade {trust_grade} · "
+            f"MOIC coverage {has_moic_pct:.0f}%"
+        ),
+    )
     body = f"""
 <div style="padding:16px 20px;max-width:1200px">
-  {ck_section_header("CORPUS COVERAGE REPORT", f"Data quality and completeness — {n:,} transactions", None)}
+  {page_title}
   {trust_panel}
   {kpi_strip}
 
