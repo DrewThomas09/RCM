@@ -198,7 +198,7 @@ def render_nav_loan_tracker(params: dict = None) -> str:
     <h1 class="ck-page-h1">NAV Loan / Fund-Level Financing Tracker</h1>
     <p class="ck-page-sub">{r.total_loans} active NAV loans · ${r.total_outstanding_m:,.1f}M outstanding · {r.weighted_ltv_pct * 100:.2f}% weighted LTV · SOFR+{r.weighted_spread_bps}bps · {r.loans_near_maturity} loans within 4-year maturity window — {r.corpus_deal_count:,} corpus deals</p>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Active NAV Loan Book</div>{l_tbl}</div>
   <div style="{cell}"><div style="{h3}">Coverage Analysis — Current LTV vs Covenants</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Stress Testing — NAV Markdown Scenarios</div>{s_tbl}</div>

@@ -228,7 +228,7 @@ def render_capex_budget(params: dict = None) -> str:
     )
     body = page_title + cx_explainer + f"""
 <div class="ck-page-wrap">
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Active Capex Projects</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Category Rollup</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Deal-Level Budget Mix</div>{d_tbl}</div>

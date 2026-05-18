@@ -180,7 +180,7 @@ def render_secondaries_tracker(params: dict = None) -> str:
     <h1 class="ck-page-h1">Secondaries / GP-Led Market Tracker</h1>
     <p class="ck-page-sub">Continuation vehicles · strip sales · tender offers · buyer landscape · CV economics · LP conflicts — {r.corpus_deal_count:,} corpus deals</p>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Recent Healthcare Secondaries Transactions</div>{t_tbl}</div>
   <div style="{cell}"><div style="{h3}">Secondary Buyer Landscape</div>{b_tbl}</div>
   <div style="{cell}"><div style="{h3}">CV Economics Structure</div>{ce_tbl}</div>

@@ -187,7 +187,7 @@ def render_ai_operating_model(params: dict = None) -> str:
     )
     body = page_title + aim_explainer + f"""
 <div class="ck-page-wrap">
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {gov_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">AI Portfolio Health</div>
     <div style="color:{gov_c};font-weight:700;font-size:14px">Blended ROI {r.blended_roi_pct:.1f}x · {r.initiatives_in_prod} initiatives in production · Governance posture {_html.escape(r.governance_risk_tier.upper())}</div>

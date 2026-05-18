@@ -204,7 +204,7 @@ def render_treasury_tracker(params: dict = None) -> str:
     <h1 class="ck-page-h1">Treasury / Cash Position Tracker</h1>
     <p class="ck-page-sub">${r.total_portfolio_liquidity_m:,.1f}M total liquidity · ${r.total_cash_and_investments_m:,.1f}M cash + investments · {r.weighted_revolver_utilization_pct * 100:.1f}% revolver utilization · {r.at_risk_deals} deal{"s" if r.at_risk_deals != 1 else ""} at risk · {len(r.hedging)} hedging positions — {r.corpus_deal_count:,} corpus deals</p>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Cash Position & Revolver Utilization</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Working Capital Summary</div>{w_tbl}</div>
   <div style="{cell}"><div style="{h3}">Monthly Cash Burn / Free Cash Flow</div>{b_tbl}</div>

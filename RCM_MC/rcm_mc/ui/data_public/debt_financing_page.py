@@ -221,7 +221,7 @@ def render_debt_financing(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Syndication Status — Active Book</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Facility Detail — Tranches, Pricing, Tenor</div>{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">Covenant Package — Leverage, Headroom, Baskets</div>{c_tbl}</div>

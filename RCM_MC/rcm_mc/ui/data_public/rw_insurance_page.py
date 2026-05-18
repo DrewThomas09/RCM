@@ -206,7 +206,7 @@ def render_rw_insurance(params: dict = None) -> str:
     <h1 class="ck-page-h1">R&W Insurance / M&A Insurance Tracker</h1>
     <p class="ck-page-sub">{r.total_policies} active policies · ${r.total_tower_limit_m:,.1f}M total tower · ${r.total_premium_m:.1f}M premium · {r.weighted_avg_rate_pct * 100:.2f}% weighted rate · {r.weighted_avg_retention_pct * 100:.2f}% avg retention · {r.open_claims} open claims — {r.corpus_deal_count:,} corpus deals</p>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Active R&W Policies</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Carrier League Table & Concentration</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Claim Activity</div>{cl_tbl}</div>

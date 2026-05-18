@@ -234,7 +234,7 @@ def render_locum_tracker(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   {form}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {roles_paired}
   <div style="{cell}"><div style="{h3}">Coverage Gap Inventory — Revenue At Risk</div>{gaps_tbl}</div>
   <div style="{cell}"><div style="{h3}">Permanent Conversion Pipeline</div>{conv_tbl}</div>

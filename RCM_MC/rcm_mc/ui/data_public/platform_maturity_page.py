@@ -155,7 +155,7 @@ def render_platform_maturity(params: dict = None) -> str:
     <h1 class="ck-page-h1">Platform Maturity / Exit Readiness</h1>
     <p class="ck-page-sub">10-dimension scorecard · 6 exit-path comparison · remediation roadmap · financial benchmarks · corpus comps — {r.corpus_deal_count:,} corpus deals</p>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {score_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Exit Recommendation</div>
     <div style="color:{score_c};font-weight:700;font-size:14px">{_html.escape(r.recommended_exit_path)} — {r.time_to_exit_months} months</div>

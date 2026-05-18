@@ -226,7 +226,7 @@ def render_phys_comp_plan(params: dict = None) -> str:
     <p class="ck-page-sub">wRVU production · quality pools · partner track · VBC — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   {form}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Comp Plan Model Library</div>{models_tbl}</div>
   <div style="{cell}"><div style="{h3}">Plan Simulation — Distribution & Retention</div>{sims_svg}</div>
   <div style="{cell}"><div style="{h3}">Plan Scenario Detail</div>{sims_tbl}</div>

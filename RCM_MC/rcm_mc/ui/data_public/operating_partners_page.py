@@ -216,7 +216,7 @@ def render_operating_partners(params: dict = None) -> str:
     <h1 class="ck-page-h1">Operating Partner / CEO Rolodex Tracker</h1>
     <p class="ck-page-sub">{r.total_operating_partners} operating partners · {r.total_exec_placements} exec placements LTM · {r.active_searches} active searches · {r.total_bench_count} bench roster · {r.total_engagement_hours_ltm:,} engagement hours · ${r.total_value_creation_m:.1f}M value creation attributed — {r.corpus_deal_count:,} corpus deals</p>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Operating Partner Roster</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Recent Executive Placements (LTM)</div>{pl_tbl}</div>
   <div style="{cell}"><div style="{h3}">Active Executive Searches</div>{s_tbl}</div>

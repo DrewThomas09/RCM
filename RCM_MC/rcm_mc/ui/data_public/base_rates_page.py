@@ -280,7 +280,7 @@ def render_base_rates(params: dict = None) -> str:
     body = page_title + br_explainer + f"""
 <div class="ck-page-wrap">
   {form}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};padding:10px 14px;margin-bottom:16px;font-size:11px;font-family:JetBrains Mono,monospace;color:{text_dim}">
     <strong style="color:{acc}">FILTER:</strong> {_html.escape(filter_desc)} &nbsp;|&nbsp;
     <strong style="color:{text}">{r.total_matching:,}</strong> matching deals of {r.corpus_deal_count:,} total

@@ -206,7 +206,7 @@ def render_medical_realestate(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Property-Type Rollup</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Individual Properties</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Tenant Concentration & Credit Quality</div>{t_tbl}</div>

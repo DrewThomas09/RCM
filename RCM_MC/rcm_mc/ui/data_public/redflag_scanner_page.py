@@ -193,7 +193,7 @@ def render_redflag_scanner(params: dict = None) -> str:
     <p class="ck-page-sub">Rule-based red-flag detection · corpus-benchmarked · severity-ranked · IC-ready — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   {form}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {rec_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">IC Recommendation</div>
     <div style="color:{rec_c};font-weight:700;font-size:14px">{_html.escape(r.overall_recommendation)}</div>

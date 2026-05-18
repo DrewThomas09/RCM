@@ -218,7 +218,7 @@ def render_ma_star_tracker(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">MA Plan Economics — Star Ratings, Rebates, MLR</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Portfolio Exposure — MA Partnership Revenue</div>{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Stars Measures — Portfolio vs Industry</div>{s_tbl}</div>

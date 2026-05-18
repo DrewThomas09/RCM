@@ -248,7 +248,7 @@ def render_covenant_headroom(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   {form}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {stress_paired}
   <div style="{cell}"><div style="{h3}">Covenant Compliance Matrix</div>{cov_tbl}</div>
   <div style="{cell}"><div style="{h3}">Capital Structure — Tranche by Tranche</div>{tr_tbl}</div>

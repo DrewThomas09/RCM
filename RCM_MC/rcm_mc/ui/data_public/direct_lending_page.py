@@ -159,7 +159,7 @@ def render_direct_lending(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Active Facility Portfolio</div>{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">Market-Rate Spread Matrix by Deal Size</div>{rt_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sponsor-Lender Relationship Matrix</div>{m_tbl}</div>

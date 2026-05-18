@@ -206,7 +206,7 @@ def render_cyber_risk(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {tier_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Cyber Posture</div>
     <div style="color:{tier_c};font-weight:700;font-size:14px">Score {r.overall_cyber_score}/100 · Tier {_html.escape(r.risk_tier.upper())} · {r.total_records_in_scope:,} PHI records in scope</div>

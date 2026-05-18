@@ -229,7 +229,7 @@ def render_aco_economics(params: dict = None) -> str:
     body = page_title + ao_explainer + f"""
 <div class="ck-page-wrap">
   {form}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Shared Savings Performance Scenarios</div>{savings_svg}</div>
   <div style="{cell}"><div style="{h3}">ACO Risk Tracks</div>{tracks_tbl}</div>
   <div style="{cell}"><div style="{h3}">Benchmark Establishment</div>{bench_tbl}</div>

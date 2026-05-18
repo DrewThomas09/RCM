@@ -231,7 +231,7 @@ def render_clinical_ai_tracker(params: dict = None) -> str:
     )
     body = page_title + cai_explainer + f"""
 <div class="ck-page-wrap">
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">AI Systems in Production</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Clinical Outcomes & ROI</div>{o_tbl}</div>
   <div style="{cell}"><div style="{h3}">Adoption Metrics</div>{a_tbl}</div>

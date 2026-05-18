@@ -204,7 +204,7 @@ def render_insurance(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   {form}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Premium by Coverage Type</div>{cov_svg}</div>
   <div style="{cell}"><div style="{h3}">Coverage Portfolio Detail</div>{cov_tbl}</div>
   <div style="{cell}"><div style="{h3}">Malpractice Premium by Specialty</div>{spec_tbl}</div>

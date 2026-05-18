@@ -207,7 +207,7 @@ def render_risk_adjustment(params: dict = None) -> str:
     <h1 class="ck-page-h1">Risk Adjustment / HCC Tracker</h1>
     <p class="ck-page-sub">{r.total_ma_lives_k:,.1f}K MA lives · weighted RAF {r.weighted_avg_raf:.3f} · ${r.total_ma_revenue_m:,.1f}M MA revenue · ${r.total_raf_gap_opportunity_m:.1f}M gap opportunity · ${r.radv_total_exposure_m:.1f}M max RADV exposure — {r.corpus_deal_count:,} corpus deals</p>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Portfolio RAF Roll-up</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">HCC Gap Analysis — Top Opportunities</div>{h_tbl}</div>
   <div style="{cell}"><div style="{h3}">V28 Model Impact Analysis</div>{v_tbl}</div>

@@ -226,7 +226,7 @@ def render_reit_analyzer(params: dict = None) -> str:
     <p class="ck-page-sub">Real-estate monetization · cap-rate comps · rent coverage · REIT buyer landscape · proceeds allocation — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   {form}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {assets_paired}
   <div style="{cell}"><div style="{h3}">Sale-Leaseback Scenario Matrix</div>{scen_tbl}</div>
   <div style="{cell}"><div style="{h3}">REIT Buyer Landscape — Public + Private Capital</div>{buy_tbl}</div>

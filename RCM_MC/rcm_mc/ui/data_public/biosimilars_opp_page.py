@@ -176,7 +176,7 @@ def render_biosimilars(params: dict = None) -> str:
     )
     body = page_title + bio_explainer + f"""
 <div class="ck-page-wrap">
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">LoE Wave Schedule &amp; Adoption Curves</div>{w_tbl}</div>
   <div style="{cell}"><div style="{h3}">Per-Drug Economics — Reference vs Biosimilar</div>{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Site-Level Adoption &amp; Margin Capture</div>{s_tbl}</div>

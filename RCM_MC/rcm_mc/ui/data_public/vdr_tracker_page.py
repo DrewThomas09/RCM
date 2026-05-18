@@ -232,7 +232,7 @@ def render_vdr_tracker(params: dict = None) -> str:
     <h1 class="ck-page-h1">VDR / Diligence Request Tracker</h1>
     <p class="ck-page-sub">{_html.escape(r.deal_name)} · {r.days_since_vdr_open} days since VDR open · {r.total_requests} requests across {len(r.workstreams)} workstreams · {r.overdue_count} overdue · {r.material_findings_count} material findings — {r.corpus_deal_count:,} corpus deals</p>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Workstream Completion Summary</div>{ws_tbl}</div>
   <div style="{cell}"><div style="{h3}">Critical-Path Items to Close</div>{cp_tbl}</div>
   <div style="{cell}"><div style="{h3}">Materiality Findings / SPA Exposure</div>{mat_tbl}</div>

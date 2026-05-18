@@ -161,7 +161,7 @@ def render_diligence_vendors(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Active Vendor Panel</div>{v_tbl}</div>
   <div style="{cell}"><div style="{h3}">Category Spend Analysis</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Top Vendor Scorecards</div>{s_tbl}</div>

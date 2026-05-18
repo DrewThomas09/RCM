@@ -237,7 +237,7 @@ def render_patient_experience(params: dict = None) -> str:
     <p class="ck-page-sub">HCAHPS, Press Ganey, NPS, online reviews, retention drivers — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   {form}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:16px">
     <div style="{cell}"><div style="{h3}">NPS Position</div>{nps_svg}</div>
     <div style="{cell}"><div style="{h3}">Review Platform Ratings</div>{review_svg}</div>

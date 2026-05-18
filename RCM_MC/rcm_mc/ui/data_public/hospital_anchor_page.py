@@ -214,7 +214,7 @@ def render_hospital_anchor(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Renewal Schedule — Next 36 Months</div>{rn_tbl}</div>
   <div style="{cell}"><div style="{h3}">At-Risk Contracts (Active Watchlist)</div>{ar_tbl}</div>
   <div style="{cell}"><div style="{h3}">Active Hospital Contract Book</div>{c_tbl}</div>

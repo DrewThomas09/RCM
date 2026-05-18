@@ -171,7 +171,7 @@ def render_tax_structure_analyzer(params: dict = None) -> str:
     <h1 class="ck-page-h1">Tax Structure Analyzer</h1>
     <p class="ck-page-sub">Exit-structure options · after-tax scenarios · rollover mechanics · blocker structures · state-by-state diligence — {r.corpus_deal_count:,} corpus deals</p>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {pos};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Structuring Recommendation</div>
     <div style="color:{pos};font-weight:700;font-size:14px">{_html.escape(r.recommended_structure)} · +${r.estimated_tax_savings_mm:,.1f}M savings · +{r.after_tax_moic_uplift:.2f}x MOIC uplift</div>

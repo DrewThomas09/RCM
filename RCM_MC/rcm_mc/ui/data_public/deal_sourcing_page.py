@@ -205,7 +205,7 @@ def render_deal_sourcing(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Sourcing Funnel — LTM Activity</div>{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">Source Channel Performance</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Active Proprietary Opportunities</div>{p_tbl}</div>

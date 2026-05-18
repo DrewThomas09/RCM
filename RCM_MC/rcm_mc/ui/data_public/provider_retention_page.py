@@ -242,7 +242,7 @@ def render_provider_retention(params: dict = None) -> str:
     <p class="ck-page-sub">Churn cohorts, driver diagnosis, at-risk individuals, retention levers, succession — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   {form}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
     <div style="{cell}"><div style="{h3}">Turnover by Role</div>{cohort_svg}</div>
     <div style="{cell}"><div style="{h3}">Lever ROI Ranking</div>{roi_svg}</div>

@@ -199,7 +199,7 @@ def render_denovo_expansion(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {ramp_paired}
   <div style="{cell}"><div style="{h3}">Site-Type Unit Economics</div>{st_tbl}</div>
   <div style="{cell}"><div style="{h3}">Market Expansion Queue</div>{mk_tbl}</div>

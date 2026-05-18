@@ -203,7 +203,7 @@ def render_peer_transactions(params: dict = None) -> str:
     <h1 class="ck-page-h1">Peer Transaction Database / Comps Library</h1>
     <p class="ck-page-sub">{r.total_transactions} comparable transactions · ${r.total_volume_b:.2f}B aggregate value · median {r.median_ev_ebitda:.2f}x EV/EBITDA · {r.median_ev_revenue:.2f}x EV/Revenue · {latest_info} — {r.corpus_deal_count:,} corpus deals</p>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Recent Comparable Transactions</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sector Multiples — 2022-2025 Aggregated</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Deal Type Breakdown</div>{t_tbl}</div>

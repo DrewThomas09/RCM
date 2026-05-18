@@ -288,7 +288,7 @@ def render_rollup_economics(params: dict = None) -> str:
     <p class="ck-page-sub">Multiple arb · add-on cadence · synergy capture · debt capacity · exit waterfall — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   {form}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Platform EBITDA Walk — Entry → Exit</div>{svg}</div>
   <div style="{cell}"><div style="{h3}">Multiple Arbitrage Waterfall</div>{arb_tbl}</div>
   <div style="{cell}"><div style="{h3}">Add-On Cohorts — Deployment Pacing</div>{cohorts_tbl}</div>

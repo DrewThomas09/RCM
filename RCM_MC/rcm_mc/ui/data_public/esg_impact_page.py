@@ -249,7 +249,7 @@ def render_esg_impact(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">ESG Composite Scorecards</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Patient Access / Community Benefit</div>{a_tbl}</div>
   <div style="{cell}"><div style="{h3}">Clinical Outcomes</div>{o_tbl}</div>
