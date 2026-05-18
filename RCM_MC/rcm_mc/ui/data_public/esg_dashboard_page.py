@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _esg_ring_svg(overall: float, e: float, s: float, g: float, tier: str) -> str:
@@ -266,16 +266,16 @@ def render_esg_dashboard(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    page_title = ck_page_title(
+        "ESG / Sustainability Dashboard",
+        eyebrow="ESG DASHBOARD",
+        meta=f"{sector} sector · {r.overall_score:.0f}/100 ESG score ({r.tier} tier) · E {r.e_score:.0f} · S {r.s_score:.0f} · G {r.g_score:.0f} · {r.total_disclosure_gaps} LP disclosure gaps across {len(r.lp_disclosures)} framework requirements",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">ESG / Sustainability Dashboard</h1>
-    <p class="ck-page-sub">
-      LP-facing ESG diligence — environmental, social, governance metrics with ILPA / SASB / TCFD framework
-      alignment — {r.corpus_deal_count:,} corpus deals
-    </p>
-  </div>
+  {page_title}
 
   {form}
 
