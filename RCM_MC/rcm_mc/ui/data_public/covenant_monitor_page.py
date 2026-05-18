@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from rcm_mc.ui._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_provenance_tooltip,
+    P, chartis_shell, ck_kpi_block, ck_page_title, ck_provenance_tooltip,
 )
 
 
@@ -388,7 +388,28 @@ def render_covenant_monitor(params: dict) -> str:
     tprim = P["text"]
     tdim = P["text_dim"]
 
+    # B11 sweep batch 2 PR 5/10 — pure addition. Pre-fix this page
+    # had no h1 at all (no inline .ck-page-h1, no ck_page_title).
+    # Body went straight into the input form + 6-KPI grid. Partners
+    # landing on /covenant-monitor saw stats with no editorial anchor
+    # identifying the page's role. Meta highlights the sector +
+    # leverage + overall PASSING/TIGHT/BREACH status — the partner-
+    # facing read on whether the covenant headroom is comfortable
+    # (which is the page's analytical output, complementing the
+    # /covenant-headroom sibling page that drills into specific
+    # covenants for a single asset).
+    page_title = ck_page_title(
+        "Covenant Monitor",
+        eyebrow="COVENANT MONITOR",
+        meta=(
+            f"{sector} · ${ev_mm:,.0f}M EV · "
+            f"{r.current_leverage:.2f}x leverage · "
+            f"status: {r.overall_status}"
+        ),
+    )
     content = f'''
+{page_title}
+
 {_input_form(params)}
 
 <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:12px">
