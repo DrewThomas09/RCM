@@ -8,7 +8,7 @@ from __future__ import annotations
 import html as _html
 
 from rcm_mc.ui._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_section_header, ck_data_cell,
+    P, chartis_shell, ck_kpi_block, ck_section_header, ck_data_cell, ck_page_title,
 )
 
 
@@ -237,15 +237,17 @@ def render_data_sources_admin() -> str:
     cell_style = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3_style = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    active_sources = sum(1 for s in result.data_sources if s.status == "active")
+    page_title = ck_page_title(
+        "Data Sources Admin",
+        eyebrow="DATA SOURCES ADMIN",
+        meta=f"{len(result.data_sources)} sources ({active_sources} active) · {len(result.scraper_statuses)} scrapers · {result.total_seed_deals:,} corpus deals across {cov.sector_count} sectors · vintage {cov.year_range[0]}–{cov.year_range[1]}",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Data Sources Admin</h1>
-    <p class="ck-page-sub">
-      Corpus inventory, CMS public datasets, scraper status — {result.total_seed_deals:,} deals across {cov.sector_count} sectors
-    </p>
-  </div>
+  {page_title}
 
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
     {kpi_strip}
