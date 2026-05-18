@@ -26,7 +26,7 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 
 def _moic_color(m: float) -> str:
-    if m >= 3.0: return "#22c55e"
+    if m >= 3.0: return "#0a8a5f"
     if m >= 2.0: return "#3b82f6"
     if m >= 1.5: return "#f59e0b"
     return "#ef4444"
@@ -102,7 +102,7 @@ def _payer_mini(pm: Any) -> str:
     return (
         f'<svg width="{W}" height="6" xmlns="http://www.w3.org/2000/svg">'
         f'<rect x="0" y="0" width="{w_c}" height="6" fill="#3b82f6"/>'
-        f'<rect x="{w_c}" y="0" width="{w_m}" height="6" fill="#22c55e"/>'
+        f'<rect x="{w_c}" y="0" width="{w_m}" height="6" fill="#0a8a5f"/>'
         f'<rect x="{w_c+w_m}" y="0" width="{w_d}" height="6" fill="#f59e0b"/>'
         f'</svg>'
     )

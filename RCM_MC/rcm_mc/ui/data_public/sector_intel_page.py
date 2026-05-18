@@ -99,7 +99,7 @@ def _scatter_svg(stats: List[Any], width: int = 480, height: int = 320) -> str:
         cx = sx(s.moic_p50)
         cy = sy(s.loss_rate)
         r = max(3, min(9, int(math.sqrt(s.n_deals) * 1.5)))
-        color = "#22c55e" if s.moic_p50 >= 3.0 else ("#3b82f6" if s.moic_p50 >= 2.0 else "#f59e0b" if s.moic_p50 >= 1.5 else "#ef4444")
+        color = "#0a8a5f" if s.moic_p50 >= 3.0 else ("#3b82f6" if s.moic_p50 >= 2.0 else "#f59e0b" if s.moic_p50 >= 1.5 else "#ef4444")
         label = s.sector[:18].replace("_", " ")
         elements.append(
             f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{color}" opacity="0.8">'
@@ -127,7 +127,7 @@ def _scatter_svg(stats: List[Any], width: int = 480, height: int = 320) -> str:
 
 
 def _moic_color(moic: float) -> str:
-    if moic >= 3.0: return "#22c55e"
+    if moic >= 3.0: return "#0a8a5f"
     if moic >= 2.0: return "#3b82f6"
     if moic >= 1.5: return "#f59e0b"
     return "#ef4444"
@@ -238,7 +238,7 @@ def render_sector_intel(min_deals: int = 3, sort_by: str = "moic_p50") -> str:
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#64748b;">{s.moic_p75:.2f}x</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{s.irr_p50*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#ef4444' if s.loss_rate>0.2 else '#f59e0b' if s.loss_rate>0.1 else '#22c55e'};">{s.loss_rate*100:.1f}%</td>
+      color:{'#ef4444' if s.loss_rate>0.2 else '#f59e0b' if s.loss_rate>0.1 else '#0a8a5f'};">{s.loss_rate*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{s.avg_hold:.1f}y</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">${s.avg_ev_mm:.0f}M</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#3b82f6;">{s.sharpe_proxy:.2f}</td>

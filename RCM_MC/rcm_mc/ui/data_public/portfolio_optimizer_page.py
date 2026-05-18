@@ -47,7 +47,7 @@ def _percentile(vals: List[float], p: float) -> float:
 def _hhi_signal(hhi: float) -> str:
     """HHI signal color (0=minimum concentration, 1=monopoly)."""
     if hhi < 0.15:
-        return "#22c55e", "Low"
+        return "#0a8a5f", "Low"
     if hhi < 0.25:
         return "#f59e0b", "Moderate"
     return "#ef4444", "High"
@@ -66,7 +66,7 @@ def _hhi_bar(hhi: float, label: str, width: int = 200) -> str:
         f'<rect x="0" y="1" width="{width}" height="8" rx="1" fill="#1e293b"/>'
         f'<rect x="0" y="1" width="{filled}" height="8" rx="1" fill="{color}"/>'
         f'<line x1="{int(0.25*width)}" y1="0" x2="{int(0.25*width)}" y2="10" stroke="#334155" stroke-width="1"/>'
-        f'<line x1="{int(0.15*width)}" y1="0" x2="{int(0.15*width)}" y2="10" stroke="#22c55e" stroke-width="0.8" stroke-dasharray="2,2"/>'
+        f'<line x1="{int(0.15*width)}" y1="0" x2="{int(0.15*width)}" y2="10" stroke="#0a8a5f" stroke-width="0.8" stroke-dasharray="2,2"/>'
         f'</svg>'
         f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;font-size:10px;color:{color}">'
         f'{hhi:.3f} — {level}</span>'

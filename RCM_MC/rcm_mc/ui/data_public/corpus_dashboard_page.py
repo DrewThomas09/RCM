@@ -37,7 +37,7 @@ def _pct(vals: List[float], p: float) -> float:
 
 
 def _moic_color(m: float) -> str:
-    if m >= 3.0: return "#22c55e"
+    if m >= 3.0: return "#0a8a5f"
     if m >= 2.0: return "#3b82f6"
     if m >= 1.5: return "#f59e0b"
     return "#ef4444"
@@ -65,7 +65,7 @@ def _mini_moic_hist(moics: List[float], width: int = 140, height: int = 50) -> s
         bh = max(0, int(cnt / max_n * (height - 8)))
         bx = 2 + i * bar_w
         by = height - 4 - bh
-        color = "#22c55e" if i >= 2 else ("#f59e0b" if i == 1 else "#ef4444")
+        color = "#0a8a5f" if i >= 2 else ("#f59e0b" if i == 1 else "#ef4444")
         elements.append(f'<rect x="{bx}" y="{by}" width="{max(1,bar_w-1)}" height="{bh}" fill="{color}" opacity="0.8"/>')
     return (
         f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">'
@@ -213,7 +213,7 @@ def render_corpus_dashboard() -> str:
   {_nav_tile("Deal Quality", "/deal-quality",
     f"A:{tier_counts.get('A',0)} B:{tier_counts.get('B',0)} C:{tier_counts.get('C',0)} D:{tier_counts.get('D',0)}",
     f"{avg_quality:.0f}/100",
-    "#22c55e" if avg_quality >= 70 else "#f59e0b",
+    "#0a8a5f" if avg_quality >= 70 else "#f59e0b",
     "")}
   {_nav_tile("Underwriting", "/underwriting",
     "LBO model · sensitivity table",
@@ -258,7 +258,7 @@ def render_corpus_dashboard() -> str:
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:{mc}">{s.moic_p50:.2f}x</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{s.irr_p50*100:.1f}%</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#ef4444' if s.loss_rate>0.2 else '#f59e0b' if s.loss_rate>0.1 else '#22c55e'};">{s.loss_rate*100:.0f}%</td>
+      color:{'#ef4444' if s.loss_rate>0.2 else '#f59e0b' if s.loss_rate>0.1 else '#0a8a5f'};">{s.loss_rate*100:.0f}%</td>
 </tr>""")
 
     sector_table = f"""
@@ -291,7 +291,7 @@ def render_corpus_dashboard() -> str:
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{s.n_deals}</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:{mc}">{s.moic_p50:.2f}x</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#ef4444' if s.loss_rate>0.2 else '#f59e0b' if s.loss_rate>0.1 else '#22c55e'};">{s.loss_rate*100:.0f}%</td>
+      color:{'#ef4444' if s.loss_rate>0.2 else '#f59e0b' if s.loss_rate>0.1 else '#0a8a5f'};">{s.loss_rate*100:.0f}%</td>
 </tr>""")
 
     vintage_table = f"""

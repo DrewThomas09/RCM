@@ -143,7 +143,7 @@ def _status(headroom: float, headroom_pct: float) -> Tuple[str, str]:
         return "Breach", "#ef4444"
     if headroom_pct < 0.15:
         return "Watch", "#f59e0b"
-    return "Compliant", "#22c55e"
+    return "Compliant", "#0a8a5f"
 
 
 def _project_leverage(
@@ -254,7 +254,7 @@ def compute_covenant_monitor(
     elif "Watch" in statuses:
         overall_status, overall_color = "Watch", "#f59e0b"
     else:
-        overall_status, overall_color = "Compliant", "#22c55e"
+        overall_status, overall_color = "Compliant", "#0a8a5f"
 
     # Corpus peers
     sector_deals = [d for d in corpus if sector.lower()[:6] in d.get("sector","").lower() or

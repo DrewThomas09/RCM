@@ -39,7 +39,7 @@ def _mini_bar(pct: float, color: str, width: int = 80) -> str:
 
 
 def _tier_badge(tier: str) -> str:
-    colors = {"A": "#22c55e", "B": "#3b82f6", "C": "#f59e0b", "D": "#ef4444"}
+    colors = {"A": "#0a8a5f", "B": "#3b82f6", "C": "#f59e0b", "D": "#ef4444"}
     c = colors.get(tier, "#64748b")
     return (
         f'<span style="display:inline-block;padding:1px 6px;border:1px solid {c};'
@@ -56,7 +56,7 @@ def _severity_badge(severity: str) -> str:
 
 def _tier_distribution_svg(tier_counts: Dict[str, int], total: int) -> str:
     """Horizontal stacked bar of tier distribution."""
-    tiers = [("A", "#22c55e"), ("B", "#3b82f6"), ("C", "#f59e0b"), ("D", "#ef4444")]
+    tiers = [("A", "#0a8a5f"), ("B", "#3b82f6"), ("C", "#f59e0b"), ("D", "#ef4444")]
     W, H = 400, 24
     segments = []
     x = 0
@@ -93,7 +93,7 @@ def _quality_histogram_svg(scores: List[float], width: int = 400, height: int = 
         bh = max(1, int(cnt / max_b * (height - 20)))
         bx = 10 + i * bar_w
         by = height - 10 - bh
-        color = "#22c55e" if i >= 7 else ("#3b82f6" if i >= 5 else ("#f59e0b" if i >= 3 else "#ef4444"))
+        color = "#0a8a5f" if i >= 7 else ("#3b82f6" if i >= 5 else ("#f59e0b" if i >= 3 else "#ef4444"))
         bars.append(f'<rect x="{bx}" y="{by}" width="{bar_w-2}" height="{bh}" fill="{color}"/>')
         label = f'{i*10}'
         bars.append(
@@ -186,7 +186,7 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
         '<div class="ck-kpi-grid">'
         + ck_kpi_block("Total Deals", ck_fmt_num(total), "in corpus")
         + ck_kpi_block("Avg Quality", avg_q_value, "out of 100")
-        + ck_kpi_block("Tier A", f'<span class="mn" style="color:#22c55e">{tier_counts.get("A",0)}</span>', f'{100*tier_counts.get("A",0)/total:.0f}% of corpus')
+        + ck_kpi_block("Tier A", f'<span class="mn" style="color:#0a8a5f">{tier_counts.get("A",0)}</span>', f'{100*tier_counts.get("A",0)/total:.0f}% of corpus')
         + ck_kpi_block("Tier B", f'<span class="mn" style="color:#3b82f6">{tier_counts.get("B",0)}</span>', f'{100*tier_counts.get("B",0)/total:.0f}% of corpus')
         + ck_kpi_block("Flagged", flagged_value, f"{n_errors} errors total")
         + '</div>'
@@ -217,8 +217,8 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
     # Filter bar
     tiers_nav = "".join(
         f'<a href="/deal-quality?tier={t}&sort_by={sort_by}" style="display:inline-block;margin:2px 4px;'
-        f'padding:2px 8px;border:1px solid {"#22c55e" if t=="A" else "#3b82f6" if t=="B" else "#f59e0b" if t=="C" else "#ef4444"};'
-        f'color:{"#22c55e" if t=="A" else "#3b82f6" if t=="B" else "#f59e0b" if t=="C" else "#ef4444"};'
+        f'padding:2px 8px;border:1px solid {"#0a8a5f" if t=="A" else "#3b82f6" if t=="B" else "#f59e0b" if t=="C" else "#ef4444"};'
+        f'color:{"#0a8a5f" if t=="A" else "#3b82f6" if t=="B" else "#f59e0b" if t=="C" else "#ef4444"};'
         f'font-family:var(--ck-mono);font-size:10px;border-radius:2px;text-decoration:none;">'
         f'Tier {t} ({tier_counts.get(t,0)})</a>'
         for t in ("A", "B", "C", "D")
@@ -289,7 +289,7 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
   </td>
   <td style="padding:5px 8px;text-align:center;">{_tier_badge(s.tier)}</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#22c55e' if s.quality_score>=75 else '#3b82f6' if s.quality_score>=55 else '#f59e0b' if s.quality_score>=35 else '#ef4444'};">
+      color:{'#0a8a5f' if s.quality_score>=75 else '#3b82f6' if s.quality_score>=55 else '#f59e0b' if s.quality_score>=35 else '#ef4444'};">
     {s.quality_score:.1f}
   </td>
   <td style="padding:5px 8px;">
@@ -297,7 +297,7 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
     <span style="font-family:var(--ck-mono);font-size:9px;color:#94a3b8;margin-left:4px;">{s.completeness_pct*100:.0f}%</span>
   </td>
   <td style="padding:5px 8px;">
-    {_mini_bar(s.credibility_pct, '#22c55e' if s.credibility_pct>=0.9 else '#f59e0b' if s.credibility_pct>=0.7 else '#ef4444')}
+    {_mini_bar(s.credibility_pct, '#0a8a5f' if s.credibility_pct>=0.9 else '#f59e0b' if s.credibility_pct>=0.7 else '#ef4444')}
     <span style="font-family:var(--ck-mono);font-size:9px;color:#94a3b8;margin-left:4px;">{s.credibility_pct*100:.0f}%</span>
   </td>
   <td style="padding:5px 8px;font-size:9px;">{flag_html or '<span style="color:#475569;">—</span>'}</td>

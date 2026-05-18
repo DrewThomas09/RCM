@@ -28,7 +28,7 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 
 def _moic_color(m: float) -> str:
-    if m >= 3.0: return "#22c55e"
+    if m >= 3.0: return "#0a8a5f"
     if m >= 2.0: return "#3b82f6"
     if m >= 1.5: return "#f59e0b"
     return "#ef4444"
@@ -45,7 +45,7 @@ def _payer_pie_svg(comm: float, medicare: float, medicaid: float, self_pay: floa
     r = size // 2 - 4
     slices = [
         (comm, "#3b82f6", "Commercial"),
-        (medicare, "#22c55e", "Medicare"),
+        (medicare, "#0a8a5f", "Medicare"),
         (medicaid, "#f59e0b", "Medicaid"),
         (self_pay, "#64748b", "Self-Pay"),
     ]
@@ -80,7 +80,7 @@ def _payer_pie_svg(comm: float, medicare: float, medicaid: float, self_pay: floa
 def _payer_legend(comm: float, medicare: float, medicaid: float, self_pay: float) -> str:
     items = [
         ("#3b82f6", "Commercial", comm),
-        ("#22c55e", "Medicare",   medicare),
+        ("#0a8a5f", "Medicare",   medicare),
         ("#f59e0b", "Medicaid",   medicaid),
         ("#64748b", "Self-Pay",   self_pay),
     ]
@@ -185,7 +185,7 @@ def render_payer_intel() -> str:
         + ck_kpi_block("Avg Medicare %",   f'<span class="mn">{profile.avg_medicare*100:.1f}%</span>', "corpus-weighted")
         + ck_kpi_block("Avg Medicaid %",   f'<span class="mn">{profile.avg_medicaid*100:.1f}%</span>', "corpus-weighted")
         + ck_kpi_block("Comm↔MOIC Corr",
-                       f'<span class="mn" style="color:{"#22c55e" if comm_corr>0.1 else "#f59e0b" if comm_corr>0 else "#ef4444"}">'
+                       f'<span class="mn" style="color:{"#0a8a5f" if comm_corr>0.1 else "#f59e0b" if comm_corr>0 else "#ef4444"}">'
                        f'{comm_corr:+.2f}</span>', "Spearman rank")
         + '</div>'
     )
@@ -237,7 +237,7 @@ def render_payer_intel() -> str:
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#64748b;">{r.moic_p75:.2f}x</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{r.irr_p50*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#ef4444' if r.loss_rate>0.2 else '#f59e0b' if r.loss_rate>0.1 else '#22c55e'};">{r.loss_rate*100:.1f}%</td>
+      color:{'#ef4444' if r.loss_rate>0.2 else '#f59e0b' if r.loss_rate>0.1 else '#0a8a5f'};">{r.loss_rate*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{r.avg_commercial_pct*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{r.avg_medicare_pct*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{r.avg_medicaid_pct*100:.1f}%</td>

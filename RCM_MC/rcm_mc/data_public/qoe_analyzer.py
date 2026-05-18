@@ -93,7 +93,7 @@ _QUALITY_THRESHOLDS = {
 }
 
 _QUALITY_COLORS = {
-    "Investment Grade": "#22c55e",
+    "Investment Grade": "#0a8a5f",
     "Acceptable":       "#3b82f6",
     "Elevated":         "#f59e0b",
     "Aggressive":       "#ef4444",

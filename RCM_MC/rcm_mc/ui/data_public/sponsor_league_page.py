@@ -30,7 +30,7 @@ def _moic_color(v: Optional[float]) -> str:
     if v < 1.0:
         return "#ef4444"
     if v >= 2.5:
-        return "#22c55e"
+        return "#0a8a5f"
     if v >= 1.5:
         return "#e2e8f0"
     return "#f59e0b"
@@ -41,13 +41,13 @@ def _loss_color(v: float) -> str:
         return "#ef4444"
     if v >= 0.15:
         return "#f59e0b"
-    return "#22c55e"
+    return "#0a8a5f"
 
 
 def _consistency_bar(score: float, width: int = 60) -> str:
     """Inline SVG consistency score bar."""
     filled = int(score / 100 * width)
-    bar_color = "#22c55e" if score >= 70 else ("#f59e0b" if score >= 45 else "#ef4444")
+    bar_color = "#0a8a5f" if score >= 70 else ("#f59e0b" if score >= 45 else "#ef4444")
     return (
         f'<svg width="{width}" height="8" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;">'
         f'<rect x="0" y="1" width="{width}" height="6" rx="1" fill="#1e293b"/>'
@@ -177,7 +177,7 @@ def _build_table(records: List[Any]) -> str:
   <td style="text-align:right;padding:7px 6px;">{_fmt_moic(rec.moic_p75)}</td>
   <td style="text-align:center;padding:7px 6px;">{spark}</td>
   <td style="text-align:right;padding:7px 6px;">{_fmt_pct(rec.loss_rate, _loss_color(rec.loss_rate))}</td>
-  <td style="text-align:right;padding:7px 6px;">{_fmt_pct(rec.home_run_rate, "#22c55e" if rec.home_run_rate >= 0.30 else None)}</td>
+  <td style="text-align:right;padding:7px 6px;">{_fmt_pct(rec.home_run_rate, "#0a8a5f" if rec.home_run_rate >= 0.30 else None)}</td>
   <td style="text-align:center;padding:7px 6px;">{_consistency_bar(rec.consistency_score)}</td>
   <td style="text-align:right;padding:7px 6px;">{_fmt_ev(rec.avg_ev_mm)}</td>
   <td style="padding:7px 6px;">{_sector_pills(rec.sectors)}</td>
@@ -210,7 +210,7 @@ def _kpi_bar(records: List[Any]) -> str:
     avg_consistency = sum(r.consistency_score for r in records) / len(records) if records else 0
 
     best_html = (
-        f'<span class="mn" style="color:#22c55e">{top_moic:.2f}×</span>'
+        f'<span class="mn" style="color:#0a8a5f">{top_moic:.2f}×</span>'
         if top_moic else '<span class="faint">—</span>'
     )
     return (

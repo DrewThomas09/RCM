@@ -57,7 +57,7 @@ def _num(v: Optional[float], decimals: int = 2, suffix: str = "", prefix: str = 
 def _moic_html(v: Optional[float]) -> str:
     if v is None:
         return "—"
-    color = "#ef4444" if v < 1.0 else ("#22c55e" if v >= 2.5 else "#f59e0b")
+    color = "#ef4444" if v < 1.0 else ("#0a8a5f" if v >= 2.5 else "#f59e0b")
     return (
         f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;'
         f'font-size:22px;font-weight:700;color:{color}">{v:.2f}×</span>'
@@ -67,7 +67,7 @@ def _moic_html(v: Optional[float]) -> str:
 def _irr_html(v: Optional[float]) -> str:
     if v is None:
         return "—"
-    color = "#ef4444" if v < 0.10 else ("#22c55e" if v >= 0.20 else "#f59e0b")
+    color = "#ef4444" if v < 0.10 else ("#0a8a5f" if v >= 0.20 else "#f59e0b")
     return (
         f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;'
         f'font-size:22px;font-weight:700;color:{color}">{v*100:.1f}%</span>'
@@ -77,7 +77,7 @@ def _irr_html(v: Optional[float]) -> str:
 def _pct_rank_bar(rank: float, width: int = 120) -> str:
     """Horizontal percentile bar."""
     filled = int(rank / 100 * width)
-    color = "#22c55e" if rank >= 60 else ("#f59e0b" if rank >= 35 else "#ef4444")
+    color = "#0a8a5f" if rank >= 60 else ("#f59e0b" if rank >= 35 else "#ef4444")
     return (
         f'<div style="display:inline-flex;align-items:center;gap:6px;">'
         f'<svg width="{width}" height="8" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;">'
@@ -199,7 +199,7 @@ def _results_panel(result: Any, corpus: List[Dict[str, Any]]) -> str:
                 r = row[mult_key]
                 if isinstance(r, dict):
                     moic = r.get("gross_moic")
-                    color = "#ef4444" if (moic or 0) < 1.0 else ("#22c55e" if (moic or 0) >= 2.5 else "#e2e8f0")
+                    color = "#ef4444" if (moic or 0) < 1.0 else ("#0a8a5f" if (moic or 0) >= 2.5 else "#e2e8f0")
                     cells.append(
                         f'<td style="text-align:right;padding:6px 8px;">'
                         f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;color:{color}">'
@@ -265,7 +265,7 @@ def _corpus_benchmark_panel(result: Any, corpus: List[Dict[str, Any]]) -> str:
 
     comp_rank = _percentile_rank(comp_moics, model_moic)
 
-    delta_color = "#22c55e" if moic_vs_p50 > 0 else "#ef4444"
+    delta_color = "#0a8a5f" if moic_vs_p50 > 0 else "#ef4444"
     sign = "+" if moic_vs_p50 > 0 else ""
 
     return f"""
@@ -372,7 +372,7 @@ def render_underwriting(
     )
     model_moic_value = ck_provenance_tooltip(
         "Model MOIC",
-        f'<span class="mn" style="color:{"#22c55e" if (result.gross_moic or 0) >= 2.5 else "#f59e0b"}">{ck_fmt_moic(result.gross_moic)}</span>' if result else '<span class="faint">—</span>',
+        f'<span class="mn" style="color:{"#0a8a5f" if (result.gross_moic or 0) >= 2.5 else "#f59e0b"}">{ck_fmt_moic(result.gross_moic)}</span>' if result else '<span class="faint">—</span>',
         explainer=(
             "Projected MOIC from the underwriting model: EBITDA "
             "growth at the input CAGR + exit at the input "

@@ -142,7 +142,7 @@ def _implied_regime(d: dict) -> str:
 
 def _concentration_level(hhi: float) -> Tuple[str, str]:
     if hhi < 1500:
-        return "Low", "#22c55e"
+        return "Low", "#0a8a5f"
     if hhi < 2500:
         return "Medium", "#f59e0b"
     if hhi < 4000:
@@ -154,7 +154,7 @@ def _regime_color(regime: str) -> str:
     return {
         "captive": "#ef4444",
         "concentrated": "#ea580c",
-        "diversified": "#22c55e",
+        "diversified": "#0a8a5f",
         "community": "#3b82f6",
         "self_pay_heavy": "#a855f7",
     }.get(regime, "#94a3b8")

@@ -65,7 +65,7 @@ _PALETTE_LEGACY: Dict[str, str] = {
     "brand_primary": "#1a3a5c",
     "brand_accent": "#2d6ba4",
     "accent_amber": "#e8a33d",
-    "positive": "#22c55e",
+    "positive": "#0a8a5f",
     "negative": "#ef4444",
     "warning": "#f59e0b",
     "neutral": "#5b6abf",
@@ -73,7 +73,7 @@ _PALETTE_LEGACY: Dict[str, str] = {
     "high": "#ea580c",
     "medium": "#ca8a04",
     "low": "#64748b",
-    "ticker_up": "#22c55e",
+    "ticker_up": "#0a8a5f",
     "ticker_down": "#ef4444",
     "ticker_flat": "#9aa7b8",
     # Secondary vocabulary — same values, aliased to the key names

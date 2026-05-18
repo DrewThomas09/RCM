@@ -14,7 +14,7 @@ _SECTORS = [
 ]
 
 _LEVER_COLORS = {
-    "revenue_growth":         "#22c55e",
+    "revenue_growth":         "#0a8a5f",
     "ebitda_margin_expansion": "#3b82f6",
     "add_on_acquisitions":    "#a855f7",
     "multiple_expansion":     "#f59e0b",

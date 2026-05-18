@@ -301,7 +301,7 @@ def _kpi_bar(stats: Dict[str, Any]) -> str:
     def moic_html(v):
         if v is None:
             return '<span class="faint">—</span>'
-        color = "#22c55e" if v >= 2.5 else ("#f59e0b" if v >= 1.5 else "#ef4444")
+        color = "#0a8a5f" if v >= 2.5 else ("#f59e0b" if v >= 1.5 else "#ef4444")
         return f'<span class="mn" style="color:{color}">{v:.2f}×</span>'
 
     return (
@@ -356,7 +356,7 @@ def _sector_table_panel(rows: List[Dict[str, Any]]) -> str:
     tbody = []
     for i, r in enumerate(rows):
         stripe = ' style="background:var(--sc-bone)"' if i % 2 == 1 else ""
-        moic_color = "#22c55e" if (r["moic_p50"] or 0) >= 2.5 else ("#f59e0b" if (r["moic_p50"] or 0) >= 1.5 else "#ef4444")
+        moic_color = "#0a8a5f" if (r["moic_p50"] or 0) >= 2.5 else ("#f59e0b" if (r["moic_p50"] or 0) >= 1.5 else "#ef4444")
         moic_html = (
             f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;color:{moic_color}">'
             f'{r["moic_p50"]:.2f}×</span>'
@@ -414,7 +414,7 @@ def _vintage_panel(vintage_data: Dict[int, Dict[str, Any]]) -> str:
         bx = pad_l + i * (pw / len(years))
         bh = pct * ph
         by = pad_t + ph - bh
-        color = "#22c55e" if pct >= 0.80 else ("#f59e0b" if pct >= 0.50 else "#3b82f6")
+        color = "#0a8a5f" if pct >= 0.80 else ("#f59e0b" if pct >= 0.50 else "#3b82f6")
         bars.append(
             f'<rect x="{bx:.1f}" y="{by:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" '
             f'fill="{color}" opacity="0.75"/>'
@@ -428,8 +428,8 @@ def _vintage_panel(vintage_data: Dict[int, Dict[str, Any]]) -> str:
     line_y = pad_t + ph - 0.8 * ph
     overlay = (
         f'<line x1="{pad_l}" y1="{line_y:.1f}" x2="{pad_l+pw}" y2="{line_y:.1f}" '
-        f'stroke="#22c55e" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.5"/>'
-        f'<text x="{pad_l+pw+2}" y="{line_y+3:.1f}" font-size="7" fill="#22c55e" opacity="0.7">80%</text>'
+        f'stroke="#0a8a5f" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.5"/>'
+        f'<text x="{pad_l+pw+2}" y="{line_y+3:.1f}" font-size="7" fill="#0a8a5f" opacity="0.7">80%</text>'
     )
     axes = (
         f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" y2="{pad_t+ph}" stroke="#334155" stroke-width="1"/>'
