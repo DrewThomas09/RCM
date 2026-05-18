@@ -192,5 +192,51 @@ class InfluencePointsIntegrationTests(unittest.TestCase):
         self.assertEqual(cooks_d_seq, sorted(cooks_d_seq, reverse=True))
 
 
+class PerfectLeverageOverflowTests(unittest.TestCase):
+    """User-reported bug: Cook's D rendered as 4,891,622,318,067,742
+    (1e18) for a row whose leverage was ≈ 1.0. The divisor in the
+    Cook's-D formula was clamped to 1e-9, producing exponentially
+    large values. Rows with leverage > 0.99 now NaN out and
+    classify as ``perfect_leverage`` instead.
+    """
+
+    def test_perfect_leverage_row_produces_nan_not_huge_number(self):
+        # Inject a row whose features are far from all others
+        rng = np.random.default_rng(7)
+        n, p = 50, 3
+        X = rng.normal(0, 1, (n, p))
+        y = X[:, 0] + rng.normal(0, 0.3, n)
+        X[0] = [50.0, 50.0, 50.0]  # geometrically isolated
+        y[0] = 100.0
+        _, y_hat = _fit_ols(X, y)
+        leverage, stud, cooks = compute_influence(X, y, y_hat)
+        # Row 0 should have leverage ≈ 1 → NaN'd cooks_d
+        self.assertGreater(leverage[0], 0.99)
+        self.assertTrue(np.isnan(cooks[0]))
+        self.assertTrue(np.isnan(stud[0]))
+        # No row anywhere should have a > 1000 Cook's D
+        finite = cooks[np.isfinite(cooks)]
+        if len(finite) > 0:
+            self.assertLessEqual(float(finite.max()), 1000.0)
+
+    def test_classifier_returns_perfect_leverage(self):
+        # leverage > 0.99 → perfect_leverage classification, even
+        # if cooks_d and stud_resid are NaN
+        cls, sev = classify_influence_point(
+            leverage=0.999, studentized_residual=float("nan"),
+            cooks_d=float("nan"), n=100, p=5, segment="Small Community",
+        )
+        self.assertEqual(cls, "perfect_leverage")
+        self.assertEqual(sev, "critical")
+
+    def test_normal_leverage_unaffected(self):
+        # Sanity: rows in normal leverage range still classify as before
+        cls, _ = classify_influence_point(
+            leverage=0.3, studentized_residual=4.0, cooks_d=2.0,
+            n=100, p=5, segment="Academic",
+        )
+        self.assertEqual(cls, "legitimate_but_different_class")
+
+
 if __name__ == "__main__":
     unittest.main()

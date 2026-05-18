@@ -133,11 +133,47 @@ def compute_influence(
     rmse = float(np.sqrt(sigma2)) if sigma2 > 0 else 0.0
 
     if rmse > 0 and not np.any(np.isnan(leverage)):
-        denom = rmse * np.sqrt(np.maximum(1.0 - leverage, 1e-9))
-        studentized = residuals / np.where(denom > 0, denom, 1.0)
-        cooks_d = (
+        # Numerical-stability fix (user-reported bug: a Cook's D of
+        # 4.89e18 surfaced for a row whose leverage was ≈ 1.0).
+        # When 1 - leverage approaches zero, the divisor in the
+        # studentized-residual and Cook's-D formulas blows up
+        # exponentially. The old code clamped to 1e-9 — way too
+        # permissive, produced 18-digit Cook's-D values that
+        # rendered as nonsense in the UI.
+        #
+        # New behavior: rows with leverage > 0.99 are treated as
+        # "perfect leverage" — geometrically isolated in feature
+        # space, with no other rows nearby for the fit to compare
+        # against. Their studentized residual and Cook's D are
+        # undefined (set to NaN); the classifier surfaces them as
+        # ``perfect_leverage`` so partners see why they're being
+        # flagged rather than a nonsense number.
+        perfect_lev = leverage > 0.99
+        # For all other rows, clamp 1 - leverage to a sane minimum
+        # (1e-4) so a near-perfect-leverage row that still has a
+        # defined Cook's D doesn't produce 7-digit values.
+        one_minus_lev = np.where(
+            perfect_lev, np.nan,
+            np.maximum(1.0 - leverage, 1e-4),
+        )
+        denom = rmse * np.sqrt(one_minus_lev)
+        # studentized residual — NaN where perfect_lev
+        studentized = np.where(
+            perfect_lev, np.nan,
+            residuals / np.where(denom > 0, denom, 1.0),
+        )
+        cooks_d = np.where(
+            perfect_lev, np.nan,
             (studentized ** 2) / p_plus
-            * (leverage / np.maximum(1.0 - leverage, 1e-9))
+            * (leverage / one_minus_lev),
+        )
+        # Defensive cap — even after the leverage clamp, a numerical
+        # edge case could produce a Cook's D > 1000. Any value that
+        # large is meaningless ("definitely influential" only needs
+        # > 1) so cap to keep the UI readable.
+        cooks_d = np.where(
+            np.isfinite(cooks_d) & (cooks_d > 1000.0),
+            1000.0, cooks_d,
         )
     else:
         studentized = np.full(n, np.nan)
@@ -175,7 +211,13 @@ def classify_influence_point(
       |stud_resid| > 3        → flagged as outlier in y
       leverage > 2(p+1)/n     → high-leverage
     """
-    # NaN inputs → can't classify
+    # Perfect-leverage rows: leverage > 0.99 → row sits alone in
+    # feature space, Cook's D + studentized residual are undefined.
+    # Surface as ``perfect_leverage`` so partners see why the row
+    # is flagged rather than NaN or a nonsense 1e18 number.
+    if not np.isnan(leverage) and leverage > 0.99:
+        return ("perfect_leverage", "critical")
+    # Other NaN inputs → genuinely can't classify
     if np.isnan(cooks_d) or np.isnan(leverage):
         return ("unknown", "info")
 

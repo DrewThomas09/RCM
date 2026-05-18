@@ -862,6 +862,7 @@ def render_regression_page(
         "possible_opportunity":           "rg-influence-opportunity",
         "data_issue":                     "rg-influence-data-issue",
         "high_influence":                 "rg-influence-high",
+        "perfect_leverage":               "rg-influence-data-issue",
         "in_band":                        "rg-influence-ok",
         "unknown":                        "rg-influence-info",
     }
@@ -870,6 +871,7 @@ def render_regression_page(
         "possible_opportunity":           "opportunity",
         "data_issue":                     "data issue?",
         "high_influence":                 "high influence",
+        "perfect_leverage":               "perfect leverage",
         "in_band":                        "in band",
         "unknown":                        "—",
     }
@@ -1643,15 +1645,44 @@ border-radius:14px;transition:border-color 120ms ease,background 120ms ease;}
 .rg-pill-active{background:var(--sc-navy,#0b2341);color:#fff;
 border-color:var(--sc-navy,#0b2341);}
 .rg-diagnostic-banner{display:flex;align-items:baseline;gap:12px;
-padding:12px 16px;margin:0 0 16px;background:#fff;
+padding:14px 18px;margin:0 0 16px;background:#fff;
 border:1px solid var(--sc-rule,#d6cfc0);
 border-left:3px solid var(--sc-teal-ink,#155752);}
-.rg-diagnostic-tag{font-family:var(--sc-mono,monospace);font-size:10px;
+.rg-diagnostic-tag{font-family:var(--sc-mono,monospace);font-size:11px;
 font-weight:700;letter-spacing:0.14em;color:var(--sc-teal-ink,#155752);
 flex-shrink:0;}
-.rg-diagnostic-text{font-size:13px;color:var(--sc-text,#1a2332);
-line-height:1.5;}
+.rg-diagnostic-text{font-size:14px;color:var(--sc-text,#1a2332);
+line-height:1.55;}
 .rg-diagnostic-text em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+/* Leakage alert banner — fires when drop_leakage=off + critical
+ * leaks exist. Red border + parchment background so partners can't
+ * miss the inflated-R² warning the inline panel was burying. */
+.rg-leakage-banner{display:flex;align-items:baseline;gap:14px;
+padding:14px 18px;margin:0 0 16px;background:#fff;
+border:1px solid #b5321e;border-left:5px solid #b5321e;}
+.rg-leakage-banner-tag{font-family:var(--sc-mono,monospace);font-size:11px;
+font-weight:700;letter-spacing:0.14em;color:#b5321e;flex-shrink:0;}
+.rg-leakage-banner-text{font-size:14px;color:var(--sc-text,#1a2332);
+line-height:1.55;}
+.rg-leakage-banner-text strong{color:#b5321e;}
+/* Readability bump (user-reported "text is impossible to read"):
+ * the panel description paragraphs were unstyled bare <p>s that
+ * picked up the browser default (12-13px). Bump to 14px + 1.6
+ * line-height so the multi-line descriptions on the leakage,
+ * cluster, segmented, buyability, and outliers panels are
+ * comfortable to read. Restricted to .ck-panel-body so it doesn't
+ * leak into other surfaces. */
+.ck-panel-body .ck-section-body{
+  font-size:14px;line-height:1.6;color:var(--sc-text,#1a2332);
+  margin:0 0 12px;max-width:88ch;
+}
+.ck-panel-body .ck-section-body strong{color:var(--sc-navy,#0b2341);}
+.ck-panel-body .ck-section-body em{
+  color:var(--sc-teal-ink,#155752);font-style:italic;
+}
+/* Bump the inline reason cells in the leakage + insufficient_n
+ * tables — were 12px and squished. */
+.ck-panel-body td[style*="font-size:12px"]{font-size:13px !important;}
 .rg-segment-chip{display:inline-block;padding:2px 8px;font-family:var(--sc-mono,monospace);
 font-size:10px;font-weight:600;letter-spacing:0.04em;color:var(--sc-teal-ink,#155752);
 background:var(--sc-parchment,#f2ede3);border:1px solid var(--sc-rule,#d6cfc0);
@@ -1697,8 +1728,30 @@ letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
         eyebrow="Continue —",
         italic_word="portfolio",
     )
+    # Unmissable red banner — user reported R²=83% on a fit with 4
+    # known-leaky features still in. The inline panel warning isn't
+    # loud enough; a banner above the source selector tells the
+    # partner the inflated R² has a known cause and links the toggle.
+    leakage_banner = ""
+    if leak_count > 0 and not drop_leakage:
+        leakage_banner = (
+            '<div class="rg-leakage-banner">'
+            '<span class="rg-leakage-banner-tag">⚠ LEAKAGE</span>'
+            '<span class="rg-leakage-banner-text">'
+            f'<strong>{leak_count} leaky feature'
+            f'{"s" if leak_count != 1 else ""}</strong> '
+            'still in the fit — R² is inflated by features '
+            'mathematically derived from the target (revenue per '
+            'bed, operating margin, net-to-gross ratio, …). Toggle '
+            '<strong>Drop leakage features</strong> in the Regression '
+            'Inputs above to see the honest fit.'
+            '</span>'
+            '</div>'
+        )
+
     body = (
         f'{rg_styles}{intro}{diagnostic_banner}{source_selector}'
+        f'{leakage_banner}'
         f'{leakage_section}{cv_section}{cluster_section}'
         f'{buyability_section}{segmented_section}'
         f'{kpis}{intercept_section}'
