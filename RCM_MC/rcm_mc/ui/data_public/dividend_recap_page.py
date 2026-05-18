@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _scenarios_svg(scenarios) -> str:
@@ -306,15 +306,16 @@ def render_dividend_recap(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    page_title = ck_page_title(
+        "Dividend Recap Analyzer",
+        eyebrow="DIVIDEND RECAP",
+        meta=f"${r.ev_mm:,.0f}M EV · {r.entry_leverage:.1f}x → {r.current_leverage:.1f}x leverage (year {current_yr}, ${r.current_ebitda_mm:,.1f}M EBITDA) · ${r.max_recap_dividend_mm:,.1f}M max dividend at {r.cash_multiple_from_recap * 100:.0f}% of invested equity · recommended {r.recommended_scenario}",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Dividend Recap Analyzer</h1>
-    <p class="ck-page-sub">
-      Interim capital distribution via refinancing — scenarios, timing, carry impact — {r.corpus_deal_count:,} corpus deals
-    </p>
-  </div>
+  {page_title}
 
   {form}
 
