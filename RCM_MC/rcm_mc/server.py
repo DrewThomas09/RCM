@@ -6889,6 +6889,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         universe = (qs.get("universe") or ["all"])[0][:40]
         log_target = (qs.get("log") or ["0"])[0] in ("1", "true", "on")
         segmented = (qs.get("segmented") or ["0"])[0] in ("1", "true", "on")
+        # Phase 3: drop algebraically-leaky features before the fit
+        drop_leakage = (
+            (qs.get("drop_leakage") or ["0"])[0] in ("1", "true", "on")
+        )
         hcris_df = _get_latest_per_ccn()
         store = PortfolioStore(self.config.db_path)
         try:
@@ -6901,6 +6905,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             universe=universe,
             log_target=log_target,
             segmented=segmented,
+            drop_leakage=drop_leakage,
         ))
 
     def _route_hospital_regression(self, ccn: str) -> None:
