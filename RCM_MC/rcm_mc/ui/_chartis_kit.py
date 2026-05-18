@@ -173,17 +173,22 @@ _SUB_NAV = {
         {"label": "Comparables",         "href": "/comparables"},
         {"label": "Market Rates",        "href": "/market-rates"},
     ],
+    # Research — 10 analytical + catalog surfaces. Mirrors the
+    # diligence trim: rendering all ten in the sub-nav strip
+    # crowded the topbar to the point of wrapping on common
+    # laptop widths. Trimmed to the five daily-driver workbench
+    # surfaces (analyst voice + the four most-read benchmarking
+    # / momentum reads) plus an "All Research →" link to the
+    # /research index, which now surfaces every dropped item
+    # (Comparable Outcomes, Bear Cases, Reg Calendar, Corpus
+    # Backtest, Backtest) alongside the original catalog.
     "research": [
         {"label": "Notes",               "href": "/notes"},
         {"label": "Sector Momentum",     "href": "/sector-momentum"},
         {"label": "IRR Dispersion",      "href": "/irr-dispersion"},
         {"label": "Hold Analysis",       "href": "/hold-analysis"},
-        {"label": "Comparable Outcomes", "href": "/comparable-outcomes"},
-        {"label": "Bear Cases",          "href": "/bear-cases"},
-        {"label": "Reg Calendar",        "href": "/regulatory-calendar"},
         {"label": "Market Intel",        "href": "/market-intel"},
-        {"label": "Corpus Backtest",     "href": "/corpus-backtest"},
-        {"label": "Backtest",            "href": "/backtest"},
+        {"label": "All Research →",      "href": "/research"},
     ],
     "portfolio": [
         {"label": "Portfolio Map",       "href": "/portfolio/map"},

@@ -104,6 +104,66 @@ RESEARCH_ENTRIES: List[Dict[str, str]] = [
         "topic": "Methodology",
         "kind": "Frameworks",
     },
+    {
+        "title": "Notes",
+        "summary": (
+            "Analyst voice — running working notes, hypotheses, and "
+            "open questions across the portfolio."
+        ),
+        "href": "/notes",
+        "topic": "Field Notes",
+        "kind": "Field Notes",
+    },
+    {
+        "title": "Sector Momentum",
+        "summary": (
+            "Rolling sector velocity — which healthcare verticals are "
+            "accelerating, plateauing, or rolling over."
+        ),
+        "href": "/sector-momentum",
+        "topic": "Benchmarks",
+        "kind": "Reference",
+    },
+    {
+        "title": "IRR Dispersion",
+        "summary": (
+            "Distribution of realized IRRs across the corpus, sliced "
+            "by vintage, sector, and exit regime."
+        ),
+        "href": "/irr-dispersion",
+        "topic": "Benchmarks",
+        "kind": "Reference",
+    },
+    {
+        "title": "Hold Analysis",
+        "summary": (
+            "How long a deal should run — hold-period distributions "
+            "and exit-window readouts across the corpus."
+        ),
+        "href": "/hold-analysis",
+        "topic": "Benchmarks",
+        "kind": "Reference",
+    },
+    {
+        "title": "Corpus Backtest",
+        "summary": (
+            "Replay screening rules against the historical corpus to "
+            "see what the platform would have surfaced."
+        ),
+        "href": "/corpus-backtest",
+        "topic": "Methodology",
+        "kind": "Frameworks",
+    },
+    {
+        "title": "Backtest",
+        "summary": (
+            "Single-thesis backtest — apply one rule across the "
+            "deal universe and inspect the cohort it picks."
+        ),
+        "href": "/backtest",
+        "topic": "Methodology",
+        "kind": "Frameworks",
+    },
 ]
 
 
