@@ -12,7 +12,7 @@ from typing import Dict, List, Optional
 from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_kpi_block, ck_section_header,
     ck_fmt_currency, ck_fmt_percent, ck_fmt_number,
-    ck_data_cell,
+    ck_data_cell, ck_page_title,
 )
 # Backward-compat aliases — lp_dashboard_page was written against
 # pre-cycle-22 helper names (ck_fmt_num/pct/moic). Map them to
@@ -433,13 +433,16 @@ def render_lp_dashboard(params: dict = None) -> str:
     cell_style = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3_style = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    page_title = ck_page_title(
+        "LP Portfolio Dashboard",
+        eyebrow="LP DASHBOARD",
+        meta=f"{kpis.total_deals} deals at ${kpis.total_ev_deployed_mm:,.0f}M EV deployed · {kpis.gross_moic:.2f}x gross MOIC / {kpis.irr_gross * 100:.1f}% IRR → {kpis.net_moic:.2f}x net / {kpis.irr_net * 100:.1f}% net IRR · TVPI {kpis.tvpi:.2f}x / DPI {kpis.dpi:.2f}x · {kpis.loss_rate * 100:.1f}% loss rate · {kpis.home_run_rate * 100:.1f}% home-run rate",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">LP Portfolio Dashboard</h1>
-    <p class="ck-page-sub">Fund-level KPIs, vintage curves, and sector exposure — {result.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
 
   {filter_form}
 
