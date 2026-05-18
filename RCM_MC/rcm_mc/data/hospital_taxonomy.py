@@ -63,13 +63,36 @@ from .hcris import _classify_series
 
 
 # ── Known academic / teaching / flagship system names ──────────────
-# Hand-curated from the user's "largest positive residuals" list plus
-# the standard top-20 US academic medical centres. Match is
-# case-insensitive substring; order doesn't matter (we OR them).
-# This list is intentionally short and explicit — better to under-
-# label and let the generic UNIVERSITY/SCHOOL OF MEDICINE pattern
-# catch the long tail than to over-tag big-name community hospitals
-# whose names happen to share a keyword.
+# Hand-curated. **This is intentionally NOT a complete list of US
+# academic medical centres** — it's a deterministic shortlist used
+# to confirm the flag for systems whose names don't already include
+# UNIVERSITY / SCHOOL OF MEDICINE / MEDICAL SCHOOL (the generic
+# pattern below catches the long tail). Keep this list short and
+# explicit: every entry should be a system everyone agrees is an
+# academic medical centre, with no risk of false-positive matches
+# against community hospitals that share a keyword.
+#
+# Selection rationale: top US academic centres (Stanford, Mass
+# General, Johns Hopkins, Cleveland Clinic, Mayo, UCSF, UCLA, MD
+# Anderson, etc.) — these consistently appear in the largest-
+# positive-residuals list because they have specialty referrals,
+# residents, research, donor philanthropy and quaternary care that
+# pooled OLS can't model with bed/payer/scale variables alone.
+#
+# If a system needs to be added: include both the canonical form
+# AND any historical / colloquial variant the name field might
+# carry (e.g. "MASS GENERAL" + "MASSACHUSETTS GENERAL").
+#
+# Substring match is case-insensitive (input upper-cased before
+# matching) and applied to the WHOLE name string, so "STANFORD"
+# matches "STANFORD HEALTH CARE", "STANFORD HOSPITAL", and
+# "STANFORD UNIVERSITY MEDICAL CENTER" equivalently.
+#
+# Future migration path: when this list grows past ~50 entries or
+# needs editorial input from non-engineers, move to a YAML/JSON
+# file under data_public/ with per-row commentary. For Phase 1 (~40
+# entries with engineering-only edits), the Python module-level
+# constant is clearer to grep and audit.
 _ACADEMIC_SYSTEM_NAMES: tuple[str, ...] = (
     "STANFORD",
     "CLEVELAND CLINIC",
@@ -275,31 +298,70 @@ def derive_taxonomy(df: pd.DataFrame) -> pd.DataFrame:
         out["critical_access_flag"] | (beds_num < 25).fillna(False)
     )
 
-    # Single business-name segment label. Precedence matters — pick
-    # the most specific applicable label so a flagship-academic
-    # hospital reads as "Flagship Academic" rather than "Large
-    # Community" just because it also crosses the bed-count
-    # threshold.
-    seg = pd.Series("Other", index=out.index, dtype=object)
-    # General community hospitals first (lowest precedence), then
-    # specialty / safety-net / academic on top.
+    # Segment label: deterministic single-label classification with
+    # explicit precedence. Some hospitals match multiple flags (a
+    # large academic centre is also "large community" by bed count;
+    # a children's specialty hospital might also be academic-
+    # affiliated). The precedence table below settles those cases —
+    # MOST SPECIFIC LABEL WINS. Tested in
+    # tests/test_hospital_taxonomy.py::PrecedenceTests so a future
+    # refactor can't silently re-order the hierarchy.
     is_general = ftype.eq("general")
     big = beds_num >= 100
-    seg = seg.mask(is_general & ~big, "Small Community")
-    seg = seg.mask(is_general & big, "Large Community")
-    seg = seg.mask(out["safety_net_proxy_flag"] & is_general,
-                   "Safety-Net Community")
-    seg = seg.mask(out["rehab_flag"], "Rehab")
-    seg = seg.mask(out["ltach_flag"], "LTACH")
-    seg = seg.mask(out["psychiatric_flag"], "Psychiatric / Behavioral")
-    seg = seg.mask(out["children_flag"], "Children's")
-    seg = seg.mask(out["critical_access_flag"], "Critical Access")
-    seg = seg.mask(out["teaching_flag"] & ~out["academic_flag"], "Teaching")
-    seg = seg.mask(out["academic_flag"], "Academic")
-    seg = seg.mask(out["flagship_specialty_flag"], "Flagship Specialty")
+    # Each row: (label, boolean-mask). LATER rows OVERWRITE earlier
+    # ones (last-write-wins), so the table is ordered LEAST-specific
+    # at the top → MOST-specific at the bottom.
+    #
+    # Rationale for the ordering: pick the label that best predicts
+    # the regression behaviour. Children's hospitals and CAHs are
+    # very homogeneous economic regimes (pediatric specialty mix /
+    # rural-occupancy distress respectively); Academic / Teaching
+    # are diverse populations (CHOP is both academic AND children's,
+    # but its economics look like a children's hospital, not an
+    # AMC). So Children's > Academic, CAH > Teaching. Flagship
+    # Specialty (MD Anderson, MSK) is the smallest and most
+    # distinct economic regime and wins over everything.
+    precedence: list[tuple[str, pd.Series]] = [
+        ("Other",                    pd.Series(True, index=out.index)),
+        ("Small Community",          is_general & ~big),
+        ("Large Community",          is_general & big),
+        ("Safety-Net Community",     out["safety_net_proxy_flag"] & is_general),
+        ("Rehab",                    out["rehab_flag"]),
+        ("LTACH",                    out["ltach_flag"]),
+        ("Psychiatric / Behavioral", out["psychiatric_flag"]),
+        ("Teaching",                 out["teaching_flag"] & ~out["academic_flag"]),
+        ("Academic",                 out["academic_flag"]),
+        ("Critical Access",          out["critical_access_flag"]),
+        ("Children's",               out["children_flag"]),
+        ("Flagship Specialty",       out["flagship_specialty_flag"]),
+    ]
+    seg = pd.Series("Other", index=out.index, dtype=object)
+    for label, mask in precedence:
+        seg = seg.mask(mask.fillna(False), label)
     out["segment_label"] = seg
 
     return out
+
+
+# Explicit precedence list — most-specific label LAST (it wins).
+# Mirrors the table inside derive_taxonomy so external callers
+# (tests, docs, UI tooltips) can reference a single source of truth.
+# Two hospitals matching the same flags will always get the same
+# segment_label regardless of column order or HCRIS refresh.
+SEGMENT_PRECEDENCE: tuple[str, ...] = (
+    "Other",
+    "Small Community",
+    "Large Community",
+    "Safety-Net Community",
+    "Rehab",
+    "LTACH",
+    "Psychiatric / Behavioral",
+    "Teaching",
+    "Academic",
+    "Critical Access",
+    "Children's",
+    "Flagship Specialty",
+)
 
 
 # Canonical ordered segment list — same order is used by the

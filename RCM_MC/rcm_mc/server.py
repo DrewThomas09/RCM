@@ -6883,6 +6883,12 @@ class RCMHandler(BaseHTTPRequestHandler):
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         source = (qs.get("source") or ["hcris"])[0][:20]
         target = (qs.get("target") or ["net_patient_revenue"])[0][:40]
+        # Phase-2 query controls: universe filter + log-target +
+        # segmented regression toggle. Lengths capped defensively
+        # (universe values are short literals from the pill nav).
+        universe = (qs.get("universe") or ["all"])[0][:40]
+        log_target = (qs.get("log") or ["0"])[0] in ("1", "true", "on")
+        segmented = (qs.get("segmented") or ["0"])[0] in ("1", "true", "on")
         hcris_df = _get_latest_per_ccn()
         store = PortfolioStore(self.config.db_path)
         try:
@@ -6892,6 +6898,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         return self._send_html(render_regression_page(
             data_source=source, target=target,
             hcris_df=hcris_df, deals_df=deals_df,
+            universe=universe,
+            log_target=log_target,
+            segmented=segmented,
         ))
 
     def _route_hospital_regression(self, ccn: str) -> None:
