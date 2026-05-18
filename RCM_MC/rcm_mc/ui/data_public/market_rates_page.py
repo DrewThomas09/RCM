@@ -354,6 +354,9 @@ def render_market_rates(
         active_filters.append(f"region={region_filter}")
     filter_desc = " · ".join(active_filters) if active_filters else "all corpus"
 
+    # Title is auto-rendered by chartis_shell from editorial_intro +
+    # title + subtitle (post-fix in _chartis_kit.chartis_shell). No
+    # need for an explicit ck_page_title here.
     body = (
         kpis
         + filter_bar

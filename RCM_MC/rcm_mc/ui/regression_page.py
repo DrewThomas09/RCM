@@ -30,7 +30,10 @@ from ..finance.influence import (
     classify_influence_point as _classify_influence,
     compute_influence as _compute_influence,
 )
-from ..finance.clustering import cluster_hospitals as _cluster_hospitals
+from ..finance.clustering import (
+    cluster_hospitals as _cluster_hospitals,
+    render_cluster_scatter as _render_cluster_scatter,
+)
 from ..finance.buyability import (
     score_buyability_batch as _score_buyability_batch,
     summarize_distribution as _buyability_distribution,
@@ -1377,6 +1380,11 @@ def render_regression_page(
                 f"PC{i + 1}: {v * 100:.0f}%"
                 for i, v in enumerate(pca_var)
             )
+            # PCA scatter plot — turns the cluster panel from a
+            # table dump into a real visualization. Every hospital
+            # plots at its (PC1, PC2) projection coloured by cluster;
+            # cluster centroids render as larger diamonds on top.
+            scatter_svg = _render_cluster_scatter(cluster_res)
             cluster_section = ck_panel(
                 '<p class="ck-section-body">'
                 f'<strong>k = {cluster_res.k}</strong> · '
@@ -1390,6 +1398,11 @@ def render_regression_page(
                 'taxonomy alone misses — e.g. a Large Community '
                 'cluster that\'s actually 90% Medicaid + urban '
                 'belongs in its own regression slope.</p>'
+                '<div class="rg-cluster-scatter-wrap" '
+                'style="margin:8px 0 18px;display:flex;'
+                'justify-content:center;">'
+                f'{scatter_svg}'
+                '</div>'
                 '<table class="cad-table"><thead><tr>'
                 '<th>#</th><th>Cluster name</th><th>n</th>'
                 '<th>Dominant segment</th><th>Med beds</th>'

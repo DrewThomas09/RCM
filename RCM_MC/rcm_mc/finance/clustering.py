@@ -441,3 +441,195 @@ def cluster_hospitals(
         profiles=profiles,
         source_index=idx,
     )
+
+
+# ── SVG scatter plot ───────────────────────────────────────────────
+
+
+# Editorial chartis palette for the cluster colors. Cycles through
+# the 8 entries — covers k=2..8 cleanly, repeats for k=9..12.
+_CLUSTER_COLORS: tuple[str, ...] = (
+    "#155752",  # teal-ink (chartis accent)
+    "#b8732a",  # bronze (warning)
+    "#0a8a5f",  # green (positive)
+    "#b5321e",  # brick (negative)
+    "#0b2341",  # navy
+    "#7a3478",  # plum
+    "#3b6789",  # slate blue
+    "#5d6b7a",  # editorial dim
+)
+
+
+def render_cluster_scatter(
+    result: "ClusteringResult",
+    *,
+    width: int = 720,
+    height: int = 460,
+    padding_left: int = 56,
+    padding_right: int = 24,
+    padding_top: int = 36,
+    padding_bottom: int = 42,
+) -> str:
+    """Render a PCA scatter plot of the clustered hospitals as SVG.
+
+    Each row plots at its (PC1, PC2) projection coloured by the
+    cluster it belongs to. Cluster centroids render as larger
+    diamond markers on top of the dot cloud so the partner can see
+    where the cluster centres sit. Axes show the explained variance
+    ratio for each PC so the partner knows how much of the original
+    variance the 2D projection actually captures.
+
+    Zero-dep SVG (same approach as Deal MC charts). Returns an
+    empty SVG if the result has no rows or PCA wasn't computed.
+    """
+    pca = result.pca
+    labels = result.kmeans.labels
+    profiles_by_id = {p.cluster_id: p for p in result.profiles}
+
+    if pca.scores.size == 0 or pca.scores.shape[1] < 2:
+        return '<svg width="0" height="0"></svg>'
+
+    inner_w = width - padding_left - padding_right
+    inner_h = height - padding_top - padding_bottom
+    pc1 = pca.scores[:, 0]
+    pc2 = pca.scores[:, 1]
+
+    x_min, x_max = float(pc1.min()), float(pc1.max())
+    y_min, y_max = float(pc2.min()), float(pc2.max())
+    # 6% padding so points don't kiss the axes
+    x_span = x_max - x_min or 1.0
+    y_span = y_max - y_min or 1.0
+    x_min -= x_span * 0.06
+    x_max += x_span * 0.06
+    y_min -= y_span * 0.06
+    y_max += y_span * 0.06
+
+    def sx(v: float) -> float:
+        return padding_left + (
+            (v - x_min) / (x_max - x_min) * inner_w
+        )
+
+    def sy(v: float) -> float:
+        # SVG y grows downward; flip so larger PC2 sits at the top
+        return padding_top + inner_h - (
+            (v - y_min) / (y_max - y_min) * inner_h
+        )
+
+    # Axis tick lines + labels — 4 ticks per axis
+    grid_lines = []
+    for i in range(5):
+        frac = i / 4
+        # vertical (PC1)
+        x = padding_left + frac * inner_w
+        v = x_min + frac * (x_max - x_min)
+        grid_lines.append(
+            f'<line x1="{x:.1f}" x2="{x:.1f}" '
+            f'y1="{padding_top}" y2="{padding_top + inner_h}" '
+            f'stroke="#d6cfc0" stroke-dasharray="2,4" />'
+            f'<text x="{x:.1f}" y="{padding_top + inner_h + 16}" '
+            f'fill="#7a8699" text-anchor="middle" font-size="11" '
+            f'font-family="JetBrains Mono, monospace">{v:+.1f}</text>'
+        )
+        # horizontal (PC2)
+        y = padding_top + inner_h - frac * inner_h
+        v = y_min + frac * (y_max - y_min)
+        grid_lines.append(
+            f'<line y1="{y:.1f}" y2="{y:.1f}" '
+            f'x1="{padding_left}" x2="{padding_left + inner_w}" '
+            f'stroke="#d6cfc0" stroke-dasharray="2,4" />'
+            f'<text x="{padding_left - 8}" y="{y + 4:.1f}" '
+            f'fill="#7a8699" text-anchor="end" font-size="11" '
+            f'font-family="JetBrains Mono, monospace">{v:+.1f}</text>'
+        )
+
+    # Plot every row as a small dot, coloured by cluster
+    dot_layers: List[str] = []
+    for i in range(len(pc1)):
+        cid = int(labels[i])
+        color = _CLUSTER_COLORS[cid % len(_CLUSTER_COLORS)]
+        dot_layers.append(
+            f'<circle cx="{sx(pc1[i]):.1f}" cy="{sy(pc2[i]):.1f}" '
+            f'r="2.5" fill="{color}" fill-opacity="0.55" '
+            f'stroke="none"/>'
+        )
+
+    # Compute centroids in PCA-score space (mean of each cluster's
+    # PC1/PC2). Render as larger diamonds on top of the dot cloud.
+    centroid_layers: List[str] = []
+    for cid in sorted(set(int(l) for l in labels)):
+        mask = labels == cid
+        if not mask.any():
+            continue
+        cx = float(pc1[mask].mean())
+        cy = float(pc2[mask].mean())
+        color = _CLUSTER_COLORS[cid % len(_CLUSTER_COLORS)]
+        x, y = sx(cx), sy(cy)
+        # Diamond marker (rotated square)
+        size = 7
+        centroid_layers.append(
+            f'<polygon points="'
+            f'{x:.1f},{y - size:.1f} '
+            f'{x + size:.1f},{y:.1f} '
+            f'{x:.1f},{y + size:.1f} '
+            f'{x - size:.1f},{y:.1f}" '
+            f'fill="{color}" stroke="#fff" stroke-width="2"/>'
+        )
+
+    # Axis labels — explained variance ratio for each PC
+    ev = pca.explained_variance_ratio
+    pc1_label = (
+        f"PC1 · {ev[0] * 100:.0f}% var" if len(ev) > 0 else "PC1"
+    )
+    pc2_label = (
+        f"PC2 · {ev[1] * 100:.0f}% var" if len(ev) > 1 else "PC2"
+    )
+    axis_labels = (
+        f'<text x="{padding_left + inner_w / 2:.1f}" '
+        f'y="{height - 8}" '
+        f'fill="#1a2332" text-anchor="middle" font-size="12" '
+        f'font-family="Inter, sans-serif" font-weight="600">'
+        f'{pc1_label}</text>'
+        f'<text x="14" y="{padding_top + inner_h / 2:.1f}" '
+        f'fill="#1a2332" text-anchor="middle" font-size="12" '
+        f'font-family="Inter, sans-serif" font-weight="600" '
+        f'transform="rotate(-90 14 {padding_top + inner_h / 2:.1f})">'
+        f'{pc2_label}</text>'
+    )
+
+    # Legend — one row per cluster with its dominant-segment name
+    legend_items: List[str] = []
+    legend_x = padding_left + 8
+    legend_y_start = padding_top + 8
+    for i, cid in enumerate(sorted(profiles_by_id.keys())):
+        prof = profiles_by_id[cid]
+        color = _CLUSTER_COLORS[cid % len(_CLUSTER_COLORS)]
+        y = legend_y_start + i * 16
+        # Truncate long names so the legend stays compact
+        name = prof.name if len(prof.name) <= 40 else prof.name[:37] + "…"
+        legend_items.append(
+            f'<g transform="translate({legend_x:.0f},{y:.0f})">'
+            f'<circle cx="0" cy="0" r="4" fill="{color}"/>'
+            f'<text x="10" y="4" font-size="11" '
+            f'font-family="Inter, sans-serif" fill="#1a2332">'
+            f'{name} <tspan fill="#7a8699">· n={prof.size}</tspan>'
+            f'</text></g>'
+        )
+
+    legend_bg = (
+        f'<rect x="{padding_left + 1}" y="{padding_top + 1}" '
+        f'width="320" height="{len(legend_items) * 16 + 14}" '
+        f'fill="#ffffff" fill-opacity="0.92" '
+        f'stroke="#d6cfc0" stroke-width="1"/>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;background:transparent;">'
+        f'{"".join(grid_lines)}'
+        f'{"".join(dot_layers)}'
+        f'{"".join(centroid_layers)}'
+        f'{axis_labels}'
+        f'{legend_bg}'
+        f'{"".join(legend_items)}'
+        f'</svg>'
+    )
