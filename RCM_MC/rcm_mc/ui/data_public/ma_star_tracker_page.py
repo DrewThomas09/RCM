@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _star_color(s: float) -> str:
@@ -208,12 +208,16 @@ def render_ma_star_tracker(params: dict = None) -> str:
 
     stars_up = sum(1 for p in r.plans if p.star_rating_2026 > p.star_rating_2025)
     stars_down = sum(1 for p in r.plans if p.star_rating_2026 < p.star_rating_2025)
+
+    page_title = ck_page_title(
+        "Medicare Advantage / Star Ratings Tracker",
+        eyebrow="MA STAR TRACKER",
+        meta=f"{r.total_plans} MA plans tracking {r.total_enrollment_m:.1f}M lives · {r.avg_star_rating:.2f}★ weighted avg · {r.pct_4star_plus * 100:.1f}% in 4+★ plans · {stars_up} improved / {stars_down} declined in 2026 cycle · ${r.total_portfolio_ma_revenue_m:,.0f}M portfolio MA revenue · ${r.total_radv_exposure_m:,.0f}M industry RADV exposure",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Medicare Advantage / Star Ratings Tracker</h1>
-    <p class="ck-page-sub">{r.total_plans} MA plans · {r.total_enrollment_m:.1f}M enrolled · {r.avg_star_rating:.2f}★ weighted average · {r.pct_4star_plus * 100:.1f}% of lives in 4+★ plans · ${r.total_portfolio_ma_revenue_m:,.1f}M portfolio MA revenue · ${r.total_radv_exposure_m:,.1f}M industry RADV exposure — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">MA Plan Economics — Star Ratings, Rebates, MLR</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Portfolio Exposure — MA Partnership Revenue</div>{e_tbl}</div>
