@@ -3384,8 +3384,19 @@ _CSS_INLINE_FALLBACK = """
   .ck-table .align-right { text-align:right; }
   .ck-table .align-center { text-align:center; }
   .ck-kpi { padding:var(--sc-s-4) 0; border-top:1px solid var(--sc-rule); position:relative; }
+  /* B3 — forgotten migration. .ck-kpi-grid is referenced by
+   * deal_dashboard.py, market_rates_page.py, etc., but the rule
+   * lived only in _chartis_kit_legacy.py — modern shell had no
+   * definition, so children stacked vertically (default
+   * display:block on div). Mirrors .ck-pulse-grid below. Auto-fit
+   * minmax means N stats per row at typical viewport, wraps to
+   * additional rows for thick-stat strips (8-stat sponsor heatmap
+   * fits one row on wide; wraps to two on narrower viewports). */
+  .ck-kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:0; border-top:1px solid var(--sc-rule); }
+  .ck-kpi-grid .ck-kpi { padding:14px 18px; border-top:0; border-right:1px solid var(--sc-rule); }
+  .ck-kpi-grid .ck-kpi:last-child { border-right:0; }
   .ck-kpi-label { font-family:var(--sc-sans); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--sc-text-dim); margin-bottom:4px; }
-  .ck-kpi-value { font-family:var(--sc-serif); font-size:24px; font-weight:500; color:var(--sc-navy); display:flex; align-items:baseline; gap:8px; }
+  .ck-kpi-value { font-family:var(--sc-serif); font-size:22px; font-weight:500; color:var(--sc-navy); display:flex; align-items:baseline; gap:8px; }
   .ck-kpi-trend { font-family:var(--sc-mono); font-size:12px; }
   .ck-kpi-trend.tone-positive { color:var(--sc-positive); }
   .ck-kpi-trend.tone-negative { color:var(--sc-negative); }
