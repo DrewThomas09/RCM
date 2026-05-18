@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _tier_color(t: str) -> str:
@@ -210,12 +210,15 @@ def render_gpo_supply_tracker(params: dict = None) -> str:
 
     bulk_incremental = sum(b.incremental_savings_m for b in r.bulk_buys)
 
+    page_title = ck_page_title(
+        "GPO / Supply Chain Savings Tracker",
+        eyebrow="GPO SUPPLY TRACKER",
+        meta=f"${r.total_annual_spend_m:,.1f}M annual spend across {r.portfolio_deals_covered} deals · ${r.total_realized_savings_m:.1f}M net savings at {r.average_savings_rate_pct * 100:.1f}% rate · ${r.total_rebates_m:.1f}M rebate capture · {r.contracts_active} active contracts · {len(r.bulk_buys)} bulk-buy initiatives",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">GPO / Supply Chain Savings Tracker</h1>
-    <p class="ck-page-sub">${r.total_annual_spend_m:,.1f}M annual supply-chain spend across {r.portfolio_deals_covered} deals · ${r.total_realized_savings_m:.1f}M net savings ({r.average_savings_rate_pct * 100:.1f}% rate) · ${r.total_rebates_m:.1f}M rebate capture · {r.contracts_active} active contracts — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">GPO Affiliations — Scale, Savings, Rebates</div>{a_tbl}</div>
   <div style="{cell}"><div style="{h3}">Spend Categories — Savings Rate by Category</div>{c_tbl}</div>
