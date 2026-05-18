@@ -278,163 +278,83 @@ def render_page_explainer(
     source: str = "",
     page_key: str = "",
 ) -> str:
-    """Render the standardized "About this page" block.
+    """Render an editorial explainer block under the page title.
 
-    Every chartis page calls this at the top of its body, under the
-    page title. Three sections:
+    REDESIGN (replaces the old "About this page" bordered card with
+    a Hide button): partners pushed back on the card chrome — it
+    looked like a UI widget instead of editorial prose. New render
+    is the same minimal italic-paragraph style as
+    ``ck_page_explainer`` from the chartis-kit: italic teal lead
+    sentence + serif body, with optional Scale / How-to-use
+    sub-items and a small mono Source footer at the bottom.
 
-      - WHAT  (required): one sentence describing what the page shows.
-      - SCALE (optional): explicit interpretation of metric thresholds.
-      - USE   (optional): one sentence on the action a partner takes.
+    Signature preserved so the ~30 existing callers don't need to
+    change — same ``what`` / ``scale`` / ``use`` / ``source`` /
+    ``page_key`` parameters. ``page_key`` is now ignored (no
+    collapse state to persist), kept for backwards compat.
 
-    ``source`` renders as a muted "Source: ..." footer. Leave blank
-    only for pages whose WHAT is purely descriptive (no interpretive
-    claims).
-
-    ``page_key`` is the route path (e.g. "deal-partner-review") that
-    gets hashed into the localStorage key so collapse state persists
-    per-page. Collision-safe across routes and between multiple
-    explainers on the same page.
-
-    Collapse toggle: a small "hide" button at the top-right flips a
-    localStorage flag. On next load the block renders collapsed.
-    JavaScript is added once per page (idempotent — loads the first
-    explainer's script block; subsequent ones are no-ops).
+    The original "About this page" card + Hide button + localStorage
+    state machine are gone. JavaScript dependency removed.
     """
-    key = _html.escape(page_key or "default")
     what_html = _html.escape(what)
+    # First sentence (up to the first period) becomes the italic
+    # teal lead — same convention as ck_page_explainer. Rest of
+    # `what` flows into the body. If `what` is one sentence, the
+    # whole thing is the lead and body is empty.
+    if ". " in what:
+        lead, _, rest = what.partition(". ")
+        lead_html = _html.escape(lead) + "."
+        body_html = _html.escape(rest)
+    else:
+        lead_html = what_html
+        body_html = ""
+
     scale_html = (
-        f'<div class="ck-explainer-subheading">Scale</div>'
-        f'<p class="ck-explainer-body">{_html.escape(scale)}</p>'
+        f'<span class="ck-explainer-sub">'
+        f'<span class="ck-explainer-sub-label">Scale.</span> '
+        f'{_html.escape(scale)}</span>'
         if scale else ""
     )
     use_html = (
-        f'<div class="ck-explainer-subheading">How to use</div>'
-        f'<p class="ck-explainer-body">{_html.escape(use)}</p>'
+        f'<span class="ck-explainer-sub">'
+        f'<span class="ck-explainer-sub-label">How to use.</span> '
+        f'{_html.escape(use)}</span>'
         if use else ""
     )
     source_html = (
-        f'<div class="ck-explainer-source">Source: {_html.escape(source)}</div>'
+        f'<span class="ck-page-explainer-source">'
+        f'Source: {_html.escape(source)}</span>'
         if source else ""
     )
 
+    body_inline = (f' {body_html}' if body_html else '') + scale_html + use_html
+
     return (
-        f'<div class="ck-explainer" data-page-key="{key}">'
-        f'<div class="ck-explainer-header">'
-        f'<span class="ck-explainer-title">About this page</span>'
-        f'<button class="ck-explainer-toggle" type="button" '
-        f'aria-label="Toggle explainer" '
-        f'onclick="ckExplainerToggle(this)">hide</button>'
-        f'</div>'
-        f'<div class="ck-explainer-content">'
-        f'<p class="ck-explainer-body ck-explainer-what">{what_html}</p>'
-        f'{scale_html}'
-        f'{use_html}'
-        f'{source_html}'
-        f'</div>'
-        f'</div>'
-        f'{_EXPLAINER_CSS_AND_JS}'
+        '<p class="ck-page-explainer">'
+        f'<em>{lead_html}</em>{body_inline}{source_html}'
+        '</p>'
+        f'{_EXPLAINER_CSS}'
     )
 
 
-# Single-shot CSS + JS appended on every explainer. The <style> block
-# is load-safe to repeat (duplicate rules are identical); the
-# <script> block is idempotent because the function name check
-# guards against redeclaration.
-_EXPLAINER_CSS_AND_JS = """
+# Editorial-paragraph CSS for the redesigned explainer. Matches the
+# .ck-page-explainer styling defined in _chartis_kit so the two
+# helpers render visually identically — the only difference is that
+# this one supports optional Scale / How-to-use sub-items inline.
+# CSS is load-safe to repeat (duplicate rules are identical).
+_EXPLAINER_CSS = """
 <style>
-.ck-explainer {
-  background: var(--ck-panel);
-  border: 1px solid var(--ck-border);
-  border-left: 3px solid var(--ck-accent);
-  border-radius: 3px;
-  padding: 10px 14px;
-  margin-bottom: 14px;
-}
-.ck-explainer.collapsed .ck-explainer-content { display: none; }
-.ck-explainer-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 6px;
-}
-.ck-explainer-title {
-  font-family: var(--ck-mono);
-  font-size: 9px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--ck-text-faint);
-}
-.ck-explainer-toggle {
-  background: transparent;
-  border: 1px solid var(--ck-border);
-  color: var(--ck-text-faint);
-  font-family: var(--ck-mono);
-  font-size: 9px;
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  padding: 1px 7px;
-  border-radius: 2px;
-  cursor: pointer;
-}
-.ck-explainer-toggle:hover {
-  border-color: var(--ck-accent);
-  color: var(--ck-text);
-}
-.ck-explainer-body {
-  color: var(--ck-text);
-  font-size: 12px;
-  line-height: 1.55;
-  margin: 0 0 8px 0;
-}
-.ck-explainer-body:last-child { margin-bottom: 0; }
-.ck-explainer-subheading {
-  font-family: var(--ck-mono);
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ck-text-faint);
-  margin-top: 4px;
-  margin-bottom: 2px;
-}
-.ck-explainer-source {
-  font-family: var(--ck-mono);
-  font-size: 10px;
-  color: var(--ck-text-faint);
-  margin-top: 8px;
-  padding-top: 6px;
-  border-top: 1px solid var(--ck-border-dim);
-}
+.ck-page-explainer { font-family: var(--sc-serif, 'Source Serif 4', Georgia, serif);
+  font-size: 15px; line-height: 1.6; color: var(--sc-text-dim, #5d6b7a);
+  max-width: 72ch; margin: var(--sc-s-4, 14px) 0 var(--sc-s-6, 22px); }
+.ck-page-explainer em { color: var(--sc-teal-ink, #155752); font-style: italic; }
+.ck-explainer-sub { display: block; margin-top: 10px; }
+.ck-explainer-sub-label { font-family: var(--sc-mono, 'JetBrains Mono', monospace);
+  font-size: 10px; letter-spacing: 0.10em; text-transform: uppercase;
+  color: var(--sc-teal-ink, #155752); margin-right: 4px; }
+.ck-page-explainer-source { display: block; margin-top: 10px;
+  font-family: var(--sc-mono, 'JetBrains Mono', monospace);
+  font-size: 10.5px; letter-spacing: 0.06em;
+  color: var(--sc-text-faint, #7a8699); text-transform: uppercase; }
 </style>
-<script>
-if (typeof window.ckExplainerToggle === 'undefined') {
-  window.ckExplainerToggle = function(btn) {
-    var panel = btn.closest('.ck-explainer');
-    if (!panel) return;
-    var key = 'ck-explainer-collapsed:' + (panel.getAttribute('data-page-key') || 'default');
-    if (panel.classList.contains('collapsed')) {
-      panel.classList.remove('collapsed');
-      btn.textContent = 'hide';
-      try { localStorage.removeItem(key); } catch(e) {}
-    } else {
-      panel.classList.add('collapsed');
-      btn.textContent = 'show';
-      try { localStorage.setItem(key, '1'); } catch(e) {}
-    }
-  };
-  // Restore collapsed state on load
-  document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.ck-explainer').forEach(function(panel) {
-      var key = 'ck-explainer-collapsed:' + (panel.getAttribute('data-page-key') || 'default');
-      try {
-        if (localStorage.getItem(key) === '1') {
-          panel.classList.add('collapsed');
-          var btn = panel.querySelector('.ck-explainer-toggle');
-          if (btn) btn.textContent = 'show';
-        }
-      } catch(e) {}
-    });
-  });
-}
-</script>
 """

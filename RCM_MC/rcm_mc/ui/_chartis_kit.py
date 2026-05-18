@@ -4903,9 +4903,25 @@ def chartis_shell(
     # (italic-serif headline) with a single kwarg instead of
     # restructuring its render function — much lower-friction port
     # for the 60-69 fidelity-tier.
+    #
+    # Missing-title bugfix: 74 pages pass editorial_intro= without
+    # also calling ck_page_title() in their body, so they render
+    # WITHOUT a page H1 (just the section-intro italic headline).
+    # When editorial_intro is provided AND the body doesn't already
+    # carry a ck-page-title, auto-prepend a real page title using
+    # the page's `title` + the editorial_intro's eyebrow + the
+    # subtitle. The original ck_section_intro still renders below,
+    # acting as the editorial deck under the H1.
     intro_html = ""
     if editorial_intro:
-        intro_html = ck_section_intro(**editorial_intro)
+        if 'class="ck-page-title"' not in body_html:
+            page_eyebrow = editorial_intro.get("eyebrow")
+            intro_html += ck_page_title(
+                title,
+                eyebrow=page_eyebrow,
+                meta=subtitle if subtitle else None,
+            )
+        intro_html += ck_section_intro(**editorial_intro)
     body_html = intro_html + body_html
     # Page-specific CSS goes AFTER the kit's CSS so page styles
     # win specificity ties — matches the contract login_page.py
