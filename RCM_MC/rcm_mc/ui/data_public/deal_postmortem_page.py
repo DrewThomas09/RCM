@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title
 
 
 def _plan_vs_actual_table(items) -> str:
@@ -182,12 +182,28 @@ def render_deal_postmortem(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    # B11 — replace bespoke .ck-page-h1 inline HTML with the editorial-
+    # kit ck_page_title primitive (same anti-pattern as deal_pipeline +
+    # deal_origination, PRs #160-#161). Title preserves "Deal Post-Mortem"
+    # identity from the inline h1. Meta is deal-specific rather than
+    # corpus-wide: deal name + letter grade + realized-vs-underwritten
+    # MOIC comparison. ck_page_title internally HTML-escapes meta so
+    # the raw r.deal_name is safe to pass (matches what the underlying
+    # _esc(meta) call did pre-fix with the inline subtitle).
+    grade_letter = r.overall_grade.split(" ")[-1]
+    page_title = ck_page_title(
+        "Deal Post-Mortem",
+        eyebrow="DEAL POSTMORTEM",
+        meta=(
+            f"{r.deal_name} · grade {grade_letter} · "
+            f"realized {r.realized_moic:.2f}x vs underwritten "
+            f"{r.underwritten_moic:.2f}x"
+        ),
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Deal Post-Mortem</h1>
-    <p class="ck-page-sub">{_html.escape(r.deal_name)} · plan-vs-actual · lever attribution · milestone slippage · lessons learned · counterfactuals — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {grade_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Deal Grade</div>
