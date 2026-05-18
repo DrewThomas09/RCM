@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _stage_color(s: str) -> str:
@@ -196,12 +196,15 @@ def render_deal_sourcing(params: dict = None) -> str:
     prop_closed = sum(1 for c in r.closed_bridge if "Proprietary" in c.source or "Operating Partner" in c.source or "Portfolio" in c.source or "Co-Invest" in c.source)
     prop_value = sum(c.deal_value_m for c in r.closed_bridge if "Proprietary" in c.source or "Operating Partner" in c.source or "Portfolio" in c.source or "Co-Invest" in c.source)
     prop_pct = prop_closed / r.total_closed_ltm if r.total_closed_ltm else 0
+    page_title = ck_page_title(
+        "Deal Sourcing / Proprietary Flow Tracker",
+        eyebrow="DEAL SOURCING",
+        meta=f"{r.total_annualized_pipeline:,} annualized leads · {r.total_closed_ltm} closed LTM at ${r.total_closed_value_m:,.1f}M · {r.weighted_close_rate_pct * 100:.2f}% close rate · {prop_pct * 100:.0f}% proprietary mix on close",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Deal Sourcing / Proprietary Flow Tracker</h1>
-    <p class="ck-page-sub">{r.total_annualized_pipeline:,} annualized leads · {r.total_proprietary_opportunities} active proprietary opps · {r.total_closed_ltm} closed LTM ({prop_closed} proprietary = {prop_pct * 100:.0f}%) · ${r.total_closed_value_m:,.1f}M closed value — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Sourcing Funnel — LTM Activity</div>{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">Source Channel Performance</div>{c_tbl}</div>
