@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title
 
 
 def _sensitivity_table(items) -> str:
@@ -202,12 +202,15 @@ def render_lbo_stress(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     top_driver = max(r.tornado, key=lambda t: abs(t.swing_moic))
+    page_title = ck_page_title(
+        "LBO Model Stress Test",
+        eyebrow="LBO STRESS",
+        meta=f"${b.purchase_price_mm:,.0f}M purchase at {b.entry_multiple:.2f}x entry / {b.initial_leverage:.2f}x leverage · base {b.projected_moic:.2f}x MOIC / {b.projected_irr_pct * 100:.1f}% IRR → probability-weighted {expected_moic:.2f}x / {expected_irr * 100:.1f}% · top sensitivity: {top_driver.driver} (±{abs(top_driver.swing_moic):.2f}x swing) · {len(r.tornado)} drivers stressed",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">LBO Model Stress Test</h1>
-    <p class="ck-page-sub">Sensitivity analysis · tornado drivers · covenant path · returns bridge · scenario probability weighting — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   {tornado_paired}
   <div style="{cell}"><div style="{h3}">Exit Multiple Sensitivity Grid</div>{s_tbl}</div>
