@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title
 
 
 def _funnel_svg(stages) -> str:
@@ -258,15 +258,31 @@ def render_deal_pipeline(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    # B11 — pre-fix, this page rendered its h1 via bespoke inline
+    # `<h1 class="ck-page-h1">` HTML (a legacy Bloomberg-era helper class)
+    # rather than the editorial-kit ck_page_title primitive. The B11
+    # sweep grep flagged it as "missing ck_page_title call" but the
+    # visible symptom was actually "uses inconsistent title primitive."
+    # Replacing with ck_page_title keeps the same visible h1 + sub
+    # while routing through the editorial kit so future shell-level
+    # title styling improvements cascade automatically. Meta line uses
+    # the most-load-bearing pipeline stats already computed in `r`
+    # — keeps partner-facing identity short while signaling the
+    # pipeline is non-trivial.
+    page_title = ck_page_title(
+        "Deal Pipeline Tracker",
+        eyebrow="DEAL PIPELINE",
+        meta=(
+            f"{sourced:,} sourced · {r.total_active_deals:,} active · "
+            f"${r.weighted_closed_ev_mm:,.0f}M weighted close · "
+            f"{r.corpus_deal_count:,} corpus deals"
+        ),
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Deal Pipeline Tracker</h1>
-    <p class="ck-page-sub">
-      Sourcing funnel, stage conversion, channel ROI, sector concentration — {r.corpus_deal_count:,} corpus deals
-    </p>
-  </div>
+  {page_title}
 
   {form}
 
