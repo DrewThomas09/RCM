@@ -224,5 +224,121 @@ class SegmentedRegressionTests(unittest.TestCase):
         self.assertTrue(res.by_segment["A"].target_was_log_transformed)
 
 
+class TypicalFractionalErrorTests(unittest.TestCase):
+    """Reviewer point #2: define the metric. ``typical_fractional_error``
+    is ``exp(RMSE_log) - 1`` — the multiplicative error a partner
+    should expect on any single prediction. Returns 0.0 on raw-target
+    fits because RMSE is already in dollars there.
+    """
+
+    def setUp(self):
+        rng = np.random.default_rng(42)
+        n = 200
+        x1 = rng.uniform(0, 10, n)
+        x2 = rng.uniform(0, 5, n)
+        y_log = 2.0 + 0.3 * x1 + 0.2 * x2 + rng.normal(0, 0.05, n)
+        self.df = pd.DataFrame({"y": np.exp(y_log), "x1": x1, "x2": x2})
+
+    def test_typical_fractional_error_formula(self):
+        res = run_regression(self.df, "y", ["x1", "x2"],
+                             log_transform_target=True)
+        expected = np.exp(res.rmse) - 1.0
+        self.assertAlmostEqual(res.typical_fractional_error, expected,
+                               places=6)
+        # Tight fit (sd=0.05 in log space) → small fractional error
+        self.assertLess(res.typical_fractional_error, 0.10)
+
+    def test_typical_fractional_error_zero_for_raw_target(self):
+        res = run_regression(self.df, "y", ["x1", "x2"])
+        self.assertFalse(res.target_was_log_transformed)
+        self.assertEqual(res.typical_fractional_error, 0.0)
+
+    def test_typical_fractional_error_in_to_dict(self):
+        res = run_regression(self.df, "y", ["x1", "x2"],
+                             log_transform_target=True)
+        self.assertIn("typical_fractional_error", res.to_dict())
+
+
+class SegmentationSafetyMarginTests(unittest.TestCase):
+    """Reviewer point #6: min_n threshold is the larger of
+    ``min_segment_rows`` and ``n_features + dof_safety_margin``.
+    Segments that don't clear the threshold get surfaced in
+    ``insufficient_n`` with the reason — not silently dropped.
+    """
+
+    def setUp(self):
+        rng = np.random.default_rng(7)
+        n = 200
+        # Three features
+        x1 = rng.normal(0, 1, n)
+        x2 = rng.normal(0, 1, n)
+        x3 = rng.normal(0, 1, n)
+        y = 1.0 + x1 + 0.5 * x2 + 0.25 * x3 + rng.normal(0, 0.1, n)
+        self.df_big = pd.DataFrame({
+            "y": y, "x1": x1, "x2": x2, "x3": x3,
+            "segment_label": ["A"] * n,
+        })
+        # Tiny segment (only 5 rows — well under any reasonable
+        # threshold for 3 features)
+        self.df_tiny = pd.DataFrame({
+            "y": [1, 2, 3, 4, 5],
+            "x1": [1, 2, 3, 4, 5],
+            "x2": [2, 1, 3, 5, 4],
+            "x3": [0, 1, 1, 0, 1],
+            "segment_label": ["tiny"] * 5,
+        })
+
+    def test_dof_safety_margin_default_blocks_undersized_segments(self):
+        # 3 features + default 10 dof margin = 13; default min_segment_rows
+        # = 30; max(30, 13) = 30. A 5-row segment fails.
+        df = pd.concat([self.df_big, self.df_tiny], ignore_index=True)
+        res = run_segmented_regression(df, "y", ["x1", "x2", "x3"])
+        self.assertIn("A", res.by_segment)
+        self.assertNotIn("tiny", res.by_segment)
+        self.assertIn("tiny", res.insufficient_n)
+        self.assertEqual(res.insufficient_n["tiny"]["n_clean"], 5)
+        self.assertGreater(res.insufficient_n["tiny"]["min_required"], 5)
+        self.assertIn("reason", res.insufficient_n["tiny"])
+        # The reason must say WHY (n_features + dof margin)
+        self.assertIn("safety margin",
+                      res.insufficient_n["tiny"]["reason"])
+
+    def test_min_n_used_reflects_chosen_threshold(self):
+        df = pd.concat([self.df_big, self.df_tiny], ignore_index=True)
+        res = run_segmented_regression(
+            df, "y", ["x1", "x2", "x3"],
+            min_segment_rows=50, dof_safety_margin=5,
+        )
+        # max(50, 3+5) = 50
+        self.assertEqual(res.min_n_used, 50)
+
+    def test_dof_safety_margin_can_raise_threshold(self):
+        # If features + safety margin > min_segment_rows, threshold
+        # rises to features + margin
+        df = pd.concat([self.df_big, self.df_tiny], ignore_index=True)
+        res = run_segmented_regression(
+            df, "y", ["x1", "x2", "x3"],
+            min_segment_rows=10, dof_safety_margin=20,
+        )
+        # max(10, 3+20) = 23
+        self.assertEqual(res.min_n_used, 23)
+
+    def test_segment_counts_includes_skipped(self):
+        # Even if a segment didn't get a fit, its row count is in
+        # segment_counts (so the UI can show "tiny: 5 rows, skipped")
+        df = pd.concat([self.df_big, self.df_tiny], ignore_index=True)
+        res = run_segmented_regression(df, "y", ["x1", "x2", "x3"])
+        self.assertEqual(res.segment_counts["tiny"], 5)
+        self.assertEqual(res.segment_counts["A"], 200)
+
+    def test_insufficient_n_in_to_dict(self):
+        df = pd.concat([self.df_big, self.df_tiny], ignore_index=True)
+        res = run_segmented_regression(df, "y", ["x1", "x2", "x3"])
+        d = res.to_dict()
+        self.assertIn("insufficient_n", d)
+        self.assertIn("min_n_used", d)
+        self.assertIn("tiny", d["insufficient_n"])
+
+
 if __name__ == "__main__":
     unittest.main()

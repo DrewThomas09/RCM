@@ -5,6 +5,16 @@ outcomes (EBITDA margin, denial rate, collection rate). This module
 runs OLS regression across the portfolio to surface relationships.
 
 Uses numpy only — no sklearn dependency.
+
+DIAGNOSTIC SCOPE (Phase 1):
+  The metrics surfaced here (R², RMSE, MAE, VIFs, segment fits) are
+  all IN-SAMPLE explanatory fits — they describe how well the model
+  fits the data it was trained on. They do NOT yet make
+  out-of-sample prediction claims. Until PR 4 (cross-validation) and
+  PR 3 (leakage audit — flagging features that use the target in
+  their formula) land, treat these numbers as DIAGNOSTIC ONLY: useful
+  for hypothesis generation and feature selection, not for sourcing
+  decisions or LP-facing forecasts.
 """
 from __future__ import annotations
 
@@ -65,6 +75,23 @@ class RegressionResult:
     # computed (e.g. matrix was singular).
     vifs: Dict[str, float] = field(default_factory=dict)
 
+    @property
+    def typical_fractional_error(self) -> float:
+        """A scale-free "typical multiplicative prediction error" — only
+        meaningful for log-transformed fits. Computed as
+        ``exp(RMSE_log) - 1``, so a return value of 0.30 means
+        "typical prediction is off by ~30% in either direction"
+        (e.g. a hospital's $500M NPSR predicted as $650M or $385M).
+
+        Returns 0.0 for raw-target fits (where RMSE is already in
+        the target's units and ``rmse / target_mean`` is the
+        partner-facing relative error).
+        """
+        if not self.target_was_log_transformed:
+            return 0.0
+        import math as _m
+        return _m.exp(self.rmse) - 1.0
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "target": self.target,
@@ -81,6 +108,9 @@ class RegressionResult:
             "target_mean": round(self.target_mean, 4),
             "target_was_log_transformed": self.target_was_log_transformed,
             "vifs": {k: round(v, 3) for k, v in self.vifs.items()},
+            "typical_fractional_error": round(
+                self.typical_fractional_error, 4,
+            ),
         }
 
 
@@ -107,10 +137,17 @@ class SegmentedRegressionResult:
     baseline: "RegressionResult"
     # The "Model 3" per-segment fits, keyed by segment label.
     by_segment: Dict[str, "RegressionResult"]
-    # Per-segment row counts (segments with too few rows to fit are
-    # dropped from ``by_segment`` but still recorded here so the UI
-    # can show "segment X: 4 rows, fit skipped").
+    # Per-segment row counts (every segment present in the data,
+    # including ones we couldn't fit).
     segment_counts: Dict[str, int]
+    # Segments we explicitly chose NOT to fit, with the reason —
+    # surfaced as a first-class field instead of just "missing
+    # from by_segment" so the UI can render "Flagship Specialty:
+    # 9 rows, insufficient sample for stable fit (need at least N)".
+    insufficient_n: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    # The actual minimum-n threshold the fit used (reflects both
+    # the caller's request and the dof safety margin).
+    min_n_used: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -123,6 +160,8 @@ class SegmentedRegressionResult:
                 seg: res.to_dict() for seg, res in self.by_segment.items()
             },
             "segment_counts": self.segment_counts,
+            "insufficient_n": self.insufficient_n,
+            "min_n_used": self.min_n_used,
         }
 
 
@@ -341,21 +380,34 @@ def run_segmented_regression(
     log_transform_target: bool = False,
     significance_level: float = 0.05,
     min_segment_rows: int = 30,
+    dof_safety_margin: int = 10,
 ) -> SegmentedRegressionResult:
     """Fit one OLS per segment plus a single all-segments baseline.
 
-    This is the operational answer to "academic hospitals follow a
-    different revenue equation than community hospitals." For each
-    distinct value of ``segment_column``, refit the same model and
-    report R² / RMSE / coefficients side-by-side. Segments below
-    ``min_segment_rows`` are skipped (not enough data for a stable
-    fit) but their row count is still surfaced so the UI can show
-    why a particular segment is missing.
+    Operational answer to "academic hospitals follow a different
+    revenue equation than community hospitals." For each distinct
+    value of ``segment_column``, refit the same model and report
+    R² / RMSE / coefficients side-by-side.
+
+    Each segment must clear ``max(min_segment_rows, n_features +
+    dof_safety_margin)`` rows to get its own fit. The
+    ``dof_safety_margin`` (default 10) protects against fits with
+    barely more rows than parameters — those produce inflated R²
+    and unreliable coefficient SEs even when OLS doesn't outright
+    fail. Segments that fail the threshold are surfaced in
+    ``insufficient_n`` with the reason, not silently dropped.
 
     Returns a ``SegmentedRegressionResult`` with both the baseline
     (all rows, no segmentation) and the per-segment fits. Use the
-    delta between baseline R² and segment R² to assess whether the
-    segmentation actually buys you explanatory power.
+    R² delta between baseline and per-segment to assess whether the
+    segmentation buys explanatory power — but bear in mind this is
+    IN-SAMPLE explanatory fit, not out-of-sample prediction (no
+    cross-validation here; that's PR 4 of the rebuild series).
+    A worse per-segment fit usually means the segment's variance
+    isn't captured by the current feature set, not that the segment
+    is inherently unmodellable — sub-segment-appropriate features
+    (rurality / occupancy / wage index for CAHs, for example)
+    typically lift those R²s.
     """
     if segment_column not in df.columns:
         raise ValueError(
@@ -371,9 +423,12 @@ def run_segmented_regression(
 
     # Use the features the baseline actually fit (in case features=None)
     fit_features = baseline.features
+    n_features = len(fit_features)
+    min_n = max(min_segment_rows, n_features + dof_safety_margin)
 
     by_segment: Dict[str, RegressionResult] = {}
     segment_counts: Dict[str, int] = {}
+    insufficient_n: Dict[str, Dict[str, Any]] = {}
     for seg, sdf in df.groupby(segment_column, dropna=True):
         seg_name = str(seg)
         # Count rows that would survive the same dropna+target>0
@@ -385,8 +440,19 @@ def run_segmented_regression(
         ).dropna()
         if log_transform_target:
             sclean = sclean[sclean[target] > 0]
-        segment_counts[seg_name] = int(len(sclean))
-        if len(sclean) < max(min_segment_rows, len(fit_features) + 2):
+        n_clean = int(len(sclean))
+        segment_counts[seg_name] = n_clean
+        if n_clean < min_n:
+            insufficient_n[seg_name] = {
+                "n_clean": n_clean,
+                "min_required": min_n,
+                "reason": (
+                    f"need at least {min_n} rows after dropping NaN "
+                    f"({n_features} features + {dof_safety_margin} "
+                    f"degrees-of-freedom safety margin); only "
+                    f"{n_clean} qualify."
+                ),
+            }
             continue
         try:
             by_segment[seg_name] = run_regression(
@@ -394,9 +460,12 @@ def run_segmented_regression(
                 significance_level=significance_level,
                 log_transform_target=log_transform_target,
             )
-        except ValueError:
-            # Singular matrix in this segment — skip rather than
-            # poison the whole result. UI surfaces "fit_skipped".
+        except ValueError as exc:
+            insufficient_n[seg_name] = {
+                "n_clean": n_clean,
+                "min_required": min_n,
+                "reason": f"OLS failed: {exc}",
+            }
             continue
 
     return SegmentedRegressionResult(
@@ -407,6 +476,8 @@ def run_segmented_regression(
         baseline=baseline,
         by_segment=by_segment,
         segment_counts=segment_counts,
+        insufficient_n=insufficient_n,
+        min_n_used=min_n,
     )
 
 

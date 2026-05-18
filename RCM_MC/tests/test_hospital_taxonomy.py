@@ -16,6 +16,7 @@ from rcm_mc.data.hospital_taxonomy import (
     filter_to_universe,
     segment_counts,
     SEGMENT_LABELS,
+    SEGMENT_PRECEDENCE,
 )
 
 
@@ -210,6 +211,149 @@ class EmptyFrameTests(unittest.TestCase):
                     "size_class", "payer_class", "segment_label"):
             self.assertIn(col, out.columns)
         self.assertEqual(len(out), 0)
+
+
+class PrecedenceTests(unittest.TestCase):
+    """Reviewer point #3: when a hospital matches multiple flags
+    (academic + large + safety-net + system-affiliated) the label
+    must be deterministic and follow the documented hierarchy.
+    SEGMENT_PRECEDENCE is the single source of truth.
+    """
+
+    def test_precedence_constant_matches_implementation(self):
+        # Build one row per precedence-level label and confirm that
+        # adding a higher-level flag overrides a lower-level one.
+        # A 500-bed academic centre with high Medicaid share matches:
+        #   teaching_flag, academic_flag, safety_net_proxy_flag,
+        #   Large Community (by beds). Expected label: "Academic"
+        #   (higher precedence than Teaching / Safety-Net Community
+        #   / Large Community).
+        df = pd.DataFrame([{
+            "ccn": "050001",  # general (academic by name)
+            "name": "STANFORD HOSPITAL",
+            "beds": 500,
+            "medicare_day_pct": 40,
+            "medicaid_day_pct": 45,  # would otherwise mark safety-net
+        }])
+        tagged = derive_taxonomy(df)
+        self.assertEqual(tagged.iloc[0]["segment_label"], "Academic")
+        # The flags themselves all set — just the LABEL respects precedence
+        self.assertTrue(tagged.iloc[0]["academic_flag"])
+        self.assertTrue(tagged.iloc[0]["teaching_flag"])
+        self.assertTrue(tagged.iloc[0]["safety_net_proxy_flag"])
+
+    def test_flagship_specialty_beats_academic(self):
+        # MD Anderson is the canonical case — flagship specialty
+        # wins over academic even when both match.
+        df = pd.DataFrame([{
+            "ccn": "450076",
+            "name": "MD ANDERSON UNIVERSITY CANCER CENTER",
+            "beds": 700,
+            "medicare_day_pct": 30,
+            "medicaid_day_pct": 10,
+        }])
+        tagged = derive_taxonomy(df)
+        self.assertTrue(tagged.iloc[0]["academic_flag"])
+        self.assertTrue(tagged.iloc[0]["flagship_specialty_flag"])
+        self.assertEqual(
+            tagged.iloc[0]["segment_label"], "Flagship Specialty"
+        )
+
+    def test_children_beats_academic_and_large_community(self):
+        # A children's hospital affiliated with a university is
+        # "Children's" — partner reasons about it as a different
+        # economic regime regardless of academic affiliation.
+        df = pd.DataFrame([{
+            "ccn": "053301",
+            "name": "CHILDRENS HOSPITAL OF UNIVERSITY OF SOMEWHERE",
+            "beds": 400,
+            "medicare_day_pct": 5,
+            "medicaid_day_pct": 50,
+        }])
+        tagged = derive_taxonomy(df)
+        self.assertEqual(tagged.iloc[0]["segment_label"], "Children's")
+
+    def test_critical_access_beats_teaching(self):
+        # CAH precedence is intentionally above Teaching — a 20-bed
+        # rural CAH that happens to host residents is still a CAH
+        # for regression purposes (its economics are CAH-shaped).
+        df = pd.DataFrame([{
+            "ccn": "191333",
+            "name": "TINY COUNTY TEACHING HOSPITAL",
+            "beds": 20,
+            "medicare_day_pct": 60,
+            "medicaid_day_pct": 25,
+        }])
+        tagged = derive_taxonomy(df)
+        self.assertTrue(tagged.iloc[0]["teaching_flag"])
+        self.assertTrue(tagged.iloc[0]["critical_access_flag"])
+        self.assertEqual(
+            tagged.iloc[0]["segment_label"], "Critical Access"
+        )
+
+    def test_segment_precedence_constant_covers_all_labels(self):
+        # SEGMENT_PRECEDENCE should mention every label the
+        # implementation can emit (canary against the table getting
+        # out of sync with derive_taxonomy).
+        expected = {
+            "Other", "Small Community", "Large Community",
+            "Safety-Net Community", "Rehab", "LTACH",
+            "Psychiatric / Behavioral", "Children's",
+            "Critical Access", "Teaching", "Academic",
+            "Flagship Specialty",
+        }
+        self.assertEqual(set(SEGMENT_PRECEDENCE), expected)
+        # Ordering matters: most-specific must be last
+        self.assertEqual(SEGMENT_PRECEDENCE[-1], "Flagship Specialty")
+        self.assertEqual(SEGMENT_PRECEDENCE[0], "Other")
+
+
+class NameNormalizationTests(unittest.TestCase):
+    """Reviewer point #4: HCRIS names arrive with varying case,
+    punctuation, and spacing. The taxonomy must tag all spelling
+    variants of the same system consistently.
+    """
+
+    def test_stanford_variants_all_tag_academic(self):
+        variants = [
+            "STANFORD HEALTH CARE",
+            "Stanford Health Care",          # mixed-case
+            "stanford hospital",             # lower-case
+            "STANFORD UNIVERSITY MEDICAL CENTER",
+            "STANFORD HOSPITAL ",            # trailing whitespace
+        ]
+        df = pd.DataFrame([
+            {"ccn": f"05000{i}", "name": n, "beds": 700,
+             "medicare_day_pct": 40, "medicaid_day_pct": 10}
+            for i, n in enumerate(variants)
+        ])
+        tagged = derive_taxonomy(df)
+        self.assertTrue(tagged["academic_flag"].all(),
+                        f"variants tagged: {tagged['academic_flag'].tolist()}")
+        self.assertTrue((tagged["segment_label"] == "Academic").all())
+
+    def test_ucsf_variants(self):
+        df = pd.DataFrame([
+            {"ccn": "050100", "name": "UCSF MEDICAL CENTER", "beds": 600,
+             "medicare_day_pct": 35, "medicaid_day_pct": 15},
+            {"ccn": "050101", "name": "ucsf medical center", "beds": 600,
+             "medicare_day_pct": 35, "medicaid_day_pct": 15},
+            {"ccn": "050102", "name": "UCSF Medical Center", "beds": 600,
+             "medicare_day_pct": 35, "medicaid_day_pct": 15},
+        ])
+        tagged = derive_taxonomy(df)
+        self.assertTrue(tagged["academic_flag"].all())
+
+    def test_punctuation_does_not_break_match(self):
+        # "M.D. ANDERSON" vs "MD ANDERSON" — both in the curated list
+        df = pd.DataFrame([
+            {"ccn": "450076", "name": "M.D. ANDERSON CANCER CENTER",
+             "beds": 700, "medicare_day_pct": 30, "medicaid_day_pct": 10},
+            {"ccn": "450077", "name": "MD ANDERSON CANCER CENTER",
+             "beds": 700, "medicare_day_pct": 30, "medicaid_day_pct": 10},
+        ])
+        tagged = derive_taxonomy(df)
+        self.assertTrue(tagged["flagship_specialty_flag"].all())
 
 
 if __name__ == "__main__":
