@@ -2,9 +2,12 @@
 
 Each function takes the DealMCResult (or a slice of it) and returns
 an SVG string that renders inline in the UI. No numpy, no
-matplotlib, no plotly — pure string templates. Charts inherit the
-Chartis palette via CSS custom properties where possible so they
-look right in the dark shell.
+matplotlib, no plotly — pure string templates. Palette is the
+editorial chartis (navy ink axis, teal-ink median line, parchment
+rule grid) — was originally Bloomberg-dark-mode, which rendered as
+light text on the cream parchment background and the user reported
+as illegible. Default chart size bumped (640×280 → 920×360) so the
+fan + histogram + tornado read at typical viewing distance.
 """
 from __future__ import annotations
 
@@ -14,21 +17,29 @@ from .engine import DealMCResult, StressResult, YearBand
 
 
 # Palette tuned for the Chartis dark shell.
+# Editorial chartis palette (was dark-mode Bloomberg colors that
+# rendered as light text on the cream parchment background —
+# user-reported "very very light font on light background").
+# All values converted to the editorial tokens used elsewhere:
+# navy ink for axis text, teal-ink for the median band, parchment-
+# rule grid lines, severity tokens for status.
 _PAL = {
     "bg": "transparent",
-    "axis": "#64748b",
-    "grid": "#1e293b",
-    "text": "#e2e8f0",
-    "text_dim": "#94a3b8",
-    "text_faint": "#64748b",
-    "accent": "#3b82f6",
-    "positive": "#10b981",
-    "negative": "#ef4444",
-    "warn": "#f59e0b",
-    # Fan-chart band fills, ordered narrow → wide.
-    "p50_fill": "rgba(59, 130, 246, 0.55)",
-    "p25_75_fill": "rgba(59, 130, 246, 0.35)",
-    "p10_90_fill": "rgba(59, 130, 246, 0.15)",
+    "axis": "#1a2332",           # near-ink, dark on light bg
+    "grid": "#d6cfc0",           # parchment rule, light-on-light grid
+    "text": "#1a2332",           # near-ink for primary text
+    "text_dim": "#5d6b7a",       # editorial dim
+    "text_faint": "#7a8699",     # editorial faint
+    "accent": "#155752",         # teal-ink (median line + bars)
+    "positive": "#0a8a5f",       # editorial green
+    "negative": "#b5321e",       # editorial brick red
+    "warn": "#b8732a",           # editorial bronze
+    # Fan-chart band fills, ordered narrow → wide. Tinted teal-ink
+    # (matches accent line) so the bands read as part of the same
+    # chart family on the parchment background.
+    "p50_fill": "rgba(21, 87, 82, 0.55)",
+    "p25_75_fill": "rgba(21, 87, 82, 0.30)",
+    "p10_90_fill": "rgba(21, 87, 82, 0.12)",
 }
 
 
@@ -65,8 +76,8 @@ def fan_chart(
     *,
     title: str = "",
     y_label: str = "",
-    width: int = 640,
-    height: int = 280,
+    width: int = 920,
+    height: int = 360,
     padding_left: int = 72,
     padding_right: int = 24,
     padding_top: int = 36,
@@ -131,7 +142,7 @@ def fan_chart(
             f'stroke="{_PAL["grid"]}" stroke-dasharray="2,4" />'
             f'<text x="{padding_left - 8}" y="{y_pos + 3:.1f}" '
             f'fill="{_PAL["text_faint"]}" text-anchor="end" '
-            f'font-size="10" font-family="JetBrains Mono, monospace">'
+            f'font-size="12" font-family="JetBrains Mono, monospace">'
             f'{_svg_escape(fmt_y(val))}</text>'
         )
 
@@ -142,7 +153,7 @@ def fan_chart(
         x_ticks.append(
             f'<text x="{x:.1f}" y="{padding_top + inner_h + 16}" '
             f'fill="{_PAL["text_faint"]}" text-anchor="middle" '
-            f'font-size="10" font-family="JetBrains Mono, monospace">'
+            f'font-size="12" font-family="JetBrains Mono, monospace">'
             f'Y{b.year}</text>'
         )
 
@@ -198,7 +209,7 @@ def fan_chart(
 def moic_histogram_chart(
     result: DealMCResult,
     *,
-    width: int = 640, height: int = 240,
+    width: int = 920, height: int = 320,
     padding_left: int = 40, padding_right: int = 20,
     padding_top: int = 36, padding_bottom: int = 42,
 ) -> str:
@@ -264,7 +275,7 @@ def moic_histogram_chart(
             f'stroke="{_PAL["text"]}" stroke-width="1.5" stroke-dasharray="4,3" />'
             f'<text x="{p50_x:.1f}" y="{padding_top - 6}" '
             f'fill="{_PAL["text"]}" text-anchor="middle" '
-            f'font-size="10" font-family="JetBrains Mono, monospace" '
+            f'font-size="12" font-family="JetBrains Mono, monospace" '
             f'font-weight="700">'
             f'P50 {p50:.2f}x</text>'
         )
@@ -291,7 +302,7 @@ def moic_histogram_chart(
 def attribution_chart(
     result: DealMCResult,
     *,
-    width: int = 640, height: int = 240,
+    width: int = 920, height: int = 320,
     padding_left: int = 220, padding_right: int = 60,
     padding_top: int = 30, padding_bottom: int = 30,
 ) -> str:
@@ -362,7 +373,7 @@ def attribution_chart(
 def sensitivity_tornado(
     result: DealMCResult,
     *,
-    width: int = 640, height: int = 260,
+    width: int = 920, height: int = 340,
     padding_left: int = 220, padding_right: int = 40,
     padding_top: int = 30, padding_bottom: int = 36,
 ) -> str:

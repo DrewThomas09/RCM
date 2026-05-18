@@ -4831,16 +4831,25 @@ class RCMHandler(BaseHTTPRequestHandler):
                 # without rewriting the renderer.
                 from .ui._chartis_kit import chartis_shell
                 inner = render_monitor_dashboard(pv)
-                # The renderer returns a full <html>...</html> doc; pull
-                # out the <body> contents so chartis_shell can supply
-                # the page chrome around it.
+                # The renderer returns a full <html>...</html> doc.
+                # Previously only the <body> was extracted, which
+                # stripped the page-specific <style> block in <head>
+                # and the page rendered totally unstyled (user-
+                # reported). Now pull BOTH the <style> contents
+                # (passed as extra_css) AND the <body> contents.
                 import re as _re_pm
-                m = _re_pm.search(
+                style_match = _re_pm.search(
+                    r"<style[^>]*>(.*?)</style>", inner, _re_pm.S)
+                body_match = _re_pm.search(
                     r"<body[^>]*>(.*?)</body>", inner, _re_pm.S)
-                body_html = m.group(1) if m else inner
+                body_html = body_match.group(1) if body_match else inner
+                extra_css = (
+                    style_match.group(1) if style_match else ""
+                )
                 return self._send_html(chartis_shell(
                     body_html, "Portfolio Monitor",
-                    subtitle="plan-vs-actual variance, fund-level"))
+                    subtitle="plan-vs-actual variance, fund-level",
+                    extra_css=extra_css))
             except Exception as exc:  # noqa: BLE001
                 return self._send_html(
                     f"<h1>500</h1><p>Monitor failed: "
