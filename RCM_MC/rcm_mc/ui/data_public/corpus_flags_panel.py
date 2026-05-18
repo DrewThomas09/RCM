@@ -76,7 +76,7 @@ _PANEL_CSS = """
 .ckf-badge-high     { background: rgba(234,88,12,0.15);  color: #ea580c; }
 .ckf-badge-medium   { background: rgba(202,138,4,0.15);  color: #ca8a04; }
 .ckf-badge-low      { background: rgba(71,85,105,0.15);  color: #94a3b8; }
-.ckf-badge-ok       { background: rgba(34,197,94,0.12);  color: #22c55e; }
+.ckf-badge-ok       { background: rgba(34,197,94,0.12);  color: #0a8a5f; }
 .ckf-body { padding: 10px 16px 14px; }
 .ckf-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 8px;
@@ -106,7 +106,7 @@ _PANEL_CSS = """
   font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums;
   color: #ea580c;
 }
-.ckf-ok { color: #22c55e; font-size: 11px; padding: 8px 0; }
+.ckf-ok { color: #0a8a5f; font-size: 11px; padding: 8px 0; }
 .ckf-meta {
   font-size: 9px; color: #334155; margin-top: 10px; letter-spacing: 0.08em;
 }

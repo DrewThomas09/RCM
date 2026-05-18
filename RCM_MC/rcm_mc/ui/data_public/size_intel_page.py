@@ -25,7 +25,7 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 
 def _moic_color(m: float) -> str:
-    if m >= 3.0: return "#22c55e"
+    if m >= 3.0: return "#0a8a5f"
     if m >= 2.0: return "#3b82f6"
     if m >= 1.5: return "#f59e0b"
     return "#ef4444"
@@ -122,7 +122,7 @@ def render_size_intel() -> str:
         + ck_kpi_block("EV P50", f'<span class="mn">${profile.ev_p50:.0f}M</span>', "median deal size")
         + ck_kpi_block("EV P75", f'<span class="mn">${profile.ev_p75:.0f}M</span>', "75th percentile")
         + ck_kpi_block("Size↔MOIC Corr",
-                       f'<span class="mn" style="color:{"#22c55e" if corr>0.1 else "#ef4444" if corr<-0.1 else "#f59e0b"}">{corr:+.2f}</span>',
+                       f'<span class="mn" style="color:{"#0a8a5f" if corr>0.1 else "#ef4444" if corr<-0.1 else "#f59e0b"}">{corr:+.2f}</span>',
                        "Spearman ρ")
         + (ck_kpi_block("Best Size Bucket", f'<span class="mn">{_html.escape(best_bucket.label)}</span>', f'P50 {best_bucket.moic_p50:.2f}x') if best_bucket else "")
         + '</div>'
@@ -159,7 +159,7 @@ def render_size_intel() -> str:
     for i, b in enumerate(profile.buckets):
         stripe = ' style="background:var(--sc-bone)"' if i % 2 == 1 else ""
         mc = _moic_color(b.moic_p50)
-        optimal_badge = f'<span style="margin-left:4px;font-size:8px;color:#22c55e;font-family:var(--ck-mono);">★</span>' if best_bucket and b.label == best_bucket.label else ""
+        optimal_badge = f'<span style="margin-left:4px;font-size:8px;color:#0a8a5f;font-family:var(--ck-mono);">★</span>' if best_bucket and b.label == best_bucket.label else ""
         hi_label = f"${b.ev_range[1]:.0f}M" if b.ev_range[1] < 1000 else ("$1B+" if b.ev_range[1] < 1e6 else "—")
         lo_label = f"${b.ev_range[0]:.0f}M" if b.ev_range[0] < 1000 else f"${int(b.ev_range[0])//1000}B"
         bucket_rows.append(f"""<tr{stripe}>
@@ -176,7 +176,7 @@ def render_size_intel() -> str:
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{b.irr_p50*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{b.avg_hold:.1f}y</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#ef4444' if b.loss_rate>0.2 else '#f59e0b' if b.loss_rate>0.1 else '#22c55e'};">{b.loss_rate*100:.1f}%</td>
+      color:{'#ef4444' if b.loss_rate>0.2 else '#f59e0b' if b.loss_rate>0.1 else '#0a8a5f'};">{b.loss_rate*100:.1f}%</td>
 </tr>""")
 
     bucket_table = f"""

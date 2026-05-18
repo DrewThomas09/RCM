@@ -28,7 +28,7 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 
 def _moic_color(m: float) -> str:
-    if m >= 3.0: return "#22c55e"
+    if m >= 3.0: return "#0a8a5f"
     if m >= 2.0: return "#3b82f6"
     if m >= 1.5: return "#f59e0b"
     return "#ef4444"
@@ -155,7 +155,7 @@ def render_leverage_intel() -> str:
         + ck_kpi_block("Proxied (EV/EBITDA)", f'<span class="mn">{profile.n_proxied}</span>', "estimated from EV/EBITDA")
         + ck_kpi_block("Avg Leverage (direct)", f'<span class="mn">{profile.avg_leverage_direct*100:.1f}%</span>', "direct-data deals")
         + ck_kpi_block("Lev↔MOIC Corr",
-                       f'<span class="mn" style="color:{"#ef4444" if corr<-0.1 else "#22c55e" if corr>0.1 else "#f59e0b"}">{corr:+.2f}</span>',
+                       f'<span class="mn" style="color:{"#ef4444" if corr<-0.1 else "#0a8a5f" if corr>0.1 else "#f59e0b"}">{corr:+.2f}</span>',
                        f"{corr_dir} — Spearman ρ")
         + ck_kpi_block("Optimal Bucket", f'<span class="mn" style="font-size:11px;">{_html.escape(profile.optimal_bucket)}</span>', "highest P50 MOIC")
         + '</div>'
@@ -193,7 +193,7 @@ def render_leverage_intel() -> str:
         stripe = ' style="background:var(--sc-bone)"' if i % 2 == 1 else ""
         mc = _moic_color(b.moic_p50)
         optimal_badge = (
-            f'<span style="margin-left:4px;font-size:8px;color:#22c55e;font-family:var(--ck-mono);">★ OPTIMAL</span>'
+            f'<span style="margin-left:4px;font-size:8px;color:#0a8a5f;font-family:var(--ck-mono);">★ OPTIMAL</span>'
             if b.label == profile.optimal_bucket else ""
         )
         bucket_rows.append(f"""<tr{stripe}>
@@ -209,7 +209,7 @@ def render_leverage_intel() -> str:
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#64748b;">{b.moic_p75:.2f}x</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{b.irr_p50*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#ef4444' if b.loss_rate>0.2 else '#f59e0b' if b.loss_rate>0.1 else '#22c55e'};">{b.loss_rate*100:.1f}%</td>
+      color:{'#ef4444' if b.loss_rate>0.2 else '#f59e0b' if b.loss_rate>0.1 else '#0a8a5f'};">{b.loss_rate*100:.1f}%</td>
   <td style="padding:5px 8px;font-size:9px;color:#64748b;">{'direct' if b.is_direct else 'proxy'}</td>
 </tr>""")
 

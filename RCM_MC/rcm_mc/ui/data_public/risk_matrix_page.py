@@ -187,8 +187,8 @@ def _sector_risk_heatmap(rows: List[Dict[str, Any]]) -> str:
     tbody = []
     for i, r in enumerate(rows):
         stripe = ' style="background:var(--sc-bone)"' if i % 2 == 1 else ""
-        risk_color = "#ef4444" if r["avg_risk"] >= 65 else ("#f59e0b" if r["avg_risk"] >= 40 else "#22c55e")
-        moic_color = "#ef4444" if (r["p50_moic"] or 0) < 1.0 else ("#22c55e" if (r["p50_moic"] or 0) >= 2.5 else "#e2e8f0")
+        risk_color = "#ef4444" if r["avg_risk"] >= 65 else ("#f59e0b" if r["avg_risk"] >= 40 else "#0a8a5f")
+        moic_color = "#ef4444" if (r["p50_moic"] or 0) < 1.0 else ("#0a8a5f" if (r["p50_moic"] or 0) >= 2.5 else "#e2e8f0")
         tbody.append(f"""
 <tr{stripe}>
   <td class="dim" style="font-size:11px;">{_html.escape(r['sector'])}</td>

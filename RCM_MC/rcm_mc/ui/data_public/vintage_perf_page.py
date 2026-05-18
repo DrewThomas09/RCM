@@ -25,7 +25,7 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 
 def _moic_color(moic: float) -> str:
-    if moic >= 3.0: return "#22c55e"
+    if moic >= 3.0: return "#0a8a5f"
     if moic >= 2.0: return "#3b82f6"
     if moic >= 1.5: return "#f59e0b"
     return "#ef4444"
@@ -161,7 +161,7 @@ def render_vintage_perf() -> str:
         + ck_kpi_block("Vintages", f'<span class="mn">{total_yrs}</span>', f"{stats[0].year}–{stats[-1].year}")
         + ck_kpi_block("Total Deals", f'<span class="mn">{total_deals}</span>', "across all vintages")
         + ck_kpi_block("Avg P50 MOIC", f'<span class="mn" style="color:{_moic_color(avg_p50)}">{avg_p50:.2f}x</span>', "vintage-weighted")
-        + ck_kpi_block("Best Vintage", f'<span class="mn" style="color:#22c55e">{best.year}</span>', f"P50 {best.moic_p50:.2f}x")
+        + ck_kpi_block("Best Vintage", f'<span class="mn" style="color:#0a8a5f">{best.year}</span>', f"P50 {best.moic_p50:.2f}x")
         + ck_kpi_block("Worst Vintage", f'<span class="mn" style="color:#ef4444">{worst.year}</span>', f"P50 {worst.moic_p50:.2f}x")
         + '</div>'
     )
@@ -217,7 +217,7 @@ def render_vintage_perf() -> str:
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{s.irr_p50*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{s.avg_hold:.1f}y</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#ef4444' if s.loss_rate>0.2 else '#f59e0b' if s.loss_rate>0.1 else '#22c55e'};">{s.loss_rate*100:.1f}%</td>
+      color:{'#ef4444' if s.loss_rate>0.2 else '#f59e0b' if s.loss_rate>0.1 else '#0a8a5f'};">{s.loss_rate*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">${s.avg_ev_mm:.0f}M</td>
   <td style="padding:5px 8px;">{sectors_html}</td>
 </tr>""")

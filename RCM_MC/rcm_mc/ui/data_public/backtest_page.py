@@ -210,8 +210,8 @@ def _histogram_svg(
         rx = tx(ref_line)
         overlays += (
             f'<line x1="{rx:.1f}" y1="{pad_t}" x2="{rx:.1f}" y2="{pad_t+ph}" '
-            f'stroke="#22c55e" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>'
-            f'<text x="{rx+2:.1f}" y="{pad_t+9}" font-size="7" fill="#22c55e" opacity="0.8">{ref_line}×</text>'
+            f'stroke="#0a8a5f" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>'
+            f'<text x="{rx+2:.1f}" y="{pad_t+9}" font-size="7" fill="#0a8a5f" opacity="0.8">{ref_line}×</text>'
         )
 
     x_ticks = []
@@ -424,7 +424,7 @@ def _moic_color(v: Optional[float]) -> str:
     if v < 1.0:
         return "#ef4444"
     if v >= 2.5:
-        return "#22c55e"
+        return "#0a8a5f"
     return "#e2e8f0"
 
 
@@ -443,7 +443,7 @@ def _fmt_pct(v: Optional[float]) -> str:
 def _error_badge(v: Optional[float]) -> str:
     if v is None:
         return '<span style="color:var(--ck-text-faint)">—</span>'
-    color = "#22c55e" if abs(v) < 0.3 else ("#f59e0b" if abs(v) < 0.7 else "#ef4444")
+    color = "#0a8a5f" if abs(v) < 0.3 else ("#f59e0b" if abs(v) < 0.7 else "#ef4444")
     sign = "+" if v > 0 else ""
     return (
         f'<span style="font-family:var(--ck-mono);color:{color};font-variant-numeric:tabular-nums">'
@@ -454,7 +454,7 @@ def _error_badge(v: Optional[float]) -> str:
 def _r2_badge(r2: Optional[float]) -> str:
     if r2 is None:
         return "—"
-    color = "#22c55e" if r2 >= 0.5 else ("#f59e0b" if r2 >= 0.25 else "#ef4444")
+    color = "#0a8a5f" if r2 >= 0.5 else ("#f59e0b" if r2 >= 0.25 else "#ef4444")
     return (
         f'<span style="font-family:var(--ck-mono);color:{color};font-size:13px;font-weight:600">'
         f'{r2:.3f}</span>'
@@ -514,7 +514,7 @@ def _kpi_bar(stats: Dict[str, Any]) -> str:
 
 
 def _calibration_panel(stats: Dict[str, Any]) -> str:
-    mae_color = "#22c55e" if (stats["mae"] or 99) < 0.5 else ("#f59e0b" if (stats["mae"] or 99) < 1.0 else "#ef4444")
+    mae_color = "#0a8a5f" if (stats["mae"] or 99) < 0.5 else ("#f59e0b" if (stats["mae"] or 99) < 1.0 else "#ef4444")
     rows_html = [
         f'<tr><td>Mean Absolute Error (MAE)</td><td class="mono" style="color:{mae_color}">{stats["mae"]:.3f}x</td></tr>',
         f'<tr style="background:var(--sc-bone)"><td>RMSE</td><td class="mono">{stats["rmse"]:.3f}x</td></tr>',
