@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _waterfall_svg(components, fund_moic: float) -> str:
@@ -267,15 +267,16 @@ def render_fund_attribution(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    page_title = ck_page_title(
+        "Fund Performance Attribution",
+        eyebrow="FUND ATTRIBUTION",
+        meta=f"{r.fund_moic:.2f}x MOIC / {r.fund_irr * 100:.1f}% IRR · {r.components[0].pct_of_total_return * 100:.0f}% operational · {r.components[2].pct_of_total_return * 100:.0f}% multiple expansion · {r.components[3].pct_of_total_return * 100:.0f}% leverage · {r.avg_ebitda_growth_pct * 100:.1f}% avg EBITDA growth",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Fund Performance Attribution</h1>
-    <p class="ck-page-sub">
-      IRR decomposition — operational, multiple expansion, leverage, bolt-on, vintage — {r.corpus_deal_count:,} corpus deals
-    </p>
-  </div>
+  {page_title}
 
   {form}
 
