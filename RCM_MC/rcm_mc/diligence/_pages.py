@@ -355,7 +355,14 @@ def render_benchmarks_page(
     ds_path = _resolve_dataset(dataset)
     if ds_path is None:
         placeholder = _render()  # renders the placeholder
-        selector = _fixture_selector("/diligence/benchmarks", dataset)
+        # Prepend _DILIGENCE_CSS to the selector — the placeholder
+        # page doesn't go through _hero() so the .ck-diligence-fixture
+        # styles aren't on the page yet; without this prepend the
+        # selector renders as unstyled raw form chrome (label / select /
+        # button floating with no panel border, padding, or alignment).
+        selector = _DILIGENCE_CSS + _fixture_selector(
+            "/diligence/benchmarks", dataset,
+        )
         # Inject the selector into the placeholder body — crude but
         # keeps the shell consistent with the ingest tab.
         return placeholder.replace("</main>", selector + "</main>", 1) \
@@ -386,7 +393,12 @@ def render_benchmarks_page(
 
     live_html = _render(bundle=bundle, cohort_report=cohort,
                         cash_waterfall=waterfall)
-    selector = _fixture_selector("/diligence/benchmarks", dataset)
+    # Same _DILIGENCE_CSS prepend as the placeholder branch — the
+    # full-bundle renderer doesn't go through _hero() either, so the
+    # injected selector needs its styles to travel with it.
+    selector = _DILIGENCE_CSS + _fixture_selector(
+        "/diligence/benchmarks", dataset,
+    )
     # Prepend the selector to the live page body.
     if "<main" in live_html:
         idx = live_html.find(">", live_html.find("<main"))
