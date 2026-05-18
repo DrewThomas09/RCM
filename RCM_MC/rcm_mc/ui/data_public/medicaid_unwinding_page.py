@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _pace_color(p: str) -> str:
@@ -203,12 +203,17 @@ def render_medicaid_unwinding(params: dict = None) -> str:
 
     revenue_preserved = sum(p.revenue_preserved_m for p in r.programs)
     accel_states = sum(1 for t in r.timelines if t.current_pace == "accelerated")
+    disenroll_rate = r.total_disenrolled_m / r.total_medicaid_lives_pre_phe_m if r.total_medicaid_lives_pre_phe_m else 0
+
+    page_title = ck_page_title(
+        "Medicaid Redetermination / Coverage Unwinding Tracker",
+        eyebrow="MEDICAID UNWINDING",
+        meta=f"{r.total_deals_exposed} portcos exposed · {r.total_medicaid_lives_pre_phe_m:.1f}M pre-PHE Medicaid lives → {r.total_disenrolled_m:.1f}M disenrolled ({disenroll_rate * 100:.0f}% rate) · ${r.total_revenue_impact_m:.1f}M net revenue impact offset by ${revenue_preserved:.1f}M preserved through {r.active_retention_programs} retention programs",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Medicaid Redetermination / Coverage Unwinding Tracker</h1>
-    <p class="ck-page-sub">{r.total_deals_exposed} portcos exposed · {r.total_medicaid_lives_pre_phe_m:.1f}M pre-PHE Medicaid lives → {r.total_disenrolled_m:.1f}M disenrolled · ${r.total_revenue_impact_m:.1f}M net revenue impact · {r.active_retention_programs} active retention programs — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Portfolio Deal Impact</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">State-Level Unwinding Activity</div>{s_tbl}</div>
