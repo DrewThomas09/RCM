@@ -9,8 +9,14 @@
   --sc-navy-2:     #132e53;     /* hover / one-step lighter */
   --sc-navy-3:     #1d3c69;     /* dividers on navy */
 
-  /* Accent (teal, per reference) */
-  --sc-teal:       #2fb3ad;
+  /* Accent (teal, per reference) — D2: --sc-teal flipped from
+     the bright #2fb3ad mint to #155752 (same as --sc-teal-ink) so
+     the cream + navy + amber editorial palette gets a single
+     deep-teal accent across all 233 var(--sc-teal) / var(--accent)
+     usages. --sc-data-1 stays #2fb3ad below for data-viz chart-
+     color distinguishability; --sc-teal-2 stays #66c8c3 for its
+     few mint-accent uses (wordmark em, user-chip hover). */
+  --sc-teal:       #155752;
   --sc-teal-2:     #66c8c3;
   --sc-teal-ink:   #155752;     /* dark teal text on light */
 
