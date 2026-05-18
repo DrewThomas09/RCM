@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _escrow_status_color(status: str) -> str:
@@ -221,15 +221,18 @@ def render_escrow_earnout(params: dict = None) -> str:
     total_contingent = r.total_escrow_held_m + r.total_earnout_accrued_m + r.total_milestones_m
     claim_loss = sum(c.claim_amount_m - c.recovery_m for c in r.claims)
 
+    page_title = ck_page_title(
+        "Escrow & Earnout Tracker",
+        eyebrow="ESCROW EARNOUT",
+        meta=f"{r.total_deals} deals · ${total_contingent:.1f}M total contingent consideration (${r.total_escrow_held_m:.1f}M escrow + ${r.total_earnout_accrued_m:.1f}M expected earnout + ${r.total_milestones_m:.1f}M milestones) · ${r.expected_12mo_release_m:.1f}M releasing in next 12 months · {r.active_claims} active claims",
+    )
+
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Escrow & Earnout Tracker</h1>
-    <p class="ck-page-sub">{r.total_deals} deals · ${r.total_escrow_held_m:.1f}M escrow held · ${r.total_earnout_max_m:.1f}M max earnout · {r.active_claims} active claims · ${r.expected_12mo_release_m:.1f}M releasing in next 12 months — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Sector Rollup — Contingent Liability Exposure</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Escrow Positions — Active, Releasing, Released</div>{e_tbl}</div>
