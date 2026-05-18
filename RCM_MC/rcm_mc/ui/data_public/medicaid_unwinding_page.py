@@ -214,7 +214,7 @@ def render_medicaid_unwinding(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Portfolio Deal Impact</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">State-Level Unwinding Activity</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Coverage Shift Analysis</div>{sh_tbl}</div>

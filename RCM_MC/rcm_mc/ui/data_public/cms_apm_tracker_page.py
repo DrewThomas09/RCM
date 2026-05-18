@@ -205,7 +205,7 @@ def render_cms_apm_tracker(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Program Catalog — CMMI & CMS APMs</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Portfolio Exposure — Deals in APMs</div>{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Historical Performance — Top Programs</div>{t_tbl}</div>

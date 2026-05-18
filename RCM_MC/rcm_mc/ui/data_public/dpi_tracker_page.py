@@ -208,7 +208,7 @@ def render_dpi_tracker(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Fund Vintage Performance — DPI, RVPI, TVPI, Benchmark Gap</div>{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">Exit Drought — Market Metrics</div>{dr_tbl}</div>
   <div style="{cell}"><div style="{h3}">Recent Distributions — Last 4 Quarters</div>{d_tbl}</div>

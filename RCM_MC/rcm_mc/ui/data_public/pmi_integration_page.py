@@ -219,7 +219,7 @@ def render_pmi_integration(params: dict = None) -> str:
     <h1 class="ck-page-h1">PMI / Post-Merger Integration Scorecard</h1>
     <p class="ck-page-sub">{r.total_integrations} active integrations · ${r.total_synergy_target_m:.1f}M synergy target · ${r.total_synergy_realized_m:.1f}M realized ({r.weighted_realization_pct * 100:.0f}%) · ${r.total_integration_cost_m:.1f}M integration cost · {r.on_track_count}/{r.total_integrations} on track — {r.corpus_deal_count:,} corpus deals</p>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Integration Deals — Synergy Realization</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Synergy Categories — Portfolio Aggregate</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Workstream Execution</div>{w_tbl}</div>

@@ -200,7 +200,7 @@ def render_tracker_340b(params: dict = None) -> str:
     <h1 class="ck-page-h1">340B Pharmacy Program Tracker</h1>
     <p class="ck-page-sub">{r.total_entities} covered entities · ${r.total_annual_spend_m:,.1f}M 340B spend · ${r.total_annual_savings_m:,.1f}M savings ({r.effective_savings_rate * 100:.1f}%) · {r.total_contract_pharmacies} contract pharmacies · {r.restricted_manufacturers} mfr restrictions — {r.corpus_deal_count:,} corpus deals</p>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Covered Entities — Portfolio Registration</div>{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Contract Pharmacy Arrangements</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Manufacturer Restrictions — Active</div>{res_tbl}</div>

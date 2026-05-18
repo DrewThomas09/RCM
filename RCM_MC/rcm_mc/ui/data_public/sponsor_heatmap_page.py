@@ -281,7 +281,7 @@ def render_sponsor_heatmap(params: dict = None) -> str:
     <p class="ck-page-sub">2-D performance grid — which sponsors win in which sectors · vintage &amp; hold cuts — {r.corpus_deal_count:,} normalized deals</p>
   </div>
   {form}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {heatmap_paired}
   <div style="{cell}"><div style="{h3}">Sponsor × Sector Matrix Detail (top 50)</div>{cells_tbl}</div>
   <div style="{cell}"><div style="{h3}">Top Sponsor Profiles</div>{profiles_tbl}</div>

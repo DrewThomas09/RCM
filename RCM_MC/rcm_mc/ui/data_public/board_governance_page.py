@@ -208,7 +208,7 @@ def render_board_governance(params: dict = None) -> str:
     )
     body = page_title + bg_explainer + f"""
 <div class="ck-page-wrap">
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Holdco Board Composition</div>{h_tbl}</div>
   <div style="{cell}"><div style="{h3}">Bench of Independent Directors</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Committee Coverage by Holdco</div>{c_tbl}</div>

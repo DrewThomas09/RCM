@@ -241,7 +241,7 @@ def render_drug_pricing_340b(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   {form}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Drug Category Savings Map</div>{svg}</div>
   <div style="{cell}"><div style="{h3}">Covered Entity Inventory — DSH / FQHC / SCH / CAH / PED / Ryan White</div>{entities_tbl}</div>
   <div style="{cell}"><div style="{h3}">Drug Category Economics — WAC vs 340B Ceiling Price</div>{drugs_tbl}</div>

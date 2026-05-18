@@ -231,7 +231,7 @@ def render_demand_forecast(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   {form}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
     <div style="{cell}"><div style="{h3}">10-Year Volume Projection</div>{vol_svg}</div>
     <div style="{cell}"><div style="{h3}">Population by Age Band</div>{pop_svg}</div>

@@ -219,7 +219,7 @@ def render_gpo_supply_tracker(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">GPO Affiliations — Scale, Savings, Rebates</div>{a_tbl}</div>
   <div style="{cell}"><div style="{h3}">Spend Categories — Savings Rate by Category</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Deal-Level Savings & Compliance</div>{d_tbl}</div>

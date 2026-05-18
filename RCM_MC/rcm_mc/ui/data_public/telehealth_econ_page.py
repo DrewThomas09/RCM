@@ -172,7 +172,7 @@ def render_telehealth_econ(params: dict = None) -> str:
     <h1 class="ck-page-h1">Telehealth Economics Analyzer</h1>
     <p class="ck-page-sub">Visit-level P&amp;L · provider productivity · state parity · tech stack · PHE cliff exposure · DTC comparables — {r.corpus_deal_count:,} corpus deals</p>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Visit-Type Economics (P&amp;L by Visit Category)</div>{v_tbl}</div>
   <div style="{cell}"><div style="{h3}">Provider Productivity by Specialty</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">State-Level Payer Parity Status</div>{pa_tbl}</div>

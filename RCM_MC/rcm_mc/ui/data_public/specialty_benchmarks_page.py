@@ -187,7 +187,7 @@ def render_specialty_benchmarks(params: dict = None) -> str:
     <h1 class="ck-page-h1">Specialty Benchmarks Library</h1>
     <p class="ck-page-sub">{r.total_specialties} specialties · portfolio coverage {r.specialties_with_portfolio_coverage} · MGMA + Sullivan Cotter + Radford sourced · avg comp ${r.avg_comp_k:,.1f}K / {r.avg_wrvu:,.0f} wRVU / {r.avg_overhead_pct * 100:.1f}% overhead / {r.avg_ebitda_margin_pct * 100:.1f}% EBITDA — {r.corpus_deal_count:,} corpus deals</p>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Physician Compensation & Productivity Benchmarks</div>{b_tbl}</div>
   <div style="{cell}"><div style="{h3}">Practice Economics by Specialty</div>{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">New Patient Acquisition Benchmarks</div>{n_tbl}</div>

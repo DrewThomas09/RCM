@@ -207,7 +207,7 @@ def render_vintage_cohorts(params: dict = None) -> str:
     <h1 class="ck-page-h1">Vintage Cohort Performance Tracker</h1>
     <p class="ck-page-sub">{r.vintages_tracked} vintages · ${r.total_deployed_b:.2f}B deployed · {r.portfolio_dpi:.2f}x aggregate DPI · {r.portfolio_tvpi:.2f}x aggregate TVPI · {q1q2}/{r.vintages_tracked} top-half Cambridge Associates — {r.corpus_deal_count:,} corpus deals</p>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Vintage Cohort Performance</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sector × Vintage Performance</div>{sv_tbl}</div>
   <div style="{cell}"><div style="{h3}">Hold Period Trends</div>{h_tbl}</div>

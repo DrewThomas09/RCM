@@ -235,7 +235,7 @@ def render_supply_chain(params: dict = None) -> str:
     <p class="ck-page-sub">GPO leverage, vendor contracts, CapEx, inventory — {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   {form}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
     <div style="{cell}"><div style="{h3}">Spend by Category</div>{spend_svg}</div>
     <div style="{cell}"><div style="{h3}">Savings Lever Potential</div>{savings_svg}</div>

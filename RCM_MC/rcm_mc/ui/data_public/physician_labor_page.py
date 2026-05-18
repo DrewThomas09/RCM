@@ -158,7 +158,7 @@ def render_physician_labor(params: dict = None) -> str:
     <h1 class="ck-page-h1">Physician Labor Market Tracker</h1>
     <p class="ck-page-sub">Supply/demand by specialty · wage inflation · NP/PA extender economics · burnout index · geographic HPSA mapping — {r.corpus_deal_count:,} corpus deals</p>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Specialty-Level Supply/Demand &amp; 2030 Shortage Projection</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Wage Growth 2019-2024 &amp; Locum Premia</div>{w_tbl}</div>
   <div style="{cell}"><div style="{h3}">NP / PA / CRNA Extender Economics</div>{e_tbl}</div>

@@ -159,7 +159,7 @@ def render_trial_site_econ(params: dict = None) -> str:
     <h1 class="ck-page-h1">Clinical Trial Site Economics</h1>
     <p class="ck-page-sub">Site-level P&amp;L · therapeutic area mix · phase economics · sponsor relationship · cost structure — {r.corpus_deal_count:,} corpus deals</p>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Site Roster (Top 30 by Revenue)</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Therapeutic Area Rollup</div>{ta_tbl}</div>
   <div style="{cell}"><div style="{h3}">Phase Economics — Per-Site Revenue &amp; Margin</div>{p_tbl}</div>

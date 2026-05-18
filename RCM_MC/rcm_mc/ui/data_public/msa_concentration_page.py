@@ -163,7 +163,7 @@ def render_msa_concentration(params: dict = None) -> str:
     <h1 class="ck-page-h1">MSA Provider Market Concentration</h1>
     <p class="ck-page-sub">HHI · CR3 · CR5 · regime classification · whitespace scoring · stress scenarios · top operators — {r.corpus_deal_count:,} corpus deals</p>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">MSA-Level Concentration Analysis</div>{m_tbl}</div>
   <div style="{cell}"><div style="{h3}">Market Regime Classification &amp; Expected Returns</div>{r_tbl}</div>
   <div style="{cell}"><div style="{h3}">Whitespace Markets — Rollup Priority</div>{w_tbl}</div>

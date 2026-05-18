@@ -211,7 +211,7 @@ def render_lbo_stress(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {tornado_paired}
   <div style="{cell}"><div style="{h3}">Exit Multiple Sensitivity Grid</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Covenant Compliance Path</div>{c_tbl}</div>

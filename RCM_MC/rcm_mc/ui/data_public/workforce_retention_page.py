@@ -194,7 +194,7 @@ def render_workforce_retention(params: dict = None) -> str:
     <h1 class="ck-page-h1">Workforce Turnover / Retention Tracker</h1>
     <p class="ck-page-sub">{r.total_headcount:,} headcount · {r.weighted_turnover_pct * 100:.1f}% weighted turnover · {r.avg_engagement_score:.2f}/10 engagement · ${r.total_contract_labor_spend_m:.1f}M contract labor · ${r.total_retention_spend_m:.1f}M retention spend · {r.critical_roles} critical roles — {r.corpus_deal_count:,} corpus deals</p>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Turnover by Role (portfolio aggregate)</div>{r_tbl}</div>
   <div style="{cell}"><div style="{h3}">Deal-Level Turnover & Engagement</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Contract Labor / Agency Dependency</div>{cl_tbl}</div>

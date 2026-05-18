@@ -237,7 +237,7 @@ def render_partner_economics(params: dict = None) -> str:
     <p class="ck-page-sub">Partnership tiers, buy-in structures, tax flow, exit proceeds, recruitment economics — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   {form}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Partner Compensation by Tier</div>{tier_svg}</div>
   <div style="{cell}"><div style="{h3}">Tier Structure Detail</div>{tiers_tbl}</div>
   <div style="{cell}"><div style="{h3}">Partner Cash Flow (Mid-Tier, After Tax)</div>{cf_tbl}</div>

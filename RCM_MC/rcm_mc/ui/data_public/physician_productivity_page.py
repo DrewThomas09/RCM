@@ -294,7 +294,7 @@ def render_physician_productivity(params: dict = None) -> str:
 
   {form}
 
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
+  <div class="ck-kpi-grid" style="margin-bottom:20px">
     {kpi_strip}
   </div>
 

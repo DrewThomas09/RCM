@@ -231,7 +231,7 @@ def render_capital_pacing(params: dict = None) -> str:
     body = page_title + cp_explainer + f"""
 <div class="ck-page-wrap">
   {form}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {jcurve_paired}
   <div style="{cell}"><div style="{h3}">Portfolio Investments</div>{inv_tbl}</div>
   <div style="{cell}"><div style="{h3}">Vintage Year Peer Comparison</div>{vp_tbl}</div>

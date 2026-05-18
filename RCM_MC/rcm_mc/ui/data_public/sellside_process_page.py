@@ -222,7 +222,7 @@ def render_sellside_process(params: dict = None) -> str:
     <h1 class="ck-page-h1">Sell-Side Process Tracker</h1>
     <p class="ck-page-sub">{r.total_active_processes} active processes · {r.total_buyers_engaged} buyers engaged · ${r.total_target_ev_m:,.1f}M target EV · {r.weighted_target_moic:.2f}x weighted MOIC · {r.processes_closing_12mo} closings ≤12 mo — {r.corpus_deal_count:,} corpus deals</p>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Active Sell-Side Processes</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Negotiation Postures — Critical Deals</div>{po_tbl}</div>
   <div style="{cell}"><div style="{h3}">Buyer Engagements by Process</div>{e_tbl}</div>

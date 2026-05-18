@@ -223,7 +223,7 @@ def render_antitrust_screener(params: dict = None) -> str:
     body = page_title + as_explainer + f"""
 <div class="ck-page-wrap">
   {form}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {score_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Screening Verdict</div>
     <div style="color:{score_c};font-weight:700;font-size:14px">Risk {r.overall_risk_score}/100 · Second Request probability {r.second_request_probability * 100:.0f}% · Recommended timeline {r.recommended_timeline_months} months</div>

@@ -206,7 +206,7 @@ def render_tax_credits(params: dict = None) -> str:
     <h1 class="ck-page-h1">Tax Credits / Incentives Tracker</h1>
     <p class="ck-page-sub">${r.total_credits_gross_m:.1f}M gross federal credits · ${r.total_state_incentives_annual_m:.1f}M annual state incentives · ${r.total_annual_benefit_m:.1f}M total annual benefit · {r.total_deals} deals claiming · ${pipeline_annual:.1f}M probability-weighted pipeline — {r.corpus_deal_count:,} corpus deals</p>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Federal + State Tax Credits (Claimed)</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">State-Level Incentive Programs</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Opportunity Zone Investments</div>{q_tbl}</div>

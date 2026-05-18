@@ -256,7 +256,7 @@ def render_payer_concentration(params: dict = None) -> str:
     <p class="ck-page-sub">CR1/CR3/CR5 · HHI · renewal schedule · denials · NSA OON exposure — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   {form}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {concentration_paired}
   <div style="{cell}"><div style="{h3}">Payer Roster — Share, YoY, Contract Expiry, Denials, Renewal Risk</div>{payers_tbl}</div>
   <div style="{cell}"><div style="{h3}">Contract Renewal Calendar — Priority &amp; Exposure</div>{renewals_tbl}</div>

@@ -254,7 +254,7 @@ def render_ma_contracts(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   {form}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Revenue vs Margin by MA Plan</div>{svg}</div>
   <div style="{cell}"><div style="{h3}">MA Plan Portfolio — Benchmark, Bid, Star, MLR, Margin</div>{plans_tbl}</div>
   <div style="{cell}"><div style="{h3}">RAF Optimization — HCC Capture Opportunities</div>{raf_tbl}</div>

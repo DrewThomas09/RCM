@@ -163,7 +163,7 @@ def render_direct_employer(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
+  <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Employer Contract Portfolio</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Centers of Excellence (COE) — Bundled Procedures</div>{coe_tbl}</div>
   <div style="{cell}"><div style="{h3}">On-Site Clinic Operations</div>{os_tbl}</div>
