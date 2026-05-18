@@ -94,6 +94,25 @@ The deeper principle behind the BENCHMARKS T1/T2/T3 artifact (section 4): hardco
 
 **Always verify branch state with `git log --oneline` immediately after a rebase. Never push until the log matches expectations.** The reflog saved B.1's work; future rebases under time pressure might not. Applies double for interactive rebases that drop commits — the conflict resolution step is easy to misread, and a wrong "accept theirs" can silently insert or drop content vs the intended end state.
 
+### 2.15 Audit hypotheses are starting points, not specs — verify by grep, not assumption
+
+Audit documents identifying bugs in the codebase will state "suspected location: .X class" or "affects pages Y and Z." Treat these as starting hypotheses for investigation, never as specifications for the fix. The UI audit batch (PRs #147–157, 2026-05-18) hit this pattern 14 times in a single session:
+
+- B1: audit said target was `.mn` class; actual was `.ck-kpi-value`. `.mn` was the inline mono-numeric formatter, separate concern.
+- B1: audit said font-size was "~3rem+"; actual was 28px (1.75rem). Audit-recommended range (1.5-2rem) overlapped the current value, would have made it narrower if applied literally.
+- B2: audit said "subset of pages"; actual was every page using `ck_kpi_block` (1,837 call sites across 288 files) at 3 escape seams not 1.
+- B4: audit said "raise max-width to min(1600px, 95vw)"; actual current was 1720px — audit's "fix" would have NARROWED content by 120px, opposite of stated intent.
+- B6: audit said 2 pages; actual was 22 instances across 16 files (Bloomberg-era leftover that never migrated).
+- B9: audit said "right-aligned title"; actual was flex `space-between` (eyebrow-left + title-right pattern), required structural decision (vertical stack vs flex-start) not just text-align flip.
+- B11: agent named wrong file (`library_page.py` vs `market_data_page.py` from user screenshot); both had the same bug, both needed fixing.
+- D1: audit suggested CSS variable change; actual required mechanical hex replacement across 23 files / 76 occurrences (hardcoded hexes bypassing the editorial palette migration).
+- D2: audit said "accent" variable; actual required disambiguating four teal tokens (`--sc-teal`, `--sc-teal-2`, `--sc-teal-ink`, `--sc-data-1`) before deciding which one to flip.
+- Plus 5 more catches across B3, B10, the B1 force-push race, the B4 audit-direction-flip, and the methodology-doc internal-version-string drift.
+
+**Why:** Audit-claimed scope and locations are educated guesses by an author looking at rendered output. They get the symptom right and the cause approximately right, but the specific class names, file counts, and CSS-token names are often eyeball-derived and frequently wrong by 5x–10x.
+
+**How to apply:** Every audit-driven PR starts with grep verifying the suspected class/file/variable actually exists where the audit said. If it doesn't, surface the divergence before writing the fix. If the audit said "2 pages" and grep finds 16, surface the scope correction in the PR description as a discipline-gate catch — don't quietly fix the wider scope without naming the audit's underspecification. The accumulated catch count over a session is a useful proxy for how much the audit can be trusted on future items.
+
 ---
 
 ## 3. Chip taxonomy — current state
