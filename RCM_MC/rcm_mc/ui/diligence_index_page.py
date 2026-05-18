@@ -22,8 +22,7 @@ from typing import List, Mapping
 
 from ._chartis_kit import (
     chartis_shell, ck_next_section, ck_page_title, ck_panel,
-    ck_section_intro,
-)
+    ck_section_intro, ck_page_explainer)
 
 
 _PILLARS: List[Mapping[str, object]] = [
@@ -194,13 +193,20 @@ def render_diligence_index() -> str:
             ck_panel(pillar_inner)
         )
 
-    title = ck_page_title(
+    title = (
+        ck_page_title(
         "Diligence",
         eyebrow="RCM PLAYBOOK",
         meta=(
             f"{sum(len(p['links']) for p in _PILLARS)} surfaces · "
             "grouped into four pillars"
         ),
+    )
+        + ck_page_explainer(
+            'The diligence workspace at a glance.',
+            "Catalog of every diligence surface the platform offers, grouped into four pillars: Profile/Health, Thesis/Playbook, Audit/Stress, and Exit/Synthesis. Use this as the partner-facing entry point when you don't yet know which specific tool you need.",
+            source='Curated catalog of /diligence/* routes.',
+        )
     )
     intro = ck_section_intro(
         eyebrow="RCM DILIGENCE PLAYBOOK",

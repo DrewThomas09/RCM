@@ -27,8 +27,7 @@ from ..diligence.deal_mc.charts import (
 )
 from ._chartis_kit import (
     P, chartis_shell, ck_confidence_band, ck_kpi_block,
-    ck_next_section, ck_page_title, ck_panel, ck_section_intro,
-)
+    ck_next_section, ck_page_title, ck_panel, ck_section_intro, ck_page_explainer)
 from .power_ui import deal_context_bar, provenance
 
 
@@ -625,10 +624,17 @@ def render_deal_mc_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
     )
 
     body = (
-        ck_page_title(
+        (
+            ck_page_title(
             "Deal Monte Carlo",
             eyebrow="RCM DILIGENCE",
             meta=f"Scenario: {scenario_name} · 5-year forward distribution",
+        )
+            + ck_page_explainer(
+                '5-year forward EBITDA distribution.',
+                "Runs N Monte Carlo simulations on the deal's RCM initiatives + base-business assumptions to produce the 5-year EBITDA cone. Used to size the spread between base, downside, and upside cases for IC and LP reporting.",
+                source='Per-deal simulator (rcm_mc.simulator) — fully live.',
+            )
         )
         + deal_context_bar(qs, active_surface="deal_mc")
         + _hero_stats(result, scenario_name)

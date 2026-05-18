@@ -21,8 +21,7 @@ from ..diligence.denial_prediction import (
 from ..diligence.denial_prediction.model import CalibrationBucket
 from ._chartis_kit import (
     P, chartis_shell, ck_action_button, ck_kpi_block, ck_next_section,
-    ck_page_title, ck_panel, ck_section_intro,
-)
+    ck_page_title, ck_panel, ck_section_intro, ck_page_explainer)
 from .power_ui import provenance, sortable_table
 
 _EXPLAINER_CSS = """
@@ -37,9 +36,16 @@ def _landing() -> str:
         f'<option value="{html.escape(n)}">{html.escape(l)}</option>'
         for n, l in AVAILABLE_FIXTURES
     )
-    title_block = ck_page_title(
+    title_block = (
+        ck_page_title(
         "Predictive Denial Model", eyebrow="PREDICTIVE DENIAL MODEL",
         meta=f"{len(AVAILABLE_FIXTURES)} fixtures · Naive Bayes · claim-level",
+    )
+        + ck_page_explainer(
+            'Claim-level denial prediction from CCD data.',
+            "Predicts the per-claim probability of a payer denial using the platform's ML denial model on the deal's CCD (consolidated clinical document) feed. Used to size the recoverable revenue from a denial-management initiative before underwriting it into the EBITDA bridge.",
+            source='CCD feed (per-deal ingest) + denial ML model (rcm_mc.ml.denial_model — live).',
+        )
     )
     explainer_html = (
         '<p class="ck-dp-explainer">'

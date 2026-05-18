@@ -24,8 +24,7 @@ from ..diligence.counterfactual import (
 from ..diligence._pages import AVAILABLE_FIXTURES, _resolve_dataset
 from ._chartis_kit import (
     P, chartis_shell, ck_action_button, ck_fmt_num, ck_kpi_block,
-    ck_next_section, ck_page_title, ck_provenance_tooltip,
-)
+    ck_next_section, ck_page_title, ck_provenance_tooltip, ck_page_explainer)
 from .power_ui import diff_badge
 
 _EXPLAINER_CSS = """
@@ -82,9 +81,16 @@ def _landing_compare() -> str:
         + '</div>'
     )
 
-    title_block = ck_page_title(
+    title_block = (
+        ck_page_title(
         "Compare Deals", eyebrow="DEAL COMPARE",
         meta=f"{len(AVAILABLE_FIXTURES)} fixtures · KPIs / QoR / CF / bridge",
+    )
+        + ck_page_explainer(
+            'Side-by-side deal comparison.',
+            'Lines up two or more deals on the same metric grid — EBITDA bridge, RCM profile, payer mix, capital stack, exit assumptions — so the partner can read across rows. Used for IC bake-offs and "which one do we lead with" decisions when multiple opportunities land the same week.',
+            source='Deal packets (live).',
+        )
     )
     explainer_html = (
         '<p class="ck-cp-explainer">'

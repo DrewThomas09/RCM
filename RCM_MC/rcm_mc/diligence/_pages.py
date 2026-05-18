@@ -30,7 +30,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from ..ui._chartis_kit import chartis_shell, ck_page_title
+from ..ui._chartis_kit import chartis_shell, ck_page_title, ck_page_explainer
 from ..ui.brand import PALETTE
 
 
@@ -55,18 +55,40 @@ AVAILABLE_FIXTURES: List[Tuple[str, str]] = [
 
 # ── Shared fragments ────────────────────────────────────────────────
 
-def _hero(title: str, sub: str, *, eyebrow: str = "RCM DILIGENCE") -> str:
+def _hero(
+    title: str, sub: str, *,
+    eyebrow: str = "RCM DILIGENCE",
+    explainer_headline: str = "",
+    explainer_body: str = "",
+    explainer_source: str = "",
+) -> str:
     """Editorial hero for diligence pages. Replaces the old hand-
     rolled inline-styled block with ck_page_title + a serif lede so
     every diligence surface reads like the rest of v5. Emits the
     shared diligence CSS the first time it's called per render —
     multiple calls in one render are harmless duplicates the browser
     coalesces, but most pages only use one hero.
+
+    Pass ``explainer_headline`` + ``explainer_body`` (+ optional
+    ``explainer_source``) to emit a Portfolio-Heatmap-style explainer
+    paragraph below the lede. Tells the partner what data the page
+    uses, what it's telling them, and whether the data is live or
+    illustrative — the four things the diligence-pages-explainers
+    rollout calls for.
     """
+    explainer = (
+        ck_page_explainer(
+            explainer_headline,
+            explainer_body,
+            source=explainer_source or None,
+        )
+        if explainer_headline and explainer_body else ""
+    )
     return (
         _DILIGENCE_CSS
         + ck_page_title(title, eyebrow=eyebrow)
         + f'<p class="ck-diligence-lede">{html.escape(sub)}</p>'
+        + explainer
     )
 
 
@@ -231,6 +253,21 @@ def render_ingest_page(dataset: str = "") -> str:
             "Raw 837 / 835 EDI, Epic / Cerner / Athena exports, and "
             "messy Excel funnelled into a single versioned Canonical "
             "Claims Dataset (CCD). Every transformation is row-logged.",
+            explainer_headline=(
+                "Ingest the source data, see every transformation."
+            ),
+            explainer_body=(
+                "Loads the deal's CCD (consolidated clinical "
+                "document) or claims fixture, then renders the full "
+                "transformation log — field mappings, normalizations, "
+                "dropped rows, derived columns. Used to audit data "
+                "quality before any analytic surface trusts the "
+                "ingested table."
+            ),
+            explainer_source=(
+                "Fixture upload or CCD feed (per-deal); current "
+                "fixtures are synthetic for prototype."
+            ),
         ),
         _fixture_selector("/diligence/ingest", dataset),
     ]
@@ -652,6 +689,20 @@ def render_root_cause_page(dataset: str = "") -> str:
             "Pareto drivers for every off-benchmark KPI. ZBA autopsy "
             "surfaces recoverable write-offs. Every finding is one "
             "click from the underlying rows in the CCD.",
+            explainer_headline=(
+                "Where the denial dollars actually come from."
+            ),
+            explainer_body=(
+                "Decomposes the deal's denial-rate gap vs the segment "
+                "benchmark into the underlying causes: registration "
+                "errors, authorization gaps, coding, payer-policy "
+                "denials, timely-filing. Used to size the recoverable "
+                "denial bucket per workstream so the 100-day plan "
+                "targets the right initiatives."
+            ),
+            explainer_source=(
+                "Per-deal denial ledger (live once a CCD is loaded)."
+            ),
         ),
         _fixture_selector("/diligence/root-cause", dataset),
     ]
@@ -787,6 +838,21 @@ def render_value_page(dataset: str = "") -> str:
             "existing two-source simulator. Contract re-pricer "
             "supplies deal-specific payer leverage; the CMS advisory "
             "overlay sets market posture.",
+            explainer_headline=(
+                "What the RCM levers are worth on this deal."
+            ),
+            explainer_body=(
+                "Maps each of the 47 RCM initiative levers to its "
+                "expected EBITDA contribution on the focused deal, "
+                "given the deal's size, payer mix, and starting "
+                "denial profile. Used to prioritize the 100-day plan "
+                "and to underwrite the value-bridge that goes into "
+                "the IC memo."
+            ),
+            explainer_source=(
+                "RCM initiative library (curated in code) + per-deal "
+                "sizing model that reads from the CCD."
+            ),
         ),
         _fixture_selector("/diligence/value", dataset),
     ]

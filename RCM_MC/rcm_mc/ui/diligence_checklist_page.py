@@ -29,8 +29,7 @@ from ..diligence.checklist.items import build_checklist
 from ._chartis_kit import (
     P, chartis_shell, ck_help_tooltip, ck_kpi_block, ck_next_section,
     ck_page_title, ck_panel, ck_section_header, ck_section_intro,
-    ck_sticky_toc,
-)
+    ck_sticky_toc, ck_page_explainer)
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
 )
@@ -592,13 +591,20 @@ def render_diligence_checklist_page(
         if getattr(getattr(s, "status", None), "value", None) == "done"
     )
     _pct = (_done / len(_items) * 100.0) if _items else 0.0
-    title = ck_page_title(
+    title = (
+        ck_page_title(
         "Diligence Checklist",
         eyebrow="RCM DILIGENCE",
         meta=(
             f"Orchestration layer · {_pct:.0f}% complete · "
             "auto-tracked from live analytics"
         ),
+    )
+        + ck_page_explainer(
+            'Diligence orchestration + open-questions tracker.',
+            "Tracks every diligence workstream (QoE, IT, HR, regulatory, commercial) by owner and deadline, plus the rolling list of open questions the partner has flagged. Used as the partner's daily standup view during the exclusivity window.",
+            source='Per-deal checklist + workflow state (live).',
+        )
     )
     # Sticky right-rail TOC — the checklist has three vertical
     # sections (the hero + open questions, the phase-grouped item

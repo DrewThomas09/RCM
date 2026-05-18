@@ -21,8 +21,7 @@ from ..diligence.physician_eu import (
 from ..diligence.physician_comp.comp_ingester import Provider
 from ._chartis_kit import (
     P, SafeHtml, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
-    ck_panel, ck_section_intro, ck_signal_badge,
-)
+    ck_panel, ck_section_intro, ck_signal_badge, ck_page_explainer)
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
 )
@@ -503,10 +502,17 @@ def render_physician_eu_page(
         title="Cross-reference",
     )
 
-    title = ck_page_title(
+    title = (
+        ck_page_title(
         "Provider Economics",
         eyebrow="RCM DILIGENCE",
         meta=f"Target: {target_name} · per-provider P&L",
+    )
+        + ck_page_explainer(
+            'Per-provider P&L and roster optimization.',
+            'Builds a single-physician economic unit (RVU production × comp × overhead allocation) for every provider in the target, then surfaces the bottom-quartile by contribution margin and the flight-risk-weighted attrition exposure. Used to size the medical-staff productivity opportunity and the retention risk.',
+            source='Per-deal provider roster + RVU production data (synthetic for prototype; wire to actual practice-management system to go live).',
+        )
     )
     # Demo-data disclosure. The page renders against a fixed
     # 8-provider demonstration roster (_demo_roster above) on every

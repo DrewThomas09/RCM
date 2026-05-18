@@ -36,8 +36,7 @@ from ..diligence._pages import AVAILABLE_FIXTURES
 from ._chartis_kit import (
     P, chartis_shell, ck_eyebrow, ck_help_tooltip, ck_next_section,
     ck_page_title, ck_panel, ck_section_header, ck_section_intro,
-    ck_signal_badge, ck_sticky_toc,
-)
+    ck_signal_badge, ck_sticky_toc, ck_page_explainer)
 from .power_ui import bookmark_hint
 
 
@@ -986,7 +985,14 @@ border:1px solid var(--paper-pure);cursor:pointer;font-weight:600;}}
 
 
 def _landing_slugs() -> str:
-    """Editorial deal-profile landing — ck_page_title (durable H1) +
+    """Editorial deal-profile landing — (
+        ck_page_title (durable H1)
+        + ck_page_explainer(
+            'One source of truth per deal.',
+            "Unified profile that pulls the deal's identity (name, sector, target metrics), the live analysis packet, the deadline + owner workflow, and every diligence surface's current state into one canonical page. Every other diligence page reads from this profile.",
+            source='Deals table + analysis packet + workflow tables (live).',
+        )
+    ) +
     non-dismissible italic explainer, then a slug-entry card and
     (JS-populated) recent-deals grid.
 
