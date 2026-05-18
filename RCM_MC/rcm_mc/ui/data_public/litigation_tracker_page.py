@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _stage_color(s: str) -> str:
@@ -200,12 +200,15 @@ def render_litigation_tracker(params: dict = None) -> str:
     ca_total = sum(c.alleged_damages_m for c in r.class_actions)
     reg_total = sum(r2.estimated_fine_m for r2 in r.regulatory)
 
+    page_title = ck_page_title(
+        "Litigation Watchlist Tracker",
+        eyebrow="LITIGATION TRACKER",
+        meta=f"{r.total_matters} open matters · ${r.total_alleged_m:.1f}M alleged → ${r.total_exposure_m:.1f}M net exposure (after ${r.insurance_coverage_m:.1f}M insurance + SPA indemnity) · {high_exposure} matters at $5M+ individual exposure · {r.active_regulatory_actions} regulatory actions · {r.active_class_actions} class actions",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Litigation Watchlist Tracker</h1>
-    <p class="ck-page-sub">{r.total_matters} open matters · ${r.total_alleged_m:.1f}M alleged · ${r.total_exposure_m:.1f}M estimated exposure net of insurance/SPA · {r.active_regulatory_actions} regulatory actions · {r.active_class_actions} class actions — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Open Litigation Matters</div>{m_tbl}</div>
   <div style="{cell}"><div style="{h3}">Regulatory / Agency Actions</div>{rg_tbl}</div>
