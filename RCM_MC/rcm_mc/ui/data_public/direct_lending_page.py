@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _facilities_table(items) -> str:
@@ -127,14 +127,17 @@ def render_direct_lending(params: dict = None) -> str:
     border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     pos = P["positive"]; acc = P["accent"]
 
+    latest_hc_default_pct = r.defaults[-1].healthcare_default_rate_pct if r.defaults else 0
+    watch_count = sum(1 for m in r.marks if m.watch_list_flag)
+
     kpi_strip = (
         ck_kpi_block("Facilities", str(r.total_facilities), "", "") +
         ck_kpi_block("Total Outstanding", f"${r.total_outstanding_mm:,.0f}M", "", "") +
         ck_kpi_block("Blended Rate", f"{r.blended_all_in_rate_pct:.2f}%", "", "") +
         ck_kpi_block("Weighted Leverage", f"{r.weighted_leverage:.2f}x", "", "") +
         ck_kpi_block("Cov-Lite %", f"{r.cov_lite_pct * 100:.1f}%", "", "") +
-        ck_kpi_block("Latest HC Default", f"{r.defaults[-1].healthcare_default_rate_pct * 100:.2f}%", "", "") +
-        ck_kpi_block("Watch-List Sectors", str(sum(1 for m in r.marks if m.watch_list_flag)), "", "") +
+        ck_kpi_block("Latest HC Default", f"{latest_hc_default_pct * 100:.2f}%", "", "") +
+        ck_kpi_block("Watch-List Sectors", str(watch_count), "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
@@ -147,13 +150,15 @@ def render_direct_lending(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
-    watch_count = sum(1 for m in r.marks if m.watch_list_flag)
+    page_title = ck_page_title(
+        "Private Credit / Direct Lending Tracker",
+        eyebrow="DIRECT LENDING",
+        meta=f"${r.total_outstanding_mm:,.0f}M outstanding across {r.total_facilities} facilities · {r.blended_all_in_rate_pct:.2f}% blended all-in at {r.weighted_leverage:.2f}x leverage · {r.cov_lite_pct * 100:.1f}% cov-lite · {latest_hc_default_pct * 100:.2f}% latest HC default with {watch_count} watch-list sectors",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Private Credit / Direct Lending Tracker</h1>
-    <p class="ck-page-sub">Lender facilities · market spreads · sponsor-lender matrix · default trends · portfolio marks — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Active Facility Portfolio</div>{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">Market-Rate Spread Matrix by Deal Size</div>{rt_tbl}</div>
