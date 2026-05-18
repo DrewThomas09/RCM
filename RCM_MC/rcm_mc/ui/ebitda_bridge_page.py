@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import (
+    SafeHtml,
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
     ck_next_section, ck_page_title, ck_panel, ck_provenance_tooltip,
     ck_section_header, ck_signal_badge,
@@ -595,7 +596,9 @@ def render_ebitda_bridge(
     # Cycle 52 — port to ck_kpi_block + provenance.
     uplift_value = ck_provenance_tooltip(
         "RCM EBITDA uplift",
-        f'<span style="color:{ebitda_color};">+{_fm(bridge["total_ebitda_impact"])}</span>',
+        SafeHtml(
+            f'<span style="color:{ebitda_color};">+{_fm(bridge["total_ebitda_impact"])}</span>'
+        ),
         explainer=(
             f"Sum of EBITDA deltas across the 7-lever bridge "
             f"(denials, AR, write-offs, RCM operations, etc.). "
