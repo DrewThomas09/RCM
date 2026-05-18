@@ -242,7 +242,7 @@ def _integration_panel() -> str:
 
 
 def render_cms_sources() -> str:
-    from rcm_mc.ui._chartis_kit import chartis_shell, ck_kpi_block, ck_section_header
+    from rcm_mc.ui._chartis_kit import chartis_shell, ck_kpi_block, ck_page_title, ck_section_header
 
     active_count = sum(1 for s in _CMS_SOURCES if s["status"] == "active")
     kpis = (
@@ -254,8 +254,27 @@ def render_cms_sources() -> str:
         + '</div>'
     )
 
+    # B11 — pure addition. Pre-fix this page had NO h1 at all
+    # (no inline .ck-page-h1, no ck_page_title). The three
+    # ck_section_header calls below (DATA SOURCES / API CLIENT /
+    # ANALYTICS INTEGRATION) are legitimate within-page section
+    # dividers, not de-facto titles — they stay. Adding ck_page_title
+    # at top gives partners landing on /cms-sources an editorial
+    # anchor identifying this as the CMS Open Data registry page
+    # (vs e.g. the CMS APM tracker at /cms-apm-tracker, which is
+    # a sibling page in the same /cms-* namespace).
+    page_title = ck_page_title(
+        "CMS Open Data Sources",
+        eyebrow="CMS DATA SOURCES",
+        meta=(
+            f"{len(_CMS_SOURCES)} datasets registered · "
+            f"{active_count} live API endpoints · "
+            f"stdlib-only client"
+        ),
+    )
     body = (
-        kpis
+        page_title
+        + kpis
         + ck_section_header("DATA SOURCES", "CMS Open Data endpoints powering corpus analytics")
         + _source_table(_CMS_SOURCES)
         + ck_section_header("API CLIENT", "rcm_mc/data_public/cms_api_client.py")
