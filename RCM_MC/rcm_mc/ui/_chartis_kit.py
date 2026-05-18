@@ -3397,8 +3397,13 @@ _CSS_INLINE_FALLBACK = """
     transform: translateX(4px);
   }
   .ck-table { width:100%; border-collapse:collapse; font-size:13px; }
-  .ck-table thead th { background:var(--sc-bone); color:var(--sc-text-dim); font-family:var(--sc-sans); font-weight:600; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; padding:8px 12px; border-bottom:1px solid var(--sc-rule); text-align:left; }
-  .ck-table tbody td { padding:8px 12px; border-bottom:1px solid var(--sc-rule); }
+  /* B5 — tbody td vertical padding bumped 8px → 10px and horizontal
+   * 12px → 14px for editorial breathing room. thead th padding kept
+   * in lockstep (header still aligns visually with body). Dense
+   * variant unchanged — pages opting into ck-dense explicitly want
+   * the tighter packing. */
+  .ck-table thead th { background:var(--sc-bone); color:var(--sc-text-dim); font-family:var(--sc-sans); font-weight:600; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; padding:10px 14px; border-bottom:1px solid var(--sc-rule); text-align:left; }
+  .ck-table tbody td { padding:10px 14px; border-bottom:1px solid var(--sc-rule); }
   .ck-table.ck-dense tbody td { padding:5px 10px; font-size:12px; }
   .ck-table .sc-num { font-family:var(--sc-mono); font-variant-numeric:tabular-nums; }
   .ck-table .align-right { text-align:right; }
