@@ -194,36 +194,24 @@ _SUB_NAV = {
         {"label": "Payer Intelligence",  "href": "/payer-intelligence"},
         {"label": "LP Update",           "href": "/lp-update"},
     ],
-    # Diligence — RCM analyst playbook surfaces. The 24 pages here
-    # span the four-phase diligence flow (intake → analysis → risk
-    # → output). Heavy daily-driver workspace; partner can dip in
-    # ad-hoc but the analyst lives here for a 3-week sprint.
+    # Diligence — RCM analyst playbook surfaces. The full diligence
+    # tab carries 25 pages spanning the four-phase flow (intake →
+    # analysis → risk → output); rendering all of them in the sub-nav
+    # strip created an unreadable wall of links that wrapped or
+    # overflowed in the topbar. Trimmed to the five highest-traffic
+    # workbench surfaces (covering identity → ingest → baseline →
+    # drill-down → deliverable) plus an "All Diligence →" link that
+    # routes to /diligence (the existing diligence_index_page which
+    # already grids every tab). The Cmd-K palette (_DEFAULT_PALETTE_
+    # MODULES) and the breadcrumb resolver (_SUB_SECTION_MAP) still
+    # cover the full surface; sub-nav is only the daily-driver shortcut.
     "diligence": [
-        {"label": "Deal Profile",        "href": "/diligence/deal"},
-        {"label": "Thesis Pipeline",     "href": "/diligence/thesis-pipeline"},
-        {"label": "Checklist",           "href": "/diligence/checklist"},
-        {"label": "Ingestion",           "href": "/diligence/ingest"},
-        {"label": "Benchmarks",          "href": "/diligence/benchmarks"},
-        {"label": "HCRIS X-Ray",         "href": "/diligence/hcris-xray"},
-        {"label": "Root Cause",          "href": "/diligence/root-cause"},
-        {"label": "Value Creation",      "href": "/diligence/value"},
-        {"label": "Risk Workbench",      "href": "/diligence/risk-workbench?demo=steward"},
-        {"label": "Counterfactual",      "href": "/diligence/counterfactual"},
-        {"label": "Compare",             "href": "/diligence/compare"},
-        {"label": "Bankruptcy Scan",     "href": "/screening/bankruptcy-survivor"},
-        {"label": "QoE Memo",            "href": "/diligence/qoe-memo"},
-        {"label": "Denial Predict",      "href": "/diligence/denial-prediction"},
-        {"label": "Deal Autopsy",        "href": "/diligence/deal-autopsy"},
-        {"label": "Physician Attrition", "href": "/diligence/physician-attrition"},
-        {"label": "Provider Economics",  "href": "/diligence/physician-eu"},
-        {"label": "Management",          "href": "/diligence/management"},
-        {"label": "Deal MC",             "href": "/diligence/deal-mc"},
-        {"label": "Exit Timing",         "href": "/diligence/exit-timing"},
-        {"label": "Covenant Stress",     "href": "/diligence/covenant-stress"},
-        {"label": "Bridge Audit",        "href": "/diligence/bridge-audit"},
-        {"label": "Payer Stress",        "href": "/diligence/payer-stress"},
-        {"label": "IC Packet",           "href": "/diligence/ic-packet"},
-        {"label": "Engagements",         "href": "/engagements"},
+        {"label": "Deal Profile",       "href": "/diligence/deal"},
+        {"label": "Ingestion",          "href": "/diligence/ingest"},
+        {"label": "Benchmarks",         "href": "/diligence/benchmarks"},
+        {"label": "HCRIS X-Ray",        "href": "/diligence/hcris-xray"},
+        {"label": "QoE Memo",           "href": "/diligence/qoe-memo"},
+        {"label": "All Diligence →",    "href": "/diligence"},
     ],
 }
 
