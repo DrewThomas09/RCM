@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title
 
 
 def _sites_table(items) -> str:
@@ -190,12 +190,15 @@ def render_denovo_expansion(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    page_title = ck_page_title(
+        "De Novo Expansion Tracker",
+        eyebrow="DENOVO EXPANSION",
+        meta=f"{r.total_sites_planned} sites planned ({r.total_active_sites} active) across {len(r.markets)} markets · ${r.total_investment_committed_mm:,.0f}M investment · ${r.expected_stabilized_ebitda_mm:,.0f}M stabilized EBITDA target · {r.portfolio_payback_years:.2f}-year portfolio payback",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">De Novo Expansion Tracker</h1>
-    <p class="ck-page-sub">Greenfield buildout economics · site-type unit economics · market expansion queue · ramp curves · lease vs buy · organic/inorganic blend — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   {ramp_paired}
   <div style="{cell}"><div style="{h3}">Site-Type Unit Economics</div>{st_tbl}</div>
