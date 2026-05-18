@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _vendors_table(items) -> str:
@@ -130,12 +130,14 @@ def render_diligence_vendors(params: dict = None) -> str:
     border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     pos = P["positive"]; acc = P["accent"]
 
+    tier_1_count = sum(1 for v in r.vendors if v.tier == "Tier 1")
+
     kpi_strip = (
         ck_kpi_block("Vendors on Panel", str(r.total_vendors), "", "") +
         ck_kpi_block("Deals Covered LTM", str(r.total_deals_covered), "", "") +
         ck_kpi_block("Total Spend LTM", f"${r.total_spend_ltm_mm:,.1f}M", "", "") +
         ck_kpi_block("Avg NPS", str(r.avg_nps), "", "") +
-        ck_kpi_block("Tier 1 Vendors", str(sum(1 for v in r.vendors if v.tier == "Tier 1")), "", "") +
+        ck_kpi_block("Tier 1 Vendors", str(tier_1_count), "", "") +
         ck_kpi_block("Categories", str(len(r.categories)), "", "") +
         ck_kpi_block("Pipeline Vendors", str(len(r.pipeline)), "", "") +
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
@@ -150,12 +152,15 @@ def render_diligence_vendors(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    page_title = ck_page_title(
+        "Diligence Vendor Directory",
+        eyebrow="DILIGENCE VENDORS",
+        meta=f"{r.total_vendors} vendors across {len(r.categories)} categories ({tier_1_count} Tier 1) · {r.total_deals_covered} deal engagements LTM · ${r.total_spend_ltm_mm:,.1f}M spend at +{r.avg_nps} avg NPS · {len(r.pipeline)} new vendors in pipeline",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Diligence Vendor Directory</h1>
-    <p class="ck-page-sub">Panel of {r.total_vendors} diligence vendors · {r.total_deals_covered} deal engagements LTM · ${r.total_spend_ltm_mm:,.1f}M spend — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Active Vendor Panel</div>{v_tbl}</div>
   <div style="{cell}"><div style="{h3}">Category Spend Analysis</div>{c_tbl}</div>
