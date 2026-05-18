@@ -3448,7 +3448,16 @@ _CSS_INLINE_FALLBACK = """
   .ck-pred-chip-na    { color:var(--sc-text-dim); background:transparent; border-color:var(--sc-rule); }
   .ck-pred-chip-warn  { color:var(--sc-warning);  background:rgba(184,115,42,0.06); border-color:var(--sc-warning); }
   .ck-pred-chip-error { color:var(--sc-critical); background:rgba(181,50,30,0.06);  border-color:var(--sc-critical); }
-  .ck-section-header { display:flex; align-items:flex-end; justify-content:space-between; gap:var(--sc-s-5); margin:var(--sc-s-8) 0 var(--sc-s-5); }
+  /* B9 — pre-fix used flex-row + justify-content:space-between which
+   * pushed the eyebrow to the left edge and the h2 title to the
+   * right edge of the section. User direction: left-align titles
+   * globally. Switched to flex-direction:column (vertical stack —
+   * eyebrow on top, title below, both left-aligned) so section
+   * headers match the editorial pattern ck_page_title already uses.
+   * Cascades to 131 call sites across 68 files including
+   * gold-standard pages — editorial register change, not layout
+   * break: title gets its own row, eyebrow sits above it. */
+  .ck-section-header { display:flex; flex-direction:column; align-items:flex-start; gap:6px; margin:var(--sc-s-8) 0 var(--sc-s-5); }
   .ck-section-code { font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); letter-spacing:0.1em; }
   .ck-section-count { display:inline-block; font-family:var(--sc-mono); font-size:13px; font-weight:500; color:var(--sc-text-faint); margin-left:12px; vertical-align:baseline; letter-spacing:0.04em; }
 
