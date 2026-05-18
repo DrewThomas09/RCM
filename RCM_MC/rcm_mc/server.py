@@ -6895,6 +6895,16 @@ class RCMHandler(BaseHTTPRequestHandler):
         )
         # Phase 4: k-fold cross-validation (computes mean OOS R²)
         cv = (qs.get("cv") or ["0"])[0] in ("1", "true", "on")
+        # Phase 5: unsupervised cluster explorer (PCA + k-means on
+        # structural features only). cluster_k controls k; clamped
+        # to [2, 12] to keep the panel readable and the fit stable.
+        cluster = (qs.get("cluster") or ["0"])[0] in ("1", "true", "on")
+        try:
+            cluster_k = max(2, min(12, int(
+                (qs.get("cluster_k") or ["6"])[0]
+            )))
+        except (TypeError, ValueError):
+            cluster_k = 6
         hcris_df = _get_latest_per_ccn()
         store = PortfolioStore(self.config.db_path)
         try:
@@ -6909,6 +6919,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             segmented=segmented,
             drop_leakage=drop_leakage,
             cv=cv,
+            cluster=cluster,
+            cluster_k=cluster_k,
         ))
 
     def _route_hospital_regression(self, ccn: str) -> None:

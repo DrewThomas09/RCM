@@ -30,6 +30,7 @@ from ..finance.influence import (
     classify_influence_point as _classify_influence,
     compute_influence as _compute_influence,
 )
+from ..finance.clustering import cluster_hospitals as _cluster_hospitals
 
 
 _AVAILABLE_METRICS = [
@@ -426,6 +427,8 @@ def render_regression_page(
     segmented: bool = False,
     drop_leakage: bool = False,
     cv: bool = False,
+    cluster: bool = False,
+    cluster_k: int = 6,
 ) -> str:
     """Render the interactive regression analysis page.
 
@@ -481,6 +484,8 @@ def render_regression_page(
             href_params.append("drop_leakage=1")
         if cv:
             href_params.append("cv=1")
+        if cluster:
+            href_params.append("cluster=1")
         href = "/portfolio/regression?" + "&amp;".join(href_params)
         universe_pills += (
             f'<a href="{href}" class="rg-pill {active}">'
@@ -530,6 +535,11 @@ def render_regression_page(
         '<label class="rg-selector-checkbox">'
         f'<input type="checkbox" name="cv" value="1" '
         f'{"checked" if cv else ""}> Cross-validate (5-fold OOS R²)'
+        '</label>'
+        '<label class="rg-selector-checkbox">'
+        f'<input type="checkbox" name="cluster" value="1" '
+        f'{"checked" if cluster else ""}> Cluster explorer '
+        f'(k-means on structural features)'
         '</label>'
         '</div>'
         '<div class="rg-selector-submit">'
@@ -1110,6 +1120,77 @@ def render_regression_page(
                 title="Cross-Validation (5-fold)",
             )
 
+    # ── Cluster Explorer panel (Phase 5) ──
+    # Unsupervised pass on structural features (log_beds, occupancy,
+    # payer mix, taxonomy flags — deliberately NOT npr) to surface
+    # within-rule-segment regime differences. PCA + k-means + auto-
+    # naming via dominant rule-based segment + flavour modifiers.
+    cluster_section = ""
+    if cluster and "segment_label" in df.columns:
+        try:
+            cluster_res = _cluster_hospitals(
+                df, k=max(2, min(12, cluster_k)),
+                random_state=42,
+            )
+        except (ValueError, Exception) as exc:
+            cluster_section = ck_panel(
+                f'<p class="ck-section-body cad-warn">'
+                f'Cluster explorer failed: '
+                f'{_html.escape(str(exc))}</p>',
+                title="Cluster Explorer",
+            )
+            cluster_res = None
+
+        if cluster_res is not None:
+            # Rows sorted by size descending
+            sorted_profiles = sorted(
+                cluster_res.profiles, key=lambda p: -p.size,
+            )
+            cluster_rows = ""
+            for p in sorted_profiles:
+                cluster_rows += (
+                    '<tr>'
+                    f'<td><strong>{p.cluster_id}</strong></td>'
+                    f'<td><span class="rg-segment-chip">'
+                    f'{_html.escape(p.name)}</span></td>'
+                    f'<td class="num">{p.size:,}</td>'
+                    f'<td>{_html.escape(p.dominant_segment)} '
+                    f'<span class="cad-text2">'
+                    f'({p.segment_share * 100:.0f}%)</span></td>'
+                    f'<td class="num">{p.median_beds:.0f}</td>'
+                    f'<td class="num">{p.median_medicare_pct:.0f}%</td>'
+                    f'<td class="num">{p.median_medicaid_pct:.0f}%</td>'
+                    f'<td class="num">{p.safety_net_share * 100:.0f}%</td>'
+                    f'<td class="num">{p.academic_share * 100:.0f}%</td>'
+                    '</tr>'
+                )
+            pca_var = cluster_res.pca.explained_variance_ratio
+            var_str = " · ".join(
+                f"PC{i + 1}: {v * 100:.0f}%"
+                for i, v in enumerate(pca_var)
+            )
+            cluster_section = ck_panel(
+                '<p class="ck-section-body">'
+                f'<strong>k = {cluster_res.k}</strong> · '
+                f'{cluster_res.n_rows:,} hospitals clustered on '
+                f'{len(cluster_res.features)} structural features '
+                f'({", ".join(cluster_res.features[:3])}…). PCA top-2 '
+                f'explained variance: <strong>{var_str}</strong>. '
+                'Cluster names are auto-generated from the dominant '
+                'rule-based segment + structural flavour. Use this '
+                'to surface within-segment regime differences the '
+                'taxonomy alone misses — e.g. a Large Community '
+                'cluster that\'s actually 90% Medicaid + urban '
+                'belongs in its own regression slope.</p>'
+                '<table class="cad-table"><thead><tr>'
+                '<th>#</th><th>Cluster name</th><th>n</th>'
+                '<th>Dominant segment</th><th>Med beds</th>'
+                '<th>Med MC%</th><th>Med MD%</th>'
+                '<th>Safety-net share</th><th>Academic share</th>'
+                f'</tr></thead><tbody>{cluster_rows}</tbody></table>',
+                title="Cluster Explorer (PCA + k-means)",
+            )
+
     # ── Segmented comparison panel (Phase 2) ──
     # Only built when the partner explicitly toggles "Segmented
     # regression". Calls the Phase-1 run_segmented_regression on the
@@ -1401,7 +1482,7 @@ letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
     )
     body = (
         f'{rg_styles}{intro}{diagnostic_banner}{source_selector}'
-        f'{leakage_section}{cv_section}{segmented_section}'
+        f'{leakage_section}{cv_section}{cluster_section}{segmented_section}'
         f'{kpis}{intercept_section}'
         '<div class="rg-grid">'
         f'<div>{left_col}</div><div>{right_col}</div></div>'
@@ -1425,6 +1506,8 @@ letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
         subtitle_bits.append("+leakage-filtered")
     if cv:
         subtitle_bits.append("+CV")
+    if cluster:
+        subtitle_bits.append(f"+cluster(k={cluster_k})")
     subtitle_bits.append(f"{sig_count} significant")
     return chartis_shell(
         body, "Regression Analysis",
