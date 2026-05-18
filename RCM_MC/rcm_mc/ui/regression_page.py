@@ -31,6 +31,12 @@ from ..finance.influence import (
     compute_influence as _compute_influence,
 )
 from ..finance.clustering import cluster_hospitals as _cluster_hospitals
+from ..finance.buyability import (
+    score_buyability_batch as _score_buyability_batch,
+    summarize_distribution as _buyability_distribution,
+    target_attractiveness as _attractiveness,
+    attractiveness_tier as _attractiveness_tier,
+)
 
 
 _AVAILABLE_METRICS = [
@@ -429,6 +435,7 @@ def render_regression_page(
     cv: bool = False,
     cluster: bool = False,
     cluster_k: int = 6,
+    buyability: bool = False,
 ) -> str:
     """Render the interactive regression analysis page.
 
@@ -486,6 +493,8 @@ def render_regression_page(
             href_params.append("cv=1")
         if cluster:
             href_params.append("cluster=1")
+        if buyability:
+            href_params.append("buyability=1")
         href = "/portfolio/regression?" + "&amp;".join(href_params)
         universe_pills += (
             f'<a href="{href}" class="rg-pill {active}">'
@@ -540,6 +549,11 @@ def render_regression_page(
         f'<input type="checkbox" name="cluster" value="1" '
         f'{"checked" if cluster else ""}> Cluster explorer '
         f'(k-means on structural features)'
+        '</label>'
+        '<label class="rg-selector-checkbox">'
+        f'<input type="checkbox" name="buyability" value="1" '
+        f'{"checked" if buyability else ""}> Buyability lens '
+        f'(P(acquirable) per hospital + attractiveness composite)'
         '</label>'
         '</div>'
         '<div class="rg-selector-submit">'
@@ -850,6 +864,50 @@ def render_regression_page(
     has_influence = bool(
         result["outliers"] and "cooks_d" in result["outliers"][0]
     )
+    # Phase-6: when the buyability lens is on, compute P(acquirable)
+    # for every outlier row by joining back to the taxonomy-tagged
+    # df via CCN, then derive attractiveness from the row's residual
+    # severity as a financial proxy. Surfaces the partner-critical
+    # insight: Stanford has a huge residual but ~2% buyability, so
+    # attractiveness ~0 even with a perfect financial score.
+    has_buyability = bool(
+        buyability and result["outliers"]
+        and "ccn" in result["outliers"][0]
+    )
+    _outlier_buyability: Dict[str, Dict[str, Any]] = {}
+    if has_buyability:
+        try:
+            from ..finance.buyability import score_buyability as _sb
+            ccn_index = (
+                df.set_index("ccn")
+                if "ccn" in df.columns else None
+            )
+            for o in result["outliers"]:
+                ccn = o.get("ccn", "")
+                if ccn_index is not None and ccn in ccn_index.index:
+                    row_data = ccn_index.loc[ccn]
+                    # ccn_index.loc[ccn] returns Series for a unique
+                    # match, DataFrame for duplicates. Take the first
+                    # row in either case.
+                    if isinstance(row_data, pd.DataFrame):
+                        row_dict = row_data.iloc[0].to_dict()
+                    elif isinstance(row_data, pd.Series):
+                        row_dict = row_data.to_dict()
+                    else:
+                        row_dict = dict(row_data)
+                    score = _sb(row_dict)
+                    # Financial proxy: clip |residual σ| / 3 → [0, 1]
+                    fin = min(1.0, abs(o["std_residual"]) / 3.0)
+                    att = _attractiveness(fin, score.score)
+                    _outlier_buyability[ccn] = {
+                        "score": score.score,
+                        "tier": score.tier,
+                        "attractiveness": att,
+                        "attractiveness_tier": _attractiveness_tier(att),
+                    }
+        except Exception:
+            has_buyability = False
+
     outlier_rows = ""
     for o in result["outliers"][:15]:
         resid_val = o["std_residual"]
@@ -886,6 +944,37 @@ def render_regression_page(
                 f'{_html.escape(_CLS_DISPLAY.get(inf_cls, inf_cls))}'
                 '</span></td>'
             )
+        buy_cell = ""
+        att_cell = ""
+        if has_buyability:
+            ccn = o.get("ccn", "")
+            buy_info = _outlier_buyability.get(ccn)
+            if buy_info:
+                buy_pct = buy_info["score"] * 100
+                buy_cls = {
+                    "high":     "cad-pos",
+                    "medium":   "cad-warn",
+                    "low":      "cad-warn",
+                    "very_low": "cad-neg",
+                }.get(buy_info["tier"], "")
+                buy_cell = (
+                    f'<td class="num {buy_cls}">'
+                    f'{buy_pct:.0f}%</td>'
+                )
+                att_pct = buy_info["attractiveness"] * 100
+                att_tier_cls = {
+                    "pursue":      "cad-pos",
+                    "investigate": "cad-warn",
+                    "monitor":     "",
+                    "skip":        "cad-neg",
+                }.get(buy_info["attractiveness_tier"], "")
+                att_cell = (
+                    f'<td class="num {att_tier_cls}">'
+                    f'{att_pct:.0f}%</td>'
+                )
+            else:
+                buy_cell = '<td class="num">—</td>'
+                att_cell = '<td class="num">—</td>'
         outlier_rows += (
             f'<tr>'
             f'<td>{link}</td>'
@@ -896,12 +985,18 @@ def render_regression_page(
             f'<td class="num {resid_cls}"><strong>{resid_val:+.2f}σ</strong></td>'
             f'{cooks_cell}'
             f'{cls_cell}'
+            f'{buy_cell}'
+            f'{att_cell}'
             f'</tr>'
         )
 
     seg_header = '<th>Segment</th>' if has_segments else ''
     influence_headers = (
         '<th>Cook\'s D</th><th>Class</th>' if has_influence else ''
+    )
+    buyability_headers = (
+        '<th>P(buyable)</th><th>Attractiveness</th>'
+        if has_buyability else ''
     )
     # Make the residual-space-vs-display-space contract explicit
     # when log mode is on: residuals (and the σ ranking) are
@@ -948,6 +1043,7 @@ def render_regression_page(
         f'<th>Hospital</th>{seg_header}<th>State</th>'
         '<th>Actual</th><th>Predicted</th><th>Residual</th>'
         f'{influence_headers}'
+        f'{buyability_headers}'
         f'</tr></thead><tbody>{outlier_rows}</tbody></table>',
         title="Hospital Outliers (Residual Analysis)",
     ) if outlier_rows else ""
@@ -1118,6 +1214,104 @@ def render_regression_page(
                 '<th>Train R²</th><th>Test R²</th><th>Test RMSE</th>'
                 f'</tr></thead><tbody>{fold_rows}</tbody></table>',
                 title="Cross-Validation (5-fold)",
+            )
+
+    # ── Buyability Lens panel (Phase 6) ──
+    # Per-hospital P(acquirable) + the target_attractiveness
+    # composite (financial × buyability). Surfaces the partner-
+    # critical insight that high-financial-revenue institutions
+    # aren't necessarily acquirable — Stanford has a $9B NPSR but
+    # buyability ~2%, so attractiveness ~0 even with a perfect
+    # financial score.
+    buyability_section = ""
+    if buyability and "segment_label" in df.columns:
+        try:
+            scored_df = _score_buyability_batch(df)
+            dist = _buyability_distribution(scored_df)
+        except Exception as exc:
+            buyability_section = ck_panel(
+                f'<p class="ck-section-body cad-warn">'
+                f'Buyability scoring failed: '
+                f'{_html.escape(str(exc))}</p>',
+                title="Buyability Lens",
+            )
+            scored_df = None
+            dist = None
+
+        if scored_df is not None and dist is not None:
+            # Segment-mean table — most informative single view
+            seg_rows = ""
+            sorted_segs = sorted(
+                dist.segment_means.items(), key=lambda kv: kv[1],
+            )
+            for seg_name, mean in sorted_segs:
+                share_str = f"{mean * 100:.0f}%"
+                tier_cls = (
+                    "cad-pos" if mean >= 0.55
+                    else "cad-warn" if mean >= 0.30
+                    else "cad-neg"
+                )
+                seg_rows += (
+                    '<tr>'
+                    f'<td><span class="rg-segment-chip">'
+                    f'{_html.escape(seg_name)}</span></td>'
+                    f'<td class="num {tier_cls}">'
+                    f'<strong>{share_str}</strong></td>'
+                    '</tr>'
+                )
+
+            # Tier counts strip
+            tier_strip = (
+                '<div class="ck-kpi-strip">'
+                + ck_kpi_block(
+                    "high (≥55%)",
+                    f'{dist.tier_counts.get("high", 0):,}',
+                )
+                + ck_kpi_block(
+                    "medium (30-55%)",
+                    f'{dist.tier_counts.get("medium", 0):,}',
+                )
+                + ck_kpi_block(
+                    "low (15-30%)",
+                    f'{dist.tier_counts.get("low", 0):,}',
+                )
+                + ck_kpi_block(
+                    "very_low (<15%)",
+                    f'{dist.tier_counts.get("very_low", 0):,}',
+                )
+                + ck_kpi_block(
+                    "mean P(buyable)",
+                    f'{dist.mean_score * 100:.1f}%',
+                )
+                + '</div>'
+            )
+
+            buyability_section = ck_panel(
+                '<p class="ck-section-body">'
+                'Rule-based P(acquirable by PE) per hospital, '
+                'driven by the Phase-1 segment label (academic / '
+                'flagship-specialty / children\'s ≈ unbuyable; '
+                'community + CAH + rehab + LTACH at mid-bed size '
+                '= sweet spot) plus penalties for membership in '
+                'large nonprofit / Catholic / government systems '
+                '(Ascension, Kaiser, VA, etc.) and for '
+                'safety-net public hospitals. <strong>Heuristic '
+                'v1</strong> — treat the ordering as the reliable '
+                'signal; absolute percentages are partner-friendly '
+                'summaries, not calibrated probabilities. '
+                'Combined with the financial fit via '
+                'target_attractiveness = financial × buyable × '
+                'strategic_fit so the regression\'s top outliers '
+                'don\'t over-weight institutions that are '
+                'financially large but practically unbuyable.</p>'
+                f'{tier_strip}'
+                '<h4 class="rg-subhead">'
+                'Mean buyability by hospital segment'
+                '</h4>'
+                '<table class="cad-table"><thead><tr>'
+                '<th>Segment</th><th>Mean P(buyable)</th>'
+                f'</tr></thead><tbody>{seg_rows}</tbody></table>',
+                title="Buyability Lens",
             )
 
     # ── Cluster Explorer panel (Phase 5) ──
@@ -1482,7 +1676,8 @@ letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
     )
     body = (
         f'{rg_styles}{intro}{diagnostic_banner}{source_selector}'
-        f'{leakage_section}{cv_section}{cluster_section}{segmented_section}'
+        f'{leakage_section}{cv_section}{cluster_section}'
+        f'{buyability_section}{segmented_section}'
         f'{kpis}{intercept_section}'
         '<div class="rg-grid">'
         f'<div>{left_col}</div><div>{right_col}</div></div>'
@@ -1508,6 +1703,8 @@ letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
         subtitle_bits.append("+CV")
     if cluster:
         subtitle_bits.append(f"+cluster(k={cluster_k})")
+    if buyability:
+        subtitle_bits.append("+buyability")
     subtitle_bits.append(f"{sig_count} significant")
     return chartis_shell(
         body, "Regression Analysis",
