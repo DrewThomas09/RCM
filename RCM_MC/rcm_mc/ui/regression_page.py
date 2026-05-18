@@ -17,6 +17,10 @@ from ._chartis_kit import (
     ck_section_intro,
 )
 from .brand import PALETTE
+from ..data.hospital_taxonomy import (
+    derive_taxonomy, filter_to_universe, SEGMENT_LABELS,
+)
+from ..finance.regression import run_segmented_regression as _run_segmented
 
 
 _AVAILABLE_METRICS = [
@@ -131,19 +135,38 @@ def _compute_vif(X: np.ndarray, features: List[str]) -> List[Dict[str, Any]]:
     return sorted(vifs, key=lambda x: -x["vif"])
 
 
-def _run_ols(df: pd.DataFrame, target: str, features: List[str]) -> Optional[Dict[str, Any]]:
-    """Run OLS regression with comprehensive diagnostics."""
+def _run_ols(
+    df: pd.DataFrame,
+    target: str,
+    features: List[str],
+    log_target: bool = False,
+) -> Optional[Dict[str, Any]]:
+    """Run OLS regression with comprehensive diagnostics.
+
+    ``log_target=True`` fits ``ln(target)`` instead of raw values.
+    Targets like net_patient_revenue span six orders of magnitude
+    (rural CAH ~ $400K → academic ~ $9B); raw-dollar OLS gives the
+    biggest hospitals overwhelming weight on the loss. Log space
+    makes the model reason in percentage terms. Coefficients on a
+    log fit are semi-elasticities — a one-unit feature change
+    produces a ``β`` fractional change in the target.
+    """
     available = [f for f in features if f in df.columns and df[f].notna().sum() >= 3]
     if not available or target not in df.columns or df[target].notna().sum() < 3:
         return None
 
     clean = df.dropna(subset=[target] + available)
+    # Log fit needs strictly-positive target — drop rows where the
+    # target is 0 or negative so np.log doesn't produce -inf/NaN.
+    if log_target:
+        clean = clean[clean[target] > 0]
     if len(clean) < max(3, len(available) + 1):
         return None
 
     try:
         X = clean[available].fillna(0).values.astype(float)
-        y = clean[target].fillna(0).values.astype(float)
+        y_raw = clean[target].fillna(0).values.astype(float)
+        y = np.log(y_raw) if log_target else y_raw
 
         X_mean = X.mean(axis=0)
         X_std = X.std(axis=0)
@@ -230,11 +253,25 @@ def _run_ols(df: pd.DataFrame, target: str, features: List[str]) -> Optional[Dic
         ccn_col = "ccn" if "ccn" in clean.columns else None
         name_col = "name" if "name" in clean.columns else None
         state_col = "state" if "state" in clean.columns else None
+        segment_col = (
+            "segment_label" if "segment_label" in clean.columns else None
+        )
         for idx in outlier_idx:
+            # Show actual/predicted in raw target units (dollars/etc)
+            # even when the fit is in log space — a partner reading
+            # "Stanford: actual $4.5B, predicted $3.2B, residual
+            # +0.42σ" is doing the right diagnostic; reading log
+            # values would be confusing.
+            actual_disp = (
+                float(np.exp(y[idx])) if log_target else float(y[idx])
+            )
+            predicted_disp = (
+                float(np.exp(y_hat[idx])) if log_target else float(y_hat[idx])
+            )
             row_data = {
                 "index": int(idx),
-                "actual": float(y[idx]),
-                "predicted": float(y_hat[idx]),
+                "actual": actual_disp,
+                "predicted": predicted_disp,
                 "residual": float(resid[idx]),
                 "std_residual": float(std_resid[idx]),
             }
@@ -244,6 +281,10 @@ def _run_ols(df: pd.DataFrame, target: str, features: List[str]) -> Optional[Dic
                 row_data["name"] = str(clean.iloc[idx].get("name", ""))[:40]
             if state_col:
                 row_data["state"] = str(clean.iloc[idx].get("state", ""))
+            if segment_col:
+                row_data["segment"] = str(
+                    clean.iloc[idx].get("segment_label", "")
+                )
             outliers.append(row_data)
 
         # State-level R² (if state column exists)
@@ -268,6 +309,16 @@ def _run_ols(df: pd.DataFrame, target: str, features: List[str]) -> Optional[Dic
                 })
             state_r2.sort(key=lambda x: -x["r2"])
 
+        # Phase-2 helper: when fitting log(y) we want partner-facing
+        # error metrics in log space (per the Phase-1 decision to
+        # avoid biased exp() back-transforms). exp(rmse_log) - 1 is
+        # the "typical fractional miss" — interpretable as a
+        # multiplicative prediction error.
+        import math as _math
+        typical_fractional_error = (
+            _math.exp(rmse) - 1.0 if log_target else 0.0
+        )
+
         return {
             "r2": r2,
             "adj_r2": adj_r2,
@@ -279,6 +330,7 @@ def _run_ols(df: pd.DataFrame, target: str, features: List[str]) -> Optional[Dic
             "intercept_se": intercept_se,
             "intercept_meaning": (
                 f"When all features are at their mean values, the predicted "
+                f"{'log ' if log_target else ''}"
                 f"{target.replace('_', ' ')} is {intercept_raw:,.2f}"
             ),
             "coefficients": coefficients,
@@ -289,10 +341,17 @@ def _run_ols(df: pd.DataFrame, target: str, features: List[str]) -> Optional[Dic
             "state_r2": state_r2[:20],
             "target": target,
             "features": available,
+            # y/y_raw split so the UI can show "Target mean = $254M"
+            # (raw $) even when the fit happens in log space.
             "y_mean": float(y.mean()),
             "y_std": float(y.std()),
             "y_min": float(y.min()),
             "y_max": float(y.max()),
+            "y_raw_mean": float(y_raw.mean()),
+            "y_raw_min": float(y_raw.min()),
+            "y_raw_max": float(y_raw.max()),
+            "log_target": log_target,
+            "typical_fractional_error": typical_fractional_error,
         }
     except Exception:
         return None
@@ -315,10 +374,68 @@ def render_regression_page(
     hcris_df: Optional[pd.DataFrame] = None,
     deals_df: Optional[pd.DataFrame] = None,
     hospital_ccn: Optional[str] = None,
+    *,
+    universe: str = "all",
+    log_target: bool = False,
+    segmented: bool = False,
 ) -> str:
-    """Render the interactive regression analysis page."""
+    """Render the interactive regression analysis page.
 
-    # Data source selector
+    Phase 2 of the regression rebuild adds three controls:
+      - ``universe`` filter (all / acquisition_targets / community /
+        rural / academic_teaching / or an explicit segment label).
+        Applied via ``hospital_taxonomy.filter_to_universe`` before
+        the regression runs.
+      - ``log_target`` toggle — fits ln(y) so the model reasons in
+        percentage terms rather than raw dollars; essential for
+        targets like net_patient_revenue that span six orders of
+        magnitude across hospital regimes.
+      - ``segmented`` toggle — also runs ``run_segmented_regression``
+        from finance.regression alongside the main fit and renders
+        a per-segment R² / RMSE / typical-error comparison so the
+        partner can see whether one slope-set fits every regime or
+        whether the regimes really do follow different equations.
+
+    All three controls are diagnostic. Per the Phase-1 docs, the
+    R² / RMSE / VIF numbers here are IN-SAMPLE explanatory fits;
+    cross-validation lands in a later PR.
+    """
+
+    # ── Universe selector (Phase 2) ──
+    # Apply the universe filter BEFORE the regression runs so all
+    # downstream panels reflect the filtered slice.
+    _UNIVERSE_OPTIONS = [
+        ("all",                  "All hospitals"),
+        ("acquisition_targets",  "Acquisition targets"),
+        ("community",            "Community"),
+        ("rural",                "Rural / CAH"),
+        ("academic_teaching",    "Academic & teaching"),
+    ]
+    # Also add explicit segment labels as options so a partner can
+    # drill into one regime
+    for seg in SEGMENT_LABELS:
+        _UNIVERSE_OPTIONS.append((seg, seg))
+
+    universe_pills = ""
+    for u_key, u_label in _UNIVERSE_OPTIONS:
+        active = "rg-pill-active" if u_key == universe else ""
+        # Preserve other query params when switching universe
+        href_params = [
+            f"source={_html.escape(data_source, quote=True)}",
+            f"target={_html.escape(target, quote=True)}",
+            f"universe={_html.escape(u_key, quote=True)}",
+        ]
+        if log_target:
+            href_params.append("log=1")
+        if segmented:
+            href_params.append("segmented=1")
+        href = "/portfolio/regression?" + "&amp;".join(href_params)
+        universe_pills += (
+            f'<a href="{href}" class="rg-pill {active}">'
+            f'{_html.escape(u_label)}</a>'
+        )
+
+    # Data source + target + log + segmented controls
     selector_form = (
         '<form method="GET" action="/portfolio/regression" class="rg-selector-form">'
         '<div>'
@@ -341,11 +458,49 @@ def render_regression_page(
 
     selector_form += (
         '</select></div>'
+        # Preserve the universe choice across form submits
+        f'<input type="hidden" name="universe" value="{_html.escape(universe, quote=True)}">'
+        '<div class="rg-selector-toggles">'
+        '<label class="rg-selector-checkbox">'
+        f'<input type="checkbox" name="log" value="1" '
+        f'{"checked" if log_target else ""}> Predict log(target)'
+        '</label>'
+        '<label class="rg-selector-checkbox">'
+        f'<input type="checkbox" name="segmented" value="1" '
+        f'{"checked" if segmented else ""}> Segmented regression '
+        '(per regime)'
+        '</label>'
+        '</div>'
         '<div class="rg-selector-submit">'
         '<button type="submit" class="cad-btn cad-btn-primary">Run Regression</button>'
         '</div></form>'
     )
-    source_selector = ck_panel(selector_form, title="Regression inputs")
+    source_selector = ck_panel(
+        '<div class="rg-pills-row">'
+        '<div class="rg-pills-label">UNIVERSE</div>'
+        f'<div class="rg-pills">{universe_pills}</div>'
+        '</div>'
+        + selector_form,
+        title="Regression inputs",
+    )
+
+    # DIAGNOSTIC banner — every metric on this page is in-sample
+    # explanatory fit, not an out-of-sample prediction claim. This
+    # is the single most important thing for a partner to read
+    # before drawing a sourcing conclusion off the numbers.
+    diagnostic_banner = (
+        '<div class="rg-diagnostic-banner">'
+        '<span class="rg-diagnostic-tag">DIAGNOSTIC</span>'
+        '<span class="rg-diagnostic-text">'
+        'Every R² / RMSE / VIF / coefficient on this page is an '
+        '<em>in-sample explanatory fit</em> — it describes how well '
+        'the model fits the data it was trained on, not how it will '
+        'predict an unseen hospital. Cross-validation lands in a '
+        'later phase of the rebuild. Use these numbers for '
+        'hypothesis generation and feature selection, not for '
+        'sourcing decisions or LP-facing forecasts.'
+        '</span></div>'
+    )
 
     # Pick dataframe
     collinear_exclude = _COLLINEAR_PAIRS.get(target, set())
@@ -354,6 +509,10 @@ def render_regression_page(
         all_features = [k for k, _ in _AVAILABLE_METRICS if k != target and k not in collinear_exclude]
     elif hcris_df is not None and not hcris_df.empty:
         df = _add_computed_features(hcris_df)
+        # Phase-2: tag every row with the hospital taxonomy so
+        # universe filters, segmented regression, and the segment
+        # column on outliers all work off a single source of truth.
+        df = derive_taxonomy(df)
         base = [k for k, _ in _HCRIS_METRICS if k != target and k not in collinear_exclude]
         computed = [k for k, _ in _COMPUTED_HCRIS if k != target and k in df.columns]
         all_features = base + computed
@@ -370,10 +529,29 @@ def render_regression_page(
         )
         return chartis_shell(body, "Regression Analysis", subtitle="No data available")
 
+    # Phase-2: apply universe filter. Falls back to "all" if the
+    # frame doesn't carry a segment_label (e.g. portfolio source).
+    if "segment_label" in df.columns and universe != "all":
+        df = filter_to_universe(df, universe)
+        if df.empty:
+            body = (
+                f'{source_selector}'
+                + ck_panel(
+                    '<p class="ck-section-body">'
+                    f'No rows in universe <code>{_html.escape(universe)}</code>. '
+                    'Pick a different universe from the pills above.</p>',
+                    title="Regression Analysis",
+                )
+            )
+            return chartis_shell(
+                body, "Regression Analysis",
+                subtitle=f"Empty universe: {universe}",
+            )
+
     if features is None:
         features = all_features
 
-    result = _run_ols(df, target, features)
+    result = _run_ols(df, target, features, log_target=log_target)
 
     if result is None:
         body = (
@@ -562,6 +740,15 @@ def render_regression_page(
     ) if vif_rows else ""
 
     # ── Hospital outliers (residual analysis) ──
+    # Phase-2: surface segment_label so the partner immediately
+    # sees that the biggest residuals tend to be Academic / Flagship
+    # Specialty — those rows aren't errors, they're a different
+    # economic regime. This is the visual the Phase-1 review
+    # specifically called for ("legitimate but different class",
+    # not "delete").
+    has_segments = bool(
+        result["outliers"] and "segment" in result["outliers"][0]
+    )
     outlier_rows = ""
     for o in result["outliers"][:15]:
         resid_val = o["std_residual"]
@@ -570,9 +757,15 @@ def render_regression_page(
         ccn = o.get("ccn", "")
         state = o.get("state", "")
         link = f'<a href="/hospital/{_html.escape(ccn)}" class="ck-link">{name}</a>' if ccn else name
+        seg_cell = (
+            f'<td><span class="rg-segment-chip">'
+            f'{_html.escape(o.get("segment", ""))}</span></td>'
+            if has_segments else ""
+        )
         outlier_rows += (
             f'<tr>'
             f'<td>{link}</td>'
+            f'{seg_cell}'
             f'<td>{_html.escape(state)}</td>'
             f'<td class="num">{_fmt_num(o["actual"])}</td>'
             f'<td class="num">{_fmt_num(o["predicted"])}</td>'
@@ -580,15 +773,159 @@ def render_regression_page(
             f'</tr>'
         )
 
+    seg_header = '<th>Segment</th>' if has_segments else ''
     outlier_section = ck_panel(
         '<p class="ck-section-body">'
-        'Hospitals with the largest standardized residuals. &gt;2σ = model underpredicts/overpredicts — '
-        'investigate for deal opportunities or data quality issues.</p>'
-        '<table class="cad-table"><thead><tr>'
-        '<th>Hospital</th><th>State</th><th>Actual</th><th>Predicted</th><th>Residual</th>'
+        'Hospitals with the largest standardized residuals. &gt;2σ = model underpredicts/overpredicts. '
+        + (
+            'The <strong>Segment</strong> column shows the hospital\'s '
+            'economic regime — large positive residuals concentrated in '
+            'one segment (e.g. Academic) usually mean that segment '
+            'follows a different revenue equation than the baseline, '
+            'not that the rows are errors. Try toggling '
+            '<em>Segmented regression</em> to fit a separate model per '
+            'regime.</p>'
+            if has_segments else
+            'Investigate for deal opportunities or data quality issues.</p>'
+        )
+        + '<table class="cad-table"><thead><tr>'
+        f'<th>Hospital</th>{seg_header}<th>State</th>'
+        '<th>Actual</th><th>Predicted</th><th>Residual</th>'
         f'</tr></thead><tbody>{outlier_rows}</tbody></table>',
         title="Hospital Outliers (Residual Analysis)",
     ) if outlier_rows else ""
+
+    # ── Segmented comparison panel (Phase 2) ──
+    # Only built when the partner explicitly toggles "Segmented
+    # regression". Calls the Phase-1 run_segmented_regression on the
+    # same (universe-filtered) frame and renders per-regime R² /
+    # RMSE / typical-error alongside the all-segments baseline.
+    segmented_section = ""
+    if segmented and "segment_label" in df.columns:
+        try:
+            seg_res = _run_segmented(
+                df, target, result["features"],
+                segment_column="segment_label",
+                log_transform_target=log_target,
+                min_segment_rows=30,
+                dof_safety_margin=10,
+            )
+        except Exception as exc:
+            segmented_section = ck_panel(
+                f'<p class="ck-section-body cad-warn">'
+                f'Segmented regression failed: {_html.escape(str(exc))}'
+                f'</p>',
+                title="Segmented Regression (per regime)",
+            )
+            seg_res = None
+
+        if seg_res is not None:
+            # Header row = baseline
+            seg_rows = (
+                '<tr class="rg-seg-baseline">'
+                '<td><strong>baseline (all)</strong></td>'
+                f'<td class="num">{seg_res.baseline.n_observations:,}</td>'
+                f'<td class="num"><strong>{seg_res.baseline.r_squared:.1%}</strong></td>'
+                f'<td class="num">{seg_res.baseline.rmse:.3f}</td>'
+                f'<td class="num">'
+                + (
+                    f'{seg_res.baseline.typical_fractional_error * 100:.0f}%'
+                    if seg_res.baseline.target_was_log_transformed else '—'
+                )
+                + '</td>'
+                f'<td>—</td>'
+                '</tr>'
+            )
+            # Per-segment rows, sorted by R² descending
+            sorted_segs = sorted(
+                seg_res.by_segment.items(),
+                key=lambda kv: -kv[1].r_squared,
+            )
+            for seg_name, sr in sorted_segs:
+                delta = sr.r_squared - seg_res.baseline.r_squared
+                if delta > 0.02:
+                    arrow_html = (
+                        '<span class="cad-pos"><strong>'
+                        f'+{delta * 100:.1f}pp ↑</strong></span>'
+                    )
+                elif delta < -0.02:
+                    arrow_html = (
+                        '<span class="cad-neg"><strong>'
+                        f'{delta * 100:.1f}pp ↓</strong></span>'
+                    )
+                else:
+                    arrow_html = (
+                        f'<span class="cad-text2">'
+                        f'{delta * 100:+.1f}pp</span>'
+                    )
+                seg_rows += (
+                    '<tr>'
+                    f'<td><span class="rg-segment-chip">'
+                    f'{_html.escape(seg_name)}</span></td>'
+                    f'<td class="num">{sr.n_observations:,}</td>'
+                    f'<td class="num"><strong>{sr.r_squared:.1%}</strong></td>'
+                    f'<td class="num">{sr.rmse:.3f}</td>'
+                    f'<td class="num">'
+                    + (
+                        f'{sr.typical_fractional_error * 100:.0f}%'
+                        if sr.target_was_log_transformed else '—'
+                    )
+                    + '</td>'
+                    f'<td>{arrow_html}</td>'
+                    '</tr>'
+                )
+
+            # Insufficient-n surface: segments we explicitly chose NOT
+            # to fit, with the reason. Honest reporting beats silent
+            # drops — per the Phase-1 review.
+            insuf_html = ""
+            if seg_res.insufficient_n:
+                insuf_rows = ""
+                for seg_name, info in seg_res.insufficient_n.items():
+                    insuf_rows += (
+                        '<tr>'
+                        f'<td><span class="rg-segment-chip">'
+                        f'{_html.escape(seg_name)}</span></td>'
+                        f'<td class="num">{info["n_clean"]}</td>'
+                        f'<td class="num">{info["min_required"]}</td>'
+                        f'<td class="cad-text2" style="font-size:12px;">'
+                        f'{_html.escape(info["reason"])}</td>'
+                        '</tr>'
+                    )
+                insuf_html = (
+                    '<h4 class="rg-subhead">Segments not fit '
+                    '(insufficient n)</h4>'
+                    '<table class="cad-table"><thead><tr>'
+                    '<th>Segment</th><th>n</th><th>Required</th>'
+                    f'<th>Reason</th></tr></thead><tbody>{insuf_rows}'
+                    '</tbody></table>'
+                )
+
+            target_disp = target.replace("_", " ").title()
+            log_note = (
+                ' (target is <em>log</em>-transformed; typical '
+                'error = exp(RMSE_log) - 1)'
+                if log_target else
+                f' (RMSE in {target_disp} units; '
+                'typical error column blank for raw-target fits)'
+            )
+            segmented_section = ck_panel(
+                '<p class="ck-section-body">'
+                'One OLS fit per hospital regime, plus the all-segments '
+                'baseline at the top for comparison. <strong>R² delta '
+                '↑</strong> means the segment beats the baseline — '
+                'evidence that this regime really does follow a '
+                'different equation than the others. <strong>↓</strong> '
+                'usually means the segment\'s variance isn\'t captured '
+                f'by the current feature set, not that it\'s inherently '
+                f'unmodellable.{log_note}</p>'
+                '<table class="cad-table"><thead><tr>'
+                '<th>Segment</th><th>n</th><th>R²</th>'
+                '<th>RMSE</th><th>typ. err</th><th>vs baseline</th>'
+                f'</tr></thead><tbody>{seg_rows}</tbody></table>'
+                f'{insuf_html}',
+                title="Segmented Regression (per regime)",
+            )
 
     # ── State-level R² ──
     state_rows = ""
@@ -665,6 +1002,41 @@ transition:border-color 120ms ease, box-shadow 120ms ease;}
 .rg-selector-input:focus{outline:none;border-color:var(--cad-link);
 box-shadow:0 0 0 2px rgba(21,87,82,0.18);}
 .rg-selector-submit{align-self:flex-end;}
+.rg-selector-toggles{display:flex;flex-direction:column;gap:4px;
+align-self:flex-end;padding-bottom:2px;}
+.rg-selector-checkbox{font-size:12px;color:var(--cad-text);
+display:flex;align-items:center;gap:6px;cursor:pointer;}
+.rg-pills-row{display:flex;align-items:baseline;gap:14px;margin:0 0 14px;
+flex-wrap:wrap;}
+.rg-pills-label{font-family:var(--sc-mono,monospace);font-size:10px;
+font-weight:600;letter-spacing:0.16em;text-transform:uppercase;
+color:var(--sc-text-faint,#7a8699);}
+.rg-pills{display:flex;flex-wrap:wrap;gap:6px;}
+.rg-pill{display:inline-block;padding:5px 12px;font-family:var(--sc-sans,Inter);
+font-size:11.5px;font-weight:500;border:1px solid var(--sc-rule,#d6cfc0);
+background:#fff;color:var(--sc-navy,#0b2341);text-decoration:none;
+border-radius:14px;transition:border-color 120ms ease,background 120ms ease;}
+.rg-pill:hover{border-color:var(--sc-teal-ink,#155752);}
+.rg-pill-active{background:var(--sc-navy,#0b2341);color:#fff;
+border-color:var(--sc-navy,#0b2341);}
+.rg-diagnostic-banner{display:flex;align-items:baseline;gap:12px;
+padding:12px 16px;margin:0 0 16px;background:#fff;
+border:1px solid var(--sc-rule,#d6cfc0);
+border-left:3px solid var(--sc-teal-ink,#155752);}
+.rg-diagnostic-tag{font-family:var(--sc-mono,monospace);font-size:10px;
+font-weight:700;letter-spacing:0.14em;color:var(--sc-teal-ink,#155752);
+flex-shrink:0;}
+.rg-diagnostic-text{font-size:13px;color:var(--sc-text,#1a2332);
+line-height:1.5;}
+.rg-diagnostic-text em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+.rg-segment-chip{display:inline-block;padding:2px 8px;font-family:var(--sc-mono,monospace);
+font-size:10px;font-weight:600;letter-spacing:0.04em;color:var(--sc-teal-ink,#155752);
+background:var(--sc-parchment,#f2ede3);border:1px solid var(--sc-rule,#d6cfc0);
+border-radius:2px;}
+.rg-seg-baseline{background:var(--sc-parchment,#f2ede3);}
+.rg-seg-baseline td{border-top:2px solid var(--sc-rule,#d6cfc0);}
+.rg-subhead{font-family:var(--sc-sans,Inter);font-size:13px;font-weight:600;
+letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
 .rg-bar-track{background:var(--cad-bg3);border-radius:4px;height:10px;}
 .rg-bar-track-sm{height:8px;width:120px;}
 .rg-bar-fill{border-radius:4px;height:10px;}
@@ -679,19 +1051,29 @@ box-shadow:0 0 0 2px rgba(21,87,82,0.18);}
         italic_word="portfolio",
     )
     body = (
-        f'{rg_styles}{intro}{source_selector}{kpis}{intercept_section}'
+        f'{rg_styles}{intro}{diagnostic_banner}{source_selector}'
+        f'{segmented_section}{kpis}{intercept_section}'
         '<div class="rg-grid">'
         f'<div>{left_col}</div><div>{right_col}</div></div>'
         f'{nav_section}{next_up}'
     )
 
     sig_count = sum(1 for c in result["coefficients"] if c["significance"])
+    # Subtitle reflects universe + log + segmented state so partners
+    # can tell at a glance what filter is applied
+    subtitle_bits = [
+        f"OLS: {_html.escape(target.replace('_', ' ').title())}"
+        f"{' (log)' if log_target else ''} ~ {result['p']} features",
+        f"R\u00b2 = {result['r2']:.1%}",
+        f"n = {result['n']:,}",
+    ]
+    if universe != "all":
+        subtitle_bits.insert(0, f"universe = {universe}")
+    if segmented:
+        subtitle_bits.append("+segmented")
+    subtitle_bits.append(f"{sig_count} significant")
     return chartis_shell(
         body, "Regression Analysis",
         active_nav="/portfolio/regression",
-        subtitle=(
-            f"OLS: {_html.escape(target.replace('_', ' ').title())} ~ "
-            f"{result['p']} features | R\u00b2 = {result['r2']:.1%} | "
-            f"n = {result['n']:,} | {sig_count} significant"
-        ),
+        subtitle=" | ".join(subtitle_bits),
     )
