@@ -28,7 +28,7 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 from rcm_mc.ui._chartis_kit import (
     P, _MONO, _SANS, chartis_shell, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip, ck_section_header,
+    ck_page_title, ck_provenance_tooltip, ck_section_header,
 )
 
 
@@ -311,9 +311,25 @@ def render_deal_flow_heatmap(min_sector_deals: int = 3) -> str:
         + '</div>'
     )
 
+    # B11 sweep 2/10 — same shape as concentration_risk + corpus_coverage
+    # (PRs #165, #166): page used ck_section_header as a de-facto title.
+    # Replacing with ck_page_title (h1) + removing the now-redundant
+    # ck_section_header to avoid visual "DEAL FLOW HEATMAP" duplication.
+    # Meta packs corpus size + active sector count + year-range coverage
+    # — the three quantitative dimensions of the heatmap itself.
+    year_span = f"{years[0]}–{years[-1]}" if years else "—"
+    page_title = ck_page_title(
+        "Deal Flow Heatmap",
+        eyebrow="DEAL FLOW",
+        meta=(
+            f"{len(corpus)} transactions · "
+            f"{len(active_sectors)} active sectors · "
+            f"{year_span}"
+        ),
+    )
     body = f"""
 <div style="padding:16px 20px;max-width:1600px">
-  {ck_section_header("DEAL FLOW HEATMAP", f"Year × sector activity matrix — {len(corpus)} transactions, {len(active_sectors)} active sectors", None)}
+  {page_title}
   {kpi_strip}
 
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px">
