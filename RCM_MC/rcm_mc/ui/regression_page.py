@@ -839,10 +839,11 @@ def render_regression_page(
     # "Dropped from fit" section). Same registry-driven verdicts
     # the tests pin in test_leakage_audit.py.
     _LEAK_BADGE_CLASS = {
-        "LEAKS":   "rg-leak-critical",
-        "SELF":    "rg-leak-critical",
-        "SAFE":    "rg-leak-ok",
-        "UNKNOWN": "rg-leak-info",
+        "LEAKS":           "rg-leak-critical",
+        "SELF":            "rg-leak-critical",
+        "FORMULA_RELATED": "rg-leak-warning",
+        "SAFE":            "rg-leak-ok",
+        "UNKNOWN":         "rg-leak-info",
     }
     leak_rows = []
     # Order: critical first (LEAKS / SELF), then info (UNKNOWN),
@@ -894,10 +895,13 @@ def render_regression_page(
         '<strong>LEAKS</strong> = feature is mathematically derived '
         'from the target (or vice-versa) per its registered formula '
         '— fitting target ~ this feature inflates R² without '
-        'predicting anything. <strong>SAFE</strong> = no algebraic '
-        'path. <strong>SELF</strong> = feature IS the target. '
-        '<strong>UNKNOWN</strong> = no provenance record (caller '
-        'decides; defaults to staying in the fit).</p>'
+        'predicting anything. <strong>FORMULA_RELATED</strong> = '
+        'feature and target are accounting-identity cousins (they '
+        'share underlying inputs but neither contains the other) — '
+        'softer warning; kept by default. <strong>SAFE</strong> = '
+        'no algebraic path. <strong>SELF</strong> = feature IS the '
+        'target. <strong>UNKNOWN</strong> = no provenance record '
+        '(caller decides; defaults to staying in the fit).</p>'
         '<table class="cad-table"><thead><tr>'
         '<th>Feature</th><th>Verdict</th>'
         '<th>Reason</th><th>Status</th>'
@@ -1160,6 +1164,7 @@ font-family:var(--sc-mono,monospace);font-size:10px;font-weight:700;
 letter-spacing:0.08em;border-radius:2px;border:1px solid transparent;}
 .rg-leak-critical{color:#b5321e;background:#fff;
 border-color:#b5321e;}
+.rg-leak-warning{color:#b8732a;background:#fff;border-color:#b8732a;}
 .rg-leak-ok{color:#0a8a5f;background:#fff;border-color:#0a8a5f;}
 .rg-leak-info{color:var(--sc-text-faint,#7a8699);background:#fff;
 border-color:var(--sc-rule,#d6cfc0);}

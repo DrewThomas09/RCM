@@ -202,11 +202,16 @@ PROVENANCE: Dict[str, FeatureProvenance] = {
 class LeakageVerdict:
     """Per-(feature, target) classification.
 
-    ``verdict``: one of "LEAKS", "SAFE", "SELF", "UNKNOWN".
-    ``severity``: "critical" / "warning" / "info" / "ok" — drives the
-    UI badge tone. Critical = feature directly uses target (or vice
-    versa) in its formula; warning = explanation_only flag set;
-    info = unknown provenance; ok = safe.
+    ``verdict``: one of "LEAKS", "FORMULA_RELATED", "SAFE", "SELF",
+    "UNKNOWN".
+    ``severity``: "critical" / "warning" / "info" / "ok" — drives
+    the UI badge tone:
+      critical → LEAKS / SELF (always exclude)
+      warning  → FORMULA_RELATED (accounting-identity cousins) or
+                 explanation-only features (kept by default but
+                 partner should know)
+      info     → UNKNOWN (no provenance — caller decides)
+      ok       → SAFE (no algebraic / shared-input relationship)
     ``reason``: human-readable explanation. Always set.
     """
     feature: str
@@ -223,6 +228,10 @@ class LeakageVerdict:
     def is_target(self) -> bool:
         return self.verdict == "SELF"
 
+    @property
+    def formula_related(self) -> bool:
+        return self.verdict == "FORMULA_RELATED"
+
 
 def classify_feature_for_target(
     feature: str, target: str,
@@ -230,18 +239,27 @@ def classify_feature_for_target(
 ) -> LeakageVerdict:
     """Return a leakage verdict for a single (feature, target) pair.
 
-    Algorithm:
-      1. If feature == target → SELF (always exclude).
-      2. If either feature or target isn't in the registry →
-         UNKNOWN (caller can decide; we don't presume safe).
-      3. If feature's formula inputs contain target →
-         LEAKS (feature is downstream of target).
-      4. If target's formula inputs contain feature →
-         LEAKS (target is downstream of feature; fitting "y ~ x"
-         when y = f(x, …) recovers part of the definition).
-      5. If feature is marked explanation_only → SAFE with a
-         warning note.
-      6. Otherwise → SAFE.
+    Algorithm (most-severe match wins):
+      1. feature == target → SELF (always exclude).
+      2. feature or target missing from registry → UNKNOWN.
+      3. target ∈ feature.inputs → LEAKS (feature is downstream
+         of target).
+      4. feature ∈ target.inputs → LEAKS (target is downstream
+         of feature; fitting "y ~ x" when y = f(x, …) recovers
+         part of the definition).
+      5. feature.inputs ∩ target.inputs ≠ ∅ AND both are derived
+         (i.e. both have non-empty input sets) → FORMULA_RELATED
+         (the v1.1 review addition: catches accounting-identity
+         cousins like operating_margin and net_income, which both
+         depend on npr + opex but neither contains the other).
+      6. feature.explanation_only → SAFE with warning severity.
+      7. Otherwise → SAFE.
+
+    FORMULA_RELATED specifically does NOT fire when one of the two
+    has empty inputs (i.e. is a raw HCRIS column with no formula).
+    A raw column can't be "formula-related" to anything because it
+    has no formula. This keeps SAFE clean for the common case
+    of fitting a derived target against raw inputs.
     """
     reg = registry if registry is not None else PROVENANCE
 
@@ -293,6 +311,27 @@ def classify_feature_for_target(
             ),
         )
 
+    # FORMULA_RELATED — shared accounting inputs without direct
+    # leakage. Only fires when BOTH have non-empty input sets;
+    # raw HCRIS columns (empty inputs) can't be "formula-related".
+    if f_meta.inputs and t_meta.inputs:
+        shared = f_meta.inputs & t_meta.inputs
+        if shared:
+            shared_disp = ", ".join(sorted(shared))
+            return LeakageVerdict(
+                feature=feature, target=target,
+                verdict="FORMULA_RELATED", severity="warning",
+                reason=(
+                    f"Feature and target are accounting-identity "
+                    f"cousins — both derived from {{{shared_disp}}}. "
+                    f"Neither contains the other, but they share "
+                    f"underlying inputs, so the fit may still be "
+                    f"artificially strong. Keep with caution; "
+                    f"toggle 'strict' mode in forecasting_safe_features "
+                    f"to drop these too."
+                ),
+            )
+
     if f_meta.explanation_only:
         return LeakageVerdict(
             feature=feature, target=target, verdict="SAFE",
@@ -330,21 +369,41 @@ def forecasting_safe_features(
     features: List[str], target: str,
     registry: Optional[Dict[str, FeatureProvenance]] = None,
     drop_explanation_only: bool = True,
+    strict: bool = False,
 ) -> List[str]:
     """Return the subset of ``features`` that pass the leakage audit.
 
     SELF and LEAKS are always dropped. UNKNOWN is kept (caller must
-    decide explicitly via the registry). ``drop_explanation_only``
-    (default True) also drops SAFE features flagged
-    explanation_only — turn off for explanatory analyses where
-    those are still useful.
+    decide explicitly via the registry).
+
+    ``drop_explanation_only`` (default True) drops SAFE features
+    flagged ``explanation_only`` — turn off for explanatory
+    analyses where those are still useful.
+
+    ``strict`` (default False) also drops FORMULA_RELATED features
+    — the accounting-identity cousins like operating_margin/
+    net_income that share inputs without one literally containing
+    the other. Default behavior keeps them because they often
+    carry real signal (a feature can share an input with the
+    target and still be a useful predictor); strict=True is the
+    right call when the partner wants the cleanest possible
+    "no shared accounting" feature set for a prediction-style
+    fit.
     """
     out = []
     for f in features:
         v = classify_feature_for_target(f, target, registry)
         if v.verdict in ("SELF", "LEAKS"):
             continue
-        if drop_explanation_only and v.severity == "warning":
+        if strict and v.verdict == "FORMULA_RELATED":
+            continue
+        # explanation_only fires as SAFE+warning; FORMULA_RELATED
+        # also has severity warning. Only drop explanation_only
+        # under the explanation_only flag, not via the generic
+        # severity check.
+        f_meta = (registry or PROVENANCE).get(f)
+        if (drop_explanation_only and f_meta is not None
+                and f_meta.explanation_only):
             continue
         out.append(f)
     return out

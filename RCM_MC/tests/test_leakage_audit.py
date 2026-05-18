@@ -99,20 +99,21 @@ class OperatingMarginTargetTests(unittest.TestCase):
             "LEAKS",
         )
 
-    def test_net_income_leaks_when_target_is_margin(self):
-        # net_income depends on NPR + opex (same inputs as margin) —
-        # so by transitivity it's leaky, but our v1 algorithm
-        # catches this only via "feature inputs contain target" or
-        # "target inputs contain feature". net_income's inputs are
-        # {npr, opex}, target margin's inputs are {npr, opex} —
-        # they share inputs but aren't algebraically related per
-        # our simple model. So this currently classifies SAFE.
-        # Documented behavior; can be tightened in a later phase
-        # with a transitive-closure algorithm.
+    def test_net_income_formula_related_when_target_is_margin(self):
+        # Phase-3.5 review fix: net_income and operating_margin both
+        # depend on {npr, opex} but neither contains the other in
+        # its formula. Direct-leak v1 algorithm classified this
+        # SAFE (with a confusingly-named test). v1.1 introduces
+        # FORMULA_RELATED to flag exactly this case — accounting-
+        # identity cousins that aren't direct leaks but aren't
+        # algebraically independent either.
         v = classify_feature_for_target("net_income", self.target)
-        # We don't enforce LEAKS here — but caller should be aware
-        # the verdict is SAFE under v1 semantics.
-        self.assertIn(v.verdict, ("SAFE", "LEAKS"))
+        self.assertEqual(v.verdict, "FORMULA_RELATED")
+        self.assertEqual(v.severity, "warning")
+        # Reason must call out the shared inputs by name so the
+        # partner understands WHY this is a soft warning
+        self.assertIn("net_patient_revenue", v.reason)
+        self.assertIn("operating_expenses", v.reason)
 
     def test_beds_safe_when_target_is_margin(self):
         self.assertEqual(
@@ -245,6 +246,95 @@ class ForecastingSafeFeaturesTests(unittest.TestCase):
             registry=reg, drop_explanation_only=False,
         )
         self.assertIn("audit_flag", safe)
+
+
+class FormulaRelatedTests(unittest.TestCase):
+    """Phase-3.5 review addition: catch accounting-identity cousins.
+
+    Two features can both depend on the same raw HCRIS columns
+    without one literally containing the other — operating_margin
+    (npr, opex) and net_income (npr, opex) is the canonical case.
+    The v1 direct-only classifier missed this; v1.1 surfaces it
+    as FORMULA_RELATED with severity warning.
+    """
+
+    def test_full_overlap_returns_formula_related(self):
+        # net_income.inputs = {npr, opex}, operating_margin.inputs =
+        # {npr, opex}. Full overlap → FORMULA_RELATED.
+        v = classify_feature_for_target("net_income", "operating_margin")
+        self.assertEqual(v.verdict, "FORMULA_RELATED")
+        self.assertEqual(v.severity, "warning")
+
+    def test_partial_overlap_returns_formula_related(self):
+        # revenue_per_bed.inputs = {npr, beds}, expense_per_bed.inputs
+        # = {opex, beds}. Shared: {beds}. Partial overlap → still
+        # FORMULA_RELATED (the warning reason will name the shared
+        # input so the partner can judge severity).
+        v = classify_feature_for_target("revenue_per_bed", "expense_per_bed")
+        self.assertEqual(v.verdict, "FORMULA_RELATED")
+        self.assertIn("beds", v.reason)
+
+    def test_raw_column_vs_raw_column_stays_safe(self):
+        # FORMULA_RELATED requires both sides to have non-empty
+        # input sets. Two raw HCRIS columns (beds, medicare_day_pct)
+        # have no formulas → SAFE, not FORMULA_RELATED.
+        v = classify_feature_for_target("beds", "medicare_day_pct")
+        self.assertEqual(v.verdict, "SAFE")
+
+    def test_raw_column_vs_derived_column_no_shared_check(self):
+        # Raw beds (inputs=∅) vs derived occupancy_rate (inputs=
+        # {patient_days, bed_days}). No shared inputs → not
+        # FORMULA_RELATED → SAFE.
+        v = classify_feature_for_target("beds", "occupancy_rate")
+        self.assertEqual(v.verdict, "SAFE")
+
+    def test_direct_leak_beats_formula_related(self):
+        # When target ∈ feature.inputs the direct LEAK check fires
+        # first, even though shared inputs exist. revenue_per_bed
+        # for target=net_patient_revenue should still be LEAKS,
+        # not downgraded to FORMULA_RELATED.
+        v = classify_feature_for_target("revenue_per_bed", "net_patient_revenue")
+        self.assertEqual(v.verdict, "LEAKS")
+
+    def test_payer_share_features_formula_related(self):
+        # commercial_pct (inputs={medicare_day_pct, medicaid_day_pct})
+        # vs payer_diversity (same inputs). Full overlap.
+        v = classify_feature_for_target("commercial_pct", "payer_diversity")
+        self.assertEqual(v.verdict, "FORMULA_RELATED")
+
+
+class StrictModeTests(unittest.TestCase):
+    """The 'strict' kwarg on forecasting_safe_features drops
+    FORMULA_RELATED features too. Default (strict=False) keeps them
+    because a feature that shares an input with the target can
+    still carry real signal.
+    """
+
+    def test_default_keeps_formula_related(self):
+        # net_income for target=operating_margin is FORMULA_RELATED;
+        # default forecasting_safe_features should KEEP it.
+        safe = forecasting_safe_features(
+            ["beds", "net_income"], "operating_margin",
+        )
+        self.assertIn("net_income", safe)
+        self.assertIn("beds", safe)
+
+    def test_strict_drops_formula_related(self):
+        safe = forecasting_safe_features(
+            ["beds", "net_income"], "operating_margin", strict=True,
+        )
+        self.assertNotIn("net_income", safe)
+        self.assertIn("beds", safe)
+
+    def test_strict_still_drops_self_and_leaks(self):
+        # Strict mode is additive — still drops SELF and LEAKS.
+        safe = forecasting_safe_features(
+            ["beds", "revenue_per_bed", "net_patient_revenue"],
+            "net_patient_revenue", strict=True,
+        )
+        self.assertIn("beds", safe)
+        self.assertNotIn("revenue_per_bed", safe)
+        self.assertNotIn("net_patient_revenue", safe)
 
 
 class RegistryCoverageTests(unittest.TestCase):
