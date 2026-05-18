@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _status_color(s: str) -> str:
@@ -196,12 +196,15 @@ def render_cms_apm_tracker(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    page_title = ck_page_title(
+        "CMS Innovation Models / APM Tracker",
+        eyebrow="CMS APM",
+        meta=f"{r.total_programs} active CMS APMs · {r.total_lives_covered_m:.1f}M lives covered · ${r.total_apm_payments_b:.1f}B annual Medicare payments · ${r.total_portfolio_apm_revenue_m:.1f}M portfolio APM revenue at {r.portfolio_share_at_risk_pct * 100:.1f}% share at risk",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">CMS Innovation Models / APM Tracker</h1>
-    <p class="ck-page-sub">{r.total_programs} CMS APM programs · {r.total_lives_covered_m:.1f}M lives covered · ${r.total_apm_payments_b:.1f}B annual Medicare payments · avg {r.avg_savings_rate_pct:.2f}% savings rate · portfolio APM revenue ${r.total_portfolio_apm_revenue_m:.1f}M — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Program Catalog — CMMI & CMS APMs</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Portfolio Exposure — Deals in APMs</div>{e_tbl}</div>
