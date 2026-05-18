@@ -462,44 +462,52 @@ def render_regression_page(
     # ── Universe selector (Phase 2) ──
     # Apply the universe filter BEFORE the regression runs so all
     # downstream panels reflect the filtered slice.
-    _UNIVERSE_OPTIONS = [
+    #
+    # UI fix (post-Phase-6 review): splitting the pills into two
+    # semantic rows. Earlier version rendered all 17 pills as a
+    # single wrapping line which crammed the form. Row 1 is the
+    # 5 preset universes (All / Acquisition / Community / Rural /
+    # Academic+Teaching) that partners use ~95% of the time; Row 2
+    # is the 12 explicit segment labels for power-user drill-in.
+    _UNIVERSE_PRESETS = [
         ("all",                  "All hospitals"),
         ("acquisition_targets",  "Acquisition targets"),
         ("community",            "Community"),
         ("rural",                "Rural / CAH"),
         ("academic_teaching",    "Academic & teaching"),
     ]
-    # Also add explicit segment labels as options so a partner can
-    # drill into one regime
-    for seg in SEGMENT_LABELS:
-        _UNIVERSE_OPTIONS.append((seg, seg))
+    _UNIVERSE_SEGMENTS = [(seg, seg) for seg in SEGMENT_LABELS]
 
-    universe_pills = ""
-    for u_key, u_label in _UNIVERSE_OPTIONS:
-        active = "rg-pill-active" if u_key == universe else ""
-        # Preserve other query params when switching universe
-        href_params = [
-            f"source={_html.escape(data_source, quote=True)}",
-            f"target={_html.escape(target, quote=True)}",
-            f"universe={_html.escape(u_key, quote=True)}",
-        ]
-        if log_target:
-            href_params.append("log=1")
-        if segmented:
-            href_params.append("segmented=1")
-        if drop_leakage:
-            href_params.append("drop_leakage=1")
-        if cv:
-            href_params.append("cv=1")
-        if cluster:
-            href_params.append("cluster=1")
-        if buyability:
-            href_params.append("buyability=1")
-        href = "/portfolio/regression?" + "&amp;".join(href_params)
-        universe_pills += (
-            f'<a href="{href}" class="rg-pill {active}">'
-            f'{_html.escape(u_label)}</a>'
-        )
+    def _render_pills(options):
+        out = ""
+        for u_key, u_label in options:
+            active = "rg-pill-active" if u_key == universe else ""
+            href_params = [
+                f"source={_html.escape(data_source, quote=True)}",
+                f"target={_html.escape(target, quote=True)}",
+                f"universe={_html.escape(u_key, quote=True)}",
+            ]
+            if log_target:
+                href_params.append("log=1")
+            if segmented:
+                href_params.append("segmented=1")
+            if drop_leakage:
+                href_params.append("drop_leakage=1")
+            if cv:
+                href_params.append("cv=1")
+            if cluster:
+                href_params.append("cluster=1")
+            if buyability:
+                href_params.append("buyability=1")
+            href = "/portfolio/regression?" + "&amp;".join(href_params)
+            out += (
+                f'<a href="{href}" class="rg-pill {active}">'
+                f'{_html.escape(u_label)}</a>'
+            )
+        return out
+
+    universe_pills_presets = _render_pills(_UNIVERSE_PRESETS)
+    universe_pills_segments = _render_pills(_UNIVERSE_SEGMENTS)
 
     # Data source + target + log + segmented controls
     selector_form = (
@@ -563,7 +571,11 @@ def render_regression_page(
     source_selector = ck_panel(
         '<div class="rg-pills-row">'
         '<div class="rg-pills-label">UNIVERSE</div>'
-        f'<div class="rg-pills">{universe_pills}</div>'
+        f'<div class="rg-pills">{universe_pills_presets}</div>'
+        '</div>'
+        '<div class="rg-pills-row rg-pills-row-sub">'
+        '<div class="rg-pills-label">BY SEGMENT</div>'
+        f'<div class="rg-pills">{universe_pills_segments}</div>'
         '</div>'
         + selector_form,
         title="Regression inputs",
@@ -1593,24 +1605,35 @@ def render_regression_page(
 
     rg_styles = """
 <style>
-.rg-selector-form{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+.rg-selector-form{display:flex;flex-wrap:wrap;gap:14px 18px;
+align-items:flex-end;}
 .rg-selector-label{font-size:12px;color:var(--cad-text2);
 display:block;margin-bottom:4px;}
 .rg-selector-input{padding:7px 12px;border:1px solid var(--cad-border);
 border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;
-transition:border-color 120ms ease, box-shadow 120ms ease;}
+transition:border-color 120ms ease, box-shadow 120ms ease;min-width:220px;}
 .rg-selector-input:focus{outline:none;border-color:var(--cad-link);
 box-shadow:0 0 0 2px rgba(21,87,82,0.18);}
 .rg-selector-submit{align-self:flex-end;}
-.rg-selector-toggles{display:flex;flex-direction:column;gap:4px;
-align-self:flex-end;padding-bottom:2px;}
+/* Form-layout fix: 6 checkbox toggles in a single column made
+ * the form tall and squished the dropdowns inline. 2-column
+ * grid wraps to 1-column on narrow viewports. */
+.rg-selector-toggles{display:grid;
+grid-template-columns:repeat(2, minmax(220px, 1fr));
+gap:6px 18px;align-self:flex-end;padding-bottom:2px;
+flex:1 1 460px;}
 .rg-selector-checkbox{font-size:12px;color:var(--cad-text);
-display:flex;align-items:center;gap:6px;cursor:pointer;}
+display:flex;align-items:center;gap:6px;cursor:pointer;
+white-space:nowrap;}
 .rg-pills-row{display:flex;align-items:baseline;gap:14px;margin:0 0 14px;
 flex-wrap:wrap;}
+/* Sub-row (BY SEGMENT) — slightly muted to signal it's the
+ * power-user drill-in below the 5 preset universes. */
+.rg-pills-row-sub{margin-top:-8px;opacity:0.85;}
+.rg-pills-row-sub .rg-pill{font-size:11px;padding:3px 10px;}
 .rg-pills-label{font-family:var(--sc-mono,monospace);font-size:10px;
 font-weight:600;letter-spacing:0.16em;text-transform:uppercase;
-color:var(--sc-text-faint,#7a8699);}
+color:var(--sc-text-faint,#7a8699);min-width:88px;}
 .rg-pills{display:flex;flex-wrap:wrap;gap:6px;}
 .rg-pill{display:inline-block;padding:5px 12px;font-family:var(--sc-sans,Inter);
 font-size:11.5px;font-weight:500;border:1px solid var(--sc-rule,#d6cfc0);
