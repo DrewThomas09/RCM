@@ -21,6 +21,10 @@ from ..data.hospital_taxonomy import (
     derive_taxonomy, filter_to_universe, SEGMENT_LABELS,
 )
 from ..finance.regression import run_segmented_regression as _run_segmented
+from ..finance.leakage import (
+    audit_features as _audit_leakage,
+    forecasting_safe_features as _safe_features,
+)
 
 
 _AVAILABLE_METRICS = [
@@ -378,6 +382,7 @@ def render_regression_page(
     universe: str = "all",
     log_target: bool = False,
     segmented: bool = False,
+    drop_leakage: bool = False,
 ) -> str:
     """Render the interactive regression analysis page.
 
@@ -429,6 +434,8 @@ def render_regression_page(
             href_params.append("log=1")
         if segmented:
             href_params.append("segmented=1")
+        if drop_leakage:
+            href_params.append("drop_leakage=1")
         href = "/portfolio/regression?" + "&amp;".join(href_params)
         universe_pills += (
             f'<a href="{href}" class="rg-pill {active}">'
@@ -469,6 +476,11 @@ def render_regression_page(
         f'<input type="checkbox" name="segmented" value="1" '
         f'{"checked" if segmented else ""}> Segmented regression '
         '(per regime)'
+        '</label>'
+        '<label class="rg-selector-checkbox">'
+        f'<input type="checkbox" name="drop_leakage" value="1" '
+        f'{"checked" if drop_leakage else ""}> Drop leakage features '
+        '(forecasting-safe only)'
         '</label>'
         '</div>'
         '<div class="rg-selector-submit">'
@@ -550,6 +562,15 @@ def render_regression_page(
 
     if features is None:
         features = all_features
+
+    # Phase 3: leakage audit. Run on the full candidate feature list
+    # BEFORE optionally dropping leaks so the panel can show every
+    # candidate with its verdict (partner gets context on what was
+    # excluded and why). When ``drop_leakage`` is True, filter the
+    # OLS input down to forecasting-safe features only.
+    leakage_verdicts = _audit_leakage(features, target)
+    if drop_leakage:
+        features = _safe_features(features, target)
 
     result = _run_ols(df, target, features, log_target=log_target)
 
@@ -810,6 +831,81 @@ def render_regression_page(
     ) if outlier_rows else ""
 
     # ── Segmented comparison panel (Phase 2) ──
+    # ── Feature Leakage Audit panel (Phase 3) ──
+    # Built unconditionally so a partner can see WHICH of their
+    # features algebraically leak the target before they decide to
+    # drop them. When drop_leakage is on, the panel reflects that
+    # the leaky rows have been excluded from the fit (separate
+    # "Dropped from fit" section). Same registry-driven verdicts
+    # the tests pin in test_leakage_audit.py.
+    _LEAK_BADGE_CLASS = {
+        "LEAKS":   "rg-leak-critical",
+        "SELF":    "rg-leak-critical",
+        "SAFE":    "rg-leak-ok",
+        "UNKNOWN": "rg-leak-info",
+    }
+    leak_rows = []
+    # Order: critical first (LEAKS / SELF), then info (UNKNOWN),
+    # then warnings, then ok — partners read top-down for risks
+    severity_order = {"critical": 0, "info": 1, "warning": 2, "ok": 3}
+    for v in sorted(leakage_verdicts,
+                    key=lambda x: (severity_order.get(x.severity, 99),
+                                   x.feature)):
+        badge_cls = _LEAK_BADGE_CLASS.get(v.verdict, "rg-leak-info")
+        # Show whether this feature actually ended up in the fit
+        # (drop_leakage on → leaky features were excluded)
+        in_fit = v.feature in result["features"]
+        in_fit_mark = (
+            '<span class="cad-pos">in fit</span>' if in_fit
+            else '<span class="cad-text2">dropped</span>'
+        )
+        leak_rows.append(
+            f'<tr>'
+            f'<td><strong>{_html.escape(v.feature.replace("_", " ").title())}</strong></td>'
+            f'<td><span class="rg-leak-badge {badge_cls}">'
+            f'{_html.escape(v.verdict)}</span></td>'
+            f'<td style="font-size:12px;color:var(--cad-text2);">'
+            f'{_html.escape(v.reason)}</td>'
+            f'<td>{in_fit_mark}</td>'
+            f'</tr>'
+        )
+
+    # Count critical leaks for the panel header
+    leak_count = sum(
+        1 for v in leakage_verdicts if v.severity == "critical"
+    )
+    leak_header_note = (
+        f' · <strong class="cad-warn">{leak_count} leaky</strong>'
+        if leak_count else ''
+    )
+    drop_state_note = (
+        ' · <span class="cad-pos"><strong>drop_leakage ON</strong></span> '
+        '— leaky features excluded from this fit'
+        if drop_leakage else
+        ' · <em>drop_leakage off — leaky features are STILL in the fit '
+        'and inflating R². Toggle "Drop leakage features" above.</em>'
+        if leak_count else ''
+    )
+    leakage_section = ck_panel(
+        '<p class="ck-section-body">'
+        f'Per-feature leakage classification for target = '
+        f'<strong>{_html.escape(target.replace("_", " ").title())}</strong>'
+        f'{leak_header_note}{drop_state_note}. '
+        '<strong>LEAKS</strong> = feature is mathematically derived '
+        'from the target (or vice-versa) per its registered formula '
+        '— fitting target ~ this feature inflates R² without '
+        'predicting anything. <strong>SAFE</strong> = no algebraic '
+        'path. <strong>SELF</strong> = feature IS the target. '
+        '<strong>UNKNOWN</strong> = no provenance record (caller '
+        'decides; defaults to staying in the fit).</p>'
+        '<table class="cad-table"><thead><tr>'
+        '<th>Feature</th><th>Verdict</th>'
+        '<th>Reason</th><th>Status</th>'
+        f'</tr></thead><tbody>{"".join(leak_rows)}</tbody></table>',
+        title="Feature Leakage Audit",
+    )
+
+    # ── Segmented comparison panel (Phase 2) ──
     # Only built when the partner explicitly toggles "Segmented
     # regression". Calls the Phase-1 run_segmented_regression on the
     # same (universe-filtered) frame and renders per-regime R² /
@@ -1059,6 +1155,14 @@ background:var(--sc-parchment,#f2ede3);border:1px solid var(--sc-rule,#d6cfc0);
 border-radius:2px;}
 .rg-seg-baseline{background:var(--sc-parchment,#f2ede3);}
 .rg-seg-baseline td{border-top:2px solid var(--sc-rule,#d6cfc0);}
+.rg-leak-badge{display:inline-block;padding:2px 8px;
+font-family:var(--sc-mono,monospace);font-size:10px;font-weight:700;
+letter-spacing:0.08em;border-radius:2px;border:1px solid transparent;}
+.rg-leak-critical{color:#b5321e;background:#fff;
+border-color:#b5321e;}
+.rg-leak-ok{color:#0a8a5f;background:#fff;border-color:#0a8a5f;}
+.rg-leak-info{color:var(--sc-text-faint,#7a8699);background:#fff;
+border-color:var(--sc-rule,#d6cfc0);}
 .rg-subhead{font-family:var(--sc-sans,Inter);font-size:13px;font-weight:600;
 letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
 .rg-bar-track{background:var(--cad-bg3);border-radius:4px;height:10px;}
@@ -1076,7 +1180,7 @@ letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
     )
     body = (
         f'{rg_styles}{intro}{diagnostic_banner}{source_selector}'
-        f'{segmented_section}{kpis}{intercept_section}'
+        f'{leakage_section}{segmented_section}{kpis}{intercept_section}'
         '<div class="rg-grid">'
         f'<div>{left_col}</div><div>{right_col}</div></div>'
         f'{nav_section}{next_up}'
@@ -1095,6 +1199,8 @@ letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
         subtitle_bits.insert(0, f"universe = {universe}")
     if segmented:
         subtitle_bits.append("+segmented")
+    if drop_leakage:
+        subtitle_bits.append("+leakage-filtered")
     subtitle_bits.append(f"{sig_count} significant")
     return chartis_shell(
         body, "Regression Analysis",
