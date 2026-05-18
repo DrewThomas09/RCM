@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _components_table(items) -> str:
@@ -132,12 +132,15 @@ def render_health_equity(params: dict = None) -> str:
     total_inv_cost = sum(i.annual_cost_mm for i in r.investments)
     disparity_segments = sum(1 for d in r.demographics if d.disparity_flag)
 
+    page_title = ck_page_title(
+        "Health Equity / SDOH Scorecard",
+        eyebrow="HEALTH EQUITY",
+        meta=f"{r.total_attributed_lives:,.0f} attributed lives ({r.lis_dual_pct * 100:.1f}% LIS/Dual) · HEI score {r.overall_hei_score:.3f} ({r.hei_points_current:.0f} pts) · ${total_inv_cost:,.1f}M equity investment → ${r.hei_bonus_potential_mm:,.1f}M Star bonus potential · {disparity_segments} of {len(r.demographics)} segments flagged for disparity",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Health Equity / SDOH Scorecard</h1>
-    <p class="ck-page-sub">CMS Health Equity Index components · SDOH screening · equity investment ROI · demographic disparity flags — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">HEI Measure Components — LIS/Dual vs Non-LIS Performance</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">SDOH Screening Completion &amp; Closed-Loop Referral</div>{s_tbl}</div>
