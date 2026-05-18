@@ -3408,10 +3408,21 @@ _CSS_INLINE_FALLBACK = """
    * display:block on div). Mirrors .ck-pulse-grid below. Auto-fit
    * minmax means N stats per row at typical viewport, wraps to
    * additional rows for thick-stat strips (8-stat sponsor heatmap
-   * fits one row on wide; wraps to two on narrower viewports). */
-  .ck-kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:0; border-top:1px solid var(--sc-rule); }
-  .ck-kpi-grid .ck-kpi { padding:14px 18px; border-top:0; border-right:1px solid var(--sc-rule); }
-  .ck-kpi-grid .ck-kpi:last-child { border-right:0; }
+   * fits one row on wide; wraps to two on narrower viewports).
+   *
+   * B10 — same root cause, second forgotten primitive. .ck-kpi-strip
+   * is used by pipeline_page.py:118 and thesis_pipeline_page.py:252;
+   * the only existing rule was print-only (.ck-kpi-strip
+   * break-inside:avoid further down the file). Children were
+   * stacking vertically just like .ck-kpi-grid pre-B3. Combined
+   * selector here so both classes share the editorial grid display.
+   */
+  .ck-kpi-grid,
+  .ck-kpi-strip { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:0; border-top:1px solid var(--sc-rule); }
+  .ck-kpi-grid .ck-kpi,
+  .ck-kpi-strip .ck-kpi { padding:14px 18px; border-top:0; border-right:1px solid var(--sc-rule); }
+  .ck-kpi-grid .ck-kpi:last-child,
+  .ck-kpi-strip .ck-kpi:last-child { border-right:0; }
   .ck-kpi-label { font-family:var(--sc-sans); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--sc-text-dim); margin-bottom:4px; }
   .ck-kpi-value { font-family:var(--sc-serif); font-size:22px; font-weight:500; color:var(--sc-navy); display:flex; align-items:baseline; gap:8px; }
   .ck-kpi-trend { font-family:var(--sc-mono); font-size:12px; }
