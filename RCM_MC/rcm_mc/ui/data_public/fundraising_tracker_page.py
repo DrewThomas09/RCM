@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _stage_color(s: str) -> str:
@@ -209,12 +209,15 @@ def render_fundraising_tracker(params: dict = None) -> str:
 
     hard_circle = sum(s.weighted_commitment_m for s in r.stages if s.stage in ("hard circled", "due diligence complete"))
 
+    page_title = ck_page_title(
+        "Fundraising / LP Pipeline Tracker",
+        eyebrow="FUNDRAISING TRACKER",
+        meta=f"{r.active_funds} active funds targeting ${r.total_target_b:.2f}B aggregate · ${r.total_hard_circled_b:.2f}B hard-circled ({r.pct_fundraised * 100:.1f}% complete) · {r.lps_in_pipeline} LPs in pipeline · {len(r.agents)} placement agents engaged",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Fundraising / LP Pipeline Tracker</h1>
-    <p class="ck-page-sub">{r.active_funds} active funds · ${r.total_target_b:.2f}B aggregate target · ${r.total_hard_circled_b:.2f}B hard circled · {r.pct_fundraised * 100:.1f}% fundraised · {r.lps_in_pipeline} LPs in pipeline · {len(r.agents)} placement agents — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Active Funds Under Fundraising</div>{t_tbl}</div>
   <div style="{cell}"><div style="{h3}">Pipeline by Stage</div>{s_tbl}</div>
