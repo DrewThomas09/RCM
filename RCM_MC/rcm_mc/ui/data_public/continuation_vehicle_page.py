@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title
 
 
 def _pricing_svg(pricing, current_nav: float) -> str:
@@ -311,15 +311,26 @@ def render_continuation_vehicle(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    # B11 sweep batch 2 PR 3/10 — bespoke .ck-page-h1 → ck_page_title.
+    # This page is asset-specific (filtered by an asset form input)
+    # so meta highlights the asset + current NAV + hold elapsed +
+    # the recommended-structure verdict, which is the page's
+    # analytical output. Asset name is escaped via ck_page_title's
+    # internal _esc(meta) call.
+    page_title = ck_page_title(
+        "Continuation Vehicle Analyzer",
+        eyebrow="CONTINUATION VEHICLE",
+        meta=(
+            f"{r.asset_name} · ${r.current_nav_mm:,.0f}M NAV · "
+            f"{r.hold_years_elapsed} yrs elapsed · "
+            f"recommended: {r.recommended_structure}"
+        ),
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Continuation Vehicle Analyzer</h1>
-    <p class="ck-page-sub">
-      GP-led secondary economics — structures, pricing, LP elections, carry reset — {r.corpus_deal_count:,} corpus deals
-    </p>
-  </div>
+  {page_title}
 
   {form}
 
