@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _stage_color(s: str) -> str:
@@ -210,12 +210,15 @@ def render_payer_contracts(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     opt_value = sum(o.annualized_value_m for o in r.optimization)
+    page_title = ck_page_title(
+        "Payer Contract Renewal Tracker",
+        eyebrow="PAYER CONTRACTS",
+        meta=f"""{r.total_contracts} contracts · ${r.total_annual_revenue_m:,.1f}M annual revenue · weighted {r.weighted_avg_escalator_pct * 100:.2f}% escalator · {r.contracts_expiring_12mo} expiring ≤12 months · ${r.revenue_at_renegotiation_m:.1f}M at renegotiation — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Payer Contract Renewal Tracker</h1>
-    <p class="ck-page-sub">{r.total_contracts} contracts · ${r.total_annual_revenue_m:,.1f}M annual revenue · weighted {r.weighted_avg_escalator_pct * 100:.2f}% escalator · {r.contracts_expiring_12mo} expiring ≤12 months · ${r.revenue_at_renegotiation_m:.1f}M at renegotiation — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Active Negotiations Pipeline</div>{n_tbl}</div>
   <div style="{cell}"><div style="{h3}">Payer Contract Book</div>{c_tbl}</div>

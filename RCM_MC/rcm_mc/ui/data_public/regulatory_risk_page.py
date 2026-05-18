@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _risk_dial_svg(score: int, label: str) -> str:
@@ -248,15 +248,16 @@ def render_regulatory_risk(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    page_title = ck_page_title(
+        "Regulatory Risk Tracker",
+        eyebrow="REGULATORY RISK",
+        meta=f"""Sector-specific regulatory risk — Stark, AKS, HIPAA, OIG, 340B + active CMS/OIG events — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
 
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Regulatory Risk Tracker</h1>
-    <p class="ck-page-sub">
-      Sector-specific regulatory risk — Stark, AKS, HIPAA, OIG, 340B + active CMS/OIG events — {r.corpus_deal_count:,} corpus deals
-    </p>
-  </div>
+  {page_title}
 
   {form}
 

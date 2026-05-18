@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _spend_bars_svg(cats) -> str:
@@ -228,12 +228,15 @@ def render_supply_chain(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    page_title = ck_page_title(
+        "Procurement &amp; Supply Chain Analyzer",
+        eyebrow="SUPPLY CHAIN",
+        meta=f"""GPO leverage, vendor contracts, CapEx, inventory — {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Procurement &amp; Supply Chain Analyzer</h1>
-    <p class="ck-page-sub">GPO leverage, vendor contracts, CapEx, inventory — {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">

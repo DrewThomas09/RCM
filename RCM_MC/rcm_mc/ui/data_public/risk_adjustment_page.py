@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _intensity_color(i: str) -> str:
@@ -201,12 +201,15 @@ def render_risk_adjustment(params: dict = None) -> str:
 
     v28_total_impact = sum(v.revenue_impact_m for v in r.v28)
     program_revenue = sum(p.revenue_captured_m for p in r.programs)
+    page_title = ck_page_title(
+        "Risk Adjustment / HCC Tracker",
+        eyebrow="RISK ADJUSTMENT",
+        meta=f"""{r.total_ma_lives_k:,.1f}K MA lives · weighted RAF {r.weighted_avg_raf:.3f} · ${r.total_ma_revenue_m:,.1f}M MA revenue · ${r.total_raf_gap_opportunity_m:.1f}M gap opportunity · ${r.radv_total_exposure_m:.1f}M max RADV exposure — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Risk Adjustment / HCC Tracker</h1>
-    <p class="ck-page-sub">{r.total_ma_lives_k:,.1f}K MA lives · weighted RAF {r.weighted_avg_raf:.3f} · ${r.total_ma_revenue_m:,.1f}M MA revenue · ${r.total_raf_gap_opportunity_m:.1f}M gap opportunity · ${r.radv_total_exposure_m:.1f}M max RADV exposure — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Portfolio RAF Roll-up</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">HCC Gap Analysis — Top Opportunities</div>{h_tbl}</div>

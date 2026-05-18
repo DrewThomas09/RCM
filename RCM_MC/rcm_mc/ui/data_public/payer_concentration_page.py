@@ -3,8 +3,7 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import (
-    P, chartis_shell, ck_data_cell, ck_kpi_block, ck_paired_block,
-)
+    P, chartis_shell, ck_data_cell, ck_kpi_block, ck_paired_block, ck_page_title)
 
 
 def _metrics_paired_rows(items) -> tuple:
@@ -249,12 +248,15 @@ def render_payer_concentration(params: dict = None) -> str:
     denial_exposure = sum(d.write_off_exposure_mm for d in r.denials)
     total_oon_risk = sum(o.balance_bill_risk_mm for o in r.oon_exposure)
 
+    page_title = ck_page_title(
+        "Payer Concentration Tracker",
+        eyebrow="PAYER CONCENTRATION",
+        meta=f"""CR1/CR3/CR5 · HHI · renewal schedule · denials · NSA OON exposure — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Payer Concentration Tracker</h1>
-    <p class="ck-page-sub">CR1/CR3/CR5 · HHI · renewal schedule · denials · NSA OON exposure — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {concentration_paired}

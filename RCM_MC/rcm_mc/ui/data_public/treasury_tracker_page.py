@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _status_color(s: str) -> str:
@@ -198,12 +198,15 @@ def render_treasury_tracker(params: dict = None) -> str:
     hedge_mtm = sum(h.mtm_value_m for h in r.hedging)
     ic_total = sum(ic.balance_m for ic in r.intercompany)
     avg_yield = sum(a.yield_pct * a.balance_m for a in r.accounts) / sum(a.balance_m for a in r.accounts) if r.accounts else 0
+    page_title = ck_page_title(
+        "Treasury / Cash Position Tracker",
+        eyebrow="TREASURY TRACKER",
+        meta=f"""${r.total_portfolio_liquidity_m:,.1f}M total liquidity · ${r.total_cash_and_investments_m:,.1f}M cash + investments · {r.weighted_revolver_utilization_pct * 100:.1f}% revolver utilization · {r.at_risk_deals} deal{"s" if r.at_risk_deals != 1 else ""} at risk · {len(r.hedging)} hedging positions — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Treasury / Cash Position Tracker</h1>
-    <p class="ck-page-sub">${r.total_portfolio_liquidity_m:,.1f}M total liquidity · ${r.total_cash_and_investments_m:,.1f}M cash + investments · {r.weighted_revolver_utilization_pct * 100:.1f}% revolver utilization · {r.at_risk_deals} deal{"s" if r.at_risk_deals != 1 else ""} at risk · {len(r.hedging)} hedging positions — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Cash Position & Revolver Utilization</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Working Capital Summary</div>{w_tbl}</div>

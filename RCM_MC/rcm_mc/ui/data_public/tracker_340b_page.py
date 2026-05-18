@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _status_color(s: str) -> str:
@@ -194,12 +194,15 @@ def render_tracker_340b(params: dict = None) -> str:
     total_restriction_exposure = sum(r2.annual_exposure_m for r2 in r.restrictions)
     total_audit_repayment = sum(a.repayment_m for a in r.audits)
 
+    page_title = ck_page_title(
+        "340B Pharmacy Program Tracker",
+        eyebrow="TRACKER 340B",
+        meta=f"""{r.total_entities} covered entities · ${r.total_annual_spend_m:,.1f}M 340B spend · ${r.total_annual_savings_m:,.1f}M savings ({r.effective_savings_rate * 100:.1f}%) · {r.total_contract_pharmacies} contract pharmacies · {r.restricted_manufacturers} mfr restrictions — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">340B Pharmacy Program Tracker</h1>
-    <p class="ck-page-sub">{r.total_entities} covered entities · ${r.total_annual_spend_m:,.1f}M 340B spend · ${r.total_annual_savings_m:,.1f}M savings ({r.effective_savings_rate * 100:.1f}%) · {r.total_contract_pharmacies} contract pharmacies · {r.restricted_manufacturers} mfr restrictions — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Covered Entities — Portfolio Registration</div>{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Contract Pharmacy Arrangements</div>{p_tbl}</div>

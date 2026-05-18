@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _visits_table(items) -> str:
@@ -166,12 +166,15 @@ def render_telehealth_econ(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     total_cliff_risk = sum(c.revenue_at_risk_mm for c in r.cliffs)
+    page_title = ck_page_title(
+        "Telehealth Economics Analyzer",
+        eyebrow="TELEHEALTH ECON",
+        meta=f"""Visit-level P&amp;L · provider productivity · state parity · tech stack · PHE cliff exposure · DTC comparables — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Telehealth Economics Analyzer</h1>
-    <p class="ck-page-sub">Visit-level P&amp;L · provider productivity · state parity · tech stack · PHE cliff exposure · DTC comparables — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Visit-Type Economics (P&amp;L by Visit Category)</div>{v_tbl}</div>
   <div style="{cell}"><div style="{h3}">Provider Productivity by Specialty</div>{p_tbl}</div>

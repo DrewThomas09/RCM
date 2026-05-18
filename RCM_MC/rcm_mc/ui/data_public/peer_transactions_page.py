@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _trend_color(t: str) -> str:
@@ -197,12 +197,15 @@ def render_peer_transactions(params: dict = None) -> str:
     latest = r.trends[-1] if r.trends else None
     latest_info = f"{latest.period}: {latest.total_deals} deals, ${latest.total_volume_b:.2f}B, {latest.median_multiple:.2f}x median" if latest else "n/a"
 
+    page_title = ck_page_title(
+        "Peer Transaction Database / Comps Library",
+        eyebrow="PEER TRANSACTIONS",
+        meta=f"""{r.total_transactions} comparable transactions · ${r.total_volume_b:.2f}B aggregate value · median {r.median_ev_ebitda:.2f}x EV/EBITDA · {r.median_ev_revenue:.2f}x EV/Revenue · {latest_info} — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Peer Transaction Database / Comps Library</h1>
-    <p class="ck-page-sub">{r.total_transactions} comparable transactions · ${r.total_volume_b:.2f}B aggregate value · median {r.median_ev_ebitda:.2f}x EV/EBITDA · {r.median_ev_revenue:.2f}x EV/Revenue · {latest_info} — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Recent Comparable Transactions</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sector Multiples — 2022-2025 Aggregated</div>{s_tbl}</div>

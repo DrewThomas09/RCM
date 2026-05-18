@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _dso_trajectory_svg(bridge) -> str:
@@ -286,16 +286,16 @@ def render_working_capital(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    page_title = ck_page_title(
+        "Working Capital Analyzer",
+        eyebrow="WORKING CAPITAL",
+        meta=f"""AR/AP/DSO diligence for {_html.escape(sector)} — cash conversion cycle and RCM-driven FCF uplift across {hold} years — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
 
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Working Capital Analyzer</h1>
-    <p class="ck-page-sub">
-      AR/AP/DSO diligence for {_html.escape(sector)} — cash conversion cycle and RCM-driven FCF uplift
-      across {hold} years — {r.corpus_deal_count:,} corpus deals
-    </p>
-  </div>
+  {page_title}
 
   {form}
 
