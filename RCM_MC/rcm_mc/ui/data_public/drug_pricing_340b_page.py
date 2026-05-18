@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _entities_table(entities) -> str:
@@ -231,12 +231,15 @@ def render_drug_pricing_340b(params: dict = None) -> str:
     manuf_impact = sum(m.annual_impact_mm for m in r.manufacturers)
     audit_exposure = sum(a.exposure_mm for a in r.audits) / 1000
 
+    page_title = ck_page_title(
+        "340B Drug Pricing Analyzer",
+        eyebrow="DRUG PRICING 340B",
+        meta=f"{r.total_covered_entities} covered entities on {platform} platform · ${r.total_drug_spend_mm:,.0f}M drug spend → ${r.total_program_savings_mm:,.0f}M ceiling savings · ${r.total_margin_mm:,.0f}M program margin at {r.program_margin_pct * 100:.1f}% · {r.audit_risk_weighted:.1f}/100 weighted audit risk",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">340B Drug Pricing Analyzer</h1>
-    <p class="ck-page-sub">Covered entities · ceiling price · contract pharmacy · HRSA audits · V28 &amp; V24 · Medicaid carve-in/out — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   {form}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Drug Category Savings Map</div>{svg}</div>
