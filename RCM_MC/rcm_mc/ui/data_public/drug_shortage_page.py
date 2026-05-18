@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _drugs_table(items) -> str:
@@ -160,12 +160,15 @@ def render_drug_shortage(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     weighted_impact = sum(p.probability_pct * p.financial_impact_mm for p in r.playbooks)
+    page_title = ck_page_title(
+        "Drug Shortage / Supply-Chain Risk Tracker",
+        eyebrow="DRUG SHORTAGE",
+        meta=f"{r.active_shortages} of {r.total_critical_drugs} critical drugs in active shortage · ${r.sole_source_exposure_mm:,.2f}M sole-source exposure · ${weighted_impact:,.2f}M probability-weighted shortfall exposure · {r.overall_supply_risk_score}/100 supply risk score ({r.risk_tier.upper()} tier)",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Drug Shortage / Supply-Chain Risk</h1>
-    <p class="ck-page-sub">FDA shortage list · supplier concentration · geographic exposure · shortage playbooks · GPO reliability — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {tier_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Supply Chain Posture</div>
