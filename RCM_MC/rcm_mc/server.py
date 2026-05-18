@@ -17827,18 +17827,25 @@ class RCMHandler(BaseHTTPRequestHandler):
         # Source-parser false positives + test/scratch routes
         "/pressure?", "/diligence/", "/static", "/api",
         "/X", "/foo",
+        # JSON / non-HTML endpoints that happen to live outside /api/
+        "/portfolio/monte-carlo",
         # The tools index itself
         "/tools",
     })
 
     @classmethod
     def _discover_all_routes(cls) -> List[str]:
-        """Parse this module's source for every `path == "/X"` and
-        `path.startswith("/X/")` literal, returning the de-duped,
-        filtered list of user-facing GET routes. Cheap (~ms) and
+        """Parse this module's source for every GET-renderable route,
+        returning the de-duped, filtered list. Cheap (~ms) and
         cached on the class after first call. The alternative
         (maintaining a separate registry) drifts; parsing the
         source keeps the catalog automatic and complete.
+
+        Only emits routes that have an exact ``path == "/X"`` handler
+        — bare ``path.startswith("/X/")`` routes require a path
+        parameter (e.g. ``/models/dcf/<deal_id>``) and 404 when
+        linked bare. The earlier version of this function emitted
+        both, which leaked 35 dead links onto /tools.
         """
         if cls._CACHED_ROUTES is not None:
             return cls._CACHED_ROUTES
@@ -17849,11 +17856,15 @@ class RCMHandler(BaseHTTPRequestHandler):
         except OSError:
             cls._CACHED_ROUTES = []
             return []
-        exact = _re.findall(r"""path\s*==\s*['"](/[^'"]+)['"]""", src)
-        prefix = _re.findall(
-            r"""path\.startswith\(\s*['"](/[^'"]+)['"]""", src
-        )
-        routes = set(exact) | {p.rstrip("/") for p in prefix}
+        # Only exact-match handlers are bare-renderable. startswith
+        # patterns that also have a sibling exact handler (e.g.
+        # `path == "/diligence/deal" or path.startswith(
+        # "/diligence/deal/")`) are already covered by the exact
+        # match; pure-startswith handlers are deep-link templates
+        # and should not appear as catalog entries.
+        routes = set(_re.findall(
+            r"""path\s*==\s*['"](/[^'"]+)['"]""", src
+        ))
         # Filter system / API / static / hidden
         keep = []
         for r in sorted(routes):
