@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title
 
 
 def _roles_paired_rows(roles) -> tuple:
@@ -224,12 +224,15 @@ def render_locum_tracker(params: dict = None) -> str:
     total_gap_risk = sum(g.revenue_at_risk_mm for g in r.gaps)
     total_conv_savings = sum(c.annual_savings_mm for c in r.conversions)
 
+    page_title = ck_page_title(
+        "Locum & Contract Workforce Tracker",
+        eyebrow="LOCUM TRACKER",
+        meta=f"{sector} sector · ${r.locum_spend_mm:,.2f}M locum spend = {r.locum_pct_of_labor * 100:.1f}% of ${r.total_labor_mm:,.1f}M labor · {r.total_contract_fte:.1f} contract FTE across {len(r.roles)} roles · {len(r.gaps)} coverage gaps at ${total_gap_risk:,.1f}M revenue at risk · ${total_conv_savings:,.2f}M annual savings from permanent conversion",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Locum &amp; Contract Workforce Tracker</h1>
-    <p class="ck-page-sub">Contract clinician spend · coverage gaps · permanent conversion pipeline · 1099 compliance — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   {form}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   {roles_paired}
