@@ -7,7 +7,7 @@ from typing import List
 
 from rcm_mc.ui._chartis_kit import (
     P, _MONO, _SANS, chartis_shell, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip, ck_section_header,
+    ck_page_title, ck_provenance_tooltip, ck_section_header,
 )
 
 
@@ -150,9 +150,28 @@ def render_concentration_risk() -> str:
         f'</div>'
     )
 
+    # B11 — pre-fix, this page had no h1. It used ck_section_header
+    # ("CONCENTRATION RISK", "Portfolio diversification analysis — N
+    # corpus transactions", None) as a de-facto title — but
+    # ck_section_header is an h2-level primitive for sections within
+    # a page, not a page-level h1. Adding ck_page_title and removing
+    # the now-redundant ck_section_header (its eyebrow + subtitle
+    # text are absorbed into the new page_title's eyebrow + meta).
+    # Meta highlights the sector HHI specifically since the page's
+    # ck_provenance_tooltip already singles out sector concentration
+    # as the highest-stakes dimension.
+    page_title = ck_page_title(
+        "Concentration Risk Analysis",
+        eyebrow="CONCENTRATION RISK",
+        meta=(
+            f"{cr.corpus_size} corpus deals · "
+            f"sector HHI {cr.sector.hhi:,.0f} · "
+            f"{cr.sector.interpretation}"
+        ),
+    )
     body = f"""
 <div style="padding:16px 20px;max-width:1200px">
-  {ck_section_header("CONCENTRATION RISK", f"Portfolio diversification analysis — {cr.corpus_size} corpus transactions", None)}
+  {page_title}
   {kpi_strip}
   {hhi_legend}
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
