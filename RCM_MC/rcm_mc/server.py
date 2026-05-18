@@ -3826,6 +3826,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             ))
         if path == "/tools":
             return self._route_tools_index()
+        if path == "/pick":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            target = (_qs.get("route") or [""])[0]
+            return self._route_pick(target)
         if path == "/comparables":
             _qs = urllib.parse.parse_qs(parsed.query)
             def _qf(k, default=None):
@@ -17725,17 +17729,36 @@ class RCMHandler(BaseHTTPRequestHandler):
             )
             rows = []
             for m in entries:
-                badge = "" if m["curated"] else (
-                    '<span class="ck-tool-orphan-badge" '
-                    'title="Auto-discovered route — not yet in the '
-                    'curated palette. Title generated from the URL '
-                    'slug.">auto</span>'
-                )
+                badges = ""
+                if not m["curated"]:
+                    badges += (
+                        '<span class="ck-tool-orphan-badge" '
+                        'title="Auto-discovered route — not yet in the '
+                        'curated palette. Title generated from the URL '
+                        'slug.">auto</span>'
+                    )
+                # Parametric routes (e.g. /models/dcf) need a deal_id
+                # appended to render. Link them via the /pick chooser
+                # instead of dead-linking the bare URL, and badge so
+                # the partner knows why.
+                is_param = m["route"] in self._PICK_PARAMETRIC_ROUTES
+                if is_param:
+                    badges += (
+                        '<span class="ck-tool-needs-badge" '
+                        'title="This surface renders per-deal. The '
+                        'link opens a deal chooser that forwards to '
+                        'the selected deal\'s view.">needs deal</span>'
+                    )
+                    link_target = (
+                        f'/pick?route={urllib.parse.quote(m["route"])}'
+                    )
+                else:
+                    link_target = m["route"]
                 rows.append(
-                    f'<a href="{html.escape(m["route"], quote=True)}" '
+                    f'<a href="{html.escape(link_target, quote=True)}" '
                     'class="ck-tool-row">'
                     f'<span class="ck-tool-title">'
-                    f'{html.escape(m["title"])}{badge}</span>'
+                    f'{html.escape(m["title"])}{badges}</span>'
                     f'<span class="ck-tool-route">'
                     f'{html.escape(m["route"])}</span>'
                     '</a>'
@@ -17788,6 +17811,12 @@ class RCMHandler(BaseHTTPRequestHandler):
             'text-transform:uppercase;color:var(--sc-text-faint,#7a8699);'
             'background:var(--sc-parchment,#f2ede3);'
             'border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;}'
+            '.ck-tool-needs-badge{display:inline-block;margin-left:6px;'
+            'padding:1px 6px;font-family:var(--sc-mono,monospace);'
+            'font-size:9px;font-weight:600;letter-spacing:0.08em;'
+            'text-transform:uppercase;color:var(--sc-teal-ink,#155752);'
+            'background:#fff;border:1px solid var(--sc-teal-ink,#155752);'
+            'border-radius:2px;}'
             '</style>'
         )
         body = f"{title_html}{page_css}{''.join(cards)}"
@@ -17801,6 +17830,32 @@ class RCMHandler(BaseHTTPRequestHandler):
     # once on first /tools hit and the parsed result is kept on the
     # handler class so subsequent requests are O(1).
     _CACHED_ROUTES: Optional[List[str]] = None
+
+    # Parametric routes — handler is `path.startswith("/X/")` only,
+    # so the bare URL 404s. /tools links these via the deal-picker
+    # shim at /pick?route=<r>, which renders a chooser of available
+    # deals; clicking a deal forwards to `<r>/<deal_id>`. Without
+    # this, 32 real analyst surfaces were either missing from /tools
+    # (silent loss) or dead-linked (bad partner UX). Keep the set
+    # narrow — only routes that genuinely take a deal_id as the
+    # path parameter and would render usefully after one is picked.
+    _PICK_PARAMETRIC_ROUTES: frozenset = frozenset({
+        # /models/<name>/<deal_id>
+        "/models/anomalies", "/models/bridge", "/models/causal",
+        "/models/challenge", "/models/comparables",
+        "/models/completeness", "/models/counterfactual",
+        "/models/dcf", "/models/debt", "/models/denial",
+        "/models/financials", "/models/irs990", "/models/lbo",
+        "/models/market", "/models/memo", "/models/playbook",
+        "/models/predicted", "/models/questions", "/models/returns",
+        "/models/service-lines", "/models/trends",
+        "/models/validate", "/models/waterfall",
+        # /diligence/<view>/<deal_id>
+        "/diligence/ic-memo", "/diligence/synthesis",
+        # /<surface>/<deal_id> (legacy patterns)
+        "/ebitda-bridge", "/hold", "/ic-memo", "/value-tracker",
+        "/data-room", "/outputs", "/screening",
+    })
 
     # Routes that exist as handlers but should be hidden from the
     # tools index: they are auth flows, form POST endpoints, deep
@@ -17856,15 +17911,26 @@ class RCMHandler(BaseHTTPRequestHandler):
         except OSError:
             cls._CACHED_ROUTES = []
             return []
-        # Only exact-match handlers are bare-renderable. startswith
-        # patterns that also have a sibling exact handler (e.g.
-        # `path == "/diligence/deal" or path.startswith(
-        # "/diligence/deal/")`) are already covered by the exact
-        # match; pure-startswith handlers are deep-link templates
-        # and should not appear as catalog entries.
-        routes = set(_re.findall(
+        # Exact-match handlers are always bare-renderable. Pure
+        # startswith handlers (e.g. `path.startswith("/models/dcf/")`
+        # with no `path == "/models/dcf"` sibling) need a path
+        # parameter — they 404 when linked bare. We surface those
+        # via the picker shim (/pick?route=...) which renders a deal
+        # chooser, so we still want them in the catalog. The
+        # `parametric` field on each entry tells the renderer
+        # whether to link directly or via /pick.
+        exact = set(_re.findall(
             r"""path\s*==\s*['"](/[^'"]+)['"]""", src
         ))
+        starts = {
+            p.rstrip("/")
+            for p in _re.findall(
+                r"""path\.startswith\(\s*['"](/[^'"]+)['"]""", src
+            )
+        }
+        # Parametric = startswith-only (no exact sibling)
+        parametric_only = starts - exact
+        routes = exact | (parametric_only & cls._PICK_PARAMETRIC_ROUTES)
         # Filter system / API / static / hidden
         keep = []
         for r in sorted(routes):
@@ -18038,6 +18104,136 @@ class RCMHandler(BaseHTTPRequestHandler):
         )):
             return "diligence"
         return "more"
+
+    def _route_pick(self, target_route: str) -> None:
+        """GET /pick?route=<r> — deal-chooser shim for parametric surfaces.
+
+        Renders an editorial picker page listing every deal in the
+        portfolio with a card link to ``<target_route>/<deal_id>``
+        for each. Lets /tools surface analyst surfaces that would
+        otherwise 404 when linked bare (because their handler is a
+        ``path.startswith("/X/")`` template needing a deal_id).
+
+        Validates ``target_route`` against the explicit allowlist
+        (``_PICK_PARAMETRIC_ROUTES``) so the shim can't be used as
+        an open redirect.
+        """
+        from .ui._chartis_kit import chartis_shell, ck_page_title
+        # Allowlist guard — refuse arbitrary routes
+        if target_route not in self._PICK_PARAMETRIC_ROUTES:
+            from .ui._chartis_kit import ck_empty_state
+            body = ck_page_title(
+                "Pick a deal",
+                eyebrow="ROUTE NOT PICKABLE",
+                meta="The requested route is not on the parametric allowlist.",
+            ) + ck_empty_state(
+                title="Nothing to pick for that route",
+                body=(
+                    f"<code>{html.escape(target_route or '(empty)')}"
+                    "</code> is not a registered parametric surface. "
+                    "Either link to it directly (if it's bare-renderable) "
+                    "or add it to <code>_PICK_PARAMETRIC_ROUTES</code> "
+                    "in server.py."
+                ),
+                cta_label="Back to all tools",
+                cta_href="/tools",
+            )
+            self._send_html(chartis_shell(
+                body, "Pick a deal", active_nav="/tools",
+            ))
+            return
+        # Load deals (cheap query — list_deals returns a DataFrame)
+        store = PortfolioStore(self.config.db_path)
+        try:
+            deals_df = store.list_deals(include_archived=False)
+            deals = [
+                (r["deal_id"], r.get("name", r["deal_id"]))
+                for _, r in deals_df.iterrows()
+            ]
+        except Exception:
+            deals = []
+        # Friendly label for the target surface
+        from .ui._chartis_kit import (
+            _DEFAULT_PALETTE_MODULES, ck_empty_state,
+        )
+        palette_by_route = {m["route"]: m for m in _DEFAULT_PALETTE_MODULES}
+        target_title = (
+            palette_by_route.get(target_route, {}).get("title")
+            or self._title_from_route(target_route)
+        )
+        title_html = ck_page_title(
+            f"{target_title} — pick a deal",
+            eyebrow="DEAL CHOOSER",
+            meta=(
+                f"{len(deals)} deal{'s' if len(deals) != 1 else ''} "
+                f"available · routes to "
+                f"{html.escape(target_route)}/<deal_id>"
+            ),
+        )
+        if not deals:
+            body = title_html + ck_empty_state(
+                title="No deals in the portfolio yet",
+                body=(
+                    "Create a deal via <code>/new-deal</code> or seed the "
+                    "demo corpus, then return here to launch this surface."
+                ),
+                cta_label="Add a deal",
+                cta_href="/new-deal",
+            )
+            self._send_html(chartis_shell(
+                body, "Pick a deal", active_nav="/tools",
+            ))
+            return
+        # Grid of deal cards — same .ck-tool-row look as /tools rows
+        # so the visual language stays consistent between catalog
+        # and picker.
+        rows = []
+        for deal_id, name in deals:
+            href = f"{target_route}/{urllib.parse.quote(str(deal_id))}"
+            rows.append(
+                f'<a class="ck-tool-row" href="{html.escape(href, quote=True)}">'
+                f'<span class="ck-tool-title">{html.escape(str(name or deal_id))}</span>'
+                f'<span class="ck-tool-route">{html.escape(str(deal_id))}</span>'
+                "</a>"
+            )
+        css = (
+            '<style>'
+            '.ck-pick-card{padding:22px 26px;margin:0 0 20px;'
+            'background:#fff;border:1px solid var(--sc-rule,#d6cfc0);'
+            'border-radius:2px;}'
+            '.ck-pick-card-head{display:flex;align-items:baseline;'
+            'justify-content:space-between;gap:12px;margin:0 0 14px;}'
+            '.ck-pick-card-head h2{font-family:var(--sc-serif,Georgia,serif);'
+            'font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);'
+            'margin:0;}'
+            '.ck-pick-list{display:grid;'
+            'grid-template-columns:repeat(auto-fit,minmax(320px,1fr));'
+            'gap:0;border-top:1px solid var(--sc-rule,#d6cfc0);}'
+            '.ck-tool-row{display:flex;align-items:baseline;'
+            'justify-content:space-between;gap:18px;padding:11px 14px;'
+            'border-bottom:1px solid var(--sc-rule,#d6cfc0);'
+            'text-decoration:none;color:var(--sc-text,#1a2332);'
+            'font-family:var(--sc-sans,Inter,sans-serif);font-size:13.5px;}'
+            '.ck-tool-row:hover{background:var(--sc-bone,#ece5d6);}'
+            '.ck-tool-title{font-weight:600;color:var(--sc-navy,#0b2341);}'
+            '.ck-tool-route{font-family:var(--sc-mono,monospace);'
+            'font-size:11px;color:var(--sc-text-faint,#7a8699);}'
+            '</style>'
+        )
+        body = (
+            title_html
+            + css
+            + '<section class="ck-pick-card">'
+            '<header class="ck-pick-card-head">'
+            f'<h2>Available deals</h2>'
+            f'<span class="ck-tool-card-count">{len(deals)} deals</span>'
+            '</header>'
+            f'<div class="ck-pick-list">{"".join(rows)}</div>'
+            '</section>'
+        )
+        self._send_html(chartis_shell(
+            body, "Pick a deal", active_nav="/tools",
+        ))
 
     def _redirect(self, location: str) -> None:
         """See Other redirect — browser re-GETs the target after form POST.
