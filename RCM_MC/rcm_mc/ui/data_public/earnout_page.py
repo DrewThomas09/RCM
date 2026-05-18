@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _milestone_waterfall_svg(milestones) -> str:
@@ -294,15 +294,16 @@ def render_earnout(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    page_title = ck_page_title(
+        "Earnout & Contingent Consideration Analyzer",
+        eyebrow="EARNOUT",
+        meta=f"${r.base_purchase_price_mm:,.0f}M base + ${r.max_earnout_mm:,.1f}M max earnout · ${r.expected_earnout_mm:,.1f}M probability-weighted (${r.total_expected_payout_pv_mm:,.1f}M PV) · {r.effective_headline_multiple:.2f}x headline → {r.effective_paid_multiple:.2f}x effective paid · {len(r.milestones)} milestones",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Earnout &amp; Contingent Consideration Analyzer</h1>
-    <p class="ck-page-sub">
-      Milestone-based payouts, probability-weighted value, fair-value accounting, IRR impact — {r.corpus_deal_count:,} corpus deals
-    </p>
-  </div>
+  {page_title}
 
   {form}
 
