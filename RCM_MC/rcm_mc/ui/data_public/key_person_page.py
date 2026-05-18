@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _concentration_gauge_svg(score: float) -> str:
@@ -245,14 +245,17 @@ def render_key_person(params: dict = None) -> str:
     border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     pos = P["positive"]; neg = P["negative"]; acc = P["accent"]
 
+    critical_gap_count = sum(1 for kp in r.key_persons if kp.succession_status == "critical_gap")
+    high_risk_count = sum(1 for kp in r.key_persons if kp.departure_risk == "high")
+
     kpi_strip = (
         ck_kpi_block("Concentration Score", f"{r.concentration_score:.0f}", "/100", "") +
         ck_kpi_block("Key Persons", str(len(r.key_persons)), "", "") +
         ck_kpi_block("Sector", sector, "", "") +
         ck_kpi_block("Revenue at Risk", f"${r.total_revenue_at_risk_mm:,.1f}M", "", "") +
         ck_kpi_block("EV at Risk", f"${r.total_ev_at_risk_mm:,.1f}M", "", "") +
-        ck_kpi_block("Critical Gaps", str(sum(1 for kp in r.key_persons if kp.succession_status == "critical_gap")), "", "") +
-        ck_kpi_block("High-Risk Persons", str(sum(1 for kp in r.key_persons if kp.departure_risk == "high")), "", "") +
+        ck_kpi_block("Critical Gaps", str(critical_gap_count), "", "") +
+        ck_kpi_block("High-Risk Persons", str(high_risk_count), "", "") +
         ck_kpi_block("Mitigation Cost", f"${r.total_mitigation_cost_mm:,.2f}M", "", "")
     )
 
@@ -293,15 +296,16 @@ def render_key_person(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    page_title = ck_page_title(
+        "Key Person & Clinical Concentration Risk",
+        eyebrow="KEY PERSON",
+        meta=f"{sector} sector · concentration score {r.concentration_score:.0f}/100 · {high_risk_count} of {len(r.key_persons)} key persons high-risk · ${r.total_revenue_at_risk_mm:,.1f}M revenue at risk → ${r.total_ev_at_risk_mm:,.1f}M EV impact · ${r.total_mitigation_cost_mm:,.2f}M mitigation cost",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Key Person &amp; Clinical Concentration Risk</h1>
-    <p class="ck-page-sub">
-      CEO, medical director, top-producer dependency with departure scenarios and mitigation plans for {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals
-    </p>
-  </div>
+  {page_title}
 
   {form}
 
