@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _synd_status_color(status: str) -> str:
@@ -212,12 +212,15 @@ def render_debt_financing(params: dict = None) -> str:
     cov_lite_cnt = sum(1 for f in r.facilities if f.covenant_lite)
     active_marketing = sum(1 for s in r.syndications if s.status in ("clearing", "active marketing", "final allocation"))
 
+    page_title = ck_page_title(
+        "Debt Financing / LBO Commitment Tracker",
+        eyebrow="DEBT FINANCING",
+        meta=f"{r.total_financings} active financings · ${r.total_package_m:,.1f}M total package · SOFR+{r.avg_sofr_spread}bps at {r.avg_leverage:.2f}x average leverage · {r.cov_lite_pct * 100:.1f}% cov-lite · {active_marketing} still in syndication",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Debt Financing / LBO Commitment Tracker</h1>
-    <p class="ck-page-sub">{r.total_financings} active financings · ${r.total_package_m:,.1f}M total package · SOFR+{r.avg_sofr_spread}bps average · {cov_lite_cnt} of {len(r.facilities)} facilities cov-lite ({r.cov_lite_pct * 100:.1f}%) · {active_marketing} in active syndication — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Syndication Status — Active Book</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Facility Detail — Tranches, Pricing, Tenor</div>{f_tbl}</div>
