@@ -200,7 +200,7 @@ def _comps_table(comps: List[Dict[str, Any]], show_similarity: bool = True) -> s
 
     rows_html = []
     for i, c in enumerate(comps):
-        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
+        stripe = ' style="background:var(--sc-bone)"' if i % 2 == 1 else ""
         ev = c.get("ev_mm")
         eb = c.get("ebitda_at_entry_mm") or c.get("ebitda_mm")
         multiple = float(ev) / float(eb) if ev and eb and float(eb) > 0 else None

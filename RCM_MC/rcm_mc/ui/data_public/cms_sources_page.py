@@ -122,7 +122,7 @@ def _status_badge(status: str) -> str:
 def _source_table(sources: List[Dict[str, Any]]) -> str:
     rows_html = []
     for i, src in enumerate(sources):
-        stripe = ' style="background:#0f172a"' if i % 2 == 0 else ""
+        stripe = ' style="background:var(--sc-bone)"' if i % 2 == 0 else ""
         name_html = f'<strong style="font-family:var(--ck-mono);font-size:11.5px;">{_html.escape(src["name"])}</strong>'
         desc_html = f'<div style="color:var(--ck-text-dim);font-size:11px;margin-top:3px;white-space:normal;">{_html.escape(src["description"])}</div>'
         cols_html = f'<div style="font-family:var(--ck-mono);font-size:9.5px;color:var(--ck-text-faint);margin-top:4px;">{_html.escape(src["key_cols"])}</div>'
@@ -202,11 +202,11 @@ clean = winsorize_column([col for col in payments], upper_quantile=0.95)
         <thead><tr><th style="width:220px">Function</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td class="mono">fetch_pages(endpoint, ...)</td><td class="dim">Raw paginated fetch with retry. Returns List[Dict].</td></tr>
-          <tr style="background:#0f172a"><td class="mono">fetch_provider_utilization(state, specialty, year, ...)</td><td class="dim">Physician utilization, filtered and normalized.</td></tr>
+          <tr style="background:var(--sc-bone)"><td class="mono">fetch_provider_utilization(state, specialty, year, ...)</td><td class="dim">Physician utilization, filtered and normalized.</td></tr>
           <tr><td class="mono">fetch_geographic_variation(state, ...)</td><td class="dim">Geographic variation dataset for regional benchmarking.</td></tr>
-          <tr style="background:#0f172a"><td class="mono">normalize_row(row)</td><td class="dim">Map CMS column names → internal canonical names.</td></tr>
+          <tr style="background:var(--sc-bone)"><td class="mono">normalize_row(row)</td><td class="dim">Map CMS column names → internal canonical names.</td></tr>
           <tr><td class="mono">winsorize_column(values, upper_quantile)</td><td class="dim">Clip heavy tails for comparability analysis.</td></tr>
-          <tr style="background:#0f172a"><td class="mono">safe_float(value, default)</td><td class="dim">Null-safe numeric coercion from CMS string fields.</td></tr>
+          <tr style="background:var(--sc-bone)"><td class="mono">safe_float(value, default)</td><td class="dim">Null-safe numeric coercion from CMS string fields.</td></tr>
         </tbody>
       </table>
     </div>

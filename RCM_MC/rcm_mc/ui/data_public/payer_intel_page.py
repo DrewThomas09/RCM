@@ -225,7 +225,7 @@ def render_payer_intel() -> str:
     # Regime table
     regime_rows = []
     for i, r in enumerate(profile.regime_stats):
-        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
+        stripe = ' style="background:var(--sc-bone)"' if i % 2 == 1 else ""
         mc = _moic_color(r.moic_p50)
         regime_rows.append(f"""<tr{stripe}>
   <td style="padding:5px 8px;font-size:10.5px;">{_html.escape(r.regime)}</td>

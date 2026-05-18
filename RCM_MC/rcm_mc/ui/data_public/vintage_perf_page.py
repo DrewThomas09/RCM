@@ -201,7 +201,7 @@ def render_vintage_perf() -> str:
     # Table
     rows = []
     for i, s in enumerate(stats):
-        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
+        stripe = ' style="background:var(--sc-bone)"' if i % 2 == 1 else ""
         mc = _moic_color(s.moic_p50)
         sectors_html = "".join(
             f'<span style="display:inline-block;margin:1px 2px;padding:1px 5px;border:1px solid #1e293b;'

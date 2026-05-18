@@ -222,7 +222,7 @@ def _rates_table(rows: List[Dict[str, Any]], group_label: str) -> str:
 
     tbody_rows = []
     for i, r in enumerate(rows):
-        stripe = ' style="background:#0f172a"' if i % 2 == 0 else ""
+        stripe = ' style="background:var(--sc-bone)"' if i % 2 == 0 else ""
         spark = _sparkline_svg(r["moic_p25"], r["moic_p50"], r["moic_p75"])
         tbody_rows.append(f"""
 <tr{stripe}>

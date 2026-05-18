@@ -259,7 +259,7 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
 
     rows = []
     for i, s in enumerate(page_scores):
-        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
+        stripe = ' style="background:var(--sc-bone)"' if i % 2 == 1 else ""
         flag_html = ""
         if s.flags:
             flag_parts = []

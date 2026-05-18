@@ -89,7 +89,7 @@ def _sector_pills(sectors: List[str]) -> str:
     pills = []
     for s in sectors[:3]:
         pills.append(
-            f'<span style="display:inline-block;background:#0f172a;border:1px solid #1e293b;'
+            f'<span style="display:inline-block;background:var(--sc-bone);border:1px solid #1e293b;'
             f'border-radius:2px;padding:1px 5px;font-size:8.5px;color:#64748b;margin:1px;">'
             f'{_html.escape(s[:20])}</span>'
         )
@@ -154,7 +154,7 @@ def _build_table(records: List[Any]) -> str:
 
     rows_html = []
     for i, rec in enumerate(records):
-        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
+        stripe = ' style="background:var(--sc-bone)"' if i % 2 == 1 else ""
 
         # Get realized moics for sparkline
         moics = sorted([

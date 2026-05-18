@@ -250,7 +250,7 @@ def render_corpus_dashboard() -> str:
     # Top sectors table
     top_sector_rows = []
     for i, s in enumerate(sector_stats[:15]):
-        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
+        stripe = ' style="background:var(--sc-bone)"' if i % 2 == 1 else ""
         mc = _moic_color(s.moic_p50)
         top_sector_rows.append(f"""<tr{stripe}>
   <td style="padding:4px 8px;font-size:10px;">{_html.escape(s.sector[:30].replace('_',' '))}</td>
@@ -284,7 +284,7 @@ def render_corpus_dashboard() -> str:
     # Vintage mini table
     vintage_rows = []
     for i, s in enumerate(vintage_stats[-10:]):  # last 10 vintages
-        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
+        stripe = ' style="background:var(--sc-bone)"' if i % 2 == 1 else ""
         mc = _moic_color(s.moic_p50)
         vintage_rows.append(f"""<tr{stripe}>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;">{s.year}</td>
