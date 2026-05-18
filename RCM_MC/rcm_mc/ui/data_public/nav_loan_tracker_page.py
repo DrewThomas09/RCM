@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _tier_color(t: str) -> str:
@@ -192,12 +192,15 @@ def render_nav_loan_tracker(params: dict = None) -> str:
 
     avg_headroom = sum(c.headroom_pct for c in r.coverage) / len(r.coverage) if r.coverage else 0
 
+    page_title = ck_page_title(
+        "NAV Loan / Fund-Level Financing Tracker",
+        eyebrow="NAV LOAN TRACKER",
+        meta=f"""{r.total_loans} active NAV loans · ${r.total_outstanding_m:,.1f}M outstanding · {r.weighted_ltv_pct * 100:.2f}% weighted LTV · SOFR+{r.weighted_spread_bps}bps · {r.loans_near_maturity} loans within 4-year maturity window — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">NAV Loan / Fund-Level Financing Tracker</h1>
-    <p class="ck-page-sub">{r.total_loans} active NAV loans · ${r.total_outstanding_m:,.1f}M outstanding · {r.weighted_ltv_pct * 100:.2f}% weighted LTV · SOFR+{r.weighted_spread_bps}bps · {r.loans_near_maturity} loans within 4-year maturity window — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Active NAV Loan Book</div>{l_tbl}</div>
   <div style="{cell}"><div style="{h3}">Coverage Analysis — Current LTV vs Covenants</div>{c_tbl}</div>

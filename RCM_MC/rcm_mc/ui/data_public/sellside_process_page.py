@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _stage_color(s: str) -> str:
@@ -216,12 +216,15 @@ def render_sellside_process(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    page_title = ck_page_title(
+        "Sell-Side Process Tracker",
+        eyebrow="SELLSIDE PROCESS",
+        meta=f"""{r.total_active_processes} active processes · {r.total_buyers_engaged} buyers engaged · ${r.total_target_ev_m:,.1f}M target EV · {r.weighted_target_moic:.2f}x weighted MOIC · {r.processes_closing_12mo} closings ≤12 mo — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Sell-Side Process Tracker</h1>
-    <p class="ck-page-sub">{r.total_active_processes} active processes · {r.total_buyers_engaged} buyers engaged · ${r.total_target_ev_m:,.1f}M target EV · {r.weighted_target_moic:.2f}x weighted MOIC · {r.processes_closing_12mo} closings ≤12 mo — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Active Sell-Side Processes</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Negotiation Postures — Critical Deals</div>{po_tbl}</div>

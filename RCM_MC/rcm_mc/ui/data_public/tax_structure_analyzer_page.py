@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _structures_table(items) -> str:
@@ -165,12 +165,15 @@ def render_tax_structure_analyzer(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    page_title = ck_page_title(
+        "Tax Structure Analyzer",
+        eyebrow="TAX STRUCTURE ANALYZER",
+        meta=f"""Exit-structure options · after-tax scenarios · rollover mechanics · blocker structures · state-by-state diligence — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Tax Structure Analyzer</h1>
-    <p class="ck-page-sub">Exit-structure options · after-tax scenarios · rollover mechanics · blocker structures · state-by-state diligence — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {pos};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Structuring Recommendation</div>

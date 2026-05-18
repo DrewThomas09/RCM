@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _status_color(s: str) -> str:
@@ -210,12 +210,15 @@ def render_operating_partners(params: dict = None) -> str:
 
     avg_outcome = sum(e.outcome_score for e in r.engagement) / len(r.engagement) if r.engagement else 0
 
+    page_title = ck_page_title(
+        "Operating Partner / CEO Rolodex Tracker",
+        eyebrow="OPERATING PARTNERS",
+        meta=f"""{r.total_operating_partners} operating partners · {r.total_exec_placements} exec placements LTM · {r.active_searches} active searches · {r.total_bench_count} bench roster · {r.total_engagement_hours_ltm:,} engagement hours · ${r.total_value_creation_m:.1f}M value creation attributed — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Operating Partner / CEO Rolodex Tracker</h1>
-    <p class="ck-page-sub">{r.total_operating_partners} operating partners · {r.total_exec_placements} exec placements LTM · {r.active_searches} active searches · {r.total_bench_count} bench roster · {r.total_engagement_hours_ltm:,} engagement hours · ${r.total_value_creation_m:.1f}M value creation attributed — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Operating Partner Roster</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Recent Executive Placements (LTM)</div>{pl_tbl}</div>

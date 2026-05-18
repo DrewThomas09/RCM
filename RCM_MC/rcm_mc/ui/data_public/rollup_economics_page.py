@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _cohorts_table(items) -> str:
@@ -281,12 +281,15 @@ def render_rollup_economics(params: dict = None) -> str:
 
     total_int_cost = sum(ic.total_cost_mm for ic in r.integration_costs)
 
+    page_title = ck_page_title(
+        "Roll-Up / Platform Economics",
+        eyebrow="ROLLUP ECONOMICS",
+        meta=f"""Multiple arb · add-on cadence · synergy capture · debt capacity · exit waterfall — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Roll-Up / Platform Economics</h1>
-    <p class="ck-page-sub">Multiple arb · add-on cadence · synergy capture · debt capacity · exit waterfall — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Platform EBITDA Walk — Entry → Exit</div>{svg}</div>

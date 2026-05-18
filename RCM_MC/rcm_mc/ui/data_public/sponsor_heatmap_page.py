@@ -3,8 +3,7 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import (
-    P, chartis_shell, ck_data_cell, ck_kpi_block, ck_paired_block,
-)
+    P, chartis_shell, ck_data_cell, ck_kpi_block, ck_paired_block, ck_page_title)
 
 
 def _leaders_paired_rows(leaders) -> tuple:
@@ -274,12 +273,15 @@ def render_sponsor_heatmap(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    page_title = ck_page_title(
+        "Sponsor × Sector Performance Heatmap",
+        eyebrow="SPONSOR HEATMAP",
+        meta=f"""2-D performance grid — which sponsors win in which sectors · vintage &amp; hold cuts — {r.corpus_deal_count:,} normalized deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Sponsor × Sector Performance Heatmap</h1>
-    <p class="ck-page-sub">2-D performance grid — which sponsors win in which sectors · vintage &amp; hold cuts — {r.corpus_deal_count:,} normalized deals</p>
-  </div>
+  {page_title}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {heatmap_paired}

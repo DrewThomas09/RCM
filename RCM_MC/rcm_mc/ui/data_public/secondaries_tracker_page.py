@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _transactions_table(items) -> str:
@@ -174,12 +174,15 @@ def render_secondaries_tracker(params: dict = None) -> str:
     lpac_required = sum(1 for c in r.conflicts if c.lpac_vote_needed)
     total_vol = sum(t.transaction_size_mm for t in r.transactions)
 
+    page_title = ck_page_title(
+        "Secondaries / GP-Led Market Tracker",
+        eyebrow="SECONDARIES TRACKER",
+        meta=f"""Continuation vehicles · strip sales · tender offers · buyer landscape · CV economics · LP conflicts — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Secondaries / GP-Led Market Tracker</h1>
-    <p class="ck-page-sub">Continuation vehicles · strip sales · tender offers · buyer landscape · CV economics · LP conflicts — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Recent Healthcare Secondaries Transactions</div>{t_tbl}</div>
   <div style="{cell}"><div style="{h3}">Secondary Buyer Landscape</div>{b_tbl}</div>

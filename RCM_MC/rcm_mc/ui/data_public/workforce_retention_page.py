@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _roles_table(items) -> str:
@@ -188,12 +188,15 @@ def render_workforce_retention(params: dict = None) -> str:
 
     program_cost = sum(p.annual_cost_m for p in r.programs)
     savings_opp = sum(c.savings_opportunity_m for c in r.contract_labor)
+    page_title = ck_page_title(
+        "Workforce Turnover / Retention Tracker",
+        eyebrow="WORKFORCE RETENTION",
+        meta=f"""{r.total_headcount:,} headcount · {r.weighted_turnover_pct * 100:.1f}% weighted turnover · {r.avg_engagement_score:.2f}/10 engagement · ${r.total_contract_labor_spend_m:.1f}M contract labor · ${r.total_retention_spend_m:.1f}M retention spend · {r.critical_roles} critical roles — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Workforce Turnover / Retention Tracker</h1>
-    <p class="ck-page-sub">{r.total_headcount:,} headcount · {r.weighted_turnover_pct * 100:.1f}% weighted turnover · {r.avg_engagement_score:.2f}/10 engagement · ${r.total_contract_labor_spend_m:.1f}M contract labor · ${r.total_retention_spend_m:.1f}M retention spend · {r.critical_roles} critical roles — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Turnover by Role (portfolio aggregate)</div>{r_tbl}</div>
   <div style="{cell}"><div style="{h3}">Deal-Level Turnover & Engagement</div>{d_tbl}</div>

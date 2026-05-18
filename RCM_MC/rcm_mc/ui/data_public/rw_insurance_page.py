@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _status_color(s: str) -> str:
@@ -200,12 +200,15 @@ def render_rw_insurance(params: dict = None) -> str:
     total_paid = sum(c.paid_amount_m for c in r.claims)
     total_claimed = sum(c.claimed_amount_m for c in r.claims)
     spec_prem = sum(s.premium_m for s in r.specialty)
+    page_title = ck_page_title(
+        "R&W Insurance / M&A Insurance Tracker",
+        eyebrow="RW INSURANCE",
+        meta=f"""{r.total_policies} active policies · ${r.total_tower_limit_m:,.1f}M total tower · ${r.total_premium_m:.1f}M premium · {r.weighted_avg_rate_pct * 100:.2f}% weighted rate · {r.weighted_avg_retention_pct * 100:.2f}% avg retention · {r.open_claims} open claims — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">R&W Insurance / M&A Insurance Tracker</h1>
-    <p class="ck-page-sub">{r.total_policies} active policies · ${r.total_tower_limit_m:,.1f}M total tower · ${r.total_premium_m:.1f}M premium · {r.weighted_avg_rate_pct * 100:.2f}% weighted rate · {r.weighted_avg_retention_pct * 100:.2f}% avg retention · {r.open_claims} open claims — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Active R&W Policies</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Carrier League Table & Concentration</div>{c_tbl}</div>

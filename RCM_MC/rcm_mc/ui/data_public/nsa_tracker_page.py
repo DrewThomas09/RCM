@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _selected_color(s: str) -> str:
@@ -181,12 +181,15 @@ def render_nsa_tracker(params: dict = None) -> str:
     provider_won = sum(1 for c in r.cases if "provider" in c.status.lower() and "awarded" in c.status.lower())
     payer_won = sum(1 for c in r.cases if "payer" in c.status.lower() and "awarded" in c.status.lower())
 
+    page_title = ck_page_title(
+        "No Surprises Act / IDR Tracker",
+        eyebrow="NSA TRACKER",
+        meta=f"""{r.total_cases} active/resolved IDR cases · ${r.total_revenue_at_risk_m:,.1f}M revenue at risk across {r.active_strategies} strategies · {r.provider_win_rate_pct * 100:.1f}% provider win rate · {provider_won} awarded provider / {payer_won} awarded payer — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">No Surprises Act / IDR Tracker</h1>
-    <p class="ck-page-sub">{r.total_cases} active/resolved IDR cases · ${r.total_revenue_at_risk_m:,.1f}M revenue at risk across {r.active_strategies} strategies · {r.provider_win_rate_pct * 100:.1f}% provider win rate · {provider_won} awarded provider / {payer_won} awarded payer — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Portfolio NSA / IDR Exposure by Deal</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Emergency Department Portfolio Economics</div>{e_tbl}</div>

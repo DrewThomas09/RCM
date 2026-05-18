@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
@@ -201,12 +201,15 @@ def render_vintage_cohorts(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     q1q2 = sum(1 for c in r.cohorts if c.quartile_vs_cambridge in (1, 2))
+    page_title = ck_page_title(
+        "Vintage Cohort Performance Tracker",
+        eyebrow="VINTAGE COHORTS",
+        meta=f"""{r.vintages_tracked} vintages · ${r.total_deployed_b:.2f}B deployed · {r.portfolio_dpi:.2f}x aggregate DPI · {r.portfolio_tvpi:.2f}x aggregate TVPI · {q1q2}/{r.vintages_tracked} top-half Cambridge Associates — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Vintage Cohort Performance Tracker</h1>
-    <p class="ck-page-sub">{r.vintages_tracked} vintages · ${r.total_deployed_b:.2f}B deployed · {r.portfolio_dpi:.2f}x aggregate DPI · {r.portfolio_tvpi:.2f}x aggregate TVPI · {q1q2}/{r.vintages_tracked} top-half Cambridge Associates — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Vintage Cohort Performance</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sector × Vintage Performance</div>{sv_tbl}</div>

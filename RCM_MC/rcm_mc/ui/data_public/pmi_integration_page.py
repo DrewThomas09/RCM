@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _status_color(s: str) -> str:
@@ -213,12 +213,15 @@ def render_pmi_integration(params: dict = None) -> str:
     avg_retention = sum(x.retention_rate_pct for x in r.retention) / len(r.retention) if r.retention else 0
     high_risk = sum(1 for risk in r.risks if risk.severity == "high")
     late_milestones = sum(1 for m in r.milestones if m.variance_days > 0)
+    page_title = ck_page_title(
+        "PMI / Post-Merger Integration Scorecard",
+        eyebrow="PMI INTEGRATION",
+        meta=f"""{r.total_integrations} active integrations · ${r.total_synergy_target_m:.1f}M synergy target · ${r.total_synergy_realized_m:.1f}M realized ({r.weighted_realization_pct * 100:.0f}%) · ${r.total_integration_cost_m:.1f}M integration cost · {r.on_track_count}/{r.total_integrations} on track — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">PMI / Post-Merger Integration Scorecard</h1>
-    <p class="ck-page-sub">{r.total_integrations} active integrations · ${r.total_synergy_target_m:.1f}M synergy target · ${r.total_synergy_realized_m:.1f}M realized ({r.weighted_realization_pct * 100:.0f}%) · ${r.total_integration_cost_m:.1f}M integration cost · {r.on_track_count}/{r.total_integrations} on track — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Integration Deals — Synergy Realization</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Synergy Categories — Portfolio Aggregate</div>{c_tbl}</div>

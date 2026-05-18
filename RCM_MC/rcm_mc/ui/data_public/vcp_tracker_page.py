@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _status_color(status: str) -> str:
@@ -213,12 +213,15 @@ def render_vcp_tracker(params: dict = None) -> str:
 
     beat_count = sum(1 for k in r.kpi_scorecards if k.scorecard == "beat")
     interv_critical = sum(1 for i in r.interventions if i.severity == "critical")
+    page_title = ck_page_title(
+        "Value Creation Plan (VCP) / 100-Day Plan Tracker",
+        eyebrow="VCP TRACKER",
+        meta=f"""{r.total_deals} active deals · ${r.total_realized_ebitda_m:.1f}M realized vs ${r.total_target_ebitda_m:.1f}M target ({r.realization_pct * 100:.1f}%) · {r.on_track_pct * 100:.1f}% levers on track or complete · {beat_count} of {len(r.kpi_scorecards)} deals beat budget — {r.corpus_deal_count:,} corpus deals""",
+    )
+    
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Value Creation Plan (VCP) / 100-Day Plan Tracker</h1>
-    <p class="ck-page-sub">{r.total_deals} active deals · ${r.total_realized_ebitda_m:.1f}M realized vs ${r.total_target_ebitda_m:.1f}M target ({r.realization_pct * 100:.1f}%) · {r.on_track_pct * 100:.1f}% levers on track or complete · {beat_count} of {len(r.kpi_scorecards)} deals beat budget — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">EBITDA Bridge — Realized by Lever Category</div>{b_tbl}</div>
   <div style="{cell}"><div style="{h3}">100-Day Plan Execution</div>{p_tbl}</div>
