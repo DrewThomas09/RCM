@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
@@ -296,16 +296,16 @@ def render_exit_readiness(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    page_title = ck_page_title(
+        "Exit Readiness Index",
+        eyebrow="EXIT READINESS",
+        meta=f"{r.overall_score:.1f}/100 readiness ({r.tier}) · {r.critical_gap_count} critical gaps · ${r.total_gap_cost_mm:,.2f}M gap-closure spend · {r.est_days_to_exit_ready} days to fully ready · target pathway {pathway}",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Exit Readiness Index</h1>
-    <p class="ck-page-sub">
-      Multi-dimensional IPO / sale readiness scoring — {len(r.criteria)} criteria across 5 dimensions —
-      {r.corpus_deal_count:,} corpus deals
-    </p>
-  </div>
+  {page_title}
 
   {form}
 
