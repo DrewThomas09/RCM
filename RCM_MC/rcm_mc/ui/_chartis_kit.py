@@ -4922,6 +4922,26 @@ def chartis_shell(
                 meta=subtitle if subtitle else None,
             )
         intro_html += ck_section_intro(**editorial_intro)
+    # Second pass — pages that call ck_section_intro DIRECTLY in
+    # their body (instead of via the editorial_intro kwarg) still
+    # render without an H1: bear_case, covenant_lab, payer_stress,
+    # bridge_audit, regulatory_calendar, ic_memo, day_one,
+    # portfolio_monitor, regression — partners see a bare italic
+    # deck headline floating at the top with no page title above
+    # it. Auto-inject ck_page_title using the shell's `title` arg
+    # when the body clearly signals editorial cadence
+    # (ck-section-intro) but has no ck-page-title yet.
+    if (
+        title
+        and title != "PE Desk"
+        and 'class="ck-page-title"' not in body_html
+        and 'class="ck-section-intro"' in body_html
+        and not intro_html
+    ):
+        intro_html = ck_page_title(
+            title,
+            meta=subtitle if subtitle else None,
+        )
     body_html = intro_html + body_html
     # Page-specific CSS goes AFTER the kit's CSS so page styles
     # win specificity ties — matches the contract login_page.py
