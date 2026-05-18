@@ -151,9 +151,12 @@ def render_ic_memo_generator(params: dict = None) -> str:
     border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     pos = P["positive"]; acc = P["accent"]
 
+    # B2: ck_kpi_block dropped _esc on value/sub/trend (trusted-markup
+    # contract). Escape partner-supplied strings (deal_name, sector)
+    # at the call site so they can't carry HTML into the trusted seam.
     kpi_strip = (
-        ck_kpi_block("Deal", r.summary.deal_name[:16], "", "") +
-        ck_kpi_block("Sector", r.summary.sector[:14], "", "") +
+        ck_kpi_block("Deal", _html.escape(r.summary.deal_name[:16]), "", "") +
+        ck_kpi_block("Sector", _html.escape(r.summary.sector[:14]), "", "") +
         ck_kpi_block("EV", f"${r.summary.ev_mm:,.0f}M", "", "") +
         ck_kpi_block("EV/EBITDA", f"{r.summary.ev_ebitda_multiple:.2f}x", "", "") +
         ck_kpi_block("Projected MOIC", f"{r.summary.projected_moic:.2f}x", "", "") +

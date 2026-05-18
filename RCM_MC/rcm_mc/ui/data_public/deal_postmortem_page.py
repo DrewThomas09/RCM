@@ -157,8 +157,11 @@ def render_deal_postmortem(params: dict = None) -> str:
     moic_delta = (r.realized_moic - r.underwritten_moic) / r.underwritten_moic
     irr_delta = r.realized_irr - r.underwritten_irr
 
+    # B2: ck_kpi_block dropped _esc on value/sub/trend (trusted-markup
+    # contract). Escape partner-supplied deal_name at the call site so
+    # it can't carry HTML into the trusted seam.
     kpi_strip = (
-        ck_kpi_block("Deal", r.deal_name[:20], "", "") +
+        ck_kpi_block("Deal", _html.escape(r.deal_name[:20]), "", "") +
         ck_kpi_block("Entry → Exit", f"{r.entry_year}→{r.exit_year}", "", "") +
         ck_kpi_block("Hold Years", f"{r.hold_years:.1f}y", "", "") +
         ck_kpi_block("Underwritten MOIC", f"{r.underwritten_moic:.2f}x", "", "") +

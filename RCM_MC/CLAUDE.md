@@ -180,6 +180,17 @@ Partner-facing operations:
 - **`html.escape()` every user-supplied string** before putting it
   in HTML. Attribute context escapes `"`; content context escapes
   `<>&`.
+  - **Documented exception:** `ck_kpi_block(label, value, sub, trend)`
+    in `rcm_mc/ui/_chartis_kit.py` does NOT escape `value`, `sub`,
+    or `trend` — these three fields are trusted server-rendered
+    markup (inline styling spans, formatted numerics, source_tag
+    badges). Callers passing partner-supplied strings (deal_name,
+    sponsor_name, etc.) into these fields MUST escape upstream,
+    e.g. `ck_kpi_block("Deal", _html.escape(deal_name))`. `label`
+    and `code` remain escaped inside the helper. The
+    pre-exemption behavior caused literal `<span class="mn">365</span>`
+    text on EBITDA Bridge, Market Rates, Sponsor League, CMS
+    Sources, and other stat-block surfaces.
 - **`_clamp_int` every integer query param** — never `int(qs[...])`
   unchecked.
 - **Datetimes must be timezone-aware** (`datetime.now(timezone.utc)`)

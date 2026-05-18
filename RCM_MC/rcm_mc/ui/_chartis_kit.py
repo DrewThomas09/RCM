@@ -468,11 +468,28 @@ def ck_kpi_block(
         sub = unit
     if trend is None and delta is not None:
         trend = delta
+    # B2 EXEMPT: value, sub, and trend fields are server-rendered
+    # trusted markup (inline styling spans for color/pos/neg/warn,
+    # source_tag badges, formatted numerics). _esc() is NOT applied
+    # to these three fields — partner pages routinely pass HTML like
+    # `<span style="color:var(--cad-pos);">+$42M</span>` or
+    # `<span class="mn">365</span>` for inline formatting. Pre-B2,
+    # _esc on these fields was rendering the markup as literal text
+    # on EBITDA Bridge, Market Rates, Sponsor League, CMS Sources,
+    # etc. — the audit's "literal HTML in stat values" symptom.
+    # User input MUST NEVER reach value/sub/trend; verify all call
+    # sites pass only server-generated strings. Two call sites that
+    # passed deal_name were patched to escape upstream as part of
+    # this PR (ic_memo_generator_page.py:155-156,
+    # deal_postmortem_page.py:161). label + code remain escaped —
+    # plain-text fields, no HTML pattern. See CLAUDE.md
+    # "html.escape every user input" guardrail — this is the
+    # documented exception.
     trend_html = ""
     if trend:
         tone = "positive" if trend.startswith("+") else "negative" if trend.startswith("-") else "neutral"
-        trend_html = f'<span class="ck-kpi-trend tone-{tone}">{_esc(trend)}</span>'
-    sub_html = f'<div class="ck-kpi-sub">{_esc(sub)}</div>' if sub else ""
+        trend_html = f'<span class="ck-kpi-trend tone-{tone}">{trend}</span>'
+    sub_html = f'<div class="ck-kpi-sub">{sub}</div>' if sub else ""
     code_html = f'<div class="ck-kpi-code">[{_esc(code)}]</div>' if code else ""
     if help and help.get("definition"):
         label_html = ck_help_tooltip(
@@ -489,7 +506,7 @@ def ck_kpi_block(
         '<div class="ck-kpi">'
         f'{code_html}'
         f'<div class="ck-kpi-label">{label_html}</div>'
-        f'<div class="ck-kpi-value sc-num">{_esc(value)}{trend_html}</div>'
+        f'<div class="ck-kpi-value sc-num">{value}{trend_html}</div>'
         f'{sub_html}'
         f'{chart_html}'
         "</div>"
