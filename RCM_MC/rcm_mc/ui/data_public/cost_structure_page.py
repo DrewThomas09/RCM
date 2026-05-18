@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title
 
 
 def _cost_stack_svg(cost_lines, ebitda_margin: float) -> str:
@@ -242,15 +242,26 @@ def render_cost_structure(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    # B11 sweep batch 2 PR 6/10 — bespoke .ck-page-h1 → ck_page_title.
+    # Sector-filtered page (form input). Meta combines partner context
+    # (which sector, revenue scale) with the page's analytical headlines
+    # (EBITDA margin + operating leverage — the two stats that drive
+    # the cost-structure interpretation). Sector escaped via
+    # ck_page_title's internal _esc(meta).
+    page_title = ck_page_title(
+        "Cost Structure Analyzer",
+        eyebrow="COST STRUCTURE",
+        meta=(
+            f"{sector} · ${r.revenue_mm:,.0f}M revenue · "
+            f"EBITDA margin {r.ebitda_margin * 100:.1f}% · "
+            f"op leverage {r.operating_leverage:.2f}x"
+        ),
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Cost Structure Analyzer</h1>
-    <p class="ck-page-sub">
-      COGS vs SG&amp;A decomposition, labor breakdown, and operating leverage for {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals
-    </p>
-  </div>
+  {page_title}
 
   {form}
 
