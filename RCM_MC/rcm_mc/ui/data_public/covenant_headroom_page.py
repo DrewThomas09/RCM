@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import (
-    P, chartis_shell, ck_data_cell, ck_kpi_block, ck_paired_block,
+    P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title, ck_paired_block,
 )
 
 
@@ -228,12 +228,25 @@ def render_covenant_headroom(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    # B11 sweep batch 2 PR 4/10 — bespoke .ck-page-h1 → ck_page_title.
+    # Capital-structure page filtered by EBITDA TTM + total debt form
+    # inputs. Meta surfaces the load-bearing leverage stats + the
+    # overall compliance status (healthy / monitoring / breach) which
+    # is the page's single most important read for partners
+    # evaluating debt-side risk.
+    page_title = ck_page_title(
+        "Debt Covenant Headroom Monitor",
+        eyebrow="COVENANT HEADROOM",
+        meta=(
+            f"${r.platform_ebitda_ttm_mm:,.1f}M EBITDA TTM · "
+            f"${r.total_debt_mm:,.1f}M debt · "
+            f"{r.total_leverage:.2f}x leverage · "
+            f"status: {r.overall_status.upper()}"
+        ),
+    )
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Debt Covenant Headroom Monitor</h1>
-    <p class="ck-page-sub">Covenant compliance · stress scenarios · cure rights · amortization schedule · maturity wall — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   {form}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   {stress_paired}
