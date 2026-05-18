@@ -6905,6 +6905,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             )))
         except (TypeError, ValueError):
             cluster_k = 6
+        # Phase 6: buyability lens (rule-based P(acquirable) per
+        # hospital + target_attractiveness composite on outliers).
+        buyability = (
+            (qs.get("buyability") or ["0"])[0] in ("1", "true", "on")
+        )
         hcris_df = _get_latest_per_ccn()
         store = PortfolioStore(self.config.db_path)
         try:
@@ -6921,6 +6926,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             cv=cv,
             cluster=cluster,
             cluster_k=cluster_k,
+            buyability=buyability,
         ))
 
     def _route_hospital_regression(self, ccn: str) -> None:
