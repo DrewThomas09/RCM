@@ -61,11 +61,20 @@ def render_hospital_profile(
 
     grade = score.grade if hasattr(score, "grade") else "—"
     score_val = score.score if hasattr(score, "score") else 0
+    # Editorial severity palette (PALETTE-driven, not neon hex). The
+    # previous map (#10b981 / #3b82f6 / #f59e0b / #ef4444) was the
+    # original Caduceus dark-terminal palette and read as garish neon
+    # on the white editorial card. PALETTE["positive"/"accent"/
+    # "warning"/"negative"/"critical"] resolves to the editorial
+    # severity tokens — green #0a8a5f, teal-ink #155752, bronze
+    # #b8732a, brick #b5321e, deep #8a1e0e — all pre-tuned for
+    # contrast on parchment / white card surfaces.
     grade_color = {
-        "A+": "#10b981", "A": "#10b981", "A-": "#10b981",
-        "B+": "#3b82f6", "B": "#3b82f6", "B-": "#3b82f6",
-        "C+": "#f59e0b", "C": "#f59e0b", "C-": "#f59e0b",
-    }.get(grade, "#ef4444")
+        "A+": PALETTE["positive"], "A": PALETTE["positive"], "A-": PALETTE["positive"],
+        "B+": PALETTE["accent"],   "B": PALETTE["accent"],   "B-": PALETTE["accent"],
+        "C+": PALETTE["warning"],  "C": PALETTE["warning"],  "C-": PALETTE["warning"],
+        "D+": PALETTE["negative"], "D": PALETTE["negative"], "D-": PALETTE["negative"],
+    }.get(grade, PALETTE["critical"])
 
     # Identity strip (Bloomberg security header)
     ident = (
@@ -89,10 +98,11 @@ letter-spacing:0.12em;color:{PALETTE["text_muted"]};text-transform:uppercase;}}
 .cad-deal-ident .ident-val{{color:{PALETTE["text_primary"]};font-weight:600;}}
 .cad-deal-ident .ident-sep{{color:{PALETTE["border_light"]};padding:0 8px;}}
 .hp-grade-block{{display:flex;flex-direction:column;align-items:center;
-padding:12px 22px;border:1px solid {PALETTE["border_light"]};
-background:#03050a;min-width:120px;}}
+padding:12px 22px;border:1px solid {PALETTE["border"]};
+border-left:4px solid {grade_color};
+background:#fff;min-width:120px;}}
 .hp-grade-val{{font-family:var(--cad-mono);font-size:32px;font-weight:700;
-line-height:1;letter-spacing:-0.02em;}}
+line-height:1;letter-spacing:-0.02em;color:{PALETTE["text_primary"]};}}
 .hp-grade-label{{font-family:var(--cad-mono);font-size:10.5px;letter-spacing:0.18em;
 text-transform:uppercase;margin-top:4px;}}
 .hp-grade-sub{{font-family:var(--cad-mono);font-size:9px;letter-spacing:0.12em;
@@ -125,7 +135,7 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
         '<div class="hp-header-row">'
         f'<div class="cad-deal-ident">{ident}</div>'
         '<div class="hp-grade-block">'
-        f'<div class="hp-grade-val" style="color:{grade_color};">{score_val}</div>'
+        f'<div class="hp-grade-val">{score_val}</div>'
         f'<div class="hp-grade-label" style="color:{grade_color};">{grade}</div>'
         '<div class="hp-grade-sub">PE Desk Score</div>'
         '</div></div>',
