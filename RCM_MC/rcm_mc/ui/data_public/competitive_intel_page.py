@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title
 
 
 def _share_landscape_svg(competitors, our_share: float) -> str:
@@ -277,15 +277,31 @@ def render_competitive_intel(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    # B11 — replace bespoke .ck-page-h1 inline HTML with the editorial-
+    # kit ck_page_title primitive (same anti-pattern as PRs #160-#162).
+    # Title preserves "Competitive Intelligence Dashboard" identity
+    # from the inline h1. Meta is sector-specific (the page is filtered
+    # by sector form input) — packs the partner's competitive
+    # positioning: which sector, our share, market concentration
+    # (top-5 share), and the competitive-intensity score that drives
+    # the page's strategic interpretation. ck_page_title escapes meta
+    # internally so the raw `sector` form input is safe (same
+    # protection the pre-fix _html.escape(sector) was providing
+    # on the inline subtitle).
+    page_title = ck_page_title(
+        "Competitive Intelligence Dashboard",
+        eyebrow="COMPETITIVE INTEL",
+        meta=(
+            f"{sector} · our share {r.our_market_share_est:.2f}% · "
+            f"top-5 {r.top_5_share:.1f}% · "
+            f"intensity {r.competitive_intensity_score}/100"
+        ),
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">Competitive Intelligence Dashboard</h1>
-    <p class="ck-page-sub">
-      Competitor landscape, strategic moves, gap analysis, share-shift opportunities for {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals
-    </p>
-  </div>
+  {page_title}
 
   {form}
 
