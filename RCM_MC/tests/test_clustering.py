@@ -21,6 +21,7 @@ from rcm_mc.finance.clustering import (
     cluster_hospitals,
     prepare_clustering_features,
     profile_clusters,
+    render_cluster_scatter,
     run_kmeans,
     run_pca,
 )
@@ -245,6 +246,54 @@ class EndToEndTests(unittest.TestCase):
         df = _synthetic_hospitals(15)  # below 30 floor
         with self.assertRaises(ValueError):
             cluster_hospitals(df, k=3)
+
+
+class ScatterRenderTests(unittest.TestCase):
+    """render_cluster_scatter returns valid editorial SVG."""
+
+    def test_returns_svg_with_expected_viewbox(self):
+        df = _synthetic_hospitals(120)
+        res = cluster_hospitals(df, k=3)
+        svg = render_cluster_scatter(res, width=720, height=460)
+        self.assertIn('viewBox="0 0 720 460"', svg)
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertTrue(svg.endswith("</svg>"))
+
+    def test_one_circle_per_row_plus_legend_dots(self):
+        # Plot circles: one per row. Legend also uses <circle> for
+        # color swatches — there will be `n_rows + k` total.
+        df = _synthetic_hospitals(120)
+        res = cluster_hospitals(df, k=3)
+        svg = render_cluster_scatter(res)
+        # exact circle count is n_rows + k (one swatch per profile)
+        expected = res.kmeans.labels.shape[0] + len(res.profiles)
+        self.assertEqual(svg.count("<circle"), expected)
+
+    def test_one_diamond_centroid_per_cluster(self):
+        # Centroids render as <polygon> diamonds
+        df = _synthetic_hospitals(120)
+        res = cluster_hospitals(df, k=3)
+        svg = render_cluster_scatter(res)
+        self.assertEqual(svg.count("<polygon"), 3)
+
+    def test_axis_labels_show_explained_variance(self):
+        df = _synthetic_hospitals(120)
+        res = cluster_hospitals(df, k=3)
+        svg = render_cluster_scatter(res)
+        # PC1 and PC2 labels include "% var" suffix
+        self.assertIn("PC1", svg)
+        self.assertIn("PC2", svg)
+        self.assertIn("% var", svg)
+
+    def test_legend_includes_each_cluster_name(self):
+        df = _synthetic_hospitals(120)
+        res = cluster_hospitals(df, k=3)
+        svg = render_cluster_scatter(res)
+        for prof in res.profiles:
+            # Names may be truncated at 40 chars, so check a prefix
+            stem = prof.name[:30]
+            self.assertIn(stem, svg,
+                          f"legend missing cluster {prof.cluster_id}")
 
 
 if __name__ == "__main__":
