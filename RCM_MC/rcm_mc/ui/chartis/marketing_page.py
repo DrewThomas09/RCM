@@ -453,7 +453,6 @@ def _hero() -> str:
         '<div class="row"><span class="k">KIND</span><span class="v">ROLLUP</span></div>'
         '<div class="row"><span class="k">STATUS</span>'
         '<span class="v" style="color:var(--green)">LIVE</span></div>'
-        '<div class="row"><span class="k">AS OF</span><span class="v">2026-04-15</span></div>'
         '<div class="stamp">'
         'Built for partners who run their own model. Public data only '
         '&mdash; no PHI on this instance.'
