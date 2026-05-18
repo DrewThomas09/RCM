@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _quartile_color(q: int) -> str:
@@ -199,12 +199,15 @@ def render_dpi_tracker(params: dict = None) -> str:
     active_requests = len(r.lp_requests)
     high_conf_exits = sum(1 for p in r.exit_paths if p.confidence == "high")
 
+    page_title = ck_page_title(
+        "DPI / Distribution Tracker",
+        eyebrow="DPI TRACKER",
+        meta=f"{r.total_funds} funds at {r.weighted_dpi:.2f}x weighted DPI / {r.weighted_tvpi:.2f}x TVPI · ${r.total_distributions_b:.2f}B LTM distributions · {r.below_benchmark_funds} of {r.total_funds} funds below vintage benchmark · {active_requests} active LP liquidity requests",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">DPI / Distribution Tracker</h1>
-    <p class="ck-page-sub">{r.total_funds} funds · weighted DPI {r.weighted_dpi:.2f}x / TVPI {r.weighted_tvpi:.2f}x · ${r.total_distributions_b:.2f}B distributions LTM · {r.below_benchmark_funds} funds below vintage benchmark · {active_requests} LP liquidity requests active — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Fund Vintage Performance — DPI, RVPI, TVPI, Benchmark Gap</div>{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">Exit Drought — Market Metrics</div>{dr_tbl}</div>
