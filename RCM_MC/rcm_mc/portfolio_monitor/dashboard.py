@@ -8,29 +8,39 @@ from .variance import AssetVariance, PortfolioVariance
 
 
 _CSS = """
+/* Editorial chartis palette (was dark-mode Bloomberg colors).
+ * Variables reference the global chartis tokens so the page
+ * matches the rest of the site automatically. Fallbacks keep the
+ * page renderable when included standalone. */
 :root {
-  --c-bg: #0a0e17; --c-panel: #111827;
-  --c-panel-alt: #0f172a; --c-border: #1e293b;
-  --c-text: #e2e8f0; --c-dim: #94a3b8; --c-faint: #64748b;
-  --c-pos: #10b981; --c-neg: #ef4444; --c-warn: #f59e0b;
-  --c-watch: #eab308; --c-blue: #3b82f6;
-  --c-mono: 'JetBrains Mono', 'SF Mono', monospace;
+  --c-bg: var(--sc-parchment, #f2ede3);
+  --c-panel: #fff;
+  --c-panel-alt: var(--sc-parchment, #f2ede3);
+  --c-border: var(--sc-rule, #d6cfc0);
+  --c-text: var(--sc-text, #1a2332);
+  --c-dim: var(--sc-text-dim, #5d6b7a);
+  --c-faint: var(--sc-text-faint, #7a8699);
+  --c-pos: var(--sc-positive, #0a8a5f);
+  --c-neg: var(--sc-negative, #b5321e);
+  --c-warn: var(--sc-warning, #b8732a);
+  --c-watch: var(--sc-warning, #b8732a);
+  --c-blue: var(--sc-teal-ink, #155752);
+  --c-mono: var(--sc-mono, 'JetBrains Mono', 'SF Mono', monospace);
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  background: var(--c-bg); color: var(--c-text);
-  font-family: 'Inter', -apple-system, sans-serif;
-  font-size: 12px; padding: 24px;
-  font-variant-numeric: tabular-nums;
-}
-.pm-wrap { max-width: 1500px; margin: 0 auto; }
+.pm-wrap * { box-sizing: border-box; }
+.pm-wrap { max-width: 1500px; margin: 0 auto;
+  font-family: var(--sc-sans, 'Inter', -apple-system, sans-serif);
+  font-size: 13px; color: var(--c-text);
+  font-variant-numeric: tabular-nums; }
 .pm-title {
   font-family: var(--c-mono); font-size: 11px;
   text-transform: uppercase; letter-spacing: 0.18em;
   color: var(--c-dim); margin-bottom: 6px;
 }
 .pm-h1 {
-  font-size: 22px; font-weight: 700; margin-bottom: 16px;
+  font-family: var(--sc-serif, 'Source Serif 4', Georgia, serif);
+  font-size: 28px; font-weight: 500; color: var(--sc-navy, #0b2341);
+  margin-bottom: 16px; line-height: 1.15;
 }
 .pm-kpis {
   display: grid; gap: 8px; margin-bottom: 16px;
