@@ -12,8 +12,8 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
-    ck_section_header, ck_section_intro, ck_signal_badge,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
+    ck_panel, ck_section_header, ck_section_intro, ck_signal_badge,
 )
 from .brand import PALETTE
 
@@ -417,6 +417,15 @@ def render_market_data(
         title="Highest Medicare Dependency",
     ) if med_rows else ""
 
+    # B11 — add explicit page title above the section intro. Pre-fix,
+    # this page rendered with no h1 (only the breadcrumb + ck_section_intro
+    # subhead), so partners landing here saw KPI tiles + heatmap without
+    # an editorial anchor explaining what they were looking at.
+    page_title = ck_page_title(
+        "National Hospital Market Intelligence",
+        eyebrow="MARKET DATA",
+        meta=f"HCRIS-derived state-level data · 50 states + DC",
+    )
     intro = ck_section_intro(
         eyebrow="MARKET DATA",
         headline="National hospital market intelligence.",
@@ -441,6 +450,7 @@ overflow:hidden;margin-bottom:8px;}
 """
     body = (
         f'{md_styles}'
+        f'{page_title}'
         f'{intro}'
         f'{kpi_section}'
         f'{margin_dist}'

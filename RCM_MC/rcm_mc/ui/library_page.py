@@ -11,7 +11,7 @@ from typing import Any, Dict, List
 
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-    ck_next_section, ck_provenance_tooltip,
+    ck_next_section, ck_page_title, ck_provenance_tooltip,
 )
 from .brand import PALETTE
 
@@ -322,7 +322,16 @@ def render_library() -> str:
         + ck_kpi_block("Entries", entries_value, "documented")
         + '</div>'
     )
-    sections = ck_eyebrow("Methodology") + kpi_strip + sections
+    # B11 — add explicit page title above the eyebrow + KPI strip.
+    # Pre-fix, this page rendered with no h1 (only ck_eyebrow which is
+    # a small caps label, not a title). Partners landing on /methodology
+    # saw KPI tiles + library sections without a clear editorial anchor.
+    page_title = ck_page_title(
+        "Research Library",
+        eyebrow="METHODOLOGY",
+        meta=f"{n_sections} sections · {total_entries} documented entries",
+    )
+    sections = page_title + kpi_strip + sections
 
     extra_links = (
         f'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">'
