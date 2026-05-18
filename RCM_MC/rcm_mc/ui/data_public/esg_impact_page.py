@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _score_color(s: float) -> str:
@@ -240,12 +240,15 @@ def render_esg_impact(params: dict = None) -> str:
     medicaid_ge20 = sum(1 for a in r.access if a.medicaid_pct >= 0.20)
     sbti_validated = sum(1 for e in r.emissions if "validated" in e.sbti_commitment)
 
+    page_title = ck_page_title(
+        "ESG / Impact Reporting Tracker",
+        eyebrow="ESG IMPACT",
+        meta=f"{r.total_portcos} portcos at {r.avg_composite_score:.2f}/10 composite ESG (+{r.prior_year_delta:.2f} YoY) · ${r.total_charity_care_m:.1f}M charity care LTM · {r.total_scope_12_mtco2e:,.0f} MTCO2e Scope 1+2 ({sbti_validated} portcos SBTi-validated) · {r.frameworks_tracked} disclosure frameworks tracked",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
-  <div class="ck-page-head">
-    <h1 class="ck-page-h1">ESG / Impact Reporting Tracker</h1>
-    <p class="ck-page-sub">{r.total_portcos} portcos · {r.avg_composite_score:.2f}/10 average ESG score (+{r.prior_year_delta:.2f} YoY) · ${r.total_charity_care_m:.1f}M charity care · {r.total_scope_12_mtco2e:,.0f} MTCO2e Scope 1+2 · {r.frameworks_tracked} frameworks tracked — {r.corpus_deal_count:,} corpus deals</p>
-  </div>
+  {page_title}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">ESG Composite Scorecards</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Patient Access / Community Benefit</div>{a_tbl}</div>
