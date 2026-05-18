@@ -117,8 +117,8 @@ def _quality_histogram_svg(scores: List[float], width: int = 400, height: int = 
 
 def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", page: int = 1) -> str:
     from rcm_mc.ui._chartis_kit import (
-        chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
-        ck_section_header,
+        chartis_shell, ck_fmt_num, ck_kpi_block, ck_page_title,
+        ck_provenance_tooltip, ck_section_header,
     )
     from rcm_mc.data_public.deal_quality_score import score_corpus_quality, DealQualityScore
 
@@ -370,7 +370,29 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
   </div>
 </div>"""
 
-    body = kpis + dist_panel + filter_panel + table_html + page_links + method_panel
+    # B11 — pre-fix, this page had no h1 at all (neither inline
+    # .ck-page-h1 nor ck_page_title — just KPI tiles + tier
+    # distribution + filter panel + per-deal table + method panel).
+    # Partners landing on /deal-quality saw stats without an
+    # editorial anchor identifying what the page is. Adding
+    # ck_page_title gives the partner-facing identity. Title pulled
+    # from module docstring ("Deal Quality Scorer"). Meta packs
+    # the tier-distribution stats since that's the visual headline
+    # of the page (every deal's letter grade is the load-bearing
+    # output of the scoring system).
+    page_title = ck_page_title(
+        "Deal Quality Scorer",
+        eyebrow="DEAL QUALITY",
+        meta=(
+            f"{total} deals scored · avg {avg_q:.1f}/100 · "
+            f"A:{tier_counts.get('A', 0)} "
+            f"B:{tier_counts.get('B', 0)} "
+            f"C:{tier_counts.get('C', 0)} "
+            f"D:{tier_counts.get('D', 0)} · "
+            f"{n_flagged} flagged"
+        ),
+    )
+    body = page_title + kpis + dist_panel + filter_panel + table_html + page_links + method_panel
 
     return chartis_shell(
         body,
