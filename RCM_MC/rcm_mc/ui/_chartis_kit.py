@@ -64,8 +64,11 @@ P = {
     "on_navy_dim":   "#a5b4ca",
     "on_navy_faint": "#6e7e99",
 
-    # Accent
-    "teal":     "#2fb3ad",
+    # Accent — D2: "teal" flipped from bright #2fb3ad mint to
+    # #155752 (same as teal_ink) so the Python-side PALETTE
+    # mirrors the CSS variable change in chartis_tokens.css.
+    # Consolidates accent + ink to one editorial deep teal.
+    "teal":     "#155752",
     "teal_2":   "#66c8c3",
     "teal_ink": "#155752",
 
