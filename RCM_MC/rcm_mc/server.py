@@ -839,9 +839,14 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         for c in health.get("components", [])
     ) or "No deductions — healthy."
 
+    # Mode-aware eyebrow: "DEAL" (PE partner) vs "ENGAGEMENT"
+    # (Chartis consulting). term() reads the per-request workspace
+    # mode; partner mode returns "Deal" so the eyebrow stays "DEAL".
+    from .ui._workspace_mode import term as _ws_term
+    _deal_eyebrow = _ws_term("deal").upper()
     title_html = ck_page_title(
         deal_name,
-        eyebrow="DEAL",
+        eyebrow=_deal_eyebrow,
         meta=(
             f"slug: {deal_id} · "
             f"stage: {str(stage).title()} · "
