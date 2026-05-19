@@ -225,18 +225,20 @@ class DenialPredictionPageTests(unittest.TestCase):
         self.assertIn("Run prediction", h)
 
     def test_live_render_includes_interpretability_elements(self):
+        # PR #240 rewrote the "What this shows" callout + the
+        # ">0.7 = usable" hero threshold copy into the editorial
+        # italic-paragraph `.ck-page-explainer`. Peer-benchmark and
+        # EBITDA Bridge sections survived the rewrite.
         from rcm_mc.ui.denial_prediction_page import (
             render_denial_prediction_page,
         )
         h = render_denial_prediction_page(
             dataset="hospital_02_denial_heavy",
         )
-        # Plain-English "What this shows" callout
-        self.assertIn("What this shows", h)
+        # Editorial explainer present (the new "What this shows")
+        self.assertIn("ck-page-explainer", h)
         # Baseline denial rate context
         self.assertIn("HFMA peer median", h)
-        # AUC interpretation band
-        self.assertIn("&gt;0.7 = usable", h)
         # EBITDA bridge card rendered
         self.assertIn("EBITDA Bridge", h)
 
