@@ -30,6 +30,14 @@ _EXPLAINER_CSS = """<style>
   font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
   margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
 .ck-eb-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+.eb-chart-caption{font-family:"Inter Tight","Inter",sans-serif;
+  font-size:.72rem;color:#5C6878;text-align:center;
+  letter-spacing:0.06em;text-transform:uppercase;
+  margin:-.5rem 0 1.25rem;}
+@media print {
+  .eb-chart-caption{color:#1a2332;}
+  svg{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+}
 </style>"""
 from ._provenance_tooltip import provenance_tooltip
 from .brand import PALETTE
@@ -91,6 +99,375 @@ def _color_for_value(val: float) -> str:
     if val < 0:
         return "var(--cad-neg)"
     return "var(--cad-text3)"
+
+
+# ── Editorial inline-SVG charts ────────────────────────────────────
+# All charts use the editorial palette (parchment surface, teal-deep
+# ramp lines, amber/red threshold colors) and render at native SVG
+# resolution without JS or a chart library.
+
+_BRIDGE_CHART_PALETTE = [
+    "#155752", "#b8732a", "#1F7A75", "#3F7D4D",
+    "#A53A2D", "#8A92A0", "#0a8a5f",
+]
+
+
+def _ramp_curve_chart(levers: List[Dict[str, Any]], months: List[int],
+                      width: int = 720, height: int = 240) -> str:
+    """Cumulative-impact ramp curve, one line per non-zero lever
+    plus a heavy total line."""
+    active = [l for l in levers if l.get("ebitda_impact", 0) != 0]
+    if not active or not months:
+        return ""
+    pad_l, pad_r, pad_t, pad_b = 50, 130, 24, 38
+    plot_w = width - pad_l - pad_r
+    plot_h = height - pad_t - pad_b
+
+    # Cumulative dollars per month across all levers
+    total_by_m: Dict[int, float] = {}
+    series: List[Dict[str, Any]] = []
+    for i, lev in enumerate(active):
+        ramp = max(1, lev.get("ramp_months", 12))
+        impact = lev["ebitda_impact"]
+        pts: List[tuple] = []
+        for m in months:
+            pct = min(1.0, m / ramp)
+            val = impact * pct
+            total_by_m[m] = total_by_m.get(m, 0.0) + val
+            pts.append((m, val))
+        series.append({
+            "label": lev["name"], "points": pts,
+            "color": _BRIDGE_CHART_PALETTE[i % len(_BRIDGE_CHART_PALETTE)],
+        })
+
+    max_val = max(max(p[1] for p in s["points"]) for s in series)
+    max_val = max(max_val, max(total_by_m.values()))
+    if max_val <= 0:
+        return ""
+
+    m_lo, m_hi = months[0], months[-1]
+    m_span = max(1, m_hi - m_lo)
+
+    def _x(m: int) -> float:
+        return pad_l + (m - m_lo) / m_span * plot_w
+
+    def _y(v: float) -> float:
+        return pad_t + plot_h - (v / max_val) * plot_h
+
+    # Gridlines + y-axis labels (5 ticks)
+    grid_svg = ""
+    for i in range(5):
+        gv = max_val * i / 4
+        gy = _y(gv)
+        grid_svg += (
+            f'<line x1="{pad_l}" y1="{gy:.1f}" x2="{pad_l + plot_w}" '
+            f'y2="{gy:.1f}" stroke="#E8E0D0" stroke-width="0.8"/>'
+            f'<text x="{pad_l - 6}" y="{gy + 3:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9" '
+            f'fill="#8A92A0" text-anchor="end">{_fm(gv)}</text>'
+        )
+
+    # X-axis month ticks
+    tick_svg = ""
+    for m in months:
+        tx = _x(m)
+        tick_svg += (
+            f'<line x1="{tx:.1f}" y1="{pad_t + plot_h}" x2="{tx:.1f}" '
+            f'y2="{pad_t + plot_h + 4}" stroke="#BFB6A2" stroke-width="0.8"/>'
+            f'<text x="{tx:.1f}" y="{pad_t + plot_h + 16}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9" '
+            f'fill="#5C6878" text-anchor="middle">M{m}</text>'
+        )
+
+    # Series lines + dots
+    series_svg = ""
+    legend_svg = ""
+    legend_x = pad_l + plot_w + 14
+    for i, s in enumerate(series):
+        path = " ".join(
+            f"{'M' if j == 0 else 'L'} {_x(m):.1f},{_y(v):.1f}"
+            for j, (m, v) in enumerate(s["points"])
+        )
+        series_svg += (
+            f'<path d="{path}" stroke="{s["color"]}" stroke-width="1.6" '
+            f'fill="none" opacity="0.85"/>'
+        )
+        for m, v in s["points"]:
+            series_svg += (
+                f'<circle cx="{_x(m):.1f}" cy="{_y(v):.1f}" r="2.4" '
+                f'fill="{s["color"]}" opacity="0.85"/>'
+            )
+        ly = pad_t + 14 + i * 16
+        label = s["label"]
+        if len(label) > 22:
+            label = label[:21] + "…"
+        legend_svg += (
+            f'<line x1="{legend_x}" y1="{ly}" x2="{legend_x + 16}" '
+            f'y2="{ly}" stroke="{s["color"]}" stroke-width="2"/>'
+            f'<circle cx="{legend_x + 8}" cy="{ly}" r="2.4" fill="{s["color"]}"/>'
+            f'<text x="{legend_x + 22}" y="{ly + 3}" '
+            f'font-family="Inter Tight,sans-serif" font-size="9.5" '
+            f'fill="#1a2332">{_html.escape(label)}</text>'
+        )
+
+    # Cumulative total line — heavier, teal-deep
+    total_pts = sorted(total_by_m.items())
+    total_path = " ".join(
+        f"{'M' if i == 0 else 'L'} {_x(m):.1f},{_y(v):.1f}"
+        for i, (m, v) in enumerate(total_pts)
+    )
+    total_svg = (
+        f'<path d="{total_path}" stroke="#0F1C2E" stroke-width="2.6" '
+        f'fill="none"/>'
+        + "".join(
+            f'<circle cx="{_x(m):.1f}" cy="{_y(v):.1f}" r="3.4" '
+            f'fill="#0F1C2E" stroke="#FAF7F0" stroke-width="1.2"/>'
+            for m, v in total_pts
+        )
+    )
+    # Final value annotation on the cumulative line
+    final_m, final_v = total_pts[-1]
+    final_label_svg = (
+        f'<text x="{_x(final_m) + 8:.1f}" y="{_y(final_v) - 6:.1f}" '
+        f'font-family="JetBrains Mono,monospace" font-size="10" '
+        f'font-weight="700" fill="#0F1C2E">{_fm(final_v)}</text>'
+    )
+    # Cumulative legend entry
+    legend_svg = (
+        f'<line x1="{legend_x}" y1="{pad_t - 4}" x2="{legend_x + 16}" '
+        f'y2="{pad_t - 4}" stroke="#0F1C2E" stroke-width="2.6"/>'
+        f'<text x="{legend_x + 22}" y="{pad_t - 1}" '
+        f'font-family="Inter Tight,sans-serif" font-size="9.5" '
+        f'font-weight="700" fill="#0F1C2E">Cumulative</text>'
+        + legend_svg
+    )
+
+    # Axes baseline
+    axes_svg = (
+        f'<line x1="{pad_l}" y1="{pad_t + plot_h}" x2="{pad_l + plot_w}" '
+        f'y2="{pad_t + plot_h}" stroke="#BFB6A2" stroke-width="1"/>'
+        f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" '
+        f'y2="{pad_t + plot_h}" stroke="#BFB6A2" stroke-width="1"/>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="width:100%;max-width:{width}px;height:auto;display:block;'
+        f'margin:0 auto 1rem;">'
+        f'{grid_svg}{axes_svg}{tick_svg}{series_svg}{total_svg}'
+        f'{final_label_svg}{legend_svg}</svg>'
+    )
+
+
+def _returns_heatmap(grid: List[Dict[str, Any]],
+                     entry_multiples: List[float],
+                     exit_multiples: List[float],
+                     width: int = 720, height: int = 260) -> str:
+    """5x5 IRR sensitivity heatmap with editorial color ramp."""
+    if not grid:
+        return ""
+    pad_l, pad_r, pad_t, pad_b = 92, 18, 56, 18
+    plot_w = width - pad_l - pad_r
+    plot_h = height - pad_t - pad_b
+    nc = len(exit_multiples)
+    nr = len(entry_multiples)
+    cw = plot_w / nc
+    ch = plot_h / nr
+
+    def _tone(irr: float, underwater: bool) -> str:
+        if underwater or irr < 0.05:
+            return "#A53A2D"
+        if irr < 0.15:
+            return "#E89478"
+        if irr < 0.20:
+            return "#E8B97E"
+        if irr < 0.30:
+            return "#7ED3A8"
+        return "#3F7D4D"
+
+    # Column headers (exit multiples)
+    headers_svg = (
+        f'<text x="{pad_l - 8}" y="{pad_t - 24}" '
+        f'font-family="Inter Tight,sans-serif" font-size="9" font-weight="700" '
+        f'letter-spacing="0.1em" fill="#5C6878" text-anchor="end" '
+        f'text-transform="uppercase">EXIT MULTIPLE →</text>'
+    )
+    for j, xm in enumerate(exit_multiples):
+        cx = pad_l + cw * j + cw / 2
+        headers_svg += (
+            f'<text x="{cx:.1f}" y="{pad_t - 8}" '
+            f'font-family="JetBrains Mono,monospace" font-size="11" '
+            f'font-weight="700" fill="#1a2332" text-anchor="middle">'
+            f'{xm:.1f}x</text>'
+        )
+
+    # Row headers (entry multiples) + cells
+    row_label_svg = (
+        f'<text x="{pad_l - 8}" y="{pad_t + 16}" '
+        f'font-family="Inter Tight,sans-serif" font-size="9" font-weight="700" '
+        f'letter-spacing="0.1em" fill="#5C6878" text-anchor="end">'
+        f'ENTRY ↓</text>'
+    )
+    cells_svg = ""
+    for i, em in enumerate(entry_multiples):
+        ry = pad_t + ch * i + ch / 2
+        row_label_svg += (
+            f'<text x="{pad_l - 8}" y="{ry + 4:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="11" '
+            f'font-weight="700" fill="#1a2332" text-anchor="end">'
+            f'{em:.1f}x</text>'
+        )
+        for j, xm in enumerate(exit_multiples):
+            cell = next(
+                (g for g in grid
+                 if g["entry_multiple"] == em and g["exit_multiple"] == xm),
+                None,
+            )
+            cx = pad_l + cw * j
+            cy = pad_t + ch * i
+            if cell is None:
+                cells_svg += (
+                    f'<rect x="{cx:.1f}" y="{cy:.1f}" width="{cw - 2:.1f}" '
+                    f'height="{ch - 2:.1f}" fill="#ECE5D6" '
+                    f'stroke="#D6CFC0" stroke-width="0.6"/>'
+                )
+                continue
+            tone = _tone(cell["irr"], cell.get("underwater", False))
+            label_irr = "—" if cell.get("underwater") else f'{cell["irr"]:.0%}'
+            label_moic = (
+                "Loss" if cell.get("underwater") else f'{cell["moic"]:.1f}x'
+            )
+            text_color = "#FAF7F0" if cell["irr"] >= 0.20 and not cell.get("underwater") else "#1a2332"
+            cells_svg += (
+                f'<rect x="{cx:.1f}" y="{cy:.1f}" width="{cw - 2:.1f}" '
+                f'height="{ch - 2:.1f}" fill="{tone}" '
+                f'stroke="#FAF7F0" stroke-width="1.5"/>'
+                f'<text x="{cx + cw / 2:.1f}" y="{cy + ch / 2 - 2:.1f}" '
+                f'font-family="Source Serif 4,serif" font-size="14" '
+                f'font-weight="600" fill="{text_color}" text-anchor="middle">'
+                f'{label_irr}</text>'
+                f'<text x="{cx + cw / 2:.1f}" y="{cy + ch / 2 + 14:.1f}" '
+                f'font-family="JetBrains Mono,monospace" font-size="9.5" '
+                f'fill="{text_color}" text-anchor="middle" opacity="0.85">'
+                f'{label_moic}</text>'
+            )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="width:100%;max-width:{width}px;height:auto;display:block;'
+        f'margin:0 auto 1rem;">'
+        f'{headers_svg}{row_label_svg}{cells_svg}</svg>'
+    )
+
+
+def _trajectory_stacked_bars(entry_ebitda: float, total_uplift: float,
+                             organic_growth: float, hold_years: int,
+                             width: int = 720, height: int = 240) -> str:
+    """Stacked-bar EBITDA trajectory: base + RCM uplift per year."""
+    pad_l, pad_r, pad_t, pad_b = 50, 18, 32, 46
+    plot_w = width - pad_l - pad_r
+    plot_h = height - pad_t - pad_b
+    cols = hold_years + 1  # Entry + Year 1..N
+    slot = plot_w / cols
+    bar_w = slot * 0.58
+
+    series: List[Dict[str, float]] = [
+        {"label": "Entry", "base": entry_ebitda, "rcm": 0.0},
+    ]
+    for yr in range(1, hold_years + 1):
+        base = entry_ebitda * (1 + organic_growth) ** yr
+        rcm = total_uplift * min(1.0, yr / 1.5)
+        series.append({"label": f"Y{yr}", "base": base, "rcm": rcm})
+    max_v = max(s["base"] + s["rcm"] for s in series)
+    if max_v <= 0:
+        return ""
+
+    def _y(v: float) -> float:
+        return pad_t + plot_h - (v / max_v) * plot_h
+
+    # Gridlines
+    grid_svg = ""
+    for i in range(5):
+        gv = max_v * i / 4
+        gy = _y(gv)
+        grid_svg += (
+            f'<line x1="{pad_l}" y1="{gy:.1f}" x2="{pad_l + plot_w}" '
+            f'y2="{gy:.1f}" stroke="#E8E0D0" stroke-width="0.8"/>'
+            f'<text x="{pad_l - 6}" y="{gy + 3:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9" '
+            f'fill="#8A92A0" text-anchor="end">{_fm(gv)}</text>'
+        )
+
+    bars_svg = ""
+    for i, s in enumerate(series):
+        cx = pad_l + slot * i + slot / 2
+        bx = cx - bar_w / 2
+        base_h = (s["base"] / max_v) * plot_h
+        rcm_h = (s["rcm"] / max_v) * plot_h
+        # Base segment
+        bars_svg += (
+            f'<rect x="{bx:.1f}" y="{pad_t + plot_h - base_h:.1f}" '
+            f'width="{bar_w:.1f}" height="{base_h:.1f}" fill="#155752" '
+            f'opacity="0.85" rx="1"/>'
+        )
+        if rcm_h > 0:
+            bars_svg += (
+                f'<rect x="{bx:.1f}" '
+                f'y="{pad_t + plot_h - base_h - rcm_h:.1f}" '
+                f'width="{bar_w:.1f}" height="{rcm_h:.1f}" fill="#7ED3A8" rx="1"/>'
+            )
+        total = s["base"] + s["rcm"]
+        bars_svg += (
+            f'<text x="{cx:.1f}" y="{pad_t + plot_h - base_h - rcm_h - 6:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="10" '
+            f'font-weight="700" fill="#1a2332" text-anchor="middle">'
+            f'{_fm(total)}</text>'
+            f'<text x="{cx:.1f}" y="{pad_t + plot_h + 16:.1f}" '
+            f'font-family="Inter Tight,sans-serif" font-size="10" '
+            f'font-weight="700" letter-spacing="0.05em" fill="#1a2332" '
+            f'text-anchor="middle">{s["label"]}</text>'
+        )
+
+    base_y = pad_t + plot_h
+    base_line = (
+        f'<line x1="{pad_l}" y1="{base_y:.1f}" x2="{pad_l + plot_w}" '
+        f'y2="{base_y:.1f}" stroke="#BFB6A2" stroke-width="1"/>'
+    )
+
+    # Legend
+    legend_y = height - 14
+    legend_svg = (
+        f'<rect x="{pad_l}" y="{legend_y - 8}" width="12" height="10" '
+        f'fill="#155752" opacity="0.85" rx="1"/>'
+        f'<text x="{pad_l + 18}" y="{legend_y}" '
+        f'font-family="Inter Tight,sans-serif" font-size="10" '
+        f'fill="#5C6878">Base EBITDA</text>'
+        f'<rect x="{pad_l + 120}" y="{legend_y - 8}" width="12" height="10" '
+        f'fill="#7ED3A8" rx="1"/>'
+        f'<text x="{pad_l + 138}" y="{legend_y}" '
+        f'font-family="Inter Tight,sans-serif" font-size="10" '
+        f'fill="#5C6878">RCM Uplift</text>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="width:100%;max-width:{width}px;height:auto;display:block;'
+        f'margin:0 auto 1rem;">'
+        f'{grid_svg}{base_line}{bars_svg}{legend_svg}</svg>'
+    )
+
+
+_BRIDGE_CHART_CAPTION_CSS = """
+.eb-chart-caption {
+  font-family: "Inter Tight","Inter",sans-serif;
+  font-size: .72rem; color: #5C6878;
+  text-align: center; letter-spacing: 0.06em;
+  text-transform: uppercase; margin: -.5rem 0 1.25rem;
+}
+"""
 
 
 # ── Bridge computation (self-contained, works from public data) ──
@@ -815,10 +1192,18 @@ def render_ebitda_bridge(
         timing_rows += f'<td class="num" style="color:var(--cad-pos);">{_fm(cumulative[m])}</td>'
     timing_rows += "</tr>"
 
+    ramp_chart = _ramp_curve_chart(bridge["levers"], months)
+    ramp_caption = (
+        '<div class="eb-chart-caption">'
+        'Per-lever and cumulative EBITDA realization · '
+        'partners typically see ~60–70% by month 12'
+        '</div>'
+    ) if ramp_chart else ""
     timing_inner = (
         '<p class="ck-section-body">'
         'Linear ramp to full run-rate per lever. Month 0 = close date. '
         'Partners should expect 60-70% of total uplift realized by month 12.</p>'
+        + ramp_chart + ramp_caption +
         f'<table class="cad-table"><thead><tr>{timing_header}'
         f'</tr></thead><tbody>{timing_rows}</tbody></table>'
     )
@@ -861,11 +1246,18 @@ def render_ebitda_bridge(
                 grid_rows += '<td>—</td>'
         grid_rows += '</tr>'
 
+    heatmap_chart = _returns_heatmap(grid, entry_multiples, exit_multiples)
+    heatmap_caption = (
+        '<div class="eb-chart-caption">'
+        'IRR (top) / MOIC (bottom) per cell · darker green = above hurdle'
+        '</div>'
+    ) if heatmap_chart else ""
     grid_inner = (
         '<p class="ck-section-body">'
         '5-year hold, 5.5x leverage, 3% organic growth, 10%/yr debt paydown. '
         'Green = exceeds 20% IRR hurdle. Amber = 15-20%. Red = below hurdle or loss. '
         f'RCM uplift of {_fm(bridge["total_ebitda_impact"])} is added at exit.</p>'
+        + heatmap_chart + heatmap_caption +
         f'<table class="cad-table"><thead><tr>{grid_header}'
         f'</tr></thead><tbody>{grid_rows}</tbody></table>'
     )
@@ -1033,9 +1425,18 @@ def render_ebitda_bridge(
         f'<td class="num">{entry_ebitda / rev:.1%}</td>' if rev
         else '<td class="num">—</td>'
     )
+    trajectory_chart = _trajectory_stacked_bars(
+        entry_ebitda, total_uplift, organic_growth, hold_years,
+    )
+    trajectory_caption = (
+        '<div class="eb-chart-caption">'
+        'Base EBITDA + RCM uplift, ramping to full run-rate by month 18'
+        '</div>'
+    ) if trajectory_chart else ""
     value_inner = (
         '<p class="ck-section-body">'
         'EBITDA trajectory: 3% organic growth + RCM uplift ramp (full run-rate at month 18).</p>'
+        + trajectory_chart + trajectory_caption +
         '<table class="cad-table"><thead><tr>'
         '<th></th><th>Base EBITDA</th><th>RCM Uplift</th><th>Total</th><th>Margin</th>'
         '</tr></thead><tbody>'
