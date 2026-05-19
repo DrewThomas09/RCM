@@ -134,6 +134,109 @@ from .models_page import _model_nav
 from .brand import PALETTE
 
 
+def _causal_forest_plot(estimates: List[Dict[str, Any]],
+                        width: int = 720, height: int = 240) -> str:
+    """Forest plot of causal effect estimates with 95% CI whiskers.
+
+    Each method gets a horizontal CI whisker + a point estimate marker
+    on a shared effect axis, with a dashed zero line. Significant
+    estimates (p<0.05) render in teal-deep; non-significant in muted
+    gray. The classic causal-inference read: does the CI cross zero?
+    """
+    items: List[Dict[str, Any]] = []
+    for e in estimates:
+        try:
+            eff = float(e.get("estimated_effect", 0))
+            lo = float(e.get("ci_low", 0))
+            hi = float(e.get("ci_high", 0))
+            p = float(e.get("p_value", 1.0))
+        except (TypeError, ValueError):
+            continue
+        items.append({
+            "method": str(e.get("method", "")),
+            "eff": eff, "lo": lo, "hi": hi, "p": p,
+        })
+    if not items:
+        return ""
+
+    pad_l, pad_r, pad_t, pad_b = 180, 40, 26, 38
+    plot_w = width - pad_l - pad_r
+    plot_h = height - pad_t - pad_b
+    n = len(items)
+    row_h = plot_h / max(n, 1)
+
+    lo_all = min(min(i["lo"], i["eff"]) for i in items)
+    hi_all = max(max(i["hi"], i["eff"]) for i in items)
+    lo_all = min(lo_all, 0.0)
+    hi_all = max(hi_all, 0.0)
+    span = (hi_all - lo_all) or 1.0
+    # Pad the domain 8% each side so whiskers don't touch the frame
+    lo_all -= span * 0.08
+    hi_all += span * 0.08
+    span = hi_all - lo_all
+
+    def _x(v: float) -> float:
+        return pad_l + (v - lo_all) / span * plot_w
+
+    # Zero reference line
+    zero_x = _x(0.0)
+    zero_svg = (
+        f'<line x1="{zero_x:.1f}" y1="{pad_t}" x2="{zero_x:.1f}" '
+        f'y2="{pad_t + plot_h}" stroke="#1a2332" stroke-width="1" '
+        f'stroke-dasharray="4,3" opacity="0.6"/>'
+        f'<text x="{zero_x:.1f}" y="{pad_t - 8}" '
+        f'font-family="JetBrains Mono,monospace" font-size="9" '
+        f'font-weight="700" fill="#5C6878" text-anchor="middle">0 (no effect)</text>'
+    )
+
+    rows_svg = ""
+    for i, item in enumerate(items):
+        cy = pad_t + row_h * i + row_h / 2
+        sig = item["p"] < 0.05
+        color = "#155752" if sig else "#8A92A0"
+        x_lo, x_hi, x_eff = _x(item["lo"]), _x(item["hi"]), _x(item["eff"])
+        rows_svg += (
+            # method label
+            f'<text x="{pad_l - 10}" y="{cy + 3:.1f}" '
+            f'font-family="Inter Tight,sans-serif" font-size="10.5" '
+            f'font-weight="600" fill="#1a2332" text-anchor="end">'
+            f'{html.escape(item["method"])}</text>'
+            # CI whisker
+            f'<line x1="{x_lo:.1f}" y1="{cy:.1f}" x2="{x_hi:.1f}" '
+            f'y2="{cy:.1f}" stroke="{color}" stroke-width="2"/>'
+            # whisker caps
+            f'<line x1="{x_lo:.1f}" y1="{cy - 5:.1f}" x2="{x_lo:.1f}" '
+            f'y2="{cy + 5:.1f}" stroke="{color}" stroke-width="2"/>'
+            f'<line x1="{x_hi:.1f}" y1="{cy - 5:.1f}" x2="{x_hi:.1f}" '
+            f'y2="{cy + 5:.1f}" stroke="{color}" stroke-width="2"/>'
+            # point estimate
+            f'<circle cx="{x_eff:.1f}" cy="{cy:.1f}" r="5" '
+            f'fill="{color}" stroke="#FAF7F0" stroke-width="1.5"/>'
+            # effect value + sig marker
+            f'<text x="{x_hi + 8:.1f}" y="{cy + 3:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9.5" '
+            f'font-weight="700" fill="{color}">'
+            f'{item["eff"]:+.2f}{"*" if sig else ""}</text>'
+        )
+
+    legend_svg = (
+        f'<text x="{pad_l}" y="{height - 8}" '
+        f'font-family="Inter Tight,sans-serif" font-size="9.5" '
+        f'fill="#5C6878">'
+        f'Whisker = 95% CI · dot = point estimate · '
+        f'<tspan fill="#155752" font-weight="700">teal = significant (p&lt;0.05, *)</tspan>'
+        f'</text>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="width:100%;max-width:{width}px;height:auto;display:block;'
+        f'margin:0 auto 1rem;">'
+        f'{zero_svg}{rows_svg}{legend_svg}</svg>'
+    )
+
+
 def render_causal_page(deal_id: str, deal_name: str, estimates: List[Dict[str, Any]]) -> str:
     """Render causal inference results for initiative impacts."""
     rows = ""
@@ -188,10 +291,24 @@ def render_causal_page(deal_id: str, deal_name: str, estimates: List[Dict[str, A
     )
 
     nav = _model_nav(deal_id, "")
+    forest = _causal_forest_plot(estimates)
+    forest_caption = (
+        '<div class="ca-chart-caption">'
+        'Effect estimate &plusmn; 95% CI per method · CI crossing zero = not significant'
+        '</div>'
+    ) if forest else ""
+    _caption_css = (
+        '<style>.ca-chart-caption{font-family:"Inter Tight","Inter",sans-serif;'
+        'font-size:.72rem;color:#5C6878;text-align:center;letter-spacing:0.06em;'
+        'text-transform:uppercase;margin:-.5rem 0 1.25rem;}'
+        '@media print{.ca-chart-caption{color:#1a2332;}'
+        'svg{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style>'
+    )
     body = (
-        f'{nav}{intro}{kpis}'
+        f'{_caption_css}{nav}{intro}{kpis}'
         + ck_panel(
             '<p class="ck-section-body">Three causal inference methods applied to each initiative.</p>'
+            + forest + forest_caption +
             '<table class="cad-table"><thead><tr>'
             '<th>Method</th><th>Effect</th><th>95% CI</th><th>p-value</th><th>Confidence</th>'
             f'</tr></thead><tbody>{rows}</tbody></table>',
