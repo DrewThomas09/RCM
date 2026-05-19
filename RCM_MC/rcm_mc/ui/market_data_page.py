@@ -312,6 +312,121 @@ def _kpi_summary(stats: List[Dict[str, Any]]) -> str:
     )
 
 
+def _top_markets_bar_chart(top_rev: List[Dict[str, Any]],
+                           total_national_rev: float,
+                           width: int = 720,
+                           height: int = 280) -> str:
+    """Horizontal bars per state showing revenue share + cumulative line.
+
+    HHI concentration colors the bar:
+      - HHI >2500 (concentrated) → red
+      - HHI >1500 (moderate)     → amber
+      - else (competitive)       → teal-deep
+    """
+    if not top_rev or total_national_rev <= 0:
+        return ""
+    pad_l, pad_r, pad_t, pad_b = 70, 100, 20, 24
+    plot_w = width - pad_l - pad_r
+    plot_h = height - pad_t - pad_b
+    n = len(top_rev)
+    row_h = plot_h / n
+    max_pct = max((s["total_revenue"] / total_national_rev * 100) for s in top_rev)
+
+    bars_svg = ""
+    cum_pts: List[tuple] = []
+    cum_pct = 0.0
+    for i, s in enumerate(top_rev):
+        share_pct = s["total_revenue"] / total_national_rev * 100
+        cum_pct += share_pct
+        cy = pad_t + row_h * i + row_h / 2
+        bw = (share_pct / max_pct) * plot_w if max_pct > 0 else 0
+        hhi = s.get("hhi", 0)
+        fill = (
+            "#A53A2D" if hhi > 2500
+            else "#b8732a" if hhi > 1500
+            else "#155752"
+        )
+        bars_svg += (
+            f'<text x="{pad_l - 10}" y="{cy + 3:.1f}" '
+            f'font-family="Inter Tight,sans-serif" font-size="11" '
+            f'font-weight="700" fill="#1a2332" text-anchor="end">'
+            f'{html.escape(s["state"])}</text>'
+            f'<rect x="{pad_l}" y="{cy - row_h * 0.30:.1f}" '
+            f'width="{bw:.1f}" height="{row_h * 0.58:.1f}" '
+            f'fill="{fill}" opacity="0.9" rx="1"/>'
+            f'<text x="{pad_l + bw + 6:.1f}" y="{cy + 4:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="10" '
+            f'font-weight="700" fill="#1a2332">'
+            f'${s["total_revenue"] / 1e9:.1f}B'
+            f'</text>'
+            f'<text x="{pad_l + bw + 6:.1f}" y="{cy + 16:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9" '
+            f'fill="#5C6878">'
+            f'{share_pct:.1f}% · {cum_pct:.0f}% cum</text>'
+        )
+        # Cumulative line point at the END of each row (right-rail)
+        cum_pts.append((cy, cum_pct))
+
+    # Cumulative overlay line (anchored to the % axis 0-100)
+    line_x = pad_l + plot_w + 40
+    line_w = 40
+    line_svg = ""
+    if cum_pts:
+        path = " ".join(
+            f"{'M' if j == 0 else 'L'} "
+            f"{line_x + (pct / 100) * line_w:.1f},{cy:.1f}"
+            for j, (cy, pct) in enumerate(cum_pts)
+        )
+        line_svg = (
+            f'<path d="{path}" stroke="#0F1C2E" stroke-width="1.6" '
+            f'fill="none" opacity="0.7"/>'
+        )
+
+    # Legend / tone key (bottom row)
+    legend_y = height - 6
+    legend_svg = (
+        f'<rect x="{pad_l}" y="{legend_y - 9}" width="10" height="8" '
+        f'fill="#155752" opacity="0.9" rx="1"/>'
+        f'<text x="{pad_l + 14}" y="{legend_y - 1}" '
+        f'font-family="Inter Tight,sans-serif" font-size="9.5" '
+        f'fill="#5C6878">Competitive</text>'
+        f'<rect x="{pad_l + 100}" y="{legend_y - 9}" width="10" height="8" '
+        f'fill="#b8732a" opacity="0.9" rx="1"/>'
+        f'<text x="{pad_l + 114}" y="{legend_y - 1}" '
+        f'font-family="Inter Tight,sans-serif" font-size="9.5" '
+        f'fill="#5C6878">Moderate</text>'
+        f'<rect x="{pad_l + 192}" y="{legend_y - 9}" width="10" height="8" '
+        f'fill="#A53A2D" opacity="0.9" rx="1"/>'
+        f'<text x="{pad_l + 206}" y="{legend_y - 1}" '
+        f'font-family="Inter Tight,sans-serif" font-size="9.5" '
+        f'fill="#5C6878">Concentrated (HHI&gt;2500)</text>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="width:100%;max-width:{width}px;height:auto;display:block;'
+        f'margin:0 auto 1rem;">'
+        f'{bars_svg}{line_svg}{legend_svg}</svg>'
+    )
+
+
+_MARKET_CHART_CAPTION_CSS = """
+<style>
+.mkt-chart-caption {
+  font-family: "Inter Tight","Inter",sans-serif;
+  font-size: .72rem; color: #5C6878;
+  text-align: center; letter-spacing: 0.06em;
+  text-transform: uppercase; margin: -.5rem 0 1.25rem;
+}
+@media print {
+  .mkt-chart-caption { color: #1a2332; }
+  svg { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+"""
+
+
 def render_market_data(
     hcris_df: Optional[pd.DataFrame] = None,
     metric: str = "avg_margin",
@@ -370,9 +485,16 @@ def render_market_data(
             f'<td><span class="cad-badge {conc_cls}">{conc_label}</span></td>'
             f'</tr>'
         )
+    top_markets_chart = _top_markets_bar_chart(top_rev, total_national_rev)
+    top_markets_caption = (
+        '<div class="mkt-chart-caption">'
+        'Revenue share by state · color = HHI concentration tier'
+        '</div>'
+    ) if top_markets_chart else ""
     top_markets = ck_panel(
         '<p class="ck-section-body">'
         f'Top 10 states account for {cumulative_pct:.0f}% of national hospital revenue.</p>'
+        + top_markets_chart + top_markets_caption +
         '<table class="cad-table"><thead><tr>'
         '<th>State</th><th>Total NPR</th><th>% National</th><th>Cumulative</th>'
         '<th>Hospitals</th><th>Margin</th><th>Concentration</th>'
@@ -450,6 +572,7 @@ overflow:hidden;margin-bottom:8px;}
 """
     body = (
         f'{md_styles}'
+        f'{_MARKET_CHART_CAPTION_CSS}'
         f'{page_title}'
         f'{intro}'
         f'{kpi_section}'
