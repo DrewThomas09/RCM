@@ -106,6 +106,128 @@ def _mix_bar(commercial: float, medicare: float, medicaid: float, self_pay: floa
     )
 
 
+def _regime_moic_boxplot(regime_stats: List[Any]) -> str:
+    """SVG box-and-whisker of MOIC distribution per payer-mix regime.
+
+    Each regime gets a box from P25 → P75 with a P50 marker line.
+    Partner reads:
+      - height of box   = spread of outcomes within the regime
+      - line in the box = median MOIC
+      - color of box    = MOIC band (green ≥2.5x, amber 1.5–2.5x,
+                          red <1.5x) keyed off P50
+
+    Glanceable answer to "which payer mix delivers tight returns vs
+    a wide range of outcomes?" without scanning columns.
+    """
+    if not regime_stats:
+        return ""
+    width = 720
+    height = 280
+    pad_l, pad_r, pad_t, pad_b = 60, 24, 32, 56
+    inner_w = width - pad_l - pad_r
+    inner_h = height - pad_t - pad_b
+    n = len(regime_stats)
+    box_w = max(20.0, inner_w / max(n, 1) * 0.55)
+    step = inner_w / max(n, 1)
+
+    # Y scale: 0 to max(P75 + 0.3, 3.0)
+    max_p75 = max((float(rs.moic_p75) for rs in regime_stats), default=3.0)
+    y_max = max(max_p75 + 0.3, 3.0)
+
+    def sy(v: float) -> float:
+        return pad_t + inner_h - (v / y_max) * inner_h
+
+    # Reference gridlines at MOIC = 1, 2, 3 (and the implicit 1.0
+    # break-even line stands out as the lower bound for "made money")
+    grid = []
+    for v in (1.0, 2.0, 3.0):
+        if v > y_max:
+            continue
+        y = sy(v)
+        grid.append(
+            f'<line x1="{pad_l}" x2="{pad_l + inner_w}" '
+            f'y1="{y:.1f}" y2="{y:.1f}" stroke="#d6cfc0" '
+            f'stroke-dasharray="2,4" />'
+            f'<text x="{pad_l - 6}" y="{y + 3:.1f}" '
+            f'fill="#7a8699" text-anchor="end" font-size="10" '
+            f'font-family="JetBrains Mono, monospace">{v:.1f}x</text>'
+        )
+
+    # Boxes (P25 → P75) + median line + regime label below
+    elements = []
+    for i, rs in enumerate(regime_stats):
+        cx = pad_l + step * i + step / 2
+        x = cx - box_w / 2
+        y_p25 = sy(float(rs.moic_p25))
+        y_p50 = sy(float(rs.moic_p50))
+        y_p75 = sy(float(rs.moic_p75))
+        # Color by P50 band
+        p50 = float(rs.moic_p50)
+        color = (
+            "#0a8a5f" if p50 >= 2.5
+            else "#b8732a" if p50 >= 1.5
+            else "#b5321e"
+        )
+        # Box (P25 to P75 — note SVG y grows downward so P75 is on top)
+        elements.append(
+            f'<rect x="{x:.1f}" y="{y_p75:.1f}" '
+            f'width="{box_w:.1f}" height="{y_p25 - y_p75:.1f}" '
+            f'fill="{color}" fill-opacity="0.20" '
+            f'stroke="{color}" stroke-width="1.5">'
+            f'<title>{_html.escape(str(rs.regime))}: '
+            f'P25 {float(rs.moic_p25):.2f}x · '
+            f'P50 {p50:.2f}x · '
+            f'P75 {float(rs.moic_p75):.2f}x · '
+            f'{rs.n_deals} deals · '
+            f'loss {float(rs.loss_rate)*100:.0f}%</title>'
+            f'</rect>'
+        )
+        # Median (P50) line — thicker
+        elements.append(
+            f'<line x1="{x:.1f}" x2="{x + box_w:.1f}" '
+            f'y1="{y_p50:.1f}" y2="{y_p50:.1f}" '
+            f'stroke="{color}" stroke-width="3" />'
+        )
+        # P50 value label above the box
+        elements.append(
+            f'<text x="{cx:.1f}" y="{y_p75 - 6:.1f}" '
+            f'fill="{color}" text-anchor="middle" font-size="11" '
+            f'font-family="JetBrains Mono, monospace" '
+            f'font-weight="700">{p50:.1f}x</text>'
+        )
+        # Regime label below the axis (two lines: name + n_deals)
+        elements.append(
+            f'<text x="{cx:.1f}" y="{height - pad_b + 16}" '
+            f'fill="#1a2332" text-anchor="middle" font-size="11" '
+            f'font-family="Inter, sans-serif" font-weight="600">'
+            f'{_html.escape(str(rs.regime))}</text>'
+        )
+        elements.append(
+            f'<text x="{cx:.1f}" y="{height - pad_b + 30}" '
+            f'fill="#7a8699" text-anchor="middle" font-size="10" '
+            f'font-family="JetBrains Mono, monospace">'
+            f'n={rs.n_deals}</text>'
+        )
+
+    axis_label = (
+        f'<text x="16" y="{pad_t + inner_h/2:.1f}" '
+        f'fill="#1a2332" text-anchor="middle" font-size="12" '
+        f'font-family="Inter, sans-serif" font-weight="600" '
+        f'transform="rotate(-90 16 {pad_t + inner_h/2:.1f})">'
+        f'MOIC distribution (P25 → P75, median line)</text>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;background:transparent;'
+        f'margin:8px 0 16px;">'
+        f'{"".join(grid)}'
+        f'{"".join(elements)}'
+        f'{axis_label}'
+        f'</svg>'
+    )
+
+
 def _regime_row(rs: Any) -> str:
     regime = str(rs.regime)
     col = _REGIME_COLORS.get(regime, P["text_dim"])
@@ -286,6 +408,10 @@ def render_payer_intelligence(
         code="COR",
     )
 
+    # Regime visual: box-and-whisker of MOIC distribution per
+    # payer-mix regime above the underlying numbers table.
+    regime_chart = _regime_moic_boxplot(pi.regime_stats)
+
     # Regime table
     regime_rows = []
     for rs in pi.regime_stats:
@@ -307,7 +433,7 @@ def render_payer_intelligence(
     )
     regime_panel = small_panel(
         f"Payer-mix regimes ({len(pi.regime_stats)})",
-        regime_table,
+        regime_chart + regime_table,
         code="REG",
     )
 
