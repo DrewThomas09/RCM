@@ -388,10 +388,13 @@ class DealAutopsyPageTests(unittest.TestCase):
 
 class NavLinkTest(unittest.TestCase):
 
-    def test_deal_autopsy_link_in_sidebar(self):
-        from rcm_mc.ui._chartis_kit import chartis_shell
-        rendered = chartis_shell("<p>x</p>", "Test")
-        self.assertIn('href="/diligence/deal-autopsy"', rendered)
+    def test_deal_autopsy_in_palette(self):
+        # Post-nav-restructure: diligence sub-surfaces are reached
+        # via the Cmd+K palette + the /diligence index, not the
+        # topnav. Assert against the palette registry.
+        from rcm_mc.ui._chartis_kit import _DEFAULT_PALETTE_MODULES
+        routes = {m["route"] for m in _DEFAULT_PALETTE_MODULES}
+        self.assertIn("/diligence/deal-autopsy", routes)
 
     def test_deal_profile_exposes_autopsy_analytic(self):
         from rcm_mc.ui.deal_profile_page import _ANALYTICS

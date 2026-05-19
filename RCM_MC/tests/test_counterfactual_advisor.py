@@ -304,10 +304,14 @@ class CounterfactualPageTests(unittest.TestCase):
 
 class NavLinkTest(unittest.TestCase):
 
-    def test_counterfactual_nav_link(self):
-        from rcm_mc.ui._chartis_kit import chartis_shell
-        rendered = chartis_shell("<p>x</p>", "Test")
-        self.assertIn('href="/diligence/counterfactual"', rendered)
+    def test_counterfactual_in_palette(self):
+        # Updated post-nav-restructure: diligence sub-surfaces are
+        # reached via the Cmd+K palette + the /diligence index page,
+        # not the topnav. Assert against the palette registry — the
+        # canonical "is this surface reachable" source of truth.
+        from rcm_mc.ui._chartis_kit import _DEFAULT_PALETTE_MODULES
+        routes = {m["route"] for m in _DEFAULT_PALETTE_MODULES}
+        self.assertIn("/diligence/counterfactual", routes)
 
 
 if __name__ == "__main__":

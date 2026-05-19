@@ -214,10 +214,12 @@ class DealMCPageTests(unittest.TestCase):
 
 class NavLinkTest(unittest.TestCase):
 
-    def test_deal_mc_in_sidebar(self):
-        from rcm_mc.ui._chartis_kit import chartis_shell
-        rendered = chartis_shell("<p>x</p>", "Test")
-        self.assertIn('href="/diligence/deal-mc"', rendered)
+    def test_deal_mc_in_palette(self):
+        # Post-nav-restructure: diligence sub-surfaces are reached
+        # via the Cmd+K palette + the /diligence index, not the topnav.
+        from rcm_mc.ui._chartis_kit import _DEFAULT_PALETTE_MODULES
+        routes = {m["route"] for m in _DEFAULT_PALETTE_MODULES}
+        self.assertIn("/diligence/deal-mc", routes)
 
 
 class JsonSerialisationTest(unittest.TestCase):

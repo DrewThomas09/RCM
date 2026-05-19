@@ -227,10 +227,12 @@ class ThesisPipelinePageTests(unittest.TestCase):
 
 class NavLinkTests(unittest.TestCase):
 
-    def test_sidebar_has_thesis_pipeline(self):
-        from rcm_mc.ui._chartis_kit import chartis_shell
-        rendered = chartis_shell("<p>x</p>", "Test")
-        self.assertIn('href="/diligence/thesis-pipeline"', rendered)
+    def test_thesis_pipeline_in_palette(self):
+        # Post-nav-restructure: diligence sub-surfaces are reached
+        # via the Cmd+K palette + the /diligence index, not the topnav.
+        from rcm_mc.ui._chartis_kit import _DEFAULT_PALETTE_MODULES
+        routes = {m["route"] for m in _DEFAULT_PALETTE_MODULES}
+        self.assertIn("/diligence/thesis-pipeline", routes)
 
     def test_deal_profile_exposes_thesis_pipeline(self):
         from rcm_mc.ui.deal_profile_page import _ANALYTICS

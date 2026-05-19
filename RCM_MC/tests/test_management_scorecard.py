@@ -249,10 +249,12 @@ class ManagementScorecardPageTests(unittest.TestCase):
 
 class NavLinkTests(unittest.TestCase):
 
-    def test_sidebar_has_management_link(self):
-        from rcm_mc.ui._chartis_kit import chartis_shell
-        h = chartis_shell("<p>x</p>", "Test")
-        self.assertIn('href="/diligence/management"', h)
+    def test_management_in_palette(self):
+        # Post-nav-restructure: diligence sub-surfaces are reached
+        # via the Cmd+K palette + the /diligence index, not the topnav.
+        from rcm_mc.ui._chartis_kit import _DEFAULT_PALETTE_MODULES
+        routes = {m["route"] for m in _DEFAULT_PALETTE_MODULES}
+        self.assertIn("/diligence/management", routes)
 
     def test_deal_profile_exposes_management(self):
         from rcm_mc.ui.deal_profile_page import _ANALYTICS
