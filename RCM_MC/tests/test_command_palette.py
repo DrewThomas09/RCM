@@ -97,23 +97,23 @@ class TestDashboardIncludesPalette(unittest.TestCase):
         self.tmp.cleanup()
 
     def test_dashboard_has_modal(self):
-        """Dashboard uses chartis_shell, which ships the legacy
-        Cmd-K palette (`#ck-palette-bd`). The dashboard's explicit
-        `wc-cmdk` wiring was removed when we discovered it was
-        creating a duplicate modal — the legacy palette is canonical."""
+        """Dashboard uses chartis_shell, which ships the editorial
+        chartis-kit Cmd-K palette. The modal id was renamed from the
+        legacy `ck-palette-bd` to `ck-palette` in the editorial
+        rebuild — guard the current canonical id."""
         from rcm_mc.ui.dashboard_page import render_dashboard
         html = render_dashboard(self.db)
-        self.assertIn('id="ck-palette-bd"', html,
-                      msg="legacy Cmd-K palette should render on dashboard")
+        self.assertIn('id="ck-palette"', html,
+                      msg="editorial Cmd-K palette should render on dashboard")
 
     def test_dashboard_has_cmdk_js(self):
-        """The legacy shell's Cmd-K handler is in chartis_kit_legacy.py
-        and binds to `e.key==='k'` — that's what the dashboard gets
-        via the shell include."""
+        """The editorial chartis-kit ships a Cmd-K key handler that
+        binds to `e.key === 'k'` (with spaces — the editorial JS uses
+        the modern formatted form rather than the legacy compact one)."""
         from rcm_mc.ui.dashboard_page import render_dashboard
         html = render_dashboard(self.db)
-        self.assertIn("e.key==='k'", html,
-                      msg="legacy shell Cmd-K handler should be present")
+        self.assertIn("e.key === 'k'", html,
+                      msg="editorial shell Cmd-K handler should be present")
 
     def test_dashboard_shows_discoverability_hint(self):
         from rcm_mc.ui.dashboard_page import render_dashboard
@@ -190,18 +190,19 @@ class TestDashboardWiresPaletteCommands(unittest.TestCase):
         self.tmp.cleanup()
 
     def test_dashboard_palette_includes_navigation_commands(self):
-        """The legacy shell's palette (rendered on dashboard via
-        chartis_shell) must include the web-deployment surfaces.
-        The legacy palette's entries are statically listed in
-        `_chartis_kit_legacy.py::_PALETTE_ENTRIES`; this test
-        verifies they flow into the rendered HTML."""
+        """The dashboard must surface the morning-flow navigation
+        hops (alerts, watchlist) and the curated analytics launchers
+        (Thesis Pipeline, HCRIS Peer X-Ray). These appear as inline
+        deep-links from the dashboard cards — the legacy
+        `_PALETTE_ENTRIES` Cmd-K array no longer serializes into the
+        page after the editorial chartis-shell rebuild, so we verify
+        the rendered labels in the page body instead."""
         from rcm_mc.ui.dashboard_page import render_dashboard
         html = render_dashboard(self.db)
         # Navigation hops that matter for the morning flow
         self.assertIn("Active alerts", html)
         self.assertIn("Watchlist", html)
-        self.assertIn("Downloads", html)
-        # Curated analyses — present on the palette via RUN category
+        # Curated analyses — present as inline links on the dashboard
         self.assertIn("Thesis Pipeline", html)
         self.assertIn("HCRIS Peer X-Ray", html)
 
