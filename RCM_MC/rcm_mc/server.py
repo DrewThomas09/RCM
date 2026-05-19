@@ -17860,10 +17860,16 @@ class RCMHandler(BaseHTTPRequestHandler):
         "/data/refresh", "/quick-import", "/quick-import-json",
         "/export/bridge", "/exports/lp-update", "/calibrate", "/upload",
         "/digest/morning",
+        "/pipeline/stage",  # POST-only handler — /pipeline/stage/<ccn>
         # Routes that require a path parameter; bare slug 404s
         "/hospital", "/deal", "/initiative", "/owner", "/cohort",
         "/bayesian/hospital", "/ml-insights/hospital",
         "/portfolio/regression/hospital",
+        # Parametric routes that 404 on the bare slug. Curated
+        # variants with a default parameter live in the palette
+        # (e.g. /my/AT, /market-data/state/CA), so hiding the bare
+        # slug keeps partners from clicking a dead orphan link.
+        "/my", "/market-data/state",
         # Redirect aliases (resolve to a different canonical route)
         "/home", "/dashboard", "/portal", "/index.html", "/ready",
         # Internal/legacy

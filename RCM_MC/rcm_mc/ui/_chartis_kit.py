@@ -3075,6 +3075,8 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "data",          "title": "Data Catalog",       "route": "/data"},
     {"id": "comparables",   "title": "Comparables",        "route": "/comparables"},
     {"id": "market-rates",  "title": "Market Rates",       "route": "/market-rates"},
+    {"id": "market-state",  "title": "Market Data · State (CA)",
+        "route": "/market-data/state/CA"},
     # Research
     {"id": "research",      "title": "Research Hub",       "route": "/research"},
     {"id": "notes",         "title": "Notes",              "route": "/notes"},
