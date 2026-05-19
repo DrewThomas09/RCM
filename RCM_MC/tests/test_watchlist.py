@@ -112,6 +112,10 @@ class TestStarHttp(unittest.TestCase):
                 server.shutdown(); server.server_close()
 
     def test_deal_page_has_star_button(self):
+        # Star button was renamed to "Pin" in the editorial rebuild
+        # (verb feels lighter for a save-for-later action). The
+        # underlying /api/deals/<id>/star endpoint kept its path
+        # for backward compat; only the visible verb changed.
         with tempfile.TemporaryDirectory() as tmp:
             _seed_with_pe_math(tmp, "ccf")
             server, port = self._start(tmp)
@@ -119,11 +123,13 @@ class TestStarHttp(unittest.TestCase):
                 with _u.urlopen(f"http://127.0.0.1:{port}/deal/ccf") as r:
                     body = r.read().decode()
                     self.assertIn("/api/deals/ccf/star", body)
-                    self.assertIn("☆ Star", body)
+                    self.assertIn("☆ Pin", body)
             finally:
                 server.shutdown(); server.server_close()
 
     def test_deal_page_shows_starred_state(self):
+        # "Starred" → "Pinned" rename (sibling to the button label
+        # change above).
         with tempfile.TemporaryDirectory() as tmp:
             store = _seed_with_pe_math(tmp, "ccf")
             star_deal(store, "ccf")
@@ -131,7 +137,7 @@ class TestStarHttp(unittest.TestCase):
             try:
                 with _u.urlopen(f"http://127.0.0.1:{port}/deal/ccf") as r:
                     body = r.read().decode()
-                    self.assertIn("★ Starred", body)
+                    self.assertIn("★ Pinned", body)
             finally:
                 server.shutdown(); server.server_close()
 
@@ -150,10 +156,14 @@ class TestStarHttp(unittest.TestCase):
                 server.shutdown(); server.server_close()
 
     def test_dashboard_has_watchlist_link(self):
+        # `/` now serves the marketing splash; the dashboard with
+        # the watchlist link moved to /dashboard.
         with tempfile.TemporaryDirectory() as tmp:
             server, port = self._start(tmp)
             try:
-                with _u.urlopen(f"http://127.0.0.1:{port}/") as r:
+                with _u.urlopen(
+                    f"http://127.0.0.1:{port}/dashboard"
+                ) as r:
                     body = r.read().decode()
                     self.assertIn('href="/watchlist"', body)
             finally:
