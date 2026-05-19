@@ -1156,6 +1156,7 @@ def render_regression_page(
                 df, target, result["features"],
                 k=5, log_transform_target=log_target,
                 random_state=42,
+                auto_reduce_k=True,
             )
         except ValueError as exc:
             cv_section = ck_panel(
@@ -1200,14 +1201,29 @@ def render_regression_page(
                     " — small gap; the in-sample fit generalises "
                     "to held-out folds."
                 )
+            # auto_reduce_k=True can knock k down when the universe
+            # is too thin (CAH, Small Community). Surface this so the
+            # partner knows their "5-fold" request actually became
+            # 3-fold or 2-fold — otherwise the headline "Mean test R²"
+            # looks identical to a real 5-fold result.
+            k_note = ""
+            if cv_res.requested_k and cv_res.requested_k != cv_res.k:
+                k_note = (
+                    f' <span class="cad-warn">k auto-reduced from '
+                    f'{cv_res.requested_k} → {cv_res.k} because '
+                    f'the universe is too small for stable '
+                    f'{cv_res.requested_k}-fold splits.</span>'
+                )
+            panel_title = f"Cross-Validation ({cv_res.k}-fold)"
             cv_section = ck_panel(
                 '<p class="ck-section-body">'
-                'k=5 random-fold cross-validation, seed = 42 '
+                f'k={cv_res.k} random-fold cross-validation, '
+                'seed = 42 '
                 '(deterministic — same input → same OOS numbers). '
                 'Test R² is the average across folds of the R² '
-                'measured on the held-out 20% of rows after fitting '
+                'measured on the held-out rows after fitting '
                 'on the rest. Big gap between in-sample R² and mean '
-                f'test R² = overfit signal.{gap_note}</p>'
+                f'test R² = overfit signal.{gap_note}{k_note}</p>'
                 '<div class="ck-kpi-strip">'
                 + ck_kpi_block(
                     "In-sample R²",
@@ -1230,7 +1246,7 @@ def render_regression_page(
                 '<th>Fold</th><th>n train</th><th>n test</th>'
                 '<th>Train R²</th><th>Test R²</th><th>Test RMSE</th>'
                 f'</tr></thead><tbody>{fold_rows}</tbody></table>',
-                title="Cross-Validation (5-fold)",
+                title=panel_title,
             )
 
     # ── Buyability Lens panel (Phase 6) ──
