@@ -328,9 +328,13 @@ def render_alerts(
     n_info = len(grouped.get("info") or [])
 
     # Page header
+    # Mode-aware eyebrow: "PORTFOLIO ALERTS" (PE partner) vs
+    # "ENGAGEMENT BOOK ALERTS" (Chartis consulting).
+    from ._workspace_mode import current_workspace_mode, CONSULTING
+    _scope = "ENGAGEMENT BOOK" if current_workspace_mode() == CONSULTING else "PORTFOLIO"
     title_html = ck_page_title(
         "Alerts",
-        eyebrow=("ACKNOWLEDGED + ALL" if show_all else "PORTFOLIO ALERTS"),
+        eyebrow=("ACKNOWLEDGED + ALL" if show_all else f"{_scope} ALERTS"),
         meta=(
             f"{len(alerts):,} {'total' if show_all else 'active'} "
             f"alert{'s' if len(alerts) != 1 else ''}"
