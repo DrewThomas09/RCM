@@ -157,15 +157,10 @@ class TestCohortsHttp(unittest.TestCase):
             finally:
                 server.shutdown(); server.server_close()
 
-    def test_dashboard_has_cohorts_link(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            server, port = self._start(tmp)
-            try:
-                with _u.urlopen(f"http://127.0.0.1:{port}/") as r:
-                    body = r.read().decode()
-                    self.assertIn('href="/cohorts"', body)
-            finally:
-                server.shutdown(); server.server_close()
+    # test_dashboard_has_cohorts_link removed — the editorial
+    # dashboard no longer surfaces a direct /cohorts link. The
+    # /cohorts route still exists and is reachable via the Cmd+K
+    # palette and the portfolio nav rail.
 
 
 if __name__ == "__main__":

@@ -118,7 +118,7 @@ class TestEscalationsPage(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             server, port = self._start(tmp)
             try:
-                with _u.urlopen(f"http://127.0.0.1:{port}/") as r:
+                with _u.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
                     body = r.read().decode()
                     self.assertIn('href="/escalations"', body)
             finally:

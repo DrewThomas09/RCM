@@ -28,7 +28,7 @@ class TestPortfolioPulse(unittest.TestCase):
             _seed_with_pe_math(tmp, "ccf", headroom=2.0)  # no alerts
             server, port = self._start(tmp)
             try:
-                with _u.urlopen(f"http://127.0.0.1:{port}/") as r:
+                with _u.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
                     body = r.read().decode()
                     self.assertNotIn(">Pulse<", body)
             finally:
@@ -50,7 +50,7 @@ class TestPortfolioPulse(unittest.TestCase):
             _seed_with_pe_math(tmp, "ccf", headroom=-0.5)  # red covenant
             server, port = self._start(tmp)
             try:
-                with _u.urlopen(f"http://127.0.0.1:{port}/") as r:
+                with _u.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
                     body = r.read().decode()
                     self.assertIn(">Pulse<", body)
                     self.assertIn("1 red", body)
@@ -70,7 +70,7 @@ class TestPortfolioPulse(unittest.TestCase):
             add_deadline(store, deal_id="ccf", label="x", due_date=past)
             server, port = self._start(tmp)
             try:
-                with _u.urlopen(f"http://127.0.0.1:{port}/") as r:
+                with _u.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
                     body = r.read().decode()
                     self.assertIn("1 overdue", body)
             finally:
@@ -89,7 +89,7 @@ class TestPortfolioPulse(unittest.TestCase):
             add_deadline(store, deal_id="ccf", label="x", due_date=soon)
             server, port = self._start(tmp)
             try:
-                with _u.urlopen(f"http://127.0.0.1:{port}/") as r:
+                with _u.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
                     body = r.read().decode()
                     self.assertIn("1 upcoming", body)
             finally:

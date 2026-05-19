@@ -170,15 +170,10 @@ class TestOwnersHttp(unittest.TestCase):
             finally:
                 server.shutdown(); server.server_close()
 
-    def test_dashboard_has_owners_link(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            server, port = self._start(tmp)
-            try:
-                with _u.urlopen(f"http://127.0.0.1:{port}/") as r:
-                    body = r.read().decode()
-                    self.assertIn('href="/owners"', body)
-            finally:
-                server.shutdown(); server.server_close()
+    # test_dashboard_has_owners_link removed — the editorial
+    # dashboard no longer surfaces a direct /owners link. The
+    # /owners route still exists and is reachable via the Cmd+K
+    # palette and the portfolio nav rail.
 
 
 if __name__ == "__main__":
