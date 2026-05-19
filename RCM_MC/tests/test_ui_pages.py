@@ -73,10 +73,11 @@ class TestPortfolioMap(unittest.TestCase):
              "ebitda_opportunity": 5e6, "stage": "hold"},
         ]
         html = render_portfolio_map(deals)
-        # Hold-stage marker color from rcm_mc/ui/portfolio_map.py
-        # _STAGE_COLORS. The previous v2 reskin used #0a8a5f; the
-        # revert at d8bfac4 restored #10b981.
-        self.assertIn("#10b981", html)
+        # Hold-stage marker color from portfolio_map.py:_STAGE_COLORS.
+        # Editorial refactor: literal hexes (#10b981 / #0a8a5f) were
+        # replaced by the CSS custom property var(--green), which
+        # resolves to #3F7D4D in v3/chartis.css. Assert the variable.
+        self.assertIn("var(--green)", html)
 
     def test_legend_present(self):
         deals = [

@@ -136,7 +136,9 @@ class TestDashboardRender(unittest.TestCase):
                 ebitda_margin=0.15),
         ]
         html = render_screening_dashboard(score_universe(cands))
-        self.assertTrue(html.startswith("<!DOCTYPE html>"))
+        # chartis_shell emits "<!doctype html>" (lowercase, HTML5
+        # convention) — both spellings are spec-valid.
+        self.assertTrue(html.lower().startswith("<!doctype html>"))
         self.assertIn("Test Hospital", html)
         self.assertIn("Universe size", html)
         self.assertIn("Median uplift", html)

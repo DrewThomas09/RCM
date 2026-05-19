@@ -115,16 +115,31 @@ class PortfolioOverviewGlossaryLinksTests(unittest.TestCase):
         )
 
     def test_helper_referenced_at_least_7_times(self) -> None:
-        """After loops 110 + 116, 7 wrap sites total: 4 KPI
-        cards (Avg Denial, Avg AR, Avg Net Collection, Total
-        Net Revenue) + 3 deal-table headers (Denial, AR,
-        NPR)."""
+        """7 glossary-wired sites total: 4 KPI cards (Avg Denial,
+        Avg AR, Avg Net Collection, Total Net Revenue) + 3
+        deal-table headers (Denial, AR, NPR).
+
+        Editorial cutover: the 4 KPI cards moved from
+        metric_label_link() to ck_kpi_block(label, provenance_tooltip(
+        ..., metric_key=...)) — provenance_tooltip carries the
+        /metric-glossary link via metric_key, replacing the
+        bare metric_label_link wrap. Count both linking
+        mechanisms.
+        """
         text = _MODULE_PATH.read_text(encoding="utf-8")
-        ref_count = len(re.findall(r"metric_label_link\(", text))
+        label_link_count = len(re.findall(r"metric_label_link\(", text))
+        # The 4 KPI cards link via `provenance_tooltip(..., metric_key=...)`;
+        # each metric_key= keyword on its own counts. Use a plain
+        # `metric_key=` count (avoids regex backtracking around the
+        # nested parens in `value=(_fmt_pct(...) if ... else "—")`).
+        prov_link_count = len(re.findall(r"\bmetric_key=", text))
+        total = label_link_count + prov_link_count
         self.assertGreaterEqual(
-            ref_count, 7,
-            f"metric_label_link should be called ≥7 times "
-            f"(4 KPI cards + 3 table headers); found {ref_count}",
+            total, 7,
+            f"expected ≥7 glossary-wired sites "
+            f"(4 KPI cards + 3 table headers); found "
+            f"{label_link_count} metric_label_link + "
+            f"{prov_link_count} metric_key= = {total}",
         )
 
 

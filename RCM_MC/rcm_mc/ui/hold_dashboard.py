@@ -242,7 +242,9 @@ def render_hold_dashboard(
     quarters_held = len(actuals)
 
     # Cycle 48 — KPI strip with provenance.
-    n_initiatives = len(plan) if plan else 0
+    # ValueCreationPlan is a dataclass with an `initiatives` list;
+    # len() lives on the list, not the wrapper.
+    n_initiatives = len(plan.initiatives) if plan else 0
     quarters_value = ck_provenance_tooltip(
         "Quarters held",
         ck_fmt_num(quarters_held),
