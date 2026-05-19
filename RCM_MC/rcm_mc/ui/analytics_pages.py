@@ -100,6 +100,138 @@ def render_causal_page(deal_id: str, deal_name: str, estimates: List[Dict[str, A
                     subtitle=f"{len(estimates)} estimates, {sig_count} significant")
 
 
+def _counterfactual_trajectory_chart(
+    actual: List[float],
+    counter: List[float],
+) -> str:
+    """SVG line chart of Actual vs Counterfactual EBITDA trajectory.
+
+    Two lines on a shared axis — actual (solid green) sits above (or
+    below) counterfactual (dashed grey). The shaded area between is
+    the cumulative initiative impact. Partner-readable summary of
+    "what we did" vs. "what would have happened" without scanning
+    the period-by-period table.
+    """
+    if not actual or not counter or len(actual) != len(counter):
+        return ""
+    n = len(actual)
+    width = 720
+    height = 280
+    pad_l, pad_r, pad_t, pad_b = 64, 28, 32, 44
+    inner_w = width - pad_l - pad_r
+    inner_h = height - pad_t - pad_b
+
+    all_vals = [float(v) for v in actual] + [float(v) for v in counter]
+    y_min = min(all_vals)
+    y_max = max(all_vals)
+    span = y_max - y_min or 1.0
+    y_lo = y_min - span * 0.08
+    y_hi = y_max + span * 0.08
+
+    def sx(i: int) -> float:
+        if n == 1:
+            return pad_l + inner_w / 2
+        return pad_l + (i / (n - 1)) * inner_w
+
+    def sy(v: float) -> float:
+        return pad_t + inner_h - (v - y_lo) / (y_hi - y_lo) * inner_h
+
+    # 4 horizontal gridlines + tick labels
+    grid = []
+    for frac in (0.0, 0.25, 0.5, 0.75, 1.0):
+        v = y_lo + (y_hi - y_lo) * frac
+        y = pad_t + inner_h - frac * inner_h
+        grid.append(
+            f'<line x1="{pad_l}" x2="{pad_l + inner_w}" '
+            f'y1="{y:.1f}" y2="{y:.1f}" stroke="#d6cfc0" '
+            f'stroke-dasharray="2,4" />'
+            f'<text x="{pad_l - 6}" y="{y + 3:.1f}" '
+            f'fill="#7a8699" text-anchor="end" font-size="10" '
+            f'font-family="JetBrains Mono, monospace">'
+            f'${v/1e6:.0f}M</text>'
+        )
+
+    # Shaded area between the two trajectories — green tint when
+    # actual > counter (initiative created value), red when below
+    cumulative = sum(float(a) - float(c) for a, c in zip(actual, counter))
+    fill_color = "#0a8a5f" if cumulative >= 0 else "#b5321e"
+    actual_pts = [(sx(i), sy(float(a))) for i, a in enumerate(actual)]
+    counter_pts = [(sx(i), sy(float(c))) for i, c in enumerate(counter)]
+    poly_points = " ".join(f"{x:.1f},{y:.1f}" for x, y in actual_pts)
+    poly_points += " " + " ".join(
+        f"{x:.1f},{y:.1f}" for x, y in reversed(counter_pts)
+    )
+    shade = (
+        f'<polygon points="{poly_points}" '
+        f'fill="{fill_color}" fill-opacity="0.10" />'
+    )
+
+    # Counterfactual line: dashed grey
+    counter_path = "M " + " L ".join(
+        f"{x:.1f},{y:.1f}" for x, y in counter_pts
+    )
+    counter_line = (
+        f'<path d="{counter_path}" stroke="#5d6b7a" '
+        f'stroke-width="2" stroke-dasharray="5,3" fill="none" />'
+    )
+
+    # Actual line: solid green/red (matches the cumulative sign)
+    actual_path = "M " + " L ".join(
+        f"{x:.1f},{y:.1f}" for x, y in actual_pts
+    )
+    actual_color = "#0a8a5f" if cumulative >= 0 else "#b5321e"
+    actual_line = (
+        f'<path d="{actual_path}" stroke="{actual_color}" '
+        f'stroke-width="2.5" fill="none" />'
+    )
+
+    # Period dots on actual line
+    actual_dots = "".join(
+        f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3" '
+        f'fill="{actual_color}" stroke="#fff" stroke-width="1.5" />'
+        for x, y in actual_pts
+    )
+    # Period labels along the x-axis
+    period_labels = []
+    for i in range(n):
+        x = sx(i)
+        period_labels.append(
+            f'<text x="{x:.1f}" y="{height - pad_b + 14}" '
+            f'fill="#7a8699" text-anchor="middle" font-size="10" '
+            f'font-family="JetBrains Mono, monospace">'
+            f'P{i + 1}</text>'
+        )
+
+    legend = (
+        f'<g transform="translate({pad_l + inner_w - 200}, {pad_t + 6})">'
+        # actual swatch
+        f'<line x1="0" x2="20" y1="6" y2="6" '
+        f'stroke="{actual_color}" stroke-width="2.5" />'
+        f'<text x="26" y="9" fill="#1a2332" font-size="11" '
+        f'font-family="Inter, sans-serif">Actual</text>'
+        # counter swatch
+        f'<line x1="80" x2="100" y1="6" y2="6" '
+        f'stroke="#5d6b7a" stroke-width="2" stroke-dasharray="5,3" />'
+        f'<text x="106" y="9" fill="#1a2332" font-size="11" '
+        f'font-family="Inter, sans-serif">Counterfactual</text>'
+        f'</g>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;background:transparent;'
+        f'margin:8px 0 16px;">'
+        f'{"".join(grid)}'
+        f'{shade}'
+        f'{counter_line}'
+        f'{actual_line}'
+        f'{actual_dots}'
+        f'{"".join(period_labels)}'
+        f'{legend}'
+        f'</svg>'
+    )
+
+
 def render_counterfactual_page(deal_id: str, deal_name: str, result: Dict[str, Any]) -> str:
     """Render counterfactual analysis — what would have happened without the initiative."""
     actual = result.get("actual_trajectory", [])
@@ -157,12 +289,16 @@ def render_counterfactual_page(deal_id: str, deal_name: str, result: Dict[str, A
         + '</div>'
     )
 
+    trajectory_chart = _counterfactual_trajectory_chart(actual, counter)
     nav = _model_nav(deal_id, "")
     body = (
         f'{nav}{intro}{kpis}'
         + ck_panel(
             '<p class="ck-section-body">'
-            '"What would EBITDA be if we hadn\'t done this initiative?"</p>'
+            '"What would EBITDA be if we hadn\'t done this initiative?" '
+            'Solid line = actual; dashed grey = counterfactual; shaded '
+            'area = the attributable initiative impact.</p>'
+            f'{trajectory_chart}'
             '<table class="cad-table"><thead><tr>'
             '<th>Period</th><th>Actual</th><th>Counterfactual</th><th>Delta</th>'
             f'</tr></thead><tbody>{rows}</tbody></table>',
