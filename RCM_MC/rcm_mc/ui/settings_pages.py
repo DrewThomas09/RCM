@@ -19,6 +19,118 @@ def _esc(s: Any) -> str:
     return html.escape("" if s is None else str(s))
 
 
+def render_workspace_mode_page() -> str:
+    """Settings page: choose the workspace mode (audience framing).
+
+    Two cards — PE Partner (fund-level deal operations) and Chartis
+    Consulting (commercial diligence for client engagements). The
+    selected card POSTs to /settings/workspace which sets the
+    ck_workspace_mode cookie; the whole platform's copy then swaps
+    via ui._workspace_mode.term().
+    """
+    from ._chartis_kit import ck_page_title
+    from ._workspace_mode import (
+        current_workspace_mode, MODE_LABELS, MODE_TAGLINES,
+        PARTNER, CONSULTING,
+    )
+
+    active = current_workspace_mode()
+
+    def _card(mode: str, summary: str, bullets: List[str]) -> str:
+        is_active = mode == active
+        radio = "&#9679;" if is_active else "&#9675;"  # ● / ○
+        active_cls = " ws-card-active" if is_active else ""
+        bullets_html = "".join(
+            f'<li>{_esc(b)}</li>' for b in bullets
+        )
+        return (
+            f'<form method="POST" action="/settings/workspace" '
+            f'class="ws-card-form">'
+            f'<input type="hidden" name="mode" value="{_esc(mode)}">'
+            f'<button type="submit" class="ws-card{active_cls}">'
+            f'<div class="ws-card-head">'
+            f'<span class="ws-radio">{radio}</span>'
+            f'<span class="ws-card-label">{_esc(MODE_LABELS[mode])}</span>'
+            + ('<span class="ws-badge">ACTIVE</span>' if is_active else '')
+            + '</div>'
+            f'<div class="ws-card-tagline">&ldquo;{_esc(MODE_TAGLINES[mode])}&rdquo;</div>'
+            f'<div class="ws-card-summary">{_esc(summary)}</div>'
+            f'<ul class="ws-card-bullets">{bullets_html}</ul>'
+            f'</button></form>'
+        )
+
+    cards = (
+        _card(
+            PARTNER,
+            "The fund-level operating view. Deals, sponsors, IC memos, "
+            "MOIC / IRR / covenant math, and portfolio operations.",
+            ["Deal profiles + IC memos", "Portfolio operations + alerts",
+             "Returns math (MOIC / IRR / covenants)"],
+        )
+        + _card(
+            CONSULTING,
+            "The commercial-diligence consulting view. Client engagements, "
+            "target profiles, market sizing, and source-backed readouts.",
+            ["Engagement profiles + diligence readouts",
+             "Market + competitive + customer intelligence",
+             "Client briefings replace LP updates"],
+        )
+    )
+
+    styles = (
+        '<style>'
+        '.ws-grid{display:grid;grid-template-columns:repeat(auto-fit,'
+        'minmax(320px,1fr));gap:18px;margin:8px 0 24px;}'
+        '.ws-card-form{margin:0;}'
+        '.ws-card{display:block;width:100%;text-align:left;cursor:pointer;'
+        'background:#FAF7F0;border:1px solid #D6CFC0;border-radius:2px;'
+        'padding:20px 22px;font-family:inherit;transition:border-color .18s '
+        'ease,box-shadow .18s ease,transform .18s ease;}'
+        '.ws-card:hover{border-color:#155752;transform:translateY(-1px);'
+        'box-shadow:0 6px 16px -10px rgba(21,87,82,.45);}'
+        '.ws-card-active{border-color:#155752;border-left:3px solid #155752;'
+        'background:linear-gradient(135deg,#D4E4E2 0%,#FAF7F0 70%);}'
+        '.ws-card-head{display:flex;align-items:center;gap:10px;'
+        'margin-bottom:8px;}'
+        '.ws-radio{color:#155752;font-size:15px;}'
+        '.ws-card-label{font-family:"Source Serif 4",Georgia,serif;'
+        'font-size:1.3rem;font-weight:600;color:#0b2341;}'
+        '.ws-badge{margin-left:auto;font-family:"JetBrains Mono",monospace;'
+        'font-size:9.5px;font-weight:700;letter-spacing:.12em;'
+        'background:#155752;color:#FAF7F0;padding:2px 8px;border-radius:2px;}'
+        '.ws-card-tagline{font-family:"Source Serif 4",Georgia,serif;'
+        'font-style:italic;font-size:1.02rem;color:#155752;margin-bottom:10px;}'
+        '.ws-card-summary{font-family:"Inter Tight","Inter",sans-serif;'
+        'font-size:.92rem;line-height:1.55;color:#5C6878;margin-bottom:10px;}'
+        '.ws-card-bullets{margin:0;padding-left:18px;'
+        'font-family:"Inter Tight","Inter",sans-serif;font-size:.85rem;'
+        'color:#1a2332;line-height:1.7;}'
+        '</style>'
+    )
+
+    title = ck_page_title(
+        "Workspace Mode",
+        eyebrow="SETTINGS · AUDIENCE",
+        meta="Switch between the PE-partner deal view and the Chartis "
+             "commercial-diligence consulting view. Changes copy and "
+             "framing across the platform — not the underlying data.",
+    )
+
+    body = (
+        styles
+        + title
+        + f'<div class="ws-grid">{cards}</div>'
+        + '<p class="ck-eyebrow" style="color:#8A92A0;max-width:70ch;">'
+        'This is a per-browser preference stored in a cookie. It changes '
+        'vocabulary (e.g. &ldquo;Deal&rdquo; &harr; &ldquo;Engagement&rdquo;, '
+        '&ldquo;Sponsor&rdquo; &harr; &ldquo;Client&rdquo;, &ldquo;IC Memo&rdquo; '
+        '&harr; &ldquo;Diligence Readout&rdquo;) and not the analytics, '
+        'routes, or stored records. Public marketing + login pages keep the '
+        'commercial-diligence framing regardless.</p>'
+    )
+    return chartis_shell(body, "Workspace Mode", active_nav="/settings")
+
+
 def render_custom_kpis_page(store: Any) -> str:
     from ..domain.custom_metrics import list_custom_metrics
 
