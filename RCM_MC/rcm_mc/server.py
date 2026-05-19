@@ -14074,54 +14074,82 @@ class RCMHandler(BaseHTTPRequestHandler):
         )
 
         auth_line = (
-            f'Auth: <span class="badge badge-green">enabled</span> '
-            f'as <code>{html.escape(self.config.auth_user)}</code>'
+            f'Auth: <strong style="color:var(--sc-positive,#0a8a5f);">'
+            f'enabled</strong> as <code>{html.escape(self.config.auth_user)}</code>'
             if self.config.auth_user else
-            'Auth: <span class="badge badge-muted">off (laptop mode)</span>'
+            'Auth: <em>off · laptop mode</em>'
         )
 
-        body = f"""
-        <div class="kpi-grid">
-          <div class="kpi-card">
-            <div class="kpi-value">{stats.get('deals', 0):,}</div>
-            <div class="kpi-label">Deals</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-value">{stats.get('deal_snapshots', 0):,}</div>
-            <div class="kpi-label">Snapshots</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-value">{stats.get('deal_notes', 0):,}</div>
-            <div class="kpi-label">Notes</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-value">{size_str}</div>
-            <div class="kpi-label">DB Size</div>
-          </div>
-        </div>
+        # Editorial chartis_shell + ck_kpi_block + ck_panel — replaces
+        # the legacy `shell()` + bespoke `kpi-card` / `card` markup
+        # that rendered without any of the chartis typography or
+        # tokens (partner-flagged as "no editorial editing").
+        from .ui._chartis_kit import (
+            chartis_shell as _editorial_shell,
+            ck_kpi_block as _kpi,
+            ck_panel as _panel,
+            ck_page_title as _title,
+        )
 
-        <div class="card">
-          <h2>Storage</h2>
-          <p class="muted" style="font-size: 0.85rem;">
-            Portfolio SQLite (size {html.escape(size_str)}) · {auth_line}
-          </p>
-          <table>
-            <thead><tr><th>Table</th><th class="num">Rows</th>
-            <th>Last write</th></tr></thead>
-            <tbody>{stats_rows}</tbody>
-          </table>
-        </div>
+        editorial_stats_rows = "".join(
+            f'<tr><td style="font-family:var(--sc-mono,monospace);'
+            f'font-size:11px;">{tbl}</td>'
+            f'<td class="num" style="text-align:right;'
+            f'font-family:var(--sc-mono,monospace);font-variant-numeric:tabular-nums;">'
+            f'{stats.get(tbl, 0):,}</td>'
+            f'<td style="color:var(--sc-text-faint,#7a8699);'
+            f'font-family:var(--sc-mono,monospace);font-size:11px;">'
+            f'{_fmt_ts(table_last_write.get(tbl))}</td></tr>'
+            for tbl in ("deals", "deal_snapshots", "deal_notes",
+                        "deal_tags", "quarterly_actuals",
+                        "initiative_actuals")
+        )
 
-        <div class="card">
-          <h2>Top tags</h2>
-          {(tag_cloud if tag_cloud else
-            '<p class="muted">No tags yet.</p>')}
-        </div>
-        """
-        self._send_html(shell(
-            body=body, title="Portfolio ops",
-            subtitle="Store health & activity diagnostics",
-            back_href="/",
+        kpi_strip = (
+            '<div class="ck-kpi-grid">'
+            + _kpi("Deals", f"{stats.get('deals', 0):,}", "in portfolio")
+            + _kpi("Snapshots",
+                    f"{stats.get('deal_snapshots', 0):,}",
+                    "quarterly captures")
+            + _kpi("Notes",
+                    f"{stats.get('deal_notes', 0):,}",
+                    "partner-authored")
+            + _kpi("DB Size", html.escape(size_str), "SQLite on disk")
+            + '</div>'
+        )
+
+        storage_table = (
+            f'<p class="ck-section-body" style="margin-bottom:8px;">'
+            f'Portfolio SQLite · {html.escape(size_str)} · {auth_line}'
+            f'</p>'
+            f'<table class="ck-table">'
+            f'<thead><tr><th>Table</th>'
+            f'<th class="num" style="text-align:right;">Rows</th>'
+            f'<th>Last write</th></tr></thead>'
+            f'<tbody>{editorial_stats_rows}</tbody>'
+            f'</table>'
+        )
+
+        tags_inner = (
+            f'<div style="display:flex;flex-wrap:wrap;gap:6px;">'
+            f'{tag_cloud}</div>'
+            if tag_cloud else
+            '<p class="ck-section-body" '
+            'style="color:var(--sc-text-faint,#7a8699);">'
+            'No tags yet.</p>'
+        )
+
+        body = (
+            _title("Portfolio Ops",
+                   eyebrow="STORE HEALTH",
+                   meta="Activity diagnostics · read-only")
+            + kpi_strip
+            + _panel(storage_table, title="Storage")
+            + _panel(tags_inner, title="Top tags")
+        )
+        self._send_html(_editorial_shell(
+            body, "Portfolio Ops",
+            active_nav="/ops",
         ))
 
     def _route_initiatives_rollup(self) -> None:

@@ -308,7 +308,6 @@ def render_hold_analysis() -> str:
 
     body = f"""
 <div style="padding:16px 20px;max-width:1200px">
-  {ck_section_header("HOLD DURATION ANALYSIS", f"Hold period vs return relationship — {len(corpus)} corpus transactions", None)}
   {kpi_strip}
 
   {paired}

@@ -319,11 +319,17 @@ def _public_comps_section(
             consensus,
             surprise_pct if surprise_pct is not None else -9.9,
         ])
+    # Use the editorial `ck-table` class instead of the bespoke
+    # `rcm-comps-table` so the table inherits chartis typography
+    # (mono-uppercase headers, tabular-num numerics, parchment
+    # background) and the data-sortable attribute hooks the editorial
+    # sort JS. Partner-flagged the legacy form as "weird font + not
+    # being sorted".
     table = sortable_table(
         headers, rows,
         name="public_comps",
         sort_keys=sort_keys,
-        table_class="rcm-comps-table",
+        table_class="ck-table sortable",
     )
     band_html = ""
     if band:
