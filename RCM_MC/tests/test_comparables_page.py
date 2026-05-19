@@ -63,7 +63,7 @@ class TestRenderComparables(unittest.TestCase):
     def test_sim_badge_green_for_high_score(self):
         from rcm_mc.ui.data_public.comparables_page import _sim_badge
         badge = _sim_badge(0.85)
-        self.assertIn("22c55e", badge)
+        self.assertIn("0a8a5f", badge)  # editorial green replaces Tailwind 22c55e
         self.assertIn("85%", badge)
 
     def test_sim_badge_red_for_low_score(self):

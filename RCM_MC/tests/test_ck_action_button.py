@@ -121,12 +121,16 @@ class TestFourPagesNowUseThePrimitive(unittest.TestCase):
         # _landing_page() helper.
         html = render_counterfactual_page(dataset="")
         self.assertIn('class="cad-btn cad-btn-primary"', html)
-        # The deleted ``.cf-form button { background: #155752; ... }``
-        # rule produced inline text containing the hex value. Verify
-        # it's gone from the scoped CSS block (the hex shouldn't
-        # appear anywhere on the rendered page — the only place it
-        # used to come from was the deleted rule).
-        self.assertNotIn('#155752', html)
+        # The form submit button must use the cad-btn primitive, not a
+        # custom ``.cf-form button { background: #155752 }`` rule. The
+        # editorial teal #155752 legitimately appears elsewhere in the
+        # page's scoped CSS (.cf-download, .cf-bridge gradient), so the
+        # precise regression guard is that the .cf-form button rule
+        # carries no background declaration.
+        import re
+        m = re.search(r"\.cf-form button \{([^}]*)\}", html)
+        self.assertIsNotNone(m)
+        self.assertNotIn("background", m.group(1))
 
     def test_denial_prediction_page_uses_primitive(self):
         from rcm_mc.ui.denial_prediction_page import (

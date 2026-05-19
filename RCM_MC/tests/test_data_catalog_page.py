@@ -72,7 +72,10 @@ class DataCatalogPageTests(unittest.TestCase):
             try:
                 with _u.urlopen(f"http://127.0.0.1:{port}/data/catalog") as r:
                     body = r.read().decode("utf-8")
-                self.assertIn('class="num"', body)
+                # Editorial numerics carry the `sc-num` tabular-nums
+                # utility (emitted by ck_kpi_block), the v3 successor
+                # to the legacy bare `num` class.
+                self.assertIn("sc-num", body)
                 # The KPI grid emits the .micro eyebrow label class on each
                 # KPI label - a v3 chartis.css utility.
                 self.assertIn('class="micro"', body)

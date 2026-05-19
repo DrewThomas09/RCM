@@ -191,7 +191,7 @@ class TestCatalogPageRender(unittest.TestCase):
             self.assertIn("Quality", html)
             # KPI strip present
             self.assertIn("Sources", html)
-            self.assertIn("Total records", html)
+            self.assertIn("Total Records", html)  # ck_kpi_block title-case
             # Quality badge text
             self.assertTrue(
                 "high" in html or "medium" in html

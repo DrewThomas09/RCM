@@ -103,6 +103,9 @@ class _Packet:
         default_factory=list)
     diligence_questions: List[_DiligenceQ] = field(
         default_factory=list)
+    # The renderer reads packet.completeness (real DealAnalysisPacket
+    # always has it); default None so the guard yields a "—" grade.
+    completeness: Any = None
 
 
 def _full_packet():

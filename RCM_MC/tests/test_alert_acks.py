@@ -203,7 +203,10 @@ class TestAckHttp(unittest.TestCase):
             try:
                 with _u.urlopen(f"http://127.0.0.1:{port}/alerts") as r:
                     body = r.read().decode()
-                    self.assertIn("No active alerts", body)
+                    # All alerts acked → editorial affirmative empty
+                    # state ("Portfolio is clean"), not the legacy
+                    # "No active alerts" string.
+                    self.assertIn("ck-affirm-empty", body)
                 with _u.urlopen(
                     f"http://127.0.0.1:{port}/alerts?show=all"
                 ) as r:

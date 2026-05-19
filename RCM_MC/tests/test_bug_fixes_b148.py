@@ -89,7 +89,7 @@ class TestClampedEndpoints(unittest.TestCase):
                 ) as r:
                     body = r.read().decode()
                     # clamped to max 365
-                    self.assertIn("window 365 days", body)
+                    self.assertIn("last 365 days", body)  # editorial meta: "Window: last N days"
             finally:
                 server.shutdown(); server.server_close()
 
