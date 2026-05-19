@@ -1110,6 +1110,12 @@ def render_regression_page(
     leak_count = sum(
         1 for v in leakage_verdicts if v.severity == "critical"
     )
+    # FORMULA_RELATED count for the amber sibling banner. Counts
+    # warning-severity verdicts that are FORMULA_RELATED specifically
+    # — SAFE+warning (explanation_only features) is a separate signal.
+    formula_related_count = sum(
+        1 for v in leakage_verdicts if v.verdict == "FORMULA_RELATED"
+    )
     leak_header_note = (
         f' · <strong class="cad-warn">{leak_count} leaky</strong>'
         if leak_count else ''
@@ -1694,6 +1700,14 @@ font-weight:700;letter-spacing:0.14em;color:#b5321e;flex-shrink:0;}
 .rg-leakage-banner-text{font-size:14px;color:var(--sc-text,#1a2332);
 line-height:1.55;}
 .rg-leakage-banner-text strong{color:#b5321e;}
+/* Amber sibling — fires when FORMULA_RELATED (accounting-cousin)
+ * features are in the fit. Not a critical leak but the R² is still
+ * suspect because the feature shares atomic inputs with the target.
+ * Softer tone than the red banner so the partner can tell at a
+ * glance which severity bucket they're in. */
+.rg-leakage-banner.warn{border-color:#b8732a;border-left-color:#b8732a;}
+.rg-leakage-banner.warn .rg-leakage-banner-tag{color:#b8732a;}
+.rg-leakage-banner.warn .rg-leakage-banner-text strong{color:#b8732a;}
 /* Readability bump (user-reported "text is impossible to read"):
  * the panel description paragraphs were unstyled bare <p>s that
  * picked up the browser default (12-13px). Bump to 14px + 1.6
@@ -1778,9 +1792,38 @@ letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
             '</div>'
         )
 
+    # Amber sibling — FORMULA_RELATED features share atomic inputs
+    # with the target without being direct leaks. R² is still
+    # softly inflated by the shared denominator/numerator, but it's
+    # not the "fitting y ~ y/x" critical case. Surfaces only when
+    # there are no critical leaks (otherwise the red banner already
+    # covers the inflated-R² story); avoids stacking two near-
+    # identical warnings.
+    formula_related_banner = ""
+    if (
+        formula_related_count > 0
+        and leak_count == 0
+        and not drop_leakage
+    ):
+        formula_related_banner = (
+            '<div class="rg-leakage-banner warn">'
+            '<span class="rg-leakage-banner-tag">⚠ FORMULA-RELATED</span>'
+            '<span class="rg-leakage-banner-text">'
+            f'<strong>{formula_related_count} accounting-cousin '
+            f'feature{"s" if formula_related_count != 1 else ""}</strong> '
+            'in the fit — these aren\'t direct leaks but share '
+            'atomic inputs with the target (e.g. operating margin '
+            'vs. net-to-gross ratio both involve NPR + opex), so '
+            'R² is softly inflated. Toggle <strong>Drop leakage '
+            'features (strict)</strong> in the Regression Inputs '
+            'to also drop these.'
+            '</span>'
+            '</div>'
+        )
+
     body = (
         f'{rg_styles}{intro}{diagnostic_banner}{source_selector}'
-        f'{leakage_banner}'
+        f'{leakage_banner}{formula_related_banner}'
         f'{leakage_section}{cv_section}{cluster_section}'
         f'{buyability_section}{segmented_section}'
         f'{kpis}{intercept_section}'
