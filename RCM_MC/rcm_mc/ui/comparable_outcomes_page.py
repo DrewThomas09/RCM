@@ -249,16 +249,15 @@ def render_comparable_outcomes_page(
     from ..diligence.comparable_outcomes import benchmark_deal
     from ..data_public.deals_corpus import DealsCorpus
 
-    header = _wc.page_header(
+    header = ck_page_title(
         "Comparable-deal outcomes",
-        subtitle=(
+        eyebrow="DILIGENCE · MARKET COMPARABLES",
+        meta=(
             "For a target deal profile (sector + EV + year), surface "
             "the most-similar realized PE deals in the corpus and "
             "their MOIC / IRR distribution. The "
             "\"what would this trade for?\" answer in one screen."
         ),
-        crumbs=[("Dashboard", "/dashboard"),
-                ("Comparable outcomes", None)],
     )
 
     form = _input_form(qs)

@@ -114,14 +114,16 @@ def _deal_format_guide() -> str:
 def render_exports_index(db_path: str) -> str:
     from ._chartis_kit import (
         chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-        ck_next_section, ck_provenance_tooltip,
+        ck_next_section, ck_page_title, ck_provenance_tooltip,
     )
 
-    header = _wc.page_header(
+    header = ck_page_title(
         "Downloads",
-        subtitle=("Every export in one place. For deal-specific memos + "
-                  "data, open a deal first and use its export menu."),
-        crumbs=[("Dashboard", "/dashboard"), ("Downloads", None)],
+        eyebrow="EXPORTS · PORTFOLIO SCOPE",
+        meta=(
+            "Every export in one place. For deal-specific memos + "
+            "data, open a deal first and use its export menu."
+        ),
     )
 
     portfolio_card = _wc.section_card(
