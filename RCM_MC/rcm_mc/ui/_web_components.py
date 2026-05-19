@@ -64,18 +64,27 @@ def web_styles() -> str:
 .wc-card-body { padding: 16px; }
 .wc-card-body.wc-no-pad { padding: 0; }
 
-/* Sortable table */
-.wc-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+/* Sortable table — editorial chartis typography so wc-table cells
+ * match the rest of the editorial site instead of inheriting the
+ * page body's serif. Without explicit font-family on .wc-table the
+ * Portfolio Risk Scan + similar tables rendered in Source Serif and
+ * looked "different from the other pages" per partner feedback. */
+.wc-table { width: 100%; border-collapse: collapse; font-size: 13px;
+    font-family: var(--sc-sans, 'Inter Tight', -apple-system, sans-serif);
+    font-variant-numeric: tabular-nums; }
 .wc-table thead th { padding: 10px 12px; text-align: left; font-weight: 600;
-    color: #374151; background: #f9fafb; border-bottom: 1px solid #e5e7eb;
-    cursor: pointer; user-select: none; white-space: nowrap; font-size: 12px;
-    text-transform: uppercase; letter-spacing: 0.03em; }
-.wc-table thead th:hover { background: #f3f4f6; }
-.wc-table thead th.wc-sorted-asc::after  { content: " ↑"; color: var(--sc-navy); }
-.wc-table thead th.wc-sorted-desc::after { content: " ↓"; color: var(--sc-navy); }
-.wc-table tbody td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6;
-    vertical-align: top; color: #1f2937; }
-.wc-table tbody tr:hover { background: #fafbfc; }
+    color: var(--sc-text-dim, #5d6b7a); background: var(--sc-parchment, #f5f1ea);
+    border-bottom: 1px solid var(--sc-rule, #d6cfc0);
+    cursor: pointer; user-select: none; white-space: nowrap; font-size: 10px;
+    font-family: var(--sc-mono, 'JetBrains Mono', monospace);
+    text-transform: uppercase; letter-spacing: 0.10em; }
+.wc-table thead th:hover { background: var(--sc-bone, #ece5d6); }
+.wc-table thead th.wc-sorted-asc::after  { content: " ↑"; color: var(--sc-teal-ink, #155752); }
+.wc-table thead th.wc-sorted-desc::after { content: " ↓"; color: var(--sc-teal-ink, #155752); }
+.wc-table tbody td { padding: 10px 12px;
+    border-bottom: 1px solid var(--sc-rule, #d6cfc0);
+    vertical-align: top; color: var(--sc-text, #1a2332); }
+.wc-table tbody tr:hover { background: var(--sc-parchment, #f5f1ea); }
 .wc-table tbody tr:last-child td { border-bottom: none; }
 
 /* Filter input above sortable tables */
