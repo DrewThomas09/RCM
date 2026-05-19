@@ -104,12 +104,21 @@ class TestRenderPayerIntel(unittest.TestCase):
     def test_editorial_theme(self):
         from rcm_mc.ui.data_public.payer_intel_page import render_payer_intel
         html = render_payer_intel()
-        # Branch `fix/revert-ui-reskin` restores the dark Chartis
-        # terminal palette; the short-lived editorial theme is gone.
-        # We assert the dark-shell palette (bg #0a0e17) + power_ui.css
-        # instead of the reverted chartis_tokens.css.
-        self.assertIn("power_ui.css", html)
-        self.assertIn("#0a0e17", html.lower())
+        # Editorial chartis is the canonical theme. PR #281 swept the
+        # Bloomberg-era dark hexes (#0a0e17, #0f172a, #1e293b, #111827)
+        # from this page; the previous assertion checked for state
+        # the codebase explicitly rejects. Anchor on what editorial
+        # mode actually emits: the chartis_tokens stylesheet and at
+        # least one parchment-palette hex.
+        self.assertIn("chartis_tokens.css", html)
+        # Parchment / paper-pure / editorial ink — at least one of
+        # the canonical editorial surface colors must be present.
+        editorial_markers = ("#F2EDE3", "#FAF7F0", "#ECE5D6", "#1a2332")
+        present = [m for m in editorial_markers if m in html or m.lower() in html.lower()]
+        self.assertTrue(
+            present,
+            f"expected at least one editorial palette hex; got none of {editorial_markers}",
+        )
 
     def test_payer_pie_helper(self):
         from rcm_mc.ui.data_public.payer_intel_page import _payer_pie_svg
