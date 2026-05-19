@@ -885,6 +885,19 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         + '</div>'
     )
 
+    # B143 — health-history sparkline. The editorial KPI-strip refactor
+    # dropped the inline sparkline; restore it as a small labeled block
+    # below the strip (renders only when ≥2 history points exist).
+    _health_spark = _render_health_sparkline(store, deal_id)
+    health_spark_block = (
+        '<div class="ck-deal-health-spark" '
+        'style="margin:-8px 0 24px;">'
+        '<div class="ck-eyebrow" style="margin-bottom:4px;">'
+        'Health history</div>'
+        f'{_health_spark}'
+        '</div>'
+    ) if _health_spark else ""
+
     deal_header_css = (
         '<style>'
         '.ck-deal-action-row{display:flex;align-items:center;gap:14px;'
@@ -949,6 +962,7 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
     {title_html}
     {action_row}
     {kpi_strip}
+    {health_spark_block}
 
     {_render_deal_alerts(store, deal_id)}
 

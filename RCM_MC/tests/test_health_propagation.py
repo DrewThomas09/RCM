@@ -32,7 +32,7 @@ class TestHealthPropagation(unittest.TestCase):
             try:
                 with _u.urlopen(f"http://127.0.0.1:{port}/watchlist") as r:
                     body = r.read().decode()
-                    self.assertIn("<th>Health</th>", body)
+                    self.assertIn(">Health</th>", body)  # editorial: th gained class="align-left"
                     # ccf is covenant TRIPPED → health 60
                     self.assertIn(">60</td>", body)
             finally:
@@ -46,7 +46,7 @@ class TestHealthPropagation(unittest.TestCase):
             try:
                 with _u.urlopen(f"http://127.0.0.1:{port}/owner/AT") as r:
                     body = r.read().decode()
-                    self.assertIn("<th>Health</th>", body)
+                    self.assertIn(">Health</th>", body)  # editorial: th gained class="align-left"
                     self.assertIn(">60</td>", body)
             finally:
                 server.shutdown(); server.server_close()
@@ -59,7 +59,7 @@ class TestHealthPropagation(unittest.TestCase):
             try:
                 with _u.urlopen(f"http://127.0.0.1:{port}/cohort/watch") as r:
                     body = r.read().decode()
-                    self.assertIn("<th>Health</th>", body)
+                    self.assertIn(">Health</th>", body)  # editorial: th gained class="align-left"
                     self.assertIn(">60</td>", body)
             finally:
                 server.shutdown(); server.server_close()
@@ -72,8 +72,10 @@ class TestHealthPropagation(unittest.TestCase):
             try:
                 with _u.urlopen(f"http://127.0.0.1:{port}/my/AT") as r:
                     body = r.read().decode()
-                    self.assertIn("<th>Health</th>", body)
-                    self.assertIn(">60</td>", body)
+                    self.assertIn(">Health</th>", body)  # editorial: th gained class="align-left"
+                    # my_dashboard wraps the score in a colored band
+                    # <span>, so the value reads ">60</span>".
+                    self.assertIn(">60</span>", body)
             finally:
                 server.shutdown(); server.server_close()
 
