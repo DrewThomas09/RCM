@@ -88,6 +88,18 @@ def _running_server(seed_users=True):
             os.environ.pop("CHARTIS_UI_V2", None)
         else:
             os.environ["CHARTIS_UI_V2"] = prior
+        # Restore the modules we reloaded above. Without this, the
+        # reloaded rcm_mc.server / _chartis_kit (resolved against the
+        # forced CHARTIS_UI_V2=1) leak into every subsequent test in
+        # the process, which previously caused unrelated HTTP-endpoint
+        # tests (bear_case, bridge_audit) to 401 under full-suite
+        # ordering. Re-reload against the now-restored env.
+        for m in (
+            "rcm_mc.ui._chartis_kit",
+            "rcm_mc.server",
+        ):
+            if m in sys.modules:
+                importlib.reload(sys.modules[m])
 
 
 class HealthzCheckTests(unittest.TestCase):
