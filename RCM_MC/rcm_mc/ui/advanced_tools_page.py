@@ -15,6 +15,115 @@ from .models_page import _model_nav
 from .brand import PALETTE
 
 
+_AT_CHART_CAPTION_CSS = """
+<style>
+.at-chart-caption {
+  font-family: "Inter Tight","Inter",sans-serif;
+  font-size: .72rem; color: #5C6878;
+  text-align: center; letter-spacing: 0.06em;
+  text-transform: uppercase; margin: -.5rem 0 1.25rem;
+}
+@media print {
+  .at-chart-caption { color: #1a2332; }
+  svg { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+"""
+
+
+def _trend_slope_chart(trends: List[Dict[str, Any]],
+                       width: int = 720, height: int = 260) -> str:
+    """Diverging-bar chart of per-metric quarterly slope.
+
+    Bars project right (improving, green) or left (declining, red)
+    from a centered zero axis. Confidence (r2) modulates opacity so
+    high-confidence trends read stronger.
+    """
+    items: List[Dict[str, Any]] = []
+    for t in trends:
+        try:
+            slope = float(t.get("slope", t.get("change_per_quarter", 0)))
+        except (TypeError, ValueError):
+            continue
+        try:
+            conf = float(t.get("confidence", t.get("r2", 0)))
+        except (TypeError, ValueError):
+            conf = 0.0
+        items.append({
+            "metric": str(t.get("metric", t.get("kpi", ""))),
+            "slope": slope,
+            "conf": max(0.0, min(1.0, conf)),
+        })
+    if not items:
+        return ""
+    items.sort(key=lambda i: -i["slope"])
+    max_abs = max((abs(i["slope"]) for i in items), default=1) or 1
+
+    pad_l, pad_r, pad_t, pad_b = 18, 18, 28, 38
+    plot_w = width - pad_l - pad_r
+    plot_h = height - pad_t - pad_b
+    n = len(items)
+    row_h = plot_h / max(n, 1)
+    mid_x = pad_l + plot_w / 2
+    half_w = plot_w / 2 - 6
+
+    bars_svg = ""
+    for i, item in enumerate(items):
+        cy = pad_t + row_h * i + row_h / 2
+        slope = item["slope"]
+        bw = abs(slope) / max_abs * half_w
+        is_pos = slope > 0
+        bx = mid_x if is_pos else mid_x - bw
+        fill = "#3F7D4D" if is_pos else ("#A53A2D" if slope < 0 else "#8A92A0")
+        # Confidence drives opacity: 0.45 floor so low-conf still visible
+        opacity = 0.45 + 0.5 * item["conf"]
+        label_x = mid_x + 8 if not is_pos else mid_x - 8
+        label_anchor = "start" if not is_pos else "end"
+        val_x = (bx + bw + 6) if is_pos else (bx - 6)
+        val_anchor = "start" if is_pos else "end"
+        bars_svg += (
+            f'<rect x="{bx:.1f}" y="{cy - row_h * 0.30:.1f}" '
+            f'width="{bw:.1f}" height="{row_h * 0.58:.1f}" '
+            f'fill="{fill}" opacity="{opacity:.2f}" rx="1"/>'
+            f'<text x="{label_x:.1f}" y="{cy + 3:.1f}" '
+            f'font-family="Inter Tight,sans-serif" font-size="10.5" '
+            f'font-weight="600" fill="#1a2332" '
+            f'text-anchor="{label_anchor}">'
+            f'{html.escape(item["metric"])}</text>'
+            f'<text x="{val_x:.1f}" y="{cy + 3:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9.5" '
+            f'font-weight="700" fill="{fill}" '
+            f'text-anchor="{val_anchor}">'
+            f'{slope:+.3f}/q</text>'
+        )
+
+    axis_svg = (
+        f'<line x1="{mid_x:.1f}" y1="{pad_t}" x2="{mid_x:.1f}" '
+        f'y2="{pad_t + plot_h}" stroke="#1a2332" stroke-width="1.2"/>'
+    )
+    bottom_svg = (
+        f'<text x="{mid_x - half_w / 2:.1f}" y="{height - 8}" '
+        f'font-family="Inter Tight,sans-serif" font-size="10" '
+        f'font-weight="700" letter-spacing="0.08em" '
+        f'fill="#A53A2D" text-anchor="middle">◀ DECLINING</text>'
+        f'<text x="{mid_x + half_w / 2:.1f}" y="{height - 8}" '
+        f'font-family="Inter Tight,sans-serif" font-size="10" '
+        f'font-weight="700" letter-spacing="0.08em" '
+        f'fill="#3F7D4D" text-anchor="middle">IMPROVING ▶</text>'
+        f'<text x="{mid_x:.1f}" y="{pad_t - 8}" '
+        f'font-family="JetBrains Mono,monospace" font-size="9" '
+        f'font-weight="700" fill="#5C6878" text-anchor="middle">0/q</text>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="width:100%;max-width:{width}px;height:auto;display:block;'
+        f'margin:0 auto 1rem;">'
+        f'{axis_svg}{bars_svg}{bottom_svg}</svg>'
+    )
+
+
 def render_debt_model(deal_id: str, deal_name: str, debt: Dict[str, Any]) -> str:
     """Render debt trajectory projections."""
     schedule = debt.get("schedule", debt.get("years", []))
@@ -378,12 +487,19 @@ def render_trend_forecast(deal_id: str, deal_name: str, trends: List[Dict[str, A
     )
 
     nav = _model_nav(deal_id, "trends")
+    slope_chart = _trend_slope_chart(trends)
+    slope_caption = (
+        '<div class="at-chart-caption">'
+        'Quarterly slope per metric · bar opacity scales with confidence (r²)'
+        '</div>'
+    ) if slope_chart else ""
     body = (
-        f'{nav}{intro}{kpis}'
+        f'{_AT_CHART_CAPTION_CSS}{nav}{intro}{kpis}'
         + ck_panel(
             '<p class="ck-section-body">'
             'Per-metric time-series trend detection with short-horizon forecasts. '
             'Direction and slope estimated from historical data points.</p>'
+            + slope_chart + slope_caption +
             '<table class="cad-table"><thead><tr>'
             '<th>Metric</th><th>Direction</th><th>Slope</th><th>Next Forecast</th><th>Confidence</th>'
             f'</tr></thead><tbody>{rows}</tbody></table>',
