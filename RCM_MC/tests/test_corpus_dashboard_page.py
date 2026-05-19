@@ -42,17 +42,24 @@ class TestRenderCorpusDashboard(unittest.TestCase):
         self.assertIn("Recent Vintages", html)
 
     def test_nav_link(self):
+        # The legacy assertion checked that /corpus-dashboard appeared
+        # as a self-href in the rendered page (legacy sidebar). The
+        # editorial shell's nav doesn't include it; the page still
+        # renders standalone. Assert the page's canonical title text
+        # so the test guards "page renders" rather than the gone-nav.
         from rcm_mc.ui.data_public.corpus_dashboard_page import render_corpus_dashboard
         html = render_corpus_dashboard()
-        self.assertIn("/corpus-dashboard", html)
+        self.assertIn("Corpus Dashboard", html)
 
     def test_editorial_theme(self):
+        # The dark-terminal `power_ui.css` shell (restored briefly by
+        # `fix/revert-ui-reskin`) was permanently retired. The canonical
+        # chrome is the chartis editorial shell: `chartis_tokens.css`
+        # + parchment background tokens.
         from rcm_mc.ui.data_public.corpus_dashboard_page import render_corpus_dashboard
         html = render_corpus_dashboard()
-        # Branch `fix/revert-ui-reskin` restored the dark terminal
-        # palette — the short-lived editorial CSS-tokens theme is gone.
-        self.assertIn("power_ui.css", html)
-        self.assertIn("#0a0e17", html.lower())
+        self.assertIn("chartis_tokens.css", html)
+        self.assertIn("/static/v3/chartis.css", html)
 
     def test_quality_summary(self):
         from rcm_mc.ui.data_public.corpus_dashboard_page import render_corpus_dashboard
