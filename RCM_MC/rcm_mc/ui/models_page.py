@@ -295,6 +295,175 @@ _MODELS_CHART_CAPTION_CSS = """
 """
 
 
+def _lbo_deleveraging_chart(annual: List[Dict[str, Any]],
+                            width: int = 720,
+                            height: int = 240) -> str:
+    """LBO deleveraging trajectory — leverage line + EBITDA bars per year.
+
+    Two superimposed series on a shared x-axis (years):
+    - Bars (background): EBITDA per year, light teal
+    - Line (foreground): leverage ratio per year, tone-coded
+      (teal-deep <3x · teal <4.5x · amber <6x · red ≥7.5x)
+    - Dashed 6.5x covenant line for reference
+    """
+    if not annual:
+        return ""
+    rows: List[Dict[str, float]] = []
+    for yr in annual[:7]:
+        try:
+            y = int(yr.get("year"))
+        except (TypeError, ValueError):
+            continue
+        try:
+            ebitda = float(yr.get("ebitda") or 0)
+        except (TypeError, ValueError):
+            ebitda = 0
+        lev = yr.get("leverage") or yr.get("net_debt_ebitda")
+        try:
+            lev_v = float(lev) if lev is not None else None
+        except (TypeError, ValueError):
+            lev_v = None
+        rows.append({"year": y, "ebitda": ebitda, "leverage": lev_v})
+    rows.sort(key=lambda r: r["year"])
+    if not rows:
+        return ""
+
+    pad_l, pad_r, pad_t, pad_b = 56, 56, 26, 38
+    plot_w = width - pad_l - pad_r
+    plot_h = height - pad_t - pad_b
+    n = len(rows)
+    slot = plot_w / max(n, 1)
+    bar_w = slot * 0.55
+
+    ebitda_max = max((r["ebitda"] for r in rows), default=0)
+    lev_max = max((r["leverage"] or 0 for r in rows), default=0)
+    lev_max = max(lev_max, 7.0)  # always show the 6.5x covenant line
+
+    def _x(i: int) -> float:
+        return pad_l + slot * i + slot / 2
+
+    def _y_eb(v: float) -> float:
+        return pad_t + plot_h - (v / ebitda_max if ebitda_max else 0) * plot_h
+
+    def _y_lev(v: float) -> float:
+        return pad_t + plot_h - (v / lev_max if lev_max else 0) * plot_h
+
+    # Left y-axis (EBITDA $) labels
+    grid_svg = ""
+    for i in range(5):
+        gv = ebitda_max * i / 4
+        gy = pad_t + plot_h - (i / 4) * plot_h
+        grid_svg += (
+            f'<line x1="{pad_l}" y1="{gy:.1f}" x2="{pad_l + plot_w}" '
+            f'y2="{gy:.1f}" stroke="#E8E0D0" stroke-width="0.8"/>'
+            f'<text x="{pad_l - 6}" y="{gy + 3:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9" '
+            f'fill="#8A92A0" text-anchor="end">{_fmt_m(gv)}</text>'
+        )
+
+    # Right y-axis (leverage x) labels
+    right_axis_svg = ""
+    for i in range(5):
+        lv = lev_max * i / 4
+        gy = pad_t + plot_h - (i / 4) * plot_h
+        right_axis_svg += (
+            f'<text x="{pad_l + plot_w + 6}" y="{gy + 3:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9" '
+            f'fill="#8A92A0" text-anchor="start">{lv:.1f}x</text>'
+        )
+
+    # 6.5x covenant reference
+    cov_y = _y_lev(6.5)
+    covenant_svg = (
+        f'<line x1="{pad_l}" y1="{cov_y:.1f}" x2="{pad_l + plot_w}" '
+        f'y2="{cov_y:.1f}" stroke="#A53A2D" stroke-width="1" '
+        f'stroke-dasharray="4,3" opacity="0.7"/>'
+        f'<text x="{pad_l + plot_w - 4}" y="{cov_y - 4:.1f}" '
+        f'font-family="Inter Tight,sans-serif" font-size="9" '
+        f'font-weight="700" letter-spacing="0.06em" '
+        f'fill="#A53A2D" text-anchor="end">6.5x COVENANT</text>'
+    )
+
+    # EBITDA bars + year labels
+    bars_svg = ""
+    for i, r in enumerate(rows):
+        cx = _x(i)
+        bx = cx - bar_w / 2
+        by = _y_eb(r["ebitda"])
+        bh = (pad_t + plot_h) - by
+        bars_svg += (
+            f'<rect x="{bx:.1f}" y="{by:.1f}" width="{bar_w:.1f}" '
+            f'height="{bh:.1f}" fill="#D4E4E2" stroke="#BFD1CE" '
+            f'stroke-width="0.6" rx="1"/>'
+            f'<text x="{cx:.1f}" y="{pad_t + plot_h + 14:.1f}" '
+            f'font-family="Inter Tight,sans-serif" font-size="10" '
+            f'font-weight="700" fill="#1a2332" text-anchor="middle">'
+            f'Y{r["year"]}</text>'
+        )
+
+    # Leverage line + tone-coded dots
+    lev_pts = [(i, r["leverage"]) for i, r in enumerate(rows) if r["leverage"] is not None]
+    line_svg = ""
+    dots_svg = ""
+    if lev_pts:
+        path = " ".join(
+            f"{'M' if j == 0 else 'L'} {_x(i):.1f},{_y_lev(v):.1f}"
+            for j, (i, v) in enumerate(lev_pts)
+        )
+        line_svg = (
+            f'<path d="{path}" stroke="#0F1C2E" stroke-width="2.4" '
+            f'fill="none"/>'
+        )
+        for i, v in lev_pts:
+            tone = (
+                "#155752" if v < 3
+                else "#1F7A75" if v < 4.5
+                else "#b8732a" if v < 6
+                else "#A53A2D"
+            )
+            dots_svg += (
+                f'<circle cx="{_x(i):.1f}" cy="{_y_lev(v):.1f}" r="4.5" '
+                f'fill="{tone}" stroke="#FAF7F0" stroke-width="1.5"/>'
+                f'<text x="{_x(i):.1f}" y="{_y_lev(v) - 9:.1f}" '
+                f'font-family="JetBrains Mono,monospace" font-size="9.5" '
+                f'font-weight="700" fill="{tone}" text-anchor="middle">'
+                f'{v:.1f}x</text>'
+            )
+
+    # Axes
+    base_y = pad_t + plot_h
+    axes_svg = (
+        f'<line x1="{pad_l}" y1="{base_y:.1f}" x2="{pad_l + plot_w}" '
+        f'y2="{base_y:.1f}" stroke="#BFB6A2" stroke-width="1"/>'
+        f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" '
+        f'y2="{base_y:.1f}" stroke="#BFB6A2" stroke-width="1"/>'
+        f'<line x1="{pad_l + plot_w}" y1="{pad_t}" '
+        f'x2="{pad_l + plot_w}" y2="{base_y:.1f}" '
+        f'stroke="#BFB6A2" stroke-width="1"/>'
+    )
+
+    # Axis-label eyebrows
+    eyebrow_svg = (
+        f'<text x="{pad_l - 6}" y="{pad_t - 8}" '
+        f'font-family="Inter Tight,sans-serif" font-size="9" '
+        f'font-weight="700" letter-spacing="0.08em" '
+        f'fill="#5C6878" text-anchor="end">EBITDA ($)</text>'
+        f'<text x="{pad_l + plot_w + 6}" y="{pad_t - 8}" '
+        f'font-family="Inter Tight,sans-serif" font-size="9" '
+        f'font-weight="700" letter-spacing="0.08em" '
+        f'fill="#5C6878" text-anchor="start">LEVERAGE</text>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="width:100%;max-width:{width}px;height:auto;display:block;'
+        f'margin:0 auto 1rem;">'
+        f'{grid_svg}{axes_svg}{eyebrow_svg}{bars_svg}{covenant_svg}'
+        f'{line_svg}{dots_svg}{right_axis_svg}</svg>'
+    )
+
+
 def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
     """Render DCF model as a full browser page."""
     assumptions = dcf.get("assumptions", {})
@@ -727,6 +896,13 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
                 f'<td class="num {heat}" style="font-weight:600;">{_fmt_x(lev)}</td>'
                 f'</tr>'
             )
+        delev_chart = _lbo_deleveraging_chart(annual)
+        delev_caption = (
+            '<div class="mdl-chart-caption">'
+            'EBITDA growth (bars) + leverage trajectory (line) · '
+            'dashed 6.5x covenant line'
+            '</div>'
+        ) if delev_chart else ""
         annual_html = (
             f'<div class="cad-card">'
             f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
@@ -736,6 +912,7 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
             f'letter-spacing:0.08em;color:{PALETTE["text_muted"]};'
             f'text-transform:uppercase;margin-left:auto;">'
             f'Leverage · green &lt;3x · red &gt;7.5x</span></div>'
+            + delev_chart + delev_caption +
             f'<table class="cad-table crosshair"><thead><tr>'
             f'<th>Year</th><th>Revenue</th><th>EBITDA</th>'
             f'<th>Debt</th><th>Interest</th><th>Leverage</th>'
@@ -807,7 +984,7 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
         eyebrow="Continue —",
         italic_word="waterfall",
     )
-    body = f'{nav}{kpis}{su_html}{annual_html}{interp}{waterfall_html}{actions}{next_up}'
+    body = f'{_MODELS_CHART_CAPTION_CSS}{nav}{kpis}{su_html}{annual_html}{interp}{waterfall_html}{actions}{next_up}'
     return chartis_shell(body, f"LBO — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"IRR: {_fmt_pct(irr)} | MOIC: {_fmt_x(moic)}",
