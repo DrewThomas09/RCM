@@ -252,10 +252,12 @@ class ICPacketPageRouteTests(unittest.TestCase):
 
 class NavLinkTest(unittest.TestCase):
 
-    def test_ic_packet_link_in_sidebar(self):
-        from rcm_mc.ui._chartis_kit import chartis_shell
-        rendered = chartis_shell("<p>x</p>", "Test")
-        self.assertIn('href="/diligence/ic-packet"', rendered)
+    def test_ic_packet_in_palette(self):
+        # Post-nav-restructure: diligence sub-surfaces are reached
+        # via the Cmd+K palette + the /diligence index, not the topnav.
+        from rcm_mc.ui._chartis_kit import _DEFAULT_PALETTE_MODULES
+        routes = {m["route"] for m in _DEFAULT_PALETTE_MODULES}
+        self.assertIn("/diligence/ic-packet", routes)
 
 
 if __name__ == "__main__":

@@ -112,19 +112,20 @@ class IndividualPanelTests(unittest.TestCase):
 
 class NavLinkTests(unittest.TestCase):
 
-    def test_risk_workbench_is_in_sidebar(self):
-        from rcm_mc.ui._chartis_kit import chartis_shell
-        rendered = chartis_shell("<p>x</p>", "Test")
+    def test_risk_workbench_in_palette(self):
+        # Post-nav-restructure: diligence sub-surfaces are reached
+        # via the Cmd+K palette + the /diligence index, not the topnav.
+        from rcm_mc.ui._chartis_kit import _DEFAULT_PALETTE_MODULES
+        routes = {m["route"] for m in _DEFAULT_PALETTE_MODULES}
         self.assertIn(
-            'href="/diligence/risk-workbench?demo=steward"', rendered,
+            "/diligence/risk-workbench?demo=steward", routes,
         )
 
-    def test_bankruptcy_scan_is_in_sidebar(self):
-        from rcm_mc.ui._chartis_kit import chartis_shell
-        rendered = chartis_shell("<p>x</p>", "Test")
-        self.assertIn(
-            'href="/screening/bankruptcy-survivor"', rendered,
-        )
+    def test_bankruptcy_scan_in_palette(self):
+        # Post-nav-restructure: same as above.
+        from rcm_mc.ui._chartis_kit import _DEFAULT_PALETTE_MODULES
+        routes = {m["route"] for m in _DEFAULT_PALETTE_MODULES}
+        self.assertIn("/screening/bankruptcy-survivor", routes)
 
 
 if __name__ == "__main__":

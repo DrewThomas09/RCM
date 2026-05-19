@@ -402,10 +402,12 @@ class PhysicianAttritionPageTests(unittest.TestCase):
 
 class NavLinkTests(unittest.TestCase):
 
-    def test_sidebar_has_physician_attrition(self):
-        from rcm_mc.ui._chartis_kit import chartis_shell
-        rendered = chartis_shell("<p>x</p>", "Test")
-        self.assertIn('href="/diligence/physician-attrition"', rendered)
+    def test_physician_attrition_in_palette(self):
+        # Post-nav-restructure: diligence sub-surfaces are reached
+        # via the Cmd+K palette + the /diligence index, not the topnav.
+        from rcm_mc.ui._chartis_kit import _DEFAULT_PALETTE_MODULES
+        routes = {m["route"] for m in _DEFAULT_PALETTE_MODULES}
+        self.assertIn("/diligence/physician-attrition", routes)
 
     def test_deal_profile_exposes_physician_attrition(self):
         from rcm_mc.ui.deal_profile_page import _ANALYTICS
