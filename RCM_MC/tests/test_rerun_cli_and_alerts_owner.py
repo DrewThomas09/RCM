@@ -168,8 +168,11 @@ class TestAlertsOwnerFilter(unittest.TestCase):
                     f"http://127.0.0.1:{port}/alerts?owner=AT"
                 ) as r:
                     body = r.read().decode()
-                    # No deals assigned to AT → empty state
-                    self.assertIn("No 'AT' alerts", body)
+                    # No deals assigned to AT → empty state.
+                    # Editorial refactor: copy reads
+                    # "No alerts for owner 'AT'" (alerts_page.py:409).
+                    self.assertIn("No alerts for owner", body)
+                    self.assertIn("AT", body)
             finally:
                 server.shutdown(); server.server_close()
 

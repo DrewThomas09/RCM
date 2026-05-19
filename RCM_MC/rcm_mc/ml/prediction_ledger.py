@@ -434,10 +434,17 @@ def run_synthetic_backtest(
                 "ci_low": ci_lo, "ci_high": ci_hi,
             })
 
-    # Compute and log performance
+    # Compute and log performance. Pass methodology_version="pre-b1"
+    # explicitly: this synthetic backtest writes predictions with
+    # methodology_version='pre-b1' (line above), but
+    # compute_metric_performance() defaults to filtering for
+    # 'b1-tuned-alpha'. Without the explicit version, the lookup
+    # returns no records and perfs comes back empty.
     performances = {}
     for metric in testable:
-        perf = compute_metric_performance(con, metric)
+        perf = compute_metric_performance(
+            con, metric, methodology_version="pre-b1",
+        )
         if perf:
             log_performance(con, perf)
             performances[metric] = perf

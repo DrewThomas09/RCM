@@ -79,18 +79,12 @@ class TestRollupArrows(unittest.TestCase):
             finally:
                 server.shutdown(); server.server_close()
 
-    def test_my_dashboard_arrow(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            store = _seed_with_pe_math(tmp, "ccf", headroom=-0.5)
-            assign_owner(store, deal_id="ccf", owner="AT")
-            _backdate_history(store, "ccf", 100, days_ago=1)
-            server, port = self._start(tmp)
-            try:
-                with _u.urlopen(f"http://127.0.0.1:{port}/my/AT") as r:
-                    body = r.read().decode()
-                    self.assertIn('title="Δ -40', body)
-            finally:
-                server.shutdown(); server.server_close()
+    # test_my_dashboard_arrow removed — /my/AT was simplified in the
+    # editorial refactor; the inline Δ trend-arrow indicator now
+    # appears on /owner/AT (covered by test_owner_dashboard_arrow
+    # above) and on the portfolio rollup, not on the personal
+    # /my/AT pulse surface, which now leans on the Red Alerts /
+    # Health Mix KPI cards instead.
 
     def test_no_arrow_on_first_day(self):
         with tempfile.TemporaryDirectory() as tmp:

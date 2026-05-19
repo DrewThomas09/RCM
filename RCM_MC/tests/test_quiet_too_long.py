@@ -95,9 +95,11 @@ class TestQuietTooLong(unittest.TestCase):
         html = render_dashboard(self.db)
         self.assertIn("Quiet too long", html)
         self.assertIn("STALE", html)
-        # 60d quiet → red palette
+        # 60d quiet → red palette (editorial palette uses
+        # #EBD3CD / #A53A2D — the legacy Tailwind #fee2e2 / #991b1b
+        # was retired in the editorial color sweep).
         self.assertIn("60d quiet", html)
-        self.assertIn("#fee2e2", html)
+        self.assertIn("#EBD3CD", html)
 
     def test_never_viewed_deal_surfaces_with_red_chip(self):
         """A starred deal with NO audit_events at all → 'never
