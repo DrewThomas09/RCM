@@ -16,6 +16,46 @@ import unittest
 from rcm_mc.ui.research_page import RESEARCH_ENTRIES, render_research
 
 
+def _extract_research_grid(html: str) -> str:
+    """Return only the markup between the grid's opening + closing tags.
+
+    The chartis_shell ships a Cmd+K palette as page chrome AFTER the
+    grid; that palette lists `Bear Cases` as a navigable route. A
+    naive `html.split('class="ck-research-grid"')[1]` captures the
+    palette and produces false-positive matches. This helper scopes
+    assertions to the actual grid contents by counting balanced
+    <div> tags (the grid wrapper contains <article> cards which
+    themselves contain inner <div class="ck-eyebrow"> blocks, so
+    we can't stop at the first </div>).
+    """
+    start = html.find('class="ck-research-grid"')
+    if start == -1:
+        return ""
+    open_div = html.rfind("<div", 0, start)
+    if open_div == -1:
+        return ""
+    # Walk forward from the END of the grid's opening tag; depth
+    # starts at 1 because the wrapper itself is already open. We
+    # decrement on every </div> and increment on every nested <div>.
+    grid_open_end = html.find(">", start) + 1
+    depth = 1
+    i = grid_open_end
+    while i < len(html):
+        next_open = html.find("<div", i)
+        next_close = html.find("</div>", i)
+        if next_close == -1:
+            return html[open_div:]
+        if next_open != -1 and next_open < next_close:
+            depth += 1
+            i = next_open + len("<div")
+        else:
+            depth -= 1
+            if depth == 0:
+                return html[open_div : next_close + len("</div>")]
+            i = next_close + len("</div>")
+    return html[open_div:]
+
+
 class ResearchEditorialChromeTests(unittest.TestCase):
     def test_unfiltered_renders_all_entries(self) -> None:
         html = render_research()
@@ -37,12 +77,17 @@ class ResearchEditorialChromeTests(unittest.TestCase):
         self.assertIn("Methodology Hub", html)
         # An entry from a different topic should NOT appear in the grid
         # (it may still appear in the filter sidebar option list).
-        grid_section = html.split('class="ck-research-grid"')[1]
+        grid_section = _extract_research_grid(html)
         self.assertNotIn("Conference Roadmap", grid_section)
 
     def test_kind_filter_narrows_results(self) -> None:
         html = render_research(kind="Reference")
-        grid_section = html.split('class="ck-research-grid"')[1]
+        # Limit the search window to the actual research grid, not
+        # everything that follows it — the Cmd+K palette (injected by
+        # chartis_shell at page end) lists "Bear Cases" as a palette
+        # route, which used to leak into the post-grid split and
+        # cause false-positive failures.
+        grid_section = _extract_research_grid(html)
         # Reference items are present
         self.assertIn("Methodology Hub", grid_section)
         # Case Studies items are not
@@ -53,7 +98,7 @@ class ResearchEditorialChromeTests(unittest.TestCase):
         # Conference Roadmap title contains "conference"
         self.assertIn("Conference Roadmap", html)
         # Empty hit on bear-cases (no "conference" substring there)
-        grid_section = html.split('class="ck-research-grid"')[1]
+        grid_section = _extract_research_grid(html)
         self.assertNotIn("Bear Cases", grid_section)
 
     def test_zero_match_renders_affirm_band(self) -> None:
