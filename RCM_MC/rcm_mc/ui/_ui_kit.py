@@ -36,6 +36,150 @@ from typing import Optional, Union
 from ._chartis_kit import chartis_shell
 
 
+# Editorial overlay for legacy shell()-routed pages.
+#
+# 26 routes in server.py (alerts, owners, cohorts, deadlines, audit,
+# runs, ops, …) render their bodies with legacy markup:
+#   - `<div class="card">` — picks up the LOGIN-card CSS (max-width
+#     520px, auto-centered) on dashboard-style pages, looks wrong
+#   - raw `<table>` — no class → no editorial typography, inherits
+#     Source Serif from the page body
+#   - `<h2>` direct headings inside cards — wrong size/letter-spacing
+#     relative to editorial ck_section_header
+#
+# Refactoring each route into ck_panel + ck-table is ~26 PRs of
+# mechanical work. Single CSS overlay below catches them all in one
+# place — scoped to `.ck-main .card` (the chartis_shell main column)
+# so it doesn't bleed into actual login/forgot card surfaces (which
+# render outside `.ck-main`).
+_LEGACY_BODY_OVERLAY = """
+<style>
+/* Editorial overlay for legacy `<div class="card">` panels inside
+ * the chartis editorial shell — partner-flagged as "looks weird"
+ * because the chartis CSS scopes .card to login-style centered
+ * forms. Override here so legacy ops/owners/runs/etc. pages get
+ * panel chrome that matches ck_panel without per-route refactors. */
+.ck-main .card {
+  background: var(--sc-paper, #fff);
+  border: 1px solid var(--sc-rule, #d6cfc0);
+  padding: 14px 18px;
+  margin: 0 0 16px;
+  max-width: none;
+}
+.ck-main .card h1,
+.ck-main .card h2,
+.ck-main .card h3 {
+  font-family: var(--sc-sans, 'Inter Tight', sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sc-navy, #0b2341);
+  margin: 0 0 10px;
+}
+.ck-main .card p,
+.ck-main .card .muted {
+  font-family: var(--sc-sans, 'Inter Tight', sans-serif);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--sc-text, #1a2332);
+  margin: 0 0 8px;
+}
+.ck-main .card .muted {
+  color: var(--sc-text-dim, #5d6b7a);
+}
+/* Legacy raw <table> inside cards — give it editorial typography
+ * so it stops inheriting Source Serif. Same approach as PR #278's
+ * wc-table fix. */
+.ck-main .card table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--sc-sans, 'Inter Tight', sans-serif);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.ck-main .card table thead th {
+  padding: 8px 10px;
+  text-align: left;
+  font-family: var(--sc-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--sc-text-dim, #5d6b7a);
+  background: var(--sc-parchment, #f5f1ea);
+  border-bottom: 1px solid var(--sc-rule, #d6cfc0);
+}
+.ck-main .card table tbody td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--sc-rule, #d6cfc0);
+  color: var(--sc-text, #1a2332);
+  vertical-align: top;
+}
+.ck-main .card table tbody tr:last-child td { border-bottom: 0; }
+.ck-main .card table .num { text-align: right; font-variant-numeric: tabular-nums; }
+/* Legacy `kpi-grid` / `kpi-card` markup — looks lazy without
+ * editorial styling. Convert the visual to match ck_kpi_block: bone
+ * background, mono uppercase label, mono value. */
+.ck-main .kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+  margin: 0 0 16px;
+}
+.ck-main .kpi-card {
+  background: var(--sc-paper, #fff);
+  border: 1px solid var(--sc-rule, #d6cfc0);
+  padding: 12px 14px;
+}
+.ck-main .kpi-card .kpi-label {
+  font-family: var(--sc-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--sc-text-dim, #5d6b7a);
+  margin: 0 0 4px;
+}
+.ck-main .kpi-card .kpi-value {
+  font-family: var(--sc-mono, 'JetBrains Mono', monospace);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--sc-navy, #0b2341);
+  font-variant-numeric: tabular-nums;
+}
+/* `badge` chips inside legacy pages */
+.ck-main .badge {
+  display: inline-block;
+  padding: 1px 6px;
+  font-family: var(--sc-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  border-radius: 2px;
+  border: 1px solid var(--sc-rule, #d6cfc0);
+  color: var(--sc-text, #1a2332);
+}
+.ck-main .badge-green {
+  color: var(--sc-positive, #0a8a5f);
+  border-color: var(--sc-positive, #0a8a5f);
+}
+.ck-main .badge-amber {
+  color: var(--sc-warning, #b8732a);
+  border-color: var(--sc-warning, #b8732a);
+}
+.ck-main .badge-red {
+  color: var(--sc-negative, #b5321e);
+  border-color: var(--sc-negative, #b5321e);
+}
+.ck-main .badge-muted {
+  color: var(--sc-text-faint, #7a8699);
+  border-color: var(--sc-rule, #d6cfc0);
+}
+</style>
+"""
+
+
 def shell(
     body: str,
     title: str,
@@ -56,6 +200,13 @@ def shell(
     ``back_href`` argument is rendered as a small breadcrumb link above
     the body content; the ``generated`` and ``omit_h1`` arguments are
     accepted for backward compat but ignored.
+
+    Always injects the editorial overlay CSS (`_LEGACY_BODY_OVERLAY`)
+    so legacy `card` / `kpi-card` / raw-table markup picks up
+    parchment + Inter Tight + JetBrains Mono. Partners flagged the
+    legacy routes as "no editorial editing" — this overlay catches
+    every shell()-routed page in one place rather than refactoring
+    each of the 26 routes individually.
     """
     import html as _html
     if back_href:
@@ -63,9 +214,13 @@ def shell(
             f'<nav class="breadcrumb" aria-label="Breadcrumb" '
             f'style="margin-bottom:12px;font-size:11px;">'
             f'<a href="{_html.escape(back_href)}" '
-            f'style="color:var(--ck-accent);text-decoration:none;">'
+            f'style="color:var(--sc-teal-ink);text-decoration:none;">'
             f'&larr; Back to index</a></nav>{body}'
         )
+    # Prepend the editorial overlay — it's a <style> block so order
+    # doesn't matter, but conceptually it belongs above the body so
+    # the rules are in place before the markup renders.
+    body = _LEGACY_BODY_OVERLAY + body
     return chartis_shell(
         body,
         title,
