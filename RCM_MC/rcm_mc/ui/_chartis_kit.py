@@ -4893,12 +4893,14 @@ def chartis_shell(
         f"{_topbar(active_nav, user_initials)}"
         f"{_breadcrumbs(breadcrumbs)}"
     ) if show_chrome else ""
-    # subtitle: render under the page heading inside <main>
-    subtitle_html = (
-        f'<div class="ck-subtitle" style="font-size:13px;'
-        f'color:var(--ck-text-muted,#5C6878);margin:0 0 14px;'
-        f'font-style:italic;">{_esc(subtitle)}</div>'
-    ) if subtitle else ""
+    # subtitle: render under the page heading inside <main>. Note —
+    # when the shell auto-injects ck_page_title (because the page
+    # passed editorial_intro= and/or ck_section_intro in the body),
+    # the subtitle text gets folded into the title's meta line.
+    # In that case the standalone subtitle_html below is suppressed
+    # so the same string doesn't render twice (an italic line at the
+    # very top + a duplicate inside the title meta).
+    subtitle_consumed_by_title = False
     main_class = "ck-main ck-with-sidebar" if show_sidebar else "ck-main"
     # ``editorial_intro`` auto-prepends a ck_section_intro block to
     # the page body. Lets a legacy renderer adopt the chartis cadence
@@ -4923,6 +4925,8 @@ def chartis_shell(
                 eyebrow=page_eyebrow,
                 meta=subtitle if subtitle else None,
             )
+            if subtitle:
+                subtitle_consumed_by_title = True
         intro_html += ck_section_intro(**editorial_intro)
     # Second pass — pages that call ck_section_intro DIRECTLY in
     # their body (instead of via the editorial_intro kwarg) still
@@ -4944,7 +4948,18 @@ def chartis_shell(
             title,
             meta=subtitle if subtitle else None,
         )
+        if subtitle:
+            subtitle_consumed_by_title = True
     body_html = intro_html + body_html
+
+    # Render the standalone subtitle_html only when the shell did
+    # NOT auto-inject the subtitle into a ck_page_title (otherwise
+    # it duplicates).
+    subtitle_html = (
+        f'<div class="ck-subtitle" style="font-size:13px;'
+        f'color:var(--ck-text-muted,#5C6878);margin:0 0 14px;'
+        f'font-style:italic;">{_esc(subtitle)}</div>'
+    ) if subtitle and not subtitle_consumed_by_title else ""
     # Page-specific CSS goes AFTER the kit's CSS so page styles
     # win specificity ties — matches the contract login_page.py
     # and forgot_page.py expect (grid layout, panel chrome, etc.)

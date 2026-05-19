@@ -117,7 +117,7 @@ _LIBRARY_SECTIONS = [
             {
                 "title": "OLS Regression",
                 "description": "Multi-variable regression on any hospital dataset with full diagnostics",
-                "endpoint": "/api/portfolio/regression",
+                "endpoint": "/portfolio/regression",
                 "doc": "Ordinary least squares with t-statistics, p-values, significance flags, "
                        "correlation matrix, and top correlated pairs. Numpy-only implementation "
                        "(no sklearn). Can target any metric against any feature set.",
@@ -159,10 +159,11 @@ _LIBRARY_SECTIONS = [
             {
                 "title": "FRED (Federal Reserve Economic Data)",
                 "description": "Treasury yields, CPI, healthcare spending macro indicators",
-                "endpoint": "/api/market-pulse",
+                "endpoint": "/market-intel",
                 "doc": "Used for market pulse indicators: 10-year Treasury yield (DGS10), "
                        "healthcare CPI, national health expenditure estimates. API key optional "
-                       "(falls back to static benchmarks).",
+                       "(falls back to static benchmarks). The Market Intelligence page "
+                       "surfaces the live values.",
                 "badge": "Data Source",
             },
             {
