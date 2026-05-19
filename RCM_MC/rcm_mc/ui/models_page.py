@@ -152,6 +152,149 @@ def _fmt_x(val: Any) -> str:
         return "—"
 
 
+# ── Editorial inline-SVG trajectory chart ──────────────────────────
+# DCF projection chart — revenue + EBITDA + FCF lines over the
+# explicit-period years. Same vocabulary as ic_memo / ebitda_bridge:
+# parchment palette, navy / teal / amber lines, no JS, no chart libs.
+
+def _projection_trajectory_chart(projections: List[Dict[str, Any]],
+                                 width: int = 720,
+                                 height: int = 220) -> str:
+    """Multi-line trajectory chart for DCF projection rows.
+
+    Lines: Revenue (navy), EBITDA (teal), FCF (amber).
+    Year markers on x-axis, dollar gridlines on y-axis.
+    """
+    if not projections:
+        return ""
+    series_defs = [
+        ("Revenue",  "revenue",         "#0b2341"),
+        ("EBITDA",   "ebitda",          "#155752"),
+        ("FCF",      "free_cash_flow",  "#b8732a"),
+    ]
+    # Pull (year, value) per series
+    series: List[Dict[str, Any]] = []
+    all_vals: List[float] = []
+    for label, key, color in series_defs:
+        pts: List[tuple] = []
+        for p in projections:
+            yr = p.get("year")
+            v = p.get(key)
+            if yr is None or v is None:
+                continue
+            try:
+                pts.append((float(yr), float(v)))
+            except (TypeError, ValueError):
+                continue
+        if pts:
+            series.append({"label": label, "points": pts, "color": color})
+            all_vals.extend(v for _, v in pts)
+    if not series or not all_vals:
+        return ""
+
+    pad_l, pad_r, pad_t, pad_b = 56, 110, 28, 36
+    plot_w = width - pad_l - pad_r
+    plot_h = height - pad_t - pad_b
+    years = sorted({y for s in series for y, _ in s["points"]})
+    y_lo, y_hi = years[0], years[-1]
+    y_span = max(1, y_hi - y_lo)
+    v_lo = min(0.0, min(all_vals))
+    v_hi = max(all_vals)
+    v_span = v_hi - v_lo if v_hi != v_lo else max(abs(v_hi), 1)
+
+    def _x(y: float) -> float:
+        return pad_l + (y - y_lo) / y_span * plot_w
+
+    def _y(v: float) -> float:
+        return pad_t + plot_h - (v - v_lo) / v_span * plot_h
+
+    # Y-axis gridlines + value labels (5 ticks)
+    grid_svg = ""
+    for i in range(5):
+        gv = v_lo + v_span * i / 4
+        gy = _y(gv)
+        grid_svg += (
+            f'<line x1="{pad_l}" y1="{gy:.1f}" x2="{pad_l + plot_w}" '
+            f'y2="{gy:.1f}" stroke="#E8E0D0" stroke-width="0.8"/>'
+            f'<text x="{pad_l - 6}" y="{gy + 3:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9" '
+            f'fill="#8A92A0" text-anchor="end">{_fmt_m(gv)}</text>'
+        )
+
+    # X-axis year ticks
+    tick_svg = ""
+    for y in years:
+        tx = _x(y)
+        tick_svg += (
+            f'<line x1="{tx:.1f}" y1="{pad_t + plot_h}" x2="{tx:.1f}" '
+            f'y2="{pad_t + plot_h + 4}" stroke="#BFB6A2" stroke-width="0.8"/>'
+            f'<text x="{tx:.1f}" y="{pad_t + plot_h + 16}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9.5" '
+            f'fill="#5C6878" text-anchor="middle">Y{int(y)}</text>'
+        )
+
+    # Series lines + dots
+    lines_svg = ""
+    legend_svg = ""
+    legend_x = pad_l + plot_w + 16
+    for i, s in enumerate(series):
+        pts = sorted(s["points"], key=lambda p: p[0])
+        path = " ".join(
+            f"{'M' if j == 0 else 'L'} {_x(y):.1f},{_y(v):.1f}"
+            for j, (y, v) in enumerate(pts)
+        )
+        lines_svg += (
+            f'<path d="{path}" stroke="{s["color"]}" stroke-width="2" '
+            f'fill="none"/>'
+        )
+        for y, v in pts:
+            lines_svg += (
+                f'<circle cx="{_x(y):.1f}" cy="{_y(v):.1f}" r="3" '
+                f'fill="{s["color"]}" stroke="#FAF7F0" stroke-width="1.2"/>'
+            )
+        ly = pad_t + 8 + i * 18
+        legend_svg += (
+            f'<line x1="{legend_x}" y1="{ly}" x2="{legend_x + 18}" '
+            f'y2="{ly}" stroke="{s["color"]}" stroke-width="2.4"/>'
+            f'<circle cx="{legend_x + 9}" cy="{ly}" r="3" fill="{s["color"]}"/>'
+            f'<text x="{legend_x + 24}" y="{ly + 3}" '
+            f'font-family="Inter Tight,sans-serif" font-size="10.5" '
+            f'font-weight="600" fill="#1a2332">{s["label"]}</text>'
+        )
+
+    # Axes
+    axes_svg = (
+        f'<line x1="{pad_l}" y1="{pad_t + plot_h}" x2="{pad_l + plot_w}" '
+        f'y2="{pad_t + plot_h}" stroke="#BFB6A2" stroke-width="1"/>'
+        f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" '
+        f'y2="{pad_t + plot_h}" stroke="#BFB6A2" stroke-width="1"/>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="width:100%;max-width:{width}px;height:auto;display:block;'
+        f'margin:0 auto 1rem;">'
+        f'{grid_svg}{axes_svg}{tick_svg}{lines_svg}{legend_svg}</svg>'
+    )
+
+
+_MODELS_CHART_CAPTION_CSS = """
+<style>
+.mdl-chart-caption {
+  font-family: "Inter Tight","Inter",sans-serif;
+  font-size: .72rem; color: #5C6878;
+  text-align: center; letter-spacing: 0.06em;
+  text-transform: uppercase; margin: -.5rem 0 1.25rem;
+}
+@media print {
+  .mdl-chart-caption { color: #1a2332; }
+  svg { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+"""
+
+
 def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
     """Render DCF model as a full browser page."""
     assumptions = dcf.get("assumptions", {})
@@ -266,11 +409,18 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
             f'<td class="num">{_fmt_m(p.get("pv_fcf"))}</td>'
             f'</tr>'
         )
+    proj_chart = _projection_trajectory_chart(projections)
+    proj_caption = (
+        '<div class="mdl-chart-caption">'
+        'Revenue · EBITDA · FCF across the explicit projection period'
+        '</div>'
+    ) if proj_chart else ""
     proj_table = (
         f'<div class="cad-card">'
         f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
         f'<h2 style="margin:0;">Cash Flow Projections</h2>'
         f'<span class="cad-section-code">PROJ</span></div>'
+        + proj_chart + proj_caption +
         f'<table class="cad-table crosshair"><thead><tr>'
         f'<th>Year</th><th>Revenue</th><th>EBITDA</th>'
         f'<th>Margin</th><th>FCF</th><th>PV(FCF)</th>'
@@ -396,7 +546,7 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
         eyebrow="Continue —",
         italic_word="LBO",
     )
-    body = f'{nav}{kpis}{proj_table}{interp}{sens_html}{assume_section}{actions}{next_up}'
+    body = f'{_MODELS_CHART_CAPTION_CSS}{nav}{kpis}{proj_table}{interp}{sens_html}{assume_section}{actions}{next_up}'
     return chartis_shell(body, f"DCF — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"Enterprise Value: {_fmt_m(ev)}",
