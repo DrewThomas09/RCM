@@ -64,12 +64,15 @@ class TestMyPulse(unittest.TestCase):
                     self.assertIn("ck-pulse-grid", body)
                     self.assertIn(">Red Alerts</div>", body)
                     # AT owns 1 red deal — scoped count reflects it.
-                    # Pull the Red Alerts KPI block region for tight
-                    # match. The KPI value slot ends at </div> so the
-                    # rendered "1" trails right up to "</div>".
+                    # KPI value is now wrapped in a provenance tooltip
+                    # span (<span class="ck-prov-tt-value">N</span>);
+                    # check the value within the KPI block region.
                     red_block_start = body.index(">Red Alerts</div>")
                     red_block_end = red_block_start + body[red_block_start:].index('class="ck-kpi-sub"')
-                    self.assertIn(">1</div>", body[red_block_start:red_block_end])
+                    self.assertIn(
+                        '>1</span>',
+                        body[red_block_start:red_block_end],
+                    )
             finally:
                 server.shutdown(); server.server_close()
 
