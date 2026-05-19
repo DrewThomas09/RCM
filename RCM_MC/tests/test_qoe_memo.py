@@ -221,8 +221,13 @@ class QoEMemoHttpRouteTests(unittest.TestCase):
     def test_landing_rendered_when_no_dataset(self):
         from rcm_mc.diligence._pages import render_qoe_memo_page
         html = render_qoe_memo_page("")
-        self.assertIn("Quality of Earnings Memorandum", html)
-        self.assertIn("Render memo", html)
+        # Editorial refactor: headline now reads
+        # "Quality of Earnings <em>Memorandum</em>." with the second
+        # word italicized, so the contiguous substring is gone.
+        self.assertIn("Quality of Earnings", html)
+        self.assertIn("Memorandum</em>", html)
+        # Button label is now title-case "Render Memo →" (was lowercase).
+        self.assertIn("Render Memo", html)
 
     def test_dataset_plus_mgmt_revenue_produces_critical_memo(self):
         from rcm_mc.diligence._pages import render_qoe_memo_page
@@ -242,7 +247,9 @@ class QoEMemoHttpRouteTests(unittest.TestCase):
     def test_unknown_fixture_returns_landing_not_crash(self):
         from rcm_mc.diligence._pages import render_qoe_memo_page
         html = render_qoe_memo_page("not_a_real_fixture")
-        self.assertIn("Quality of Earnings Memorandum", html)
+        # Same italic-headline structure as the landing render.
+        self.assertIn("Quality of Earnings", html)
+        self.assertIn("Memorandum</em>", html)
 
 
 class QoEMemoEngagementLinkTests(unittest.TestCase):

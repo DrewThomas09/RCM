@@ -269,7 +269,7 @@ class TestWizardRoutes(unittest.TestCase):
                 # 303 redirect → urllib follows → Step 2 renders.
                 with urllib.request.urlopen(req) as r:
                     body = r.read().decode()
-                self.assertIn("Step 2", body)
+                self.assertIn("STEP 2", body)
                 # Source pill present somewhere.
                 self.assertIn("HCRIS", body)
             finally:
@@ -299,7 +299,7 @@ class TestWizardRoutes(unittest.TestCase):
                 )
                 with urllib.request.urlopen(req) as r:
                     body = r.read().decode()
-                self.assertIn("Step 2", body)
+                self.assertIn("STEP 2", body)
                 self.assertIn("Test Regional", body)
             finally:
                 server.shutdown(); server.server_close()
@@ -325,7 +325,7 @@ class TestWizardRoutes(unittest.TestCase):
                     method="POST",
                 )
                 with urllib.request.urlopen(req) as r:
-                    self.assertIn("Step 2", r.read().decode())
+                    self.assertIn("STEP 2", r.read().decode())
 
                 deal_id = ccn.zfill(6)
                 # Skip straight to Step 4 (no upload in this test).
@@ -345,7 +345,7 @@ class TestWizardRoutes(unittest.TestCase):
                 )
                 with urllib.request.urlopen(req) as r:
                     step5 = r.read().decode()
-                self.assertIn("Step 5", step5)
+                self.assertIn("STEP 5", step5)
                 self.assertIn(f"/analysis/{deal_id}", step5)
 
                 # Workbench now serves for this deal_id.
@@ -388,7 +388,7 @@ class TestWizardRoutes(unittest.TestCase):
                     )
                     with urllib.request.urlopen(req) as r:
                         # Redirect back to Step 3.
-                        self.assertIn("Step 3", r.read().decode())
+                        self.assertIn("STEP 3", r.read().decode())
                 finally:
                     server.shutdown(); server.server_close()
                 session = load_session("wtest")
