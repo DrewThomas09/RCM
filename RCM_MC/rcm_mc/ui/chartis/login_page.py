@@ -1,11 +1,13 @@
 """Editorial /login route renderer.
 
-Matches docs/design-handoff/reference/02-login.html.
-
-Critical invariant: the sign-in form's POST target is unchanged
-(``/api/login``). Only the page CONTAINING the form is reskinned. The
-auth-round-trip contract test (``test_login_round_trip``) passes
-because the cookie-setting endpoint is identical to legacy.
+Repositioned 2026-05-19 from "PE fund operating system" framing to
+"commercial diligence intelligence" — the platform is sold to
+client-facing deal teams who build per-target profiles, not to
+internal fund operating partners managing a hold portfolio. The
+contract-test pins (`console-teaser` class, `cta-btn submit` button
+class, POST to `/api/login`, `href="/forgot"`, server-side
+`?tab=request` switching) are all preserved; only the copy + visual
+polish change.
 
 Tab switching (Sign In ↔ Request Access) is server-side via
 ``?tab=request`` — no JS state, no client-side framework. This keeps
@@ -24,13 +26,33 @@ _LOGIN_EXTRA_CSS = """
   display: grid; grid-template-columns: 1fr 1fr;
   min-height: calc(100vh - 72px - 80px);
 }
+/* Left panel — editorial position statement.
+ * Subtle teal-ink stripe on the inside edge so the panel reads as
+ * an editorial document instead of a flat split-screen. */
 .panel-l {
   padding: 4rem 3rem;
   background: var(--paper);
   border-right: 1px solid var(--rule);
   display: flex; flex-direction: column; justify-content: space-between;
+  position: relative;
 }
-.panel-r { padding: 4rem 3rem; }
+.panel-l::before {
+  content: "";
+  position: absolute; top: 4rem; bottom: 4rem; left: 0;
+  width: 3px;
+  background: linear-gradient(
+    180deg,
+    var(--teal-deep) 0%,
+    var(--teal) 55%,
+    transparent 100%
+  );
+}
+.panel-r {
+  padding: 4rem 3rem;
+  /* Cream-paper background so the right panel reads as the working
+   * surface (where the form sits) vs the left's editorial surface. */
+  background: var(--paper-pure);
+}
 .panel-l h1 {
   font-family: "Source Serif 4", serif; font-weight: 400;
   font-size: clamp(2.4rem, 4vw, 3.4rem); line-height: 1.05;
@@ -43,10 +65,49 @@ _LOGIN_EXTRA_CSS = """
   font-family: "Source Serif 4", serif; font-size: 1.05rem;
   color: var(--muted); margin: 0 0 2rem; max-width: 48ch;
 }
+.panel-l .what-card {
+  /* Sub-eyebrow + 3-line "what is this" card above the teaser.
+   * Gives the page a real what-the-product-does block partners
+   * read before signing in. Subtle teal-soft tint so the block
+   * pops on the parchment background. */
+  background: linear-gradient(
+    135deg,
+    var(--teal-soft) 0%,
+    var(--paper) 70%
+  );
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--teal-deep);
+  padding: 1.1rem 1.4rem;
+  margin-bottom: 1.5rem;
+  font-family: "Source Serif 4", serif;
+  font-size: .95rem; line-height: 1.55; color: var(--ink-2);
+}
+.panel-l .what-card .label {
+  display: block;
+  font-family: "JetBrains Mono", monospace;
+  font-size: .68rem; font-weight: 600; letter-spacing: .12em;
+  color: var(--teal-deep);
+  text-transform: uppercase;
+  margin-bottom: .4rem;
+}
 
 .console-teaser {
   background: var(--paper-pure); border: 1px solid var(--rule);
   padding: 1.5rem;
+  position: relative;
+}
+.console-teaser::after {
+  /* Tiny pulse dot in the corner so the card feels alive. */
+  content: "";
+  position: absolute; top: 1.2rem; right: 1.4rem;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 0 var(--green-soft);
+  animation: ck-pulse 2.4s ease-out infinite;
+}
+@keyframes ck-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(63, 125, 77, 0.55); }
+  50%      { box-shadow: 0 0 0 6px rgba(63, 125, 77, 0); }
 }
 .teaser-h {
   font-family: "Inter", sans-serif; font-size: .68rem;
@@ -60,19 +121,24 @@ _LOGIN_EXTRA_CSS = """
 }
 .teaser-row {
   display: flex; justify-content: space-between; align-items: baseline;
-  padding: .55rem 0; border-bottom: 1px solid var(--border);
+  padding: .58rem 0; border-bottom: 1px solid var(--border);
   font-family: "JetBrains Mono", monospace; font-size: .82rem;
 }
 .teaser-row:last-child { border-bottom: none; }
 .teaser-row .lbl {
   font-family: "Inter", sans-serif; color: var(--muted); font-size: .85rem;
 }
-.teaser-row .v { color: var(--ink); font-weight: 600; }
-.teaser-row .v.green { color: var(--green); }
+.teaser-row .v {
+  color: var(--ink); font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.teaser-row .v.teal  { color: var(--teal-deep); }
 .teaser-row .v.amber { color: var(--amber); }
+.teaser-row .v.green { color: var(--green); }
 
 .meta-stack {
-  display: grid; gap: .55rem; padding-top: 2rem; border-top: 1px solid var(--rule);
+  display: grid; gap: .55rem; padding-top: 2rem;
+  border-top: 1px solid var(--rule);
 }
 .meta-stack .row {
   display: flex; justify-content: space-between;
@@ -95,7 +161,7 @@ _LOGIN_EXTRA_CSS = """
 }
 .form-sub {
   font-family: "Source Serif 4", serif; font-size: .98rem;
-  color: var(--muted); margin: 0 0 1.75rem;
+  color: var(--muted); margin: 0 0 1.75rem; max-width: 42ch;
 }
 
 .tabs {
@@ -118,8 +184,28 @@ _LOGIN_EXTRA_CSS = """
 }
 .field-row label.check { display: flex; align-items: center; gap: .5rem; }
 .field-row label.check input { width: auto; padding: 0; }
-.field-row a { color: var(--teal-deep); }
+.field-row a {
+  color: var(--teal-deep);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.12s;
+}
+.field-row a:hover { border-bottom-color: var(--teal-deep); }
 .submit { width: 100%; }
+/* Stronger hover state — gentle gradient + subtle lift so the
+ * primary CTA reads as the next action. */
+.cta-btn.submit {
+  background: linear-gradient(
+    180deg,
+    var(--ink-2) 0%,
+    var(--ink) 100%
+  );
+  transition: transform 0.08s, box-shadow 0.12s;
+}
+.cta-btn.submit:hover {
+  background: var(--teal-deep);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(21, 87, 82, 0.18);
+}
 
 .footnote {
   margin-top: 2rem; font-family: "Source Serif 4", serif;
@@ -142,7 +228,11 @@ _LOGIN_EXTRA_CSS = """
 
 @media (max-width: 900px) {
   .stage { grid-template-columns: 1fr; }
-  .panel-l { border-right: none; border-bottom: 1px solid var(--rule); padding: 3rem 1.5rem; }
+  .panel-l {
+    border-right: none; border-bottom: 1px solid var(--rule);
+    padding: 3rem 1.5rem;
+  }
+  .panel-l::before { display: none; }
   .panel-r { padding: 3rem 1.5rem; }
 }
 """.strip()
@@ -171,7 +261,7 @@ def _render_signin_form(*, error: Optional[str], next_url: str) -> str:
         # and email-style strings. inputmode="email" keeps the
         # mobile keyboard helpful for the typical case.
         '<input type="text" id="login-email" name="username" '
-        'placeholder="partner@firm.com" required '
+        'placeholder="you@firm.com" required '
         'inputmode="email" autocomplete="username" autofocus/>'
         '</div>'
         '<div class="field">'
@@ -186,7 +276,7 @@ def _render_signin_form(*, error: Optional[str], next_url: str) -> str:
         '<a href="/forgot">Forgot password?</a>'
         '</div>'
         '<button type="submit" class="cta-btn submit">'
-        'Open Command Center →</button>'
+        'Open Deal Workspace →</button>'
         '</form>'
         '</div>'
     )
@@ -196,7 +286,8 @@ def _render_request_form(*, success: bool) -> str:
     if success:
         return (
             '<div class="req-ok">'
-            "Request received. We'll be in touch within one business day."
+            "Request received. A member of the team will reach out within "
+            "one business day."
             '</div>'
         )
     return (
@@ -205,18 +296,18 @@ def _render_request_form(*, success: bool) -> str:
         '<div class="field">'
         '<label for="req-email">Work email</label>'
         '<input type="email" id="req-email" name="email" '
-        'placeholder="partner@firm.com" required autocomplete="email"/>'
+        'placeholder="you@firm.com" required autocomplete="email"/>'
         '</div>'
         '<div class="field">'
         '<label for="req-firm">Firm</label>'
         '<input type="text" id="req-firm" name="firm" '
-        'placeholder="Healthcare Opportunity Fund II" required '
+        'placeholder="Strategy Group · Consulting Firm · Advisory" required '
         'autocomplete="organization"/>'
         '</div>'
         '<div class="field">'
         '<label for="req-role">Role</label>'
         '<input type="text" id="req-role" name="role" '
-        'placeholder="Partner · Operating Partner · Analyst" '
+        'placeholder="Director · Engagement Manager · Associate" '
         'autocomplete="organization-title"/>'
         '</div>'
         '<button type="submit" class="cta-btn submit">'
@@ -259,16 +350,16 @@ def render_login_page(
     panel_r = (
         '<div class="panel-r">'
         '<div class="form-wrap">'
-        '<div class="micro">PARTNER LOGIN</div>'
-        '<h2 class="form-h">Sign in to your<br/><em>instance</em>.</h2>'
-        '<p class="form-sub">Use your partner credentials to '
-        'access the platform.</p>'
+        '<div class="micro">DEAL TEAM LOGIN</div>'
+        '<h2 class="form-h">Sign in to your<br/><em>workspace</em>.</h2>'
+        '<p class="form-sub">Use your team credentials to open your '
+        'deal profiles, market briefs, and source library.</p>'
         f'{tabs_html}'
         f'{request_form if is_request_tab else signin_form}'
         '<p class="footnote">'
-        'Partners with private feeds: see your '
-        '<a href="/docs/deployment">deployment runbook</a> to enable '
-        'connectors after sign-in.</p>'
+        'Teams with private data feeds: see the '
+        '<a href="/docs/deployment">deployment runbook</a> to wire up '
+        'CRM, market data, or research connectors after sign-in.</p>'
         '</div>'
         '</div>'
     )
@@ -277,35 +368,47 @@ def render_login_page(
         '<div class="panel-l">'
         '<div>'
         '<div class="eyebrow">'
-        '<span>PARTNER ACCESS</span>'
+        '<span>COMMERCIAL DILIGENCE</span>'
         '<span class="dot" style="margin:0 .35rem;color:var(--faint)">·</span>'
-        '<span>FUND II</span>'
+        '<span>INTELLIGENCE LAYER</span>'
         '<span class="dot" style="margin:0 .35rem;color:var(--faint)">·</span>'
         '<span class="slug">/v1.0.0</span>'
         '</div>'
-        '<h1>Open the<br/><em>console</em>.</h1>'
-        '<p class="lede">Each partner gets a dedicated instance. State '
-        'persists locally — refresh or return tomorrow and pick up '
-        'exactly where you left off.</p>'
+        '<h1>Open the<br/><em>deal</em>.</h1>'
+        '<p class="lede">Each deal team gets a dedicated workspace. '
+        'Profiles persist locally — refresh or return tomorrow and '
+        'pick up exactly where the diligence left off.</p>'
+        '<div class="what-card">'
+        '<span class="label">What this is</span>'
+        'Commercial diligence intelligence for client-facing deal '
+        'teams. Build living target-company profiles with market '
+        'research, customer signals, benchmarks, competitive context, '
+        'client priorities, and source-backed notes — organized '
+        'around the deal at hand, not buried in old decks or '
+        'one-off spreadsheets.'
+        '</div>'
         '<div class="console-teaser">'
         '<div class="teaser-h"><span>YOUR LAST SESSION</span>'
-        '<span class="src">portfolio.db</span></div>'
-        '<div class="teaser-row"><span class="lbl">Weighted MOIC</span>'
-        '<span class="v green">2.69x</span></div>'
-        '<div class="teaser-row"><span class="lbl">Weighted IRR</span>'
-        '<span class="v amber">21.9%</span></div>'
-        '<div class="teaser-row"><span class="lbl">Covenants on watch</span>'
+        '<span class="src">deal.profile</span></div>'
+        '<div class="teaser-row"><span class="lbl">Active deal profiles</span>'
+        '<span class="v teal">4</span></div>'
+        '<div class="teaser-row"><span class="lbl">Market briefs in progress</span>'
+        '<span class="v teal">7</span></div>'
+        '<div class="teaser-row"><span class="lbl">Client priorities flagged</span>'
         '<span class="v amber">2 of 6</span></div>'
-        '<div class="teaser-row"><span class="lbl">EBITDA drag identified</span>'
-        '<span class="v">$24.4M</span></div>'
+        '<div class="teaser-row"><span class="lbl">Source-backed claims</span>'
+        '<span class="v">38 cited · 12 pending</span></div>'
         '<div class="teaser-row"><span class="lbl">Last accessed</span>'
         '<span class="v">2026-04-15</span></div>'
         '</div>'
         '</div>'
         '<div class="meta-stack">'
-        '<div class="row"><span class="k">INSTANCE</span><span class="v">CCF-FUND2</span></div>'
-        '<div class="row"><span class="k">REGION</span><span class="v">us-east-1</span></div>'
-        '<div class="row"><span class="k">DATA</span><span class="v">Public only — no PHI</span></div>'
+        '<div class="row"><span class="k">WORKSPACE</span>'
+        '<span class="v">CCF-DILIGENCE</span></div>'
+        '<div class="row"><span class="k">REGION</span>'
+        '<span class="v">us-east-1</span></div>'
+        '<div class="row"><span class="k">DATA</span>'
+        '<span class="v">Public sources only — no PHI</span></div>'
         '<div class="row"><span class="k">STATUS</span>'
         '<span class="v" style="color:var(--green)">● OPERATIONAL</span></div>'
         '</div>'

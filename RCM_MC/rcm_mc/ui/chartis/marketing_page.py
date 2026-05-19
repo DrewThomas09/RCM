@@ -66,8 +66,24 @@ _STYLE = """
     font-family: "Source Serif 4", Georgia, serif; font-size: 16px; line-height: 1.55;
     -webkit-font-smoothing: antialiased; scroll-behavior: smooth;
   }
+  body {
+    background-image:
+      radial-gradient(circle at 12% 4%, rgba(31,122,117,.07), transparent 38%),
+      radial-gradient(circle at 92% 22%, rgba(21,87,82,.05), transparent 42%),
+      linear-gradient(180deg, var(--bg) 0%, var(--bg) 100%);
+    background-attachment: fixed;
+  }
   .sans { font-family: "Inter", sans-serif; }
   .mono { font-family: "JetBrains Mono", monospace; font-feature-settings: "tnum" on; }
+
+  @keyframes ck-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .55; transform: scale(1.15); }
+  }
+  @keyframes ck-rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 
   /* TOP BAR */
   .topbar {
@@ -98,13 +114,20 @@ _STYLE = """
   }
   .signin:hover { color: var(--ink); }
   .cta-btn {
-    background: var(--ink); color: var(--paper);
+    background: linear-gradient(135deg, var(--ink) 0%, var(--ink-2) 100%);
+    color: var(--paper);
     font-family: "Inter", sans-serif; font-size: .72rem; font-weight: 700;
     letter-spacing: .14em; text-transform: uppercase;
     padding: .8rem 1.4rem; border: none; cursor: pointer; text-decoration: none;
     display: inline-block;
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+    box-shadow: 0 1px 0 rgba(15,28,46,.08);
   }
-  .cta-btn:hover { background: var(--teal-deep); }
+  .cta-btn:hover {
+    background: linear-gradient(135deg, var(--teal-deep) 0%, var(--teal) 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px -8px rgba(21,87,82,.45);
+  }
 
   /* CRUMBS */
   .crumbs {
@@ -120,7 +143,14 @@ _STYLE = """
   .hero {
     display: grid; grid-template-columns: 1fr 360px; gap: 3rem;
     padding: 4rem 0 3rem; border-bottom: 1px solid var(--rule);
+    position: relative;
   }
+  .hero::before {
+    content: ""; position: absolute; left: -1.5rem; top: 5rem;
+    width: 3px; height: 7rem;
+    background: linear-gradient(180deg, var(--teal-deep) 0%, var(--teal) 60%, transparent 100%);
+  }
+  .hero > div:first-child { animation: ck-rise .6s ease-out; }
   .eyebrow {
     font-family: "Inter", sans-serif; font-size: .72rem; letter-spacing: .14em;
     text-transform: uppercase; color: var(--muted); font-weight: 600;
@@ -128,6 +158,12 @@ _STYLE = """
   }
   .eyebrow .dot { color: var(--faint); }
   .eyebrow .slug { font-family: "JetBrains Mono", monospace; color: var(--teal-deep); letter-spacing: .04em; }
+  .eyebrow::before {
+    content: ""; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--teal); display: inline-block;
+    animation: ck-pulse 2.4s ease-in-out infinite;
+    box-shadow: 0 0 0 3px rgba(31,122,117,.12);
+  }
   h1.title {
     font-family: "Source Serif 4", serif; font-weight: 400;
     font-size: clamp(3.5rem, 6vw, 5.5rem); line-height: 0.98; letter-spacing: -0.025em;
@@ -164,12 +200,29 @@ _STYLE = """
   .triplet {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
     background: var(--paper-pure); border: 1px solid var(--rule); margin: 3rem 0;
+    position: relative; overflow: hidden;
   }
-  .trip-cell { padding: 2rem 1.75rem; border-right: 1px solid var(--border); }
+  .triplet::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg,
+      var(--teal-deep) 0%, var(--teal) 33%,
+      var(--teal-soft) 50%, var(--teal) 67%, var(--teal-deep) 100%);
+    opacity: .85;
+  }
+  .trip-cell {
+    padding: 2rem 1.75rem; border-right: 1px solid var(--border);
+    transition: background .25s ease, transform .25s ease;
+    position: relative;
+  }
+  .trip-cell:hover {
+    background: linear-gradient(180deg, var(--teal-soft) 0%, var(--paper-pure) 80%);
+  }
+  .trip-cell:hover .trip-num { color: var(--teal); }
   .trip-cell:last-child { border-right: none; }
   .trip-num {
     font-family: "JetBrains Mono", monospace; font-size: .72rem;
     color: var(--teal-deep); letter-spacing: .04em; margin-bottom: .8rem;
+    transition: color .25s ease;
   }
   .trip-h {
     font-family: "Source Serif 4", serif; font-weight: 400; font-size: 1.4rem;
@@ -181,7 +234,13 @@ _STYLE = """
   /* SECTION HEADERS */
   .sect {
     display: grid; grid-template-columns: 1fr 1.3fr; gap: 3rem; align-items: end;
-    padding: 4rem 0 1.5rem; border-top: 1px solid var(--rule); margin-top: 1rem;
+    padding: 4rem 0 1.5rem; margin-top: 1rem;
+    border-top: 1px solid var(--rule);
+    position: relative;
+  }
+  .sect::before {
+    content: ""; position: absolute; top: -1px; left: 0; width: 80px; height: 3px;
+    background: linear-gradient(90deg, var(--teal-deep), var(--teal) 70%, transparent);
   }
   .sect h2 {
     font-family: "Source Serif 4", serif; font-weight: 400;
@@ -256,10 +315,17 @@ _STYLE = """
   .proof {
     display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
     background: var(--paper-pure); border: 1px solid var(--rule); margin: 1.5rem 0 0;
+    background-image:
+      linear-gradient(135deg, rgba(31,122,117,.04) 0%, transparent 40%),
+      linear-gradient(315deg, rgba(31,122,117,.03) 0%, transparent 40%);
   }
   .proof-cell {
     padding: 1.5rem 1.25rem; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    transition: background .2s ease;
+    position: relative;
   }
+  .proof-cell:hover { background: rgba(31,122,117,.045); }
+  .proof-cell:hover .proof-v em { color: var(--teal); }
   .proof-cell:nth-child(4n) { border-right: none; }
   .proof-cell:nth-last-child(-n+4) { border-bottom: none; }
   .proof-v {
@@ -281,7 +347,12 @@ _STYLE = """
     display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
     background: var(--paper-pure); border: 1px solid var(--rule); margin: 1.5rem 0;
   }
-  .cat-col { border-right: 1px solid var(--border); }
+  .cat-col {
+    border-right: 1px solid var(--border);
+    transition: background .25s ease;
+  }
+  .cat-col:hover .cat-h { background: var(--teal-soft); }
+  .cat-col:hover .cat-h .ttl { color: var(--teal-deep); }
   .cat-col:last-child { border-right: none; }
   .cat-h {
     padding: .9rem 1.25rem; border-bottom: 1px solid var(--border); background: var(--bg);
@@ -308,9 +379,17 @@ _STYLE = """
 
   /* TESTIMONIAL / PULL QUOTE */
   .pull {
-    margin: 3rem 0; padding: 2.5rem 3rem; background: var(--paper-pure);
+    margin: 3rem 0; padding: 2.5rem 3rem;
+    background: linear-gradient(135deg, var(--paper-pure) 0%, rgba(212,228,226,.55) 100%);
     border: 1px solid var(--rule); border-left: 3px solid var(--teal);
     display: grid; grid-template-columns: 1fr 280px; gap: 3rem; align-items: center;
+    position: relative; overflow: hidden;
+  }
+  .pull::before {
+    content: "\\201C"; position: absolute; top: -2rem; right: 2rem;
+    font-family: "Source Serif 4", serif; font-style: italic;
+    font-size: 9rem; color: rgba(21,87,82,.08); line-height: 1;
+    pointer-events: none;
   }
   .pull q {
     font-family: "Source Serif 4", serif; font-style: italic; font-weight: 400;
@@ -335,8 +414,17 @@ _STYLE = """
 
   /* CTA STRIP */
   .cta-strip {
-    margin: 3rem 0 0; padding: 3.5rem 2.5rem; background: var(--ink); color: var(--paper);
+    margin: 3rem 0 0; padding: 3.5rem 2.5rem;
+    background:
+      radial-gradient(circle at 85% 30%, rgba(31,122,117,.18) 0%, transparent 55%),
+      linear-gradient(135deg, var(--ink) 0%, var(--ink-2) 100%);
+    color: var(--paper);
     display: grid; grid-template-columns: 1.4fr 1fr; gap: 3rem; align-items: center;
+    position: relative; overflow: hidden;
+  }
+  .cta-strip::before {
+    content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--teal) 50%, transparent);
   }
   .cta-strip h3 {
     font-family: "Source Serif 4", serif; font-weight: 400;
@@ -356,12 +444,20 @@ _STYLE = """
     letter-spacing: .14em; text-transform: uppercase;
     padding: 1rem 1.5rem; text-decoration: none; text-align: center;
   }
-  .cta-light:hover { background: var(--teal); color: var(--paper); }
+  .cta-light {
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease, color .18s ease;
+  }
+  .cta-light:hover {
+    background: var(--teal); color: var(--paper);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px -10px rgba(31,122,117,.55);
+  }
   .cta-outline {
     background: transparent; border: 1px solid var(--paper); color: var(--paper);
     font-family: "Inter", sans-serif; font-size: .72rem; font-weight: 700;
     letter-spacing: .14em; text-transform: uppercase;
     padding: 1rem 1.5rem; text-decoration: none; text-align: center;
+    transition: background .18s ease, color .18s ease;
   }
   .cta-outline:hover { background: var(--paper); color: var(--ink); }
 
@@ -431,31 +527,37 @@ def _hero() -> str:
         '<section class="hero">'
         '<div>'
         '<div class="eyebrow">'
-        '<span>HEALTHCARE&nbsp;PRIVATE&nbsp;EQUITY</span>'
+        '<span>COMMERCIAL&nbsp;DILIGENCE</span>'
         '<span class="dot">&middot;</span>'
-        '<span>FUND&nbsp;II</span>'
+        '<span>CLIENT-FACING&nbsp;INTELLIGENCE</span>'
         '<span class="dot">&middot;</span>'
         '<span class="slug">/v1.0.0</span>'
         '</div>'
-        '<h1 class="title">Healthcare diligence,<br/><em>instrument-grade</em>.</h1>'
+        '<h1 class="title">Commercial diligence,<br/>'
+        '<em>personalized</em> to every deal.</h1>'
         '<p class="lede">'
-        'Sourced through hold, in one canvas. Weighted MOIC, covenant heatmaps, '
-        'EBITDA drag decomposition, and forty-seven initiative levers &mdash; all '
-        'reading from the same in-process model registry. No SaaS dependencies.'
+        'Built for client-facing deal teams working across markets, '
+        'clients, and targets. Create living deal profiles that '
+        'combine market research, company intelligence, customer '
+        'signals, benchmarks, interviews, and source-backed findings '
+        '&mdash; all organized around the opportunity at hand.'
         '</p>'
         '<div class="hero-actions">'
-        f'<a href="{_LOGIN}" class="cta-btn">Open Command Center</a>'
-        '<a href="#platform" class="ghost-btn">See how it works &darr;</a>'
+        f'<a href="{_LOGIN}" class="cta-btn">Open Deal Workspace</a>'
+        '<a href="#platform" class="ghost-btn">See a sample profile &darr;</a>'
         '</div>'
         '</div>'
         '<div class="hero-meta">'
-        '<div class="row"><span class="k">PRODUCT</span><span class="v">CCF-FUND2</span></div>'
-        '<div class="row"><span class="k">KIND</span><span class="v">ROLLUP</span></div>'
+        '<div class="row"><span class="k">WORKSPACE</span>'
+        '<span class="v">CCF-DILIGENCE</span></div>'
+        '<div class="row"><span class="k">KIND</span>'
+        '<span class="v">INTELLIGENCE LAYER</span></div>'
         '<div class="row"><span class="k">STATUS</span>'
         '<span class="v" style="color:var(--green)">LIVE</span></div>'
         '<div class="stamp">'
-        'Built for partners who run their own model. Public data only '
-        '&mdash; no PHI on this instance.'
+        'Built for diligence teams who want every source, benchmark, '
+        'and client priority connected to the deal. Public sources '
+        'only &mdash; no PHI on this instance.'
         '</div>'
         '</div>'
         '</section>'
@@ -464,15 +566,21 @@ def _hero() -> str:
 
 def _triplet() -> str:
     cells = [
-        ("/01", "One source <em>of truth</em>",
-         "Each deal gets a unique URL. Enter parameters once &mdash; every "
-         "downstream analytic opens with them pre-filled. State persists locally."),
-        ("/02", "Six layers, <em>one console</em>",
-         "Econometrics, variance &amp; drift, RCM drag, covenant engine, market "
-         "&amp; peer, delivery. Every panel reads from the same registry."),
-        ("/03", "Provenance, <em>preserved</em>",
-         "HCRIS, APCD, CMS-MA citations live next to every number. Drop-in "
-         "compatible with the existing output v1/ structure."),
+        ("/01", "One profile <em>per opportunity</em>",
+         "Each target gets a living intelligence layer: company facts, "
+         "market context, client priorities, competitors, benchmarks, "
+         "and open diligence questions. Enter once &mdash; every "
+         "downstream analytic opens with the deal pre-filled."),
+        ("/02", "Market, client, <em>and deal together</em>",
+         "Connect the target company to the broader commercial picture: "
+         "market structure, growth drivers, customer behavior, competitive "
+         "positioning, pricing, and comparable assets &mdash; all linked "
+         "to the deal."),
+        ("/03", "Source-backed <em>and reusable</em>",
+         "Every claim traces back to its underlying source &mdash; "
+         "filings, research, interviews, benchmarks, notes, or prior "
+         "engagement work. Verify, reuse, and turn research into "
+         "client-ready recommendations."),
     ]
     inner = "".join(
         f'<div class="trip-cell">'
@@ -562,17 +670,20 @@ def _platform_section() -> str:
     return (
         '<section id="platform">'
         + _sect(
-            "THE PLATFORM",
-            "Sourced through<br/><em>hold</em>, in one place.",
-            "Pipeline funnel with stage-relative widths, conversion ratios "
-            "computed against the prior stage, entry EV summed where modeled. "
-            "Click a stage in the live console to filter the deal table beneath.",
+            "THE WORKSPACE",
+            "Market, client, <em>and deal</em><br/>"
+            "intelligence in one place.",
+            "Create a workspace for each opportunity that combines target "
+            "profiles, market maps, commercial benchmarks, client context, "
+            "research notes, and deal history. Move from scattered "
+            "information to a clear view of what matters, what is changing, "
+            "and what the client needs to know.",
         )
         + '<div class="pair">'
         f'<div class="viz">{funnel}</div>'
         '<div class="data">'
-        '<div class="data-h"><span>FUNNEL CONVERSION</span>'
-        '<span class="src">portfolio.db / funnel</span></div>'
+        '<div class="data-h"><span>SAMPLE DEAL FUNNEL</span>'
+        '<span class="src">deal.profile / funnel</span></div>'
         '<table><thead><tr><th>Stage</th><th class="r">N</th>'
         '<th class="r">EV</th><th class="r">&rarr; prior</th></tr></thead>'
         f'<tbody>{rows}</tbody></table>'
@@ -584,14 +695,30 @@ def _platform_section() -> str:
 
 def _proof_section() -> str:
     cells = [
-        ("<em>2.69</em>x", "Weighted MOIC", "+0.18x QoQ on a 7-quarter trajectory"),
-        ("<em>21.9</em>%", "Weighted IRR", "&minus;1.4 pts QoQ; covenant pressure flagged"),
-        ("<em>0</em>", "Covenants at Risk", "All hold deals SAFE; 2 lines on watch"),
-        ("$<em>17.5</em>M", "Avg EBITDA Drag", "&minus;$1.2M QoQ vs RCM benchmark"),
-        ("<em>12.1</em>d", "Avg DAR Drag", "Trending toward 11d benchmark"),
-        ("<em>47</em>", "Initiatives Tracked", "12 lagging across hold portfolio"),
-        ("<em>84</em>d", "Avg Days Cash", "+3d QoQ; well above 60d covenant"),
-        ("<em>3</em>/14", "Pipeline &rarr; Hold", "21% conversion sourced to hold"),
+        ("<em>247</em>",
+         "Source-backed Claims",
+         "Across the sample profile &mdash; every claim cited"),
+        ("<em>42</em>",
+         "Market Briefs",
+         "Sector maps, demand drivers, growth signals"),
+        ("<em>18</em>",
+         "Client Priorities",
+         "Engagement-specific watch-list connected to the deal"),
+        ("$<em>4.2</em>B",
+         "Comparable TEV",
+         "Reference transactions matched to the target"),
+        ("<em>11.4</em>x",
+         "Median Peer Multiple",
+         "EV / EBITDA across the matched comparable set"),
+        ("<em>26</em>",
+         "Interviews Logged",
+         "Customer + channel + competitor calls, transcribed"),
+        ("<em>9</em>",
+         "Open Diligence Risks",
+         "Tracked from kickoff to readout with status updates"),
+        ("<em>4</em>/14",
+         "Targets &rarr; Long-list",
+         "29% screen-to-long-list conversion this engagement"),
     ]
     inner = "".join(
         f'<div class="proof-cell">'
@@ -604,11 +731,12 @@ def _proof_section() -> str:
     return (
         '<section id="proof">'
         + _sect(
-            "FUND-LEVEL PROOF",
-            "Numbers <em>that hold up</em><br/>in a partners' meeting.",
-            "Eight tracked KPIs across Fund II, weighted by entry EV. Every "
-            "value carries a 7-quarter provenance chain &mdash; click into the "
-            "Command Center to see the underlying simulations and source rows.",
+            "DILIGENCE SIGNAL",
+            "Insight <em>that supports</em><br/>the diligence story.",
+            "Eight tracked signals across a sample engagement &mdash; "
+            "market evidence, customer interviews, comparable transactions, "
+            "and client priorities, all carrying source citations. Click "
+            "into the workspace to see the underlying notes and references.",
         )
         + f'<div class="proof">{inner}</div>'
         + '</section>'
@@ -617,35 +745,43 @@ def _proof_section() -> str:
 
 def _catalog_section() -> str:
     columns = [
-        ("RETURNS", "fund", [
-            ("Weighted MOIC", "2.69x", ""),
-            ("Weighted IRR", "21.9%", ""),
-            ("DPI", "0.42x", ""),
-            ("TVPI", "2.69x", ""),
+        ("COMPANY PROFILE", "deal", [
+            ("Revenue", "$418M", ""),
+            ("Locations", "62 sites", ""),
+            ("Ownership", "Sponsor-backed", ""),
+            ("Management tenure", "4.2y avg", ""),
         ]),
-        ("RCM DRAG", "", [
-            ("Denial write-off", "$14.6M", ""),
-            ("DAR carry cost", "$1.4M", ""),
-            ("Underpay leakage", "$1.7M", ""),
-            ("Recovery cost", "$0.2M", ""),
+        ("MARKET LANDSCAPE", "market", [
+            ("TAM", "$28B", ""),
+            ("Growth (5y CAGR)", "+7.4%", "var(--green)"),
+            ("Top 3 share", "31%", "var(--amber)"),
+            ("Reg exposure", "Moderate", "var(--amber)"),
         ]),
-        ("COVENANTS", "", [
-            ("Net leverage", "6.1x", "var(--amber)"),
-            ("Interest coverage", "2.2x", "var(--amber)"),
-            ("Days cash", "84d", "var(--green)"),
-            ("EBITDA / Plan", "87%", "var(--amber)"),
+        ("COMPETITIVE SET", "market", [
+            ("Peer count", "14", ""),
+            ("Peer median EV/EBITDA", "11.4x", ""),
+            ("Pricing position", "Premium", "var(--green)"),
+            ("Differentiator", "Network density", ""),
         ]),
-        ("INITIATIVES", "", [
-            ("Coding &amp; CDI", "&minus;10.0%", "var(--amber)"),
-            ("Prior auth reform", "+28.0%", "var(--red)"),
-            ("Denials workflow", "+6.4%", "var(--green)"),
-            ("Underpay recovery", "&minus;15.2%", "var(--amber)"),
+        ("CUSTOMER SIGNALS", "deal", [
+            ("Net retention", "108%", "var(--green)"),
+            ("Top-10 concentration", "34%", "var(--amber)"),
+            ("Referral velocity", "+12% QoQ", "var(--green)"),
+            ("Churn risk flags", "3", "var(--amber)"),
         ]),
     ]
     cols_html = ""
     for title, level, rows in columns:
-        lvl_cls = "lvl fund" if level == "fund" else "lvl"
-        lvl_txt = "FUND" if level == "fund" else "DEAL"
+        lvl_cls = (
+            "lvl fund" if level == "deal"
+            else "lvl market" if level == "market"
+            else "lvl"
+        )
+        lvl_txt = (
+            "DEAL" if level == "deal"
+            else "MARKET" if level == "market"
+            else "—"
+        )
         row_html = "".join(
             f'<tr><td class="lbl">{label}</td>'
             f'<td class="r"'
@@ -663,11 +799,12 @@ def _catalog_section() -> str:
     return (
         '<section id="modules">'
         + _sect(
-            "MODULE CATALOG",
-            "Every <em>number</em><br/>has a home.",
-            "Cross-reference of fund- and deal-level metrics with their "
-            "visualization anchors. The catalog is the spine of the Command "
-            "Center &mdash; click any row in the live app to scroll its source.",
+            "PROFILE CATALOG",
+            "Every <em>insight</em><br/>has context.",
+            "Organize research by target, market, customer segment, "
+            "competitor, workstream, and client priority. The catalog is "
+            "the spine of the deal workspace &mdash; click any row in "
+            "the live app to scroll to its underlying source.",
         )
         + f'<div class="catalog">{cols_html}</div>'
         + '</section>'
@@ -676,9 +813,9 @@ def _catalog_section() -> str:
 
 def _pull_quote() -> str:
     stats = [
-        ("$24.4M", "EBITDA drag identified"),
-        ("+$7.0M", "Modeled recovery, base case"),
-        ("4 quarters", "To close half the gap"),
+        ("3 hours", "Saved per profile, on average"),
+        ("100%", "Of claims traceable to a source"),
+        ("1 workspace", "Replaces 6+ decks per engagement"),
     ]
     stats_html = "".join(
         f'<div><div class="stat-v">{v}</div>'
@@ -688,11 +825,12 @@ def _pull_quote() -> str:
     return (
         '<section class="pull">'
         '<div>'
-        '<q>The covenant heatmap caught the EBITDA-to-plan drift two quarters '
-        'before our last operator review would have. We re-priced the bridge '
-        'that week.</q>'
-        '<div class="attr"><b>Operating Partner</b>'
-        'Healthcare Opportunity Fund II</div>'
+        '<q>The profile gave us a market view, target context, and '
+        'client-specific talking points before the first diligence '
+        'readout. We stopped rebuilding the story from scratch every '
+        'engagement.</q>'
+        '<div class="attr"><b>Director, Commercial Diligence</b>'
+        'Strategy Consulting Firm</div>'
         '</div>'
         f'<div class="stats">{stats_html}</div>'
         '</section>'
@@ -702,28 +840,34 @@ def _pull_quote() -> str:
 def _sources_section() -> str:
     funnel = _funnel([
         ("HCRIS", "2,847", "cost reports", 100, ""),
-        ("APCD", "14", "state feeds", 50, ""),
-        ("CMS-MA", "312", "enrollment", 35, ""),
-        ("portfolio.db", "7", "tables", 25, ""),
-        ("simulations", "10k", "runs", 75, ""),
+        ("Market reports", "184", "sector briefs", 70, ""),
+        ("Interviews", "26", "calls logged", 35, ""),
+        ("Filings", "412", "10-K / S-1", 55, ""),
+        ("Internal notes", "98", "engagements", 80, ""),
     ], columns=5)
     rows = (
-        '<tr><td class="lbl">HCRIS cost reports</td><td class="r">2,847</td></tr>'
-        '<tr><td class="lbl">APCD claims (14 states)</td><td class="r">38.2M</td></tr>'
-        '<tr><td class="lbl">CMS-MA enrollment</td><td class="r">312 cnty</td></tr>'
-        '<tr><td class="lbl">portfolio.db tables</td><td class="r">7</td></tr>'
+        '<tr><td class="lbl">CMS public data (HCRIS, MA, CMS-Compare)</td>'
+        '<td class="r">2,847</td></tr>'
+        '<tr><td class="lbl">Sector + market research reports</td>'
+        '<td class="r">184</td></tr>'
+        '<tr><td class="lbl">Customer / channel / competitor interviews</td>'
+        '<td class="r">26</td></tr>'
+        '<tr><td class="lbl">SEC filings (10-K, S-1, proxies)</td>'
+        '<td class="r">412</td></tr>'
         '<tr class="hot">'
         '<td class="lbl" style="font-weight:700; color:var(--ink)">'
-        'simulations.csv runs</td>'
-        '<td class="r" style="font-weight:700">10,000</td></tr>'
+        'Internal engagement notes &amp; decks</td>'
+        '<td class="r" style="font-weight:700">98</td></tr>'
     )
     return (
         '<section id="sources">'
         + _sect(
-            "DATA SOURCES",
-            "Public data, <em>cited inline</em>.",
-            "Every number traces back to a public filing or simulation. No "
-            "PHI, no proprietary data, no SaaS calls. The model is yours.",
+            "SOURCE LIBRARY",
+            "Every claim, <em>cited inline</em>.",
+            "Filings, market research, interviews, benchmarks, and "
+            "engagement notes &mdash; every number traces back to its "
+            "underlying source. No PHI, no proprietary data leaving the "
+            "workspace, no SaaS lock-in. The intelligence layer is yours.",
         )
         + '<div class="pair">'
         f'<div class="viz">{funnel}</div>'
@@ -741,11 +885,12 @@ def _cta_strip() -> str:
     return (
         '<section class="cta-strip">'
         '<div>'
-        '<div class="micro">READY TO OPEN THE CONSOLE</div>'
-        '<h3>Bring your <em>own model</em>.<br/>'
-        'Keep your <em>own data</em>.</h3>'
-        '<p>Sign in to your partner instance. Public data is preloaded '
-        '&mdash; connect your private feeds when you\'re ready.</p>'
+        '<div class="micro">READY TO OPEN A WORKSPACE</div>'
+        '<h3>Bring the <em>research</em>.<br/>'
+        'Keep the <em>client view</em>.</h3>'
+        '<p>Sign in to your team workspace. Public sources are preloaded '
+        '&mdash; connect CRM, market data, or research feeds when you\'re '
+        'ready.</p>'
         '</div>'
         '<div class="cta-strip-actions">'
         f'<a href="{_LOGIN}" class="cta-light">Sign In &rarr;</a>'
@@ -758,11 +903,11 @@ def _cta_strip() -> str:
 def _footer() -> str:
     return (
         '<footer>'
-        '<span>PE <em>Desk</em> v1.0.0 &mdash; Healthcare diligence, '
-        'instrument-grade</span>'
+        '<span>PE <em>Desk</em> v1.0.0 &mdash; Commercial diligence, '
+        'personalized to every deal</span>'
         '<span class="mono" style="font-size:.75rem">'
-        'HCRIS &middot; APCD &middot; CMS-MA &middot; simulations.csv '
-        '&middot; portfolio.db</span>'
+        'CMS public data &middot; market reports &middot; filings '
+        '&middot; interviews &middot; engagement notes</span>'
         '</footer>'
     )
 
@@ -779,11 +924,14 @@ def render_marketing_page() -> str:
         '<!doctype html><html lang="en"><head>'
         '<meta charset="utf-8"/>'
         '<meta name="viewport" content="width=device-width, initial-scale=1"/>'
-        '<title>PE Desk &mdash; Healthcare diligence, instrument-grade</title>'
-        '<meta name="description" content="PE Desk is the diligence and '
-        'portfolio-operations platform for healthcare-focused private equity. '
-        'Sourced through hold, in one canvas — weighted MOIC, covenant '
-        'heatmaps, EBITDA drag decomposition, public data cited inline.">'
+        '<title>PE Desk &mdash; Commercial diligence, personalized '
+        'to every deal</title>'
+        '<meta name="description" content="PE Desk is the commercial '
+        'diligence intelligence layer for client-facing deal teams. '
+        'Build living target-company profiles with market research, '
+        'customer signals, benchmarks, competitive context, client '
+        'priorities, and source-backed notes — organized around the '
+        'opportunity at hand.">'
         + _FONTS
         + _STYLE
         + '</head><body>'
