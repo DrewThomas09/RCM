@@ -606,7 +606,11 @@ class TestPostForms(unittest.TestCase):
             try:
                 with urllib.request.urlopen(f"http://127.0.0.1:{port}/search") as r:
                     body = r.read().decode()
-                    self.assertIn("Portfolio-wide search", body)
+                    # Editorial refactor: eyebrow "PORTFOLIO-WIDE" +
+                    # meta "Type a query to scan…"; the legacy
+                    # subtitle "Portfolio-wide search" lives in
+                    # chartis_shell metadata, not the visible body.
+                    self.assertIn("PORTFOLIO-WIDE", body)
                     self.assertIn("Type a query", body)
             finally:
                 server.shutdown()
@@ -622,7 +626,10 @@ class TestPostForms(unittest.TestCase):
                 ) as r:
                     body = r.read().decode()
                     self.assertIn("ccf_2026", body)
-                    self.assertIn("Deal matches", body)
+                    # Editorial refactor: section header is now
+                    # "<h2>Deals</h2>" with a hit count badge,
+                    # not "Deal matches".
+                    self.assertIn(">Deals<", body)
             finally:
                 server.shutdown()
                 server.server_close()
@@ -640,7 +647,9 @@ class TestPostForms(unittest.TestCase):
                     f"http://127.0.0.1:{port}/search?q=working-capital"
                 ) as r:
                     body = r.read().decode()
-                    self.assertIn("Note matches", body)
+                    # Editorial refactor: section header is now
+                    # "<h2>Notes</h2>", not "Note matches".
+                    self.assertIn(">Notes<", body)
                     self.assertIn("working-capital release", body)
                     # Link back to the deal page
                     self.assertIn('href="/deal/ccf_2026"', body)
@@ -753,20 +762,15 @@ class TestPostForms(unittest.TestCase):
                 server.shutdown()
                 server.server_close()
 
-    def test_dashboard_ships_tag_datalist(self):
-        """Autocomplete: dashboard exposes a <datalist id='rcm-tag-datalist'>."""
-        with tempfile.TemporaryDirectory() as tmp:
-            _seed(tmp)
-            server, _, port = _start_server(os.path.join(tmp, "p.db"))
-            try:
-                with urllib.request.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
-                    body = r.read().decode()
-                    self.assertIn('id="rcm-tag-datalist"', body)
-                    # Bulk tag input points at the datalist
-                    self.assertIn('list="rcm-tag-datalist"', body)
-            finally:
-                server.shutdown()
-                server.server_close()
+    # B70/B97 dashboard tag-autocomplete + bulk-bar test removed —
+    # the legacy dashboard surface (inline new-deal form, bulk
+    # operations row, tag-datalist autocomplete, filter
+    # localStorage persistence, live-mode meta-refresh, in-dashboard
+    # search hint) was intentionally retired in the editorial
+    # refactor. Tag editing now happens on the deal page; bulk ops
+    # live on /portfolio. The renderer no longer emits these
+    # markers and the corresponding tests have been deleted.
+
 
     def test_bulk_tag_add_applies_to_multiple_deals(self):
         """B97: POST /api/bulk/tags/add tags every deal_id in the list."""
@@ -858,35 +862,12 @@ class TestPostForms(unittest.TestCase):
                 server.shutdown()
                 server.server_close()
 
-    def test_dashboard_renders_bulk_bar_and_checkboxes(self):
-        """B97: dashboard has the bulk-select checkboxes + floating bar."""
-        with tempfile.TemporaryDirectory() as tmp:
-            _seed(tmp)
-            server, _, port = _start_server(os.path.join(tmp, "p.db"))
-            try:
-                with urllib.request.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
-                    body = r.read().decode()
-                    self.assertIn("rcm-bulk-select", body)
-                    self.assertIn("rcm-bulk-bar", body)
-                    self.assertIn('action="/api/bulk/tags/add"', body)
-                    self.assertIn('id="rcm-bulk-all"', body)
-            finally:
-                server.shutdown()
-                server.server_close()
+    # B97 dashboard bulk-bar + B96 filter-localStorage tests removed.
+    # The dashboard no longer hosts the bulk-select checkbox row or
+    # the inline filter widget — bulk ops moved to /portfolio, and
+    # the dashboard is now an editorial landing surface (curated
+    # insights + system status), not a deal-list view.
 
-    def test_dashboard_persists_filter_state_in_localstorage(self):
-        """B96: filter JS reads/writes localStorage key for persistence."""
-        with tempfile.TemporaryDirectory() as tmp:
-            _seed(tmp)
-            server, _, port = _start_server(os.path.join(tmp, "p.db"))
-            try:
-                with urllib.request.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
-                    body = r.read().decode()
-                    self.assertIn("rcm-mc-filter-v1", body)
-                    self.assertIn("localStorage", body)
-            finally:
-                server.shutdown()
-                server.server_close()
 
     def test_ops_page_shows_store_stats(self):
         """B94: /ops renders deal / snapshot / notes counts + DB size."""
@@ -1050,25 +1031,11 @@ class TestPostForms(unittest.TestCase):
                 server.shutdown()
                 server.server_close()
 
-    def test_dashboard_includes_tag_filter_and_export_link(self):
-        """B87 + B88: dashboard filter bar has tag input + export CSV button."""
-        with tempfile.TemporaryDirectory() as tmp:
-            _seed(tmp)
-            from rcm_mc.deals.deal_tags import add_tag
-            store = PortfolioStore(os.path.join(tmp, "p.db"))
-            add_tag(store, "ccf_2026", "growth")
-            server, _, port = _start_server(os.path.join(tmp, "p.db"))
-            try:
-                with urllib.request.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
-                    body = r.read().decode()
-                    self.assertIn("rcm-filter-tag", body)
-                    self.assertIn("rcm-export-link", body)
-                    self.assertIn('data-tags="growth"', body)
-                    # Tag pill rendered next to deal ID
-                    self.assertIn(">growth<", body)
-            finally:
-                server.shutdown()
-                server.server_close()
+    # B87+B88 dashboard tag-filter + CSV export-link test removed.
+    # Filtering by tag moved to /portfolio; export menus are now
+    # surfaced via the editorial export_menu helper (rendered
+    # per-page) rather than an inline dashboard chip.
+
 
     def test_api_export_csv_with_filters(self):
         """B88: filtered CSV matches query params."""
@@ -1272,19 +1239,13 @@ class TestPostForms(unittest.TestCase):
                 server.shutdown()
                 server.server_close()
 
-    def test_live_mode_injects_meta_refresh(self):
-        """B72: /?live=1 adds an auto-refresh meta tag."""
-        with tempfile.TemporaryDirectory() as tmp:
-            _seed(tmp)
-            server, _, port = _start_server(os.path.join(tmp, "p.db"))
-            try:
-                with urllib.request.urlopen(f"http://127.0.0.1:{port}/?live=1") as r:
-                    body = r.read().decode()
-                    self.assertIn('http-equiv="refresh"', body)
-                    self.assertIn("Live mode", body)
-            finally:
-                server.shutdown()
-                server.server_close()
+    # B72 live-mode meta-refresh test removed. The auto-refresh
+    # behavior on `/?live=1` was retired during the editorial
+    # refactor (it conflicted with the marketing splash route, and
+    # partners use Cmd+R or the data-freshness card on /dashboard
+    # to know when to reload). Negative-control test_live_mode_off_by_default
+    # below stays — it still asserts that the default render does
+    # NOT inject a refresh tag.
 
     def test_live_mode_off_by_default(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1420,21 +1381,11 @@ class TestPostForms(unittest.TestCase):
                 server.shutdown()
                 server.server_close()
 
-    def test_dashboard_includes_new_deal_card(self):
-        """B70: dashboard carries a collapsible 'Register new deal' form."""
-        with tempfile.TemporaryDirectory() as tmp:
-            _seed(tmp)
-            server, _, port = _start_server(os.path.join(tmp, "p.db"))
-            try:
-                with urllib.request.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
-                    body = r.read().decode()
-                    self.assertIn("Register a new deal", body)
-                    self.assertIn("<details", body)
-                    self.assertIn('name="deal_id"', body)
-                    self.assertIn('name="stage"', body)
-            finally:
-                server.shutdown()
-                server.server_close()
+    # B70 inline new-deal-registration form on dashboard removed.
+    # Deal creation now lives in the onboarding wizard
+    # (/onboarding/intake) rather than as a <details> on the
+    # editorial dashboard surface. The wizard is exercised by
+    # tests/test_onboarding_wizard*.
 
     def test_deal_page_renders_forms(self):
         """GET /deal/<id> must include both POST forms."""
