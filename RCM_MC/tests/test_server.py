@@ -138,7 +138,7 @@ class TestLiveRoutes(unittest.TestCase):
             _seed(tmp)
             server, _, port = _start_server(os.path.join(tmp, "p.db"))
             try:
-                with urllib.request.urlopen(f"http://127.0.0.1:{port}/") as r:
+                with urllib.request.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
                     self.assertEqual(r.status, 200)
                     body = r.read().decode()
                     self.assertIn("Portfolio", body)
@@ -382,7 +382,7 @@ class TestBasicAuth(unittest.TestCase):
             )
             try:
                 with self.assertRaises(HTTPError) as ctx:
-                    urllib.request.urlopen(f"http://127.0.0.1:{port}/")
+                    urllib.request.urlopen(f"http://127.0.0.1:{port}/dashboard")
                 self.assertEqual(ctx.exception.code, 401)
                 self.assertIn(
                     "Basic realm",
@@ -401,8 +401,11 @@ class TestBasicAuth(unittest.TestCase):
             )
             try:
                 token = base64.b64encode(b"alice:wonderland").decode()
+                # `/` is a public splash and bypasses the auth gate;
+                # hit an auth-walled surface so we're actually testing
+                # that creds are accepted (not just the bypass).
                 req = urllib.request.Request(
-                    f"http://127.0.0.1:{port}/",
+                    f"http://127.0.0.1:{port}/dashboard",
                     headers={"Authorization": f"Basic {token}"},
                 )
                 with urllib.request.urlopen(req) as r:
@@ -419,8 +422,11 @@ class TestBasicAuth(unittest.TestCase):
             )
             try:
                 token = base64.b64encode(b"alice:nope").decode()
+                # `/` is intentionally a public marketing splash and
+                # bypasses the auth gate (server.py:_auth_ok). Hit an
+                # actually auth-walled surface to verify the gate.
                 req = urllib.request.Request(
-                    f"http://127.0.0.1:{port}/",
+                    f"http://127.0.0.1:{port}/dashboard",
                     headers={"Authorization": f"Basic {token}"},
                 )
                 with self.assertRaises(HTTPError) as ctx:
@@ -451,7 +457,7 @@ class TestBasicAuth(unittest.TestCase):
             _seed(tmp)
             server, _, port = _start_server(os.path.join(tmp, "p.db"))
             try:
-                with urllib.request.urlopen(f"http://127.0.0.1:{port}/") as r:
+                with urllib.request.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
                     self.assertEqual(r.status, 200)
             finally:
                 server.shutdown()
@@ -463,8 +469,10 @@ class TestBasicAuth(unittest.TestCase):
                 os.path.join(tmp, "p.db"), "alice:wonderland",
             )
             try:
+                # `/` is intentionally a public marketing splash and
+                # bypasses the auth gate; hit an auth-walled surface.
                 req = urllib.request.Request(
-                    f"http://127.0.0.1:{port}/",
+                    f"http://127.0.0.1:{port}/dashboard",
                     headers={"Authorization": "NotBasic garbage"},
                 )
                 with self.assertRaises(HTTPError) as ctx:
@@ -751,7 +759,7 @@ class TestPostForms(unittest.TestCase):
             _seed(tmp)
             server, _, port = _start_server(os.path.join(tmp, "p.db"))
             try:
-                with urllib.request.urlopen(f"http://127.0.0.1:{port}/") as r:
+                with urllib.request.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
                     body = r.read().decode()
                     self.assertIn('id="rcm-tag-datalist"', body)
                     # Bulk tag input points at the datalist
@@ -856,7 +864,7 @@ class TestPostForms(unittest.TestCase):
             _seed(tmp)
             server, _, port = _start_server(os.path.join(tmp, "p.db"))
             try:
-                with urllib.request.urlopen(f"http://127.0.0.1:{port}/") as r:
+                with urllib.request.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
                     body = r.read().decode()
                     self.assertIn("rcm-bulk-select", body)
                     self.assertIn("rcm-bulk-bar", body)
@@ -872,7 +880,7 @@ class TestPostForms(unittest.TestCase):
             _seed(tmp)
             server, _, port = _start_server(os.path.join(tmp, "p.db"))
             try:
-                with urllib.request.urlopen(f"http://127.0.0.1:{port}/") as r:
+                with urllib.request.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
                     body = r.read().decode()
                     self.assertIn("rcm-mc-filter-v1", body)
                     self.assertIn("localStorage", body)
@@ -1051,7 +1059,7 @@ class TestPostForms(unittest.TestCase):
             add_tag(store, "ccf_2026", "growth")
             server, _, port = _start_server(os.path.join(tmp, "p.db"))
             try:
-                with urllib.request.urlopen(f"http://127.0.0.1:{port}/") as r:
+                with urllib.request.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
                     body = r.read().decode()
                     self.assertIn("rcm-filter-tag", body)
                     self.assertIn("rcm-export-link", body)
@@ -1283,7 +1291,7 @@ class TestPostForms(unittest.TestCase):
             _seed(tmp)
             server, _, port = _start_server(os.path.join(tmp, "p.db"))
             try:
-                with urllib.request.urlopen(f"http://127.0.0.1:{port}/") as r:
+                with urllib.request.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
                     body = r.read().decode()
                     self.assertNotIn('http-equiv="refresh"', body)
             finally:
@@ -1418,7 +1426,7 @@ class TestPostForms(unittest.TestCase):
             _seed(tmp)
             server, _, port = _start_server(os.path.join(tmp, "p.db"))
             try:
-                with urllib.request.urlopen(f"http://127.0.0.1:{port}/") as r:
+                with urllib.request.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
                     body = r.read().decode()
                     self.assertIn("Register a new deal", body)
                     self.assertIn("<details", body)
