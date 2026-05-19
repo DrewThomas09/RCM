@@ -175,10 +175,13 @@ def check_login_round_trip(
 # These are the load-bearing strings the chartis_shell topbar
 # always emits — if any one is missing the partner is staring at
 # either a 404, the legacy dark shell, or a 500.
+#
+# Brand wordmark was renamed from "Seeking<em>Chartis</em>" → "PE<em>Desk</em>"
+# in the platform repositioning; the marker tracks the current emission.
 _CHROME_MARKERS = (
     'class="ck-topbar"',
     'class="ck-wordmark"',
-    "Seeking<em>Chartis</em>",
+    "PE<em>Desk</em>",
     "ck-nav",
 )
 
