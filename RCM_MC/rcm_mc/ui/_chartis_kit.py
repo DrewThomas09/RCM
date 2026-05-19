@@ -4712,6 +4712,12 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
     # "/analysis"). Normalise to a section key so we can look up
     # _SUB_NAV regardless of caller. Falls back to nothing if the
     # section has no entry (e.g. /login, /admin, debug pages).
+    # Workspace-mode label for the user-dropdown quick-switch item.
+    from ._workspace_mode import current_workspace_mode, MODE_LABELS
+    _ws_mode_label = MODE_LABELS.get(
+        current_workspace_mode(), "PE Partner",
+    )
+
     sub_section = _resolve_sub_section(active_nav)
     sub_links_html = ""
     if sub_section and sub_section in _SUB_NAV:
@@ -4761,6 +4767,8 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '<a href="/my/AT" class="ck-user-dropdown-item">My Dashboard</a>'
         '<a href="/tools" class="ck-user-dropdown-item">All Tools &middot; ⌘K</a>'
         '<a href="/methodology" class="ck-user-dropdown-item">Methodology</a>'
+        f'<a href="/settings/workspace" class="ck-user-dropdown-item">'
+        f'Workspace: {_esc(_ws_mode_label)}</a>'
         '<a href="/admin" class="ck-user-dropdown-item">Admin</a>'
         '<a href="/audit" class="ck-user-dropdown-item">Audit Log</a>'
         '<div class="ck-user-dropdown-divider"></div>'
