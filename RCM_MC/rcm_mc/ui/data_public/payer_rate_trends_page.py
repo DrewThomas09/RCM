@@ -283,7 +283,6 @@ def render_payer_rate_trends() -> str:
 
     body = f"""
 <div style="padding:16px 20px;max-width:1200px">
-  {ck_section_header("PAYER RATE TRENDS", f"Commercial vs. government payer mix evolution — {len(corpus)} transactions", None)}
   {kpi_strip}
 
   <div style="margin-bottom:20px;background:{P['panel_alt']};border:1px solid {P['border']};padding:12px">

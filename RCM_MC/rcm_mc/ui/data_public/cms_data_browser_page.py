@@ -176,15 +176,18 @@ def render_cms_data_browser(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
-    page_title = ck_page_title(
-        "CMS Public Data Browser",
-        eyebrow="CMS DATA BROWSER",
-        meta=f"{r.total_datasets} CMS datasets ({r.datasets_active} active) · {r.total_records_mm:,}M records aggregate · {len(r.connections)} API connections · last full refresh {r.last_full_refresh[:10]}",
+    # Page title now auto-injected by chartis_shell via the
+    # editorial_intro kwarg (PR #244) — no manual ck_page_title
+    # here so the title can't render below the explainer paragraph.
+    meta_line = (
+        f"{r.total_datasets} CMS datasets ({r.datasets_active} active) "
+        f"· {r.total_records_mm:,}M records aggregate · "
+        f"{len(r.connections)} API connections · last full refresh "
+        f"{r.last_full_refresh[:10]}"
     )
 
     body = f"""
 <div class="ck-page-wrap">
-  {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Dataset Catalog</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Medicare PFS — Fee Schedule Sample (2025)</div>{f_tbl}</div>
@@ -201,20 +204,25 @@ def render_cms_data_browser(params: dict = None) -> str:
   </div>
 </div>"""
 
-    explainer = render_page_explainer(
-        what=(
-            "Inventory of CMS public datasets available to the "
-            "platform: dataset name, update frequency, last refresh, "
-            "record count, primary use case, and ingestion status "
-            "across PFS, OPPS, MS-DRG, HCRIS, and quality-measure "
-            "feeds."
-        ),
-        source="data_public/cms_data_browser.py; CMS.gov public-data APIs.",
-        page_key="cms-data-browser",
-    )
-    return chartis_shell(explainer + body, "CMS Data Browser", active_nav="/cms-data-browser",
+    # The page explainer is verbose and duplicates the editorial
+    # deck headline + the meta_line. Drop it; the shell-injected
+    # title, eyebrow, meta, and deck cover the same ground without
+    # the noise.
+    return chartis_shell(
+        body, "CMS Public Data Browser",
+        active_nav="/cms-data-browser",
+        subtitle=meta_line,
         editorial_intro={
             "eyebrow": "CMS DATA BROWSER",
-            "headline": "What the cms data browser page reveals on this deal.",
-            "italic_word": "reveals",
-        })
+            "headline": (
+                "Inventory of CMS public datasets the platform pulls."
+            ),
+            "italic_word": "datasets",
+            "body": (
+                "Update frequency, last refresh, record count, primary "
+                "use case, and ingestion status across PFS, OPPS, "
+                "MS-DRG, HCRIS, and quality-measure feeds. Source: "
+                "data_public/cms_data_browser.py + CMS.gov public APIs."
+            ),
+        },
+    )

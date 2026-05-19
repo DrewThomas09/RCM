@@ -352,7 +352,6 @@ def render_irr_dispersion() -> str:
     )
     body = f"""
 <div>
-  {ck_section_header("IRR DISPERSION ANALYSIS", f"Realized IRR distribution — {len(corpus)} corpus transactions", None)}
   {kpi_strip}
 
   {irr_paired}

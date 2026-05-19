@@ -423,7 +423,6 @@ def render_ic_memo_gen(params: Dict[str, str]) -> str:
 
     body = f"""
 <div style="padding:16px 20px;max-width:1200px">
-  {ck_section_header("IC MEMO GENERATOR", f"Corpus-benchmarked investment committee analysis — {705} transactions", None)}
   <div style="background:{P['panel']};border:1px solid {P['border']};padding:14px;margin-bottom:16px">
     <div style="font-size:9px;color:{P['text_dim']};font-family:{_SANS};letter-spacing:.08em;margin-bottom:10px">DEAL INPUTS</div>
     {_input_form(params)}

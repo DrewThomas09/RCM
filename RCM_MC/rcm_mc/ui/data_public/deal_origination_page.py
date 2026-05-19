@@ -184,73 +184,18 @@ def render_deal_origination(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
-    # B11 — replace bespoke .ck-page-h1 inline HTML with the editorial-
-    # kit ck_page_title primitive (same anti-pattern as deal_pipeline,
-    # PR #160). Title preserves the "Deal Origination / M&A Pipeline
-    # Tracker" identity from the inline h1 (ck_page_title escapes `&`
-    # internally so passing the literal "&" works). Meta packs the
-    # four most-load-bearing pipeline-EV stats already on the result
-    # object `r` — gives partners landing on /deal-origination an
-    # immediate quantitative read on pipeline size + active count.
-    page_title = ck_page_title(
-        "Deal Origination / M&A Pipeline Tracker",
-        eyebrow="DEAL ORIGINATION",
-        meta=(
-            f"${r.total_pipeline_ev_mm:,.0f}M active pipeline · "
-            f"${r.weighted_pipeline_ev_mm:,.0f}M weighted · "
-            f"{r.active_deals} active deals · "
-            f"{r.corpus_deal_count:,} corpus deals"
-        ),
-    )
-
-    # "About this page" callout — addresses the partner question
-    # "where is this data coming from and what is it for?" The
-    # pipeline, banker, whitespace, win/loss, and velocity tables
-    # are illustrative seed data (see _build_* in
-    # data_public/deal_origination.py); only the corpus_deal_count
-    # KPI is the live seeded corpus loader. Calling that out
-    # explicitly in `source` keeps the page from feeling like
-    # mystery numbers — partners see the same dashboard a real
-    # fund would render once their CRM / pipeline tracker /
-    # banker CRM data is wired in.
-    explainer = render_page_explainer(
-        what=(
-            "The deal-flow control panel a healthcare-PE fund runs "
-            "every Monday morning — the active pipeline by stage and "
-            "probability, banker relationship scorecard, sector "
-            "whitespace ranking, win/loss diagnosis, and quarterly "
-            "sourcing velocity (screened → diligenced → LOI → close)."
-        ),
-        use=(
-            "Decide where origination effort goes this quarter. Which "
-            "banker channels deserve more touch (high win-rate, low "
-            "engagement)? Which sectors are under-banked relative to "
-            "platform whitespace (Fertility, Behavioral, Women's "
-            "Health)? Are losses concentrated in price, strategy, or "
-            "seller-relationship — i.e. is the auction discipline or "
-            "the relationship-coverage model the bottleneck? Track "
-            "screen-to-close conversion against the 1–2% industry "
-            "norm to size top-of-funnel."
-        ),
-        source=(
-            "Pipeline, banker scorecard, whitespace ranking, win/loss "
-            "breakdown, and velocity series are illustrative seed data "
-            "in rcm_mc/data_public/deal_origination.py — replace the "
-            "_build_pipeline / _build_bankers / _build_whitespace / "
-            "_build_winloss / _build_velocity functions with reads "
-            "against your CRM (Salesforce, DealCloud, Affinity) and "
-            "banker-tracking sheet to make this surface live. The "
-            "Corpus Deals KPI is the only live number — counts the "
-            "seeded healthcare deal corpus loaded by "
-            "data_public/extended_seed_*."
-        ),
-        page_key="deal-origination",
+    # Title + explainer auto-injected by chartis_shell via
+    # editorial_intro (PR #244). Page-level meta line packs the four
+    # most-load-bearing pipeline-EV stats from `r`.
+    meta_line = (
+        f"${r.total_pipeline_ev_mm:,.0f}M active pipeline · "
+        f"${r.weighted_pipeline_ev_mm:,.0f}M weighted · "
+        f"{r.active_deals} active deals · "
+        f"{r.corpus_deal_count:,} corpus deals"
     )
 
     body = f"""
 <div class="ck-page-wrap">
-  {page_title}
-  {explainer}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Sourcing Funnel — Latest Quarter</div>{funnel_svg}</div>
   <div style="{cell}"><div style="{h3}">Active Pipeline — Stage, Probability, Weighted EV</div>{pl_tbl}</div>
@@ -268,9 +213,23 @@ def render_deal_origination(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Deal Origination", active_nav="/deal-origination",
+    return chartis_shell(
+        body, "Deal Origination / M&A Pipeline Tracker",
+        active_nav="/deal-origination",
+        subtitle=meta_line,
         editorial_intro={
             "eyebrow": "DEAL ORIGINATION",
-            "headline": "What the deal origination page reveals on this deal.",
-            "italic_word": "reveals",
-        })
+            "headline": "The deal-flow control panel for Monday morning.",
+            "italic_word": "control",
+            "body": (
+                "Active pipeline by stage and probability, banker "
+                "relationship scorecard, sector whitespace, win/loss "
+                "diagnosis, and screened→diligenced→LOI→close velocity. "
+                "Use it to decide where origination effort goes this "
+                "quarter. Pipeline / banker / whitespace / velocity "
+                "tables are seed data in data_public/deal_origination.py "
+                "— swap _build_* for CRM reads to make live. Corpus "
+                "Deals is the only live KPI."
+            ),
+        },
+    )
