@@ -54,8 +54,10 @@ class TestProvenanceBadgeWithDataPoint(unittest.TestCase):
         html = provenance_badge(self._datapoint())
         # 84% confidence
         self.assertIn("84%", html)
-        # Watch-band background since 0.60 ≤ 0.84 < 0.85
-        self.assertIn("#92400e", html)
+        # Watch-band background since 0.60 ≤ 0.84 < 0.85.
+        # Editorial rebuild moved literal hex (#92400e) onto a
+        # CSS variable (var(--amber)) — assert against the token.
+        self.assertIn("var(--amber)", html)
 
     def test_explicit_value_html(self):
         from rcm_mc.ui.provenance_badge import (
@@ -83,9 +85,10 @@ class TestProvenanceWithDict(unittest.TestCase):
         self.assertIn("42.5", html)
         self.assertIn("HCRIS public data", html)
         self.assertIn("n = 5,000", html)
-        # Confidence 100% → positive band
+        # Confidence 100% → positive band. Editorial rebuild
+        # swapped literal hex (#065f46) for CSS token (var(--green)).
         self.assertIn("100%", html)
-        self.assertIn("#065f46", html)
+        self.assertIn("var(--green)", html)
 
 
 class TestProvenanceUpstream(unittest.TestCase):
@@ -130,13 +133,16 @@ class TestIconOnly(unittest.TestCase):
 
 class TestConfidenceBands(unittest.TestCase):
     def test_high_confidence_green(self):
+        # Editorial rebuild moved _confidence_color from literal
+        # hex (#10b981) to CSS token (var(--green)) so theming
+        # flows through the design-token system.
         from rcm_mc.ui.provenance_badge import (
             _confidence_kind, _confidence_color,
         )
         self.assertEqual(
             _confidence_kind(0.92), "positive")
         self.assertEqual(
-            _confidence_color(0.92), "#10b981")
+            _confidence_color(0.92), "var(--green)")
 
     def test_medium_confidence_amber(self):
         from rcm_mc.ui.provenance_badge import (
