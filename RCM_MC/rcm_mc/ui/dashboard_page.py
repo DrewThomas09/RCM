@@ -2527,7 +2527,7 @@ def render_dashboard(db_path: str, *,
         Full HTML page (passes through `chartis_shell` for consistent
         chrome + PHI banner).
     """
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import chartis_shell, ck_page_title
     from ._export_menu import export_menu
     from . import _web_components as _wc
 
@@ -2542,11 +2542,13 @@ def render_dashboard(db_path: str, *,
 
     workflow_shortcuts = _render_workflow_shortcuts_section(db_path)
 
-    header = _wc.page_header(
+    header = ck_page_title(
         "Dashboard",
-        subtitle=('Private web app — curated analyses, recent runs, '
-                  'system status, and data freshness in one view.'),
-        crumbs=[("Dashboard", None)],
+        eyebrow="PARTNER WORKSPACE · LANDING",
+        meta=(
+            "Curated analyses, recent runs, system status, "
+            "and data freshness — one view."
+        ),
     )
     # Discoverability hint for the command palette — kbd tags need to
     # render as HTML, which page_header's subtitle escapes, so emit
