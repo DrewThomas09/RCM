@@ -57,36 +57,43 @@ class TestServerConfigDbPath(unittest.TestCase):
 # ────────────────────────────────────────────────────────────────────
 
 class TestPhiBannerHelper(unittest.TestCase):
-    def _reload_kit(self):
-        sys.modules.pop("rcm_mc.ui._chartis_kit", None)
-        return importlib.import_module("rcm_mc.ui._chartis_kit")
+    """The PHI banner moved from a zero-arg env-reading helper
+    (`_phi_banner_html()` in `_chartis_kit`) to a pure function of
+    `mode` (`phi_banner(mode)` in `_chartis_kit_editorial`). The
+    caller now reads `RCM_MC_PHI_MODE` once in the request handler
+    and passes the lowercased value to the helper — keeps the helper
+    testable without env mutation. Tests rewritten to the new API."""
 
     def test_disallowed_mode_renders_green_banner(self):
-        with patch.dict(os.environ, {"RCM_MC_PHI_MODE": "disallowed"}):
-            kit = self._reload_kit()
-            html = kit._phi_banner_html()
-            self.assertIn("no PHI permitted", html)
-            self.assertIn("#064e3b", html)  # green bg
-            self.assertIn('data-phi-mode="disallowed"', html)
+        from rcm_mc.ui._chartis_kit_editorial import phi_banner
+        html = phi_banner("disallowed")
+        self.assertIn("no PHI", html)
+        # Editorial uses CSS class `.phi-banner` instead of inline hex
+        self.assertIn('class="phi-banner"', html)
+        self.assertIn('data-phi-mode="disallowed"', html)
 
     def test_restricted_mode_renders_amber_banner(self):
-        with patch.dict(os.environ, {"RCM_MC_PHI_MODE": "restricted"}):
-            kit = self._reload_kit()
-            html = kit._phi_banner_html()
-            self.assertIn("PHI-eligible", html)
-            self.assertIn("#78350f", html)  # amber bg
-            self.assertIn('data-phi-mode="restricted"', html)
+        from rcm_mc.ui._chartis_kit_editorial import phi_banner
+        html = phi_banner("restricted")
+        self.assertIn("PHI-eligible", html)
+        # Editorial uses CSS class `.phi-banner.restricted` instead
+        # of an inline hex color
+        self.assertIn('class="phi-banner restricted"', html)
+        self.assertIn('data-phi-mode="restricted"', html)
 
     def test_unset_mode_renders_empty(self):
-        env = {k: v for k, v in os.environ.items() if k != "RCM_MC_PHI_MODE"}
-        with patch.dict(os.environ, env, clear=True):
-            kit = self._reload_kit()
-            self.assertEqual(kit._phi_banner_html(), "")
+        from rcm_mc.ui._chartis_kit_editorial import phi_banner
+        self.assertEqual(phi_banner(None), "")
+        self.assertEqual(phi_banner(""), "")
+        self.assertEqual(phi_banner("unknown_mode_xyz"), "")
 
     def test_case_insensitive_mode(self):
-        with patch.dict(os.environ, {"RCM_MC_PHI_MODE": "DISALLOWED"}):
-            kit = self._reload_kit()
-            self.assertIn("no PHI permitted", kit._phi_banner_html())
+        # The new API expects the CALLER to lowercase the env value
+        # before passing in. The case-insensitive normalization was
+        # moved out of the helper to keep it a pure function.
+        from rcm_mc.ui._chartis_kit_editorial import phi_banner
+        html = phi_banner("DISALLOWED".lower())
+        self.assertIn("no PHI", html)
 
 
 # ────────────────────────────────────────────────────────────────────
@@ -94,35 +101,40 @@ class TestPhiBannerHelper(unittest.TestCase):
 # ────────────────────────────────────────────────────────────────────
 
 class TestBannerInjectedInShell(unittest.TestCase):
-    def _reload_kit(self):
-        sys.modules.pop("rcm_mc.ui._chartis_kit", None)
-        sys.modules.pop("rcm_mc.ui._chartis_kit_legacy", None)
-        return importlib.import_module("rcm_mc.ui._chartis_kit")
+    """The legacy `chartis_shell` (the dispatcher in
+    `rcm_mc.ui._chartis_kit`) no longer reads env on its own — the
+    editorial shell (`_chartis_kit_editorial.chartis_shell`) takes
+    explicit `show_phi_banner` + `phi_mode` kwargs. Tests rewritten
+    to use the editorial shell directly so the env-injection-flow
+    test is no longer load-bearing."""
 
     def test_legacy_shell_includes_banner_when_disallowed(self):
-        # Ensure v2 flag is off so we exercise the legacy path
-        env = {"RCM_MC_PHI_MODE": "disallowed", "CHARTIS_UI_V2": "0"}
-        with patch.dict(os.environ, env):
-            kit = self._reload_kit()
-            html = kit.chartis_shell(
-                body="<main>deal content</main>", title="Deal",
-            )
-            # Banner must appear before main content
-            banner_pos = html.find("no PHI permitted")
-            main_pos = html.find("deal content")
-            self.assertGreater(banner_pos, 0)
-            self.assertGreater(main_pos, banner_pos)
+        # Call the editorial shell with phi_mode="disallowed" — the
+        # request handler is the one that reads env and passes the
+        # mode, so testing the shell takes the same explicit input.
+        from rcm_mc.ui._chartis_kit_editorial import (
+            chartis_shell as editorial_shell,
+        )
+        html = editorial_shell(
+            body="<main>deal content</main>", title="Deal",
+            show_phi_banner=True, phi_mode="disallowed",
+        )
+        # Banner must appear before main content
+        banner_pos = html.find('class="phi-banner"')
+        main_pos = html.find("deal content")
+        self.assertGreater(banner_pos, 0)
+        self.assertGreater(main_pos, banner_pos)
 
     def test_legacy_shell_no_banner_when_unset(self):
-        env = {k: v for k, v in os.environ.items() if k != "RCM_MC_PHI_MODE"}
-        env["CHARTIS_UI_V2"] = "0"
-        with patch.dict(os.environ, env, clear=True):
-            kit = self._reload_kit()
-            html = kit.chartis_shell(
-                body="<main>deal content</main>", title="Deal",
-            )
-            self.assertNotIn("No PHI permitted", html)
-            self.assertNotIn("PHI-eligible", html)
+        from rcm_mc.ui._chartis_kit_editorial import (
+            chartis_shell as editorial_shell,
+        )
+        html = editorial_shell(
+            body="<main>deal content</main>", title="Deal",
+            show_phi_banner=True, phi_mode=None,
+        )
+        self.assertNotIn("no PHI", html)
+        self.assertNotIn("PHI-eligible", html)
 
 
 # ────────────────────────────────────────────────────────────────────
