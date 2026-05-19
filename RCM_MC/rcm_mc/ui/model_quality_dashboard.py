@@ -88,7 +88,7 @@ def _kpi_card(label: str, value_html: str, sub: str = "") -> str:
     )
     return (
         '<div style="border:1px solid var(--border,#374151);'
-        'background:var(--paper,#1f2937);border-radius:8px;'
+        'background:var(--paper,#F2EDE3);border-radius:8px;'
         'padding:.9rem 1.1rem;flex:1;min-width:170px;">'
         f'<div class="micro">{_html.escape(label)}</div>'
         f'<div style="font-size:1.4rem;font-weight:600;margin-top:.4rem;">'
@@ -266,7 +266,7 @@ def render_model_quality_dashboard(
         body = (
             '<section style="max-width:80rem;">'
             '<h1 style="margin:0 0 .5rem 0;">Model Quality</h1>'
-            '<div style="background:var(--paper,#111827);'
+            '<div style="background:var(--paper,#F2EDE3);'
             'border:1px solid var(--border,#374151);border-radius:8px;'
             'padding:2.5rem;text-align:center;color:var(--muted,#9ca3af);">'
             'No backtest results — run '
@@ -338,7 +338,7 @@ def render_model_quality_dashboard(
     table_html = (
         '<table style="width:100%;border-collapse:collapse;'
         'border:1px solid var(--border,#374151);'
-        'background:var(--paper,#1f2937);border-radius:8px;'
+        'background:var(--paper,#F2EDE3);border-radius:8px;'
         'overflow:hidden;">'
         '<thead>'
         '<tr style="border-bottom:1px solid var(--border,#374151);">'

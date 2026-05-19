@@ -491,7 +491,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
         + _input_form(qs)
         + _suggestions_datalist(records)
         + f'<h2 style="font-size:18px;margin:8px 0 12px;'
-        f'color:#0f172a;">{_html.escape(matched_name)}</h2>'
+        f'color:#1a2332;">{_html.escape(matched_name)}</h2>'
         + stats
         + vintage_card
         + sector_card

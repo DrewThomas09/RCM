@@ -296,7 +296,7 @@ _CHART_JS = """
         var dataUrl = "data:image/svg+xml;base64," +
           btoa(unescape(encodeURIComponent(src)));
         img.onload = function() {
-          ctx.fillStyle = "#0f172a";
+          ctx.fillStyle = "#1a2332";
           ctx.fillRect(0, 0,
             canvas.width, canvas.height);
           ctx.drawImage(img, 0, 0);
@@ -621,10 +621,12 @@ def render_power_chart(
     tooltip_html = (
         f'<div id="{chart_id}-tooltip" '
         f'style="position:absolute;display:none;'
-        f'background:#111827;border:1px solid #374151;'
-        f'border-radius:6px;padding:8px 10px;font-size:11px;'
+        f'background:#FAF7F0;border:1px solid #D6CFC0;'
+        f'color:#1a2332;'
+        f'border-radius:2px;padding:8px 10px;font-size:11px;'
         f'pointer-events:none;z-index:100;'
-        f'box-shadow:0 4px 12px rgba(0,0,0,0.4);"></div>')
+        f'font-family:\'Inter Tight\',\'Inter\',sans-serif;'
+        f'box-shadow:0 8px 20px -8px rgba(15,28,46,.25);"></div>')
 
     config = {
         "x_count": n,

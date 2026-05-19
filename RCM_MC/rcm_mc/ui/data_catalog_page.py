@@ -104,7 +104,7 @@ def _kpi_card(label: str, value_html: str, sub: str = "") -> str:
     )
     return (
         '<div style="border:1px solid var(--border,#374151);'
-        'background:var(--paper,#1f2937);'
+        'background:var(--paper,#F2EDE3);'
         'border-radius:8px;padding:14px 18px;flex:1;min-width:180px;">'
         f'<div class="micro">{_html.escape(label)}</div>'
         f'<div style="font-size:1.5rem;font-weight:600;margin-top:.4rem;">'
@@ -137,7 +137,7 @@ def _source_row(entry: DataSourceEntry) -> str:
 def _empty_state_html() -> str:
     return (
         '<div style="border:1px solid var(--border,#374151);'
-        'background:var(--paper,#111827);border-radius:8px;'
+        'background:var(--paper,#F2EDE3);border-radius:8px;'
         'padding:2.5rem;text-align:center;">'
         '<div style="font-size:1rem;margin-bottom:.5rem;">'
         'No data sources loaded yet</div>'
@@ -248,7 +248,7 @@ def render_data_catalog_page(store: Any) -> str:
                 f'{_html.escape(cat_label)}</h2>'
                 '<table style="width:100%;border-collapse:collapse;'
                 'border:1px solid var(--border,#374151);'
-                'background:var(--paper,#1f2937);border-radius:8px;'
+                'background:var(--paper,#F2EDE3);border-radius:8px;'
                 'overflow:hidden;">'
                 '<thead>'
                 '<tr style="border-bottom:1px solid var(--border,#374151);">'
