@@ -203,6 +203,114 @@ def _dea_frontier_scatter(eff_scores: List[Any]) -> str:
     )
 
 
+def _queue_utilization_chart(queues: List[Any], width: int = 720,
+                             height: int = 220) -> str:
+    """Horizontal utilization bars per queue, tone-coded by threshold.
+
+    >85% util → red (over capacity)
+    >70% util → amber (warning)
+    else      → teal-deep (healthy)
+    Dashed reference line at 70% (warn threshold) and 85% (danger).
+    """
+    if not queues:
+        return ""
+    pad_l, pad_r, pad_t, pad_b = 170, 90, 26, 32
+    plot_w = width - pad_l - pad_r
+    plot_h = height - pad_t - pad_b
+    n = len(queues)
+    row_h = plot_h / n
+
+    bars_svg = ""
+    for i, q in enumerate(queues):
+        util = float(getattr(q, "utilization", 0))
+        cy = pad_t + row_h * i + row_h / 2
+        bw = max(0, min(1.0, util)) * plot_w
+        fill = (
+            "#A53A2D" if util > 0.85
+            else "#b8732a" if util > 0.70
+            else "#155752"
+        )
+        wait = float(getattr(q, "avg_wait_time", 0))
+        bars_svg += (
+            f'<text x="{pad_l - 10}" y="{cy + 3:.1f}" '
+            f'font-family="Inter Tight,sans-serif" font-size="11" '
+            f'font-weight="600" fill="#1a2332" text-anchor="end">'
+            f'{_html.escape(getattr(q, "queue_name", ""))}</text>'
+            f'<rect x="{pad_l}" y="{cy - row_h * 0.28:.1f}" '
+            f'width="{bw:.1f}" height="{row_h * 0.54:.1f}" '
+            f'fill="{fill}" opacity="0.9" rx="1"/>'
+            f'<text x="{pad_l + bw + 6:.1f}" y="{cy + 4:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="10.5" '
+            f'font-weight="700" fill="#1a2332">'
+            f'{util * 100:.0f}%</text>'
+            f'<text x="{pad_l + bw + 6:.1f}" y="{cy + 16:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9" '
+            f'fill="#5C6878">'
+            f'{wait:.1f}d wait</text>'
+        )
+
+    # Threshold reference lines at 70% and 85%
+    warn_x = pad_l + 0.70 * plot_w
+    danger_x = pad_l + 0.85 * plot_w
+    threshold_svg = (
+        f'<line x1="{warn_x:.1f}" y1="{pad_t}" x2="{warn_x:.1f}" '
+        f'y2="{pad_t + plot_h}" stroke="#b8732a" stroke-width="1" '
+        f'stroke-dasharray="3,2" opacity="0.7"/>'
+        f'<text x="{warn_x:.1f}" y="{pad_t - 6}" '
+        f'font-family="Inter Tight,sans-serif" font-size="9" '
+        f'font-weight="700" letter-spacing="0.06em" '
+        f'fill="#b8732a" text-anchor="middle">70%</text>'
+        f'<line x1="{danger_x:.1f}" y1="{pad_t}" x2="{danger_x:.1f}" '
+        f'y2="{pad_t + plot_h}" stroke="#A53A2D" stroke-width="1" '
+        f'stroke-dasharray="3,2" opacity="0.7"/>'
+        f'<text x="{danger_x:.1f}" y="{pad_t - 6}" '
+        f'font-family="Inter Tight,sans-serif" font-size="9" '
+        f'font-weight="700" letter-spacing="0.06em" '
+        f'fill="#A53A2D" text-anchor="middle">85%</text>'
+    )
+
+    # x-axis ticks at 0/25/50/75/100%
+    tick_svg = ""
+    for pct in (0, 25, 50, 75, 100):
+        tx = pad_l + (pct / 100) * plot_w
+        tick_svg += (
+            f'<line x1="{tx:.1f}" y1="{pad_t + plot_h}" x2="{tx:.1f}" '
+            f'y2="{pad_t + plot_h + 4}" stroke="#BFB6A2" stroke-width="0.8"/>'
+            f'<text x="{tx:.1f}" y="{pad_t + plot_h + 16}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9" '
+            f'fill="#5C6878" text-anchor="middle">{pct}%</text>'
+        )
+
+    base_svg = (
+        f'<line x1="{pad_l}" y1="{pad_t + plot_h}" x2="{pad_l + plot_w}" '
+        f'y2="{pad_t + plot_h}" stroke="#BFB6A2" stroke-width="1"/>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="width:100%;max-width:{width}px;height:auto;display:block;'
+        f'margin:0 auto 1rem;">'
+        f'{threshold_svg}{bars_svg}{base_svg}{tick_svg}</svg>'
+    )
+
+
+_QL_CHART_CAPTION_CSS = """
+<style>
+.ql-chart-caption {
+  font-family: "Inter Tight","Inter",sans-serif;
+  font-size: .72rem; color: #5C6878;
+  text-align: center; letter-spacing: 0.06em;
+  text-transform: uppercase; margin: -.5rem 0 1.25rem;
+}
+@media print {
+  .ql-chart-caption { color: #1a2332; }
+  svg { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+"""
+
+
 def _np_log(v: float) -> float:
     """Wrapper used so callers can override for tests; pulls in math."""
     import math
@@ -313,11 +421,18 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
             f'</tr>'
         )
 
+    queue_chart = _queue_utilization_chart(queues)
+    queue_caption = (
+        '<div class="ql-chart-caption">'
+        'Utilization per queue · dashed lines mark 70% (warn) + 85% (over-capacity)'
+        '</div>'
+    ) if queue_chart else ""
     queue_section = ck_panel(
         '<p class="ck-section-body">'
         'Operations research model of RCM workqueues as M/M/c systems. Shows utilization, '
         'wait times, SLA breach probability, and recommended staffing. Uses Erlang C formula + '
         'Little\'s Law. Inputs are configurable per hospital.</p>'
+        + queue_chart + queue_caption +
         '<table class="cad-table"><thead><tr>'
         '<th>Queue</th><th>Arrivals</th><th>Staff</th><th>Utilization</th>'
         '<th>Avg Wait</th><th>SLA Breach</th><th>Rec. Staff</th><th>Status</th>'
@@ -486,6 +601,7 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
         italic_word="methodology",
     )
     body = (
+        f'{_QL_CHART_CAPTION_CSS}'
         f'{intro}{kpis}{stack}{bayes_section}{eff_section}'
         f'{mkt_section}{queue_section}{nav}{next_up}'
     )
