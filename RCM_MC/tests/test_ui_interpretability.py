@@ -51,15 +51,21 @@ class BenchmarksInterpretabilityTests(unittest.TestCase):
 class DenialPredictionInterpretabilityTests(unittest.TestCase):
 
     def test_live_render_includes_peer_benchmark_and_callout(self):
+        # PR #240 rewrote the bordered "What this shows" card as
+        # the editorial italic-paragraph `.ck-page-explainer`. The
+        # ">0.7 = usable" threshold copy was a hand-rolled hero
+        # explainer that's been superseded. HFMA peer median text
+        # survived the rewrite (still appears on the page).
         from rcm_mc.ui.denial_prediction_page import (
             render_denial_prediction_page,
         )
         h = render_denial_prediction_page(
             dataset="hospital_02_denial_heavy",
         )
-        self.assertIn("What this shows", h)
+        # Editorial explainer present (the new "What this shows")
+        self.assertIn("ck-page-explainer", h)
+        # Peer-benchmark signal preserved
         self.assertIn("HFMA peer median", h)
-        self.assertIn("&gt;0.7 = usable", h)
 
 
 class RiskWorkbenchInterpretabilityTests(unittest.TestCase):
@@ -126,8 +132,11 @@ class DealMCInterpretabilityTests(unittest.TestCase):
         })
 
     def test_hero_has_what_this_shows_callout(self):
+        # PR #240 rewrote the "What this shows" callout into the
+        # editorial italic-paragraph `.ck-page-explainer`. Test
+        # intent preserved: the page surfaces an explainer block.
         h = self._run_dmc()
-        self.assertIn("What this shows", h)
+        self.assertIn("ck-page-explainer", h)
 
     def test_hero_interprets_moic_band(self):
         """Some form of band-specific narrative should appear —
@@ -149,6 +158,10 @@ class DealMCInterpretabilityTests(unittest.TestCase):
 class DealAutopsyInterpretabilityTests(unittest.TestCase):
 
     def test_autopsy_page_has_what_this_shows(self):
+        # PR #240 rewrote the "What this shows" callout into the
+        # editorial italic-paragraph `.ck-page-explainer`. The
+        # signature alert banner copy survived ("underwriting a
+        # deal" still renders when top-match similarity ≥ 0.80).
         from rcm_mc.ui.deal_autopsy_page import (
             render_deal_autopsy_page,
         )
@@ -165,8 +178,9 @@ class DealAutopsyInterpretabilityTests(unittest.TestCase):
             "physician_concentration": ["0.30"],
             "oon_revenue_share": ["0.08"],
         })
-        self.assertIn("What this shows", h)
-        # Signature alert banner
+        # Editorial explainer present (the new "What this shows")
+        self.assertIn("ck-page-explainer", h)
+        # Signature alert banner copy preserved
         self.assertIn("underwriting a deal", h)
 
 
