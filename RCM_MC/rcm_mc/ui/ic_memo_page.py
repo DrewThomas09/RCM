@@ -433,16 +433,23 @@ def render_ic_memo(
         "C": "#E8B97E", "D": "#E89478",
     }
     grade_color = grade_tone_map.get(invest_grade, "rgba(250, 247, 240, 0.55)")
+    # Mode-aware eyebrow: PE-partner IC memo vs Chartis consulting
+    # diligence readout. Headline + body are unchanged.
+    from ._workspace_mode import current_workspace_mode, CONSULTING
+    _is_consulting = current_workspace_mode() == CONSULTING
+    _memo_eyebrow = (
+        f"COMMERCIAL DILIGENCE READOUT · CCN {_html.escape(ccn)}"
+        if _is_consulting
+        else f"INVESTMENT COMMITTEE MEMORANDUM · CCN {_html.escape(ccn)}"
+    )
     intro = ck_section_intro(
-        eyebrow=(
-            f"INVESTMENT COMMITTEE MEMORANDUM · CCN {_html.escape(ccn)}"
-        ),
+        eyebrow=_memo_eyebrow,
         headline=_html.escape(data["name"]),
         body=(
             f"{_html.escape(data['county'])}, {_html.escape(data['state'])} · "
             f"{data['beds']:.0f} beds · As of {_html.escape(ts)}"
         ),
-        italic_word="committee",
+        italic_word="committee" if not _is_consulting else "diligence",
     )
     grade_kpi = (
         '<div class="ck-kpi-strip">'

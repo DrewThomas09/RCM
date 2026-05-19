@@ -2542,9 +2542,17 @@ def render_dashboard(db_path: str, *,
 
     workflow_shortcuts = _render_workflow_shortcuts_section(db_path)
 
+    # Mode-aware eyebrow — "PARTNER WORKSPACE" for the PE-fund view,
+    # "CONSULTING WORKSPACE" for the Chartis commercial-diligence view.
+    from ._workspace_mode import current_workspace_mode, CONSULTING
+    _eyebrow = (
+        "CONSULTING WORKSPACE · LANDING"
+        if current_workspace_mode() == CONSULTING
+        else "PARTNER WORKSPACE · LANDING"
+    )
     header = ck_page_title(
         "Dashboard",
-        eyebrow="PARTNER WORKSPACE · LANDING",
+        eyebrow=_eyebrow,
         meta=(
             "Curated analyses, recent runs, system status, "
             "and data freshness — one view."
