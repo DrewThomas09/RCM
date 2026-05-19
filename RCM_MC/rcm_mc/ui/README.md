@@ -164,6 +164,62 @@ Key kwargs: `active_nav`, `breadcrumbs`, `subtitle`, `extra_css`, `editorial_int
 |---|---|
 | `ck_command_palette(modules)` | ⌘K palette popover — feed it the module catalog. Keyboard-driven nav. |
 
+## Workspace mode — dual-audience copy (`_workspace_mode.py`)
+
+The platform serves two audiences from the same surfaces:
+
+- **`partner`** (default) — a PE fund partner running deals. All
+  legacy copy lives here, so existing tests/contracts are unchanged.
+- **`consulting`** — a Chartis-style commercial-diligence consulting
+  team running client engagements.
+
+| helper | purpose |
+|---|---|
+| `current_workspace_mode()` | Returns `"partner"` / `"consulting"` for the current request. |
+| `term(key, mode=None)` | Resolve a lexicon key to audience copy (e.g. `term("deal")` → "Deal" / "Engagement"). Degrades to the key itself for unknown keys — never raises. |
+| `MODE_LABELS`, `MODE_TAGLINES` | Display strings for the toggle UI. |
+
+**How it flows:** the mode lives in a `ContextVar`. `server.py`'s
+`_compute_workspace_mode()` reads the `ck_workspace_mode` cookie (or a
+`?mode=` query override) at the top of every `do_GET` and publishes
+it; renderers then call `term()` / `current_workspace_mode()` with no
+`mode` argument threaded through. Safe under `ThreadingHTTPServer`
+(fresh threads start with an empty context; the server sets the value
+per-request).
+
+The toggle UI is `/settings/workspace` (a card per mode); the POST sets
+the cookie. Public marketing + login keep the commercial-diligence
+framing regardless (they're pre-auth).
+
+**To make a surface mode-aware:** branch on `current_workspace_mode()`
+for one-off eyebrows/headlines, or add a key to `_TERMS` and call
+`term("your_key")`. Keep the `partner` value byte-identical to the
+existing string so tests stay green. This is a **copy-only (L1)**
+layer — do not hide/show panels by mode (that's a separate, heavier
+change with regression risk).
+
+## Inline-SVG editorial charts
+
+Dense analytical tables get a hand-rolled inline-SVG chart rendered
+**above** the table (the table stays for per-row drill-down). No JS,
+no chart library, no new deps — just SVG strings built against the
+editorial palette. Pattern established across IC memo, EBITDA bridge,
+ML insights, DCF/LBO models, data dashboard, market data, quant lab,
+benchmark drift, trend forecast, and causal inference.
+
+Conventions for a new chart helper:
+- `viewBox="0 0 W H"` + `preserveAspectRatio="xMidYMid meet"` +
+  `style="width:100%;max-width:Wpx;height:auto"` so it scales.
+- Palette: teal-deep `#155752`, teal `#1F7A75`, soft-green `#7ED3A8`,
+  amber `#b8732a`, red `#A53A2D`, navy `#0b2341`, ink `#1a2332`,
+  rule `#BFB6A2`, gridline `#E8E0D0`, muted `#5C6878`/`#8A92A0`.
+- Fonts: JetBrains Mono for numerics/axes, Inter Tight for labels.
+- Add a `.<page>-chart-caption` line under the chart (mono-uppercase,
+  `#5C6878`), and a `@media print { svg { print-color-adjust: exact } }`
+  block so PDF export keeps the colors.
+- Guard empty input: return `""` so the page degrades to just the
+  table.
+
 ## Migration tools (`tools/`)
 
 | script | purpose |
