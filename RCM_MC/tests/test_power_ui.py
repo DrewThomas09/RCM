@@ -117,10 +117,15 @@ class PowerUIHelperTests(unittest.TestCase):
         )
 
     def test_shell_injects_power_ui_bundle(self):
+        # Editorial cutover: chartis_shell no longer ships power_ui.css /
+        # power_ui.js — the canonical stylesheets are chartis_tokens.css
+        # + v3/chartis.css. The power_ui_tags() helper still renders the
+        # legacy bundle for any caller that explicitly opts in (covered
+        # by test_tags_helper_emits_both_assets below).
         from rcm_mc.ui._chartis_kit import chartis_shell
         rendered = chartis_shell("<p>x</p>", "Test")
-        self.assertIn("/static/power_ui.css", rendered)
-        self.assertIn("/static/power_ui.js", rendered)
+        self.assertIn("chartis_tokens.css", rendered)
+        self.assertIn("v3/chartis.css", rendered)
 
     def test_tags_helper_emits_both_assets(self):
         t = power_ui_tags()
@@ -177,9 +182,14 @@ class CounterfactualRetrofitTests(unittest.TestCase):
 class NavTests(unittest.TestCase):
 
     def test_compare_link_in_sidebar(self):
+        # Editorial cutover: the legacy left-sidebar Compare-Deals link
+        # is gone; /diligence/compare is now reachable via the Cmd+K
+        # palette (route id "compare", title "Compare Deals"). Pin
+        # the palette wiring instead of a sidebar anchor.
         from rcm_mc.ui._chartis_kit import chartis_shell
         rendered = chartis_shell("<p>x</p>", "Test")
-        self.assertIn('href="/diligence/compare"', rendered)
+        self.assertIn('"/diligence/compare"', rendered)
+        self.assertIn("Compare Deals", rendered)
 
 
 if __name__ == "__main__":

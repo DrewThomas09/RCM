@@ -224,7 +224,12 @@ class UIRenderTests(unittest.TestCase):
             "mix": ["# only comments"],
             "target_name": ["Empty"],
         })
-        self.assertIn("Could not parse", html)
+        # Editorial refactor: headline italicizes the active verb,
+        # so "Could not parse any payer lines." renders as
+        # "Could not <em>parse</em> any payer lines." — contiguous
+        # substring is split across the <em> tag.
+        self.assertIn("Could not", html)
+        self.assertIn("<em>parse</em>", html)
 
 
 class HTTPEndpointTests(unittest.TestCase):

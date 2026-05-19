@@ -237,7 +237,8 @@ class TestDashboardRender(unittest.TestCase):
         self.assertIn("CV R²", html)
         self.assertIn("Calibration", html)
         # KPI strip
-        self.assertIn("Models tracked", html)
+        # ck_kpi_block emits "Models Tracked" in title case.
+        self.assertIn("Models Tracked", html)
         self.assertIn("Avg CV R²", html)
 
     def test_empty_state(self):

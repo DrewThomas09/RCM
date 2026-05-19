@@ -132,15 +132,11 @@ class TestNoteTagsHttp(unittest.TestCase):
         t.start(); _time.sleep(0.05)
         return server, port
 
-    def test_notes_page_has_tags_input(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            server, port = self._start(tmp)
-            try:
-                with _u.urlopen(f"http://127.0.0.1:{port}/notes") as r:
-                    body = r.read().decode()
-                    self.assertIn('name="tags"', body)
-            finally:
-                server.shutdown(); server.server_close()
+    # test_notes_page_has_tags_input removed — the inline tags filter
+    # input on /notes was retired in the editorial refactor. Tag
+    # filtering now flows through the URL query string (tested by
+    # test_notes_page_tag_filter_narrows below) rather than an
+    # in-page search input.
 
     def test_notes_page_tag_filter_narrows(self):
         with tempfile.TemporaryDirectory() as tmp:
