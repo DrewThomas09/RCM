@@ -270,16 +270,10 @@ def render_rcm_benchmarks(
             subtitle="No benchmarks",
         )
 
-    intro = (
-        f'<p style="color:{P["text_dim"]};font-size:12px;line-height:1.6;'
-        f'margin-bottom:10px;">'
-        f'Industry RCM benchmarks for the seven canonical metrics, '
-        f'segmented by hospital / facility type. Source data pulled from '
-        f'HFMA MAP and Advisory Board surveys (see per-segment notes at '
-        f'the bottom of each section).'
-        f'</p>'
-    )
-
+    # Editorial `render_page_explainer` below carries the source +
+    # methodology — dropped the duplicate `intro` paragraph that
+    # used to render below it (same content, partner-flagged as
+    # redundant "two summaries" on RCM Benchmarks).
     n_segments = len(benchmarks)
     kpis = (
         ck_kpi_block("Segments", str(n_segments), "hospital / facility types")
@@ -361,7 +355,6 @@ def render_rcm_benchmarks(
     body = (
         page_title
         + explainer
-        + intro
         + kpi_strip
         + jump_strip
         + ck_section_header(

@@ -4953,13 +4953,22 @@ def chartis_shell(
     body_html = intro_html + body_html
 
     # Render the standalone subtitle_html only when the shell did
-    # NOT auto-inject the subtitle into a ck_page_title (otherwise
-    # it duplicates).
+    # NOT auto-inject the subtitle into a ck_page_title AND the
+    # body doesn't already carry a ck_page_title (which carries
+    # its own meta line). Otherwise the subtitle text rendered
+    # both as an italic line at the very top AND inside the title
+    # meta — the duplicate partners flagged on physician-eu /
+    # market-analysis / many other pages.
+    body_has_page_title = 'class="ck-page-title"' in body_html
     subtitle_html = (
         f'<div class="ck-subtitle" style="font-size:13px;'
         f'color:var(--ck-text-muted,#5C6878);margin:0 0 14px;'
         f'font-style:italic;">{_esc(subtitle)}</div>'
-    ) if subtitle and not subtitle_consumed_by_title else ""
+    ) if (
+        subtitle
+        and not subtitle_consumed_by_title
+        and not body_has_page_title
+    ) else ""
     # Page-specific CSS goes AFTER the kit's CSS so page styles
     # win specificity ties — matches the contract login_page.py
     # and forgot_page.py expect (grid layout, panel chrome, etc.)
