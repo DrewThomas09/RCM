@@ -76,18 +76,31 @@ def _hero(
     illustrative — the four things the diligence-pages-explainers
     rollout calls for.
     """
-    explainer = (
-        ck_page_explainer(
+    # Single intro paragraph below the title — not two. Earlier
+    # `_hero` rendered BOTH the `sub` lede AND the `ck_page_explainer`
+    # which produced the "two summaries" pattern partners flagged
+    # (HCRIS X-Ray, Ingestion, RCM Benchmarks, etc.). When the page
+    # supplies a real editorial explainer (headline + body), that
+    # carries the load — skip the `sub` lede so the page reads once,
+    # not twice. When no explainer is provided, render `sub` as the
+    # sole lede so titleless pages still get context.
+    if explainer_headline and explainer_body:
+        explainer = ck_page_explainer(
             explainer_headline,
             explainer_body,
             source=explainer_source or None,
         )
-        if explainer_headline and explainer_body else ""
-    )
+        lede = ""
+    else:
+        explainer = ""
+        lede = (
+            f'<p class="ck-diligence-lede">{html.escape(sub)}</p>'
+            if sub else ""
+        )
     return (
         _DILIGENCE_CSS
         + ck_page_title(title, eyebrow=eyebrow)
-        + f'<p class="ck-diligence-lede">{html.escape(sub)}</p>'
+        + lede
         + explainer
     )
 

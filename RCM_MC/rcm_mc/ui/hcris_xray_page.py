@@ -801,30 +801,34 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
     )
     stats = ck_panel(stats_inner, title="Dataset coverage")
 
+    # Single canonical page intro. Previously rendered both
+    # ck_page_explainer AND a bespoke "Benchmark any hospital
+    # against its true peers" paragraph below — two summaries
+    # saying nearly the same thing. The ck_page_explainer carries
+    # source attribution and is the editorial primitive; keep
+    # that and drop the duplicate.
     landing_title = (
         ck_page_title(
-        "HCRIS X-Ray", eyebrow="HCRIS-NATIVE PEER X-RAY",
-        meta=f"{summary['total_rows']:,} Medicare cost reports · 15 metrics",
-    )
+            "HCRIS X-Ray", eyebrow="HCRIS-NATIVE PEER X-RAY",
+            meta=(
+                f"{summary['total_rows']:,} Medicare cost reports · "
+                f"15 metrics"
+            ),
+        )
         + ck_page_explainer(
             'HCRIS peer benchmarking, native to the cost report.',
-            'Pulls CMS HCRIS (Form 2552-10) cost-report rollups for the focal hospital and the matched peer set, then surfaces where the target sits vs comparators on occupancy, case-mix-adjusted cost, payer mix, and margin. Used during diligence to size the operational gap behind the EBITDA delta.',
+            "Pulls CMS HCRIS (Form 2552-10) cost-report rollups for the "
+            "focal hospital and the matched 25–50 peer hospitals (size "
+            "cohort, state, payer mix, fiscal year). Surfaces where the "
+            "target sits inside, above, or below the peer P25–P75 band "
+            "on 15 RCM / cost / margin metrics — used during diligence "
+            "to size the operational gap behind the EBITDA delta.",
             source='CMS HCRIS — refreshed quarterly from cms.gov',
         )
-    )
-    landing_explainer = (
-        '<p class="ck-hx-explainer">'
-        '<em>Benchmark any hospital against its true peers.</em> '
-        "Find the 25–50 true peer hospitals for any target on size "
-        "cohort, state, payer mix, and fiscal year, then see where "
-        "it sits inside, above, or below the peer P25–P75 band on "
-        "15 RCM / cost / margin metrics derived from CMS cost reports."
-        '</p>'
     )
     body = (
         _scoped_styles()
         + landing_title
-        + landing_explainer
         + '<div class="hx-wrap">'
         + deal_context_bar(qs, active_surface="hcris")
         + ck_panel(search_form, title="Find a hospital")
