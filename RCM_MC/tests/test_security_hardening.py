@@ -386,26 +386,31 @@ class TestSensitiveViewAudit(unittest.TestCase):
 # ────────────────────────────────────────────────────────────────────
 
 class TestPhiBanner(unittest.TestCase):
+    """The PHI banner helper moved from a zero-arg env-reading
+    `_phi_banner_html()` (in `_chartis_kit`) to a pure function
+    `phi_banner(mode)` (in `_chartis_kit_editorial`). The caller
+    now reads `RCM_MC_PHI_MODE` once in the request handler and
+    passes the lowercased value — keeps the helper testable without
+    env mutation. See PR #256 for the original migration."""
+
     def test_banner_absent_without_env(self):
-        from rcm_mc.ui._chartis_kit import _phi_banner_html
-        # Clear env
-        with patch.dict(os.environ, {}, clear=False):
-            os.environ.pop("RCM_MC_PHI_MODE", None)
-            self.assertEqual(_phi_banner_html(), "")
+        from rcm_mc.ui._chartis_kit_editorial import phi_banner
+        # None / empty / unknown mode → empty string (security
+        # default: no banner = no PHI claim made)
+        self.assertEqual(phi_banner(None), "")
+        self.assertEqual(phi_banner(""), "")
 
     def test_disallowed_banner(self):
-        from rcm_mc.ui._chartis_kit import _phi_banner_html
-        with patch.dict(os.environ, {"RCM_MC_PHI_MODE": "disallowed"}):
-            html = _phi_banner_html()
-        self.assertIn("no PHI permitted", html)
-        self.assertIn("data-phi-mode=\"disallowed\"", html)
+        from rcm_mc.ui._chartis_kit_editorial import phi_banner
+        html = phi_banner("disallowed")
+        self.assertIn("no PHI", html)
+        self.assertIn('data-phi-mode="disallowed"', html)
 
     def test_restricted_banner(self):
-        from rcm_mc.ui._chartis_kit import _phi_banner_html
-        with patch.dict(os.environ, {"RCM_MC_PHI_MODE": "restricted"}):
-            html = _phi_banner_html()
+        from rcm_mc.ui._chartis_kit_editorial import phi_banner
+        html = phi_banner("restricted")
         self.assertIn("PHI-eligible", html)
-        self.assertIn("data-phi-mode=\"restricted\"", html)
+        self.assertIn('data-phi-mode="restricted"', html)
 
 
 if __name__ == "__main__":
