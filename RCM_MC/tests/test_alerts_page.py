@@ -88,7 +88,11 @@ class AlertsPageE2ETests(unittest.TestCase):
                     body = r.read().decode("utf-8")
                 self.assertIn("ck-affirm-empty", body)
                 self.assertIn("Portfolio is clean", body)
-                self.assertIn("Evaluators run on every page load", body)
+                # The "Evaluators run on every page load" explainer was
+                # lifted into the page intro (hidden by default when
+                # tutorial-intros are off), so it no longer appears in
+                # the empty-state card. Per this test's own docstring,
+                # what matters is the affirmative empty signal above.
             finally:
                 server.shutdown()
                 server.server_close()
