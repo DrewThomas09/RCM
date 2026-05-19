@@ -195,6 +195,25 @@ PROVENANCE: Dict[str, FeatureProvenance] = {
             "model adds no information."
         ),
     ),
+    # ── 2-hop derived features (built on other derived features) ──
+    # These exist so the transitive FORMULA_RELATED detector has
+    # real chains to catch. As soon as a feature lists a derived
+    # parent in its inputs (rather than only raw HCRIS columns),
+    # the atomic-input walk needs to keep going to find the true
+    # shared ancestors of feature and target.
+    "margin_per_bed": _derived(
+        "margin_per_bed", "Margin per Bed",
+        # operating_margin = (npr - opex) / npr; this rescales by
+        # beds. Direct inputs reference operating_margin (derived)
+        # so atomic_inputs has to walk through it to reach npr/opex.
+        inputs=["operating_margin", "beds"],
+        note=(
+            "Multi-hop derivation: operating_margin × bed-scale. "
+            "Atomic ancestors are {net_patient_revenue, "
+            "operating_expenses, beds} — transitive FORMULA_RELATED "
+            "with any feature that also depends on npr or opex."
+        ),
+    ),
 }
 
 
@@ -213,12 +232,20 @@ class LeakageVerdict:
       info     → UNKNOWN (no provenance — caller decides)
       ok       → SAFE (no algebraic / shared-input relationship)
     ``reason``: human-readable explanation. Always set.
+
+    ``transitive``: True when the verdict was reached via the
+    atomic-input closure walk (multi-hop chain through intermediate
+    derived features) rather than a 1-hop direct match. Only ever
+    True for FORMULA_RELATED verdicts; gives the UI a hook to label
+    these as "transitive" so partners know the registry detected a
+    chain, not a direct shared input.
     """
     feature: str
     target: str
     verdict: str
     severity: str
     reason: str
+    transitive: bool = False
 
     @property
     def leaks(self) -> bool:
@@ -231,6 +258,53 @@ class LeakageVerdict:
     @property
     def formula_related(self) -> bool:
         return self.verdict == "FORMULA_RELATED"
+
+
+def atomic_inputs(
+    name: str,
+    registry: Optional[Dict[str, FeatureProvenance]] = None,
+    *,
+    max_depth: int = 8,
+) -> FrozenSet[str]:
+    """Return the set of raw HCRIS columns this feature ultimately
+    derives from, walking the provenance DAG transitively.
+
+    For a raw column (empty .inputs) returns {name} — itself is the
+    atomic ancestor. For a derived feature, returns the union of
+    atomic_inputs of each direct input. Cycles are guarded via a
+    visited set; depth is capped at ``max_depth`` to bound runtime
+    if a future registry entry ever introduces a long chain.
+
+    Used by the transitive FORMULA_RELATED detection — two features
+    can share atomic inputs (and therefore have inflated R² when
+    one is regressed on the other) without their direct .inputs
+    sets overlapping at all. Example: target = roa (inputs:
+    net_income, total_assets) and feature = operating_margin
+    (inputs: npr, opex). Direct shared = ∅, but
+    atomic(net_income) = {npr, opex} ⊆ atomic(operating_margin) so
+    the chain is real.
+    """
+    reg = registry if registry is not None else PROVENANCE
+
+    def _walk(n: str, visited: set, depth: int) -> FrozenSet[str]:
+        if depth > max_depth or n in visited:
+            return frozenset()
+        meta = reg.get(n)
+        if meta is None:
+            # Unknown name — treat as atomic (caller's problem if it
+            # really is a derived feature missing from the registry)
+            return frozenset({n})
+        if not meta.inputs:
+            # Raw column — itself is its only atomic ancestor
+            return frozenset({n})
+        visited.add(n)
+        result: set = set()
+        for inp in meta.inputs:
+            result |= _walk(inp, visited, depth + 1)
+        visited.discard(n)
+        return frozenset(result)
+
+    return _walk(name, set(), 0)
 
 
 def classify_feature_for_target(
@@ -330,6 +404,39 @@ def classify_feature_for_target(
                     f"toggle 'strict' mode in forecasting_safe_features "
                     f"to drop these too."
                 ),
+            )
+        # Transitive shared-input check — walks the inputs DAG to
+        # the atomic raw columns and checks intersection there.
+        # Catches multi-hop chains the 1-hop check above misses:
+        # e.g. roa.inputs = {net_income, total_assets} and
+        # operating_margin.inputs = {npr, opex} have empty direct
+        # intersection, but net_income itself derives from
+        # {npr, opex}, so the atomic closures overlap. Without this
+        # check the partner would see roa ~ operating_margin as
+        # SAFE and trust the inflated R².
+        f_atomic = atomic_inputs(feature, reg)
+        t_atomic = atomic_inputs(target, reg)
+        atomic_shared = f_atomic & t_atomic
+        # Subtract raw columns that are themselves the feature/target
+        # (avoid claiming a circular "feature is its own atomic
+        # ancestor" relationship when the feature happens to be a
+        # raw column tagged as derived, like net_income).
+        atomic_shared = atomic_shared - {feature, target}
+        if atomic_shared:
+            shared_disp = ", ".join(sorted(atomic_shared))
+            return LeakageVerdict(
+                feature=feature, target=target,
+                verdict="FORMULA_RELATED", severity="warning",
+                reason=(
+                    f"Transitive accounting-cousin — feature and "
+                    f"target share atomic inputs {{{shared_disp}}} "
+                    f"via a multi-hop derivation chain (one or both "
+                    f"go through an intermediate derived feature). "
+                    f"Direct inputs don't overlap, but the underlying "
+                    f"raw columns do, so R² may still be softly "
+                    f"inflated. Toggle 'strict' mode to drop."
+                ),
+                transitive=True,
             )
 
     if f_meta.explanation_only:
