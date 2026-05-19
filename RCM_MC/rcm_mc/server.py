@@ -2586,6 +2586,35 @@ class RCMHandler(BaseHTTPRequestHandler):
         from .ui._chartis_kit import UI_V2_ENABLED as _v2_default
         self._ui_choice = "editorial" if _v2_default else "legacy"
 
+    def _compute_workspace_mode(self) -> None:
+        """Resolve the per-request workspace mode (PE Partner vs Chartis
+        Consulting) from the ``ck_workspace_mode`` cookie and publish it
+        to the contextvar that ui._workspace_mode.term() reads.
+
+        Set on every request — a ``?mode=`` query param overrides the
+        cookie for shareable links / quick toggling. Defaults to
+        ``partner`` (today's copy) when unset or unrecognized.
+        """
+        from .ui._workspace_mode import set_workspace_mode
+        mode = ""
+        # Query-param override (escape hatch for shareable links).
+        try:
+            qs = urllib.parse.parse_qs(
+                urllib.parse.urlparse(self.path).query
+            )
+            mode = (qs.get("mode") or [""])[0].lower().strip()
+        except Exception:  # noqa: BLE001
+            mode = ""
+        # Cookie persistence.
+        if not mode:
+            cookie = self.headers.get("Cookie", "") or ""
+            for part in cookie.split(";"):
+                part = part.strip()
+                if part.startswith("ck_workspace_mode="):
+                    mode = part.split("=", 1)[1].strip().lower()
+                    break
+        set_workspace_mode(mode)
+
     def do_GET(self) -> None:
         if not self._auth_ok():
             return self._send_401()
@@ -2599,6 +2628,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         # Per-request UI choice (editorial v3 vs legacy dark shell).
         # Set early so any handler can branch on self._ui_choice.
         self._compute_ui_choice()
+        # Per-request workspace mode (PE Partner vs Chartis Consulting)
+        # — published to a contextvar that ui._workspace_mode.term()
+        # reads, so renderers swap audience copy without a mode arg.
+        self._compute_workspace_mode()
         try:
             self._do_get_inner()
         except Exception as exc:  # noqa: BLE001 — global error boundary
@@ -4496,6 +4529,20 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "Claude-backed memos, Q&A, chat — not yet configured. "
                 "Click to connect via ANTHROPIC_API_KEY."
             )
+            # Workspace-mode card — shows the active audience framing.
+            from .ui._workspace_mode import (
+                current_workspace_mode as _cwm, MODE_LABELS as _ws_labels,
+            )
+            _ws_mode = _cwm()
+            _ws_badge = (
+                '<span class="cad-badge cad-badge-green" '
+                f'style="margin-left:8px;">{html.escape(_ws_labels[_ws_mode].upper())}</span>'
+            )
+            _ws_sub = (
+                "Switch between the PE-partner deal view and the Chartis "
+                "commercial-diligence consulting view. Swaps copy + framing "
+                "platform-wide; data and routes unchanged."
+            )
             # Editorial onboarding checklist — "your platform
             # journey". JS-hydrated from localStorage so partners see
             # which milestones they've crossed.
@@ -4611,6 +4658,10 @@ class RCMHandler(BaseHTTPRequestHandler):
                 'el.textContent="VOL "+ROMAN[done]+" OF VII";'
                 '}catch(e){}}());'
                 '</script>'
+                '<a href="/settings/workspace" class="cad-card" '
+                'style="text-decoration:none;color:inherit;">'
+                f'<h3>Workspace Mode{_ws_badge}</h3>'
+                f'<div class="cad-muted">{_ws_sub}</div></a>'
                 '<a href="/settings/ai" class="cad-card" '
                 'style="text-decoration:none;color:inherit;">'
                 f'<h3>AI Assistant (Claude){_ai_badge}</h3>'
@@ -11484,6 +11535,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_login_post()
         if path == "/api/logout":
             return self._route_logout_post()
+        if path == "/settings/workspace":
+            return self._route_workspace_mode_post()
         if path == "/forgot":
             # Unauthenticated POST — no session, so the CSRF gate
             # above doesn't apply. The handler placeholder-accepts
@@ -12302,6 +12355,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/settings/ai":
             from .ui.settings_ai_page import render_ai_settings
             return self._send_html(render_ai_settings(store))
+        if path == "/settings/workspace":
+            from .ui.settings_pages import render_workspace_mode_page
+            return self._send_html(render_workspace_mode_page())
         renderers = {
             "/settings/custom-kpis": render_custom_kpis_page,
             "/settings/automations": render_automations_page,
@@ -16106,6 +16162,35 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.send_header("Set-Cookie", expired_session)
         self.send_header("Set-Cookie", expired_csrf)
         self.send_header("Location", "/login")
+        self.end_headers()
+
+    def _route_workspace_mode_post(self) -> None:
+        """Set the ck_workspace_mode cookie (PE Partner vs Chartis
+        Consulting) from the settings toggle, then redirect back to
+        the workspace-mode settings page so the user sees the new
+        active state."""
+        from .ui._workspace_mode import set_workspace_mode
+        form = self._read_form_body()
+        mode = set_workspace_mode((form.get("mode") or "").strip().lower())
+        secure = self._cookie_flags()
+        # Non-HttpOnly is fine — no security-sensitive value, and a
+        # 1-year Max-Age makes the preference sticky.
+        cookie = (
+            f"ck_workspace_mode={mode}; Path=/; SameSite=Lax; "
+            f"Max-Age={365*24*3600}{secure}"
+        )
+        accept = self.headers.get("Accept", "")
+        if "application/json" in accept:
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Set-Cookie", cookie)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            import json as _json
+            self.wfile.write(_json.dumps({"workspace_mode": mode}).encode())
+            return
+        self.send_response(HTTPStatus.SEE_OTHER)
+        self.send_header("Set-Cookie", cookie)
+        self.send_header("Location", "/settings/workspace")
         self.end_headers()
 
     def _route_upload_notes_post(self) -> None:
