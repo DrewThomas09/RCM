@@ -25,7 +25,7 @@ class TestHealthDistribution(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             server, port = self._start(tmp)
             try:
-                with _u.urlopen(f"http://127.0.0.1:{port}/") as r:
+                with _u.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
                     body = r.read().decode()
                     self.assertNotIn("Portfolio health", body)
             finally:
@@ -46,7 +46,7 @@ class TestHealthDistribution(unittest.TestCase):
             _seed_with_pe_math(tmp, "ccf", headroom=2.0)  # score=100
             server, port = self._start(tmp)
             try:
-                with _u.urlopen(f"http://127.0.0.1:{port}/") as r:
+                with _u.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
                     body = r.read().decode()
                     self.assertIn("Portfolio health", body)
                     self.assertIn("● 1 green", body)
@@ -67,7 +67,7 @@ class TestHealthDistribution(unittest.TestCase):
             _seed_with_pe_math(tmp, "tripped", headroom=-0.5) # amber (60)
             server, port = self._start(tmp)
             try:
-                with _u.urlopen(f"http://127.0.0.1:{port}/") as r:
+                with _u.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
                     body = r.read().decode()
                     self.assertIn("● 2 green", body)
                     self.assertIn("● 1 amber", body)

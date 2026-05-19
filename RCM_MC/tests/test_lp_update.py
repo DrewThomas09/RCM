@@ -42,10 +42,12 @@ class TestLpUpdatePage(unittest.TestCase):
             try:
                 with _u.urlopen(f"http://127.0.0.1:{port}/lp-update") as r:
                     body = r.read().decode()
+                    # Editorial refactor: ck_kpi_block labels are
+                    # title-case ("Active Deals", "Covenant Trips").
                     self.assertIn("Weighted MOIC", body)
                     self.assertIn("Weighted IRR", body)
-                    self.assertIn("Active deals", body)
-                    self.assertIn("Covenant trips", body)
+                    self.assertIn("Active Deals", body)
+                    self.assertIn("Covenant Trips", body)
             finally:
                 server.shutdown(); server.server_close()
 
@@ -109,7 +111,9 @@ class TestLpUpdatePage(unittest.TestCase):
                     f"http://127.0.0.1:{port}/lp-update?days=7"
                 ) as r:
                     body = r.read().decode()
-                    self.assertIn("window 7 days", body)
+                    # Editorial refactor: meta now reads
+                    # "Window: last 7 days · N events captured".
+                    self.assertIn("last 7 days", body)
             finally:
                 server.shutdown(); server.server_close()
 
@@ -117,7 +121,7 @@ class TestLpUpdatePage(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             server, port = self._start(tmp)
             try:
-                with _u.urlopen(f"http://127.0.0.1:{port}/") as r:
+                with _u.urlopen(f"http://127.0.0.1:{port}/dashboard") as r:
                     body = r.read().decode()
                     self.assertIn('href="/lp-update"', body)
             finally:

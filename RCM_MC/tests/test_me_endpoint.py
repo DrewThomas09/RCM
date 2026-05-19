@@ -51,16 +51,12 @@ class TestMeEndpoint(unittest.TestCase):
             finally:
                 server.shutdown(); server.server_close()
 
-    def test_dashboard_has_whoami_element(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            server, port = self._start(tmp)
-            try:
-                with _u.urlopen(f"http://127.0.0.1:{port}/") as r:
-                    body = r.read().decode()
-                    self.assertIn('id="rcm-whoami"', body)
-                    self.assertIn("/api/me", body)
-            finally:
-                server.shutdown(); server.server_close()
+    # test_dashboard_has_whoami_element removed — the inline
+    # rcm-whoami widget that called /api/me is no longer rendered
+    # on the editorial dashboard. The /api/me JSON endpoint itself
+    # remains (covered by the api_returns_role_for_active_user test
+    # above); user identity is now surfaced via the chartis_shell
+    # topbar / palette user menu instead of an inline DOM element.
 
 
 if __name__ == "__main__":

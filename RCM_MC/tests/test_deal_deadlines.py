@@ -209,15 +209,10 @@ class TestDeadlinesHttp(unittest.TestCase):
             finally:
                 server.shutdown(); server.server_close()
 
-    def test_dashboard_has_deadlines_link(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            server, port = self._start(tmp)
-            try:
-                with _u.urlopen(f"http://127.0.0.1:{port}/") as r:
-                    body = r.read().decode()
-                    self.assertIn('href="/deadlines"', body)
-            finally:
-                server.shutdown(); server.server_close()
+    # test_dashboard_has_deadlines_link removed — the editorial
+    # dashboard no longer surfaces a direct /deadlines link. The
+    # /deadlines route still exists and is reachable via the Cmd+K
+    # palette and the portfolio nav rail.
 
 
 if __name__ == "__main__":
