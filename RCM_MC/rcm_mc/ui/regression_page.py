@@ -1095,11 +1095,23 @@ def render_regression_page(
             '<span class="cad-pos">in fit</span>' if in_fit
             else '<span class="cad-text2">dropped</span>'
         )
+        # Transitive chip — only for FORMULA_RELATED cases that came
+        # from the multi-hop atomic-input walk (PR #248). Lets the
+        # partner distinguish "direct cousin" from "chain cousin"
+        # at a glance; the reason text already explains the chain
+        # but the chip surfaces the signal without reading it.
+        transitive_chip = (
+            ' <span class="rg-leak-transitive-chip" '
+            'title="Detected via multi-hop atomic-input walk — '
+            'feature and target share raw ancestors through an '
+            'intermediate derived feature">transitive</span>'
+            if getattr(v, "transitive", False) else ''
+        )
         leak_rows.append(
             f'<tr>'
             f'<td><strong>{_html.escape(v.feature.replace("_", " ").title())}</strong></td>'
             f'<td><span class="rg-leak-badge {badge_cls}">'
-            f'{_html.escape(v.verdict)}</span></td>'
+            f'{_html.escape(v.verdict)}</span>{transitive_chip}</td>'
             f'<td style="font-size:12px;color:var(--cad-text2);">'
             f'{_html.escape(v.reason)}</td>'
             f'<td>{in_fit_mark}</td>'
@@ -1139,10 +1151,15 @@ def render_regression_page(
         'predicting anything. <strong>FORMULA_RELATED</strong> = '
         'feature and target are accounting-identity cousins (they '
         'share underlying inputs but neither contains the other) — '
-        'softer warning; kept by default. <strong>SAFE</strong> = '
-        'no algebraic path. <strong>SELF</strong> = feature IS the '
-        'target. <strong>UNKNOWN</strong> = no provenance record '
-        '(caller decides; defaults to staying in the fit).</p>'
+        'softer warning; kept by default. A '
+        '<span class="rg-leak-transitive-chip">transitive</span> '
+        'chip means the cousin relationship was detected via the '
+        'multi-hop atomic-input walk (one or both go through an '
+        'intermediate derived feature) rather than a 1-hop direct '
+        'shared input. <strong>SAFE</strong> = no algebraic path. '
+        '<strong>SELF</strong> = feature IS the target. '
+        '<strong>UNKNOWN</strong> = no provenance record (caller '
+        'decides; defaults to staying in the fit).</p>'
         '<table class="cad-table"><thead><tr>'
         '<th>Feature</th><th>Verdict</th>'
         '<th>Reason</th><th>Status</th>'
@@ -1741,6 +1758,17 @@ border-color:#b5321e;}
 .rg-leak-ok{color:#0a8a5f;background:#fff;border-color:#0a8a5f;}
 .rg-leak-info{color:var(--sc-text-faint,#7a8699);background:#fff;
 border-color:var(--sc-rule,#d6cfc0);}
+/* Transitive chip — small mono pill that sits next to a
+ * FORMULA_RELATED badge when the verdict came from the multi-hop
+ * atomic-input walk (PR #248) rather than a 1-hop direct shared
+ * input. Subtle teal-ink tone so partners can read the distinction
+ * without the chip competing with the verdict badge itself. */
+.rg-leak-transitive-chip{display:inline-block;margin-left:6px;
+padding:1px 6px;font-family:var(--sc-mono,monospace);font-size:9px;
+font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+color:var(--sc-teal-ink,#155752);background:var(--sc-parchment,#f2ede3);
+border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;
+cursor:help;}
 .rg-influence-badge{display:inline-block;padding:2px 8px;
 font-family:var(--sc-mono,monospace);font-size:10px;font-weight:600;
 letter-spacing:0.04em;border-radius:2px;border:1px solid transparent;}

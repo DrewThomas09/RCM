@@ -199,6 +199,50 @@ class SegmentChipInOutliersTests(unittest.TestCase):
         self.assertIn("rg-segment-chip", html)
 
 
+class TransitiveLeakageChipTests(unittest.TestCase):
+    """The leakage panel surfaces a small 'transitive' chip next to
+    FORMULA_RELATED badges whose verdict came from PR #248's
+    multi-hop atomic-input walk (rather than a 1-hop direct shared
+    input). Pins the chip's presence/absence."""
+
+    def test_transitive_chip_renders_for_multihop_cousin(self):
+        # margin_per_bed (2-hop: operating_margin → npr, opex; + beds)
+        # vs. revenue_per_day (1-hop: npr, total_patient_days) has
+        # direct shared = ∅ but atomic shared = {npr} → transitive.
+        html = render_regression_page(
+            hcris_df=_synthetic_hcris(100),
+            target="revenue_per_day",
+            features=[
+                "margin_per_bed",
+                "occupancy_rate",
+            ],
+        )
+        # Chip class wired
+        self.assertIn("rg-leak-transitive-chip", html)
+        # Chip text actually rendered
+        self.assertIn(">transitive</span>", html)
+
+    def test_no_transitive_chip_for_direct_cousin(self):
+        # revenue_per_bed (npr, beds) vs. operating_margin (npr, opex)
+        # has direct shared = {npr} → 1-hop FORMULA_RELATED, not
+        # transitive. The chip class can still appear in the panel
+        # intro paragraph (as part of the legend); test specifically
+        # checks no chip rendered in a table row.
+        html = render_regression_page(
+            hcris_df=_synthetic_hcris(100),
+            target="operating_margin",
+            features=[
+                "revenue_per_bed",
+                "occupancy_rate",
+            ],
+        )
+        # FORMULA_RELATED badge present
+        self.assertIn("FORMULA_RELATED", html)
+        # Chip text appears at most once (the explainer in the
+        # intro paragraph); no row-level chip rendered.
+        self.assertEqual(html.count(">transitive</span>"), 1)
+
+
 class FormulaRelatedBannerTests(unittest.TestCase):
     """Amber sibling to the red LEAKS banner. Fires when FORMULA_
     RELATED (accounting-cousin) features are in the fit and the
