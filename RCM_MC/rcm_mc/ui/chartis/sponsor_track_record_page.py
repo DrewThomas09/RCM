@@ -76,6 +76,157 @@ def _fmt_ev(v: Any) -> str:
         return "—"
 
 
+def _consistency_moic_scatter(records: List[Any]) -> str:
+    """SVG scatter: Consistency (x) vs. Median MOIC (y), bubble
+    size = deal count.
+
+    Helps the partner read the four-quadrant structure of the
+    sponsor universe at a glance:
+      - top-right: high MOIC + high consistency → compounders
+      - top-left:  high MOIC + low consistency  → lottery sponsors
+      - bottom-right: low MOIC + high consistency → underperformers
+      - bottom-left:  low MOIC + low consistency  → mixed/avoid
+
+    The scatter is a glanceable version of the table below; partners
+    looking for "find me the compounders" point at the top-right
+    region instead of sorting columns.
+    """
+    points = [
+        r for r in records
+        if r.consistency_score is not None
+        and r.median_moic is not None
+    ]
+    if not points:
+        return ""
+
+    width = 720
+    height = 380
+    pad_l, pad_r, pad_t, pad_b = 60, 24, 32, 48
+    inner_w = width - pad_l - pad_r
+    inner_h = height - pad_t - pad_b
+
+    # X: consistency [0, 1]. Y: MOIC [0, max+0.5].
+    moics = [float(r.median_moic) for r in points]
+    max_moic = max(max(moics), 3.0) + 0.5
+    deal_counts = [r.deal_count for r in points]
+    max_deals = max(deal_counts)
+
+    def sx(v: float) -> float:
+        return pad_l + v * inner_w
+
+    def sy(v: float) -> float:
+        return pad_t + inner_h - (v / max_moic) * inner_h
+
+    def sr(deals: int) -> float:
+        # Bubble radius 3..16 by sqrt scaling (area ~ deals)
+        if max_deals <= 1:
+            return 6.0
+        return 3.0 + 13.0 * (deals / max_deals) ** 0.5
+
+    # Quadrant background tint at consistency=0.55, MOIC=2.0
+    # (median-ish split). Subtle wash so the four zones are visible
+    # without overpowering the dots.
+    qx = sx(0.55)
+    qy = sy(2.0)
+    quadrants = (
+        # top-right: compounders (light green wash)
+        f'<rect x="{qx:.1f}" y="{pad_t}" '
+        f'width="{pad_l + inner_w - qx:.1f}" height="{qy - pad_t:.1f}" '
+        f'fill="#0a8a5f" fill-opacity="0.05" />'
+        # bottom-left: avoid (light red wash)
+        f'<rect x="{pad_l}" y="{qy:.1f}" '
+        f'width="{qx - pad_l:.1f}" '
+        f'height="{pad_t + inner_h - qy:.1f}" '
+        f'fill="#b5321e" fill-opacity="0.03" />'
+    )
+
+    # Gridlines at MOIC 1, 2, 3 and Consistency 0.25, 0.5, 0.75
+    grid = []
+    for v in (1.0, 2.0, 3.0):
+        if v > max_moic:
+            continue
+        y = sy(v)
+        grid.append(
+            f'<line x1="{pad_l}" x2="{pad_l + inner_w}" '
+            f'y1="{y:.1f}" y2="{y:.1f}" stroke="#d6cfc0" '
+            f'stroke-dasharray="2,4" />'
+            f'<text x="{pad_l - 6}" y="{y + 3:.1f}" '
+            f'fill="#7a8699" text-anchor="end" font-size="10" '
+            f'font-family="JetBrains Mono, monospace">{v:.1f}x</text>'
+        )
+    for v in (0.25, 0.5, 0.75):
+        x = sx(v)
+        grid.append(
+            f'<line y1="{pad_t}" y2="{pad_t + inner_h}" '
+            f'x1="{x:.1f}" x2="{x:.1f}" stroke="#d6cfc0" '
+            f'stroke-dasharray="2,4" />'
+            f'<text x="{x:.1f}" y="{height - pad_b + 14}" '
+            f'fill="#7a8699" text-anchor="middle" font-size="10" '
+            f'font-family="JetBrains Mono, monospace">{v:.2f}</text>'
+        )
+
+    # Plot each sponsor as a bubble
+    bubbles = []
+    for r in points:
+        cx = sx(float(r.consistency_score))
+        cy = sy(float(r.median_moic))
+        rad = sr(r.deal_count)
+        # Color by MOIC band (same as vintage chart)
+        moic = float(r.median_moic)
+        color = (
+            "#0a8a5f" if moic >= 2.5
+            else "#b8732a" if moic >= 1.5
+            else "#b5321e"
+        )
+        sponsor = _html.escape(str(r.sponsor))
+        bubbles.append(
+            f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{rad:.1f}" '
+            f'fill="{color}" fill-opacity="0.55" '
+            f'stroke="{color}" stroke-width="1">'
+            f'<title>{sponsor}: {moic:.2f}x median MOIC · '
+            f'{float(r.consistency_score):.2f} consistency · '
+            f'{r.deal_count} deals</title>'
+            f'</circle>'
+        )
+
+    # Axis labels
+    axis_labels = (
+        f'<text x="{pad_l + inner_w/2:.1f}" y="{height - 8}" '
+        f'fill="#1a2332" text-anchor="middle" font-size="12" '
+        f'font-family="Inter, sans-serif" font-weight="600">'
+        f'Consistency score (0 = scattered, 1 = tight)</text>'
+        f'<text x="16" y="{pad_t + inner_h/2:.1f}" '
+        f'fill="#1a2332" text-anchor="middle" font-size="12" '
+        f'font-family="Inter, sans-serif" font-weight="600" '
+        f'transform="rotate(-90 16 {pad_t + inner_h/2:.1f})">'
+        f'Median MOIC</text>'
+    )
+
+    # Quadrant legend chips in the corners
+    quad_legend = (
+        f'<text x="{pad_l + inner_w - 12}" y="{pad_t + 14}" '
+        f'fill="#0a8a5f" text-anchor="end" font-size="10" '
+        f'font-family="Inter, sans-serif" font-weight="600" '
+        f'fill-opacity="0.75">COMPOUNDERS →</text>'
+        f'<text x="{pad_l + 12}" y="{pad_t + 14}" '
+        f'fill="#b8732a" text-anchor="start" font-size="10" '
+        f'font-family="Inter, sans-serif" font-weight="600" '
+        f'fill-opacity="0.75">← LOTTERY</text>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;background:transparent;'
+        f'margin:8px 0 16px;">'
+        f'{quadrants}'
+        f'{"".join(grid)}'
+        f'{"".join(bubbles)}'
+        f'{axis_labels}'
+        f'{quad_legend}'
+        f'</svg>'
+    )
+
+
 def _sponsor_row(rec: Any) -> str:
     sponsor = _html.escape(str(rec.sponsor))
     sector_tags = ""
@@ -221,6 +372,12 @@ def render_sponsor_track_record(
     )
     kpi_strip = f'<div class="ck-kpi-grid">{kpis}</div>'
 
+    # Visual sponsor universe: scatter of consistency × MOIC sized
+    # by deal count, so the partner can read the four-quadrant
+    # structure (compounders / lottery / underperformers / avoid)
+    # without sorting the table below.
+    scatter = _consistency_moic_scatter(records_sorted)
+
     table_rows = "".join(_sponsor_row(r) for r in records_sorted)
     table = (
         f'<div class="ck-table-wrap">'
@@ -276,6 +433,12 @@ def render_sponsor_track_record(
         + kpi_strip
         + ck_section_header("TOP 5 BY MEDIAN MOIC", "highest realized returns")
         + top5_strip
+        + ck_section_header(
+            "SPONSOR UNIVERSE — CONSISTENCY × MOIC",
+            "compounders top-right · lottery sponsors top-left · "
+            "bubble size = deal count",
+        )
+        + scatter
         + ck_section_header(
             "FULL LEAGUE TABLE",
             f"sorted by median MOIC · click a column header to re-sort",
