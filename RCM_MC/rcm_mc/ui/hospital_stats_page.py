@@ -195,6 +195,11 @@ def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
 
     # Regression residuals — run quick regressions for key targets
     residual_rows = ""
+    # Per-target driver breakdowns: which features pushed THIS
+    # hospital's predicted value above or below the corpus mean.
+    # Contribution_i = beta_i × (x_i - mean_i) / std_i in the
+    # z-scored OLS we fit below. Sum across features = pred - mean.
+    driver_blocks: List[str] = []
     key_targets = [
         "net_patient_revenue", "operating_margin", "occupancy_rate",
         "revenue_per_bed", "net_to_gross_ratio",
@@ -243,6 +248,68 @@ def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
                 f'<td class="num" style="color:{resid_color};font-weight:600;">{std_resid:+.2f}σ</td>'
                 f'</tr>'
             )
+
+            # Per-feature contribution to the prediction relative to
+            # the corpus mean. beta_aug[0] is the intercept (corpus
+            # mean in z-scored fit); contributions[i] = beta[i+1] *
+            # hosp_xn[i]. The sum equals (hosp_pred - mean(y)).
+            mean_y = float(y.mean())
+            contribs = [
+                (feats[i], float(beta[i + 1] * hosp_xn[i]))
+                for i in range(len(feats))
+            ]
+            # Sort by absolute contribution and take top 3 — partners
+            # don't want to read a wall of small-effect features.
+            contribs.sort(key=lambda kv: abs(kv[1]), reverse=True)
+            top_contribs = contribs[:3]
+            # Render as a compact list under the residual row
+            driver_items: List[str] = []
+            gap = hosp_pred - mean_y
+            for feat_name, contrib in top_contribs:
+                if abs(contrib) < 1e-9:
+                    continue
+                # % share of the (pred - mean) gap accounted for by
+                # this feature. Helps partner read "Medicare-heavy
+                # mix is 60% of why this hospital is predicted lower
+                # margin than the average".
+                share = (
+                    abs(contrib) / abs(gap) if abs(gap) > 1e-9
+                    else 0
+                )
+                sign_color = (
+                    PALETTE["positive"] if contrib > 0
+                    else PALETTE["negative"]
+                )
+                arrow = "▲" if contrib > 0 else "▼"
+                feat_disp = feat_name.replace("_", " ").title()
+                driver_items.append(
+                    f'<li style="margin:2px 0;font-size:12px;">'
+                    f'<span style="color:{sign_color};font-weight:600;">'
+                    f'{arrow} {_fmt_num(contrib)}</span> '
+                    f'<span style="color:{PALETTE["text_secondary"]};">'
+                    f'({share:.0%} of gap)</span> '
+                    f'· {_html.escape(feat_disp)}'
+                    f'</li>'
+                )
+            if driver_items:
+                gap_color = (
+                    PALETTE["positive"] if gap > 0
+                    else PALETTE["negative"]
+                )
+                driver_blocks.append(
+                    f'<div style="margin:0 0 12px 0;">'
+                    f'<div style="font-size:11px;'
+                    f'color:{PALETTE["text_secondary"]};'
+                    f'margin-bottom:4px;letter-spacing:0.04em;'
+                    f'text-transform:uppercase;font-weight:600;">'
+                    f'{_html.escape(label)} · '
+                    f'<span style="color:{gap_color};">'
+                    f'{_fmt_num(gap)} vs corpus mean</span></div>'
+                    f'<ul class="rg-drivers" '
+                    f'style="margin:0;padding-left:18px;">'
+                    f'{"".join(driver_items)}'
+                    f'</ul></div>'
+                )
         except Exception:
             continue
 
@@ -257,6 +324,20 @@ def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
             f'<table class="cad-table"><thead><tr>'
             f'<th>Target</th><th>Model R&sup2;</th><th>Actual</th><th>Predicted</th><th>Residual</th>'
             f'</tr></thead><tbody>{residual_rows}</tbody></table></div>'
+        )
+
+    drivers_section = ""
+    if driver_blocks:
+        drivers_section = (
+            f'<div class="cad-card">'
+            f'<h2>What\'s Driving Each Prediction</h2>'
+            f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:12px;">'
+            f'Top 3 features pushing this hospital\'s predicted value above '
+            f'(▲) or below (▼) the corpus mean, for each regression target. '
+            f'"% of gap" is each feature\'s share of the predicted-minus-mean '
+            f'distance. Helps explain WHY this hospital looks the way it does '
+            f'in the residual table above.</p>'
+            f'{"".join(driver_blocks)}</div>'
         )
 
     # Actions
@@ -281,7 +362,10 @@ def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
         eyebrow="Continue —",
         italic_word="profile",
     )
-    body = f'{kpis}{flags_html}{metrics_section}{residual_section}{actions}{next_up}'
+    body = (
+        f'{kpis}{flags_html}{metrics_section}'
+        f'{residual_section}{drivers_section}{actions}{next_up}'
+    )
 
     return chartis_shell(
         body,
