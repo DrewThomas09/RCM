@@ -30,6 +30,140 @@ from .brand import PALETTE
 from .ebitda_bridge_page import _compute_bridge, _compute_returns_grid, _fm, _safe_float, _load_data_room_overrides
 
 
+_SM_CHART_CAPTION_CSS = """
+<style>
+.sm-chart-caption {
+  font-family: "Inter Tight","Inter",sans-serif;
+  font-size: .72rem; color: #5C6878;
+  text-align: center; letter-spacing: 0.06em;
+  text-transform: uppercase; margin: -.5rem 0 1.25rem;
+}
+@media print {
+  .sm-chart-caption { color: #1a2332; }
+  svg { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+"""
+
+_SM_LINE_PALETTE = ["#155752", "#b8732a", "#1F7A75", "#A53A2D",
+                    "#3F7D4D", "#8A92A0", "#0b2341"]
+
+
+def _scenario_timing_chart(results: List[Dict[str, Any]],
+                           months: List[int],
+                           width: int = 720, height: int = 250) -> str:
+    """Multi-line cumulative-uplift curves, one line per scenario.
+
+    Each scenario's cumulative EBITDA uplift is plotted across the
+    milestone months; the legend ties color → scenario name.
+    """
+    if not results or not months:
+        return ""
+    series: List[Dict[str, Any]] = []
+    all_vals: List[float] = []
+    for i, r in enumerate(results):
+        pts: List[tuple] = []
+        for m in months:
+            cumulative = 0.0
+            for lev in r["bridge"]["levers"]:
+                ramp = lev["ramp_months"]
+                frac = min(1.0, m / ramp) if ramp > 0 else 1.0
+                cumulative += (
+                    lev["ebitda_impact"] * frac
+                    * r["scenario"].get("uplift_factor", 1.0)
+                )
+            pts.append((m, cumulative))
+            all_vals.append(cumulative)
+        series.append({
+            "name": r["scenario"]["name"],
+            "points": pts,
+            "color": _SM_LINE_PALETTE[i % len(_SM_LINE_PALETTE)],
+        })
+    max_v = max(all_vals) if all_vals else 0
+    if max_v <= 0:
+        return ""
+
+    pad_l, pad_r, pad_t, pad_b = 56, 150, 24, 36
+    plot_w = width - pad_l - pad_r
+    plot_h = height - pad_t - pad_b
+    m_lo, m_hi = months[0], months[-1]
+    m_span = max(1, m_hi - m_lo)
+
+    def _x(m: int) -> float:
+        return pad_l + (m - m_lo) / m_span * plot_w
+
+    def _y(v: float) -> float:
+        return pad_t + plot_h - (v / max_v) * plot_h
+
+    grid_svg = ""
+    for i in range(5):
+        gv = max_v * i / 4
+        gy = _y(gv)
+        grid_svg += (
+            f'<line x1="{pad_l}" y1="{gy:.1f}" x2="{pad_l + plot_w}" '
+            f'y2="{gy:.1f}" stroke="#E8E0D0" stroke-width="0.8"/>'
+            f'<text x="{pad_l - 6}" y="{gy + 3:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9" '
+            f'fill="#8A92A0" text-anchor="end">{_fm(gv)}</text>'
+        )
+
+    tick_svg = ""
+    for m in months:
+        tx = _x(m)
+        tick_svg += (
+            f'<line x1="{tx:.1f}" y1="{pad_t + plot_h}" x2="{tx:.1f}" '
+            f'y2="{pad_t + plot_h + 4}" stroke="#BFB6A2" stroke-width="0.8"/>'
+            f'<text x="{tx:.1f}" y="{pad_t + plot_h + 16}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9" '
+            f'fill="#5C6878" text-anchor="middle">M{m}</text>'
+        )
+
+    lines_svg = ""
+    legend_svg = ""
+    legend_x = pad_l + plot_w + 14
+    for i, s in enumerate(series):
+        path = " ".join(
+            f"{'M' if j == 0 else 'L'} {_x(m):.1f},{_y(v):.1f}"
+            for j, (m, v) in enumerate(s["points"])
+        )
+        lines_svg += (
+            f'<path d="{path}" stroke="{s["color"]}" stroke-width="2" '
+            f'fill="none"/>'
+        )
+        for m, v in s["points"]:
+            lines_svg += (
+                f'<circle cx="{_x(m):.1f}" cy="{_y(v):.1f}" r="2.4" '
+                f'fill="{s["color"]}"/>'
+            )
+        ly = pad_t + 10 + i * 16
+        nm = s["name"]
+        if len(nm) > 18:
+            nm = nm[:17] + "…"
+        legend_svg += (
+            f'<line x1="{legend_x}" y1="{ly}" x2="{legend_x + 16}" '
+            f'y2="{ly}" stroke="{s["color"]}" stroke-width="2.4"/>'
+            f'<circle cx="{legend_x + 8}" cy="{ly}" r="2.4" fill="{s["color"]}"/>'
+            f'<text x="{legend_x + 22}" y="{ly + 3}" '
+            f'font-family="Inter Tight,sans-serif" font-size="9.5" '
+            f'fill="#1a2332">{_html.escape(nm)}</text>'
+        )
+
+    axes_svg = (
+        f'<line x1="{pad_l}" y1="{pad_t + plot_h}" x2="{pad_l + plot_w}" '
+        f'y2="{pad_t + plot_h}" stroke="#BFB6A2" stroke-width="1"/>'
+        f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" '
+        f'y2="{pad_t + plot_h}" stroke="#BFB6A2" stroke-width="1"/>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="width:100%;max-width:{width}px;height:auto;display:block;'
+        f'margin:0 auto 1rem;">'
+        f'{grid_svg}{axes_svg}{tick_svg}{lines_svg}{legend_svg}</svg>'
+    )
+
+
 _PRESET_SCENARIOS = [
     {
         "id": "base",
@@ -437,9 +571,16 @@ def render_scenario_modeler(
             timing_rows += f'<td class="num {cls}">{_fm(cumulative)}</td>'
         timing_rows += '</tr>'
 
+    timing_chart = _scenario_timing_chart(results, months)
+    timing_caption = (
+        '<div class="sm-chart-caption">'
+        'Cumulative EBITDA uplift by milestone · one line per scenario'
+        '</div>'
+    ) if timing_chart else ""
     timing_section = ck_panel(
         '<p class="ck-section-body">'
         'Cumulative EBITDA uplift at each milestone across scenarios.</p>'
+        + timing_chart + timing_caption +
         '<table class="cad-table"><thead><tr>'
         f'{timing_header}</tr></thead><tbody>{timing_rows}</tbody></table>',
         title="Implementation Timing Comparison",
@@ -482,7 +623,7 @@ padding:4px 0;cursor:pointer;}
         italic_word="bridge",
     )
     body = (
-        f'{sm_styles}{intro}{selector}{kpis}{comparison}'
+        f'{sm_styles}{_SM_CHART_CAPTION_CSS}{intro}{selector}{kpis}{comparison}'
         f'{bridge_section}{timing_section}{nav}{next_up}'
     )
 
