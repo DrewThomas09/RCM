@@ -235,7 +235,7 @@ class TestRenderBacktest(unittest.TestCase):
     def test_contains_sector_table(self):
         from rcm_mc.ui.data_public.backtest_page import render_backtest
         html = render_backtest()
-        self.assertIn("Sector-Level MOIC", html)
+        self.assertIn("MOIC by sector", html)  # editorial data_label replaces "Sector-Level MOIC"
 
     def test_nav_link_present(self):
         from rcm_mc.ui.data_public.backtest_page import render_backtest

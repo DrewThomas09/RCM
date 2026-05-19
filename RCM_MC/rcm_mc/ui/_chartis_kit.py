@@ -4910,6 +4910,13 @@ def chartis_shell(
     # very top + a duplicate inside the title meta).
     subtitle_consumed_by_title = False
     main_class = "ck-main ck-with-sidebar" if show_sidebar else "ck-main"
+    # PHI-mode marker for compliance tooling. The /app route forwards
+    # RCM_MC_PHI_MODE as phi_mode=; emit it as a data-attribute on the
+    # main element (the shell migration to this module had dropped the
+    # attribute that _chartis_kit_editorial.py used to render).
+    _phi_attr = (
+        f' data-phi-mode="{_esc(phi_mode)}"' if phi_mode else ""
+    )
     # ``editorial_intro`` auto-prepends a ck_section_intro block to
     # the page body. Lets a legacy renderer adopt the chartis cadence
     # (italic-serif headline) with a single kwarg instead of
@@ -5001,7 +5008,7 @@ def chartis_shell(
         f"{extra_css_html}"
         "</head><body>"
         f"{chrome_html}"
-        f'<main class="{main_class}">{debug_tag}{subtitle_html}{body_html}</main>'
+        f'<main class="{main_class}"{_phi_attr}>{debug_tag}{subtitle_html}{body_html}</main>'
         f"{palette_html}"
         f"{_SHORTCUTS_HTML}"
         f"{_TOAST_HTML}"

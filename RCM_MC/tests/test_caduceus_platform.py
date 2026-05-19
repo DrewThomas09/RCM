@@ -72,10 +72,17 @@ class TestHospitalProfile(unittest.TestCase):
         try:
             server, port = _start(tf.name)
             try:
-                with urllib.request.urlopen(
-                    f"http://127.0.0.1:{port}/hospital/999999",
-                ) as r:
-                    body = r.read().decode()
+                # An unknown CCN returns a graceful 404 (correct HTTP
+                # semantics); urllib raises HTTPError on 4xx, so read
+                # the error body and assert the not-found message.
+                try:
+                    with urllib.request.urlopen(
+                        f"http://127.0.0.1:{port}/hospital/999999",
+                    ) as r:
+                        body = r.read().decode()
+                except urllib.error.HTTPError as exc:
+                    self.assertEqual(exc.code, 404)
+                    body = exc.read().decode()
                 self.assertIn("Not Found", body)
             finally:
                 server.shutdown(); server.server_close()

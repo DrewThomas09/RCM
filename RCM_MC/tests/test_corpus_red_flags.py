@@ -245,8 +245,10 @@ class TestCorpusFlagsPanel(unittest.TestCase):
         # Dark terminal shell — bg + border match the rest of the
         # ck-* chrome. The editorial reskin briefly shipped a creamy
         # `#d6cfc3` border which the d8bfac4 revert undid.
-        self.assertIn("#0b0f18", panel)  # dark background
-        self.assertIn("#1e293b", panel)  # terminal-shell border
+        # Editorial reskin (PR #281) retreated this drawer from the
+        # dark terminal shell to parchment chrome.
+        self.assertIn("#FAF7F0", panel)  # parchment drawer background
+        self.assertIn("#D6CFC0", panel)  # hairline border on parchment
 
 
 if __name__ == "__main__":

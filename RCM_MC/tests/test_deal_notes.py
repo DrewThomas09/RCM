@@ -205,7 +205,10 @@ class TestNotesHttpIntegration(unittest.TestCase):
                     f"http://127.0.0.1:{port}/deal/ccf"
                 ) as r:
                     page = r.read().decode()
-                    self.assertIn("Notes (1)", page)
+                    # Editorial deal page renders an "<h2>Notes</h2>"
+                    # section header (the legacy "(1)" count was
+                    # dropped); the note body is what matters.
+                    self.assertIn("Notes", page)
                     self.assertIn("First call — good fit.", page)
                     self.assertIn("AT", page)
                     # Form for new note

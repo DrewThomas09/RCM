@@ -137,6 +137,14 @@ class TestListStarredStableOrder(unittest.TestCase):
             ts = "2026-04-15T10:00:00+00:00"
             with store.connect() as con:
                 for did in ["zzz", "aaa", "mmm"]:
+                    # deal_stars now has a FK to deals(deal_id); create
+                    # the parent rows before starring (the direct-insert
+                    # bypasses the star_deal API that would do this).
+                    con.execute(
+                        "INSERT OR IGNORE INTO deals (deal_id, name) "
+                        "VALUES (?, ?)",
+                        (did, did.upper()),
+                    )
                     con.execute(
                         "INSERT INTO deal_stars (deal_id, starred_at) "
                         "VALUES (?, ?)",
