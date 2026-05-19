@@ -19,20 +19,19 @@ from typing import Any, Dict, List
 
 def render_insights_page(db_path: str) -> str:
     from . import _web_components as _wc
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import chartis_shell, ck_page_title
     from .dashboard_page import _all_insights
 
     insights = _all_insights(db_path)
 
-    header = _wc.page_header(
+    header = ck_page_title(
         "All insights",
-        subtitle=(
+        eyebrow="PORTFOLIO · CROSS-DEAL SIGNALS",
+        meta=(
             "Every cross-portfolio signal the tool can compute, "
             "ranked highest-priority first. The /dashboard card "
             "shows only the top one."
         ),
-        crumbs=[("Dashboard", "/dashboard"),
-                ("All insights", None)],
     )
 
     if not insights:

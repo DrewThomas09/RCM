@@ -193,24 +193,23 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
     from . import _web_components as _wc
     from ._chartis_kit import (
         chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-        ck_next_section, ck_provenance_tooltip,
+        ck_next_section, ck_page_title, ck_provenance_tooltip,
     )
     from ..data_public.deals_corpus import DealsCorpus
     from ..data_public.sponsor_track_record import (
         build_sponsor_records,
     )
 
-    header = _wc.page_header(
+    header = ck_page_title(
         "Sponsor track record",
-        subtitle=(
+        eyebrow="DILIGENCE · SPONSOR INTELLIGENCE",
+        meta=(
             "Type a sponsor name. The tool computes their full "
             "track record from the corpus — every realized deal, "
             "median MOIC, win rate, sector breakdown, vintage "
             "timeline. Use when evaluating a sponsor's pitched "
             "base case."
         ),
-        crumbs=[("Dashboard", "/dashboard"),
-                ("Sponsor track record", None)],
     )
 
     # Pull corpus + build records once

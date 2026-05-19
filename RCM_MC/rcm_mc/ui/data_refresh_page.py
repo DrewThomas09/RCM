@@ -150,17 +150,18 @@ _CLIENT_JS = r"""
 def render_data_refresh_page(db_path: str) -> str:
     from ._chartis_kit import (
         chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-        ck_next_section, ck_provenance_tooltip,
+        ck_next_section, ck_page_title, ck_provenance_tooltip,
     )
     from . import _web_components as _wc
 
-    header = _wc.page_header(
+    header = ck_page_title(
         "Data refresh",
-        subtitle=("Pull fresh data from CMS HCRIS, Care Compare, IRS 990, "
-                  "and other public sources. Each refresh runs in the "
-                  "background — click, wait for the status chip, done. "
-                  "Rate-limited to 1 refresh per source per hour."),
-        crumbs=[("Dashboard", "/dashboard"), ("Data refresh", None)],
+        eyebrow="PUBLIC DATA · INGEST",
+        meta=(
+            "Pull fresh data from CMS HCRIS, Care Compare, IRS 990, "
+            "and other public sources. Rate-limited to 1 refresh per "
+            "source per hour."
+        ),
     )
 
     # Pull status rows from the data_source_status table.
