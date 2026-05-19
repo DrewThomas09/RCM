@@ -52,6 +52,221 @@ def _grade_badge(grade: str) -> str:
     return f'<span style="background:{color};color:#fff;padding:3px 10px;border-radius:3px;font-size:12px;font-weight:700;">{grade}</span>'
 
 
+# ── Editorial inline-SVG charts ────────────────────────────────────
+# Same vocabulary as ic_memo / ebitda_bridge: parchment palette,
+# teal-deep ramps, no JS, no chart libs.
+
+def _distress_distribution_chart(probs: List[float], width: int = 720,
+                                 height: int = 160) -> str:
+    """Histogram of distress probabilities across the corpus, with
+    the high-risk threshold marked."""
+    if not probs:
+        return ""
+    pad_l, pad_r, pad_t, pad_b = 40, 18, 22, 38
+    plot_w = width - pad_l - pad_r
+    plot_h = height - pad_t - pad_b
+    bins = 20
+    counts = [0] * bins
+    for p in probs:
+        idx = min(bins - 1, int(p * bins))
+        counts[idx] += 1
+    max_n = max(counts) or 1
+    bw = plot_w / bins
+
+    bars_svg = ""
+    for i, c in enumerate(counts):
+        bx = pad_l + bw * i
+        bh = (c / max_n) * plot_h
+        by = pad_t + plot_h - bh
+        midpoint = (i + 0.5) / bins
+        fill = (
+            "#A53A2D" if midpoint > 0.5
+            else "#b8732a" if midpoint > 0.35
+            else "#3F7D4D" if midpoint < 0.15
+            else "#8A92A0"
+        )
+        bars_svg += (
+            f'<rect x="{bx + 1:.1f}" y="{by:.1f}" width="{bw - 2:.1f}" '
+            f'height="{bh:.1f}" fill="{fill}" opacity="0.85" rx="1"/>'
+        )
+
+    # X-axis ticks
+    tick_svg = ""
+    for t in (0, 0.25, 0.5, 0.75, 1.0):
+        tx = pad_l + plot_w * t
+        tick_svg += (
+            f'<line x1="{tx:.1f}" y1="{pad_t + plot_h}" x2="{tx:.1f}" '
+            f'y2="{pad_t + plot_h + 4}" stroke="#BFB6A2" stroke-width="0.8"/>'
+            f'<text x="{tx:.1f}" y="{pad_t + plot_h + 16}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9" '
+            f'fill="#5C6878" text-anchor="middle">{int(t * 100)}%</text>'
+        )
+
+    # 50% threshold line
+    thr_x = pad_l + plot_w * 0.5
+    threshold_svg = (
+        f'<line x1="{thr_x:.1f}" y1="{pad_t - 4}" x2="{thr_x:.1f}" '
+        f'y2="{pad_t + plot_h}" stroke="#A53A2D" stroke-width="1.2" '
+        f'stroke-dasharray="3,2"/>'
+        f'<text x="{thr_x + 4:.1f}" y="{pad_t + 8}" '
+        f'font-family="Inter Tight,sans-serif" font-size="9" '
+        f'font-weight="700" letter-spacing="0.06em" '
+        f'fill="#A53A2D">HIGH-RISK ≥50%</text>'
+    )
+
+    # Y-axis "count" label
+    y_label_svg = (
+        f'<text x="{pad_l - 6}" y="{pad_t + 8}" '
+        f'font-family="Inter Tight,sans-serif" font-size="9" '
+        f'font-weight="700" letter-spacing="0.08em" '
+        f'fill="#5C6878" text-anchor="end">N HOSPITALS</text>'
+    )
+
+    base = (
+        f'<line x1="{pad_l}" y1="{pad_t + plot_h}" x2="{pad_l + plot_w}" '
+        f'y2="{pad_t + plot_h}" stroke="#BFB6A2" stroke-width="1"/>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="width:100%;max-width:{width}px;height:auto;display:block;'
+        f'margin:0 auto 1rem;">'
+        f'{base}{tick_svg}{bars_svg}{threshold_svg}{y_label_svg}</svg>'
+    )
+
+
+def _factor_contribution_chart(factors: List[Dict[str, Any]],
+                               width: int = 600,
+                               height: int = 180) -> str:
+    """Horizontal +/- bars: contribution of each factor to distress
+    score. ``factors`` items: ``{"feature", "contribution", "direction"}``."""
+    if not factors:
+        return ""
+    pad_l, pad_r, pad_t, pad_b = 180, 28, 14, 14
+    plot_w = width - pad_l - pad_r
+    rows = factors[:6]
+    row_h = (height - pad_t - pad_b) / max(1, len(rows))
+    max_abs = max(abs(f["contribution"]) for f in rows) or 0.01
+    mid_x = pad_l + plot_w / 2
+
+    bars_svg = ""
+    for i, f in enumerate(rows):
+        ry = pad_t + row_h * i + row_h / 2
+        contrib = f["contribution"]
+        is_pos = f.get("direction") == "increases" or contrib > 0
+        bw = abs(contrib) / max_abs * (plot_w / 2 - 6)
+        bx = mid_x if is_pos else mid_x - bw
+        fill = "#A53A2D" if is_pos else "#3F7D4D"
+        bars_svg += (
+            f'<rect x="{bx:.1f}" y="{ry - row_h * 0.32:.1f}" '
+            f'width="{bw:.1f}" height="{row_h * 0.62:.1f}" fill="{fill}" '
+            f'opacity="0.85" rx="1"/>'
+            f'<text x="{pad_l - 8}" y="{ry + 3:.1f}" '
+            f'font-family="Inter Tight,sans-serif" font-size="10.5" '
+            f'fill="#1a2332" text-anchor="end">'
+            f'{_html.escape(f["feature"])}</text>'
+            f'<text x="{(bx + bw + 4) if is_pos else (bx - 4):.1f}" '
+            f'y="{ry + 3:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9.5" '
+            f'font-weight="700" fill="{fill}" '
+            f'text-anchor="{ "start" if is_pos else "end" }">'
+            f'{contrib:+.3f}</text>'
+        )
+
+    axis_svg = (
+        f'<line x1="{mid_x:.1f}" y1="{pad_t}" x2="{mid_x:.1f}" '
+        f'y2="{height - pad_b}" stroke="#BFB6A2" stroke-width="1"/>'
+        f'<text x="{pad_l + plot_w * 0.25:.1f}" y="{height - 2}" '
+        f'font-family="Inter Tight,sans-serif" font-size="9" '
+        f'font-weight="700" letter-spacing="0.08em" '
+        f'fill="#3F7D4D" text-anchor="middle">▼ RISK</text>'
+        f'<text x="{pad_l + plot_w * 0.75:.1f}" y="{height - 2}" '
+        f'font-family="Inter Tight,sans-serif" font-size="9" '
+        f'font-weight="700" letter-spacing="0.08em" '
+        f'fill="#A53A2D" text-anchor="middle">▲ RISK</text>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="width:100%;max-width:{width}px;height:auto;display:block;'
+        f'margin:0 auto 1rem;">'
+        f'{axis_svg}{bars_svg}</svg>'
+    )
+
+
+def _rcm_lever_chart(levers: List[Any], width: int = 720,
+                     height: int = 220) -> str:
+    """Horizontal impact bars per RCM lever.
+
+    ``levers`` items expose ``.lever``, ``.risk_adjusted_impact``,
+    ``.confidence``, ``.implementation_months``.
+    """
+    pos = [l for l in levers if getattr(l, "risk_adjusted_impact", 0) >= 1000]
+    pos.sort(key=lambda l: l.risk_adjusted_impact, reverse=True)
+    pos = pos[:6]
+    if not pos:
+        return ""
+    pad_l, pad_r, pad_t, pad_b = 200, 100, 14, 24
+    plot_w = width - pad_l - pad_r
+    row_h = (height - pad_t - pad_b) / len(pos)
+    max_v = max(l.risk_adjusted_impact for l in pos) or 1
+
+    bars_svg = ""
+    for i, l in enumerate(pos):
+        ry = pad_t + row_h * i + row_h / 2
+        bw = (l.risk_adjusted_impact / max_v) * plot_w
+        conf = getattr(l, "confidence", 1.0)
+        # Confidence threads the green tone — high confidence = teal-deep,
+        # lower = teal
+        fill = (
+            "#155752" if conf >= 0.75
+            else "#1F7A75" if conf >= 0.5
+            else "#7ED3A8"
+        )
+        bars_svg += (
+            f'<rect x="{pad_l}" y="{ry - row_h * 0.32:.1f}" '
+            f'width="{bw:.1f}" height="{row_h * 0.62:.1f}" '
+            f'fill="{fill}" opacity="0.9" rx="1"/>'
+            f'<text x="{pad_l - 8}" y="{ry + 3:.1f}" '
+            f'font-family="Inter Tight,sans-serif" font-size="10.5" '
+            f'fill="#1a2332" text-anchor="end">'
+            f'{_html.escape(l.lever)}</text>'
+            f'<text x="{pad_l + bw + 6:.1f}" y="{ry + 3:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="10" '
+            f'font-weight="700" fill="#1a2332">'
+            f'{_fmt_money(l.risk_adjusted_impact)}</text>'
+            f'<text x="{pad_l + bw + 6:.1f}" y="{ry + 16:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9" '
+            f'fill="#5C6878">'
+            f'{conf * 100:.0f}% · {getattr(l, "implementation_months", 0)}mo</text>'
+        )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="width:100%;max-width:{width}px;height:auto;display:block;'
+        f'margin:0 auto 1rem;">{bars_svg}</svg>'
+    )
+
+
+_ML_CHART_CSS = """
+<style>
+.ml-chart-caption {
+  font-family: "Inter Tight","Inter",sans-serif;
+  font-size: .72rem; color: #5C6878;
+  text-align: center; letter-spacing: 0.06em;
+  text-transform: uppercase; margin: -.5rem 0 1.25rem;
+}
+@media print {
+  .ml-chart-caption { color: #1a2332; }
+  svg { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+"""
+
+
 def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str:
     """Render the ML Insights page — national view or hospital-specific."""
     from ..ml.hospital_clustering import cluster_hospitals
@@ -215,6 +430,14 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
             f'</tr>'
         )
 
+    distress_probs_all = [d["distress_prob"] for d in distressed_list]
+    distress_chart = _distress_distribution_chart(distress_probs_all)
+    distress_caption = (
+        '<div class="ml-chart-caption">'
+        f'Distress probability distribution · {n_distressed} hospitals above the 50% threshold'
+        '</div>'
+    ) if distress_chart else ""
+
     distress_section = (
         f'<div class="cad-card">'
         f'<h2>Distress Risk Screening (Logistic Regression)</h2>'
@@ -222,6 +445,7 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
         f'Hospitals ranked by predicted probability of financial distress '
         f'(operating margin &lt; -5%). Model AUC = {auc:.3f} on {n_train:,} training samples. '
         f'High-distress hospitals are potential turnaround acquisition targets at discounted multiples.</p>'
+        f'{distress_chart}{distress_caption}'
         f'<table class="cad-table"><thead><tr>'
         f'<th>Hospital</th><th>State</th><th>Beds</th><th>Revenue</th>'
         f'<th>Margin</th><th>Distress P</th><th>Risk</th>'
@@ -312,7 +536,7 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
         eyebrow="Continue —",
         italic_word="feature",
     )
-    body = f'{kpis}{cluster_section}{distress_section}{rcm_screen}{methodology}{nav}{next_up}'
+    body = f'{_ML_CHART_CSS}{kpis}{cluster_section}{distress_section}{rcm_screen}{methodology}{nav}{next_up}'
 
     return chartis_shell(
         body,
@@ -550,6 +774,18 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
                 f'</tr>'
             )
 
+        factor_chart_rows = [
+            {"feature": f["feature"], "contribution": f["contribution"],
+             "direction": f["direction"]}
+            for f in distress_result.contributing_factors[:6]
+        ]
+        factor_chart = _factor_contribution_chart(factor_chart_rows)
+        factor_caption = (
+            '<div class="ml-chart-caption">'
+            'Per-factor contribution to distress score · right = adds risk · left = reduces risk'
+            '</div>'
+        ) if factor_chart else ""
+
         sections.append(
             f'<div class="cad-card">'
             f'<h2>Distress Analysis</h2>'
@@ -560,6 +796,7 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             f'<strong>{distress_result.state_distress_rate:.1%}</strong></div>'
             f'<div>Model AUC: <strong>{distress_result.model_auc:.3f}</strong></div>'
             f'</div>'
+            f'{factor_chart}{factor_caption}'
             f'<table class="cad-table"><thead><tr>'
             f'<th>Factor</th><th>Value</th><th>Contribution</th><th>Direction</th>'
             f'</tr></thead><tbody>{factor_rows}</tbody></table></div>'
@@ -585,6 +822,13 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
                 f'</tr>'
             )
 
+        lever_chart = _rcm_lever_chart(rcm_result.levers)
+        lever_caption = (
+            '<div class="ml-chart-caption">'
+            'Risk-adjusted EBITDA impact per lever · darker = higher confidence · timeline shown in months'
+            '</div>'
+        ) if lever_chart else ""
+
         sections.append(
             f'<div class="cad-card">'
             f'<h2>RCM Improvement Opportunity</h2>'
@@ -600,6 +844,7 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             f'<p style="font-size:11.5px;color:var(--cad-text2);margin-bottom:8px;">'
             f'Gap analysis vs P75 peers with 60% closure assumption. Confidence-weighted by '
             f'lever implementation difficulty.</p>'
+            f'{lever_chart}{lever_caption}'
             f'<table class="cad-table"><thead><tr>'
             f'<th>Lever</th><th>Current</th><th>Benchmark</th><th>Gap</th>'
             f'<th>Impact</th><th>Confidence</th><th>Timeline</th>'
@@ -671,7 +916,7 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
         f'</div>'
     )
 
-    body = "\n".join(sections)
+    body = _ML_CHART_CSS + "\n".join(sections)
     return chartis_shell(
         body,
         f"ML Analysis — {_html.escape(name)}",
