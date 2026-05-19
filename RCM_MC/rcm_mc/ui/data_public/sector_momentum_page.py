@@ -308,7 +308,6 @@ def render_sector_momentum(recent_years: int = 5) -> str:
 
     body = f"""
 <div style="padding:16px 20px;max-width:1200px">
-  {ck_section_header("SECTOR MOMENTUM", f"Deal activity acceleration by sector — {len(corpus)} corpus transactions", None)}
   {data_source_callout}
   {kpi_strip}
 

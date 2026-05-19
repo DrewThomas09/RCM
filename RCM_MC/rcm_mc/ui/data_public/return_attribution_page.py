@@ -222,7 +222,6 @@ def render_return_attribution() -> str:
 
     body = f"""
 <div style="padding:16px 20px;max-width:1400px">
-  {ck_section_header("RETURN ATTRIBUTION", f"MOIC decomposition by deal dimension — {ra.corpus_size} transactions", None)}
   {kpi_strip}
   {legend}
   {_dim_panel("BY SECTOR — MOIC DISTRIBUTION (P25 / P50 / P75)", ra.by_sector[:20], cp50)}

@@ -251,12 +251,27 @@ def _error_histogram_svg(
 # corpus-calibrated regression buckets. No sklearn needed.
 # ---------------------------------------------------------------------------
 
-def _corpus_predicted_moic(deal: Dict[str, Any]) -> Optional[float]:
-    """Rough corpus-calibrated MOIC prediction from entry characteristics."""
+# Module-level cache for OLS-fitted model coefficients. The fit
+# runs once per process per corpus-id (id() of the deals list) so
+# pages that call _corpus_predicted_moic across multiple deals
+# share one fit. Previously the model was a hardcoded formula
+# (3.2 - 0.10*multiple + 0.12*hold) labelled "approximate" — R²
+# came out at -1.09 because those coefficients didn't match the
+# corpus at all. Fitting OLS on the realized subset every time
+# replaces that toy model with one that actually earns its place.
+_MODEL_CACHE: Dict[int, Optional[Tuple[float, float, float, float, float]]] = {}
+
+
+def _deal_features(deal: Dict[str, Any]) -> Optional[Tuple[float, float, float, float]]:
+    """Extract (multiple, hold_yr, commercial_frac, gov_frac) or None.
+
+    commercial_frac = pm.commercial; gov_frac = pm.medicare + pm.medicaid.
+    Missing payer-mix → both default to 0 so the deal still scores
+    on multiple + hold alone.
+    """
     ev = deal.get("ev_mm") or deal.get("entry_ev_mm")
     ebitda = deal.get("ebitda_at_entry_mm") or deal.get("ebitda_mm")
     hold = deal.get("hold_years")
-
     if not ev or not ebitda or not hold:
         return None
     try:
@@ -264,22 +279,102 @@ def _corpus_predicted_moic(deal: Dict[str, Any]) -> Optional[float]:
         hold_yr = float(hold)
     except (TypeError, ZeroDivisionError):
         return None
+    pm = deal.get("payer_mix") or {}
+    if not isinstance(pm, dict):
+        pm = {}
+    comm = float(pm.get("commercial", 0) or 0)
+    gov = float(
+        (pm.get("medicare", 0) or 0) + (pm.get("medicaid", 0) or 0)
+    )
+    return (multiple, hold_yr, comm, gov)
 
-    # Corpus-calibrated: lower entry multiple → better realized MOIC historically
-    # Intercept and slope from corpus OLS on realized deals
-    # Approximate: MOIC ≈ 3.2 - 0.10 * multiple + 0.12 * hold_yr
+
+def _fit_corpus_model(
+    deals: List[Dict[str, Any]],
+) -> Optional[Tuple[float, float, float, float, float]]:
+    """OLS-fit `realized_moic ~ multiple + hold_yr + commercial + gov`
+    on the realized subset of the corpus. Returns (b0, b_mult, b_hold,
+    b_comm, b_gov) or None if there aren't enough rows.
+
+    Numpy-only (no sklearn). Cached per corpus id.
+    """
+    import numpy as np  # local import to keep module-import light
+
+    key = id(deals)
+    if key in _MODEL_CACHE:
+        return _MODEL_CACHE[key]
+
+    rows = []
+    for d in _realized(deals):
+        feats = _deal_features(d)
+        moic = d.get("realized_moic")
+        if feats is None or moic is None:
+            continue
+        try:
+            rows.append((*feats, float(moic)))
+        except (TypeError, ValueError):
+            continue
+
+    if len(rows) < 10:
+        _MODEL_CACHE[key] = None
+        return None
+
+    arr = np.asarray(rows, dtype=float)
+    X = arr[:, :4]
+    y = arr[:, 4]
+    # Augment with intercept column
+    X_aug = np.column_stack([np.ones(len(X)), X])
+    try:
+        beta, *_ = np.linalg.lstsq(X_aug, y, rcond=None)
+    except np.linalg.LinAlgError:
+        _MODEL_CACHE[key] = None
+        return None
+
+    result = tuple(float(b) for b in beta)
+    _MODEL_CACHE[key] = result  # type: ignore[assignment]
+    return result  # type: ignore[return-value]
+
+
+def _corpus_predicted_moic(
+    deal: Dict[str, Any],
+    corpus: Optional[List[Dict[str, Any]]] = None,
+) -> Optional[float]:
+    """Corpus-calibrated MOIC prediction from entry characteristics.
+
+    Fits OLS once per corpus and uses the fitted coefficients to
+    predict — see _fit_corpus_model for the spec.
+
+    ``corpus`` is optional for backward compat with single-deal
+    callers; when omitted the function falls back to the hardcoded
+    historical formula. The page's calibration stats call passes
+    the corpus so the page reports the OLS-fitted R².
+    """
+    feats = _deal_features(deal)
+    if feats is None:
+        return None
+    multiple, hold_yr, comm, gov = feats
+
+    if corpus is not None:
+        coeffs = _fit_corpus_model(corpus)
+        if coeffs is not None:
+            b0, b_mult, b_hold, b_comm, b_gov = coeffs
+            pred = (
+                b0
+                + b_mult * multiple
+                + b_hold * hold_yr
+                + b_comm * comm
+                + b_gov * gov
+            )
+            return max(0.05, round(pred, 2))
+
+    # Fallback (no corpus passed or fit failed): keep the
+    # historical hardcoded formula so single-deal callers still
+    # get a number rather than None.
     base = 3.2 - 0.10 * multiple + 0.12 * hold_yr
-
-    # Payer mix adjustment: high commercial → +0.15, high gov → -0.10
-    pm = deal.get("payer_mix")
-    if isinstance(pm, dict):
-        comm = pm.get("commercial", 0)
-        gov = (pm.get("medicare", 0) or 0) + (pm.get("medicaid", 0) or 0)
-        if comm >= 0.65:
-            base += 0.15
-        elif gov >= 0.65:
-            base -= 0.10
-
+    if comm >= 0.65:
+        base += 0.15
+    elif gov >= 0.65:
+        base -= 0.10
     return max(0.05, round(base, 2))
 
 
@@ -302,10 +397,13 @@ def _calibration_stats(deals: List[Dict[str, Any]]) -> Dict[str, Any]:
     moics = sorted([d["realized_moic"] for d in realized_list])
     irrs = sorted([d["realized_irr"] for d in realized_list if d.get("realized_irr") is not None])
 
-    # Predicted vs realized pairs
+    # Predicted vs realized pairs — pass the corpus so the helper
+    # fits OLS on the realized subset (rather than using the legacy
+    # hardcoded "MOIC ≈ 3.2 - 0.10*multiple + 0.12*hold" formula
+    # that produced R² = -1.09).
     pairs = []
     for d in realized_list:
-        pred = _corpus_predicted_moic(d)
+        pred = _corpus_predicted_moic(d, corpus=deals)
         if pred is not None:
             pairs.append((pred, d["realized_moic"]))
 
@@ -377,7 +475,7 @@ def _predicted_vs_realized_data(
     """(predicted MOIC, realized MOIC) pairs for calibration scatter."""
     pts = []
     for d in _realized(deals):
-        pred = _corpus_predicted_moic(d)
+        pred = _corpus_predicted_moic(d, corpus=deals)
         moic = d.get("realized_moic")
         if pred is not None and moic is not None:
             if 0.0 <= pred <= 6.0 and 0.0 <= float(moic) <= 6.0:

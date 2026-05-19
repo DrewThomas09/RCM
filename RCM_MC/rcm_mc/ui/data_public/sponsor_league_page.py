@@ -304,11 +304,10 @@ def render_sponsor_league(
 </form>"""
 
     kpis = _kpi_bar(records)
-    section = ck_section_header("SPONSOR LEAGUE TABLE", "healthcare PE returns by firm", len(records))
     table = _build_table(records)
     meth = _methodology_panel()
 
-    body = kpis + controls + section + table + meth
+    body = kpis + controls + table + meth
 
     return chartis_shell(
         body,

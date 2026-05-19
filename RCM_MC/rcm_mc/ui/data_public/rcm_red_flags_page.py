@@ -374,7 +374,6 @@ def render_rcm_red_flags(params: Dict[str, str]) -> str:
 
     body = f"""
 <div style="padding:16px 20px;max-width:1200px">
-  {ck_section_header("RCM RED FLAG DETECTOR", f"Corpus-driven risk factor scoring — {len(corpus):,} transactions", None)}
   {kpi_strip}
   <div style="background:{P['panel']};border:1px solid {P['border']};padding:14px;margin-bottom:16px">
     <div style="font-size:9px;color:{P['text_dim']};font-family:{_SANS};letter-spacing:.08em;margin-bottom:10px">DEAL PARAMETERS</div>

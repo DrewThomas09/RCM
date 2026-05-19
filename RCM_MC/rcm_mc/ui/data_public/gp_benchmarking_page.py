@@ -246,7 +246,6 @@ def render_gp_benchmarking(params: Dict[str, str]) -> str:
 
     body = f"""
 <div style="padding:16px 20px;max-width:1200px">
-  {ck_section_header("GP BENCHMARKING", f"Sponsor performance vs corpus peers — {len(corpus):,} transactions", None)}
   <div style="background:{P['panel']};border:1px solid {P['border']};padding:14px;margin-bottom:16px">
     {_input_form(params, gps)}
   </div>

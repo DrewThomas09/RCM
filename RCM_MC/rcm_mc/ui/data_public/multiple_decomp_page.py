@@ -272,7 +272,7 @@ def render_multiple_decomp(params: Dict[str, str]) -> str:
     body = f"""
 {_input_form(params)}
 {kpi_grid}
-{ck_section_header("Multiple Decomposition", f"Entry {ev_ebitda:.1f}× broken into components")}
+{ck_section_header("Component Waterfall", f"Entry {ev_ebitda:.1f}× broken into drivers")}
 <div style="overflow-x:auto;margin-bottom:24px">{chart}</div>
 {ck_section_header("Sector Benchmarks", "Corpus EV/EBITDA ranges and premium-MOIC relationship")}
 <div style="overflow-x:auto;margin-bottom:24px">{_sector_bench_table(result.sector_benchmarks)}</div>
