@@ -441,19 +441,30 @@ def render_portfolio_risk_scan(db_path: str) -> str:
                       if (d.get("overdue_deadlines") or 0) > 0)
 
     def _summary_chip(label: str, n: int, *, level: str) -> str:
+        # Editorial chartis palette — replaces the mint/amber/red
+        # pastels with the dark teal-ink + amber + brick from the
+        # design tokens so the chips match the rest of the site
+        # (and the AT avatar). Foreground is cream/parchment for
+        # high contrast against the dark fills.
         colors = {
-            "ok": ("#d1fae5", "#065f46"),
-            "warn": ("#fef3c7", "#92400e"),
-            "alert": ("#fee2e2", "#991b1b"),
+            "ok":    ("#155752", "#f5f1ea"),  # teal-ink + parchment
+            "warn":  ("#b8732a", "#fdf4e3"),  # editorial amber
+            "alert": ("#b5321e", "#fdeae5"),  # editorial brick red
         }
         bg, fg = colors.get(level, colors["ok"])
         return (
-            f'<div style="padding:10px 14px;background:{bg};color:{fg};'
-            f'border-radius:8px;flex:1;min-width:180px;">'
-            f'<div style="font-size:11px;font-weight:600;text-transform:uppercase;'
-            f'letter-spacing:0.05em;opacity:0.85;">{_html.escape(label)}</div>'
-            f'<div style="font-size:22px;font-weight:700;margin-top:2px;'
-            f'font-variant-numeric:tabular-nums;">{n}</div>'
+            f'<div style="padding:14px 18px;background:{bg};color:{fg};'
+            f'border-radius:3px;flex:1;min-width:180px;'
+            f'font-family:var(--sc-sans,\'Inter Tight\','
+            f'-apple-system,sans-serif);">'
+            f'<div style="font-family:var(--sc-mono,\'JetBrains Mono\','
+            f'monospace);font-size:10px;font-weight:600;'
+            f'text-transform:uppercase;letter-spacing:0.10em;'
+            f'opacity:0.85;">{_html.escape(label)}</div>'
+            f'<div style="font-family:var(--sc-mono,\'JetBrains Mono\','
+            f'monospace);font-size:26px;font-weight:600;margin-top:6px;'
+            f'font-variant-numeric:tabular-nums;letter-spacing:-0.01em;">'
+            f'{n}</div>'
             f'</div>'
         )
 
