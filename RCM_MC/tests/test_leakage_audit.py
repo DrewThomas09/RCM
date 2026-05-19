@@ -19,7 +19,9 @@ import unittest
 
 from rcm_mc.finance.leakage import (
     PROVENANCE,
+    FeatureProvenance,
     LeakageVerdict,
+    atomic_inputs,
     audit_features,
     classify_feature_for_target,
     forecasting_safe_features,
@@ -358,6 +360,133 @@ class RegistryCoverageTests(unittest.TestCase):
             f"PROVENANCE: {missing}. Add a FeatureProvenance entry "
             f"to rcm_mc/finance/leakage.py.",
         )
+
+
+class AtomicInputsTests(unittest.TestCase):
+    """The atomic-input walk underpins transitive FORMULA_RELATED
+    detection. Pin the contract: returns {self} for raw columns,
+    walks chains for derived features, terminates on cycles."""
+
+    def test_raw_column_returns_itself(self):
+        self.assertEqual(atomic_inputs("beds"), frozenset({"beds"}))
+        self.assertEqual(
+            atomic_inputs("net_patient_revenue"),
+            frozenset({"net_patient_revenue"}),
+        )
+
+    def test_one_hop_returns_direct_inputs(self):
+        # revenue_per_bed = npr / beds (1 hop deep)
+        self.assertEqual(
+            atomic_inputs("revenue_per_bed"),
+            frozenset({"net_patient_revenue", "beds"}),
+        )
+
+    def test_two_hop_chain_walks_through(self):
+        # margin_per_bed = operating_margin × bed-scale
+        # operating_margin = (npr - opex) / npr
+        # → atomic ancestors: {npr, opex, beds}
+        self.assertEqual(
+            atomic_inputs("margin_per_bed"),
+            frozenset({
+                "net_patient_revenue", "operating_expenses", "beds",
+            }),
+        )
+
+    def test_cycle_does_not_loop_forever(self):
+        # Synthetic registry with A→B→A would otherwise infinite-loop.
+        # The visited-set guard returns empty on the second visit.
+        reg = {
+            "A": FeatureProvenance(
+                name="A", label="A", inputs=frozenset({"B"}),
+            ),
+            "B": FeatureProvenance(
+                name="B", label="B", inputs=frozenset({"A"}),
+            ),
+        }
+        # Should terminate, returning something (whatever it can
+        # reach in the bounded walk; specifically NOT an infinite
+        # loop or RecursionError).
+        result = atomic_inputs("A", reg)
+        self.assertIsInstance(result, frozenset)
+
+    def test_max_depth_bounds_walk(self):
+        # Chain of 12 → max_depth=8 truncates before reaching atom.
+        chain = {}
+        for i in range(12):
+            chain[f"L{i}"] = FeatureProvenance(
+                name=f"L{i}", label=f"L{i}",
+                inputs=(
+                    frozenset({f"L{i+1}"}) if i < 11
+                    else frozenset()  # L11 is raw
+                ),
+            )
+        # Bounded walk shouldn't crash; just returns whatever it
+        # could enumerate within max_depth=8.
+        result = atomic_inputs("L0", chain, max_depth=8)
+        self.assertIsInstance(result, frozenset)
+
+
+class TransitiveFormulaRelatedTests(unittest.TestCase):
+    """Multi-hop FORMULA_RELATED detection. PR #232 added the 1-hop
+    check (direct .inputs intersection); this catches the 2+ hop
+    chains the 1-hop check misses.
+
+    Concrete case: margin_per_bed shares atomic inputs {npr, opex,
+    beds} with operating_margin's atomic inputs {npr, opex}. Direct
+    .inputs of margin_per_bed = {operating_margin, beds}, which
+    doesn't intersect operating_margin.inputs = {npr, opex} —
+    so the 1-hop check would say SAFE. Transitive must catch it.
+    """
+
+    def test_margin_per_bed_vs_revenue_per_day_is_transitive(self):
+        # margin_per_bed.inputs = {operating_margin, beds}
+        # revenue_per_day.inputs = {npr, total_patient_days}
+        # Direct shared = ∅
+        # margin_per_bed atomic = {npr, opex, beds}
+        # revenue_per_day atomic = {npr, total_patient_days}
+        # Atomic shared = {npr} → transitive FORMULA_RELATED
+        v = classify_feature_for_target(
+            "margin_per_bed", "revenue_per_day",
+        )
+        self.assertEqual(v.verdict, "FORMULA_RELATED")
+        self.assertTrue(
+            v.transitive,
+            "should be transitive — direct .inputs don't overlap, "
+            "the chain only emerges via the atomic walk through "
+            "operating_margin",
+        )
+        self.assertIn("Transitive", v.reason)
+
+    def test_one_hop_formula_related_not_marked_transitive(self):
+        # revenue_per_bed.inputs = {npr, beds}
+        # operating_margin.inputs = {npr, opex}
+        # Direct shared = {npr} → 1-hop FORMULA_RELATED, not transitive.
+        v = classify_feature_for_target(
+            "revenue_per_bed", "operating_margin",
+        )
+        self.assertEqual(v.verdict, "FORMULA_RELATED")
+        self.assertFalse(v.transitive)
+
+    def test_direct_leak_still_wins_over_transitive(self):
+        # margin_per_bed has operating_margin in its direct inputs.
+        # Rule 3 (target ∈ feature.inputs) must short-circuit before
+        # the atomic walk; otherwise we'd downgrade a critical LEAK
+        # to a warning-severity FORMULA_RELATED.
+        v = classify_feature_for_target(
+            "margin_per_bed", "operating_margin",
+        )
+        self.assertEqual(v.verdict, "LEAKS")
+        self.assertEqual(v.severity, "critical")
+
+    def test_truly_unrelated_features_stay_safe(self):
+        # occupancy_rate.inputs = {total_patient_days, bed_days}
+        # commercial_pct.inputs = {medicare_day_pct, medicaid_day_pct}
+        # Atomic: no overlap at all → SAFE.
+        v = classify_feature_for_target(
+            "occupancy_rate", "commercial_pct",
+        )
+        self.assertEqual(v.verdict, "SAFE")
+        self.assertFalse(v.transitive)
 
 
 if __name__ == "__main__":
