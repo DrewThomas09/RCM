@@ -168,13 +168,13 @@ def _api_client_docs() -> str:
   <div class="ck-panel-title">CMS API Client — Quick Reference</div>
   <div style="padding:14px 16px;">
     <div class="ck-section-label" style="margin-bottom:8px;">Python Usage</div>
-    <pre style="background:#0a0e17;border:1px solid #1e293b;border-radius:3px;padding:12px 14px;
-                font-family:var(--ck-mono);font-size:11px;color:#e2e8f0;overflow-x:auto;
+    <pre style="background:#FAF7F0;border:1px solid #D6CFC0;border-left:3px solid #155752;border-radius:2px;padding:12px 14px;
+                font-family:var(--ck-mono);font-size:11px;color:#1a2332;overflow-x:auto;
                 white-space:pre;line-height:1.6;">
-<span style="color:#94a3b8"># rcm_mc/data_public/cms_api_client.py</span>
+<span style="color:#5C6878"># rcm_mc/data_public/cms_api_client.py</span>
 from rcm_mc.data_public.cms_api_client import fetch_pages, fetch_provider_utilization
 
-<span style="color:#94a3b8"># Low-level: fetch raw paginated JSON</span>
+<span style="color:#5C6878"># Low-level: fetch raw paginated JSON</span>
 rows = fetch_pages(
     "https://data.cms.gov/data-api/v1/dataset/9552/data",
     limit=5000,
@@ -182,17 +182,17 @@ rows = fetch_pages(
     retry_count=3,
 )
 
-<span style="color:#94a3b8"># High-level: physician utilization with normalization</span>
+<span style="color:#5C6878"># High-level: physician utilization with normalization</span>
 providers = fetch_provider_utilization(
     state="TX",
     specialty="Cardiology",
     year=2022,
     max_pages=5,
 )
-<span style="color:#94a3b8"># → List[Dict] with: npi, provider_name, state, specialty,
+<span style="color:#5C6878"># → List[Dict] with: npi, provider_name, state, specialty,
 #   total_services, total_beneficiaries, total_payment</span>
 
-<span style="color:#94a3b8"># Winsorize heavy-tailed payment columns</span>
+<span style="color:#5C6878"># Winsorize heavy-tailed payment columns</span>
 from rcm_mc.data_public.cms_api_client import winsorize_column
 clean = winsorize_column([col for col in payments], upper_quantile=0.95)
     </pre>

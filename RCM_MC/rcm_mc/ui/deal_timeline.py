@@ -231,13 +231,17 @@ def render_timeline(
         )
 
     css = """
-    .tl-card { background:#111827; border:1px solid #1e293b;
-      padding:12px 14px; margin-bottom:8px; border-radius:4px; }
-    .tl-meta { color:#64748b; font-size:11px; margin-bottom:4px; }
-    .tl-title { font-weight:600; font-size:13px; }
-    .tl-badge { color:#fff; font-size:10px; padding:1px 6px;
-      border-radius:2px; text-transform:uppercase; letter-spacing:.04em; }
-    .tl-detail { color:#94a3b8; font-size:12px; margin-top:4px; }
+    .tl-card { background:#FAF7F0; border:1px solid #D6CFC0;
+      border-left:3px solid #155752;
+      padding:12px 14px; margin-bottom:8px; border-radius:2px;
+      font-family:"Inter Tight","Inter",sans-serif; }
+    .tl-meta { color:#5C6878; font-size:11px; margin-bottom:4px;
+      font-family:"JetBrains Mono",monospace; letter-spacing:.04em; }
+    .tl-title { font-weight:600; font-size:13px; color:#1a2332; }
+    .tl-badge { color:#FAF7F0; font-size:10px; padding:2px 7px;
+      border-radius:2px; text-transform:uppercase; letter-spacing:.08em;
+      font-family:"JetBrains Mono",monospace; font-weight:600; }
+    .tl-detail { color:#5C6878; font-size:12px; margin-top:4px; line-height:1.5; }
     """
     body = f"""
     <h2>{_esc(deal_name)} — Activity Timeline ({len(events)} events)</h2>

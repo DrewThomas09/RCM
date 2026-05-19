@@ -351,7 +351,7 @@ def _box_plot(
             f'{tx + 5:.1f},{mid_y} '
             f'{tx:.1f},{mid_y + 7} '
             f'{tx - 5:.1f},{mid_y}" '
-            f'fill="{color}" stroke="#0f172a" '
+            f'fill="{color}" stroke="#1a2332" '
             f'stroke-width="0.5">'
             f'<title>Target: {target_value:.3g}</title>'
             f'</polygon>'

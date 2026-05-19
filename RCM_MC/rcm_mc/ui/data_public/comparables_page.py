@@ -159,7 +159,7 @@ def _peer_stats_panel(comps: List[Dict[str, Any]], target: Optional[Dict[str, An
         cells.append(("Target MOIC Percentile", f'<span style="font-family:var(--ck-mono)">{percentile_rank:.0f}th</span>'))
 
     cells_html = "".join(
-        f'<div style="padding:8px 12px;border-right:1px solid #1e293b;">'
+        f'<div style="padding:8px 12px;border-right:1px solid #D6CFC0;">'
         f'<div style="font-size:8.5px;color:#475569;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:3px;">{_html.escape(k)}</div>'
         f'<div style="font-size:13px;">{v}</div>'
         f'</div>'

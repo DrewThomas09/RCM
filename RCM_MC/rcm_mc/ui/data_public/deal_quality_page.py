@@ -32,7 +32,7 @@ def _mini_bar(pct: float, color: str, width: int = 80) -> str:
     filled = max(0, min(width, int(pct * width)))
     return (
         f'<svg width="{width}" height="8" xmlns="http://www.w3.org/2000/svg">'
-        f'<rect x="0" y="0" width="{width}" height="8" rx="1" fill="#1e293b"/>'
+        f'<rect x="0" y="0" width="{width}" height="8" rx="1" fill="#ECE5D6"/>'
         f'<rect x="0" y="0" width="{filled}" height="8" rx="1" fill="{color}"/>'
         f'</svg>'
     )
@@ -69,7 +69,7 @@ def _tier_distribution_svg(tier_counts: Dict[str, int], total: int) -> str:
                 lx = x + w // 2
                 segments.append(
                     f'<text x="{lx}" y="15" text-anchor="middle" '
-                    f'font-family="JetBrains Mono,monospace" font-size="9" fill="#0a0e17">'
+                    f'font-family="JetBrains Mono,monospace" font-size="9" fill="#1a2332">'
                     f'{tier}:{count}</text>'
                 )
         x += w
@@ -309,7 +309,7 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
   <div class="ck-panel-title">Per-Deal Quality Scores — {len(page_scores)} of {len(scores)}</div>
   <div class="ck-table-wrap" style="max-height:600px;overflow-y:auto;">
     <table class="ck-table" style="width:100%;table-layout:fixed;">
-      <thead style="position:sticky;top:0;background:#111827;z-index:2;">
+      <thead style="position:sticky;top:0;background:#ECE5D6;z-index:2;">
         <tr>
           {_col_header("ID", "source_id")}
           <th style="padding:5px 8px;text-align:left;color:#64748b;width:220px;">Deal</th>

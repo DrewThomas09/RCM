@@ -50,7 +50,7 @@ def _consistency_bar(score: float, width: int = 60) -> str:
     bar_color = "#0a8a5f" if score >= 70 else ("#f59e0b" if score >= 45 else "#ef4444")
     return (
         f'<svg width="{width}" height="8" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;">'
-        f'<rect x="0" y="1" width="{width}" height="6" rx="1" fill="#1e293b"/>'
+        f'<rect x="0" y="1" width="{width}" height="6" rx="1" fill="#ECE5D6"/>'
         f'<rect x="0" y="1" width="{filled}" height="6" rx="1" fill="{bar_color}"/>'
         f'</svg>'
         f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;'
@@ -89,7 +89,7 @@ def _sector_pills(sectors: List[str]) -> str:
     pills = []
     for s in sectors[:3]:
         pills.append(
-            f'<span style="display:inline-block;background:var(--sc-bone);border:1px solid #1e293b;'
+            f'<span style="display:inline-block;background:var(--sc-bone);border:1px solid #D6CFC0;'
             f'border-radius:2px;padding:1px 5px;font-size:8.5px;color:#64748b;margin:1px;">'
             f'{_html.escape(s[:20])}</span>'
         )

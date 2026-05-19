@@ -81,7 +81,7 @@ def _pct_rank_bar(rank: float, width: int = 120) -> str:
     return (
         f'<div style="display:inline-flex;align-items:center;gap:6px;">'
         f'<svg width="{width}" height="8" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;">'
-        f'<rect x="0" y="1" width="{width}" height="6" rx="1" fill="#1e293b"/>'
+        f'<rect x="0" y="1" width="{width}" height="6" rx="1" fill="#ECE5D6"/>'
         f'<rect x="0" y="1" width="{filled}" height="6" rx="1" fill="{color}"/>'
         f'</svg>'
         f'<span style="font-family:var(--ck-mono);font-size:9.5px;color:{color};font-variant-numeric:tabular-nums">'

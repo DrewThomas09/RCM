@@ -48,9 +48,10 @@ _PANEL_CSS = """
 .ckf-drawer {
   position: fixed;
   bottom: 0; left: 0; right: 0; z-index: 9000;
-  background: #0b0f18;
-  border-top: 1px solid #1e293b;
-  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  background: #FAF7F0;
+  border-top: 1px solid #D6CFC0;
+  box-shadow: 0 -8px 24px -12px rgba(15,28,46,.15);
+  font-family: 'Inter Tight', 'Inter', sans-serif;
   font-size: 11px;
   max-height: 42px;
   transition: max-height 0.2s ease;
@@ -60,57 +61,61 @@ _PANEL_CSS = """
 .ckf-header {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 16px; cursor: pointer;
-  background: #0b0f18; border-bottom: 1px solid #1e293b;
+  background: #ECE5D6; border-bottom: 1px solid #D6CFC0;
   position: sticky; top: 0; z-index: 1;
 }
-.ckf-header:hover { background: #111827; }
+.ckf-header:hover { background: #E8E0D0; }
 .ckf-title {
   font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
-  color: #64748b; font-weight: 600;
+  color: #5C6878; font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
 }
 .ckf-badge {
   display: inline-block; padding: 1px 6px; border-radius: 2px;
   font-size: 9.5px; font-weight: 700; letter-spacing: 0.05em;
+  font-family: 'JetBrains Mono', monospace;
 }
-.ckf-badge-critical { background: rgba(220,38,38,0.15); color: #dc2626; }
-.ckf-badge-high     { background: rgba(234,88,12,0.15);  color: #ea580c; }
-.ckf-badge-medium   { background: rgba(202,138,4,0.15);  color: #ca8a04; }
-.ckf-badge-low      { background: rgba(71,85,105,0.15);  color: #94a3b8; }
-.ckf-badge-ok       { background: rgba(34,197,94,0.12);  color: #0a8a5f; }
+.ckf-badge-critical { background: rgba(181,50,30,0.15); color: #b5321e; }
+.ckf-badge-high     { background: rgba(184,115,42,0.15); color: #b8732a; }
+.ckf-badge-medium   { background: rgba(183,121,31,0.15); color: #B7791F; }
+.ckf-badge-low      { background: rgba(92,104,120,0.15); color: #5C6878; }
+.ckf-badge-ok       { background: rgba(10,138,95,0.12);  color: #0a8a5f; }
 .ckf-body { padding: 10px 16px 14px; }
 .ckf-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 8px;
   margin-top: 8px;
 }
 .ckf-flag {
-  background: var(--flag-bg, #111827);
-  border: 1px solid var(--flag-border, #1e293b);
-  border-left: 3px solid var(--flag-color, #334155);
-  padding: 8px 10px; border-radius: 0 3px 3px 0;
+  background: var(--flag-bg, #F2EDE3);
+  border: 1px solid var(--flag-border, #D6CFC0);
+  border-left: 3px solid var(--flag-color, #155752);
+  padding: 8px 10px; border-radius: 0 2px 2px 0;
 }
 .ckf-flag-cat {
   font-size: 8.5px; letter-spacing: 0.12em; text-transform: uppercase;
-  color: #475569; margin-bottom: 3px;
+  color: #8A92A0; margin-bottom: 3px;
+  font-family: 'JetBrains Mono', monospace; font-weight: 600;
 }
 .ckf-flag-headline {
-  font-size: 11px; color: #e2e8f0; line-height: 1.4; margin-bottom: 4px;
-  font-weight: 500;
+  font-size: 11px; color: #1a2332; line-height: 1.4; margin-bottom: 4px;
+  font-weight: 600;
 }
 .ckf-flag-detail {
-  font-size: 10px; color: #64748b; line-height: 1.5;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 10px; color: #5C6878; line-height: 1.5;
+  font-family: 'Inter Tight', 'Inter', sans-serif;
   font-variant-numeric: normal; white-space: normal;
 }
 .ckf-flag-risk {
   margin-top: 5px; font-size: 9.5px;
   font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums;
-  color: #ea580c;
+  color: #b8732a; font-weight: 600;
 }
-.ckf-ok { color: #0a8a5f; font-size: 11px; padding: 8px 0; }
+.ckf-ok { color: #0a8a5f; font-size: 11px; padding: 8px 0; font-weight: 600; }
 .ckf-meta {
-  font-size: 9px; color: #334155; margin-top: 10px; letter-spacing: 0.08em;
+  font-size: 9px; color: #8A92A0; margin-top: 10px; letter-spacing: 0.08em;
+  font-family: 'JetBrains Mono', monospace;
 }
-.ckf-toggle { margin-left: auto; color: #334155; font-size: 14px; }
+.ckf-toggle { margin-left: auto; color: #5C6878; font-size: 14px; }
 .ckf-summary { display:flex; gap:8px; align-items:center; flex-wrap: wrap; }
 </style>
 """

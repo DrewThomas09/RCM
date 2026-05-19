@@ -36,7 +36,7 @@ def _moic_spread_bar(p25: float, p50: float, p75: float, width: int = 120) -> st
     x25, x50, x75 = x(p25), x(p50), x(p75)
     return (
         f'<svg width="{width}" height="12" xmlns="http://www.w3.org/2000/svg">'
-        f'<rect x="0" y="4" width="{width}" height="4" rx="0" fill="#1e293b"/>'
+        f'<rect x="0" y="4" width="{width}" height="4" rx="0" fill="#ECE5D6"/>'
         f'<rect x="{x25}" y="2" width="{max(1,x75-x25)}" height="8" rx="0" fill="#1e3a5c"/>'
         f'<line x1="{x50}" y1="0" x2="{x50}" y2="12" stroke="#3b82f6" stroke-width="2"/>'
         f'</svg>'
@@ -46,7 +46,7 @@ def _moic_spread_bar(p25: float, p50: float, p75: float, width: int = 120) -> st
 def _sparkline(vintage_moic: Dict[int, List[float]], width: int = 80, height: int = 20) -> str:
     """P50 MOIC by year sparkline."""
     if not vintage_moic:
-        return f'<svg width="{width}" height="{height}"><line x1="0" y1="{height//2}" x2="{width}" y2="{height//2}" stroke="#1e293b" stroke-width="1"/></svg>'
+        return f'<svg width="{width}" height="{height}"><line x1="0" y1="{height//2}" x2="{width}" y2="{height//2}" stroke="#BFB6A2" stroke-width="1"/></svg>'
     years = sorted(vintage_moic.keys())
     pts = []
     for yr in years:
@@ -87,11 +87,11 @@ def _scatter_svg(stats: List[Any], width: int = 480, height: int = 320) -> str:
     # grid lines
     for m in (1.0, 2.0, 3.0, 4.0, 5.0):
         gx = sx(m)
-        elements.append(f'<line x1="{gx}" y1="{margin["t"]}" x2="{gx}" y2="{margin["t"]+H}" stroke="#1e293b" stroke-width="0.8"/>')
+        elements.append(f'<line x1="{gx}" y1="{margin["t"]}" x2="{gx}" y2="{margin["t"]+H}" stroke="#BFB6A2" stroke-width="0.8"/>')
         elements.append(f'<text x="{gx}" y="{margin["t"]+H+12}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{m:.0f}x</text>')
     for r in (0.0, 0.1, 0.2, 0.3, 0.5):
         gy = sy(r)
-        elements.append(f'<line x1="{margin["l"]}" y1="{gy}" x2="{margin["l"]+W}" y2="{gy}" stroke="#1e293b" stroke-width="0.8"/>')
+        elements.append(f'<line x1="{margin["l"]}" y1="{gy}" x2="{margin["l"]+W}" y2="{gy}" stroke="#BFB6A2" stroke-width="0.8"/>')
         elements.append(f'<text x="{margin["l"]-3}" y="{gy+3}" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{r*100:.0f}%</text>')
 
     # points — color by moic tier
@@ -250,7 +250,7 @@ def render_sector_intel(min_deals: int = 3, sort_by: str = "moic_p50") -> str:
   <div class="ck-panel-title">Sector Performance — {len(stats)} sectors · {total_deals_with_sector} tagged deals</div>
   <div class="ck-table-wrap" style="max-height:600px;overflow-y:auto;">
     <table class="ck-table" style="width:100%;">
-      <thead style="position:sticky;top:0;background:#111827;z-index:2;">
+      <thead style="position:sticky;top:0;background:#ECE5D6;z-index:2;">
         <tr>
           {_th("Sector", "sector")}
           {_th("Deals", "n_deals")}

@@ -54,7 +54,7 @@ def _moic_bar_chart(stats: List[Any], width: int = 600, height: int = 160) -> st
     for m in (1.0, 2.0, 3.0, 4.0, 5.0):
         if m > max_moic: break
         gx = px(m)
-        elements.append(f'<line x1="{gx}" y1="{margin["t"]}" x2="{gx}" y2="{margin["t"]+row_h*len(stats)}" stroke="#1e293b" stroke-width="0.8"/>')
+        elements.append(f'<line x1="{gx}" y1="{margin["t"]}" x2="{gx}" y2="{margin["t"]+row_h*len(stats)}" stroke="#BFB6A2" stroke-width="0.8"/>')
         elements.append(f'<text x="{gx}" y="{margin["t"]+row_h*len(stats)+12}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{m:.0f}x</text>')
     # 1x reference
     ref_x = px(1.0)
@@ -125,11 +125,11 @@ def _heatmap_svg(stats: List[Any], width: int = 600) -> str:
         elements.append(f'<rect x="{cx}" y="0" width="{cell_w-2}" height="{cell_h}" fill="{color}" opacity="0.85" rx="1"/>')
         elements.append(
             f'<text x="{cx+cell_w//2-1}" y="11" text-anchor="middle" '
-            f'font-family="JetBrains Mono,monospace" font-size="8.5" fill="#0a0e17" font-weight="600">{s.year}</text>'
+            f'font-family="JetBrains Mono,monospace" font-size="8.5" fill="#1a2332" font-weight="600">{s.year}</text>'
         )
         elements.append(
             f'<text x="{cx+cell_w//2-1}" y="23" text-anchor="middle" '
-            f'font-family="JetBrains Mono,monospace" font-size="8" fill="#0a0e17">{s.moic_p50:.1f}x</text>'
+            f'font-family="JetBrains Mono,monospace" font-size="8" fill="#1a2332">{s.moic_p50:.1f}x</text>'
         )
     W = 20 + len(stats) * cell_w
     return (
@@ -204,7 +204,7 @@ def render_vintage_perf() -> str:
         stripe = ' style="background:var(--sc-bone)"' if i % 2 == 1 else ""
         mc = _moic_color(s.moic_p50)
         sectors_html = "".join(
-            f'<span style="display:inline-block;margin:1px 2px;padding:1px 5px;border:1px solid #1e293b;'
+            f'<span style="display:inline-block;margin:1px 2px;padding:1px 5px;border:1px solid #D6CFC0;'
             f'font-size:8.5px;font-family:var(--ck-mono);color:#64748b;">{_html.escape(sec[:16])}</span>'
             for sec in s.top_sectors[:3]
         )
@@ -227,7 +227,7 @@ def render_vintage_perf() -> str:
   <div class="ck-panel-title">Vintage Detail — {total_yrs} years · {total_deals} deals</div>
   <div class="ck-table-wrap" style="max-height:500px;overflow-y:auto;">
     <table class="ck-table" style="width:100%;">
-      <thead style="position:sticky;top:0;background:#111827;z-index:2;">
+      <thead style="position:sticky;top:0;background:#ECE5D6;z-index:2;">
         <tr>
           <th style="padding:5px 8px;text-align:center;color:#64748b;">Year</th>
           <th style="padding:5px 8px;text-align:right;color:#64748b;">Deals</th>
