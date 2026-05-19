@@ -77,6 +77,117 @@ def _scorecard_panel(sc: Dict[str, Any]) -> str:
     return "".join(items) or empty_note("No scorecard fields.")
 
 
+def _vintage_chart(cohorts: List[Dict[str, Any]]) -> str:
+    """SVG bar chart of median MOIC by vintage year.
+
+    Turns the vintage cohort table into an at-a-glance shape view:
+    bar height = median MOIC, colored by performance band (green
+    ≥2.5x, amber 1.5–2.5x, red <1.5x). Sized in <small>-style at
+    100% width so it adapts to panel width. Skip entries with no
+    median MOIC (still-unrealized cohorts).
+    """
+    plotted = [
+        c for c in cohorts
+        if c.get("median_moic") is not None
+        and isinstance(c.get("year"), (int, str))
+    ]
+    if not plotted:
+        return ""
+    # Sort by year ascending — left-to-right time axis
+    plotted = sorted(plotted, key=lambda c: str(c.get("year", "")))
+    width = 720
+    height = 220
+    pad_l, pad_r, pad_t, pad_b = 48, 16, 28, 32
+    inner_w = width - pad_l - pad_r
+    inner_h = height - pad_t - pad_b
+    n = len(plotted)
+    bar_w = max(8.0, inner_w / max(n, 1) * 0.7)
+    gap = inner_w / max(n, 1) - bar_w
+    # MOIC scale: 0 to max(3.0, observed max + 0.5)
+    max_moic = max(
+        (float(c.get("median_moic") or 0) for c in plotted),
+        default=3.0,
+    )
+    y_max = max(3.0, max_moic + 0.5)
+
+    def sy(v: float) -> float:
+        return pad_t + inner_h - (v / y_max) * inner_h
+
+    # 4 horizontal gridlines at 0, 1.0, 2.0, 3.0 (or scaled)
+    grid_lines = []
+    for v in (0.0, 1.0, 2.0, 3.0):
+        if v > y_max:
+            continue
+        y = sy(v)
+        grid_lines.append(
+            f'<line x1="{pad_l}" x2="{pad_l + inner_w}" '
+            f'y1="{y:.1f}" y2="{y:.1f}" stroke="#d6cfc0" '
+            f'stroke-dasharray="2,4" />'
+            f'<text x="{pad_l - 6}" y="{y + 3:.1f}" '
+            f'fill="#7a8699" text-anchor="end" font-size="10" '
+            f'font-family="JetBrains Mono, monospace">'
+            f'{v:.1f}x</text>'
+        )
+    # Reference line at 1.0x (break-even)
+    bars = []
+    labels = []
+    for i, c in enumerate(plotted):
+        moic = float(c.get("median_moic") or 0)
+        # Color by band
+        color = (
+            "#0a8a5f" if moic >= 2.5
+            else "#b8732a" if moic >= 1.5
+            else "#b5321e"
+        )
+        x = pad_l + i * (bar_w + gap) + gap / 2
+        y_top = sy(moic)
+        bar_h = pad_t + inner_h - y_top
+        bars.append(
+            f'<rect x="{x:.1f}" y="{y_top:.1f}" '
+            f'width="{bar_w:.1f}" height="{bar_h:.1f}" '
+            f'fill="{color}" fill-opacity="0.85" '
+            f'stroke="{color}" stroke-width="0.5">'
+            f'<title>Vintage {c.get("year")}: median MOIC '
+            f'{moic:.2f}x · {c.get("count", 0)} deals · '
+            f'{c.get("realized_count", 0)} realized</title>'
+            f'</rect>'
+        )
+        # Year label at bottom
+        labels.append(
+            f'<text x="{x + bar_w/2:.1f}" '
+            f'y="{height - pad_b + 14}" '
+            f'fill="#1a2332" text-anchor="middle" font-size="10" '
+            f'font-family="JetBrains Mono, monospace">'
+            f'{c.get("year")}</text>'
+        )
+        # Value label above bar
+        labels.append(
+            f'<text x="{x + bar_w/2:.1f}" y="{y_top - 4:.1f}" '
+            f'fill="{color}" text-anchor="middle" font-size="10" '
+            f'font-family="JetBrains Mono, monospace" '
+            f'font-weight="600">{moic:.1f}x</text>'
+        )
+
+    axis_label = (
+        f'<text x="14" y="{pad_t + inner_h/2:.1f}" '
+        f'fill="#1a2332" text-anchor="middle" font-size="11" '
+        f'font-family="Inter, sans-serif" font-weight="600" '
+        f'transform="rotate(-90 14 {pad_t + inner_h/2:.1f})">'
+        f'Median MOIC</text>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;background:transparent;'
+        f'margin:8px 0 16px;">'
+        f'{"".join(grid_lines)}'
+        f'{"".join(bars)}'
+        f'{"".join(labels)}'
+        f'{axis_label}'
+        f'</svg>'
+    )
+
+
 def _vintage_table(cohorts: List[Dict[str, Any]]) -> str:
     if not cohorts:
         return empty_note("No vintage data.")
@@ -447,9 +558,15 @@ def render_portfolio_analytics(
         _scorecard_panel(sc), code="SCR",
     )
 
+    # Visual + tabular: SVG bar chart of median MOIC by vintage
+    # year above the underlying table. The chart turns the cohort
+    # table into an at-a-glance shape view; partners see which
+    # vintages were home-run years vs. underwater without
+    # reading the numbers.
+    vintage_body = _vintage_chart(vc) + _vintage_table(vc)
     vintage_panel = small_panel(
         f"Vintage cohort summary ({len(vc)} years)",
-        _vintage_table(vc), code="VNT",
+        vintage_body, code="VNT",
     )
 
     type_panel = small_panel(
