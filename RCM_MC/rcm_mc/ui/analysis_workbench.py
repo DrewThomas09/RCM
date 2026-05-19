@@ -74,10 +74,10 @@ body.analysis-workbench {{
   margin: 0; padding: 0;
   background: var(--wb-bg);
   color: var(--wb-text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter,
-               Helvetica, Arial, sans-serif;
+  font-family: "Inter Tight", "Inter", -apple-system, BlinkMacSystemFont,
+               "Segoe UI", Helvetica, Arial, sans-serif;
   font-size: 13px;
-  line-height: 1.45;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }}
 .analysis-workbench .num,
@@ -310,13 +310,25 @@ body.analysis-workbench {{
   background: var(--wb-panel-alt);
   border: 1px solid var(--wb-border);
   color: var(--wb-text);
-  padding: 5px 12px; border-radius: 3px;
-  font-size: 12px; cursor: pointer;
+  padding: 5px 12px; border-radius: 2px;
+  font-family: "Inter Tight", "Inter", sans-serif;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase;
+  cursor: pointer;
   text-decoration: none; display: inline-block;
+  transition: background .15s ease, transform .15s ease, box-shadow .15s ease;
 }}
-.analysis-workbench .wb-btn:hover {{ background: var(--wb-border); }}
+.analysis-workbench .wb-btn:hover {{
+  background: var(--wb-border);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px -6px rgba(15,28,46,.18);
+}}
 .analysis-workbench .wb-btn-primary {{
   background: var(--wb-accent); border-color: var(--wb-accent);
+  color: #FAF7F0;
+}}
+.analysis-workbench .wb-btn-primary:hover {{
+  background: #1F7A75; border-color: #1F7A75;
 }}
 
 /* Tab nav */
@@ -328,13 +340,17 @@ body.analysis-workbench {{
 }}
 .analysis-workbench .wb-tab {{
   background: transparent; border: none; color: var(--wb-text-dim);
-  padding: 10px 14px; font-size: 12px; cursor: pointer;
+  padding: 10px 14px;
+  font-family: "Inter Tight", "Inter", sans-serif;
+  font-size: 11px; font-weight: 600; cursor: pointer;
   border-bottom: 2px solid transparent;
-  text-transform: uppercase; letter-spacing: 0.04em;
+  text-transform: uppercase; letter-spacing: 0.14em;
+  transition: color .15s ease, border-bottom-color .15s ease;
 }}
-.analysis-workbench .wb-tab:hover {{ color: var(--wb-text); }}
+.analysis-workbench .wb-tab:hover {{ color: var(--wb-accent); }}
 .analysis-workbench .wb-tab.active {{
   color: var(--wb-text); border-bottom-color: var(--wb-accent);
+  font-weight: 700;
 }}
 .analysis-workbench .wb-tab-panel {{ display: none; padding: 14px 16px; }}
 .analysis-workbench .wb-tab-panel.active {{ display: block; }}
@@ -343,13 +359,19 @@ body.analysis-workbench {{
 .analysis-workbench .wb-card {{
   background: var(--wb-panel);
   border: 1px solid var(--wb-border);
-  border-radius: 3px;
+  border-radius: 2px;
   padding: 12px 14px;
   margin-bottom: 10px;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}}
+.analysis-workbench .wb-card:hover {{
+  border-color: #BFB6A2;
+  box-shadow: 0 2px 6px -3px rgba(15,28,46,.08);
 }}
 .analysis-workbench .wb-card-title {{
-  font-size: 11px; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.08em;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.14em;
   color: var(--wb-text-dim); margin-bottom: 8px;
 }}
 .analysis-workbench .wb-grid {{
@@ -362,8 +384,10 @@ body.analysis-workbench {{
 
 /* Badges */
 .analysis-workbench .wb-badge {{
-  display: inline-block; padding: 1px 7px; border-radius: 3px;
-  font-size: 11px; font-weight: 600;
+  display: inline-block; padding: 2px 7px; border-radius: 2px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
 }}
 .analysis-workbench .wb-badge-critical {{
   background: rgba(220,38,38,0.18); color: {PALETTE['critical']};
@@ -396,12 +420,13 @@ body.analysis-workbench {{
   font-size: 13px;
 }}
 .analysis-workbench .wb-table th {{
-  text-align: left; padding: 6px 10px;
+  text-align: left; padding: 7px 10px;
   background: var(--wb-panel-alt);
   border-bottom: 1px solid var(--wb-border);
   color: var(--wb-text-dim);
-  font-size: 10px; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.06em;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.10em;
 }}
 .analysis-workbench .wb-table td {{
   padding: 6px 10px;
@@ -556,7 +581,13 @@ body.analysis-workbench {{
 .analysis-workbench .scenario-card {{
   background: var(--wb-panel-alt);
   border: 1px solid var(--wb-border);
-  padding: 12px; border-radius: 4px;
+  padding: 12px; border-radius: 2px;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}}
+.analysis-workbench .scenario-card:hover {{
+  border-color: var(--wb-accent);
+  box-shadow: 0 4px 12px -6px rgba(21,87,82,.25);
+  transform: translateY(-1px);
 }}
 .analysis-workbench .scenario-card.recommended {{
   border: 2px solid var(--wb-accent);
@@ -567,9 +598,11 @@ body.analysis-workbench {{
   display: flex; align-items: center; gap: 6px;
 }}
 .analysis-workbench .scenario-rec-badge {{
-  background: var(--wb-accent); color: white;
-  font-size: 10px; padding: 1px 6px; border-radius: 3px;
-  letter-spacing: 0.04em; text-transform: uppercase;
+  background: var(--wb-accent); color: #FAF7F0;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9.5px; font-weight: 700;
+  padding: 2px 7px; border-radius: 2px;
+  letter-spacing: 0.10em; text-transform: uppercase;
 }}
 .analysis-workbench .scenario-kpi {{
   display: grid; grid-template-columns: 1fr auto; gap: 4px;
@@ -599,9 +632,9 @@ body.analysis-workbench {{
   font-family: "JetBrains Mono", monospace;
 }}
 .analysis-workbench .pairwise-matrix th {{
-  background: var(--wb-panel); font-weight: 600;
+  background: var(--wb-panel); font-weight: 700;
   color: var(--wb-text-dim); text-transform: uppercase;
-  font-size: 10px; letter-spacing: 0.04em;
+  font-size: 10px; letter-spacing: 0.10em;
 }}
 .analysis-workbench .pairwise-matrix td.pw-self {{
   color: var(--wb-text-faint);
@@ -624,7 +657,7 @@ body.analysis-workbench {{
 .analysis-workbench .scenario-add-form {{
   display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
   padding: 12px; background: var(--wb-panel-alt);
-  border: 1px solid var(--wb-border); border-radius: 4px;
+  border: 1px solid var(--wb-border); border-radius: 2px;
   margin-top: 12px;
 }}
 .analysis-workbench .scenario-add-form.hidden {{ display: none; }}
@@ -726,10 +759,10 @@ body.analysis-workbench {{
 
 /* ── Analyst Override / Assumptions tab ── */
 .analysis-workbench .ov-banner {{
-  background: rgba(47,179,173,0.08);
-  border: 1px solid var(--wb-accent);
-  border-radius: 3px;
-  padding: 8px 12px; margin-bottom: 10px;
+  background: linear-gradient(135deg, rgba(21,87,82,0.10) 0%, rgba(212,228,226,0.4) 100%);
+  border: 1px solid var(--wb-accent); border-left: 3px solid var(--wb-accent);
+  border-radius: 2px;
+  padding: 9px 12px; margin-bottom: 10px;
   font-size: 12px; color: var(--wb-text);
 }}
 .analysis-workbench .ov-section {{
@@ -772,7 +805,7 @@ body.analysis-workbench {{
 }}
 .analysis-workbench .ov-input {{
   width: 90px; padding: 4px 6px; border: 1px solid var(--wb-border);
-  border-radius: 3px; font-size: 12px; background: var(--wb-panel);
+  border-radius: 2px; font-size: 12px; background: var(--wb-panel);
   color: var(--wb-text); font-family: "JetBrains Mono", monospace;
 }}
 .analysis-workbench .ov-input:focus {{
@@ -790,7 +823,7 @@ body.analysis-workbench {{
 .analysis-workbench .ov-feedback.err {{ color: var(--wb-negative); }}
 .analysis-workbench .ov-add-form {{
   margin-top: 10px; padding: 10px;
-  background: var(--wb-panel-alt); border-radius: 3px;
+  background: var(--wb-panel-alt); border-radius: 2px;
   display: grid; grid-template-columns: 200px 110px 1fr 80px; gap: 6px;
   align-items: end;
 }}
@@ -801,7 +834,7 @@ body.analysis-workbench {{
 }}
 .analysis-workbench .ov-add-input {{
   width: 100%; padding: 4px 6px; border: 1px solid var(--wb-border);
-  border-radius: 3px; font-size: 12px; background: var(--wb-panel);
+  border-radius: 2px; font-size: 12px; background: var(--wb-panel);
   color: var(--wb-text); font-family: "JetBrains Mono", monospace;
 }}
 .analysis-workbench .ov-bridge-banner {{
