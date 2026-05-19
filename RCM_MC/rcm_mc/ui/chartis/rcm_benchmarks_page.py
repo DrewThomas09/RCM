@@ -171,6 +171,175 @@ def _segment_card(seg_key: str, b: Any) -> str:
     )
 
 
+def _segment_metric_charts(benchmarks: Dict[str, Any]) -> str:
+    """Small-multiples SVG grid: one horizontal-bar chart per metric,
+    showing each segment's P50 value with P25→P75 error bars.
+
+    Replaces the "huge list of tables" partner-flagged read on
+    /rcm-benchmarks. Reading a 7-metric × 8-segment table by row
+    is dense; the small-multiples grid gives an at-a-glance shape
+    of which segments outperform on each metric. Color codes:
+    teal-ink when better than the cross-segment median for that
+    metric (with direction respected via `inverted`), brick red
+    when worse.
+    """
+    if not benchmarks:
+        return ""
+    segments = list(benchmarks.items())
+    if not segments:
+        return ""
+
+    charts: List[str] = []
+    for field, name, unit, inv, is_pct in _METRICS:
+        # Collect (segment_label, p25, p50, p75) tuples
+        rows = []
+        for seg_key, b in segments:
+            p25 = getattr(b, f"{field}_p25", None)
+            p50 = getattr(b, f"{field}_p50", None)
+            p75 = getattr(b, f"{field}_p75", None)
+            if p50 is None:
+                continue
+            rows.append((str(b.label), float(p25 or p50),
+                         float(p50), float(p75 or p50)))
+        if not rows:
+            continue
+        # Sort by p50 descending (or ascending if lower-is-better)
+        rows.sort(key=lambda r: r[2], reverse=not inv)
+        # Cross-segment median for color reference
+        sorted_p50s = sorted(r[2] for r in rows)
+        mid = sorted_p50s[len(sorted_p50s) // 2]
+
+        # Chart dims
+        width = 360
+        row_h = 22
+        pad_l, pad_r, pad_t, pad_b = 130, 60, 28, 20
+        inner_w = width - pad_l - pad_r
+        height = pad_t + len(rows) * row_h + pad_b
+
+        # X-axis range: padded around min(p25)/max(p75)
+        all_vals = [r[1] for r in rows] + [r[3] for r in rows]
+        x_lo = min(all_vals)
+        x_hi = max(all_vals)
+        span = x_hi - x_lo or max(0.5, x_hi * 0.2)
+        x_lo -= span * 0.08
+        x_hi += span * 0.08
+
+        def sx(v: float) -> float:
+            return pad_l + (v - x_lo) / (x_hi - x_lo) * inner_w
+
+        def _fmt_value(v: float) -> str:
+            if is_pct:
+                return f"{v:.1f}%"
+            if unit == "days":
+                return f"{v:.0f}d"
+            return f"{v:.2f}"
+
+        # 3 vertical gridlines at quartile-ish positions
+        grid = []
+        for frac in (0.0, 0.5, 1.0):
+            x = pad_l + frac * inner_w
+            v = x_lo + frac * (x_hi - x_lo)
+            grid.append(
+                f'<line x1="{x:.1f}" x2="{x:.1f}" '
+                f'y1="{pad_t}" y2="{pad_t + len(rows) * row_h}" '
+                f'stroke="#d6cfc0" stroke-dasharray="2,4" />'
+                f'<text x="{x:.1f}" y="{pad_t + len(rows) * row_h + 14}" '
+                f'fill="#7a8699" text-anchor="middle" font-size="9" '
+                f'font-family="JetBrains Mono, monospace">'
+                f'{_fmt_value(v)}</text>'
+            )
+
+        elements = []
+        for i, (label, p25v, p50v, p75v) in enumerate(rows):
+            cy = pad_t + i * row_h + row_h / 2
+            # Color by direction-aware comparison vs cross-segment median
+            if inv:
+                better = p50v < mid
+            else:
+                better = p50v > mid
+            color = "#155752" if better else "#b5321e"
+            # Error bar (P25 → P75)
+            x25 = sx(p25v)
+            x50 = sx(p50v)
+            x75 = sx(p75v)
+            elements.append(
+                f'<line x1="{x25:.1f}" x2="{x75:.1f}" '
+                f'y1="{cy:.1f}" y2="{cy:.1f}" '
+                f'stroke="{color}" stroke-width="2" '
+                f'stroke-opacity="0.45" stroke-linecap="round" />'
+            )
+            # Whisker caps
+            elements.append(
+                f'<line x1="{x25:.1f}" x2="{x25:.1f}" '
+                f'y1="{cy - 4:.1f}" y2="{cy + 4:.1f}" '
+                f'stroke="{color}" stroke-width="2" '
+                f'stroke-opacity="0.55" />'
+                f'<line x1="{x75:.1f}" x2="{x75:.1f}" '
+                f'y1="{cy - 4:.1f}" y2="{cy + 4:.1f}" '
+                f'stroke="{color}" stroke-width="2" '
+                f'stroke-opacity="0.55" />'
+            )
+            # P50 marker
+            elements.append(
+                f'<circle cx="{x50:.1f}" cy="{cy:.1f}" r="4" '
+                f'fill="{color}" stroke="#fff" stroke-width="1.5">'
+                f'<title>{_html.escape(label)}: '
+                f'P25 {_fmt_value(p25v)} · '
+                f'P50 {_fmt_value(p50v)} · '
+                f'P75 {_fmt_value(p75v)}</title>'
+                f'</circle>'
+            )
+            # Segment label (right-aligned in left gutter)
+            disp = label if len(label) <= 18 else label[:16] + "…"
+            elements.append(
+                f'<text x="{pad_l - 8:.1f}" y="{cy + 3:.1f}" '
+                f'fill="#1a2332" text-anchor="end" font-size="10" '
+                f'font-family="Inter, sans-serif">'
+                f'{_html.escape(disp)}</text>'
+            )
+            # P50 value at right
+            elements.append(
+                f'<text x="{pad_l + inner_w + 6:.1f}" y="{cy + 3:.1f}" '
+                f'fill="{color}" text-anchor="start" font-size="10" '
+                f'font-family="JetBrains Mono, monospace" '
+                f'font-weight="700">{_fmt_value(p50v)}</text>'
+            )
+
+        better_dir = "lower" if inv else "higher"
+        title_block = (
+            f'<text x="{pad_l:.1f}" y="18" '
+            f'fill="#1a2332" text-anchor="start" font-size="12" '
+            f'font-family="Inter, sans-serif" font-weight="600">'
+            f'{_html.escape(name)}</text>'
+            f'<text x="{pad_l + inner_w + 60:.1f}" y="18" '
+            f'fill="#7a8699" text-anchor="end" font-size="9" '
+            f'font-family="JetBrains Mono, monospace" '
+            f'letter-spacing="0.06em">{better_dir} = better</text>'
+        )
+
+        chart = (
+            f'<svg viewBox="0 0 {width} {height}" '
+            f'style="width:100%;max-width:{width}px;'
+            f'background:transparent;">'
+            f'{title_block}'
+            f'{"".join(grid)}'
+            f'{"".join(elements)}'
+            f'</svg>'
+        )
+        charts.append(
+            f'<div style="background:#fff;border:1px solid '
+            f'var(--sc-rule,#d6cfc0);padding:12px;">{chart}</div>'
+        )
+
+    return (
+        f'<div style="display:grid;'
+        f'grid-template-columns:repeat(auto-fit,minmax(360px,1fr));'
+        f'gap:10px;margin:8px 0 16px;">'
+        f'{"".join(charts)}'
+        f'</div>'
+    )
+
+
 def _cross_segment_table(benchmarks: Dict[str, Any]) -> str:
     """Wide table with segments as rows and metric P50s as columns — the
     "how do segments compare" read. Only P50s to keep density manageable.
@@ -296,9 +465,14 @@ def render_rcm_benchmarks(
         + f'</div>'
     )
 
+    # Visual + tabular: small-multiples chart grid (one per metric)
+    # above the cross-segment numbers table. Partners read which
+    # segments outperform on which metrics at a glance instead of
+    # scanning a 7-column-wide table.
+    cross_chart = _segment_metric_charts(benchmarks)
     cross_panel = small_panel(
         f"Cross-segment P50 comparison · {n_segments} segments",
-        _cross_segment_table(benchmarks),
+        cross_chart + _cross_segment_table(benchmarks),
         code="XCS",
     )
 
