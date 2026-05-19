@@ -13380,9 +13380,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             )
 
         # ── Page title with eyebrow + meta ──
+        # Mode-aware: "LP Update" (PE partner, reporting to LPs) vs
+        # "Client Briefing" (Chartis consulting, reporting to a client).
+        from .ui._workspace_mode import term as _ws_term, current_workspace_mode as _cwm, CONSULTING
+        _lp_title = _ws_term("lp_update")
+        _lp_eyebrow = (
+            "CLIENT BRIEFING" if _cwm() == CONSULTING else "PORTFOLIO SNAPSHOT"
+        )
         title_html = ck_page_title(
-            "LP Update",
-            eyebrow="PORTFOLIO SNAPSHOT",
+            _lp_title,
+            eyebrow=_lp_eyebrow,
             meta=f"Window: last {days} days · {len(events_df)} events captured",
         )
 
