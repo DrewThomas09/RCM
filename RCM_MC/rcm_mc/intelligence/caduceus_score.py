@@ -99,11 +99,11 @@ def compute_caduceus_score(
         fin_score = 25.0
     breakdown["margin"] = f"{margin:.1%} margin (+{fin_score:.1f})"
 
-    # Operational Quality (20 points max) — only scored when we actually
-    # have denial / AR data. HCRIS doesn't carry these, so for
-    # HCRIS-only hospitals we rescale the composite across the three
-    # components we CAN observe (market / financial / moat). This avoids
-    # a systemic pile-up at the sentinel baseline (~41 = D).
+    # Operational Quality (20 points max). RCM-richer profiles score
+    # off denial_rate + days_in_ar; HCRIS-only profiles score off
+    # public-data proxies (cost ratio, occupancy, commercial-payer
+    # share) so the breakdown isn't a flat 0 that partners read as
+    # "operations are broken" when the truth is "RCM data not loaded".
     denial_raw = profile.get("denial_rate")
     ar_raw = profile.get("days_in_ar")
     have_ops = denial_raw is not None and ar_raw is not None
@@ -133,8 +133,92 @@ def compute_caduceus_score(
             breakdown["ar_days"] = f"{ar_days:.0f} AR days (slow, +0)"
 
         ops_score = min(ops_score, 20)
+        have_ops = True
     else:
-        breakdown["denial"] = "no RCM data (scored on public data only)"
+        # HCRIS-proxy operational score — scaled into the same 0–20
+        # band so the composite stays comparable:
+        #   1. cost ratio (opex / npr) — peer-median is ~0.95, very
+        #      operationally efficient hospitals run 0.85–0.92.
+        #      0.85 → +8, 0.95 → +4, 1.05 → 0.
+        #   2. occupancy proxy (patient_days / bed_days_avail) —
+        #      higher is better. ≥0.65 → +6, 0.50 → +3, <0.40 → 0.
+        #   3. commercial payer share — lower denial-risk payers.
+        #      ≥0.45 → +6, 0.30 → +3, <0.20 → 0.
+        # Sum is clamped to [0, 20].
+        npr = float(profile.get("net_patient_revenue") or 0.0)
+        opex = float(profile.get("operating_expenses") or 0.0)
+        cost_ratio = (opex / npr) if npr > 0 else None
+        bed_days = float(profile.get("bed_days_available") or 0.0)
+        patient_days = float(profile.get("total_patient_days") or 0.0)
+        occupancy = (patient_days / bed_days) if bed_days > 0 else None
+        comm_share = profile.get("commercial_pct")
+        if comm_share is None:
+            mcare = float(profile.get("medicare_day_pct") or 0.0)
+            mcaid = float(profile.get("medicaid_day_pct") or 0.0)
+            # day_pct values are 0–100 on HCRIS; normalize before subtracting
+            if mcare > 1.0 or mcaid > 1.0:
+                mcare /= 100.0
+                mcaid /= 100.0
+            comm_share = max(0.0, 1.0 - mcare - mcaid)
+        else:
+            comm_share = float(comm_share)
+            if comm_share > 1.0:
+                comm_share /= 100.0
+
+        ops_parts = []
+        if cost_ratio is not None:
+            if cost_ratio <= 0.88:
+                cost_pts = 8.0
+            elif cost_ratio <= 0.98:
+                # Linear 0.88 → 8 ... 0.98 → 4
+                cost_pts = 8.0 - (cost_ratio - 0.88) / 0.10 * 4.0
+            elif cost_ratio <= 1.05:
+                cost_pts = max(0.0, 4.0 - (cost_ratio - 0.98) / 0.07 * 4.0)
+            else:
+                cost_pts = 0.0
+            ops_score += cost_pts
+            ops_parts.append(
+                f"cost ratio {cost_ratio:.2f} (+{cost_pts:.1f})"
+            )
+
+        if occupancy is not None:
+            if occupancy >= 0.65:
+                occ_pts = 6.0
+            elif occupancy >= 0.40:
+                occ_pts = (occupancy - 0.40) / 0.25 * 6.0
+            else:
+                occ_pts = 0.0
+            ops_score += occ_pts
+            ops_parts.append(
+                f"occupancy {occupancy:.0%} (+{occ_pts:.1f})"
+            )
+
+        if comm_share > 0:
+            if comm_share >= 0.45:
+                cs_pts = 6.0
+            elif comm_share >= 0.20:
+                cs_pts = (comm_share - 0.20) / 0.25 * 6.0
+            else:
+                cs_pts = 0.0
+            ops_score += cs_pts
+            ops_parts.append(
+                f"commercial mix {comm_share:.0%} (+{cs_pts:.1f})"
+            )
+
+        ops_score = max(0.0, min(20.0, ops_score))
+        # Did we have ANY proxy? If yes, score the operational
+        # subscore proper (and use the standard 100-pt total below).
+        # If no proxies were observable either, fall back to the
+        # rescaled 80-pt total so the composite isn't flat.
+        if ops_parts:
+            have_ops = True
+            breakdown["denial"] = (
+                "HCRIS proxy — " + ", ".join(ops_parts)
+            )
+        else:
+            breakdown["denial"] = (
+                "no RCM or HCRIS proxy data (scored on public data only)"
+            )
 
     # ── Moat (0-20 pts) ── Continuous.
     # Scale component: beds/600 * 8 (large systems score higher on scale)

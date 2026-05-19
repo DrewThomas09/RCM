@@ -31,10 +31,20 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
     moat_rating = moat.get("moat_rating", "none")
     moat_cls = "cad-badge-green" if moat_rating == "wide" else ("cad-badge-amber" if moat_rating == "narrow" else "cad-badge-muted")
 
-    # Cycle 56 — port to ck_kpi_block + provenance.
+    # The HHI + moat values are pre-formatted HTML (a styled badge
+    # span), so we wrap them in SafeHtml so ck_provenance_tooltip
+    # doesn't HTML-escape them into literal `<span class="cad-badge
+    # ...">Competitive</span>` text on the page. (Helper's default
+    # behavior is to escape any non-SafeHtml value — correct security
+    # default; this is the documented exit.)
+    from ._chartis_kit import SafeHtml
     hhi_value = ck_provenance_tooltip(
         f"Market HHI: {hhi:,.0f}",
-        f'<span class="cad-badge {hhi_cls}" style="font-size:14px;padding:4px 12px;">{hhi_label}</span>',
+        SafeHtml(
+            f'<span class="cad-badge {hhi_cls}" '
+            f'style="font-size:14px;padding:4px 12px;">'
+            f'{html.escape(hhi_label)}</span>'
+        ),
         explainer=(
             "Herfindahl-Hirschman Index of market concentration. "
             "DOJ thresholds: <1,500 competitive, 1,500-2,500 "
@@ -44,7 +54,11 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
     )
     moat_value = ck_provenance_tooltip(
         f"Moat rating ({moat.get('moat_score', 0)}/10)",
-        f'<span class="cad-badge {moat_cls}" style="font-size:14px;padding:4px 12px;">{moat_rating.title()}</span>',
+        SafeHtml(
+            f'<span class="cad-badge {moat_cls}" '
+            f'style="font-size:14px;padding:4px 12px;">'
+            f'{html.escape(moat_rating.title())}</span>'
+        ),
         explainer=(
             "Wide / narrow / none verdict from the moat-scoring "
             "engine: catchment exclusivity, regulatory moats, "
