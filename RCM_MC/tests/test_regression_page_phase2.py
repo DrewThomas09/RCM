@@ -199,5 +199,67 @@ class SegmentChipInOutliersTests(unittest.TestCase):
         self.assertIn("rg-segment-chip", html)
 
 
+class FormulaRelatedBannerTests(unittest.TestCase):
+    """Amber sibling to the red LEAKS banner. Fires when FORMULA_
+    RELATED (accounting-cousin) features are in the fit and the
+    partner hasn't toggled drop_leakage. Suppressed when the red
+    banner is already showing — we don't stack two near-identical
+    warnings."""
+
+    def test_amber_banner_renders_when_formula_related_only(self):
+        # operating_margin shares atomic inputs with net_to_gross_ratio
+        # (both involve npr) and expense_per_bed (both involve opex)
+        # but neither is direct leakage. Pick a feature set that
+        # explicitly avoids the raw npr/opex inputs so the red banner
+        # doesn't fire and we can verify the amber banner does.
+        html = render_regression_page(
+            hcris_df=_synthetic_hcris(120),
+            target="operating_margin",
+            features=[
+                "net_to_gross_ratio",
+                "expense_per_bed",
+                "occupancy_rate",
+            ],
+        )
+        self.assertIn("rg-leakage-banner warn", html)
+        self.assertIn("FORMULA-RELATED", html)
+        self.assertIn("accounting-cousin", html)
+
+    def test_amber_banner_suppressed_when_red_banner_fires(self):
+        # When critical leaks are also present, the red banner
+        # already covers the inflated-R² story. Don't stack a near-
+        # identical second warning.
+        html = render_regression_page(
+            hcris_df=_synthetic_hcris(120),
+            target="operating_margin",
+            # Includes raw npr (LEAKS — npr is in operating_margin's
+            # inputs) PLUS net_to_gross_ratio (FORMULA_RELATED).
+            features=[
+                "net_patient_revenue",
+                "net_to_gross_ratio",
+                "occupancy_rate",
+            ],
+        )
+        # Red banner present
+        self.assertIn(">⚠ LEAKAGE<", html)
+        # Amber sibling suppressed
+        self.assertNotIn("rg-leakage-banner warn", html)
+
+    def test_amber_banner_suppressed_when_drop_leakage_on(self):
+        # Active mitigation → suppress the banner. Partner is already
+        # acting on the warning, no need to keep nagging.
+        html = render_regression_page(
+            hcris_df=_synthetic_hcris(120),
+            target="operating_margin",
+            features=[
+                "net_to_gross_ratio",
+                "expense_per_bed",
+                "occupancy_rate",
+            ],
+            drop_leakage=True,
+        )
+        self.assertNotIn("rg-leakage-banner warn", html)
+
+
 if __name__ == "__main__":
     unittest.main()
