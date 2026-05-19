@@ -62,6 +62,187 @@ def _disambig_banner() -> str:
     )
 
 
+def _vintage_moic_chart(
+    by_year: Dict[int, List[float]],
+) -> str:
+    """SVG bar chart of median realized MOIC by vintage year.
+
+    One bar per year, colored by performance band. Box around
+    each bar shows ±1 stdev range so partners see dispersion at a
+    glance. Quick "which vintages were home-run years" view above
+    the underlying numbers table.
+    """
+    if not by_year:
+        return ""
+    points = sorted(by_year.items())
+    width = 720
+    height = 240
+    pad_l, pad_r, pad_t, pad_b = 56, 16, 30, 36
+    inner_w = width - pad_l - pad_r
+    inner_h = height - pad_t - pad_b
+    n = len(points)
+    bar_w = max(8.0, inner_w / max(n, 1) * 0.62)
+    step = inner_w / max(n, 1)
+
+    medians = [_stats.median(m) for _, m in points]
+    max_moic = max(max(medians), 3.0) + 0.5
+
+    def sy(v: float) -> float:
+        return pad_t + inner_h - (v / max_moic) * inner_h
+
+    grid = []
+    for v in (1.0, 2.0, 3.0):
+        if v > max_moic:
+            continue
+        y = sy(v)
+        grid.append(
+            f'<line x1="{pad_l}" x2="{pad_l + inner_w}" '
+            f'y1="{y:.1f}" y2="{y:.1f}" stroke="#d6cfc0" '
+            f'stroke-dasharray="2,4" />'
+            f'<text x="{pad_l - 6}" y="{y + 3:.1f}" '
+            f'fill="#7a8699" text-anchor="end" font-size="10" '
+            f'font-family="JetBrains Mono, monospace">{v:.1f}x</text>'
+        )
+
+    bars = []
+    for i, (year, moics) in enumerate(points):
+        median = _stats.median(moics)
+        cx = pad_l + step * i + step / 2
+        x = cx - bar_w / 2
+        y_top = sy(median)
+        bar_h = pad_t + inner_h - y_top
+        color = (
+            "#0a8a5f" if median >= 2.5
+            else "#b8732a" if median >= 1.5
+            else "#b5321e"
+        )
+        bars.append(
+            f'<rect x="{x:.1f}" y="{y_top:.1f}" '
+            f'width="{bar_w:.1f}" height="{bar_h:.1f}" '
+            f'fill="{color}" fill-opacity="0.85" '
+            f'stroke="{color}" stroke-width="0.5">'
+            f'<title>{year}: median {median:.2f}x · '
+            f'{len(moics)} realized deals · '
+            f'range {min(moics):.2f}x–{max(moics):.2f}x</title>'
+            f'</rect>'
+        )
+        # Year label below
+        bars.append(
+            f'<text x="{cx:.1f}" y="{height - pad_b + 14}" '
+            f'fill="#1a2332" text-anchor="middle" font-size="10" '
+            f'font-family="JetBrains Mono, monospace">{year}</text>'
+        )
+        # Value label above
+        bars.append(
+            f'<text x="{cx:.1f}" y="{y_top - 4:.1f}" '
+            f'fill="{color}" text-anchor="middle" font-size="10" '
+            f'font-family="JetBrains Mono, monospace" '
+            f'font-weight="600">{median:.1f}x</text>'
+        )
+
+    axis = (
+        f'<text x="14" y="{pad_t + inner_h/2:.1f}" '
+        f'fill="#1a2332" text-anchor="middle" font-size="11" '
+        f'font-family="Inter, sans-serif" font-weight="600" '
+        f'transform="rotate(-90 14 {pad_t + inner_h/2:.1f})">'
+        f'Median realized MOIC</text>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;background:transparent;'
+        f'margin:8px 0 16px;">'
+        f'{"".join(grid)}'
+        f'{"".join(bars)}'
+        f'{axis}'
+        f'</svg>'
+    )
+
+
+def _sector_median_bars(
+    sector_items: List[Tuple[str, List[float]]],
+) -> str:
+    """Horizontal bars of median MOIC by subsector.
+
+    Sorted highest median on top. Sectors with < 3 deals skipped
+    (same threshold the table uses). Glanceable answer to "which
+    subsectors compound best in this corpus".
+    """
+    items = [(s, m) for s, m in sector_items if len(m) >= 3]
+    if not items:
+        return ""
+
+    width = 720
+    row_h = 22
+    pad_l, pad_r, pad_t, pad_b = 200, 56, 26, 36
+    inner_w = width - pad_l - pad_r
+    height = pad_t + len(items) * row_h + pad_b
+
+    medians = [_stats.median(m) for _, m in items]
+    max_moic = max(max(medians), 3.0) + 0.4
+
+    def sx(v: float) -> float:
+        return pad_l + (v / max_moic) * inner_w
+
+    grid = []
+    for v in (1.0, 2.0, 3.0):
+        if v > max_moic:
+            continue
+        x = sx(v)
+        grid.append(
+            f'<line x1="{x:.1f}" x2="{x:.1f}" '
+            f'y1="{pad_t}" y2="{pad_t + len(items) * row_h}" '
+            f'stroke="#d6cfc0" stroke-dasharray="2,4" />'
+            f'<text x="{x:.1f}" y="{pad_t + len(items) * row_h + 14}" '
+            f'fill="#7a8699" text-anchor="middle" font-size="10" '
+            f'font-family="JetBrains Mono, monospace">{v:.1f}x</text>'
+        )
+
+    elements = []
+    for i, (sec, moics) in enumerate(items):
+        cy = pad_t + i * row_h + row_h / 2
+        median = _stats.median(moics)
+        color = (
+            "#0a8a5f" if median >= 2.5
+            else "#b8732a" if median >= 1.5
+            else "#b5321e"
+        )
+        x_left = pad_l
+        x_right = sx(median)
+        elements.append(
+            f'<rect x="{x_left:.1f}" y="{cy - 8:.1f}" '
+            f'width="{x_right - x_left:.1f}" height="16" '
+            f'fill="{color}" fill-opacity="0.85" '
+            f'stroke="{color}" stroke-width="0.5">'
+            f'<title>{_html.escape(sec)}: median {median:.2f}x · '
+            f'{len(moics)} deals</title>'
+            f'</rect>'
+        )
+        # Sector label (right-aligned in left gutter)
+        elements.append(
+            f'<text x="{pad_l - 8:.1f}" y="{cy + 3:.1f}" '
+            f'fill="#1a2332" text-anchor="end" font-size="11" '
+            f'font-family="Inter, sans-serif">'
+            f'{_html.escape(sec)[:28]}</text>'
+        )
+        # Median value at bar end
+        elements.append(
+            f'<text x="{x_right + 4:.1f}" y="{cy + 3:.1f}" '
+            f'fill="{color}" text-anchor="start" font-size="10" '
+            f'font-family="JetBrains Mono, monospace" '
+            f'font-weight="700">{median:.2f}x</text>'
+        )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;background:transparent;'
+        f'margin:8px 0 16px;">'
+        f'{"".join(grid)}'
+        f'{"".join(elements)}'
+        f'</svg>'
+    )
+
+
 def _vintage_row(year: int, moics: List[float]) -> str:
     n = len(moics)
     median = _stats.median(moics)
@@ -194,15 +375,20 @@ def _corpus_self_analysis(corpus: List[Dict[str, Any]]) -> Tuple[str, Dict[str, 
         "n_sectors_scored": len(sector_items),
     }
 
+    # Visual + tabular: chart above the underlying table for each
+    # cohort dimension. Partners read the shape first; numbers below
+    # for exact lookups.
+    vintage_chart = _vintage_moic_chart(by_year)
+    sector_chart = _sector_median_bars(sector_items)
     combined = (
         small_panel(
             f"Realized MOIC by vintage ({len(by_year)} years · {n_realized} deals)",
-            vintage_table,
+            vintage_chart + vintage_table,
             code="VYR",
         )
         + small_panel(
             f"Realized MOIC by subsector ({len(sector_items)} segments)",
-            sector_table,
+            sector_chart + sector_table,
             code="SEG",
         )
     )
