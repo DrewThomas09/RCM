@@ -4534,9 +4534,14 @@ class RCMHandler(BaseHTTPRequestHandler):
                 current_workspace_mode as _cwm, MODE_LABELS as _ws_labels,
             )
             _ws_mode = _cwm()
+            # MODE_LABELS values are trusted constants ("PE Partner" /
+            # "Chartis Consulting") — no escaping needed. Avoid
+            # html.escape() here: `html` is a function-local further
+            # down this method (html = render_*(...)), so referencing
+            # the module before that assignment raises UnboundLocalError.
             _ws_badge = (
                 '<span class="cad-badge cad-badge-green" '
-                f'style="margin-left:8px;">{html.escape(_ws_labels[_ws_mode].upper())}</span>'
+                f'style="margin-left:8px;">{_ws_labels[_ws_mode].upper()}</span>'
             )
             _ws_sub = (
                 "Switch between the PE-partner deal view and the Chartis "
