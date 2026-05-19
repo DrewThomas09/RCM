@@ -76,8 +76,9 @@ class V3StatusPageTests(unittest.TestCase):
                     body = r.read().decode("utf-8")
                 # .num utility class on at least one numeric span
                 self.assertIn('class="num"', body)
-                # KPI grid has visible labels
-                self.assertIn("Total routes", body)
+                # KPI grid has visible labels (ck_kpi_block emits
+                # "Total Routes" in title case)
+                self.assertIn("Total Routes", body)
                 self.assertIn("v3 chrome", body)
                 self.assertIn("Packet-driven", body)
             finally:

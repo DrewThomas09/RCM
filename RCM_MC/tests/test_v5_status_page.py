@@ -51,7 +51,8 @@ class V5StatusPageTests(unittest.TestCase):
                 with _u.urlopen(f"http://127.0.0.1:{port}/v5-status") as r:
                     body = r.read().decode("utf-8")
                 self.assertIn('class="num"', body)
-                self.assertIn("Total routes", body)
+                # ck_kpi_block emits "Total Routes" in title case
+                self.assertIn("Total Routes", body)
                 self.assertIn("v5 chrome", body)
                 self.assertIn("Packet-driven", body)
             finally:
