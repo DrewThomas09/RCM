@@ -105,14 +105,17 @@ def _consistency_moic_scatter(records: List[Any]) -> str:
     inner_w = width - pad_l - pad_r
     inner_h = height - pad_t - pad_b
 
-    # X: consistency [0, 1]. Y: MOIC [0, max+0.5].
+    # Consistency_score is on a 0-100 composite scale (see
+    # data_public/sponsor_track_record.py:146). MOIC: 0 → max+0.5.
     moics = [float(r.median_moic) for r in points]
     max_moic = max(max(moics), 3.0) + 0.5
     deal_counts = [r.deal_count for r in points]
     max_deals = max(deal_counts)
 
     def sx(v: float) -> float:
-        return pad_l + v * inner_w
+        # v is 0..100; clamp defensively in case of out-of-range
+        v_clamped = max(0.0, min(100.0, v))
+        return pad_l + (v_clamped / 100.0) * inner_w
 
     def sy(v: float) -> float:
         return pad_t + inner_h - (v / max_moic) * inner_h
@@ -123,10 +126,10 @@ def _consistency_moic_scatter(records: List[Any]) -> str:
             return 6.0
         return 3.0 + 13.0 * (deals / max_deals) ** 0.5
 
-    # Quadrant background tint at consistency=0.55, MOIC=2.0
-    # (median-ish split). Subtle wash so the four zones are visible
-    # without overpowering the dots.
-    qx = sx(0.55)
+    # Quadrant background tint at consistency=55, MOIC=2.0 (median-ish
+    # split). Subtle wash so the four zones are visible without
+    # overpowering the dots.
+    qx = sx(55.0)
     qy = sy(2.0)
     quadrants = (
         # top-right: compounders (light green wash)
@@ -140,7 +143,7 @@ def _consistency_moic_scatter(records: List[Any]) -> str:
         f'fill="#b5321e" fill-opacity="0.03" />'
     )
 
-    # Gridlines at MOIC 1, 2, 3 and Consistency 0.25, 0.5, 0.75
+    # Gridlines at MOIC 1, 2, 3 and Consistency 25, 50, 75
     grid = []
     for v in (1.0, 2.0, 3.0):
         if v > max_moic:
@@ -154,7 +157,7 @@ def _consistency_moic_scatter(records: List[Any]) -> str:
             f'fill="#7a8699" text-anchor="end" font-size="10" '
             f'font-family="JetBrains Mono, monospace">{v:.1f}x</text>'
         )
-    for v in (0.25, 0.5, 0.75):
+    for v in (25.0, 50.0, 75.0):
         x = sx(v)
         grid.append(
             f'<line y1="{pad_t}" y2="{pad_t + inner_h}" '
@@ -162,7 +165,7 @@ def _consistency_moic_scatter(records: List[Any]) -> str:
             f'stroke-dasharray="2,4" />'
             f'<text x="{x:.1f}" y="{height - pad_b + 14}" '
             f'fill="#7a8699" text-anchor="middle" font-size="10" '
-            f'font-family="JetBrains Mono, monospace">{v:.2f}</text>'
+            f'font-family="JetBrains Mono, monospace">{v:.0f}</text>'
         )
 
     # Plot each sponsor as a bubble
@@ -184,7 +187,7 @@ def _consistency_moic_scatter(records: List[Any]) -> str:
             f'fill="{color}" fill-opacity="0.55" '
             f'stroke="{color}" stroke-width="1">'
             f'<title>{sponsor}: {moic:.2f}x median MOIC · '
-            f'{float(r.consistency_score):.2f} consistency · '
+            f'{float(r.consistency_score):.0f} consistency · '
             f'{r.deal_count} deals</title>'
             f'</circle>'
         )
@@ -194,7 +197,7 @@ def _consistency_moic_scatter(records: List[Any]) -> str:
         f'<text x="{pad_l + inner_w/2:.1f}" y="{height - 8}" '
         f'fill="#1a2332" text-anchor="middle" font-size="12" '
         f'font-family="Inter, sans-serif" font-weight="600">'
-        f'Consistency score (0 = scattered, 1 = tight)</text>'
+        f'Consistency score (0 = scattered, 100 = tight)</text>'
         f'<text x="16" y="{pad_t + inner_h/2:.1f}" '
         f'fill="#1a2332" text-anchor="middle" font-size="12" '
         f'font-family="Inter, sans-serif" font-weight="600" '
