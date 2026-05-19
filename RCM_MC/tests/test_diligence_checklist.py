@@ -208,7 +208,11 @@ class DiligenceChecklistPageTests(unittest.TestCase):
     def test_landing_renders(self):
         h = self._render()
         self.assertIn("Diligence Checklist", h)
-        self.assertIn("Coverage + Open Questions", h)
+        # Editorial section-intro headline is sentence-case and
+        # italicizes "open" → "Coverage + <em>open</em> questions for
+        # IC.", so the contiguous phrase is split across the <em>.
+        self.assertIn("Coverage +", h)
+        self.assertIn("questions for IC", h)
         self.assertIn("P0 coverage", h)
 
     def test_hero_kpis_have_provenance(self):

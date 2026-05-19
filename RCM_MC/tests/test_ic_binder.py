@@ -80,7 +80,7 @@ class TestHTMLBinder(unittest.TestCase):
         self.assertIn("<title>IC Binder — Populated Co</title>",
                       html)
         # Inline CSS present
-        self.assertIn("--c-accent: #1F4E78", html)
+        self.assertIn("--c-accent: var(--sc-navy)", html)  # editorial: navy token replaces literal hex
         # Markdown header converted to <h1>
         self.assertIn("<h1>IC Binder — Populated Co</h1>", html)
 
