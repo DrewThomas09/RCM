@@ -86,6 +86,131 @@ def _fmt_delta(val: Any) -> str:
         return f'<span style="color:{P["text_faint"]};">—</span>'
 
 
+def _ebitda_delta_tornado(outcomes: List[Dict[str, Any]]) -> str:
+    """Horizontal bar chart of EBITDA delta % per scenario.
+
+    Each scenario gets a bar — pivoted around 0%. Negative deltas
+    extend left in red; positive extend right in green. Bars
+    sorted by delta (most negative on top) so the partner sees the
+    "where this deal hurts" lineup at a glance.
+
+    Bar opacity drops for scenarios that pass; failures get full
+    opacity so the eye lands on them first.
+    """
+    plotted = [
+        o for o in outcomes
+        if isinstance(o.get("ebitda_delta_pct"), (int, float))
+    ]
+    if not plotted:
+        return ""
+    plotted = sorted(
+        plotted, key=lambda o: float(o.get("ebitda_delta_pct") or 0),
+    )
+
+    width = 720
+    row_h = 22
+    pad_l, pad_r, pad_t, pad_b = 200, 24, 30, 40
+    inner_w = width - pad_l - pad_r
+    height = pad_t + len(plotted) * row_h + pad_b
+
+    deltas = [float(o.get("ebitda_delta_pct") or 0) for o in plotted]
+    max_abs = max(abs(d) for d in deltas) or 0.10
+    # Round up to nearest 5% for clean axis
+    axis_max = max(0.10, (int(max_abs * 100 + 4) // 5) * 0.05)
+
+    zero_x = pad_l + (axis_max / (2 * axis_max)) * inner_w
+
+    def sx(v: float) -> float:
+        # Map [-axis_max, +axis_max] → [pad_l, pad_l + inner_w]
+        return pad_l + (v + axis_max) / (2 * axis_max) * inner_w
+
+    # Axis ticks at -axis_max, -axis_max/2, 0, +axis_max/2, +axis_max
+    grid = []
+    for v in (-axis_max, -axis_max / 2, 0, axis_max / 2, axis_max):
+        x = sx(v)
+        stroke = "#1a2332" if v == 0 else "#d6cfc0"
+        sw = 1.2 if v == 0 else 0.8
+        dash = "" if v == 0 else ' stroke-dasharray="2,4"'
+        grid.append(
+            f'<line x1="{x:.1f}" x2="{x:.1f}" '
+            f'y1="{pad_t}" y2="{pad_t + len(plotted) * row_h}" '
+            f'stroke="{stroke}" stroke-width="{sw}"{dash} />'
+            f'<text x="{x:.1f}" y="{pad_t + len(plotted) * row_h + 16}" '
+            f'fill="#7a8699" text-anchor="middle" font-size="10" '
+            f'font-family="JetBrains Mono, monospace">'
+            f'{v*100:+.0f}%</text>'
+        )
+
+    # Bars + labels
+    elements = []
+    for i, o in enumerate(plotted):
+        cy = pad_t + i * row_h + row_h / 2
+        delta = float(o.get("ebitda_delta_pct") or 0)
+        passes = o.get("passes")
+        breach = o.get("covenant_breach")
+        # Color: red for negative (and brick-darker if covenant breach),
+        # green for positive, dim for failed-but-positive (shouldn't
+        # really happen but be defensive)
+        if delta < 0:
+            color = "#b5321e" if breach else "#b8732a"
+        else:
+            color = "#0a8a5f"
+        # Opacity: full when fails (i.e. passes==False) so failures
+        # pop visually; lighter when passes
+        opacity = 0.85 if passes is False else 0.45
+        x_left = sx(min(delta, 0))
+        x_right = sx(max(delta, 0))
+        bar_w = max(1.0, x_right - x_left)
+        name = _html.escape(str(o.get("name", "—")).replace("_", " "))
+        elements.append(
+            f'<rect x="{x_left:.1f}" y="{cy - 8:.1f}" '
+            f'width="{bar_w:.1f}" height="16" '
+            f'fill="{color}" fill-opacity="{opacity}" '
+            f'stroke="{color}" stroke-width="0.5">'
+            f'<title>{name}: {delta*100:+.1f}% EBITDA · '
+            f'{"passes" if passes else "FAILS"}'
+            f'{" · covenant breach" if breach else ""}</title>'
+            f'</rect>'
+        )
+        # Row label (left-padded scenario name)
+        elements.append(
+            f'<text x="{pad_l - 10:.1f}" y="{cy + 3:.1f}" '
+            f'fill="#1a2332" text-anchor="end" font-size="11" '
+            f'font-family="Inter, sans-serif">'
+            f'{name}</text>'
+        )
+        # Inline value label at the bar end
+        if delta < 0:
+            label_x = x_left - 4
+            anchor = "end"
+        else:
+            label_x = x_right + 4
+            anchor = "start"
+        elements.append(
+            f'<text x="{label_x:.1f}" y="{cy + 3:.1f}" '
+            f'fill="{color}" text-anchor="{anchor}" font-size="10" '
+            f'font-family="JetBrains Mono, monospace" '
+            f'font-weight="700">{delta*100:+.1f}%</text>'
+        )
+
+    axis_label = (
+        f'<text x="{pad_l + inner_w / 2:.1f}" y="{height - 8}" '
+        f'fill="#1a2332" text-anchor="middle" font-size="12" '
+        f'font-family="Inter, sans-serif" font-weight="600">'
+        f'EBITDA Δ vs. baseline (red = drag, green = lift)</text>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;background:transparent;'
+        f'margin:8px 0 16px;">'
+        f'{"".join(grid)}'
+        f'{"".join(elements)}'
+        f'{axis_label}'
+        f'</svg>'
+    )
+
+
 def _scenario_row(out: Dict[str, Any]) -> str:
     name = _html.escape(str(out.get("name", "—")))
     passes = out.get("passes")
@@ -287,6 +412,18 @@ def render_stress(
         "and regulatory scenarios run against the live packet."
         "</p>"
     )
+    # Horizontal-bar tornado of EBITDA Δ per scenario — partners
+    # see "where the deal hurts" at a glance, sorted most-negative
+    # on top. Tables below give the full per-scenario detail.
+    tornado_svg = _ebitda_delta_tornado(outcomes)
+    tornado_block = (
+        ck_section_header(
+            "EBITDA Δ TORNADO",
+            "negative scenarios on top · red = covenant breach · "
+            "full opacity = fails",
+        ) + tornado_svg
+    ) if tornado_svg else ""
+
     body = (
         page_title
         + stress_explainer
@@ -294,6 +431,7 @@ def render_stress(
         + header
         + _grade_banner(grade, pass_rate, n_breaches, partner_summary)
         + kpi_strip
+        + tornado_block
         + ck_section_header(
             "SCENARIO GRID", "downside + upside + baseline sweep",
             count=len(outcomes),
