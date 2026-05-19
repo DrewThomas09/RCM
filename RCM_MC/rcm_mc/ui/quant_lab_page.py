@@ -36,6 +36,179 @@ def _fmt(val: float, kind: str = "num") -> str:
 _QUANT_CACHE: dict = {}
 
 
+def _dea_frontier_scatter(eff_scores: List[Any]) -> str:
+    """SVG scatter: opex (input) on x-axis vs. NPR (output) on y-axis,
+    one dot per hospital. Color-coded by efficiency score; frontier
+    hospitals (score ≥ 0.95) drawn as stars on top.
+
+    This is THE canonical DEA visualization — partners see the
+    efficient envelope curve at the top-left, with everyone else
+    falling away. Bubble color shifts from green (frontier) → amber
+    (mid) → red (bottom 30%) so the inefficiency is visible
+    even without reading the score.
+    """
+    points = []
+    for s in eff_scores:
+        inp = s.input_levels.get("operating_expenses")
+        out = s.output_levels.get("net_patient_revenue")
+        if inp is None or out is None or inp <= 0 or out <= 0:
+            continue
+        points.append((float(inp), float(out), s))
+    if not points:
+        return ""
+
+    width = 720
+    height = 380
+    pad_l, pad_r, pad_t, pad_b = 64, 24, 32, 48
+    inner_w = width - pad_l - pad_r
+    inner_h = height - pad_t - pad_b
+
+    # Log-scale both axes since hospital sizes span ~4 orders of
+    # magnitude — linear would crush everything in the corner.
+    xs = [p[0] for p in points]
+    ys = [p[1] for p in points]
+    log_xs = [_np_log(v) for v in xs]
+    log_ys = [_np_log(v) for v in ys]
+    x_lo, x_hi = min(log_xs), max(log_xs)
+    y_lo, y_hi = min(log_ys), max(log_ys)
+    # Pad the bounds 5%
+    x_pad = (x_hi - x_lo) * 0.05 or 0.5
+    y_pad = (y_hi - y_lo) * 0.05 or 0.5
+    x_lo -= x_pad
+    x_hi += x_pad
+    y_lo -= y_pad
+    y_hi += y_pad
+
+    def sx(v: float) -> float:
+        return pad_l + (_np_log(v) - x_lo) / (x_hi - x_lo) * inner_w
+
+    def sy(v: float) -> float:
+        return pad_t + inner_h - (_np_log(v) - y_lo) / (y_hi - y_lo) * inner_h
+
+    # Axis ticks at 10^k that fall in range
+    import math as _math
+    def _decades(lo: float, hi: float) -> list:
+        out = []
+        k = int(_math.floor(lo / _math.log(10)))
+        while k * _math.log(10) <= hi:
+            v = 10.0 ** k
+            if _math.log(v) >= lo:
+                out.append(v)
+            k += 1
+        return out
+
+    def _fmt_money(v: float) -> str:
+        if v >= 1e9:
+            return f"${v/1e9:.0f}B"
+        if v >= 1e6:
+            return f"${v/1e6:.0f}M"
+        if v >= 1e3:
+            return f"${v/1e3:.0f}K"
+        return f"${v:.0f}"
+
+    grid = []
+    for v in _decades(x_lo, x_hi):
+        x = sx(v)
+        grid.append(
+            f'<line x1="{x:.1f}" x2="{x:.1f}" '
+            f'y1="{pad_t}" y2="{pad_t + inner_h}" '
+            f'stroke="#d6cfc0" stroke-dasharray="2,4" />'
+            f'<text x="{x:.1f}" y="{pad_t + inner_h + 14}" '
+            f'fill="#7a8699" text-anchor="middle" font-size="10" '
+            f'font-family="JetBrains Mono, monospace">'
+            f'{_fmt_money(v)}</text>'
+        )
+    for v in _decades(y_lo, y_hi):
+        y = sy(v)
+        grid.append(
+            f'<line x1="{pad_l}" x2="{pad_l + inner_w}" '
+            f'y1="{y:.1f}" y2="{y:.1f}" '
+            f'stroke="#d6cfc0" stroke-dasharray="2,4" />'
+            f'<text x="{pad_l - 6}" y="{y + 3:.1f}" '
+            f'fill="#7a8699" text-anchor="end" font-size="10" '
+            f'font-family="JetBrains Mono, monospace">'
+            f'{_fmt_money(v)}</text>'
+        )
+
+    # Plot non-frontier dots first (background), then frontier stars
+    # on top so they pop visually.
+    dots = []
+    stars = []
+    for inp, out, s in points:
+        cx = sx(inp)
+        cy = sy(out)
+        score = float(s.efficiency_score)
+        if s.is_frontier:
+            # 4-pointed star marker for frontier
+            size = 6
+            stars.append(
+                f'<polygon points="'
+                f'{cx:.1f},{cy - size:.1f} '
+                f'{cx + size*0.4:.1f},{cy - size*0.4:.1f} '
+                f'{cx + size:.1f},{cy:.1f} '
+                f'{cx + size*0.4:.1f},{cy + size*0.4:.1f} '
+                f'{cx:.1f},{cy + size:.1f} '
+                f'{cx - size*0.4:.1f},{cy + size*0.4:.1f} '
+                f'{cx - size:.1f},{cy:.1f} '
+                f'{cx - size*0.4:.1f},{cy - size*0.4:.1f}" '
+                f'fill="#0a8a5f" stroke="#fff" stroke-width="1.2">'
+                f'<title>★ {_html.escape(s.hospital_name)} '
+                f'(efficiency {score:.2f}) — on the frontier</title>'
+                f'</polygon>'
+            )
+        else:
+            color = (
+                "#b8732a" if score >= 0.5
+                else "#b5321e" if score >= 0.3
+                else "#7a3478"
+            )
+            dots.append(
+                f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="2.5" '
+                f'fill="{color}" fill-opacity="0.55" '
+                f'stroke="none">'
+                f'<title>{_html.escape(s.hospital_name)} '
+                f'(efficiency {score:.2f})</title>'
+                f'</circle>'
+            )
+
+    axis_labels = (
+        f'<text x="{pad_l + inner_w / 2:.1f}" y="{height - 8}" '
+        f'fill="#1a2332" text-anchor="middle" font-size="12" '
+        f'font-family="Inter, sans-serif" font-weight="600">'
+        f'Operating expenses (log scale)</text>'
+        f'<text x="14" y="{pad_t + inner_h/2:.1f}" '
+        f'fill="#1a2332" text-anchor="middle" font-size="12" '
+        f'font-family="Inter, sans-serif" font-weight="600" '
+        f'transform="rotate(-90 14 {pad_t + inner_h/2:.1f})">'
+        f'Net patient revenue (log scale)</text>'
+    )
+
+    legend = (
+        f'<text x="{pad_l + inner_w - 12}" y="{pad_t + 14}" '
+        f'fill="#0a8a5f" text-anchor="end" font-size="10" '
+        f'font-family="Inter, sans-serif" font-weight="600" '
+        f'fill-opacity="0.85">★ FRONTIER (top-left envelope)</text>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;background:transparent;'
+        f'margin:8px 0 16px;">'
+        f'{"".join(grid)}'
+        f'{"".join(dots)}'
+        f'{"".join(stars)}'
+        f'{axis_labels}'
+        f'{legend}'
+        f'</svg>'
+    )
+
+
+def _np_log(v: float) -> float:
+    """Wrapper used so callers can override for tests; pulls in math."""
+    import math
+    return math.log(v) if v > 0 else 0.0
+
+
 def render_quant_lab(hcris_df: pd.DataFrame) -> str:
     """Render the Quant Lab national dashboard."""
     from ..ml.efficiency_frontier import compute_efficiency_frontier
@@ -73,11 +246,15 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
             f'</tr>'
         )
 
+    eff_scatter = _dea_frontier_scatter(eff_scores)
     eff_section = ck_panel(
         '<p class="ck-section-body">'
         f'Data Envelopment Analysis: {frontier_count} hospitals on the efficient frontier, '
         f'{bottom_count} in the bottom 30%. Inputs: beds + operating expenses. '
-        'Outputs: net patient revenue + patient days.</p>'
+        'Outputs: net patient revenue + patient days. Frontier (★) is '
+        'the top-left envelope — hospitals producing the most revenue '
+        'per dollar of input.</p>'
+        f'{eff_scatter}'
         '<table class="cad-table"><thead><tr>'
         '<th>Hospital</th><th>State</th><th>Efficiency</th><th>Percentile</th><th>Frontier</th>'
         f'</tr></thead><tbody>{eff_rows}</tbody></table>',
