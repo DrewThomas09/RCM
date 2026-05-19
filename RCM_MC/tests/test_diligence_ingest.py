@@ -24,6 +24,16 @@ from rcm_mc.diligence.ingest import CanonicalClaimsDataset
 
 FIXTURE_ROOT = Path(__file__).resolve().parent / "fixtures" / "messy"
 
+# pyarrow is an optional dependency used only to read .parquet
+# fixture inputs (e.g. fixture_02). When it isn't installed, the
+# parquet-dependent cases should SKIP, not error — the CSV/Excel
+# fixtures still exercise the ingester end-to-end.
+try:
+    import pyarrow  # noqa: F401
+    _HAS_PYARROW = True
+except ImportError:
+    _HAS_PYARROW = False
+
 
 def _load_expected(fixture_dir: Path) -> Dict[str, Any]:
     return json.loads((fixture_dir / "expected.json").read_text("utf-8"))
@@ -61,6 +71,7 @@ class DiligenceIngesterRegressionTests(unittest.TestCase):
 
     # ── fixture_02 ──────────────────────────────────────────────────
 
+    @unittest.skipUnless(_HAS_PYARROW, "pyarrow not installed (parquet fixture)")
     def test_fixture_02_mixed_ehr_rollup(self) -> None:
         d = FIXTURE_ROOT / "fixture_02_mixed_ehr_rollup"
         exp = _load_expected(d)
@@ -221,6 +232,10 @@ class DiligenceIngesterRegressionTests(unittest.TestCase):
         round-trip through JSON must produce the same hash."""
         for d in sorted(FIXTURE_ROOT.iterdir()):
             if not d.is_dir() or not (d / "expected.json").exists():
+                continue
+            # Skip parquet-input fixtures when pyarrow is absent —
+            # the reader needs it only for .parquet sources.
+            if not _HAS_PYARROW and any(d.rglob("*.parquet")):
                 continue
             with self.subTest(fixture=d.name):
                 ds = ingest_dataset(d)

@@ -100,11 +100,11 @@ class TestTTLCache(unittest.TestCase):
             return x
 
         f(1)
-        time.sleep(0.001)
+        time.sleep(0.01)  # distinct insertion ts for LRU order (>=10ms per test_improvements_b110)
         f(2)
-        time.sleep(0.001)
+        time.sleep(0.01)  # distinct insertion ts for LRU order (>=10ms per test_improvements_b110)
         f(3)
-        time.sleep(0.001)
+        time.sleep(0.01)  # distinct insertion ts for LRU order (>=10ms per test_improvements_b110)
         f(4)  # forces eviction
         info = f.cache_info()
         self.assertEqual(info.currsize, 3)
