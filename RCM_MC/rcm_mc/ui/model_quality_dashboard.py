@@ -145,6 +145,112 @@ def _row(r: ModelBacktestResult) -> str:
     )
 
 
+def _r2_bar_chart(results: List["ModelBacktestResult"]) -> str:
+    """SVG horizontal-bar chart: CV R² per tracked model.
+
+    Sorted highest-R² on top so the partner sees which models pull
+    their weight at a glance. Color-coded by grade (A=green, B=teal,
+    C=amber, D/F=red) — overconfident calibration adds a tick-mark
+    indicator on the right of the bar.
+    """
+    plotted = [r for r in results if not math.isnan(r.cv_r2)]
+    if not plotted:
+        return ""
+    plotted.sort(key=lambda r: r.cv_r2, reverse=True)
+
+    width = 720
+    row_h = 24
+    pad_l, pad_r, pad_t, pad_b = 220, 60, 28, 38
+    inner_w = width - pad_l - pad_r
+    height = pad_t + len(plotted) * row_h + pad_b
+
+    # X-axis: 0 to max(R²)+0.05, capped at 1.0
+    max_r2 = min(1.0, max(r.cv_r2 for r in plotted) + 0.05)
+
+    def sx(v: float) -> float:
+        return pad_l + max(0.0, min(v, 1.0)) / max_r2 * inner_w
+
+    grid = []
+    for v in (0.25, 0.5, 0.7, 0.9):
+        if v > max_r2:
+            continue
+        x = sx(v)
+        grid.append(
+            f'<line x1="{x:.1f}" x2="{x:.1f}" '
+            f'y1="{pad_t}" y2="{pad_t + len(plotted) * row_h}" '
+            f'stroke="#d6cfc0" stroke-dasharray="2,4" />'
+            f'<text x="{x:.1f}" y="{pad_t + len(plotted) * row_h + 14}" '
+            f'fill="#7a8699" text-anchor="middle" font-size="10" '
+            f'font-family="JetBrains Mono, monospace">'
+            f'{v:.2f}</text>'
+        )
+
+    grade_colors = {
+        "A": "#0a8a5f",
+        "B": "#155752",
+        "C": "#b8732a",
+        "D": "#b5321e",
+        "F": "#7a3478",
+    }
+
+    elements = []
+    for i, r in enumerate(plotted):
+        cy = pad_t + i * row_h + row_h / 2
+        color = grade_colors.get(r.grade, "#5d6b7a")
+        x_right = sx(r.cv_r2)
+        bar_w = x_right - pad_l
+        elements.append(
+            f'<rect x="{pad_l:.1f}" y="{cy - 8:.1f}" '
+            f'width="{max(1.0, bar_w):.1f}" height="16" '
+            f'fill="{color}" fill-opacity="0.85" '
+            f'stroke="{color}" stroke-width="0.5">'
+            f'<title>{_html.escape(r.model_name)}: '
+            f'CV R² {r.cv_r2:.3f} · grade {r.grade} · '
+            f'calibration {r.calibration.quality_label}</title>'
+            f'</rect>'
+        )
+        # Model name (right-aligned in left gutter)
+        name = r.model_name
+        name_disp = name if len(name) <= 30 else name[:27] + "…"
+        elements.append(
+            f'<text x="{pad_l - 10:.1f}" y="{cy + 3:.1f}" '
+            f'fill="#1a2332" text-anchor="end" font-size="11" '
+            f'font-family="Inter, sans-serif">'
+            f'{_html.escape(name_disp)}</text>'
+        )
+        # R² value + grade chip on the right
+        elements.append(
+            f'<text x="{x_right + 6:.1f}" y="{cy + 3:.1f}" '
+            f'fill="{color}" text-anchor="start" font-size="10" '
+            f'font-family="JetBrains Mono, monospace" '
+            f'font-weight="700">{r.cv_r2:.2f} · {r.grade}</text>'
+        )
+        # Overconfident indicator (tick on the left edge of the bar)
+        if r.calibration.quality_label == "overconfident":
+            elements.append(
+                f'<line x1="{pad_l:.1f}" x2="{pad_l - 4:.1f}" '
+                f'y1="{cy:.1f}" y2="{cy:.1f}" '
+                f'stroke="#b5321e" stroke-width="3" />'
+            )
+
+    axis_label = (
+        f'<text x="{pad_l + inner_w / 2:.1f}" y="{height - 8}" '
+        f'fill="#1a2332" text-anchor="middle" font-size="12" '
+        f'font-family="Inter, sans-serif" font-weight="600">'
+        f'CV R² (0 = baseline, 1 = perfect)</text>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;background:transparent;'
+        f'margin:8px 0 16px;">'
+        f'{"".join(grid)}'
+        f'{"".join(elements)}'
+        f'{axis_label}'
+        f'</svg>'
+    )
+
+
 def render_model_quality_dashboard(
     results: List[ModelBacktestResult],
 ) -> str:
@@ -227,6 +333,7 @@ def render_model_quality_dashboard(
         + '</div>'
     )
 
+    r2_chart = _r2_bar_chart(results)
     rows = "".join(_row(r) for r in results)
     table_html = (
         '<table style="width:100%;border-collapse:collapse;'
@@ -262,6 +369,7 @@ def render_model_quality_dashboard(
         'Overconfident models flag where claimed precision exceeds '
         'reality — multiply CI width by the CI Factor to fix.</p>'
         + kpi_html
+        + r2_chart
         + table_html
         + '</section>'
         + ck_next_section(
