@@ -862,10 +862,16 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         '↓ Download HTML</a>'
         '</div>'
     )
-    # Health KPI value: pre-built coloured number + sparkline; wrap in
-    # SafeHtml so ck_kpi_block doesn't escape it.
+    # Health KPI value: coloured number carrying the component
+    # breakdown as a single-line title tooltip (comp_lines uses " | "
+    # separators — no newlines, per B157). The editorial KPI-strip
+    # refactor had dropped this tooltip (comp_lines became dead code),
+    # losing the partner-facing "why is health N" breakdown; restored
+    # here on the value span. Wrap in SafeHtml so ck_kpi_block doesn't
+    # escape the markup.
     health_value = SafeHtml(
-        f'<span style="color:{health_band_color};">'
+        f'<span class="ck-health-value" title="{html.escape(comp_lines)}" '
+        f'style="color:{health_band_color};">'
         f'{health_score_display_html}</span>'
     )
     moic_v = _fmt(latest.get("moic"))

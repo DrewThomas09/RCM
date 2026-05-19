@@ -46,8 +46,11 @@ class TestTitleNoNewline(unittest.TestCase):
                 with _u.urlopen(f"http://127.0.0.1:{port}/deal/ccf") as r:
                     body = r.read().decode()
                 import re
+                # Editorial refactor: the health-component tooltip
+                # moved from the legacy `kpi-card title="…"` div onto
+                # the `ck-health-value` span in the ck_kpi_block strip.
                 m = re.search(
-                    r'kpi-card" title="([^"]*)"', body,
+                    r'ck-health-value" title="([^"]*)"', body,
                 )
                 self.assertIsNotNone(m)
                 title_val = m.group(1)
