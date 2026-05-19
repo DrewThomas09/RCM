@@ -23,7 +23,131 @@ _EXPLAINER_CSS = """<style>
   font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
   margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
 .ck-di-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+.di-chart-caption {
+  font-family: "Inter Tight","Inter",sans-serif;
+  font-size: .72rem; color: #5C6878;
+  text-align: center; letter-spacing: 0.06em;
+  text-transform: uppercase; margin: -.5rem 0 1.25rem;
+}
+@media print {
+  .di-chart-caption { color: #1a2332; }
+  svg { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
 </style>"""
+
+
+# ── Editorial inline-SVG charts ────────────────────────────────────
+
+def _bed_distribution_chart(brackets: Dict[str, int], total: int,
+                            width: int = 720, height: int = 200) -> str:
+    """Horizontal bar chart of hospitals per bed-count bracket."""
+    items = list(brackets.items())
+    if not items or total <= 0:
+        return ""
+    pad_l, pad_r, pad_t, pad_b = 140, 80, 18, 18
+    plot_w = width - pad_l - pad_r
+    n = len(items)
+    row_h = (height - pad_t - pad_b) / n
+    max_count = max((c for _, c in items), default=1)
+
+    bars_svg = ""
+    for i, (bracket, count) in enumerate(items):
+        cy = pad_t + row_h * i + row_h / 2
+        bw = (count / max_count) * plot_w if max_count > 0 else 0
+        pct = (count / total * 100) if total else 0
+        # Tone based on share — higher share = darker teal
+        if pct >= 30:
+            fill = "#155752"
+        elif pct >= 15:
+            fill = "#1F7A75"
+        else:
+            fill = "#7ED3A8"
+        bars_svg += (
+            f'<text x="{pad_l - 8}" y="{cy + 3:.1f}" '
+            f'font-family="Inter Tight,sans-serif" font-size="11" '
+            f'font-weight="600" fill="#1a2332" text-anchor="end">'
+            f'{_html.escape(bracket)}</text>'
+            f'<rect x="{pad_l}" y="{cy - row_h * 0.32:.1f}" '
+            f'width="{bw:.1f}" height="{row_h * 0.62:.1f}" '
+            f'fill="{fill}" opacity="0.9" rx="1"/>'
+            f'<text x="{pad_l + bw + 6:.1f}" y="{cy + 4:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="10.5" '
+            f'font-weight="700" fill="#1a2332">'
+            f'{count:,}'
+            f'</text>'
+            f'<text x="{pad_l + bw + 6:.1f}" y="{cy + 16:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9" '
+            f'fill="#5C6878">'
+            f'{pct:.1f}%</text>'
+        )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="width:100%;max-width:{width}px;height:auto;display:block;'
+        f'margin:0 auto 1rem;">{bars_svg}</svg>'
+    )
+
+
+def _fy_coverage_chart(fy_counts: Dict[str, int],
+                       width: int = 720, height: int = 200) -> str:
+    """Column chart of hospitals per fiscal year."""
+    items = sorted(fy_counts.items())
+    if not items:
+        return ""
+    pad_l, pad_r, pad_t, pad_b = 50, 18, 28, 38
+    plot_w = width - pad_l - pad_r
+    plot_h = height - pad_t - pad_b
+    n = len(items)
+    slot = plot_w / max(n, 1)
+    bar_w = slot * 0.66
+    max_count = max(c for _, c in items)
+
+    # Y-axis gridlines + labels
+    grid_svg = ""
+    for i in range(5):
+        gv = max_count * i / 4
+        gy = pad_t + plot_h - (i / 4) * plot_h
+        grid_svg += (
+            f'<line x1="{pad_l}" y1="{gy:.1f}" x2="{pad_l + plot_w}" '
+            f'y2="{gy:.1f}" stroke="#E8E0D0" stroke-width="0.8"/>'
+            f'<text x="{pad_l - 6}" y="{gy + 3:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9" '
+            f'fill="#8A92A0" text-anchor="end">{int(gv):,}</text>'
+        )
+
+    bars_svg = ""
+    for i, (fy, count) in enumerate(items):
+        cx = pad_l + slot * i + slot / 2
+        bx = cx - bar_w / 2
+        bh = (count / max_count) * plot_h if max_count > 0 else 0
+        by = pad_t + plot_h - bh
+        bars_svg += (
+            f'<rect x="{bx:.1f}" y="{by:.1f}" width="{bar_w:.1f}" '
+            f'height="{bh:.1f}" fill="#1F7A75" opacity="0.85" rx="1"/>'
+            f'<text x="{cx:.1f}" y="{by - 5:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9.5" '
+            f'font-weight="700" fill="#1a2332" text-anchor="middle">'
+            f'{count:,}</text>'
+            f'<text x="{cx:.1f}" y="{pad_t + plot_h + 14:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9.5" '
+            f'font-weight="700" fill="#1a2332" text-anchor="middle">'
+            f'{_html.escape(fy)}</text>'
+        )
+
+    base_y = pad_t + plot_h
+    axes_svg = (
+        f'<line x1="{pad_l}" y1="{base_y:.1f}" x2="{pad_l + plot_w}" '
+        f'y2="{base_y:.1f}" stroke="#BFB6A2" stroke-width="1"/>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="width:100%;max-width:{width}px;height:auto;display:block;'
+        f'margin:0 auto 1rem;">'
+        f'{grid_svg}{axes_svg}{bars_svg}</svg>'
+    )
 
 
 def render_data_dashboard(hcris_df: pd.DataFrame) -> str:
@@ -202,9 +326,16 @@ def render_data_dashboard(hcris_df: pd.DataFrame) -> str:
             f'<td class="num">{pct:.1f}%</td></tr>'
         )
 
+    bed_chart = _bed_distribution_chart(bed_brackets, n_hospitals)
+    bed_caption = (
+        '<div class="di-chart-caption">'
+        'Hospitals per bed-count bracket · darker teal = larger share'
+        '</div>'
+    ) if bed_chart else ""
     bed_section = (
         f'<div class="cad-card">'
         f'<h2>Hospital Size Distribution</h2>'
+        + bed_chart + bed_caption +
         f'<table class="cad-table"><thead><tr>'
         f'<th>Size</th><th>Count</th><th>%</th>'
         f'</tr></thead><tbody>{bed_rows}</tbody></table></div>'
@@ -236,9 +367,16 @@ def render_data_dashboard(hcris_df: pd.DataFrame) -> str:
         fy_rows = ""
         for fy, count in sorted(fy_counts.items()):
             fy_rows += f'<tr><td>{_html.escape(fy)}</td><td class="num">{count:,}</td></tr>'
+        fy_chart = _fy_coverage_chart(fy_counts)
+        fy_caption = (
+            '<div class="di-chart-caption">'
+            'Hospital filings per fiscal year · ramp-up indicates corpus completeness'
+            '</div>'
+        ) if fy_chart else ""
         fy_section = (
             f'<div class="cad-card">'
             f'<h2>Fiscal Year Coverage</h2>'
+            + fy_chart + fy_caption +
             f'<table class="cad-table"><thead><tr><th>Year</th><th>Hospitals</th>'
             f'</tr></thead><tbody>{fy_rows}</tbody></table></div>'
         )
