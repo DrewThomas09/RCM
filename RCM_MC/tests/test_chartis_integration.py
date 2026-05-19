@@ -623,6 +623,10 @@ class TestExplainerHelper(unittest.TestCase):
     shows, what the scale means, and how partners should use it."""
 
     def test_explainer_with_all_three_parts_renders(self):
+        # PR #240 rewrote render_page_explainer from a bordered
+        # "About this page" card to an editorial italic-paragraph
+        # ("ck-page-explainer"). Scale / How to use / Source render
+        # as inline sub-segments instead of separate <h4> headings.
         from rcm_mc.ui.chartis._helpers import render_page_explainer
         html = render_page_explainer(
             what="This page shows HHI for the target's local market.",
@@ -631,17 +635,15 @@ class TestExplainerHelper(unittest.TestCase):
             source="FTC Horizontal Merger Guidelines (2023).",
             page_key="market-structure",
         )
-        self.assertIn("About this page", html)
+        # Lead italic paragraph carries the "what" content
+        self.assertIn("ck-page-explainer", html)
         self.assertIn("HHI", html)
-        self.assertIn(">Scale<", html)
-        self.assertIn(">How to use<", html)
+        # Scale + Use sub-labels rendered inline
+        self.assertIn("Scale.", html)
+        self.assertIn("How to use.", html)
+        # Source attribution still present
         self.assertIn("Source:", html)
         self.assertIn("FTC Horizontal Merger Guidelines", html)
-        # Toggle + JS wired
-        self.assertIn("ck-explainer-toggle", html)
-        self.assertIn("ckExplainerToggle", html)
-        # Page key wired for localStorage
-        self.assertIn('data-page-key="market-structure"', html)
 
     def test_explainer_with_only_what_renders(self):
         from rcm_mc.ui.chartis._helpers import render_page_explainer
@@ -651,11 +653,11 @@ class TestExplainerHelper(unittest.TestCase):
         )
         self.assertIn("This page shows a list of deals.", html)
         # Scale / Use / Source sections absent
-        self.assertNotIn(">Scale<", html)
-        self.assertNotIn(">How to use<", html)
+        self.assertNotIn("Scale.", html)
+        self.assertNotIn("How to use.", html)
         self.assertNotIn("Source:", html)
-        # Toggle still present — every explainer collapses
-        self.assertIn("ck-explainer-toggle", html)
+        # Lead paragraph still rendered
+        self.assertIn("ck-page-explainer", html)
 
     def test_explainer_omits_source_line_when_source_empty(self):
         from rcm_mc.ui.chartis._helpers import render_page_explainer
@@ -666,8 +668,8 @@ class TestExplainerHelper(unittest.TestCase):
             source="",
             page_key="page",
         )
-        self.assertIn(">Scale<", html)
-        self.assertIn(">How to use<", html)
+        self.assertIn("Scale.", html)
+        self.assertIn("How to use.", html)
         self.assertNotIn("Source:", html)
 
     def test_explainer_html_is_safe(self):

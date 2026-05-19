@@ -79,5 +79,78 @@ class ChartisShellEditorialIntroTests(unittest.TestCase):
         self.assertNotIn('class="ck-section-intro"', html)
 
 
+class ChartisShellLegacySectionIntroAutoTitleTests(unittest.TestCase):
+    """Pages that call ``ck_section_intro`` *directly* in their body
+    (rather than via the ``editorial_intro=`` kwarg) used to render
+    without any page H1 — the partner saw a bare italic deck headline
+    floating at the top with no title above it (bear_case,
+    covenant_lab, payer_stress, bridge_audit, regulatory_calendar,
+    ic_memo, day_one, portfolio_monitor, regression).
+
+    The shell now auto-injects a ck_page_title using the shell's
+    ``title`` arg whenever the body signals editorial cadence
+    (presence of ``ck-section-intro``) but has no ``ck-page-title``
+    yet.
+    """
+
+    def test_body_with_section_intro_gets_page_title(self):
+        body = (
+            '<div class="ck-section-intro" data-ck-intro="x">'
+            '<h2>The deck headline.</h2></div>'
+            '<p>body</p>'
+        )
+        html = chartis_shell(body, title="Bear Case")
+        # ck_page_title now present
+        self.assertIn('class="ck-page-title"', html)
+        # And it appears BEFORE the section intro
+        title_idx = html.index('class="ck-page-title"')
+        intro_idx = html.index('class="ck-section-intro"')
+        self.assertLess(title_idx, intro_idx)
+        # The title text rendered
+        self.assertIn(">Bear Case</h1>", html)
+
+    def test_body_without_section_intro_does_not_get_title(self):
+        # Plain bodies don't get a forced H1 — leaves login/error
+        # pages and dashboards that bring their own header alone.
+        html = chartis_shell("<p>just body</p>", title="Plain")
+        self.assertNotIn('class="ck-page-title"', html)
+
+    def test_body_with_existing_page_title_not_doubled(self):
+        body = (
+            '<header class="ck-page-title"><h1>Already Titled</h1>'
+            '</header>'
+            '<div class="ck-section-intro" data-ck-intro="x">'
+            '<h2>Deck.</h2></div>'
+        )
+        html = chartis_shell(body, title="Should Not Appear")
+        # Only one ck-page-title in the rendered HTML
+        self.assertEqual(html.count('class="ck-page-title"'), 1)
+        # The auto-injected title is NOT prepended on top
+        self.assertNotIn("Should Not Appear</h1>", html)
+
+    def test_default_pe_desk_title_does_not_inject(self):
+        # Pages that don't pass a real title get no H1 either —
+        # avoids surfacing "PE Desk" as a meaningless H1 string.
+        body = (
+            '<div class="ck-section-intro" data-ck-intro="x">'
+            '<h2>Deck.</h2></div>'
+        )
+        html = chartis_shell(body)  # no title= → defaults to "PE Desk"
+        self.assertNotIn('class="ck-page-title"', html)
+
+    def test_editorial_intro_kwarg_path_still_wins(self):
+        # When editorial_intro= is set, that path handles title
+        # injection (with eyebrow). The fallback path must NOT
+        # fire again and double the title.
+        html = chartis_shell(
+            "<p>body</p>", title="X",
+            editorial_intro={
+                "eyebrow": "EYE",
+                "headline": "Headline.",
+            },
+        )
+        self.assertEqual(html.count('class="ck-page-title"'), 1)
+
+
 if __name__ == "__main__":
     unittest.main()
