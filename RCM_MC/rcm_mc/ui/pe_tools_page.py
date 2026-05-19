@@ -39,6 +39,128 @@ font-size:10px;color:white;font-weight:600;}}
 """
 
 
+_PET_CHART_CAPTION_CSS = """
+<style>
+.pet-chart-caption {
+  font-family: "Inter Tight","Inter",sans-serif;
+  font-size: .72rem; color: #5C6878;
+  text-align: center; letter-spacing: 0.06em;
+  text-transform: uppercase; margin: -.5rem 0 1.25rem;
+}
+@media print {
+  .pet-chart-caption { color: #1a2332; }
+  svg { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+"""
+
+
+def _comparable_scatter(comparables: List[Dict[str, Any]],
+                        target_profile: Dict[str, Any],
+                        width: int = 720, height: int = 300) -> str:
+    """Scatter of peer hospitals (beds × net patient revenue), with the
+    target marked. Peer dots are tone-coded by similarity so the
+    closest comps read darkest."""
+    pts = []
+    for c in comparables[:40]:
+        try:
+            beds = float(c.get("beds", c.get("bed_count", 0)) or 0)
+            rev = float(c.get("net_patient_revenue", c.get("revenue", 0)) or 0)
+        except (TypeError, ValueError):
+            continue
+        if beds <= 0 or rev <= 0:
+            continue
+        dist = c.get("distance", c.get("similarity", 0))
+        try:
+            sim = max(0.0, min(1.0, 1.0 - float(dist) * 0.1)) if dist else 0.0
+        except (TypeError, ValueError):
+            sim = 0.0
+        pts.append({"beds": beds, "rev": rev, "sim": sim})
+    if not pts:
+        return ""
+
+    try:
+        t_beds = float(target_profile.get("beds",
+                       target_profile.get("bed_count", 0)) or 0)
+        t_rev = float(target_profile.get("net_patient_revenue",
+                      target_profile.get("revenue", 0)) or 0)
+    except (TypeError, ValueError):
+        t_beds = t_rev = 0.0
+    has_target = t_beds > 0 and t_rev > 0
+
+    all_beds = [p["beds"] for p in pts] + ([t_beds] if has_target else [])
+    all_rev = [p["rev"] for p in pts] + ([t_rev] if has_target else [])
+    bmin, bmax = min(all_beds), max(all_beds)
+    rmin, rmax = min(all_rev), max(all_rev)
+    bspan = (bmax - bmin) or 1.0
+    rspan = (rmax - rmin) or 1.0
+    pad_l, pad_r, pad_t, pad_b = 60, 20, 22, 40
+    plot_w = width - pad_l - pad_r
+    plot_h = height - pad_t - pad_b
+
+    def _x(b): return pad_l + (b - bmin) / bspan * plot_w
+    def _y(r): return pad_t + plot_h - (r - rmin) / rspan * plot_h
+
+    # Gridlines + axis labels
+    grid = ""
+    for i in range(5):
+        gy = pad_t + plot_h - (i / 4) * plot_h
+        rv = rmin + rspan * i / 4
+        grid += (
+            f'<line x1="{pad_l}" y1="{gy:.1f}" x2="{pad_l + plot_w}" '
+            f'y2="{gy:.1f}" stroke="#E8E0D0" stroke-width="0.8"/>'
+            f'<text x="{pad_l - 6}" y="{gy + 3:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9" '
+            f'fill="#8A92A0" text-anchor="end">${rv/1e6:.0f}M</text>'
+        )
+    ticks = ""
+    for i in range(5):
+        gx = pad_l + (i / 4) * plot_w
+        bv = bmin + bspan * i / 4
+        ticks += (
+            f'<text x="{gx:.1f}" y="{pad_t + plot_h + 15:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="9" '
+            f'fill="#5C6878" text-anchor="middle">{bv:.0f}</text>'
+        )
+
+    dots = ""
+    for p in pts:
+        # similarity → darker teal as it rises
+        op = 0.35 + 0.55 * p["sim"]
+        dots += (
+            f'<circle cx="{_x(p["beds"]):.1f}" cy="{_y(p["rev"]):.1f}" r="4.5" '
+            f'fill="#155752" opacity="{op:.2f}" stroke="#FAF7F0" '
+            f'stroke-width="0.6"/>'
+        )
+    target_svg = ""
+    if has_target:
+        tx, ty = _x(t_beds), _y(t_rev)
+        target_svg = (
+            f'<circle cx="{tx:.1f}" cy="{ty:.1f}" r="7" fill="#b8732a" '
+            f'stroke="#FAF7F0" stroke-width="2"/>'
+            f'<text x="{tx:.1f}" y="{ty - 12:.1f}" '
+            f'font-family="Inter Tight,sans-serif" font-size="9.5" '
+            f'font-weight="700" letter-spacing="0.06em" fill="#b8732a" '
+            f'text-anchor="middle">TARGET</text>'
+        )
+    axes = (
+        f'<line x1="{pad_l}" y1="{pad_t + plot_h}" x2="{pad_l + plot_w}" '
+        f'y2="{pad_t + plot_h}" stroke="#BFB6A2" stroke-width="1"/>'
+        f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" '
+        f'y2="{pad_t + plot_h}" stroke="#BFB6A2" stroke-width="1"/>'
+        f'<text x="{pad_l + plot_w/2:.1f}" y="{height - 4}" '
+        f'font-family="Inter Tight,sans-serif" font-size="9" font-weight="700" '
+        f'letter-spacing="0.08em" fill="#5C6878" text-anchor="middle">BEDS →</text>'
+    )
+    return (
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="width:100%;max-width:{width}px;height:auto;display:block;'
+        f'margin:0 auto 1rem;">'
+        f'{grid}{axes}{ticks}{dots}{target_svg}</svg>'
+    )
+
+
 def render_value_bridge(deal_id: str, deal_name: str, bridge: Dict[str, Any]) -> str:
     """Render EBITDA value bridge as a browser page."""
     levers = bridge.get("levers", bridge.get("items", []))
@@ -199,9 +321,18 @@ def render_comparable_hospitals(deal_id: str, deal_name: str,
         "margins, and payer mix. Use as a base-rate sanity check for the bridge."
         '</p>'
     )
+    scatter = _comparable_scatter(comparables, target_profile)
+    scatter_caption = (
+        '<div class="pet-chart-caption">'
+        'Peer cloud: beds &times; net patient revenue · darker = closer comp · '
+        'amber = target'
+        '</div>'
+    ) if scatter else ""
     body = (
-        intro
+        _PET_CHART_CAPTION_CSS
+        + intro
         + ck_panel(
+            scatter + scatter_caption +
             '<table class="cad-table"><thead><tr>'
             '<th>Hospital</th><th>State</th><th>Beds</th><th>NPR</th><th>Similarity</th>'
             f'</tr></thead><tbody>{rows}</tbody></table>',
