@@ -75,16 +75,19 @@ class HospitalProfileProvenanceTooltipTests(unittest.TestCase):
         self.assertIn("SOURCE", out)
 
     def test_label_still_renders_below_value(self) -> None:
-        """v3 layout pin: the cad-kpi-label "Operating Margin"
-        text should still appear unchanged below the wrapped
-        value cell — only the value itself gets the tooltip."""
+        """v3 layout pin: the "Operating Margin" KPI label should
+        still appear below the wrapped value cell — only the value
+        gets the provenance tooltip. The label class was renamed
+        cad-kpi-label → ck-kpi-label in the editorial rebuild and
+        the label text is now wrapped in a ck-help inline-tooltip
+        span (button for the term-definition popover); both forms
+        satisfy "the label is still present"."""
         out = render_hospital_profile(
             _HOSPITAL_FULL, _FakeScore(),
         )
-        self.assertIn(
-            '<div class="cad-kpi-label">Operating Margin</div>',
-            out,
-        )
+        # Label class + text still present in the editorial form
+        self.assertIn('class="ck-kpi-label"', out)
+        self.assertIn(">Operating Margin", out)
 
     def test_render_robust_to_missing_financials(self) -> None:
         """Defensive contract: a hospital with no NPR / opex
@@ -99,11 +102,10 @@ class HospitalProfileProvenanceTooltipTests(unittest.TestCase):
         out = render_hospital_profile(thin_hospital, _FakeScore())
         # Page renders without raising
         self.assertGreater(len(out), 1000)
-        # Operating Margin label still appears (KPI card present)
-        self.assertIn(
-            '<div class="cad-kpi-label">Operating Margin</div>',
-            out,
-        )
+        # Operating Margin label still appears (KPI card present —
+        # editorial form uses ck-kpi-label + inline ck-help span)
+        self.assertIn('class="ck-kpi-label"', out)
+        self.assertIn(">Operating Margin", out)
 
     def test_render_robust_to_no_db_path(self) -> None:
         """build_provenance_graph supports db_path=None
@@ -133,29 +135,28 @@ class HospitalProfileProvenanceTooltipTests(unittest.TestCase):
         )
 
     def test_npr_value_is_wrapped(self) -> None:
-        """Loop 138 wrap pin: the NPR value cell ($1.5M-style)
-        renders inside a prov-tt wrapper, not bare."""
+        """Loop 138 wrap pin: the NPR value cell ($150.0M for the
+        test fixture) renders inside a prov-tt wrapper, not bare.
+        Editorial rebuild moved the label ABOVE the value within
+        each ck-kpi card (legacy layout had value above label), so
+        verify the prov-tt wrapper sits between NPR's label and the
+        next KPI's label (Operating Margin)."""
         out = render_hospital_profile(
             _HOSPITAL_FULL, _FakeScore(),
         )
         # The NPR cell formats as $150.0M for npr=1.5e8
         self.assertIn('$150.0M', out)
-        # And the cell that shows that string is followed by the
-        # NPR label (with provenance wrapper between)
-        self.assertIn(
-            'Net Patient Revenue', out,
-        )
-        # Sanity: at least one wrapper sits before the NPR label
-        # (not just the loop-131 Operating Margin wrapper)
-        npr_label_idx = out.index(
-            '<div class="cad-kpi-label">Net Patient Revenue</div>')
-        op_margin_idx = out.index(
-            '<div class="cad-kpi-label">Operating Margin</div>')
-        # NPR card comes before Operating Margin in the grid
+        # NPR label text present
+        self.assertIn('Net Patient Revenue', out)
+        # NPR's card sits before Operating Margin's card
+        npr_label_idx = out.index('>Net Patient Revenue')
+        op_margin_idx = out.index('>Operating Margin')
         self.assertLess(npr_label_idx, op_margin_idx)
-        # And there's a prov-tt wrapper sitting in between
-        # the start-of-html and the NPR label
-        self.assertIn('class="prov-tt"', out[:npr_label_idx])
+        # The NPR card's value renders inside a prov-tt wrapper —
+        # verify by finding ≥1 wrapper between NPR's label and
+        # Operating Margin's label.
+        between = out[npr_label_idx:op_margin_idx]
+        self.assertIn('class="prov-tt"', between)
 
 
 if __name__ == "__main__":
