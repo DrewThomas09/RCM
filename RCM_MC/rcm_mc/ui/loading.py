@@ -157,11 +157,11 @@ def skeleton_table(
     cell_w = f"{100 / cols:.2f}%"
 
     def _row(is_header: bool, height: str) -> str:
-        bg = "#111827" if is_header else "transparent"
+        bg = "#ECE5D6" if is_header else "transparent"
         bar_w = "60%" if is_header else "85%"
         cells = "".join([
             f'<td style="padding:10px 14px;border-bottom:'
-            f'1px solid #374151;width:{cell_w};">'
+            f'1px solid #D6CFC0;width:{cell_w};">'
             f'<span class="sk" style="display:block;'
             f'width:{bar_w};height:{height};"></span>'
             f'</td>' for _ in range(cols)])

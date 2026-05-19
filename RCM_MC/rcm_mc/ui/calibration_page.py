@@ -88,7 +88,7 @@ def _slider_card(payer: str, agg: Dict[str, float]) -> str:
     dar_m = agg["dar_m"]
     return (
         '<section style="border:1px solid var(--border,#374151);'
-        'background:var(--paper,#1f2937);border-radius:8px;'
+        'background:var(--paper,#F2EDE3);border-radius:8px;'
         'padding:1rem 1.25rem;margin-bottom:.75rem;">'
         f'<h3 style="margin:0 0 .5rem 0;font-size:1rem;">{ep}</h3>'
         '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;'
@@ -150,7 +150,7 @@ def render_calibration_page(store: Any) -> str:
             'Per-payer prior calibration. Aggregates IDR / FWR / DAR '
             'primitives across every run in the analysis cache so you '
             'can intuit priors before configuring a new deal.</p>'
-            '<div style="background:var(--paper,#111827);'
+            '<div style="background:var(--paper,#F2EDE3);'
             'border:1px solid var(--border,#374151);border-radius:8px;'
             'padding:2.5rem;text-align:center;color:var(--muted,#9ca3af);">'
             'No simulation runs yet. Run an analysis first to populate '

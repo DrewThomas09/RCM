@@ -37,9 +37,9 @@ def web_styles() -> str:
 .wc-container { max-width: 1100px; margin: 0 auto; padding: 24px 20px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
                  Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-    color: #111827; line-height: 1.5; font-size: 14px; }
+    color: #1a2332; line-height: 1.5; font-size: 14px; }
 .wc-container h1 { font-size: 24px; margin: 0; font-weight: 600;
-    letter-spacing: -0.01em; color: #0f172a; }
+    letter-spacing: -0.01em; color: #1a2332; }
 .wc-container h2 { font-size: 16px; margin: 24px 0 12px; font-weight: 600;
     color: #1f2937; letter-spacing: -0.005em; }
 .wc-container h3 { font-size: 13px; margin: 16px 0 8px; font-weight: 600;
@@ -92,7 +92,7 @@ def web_styles() -> str:
     padding: 6px 10px; margin: 0 0 8px;
     font-size: 13px; font-family: inherit;
     border: 1px solid #e5e7eb; border-radius: 4px;
-    background: #fff; color: #111827;
+    background: #fff; color: #1a2332;
     transition: border-color 0.1s, box-shadow 0.1s; }
 .wc-filter:focus { outline: none; border-color: var(--sc-navy);
     box-shadow: 0 0 0 2px rgba(31, 78, 120, 0.15); }
@@ -113,7 +113,7 @@ def web_styles() -> str:
 .wc-cmdk-input-wrap { display: flex; align-items: center; gap: 10px;
     padding: 14px 16px; border-bottom: 1px solid #f3f4f6; }
 .wc-cmdk-input { flex: 1; border: none; outline: none;
-    font-size: 15px; font-family: inherit; color: #111827;
+    font-size: 15px; font-family: inherit; color: #1a2332;
     background: transparent; padding: 0; }
 .wc-cmdk-input::placeholder { color: #9ca3af; }
 .wc-cmdk-hint { font-size: 10px; padding: 2px 6px;
@@ -121,7 +121,7 @@ def web_styles() -> str:
     font-family: monospace; border: 1px solid #e5e7eb; }
 .wc-cmdk-results { max-height: 50vh; overflow-y: auto; padding: 4px 0; }
 .wc-cmdk-row { display: flex; align-items: center; gap: 12px;
-    padding: 8px 16px; color: #111827; text-decoration: none;
+    padding: 8px 16px; color: #1a2332; text-decoration: none;
     font-size: 13px; border-left: 2px solid transparent; }
 .wc-cmdk-row:hover, .wc-cmdk-row.wc-cmdk-active {
     background: #f0f6fc; border-left-color: var(--sc-navy); }
@@ -394,11 +394,11 @@ def universal_palette_bundle() -> str:
     box-shadow: 0 20px 50px -10px rgba(0,0,0,0.35),
                 0 8px 20px -8px rgba(0,0,0,0.2);
     overflow: hidden; font-family: -apple-system, BlinkMacSystemFont,
-    "Segoe UI", Roboto, sans-serif; color: #111827; }
+    "Segoe UI", Roboto, sans-serif; color: #1a2332; }
 .wc-cmdk-input-wrap { display: flex; align-items: center; gap: 10px;
     padding: 14px 16px; border-bottom: 1px solid #f3f4f6; }
 .wc-cmdk-input { flex: 1; border: none; outline: none;
-    font-size: 15px; font-family: inherit; color: #111827;
+    font-size: 15px; font-family: inherit; color: #1a2332;
     background: transparent; padding: 0; }
 .wc-cmdk-input::placeholder { color: #9ca3af; }
 .wc-cmdk-hint { font-size: 10px; padding: 2px 6px;
@@ -407,7 +407,7 @@ def universal_palette_bundle() -> str:
 .wc-cmdk-results { max-height: 50vh; overflow-y: auto; padding: 4px 0;
     background: #fff; }
 .wc-cmdk-row { display: flex; align-items: center; gap: 12px;
-    padding: 8px 16px; color: #111827; text-decoration: none;
+    padding: 8px 16px; color: #1a2332; text-decoration: none;
     font-size: 13px; border-left: 2px solid transparent; }
 .wc-cmdk-row:hover, .wc-cmdk-row.wc-cmdk-active {
     background: #f0f6fc; border-left-color: var(--sc-navy); }

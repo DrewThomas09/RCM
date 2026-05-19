@@ -105,7 +105,7 @@ def _row(r: Dict[str, Any]) -> str:
 
 def _empty_state(reason: str) -> str:
     return (
-        '<div style="background:var(--paper,#111827);'
+        '<div style="background:var(--paper,#F2EDE3);'
         'border:1px solid var(--border,#374151);border-radius:8px;'
         'padding:2.5rem;text-align:center;color:var(--muted,#9ca3af);">'
         f'{_html.escape(reason)}'
@@ -158,7 +158,7 @@ def render_cli_runs_page(
         catalog_body = (
             '<table style="width:100%;border-collapse:collapse;'
             'border:1px solid var(--border,#374151);'
-            'background:var(--paper,#1f2937);border-radius:8px;'
+            'background:var(--paper,#F2EDE3);border-radius:8px;'
             'overflow:hidden;">'
             '<thead>'
             '<tr style="border-bottom:1px solid var(--border,#374151);">'

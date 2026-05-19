@@ -343,7 +343,7 @@ def _band_filter_chips(current: str = "") -> str:
         is_active = (key == active)
         active_cls = " pa-band-chip-active" if is_active else ""
         bg = color if is_active else "transparent"
-        fg = "#0a0e17" if is_active else color
+        fg = "#1a2332" if is_active else color
         out.append(
             f'<a href="/diligence/physician-attrition?band={key}" '
             f'class="pa-band-chip{active_cls}" '

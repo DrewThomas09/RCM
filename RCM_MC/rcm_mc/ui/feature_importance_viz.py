@@ -66,7 +66,7 @@ def render_importance_bar_chart(
     """
     if not importances:
         return (
-            '<div style="background:var(--paper,#1f2937);'
+            '<div style="background:var(--paper,#F2EDE3);'
             'border:1px solid var(--border,#374151);'
             'border-radius:8px;padding:1.5rem;text-align:center;'
             'color:var(--muted,#9ca3af);font-size:.85rem;">'
@@ -136,7 +136,7 @@ def render_importance_bar_chart(
         f'stroke="{_AXIS_COLOR}" stroke-width="1" />')
 
     return (
-        '<div style="background:var(--paper,#1f2937);'
+        '<div style="background:var(--paper,#F2EDE3);'
         'border:1px solid var(--border,#374151);'
         'border-radius:8px;padding:.9rem;margin-bottom:.9rem;">'
         f'<svg viewBox="0 0 {width} {height}" '
@@ -176,7 +176,7 @@ def render_feature_importance_page(
     """
     if not model_importances:
         catalog_body = (
-            '<div style="background:var(--paper,#111827);'
+            '<div style="background:var(--paper,#F2EDE3);'
             'border:1px solid var(--border,#374151);'
             'border-radius:8px;padding:2.5rem;text-align:center;'
             'color:var(--muted,#9ca3af);">'
