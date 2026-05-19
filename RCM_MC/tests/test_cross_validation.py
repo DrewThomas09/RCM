@@ -198,5 +198,62 @@ class ResultStructureTests(unittest.TestCase):
         )
 
 
+class AutoReduceKTests(unittest.TestCase):
+    """``auto_reduce_k=True`` lets thin universes (CAH, Small
+    Community segments) still get OOS numbers instead of an
+    error. The original ``k`` is preserved in ``requested_k`` so
+    the UI can flag the reduction to the partner."""
+
+    def test_thin_universe_with_auto_reduce_returns_smaller_k(self):
+        # 30 rows × 2 features: needs ≥40 for k=5, ≥30 for k=3
+        df = _clean_linear(30, seed=7)
+        res = run_cv_regression(
+            df, "y", ["x1", "x2"], k=5,
+            auto_reduce_k=True,
+        )
+        # k knocked down (likely to 3); requested_k preserves orig
+        self.assertLess(res.k, 5)
+        self.assertGreaterEqual(res.k, 2)
+        self.assertEqual(res.requested_k, 5)
+        # Real OOS numbers — not NaN, not zero-folds
+        self.assertEqual(len(res.folds), res.k)
+
+    def test_large_universe_with_auto_reduce_keeps_requested_k(self):
+        # No reduction needed → requested_k stays None
+        df = _clean_linear(400)
+        res = run_cv_regression(
+            df, "y", ["x1", "x2"], k=5,
+            auto_reduce_k=True,
+        )
+        self.assertEqual(res.k, 5)
+        self.assertIsNone(res.requested_k)
+
+    def test_auto_reduce_false_still_raises_on_thin_universe(self):
+        # Backward-compat: default behavior unchanged
+        df = _clean_linear(30, seed=7)
+        with self.assertRaises(ValueError):
+            run_cv_regression(df, "y", ["x1", "x2"], k=5)
+
+    def test_auto_reduce_below_k2_still_raises(self):
+        # Even auto-reduce can't fix a universe so small that 2-fold
+        # CV doesn't have enough rows — error then is the right call.
+        df = _clean_linear(5, seed=7)
+        with self.assertRaises(ValueError):
+            run_cv_regression(
+                df, "y", ["x1", "x2"], k=5,
+                auto_reduce_k=True,
+            )
+
+    def test_to_dict_includes_requested_k(self):
+        df = _clean_linear(30, seed=7)
+        res = run_cv_regression(
+            df, "y", ["x1", "x2"], k=5,
+            auto_reduce_k=True,
+        )
+        d = res.to_dict()
+        self.assertEqual(d["requested_k"], 5)
+        self.assertEqual(d["k"], res.k)
+
+
 if __name__ == "__main__":
     unittest.main()

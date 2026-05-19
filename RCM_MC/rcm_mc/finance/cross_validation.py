@@ -73,6 +73,12 @@ class CVResult:
     ``mean_test_r2`` is the overfit signal — the larger the gap,
     the more the in-sample R² was reading off noise / leakage /
     high-influence rows.
+
+    ``requested_k`` and ``k`` will differ only when the caller passed
+    ``auto_reduce_k=True`` and the requested k was too aggressive for
+    the universe size — k was knocked down to the largest viable
+    value. The UI surfaces this so the partner knows their "5-fold"
+    request actually became 3-fold on a thin CAH universe.
     """
     target: str
     features: List[str]
@@ -85,6 +91,7 @@ class CVResult:
     mean_test_rmse: float
     mean_test_mae: float
     folds: List[CVFoldResult] = field(default_factory=list)
+    requested_k: Optional[int] = None  # only set when auto-reduced
 
     @property
     def overfit_gap(self) -> float:
@@ -96,6 +103,7 @@ class CVResult:
             "target": self.target,
             "features": self.features,
             "k": self.k,
+            "requested_k": self.requested_k,
             "target_was_log_transformed":
                 self.target_was_log_transformed,
             "baseline_in_sample_r2": round(self.baseline_in_sample_r2, 4),
@@ -128,6 +136,12 @@ def _r2(y, y_hat) -> float:
     return 1.0 - ss_res / ss_tot
 
 
+def _min_rows_for_k(p: int, k: int) -> int:
+    """Conservative row floor: each training set ≥ 2 * (p + 2) rows,
+    AND each fold has ≥ 5 test rows."""
+    return max(2 * (p + 2) * k, k * 5)
+
+
 def run_cv_regression(
     df: pd.DataFrame,
     target: str,
@@ -136,6 +150,7 @@ def run_cv_regression(
     k: int = 5,
     log_transform_target: bool = False,
     random_state: int = 42,
+    auto_reduce_k: bool = False,
 ) -> CVResult:
     """Run k-fold cross-validation on an OLS spec.
 
@@ -151,8 +166,15 @@ def run_cv_regression(
       - rejects calls with too few rows for a stable fold split
         (each fold's training set must clear ``n_features + 2``).
 
+    ``auto_reduce_k=True``: when the requested ``k`` is too aggressive
+    for the universe size, knock k down to the largest viable value
+    (≥ 2). Lets thin universes (CAH, Small Community segments) still
+    get OOS numbers instead of an error. ``CVResult.requested_k``
+    records what the caller asked for so the UI can surface the
+    reduction.
+
     Raises ``ValueError`` for unrecoverable inputs (missing target,
-    no usable features, k < 2, too few rows).
+    no usable features, k < 2, too few rows even for k=2).
     """
     if k < 2:
         raise ValueError(f"k must be at least 2, got {k}")
@@ -177,11 +199,31 @@ def run_cv_regression(
     p = len(features)
     # Each fold's training set must have enough rows for a stable
     # fit — n*(k-1)/k > p + 1. Conservative threshold: n > 2 * p * k.
-    if n < max(2 * (p + 2) * k, k * 5):
-        raise ValueError(
-            f"need at least {max(2 * (p + 2) * k, k * 5)} rows for "
-            f"{k}-fold CV with {p} features, got {n}"
-        )
+    requested_k: Optional[int] = None
+    if n < _min_rows_for_k(p, k):
+        if auto_reduce_k:
+            # Walk k down to the largest viable value ≥ 2. CAH and
+            # Small Community universes often hit this — without
+            # auto-reduce the partner just sees a "need 70 rows"
+            # error and no OOS numbers at all.
+            original_k = k
+            new_k = None
+            for trial_k in range(k - 1, 1, -1):
+                if n >= _min_rows_for_k(p, trial_k):
+                    new_k = trial_k
+                    break
+            if new_k is None:
+                raise ValueError(
+                    f"need at least {_min_rows_for_k(p, 2)} rows for "
+                    f"even 2-fold CV with {p} features, got {n}"
+                )
+            requested_k = original_k
+            k = new_k
+        else:
+            raise ValueError(
+                f"need at least {_min_rows_for_k(p, k)} rows for "
+                f"{k}-fold CV with {p} features, got {n}"
+            )
 
     y_raw = clean[target].values.astype(float)
     y = np.log(y_raw) if log_transform_target else y_raw
@@ -253,4 +295,5 @@ def run_cv_regression(
         mean_test_rmse=float(np.mean(test_rmses)),
         mean_test_mae=float(np.mean(test_maes)),
         folds=folds,
+        requested_k=requested_k,
     )
