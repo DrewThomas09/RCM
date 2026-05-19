@@ -18,7 +18,118 @@ _BENCH_EXPLAINER_CSS = """
 color:var(--sc-text-dim);max-width:68ch;
 margin:var(--sc-s-4) 0 var(--sc-s-6);}
 .ck-be-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+.bd-chart-caption {
+  font-family: "Inter Tight","Inter",sans-serif;
+  font-size: .72rem; color: #5C6878;
+  text-align: center; letter-spacing: 0.06em;
+  text-transform: uppercase; margin: -.5rem 0 1.25rem;
+}
+@media print {
+  .bd-chart-caption { color: #1a2332; }
+  svg { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
 """
+
+
+def _benchmark_drift_chart(drifts: List[Dict[str, Any]],
+                           width: int = 720,
+                           height: int = 260) -> str:
+    """Diverging horizontal-bar chart of benchmark drift per metric.
+
+    Bars project left (declining industry, red) or right (improving
+    industry, green) from a centered zero axis. Metric label on the
+    outer rail per direction; numeric drift in pp at bar end.
+    """
+    items: List[Dict[str, Any]] = []
+    for d in drifts:
+        try:
+            drift = float(d.get("drift_pp", 0))
+        except (TypeError, ValueError):
+            continue
+        items.append({
+            "metric": str(d.get("metric_key", "")).replace("_", " ").title(),
+            "drift": drift,
+            "direction": str(d.get("direction", "stable")),
+        })
+    if not items:
+        return ""
+    # Sort by drift descending so improvers stack at top, decliners at bottom
+    items.sort(key=lambda i: -i["drift"])
+    max_abs = max((abs(i["drift"]) for i in items), default=1) or 1
+
+    pad_l, pad_r, pad_t, pad_b = 18, 18, 28, 38
+    plot_w = width - pad_l - pad_r
+    plot_h = height - pad_t - pad_b
+    n = len(items)
+    row_h = plot_h / max(n, 1)
+    mid_x = pad_l + plot_w / 2
+    half_w = plot_w / 2 - 6
+
+    bars_svg = ""
+    for i, item in enumerate(items):
+        cy = pad_t + row_h * i + row_h / 2
+        drift = item["drift"]
+        bw = abs(drift) / max_abs * half_w
+        is_pos = drift > 0
+        bx = mid_x if is_pos else mid_x - bw
+        if "improving" in item["direction"]:
+            fill = "#3F7D4D"  # editorial green
+        elif "declining" in item["direction"]:
+            fill = "#A53A2D"  # editorial red
+        else:
+            fill = "#8A92A0"  # neutral
+        # Metric label sits on the OPPOSITE side of the bar
+        label_x = mid_x + 8 if not is_pos else mid_x - 8
+        label_anchor = "start" if not is_pos else "end"
+        # Drift value sits at the OUTER end of the bar
+        val_x = (bx + bw + 6) if is_pos else (bx - 6)
+        val_anchor = "start" if is_pos else "end"
+        bars_svg += (
+            f'<rect x="{bx:.1f}" y="{cy - row_h * 0.30:.1f}" '
+            f'width="{bw:.1f}" height="{row_h * 0.58:.1f}" '
+            f'fill="{fill}" opacity="0.9" rx="1"/>'
+            f'<text x="{label_x:.1f}" y="{cy + 3:.1f}" '
+            f'font-family="Inter Tight,sans-serif" font-size="10.5" '
+            f'font-weight="600" fill="#1a2332" '
+            f'text-anchor="{label_anchor}">'
+            f'{html.escape(item["metric"])}</text>'
+            f'<text x="{val_x:.1f}" y="{cy + 3:.1f}" '
+            f'font-family="JetBrains Mono,monospace" font-size="10" '
+            f'font-weight="700" fill="{fill}" '
+            f'text-anchor="{val_anchor}">'
+            f'{drift:+.2f}pp</text>'
+        )
+
+    # Zero-axis vertical line
+    axis_svg = (
+        f'<line x1="{mid_x:.1f}" y1="{pad_t}" x2="{mid_x:.1f}" '
+        f'y2="{pad_t + plot_h}" stroke="#1a2332" stroke-width="1.2"/>'
+    )
+    # Bottom-axis labels
+    bottom_svg = (
+        f'<text x="{mid_x - half_w / 2:.1f}" y="{height - 8}" '
+        f'font-family="Inter Tight,sans-serif" font-size="10" '
+        f'font-weight="700" letter-spacing="0.08em" '
+        f'fill="#A53A2D" text-anchor="middle">'
+        f'◀ INDUSTRY DECLINING</text>'
+        f'<text x="{mid_x + half_w / 2:.1f}" y="{height - 8}" '
+        f'font-family="Inter Tight,sans-serif" font-size="10" '
+        f'font-weight="700" letter-spacing="0.08em" '
+        f'fill="#3F7D4D" text-anchor="middle">'
+        f'INDUSTRY IMPROVING ▶</text>'
+        f'<text x="{mid_x:.1f}" y="{pad_t - 8}" '
+        f'font-family="JetBrains Mono,monospace" font-size="9" '
+        f'font-weight="700" letter-spacing="0.06em" '
+        f'fill="#5C6878" text-anchor="middle">0pp</text>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="width:100%;max-width:{width}px;height:auto;display:block;'
+        f'margin:0 auto 1rem;">'
+        f'{axis_svg}{bars_svg}{bottom_svg}</svg>'
+    )
 from .models_page import _model_nav
 from .brand import PALETTE
 
@@ -370,12 +481,19 @@ def render_benchmark_drift(drifts: List[Dict[str, Any]]) -> str:
         + '</div>'
     )
 
+    drift_chart = _benchmark_drift_chart(drifts)
+    drift_caption = (
+        '<div class="bd-chart-caption">'
+        'YoY P50 drift per metric · left = industry declining · right = industry improving'
+        '</div>'
+    ) if drift_chart else ""
     body = (
         title_block + explainer_html + kpis
         + ck_panel(
             '<p class="ck-section-body">'
             'How industry P50 benchmarks are shifting year-over-year. '
             'Drifts &gt;1pp trigger automatic target re-marking.</p>'
+            + drift_chart + drift_caption +
             '<table class="cad-table"><thead><tr>'
             '<th>Metric</th><th>Prior P50</th><th>Current P50</th><th>Drift</th><th>Direction</th>'
             f'</tr></thead><tbody>{rows}</tbody></table>',
