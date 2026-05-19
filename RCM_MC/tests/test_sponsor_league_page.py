@@ -92,16 +92,20 @@ class TestHelpers(unittest.TestCase):
         self.assertIn("ef4444", _moic_color(0.8))
 
     def test_moic_color_green(self):
+        # Editorial palette uses #0a8a5f for positive (replaces
+        # legacy Tailwind green-500 #22c55e).
         from rcm_mc.ui.data_public.sponsor_league_page import _moic_color
-        self.assertIn("22c55e", _moic_color(3.0))
+        self.assertIn("0a8a5f", _moic_color(3.0))
 
     def test_loss_color_red(self):
         from rcm_mc.ui.data_public.sponsor_league_page import _loss_color
         self.assertIn("ef4444", _loss_color(0.35))
 
     def test_loss_color_green(self):
+        # Editorial palette uses #0a8a5f for positive (replaces
+        # legacy Tailwind green-500 #22c55e).
         from rcm_mc.ui.data_public.sponsor_league_page import _loss_color
-        self.assertIn("22c55e", _loss_color(0.05))
+        self.assertIn("0a8a5f", _loss_color(0.05))
 
 
 if __name__ == "__main__":
