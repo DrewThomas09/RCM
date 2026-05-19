@@ -63,7 +63,7 @@ def _hhi_bar(hhi: float, label: str, width: int = 200) -> str:
         f'{_html.escape(label)}</div>'
         f'<div style="display:flex;align-items:center;gap:8px;">'
         f'<svg width="{width}" height="10" xmlns="http://www.w3.org/2000/svg">'
-        f'<rect x="0" y="1" width="{width}" height="8" rx="1" fill="#1e293b"/>'
+        f'<rect x="0" y="1" width="{width}" height="8" rx="1" fill="#ECE5D6"/>'
         f'<rect x="0" y="1" width="{filled}" height="8" rx="1" fill="{color}"/>'
         f'<line x1="{int(0.25*width)}" y1="0" x2="{int(0.25*width)}" y2="10" stroke="#334155" stroke-width="1"/>'
         f'<line x1="{int(0.15*width)}" y1="0" x2="{int(0.15*width)}" y2="10" stroke="#0a8a5f" stroke-width="0.8" stroke-dasharray="2,2"/>'
@@ -126,7 +126,7 @@ def _sector_weight_panel(composition: Any) -> str:
             f'font-family:var(--ck-mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
             f'{_html.escape(sector[:22])}</div>'
             f'<svg width="200" height="10" xmlns="http://www.w3.org/2000/svg">'
-            f'<rect x="0" y="1" width="200" height="8" rx="1" fill="#1e293b"/>'
+            f'<rect x="0" y="1" width="200" height="8" rx="1" fill="#ECE5D6"/>'
             f'<rect x="0" y="1" width="{filled}" height="8" rx="1" fill="{color}"/>'
             f'</svg>'
             f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;'
@@ -239,7 +239,7 @@ def render_portfolio_optimizer(sectors: Optional[List[str]] = None) -> str:
     <div style="font-size:9.5px;color:#64748b;margin-bottom:8px;letter-spacing:0.08em;text-transform:uppercase;">
       Select Sectors (sample 2 top deals per sector)
     </div>
-    <div style="max-height:120px;overflow-y:auto;border:1px solid #1e293b;padding:8px;border-radius:3px;">
+    <div style="max-height:120px;overflow-y:auto;border:1px solid #D6CFC0;padding:8px;border-radius:3px;">
       {checkboxes}
     </div>
     <div style="margin-top:10px;">

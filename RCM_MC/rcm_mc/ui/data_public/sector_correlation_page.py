@@ -75,7 +75,7 @@ def _heatmap_table(
         for j, col_sec in enumerate(secs):
             if i == j:
                 cells.append(
-                    f'<td style="background:#1e293b;text-align:center;'
+                    f'<td style="background:#5C6878;text-align:center;'
                     f'font-size:9px;padding:2px 4px;color:{P["text_faint"]}" title="{_html.escape(row_sec)}">—</td>'
                 )
             else:

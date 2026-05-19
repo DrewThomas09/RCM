@@ -56,13 +56,13 @@ def _log_scale_scatter(points: List[Tuple[float, float, str]], width: int = 500,
         gx = sx(ev_tick)
         if gx < margin["l"] or gx > margin["l"] + W:
             continue
-        elements.append(f'<line x1="{gx}" y1="{margin["t"]}" x2="{gx}" y2="{margin["t"]+H}" stroke="#1e293b" stroke-width="0.8"/>')
+        elements.append(f'<line x1="{gx}" y1="{margin["t"]}" x2="{gx}" y2="{margin["t"]+H}" stroke="#BFB6A2" stroke-width="0.8"/>')
         label = f"${ev_tick}M" if ev_tick < 1000 else f"${ev_tick//1000}B"
         elements.append(f'<text x="{gx}" y="{margin["t"]+H+12}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="#475569">{label}</text>')
     for m in (1.0, 2.0, 3.0, 4.0):
         if m > max_moic: break
         gy = sy(m)
-        elements.append(f'<line x1="{margin["l"]}" y1="{gy}" x2="{margin["l"]+W}" y2="{gy}" stroke="#1e293b" stroke-width="0.8"/>')
+        elements.append(f'<line x1="{margin["l"]}" y1="{gy}" x2="{margin["l"]+W}" y2="{gy}" stroke="#BFB6A2" stroke-width="0.8"/>')
         elements.append(f'<text x="{margin["l"]-3}" y="{gy+3}" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{m:.0f}x</text>')
 
     for ev, moic, name in points:

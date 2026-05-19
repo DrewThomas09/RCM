@@ -222,7 +222,7 @@ def render_deal_search(
     def _vi(name: str, val: Any, placeholder: str = "") -> str:
         v_str = str(val) if val is not None else ""
         return (f'<input name="{name}" value="{_esc(v_str)}" placeholder="{_esc(placeholder)}" '
-                f'style="background:#0a0e17;border:1px solid #1e293b;color:#e2e8f0;'
+                f'style="background:#FAF7F0;border:1px solid #D6CFC0;color:#1a2332;'
                 f'font-family:var(--ck-mono);font-size:10px;padding:3px 6px;width:80px;">')
 
     form_html = f"""
@@ -231,47 +231,47 @@ def render_deal_search(
   <form method="get" action="/deal-search" style="padding:10px 16px;">
     <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
       <div>
-        <div style="font-size:9px;color:#475569;margin-bottom:3px;">Search</div>
+        <div style="font-size:9px;color:#5C6878;margin-bottom:3px;font-family:"Inter Tight","Inter",sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.08em;">Search</div>
         <input name="q" value="{_esc(query)}" placeholder="deal name, buyer, sector..."
-          style="background:#0a0e17;border:1px solid #1e293b;color:#e2e8f0;
+          style="background:#FAF7F0;border:1px solid #D6CFC0;color:#1a2332;
           font-size:10px;padding:3px 8px;width:200px;">
       </div>
       <div>
-        <div style="font-size:9px;color:#475569;margin-bottom:3px;">Sector</div>
-        <select name="sector" style="background:#0a0e17;border:1px solid #1e293b;color:#e2e8f0;font-size:10px;padding:3px 6px;">
+        <div style="font-size:9px;color:#5C6878;margin-bottom:3px;font-family:"Inter Tight","Inter",sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.08em;">Sector</div>
+        <select name="sector" style="background:#FAF7F0;border:1px solid #D6CFC0;color:#1a2332;font-size:10px;padding:3px 6px;">
           {sector_opts}
         </select>
       </div>
       <div>
-        <div style="font-size:9px;color:#475569;margin-bottom:3px;">Deal Type</div>
-        <select name="deal_type" style="background:#0a0e17;border:1px solid #1e293b;color:#e2e8f0;font-size:10px;padding:3px 6px;">
+        <div style="font-size:9px;color:#5C6878;margin-bottom:3px;font-family:"Inter Tight","Inter",sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.08em;">Deal Type</div>
+        <select name="deal_type" style="background:#FAF7F0;border:1px solid #D6CFC0;color:#1a2332;font-size:10px;padding:3px 6px;">
           {type_opts}
         </select>
       </div>
       <div>
-        <div style="font-size:9px;color:#475569;margin-bottom:3px;">Year</div>
+        <div style="font-size:9px;color:#5C6878;margin-bottom:3px;font-family:"Inter Tight","Inter",sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.08em;">Year</div>
         <div style="display:flex;gap:4px;">
           {_vi("yr_lo", yr_lo, "from")}
           {_vi("yr_hi", yr_hi, "to")}
         </div>
       </div>
       <div>
-        <div style="font-size:9px;color:#475569;margin-bottom:3px;">EV ($M)</div>
+        <div style="font-size:9px;color:#5C6878;margin-bottom:3px;font-family:"Inter Tight","Inter",sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.08em;">EV ($M)</div>
         <div style="display:flex;gap:4px;">
           {_vi("ev_lo", ev_lo, "min")}
           {_vi("ev_hi", ev_hi, "max")}
         </div>
       </div>
       <div>
-        <div style="font-size:9px;color:#475569;margin-bottom:3px;">MOIC</div>
+        <div style="font-size:9px;color:#5C6878;margin-bottom:3px;font-family:"Inter Tight","Inter",sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.08em;">MOIC</div>
         <div style="display:flex;gap:4px;">
           {_vi("moic_lo", moic_lo, "min")}
           {_vi("moic_hi", moic_hi, "max")}
         </div>
       </div>
       <div>
-        <div style="font-size:9px;color:#475569;margin-bottom:3px;">Sort by</div>
-        <select name="sort_by" style="background:#0a0e17;border:1px solid #1e293b;color:#e2e8f0;font-size:10px;padding:3px 6px;">
+        <div style="font-size:9px;color:#5C6878;margin-bottom:3px;font-family:"Inter Tight","Inter",sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.08em;">Sort by</div>
+        <select name="sort_by" style="background:#FAF7F0;border:1px solid #D6CFC0;color:#1a2332;font-size:10px;padding:3px 6px;">
           {"".join(_opt(k, k.replace('_',' '), sort_by) for k in ('realized_moic','ev_mm','year','hold_years','deal_name'))}
         </select>
       </div>
@@ -338,7 +338,7 @@ def render_deal_search(
   <div class="ck-panel-title">{total:,} Results{' — ' + _esc(query) if query else ''}</div>
   <div class="ck-table-wrap" style="max-height:600px;overflow-y:auto;">
     <table class="ck-table" style="width:100%;table-layout:fixed;">
-      <thead style="position:sticky;top:0;background:#111827;z-index:2;">
+      <thead style="position:sticky;top:0;background:#ECE5D6;z-index:2;">
         <tr>
           <th style="padding:5px 6px;color:#64748b;width:70px;">ID</th>
           {_col_href("Deal", "deal_name")}

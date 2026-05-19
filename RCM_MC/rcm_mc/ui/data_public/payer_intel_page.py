@@ -69,7 +69,7 @@ def _payer_pie_svg(comm: float, medicare: float, medicaid: float, self_pay: floa
         angle += sweep
     # inner circle (donut)
     ir = r * 0.45
-    elements.append(f'<circle cx="{cx}" cy="{cy}" r="{ir:.0f}" fill="#0a0e17"/>')
+    elements.append(f'<circle cx="{cx}" cy="{cy}" r="{ir:.0f}" fill="#F2EDE3"/>')
     return (
         f'<svg width="{size}" height="{size}" xmlns="http://www.w3.org/2000/svg">'
         f'{"".join(elements)}'
@@ -120,12 +120,12 @@ def _scatter_svg(corpus: List[Dict[str, Any]], width: int = 440, height: int = 2
     # grid
     for pct in (0.2, 0.4, 0.6, 0.8):
         gx = sx(pct)
-        elements.append(f'<line x1="{gx}" y1="{margin["t"]}" x2="{gx}" y2="{margin["t"]+H}" stroke="#1e293b" stroke-width="0.8"/>')
+        elements.append(f'<line x1="{gx}" y1="{margin["t"]}" x2="{gx}" y2="{margin["t"]+H}" stroke="#BFB6A2" stroke-width="0.8"/>')
         elements.append(f'<text x="{gx}" y="{margin["t"]+H+12}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{pct*100:.0f}%</text>')
     for m in (1.0, 2.0, 3.0, 4.0):
         if m > max_moic: break
         gy = sy(m)
-        elements.append(f'<line x1="{margin["l"]}" y1="{gy}" x2="{margin["l"]+W}" y2="{gy}" stroke="#1e293b" stroke-width="0.8"/>')
+        elements.append(f'<line x1="{margin["l"]}" y1="{gy}" x2="{margin["l"]+W}" y2="{gy}" stroke="#BFB6A2" stroke-width="0.8"/>')
         elements.append(f'<text x="{margin["l"]-3}" y="{gy+3}" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{m:.0f}x</text>')
 
     for d in deals_with_data:
@@ -159,7 +159,7 @@ def _regime_moic_bar(p25: float, p50: float, p75: float, width: int = 100) -> st
     color = _moic_color(p50)
     return (
         f'<svg width="{width}" height="12" xmlns="http://www.w3.org/2000/svg">'
-        f'<rect x="0" y="4" width="{width}" height="4" fill="#1e293b"/>'
+        f'<rect x="0" y="4" width="{width}" height="4" fill="#ECE5D6"/>'
         f'<rect x="{x25}" y="2" width="{max(1,x75-x25)}" height="8" fill="#1d3a5c"/>'
         f'<line x1="{x50}" y1="0" x2="{x50}" y2="12" stroke="{color}" stroke-width="2"/>'
         f'</svg>'
@@ -273,15 +273,15 @@ def render_payer_intel() -> str:
 </div>"""
 
     deeper_link = (
-        f'<div style="background:#111827;border:1px solid #1e293b;'
-        f'border-left:3px solid #3b82f6;padding:10px 14px;margin-bottom:14px;'
-        f'border-radius:3px;">'
+        f'<div style="background:#FAF7F0;border:1px solid #D6CFC0;'
+        f'border-left:3px solid #155752;padding:10px 14px;margin-bottom:14px;'
+        f'border-radius:2px;">'
         f'<span style="font-family:JetBrains Mono,monospace;font-size:9.5px;'
-        f'letter-spacing:0.15em;color:#94a3b8;">SUMMARY VIEW</span>'
-        f'<div style="color:#e2e8f0;font-size:12px;margin-top:4px;">'
+        f'letter-spacing:0.15em;color:#5C6878;font-weight:600;">SUMMARY VIEW</span>'
+        f'<div style="color:#1a2332;font-size:12px;margin-top:4px;font-family:\'Inter Tight\',\'Inter\',sans-serif;line-height:1.5;">'
         f'This is the summary. For the comprehensive payer-mix breakdown '
         f'(4 regimes, per-band MOIC distributions, correlation coefficients) '
-        f'see <a href="/payer-intelligence" style="color:#3b82f6;">'
+        f'see <a href="/payer-intelligence" style="color:#155752;font-weight:600;">'
         f'/payer-intelligence</a>.</div></div>'
     )
 

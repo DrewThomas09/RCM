@@ -90,12 +90,12 @@ def _mini_sparkline(ys: List[float], width: int = 120, height: int = 30) -> str:
     )
 
 
-def _nav_tile(title: str, href: str, subtitle: str, value: str, value_color: str = "#e2e8f0", svg: str = "") -> str:
+def _nav_tile(title: str, href: str, subtitle: str, value: str, value_color: str = "#1a2332", svg: str = "") -> str:
     return f"""
-<a href="{_html.escape(href)}" style="display:block;text-decoration:none;border:1px solid #1e293b;padding:12px;background:#111827;border-radius:2px;">
-  <div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">{_html.escape(title)}</div>
+<a href="{_html.escape(href)}" style="display:block;text-decoration:none;border:1px solid #D6CFC0;padding:12px;background:#FAF7F0;border-radius:2px;">
+  <div style="font-size:9px;color:#5C6878;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;font-family:'Inter Tight','Inter',sans-serif;font-weight:600;">{_html.escape(title)}</div>
   <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-variant-numeric:tabular-nums;color:{value_color};line-height:1.1;">{value}</div>
-  <div style="font-size:9px;color:#475569;margin-top:2px;">{_html.escape(subtitle)}</div>
+  <div style="font-size:9px;color:#5C6878;margin-top:2px;">{_html.escape(subtitle)}</div>
   {f'<div style="margin-top:6px;">{svg}</div>' if svg else ''}
 </a>"""
 

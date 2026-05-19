@@ -185,13 +185,15 @@ def render_heatmap(
 
     css = """
     .heatmap-table { width:100%; border-collapse:collapse; font-size:12px;
-      font-family:"JetBrains Mono",monospace; }
-    .heatmap-table th { background:#111827; color:#94a3b8; padding:6px 8px;
+      font-family:"JetBrains Mono",monospace; font-variant-numeric: tabular-nums; }
+    .heatmap-table th { background:#ECE5D6; color:#5C6878; padding:6px 8px;
       text-align:center; text-transform:uppercase; font-size:10px;
-      letter-spacing:.04em; border-bottom:1px solid #1e293b; }
+      letter-spacing:.08em; border-bottom:1px solid #D6CFC0;
+      font-family:"Inter Tight","Inter",sans-serif; font-weight:600; }
     .heatmap-table td { padding:6px 8px; text-align:center;
-      border-bottom:1px solid #1e293b; }
+      border-bottom:1px solid #E8E0D0; color:#1a2332; }
     .heatmap-table td:first-child { text-align:left; }
+    .heatmap-table tr:hover td { background:#F2EDE3; }
     """
     table = (
         '<table class="heatmap-table">'
