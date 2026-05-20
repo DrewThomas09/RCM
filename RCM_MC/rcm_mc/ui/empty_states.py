@@ -191,7 +191,7 @@ def empty_table_row(
             f'{_html.escape(action_label)} →</a>')
     return (
         f'<tr><td colspan="{int(n_columns)}" '
-        f'style="padding:24px;color:#9ca3af;'
+        f'style="padding:24px;color:#7a8699;'
         f'text-align:center;font-size:13px;">'
         f'{_html.escape(message)}{action_html}</td></tr>')
 
