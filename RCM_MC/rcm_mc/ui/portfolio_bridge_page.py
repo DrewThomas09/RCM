@@ -44,6 +44,74 @@ def _safe_float(val, default=0.0):
         return default
 
 
+_PB_CHART_CAPTION_CSS = (
+    ".pb-figcap{font-size:11px;color:#6b6456;margin:6px 0 8px;"
+    "font-family:'JetBrains Mono',ui-monospace,monospace;"
+    "letter-spacing:0.02em;}"
+)
+
+
+def _deal_uplift_chart(
+    deal_results: List[Dict[str, Any]], width: int = 700, row_h: int = 24
+) -> str:
+    """Horizontal bars of projected EBITDA uplift per pipeline hospital.
+
+    Surfaces concentration — which deals carry the portfolio's value-
+    creation case — sorted descending, tone-faded by rank. Reads the
+    same uplift the per-deal table shows. Empty input returns "".
+    """
+    rows = [d for d in (deal_results or [])
+            if d.get("name") and d.get("uplift", 0) > 0]
+    rows = sorted(rows, key=lambda d: -d["uplift"])[:12]
+    if not rows:
+        return ""
+    max_up = max((d["uplift"] for d in rows), default=0) or 1.0
+
+    pad_l, pad_r, pad_t = 180, 70, 8
+    bar_max = width - pad_l - pad_r
+    height = pad_t + row_h * len(rows) + 8
+
+    pos = PALETTE["positive"]
+    rule = PALETTE.get("border", "#BFB6A2")
+    txt = PALETTE.get("text_secondary", "#4a5568")
+
+    parts: List[str] = [
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" role="img" '
+        f'aria-label="Projected EBITDA uplift by pipeline hospital" '
+        f'style="width:100%;max-width:{width}px;height:auto;'
+        f'print-color-adjust:exact;-webkit-print-color-adjust:exact;">'
+    ]
+    parts.append(
+        f'<line x1="{pad_l}" y1="{pad_t - 2}" x2="{pad_l}" '
+        f'y2="{height - 6}" stroke="{rule}" stroke-width="1"/>'
+    )
+    for i, d in enumerate(rows):
+        name = _html.escape(str(d["name"])[:28])
+        up = d["uplift"]
+        y = pad_t + i * row_h
+        w = up / max_up * bar_max
+        op = 0.9 - (i / max(len(rows), 1)) * 0.5
+        parts.append(
+            f'<text x="{pad_l - 8}" y="{y + row_h / 2 + 3:.1f}" '
+            f'text-anchor="end" font-size="11" '
+            f'font-family="Inter Tight,system-ui,sans-serif" '
+            f'fill="{txt}">{name}</text>'
+        )
+        parts.append(
+            f'<rect x="{pad_l}" y="{y + 3:.1f}" width="{max(w, 0.5):.1f}" '
+            f'height="{row_h - 8}" rx="2" fill="{pos}" opacity="{op:.2f}"/>'
+        )
+        parts.append(
+            f'<text x="{pad_l + w + 6:.1f}" y="{y + row_h / 2 + 3:.1f}" '
+            f'text-anchor="start" font-size="10" '
+            f'font-family="JetBrains Mono,ui-monospace,monospace" '
+            f'fill="{txt}">+{_fm(up)}</text>'
+        )
+    parts.append("</svg>")
+    return "".join(parts)
+
+
 def render_portfolio_bridge(
     hcris_df: pd.DataFrame,
     db_path: str,
@@ -208,11 +276,19 @@ def render_portfolio_bridge(
         '</tr>'
     )
 
+    _uplift_chart = _deal_uplift_chart(deal_results)
+    _uplift_fig = (
+        f'<style>{_PB_CHART_CAPTION_CSS}</style>'
+        f'<div class="pb-figcap">Projected EBITDA uplift by hospital '
+        f'&middot; longest bar = top value-creation case</div>'
+        f'{_uplift_chart}'
+    ) if _uplift_chart else ""
     deal_section = ck_panel(
         '<p class="ck-section-body">'
         "Each deal's bridge computed from HCRIS + Data Room calibrations. "
         'Click any deal for the full 10-section bridge. '
         f'{source_tag(Source.SELLER)} = has seller data in Data Room.</p>'
+        f'{_uplift_fig}'
         '<table class="cad-table"><thead><tr>'
         '<th>Hospital</th><th>Stage</th><th>Revenue</th><th>Margin</th>'
         '<th>Uplift</th><th>Pro Forma</th><th>Δ Margin</th>'
