@@ -2,7 +2,35 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+
+
+def _concentration_chart(items) -> str:
+    """Lead chart for the payer-concentration table — payers ranked by
+    share of portfolio revenue so concentration risk reads at a glance.
+    Bar width = % of portfolio revenue; value = annual revenue ($M);
+    tone flags concentration risk (>=20% amber, otherwise teal),
+    matching the table. Full concentration grid stays directly below.
+    """
+    ranked = sorted(items, key=lambda c: c.pct_of_portfolio_rev, reverse=True)
+    rows = []
+    for c in ranked:
+        tone = "warning" if c.pct_of_portfolio_rev >= 0.20 else "teal"
+        rows.append(ck_bar_row(
+            c.payer,
+            f"${c.annual_revenue_m:,.0f}M",
+            c.pct_of_portfolio_rev * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = share of portfolio revenue · value = annual revenue ($M) · '
+        'tone = concentration risk (amber &ge;20% of portfolio)</div>'
+        '</div>'
+    )
 
 
 def _stage_color(s: str) -> str:
@@ -201,6 +229,7 @@ def render_payer_contracts(params: dict = None) -> str:
 
     c_tbl = _contracts_table(r.contracts)
     h_tbl = _history_table(r.history)
+    con_chart = _concentration_chart(r.concentration)
     con_tbl = _concentration_table(r.concentration)
     n_tbl = _negotiations_table(r.negotiations)
     nt_tbl = _network_table(r.network)
@@ -223,7 +252,7 @@ def render_payer_contracts(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Active Negotiations Pipeline</div>{n_tbl}</div>
   <div style="{cell}"><div style="{h3}">Payer Contract Book</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Historical Rate Change by Payer</div>{h_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Payer Concentration</div>{con_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Payer Concentration</div>{con_chart}{con_tbl}</div>
   <div style="{cell}"><div style="{h3}">Network Adequacy by Payer / Market</div>{nt_tbl}</div>
   <div style="{cell}"><div style="{h3}">Contract Optimization Opportunities</div>{o_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">

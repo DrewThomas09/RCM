@@ -2,8 +2,37 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
 from rcm_mc.ui.chartis._helpers import render_page_explainer
+
+
+def _cohorts_chart(items) -> str:
+    """Lead chart for the vintage-cohort table — TVPI by vintage in
+    chronological order so the performance arc across fund years reads
+    at a glance. Bar width = TVPI relative to the strongest vintage;
+    value = TVPI; tone marks the table's tiers (>=2.20x green · >=1.80x
+    teal · below amber). Full cohort grid stays directly below.
+    """
+    hi = max((c.tvpi for c in items), default=1.0) or 1.0
+    ordered = sorted(items, key=lambda c: c.vintage_year)
+    rows = []
+    for c in ordered:
+        tone = "positive" if c.tvpi >= 2.20 else ("teal" if c.tvpi >= 1.80 else "warning")
+        rows.append(ck_bar_row(
+            str(c.vintage_year),
+            f"{c.tvpi:.2f}x",
+            c.tvpi / hi * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = TVPI relative to strongest vintage · value = TVPI · '
+        'tone = performance tier (green &ge;2.20x · teal &ge;1.80x · amber below)</div>'
+        '</div>'
+    )
 
 
 def _quartile_color(q: int) -> str:
@@ -190,6 +219,7 @@ def render_vintage_cohorts(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    c_chart = _cohorts_chart(r.cohorts)
     c_tbl = _cohorts_table(r.cohorts)
     sv_tbl = _sector_vintages_table(r.sector_vintages)
     h_tbl = _holds_table(r.holds)
@@ -211,7 +241,7 @@ def render_vintage_cohorts(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Vintage Cohort Performance</div>{c_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Vintage Cohort Performance</div>{c_chart}{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sector × Vintage Performance</div>{sv_tbl}</div>
   <div style="{cell}"><div style="{h3}">Hold Period Trends</div>{h_tbl}</div>
   <div style="{cell}"><div style="{h3}">Exit Mix by Vintage</div>{e_tbl}</div>
