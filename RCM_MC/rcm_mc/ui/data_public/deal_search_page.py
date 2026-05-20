@@ -312,7 +312,7 @@ def render_deal_search(
   <td style="padding:4px 8px;font-size:10px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
     <span title="{_esc(d.get('deal_name',''))}">{_esc((d.get('deal_name') or '')[:45])}</span>
   </td>
-  <td style="padding:4px 8px;font-size:9.5px;color:#94a3b8;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{_esc((d.get('buyer') or '')[:22])}</td>
+  <td style="padding:4px 8px;font-size:9.5px;color:#7a8699;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{_esc((d.get('buyer') or '')[:22])}</td>
   <td style="padding:4px 8px;font-size:9.5px;color:#7a8699;">{_esc((d.get('sector') or '—')[:20])}</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{_esc(str(yr) if yr else '—')}</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{_fmt(ev, '${:.0f}M')}</td>
@@ -325,7 +325,7 @@ def render_deal_search(
 </tr>""")
 
     def _col_href(label: str, key: str) -> str:
-        color = "#e2e8f0" if sort_by == key else "#7a8699"
+        color = "#d6cfc0" if sort_by == key else "#7a8699"
         q_str = f"&q={_html.escape(query)}" if query else ""
         sec_str = f"&sector={_html.escape(sector)}" if sector else ""
         return (

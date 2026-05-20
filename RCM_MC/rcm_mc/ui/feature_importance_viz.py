@@ -69,9 +69,9 @@ def render_importance_bar_chart(
     if not importances:
         return (
             '<div style="background:var(--paper,#F2EDE3);'
-            'border:1px solid var(--border,#374151);'
+            'border:1px solid var(--border,#465366);'
             'border-radius:8px;padding:1.5rem;text-align:center;'
-            'color:var(--muted,#9ca3af);font-size:.85rem;">'
+            'color:var(--muted,#9b9382);font-size:.85rem;">'
             'No feature importance data.</div>')
 
     items = importances[:max_bars]
@@ -139,7 +139,7 @@ def render_importance_bar_chart(
 
     return (
         '<div style="background:var(--paper,#F2EDE3);'
-        'border:1px solid var(--border,#374151);'
+        'border:1px solid var(--border,#465366);'
         'border-radius:8px;padding:.9rem;margin-bottom:.9rem;">'
         f'<svg viewBox="0 0 {width} {height}" '
         f'width="{width}" height="{height}">'
@@ -154,7 +154,7 @@ def render_importance_panel(
     """Render a panel of importance charts, one per model."""
     if not model_importances:
         return (
-            '<div style="color:var(--muted,#9ca3af);">'
+            '<div style="color:var(--muted,#9b9382);">'
             'No models to visualize.</div>')
     sections = []
     for model_name, imps in model_importances.items():
@@ -179,9 +179,9 @@ def render_feature_importance_page(
     if not model_importances:
         catalog_body = (
             '<div style="background:var(--paper,#F2EDE3);'
-            'border:1px solid var(--border,#374151);'
+            'border:1px solid var(--border,#465366);'
             'border-radius:8px;padding:2.5rem;text-align:center;'
-            'color:var(--muted,#9ca3af);">'
+            'color:var(--muted,#9b9382);">'
             'No model importance data — train models and build '
             'importance via '
             '<code>importance_from_trained_ridge(...)</code> '
@@ -233,7 +233,7 @@ def render_feature_importance_page(
         'style="font-weight:400;letter-spacing:.04em;'
         'text-transform:none;">Model quality →</a>'
         '</div>'
-        '<p style="max-width:48rem;color:var(--muted,#9ca3af);'
+        '<p style="max-width:48rem;color:var(--muted,#9b9382);'
         'margin:0 0 1rem 0;">'
         'What drives each model\'s predictions. Bars extend right '
         '(positive drivers) or left (negative). Length proportional '

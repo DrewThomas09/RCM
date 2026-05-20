@@ -194,7 +194,7 @@ def render_comparison(
         '.cmp-delta.up{color:#0a8a5f;}'
         '.cmp-delta.down{color:#b5321e;}'
         '.cmp-arrow{margin-right:4px;font-size:10px;}'
-        '.cmp-table a{color:#60a5fa;'
+        '.cmp-table a{color:#1d3c69;'
         'text-decoration:none;}'
         '.cmp-table a:hover{text-decoration:underline;}'
         '</style>') if inject_css else ""

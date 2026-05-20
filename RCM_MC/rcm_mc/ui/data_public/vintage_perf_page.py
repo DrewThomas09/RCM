@@ -70,11 +70,11 @@ def _moic_bar_chart(stats: List[Any], width: int = 600, height: int = 160) -> st
         # whisker P25-P75
         wx25, wx75 = px(s.moic_p25), px(s.moic_p75)
         mid_y = y + bar_h // 2 + 1
-        elements.append(f'<line x1="{wx25}" y1="{mid_y-3}" x2="{wx75}" y2="{mid_y-3}" stroke="#94a3b8" stroke-width="1.2"/>')
+        elements.append(f'<line x1="{wx25}" y1="{mid_y-3}" x2="{wx75}" y2="{mid_y-3}" stroke="#7a8699" stroke-width="1.2"/>')
         elements.append(f'<line x1="{wx25}" y1="{mid_y-5}" x2="{wx25}" y2="{mid_y-1}" stroke="#7a8699" stroke-width="1"/>')
         elements.append(f'<line x1="{wx75}" y1="{mid_y-5}" x2="{wx75}" y2="{mid_y-1}" stroke="#7a8699" stroke-width="1"/>')
         # year label
-        elements.append(f'<text x="{margin["l"]-3}" y="{y+bar_h-1}" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="#94a3b8">{s.year}</text>')
+        elements.append(f'<text x="{margin["l"]-3}" y="{y+bar_h-1}" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="#7a8699">{s.year}</text>')
         # P50 value
         label_x = px(s.moic_p50) + 3
         elements.append(f'<text x="{label_x}" y="{y+bar_h-1}" font-family="JetBrains Mono,monospace" font-size="7.5" fill="{color}">{s.moic_p50:.2f}x</text>')

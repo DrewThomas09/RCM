@@ -17,15 +17,15 @@ from rcm_mc.ui._chartis_kit import (
 def _r_color(r: float) -> str:
     """Diverging color: red for high positive, blue for high negative, gray for ~0."""
     if r >= 0.7:
-        return "#dc2626"
+        return "#b5321e"
     if r >= 0.4:
         return "#b8732a"
     if r >= 0.1:
-        return "#94a3b8"
+        return "#7a8699"
     if r >= -0.1:
         return "#7a8699"
     if r >= -0.4:
-        return "#60a5fa"
+        return "#1d3c69"
     return "#1F7A75"
 
 
@@ -161,7 +161,7 @@ def _time_series_svg(
 
     SERIES_COLORS = [
         "#1F7A75", "#0a8a5f", "#b8732a", "#b5321e",
-        "#a98545", "#ec4899", "#06b6d4", "#84cc16",
+        "#a98545", "#a98545", "#06b6d4", "#84cc16",
     ]
 
     lines = [

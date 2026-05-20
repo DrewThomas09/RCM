@@ -33,7 +33,7 @@ from ._ui_kit import fmt_num
 
 _EXPLAINER_CSS = """<style>
 .ck-dc-explainer{font-family:var(--sc-serif,'Georgia',serif);
-  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#465366);
   margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
 .ck-dc-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
 </style>"""
@@ -60,7 +60,7 @@ def _quality_pill(q: Optional[float]) -> str:
     pill picks up the editorial palette automatically.
     """
     if q is None:
-        return '<span class="pill" style="color:var(--muted,#9ca3af);">no data</span>'
+        return '<span class="pill" style="color:var(--muted,#9b9382);">no data</span>'
     if q >= 0.7:
         cls, label = "pill pill-good", "high"
     elif q >= 0.4:
@@ -78,7 +78,7 @@ def _freshness_pill(days: Optional[int]) -> str:
     """Days-since-refresh pill. Falls back to v3 ``.pill`` chrome
     plus the .num utility class on the numeric."""
     if days is None:
-        return '<span class="pill" style="color:var(--muted,#9ca3af);">never</span>'
+        return '<span class="pill" style="color:var(--muted,#9b9382);">never</span>'
     if days <= 7:
         cls = "pill pill-good"
     elif days <= 30:
@@ -99,11 +99,11 @@ def _kpi_card(label: str, value_html: str, sub: str = "") -> str:
     editorial parchment shell (which sets --paper, --border, --ink).
     """
     sub_html = (
-        f'<div class="micro" style="margin-top:.35rem;color:var(--muted,#9ca3af);">'
+        f'<div class="micro" style="margin-top:.35rem;color:var(--muted,#9b9382);">'
         f'{_html.escape(sub)}</div>' if sub else ""
     )
     return (
-        '<div style="border:1px solid var(--border,#374151);'
+        '<div style="border:1px solid var(--border,#465366);'
         'background:var(--paper,#F2EDE3);'
         'border-radius:8px;padding:14px 18px;flex:1;min-width:180px;">'
         f'<div class="micro">{_html.escape(label)}</div>'
@@ -136,7 +136,7 @@ def _source_row(entry: DataSourceEntry) -> str:
 
 def _empty_state_html() -> str:
     return (
-        '<div style="border:1px solid var(--border,#374151);'
+        '<div style="border:1px solid var(--border,#465366);'
         'background:var(--paper,#F2EDE3);border-radius:8px;'
         'padding:2.5rem;text-align:center;">'
         '<div style="font-size:1rem;margin-bottom:.5rem;">'
@@ -247,11 +247,11 @@ def render_data_catalog_page(store: Any) -> str:
                 f'<h2 class="micro" style="margin:0 0 .5rem 0;">'
                 f'{_html.escape(cat_label)}</h2>'
                 '<table style="width:100%;border-collapse:collapse;'
-                'border:1px solid var(--border,#374151);'
+                'border:1px solid var(--border,#465366);'
                 'background:var(--paper,#F2EDE3);border-radius:8px;'
                 'overflow:hidden;">'
                 '<thead>'
-                '<tr style="border-bottom:1px solid var(--border,#374151);">'
+                '<tr style="border-bottom:1px solid var(--border,#465366);">'
                 '<th class="micro" style="padding:.6rem 1rem;text-align:left;">Source</th>'
                 '<th class="micro" style="padding:.6rem 1rem;text-align:right;">Records</th>'
                 '<th class="micro" style="padding:.6rem 1rem;text-align:left;">Coverage</th>'

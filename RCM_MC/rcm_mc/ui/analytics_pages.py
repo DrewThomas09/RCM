@@ -399,7 +399,7 @@ def _counterfactual_trajectory_chart(
         f"{x:.1f},{y:.1f}" for x, y in counter_pts
     )
     counter_line = (
-        f'<path d="{counter_path}" stroke="#5d6b7a" '
+        f'<path d="{counter_path}" stroke="#465366" '
         f'stroke-width="2" stroke-dasharray="5,3" fill="none" />'
     )
 
@@ -439,7 +439,7 @@ def _counterfactual_trajectory_chart(
         f'font-family="Inter, sans-serif">Actual</text>'
         # counter swatch
         f'<line x1="80" x2="100" y1="6" y2="6" '
-        f'stroke="#5d6b7a" stroke-width="2" stroke-dasharray="5,3" />'
+        f'stroke="#465366" stroke-width="2" stroke-dasharray="5,3" />'
         f'<text x="106" y="9" fill="#1a2332" font-size="11" '
         f'font-family="Inter, sans-serif">Counterfactual</text>'
         f'</g>'

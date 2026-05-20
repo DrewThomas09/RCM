@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional  # noqa: F401
 
 _EXPLAINER_CSS = """<style>
 .ck-co-explainer{font-family:var(--sc-serif,'Georgia',serif);
-  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#465366);
   margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
 .ck-co-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
 </style>"""
@@ -201,8 +201,8 @@ def _breakdown_bar(breakdown: Dict[str, float]) -> str:
 def _comparable_row(c: Dict[str, Any]) -> List[str]:
     score = c.get("match_score") or 0
     bg, fg = (
-        ("#d1fae5", "#065f46") if score >= 70 else
-        ("#fef3c7", "#92400e") if score >= 50 else
+        ("#d9ece2", "#0a6a48") if score >= 70 else
+        ("#f2e7d1", "#7a4c16") if score >= 50 else
         ("#E8E0D0", "#7a8699")
     )
     breakdown = c.get("score_breakdown") or {}
@@ -274,7 +274,7 @@ def render_comparable_outcomes_page(
                 + form
                 + _wc.section_card(
                     "Tip",
-                    '<p style="margin:0;font-size:13px;color:#4b5563;">'
+                    '<p style="margin:0;font-size:13px;color:#465366;">'
                     'Enter a sector + entry EV (in $M) above. The '
                     'tool ranks every realized deal in the corpus by '
                     'similarity (sector / size / vintage / payer mix '
@@ -324,7 +324,7 @@ def render_comparable_outcomes_page(
                 header + form
                 + _wc.section_card(
                     "Couldn't run benchmark",
-                    f'<p style="margin:0;color:#991b1b;">'
+                    f'<p style="margin:0;color:#8a2a1a;">'
                     f'Error: {_html.escape(type(exc).__name__)}. '
                     f'The corpus may not be initialized — try running '
                     f'<code>rcm-mc data refresh</code> first.</p>'

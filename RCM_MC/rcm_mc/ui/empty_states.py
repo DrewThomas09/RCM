@@ -187,7 +187,7 @@ def empty_table_row(
     if action_label and action_url:
         action_html = (
             f' <a href="{_html.escape(action_url)}" '
-            f'style="color:#60a5fa;text-decoration:none;">'
+            f'style="color:#1d3c69;text-decoration:none;">'
             f'{_html.escape(action_label)} →</a>')
     return (
         f'<tr><td colspan="{int(n_columns)}" '

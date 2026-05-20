@@ -28,7 +28,7 @@ from ._sanity import render_number
 
 _EXPLAINER_CSS = """<style>
 .ck-home-explainer{font-family:var(--sc-serif,'Georgia',serif);
-  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#465366);
   margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
 .ck-home-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
 </style>"""

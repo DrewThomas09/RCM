@@ -40,7 +40,7 @@ from ._chartis_kit import (
 
 _EXPLAINER_CSS = """<style>
 .ck-clr-explainer{font-family:var(--sc-serif,'Georgia',serif);
-  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#465366);
   margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
 .ck-clr-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
 </style>"""
@@ -95,9 +95,9 @@ def _row(r: Dict[str, Any]) -> str:
         f'<td style="padding:.6rem 1rem;text-align:right;">{drag_p10}</td>'
         f'<td style="padding:.6rem 1rem;text-align:right;">{drag_p90}</td>'
         f'<td style="padding:.6rem 1rem;font-size:.7rem;'
-        f'color:var(--muted,#9ca3af);">'
+        f'color:var(--muted,#9b9382);">'
         f'<code>{actual_hash}</code> / <code>{bench_hash}</code></td>'
-        f'<td style="padding:.6rem 1rem;color:var(--muted,#9ca3af);'
+        f'<td style="padding:.6rem 1rem;color:var(--muted,#9b9382);'
         f'font-size:.8rem;">{notes}</td>'
         '</tr>'
     )
@@ -106,8 +106,8 @@ def _row(r: Dict[str, Any]) -> str:
 def _empty_state(reason: str) -> str:
     return (
         '<div style="background:var(--paper,#F2EDE3);'
-        'border:1px solid var(--border,#374151);border-radius:8px;'
-        'padding:2.5rem;text-align:center;color:var(--muted,#9ca3af);">'
+        'border:1px solid var(--border,#465366);border-radius:8px;'
+        'padding:2.5rem;text-align:center;color:var(--muted,#9b9382);">'
         f'{_html.escape(reason)}'
         '</div>'
     )
@@ -127,7 +127,7 @@ def render_cli_runs_page(
         body = (
             '<section style="max-width:62rem;">'
             '<h1 style="margin:0 0 .5rem 0;">CLI Run History</h1>'
-            '<p style="max-width:48rem;color:var(--muted,#9ca3af);'
+            '<p style="max-width:48rem;color:var(--muted,#9b9382);'
             'margin:0 0 1rem 0;">'
             'Every <code>rcm-mc</code> simulation run gets logged to '
             '<code>&lt;outdir&gt;/runs.sqlite</code>. This page surfaces '
@@ -157,11 +157,11 @@ def render_cli_runs_page(
         rows = "".join(_row(r) for r in runs)
         catalog_body = (
             '<table style="width:100%;border-collapse:collapse;'
-            'border:1px solid var(--border,#374151);'
+            'border:1px solid var(--border,#465366);'
             'background:var(--paper,#F2EDE3);border-radius:8px;'
             'overflow:hidden;">'
             '<thead>'
-            '<tr style="border-bottom:1px solid var(--border,#374151);">'
+            '<tr style="border-bottom:1px solid var(--border,#465366);">'
             '<th class="micro" style="padding:.55rem 1rem;text-align:left;">ID</th>'
             '<th class="micro" style="padding:.55rem 1rem;text-align:left;">When</th>'
             '<th class="micro" style="padding:.55rem 1rem;text-align:left;">Hospital</th>'
@@ -215,7 +215,7 @@ def render_cli_runs_page(
         + kpi_strip
         + '<section style="max-width:80rem;">'
         f'<div style="text-align:right;margin-bottom:.75rem;">'
-        f'<span class="micro" style="color:var(--muted,#9ca3af);">'
+        f'<span class="micro" style="color:var(--muted,#9b9382);">'
         f'{fmt_num(len(runs))} runs · most recent first · '
         f'limit {fmt_num(limit)}</span>'
         '</div>'

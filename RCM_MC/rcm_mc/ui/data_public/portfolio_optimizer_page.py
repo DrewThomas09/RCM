@@ -122,7 +122,7 @@ def _sector_weight_panel(composition: Any) -> str:
         color = "#1F7A75" if w_pct <= 20 else ("#b8732a" if w_pct <= 35 else "#b5321e")
         bars.append(
             f'<div style="margin:4px 0;display:flex;align-items:center;gap:8px;">'
-            f'<div style="width:160px;font-size:10px;color:#94a3b8;text-align:right;'
+            f'<div style="width:160px;font-size:10px;color:#7a8699;text-align:right;'
             f'font-family:var(--ck-mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
             f'{_html.escape(sector[:22])}</div>'
             f'<svg width="200" height="10" xmlns="http://www.w3.org/2000/svg">'
@@ -226,7 +226,7 @@ def render_portfolio_optimizer(sectors: Optional[List[str]] = None) -> str:
     all_sectors = sorted({d.get("sector") for d in corpus if d.get("sector")})
     selected_set = set(sectors or [])
     checkboxes = "".join(
-        f'<label style="display:inline-block;margin:3px 8px 3px 0;font-size:10px;color:#94a3b8;cursor:pointer;">'
+        f'<label style="display:inline-block;margin:3px 8px 3px 0;font-size:10px;color:#7a8699;cursor:pointer;">'
         f'<input type="checkbox" name="sector" value="{_html.escape(s)}" '
         f'{"checked" if s in selected_set else ""} style="margin-right:3px;">'
         f'{_html.escape(s[:22])}</label>'

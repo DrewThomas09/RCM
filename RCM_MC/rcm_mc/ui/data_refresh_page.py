@@ -33,11 +33,11 @@ def _freshness_chip(last_refreshed_iso: str | None) -> str:
                 'unparseable</span>')
     days = (datetime.now(timezone.utc) - ts).days
     if days < 7:
-        bg, fg = "#d1fae5", "#065f46"
+        bg, fg = "#d9ece2", "#0a6a48"
     elif days < 30:
-        bg, fg = "#fef3c7", "#92400e"
+        bg, fg = "#f2e7d1", "#7a4c16"
     else:
-        bg, fg = "#fee2e2", "#991b1b"
+        bg, fg = "#f2ded7", "#8a2a1a"
     return (f'<span style="display:inline-block;padding:2px 8px;'
             f'border-radius:4px;background:{bg};color:{fg};'
             f'font-size:11px;font-weight:500;">{days}d ago</span>')

@@ -235,7 +235,7 @@ def render_multiple_decomp(params: Dict[str, str]) -> str:
     elif unexp < -1.0:
         signal_html = f'<span class="mn pos">Discount: {unexp:.1f}× below fundamentals</span>'
     else:
-        signal_html = '<span class="mn" style="color:#94a3b8">Inline with fundamentals</span>'
+        signal_html = '<span class="mn" style="color:#7a8699">Inline with fundamentals</span>'
 
     kpi_grid = (
         '<div class="ck-kpi-grid">'

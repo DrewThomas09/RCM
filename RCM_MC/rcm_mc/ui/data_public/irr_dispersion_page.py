@@ -72,7 +72,7 @@ def _irr_histogram(irrs: List[float], w: int = 720, h: int = 260) -> str:
         bh = int(cnt / max_count * (h - pad_t - pad_b))
         x = pad_l + i * bar_w
         y = h - pad_b - bh
-        col = P["positive"] if lo >= 20 else (P["warning"] if lo >= 10 else (P["negative"] if lo >= 0 else "#dc2626"))
+        col = P["positive"] if lo >= 20 else (P["warning"] if lo >= 10 else (P["negative"] if lo >= 0 else "#b5321e"))
         parts.append(
             f'<rect x="{x+2:.1f}" y="{y}" width="{bar_w-4:.1f}" '
             f'height="{bh}" fill="{col}" fill-opacity="0.85" rx="1"/>'

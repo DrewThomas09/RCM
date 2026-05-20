@@ -189,8 +189,8 @@ def _hold_moic_scatter(
         for yv in [0, 1, 2, 3, 4, 5, 6]
     )
     labels = (
-        f'<text x="{pad_l+pw/2:.1f}" y="{height-2}" font-size="8" fill="#94a3b8" text-anchor="middle">Hold Years</text>'
-        f'<text x="8" y="{pad_t+ph/2:.1f}" font-size="8" fill="#94a3b8" text-anchor="middle" '
+        f'<text x="{pad_l+pw/2:.1f}" y="{height-2}" font-size="8" fill="#7a8699" text-anchor="middle">Hold Years</text>'
+        f'<text x="8" y="{pad_t+ph/2:.1f}" font-size="8" fill="#7a8699" text-anchor="middle" '
         f'transform="rotate(-90,8,{pad_t+ph/2:.1f})">MOIC</text>'
     )
     n_lbl = f'<text x="{pad_l+4}" y="{pad_t+9}" font-size="7.5" fill="#465366">n={len(pts)}</text>'

@@ -44,7 +44,7 @@ def web_styles() -> str:
     color: #1a2332; letter-spacing: -0.005em; }
 .wc-container h3 { font-size: 13px; margin: 16px 0 8px; font-weight: 600;
     color: #465366; text-transform: uppercase; letter-spacing: 0.04em; }
-.wc-container p  { margin: 4px 0; color: #4b5563; }
+.wc-container p  { margin: 4px 0; color: #465366; }
 .wc-container code { background:#ece5d6; padding:2px 6px; border-radius:3px;
     font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 12px; }
 
@@ -73,7 +73,7 @@ def web_styles() -> str:
     font-family: var(--sc-sans, 'Inter Tight', -apple-system, sans-serif);
     font-variant-numeric: tabular-nums; }
 .wc-table thead th { padding: 10px 12px; text-align: left; font-weight: 600;
-    color: var(--sc-text-dim, #5d6b7a); background: var(--sc-parchment, #f5f1ea);
+    color: var(--sc-text-dim, #465366); background: var(--sc-parchment, #f5f1ea);
     border-bottom: 1px solid var(--sc-rule, #d6cfc0);
     cursor: pointer; user-select: none; white-space: nowrap; font-size: 10px;
     font-family: var(--sc-mono, 'JetBrains Mono', monospace);
@@ -124,13 +124,13 @@ def web_styles() -> str:
     padding: 8px 16px; color: #1a2332; text-decoration: none;
     font-size: 13px; border-left: 2px solid transparent; }
 .wc-cmdk-row:hover, .wc-cmdk-row.wc-cmdk-active {
-    background: #f0f6fc; border-left-color: var(--sc-navy); }
+    background: #f7f3ea; border-left-color: var(--sc-navy); }
 .wc-cmdk-id { font-family: monospace; color: var(--sc-navy);
     font-size: 11px; min-width: 90px; flex-shrink: 0;
     text-transform: uppercase; letter-spacing: 0.03em; }
 .wc-cmdk-name { flex: 1; color: #1a2332; }
 .wc-cmdk-badge { font-size: 10px; padding: 1px 6px;
-    background: #fef3c7; color: #92400e; border-radius: 3px; }
+    background: #f2e7d1; color: #7a4c16; border-radius: 3px; }
 .wc-cmdk-empty { padding: 20px 16px; text-align: center;
     color: #9b9382; font-size: 13px; }
 .wc-cmdk-section { padding: 6px 16px 2px;
@@ -160,7 +160,7 @@ def web_styles() -> str:
 .wc-btn-primary { background: var(--sc-navy); color: #fff; }
 .wc-btn-primary:hover { background: #1a3f61; }
 .wc-btn-secondary { background: #fff; color: var(--sc-navy); }
-.wc-btn-secondary:hover { background: #eff4f8; }
+.wc-btn-secondary:hover { background: #f7f3ea; }
 
 /* Responsive — mobile/tablet breakpoints */
 @media (max-width: 768px) {
@@ -410,13 +410,13 @@ def universal_palette_bundle() -> str:
     padding: 8px 16px; color: #1a2332; text-decoration: none;
     font-size: 13px; border-left: 2px solid transparent; }
 .wc-cmdk-row:hover, .wc-cmdk-row.wc-cmdk-active {
-    background: #f0f6fc; border-left-color: var(--sc-navy); }
+    background: #f7f3ea; border-left-color: var(--sc-navy); }
 .wc-cmdk-id { font-family: monospace; color: var(--sc-navy);
     font-size: 11px; min-width: 90px; flex-shrink: 0;
     text-transform: uppercase; letter-spacing: 0.03em; }
 .wc-cmdk-name { flex: 1; color: #1a2332; }
 .wc-cmdk-badge { font-size: 10px; padding: 1px 6px;
-    background: #fef3c7; color: #92400e; border-radius: 3px; }
+    background: #f2e7d1; color: #7a4c16; border-radius: 3px; }
 .wc-cmdk-empty { padding: 20px 16px; text-align: center;
     color: #9b9382; font-size: 13px; background: #fff; }
 .wc-cmdk-section { padding: 6px 16px 2px;
@@ -737,7 +737,7 @@ def sortable_table_js() -> str:
                     counter.textContent = 'showing ' + visible + ' of ' + total
                         + (total === 1 ? ' row' : ' rows')
                         + (visible === 0 ? ' — no matches' : '');
-                    counter.style.color = visible === 0 ? '#991b1b' : 'var(--sc-navy)';
+                    counter.style.color = visible === 0 ? '#8a2a1a' : 'var(--sc-navy)';
                 } else {
                     counter.textContent = total + (total === 1 ? ' row' : ' rows');
                     counter.style.color = '#7a8699';
