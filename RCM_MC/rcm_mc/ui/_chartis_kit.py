@@ -3506,7 +3506,10 @@ _CSS_INLINE_FALLBACK = """
   /* Top bar — navy + white + teal accent rule, mirrors chartis.com */
   .ck-topbar { position:sticky; top:0; z-index:50; background:var(--sc-navy); border-bottom:2px solid var(--sc-teal); }
   .ck-topbar-inner { display:flex; align-items:center; gap:var(--sc-s-6); padding:18px var(--sc-s-7); max-width:min(1920px, 95vw); margin:0 auto; }
-  .ck-wordmark { display:inline-flex; align-items:baseline; font-family:var(--sc-serif); font-weight:500; font-size:22px; color:var(--sc-on-navy); letter-spacing:-0.018em; text-decoration:none; line-height:1; }
+  .ck-wordmark { display:inline-flex; align-items:center; gap:0.55rem; font-family:var(--sc-serif); font-weight:500; font-size:22px; color:var(--sc-on-navy); letter-spacing:-0.018em; text-decoration:none; line-height:1; }
+  .ck-wordmark-text { display:inline-flex; align-items:baseline; }
+  .ck-brand-mark { color:var(--sc-on-navy); flex:none; opacity:.92; transition:opacity .15s ease; }
+  .ck-wordmark:hover .ck-brand-mark { opacity:1; }
   .ck-wordmark em { font-style:italic; font-weight:400; color:var(--sc-teal-2); margin-left:0.22em; }
   .ck-wordmark:hover em { color:var(--sc-on-navy); }
   .ck-nav { display:flex; gap:var(--sc-s-7); margin-left:var(--sc-s-6); }
@@ -4717,6 +4720,7 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
     # vocabulary shift (Deals → Engagements, Portfolio → Engagement Book)
     # the moment they toggle to the Chartis-consulting workspace.
     from ._workspace_mode import term as _ws_term
+    from .brand import BRAND_MARK_SVG as _BRAND_MARK_SVG
     _NAV_TERM = {"Deals": "deals", "Portfolio": "portfolio"}
 
     def _nav_label(lbl: str) -> str:
@@ -4757,7 +4761,8 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '<header class="ck-topbar">'
         '<div class="ck-topbar-inner">'
         '<a href="/" class="ck-wordmark" aria-label="PE Desk home">'
-        'PE<em>Desk</em>'
+        f'{_BRAND_MARK_SVG}'
+        '<span class="ck-wordmark-text">PE<em>Desk</em></span>'
         '</a>'
         f'<nav class="ck-nav" aria-label="Primary">{links}</nav>'
         '<div class="ck-topbar-right">'
@@ -5030,6 +5035,7 @@ def chartis_shell(
         '<meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
         f"<title>{_esc(title)} · PE Desk</title>"
+        '<link rel="icon" type="image/svg+xml" href="/favicon.svg">'
         f"{fonts}"
         f"{_CSS_LINK}"
         f"{_CSS_INLINE_FALLBACK}"

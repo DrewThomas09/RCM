@@ -16,7 +16,7 @@ Routes (MVP):
     GET /deal/<id>         → deal detail page (audit, variance, attribution)
     GET /outputs/*         → static files from the run-output folder
     GET /health            → 200 OK (for uptime checks / liveness probes)
-    GET /favicon.ico       → 204 (silences the default browser fetch)
+    GET /favicon.{svg,ico} → the "PD" circular brand mark (image/svg+xml)
     *   /api/*             → reserved for Brick 68 JSON endpoints
 
 Graceful Ctrl+C shutdown; threaded server so concurrent browser tabs
@@ -5531,9 +5531,15 @@ class RCMHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(body)
             return
-        if path == "/favicon.ico":
-            self.send_response(HTTPStatus.NO_CONTENT)
+        if path in ("/favicon.svg", "/favicon.ico"):
+            from .ui.brand import FAVICON_SVG
+            body = FAVICON_SVG.encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "image/svg+xml")
+            self.send_header("Cache-Control", "public, max-age=86400")
+            self.send_header("Content-Length", str(len(body)))
             self.end_headers()
+            self.wfile.write(body)
             return
         if path == "/upload":
             return self._route_upload_page()
