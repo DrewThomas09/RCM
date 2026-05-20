@@ -36,9 +36,11 @@ from .colors import STATUS
 _COLOR_POSITIVE = STATUS["positive"]
 _COLOR_NEGATIVE = STATUS["negative"]
 _COLOR_NEUTRAL = STATUS["neutral"]
-_TEXT_COLOR = "#f3f4f6"
-_AXIS_COLOR = "#374151"
-_BG_COLOR = "#1f2937"
+# Editorial chart chrome — dark ink labels + muted axis on the
+# parchment page background (the chart has no own fill). The bar
+# colors are semantic and come from colors.STATUS below.
+_TEXT_COLOR = "#1a2332"
+_AXIS_COLOR = "#7a8699"
 
 
 def _bar_color(direction: str) -> str:
@@ -124,7 +126,7 @@ def render_importance_bar_chart(
                     f"{imp.relative:.0%}")
         rows.append(
             f'<text x="{x_text}" y="{y + 14}" '
-            f'fill="#9ca3af" font-size="10" '
+            f'fill="#7a8699" font-size="10" '
             f'text-anchor="{text_anchor}" '
             f'font-family="ui-monospace, monospace">'
             f'{val_text}</text>')
