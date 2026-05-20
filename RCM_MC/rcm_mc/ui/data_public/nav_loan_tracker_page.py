@@ -2,7 +2,35 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+
+
+def _loans_chart(items) -> str:
+    """Lead chart for the NAV-loan book — loans ranked by size so the
+    biggest fund-level facilities surface first. Bar width = share of
+    total outstanding; value = loan size ($M); tone marks LTV risk
+    (>=20% amber, otherwise teal). Full loan grid stays directly below.
+    """
+    total = sum(l.loan_size_m for l in items) or 1.0
+    ranked = sorted(items, key=lambda l: l.loan_size_m, reverse=True)
+    rows = []
+    for l in ranked:
+        tone = "warning" if l.ltv_pct >= 0.20 else "teal"
+        rows.append(ck_bar_row(
+            l.fund,
+            f"${l.loan_size_m:,.0f}M",
+            l.loan_size_m / total * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = share of total outstanding · value = loan size ($M) · '
+        'tone = LTV risk (amber if &ge;20% loan-to-NAV)</div>'
+        '</div>'
+    )
 
 
 def _tier_color(t: str) -> str:
@@ -180,7 +208,14 @@ def render_nav_loan_tracker(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    l_chart = _loans_chart(r.loans)
     l_tbl = _loans_table(r.loans)
+    value_anchor = ck_value_anchor(
+        "NAV Loan Book",
+        f"${r.total_outstanding_m:,.0f}M outstanding",
+        delta=f"{r.total_loans} loans · {r.weighted_ltv_pct * 100:.1f}% wtd LTV · SOFR+{r.weighted_spread_bps:.0f}bps · {r.loans_near_maturity} near maturity",
+        tone="navy",
+    )
     lend_tbl = _lenders_table(r.lenders)
     u_tbl = _uses_table(r.uses)
     c_tbl = _coverage_table(r.coverage)
@@ -202,7 +237,8 @@ def render_nav_loan_tracker(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Active NAV Loan Book</div>{l_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">Active NAV Loan Book</div>{l_chart}{l_tbl}</div>
   <div style="{cell}"><div style="{h3}">Coverage Analysis — Current LTV vs Covenants</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Stress Testing — NAV Markdown Scenarios</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Use of Proceeds Distribution</div>{u_tbl}</div>

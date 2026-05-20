@@ -2,7 +2,35 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+
+
+def _targets_chart(items) -> str:
+    """Lead chart for the fundraising table — funds ranked by capital
+    committed so progress against target reads at a glance. Bar width =
+    committed as a share of the fund's target; value = committed ($M);
+    tone teal. Full fund grid stays directly below.
+    """
+    ranked = sorted(items, key=lambda t: t.committed_m, reverse=True)
+    rows = []
+    for t in ranked:
+        target_m = (t.target_size_b or 0) * 1000.0
+        progress = (t.committed_m / target_m * 100.0) if target_m else 0.0
+        rows.append(ck_bar_row(
+            t.fund_name,
+            f"${t.committed_m:,.0f}M",
+            progress,
+            tone="teal",
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = committed as a share of fund target · value = capital '
+        'committed ($M)</div>'
+        '</div>'
+    )
 
 
 def _stage_color(s: str) -> str:
@@ -197,7 +225,14 @@ def render_fundraising_tracker(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    t_chart = _targets_chart(r.targets)
     t_tbl = _targets_table(r.targets)
+    value_anchor = ck_value_anchor(
+        "Fundraising",
+        f"${r.total_committed_b:,.1f}B committed",
+        delta=f"{r.pct_fundraised * 100:.0f}% of ${r.total_target_b:,.1f}B target · {r.active_funds} active funds · {r.lps_in_pipeline} LPs in pipeline",
+        tone="positive",
+    )
     s_tbl = _stages_table(r.stages)
     p_tbl = _pipeline_table(r.pipeline)
     tr_tbl = _terms_table(r.terms)
@@ -219,7 +254,8 @@ def render_fundraising_tracker(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Active Funds Under Fundraising</div>{t_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">Active Funds Under Fundraising</div>{t_chart}{t_tbl}</div>
   <div style="{cell}"><div style="{h3}">Pipeline by Stage</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Close Schedule — All Funds</div>{sc_tbl}</div>
   <div style="{cell}"><div style="{h3}">LP Pipeline Detail ({r.lps_in_pipeline} LPs)</div>{p_tbl}</div>

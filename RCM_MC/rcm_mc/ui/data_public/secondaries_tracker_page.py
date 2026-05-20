@@ -2,7 +2,35 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+
+
+def _transactions_chart(items) -> str:
+    """Lead chart for the secondaries table — transactions ranked by
+    size so the largest GP-led deals surface first. Bar width = share of
+    total transaction volume; value = size ($M); tone marks NAV pricing
+    (premium green · discount amber). Full transaction grid stays below.
+    """
+    total = sum(t.transaction_size_mm for t in items) or 1.0
+    ranked = sorted(items, key=lambda t: t.transaction_size_mm, reverse=True)
+    rows = []
+    for t in ranked:
+        tone = "positive" if t.nav_premium_discount_pct >= 0 else "warning"
+        rows.append(ck_bar_row(
+            t.transaction,
+            f"${t.transaction_size_mm:,.0f}M",
+            t.transaction_size_mm / total * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = share of total transaction volume · value = deal size ($M) · '
+        'tone = NAV pricing (green premium · amber discount)</div>'
+        '</div>'
+    )
 
 
 def _transactions_table(items) -> str:
@@ -161,7 +189,14 @@ def render_secondaries_tracker(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    t_chart = _transactions_chart(r.transactions)
     t_tbl = _transactions_table(r.transactions)
+    value_anchor = ck_value_anchor(
+        "GP-Led Secondaries",
+        f"${r.total_gp_led_volume_2024_b:,.0f}B 2024 volume",
+        delta=f"{r.typical_nav_premium_discount_pct * 100:+.1f}% typical NAV pricing · {r.single_asset_cv_share_pct * 100:.0f}% single-asset CV share",
+        tone="teal",
+    )
     b_tbl = _buyers_table(r.buyers)
     ce_tbl = _cv_econ_table(r.cv_economics)
     cf_tbl = _conflicts_table(r.conflicts)
@@ -184,7 +219,8 @@ def render_secondaries_tracker(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Recent Healthcare Secondaries Transactions</div>{t_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">Recent Healthcare Secondaries Transactions</div>{t_chart}{t_tbl}</div>
   <div style="{cell}"><div style="{h3}">Secondary Buyer Landscape</div>{b_tbl}</div>
   <div style="{cell}"><div style="{h3}">CV Economics Structure</div>{ce_tbl}</div>
   <div style="{cell}"><div style="{h3}">LP/GP Conflict Areas</div>{cf_tbl}</div>
