@@ -2818,6 +2818,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             qs = urllib.parse.parse_qs(parsed.query)
             ds = (qs.get("dataset") or [""])[0]
             return self._send_html(render_ingest_page(dataset=ds))
+        if path == "/diligence/snapshot":
+            # V2 healthcare-snapshot tab — live VDR 835/837 upload →
+            # revenue-leakage findings + memo. GET renders the upload form.
+            from .diligence.snapshot_page import render_snapshot_upload
+            return self._send_html(render_snapshot_upload())
         if path == "/diligence/benchmarks":
             from .diligence._pages import render_benchmarks_page
             qs = urllib.parse.parse_qs(parsed.query)
@@ -11547,6 +11552,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             or path.startswith("/team/")
             or path.startswith("/engagements/")
             or path.startswith("/screening/")
+            or path == "/diligence/snapshot"
         )
         if (self._session_token() is not None and not csrf_exempt):
             ctype = self.headers.get("Content-Type", "")
@@ -11575,6 +11581,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             cached = _IDEMPOTENCY_CACHE.get(self._idempotency_key)
             if cached is not None:
                 return self._send_json(cached)
+        if path == "/diligence/snapshot":
+            return self._route_diligence_snapshot_post()
         if path == "/api/login":
             return self._route_login_post()
         if path == "/api/logout":
@@ -15871,6 +15879,52 @@ class RCMHandler(BaseHTTPRequestHandler):
             subtitle="Bulk-ingest a management-reporting CSV",
             back_href="/",
         ))
+
+    def _route_diligence_snapshot_post(self) -> None:
+        """V2 healthcare snapshot: multipart upload of 835/837 files or a
+        VDR ZIP → run the snapshot pipeline → render findings + memo.
+        Analysis-only (no persistent mutation); files live in a temp dir
+        for the request and are discarded afterwards."""
+        import os
+        import tempfile
+
+        from .diligence.snapshot import run_snapshot, run_snapshot_from_zip
+        from .diligence.snapshot_page import (
+            render_snapshot_result,
+            render_snapshot_upload,
+        )
+        try:
+            fields, files = self._parse_multipart()
+        except ValueError as exc:
+            return self._send_html(render_snapshot_upload(error=str(exc)))
+        deal_name = (fields.get("deal_name") or "Target").strip() or "Target"
+        if not files:
+            return self._send_html(
+                render_snapshot_upload(error="No files were uploaded."))
+        with tempfile.TemporaryDirectory(prefix="hcrl_upload_") as tmp:
+            written: list = []
+            zip_path = None
+            for _name, (fn, data) in files.items():
+                safe = os.path.basename(fn or "") or "upload.bin"
+                dest = os.path.join(tmp, safe)
+                with open(dest, "wb") as fh:
+                    fh.write(data)
+                if safe.lower().endswith(".zip"):
+                    zip_path = dest
+                else:
+                    written.append(dest)
+            try:
+                if zip_path:
+                    result = run_snapshot_from_zip(zip_path, deal_name=deal_name)
+                elif written:
+                    result = run_snapshot(written, deal_name=deal_name)
+                else:
+                    return self._send_html(render_snapshot_upload(
+                        error="No supported files found in the upload."))
+            except Exception as exc:  # noqa: BLE001 — surface to the user
+                return self._send_html(render_snapshot_upload(
+                    error=f"Analysis failed: {type(exc).__name__}: {exc}"))
+        return self._send_html(render_snapshot_result(result, deal_name=deal_name))
 
     def _parse_multipart(self) -> Tuple[Dict[str, str], Dict[str, Tuple[str, bytes]]]:
         """Pull form fields + files from a multipart/form-data POST body.
