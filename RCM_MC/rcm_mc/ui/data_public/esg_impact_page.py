@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _score_color(s: float) -> str:
@@ -10,6 +10,36 @@ def _score_color(s: float) -> str:
     if s >= 7.5: return P["accent"]
     if s >= 6.5: return P["warning"]
     return P["negative"]
+
+
+def _scorecard_chart(items) -> str:
+    """Lead chart for the ESG scorecard — portfolio companies ranked by
+    composite ESG score (0-10) so leaders and laggards read at a glance.
+    Bar width = composite as a share of the 10-point scale; value = the
+    composite; tone marks the table's score bands (>=8.5 green · >=7.5
+    teal · >=6.5 amber · below red). Full scorecard stays directly below.
+    """
+    ranked = sorted(items, key=lambda s: s.composite_score, reverse=True)
+    rows = []
+    for s in ranked:
+        c = s.composite_score
+        tone = ("positive" if c >= 8.5 else "teal" if c >= 7.5
+                else "warning" if c >= 6.5 else "negative")
+        rows.append(ck_bar_row(
+            s.deal,
+            f"{c:.2f}",
+            c / 10.0 * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = composite ESG score (of 10) · value = composite · '
+        'tone = score band (green &ge;8.5 · teal &ge;7.5 · amber &ge;6.5 · red below)</div>'
+        '</div>'
+    )
 
 
 def _scorecard_table(items) -> str:
@@ -226,6 +256,7 @@ def render_esg_impact(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    s_chart = _scorecard_chart(r.scorecards)
     s_tbl = _scorecard_table(r.scorecards)
     a_tbl = _access_table(r.access)
     o_tbl = _outcomes_table(r.outcomes)
@@ -250,7 +281,7 @@ def render_esg_impact(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">ESG Composite Scorecards</div>{s_tbl}</div>
+  <div style="{cell}"><div style="{h3}">ESG Composite Scorecards</div>{s_chart}{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Patient Access / Community Benefit</div>{a_tbl}</div>
   <div style="{cell}"><div style="{h3}">Clinical Outcomes</div>{o_tbl}</div>
   <div style="{cell}"><div style="{h3}">Workforce DEI</div>{d_tbl}</div>
