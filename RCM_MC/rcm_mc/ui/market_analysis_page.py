@@ -15,6 +15,81 @@ from .models_page import _model_nav
 from .brand import PALETTE
 
 
+def _competitor_share_chart(
+    competitors: List[Dict[str, Any]], width: int = 720, row_h: int = 24
+) -> str:
+    """Horizontal bars of revenue market share across the competitive set.
+
+    Reads the same ``market_share_revenue`` the table below shows, so
+    the figure can never disagree with the rows. Bars are tone-graded:
+    the market leader (largest share) is teal-deep, the rest fade by
+    rank so concentration reads at a glance. Empty input returns "".
+    """
+    rows = [c for c in (competitors or [])[:10]
+            if c.get("name")]
+    if not rows:
+        return ""
+    rows = sorted(rows, key=lambda c: c.get("market_share_revenue", 0),
+                  reverse=True)
+    max_share = max((c.get("market_share_revenue", 0) for c in rows),
+                    default=0)
+    if max_share <= 0:
+        max_share = 1.0
+
+    pad_l, pad_r, pad_t = 200, 64, 10
+    bar_max = width - pad_l - pad_r
+    height = pad_t + row_h * len(rows) + 8
+
+    lead = PALETTE.get("brand_accent", "#155752")
+    rule = PALETTE.get("border", "#BFB6A2")
+    txt = PALETTE.get("text_secondary", "#4a5568")
+
+    parts: List[str] = [
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" role="img" '
+        f'aria-label="Revenue market share by competitor" '
+        f'style="width:100%;max-width:{width}px;height:auto;'
+        f'print-color-adjust:exact;-webkit-print-color-adjust:exact;">'
+    ]
+    parts.append(
+        f'<line x1="{pad_l}" y1="{pad_t - 2}" x2="{pad_l}" '
+        f'y2="{height - 6}" stroke="{rule}" stroke-width="1"/>'
+    )
+    for i, c in enumerate(rows):
+        name = html.escape(str(c.get("name", ""))[:32])
+        share = c.get("market_share_revenue", 0)
+        y = pad_t + i * row_h
+        w = share / max_share * bar_max
+        # Fade by rank: leader fully opaque, tail muted.
+        op = 0.9 - (i / max(len(rows), 1)) * 0.55
+        parts.append(
+            f'<text x="{pad_l - 8}" y="{y + row_h / 2 + 3:.1f}" '
+            f'text-anchor="end" font-size="11" '
+            f'font-family="Inter Tight,system-ui,sans-serif" '
+            f'fill="{txt}">{name}</text>'
+        )
+        parts.append(
+            f'<rect x="{pad_l}" y="{y + 3:.1f}" width="{max(w, 0.5):.1f}" '
+            f'height="{row_h - 8}" rx="2" fill="{lead}" '
+            f'opacity="{op:.2f}"/>'
+        )
+        parts.append(
+            f'<text x="{pad_l + w + 6:.1f}" y="{y + row_h / 2 + 3:.1f}" '
+            f'text-anchor="start" font-size="10.5" '
+            f'font-family="JetBrains Mono,ui-monospace,monospace" '
+            f'fill="{txt}">{share:.1%}</text>'
+        )
+    parts.append("</svg>")
+    return "".join(parts)
+
+
+_MKT_CHART_CAPTION_CSS = (
+    ".mkt-figcap{font-size:11px;color:#6b6456;margin:8px 0 4px;"
+    "font-family:'JetBrains Mono',ui-monospace,monospace;"
+    "letter-spacing:0.02em;}"
+)
+
+
 def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -> str:
     """Render market analysis as a browser page."""
     target = analysis.get("target", {})
@@ -120,9 +195,17 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
             f'<td class="num">{c.get("market_share_beds", 0):.1%}</td>'
             f'</tr>'
         )
+    _comp_chart = _competitor_share_chart(competitors)
+    _comp_fig = (
+        f'<style>{_MKT_CHART_CAPTION_CSS}</style>'
+        f'<div class="mkt-figcap">Revenue market share &middot; '
+        f'longest bar = market leader &middot; bars fade by rank</div>'
+        f'{_comp_chart}'
+    ) if _comp_chart else ""
     comp_section = (
         f'<div class="cad-card">'
         f'<h2>Top Competitors</h2>'
+        f'{_comp_fig}'
         f'<table class="cad-table"><thead><tr>'
         f'<th>Hospital</th><th>Beds</th><th>Revenue</th>'
         f'<th>Rev Share</th><th>Bed Share</th>'
