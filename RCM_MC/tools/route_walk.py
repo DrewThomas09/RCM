@@ -220,17 +220,43 @@ def main() -> int:
         server.shutdown()
         server.server_close()
 
+    # Second pass — first-run resilience: every non-entity page must
+    # degrade gracefully (clean editorial empty states, no 500s / leaks)
+    # against an *empty* database, not just the seeded demo.
+    edb = os.path.join(tmp, "empty.db")
+    estore = PortfolioStore(edb)
+    estore.init_db()
+    create_user(estore, "walker@chartis.com", "RouteWalk1",
+                display_name="Route Walker", role="admin")
+    eport = _free_port()
+    eserver, _ = build_server(port=eport, db_path=edb)
+    et = threading.Thread(target=eserver.serve_forever, daemon=True)
+    et.start()
+    time.sleep(0.1)
+    ebase = f"http://127.0.0.1:{eport}"
+    try:
+        eopener = _login(ebase, "walker@chartis.com", "RouteWalk1")
+        empty_routes, _ = _seeded_routes(edb)  # palette+modules; no deals
+        print(f"\nempty-db pass: walking {len(empty_routes)} routes\n")
+        empty_results = _walk(ebase, eopener, empty_routes)
+    finally:
+        eserver.shutdown()
+        eserver.server_close()
+
     bad = [r for r in results if not r.ok]
+    ebad = [r for r in empty_results if not r.ok]
     print(f"\n{'='*64}")
-    print(f"  {len(results)} routes walked · {len(bad)} with findings")
+    print(f"  seeded: {len(results)} routes · {len(bad)} findings   "
+          f"empty-db: {len(empty_results)} routes · {len(ebad)} findings")
     print(f"{'='*64}")
-    for r in bad:
-        print(f"\n  [{r.status}] {r.route}  ({r.size}b)")
-        for f in r.findings:
-            print(f"      → {f}")
-    if not bad:
-        print("\n  ✓ every page rendered clean")
-    return 1 if bad else 0
+    for tag, rs in (("seeded", bad), ("empty-db", ebad)):
+        for r in rs:
+            print(f"\n  [{tag}][{r.status}] {r.route}  ({r.size}b)")
+            for f in r.findings:
+                print(f"      → {f}")
+    if not bad and not ebad:
+        print("\n  ✓ every page rendered clean (seeded + empty db)")
+    return 1 if (bad or ebad) else 0
 
 
 if __name__ == "__main__":
