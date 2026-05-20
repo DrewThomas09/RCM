@@ -2,7 +2,36 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+
+
+def _billing_chart(items) -> str:
+    """Lead chart for the provider billing-anomaly table — providers
+    ranked by anomaly score so the highest-risk billers surface before
+    the dense per-provider grid. Bar width = anomaly score (0-100),
+    value = dollar exposure ($k), tone tracks the table's severity
+    coloring (critical/high red · medium amber · low teal).
+    """
+    tone_for = {"critical": "negative", "high": "negative",
+                "medium": "warning", "low": "teal"}
+    ranked = sorted(items, key=lambda b: b.anomaly_score, reverse=True)
+    rows = []
+    for b in ranked:
+        rows.append(ck_bar_row(
+            b.provider_id,
+            f"${b.dollar_exposure_k:,.0f}k",
+            float(b.anomaly_score),
+            tone=tone_for.get(b.severity, "teal"),
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = anomaly score (0–100) · value = dollar exposure ($k) · '
+        'tone = severity (red critical/high · amber medium · teal low)</div>'
+        '</div>'
+    )
 
 
 def _billing_table(items) -> str:
@@ -166,6 +195,7 @@ def render_fraud_detection(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    b_chart = _billing_chart(r.billing_anomalies)
     b_tbl = _billing_table(r.billing_anomalies)
     u_tbl = _upcoding_table(r.upcoding)
     r_tbl = _referrals_table(r.referrals)
@@ -191,7 +221,7 @@ def render_fraud_detection(params: dict = None) -> str:
     <div style="color:{tier_c};font-weight:700;font-size:14px">Risk tier: {_html.escape(r.risk_tier.upper())} · {r.total_anomalies_flagged} anomalies · ${r.total_exposure_mm:,.1f}M total exposure</div>
     <div style="color:{text_dim};font-size:11px;margin-top:4px">{r.high_severity_count} high-severity flags warrant immediate compliance review</div>
   </div>
-  <div style="{cell}"><div style="{h3}">Provider-Level Billing Anomalies</div>{b_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Provider-Level Billing Anomalies</div>{b_chart}{b_tbl}</div>
   <div style="{cell}"><div style="{h3}">Upcoding Risk — Platform vs Peer</div>{u_tbl}</div>
   <div style="{cell}"><div style="{h3}">Referral Pattern Analysis — Stark / Anti-Kickback</div>{r_tbl}</div>
   <div style="{cell}"><div style="{h3}">Claim Fingerprint Patterns</div>{f_tbl}</div>
