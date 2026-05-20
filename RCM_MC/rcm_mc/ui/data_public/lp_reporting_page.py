@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _funds_chart(items) -> str:
@@ -227,10 +227,17 @@ def render_lp_reporting(params: dict = None) -> str:
         meta=f"{r.reporting_quarter} · {r.fund_count} funds at ${r.total_aum_mm:,.0f}M AUM · blended {r.blended_tvpi:.2f}x TVPI / {r.blended_dpi:.2f}x DPI at {r.blended_irr_pct:.1f}% IRR · {top_quartile} of {r.fund_count} funds tracking top-quartile vs PitchBook",
     )
 
+    value_anchor = ck_value_anchor(
+        "Portfolio NAV",
+        f"${r.total_aum_mm:,.0f}M AUM",
+        delta=f"{r.blended_tvpi:.2f}x TVPI · {r.blended_dpi:.2f}x DPI · {r.blended_irr_pct:.1f}% net IRR",
+        tone="positive",
+    )
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Fund-Level Performance Summary</div>{f_chart}{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">Quarterly NAV Evolution (9 quarters)</div>{m_tbl}</div>
   <div style="{cell}"><div style="{h3}">Value Change Attribution — Q1 vs YTD</div>{a_tbl}</div>
