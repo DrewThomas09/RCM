@@ -111,6 +111,16 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
     hhi_cls = "cad-badge-red" if hhi > 2500 else ("cad-badge-amber" if hhi > 1500 else "cad-badge-green")
     moat_rating = moat.get("moat_rating", "none")
     moat_cls = "cad-badge-green" if moat_rating == "wide" else ("cad-badge-amber" if moat_rating == "narrow" else "cad-badge-muted")
+    # Readable verdict label — "none".title() would render the
+    # null-looking word "None" in the badge; show "No Moat" instead.
+    moat_label = {"wide": "Wide", "narrow": "Narrow",
+                  "none": "No Moat"}.get(moat_rating, moat_rating.title())
+    # Grammatical prose phrase ("a wide moat" / "no competitive moat").
+    moat_phrase = {
+        "wide": "a <strong>wide moat</strong>",
+        "narrow": "a <strong>narrow moat</strong>",
+        "none": "<strong>no competitive moat</strong>",
+    }.get(moat_rating, f"a <strong>{html.escape(moat_rating)} moat</strong>")
 
     # The HHI + moat values are pre-formatted HTML (a styled badge
     # span), so we wrap them in SafeHtml so ck_provenance_tooltip
@@ -138,7 +148,7 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
         SafeHtml(
             f'<span class="cad-badge {moat_cls}" '
             f'style="font-size:14px;padding:4px 12px;">'
-            f'{html.escape(moat_rating.title())}</span>'
+            f'{html.escape(moat_label)}</span>'
         ),
         explainer=(
             "Wide / narrow / none verdict from the moat-scoring "
@@ -274,7 +284,7 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
         f'<div class="cad-card" style="border-left:3px solid {PALETTE["brand_accent"]};">'
         f'<h2>What This Means</h2>'
         f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
-        f'<p>This hospital has a <strong>{moat_rating} moat</strong> — {moat_interp}. '
+        f'<p>This hospital has {moat_phrase} — {moat_interp}. '
         f'The {state or "regional"} market is {market_interp} (HHI: {hhi:,.0f}).</p>'
         f'<p style="margin-top:6px;"><strong>Implications:</strong> {implication}'
         f' Compare against peers via '
