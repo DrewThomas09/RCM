@@ -175,7 +175,7 @@ EXTENDED_SEED_DEALS_15: List[Dict[str, Any]] = [
         "source_id": "seed_324",
         "deal_name": "National Veterinary Associates Add-On to QVCP",
         "buyer": "KKR",
-        "seller": "None",
+        "seller": "Undisclosed",
         "year": 2019,
         "deal_type": "add-on",
         "sector": "veterinary (animal health)",
