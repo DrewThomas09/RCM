@@ -282,6 +282,15 @@ def render_ingest_page(dataset: str = "") -> str:
                 "fixtures are synthetic for prototype."
             ),
         ),
+        '<div style="background:var(--sc-bone);border:1px solid var(--sc-rule);'
+        'border-left:3px solid var(--sc-teal);padding:12px 16px;margin:0 0 18px 0;'
+        'font-size:13px;">'
+        '<strong>New — live VDR upload.</strong> Upload real 835/837 files '
+        'or a VDR ZIP at '
+        '<a href="/diligence/snapshot" style="color:var(--sc-teal-ink);'
+        'font-weight:600;">/diligence/snapshot</a> for revenue-leakage '
+        'findings + a diligence memo (PHI-tokenized, aggregate output).'
+        '</div>',
         _fixture_selector("/diligence/ingest", dataset),
     ]
 
