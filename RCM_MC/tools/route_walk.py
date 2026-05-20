@@ -152,7 +152,7 @@ def _seeded_routes(db_path: str) -> Tuple[List[str], List[str]]:
         for ccn in ccns:
             entity += [
                 f"/hospital/{ccn}", f"/competitive-intel/{ccn}",
-                f"/demand/{ccn}", f"/models/market/{ccn}",
+                f"/hospital/{ccn}/demand", f"/models/market/{ccn}",
             ]
     except Exception:  # noqa: BLE001
         pass
