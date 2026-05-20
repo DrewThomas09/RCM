@@ -2,7 +2,36 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+
+
+def _econ_chart(items) -> str:
+    """Lead chart for the specialty-economics table — specialties ranked
+    by median EBITDA margin so the most profitable practice types surface
+    before the detail grid. Bar width = EBITDA margin; value = the same
+    margin; tone marks the table's quality tiers (>=25% green · >=15%
+    teal · below amber). Full economics grid stays directly below.
+    """
+    ranked = sorted(items, key=lambda e: e.median_ebitda_margin_pct, reverse=True)
+    rows = []
+    for e in ranked:
+        m = e.median_ebitda_margin_pct
+        tone = "positive" if m >= 0.25 else ("teal" if m >= 0.15 else "warning")
+        rows.append(ck_bar_row(
+            e.specialty,
+            f"{m * 100:.1f}%",
+            m * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = median EBITDA margin · value = margin % · '
+        'tone = quality tier (green &ge;25% · teal &ge;15% · amber below)</div>'
+        '</div>'
+    )
 
 
 def _benchmarks_table(items) -> str:
@@ -172,6 +201,7 @@ def render_specialty_benchmarks(params: dict = None) -> str:
     )
 
     b_tbl = _benchmarks_table(r.benchmarks)
+    e_chart = _econ_chart(r.economics)
     e_tbl = _econ_table(r.economics)
     n_tbl = _np_table(r.new_patients)
     a_tbl = _anc_table(r.ancillary)
@@ -192,7 +222,7 @@ def render_specialty_benchmarks(params: dict = None) -> str:
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Physician Compensation & Productivity Benchmarks</div>{b_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Practice Economics by Specialty</div>{e_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Practice Economics by Specialty</div>{e_chart}{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">New Patient Acquisition Benchmarks</div>{n_tbl}</div>
   <div style="{cell}"><div style="{h3}">Ancillary Revenue Opportunities</div>{a_tbl}</div>
   <div style="{cell}"><div style="{h3}">Clinical Quality Benchmarks</div>{q_tbl}</div>
