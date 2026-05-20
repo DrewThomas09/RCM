@@ -2,7 +2,37 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+
+
+def _affiliations_chart(items) -> str:
+    """Lead chart for the GPO affiliation table — affiliations ranked by
+    realized savings so the biggest supply-chain wins surface first. Bar
+    width = share of total realized savings; value = realized savings
+    ($M); tone marks the savings rate (>=15% green · >=12% teal · below
+    amber). Full affiliation grid stays directly below.
+    """
+    total = sum(a.realized_savings_m for a in items) or 1.0
+    ranked = sorted(items, key=lambda a: a.realized_savings_m, reverse=True)
+    rows = []
+    for a in ranked:
+        tone = ("positive" if a.savings_rate_pct >= 0.15 else "teal"
+                if a.savings_rate_pct >= 0.12 else "warning")
+        rows.append(ck_bar_row(
+            a.gpo_name,
+            f"${a.realized_savings_m:,.1f}M",
+            a.realized_savings_m / total * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = share of total realized savings · value = realized savings '
+        '($M) · tone = savings rate (green &ge;15% · teal &ge;12% · amber below)</div>'
+        '</div>'
+    )
 
 
 def _tier_color(t: str) -> str:
@@ -198,7 +228,14 @@ def render_gpo_supply_tracker(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    a_chart = _affiliations_chart(r.affiliations)
     a_tbl = _affiliations_table(r.affiliations)
+    value_anchor = ck_value_anchor(
+        "GPO Supply Savings",
+        f"${r.total_realized_savings_m:,.1f}M realized savings",
+        delta=f"${r.total_annual_spend_m:,.0f}M spend · {r.average_savings_rate_pct * 100:.1f}% savings rate · ${r.total_rebates_m:,.1f}M rebates",
+        tone="positive",
+    )
     c_tbl = _categories_table(r.categories)
     d_tbl = _deals_table(r.deals)
     ct_tbl = _contracts_table(r.contracts)
@@ -220,7 +257,8 @@ def render_gpo_supply_tracker(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">GPO Affiliations — Scale, Savings, Rebates</div>{a_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">GPO Affiliations — Scale, Savings, Rebates</div>{a_chart}{a_tbl}</div>
   <div style="{cell}"><div style="{h3}">Spend Categories — Savings Rate by Category</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Deal-Level Savings & Compliance</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Key Contracts — Reference Price, Renewal</div>{ct_tbl}</div>
