@@ -32,16 +32,16 @@ from .portfolio_snapshots import (
 
 # ── Style palette (shared with the rest of the product) ──
 _PALETTE = {
-    "bg":       "#FAFAFA",
+    "bg":       "#f2ede3",
     "card":     "#FFFFFF",
-    "border":   "#E5E7EB",
-    "text":     "#111827",
-    "muted":    "#6B7280",
+    "border":   "#d6cfc0",
+    "text":     "#1a2332",
+    "muted":    "#7a8699",
     "accent":   "var(--sc-navy)",
-    "green":    "#10B981",
-    "amber":    "#F59E0B",
-    "red":      "#EF4444",
-    "blue":     "#3B82F6",
+    "green":    "#0a8a5f",
+    "amber":    "#b8732a",
+    "red":      "#b5321e",
+    "blue":     "#1F7A75",
 }
 
 
@@ -598,23 +598,23 @@ _FILTER_JS = """
     var fmtX = function(v){ return isFinite(v) ? (v.toFixed(2) + 'x') : '—'; };
     var fmtP = function(v){ return isFinite(v) ? ((v*100).toFixed(1) + '%') : '—'; };
     var colorMoic = function(v){
-      if (!isFinite(v)) return '#6B7280';
-      if (v >= 2.5) return '#10B981';
-      if (v >= 2.0) return '#F59E0B';
-      return '#EF4444';
+      if (!isFinite(v)) return '#7a8699';
+      if (v >= 2.5) return '#0a8a5f';
+      if (v >= 2.0) return '#b8732a';
+      return '#b5321e';
     };
     var colorIrr = function(v){
-      if (!isFinite(v)) return '#6B7280';
-      if (v >= 0.25) return '#10B981';
-      if (v >= 0.18) return '#F59E0B';
-      return '#EF4444';
+      if (!isFinite(v)) return '#7a8699';
+      if (v >= 0.25) return '#0a8a5f';
+      if (v >= 0.18) return '#b8732a';
+      return '#b5321e';
     };
     var wMoic = totalEv > 0 ? wMoicNum / totalEv : NaN;
     var wIrr  = totalEv > 0 ? wIrrNum  / totalEv : NaN;
     setText('kpi-weighted-moic', fmtX(wMoic), colorMoic(wMoic));
     setText('kpi-weighted-irr', fmtP(wIrr), colorIrr(wIrr));
     setText('kpi-at-risk', String(atRisk),
-            atRisk ? '#EF4444' : '#10B981');
+            atRisk ? '#b5321e' : '#0a8a5f');
 
     // B96: save filter state (debounced trivially via last-wins)
     persist();
@@ -700,13 +700,13 @@ def _render_mini_sparkline(
     except (TypeError, ValueError):
         ld = None
     if ld is None or ld != ld:
-        stroke = "#6B7280"  # muted
+        stroke = "#7a8699"  # muted
     elif ld > 0.02:
-        stroke = "#10B981"  # green
+        stroke = "#0a8a5f"  # green
     elif ld < -0.02:
-        stroke = "#EF4444"  # red
+        stroke = "#b5321e"  # red
     else:
-        stroke = "#6B7280"
+        stroke = "#7a8699"
 
     return (
         f'<svg viewBox="0 0 {width} {height}" '
@@ -1020,9 +1020,9 @@ def _render_at_risk(df: pd.DataFrame) -> str:
 
 _CSS = """
 :root {
-  --bg: #FAFAFA; --card: #FFFFFF; --border: #E5E7EB;
-  --text: #111827; --muted: #6B7280; --accent: var(--sc-navy);
-  --green: #10B981; --amber: #F59E0B; --red: #EF4444;
+  --bg: #f2ede3; --card: #FFFFFF; --border: #d6cfc0;
+  --text: #1a2332; --muted: #7a8699; --accent: var(--sc-navy);
+  --green: #0a8a5f; --amber: #b8732a; --red: #b5321e;
 }
 * { box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -1053,9 +1053,9 @@ h1 { margin: 0 0 0.25rem 0; color: var(--accent); }
 .deal-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .badge { display: inline-block; padding: 2px 8px; border-radius: 4px;
          font-size: 0.75rem; font-weight: 600; }
-.badge-green { background: #D1FAE5; color: #065F46; }
-.badge-red   { background: #FEE2E2; color: #991B1B; }
-.badge-amber { background: #FEF3C7; color: #92400E; }
+.badge-green { background: #d9ece2; color: #0a6a48; }
+.badge-red   { background: #f2ded7; color: #8a2a1a; }
+.badge-amber { background: #f2e7d1; color: #7a4c16; }
 .at-risk-card ul { margin: 0.5rem 0 0 0; padding-left: 1.2rem; }
 .at-risk-card li { margin-bottom: 0.25rem; }
 footer { color: var(--muted); font-size: 0.8rem; margin-top: 2rem; text-align: center; }
@@ -1084,7 +1084,7 @@ def build_portfolio_dashboard(
     except Exception:
         archived_count = 0
     archived_badge = (
-        f' · <span style="color:#f59e0b;">{archived_count} archived</span>'
+        f' · <span style="color:#b8732a;">{archived_count} archived</span>'
         if archived_count > 0 else ""
     )
 
