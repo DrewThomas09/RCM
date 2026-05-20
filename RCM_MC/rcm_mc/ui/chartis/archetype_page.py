@@ -350,20 +350,31 @@ def render_archetype(
     ctx = archetype_context
     ctx_fields = []
     if ctx is not None:
+        # Yes/No/— for the boolean thesis flags — str(None) would leak a
+        # literal "None" into the cell, and str(True/False) reads worse
+        # than Yes/No in a partner-facing panel.
+        def _flag(v: Any) -> str:
+            return "—" if v is None else ("Yes" if v else "No")
+
+        # Use "is None" checks (not `or "—"`) so a legitimate 0 (e.g.
+        # zero add-ons planned) renders as "0", not the empty-dash.
+        def _txt(v: Any) -> str:
+            return "—" if v is None else str(v)
+
         ctx_fields = [
-            ("hospital_type", str(ctx.hospital_type or "—")),
-            ("platform_or_addon", str(ctx.platform_or_addon or "—")),
-            ("addons_planned", str(ctx.number_of_addons_planned or "—")),
+            ("hospital_type", _txt(ctx.hospital_type)),
+            ("platform_or_addon", _txt(ctx.platform_or_addon)),
+            ("addons_planned", _txt(ctx.number_of_addons_planned)),
             ("current_margin", render_number(ctx.current_ebitda_margin, "ebitda_margin")),
             ("debt_to_ebitda", render_number(ctx.debt_to_ebitda, "leverage_multiple")),
             ("revenue_growth", fmt_pct(ctx.revenue_growth_pct)),
             ("ebitda_growth", fmt_pct(ctx.ebitda_growth_pct)),
-            ("has_rollup_thesis", str(ctx.has_rollup_thesis)),
-            ("has_rcm_thesis", str(ctx.has_rcm_thesis)),
-            ("has_turnaround_thesis", str(ctx.has_turnaround_thesis)),
-            ("is_carveout", str(ctx.is_carveout)),
-            ("seller_is_strategic", str(ctx.seller_is_strategic)),
-            ("is_distressed", str(ctx.is_distressed)),
+            ("has_rollup_thesis", _flag(ctx.has_rollup_thesis)),
+            ("has_rcm_thesis", _flag(ctx.has_rcm_thesis)),
+            ("has_turnaround_thesis", _flag(ctx.has_turnaround_thesis)),
+            ("is_carveout", _flag(ctx.is_carveout)),
+            ("seller_is_strategic", _flag(ctx.seller_is_strategic)),
+            ("is_distressed", _flag(ctx.is_distressed)),
         ]
     ctx_panel = small_panel(
         "Classifier inputs",

@@ -159,12 +159,19 @@ def _seeded_routes(db_path: str) -> Tuple[List[str], List[str]]:
     with store.connect() as con:
         deal_ids = [r[0] for r in con.execute(
             "SELECT deal_id FROM deals LIMIT 5").fetchall()]
+    # Per-deal route families, incl. the chartis app deal sub-pages
+    # (red-flags / archetype / ic-packet / etc.) — these aren't in the
+    # palette and have surfaced real dup-title / render-leak bugs.
+    _deal_subs = (
+        "profile", "timeline", "partner-review", "red-flags",
+        "archetype", "investability", "market-structure",
+        "white-space", "stress", "ic-packet",
+    )
     for did in deal_ids:
-        entity += [
-            f"/deal/{did}", f"/deal/{did}/profile",
-            f"/analysis/{did}", f"/ebitda-bridge/{did}",
-            f"/value-tracker/{did}", f"/lp-update?deal_id={did}",
-        ]
+        entity += [f"/deal/{did}", f"/analysis/{did}",
+                   f"/ebitda-bridge/{did}", f"/value-tracker/{did}",
+                   f"/lp-update?deal_id={did}"]
+        entity += [f"/deal/{did}/{sub}" for sub in _deal_subs]
     # A couple of real HCRIS hospitals (these drive the diligence pages).
     try:
         from rcm_mc.data.hcris import _get_latest_per_ccn
@@ -172,7 +179,9 @@ def _seeded_routes(db_path: str) -> Tuple[List[str], List[str]]:
         for ccn in ccns:
             entity += [
                 f"/hospital/{ccn}", f"/competitive-intel/{ccn}",
-                f"/hospital/{ccn}/demand", f"/models/market/{ccn}",
+                f"/hospital/{ccn}/demand", f"/hospital/{ccn}/history",
+                f"/hospital/{ccn}/providers", f"/models/market/{ccn}",
+                f"/models/dcf/{ccn}", f"/models/denial/{ccn}",
             ]
     except Exception:  # noqa: BLE001
         pass
