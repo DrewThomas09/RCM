@@ -38,37 +38,37 @@ def _input_form(qs: Dict[str, Any]) -> str:
     return (
         '<form method="GET" action="/diligence/comparable-outcomes" '
         'style="display:flex;flex-wrap:wrap;gap:10px;align-items:end;'
-        'margin:12px 0 20px;padding:14px 16px;background:#fafbfc;'
-        'border:1px solid #e5e7eb;border-radius:6px;">'
-        '<div><label style="display:block;font-size:11px;color:#6b7280;'
+        'margin:12px 0 20px;padding:14px 16px;background:#f7f3ea;'
+        'border:1px solid #d6cfc0;border-radius:6px;">'
+        '<div><label style="display:block;font-size:11px;color:#7a8699;'
         'text-transform:uppercase;letter-spacing:0.05em;'
         'margin-bottom:4px;">Sector</label>'
         '<select name="sector" style="padding:6px 8px;border:1px solid '
-        '#e5e7eb;border-radius:4px;font-size:13px;">'
+        '#d6cfc0;border-radius:4px;font-size:13px;">'
         + "".join(sector_options) +
         '</select></div>'
-        '<div><label style="display:block;font-size:11px;color:#6b7280;'
+        '<div><label style="display:block;font-size:11px;color:#7a8699;'
         'text-transform:uppercase;letter-spacing:0.05em;'
         'margin-bottom:4px;">Entry EV ($M)</label>'
         f'<input type="number" name="ev_mm" value="{ev_mm}" '
         'placeholder="e.g. 500" min="1" max="50000" step="1" '
-        'style="padding:6px 8px;border:1px solid #e5e7eb;'
+        'style="padding:6px 8px;border:1px solid #d6cfc0;'
         'border-radius:4px;font-size:13px;width:120px;"></div>'
-        '<div><label style="display:block;font-size:11px;color:#6b7280;'
+        '<div><label style="display:block;font-size:11px;color:#7a8699;'
         'text-transform:uppercase;letter-spacing:0.05em;'
         'margin-bottom:4px;">Year</label>'
         f'<input type="number" name="year" value="{year}" '
         'placeholder="e.g. 2024" min="1990" max="2030" '
-        'style="padding:6px 8px;border:1px solid #e5e7eb;'
+        'style="padding:6px 8px;border:1px solid #d6cfc0;'
         'border-radius:4px;font-size:13px;width:100px;"></div>'
-        '<div><label style="display:block;font-size:11px;color:#6b7280;'
+        '<div><label style="display:block;font-size:11px;color:#7a8699;'
         'text-transform:uppercase;letter-spacing:0.05em;'
         'margin-bottom:4px;" title="Sponsor name boosts match score '
         'on same-sponsor deals — useful when tracking a particular '
         'PE house\'s playbook">Sponsor (optional)</label>'
         f'<input type="text" name="buyer" value="{buyer}" '
         'placeholder="e.g. New Mountain Capital" '
-        'style="padding:6px 8px;border:1px solid #e5e7eb;'
+        'style="padding:6px 8px;border:1px solid #d6cfc0;'
         'border-radius:4px;font-size:13px;width:200px;"></div>'
         '<button type="submit" '
         'style="padding:8px 16px;background:var(--sc-navy);color:#fff;'
@@ -114,13 +114,13 @@ def _outcome_strip(summary: Dict[str, Any]) -> str:
     def _stat(label: str, big: str, sub: str) -> str:
         return (
             f'<div style="flex:1;min-width:160px;padding:14px 16px;'
-            f'background:#fff;border:1px solid #e5e7eb;border-radius:8px;">'
-            f'<div style="font-size:10px;color:#6b7280;font-weight:600;'
+            f'background:#fff;border:1px solid #d6cfc0;border-radius:8px;">'
+            f'<div style="font-size:10px;color:#7a8699;font-weight:600;'
             f'text-transform:uppercase;letter-spacing:0.05em;">'
             f'{label}</div>'
             f'<div style="font-size:24px;font-weight:700;color:var(--sc-navy);'
             f'margin-top:4px;font-variant-numeric:tabular-nums;">{big}</div>'
-            f'<div style="font-size:11px;color:#6b7280;margin-top:4px;'
+            f'<div style="font-size:11px;color:#7a8699;margin-top:4px;'
             f'font-variant-numeric:tabular-nums;">{sub}</div>'
             f'</div>'
         )
@@ -145,12 +145,14 @@ def _breakdown_bar(breakdown: Dict[str, float]) -> str:
     """
     if not breakdown:
         return ""
+    # Editorial categorical hues — distinct but on-palette (no
+    # blue/green/purple from Tailwind). The legend below mirrors these.
     feature_palette = {
         "sector":     "var(--sc-navy)",  # navy — the heaviest weight
-        "size":       "#3b82f6",  # blue
-        "year":       "#10b981",  # green
-        "payer_mix":  "#f59e0b",  # amber
-        "buyer_type": "#8b5cf6",  # purple
+        "size":       "#1F7A75",  # teal
+        "year":       "#b8732a",  # amber
+        "payer_mix":  "#b5321e",  # red
+        "buyer_type": "#a98545",  # ochre
     }
     feature_max = {
         "sector": 35.0, "size": 20.0, "year": 20.0,
@@ -183,7 +185,7 @@ def _breakdown_bar(breakdown: Dict[str, float]) -> str:
             segments.append(
                 f'<rect x="{x_cursor + fill_w}" y="0" '
                 f'width="{slice_w - fill_w}" height="{height}" '
-                f'fill="#f3f4f6" opacity="0.6"><title>{title}</title></rect>'
+                f'fill="#E8E0D0" opacity="0.6"><title>{title}</title></rect>'
             )
         x_cursor += slice_w
     return (
@@ -201,7 +203,7 @@ def _comparable_row(c: Dict[str, Any]) -> List[str]:
     bg, fg = (
         ("#d1fae5", "#065f46") if score >= 70 else
         ("#fef3c7", "#92400e") if score >= 50 else
-        ("#f3f4f6", "#6b7280")
+        ("#E8E0D0", "#7a8699")
     )
     breakdown = c.get("score_breakdown") or {}
     bar = _breakdown_bar(breakdown)
@@ -214,15 +216,15 @@ def _comparable_row(c: Dict[str, Any]) -> List[str]:
         f'</div>'
     )
     name = (
-        f'<div><span style="font-weight:500;color:#1f2937;">'
+        f'<div><span style="font-weight:500;color:#1a2332;">'
         f'{_html.escape(c.get("deal_name") or "")}</span>'
-        f'<div style="font-family:monospace;font-size:10px;color:#6b7280;'
+        f'<div style="font-family:monospace;font-size:10px;color:#7a8699;'
         f'text-transform:uppercase;margin-top:2px;">'
         f'{_html.escape(c.get("deal_id") or "")}</div></div>'
     )
     reasons = c.get("match_reasons") or []
     reasons_str = (
-        '<div style="font-size:11px;color:#6b7280;">'
+        '<div style="font-size:11px;color:#7a8699;">'
         + " · ".join(_html.escape(r) for r in reasons)
         + '</div>'
     ) if reasons else ""
@@ -344,25 +346,25 @@ def render_comparable_outcomes_page(
 
     breakdown_legend = (
         '<div style="display:flex;flex-wrap:wrap;gap:14px;'
-        'font-size:11px;color:#6b7280;margin:8px 0 0;'
-        'padding:8px 12px;background:#fafbfc;border-radius:6px;">'
-        '<span style="font-weight:600;color:#374151;'
+        'font-size:11px;color:#7a8699;margin:8px 0 0;'
+        'padding:8px 12px;background:#f7f3ea;border-radius:6px;">'
+        '<span style="font-weight:600;color:#1a2332;'
         'text-transform:uppercase;letter-spacing:0.05em;">'
         'Match-score bar</span>'
         '<span><span style="display:inline-block;width:10px;'
         'height:8px;background:var(--sc-navy);margin-right:4px;'
         'vertical-align:middle;"></span>sector (35)</span>'
         '<span><span style="display:inline-block;width:10px;'
-        'height:8px;background:#3b82f6;margin-right:4px;'
+        'height:8px;background:#1F7A75;margin-right:4px;'
         'vertical-align:middle;"></span>size (20)</span>'
         '<span><span style="display:inline-block;width:10px;'
-        'height:8px;background:#10b981;margin-right:4px;'
+        'height:8px;background:#b8732a;margin-right:4px;'
         'vertical-align:middle;"></span>year (20)</span>'
         '<span><span style="display:inline-block;width:10px;'
-        'height:8px;background:#f59e0b;margin-right:4px;'
+        'height:8px;background:#b5321e;margin-right:4px;'
         'vertical-align:middle;"></span>payer mix (15)</span>'
         '<span><span style="display:inline-block;width:10px;'
-        'height:8px;background:#8b5cf6;margin-right:4px;'
+        'height:8px;background:#a98545;margin-right:4px;'
         'vertical-align:middle;"></span>sponsor (10)</span>'
         '</div>'
     )
@@ -378,14 +380,14 @@ def render_comparable_outcomes_page(
     })
     btn_style = (
         "display:inline-flex;align-items:center;gap:6px;"
-        "padding:8px 14px;border:1px solid #d1d5db;border-radius:6px;"
+        "padding:8px 14px;border:1px solid #d6cfc0;border-radius:6px;"
         "background:#fff;color:var(--sc-navy);font-size:13px;font-weight:600;"
         "text-decoration:none;cursor:pointer;"
     )
     export_bar = (
         '<div style="display:flex;flex-wrap:wrap;gap:10px;'
         'align-items:center;margin:12px 0;">'
-        '<span style="font-size:11px;color:#6b7280;font-weight:600;'
+        '<span style="font-size:11px;color:#7a8699;font-weight:600;'
         'text-transform:uppercase;letter-spacing:0.05em;'
         'margin-right:4px;">One-click export</span>'
         f'<a href="/api/diligence/comparable-outcomes.csv?{export_qs}" '
