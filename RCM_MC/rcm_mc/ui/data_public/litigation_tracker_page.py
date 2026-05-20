@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
 
 
 def _stage_color(s: str) -> str:
@@ -15,6 +15,22 @@ def _stage_color(s: str) -> str:
         "settlement discussion": P["positive"],
         "consent order discussion": P["positive"],
     }.get(s, P["text_dim"])
+
+
+def _matters_chart(items) -> str:
+    """Lead chart — open matters ranked by estimated exposure (tone by size)."""
+    def _tone(m):
+        if m.est_exposure_m >= 5: return "negative"
+        if m.est_exposure_m >= 2: return "warning"
+        return "navy"
+    top = sorted(items, key=lambda m: m.est_exposure_m, reverse=True)[:14]
+    total = sum(m.est_exposure_m for m in top) or 1.0
+    rows = [ck_bar_row(f"{m.matter_id} · {m.matter_type}", f"${m.est_exposure_m:.1f}M",
+            m.est_exposure_m / total * 100.0, tone=_tone(m)) for m in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of top-14 net exposure '
+            '· value = est. exposure ($M) · tone = exposure size</div></div>')
 
 
 def _matters_table(items) -> str:
@@ -199,6 +215,13 @@ def render_litigation_tracker(params: dict = None) -> str:
     high_exposure = sum(1 for m in r.matters if m.est_exposure_m >= 5)
     ca_total = sum(c.alleged_damages_m for c in r.class_actions)
     reg_total = sum(r2.estimated_fine_m for r2 in r.regulatory)
+    m_chart = _matters_chart(r.matters)
+    value_anchor = ck_value_anchor(
+        "Litigation Net Exposure",
+        f"${r.total_exposure_m:.1f}M estimated net exposure",
+        delta=f"${r.total_alleged_m:.1f}M alleged · ${r.insurance_coverage_m:.1f}M insurance · {r.total_matters} open matters · {high_exposure} at $5M+",
+        tone="negative",
+    )
 
     page_title = ck_page_title(
         "Litigation Watchlist Tracker",
@@ -210,7 +233,8 @@ def render_litigation_tracker(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Open Litigation Matters</div>{m_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">Open Litigation Matters</div>{m_chart}{m_tbl}</div>
   <div style="{cell}"><div style="{h3}">Regulatory / Agency Actions</div>{rg_tbl}</div>
   <div style="{cell}"><div style="{h3}">Class Actions</div>{ca_tbl}</div>
   <div style="{cell}"><div style="{h3}">Matter Type Rollup</div>{t_tbl}</div>

@@ -2,7 +2,25 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+
+
+def _workstreams_chart(items) -> str:
+    """Lead chart — integration workstreams ranked by budget (tone by status)."""
+    def _tone(w):
+        s = (w.status or "").lower()
+        if s in ("on track", "ahead"): return "positive"
+        if s == "at risk": return "warning"
+        if s == "lagging": return "negative"
+        return "teal"
+    top = sorted(items, key=lambda w: w.budget_mm, reverse=True)
+    total = sum(w.budget_mm for w in top) or 1.0
+    rows = [ck_bar_row(f"{w.workstream} · {w.owner}", f"${w.budget_mm:,.2f}M",
+            w.budget_mm / total * 100.0, tone=_tone(w)) for w in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of integration budget '
+            '· value = budget ($M) · tone = workstream status</div></div>')
 
 
 def _workstreams_table(items) -> str:
@@ -158,6 +176,7 @@ def render_pmi_playbook(params: dict = None) -> str:
     )
 
     w_tbl = _workstreams_table(r.workstreams)
+    w_chart = _workstreams_chart(r.workstreams)
     s_tbl = _synergy_table(r.synergies)
     m_tbl = _milestones_table(r.milestones)
     rsk_tbl = _risks_table(r.risks)
@@ -181,7 +200,7 @@ def render_pmi_playbook(params: dict = None) -> str:
     <div style="color:{prog_c};font-weight:700;font-size:14px">Day {r.days_since_close} · {r.overall_progress_pct * 100:.1f}% complete · ${r.run_rate_synergies_mm:,.1f}M run-rate synergies ({synergy_pct * 100:.0f}% of target)</div>
     <div style="color:{text_dim};font-size:11px;margin-top:4px">Integration spend ${r.integration_spend_mm:,.1f}M / ${r.integration_budget_mm:,.1f}M budget ({budget_util * 100:.0f}% util)</div>
   </div>
-  <div style="{cell}"><div style="{h3}">Workstream Progress &amp; Budget</div>{w_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Workstream Progress &amp; Budget</div>{w_chart}{w_tbl}</div>
   <div style="{cell}"><div style="{h3}">Synergy Capture vs Plan</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Day 1 / Day 100 / Year-End Milestone Tracking</div>{m_tbl}</div>
   <div style="{cell}"><div style="{h3}">Integration Risk Register</div>{rsk_tbl}</div>

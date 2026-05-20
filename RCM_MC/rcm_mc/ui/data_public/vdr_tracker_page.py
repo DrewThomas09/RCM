@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
 
 
 def _status_color(status: str) -> str:
@@ -34,6 +34,22 @@ def _mat_color(m: str) -> str:
         "medium": P["accent"],
         "low": P["text_dim"],
     }.get(m, P["text_dim"])
+
+
+def _workstreams_chart(items) -> str:
+    """Lead chart — VDR workstreams ranked by completeness (tone by band/overdue)."""
+    def _tone(w):
+        if w.overdue > 0: return "negative"
+        if w.completeness_pct >= 0.95: return "positive"
+        if w.completeness_pct >= 0.80: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda w: w.completeness_pct, reverse=True)
+    rows = [ck_bar_row(f"{w.workstream} ({w.complete}/{w.total_requests})",
+            f"{w.completeness_pct * 100:.1f}%", w.completeness_pct * 100.0, tone=_tone(w)) for w in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = workstream completeness % '
+            '· tone = status (red = overdue items)</div></div>')
 
 
 def _requests_table(items) -> str:
@@ -214,6 +230,7 @@ def render_vdr_tracker(params: dict = None) -> str:
 
     req_tbl = _requests_table(r.requests)
     ws_tbl = _workstreams_table(r.workstreams)
+    ws_chart = _workstreams_chart(r.workstreams)
     qa_tbl = _qa_table(r.qa_log)
     doc_tbl = _documents_table(r.documents)
     cp_tbl = _critical_path_table(r.critical_path)
@@ -236,7 +253,7 @@ def render_vdr_tracker(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Workstream Completion Summary</div>{ws_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Workstream Completion Summary</div>{ws_chart}{ws_tbl}</div>
   <div style="{cell}"><div style="{h3}">Critical-Path Items to Close</div>{cp_tbl}</div>
   <div style="{cell}"><div style="{h3}">Materiality Findings / SPA Exposure</div>{mat_tbl}</div>
   <div style="{cell}"><div style="{h3}">Document Room — Section Coverage ({total_docs_up:,} / {total_docs_exp:,} · {doc_complete_pct:.1f}%)</div>{doc_tbl}</div>
