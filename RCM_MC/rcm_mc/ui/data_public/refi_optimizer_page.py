@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _portfolio_chart(items) -> str:
@@ -228,10 +228,19 @@ def render_refi_optimizer(params: dict = None) -> str:
         meta=f"""Portfolio-wide refi opportunities · market window tracker · lender quote matrix · maturity wall · covenant stress — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    value_anchor = ck_value_anchor(
+        "Refinancing Opportunity",
+        f"{r.refi_opportunities_identified} refi candidates",
+        delta=f"${r.total_portfolio_debt_mm:,.0f}M debt · {r.weighted_rate_pct:.2f}% wtd rate",
+        opportunity=f"${r.total_refi_npv_mm:,.1f}M net NPV savings",
+        target=f"${r.near_term_maturities_mm:,.0f}M near-term maturities",
+        tone="positive",
+    )
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {pos};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Portfolio Refi Opportunity</div>
     <div style="color:{pos};font-weight:700;font-size:14px">${r.total_refi_npv_mm:,.1f}M Net NPV · {urgent_count} urgent refi candidates · ${r.near_term_maturities_mm:,.0f}M maturing in next 4 years</div>

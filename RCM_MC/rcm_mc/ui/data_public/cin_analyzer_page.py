@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _quality_chart(items) -> str:
@@ -267,10 +267,20 @@ def render_cin_analyzer(params: dict = None) -> str:
         "network adequacy, distribution cohorts, and regulatory compliance exposure."
         "</p>"
     )
+    _quality_at_stake = sum(abs(q.financial_impact_mm) for q in r.quality_measures)
+    value_anchor = ck_value_anchor(
+        "Expected Shared-Savings Distribution",
+        f"${r.total_expected_distribution_mm:,.1f}M",
+        delta=f"{r.total_attributed_lives:,} attributed lives · quality {r.weighted_quality_score * 100:.0f}%",
+        opportunity=f"${_quality_at_stake:,.1f}M tied to quality-measure gaps",
+        target=f"${r.total_annual_contribution_mm:,.1f}M annual provider contribution",
+        tone="positive",
+    )
     body = page_title + cin_explainer + f"""
 <div class="ck-page-wrap">
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Provider Member Roster — Specialty, Lives, Quality, Engagement</div>{pv_tbl}</div>
   <div style="{cell}"><div style="{h3}">Payer Contract Portfolio — Shared Savings &amp; Risk</div>{ct_tbl}</div>
   <div style="{cell}"><div style="{h3}">Quality Measure Performance vs HEDIS/STARS Benchmark</div>{qm_chart}{qm_tbl}</div>
