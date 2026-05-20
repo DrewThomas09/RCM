@@ -42,6 +42,110 @@ from ..finance.buyability import (
 )
 
 
+_REG_CHART_CAPTION_CSS = (
+    ".rg-figcap{font-size:11px;color:#6b6456;margin:8px 0 4px;"
+    "font-family:'JetBrains Mono',ui-monospace,monospace;"
+    "letter-spacing:0.02em;}"
+)
+
+
+def _coefficient_forest_chart(
+    coefficients: List[Dict[str, Any]], width: int = 720, row_h: int = 26
+) -> str:
+    """Diverging coefficient plot with 95% CI whiskers.
+
+    Each feature's standardized coefficient (scaled to the strongest
+    effect, matching the table's "Strength" column) is a bar diverging
+    from a zero baseline — green right, red left — with a thin whisker
+    spanning the 95% CI. Non-significant features fade so the eye lands
+    on the load-bearing drivers first. Reads the same coefficients the
+    retained table shows; empty input returns "".
+    """
+    rows = [c for c in (coefficients or []) if c.get("feature")]
+    if not rows:
+        return ""
+    max_abs = max((abs(c.get("coefficient", 0)) for c in rows), default=0)
+    if max_abs <= 0:
+        max_abs = 1.0
+    rows = sorted(rows, key=lambda c: -abs(c.get("coefficient", 0)))[:14]
+
+    pad_l, pad_r, pad_t = 180, 52, 14
+    half = (width - pad_l - pad_r) / 2.0
+    mid_x = pad_l + half
+    height = pad_t + row_h * len(rows) + 22
+
+    pos = PALETTE["positive"]
+    neg = PALETTE["negative"]
+    rule = PALETTE.get("border", "#BFB6A2")
+    txt = PALETTE.get("text_secondary", "#4a5568")
+    mut = PALETTE.get("text_muted", "#8a8270")
+
+    def _x(rel: float) -> float:
+        return mid_x + max(-1.0, min(1.0, rel)) * half
+
+    parts: List[str] = [
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" role="img" '
+        f'aria-label="Standardized regression coefficients with 95% CI" '
+        f'style="width:100%;max-width:{width}px;height:auto;'
+        f'print-color-adjust:exact;-webkit-print-color-adjust:exact;">'
+    ]
+    parts.append(
+        f'<line x1="{mid_x:.1f}" y1="{pad_t - 4}" x2="{mid_x:.1f}" '
+        f'y2="{height - 18}" stroke="{rule}" stroke-width="1"/>'
+    )
+    for i, c in enumerate(rows):
+        name = _html.escape(
+            str(c.get("feature", "")).replace("_", " ").title()[:28])
+        coef = c.get("coefficient", 0)
+        rel = coef / max_abs
+        sig = bool(c.get("significance"))
+        color = pos if coef > 0 else neg
+        op = 0.88 if sig else 0.4
+        y = pad_t + i * row_h
+        cy = y + row_h / 2
+        x_coef = _x(rel)
+        x_lo = _x(c.get("ci_low", coef) / max_abs)
+        x_hi = _x(c.get("ci_high", coef) / max_abs)
+        parts.append(
+            f'<text x="{pad_l - 10}" y="{cy + 3:.1f}" text-anchor="end" '
+            f'font-size="11" font-family="Inter Tight,system-ui,sans-serif" '
+            f'fill="{txt}">{name}</text>'
+        )
+        # Bar from zero to coefficient.
+        bx = min(mid_x, x_coef)
+        bw = abs(x_coef - mid_x)
+        parts.append(
+            f'<rect x="{bx:.1f}" y="{y + 5:.1f}" width="{max(bw, 0.5):.1f}" '
+            f'height="{row_h - 12}" rx="2" fill="{color}" opacity="{op:.2f}"/>'
+        )
+        # 95% CI whisker.
+        parts.append(
+            f'<line x1="{x_lo:.1f}" y1="{cy:.1f}" x2="{x_hi:.1f}" '
+            f'y2="{cy:.1f}" stroke="{txt}" stroke-width="1" opacity="0.6"/>'
+            f'<line x1="{x_lo:.1f}" y1="{cy - 3:.1f}" x2="{x_lo:.1f}" '
+            f'y2="{cy + 3:.1f}" stroke="{txt}" stroke-width="1" opacity="0.6"/>'
+            f'<line x1="{x_hi:.1f}" y1="{cy - 3:.1f}" x2="{x_hi:.1f}" '
+            f'y2="{cy + 3:.1f}" stroke="{txt}" stroke-width="1" opacity="0.6"/>'
+        )
+        lbl_x = (x_coef + 6) if coef >= 0 else (x_coef - 6)
+        anchor = "start" if coef >= 0 else "end"
+        parts.append(
+            f'<text x="{lbl_x:.1f}" y="{cy + 3:.1f}" text-anchor="{anchor}" '
+            f'font-size="10" font-family="JetBrains Mono,ui-monospace,monospace" '
+            f'fill="{color if sig else mut}">{"+" if rel > 0 else ""}{rel:.2f}</text>'
+        )
+    parts.append(
+        f'<text x="{mid_x:.1f}" y="{height - 4}" text-anchor="middle" '
+        f'font-size="9.5" letter-spacing="0.06em" '
+        f'font-family="JetBrains Mono,ui-monospace,monospace" '
+        f'fill="{mut}">&#9664; NEGATIVE&#160;&#160;|&#160;&#160;POSITIVE &#9654; '
+        f'&#183; faded = not significant</text>'
+    )
+    parts.append("</svg>")
+    return "".join(parts)
+
+
 _AVAILABLE_METRICS = [
     ("denial_rate", "Denial Rate"),
     ("days_in_ar", "Days in AR"),
@@ -784,12 +888,20 @@ def render_regression_page(
             f'</tr>'
         )
 
+    _coef_chart = _coefficient_forest_chart(result["coefficients"])
+    _coef_fig = (
+        f'<style>{_REG_CHART_CAPTION_CSS}</style>'
+        f'<div class="rg-figcap">Standardized coefficients with 95% CI '
+        f'&middot; bar = effect, whisker = confidence interval</div>'
+        f'{_coef_chart}'
+    ) if _coef_chart else ""
     coef_section = ck_panel(
         '<p class="ck-section-body">'
         f'Target: <strong>{_html.escape(target.replace("_", " ").title())}</strong>. '
         'Standardized coefficients (-1.0 to +1.0): a one-SD increase in the feature produces '
         'this fraction of the strongest effect. '
         '*** p&lt;0.001, ** p&lt;0.01, * p&lt;0.05.</p>'
+        f'{_coef_fig}'
         '<table class="cad-table"><thead><tr>'
         '<th>Variable</th><th>Strength</th><th>t</th><th>p-value</th>'
         '<th>Sig</th><th>95% CI</th><th>Impact</th>'
