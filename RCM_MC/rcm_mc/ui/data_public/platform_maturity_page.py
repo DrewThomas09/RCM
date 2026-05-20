@@ -47,6 +47,23 @@ def _dimensions_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _paths_chart(items) -> str:
+    """Summary chart — exit paths by expected EV (tone by readiness)."""
+    def _tone(p):
+        if p.readiness_score >= 75: return "positive"
+        if p.readiness_score >= 55: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda p: p.expected_ev_mm, reverse=True)
+    mx = max((p.expected_ev_mm for p in top), default=0.0) or 1.0
+    rows = [ck_bar_row(f"{p.path} ({p.timing_months}mo)",
+            f"${p.expected_ev_mm:,.0f}M · {p.expected_multiple:.1f}x · readiness {p.readiness_score:.0f}",
+            p.expected_ev_mm / mx * 100.0, tone=_tone(p)) for p in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = expected EV vs best path '
+            '· value = EV ($M) + multiple + readiness · tone = exit readiness</div></div>')
+
+
 def _paths_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
@@ -166,6 +183,7 @@ def render_platform_maturity(params: dict = None) -> str:
         tone="positive",
     )
     p_tbl = _paths_table(r.exit_paths)
+    p_chart = _paths_chart(r.exit_paths)
     r_tbl = _remediations_table(r.remediations)
     f_tbl = _financial_table(r.financial)
     c_tbl = _comps_table(r.comps)
@@ -191,7 +209,7 @@ def render_platform_maturity(params: dict = None) -> str:
     <div style="color:{text_dim};font-size:11px;margin-top:4px">Expected EV ${r.expected_exit_ev_mm:,.0f}M · Overall maturity {r.overall_maturity_score}/100 · Remediation cost ${total_remediation_cost:,.1f}M</div>
   </div>
   <div style="{cell}"><div style="{h3}">Maturity Dimensions — Current vs Thresholds</div>{d_chart}{d_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Exit Path Comparison</div>{p_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Exit Path Comparison</div>{p_chart}{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Remediation Roadmap</div>{r_tbl}</div>
   <div style="{cell}"><div style="{h3}">Financial Profile vs IPO/Strategic Benchmarks</div>{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">Corpus Exit Comparables</div>{c_tbl}</div>
