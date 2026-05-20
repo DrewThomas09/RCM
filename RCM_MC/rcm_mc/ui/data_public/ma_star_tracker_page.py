@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _star_color(s: float) -> str:
@@ -246,10 +246,18 @@ def render_ma_star_tracker(params: dict = None) -> str:
         meta=f"{r.total_plans} MA plans tracking {r.total_enrollment_m:.1f}M lives · {r.avg_star_rating:.2f}★ weighted avg · {r.pct_4star_plus * 100:.1f}% in 4+★ plans · {stars_up} improved / {stars_down} declined in 2026 cycle · ${r.total_portfolio_ma_revenue_m:,.0f}M portfolio MA revenue · ${r.total_radv_exposure_m:,.0f}M industry RADV exposure",
     )
 
+    value_anchor = ck_value_anchor(
+        "MA Star Ratings",
+        f"{r.avg_star_rating:.1f}★ avg",
+        delta=f"{r.pct_4star_plus * 100:.0f}% of plans ≥4.0 (bonus) · {r.total_enrollment_m:.1f}M lives",
+        opportunity=f"${r.total_radv_exposure_m:,.0f}M RADV exposure",
+        tone="teal",
+    )
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">MA Plan Economics — Star Ratings, Rebates, MLR</div>{p_chart}{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Portfolio Exposure — MA Partnership Revenue</div>{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Stars Measures — Portfolio vs Industry</div>{s_tbl}</div>

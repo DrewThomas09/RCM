@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _concentration_chart(items) -> str:
@@ -245,10 +245,18 @@ def render_payer_contracts(params: dict = None) -> str:
         meta=f"""{r.total_contracts} contracts · ${r.total_annual_revenue_m:,.1f}M annual revenue · weighted {r.weighted_avg_escalator_pct * 100:.2f}% escalator · {r.contracts_expiring_12mo} expiring ≤12 months · ${r.revenue_at_renegotiation_m:.1f}M at renegotiation — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    value_anchor = ck_value_anchor(
+        "Payer Contracts",
+        f"${r.total_annual_revenue_m:,.0f}M annual revenue",
+        delta=f"{r.total_contracts} contracts · {r.contracts_expiring_12mo} expiring <12mo",
+        opportunity=f"${r.revenue_at_renegotiation_m:,.1f}M revenue at renegotiation",
+        tone="teal",
+    )
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Active Negotiations Pipeline</div>{n_tbl}</div>
   <div style="{cell}"><div style="{h3}">Payer Contract Book</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Historical Rate Change by Payer</div>{h_tbl}</div>

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _portfolios_chart(items) -> str:
@@ -238,10 +238,18 @@ def render_risk_adjustment(params: dict = None) -> str:
         meta=f"""{r.total_ma_lives_k:,.1f}K MA lives · weighted RAF {r.weighted_avg_raf:.3f} · ${r.total_ma_revenue_m:,.1f}M MA revenue · ${r.total_raf_gap_opportunity_m:.1f}M gap opportunity · ${r.radv_total_exposure_m:.1f}M max RADV exposure — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    value_anchor = ck_value_anchor(
+        "Risk Adjustment",
+        f"{r.weighted_avg_raf:.3f} wtd RAF",
+        delta=f"{r.total_ma_lives_k:,.0f}K MA lives · ${r.total_ma_revenue_m:,.0f}M revenue",
+        opportunity=f"${r.total_raf_gap_opportunity_m:,.1f}M RAF-gap opportunity",
+        tone="positive",
+    )
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Portfolio RAF Roll-up</div>{p_chart}{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">HCC Gap Analysis — Top Opportunities</div>{h_tbl}</div>
   <div style="{cell}"><div style="{h3}">V28 Model Impact Analysis</div>{v_tbl}</div>
