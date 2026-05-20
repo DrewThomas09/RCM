@@ -135,6 +135,15 @@ _LOGIN_EXTRA_CSS = """
 .teaser-row .v.teal  { color: var(--teal-deep); }
 .teaser-row .v.amber { color: var(--amber); }
 .teaser-row .v.green { color: var(--green); }
+/* Slim progress bars visualising the proportional session metrics —
+ * breaks up the otherwise text-only console without adding new data. */
+.teaser-bar {
+  height: 4px; background: var(--border); margin: -2px 0 2px;
+  border-radius: 2px; overflow: hidden;
+}
+.teaser-bar .fill { display: block; height: 100%; border-radius: 2px; }
+.teaser-bar .fill.teal  { background: var(--teal); }
+.teaser-bar .fill.amber { background: var(--amber); }
 
 .meta-stack {
   display: grid; gap: .55rem; padding-top: 2rem;
@@ -396,8 +405,12 @@ def render_login_page(
         '<span class="v teal">7</span></div>'
         '<div class="teaser-row"><span class="lbl">Client priorities flagged</span>'
         '<span class="v amber">2 of 6</span></div>'
+        '<div class="teaser-bar" aria-hidden="true">'
+        '<span class="fill amber" style="width:33%"></span></div>'
         '<div class="teaser-row"><span class="lbl">Source-backed claims</span>'
         '<span class="v">38 cited · 12 pending</span></div>'
+        '<div class="teaser-bar" aria-hidden="true">'
+        '<span class="fill teal" style="width:76%"></span></div>'
         '<div class="teaser-row"><span class="lbl">Last accessed</span>'
         '<span class="v">2026-04-15</span></div>'
         '</div>'
