@@ -31,9 +31,9 @@ def _implied_leverage(ev_ebitda: float) -> Optional[float]:
 
 LEVERAGE_BUCKETS = [
     ("Low",       0.00, 0.45, "#0a8a5f"),
-    ("Mid",       0.45, 0.60, "#3b82f6"),
-    ("High",      0.60, 0.70, "#f59e0b"),
-    ("Very High", 0.70, 1.01, "#ef4444"),
+    ("Mid",       0.45, 0.60, "#1F7A75"),
+    ("High",      0.60, 0.70, "#b8732a"),
+    ("Very High", 0.70, 1.01, "#b5321e"),
 ]
 
 

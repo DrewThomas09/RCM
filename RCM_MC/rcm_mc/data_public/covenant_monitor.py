@@ -140,9 +140,9 @@ def _implied_leverage(d: dict) -> float:
 
 def _status(headroom: float, headroom_pct: float) -> Tuple[str, str]:
     if headroom < 0:
-        return "Breach", "#ef4444"
+        return "Breach", "#b5321e"
     if headroom_pct < 0.15:
-        return "Watch", "#f59e0b"
+        return "Watch", "#b8732a"
     return "Compliant", "#0a8a5f"
 
 
@@ -250,9 +250,9 @@ def compute_covenant_monitor(
     # Overall status
     statuses = [c.status for c in covenants]
     if "Breach" in statuses:
-        overall_status, overall_color = "Breach", "#ef4444"
+        overall_status, overall_color = "Breach", "#b5321e"
     elif "Watch" in statuses:
-        overall_status, overall_color = "Watch", "#f59e0b"
+        overall_status, overall_color = "Watch", "#b8732a"
     else:
         overall_status, overall_color = "Compliant", "#0a8a5f"
 

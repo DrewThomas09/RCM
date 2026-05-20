@@ -62,7 +62,7 @@ SCENARIOS: List[Dict[str, Any]] = [
         "moic_mult": 1.00,
         "moic_shift": 0.00,
         "ee_shift": 0.0,
-        "color": "#3b82f6",
+        "color": "#1F7A75",
     },
     {
         "id": "recession",
@@ -71,7 +71,7 @@ SCENARIOS: List[Dict[str, Any]] = [
         "moic_mult": 0.82,
         "moic_shift": -0.30,
         "ee_shift": -2.0,
-        "color": "#ef4444",
+        "color": "#b5321e",
     },
     {
         "id": "rate_shock",
@@ -89,7 +89,7 @@ SCENARIOS: List[Dict[str, Any]] = [
         "moic_mult": 0.93,
         "moic_shift": -0.10,
         "ee_shift": 0.0,
-        "color": "#f59e0b",
+        "color": "#b8732a",
     },
     {
         "id": "bull",
@@ -98,7 +98,7 @@ SCENARIOS: List[Dict[str, Any]] = [
         "moic_mult": 1.12,
         "moic_shift": +0.25,
         "ee_shift": +1.5,
-        "color": "#10b981",
+        "color": "#0a8a5f",
     },
 ]
 

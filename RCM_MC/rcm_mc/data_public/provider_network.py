@@ -144,20 +144,20 @@ def _concentration_level(hhi: float) -> Tuple[str, str]:
     if hhi < 1500:
         return "Low", "#0a8a5f"
     if hhi < 2500:
-        return "Medium", "#f59e0b"
+        return "Medium", "#b8732a"
     if hhi < 4000:
         return "High", "#ea580c"
-    return "Critical", "#ef4444"
+    return "Critical", "#b5321e"
 
 
 def _regime_color(regime: str) -> str:
     return {
-        "captive": "#ef4444",
+        "captive": "#b5321e",
         "concentrated": "#ea580c",
         "diversified": "#0a8a5f",
-        "community": "#3b82f6",
-        "self_pay_heavy": "#a855f7",
-    }.get(regime, "#94a3b8")
+        "community": "#1F7A75",
+        "self_pay_heavy": "#a98545",
+    }.get(regime, "#7a8699")
 
 
 def _build_segments(payer_mix: Dict[str, float], sector: str) -> List[NetworkSegment]:

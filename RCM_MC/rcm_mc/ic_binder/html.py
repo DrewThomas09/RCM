@@ -116,9 +116,9 @@ def _md_to_html(md: str) -> str:
 
 _CSS = """
 :root {
-  --c-text: #111827; --c-muted: #6b7280; --c-bg: #fafbfc;
-  --c-card: #ffffff; --c-border: #e5e7eb; --c-accent: var(--sc-navy);
-  --c-table-head: #f3f4f6;
+  --c-text: #1a2332; --c-muted: #7a8699; --c-bg: #f7f3ea;
+  --c-card: #ffffff; --c-border: #d6cfc0; --c-accent: var(--sc-navy);
+  --c-table-head: #ece5d6;
 }
 * { box-sizing: border-box; }
 body {
