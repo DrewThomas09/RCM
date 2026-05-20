@@ -2,8 +2,25 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title, ck_bar_row
 from rcm_mc.ui.chartis._helpers import render_page_explainer
+
+
+def _pipeline_chart(items):
+    """Summary chart — pipeline deals by estimated EV (tone by probability)."""
+    def _tone(p):
+        if p.probability_pct >= 0.60: return "positive"
+        if p.probability_pct >= 0.35: return "teal"
+        return "navy"
+    top = sorted(items, key=lambda p: p.est_ev_mm, reverse=True)
+    total = sum(p.est_ev_mm for p in top) or 1.0
+    rows = [ck_bar_row(f"{p.deal_name} · {p.sector}",
+            f"${p.est_ev_mm:,.0f}M · {p.probability_pct * 100:.0f}% · {p.stage}",
+            p.est_ev_mm / total * 100.0, tone=_tone(p)) for p in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of pipeline EV '
+            '· value = est EV ($M) + probability + stage · tone = close probability</div></div>')
 
 
 def _pipeline_table(items) -> str:
@@ -176,6 +193,7 @@ def render_deal_origination(params: dict = None) -> str:
 
     funnel_svg = _funnel_svg(r.velocity)
     pl_tbl = _pipeline_table(r.pipeline)
+    pl_chart = _pipeline_chart(r.pipeline)
     bk_tbl = _bankers_table(r.bankers)
     ws_tbl = _whitespace_table(r.whitespace)
     wl_tbl = _winloss_table(r.winloss)
@@ -198,7 +216,7 @@ def render_deal_origination(params: dict = None) -> str:
 <div class="ck-page-wrap">
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Sourcing Funnel — Latest Quarter</div>{funnel_svg}</div>
-  <div style="{cell}"><div style="{h3}">Active Pipeline — Stage, Probability, Weighted EV</div>{pl_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Active Pipeline — Stage, Probability, Weighted EV</div>{pl_chart}{pl_tbl}</div>
   <div style="{cell}"><div style="{h3}">Banker Relationship Matrix — LTM Performance</div>{bk_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sector Whitespace &amp; Expansion Targets</div>{ws_tbl}</div>
   <div style="{cell}"><div style="{h3}">Win/Loss Analysis</div>{wl_tbl}</div>

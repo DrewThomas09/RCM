@@ -2,7 +2,25 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+
+
+def _coverages_chart(items):
+    """Summary chart — insurance premium by coverage line (tone by market trend)."""
+    def _tone(c):
+        t = (c.market_trend or "").lower()
+        if "soft" in t or "decreas" in t or "down" in t: return "positive"
+        if "harden" in t or "increas" in t or "up" in t: return "warning"
+        return "teal"
+    top = sorted(items, key=lambda c: c.annual_premium_mm, reverse=True)
+    total = sum(c.annual_premium_mm for c in top) or 1.0
+    rows = [ck_bar_row(f"{c.coverage_type}",
+            f"${c.annual_premium_mm:,.2f}M · {c.market_trend}",
+            c.annual_premium_mm / total * 100.0, tone=_tone(c)) for c in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of premium spend by line '
+            '· value = premium ($M) + market trend · tone = rate trend (green = softening)</div></div>')
 
 
 def _coverage_svg(coverages) -> str:
@@ -178,6 +196,7 @@ def render_insurance(params: dict = None) -> str:
 
     cov_svg = _coverage_svg(r.coverages)
     cov_tbl = _coverages_table(r.coverages)
+    cov_chart = _coverages_chart(r.coverages)
     spec_tbl = _specialty_table(r.specialty_premiums)
     claim_tbl = _claims_table(r.open_claims)
     tail_tbl = _tail_table(r.tail_coverage)
@@ -206,7 +225,7 @@ def render_insurance(params: dict = None) -> str:
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Premium by Coverage Type</div>{cov_svg}</div>
-  <div style="{cell}"><div style="{h3}">Coverage Portfolio Detail</div>{cov_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Coverage Portfolio Detail</div>{cov_chart}{cov_tbl}</div>
   <div style="{cell}"><div style="{h3}">Malpractice Premium by Specialty</div>{spec_tbl}</div>
   <div style="{cell}"><div style="{h3}">Open Claim Reserves</div>{claim_tbl}</div>
   <div style="{cell}"><div style="{h3}">Tail Coverage Options (Transaction)</div>{tail_tbl}</div>
