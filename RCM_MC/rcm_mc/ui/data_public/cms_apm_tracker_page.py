@@ -2,7 +2,25 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
+
+
+def _programs_chart(items) -> str:
+    """Lead chart — APM programs ranked by total payments (tone by status)."""
+    def _tone(st):
+        s=(st or "").lower()
+        if "sunset" in s or "expir" in s: return "warning"
+        if "permanent" in s or "active" in s: return "positive"
+        return "teal"
+    total = sum(p.total_payments_b for p in items) or 1.0
+    rows=[ck_bar_row(p.program, f"${p.total_payments_b:,.1f}B",
+          p.total_payments_b/total*100.0, tone=_tone(p.status))
+          for p in sorted(items, key=lambda p: p.total_payments_b, reverse=True)]
+    return ('<div style="margin-bottom:14px">'+"".join(rows)+
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of total APM payments '
+            '\u00b7 value = payments ($B) \u00b7 tone = program status</div></div>')
+
 
 
 def _status_color(s: str) -> str:
@@ -186,7 +204,14 @@ def render_cms_apm_tracker(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    p_chart = _programs_chart(r.programs)
     p_tbl = _programs_table(r.programs)
+    value_anchor = ck_value_anchor(
+        "CMS APM Exposure",
+        f"${r.total_apm_payments_b:,.0f}B APM payments",
+        delta=f"{r.total_programs} programs \u00b7 {r.avg_savings_rate_pct:.1f}% avg savings \u00b7 {r.total_lives_covered_m:.1f}M lives \u00b7 {r.portfolio_share_at_risk_pct * 100:.0f}% portfolio at risk",
+        tone="teal",
+    )
     e_tbl = _exposures_table(r.exposures)
     t_tbl = _trends_table(r.trends)
     rs_tbl = _risk_table(r.risk_structures)
@@ -206,7 +231,8 @@ def render_cms_apm_tracker(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Program Catalog — CMMI & CMS APMs</div>{p_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">Program Catalog — CMMI & CMS APMs</div>{p_chart}{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Portfolio Exposure — Deals in APMs</div>{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Historical Performance — Top Programs</div>{t_tbl}</div>
   <div style="{cell}"><div style="{h3}">Risk Structure Options</div>{rs_tbl}</div>

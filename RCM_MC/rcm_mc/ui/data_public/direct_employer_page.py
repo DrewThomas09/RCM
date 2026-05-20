@@ -2,7 +2,25 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
+
+
+def _contracts_chart(items) -> str:
+    """Lead chart — employer contracts ranked by annual revenue (tone by churn risk)."""
+    def _tone(c):
+        s=(c or "").lower()
+        if "high" in s: return "negative"
+        if "med" in s: return "warning"
+        return "teal"
+    total = sum(c.annual_revenue_mm for c in items) or 1.0
+    rows=[ck_bar_row(c.employer, f"${c.annual_revenue_mm:,.1f}M",
+          c.annual_revenue_mm/total*100.0, tone=_tone(c.churn_risk))
+          for c in sorted(items, key=lambda c: c.annual_revenue_mm, reverse=True)]
+    return ('<div style="margin-bottom:14px">'+"".join(rows)+
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of total contract revenue '
+            '\u00b7 value = annual revenue ($M) \u00b7 tone = churn risk</div></div>')
+
 
 
 def _contracts_table(items) -> str:
@@ -144,7 +162,14 @@ def render_direct_employer(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    c_chart = _contracts_chart(r.contracts)
     c_tbl = _contracts_table(r.contracts)
+    value_anchor = ck_value_anchor(
+        "Direct-to-Employer",
+        f"${r.total_annual_revenue_mm:,.0f}M annual revenue",
+        delta=f"{r.total_employers} employers \u00b7 {r.total_lives:,} covered lives \u00b7 ${r.blended_pmpy:,.0f} PMPY \u00b7 {r.coe_margin_pct * 100:.0f}% COE margin",
+        tone="positive",
+    )
     coe_tbl = _coe_table(r.coes)
     os_tbl = _onsite_table(r.onsites)
     er_tbl = _erisa_table(r.erisa)
@@ -164,7 +189,8 @@ def render_direct_employer(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Employer Contract Portfolio</div>{c_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">Employer Contract Portfolio</div>{c_chart}{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Centers of Excellence (COE) — Bundled Procedures</div>{coe_tbl}</div>
   <div style="{cell}"><div style="{h3}">On-Site Clinic Operations</div>{os_tbl}</div>
   <div style="{cell}"><div style="{h3}">ERISA Structural Considerations</div>{er_tbl}</div>
