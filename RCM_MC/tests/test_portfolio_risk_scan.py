@@ -99,6 +99,15 @@ class TestCellRenderers(unittest.TestCase):
         from rcm_mc.ui.portfolio_risk_scan_page import _covenant_cell
         self.assertIn("—", _covenant_cell(None))
 
+    def test_covenant_cell_survives_nan_float(self):
+        """Regression: a NULL covenant_status arrives from pandas as a
+        NaN float (truthy), so the bare ``(status or "").upper()`` idiom
+        crashed the whole /portfolio/risk-scan page with
+        'float object has no attribute upper'. Must coerce safely."""
+        from rcm_mc.ui.portfolio_risk_scan_page import _covenant_cell
+        self.assertIn("—", _covenant_cell(float("nan")))  # no crash
+        self.assertIn("—", _covenant_cell(1.5))           # truthy float
+
     def test_alerts_threshold(self):
         from rcm_mc.ui.portfolio_risk_scan_page import _alerts_cell
         self.assertIn("#f2ded7", _alerts_cell(5))     # red when ≥3
