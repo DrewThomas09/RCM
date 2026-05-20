@@ -117,7 +117,23 @@ def _check_page(route: str, status: int, body: str) -> PageResult:
     return PageResult(route, status, not findings, findings, len(body))
 
 
-def _walk(base: str, opener, routes: List[str]) -> List[PageResult]:
+def _collect_links(body: str, sink: set) -> None:
+    """Harvest internal <a href> targets worth integrity-checking.
+
+    Skips API/static/export-file links and JS-template hrefs (those carry
+    `' +`/quotes/spaces from in-page string concatenation).
+    """
+    for m in re.finditer(r'href="(/[^"#?][^"]*)"', body):
+        h = m.group(1).split("?")[0].split("#")[0]
+        if h.startswith(("/api", "/static", "/logout", "/exports/")):
+            continue
+        if "'" in h or " " in h or "+" in h:  # JS-built href fragment
+            continue
+        sink.add(h)
+
+
+def _walk(base: str, opener, routes: List[str],
+          link_sink: Optional[set] = None) -> List[PageResult]:
     out: List[PageResult] = []
     for route in routes:
         url = base + route
@@ -131,7 +147,27 @@ def _walk(base: str, opener, routes: List[str]) -> List[PageResult]:
         except Exception as exc:  # noqa: BLE001 — report, don't crash the walk
             out.append(PageResult(route, 0, False,
                                   [f"exception: {type(exc).__name__}: {exc}"]))
+            body = ""
+        if link_sink is not None and body:
+            _collect_links(body, link_sink)
     return out
+
+
+def _check_links(base: str, opener, links: set) -> List[tuple]:
+    """GET each unique internal link; return [(status, href)] for any
+    that 404 / 500 / fail — i.e. broken nav a viewer would hit."""
+    dead: List[tuple] = []
+    for h in sorted(links):
+        try:
+            with opener.open(base + h, timeout=20) as r:
+                st = r.status
+        except urllib.error.HTTPError as e:
+            st = e.code
+        except Exception:  # noqa: BLE001
+            st = -1
+        if st in (404, 500, -1):
+            dead.append((st, h))
+    return dead
 
 
 def _seeded_routes(db_path: str) -> Tuple[List[str], List[str]]:
@@ -225,11 +261,17 @@ def main() -> int:
     time.sleep(0.1)
     base = f"http://127.0.0.1:{port}"
 
+    seen_links: set = set()
     try:
         opener = _login(base, "walker@chartis.com", "RouteWalk1")
         palette, entity = _seeded_routes(db)
         print(f"walking {len(palette)} palette + {len(entity)} entity routes\n")
-        results = _walk(base, opener, palette + entity)
+        results = _walk(base, opener, palette + entity, link_sink=seen_links)
+        # Link integrity: every internal <a href> a viewer can click must
+        # resolve (no 404/500). This caught the missing /library/<id>
+        # route + dead /admin and /diligence/ebitda-bridge nav links.
+        print(f"checking {len(seen_links)} internal links\n")
+        dead_links = _check_links(base, opener, seen_links)
     finally:
         server.shutdown()
         server.server_close()
@@ -261,16 +303,20 @@ def main() -> int:
     ebad = [r for r in empty_results if not r.ok]
     print(f"\n{'='*64}")
     print(f"  seeded: {len(results)} routes · {len(bad)} findings   "
-          f"empty-db: {len(empty_results)} routes · {len(ebad)} findings")
+          f"empty-db: {len(empty_results)} routes · {len(ebad)} findings   "
+          f"dead links: {len(dead_links)}")
     print(f"{'='*64}")
     for tag, rs in (("seeded", bad), ("empty-db", ebad)):
         for r in rs:
             print(f"\n  [{tag}][{r.status}] {r.route}  ({r.size}b)")
             for f in r.findings:
                 print(f"      → {f}")
-    if not bad and not ebad:
-        print("\n  ✓ every page rendered clean (seeded + empty db)")
-    return 1 if (bad or ebad) else 0
+    for st, h in dead_links:
+        print(f"\n  [link][{st}] {h}")
+    ok = not bad and not ebad and not dead_links
+    if ok:
+        print("\n  ✓ every page rendered clean + all internal links resolve")
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":
