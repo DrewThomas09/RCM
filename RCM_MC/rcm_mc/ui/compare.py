@@ -191,8 +191,8 @@ def render_comparison(
         '.cmp-loser{color:#8A92A0;}'
         '.cmp-delta{font-size:10px;color:#5C6878;'
         'margin-left:6px;font-family:"JetBrains Mono",monospace;}'
-        '.cmp-delta.up{color:#10b981;}'
-        '.cmp-delta.down{color:#ef4444;}'
+        '.cmp-delta.up{color:#0a8a5f;}'
+        '.cmp-delta.down{color:#b5321e;}'
         '.cmp-arrow{margin-right:4px;font-size:10px;}'
         '.cmp-table a{color:#60a5fa;'
         'text-decoration:none;}'
@@ -290,7 +290,7 @@ def render_comparison(
 
     title_html = (
         f'<h3 style="margin:0 0 10px 0;font-size:14px;'
-        f'color:#f3f4f6;font-weight:600;">'
+        f'color:#1a2332;font-weight:600;">'
         f'{_html.escape(title)}</h3>'
         if title else "")
 

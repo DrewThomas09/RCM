@@ -53,9 +53,9 @@ def export_menu(label: str, links: List[Tuple[str, str]]) -> str:
         buttons.append(_button(href, btn_label, primary=(i == 0)))
     return (
         '<div class="no-print" style="margin:16px 0;padding:12px;'
-        'background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;'
+        'background:#f7f3ea;border:1px solid #d6cfc0;border-radius:6px;'
         'font-family:system-ui,-apple-system,sans-serif;">'
-        f'<div style="font-size:11px;text-transform:uppercase;color:#6b7280;'
+        f'<div style="font-size:11px;text-transform:uppercase;color:#7a8699;'
         f'letter-spacing:0.05em;margin-bottom:8px;">{_html.escape(label)}</div>'
         + "".join(buttons) +
         '</div>'
