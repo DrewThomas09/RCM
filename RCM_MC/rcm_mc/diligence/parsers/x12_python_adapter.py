@@ -53,6 +53,15 @@ def _f(v: Optional[str]) -> Optional[float]:
 _MEMBER_ID_QUALIFIERS = {"MI", "MR", "II", "34", "HN", "MB"}
 
 
+def _npi(els: List[str]) -> Optional[str]:
+    """Pull an NPI from an NM1 element list — qualifier ``XX`` at NM108
+    introduces the NPI at NM109."""
+    for i, val in enumerate(els):
+        if val == "XX" and i + 1 < len(els) and els[i + 1]:
+            return els[i + 1]
+    return None
+
+
 def _member_id(els: List[str]) -> Optional[str]:
     """Pull the member/patient id from an NM1 element list (segment tag
     already stripped). NM108 is the ID qualifier and NM109 the ID; we
@@ -77,6 +86,7 @@ def _claims_from_837(segs: List[Any]) -> List[Dict[str, Any]]:
             rows.append(cur)
         cur = None
 
+    pending_npi: Optional[str] = None
     for seg in segs:
         tag = seg.segment_id
         e = _els(seg)
@@ -84,6 +94,10 @@ def _claims_from_837(segs: List[Any]) -> List[Dict[str, Any]]:
             qual = e[0]
             if qual == "PR" and len(e) > 2:
                 pending_payer = e[2]
+            elif qual == "85":  # billing provider
+                npi = _npi(e)
+                if npi:
+                    pending_npi = npi
             elif qual in ("IL", "QC"):
                 mid = _member_id(e)
                 if mid:
@@ -95,8 +109,9 @@ def _claims_from_837(segs: List[Any]) -> List[Dict[str, Any]]:
                 "charge_amount": _f(e[1]) if len(e) > 1 else None,
                 "payer": pending_payer,
                 "patient_id": pending_patient,
+                "billing_npi": pending_npi,
             }
-            pending_payer = pending_patient = None
+            pending_payer = pending_patient = pending_npi = None
         elif cur is not None:
             if tag == "SV1" and e:
                 parts = e[0].split(":")
@@ -120,6 +135,7 @@ def _claims_from_835(segs: List[Any]) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     cur: Optional[Dict[str, Any]] = None
     cur_payer: Optional[str] = None
+    cur_npi: Optional[str] = None
 
     def _flush():
         nonlocal cur
@@ -132,6 +148,8 @@ def _claims_from_835(segs: List[Any]) -> List[Dict[str, Any]]:
         e = _els(seg)
         if tag == "N1" and len(e) > 1 and e[0] == "PR":
             cur_payer = e[1]
+        elif tag == "N1" and len(e) > 1 and e[0] == "PE":
+            cur_npi = _npi(e)
         elif tag == "CLP":
             _flush()
             cur = {
@@ -141,6 +159,7 @@ def _claims_from_835(segs: List[Any]) -> List[Dict[str, Any]]:
                 "paid_amount": _f(e[3]) if len(e) > 3 else None,
                 "patient_responsibility": _f(e[4]) if len(e) > 4 else None,
                 "payer": cur_payer,
+                "billing_npi": cur_npi,
                 "adjustment_reason_codes": [],
                 "adjustment_amount": 0.0,
             }
