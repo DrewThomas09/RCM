@@ -229,7 +229,7 @@ _LEGACY_NAV = [
     {"label": "PE Intel",     "href": "/pe-intelligence", "key": "pe"},
     {"label": "Corpus",       "href": "/corpus-backtest", "key": "corpus"},
     {"label": "Telehealth Econ", "href": "/telehealth-econ", "key": "tele"},
-    {"label": "Admin",        "href": "/admin",        "key": "admin"},
+    {"label": "Admin",        "href": "/users",        "key": "admin"},
 ]
 
 # ---------------------------------------------------------------------------
@@ -1775,7 +1775,7 @@ _TOUR_VOLUMES: List[Dict[str, Any]] = [
         ),
         "try_it": {
             "label": "Open the EBITDA bridge",
-            "href": "/diligence/ebitda-bridge",
+            "href": "/pipeline/bridge",
         },
     },
     {
@@ -4768,7 +4768,7 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '<a href="/methodology" class="ck-user-dropdown-item">Methodology</a>'
         f'<a href="/settings/workspace" class="ck-user-dropdown-item">'
         f'Workspace: {_esc(_ws_mode_label)}</a>'
-        '<a href="/admin" class="ck-user-dropdown-item">Admin</a>'
+        '<a href="/users" class="ck-user-dropdown-item">Admin</a>'
         '<a href="/audit" class="ck-user-dropdown-item">Audit Log</a>'
         '<div class="ck-user-dropdown-divider"></div>'
         '<button type="button" class="ck-user-dropdown-item" '

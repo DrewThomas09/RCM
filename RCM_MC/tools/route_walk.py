@@ -185,6 +185,20 @@ def _seeded_routes(db_path: str) -> Tuple[List[str], List[str]]:
             ]
     except Exception:  # noqa: BLE001
         pass
+    # A few corpus-deal detail pages (/library/<source_id>) — the deals
+    # library + comparables tables link here. seed_075 carries a
+    # JSON-string payer_mix (a past 500), so keep it in coverage.
+    try:
+        from rcm_mc.ui.data_public.deals_library_page import (
+            _get_all_seed_deals,
+        )
+        sids = [str(d.get("source_id", ""))
+                for d in _get_all_seed_deals()[:3]]
+        for sid in sids + ["seed_075"]:
+            if sid:
+                entity.append(f"/library/{sid}")
+    except Exception:  # noqa: BLE001
+        pass
     return palette, entity
 
 

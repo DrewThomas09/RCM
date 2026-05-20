@@ -4085,6 +4085,14 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_html(render_portfolio_analytics(
                 store=store, current_user=self._chartis_username(),
             ))
+        if path.startswith("/library/"):
+            # /library/<source_id> — single corpus-deal detail. The
+            # library + comparables tables link here; previously 404'd.
+            sid = urllib.parse.unquote(path[len("/library/"):]).strip("/")
+            from .ui.data_public.deals_library_page import (
+                render_corpus_deal_detail,
+            )
+            return self._send_html(render_corpus_deal_detail(sid))
         if path == "/library":
             # /library surfaces the deal corpus. Methodology hub → /methodology.
             _qs = urllib.parse.parse_qs(parsed.query)
