@@ -51,6 +51,24 @@ def _waves_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _economics_chart(items) -> str:
+    """Summary chart — per-drug biosimilar revenue opportunity (tone by margin uplift)."""
+    def _tone(e):
+        uplift = e.provider_margin_biosimilar - e.provider_margin_reference
+        if uplift >= 0.10: return "positive"
+        if uplift >= 0.0: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda e: e.revenue_opportunity_mm, reverse=True)
+    total = sum(e.revenue_opportunity_mm for e in top) or 1.0
+    rows = [ck_bar_row(f"{e.reference_drug}",
+            f"${e.revenue_opportunity_mm:,.1f}M · margin {e.provider_margin_biosimilar * 100:.0f}% vs {e.provider_margin_reference * 100:.0f}%",
+            e.revenue_opportunity_mm / total * 100.0, tone=_tone(e)) for e in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of biosimilar revenue opportunity '
+            '· value = opportunity ($M) + margins · tone = margin uplift</div></div>')
+
+
 def _economics_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
@@ -173,6 +191,7 @@ def render_biosimilars(params: dict = None) -> str:
         tone="positive",
     )
     e_tbl = _economics_table(r.economics)
+    e_chart = _economics_chart(r.economics)
     s_tbl = _sites_table(r.sites)
     i_tbl = _interchangeable_table(r.interchangeable)
     d_tbl = _dynamics_table(r.dynamics)
@@ -202,7 +221,7 @@ def render_biosimilars(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">LoE Wave Schedule &amp; Adoption Curves</div>{w_chart}{w_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Per-Drug Economics — Reference vs Biosimilar</div>{e_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Per-Drug Economics — Reference vs Biosimilar</div>{e_chart}{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Site-Level Adoption &amp; Margin Capture</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">FDA Interchangeable Designation Status</div>{i_tbl}</div>
   <div style="{cell}"><div style="{h3}">Class-Level Competitive Dynamics</div>{d_tbl}</div>

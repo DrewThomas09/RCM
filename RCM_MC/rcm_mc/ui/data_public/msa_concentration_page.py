@@ -76,6 +76,24 @@ def _regimes_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _whitespace_chart(items) -> str:
+    """Summary chart — whitespace markets ranked by rollup opportunity score."""
+    def _tone(w):
+        p = (w.rollup_priority or "").lower()
+        if "high" in p: return "positive"
+        if "medium" in p or "mod" in p: return "teal"
+        return "navy"
+    top = sorted(items, key=lambda w: w.whitespace_score, reverse=True)
+    mx = max((w.whitespace_score for w in top), default=0.0) or 1.0
+    rows = [ck_bar_row(f"{w.msa}, {w.state}",
+            f"score {w.whitespace_score:.0f} · {w.total_providers:,} providers",
+            w.whitespace_score / mx * 100.0, tone=_tone(w)) for w in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = whitespace score vs top market '
+            '· value = score + providers · tone = rollup priority</div></div>')
+
+
 def _whitespace_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]; warn = P["warning"]
@@ -177,6 +195,7 @@ def render_msa_concentration(params: dict = None) -> str:
     )
     r_tbl = _regimes_table(r.regimes)
     w_tbl = _whitespace_table(r.whitespace)
+    w_chart = _whitespace_chart(r.whitespace)
     s_tbl = _stress_table(r.stress_scenarios)
     o_tbl = _operators_table(r.top_operators)
 
@@ -196,7 +215,7 @@ def render_msa_concentration(params: dict = None) -> str:
   {value_anchor}
   <div style="{cell}"><div style="{h3}">MSA-Level Concentration Analysis</div>{m_chart}{m_tbl}</div>
   <div style="{cell}"><div style="{h3}">Market Regime Classification &amp; Expected Returns</div>{r_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Whitespace Markets — Rollup Priority</div>{w_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Whitespace Markets — Rollup Priority</div>{w_chart}{w_tbl}</div>
   <div style="{cell}"><div style="{h3}">Stress-Test Scenarios — FTC Action Likelihood</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Active Healthcare Platform Operators</div>{o_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">

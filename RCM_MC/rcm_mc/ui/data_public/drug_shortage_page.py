@@ -51,6 +51,23 @@ def _drugs_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _suppliers_chart(items) -> str:
+    """Summary chart — suppliers ranked by annual spend (tone by risk score)."""
+    def _tone(s):
+        if s.risk_score >= 70: return "negative"
+        if s.risk_score >= 45: return "warning"
+        return "teal"
+    top = sorted(items, key=lambda s: s.annual_spend_mm, reverse=True)
+    total = sum(s.annual_spend_mm for s in top) or 1.0
+    rows = [ck_bar_row(f"{s.supplier} · {s.country_of_manufacture}",
+            f"${s.annual_spend_mm:,.1f}M · risk {s.risk_score:.0f}",
+            s.annual_spend_mm / total * 100.0, tone=_tone(s)) for s in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of supplier spend '
+            '· value = spend ($M) + risk score · tone = supply risk</div></div>')
+
+
 def _suppliers_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; warn = P["warning"]
@@ -178,6 +195,7 @@ def render_drug_shortage(params: dict = None) -> str:
         tone="warning",
     )
     s_tbl = _suppliers_table(r.suppliers)
+    s_chart = _suppliers_chart(r.suppliers)
     g_tbl = _geo_table(r.geography)
     p_tbl = _playbooks_table(r.playbooks)
     gpo_tbl = _gpo_table(r.gpos)
@@ -203,7 +221,7 @@ def render_drug_shortage(params: dict = None) -> str:
     <div style="color:{text_dim};font-size:11px;margin-top:4px">Sole-source exposure ${r.sole_source_exposure_mm:,.2f}M · highest-risk drugs in oncology (5-FU, Cisplatin)</div>
   </div>
   <div style="{cell}"><div style="{h3}">Critical Drug Inventory &amp; Shortage Status</div>{d_chart}{d_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Supplier Concentration &amp; Audit History</div>{s_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Supplier Concentration &amp; Audit History</div>{s_chart}{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Geographic Exposure &amp; Tariff Risk</div>{g_tbl}</div>
   <div style="{cell}"><div style="{h3}">Shortage Scenario Playbooks</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">GPO Partner Performance</div>{gpo_tbl}</div>
