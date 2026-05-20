@@ -47,6 +47,16 @@ from rcm_mc.pe.cms_advisory_bridge import (
 
 FIXTURE_ROOT = Path(__file__).resolve().parent / "fixtures" / "kpi_truth"
 
+# pyarrow is an optional dependency (see CLAUDE.md): the Tuva Input
+# Layer bridge emits pyarrow Tables. When it isn't installed, the
+# Tuva-bridge cases must SKIP, not error — the rest of the full-stack
+# suite (CMS advisory, packet wiring) still runs without it.
+try:
+    import pyarrow  # noqa: F401
+    _HAS_PYARROW = True
+except ImportError:
+    _HAS_PYARROW = False
+
 
 # ── Shared synthetic dataset for the advisory pipeline ──────────────
 
@@ -232,6 +242,7 @@ class CMSAdvisoryBridgeTests(unittest.TestCase):
         self.assertEqual(bottom_posture[0].severity, RiskSeverity.HIGH)
 
 
+@unittest.skipUnless(_HAS_PYARROW, "pyarrow not installed (Tuva arrow bridge)")
 class TuvaBridgeTests(unittest.TestCase):
     """CCD → Tuva Input Layer schema mapping. Does NOT require dbt or
     the vendored Tuva project to be on disk — the arrow-output path
