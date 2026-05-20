@@ -2,7 +2,25 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+
+
+def _synergy_chart(items) -> str:
+    """Summary chart — synergy run-rate by category (tone by execution risk)."""
+    def _tone(s):
+        r = (s.execution_risk or "").lower()
+        if r == "low": return "positive"
+        if r == "medium": return "teal"
+        return "warning"
+    top = sorted(items, key=lambda s: s.annual_run_rate_mm, reverse=True)
+    total = sum(s.annual_run_rate_mm for s in top) or 1.0
+    rows = [ck_bar_row(f"{s.category}",
+            f"${s.annual_run_rate_mm:,.1f}M/yr · {s.execution_risk} risk",
+            s.annual_run_rate_mm / total * 100.0, tone=_tone(s)) for s in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of synergy run-rate '
+            '· value = annual ($M) + execution risk · tone = risk</div></div>')
 
 
 def _cohorts_table(items) -> str:
@@ -260,6 +278,7 @@ def render_rollup_economics(params: dict = None) -> str:
     cohorts_tbl = _cohorts_table(r.add_on_cohorts)
     arb_tbl = _arb_table(r.multiple_arb)
     syn_tbl = _synergy_table(r.synergies)
+    syn_chart = _synergy_chart(r.synergies)
     int_tbl = _integration_table(r.integration_costs)
     debt_tbl = _debt_table(r.debt_capacity)
     walk_tbl = _walk_table(r.ebitda_walk)
@@ -295,7 +314,7 @@ def render_rollup_economics(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Platform EBITDA Walk — Entry → Exit</div>{svg}</div>
   <div style="{cell}"><div style="{h3}">Multiple Arbitrage Waterfall</div>{arb_tbl}</div>
   <div style="{cell}"><div style="{h3}">Add-On Cohorts — Deployment Pacing</div>{cohorts_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Synergy Capture — Run-Rate &amp; Cost to Achieve</div>{syn_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Synergy Capture — Run-Rate &amp; Cost to Achieve</div>{syn_chart}{syn_tbl}</div>
   <div style="{cell}"><div style="{h3}">Integration Cost by Workstream</div>{int_tbl}</div>
   <div style="{cell}"><div style="{h3}">Debt Capacity Trajectory</div>{debt_tbl}</div>
   <div style="{cell}"><div style="{h3}">Year-by-Year EBITDA Walk Detail</div>{walk_tbl}</div>

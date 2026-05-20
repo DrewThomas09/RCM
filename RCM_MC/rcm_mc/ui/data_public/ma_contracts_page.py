@@ -2,7 +2,24 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+
+
+def _plans_chart(items) -> str:
+    """Summary chart — MA plans by annual margin (tone by Star rating)."""
+    def _tone(p):
+        if p.star_rating >= 4.5: return "positive"
+        if p.star_rating >= 4.0: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda p: p.annual_margin_mm, reverse=True)
+    total = sum(abs(p.annual_margin_mm) for p in top) or 1.0
+    rows = [ck_bar_row(f"{p.plan_name} · {p.plan_type}",
+            f"${p.annual_margin_mm:,.1f}M margin · {p.star_rating:.1f}★ · {p.enrollment:,}",
+            abs(p.annual_margin_mm) / total * 100.0, tone=_tone(p)) for p in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of plan margin '
+            '· value = annual margin ($M) + Stars + enrollment · tone = Star rating</div></div>')
 
 
 def _plans_table(plans) -> str:
@@ -224,6 +241,7 @@ def render_ma_contracts(params: dict = None) -> str:
     )
 
     plans_tbl = _plans_table(r.plans)
+    plans_chart = _plans_chart(r.plans)
     svg = _plan_margin_svg(r.plans)
     raf_tbl = _raf_table(r.raf)
     stars_tbl = _stars_table(r.stars)
@@ -256,7 +274,7 @@ def render_ma_contracts(params: dict = None) -> str:
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Revenue vs Margin by MA Plan</div>{svg}</div>
-  <div style="{cell}"><div style="{h3}">MA Plan Portfolio — Benchmark, Bid, Star, MLR, Margin</div>{plans_tbl}</div>
+  <div style="{cell}"><div style="{h3}">MA Plan Portfolio — Benchmark, Bid, Star, MLR, Margin</div>{plans_chart}{plans_tbl}</div>
   <div style="{cell}"><div style="{h3}">RAF Optimization — HCC Capture Opportunities</div>{raf_tbl}</div>
   <div style="{cell}"><div style="{h3}">Star Rating Roadmap — Quality Bonus Unlock</div>{stars_tbl}</div>
   <div style="{cell}"><div style="{h3}">V28 Risk Model Transition — Revenue Headwind</div>{v28_tbl}</div>
