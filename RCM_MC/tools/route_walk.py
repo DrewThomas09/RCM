@@ -138,6 +138,20 @@ def _seeded_routes(db_path: str) -> Tuple[List[str], List[str]]:
     """Return (palette_routes, entity_routes) for the seeded DB."""
     from rcm_mc.ui._chartis_kit import _DEFAULT_PALETTE_MODULES
     palette = [m["route"] for m in _DEFAULT_PALETTE_MODULES]
+    # Fold in the full module-index catalog so every analytic surface
+    # is walked, not just the ones pinned in the Cmd-K palette. Deduped
+    # against the palette; ignored if the catalog can't be computed.
+    try:
+        from rcm_mc.data_public.module_index import compute_module_index
+        _idx = compute_module_index()
+        _mods = _idx.modules if hasattr(_idx, "modules") else list(_idx)
+        _seen = set(palette)
+        for _m in _mods:
+            if _m.route and _m.route not in _seen:
+                palette.append(_m.route)
+                _seen.add(_m.route)
+    except Exception:  # noqa: BLE001 — catalog is best-effort coverage
+        pass
 
     from rcm_mc.portfolio.store import PortfolioStore
     entity: List[str] = []
