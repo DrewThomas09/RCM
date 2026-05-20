@@ -115,9 +115,16 @@ def _coefficient_forest_chart(
         # Bar from zero to coefficient.
         bx = min(mid_x, x_coef)
         bw = abs(x_coef - mid_x)
+        sig_txt = c.get("significance") or "ns"
+        tip = _html.escape(
+            f"{str(c.get('feature', '')).replace('_', ' ').title()}: "
+            f"β={coef:+.3f} (rel {rel:+.2f}) · 95% CI "
+            f"[{c.get('ci_low', coef):.3f}, {c.get('ci_high', coef):.3f}] · {sig_txt}"
+        )
         parts.append(
             f'<rect x="{bx:.1f}" y="{y + 5:.1f}" width="{max(bw, 0.5):.1f}" '
-            f'height="{row_h - 12}" rx="2" fill="{color}" opacity="{op:.2f}"/>'
+            f'height="{row_h - 12}" rx="2" fill="{color}" opacity="{op:.2f}">'
+            f'<title>{tip}</title></rect>'
         )
         # 95% CI whisker.
         parts.append(

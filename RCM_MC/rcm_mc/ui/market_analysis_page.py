@@ -68,10 +68,16 @@ def _competitor_share_chart(
             f'font-family="Inter Tight,system-ui,sans-serif" '
             f'fill="{txt}">{name}</text>'
         )
+        beds = c.get("beds", 0)
+        rev = c.get("revenue", 0)
+        tip = html.escape(
+            f"{c.get('name', '')}: {share:.1%} revenue share · "
+            f"${rev/1e6:,.0f}M NPR · {beds:,.0f} beds"
+        )
         parts.append(
             f'<rect x="{pad_l}" y="{y + 3:.1f}" width="{max(w, 0.5):.1f}" '
             f'height="{row_h - 8}" rx="2" fill="{lead}" '
-            f'opacity="{op:.2f}"/>'
+            f'opacity="{op:.2f}"><title>{tip}</title></rect>'
         )
         parts.append(
             f'<text x="{pad_l + w + 6:.1f}" y="{y + row_h / 2 + 3:.1f}" '
