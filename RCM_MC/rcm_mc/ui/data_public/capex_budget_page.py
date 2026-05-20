@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
 
 _EXPLAINER_CSS = """<style>
 .ck-cx-explainer{font-family:var(--sc-serif,'Georgia',serif);
@@ -22,6 +22,35 @@ def _status_color(s: str) -> str:
         "permitting": P["warning"],
         "site selection": P["text_dim"],
     }.get(s, P["text_dim"])
+
+
+def _projects_chart(items) -> str:
+    """Lead chart for the project table — capex projects ranked by ROI
+    so the highest-return investments surface before the detail grid.
+    Bar width = projected ROI; value = budget ($M); tone marks the
+    table's ROI tiers (>=35% green · >=25% teal · below amber). Full
+    project grid stays directly below.
+    """
+    ranked = sorted(items, key=lambda p: p.roi_pct, reverse=True)
+    rows = []
+    for p in ranked:
+        tone = ("positive" if p.roi_pct >= 0.35 else "teal"
+                if p.roi_pct >= 0.25 else "warning")
+        rows.append(ck_bar_row(
+            p.project_id,
+            f"${p.budget_m:,.1f}M",
+            p.roi_pct * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = projected ROI · value = project budget ($M) · '
+        'tone = return tier (green &ge;35% · teal &ge;25% · amber below)</div>'
+        '</div>'
+    )
 
 
 def _projects_table(items) -> str:
@@ -196,6 +225,7 @@ def render_capex_budget(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    p_chart = _projects_chart(r.projects)
     p_tbl = _projects_table(r.projects)
     c_tbl = _categories_table(r.categories)
     d_tbl = _deal_budgets_table(r.deal_budgets)
@@ -229,7 +259,7 @@ def render_capex_budget(params: dict = None) -> str:
     body = page_title + cx_explainer + f"""
 <div class="ck-page-wrap">
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Active Capex Projects</div>{p_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Active Capex Projects</div>{p_chart}{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Category Rollup</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Deal-Level Budget Mix</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Recent Capex Approvals</div>{a_tbl}</div>
