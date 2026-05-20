@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _visits_chart(items) -> str:
@@ -204,10 +204,18 @@ def render_telehealth_econ(params: dict = None) -> str:
         meta=f"""Visit-level P&amp;L · provider productivity · state parity · tech stack · PHE cliff exposure · DTC comparables — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    value_anchor = ck_value_anchor(
+        "Telehealth Economics",
+        f"${r.annual_revenue_mm:,.1f}M revenue",
+        delta=f"{r.blended_gross_margin_pct * 100:.1f}% blended GM · {r.total_visits_annual:,} annual visits",
+        opportunity=f"${total_cliff_risk:,.1f}M regulatory-cliff exposure",
+        tone="teal",
+    )
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Visit-Type Economics (P&amp;L by Visit Category)</div>{v_chart}{v_tbl}</div>
   <div style="{cell}"><div style="{h3}">Provider Productivity by Specialty</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">State-Level Payer Parity Status</div>{pa_tbl}</div>

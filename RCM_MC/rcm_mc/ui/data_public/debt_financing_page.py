@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _facilities_chart(items) -> str:
@@ -248,10 +248,17 @@ def render_debt_financing(params: dict = None) -> str:
         meta=f"{r.total_financings} active financings · ${r.total_package_m:,.1f}M total package · SOFR+{r.avg_sofr_spread}bps at {r.avg_leverage:.2f}x average leverage · {r.cov_lite_pct * 100:.1f}% cov-lite · {active_marketing} still in syndication",
     )
 
+    value_anchor = ck_value_anchor(
+        "Debt Package",
+        f"${r.total_package_m:,.0f}M",
+        delta=f"{r.avg_leverage:.2f}x leverage · SOFR+{r.avg_sofr_spread:.0f}bps · {r.cov_lite_pct * 100:.0f}% cov-lite",
+        tone="navy",
+    )
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Syndication Status — Active Book</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Facility Detail — Tranches, Pricing, Tenor</div>{f_chart}{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">Covenant Package — Leverage, Headroom, Baskets</div>{c_tbl}</div>

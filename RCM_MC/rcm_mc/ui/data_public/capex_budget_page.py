@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 _EXPLAINER_CSS = """<style>
 .ck-cx-explainer{font-family:var(--sc-serif,'Georgia',serif);
@@ -256,9 +256,16 @@ def render_capex_budget(params: dict = None) -> str:
         "and de novo construction pipeline — with deployment pacing and ROI benchmarks."
         "</p>"
     )
+    value_anchor = ck_value_anchor(
+        "Capex Program",
+        f"${r.total_annual_budget_m:,.1f}M budget",
+        delta=f"${r.total_ytd_spent_m:,.1f}M spent YTD · {r.weighted_avg_roi_pct * 100:.1f}% wtd ROI · {r.projects_at_risk} at risk",
+        tone="teal",
+    )
     body = page_title + cx_explainer + f"""
 <div class="ck-page-wrap">
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Active Capex Projects</div>{p_chart}{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Category Rollup</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Deal-Level Budget Mix</div>{d_tbl}</div>
