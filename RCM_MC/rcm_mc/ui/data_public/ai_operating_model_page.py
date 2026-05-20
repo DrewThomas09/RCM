@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
 
 _EXPLAINER_CSS = """<style>
 .ck-aim-explainer{font-family:var(--sc-serif,'Georgia',serif);
@@ -10,6 +10,24 @@ _EXPLAINER_CSS = """<style>
   margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
 .ck-aim-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
 </style>"""
+
+
+def _init_chart(items) -> str:
+    """Lead chart — AI initiatives ranked by annual savings (tone by stage/ROI)."""
+    def _tone(it):
+        st = (it.deployment_stage or "").lower()
+        if st == "production" and it.net_roi_pct >= 3.0: return "positive"
+        if st == "production": return "teal"
+        if st == "pilot": return "warning"
+        return "navy"
+    top = sorted(items, key=lambda it: it.annual_savings_mm, reverse=True)
+    total = sum(it.annual_savings_mm for it in top) or 1.0
+    rows = [ck_bar_row(f"{it.use_case} · {it.category}", f"${it.annual_savings_mm:,.2f}M",
+            it.annual_savings_mm / total * 100.0, tone=_tone(it)) for it in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of annual AI savings '
+            '· value = savings ($M) · tone = deployment stage / ROI</div></div>')
 
 
 def _init_table(items) -> str:
@@ -164,6 +182,7 @@ def render_ai_operating_model(params: dict = None) -> str:
     )
 
     i_tbl = _init_table(r.initiatives)
+    i_chart = _init_chart(r.initiatives)
     v_tbl = _vendors_table(r.vendors)
     g_tbl = _governance_table(r.governance)
     roi_tbl = _roi_table(r.roi_buckets)
@@ -193,7 +212,7 @@ def render_ai_operating_model(params: dict = None) -> str:
     <div style="color:{gov_c};font-weight:700;font-size:14px">Blended ROI {r.blended_roi_pct:.1f}x · {r.initiatives_in_prod} initiatives in production · Governance posture {_html.escape(r.governance_risk_tier.upper())}</div>
     <div style="color:{text_dim};font-size:11px;margin-top:4px">Net annual value ${r.total_annual_savings_mm + r.total_revenue_lift_mm - r.total_annual_ai_spend_mm:,.1f}M · Regulatory remediation ${total_reg_cost:,.2f}M outstanding</div>
   </div>
-  <div style="{cell}"><div style="{h3}">AI Initiative Portfolio</div>{i_tbl}</div>
+  <div style="{cell}"><div style="{h3}">AI Initiative Portfolio</div>{i_chart}{i_tbl}</div>
   <div style="{cell}"><div style="{h3}">Vendor Landscape &amp; Contract Economics</div>{v_tbl}</div>
   <div style="{cell}"><div style="{h3}">Model Governance &amp; Validation</div>{g_tbl}</div>
   <div style="{cell}"><div style="{h3}">ROI by Bucket — Strategic Value</div>{roi_tbl}</div>

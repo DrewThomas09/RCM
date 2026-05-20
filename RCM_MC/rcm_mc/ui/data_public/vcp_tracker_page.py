@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
 
 
 def _status_color(status: str) -> str:
@@ -24,6 +24,22 @@ def _plan_color(status: str) -> str:
 
 def _scorecard_color(sc: str) -> str:
     return {"beat": P["positive"], "in line": P["accent"], "miss": P["negative"]}.get(sc, P["text_dim"])
+
+
+def _levers_chart(items) -> str:
+    """Lead chart — value levers ranked by target EBITDA (tone by realization)."""
+    def _tone(l):
+        if l.realization_pct >= 0.85: return "positive"
+        if l.realization_pct >= 0.65: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda l: l.target_ebitda_m, reverse=True)[:14]
+    total = sum(l.target_ebitda_m for l in top) or 1.0
+    rows = [ck_bar_row(f"{l.deal} · {l.lever_category}", f"${l.target_ebitda_m:.1f}M",
+            l.target_ebitda_m / total * 100.0, tone=_tone(l)) for l in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of top-14 target EBITDA lift '
+            '· value = target ($M) · tone = realization %</div></div>')
 
 
 def _levers_table(items) -> str:
@@ -202,6 +218,13 @@ def render_vcp_tracker(params: dict = None) -> str:
     )
 
     l_tbl = _levers_table(r.levers)
+    l_chart = _levers_chart(r.levers)
+    value_anchor = ck_value_anchor(
+        "Value Creation Plan",
+        f"${r.total_realized_ebitda_m:.1f}M realized of ${r.total_target_ebitda_m:.1f}M target",
+        delta=f"{r.realization_pct * 100:.1f}% realized · {r.on_track_pct * 100:.1f}% levers on track · {r.total_deals} active deals",
+        tone="teal",
+    )
     p_tbl = _hundred_day_table(r.hundred_day_plans)
     k_tbl = _kpi_table(r.kpi_scorecards)
     int_tbl = _interventions_table(r.interventions)
@@ -223,10 +246,11 @@ def render_vcp_tracker(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">EBITDA Bridge — Realized by Lever Category</div>{b_tbl}</div>
   <div style="{cell}"><div style="{h3}">100-Day Plan Execution</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">KPI Scorecards — Revenue / EBITDA / Margin / Volume / WC / Budget</div>{k_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Individual Value Levers</div>{l_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Individual Value Levers</div>{l_chart}{l_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sponsor Interventions</div>{int_tbl}</div>
   <div style="{cell}"><div style="{h3}">Portfolio-Wide Initiative Benchmarks</div>{t_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">

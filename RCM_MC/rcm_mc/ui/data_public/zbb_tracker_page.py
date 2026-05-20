@@ -2,7 +2,25 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+
+
+def _categories_chart(items) -> str:
+    """Lead chart — cost categories ranked by remaining savings potential."""
+    def _tone(c):
+        cap = c.savings_captured_mm + c.savings_potential_mm
+        rate = (c.savings_captured_mm / cap) if cap else 0.0
+        if rate >= 0.75: return "positive"
+        if rate >= 0.45: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda c: c.savings_potential_mm, reverse=True)
+    total = sum(c.savings_potential_mm for c in top) or 1.0
+    rows = [ck_bar_row(c.category, f"${c.savings_potential_mm:,.2f}M",
+            c.savings_potential_mm / total * 100.0, tone=_tone(c)) for c in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of remaining savings opportunity '
+            '· value = potential ($M) · tone = capture progress</div></div>')
 
 
 def _categories_table(items) -> str:
@@ -149,6 +167,7 @@ def render_zbb_tracker(params: dict = None) -> str:
     )
 
     c_tbl = _categories_table(r.categories)
+    c_chart = _categories_chart(r.categories)
     i_tbl = _initiatives_table(r.initiatives)
     w_tbl = _waste_table(r.waste)
     p_tbl = _policies_table(r.policies)
@@ -172,7 +191,7 @@ def render_zbb_tracker(params: dict = None) -> str:
     <div style="color:{r_c};font-weight:700;font-size:14px">${r.total_savings_captured_mm:,.1f}M captured / ${r.total_savings_captured_mm + r.total_savings_potential_mm:,.1f}M opportunity · {r.capture_rate_pct * 100:.0f}% capture rate</div>
     <div style="color:{text_dim};font-size:11px;margin-top:4px">Run-rate reduced from ${r.total_baseline_mm:,.1f}M → ${r.current_run_rate_mm:,.1f}M · ${r.current_run_rate_mm - r.target_run_rate_mm:,.1f}M remains to target</div>
   </div>
-  <div style="{cell}"><div style="{h3}">Cost Category Rebuild — Baseline vs Current vs Target</div>{c_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Cost Category Rebuild — Baseline vs Current vs Target</div>{c_chart}{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Savings Initiative Portfolio</div>{i_tbl}</div>
   <div style="{cell}"><div style="{h3}">Waste Audit Findings</div>{w_tbl}</div>
   <div style="{cell}"><div style="{h3}">Spend Policy &amp; Control Framework</div>{p_tbl}</div>
