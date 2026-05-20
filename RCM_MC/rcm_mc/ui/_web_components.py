@@ -41,25 +41,25 @@ def web_styles() -> str:
 .wc-container h1 { font-size: 24px; margin: 0; font-weight: 600;
     letter-spacing: -0.01em; color: #1a2332; }
 .wc-container h2 { font-size: 16px; margin: 24px 0 12px; font-weight: 600;
-    color: #1f2937; letter-spacing: -0.005em; }
+    color: #1a2332; letter-spacing: -0.005em; }
 .wc-container h3 { font-size: 13px; margin: 16px 0 8px; font-weight: 600;
-    color: #374151; text-transform: uppercase; letter-spacing: 0.04em; }
+    color: #465366; text-transform: uppercase; letter-spacing: 0.04em; }
 .wc-container p  { margin: 4px 0; color: #4b5563; }
-.wc-container code { background:#f3f4f6; padding:2px 6px; border-radius:3px;
+.wc-container code { background:#ece5d6; padding:2px 6px; border-radius:3px;
     font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 12px; }
 
 /* Breadcrumb trail */
-.wc-breadcrumbs { font-size: 12px; color: #6b7280; margin-bottom: 12px;
+.wc-breadcrumbs { font-size: 12px; color: #7a8699; margin-bottom: 12px;
     letter-spacing: 0.01em; }
-.wc-breadcrumbs a { color: #6b7280; text-decoration: none; }
-.wc-breadcrumbs a:hover { color: #1f2937; text-decoration: underline; }
-.wc-breadcrumbs .sep { margin: 0 6px; color: #d1d5db; }
+.wc-breadcrumbs a { color: #7a8699; text-decoration: none; }
+.wc-breadcrumbs a:hover { color: #1a2332; text-decoration: underline; }
+.wc-breadcrumbs .sep { margin: 0 6px; color: #d6cfc0; }
 
 /* Section card */
-.wc-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
+.wc-card { background: #fff; border: 1px solid #d6cfc0; border-radius: 8px;
     margin: 16px 0; overflow: hidden; }
-.wc-card-head { padding: 12px 16px; border-bottom: 1px solid #f3f4f6;
-    background: #fafbfc; font-size: 13px; font-weight: 600; color: #1f2937;
+.wc-card-head { padding: 12px 16px; border-bottom: 1px solid #ece5d6;
+    background: #f7f3ea; font-size: 13px; font-weight: 600; color: #1a2332;
     display: flex; align-items: center; justify-content: space-between; }
 .wc-card-body { padding: 16px; }
 .wc-card-body.wc-no-pad { padding: 0; }
@@ -91,7 +91,7 @@ def web_styles() -> str:
 .wc-filter { display: block; width: 100%; max-width: 320px;
     padding: 6px 10px; margin: 0 0 8px;
     font-size: 13px; font-family: inherit;
-    border: 1px solid #e5e7eb; border-radius: 4px;
+    border: 1px solid #d6cfc0; border-radius: 4px;
     background: #fff; color: #1a2332;
     transition: border-color 0.1s, box-shadow 0.1s; }
 .wc-filter:focus { outline: none; border-color: var(--sc-navy);
@@ -106,19 +106,19 @@ def web_styles() -> str:
 .wc-cmdk-backdrop.wc-cmdk-open { display: flex; }
 .wc-cmdk-backdrop[aria-hidden="true"] { display: none; }
 .wc-cmdk-card { width: 92%; max-width: 560px; background: #fff;
-    border: 1px solid #e5e7eb; border-radius: 10px;
+    border: 1px solid #d6cfc0; border-radius: 10px;
     box-shadow: 0 20px 50px -10px rgba(0,0,0,0.35),
                 0 8px 20px -8px rgba(0,0,0,0.2);
     overflow: hidden; font-family: inherit; }
 .wc-cmdk-input-wrap { display: flex; align-items: center; gap: 10px;
-    padding: 14px 16px; border-bottom: 1px solid #f3f4f6; }
+    padding: 14px 16px; border-bottom: 1px solid #ece5d6; }
 .wc-cmdk-input { flex: 1; border: none; outline: none;
     font-size: 15px; font-family: inherit; color: #1a2332;
     background: transparent; padding: 0; }
-.wc-cmdk-input::placeholder { color: #9ca3af; }
+.wc-cmdk-input::placeholder { color: #9b9382; }
 .wc-cmdk-hint { font-size: 10px; padding: 2px 6px;
-    background: #f3f4f6; color: #6b7280; border-radius: 3px;
-    font-family: monospace; border: 1px solid #e5e7eb; }
+    background: #ece5d6; color: #7a8699; border-radius: 3px;
+    font-family: monospace; border: 1px solid #d6cfc0; }
 .wc-cmdk-results { max-height: 50vh; overflow-y: auto; padding: 4px 0; }
 .wc-cmdk-row { display: flex; align-items: center; gap: 12px;
     padding: 8px 16px; color: #1a2332; text-decoration: none;
@@ -128,25 +128,25 @@ def web_styles() -> str:
 .wc-cmdk-id { font-family: monospace; color: var(--sc-navy);
     font-size: 11px; min-width: 90px; flex-shrink: 0;
     text-transform: uppercase; letter-spacing: 0.03em; }
-.wc-cmdk-name { flex: 1; color: #1f2937; }
+.wc-cmdk-name { flex: 1; color: #1a2332; }
 .wc-cmdk-badge { font-size: 10px; padding: 1px 6px;
     background: #fef3c7; color: #92400e; border-radius: 3px; }
 .wc-cmdk-empty { padding: 20px 16px; text-align: center;
-    color: #9ca3af; font-size: 13px; }
+    color: #9b9382; font-size: 13px; }
 .wc-cmdk-section { padding: 6px 16px 2px;
     font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
-    text-transform: uppercase; color: #6b7280;
-    border-top: 1px solid #f3f4f6; background: #fafbfc; }
+    text-transform: uppercase; color: #7a8699;
+    border-top: 1px solid #ece5d6; background: #f7f3ea; }
 .wc-cmdk-section:first-child { border-top: 0; }
 .wc-cmdk-footer { display: flex; gap: 16px; padding: 8px 16px;
-    border-top: 1px solid #f3f4f6; font-size: 11px; color: #6b7280;
-    background: #fafbfc; }
+    border-top: 1px solid #ece5d6; font-size: 11px; color: #7a8699;
+    background: #f7f3ea; }
 .wc-cmdk-footer kbd { font-family: monospace; padding: 1px 5px;
-    background: #fff; color: #374151; border: 1px solid #e5e7eb;
+    background: #fff; color: #465366; border: 1px solid #d6cfc0;
     border-radius: 3px; font-size: 10px; margin: 0 2px; }
 
 /* Loading spinner (CSS-only; JS toggles display) */
-.wc-spinner { display: none; width: 16px; height: 16px; border: 2px solid #e5e7eb;
+.wc-spinner { display: none; width: 16px; height: 16px; border: 2px solid #d6cfc0;
     border-top-color: var(--sc-navy); border-radius: 50%;
     animation: wc-spin 0.7s linear infinite;
     vertical-align: middle; margin-right: 6px; }
@@ -199,7 +199,7 @@ def breadcrumbs(items: Iterable[Tuple[str, Optional[str]]]) -> str:
 def page_header(title: str, *, subtitle: Optional[str] = None,
                 crumbs: Optional[Iterable[Tuple[str, Optional[str]]]] = None) -> str:
     bc = breadcrumbs(crumbs) if crumbs else ""
-    sub = (f'<p style="color:#6b7280;font-size:13px;margin:6px 0 0;">'
+    sub = (f'<p style="color:#7a8699;font-size:13px;margin:6px 0 0;">'
            f'{_html.escape(subtitle)}</p>') if subtitle else ""
     return (
         f'<header style="margin:4px 0 20px;">'
@@ -280,7 +280,7 @@ def sortable_table(
         f'<div class="wc-table-counter" '
         f'data-counter-for="{_html.escape(id) if id else ""}" '
         f'data-total="{row_count}" '
-        f'style="font-size:11px;color:#6b7280;padding:6px 0 0;'
+        f'style="font-size:11px;color:#7a8699;padding:6px 0 0;'
         f'font-variant-numeric:tabular-nums;">'
         f'{row_count} row{"s" if row_count != 1 else ""}</div>'
     )
@@ -303,7 +303,7 @@ def sortable_table(
         f'<div class="wc-table-counter" '
         f'data-counter-for="{_html.escape(filter_target)}" '
         f'data-total="{row_count}" '
-        f'style="font-size:11px;color:#6b7280;padding:6px 0 0;'
+        f'style="font-size:11px;color:#7a8699;padding:6px 0 0;'
         f'font-variant-numeric:tabular-nums;">'
         f'{row_count} row{"s" if row_count != 1 else ""}</div>'
     )
@@ -390,20 +390,20 @@ def universal_palette_bundle() -> str:
 .wc-cmdk-backdrop.wc-cmdk-open { display: flex; }
 .wc-cmdk-backdrop[aria-hidden="true"] { display: none; }
 .wc-cmdk-card { width: 92%; max-width: 560px; background: #fff;
-    border: 1px solid #e5e7eb; border-radius: 10px;
+    border: 1px solid #d6cfc0; border-radius: 10px;
     box-shadow: 0 20px 50px -10px rgba(0,0,0,0.35),
                 0 8px 20px -8px rgba(0,0,0,0.2);
     overflow: hidden; font-family: -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, sans-serif; color: #1a2332; }
 .wc-cmdk-input-wrap { display: flex; align-items: center; gap: 10px;
-    padding: 14px 16px; border-bottom: 1px solid #f3f4f6; }
+    padding: 14px 16px; border-bottom: 1px solid #ece5d6; }
 .wc-cmdk-input { flex: 1; border: none; outline: none;
     font-size: 15px; font-family: inherit; color: #1a2332;
     background: transparent; padding: 0; }
-.wc-cmdk-input::placeholder { color: #9ca3af; }
+.wc-cmdk-input::placeholder { color: #9b9382; }
 .wc-cmdk-hint { font-size: 10px; padding: 2px 6px;
-    background: #f3f4f6; color: #6b7280; border-radius: 3px;
-    font-family: monospace; border: 1px solid #e5e7eb; }
+    background: #ece5d6; color: #7a8699; border-radius: 3px;
+    font-family: monospace; border: 1px solid #d6cfc0; }
 .wc-cmdk-results { max-height: 50vh; overflow-y: auto; padding: 4px 0;
     background: #fff; }
 .wc-cmdk-row { display: flex; align-items: center; gap: 12px;
@@ -414,21 +414,21 @@ def universal_palette_bundle() -> str:
 .wc-cmdk-id { font-family: monospace; color: var(--sc-navy);
     font-size: 11px; min-width: 90px; flex-shrink: 0;
     text-transform: uppercase; letter-spacing: 0.03em; }
-.wc-cmdk-name { flex: 1; color: #1f2937; }
+.wc-cmdk-name { flex: 1; color: #1a2332; }
 .wc-cmdk-badge { font-size: 10px; padding: 1px 6px;
     background: #fef3c7; color: #92400e; border-radius: 3px; }
 .wc-cmdk-empty { padding: 20px 16px; text-align: center;
-    color: #9ca3af; font-size: 13px; background: #fff; }
+    color: #9b9382; font-size: 13px; background: #fff; }
 .wc-cmdk-section { padding: 6px 16px 2px;
     font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
-    text-transform: uppercase; color: #6b7280;
-    border-top: 1px solid #f3f4f6; background: #fafbfc; }
+    text-transform: uppercase; color: #7a8699;
+    border-top: 1px solid #ece5d6; background: #f7f3ea; }
 .wc-cmdk-section:first-child { border-top: 0; }
 .wc-cmdk-footer { display: flex; gap: 16px; padding: 8px 16px;
-    border-top: 1px solid #f3f4f6; font-size: 11px; color: #6b7280;
-    background: #fafbfc; }
+    border-top: 1px solid #ece5d6; font-size: 11px; color: #7a8699;
+    background: #f7f3ea; }
 .wc-cmdk-footer kbd { font-family: monospace; padding: 1px 5px;
-    background: #fff; color: #374151; border: 1px solid #e5e7eb;
+    background: #fff; color: #465366; border: 1px solid #d6cfc0;
     border-radius: 3px; font-size: 10px; margin: 0 2px; }
 </style>"""
     return css + command_palette() + command_palette_js(
@@ -452,7 +452,7 @@ def command_palette() -> str:
   <div class="wc-cmdk-card" role="document">
     <div class="wc-cmdk-input-wrap">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-           stroke="#6b7280" stroke-width="2" aria-hidden="true"
+           stroke="#7a8699" stroke-width="2" aria-hidden="true"
            style="flex-shrink:0;">
         <circle cx="11" cy="11" r="7"></circle>
         <path d="m21 21-4.3-4.3"></path>
@@ -740,7 +740,7 @@ def sortable_table_js() -> str:
                     counter.style.color = visible === 0 ? '#991b1b' : 'var(--sc-navy)';
                 } else {
                     counter.textContent = total + (total === 1 ? ' row' : ' rows');
-                    counter.style.color = '#6b7280';
+                    counter.style.color = '#7a8699';
                 }
             }
         }
