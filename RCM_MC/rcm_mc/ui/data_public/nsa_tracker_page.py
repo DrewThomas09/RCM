@@ -97,6 +97,22 @@ def _payers_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _deals_chart(items) -> str:
+    """Summary chart — deals ranked by NSA revenue at risk (concentration view)."""
+    def _tone(d):
+        if d.revenue_at_risk_m >= 5: return "negative"
+        if d.revenue_at_risk_m >= 2: return "warning"
+        return "navy"
+    top = sorted(items, key=lambda d: d.revenue_at_risk_m, reverse=True)
+    total = sum(d.revenue_at_risk_m for d in top) or 1.0
+    rows = [ck_bar_row(f"{d.deal} · {d.sector}", f"${d.revenue_at_risk_m:.1f}M",
+            d.revenue_at_risk_m / total * 100.0, tone=_tone(d)) for d in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of portfolio NSA revenue at risk '
+            '· value = at-risk ($M) · tone = exposure size</div></div>')
+
+
 def _deals_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; neg = P["negative"]
@@ -188,6 +204,7 @@ def render_nsa_tracker(params: dict = None) -> str:
 
     c_tbl = _cases_table(r.cases)
     c_chart = _cases_chart(r.cases)
+    d_chart = _deals_chart(r.deals)
     value_anchor = ck_value_anchor(
         "NSA / IDR Exposure",
         f"${r.total_revenue_at_risk_m:,.1f}M revenue at risk",
@@ -216,7 +233,7 @@ def render_nsa_tracker(params: dict = None) -> str:
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
-  <div style="{cell}"><div style="{h3}">Portfolio NSA / IDR Exposure by Deal</div>{d_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Portfolio NSA / IDR Exposure by Deal</div>{d_chart}{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Emergency Department Portfolio Economics</div>{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">IDR Case Detail</div>{c_chart}{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Payer Posture Analytics</div>{p_tbl}</div>
