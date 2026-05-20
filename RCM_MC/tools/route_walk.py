@@ -108,6 +108,12 @@ def _check_page(route: str, status: int, body: str) -> PageResult:
     # Editorial chrome: every real page should carry the shell.
     if status < 400 and "ck-topbar" not in body and "chartis" not in body.lower():
         findings.append("missing editorial chrome")
+    # Exactly one page title: more than one rendered <h1> means a
+    # duplicate-title bug (a viewer should never see two titles).
+    if status < 400:
+        n_h1 = len(re.findall(r"<h1[ >]", body))
+        if n_h1 > 1:
+            findings.append(f"duplicate title ({n_h1} <h1>)")
     return PageResult(route, status, not findings, findings, len(body))
 
 

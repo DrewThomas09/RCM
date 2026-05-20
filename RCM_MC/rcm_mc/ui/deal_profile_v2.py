@@ -648,23 +648,19 @@ def render_deal_profile_v2(
         + ck_kpi_block("Diligence Questions", ck_fmt_num(n_questions), "open")
         + '</div>'
     )
+    # The single page title (eyebrow + "Deal · {name}" H1 + editorial
+    # deck) is supplied by chartis_shell's editorial_intro below, so the
+    # page body must NOT roll its own header — doing so produced two
+    # competing <h1>s naming the same deal. Keep only the inline
+    # "Detail →" link bar above the KPI strip.
     page_body = (
         f'<div style="max-width:1100px;margin:0 auto;'
         f'padding:1.5rem 1rem;">'
-        + ck_eyebrow("Deal Profile")
-        + f'<div style="display:flex;justify-content:'
-        f'space-between;align-items:baseline;'
-        f'margin-bottom:.5rem;">'
-        f'<h1 style="font-size:1.5rem;color:{_TEXT};margin:0;'
-        f'font-family:\'Source Serif 4\',Georgia,serif;font-weight:400;">'
-        f'{_esc(deal_name)}</h1>'
-        f'<div style="display:flex;gap:14px;font-size:12px;">'
+        + f'<div style="display:flex;justify-content:flex-end;'
+        f'font-size:12px;margin-bottom:.5rem;">'
         f'<a href="/deal/{_esc(deal_id)}?ui=v3" '
         f'style="color:{_ACCENT};">Detail →</a>'
-        f'</div></div>'
-        f'<p style="color:{_TEXT_DIM};font-size:13px;'
-        f'margin:0 0 1rem 0;">Top-to-bottom investment '
-        f'narrative — read sequentially.</p>'
+        f'</div>'
         + kpi_strip
         + f'{body}'
         f'</div>'
