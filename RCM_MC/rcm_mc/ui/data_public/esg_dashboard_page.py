@@ -36,7 +36,7 @@ def _esg_ring_svg(overall: float, e: float, s: float, g: float, tier: str) -> st
 
     # 3 concentric rings
     rings = (
-        _ring(85, e, "#14b8a6", "E", 0) +      # Environmental (teal)
+        _ring(85, e, "#1F7A75", "E", 0) +      # Environmental (teal)
         _ring(68, s, P["accent"], "S", 0) +    # Social (blue)
         _ring(51, g, "#a78bfa", "G", 0)        # Governance (purple)
     )
@@ -50,7 +50,7 @@ def _esg_ring_svg(overall: float, e: float, s: float, g: float, tier: str) -> st
         f'<text x="{cx}" y="{cy + 17}" text-anchor="middle" fill="{overall_color}" '
         f'font-size="9" font-weight="600" letter-spacing="0.10em" font-family="Inter,sans-serif">{_html.escape(tier.upper())}</text>'
         # Legend
-        f'<rect x="10" y="{h - 18}" width="8" height="8" fill="#14b8a6"/>'
+        f'<rect x="10" y="{h - 18}" width="8" height="8" fill="#1F7A75"/>'
         f'<text x="22" y="{h - 10}" fill="{P["text_dim"]}" font-size="9" font-family="JetBrains Mono,monospace">E {e:.0f}</text>'
         f'<rect x="70" y="{h - 18}" width="8" height="8" fill="{P["accent"]}"/>'
         f'<text x="82" y="{h - 10}" fill="{P["text_dim"]}" font-size="9" font-family="JetBrains Mono,monospace">S {s:.0f}</text>'
@@ -96,7 +96,7 @@ def _metrics_by_cat_svg(metrics, category: str, color: str) -> str:
 def _metric_table(metrics) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]
-    cat_colors = {"E": "#14b8a6", "S": P["accent"], "G": "#a78bfa"}
+    cat_colors = {"E": "#1F7A75", "S": P["accent"], "G": "#a78bfa"}
     cols = [("Cat","left"),("Metric","left"),("Value","right"),("Unit","left"),
             ("Benchmark","right"),("Score","right"),("Weight","right"),("Notes","left")]
     ths = "".join(
@@ -237,7 +237,7 @@ def render_esg_dashboard(params: dict = None) -> str:
     )
 
     ring_svg = _esg_ring_svg(r.overall_score, r.e_score, r.s_score, r.g_score, r.tier)
-    e_svg = _metrics_by_cat_svg(r.metrics, "E", "#14b8a6")
+    e_svg = _metrics_by_cat_svg(r.metrics, "E", "#1F7A75")
     s_svg = _metrics_by_cat_svg(r.metrics, "S", acc)
     g_svg = _metrics_by_cat_svg(r.metrics, "G", "#a78bfa")
 

@@ -38,9 +38,9 @@ def _pct(vals: List[float], p: float) -> float:
 
 def _moic_color(m: float) -> str:
     if m >= 3.0: return "#0a8a5f"
-    if m >= 2.0: return "#3b82f6"
-    if m >= 1.5: return "#f59e0b"
-    return "#ef4444"
+    if m >= 2.0: return "#1F7A75"
+    if m >= 1.5: return "#b8732a"
+    return "#b5321e"
 
 
 # ---------------------------------------------------------------------------
@@ -65,7 +65,7 @@ def _mini_moic_hist(moics: List[float], width: int = 140, height: int = 50) -> s
         bh = max(0, int(cnt / max_n * (height - 8)))
         bx = 2 + i * bar_w
         by = height - 4 - bh
-        color = "#0a8a5f" if i >= 2 else ("#f59e0b" if i == 1 else "#ef4444")
+        color = "#0a8a5f" if i >= 2 else ("#b8732a" if i == 1 else "#b5321e")
         elements.append(f'<rect x="{bx}" y="{by}" width="{max(1,bar_w-1)}" height="{bh}" fill="{color}" opacity="0.8"/>')
     return (
         f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">'
@@ -85,7 +85,7 @@ def _mini_sparkline(ys: List[float], width: int = 120, height: int = 30) -> str:
     pts = " ".join(f"{int(2+i*step)},{py(v)}" for i, v in enumerate(ys))
     return (
         f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">'
-        f'<polyline points="{pts}" fill="none" stroke="#3b82f6" stroke-width="1.5"/>'
+        f'<polyline points="{pts}" fill="none" stroke="#1F7A75" stroke-width="1.5"/>'
         f'</svg>'
     )
 
@@ -150,7 +150,7 @@ def render_corpus_dashboard() -> str:
         + ck_kpi_block("Corpus Deals", f'<span class="mn">{n:,}</span>', "in analysis")
         + ck_kpi_block("P50 MOIC", f'<span class="mn" style="color:{_moic_color(moic_p50)}">{moic_p50:.2f}x</span>', f"P25: {_pct(moics,25):.2f}x · P75: {_pct(moics,75):.2f}x")
         + ck_kpi_block("P50 IRR", f'<span class="mn">{irr_p50*100:.1f}%</span>', "realized median")
-        + ck_kpi_block("Loss Rate", f'<span class="mn" style="color:{"#ef4444" if loss_rate>0.15 else "#f59e0b"}">{loss_rate*100:.1f}%</span>', "MOIC < 1.0×")
+        + ck_kpi_block("Loss Rate", f'<span class="mn" style="color:{"#b5321e" if loss_rate>0.15 else "#b8732a"}">{loss_rate*100:.1f}%</span>', "MOIC < 1.0×")
         + ck_kpi_block("Avg Hold", f'<span class="mn">{hold_avg:.1f}y</span>', "years to exit")
         + ck_kpi_block("Avg Quality", f'<span class="mn">{avg_quality:.1f}/100</span>', f"A:{tier_counts.get('A',0)} B:{tier_counts.get('B',0)} C+D:{tier_counts.get('C',0)+tier_counts.get('D',0)}")
         + '</div>'
@@ -170,7 +170,7 @@ def render_corpus_dashboard() -> str:
       <tr><td class="dim">P75</td><td class="mono" style="padding-left:12px;">{_pct(moics,75):.2f}x</td></tr>
       <tr><td class="dim">P90</td><td class="mono" style="padding-left:12px;">{_pct(moics,90):.2f}x</td></tr>
     </table>
-    <div style="font-size:9px;color:#475569;max-width:180px;line-height:1.6;">
+    <div style="font-size:9px;color:#465366;max-width:180px;line-height:1.6;">
       Bars: 0–1 (red) · 1–2 (amber) · 2+ (green)<br>
       {sum(1 for m in moics if m>=2)}/{len(moics)} deals achieved ≥2× ({100*sum(1 for m in moics if m>=2)/len(moics):.0f}%)
     </div>
@@ -198,7 +198,7 @@ def render_corpus_dashboard() -> str:
   {_nav_tile("Deal Size Intelligence", "/size-intel",
     f"P50 EV ${size_profile.ev_p50:.0f}M · {len(size_profile.buckets)} buckets",
     f"${size_profile.ev_p50:.0f}M",
-    "#3b82f6",
+    "#1F7A75",
     "")}
   {_nav_tile("Payer Intelligence", "/payer-intel",
     f"commercial/medicare/medicaid/self-pay",
@@ -213,37 +213,37 @@ def render_corpus_dashboard() -> str:
   {_nav_tile("Deal Quality", "/deal-quality",
     f"A:{tier_counts.get('A',0)} B:{tier_counts.get('B',0)} C:{tier_counts.get('C',0)} D:{tier_counts.get('D',0)}",
     f"{avg_quality:.0f}/100",
-    "#0a8a5f" if avg_quality >= 70 else "#f59e0b",
+    "#0a8a5f" if avg_quality >= 70 else "#b8732a",
     "")}
   {_nav_tile("Underwriting", "/underwriting",
     "LBO model · sensitivity table",
     "LBO",
-    "#64748b",
+    "#7a8699",
     "")}
   {_nav_tile("Portfolio Optimizer", "/portfolio-optimizer",
     "HHI · sector weights vs optimal",
     "HHI",
-    "#64748b",
+    "#7a8699",
     "")}
   {_nav_tile("Backtester", "/backtest",
     "OLS calibration · R² · MAE",
     "OLS",
-    "#64748b",
+    "#7a8699",
     "")}
   {_nav_tile("Comparables", "/comparables",
     "similarity-weighted peer set",
     "Peers",
-    "#64748b",
+    "#7a8699",
     "")}
   {_nav_tile("Risk Matrix", "/risk-matrix",
     "entry risk vs realized MOIC",
     "Risk",
-    "#64748b",
+    "#7a8699",
     "")}
   {_nav_tile("Sponsor League", "/sponsor-league",
     "sponsor consistency scores",
     "SPO",
-    "#64748b",
+    "#7a8699",
     "")}
 </div>"""
 
@@ -258,7 +258,7 @@ def render_corpus_dashboard() -> str:
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:{mc}">{s.moic_p50:.2f}x</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{s.irr_p50*100:.1f}%</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#ef4444' if s.loss_rate>0.2 else '#f59e0b' if s.loss_rate>0.1 else '#0a8a5f'};">{s.loss_rate*100:.0f}%</td>
+      color:{'#b5321e' if s.loss_rate>0.2 else '#b8732a' if s.loss_rate>0.1 else '#0a8a5f'};">{s.loss_rate*100:.0f}%</td>
 </tr>""")
 
     sector_table = f"""
@@ -267,17 +267,17 @@ def render_corpus_dashboard() -> str:
   <div class="ck-table-wrap">
     <table class="ck-table" style="width:100%;">
       <thead><tr>
-        <th style="padding:5px 8px;color:#64748b;">Sector</th>
-        <th style="padding:5px 8px;color:#64748b;text-align:right;">Deals</th>
-        <th style="padding:5px 8px;color:#64748b;text-align:right;">P50 MOIC</th>
-        <th style="padding:5px 8px;color:#64748b;text-align:right;">P50 IRR</th>
-        <th style="padding:5px 8px;color:#64748b;text-align:right;">Loss %</th>
+        <th style="padding:5px 8px;color:#7a8699;">Sector</th>
+        <th style="padding:5px 8px;color:#7a8699;text-align:right;">Deals</th>
+        <th style="padding:5px 8px;color:#7a8699;text-align:right;">P50 MOIC</th>
+        <th style="padding:5px 8px;color:#7a8699;text-align:right;">P50 IRR</th>
+        <th style="padding:5px 8px;color:#7a8699;text-align:right;">Loss %</th>
       </tr></thead>
       <tbody>{''.join(top_sector_rows)}</tbody>
     </table>
   </div>
-  <div style="padding:0 16px 8px;font-size:9px;color:#475569;">
-    <a href="/sector-intel" style="color:#3b82f6;text-decoration:none;">→ Full sector intelligence</a>
+  <div style="padding:0 16px 8px;font-size:9px;color:#465366;">
+    <a href="/sector-intel" style="color:#1F7A75;text-decoration:none;">→ Full sector intelligence</a>
   </div>
 </div>"""
 
@@ -291,7 +291,7 @@ def render_corpus_dashboard() -> str:
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{s.n_deals}</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:{mc}">{s.moic_p50:.2f}x</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#ef4444' if s.loss_rate>0.2 else '#f59e0b' if s.loss_rate>0.1 else '#0a8a5f'};">{s.loss_rate*100:.0f}%</td>
+      color:{'#b5321e' if s.loss_rate>0.2 else '#b8732a' if s.loss_rate>0.1 else '#0a8a5f'};">{s.loss_rate*100:.0f}%</td>
 </tr>""")
 
     vintage_table = f"""
@@ -300,16 +300,16 @@ def render_corpus_dashboard() -> str:
   <div class="ck-table-wrap">
     <table class="ck-table" style="width:100%;">
       <thead><tr>
-        <th style="padding:5px 8px;color:#64748b;">Year</th>
-        <th style="padding:5px 8px;color:#64748b;text-align:right;">Deals</th>
-        <th style="padding:5px 8px;color:#64748b;text-align:right;">P50 MOIC</th>
-        <th style="padding:5px 8px;color:#64748b;text-align:right;">Loss %</th>
+        <th style="padding:5px 8px;color:#7a8699;">Year</th>
+        <th style="padding:5px 8px;color:#7a8699;text-align:right;">Deals</th>
+        <th style="padding:5px 8px;color:#7a8699;text-align:right;">P50 MOIC</th>
+        <th style="padding:5px 8px;color:#7a8699;text-align:right;">Loss %</th>
       </tr></thead>
       <tbody>{''.join(vintage_rows)}</tbody>
     </table>
   </div>
-  <div style="padding:0 16px 8px;font-size:9px;color:#475569;">
-    <a href="/vintage-perf" style="color:#3b82f6;text-decoration:none;">→ Full vintage analysis</a>
+  <div style="padding:0 16px 8px;font-size:9px;color:#465366;">
+    <a href="/vintage-perf" style="color:#1F7A75;text-decoration:none;">→ Full vintage analysis</a>
   </div>
 </div>"""
 

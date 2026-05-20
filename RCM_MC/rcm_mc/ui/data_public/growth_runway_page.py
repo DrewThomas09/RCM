@@ -21,7 +21,7 @@ def _market_nested_svg(sizes) -> str:
     max_size = max(s.size_mm for s in sizes) or 1
 
     bg = P["panel"]; text_dim = P["text_dim"]; text_faint = P["text_faint"]
-    colors = [P["accent"], "#8b5cf6", P["positive"]]
+    colors = [P["accent"], "#a98545", P["positive"]]
 
     bars = []
     for i, s in enumerate(sizes):

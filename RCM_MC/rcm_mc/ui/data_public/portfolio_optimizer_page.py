@@ -49,8 +49,8 @@ def _hhi_signal(hhi: float) -> str:
     if hhi < 0.15:
         return "#0a8a5f", "Low"
     if hhi < 0.25:
-        return "#f59e0b", "Moderate"
-    return "#ef4444", "High"
+        return "#b8732a", "Moderate"
+    return "#b5321e", "High"
 
 
 def _hhi_bar(hhi: float, label: str, width: int = 200) -> str:
@@ -59,13 +59,13 @@ def _hhi_bar(hhi: float, label: str, width: int = 200) -> str:
     color, level = _hhi_signal(hhi)
     return (
         f'<div style="margin:6px 0;">'
-        f'<div style="font-size:9px;color:#64748b;margin-bottom:2px;font-family:var(--ck-mono)">'
+        f'<div style="font-size:9px;color:#7a8699;margin-bottom:2px;font-family:var(--ck-mono)">'
         f'{_html.escape(label)}</div>'
         f'<div style="display:flex;align-items:center;gap:8px;">'
         f'<svg width="{width}" height="10" xmlns="http://www.w3.org/2000/svg">'
         f'<rect x="0" y="1" width="{width}" height="8" rx="1" fill="#ECE5D6"/>'
         f'<rect x="0" y="1" width="{filled}" height="8" rx="1" fill="{color}"/>'
-        f'<line x1="{int(0.25*width)}" y1="0" x2="{int(0.25*width)}" y2="10" stroke="#334155" stroke-width="1"/>'
+        f'<line x1="{int(0.25*width)}" y1="0" x2="{int(0.25*width)}" y2="10" stroke="#465366" stroke-width="1"/>'
         f'<line x1="{int(0.15*width)}" y1="0" x2="{int(0.15*width)}" y2="10" stroke="#0a8a5f" stroke-width="0.8" stroke-dasharray="2,2"/>'
         f'</svg>'
         f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;font-size:10px;color:{color}">'
@@ -119,7 +119,7 @@ def _sector_weight_panel(composition: Any) -> str:
     for sector, weight in items:
         w_pct = weight * 100
         filled = int(weight * 200)
-        color = "#3b82f6" if w_pct <= 20 else ("#f59e0b" if w_pct <= 35 else "#ef4444")
+        color = "#1F7A75" if w_pct <= 20 else ("#b8732a" if w_pct <= 35 else "#b5321e")
         bars.append(
             f'<div style="margin:4px 0;display:flex;align-items:center;gap:8px;">'
             f'<div style="width:160px;font-size:10px;color:#94a3b8;text-align:right;'
@@ -236,7 +236,7 @@ def render_portfolio_optimizer(sectors: Optional[List[str]] = None) -> str:
 <div class="ck-panel">
   <div class="ck-panel-title">Portfolio Composition</div>
   <form method="get" action="/portfolio-optimizer" style="padding:12px 16px;">
-    <div style="font-size:9.5px;color:#64748b;margin-bottom:8px;letter-spacing:0.08em;text-transform:uppercase;">
+    <div style="font-size:9.5px;color:#7a8699;margin-bottom:8px;letter-spacing:0.08em;text-transform:uppercase;">
       Select Sectors (sample 2 top deals per sector)
     </div>
     <div style="max-height:120px;overflow-y:auto;border:1px solid #D6CFC0;padding:8px;border-radius:3px;">
@@ -244,7 +244,7 @@ def render_portfolio_optimizer(sectors: Optional[List[str]] = None) -> str:
     </div>
     <div style="margin-top:10px;">
       <button type="submit" class="ck-btn">Analyze Portfolio</button>
-      <span style="margin-left:10px;font-size:9.5px;color:#475569;">{len(portfolio)} deals selected</span>
+      <span style="margin-left:10px;font-size:9.5px;color:#465366;">{len(portfolio)} deals selected</span>
     </div>
   </form>
 </div>"""

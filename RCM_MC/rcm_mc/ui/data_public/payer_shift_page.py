@@ -19,7 +19,7 @@ def _mix_bar_svg(start_mix, target_mix) -> str:
     bar_h = 36
 
     bg = P["panel"]; text_dim = P["text_dim"]; text = P["text"]
-    colors = [P["accent"], "#8b5cf6", "#14b8a6", P["warning"], "#f97316", P["negative"]]
+    colors = [P["accent"], "#a98545", "#1F7A75", P["warning"], "#f97316", P["negative"]]
 
     def _render_bar(mix, y, label):
         segs = []

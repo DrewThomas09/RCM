@@ -28,26 +28,26 @@ def _moic_color(v: Optional[float]) -> str:
     if v is None:
         return "var(--ck-text-faint)"
     if v < 1.0:
-        return "#ef4444"
+        return "#b5321e"
     if v >= 2.5:
         return "#0a8a5f"
     if v >= 1.5:
         return "#e2e8f0"
-    return "#f59e0b"
+    return "#b8732a"
 
 
 def _loss_color(v: float) -> str:
     if v >= 0.30:
-        return "#ef4444"
+        return "#b5321e"
     if v >= 0.15:
-        return "#f59e0b"
+        return "#b8732a"
     return "#0a8a5f"
 
 
 def _consistency_bar(score: float, width: int = 60) -> str:
     """Inline SVG consistency score bar."""
     filled = int(score / 100 * width)
-    bar_color = "#0a8a5f" if score >= 70 else ("#f59e0b" if score >= 45 else "#ef4444")
+    bar_color = "#0a8a5f" if score >= 70 else ("#b8732a" if score >= 45 else "#b5321e")
     return (
         f'<svg width="{width}" height="8" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;">'
         f'<rect x="0" y="1" width="{width}" height="6" rx="1" fill="#ECE5D6"/>'
@@ -90,12 +90,12 @@ def _sector_pills(sectors: List[str]) -> str:
     for s in sectors[:3]:
         pills.append(
             f'<span style="display:inline-block;background:var(--sc-bone);border:1px solid #D6CFC0;'
-            f'border-radius:2px;padding:1px 5px;font-size:8.5px;color:#64748b;margin:1px;">'
+            f'border-radius:2px;padding:1px 5px;font-size:8.5px;color:#7a8699;margin:1px;">'
             f'{_html.escape(s[:20])}</span>'
         )
     if len(sectors) > 3:
         pills.append(
-            f'<span style="font-size:8.5px;color:#475569">+{len(sectors)-3}</span>'
+            f'<span style="font-size:8.5px;color:#465366">+{len(sectors)-3}</span>'
         )
     return "".join(pills)
 
@@ -117,8 +117,8 @@ def _sparkline_moics(moics: List[float], width: int = 60, height: int = 14) -> s
         f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg" '
         f'style="display:inline-block;vertical-align:middle;">'
         f'<line x1="0" y1="{breakeven_y}" x2="{width}" y2="{breakeven_y}" '
-        f'stroke="#ef4444" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.5"/>'
-        f'<polyline points="{polyline}" fill="none" stroke="#3b82f6" stroke-width="1.2" opacity="0.8"/>'
+        f'stroke="#b5321e" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.5"/>'
+        f'<polyline points="{polyline}" fill="none" stroke="#1F7A75" stroke-width="1.2" opacity="0.8"/>'
         f'</svg>'
     )
 

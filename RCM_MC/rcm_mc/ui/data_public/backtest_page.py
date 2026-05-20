@@ -64,8 +64,8 @@ def _scatter_svg(
     x_hi: float = 20.0,
     y_lo: float = 0.0,
     y_hi: float = 6.0,
-    color: str = "#3b82f6",
-    trend_color: str = "#f59e0b",
+    color: str = "#1F7A75",
+    trend_color: str = "#b8732a",
 ) -> str:
     """Scatter plot with linear trend line, inline SVG."""
     pad_l, pad_r, pad_t, pad_b = 38, 12, 10, 26
@@ -106,17 +106,17 @@ def _scatter_svg(
 
     # Axes
     axes = (
-        f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" y2="{pad_t+ph}" stroke="#334155" stroke-width="1"/>'
-        f'<line x1="{pad_l}" y1="{pad_t+ph}" x2="{pad_l+pw}" y2="{pad_t+ph}" stroke="#334155" stroke-width="1"/>'
+        f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" y2="{pad_t+ph}" stroke="#465366" stroke-width="1"/>'
+        f'<line x1="{pad_l}" y1="{pad_t+ph}" x2="{pad_l+pw}" y2="{pad_t+ph}" stroke="#465366" stroke-width="1"/>'
     )
 
     # 1.0x breakeven horizontal
     breakeven_y = ty(1.0)
     be_line = (
         f'<line x1="{pad_l}" y1="{breakeven_y:.1f}" x2="{pad_l+pw}" y2="{breakeven_y:.1f}" '
-        f'stroke="#ef4444" stroke-width="0.8" stroke-dasharray="3,4" opacity="0.5"/>'
+        f'stroke="#b5321e" stroke-width="0.8" stroke-dasharray="3,4" opacity="0.5"/>'
         f'<text x="{pad_l+pw-2}" y="{breakeven_y-3:.1f}" '
-        f'font-size="7" fill="#ef4444" text-anchor="end" opacity="0.7">1.0×</text>'
+        f'font-size="7" fill="#b5321e" text-anchor="end" opacity="0.7">1.0×</text>'
     )
 
     # Tick labels
@@ -125,14 +125,14 @@ def _scatter_svg(
         xv_px = tx(xv)
         x_ticks.append(
             f'<text x="{xv_px:.1f}" y="{pad_t+ph+14}" font-size="7.5" '
-            f'fill="#64748b" text-anchor="middle">{xv:.0f}</text>'
+            f'fill="#7a8699" text-anchor="middle">{xv:.0f}</text>'
         )
     y_ticks = []
     for yv in [y_lo, (y_lo + y_hi) / 2, y_hi]:
         yv_px = ty(yv)
         y_ticks.append(
             f'<text x="{pad_l-4}" y="{yv_px+3:.1f}" font-size="7.5" '
-            f'fill="#64748b" text-anchor="end">{yv:.1f}x</text>'
+            f'fill="#7a8699" text-anchor="end">{yv:.1f}x</text>'
         )
 
     # Axis labels
@@ -145,7 +145,7 @@ def _scatter_svg(
         f'text-anchor="middle" transform="rotate(-90,8,{pad_t+ph/2:.1f})">{_html.escape(y_label)}</text>'
     )
 
-    n_lbl = f'<text x="{pad_l+4}" y="{pad_t+10}" font-size="7.5" fill="#475569">n={len(points)}</text>'
+    n_lbl = f'<text x="{pad_l+4}" y="{pad_t+10}" font-size="7.5" fill="#465366">n={len(points)}</text>'
 
     return (
         f'<svg viewBox="0 0 {width} {height}" width="{width}" height="{height}" '
@@ -191,8 +191,8 @@ def _histogram_svg(
         )
 
     axes = (
-        f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" y2="{pad_t+ph}" stroke="#334155" stroke-width="1"/>'
-        f'<line x1="{pad_l}" y1="{pad_t+ph}" x2="{pad_l+pw}" y2="{pad_t+ph}" stroke="#334155" stroke-width="1"/>'
+        f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" y2="{pad_t+ph}" stroke="#465366" stroke-width="1"/>'
+        f'<line x1="{pad_l}" y1="{pad_t+ph}" x2="{pad_l+pw}" y2="{pad_t+ph}" stroke="#465366" stroke-width="1"/>'
     )
 
     def tx(xv: float) -> float:
@@ -203,8 +203,8 @@ def _histogram_svg(
     be_x = tx(1.0)
     overlays += (
         f'<line x1="{be_x:.1f}" y1="{pad_t}" x2="{be_x:.1f}" y2="{pad_t+ph}" '
-        f'stroke="#ef4444" stroke-width="1" stroke-dasharray="3,3" opacity="0.7"/>'
-        f'<text x="{be_x+2:.1f}" y="{pad_t+9}" font-size="7" fill="#ef4444" opacity="0.8">1×</text>'
+        f'stroke="#b5321e" stroke-width="1" stroke-dasharray="3,3" opacity="0.7"/>'
+        f'<text x="{be_x+2:.1f}" y="{pad_t+9}" font-size="7" fill="#b5321e" opacity="0.8">1×</text>'
     )
     if ref_line is not None:
         rx = tx(ref_line)
@@ -219,10 +219,10 @@ def _histogram_svg(
         if x_lo <= xv <= x_hi:
             x_ticks.append(
                 f'<text x="{tx(xv):.1f}" y="{pad_t+ph+13}" font-size="7.5" '
-                f'fill="#64748b" text-anchor="middle">{xv:.0f}x</text>'
+                f'fill="#7a8699" text-anchor="middle">{xv:.0f}x</text>'
             )
 
-    n_lbl = f'<text x="{pad_l+4}" y="{pad_t+9}" font-size="7.5" fill="#475569">n={len(values)}</text>'
+    n_lbl = f'<text x="{pad_l+4}" y="{pad_t+9}" font-size="7.5" fill="#465366">n={len(values)}</text>'
 
     return (
         f'<svg viewBox="0 0 {width} {height}" width="{width}" height="{height}" '
@@ -520,7 +520,7 @@ def _moic_color(v: Optional[float]) -> str:
     if v is None:
         return "var(--ck-text-faint)"
     if v < 1.0:
-        return "#ef4444"
+        return "#b5321e"
     if v >= 2.5:
         return "#0a8a5f"
     return "#e2e8f0"
@@ -541,7 +541,7 @@ def _fmt_pct(v: Optional[float]) -> str:
 def _error_badge(v: Optional[float]) -> str:
     if v is None:
         return '<span style="color:var(--ck-text-faint)">—</span>'
-    color = "#0a8a5f" if abs(v) < 0.3 else ("#f59e0b" if abs(v) < 0.7 else "#ef4444")
+    color = "#0a8a5f" if abs(v) < 0.3 else ("#b8732a" if abs(v) < 0.7 else "#b5321e")
     sign = "+" if v > 0 else ""
     return (
         f'<span style="font-family:var(--ck-mono);color:{color};font-variant-numeric:tabular-nums">'
@@ -552,7 +552,7 @@ def _error_badge(v: Optional[float]) -> str:
 def _r2_badge(r2: Optional[float]) -> str:
     if r2 is None:
         return "—"
-    color = "#0a8a5f" if r2 >= 0.5 else ("#f59e0b" if r2 >= 0.25 else "#ef4444")
+    color = "#0a8a5f" if r2 >= 0.5 else ("#b8732a" if r2 >= 0.25 else "#b5321e")
     return (
         f'<span style="font-family:var(--ck-mono);color:{color};font-size:13px;font-weight:600">'
         f'{r2:.3f}</span>'
@@ -612,7 +612,7 @@ def _kpi_bar(stats: Dict[str, Any]) -> str:
 
 
 def _calibration_panel(stats: Dict[str, Any]) -> str:
-    mae_color = "#0a8a5f" if (stats["mae"] or 99) < 0.5 else ("#f59e0b" if (stats["mae"] or 99) < 1.0 else "#ef4444")
+    mae_color = "#0a8a5f" if (stats["mae"] or 99) < 0.5 else ("#b8732a" if (stats["mae"] or 99) < 1.0 else "#b5321e")
     rows_html = [
         f'<tr><td>Mean Absolute Error (MAE)</td><td class="mono" style="color:{mae_color}">{stats["mae"]:.3f}x</td></tr>',
         f'<tr style="background:var(--sc-bone)"><td>RMSE</td><td class="mono">{stats["rmse"]:.3f}x</td></tr>',
@@ -666,16 +666,16 @@ def _scatter_panel(
 ) -> str:
     svg_entry = _scatter_svg(
         pts_entry, "Entry EV/EBITDA (×)", "Realized MOIC",
-        x_lo=3.0, x_hi=22.0, y_lo=0.0, y_hi=6.5, color="#3b82f6",
+        x_lo=3.0, x_hi=22.0, y_lo=0.0, y_hi=6.5, color="#1F7A75",
     )
     svg_hold = _scatter_svg(
         pts_hold, "Hold Years", "Realized MOIC",
-        x_lo=1.0, x_hi=11.0, y_lo=0.0, y_hi=6.5, color="#8b5cf6",
+        x_lo=1.0, x_hi=11.0, y_lo=0.0, y_hi=6.5, color="#a98545",
     )
     svg_pred = _scatter_svg(
         pts_pred, "Predicted MOIC (corpus model)", "Realized MOIC",
         x_lo=0.5, x_hi=5.5, y_lo=0.0, y_hi=6.5, color="#06b6d4",
-        trend_color="#f59e0b",
+        trend_color="#b8732a",
     )
     return f"""
 <div class="ck-panel">

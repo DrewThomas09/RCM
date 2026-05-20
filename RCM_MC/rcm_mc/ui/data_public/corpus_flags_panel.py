@@ -142,7 +142,7 @@ def _sev_badge(severity: str, label: Optional[str] = None) -> str:
 
 
 def _flag_card(flag: Any) -> str:
-    color = _SEVERITY_COLOR.get(flag.severity, "#475569")
+    color = _SEVERITY_COLOR.get(flag.severity, "#465366")
     bg = _SEVERITY_BG.get(flag.severity, "rgba(71,85,105,0.06)")
     cat_label = _CATEGORY_LABEL.get(flag.category, flag.category)
     risk_html = ""
@@ -194,7 +194,7 @@ def render_corpus_flags_panel(deal: Dict[str, Any]) -> str:
 
     body_html = (
         f'<div class="ckf-body">'
-        f'<div style="font-size:9px;color:#334155;margin-bottom:6px;letter-spacing:0.08em;">'
+        f'<div style="font-size:9px;color:#465366;margin-bottom:6px;letter-spacing:0.08em;">'
         f'CORPUS RED FLAGS — {_html.escape(str(deal_name)).upper()} — '
         f'{summary["total_flags"]} flag{"s" if summary["total_flags"] != 1 else ""} '
         f'from {615} realized corpus deals'

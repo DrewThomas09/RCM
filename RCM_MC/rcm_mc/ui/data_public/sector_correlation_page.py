@@ -19,14 +19,14 @@ def _r_color(r: float) -> str:
     if r >= 0.7:
         return "#dc2626"
     if r >= 0.4:
-        return "#f59e0b"
+        return "#b8732a"
     if r >= 0.1:
         return "#94a3b8"
     if r >= -0.1:
-        return "#64748b"
+        return "#7a8699"
     if r >= -0.4:
         return "#60a5fa"
-    return "#3b82f6"
+    return "#1F7A75"
 
 
 def _r_bg(r: float) -> str:
@@ -160,8 +160,8 @@ def _time_series_svg(
         return int(mt + H - (v - min_v) / (max_v - min_v) * H)
 
     SERIES_COLORS = [
-        "#3b82f6", "#10b981", "#f59e0b", "#ef4444",
-        "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16",
+        "#1F7A75", "#0a8a5f", "#b8732a", "#b5321e",
+        "#a98545", "#ec4899", "#06b6d4", "#84cc16",
     ]
 
     lines = [

@@ -57,7 +57,7 @@ def _num(v: Optional[float], decimals: int = 2, suffix: str = "", prefix: str = 
 def _moic_html(v: Optional[float]) -> str:
     if v is None:
         return "—"
-    color = "#ef4444" if v < 1.0 else ("#0a8a5f" if v >= 2.5 else "#f59e0b")
+    color = "#b5321e" if v < 1.0 else ("#0a8a5f" if v >= 2.5 else "#b8732a")
     return (
         f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;'
         f'font-size:22px;font-weight:700;color:{color}">{v:.2f}×</span>'
@@ -67,7 +67,7 @@ def _moic_html(v: Optional[float]) -> str:
 def _irr_html(v: Optional[float]) -> str:
     if v is None:
         return "—"
-    color = "#ef4444" if v < 0.10 else ("#0a8a5f" if v >= 0.20 else "#f59e0b")
+    color = "#b5321e" if v < 0.10 else ("#0a8a5f" if v >= 0.20 else "#b8732a")
     return (
         f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;'
         f'font-size:22px;font-weight:700;color:{color}">{v*100:.1f}%</span>'
@@ -77,7 +77,7 @@ def _irr_html(v: Optional[float]) -> str:
 def _pct_rank_bar(rank: float, width: int = 120) -> str:
     """Horizontal percentile bar."""
     filled = int(rank / 100 * width)
-    color = "#0a8a5f" if rank >= 60 else ("#f59e0b" if rank >= 35 else "#ef4444")
+    color = "#0a8a5f" if rank >= 60 else ("#b8732a" if rank >= 35 else "#b5321e")
     return (
         f'<div style="display:inline-flex;align-items:center;gap:6px;">'
         f'<svg width="{width}" height="8" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;">'
@@ -199,7 +199,7 @@ def _results_panel(result: Any, corpus: List[Dict[str, Any]]) -> str:
                 r = row[mult_key]
                 if isinstance(r, dict):
                     moic = r.get("gross_moic")
-                    color = "#ef4444" if (moic or 0) < 1.0 else ("#0a8a5f" if (moic or 0) >= 2.5 else "#e2e8f0")
+                    color = "#b5321e" if (moic or 0) < 1.0 else ("#0a8a5f" if (moic or 0) >= 2.5 else "#e2e8f0")
                     cells.append(
                         f'<td style="text-align:right;padding:6px 8px;">'
                         f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;color:{color}">'
@@ -265,7 +265,7 @@ def _corpus_benchmark_panel(result: Any, corpus: List[Dict[str, Any]]) -> str:
 
     comp_rank = _percentile_rank(comp_moics, model_moic)
 
-    delta_color = "#0a8a5f" if moic_vs_p50 > 0 else "#ef4444"
+    delta_color = "#0a8a5f" if moic_vs_p50 > 0 else "#b5321e"
     sign = "+" if moic_vs_p50 > 0 else ""
 
     return f"""
@@ -286,7 +286,7 @@ def _corpus_benchmark_panel(result: Any, corpus: List[Dict[str, Any]]) -> str:
     </div>
     <div style="background:var(--ck-panel-alt);padding:10px 12px;">
       <div class="ck-section-label" style="margin-bottom:4px;">Peer Loss Rate</div>
-      <div style="font-family:var(--ck-mono);font-size:14px;color:#ef4444;font-variant-numeric:tabular-nums;">{loss*100:.1f}%</div>
+      <div style="font-family:var(--ck-mono);font-size:14px;color:#b5321e;font-variant-numeric:tabular-nums;">{loss*100:.1f}%</div>
     </div>
     <div style="background:var(--ck-panel-alt);padding:10px 12px;">
       <div class="ck-section-label" style="margin-bottom:4px;">Model vs Peer P50</div>
@@ -352,7 +352,7 @@ def render_underwriting(
         results_html = _results_panel(result, corpus)
         benchmark_html = _corpus_benchmark_panel(result, corpus)
     except Exception as exc:
-        results_html = f'<div class="ck-panel"><div style="padding:12px;color:#ef4444;">Error: {_html.escape(str(exc))}</div></div>'
+        results_html = f'<div class="ck-panel"><div style="padding:12px;color:#b5321e;">Error: {_html.escape(str(exc))}</div></div>'
 
     # KPI bar (corpus context)
     realized = [d for d in corpus if d.get("realized_moic") is not None]
@@ -372,7 +372,7 @@ def render_underwriting(
     )
     model_moic_value = ck_provenance_tooltip(
         "Model MOIC",
-        f'<span class="mn" style="color:{"#0a8a5f" if (result.gross_moic or 0) >= 2.5 else "#f59e0b"}">{ck_fmt_moic(result.gross_moic)}</span>' if result else '<span class="faint">—</span>',
+        f'<span class="mn" style="color:{"#0a8a5f" if (result.gross_moic or 0) >= 2.5 else "#b8732a"}">{ck_fmt_moic(result.gross_moic)}</span>' if result else '<span class="faint">—</span>',
         explainer=(
             "Projected MOIC from the underwriting model: EBITDA "
             "growth at the input CAGR + exit at the input "
