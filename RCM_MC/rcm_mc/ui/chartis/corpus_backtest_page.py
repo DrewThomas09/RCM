@@ -27,6 +27,7 @@ from .._chartis_kit import (
     P,
     chartis_shell,
     ck_kpi_block,
+    ck_page_title,
     ck_section_header,
 )
 from ._helpers import (
@@ -591,7 +592,16 @@ def render_corpus_backtest(
         page_key="corpus-backtest",
     )
 
-    body = explainer + _disambig_banner() + kpi_strip + body_blocks
+    page_title = ck_page_title(
+        "Corpus Backtest",
+        eyebrow="CORPUS BACKTEST",
+        meta=(
+            f"{len(corpus)} corpus deals · "
+            f"{self_summary['n_realized']} realized · "
+            f"{'prediction match' if match_attempt else 'ground-truth mode'}"
+        ),
+    )
+    body = page_title + explainer + _disambig_banner() + kpi_strip + body_blocks
 
     return chartis_shell(
         body,

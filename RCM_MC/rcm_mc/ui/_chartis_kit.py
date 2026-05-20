@@ -2985,7 +2985,10 @@ def ck_provenance_tooltip(
 
     Args:
         label: User-visible name of the metric (HTML-escaped).
-        value: Pre-formatted display string (HTML-escaped).
+        value: Pre-formatted display string — TRUSTED server markup
+            (not escaped), same exemption as ``ck_kpi_block``. May be a
+            plain number or a color ``<span>``. Escape user-supplied
+            strings upstream.
         explainer: Optional plain-text methodology / source line.
             When set, a hover card with this text appears on the
             value's info icon.
@@ -3003,13 +3006,15 @@ def ck_provenance_tooltip(
             graph=graph, metric_key=metric_key,
             inject_css=inject_css,
         )
-    # Honour SafeHtml: callers that pass already-escaped markup (e.g.
-    # `<span class="mn neg">14.8%</span>`) shouldn't have it re-
-    # escaped into literal text on the page.
-    safe_value = (
-        str(value) if isinstance(value, SafeHtml)
-        else _html.escape(value)
-    )
+    # ``value`` is a trusted server-rendered display string — a formatted
+    # numeric optionally wrapped in a color <span> (denial rate, MOIC,
+    # IRR, scores). Same exemption as ``ck_kpi_block``/``ck_data_cell``:
+    # the kit does NOT escape it, so the color spans render as markup
+    # rather than as literal `&lt;span…&gt;` text (the bug fixed here).
+    # Callers passing a user-supplied string (deal/payer name) as the
+    # value MUST escape it upstream, exactly like ck_kpi_block. ``label``
+    # and ``explainer`` below remain escaped.
+    safe_value = str(value)
     if not explainer:
         return SafeHtml(safe_value)
     safe_label = _html.escape(label)

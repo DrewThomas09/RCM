@@ -307,7 +307,7 @@ def render_hold_analysis() -> str:
     )
 
     body = f"""
-<div style="padding:16px 20px;max-width:1200px">
+<div class="ck-page-wrap">
   {kpi_strip}
 
   {paired}
