@@ -19,10 +19,9 @@ Sections, top to bottom:
   5. Platform — section header + paired funnel / conversion table
   6. Proof grid — 8 fund-level KPI cells
   7. Modules — section header + 4-column module catalog
-  8. Pull quote — quote + 3-stat sidebar
-  9. Sources — section header + paired sources funnel / inventory
-  10. CTA strip — dark, "Bring your own model"
-  11. Footer
+  8. Sources — section header + paired sources funnel / inventory
+  9. CTA strip — dark, "Bring your own model"
+  10. Footer
 
 All CTAs route to ``/login?next=/app``. Top-nav links smooth-scroll
 within the page (``#platform`` / ``#modules`` / ``#proof`` /
@@ -377,41 +376,6 @@ _STYLE = """
   .cat-col td.r { text-align: right; font-family: "JetBrains Mono", monospace; color: var(--ink); font-weight: 600; }
   .cat-col tr:hover td { background: var(--bg-tint); }
 
-  /* TESTIMONIAL / PULL QUOTE */
-  .pull {
-    margin: 3rem 0; padding: 2.5rem 3rem;
-    background: linear-gradient(135deg, var(--paper-pure) 0%, rgba(212,228,226,.55) 100%);
-    border: 1px solid var(--rule); border-left: 3px solid var(--teal);
-    display: grid; grid-template-columns: 1fr 280px; gap: 3rem; align-items: center;
-    position: relative; overflow: hidden;
-  }
-  .pull::before {
-    content: "\\201C"; position: absolute; top: -2rem; right: 2rem;
-    font-family: "Source Serif 4", serif; font-style: italic;
-    font-size: 9rem; color: rgba(21,87,82,.08); line-height: 1;
-    pointer-events: none;
-  }
-  .pull q {
-    font-family: "Source Serif 4", serif; font-style: italic; font-weight: 400;
-    font-size: 1.6rem; line-height: 1.4; color: var(--ink);
-  }
-  .pull .attr {
-    font-family: "Inter", sans-serif; font-size: .82rem; color: var(--muted);
-    margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border);
-  }
-  .pull .attr b { color: var(--ink); display: block; margin-bottom: .15rem; }
-  .pull .stats {
-    border-left: 1px solid var(--border); padding-left: 2rem;
-    display: flex; flex-direction: column; gap: 1rem;
-  }
-  .pull .stat-v {
-    font-family: "Source Serif 4", serif; font-size: 2rem; color: var(--teal-deep); line-height: 1;
-  }
-  .pull .stat-l {
-    font-family: "Inter", sans-serif; font-size: .68rem; letter-spacing: .14em;
-    text-transform: uppercase; color: var(--muted); margin-top: .35rem;
-  }
-
   /* CTA STRIP */
   .cta-strip {
     margin: 3rem 0 0; padding: 3.5rem 2.5rem;
@@ -470,7 +434,7 @@ _STYLE = """
   footer em { font-style: italic; color: var(--teal-deep); }
 
   @media (max-width: 1100px) {
-    .hero, .sect, .pull, .cta-strip { grid-template-columns: 1fr; gap: 2rem; }
+    .hero, .sect, .cta-strip { grid-template-columns: 1fr; gap: 2rem; }
     .triplet, .proof, .catalog { grid-template-columns: repeat(2, 1fr); }
     .funnel { grid-template-columns: repeat(4, 1fr); }
     .pair { grid-template-columns: 1fr; }
@@ -811,32 +775,6 @@ def _catalog_section() -> str:
     )
 
 
-def _pull_quote() -> str:
-    stats = [
-        ("3 hours", "Saved per profile, on average"),
-        ("100%", "Of claims traceable to a source"),
-        ("1 workspace", "Replaces 6+ decks per engagement"),
-    ]
-    stats_html = "".join(
-        f'<div><div class="stat-v">{v}</div>'
-        f'<div class="stat-l">{label}</div></div>'
-        for v, label in stats
-    )
-    return (
-        '<section class="pull">'
-        '<div>'
-        '<q>The profile gave us a market view, target context, and '
-        'client-specific talking points before the first diligence '
-        'readout. We stopped rebuilding the story from scratch every '
-        'engagement.</q>'
-        '<div class="attr"><b>Director, Commercial Diligence</b>'
-        'Strategy Consulting Firm</div>'
-        '</div>'
-        f'<div class="stats">{stats_html}</div>'
-        '</section>'
-    )
-
-
 def _sources_section() -> str:
     funnel = _funnel([
         ("HCRIS", "2,847", "cost reports", 100, ""),
@@ -924,6 +862,7 @@ def render_marketing_page() -> str:
         '<!doctype html><html lang="en"><head>'
         '<meta charset="utf-8"/>'
         '<meta name="viewport" content="width=device-width, initial-scale=1"/>'
+        '<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>'
         '<title>PE Desk &mdash; Commercial diligence, personalized '
         'to every deal</title>'
         '<meta name="description" content="PE Desk is the commercial '
@@ -943,7 +882,6 @@ def render_marketing_page() -> str:
         + _platform_section()
         + _proof_section()
         + _catalog_section()
-        + _pull_quote()
         + _sources_section()
         + _cta_strip()
         + '</div>'

@@ -245,12 +245,17 @@ class TestLiveRoutes(unittest.TestCase):
                 server.shutdown()
                 server.server_close()
 
-    def test_favicon_returns_204(self):
+    def test_favicon_serves_brand_mark(self):
         with tempfile.TemporaryDirectory() as tmp:
             server, _, port = _start_server(os.path.join(tmp, "p.db"))
             try:
-                with urllib.request.urlopen(f"http://127.0.0.1:{port}/favicon.ico") as r:
-                    self.assertEqual(r.status, 204)
+                for route in ("/favicon.svg", "/favicon.ico"):
+                    with urllib.request.urlopen(f"http://127.0.0.1:{port}{route}") as r:
+                        self.assertEqual(r.status, 200)
+                        self.assertEqual(r.headers["Content-Type"], "image/svg+xml")
+                        body = r.read().decode("utf-8")
+                        self.assertIn("<svg", body)
+                        self.assertIn("PD", body)
             finally:
                 server.shutdown()
                 server.server_close()

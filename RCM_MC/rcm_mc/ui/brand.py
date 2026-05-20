@@ -40,6 +40,32 @@ LOGO_SVG = (
     '</svg>'
 )
 
+# The "PD" circular brand mark — the primary PE Desk identity, matching
+# the marketing-page topbar badge. Outlined ring + serif "PD" inheriting
+# currentColor so it sits on any editorial surface (navy topbar, parchment).
+BRAND_MARK_SVG = (
+    '<svg viewBox="0 0 40 40" width="28" height="28" '
+    'class="ck-brand-mark" aria-hidden="true" '
+    'xmlns="http://www.w3.org/2000/svg">'
+    '<circle cx="20" cy="20" r="18.75" fill="none" '
+    'stroke="currentColor" stroke-width="1.5"/>'
+    '<text x="20" y="26" text-anchor="middle" '
+    'font-family="Source Serif 4, Georgia, serif" font-size="15" '
+    'font-weight="600" fill="currentColor">PD</text>'
+    '</svg>'
+)
+
+# Filled, high-contrast variant for the browser-tab favicon — a solid
+# navy disc with parchment "PD" so the mark stays legible at 16px.
+FAVICON_SVG = (
+    '<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">'
+    '<circle cx="16" cy="16" r="16" fill="#0b2341"/>'
+    '<text x="16" y="22.5" text-anchor="middle" '
+    'font-family="Georgia, \'Source Serif 4\', serif" font-size="15" '
+    'font-weight="700" fill="#f7f3ea" letter-spacing="-0.3">PD</text>'
+    '</svg>'
+)
+
 WORDMARK_SVG = (
     '<svg viewBox="0 0 200 24" width="200" height="24" xmlns="http://www.w3.org/2000/svg">'
     '<text x="0" y="18" font-family="Source Serif Pro, Georgia, serif" '
