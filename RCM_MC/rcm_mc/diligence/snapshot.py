@@ -190,6 +190,25 @@ def build_ccd_from_files(paths: Sequence[Path | str]) -> BuildResult:
         transaction_types=sorted(set(txn_types)), parser_used=primary.name)
 
 
+def run_snapshot_from_zip(
+    zip_path: Path | str, *,
+    deal_name: str = "Target", salt: Optional[str] = None,
+) -> SnapshotResult:
+    """Extract a VDR ZIP to a temp dir and run the snapshot over its
+    supported files. The temp dir is cleaned up afterwards."""
+    import tempfile
+
+    from .ingestion import extract_zip
+
+    with tempfile.TemporaryDirectory(prefix="hcrl_zip_") as tmp:
+        res = extract_zip(zip_path, tmp)
+        if not res.extracted_files:
+            raise ValueError(
+                "no supported EDI files in archive: "
+                + ("; ".join(res.warnings) or "empty"))
+        return run_snapshot(res.extracted_files, deal_name=deal_name, salt=salt)
+
+
 def run_snapshot(
     paths: Sequence[Path | str], *,
     deal_name: str = "Target", salt: Optional[str] = None,
