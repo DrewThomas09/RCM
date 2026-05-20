@@ -298,7 +298,7 @@ class TestRenderFieldError(unittest.TestCase):
         html = render_field_error(
             "Email is required.")
         self.assertIn("Email is required", html)
-        self.assertIn("#ef4444", html)
+        self.assertIn("#b5321e", html)
         self.assertIn('role="alert"', html)
 
     def test_html_escape(self):
