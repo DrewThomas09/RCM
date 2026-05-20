@@ -790,27 +790,27 @@ _REG_BLOCK_CSS = """
 .ic-reg-block{page-break-before:always;padding:28px 32px;
 font-family:Georgia,serif;color:#1a1a1a;}
 .ic-reg-block .ic-reg-eyebrow{font-size:11px;letter-spacing:1.6px;
-text-transform:uppercase;color:#64748b;font-weight:600;}
+text-transform:uppercase;color:#7a8699;font-weight:600;}
 .ic-reg-block h2{font-size:22px;margin:4px 0 10px 0;}
 .ic-reg-block h3{font-size:14px;margin:16px 0 8px 0;}
-.ic-reg-block .ic-reg-verdict{padding:12px 16px;background:#f8fafc;
+.ic-reg-block .ic-reg-verdict{padding:12px 16px;background:#f7f3ea;
 border-left:4px solid var(--vcol);border-radius:0 3px 3px 0;margin:12px 0;}
 .ic-reg-block .ic-reg-verdict-label{font-size:11px;font-weight:700;
 letter-spacing:1.2px;color:var(--vcol);text-transform:uppercase;}
 .ic-reg-block .ic-reg-headline{font-size:14px;margin-top:6px;font-weight:600;}
-.ic-reg-block .ic-reg-rationale{font-size:12px;color:#475569;
+.ic-reg-block .ic-reg-rationale{font-size:12px;color:#465366;
 margin-top:6px;line-height:1.6;}
 .ic-reg-block table{width:100%;border-collapse:collapse;font-size:12.5px;}
-.ic-reg-block thead tr{background:#f1f5f9;}
-.ic-reg-block th{padding:6px 10px;text-align:left;border-bottom:2px solid #cbd5e1;}
-.ic-reg-block td{padding:6px 10px;border-bottom:1px solid #e5e7eb;}
+.ic-reg-block thead tr{background:#ece5d6;}
+.ic-reg-block th{padding:6px 10px;text-align:left;border-bottom:2px solid #d6cfc0;}
+.ic-reg-block td{padding:6px 10px;border-bottom:1px solid #e8e0d0;}
 .ic-reg-block td.mono{font-family:monospace;}
-.ic-reg-block td.tone-killed{color:#EF4444;font-weight:600;}
-.ic-reg-block td.tone-damaged{color:#F59E0B;font-weight:600;}
-.ic-reg-block td.delta-neg{color:#EF4444;}
-.ic-reg-block td.delta-pos{color:#10B981;}
-.ic-reg-block tr.ic-reg-total{border-top:2px solid #1a1a1a;font-weight:700;}
-.ic-reg-block p.ic-reg-empty{font-size:13px;color:#475569;}
+.ic-reg-block td.tone-killed{color:#b5321e;font-weight:600;}
+.ic-reg-block td.tone-damaged{color:#b8732a;font-weight:600;}
+.ic-reg-block td.delta-neg{color:#b5321e;}
+.ic-reg-block td.delta-pos{color:#0a8a5f;}
+.ic-reg-block tr.ic-reg-total{border-top:2px solid #1a2332;font-weight:700;}
+.ic-reg-block p.ic-reg-empty{font-size:13px;color:#465366;}
 </style>
 """
 
@@ -823,9 +823,9 @@ def _render_regulatory_block(report: Any) -> str:
         ImpactVerdict,
     )
     verdict_color = {
-        "PASS": "#10B981", "CAUTION": "#F59E0B",
-        "WARNING": "#F59E0B", "FAIL": "#EF4444",
-    }.get(report.verdict.value, "#64748b")
+        "PASS": "#0a8a5f", "CAUTION": "#b8732a",
+        "WARNING": "#b8732a", "FAIL": "#b5321e",
+    }.get(report.verdict.value, "#7a8699")
 
     killed_rows: List[str] = []
     for tl in report.driver_timelines:
