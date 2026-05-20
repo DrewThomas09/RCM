@@ -14,6 +14,99 @@ from ._chartis_kit import (
 from .brand import PALETTE
 
 
+def _prevalence_delta_chart(
+    conditions: List[Dict[str, Any]], width: int = 720, row_h: int = 26
+) -> str:
+    """Diverging-bar chart of county-vs-national prevalence delta.
+
+    Bars extend right (green) when the county runs hotter than the
+    national average — structural inpatient demand — and left (red)
+    when cooler. Reads the same ``delta_pct`` the table below shows,
+    so the chart and table can never disagree. Empty input yields ""
+    so the caller can drop the figure cleanly.
+    """
+    rows = [c for c in (conditions or [])[:12]
+            if c.get("condition")]
+    if not rows:
+        return ""
+
+    max_abs = max((abs(c.get("delta_pct", 0)) for c in rows), default=0)
+    if max_abs <= 0:
+        max_abs = 1.0
+
+    pad_l, pad_r, pad_t = 168, 56, 14
+    mid_x = pad_l + (width - pad_l - pad_r) / 2.0
+    half = (width - pad_l - pad_r) / 2.0
+    height = pad_t + row_h * len(rows) + 22
+
+    pos = PALETTE["positive"]
+    neg = PALETTE["negative"]
+    mut = PALETTE["text_muted"]
+    rule = PALETTE.get("border", "#BFB6A2")
+    txt = PALETTE.get("text_secondary", "#4a5568")
+
+    parts: List[str] = [
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" role="img" '
+        f'aria-label="County vs national prevalence delta by condition" '
+        f'style="width:100%;max-width:{width}px;height:auto;'
+        f'print-color-adjust:exact;-webkit-print-color-adjust:exact;">'
+    ]
+    # Zero baseline.
+    parts.append(
+        f'<line x1="{mid_x:.1f}" y1="{pad_t - 4}" x2="{mid_x:.1f}" '
+        f'y2="{height - 18}" stroke="{rule}" stroke-width="1"/>'
+    )
+    for i, c in enumerate(rows):
+        name = html.escape(str(c.get("condition", ""))[:30])
+        delta = c.get("delta_pct", 0)
+        y = pad_t + i * row_h
+        bar_y = y + 4
+        bar_h = row_h - 10
+        w = abs(delta) / max_abs * half
+        if delta > 1:
+            color, x0 = pos, mid_x
+        elif delta < -1:
+            color, x0 = neg, mid_x - w
+        else:
+            color, x0 = mut, (mid_x if delta >= 0 else mid_x - w)
+        parts.append(
+            f'<text x="{pad_l - 10}" y="{y + row_h / 2 + 3:.1f}" '
+            f'text-anchor="end" font-size="11" '
+            f'font-family="Inter Tight,system-ui,sans-serif" '
+            f'fill="{txt}">{name}</text>'
+        )
+        parts.append(
+            f'<rect x="{x0:.1f}" y="{bar_y:.1f}" width="{max(w, 0.5):.1f}" '
+            f'height="{bar_h}" rx="2" fill="{color}" '
+            f'opacity="0.85"/>'
+        )
+        lbl_x = (mid_x + w + 6) if delta >= 0 else (mid_x - w - 6)
+        anchor = "start" if delta >= 0 else "end"
+        parts.append(
+            f'<text x="{lbl_x:.1f}" y="{y + row_h / 2 + 3:.1f}" '
+            f'text-anchor="{anchor}" font-size="10.5" '
+            f'font-family="JetBrains Mono,ui-monospace,monospace" '
+            f'fill="{color}">{delta:+.1f}pp</text>'
+        )
+    # Axis caption.
+    parts.append(
+        f'<text x="{mid_x:.1f}" y="{height - 4}" text-anchor="middle" '
+        f'font-size="9.5" letter-spacing="0.06em" '
+        f'font-family="JetBrains Mono,ui-monospace,monospace" '
+        f'fill="{mut}">&#9664; BELOW NATIONAL&#160;&#160;|&#160;&#160;ABOVE NATIONAL &#9654;</text>'
+    )
+    parts.append("</svg>")
+    return "".join(parts)
+
+
+_DEMAND_CHART_CAPTION_CSS = (
+    ".dmd-figcap{font-size:11px;color:#6b6456;margin:8px 0 4px;"
+    "font-family:'JetBrains Mono',ui-monospace,monospace;"
+    "letter-spacing:0.02em;}"
+)
+
+
 def render_demand_analysis(profile: Dict[str, Any]) -> str:
     """Render the full demand analysis page."""
     ccn = html.escape(str(profile.get("ccn", "")))
@@ -132,12 +225,20 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
             f'</tr>'
         )
 
+    _prev_chart = _prevalence_delta_chart(conditions)
+    _prev_fig = (
+        f'<style>{_DEMAND_CHART_CAPTION_CSS}</style>'
+        f'<div class="dmd-figcap">County vs national prevalence delta '
+        f'&middot; green = excess inpatient demand &middot; red = below baseline</div>'
+        f'{_prev_chart}'
+    ) if _prev_chart else ""
     prevalence_section = (
         f'<div class="cad-card">'
         f'<h2>County Disease Prevalence — {county}, {state}</h2>'
         f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:10px;">'
         f'Medicare chronic condition rates in this hospital\'s county vs national average. '
         f'Higher prevalence = more inpatient demand. Acuity weight reflects revenue intensity.</p>'
+        f'{_prev_fig}'
         f'<table class="cad-table"><thead><tr>'
         f'<th>Condition</th><th>County %</th><th>National %</th>'
         f'<th>Delta</th><th>Acuity</th>'
