@@ -178,16 +178,16 @@ class TestStatusBadge(unittest.TestCase):
     def test_positive_badge(self):
         from rcm_mc.ui.colors import status_badge
         html = status_badge("good", kind="positive")
-        # green bg + light green fg
-        self.assertIn("#065f46", html)
-        self.assertIn("#a7f3d0", html)
+        # editorial light-green bg + dark-green fg
+        self.assertIn("#d9ece2", html)
+        self.assertIn("#0a6a48", html)
         self.assertIn("good", html)
 
     def test_negative_badge(self):
         from rcm_mc.ui.colors import status_badge
         html = status_badge("bad", kind="negative")
-        self.assertIn("#7f1d1d", html)
-        self.assertIn("#fecaca", html)
+        self.assertIn("#f2ded7", html)
+        self.assertIn("#8a2a1a", html)
 
     def test_severity_string_accepted(self):
         """status_badge should accept severity strings as
@@ -196,13 +196,13 @@ class TestStatusBadge(unittest.TestCase):
         html = status_badge("critical alert",
                             kind="critical")
         # Should render as negative (red bg)
-        self.assertIn("#7f1d1d", html)
+        self.assertIn("#f2ded7", html)
 
     def test_unknown_kind_falls_back_to_neutral(self):
         from rcm_mc.ui.colors import status_badge
         html = status_badge("?", kind="purple")
         # Neutral bg
-        self.assertIn("#374151", html)
+        self.assertIn("#ece5d6", html)
 
     def test_size_medium(self):
         from rcm_mc.ui.colors import status_badge
@@ -221,12 +221,12 @@ class TestStatusDot(unittest.TestCase):
         from rcm_mc.ui.colors import status_dot
         html = status_dot("positive")
         self.assertIn("border-radius:50%", html)
-        self.assertIn("#10b981", html)
+        self.assertIn("#0a8a5f", html)
 
     def test_severity_string_mapped(self):
         from rcm_mc.ui.colors import status_dot
         html = status_dot("critical")
-        self.assertIn("#ef4444", html)
+        self.assertIn("#b5321e", html)
 
 
 if __name__ == "__main__":
