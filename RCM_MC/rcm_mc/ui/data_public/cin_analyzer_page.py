@@ -2,7 +2,43 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+
+
+def _quality_chart(items) -> str:
+    """Lead chart for the quality-measure table — measures ranked by
+    financial impact so a partner sees which gaps move the most money
+    before reading the mixed-unit detail grid. Bar width = share of
+    total financial impact; tone marks performance vs benchmark
+    (beating green · within 5pp amber · lagging red), using the table's
+    own inverse-metric handling so readmission/ED rates read correctly.
+    """
+    def _gap(q):
+        inverse = q.measure in ("Readmission Rate 30-Day", "ED Utilization / 1000")
+        return (q.benchmark - q.current_performance) if inverse \
+            else (q.current_performance - q.benchmark)
+
+    total = sum(abs(q.financial_impact_mm) for q in items) or 1.0
+    ranked = sorted(items, key=lambda q: abs(q.financial_impact_mm), reverse=True)
+    rows = []
+    for q in ranked:
+        g = _gap(q)
+        tone = "positive" if g > 0 else ("warning" if g > -0.05 else "negative")
+        rows.append(ck_bar_row(
+            q.measure,
+            f"${q.financial_impact_mm:,.1f}M",
+            abs(q.financial_impact_mm) / total * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = share of total financial impact · value = impact ($M) · '
+        'tone = vs benchmark (green beating · amber within 5pp · red lagging)</div>'
+        '</div>'
+    )
 
 _EXPLAINER_CSS = """<style>
 .ck-cin-explainer{font-family:var(--sc-serif,'Georgia',serif);
@@ -197,6 +233,7 @@ def render_cin_analyzer(params: dict = None) -> str:
 
     pv_tbl = _providers_table(r.providers)
     ct_tbl = _contracts_table(r.contracts)
+    qm_chart = _quality_chart(r.quality_measures)
     qm_tbl = _quality_table(r.quality_measures)
     gt_tbl = _geo_table(r.geography)
     dst_tbl = _dist_table(r.distributions)
@@ -236,7 +273,7 @@ def render_cin_analyzer(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Provider Member Roster — Specialty, Lives, Quality, Engagement</div>{pv_tbl}</div>
   <div style="{cell}"><div style="{h3}">Payer Contract Portfolio — Shared Savings &amp; Risk</div>{ct_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Quality Measure Performance vs HEDIS/STARS Benchmark</div>{qm_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Quality Measure Performance vs HEDIS/STARS Benchmark</div>{qm_chart}{qm_tbl}</div>
   <div style="{cell}"><div style="{h3}">Geographic Coverage &amp; Network Adequacy</div>{gt_tbl}</div>
   <div style="{cell}"><div style="{h3}">Distribution Cohorts — Quality-Weighted Payment</div>{dst_tbl}</div>
   <div style="{cell}"><div style="{h3}">Regulatory Compliance — FTC / Stark / Anti-Kickback / State Insurance</div>{cm_tbl}</div>
