@@ -59,6 +59,94 @@ def _status_badge(status: str) -> str:
     return f'<span style="background:{c};color:#fff;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:600;">{l}</span>'
 
 
+_VT_CHART_CAPTION_CSS = (
+    ".vt-figcap{font-size:11px;color:#6b6456;margin:6px 0 8px;"
+    "font-family:'JetBrains Mono',ui-monospace,monospace;"
+    "letter-spacing:0.02em;}"
+)
+
+
+def _realization_chart(
+    levers: List[Dict[str, Any]], width: int = 700, row_h: int = 26
+) -> str:
+    """Horizontal realization-% bars per lever with on-track/lagging bands.
+
+    Each lever's realization (actual ÷ planned) is a bar tone-coded
+    green (≥85%, on track), amber (60–85%, lagging), red (<60%, off
+    track) — matching the table's status column — with dashed 60% and
+    85% reference lines so a partner sees who is hitting plan at a
+    glance. Reads the same realization_pct the table shows; empty
+    input returns "".
+    """
+    rows = [lev for lev in (levers or []) if lev.get("lever")]
+    if not rows:
+        return ""
+
+    pad_l, pad_r, pad_t = 180, 56, 16
+    bar_max = width - pad_l - pad_r
+    height = pad_t + row_h * len(rows) + 22
+    # Scale axis to the largest realization (cap headroom at 120%).
+    axis_max = max(1.0, min(1.5, max(
+        (lev.get("realization_pct", 0) for lev in rows), default=1.0)))
+
+    pos = PALETTE["positive"]
+    warn = PALETTE["warning"]
+    neg = PALETTE["negative"]
+    rule = PALETTE.get("border", "#BFB6A2")
+    txt = PALETTE.get("text_secondary", "#4a5568")
+    mut = PALETTE.get("text_muted", "#8a8270")
+
+    def _x(frac: float) -> float:
+        return pad_l + max(0.0, min(axis_max, frac)) / axis_max * bar_max
+
+    parts: List[str] = [
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" role="img" '
+        f'aria-label="Realization percent by value-creation lever" '
+        f'style="width:100%;max-width:{width}px;height:auto;'
+        f'print-color-adjust:exact;-webkit-print-color-adjust:exact;">'
+    ]
+    parts.append(
+        f'<line x1="{pad_l}" y1="{pad_t - 4}" x2="{pad_l}" '
+        f'y2="{height - 18}" stroke="{rule}" stroke-width="1"/>'
+    )
+    # Reference lines at 60% and 85%.
+    for ref, col, lbl in ((0.6, warn, "60%"), (0.85, pos, "85%")):
+        rx = _x(ref)
+        parts.append(
+            f'<line x1="{rx:.1f}" y1="{pad_t - 4}" x2="{rx:.1f}" '
+            f'y2="{height - 18}" stroke="{col}" stroke-width="1" '
+            f'stroke-dasharray="4 3" opacity="0.5"/>'
+            f'<text x="{rx:.1f}" y="{height - 6}" text-anchor="middle" '
+            f'font-size="9" font-family="JetBrains Mono,ui-monospace,monospace" '
+            f'fill="{col}">{lbl}</text>'
+        )
+    for i, lev in enumerate(rows):
+        name = _html.escape(str(lev["lever"])[:26])
+        r = lev.get("realization_pct", 0)
+        color = pos if r >= 0.85 else (warn if r >= 0.6 else neg)
+        y = pad_t + i * row_h
+        w = _x(r) - pad_l
+        parts.append(
+            f'<text x="{pad_l - 8}" y="{y + row_h / 2 + 3:.1f}" '
+            f'text-anchor="end" font-size="11" '
+            f'font-family="Inter Tight,system-ui,sans-serif" '
+            f'fill="{txt}">{name}</text>'
+        )
+        parts.append(
+            f'<rect x="{pad_l}" y="{y + 4:.1f}" width="{max(w, 0.5):.1f}" '
+            f'height="{row_h - 11}" rx="2" fill="{color}" opacity="0.82"/>'
+        )
+        parts.append(
+            f'<text x="{pad_l + w + 6:.1f}" y="{y + row_h / 2 + 3:.1f}" '
+            f'text-anchor="start" font-size="10" '
+            f'font-family="JetBrains Mono,ui-monospace,monospace" '
+            f'fill="{color}">{r:.0%}</text>'
+        )
+    parts.append("</svg>")
+    return "".join(parts)
+
+
 def render_value_tracker(
     deal_id: str,
     db_path: str,
@@ -230,12 +318,22 @@ def render_value_tracker(
 
     lever_table = ""
     if lever_rows:
+        _realz_chart = _realization_chart(
+            list(summary.levers) if summary else [])
+        _realz_fig = (
+            f'<style>{_VT_CHART_CAPTION_CSS}</style>'
+            f'<div class="vt-figcap">Realization by lever &middot; '
+            f'green &ge;85% on track &middot; amber 60&ndash;85% lagging '
+            f'&middot; red &lt;60% off track</div>'
+            f'{_realz_chart}'
+        ) if _realz_chart else ""
         lever_table = (
             f'<div class="cad-card">'
             f'<h2>Lever-by-Lever Comparison</h2>'
             f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:10px;">'
             f'Planned impact from the frozen EBITDA bridge vs cumulative quarterly actuals. '
             f'On Track = &ge;85% realization. Lagging = 60-85%. Off Track = &lt;60%.</p>'
+            f'{_realz_fig}'
             f'<table class="cad-table"><thead><tr>'
             f'<th>Lever</th><th>Planned</th><th>Actual</th><th>Realization</th>'
             f'<th></th><th>Status</th>'
