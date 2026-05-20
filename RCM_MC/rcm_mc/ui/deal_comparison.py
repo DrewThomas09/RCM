@@ -37,7 +37,9 @@ _RADAR_METRICS = [
     "cost_to_collect", "clean_claim_rate", "case_mix_index",
 ]
 
-_PALETTE = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"]
+# Editorial categorical series colors (one per compared deal) —
+# navy / teal / amber / red, distinct but on-palette.
+_PALETTE = ["#0b2341", "#1F7A75", "#b8732a", "#b5321e"]
 
 
 def _pm_val(p: DealAnalysisPacket, metric: str) -> Optional[float]:
@@ -90,7 +92,7 @@ def _render_radar(packets: List[DealAnalysisPacket]) -> str:
             anchor = "start"
         labels += (
             f'<text x="{lx:.0f}" y="{ly:.0f}" '
-            f'text-anchor="{anchor}" fill="#94a3b8" '
+            f'text-anchor="{anchor}" fill="#7a8699" '
             f'font-size="10">{m.replace("_", " ")}</text>'
         )
 
