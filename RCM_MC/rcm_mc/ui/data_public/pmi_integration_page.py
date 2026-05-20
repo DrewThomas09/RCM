@@ -2,7 +2,36 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+
+
+def _integrations_chart(items) -> str:
+    """Lead chart for the integration table — deals ranked by synergy
+    realized so the biggest captured value surfaces first. Bar width =
+    realization (% of synergy target captured); value = synergy realized
+    ($M); tone marks the realization tier (>=80% green · >=60% teal ·
+    below amber). Full integration grid stays directly below.
+    """
+    ranked = sorted(items, key=lambda d: d.synergy_realized_m, reverse=True)
+    rows = []
+    for d in ranked:
+        tone = ("positive" if d.realization_pct >= 0.80 else "teal"
+                if d.realization_pct >= 0.60 else "warning")
+        rows.append(ck_bar_row(
+            d.platform,
+            f"${d.synergy_realized_m:,.1f}M",
+            d.realization_pct * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = synergy realization (% of target captured) · value = '
+        'synergy realized ($M) · tone = tier (green &ge;80% · teal &ge;60% · amber below)</div>'
+        '</div>'
+    )
 
 
 def _status_color(s: str) -> str:
@@ -200,7 +229,15 @@ def render_pmi_integration(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    d_chart = _integrations_chart(r.integrations)
     d_tbl = _integrations_table(r.integrations)
+    value_anchor = ck_value_anchor(
+        "Synergy Capture",
+        f"${r.total_synergy_realized_m:,.1f}M realized",
+        delta=f"{r.weighted_realization_pct * 100:.0f}% of ${r.total_synergy_target_m:,.0f}M target · {r.on_track_count}/{r.total_integrations} on track",
+        opportunity=f"${(r.total_synergy_target_m - r.total_synergy_realized_m):,.1f}M synergy remaining",
+        tone="positive",
+    )
     w_tbl = _workstreams_table(r.workstreams)
     c_tbl = _categories_table(r.synergy_categories)
     rk_tbl = _risks_table(r.risks)
@@ -223,7 +260,8 @@ def render_pmi_integration(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Integration Deals — Synergy Realization</div>{d_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">Integration Deals — Synergy Realization</div>{d_chart}{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Synergy Categories — Portfolio Aggregate</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Workstream Execution</div>{w_tbl}</div>
   <div style="{cell}"><div style="{h3}">Milestone Schedule</div>{m_tbl}</div>

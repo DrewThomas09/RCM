@@ -2,7 +2,37 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+
+
+def _cash_chart(items) -> str:
+    """Lead chart for the cash-position table — deals ranked by total
+    liquidity so the strongest and thinnest balance sheets surface first.
+    Bar width = share of total portfolio liquidity; value = liquidity
+    ($M); tone marks runway via days of opex (>=90d green · >=45d teal ·
+    below amber). Full cash grid stays directly below.
+    """
+    total = sum(c.total_liquidity_m for c in items) or 1.0
+    ranked = sorted(items, key=lambda c: c.total_liquidity_m, reverse=True)
+    rows = []
+    for c in ranked:
+        tone = ("positive" if c.days_of_opex >= 90 else "teal"
+                if c.days_of_opex >= 45 else "warning")
+        rows.append(ck_bar_row(
+            c.deal,
+            f"${c.total_liquidity_m:,.1f}M",
+            c.total_liquidity_m / total * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = share of portfolio liquidity · value = total liquidity ($M) · '
+        'tone = runway (green &ge;90d opex · teal &ge;45d · amber below)</div>'
+        '</div>'
+    )
 
 
 def _status_color(s: str) -> str:
@@ -185,7 +215,14 @@ def render_treasury_tracker(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    c_chart = _cash_chart(r.cash_positions)
     c_tbl = _cash_table(r.cash_positions)
+    value_anchor = ck_value_anchor(
+        "Portfolio Treasury",
+        f"${r.total_portfolio_liquidity_m:,.0f}M liquidity",
+        delta=f"${r.total_cash_and_investments_m:,.0f}M cash · {r.weighted_revolver_utilization_pct * 100:.0f}% revolver utilization · {r.at_risk_deals} deals at risk",
+        tone="navy",
+    )
     w_tbl = _wc_table(r.working_capital)
     b_tbl = _burn_table(r.burn_rate)
     a_tbl = _accounts_table(r.accounts)
@@ -208,7 +245,8 @@ def render_treasury_tracker(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Cash Position & Revolver Utilization</div>{c_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">Cash Position & Revolver Utilization</div>{c_chart}{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Working Capital Summary</div>{w_tbl}</div>
   <div style="{cell}"><div style="{h3}">Monthly Cash Burn / Free Cash Flow</div>{b_tbl}</div>
   <div style="{cell}"><div style="{h3}">Bank Accounts & Yield</div>{a_tbl}</div>

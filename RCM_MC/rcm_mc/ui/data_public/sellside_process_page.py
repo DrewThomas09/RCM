@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _stage_color(s: str) -> str:
@@ -222,10 +222,17 @@ def render_sellside_process(params: dict = None) -> str:
         meta=f"""{r.total_active_processes} active processes · {r.total_buyers_engaged} buyers engaged · ${r.total_target_ev_m:,.1f}M target EV · {r.weighted_target_moic:.2f}x weighted MOIC · {r.processes_closing_12mo} closings ≤12 mo — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    value_anchor = ck_value_anchor(
+        "Sell-Side Pipeline",
+        f"${r.total_target_ev_m:,.0f}M target EV in market",
+        delta=f"{r.total_active_processes} active processes · {r.total_buyers_engaged} buyers engaged · {r.weighted_target_moic:.2f}x target MOIC · {r.processes_closing_12mo} closing <12mo",
+        tone="teal",
+    )
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Active Sell-Side Processes</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Negotiation Postures — Critical Deals</div>{po_tbl}</div>
   <div style="{cell}"><div style="{h3}">Buyer Engagements by Process</div>{e_tbl}</div>
