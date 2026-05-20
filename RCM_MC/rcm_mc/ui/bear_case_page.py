@@ -127,13 +127,16 @@ font-family:"Helvetica Neue",Arial,sans-serif;}}
 # Composed blocks
 # ────────────────────────────────────────────────────────────────────
 
+# Editorial categorical hues for risk themes — distinct but on-palette
+# (no Tailwind purple/pink). Regulatory/credit keep their natural
+# red/amber semantic tones.
 _THEME_COLORS = {
-    "REGULATORY": "#EF4444",
-    "CREDIT": "#F59E0B",
+    "REGULATORY": "#b5321e",       # red
+    "CREDIT": "#b8732a",           # amber
     "OPERATIONAL": "var(--sc-navy)",
-    "MARKET": "#8b5cf6",
-    "STRUCTURAL": "#64748b",
-    "PATTERN": "#ec4899",
+    "MARKET": "#1F7A75",           # teal
+    "STRUCTURAL": "#7a8699",       # muted slate
+    "PATTERN": "#a98545",          # ochre
 }
 
 
