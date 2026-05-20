@@ -893,6 +893,73 @@ def ck_bar_row(
     )
 
 
+def ck_value_anchor(
+    label: str,
+    value: str,
+    *,
+    delta: str = "",
+    opportunity: str = "",
+    target: str = "",
+    tone: str = "teal",
+) -> str:
+    """Value-anchor band — leads an analytic section with the iVantage
+    pattern: a headline metric anchored to *benchmark delta → dollar
+    opportunity → target*, so a partner reads the financial stakes
+    before any chart or table.
+
+    ``label`` is the eyebrow (e.g. "CYBER POSTURE"); ``value`` is the
+    headline metric (e.g. "72 / 100"). The three optional facts render
+    as a labelled row — ``opportunity`` is emphasised in the tone color
+    because it is the load-bearing number. ``tone`` ∈ {teal, positive,
+    warning, negative, navy}.
+
+    DEFENSIBILITY: callers pass only computed figures. Pass ``opportunity``
+    empty when no defensible dollar value exists — the band still anchors
+    on the real metric + ``delta`` rather than inventing one. ``value``,
+    ``delta``, ``opportunity`` and ``target`` are escaped here, so callers
+    pass plain strings (not pre-built markup).
+    """
+    tone_var = {
+        "teal": "var(--sc-teal)",
+        "positive": "var(--sc-positive)",
+        "warning": "var(--sc-warning)",
+        "negative": "var(--sc-negative)",
+        "navy": "var(--sc-navy)",
+    }.get(tone, "var(--sc-teal)")
+    facts = []
+    if delta:
+        facts.append(
+            '<div class="ck-va-fact">'
+            '<span class="ck-va-fact-label">vs benchmark</span>'
+            f'<span class="ck-va-fact-value">{_esc(delta)}</span></div>'
+        )
+    if opportunity:
+        facts.append(
+            '<div class="ck-va-fact ck-va-fact-hero">'
+            '<span class="ck-va-fact-label">opportunity</span>'
+            f'<span class="ck-va-fact-value" style="color:{tone_var}">'
+            f'{_esc(opportunity)}</span></div>'
+        )
+    if target:
+        facts.append(
+            '<div class="ck-va-fact">'
+            '<span class="ck-va-fact-label">target</span>'
+            f'<span class="ck-va-fact-value">{_esc(target)}</span></div>'
+        )
+    facts_html = (
+        f'<div class="ck-va-facts">{"".join(facts)}</div>' if facts else ""
+    )
+    return (
+        f'<div class="ck-value-anchor" style="--ck-va-tone:{tone_var}">'
+        '<div class="ck-va-head">'
+        f'<span class="ck-va-eyebrow">{_esc(label)}</span>'
+        f'<span class="ck-va-value">{_esc(value)}</span>'
+        '</div>'
+        f'{facts_html}'
+        '</div>'
+    )
+
+
 def ck_paired_block(
     viz_html: str,
     *,
@@ -3982,6 +4049,25 @@ _CSS_INLINE_FALLBACK = """
   .ck-bar-row-fill { position:absolute; left:0; top:0; bottom:0; }
   .ck-bar-row-pct { text-align:right; color:var(--sc-text-faint); font-size:11px; }
 
+  /* Value-anchor band — headline metric + benchmark delta / $ opportunity / target */
+  .ck-value-anchor { display:flex; flex-wrap:wrap; align-items:center;
+    justify-content:space-between; gap:var(--sc-s-5); margin-bottom:var(--sc-s-5);
+    padding:14px 18px; background:var(--sc-bone);
+    border:1px solid var(--sc-rule); border-left:3px solid var(--ck-va-tone, var(--sc-teal)); }
+  .ck-va-head { display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .ck-va-eyebrow { font-family:var(--sc-mono); font-size:10px; letter-spacing:0.12em;
+    text-transform:uppercase; color:var(--sc-text-dim); }
+  .ck-va-value { font-family:var(--sc-serif); font-weight:600; font-size:26px;
+    line-height:1; color:var(--sc-text); font-variant-numeric:tabular-nums; }
+  .ck-va-facts { display:flex; flex-wrap:wrap; gap:var(--sc-s-6);
+    align-items:flex-end; }
+  .ck-va-fact { display:flex; flex-direction:column; gap:4px; }
+  .ck-va-fact-label { font-family:var(--sc-mono); font-size:9.5px; letter-spacing:0.1em;
+    text-transform:uppercase; color:var(--sc-text-faint); }
+  .ck-va-fact-value { font-family:var(--sc-mono); font-size:13px; font-weight:600;
+    color:var(--sc-text); font-variant-numeric:tabular-nums; }
+  .ck-va-fact-hero .ck-va-fact-value { font-size:18px; font-weight:700; }
+
   /* Paired viz + dataset — the signature block (chart left, data right) */
   .ck-pair { display:grid; grid-template-columns:1.4fr 1fr; gap:0;
     background:#fff; border:1px solid var(--sc-rule-2); margin:var(--sc-s-5) 0; }
@@ -5071,6 +5157,7 @@ __all__ = [
     "ck_table",
     "ck_empty_state",
     "ck_kpi_block",
+    "ck_value_anchor",
     "ck_page_title",
     "ck_signal_badge",
     "ck_command_palette",
