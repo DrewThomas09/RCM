@@ -490,34 +490,10 @@ def render_rcm_benchmarks(
     )
 
     explainer = render_page_explainer(
-        what=(
-            "Industry P25/P50/P75 bands for the seven canonical RCM "
-            "metrics (initial-denial rate, clean-claim rate, days in "
-            "AR, net collection rate, write-off %, cost to collect, "
-            "denial-overturn rate) segmented by facility type "
-            "(community, academic, CAH, LTAC, ASC, behavioral, "
-            "physician group, home health)."
-        ),
-        scale=(
-            "For each metric the P50 is the industry median and the "
-            "P25/P75 are the quartile boundaries. Metrics are labelled "
-            "'↓ better' when lower values are favourable (denial rate, "
-            "days in AR, write-offs, cost to collect) and '↑ better' "
-            "otherwise."
-        ),
-        use=(
-            "Use this as the benchmark file when comparing a target's "
-            "actuals. A target whose days-in-AR sits above P75 for its "
-            "segment is not merely 'high' — it is worse than 75% of "
-            "peers, which sizes the recoverable AR opportunity."
-        ),
-        source=(
-            "data_public/rcm_benchmarks.py::get_all_benchmarks; "
-            "band values sourced from HFMA MAP 2023, Advisory Board "
-            "Hospital Benchmarking Survey 2022, MGMA 2022–2023, ASCA "
-            "2023, Waystar 2020–2024, and segment-specific citations "
-            "in each record's benchmark_notes field."
-        ),
+        what="Industry P25/P50/P75 benchmark bands for the seven RCM metrics, by facility type.",
+        scale="P50 is the median; P25/P75 are the quartiles. '↓ better' metrics favor lower values.",
+        use="Compare a target to its segment — above-P75 days-in-AR sizes the recoverable opportunity.",
+        source="HFMA MAP 2023 · Advisory Board 2022 · MGMA 2022–23 · ASCA 2023 · Waystar 2020–24.",
         page_key="rcm-benchmarks",
     )
 
