@@ -2,7 +2,21 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
+
+
+def _vendors_chart(items) -> str:
+    """Lead chart — panel vendors ranked by deal engagements (tone by tier)."""
+    def _tone(v):
+        return {"Tier 1": "positive", "Tier 2": "teal", "Tier 3": "navy"}.get(v.tier, "navy")
+    top = sorted(items, key=lambda v: v.deals_last_24mo, reverse=True)[:14]
+    total = sum(v.deals_last_24mo for v in top) or 1
+    rows = [ck_bar_row(f"{v.firm} · {v.category}", f"{v.deals_last_24mo} deals",
+            v.deals_last_24mo / total * 100.0, tone=_tone(v)) for v in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of top-14 deal engagements (LTM) '
+            '· value = engagements · tone = vendor tier</div></div>')
 
 
 def _vendors_table(items) -> str:
@@ -144,6 +158,13 @@ def render_diligence_vendors(params: dict = None) -> str:
     )
 
     v_tbl = _vendors_table(r.vendors)
+    v_chart = _vendors_chart(r.vendors)
+    value_anchor = ck_value_anchor(
+        "Diligence Panel Spend",
+        f"${r.total_spend_ltm_mm:,.1f}M spend LTM",
+        delta=f"{r.total_vendors} vendors · {r.total_deals_covered} engagements · +{r.avg_nps} avg NPS",
+        tone="teal",
+    )
     c_tbl = _categories_table(r.categories)
     s_tbl = _scorecards_table(r.scorecards)
     p_tbl = _pipeline_table(r.pipeline)
@@ -162,7 +183,8 @@ def render_diligence_vendors(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Active Vendor Panel</div>{v_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">Active Vendor Panel</div>{v_chart}{v_tbl}</div>
   <div style="{cell}"><div style="{h3}">Category Spend Analysis</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Top Vendor Scorecards</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">New Vendor Pipeline</div>{p_tbl}</div>

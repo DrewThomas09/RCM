@@ -2,7 +2,23 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+
+
+def _holdcos_chart(items) -> str:
+    """Lead chart — holdco boards ranked by governance score (tone by band)."""
+    def _tone(h):
+        if h.governance_score >= 85: return "positive"
+        if h.governance_score >= 78: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda h: h.governance_score, reverse=True)
+    rows = [ck_bar_row(f"{h.holdco} · {h.sector}", f"{h.governance_score}",
+            float(h.governance_score), tone=_tone(h)) for h in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = governance score (0-100 scale) '
+            '· tone = score band</div></div>')
+
 
 _EXPLAINER_CSS = """<style>
 .ck-bg-explainer{font-family:var(--sc-serif,'Georgia',serif);
@@ -180,6 +196,7 @@ def render_board_governance(params: dict = None) -> str:
     )
 
     h_tbl = _holdcos_table(r.holdcos)
+    h_chart = _holdcos_chart(r.holdcos)
     d_tbl = _directors_table(r.directors)
     c_tbl = _committees_table(r.committees)
     s_tbl = _sponsors_table(r.sponsors)
@@ -209,7 +226,7 @@ def render_board_governance(params: dict = None) -> str:
     body = page_title + bg_explainer + f"""
 <div class="ck-page-wrap">
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Holdco Board Composition</div>{h_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Holdco Board Composition</div>{h_chart}{h_tbl}</div>
   <div style="{cell}"><div style="{h3}">Bench of Independent Directors</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Committee Coverage by Holdco</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sponsor Board Representation</div>{s_tbl}</div>
