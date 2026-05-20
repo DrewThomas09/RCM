@@ -70,6 +70,24 @@ def _sdoh_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _investments_chart(items) -> str:
+    """Summary chart — equity investments ranked by Star bonus impact (tone by ROI)."""
+    def _tone(inv):
+        roi = (inv.star_bonus_impact_mm / inv.annual_cost_mm) if inv.annual_cost_mm else 0.0
+        if roi >= 2.0: return "positive"
+        if roi >= 1.0: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda inv: inv.star_bonus_impact_mm, reverse=True)
+    total = sum(inv.star_bonus_impact_mm for inv in top) or 1.0
+    rows = [ck_bar_row(f"{inv.initiative} · {inv.category}",
+            f"${inv.star_bonus_impact_mm:,.2f}M / ${inv.annual_cost_mm:,.2f}M cost",
+            inv.star_bonus_impact_mm / total * 100.0, tone=_tone(inv)) for inv in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of Star bonus impact '
+            '· value = bonus impact / annual cost · tone = ROI (bonus ÷ cost)</div></div>')
+
+
 def _investments_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
@@ -142,6 +160,7 @@ def render_health_equity(params: dict = None) -> str:
     c_chart = _components_chart(r.hei_components)
     s_tbl = _sdoh_table(r.sdoh)
     i_tbl = _investments_table(r.investments)
+    i_chart = _investments_chart(r.investments)
     d_tbl = _demographics_table(r.demographics)
 
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
@@ -169,7 +188,7 @@ def render_health_equity(params: dict = None) -> str:
   {value_anchor}
   <div style="{cell}"><div style="{h3}">HEI Measure Components — LIS/Dual vs Non-LIS Performance</div>{c_chart}{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">SDOH Screening Completion &amp; Closed-Loop Referral</div>{s_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Equity Investment Portfolio &amp; ROI</div>{i_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Equity Investment Portfolio &amp; ROI</div>{i_chart}{i_tbl}</div>
   <div style="{cell}"><div style="{h3}">Demographic Segment Performance &amp; Disparity Flags</div>{d_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Equity Thesis:</strong> HEI score {r.overall_hei_score:.3f} ({r.hei_points_current:.0f}/100 points).

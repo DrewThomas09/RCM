@@ -48,6 +48,23 @@ def _vendors_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _categories_chart(items) -> str:
+    """Summary chart — vendor categories ranked by spend (tone by concentration)."""
+    def _tone(c):
+        if c.concentration_pct > 0.50: return "warning"
+        if c.concentration_pct > 0.35: return "teal"
+        return "navy"
+    top = sorted(items, key=lambda c: c.total_spend_mm, reverse=True)
+    total = sum(c.total_spend_mm for c in top) or 1.0
+    rows = [ck_bar_row(f"{c.category} ({c.total_deals} deals)",
+            f"${c.total_spend_mm:,.2f}M",
+            c.total_spend_mm / total * 100.0, tone=_tone(c)) for c in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of panel spend by category '
+            '· value = spend ($M) · tone = vendor concentration</div></div>')
+
+
 def _categories_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
@@ -166,6 +183,7 @@ def render_diligence_vendors(params: dict = None) -> str:
         tone="teal",
     )
     c_tbl = _categories_table(r.categories)
+    c_chart = _categories_chart(r.categories)
     s_tbl = _scorecards_table(r.scorecards)
     p_tbl = _pipeline_table(r.pipeline)
     ph_tbl = _phases_table(r.phase_spend)
@@ -185,7 +203,7 @@ def render_diligence_vendors(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">Active Vendor Panel</div>{v_chart}{v_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Category Spend Analysis</div>{c_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Category Spend Analysis</div>{c_chart}{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Top Vendor Scorecards</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">New Vendor Pipeline</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Spend by Deal Phase</div>{ph_tbl}</div>
