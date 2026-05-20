@@ -94,11 +94,11 @@ def _health_cell(score: Optional[int], band: Optional[str]) -> str:
         return _cell_chip(str(score), bg="#f2e7d1", fg="#7a4c16")
     if band_l in ("poor", "critical"):
         return _cell_chip(str(score), bg="#f2ded7", fg="#8a2a1a")
-    return _cell_chip(str(score), bg="#e0e7ff", fg="#3730a3")
+    return _cell_chip(str(score), bg="#ece5d6", fg="#7a8699")
 
 
 def _covenant_cell(status: Optional[str]) -> str:
-    s = (status or "").upper()
+    s = _safe_status_str(status).upper()
     if s == "TRIPPED":
         return _cell_chip("TRIPPED", bg="#f2ded7", fg="#8a2a1a")
     if s == "TIGHT":
