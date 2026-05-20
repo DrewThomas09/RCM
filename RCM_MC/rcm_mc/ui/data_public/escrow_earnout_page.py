@@ -2,7 +2,26 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+
+def _escrows_chart(items) -> str:
+    """Lead chart for the escrow table — positions ranked by size so the
+    largest held balances surface first. Bar = share of total escrow
+    held; value = escrow size ($M); tone amber where claims are filed.
+    Full escrow grid stays directly below.
+    """
+    total = sum(e.escrow_size_m for e in items) or 1.0
+    ranked = sorted(items, key=lambda e: e.escrow_size_m, reverse=True)
+    rows = []
+    for e in ranked:
+        tone = "warning" if getattr(e, "claims_filed", 0) else "teal"
+        rows.append(ck_bar_row(e.deal, f"${e.escrow_size_m:,.1f}M",
+                               e.escrow_size_m / total * 100.0, tone=tone))
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of total escrow held '
+            '\u00b7 value = escrow size ($M) \u00b7 tone = amber if claims filed</div></div>')
+
 
 
 def _escrow_status_color(status: str) -> str:
@@ -211,7 +230,15 @@ def render_escrow_earnout(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    e_chart = _escrows_chart(r.escrows)
     e_tbl = _escrows_table(r.escrows)
+    value_anchor = ck_value_anchor(
+        "Escrow & Earnout",
+        f"${r.total_escrow_held_m:,.1f}M escrow held",
+        delta=f"${r.total_earnout_accrued_m:,.1f}M earnout accrued of ${r.total_earnout_max_m:,.0f}M max \u00b7 {r.active_claims} active claims",
+        opportunity=f"${r.expected_12mo_release_m:,.1f}M expected release <12mo",
+        tone="teal",
+    )
     eo_tbl = _earnouts_table(r.earnouts)
     m_tbl = _milestones_table(r.milestones)
     s_tbl = _sectors_table(r.sectors)
@@ -234,8 +261,9 @@ def render_escrow_earnout(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Sector Rollup — Contingent Liability Exposure</div>{s_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Escrow Positions — Active, Releasing, Released</div>{e_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Escrow Positions — Active, Releasing, Released</div>{e_chart}{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Earnout Positions — Accrual / Probability-Weighted</div>{eo_tbl}</div>
   <div style="{cell}"><div style="{h3}">Milestone Payments — Trigger Events</div>{m_tbl}</div>
   <div style="{cell}"><div style="{h3}">Claim History — Portfolio-Wide</div>{c_tbl}</div>

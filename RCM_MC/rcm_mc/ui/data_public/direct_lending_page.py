@@ -2,7 +2,31 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+
+
+def _facilities_chart(items) -> str:
+    """Lead chart for the facility table — facilities ranked by amount
+    outstanding so the weight of the loan book reads at a glance. Bar =
+    share of total outstanding; value = outstanding ($M); tone marks
+    documentation (teal cov-lite · amber maintenance). Full grid below.
+    """
+    total = sum(f.outstanding_mm for f in items) or 1.0
+    ranked = sorted(items, key=lambda f: f.outstanding_mm, reverse=True)
+    rows = []
+    for f in ranked:
+        tone = "teal" if f.cov_lite else "warning"
+        rows.append(ck_bar_row(
+            f.lender, f"${f.outstanding_mm:,.0f}M",
+            f.outstanding_mm / total * 100.0, tone=tone))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = share of total outstanding · value = outstanding ($M) · '
+        'tone = documentation (teal cov-lite · amber maintenance)</div>'
+        '</div>')
 
 
 def _facilities_table(items) -> str:
@@ -141,7 +165,14 @@ def render_direct_lending(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    f_chart = _facilities_chart(r.facilities)
     f_tbl = _facilities_table(r.facilities)
+    value_anchor = ck_value_anchor(
+        "Direct Lending Book",
+        f"${r.total_outstanding_mm:,.0f}M outstanding",
+        delta=f"{r.total_facilities} facilities · {r.blended_all_in_rate_pct:.2f}% all-in · {r.weighted_leverage:.2f}x leverage · {r.cov_lite_pct * 100:.0f}% cov-lite",
+        tone="navy",
+    )
     rt_tbl = _rates_table(r.rates)
     m_tbl = _matrix_table(r.matrix)
     d_tbl = _defaults_table(r.defaults)
@@ -160,7 +191,8 @@ def render_direct_lending(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Active Facility Portfolio</div>{f_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">Active Facility Portfolio</div>{f_chart}{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">Market-Rate Spread Matrix by Deal Size</div>{rt_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sponsor-Lender Relationship Matrix</div>{m_tbl}</div>
   <div style="{cell}"><div style="{h3}">Default Rate Trend — Healthcare vs Overall</div>{d_tbl}</div>

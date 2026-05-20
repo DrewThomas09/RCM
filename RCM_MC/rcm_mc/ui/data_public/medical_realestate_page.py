@@ -2,7 +2,24 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+
+def _properties_chart(items) -> str:
+    """Lead chart for the property table — properties ranked by value so
+    the biggest assets surface first. Bar = share of total portfolio
+    value; value = property value ($M); tone teal. Full grid below.
+    """
+    total = sum(p.value_m for p in items) or 1.0
+    ranked = sorted(items, key=lambda p: p.value_m, reverse=True)
+    rows = []
+    for p in ranked:
+        rows.append(ck_bar_row(p.property_name, f"${p.value_m:,.1f}M",
+                               p.value_m / total * 100.0, tone="teal"))
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of total portfolio '
+            'value \u00b7 value = property value ($M)</div></div>')
+
 
 
 def _credit_color(rating: str) -> str:
@@ -184,7 +201,14 @@ def render_medical_realestate(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    p_chart = _properties_chart(r.properties)
     p_tbl = _properties_table(r.properties)
+    value_anchor = ck_value_anchor(
+        "Medical Real Estate",
+        f"${r.total_value_b:,.1f}B portfolio value",
+        delta=f"{r.total_properties} properties \u00b7 ${r.total_annual_rent_m:,.1f}M annual rent \u00b7 {r.weighted_cap_rate_pct:.1f}% wtd cap \u00b7 {r.weighted_lease_years:.1f}y WALT",
+        tone="navy",
+    )
     s_tbl = _sectors_table(r.sectors)
     t_tbl = _tenants_table(r.tenants)
     e_tbl = _expirations_table(r.expirations)
@@ -207,8 +231,9 @@ def render_medical_realestate(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Property-Type Rollup</div>{s_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Individual Properties</div>{p_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Individual Properties</div>{p_chart}{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Tenant Concentration & Credit Quality</div>{t_tbl}</div>
   <div style="{cell}"><div style="{h3}">Lease Expiration Schedule</div>{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Cap Rate Benchmarks (P25 / Median / P75)</div>{b_tbl}</div>
