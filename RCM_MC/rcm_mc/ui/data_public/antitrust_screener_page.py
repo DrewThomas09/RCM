@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _hhi_chart(items) -> str:
@@ -253,10 +253,19 @@ def render_antitrust_screener(params: dict = None) -> str:
         "state-AG posture, and remediation options — drawn from corpus deal history."
         "</p>"
     )
+    _at_tone = ("negative" if r.overall_risk_score >= 70
+                else "warning" if r.overall_risk_score >= 50 else "teal")
+    value_anchor = ck_value_anchor(
+        "Antitrust Risk",
+        f"{r.overall_risk_score}/100 risk",
+        delta=f"${r.deal_size_mm:,.0f}M deal · {r.second_request_probability * 100:.0f}% second-request prob · {r.recommended_timeline_months}mo timeline",
+        tone=_at_tone,
+    )
     body = page_title + as_explainer + f"""
 <div class="ck-page-wrap">
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {score_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Screening Verdict</div>
     <div style="color:{score_c};font-weight:700;font-size:14px">Risk {r.overall_risk_score}/100 · Second Request probability {r.second_request_probability * 100:.0f}% · Recommended timeline {r.recommended_timeline_months} months</div>

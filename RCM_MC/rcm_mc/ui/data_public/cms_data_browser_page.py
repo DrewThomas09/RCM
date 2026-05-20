@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
@@ -224,9 +224,16 @@ def render_cms_data_browser(params: dict = None) -> str:
         f"{r.last_full_refresh[:10]}"
     )
 
+    value_anchor = ck_value_anchor(
+        "CMS Data Coverage",
+        f"{r.total_records_mm:,.0f}M records",
+        delta=f"{r.datasets_active}/{r.total_datasets} datasets current · refreshed {r.last_full_refresh[:10]}",
+        tone="teal",
+    )
     body = f"""
 <div class="ck-page-wrap">
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Dataset Catalog</div>{d_chart}{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Medicare PFS — Fee Schedule Sample (2025)</div>{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">MS-DRG / IPPS Base Rate Sample (FY2025)</div>{drg_tbl}</div>

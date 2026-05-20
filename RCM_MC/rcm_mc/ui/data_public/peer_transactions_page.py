@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _trend_color(t: str) -> str:
@@ -235,10 +235,17 @@ def render_peer_transactions(params: dict = None) -> str:
         meta=f"""{r.total_transactions} comparable transactions · ${r.total_volume_b:.2f}B aggregate value · median {r.median_ev_ebitda:.2f}x EV/EBITDA · {r.median_ev_revenue:.2f}x EV/Revenue · {latest_info} — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    value_anchor = ck_value_anchor(
+        "M&A Comps",
+        f"{r.median_ev_ebitda:.1f}x median EV/EBITDA",
+        delta=f"{r.total_transactions} transactions · ${r.total_volume_b:,.1f}B volume · {r.median_ev_revenue:.1f}x EV/Rev",
+        tone="teal",
+    )
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Recent Comparable Transactions</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sector Multiples — 2022-2025 Aggregated</div>{s_chart}{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Deal Type Breakdown</div>{t_tbl}</div>

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _econ_chart(items) -> str:
@@ -217,10 +217,17 @@ def render_specialty_benchmarks(params: dict = None) -> str:
         meta=f"""{r.total_specialties} specialties · portfolio coverage {r.specialties_with_portfolio_coverage} · MGMA + Sullivan Cotter + Radford sourced · avg comp ${r.avg_comp_k:,.1f}K / {r.avg_wrvu:,.0f} wRVU / {r.avg_overhead_pct * 100:.1f}% overhead / {r.avg_ebitda_margin_pct * 100:.1f}% EBITDA — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    value_anchor = ck_value_anchor(
+        "Specialty Benchmarks",
+        f"{r.avg_ebitda_margin_pct * 100:.1f}% avg EBITDA margin",
+        delta=f"{r.total_specialties} specialties · {r.specialties_with_portfolio_coverage} with portfolio coverage · ${r.avg_comp_k:,.0f}K avg comp",
+        tone="teal",
+    )
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Physician Compensation & Productivity Benchmarks</div>{b_tbl}</div>
   <div style="{cell}"><div style="{h3}">Practice Economics by Specialty</div>{e_chart}{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">New Patient Acquisition Benchmarks</div>{n_tbl}</div>
