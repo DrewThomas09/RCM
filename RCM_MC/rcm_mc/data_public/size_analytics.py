@@ -19,10 +19,10 @@ def _pct(vals: List[float], p: float) -> float:
 
 
 SIZE_BUCKETS = [
-    ("Small",  0,     100,   "#64748b"),
-    ("Mid",    100,   300,   "#3b82f6"),
-    ("Large",  300,   1000,  "#f59e0b"),
-    ("Mega",   1000,  1e9,   "#ef4444"),
+    ("Small",  0,     100,   "#7a8699"),
+    ("Mid",    100,   300,   "#1F7A75"),
+    ("Large",  300,   1000,  "#b8732a"),
+    ("Mega",   1000,  1e9,   "#b5321e"),
 ]
 
 

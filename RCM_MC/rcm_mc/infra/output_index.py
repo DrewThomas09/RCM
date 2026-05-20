@@ -119,7 +119,7 @@ a.card .kind.json  { background: var(--blue-soft); color: var(--blue-text); }
 a.card .kind.yaml  { background: #F3E8FF; color: #6B21A8; }
 a.card .kind.markdown { background: #F0FDF4; color: #166534; }
 a.card .kind.powerpoint { background: #FED7AA; color: #9A3412; }
-a.card .kind.sqlite { background: #E2E8F0; color: #334155; }
+a.card .kind.sqlite { background: #d6cfc0; color: #465366; }
 a.card .kind.folder { background: var(--blue); color: #FFFFFF; }
 a.card h3 { font-size: 0.95rem; margin: 0.5rem 0 0.25rem 0;
             font-family: "SF Mono", Menlo, Consolas, monospace;

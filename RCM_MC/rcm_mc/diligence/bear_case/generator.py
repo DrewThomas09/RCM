@@ -243,9 +243,9 @@ def _build_ic_memo_html(
     for e in ranked[:8]:
         tone = {
             EvidenceSeverity.CRITICAL: "#b91c1c",
-            EvidenceSeverity.HIGH: "#d97706",
-            EvidenceSeverity.MEDIUM: "#64748b",
-            EvidenceSeverity.LOW: "#94a3b8",
+            EvidenceSeverity.HIGH: "#b8732a",
+            EvidenceSeverity.MEDIUM: "#7a8699",
+            EvidenceSeverity.LOW: "#7a8699",
         }[e.severity]
         impact = (
             f" · ${e.ebitda_impact_usd/1e6:+,.1f}M impact"
@@ -258,15 +258,15 @@ def _build_ic_memo_html(
             f'<td style="padding:6px 10px;vertical-align:top;">'
             f'<div style="font-weight:600;">'
             f'{e.title}{impact}</div>'
-            f'<div style="font-size:12px;color:#475569;margin-top:3px;">'
+            f'<div style="font-size:12px;color:#465366;margin-top:3px;">'
             f'{e.narrative}</div></td></tr>'
         )
     return (
         f'<section style="font-family:Georgia,serif;color:#1a1a1a;'
-        f'padding:16px 20px;background:#fff;border:1px solid #e5e7eb;'
+        f'padding:16px 20px;background:#fff;border:1px solid #d6cfc0;'
         f'border-radius:4px;page-break-before:always;">'
         f'<div style="font-size:11px;letter-spacing:1.6px;'
-        f'text-transform:uppercase;color:#64748b;font-weight:600;">'
+        f'text-transform:uppercase;color:#7a8699;font-weight:600;">'
         f'Bear Case · auto-generated</div>'
         f'<h2 style="font-size:20px;margin:6px 0 10px 0;">'
         f'{target} — What Could Break the Thesis</h2>'
@@ -281,7 +281,7 @@ def _build_ic_memo_html(
         f'<table style="width:100%;border-collapse:collapse;'
         f'font-size:13px;">'
         f'<tbody>{"".join(rows)}</tbody></table>'
-        f'<div style="font-size:11px;color:#64748b;line-height:1.5;'
+        f'<div style="font-size:11px;color:#7a8699;line-height:1.5;'
         f'margin-top:12px;">Auto-generated from Regulatory Calendar '
         f'× Covenant Stress × Bridge Audit × Deal MC × Deal '
         f'Autopsy. Citations map to source-module detail pages. '

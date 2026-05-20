@@ -165,7 +165,7 @@ def plot_tornado(oat_df: pd.DataFrame, outpath: str, baseline_drag: float) -> No
     df = oat_df.sort_values("uplift_oat", ascending=True)
     labels = df["bucket"].tolist()
     vals = df["uplift_oat"].tolist()
-    colors = ["#2563eb" if v >= 0 else "#dc2626" for v in vals]
+    colors = ["#155752" if v >= 0 else "#b5321e" for v in vals]
 
     fig, ax = plt.subplots(figsize=(10, max(6, len(labels) * 0.45)), facecolor="#fafafa")
     ax.set_facecolor("#fafafa")
@@ -173,7 +173,7 @@ def plot_tornado(oat_df: pd.DataFrame, outpath: str, baseline_drag: float) -> No
     bars = ax.barh(y_pos, vals, color=colors, edgecolor="white", linewidth=0.8)
     ax.set_yticks(y_pos)
     ax.set_yticklabels(labels, fontsize=10)
-    ax.axvline(0, color="#374151", linewidth=1, linestyle="-")
+    ax.axvline(0, color="#465366", linewidth=1, linestyle="-")
     ax.set_xlabel("$ uplift if fixed to benchmark (OAT)", fontsize=11)
     ax.set_title("Value Attribution: $ Uplift by Driver Bucket", fontsize=13, fontweight=600)
     ax.spines["top"].set_visible(False)

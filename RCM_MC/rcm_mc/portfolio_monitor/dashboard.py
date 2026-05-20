@@ -18,7 +18,7 @@ _CSS = """
   --c-panel-alt: var(--sc-parchment, #f2ede3);
   --c-border: var(--sc-rule, #d6cfc0);
   --c-text: var(--sc-text, #1a2332);
-  --c-dim: var(--sc-text-dim, #5d6b7a);
+  --c-dim: var(--sc-text-dim, #465366);
   --c-faint: var(--sc-text-faint, #7a8699);
   --c-pos: var(--sc-positive, #0a8a5f);
   --c-neg: var(--sc-negative, #b5321e);
@@ -191,10 +191,10 @@ def render_monitor_dashboard(
         1.0,
     )
     color_map = {
-        "outperforming": "#3b82f6",
-        "on_track": "#10b981",
+        "outperforming": "#1F7A75",
+        "on_track": "#0a8a5f",
         "watch": "#eab308",
-        "early_warning": "#ef4444",
+        "early_warning": "#b5321e",
     }
     label_map = {
         "outperforming": "Outperforming (>+5%)",
