@@ -277,6 +277,6 @@ def render_field_error(message: str) -> str:
         return ""
     return (
         f'<div role="alert" '
-        f'style="color:#ef4444;font-size:12px;'
+        f'style="color:#b5321e;font-size:12px;'
         f'margin-top:4px;">'
         f'{_html.escape(message)}</div>')
