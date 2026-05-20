@@ -85,6 +85,24 @@ def _attestations_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _pentest_chart(items) -> str:
+    """Summary chart — portcos ranked by open critical+high pentest findings."""
+    def _tone(p):
+        if p.critical_findings > 0: return "negative"
+        if p.high_findings > 2: return "warning"
+        return "navy"
+    scored = [(p, p.critical_findings + p.high_findings) for p in items]
+    top = sorted(scored, key=lambda t: t[1], reverse=True)
+    total = sum(n for _, n in top) or 1
+    rows = [ck_bar_row(f"{p.deal} · {p.firm}",
+            f"{p.critical_findings} crit / {p.high_findings} high ({p.remediated_pct * 100:.0f}% fixed)",
+            n / total * 100.0, tone=_tone(p)) for p, n in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of critical+high findings '
+            '· value = crit / high + remediation · tone = severity</div></div>')
+
+
 def _pentest_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
@@ -237,6 +255,7 @@ def render_compliance_attestation(params: dict = None) -> str:
     a_tbl = _attestations_table(r.attestations)
     a_chart = _attestations_chart(r.attestations)
     p_tbl = _pentest_table(r.pentests)
+    p_chart = _pentest_chart(r.pentests)
     v_tbl = _vendors_table(r.vendors)
     i_tbl = _incidents_table(r.incidents)
     f_tbl = _frameworks_table(r.frameworks)
@@ -271,7 +290,7 @@ def render_compliance_attestation(params: dict = None) -> str:
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Attestation Status — SOC 2, HITRUST, HIPAA, PCI, ISO</div>{a_chart}{a_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Penetration Test Findings</div>{p_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Penetration Test Findings</div>{p_chart}{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Security Incident History</div>{i_tbl}</div>
   <div style="{cell}"><div style="{h3}">Third-Party Vendor Risk</div>{v_tbl}</div>
   <div style="{cell}"><div style="{h3}">Control Framework Maturity</div>{f_tbl}</div>

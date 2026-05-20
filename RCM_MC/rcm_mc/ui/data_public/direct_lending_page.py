@@ -121,6 +121,23 @@ def _defaults_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _marks_chart(items) -> str:
+    """Summary chart — portfolio par balance by sector (tone by watch-list/mark)."""
+    def _tone(m):
+        if m.watch_list_flag: return "negative"
+        if m.unrealized_loss_mm > 0: return "warning"
+        return "teal"
+    top = sorted(items, key=lambda m: m.par_balance_mm, reverse=True)
+    total = sum(m.par_balance_mm for m in top) or 1.0
+    rows = [ck_bar_row(f"{m.sector}",
+            f"${m.par_balance_mm:,.0f}M @ {m.current_mark_pct * 100:.1f}",
+            m.par_balance_mm / total * 100.0, tone=_tone(m)) for m in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of par balance by sector '
+            '· value = par ($M) @ mark · tone = watch-list / unrealized loss</div></div>')
+
+
 def _marks_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
@@ -177,6 +194,7 @@ def render_direct_lending(params: dict = None) -> str:
     m_tbl = _matrix_table(r.matrix)
     d_tbl = _defaults_table(r.defaults)
     mk_tbl = _marks_table(r.marks)
+    mk_chart = _marks_chart(r.marks)
 
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
@@ -196,7 +214,7 @@ def render_direct_lending(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Market-Rate Spread Matrix by Deal Size</div>{rt_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sponsor-Lender Relationship Matrix</div>{m_tbl}</div>
   <div style="{cell}"><div style="{h3}">Default Rate Trend — Healthcare vs Overall</div>{d_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Portfolio Marks by Sector</div>{mk_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Portfolio Marks by Sector</div>{mk_chart}{mk_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Direct Lending Thesis:</strong> ${r.total_outstanding_mm:,.0f}M outstanding across {r.total_facilities} facilities at {r.blended_all_in_rate_pct:.2f}% blended all-in rate.
     Weighted leverage {r.weighted_leverage:.2f}x; cov-lite penetration {r.cov_lite_pct * 100:.1f}% — structural flexibility but reduced lender protection.
