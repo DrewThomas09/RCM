@@ -2,7 +2,25 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
+
+
+def _systems_chart(items) -> str:
+    """Lead chart — AI systems ranked by annual license spend (tone by FDA status)."""
+    def _tone(st):
+        s=(st or "").lower()
+        if "clear" in s or "approv" in s: return "positive"
+        if "pend" in s or "submit" in s or "investig" in s: return "warning"
+        return "teal"
+    total = sum(s.annual_license_m for s in items) or 1.0
+    rows=[ck_bar_row(s.product, f"${s.annual_license_m:,.1f}M",
+          s.annual_license_m/total*100.0, tone=_tone(s.fda_status))
+          for s in sorted(items, key=lambda s: s.annual_license_m, reverse=True)]
+    return ('<div style="margin-bottom:14px">'+"".join(rows)+
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of total AI license spend '
+            '\u00b7 value = annual license ($M) \u00b7 tone = FDA status</div></div>')
+
 
 _EXPLAINER_CSS = """<style>
 .ck-cai-explainer{font-family:var(--sc-serif,'Georgia',serif);
@@ -203,7 +221,14 @@ def render_clinical_ai_tracker(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    s_chart = _systems_chart(r.systems)
     s_tbl = _systems_table(r.systems)
+    value_anchor = ck_value_anchor(
+        "Clinical AI",
+        f"${r.total_annual_spend_m:,.1f}M AI spend",
+        delta=f"{r.total_systems} systems \u00b7 {r.avg_accuracy_pct * 100:.0f}% avg accuracy \u00b7 {r.avg_adoption_pct * 100:.0f}% adoption \u00b7 {r.total_cases_monthly_k:,}K cases/mo",
+        tone="teal",
+    )
     o_tbl = _outcomes_table(r.outcomes)
     a_tbl = _adoption_table(r.adoption)
     f_tbl = _fda_table(r.fda)
@@ -232,7 +257,8 @@ def render_clinical_ai_tracker(params: dict = None) -> str:
     body = page_title + cai_explainer + f"""
 <div class="ck-page-wrap">
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">AI Systems in Production</div>{s_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">AI Systems in Production</div>{s_chart}{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Clinical Outcomes & ROI</div>{o_tbl}</div>
   <div style="{cell}"><div style="{h3}">Adoption Metrics</div>{a_tbl}</div>
   <div style="{cell}"><div style="{h3}">FDA Clearances</div>{f_tbl}</div>

@@ -2,7 +2,24 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
+
+
+def _dimensions_chart(items) -> str:
+    """Lead chart — maturity dimensions by current score vs IPO threshold
+    (tone by remaining gap)."""
+    def _tone(gap):
+        if gap <= 0: return "positive"
+        if gap <= 10: return "teal"
+        return "warning"
+    rows=[ck_bar_row(d.dimension, f"{d.current_score} / {d.ipo_ready_threshold}",
+          float(d.current_score), tone=_tone(d.gap_to_ipo))
+          for d in sorted(items, key=lambda d: d.gap_to_ipo, reverse=True)]
+    return ('<div style="margin-bottom:14px">'+"".join(rows)+
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = current maturity score (of 100) '
+            '\u00b7 value = current / IPO-ready threshold \u00b7 tone = gap to IPO</div></div>')
+
 
 
 def _dimensions_table(items) -> str:
@@ -139,7 +156,15 @@ def render_platform_maturity(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    d_chart = _dimensions_chart(r.dimensions)
     d_tbl = _dimensions_table(r.dimensions)
+    value_anchor = ck_value_anchor(
+        "Platform Maturity",
+        f"{r.overall_maturity_score}/100 maturity",
+        delta=f"recommended exit: {r.recommended_exit_path} \u00b7 {r.time_to_exit_months}mo to exit",
+        opportunity=f"${r.expected_exit_ev_mm:,.0f}M expected exit EV",
+        tone="positive",
+    )
     p_tbl = _paths_table(r.exit_paths)
     r_tbl = _remediations_table(r.remediations)
     f_tbl = _financial_table(r.financial)
@@ -159,12 +184,13 @@ def render_platform_maturity(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {score_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Exit Recommendation</div>
     <div style="color:{score_c};font-weight:700;font-size:14px">{_html.escape(r.recommended_exit_path)} — {r.time_to_exit_months} months</div>
     <div style="color:{text_dim};font-size:11px;margin-top:4px">Expected EV ${r.expected_exit_ev_mm:,.0f}M · Overall maturity {r.overall_maturity_score}/100 · Remediation cost ${total_remediation_cost:,.1f}M</div>
   </div>
-  <div style="{cell}"><div style="{h3}">Maturity Dimensions — Current vs Thresholds</div>{d_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Maturity Dimensions — Current vs Thresholds</div>{d_chart}{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Exit Path Comparison</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Remediation Roadmap</div>{r_tbl}</div>
   <div style="{cell}"><div style="{h3}">Financial Profile vs IPO/Strategic Benchmarks</div>{f_tbl}</div>
