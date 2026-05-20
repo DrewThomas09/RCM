@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _star_color(s: float) -> str:
@@ -11,6 +11,36 @@ def _star_color(s: float) -> str:
     if s >= 3.5: return P["warning"]
     if s >= 3.0: return P["text_dim"]
     return P["negative"]
+
+
+def _plans_chart(items) -> str:
+    """Lead chart for the plan table — MA plans ranked by 2026 Star
+    rating so the bonus-eligible (>=4.0) and at-risk plans read at a
+    glance. Bar width = rating on the 5-star scale; value = the rating;
+    tone matches the table's star bands (>=4.5 green · >=4.0 teal · >=3.5
+    amber · below red). Full plan grid stays directly below.
+    """
+    ranked = sorted(items, key=lambda p: p.star_rating_2026, reverse=True)
+    rows = []
+    for p in ranked:
+        s = p.star_rating_2026
+        tone = ("positive" if s >= 4.5 else "teal" if s >= 4.0
+                else "warning" if s >= 3.5 else "negative")
+        rows.append(ck_bar_row(
+            p.plan,
+            f"{s:.1f}★",
+            s / 5.0 * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = 2026 Star rating (of 5) · value = rating · '
+        'tone = band (green &ge;4.5 · teal &ge;4.0 bonus · amber &ge;3.5 · red below)</div>'
+        '</div>'
+    )
 
 
 def _traj_color(t: str) -> str:
@@ -196,6 +226,7 @@ def render_ma_star_tracker(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    p_chart = _plans_chart(r.plans)
     p_tbl = _plans_table(r.plans)
     e_tbl = _exposures_table(r.exposures)
     s_tbl = _stars_table(r.stars)
@@ -219,7 +250,7 @@ def render_ma_star_tracker(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">MA Plan Economics — Star Ratings, Rebates, MLR</div>{p_tbl}</div>
+  <div style="{cell}"><div style="{h3}">MA Plan Economics — Star Ratings, Rebates, MLR</div>{p_chart}{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Portfolio Exposure — MA Partnership Revenue</div>{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Stars Measures — Portfolio vs Industry</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Regional Rate Benchmarks (PMPM)</div>{b_tbl}</div>

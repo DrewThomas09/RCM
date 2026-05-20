@@ -2,7 +2,39 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+
+
+def _deals_chart(items) -> str:
+    """Lead chart for the deal-exposure table — deals ranked by revenue
+    at risk from Medicaid unwinding so the most exposed books surface
+    first. Bar width = share of total revenue impact; value = revenue
+    impact ($M, signed); tone flags bad-debt risk by the share of lost
+    coverage shifting to self-pay (>=35% red · otherwise amber). Full
+    exposure grid stays directly below.
+    """
+    total = sum(abs(d.revenue_impact_m) for d in items) or 1.0
+    ranked = sorted(items, key=lambda d: abs(d.revenue_impact_m), reverse=True)
+    rows = []
+    for d in ranked:
+        self_pay = d.coverage_shift_pct.get("self_pay", 0.0)
+        tone = "negative" if self_pay >= 0.35 else "warning"
+        rows.append(ck_bar_row(
+            d.deal,
+            f"${d.revenue_impact_m:,.1f}M",
+            abs(d.revenue_impact_m) / total * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = share of total revenue impact · value = revenue impact '
+        '($M) · tone = bad-debt risk (red if &ge;35% of lost coverage '
+        'goes self-pay)</div>'
+        '</div>'
+    )
 
 
 def _pace_color(p: str) -> str:
@@ -191,6 +223,7 @@ def render_medicaid_unwinding(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    d_chart = _deals_chart(r.deals)
     d_tbl = _deals_table(r.deals)
     s_tbl = _states_table(r.states)
     sh_tbl = _shifts_table(r.shifts)
@@ -215,7 +248,7 @@ def render_medicaid_unwinding(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Portfolio Deal Impact</div>{d_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Portfolio Deal Impact</div>{d_chart}{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">State-Level Unwinding Activity</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Coverage Shift Analysis</div>{sh_tbl}</div>
   <div style="{cell}"><div style="{h3}">Operational Metrics — Self-Pay + Bad Debt + Charity</div>{o_tbl}</div>

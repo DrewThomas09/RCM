@@ -2,7 +2,37 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+
+
+def _portfolios_chart(items) -> str:
+    """Lead chart for the portfolio table — deals ranked by average RAF
+    score so the highest-acuity (and highest-revenue-per-point) books
+    surface first. Bar width = avg RAF relative to the highest book;
+    value = avg RAF; tone marks the table's RAF-trend tiers (YoY lift
+    >=0.05 green · >=0.03 teal · below amber). Full grid stays below.
+    """
+    hi = max((p.avg_raf for p in items), default=1.0) or 1.0
+    ranked = sorted(items, key=lambda p: p.avg_raf, reverse=True)
+    rows = []
+    for p in ranked:
+        tone = ("positive" if p.raf_trend >= 0.05 else "teal"
+                if p.raf_trend >= 0.03 else "warning")
+        rows.append(ck_bar_row(
+            p.deal,
+            f"{p.avg_raf:.3f}",
+            p.avg_raf / hi * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = average RAF relative to highest book · value = avg RAF · '
+        'tone = YoY RAF trend (green &ge;+0.05 · teal &ge;+0.03 · amber below)</div>'
+        '</div>'
+    )
 
 
 def _intensity_color(i: str) -> str:
@@ -189,6 +219,7 @@ def render_risk_adjustment(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    p_chart = _portfolios_chart(r.portfolios)
     p_tbl = _portfolios_table(r.portfolios)
     h_tbl = _hcc_table(r.hcc_gaps)
     c_tbl = _coding_table(r.coding)
@@ -211,7 +242,7 @@ def render_risk_adjustment(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Portfolio RAF Roll-up</div>{p_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Portfolio RAF Roll-up</div>{p_chart}{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">HCC Gap Analysis — Top Opportunities</div>{h_tbl}</div>
   <div style="{cell}"><div style="{h3}">V28 Model Impact Analysis</div>{v_tbl}</div>
   <div style="{cell}"><div style="{h3}">Gap-Closure Program Performance</div>{pr_tbl}</div>
