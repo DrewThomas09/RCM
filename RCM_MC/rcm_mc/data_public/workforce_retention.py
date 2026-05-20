@@ -218,9 +218,9 @@ def _build_benefits() -> List[BenefitsBenchmark]:
         BenefitsBenchmark("Tuition Reimbursement (Annual)", "$3,500", "$5,250", "$10,000", "$5,250", 0.65),
         BenefitsBenchmark("Student Loan Repayment", "$0", "$3,600/yr", "$10,000/yr", "$3,600/yr", 0.38),
         BenefitsBenchmark("Mental Health Benefit", "6 visits/yr", "12 visits + EAP", "Unlimited + EAP", "12 visits + EAP", 0.92),
-        BenefitsBenchmark("Childcare Benefit", "None", "$1,500/yr", "$5,000/yr on-site", "$2,500/yr", 0.28),
-        BenefitsBenchmark("Commuter Benefit", "None", "$100/mo", "$300/mo", "$150/mo", 0.45),
-        BenefitsBenchmark("Wellness Stipend", "None", "$500/yr", "$1,500/yr", "$500/yr", 0.55),
+        BenefitsBenchmark("Childcare Benefit", "Not offered", "$1,500/yr", "$5,000/yr on-site", "$2,500/yr", 0.28),
+        BenefitsBenchmark("Commuter Benefit", "Not offered", "$100/mo", "$300/mo", "$150/mo", 0.45),
+        BenefitsBenchmark("Wellness Stipend", "Not offered", "$500/yr", "$1,500/yr", "$500/yr", 0.55),
         BenefitsBenchmark("Short-Term Disability", "60% / 13 wk", "70% / 26 wk", "100% / 26 wk", "70% / 26 wk", 0.95),
     ]
 

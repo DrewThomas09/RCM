@@ -504,11 +504,12 @@ def render_global_search_page(
         + '</div>'
     )
 
+    # The page header (eyebrow + "Search" <h1> + deck) is supplied by
+    # chartis_shell's editorial_intro below. The query-state heading here
+    # is a sub-heading (<h2>), not a second page title.
     if not query or not query.strip():
         body = (
-            ck_eyebrow("Global Search")
-            + '<div class="search-results">'
-            '<h1 class="search-h1">Search</h1>'
+            '<div class="search-results">'
             '<p class="search-empty">Enter a query in the topbar — '
             'searches deals, packets, metrics, and pages.</p>'
             '</div>'
@@ -517,7 +518,7 @@ def render_global_search_page(
         body = (
             kpi_strip
             + '<div class="search-results">'
-            f'<h1 class="search-h1">No matches for &ldquo;{q_safe}&rdquo;</h1>'
+            f'<h2 class="search-h1">No matches for &ldquo;{q_safe}&rdquo;</h2>'
             '<p class="search-empty">No results across deals, packets, '
             'metrics, or pages. Try a shorter query or different keywords.</p>'
             '</div>'
@@ -542,7 +543,7 @@ def render_global_search_page(
         body = (
             kpi_strip
             + '<div class="search-results">'
-            f'<h1 class="search-h1">Results for &ldquo;{q_safe}&rdquo;</h1>'
+            f'<h2 class="search-h1">Results for &ldquo;{q_safe}&rdquo;</h2>'
             f'<p class="search-meta">{len(results)} match'
             f'{"es" if len(results) != 1 else ""} across deals, '
             'packets, metrics, and pages.</p>'
