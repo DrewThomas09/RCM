@@ -2,7 +2,33 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+
+
+def _partners_chart(items) -> str:
+    """Lead chart for the operating-partner roster — partners ranked by
+    LTM engagement hours so the most deployed bench surfaces first. Bar
+    width = share of total engagement hours; value = LTM hours; tone
+    teal. Full roster stays directly below.
+    """
+    total = sum(p.engagement_hours_ltm for p in items) or 1.0
+    ranked = sorted(items, key=lambda p: p.engagement_hours_ltm, reverse=True)
+    rows = []
+    for p in ranked:
+        rows.append(ck_bar_row(
+            p.name,
+            f"{p.engagement_hours_ltm:,}h",
+            p.engagement_hours_ltm / total * 100.0,
+            tone="teal",
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = share of total LTM engagement hours · value = LTM hours</div>'
+        '</div>'
+    )
 
 
 def _status_color(s: str) -> str:
@@ -198,7 +224,14 @@ def render_operating_partners(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    p_chart = _partners_chart(r.partners)
     p_tbl = _partners_table(r.partners)
+    value_anchor = ck_value_anchor(
+        "Operating Partner Bench",
+        f"${r.total_value_creation_m:,.0f}M value creation",
+        delta=f"{r.total_operating_partners} operating partners · {r.total_engagement_hours_ltm:,} hrs LTM · {r.total_exec_placements} exec placements",
+        tone="positive",
+    )
     pl_tbl = _placements_table(r.placements)
     s_tbl = _searches_table(r.searches)
     b_tbl = _bench_table(r.bench)
@@ -220,7 +253,8 @@ def render_operating_partners(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Operating Partner Roster</div>{p_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">Operating Partner Roster</div>{p_chart}{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Recent Executive Placements (LTM)</div>{pl_tbl}</div>
   <div style="{cell}"><div style="{h3}">Active Executive Searches</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Bench Roster — Cultivated Executives</div>{b_tbl}</div>
