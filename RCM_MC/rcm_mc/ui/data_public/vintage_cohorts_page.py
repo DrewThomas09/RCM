@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
@@ -237,10 +237,17 @@ def render_vintage_cohorts(params: dict = None) -> str:
         meta=f"""{r.vintages_tracked} vintages · ${r.total_deployed_b:.2f}B deployed · {r.portfolio_dpi:.2f}x aggregate DPI · {r.portfolio_tvpi:.2f}x aggregate TVPI · {q1q2}/{r.vintages_tracked} top-half Cambridge Associates — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    value_anchor = ck_value_anchor(
+        "Vintage Portfolio",
+        f"{r.portfolio_tvpi:.2f}x TVPI",
+        delta=f"${r.total_deployed_b:,.1f}B deployed · {r.portfolio_dpi:.2f}x DPI · {r.vintages_tracked} vintages",
+        tone="positive",
+    )
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Vintage Cohort Performance</div>{c_chart}{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sector × Vintage Performance</div>{sv_tbl}</div>
   <div style="{cell}"><div style="{h3}">Hold Period Trends</div>{h_tbl}</div>

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _funds_chart(items) -> str:
@@ -235,10 +235,18 @@ def render_dpi_tracker(params: dict = None) -> str:
         meta=f"{r.total_funds} funds at {r.weighted_dpi:.2f}x weighted DPI / {r.weighted_tvpi:.2f}x TVPI · ${r.total_distributions_b:.2f}B LTM distributions · {r.below_benchmark_funds} of {r.total_funds} funds below vintage benchmark · {active_requests} active LP liquidity requests",
     )
 
+    value_anchor = ck_value_anchor(
+        "Distributions to LPs",
+        f"${r.total_distributions_b:,.1f}B distributed",
+        delta=f"{r.weighted_dpi:.2f}x DPI · {r.weighted_tvpi:.2f}x TVPI · {r.total_funds} funds",
+        opportunity=f"${r.pending_exits_m:,.0f}M pending exits",
+        tone="positive",
+    )
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Fund Vintage Performance — DPI, RVPI, TVPI, Benchmark Gap</div>{f_chart}{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">Exit Drought — Market Metrics</div>{dr_tbl}</div>
   <div style="{cell}"><div style="{h3}">Recent Distributions — Last 4 Quarters</div>{d_tbl}</div>

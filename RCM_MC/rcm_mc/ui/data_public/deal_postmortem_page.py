@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_data_cell, ck_kpi_block, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_data_cell, ck_kpi_block, ck_page_title, ck_value_anchor
 
 
 def _plan_vs_actual_chart(items) -> str:
@@ -231,10 +231,17 @@ def render_deal_postmortem(params: dict = None) -> str:
         ),
     )
 
+    value_anchor = ck_value_anchor(
+        "Realized vs Underwritten",
+        f"{r.realized_moic:.2f}x MOIC",
+        delta=f"vs {r.underwritten_moic:.2f}x underwritten · {r.realized_irr * 100:.1f}% IRR · grade {r.overall_grade}",
+        tone="positive" if r.realized_moic >= r.underwritten_moic else "warning",
+    )
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {grade_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Deal Grade</div>
     <div style="color:{grade_c};font-weight:700;font-size:14px">{_html.escape(r.overall_grade)} · {r.realized_moic:.2f}x vs {r.underwritten_moic:.2f}x underwritten ({moic_delta * 100:+.0f}%)</div>

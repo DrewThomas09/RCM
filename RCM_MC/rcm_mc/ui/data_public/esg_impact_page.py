@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _score_color(s: float) -> str:
@@ -277,10 +277,17 @@ def render_esg_impact(params: dict = None) -> str:
         meta=f"{r.total_portcos} portcos at {r.avg_composite_score:.2f}/10 composite ESG (+{r.prior_year_delta:.2f} YoY) · ${r.total_charity_care_m:.1f}M charity care LTM · {r.total_scope_12_mtco2e:,.0f} MTCO2e Scope 1+2 ({sbti_validated} portcos SBTi-validated) · {r.frameworks_tracked} disclosure frameworks tracked",
     )
 
+    value_anchor = ck_value_anchor(
+        "ESG / Impact",
+        f"{r.avg_composite_score:.2f}/10 composite",
+        delta=f"{r.prior_year_delta:+.2f} YoY · {r.total_portcos} portcos · {r.frameworks_tracked} frameworks tracked",
+        tone="positive",
+    )
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">ESG Composite Scorecards</div>{s_chart}{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Patient Access / Community Benefit</div>{a_tbl}</div>
   <div style="{cell}"><div style="{h3}">Clinical Outcomes</div>{o_tbl}</div>
