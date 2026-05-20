@@ -65,6 +65,23 @@ def _properties_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _sectors_chart(items) -> str:
+    """Summary chart — property value by type (tone by cap rate / quality)."""
+    def _tone(s):
+        if s.avg_cap_rate_pct <= 0.070: return "positive"
+        if s.avg_cap_rate_pct <= 0.085: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda s: s.total_value_m, reverse=True)
+    total = sum(s.total_value_m for s in top) or 1.0
+    rows = [ck_bar_row(f"{s.sector} ({s.property_count} props)",
+            f"${s.total_value_m:,.0f}M @ {s.avg_cap_rate_pct * 100:.1f}% cap",
+            s.total_value_m / total * 100.0, tone=_tone(s)) for s in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of portfolio value by property type '
+            '· value = value ($M) @ cap rate · tone = cap rate (lower = premium)</div></div>')
+
+
 def _sectors_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
@@ -210,6 +227,7 @@ def render_medical_realestate(params: dict = None) -> str:
         tone="navy",
     )
     s_tbl = _sectors_table(r.sectors)
+    s_chart = _sectors_chart(r.sectors)
     t_tbl = _tenants_table(r.tenants)
     e_tbl = _expirations_table(r.expirations)
     b_tbl = _benchmarks_table(r.benchmarks)
@@ -232,7 +250,7 @@ def render_medical_realestate(params: dict = None) -> str:
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
-  <div style="{cell}"><div style="{h3}">Property-Type Rollup</div>{s_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Property-Type Rollup</div>{s_chart}{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Individual Properties</div>{p_chart}{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Tenant Concentration & Credit Quality</div>{t_tbl}</div>
   <div style="{cell}"><div style="{h3}">Lease Expiration Schedule</div>{e_tbl}</div>

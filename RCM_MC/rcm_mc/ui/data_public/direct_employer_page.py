@@ -50,6 +50,23 @@ def _contracts_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _coe_chart(items) -> str:
+    """Summary chart — COE bundled procedures by annual revenue (tone by margin)."""
+    def _tone(c):
+        if c.gross_margin_pct >= 0.40: return "positive"
+        if c.gross_margin_pct >= 0.25: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda c: c.annual_revenue_mm, reverse=True)
+    total = sum(c.annual_revenue_mm for c in top) or 1.0
+    rows = [ck_bar_row(f"{c.procedure}",
+            f"${c.annual_revenue_mm:,.1f}M · {c.case_volume_annual:,} cases · {c.gross_margin_pct * 100:.0f}% GM",
+            c.annual_revenue_mm / total * 100.0, tone=_tone(c)) for c in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of COE revenue by procedure '
+            '· value = revenue ($M) + volume + margin · tone = gross margin</div></div>')
+
+
 def _coe_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
@@ -171,6 +188,7 @@ def render_direct_employer(params: dict = None) -> str:
         tone="positive",
     )
     coe_tbl = _coe_table(r.coes)
+    coe_chart = _coe_chart(r.coes)
     os_tbl = _onsite_table(r.onsites)
     er_tbl = _erisa_table(r.erisa)
     pp_tbl = _pipeline_table(r.pipeline)
@@ -191,7 +209,7 @@ def render_direct_employer(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">Employer Contract Portfolio</div>{c_chart}{c_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Centers of Excellence (COE) — Bundled Procedures</div>{coe_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Centers of Excellence (COE) — Bundled Procedures</div>{coe_chart}{coe_tbl}</div>
   <div style="{cell}"><div style="{h3}">On-Site Clinic Operations</div>{os_tbl}</div>
   <div style="{cell}"><div style="{h3}">ERISA Structural Considerations</div>{er_tbl}</div>
   <div style="{cell}"><div style="{h3}">RFP Pipeline — Direct-Primary-Care Market Expansion</div>{pp_tbl}</div>

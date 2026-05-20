@@ -137,6 +137,23 @@ def _milestones_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _sectors_chart(items) -> str:
+    """Summary chart — contingent escrow held by sector (tone by claim ratio)."""
+    def _tone(s):
+        if s.avg_claim_ratio >= 0.30: return "warning"
+        if s.avg_claim_ratio >= 0.15: return "teal"
+        return "navy"
+    top = sorted(items, key=lambda s: s.escrow_held_m, reverse=True)
+    total = sum(s.escrow_held_m for s in top) or 1.0
+    rows = [ck_bar_row(f"{s.sector} ({s.deals} deals)",
+            f"${s.escrow_held_m:,.1f}M held · {s.avg_claim_ratio * 100:.0f}% claim",
+            s.escrow_held_m / total * 100.0, tone=_tone(s)) for s in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of escrow held by sector '
+            '· value = escrow ($M) + claim ratio · tone = claim experience</div></div>')
+
+
 def _sectors_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; neg = P["negative"]
@@ -242,6 +259,7 @@ def render_escrow_earnout(params: dict = None) -> str:
     eo_tbl = _earnouts_table(r.earnouts)
     m_tbl = _milestones_table(r.milestones)
     s_tbl = _sectors_table(r.sectors)
+    s_chart = _sectors_chart(r.sectors)
     c_tbl = _claims_table(r.claims)
     cov_tbl = _coverage_table(r.coverage)
 
@@ -262,7 +280,7 @@ def render_escrow_earnout(params: dict = None) -> str:
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
-  <div style="{cell}"><div style="{h3}">Sector Rollup — Contingent Liability Exposure</div>{s_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Sector Rollup — Contingent Liability Exposure</div>{s_chart}{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Escrow Positions — Active, Releasing, Released</div>{e_chart}{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Earnout Positions — Accrual / Probability-Weighted</div>{eo_tbl}</div>
   <div style="{cell}"><div style="{h3}">Milestone Payments — Trigger Events</div>{m_tbl}</div>
