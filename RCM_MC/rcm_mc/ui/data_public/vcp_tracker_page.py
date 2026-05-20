@@ -151,6 +151,23 @@ def _interventions_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _bridges_chart(items) -> str:
+    """Summary chart — EBITDA realized by lever category (tone by realization)."""
+    def _tone(b):
+        if b.realization_pct >= 0.85: return "positive"
+        if b.realization_pct >= 0.65: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda b: b.aggregate_realized_m, reverse=True)
+    total = sum(b.aggregate_realized_m for b in top) or 1.0
+    rows = [ck_bar_row(f"{b.lever_category} ({b.deals} deals)",
+            f"${b.aggregate_realized_m:.1f}M ({b.realization_pct * 100:.0f}%)",
+            b.aggregate_realized_m / total * 100.0, tone=_tone(b)) for b in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of realized EBITDA lift '
+            '· value = realized ($M) + realization % · tone = realization</div></div>')
+
+
 def _bridges_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; warn = P["warning"]
@@ -229,6 +246,7 @@ def render_vcp_tracker(params: dict = None) -> str:
     k_tbl = _kpi_table(r.kpi_scorecards)
     int_tbl = _interventions_table(r.interventions)
     b_tbl = _bridges_table(r.bridges)
+    b_chart = _bridges_chart(r.bridges)
     t_tbl = _top_init_table(r.top_initiatives)
 
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
@@ -247,7 +265,7 @@ def render_vcp_tracker(params: dict = None) -> str:
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
-  <div style="{cell}"><div style="{h3}">EBITDA Bridge — Realized by Lever Category</div>{b_tbl}</div>
+  <div style="{cell}"><div style="{h3}">EBITDA Bridge — Realized by Lever Category</div>{b_chart}{b_tbl}</div>
   <div style="{cell}"><div style="{h3}">100-Day Plan Execution</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">KPI Scorecards — Revenue / EBITDA / Margin / Volume / WC / Budget</div>{k_tbl}</div>
   <div style="{cell}"><div style="{h3}">Individual Value Levers</div>{l_chart}{l_tbl}</div>

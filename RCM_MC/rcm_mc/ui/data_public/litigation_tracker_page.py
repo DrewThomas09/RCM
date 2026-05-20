@@ -111,6 +111,24 @@ def _regulatory_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _class_chart(items) -> str:
+    """Summary chart — class actions ranked by alleged damages (tone by certification)."""
+    def _tone(c):
+        s = (c.certification_status or "").lower()
+        if "certified" in s and "settlement" not in s and "denied" not in s: return "negative"
+        if "pending" in s: return "warning"
+        return "navy"
+    top = sorted(items, key=lambda c: c.alleged_damages_m, reverse=True)
+    total = sum(c.alleged_damages_m for c in top) or 1.0
+    rows = [ck_bar_row(f"{c.deal} · {c.sector}",
+            f"${c.alleged_damages_m:.1f}M (est ${c.settlement_estimate_m:.1f}M)",
+            c.alleged_damages_m / total * 100.0, tone=_tone(c)) for c in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of alleged class damages '
+            '· value = alleged ($M) + settlement est · tone = certification status</div></div>')
+
+
 def _class_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; neg = P["negative"]; pos = P["positive"]
@@ -206,6 +224,7 @@ def render_litigation_tracker(params: dict = None) -> str:
     t_tbl = _types_table(r.types)
     rg_tbl = _regulatory_table(r.regulatory)
     ca_tbl = _class_table(r.class_actions)
+    ca_chart = _class_chart(r.class_actions)
     i_tbl = _insurance_table(r.insurance)
     h_tbl = _history_table(r.history)
 
@@ -236,7 +255,7 @@ def render_litigation_tracker(params: dict = None) -> str:
   {value_anchor}
   <div style="{cell}"><div style="{h3}">Open Litigation Matters</div>{m_chart}{m_tbl}</div>
   <div style="{cell}"><div style="{h3}">Regulatory / Agency Actions</div>{rg_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Class Actions</div>{ca_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Class Actions</div>{ca_chart}{ca_tbl}</div>
   <div style="{cell}"><div style="{h3}">Matter Type Rollup</div>{t_tbl}</div>
   <div style="{cell}"><div style="{h3}">Insurance Tower — Portfolio Coverage</div>{i_tbl}</div>
   <div style="{cell}"><div style="{h3}">5-Year Settlement History</div>{h_tbl}</div>
