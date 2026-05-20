@@ -31,12 +31,10 @@ from .._chartis_kit import (
     ck_page_title,
     ck_section_header,
 )
-_EXPLAINER_CSS = """<style>
-.ck-inv-explainer{font-family:var(--sc-serif,'Georgia',serif);
-  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#465366);
-  margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
-.ck-inv-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
-</style>"""
+# The page explainer now comes solely from render_page_explainer()
+# (which ships its own CSS); the old bespoke ck-inv-explainer deck +
+# its styles were removed to avoid a second explainer under the title.
+_EXPLAINER_CSS = ""
 
 from ._helpers import (
     bullet_list,
@@ -363,17 +361,12 @@ def render_investability(
             f"exit {_html.escape(exit_verdict.replace('_', ' '))}"
         ),
     )
-    inv_explainer = (
-        '<p class="ck-inv-explainer">'
-        f'<em>{_html.escape(label)}.</em> '
-        "A 0-100 composite that reads like a verdict — the five inputs and their "
-        "weights are right below the score so the partner can see what would "
-        "change it."
-        "</p>"
-    )
+    # Single explainer per page: the structured render_page_explainer
+    # below is the canonical one (matches every other page). The old
+    # bespoke ck-inv-explainer deck was a second, redundant explainer
+    # under the title (the deal label already shows in the title meta).
     body = (
         page_title
-        + inv_explainer
         + explainer
         + header
         + kpi_strip

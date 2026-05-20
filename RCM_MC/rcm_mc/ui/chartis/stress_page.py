@@ -426,7 +426,6 @@ def render_stress(
 
     body = (
         page_title
-        + stress_explainer
         + explainer
         + header
         + _grade_banner(grade, pass_rate, n_breaches, partner_summary)

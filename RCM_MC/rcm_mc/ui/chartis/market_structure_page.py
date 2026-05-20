@@ -297,7 +297,6 @@ def render_market_structure(
     )
     body = (
         page_title
-        + mkt_explainer
         + explainer
         + header
         + kpi_strip

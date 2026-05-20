@@ -692,6 +692,9 @@ def _new_modules_index() -> str:
 
 def render_home(store: Any, db_path: str, current_user: Optional[str] = None) -> str:
     """Render the seven-panel home landing page."""
+    # Single explainer: render_page_explainer below. The old bespoke
+    # ck-home-explainer deck appended here was a second explainer under
+    # the title.
     intro = ck_page_title(
         "Home",
         eyebrow="PARTNER LANDING",
@@ -699,12 +702,6 @@ def render_home(store: Any, db_path: str, current_user: Optional[str] = None) ->
             f"Signed in as {_html.escape(current_user)}"
             if current_user else "Pipeline · alerts · PE brain verdicts"
         ),
-    ) + (
-        '<p class="ck-home-explainer">'
-        "<em>Where the portfolio reveals what to read first.</em> "
-        "Pipeline, alerts, health distribution, and the seven "
-        "partner-reflex verdicts your team relies on, in one read."
-        "</p>"
     )
     explainer = render_page_explainer(
         what=(
