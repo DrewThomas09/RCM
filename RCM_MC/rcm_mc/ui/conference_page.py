@@ -266,10 +266,10 @@ CONFERENCES = [
 ]
 
 CATEGORY_COLORS = {
-    "Investment": PALETTE.get("brand_accent", "#2d6ba4"),
-    "PE/M&A": PALETTE.get("positive", "#2ecc71"),
+    "Investment": PALETTE.get("brand_accent", "#155752"),
+    "PE/M&A": PALETTE.get("positive", "#0a8a5f"),
     "Policy": PALETTE.get("warning", "#f39c12"),
-    "Operations": PALETTE.get("text_link", "#5b9bd5"),
+    "Operations": PALETTE.get("text_link", "#155752"),
     "Finance": PALETTE.get("text_secondary", "#a0aec0"),
     "Health IT": PALETTE.get("negative", "#e74c3c"),
 }
@@ -323,7 +323,7 @@ def render_conference_roadmap(category: str = "all") -> str:
             end = ev.get("end_date", "")
             loc = _html.escape(ev["location"])
             cat = ev["category"]
-            cat_color = CATEGORY_COLORS.get(cat, "#718096")
+            cat_color = CATEGORY_COLORS.get(cat, "#7a8699")
             tier = ev.get("tier", "standard")
             badge_class, badge_label = TIER_BADGE.get(tier, ("cad-badge-muted", "Standard"))
             desc = _html.escape(ev["description"])
@@ -369,7 +369,7 @@ def render_conference_roadmap(category: str = "all") -> str:
 
     cat_breakdown = ""
     for cat, count in sorted(cat_counts.items(), key=lambda x: -x[1]):
-        color = CATEGORY_COLORS.get(cat, "#718096")
+        color = CATEGORY_COLORS.get(cat, "#7a8699")
         cat_breakdown += (
             f'<div style="display:flex;justify-content:space-between;padding:4px 0;'
             f'font-size:12px;border-bottom:1px solid var(--cad-border);">'

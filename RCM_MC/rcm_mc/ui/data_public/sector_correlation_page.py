@@ -161,7 +161,7 @@ def _time_series_svg(
 
     SERIES_COLORS = [
         "#1F7A75", "#0a8a5f", "#b8732a", "#b5321e",
-        "#a98545", "#a98545", "#06b6d4", "#84cc16",
+        "#a98545", "#a98545", "#3d7d87", "#6b8e3c",
     ]
 
     lines = [
