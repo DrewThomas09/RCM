@@ -2,7 +2,37 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+
+
+def _entity_chart(items) -> str:
+    """Lead chart for the covered-entity table — entities ranked by
+    annual 340B savings so the biggest program value surfaces first. Bar
+    width = share of total savings; value = annual savings ($M); tone
+    marks compliance health (>=8.8 green · >=8.3 teal · below amber).
+    Full entity grid stays directly below.
+    """
+    total = sum(e.annual_savings_m for e in items) or 1.0
+    ranked = sorted(items, key=lambda e: e.annual_savings_m, reverse=True)
+    rows = []
+    for e in ranked:
+        tone = ("positive" if e.compliance_score >= 8.8 else "teal"
+                if e.compliance_score >= 8.3 else "warning")
+        rows.append(ck_bar_row(
+            e.entity_name,
+            f"${e.annual_savings_m:,.1f}M",
+            e.annual_savings_m / total * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = share of total 340B savings · value = annual savings ($M) · '
+        'tone = compliance score (green &ge;8.8 · teal &ge;8.3 · amber below)</div>'
+        '</div>'
+    )
 
 
 def _status_color(s: str) -> str:
@@ -181,7 +211,14 @@ def render_tracker_340b(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    e_chart = _entity_chart(r.entities)
     e_tbl = _entity_table(r.entities)
+    value_anchor = ck_value_anchor(
+        "340B Program Value",
+        f"${r.total_annual_savings_m:,.1f}M annual savings",
+        delta=f"${r.total_annual_spend_m:,.0f}M spend · {r.effective_savings_rate * 100:.0f}% effective savings · {r.total_entities} entities · compliance {r.avg_compliance_score:.1f}",
+        tone="positive",
+    )
     p_tbl = _pharmacy_table(r.pharmacies)
     res_tbl = _restriction_table(r.restrictions)
     a_tbl = _audit_table(r.audits)
@@ -204,7 +241,8 @@ def render_tracker_340b(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Covered Entities — Portfolio Registration</div>{e_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">Covered Entities — Portfolio Registration</div>{e_chart}{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Contract Pharmacy Arrangements</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Manufacturer Restrictions — Active</div>{res_tbl}</div>
   <div style="{cell}"><div style="{h3}">Drug-Category Savings Breakdown</div>{b_tbl}</div>

@@ -2,7 +2,36 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+
+
+def _funnel_chart(items) -> str:
+    """Lead chart for the sourcing funnel — LTM volume by stage in funnel
+    order so the narrowing from top-of-funnel to close reads at a glance.
+    Bar width = stage count relative to the widest stage; value = LTM
+    count; tone marks stage-to-next conversion (>=50% green · >=40% teal
+    · below amber). Full funnel table stays directly below.
+    """
+    hi = max((f.count_ltm for f in items), default=1) or 1
+    rows = []
+    for f in items:
+        tone = ("positive" if f.conversion_to_next_pct >= 0.50 else "teal"
+                if f.conversion_to_next_pct >= 0.40 else "warning")
+        rows.append(ck_bar_row(
+            f.stage,
+            f"{f.count_ltm:,}",
+            f.count_ltm / hi * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = LTM count relative to widest stage · value = count · '
+        'tone = conversion to next stage (green &ge;50% · teal &ge;40% · amber below)</div>'
+        '</div>'
+    )
 
 
 def _stage_color(s: str) -> str:
@@ -183,7 +212,15 @@ def render_deal_sourcing(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    f_chart = _funnel_chart(r.funnel)
     f_tbl = _funnel_table(r.funnel)
+    value_anchor = ck_value_anchor(
+        "Sourcing Pipeline",
+        f"${r.total_closed_value_m:,.0f}M closed LTM",
+        delta=f"{r.total_closed_ltm} deals closed · {r.weighted_close_rate_pct * 100:.1f}% weighted close rate · {r.total_proprietary_opportunities} proprietary",
+        opportunity=f"{r.total_annualized_pipeline} annualized pipeline ops",
+        tone="teal",
+    )
     c_tbl = _channels_table(r.channels)
     i_tbl = _intermediaries_table(r.intermediaries)
     p_tbl = _proprietary_table(r.proprietary)
@@ -206,7 +243,8 @@ def render_deal_sourcing(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Sourcing Funnel — LTM Activity</div>{f_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">Sourcing Funnel — LTM Activity</div>{f_chart}{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">Source Channel Performance</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Active Proprietary Opportunities</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Intermediary Relationships</div>{i_tbl}</div>
