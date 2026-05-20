@@ -58,10 +58,12 @@ _REG_RISK_PEER_MEDIAN = 35.0
 
 def _scoped_styles() -> str:
     css = """
-.rc-wrap{{font-family:"Helvetica Neue",Arial,sans-serif;}}
-.rc-eyebrow{{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;
+.rc-wrap{{font-family:var(--sc-sans,"Inter Tight","Helvetica Neue",Arial,sans-serif);}}
+.rc-eyebrow{{font-family:var(--sc-mono,"JetBrains Mono",monospace);
+font-size:11px;letter-spacing:1.6px;text-transform:uppercase;
 color:{tf};font-weight:600;}}
-.rc-h1{{font-size:26px;color:{tx};font-weight:600;line-height:1.15;
+.rc-h1{{font-family:var(--sc-serif,"Source Serif 4",Georgia,serif);
+font-size:26px;color:{tx};font-weight:600;line-height:1.15;
 margin:4px 0 0 0;letter-spacing:-.2px;}}
 .rc-section-label{{font-size:10px;letter-spacing:1.6px;text-transform:uppercase;
 font-weight:700;color:{tf};margin:22px 0 10px 0;}}

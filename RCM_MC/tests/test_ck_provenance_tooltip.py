@@ -3,8 +3,9 @@
 Two paths: (1) ``explainer`` mode wraps a value in a hover card
 with a plain-text methodology sentence; (2) ``graph`` + ``metric_key``
 mode defers to ``rcm_mc/ui/_provenance_tooltip.py::provenance_tooltip``
-which pulls from a per-deal provenance graph. With neither, returns
-escape-safe value.
+which pulls from a per-deal provenance graph. With neither, returns the
+value as trusted markup (``label``/``explainer`` are escaped; ``value``
+is not — same exemption as ck_kpi_block).
 """
 from __future__ import annotations
 
@@ -19,10 +20,18 @@ class CkProvenanceTooltipTests(unittest.TestCase):
         html = ck_provenance_tooltip("Operating Margin", "12.4%")
         self.assertEqual(html, "12.4%")
 
-    def test_no_args_escapes_special_chars(self):
-        html = ck_provenance_tooltip("X", "<script>x</script>")
-        self.assertNotIn("<script>", html)
-        self.assertIn("&lt;script&gt;", html)
+    def test_no_args_value_is_trusted_markup(self):
+        # ``value`` is a trusted server-rendered display string (same
+        # exemption as ck_kpi_block / ck_data_cell): a formatted numeric
+        # optionally wrapped in a color <span>. It is NOT escaped, so the
+        # color spans render as markup rather than literal &lt;span&gt;
+        # text (the Denial Drivers / Returns Waterfall bug). Callers must
+        # escape any user-supplied string upstream — names go in ``label``
+        # (escaped) or ``explainer`` (escaped), never in ``value``.
+        html = ck_provenance_tooltip(
+            "Denial rate", '<span style="color:#b5321e;">12.0%</span>')
+        self.assertIn('<span style="color:#b5321e;">12.0%</span>', html)
+        self.assertNotIn("&lt;span", html)
 
     def test_explainer_mode_renders_card(self):
         html = ck_provenance_tooltip(
@@ -47,15 +56,18 @@ class CkProvenanceTooltipTests(unittest.TestCase):
         self.assertIn('class="ck-prov-tt"', html)
         self.assertNotIn("<style>", html)
 
-    def test_explainer_html_escape(self):
+    def test_explainer_escapes_label_and_explainer_not_value(self):
+        # label + explainer are escaped (that's where any user text goes);
+        # value is trusted markup and passes through unescaped.
         html = ck_provenance_tooltip(
-            "<L>", "<V>",
+            "<L>", '<span class="mn">9.9%</span>',
             explainer="<script>alert(1)</script>",
         )
         self.assertNotIn("<script>alert(1)</script>", html)
         self.assertIn("&lt;L&gt;", html)
-        self.assertIn("&lt;V&gt;", html)
         self.assertIn("&lt;script&gt;alert(1)&lt;/script&gt;", html)
+        # value markup preserved
+        self.assertIn('<span class="mn">9.9%</span>', html)
 
     def test_graph_mode_defers_to_provenance_tooltip(self):
         # When graph + metric_key are provided, defer to the
