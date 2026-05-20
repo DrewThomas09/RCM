@@ -165,8 +165,8 @@ def _render_health_sparkline(
     # Band-colored dot at the newest point
     last_score = series[-1][1]
     last_color = (
-        "#10B981" if last_score >= 80 else
-        "#F59E0B" if last_score >= 50 else "#EF4444"
+        "#0a8a5f" if last_score >= 80 else
+        "#b8732a" if last_score >= 50 else "#b5321e"
     )
     # 80 and 50 threshold lines for visual reference
     y80, y50 = _y(80), _y(50)
@@ -174,10 +174,10 @@ def _render_health_sparkline(
         f'<svg width="{width}" height="{height}" '
         f'style="display: block; margin-top: 0.3rem;">'
         f'<line x1="{pad}" x2="{width - pad}" y1="{y80:.1f}" y2="{y80:.1f}" '
-        f'stroke="#10B981" stroke-width="1" stroke-dasharray="2,3" '
+        f'stroke="#0a8a5f" stroke-width="1" stroke-dasharray="2,3" '
         f'opacity="0.5"/>'
         f'<line x1="{pad}" x2="{width - pad}" y1="{y50:.1f}" y2="{y50:.1f}" '
-        f'stroke="#EF4444" stroke-width="1" stroke-dasharray="2,3" '
+        f'stroke="#b5321e" stroke-width="1" stroke-dasharray="2,3" '
         f'opacity="0.5"/>'
         f'<polyline fill="none" stroke="var(--sc-navy)" stroke-width="1.5" '
         f'stroke-linejoin="round" points="{pts}"/>'
@@ -1308,7 +1308,7 @@ def _render_deal_notes(store: PortfolioStore, deal_id: str) -> str:
 def _inject_live_banner(dashboard_html: str) -> str:
     """Insert a small 'Live • auto-refreshing' banner at the top of the dashboard."""
     banner = (
-        '<div style="background: #FEF3C7; border: 1px solid #F59E0B; '
+        '<div style="background: #f2e7d1; border: 1px solid #b8732a; '
         'border-radius: 6px; padding: 0.4rem 0.75rem; margin-bottom: 1rem; '
         'font-size: 0.82rem; color: #92400E; display: flex; '
         'justify-content: space-between; align-items: center;">'
@@ -1536,9 +1536,9 @@ def _render_ebitda_sparkline(var_df, width: int = 600, height: int = 180) -> str
         return height - pad - ((v - vmin) / (vmax - vmin)) * chart_h
 
     sev_color = {
-        "on_track":  "#10B981",
-        "lagging":   "#F59E0B",
-        "off_track": "#EF4444",
+        "on_track":  "#0a8a5f",
+        "lagging":   "#b8732a",
+        "off_track": "#b5321e",
     }
 
     # Build polyline paths
@@ -1550,14 +1550,14 @@ def _render_ebitda_sparkline(var_df, width: int = 600, height: int = 180) -> str
     # Quarter labels on x-axis
     labels = "".join(
         f'<text x="{_x(i):.1f}" y="{height - 8}" '
-        f'text-anchor="middle" font-size="10" fill="#6B7280">{html.escape(q)}</text>'
+        f'text-anchor="middle" font-size="10" fill="#7a8699">{html.escape(q)}</text>'
         for i, q in enumerate(quarters)
     )
 
     # Severity dots on actual series
     dots = "".join(
         f'<circle cx="{_x(i):.1f}" cy="{_y(v):.1f}" r="4" '
-        f'fill="{sev_color.get(severities[i], "#6B7280")}" stroke="white" stroke-width="2"/>'
+        f'fill="{sev_color.get(severities[i], "#7a8699")}" stroke="white" stroke-width="2"/>'
         for i, v in enumerate(actuals) if v is not None
     )
 
@@ -1570,13 +1570,13 @@ def _render_ebitda_sparkline(var_df, width: int = 600, height: int = 180) -> str
         return f"${v:,.0f}"
     y_labels = (
         f'<text x="{pad - 5}" y="{pad + 4}" text-anchor="end" '
-        f'font-size="10" fill="#6B7280">{_fmt_money_compact(vmax)}</text>'
+        f'font-size="10" fill="#7a8699">{_fmt_money_compact(vmax)}</text>'
         f'<text x="{pad - 5}" y="{height - pad + 4}" text-anchor="end" '
-        f'font-size="10" fill="#6B7280">{_fmt_money_compact(vmin)}</text>'
+        f'font-size="10" fill="#7a8699">{_fmt_money_compact(vmin)}</text>'
     )
 
     plan_path = (
-        f'<polyline points="{plan_pts}" fill="none" stroke="#6B7280" '
+        f'<polyline points="{plan_pts}" fill="none" stroke="#7a8699" '
         f'stroke-width="2" stroke-dasharray="5,3" opacity="0.7"/>'
     ) if plan_pts else ""
 
@@ -1587,9 +1587,9 @@ def _render_ebitda_sparkline(var_df, width: int = 600, height: int = 180) -> str
         f'display: block; margin: 0 auto;">'
         # Frame lines
         f'<line x1="{pad}" y1="{pad}" x2="{pad}" y2="{height - pad}" '
-        f'stroke="#E5E7EB" stroke-width="1"/>'
+        f'stroke="#d6cfc0" stroke-width="1"/>'
         f'<line x1="{pad}" y1="{height - pad}" x2="{width - pad}" '
-        f'y2="{height - pad}" stroke="#E5E7EB" stroke-width="1"/>'
+        f'y2="{height - pad}" stroke="#d6cfc0" stroke-width="1"/>'
         f'{plan_path}'
         f'<polyline points="{actual_pts}" fill="none" stroke="var(--sc-navy)" stroke-width="2.5"/>'
         f'{dots}'
@@ -5428,7 +5428,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_html(
                 f'<!DOCTYPE html><html><head>'
                 f'<meta charset="utf-8"><title>Morning digest preview</title>'
-                f'</head><body style="background:#f3f4f6;padding:24px;">'
+                f'</head><body style="background:#ece5d6;padding:24px;">'
                 f'<div style="max-width:720px;margin:0 auto;background:#fff;'
                 f'border-radius:8px;padding:24px;'
                 f'box-shadow:0 2px 8px rgba(0,0,0,0.05);">{html_body}</div>'
@@ -5513,7 +5513,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "description": "Healthcare PE Diligence Platform",
                 "start_url": "/",
                 "display": "standalone",
-                "background_color": "#0F172A",
+                "background_color": "#0b2341",
                 "theme_color": "var(--sc-navy)",
             }
             body = _json.dumps(manifest, indent=2).encode("utf-8")
@@ -9303,7 +9303,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 name = html.escape(str(d.get("name", deal_id)))
                 score = health.get("score")
                 band = health.get("band", "unknown")
-                band_color = {"green": "#10b981", "amber": "#f59e0b", "red": "#ef4444"}.get(band, "#94a3b8")
+                band_color = {"green": "#0a8a5f", "amber": "#b8732a", "red": "#b5321e"}.get(band, "#7a8699")
                 notes_html = ""
                 if not notes.empty:
                     for _, n in notes.head(10).iterrows():
