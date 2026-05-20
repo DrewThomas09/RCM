@@ -2,7 +2,24 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+
+
+def _exit_chart(items):
+    """Summary chart — net exit proceeds by role (tone by MOIC on buy-in)."""
+    def _tone(e):
+        if e.moic_on_buy_in >= 3.0: return "positive"
+        if e.moic_on_buy_in >= 2.0: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda e: e.net_proceeds_mm, reverse=True)
+    total = sum(e.net_proceeds_mm for e in top) or 1.0
+    rows = [ck_bar_row(f"{e.role}",
+            f"${e.net_proceeds_mm:,.2f}M net · {e.moic_on_buy_in:.2f}x",
+            e.net_proceeds_mm / total * 100.0, tone=_tone(e)) for e in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of net exit proceeds '
+            '· value = net ($M) + MOIC · tone = MOIC on buy-in</div></div>')
 
 
 def _tier_svg(tiers) -> str:
@@ -215,6 +232,7 @@ def render_partner_economics(params: dict = None) -> str:
     buy_tbl = _buy_in_table(r.buy_in_structures)
     vs_tbl = _vs_table(r.emp_vs_partner)
     exit_tbl = _exit_table(r.exit_proceeds)
+    exit_chart = _exit_chart(r.exit_proceeds)
     rec_tbl = _recruit_table(r.recruitment)
 
     form = f"""
@@ -246,7 +264,7 @@ def render_partner_economics(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Partner Cash Flow (Mid-Tier, After Tax)</div>{cf_tbl}</div>
   <div style="{cell}"><div style="{h3}">Buy-in Financing Structures</div>{buy_tbl}</div>
   <div style="{cell}"><div style="{h3}">Employee vs Partner Comparison</div>{vs_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Exit Proceeds at Sale ({hold}-yr hold)</div>{exit_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Exit Proceeds at Sale ({hold}-yr hold)</div>{exit_chart}{exit_tbl}</div>
   <div style="{cell}"><div style="{h3}">Recruitment Pathway Economics</div>{rec_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Partner Thesis:</strong> {r.total_partners} partners with {r.physician_equity_pool_pct * 100:.0f}% equity pool.

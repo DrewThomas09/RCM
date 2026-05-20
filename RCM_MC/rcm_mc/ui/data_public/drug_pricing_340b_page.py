@@ -2,7 +2,24 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+
+
+def _entities_chart(items):
+    """Summary chart — covered entities by 340B program margin (tone by audit risk)."""
+    def _tone(e):
+        if e.audit_risk_score >= 70: return "negative"
+        if e.audit_risk_score >= 45: return "warning"
+        return "teal"
+    top = sorted(items, key=lambda e: e.program_margin_mm, reverse=True)
+    total = sum(e.program_margin_mm for e in top) or 1.0
+    rows = [ck_bar_row(f"{e.name} · {e.entity_type}",
+            f"${e.program_margin_mm:,.1f}M margin · risk {e.audit_risk_score:.0f}",
+            e.program_margin_mm / total * 100.0, tone=_tone(e)) for e in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of 340B program margin '
+            '· value = margin ($M) + audit risk · tone = audit risk</div></div>')
 
 
 def _entities_table(entities) -> str:
@@ -209,6 +226,7 @@ def render_drug_pricing_340b(params: dict = None) -> str:
 
     svg = _drugs_svg(r.drugs)
     entities_tbl = _entities_table(r.entities)
+    entities_chart = _entities_chart(r.entities)
     drugs_tbl = _drugs_table(r.drugs)
     pharms_tbl = _pharmacy_table(r.pharmacies)
     audit_tbl = _audits_table(r.audits)
@@ -243,7 +261,7 @@ def render_drug_pricing_340b(params: dict = None) -> str:
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Drug Category Savings Map</div>{svg}</div>
-  <div style="{cell}"><div style="{h3}">Covered Entity Inventory — DSH / FQHC / SCH / CAH / PED / Ryan White</div>{entities_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Covered Entity Inventory — DSH / FQHC / SCH / CAH / PED / Ryan White</div>{entities_chart}{entities_tbl}</div>
   <div style="{cell}"><div style="{h3}">Drug Category Economics — WAC vs 340B Ceiling Price</div>{drugs_tbl}</div>
   <div style="{cell}"><div style="{h3}">Contract Pharmacy Network — Spread Capture by Type</div>{pharms_tbl}</div>
   <div style="{cell}"><div style="{h3}">Compliance Audit Inventory — HRSA Program Integrity</div>{audit_tbl}</div>
