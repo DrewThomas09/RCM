@@ -2,8 +2,40 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
 from rcm_mc.ui.chartis._helpers import render_page_explainer
+
+
+def _levers_chart(items) -> str:
+    """Lead chart for the value-creation lever table — levers ranked by
+    probability-weighted expected contribution so the IC sees where the
+    value actually comes from before the target-vs-expected detail grid.
+    Bar width = share of total expected contribution, value = expected
+    ($M), tone marks execution probability (>=80% green · >=65% teal ·
+    below amber). Full lever grid stays directly below.
+    """
+    total = sum(lv.expected_contribution_mm for lv in items) or 1.0
+    ranked = sorted(items, key=lambda lv: lv.expected_contribution_mm, reverse=True)
+    rows = []
+    for lv in ranked:
+        tone = ("positive" if lv.probability_pct >= 0.80
+                else "teal" if lv.probability_pct >= 0.65 else "warning")
+        rows.append(ck_bar_row(
+            lv.lever,
+            f"${lv.expected_contribution_mm:,.1f}M",
+            lv.expected_contribution_mm / total * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = share of total expected contribution · value = '
+        'probability-weighted expected ($M) · tone = execution '
+        'probability (green &ge;80% · teal &ge;65% · amber below)</div>'
+        '</div>'
+    )
 
 
 def _thesis_table(items) -> str:
@@ -167,6 +199,7 @@ def render_ic_memo_generator(params: dict = None) -> str:
 
     th_tbl = _thesis_table(r.thesis)
     fi_tbl = _findings_table(r.findings)
+    lv_chart = _levers_chart(r.levers)
     lv_tbl = _levers_table(r.levers)
     rk_tbl = _risks_table(r.risks)
     sc_tbl = _scenarios_table(r.scenarios)
@@ -192,7 +225,7 @@ def render_ic_memo_generator(params: dict = None) -> str:
   </div>
   <div style="{cell}"><div style="{h3}">Investment Thesis</div>{th_tbl}</div>
   <div style="{cell}"><div style="{h3}">Diligence Findings</div>{fi_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Value Creation Levers — Target vs Probability-Weighted Expected</div>{lv_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Value Creation Levers — Target vs Probability-Weighted Expected</div>{lv_chart}{lv_tbl}</div>
   <div style="{cell}"><div style="{h3}">Risk Register</div>{rk_tbl}</div>
   <div style="{cell}"><div style="{h3}">Scenario Outcomes</div>{sc_tbl}</div>
   <div style="{cell}"><div style="{h3}">Deal Structure</div>{st_tbl}</div>
