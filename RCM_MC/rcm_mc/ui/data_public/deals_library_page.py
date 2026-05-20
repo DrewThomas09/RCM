@@ -182,6 +182,141 @@ _MOIC_BUCKETS = {
 }
 
 
+def _fmt_money_mm(v: Optional[float]) -> str:
+    if v is None:
+        return "—"
+    return f"${v/1000:.1f}B" if v >= 1000 else f"${v:,.0f}M"
+
+
+def render_corpus_deal_detail(source_id: str) -> str:
+    """Detail page for a single corpus deal at /library/<source_id>.
+
+    The deals library and comparables pages link each row here; the
+    route previously didn't exist (every detail link 404'd). Renders the
+    deal's known fields — returns/structure/payer mix/notes — in the
+    editorial shell, with a graceful not-found state.
+    """
+    from rcm_mc.ui._chartis_kit import (
+        chartis_shell, ck_page_title, ck_kpi_block,
+    )
+
+    sid = (source_id or "").strip()
+    deal = next(
+        (d for d in _get_all_seed_deals()
+         if str(d.get("source_id", "")) == sid),
+        None,
+    )
+    if deal is None:
+        body = ck_page_title(
+            "Deal not found", eyebrow="DEAL CORPUS",
+            meta=_html.escape(sid),
+        ) + (
+            '<p class="ck-section-body" style="margin-top:8px;">'
+            f'No corpus deal matches <code>{_html.escape(sid)}</code>. '
+            '<a href="/library" class="ck-link">← Back to the deal '
+            'library</a>.</p>'
+        )
+        return chartis_shell(body, "Deal not found", active_nav="/library")
+
+    name = str(deal.get("deal_name", sid))
+    year = deal.get("year")
+    moic = deal.get("realized_moic")
+    irr = deal.get("realized_irr")
+    hold = deal.get("hold_years")
+    mult = _entry_multiple(deal)
+    regime = _vintage_regime(year)
+
+    def _x(v, suf="x"):
+        return f"{v:.2f}{suf}" if isinstance(v, (int, float)) else "—"
+
+    def _pct(v):
+        return f"{v*100:.1f}%" if isinstance(v, (int, float)) else "—"
+
+    kpis = (
+        '<div class="ck-kpi-grid">'
+        + ck_kpi_block("Entry EV", _fmt_money_mm(deal.get("ev_mm")), "enterprise value")
+        + ck_kpi_block("Entry EBITDA", _fmt_money_mm(deal.get("ebitda_at_entry_mm")), "at entry")
+        + ck_kpi_block("Entry Multiple", _x(mult) if mult else "—", "EV / EBITDA")
+        + ck_kpi_block("Realized MOIC", _x(moic), "exit / entry equity")
+        + ck_kpi_block("Realized IRR", _pct(irr), "annualized")
+        + ck_kpi_block("Hold", f"{hold:.1f}y" if isinstance(hold, (int, float)) else "—", "years")
+        + '</div>'
+    )
+
+    # Identity panel
+    def _row(k, v):
+        return (
+            '<div style="display:flex;justify-content:space-between;'
+            'padding:7px 0;border-bottom:1px solid var(--sc-rule,#d6cfc0);'
+            'font-size:13px;">'
+            f'<span style="color:var(--sc-text-dim,#465366);">{_html.escape(k)}</span>'
+            f'<span style="font-weight:500;">{_html.escape(str(v))}</span></div>'
+        )
+    meta_panel = (
+        '<div class="cad-card"><h2>Deal facts</h2>'
+        + _row("Sponsor / buyer", deal.get("buyer") or "—")
+        + _row("Seller", deal.get("seller") or "—")
+        + _row("Vintage", year if year else "—")
+        + _row("Vintage regime", regime)
+        + _row("Source", deal.get("source") or "—")
+        + '</div>'
+    )
+
+    # Payer mix bar (if present). ~60 corpus deals store payer_mix as a
+    # JSON string rather than a dict — coerce so both shapes render.
+    pm = deal.get("payer_mix") or {}
+    if isinstance(pm, str):
+        import json as _json
+        try:
+            pm = _json.loads(pm)
+        except (ValueError, TypeError):
+            pm = {}
+    if not isinstance(pm, dict):
+        pm = {}
+    mix_html = ""
+    if pm:
+        segs, legend = "", ""
+        _tones = {"medicare": "#1F7A75", "medicaid": "#b8732a",
+                  "commercial": "#0a8a5f", "self_pay": "#7a8699"}
+        for k in ("medicare", "medicaid", "commercial", "self_pay"):
+            v = pm.get(k)
+            if not v:
+                continue
+            c = _tones.get(k, "#7a8699")
+            segs += (f'<div style="width:{v*100:.0f}%;background:{c};" '
+                     f'title="{k} {v*100:.0f}%"></div>')
+            legend += (f'<span style="color:{c};">&#9632; '
+                       f'{k.replace("_", " ").title()} {v*100:.0f}%</span>')
+        mix_html = (
+            '<div class="cad-card"><h2>Payer mix</h2>'
+            '<div style="display:flex;height:22px;border-radius:6px;'
+            'overflow:hidden;border:1px solid var(--sc-rule,#d6cfc0);">'
+            f'{segs}</div>'
+            '<div style="display:flex;gap:16px;font-size:12px;'
+            'margin-top:8px;flex-wrap:wrap;">' + legend + '</div></div>'
+        )
+
+    notes = deal.get("notes")
+    notes_html = (
+        '<div class="cad-card"><h2>Notes</h2>'
+        f'<p style="font-size:13px;line-height:1.7;color:var(--sc-text-dim,#465366);">'
+        f'{_html.escape(str(notes))}</p></div>'
+    ) if notes else ""
+
+    body = (
+        ck_page_title(
+            name,
+            eyebrow=f"DEAL CORPUS · {_html.escape(sid)}",
+            meta=f"{regime} vintage" + (f" · {year}" if year else ""),
+        )
+        + '<p class="ck-section-body" style="margin:4px 0 14px;">'
+        '<a href="/library" class="ck-link">← Back to the deal library</a>'
+        '</p>'
+        + kpis + meta_panel + mix_html + notes_html
+    )
+    return chartis_shell(body, name, active_nav="/library")
+
+
 def render_deals_library(
     sector_filter: str = "",
     regime_filter: str = "",

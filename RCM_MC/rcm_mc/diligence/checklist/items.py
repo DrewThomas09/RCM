@@ -338,7 +338,7 @@ CHECKLIST_ITEMS: Tuple[ChecklistItem, ...] = (
                  "cyber reserve)?",
         default_owner=Owner.ANALYST,
         auto_check_key="ebitda_bridge_built",
-        evidence_url="/diligence/ebitda-bridge",
+        evidence_url="/pipeline/bridge",
     ),
     ChecklistItem(
         item_id="fin_deal_mc",
