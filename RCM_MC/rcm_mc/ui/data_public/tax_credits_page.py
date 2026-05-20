@@ -2,7 +2,25 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+
+def _credits_chart(items) -> str:
+    """Lead chart for the tax-credit table — credits ranked by amount
+    remaining (unused) so the biggest untapped balances surface first.
+    Bar = share of total remaining; value = remaining ($M); tone teal.
+    Full credit grid stays directly below.
+    """
+    total = sum(c.remaining_m for c in items) or 1.0
+    ranked = sorted(items, key=lambda c: c.remaining_m, reverse=True)
+    rows = []
+    for c in ranked:
+        rows.append(ck_bar_row(c.credit_name, f"${c.remaining_m:,.1f}M",
+                               c.remaining_m / total * 100.0, tone="teal"))
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of total credits '
+            'remaining \u00b7 value = remaining ($M)</div></div>')
+
 
 
 def _status_color(s: str) -> str:
@@ -188,7 +206,15 @@ def render_tax_credits(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    c_chart = _credits_chart(r.credits)
     c_tbl = _credits_table(r.credits)
+    value_anchor = ck_value_anchor(
+        "Tax Credits",
+        f"${r.total_annual_benefit_m:,.1f}M annual benefit",
+        delta=f"${r.total_credits_gross_m:,.1f}M gross \u00b7 ${r.total_credits_utilized_m:,.1f}M utilized",
+        opportunity=f"${r.total_credits_remaining_m:,.1f}M credits remaining (unused)",
+        tone="positive",
+    )
     s_tbl = _state_table(r.state_incentives)
     q_tbl = _qoz_table(r.opportunity_zones)
     w_tbl = _wotc_table(r.wotc)
@@ -210,7 +236,8 @@ def render_tax_credits(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Federal + State Tax Credits (Claimed)</div>{c_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">Federal + State Tax Credits (Claimed)</div>{c_chart}{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">State-Level Incentive Programs</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Opportunity Zone Investments</div>{q_tbl}</div>
   <div style="{cell}"><div style="{h3}">WOTC / Workforce Credits</div>{w_tbl}</div>
