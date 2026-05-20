@@ -3751,13 +3751,12 @@ _CSS_INLINE_FALLBACK = """
   .ck-cell-w-700 { font-weight:700; }
 
   /* Page-header chrome — replaces the per-page page-wrapper that
-   * data_public pages roll by hand:
-   *   <div style="padding:20px;max-width:1400px;margin:0 auto">
-   *     <div style="margin-bottom:20px">
-   *       <h1 style="font-size:18px;font-weight:700;...">Title</h1>
-   *       <p style="font-size:12px;...">Subtitle</p>
-   * Cycle 31 migration replaces those inline styles with these
-   * utility classes. ~500 inline-style instances eliminated. */
+   * data_public pages used to roll by hand with an inline-styled
+   * padded container, a margin-bottom header block, an 18px/700 title,
+   * and a 12px subtitle. Cycle 31 migration replaces those inline
+   * styles with these utility classes. ~500 inline-style instances
+   * eliminated. (Example tags kept out of this comment so they never
+   * ship as literal markup inside the served stylesheet.) */
   .ck-page-wrap { padding:20px; max-width:min(1920px, 95vw); margin:0 auto; }
   .ck-page-head { margin-bottom:20px; }
   .ck-page-h1 { font-size:18px; font-weight:700; color:var(--sc-text); letter-spacing:0.02em; }
