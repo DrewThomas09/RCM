@@ -5,8 +5,10 @@ entire :class:`DealAnalysisPacket` across six tabs: Overview, RCM
 Profile, EBITDA Bridge, Monte Carlo, Risk & Diligence, Provenance.
 
 Design constraints from the spec:
-- Dark theme — ``#0a0e17`` background, ``#111827`` panels, ``#1e293b``
-  borders. ``#e2e8f0`` text, ``#94a3b8`` muted.
+- Editorial Chartis theme — parchment background, navy topbar, teal
+  accents, near-ink text (palette via ``--wb-*`` tokens bound to
+  ``rcm_mc.ui.brand.PALETTE``). Originally a dark Bloomberg terminal;
+  ported to the editorial system.
 - JetBrains Mono for numeric cells; inter-system default for body.
 - No border-radius > 4px. Dense padding (6px/10px on table cells).
 - Zero external dependencies — no charts library, no framework, just
@@ -1347,7 +1349,7 @@ def _render_next_actions(packet: DealAnalysisPacket) -> str:
 
     if not actions:
         actions.append(
-            '<div style="color:#10b981;">✓ <strong>Looking good</strong> '
+            '<div style="color:#0a8a5f;">✓ <strong>Looking good</strong> '
             '— completeness, risks, and simulation are all in order.</div>'
         )
 
@@ -2973,9 +2975,9 @@ _EXPLAIN_JS = r"""
     titleEl.textContent = d.display_name || metric;
     var pct = d.percentile != null ? (d.percentile*100).toFixed(0)+'th' : '—';
     var barPct = d.percentile != null ? Math.round(d.percentile*100) : 50;
-    var barColor = barPct > 70 ? '#10b981' : (barPct < 30 ? '#ef4444' : '#f59e0b');
+    var barColor = barPct > 70 ? '#0a8a5f' : (barPct < 30 ? '#b5321e' : '#b8732a');
     bodyEl.innerHTML =
-      '<div class="ep-section"><div class="ep-label">Source</div><span style="background:#1e293b;padding:2px 8px;border-radius:3px;font-size:11px;">'+d.source+'</span></div>'+
+      '<div class="ep-section"><div class="ep-label">Source</div><span style="background:#0b2341;color:#f2ede3;padding:2px 8px;border-radius:3px;font-size:11px;">'+d.source+'</span></div>'+
       '<div class="ep-section"><div class="ep-label">Current value</div><div class="num" style="font-size:18px;">'+d.value.toFixed(2)+'</div></div>'+
       '<div class="ep-section"><div class="ep-label">Benchmark P50</div><div>'+(d.benchmark_p50!=null?d.benchmark_p50.toFixed(1):'—')+'</div>'+
       '<div class="ep-label" style="margin-top:6px;">Percentile rank: '+pct+'</div>'+
