@@ -2,7 +2,39 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+
+
+def _hhi_chart(items) -> str:
+    """Lead chart for the HHI table — markets ranked by post-merger
+    concentration so the most antitrust-exposed MSAs surface first. Bar
+    width = CR3 (top-3) market share, value = the merger's HHI delta
+    (the DOJ/FTC presumption trigger at +200), tone tracks the table's
+    concentration flag (highly red · moderately amber · unconcentrated
+    green). Full MSA-level grid stays directly below.
+    """
+    tone_for = {"highly concentrated": "negative",
+                "moderately concentrated": "warning",
+                "unconcentrated": "positive"}
+    ranked = sorted(items, key=lambda h: h.post_merger_hhi, reverse=True)
+    rows = []
+    for h in ranked:
+        rows.append(ck_bar_row(
+            h.market,
+            f"+{h.delta_hhi}",
+            h.cr3_share_pct * 100.0,
+            tone=tone_for.get(h.concentration_flag, "teal"),
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = CR3 top-3 market share · value = HHI delta from merger '
+        '(+200 = DOJ/FTC presumption) · tone = concentration flag</div>'
+        '</div>'
+    )
+
 
 _EXPLAINER_CSS = """<style>
 .ck-as-explainer{font-family:var(--sc-serif,'Georgia',serif);
@@ -193,6 +225,7 @@ def render_antitrust_screener(params: dict = None) -> str:
   <button type="submit" style="background:{border};color:{text};border:1px solid {border};padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Screen</button>
 </form>"""
 
+    h_chart = _hhi_chart(r.hhi_analysis)
     h_tbl = _hhi_table(r.hhi_analysis)
     hsr_tbl = _hsr_table(r.hsr_thresholds)
     o_tbl = _overlaps_table(r.overlaps)
@@ -229,7 +262,7 @@ def render_antitrust_screener(params: dict = None) -> str:
     <div style="color:{score_c};font-weight:700;font-size:14px">Risk {r.overall_risk_score}/100 · Second Request probability {r.second_request_probability * 100:.0f}% · Recommended timeline {r.recommended_timeline_months} months</div>
     <div style="color:{text_dim};font-size:11px;margin-top:4px">Recommended remediation: <strong style="color:{text}">{_html.escape(best_remediation.option)}</strong></div>
   </div>
-  <div style="{cell}"><div style="{h3}">HHI / Market Concentration Analysis (MSA-Level)</div>{h_tbl}</div>
+  <div style="{cell}"><div style="{h3}">HHI / Market Concentration Analysis (MSA-Level)</div>{h_chart}{h_tbl}</div>
   <div style="{cell}"><div style="{h3}">HSR Threshold Analysis</div>{hsr_tbl}</div>
   <div style="{cell}"><div style="{h3}">Market Overlap (Platform + Target)</div>{o_tbl}</div>
   <div style="{cell}"><div style="{h3}">FTC Case Law Precedents</div>{c_tbl}</div>
