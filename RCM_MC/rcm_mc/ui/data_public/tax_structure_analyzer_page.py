@@ -68,6 +68,22 @@ def _scenarios_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _rollovers_chart(items) -> str:
+    """Summary chart — rollover mechanics by typical equity rolled (tone by tax deferral)."""
+    def _tone(r):
+        if str(r.tax_deferred).lower() in ("yes", "true", "full"): return "positive"
+        if "partial" in str(r.tax_deferred).lower(): return "teal"
+        return "warning"
+    top = sorted(items, key=lambda r: r.typical_rollover_pct, reverse=True)
+    rows = [ck_bar_row(f"{r.rollover_type} · {r.typical_structure}",
+            f"{r.typical_rollover_pct * 100:.0f}% rolled · {r.lock_up_months}mo lock",
+            r.typical_rollover_pct * 100.0, tone=_tone(r)) for r in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = typical equity rolled '
+            '· value = rollover % + lock-up · tone = tax deferral</div></div>')
+
+
 def _rollovers_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]
@@ -175,6 +191,7 @@ def render_tax_structure_analyzer(params: dict = None) -> str:
     sc_tbl = _scenarios_table(r.after_tax_scenarios)
     sc_chart = _scenarios_chart(r.after_tax_scenarios)
     ro_tbl = _rollovers_table(r.rollovers)
+    ro_chart = _rollovers_chart(r.rollovers)
     b_tbl = _blockers_table(r.blockers)
     st_tbl = _state_table(r.state_diligence)
     sor_tbl = _sor_table(r.sor_items)
@@ -199,7 +216,7 @@ def render_tax_structure_analyzer(params: dict = None) -> str:
   </div>
   <div style="{cell}"><div style="{h3}">Structure Options Evaluated</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">After-Tax Scenario Comparison</div>{sc_chart}{sc_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Rollover Mechanics</div>{ro_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Rollover Mechanics</div>{ro_chart}{ro_tbl}</div>
   <div style="{cell}"><div style="{h3}">Blocker Structures by Investor Type</div>{b_tbl}</div>
   <div style="{cell}"><div style="{h3}">State-Level Tax Diligence</div>{st_tbl}</div>
   <div style="{cell}"><div style="{h3}">Structure of Review (SOR) Checklist</div>{sor_tbl}</div>

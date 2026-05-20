@@ -154,6 +154,23 @@ def _gaps_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></name></table></div>').replace('</name>', '')
 
 
+def _comp_chart(items) -> str:
+    """Summary chart — director/exec comp by role (tone by equity alignment)."""
+    def _tone(c):
+        if c.equity_pct >= 0.50: return "positive"
+        if c.equity_pct >= 0.25: return "teal"
+        return "navy"
+    top = sorted(items, key=lambda c: c.median_comp_k, reverse=True)
+    mx = max((c.median_comp_k for c in top), default=0.0) or 1.0
+    rows = [ck_bar_row(f"{c.role}",
+            f"${c.median_comp_k:,.0f}k · {c.equity_pct * 100:.0f}% equity",
+            c.median_comp_k / mx * 100.0, tone=_tone(c)) for c in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = median comp vs highest role '
+            '· value = median ($k) + equity % · tone = equity alignment</div></div>')
+
+
 def _comp_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
@@ -202,6 +219,7 @@ def render_board_governance(params: dict = None) -> str:
     s_tbl = _sponsors_table(r.sponsors)
     g_tbl = _gaps_table(r.gaps)
     comp_tbl = _comp_table(r.compensation)
+    comp_chart = _comp_chart(r.compensation)
 
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
@@ -231,7 +249,7 @@ def render_board_governance(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Committee Coverage by Holdco</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sponsor Board Representation</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Governance Best-Practice Gaps</div>{g_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Executive Compensation Benchmarks</div>{comp_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Executive Compensation Benchmarks</div>{comp_chart}{comp_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Governance Thesis:</strong> {r.total_holdcos} holdco boards average {r.avg_board_size:.1f} directors with {r.avg_independence_pct * 100:.1f}% independence (below NYSE majority-independent standard but sufficient for PE-owned).
     Diversity at {r.avg_diversity_pct * 100:.1f}% tracks below public-company benchmarks; remediation required for next-round diligence.

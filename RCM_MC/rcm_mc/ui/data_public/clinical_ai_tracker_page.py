@@ -74,6 +74,23 @@ def _systems_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _outcomes_chart(items) -> str:
+    """Summary chart — clinical AI systems by revenue impact (tone by accuracy)."""
+    def _tone(o):
+        if o.accuracy_pct >= 0.92: return "positive"
+        if o.accuracy_pct >= 0.85: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda o: o.revenue_impact_m, reverse=True)
+    total = sum(o.revenue_impact_m for o in top) or 1.0
+    rows = [ck_bar_row(f"{o.system} · {o.deal}",
+            f"${o.revenue_impact_m:,.2f}M · {o.accuracy_pct * 100:.0f}% acc",
+            o.revenue_impact_m / total * 100.0, tone=_tone(o)) for o in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of clinical-AI revenue impact '
+            '· value = revenue ($M) + accuracy · tone = model accuracy</div></div>')
+
+
 def _outcomes_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
@@ -230,6 +247,7 @@ def render_clinical_ai_tracker(params: dict = None) -> str:
         tone="teal",
     )
     o_tbl = _outcomes_table(r.outcomes)
+    o_chart = _outcomes_chart(r.outcomes)
     a_tbl = _adoption_table(r.adoption)
     f_tbl = _fda_table(r.fda)
     e_tbl = _eval_table(r.evaluations)
@@ -259,7 +277,7 @@ def render_clinical_ai_tracker(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">AI Systems in Production</div>{s_chart}{s_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Clinical Outcomes & ROI</div>{o_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Clinical Outcomes & ROI</div>{o_chart}{o_tbl}</div>
   <div style="{cell}"><div style="{h3}">Adoption Metrics</div>{a_tbl}</div>
   <div style="{cell}"><div style="{h3}">FDA Clearances</div>{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">Vendor Evaluation Pipeline</div>{e_tbl}</div>
