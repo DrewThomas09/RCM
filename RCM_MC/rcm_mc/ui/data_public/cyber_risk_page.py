@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_data_cell, ck_kpi_block, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_data_cell, ck_kpi_block, ck_page_title, ck_value_anchor
 
 
 def _domains_chart(items) -> str:
@@ -191,8 +191,6 @@ def render_cyber_risk(params: dict = None) -> str:
     border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     pos = P["positive"]; acc = P["accent"]; neg = P["negative"]; warn = P["warning"]
 
-    tier_c = pos if r.risk_tier == "strong" else (acc if r.risk_tier == "adequate" else (warn if r.risk_tier == "developing" else neg))
-
     kpi_strip = (
         ck_kpi_block("Cyber Score", f"{r.overall_cyber_score}/100", "", "") +
         ck_kpi_block("Risk Tier", r.risk_tier.upper()[:14], "", "") +
@@ -216,7 +214,20 @@ def render_cyber_risk(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     total_rem = sum(c.remediation_cost_mm for c in r.compliance)
-    hhs_incidents = sum(1 for inc in r.incidents if inc.hhs_reportable)
+    _va_tone = {"strong": "positive", "adequate": "teal",
+                "developing": "warning"}.get(r.risk_tier, "negative")
+    _avg_gap = (
+        sum(d.maturity_score - d.industry_benchmark for d in r.domains)
+        / len(r.domains)
+    ) if r.domains else 0.0
+    value_anchor = ck_value_anchor(
+        "Cyber Posture",
+        f"{r.overall_cyber_score}/100",
+        delta=f"{_avg_gap:+.0f} pts vs industry avg · tier {r.risk_tier.upper()}",
+        opportunity=f"${total_rem:,.1f}M to close gaps",
+        target="Tier 'strong'",
+        tone=_va_tone,
+    )
     # B11 sweep batch 2 PR 8/10 — bespoke .ck-page-h1 → ck_page_title.
     # Cybersecurity scorecard page. Pre-fix sub-line described what the
     # page COVERS (12-domain maturity, incidents, ransomware, threats,
@@ -239,11 +250,7 @@ def render_cyber_risk(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {tier_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
-    <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Cyber Posture</div>
-    <div style="color:{tier_c};font-weight:700;font-size:14px">Score {r.overall_cyber_score}/100 · Tier {_html.escape(r.risk_tier.upper())} · {r.total_records_in_scope:,} PHI records in scope</div>
-    <div style="color:{text_dim};font-size:11px;margin-top:4px">${r.cyber_insurance_coverage_mm:,.0f}M insurance tower · ${r.annual_cyber_spend_mm:,.1f}M annual spend · {hhs_incidents} HHS-reportable incidents LTM</div>
-  </div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Control Domain Maturity vs Industry Benchmark</div>{d_chart}{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Incident History (LTM)</div>{i_tbl}</div>
   <div style="{cell}"><div style="{h3}">Ransomware Preparedness</div>{rw_tbl}</div>
