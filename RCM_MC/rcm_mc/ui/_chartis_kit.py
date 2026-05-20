@@ -3514,6 +3514,19 @@ _CSS_INLINE_FALLBACK = """
   .ck-nav a:hover { color:var(--sc-on-navy); }
   .ck-nav a.active { color:var(--sc-on-navy); border-bottom-color:var(--sc-teal); }
   .ck-topbar-right { margin-left:auto; display:flex; align-items:center; gap:var(--sc-s-4); }
+  /* Workspace-mode chip — distinct accent per audience so the active
+     interface reads at a glance. Partner = teal (fund ops); Consulting
+     = amber (Chartis commercial-diligence engagements). */
+  .ck-mode-chip { font-family:var(--sc-mono); font-size:10px; font-weight:700;
+    letter-spacing:0.08em; text-transform:uppercase; text-decoration:none;
+    padding:4px 10px; border-radius:2px; white-space:nowrap;
+    border:1px solid var(--sc-teal); color:var(--sc-on-navy);
+    background:rgba(31,122,117,0.22); transition:background 0.15s; }
+  .ck-mode-chip:hover { background:rgba(31,122,117,0.40); }
+  .ck-mode-chip[data-mode="consulting"] { border-color:#d9a23a;
+    background:rgba(184,115,42,0.30); color:#f5e3c4; }
+  .ck-mode-chip[data-mode="consulting"]:hover { background:rgba(184,115,42,0.48); }
+  @media (max-width:900px){ .ck-mode-chip { display:none; } }
   .ck-search { border:1px solid var(--sc-navy-3); padding:7px 12px; font-size:12px; min-width:240px; border-radius:2px; background:var(--sc-navy-2); font-family:var(--sc-sans); color:var(--sc-on-navy); letter-spacing:0.02em; }
   .ck-search::placeholder { color:var(--sc-on-navy-faint); }
   .ck-search:focus { outline:none; border-color:var(--sc-teal); background:var(--sc-navy); }
@@ -4700,8 +4713,17 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
     second-level pages — saves a partner the click into a section
     landing page just to find a common surface.
     """
+    # Nav labels are workspace-mode-aware so a viewer sees the
+    # vocabulary shift (Deals → Engagements, Portfolio → Engagement Book)
+    # the moment they toggle to the Chartis-consulting workspace.
+    from ._workspace_mode import term as _ws_term
+    _NAV_TERM = {"Deals": "deals", "Portfolio": "portfolio"}
+
+    def _nav_label(lbl: str) -> str:
+        return _ws_term(_NAV_TERM[lbl]) if lbl in _NAV_TERM else lbl
+
     links = "".join(
-        f'<a href="{_esc(item["href"])}" class="{"active" if item["key"] == active_nav else ""}">{_esc(item["label"])}</a>'
+        f'<a href="{_esc(item["href"])}" class="{"active" if item["key"] == active_nav else ""}">{_esc(_nav_label(item["label"]))}</a>'
         for item in _CORPUS_NAV
     )
 
@@ -4739,6 +4761,13 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '</a>'
         f'<nav class="ck-nav" aria-label="Primary">{links}</nav>'
         '<div class="ck-topbar-right">'
+        # Always-visible workspace-mode chip so the active interface
+        # (PE Partner vs Chartis Consulting) is obvious on every page,
+        # not buried in the user dropdown. data-mode drives the accent.
+        f'<a class="ck-mode-chip" href="/settings/workspace" '
+        f'data-mode="{_esc(current_workspace_mode())}" '
+        f'title="Workspace: {_esc(_ws_mode_label)} — click to switch">'
+        f'{_esc(_ws_mode_label)}</a>'
         # Portfolio-wide diligence-questions pill. JS-hydrated from
         # all rcm_deal_*_questions entries on DOMContentLoaded;
         # hidden when zero open across the portfolio. Click → ledger.
