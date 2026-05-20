@@ -2,7 +2,38 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+
+
+def _funds_chart(items) -> str:
+    """Lead chart for the fund-summary table — funds ranked by TVPI so
+    total value creation reads before the detailed metrics grid. Bar
+    width = TVPI relative to the strongest fund; value = TVPI; tone marks
+    the table's Cambridge quartile (top green · second teal · third
+    amber · fourth red). Full fund grid stays directly below.
+    """
+    tone_for = {"top quartile": "positive", "top decile": "positive",
+                "second quartile": "teal", "third quartile": "warning",
+                "fourth quartile": "negative", "too early": "teal"}
+    hi = max((f.tvpi for f in items), default=1.0) or 1.0
+    ranked = sorted(items, key=lambda f: f.tvpi, reverse=True)
+    rows = []
+    for f in ranked:
+        rows.append(ck_bar_row(
+            f.fund,
+            f"{f.tvpi:.2f}x",
+            f.tvpi / hi * 100.0,
+            tone=tone_for.get(f.quartile, "teal"),
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = TVPI relative to strongest fund · value = TVPI · '
+        'tone = Cambridge quartile (green top · teal second · amber third · red fourth)</div>'
+        '</div>'
+    )
 
 
 def _funds_table(items) -> str:
@@ -178,6 +209,7 @@ def render_lp_reporting(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    f_chart = _funds_chart(r.funds)
     f_tbl = _funds_table(r.funds)
     m_tbl = _marks_table(r.marks)
     a_tbl = _attribution_table(r.attribution)
@@ -199,7 +231,7 @@ def render_lp_reporting(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Fund-Level Performance Summary</div>{f_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Fund-Level Performance Summary</div>{f_chart}{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">Quarterly NAV Evolution (9 quarters)</div>{m_tbl}</div>
   <div style="{cell}"><div style="{h3}">Value Change Attribution — Q1 vs YTD</div>{a_tbl}</div>
   <div style="{cell}"><div style="{h3}">Benchmark vs PitchBook Quartile</div>{b_tbl}</div>

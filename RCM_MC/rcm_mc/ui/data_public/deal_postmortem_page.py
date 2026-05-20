@@ -2,7 +2,36 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_data_cell, ck_kpi_block, ck_page_title
+
+
+def _plan_vs_actual_chart(items) -> str:
+    """Lead chart for the plan-vs-actual table — operating metrics ranked
+    by realization variance so beats and misses against the underwriting
+    case read at a glance. Bar width = magnitude of the variance; value =
+    signed variance %; tone marks beat/miss (>=0 green · within -10%
+    amber · worse red), matching the table. Full grid stays below.
+    """
+    ranked = sorted(items, key=lambda p: p.variance_pct, reverse=True)
+    rows = []
+    for p in ranked:
+        v = p.variance_pct
+        tone = "positive" if v >= 0 else ("warning" if v >= -0.10 else "negative")
+        rows.append(ck_bar_row(
+            p.metric,
+            f"{v * 100:+.1f}%",
+            min(100.0, abs(v) * 100.0),
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = magnitude of variance vs underwriting · value = signed '
+        'variance % · tone = beat/miss (green beat · amber within -10% · red worse)</div>'
+        '</div>'
+    )
 
 
 def _plan_vs_actual_table(items) -> str:
@@ -172,6 +201,7 @@ def render_deal_postmortem(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    pva_chart = _plan_vs_actual_chart(r.plan_vs_actual)
     pva_tbl = _plan_vs_actual_table(r.plan_vs_actual)
     att_tbl = _attribution_table(r.attribution)
     m_tbl = _milestones_table(r.milestones)
@@ -210,7 +240,7 @@ def render_deal_postmortem(params: dict = None) -> str:
     <div style="color:{grade_c};font-weight:700;font-size:14px">{_html.escape(r.overall_grade)} · {r.realized_moic:.2f}x vs {r.underwritten_moic:.2f}x underwritten ({moic_delta * 100:+.0f}%)</div>
     <div style="color:{text_dim};font-size:11px;margin-top:4px">IRR {r.realized_irr * 100:.1f}% vs {r.underwritten_irr * 100:.1f}% underwritten ({irr_delta * 100:+.1f}pp)</div>
   </div>
-  <div style="{cell}"><div style="{h3}">Plan vs Actual — Operating Metrics</div>{pva_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Plan vs Actual — Operating Metrics</div>{pva_chart}{pva_tbl}</div>
   <div style="{cell}"><div style="{h3}">Lever Attribution — Planned vs Realized</div>{att_tbl}</div>
   <div style="{cell}"><div style="{h3}">Milestone Slippage Analysis</div>{m_tbl}</div>
   <div style="{cell}"><div style="{h3}">Lessons Learned — Changes for Next Deal</div>{l_tbl}</div>
