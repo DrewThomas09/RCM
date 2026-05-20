@@ -7236,6 +7236,36 @@ class RCMHandler(BaseHTTPRequestHandler):
         profile = self._load_deal_profile(deal_id)
         if not profile:
             return self._error_page("Deal Not Found", f"No deal or hospital found for ID '{html.escape(deal_id)}'. Try searching from the home page.")
+        # Honest empty-state: a denial-driver decomposition needs a real
+        # initial-denial rate. HCRIS-sourced hospitals carry no RCM denial
+        # data (denial_rate absent or 0), which previously rendered a
+        # misleading all-$0 page claiming "strong performance". Surface the
+        # gap + how to populate it instead of fabricating zeros.
+        try:
+            _dr_raw = profile.get("denial_rate")
+            _dr_val = float(_dr_raw) if _dr_raw is not None else 0.0
+        except (TypeError, ValueError):
+            _dr_val = 0.0
+        if _dr_val <= 0:
+            from .ui._chartis_kit import chartis_shell as _shell_dn, ck_page_title as _t_dn
+            nm = html.escape(str(profile.get("name", deal_id)))
+            panel = (
+                _t_dn("Denial Drivers", eyebrow="DENIAL ANALYSIS", meta=nm)
+                + '<div style="background:#fff;border:1px solid var(--sc-rule);'
+                'border-left:3px solid var(--sc-warning);padding:16px 18px;'
+                'max-width:760px;font-size:14px;line-height:1.6;">'
+                '<strong>No RCM denial data for this deal.</strong> '
+                'Denial-driver decomposition requires an initial-denial rate, '
+                'which is not present on this hospital profile (HCRIS filings '
+                'do not include claims/remittance detail). '
+                '<div style="margin-top:10px;font-size:13px;color:var(--sc-text-dim);">'
+                'To populate it: upload 835/837 claims via the '
+                '<a href="/diligence/snapshot" style="color:var(--sc-teal-ink);'
+                'font-weight:600;">Healthcare Snapshot</a> tab, or set a '
+                '<code>denial_rate</code> on the deal profile.</div>'
+                '</div>')
+            return self._send_html(_shell_dn(
+                panel, f"Denial Drivers — {nm}", active_nav="/pipeline"))
         try:
             result = analyze_denial_drivers(profile)
             dd_dict = result.to_dict()

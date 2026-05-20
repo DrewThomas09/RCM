@@ -231,13 +231,33 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
             f'</tr>'
         )
 
-    _prev_chart = _prevalence_delta_chart(conditions)
-    _prev_fig = (
-        f'<style>{_DEMAND_CHART_CAPTION_CSS}</style>'
-        f'<div class="dmd-figcap">County vs national prevalence delta '
-        f'&middot; green = excess inpatient demand &middot; red = below baseline</div>'
-        f'{_prev_chart}'
-    ) if _prev_chart else ""
+    # When county-specific prevalence isn't cached, get_county_prevalence
+    # falls back to the national baseline (county == national, every delta
+    # ~0). Rendering the diverging-delta chart then shows empty bars and a
+    # wall of "+0.0pp", which reads as broken. Detect that case and show an
+    # honest note instead of a misleading viz.
+    _no_county_signal = bool(conditions) and all(
+        abs(float(c.get("delta_pct", 0) or 0)) < 0.05 for c in conditions[:12])
+    if _no_county_signal:
+        _prev_fig = (
+            f'<div style="background:var(--sc-bone,#ece5d6);'
+            f'border:1px solid {PALETTE["border"]};border-left:3px solid '
+            f'{PALETTE["warning"]};padding:12px 16px;margin-bottom:12px;'
+            f'font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.55;">'
+            f'<strong>Showing national baseline.</strong> County-specific '
+            f'prevalence for {county}, {state} is not cached, so each '
+            f'condition mirrors the national average (delta 0). Run the '
+            f'disease-density loader (<code>rcm-mc data refresh</code>) to '
+            f'populate county rates and surface real demand deltas.</div>'
+        )
+    else:
+        _prev_chart = _prevalence_delta_chart(conditions)
+        _prev_fig = (
+            f'<style>{_DEMAND_CHART_CAPTION_CSS}</style>'
+            f'<div class="dmd-figcap">County vs national prevalence delta '
+            f'&middot; green = excess inpatient demand &middot; red = below baseline</div>'
+            f'{_prev_chart}'
+        ) if _prev_chart else ""
     prevalence_section = (
         f'<div class="cad-card">'
         f'<h2>County Disease Prevalence — {county}, {state}</h2>'
