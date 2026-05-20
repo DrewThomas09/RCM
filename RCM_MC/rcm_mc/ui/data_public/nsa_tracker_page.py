@@ -2,7 +2,24 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
+
+
+def _cases_chart(items) -> str:
+    """Lead chart — top IDR cases ranked by claim amount (tone by award)."""
+    def _tone(c):
+        s = (c.idr_selected or "").lower()
+        if "provider" in s: return "positive"
+        if "payer" in s: return "negative"
+        return "teal"
+    top = sorted(items, key=lambda c: c.claim_amount, reverse=True)[:12]
+    total = sum(c.claim_amount for c in top) or 1.0
+    rows = [ck_bar_row(f"{c.case_id} · {c.specialty}", f"${c.claim_amount:,.0f}",
+            c.claim_amount / total * 100.0, tone=_tone(c)) for c in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of top-12 claim value '
+            '· value = claim ($) · tone = IDR award (green provider / red payer)</div></div>')
 
 
 def _selected_color(s: str) -> str:
@@ -170,6 +187,13 @@ def render_nsa_tracker(params: dict = None) -> str:
     )
 
     c_tbl = _cases_table(r.cases)
+    c_chart = _cases_chart(r.cases)
+    value_anchor = ck_value_anchor(
+        "NSA / IDR Exposure",
+        f"${r.total_revenue_at_risk_m:,.1f}M revenue at risk",
+        delta=f"{r.total_cases} IDR cases · ${r.total_revenue_disputed_m:.2f}M disputed · {r.provider_win_rate_pct * 100:.1f}% provider win rate",
+        tone="teal",
+    )
     p_tbl = _payers_table(r.payer_postures)
     d_tbl = _deals_table(r.deals)
     e_tbl = _emergency_table(r.emergency)
@@ -191,9 +215,10 @@ def render_nsa_tracker(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Portfolio NSA / IDR Exposure by Deal</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Emergency Department Portfolio Economics</div>{e_tbl}</div>
-  <div style="{cell}"><div style="{h3}">IDR Case Detail</div>{c_tbl}</div>
+  <div style="{cell}"><div style="{h3}">IDR Case Detail</div>{c_chart}{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Payer Posture Analytics</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Regulatory Developments Calendar</div>{r_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
