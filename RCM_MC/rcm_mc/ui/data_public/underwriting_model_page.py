@@ -62,8 +62,8 @@ def _sources_uses_svg(sources, uses) -> str:
     x = pad_l
     for label, amt, color in [
         ("Purchase Price", uses.purchase_price_mm, P["warning"]),
-        ("Fees", uses.financing_fees_mm, "#64748b"),
-        ("Txn Costs", uses.transaction_costs_mm, "#475569"),
+        ("Fees", uses.financing_fees_mm, "#7a8699"),
+        ("Txn Costs", uses.transaction_costs_mm, "#465366"),
     ]:
         w = (amt / total) * chart_w
         lines.append(_segment(x, w, color, label, amt, y_use))

@@ -16,8 +16,8 @@ _SECTORS = [
 ]
 
 _SCENARIO_COLORS = {
-    "Bear": "#ef4444",
-    "Base": "#3b82f6",
+    "Bear": "#b5321e",
+    "Base": "#1F7A75",
     "Bull": "#0a8a5f",
     "Strategic Exit": "#a855f7",
 }

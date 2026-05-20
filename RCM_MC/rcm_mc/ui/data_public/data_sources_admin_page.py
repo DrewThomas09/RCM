@@ -40,7 +40,7 @@ def _sources_table(sources) -> str:
     acc = P["accent"]
 
     type_colors = {
-        "corpus_seed": "#8b5cf6",
+        "corpus_seed": "#a98545",
         "cms_public": P["accent"],
         "scraper": P["warning"],
         "manual": P["text_faint"],

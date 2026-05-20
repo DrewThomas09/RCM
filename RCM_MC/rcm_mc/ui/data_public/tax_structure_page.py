@@ -66,7 +66,7 @@ def _allocation_donut_svg(alloc: dict, ev_mm: float) -> str:
     r_outer, r_inner = 80, 55
 
     bg = P["panel"]; text_dim = P["text_dim"]
-    colors = [P["accent"], "#14b8a6", "#a78bfa", P["warning"], P["positive"], P["negative"]]
+    colors = [P["accent"], "#1F7A75", "#a78bfa", P["warning"], P["positive"], P["negative"]]
 
     total = sum(alloc.values()) or 1
     segs = []

@@ -21,14 +21,14 @@ _EXPLAINER_CSS = """<style>
 </style>"""
 
 CYCLE_COLORS = {
-    "Peak":       "#ef4444",
+    "Peak":       "#b5321e",
     "ZIRP Peak":  "#dc2626",
-    "Trough":     "#10b981",
-    "Recovery":   "#3b82f6",
+    "Trough":     "#0a8a5f",
+    "Recovery":   "#1F7A75",
     "Mid-Cycle":  "#94a3b8",
-    "Expansion":  "#f59e0b",
+    "Expansion":  "#b8732a",
     "Late Cycle": "#f97316",
-    "Neutral":    "#64748b",
+    "Neutral":    "#7a8699",
 }
 
 

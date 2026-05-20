@@ -27,9 +27,9 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 def _moic_color(m: float) -> str:
     if m >= 3.0: return "#0a8a5f"
-    if m >= 2.0: return "#3b82f6"
-    if m >= 1.5: return "#f59e0b"
-    return "#ef4444"
+    if m >= 2.0: return "#1F7A75"
+    if m >= 1.5: return "#b8732a"
+    return "#b5321e"
 
 
 def _match_deal(deal: Dict[str, Any], query: str, sector: str, yr_lo: Optional[int],
@@ -90,7 +90,7 @@ def _match_deal(deal: Dict[str, Any], query: str, sector: str, yr_lo: Optional[i
 def _payer_mini(pm: Any) -> str:
     """Tiny inline payer mix bar."""
     if not isinstance(pm, dict):
-        return '<span style="color:#475569;font-size:9px;">—</span>'
+        return '<span style="color:#465366;font-size:9px;">—</span>'
     comm = float(pm.get("commercial", 0) or 0)
     med  = float(pm.get("medicare", 0) or 0)
     maid = float(pm.get("medicaid", 0) or 0)
@@ -101,9 +101,9 @@ def _payer_mini(pm: Any) -> str:
     w_d = max(0, W - w_c - w_m)
     return (
         f'<svg width="{W}" height="6" xmlns="http://www.w3.org/2000/svg">'
-        f'<rect x="0" y="0" width="{w_c}" height="6" fill="#3b82f6"/>'
+        f'<rect x="0" y="0" width="{w_c}" height="6" fill="#1F7A75"/>'
         f'<rect x="{w_c}" y="0" width="{w_m}" height="6" fill="#0a8a5f"/>'
-        f'<rect x="{w_c+w_m}" y="0" width="{w_d}" height="6" fill="#f59e0b"/>'
+        f'<rect x="{w_c+w_m}" y="0" width="{w_d}" height="6" fill="#b8732a"/>'
         f'</svg>'
     )
 
@@ -277,7 +277,7 @@ def render_deal_search(
       </div>
       <div>
         <button type="submit" class="ck-btn">Search</button>
-        <a href="/deal-search" style="margin-left:8px;font-size:9.5px;color:#64748b;">Clear</a>
+        <a href="/deal-search" style="margin-left:8px;font-size:9.5px;color:#7a8699;">Clear</a>
       </div>
     </div>
   </form>
@@ -299,21 +299,21 @@ def render_deal_search(
             mc = _moic_color(moic_f)
             moic_str = f'<span style="color:{mc};font-weight:500;">{moic_f:.2f}x</span>'
         except (TypeError, ValueError):
-            moic_str = '<span style="color:#475569;">—</span>'
+            moic_str = '<span style="color:#465366;">—</span>'
 
         def _fmt(v: Any, fmt: str) -> str:
             try:
                 return fmt.format(float(v))
             except (TypeError, ValueError):
-                return '<span style="color:#475569;">—</span>'
+                return '<span style="color:#465366;">—</span>'
 
         rows.append(f"""<tr{stripe}>
-  <td style="padding:4px 6px;font-size:9px;color:#64748b;font-family:var(--ck-mono);">{_esc(d.get('source_id',''))}</td>
+  <td style="padding:4px 6px;font-size:9px;color:#7a8699;font-family:var(--ck-mono);">{_esc(d.get('source_id',''))}</td>
   <td style="padding:4px 8px;font-size:10px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
     <span title="{_esc(d.get('deal_name',''))}">{_esc((d.get('deal_name') or '')[:45])}</span>
   </td>
   <td style="padding:4px 8px;font-size:9.5px;color:#94a3b8;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{_esc((d.get('buyer') or '')[:22])}</td>
-  <td style="padding:4px 8px;font-size:9.5px;color:#64748b;">{_esc((d.get('sector') or '—')[:20])}</td>
+  <td style="padding:4px 8px;font-size:9.5px;color:#7a8699;">{_esc((d.get('sector') or '—')[:20])}</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{_esc(str(yr) if yr else '—')}</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{_fmt(ev, '${:.0f}M')}</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{_fmt(ev_ebitda, '{:.1f}x')}</td>
@@ -321,11 +321,11 @@ def render_deal_search(
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{moic_str}</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{_fmt(irr, '{:.1f}%' if irr is None else '{:.1%}')}</td>
   <td style="padding:4px 8px;">{_payer_mini(d.get('payer_mix'))}</td>
-  <td style="padding:4px 8px;font-size:9px;color:#64748b;">{_esc((d.get('deal_type') or '—')[:10])}</td>
+  <td style="padding:4px 8px;font-size:9px;color:#7a8699;">{_esc((d.get('deal_type') or '—')[:10])}</td>
 </tr>""")
 
     def _col_href(label: str, key: str) -> str:
-        color = "#e2e8f0" if sort_by == key else "#64748b"
+        color = "#e2e8f0" if sort_by == key else "#7a8699"
         q_str = f"&q={_html.escape(query)}" if query else ""
         sec_str = f"&sector={_html.escape(sector)}" if sector else ""
         return (
@@ -340,21 +340,21 @@ def render_deal_search(
     <table class="ck-table" style="width:100%;table-layout:fixed;">
       <thead style="position:sticky;top:0;background:#ECE5D6;z-index:2;">
         <tr>
-          <th style="padding:5px 6px;color:#64748b;width:70px;">ID</th>
+          <th style="padding:5px 6px;color:#7a8699;width:70px;">ID</th>
           {_col_href("Deal", "deal_name")}
-          <th style="padding:5px 8px;color:#64748b;">Buyer</th>
-          <th style="padding:5px 8px;color:#64748b;">Sector</th>
+          <th style="padding:5px 8px;color:#7a8699;">Buyer</th>
+          <th style="padding:5px 8px;color:#7a8699;">Sector</th>
           {_col_href("Year", "year")}
           {_col_href("EV", "ev_mm")}
-          <th style="padding:5px 8px;color:#64748b;text-align:right;">EV/EBITDA</th>
+          <th style="padding:5px 8px;color:#7a8699;text-align:right;">EV/EBITDA</th>
           {_col_href("Hold", "hold_years")}
           {_col_href("MOIC", "realized_moic")}
-          <th style="padding:5px 8px;color:#64748b;text-align:right;">IRR</th>
-          <th style="padding:5px 8px;color:#64748b;">Payer</th>
-          <th style="padding:5px 8px;color:#64748b;">Type</th>
+          <th style="padding:5px 8px;color:#7a8699;text-align:right;">IRR</th>
+          <th style="padding:5px 8px;color:#7a8699;">Payer</th>
+          <th style="padding:5px 8px;color:#7a8699;">Type</th>
         </tr>
       </thead>
-      <tbody>{''.join(rows) if rows else '<tr><td colspan="12" style="padding:16px;text-align:center;color:#475569;">No deals match current filters.</td></tr>'}</tbody>
+      <tbody>{''.join(rows) if rows else '<tr><td colspan="12" style="padding:16px;text-align:center;color:#465366;">No deals match current filters.</td></tr>'}</tbody>
     </table>
   </div>
 </div>"""
@@ -369,10 +369,10 @@ def render_deal_search(
             return "&".join(parts)
         link_parts = []
         for p in range(1, min(total_pages + 1, 20)):
-            color = "#3b82f6" if p == page else "#64748b"
+            color = "#1F7A75" if p == page else "#7a8699"
             link_parts.append(f'<a href="{_page_url(p)}" style="margin:0 3px;font-family:var(--ck-mono);font-size:10px;color:{color};text-decoration:none;">{p}</a>')
         if total_pages > 20:
-            link_parts.append(f'<span style="color:#475569;font-size:10px;">… {total_pages}</span>')
+            link_parts.append(f'<span style="color:#465366;font-size:10px;">… {total_pages}</span>')
         page_links = f'<div style="padding:8px 16px;text-align:center;">{"".join(link_parts)}</div>'
 
     explainer = render_page_explainer(

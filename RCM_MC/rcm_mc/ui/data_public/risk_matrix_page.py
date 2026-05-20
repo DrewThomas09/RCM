@@ -61,28 +61,28 @@ def _entry_risk_score(deal: Dict[str, Any], corpus: Optional[List[Dict[str, Any]
 
 # Sector color palette (Bloomberg style — no bright colors)
 _SECTOR_COLORS = {
-    "Physician Practice": "#3b82f6",
-    "Behavioral Health": "#8b5cf6",
+    "Physician Practice": "#1F7A75",
+    "Behavioral Health": "#a98545",
     "Ambulatory Surgery Centers": "#06b6d4",
-    "Dental": "#0891b2",
-    "Cardiology": "#2563eb",
+    "Dental": "#155752",
+    "Cardiology": "#155752",
     "Dermatology": "#7c3aed",
     "Orthopedics": "#0e7490",
     "Emergency Medicine": "#dc2626",
     "Anesthesiology": "#9333ea",
-    "General Hospitals": "#64748b",
+    "General Hospitals": "#7a8699",
     "Behavioral Health / Substance Abuse": "#6d28d9",
     "Home Health": "#0284c7",
-    "Skilled Nursing": "#475569",
+    "Skilled Nursing": "#465366",
     "Healthcare IT / RCM": "#059669",
     "Value-Based Care": "#0f766e",
-    "Telehealth / DTC": "#14b8a6",
+    "Telehealth / DTC": "#1F7A75",
     "Pediatrics": "#0369a1",
     "Oncology": "#b45309",
     "Ophthalmology": "#0d9488",
     "Gastroenterology": "#16a34a",
 }
-_DEFAULT_COLOR = "#334155"
+_DEFAULT_COLOR = "#465366"
 
 
 def _sector_color(sector: str) -> str:
@@ -117,11 +117,11 @@ def _risk_return_scatter(
     be_y = ty(1.0)
     quadrant_lines = (
         f'<line x1="{q_risk_x:.1f}" y1="{pad_t}" x2="{q_risk_x:.1f}" y2="{pad_t+ph}" '
-        f'stroke="#334155" stroke-width="1.2" stroke-dasharray="5,4"/>'
+        f'stroke="#465366" stroke-width="1.2" stroke-dasharray="5,4"/>'
         f'<line x1="{pad_l}" y1="{q_moic_y:.1f}" x2="{pad_l+pw}" y2="{q_moic_y:.1f}" '
-        f'stroke="#334155" stroke-width="1.2" stroke-dasharray="5,4"/>'
+        f'stroke="#465366" stroke-width="1.2" stroke-dasharray="5,4"/>'
         f'<line x1="{pad_l}" y1="{be_y:.1f}" x2="{pad_l+pw}" y2="{be_y:.1f}" '
-        f'stroke="#ef4444" stroke-width="0.8" stroke-dasharray="3,4" opacity="0.4"/>'
+        f'stroke="#b5321e" stroke-width="0.8" stroke-dasharray="3,4" opacity="0.4"/>'
     )
 
     # Quadrant labels
@@ -149,16 +149,16 @@ def _risk_return_scatter(
 
     # Axes
     axes = (
-        f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" y2="{pad_t+ph}" stroke="#334155" stroke-width="1"/>'
-        f'<line x1="{pad_l}" y1="{pad_t+ph}" x2="{pad_l+pw}" y2="{pad_t+ph}" stroke="#334155" stroke-width="1"/>'
+        f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" y2="{pad_t+ph}" stroke="#465366" stroke-width="1"/>'
+        f'<line x1="{pad_l}" y1="{pad_t+ph}" x2="{pad_l+pw}" y2="{pad_t+ph}" stroke="#465366" stroke-width="1"/>'
     )
 
     x_ticks = "".join(
-        f'<text x="{tx(xv):.1f}" y="{pad_t+ph+14}" font-size="7.5" fill="#64748b" text-anchor="middle">{xv:.0f}</text>'
+        f'<text x="{tx(xv):.1f}" y="{pad_t+ph+14}" font-size="7.5" fill="#7a8699" text-anchor="middle">{xv:.0f}</text>'
         for xv in range(0, 101, 20)
     )
     y_ticks = "".join(
-        f'<text x="{pad_l-4}" y="{ty(yv)+3:.1f}" font-size="7.5" fill="#64748b" text-anchor="end">{yv:.0f}x</text>'
+        f'<text x="{pad_l-4}" y="{ty(yv)+3:.1f}" font-size="7.5" fill="#7a8699" text-anchor="end">{yv:.0f}x</text>'
         for yv in range(0, 7)
     )
     labels = (
@@ -167,11 +167,11 @@ def _risk_return_scatter(
         f'<text x="10" y="{pad_t+ph/2:.1f}" font-size="9" fill="#94a3b8" text-anchor="middle" '
         f'transform="rotate(-90,10,{pad_t+ph/2:.1f})">Realized MOIC</text>'
     )
-    n_lbl = f'<text x="{pad_l+4}" y="{pad_t+10}" font-size="8" fill="#475569">n={len(pts)}</text>'
+    n_lbl = f'<text x="{pad_l+4}" y="{pad_t+10}" font-size="8" fill="#465366">n={len(pts)}</text>'
 
     # Breakeven label
     be_lbl = (
-        f'<text x="{pad_l+pw-2}" y="{be_y-3:.1f}" font-size="7" fill="#ef4444" text-anchor="end" opacity="0.6">1.0×</text>'
+        f'<text x="{pad_l+pw-2}" y="{be_y-3:.1f}" font-size="7" fill="#b5321e" text-anchor="end" opacity="0.6">1.0×</text>'
     )
 
     return (
@@ -187,15 +187,15 @@ def _sector_risk_heatmap(rows: List[Dict[str, Any]]) -> str:
     tbody = []
     for i, r in enumerate(rows):
         stripe = ' style="background:var(--sc-bone)"' if i % 2 == 1 else ""
-        risk_color = "#ef4444" if r["avg_risk"] >= 65 else ("#f59e0b" if r["avg_risk"] >= 40 else "#0a8a5f")
-        moic_color = "#ef4444" if (r["p50_moic"] or 0) < 1.0 else ("#0a8a5f" if (r["p50_moic"] or 0) >= 2.5 else "#e2e8f0")
+        risk_color = "#b5321e" if r["avg_risk"] >= 65 else ("#b8732a" if r["avg_risk"] >= 40 else "#0a8a5f")
+        moic_color = "#b5321e" if (r["p50_moic"] or 0) < 1.0 else ("#0a8a5f" if (r["p50_moic"] or 0) >= 2.5 else "#e2e8f0")
         tbody.append(f"""
 <tr{stripe}>
   <td class="dim" style="font-size:11px;">{_html.escape(r['sector'])}</td>
   <td class="mono dim" style="text-align:right;">{r['n']}</td>
   <td style="text-align:right;"><span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;color:{risk_color}">{r['avg_risk']:.0f}</span></td>
   <td style="text-align:right;"><span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;color:{moic_color};font-weight:600">{r['p50_moic']:.2f}×</span></td>
-  <td class="mono" style="text-align:right;color:#ef4444;">{r['loss_rate']*100:.1f}%</td>
+  <td class="mono" style="text-align:right;color:#b5321e;">{r['loss_rate']*100:.1f}%</td>
 </tr>""")
 
     return f"""

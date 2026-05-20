@@ -24,7 +24,7 @@ def _rate_ladder_svg(cpt_rows) -> str:
 
     bg = P["panel"]; acc = P["accent"]; pos = P["positive"]
     text_dim = P["text_dim"]; text_faint = P["text_faint"]; border = P["border"]
-    mcr_col = "#8b5cf6"
+    mcr_col = "#a98545"
 
     bars = []
     for i, c in enumerate(cpt_rows):
@@ -86,7 +86,7 @@ def _index_gauge_svg(current: float, median: float, p75: float) -> str:
 
     bg = P["panel"]; text_dim = P["text_dim"]; text_faint = P["text_faint"]
     border = P["border"]
-    mcr_col = "#8b5cf6"
+    mcr_col = "#a98545"
 
     y_line = h / 2
 

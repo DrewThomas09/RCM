@@ -44,7 +44,7 @@ def _yearly_stack_svg(yearly) -> str:
     bg = P["panel"]; text_dim = P["text_dim"]; text_faint = P["text_faint"]
     colors = {
         "boltons": P["positive"], "organic": P["accent"],
-        "debt": P["warning"], "div": "#8b5cf6", "retained": P["text_faint"],
+        "debt": P["warning"], "div": "#a98545", "retained": P["text_faint"],
     }
     n = len(yearly)
     bar_w = (inner_w - (n - 1) * 12) / n
