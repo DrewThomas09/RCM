@@ -47,6 +47,24 @@ def _sites_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _tas_chart(items) -> str:
+    """Summary chart — therapeutic areas by active trial volume (tone by growth)."""
+    def _tone(t):
+        g = (t.growth_trajectory or "").lower()
+        if "grow" in g or "expand" in g or "accel" in g: return "positive"
+        if "stable" in g or "flat" in g: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda t: t.active_trials, reverse=True)
+    total = sum(t.active_trials for t in top) or 1
+    rows = [ck_bar_row(f"{t.area} ({t.site_count} sites)",
+            f"{t.active_trials} trials · ${t.median_revenue_per_site_mm:,.2f}M/site",
+            t.active_trials / total * 100.0, tone=_tone(t)) for t in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of active trials by therapeutic area '
+            '· value = trials + median rev/site · tone = growth trajectory</div></div>')
+
+
 def _tas_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
@@ -168,6 +186,7 @@ def render_trial_site_econ(params: dict = None) -> str:
         tone="positive",
     )
     ta_tbl = _tas_table(r.therapeutic_areas)
+    ta_chart = _tas_chart(r.therapeutic_areas)
     p_tbl = _phase_table(r.phase_econ)
     sp_tbl = _sponsors_table(r.sponsors)
     c_tbl = _cost_table(r.cost_structure)
@@ -187,7 +206,7 @@ def render_trial_site_econ(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">Site Roster (Top 30 by Revenue)</div>{s_chart}{s_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Therapeutic Area Rollup</div>{ta_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Therapeutic Area Rollup</div>{ta_chart}{ta_tbl}</div>
   <div style="{cell}"><div style="{h3}">Phase Economics — Per-Site Revenue &amp; Margin</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sponsor Relationship Matrix</div>{sp_tbl}</div>
   <div style="{cell}"><div style="{h3}">Cost Structure</div>{c_tbl}</div>
