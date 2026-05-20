@@ -2,7 +2,37 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+
+
+def _contracts_chart(items) -> str:
+    """Lead chart for the hospital-contract book — contracts ranked by
+    annual value so the biggest anchor relationships surface first. Bar
+    width = share of total annual contract value; value = annual value
+    ($M); tone marks renewal probability (>=80% green · >=60% teal ·
+    below amber). Full contract grid stays directly below.
+    """
+    total = sum(c.contract_value_annual_m for c in items) or 1.0
+    ranked = sorted(items, key=lambda c: c.contract_value_annual_m, reverse=True)
+    rows = []
+    for c in ranked:
+        tone = ("positive" if c.renewal_probability_pct >= 0.80 else "teal"
+                if c.renewal_probability_pct >= 0.60 else "warning")
+        rows.append(ck_bar_row(
+            c.hospital_system,
+            f"${c.contract_value_annual_m:,.1f}M",
+            c.contract_value_annual_m / total * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = share of total annual contract value · value = annual value '
+        '($M) · tone = renewal probability (green &ge;80% · teal &ge;60% · amber below)</div>'
+        '</div>'
+    )
 
 
 def _renewal_color(s: str) -> str:
@@ -195,7 +225,15 @@ def render_hospital_anchor(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    c_chart = _contracts_chart(r.contracts)
     c_tbl = _contracts_table(r.contracts)
+    value_anchor = ck_value_anchor(
+        "Hospital Anchor Contracts",
+        f"${r.total_contract_value_m:,.1f}M annual value",
+        delta=f"{r.total_contracts} contracts · {r.weighted_renewal_probability_pct * 100:.0f}% wtd renewal · {r.exclusive_contracts} exclusive · {r.contracts_expiring_12mo} expiring <12mo",
+        opportunity=f"${r.at_risk_revenue_m:,.1f}M revenue at risk",
+        tone="teal",
+    )
     rn_tbl = _renewals_table(r.renewals)
     st_tbl = _stipends_table(r.stipends)
     cp_tbl = _counterparties_table(r.counterparties)
@@ -215,9 +253,10 @@ def render_hospital_anchor(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Renewal Schedule — Next 36 Months</div>{rn_tbl}</div>
   <div style="{cell}"><div style="{h3}">At-Risk Contracts (Active Watchlist)</div>{ar_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Active Hospital Contract Book</div>{c_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Active Hospital Contract Book</div>{c_chart}{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Service Line Concentration</div>{sl_tbl}</div>
   <div style="{cell}"><div style="{h3}">Stipend Economics</div>{st_tbl}</div>
   <div style="{cell}"><div style="{h3}">Hospital Counterparties — Credit & Strategy</div>{cp_tbl}</div>

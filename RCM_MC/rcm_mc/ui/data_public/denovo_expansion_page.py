@@ -2,7 +2,37 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title, ck_value_anchor
+
+
+def _sites_chart(items) -> str:
+    """Lead chart for the site-economics table — site types ranked by
+    capital committed so the biggest build bets surface first. Bar width
+    = share of total investment; value = investment ($M); tone marks
+    payback speed (<=3y green · <=5y teal · slower amber). Full site
+    grid stays directly below.
+    """
+    total = sum(s.total_investment_mm for s in items) or 1.0
+    ranked = sorted(items, key=lambda s: s.total_investment_mm, reverse=True)
+    rows = []
+    for s in ranked:
+        tone = ("positive" if s.payback_years <= 3 else "teal"
+                if s.payback_years <= 5 else "warning")
+        rows.append(ck_bar_row(
+            s.site_type,
+            f"${s.total_investment_mm:,.1f}M",
+            s.total_investment_mm / total * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = share of total investment · value = investment ($M) · '
+        'tone = payback (green &le;3y · teal &le;5y · amber slower)</div>'
+        '</div>'
+    )
 
 
 def _sites_table(items) -> str:
@@ -182,7 +212,15 @@ def render_denovo_expansion(params: dict = None) -> str:
         data_source=f"{len(r.ramp)} months · break-even month marked",
         hot_rows=rp_hot,
     )
+    st_chart = _sites_chart(r.site_types)
     st_tbl = _sites_table(r.site_types)
+    value_anchor = ck_value_anchor(
+        "De Novo Expansion",
+        f"${r.total_investment_committed_mm:,.1f}M committed",
+        delta=f"{r.total_active_sites} active / {r.total_sites_planned} planned sites · {r.portfolio_payback_years:.1f}y payback",
+        opportunity=f"${r.expected_stabilized_ebitda_mm:,.1f}M stabilized EBITDA",
+        tone="positive",
+    )
     mk_tbl = _markets_table(r.markets)
     lb_tbl = _lease_table(r.lease_buy)
     bl_tbl = _blend_table(r.blend)
@@ -200,8 +238,9 @@ def render_denovo_expansion(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   {ramp_paired}
-  <div style="{cell}"><div style="{h3}">Site-Type Unit Economics</div>{st_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Site-Type Unit Economics</div>{st_chart}{st_tbl}</div>
   <div style="{cell}"><div style="{h3}">Market Expansion Queue</div>{mk_tbl}</div>
   <div style="{cell}"><div style="{h3}">Lease vs Buy Decision Matrix (10-Year NPV)</div>{lb_tbl}</div>
   <div style="{cell}"><div style="{h3}">Organic vs Inorganic Growth Blend</div>{bl_tbl}</div>
