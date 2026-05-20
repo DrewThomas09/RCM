@@ -58,7 +58,6 @@ def _landing() -> str:
     )
     body = (
         title_block
-        + explainer_html
         + f'<form method="GET" action="/diligence/denial-prediction" '
         f'style="max-width:480px;margin-top:20px;background:{P["panel"]};'
         f'border:1px solid {P["border"]};border-radius:4px;padding:20px;">'

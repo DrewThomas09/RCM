@@ -114,6 +114,12 @@ def _check_page(route: str, status: int, body: str) -> PageResult:
         n_h1 = len(re.findall(r"<h1[ >]", body))
         if n_h1 > 1:
             findings.append(f"duplicate title ({n_h1} <h1>)")
+    # One explanatory block under the title: a page should not stack a
+    # bespoke ck-*-explainer deck AND the canonical ck-page-explainer.
+    if status < 400:
+        n_exp = len(re.findall(r'<p class="ck-[a-z]+-explainer"', body))
+        if n_exp > 1:
+            findings.append(f"duplicate explainer ({n_exp} blocks)")
     return PageResult(route, status, not findings, findings, len(body))
 
 

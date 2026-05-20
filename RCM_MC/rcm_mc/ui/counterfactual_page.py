@@ -461,7 +461,6 @@ def _landing_page() -> str:
     body = (
         _page_style()
         + title_block
-        + explainer_html
         + '<form method="GET" action="/diligence/counterfactual" class="cf-form">'
         + '<label class="cf-form-label">Dataset</label>'
         + f'<select name="dataset" required><option value="">— pick a CCD fixture —</option>{options}</select>'
