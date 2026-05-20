@@ -2,7 +2,38 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_data_cell, ck_kpi_block, ck_page_title
+
+
+def _domains_chart(items) -> str:
+    """Lead chart for the control-domain table — maturity score per
+    domain, ranked, so a partner reads the strongest/weakest controls
+    before scanning the dataset. Bar width is absolute maturity (0-100);
+    tone tracks the table's tier coloring (>=80 strong, >=65 developing,
+    else lagging); the value label carries the signed gap to the
+    industry benchmark so the "vs benchmark" read is at-a-glance.
+    """
+    ranked = sorted(items, key=lambda d: d.maturity_score, reverse=True)
+    rows = []
+    for d in ranked:
+        tone = ("positive" if d.maturity_score >= 80
+                else "warning" if d.maturity_score >= 65 else "negative")
+        gap = d.maturity_score - d.industry_benchmark
+        rows.append(ck_bar_row(
+            d.domain,
+            f"{gap:+d}",
+            float(d.maturity_score),
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = control maturity (0–100) · value = gap vs industry '
+        'benchmark · % = maturity score</div>'
+        '</div>'
+    )
 
 
 def _domains_table(items) -> str:
@@ -173,6 +204,7 @@ def render_cyber_risk(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    d_chart = _domains_chart(r.domains)
     d_tbl = _domains_table(r.domains)
     i_tbl = _incidents_table(r.incidents)
     rw_tbl = _ransomware_table(r.ransomware)
@@ -212,7 +244,7 @@ def render_cyber_risk(params: dict = None) -> str:
     <div style="color:{tier_c};font-weight:700;font-size:14px">Score {r.overall_cyber_score}/100 · Tier {_html.escape(r.risk_tier.upper())} · {r.total_records_in_scope:,} PHI records in scope</div>
     <div style="color:{text_dim};font-size:11px;margin-top:4px">${r.cyber_insurance_coverage_mm:,.0f}M insurance tower · ${r.annual_cyber_spend_mm:,.1f}M annual spend · {hhs_incidents} HHS-reportable incidents LTM</div>
   </div>
-  <div style="{cell}"><div style="{h3}">Control Domain Maturity vs Industry Benchmark</div>{d_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Control Domain Maturity vs Industry Benchmark</div>{d_chart}{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Incident History (LTM)</div>{i_tbl}</div>
   <div style="{cell}"><div style="{h3}">Ransomware Preparedness</div>{rw_tbl}</div>
   <div style="{cell}"><div style="{h3}">Threat Vector Exposure</div>{t_tbl}</div>
