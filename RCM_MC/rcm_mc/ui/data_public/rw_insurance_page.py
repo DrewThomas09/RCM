@@ -61,6 +61,23 @@ def _policies_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _carriers_chart(items) -> str:
+    """Summary chart — carrier limit deployed (concentration; tone by open claims)."""
+    def _tone(c):
+        if c.open_claims >= 2: return "warning"
+        if c.open_claims == 1: return "teal"
+        return "navy"
+    top = sorted(items, key=lambda c: c.total_limit_deployed_m, reverse=True)
+    total = sum(c.total_limit_deployed_m for c in top) or 1.0
+    rows = [ck_bar_row(f"{c.carrier} ({c.rating})",
+            f"${c.total_limit_deployed_m:,.0f}M · {c.open_claims} open",
+            c.total_limit_deployed_m / total * 100.0, tone=_tone(c)) for c in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of limit deployed by carrier '
+            '· value = limit ($M) + open claims · tone = claims activity</div></div>')
+
+
 def _carriers_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
@@ -211,6 +228,7 @@ def render_rw_insurance(params: dict = None) -> str:
         tone="navy",
     )
     c_tbl = _carriers_table(r.carriers)
+    c_chart = _carriers_chart(r.carriers)
     e_tbl = _exclusions_table(r.exclusions)
     cl_tbl = _claims_table(r.claims)
     s_tbl = _specialty_table(r.specialty)
@@ -234,7 +252,7 @@ def render_rw_insurance(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">Active R&W Policies</div>{p_chart}{p_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Carrier League Table & Concentration</div>{c_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Carrier League Table & Concentration</div>{c_chart}{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Claim Activity</div>{cl_tbl}</div>
   <div style="{cell}"><div style="{h3}">Policy Exclusions & Standalone Coverage</div>{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Specialty Coverages</div>{s_tbl}</div>

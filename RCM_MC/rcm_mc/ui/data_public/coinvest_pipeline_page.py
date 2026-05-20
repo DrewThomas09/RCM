@@ -89,6 +89,22 @@ def _lps_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _sectors_chart(items) -> str:
+    """Summary chart — co-invest sector allocation by total equity."""
+    def _tone(s):
+        if s.total_equity_m and s.unallocated_m / s.total_equity_m > 0.30: return "warning"
+        return "teal"
+    top = sorted(items, key=lambda s: s.total_equity_m, reverse=True)
+    total = sum(s.total_equity_m for s in top) or 1.0
+    rows = [ck_bar_row(f"{s.sector} ({s.active_opportunities} opps)",
+            f"${s.total_equity_m:,.0f}M equity",
+            s.total_equity_m / total * 100.0, tone=_tone(s)) for s in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of co-invest equity by sector '
+            '· value = total equity ($M) · tone = unallocated &gt; 30%</div></div>')
+
+
 def _sectors_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
@@ -220,6 +236,7 @@ def render_coinvest_pipeline(params: dict = None) -> str:
     c_tbl = _capacity_table(r.capacity)
     lp_tbl = _lps_table(r.lps)
     s_tbl = _sectors_table(r.sectors)
+    s_chart = _sectors_chart(r.sectors)
     re_tbl = _realizations_table(r.realizations)
     f_tbl = _fees_table(r.fees)
 
@@ -256,7 +273,7 @@ def render_coinvest_pipeline(params: dict = None) -> str:
   {value_anchor}
   <div style="{cell}"><div style="{h3}">Active Pipeline — {r.active_opportunities} Opportunities</div>{d_chart}{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Deal Capacity & LP Demand</div>{c_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Sector Allocation Summary</div>{s_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Sector Allocation Summary</div>{s_chart}{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">LP Participation — {len(r.lps)} Institutional Investors</div>{lp_tbl}</div>
   <div style="{cell}"><div style="{h3}">Historical Co-Invest Realizations</div>{re_tbl}</div>
   <div style="{cell}"><div style="{h3}">Fee Structure by LP Tier</div>{f_tbl}</div>
