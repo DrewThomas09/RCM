@@ -2,7 +2,39 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+
+
+def _portfolio_chart(items) -> str:
+    """Lead chart for the portfolio table — holdco loans ranked by
+    current rate so the most expensive debt (the best refi targets)
+    surfaces first. Bar width = current rate relative to the highest in
+    the book; value = current rate; tone marks the refi window
+    (priority red · in-window green · approaching amber · long-dated
+    teal). Full loan grid stays directly below.
+    """
+    tone_for = {"priority": "negative", "in-window": "positive",
+                "approaching-window": "warning", "long-dated": "teal"}
+    hi = max((p.current_rate_pct for p in items), default=1.0) or 1.0
+    ranked = sorted(items, key=lambda p: p.current_rate_pct, reverse=True)
+    rows = []
+    for p in ranked:
+        rows.append(ck_bar_row(
+            p.holdco,
+            f"{p.current_rate_pct:.2f}%",
+            p.current_rate_pct / hi * 100.0,
+            tone=tone_for.get(p.refi_window_status, "teal"),
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = current rate relative to most expensive loan · value = '
+        'current rate · tone = refi window (red priority · green in-window '
+        '· amber approaching · teal long-dated)</div>'
+        '</div>'
+    )
 
 
 def _portfolio_table(items) -> str:
@@ -178,6 +210,7 @@ def render_refi_optimizer(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    p_chart = _portfolio_chart(r.portfolio)
     p_tbl = _portfolio_table(r.portfolio)
     o_tbl = _opportunities_table(r.opportunities)
     m_tbl = _market_table(r.market_windows)
@@ -204,7 +237,7 @@ def render_refi_optimizer(params: dict = None) -> str:
     <div style="color:{pos};font-weight:700;font-size:14px">${r.total_refi_npv_mm:,.1f}M Net NPV · {urgent_count} urgent refi candidates · ${r.near_term_maturities_mm:,.0f}M maturing in next 4 years</div>
     <div style="color:{text_dim};font-size:11px;margin-top:4px">Current weighted rate {r.weighted_rate_pct:.2f}% · market achievable ~8.75% · ~90bps compression available on average</div>
   </div>
-  <div style="{cell}"><div style="{h3}">Active Portfolio Debt Stack</div>{p_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Active Portfolio Debt Stack</div>{p_chart}{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Refi Opportunities (NPV-Ranked)</div>{o_tbl}</div>
   <div style="{cell}"><div style="{h3}">Market Window History &amp; Outlook</div>{m_tbl}</div>
   <div style="{cell}"><div style="{h3}">Active Lender Quotes</div>{q_tbl}</div>

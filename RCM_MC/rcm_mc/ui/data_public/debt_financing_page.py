@@ -2,7 +2,36 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+
+
+def _facilities_chart(items) -> str:
+    """Lead chart for the facility table — debt tranches ranked by size
+    so the weight of the capital structure reads at a glance. Bar width
+    = share of total facility size; value = size ($M); tone marks
+    documentation (teal cov-lite · amber maintenance-covenant), matching
+    the table. Full facility grid stays directly below.
+    """
+    total = sum(f.size_m for f in items) or 1.0
+    ranked = sorted(items, key=lambda f: f.size_m, reverse=True)
+    rows = []
+    for f in ranked:
+        tone = "teal" if f.covenant_lite else "warning"
+        rows.append(ck_bar_row(
+            f"{f.deal} · {f.tranche}",
+            f"${f.size_m:,.0f}M",
+            f.size_m / total * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = share of total facility size · value = tranche size ($M) · '
+        'tone = documentation (teal cov-lite · amber maintenance covenant)</div>'
+        '</div>'
+    )
 
 
 def _synd_status_color(status: str) -> str:
@@ -198,6 +227,7 @@ def render_debt_financing(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    f_chart = _facilities_chart(r.facilities)
     f_tbl = _facilities_table(r.facilities)
     s_tbl = _syndication_table(r.syndications)
     p_tbl = _pricing_table(r.pricing)
@@ -223,7 +253,7 @@ def render_debt_financing(params: dict = None) -> str:
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Syndication Status — Active Book</div>{s_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Facility Detail — Tranches, Pricing, Tenor</div>{f_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Facility Detail — Tranches, Pricing, Tenor</div>{f_chart}{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">Covenant Package — Leverage, Headroom, Baskets</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Flex Terms — Pricing Flex & Structure Flex</div>{fl_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sector Clearing Benchmarks — SOFR+ Spread, Leverage, Interest Coverage</div>{p_tbl}</div>
