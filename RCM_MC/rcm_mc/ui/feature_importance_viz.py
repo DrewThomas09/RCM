@@ -223,22 +223,17 @@ def render_feature_importance_page(
     )
 
     body = (
-        ck_eyebrow("Feature Importance")
-        + kpi_strip
+        # Title / eyebrow / deck come from chartis_shell's editorial_intro
+        # below — no hand-rolled header here (it produced a duplicate
+        # "Feature Importance" <h1>). Keep the inline cross-link only.
+        kpi_strip
         + '<section style="max-width:80rem;">'
-        '<div style="display:flex;justify-content:space-between;'
+        '<div style="display:flex;justify-content:flex-end;'
         'align-items:baseline;margin-bottom:.75rem;">'
-        '<h1 style="margin:0;">Feature Importance</h1>'
         '<a href="/models/quality" class="micro" '
         'style="font-weight:400;letter-spacing:.04em;'
         'text-transform:none;">Model quality →</a>'
         '</div>'
-        '<p style="max-width:48rem;color:var(--muted,#9b9382);'
-        'margin:0 0 1rem 0;">'
-        'What drives each model\'s predictions. Bars extend right '
-        '(positive drivers) or left (negative). Length proportional '
-        'to |coefficient|; relative importance shown as percent.'
-        '</p>'
         + catalog_body
         + '</section>'
         + ck_next_section(

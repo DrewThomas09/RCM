@@ -355,19 +355,15 @@ def render_model_quality_dashboard(
     )
 
     body = (
+        # Title / eyebrow / deck come from chartis_shell's editorial_intro
+        # below — no hand-rolled header here (it produced a duplicate
+        # "Model Quality" <h1>). Keep the inline cross-link only.
         '<section style="max-width:80rem;">'
-        '<div style="display:flex;justify-content:space-between;'
+        '<div style="display:flex;justify-content:flex-end;'
         'align-items:baseline;margin-bottom:.75rem;">'
-        '<h1 style="margin:0;">Model Quality</h1>'
         '<a href="/data/catalog" class="micro" style="font-weight:400;'
         'letter-spacing:.04em;text-transform:none;">Data sources →</a>'
         '</div>'
-        '<p style="max-width:48rem;color:var(--muted,#9b9382);'
-        'margin:0 0 1rem 0;">'
-        'CV R² + MAE + MAPE + grade per trained predictor, plus CI '
-        'calibration: observed coverage vs the claimed 90% nominal. '
-        'Overconfident models flag where claimed precision exceeds '
-        'reality — multiply CI width by the CI Factor to fix.</p>'
         + kpi_html
         + r2_chart
         + table_html

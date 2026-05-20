@@ -54,10 +54,11 @@ class V3StatusPageTests(unittest.TestCase):
                 with _u.urlopen(f"http://127.0.0.1:{port}/v3-status") as r:
                     self.assertEqual(r.status, 200)
                     body = r.read().decode("utf-8")
-                # Title set via chartis_shell
+                # Single page title comes from chartis_shell's
+                # editorial_intro (the page no longer hand-rolls a
+                # second "v3 status" <h1> — that was a duplicate title).
                 self.assertIn("v3 Transformation Status", body)
-                # Headline + section anchors prove parser ran
-                self.assertIn("v3 status", body)
+                # Section anchors prove the parser ran.
                 self.assertIn("Compliance summary", body)
                 self.assertIn("DealAnalysisPacket adoption", body)
             finally:
