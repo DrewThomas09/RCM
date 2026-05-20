@@ -42,7 +42,7 @@ _GRADE_COLORS = {
     "A": (STATUS["positive_bg"], STATUS["positive_fg"]),
     "B": (STATUS["info_bg"], STATUS["info_fg"]),
     "C": (STATUS["watch_bg"], STATUS["watch_fg"]),
-    "D": ("#7c2d12", "#fed7aa"),
+    "D": ("#f0dcd0", "#8a3a18"),
     "F": (STATUS["negative_bg"], STATUS["negative_fg"]),
 }
 
@@ -56,7 +56,7 @@ _CALIB_COLORS = {
 
 
 def _grade_badge(grade: str) -> str:
-    bg, fg = _GRADE_COLORS.get(grade, ("#374151", "#9ca3af"))
+    bg, fg = _GRADE_COLORS.get(grade, ("#ece5d6", "#7a8699"))
     return (
         f'<span style="display:inline-block;padding:.15rem .65rem;'
         f'border-radius:4px;background:{bg};color:{fg};'
@@ -65,7 +65,7 @@ def _grade_badge(grade: str) -> str:
 
 
 def _calib_badge(label: str, observed: float, nominal: float) -> str:
-    bg, fg = _CALIB_COLORS.get(label, ("#374151", "#9ca3af"))
+    bg, fg = _CALIB_COLORS.get(label, ("#ece5d6", "#7a8699"))
     text = f"{label.replace('_', ' ')} · {observed:.0%}/{nominal:.0%}"
     return (
         f'<span class="num" style="display:inline-block;'

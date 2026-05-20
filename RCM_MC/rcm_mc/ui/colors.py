@@ -43,24 +43,28 @@ from typing import Any, Dict, Optional
 
 # ── Semantic palette — single source of truth ───────────────
 STATUS: Dict[str, str] = {
-    # Severity / status
-    "positive": "#10b981",   # green — above peer, improving, good
-    "negative": "#ef4444",   # red — below peer, declining, bad
-    "watch":    "#f59e0b",   # amber — approaching threshold, mid-tier
-    "neutral":  "#9ca3af",   # gray — no signal, breakeven
-    "info":     "#60a5fa",   # blue — informational accent
+    # Severity / status — editorial semantic palette (desaturated,
+    # print-friendly), unified with rcm_mc.ui.brand. Same key names so
+    # callers don't change.
+    "positive": "#0a8a5f",   # green — above peer, improving, good
+    "negative": "#b5321e",   # red — below peer, declining, bad
+    "watch":    "#b8732a",   # amber — approaching threshold, mid-tier
+    "neutral":  "#7a8699",   # slate — no signal, breakeven
+    "info":     "#1d3c69",   # navy — informational accent
 
-    # Background pairs for badges (text on muted bg)
-    "positive_bg": "#065f46",
-    "positive_fg": "#a7f3d0",
-    "negative_bg": "#7f1d1d",
-    "negative_fg": "#fecaca",
-    "watch_bg":    "#92400e",
-    "watch_fg":    "#fde68a",
-    "neutral_bg":  "#374151",
-    "neutral_fg":  "#9ca3af",
-    "info_bg":     "#1e3a8a",
-    "info_fg":     "#bfdbfe",
+    # Badge pairs — editorial light-tint background + dark matching
+    # text (was dark-bg/light-fg for the old terminal theme, which
+    # rendered as dark pills on the parchment surface).
+    "positive_bg": "#d9ece2",
+    "positive_fg": "#0a6a48",
+    "negative_bg": "#f2ded7",
+    "negative_fg": "#8a2a1a",
+    "watch_bg":    "#f2e7d1",
+    "watch_fg":    "#7a4c16",
+    "neutral_bg":  "#ece5d6",
+    "neutral_fg":  "#7a8699",
+    "info_bg":     "#dde4ef",
+    "info_fg":     "#1d3c69",
 }
 
 
