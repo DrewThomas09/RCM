@@ -137,7 +137,6 @@ def render_v5_status() -> str:
         '<section style="max-width:62rem;">'
         + '<p class="micro">v5 Chartis campaign — '
         "<strong>saving-seeking-chartis</strong> branch</p>"
-        '<h1 style="margin-top:.25rem;">v5 status</h1>'
         "<p>Campaign progress map. Numbers come from "
         "<code>docs/V5_ROUTE_INVENTORY.md</code>.</p>"
         + kpi_grid

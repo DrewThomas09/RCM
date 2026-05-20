@@ -36,8 +36,10 @@ class V5StatusPageTests(unittest.TestCase):
                 with _u.urlopen(f"http://127.0.0.1:{port}/v5-status") as r:
                     self.assertEqual(r.status, 200)
                     body = r.read().decode("utf-8")
+                # Single page title from chartis_shell's editorial_intro
+                # (no second hand-rolled "v5 status" <h1> — that was a
+                # duplicate title).
                 self.assertIn("v5 Transformation Status", body)
-                self.assertIn("v5 status", body)
                 self.assertIn("Compliance summary", body)
                 self.assertIn("DealAnalysisPacket adoption", body)
             finally:

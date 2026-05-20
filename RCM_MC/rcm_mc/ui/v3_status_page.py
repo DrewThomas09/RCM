@@ -235,7 +235,6 @@ def render_v3_status() -> str:
         '<section style="max-width:62rem;">'
         '<p class="micro">v3 Transformation Campaign — '
         '<strong>saving-seeking-chartis</strong> branch</p>'
-        '<h1 style="margin-top:.25rem;">v3 status</h1>'
         '<p>Campaign progress map. Numbers come from '
         '<code>docs/V3_ROUTE_INVENTORY.md</code>.</p>'
         + kpi_grid
