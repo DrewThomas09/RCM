@@ -65,7 +65,7 @@ class TestPortfolioDashboard(unittest.TestCase):
             self.assertIn("ccf_2026", html)
             self.assertIn("2.55x", html)
             # MOIC 2.55 ≥ 2.5 → green; green CSS class or color hex referenced
-            self.assertIn("#10B981", html)
+            self.assertIn("#0a8a5f", html)
 
     def test_at_risk_block_highlights_tripped_deals(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -166,8 +166,8 @@ class TestHeldDealVariance(unittest.TestCase):
             out = os.path.join(tmp, "dash.html")
             build_portfolio_dashboard(store, out)
             html = _read_text(out)
-            # Green color hex (#10B981) used for on-track severity
-            self.assertIn("#10B981", html)
+            # Green color hex (#0a8a5f) used for on-track severity
+            self.assertIn("#0a8a5f", html)
 
     def test_deteriorating_deal_shows_off_track_red(self):
         """EBITDA 14.5→11.5 against 15 plan → ~-18% drift → off_track."""
@@ -179,7 +179,7 @@ class TestHeldDealVariance(unittest.TestCase):
             build_portfolio_dashboard(store, out)
             html = _read_text(out)
             # Red hex used for off-track
-            self.assertIn("#EF4444", html)
+            self.assertIn("#b5321e", html)
 
     def test_block_omitted_when_no_held_deals_with_actuals(self):
         """Deals in sourced/ioi/loi must not appear (only hold/exit)."""
