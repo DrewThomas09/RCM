@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title, ck_bar_row
 
 
 def _sev_color(s: str) -> str:
@@ -37,6 +37,21 @@ def _tier_color(t: str) -> str:
         "tier 2 (post-breach)": P["warning"],
         "tier 3": P["warning"],
     }.get(t, P["text_dim"])
+
+
+def _attestations_chart(items) -> str:
+    """Lead chart — portcos ranked by security posture score (tone by band)."""
+    def _tone(a):
+        if a.overall_score >= 8.5: return "positive"
+        if a.overall_score >= 7.5: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda a: a.overall_score, reverse=True)
+    rows = [ck_bar_row(f"{a.deal} · {a.sector}", f"{a.overall_score:.2f}/10",
+            a.overall_score / 10.0 * 100.0, tone=_tone(a)) for a in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = security posture score (0-10 scale) '
+            '· tone = score band</div></div>')
 
 
 def _attestations_table(items) -> str:
@@ -220,6 +235,7 @@ def render_compliance_attestation(params: dict = None) -> str:
     )
 
     a_tbl = _attestations_table(r.attestations)
+    a_chart = _attestations_chart(r.attestations)
     p_tbl = _pentest_table(r.pentests)
     v_tbl = _vendors_table(r.vendors)
     i_tbl = _incidents_table(r.incidents)
@@ -254,7 +270,7 @@ def render_compliance_attestation(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Attestation Status — SOC 2, HITRUST, HIPAA, PCI, ISO</div>{a_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Attestation Status — SOC 2, HITRUST, HIPAA, PCI, ISO</div>{a_chart}{a_tbl}</div>
   <div style="{cell}"><div style="{h3}">Penetration Test Findings</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Security Incident History</div>{i_tbl}</div>
   <div style="{cell}"><div style="{h3}">Third-Party Vendor Risk</div>{v_tbl}</div>

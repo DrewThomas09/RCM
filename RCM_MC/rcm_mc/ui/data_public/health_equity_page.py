@@ -2,7 +2,24 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
+
+
+def _components_chart(items) -> str:
+    """Lead chart — HEI measures ranked by points available (tone by gap)."""
+    def _tone(c):
+        g = abs(c.gap_pct)
+        if g < 0.08: return "positive"
+        if g < 0.15: return "warning"
+        return "negative"
+    top = sorted(items, key=lambda c: c.points_available, reverse=True)
+    total = sum(c.points_available for c in top) or 1
+    rows = [ck_bar_row(f"{c.measure} · {c.domain}", f"{c.points_available} pts",
+            c.points_available / total * 100.0, tone=_tone(c)) for c in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of HEI points available '
+            '· value = points · tone = LIS/non-LIS gap</div></div>')
 
 
 def _components_table(items) -> str:
@@ -122,6 +139,7 @@ def render_health_equity(params: dict = None) -> str:
     )
 
     c_tbl = _components_table(r.hei_components)
+    c_chart = _components_chart(r.hei_components)
     s_tbl = _sdoh_table(r.sdoh)
     i_tbl = _investments_table(r.investments)
     d_tbl = _demographics_table(r.demographics)
@@ -131,6 +149,12 @@ def render_health_equity(params: dict = None) -> str:
 
     total_inv_cost = sum(i.annual_cost_mm for i in r.investments)
     disparity_segments = sum(1 for d in r.demographics if d.disparity_flag)
+    value_anchor = ck_value_anchor(
+        "Health Equity Index",
+        f"${r.hei_bonus_potential_mm:,.1f}M Star bonus potential",
+        delta=f"HEI {r.overall_hei_score:.3f} ({r.hei_points_current:.0f} pts) · ${total_inv_cost:,.1f}M equity investment · {disparity_segments} disparity segments",
+        tone="teal",
+    )
 
     page_title = ck_page_title(
         "Health Equity / SDOH Scorecard",
@@ -142,7 +166,8 @@ def render_health_equity(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">HEI Measure Components — LIS/Dual vs Non-LIS Performance</div>{c_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">HEI Measure Components — LIS/Dual vs Non-LIS Performance</div>{c_chart}{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">SDOH Screening Completion &amp; Closed-Loop Referral</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Equity Investment Portfolio &amp; ROI</div>{i_tbl}</div>
   <div style="{cell}"><div style="{h3}">Demographic Segment Performance &amp; Disparity Flags</div>{d_tbl}</div>
