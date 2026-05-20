@@ -100,6 +100,90 @@ def _pctile_bar(pctile: float, direction: str) -> str:
     )
 
 
+_CI_CHART_CAPTION_CSS = (
+    ".ci-figcap{font-size:11px;color:#6b6456;margin:6px 0 8px;"
+    "font-family:'JetBrains Mono',ui-monospace,monospace;"
+    "letter-spacing:0.02em;}"
+)
+
+
+def _gap_to_p75_chart(
+    gaps: List[Dict[str, Any]], width: int = 700, row_h: int = 26
+) -> str:
+    """Percentile-progress bars per gap metric against the P75 target.
+
+    Each metric the target trails on is a 0–100 percentile bar with a
+    dashed P75 target marker; the unfilled remainder to P75 is the
+    quantifiable value-creation opportunity. Sorted by widest gap.
+    Reads the same percentile the table shows; empty input returns "".
+    """
+    rows = [g for g in (gaps or []) if g.get("metric")]
+    rows = sorted(rows, key=lambda g: g.get("pctile", 100))[:10]
+    if not rows:
+        return ""
+
+    pad_l, pad_r, pad_t = 200, 44, 16
+    bar_max = width - pad_l - pad_r
+    height = pad_t + row_h * len(rows) + 20
+
+    pos = PALETTE["positive"]
+    warn = PALETTE["warning"]
+    neg = PALETTE["negative"]
+    track = PALETTE.get("gridline", "#E8E0D0")
+    rule = PALETTE.get("border", "#BFB6A2")
+    txt = PALETTE.get("text_secondary", "#4a5568")
+
+    p75_x = pad_l + 0.75 * bar_max
+
+    parts: List[str] = [
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" role="img" '
+        f'aria-label="Current percentile vs P75 target by metric" '
+        f'style="width:100%;max-width:{width}px;height:auto;'
+        f'print-color-adjust:exact;-webkit-print-color-adjust:exact;">'
+    ]
+    # P75 target marker.
+    parts.append(
+        f'<line x1="{p75_x:.1f}" y1="{pad_t - 4}" x2="{p75_x:.1f}" '
+        f'y2="{height - 16}" stroke="{pos}" stroke-width="1" '
+        f'stroke-dasharray="4 3" opacity="0.6"/>'
+        f'<text x="{p75_x:.1f}" y="{height - 4}" text-anchor="middle" '
+        f'font-size="9" font-family="JetBrains Mono,ui-monospace,monospace" '
+        f'fill="{pos}">P75 TARGET</text>'
+    )
+    for i, g in enumerate(rows):
+        name = _html.escape(str(g["metric"])[:30])
+        pct = max(0.0, min(100.0, g.get("pctile", 0)))
+        color = neg if pct <= 25 else (warn if pct < 75 else pos)
+        y = pad_t + i * row_h
+        w = pct / 100.0 * bar_max
+        parts.append(
+            f'<text x="{pad_l - 8}" y="{y + row_h / 2 + 3:.1f}" '
+            f'text-anchor="end" font-size="11" '
+            f'font-family="Inter Tight,system-ui,sans-serif" '
+            f'fill="{txt}">{name}</text>'
+        )
+        # Full track to 100, then the filled current percentile.
+        parts.append(
+            f'<rect x="{pad_l}" y="{y + 5:.1f}" width="{bar_max:.1f}" '
+            f'height="{row_h - 13}" rx="2" fill="{track}"/>'
+            f'<rect x="{pad_l}" y="{y + 5:.1f}" width="{max(w, 0.5):.1f}" '
+            f'height="{row_h - 13}" rx="2" fill="{color}" opacity="0.85"/>'
+        )
+        parts.append(
+            f'<text x="{pad_l + w + 6:.1f}" y="{y + row_h / 2 + 3:.1f}" '
+            f'text-anchor="start" font-size="10" '
+            f'font-family="JetBrains Mono,ui-monospace,monospace" '
+            f'fill="{color}">P{pct:.0f}</text>'
+        )
+    parts.append(
+        f'<line x1="{pad_l}" y1="{pad_t - 4}" x2="{pad_l}" '
+        f'y2="{height - 16}" stroke="{rule}" stroke-width="1"/>'
+    )
+    parts.append("</svg>")
+    return "".join(parts)
+
+
 def _add_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     if "revenue_per_bed" not in df.columns and "net_patient_revenue" in df.columns and "beds" in df.columns:
@@ -371,6 +455,14 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
 
     gap_section = ""
     if gap_rows:
+        _gap_chart = _gap_to_p75_chart(gap_opportunities)
+        _gap_fig = (
+            f'<style>{_CI_CHART_CAPTION_CSS}</style>'
+            f'<div class="ci-figcap">Current percentile vs P75 target '
+            f'&middot; unfilled gap to the dashed line = value-creation '
+            f'opportunity</div>'
+            f'{_gap_chart}'
+        ) if _gap_chart else ""
         gap_section = (
             f'<div class="cad-card" style="border-left:3px solid var(--cad-pos);">'
             f'<h2>Value Creation Gaps — Path to P75</h2>'
@@ -378,6 +470,7 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
             f'Metrics where the target trails size-matched P75 peers. Each gap represents '
             f'quantifiable value creation opportunity. Estimated EBITDA impact assumes '
             f'linear improvement proportional to revenue.</p>'
+            f'{_gap_fig}'
             f'<table class="cad-table"><thead><tr>'
             f'<th>Metric</th><th>Current</th><th>P75 Target</th><th>Gap</th>'
             f'<th>Percentile</th><th>Est. Impact</th>'
