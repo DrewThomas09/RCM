@@ -89,6 +89,24 @@ def _state_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _qoz_chart(items) -> str:
+    """Summary chart — Opportunity Zone projects ranked by capital invested."""
+    def _tone(z):
+        mult = (z.projected_exit_value_m / z.invested_m) if z.invested_m else 0.0
+        if mult >= 2.0: return "positive"
+        if mult >= 1.4: return "teal"
+        return "navy"
+    top = sorted(items, key=lambda z: z.invested_m, reverse=True)
+    total = sum(z.invested_m for z in top) or 1.0
+    rows = [ck_bar_row(f"{z.project} · {z.deal}",
+            f"${z.invested_m:,.1f}M → ${z.projected_exit_value_m:,.1f}M",
+            z.invested_m / total * 100.0, tone=_tone(z)) for z in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of QOZ capital invested '
+            '· value = invested → projected exit · tone = projected multiple</div></div>')
+
+
 def _qoz_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
@@ -217,6 +235,7 @@ def render_tax_credits(params: dict = None) -> str:
     )
     s_tbl = _state_table(r.state_incentives)
     q_tbl = _qoz_table(r.opportunity_zones)
+    q_chart = _qoz_chart(r.opportunity_zones)
     w_tbl = _wotc_table(r.wotc)
     tp_tbl = _tp_table(r.transfer_pricing)
     p_tbl = _pipeline_table(r.pipeline)
@@ -239,7 +258,7 @@ def render_tax_credits(params: dict = None) -> str:
   {value_anchor}
   <div style="{cell}"><div style="{h3}">Federal + State Tax Credits (Claimed)</div>{c_chart}{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">State-Level Incentive Programs</div>{s_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Opportunity Zone Investments</div>{q_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Opportunity Zone Investments</div>{q_chart}{q_tbl}</div>
   <div style="{cell}"><div style="{h3}">WOTC / Workforce Credits</div>{w_tbl}</div>
   <div style="{cell}"><div style="{h3}">Transfer Pricing Structures</div>{tp_tbl}</div>
   <div style="{cell}"><div style="{h3}">Credit Pipeline / Opportunities</div>{p_tbl}</div>

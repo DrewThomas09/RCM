@@ -54,6 +54,23 @@ def _workstreams_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _synergy_chart(items) -> str:
+    """Summary chart — synergy categories ranked by run-rate captured (tone by % of target)."""
+    def _tone(s):
+        if s.pct_of_target >= 0.85: return "positive"
+        if s.pct_of_target >= 0.60: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda s: s.run_rate_achieved_mm, reverse=True)
+    total = sum(s.run_rate_achieved_mm for s in top) or 1.0
+    rows = [ck_bar_row(f"{s.synergy_category}",
+            f"${s.run_rate_achieved_mm:,.1f}M / ${s.annualized_target_mm:,.1f}M ({s.pct_of_target * 100:.0f}%)",
+            s.run_rate_achieved_mm / total * 100.0, tone=_tone(s)) for s in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of run-rate synergies captured '
+            '· value = run-rate / target + % · tone = capture vs target</div></div>')
+
+
 def _synergy_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
@@ -178,6 +195,7 @@ def render_pmi_playbook(params: dict = None) -> str:
     w_tbl = _workstreams_table(r.workstreams)
     w_chart = _workstreams_chart(r.workstreams)
     s_tbl = _synergy_table(r.synergies)
+    s_chart = _synergy_chart(r.synergies)
     m_tbl = _milestones_table(r.milestones)
     rsk_tbl = _risks_table(r.risks)
     t_tbl = _tms_table(r.tms)
@@ -201,7 +219,7 @@ def render_pmi_playbook(params: dict = None) -> str:
     <div style="color:{text_dim};font-size:11px;margin-top:4px">Integration spend ${r.integration_spend_mm:,.1f}M / ${r.integration_budget_mm:,.1f}M budget ({budget_util * 100:.0f}% util)</div>
   </div>
   <div style="{cell}"><div style="{h3}">Workstream Progress &amp; Budget</div>{w_chart}{w_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Synergy Capture vs Plan</div>{s_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Synergy Capture vs Plan</div>{s_chart}{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Day 1 / Day 100 / Year-End Milestone Tracking</div>{m_tbl}</div>
   <div style="{cell}"><div style="{h3}">Integration Risk Register</div>{rsk_tbl}</div>
   <div style="{cell}"><div style="{h3}">TMS — Cost Savings by Function</div>{t_tbl}</div>
