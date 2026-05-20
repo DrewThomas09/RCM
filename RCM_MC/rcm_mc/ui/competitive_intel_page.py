@@ -163,12 +163,19 @@ def _gap_to_p75_chart(
             f'font-family="Inter Tight,system-ui,sans-serif" '
             f'fill="{txt}">{name}</text>'
         )
+        gap = max(0.0, 75.0 - pct)
+        tip = _html.escape(
+            f"{g['metric']}: currently P{pct:.0f}"
+            + (f" · {gap:.0f} pts below P75 target" if gap > 0
+               else " · at or above P75 target")
+        )
         # Full track to 100, then the filled current percentile.
         parts.append(
             f'<rect x="{pad_l}" y="{y + 5:.1f}" width="{bar_max:.1f}" '
             f'height="{row_h - 13}" rx="2" fill="{track}"/>'
             f'<rect x="{pad_l}" y="{y + 5:.1f}" width="{max(w, 0.5):.1f}" '
-            f'height="{row_h - 13}" rx="2" fill="{color}" opacity="0.85"/>'
+            f'height="{row_h - 13}" rx="2" fill="{color}" opacity="0.85">'
+            f'<title>{tip}</title></rect>'
         )
         parts.append(
             f'<text x="{pad_l + w + 6:.1f}" y="{y + row_h / 2 + 3:.1f}" '

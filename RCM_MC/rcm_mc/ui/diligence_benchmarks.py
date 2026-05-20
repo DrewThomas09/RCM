@@ -518,14 +518,22 @@ def _denial_pareto_chart(
     # Bars + cumulative line.
     cum = 0.0
     pts: List[str] = []
+    tips: List[str] = []
     for i, r in enumerate(rows):
         cx = pad_l + slot * i + slot / 2
         bh = r.dollars_denied / max_d * plot_h
         by = pad_t + plot_h - bh
+        cum += r.dollars_denied / total
+        tip = html.escape(
+            f"{r.category}: ${r.dollars_denied:,.0f} "
+            f"({r.dollars_denied / total:.1%}) · {r.count} claims · "
+            f"cumulative {cum:.1%}"
+        )
+        tips.append(tip)
         parts.append(
             f'<rect x="{cx - bw / 2:.1f}" y="{by:.1f}" width="{bw:.1f}" '
             f'height="{max(bh, 0.5):.1f}" rx="1.5" fill="{accent}" '
-            f'opacity="0.82"/>'
+            f'opacity="0.82"><title>{tip}</title></rect>'
         )
         cat = html.escape(str(r.category)[:10])
         parts.append(
@@ -535,7 +543,6 @@ def _denial_pareto_chart(
             f'transform="rotate(-35 {cx:.1f} {pad_t + plot_h + 14:.1f})">'
             f'{cat}</text>'
         )
-        cum += r.dollars_denied / total
         pts.append(f'{cx:.1f},{_y(cum):.1f}')
     parts.append(
         f'<polyline points="{" ".join(pts)}" fill="none" '
@@ -544,7 +551,8 @@ def _denial_pareto_chart(
     for i, p in enumerate(pts):
         x, y = p.split(",")
         parts.append(
-            f'<circle cx="{x}" cy="{y}" r="2.6" fill="{line_c}"/>'
+            f'<circle cx="{x}" cy="{y}" r="2.6" fill="{line_c}">'
+            f'<title>{tips[i]}</title></circle>'
         )
     # Y-axis 0/100% cumulative anchors.
     parts.append(

@@ -76,10 +76,16 @@ def _prevalence_delta_chart(
             f'font-family="Inter Tight,system-ui,sans-serif" '
             f'fill="{txt}">{name}</text>'
         )
+        pct = c.get("prevalence_pct", 0)
+        nat = c.get("national_avg_pct", 0)
+        tip = html.escape(
+            f"{c.get('condition', '')}: {pct:.1f}% county vs "
+            f"{nat:.1f}% national ({delta:+.1f}pp)"
+        )
         parts.append(
             f'<rect x="{x0:.1f}" y="{bar_y:.1f}" width="{max(w, 0.5):.1f}" '
             f'height="{bar_h}" rx="2" fill="{color}" '
-            f'opacity="0.85"/>'
+            f'opacity="0.85"><title>{tip}</title></rect>'
         )
         lbl_x = (mid_x + w + 6) if delta >= 0 else (mid_x - w - 6)
         anchor = "start" if delta >= 0 else "end"

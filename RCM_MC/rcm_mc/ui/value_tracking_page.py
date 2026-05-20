@@ -133,9 +133,17 @@ def _realization_chart(
             f'font-family="Inter Tight,system-ui,sans-serif" '
             f'fill="{txt}">{name}</text>'
         )
+        status = str(lev.get("status", "")).replace("_", " ")
+        tip = _html.escape(
+            f"{lev['lever']}: {r:.0%} realized · "
+            f"{_fm(lev.get('actual', 0))} actual vs "
+            f"{_fm(lev.get('planned', 0))} planned"
+            f"{f' · {status}' if status else ''}"
+        )
         parts.append(
             f'<rect x="{pad_l}" y="{y + 4:.1f}" width="{max(w, 0.5):.1f}" '
-            f'height="{row_h - 11}" rx="2" fill="{color}" opacity="0.82"/>'
+            f'height="{row_h - 11}" rx="2" fill="{color}" opacity="0.82">'
+            f'<title>{tip}</title></rect>'
         )
         parts.append(
             f'<text x="{pad_l + w + 6:.1f}" y="{y + row_h / 2 + 3:.1f}" '

@@ -98,9 +98,16 @@ def _deal_uplift_chart(
             f'font-family="Inter Tight,system-ui,sans-serif" '
             f'fill="{txt}">{name}</text>'
         )
+        state = _html.escape(str(d.get("state", "")))
+        rev = d.get("revenue", 0)
+        tip = _html.escape(
+            f"{d['name']}{f' ({state})' if state else ''}: "
+            f"+{_fm(up)} EBITDA uplift · {_fm(rev)} revenue"
+        )
         parts.append(
             f'<rect x="{pad_l}" y="{y + 3:.1f}" width="{max(w, 0.5):.1f}" '
-            f'height="{row_h - 8}" rx="2" fill="{pos}" opacity="{op:.2f}"/>'
+            f'height="{row_h - 8}" rx="2" fill="{pos}" opacity="{op:.2f}">'
+            f'<title>{tip}</title></rect>'
         )
         parts.append(
             f'<text x="{pad_l + w + 6:.1f}" y="{y + row_h / 2 + 3:.1f}" '
