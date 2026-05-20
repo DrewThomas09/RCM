@@ -22,14 +22,14 @@ from typing import Any, Dict, List
 def _freshness_chip(last_refreshed_iso: str | None) -> str:
     if not last_refreshed_iso:
         return ('<span style="display:inline-block;padding:2px 8px;'
-                'border-radius:4px;background:#f3f4f6;color:#6b7280;'
+                'border-radius:4px;background:#ece5d6;color:#7a8699;'
                 'font-size:11px;">never</span>')
     try:
         ts = datetime.fromisoformat(last_refreshed_iso.replace("Z", "+00:00"))
         if ts.tzinfo is None:
             ts = ts.replace(tzinfo=timezone.utc)
     except ValueError:
-        return ('<span style="color:#6b7280;font-size:11px;">'
+        return ('<span style="color:#7a8699;font-size:11px;">'
                 'unparseable</span>')
     days = (datetime.now(timezone.utc) - ts).days
     if days < 7:
@@ -52,9 +52,9 @@ def _source_row(source_name: str, status: Dict[str, Any]) -> str:
         f'<tr data-source="{name}">'
         f'<td style="font-weight:500;">{name}</td>'
         f'<td>{_freshness_chip(last)}</td>'
-        f'<td style="color:#6b7280;font-size:12px;font-variant-numeric:tabular-nums;">'
+        f'<td style="color:#7a8699;font-size:12px;font-variant-numeric:tabular-nums;">'
         f'{records:,}</td>'
-        f'<td style="color:#6b7280;font-size:12px;">{_html.escape(st)}</td>'
+        f'<td style="color:#7a8699;font-size:12px;">{_html.escape(st)}</td>'
         f'<td class="job-status" style="font-size:12px;">—</td>'
         f'<td style="text-align:right;">'
         f'<button class="refresh-btn" data-source="{name}" '
@@ -85,34 +85,34 @@ _CLIENT_JS = r"""
             .then(r => r.json())
             .then(j => {
                 if (j.status === 'queued') {
-                    setStatus(row, '<span style="color:#6b7280;">● queued</span>');
+                    setStatus(row, '<span style="color:#7a8699;">● queued</span>');
                     setTimeout(() => poll(jobId, row), 2000);
                 } else if (j.status === 'running') {
-                    setStatus(row, '<span style="color:#f59e0b;">● running</span>');
+                    setStatus(row, '<span style="color:#b8732a;">● running</span>');
                     setTimeout(() => poll(jobId, row), 2000);
                 } else if (j.status === 'done') {
                     const rc = (j.result && j.result.total_records) || 0;
-                    setStatus(row, '<span style="color:#10b981;">✓ done — ' + rc.toLocaleString() + ' rows</span>');
+                    setStatus(row, '<span style="color:#0a8a5f;">✓ done — ' + rc.toLocaleString() + ' rows</span>');
                     enableButton(row);
                     // Reload freshness chip after 1 s so the table shows the fresh timestamp
                     setTimeout(() => window.location.reload(), 1200);
                 } else if (j.status === 'failed') {
                     const err = (j.error || '').split('\n')[0].slice(0, 80);
-                    setStatus(row, '<span style="color:#ef4444;" title="' + err.replace(/"/g, '&quot;') + '">✗ failed</span>');
+                    setStatus(row, '<span style="color:#b5321e;" title="' + err.replace(/"/g, '&quot;') + '">✗ failed</span>');
                     enableButton(row);
                 } else {
-                    setStatus(row, '<span style="color:#6b7280;">' + j.status + '</span>');
+                    setStatus(row, '<span style="color:#7a8699;">' + j.status + '</span>');
                     setTimeout(() => poll(jobId, row), 2000);
                 }
             })
             .catch(err => {
-                setStatus(row, '<span style="color:#ef4444;">poll error</span>');
+                setStatus(row, '<span style="color:#b5321e;">poll error</span>');
                 enableButton(row);
             });
     }
     function submitRefresh(source, row) {
         disableButton(row, 'submitting…');
-        setStatus(row, '<span style="color:#6b7280;">● submitting…</span>');
+        setStatus(row, '<span style="color:#7a8699;">● submitting…</span>');
         fetch('/api/data/refresh/' + encodeURIComponent(source) + '/async', {
             method: 'POST',
             credentials: 'same-origin',
@@ -124,15 +124,15 @@ _CLIENT_JS = r"""
                     disableButton(row, 'refreshing…');
                     poll(body.job_id, row);
                 } else if (status === 429) {
-                    setStatus(row, '<span style="color:#f59e0b;">rate limited (' + (body.detail?.retry_after_seconds || '?') + 's)</span>');
+                    setStatus(row, '<span style="color:#b8732a;">rate limited (' + (body.detail?.retry_after_seconds || '?') + 's)</span>');
                     enableButton(row);
                 } else {
-                    setStatus(row, '<span style="color:#ef4444;">' + (body.error || 'error') + '</span>');
+                    setStatus(row, '<span style="color:#b5321e;">' + (body.error || 'error') + '</span>');
                     enableButton(row);
                 }
             })
             .catch(err => {
-                setStatus(row, '<span style="color:#ef4444;">network error</span>');
+                setStatus(row, '<span style="color:#b5321e;">network error</span>');
                 enableButton(row);
             });
     }
@@ -209,11 +209,11 @@ def render_data_refresh_page(db_path: str) -> str:
     actions = (
         '<div style="margin-top:20px;">'
         '<button class="refresh-btn wc-btn wc-btn-primary" data-source="all" '
-        'style="background:#064e3b;border-color:#064e3b;">'
+        'style="background:#155752;border-color:#155752;">'
         'Refresh all sources</button>'
         '<span id="refresh-all-spinner" class="wc-spinner" '
         'style="margin-left:12px;"></span>'
-        '<span style="color:#6b7280;font-size:12px;margin-left:12px;">'
+        '<span style="color:#7a8699;font-size:12px;margin-left:12px;">'
         'Triggers a background job per source; watch the Job column above.'
         '</span></div>'
     )
