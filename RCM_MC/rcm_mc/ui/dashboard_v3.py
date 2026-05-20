@@ -252,11 +252,11 @@ def _load_recent_activity(
 
 # Editorial port (2026-04-27): dark-shell palette → editorial palette
 # Same mapping as deal_profile_v2.py port (b283a04).
-_BG_PRIMARY = "#FFFFFF"   # was #0f172a → paper-pure
-_BG_SURFACE = "#FFFFFF"   # was #1f2937 → paper-pure
-_BG_ELEVATED = "#FAF7F0"  # was #111827 → paper
-_BORDER = "#D6CFC0"       # was #374151 → editorial border
-_TEXT = "#0F1C2E"         # was #f3f4f6 → ink (dark on light)
+_BG_PRIMARY = "#FFFFFF"   # was #1a2332 → paper-pure
+_BG_SURFACE = "#FFFFFF"   # was #1a2332 → paper-pure
+_BG_ELEVATED = "#FAF7F0"  # was #1a2332 → paper
+_BORDER = "#D6CFC0"       # was #465366 → editorial border
+_TEXT = "#0F1C2E"         # was #ece5d6 → ink (dark on light)
 _TEXT_DIM = "#5C6878"     # was STATUS["neutral"] → muted
 _ACCENT = "#155752"       # was STATUS["info"] → teal-deep
 _GREEN = "#3F7D4D"        # editorial green

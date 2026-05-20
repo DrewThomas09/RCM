@@ -188,12 +188,12 @@ def render_corpus_dashboard() -> str:
   {_nav_tile("Sector Intelligence", "/sector-intel",
     f"{n_with_sector} tagged · {n_sectors} sectors",
     f"{top_sectors[0].moic_p50:.2f}x" if top_sectors else "—",
-    _moic_color(top_sectors[0].moic_p50) if top_sectors else "#e2e8f0",
+    _moic_color(top_sectors[0].moic_p50) if top_sectors else "#d6cfc0",
     "")}
   {_nav_tile("Vintage Performance", "/vintage-perf",
     f"{yr_range} · {len(vintage_stats)} vintages",
     f"{_pct(vintage_p50s,50):.2f}x" if vintage_p50s else "—",
-    _moic_color(_pct(vintage_p50s,50)) if vintage_p50s else "#e2e8f0",
+    _moic_color(_pct(vintage_p50s,50)) if vintage_p50s else "#d6cfc0",
     vintage_svg)}
   {_nav_tile("Deal Size Intelligence", "/size-intel",
     f"P50 EV ${size_profile.ev_p50:.0f}M · {len(size_profile.buckets)} buckets",
@@ -203,12 +203,12 @@ def render_corpus_dashboard() -> str:
   {_nav_tile("Payer Intelligence", "/payer-intel",
     f"commercial/medicare/medicaid/self-pay",
     f"{n} deals",
-    "#94a3b8",
+    "#7a8699",
     "")}
   {_nav_tile("Leverage Intelligence", "/leverage-intel",
     "capital structure by bucket",
     f"{n} deals",
-    "#94a3b8",
+    "#7a8699",
     "")}
   {_nav_tile("Deal Quality", "/deal-quality",
     f"A:{tier_counts.get('A',0)} B:{tier_counts.get('B',0)} C:{tier_counts.get('C',0)} D:{tier_counts.get('D',0)}",

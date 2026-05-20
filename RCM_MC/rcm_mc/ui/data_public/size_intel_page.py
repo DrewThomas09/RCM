@@ -97,7 +97,7 @@ def _ev_histogram(evs: List[float], width: int = 480, height: int = 90) -> str:
         label = f"${int(lo)}M" if lo < 1000 else f"${int(lo)//1000}B"
         elements.append(f'<text x="{bx+bar_w//2}" y="{height-1}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="6.5" fill="#465366">{label}</text>')
         if bh > 0:
-            elements.append(f'<text x="{bx+bar_w//2}" y="{by-2}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="#94a3b8">{cnt}</text>')
+            elements.append(f'<text x="{bx+bar_w//2}" y="{by-2}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="#7a8699">{cnt}</text>')
     return (
         f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">'
         f'{"".join(elements)}'

@@ -86,7 +86,7 @@ _LEGACY_BODY_OVERLAY = """
   margin: 0 0 8px;
 }
 .ck-main .card .muted {
-  color: var(--sc-text-dim, #5d6b7a);
+  color: var(--sc-text-dim, #465366);
 }
 /* Legacy raw <table> inside cards — give it editorial typography
  * so it stops inheriting Source Serif. Same approach as PR #278's
@@ -106,7 +106,7 @@ _LEGACY_BODY_OVERLAY = """
   font-weight: 600;
   letter-spacing: 0.10em;
   text-transform: uppercase;
-  color: var(--sc-text-dim, #5d6b7a);
+  color: var(--sc-text-dim, #465366);
   background: var(--sc-parchment, #f5f1ea);
   border-bottom: 1px solid var(--sc-rule, #d6cfc0);
 }
@@ -138,7 +138,7 @@ _LEGACY_BODY_OVERLAY = """
   font-weight: 600;
   letter-spacing: 0.10em;
   text-transform: uppercase;
-  color: var(--sc-text-dim, #5d6b7a);
+  color: var(--sc-text-dim, #465366);
   margin: 0 0 4px;
 }
 .ck-main .kpi-card .kpi-value {

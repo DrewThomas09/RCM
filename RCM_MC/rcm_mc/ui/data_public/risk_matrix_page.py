@@ -68,19 +68,19 @@ _SECTOR_COLORS = {
     "Cardiology": "#155752",
     "Dermatology": "#7c3aed",
     "Orthopedics": "#0e7490",
-    "Emergency Medicine": "#dc2626",
+    "Emergency Medicine": "#b5321e",
     "Anesthesiology": "#9333ea",
     "General Hospitals": "#7a8699",
     "Behavioral Health / Substance Abuse": "#6d28d9",
     "Home Health": "#0284c7",
     "Skilled Nursing": "#465366",
-    "Healthcare IT / RCM": "#059669",
+    "Healthcare IT / RCM": "#0a8a5f",
     "Value-Based Care": "#0f766e",
     "Telehealth / DTC": "#1F7A75",
     "Pediatrics": "#0369a1",
-    "Oncology": "#b45309",
+    "Oncology": "#b8732a",
     "Ophthalmology": "#0d9488",
-    "Gastroenterology": "#16a34a",
+    "Gastroenterology": "#0a8a5f",
 }
 _DEFAULT_COLOR = "#465366"
 
@@ -162,9 +162,9 @@ def _risk_return_scatter(
         for yv in range(0, 7)
     )
     labels = (
-        f'<text x="{pad_l+pw/2:.1f}" y="{height-2}" font-size="9" fill="#94a3b8" text-anchor="middle">'
+        f'<text x="{pad_l+pw/2:.1f}" y="{height-2}" font-size="9" fill="#7a8699" text-anchor="middle">'
         f'Entry Risk Score →</text>'
-        f'<text x="10" y="{pad_t+ph/2:.1f}" font-size="9" fill="#94a3b8" text-anchor="middle" '
+        f'<text x="10" y="{pad_t+ph/2:.1f}" font-size="9" fill="#7a8699" text-anchor="middle" '
         f'transform="rotate(-90,10,{pad_t+ph/2:.1f})">Realized MOIC</text>'
     )
     n_lbl = f'<text x="{pad_l+4}" y="{pad_t+10}" font-size="8" fill="#465366">n={len(pts)}</text>'
@@ -188,7 +188,7 @@ def _sector_risk_heatmap(rows: List[Dict[str, Any]]) -> str:
     for i, r in enumerate(rows):
         stripe = ' style="background:var(--sc-bone)"' if i % 2 == 1 else ""
         risk_color = "#b5321e" if r["avg_risk"] >= 65 else ("#b8732a" if r["avg_risk"] >= 40 else "#0a8a5f")
-        moic_color = "#b5321e" if (r["p50_moic"] or 0) < 1.0 else ("#0a8a5f" if (r["p50_moic"] or 0) >= 2.5 else "#e2e8f0")
+        moic_color = "#b5321e" if (r["p50_moic"] or 0) < 1.0 else ("#0a8a5f" if (r["p50_moic"] or 0) >= 2.5 else "#d6cfc0")
         tbody.append(f"""
 <tr{stripe}>
   <td class="dim" style="font-size:11px;">{_html.escape(r['sector'])}</td>

@@ -104,9 +104,9 @@ def _quality_histogram_svg(scores: List[float], width: int = 400, height: int = 
     if scores:
         med = sorted(scores)[len(scores) // 2]
         mx = int(10 + med / 100 * (width - 20))
-        bars.append(f'<line x1="{mx}" y1="0" x2="{mx}" y2="{height-10}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3"/>')
+        bars.append(f'<line x1="{mx}" y1="0" x2="{mx}" y2="{height-10}" stroke="#7a8699" stroke-width="1" stroke-dasharray="3,3"/>')
         bars.append(
-            f'<text x="{mx+2}" y="10" font-family="JetBrains Mono,monospace" font-size="7" fill="#94a3b8">med={med:.0f}</text>'
+            f'<text x="{mx+2}" y="10" font-family="JetBrains Mono,monospace" font-size="7" fill="#7a8699">med={med:.0f}</text>'
         )
     return (
         f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">'
@@ -229,14 +229,14 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
   <div style="padding:8px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
     <div>
       <span style="font-size:9px;color:#7a8699;margin-right:6px;text-transform:uppercase;letter-spacing:0.08em;">Tier</span>
-      <a href="/deal-quality?sort_by={sort_by}" style="margin-right:4px;font-size:10px;color:#94a3b8;text-decoration:none;">All</a>
+      <a href="/deal-quality?sort_by={sort_by}" style="margin-right:4px;font-size:10px;color:#7a8699;text-decoration:none;">All</a>
       {tiers_nav}
     </div>
     <div>
       <span style="font-size:9px;color:#7a8699;margin-right:6px;text-transform:uppercase;letter-spacing:0.08em;">Sort</span>
       {"".join(
         f'<a href="/deal-quality?tier={tier_filter}&sort_by={s}" style="margin-right:6px;font-size:10px;'
-        f'color:{"#1F7A75" if s==sort_by else "#94a3b8"};text-decoration:none;">{s.replace("_"," ")}</a>'
+        f'color:{"#1F7A75" if s==sort_by else "#7a8699"};text-decoration:none;">{s.replace("_"," ")}</a>'
         for s in ("quality_score", "completeness", "credibility", "tier", "deal_name")
       )}
     </div>
@@ -250,7 +250,7 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
     # Table
     def _col_header(label: str, key: str) -> str:
         active = sort_by == key
-        color = "#e2e8f0" if active else "#7a8699"
+        color = "#d6cfc0" if active else "#7a8699"
         return (
             f'<th style="padding:5px 8px;text-align:left;cursor:pointer;color:{color};">'
             f'<a href="/deal-quality?tier={tier_filter}&sort_by={key}" '
@@ -266,7 +266,7 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
             for fl in s.flags[:3]:
                 flag_parts.append(
                     f'{_severity_badge(fl.severity)} '
-                    f'<span style="font-size:9px;color:#94a3b8;">{_html.escape(fl.message[:60])}</span>'
+                    f'<span style="font-size:9px;color:#7a8699;">{_html.escape(fl.message[:60])}</span>'
                 )
             flag_html = "<br>".join(flag_parts)
             if len(s.flags) > 3:
@@ -283,7 +283,7 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
             )
 
         rows.append(f"""<tr{stripe}>
-  <td style="padding:5px 8px;font-size:9.5px;color:#94a3b8;font-family:var(--ck-mono);">{_html.escape(s.source_id)}</td>
+  <td style="padding:5px 8px;font-size:9.5px;color:#7a8699;font-family:var(--ck-mono);">{_html.escape(s.source_id)}</td>
   <td style="padding:5px 8px;font-size:10px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
     <span title="{_html.escape(s.deal_name)}">{_html.escape(s.deal_name[:38])}</span>
   </td>
@@ -294,11 +294,11 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
   </td>
   <td style="padding:5px 8px;">
     {_mini_bar(s.completeness_pct, '#1F7A75')}
-    <span style="font-family:var(--ck-mono);font-size:9px;color:#94a3b8;margin-left:4px;">{s.completeness_pct*100:.0f}%</span>
+    <span style="font-family:var(--ck-mono);font-size:9px;color:#7a8699;margin-left:4px;">{s.completeness_pct*100:.0f}%</span>
   </td>
   <td style="padding:5px 8px;">
     {_mini_bar(s.credibility_pct, '#0a8a5f' if s.credibility_pct>=0.9 else '#b8732a' if s.credibility_pct>=0.7 else '#b5321e')}
-    <span style="font-family:var(--ck-mono);font-size:9px;color:#94a3b8;margin-left:4px;">{s.credibility_pct*100:.0f}%</span>
+    <span style="font-family:var(--ck-mono);font-size:9px;color:#7a8699;margin-left:4px;">{s.credibility_pct*100:.0f}%</span>
   </td>
   <td style="padding:5px 8px;font-size:9px;">{flag_html or '<span style="color:#465366;">—</span>'}</td>
   <td style="padding:5px 8px;">{missing_html or '<span style="font-size:9px;color:#465366;">—</span>'}</td>

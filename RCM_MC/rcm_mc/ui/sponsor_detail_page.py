@@ -68,9 +68,9 @@ def _suggestions_datalist(records: Dict[str, Any]) -> str:
 def _stat(label: str, big: str, sub: str = "",
           tone: str = "neutral") -> str:
     palette = {
-        "alert":    ("#fef2f2", "#991b1b"),
-        "positive": ("#f0fdf4", "#065f46"),
-        "warn":     ("#fffbeb", "#92400e"),
+        "alert":    ("#fef2f2", "#8a2a1a"),
+        "positive": ("#f0fdf4", "#0a6a48"),
+        "warn":     ("#fffbeb", "#7a4c16"),
         "neutral":  ("#fff",    "var(--sc-navy)"),
     }
     bg, fg = palette.get(tone, palette["neutral"])
@@ -232,7 +232,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
                 + _input_form(qs)
                 + _wc.section_card(
                     "Couldn't load the sponsor index",
-                    f'<p style="margin:0;color:#991b1b;">'
+                    f'<p style="margin:0;color:#8a2a1a;">'
                     f'{_html.escape(type(exc).__name__)}: '
                     f'{_html.escape(str(exc))}</p>'
                 )
@@ -254,7 +254,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
                 + _suggestions_datalist(records)
                 + _wc.section_card(
                     "How to use this",
-                    f'<p style="margin:0 0 8px;font-size:13px;color:#4b5563;">'
+                    f'<p style="margin:0 0 8px;font-size:13px;color:#465366;">'
                     f'Type a sponsor name above (autocomplete from '
                     f'{len(records)} sponsors in the corpus). The '
                     f'detail view shows their realized MOIC '
@@ -283,7 +283,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
             f'<a href="/diligence/sponsor-detail?'
             f'sponsor={_urlparse.quote(s)}" '
             f'style="display:inline-block;margin:2px 4px 2px 0;'
-            f'padding:4px 10px;background:#f0f6fc;color:var(--sc-navy);'
+            f'padding:4px 10px;background:#f7f3ea;color:var(--sc-navy);'
             f'border:1px solid #d0e3f0;border-radius:4px;'
             f'font-size:12px;text-decoration:none;">'
             f'{_html.escape(s)}</a>'
@@ -405,12 +405,12 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
         if moic is not None:
             if moic >= 2.5:
                 moic_chip = (
-                    f'<span style="color:#065f46;font-weight:600;">'
+                    f'<span style="color:#0a6a48;font-weight:600;">'
                     f'{moic_chip}</span>'
                 )
             elif moic < 1.0:
                 moic_chip = (
-                    f'<span style="color:#991b1b;font-weight:600;">'
+                    f'<span style="color:#8a2a1a;font-weight:600;">'
                     f'{moic_chip}</span>'
                 )
         rows.append([

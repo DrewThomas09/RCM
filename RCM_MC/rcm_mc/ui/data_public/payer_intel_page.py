@@ -89,9 +89,9 @@ def _payer_legend(comm: float, medicare: float, medicaid: float, self_pay: float
         rows.append(
             f'<div style="display:flex;align-items:center;gap:6px;margin:3px 0;">'
             f'<div style="width:10px;height:10px;background:{color};border-radius:1px;flex-shrink:0;"></div>'
-            f'<div style="font-size:10px;color:#94a3b8;min-width:90px;">{label}</div>'
+            f'<div style="font-size:10px;color:#7a8699;min-width:90px;">{label}</div>'
             f'<div style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;'
-            f'font-size:10px;color:#e2e8f0;">{val*100:.1f}%</div>'
+            f'font-size:10px;color:#d6cfc0;">{val*100:.1f}%</div>'
             f'</div>'
         )
     return "".join(rows)

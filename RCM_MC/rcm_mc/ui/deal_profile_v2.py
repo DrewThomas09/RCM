@@ -71,12 +71,12 @@ def _fmt_pct(v: Optional[float], digits: int = 1) -> str:
 # §3 tokens. The page now passes through chartis_shell() so the
 # editorial parchment background + topbar + sidebar render around
 # this content; these values style the body content within.
-_BG_PRIMARY = "#FFFFFF"   # was #0f172a (slate-900) → paper-pure
-_BG_SURFACE = "#FFFFFF"   # was #1f2937 (gray-800) → white card
-_BG_ELEVATED = "#FAF7F0"  # was #111827 (gray-900) → paper (off-white)
-_BORDER = "#D6CFC0"       # was #374151 (gray-700) → editorial border
-_TEXT = "#0F1C2E"         # was #f3f4f6 (gray-100) → ink (dark on light)
-_TEXT_DIM = "#5C6878"     # was STATUS["neutral"] (~#94a3b8) → muted
+_BG_PRIMARY = "#FFFFFF"   # was #1a2332 (slate-900) → paper-pure
+_BG_SURFACE = "#FFFFFF"   # was #1a2332 (gray-800) → white card
+_BG_ELEVATED = "#FAF7F0"  # was #1a2332 (gray-900) → paper (off-white)
+_BORDER = "#D6CFC0"       # was #465366 (gray-700) → editorial border
+_TEXT = "#0F1C2E"         # was #ece5d6 (gray-100) → ink (dark on light)
+_TEXT_DIM = "#5C6878"     # was STATUS["neutral"] (~#7a8699) → muted
 _ACCENT = "#155752"       # was STATUS["info"] (Tailwind blue) → teal-deep
 _GREEN = "#3F7D4D"        # editorial green
 _AMBER = "#B7791F"        # editorial amber

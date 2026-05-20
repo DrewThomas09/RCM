@@ -39,7 +39,7 @@ from ._chartis_kit import (
 
 _EXPLAINER_CSS = """<style>
 .ck-cal-explainer{font-family:var(--sc-serif,'Georgia',serif);
-  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#465366);
   margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
 .ck-cal-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
 </style>"""
@@ -87,7 +87,7 @@ def _slider_card(payer: str, agg: Dict[str, float]) -> str:
     fwr_m = agg["fwr_m"]
     dar_m = agg["dar_m"]
     return (
-        '<section style="border:1px solid var(--border,#374151);'
+        '<section style="border:1px solid var(--border,#465366);'
         'background:var(--paper,#F2EDE3);border-radius:8px;'
         'padding:1rem 1.25rem;margin-bottom:.75rem;">'
         f'<h3 style="margin:0 0 .5rem 0;font-size:1rem;">{ep}</h3>'
@@ -123,7 +123,7 @@ def _slider_card(payer: str, agg: Dict[str, float]) -> str:
         '</div>'
         '<p class="micro" style="margin-top:.5rem;font-weight:400;'
         'letter-spacing:.04em;text-transform:none;'
-        f'color:var(--muted,#9ca3af);">{n_entries} run(s)</p>'
+        f'color:var(--muted,#9b9382);">{n_entries} run(s)</p>'
         '</section>'
     )
 
@@ -145,14 +145,14 @@ def render_calibration_page(store: Any) -> str:
         body = (
             '<section style="max-width:62rem;">'
             '<h1 style="margin:0 0 .5rem 0;">Calibration</h1>'
-            '<p style="max-width:48rem;color:var(--muted,#9ca3af);'
+            '<p style="max-width:48rem;color:var(--muted,#9b9382);'
             'margin:0 0 1rem 0;">'
             'Per-payer prior calibration. Aggregates IDR / FWR / DAR '
             'primitives across every run in the analysis cache so you '
             'can intuit priors before configuring a new deal.</p>'
             '<div style="background:var(--paper,#F2EDE3);'
-            'border:1px solid var(--border,#374151);border-radius:8px;'
-            'padding:2.5rem;text-align:center;color:var(--muted,#9ca3af);">'
+            'border:1px solid var(--border,#465366);border-radius:8px;'
+            'padding:2.5rem;text-align:center;color:var(--muted,#9b9382);">'
             'No simulation runs yet. Run an analysis first to populate '
             'calibration priors.<br><br>'
             '<a href="/analysis" class="micro" style="font-weight:400;'

@@ -199,7 +199,7 @@ def _results_panel(result: Any, corpus: List[Dict[str, Any]]) -> str:
                 r = row[mult_key]
                 if isinstance(r, dict):
                     moic = r.get("gross_moic")
-                    color = "#b5321e" if (moic or 0) < 1.0 else ("#0a8a5f" if (moic or 0) >= 2.5 else "#e2e8f0")
+                    color = "#b5321e" if (moic or 0) < 1.0 else ("#0a8a5f" if (moic or 0) >= 2.5 else "#d6cfc0")
                     cells.append(
                         f'<td style="text-align:right;padding:6px 8px;">'
                         f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;color:{color}">'

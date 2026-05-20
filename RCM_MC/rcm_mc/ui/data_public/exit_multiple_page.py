@@ -19,7 +19,7 @@ _SCENARIO_COLORS = {
     "Bear": "#b5321e",
     "Base": "#1F7A75",
     "Bull": "#0a8a5f",
-    "Strategic Exit": "#a855f7",
+    "Strategic Exit": "#a98545",
 }
 
 

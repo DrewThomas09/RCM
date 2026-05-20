@@ -217,7 +217,7 @@ def render_sector_intel(min_deals: int = 3, sort_by: str = "moic_p50") -> str:
 
     # Table header
     def _th(label: str, key: str) -> str:
-        color = "#e2e8f0" if sort_by == key else "#7a8699"
+        color = "#d6cfc0" if sort_by == key else "#7a8699"
         return (
             f'<th style="padding:5px 8px;white-space:nowrap;cursor:pointer;">'
             f'<a href="/sector-intel?min_deals={min_deals}&sort_by={key}" style="color:{color};text-decoration:none;">{label}</a></th>'

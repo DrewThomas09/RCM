@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 _EXPLAINER_CSS = """<style>
 .ck-bt-explainer{font-family:var(--sc-serif,'Georgia',serif);
-  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#465366);
   margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
 .ck-bt-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
 </style>"""
@@ -138,10 +138,10 @@ def _scatter_svg(
     # Axis labels
     xlabel_el = (
         f'<text x="{pad_l + pw/2:.1f}" y="{height-2}" '
-        f'font-size="8" fill="#94a3b8" text-anchor="middle">{_html.escape(x_label)}</text>'
+        f'font-size="8" fill="#7a8699" text-anchor="middle">{_html.escape(x_label)}</text>'
     )
     ylabel_el = (
-        f'<text x="8" y="{pad_t + ph/2:.1f}" font-size="8" fill="#94a3b8" '
+        f'<text x="8" y="{pad_t + ph/2:.1f}" font-size="8" fill="#7a8699" '
         f'text-anchor="middle" transform="rotate(-90,8,{pad_t+ph/2:.1f})">{_html.escape(y_label)}</text>'
     )
 
@@ -523,7 +523,7 @@ def _moic_color(v: Optional[float]) -> str:
         return "#b5321e"
     if v >= 2.5:
         return "#0a8a5f"
-    return "#e2e8f0"
+    return "#d6cfc0"
 
 
 def _fmt(v: Optional[float], decimals: int = 2, suffix: str = "") -> str:

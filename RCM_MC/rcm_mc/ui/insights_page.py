@@ -61,10 +61,10 @@ def render_insights_page(db_path: str) -> str:
 
     # Tone palette — same as the dashboard headline card.
     palette = {
-        "alert":    ("#fef2f2", "#fee2e2", "#991b1b", "⚠"),
-        "warn":     ("#fffbeb", "#fef3c7", "#92400e", "●"),
-        "positive": ("#f0fdf4", "#d1fae5", "#065f46", "✓"),
-        "neutral":  ("#f0f6fc", "#d0e3f0", "var(--sc-navy)", "◆"),
+        "alert":    ("#fef2f2", "#f2ded7", "#8a2a1a", "⚠"),
+        "warn":     ("#fffbeb", "#f2e7d1", "#7a4c16", "●"),
+        "positive": ("#f0fdf4", "#d9ece2", "#0a6a48", "✓"),
+        "neutral":  ("#f7f3ea", "#d0e3f0", "var(--sc-navy)", "◆"),
     }
 
     # Tone summary strip — count of insights per tone, so a partner

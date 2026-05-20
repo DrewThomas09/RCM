@@ -21,7 +21,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 _EXPLAINER_CSS = """<style>
 .ck-comps-explainer{font-family:var(--sc-serif,'Georgia',serif);
-  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#4a4a4a);
+  font-size:15px;line-height:1.55;color:var(--sc-text-dim,#465366);
   margin:0 0 var(--sc-s-6,18px) 0;max-width:72ch;}
 .ck-comps-explainer em{color:var(--sc-teal-ink,#155752);font-style:italic;}
 </style>"""
@@ -56,7 +56,7 @@ def _percentile(vals: List[float], p: float) -> float:
 def _moic_html(v: Optional[float]) -> str:
     if v is None:
         return '<span style="color:var(--ck-text-faint)">—</span>'
-    color = "#b5321e" if v < 1.0 else ("#0a8a5f" if v >= 2.5 else "#e2e8f0")
+    color = "#b5321e" if v < 1.0 else ("#0a8a5f" if v >= 2.5 else "#d6cfc0")
     weight = "600" if v < 1.0 or v >= 2.5 else "400"
     return (
         f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;'

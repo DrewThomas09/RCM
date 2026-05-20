@@ -345,7 +345,7 @@ def render_page_explainer(
 _EXPLAINER_CSS = """
 <style>
 .ck-page-explainer { font-family: var(--sc-serif, 'Source Serif 4', Georgia, serif);
-  font-size: 15px; line-height: 1.6; color: var(--sc-text-dim, #5d6b7a);
+  font-size: 15px; line-height: 1.6; color: var(--sc-text-dim, #465366);
   max-width: 72ch; margin: var(--sc-s-4, 14px) 0 var(--sc-s-6, 22px); }
 .ck-page-explainer em { color: var(--sc-teal-ink, #155752); font-style: italic; }
 .ck-explainer-sub { display: block; margin-top: 10px; }

@@ -62,7 +62,7 @@ def render_hospital_profile(
     grade = score.grade if hasattr(score, "grade") else "—"
     score_val = score.score if hasattr(score, "score") else 0
     # Editorial severity palette (PALETTE-driven, not neon hex). The
-    # previous map (#10b981 / #3b82f6 / #f59e0b / #ef4444) was the
+    # previous map (#0a8a5f / #1F7A75 / #b8732a / #b5321e) was the
     # original Caduceus dark-terminal palette and read as garish neon
     # on the white editorial card. PALETTE["positive"/"accent"/
     # "warning"/"negative"/"critical"] resolves to the editorial

@@ -151,7 +151,7 @@ def _moic_heat_svg(
                 ratio = min(1.0, moic / 4.0)
                 if moic >= 3.0:
                     fill = P["positive"]
-                    stroke = "#059669"
+                    stroke = "#0a8a5f"
                 elif moic >= 2.5:
                     fill = "#1a4a2e"
                     stroke = P["border"]

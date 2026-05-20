@@ -32,7 +32,7 @@ def _moic_color(v: Optional[float]) -> str:
     if v >= 2.5:
         return "#0a8a5f"
     if v >= 1.5:
-        return "#e2e8f0"
+        return "#d6cfc0"
     return "#b8732a"
 
 

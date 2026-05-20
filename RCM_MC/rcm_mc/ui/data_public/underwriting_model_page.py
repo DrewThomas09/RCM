@@ -51,7 +51,7 @@ def _sources_uses_svg(sources, uses) -> str:
     x = pad_l
     for label, amt, color in [
         ("Senior", sources.senior_debt_mm, P["accent"]),
-        ("Sub", sources.sub_debt_mm, "#a855f7"),
+        ("Sub", sources.sub_debt_mm, "#a98545"),
         ("Equity", sources.equity_mm, P["positive"]),
     ]:
         w = (amt / total) * chart_w

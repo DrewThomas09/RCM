@@ -513,7 +513,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
 
         rows.append([
             name_link,
-            f'<span style="color:#4b5563;">{_html.escape(d["sector"])}</span>',
+            f'<span style="color:#465366;">{_html.escape(d["sector"])}</span>',
             chain_cell,
             _quality_cell(d.get("quality_rating")),
             _hrrp_cell(d.get("hrrp_pct")),
@@ -543,7 +543,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         'color:var(--sc-navy);border-radius:4px;font-size:12px;'
         'font-weight:500;text-decoration:none;'
         'transition:background 0.1s;" '
-        'onmouseover="this.style.background=\'#f0f6fc\';" '
+        'onmouseover="this.style.background=\'#f7f3ea\';" '
         'onmouseout="this.style.background=\'#fff\';" '
         'title="Download today\'s scan as CSV — paste into PowerPoint, '
         'email, or Excel">'

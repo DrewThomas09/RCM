@@ -83,11 +83,11 @@ def _kpi_card(label: str, value_html: str, sub: str = "") -> str:
     near-identical implementations is the threshold to extract).
     """
     sub_html = (
-        f'<div class="micro" style="margin-top:.35rem;color:var(--muted,#9ca3af);">'
+        f'<div class="micro" style="margin-top:.35rem;color:var(--muted,#9b9382);">'
         f'{_html.escape(sub)}</div>' if sub else ""
     )
     return (
-        '<div style="border:1px solid var(--border,#374151);'
+        '<div style="border:1px solid var(--border,#465366);'
         'background:var(--paper,#F2EDE3);border-radius:8px;'
         'padding:.9rem 1.1rem;flex:1;min-width:170px;">'
         f'<div class="micro">{_html.escape(label)}</div>'
@@ -113,7 +113,7 @@ def _row(r: ModelBacktestResult) -> str:
         notes_html = (
             '<div style="margin-top:.4rem;">'
             + "".join(
-                f'<div style="font-size:.7rem;color:var(--muted,#9ca3af);'
+                f'<div style="font-size:.7rem;color:var(--muted,#9b9382);'
                 f'margin-top:.1rem;">{_html.escape(n)}</div>'
                 for n in r.notes
             )
@@ -139,7 +139,7 @@ def _row(r: ModelBacktestResult) -> str:
         f'</td>'
         f'<td style="padding:.8rem 1rem;text-align:right;">'
         f'<span class="num mono">{r.calibration.calibration_factor:.2f}</span></td>'
-        f'<td style="padding:.8rem 1rem;text-align:right;color:var(--muted,#9ca3af);">'
+        f'<td style="padding:.8rem 1rem;text-align:right;color:var(--muted,#9b9382);">'
         f'{fmt_num(r.n_train)} / {fmt_num(r.n_holdout)}</td>'
         '</tr>'
     )
@@ -196,7 +196,7 @@ def _r2_bar_chart(results: List["ModelBacktestResult"]) -> str:
     elements = []
     for i, r in enumerate(plotted):
         cy = pad_t + i * row_h + row_h / 2
-        color = grade_colors.get(r.grade, "#5d6b7a")
+        color = grade_colors.get(r.grade, "#465366")
         x_right = sx(r.cv_r2)
         bar_w = x_right - pad_l
         elements.append(
@@ -267,8 +267,8 @@ def render_model_quality_dashboard(
             '<section style="max-width:80rem;">'
             '<h1 style="margin:0 0 .5rem 0;">Model Quality</h1>'
             '<div style="background:var(--paper,#F2EDE3);'
-            'border:1px solid var(--border,#374151);border-radius:8px;'
-            'padding:2.5rem;text-align:center;color:var(--muted,#9ca3af);">'
+            'border:1px solid var(--border,#465366);border-radius:8px;'
+            'padding:2.5rem;text-align:center;color:var(--muted,#9b9382);">'
             'No backtest results — run '
             '<code>run_model_quality_panel(...)</code> first.'
             '</div>'
@@ -337,11 +337,11 @@ def render_model_quality_dashboard(
     rows = "".join(_row(r) for r in results)
     table_html = (
         '<table style="width:100%;border-collapse:collapse;'
-        'border:1px solid var(--border,#374151);'
+        'border:1px solid var(--border,#465366);'
         'background:var(--paper,#F2EDE3);border-radius:8px;'
         'overflow:hidden;">'
         '<thead>'
-        '<tr style="border-bottom:1px solid var(--border,#374151);">'
+        '<tr style="border-bottom:1px solid var(--border,#465366);">'
         '<th class="micro" style="padding:.6rem 1rem;text-align:left;">Model</th>'
         '<th class="micro" style="padding:.6rem 1rem;text-align:center;">Grade</th>'
         '<th class="micro" style="padding:.6rem 1rem;text-align:right;">CV R²</th>'
@@ -362,7 +362,7 @@ def render_model_quality_dashboard(
         '<a href="/data/catalog" class="micro" style="font-weight:400;'
         'letter-spacing:.04em;text-transform:none;">Data sources →</a>'
         '</div>'
-        '<p style="max-width:48rem;color:var(--muted,#9ca3af);'
+        '<p style="max-width:48rem;color:var(--muted,#9b9382);'
         'margin:0 0 1rem 0;">'
         'CV R² + MAE + MAPE + grade per trained predictor, plus CI '
         'calibration: observed coverage vs the claimed 90% nominal. '
