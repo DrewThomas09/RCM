@@ -2,7 +2,36 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+
+
+def _adoption_chart(items) -> str:
+    """Lead chart for the digital-adoption table — deals ranked by
+    90-day active portal adoption so engagement leaders and laggards read
+    at a glance. Bar width = active-portal adoption rate; value = the
+    same rate; tone marks the tier (>=60% green · >=40% teal · below
+    amber). Full adoption grid stays directly below.
+    """
+    ranked = sorted(items, key=lambda a: a.portal_active_90d_pct, reverse=True)
+    rows = []
+    for a in ranked:
+        p = a.portal_active_90d_pct
+        tone = "positive" if p >= 0.60 else ("teal" if p >= 0.40 else "warning")
+        rows.append(ck_bar_row(
+            a.deal,
+            f"{p * 100:.0f}%",
+            p * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = 90-day active portal adoption · value = adoption rate · '
+        'tone = tier (green &ge;60% · teal &ge;40% · amber below)</div>'
+        '</div>'
+    )
 
 
 def _adoption_table(items) -> str:
@@ -171,7 +200,14 @@ def render_digital_front_door(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    a_chart = _adoption_chart(r.adoption)
     a_tbl = _adoption_table(r.adoption)
+    value_anchor = ck_value_anchor(
+        "Digital Front Door",
+        f"{r.weighted_portal_adoption_pct * 100:.0f}% weighted portal adoption",
+        delta=f"{r.total_portcos} portcos · ${r.total_digital_spend_m:,.1f}M digital spend · NPS {r.avg_nps:.0f} · {r.total_telehealth_visits_monthly_k:,.0f}K telehealth/mo",
+        tone="teal",
+    )
     e_tbl = _experience_table(r.experience)
     t_tbl = _telehealth_table(r.telehealth)
     s_tbl = _spend_table(r.spend)
@@ -192,7 +228,8 @@ def render_digital_front_door(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Digital Channel Adoption</div>{a_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">Digital Channel Adoption</div>{a_chart}{a_tbl}</div>
   <div style="{cell}"><div style="{h3}">Patient Experience Metrics</div>{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Telehealth Utilization</div>{t_tbl}</div>
   <div style="{cell}"><div style="{h3}">Digital Spend Categories</div>{s_tbl}</div>

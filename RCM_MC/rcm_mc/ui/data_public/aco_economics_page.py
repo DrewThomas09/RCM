@@ -2,7 +2,33 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+
+
+def _tracks_chart(items) -> str:
+    """Lead chart for the ACO risk-track table — tracks ranked by covered
+    beneficiaries so the lives distribution across risk arrangements
+    reads at a glance. Bar width = share of total beneficiaries; value =
+    beneficiary count; tone teal. Full track grid stays directly below.
+    """
+    total = sum(t.beneficiaries for t in items) or 1
+    ranked = sorted(items, key=lambda t: t.beneficiaries, reverse=True)
+    rows = []
+    for t in ranked:
+        rows.append(ck_bar_row(
+            t.track,
+            f"{t.beneficiaries:,}",
+            t.beneficiaries / total * 100.0,
+            tone="teal",
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = share of total beneficiaries · value = covered lives</div>'
+        '</div>'
+    )
 
 _EXPLAINER_CSS = """<style>
 .ck-ao-explainer{font-family:var(--sc-serif,'Georgia',serif);
@@ -197,7 +223,15 @@ def render_aco_economics(params: dict = None) -> str:
     )
 
     savings_svg = _savings_waterfall_svg(r.savings_scenarios)
+    tracks_chart = _tracks_chart(r.tracks)
     tracks_tbl = _tracks_table(r.tracks)
+    value_anchor = ck_value_anchor(
+        "ACO Economics",
+        f"${r.total_annual_value_mm:,.1f}M annual value",
+        delta=f"{r.total_beneficiaries:,} beneficiaries · ${r.blended_benchmark_pmpm:,.0f} PMPM benchmark · quality {r.quality_score * 100:.0f}%",
+        opportunity=f"${r.expected_shared_savings_mm:,.1f}M expected shared savings",
+        tone="positive",
+    )
     bench_tbl = _benchmark_table(r.benchmark)
     savings_tbl = _savings_table(r.savings_scenarios)
     quality_tbl = _quality_table(r.quality_components)
@@ -230,8 +264,9 @@ def render_aco_economics(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Shared Savings Performance Scenarios</div>{savings_svg}</div>
-  <div style="{cell}"><div style="{h3}">ACO Risk Tracks</div>{tracks_tbl}</div>
+  <div style="{cell}"><div style="{h3}">ACO Risk Tracks</div>{tracks_chart}{tracks_tbl}</div>
   <div style="{cell}"><div style="{h3}">Benchmark Establishment</div>{bench_tbl}</div>
   <div style="{cell}"><div style="{h3}">Savings Scenario Detail</div>{savings_tbl}</div>
   <div style="{cell}"><div style="{h3}">Quality Score Components</div>{quality_tbl}</div>
