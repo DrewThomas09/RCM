@@ -187,7 +187,7 @@ def render_thesis_card(
     seller_badge = ""
     if has_seller:
         seller_badge = (
-            '<span style="background:#e67e22;color:#fff;padding:1px 6px;border-radius:2px;'
+            '<span style="background:#b8732a;color:#fff;padding:1px 6px;border-radius:2px;'
             'font-size:9px;font-weight:600;margin-left:6px;">SELLER DATA</span>'
         )
 

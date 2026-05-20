@@ -243,7 +243,7 @@ def _error_histogram_svg(
     lo = min(errors) - 0.1
     hi = max(errors) + 0.1
     return _histogram_svg(errors, x_lo=lo, x_hi=hi, bins=20, width=width, height=height,
-                          bar_color="#7c3aed", ref_line=None)
+                          bar_color="#6b5b8a", ref_line=None)
 
 
 # ---------------------------------------------------------------------------
@@ -674,7 +674,7 @@ def _scatter_panel(
     )
     svg_pred = _scatter_svg(
         pts_pred, "Predicted MOIC (corpus model)", "Realized MOIC",
-        x_lo=0.5, x_hi=5.5, y_lo=0.0, y_hi=6.5, color="#06b6d4",
+        x_lo=0.5, x_hi=5.5, y_lo=0.0, y_hi=6.5, color="#3d7d87",
         trend_color="#b8732a",
     )
     return f"""

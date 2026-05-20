@@ -65,7 +65,7 @@ def _denial_pie_svg(denials) -> str:
 
     bg = P["panel"]; text_dim = P["text_dim"]
     colors = [P["accent"], "#a98545", "#1F7A75", P["warning"], "#f97316",
-              P["negative"], "#eab308", P["positive"], "#06b6d4", "#b5321e"]
+              P["negative"], "#c9a23a", P["positive"], "#3d7d87", "#b5321e"]
 
     total = sum(d.pct_of_denials for d in denials) or 1
     segs = []

@@ -193,7 +193,7 @@ def render_monitor_dashboard(
     color_map = {
         "outperforming": "#1F7A75",
         "on_track": "#0a8a5f",
-        "watch": "#eab308",
+        "watch": "#b8732a",
         "early_warning": "#b5321e",
     }
     label_map = {
