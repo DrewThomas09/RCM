@@ -2,7 +2,23 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+
+
+def _scenarios_chart(items) -> str:
+    """Lead chart — exit structures ranked by after-tax proceeds (tone by MOIC)."""
+    def _tone(s):
+        if s.after_tax_moic >= 3.0: return "positive"
+        if s.after_tax_moic >= 2.6: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda s: s.after_tax_proceeds_mm, reverse=True)
+    mx = max((s.after_tax_proceeds_mm for s in top), default=0.0) or 1.0
+    rows = [ck_bar_row(s.structure, f"${s.after_tax_proceeds_mm:,.1f}M ({s.after_tax_moic:.2f}x)",
+            s.after_tax_proceeds_mm / mx * 100.0, tone=_tone(s)) for s in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = after-tax proceeds vs best structure '
+            '· value = net ($M) + MOIC · tone = after-tax MOIC</div></div>')
 
 
 def _structures_table(items) -> str:
@@ -157,6 +173,7 @@ def render_tax_structure_analyzer(params: dict = None) -> str:
 
     s_tbl = _structures_table(r.structures)
     sc_tbl = _scenarios_table(r.after_tax_scenarios)
+    sc_chart = _scenarios_chart(r.after_tax_scenarios)
     ro_tbl = _rollovers_table(r.rollovers)
     b_tbl = _blockers_table(r.blockers)
     st_tbl = _state_table(r.state_diligence)
@@ -181,7 +198,7 @@ def render_tax_structure_analyzer(params: dict = None) -> str:
     <div style="color:{text_dim};font-size:11px;margin-top:4px">Recommended holding jurisdiction: {_html.escape(r.recommended_jurisdiction)}</div>
   </div>
   <div style="{cell}"><div style="{h3}">Structure Options Evaluated</div>{s_tbl}</div>
-  <div style="{cell}"><div style="{h3}">After-Tax Scenario Comparison</div>{sc_tbl}</div>
+  <div style="{cell}"><div style="{h3}">After-Tax Scenario Comparison</div>{sc_chart}{sc_tbl}</div>
   <div style="{cell}"><div style="{h3}">Rollover Mechanics</div>{ro_tbl}</div>
   <div style="{cell}"><div style="{h3}">Blocker Structures by Investor Type</div>{b_tbl}</div>
   <div style="{cell}"><div style="{h3}">State-Level Tax Diligence</div>{st_tbl}</div>
