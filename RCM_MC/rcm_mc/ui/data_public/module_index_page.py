@@ -474,23 +474,14 @@ def render_module_index(params: dict = None) -> str:
     body = (
         _STYLE
         + '<div class="ck-page-wrap">'
+        # Title / eyebrow / deck come from chartis_shell's editorial_intro
+        # below — the bespoke hero here duplicated them (a second <h1>
+        # plus a second eyebrow). A small meta line is kept for the
+        # live module count.
         + '<div style="font-family:var(--sc-mono);font-size:11px;'
         'letter-spacing:0.18em;text-transform:uppercase;'
-        'color:var(--sc-teal-ink);margin-bottom:10px;">'
-        f'Module directory &middot; {meta_line}</div>'
-        '<h1 style="font-family:var(--sc-serif);font-size:40px;'
-        'line-height:1.06;color:var(--sc-navy);margin:0 0 8px;'
-        'font-weight:500;letter-spacing:-0.01em;">'
-        'Every surface in the platform, '
-        '<span style="color:var(--sc-teal-ink);font-style:italic;">'
-        'curated and live</span>.</h1>'
-        '<p style="font-family:var(--sc-sans);font-size:14px;'
-        'color:var(--sc-text-dim);margin:0 0 8px;max-width:680px;'
-        'line-height:1.55;">'
-        'Each section leads with featured surfaces, then lists the full '
-        'inventory. Every entry maps 1-to-1 to a real route in the '
-        'platform &mdash; filter by category or search by name, route, '
-        'or purpose.</p>'
+        'color:var(--sc-teal-ink);margin:0 0 14px;">'
+        f'{meta_line}</div>'
         # Controls — filter chips + search
         '<div class="dir-controls">'
         f'<div class="dir-chips">{chips}</div>'
