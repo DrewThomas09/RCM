@@ -2,7 +2,38 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+
+
+def _visits_chart(items) -> str:
+    """Lead chart for visit-type economics — annual revenue contribution
+    per visit category, ranked, so a partner sees where the revenue
+    concentrates before reading the per-line P&L. Bar width = share of
+    total revenue; tone tracks the table's gross-margin coloring
+    (>=65% high / >=55% mid / else low) so the read is "where the money
+    is" overlaid with "how profitable it is".
+    """
+    total = sum(v.annual_revenue_mm for v in items) or 1.0
+    ranked = sorted(items, key=lambda v: v.annual_revenue_mm, reverse=True)
+    rows = []
+    for v in ranked:
+        tone = ("positive" if v.gross_margin_pct >= 0.65
+                else "teal" if v.gross_margin_pct >= 0.55 else "warning")
+        rows.append(ck_bar_row(
+            v.visit_type,
+            f"${v.annual_revenue_mm:,.1f}M",
+            v.annual_revenue_mm / total * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = share of annual revenue · value = revenue ($M) · '
+        'tone = gross-margin tier (green &ge;65% · teal &ge;55% · amber below)</div>'
+        '</div>'
+    )
 
 
 def _visits_table(items) -> str:
@@ -155,6 +186,7 @@ def render_telehealth_econ(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    v_chart = _visits_chart(r.visits)
     v_tbl = _visits_table(r.visits)
     p_tbl = _prod_table(r.productivity)
     pa_tbl = _parity_table(r.parity)
@@ -176,7 +208,7 @@ def render_telehealth_econ(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Visit-Type Economics (P&amp;L by Visit Category)</div>{v_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Visit-Type Economics (P&amp;L by Visit Category)</div>{v_chart}{v_tbl}</div>
   <div style="{cell}"><div style="{h3}">Provider Productivity by Specialty</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">State-Level Payer Parity Status</div>{pa_tbl}</div>
   <div style="{cell}"><div style="{h3}">Technology Stack Cost Structure</div>{t_tbl}</div>
