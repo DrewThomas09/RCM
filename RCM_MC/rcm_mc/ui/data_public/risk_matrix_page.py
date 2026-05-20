@@ -63,23 +63,23 @@ def _entry_risk_score(deal: Dict[str, Any], corpus: Optional[List[Dict[str, Any]
 _SECTOR_COLORS = {
     "Physician Practice": "#1F7A75",
     "Behavioral Health": "#a98545",
-    "Ambulatory Surgery Centers": "#06b6d4",
+    "Ambulatory Surgery Centers": "#3d7d87",
     "Dental": "#155752",
     "Cardiology": "#155752",
-    "Dermatology": "#7c3aed",
-    "Orthopedics": "#0e7490",
+    "Dermatology": "#6b5b8a",
+    "Orthopedics": "#2c6670",
     "Emergency Medicine": "#b5321e",
-    "Anesthesiology": "#9333ea",
+    "Anesthesiology": "#7a5b8a",
     "General Hospitals": "#7a8699",
-    "Behavioral Health / Substance Abuse": "#6d28d9",
-    "Home Health": "#0284c7",
+    "Behavioral Health / Substance Abuse": "#5d4b7a",
+    "Home Health": "#3a6a8a",
     "Skilled Nursing": "#465366",
     "Healthcare IT / RCM": "#0a8a5f",
-    "Value-Based Care": "#0f766e",
+    "Value-Based Care": "#1f6a62",
     "Telehealth / DTC": "#1F7A75",
-    "Pediatrics": "#0369a1",
+    "Pediatrics": "#2c5c84",
     "Oncology": "#b8732a",
-    "Ophthalmology": "#0d9488",
+    "Ophthalmology": "#2c8077",
     "Gastroenterology": "#0a8a5f",
 }
 _DEFAULT_COLOR = "#465366"
@@ -126,10 +126,10 @@ def _risk_return_scatter(
 
     # Quadrant labels
     q_labels = (
-        f'<text x="{pad_l+6}" y="{pad_t+12}" font-size="8" fill="#1e3a5f" opacity="0.8" font-style="italic">Low Risk / High Return</text>'
-        f'<text x="{q_risk_x+6}" y="{pad_t+12}" font-size="8" fill="#3d1a1a" opacity="0.8" font-style="italic">High Risk / High Return</text>'
-        f'<text x="{pad_l+6}" y="{q_moic_y+18}" font-size="8" fill="#1a3d2a" opacity="0.8" font-style="italic">Low Risk / Low Return</text>'
-        f'<text x="{q_risk_x+6}" y="{q_moic_y+18}" font-size="8" fill="#3d2000" opacity="0.8" font-style="italic">Danger Zone</text>'
+        f'<text x="{pad_l+6}" y="{pad_t+12}" font-size="8" fill="#0b2341" opacity="0.8" font-style="italic">Low Risk / High Return</text>'
+        f'<text x="{q_risk_x+6}" y="{pad_t+12}" font-size="8" fill="#6e2418" opacity="0.8" font-style="italic">High Risk / High Return</text>'
+        f'<text x="{pad_l+6}" y="{q_moic_y+18}" font-size="8" fill="#1a4731" opacity="0.8" font-style="italic">Low Risk / Low Return</text>'
+        f'<text x="{q_risk_x+6}" y="{q_moic_y+18}" font-size="8" fill="#6b5d3c" opacity="0.8" font-style="italic">Danger Zone</text>'
     )
 
     # Dots
