@@ -21,14 +21,17 @@ logger = logging.getLogger(__name__)
 
 # ── Event model ────────────────────────────────────────────────────
 
+# Editorial event hues — distinct but on-palette; alert/export/note/
+# mc_run map to their natural semantic tones, the rest to navy/ochre/
+# slate so the timeline dots read on-brand on parchment.
 _EVENT_COLORS = {
-    "analysis": "#3b82f6",
-    "alert": "#f59e0b",
-    "export": "#10b981",
-    "note": "#94a3b8",
-    "override": "#8b5cf6",
-    "mc_run": "#14b8a6",
-    "other": "#64748b",
+    "analysis": "#0b2341",  # navy
+    "alert": "#b8732a",     # amber
+    "export": "#0a8a5f",    # positive green
+    "note": "#7a8699",      # muted slate
+    "override": "#a98545",  # ochre
+    "mc_run": "#1F7A75",    # teal
+    "other": "#465366",     # slate-ink
 }
 
 
