@@ -2,7 +2,22 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
+
+
+def _sites_chart(items) -> str:
+    """Lead chart — trial sites ranked by annual revenue (tone by margin)."""
+    total = sum(s.annual_revenue_mm for s in items) or 1.0
+    rows = []
+    for s in sorted(items, key=lambda s: s.annual_revenue_mm, reverse=True):
+        tone = "positive" if s.operating_margin_pct >= 0.25 else ("teal" if s.operating_margin_pct >= 0.15 else "warning")
+        rows.append(ck_bar_row(s.site_id, f"${s.annual_revenue_mm:,.1f}M",
+                               s.annual_revenue_mm / total * 100.0, tone=tone))
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of total site revenue '
+            '\u00b7 value = revenue ($M) \u00b7 tone = operating margin</div></div>')
+
 
 
 def _sites_table(items) -> str:
@@ -144,7 +159,14 @@ def render_trial_site_econ(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    s_chart = _sites_chart(r.sites)
     s_tbl = _sites_table(r.sites)
+    value_anchor = ck_value_anchor(
+        "Trial Site Economics",
+        f"${r.annual_revenue_mm:,.1f}M annual revenue",
+        delta=f"{r.total_sites} sites \u00b7 {r.total_active_trials} active trials \u00b7 {r.blended_margin_pct * 100:.0f}% blended margin \u00b7 {r.avg_enrollment_rate_pct * 100:.1f}% enrollment",
+        tone="positive",
+    )
     ta_tbl = _tas_table(r.therapeutic_areas)
     p_tbl = _phase_table(r.phase_econ)
     sp_tbl = _sponsors_table(r.sponsors)
@@ -163,7 +185,8 @@ def render_trial_site_econ(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Site Roster (Top 30 by Revenue)</div>{s_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">Site Roster (Top 30 by Revenue)</div>{s_chart}{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Therapeutic Area Rollup</div>{ta_tbl}</div>
   <div style="{cell}"><div style="{h3}">Phase Economics — Per-Site Revenue &amp; Margin</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sponsor Relationship Matrix</div>{sp_tbl}</div>

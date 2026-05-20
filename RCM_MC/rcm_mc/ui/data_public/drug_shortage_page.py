@@ -2,7 +2,25 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
+
+
+def _drugs_chart(items) -> str:
+    """Lead chart — critical drugs ranked by platform spend (tone by status)."""
+    def _tone(status):
+        s = (status or "").lower()
+        if "active" in s: return "negative"
+        if "resolv" in s or "watch" in s: return "warning"
+        return "teal"
+    total = sum(d.platform_spend_mm for d in items) or 1.0
+    rows = [ck_bar_row(d.drug, f"${d.platform_spend_mm:,.1f}M",
+            d.platform_spend_mm / total * 100.0, tone=_tone(d.shortage_status))
+            for d in sorted(items, key=lambda d: d.platform_spend_mm, reverse=True)]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of platform drug spend '
+            '\u00b7 value = spend ($M) \u00b7 tone = shortage status</div></div>')
+
 
 
 def _drugs_table(items) -> str:
@@ -150,7 +168,15 @@ def render_drug_shortage(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    d_chart = _drugs_chart(r.drugs)
     d_tbl = _drugs_table(r.drugs)
+    value_anchor = ck_value_anchor(
+        "Drug Shortage Risk",
+        f"{r.overall_supply_risk_score}/100 supply risk",
+        delta=f"{r.total_critical_drugs} critical drugs \u00b7 {r.active_shortages} active shortages \u00b7 ${r.total_platform_spend_mm:,.1f}M spend \u00b7 {r.risk_tier} tier",
+        opportunity=f"${r.sole_source_exposure_mm:,.1f}M sole-source exposure",
+        tone="warning",
+    )
     s_tbl = _suppliers_table(r.suppliers)
     g_tbl = _geo_table(r.geography)
     p_tbl = _playbooks_table(r.playbooks)
@@ -170,12 +196,13 @@ def render_drug_shortage(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {tier_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Supply Chain Posture</div>
     <div style="color:{tier_c};font-weight:700;font-size:14px">Risk tier {_html.escape(r.risk_tier.upper())} · {r.active_shortages} active shortages · ${weighted_impact:,.2f}M probability-weighted shortfall exposure</div>
     <div style="color:{text_dim};font-size:11px;margin-top:4px">Sole-source exposure ${r.sole_source_exposure_mm:,.2f}M · highest-risk drugs in oncology (5-FU, Cisplatin)</div>
   </div>
-  <div style="{cell}"><div style="{h3}">Critical Drug Inventory &amp; Shortage Status</div>{d_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Critical Drug Inventory &amp; Shortage Status</div>{d_chart}{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Supplier Concentration &amp; Audit History</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Geographic Exposure &amp; Tariff Risk</div>{g_tbl}</div>
   <div style="{cell}"><div style="{h3}">Shortage Scenario Playbooks</div>{p_tbl}</div>

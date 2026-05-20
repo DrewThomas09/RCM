@@ -2,7 +2,20 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title, ck_bar_row, ck_value_anchor
+
+
+def _deals_chart(items) -> str:
+    """Lead chart — co-invest deals ranked by allocation."""
+    total = sum(d.coinvest_allocation_m for d in items) or 1.0
+    rows = [ck_bar_row(d.deal, f"${d.coinvest_allocation_m:,.0f}M",
+            d.coinvest_allocation_m / total * 100.0, tone="teal")
+            for d in sorted(items, key=lambda d: d.coinvest_allocation_m, reverse=True)]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of total co-invest '
+            'allocation \u00b7 value = allocation ($M)</div></div>')
+
 
 
 def _status_color(status: str) -> str:
@@ -195,7 +208,15 @@ def render_coinvest_pipeline(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    d_chart = _deals_chart(r.deals)
     d_tbl = _deals_table(r.deals)
+    value_anchor = ck_value_anchor(
+        "Co-Invest Pipeline",
+        f"${r.total_equity_pipeline_m:,.0f}M equity pipeline",
+        delta=f"{r.active_opportunities} opportunities \u00b7 ${r.total_coinvest_allocated_m:,.0f}M allocated \u00b7 {r.historical_avg_moic:.2f}x hist MOIC",
+        opportunity=f"${r.total_coinvest_available_m:,.0f}M co-invest capacity available",
+        tone="positive",
+    )
     c_tbl = _capacity_table(r.capacity)
     lp_tbl = _lps_table(r.lps)
     s_tbl = _sectors_table(r.sectors)
@@ -232,7 +253,8 @@ def render_coinvest_pipeline(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Active Pipeline — {r.active_opportunities} Opportunities</div>{d_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">Active Pipeline — {r.active_opportunities} Opportunities</div>{d_chart}{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Deal Capacity & LP Demand</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sector Allocation Summary</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">LP Participation — {len(r.lps)} Institutional Investors</div>{lp_tbl}</div>
