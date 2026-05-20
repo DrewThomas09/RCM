@@ -450,11 +450,127 @@ def _cohort_section(report: Optional[CohortLiquidationReport]) -> str:
     )
 
 
+_DB_CHART_CAPTION_CSS = (
+    ".db-figcap{font-size:11px;color:#6b6456;margin:6px 0 8px;"
+    "font-family:'JetBrains Mono',ui-monospace,monospace;"
+    "letter-spacing:0.02em;}"
+)
+
+
+def _denial_pareto_chart(
+    row_list: List[DenialStratRow], width: int = 720, height: int = 300
+) -> str:
+    """Pareto chart: denial dollars as sorted bars + cumulative-% line.
+
+    The canonical 80/20 view — bars descend by dollar impact, a line
+    tracks the running cumulative share, and an 80% reference marks how
+    many categories carry the bulk of denials. Reads the same dollars
+    the bar list below shows. Empty input returns "".
+    """
+    rows = sorted(
+        [r for r in row_list if getattr(r, "category", None)],
+        key=lambda r: r.dollars_denied, reverse=True,
+    )[:12]
+    if not rows:
+        return ""
+    total = sum(r.dollars_denied for r in rows) or 1.0
+    max_d = max((r.dollars_denied for r in rows), default=0) or 1.0
+
+    pad_l, pad_r, pad_t, pad_b = 56, 48, 18, 64
+    plot_w = width - pad_l - pad_r
+    plot_h = height - pad_t - pad_b
+    n = len(rows)
+    slot = plot_w / n
+    bw = min(slot * 0.62, 54)
+
+    accent = P["accent"]
+    rule = P["border"]
+    txt = P["text_dim"]
+    line_c = P["warning"]
+
+    def _y(frac: float) -> float:
+        return pad_t + (1 - max(0.0, min(1.0, frac))) * plot_h
+
+    parts: List[str] = [
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'preserveAspectRatio="xMidYMid meet" role="img" '
+        f'aria-label="Denial dollars Pareto with cumulative share" '
+        f'style="width:100%;max-width:{width}px;height:auto;'
+        f'print-color-adjust:exact;-webkit-print-color-adjust:exact;">'
+    ]
+    # Axes.
+    parts.append(
+        f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" y2="{pad_t + plot_h}" '
+        f'stroke="{rule}" stroke-width="1"/>'
+        f'<line x1="{pad_l}" y1="{pad_t + plot_h}" x2="{pad_l + plot_w}" '
+        f'y2="{pad_t + plot_h}" stroke="{rule}" stroke-width="1"/>'
+    )
+    # 80% reference line.
+    y80 = _y(0.8)
+    parts.append(
+        f'<line x1="{pad_l}" y1="{y80:.1f}" x2="{pad_l + plot_w}" '
+        f'y2="{y80:.1f}" stroke="{line_c}" stroke-width="1" '
+        f'stroke-dasharray="4 3" opacity="0.5"/>'
+        f'<text x="{pad_l + plot_w + 4}" y="{y80 + 3:.1f}" font-size="9.5" '
+        f'font-family="JetBrains Mono,ui-monospace,monospace" '
+        f'fill="{line_c}">80%</text>'
+    )
+    # Bars + cumulative line.
+    cum = 0.0
+    pts: List[str] = []
+    for i, r in enumerate(rows):
+        cx = pad_l + slot * i + slot / 2
+        bh = r.dollars_denied / max_d * plot_h
+        by = pad_t + plot_h - bh
+        parts.append(
+            f'<rect x="{cx - bw / 2:.1f}" y="{by:.1f}" width="{bw:.1f}" '
+            f'height="{max(bh, 0.5):.1f}" rx="1.5" fill="{accent}" '
+            f'opacity="0.82"/>'
+        )
+        cat = html.escape(str(r.category)[:10])
+        parts.append(
+            f'<text x="{cx:.1f}" y="{pad_t + plot_h + 14:.1f}" '
+            f'text-anchor="end" font-size="9" '
+            f'font-family="Inter Tight,system-ui,sans-serif" fill="{txt}" '
+            f'transform="rotate(-35 {cx:.1f} {pad_t + plot_h + 14:.1f})">'
+            f'{cat}</text>'
+        )
+        cum += r.dollars_denied / total
+        pts.append(f'{cx:.1f},{_y(cum):.1f}')
+    parts.append(
+        f'<polyline points="{" ".join(pts)}" fill="none" '
+        f'stroke="{line_c}" stroke-width="2"/>'
+    )
+    for i, p in enumerate(pts):
+        x, y = p.split(",")
+        parts.append(
+            f'<circle cx="{x}" cy="{y}" r="2.6" fill="{line_c}"/>'
+        )
+    # Y-axis 0/100% cumulative anchors.
+    parts.append(
+        f'<text x="{pad_l - 6}" y="{pad_t + 4:.1f}" text-anchor="end" '
+        f'font-size="9" font-family="JetBrains Mono,ui-monospace,monospace" '
+        f'fill="{txt}">100%</text>'
+        f'<text x="{pad_l - 6}" y="{pad_t + plot_h:.1f}" text-anchor="end" '
+        f'font-size="9" font-family="JetBrains Mono,ui-monospace,monospace" '
+        f'fill="{txt}">0</text>'
+    )
+    parts.append("</svg>")
+    return "".join(parts)
+
+
 def _denial_pareto(rows: Iterable[DenialStratRow]) -> str:
     row_list = list(rows)
     if not row_list:
         return ""
     total = sum(r.dollars_denied for r in row_list) or 1.0
+    _chart = _denial_pareto_chart(row_list)
+    _fig = (
+        f'<style>{_DB_CHART_CAPTION_CSS}</style>'
+        f'<div class="db-figcap">Denial dollars by category &middot; '
+        f'bars = impact, line = cumulative share &middot; 80% reference</div>'
+        f'{_chart}'
+    ) if _chart else ""
     items = []
     for r in row_list:
         pct = r.dollars_denied / total
@@ -477,6 +593,7 @@ def _denial_pareto(rows: Iterable[DenialStratRow]) -> str:
         'claim rows is available via '
         '<a href="/diligence/root-cause" class="ck-link">Phase 3 — Root Cause</a>.'
         '</p>'
+        f'{_fig}'
         f'{"".join(items)}',
         title="Denial Stratification",
     )
