@@ -72,6 +72,23 @@ def _wages_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _extenders_chart(items) -> str:
+    """Summary chart — APP extender supply ranked by FTE (tone by cost ratio vs MD)."""
+    def _tone(e):
+        if e.cost_ratio_vs_md <= 0.55: return "positive"
+        if e.cost_ratio_vs_md <= 0.75: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda e: e.fte_supply, reverse=True)
+    total = sum(e.fte_supply for e in top) or 1.0
+    rows = [ck_bar_row(f"{e.category}",
+            f"{e.fte_supply:,.0f} FTE · {e.cost_ratio_vs_md * 100:.0f}% MD cost",
+            e.fte_supply / total * 100.0, tone=_tone(e)) for e in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of extender FTE supply '
+            '· value = FTE + cost vs MD · tone = cost efficiency</div></div>')
+
+
 def _extenders_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
@@ -169,6 +186,7 @@ def render_physician_labor(params: dict = None) -> str:
     )
     w_tbl = _wages_table(r.wages)
     e_tbl = _extenders_table(r.extenders)
+    e_chart = _extenders_chart(r.extenders)
     b_tbl = _burnout_table(r.burnout)
     g_tbl = _geo_table(r.geography)
 
@@ -189,7 +207,7 @@ def render_physician_labor(params: dict = None) -> str:
   {value_anchor}
   <div style="{cell}"><div style="{h3}">Specialty-Level Supply/Demand &amp; 2030 Shortage Projection</div>{s_chart}{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Wage Growth 2019-2024 &amp; Locum Premia</div>{w_tbl}</div>
-  <div style="{cell}"><div style="{h3}">NP / PA / CRNA Extender Economics</div>{e_tbl}</div>
+  <div style="{cell}"><div style="{h3}">NP / PA / CRNA Extender Economics</div>{e_chart}{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Burnout &amp; Retention Index</div>{b_tbl}</div>
   <div style="{cell}"><div style="{h3}">Geographic Physician Density &amp; HPSA Designation</div>{g_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
