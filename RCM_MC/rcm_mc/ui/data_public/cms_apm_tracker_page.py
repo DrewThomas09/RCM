@@ -70,6 +70,23 @@ def _programs_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _exposures_chart(items) -> str:
+    """Summary chart — deals ranked by APM revenue exposure (tone by rev share)."""
+    def _tone(e):
+        if e.apm_share_of_rev_pct >= 0.15: return "warning"
+        if e.apm_share_of_rev_pct >= 0.08: return "teal"
+        return "navy"
+    top = sorted(items, key=lambda e: e.apm_revenue_m, reverse=True)
+    total = sum(e.apm_revenue_m for e in top) or 1.0
+    rows = [ck_bar_row(f"{e.deal} · {e.sector}",
+            f"${e.apm_revenue_m:.1f}M ({e.apm_share_of_rev_pct * 100:.0f}%)",
+            e.apm_revenue_m / total * 100.0, tone=_tone(e)) for e in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of portfolio APM revenue '
+            '· value = APM revenue ($M) + rev share · tone = APM dependence</div></div>')
+
+
 def _exposures_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
@@ -213,6 +230,7 @@ def render_cms_apm_tracker(params: dict = None) -> str:
         tone="teal",
     )
     e_tbl = _exposures_table(r.exposures)
+    e_chart = _exposures_chart(r.exposures)
     t_tbl = _trends_table(r.trends)
     rs_tbl = _risk_table(r.risk_structures)
     c_tbl = _calendar_table(r.calendar)
@@ -233,7 +251,7 @@ def render_cms_apm_tracker(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">Program Catalog — CMMI & CMS APMs</div>{p_chart}{p_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Portfolio Exposure — Deals in APMs</div>{e_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Portfolio Exposure — Deals in APMs</div>{e_chart}{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Historical Performance — Top Programs</div>{t_tbl}</div>
   <div style="{cell}"><div style="{h3}">Risk Structure Options</div>{rs_tbl}</div>
   <div style="{cell}"><div style="{h3}">2026-2027 Policy Calendar & Portfolio Impact</div>{c_tbl}</div>

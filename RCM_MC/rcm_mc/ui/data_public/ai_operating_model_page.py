@@ -112,6 +112,22 @@ def _governance_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _roi_chart(items) -> str:
+    """Summary chart — strategic-value buckets ranked by savings (tone by ROI multiple)."""
+    def _tone(b):
+        if b.roi_multiple >= 3.5: return "positive"
+        if b.roi_multiple >= 2.0: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda b: b.savings_mm, reverse=True)
+    total = sum(b.savings_mm for b in top) or 1.0
+    rows = [ck_bar_row(f"{b.bucket}", f"${b.savings_mm:,.2f}M ({b.roi_multiple:.2f}x)",
+            b.savings_mm / total * 100.0, tone=_tone(b)) for b in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of AI savings by value bucket '
+            '· value = savings ($M) + ROI · tone = ROI multiple</div></div>')
+
+
 def _roi_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
@@ -186,6 +202,7 @@ def render_ai_operating_model(params: dict = None) -> str:
     v_tbl = _vendors_table(r.vendors)
     g_tbl = _governance_table(r.governance)
     roi_tbl = _roi_table(r.roi_buckets)
+    roi_chart = _roi_chart(r.roi_buckets)
     reg_tbl = _regulation_table(r.regulation)
 
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
@@ -215,7 +232,7 @@ def render_ai_operating_model(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">AI Initiative Portfolio</div>{i_chart}{i_tbl}</div>
   <div style="{cell}"><div style="{h3}">Vendor Landscape &amp; Contract Economics</div>{v_tbl}</div>
   <div style="{cell}"><div style="{h3}">Model Governance &amp; Validation</div>{g_tbl}</div>
-  <div style="{cell}"><div style="{h3}">ROI by Bucket — Strategic Value</div>{roi_tbl}</div>
+  <div style="{cell}"><div style="{h3}">ROI by Bucket — Strategic Value</div>{roi_chart}{roi_tbl}</div>
   <div style="{cell}"><div style="{h3}">Regulatory Exposure — FDA SaMD, HHS, AB 3030, HTI-1</div>{reg_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">AI Operating Thesis:</strong> ${r.total_annual_ai_spend_mm:,.1f}M annual spend returns ${r.total_annual_savings_mm + r.total_revenue_lift_mm:,.1f}M value at {r.blended_roi_pct:.1f}x ROI.

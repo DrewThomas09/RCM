@@ -48,6 +48,23 @@ def _categories_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _initiatives_chart(items) -> str:
+    """Summary chart — savings initiatives ranked by captured LTM (tone by capture rate)."""
+    def _tone(it):
+        if it.capture_rate_pct >= 0.80: return "positive"
+        if it.capture_rate_pct >= 0.60: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda it: it.captured_ltm_mm, reverse=True)
+    total = sum(it.captured_ltm_mm for it in top) or 1.0
+    rows = [ck_bar_row(f"{it.initiative} · {it.category}",
+            f"${it.captured_ltm_mm:,.2f}M ({it.capture_rate_pct * 100:.0f}%)",
+            it.captured_ltm_mm / total * 100.0, tone=_tone(it)) for it in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of LTM savings captured '
+            '· value = captured ($M) + capture rate · tone = capture rate</div></div>')
+
+
 def _initiatives_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
@@ -169,6 +186,7 @@ def render_zbb_tracker(params: dict = None) -> str:
     c_tbl = _categories_table(r.categories)
     c_chart = _categories_chart(r.categories)
     i_tbl = _initiatives_table(r.initiatives)
+    i_chart = _initiatives_chart(r.initiatives)
     w_tbl = _waste_table(r.waste)
     p_tbl = _policies_table(r.policies)
     v_tbl = _vendors_table(r.vendors)
@@ -192,7 +210,7 @@ def render_zbb_tracker(params: dict = None) -> str:
     <div style="color:{text_dim};font-size:11px;margin-top:4px">Run-rate reduced from ${r.total_baseline_mm:,.1f}M → ${r.current_run_rate_mm:,.1f}M · ${r.current_run_rate_mm - r.target_run_rate_mm:,.1f}M remains to target</div>
   </div>
   <div style="{cell}"><div style="{h3}">Cost Category Rebuild — Baseline vs Current vs Target</div>{c_chart}{c_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Savings Initiative Portfolio</div>{i_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Savings Initiative Portfolio</div>{i_chart}{i_tbl}</div>
   <div style="{cell}"><div style="{h3}">Waste Audit Findings</div>{w_tbl}</div>
   <div style="{cell}"><div style="{h3}">Spend Policy &amp; Control Framework</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Vendor Rationalization Results</div>{v_tbl}</div>
