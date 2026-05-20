@@ -34,16 +34,16 @@ def _input_form(qs: Dict[str, Any]) -> str:
     return (
         '<form method="GET" action="/diligence/sponsor-detail" '
         'style="display:flex;gap:10px;align-items:end;'
-        'margin:12px 0 20px;padding:14px 16px;background:#fafbfc;'
-        'border:1px solid #e5e7eb;border-radius:6px;">'
+        'margin:12px 0 20px;padding:14px 16px;background:#f7f3ea;'
+        'border:1px solid #d6cfc0;border-radius:6px;">'
         '<div style="flex:1;"><label style="display:block;'
-        'font-size:11px;color:#6b7280;text-transform:uppercase;'
+        'font-size:11px;color:#7a8699;text-transform:uppercase;'
         'letter-spacing:0.05em;margin-bottom:4px;">'
         'Sponsor name</label>'
         f'<input type="text" name="sponsor" value="{sponsor}" '
         'placeholder="e.g. New Mountain Capital, KKR, HCA" '
         'list="sponsor-suggestions" '
-        'style="padding:6px 8px;border:1px solid #e5e7eb;'
+        'style="padding:6px 8px;border:1px solid #d6cfc0;'
         'border-radius:4px;font-size:13px;width:100%;"></div>'
         '<button type="submit" '
         'style="padding:8px 16px;background:var(--sc-navy);color:#fff;'
@@ -76,14 +76,14 @@ def _stat(label: str, big: str, sub: str = "",
     bg, fg = palette.get(tone, palette["neutral"])
     return (
         f'<div style="flex:1;min-width:160px;padding:14px 16px;'
-        f'background:{bg};border:1px solid #e5e7eb;border-radius:8px;">'
-        f'<div style="font-size:10px;color:#6b7280;font-weight:600;'
+        f'background:{bg};border:1px solid #d6cfc0;border-radius:8px;">'
+        f'<div style="font-size:10px;color:#7a8699;font-weight:600;'
         f'text-transform:uppercase;letter-spacing:0.05em;">'
         f'{_html.escape(label)}</div>'
         f'<div style="font-size:24px;font-weight:700;color:{fg};'
         f'margin-top:4px;font-variant-numeric:tabular-nums;">'
         f'{_html.escape(big)}</div>'
-        f'<div style="font-size:11px;color:#6b7280;margin-top:4px;">'
+        f'<div style="font-size:11px;color:#7a8699;margin-top:4px;">'
         f'{_html.escape(sub)}</div>'
         f'</div>'
     )
@@ -132,7 +132,7 @@ def _vintage_bars(years_active: List[int],
         c = deal_count_per_year.get(y, 0)
         h = (c / max_count) * bar_h_max if max_count else 0
         x = i * (bar_w + gap)
-        color = "var(--sc-navy)" if c > 0 else "#f3f4f6"
+        color = "var(--sc-navy)" if c > 0 else "#ece5d6"
         bars.append(
             f'<rect x="{x:.1f}" y="{height - h - 12:.1f}" '
             f'width="{bar_w:.1f}" height="{h:.1f}" '
@@ -142,11 +142,11 @@ def _vintage_bars(years_active: List[int],
     # First and last year labels under the bars
     labels.append(
         f'<text x="0" y="{height - 1}" font-size="10" '
-        f'fill="#6b7280" font-family="monospace">{min_y}</text>'
+        f'fill="#7a8699" font-family="monospace">{min_y}</text>'
     )
     labels.append(
         f'<text x="{width - 24}" y="{height - 1}" font-size="10" '
-        f'fill="#6b7280" font-family="monospace">{max_y}</text>'
+        f'fill="#7a8699" font-family="monospace">{max_y}</text>'
     )
     return (
         f'<svg width="{width}" height="{height}" '
@@ -174,14 +174,14 @@ def _sector_pie(sectors_with_counts: Dict[str, int]) -> str:
             f'<div style="display:grid;grid-template-columns:'
             f'140px 1fr 60px;align-items:center;gap:10px;'
             f'padding:3px 0;font-size:12px;">'
-            f'<span style="color:#374151;white-space:nowrap;'
+            f'<span style="color:#465366;white-space:nowrap;'
             f'overflow:hidden;text-overflow:ellipsis;">'
             f'{_html.escape(sector)}</span>'
-            f'<div style="background:#f3f4f6;border-radius:3px;'
+            f'<div style="background:#ece5d6;border-radius:3px;'
             f'height:12px;overflow:hidden;">'
             f'<div style="background:var(--sc-navy);height:100%;'
             f'width:{bar_w}%;"></div></div>'
-            f'<span style="color:#6b7280;font-variant-numeric:'
+            f'<span style="color:#7a8699;font-variant-numeric:'
             f'tabular-nums;text-align:right;">{count} · '
             f'{pct:.0f}%</span></div>'
         )
@@ -262,7 +262,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
                     f'specialization, and per-deal outcomes — '
                     f'enough to gut-check whether their pitched '
                     f'base case is realistic.</p>'
-                    f'<p style="margin:0;font-size:12px;color:#6b7280;">'
+                    f'<p style="margin:0;font-size:12px;color:#7a8699;">'
                     f'For the full league table across every '
                     f'sponsor, see <a href="/sponsor-track-record" '
                     f'style="color:var(--sc-navy);">/sponsor-track-record</a>.'
@@ -298,12 +298,12 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
                 + _wc.section_card(
                     f'No exact match for "{_html.escape(sponsor_input)}"',
                     (
-                        f'<p style="margin:0 0 12px;color:#6b7280;'
+                        f'<p style="margin:0 0 12px;color:#7a8699;'
                         f'font-size:13px;">{len(partial)} '
                         f'partial-match sponsor{"s" if len(partial) != 1 else ""} '
                         f'in the corpus:</p>'
                         + (suggestions or
-                           '<p style="font-style:italic;color:#9ca3af;">'
+                           '<p style="font-style:italic;color:#9b9382;">'
                            '(none — try a different spelling)</p>')
                     )
                 )
@@ -372,7 +372,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
 
     vintage_card = _wc.section_card(
         "Vintage activity",
-        '<p style="margin:0 0 8px;font-size:12px;color:#6b7280;">'
+        '<p style="margin:0 0 8px;font-size:12px;color:#7a8699;">'
         f'{rec.deal_count} deals across '
         f'{len(deal_count_per_year)} active year'
         f'{"s" if len(deal_count_per_year) != 1 else ""}'
@@ -387,11 +387,11 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
         sector_counts[s] = sector_counts.get(s, 0) + 1
     sector_card = _wc.section_card(
         "Sector specialization",
-        '<p style="margin:0 0 10px;font-size:12px;color:#6b7280;">'
+        '<p style="margin:0 0 10px;font-size:12px;color:#7a8699;">'
         f'Where {_html.escape(matched_name)} has invested '
         f'historically.</p>'
         + (_sector_pie(sector_counts) or
-           '<p style="font-style:italic;color:#9ca3af;">'
+           '<p style="font-style:italic;color:#9b9382;">'
            'No sector data on these deals.</p>'),
     )
 
