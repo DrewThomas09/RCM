@@ -2,7 +2,35 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+
+
+def _calls_chart(items) -> str:
+    """Lead chart for the capital-call table — LTM calls ranked by size
+    so the largest draws surface first. Bar width = share of total LTM
+    call volume; value = call amount ($M); tone flags any LP default
+    (red), otherwise teal. Full call grid stays directly below.
+    """
+    total = sum(c.amount_m for c in items) or 1.0
+    ranked = sorted(items, key=lambda c: c.amount_m, reverse=True)
+    rows = []
+    for c in ranked:
+        tone = "negative" if c.defaulted_lp else "teal"
+        rows.append(ck_bar_row(
+            f"{c.fund} #{c.call_number}",
+            f"${c.amount_m:,.0f}M",
+            c.amount_m / total * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = share of total LTM call volume · value = call amount ($M) · '
+        'tone = red if any LP default on the call</div>'
+        '</div>'
+    )
 
 _EXPLAINER_CSS = """<style>
 .ck-cc-explainer{font-family:var(--sc-serif,'Georgia',serif);
@@ -204,7 +232,15 @@ def render_capital_call_tracker(params: dict = None) -> str:
     )
 
     cf_tbl = _cashflow_table(r.cashflows)
+    cal_chart = _calls_chart(r.calls)
     cal_tbl = _calls_table(r.calls)
+    value_anchor = ck_value_anchor(
+        "Capital Account",
+        f"${r.total_called_b:,.1f}B called",
+        delta=f"of ${r.total_committed_b:,.1f}B committed · ${r.total_distributed_b:,.1f}B distributed · {r.total_funds} funds",
+        opportunity=f"${r.net_ltm_m:+,.0f}M net LTM cashflow",
+        tone="teal",
+    )
     d_tbl = _dist_table(r.distributions)
     lp_tbl = _lp_comms_table(r.lp_comms)
     rep_tbl = _reporting_table(r.reporting)
@@ -233,8 +269,9 @@ def render_capital_call_tracker(params: dict = None) -> str:
     body = page_title + cc_explainer + f"""
 <div class="ck-page-wrap">
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Fund Cashflow Roll-up</div>{cf_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Recent Capital Calls (LTM)</div>{cal_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Recent Capital Calls (LTM)</div>{cal_chart}{cal_tbl}</div>
   <div style="{cell}"><div style="{h3}">Recent Distributions (LTM)</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">LP Communications — Active & Recent</div>{lp_tbl}</div>
   <div style="{cell}"><div style="{h3}">Reporting Schedule</div>{rep_tbl}</div>
