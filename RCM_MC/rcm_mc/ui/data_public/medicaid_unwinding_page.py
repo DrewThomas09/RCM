@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _deals_chart(items) -> str:
@@ -244,10 +244,18 @@ def render_medicaid_unwinding(params: dict = None) -> str:
         meta=f"{r.total_deals_exposed} portcos exposed · {r.total_medicaid_lives_pre_phe_m:.1f}M pre-PHE Medicaid lives → {r.total_disenrolled_m:.1f}M disenrolled ({disenroll_rate * 100:.0f}% rate) · ${r.total_revenue_impact_m:.1f}M net revenue impact offset by ${revenue_preserved:.1f}M preserved through {r.active_retention_programs} retention programs",
     )
 
+    value_anchor = ck_value_anchor(
+        "Medicaid Unwinding",
+        f"{r.total_deals_exposed} deals exposed",
+        delta=f"{r.total_disenrolled_m:.1f}M lives disenrolled · {r.avg_coverage_shift_back_pct * 100:.0f}% reshifting to coverage",
+        opportunity=f"${abs(r.total_revenue_impact_m):,.1f}M revenue at risk",
+        tone="negative",
+    )
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Portfolio Deal Impact</div>{d_chart}{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">State-Level Unwinding Activity</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Coverage Shift Analysis</div>{sh_tbl}</div>
