@@ -86,44 +86,44 @@ def _cell_chip(label: str, *, bg: str, fg: str) -> str:
 def _health_cell(score: Optional[int], band: Optional[str]) -> str:
     """Score chip color-coded by band."""
     if score is None:
-        return _cell_chip("—", bg="#f3f4f6", fg="#6b7280")
+        return _cell_chip("—", bg="#ece5d6", fg="#7a8699")
     band_l = (band or "").lower()
     if band_l in ("excellent", "good"):
-        return _cell_chip(str(score), bg="#d1fae5", fg="#065f46")
+        return _cell_chip(str(score), bg="#d9ece2", fg="#0a6a48")
     if band_l == "fair":
-        return _cell_chip(str(score), bg="#fef3c7", fg="#92400e")
+        return _cell_chip(str(score), bg="#f2e7d1", fg="#7a4c16")
     if band_l in ("poor", "critical"):
-        return _cell_chip(str(score), bg="#fee2e2", fg="#991b1b")
+        return _cell_chip(str(score), bg="#f2ded7", fg="#8a2a1a")
     return _cell_chip(str(score), bg="#e0e7ff", fg="#3730a3")
 
 
 def _covenant_cell(status: Optional[str]) -> str:
     s = (status or "").upper()
     if s == "TRIPPED":
-        return _cell_chip("TRIPPED", bg="#fee2e2", fg="#991b1b")
+        return _cell_chip("TRIPPED", bg="#f2ded7", fg="#8a2a1a")
     if s == "TIGHT":
-        return _cell_chip("TIGHT", bg="#fef3c7", fg="#92400e")
+        return _cell_chip("TIGHT", bg="#f2e7d1", fg="#7a4c16")
     if s in ("SAFE", "OK"):
-        return _cell_chip("SAFE", bg="#d1fae5", fg="#065f46")
-    return _cell_chip("—", bg="#f3f4f6", fg="#6b7280")
+        return _cell_chip("SAFE", bg="#d9ece2", fg="#0a6a48")
+    return _cell_chip("—", bg="#ece5d6", fg="#7a8699")
 
 
 def _alerts_cell(count: int) -> str:
     if count <= 0:
-        return _cell_chip("0", bg="#f3f4f6", fg="#6b7280")
+        return _cell_chip("0", bg="#ece5d6", fg="#7a8699")
     if count >= 3:
-        return _cell_chip(str(count), bg="#fee2e2", fg="#991b1b")
-    return _cell_chip(str(count), bg="#fef3c7", fg="#92400e")
+        return _cell_chip(str(count), bg="#f2ded7", fg="#8a2a1a")
+    return _cell_chip(str(count), bg="#f2e7d1", fg="#7a4c16")
 
 
 def _freshness_cell(days: Optional[int]) -> str:
     if days is None:
-        return _cell_chip("never", bg="#f3f4f6", fg="#6b7280")
+        return _cell_chip("never", bg="#ece5d6", fg="#7a8699")
     if days < 7:
-        return _cell_chip(f"{days}d", bg="#d1fae5", fg="#065f46")
+        return _cell_chip(f"{days}d", bg="#d9ece2", fg="#0a6a48")
     if days < 30:
-        return _cell_chip(f"{days}d", bg="#fef3c7", fg="#92400e")
-    return _cell_chip(f"{days}d", bg="#fee2e2", fg="#991b1b")
+        return _cell_chip(f"{days}d", bg="#f2e7d1", fg="#7a4c16")
+    return _cell_chip(f"{days}d", bg="#f2ded7", fg="#8a2a1a")
 
 
 def _hrrp_cell(pct: Optional[float]) -> str:
@@ -132,13 +132,13 @@ def _hrrp_cell(pct: Optional[float]) -> str:
     no penalty (green); ≥2% = high penalty (red); cap is 3%.
     """
     if pct is None:
-        return _cell_chip("—", bg="#f3f4f6", fg="#6b7280")
+        return _cell_chip("—", bg="#ece5d6", fg="#7a8699")
     if pct == 0:
-        return _cell_chip("0%", bg="#d1fae5", fg="#065f46")
+        return _cell_chip("0%", bg="#d9ece2", fg="#0a6a48")
     if pct >= 2.0:
-        return _cell_chip(f"{pct:.1f}%", bg="#fee2e2", fg="#991b1b")
+        return _cell_chip(f"{pct:.1f}%", bg="#f2ded7", fg="#8a2a1a")
     if pct >= 1.0:
-        return _cell_chip(f"{pct:.1f}%", bg="#fef3c7", fg="#92400e")
+        return _cell_chip(f"{pct:.1f}%", bg="#f2e7d1", fg="#7a4c16")
     return _cell_chip(f"{pct:.1f}%", bg="#e0e7ff", fg="#3730a3")
 
 
@@ -146,25 +146,25 @@ def _quality_cell(rating: Optional[int]) -> str:
     """CMS overall hospital rating, 1-5 stars. None for facilities
     not in the CMS General Info file (or non-hospital deals)."""
     if rating is None:
-        return _cell_chip("—", bg="#f3f4f6", fg="#6b7280")
+        return _cell_chip("—", bg="#ece5d6", fg="#7a8699")
     if rating >= 4:
-        return _cell_chip(f"{rating}★", bg="#d1fae5", fg="#065f46")
+        return _cell_chip(f"{rating}★", bg="#d9ece2", fg="#0a6a48")
     if rating == 3:
         return _cell_chip(f"{rating}★", bg="#e0e7ff", fg="#3730a3")
     if rating == 2:
-        return _cell_chip(f"{rating}★", bg="#fef3c7", fg="#92400e")
-    return _cell_chip(f"{rating}★", bg="#fee2e2", fg="#991b1b")
+        return _cell_chip(f"{rating}★", bg="#f2e7d1", fg="#7a4c16")
+    return _cell_chip(f"{rating}★", bg="#f2ded7", fg="#8a2a1a")
 
 
 def _deadlines_cell(open_count: int, overdue_count: int) -> str:
     if overdue_count > 0:
         return _cell_chip(
             f"{open_count} ({overdue_count} overdue)",
-            bg="#fee2e2", fg="#991b1b",
+            bg="#f2ded7", fg="#8a2a1a",
         )
     if open_count > 0:
         return _cell_chip(str(open_count), bg="#e0e7ff", fg="#3730a3")
-    return _cell_chip("0", bg="#f3f4f6", fg="#6b7280")
+    return _cell_chip("0", bg="#ece5d6", fg="#7a8699")
 
 
 # ── Data gathering ──────────────────────────────────────────────────
@@ -412,22 +412,22 @@ def render_portfolio_risk_scan(db_path: str) -> str:
     # before they have to hover or click to discover it.
     legend = (
         '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;'
-        'margin:12px 0 4px;padding:10px 12px;background:#fafbfc;'
-        'border:1px solid #f3f4f6;border-radius:6px;'
-        'font-size:11px;color:#6b7280;">'
-        '<span style="font-weight:600;color:#374151;'
+        'margin:12px 0 4px;padding:10px 12px;background:#f7f3ea;'
+        'border:1px solid #d6cfc0;border-radius:6px;'
+        'font-size:11px;color:#7a8699;">'
+        '<span style="font-weight:600;color:#1a2332;'
         'text-transform:uppercase;letter-spacing:0.05em;">Key</span>'
         '<span><span style="display:inline-block;width:10px;height:10px;'
-        'background:#10b981;border-radius:50%;margin-right:6px;'
+        'background:#0a8a5f;border-radius:50%;margin-right:6px;'
         'vertical-align:middle;"></span>safe / fresh / excellent</span>'
         '<span><span style="display:inline-block;width:10px;height:10px;'
-        'background:#f59e0b;border-radius:50%;margin-right:6px;'
+        'background:#b8732a;border-radius:50%;margin-right:6px;'
         'vertical-align:middle;"></span>tight / stale / fair</span>'
         '<span><span style="display:inline-block;width:10px;height:10px;'
-        'background:#ef4444;border-radius:50%;margin-right:6px;'
+        'background:#b5321e;border-radius:50%;margin-right:6px;'
         'vertical-align:middle;"></span>tripped / cold / poor / overdue</span>'
         '<span><span style="display:inline-block;width:10px;height:10px;'
-        'background:#d1d5db;border-radius:50%;margin-right:6px;'
+        'background:#9b9382;border-radius:50%;margin-right:6px;'
         'vertical-align:middle;"></span>no data / zero</span>'
         '</div>'
     )
@@ -490,7 +490,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
             f'style="color:var(--sc-navy);font-weight:500;text-decoration:none;">'
             f'{_html.escape(d["name"])}</a>'
             f'<div style="font-family:monospace;font-size:10px;'
-            f'color:#6b7280;margin-top:2px;text-transform:uppercase;">'
+            f'color:#7a8699;margin-top:2px;text-transform:uppercase;">'
             f'{_html.escape(deal_id)}</div>'
         )
         # Chain cell — shows the chain identifier + count of
@@ -501,7 +501,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
             if cs >= 4:
                 chain_cell = _cell_chip(
                     f'{_html.escape(d["chain"])} · {cs}',
-                    bg="#fef3c7", fg="#92400e",
+                    bg="#f2e7d1", fg="#7a4c16",
                 )
             else:
                 chain_cell = _cell_chip(
@@ -509,7 +509,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
                     bg="#e0e7ff", fg="#3730a3",
                 )
         else:
-            chain_cell = _cell_chip("—", bg="#f3f4f6", fg="#6b7280")
+            chain_cell = _cell_chip("—", bg="#ece5d6", fg="#7a8699")
 
         rows.append([
             name_link,

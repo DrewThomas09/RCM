@@ -85,15 +85,15 @@ class TestCellRenderers(unittest.TestCase):
         from rcm_mc.ui.portfolio_risk_scan_page import _health_cell
         excellent = _health_cell(95, "excellent")
         poor = _health_cell(25, "poor")
-        self.assertIn("#d1fae5", excellent)  # green
-        self.assertIn("#fee2e2", poor)       # red
+        self.assertIn("#d9ece2", excellent)  # green
+        self.assertIn("#f2ded7", poor)       # red
         self.assertIn("95", excellent)
         self.assertIn("25", poor)
 
     def test_covenant_cell_tripped_is_red(self):
         from rcm_mc.ui.portfolio_risk_scan_page import _covenant_cell
         self.assertIn("TRIPPED", _covenant_cell("TRIPPED"))
-        self.assertIn("#fee2e2", _covenant_cell("TRIPPED"))
+        self.assertIn("#f2ded7", _covenant_cell("TRIPPED"))
 
     def test_covenant_unknown_renders_dash(self):
         from rcm_mc.ui.portfolio_risk_scan_page import _covenant_cell
@@ -101,15 +101,15 @@ class TestCellRenderers(unittest.TestCase):
 
     def test_alerts_threshold(self):
         from rcm_mc.ui.portfolio_risk_scan_page import _alerts_cell
-        self.assertIn("#fee2e2", _alerts_cell(5))     # red when ≥3
-        self.assertIn("#fef3c7", _alerts_cell(2))     # amber when 1-2
-        self.assertIn("#f3f4f6", _alerts_cell(0))     # neutral when 0
+        self.assertIn("#f2ded7", _alerts_cell(5))     # red when ≥3
+        self.assertIn("#f2e7d1", _alerts_cell(2))     # amber when 1-2
+        self.assertIn("#ece5d6", _alerts_cell(0))     # neutral when 0
 
     def test_freshness_thresholds(self):
         from rcm_mc.ui.portfolio_risk_scan_page import _freshness_cell
-        self.assertIn("#d1fae5", _freshness_cell(3))    # <7d green
-        self.assertIn("#fef3c7", _freshness_cell(15))   # <30d amber
-        self.assertIn("#fee2e2", _freshness_cell(90))   # ≥30d red
+        self.assertIn("#d9ece2", _freshness_cell(3))    # <7d green
+        self.assertIn("#f2e7d1", _freshness_cell(15))   # <30d amber
+        self.assertIn("#f2ded7", _freshness_cell(90))   # ≥30d red
         self.assertIn("never", _freshness_cell(None))
 
     def test_deadlines_cell_flags_overdue(self):
@@ -117,7 +117,7 @@ class TestCellRenderers(unittest.TestCase):
         out = _deadlines_cell(5, 2)
         self.assertIn("5", out)
         self.assertIn("overdue", out)
-        self.assertIn("#fee2e2", out)
+        self.assertIn("#f2ded7", out)
 
 
 class TestHttpRoute(unittest.TestCase):
