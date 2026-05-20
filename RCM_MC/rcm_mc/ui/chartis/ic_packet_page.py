@@ -107,7 +107,14 @@ def _toc(bundle: Dict[str, Any], review: Any = None) -> str:
 def _ic_memo_section(html_body: str, anchor: str) -> str:
     """Wrap the ic_memo HTML (which is a full styled block) in our
     standard chartis panel so it reads at parity with the other sections.
+
+    The standalone IC-memo render leads with its own <h1> (correct on its
+    own page). Embedded inside the IC Packet — which already has a page
+    <h1> and a panel title — that becomes a second page title, so demote
+    the memo's heading to <h2>.
     """
+    import re as _re
+    html_body = _re.sub(r"<(/?)h1\b", r"<\1h2", html_body)
     return (
         f'<div class="ck-panel" id="{anchor}">'
         f'<div class="ck-panel-title">IC Memo <span style="font-family:var(--ck-mono);'
