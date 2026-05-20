@@ -135,6 +135,21 @@ def _qa_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _documents_chart(items) -> str:
+    """Summary chart — document-room sections by completeness (weakest surfaced)."""
+    def _tone(d):
+        if d.completeness_pct >= 0.95: return "positive"
+        if d.completeness_pct >= 0.80: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda d: d.completeness_pct)
+    rows = [ck_bar_row(f"{d.section} ({d.documents_uploaded}/{d.total_expected})",
+            f"{d.completeness_pct * 100:.1f}%", d.completeness_pct * 100.0, tone=_tone(d)) for d in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = section completeness % (weakest first) '
+            '· tone = coverage band</div></div>')
+
+
 def _documents_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
@@ -233,6 +248,7 @@ def render_vdr_tracker(params: dict = None) -> str:
     ws_chart = _workstreams_chart(r.workstreams)
     qa_tbl = _qa_table(r.qa_log)
     doc_tbl = _documents_table(r.documents)
+    doc_chart = _documents_chart(r.documents)
     cp_tbl = _critical_path_table(r.critical_path)
     mat_tbl = _materiality_table(r.materiality)
 
@@ -256,7 +272,7 @@ def render_vdr_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Workstream Completion Summary</div>{ws_chart}{ws_tbl}</div>
   <div style="{cell}"><div style="{h3}">Critical-Path Items to Close</div>{cp_tbl}</div>
   <div style="{cell}"><div style="{h3}">Materiality Findings / SPA Exposure</div>{mat_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Document Room — Section Coverage ({total_docs_up:,} / {total_docs_exp:,} · {doc_complete_pct:.1f}%)</div>{doc_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Document Room — Section Coverage ({total_docs_up:,} / {total_docs_exp:,} · {doc_complete_pct:.1f}%)</div>{doc_chart}{doc_tbl}</div>
   <div style="{cell}"><div style="{h3}">Full Diligence Request List ({r.total_requests} items)</div>{req_tbl}</div>
   <div style="{cell}"><div style="{h3}">Management Q&A Log</div>{qa_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
