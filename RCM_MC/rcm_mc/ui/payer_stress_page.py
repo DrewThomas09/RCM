@@ -121,10 +121,23 @@ gap:14px;}}
 # Visualisations
 # ────────────────────────────────────────────────────────────────────
 
+# Editorial categorical sequence — distinguishable but on-palette
+# (no electric blue / purple / hot-pink on parchment). Ordered for
+# maximum separation since donut segments are sorted by share desc,
+# so the largest slices get the most distinct hues first.
 _DONUT_COLORS = [
-    "var(--sc-navy)", "#2563eb", "#0891b2", "#10B981",
-    "#8b5cf6", "#ec4899", "#F59E0B", "#ef4444",
-    "#64748b", "#334155", "#475569", "#71717a",
+    "#0b2341",  # navy
+    "#1F7A75",  # teal
+    "#b8732a",  # amber
+    "#155752",  # teal-deep
+    "#b5321e",  # red
+    "#1d3c69",  # navy_3
+    "#7a8699",  # muted slate
+    "#a98545",  # ochre
+    "#5c8a84",  # dusty teal
+    "#8a8270",  # taupe
+    "#465366",  # slate-ink
+    "#c08552",  # light amber
 ]
 
 
