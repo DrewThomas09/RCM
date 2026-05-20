@@ -2,7 +2,36 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+
+
+def _funds_chart(items) -> str:
+    """Lead chart for the fund table — funds ranked by DPI (cash actually
+    returned to LPs per dollar called) so realized liquidity reads before
+    the full performance grid. Bar width = DPI relative to the strongest
+    fund; value = DPI; tone marks the table's tiers (>=1.0x green ·
+    >=0.5x teal · below amber). Full fund grid stays directly below.
+    """
+    hi = max((f.dpi for f in items), default=1.0) or 1.0
+    ranked = sorted(items, key=lambda f: f.dpi, reverse=True)
+    rows = []
+    for f in ranked:
+        tone = "positive" if f.dpi >= 1.0 else ("teal" if f.dpi >= 0.5 else "warning")
+        rows.append(ck_bar_row(
+            f.fund_name,
+            f"{f.dpi:.2f}x",
+            f.dpi / hi * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = DPI relative to strongest fund · value = DPI (cash returned '
+        'per dollar called) · tone = tier (green &ge;1.0x · teal &ge;0.5x · amber below)</div>'
+        '</div>'
+    )
 
 
 def _quartile_color(q: int) -> str:
@@ -185,6 +214,7 @@ def render_dpi_tracker(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    f_chart = _funds_chart(r.funds)
     f_tbl = _funds_table(r.funds)
     d_tbl = _distributions_table(r.distributions)
     s_tbl = _sectors_table(r.sectors)
@@ -209,7 +239,7 @@ def render_dpi_tracker(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Fund Vintage Performance — DPI, RVPI, TVPI, Benchmark Gap</div>{f_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Fund Vintage Performance — DPI, RVPI, TVPI, Benchmark Gap</div>{f_chart}{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">Exit Drought — Market Metrics</div>{dr_tbl}</div>
   <div style="{cell}"><div style="{h3}">Recent Distributions — Last 4 Quarters</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Path to Exit — Active Portfolio</div>{p_tbl}</div>
