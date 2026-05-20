@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
 
 
 def _trend_color(t: str) -> str:
@@ -11,6 +11,37 @@ def _trend_color(t: str) -> str:
         "stable": P["accent"],
         "compressing": P["warning"],
     }.get(t, P["text_dim"])
+
+
+def _multiples_chart(items) -> str:
+    """Lead chart for the sector-multiples table — sectors ranked by
+    median EV/EBITDA so the richest comps surface first. Bar width =
+    multiple relative to the highest sector in the set; value = the
+    multiple; tone marks the table's trend (expanding green · stable
+    teal · compressing amber). Full comps grid stays directly below.
+    """
+    tone_for = {"expanding": "positive", "stable": "teal",
+                "compressing": "warning"}
+    hi = max((s.median_ev_ebitda_x for s in items), default=1.0) or 1.0
+    ranked = sorted(items, key=lambda s: s.median_ev_ebitda_x, reverse=True)
+    rows = []
+    for s in ranked:
+        rows.append(ck_bar_row(
+            s.sector,
+            f"{s.median_ev_ebitda_x:.1f}x",
+            s.median_ev_ebitda_x / hi * 100.0,
+            tone=tone_for.get(s.trend, "teal"),
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = median EV/EBITDA (relative to richest sector) · value = '
+        'multiple · tone = multiple trend (green expanding · teal stable '
+        '· amber compressing)</div>'
+        '</div>'
+    )
 
 
 def _deals_table(items) -> str:
@@ -183,6 +214,7 @@ def render_peer_transactions(params: dict = None) -> str:
     )
 
     d_tbl = _deals_table(r.deals)
+    s_chart = _multiples_chart(r.sector_multiples)
     s_tbl = _multiples_table(r.sector_multiples)
     t_tbl = _types_table(r.deal_types)
     b_tbl = _buyers_table(r.buyers)
@@ -208,7 +240,7 @@ def render_peer_transactions(params: dict = None) -> str:
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Recent Comparable Transactions</div>{d_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Sector Multiples — 2022-2025 Aggregated</div>{s_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Sector Multiples — 2022-2025 Aggregated</div>{s_chart}{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Deal Type Breakdown</div>{t_tbl}</div>
   <div style="{cell}"><div style="{h3}">Buyer Category Analysis</div>{b_tbl}</div>
   <div style="{cell}"><div style="{h3}">Quarterly Market Trends</div>{tr_tbl}</div>

@@ -2,7 +2,38 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
+
+
+def _roles_chart(items) -> str:
+    """Lead chart for the role-turnover table — roles ranked by annual
+    turnover so the worst retention problems surface first. Bar width =
+    turnover rate; value = signed gap vs the industry benchmark; tone
+    marks severity (>=35% red · >=25% amber · >=15% teal · below green),
+    matching the table's coloring. Full roster stays directly below.
+    """
+    ranked = sorted(items, key=lambda r: r.annual_turnover_pct, reverse=True)
+    rows = []
+    for r in ranked:
+        t = r.annual_turnover_pct
+        tone = ("negative" if t >= 0.35 else "warning" if t >= 0.25
+                else "teal" if t >= 0.15 else "positive")
+        gap = (r.annual_turnover_pct - r.industry_benchmark_pct) * 100.0
+        rows.append(ck_bar_row(
+            r.role,
+            f"{gap:+.1f}pp",
+            r.annual_turnover_pct * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = annual turnover rate · value = gap vs industry benchmark · '
+        'tone = severity (red &ge;35% · amber &ge;25% · teal &ge;15% · green below)</div>'
+        '</div>'
+    )
 
 
 def _roles_table(items) -> str:
@@ -176,6 +207,7 @@ def render_workforce_retention(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    r_chart = _roles_chart(r.roles)
     r_tbl = _roles_table(r.roles)
     d_tbl = _deals_table(r.deals)
     p_tbl = _programs_table(r.programs)
@@ -198,7 +230,7 @@ def render_workforce_retention(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Turnover by Role (portfolio aggregate)</div>{r_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Turnover by Role (portfolio aggregate)</div>{r_chart}{r_tbl}</div>
   <div style="{cell}"><div style="{h3}">Deal-Level Turnover & Engagement</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Contract Labor / Agency Dependency</div>{cl_tbl}</div>
   <div style="{cell}"><div style="{h3}">Retention Programs</div>{p_tbl}</div>
