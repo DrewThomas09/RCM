@@ -237,7 +237,7 @@ def _sparkline(
     grey for flat."""
     if not values or len(values) < 2:
         return (
-            f'<span style="font-size:10px;color:#64748b;">'
+            f'<span style="font-size:10px;color:#7a8699;">'
             f'n/a</span>'
         )
     v_min = min(values)
@@ -254,11 +254,11 @@ def _sparkline(
         pts.append(f"{x:.1f},{y:.1f}")
     delta = values[-1] - values[0]
     if abs(delta) < abs(v_max) * 0.02:
-        color = "#94a3b8"                 # flat
+        color = "#7a8699"                 # flat
     elif (delta > 0) == higher_is_better:
-        color = "#10B981"                 # improving
+        color = "#0a8a5f"                 # improving
     else:
-        color = "#EF4444"                 # deteriorating
+        color = "#b5321e"                 # deteriorating
     path_d = "M " + " L ".join(pts)
     # Latest-value marker dot
     last_x, last_y = pts[-1].split(",")
@@ -319,32 +319,32 @@ def _box_plot(
     whisker = (
         f'<line x1="{x(lo):.1f}" y1="{mid_y:.1f}" '
         f'x2="{x(hi):.1f}" y2="{mid_y:.1f}" '
-        f'stroke="#475569" stroke-width="1"/>'
+        f'stroke="#7a8699" stroke-width="1"/>'
     )
     # Box
     box = (
         f'<rect x="{x(p25):.1f}" y="{box_top:.1f}" '
         f'width="{max(2, x(p75) - x(p25)):.1f}" '
-        f'height="{box_h:.1f}" fill="#334155" '
-        f'stroke="#64748b" stroke-width="0.5"/>'
+        f'height="{box_h:.1f}" fill="#c9d2e0" '
+        f'stroke="#1d3c69" stroke-width="0.5"/>'
     )
     # Median tick
     med_tick = (
         f'<line x1="{x(median):.1f}" y1="{box_top:.1f}" '
         f'x2="{x(median):.1f}" '
         f'y2="{box_top + box_h:.1f}" '
-        f'stroke="#f1f5f9" stroke-width="1.5"/>'
+        f'stroke="#0b2341" stroke-width="1.5"/>'
     )
     # Target marker (diamond)
     if target_value is not None:
         tx = x(target_value)
         # Color: green if target better than median per polarity
         if target_value > p75:
-            color = "#10B981" if higher_is_better else "#EF4444"
+            color = "#0a8a5f" if higher_is_better else "#b5321e"
         elif target_value < p25:
-            color = "#EF4444" if higher_is_better else "#10B981"
+            color = "#b5321e" if higher_is_better else "#0a8a5f"
         else:
-            color = "#F59E0B"
+            color = "#b8732a"
         target_mark = (
             f'<polygon points="'
             f'{tx:.1f},{mid_y - 7} '
