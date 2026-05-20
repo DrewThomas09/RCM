@@ -2,8 +2,45 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title
 from rcm_mc.ui.chartis._helpers import render_page_explainer
+
+
+def _compact_count(n: int) -> str:
+    if n >= 1_000_000:
+        return f"{n / 1_000_000:.1f}M"
+    if n >= 1_000:
+        return f"{n / 1_000:.0f}k"
+    return f"{n:,}"
+
+
+def _datasets_chart(items) -> str:
+    """Lead chart for the dataset catalog — datasets ranked by record
+    count so a partner sees which CMS sources carry the corpus before
+    reading the catalog grid. Bar width = share of total records; value
+    = compact record count; tone marks ingestion status (current teal ·
+    otherwise amber) so a stale source stands out at a glance.
+    """
+    total = sum(d.record_count for d in items) or 1
+    ranked = sorted(items, key=lambda d: d.record_count, reverse=True)
+    rows = []
+    for d in ranked:
+        tone = "teal" if d.ingestion_status == "current" else "warning"
+        rows.append(ck_bar_row(
+            d.dataset_name,
+            _compact_count(d.record_count),
+            d.record_count / total * 100.0,
+            tone=tone,
+        ))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);'
+        'margin-top:6px;font-family:JetBrains Mono,monospace">'
+        'Bar = share of total records · value = record count · '
+        'tone = ingestion status (teal current · amber stale)</div>'
+        '</div>'
+    )
 
 
 def _datasets_table(items) -> str:
@@ -166,6 +203,7 @@ def render_cms_data_browser(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    d_chart = _datasets_chart(r.datasets)
     d_tbl = _datasets_table(r.datasets)
     f_tbl = _fee_schedule_table(r.fee_schedule_sample)
     drg_tbl = _drg_table(r.drg_sample)
@@ -189,7 +227,7 @@ def render_cms_data_browser(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Dataset Catalog</div>{d_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Dataset Catalog</div>{d_chart}{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Medicare PFS — Fee Schedule Sample (2025)</div>{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">MS-DRG / IPPS Base Rate Sample (FY2025)</div>{drg_tbl}</div>
   <div style="{cell}"><div style="{h3}">HCRIS Cost Reports — Provider Type Aggregates</div>{h_tbl}</div>
