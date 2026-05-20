@@ -468,7 +468,6 @@ def render_red_flags(
     )
     body = (
         page_title
-        + rf_explainer
         + explainer
         + _header_links(deal_id)
         + _severity_banner(review)

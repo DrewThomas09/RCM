@@ -433,7 +433,6 @@ def render_archetype(
     )
     body = (
         page_title
-        + arch_explainer
         + explainer
         + header
         + kpi_strip

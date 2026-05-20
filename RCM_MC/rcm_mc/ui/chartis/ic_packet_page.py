@@ -603,7 +603,6 @@ def render_ic_packet(
     )
     body = (
         page_title
-        + ic_explainer
         + explainer
         + header
         + banner

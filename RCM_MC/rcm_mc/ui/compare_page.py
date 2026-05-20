@@ -102,7 +102,6 @@ def _landing_compare() -> str:
     )
     body = (
         title_block
-        + explainer_html
         + kpi_strip
         + f'<form method="GET" action="/diligence/compare" '
         f'style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;'

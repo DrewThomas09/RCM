@@ -738,7 +738,6 @@ def render_partner_review(
     )
     body = (
         page_title
-        + pr_explainer
         + explainer
         + header_links
         + banner

@@ -329,7 +329,6 @@ def render_white_space(
     )
     body = (
         page_title
-        + ws_explainer
         + explainer
         + header
         + kpi_strip
