@@ -2,7 +2,26 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+
+def _msas_chart(items) -> str:
+    """Lead chart for the MSA-concentration table — MSAs ranked by HHI.
+    Bar = CR3 top-3 share; value = HHI; tone marks market structure
+    (highly concentrated red, moderately amber, fragmented green)."""
+    def _tone(struct):
+        s = (struct or "").lower()
+        if "highly" in s: return "negative"
+        if "moderately" in s: return "warning"
+        if "fragmented" in s or "competitive" in s: return "positive"
+        return "teal"
+    rows = []
+    for m in sorted(items, key=lambda m: m.hhi, reverse=True):
+        rows.append(ck_bar_row(m.msa, f"{m.hhi:,.0f}", m.cr3_pct * 100.0, tone=_tone(m.market_structure)))
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = CR3 top-3 share \u00b7 value = HHI '
+            '\u00b7 tone = market structure</div></div>')
+
 
 
 def _msas_table(items) -> str:
@@ -148,7 +167,14 @@ def render_msa_concentration(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    m_chart = _msas_chart(r.msa_details)
     m_tbl = _msas_table(r.msa_details)
+    value_anchor = ck_value_anchor(
+        "MSA Concentration",
+        f"{r.avg_hhi:,.0f} avg HHI",
+        delta=f"{r.total_msas_analyzed} MSAs \u00b7 {r.avg_cr3_pct * 100:.0f}% avg CR3 \u00b7 {r.highly_concentrated_count} highly concentrated",
+        tone="teal",
+    )
     r_tbl = _regimes_table(r.regimes)
     w_tbl = _whitespace_table(r.whitespace)
     s_tbl = _stress_table(r.stress_scenarios)
@@ -167,7 +193,8 @@ def render_msa_concentration(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">MSA-Level Concentration Analysis</div>{m_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">MSA-Level Concentration Analysis</div>{m_chart}{m_tbl}</div>
   <div style="{cell}"><div style="{h3}">Market Regime Classification &amp; Expected Returns</div>{r_tbl}</div>
   <div style="{cell}"><div style="{h3}">Whitespace Markets — Rollup Priority</div>{w_tbl}</div>
   <div style="{cell}"><div style="{h3}">Stress-Test Scenarios — FTC Action Likelihood</div>{s_tbl}</div>

@@ -2,7 +2,22 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+
+def _policies_chart(items) -> str:
+    """Lead chart for the R&W policy table — policies ranked by total
+    tower limit so the biggest coverage towers surface first. Bar =
+    share of total tower limit; value = tower ($M); tone teal."""
+    total = sum(p.total_tower_m for p in items) or 1.0
+    rows = []
+    for p in sorted(items, key=lambda p: p.total_tower_m, reverse=True):
+        rows.append(ck_bar_row(p.deal, f"${p.total_tower_m:,.0f}M",
+                               p.total_tower_m / total * 100.0, tone="teal"))
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of total tower limit '
+            '\u00b7 value = tower ($M)</div></div>')
+
 
 
 def _status_color(s: str) -> str:
@@ -187,7 +202,14 @@ def render_rw_insurance(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    p_chart = _policies_chart(r.policies)
     p_tbl = _policies_table(r.policies)
+    value_anchor = ck_value_anchor(
+        "R&W Insurance Tower",
+        f"${r.total_tower_limit_m:,.0f}M tower limit",
+        delta=f"{r.total_policies} policies \u00b7 ${r.total_premium_m:,.1f}M premium \u00b7 {r.weighted_avg_rate_pct * 100:.2f}% rate \u00b7 {r.open_claims} open claims",
+        tone="navy",
+    )
     c_tbl = _carriers_table(r.carriers)
     e_tbl = _exclusions_table(r.exclusions)
     cl_tbl = _claims_table(r.claims)
@@ -210,7 +232,8 @@ def render_rw_insurance(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Active R&W Policies</div>{p_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">Active R&W Policies</div>{p_chart}{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Carrier League Table & Concentration</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Claim Activity</div>{cl_tbl}</div>
   <div style="{cell}"><div style="{h3}">Policy Exclusions & Standalone Coverage</div>{e_tbl}</div>

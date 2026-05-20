@@ -2,7 +2,22 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+
+def _waves_chart(items) -> str:
+    """Lead chart for the LoE-wave table — waves ranked by reference
+    annual sales at loss of exclusivity. Bar = share of total reference
+    sales; value = reference sales ($B); tone teal."""
+    total = sum(w.reference_annual_sales_b for w in items) or 1.0
+    rows = []
+    for w in sorted(items, key=lambda w: w.reference_annual_sales_b, reverse=True):
+        rows.append(ck_bar_row(w.reference_drug, f"${w.reference_annual_sales_b:,.1f}B",
+                               w.reference_annual_sales_b / total * 100.0, tone="teal"))
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of total reference sales '
+            '\u00b7 value = reference annual sales ($B)</div></div>')
+
 
 _EXPLAINER_CSS = """<style>
 .ck-bio-explainer{font-family:var(--sc-serif,'Georgia',serif);
@@ -148,7 +163,15 @@ def render_biosimilars(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    w_chart = _waves_chart(r.waves)
     w_tbl = _waves_table(r.waves)
+    value_anchor = ck_value_anchor(
+        "Biosimilar LoE Opportunity",
+        f"${r.total_reference_sales_b:,.0f}B reference sales at LoE",
+        delta=f"{r.total_loe_waves} LoE waves \u00b7 {r.weighted_adoption_y3_pct * 100:.0f}% Y3 adoption",
+        opportunity=f"${r.total_annual_opportunity_mm:,.0f}M annual opportunity",
+        tone="positive",
+    )
     e_tbl = _economics_table(r.economics)
     s_tbl = _sites_table(r.sites)
     i_tbl = _interchangeable_table(r.interchangeable)
@@ -177,7 +200,8 @@ def render_biosimilars(params: dict = None) -> str:
     body = page_title + bio_explainer + f"""
 <div class="ck-page-wrap">
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">LoE Wave Schedule &amp; Adoption Curves</div>{w_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">LoE Wave Schedule &amp; Adoption Curves</div>{w_chart}{w_tbl}</div>
   <div style="{cell}"><div style="{h3}">Per-Drug Economics — Reference vs Biosimilar</div>{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Site-Level Adoption &amp; Margin Capture</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">FDA Interchangeable Designation Status</div>{i_tbl}</div>

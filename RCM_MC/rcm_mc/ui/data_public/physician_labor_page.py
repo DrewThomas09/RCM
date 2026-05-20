@@ -2,7 +2,24 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+
+def _specialties_chart(items) -> str:
+    """Lead chart for the specialty supply/demand table — specialties
+    ranked by projected 2030 shortage. Bar = shortage vs worst
+    specialty; value = shortage headcount; tone marks net annual change
+    (shrinking supply red, growing teal)."""
+    hi = max((s.projected_2030_shortage for s in items), default=1) or 1
+    rows = []
+    for s in sorted(items, key=lambda s: s.projected_2030_shortage, reverse=True):
+        tone = "negative" if s.net_annual_change < 0 else "teal"
+        rows.append(ck_bar_row(s.specialty, f"{s.projected_2030_shortage:,}",
+                               s.projected_2030_shortage / hi * 100.0, tone=tone))
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = projected 2030 shortage '
+            '\u00b7 value = shortage headcount \u00b7 tone = net annual supply change</div></div>')
+
 
 
 def _specialties_table(items) -> str:
@@ -142,7 +159,14 @@ def render_physician_labor(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    s_chart = _specialties_chart(r.specialties)
     s_tbl = _specialties_table(r.specialties)
+    value_anchor = ck_value_anchor(
+        "Physician Labor",
+        f"{r.specialties_in_shortage} specialties in shortage",
+        delta=f"{r.total_active_physicians:,} active physicians \u00b7 {r.blended_wage_inflation_pct * 100:.1f}% wage inflation \u00b7 median age {r.avg_median_age:.0f}",
+        tone="warning",
+    )
     w_tbl = _wages_table(r.wages)
     e_tbl = _extenders_table(r.extenders)
     b_tbl = _burnout_table(r.burnout)
@@ -162,7 +186,8 @@ def render_physician_labor(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Specialty-Level Supply/Demand &amp; 2030 Shortage Projection</div>{s_tbl}</div>
+  {value_anchor}
+  <div style="{cell}"><div style="{h3}">Specialty-Level Supply/Demand &amp; 2030 Shortage Projection</div>{s_chart}{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Wage Growth 2019-2024 &amp; Locum Premia</div>{w_tbl}</div>
   <div style="{cell}"><div style="{h3}">NP / PA / CRNA Extender Economics</div>{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Burnout &amp; Retention Index</div>{b_tbl}</div>
