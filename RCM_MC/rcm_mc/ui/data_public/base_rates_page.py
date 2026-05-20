@@ -7,7 +7,24 @@ by sector, size bucket, vintage year, commercial-payer-share bucket.
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+
+
+def _sector_chart(items):
+    """Summary chart — corpus base-rate MOIC by sector (tone by median IRR)."""
+    def _tone(s):
+        if s.median_irr >= 0.20: return "positive"
+        if s.median_irr >= 0.15: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda s: s.median_moic, reverse=True)[:18]
+    mx = max((s.median_moic for s in top), default=0.0) or 1.0
+    rows = [ck_bar_row(f"{s.sector} ({s.deal_count} deals)",
+            f"{s.median_moic:.2f}x MOIC · {s.median_irr * 100:.0f}% IRR · {s.median_ev_ebitda:.1f}x entry",
+            s.median_moic / mx * 100.0, tone=_tone(s)) for s in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = median MOIC vs best sector '
+            '· value = MOIC + IRR + entry multiple · tone = median IRR</div></div>')
 
 _EXPLAINER_CSS = """<style>
 .ck-br-explainer{font-family:var(--sc-serif,'Georgia',serif);
@@ -247,6 +264,7 @@ def render_base_rates(params: dict = None) -> str:
     svg = _vintage_svg(r.vintage_rollups)
     pct_tbl = _percentile_table(r.percentile_rows)
     sec_tbl = _sector_table(r.sector_rollups)
+    sec_chart = _sector_chart(r.sector_rollups)
     size_tbl = _size_table(r.size_rollups)
     vin_tbl = _vintage_table(r.vintage_rollups)
     com_tbl = _comm_table(r.comm_rollups)
@@ -287,7 +305,7 @@ def render_base_rates(params: dict = None) -> str:
   </div>
   <div style="{cell}"><div style="{h3}">Vintage Trend — Median EV/EBITDA by Year</div>{svg}</div>
   <div style="{cell}"><div style="{h3}">Percentile Distribution — All Metrics</div>{pct_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Sector Rollups — Top 40 by Deal Count</div>{sec_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Sector Rollups — Top 40 by Deal Count</div>{sec_chart}{sec_tbl}</div>
   <div style="{cell}"><div style="{h3}">Size Bucket Rollups</div>{size_tbl}</div>
   <div style="{cell}"><div style="{h3}">Vintage Year Rollups</div>{vin_tbl}</div>
   <div style="{cell}"><div style="{h3}">Commercial-Payer-Share Rollups</div>{com_tbl}</div>

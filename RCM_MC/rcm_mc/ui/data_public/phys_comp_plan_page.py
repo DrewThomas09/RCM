@@ -2,7 +2,24 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+
+
+def _benchmarks_chart(items):
+    """Summary chart — our median comp by specialty (tone by delta vs MGMA)."""
+    def _tone(b):
+        if b.delta_pct <= -0.03: return "positive"
+        if b.delta_pct <= 0.05: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda b: b.our_median_k, reverse=True)
+    mx = max((b.our_median_k for b in top), default=0.0) or 1.0
+    rows = [ck_bar_row(f"{b.specialty}",
+            f"${b.our_median_k:,.0f}k · {b.delta_pct * 100:+.0f}% vs MGMA",
+            b.our_median_k / mx * 100.0, tone=_tone(b)) for b in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = our median comp vs highest specialty '
+            '· value = our median ($k) + delta to MGMA · tone = vs market (green = below)</div></div>')
 
 
 def _models_table(models) -> str:
@@ -204,6 +221,7 @@ def render_phys_comp_plan(params: dict = None) -> str:
     quality_tbl = _quality_table(r.quality_pools)
     sims_tbl = _sims_table(r.simulations)
     bench_tbl = _benchmarks_table(r.benchmarks)
+    bench_chart = _benchmarks_chart(r.benchmarks)
 
     sectors = ["Primary Care", "Orthopedics", "Cardiology", "Dermatology", "Gastroenterology", "Physician Services"]
     sector_opts = "".join(f'<option value="{_html.escape(s)}"{" selected" if s == sector else ""}>{_html.escape(s)}</option>' for s in sectors)
@@ -235,7 +253,7 @@ def render_phys_comp_plan(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Plan Scenario Detail</div>{sims_tbl}</div>
   <div style="{cell}"><div style="{h3}">Per-Provider Compensation (Sample)</div>{providers_tbl}</div>
   <div style="{cell}"><div style="{h3}">Quality Bonus Pool Structure</div>{quality_tbl}</div>
-  <div style="{cell}"><div style="{h3}">MGMA Specialty Benchmarking</div>{bench_tbl}</div>
+  <div style="{cell}"><div style="{h3}">MGMA Specialty Benchmarking</div>{bench_chart}{bench_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Comp Plan Thesis:</strong> {r.total_physicians} physicians at ${r.practice_revenue_mm:,.1f}M revenue.
     Recommended plan: <strong style="color:{text}">{_html.escape(r.recommended_model)}</strong>.
