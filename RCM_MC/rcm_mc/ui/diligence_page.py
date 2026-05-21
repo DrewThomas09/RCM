@@ -9,7 +9,7 @@ import html
 from typing import Any, Dict, List
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    chartis_shell, ck_bar_row, ck_kpi_block, ck_next_section, ck_panel,
     ck_section_header,
 )
 from .models_page import _model_nav
@@ -41,10 +41,19 @@ def render_diligence_questions(deal_id: str, deal_name: str, questions: List[Dic
         cat = str(q.get("category", "Other"))
         by_category[cat] = by_category.get(cat, 0) + 1
 
+    _sorted_cats = sorted(by_category.items(), key=lambda x: -x[1])
     cat_badges = " ".join(
         f'<span class="cad-badge cad-badge-muted" style="margin:2px;">{html.escape(c)}: {n}</span>'
-        for c, n in sorted(by_category.items(), key=lambda x: -x[1])
+        for c, n in _sorted_cats
     )
+    # Distribution bars make the question mix scannable — which diligence
+    # areas dominate the auto-generated set — instead of a row of chips.
+    _cat_max = max((n for _, n in _sorted_cats), default=0) or 1
+    cat_bars = "".join(
+        ck_bar_row(c, str(n), n / _cat_max * 100.0)
+        for c, n in _sorted_cats
+    )
+    cat_body = (cat_bars + cat_badges) if cat_bars else cat_badges
 
     nav = _model_nav(deal_id, "questions")
     kpi_strip = (
@@ -86,7 +95,7 @@ def render_diligence_questions(deal_id: str, deal_name: str, questions: List[Dic
     body = (
         f"{nav}"
         + kpi_strip
-        + ck_panel(cat_badges, title="Categories")
+        + ck_panel(cat_body, title="Categories")
         + ck_panel(questions_table, title="Diligence Questions")
         + ck_panel(how_to_use, title="How to Use This")
         + ck_panel(actions, title="Next steps")
