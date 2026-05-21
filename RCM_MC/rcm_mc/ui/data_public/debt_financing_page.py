@@ -2,7 +2,22 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_scatter
+
+
+def _covenants_scatter(items):
+    """Quadrant — leverage at close vs covenant headroom, so high-leverage
+    thin-headroom facilities (lower-right) read as the breach risk."""
+    pts, ys = [], []
+    for c in items:
+        y = c.headroom_pct * 100.0
+        tn = ('negative' if c.headroom_pct < 0.10 else 'warning' if c.headroom_pct < 0.20 else 'teal')
+        pts.append((c.leverage_at_close, y, c.deal, tn)); ys.append(y)
+    return ck_scatter(
+        pts, x_label='Leverage at close (x)', y_label='Covenant headroom %',
+        y_ref=10.0,
+        caption='Each dot = a facility · lower-right = high leverage + thin headroom (breach risk) · 10% line = tight',
+    )
 
 
 def _facilities_chart(items) -> str:
@@ -232,6 +247,7 @@ def render_debt_financing(params: dict = None) -> str:
     s_tbl = _syndication_table(r.syndications)
     p_tbl = _pricing_table(r.pricing)
     c_tbl = _covenants_table(r.covenants)
+    c_scatter = _covenants_scatter(r.covenants)
     fl_tbl = _flex_table(r.flex)
     l_tbl = _lenders_table(r.lenders)
 
@@ -261,7 +277,7 @@ def render_debt_financing(params: dict = None) -> str:
   {value_anchor}
   <div style="{cell}"><div style="{h3}">Syndication Status — Active Book</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Facility Detail — Tranches, Pricing, Tenor</div>{f_chart}{f_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Covenant Package — Leverage, Headroom, Baskets</div>{c_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Covenant Package — Leverage, Headroom, Baskets</div>{c_scatter}{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Flex Terms — Pricing Flex & Structure Flex</div>{fl_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sector Clearing Benchmarks — SOFR+ Spread, Leverage, Interest Coverage</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Lender Book — Relationships & Concentration</div>{l_tbl}</div>
