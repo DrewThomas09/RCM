@@ -6,7 +6,24 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+
+
+def _roi_chart(items):
+    """Summary chart — quality initiatives by EV impact (tone by payback)."""
+    def _tone(r):
+        if r.payback_months <= 12: return "positive"
+        if r.payback_months <= 24: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda r: r.ev_impact_mm, reverse=True)
+    total = sum(r.ev_impact_mm for r in top) or 1.0
+    rows = [ck_bar_row(f"{r.initiative}",
+            f"${r.ev_impact_mm:,.1f}M EV · ${r.annual_benefit_mm:,.1f}M/yr · {r.payback_months:.0f}mo payback",
+            r.ev_impact_mm / total * 100.0, tone=_tone(r)) for r in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of EV impact from quality initiatives '
+            '· value = EV impact ($M) + annual benefit + payback · tone = payback period</div></div>')
 
 _EXPLAINER_CSS = """
 .ck-co-explainer{font-size:13px;line-height:1.6;color:var(--ck-text-dim);
@@ -251,6 +268,7 @@ def render_clinical_outcomes(params: dict = None) -> str:
     comp_tbl = _complications_table(r.complications)
     vbc_tbl = _vbc_table(r.vbc_contracts)
     roi_tbl = _roi_table(r.quality_roi)
+    roi_chart = _roi_chart(r.quality_roi)
 
     form = f"""
 <form method="GET" action="/clinical-outcomes" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
@@ -326,7 +344,7 @@ def render_clinical_outcomes(params: dict = None) -> str:
 
   <div style="{cell}">
     <div style="{h3}">Quality Initiative ROI</div>
-    {roi_tbl}
+    {roi_chart}{roi_tbl}
   </div>
 
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};

@@ -2,7 +2,24 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_bar_row
+
+
+def _valuations_chart(items):
+    """Summary chart — target EV by deal (tone by target MOIC)."""
+    def _tone(v):
+        if v.target_moic >= 3.0: return "positive"
+        if v.target_moic >= 2.0: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda v: v.target_ev_m, reverse=True)
+    total = sum(v.target_ev_m for v in top) or 1.0
+    rows = [ck_bar_row(f"{v.deal}",
+            f"${v.target_ev_m:,.0f}M EV · {v.target_moic:.2f}x · {v.ask_multiple:.1f}x ask",
+            v.target_ev_m / total * 100.0, tone=_tone(v)) for v in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of target EV '
+            '· value = target EV ($M) + MOIC + ask multiple · tone = target MOIC</div></div>')
 
 
 def _stage_color(s: str) -> str:
@@ -210,6 +227,7 @@ def render_sellside_process(params: dict = None) -> str:
     e_tbl = _engagements_table(r.engagements)
     d_tbl = _diligence_table(r.diligence)
     v_tbl = _valuations_table(r.valuations)
+    v_chart = _valuations_chart(r.valuations)
     m_tbl = _milestones_table(r.milestones)
     po_tbl = _postures_table(r.postures)
 
@@ -237,7 +255,7 @@ def render_sellside_process(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Negotiation Postures — Critical Deals</div>{po_tbl}</div>
   <div style="{cell}"><div style="{h3}">Buyer Engagements by Process</div>{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Diligence Preparation Checklist</div>{d_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Valuation Analytics</div>{v_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Valuation Analytics</div>{v_chart}{v_tbl}</div>
   <div style="{cell}"><div style="{h3}">Process Milestones</div>{m_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Sell-Side Program Summary:</strong> {r.total_active_processes} active processes representing ${r.total_target_ev_m:,.1f}M target EV at {r.weighted_target_moic:.2f}x weighted MOIC; {r.processes_closing_12mo} targeted for close within 12 months.
