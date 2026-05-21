@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
 
 
 def _plans_chart(items) -> str:
@@ -268,11 +268,19 @@ def render_ma_contracts(params: dict = None) -> str:
         meta=f"{r.total_enrollment:,} MA lives at ${r.blended_bid_pmpm:,.0f} bid PMPM (benchmark ${r.blended_benchmark_pmpm:,.0f}) · ${r.annual_revenue_mm:,.0f}M revenue / ${r.annual_margin_mm:,.0f}M margin at {r.margin_pct * 100:.1f}% · {r.weighted_star_rating:.2f}★ Stars · {r.blended_mlr * 100:.1f}% MLR · ${r.v28_net_impact_mm:+,.1f}M V28 headwind offset by ${raf_opportunity:,.1f}M RAF + ${star_opportunity:,.1f}M Star bonus opportunity",
     )
 
+    value_anchor = ck_value_anchor(
+        "MA Contract Economics",
+        f"{r.weighted_star_rating:.2f}★ weighted Stars",
+        delta=f"{r.total_enrollment:,} enrollment · ${r.blended_bid_pmpm:,.0f} bid vs ${r.blended_benchmark_pmpm:,.0f} benchmark PMPM",
+        tone="positive" if r.weighted_star_rating >= 4.0 else "teal" if r.weighted_star_rating >= 3.5 else "warning",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Revenue vs Margin by MA Plan</div>{svg}</div>
   <div style="{cell}"><div style="{h3}">MA Plan Portfolio — Benchmark, Bid, Star, MLR, Margin</div>{plans_chart}{plans_tbl}</div>
   <div style="{cell}"><div style="{h3}">RAF Optimization — HCC Capture Opportunities</div>{raf_tbl}</div>
