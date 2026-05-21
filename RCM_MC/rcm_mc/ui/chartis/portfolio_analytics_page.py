@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Optional
 from .._chartis_kit import (
     P,
     chartis_shell,
+    ck_bar_row,
     ck_kpi_block,
     ck_page_title,
     ck_section_header,
@@ -242,6 +243,29 @@ def _vintage_table(cohorts: List[Dict[str, Any]]) -> str:
         f'</tr></thead>'
         f'<tbody>{"".join(rows)}</tbody></table></div>'
     )
+
+
+def _deal_type_moic_bars(by_type: Dict[str, Dict[str, Any]]) -> str:
+    """Median MOIC by deal type — which archetypes actually returned.
+    The table carries MOIC alongside count/loss/HR; this lead bar ranks
+    types by realized median MOIC so the best-performing archetype reads
+    first. Tone matches the table's MOIC coloring (≥2.5x positive,
+    ≥1.5x warning, else negative)."""
+    rows = [
+        (t, float(s.get("median_moic") or 0.0))
+        for t, s in by_type.items()
+        if s.get("median_moic") is not None
+    ]
+    rows = [(t, m) for t, m in rows if m > 0]
+    if len(rows) < 2:
+        return ""
+    rows.sort(key=lambda r: -r[1])
+    mx = max(m for _, m in rows)
+    out = ""
+    for t, m in rows:
+        tone = "positive" if m >= 2.5 else "warning" if m >= 1.5 else "negative"
+        out += ck_bar_row(t, f"{m:.2f}x", m / mx * 100.0, tone=tone)
+    return '<div style="margin-bottom:12px;">' + out + '</div>'
 
 
 def _deal_type_table(by_type: Dict[str, Dict[str, Any]]) -> str:
@@ -571,7 +595,7 @@ def render_portfolio_analytics(
 
     type_panel = small_panel(
         f"Deals by type ({len(dt)} categories)",
-        _deal_type_table(dt), code="TYP",
+        _deal_type_moic_bars(dt) + _deal_type_table(dt), code="TYP",
     )
 
     outlier_panel = small_panel(
