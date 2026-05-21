@@ -3690,15 +3690,18 @@ _CSS_INLINE_FALLBACK = """
   /* Workspace-mode chip — distinct accent per audience so the active
      interface reads at a glance. Partner = teal (fund ops); Consulting
      = amber (Chartis commercial-diligence engagements). */
+  /* Editorial mode label — flat, ruled, no translucent fill (which read
+     as a modern SaaS pill). A thin accent underline carries the
+     workspace color (teal = partner / amber = consulting) the way the
+     nav active-state does, keeping the topbar typographic. */
   .ck-mode-chip { font-family:var(--sc-mono); font-size:10px; font-weight:700;
-    letter-spacing:0.08em; text-transform:uppercase; text-decoration:none;
-    padding:4px 10px; border-radius:2px; white-space:nowrap;
-    border:1px solid var(--sc-teal); color:var(--sc-on-navy);
-    background:rgba(31,122,117,0.22); transition:background 0.15s; }
-  .ck-mode-chip:hover { background:rgba(31,122,117,0.40); }
-  .ck-mode-chip[data-mode="consulting"] { border-color:#d9a23a;
-    background:rgba(184,115,42,0.30); color:#f5e3c4; }
-  .ck-mode-chip[data-mode="consulting"]:hover { background:rgba(184,115,42,0.48); }
+    letter-spacing:0.1em; text-transform:uppercase; text-decoration:none;
+    padding:4px 2px 3px; border-radius:0; white-space:nowrap;
+    border:0; border-bottom:2px solid var(--sc-teal); color:var(--sc-on-navy-dim);
+    background:transparent; transition:color 0.15s, border-color 0.15s; }
+  .ck-mode-chip:hover { color:var(--sc-on-navy); }
+  .ck-mode-chip[data-mode="consulting"] { border-bottom-color:#d9a23a; }
+  .ck-mode-chip[data-mode="consulting"]:hover { color:#f5e3c4; }
   @media (max-width:900px){ .ck-mode-chip { display:none; } }
   .ck-search { border:1px solid var(--sc-navy-3); padding:7px 12px; font-size:12px; min-width:240px; border-radius:2px; background:var(--sc-navy-2); font-family:var(--sc-sans); color:var(--sc-on-navy); letter-spacing:0.02em; }
   .ck-search::placeholder { color:var(--sc-on-navy-faint); }
@@ -3760,9 +3763,9 @@ _CSS_INLINE_FALLBACK = """
    * landing on a section index first. */
   .ck-subnav { background:var(--sc-bone,#f2ede3); border-bottom:1px solid var(--sc-rule); position:sticky; top:60px; z-index:40; }
   .ck-subnav-inner { display:flex; gap:var(--sc-s-5); align-items:center; padding:10px var(--sc-s-7); max-width:min(1920px, 95vw); margin:0 auto; overflow-x:auto; }
-  .ck-subnav-link { font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.08em; color:var(--sc-text-dim); text-decoration:none; padding:5px 10px; border-radius:2px; white-space:nowrap; transition:color 0.15s, background 0.15s; }
-  .ck-subnav-link:hover { color:var(--sc-teal-ink); background:#fff; }
-  .ck-subnav-link.active { color:var(--sc-navy); background:#fff; box-shadow:inset 0 -2px 0 var(--sc-teal); }
+  .ck-subnav-link { font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--sc-text-dim); text-decoration:none; padding:6px 1px; border-bottom:2px solid transparent; border-radius:0; white-space:nowrap; transition:color 0.15s, border-color 0.15s; }
+  .ck-subnav-link:hover { color:var(--sc-teal-ink); border-bottom-color:var(--sc-rule-2,#bfb6a2); }
+  .ck-subnav-link.active { color:var(--sc-navy); border-bottom-color:var(--sc-teal); }
   .ck-breadcrumbs { display:flex; gap:8px; padding:14px var(--sc-s-7); max-width:min(1920px, 95vw); margin:0 auto; font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); letter-spacing:0.08em; text-transform:uppercase; border-bottom:1px solid var(--sc-rule); }
   .ck-breadcrumbs a { color:var(--sc-text-dim); text-decoration:none; }
   .ck-breadcrumbs a:hover { color:var(--sc-teal-ink); }
