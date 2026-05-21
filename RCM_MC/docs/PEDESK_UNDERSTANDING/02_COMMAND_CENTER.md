@@ -75,7 +75,7 @@ Cells 5–8 are explicit Phase-2 placeholders (the per-deal aggregates aren't in
 Eight **static** cards (no data, no queries) linking to: `/analysis`, `/portfolio/heatmap`, `/diligence/ic-packet`, `/diligence/hcris-xray`, `/diligence/bridge-audit`, `/payer-intelligence`, `/ops`, `/module-index`.
 
 ### 5. Morning brief (`render_morning_brief`) — 4 glance panels
-- **FNL (Pipeline funnel)** — bar per stage from `rollup["stage_funnel"]`. ⚠ The panel's stage list (`sourcing/screened/diligence/ic`) doesn't match the canonical `DEAL_STAGES` (`sourced/ioi/loi/spa/closed/hold/exit`), so `sourced`/`spa` are filtered out — only ioi/loi/closed/hold/exit ever appear here.
+- **FNL (Pipeline funnel)** — bar per stage from `rollup["stage_funnel"]`. **Fixed (PR #497):** the panel's stage list was stale (`sourcing/screened/diligence/ic`) so `sourced`/`spa` deals were dropped; it now imports the canonical `DEAL_STAGES`.
 - **CVN (Covenant status)** — Tripped / Tight / Safe bars; `safe = deal_count − trips − tight`.
 - **SIG (Signal scan)** — Concerning vs Clean; `concerning = rollup["concerning_deals"]`.
 - **DLS (Recent deals)** — up to 6 deals by `created_at` desc; name → `/deal/<id>`, stage, MOIC.
@@ -100,10 +100,9 @@ One row per deal (stage-filtered by `?stage=`). Columns and sources:
 | MOIC | `moic` | `x.xx` |
 | IRR | `irr` | `%` |
 | Covenant | `covenant_status` | SAFE/WATCH/TRIP pill |
-| Drift | `drift_pct` | ⚠ **always blank** — no such column exists |
-| Headline | `headline` | ⚠ **always blank** — no such column exists |
 
-The Drift and Headline columns are dead in the live render (the snapshot schema has neither field).
+
+> **Fixed (PR #498):** the table previously also had **Drift** and **Headline** columns that always rendered blank (the snapshot schema has neither field). They've been dropped — the table is now these 6 live columns.
 
 ### 9. Focused-deal bar (`render_focused_deal_bar`)
 Hidden entirely unless `?deal=<id>`. Shows the focused deal's stage / EV / MOIC / IRR (from `focused_row`), export buttons (`/api/analysis/<id>/export?format=html|xlsx|json`), and prev/next switcher across held deals.
@@ -123,7 +122,7 @@ Requires a focused deal's packet. **Correctly uses dataclass attribute access** 
 
 ### 12. Initiative tracker (`render_initiative_tracker`)
 Two modes:
-- **Focused deal:** per-initiative variance from `initiative_variance_report(store, deal_id)` (cumulative actual vs library-plan EBITDA, `variance_pct`). ⚠ **Currently degenerate** — the renderer reads columns `actual_cumulative_M`/`plan_cumulative_M`/`initiative_name` but the report emits `cumulative_actual`/`cumulative_plan`/`initiative_id`, so rows show zeroed actuals/variance and blank names. **Worth fixing** (align the column names).
+- **Focused deal:** per-initiative variance from `initiative_variance_report(store, deal_id)` (cumulative actual vs library-plan EBITDA, `variance_pct`). **Fixed (PR #497):** the renderer previously read `actual_cumulative_M`/`plan_cumulative_M`/`initiative_name` (columns the report never emits), so rows showed zeroed actuals + blank names; it now reads the real `cumulative_actual`/`cumulative_plan`/`initiative_id` columns and resolves names from the initiatives library.
 - **No focused deal (cross-portfolio):** `cross_portfolio_initiative_variance(store)` over held deals, trailing 4 quarters — per initiative: `n_deals`, `mean_variance_pct`, `total_actual_M`, `is_playbook_gap` (mean ≤ −10% AND ≥2 deals). Sorted by |mean variance|, top 10. This mode works correctly.
 
 ### 13. Alerts (`render_alerts`)
@@ -140,14 +139,13 @@ Recent export manifest. **Primary:** `generated_exports` table (`list_exports`, 
 
 **Phase-2 placeholders (intentionally `—`):** KPI cells 5–8 (Avg EBITDA drag / DAR drag / Initiatives tracked / Avg days cash), the 7-quarter sparkline track.
 
-**Currently broken (renders `—`/blank due to a bug — candidates to fix):**
-1. **Metric catalog** RCM DRAG / COVENANTS / INITIATIVES columns — dataclass-vs-`Mapping` bug.
-2. **Deals table** Drift + Headline columns — no such snapshot fields.
-3. **Focused initiative tracker** rows — wrong column names read from the variance report.
-4. Morning-brief FNL — two canonical stages (`sourced`, `spa`) silently filtered out by a stale stage list.
-5. Metric catalog DPI/TVPI — keys never computed.
+**Fixed since the first pass** (found while documenting):
+- ✅ **Deals table** Drift + Headline columns dropped (PR #498) — no backing fields, can't be computed in budget.
+- ✅ **Focused initiative tracker** now reads the real `cumulative_actual`/`cumulative_plan`/`initiative_id` columns + resolves names (PR #497).
+- ✅ **Morning-brief FNL** now uses the canonical `DEAL_STAGES` so `sourced`/`spa` show (PR #497).
 
-> These were found while documenting; they don't crash anything (all guarded), but they mean parts of the Command Center show `—` where real numbers should appear. Fixing them is tracked separately from this documentation.
+**Still open — needs a wiring decision (renders `—`):**
+- **Metric catalog** RCM DRAG / COVENANTS / INITIATIVES columns + DPI/TVPI. These have two problems: (a) the helper treats the packet *dataclass* as a dict (`isinstance(packet, Mapping)`), and (b) more fundamentally, the catalog only receives `focused_packet` — but covenant + initiative data isn't on the packet (they live in the `covenant_metrics` table and need `initiative_variance_report(store, …)`), and DPI/TVPI are never computed. The dedicated blocks on the same page (EBITDA drag, covenant heatmap, initiative tracker) already show this data live. So the fix is a **decision**: either pass `store` into the catalog and wire it (costs queries against the 3-query budget), or simplify the catalog to the columns it can source. Documented, not yet decided.
 
 ---
 *Next: `03_DEAL_PAGES.md` — the per-deal surfaces, where the numbers DO come from a packet.*
