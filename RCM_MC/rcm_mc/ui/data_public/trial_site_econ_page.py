@@ -2,7 +2,23 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor, ck_scatter
+
+
+def _sites_scatter(items):
+    """Quadrant — annual revenue vs operating margin per site, so high-
+    revenue / high-margin sites (upper-right) and sub-scale ones separate."""
+    import statistics
+    pts, xs, ys = [], [], []
+    for s in items:
+        y = s.operating_margin_pct * 100.0
+        tn = ('positive' if s.operating_margin_pct >= 0.20 else 'teal' if s.operating_margin_pct >= 0.10 else 'warning')
+        pts.append((s.annual_revenue_mm, y, s.site_id, tn)); xs.append(s.annual_revenue_mm); ys.append(y)
+    return ck_scatter(
+        pts, x_label='Annual revenue ($M)', y_label='Operating margin %',
+        x_ref=(statistics.median(xs) if xs else None), y_ref=(statistics.median(ys) if ys else None),
+        caption='Each dot = a site · upper-right = high revenue + high margin · tone = operating margin',
+    )
 
 
 def _sites_chart(items) -> str:
@@ -178,6 +194,7 @@ def render_trial_site_econ(params: dict = None) -> str:
     )
 
     s_chart = _sites_chart(r.sites)
+    s_scatter = _sites_scatter(r.sites)
     s_tbl = _sites_table(r.sites)
     value_anchor = ck_value_anchor(
         "Trial Site Economics",
@@ -205,7 +222,7 @@ def render_trial_site_econ(params: dict = None) -> str:
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
-  <div style="{cell}"><div style="{h3}">Site Roster (Top 30 by Revenue)</div>{s_chart}{s_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Site Roster (Top 30 by Revenue)</div>{s_chart}{s_scatter}{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Therapeutic Area Rollup</div>{ta_chart}{ta_tbl}</div>
   <div style="{cell}"><div style="{h3}">Phase Economics — Per-Site Revenue &amp; Margin</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sponsor Relationship Matrix</div>{sp_tbl}</div>
