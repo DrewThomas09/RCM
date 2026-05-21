@@ -2,7 +2,22 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_scatter
+
+
+def _accounts_scatter(items):
+    """Quadrant — balance vs yield per account, so large high-yield (and
+    under-insured) cash positions stand out."""
+    import statistics
+    pts, xs = [], []
+    for a in items:
+        tn = ('positive' if a.fdic_insured_pct >= 0.99 else 'warning' if a.fdic_insured_pct >= 0.5 else 'negative')
+        pts.append((a.balance_m, a.yield_pct, a.bank, tn)); xs.append(a.balance_m)
+    return ck_scatter(
+        pts, x_label='Balance ($M)', y_label='Yield %',
+        x_ref=(statistics.median(xs) if xs else None),
+        caption='Each dot = an account · upper-right = large balance + high yield · tone = FDIC coverage',
+    )
 
 
 def _cash_chart(items) -> str:
@@ -226,6 +241,7 @@ def render_treasury_tracker(params: dict = None) -> str:
     w_tbl = _wc_table(r.working_capital)
     b_tbl = _burn_table(r.burn_rate)
     a_tbl = _accounts_table(r.accounts)
+    a_scatter = _accounts_scatter(r.accounts)
     h_tbl = _hedging_table(r.hedging)
     ic_tbl = _intercompany_table(r.intercompany)
 
@@ -249,7 +265,7 @@ def render_treasury_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Cash Position & Revolver Utilization</div>{c_chart}{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Working Capital Summary</div>{w_tbl}</div>
   <div style="{cell}"><div style="{h3}">Monthly Cash Burn / Free Cash Flow</div>{b_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Bank Accounts & Yield</div>{a_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Bank Accounts & Yield</div>{a_scatter}{a_tbl}</div>
   <div style="{cell}"><div style="{h3}">Hedging Positions (Interest Rate + FX)</div>{h_tbl}</div>
   <div style="{cell}"><div style="{h3}">Intercompany Balances</div>{ic_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
