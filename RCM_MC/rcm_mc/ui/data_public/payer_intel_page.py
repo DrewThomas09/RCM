@@ -167,7 +167,7 @@ def _regime_moic_bar(p25: float, p50: float, p75: float, width: int = 100) -> st
 
 
 def render_payer_intel() -> str:
-    from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_kpi_block
+    from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_kpi_block, ck_value_anchor
     from rcm_mc.ui.chartis._helpers import render_page_explainer
     from rcm_mc.data_public.payer_intelligence import compute_payer_intelligence
 
@@ -296,10 +296,17 @@ def render_payer_intel() -> str:
         source="data_public/payer_intelligence.py::compute_payer_intelligence.",
         page_key="payer-intel",
     )
+    value_anchor = ck_value_anchor(
+        "Payer Mix",
+        f"{profile.avg_commercial * 100:.1f}% commercial",
+        delta=f"{profile.avg_medicare * 100:.1f}% Medicare · {profile.avg_medicaid * 100:.1f}% Medicaid · commercial↔MOIC {comm_corr:+.2f}",
+        tone="positive" if comm_corr > 0.1 else "teal",
+    )
     body = (
         explainer
         + deeper_link
         + kpis
+        + value_anchor
         + ck_section_header("PAYER MIX", "corpus-average composition and return correlation")
         + f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">{mix_panel}{scatter_panel}</div>'
         + ck_section_header("PAYER REGIME ANALYSIS", "P25/P50/P75 MOIC by commercial % bucket")
