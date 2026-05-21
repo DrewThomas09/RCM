@@ -8,8 +8,23 @@ from __future__ import annotations
 import html
 import importlib
 import re
+import urllib.parse as _urlparse
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
+
+
+def _deal_name_cell(d: Dict[str, Any], maxlen: int) -> str:
+    """Corpus deal name, linked to its /library detail when source_id is
+    present (connectivity). /library is keyed by source_id (TEXT)."""
+    nm = html.escape((d.get("deal_name") or "")[:maxlen])
+    sid = d.get("source_id")
+    if sid:
+        return (
+            f'<a href="/library/{_urlparse.quote(str(sid))}" '
+            f'style="color:var(--ck-accent,#155752);text-decoration:none;">'
+            f'{nm}</a>'
+        )
+    return nm
 
 
 def _load_corpus() -> List[Dict[str, Any]]:
@@ -210,7 +225,7 @@ def render_gp_benchmarking(params: Dict[str, str]) -> str:
                 moic_col = P["positive"] if (moic or 0) >= 2.5 else (P["warning"] if (moic or 0) >= 2.0 else P["text"])
                 rows += (
                     f'<tr>'
-                    f'<td style="padding:4px 8px;font-size:11px">{html.escape(d.get("deal_name","")[:44])}</td>'
+                    f'<td style="padding:4px 8px;font-size:11px">{_deal_name_cell(d, 44)}</td>'
                     f'<td style="padding:4px 8px;font-size:10px;color:{P["text_dim"]}">{html.escape((d.get("sector") or "—")[:24])}</td>'
                     f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{d.get("year","—")}</td>'
                     f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{f"${d["ev_mm"]:,.0f}M" if d.get("ev_mm") else "—"}</td>'

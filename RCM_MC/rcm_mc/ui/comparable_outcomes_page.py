@@ -215,9 +215,21 @@ def _comparable_row(c: Dict[str, Any]) -> List[str]:
         f'{bar}'
         f'</div>'
     )
+    # Connectivity: link the comp through to its corpus-deal detail.
+    # /library is keyed by source_id (TEXT, e.g. "seed_001") — NOT the
+    # integer deal_id shown as the code below.
+    _sid = c.get("source_id")
+    _name_txt = _html.escape(c.get("deal_name") or "")
+    if _sid:
+        _name_inner = (
+            f'<a href="/library/{_urlparse.quote(str(_sid))}" '
+            f'style="font-weight:500;color:var(--ck-accent,#155752);'
+            f'text-decoration:none;">{_name_txt}</a>'
+        )
+    else:
+        _name_inner = f'<span style="font-weight:500;color:#1a2332;">{_name_txt}</span>'
     name = (
-        f'<div><span style="font-weight:500;color:#1a2332;">'
-        f'{_html.escape(c.get("deal_name") or "")}</span>'
+        f'<div>{_name_inner}'
         f'<div style="font-family:monospace;font-size:10px;color:#7a8699;'
         f'text-transform:uppercase;margin-top:2px;">'
         f'{_html.escape(c.get("deal_id") or "")}</div></div>'

@@ -8,8 +8,22 @@ from __future__ import annotations
 import html
 import importlib
 import math
+import urllib.parse as _urlparse
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
+
+
+def _deal_name_cell(d: Dict[str, Any], maxlen: int) -> str:
+    """Corpus deal name linked to its /library detail (connectivity)."""
+    nm = html.escape((d.get("deal_name") or "")[:maxlen])
+    sid = d.get("source_id")
+    if sid:
+        return (
+            f'<a href="/library/{_urlparse.quote(str(sid))}" '
+            f'style="color:var(--ck-accent,#155752);text-decoration:none;">'
+            f'{nm}</a>'
+        )
+    return nm
 
 
 def _load_corpus() -> List[Dict[str, Any]]:
@@ -217,7 +231,7 @@ def _outliers_table(deals: List[Dict[str, Any]]) -> str:
         col = P["negative"] if moic < 2.0 else P["warning"]
         rows += (
             f'<tr style="background:{P["row_stripe"] if i%2 else P["panel"]}">'
-            f'<td style="padding:4px 8px;font-size:11px">{html.escape(d.get("deal_name","")[:40])}</td>'
+            f'<td style="padding:4px 8px;font-size:11px">{_deal_name_cell(d, 40)}</td>'
             f'<td style="padding:4px 8px;font-size:10px;color:{P["text_dim"]}">{html.escape(d.get("sector","") or "—")}</td>'
             f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{d.get("year","—")}</td>'
             f'<td style="padding:4px 8px;font-size:11px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{hold:.1f}y</td>'
