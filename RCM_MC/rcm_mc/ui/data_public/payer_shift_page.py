@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _mix_bar_svg(start_mix, target_mix) -> str:
@@ -341,6 +341,13 @@ def render_payer_shift(params: dict = None) -> str:
         meta=f"""Rate index, collection rate, weighted yield — modeled across {hold}-year hold in {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    value_anchor = ck_value_anchor(
+        "Payer Shift Impact",
+        f"${r.terminal_revenue_mm:,.0f}M terminal revenue",
+        delta=f"${r.base_revenue_mm:,.0f}M base · entry yield {start_yield:.3f} → exit {end_yield:.3f}",
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
@@ -351,6 +358,8 @@ def render_payer_shift(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">
     {kpi_strip}
   </div>
+
+  {value_anchor}
 
   <div style="{cell}">
     <div style="{h3}">Entry → Target Payer Mix</div>

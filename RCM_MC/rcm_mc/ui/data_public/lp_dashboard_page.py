@@ -12,7 +12,7 @@ from typing import Dict, List, Optional
 from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_kpi_block, ck_section_header,
     ck_fmt_currency, ck_fmt_percent, ck_fmt_number,
-    ck_data_cell, ck_page_title,
+    ck_data_cell, ck_page_title, ck_value_anchor,
 )
 # Backward-compat aliases — lp_dashboard_page was written against
 # pre-cycle-22 helper names (ck_fmt_num/pct/moic). Map them to
@@ -391,6 +391,13 @@ def render_lp_dashboard(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", str(result.corpus_deal_count), "", "")
     )
 
+    value_anchor = ck_value_anchor(
+        "Fund Performance",
+        f"{kpis.net_moic:.2f}x net MOIC",
+        delta=f"${kpis.total_ev_deployed_mm:,.0f}M EV · {kpis.total_deals} deals · {kpis.gross_moic:.2f}x gross",
+        tone="teal",
+    )
+
     vintage_svg = _vintage_moic_svg(result.vintage_rows)
     tvpi_svg = _tvpi_dpi_svg(result.vintage_rows)
     sector_svg = _sector_bar_svg(result.sector_exposures)
@@ -452,6 +459,8 @@ def render_lp_dashboard(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">
     {kpi_strip2}
   </div>
+
+  {value_anchor}
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
     <div style="{cell_style}">
