@@ -30,6 +30,8 @@ Each per-page file follows the same template:
 | `09_HOSPITAL_PAGES.md` | The per-hospital surfaces (`/hospital/<ccn>/*`) — profile, stats, providers, ML/Bayesian, data room, bridge, scenarios. |
 | `10_WORKFLOW_OPS.md` | The daily portfolio workflow — alerts lifecycle, cohorts/owners/deadlines/notes/tags, LP digest, audit. |
 | `11_METRIC_GLOSSARY.md` | Canonical definitions of every metric name — definition · computation · source · scale. The connective tissue. |
+| `12_CLI_EXPORTS_API.md` | The non-browser front doors — the `rcm-mc` CLI, file exports/reports, and the JSON/OpenAPI surface (same engines, same numbers). |
+| `13_ENGAGEMENT_AUTH.md` | The consulting engagement layer, the two RBAC systems, the draft→publish client-portal workflow, the two-view mode, and auth mechanics. |
 
 ## The one-sentence version
 
