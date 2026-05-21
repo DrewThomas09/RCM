@@ -26,6 +26,10 @@ Each per-page file follows the same template:
 | `05_PORTFOLIO.md` | Portfolio overview, monitor (health + launched-vs-realized), risk-scan, portfolio-analytics, sponsor track record, payer intelligence. |
 | `06_SCREENING.md` | Hospital screener, predictive screener, pipeline, deal-screening engine — how candidates are scored and ranked. |
 | `07_LIBRARY_CORPUS.md` | The deal library/corpus, comparables, RCM benchmarks, market rates — the empirical base every benchmark rests on. |
+| `08_DATA_PUBLIC_MODULES.md` | The ~150 analytic modules — the shared pattern, a grouped catalog, and (critically) **which are live vs curated/illustrative**. |
+| `09_HOSPITAL_PAGES.md` | The per-hospital surfaces (`/hospital/<ccn>/*`) — profile, stats, providers, ML/Bayesian, data room, bridge, scenarios. |
+| `10_WORKFLOW_OPS.md` | The daily portfolio workflow — alerts lifecycle, cohorts/owners/deadlines/notes/tags, LP digest, audit. |
+| `11_METRIC_GLOSSARY.md` | Canonical definitions of every metric name — definition · computation · source · scale. The connective tissue. |
 
 ## The one-sentence version
 
