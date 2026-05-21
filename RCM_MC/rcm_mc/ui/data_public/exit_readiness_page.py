@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
@@ -302,6 +302,14 @@ def render_exit_readiness(params: dict = None) -> str:
         meta=f"{r.overall_score:.1f}/100 readiness ({r.tier}) · {r.critical_gap_count} critical gaps · ${r.total_gap_cost_mm:,.2f}M gap-closure spend · {r.est_days_to_exit_ready} days to fully ready · target pathway {pathway}",
     )
 
+    value_anchor = ck_value_anchor(
+        "Exit Readiness",
+        f"{r.overall_score:.1f}/100 readiness ({r.tier})",
+        delta=f"{r.critical_gap_count} critical gaps · {r.est_days_to_exit_ready} days to fully ready",
+        target=f"${r.total_gap_cost_mm:,.1f}M gap-closure spend",
+        tone="positive" if r.overall_score >= 75 else "teal" if r.overall_score >= 55 else "warning",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
@@ -312,6 +320,8 @@ def render_exit_readiness(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">
     {kpi_strip}
   </div>
+
+  {value_anchor}
 
   <div style="{cell}">
     <div style="{h3}">Composite Readiness</div>

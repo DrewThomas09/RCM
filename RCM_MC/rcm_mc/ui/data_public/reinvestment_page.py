@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _scenario_bars_svg(scenarios, entry_equity: float) -> str:
@@ -237,11 +237,20 @@ def render_reinvestment(params: dict = None) -> str:
         meta=f"""Operating cash reinvestment strategy: bolt-ons, organic capex, debt paydown, dividends — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    value_anchor = ck_value_anchor(
+        "Reinvestment Case",
+        f"{r.base_case_moic:.2f}x base-case MOIC",
+        delta=f"${r.entry_ev_mm:,.0f}M EV · ${r.entry_equity_mm:,.0f}M equity · ${r.cumulative_fcf_mm:,.1f}M cumulative FCF over {r.hold_years}y",
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+
+  {value_anchor}
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
     <div style="{cell}"><div style="{h3}">Equity MOIC by Strategy</div>{scen_svg}</div>
     <div style="{cell}"><div style="{h3}">Yearly FCF Allocation Stack</div>{yearly_svg}</div>

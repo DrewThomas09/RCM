@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Dict
 
 from rcm_mc.ui._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_provenance_tooltip,
+    P, chartis_shell, ck_kpi_block, ck_provenance_tooltip, ck_value_anchor,
 )
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
@@ -340,12 +340,22 @@ def render_qoe_analyzer(params: dict) -> str:
     moic_premium_str = f"+{r.benchmark.moic_premium_low_addback:.2f}x" if r.benchmark.moic_premium_low_addback >= 0 \
         else f"{r.benchmark.moic_premium_low_addback:.2f}x"
 
+    value_anchor = ck_value_anchor(
+        "Quality of Earnings",
+        f"${r.adjusted_ebitda_mm:.1f}M adjusted EBITDA",
+        delta=f"${r.reported_ebitda_mm:.1f}M reported · {ev_ebitda_adj:.1f}x adj EV/EBITDA",
+        opportunity=f"${r.adjusted_ebitda_mm - r.reported_ebitda_mm:.1f}M add-back uplift",
+        tone="teal",
+    )
     content = f'''
 {_input_form(params)}
 
 <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:12px">
 {kpis}
 </div>
+
+<div style="margin-top:12px">{value_anchor}</div>'''
+    content += f'''
 
 <div style="margin-top:12px;background:{bg_sec};border:1px solid {border};padding:12px">
   <div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:{tdim};
