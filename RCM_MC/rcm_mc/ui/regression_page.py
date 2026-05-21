@@ -1346,6 +1346,7 @@ def render_regression_page(
             cv_res = None
 
         if cv_res is not None:
+            import math as _math
             # Per-fold rows
             fold_rows = ""
             for f in cv_res.folds:
@@ -1418,6 +1419,17 @@ def render_regression_page(
                 + ck_kpi_block(
                     "Overfit gap",
                     f"{gap * 100:+.1f}pp",
+                )
+                + ck_kpi_block(
+                    # For a log-target fit the raw RMSE is in log units,
+                    # which is hard to read; convert to the partner-facing
+                    # "typical prediction is off by ±X%" (exp(rmse)-1).
+                    # For a raw fit show RMSE in the target's own units.
+                    "Mean test RMSE (OOS)",
+                    (f"±{(_math.exp(cv_res.mean_test_rmse) - 1.0) * 100:.0f}%"
+                     if cv_res.target_was_log_transformed
+                     else f"{cv_res.mean_test_rmse:,.3g}"),
+                    "typical OOS error" if cv_res.target_was_log_transformed else "",
                 )
                 + '</div>'
                 '<table class="cad-table"><thead><tr>'
