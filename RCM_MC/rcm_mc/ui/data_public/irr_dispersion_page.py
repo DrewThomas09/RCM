@@ -28,7 +28,7 @@ def _load_corpus() -> List[Dict[str, Any]]:
 from rcm_mc.ui._chartis_kit import (
     P, _MONO, _SANS, SafeHtml, chartis_shell, ck_fmt_num, ck_fmt_pct,
     ck_kpi_block, ck_paired_block, ck_provenance_tooltip,
-    ck_section_header,
+    ck_section_header, ck_value_anchor,
 )
 
 
@@ -350,8 +350,21 @@ def render_irr_dispersion() -> str:
         f"font-size:12px;color:{P['text_faint']};font-family:{_SANS};"
         "line-height:1.5;margin-bottom:14px;"
     )
+    _irr_delta = " · ".join(s for s in [
+        (f"P25 {irr_p25 * 100:.1f}%" if irr_p25 else None),
+        (f"P75 {irr_p75 * 100:.1f}%" if irr_p75 else None),
+        f"{above_hurdle:.0f}% above 20% hurdle",
+    ] if s)
+    value_anchor = ck_value_anchor(
+        "IRR Dispersion",
+        (f"{irr_p50 * 100:.1f}% median IRR" if irr_p50 else "IRR dispersion"),
+        delta=_irr_delta,
+        tone="positive" if above_hurdle >= 50 else "teal",
+    )
+
     body = f"""
 <div>
+  {value_anchor}
   {kpi_strip}
 
   {irr_paired}
