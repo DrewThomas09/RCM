@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title, ck_value_anchor
 
 
 def _cost_stack_svg(cost_lines, ebitda_margin: float) -> str:
@@ -217,6 +217,13 @@ def render_cost_structure(params: dict = None) -> str:
     labor_tbl = _labor_table(r.labor_breakdown)
     scen_tbl = _scenario_table(r.leverage_scenarios)
 
+    value_anchor = ck_value_anchor(
+        "Margin Structure",
+        f"{r.ebitda_margin * 100:.1f}% EBITDA margin",
+        delta=f"${r.revenue_mm:,.0f}M revenue · ${r.total_cogs_mm:,.1f}M COGS · ${r.total_sga_mm:,.1f}M SG&A · {r.variable_cost_pct * 100:.0f}% variable",
+        tone="teal",
+    )
+
     form = f"""
 <form method="GET" action="/cost-structure" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
   <label style="font-size:11px;color:{text_dim}">Sector
@@ -268,6 +275,8 @@ def render_cost_structure(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">
     {kpi_strip}
   </div>
+
+  {value_anchor}
 
   <div style="{cell}">
     <div style="{h3}">Revenue Composition ($1 Waterfall)</div>
