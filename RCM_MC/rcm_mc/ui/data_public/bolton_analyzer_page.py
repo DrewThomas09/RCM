@@ -8,7 +8,7 @@ from __future__ import annotations
 import html as _html
 from typing import List
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 _EXPLAINER_CSS = """<style>
 .ck-ba-explainer{font-family:var(--sc-serif,'Georgia',serif);
@@ -381,6 +381,12 @@ def render_bolton_analyzer(params: dict = None) -> str:
         "return scenarios with and without bolt-ons, and year-by-year EBITDA build."
         "</p>"
     )
+    value_anchor = ck_value_anchor(
+        "Multiple Arbitrage",
+        f"{arb.mult_arbitrage:+.2f}x platform-vs-bolt-on arbitrage",
+        delta=f"${r.platform_ev_mm:,.0f}M platform at {r.platform_mult:.2f}x · bolt-ons at {arb.avg_bolton_mult:.2f}x",
+        tone="positive" if arb.mult_arbitrage > 0 else "warning",
+    )
     body = page_title + ba_explainer + f"""
 <div class="ck-page-wrap">
 
@@ -389,6 +395,8 @@ def render_bolton_analyzer(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">
     {kpi_strip}
   </div>
+
+  {value_anchor}
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
     <div style="{cell}">
