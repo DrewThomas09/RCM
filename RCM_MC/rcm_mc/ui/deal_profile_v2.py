@@ -366,6 +366,56 @@ def _predictions_section(packet: Any) -> str:
         f'{"".join(rows)}</table>')
 
 
+def _bridge_lever_chart(impacts: List[Any]) -> str:
+    """Sorted lever-contribution bars for the EBITDA bridge.
+
+    The bridge table lists per-lever EBITDA $ in row order; this ranks
+    the levers by absolute impact and draws a proportional bar each, so
+    the partner reads which RCM levers carry the value creation at a
+    glance (the bar that dwarfs the others is the thesis). Bars are
+    green for uplift, red for drag; widths are share of the largest
+    absolute impact. Full signed detail stays in the table below.
+    """
+    pairs = []
+    for imp in impacts:
+        metric = getattr(imp, "metric_key", "—")
+        eb = getattr(imp, "ebitda_impact", 0) or 0
+        pairs.append((str(metric), float(eb)))
+    pairs = [p for p in pairs if p[1] != 0]
+    if len(pairs) < 2:
+        return ""
+    pairs.sort(key=lambda p: -abs(p[1]))
+    max_abs = max(abs(v) for _, v in pairs) or 1.0
+
+    rows = []
+    for metric, eb in pairs:
+        pct = max(2.0, abs(eb) / max_abs * 100.0)
+        color = _GREEN if eb >= 0 else _RED
+        label = _esc(metric.replace("_", " ").title())
+        rows.append(
+            f'<div style="display:flex;align-items:center;gap:10px;'
+            f'padding:3px 0;font-size:12px;">'
+            f'<span style="width:150px;color:{_TEXT};flex:none;'
+            f'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" '
+            f'title="{label}">{label}</span>'
+            f'<span style="flex:1;background:{_BG_ELEVATED};border:1px solid '
+            f'{_BORDER};border-radius:2px;height:13px;overflow:hidden;">'
+            f'<span style="display:block;width:{pct:.1f}%;height:100%;'
+            f'background:{color};"></span></span>'
+            f'<span style="width:74px;flex:none;text-align:right;color:{color};'
+            f'font-variant-numeric:tabular-nums;font-weight:500;">'
+            f'{_fmt_money(eb)}</span></div>'
+        )
+    return (
+        f'<div style="background:{_BG_SURFACE};border:1px solid {_BORDER};'
+        f'border-radius:8px;padding:14px 16px;margin-bottom:12px;">'
+        f'<div style="font-size:11px;text-transform:uppercase;'
+        f'letter-spacing:0.05em;color:{_TEXT_DIM};margin-bottom:8px;">'
+        f'Lever contribution · ranked by EBITDA impact</div>'
+        + "".join(rows) + '</div>'
+    )
+
+
 def _bridge_section(packet: Any) -> str:
     bridge = getattr(packet, "ebitda_bridge", None)
     if bridge is None:
@@ -398,6 +448,7 @@ def _bridge_section(packet: Any) -> str:
             f'color:{sign_color};font-variant-numeric:'
             f'tabular-nums;font-weight:500;">'
             f'{_fmt_money(eb)}</td></tr>')
+    lever_chart = _bridge_lever_chart(impacts)
     prose = (
         f"Current EBITDA {_fmt_money(current)} → target "
         f"{_fmt_money(target)} via {len(impacts)} RCM levers. "
@@ -417,7 +468,7 @@ def _bridge_section(packet: Any) -> str:
         f'letter-spacing:0.05em;color:{_TEXT_DIM};">'
         f'EBITDA $</th>'
         f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>')
-    return _section_header(6, "EBITDA bridge", prose) + table
+    return _section_header(6, "EBITDA bridge", prose) + lever_chart + table
 
 
 def _scenarios_section(packet: Any) -> str:
