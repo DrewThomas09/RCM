@@ -40,6 +40,79 @@ def _sev_badge(sev: str) -> str:
     return ck_signal_badge(labels.get(sev, sev), tone=tones.get(sev, "neutral"))
 
 
+def _value_creation_panel(store: Any) -> str:
+    """Launched vs Realized value-creation progress (portfolio-level).
+
+    Definitions (defensible, stated in the panel):
+      * **Launched** — the cumulative *underwritten plan* EBITDA impact
+        of initiatives that are in execution. An initiative counts as
+        launched once it has at least one quarter of recorded actuals
+        (that's how the data model records execution). Σ of pro-rated
+        plan across held deals.
+      * **Realized** — the cumulative *actual* EBITDA impact recorded to
+        date: raw run-rate attribution, NOT trailing-twelve-months and
+        NOT re-attributed. Σ of actuals across held deals.
+      * **Capture rate** — realized ÷ launched.
+
+    Portfolio-level aggregate (per the fund-model decision to stay
+    portfolio-level). Honest empty state when no actuals are recorded —
+    never a fabricated number.
+    """
+    try:
+        from ..rcm.initiative_rollup import initiative_portfolio_rollup
+        df = initiative_portfolio_rollup(store)
+    except Exception:  # noqa: BLE001 — panel must never break the page
+        return ""
+
+    launched = realized = 0.0
+    n_init = 0
+    if df is not None and not df.empty:
+        for _, r in df.iterrows():
+            plan = r.get("cumulative_plan")
+            act = r.get("cumulative_actual")
+            if plan is not None and plan == plan:  # NaN guard
+                launched += float(plan)
+            if act is not None and act == act:
+                realized += float(act)
+            n_init += 1
+
+    if n_init == 0 or launched <= 0:
+        return ck_panel(
+            '<p class="ck-section-body" style="margin:0;">'
+            'No initiative actuals recorded yet. Launched (underwritten '
+            'plan in execution) and realized (actual EBITDA captured) '
+            'value populate once a deal logs its first quarterly '
+            'initiative actual.</p>',
+            title="Value Creation — Launched vs Realized",
+        )
+
+    capture = realized / launched if launched else 0.0
+    pct = max(0.0, min(100.0, capture * 100.0))
+    tone = (PALETTE.get("positive") if capture >= 0.85
+            else PALETTE.get("warning") if capture >= 0.6
+            else PALETTE.get("negative"))
+    bar = (
+        f'<div style="margin:10px 0 6px;background:var(--sc-bg-elevated,#faf7f0);'
+        f'border:1px solid var(--sc-rule,#d6cfc0);border-radius:3px;height:18px;'
+        f'overflow:hidden;">'
+        f'<div style="width:{pct:.1f}%;height:100%;background:{tone};"></div></div>'
+    )
+    return ck_panel(
+        '<p class="ck-section-body" style="margin:0 0 4px;">'
+        f'<strong>{_fm(realized)}</strong> realized of '
+        f'<strong>{_fm(launched)}</strong> launched · '
+        f'<strong>{capture*100:.0f}%</strong> of the in-execution plan '
+        f'captured across {n_init} initiatives.</p>'
+        + bar +
+        '<p class="ck-section-body" style="font-size:11px;margin:6px 0 0;">'
+        '<em>Launched</em> = cumulative underwritten plan of initiatives '
+        'in execution (≥1 quarter of actuals). <em>Realized</em> = '
+        'cumulative actual EBITDA impact recorded to date (run-rate, not '
+        'TTM, not re-attributed). Portfolio-level.</p>',
+        title="Value Creation — Launched vs Realized",
+    )
+
+
 def render_portfolio_monitor(store: Any) -> str:
     """Render the portfolio monitoring dashboard."""
     import json as _json
@@ -482,9 +555,11 @@ overflow:hidden;margin-bottom:8px;}
         eyebrow="Continue —",
         italic_word="risk",
     )
+    value_creation = _value_creation_panel(store)
+
     body = (
         f'{pm_styles}{intro}{kpis}{alert_html}{warning_html}'
-        f'{health_bar}{deal_table}{pred_vs_actual}{nav}{next_up}'
+        f'{health_bar}{deal_table}{value_creation}{pred_vs_actual}{nav}{next_up}'
     )
 
     return chartis_shell(
