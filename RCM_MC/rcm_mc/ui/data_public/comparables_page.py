@@ -284,6 +284,70 @@ def _query_form(corpus: List[Dict[str, Any]], params: Dict[str, str]) -> str:
 </form>"""
 
 
+def _comps_scatter(
+    comps: List[Dict[str, Any]],
+    target: Optional[Dict[str, Any]],
+) -> str:
+    """Entry-multiple vs realized-outcome scatter for the peer group.
+
+    The comps table lists EV/EBITDA and realized MOIC in adjacent
+    columns; the scatter pairs them so a partner reads the IC question
+    directly — did peers who paid this kind of entry multiple still
+    return well? Each dot is a realized peer (click through to the deal);
+    y=1.0× marks break-even, and the target's own entry multiple (when a
+    query deal is set) drops a dashed vertical so the partner sees where
+    their price sits in the realized cloud.
+    """
+    import urllib.parse as _urlparse
+
+    from rcm_mc.ui._chartis_kit import ck_scatter
+
+    pts = []
+    for c in comps:
+        moic = c.get("realized_moic")
+        ev = c.get("ev_mm")
+        eb = c.get("ebitda_at_entry_mm") or c.get("ebitda_mm")
+        if moic is None or not (ev and eb and float(eb) > 0):
+            continue
+        mult = float(ev) / float(eb)
+        m = float(moic)
+        tone = "positive" if m >= 3.0 else ("negative" if m < 1.0 else "teal")
+        sid = c.get("source_id")
+        href = f"/library/{_urlparse.quote(str(sid))}" if sid else None
+        pts.append((mult, m, (c.get("deal_name") or "")[:40], tone, href))
+
+    x_ref = None
+    if target:
+        tev = target.get("ev_mm")
+        teb = target.get("ebitda_at_entry_mm") or target.get("ebitda_mm")
+        if tev and teb and float(teb) > 0:
+            x_ref = float(tev) / float(teb)
+
+    chart = ck_scatter(
+        pts,
+        x_label="Entry multiple (EV/EBITDA)",
+        y_label="Realized MOIC (×)",
+        x_ref=x_ref,
+        y_ref=1.0,
+        height=250,
+        caption=(
+            "Each dot a realized peer (click through to the deal) · "
+            "y = 1.0× is break-even · "
+            + ("dashed vertical = your target's entry multiple · "
+               if x_ref is not None else "")
+            + "green ≥3.0× homerun, red <1.0× loss"
+        ),
+    )
+    if not chart:
+        return ""
+    return (
+        '<div class="ck-panel">'
+        '<div class="ck-panel-title">Entry Multiple vs Realized Outcome</div>'
+        '<div style="padding:14px 16px;">' + chart + '</div>'
+        '</div>'
+    )
+
+
 # ---------------------------------------------------------------------------
 # Main render
 # ---------------------------------------------------------------------------
@@ -366,6 +430,7 @@ def render_comparables(
         f"{'similarity-ranked against query deal' if has_query else 'most recent realized exits'} · {len(comps)} shown"
     )
     comps_table = _comps_table(comps, show_similarity=show_sim)
+    comps_scatter = _comps_scatter(comps, query_deal if has_query else None)
 
     peer_panel = ""
     if has_query and comps:
@@ -387,7 +452,9 @@ def render_comparables(
     )
     body = (
         page_title + explainer_html + kpis + form
-        + (peer_panel + section + comps_table if peer_panel else section + comps_table)
+        + (peer_panel if peer_panel else "")
+        + comps_scatter
+        + section + comps_table
     )
 
     return chartis_shell(
