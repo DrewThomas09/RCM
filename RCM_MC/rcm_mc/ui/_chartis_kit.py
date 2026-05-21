@@ -4231,6 +4231,109 @@ table.ck-data-table th[data-sort-dir]{color:var(--sc-teal,#155752);}
 """
 
 
+_TABLE_TOTALS_JS = """
+<style>
+.ck-ttotals{position:absolute;top:4px;right:110px;z-index:3;opacity:0;transition:opacity .12s;
+  font:9px var(--sc-mono,'JetBrains Mono',monospace);letter-spacing:.04em;text-transform:uppercase;
+  padding:2px 7px;border:1px solid var(--sc-rule,#d6cfc0);background:var(--sc-bg,#faf7f0);
+  color:var(--sc-text-dim,#465366);border-radius:2px;cursor:pointer;}
+.ck-data-table-scroll:hover .ck-ttotals{opacity:0.9;}
+.ck-ttotals:hover,.ck-ttotals[aria-pressed="true"]{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
+tfoot.ck-totals-foot td{border-top:2px solid var(--sc-teal,#155752);font-weight:700;
+  background:var(--sc-bone,#ece5d6);font-family:var(--sc-mono,'JetBrains Mono',monospace);
+  font-variant-numeric:tabular-nums;padding:6px 10px;font-size:11px;}
+</style>
+<script>
+/* Totals / averages summary row for editorial tables — a hover toggle
+ * (\\u03a3) that appends a footer aggregating each numeric column over the
+ * currently-visible rows: $ and count columns sum; % and x (multiple)
+ * columns average; text columns blank. Format mirrors the column (prefix
+ * $, suffix B/M/k, decimals). Recomputes live when the row-filter changes
+ * so the summary always matches what's on screen. Off by default;
+ * additive; opt out with data-no-totals. */
+(function(){
+  function parseNum(t){
+    if(t==null) return null;
+    var s=String(t).trim();
+    if(s===''||s==='\\u2014'||s==='-'||s==='n/a'||s==='N/A') return null;
+    var neg=/^\\(.*\\)$/.test(s);
+    s=s.replace(/[(),$%x\\u00d7\\s]/g,'').replace(/\\+/g,'');
+    if(s==='') return null;
+    var v=parseFloat(s);
+    return isNaN(v)?null:(neg?-v:v);
+  }
+  function comma(x,d){return x.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});}
+  function decimals(arr){var d=0;arr.forEach(function(s){var m=String(s).match(/\\.(\\d+)/);if(m)d=Math.max(d,m[1].length);});return Math.min(d,2);}
+  function aggColumn(texts){
+    var present=texts.filter(function(t){return t!=null&&String(t).trim()!=='';});
+    var nums=[]; texts.forEach(function(t){var n=parseNum(t);if(n!=null)nums.push(n);});
+    if(nums.length<Math.max(2,Math.ceil(present.length*0.6))) return '';
+    var sample=''; for(var i=0;i<texts.length;i++){if(parseNum(texts[i])!=null){sample=String(texts[i]).trim();break;}}
+    var hasDollar=sample.indexOf('$')>=0,hasPct=sample.indexOf('%')>=0,hasX=/x$/i.test(sample);
+    var suf=''; if(/[0-9]B$/.test(sample))suf='B'; else if(/[0-9]M$/.test(sample))suf='M'; else if(/[0-9]k$/.test(sample))suf='k';
+    var dec=decimals(texts);
+    var sum=nums.reduce(function(a,b){return a+b;},0);
+    if(hasPct) return comma(sum/nums.length,1)+'%';
+    if(hasX) return comma(sum/nums.length,2)+'x';
+    if(hasDollar) return '$'+comma(sum,dec||(suf?1:2))+suf;
+    if(dec===0) return comma(sum,0);
+    return comma(sum,dec)+suf;
+  }
+  function build(table){
+    var tb=table.tBodies[0]; if(!tb) return null;
+    var rows=Array.prototype.slice.call(tb.rows).filter(function(r){return r.style.display!=='none';});
+    if(rows.length<2) return null;
+    var ncols=0; rows.forEach(function(r){if(r.cells.length>ncols)ncols=r.cells.length;});
+    var tr=document.createElement('tr');
+    for(var c=0;c<ncols;c++){
+      var texts=rows.map(function(r){var cell=r.cells[c];return cell?(cell.textContent||''):'';});
+      var v=aggColumn(texts);
+      if(c===0&&v==='') v='\\u03a3 Total / avg';
+      var td=document.createElement('td');
+      var s=rows[0].cells[c];
+      if(s&&s.classList.contains('ck-cell-r')) td.style.textAlign='right';
+      else if(s&&s.classList.contains('ck-cell-c')) td.style.textAlign='center';
+      td.textContent=v; tr.appendChild(td);
+    }
+    return tr;
+  }
+  function render(table,on){
+    var f=table.querySelector('tfoot.ck-totals-foot'); if(f) f.parentNode.removeChild(f);
+    if(!on) return;
+    var tr=build(table); if(!tr) return;
+    var foot=document.createElement('tfoot'); foot.className='ck-totals-foot'; foot.appendChild(tr);
+    table.appendChild(foot);
+  }
+  function init(){
+    Array.prototype.forEach.call(document.querySelectorAll('table.ck-data-table'),function(table){
+      if(table.getAttribute('data-no-totals')!=null) return;
+      if(table.getAttribute('data-totalable')!=null) return;
+      var tb=table.tBodies[0]; if(!tb||tb.rows.length<2) return;
+      table.setAttribute('data-totalable','');
+      var host=table.closest('.ck-data-table-scroll'); if(!host) return;
+      var btn=document.createElement('button'); btn.type='button'; btn.className='ck-ttotals';
+      btn.textContent='\\u03a3 Totals'; btn.setAttribute('aria-pressed','false');
+      btn.setAttribute('aria-label','Toggle totals / averages row');
+      btn.addEventListener('click',function(e){
+        e.preventDefault();
+        var on=btn.getAttribute('aria-pressed')!=='true';
+        btn.setAttribute('aria-pressed',on?'true':'false');
+        render(table,on);
+      });
+      host.appendChild(btn);
+      var fi=host.parentNode?host.parentNode.querySelector('.ck-tfilter input'):null;
+      if(fi) fi.addEventListener('input',function(){
+        if(btn.getAttribute('aria-pressed')==='true') render(table,true);
+      });
+    });
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}
+  else{init();}
+})();
+</script>
+"""
+
+
 _TABLE_BARS_JS = """
 <style>
 .ck-tbars{position:absolute;top:4px;right:52px;z-index:3;opacity:0;transition:opacity .12s;
@@ -5434,6 +5537,7 @@ def chartis_shell(
         f"{_TABLE_FILTER_JS}"
         f"{_TABLE_COPY_JS}"
         f"{_TABLE_BARS_JS}"
+        f"{_TABLE_TOTALS_JS}"
         f"{extra_js_html}"
         "</body></html>"
     )
