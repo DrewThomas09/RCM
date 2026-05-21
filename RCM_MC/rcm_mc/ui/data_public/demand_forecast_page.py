@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _volume_svg(volume) -> str:
@@ -227,11 +227,19 @@ def render_demand_forecast(params: dict = None) -> str:
         meta=f"{sector} sector · {r.ten_yr_cagr * 100:.2f}% 10-year visit CAGR · +{r.aging_tailwind_pct * 100:.1f}% aging tailwind · Medicare share {r.medicare_share_2025 * 100:.1f}% → {r.medicare_share_2035 * 100:.1f}% by 2035",
     )
 
+    value_anchor = ck_value_anchor(
+        "Demand Outlook",
+        f"{r.ten_yr_cagr * 100:.2f}% 10-yr demand CAGR",
+        delta=f"{r.baseline_market_mm:,.0f}M baseline visits · +{r.aging_tailwind_pct * 100:.1f}% aging tailwind · {r.medicare_share_2025 * 100:.1f}% MA share",
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
     <div style="{cell}"><div style="{h3}">10-Year Volume Projection</div>{vol_svg}</div>
     <div style="{cell}"><div style="{h3}">Population by Age Band</div>{pop_svg}</div>
