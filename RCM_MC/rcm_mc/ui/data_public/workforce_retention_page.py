@@ -2,7 +2,23 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_scatter
+
+
+def _roles_scatter(items):
+    """Quadrant — turnover vs replacement cost by role, so high-turnover
+    high-cost roles (upper-right) are the retention priority."""
+    import statistics
+    pts, ys = [], []
+    for x in items:
+        xt = x.annual_turnover_pct * 100.0
+        tn = ('negative' if x.annual_turnover_pct > x.industry_benchmark_pct else 'teal')
+        pts.append((xt, x.replacement_cost_k, getattr(x, 'role', ''), tn)); ys.append(x.replacement_cost_k)
+    return ck_scatter(
+        pts, x_label='Annual turnover %', y_label='Replacement cost ($k)',
+        y_ref=(statistics.median(ys) if ys else None),
+        caption='Each dot = a role · upper-right = high turnover + high replacement cost (priority) · red = above industry benchmark',
+    )
 
 
 def _roles_chart(items) -> str:
@@ -209,6 +225,7 @@ def render_workforce_retention(params: dict = None) -> str:
 
     r_chart = _roles_chart(r.roles)
     r_tbl = _roles_table(r.roles)
+    r_scatter = _roles_scatter(r.roles)
     d_tbl = _deals_table(r.deals)
     p_tbl = _programs_table(r.programs)
     cl_tbl = _contract_table(r.contract_labor)
@@ -238,7 +255,7 @@ def render_workforce_retention(params: dict = None) -> str:
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
-  <div style="{cell}"><div style="{h3}">Turnover by Role (portfolio aggregate)</div>{r_chart}{r_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Turnover by Role (portfolio aggregate)</div>{r_chart}{r_scatter}{r_tbl}</div>
   <div style="{cell}"><div style="{h3}">Deal-Level Turnover & Engagement</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Contract Labor / Agency Dependency</div>{cl_tbl}</div>
   <div style="{cell}"><div style="{h3}">Retention Programs</div>{p_tbl}</div>
