@@ -27,6 +27,7 @@ from rcm_mc.ui._chartis_kit_editorial import (
     number_maybe,
     stage_pill,
 )
+from rcm_mc.ui._workspace_mode import term
 
 
 _STAGE_LABEL: Dict[str, str] = {
@@ -138,7 +139,7 @@ def render_deals_table(
         return (
             '<table class="app-deals-table">'
             '<thead><tr>'
-            '<th>Deal</th><th>Stage</th><th class="r">EV</th>'
+            f'<th>{term("deal")}</th><th>Stage</th><th class="r">EV</th>'
             '<th class="r">MOIC</th><th class="r">IRR</th>'
             '<th>Covenant</th><th class="r">Drift</th>'
             '<th>Headline</th>'
@@ -160,7 +161,7 @@ def render_deals_table(
     return (
         '<table class="app-deals-table">'
         '<thead><tr>'
-        '<th>Deal</th><th>Stage</th><th class="r">EV</th>'
+        f'<th>{term("deal")}</th><th>Stage</th><th class="r">EV</th>'
         '<th class="r">MOIC</th><th class="r">IRR</th>'
         '<th>Covenant</th><th class="r">Drift</th>'
         '<th>Headline</th>'

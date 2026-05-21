@@ -33,6 +33,7 @@ import pandas as pd
 
 from rcm_mc.portfolio.store import PortfolioStore
 from rcm_mc.ui._chartis_kit_editorial import number_maybe, pair_block
+from rcm_mc.ui._workspace_mode import term
 
 
 def _status_icon(variance: float) -> tuple[str, str]:
@@ -103,7 +104,7 @@ def _render_init_rows(rows: List[Dict[str, Any]]) -> str:
         '<div class="app-init-row head">'
         '<div></div>'
         '<div>Initiative</div>'
-        '<div>Deal</div>'
+        f'<div>{term("deal")}</div>'
         '<div>Actual</div>'
         '<div>Variance</div>'
         '<div>Progress</div>'
@@ -221,7 +222,7 @@ def _render_cross_portfolio_rows(df: pd.DataFrame) -> str:
         '<div class="app-init-row head">'
         '<div></div>'
         '<div>Initiative</div>'
-        '<div>Deals</div>'
+        f'<div>{term("deals")}</div>'
         '<div>Total $</div>'
         '<div>Mean variance</div>'
         '<div>Signal</div>'
