@@ -4231,6 +4231,66 @@ table.ck-data-table th[data-sort-dir]{color:var(--sc-teal,#155752);}
 """
 
 
+_TABLE_COPY_JS = """
+<style>
+.ck-data-table-scroll{position:relative;}
+.ck-tcopy{position:absolute;top:4px;right:4px;z-index:3;opacity:0;transition:opacity .12s;
+  font:9px var(--sc-mono,'JetBrains Mono',monospace);letter-spacing:.04em;text-transform:uppercase;
+  padding:2px 7px;border:1px solid var(--sc-rule,#d6cfc0);background:var(--sc-bg,#faf7f0);
+  color:var(--sc-text-dim,#465366);border-radius:2px;cursor:pointer;}
+.ck-data-table-scroll:hover .ck-tcopy{opacity:0.9;}
+.ck-tcopy:hover{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
+</style>
+<script>
+/* Hover copy-to-clipboard for editorial tables. A small Copy button
+ * (revealed on table hover) copies the header + currently-visible body
+ * rows as TSV — Excel/Sheets paste-ready, and respects the active row
+ * filter. Strips the sort indicator from header text. Additive; opt out
+ * with data-no-copy. */
+(function(){
+  function txt(cell){
+    var c=cell.cloneNode(true);
+    var ind=c.querySelector('.ck-sort-ind'); if(ind&&ind.parentNode) ind.parentNode.removeChild(ind);
+    return (c.textContent||'').trim().replace(/\\s+/g,' ');
+  }
+  function copyTable(table,btn){
+    var rows=[];
+    if(table.tHead){
+      var hr=table.tHead.rows[table.tHead.rows.length-1];
+      if(hr) rows.push(Array.prototype.map.call(hr.cells,txt).join('\\t'));
+    }
+    var tb=table.tBodies[0];
+    if(tb) Array.prototype.forEach.call(tb.rows,function(r){
+      if(r.style.display==='none') return;
+      rows.push(Array.prototype.map.call(r.cells,txt).join('\\t'));
+    });
+    var data=rows.join('\\n');
+    var done=function(){var o=btn.getAttribute('data-label');btn.textContent='Copied';
+      setTimeout(function(){btn.textContent=o;},1100);};
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(data).then(done,done);}
+    else{var ta=document.createElement('textarea');ta.value=data;document.body.appendChild(ta);
+      ta.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(ta);done();}
+  }
+  function init(){
+    Array.prototype.forEach.call(document.querySelectorAll('table.ck-data-table'),function(table){
+      if(table.getAttribute('data-no-copy')!=null) return;
+      if(table.getAttribute('data-copyable')!=null) return;
+      table.setAttribute('data-copyable','');
+      var host=table.closest('.ck-data-table-scroll'); if(!host) return;
+      var btn=document.createElement('button'); btn.type='button'; btn.className='ck-tcopy';
+      btn.textContent='Copy'; btn.setAttribute('data-label','Copy');
+      btn.setAttribute('aria-label','Copy table to clipboard');
+      btn.addEventListener('click',function(e){e.preventDefault();copyTable(table,btn);});
+      host.appendChild(btn);
+    });
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}
+  else{init();}
+})();
+</script>
+"""
+
+
 _TABLE_FILTER_JS = """
 <style>
 .ck-tfilter{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-bottom:6px;}
@@ -5289,6 +5349,7 @@ def chartis_shell(
         f"{_TOAST_JS}"
         f"{_SORT_JS}"
         f"{_TABLE_FILTER_JS}"
+        f"{_TABLE_COPY_JS}"
         f"{extra_js_html}"
         "</body></html>"
     )
