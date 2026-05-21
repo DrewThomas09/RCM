@@ -27,7 +27,7 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 from rcm_mc.ui._chartis_kit import (
     P, _MONO, _SANS, chartis_shell, ck_fmt_num, ck_kpi_block,
-    ck_paired_block, ck_provenance_tooltip, ck_section_header,
+    ck_paired_block, ck_provenance_tooltip, ck_section_header, ck_value_anchor,
 )
 
 
@@ -306,8 +306,20 @@ def render_hold_analysis() -> str:
         hot_rows=bk_hot,
     )
 
+    _hold_delta = " · ".join(s for s in [
+        (f"P25 {hold_p25:.1f}y" if hold_p25 else None),
+        (f"P75 {hold_p75:.1f}y" if hold_p75 else None),
+    ] if s)
+    value_anchor = ck_value_anchor(
+        "Hold Period",
+        (f"{hold_p50:.1f}y median hold" if hold_p50 else "Hold periods"),
+        delta=_hold_delta,
+        tone="navy",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
+  {value_anchor}
   {kpi_strip}
 
   {paired}

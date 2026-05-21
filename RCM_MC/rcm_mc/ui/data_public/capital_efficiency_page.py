@@ -10,7 +10,7 @@ import html as _html
 from typing import Any, Dict, List, Optional
 
 from rcm_mc.ui._chartis_kit import (
-    P, chartis_shell, ck_page_title, ck_section_header, ck_kpi_block, ck_fmt_moic,
+    P, chartis_shell, ck_page_title, ck_section_header, ck_kpi_block, ck_fmt_moic, ck_value_anchor,
 )
 
 _EXPLAINER_CSS = """<style>
@@ -260,8 +260,16 @@ def render_capital_efficiency(params: Dict[str, str]) -> str:
         "payer regime, and vintage cohort — with top and bottom performers."
         "</p>"
     )
+    _top_sec = result.by_sector[0].label if result.by_sector else "—"
+    value_anchor = ck_value_anchor(
+        "Capital Efficiency",
+        f"{cp50:.3f} MOIC efficiency (P50)",
+        delta=f"{result.total_deals} deals · {(result.corpus_value_creation_p50 or 0):.3f}x/yr value creation · top sector {_top_sec}",
+        tone="teal",
+    )
     body = page_title + ce_explainer + f"""
 {kpi_grid}
+{value_anchor}
 {ck_section_header("By Sector", "P50 MOIC Efficiency = MOIC ÷ EV/EBITDA")}
 <div style="overflow-x:auto;margin-bottom:8px">{sec_chart}</div>
 <div style="overflow-x:auto;margin-bottom:24px">{_dim_table(result.by_sector, cp50)}</div>

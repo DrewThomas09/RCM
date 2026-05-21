@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _concentration_gauge_svg(score: float) -> str:
@@ -302,6 +302,14 @@ def render_key_person(params: dict = None) -> str:
         meta=f"{sector} sector · concentration score {r.concentration_score:.0f}/100 · {high_risk_count} of {len(r.key_persons)} key persons high-risk · ${r.total_revenue_at_risk_mm:,.1f}M revenue at risk → ${r.total_ev_at_risk_mm:,.1f}M EV impact · ${r.total_mitigation_cost_mm:,.2f}M mitigation cost",
     )
 
+    value_anchor = ck_value_anchor(
+        "Key-Person Risk",
+        f"{r.concentration_score:.0f}/100 concentration",
+        delta=f"{len(r.key_persons)} key persons · ${r.total_revenue_at_risk_mm:,.1f}M revenue at risk",
+        target=f"${r.total_ev_at_risk_mm:,.1f}M EV at risk",
+        tone="negative" if r.concentration_score >= 70 else "warning" if r.concentration_score >= 40 else "teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
@@ -309,6 +317,7 @@ def render_key_person(params: dict = None) -> str:
 
   {form}
 
+  {value_anchor}
   <div class="ck-kpi-grid" style="margin-bottom:20px">
     {kpi_strip}
   </div>
