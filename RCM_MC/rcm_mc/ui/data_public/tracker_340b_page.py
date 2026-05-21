@@ -2,7 +2,22 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_scatter
+
+
+def _entity_scatter(items):
+    """Quadrant — 340B spend vs savings captured per covered entity, so
+    high-capture (and low-compliance) entities stand out."""
+    import statistics
+    pts, xs = [], []
+    for e in items:
+        tn = ('positive' if e.compliance_score >= 9 else 'teal' if e.compliance_score >= 7 else 'warning')
+        pts.append((e.annual_340b_spend_m, e.annual_savings_m, e.entity_name, tn)); xs.append(e.annual_340b_spend_m)
+    return ck_scatter(
+        pts, x_label='340B spend ($M)', y_label='Annual savings ($M)',
+        x_ref=(statistics.median(xs) if xs else None),
+        caption='Each dot = a covered entity · higher = more savings captured · tone = compliance score',
+    )
 
 
 def _entity_chart(items) -> str:
@@ -212,6 +227,7 @@ def render_tracker_340b(params: dict = None) -> str:
     )
 
     e_chart = _entity_chart(r.entities)
+    e_scatter = _entity_scatter(r.entities)
     e_tbl = _entity_table(r.entities)
     value_anchor = ck_value_anchor(
         "340B Program Value",
@@ -242,7 +258,7 @@ def render_tracker_340b(params: dict = None) -> str:
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
-  <div style="{cell}"><div style="{h3}">Covered Entities — Portfolio Registration</div>{e_chart}{e_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Covered Entities — Portfolio Registration</div>{e_chart}{e_scatter}{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Contract Pharmacy Arrangements</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Manufacturer Restrictions — Active</div>{res_tbl}</div>
   <div style="{cell}"><div style="{h3}">Drug-Category Savings Breakdown</div>{b_tbl}</div>

@@ -2,7 +2,23 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_scatter
+
+
+def _projects_scatter(items):
+    """Quadrant — payback vs ROI per capex project, so high-ROI fast-payback
+    projects (upper-left) and slow low-ROI ones separate."""
+    import statistics
+    pts, ys = [], []
+    for p in items:
+        y = p.roi_pct * 100.0
+        tn = ('positive' if p.roi_pct >= 0.20 else 'teal' if p.roi_pct >= 0.10 else 'warning')
+        pts.append((p.payback_months, y, p.project_id, tn)); ys.append(y)
+    return ck_scatter(
+        pts, x_label='Payback (months)', y_label='ROI %',
+        y_ref=(statistics.median(ys) if ys else None),
+        caption='Each dot = a project · upper-left = high ROI + fast payback (best) · tone = ROI',
+    )
 
 _EXPLAINER_CSS = """<style>
 .ck-cx-explainer{font-family:var(--sc-serif,'Georgia',serif);
@@ -226,6 +242,7 @@ def render_capex_budget(params: dict = None) -> str:
     )
 
     p_chart = _projects_chart(r.projects)
+    p_scatter = _projects_scatter(r.projects)
     p_tbl = _projects_table(r.projects)
     c_tbl = _categories_table(r.categories)
     d_tbl = _deal_budgets_table(r.deal_budgets)
@@ -266,7 +283,7 @@ def render_capex_budget(params: dict = None) -> str:
 <div class="ck-page-wrap">
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
-  <div style="{cell}"><div style="{h3}">Active Capex Projects</div>{p_chart}{p_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Active Capex Projects</div>{p_chart}{p_scatter}{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Category Rollup</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Deal-Level Budget Mix</div>{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Recent Capex Approvals</div>{a_tbl}</div>
