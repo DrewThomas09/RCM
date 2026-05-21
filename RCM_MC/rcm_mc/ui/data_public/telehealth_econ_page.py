@@ -2,7 +2,23 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_scatter
+
+
+def _prod_scatter(items):
+    """Quadrant — visits/provider/day vs revenue/provider, so high-volume
+    high-revenue specialties (upper-right) and sub-scale ones separate."""
+    import statistics
+    pts, xs, ys = [], [], []
+    for p in items:
+        tn = ('positive' if p.attrition_rate_pct < 0.12 else 'teal' if p.attrition_rate_pct < 0.20 else 'warning')
+        pts.append((p.visits_per_provider_day, p.avg_rev_per_provider_k, getattr(p, 'specialty', ''), tn))
+        xs.append(p.visits_per_provider_day); ys.append(p.avg_rev_per_provider_k)
+    return ck_scatter(
+        pts, x_label='Visits / provider / day', y_label='Revenue / provider ($k)',
+        x_ref=(statistics.median(xs) if xs else None), y_ref=(statistics.median(ys) if ys else None),
+        caption='Each dot = a specialty · upper-right = high volume + high revenue · tone = attrition',
+    )
 
 
 def _visits_chart(items) -> str:
@@ -189,6 +205,7 @@ def render_telehealth_econ(params: dict = None) -> str:
     v_chart = _visits_chart(r.visits)
     v_tbl = _visits_table(r.visits)
     p_tbl = _prod_table(r.productivity)
+    p_scatter = _prod_scatter(r.productivity)
     pa_tbl = _parity_table(r.parity)
     t_tbl = _tech_table(r.tech_stack)
     c_tbl = _cliffs_table(r.cliffs)
@@ -217,7 +234,7 @@ def render_telehealth_econ(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">Visit-Type Economics (P&amp;L by Visit Category)</div>{v_chart}{v_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Provider Productivity by Specialty</div>{p_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Provider Productivity by Specialty</div>{p_scatter}{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">State-Level Payer Parity Status</div>{pa_tbl}</div>
   <div style="{cell}"><div style="{h3}">Technology Stack Cost Structure</div>{t_tbl}</div>
   <div style="{cell}"><div style="{h3}">Regulatory Cliff Exposure (PHE / Ryan Haight / Home Originating)</div>{c_tbl}</div>

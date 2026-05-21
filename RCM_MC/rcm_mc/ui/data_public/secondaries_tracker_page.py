@@ -2,7 +2,23 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_scatter
+
+
+def _transactions_scatter(items):
+    """Quadrant — deal size vs NAV premium/discount, so large deep-discount
+    secondaries (lower-right) stand out against par."""
+    import statistics
+    pts, xs = [], []
+    for t in items:
+        y = t.nav_premium_discount_pct * 100.0
+        tn = ('positive' if t.nav_premium_discount_pct >= 0 else 'warning' if t.nav_premium_discount_pct >= -0.10 else 'negative')
+        pts.append((t.transaction_size_mm, y, str(t.vintage), tn)); xs.append(t.transaction_size_mm)
+    return ck_scatter(
+        pts, x_label='Transaction size ($M)', y_label='NAV premium / discount %',
+        x_ref=(statistics.median(xs) if xs else None), y_ref=0.0,
+        caption='Each dot = a transaction · below 0 = discount to NAV · tone = discount depth',
+    )
 
 
 def _transactions_chart(items) -> str:
@@ -191,6 +207,7 @@ def render_secondaries_tracker(params: dict = None) -> str:
 
     t_chart = _transactions_chart(r.transactions)
     t_tbl = _transactions_table(r.transactions)
+    t_scatter = _transactions_scatter(r.transactions)
     value_anchor = ck_value_anchor(
         "GP-Led Secondaries",
         f"${r.total_gp_led_volume_2024_b:,.0f}B 2024 volume",
@@ -220,7 +237,7 @@ def render_secondaries_tracker(params: dict = None) -> str:
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
-  <div style="{cell}"><div style="{h3}">Recent Healthcare Secondaries Transactions</div>{t_chart}{t_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Recent Healthcare Secondaries Transactions</div>{t_chart}{t_scatter}{t_tbl}</div>
   <div style="{cell}"><div style="{h3}">Secondary Buyer Landscape</div>{b_tbl}</div>
   <div style="{cell}"><div style="{h3}">CV Economics Structure</div>{ce_tbl}</div>
   <div style="{cell}"><div style="{h3}">LP/GP Conflict Areas</div>{cf_tbl}</div>
