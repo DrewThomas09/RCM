@@ -319,7 +319,12 @@ def _run_ols(
 
         mse = ss_res / (n - p - 1) if n > p + 1 else 0
         rmse = np.sqrt(mse)
-        se = np.sqrt(np.diag(mse * np.linalg.pinv(X_aug.T @ X_aug)))
+        # Clamp the variance diagonal at 0 before sqrt: collinear HCRIS
+        # features make XᵀX near-singular, so pinv's diagonal carries tiny
+        # negative round-off that would sqrt to NaN (leaking 'nan' SEs into
+        # the page). max(.,0) keeps every SE a real, non-negative number.
+        var_diag = np.clip(np.diag(mse * np.linalg.pinv(X_aug.T @ X_aug)), 0.0, None)
+        se = np.sqrt(var_diag)
         t_stats = beta / np.where(se > 0, se, 1)
 
         # P-values from t-distribution (approximation via normal for large n)

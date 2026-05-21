@@ -292,10 +292,22 @@ def run_regression(
     r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0
     adj_r2 = 1 - (1 - r2) * (n - 1) / (n - k - 1) if n > k + 1 else r2
 
-    mse = ss_res / (n - k - 1) if n > k + 1 else 0
+    mse = ss_res / (n - k - 1) if n > k + 1 else 0.0
+    # Coefficient standard errors via the (pseudo-)inverse of XᵀX.
+    # Plain np.linalg.inv blows up on collinear designs — the HCRIS
+    # feature set has VIFs in the hundreds (medicare/medicaid/commercial
+    # day-% sum to 100; beds ≈ bed_days_available), so round-off puts
+    # tiny NEGATIVE variances on the diagonal and np.sqrt returns NaN.
+    # Those NaNs propagated as "nan" std-errors, t=0, and "not
+    # significant" for every coefficient — the bug that made the
+    # regression page look broken. pinv is stable under rank deficiency
+    # (minimum-norm solution), and clipping the diagonal at 0 absorbs
+    # the floating-point noise so every SE is a real, non-negative number.
+    XtX = X_with_intercept.T @ X_with_intercept
     try:
-        var_beta = mse * np.linalg.inv(X_with_intercept.T @ X_with_intercept)
-        se = np.sqrt(np.diag(var_beta))
+        XtX_inv = np.linalg.pinv(XtX)
+        var_diag = mse * np.clip(np.diag(XtX_inv), 0.0, None)
+        se = np.sqrt(var_diag)
     except np.linalg.LinAlgError:
         se = np.zeros(k + 1)
 
