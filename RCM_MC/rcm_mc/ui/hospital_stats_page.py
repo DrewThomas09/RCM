@@ -13,8 +13,8 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_num, ck_fmt_pct, ck_kpi_block,
-    ck_next_section, ck_provenance_tooltip,
+    chartis_shell, ck_bar_row, ck_fmt_num, ck_fmt_pct, ck_kpi_block,
+    ck_next_section, ck_panel, ck_provenance_tooltip,
 )
 from .brand import PALETTE
 from .regression_page import _add_computed_features, _fmt_num, _COLLINEAR_PAIRS
@@ -64,6 +64,39 @@ def _percentile_badge(pct: float) -> str:
     return f'<span style="color:{PALETTE["text_secondary"]};">P{pct:.0f}</span>'
 
 
+def _percentile_profile(profile_data: List[tuple]) -> str:
+    """National-percentile profile — one labelled bar per metric showing
+    where this hospital ranks against the corpus (bar length = national
+    percentile). The table's P-number column hides the shape; the bar
+    rows make the hospital's spiky profile (top-decile on size, bottom
+    quartile on margin, etc.) scannable at a glance.
+
+    Bars are colored on percentile RANK, matching the table's percentile
+    badges — not a value judgment (a high expense percentile is not
+    "good"); the caption says so.
+    """
+    if len(profile_data) < 2:
+        return ""
+    rows = []
+    for label, value_str, pct_nat in profile_data:
+        if pct_nat >= 75:
+            tone = "positive"
+        elif pct_nat <= 25:
+            tone = "negative"
+        else:
+            tone = "teal"
+        rows.append(ck_bar_row(label, value_str, pct_nat, tone=tone))
+    return ck_panel(
+        '<p class="ck-section-body" style="margin-bottom:10px;">'
+        "Each bar is this hospital's national percentile rank on the "
+        "metric — longer is higher in the corpus distribution. Color "
+        "marks rank only (top quartile teal-green, bottom quartile red), "
+        "not whether high is favorable.</p>"
+        + "".join(rows),
+        title="National Percentile Profile",
+    )
+
+
 def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
     """Render per-hospital statistical profile."""
     df = _add_computed_features(hcris_df)
@@ -84,6 +117,7 @@ def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
     # Build metrics table
     metric_rows = ""
     outlier_flags = []
+    profile_data: List[tuple] = []  # (label, formatted_value, national_percentile)
     for col, label, fmt in _DISPLAY_METRICS:
         if col not in df.columns:
             continue
@@ -113,6 +147,8 @@ def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
         if abs(z_nat) > 2:
             direction = "above" if z_nat > 0 else "below"
             outlier_flags.append(f"{label}: {z_nat:+.1f}σ {direction} national mean")
+
+        profile_data.append((label, _fmt_val(val, fmt), pct_nat))
 
         metric_rows += (
             f'<tr>'
@@ -362,8 +398,10 @@ def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
         eyebrow="Continue —",
         italic_word="profile",
     )
+    profile_section = _percentile_profile(profile_data)
+
     body = (
-        f'{kpis}{flags_html}{metrics_section}'
+        f'{kpis}{flags_html}{profile_section}{metrics_section}'
         f'{residual_section}{drivers_section}{actions}{next_up}'
     )
 
