@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from rcm_mc.ui._chartis_kit import (
-    P, chartis_shell, ck_fmt_moic, ck_kpi_block, ck_provenance_tooltip,
+    P, chartis_shell, ck_fmt_moic, ck_kpi_block, ck_provenance_tooltip, ck_value_anchor,
 )
 
 
@@ -257,12 +257,20 @@ def render_mgmt_fee_tracker(params: dict) -> str:
     tprim = P["text"]
     tdim = P["text_dim"]
 
+    value_anchor = ck_value_anchor(
+        "Fund Economics",
+        f"${fe.fund_size_mm:.0f}M fund",
+        delta=f"${fe.invested_capital_mm:.0f}M deployed · ${fe.total_carry_paid_mm:.0f}M GP carry to date",
+        tone="navy",
+    )
     content = f'''
 {_input_form(params)}
 
 <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:12px">
 {kpis}
 </div>
+
+<div style="margin-top:12px">{value_anchor}</div>
 
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
   <div style="background:{bg_sec};border:1px solid {border};padding:12px">

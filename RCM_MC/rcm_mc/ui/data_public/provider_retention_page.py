@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _cohort_svg(cohorts) -> str:
@@ -241,11 +241,19 @@ def render_provider_retention(params: dict = None) -> str:
         meta=f"""Churn cohorts, driver diagnosis, at-risk individuals, retention levers, succession — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    value_anchor = ck_value_anchor(
+        "Provider Churn",
+        f"${r.cost_of_churn_mm:,.1f}M annual cost of churn",
+        delta=f"{r.total_providers:,} providers · {r.overall_turnover_pct * 100:.1f}% turnover · {r.expected_12mo_departures} expected departures",
+        tone="negative" if r.overall_turnover_pct >= 0.20 else "warning" if r.overall_turnover_pct >= 0.12 else "teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
     <div style="{cell}"><div style="{h3}">Turnover by Role</div>{cohort_svg}</div>
     <div style="{cell}"><div style="{h3}">Lever ROI Ranking</div>{roi_svg}</div>
