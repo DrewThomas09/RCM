@@ -252,6 +252,80 @@ def _render_quarterly_history_table(deals_df: pd.DataFrame) -> str:
 # /* === /app dashboard blocks === */ section. See docstring §3.
 
 
+def _return_hero(rollup: Dict[str, Any], deals_df: pd.DataFrame) -> str:
+    """Dominant return-hero block above the KPI strip.
+
+    Weighted MOIC is the figure a partner reads first, so it leads at
+    headline weight with Weighted IRR as the secondary line and a plain
+    provenance note (how many deals are weighted, how many excluded for
+    missing EV). When no deal carries an entry EV yet, the hero shows
+    "—" and says so — never a fabricated number (defensibility).
+    """
+    scope = ("Engagement" if current_workspace_mode() == CONSULTING
+             else "Fund")
+    moic = rollup.get("weighted_moic")
+    irr = rollup.get("weighted_irr")
+
+    # Honest provenance from the same frame the rollup weighted over.
+    sized_n = excluded_n = 0
+    try:
+        if deals_df is not None and not deals_df.empty:
+            cols = {"moic", "irr", "entry_ev"}
+            if cols.issubset(set(deals_df.columns)):
+                have = deals_df.dropna(subset=["moic", "irr", "entry_ev"])
+                sized_n = int(len(have))
+                excluded_n = int(len(deals_df) - sized_n)
+    except Exception:  # noqa: BLE001 — provenance note must never break render
+        sized_n = excluded_n = 0
+
+    eyebrow_css = (
+        "font-family:var(--sc-mono,monospace);font-size:10px;"
+        "letter-spacing:.12em;text-transform:uppercase;"
+        "color:var(--sc-text-dim,#465366);margin-bottom:4px;"
+    )
+    if moic is None:
+        moic_str = "—"
+        prov = (
+            f"Awaiting the first deal with a recorded entry EV — "
+            f"{scope.lower()}-weighted MOIC populates once a sized deal "
+            f"is tracked."
+        )
+        irr_html = ""
+    else:
+        moic_str = number_maybe(moic, format="moic")
+        prov = (
+            f"Entry-EV-weighted across {sized_n} sized "
+            f"deal{'' if sized_n == 1 else 's'}"
+            + (f" · {excluded_n} excluded for missing EV" if excluded_n else "")
+            + ". IRR distorts on partial-period holds; MOIC leads."
+        )
+        irr_str = number_maybe(irr, format="pct") if irr is not None else "—"
+        irr_html = (
+            '<div>'
+            f'<div style="{eyebrow_css}">Weighted IRR</div>'
+            '<div style="font-family:var(--sc-serif,Georgia,serif);'
+            'font-size:24px;line-height:1;color:var(--sc-navy,#0b2341);'
+            f'font-variant-numeric:tabular-nums;">{irr_str}</div></div>'
+        )
+    return (
+        '<div class="app-return-hero" style="border:1px solid '
+        'var(--sc-rule,#d6cfc0);border-radius:8px;padding:18px 22px;'
+        'margin-bottom:14px;background:var(--sc-bg-elevated,#fff);'
+        'display:flex;align-items:baseline;gap:28px;flex-wrap:wrap;">'
+        '<div>'
+        f'<div style="{eyebrow_css}">{_html.escape(scope)}-level return '
+        '· weighted MOIC</div>'
+        '<div style="font-family:var(--sc-serif,Georgia,serif);'
+        'font-size:38px;line-height:1;color:var(--sc-navy,#0b2341);'
+        f'font-variant-numeric:tabular-nums;">{moic_str}</div></div>'
+        f'{irr_html}'
+        '<div style="flex:1;min-width:220px;font-size:11px;'
+        'font-style:italic;color:var(--sc-text-dim,#465366);'
+        f'font-family:var(--sc-serif,Georgia,serif);">{_html.escape(prov)}</div>'
+        '</div>'
+    )
+
+
 def render_kpi_strip(
     rollup: Dict[str, Any],
     *,
@@ -293,6 +367,7 @@ def render_kpi_strip(
         )
 
     viz_html = (
+        f'{_return_hero(rollup, deals_df)}'
         f'{eyebrow}'
         f'<div class="app-kpi-strip">{cells_html}</div>'
     )
