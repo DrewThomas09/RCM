@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 
 from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_section_header, ck_kpi_block,
-    ck_fmt_moic, ck_fmt_num,
+    ck_fmt_moic, ck_fmt_num, ck_value_anchor,
 )
 
 
@@ -334,6 +334,15 @@ def render_hold_optimizer(params: Dict[str, str]) -> str:
         + "</div>"
     )
 
+    _opt_moic = f"{result.optimal_moic_p50:.2f}x" if result.optimal_moic_p50 else "n/a"
+    _corp_moic = f"{result.corpus_p50:.2f}x" if result.corpus_p50 else "n/a"
+    value_anchor = ck_value_anchor(
+        "Optimal Hold",
+        f"{result.optimal_bucket or '—'} optimal hold",
+        delta=f"{_opt_moic} peer P50 MOIC vs {_corp_moic} corpus · {result.n_peers} peer deals",
+        tone="teal",
+    )
+
     # No-results message
     if result.n_peers == 0:
         body = (
@@ -349,6 +358,7 @@ def render_hold_optimizer(params: Dict[str, str]) -> str:
         body = f"""
 {_input_form(params)}
 {kpi_grid}
+{value_anchor}
 {ck_section_header("Hold Period vs. MOIC", f"P25/P50/P75 across {result.n_peers} peer deals")}
 <div style="overflow-x:auto;margin-bottom:24px">{chart}</div>
 {ck_section_header("Bucket Statistics")}
