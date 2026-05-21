@@ -893,6 +893,104 @@ def ck_bar_row(
     )
 
 
+def ck_scatter(
+    points,
+    *,
+    x_label: str = "",
+    y_label: str = "",
+    x_ref=None,
+    y_ref=None,
+    height: int = 230,
+    caption: str = "",
+) -> str:
+    """Scatter / quadrant chart for interpreting a 2-metric dense table.
+
+    ``points`` is a list of ``(x, y, label, tone)`` tuples (tone ∈
+    {teal, positive, warning, negative, navy}); each renders as a dot
+    with a hover ``<title>`` of ``label`` + the two values. Optional
+    ``x_ref`` / ``y_ref`` draw dashed quadrant reference lines (e.g. a
+    benchmark median) so a partner reads quadrant membership — the
+    "big + risky" cluster — straight off a table that otherwise hides it
+    in columns. Pure inline SVG, editorial palette, responsive width.
+    Returns '' when fewer than 2 finite points exist (caller can fall
+    back to the table alone)."""
+    tone_var = {
+        "teal": "var(--sc-teal,#1F7A75)", "positive": "var(--sc-positive,#0a8a5f)",
+        "warning": "var(--sc-warning,#b8732a)", "negative": "var(--sc-negative,#b5321e)",
+        "navy": "var(--sc-navy,#0b2341)",
+    }
+    pts = []
+    for p in points:
+        try:
+            x = float(p[0]); y = float(p[1])
+        except (TypeError, ValueError, IndexError):
+            continue
+        if x != x or y != y:  # NaN guard
+            continue
+        lab = str(p[2]) if len(p) > 2 and p[2] is not None else ""
+        tn = p[3] if len(p) > 3 and p[3] in tone_var else "teal"
+        pts.append((x, y, lab, tn))
+    if len(pts) < 2:
+        return ""
+    W, H = 480.0, float(height)
+    L, R, T, B = 46.0, 14.0, 14.0, 30.0
+    xs = [p[0] for p in pts]; ys = [p[1] for p in pts]
+    xmin, xmax = min(xs), max(xs); ymin, ymax = min(ys), max(ys)
+    if xmax == xmin: xmax += 1.0; xmin -= 1.0
+    if ymax == ymin: ymax += 1.0; ymin -= 1.0
+    xpad = (xmax - xmin) * 0.06; ypad = (ymax - ymin) * 0.08
+    xmin -= xpad; xmax += xpad; ymin -= ypad; ymax += ypad
+
+    def sx(x): return L + (x - xmin) / (xmax - xmin) * (W - L - R)
+    def sy(y): return (H - B) - (y - ymin) / (ymax - ymin) * (H - B - T)
+
+    def fnum(v):
+        a = abs(v)
+        if a >= 100: return f"{v:,.0f}"
+        if a >= 1: return f"{v:,.1f}"
+        return f"{v:,.2f}"
+
+    parts = [f'<svg viewBox="0 0 {W:.0f} {H:.0f}" width="100%" '
+             f'style="max-width:520px;font-family:var(--sc-mono,JetBrains Mono,monospace)" '
+             f'role="img" aria-label="scatter plot">']
+    # frame axes
+    parts.append(f'<line x1="{L}" y1="{T}" x2="{L}" y2="{H-B}" stroke="var(--sc-rule,#d6cfc0)" stroke-width="1"/>')
+    parts.append(f'<line x1="{L}" y1="{H-B}" x2="{W-R}" y2="{H-B}" stroke="var(--sc-rule,#d6cfc0)" stroke-width="1"/>')
+    # quadrant reference lines
+    if x_ref is not None:
+        try:
+            xr = sx(float(x_ref))
+            parts.append(f'<line x1="{xr:.1f}" y1="{T}" x2="{xr:.1f}" y2="{H-B}" stroke="var(--sc-text-faint,#7a8699)" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>')
+        except (TypeError, ValueError): pass
+    if y_ref is not None:
+        try:
+            yr = sy(float(y_ref))
+            parts.append(f'<line x1="{L}" y1="{yr:.1f}" x2="{W-R}" y2="{yr:.1f}" stroke="var(--sc-text-faint,#7a8699)" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>')
+        except (TypeError, ValueError): pass
+    # axis min/max ticks
+    parts.append(f'<text x="{L}" y="{H-B+14}" font-size="8" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(xmin))}</text>')
+    parts.append(f'<text x="{W-R}" y="{H-B+14}" font-size="8" text-anchor="end" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(xmax))}</text>')
+    parts.append(f'<text x="{L-4}" y="{H-B}" font-size="8" text-anchor="end" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(ymin))}</text>')
+    parts.append(f'<text x="{L-4}" y="{T+8}" font-size="8" text-anchor="end" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(ymax))}</text>')
+    # axis labels
+    if x_label:
+        parts.append(f'<text x="{(L+W-R)/2:.0f}" y="{H-2}" font-size="9" text-anchor="middle" fill="var(--sc-text-dim,#465366)">{_esc(x_label)}</text>')
+    if y_label:
+        cy = (T + H - B) / 2
+        parts.append(f'<text x="11" y="{cy:.0f}" font-size="9" text-anchor="middle" fill="var(--sc-text-dim,#465366)" transform="rotate(-90 11 {cy:.0f})">{_esc(y_label)}</text>')
+    # dots
+    for x, y, lab, tn in pts:
+        cx = sx(x); cy = sy(y)
+        title = (lab + " · " if lab else "") + f"{fnum(x)}, {fnum(y)}"
+        parts.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="4" fill="{tone_var[tn]}" '
+                     f'fill-opacity="0.78" stroke="var(--sc-bg,#faf7f0)" stroke-width="0.8">'
+                     f'<title>{_esc(title)}</title></circle>')
+    parts.append('</svg>')
+    cap = (f'<div style="font-size:10px;color:var(--sc-text-faint);margin-top:4px;'
+           f'font-family:JetBrains Mono,monospace">{_esc(caption)}</div>') if caption else ""
+    return '<div style="margin-bottom:14px">' + "".join(parts) + cap + '</div>'
+
+
 def ck_value_anchor(
     label: str,
     value: str,
@@ -5569,6 +5667,7 @@ __all__ = [
     "ck_empty_state",
     "ck_kpi_block",
     "ck_value_anchor",
+    "ck_scatter",
     "ck_page_title",
     "ck_signal_badge",
     "ck_command_palette",

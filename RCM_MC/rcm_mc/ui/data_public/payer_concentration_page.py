@@ -4,7 +4,26 @@ from __future__ import annotations
 import html as _html
 from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_data_cell, ck_kpi_block, ck_paired_block, ck_page_title,
-    ck_bar_row)
+    ck_bar_row, ck_scatter)
+
+
+def _payers_scatter(items):
+    """Quadrant view — revenue concentration vs denial rate, so the
+    'big + high-denial' payers (upper-right) jump out of the roster."""
+    import statistics
+    pts, shares, denials = [], [], []
+    for p in items:
+        x = p.revenue_share_pct * 100.0; y = p.denial_rate_pct * 100.0
+        tn = ('negative' if p.renewal_risk_score >= 70
+              else 'warning' if p.renewal_risk_score >= 45 else 'teal')
+        pts.append((x, y, p.payer_name, tn)); shares.append(x); denials.append(y)
+    xref = statistics.median(shares) if shares else None
+    yref = statistics.median(denials) if denials else None
+    return ck_scatter(
+        pts, x_label='Revenue share %', y_label='Denial rate %',
+        x_ref=xref, y_ref=yref,
+        caption='Each dot = a payer · upper-right = high-concentration + high-denial (priority) · tone = renewal risk',
+    )
 
 
 def _payers_chart(items):
@@ -226,6 +245,7 @@ def render_payer_concentration(params: dict = None) -> str:
     svg = _payer_share_svg(r.payers)
     payers_tbl = _payers_table(r.payers)
     payers_chart = _payers_chart(r.payers)
+    payers_scatter = _payers_scatter(r.payers)
     renewals_tbl = _renewals_table(r.renewals)
     denials_tbl = _denials_table(r.denials)
     oon_tbl = _oon_table(r.oon_exposure)
@@ -278,7 +298,7 @@ def render_payer_concentration(params: dict = None) -> str:
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {concentration_paired}
-  <div style="{cell}"><div style="{h3}">Payer Roster — Share, YoY, Contract Expiry, Denials, Renewal Risk</div>{payers_chart}{payers_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Payer Roster — Share, YoY, Contract Expiry, Denials, Renewal Risk</div>{payers_chart}{payers_scatter}{payers_tbl}</div>
   <div style="{cell}"><div style="{h3}">Contract Renewal Calendar — Priority &amp; Exposure</div>{renewals_tbl}</div>
   <div style="{cell}"><div style="{h3}">Payer-Level Denials Analysis — Write-Off Exposure</div>{denials_tbl}</div>
   <div style="{cell}"><div style="{h3}">Out-of-Network Exposure by Service Line — No Surprises Act</div>{oon_tbl}</div>
