@@ -1466,6 +1466,61 @@ def ck_section_intro(
     )
 
 
+_NARRATIVE_CSS = (
+    "<style>"
+    # Memo-intro paragraph: the opening line of a section, drafted from
+    # the underlying data, in the editorial register (italic serif,
+    # muted ink, generous measure). Deliberately a plain paragraph — no
+    # card, no shadow, no fill, no color decoration — so it reads like
+    # the first sentence of a memo section, not a marketing callout.
+    ".ck-narrative{font-family:var(--sc-serif,Georgia,serif);"
+    "font-style:italic;font-size:15px;line-height:1.55;"
+    "color:var(--sc-text-dim,#465366);margin:0 0 var(--sc-s-5,16px) 0;"
+    "max-width:74ch;}"
+    # Empty state is the same paragraph in a quieter ink so an
+    # un-populated section still reads as intentional, not broken.
+    ".ck-narrative.is-empty{color:var(--sc-text-faint,#7a8699);}"
+    "</style>"
+)
+
+
+def ck_narrative_band(
+    text: str = "",
+    *,
+    empty_copy: str = "",
+    inject_css: bool = True,
+) -> str:
+    """Narrative summary band — the opening paragraph of a memo section.
+
+    Renders ``text`` (drafted upstream from the section's underlying
+    data) as an italic serif memo-intro paragraph. When ``text`` is
+    empty, falls back to ``empty_copy`` rendered in a quieter ink so an
+    un-populated section still reads as intentional. With neither,
+    returns ``""`` (the band is silent by default — callers opt in by
+    passing drafted copy).
+
+    Tone contract for callers: declarative, no exclamation, no
+    marketing language. This is the first sentence of a memo section,
+    not a headline.
+
+    ``text``/``empty_copy`` are HTML-escaped here, so callers pass plain
+    strings. ``inject_css`` emits the shared ``.ck-narrative`` stylesheet
+    once per page; pass ``inject_css=False`` on subsequent bands on the
+    same page to avoid duplicate ``<style>`` blocks (mirrors the
+    ``ck_provenance_tooltip`` idiom).
+
+    Distinct from ``ck_section_intro`` (eyebrow + serif headline chrome)
+    and ``ck_value_anchor`` (the dollar-anchor band): this is body prose,
+    not a header or a metric strip.
+    """
+    css = _NARRATIVE_CSS if inject_css else ""
+    if text:
+        return f'{css}<p class="ck-narrative">{_esc(text)}</p>'
+    if empty_copy:
+        return f'{css}<p class="ck-narrative is-empty">{_esc(empty_copy)}</p>'
+    return ""
+
+
 def ck_next_section(
     label: str,
     href: str,
@@ -5671,6 +5726,7 @@ __all__ = [
     "ck_kpi_block",
     "ck_value_anchor",
     "ck_scatter",
+    "ck_narrative_band",
     "ck_page_title",
     "ck_signal_badge",
     "ck_command_palette",
