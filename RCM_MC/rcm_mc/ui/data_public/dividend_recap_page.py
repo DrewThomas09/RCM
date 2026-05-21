@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _scenarios_svg(scenarios) -> str:
@@ -312,6 +312,14 @@ def render_dividend_recap(params: dict = None) -> str:
         meta=f"${r.ev_mm:,.0f}M EV · {r.entry_leverage:.1f}x → {r.current_leverage:.1f}x leverage (year {current_yr}, ${r.current_ebitda_mm:,.1f}M EBITDA) · ${r.max_recap_dividend_mm:,.1f}M max dividend at {r.cash_multiple_from_recap * 100:.0f}% of invested equity · recommended {r.recommended_scenario}",
     )
 
+    value_anchor = ck_value_anchor(
+        "Recap Capacity",
+        f"${r.max_recap_dividend_mm:,.1f}M dividend capacity",
+        delta=f"{r.entry_leverage:.1f}x → {r.current_leverage:.1f}x leverage · ${r.current_ebitda_mm:,.1f}M EBITDA",
+        opportunity=f"{r.cash_multiple_from_recap * 100:.0f}% of invested equity returned",
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
@@ -322,6 +330,8 @@ def render_dividend_recap(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">
     {kpi_strip}
   </div>
+
+  {value_anchor}
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
     <div style="{cell}">

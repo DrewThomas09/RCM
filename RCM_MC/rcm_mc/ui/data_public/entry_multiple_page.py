@@ -27,7 +27,7 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 from rcm_mc.ui._chartis_kit import (
     P, _MONO, _SANS, chartis_shell, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip, ck_section_header,
+    ck_provenance_tooltip, ck_section_header, ck_value_anchor,
 )
 
 
@@ -227,10 +227,24 @@ def render_entry_multiple() -> str:
     scatter = _multiple_moic_scatter(corpus)
     sector_table = _sector_multiple_table(corpus)
 
+    _em_delta = " · ".join(p for p in [
+        (f"P25 {p25:.1f}x" if p25 else None),
+        (f"P75 {p75:.1f}x" if p75 else None),
+        (f"{above14:.0f}% above 14x (rich)" if above14 is not None else None),
+    ] if p)
+    value_anchor = ck_value_anchor(
+        "Entry Discipline",
+        (f"{p50:.1f}x median entry multiple" if p50 else "Entry multiples"),
+        delta=_em_delta,
+        tone="navy",
+    )
+
     body = f"""
 <div style="padding:16px 20px;max-width:1200px">
   {ck_section_header("ENTRY MULTIPLE ANALYSIS", f"EV/EBITDA at entry — {len(corpus)} corpus transactions", None)}
   {kpi_strip}
+
+  {value_anchor}
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
     <div style="background:{P['panel_alt']};border:1px solid {P['border']};padding:10px">

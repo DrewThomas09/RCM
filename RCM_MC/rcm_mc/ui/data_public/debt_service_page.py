@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _dscr_trend_svg(schedule) -> str:
@@ -346,6 +346,13 @@ def render_debt_service(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    value_anchor = ck_value_anchor(
+        "Capital Structure",
+        f"${total_debt:,.0f}M debt at {r.blended_rate_pct:.2f}%",
+        delta=f"{r.entry_multiple:.1f}x EV · {current_dscr:.2f}x entry DSCR · {r.equity_pct * 100:.0f}% equity",
+        target=f"{stress_breaches} of {len(r.stress_scenarios)} stress scenarios breach",
+        tone="negative" if stress_breaches > 0 else "teal",
+    )
     page_title = ck_page_title(
         "Debt Service Coverage Tracker",
         eyebrow="DEBT SERVICE",
@@ -362,6 +369,8 @@ def render_debt_service(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">
     {kpi_strip}
   </div>
+
+  {value_anchor}
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
     <div style="{cell}">
