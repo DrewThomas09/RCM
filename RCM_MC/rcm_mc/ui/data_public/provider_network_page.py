@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from rcm_mc.ui._chartis_kit import (
-    P, chartis_shell, ck_fmt_moic, ck_kpi_block, ck_provenance_tooltip,
+    P, chartis_shell, ck_fmt_moic, ck_kpi_block, ck_provenance_tooltip, ck_value_anchor,
 )
 
 
@@ -310,12 +310,21 @@ def render_provider_network(params: dict) -> str:
     tprim = P["text"]
     tdim = P["text_dim"]
 
+    value_anchor = ck_value_anchor(
+        "Network Concentration",
+        f"{r.network_regime.capitalize()} regime",
+        delta=f"HHI {r.network_hhi:.0f} · {r.concentration_risk} concentration · adj MOIC {r.adjusted_moic_estimate:.2f}x ({adj_sign})",
+        tone="warning" if str(r.concentration_risk).lower() in ("high", "elevated") else "teal",
+    )
     content = f'''
 {_input_form(params)}
 
 <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:12px">
 {kpis}
 </div>
+
+<div style="margin-top:12px">{value_anchor}</div>'''
+    content += f'''
 
 <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px;margin-top:12px">
   <div style="background:{bg_sec};border:1px solid {border};padding:12px">
