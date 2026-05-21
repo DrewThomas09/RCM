@@ -32,6 +32,7 @@ Each per-page file follows the same template:
 | `11_METRIC_GLOSSARY.md` | Canonical definitions of every metric name — definition · computation · source · scale. The connective tissue. |
 | `12_CLI_EXPORTS_API.md` | The non-browser front doors — the `rcm-mc` CLI, file exports/reports, and the JSON/OpenAPI surface (same engines, same numbers). |
 | `13_ENGAGEMENT_AUTH.md` | The consulting engagement layer, the two RBAC systems, the draft→publish client-portal workflow, the two-view mode, and auth mechanics. |
+| `14_RESEARCH_TOOLING.md` | Research/market-intel/news, the model/quant tooling (validation, calibration, scenarios, runs), and the dashboard generations. |
 
 ## The one-sentence version
 
