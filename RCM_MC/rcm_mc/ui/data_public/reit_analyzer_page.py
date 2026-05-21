@@ -2,7 +2,24 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title, ck_bar_row
+
+
+def _scenarios_chart(items):
+    """Summary chart — sale-leaseback proceeds by scenario (tone by rent coverage)."""
+    def _tone(s):
+        if s.coverage_ratio >= 2.0: return "positive"
+        if s.coverage_ratio >= 1.5: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda s: s.sale_proceeds_mm, reverse=True)
+    total = sum(s.sale_proceeds_mm for s in top) or 1.0
+    rows = [ck_bar_row(f"{s.scenario} · {s.asset_type}",
+            f"${s.sale_proceeds_mm:,.0f}M · {s.coverage_ratio:.2f}x cov · ${s.npv_benefit_mm:,.1f}M NPV",
+            s.sale_proceeds_mm / total * 100.0, tone=_tone(s)) for s in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of sale proceeds by scenario '
+            '· value = proceeds ($M) + rent coverage + NPV · tone = coverage ratio</div></div>')
 
 
 def _assets_paired_rows(items) -> tuple:
@@ -202,6 +219,7 @@ def render_reit_analyzer(params: dict = None) -> str:
         hot_rows=a_hot,
     )
     scen_tbl = _scenarios_table(r.scenarios)
+    scen_chart = _scenarios_chart(r.scenarios)
     buy_tbl = _buyers_table(r.reit_buyers)
     cov_tbl = _coverage_table(r.rent_coverage)
     uses_tbl = _uses_table(r.proceeds_uses)
@@ -231,7 +249,7 @@ def render_reit_analyzer(params: dict = None) -> str:
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {assets_paired}
-  <div style="{cell}"><div style="{h3}">Sale-Leaseback Scenario Matrix</div>{scen_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Sale-Leaseback Scenario Matrix</div>{scen_chart}{scen_tbl}</div>
   <div style="{cell}"><div style="{h3}">REIT Buyer Landscape — Public + Private Capital</div>{buy_tbl}</div>
   <div style="{cell}"><div style="{h3}">Rent Coverage &amp; Covenant Impact</div>{cov_tbl}</div>
   <div style="{cell}"><div style="{h3}">Proceeds Allocation Plan</div>{uses_tbl}</div>

@@ -7,7 +7,25 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+
+
+def _materiality_chart(items):
+    """Summary chart — regulatory exposures by EV impact (tone by materiality tier)."""
+    def _tone(m):
+        t = (m.materiality_tier or "").lower()
+        if "critical" in t or "high" in t: return "negative"
+        if "moderate" in t or "medium" in t: return "warning"
+        return "navy"
+    top = sorted(items, key=lambda m: abs(m.ev_impact_mm), reverse=True)
+    total = sum(abs(m.ev_impact_mm) for m in top) or 1.0
+    rows = [ck_bar_row(f"{m.impact_name}",
+            f"${m.ev_impact_mm:+,.1f}M EV · ${m.ebitda_impact_mm:+,.1f}M EBITDA · {m.materiality_tier}",
+            abs(m.ev_impact_mm) / total * 100.0, tone=_tone(m)) for m in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of regulatory EV exposure '
+            '· value = EV + EBITDA impact + tier · tone = materiality tier</div></div>')
 
 
 def _risk_dial_svg(score: int, label: str) -> str:
@@ -211,6 +229,7 @@ def render_regulatory_risk(params: dict = None) -> str:
     risk_tbl = _risk_factors_table(r.risk_factors)
     event_tbl = _events_table(r.active_events)
     mat_tbl = _materiality_table(r.materiality_schedule)
+    mat_chart = _materiality_chart(r.materiality_schedule)
     gap_tbl = _gaps_table(r.compliance_gaps)
 
     form = f"""
@@ -282,7 +301,7 @@ def render_regulatory_risk(params: dict = None) -> str:
 
   <div style="{cell}">
     <div style="{h3}">Deal-Applicable Materiality Schedule</div>
-    {mat_tbl}
+    {mat_chart}{mat_tbl}
   </div>
 
   <div style="{cell}">
