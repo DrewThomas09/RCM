@@ -4144,6 +4144,93 @@ _TOAST_HTML = """
 """
 
 
+_SORT_JS = """
+<style>
+table.ck-data-table th[data-sortable]:hover{color:var(--sc-teal,#155752);}
+table.ck-data-table th[data-sort-dir]{color:var(--sc-teal,#155752);}
+.ck-sort-ind{font-size:9px;opacity:0.75;}
+</style>
+<script>
+/* Click-to-sort for every editorial data table. Hooks all
+ * table.ck-data-table that carry a <thead> + <tbody> with >=2 rows.
+ * Click (or Enter/Space) on a header sorts the body rows by that
+ * column, toggling asc/desc. Numeric cells ($1,204.50 / 12.3% /
+ * 2.50x / +4.1% / (1.2) negatives) sort numerically; everything else
+ * lexically (locale, numeric-aware). Blank / "—" cells sink to the
+ * bottom. Whole <tr> nodes are re-ordered so cell styling + color
+ * spans survive. Purely additive: with JS off the table is unchanged.
+ * Opt out per table with data-no-sort. */
+(function(){
+  function parseNum(t){
+    if(t==null) return null;
+    var s=String(t).trim();
+    if(s===''||s==='\\u2014'||s==='-'||s==='n/a'||s==='N/A') return null;
+    var neg=/^\\(.*\\)$/.test(s);
+    s=s.replace(/[(),$%x\\u00d7\\s]/g,'').replace(/\\+/g,'');
+    if(s==='') return null;
+    var v=parseFloat(s);
+    return isNaN(v)?null:(neg?-v:v);
+  }
+  function cellText(row,idx){var c=row.children[idx];return c?(c.textContent||'').trim():'';}
+  function sortTable(table,idx,th){
+    var tbody=table.tBodies[0];
+    if(!tbody) return;
+    var rows=Array.prototype.slice.call(tbody.rows);
+    if(rows.length<2) return;
+    var dir=th.getAttribute('data-sort-dir')==='asc'?'desc':'asc';
+    var heads=th.parentNode.children;
+    for(var i=0;i<heads.length;i++){
+      heads[i].removeAttribute('data-sort-dir');
+      var pi=heads[i].querySelector('.ck-sort-ind');
+      if(pi) pi.textContent='';
+    }
+    th.setAttribute('data-sort-dir',dir);
+    var mul=dir==='asc'?1:-1;
+    var dec=rows.map(function(r,i){var t=cellText(r,idx);return {r:r,i:i,t:t,n:parseNum(t)};});
+    dec.sort(function(a,b){
+      if(a.n!=null&&b.n!=null){return a.n!==b.n?(a.n-b.n)*mul:a.i-b.i;}
+      if(a.n!=null) return -1;
+      if(b.n!=null) return 1;
+      var c=a.t.localeCompare(b.t,void 0,{numeric:true});
+      return c!==0?c*mul:a.i-b.i;
+    });
+    var frag=document.createDocumentFragment();
+    dec.forEach(function(d){frag.appendChild(d.r);});
+    tbody.appendChild(frag);
+    var ind=th.querySelector('.ck-sort-ind');
+    if(ind) ind.textContent=dir==='asc'?' \\u25B2':' \\u25BC';
+  }
+  function init(){
+    var tables=document.querySelectorAll('table.ck-data-table');
+    Array.prototype.forEach.call(tables,function(table){
+      if(table.getAttribute('data-no-sort')!=null) return;
+      var head=table.tHead, tbody=table.tBodies[0];
+      if(!head||!tbody||tbody.rows.length<2) return;
+      var hrow=head.rows[head.rows.length-1];
+      if(!hrow) return;
+      Array.prototype.forEach.call(hrow.cells,function(th,idx){
+        if(th.getAttribute('data-sortable')!=null) return;
+        th.setAttribute('data-sortable','');
+        th.style.cursor='pointer';
+        th.setAttribute('role','button');
+        th.setAttribute('tabindex','0');
+        if(!th.title) th.title='Sort';
+        var ind=document.createElement('span');
+        ind.className='ck-sort-ind';
+        th.appendChild(ind);
+        var h=function(e){e.preventDefault();sortTable(table,idx,th);};
+        th.addEventListener('click',h);
+        th.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' ')h(e);});
+      });
+    });
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}
+  else{init();}
+})();
+</script>
+"""
+
+
 _TOAST_JS = """
 <script>
 /* Toast / flash notification system.
@@ -5146,6 +5233,7 @@ def chartis_shell(
         f"{_PALETTE_JS}"
         f"{_SHORTCUTS_JS}"
         f"{_TOAST_JS}"
+        f"{_SORT_JS}"
         f"{extra_js_html}"
         "</body></html>"
     )
