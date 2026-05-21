@@ -44,23 +44,6 @@ def _row_link(deal_id: str, *, selected_stage: Optional[str] = None) -> str:
     return "/app?" + "&".join(parts)
 
 
-def _format_drift(value: Any) -> str:
-    """Drift is a signed percent. Render with leading + or − and tone."""
-    if value is None or pd.isna(value):
-        return '<span style="color:var(--faint)">—</span>'
-    try:
-        f = float(value)
-    except (TypeError, ValueError):
-        return '<span style="color:var(--faint)">—</span>'
-    if f < -10:
-        tone = "red"
-    elif f < 0:
-        tone = "amber"
-    else:
-        tone = "green"
-    return number_maybe(f, format="drift", tone=tone)
-
-
 def _row_html(
     row: pd.Series,
     *,
@@ -74,8 +57,6 @@ def _row_html(
     moic = row.get("moic")
     irr = row.get("irr")
     cov = str(row.get("covenant_status") or "")
-    drift = row.get("drift_pct")
-    headline = str(row.get("headline") or "")
 
     cls = "focused" if is_focused else ""
     href = _row_link(deal_id, selected_stage=selected_stage)
@@ -97,8 +78,6 @@ def _row_html(
         f'<td class="r">{a(number_maybe(moic, format="moic"))}</td>'
         f'<td class="r">{a(number_maybe(irr, format="pct"))}</td>'
         f'<td>{a(covenant_pill(cov.upper() if cov else ""))}</td>'
-        f'<td class="r">{a(_format_drift(drift))}</td>'
-        f'<td>{a(_html.escape(headline))}</td>'
         '</tr>'
     )
 
@@ -144,7 +123,7 @@ def render_deals_table(
             '<th>Covenant</th><th class="r">Drift</th>'
             '<th>Headline</th>'
             '</tr></thead>'
-            '<tbody><tr><td colspan="8">'
+            '<tbody><tr><td colspan="6">'
             f'<div class="empty">{empty_msg}</div>'
             '</td></tr></tbody>'
             '</table>'
@@ -163,8 +142,7 @@ def render_deals_table(
         '<thead><tr>'
         f'<th>{term("deal")}</th><th>Stage</th><th class="r">EV</th>'
         '<th class="r">MOIC</th><th class="r">IRR</th>'
-        '<th>Covenant</th><th class="r">Drift</th>'
-        '<th>Headline</th>'
+        '<th>Covenant</th>'
         '</tr></thead>'
         f'<tbody>{"".join(rows)}</tbody>'
         '</table>'
