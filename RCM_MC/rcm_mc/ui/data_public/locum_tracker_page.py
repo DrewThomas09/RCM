@@ -2,7 +2,25 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title, ck_bar_row
+
+
+def _gaps_chart(items):
+    """Summary chart — coverage gaps by revenue at risk (tone by priority)."""
+    def _tone(g):
+        p = (g.priority or "").lower()
+        if "crit" in p or "high" in p: return "negative"
+        if "med" in p or "mod" in p: return "warning"
+        return "teal"
+    top = sorted(items, key=lambda g: g.revenue_at_risk_mm, reverse=True)
+    total = sum(g.revenue_at_risk_mm for g in top) or 1.0
+    rows = [ck_bar_row(f"{g.department}",
+            f"${g.revenue_at_risk_mm:,.1f}M at risk · {g.open_positions} open · {g.uncovered_pct * 100:.0f}% uncovered",
+            g.revenue_at_risk_mm / total * 100.0, tone=_tone(g)) for g in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of revenue at risk by department '
+            '· value = at-risk ($M) + open roles + uncovered % · tone = priority</div></div>')
 
 
 def _roles_paired_rows(roles) -> tuple:
@@ -203,6 +221,7 @@ def render_locum_tracker(params: dict = None) -> str:
         hot_rows=role_hot,
     )
     gaps_tbl = _gaps_table(r.gaps)
+    gaps_chart = _gaps_chart(r.gaps)
     conv_tbl = _convert_table(r.conversions)
     comp_tbl = _compliance_table(r.compliance)
     sc_tbl = _scenarios_table(r.scenarios)
@@ -236,7 +255,7 @@ def render_locum_tracker(params: dict = None) -> str:
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {roles_paired}
-  <div style="{cell}"><div style="{h3}">Coverage Gap Inventory — Revenue At Risk</div>{gaps_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Coverage Gap Inventory — Revenue At Risk</div>{gaps_chart}{gaps_tbl}</div>
   <div style="{cell}"><div style="{h3}">Permanent Conversion Pipeline</div>{conv_tbl}</div>
   <div style="{cell}"><div style="{h3}">Compliance Exposure — 1099 / Credentialing / Contract Drift</div>{comp_tbl}</div>
   <div style="{cell}"><div style="{h3}">Workforce Scenario Plans</div>{sc_tbl}</div>

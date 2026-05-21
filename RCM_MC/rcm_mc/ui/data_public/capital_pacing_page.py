@@ -2,7 +2,24 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title, ck_bar_row
+
+
+def _commitments_chart(items):
+    """Summary chart — commitments by amount (tone by deployment utilization)."""
+    def _tone(c):
+        if c.utilization_pct >= 0.75: return "positive"
+        if c.utilization_pct >= 0.45: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda c: c.committed_mm, reverse=True)
+    total = sum(c.committed_mm for c in top) or 1.0
+    rows = [ck_bar_row(f"{c.category}",
+            f"${c.committed_mm:,.0f}M committed · {c.utilization_pct * 100:.0f}% deployed",
+            c.committed_mm / total * 100.0, tone=_tone(c)) for c in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of committed capital '
+            '· value = committed ($M) + utilization · tone = deployment progress</div></div>')
 
 _EXPLAINER_CSS = """<style>
 .ck-cp-explainer{font-family:var(--sc-serif,'Georgia',serif);
@@ -201,6 +218,7 @@ def render_capital_pacing(params: dict = None) -> str:
     inv_tbl = _investments_table(r.investments)
     vp_tbl = _vintage_table(r.vintage_peers, r.vintage_year)
     cmt_tbl = _commitments_table(r.commitments)
+    cmt_chart = _commitments_chart(r.commitments)
 
     form = f"""
 <form method="GET" action="/capital-pacing" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
@@ -235,7 +253,7 @@ def render_capital_pacing(params: dict = None) -> str:
   {jcurve_paired}
   <div style="{cell}"><div style="{h3}">Portfolio Investments</div>{inv_tbl}</div>
   <div style="{cell}"><div style="{h3}">Vintage Year Peer Comparison</div>{vp_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Commitment Utilization — Deployment Status</div>{cmt_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Commitment Utilization — Deployment Status</div>{cmt_chart}{cmt_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {irr_c};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Pacing Thesis:</strong> Vintage {r.vintage_year} fund of ${r.fund_size_mm:,.0f}M is in year {r.fund_age_years} of life.
     ${r.total_called_mm:,.0f}M called ({r.total_called_mm / r.fund_size_mm * 100:.0f}% of commitments), ${r.total_distributions_mm:,.0f}M distributed ({r.current_dpi:.2f}x DPI).

@@ -7,7 +7,24 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+
+
+def _component_chart(items):
+    """Summary chart — return attribution by component (tone by sign of contribution)."""
+    def _tone(c):
+        if c.contribution_moic_x > 0.05: return "positive"
+        if c.contribution_moic_x < -0.01: return "negative"
+        return "teal"
+    top = sorted(items, key=lambda c: abs(c.pct_of_total_return), reverse=True)
+    total = sum(abs(c.pct_of_total_return) for c in top) or 1.0
+    rows = [ck_bar_row(f"{c.component}",
+            f"{c.contribution_moic_x:+.2f}x · {c.pct_of_total_return * 100:+.0f}% of return",
+            abs(c.pct_of_total_return) / total * 100.0, tone=_tone(c)) for c in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of total return attribution '
+            '· value = MOIC contribution + % of return · tone = positive / negative driver</div></div>')
 
 
 def _waterfall_svg(components, fund_moic: float) -> str:
@@ -239,6 +256,7 @@ def render_fund_attribution(params: dict = None) -> str:
 
     water_svg = _waterfall_svg(r.components, r.fund_moic)
     comp_tbl = _component_table(r.components)
+    comp_chart = _component_chart(r.components)
     vintage_tbl = _vintage_table(r.vintage_effects)
     deal_tbl = _deal_attr_table(r.deal_attributions)
 
@@ -291,7 +309,7 @@ def render_fund_attribution(params: dict = None) -> str:
 
   <div style="{cell}">
     <div style="{h3}">Component Contribution Detail</div>
-    {comp_tbl}
+    {comp_chart}{comp_tbl}
   </div>
 
   <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:16px">

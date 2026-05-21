@@ -2,7 +2,24 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+
+
+def _categories_chart(items):
+    """Summary chart — red-flag categories by weighted severity (tone by criticals)."""
+    def _tone(c):
+        if c.critical_count > 0: return "negative"
+        if c.high_count > 0: return "warning"
+        return "teal"
+    top = sorted(items, key=lambda c: c.weighted_score, reverse=True)
+    total = sum(c.weighted_score for c in top) or 1.0
+    rows = [ck_bar_row(f"{c.category}",
+            f"{c.flag_count} flags · {c.critical_count} crit / {c.high_count} high",
+            c.weighted_score / total * 100.0, tone=_tone(c)) for c in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of weighted red-flag severity '
+            '· value = flag count + critical/high · tone = highest severity present</div></div>')
 
 
 def _flags_table(items) -> str:
@@ -161,6 +178,7 @@ def render_redflag_scanner(params: dict = None) -> str:
     svg = _severity_svg(r.categories)
     flags_tbl = _flags_table(r.flags)
     cat_tbl = _categories_table(r.categories)
+    cat_chart = _categories_chart(r.categories)
     comp_tbl = _comps_table(r.comparable_deals)
 
     sectors = ["Primary Care", "ASC", "Behavioral Health", "Dermatology", "Orthopedics",
@@ -204,7 +222,7 @@ def render_redflag_scanner(params: dict = None) -> str:
   </div>
   <div style="{cell}"><div style="{h3}">Category-Level Severity</div>{svg}</div>
   <div style="{cell}"><div style="{h3}">Full Flag Inventory — Severity-Ranked</div>{flags_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Category Rollup</div>{cat_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Category Rollup</div>{cat_chart}{cat_tbl}</div>
   <div style="{cell}"><div style="{h3}">Corpus Comparable Deals (same sector)</div>{comp_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Scanner Methodology:</strong> Each flag compares target metric against {r.corpus_deal_count:,}-deal corpus base rates.
