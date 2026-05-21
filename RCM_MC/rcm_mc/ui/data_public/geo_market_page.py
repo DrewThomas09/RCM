@@ -7,7 +7,24 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_scatter
+
+
+def _markets_scatter(items):
+    """Quadrant — 5yr growth vs white-space score per CBSA, so high-growth
+    high-whitespace markets (upper-right) are the entry priority."""
+    import statistics
+    pts, xs, ys = [], [], []
+    for m in items:
+        x = m.growth_5yr_pct * 100.0
+        t = (m.tier or "").lower()
+        tn = ('positive' if 'priority' in t else 'warning' if 'watch' in t else 'navy')
+        pts.append((x, m.white_space_score, m.cbsa, tn)); xs.append(x); ys.append(m.white_space_score)
+    return ck_scatter(
+        pts, x_label='5-yr growth %', y_label='White-space score',
+        x_ref=(statistics.median(xs) if xs else None), y_ref=(statistics.median(ys) if ys else None),
+        caption='Each dot = a CBSA · upper-right = high growth + high white-space (entry priority) · tone = tier',
+    )
 
 
 def _tier_distribution_svg(priority: int, watch: int, secondary: int, avoid: int) -> str:
@@ -259,6 +276,13 @@ def render_geo_market(params: dict = None) -> str:
     dist_svg = _tier_distribution_svg(r.priority_markets, r.watch_markets, r.secondary_markets, r.avoid_markets)
     scatter_svg = _scatter_svg(r.markets)
     markets_tbl = _markets_table(r.markets)
+    markets_scatter = _markets_scatter(r.markets)
+    value_anchor = ck_value_anchor(
+        "Geographic Priority",
+        f"{r.priority_markets} priority markets",
+        delta=f"{len(r.markets)} CBSAs screened · {r.watch_markets} watch · {r.secondary_markets} secondary",
+        tone="teal",
+    )
     comp_tbl = _components_table(r.components)
     scen_tbl = _scenarios_table(r.entry_scenarios)
     tier_tbl = _tiers_table(r.tiers)
@@ -291,6 +315,7 @@ def render_geo_market(params: dict = None) -> str:
 
   {form}
 
+  {value_anchor}
   <div class="ck-kpi-grid" style="margin-bottom:20px">
     {kpi_strip}
   </div>
@@ -313,7 +338,7 @@ def render_geo_market(params: dict = None) -> str:
 
   <div style="{cell}">
     <div style="{h3}">Market Rankings — {len(r.markets)} CBSAs</div>
-    {markets_tbl}
+    {markets_scatter}{markets_tbl}
   </div>
 
   <div style="{cell}">
