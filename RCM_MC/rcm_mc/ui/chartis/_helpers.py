@@ -280,27 +280,22 @@ def render_page_explainer(
 ) -> str:
     """Render an editorial explainer block under the page title.
 
-    REDESIGN (replaces the old "About this page" bordered card with
-    a Hide button): partners pushed back on the card chrome — it
-    looked like a UI widget instead of editorial prose. New render
-    is the same minimal italic-paragraph style as
-    ``ck_page_explainer`` from the chartis-kit: italic teal lead
-    sentence + serif body, with optional Scale / How-to-use
-    sub-items and a small mono Source footer at the bottom.
+    ONE-PARAGRAPH RULE (2026-05): partners found the stacked
+    Scale / How-to-use / Source sub-blocks far too heavy — every
+    synthesis + RCM page led with a wall of explanation that dwarfed
+    the analysis. The explainer is now a single small italic-led
+    paragraph, identical in weight to ``ck_page_explainer`` and the
+    rest of the app: just the ``what`` sentence(s).
 
-    Signature preserved so the ~30 existing callers don't need to
-    change — same ``what`` / ``scale`` / ``use`` / ``source`` /
-    ``page_key`` parameters. ``page_key`` is now ignored (no
-    collapse state to persist), kept for backwards compat.
-
-    The original "About this page" card + Hide button + localStorage
-    state machine are gone. JavaScript dependency removed.
+    ``scale`` / ``use`` / ``source`` / ``page_key`` are accepted for
+    backwards compatibility with the ~30 existing callers but are no
+    longer rendered — that detail belongs in tooltips / the metric
+    glossary, not in a giant header block.
     """
     what_html = _html.escape(what)
-    # First sentence (up to the first period) becomes the italic
-    # teal lead — same convention as ck_page_explainer. Rest of
-    # `what` flows into the body. If `what` is one sentence, the
-    # whole thing is the lead and body is empty.
+    # First sentence (up to the first period) becomes the italic teal
+    # lead — same convention as ck_page_explainer. The rest flows into
+    # the same paragraph as body. No sub-blocks, no source footer.
     if ". " in what:
         lead, _, rest = what.partition(". ")
         lead_html = _html.escape(lead) + "."
@@ -309,52 +304,23 @@ def render_page_explainer(
         lead_html = what_html
         body_html = ""
 
-    scale_html = (
-        f'<span class="ck-explainer-sub">'
-        f'<span class="ck-explainer-sub-label">Scale.</span> '
-        f'{_html.escape(scale)}</span>'
-        if scale else ""
-    )
-    use_html = (
-        f'<span class="ck-explainer-sub">'
-        f'<span class="ck-explainer-sub-label">How to use.</span> '
-        f'{_html.escape(use)}</span>'
-        if use else ""
-    )
-    source_html = (
-        f'<span class="ck-page-explainer-source">'
-        f'Source: {_html.escape(source)}</span>'
-        if source else ""
-    )
-
-    body_inline = (f' {body_html}' if body_html else '') + scale_html + use_html
-
+    body_inline = f' {body_html}' if body_html else ''
     return (
         '<p class="ck-page-explainer">'
-        f'<em>{lead_html}</em>{body_inline}{source_html}'
+        f'<em>{lead_html}</em>{body_inline}'
         '</p>'
         f'{_EXPLAINER_CSS}'
     )
 
 
-# Editorial-paragraph CSS for the redesigned explainer. Matches the
-# .ck-page-explainer styling defined in _chartis_kit so the two
-# helpers render visually identically — the only difference is that
-# this one supports optional Scale / How-to-use sub-items inline.
-# CSS is load-safe to repeat (duplicate rules are identical).
+# Minimal editorial-paragraph CSS — identical to the shared
+# .ck-page-explainer rule in _chartis_kit so the explainer renders at
+# the same single-paragraph weight everywhere. (Load-safe to repeat.)
 _EXPLAINER_CSS = """
 <style>
 .ck-page-explainer { font-family: var(--sc-serif, 'Source Serif 4', Georgia, serif);
   font-size: 15px; line-height: 1.6; color: var(--sc-text-dim, #465366);
   max-width: 72ch; margin: var(--sc-s-4, 14px) 0 var(--sc-s-6, 22px); }
 .ck-page-explainer em { color: var(--sc-teal-ink, #155752); font-style: italic; }
-.ck-explainer-sub { display: block; margin-top: 10px; }
-.ck-explainer-sub-label { font-family: var(--sc-mono, 'JetBrains Mono', monospace);
-  font-size: 10px; letter-spacing: 0.10em; text-transform: uppercase;
-  color: var(--sc-teal-ink, #155752); margin-right: 4px; }
-.ck-page-explainer-source { display: block; margin-top: 10px;
-  font-family: var(--sc-mono, 'JetBrains Mono', monospace);
-  font-size: 10.5px; letter-spacing: 0.06em;
-  color: var(--sc-text-faint, #7a8699); text-transform: uppercase; }
 </style>
 """
