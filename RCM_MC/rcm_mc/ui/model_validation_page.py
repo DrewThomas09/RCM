@@ -114,7 +114,13 @@ def render_model_validation(
     # Check if we have any predictions
     count = con.execute("SELECT COUNT(*) FROM predictions").fetchone()[0]
 
-    if count < 20 and hcris_df is not None and len(hcris_df) > 100:
+    # When there's no real prediction ledger yet, the scorecard is a
+    # synthetic backtest on HCRIS data — it demonstrates the validation
+    # methodology, NOT live deal predictions. Track that so the page can
+    # say so plainly (defensibility: never present synthetic numbers as
+    # validated live performance).
+    is_synthetic = count < 20
+    if is_synthetic and hcris_df is not None and len(hcris_df) > 100:
         performances = run_synthetic_backtest(con, hcris_df, n_trials=200)
         con.commit()
         count = con.execute("SELECT COUNT(*) FROM predictions").fetchone()[0]
@@ -190,6 +196,24 @@ def render_model_validation(
             "number is reproducible from the prediction ledger."
         ),
     )
+
+    # Defensibility: when no live prediction ledger exists yet, the
+    # scorecard is a synthetic backtest on HCRIS data. Say so plainly so
+    # a partner never mistakes the methodology demo for validated live
+    # performance.
+    synthetic_notice = ""
+    if is_synthetic:
+        synthetic_notice = ck_panel(
+            '<p class="ck-section-body" style="margin:0;">'
+            "<strong>Illustrative backtest — not live validation.</strong> "
+            "No live deal predictions are recorded yet, so the scorecard "
+            "below is a <strong>synthetic backtest on HCRIS data</strong> "
+            "that demonstrates the validation methodology. These numbers "
+            "do <strong>not</strong> reflect validated performance on real "
+            "deal predictions — they populate from the prediction ledger as "
+            "deals are underwritten.</p>",
+            title="⚠ Synthetic backtest",
+        )
 
     # B.1 — methodology badge + legacy toggle (D6 lock 1: dashboard
     # defaults to b1-tuned-alpha only; opt-in toggle includes legacy).
@@ -400,8 +424,8 @@ def render_model_validation(
         italic_word="priors",
     )
     body = (
-        f'{intro}{methodology_badge}{kpis}{accuracy_section}{metric_section}'
-        f'{cov_analysis}{recent_section}{flywheel}{nav}{next_up}'
+        f'{intro}{synthetic_notice}{methodology_badge}{kpis}{accuracy_section}'
+        f'{metric_section}{cov_analysis}{recent_section}{flywheel}{nav}{next_up}'
     )
 
     _pstore_cm.__exit__(None, None, None)
