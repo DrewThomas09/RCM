@@ -23,9 +23,31 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    chartis_shell, ck_bar_row, ck_kpi_block, ck_next_section, ck_panel,
     ck_section_intro,
 )
+
+
+def _scenario_moic_bars(results: List[Dict[str, Any]]) -> str:
+    """MOIC-by-scenario bar chart — the headline comparison the table
+    spreads across columns. Each scenario is a bar (share of the best
+    MOIC); the best scenario and any ≥2.0x clear the positive tone, so
+    the winning case is obvious before reading the grid."""
+    rows = [(r["scenario"]["name"], float(r.get("moic") or 0.0)) for r in results]
+    rows = [(n, m) for n, m in rows if m > 0]
+    if len(rows) < 2:
+        return ""
+    best = max(m for _, m in rows)
+    out = ""
+    for name, moic in rows:
+        tone = "positive" if (moic >= 2.0 or moic == best) else "teal"
+        out += ck_bar_row(name, f"{moic:.2f}x", moic / best * 100.0, tone=tone)
+    return ck_panel(
+        '<p class="ck-section-body" style="margin:0 0 8px;">'
+        "Equity MOIC by scenario — bar is share of the strongest case.</p>"
+        + out,
+        title="Scenario Returns — MOIC at a glance",
+    )
 from .brand import PALETTE
 from .ebitda_bridge_page import _compute_bridge, _compute_returns_grid, _fm, _safe_float, _load_data_room_overrides
 
@@ -622,8 +644,10 @@ padding:4px 0;cursor:pointer;}
         eyebrow="Continue —",
         italic_word="bridge",
     )
+    moic_bars = _scenario_moic_bars(results)
     body = (
-        f'{sm_styles}{_SM_CHART_CAPTION_CSS}{intro}{selector}{kpis}{comparison}'
+        f'{sm_styles}{_SM_CHART_CAPTION_CSS}{intro}{selector}{kpis}'
+        f'{moic_bars}{comparison}'
         f'{bridge_section}{timing_section}{nav}{next_up}'
     )
 
