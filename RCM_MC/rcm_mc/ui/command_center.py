@@ -27,6 +27,7 @@ from ._chartis_kit import (
     ck_page_title,
     ck_provenance_tooltip,
 )
+from ._workspace_mode import CONSULTING, current_workspace_mode
 
 _EXPLAINER_CSS = """<style>
 .ck-cc-explainer{font-family:var(--sc-serif,'Georgia',serif);
@@ -214,9 +215,51 @@ def render_command_center(
     hcris_df: pd.DataFrame,
     db_path: str,
 ) -> str:
-    """Render the command center home page."""
+    """Render the command center home page.
 
+    Thin dispatcher: builds the pure data model, reads the per-request
+    workspace mode, and hands both to the composition layer. The mode
+    branch is the two-view seam — see :func:`_compose_command_center`.
+    """
     model = build_command_center_model(hcris_df, db_path)
+    body = _compose_command_center(model, current_workspace_mode())
+    return chartis_shell(
+        body, "PE Desk",
+        active_nav="/home",
+        show_ticker=True,
+        extra_css=_EXPLAINER_CSS,
+    )
+
+
+def _compose_command_center(model: CommandCenterModel, mode: str) -> str:
+    """Two-view composition seam for the command center body.
+
+    The internal (Chartis Consulting) and partner views currently share
+    one composition — structural divergence lands in later PRs, gated
+    behind ``?view=partner-v2``. The branch exists *now* so that adding
+    the partner composition is a localized change here rather than a
+    rewrite of the render path, and so the guardrail test can pin the
+    editorial register of both branches before they diverge.
+    """
+    if mode == CONSULTING:
+        return _compose_internal(model)
+    return _compose_partner(model)
+
+
+def _compose_internal(model: CommandCenterModel) -> str:
+    """Chartis Consulting (internal) composition. Shares the editorial
+    body with the partner view until structural divergence lands."""
+    return _compose_shared(model)
+
+
+def _compose_partner(model: CommandCenterModel) -> str:
+    """PE Partner composition. Shares the editorial body with the
+    internal view until the partner-v2 divergence lands."""
+    return _compose_shared(model)
+
+
+def _compose_shared(model: CommandCenterModel) -> str:
+    """The editorial command-center body both views render today."""
     hcris_df = model.hcris_df
     n_hospitals = model.n_hospitals
     deals = model.deals
@@ -560,16 +603,9 @@ def render_command_center(
         f'</span></div>'
     )
 
-    body = "\n".join(sections) + ck_next_section(
+    return "\n".join(sections) + ck_next_section(
         "Open the morning dashboard",
         "/dashboard",
         eyebrow="Continue —",
         italic_word="dashboard",
-    )
-
-    return chartis_shell(
-        body, "PE Desk",
-        active_nav="/home",
-        show_ticker=True,
-        extra_css=_EXPLAINER_CSS,
     )
