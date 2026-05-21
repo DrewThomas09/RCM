@@ -3,7 +3,25 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import (
-    P, chartis_shell, ck_data_cell, ck_kpi_block, ck_paired_block, ck_page_title)
+    P, chartis_shell, ck_data_cell, ck_kpi_block, ck_paired_block, ck_page_title,
+    ck_bar_row)
+
+
+def _profiles_chart(items):
+    """Summary chart — top sponsors by avg MOIC (tone by avg IRR)."""
+    def _tone(p):
+        if p.avg_irr >= 0.20: return "positive"
+        if p.avg_irr >= 0.15: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda p: p.avg_moic, reverse=True)
+    mx = max((p.avg_moic for p in top), default=0.0) or 1.0
+    rows = [ck_bar_row(f"{p.sponsor}",
+            f"{p.avg_moic:.2f}x · {p.avg_irr * 100:.0f}% IRR · {p.total_deals} deals",
+            p.avg_moic / mx * 100.0, tone=_tone(p)) for p in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = avg MOIC vs top sponsor '
+            '· value = avg MOIC + IRR + deal count · tone = avg IRR</div></div>')
 
 
 def _leaders_paired_rows(leaders) -> tuple:
@@ -237,6 +255,7 @@ def render_sponsor_heatmap(params: dict = None) -> str:
     svg = _heatmap_svg(r.matrix_cells, r.top_sponsors, r.sector_leaders)
     cells_tbl = _cells_table(r.matrix_cells)
     profiles_tbl = _profiles_table(r.top_sponsors)
+    profiles_chart = _profiles_chart(r.top_sponsors)
     vintage_tbl = _vintage_table(r.vintage_cuts)
     hold_tbl = _hold_table(r.hold_strat)
 
@@ -286,7 +305,7 @@ def render_sponsor_heatmap(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {heatmap_paired}
   <div style="{cell}"><div style="{h3}">Sponsor × Sector Matrix Detail (top 50)</div>{cells_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Top Sponsor Profiles</div>{profiles_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Top Sponsor Profiles</div>{profiles_chart}{profiles_tbl}</div>
   <div style="{cell}"><div style="{h3}">Vintage Cuts — 2016-2019 vs 2020-2024</div>{vintage_tbl}</div>
   <div style="{cell}"><div style="{h3}">Hold-Period Stratification</div>{hold_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">

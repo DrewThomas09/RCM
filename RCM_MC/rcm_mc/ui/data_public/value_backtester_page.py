@@ -2,8 +2,25 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title, ck_bar_row
 from rcm_mc.ui.chartis._helpers import render_page_explainer
+
+
+def _levers_chart(items):
+    """Summary chart — value-creation levers by risk-adjusted value (tone by realization)."""
+    def _tone(v):
+        if v.realization_rate_pct >= 0.80: return "positive"
+        if v.realization_rate_pct >= 0.55: return "teal"
+        return "warning"
+    top = sorted(items, key=lambda v: v.risk_adjusted_mm, reverse=True)
+    total = sum(v.risk_adjusted_mm for v in top) or 1.0
+    rows = [ck_bar_row(f"{v.lever}",
+            f"${v.risk_adjusted_mm:,.1f}M risk-adj · ${v.target_contribution_mm:,.1f}M target · {v.realization_rate_pct * 100:.0f}%",
+            v.risk_adjusted_mm / total * 100.0, tone=_tone(v)) for v in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of risk-adjusted value '
+            '· value = risk-adj ($M) + target + realization · tone = realization rate</div></div>')
 
 
 def _levers_table(items) -> str:
@@ -220,6 +237,7 @@ def render_value_backtester(params: dict = None) -> str:
         hot_rows=cal_hot,
     )
     lv_tbl = _levers_table(r.levers)
+    lv_chart = _levers_chart(r.levers)
     bk_tbl = _buckets_table(r.buckets)
     at_tbl = _attribution_table(r.attribution)
     comp_tbl = _comparables_table(r.comparables)
@@ -275,7 +293,7 @@ def render_value_backtester(params: dict = None) -> str:
     <div style="color:{text_dim};font-size:11px;margin-top:4px">Predicted {r.target_predicted_moic:.2f}x vs sector P50 realized {r.realized_base_rate_p50:.2f}x (gap {r.calibration_gap_pct * 100:+.1f}%)</div>
   </div>
   {calibration_paired}
-  <div style="{cell}"><div style="{h3}">Value-Creation Lever Attribution — Target vs Base Rate</div>{lv_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Value-Creation Lever Attribution — Target vs Base Rate</div>{lv_chart}{lv_tbl}</div>
   <div style="{cell}"><div style="{h3}">Corpus Base-Rate Buckets — Sector × Vintage × Size</div>{bk_tbl}</div>
   <div style="{cell}"><div style="{h3}">Driver Attribution — What Predicts Realized MOIC</div>{at_tbl}</div>
   <div style="{cell}"><div style="{h3}">Most Similar Corpus Deals</div>{comp_tbl}</div>
