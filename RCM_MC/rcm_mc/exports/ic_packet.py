@@ -60,7 +60,7 @@ class ICPacketMetadata:
 def _style_block() -> str:
     return """<style>
 body {
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: var(--sc-serif, Georgia, 'Times New Roman', serif);
     font-size: 11pt; color: #1a1a1a;
     max-width: 7.5in; margin: 0 auto;
     padding: 0.75in 0.5in; line-height: 1.5;

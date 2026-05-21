@@ -788,7 +788,7 @@ def render_ic_packet_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
 _REG_BLOCK_CSS = """
 <style>
 .ic-reg-block{page-break-before:always;padding:28px 32px;
-font-family:Georgia,serif;color:#1a1a1a;}
+font-family:var(--sc-serif,Georgia,serif);color:#1a1a1a;}
 .ic-reg-block .ic-reg-eyebrow{font-size:11px;letter-spacing:1.6px;
 text-transform:uppercase;color:#7a8699;font-weight:600;}
 .ic-reg-block h2{font-size:22px;margin:4px 0 10px 0;}
