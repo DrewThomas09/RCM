@@ -2,7 +2,23 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor, ck_scatter
+
+
+def _tam_scatter(items):
+    """Quadrant — current penetration vs revenue opportunity, so low-
+    penetration / high-opportunity sub-TAMs (upper-left) = whitespace."""
+    import statistics
+    pts, xs, ys = [], [], []
+    for t in items:
+        x = t.current_penetration_pct * 100.0; y = t.revenue_opportunity_mm
+        tn = ('positive' if t.current_penetration_pct < 0.10 else 'teal' if t.current_penetration_pct < 0.30 else 'navy')
+        pts.append((x, y, t.sub_tam, tn)); xs.append(x); ys.append(y)
+    return ck_scatter(
+        pts, x_label='Current penetration %', y_label='Revenue opportunity ($M)',
+        x_ref=(statistics.median(xs) if xs else None), y_ref=(statistics.median(ys) if ys else None),
+        caption='Each dot = a sub-TAM · upper-left = low penetration + high opportunity (whitespace) · tone = headroom',
+    )
 
 
 def _segments_chart(items) -> str:
@@ -188,6 +204,7 @@ def render_hcit_platform(params: dict = None) -> str:
     m_tbl = _metrics_table(r.metrics)
     t_tbl = _tam_table(r.tam)
     t_chart = _tam_chart(r.tam)
+    t_scatter = _tam_scatter(r.tam)
     c_tbl = _comps_table(r.comps)
 
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
@@ -208,7 +225,7 @@ def render_hcit_platform(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Customer Segment Economics</div>{s_chart}{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Product Line Portfolio</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">SaaS Benchmark Metrics</div>{m_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Sub-TAM Penetration &amp; Revenue Opportunity</div>{t_chart}{t_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Sub-TAM Penetration &amp; Revenue Opportunity</div>{t_chart}{t_scatter}{t_tbl}</div>
   <div style="{cell}"><div style="{h3}">Public &amp; Private Comp Universe</div>{c_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">HCIT SaaS Thesis:</strong> ${r.total_arr_mm:,.1f}M ARR growing {r.arr_growth_pct * 100:+.0f}% with {r.total_nrr_pct:.2f}x NRR and {r.total_gross_margin_pct * 100:.0f}% gross margin.
