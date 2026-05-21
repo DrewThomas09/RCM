@@ -135,6 +135,35 @@ def render_app_page(
         if not deals_df.empty else None
     )
 
+    # Mode-aware page framing (two-view L1 lexicon): the PE-partner view
+    # frames this as a fund-level command center; the Chartis Consulting
+    # view frames it as a client-engagement command center. Vocabulary
+    # only — the blocks, metrics, and layout are identical. Default
+    # (partner) copy is unchanged, so the partner render stays
+    # byte-identical; only the consulting cookie changes the strings.
+    from rcm_mc.ui._workspace_mode import current_workspace_mode, CONSULTING
+    _is_consulting = current_workspace_mode() == CONSULTING
+    _cc_section_label = (
+        "COMMERCIAL DILIGENCE" if _is_consulting else "PORTFOLIO & DILIGENCE"
+    )
+    _cc_kicker_label = "CLIENT ENGAGEMENT" if _is_consulting else "FUND II"
+    _cc_breadcrumb_label = (
+        "Commercial diligence" if _is_consulting else "Portfolio & diligence"
+    )
+    _cc_lede = (
+        ("Engagement rollup, active diligence, screening flow — one canvas.")
+        if _is_consulting
+        else ("Hold-period rollup, active diligence, screening flow — "
+              "one canvas.")
+    )
+    _cc_what_summary = (
+        "Weighted MOIC & IRR · pipeline funnel · covenant heatmap · "
+        "EBITDA drag decomposition · initiative variance · cross-deal "
+        "playbook signals. The complete "
+        + ("engagement" if _is_consulting else "hold-period")
+        + " view in one place."
+    )
+
     # As-of for the page-head meta column. Use the most recent snapshot
     # if any deals tracked; else "—".
     asof_str = "—"
@@ -148,15 +177,12 @@ def render_app_page(
 
     page_head_html = editorial_page_head(
         eyebrow=[
-            ("PORTFOLIO & DILIGENCE", None),
-            ("FUND II", None),
+            (_cc_section_label, None),
+            (_cc_kicker_label, None),
             ("/COMMAND-CENTER", "slug"),
         ],
         title="Command center",
-        lede=(
-            "Hold-period rollup, active diligence, screening flow — "
-            "one canvas."
-        ),
+        lede=_cc_lede,
         meta=[
             ("ID", "CCF-FUND2"),
             ("STATUS", "LIVE"),
@@ -172,12 +198,7 @@ def render_app_page(
         # ordering. WhatBlock orients the reader; MetricCatalog is the
         # cross-reference table that gives every number on the page a home.
         render_what_block(
-            summary=(
-                "Weighted MOIC & IRR · pipeline funnel · covenant "
-                "heatmap · EBITDA drag decomposition · initiative "
-                "variance · cross-deal playbook signals. The complete "
-                "hold-period view in one place."
-            ),
+            summary=_cc_what_summary,
             sources=[
                 "portfolio.db",
                 "deal_snapshots",
@@ -242,7 +263,7 @@ def render_app_page(
         active_nav="PORTFOLIO",
         breadcrumbs=[
             ("Home", "/"),
-            ("Portfolio & diligence", None),
+            (_cc_breadcrumb_label, None),
             ("Command center", None),
         ],
         show_chrome=True,
