@@ -76,19 +76,34 @@ def _fetch_initiative_rows(
         return []
     if df is None or df.empty:
         return []
+    # Resolve human names from the initiatives library (the report only
+    # carries initiative_id). Best-effort — falls back to a titleized id.
+    name_by_id: Dict[str, str] = {}
+    try:
+        from rcm_mc.rcm.initiatives import get_all_initiatives
+        name_by_id = {
+            i["id"]: (i.get("name") or i["id"])
+            for i in get_all_initiatives() if i.get("id")
+        }
+    except Exception:  # noqa: BLE001
+        name_by_id = {}
     rows: List[Dict[str, Any]] = []
     for _, r in df.iterrows():
         try:
-            actual = float(r.get("actual_cumulative_M") or 0.0)
-            plan = float(r.get("plan_cumulative_M") or 0.0)
+            # initiative_variance_report emits cumulative_actual /
+            # cumulative_plan (dollars) keyed by initiative_id — NOT the
+            # *_cumulative_M / initiative_name columns the old code read.
+            actual = float(r.get("cumulative_actual") or 0.0)
+            plan = float(r.get("cumulative_plan") or 0.0)
             variance_pct = (
                 ((actual - plan) / plan * 100) if plan else 0.0
             )
             progress_pct = min(100, max(0, (actual / plan * 100) if plan else 0))
         except Exception:  # noqa: BLE001
             continue
+        init_id = str(r.get("initiative_id") or "")
         rows.append({
-            "name": str(r.get("initiative_name") or r.get("initiative") or ""),
+            "name": name_by_id.get(init_id, init_id.replace("_", " ").title()),
             "deal": deal_id,
             "actual": actual,
             "variance": variance_pct,

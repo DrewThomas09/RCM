@@ -20,11 +20,14 @@ from typing import Any, Dict
 
 from rcm_mc.ui._chartis_kit import ck_bar_row, ck_data_panel
 
-# Canonical stage order for the funnel panel — matches DEAL_STAGES.
-_STAGE_ORDER = [
-    "sourcing", "screened", "ioi", "loi", "diligence",
-    "ic", "closed", "hold", "exit",
-]
+# Canonical stage order for the funnel panel. Import DEAL_STAGES so this
+# stays in sync — the old hardcoded list (sourcing/screened/diligence/ic)
+# didn't match the real stages, so 'sourced' and 'spa' deals were
+# silently dropped from the FNL panel.
+try:
+    from rcm_mc.portfolio.portfolio_snapshots import DEAL_STAGES as _STAGE_ORDER
+except Exception:  # noqa: BLE001 — fall back to the canonical list
+    _STAGE_ORDER = ["sourced", "ioi", "loi", "spa", "closed", "hold", "exit"]
 
 
 def _dls_panel(deals_df) -> str:
