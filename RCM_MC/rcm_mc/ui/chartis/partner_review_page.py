@@ -254,6 +254,43 @@ def _change_my_mind(review: Any) -> str:
     return f'<ol style="list-style:none;padding:0;margin:0;">{"".join(items)}</ol>'
 
 
+def _band_bullet(observed: Any, lo: Any, hi: Any) -> str:
+    """Compact inline bullet: shaded acceptable [lo, hi] band + an
+    observed marker, so a partner reads in-band vs out-of-band (and how
+    far out) at a glance instead of mentally comparing two numbers. The
+    marker is green inside the band, red outside. Returns '' when the
+    inputs aren't all numeric (caller falls back to the text band)."""
+    try:
+        o = float(observed); lo_f = float(lo); hi_f = float(hi)
+    except (TypeError, ValueError):
+        return ""
+    if hi_f < lo_f:
+        lo_f, hi_f = hi_f, lo_f
+    dmin = min(lo_f, hi_f, o)
+    dmax = max(lo_f, hi_f, o)
+    if dmax == dmin:
+        dmax += 1.0; dmin -= 1.0
+    pad = (dmax - dmin) * 0.10
+    dmin -= pad; dmax += pad
+    W, H = 120.0, 14.0
+    def _x(v: float) -> float:
+        return (v - dmin) / (dmax - dmin) * W
+    in_band = lo_f <= o <= hi_f
+    mark = "var(--sc-positive,#0a8a5f)" if in_band else "var(--sc-negative,#b5321e)"
+    bx, bw = _x(lo_f), _x(hi_f) - _x(lo_f)
+    mx = _x(o)
+    return (
+        f'<svg viewBox="0 0 {W:.0f} {H:.0f}" width="{W:.0f}" height="{H:.0f}" '
+        f'role="img" aria-label="band position" style="vertical-align:middle">'
+        f'<line x1="0" y1="{H/2}" x2="{W}" y2="{H/2}" '
+        f'stroke="var(--sc-rule,#d6cfc0)" stroke-width="1"/>'
+        f'<rect x="{bx:.1f}" y="3" width="{max(1.0,bw):.1f}" height="{H-6}" '
+        f'fill="var(--sc-teal,#1F7A75)" fill-opacity="0.18"/>'
+        f'<line x1="{mx:.1f}" y1="1" x2="{mx:.1f}" y2="{H-1}" '
+        f'stroke="{mark}" stroke-width="2"/></svg>'
+    )
+
+
 def _bands_table(review: Any) -> str:
     checks = list(review.reasonableness_checks or [])
     if not checks:
@@ -277,16 +314,24 @@ def _bands_table(review: Any) -> str:
             )
         band = getattr(b, "band", None)
         band_str = ""
+        band_bullet = ""
         if isinstance(band, (list, tuple)) and len(band) == 2:
             lo, hi = band
             try:
                 band_str = f'[{float(lo):.2f}, {float(hi):.2f}]'
+                band_bullet = _band_bullet(observed, lo, hi)
             except (TypeError, ValueError):
                 band_str = "—"
         elif band is not None:
             band_str = _html.escape(str(band))
         else:
             band_str = "—"
+        # Lead the Band cell with the position bullet (in-band vs out),
+        # numeric range beneath for the exact bounds.
+        band_cell = (
+            f'{band_bullet}<div style="margin-top:1px;">{band_str}</div>'
+            if band_bullet else band_str
+        )
         note = _html.escape(str(getattr(b, "partner_note", "") or ""))
         rationale = _html.escape(str(getattr(b, "rationale", "") or ""))
         rows.append(
@@ -297,7 +342,7 @@ def _bands_table(review: Any) -> str:
             f'font-size:11px;font-variant-numeric:tabular-nums;text-align:right;">'
             f'{obs_str}</td>'
             f'<td style="font-family:var(--ck-mono);color:{P["text_dim"]};'
-            f'font-size:10.5px;text-align:right;">{band_str}</td>'
+            f'font-size:10.5px;text-align:right;">{band_cell}</td>'
             f'<td><span class="ck-sig" style="color:{col};'
             f'border:1px solid {col};background:rgba(255,255,255,0.02);">'
             f'{_html.escape(verdict)}</span></td>'
