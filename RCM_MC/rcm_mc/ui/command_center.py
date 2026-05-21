@@ -11,7 +11,6 @@ Always shows: data estate summary, model health, and market pulse.
 from __future__ import annotations
 
 import html as _html
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -27,7 +26,6 @@ from ._chartis_kit import (
     ck_page_title,
     ck_provenance_tooltip,
 )
-from ._workspace_mode import CONSULTING, current_workspace_mode
 
 _EXPLAINER_CSS = """<style>
 .ck-cc-explainer{font-family:var(--sc-serif,'Georgia',serif);
@@ -49,51 +47,14 @@ def _fm(val: float) -> str:
     return f"${val:,.0f}"
 
 
-@dataclass
-class CommandCenterModel:
-    """Pure-data view-model for the command center page.
-
-    Built by :func:`build_command_center_model` and consumed by the
-    renderers. Holds every computed value the page needs — universe
-    stats, the margin-augmented HCRIS frame, portfolio/pipeline state,
-    and the two derived market-highlight tables — so that rendering is
-    a pure function of this model and the two-view compositions can
-    diverge in presentation without re-deriving any numbers.
-    """
-
-    hcris_df: pd.DataFrame  # margin-augmented copy (operating_margin + _dq_ok_margin)
-    n_hospitals: int
-    total_revenue: float
-    total_beds: int
-    n_states: int
-    n_territories: int
-    median_margin: float
-    distressed: int
-    n_pe_targets: int
-    deals: List[Dict[str, Any]]
-    alerts: List[Dict[str, Any]]
-    pipeline_hospitals: List[Any]
-    saved_searches: List[Any]
-    pipe_summary: Dict[str, Any]
-    has_portfolio: bool
-    has_pipeline: bool
-    top_states: pd.DataFrame
-    size_data: Dict[str, int]
-
-
-def build_command_center_model(
+def render_command_center(
     hcris_df: pd.DataFrame,
     db_path: str,
-) -> CommandCenterModel:
-    """Compute the command center view-model — pure data, no HTML.
+) -> str:
+    """Render the command center home page."""
 
-    Splits all the number-crunching out of :func:`render_command_center`
-    so the same model can feed multiple compositions (the two-view
-    Command Center work). Mutates a *copy* of ``hcris_df`` to attach the
-    derived ``operating_margin`` / ``_dq_ok_margin`` columns; the input
-    frame is left untouched.
-    """
     n_hospitals = len(hcris_df)
+    now = datetime.now(timezone.utc)
 
     # ── Load portfolio state ──
     # Route through PortfolioStore so the connection inherits the
@@ -101,8 +62,8 @@ def build_command_center_model(
     # row_factory=sqlite3.Row. Closes one of the 8 documented
     # dispatcher bypasses (campaign target 4E).
     store = PortfolioStore(db_path)
-    deals: List[Dict[str, Any]] = []
-    alerts: List[Dict[str, Any]] = []
+    deals = []
+    alerts = []
     try:
         with store.connect() as con:
             deal_rows = con.execute(
@@ -126,8 +87,8 @@ def build_command_center_model(
         pass
 
     # Load pipeline data through the same canonical seam.
-    pipeline_hospitals: List[Any] = []
-    saved_searches: List[Any] = []
+    pipeline_hospitals = []
+    saved_searches = []
     try:
         from ..data.pipeline import list_pipeline, list_searches, pipeline_summary
         with store.connect() as con:
@@ -172,110 +133,6 @@ def build_command_center_model(
         (hcris_df["net_patient_revenue"] >= 5e7)
     ]
     n_pe_targets = len(pe_targets)
-
-    # ── Market highlights tables (derived purely from the frame) ──
-    top_states = hcris_df.groupby("state").agg(
-        n=("ccn", "count"),
-        med_margin=("operating_margin", "median"),
-        total_rev=("net_patient_revenue", "sum"),
-    ).sort_values("total_rev", ascending=False).head(8)
-
-    beds = hcris_df["beds"].dropna()
-    size_data = {
-        "< 50 beds": int((beds < 50).sum()),
-        "50-99": int(((beds >= 50) & (beds < 100)).sum()),
-        "100-249": int(((beds >= 100) & (beds < 250)).sum()),
-        "250-499": int(((beds >= 250) & (beds < 500)).sum()),
-        "500+": int((beds >= 500).sum()),
-    }
-
-    return CommandCenterModel(
-        hcris_df=hcris_df,
-        n_hospitals=n_hospitals,
-        total_revenue=total_revenue,
-        total_beds=total_beds,
-        n_states=n_states,
-        n_territories=n_territories,
-        median_margin=median_margin,
-        distressed=distressed,
-        n_pe_targets=n_pe_targets,
-        deals=deals,
-        alerts=alerts,
-        pipeline_hospitals=pipeline_hospitals,
-        saved_searches=saved_searches,
-        pipe_summary=pipe_summary,
-        has_portfolio=has_portfolio,
-        has_pipeline=has_pipeline,
-        top_states=top_states,
-        size_data=size_data,
-    )
-
-
-def render_command_center(
-    hcris_df: pd.DataFrame,
-    db_path: str,
-) -> str:
-    """Render the command center home page.
-
-    Thin dispatcher: builds the pure data model, reads the per-request
-    workspace mode, and hands both to the composition layer. The mode
-    branch is the two-view seam — see :func:`_compose_command_center`.
-    """
-    model = build_command_center_model(hcris_df, db_path)
-    body = _compose_command_center(model, current_workspace_mode())
-    return chartis_shell(
-        body, "PE Desk",
-        active_nav="/home",
-        show_ticker=True,
-        extra_css=_EXPLAINER_CSS,
-    )
-
-
-def _compose_command_center(model: CommandCenterModel, mode: str) -> str:
-    """Two-view composition seam for the command center body.
-
-    The internal (Chartis Consulting) and partner views currently share
-    one composition — structural divergence lands in later PRs, gated
-    behind ``?view=partner-v2``. The branch exists *now* so that adding
-    the partner composition is a localized change here rather than a
-    rewrite of the render path, and so the guardrail test can pin the
-    editorial register of both branches before they diverge.
-    """
-    if mode == CONSULTING:
-        return _compose_internal(model)
-    return _compose_partner(model)
-
-
-def _compose_internal(model: CommandCenterModel) -> str:
-    """Chartis Consulting (internal) composition. Shares the editorial
-    body with the partner view until structural divergence lands."""
-    return _compose_shared(model)
-
-
-def _compose_partner(model: CommandCenterModel) -> str:
-    """PE Partner composition. Shares the editorial body with the
-    internal view until the partner-v2 divergence lands."""
-    return _compose_shared(model)
-
-
-def _compose_shared(model: CommandCenterModel) -> str:
-    """The editorial command-center body both views render today."""
-    hcris_df = model.hcris_df
-    n_hospitals = model.n_hospitals
-    deals = model.deals
-    alerts = model.alerts
-    pipeline_hospitals = model.pipeline_hospitals
-    saved_searches = model.saved_searches
-    pipe_summary = model.pipe_summary
-    has_portfolio = model.has_portfolio
-    has_pipeline = model.has_pipeline
-    total_revenue = model.total_revenue
-    total_beds = model.total_beds
-    n_states = model.n_states
-    n_territories = model.n_territories
-    median_margin = model.median_margin
-    distressed = model.distressed
-    n_pe_targets = model.n_pe_targets
 
     page_title = ck_page_title(
         "PE Desk",
@@ -359,13 +216,6 @@ def _compose_shared(model: CommandCenterModel) -> str:
         f'style="text-decoration:none;margin-left:auto;">Open Screener &rarr;</a>'
         f'</div></div>'
     )
-
-    # ── "Your Book" movement heading — editorial section anchor that
-    # groups the partner's own pipeline + active deals into one named
-    # movement, so the page reads as a memo with sections rather than a
-    # flat stack of dashboard cards. Shown only when there is a book.
-    if has_pipeline or has_portfolio:
-        sections.append(ck_eyebrow("Your Book"))
 
     # ── Pipeline section (if hospitals tracked) ──
     if has_pipeline:
@@ -499,12 +349,12 @@ def _compose_shared(model: CommandCenterModel) -> str:
             f'<div>{left}</div><div>{right}</div></div>'
         )
 
-    # ── "Market Intelligence" movement heading — editorial anchor for
-    # the always-shown universe view (top markets + size distribution).
-    sections.append(ck_eyebrow("Market Intelligence"))
-
     # ── Market highlights (always shown) ──
-    top_states = model.top_states
+    top_states = hcris_df.groupby("state").agg(
+        n=("ccn", "count"),
+        med_margin=("operating_margin", "median"),
+        total_rev=("net_patient_revenue", "sum"),
+    ).sort_values("total_rev", ascending=False).head(8)
 
     state_rows = ""
     for st, row in top_states.iterrows():
@@ -532,7 +382,14 @@ def _compose_shared(model: CommandCenterModel) -> str:
         )
 
     # Size distribution
-    size_data = model.size_data
+    beds = hcris_df["beds"].dropna()
+    size_data = {
+        "< 50 beds": int((beds < 50).sum()),
+        "50-99": int(((beds >= 50) & (beds < 100)).sum()),
+        "100-249": int(((beds >= 100) & (beds < 250)).sum()),
+        "250-499": int(((beds >= 250) & (beds < 500)).sum()),
+        "500+": int((beds >= 500).sum()),
+    }
 
     size_bars = ""
     max_count = max(size_data.values()) if size_data else 1
@@ -603,9 +460,16 @@ def _compose_shared(model: CommandCenterModel) -> str:
         f'</span></div>'
     )
 
-    return "\n".join(sections) + ck_next_section(
+    body = "\n".join(sections) + ck_next_section(
         "Open the morning dashboard",
         "/dashboard",
         eyebrow="Continue —",
         italic_word="dashboard",
+    )
+
+    return chartis_shell(
+        body, "PE Desk",
+        active_nav="/home",
+        show_ticker=True,
+        extra_css=_EXPLAINER_CSS,
     )
