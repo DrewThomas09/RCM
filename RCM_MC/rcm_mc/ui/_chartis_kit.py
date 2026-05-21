@@ -907,13 +907,16 @@ def ck_scatter(
 
     ``points`` is a list of ``(x, y, label, tone)`` tuples (tone ∈
     {teal, positive, warning, negative, navy}); each renders as a dot
-    with a hover ``<title>`` of ``label`` + the two values. Optional
-    ``x_ref`` / ``y_ref`` draw dashed quadrant reference lines (e.g. a
-    benchmark median) so a partner reads quadrant membership — the
-    "big + risky" cluster — straight off a table that otherwise hides it
-    in columns. Pure inline SVG, editorial palette, responsive width.
-    Returns '' when fewer than 2 finite points exist (caller can fall
-    back to the table alone)."""
+    with a hover ``<title>`` of ``label`` + the two values. A 5th tuple
+    element, ``href``, makes the dot a link to its drill-down (the dot
+    is wrapped in an SVG ``<a>`` and gets a pointer cursor) — so a
+    partner can click a point straight through to that row's detail
+    page. Optional ``x_ref`` / ``y_ref`` draw dashed quadrant reference
+    lines (e.g. a benchmark median) so a partner reads quadrant
+    membership — the "big + risky" cluster — straight off a table that
+    otherwise hides it in columns. Pure inline SVG, editorial palette,
+    responsive width. Returns '' when fewer than 2 finite points exist
+    (caller can fall back to the table alone)."""
     tone_var = {
         "teal": "var(--sc-teal,#1F7A75)", "positive": "var(--sc-positive,#0a8a5f)",
         "warning": "var(--sc-warning,#b8732a)", "negative": "var(--sc-negative,#b5321e)",
@@ -929,7 +932,8 @@ def ck_scatter(
             continue
         lab = str(p[2]) if len(p) > 2 and p[2] is not None else ""
         tn = p[3] if len(p) > 3 and p[3] in tone_var else "teal"
-        pts.append((x, y, lab, tn))
+        href = str(p[4]) if len(p) > 4 and p[4] else None
+        pts.append((x, y, lab, tn, href))
     if len(pts) < 2:
         return ""
     W, H = 480.0, float(height)
@@ -979,12 +983,20 @@ def ck_scatter(
         cy = (T + H - B) / 2
         parts.append(f'<text x="11" y="{cy:.0f}" font-size="9" text-anchor="middle" fill="var(--sc-text-dim,#465366)" transform="rotate(-90 11 {cy:.0f})">{_esc(y_label)}</text>')
     # dots
-    for x, y, lab, tn in pts:
+    for x, y, lab, tn, href in pts:
         cx = sx(x); cy = sy(y)
         title = (lab + " · " if lab else "") + f"{fnum(x)}, {fnum(y)}"
-        parts.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="4" fill="{tone_var[tn]}" '
-                     f'fill-opacity="0.78" stroke="var(--sc-bg,#faf7f0)" stroke-width="0.8">'
-                     f'<title>{_esc(title)}</title></circle>')
+        cursor = ';cursor:pointer' if href else ''
+        circle = (
+            f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="4" fill="{tone_var[tn]}" '
+            f'fill-opacity="0.78" stroke="var(--sc-bg,#faf7f0)" stroke-width="0.8" '
+            f'style="transition:r .1s{cursor}">'
+            f'<title>{_esc(title)}</title></circle>'
+        )
+        if href:
+            parts.append(f'<a href="{_esc(href)}">{circle}</a>')
+        else:
+            parts.append(circle)
     parts.append('</svg>')
     cap = (f'<div style="font-size:10px;color:var(--sc-text-faint);margin-top:4px;'
            f'font-family:JetBrains Mono,monospace">{_esc(caption)}</div>') if caption else ""

@@ -232,6 +232,7 @@ def _league_scatter(records: List[Any]) -> str:
     high-return AND consistent (upper-right) — at a glance.
     """
     import statistics
+    import urllib.parse as _urlparse
 
     from rcm_mc.ui._chartis_kit import ck_scatter
 
@@ -249,7 +250,13 @@ def _league_scatter(records: List[Any]) -> str:
             tone = "positive"          # ≥2.0× with zero impairments
         else:
             tone = "teal"
-        pts.append((r.consistency_score, r.median_moic, r.sponsor, tone))
+        # Connectivity: click a dot through to that sponsor's drill-down
+        # (realized MOIC distribution, vintage timeline, per-deal list).
+        href = (
+            "/diligence/sponsor-detail?sponsor="
+            + _urlparse.quote(r.sponsor)
+        )
+        pts.append((r.consistency_score, r.median_moic, r.sponsor, tone, href))
 
     chart = ck_scatter(
         pts,
@@ -258,10 +265,10 @@ def _league_scatter(records: List[Any]) -> str:
         x_ref=cons_ref,
         y_ref=2.0,
         caption=(
-            f"Each dot a sponsor · dashed lines mark median consistency "
-            f"({cons_ref:.0f}) and the 2.0× MOIC bar · upper-right = "
-            f"high-return AND consistent · green = ≥2.0× with zero losses, "
-            f"red = ≥20% loss rate"
+            f"Each dot a sponsor (click through to its drill-down) · "
+            f"dashed lines mark median consistency ({cons_ref:.0f}) and "
+            f"the 2.0× MOIC bar · upper-right = high-return AND consistent "
+            f"· green = ≥2.0× with zero losses, red = ≥20% loss rate"
         ),
     )
     if not chart:
