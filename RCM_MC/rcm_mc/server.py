@@ -7016,8 +7016,15 @@ class RCMHandler(BaseHTTPRequestHandler):
             log_target = target in _dollar_targets
             drop_leakage = True
         segmented = (qs.get("segmented") or ["0"])[0] in ("1", "true", "on")
-        # Phase 4: k-fold cross-validation (computes mean OOS R²)
-        cv = (qs.get("cv") or ["0"])[0] in ("1", "true", "on")
+        # Phase 4: k-fold cross-validation (computes mean OOS R²). Default
+        # ON on a fresh load so the headline fit ships with its train-vs-
+        # test proof (the 5-fold CV is ~instant on the curated set); an
+        # explicit form submit reads the checkbox literally so it can be
+        # turned off.
+        if _submitted:
+            cv = (qs.get("cv") or ["0"])[0] in ("1", "true", "on")
+        else:
+            cv = True
         # Phase 5: unsupervised cluster explorer (PCA + k-means on
         # structural features only). cluster_k controls k; clamped
         # to [2, 12] to keep the panel readable and the fit stable.
