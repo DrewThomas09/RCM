@@ -10,7 +10,7 @@ import html as _html
 from typing import Any, Dict, List, Optional
 
 from rcm_mc.ui._chartis_kit import (
-    P, chartis_shell, ck_section_header, ck_kpi_block, ck_fmt_moic,
+    P, chartis_shell, ck_section_header, ck_kpi_block, ck_fmt_moic, ck_value_anchor,
 )
 
 
@@ -269,9 +269,16 @@ def render_multiple_decomp(params: Dict[str, str]) -> str:
 
     chart = _waterfall_svg(result.components, ev_ebitda)
 
+    value_anchor = ck_value_anchor(
+        "Multiple Decomposition",
+        f"{result.unexplained_premium:+.1f}x unexplained premium",
+        delta=f"{ev_ebitda:.1f}x entry vs {result.sector_baseline:.1f}x sector baseline ({result.sector_n} peers)",
+        tone="warning" if result.unexplained_premium >= 2.0 else "teal",
+    )
     body = f"""
 {_input_form(params)}
 {kpi_grid}
+{value_anchor}
 {ck_section_header("Component Waterfall", f"Entry {ev_ebitda:.1f}× broken into drivers")}
 <div style="overflow-x:auto;margin-bottom:24px">{chart}</div>
 {ck_section_header("Sector Benchmarks", "Corpus EV/EBITDA ranges and premium-MOIC relationship")}
