@@ -224,6 +224,57 @@ def _kpi_bar(records: List[Any]) -> str:
     )
 
 
+def _league_scatter(records: List[Any]) -> str:
+    """Lead quadrant chart: P50 MOIC (return) vs consistency score, one
+    dot per sponsor. The table ranks on a single sort key at a time and
+    hides the joint return/consistency read in adjacent columns; the
+    scatter surfaces the quadrant a partner actually screens for —
+    high-return AND consistent (upper-right) — at a glance.
+    """
+    import statistics
+
+    from rcm_mc.ui._chartis_kit import ck_scatter
+
+    cons = [r.consistency_score for r in records
+            if r.consistency_score is not None]
+    cons_ref = statistics.median(cons) if cons else 50.0
+
+    pts = []
+    for r in records:
+        if r.median_moic is None or r.consistency_score is None:
+            continue
+        if r.loss_rate and r.loss_rate >= 0.20:
+            tone = "negative"          # lossy track record
+        elif r.median_moic >= 2.0 and (r.loss_rate or 0.0) == 0.0:
+            tone = "positive"          # ≥2.0× with zero impairments
+        else:
+            tone = "teal"
+        pts.append((r.consistency_score, r.median_moic, r.sponsor, tone))
+
+    chart = ck_scatter(
+        pts,
+        x_label="Consistency score (0–100)",
+        y_label="P50 MOIC (×)",
+        x_ref=cons_ref,
+        y_ref=2.0,
+        caption=(
+            f"Each dot a sponsor · dashed lines mark median consistency "
+            f"({cons_ref:.0f}) and the 2.0× MOIC bar · upper-right = "
+            f"high-return AND consistent · green = ≥2.0× with zero losses, "
+            f"red = ≥20% loss rate"
+        ),
+    )
+    if not chart:
+        return ""
+    return (
+        '<div class="ck-panel">'
+        '<div class="ck-panel-title">Return vs Consistency — '
+        'the league at a glance</div>'
+        '<div style="padding:14px 16px;">' + chart + '</div>'
+        '</div>'
+    )
+
+
 def _methodology_panel() -> str:
     return """
 <div class="ck-panel">
@@ -304,10 +355,11 @@ def render_sponsor_league(
 </form>"""
 
     kpis = _kpi_bar(records)
+    scatter = _league_scatter(records)
     table = _build_table(records)
     meth = _methodology_panel()
 
-    body = kpis + controls + table + meth
+    body = kpis + scatter + controls + table + meth
 
     return chartis_shell(
         body,
