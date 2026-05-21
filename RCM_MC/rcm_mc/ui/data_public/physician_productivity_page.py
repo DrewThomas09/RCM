@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _benchmark_svg(benchmarks) -> str:
@@ -288,6 +288,13 @@ def render_physician_productivity(params: dict = None) -> str:
         meta=f"""wRVU benchmarking vs MGMA/AMGA, utilization metrics, and capacity-to-EV scenarios — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    value_anchor = ck_value_anchor(
+        "Physician Productivity",
+        f"${r.total_collections_mm:,.1f}M collections",
+        delta=f"{r.total_fte:.1f} FTE · {r.total_wrvu:,.0f} wRVU · {r.productivity_score:.0f}/100 productivity",
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
@@ -298,6 +305,8 @@ def render_physician_productivity(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">
     {kpi_strip}
   </div>
+
+  {value_anchor}
 
   <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-bottom:16px">
     <div style="{cell}">

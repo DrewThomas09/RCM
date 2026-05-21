@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _rate_ladder_svg(cpt_rows) -> str:
@@ -295,6 +295,13 @@ def render_ref_pricing(params: dict = None) -> str:
         meta=f"""CPT-level rate benchmarking vs Medicare / Commercial P50 / P75, contract calendar, uplift scenarios — {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    value_anchor = ck_value_anchor(
+        "Reference Pricing",
+        f"{r.current_weighted_index:.2f}x MCR (weighted index)",
+        delta=f"market median {r.market_median_index:.2f}x · P75 {r.market_p75_index:.2f}x · +{gap_median_pct * 100:.1f}% to median",
+        tone="warning" if gap_median_pct >= 0.10 else "teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
@@ -305,6 +312,8 @@ def render_ref_pricing(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">
     {kpi_strip}
   </div>
+
+  {value_anchor}
 
   <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-bottom:16px">
     <div style="{cell}">
