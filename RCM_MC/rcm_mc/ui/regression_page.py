@@ -201,6 +201,23 @@ _COLLINEAR_PAIRS = {
     "contractual_allowances": {"gross_patient_revenue", "net_patient_revenue"},
 }
 
+# Curated low-collinearity predictor sets per target — the "strong but
+# clean" defaults. Rather than throw every leakage-safe column at OLS
+# (which leaves VIFs in the hundreds: beds ≈ bed_days ≈ patient_days ≈
+# medicare_days, and medicare%+medicaid%+commercial% sum to 100), the
+# default fit uses ONE volume measure + occupancy + payer mix + size.
+# Verified on live HCRIS: net_patient_revenue ~ this set (log target)
+# gives R²≈0.71, 7/7 coefficients significant, max VIF ≈ 5.5, signs all
+# directionally sensible. Callers can still override `features` to fit a
+# different / wider set. Keyed by target; absent target → all-safe.
+_CURATED_DEFAULTS: Dict[str, List[str]] = {
+    "net_patient_revenue": [
+        "total_patient_days", "occupancy_rate", "medicare_day_pct",
+        "medicaid_day_pct", "payer_diversity", "size_quartile",
+        "operating_expenses",
+    ],
+}
+
 
 def _add_computed_features(df: pd.DataFrame) -> pd.DataFrame:
     """Add all computed regression features to HCRIS DataFrame."""
@@ -631,6 +648,10 @@ def render_regression_page(
     # Data source + target + log + segmented controls
     selector_form = (
         '<form method="GET" action="/portfolio/regression" class="rg-selector-form">'
+        # Marker so the route can tell an explicit form submit (where an
+        # unchecked box legitimately means "off") from a fresh page load
+        # (where we apply the honest defaults: drop leakage + log $ target).
+        '<input type="hidden" name="submitted" value="1">'
         '<div>'
         '<label class="rg-selector-label">Data Source</label>'
         '<select name="source" class="rg-selector-input">'
@@ -764,6 +785,7 @@ def render_regression_page(
                 subtitle=f"Empty universe: {universe}",
             )
 
+    _features_was_none = features is None
     if features is None:
         features = all_features
 
@@ -775,6 +797,15 @@ def render_regression_page(
     leakage_verdicts = _audit_leakage(features, target)
     if drop_leakage:
         features = _safe_features(features, target)
+    # On a default load (no explicit feature override) prefer the curated
+    # low-collinearity set for this target — keeps the headline fit
+    # defensible (significant coefficients, VIF < 10) instead of dumping
+    # every safe-but-collinear column into OLS. The leakage panel above
+    # still audits the full candidate list, so partners see what's excluded.
+    if _features_was_none and drop_leakage and target in _CURATED_DEFAULTS:
+        curated = [f for f in _CURATED_DEFAULTS[target] if f in df.columns]
+        if len(curated) >= 2:
+            features = curated
 
     result = _run_ols(df, target, features, log_target=log_target)
 

@@ -6996,12 +6996,26 @@ class RCMHandler(BaseHTTPRequestHandler):
         # segmented regression toggle. Lengths capped defensively
         # (universe values are short literals from the pill nav).
         universe = (qs.get("universe") or ["all"])[0][:40]
-        log_target = (qs.get("log") or ["0"])[0] in ("1", "true", "on")
+        # Honest-by-default: on a fresh page load (no ``submitted`` marker)
+        # we drop algebraically-leaky features and log-transform dollar
+        # targets, so the headline fit is the defensible one rather than
+        # the leakage-inflated raw-dollar fit. An explicit form submit
+        # (``submitted=1``) reads the checkboxes literally so a partner can
+        # still untoggle either to inspect the leaky / raw-dollar version.
+        _submitted = "submitted" in qs
+        _dollar_targets = {
+            "net_patient_revenue", "gross_patient_revenue",
+            "operating_expenses", "total_patient_revenue",
+        }
+        if _submitted:
+            log_target = (qs.get("log") or ["0"])[0] in ("1", "true", "on")
+            drop_leakage = (
+                (qs.get("drop_leakage") or ["0"])[0] in ("1", "true", "on")
+            )
+        else:
+            log_target = target in _dollar_targets
+            drop_leakage = True
         segmented = (qs.get("segmented") or ["0"])[0] in ("1", "true", "on")
-        # Phase 3: drop algebraically-leaky features before the fit
-        drop_leakage = (
-            (qs.get("drop_leakage") or ["0"])[0] in ("1", "true", "on")
-        )
         # Phase 4: k-fold cross-validation (computes mean OOS R²)
         cv = (qs.get("cv") or ["0"])[0] in ("1", "true", "on")
         # Phase 5: unsupervised cluster explorer (PCA + k-means on

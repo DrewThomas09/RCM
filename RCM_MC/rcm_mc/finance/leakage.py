@@ -119,7 +119,22 @@ def _derived(
 PROVENANCE: Dict[str, FeatureProvenance] = {
     # ── Raw HCRIS columns ──
     "beds":                   _raw("beds", "Beds"),
-    "net_patient_revenue":    _raw("net_patient_revenue", "Net Patient Revenue"),
+    # Net patient revenue is the accounting identity gross charges minus
+    # contractual allowances (and bad debt). Treating it as derived from
+    # those two raw columns makes the audit correctly flag
+    # gross_patient_revenue and contractual_allowances as LEAKS when
+    # net_patient_revenue is the target — they're the answer's own
+    # components (and ~0.99 correlated with it), not information you'd
+    # know before computing net revenue.
+    "net_patient_revenue": _derived(
+        "net_patient_revenue", "Net Patient Revenue",
+        inputs=["gross_patient_revenue", "contractual_allowances"],
+        note=(
+            "Accounting identity: gross_patient_revenue minus "
+            "contractual_allowances (and bad debt). Flagged-derived so "
+            "its own components can't be used as predictors of it."
+        ),
+    ),
     "operating_expenses":     _raw("operating_expenses", "Operating Expenses"),
     "medicare_day_pct":       _raw("medicare_day_pct", "Medicare Day %"),
     "medicaid_day_pct":       _raw("medicaid_day_pct", "Medicaid Day %"),
