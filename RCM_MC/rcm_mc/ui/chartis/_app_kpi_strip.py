@@ -63,6 +63,7 @@ from rcm_mc.ui._chartis_kit_editorial import (
     pair_block,
     sparkline_svg,
 )
+from rcm_mc.ui._workspace_mode import CONSULTING, current_workspace_mode
 
 
 # Eight KPIs in the strip. Each row defines:
@@ -296,9 +297,14 @@ def render_kpi_strip(
         f'<div class="app-kpi-strip">{cells_html}</div>'
     )
 
+    _kpi_scope = (
+        "ENGAGEMENT-LEVEL"
+        if current_workspace_mode() == CONSULTING
+        else "FUND-LEVEL"
+    )
     return pair_block(
         viz_html,
-        label="FUND-LEVEL KPIs · 7-QUARTER TRACK",
+        label=f"{_kpi_scope} KPIs · 7-QUARTER TRACK",
         source="portfolio.db",
         data_table=_render_quarterly_history_table(deals_df),
     )

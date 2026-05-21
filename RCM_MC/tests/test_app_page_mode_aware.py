@@ -64,6 +64,23 @@ class AppPageModeAwareTests(unittest.TestCase):
         self.assertIn("Command center", self._render(PARTNER))
         self.assertIn("Command center", self._render(CONSULTING))
 
+    def test_block_helper_labels_follow_mode(self) -> None:
+        # The block helpers (deals table, initiative tracker, KPI strip)
+        # carry partner vocabulary that swaps via the lexicon: the deals
+        # table / initiative "Deal" column header and the KPI strip's
+        # FUND-LEVEL scope. Lifecycle stage names (hold/exit/...) are
+        # domain terms and are intentionally NOT swapped.
+        partner = self._render(PARTNER)
+        self.assertIn("FUND-LEVEL KPIs", partner)
+        self.assertIn(">Deal</th>", partner)
+
+        consulting = self._render(CONSULTING)
+        self.assertIn("ENGAGEMENT-LEVEL KPIs", consulting)
+        self.assertIn(">Engagement</th>", consulting)
+        self.assertNotIn("FUND-LEVEL KPIs", consulting)
+        # Lifecycle stages are domain terms, unchanged across views.
+        self.assertIn("Sourced", consulting)
+
 
 if __name__ == "__main__":
     unittest.main()
