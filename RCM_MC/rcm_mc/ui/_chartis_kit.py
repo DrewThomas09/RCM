@@ -4231,6 +4231,60 @@ table.ck-data-table th[data-sort-dir]{color:var(--sc-teal,#155752);}
 """
 
 
+_TABLE_FILTER_JS = """
+<style>
+.ck-tfilter{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-bottom:6px;}
+.ck-tfilter input{font:11px/1.4 var(--sc-mono,'JetBrains Mono',monospace);
+  padding:3px 9px;border:1px solid var(--sc-rule,#d6cfc0);background:var(--sc-bg,#faf7f0);
+  color:var(--sc-ink,#1a2332);border-radius:2px;width:190px;}
+.ck-tfilter input:focus{outline:none;border-color:var(--sc-teal,#155752);}
+.ck-tfilter-count{font:10px var(--sc-mono,'JetBrains Mono',monospace);
+  color:var(--sc-text-faint,#7a8699);}
+</style>
+<script>
+/* Live row-filter for long editorial tables (>=8 body rows). Inserts a
+ * compact filter box above the table; typing hides rows whose visible
+ * text doesn't contain the query (case-insensitive). Pairs with the
+ * sort shim (sort re-orders all rows; filter toggles row display).
+ * Additive; degrades to a plain table with JS off; opt out per table
+ * with data-no-filter. */
+(function(){
+  function attach(table){
+    var tbody=table.tBodies[0];
+    if(!tbody||tbody.rows.length<8) return;
+    if(table.getAttribute('data-no-filter')!=null) return;
+    if(table.getAttribute('data-filtered')!=null) return;
+    table.setAttribute('data-filtered','');
+    var host=table.closest('.ck-data-table-scroll')||table;
+    if(!host.parentNode) return;
+    var wrap=document.createElement('div'); wrap.className='ck-tfilter';
+    var input=document.createElement('input');
+    input.type='search'; input.placeholder='Filter rows\\u2026';
+    input.setAttribute('aria-label','Filter table rows');
+    var count=document.createElement('span'); count.className='ck-tfilter-count';
+    var total=tbody.rows.length;
+    function upd(){
+      var q=input.value.trim().toLowerCase(); var shown=0;
+      Array.prototype.forEach.call(tbody.rows,function(r){
+        var m=q===''||(r.textContent||'').toLowerCase().indexOf(q)>=0;
+        r.style.display=m?'':'none'; if(m) shown++;
+      });
+      count.textContent=q===''?'':(shown+' of '+total);
+    }
+    input.addEventListener('input',upd);
+    wrap.appendChild(input); wrap.appendChild(count);
+    host.parentNode.insertBefore(wrap,host);
+  }
+  function init(){
+    Array.prototype.forEach.call(document.querySelectorAll('table.ck-data-table'),attach);
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}
+  else{init();}
+})();
+</script>
+"""
+
+
 _TOAST_JS = """
 <script>
 /* Toast / flash notification system.
@@ -5234,6 +5288,7 @@ def chartis_shell(
         f"{_SHORTCUTS_JS}"
         f"{_TOAST_JS}"
         f"{_SORT_JS}"
+        f"{_TABLE_FILTER_JS}"
         f"{extra_js_html}"
         "</body></html>"
     )
