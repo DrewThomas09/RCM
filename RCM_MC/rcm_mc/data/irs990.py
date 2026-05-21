@@ -97,7 +97,8 @@ def fetch_990(ein: str, *, use_cache: bool = True, timeout: float = 15.0) -> Dic
 
     url = _PROPUBLICA_URL.format(ein=normalized)
     try:
-        with urllib.request.urlopen(url, timeout=timeout) as resp:
+        from ._cms_download import ssl_context
+        with urllib.request.urlopen(url, timeout=timeout, context=ssl_context()) as resp:
             raw = resp.read().decode("utf-8")
     except urllib.error.HTTPError as exc:
         if exc.code == 404:
