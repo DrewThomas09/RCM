@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import html as _html
 import importlib
+import urllib.parse as _urlparse
 from typing import Any, Dict, List, Optional
 
 
@@ -167,9 +168,13 @@ def _build_table(records: List[Any]) -> str:
         ])
         spark = _sparkline_moics(moics) if moics else ""
 
+        sponsor_href = (
+            "/diligence/sponsor-detail?sponsor="
+            + _urlparse.quote(rec.sponsor)
+        )
         rows_html.append(f"""
 <tr{stripe}>
-  <td style="padding:7px 8px;font-size:11px;color:var(--ck-text);">{_html.escape(rec.sponsor)}</td>
+  <td style="padding:7px 8px;font-size:11px;"><a href="{sponsor_href}" style="color:var(--ck-accent);text-decoration:none;">{_html.escape(rec.sponsor)}</a></td>
   <td class="mono" style="text-align:right;padding:7px 6px;">{rec.deal_count}</td>
   <td class="mono dim" style="text-align:right;padding:7px 6px;">{rec.realized_count}</td>
   <td style="text-align:right;padding:7px 6px;">{_fmt_moic(rec.moic_p25)}</td>
@@ -232,7 +237,6 @@ def _league_scatter(records: List[Any]) -> str:
     high-return AND consistent (upper-right) — at a glance.
     """
     import statistics
-    import urllib.parse as _urlparse
 
     from rcm_mc.ui._chartis_kit import ck_scatter
 
