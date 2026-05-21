@@ -60,7 +60,7 @@ def _heatmap_table(
     header = "<tr><th></th>" + "".join(
         f'<th style="writing-mode:vertical-rl;transform:rotate(180deg);'
         f'font-size:9px;padding:2px 4px;color:{P["text_dim"]};'
-        f'font-family:Inter,sans-serif;white-space:nowrap;max-height:90px">'
+        f'font-family:var(--sc-sans,Inter,sans-serif);white-space:nowrap;max-height:90px">'
         f'{_html.escape(s)}</th>'
         for s in short
     ) + "</tr>"
@@ -69,7 +69,7 @@ def _heatmap_table(
     for i, row_sec in enumerate(secs):
         cells = [
             f'<td style="font-size:9px;color:{P["text_dim"]};padding:2px 6px;'
-            f'white-space:nowrap;font-family:Inter,sans-serif">'
+            f'white-space:nowrap;font-family:var(--sc-sans,Inter,sans-serif)">'
             f'{_html.escape(short[i])}</td>'
         ]
         for j, col_sec in enumerate(secs):

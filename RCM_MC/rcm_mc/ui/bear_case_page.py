@@ -108,7 +108,7 @@ text-transform:uppercase;font-weight:700;cursor:pointer;}}
 .bc-form-submit:hover{{filter:brightness(1.15);}}
 .bc-memo-block{{background:#fff;color:#1a1a1a;border:2px dashed {wn};
 border-radius:4px;padding:22px 28px;margin-top:14px;
-font-family:Georgia,serif;}}
+font-family:var(--sc-serif,Georgia,serif);}}
 .bc-copy-btn{{display:inline-block;padding:6px 12px;background:{ac};
 color:#fff;border:0;border-radius:3px;font-size:10.5px;letter-spacing:1.2px;
 text-transform:uppercase;font-weight:700;cursor:pointer;margin-top:8px;

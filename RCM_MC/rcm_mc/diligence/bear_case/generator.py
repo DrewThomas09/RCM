@@ -262,7 +262,7 @@ def _build_ic_memo_html(
             f'{e.narrative}</div></td></tr>'
         )
     return (
-        f'<section style="font-family:Georgia,serif;color:#1a1a1a;'
+        f'<section style="font-family:var(--sc-serif,Georgia,serif);color:#1a1a1a;'
         f'padding:16px 20px;background:#fff;border:1px solid #d6cfc0;'
         f'border-radius:4px;page-break-before:always;">'
         f'<div style="font-size:11px;letter-spacing:1.6px;'
