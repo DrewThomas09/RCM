@@ -4231,6 +4231,19 @@ table.ck-data-table th[data-sort-dir]{color:var(--sc-teal,#155752);}
 """
 
 
+_BARROW_HOVER_CSS = """
+<style>
+/* Hover emphasis for ck_bar_row charts — pure CSS, makes the ranked
+ * bar lists feel interactive: the hovered row lifts with a faint wash
+ * and its fill brightens so a partner can track a single series. */
+.ck-bar-row{transition:background .12s ease;border-radius:2px;}
+.ck-bar-row:hover{background:rgba(31,122,117,0.07);}
+.ck-bar-row:hover .ck-bar-row-fill{filter:saturate(1.3) brightness(1.05);}
+.ck-bar-row:hover .ck-bar-row-label{color:var(--sc-teal-ink,#155752);}
+</style>
+"""
+
+
 _TABLE_TOTALS_JS = """
 <style>
 .ck-ttotals{position:absolute;top:4px;right:110px;z-index:3;opacity:0;transition:opacity .12s;
@@ -5538,6 +5551,7 @@ def chartis_shell(
         f"{_TABLE_COPY_JS}"
         f"{_TABLE_BARS_JS}"
         f"{_TABLE_TOTALS_JS}"
+        f"{_BARROW_HOVER_CSS}"
         f"{extra_js_html}"
         "</body></html>"
     )
