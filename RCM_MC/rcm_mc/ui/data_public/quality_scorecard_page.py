@@ -6,7 +6,24 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+
+
+def _impact_chart(items):
+    """Summary chart — quality levers by EV impact (all positive value drivers)."""
+    def _tone(p):
+        if p.ev_impact_mm >= 5.0: return "positive"
+        if p.ev_impact_mm >= 1.0: return "teal"
+        return "navy"
+    top = sorted(items, key=lambda p: p.ev_impact_mm, reverse=True)
+    total = sum(p.ev_impact_mm for p in top) or 1.0
+    rows = [ck_bar_row(f"{p.component}",
+            f"${p.ev_impact_mm:,.1f}M EV · ${p.annual_impact_mm:,.1f}M/yr",
+            p.ev_impact_mm / total * 100.0, tone=_tone(p)) for p in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of EV impact from quality levers '
+            '· value = EV impact ($M) + annual · tone = EV magnitude</div></div>')
 
 
 def _score_ring_svg(score: float, tier: str) -> str:
@@ -203,6 +220,7 @@ def render_quality_scorecard(params: dict = None) -> str:
     hedis_tbl = _hedis_table(r.hedis)
     vbc_tbl = _vbc_table(r.vbc_programs)
     impact_tbl = _impact_table(r.value_impacts)
+    impact_chart = _impact_chart(r.value_impacts)
 
     form = f"""
 <form method="GET" action="/quality-scorecard" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
@@ -277,7 +295,7 @@ def render_quality_scorecard(params: dict = None) -> str:
 
   <div style="{cell}">
     <div style="{h3}">Quality-Adjusted Value Creation Levers</div>
-    {impact_tbl}
+    {impact_chart}{impact_tbl}
   </div>
 
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};

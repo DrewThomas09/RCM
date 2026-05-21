@@ -4,7 +4,26 @@ from __future__ import annotations
 import html as _html
 from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title, ck_paired_block,
+    ck_bar_row,
 )
+
+
+def _covenants_chart(items):
+    """Summary chart — covenant headroom (tone by breach risk; tightest read easily)."""
+    def _tone(c):
+        b = (c.breach_risk or "").lower()
+        if "high" in b or "breach" in b: return "negative"
+        if "elev" in b or "medium" in b or "moderate" in b: return "warning"
+        return "teal"
+    top = sorted(items, key=lambda c: c.headroom_pct)
+    mx = max((abs(c.headroom_pct) for c in top), default=0.0) or 1.0
+    rows = [ck_bar_row(f"{c.name}",
+            f"{c.headroom_pct * 100:+.1f}% headroom · {c.breach_risk}",
+            max(abs(c.headroom_pct) / mx * 100.0, 2.0), tone=_tone(c)) for c in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = headroom magnitude (tightest first) '
+            '· value = headroom % + breach risk · tone = breach risk</div></div>')
 
 
 def _stress_paired_rows(items) -> tuple:
@@ -193,6 +212,7 @@ def render_covenant_headroom(params: dict = None) -> str:
 
     svg = _stress_svg(r.stress_scenarios)
     cov_tbl = _covenants_table(r.covenants)
+    cov_chart = _covenants_chart(r.covenants)
     tr_tbl = _tranches_table(r.tranches)
     cu_tbl = _cure_table(r.cure_rights)
     am_tbl = _amort_table(r.amort_schedule)
@@ -250,7 +270,7 @@ def render_covenant_headroom(params: dict = None) -> str:
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {stress_paired}
-  <div style="{cell}"><div style="{h3}">Covenant Compliance Matrix</div>{cov_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Covenant Compliance Matrix</div>{cov_chart}{cov_tbl}</div>
   <div style="{cell}"><div style="{h3}">Capital Structure — Tranche by Tranche</div>{tr_tbl}</div>
   <div style="{cell}"><div style="{h3}">Cure Rights Available</div>{cu_tbl}</div>
   <div style="{cell}"><div style="{h3}">Debt Amortization Schedule</div>{am_tbl}</div>

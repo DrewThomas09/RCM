@@ -2,7 +2,25 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title, ck_bar_row
+
+
+def _scenarios_chart(items):
+    """Summary chart — LBO scenario equity outcomes (tone by MOIC)."""
+    def _tone(s):
+        if s.moic >= 3.0: return "positive"
+        if s.moic >= 2.0: return "teal"
+        if s.moic >= 1.0: return "warning"
+        return "negative"
+    top = sorted(items, key=lambda s: s.exit_proceeds_mm, reverse=True)
+    mx = max((s.exit_proceeds_mm for s in top), default=0.0) or 1.0
+    rows = [ck_bar_row(f"{s.scenario}",
+            f"${s.exit_proceeds_mm:,.0f}M · {s.moic:.2f}x · {s.irr_pct * 100:.0f}% IRR · p={s.probability_pct * 100:.0f}%",
+            s.exit_proceeds_mm / mx * 100.0, tone=_tone(s)) for s in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = equity proceeds vs best scenario '
+            '· value = proceeds ($M) + MOIC + IRR + probability · tone = MOIC</div></div>')
 
 
 def _sensitivity_table(items) -> str:
@@ -197,6 +215,7 @@ def render_lbo_stress(params: dict = None) -> str:
     c_tbl = _covenant_table(r.covenant_path)
     b_tbl = _bridge_table(r.returns_bridge)
     sc_tbl = _scenarios_table(r.scenarios)
+    sc_chart = _scenarios_chart(r.scenarios)
 
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
@@ -216,7 +235,7 @@ def render_lbo_stress(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Exit Multiple Sensitivity Grid</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Covenant Compliance Path</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Returns Bridge — Entry Equity to Exit Proceeds</div>{b_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Scenario Outcomes &amp; Probability Weighting</div>{sc_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Scenario Outcomes &amp; Probability Weighting</div>{sc_chart}{sc_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">LBO Stress Thesis:</strong> Base case {b.projected_moic:,.2f}x MOIC / {b.projected_irr_pct * 100:.1f}% IRR over {b.projected_exit_year - 2026} years.
     Tornado analysis ranks {top_driver.driver} as the highest-sensitivity driver (swing: {top_driver.swing_moic:+.2f}x MOIC across downside-to-upside).
