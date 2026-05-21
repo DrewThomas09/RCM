@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title, ck_bar_row
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title, ck_bar_row, ck_value_anchor
 
 
 def _scenarios_chart(items):
@@ -243,11 +243,20 @@ def render_reit_analyzer(params: dict = None) -> str:
         meta=f"""Real-estate monetization · cap-rate comps · rent coverage · REIT buyer landscape · proceeds allocation — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    value_anchor = ck_value_anchor(
+        "Real Estate Value",
+        f"${r.total_market_value_mm:,.0f}M market value",
+        delta=f"${r.total_book_value_mm:,.0f}M book · {r.weighted_cap_rate * 100:.2f}% weighted cap",
+        opportunity=f"${r.total_unrealized_gain_mm:,.0f}M unrealized gain",
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   {assets_paired}
   <div style="{cell}"><div style="{h3}">Sale-Leaseback Scenario Matrix</div>{scen_chart}{scen_tbl}</div>
   <div style="{cell}"><div style="{h3}">REIT Buyer Landscape — Public + Private Capital</div>{buy_tbl}</div>
