@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title, ck_value_anchor
 
 
 def _pricing_svg(pricing, current_nav: float) -> str:
@@ -327,6 +327,14 @@ def render_continuation_vehicle(params: dict = None) -> str:
         ),
     )
 
+    value_anchor = ck_value_anchor(
+        "Continuation Value",
+        f"${r.current_nav_mm:,.0f}M current NAV",
+        delta=f"{r.hold_years_elapsed}y held · {r.remaining_hold_potential}y remaining potential · {len(r.structures)} structures",
+        target=f"recommended: {r.recommended_structure}",
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
@@ -337,6 +345,8 @@ def render_continuation_vehicle(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">
     {kpi_strip}
   </div>
+
+  {value_anchor}
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
     <div style="{cell}">
