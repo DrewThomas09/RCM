@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _football_field_svg(ranges) -> str:
@@ -256,6 +256,14 @@ def render_peer_valuation(params: dict = None) -> str:
         meta=f"""Trading comps + precedent transactions + control premium = football-field valuation for {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    value_anchor = ck_value_anchor(
+        "Peer Valuation",
+        f"${r.implied_ev_median_mm:,.0f}M implied EV (median)",
+        delta=f"${r.target_ebitda_mm:,.1f}M EBITDA · ${r.target_revenue_mm:,.1f}M revenue",
+        target=f"range ${r.implied_ev_low_mm:,.0f}M–${r.implied_ev_high_mm:,.0f}M",
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
@@ -266,6 +274,8 @@ def render_peer_valuation(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">
     {kpi_strip}
   </div>
+
+  {value_anchor}
 
   <div style="{cell}">
     <div style="{h3}">Football Field — Implied EV Range</div>

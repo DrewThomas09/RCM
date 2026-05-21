@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _ownership_svg(total_sqft: int, owned_sqft: int, leased_sqft: int) -> str:
@@ -264,6 +264,14 @@ def render_real_estate(params: dict = None) -> str:
         meta=f"""Property inventory, lease terms, SLB scenarios for {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    value_anchor = ck_value_anchor(
+        "Real Estate Value",
+        f"${r.realizable_re_value_mm:,.1f}M realizable RE value",
+        delta=f"{len(r.assets)} locations · {r.total_sqft:,} sqft · {r.weighted_avg_cap_rate * 100:.2f}% cap rate",
+        opportunity=f"${r.realizable_re_value_mm:,.1f}M sale-leaseback unlock",
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
@@ -274,6 +282,8 @@ def render_real_estate(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">
     {kpi_strip}
   </div>
+
+  {value_anchor}
 
   <div style="{cell}">
     <div style="{h3}">Portfolio Ownership Mix</div>
