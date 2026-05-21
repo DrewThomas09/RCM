@@ -2,7 +2,23 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor, ck_scatter
+
+
+def _matters_scatter(items):
+    """Quadrant — alleged damages vs net exposure, so the insurance /
+    indemnity buffer is visible: dots near the diagonal are under-covered,
+    far below = well-covered. Upper area = high retained risk."""
+    import statistics
+    pts, ys = [], []
+    for m in items:
+        tn = ('negative' if m.est_exposure_m >= 5 else 'warning' if m.est_exposure_m >= 2 else 'navy')
+        pts.append((m.alleged_amount_m, m.est_exposure_m, m.matter_id, tn)); ys.append(m.est_exposure_m)
+    return ck_scatter(
+        pts, x_label='Alleged ($M)', y_label='Net exposure ($M)',
+        y_ref=(statistics.median(ys) if ys else None),
+        caption='Each dot = a matter · higher = more retained exposure after insurance/indemnity · tone = exposure size',
+    )
 
 
 def _stage_color(s: str) -> str:
@@ -235,6 +251,7 @@ def render_litigation_tracker(params: dict = None) -> str:
     ca_total = sum(c.alleged_damages_m for c in r.class_actions)
     reg_total = sum(r2.estimated_fine_m for r2 in r.regulatory)
     m_chart = _matters_chart(r.matters)
+    m_scatter = _matters_scatter(r.matters)
     value_anchor = ck_value_anchor(
         "Litigation Net Exposure",
         f"${r.total_exposure_m:.1f}M estimated net exposure",
@@ -253,7 +270,7 @@ def render_litigation_tracker(params: dict = None) -> str:
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
-  <div style="{cell}"><div style="{h3}">Open Litigation Matters</div>{m_chart}{m_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Open Litigation Matters</div>{m_chart}{m_scatter}{m_tbl}</div>
   <div style="{cell}"><div style="{h3}">Regulatory / Agency Actions</div>{rg_tbl}</div>
   <div style="{cell}"><div style="{h3}">Class Actions</div>{ca_chart}{ca_tbl}</div>
   <div style="{cell}"><div style="{h3}">Matter Type Rollup</div>{t_tbl}</div>

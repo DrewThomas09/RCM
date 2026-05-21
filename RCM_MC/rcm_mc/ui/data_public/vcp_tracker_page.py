@@ -2,7 +2,23 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor, ck_scatter
+
+
+def _levers_scatter(items):
+    """Quadrant — target EBITDA vs realization %, so big high-realization
+    levers (upper-right) and big laggards (lower-right) separate."""
+    import statistics
+    pts, xs = [], []
+    for l in items:
+        y = l.realization_pct * 100.0
+        tn = ('positive' if l.realization_pct >= 0.85 else 'teal' if l.realization_pct >= 0.65 else 'warning')
+        pts.append((l.target_ebitda_m, y, f"{l.deal} · {l.lever_category}", tn)); xs.append(l.target_ebitda_m)
+    return ck_scatter(
+        pts, x_label='Target EBITDA ($M)', y_label='Realization %',
+        x_ref=(statistics.median(xs) if xs else None), y_ref=85.0,
+        caption='Each dot = a lever · lower-right = big target + low realization (at risk) · 85% line = on-track',
+    )
 
 
 def _status_color(status: str) -> str:
@@ -236,6 +252,7 @@ def render_vcp_tracker(params: dict = None) -> str:
 
     l_tbl = _levers_table(r.levers)
     l_chart = _levers_chart(r.levers)
+    l_scatter = _levers_scatter(r.levers)
     value_anchor = ck_value_anchor(
         "Value Creation Plan",
         f"${r.total_realized_ebitda_m:.1f}M realized of ${r.total_target_ebitda_m:.1f}M target",
@@ -268,7 +285,7 @@ def render_vcp_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">EBITDA Bridge — Realized by Lever Category</div>{b_chart}{b_tbl}</div>
   <div style="{cell}"><div style="{h3}">100-Day Plan Execution</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">KPI Scorecards — Revenue / EBITDA / Margin / Volume / WC / Budget</div>{k_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Individual Value Levers</div>{l_chart}{l_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Individual Value Levers</div>{l_chart}{l_scatter}{l_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sponsor Interventions</div>{int_tbl}</div>
   <div style="{cell}"><div style="{h3}">Portfolio-Wide Initiative Benchmarks</div>{t_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
