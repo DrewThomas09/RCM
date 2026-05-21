@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
 
 
 def _exit_chart(items):
@@ -254,11 +254,19 @@ def render_partner_economics(params: dict = None) -> str:
         meta=f"""Partnership tiers, buy-in structures, tax flow, exit proceeds, recruitment economics — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    value_anchor = ck_value_anchor(
+        "Partner Economics",
+        f"${r.practice_ebitda_mm:,.1f}M practice EBITDA",
+        delta=f"${r.practice_revenue_mm:,.0f}M revenue · {r.total_partners} partners · ${r.avg_partner_comp_k:,.0f}k avg comp",
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   <div style="{cell}"><div style="{h3}">Partner Compensation by Tier</div>{tier_svg}</div>
   <div style="{cell}"><div style="{h3}">Tier Structure Detail</div>{tiers_tbl}</div>
   <div style="{cell}"><div style="{h3}">Partner Cash Flow (Mid-Tier, After Tax)</div>{cf_tbl}</div>

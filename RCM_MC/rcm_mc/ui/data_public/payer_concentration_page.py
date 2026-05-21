@@ -4,7 +4,7 @@ from __future__ import annotations
 import html as _html
 from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_data_cell, ck_kpi_block, ck_paired_block, ck_page_title,
-    ck_bar_row, ck_scatter)
+    ck_bar_row, ck_scatter, ck_value_anchor)
 
 
 def _payers_scatter(items):
@@ -292,11 +292,19 @@ def render_payer_concentration(params: dict = None) -> str:
         meta=f"""CR1/CR3/CR5 · HHI · renewal schedule · denials · NSA OON exposure — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    value_anchor = ck_value_anchor(
+        "Payer Concentration",
+        f"{r.top_payer_share_pct * 100:.1f}% top-payer share",
+        delta=f"CR3 {r.top3_share_pct * 100:.0f}% · CR5 {r.top5_share_pct * 100:.0f}% · ${r.total_revenue_mm:,.0f}M revenue",
+        tone="negative" if r.top_payer_share_pct >= 0.40 else "warning" if r.top_payer_share_pct >= 0.25 else "teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   {concentration_paired}
   <div style="{cell}"><div style="{h3}">Payer Roster — Share, YoY, Contract Expiry, Denials, Renewal Risk</div>{payers_chart}{payers_scatter}{payers_tbl}</div>
   <div style="{cell}"><div style="{h3}">Contract Renewal Calendar — Priority &amp; Exposure</div>{renewals_tbl}</div>
