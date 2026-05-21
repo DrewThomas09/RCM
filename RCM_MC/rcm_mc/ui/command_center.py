@@ -317,6 +317,13 @@ def render_command_center(
         f'</div></div>'
     )
 
+    # ── "Your Book" movement heading — editorial section anchor that
+    # groups the partner's own pipeline + active deals into one named
+    # movement, so the page reads as a memo with sections rather than a
+    # flat stack of dashboard cards. Shown only when there is a book.
+    if has_pipeline or has_portfolio:
+        sections.append(ck_eyebrow("Your Book"))
+
     # ── Pipeline section (if hospitals tracked) ──
     if has_pipeline:
         active_pipe = [h for h in pipeline_hospitals if h.stage not in ("closed", "passed")]
@@ -448,6 +455,10 @@ def render_command_center(
             f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
             f'<div>{left}</div><div>{right}</div></div>'
         )
+
+    # ── "Market Intelligence" movement heading — editorial anchor for
+    # the always-shown universe view (top markets + size distribution).
+    sections.append(ck_eyebrow("Market Intelligence"))
 
     # ── Market highlights (always shown) ──
     top_states = model.top_states
