@@ -940,6 +940,21 @@ def ck_scatter(
     L, R, T, B = 46.0, 14.0, 14.0, 30.0
     xs = [p[0] for p in pts]; ys = [p[1] for p in pts]
     xmin, xmax = min(xs), max(xs); ymin, ymax = min(ys), max(ys)
+    # Pull any quadrant reference into the data range so the threshold
+    # line is always visible inside the plot and points read as
+    # above/below it — even when every point sits on one side (e.g. all
+    # sponsors above the 2.0x MOIC bar). Otherwise sx()/sy() would map
+    # the ref off the axes and the line would draw outside the frame.
+    try:
+        if x_ref is not None:
+            _xr = float(x_ref); xmin = min(xmin, _xr); xmax = max(xmax, _xr)
+    except (TypeError, ValueError):
+        pass
+    try:
+        if y_ref is not None:
+            _yr = float(y_ref); ymin = min(ymin, _yr); ymax = max(ymax, _yr)
+    except (TypeError, ValueError):
+        pass
     if xmax == xmin: xmax += 1.0; xmin -= 1.0
     if ymax == ymin: ymax += 1.0; ymin -= 1.0
     xpad = (xmax - xmin) * 0.06; ypad = (ymax - ymin) * 0.08
