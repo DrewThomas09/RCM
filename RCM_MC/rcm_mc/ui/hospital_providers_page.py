@@ -20,7 +20,7 @@ from collections import Counter
 from typing import Any, List, Optional
 
 from ._chartis_kit import (
-    chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+    chartis_shell, ck_bar_row, ck_eyebrow, ck_fmt_num, ck_kpi_block,
     ck_next_section, ck_panel, ck_provenance_tooltip, ck_section_intro,
     ck_signal_badge,
 )
@@ -225,8 +225,24 @@ def render_hospital_providers(
             f'</tr>'
         )
 
+    # Lead concentration chart — share of roster by taxonomy, so the
+    # structural-fragility read (one specialty dominating) lands before
+    # the table. Bars flag red ≥50% (the CONCENTRATION threshold), amber
+    # ≥30%, teal otherwise.
+    n_prov = summary["n_providers"] or 1
+    mix_bars = ""
+    for label, count in sorted_specs[:10]:
+        share = count / n_prov * 100
+        tone = "negative" if share >= 50 else "warning" if share >= 30 else "teal"
+        mix_bars += ck_bar_row(label, str(count), share, tone=tone)
+    mix_chart = (
+        '<div style="margin-bottom:12px;">' + mix_bars + '</div>'
+        if mix_bars else ""
+    )
+
     mix_section = ck_panel(
-        '<table class="cad-table"><thead><tr>'
+        mix_chart
+        + '<table class="cad-table"><thead><tr>'
         '<th>Taxonomy</th><th>Count</th><th>Share</th>'
         f'</tr></thead><tbody>{mix_rows}</tbody></table>'
         + (
