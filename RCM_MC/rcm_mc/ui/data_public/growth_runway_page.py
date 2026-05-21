@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _market_nested_svg(sizes) -> str:
@@ -297,6 +297,13 @@ def render_growth_runway(params: dict = None) -> str:
     pen_tbl = _penetration_table(r.penetration_curve)
     comp_tbl = _comparables_table(r.comparables)
 
+    value_anchor = ck_value_anchor(
+        "Growth Runway",
+        f"{r.moic_lift_from_growth:.2f}x MOIC lift from growth",
+        delta=f"${r.som_mm:,.0f}M SOM · {r.current_share_pct:.2f}% → {r.target_share_pct:.2f}% share · ${r.implied_terminal_revenue_mm:,.0f}M terminal revenue",
+        tone="teal",
+    )
+
     form = f"""
 <form method="GET" action="/growth-runway" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
   <label style="font-size:11px;color:{text_dim}">Sector
@@ -353,6 +360,8 @@ def render_growth_runway(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">
     {kpi_strip}
   </div>
+
+  {value_anchor}
 
   <div style="{cell}">
     <div style="{h3}">Market Sizing: TAM → SAM → SOM</div>

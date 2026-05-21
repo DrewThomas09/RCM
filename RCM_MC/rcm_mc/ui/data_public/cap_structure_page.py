@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 _EXPLAINER_CSS = """<style>
 .ck-cs-explainer{font-family:var(--sc-serif,'Georgia',serif);
@@ -290,6 +290,13 @@ def render_cap_structure(params: dict = None) -> str:
     ret_tbl = _return_table(r.return_scenarios, r.optimal_leverage)
     breach_tbl = _breach_table(r.breach_probabilities)
 
+    value_anchor = ck_value_anchor(
+        "Optimal Structure",
+        f"{r.optimal_moic:.2f}x MOIC at {r.optimal_leverage:.1f}x leverage",
+        delta=f"${r.ev_mm:,.0f}M EV · {r.ev_mm / r.ebitda_mm:.2f}x entry · ${r.ebitda_mm:,.1f}M EBITDA",
+        tone="teal",
+    )
+
     form = f"""
 <form method="GET" action="/cap-structure" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
   <label style="font-size:11px;color:{text_dim}">EV ($M)
@@ -349,6 +356,8 @@ def render_cap_structure(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">
     {kpi_strip}
   </div>
+
+  {value_anchor}
 
   <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-bottom:16px">
     <div style="{cell}">
