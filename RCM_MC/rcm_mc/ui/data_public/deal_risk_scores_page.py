@@ -8,10 +8,16 @@ from __future__ import annotations
 import html as _html
 from typing import Any, Dict, List, Optional
 
+import urllib.parse as _urlparse
+
 from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_section_header, ck_kpi_block, ck_fmt_moic,
-    ck_provenance_tooltip,
+    ck_provenance_tooltip, ck_scatter,
 )
+
+_TIER_TONE = {
+    "Low": "positive", "Medium": "teal", "High": "warning", "Critical": "negative",
+}
 
 TIER_COLORS = {
     "Low":      "#0a8a5f",
@@ -182,6 +188,51 @@ def _deal_table(deals: List[Any], tier_filter: str) -> str:
     )
 
 
+def _risk_return_scatter(deals: List[Any], corpus_avg: float) -> str:
+    """Risk vs realized-return scatter — the page's headline claim made
+    visual. Composite risk score (x) vs realized MOIC (y), one dot per
+    realized deal, colored by tier. The dashed vertical marks the corpus
+    average risk; y=1.0x is break-even. Lower-right (high risk, sub-1x)
+    is where the score should have called the loss; upper-left is low-
+    risk high-return. Dots click through to the deal's /library detail.
+    """
+    pts = []
+    for d in deals:
+        moic = getattr(d, "moic", None)
+        score = getattr(d, "composite_score", None)
+        if moic is None or score is None:
+            continue
+        tone = _TIER_TONE.get(getattr(d, "tier", ""), "teal")
+        sid = getattr(d, "source_id", None)
+        href = f"/library/{_urlparse.quote(str(sid))}" if sid else None
+        label = (getattr(d, "company_name", "") or str(sid or ""))[:40]
+        pts.append((float(score), float(moic), label, tone, href))
+
+    chart = ck_scatter(
+        pts,
+        x_label="Composite risk score (0–100)",
+        y_label="Realized MOIC (×)",
+        x_ref=corpus_avg,
+        y_ref=1.0,
+        height=260,
+        caption=(
+            "Each dot a realized deal (click through to its detail) · "
+            f"dashed vertical = corpus average risk ({corpus_avg:.0f}) · "
+            "y = 1.0× is break-even · lower-right = high-risk losses the "
+            "score flagged · green Low / teal Medium / amber High / red "
+            "Critical tier"
+        ),
+    )
+    if not chart:
+        return ""
+    return (
+        ck_section_header(
+            "Risk vs Realized Return",
+            "Does the score actually separate winners from losers?")
+        + '<div style="overflow-x:auto;margin-bottom:24px">' + chart + '</div>'
+    )
+
+
 def render_deal_risk_scores(params: Dict[str, str]) -> str:
     from rcm_mc.data_public.deal_risk_scorer import compute_deal_risk_scores
 
@@ -255,12 +306,15 @@ def render_deal_risk_scores(params: Dict[str, str]) -> str:
     dist_table = _dist_table(result.distribution)
     sec_table = _sector_risk_table(result.sector_avg_risk, result.corpus_avg_score)
     deal_table = _deal_table(result.scored_deals, tier_filter)
+    risk_return = _risk_return_scatter(
+        result.scored_deals, result.corpus_avg_score)
 
     title_suffix = f" — {tier_filter} Only" if tier_filter else ""
 
     body = f"""
 {filter_bar}
 {kpi_grid}
+{risk_return}
 {ck_section_header("Risk Tier Distribution")}
 <div style="overflow-x:auto;margin-bottom:16px">{dist_svg}</div>
 <div style="overflow-x:auto;margin-bottom:24px">{dist_table}</div>
