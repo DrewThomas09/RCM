@@ -2,7 +2,24 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor, ck_scatter
+
+
+def _payers_scatter(items):
+    """Quadrant — IDR volume vs provider win rate, so high-volume /
+    low-win payers (lower-right) surface as the priority targets."""
+    import statistics
+    pts, vols = [], []
+    for p in items:
+        x = p.cases_submitted; y = p.provider_win_rate_pct * 100.0
+        tn = ('positive' if p.provider_win_rate_pct >= 0.72
+              else 'teal' if p.provider_win_rate_pct >= 0.68 else 'warning')
+        pts.append((x, y, p.payer, tn)); vols.append(x)
+    return ck_scatter(
+        pts, x_label='IDR cases submitted', y_label='Provider win rate %',
+        x_ref=(statistics.median(vols) if vols else None), y_ref=72.0,
+        caption='Each dot = a payer · lower-right = high-volume + low-win (priority) · 72% line = industry avg',
+    )
 
 
 def _cases_chart(items) -> str:
@@ -212,6 +229,7 @@ def render_nsa_tracker(params: dict = None) -> str:
         tone="teal",
     )
     p_tbl = _payers_table(r.payer_postures)
+    p_scatter = _payers_scatter(r.payer_postures)
     d_tbl = _deals_table(r.deals)
     e_tbl = _emergency_table(r.emergency)
     r_tbl = _reg_table(r.regulatory)
@@ -236,7 +254,7 @@ def render_nsa_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Portfolio NSA / IDR Exposure by Deal</div>{d_chart}{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Emergency Department Portfolio Economics</div>{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">IDR Case Detail</div>{c_chart}{c_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Payer Posture Analytics</div>{p_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Payer Posture Analytics</div>{p_scatter}{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Regulatory Developments Calendar</div>{r_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">NSA / IDR Portfolio Summary:</strong> {r.total_cases} IDR cases tracked across emergency, anesthesia, radiology, hospitalist, NICU, and ambulance services — ${r.total_revenue_at_risk_m:,.1f}M total revenue at risk.

@@ -2,7 +2,24 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_scatter
+
+
+def _msas_scatter(items):
+    """Quadrant — market size (providers) vs concentration (HHI), so
+    large + fragmented MSAs (lower-right) read as rollup targets."""
+    import statistics
+    pts, sz = [], []
+    for m in items:
+        s = (m.market_structure or '').lower()
+        tn = ('positive' if 'fragment' in s
+              else 'warning' if ('concentrat' in s or 'consolidat' in s) else 'teal')
+        pts.append((m.providers, m.hhi, m.msa, tn)); sz.append(m.providers)
+    return ck_scatter(
+        pts, x_label='Providers (market size)', y_label='HHI (concentration)',
+        x_ref=(statistics.median(sz) if sz else None), y_ref=2500.0,
+        caption='Each dot = an MSA · lower-right = large + fragmented (rollup target) · HHI 2500 = DOJ-concentrated line',
+    )
 
 def _msas_chart(items) -> str:
     """Lead chart for the MSA-concentration table — MSAs ranked by HHI.
@@ -186,6 +203,7 @@ def render_msa_concentration(params: dict = None) -> str:
     )
 
     m_chart = _msas_chart(r.msa_details)
+    m_scatter = _msas_scatter(r.msa_details)
     m_tbl = _msas_table(r.msa_details)
     value_anchor = ck_value_anchor(
         "MSA Concentration",
@@ -213,7 +231,7 @@ def render_msa_concentration(params: dict = None) -> str:
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
-  <div style="{cell}"><div style="{h3}">MSA-Level Concentration Analysis</div>{m_chart}{m_tbl}</div>
+  <div style="{cell}"><div style="{h3}">MSA-Level Concentration Analysis</div>{m_chart}{m_scatter}{m_tbl}</div>
   <div style="{cell}"><div style="{h3}">Market Regime Classification &amp; Expected Returns</div>{r_tbl}</div>
   <div style="{cell}"><div style="{h3}">Whitespace Markets — Rollup Priority</div>{w_chart}{w_tbl}</div>
   <div style="{cell}"><div style="{h3}">Stress-Test Scenarios — FTC Action Likelihood</div>{s_tbl}</div>
