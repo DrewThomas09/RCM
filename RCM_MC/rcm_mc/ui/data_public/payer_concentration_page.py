@@ -3,7 +3,24 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import (
-    P, chartis_shell, ck_data_cell, ck_kpi_block, ck_paired_block, ck_page_title)
+    P, chartis_shell, ck_data_cell, ck_kpi_block, ck_paired_block, ck_page_title,
+    ck_bar_row)
+
+
+def _payers_chart(items):
+    """Summary chart — payer revenue concentration (tone by renewal risk)."""
+    def _tone(p):
+        if p.renewal_risk_score >= 70: return "negative"
+        if p.renewal_risk_score >= 45: return "warning"
+        return "teal"
+    top = sorted(items, key=lambda p: p.revenue_share_pct, reverse=True)
+    rows = [ck_bar_row(f"{p.payer_name} · {p.payer_type}",
+            f"{p.revenue_share_pct * 100:.1f}% · ${p.annual_net_rev_mm:,.1f}M · {p.denial_rate_pct * 100:.1f}% denied",
+            p.revenue_share_pct * 100.0, tone=_tone(p)) for p in top]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = share of net revenue by payer '
+            '· value = share + net rev + denial rate · tone = renewal risk</div></div>')
 
 
 def _metrics_paired_rows(items) -> tuple:
@@ -208,6 +225,7 @@ def render_payer_concentration(params: dict = None) -> str:
 
     svg = _payer_share_svg(r.payers)
     payers_tbl = _payers_table(r.payers)
+    payers_chart = _payers_chart(r.payers)
     renewals_tbl = _renewals_table(r.renewals)
     denials_tbl = _denials_table(r.denials)
     oon_tbl = _oon_table(r.oon_exposure)
@@ -260,7 +278,7 @@ def render_payer_concentration(params: dict = None) -> str:
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {concentration_paired}
-  <div style="{cell}"><div style="{h3}">Payer Roster — Share, YoY, Contract Expiry, Denials, Renewal Risk</div>{payers_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Payer Roster — Share, YoY, Contract Expiry, Denials, Renewal Risk</div>{payers_chart}{payers_tbl}</div>
   <div style="{cell}"><div style="{h3}">Contract Renewal Calendar — Priority &amp; Exposure</div>{renewals_tbl}</div>
   <div style="{cell}"><div style="{h3}">Payer-Level Denials Analysis — Write-Off Exposure</div>{denials_tbl}</div>
   <div style="{cell}"><div style="{h3}">Out-of-Network Exposure by Service Line — No Surprises Act</div>{oon_tbl}</div>
