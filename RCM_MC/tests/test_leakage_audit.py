@@ -368,27 +368,39 @@ class AtomicInputsTests(unittest.TestCase):
     walks chains for derived features, terminates on cycles."""
 
     def test_raw_column_returns_itself(self):
+        # Genuinely raw atomic inputs return {self}. net_patient_revenue
+        # is intentionally NOT raw — it's derived (gross − contractual
+        # allowances), the accounting identity the regression-honesty
+        # work exposed — so its raw ancestors are gross + allowances.
         self.assertEqual(atomic_inputs("beds"), frozenset({"beds"}))
         self.assertEqual(
+            atomic_inputs("gross_patient_revenue"),
+            frozenset({"gross_patient_revenue"}),
+        )
+        self.assertEqual(
             atomic_inputs("net_patient_revenue"),
-            frozenset({"net_patient_revenue"}),
+            frozenset({"gross_patient_revenue", "contractual_allowances"}),
         )
 
     def test_one_hop_returns_direct_inputs(self):
-        # revenue_per_bed = npr / beds (1 hop deep)
+        # revenue_per_bed = npr / beds; npr is itself derived (gross −
+        # allowances), so the atomic walk terminates at the raw columns.
         self.assertEqual(
             atomic_inputs("revenue_per_bed"),
-            frozenset({"net_patient_revenue", "beds"}),
+            frozenset({
+                "gross_patient_revenue", "contractual_allowances", "beds",
+            }),
         )
 
     def test_two_hop_chain_walks_through(self):
         # margin_per_bed = operating_margin × bed-scale
-        # operating_margin = (npr - opex) / npr
-        # → atomic ancestors: {npr, opex, beds}
+        # operating_margin = (npr - opex) / npr; npr = gross − allowances
+        # → atomic ancestors: {gross, allowances, opex, beds}
         self.assertEqual(
             atomic_inputs("margin_per_bed"),
             frozenset({
-                "net_patient_revenue", "operating_expenses", "beds",
+                "gross_patient_revenue", "contractual_allowances",
+                "operating_expenses", "beds",
             }),
         )
 
