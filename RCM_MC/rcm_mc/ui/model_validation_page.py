@@ -15,7 +15,7 @@ import pandas as pd
 from ..portfolio.store import PortfolioStore
 from ._chartis_kit import (
     chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
-    ck_section_intro, ck_signal_badge,
+    ck_scatter, ck_section_intro, ck_signal_badge,
 )
 from .brand import PALETTE
 
@@ -25,6 +25,49 @@ def _grade_badge(grade: str) -> str:
         "A": "positive", "B": "neutral", "C": "warning", "D": "negative",
     }.get(grade, "neutral")
     return ck_signal_badge(grade, tone=tone)
+
+
+def _accuracy_coverage_scatter(all_perfs) -> str:
+    """Lead quadrant chart pairing the two model-quality axes the
+    scorecard table keeps in separate columns: accuracy (R²) on x and
+    reliability (90%-CI coverage) on y, one dot per validated metric.
+
+    Reference lines at R²=0.70 (grade-A accuracy bar) and coverage=0.90
+    (the nominal conformal target) split the plane into the quadrant a
+    partner reads for trust: upper-right is accurate AND well-calibrated.
+    Under-covered metrics (overconfident intervals — the dangerous case
+    for IC) flag red even when R² is high.
+    """
+    pts = []
+    for p in all_perfs:
+        cov = p.coverage_rate
+        if cov < 0.75 or p.r2 < 0.30:
+            tone = "negative"          # overconfident or low-signal
+        elif cov > 0.95:
+            tone = "warning"           # over-covered (intervals too wide)
+        elif p.r2 >= 0.70 and 0.85 <= cov <= 0.95:
+            tone = "positive"          # accurate AND well-calibrated
+        else:
+            tone = "teal"
+        pts.append((p.r2, cov, p.metric.replace("_", " ").title(), tone))
+
+    chart = ck_scatter(
+        pts,
+        x_label="R² (variance explained)",
+        y_label="90%-CI coverage",
+        x_ref=0.70,
+        y_ref=0.90,
+        height=250,
+        caption=(
+            "Each dot a metric · dashed lines mark the grade-A R² bar "
+            "(0.70) and the nominal 90% coverage · upper-right = accurate "
+            "AND well-calibrated · red = under-covered (<75%) or low R² "
+            "(<30%), amber = over-covered (>95%)"
+        ),
+    )
+    if not chart:
+        return ""
+    return ck_panel(chart, title="Accuracy vs Reliability — every metric")
 
 
 def render_model_validation(
@@ -248,6 +291,8 @@ def render_model_validation(
             f'</tr>'
         )
 
+    accuracy_section = _accuracy_coverage_scatter(all_perfs)
+
     metric_section = ck_panel(
         '<p class="ck-section-body">'
         "Each metric's prediction accuracy measured against held-out actuals. "
@@ -355,8 +400,8 @@ def render_model_validation(
         italic_word="priors",
     )
     body = (
-        f'{intro}{methodology_badge}{kpis}{metric_section}{cov_analysis}'
-        f'{recent_section}{flywheel}{nav}{next_up}'
+        f'{intro}{methodology_badge}{kpis}{accuracy_section}{metric_section}'
+        f'{cov_analysis}{recent_section}{flywheel}{nav}{next_up}'
     )
 
     _pstore_cm.__exit__(None, None, None)
