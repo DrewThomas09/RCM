@@ -2,7 +2,23 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor, ck_scatter
+
+
+def _scorecards_scatter(items):
+    """Quadrant — value-for-money vs quality-of-insights, so the best
+    vendors (upper-right) and weak ones (lower-left) separate visually."""
+    import statistics
+    pts, xs, ys = [], [], []
+    for s in items:
+        tn = ('positive' if s.quality_of_insights >= 88 else 'teal' if s.quality_of_insights >= 80 else 'warning')
+        pts.append((s.value_for_money, s.quality_of_insights, s.firm, tn))
+        xs.append(s.value_for_money); ys.append(s.quality_of_insights)
+    return ck_scatter(
+        pts, x_label='Value for money', y_label='Quality of insights',
+        x_ref=(statistics.median(xs) if xs else None), y_ref=(statistics.median(ys) if ys else None),
+        caption='Each dot = a vendor · upper-right = high quality + high value · tone = quality of insights',
+    )
 
 
 def _vendors_chart(items) -> str:
@@ -185,6 +201,7 @@ def render_diligence_vendors(params: dict = None) -> str:
     c_tbl = _categories_table(r.categories)
     c_chart = _categories_chart(r.categories)
     s_tbl = _scorecards_table(r.scorecards)
+    s_scatter = _scorecards_scatter(r.scorecards)
     p_tbl = _pipeline_table(r.pipeline)
     ph_tbl = _phases_table(r.phase_spend)
 
@@ -204,7 +221,7 @@ def render_diligence_vendors(params: dict = None) -> str:
   {value_anchor}
   <div style="{cell}"><div style="{h3}">Active Vendor Panel</div>{v_chart}{v_tbl}</div>
   <div style="{cell}"><div style="{h3}">Category Spend Analysis</div>{c_chart}{c_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Top Vendor Scorecards</div>{s_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Top Vendor Scorecards</div>{s_scatter}{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">New Vendor Pipeline</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">Spend by Deal Phase</div>{ph_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">

@@ -2,7 +2,23 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor, ck_scatter
+
+
+def _outcomes_scatter(items):
+    """Quadrant — model accuracy vs revenue impact, so high-accuracy /
+    high-value AI systems (upper-right) read straight off the table."""
+    import statistics
+    pts, ys = [], []
+    for o in items:
+        x = o.accuracy_pct * 100.0; y = o.revenue_impact_m
+        tn = ('positive' if o.accuracy_pct >= 0.92 else 'teal' if o.accuracy_pct >= 0.85 else 'warning')
+        pts.append((x, y, o.system, tn)); ys.append(y)
+    return ck_scatter(
+        pts, x_label='Model accuracy %', y_label='Revenue impact ($M)',
+        x_ref=90.0, y_ref=(statistics.median(ys) if ys else None),
+        caption='Each dot = an AI system · upper-right = high-accuracy + high-value · 90% = clinical-grade line',
+    )
 
 
 def _systems_chart(items) -> str:
@@ -248,6 +264,7 @@ def render_clinical_ai_tracker(params: dict = None) -> str:
     )
     o_tbl = _outcomes_table(r.outcomes)
     o_chart = _outcomes_chart(r.outcomes)
+    o_scatter = _outcomes_scatter(r.outcomes)
     a_tbl = _adoption_table(r.adoption)
     f_tbl = _fda_table(r.fda)
     e_tbl = _eval_table(r.evaluations)
@@ -277,7 +294,7 @@ def render_clinical_ai_tracker(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">AI Systems in Production</div>{s_chart}{s_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Clinical Outcomes & ROI</div>{o_chart}{o_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Clinical Outcomes & ROI</div>{o_chart}{o_scatter}{o_tbl}</div>
   <div style="{cell}"><div style="{h3}">Adoption Metrics</div>{a_tbl}</div>
   <div style="{cell}"><div style="{h3}">FDA Clearances</div>{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">Vendor Evaluation Pipeline</div>{e_tbl}</div>
