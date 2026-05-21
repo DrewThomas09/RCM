@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _esg_ring_svg(overall: float, e: float, s: float, g: float, tier: str) -> str:
@@ -272,6 +272,14 @@ def render_esg_dashboard(params: dict = None) -> str:
         meta=f"{sector} sector · {r.overall_score:.0f}/100 ESG score ({r.tier} tier) · E {r.e_score:.0f} · S {r.s_score:.0f} · G {r.g_score:.0f} · {r.total_disclosure_gaps} LP disclosure gaps across {len(r.lp_disclosures)} framework requirements",
     )
 
+    value_anchor = ck_value_anchor(
+        "ESG Posture",
+        f"{r.overall_score:.0f}/100 ESG ({r.tier})",
+        delta=f"E {r.e_score:.0f} · S {r.s_score:.0f} · G {r.g_score:.0f}",
+        target=f"{r.total_disclosure_gaps} LP disclosure gaps",
+        tone="positive" if r.overall_score >= 70 else "teal" if r.overall_score >= 50 else "warning",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
@@ -282,6 +290,8 @@ def render_esg_dashboard(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">
     {kpi_strip}
   </div>
+
+  {value_anchor}
 
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
     <div style="{cell}">
