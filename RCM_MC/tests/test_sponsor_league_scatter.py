@@ -61,6 +61,15 @@ class LeagueScatterTests(unittest.TestCase):
         ])
         self.assertEqual(html.count("<circle"), 2)
 
+    def test_dots_link_to_sponsor_drilldown(self):
+        # Connectivity: each sponsor dot clicks through to its detail page.
+        html = self._scatter([
+            _rec(sponsor="Welsh Carson", median_moic=2.8, consistency_score=78),
+            _rec(sponsor="KKR", median_moic=1.6, consistency_score=45),
+        ])
+        self.assertEqual(html.count("<a href"), 2)
+        self.assertIn("/diligence/sponsor-detail?sponsor=Welsh%20Carson", html)
+
     def test_empty_when_fewer_than_two_points(self):
         # ck_scatter returns '' below 2 finite points; the helper passes
         # that through so the caller falls back to the table alone.
