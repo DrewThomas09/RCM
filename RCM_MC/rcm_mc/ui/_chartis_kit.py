@@ -4231,6 +4231,89 @@ table.ck-data-table th[data-sort-dir]{color:var(--sc-teal,#155752);}
 """
 
 
+_TABLE_BARS_JS = """
+<style>
+.ck-tbars{position:absolute;top:4px;right:52px;z-index:3;opacity:0;transition:opacity .12s;
+  font:9px var(--sc-mono,'JetBrains Mono',monospace);letter-spacing:.04em;text-transform:uppercase;
+  padding:2px 7px;border:1px solid var(--sc-rule,#d6cfc0);background:var(--sc-bg,#faf7f0);
+  color:var(--sc-text-dim,#465366);border-radius:2px;cursor:pointer;}
+.ck-data-table-scroll:hover .ck-tbars{opacity:0.9;}
+.ck-tbars:hover,.ck-tbars[aria-pressed="true"]{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
+td.ck-bar-cell{background-repeat:no-repeat;}
+</style>
+<script>
+/* Inline magnitude bars for editorial tables — a hover toggle that
+ * paints a proportional data-bar behind each numeric cell so a partner
+ * reads a column's distribution in place (no separate chart needed).
+ * Diverging: teal for positive, red for negative, scaled to the column's
+ * max absolute value; bar anchors to the cell's text edge (right for
+ * right-aligned numerics). Toggle is off by default, so the default look
+ * is unchanged. Additive; opt out with data-no-bars. */
+(function(){
+  function parseNum(t){
+    if(t==null) return null;
+    var s=String(t).trim();
+    if(s===''||s==='\\u2014'||s==='-'||s==='n/a'||s==='N/A') return null;
+    var neg=/^\\(.*\\)$/.test(s);
+    s=s.replace(/[(),$%x\\u00d7\\s]/g,'').replace(/\\+/g,'');
+    if(s==='') return null;
+    var v=parseFloat(s);
+    return isNaN(v)?null:(neg?-v:v);
+  }
+  function paint(table,on){
+    var tb=table.tBodies[0]; if(!tb) return;
+    var rows=Array.prototype.slice.call(tb.rows);
+    var ncols=0;
+    rows.forEach(function(r){ if(r.cells.length>ncols) ncols=r.cells.length; });
+    for(var c=0;c<ncols;c++){
+      var vals=[], cells=[];
+      rows.forEach(function(r){
+        var cell=r.cells[c]; if(!cell) return;
+        var n=parseNum(cell.textContent||'');
+        cells.push({cell:cell,n:n}); if(n!=null) vals.push(n);
+      });
+      var numeric=vals.length>=Math.max(2,Math.ceil(cells.length*0.6));
+      var distinct={}; vals.forEach(function(v){distinct[v]=1;});
+      var mx=0; vals.forEach(function(v){ if(Math.abs(v)>mx) mx=Math.abs(v); });
+      cells.forEach(function(o){
+        var cell=o.cell;
+        cell.classList.remove('ck-bar-cell'); cell.style.backgroundImage='';
+        if(!on||!numeric||mx<=0||Object.keys(distinct).length<2||o.n==null) return;
+        var w=Math.max(0,Math.min(100,Math.abs(o.n)/mx*100));
+        var col=o.n<0?'rgba(181,50,30,0.16)':'rgba(31,122,117,0.18)';
+        var rightAnchored=cell.classList.contains('ck-cell-r');
+        var dir=rightAnchored?'270deg':'90deg';
+        cell.classList.add('ck-bar-cell');
+        cell.style.backgroundImage='linear-gradient('+dir+','+col+' '+w+'%,transparent '+w+'%)';
+      });
+    }
+  }
+  function init(){
+    Array.prototype.forEach.call(document.querySelectorAll('table.ck-data-table'),function(table){
+      if(table.getAttribute('data-no-bars')!=null) return;
+      if(table.getAttribute('data-barable')!=null) return;
+      var tb=table.tBodies[0]; if(!tb||tb.rows.length<2) return;
+      table.setAttribute('data-barable','');
+      var host=table.closest('.ck-data-table-scroll'); if(!host) return;
+      var btn=document.createElement('button'); btn.type='button'; btn.className='ck-tbars';
+      btn.textContent='\\u25A6 Bars'; btn.setAttribute('aria-pressed','false');
+      btn.setAttribute('aria-label','Toggle inline magnitude bars');
+      btn.addEventListener('click',function(e){
+        e.preventDefault();
+        var on=btn.getAttribute('aria-pressed')!=='true';
+        btn.setAttribute('aria-pressed',on?'true':'false');
+        paint(table,on);
+      });
+      host.appendChild(btn);
+    });
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}
+  else{init();}
+})();
+</script>
+"""
+
+
 _TABLE_COPY_JS = """
 <style>
 .ck-data-table-scroll{position:relative;}
@@ -5350,6 +5433,7 @@ def chartis_shell(
         f"{_SORT_JS}"
         f"{_TABLE_FILTER_JS}"
         f"{_TABLE_COPY_JS}"
+        f"{_TABLE_BARS_JS}"
         f"{extra_js_html}"
         "</body></html>"
     )
