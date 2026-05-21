@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
 
 
 def _component_chart(items):
@@ -291,6 +291,13 @@ def render_fund_attribution(params: dict = None) -> str:
         meta=f"{r.fund_moic:.2f}x MOIC / {r.fund_irr * 100:.1f}% IRR · {r.components[0].pct_of_total_return * 100:.0f}% operational · {r.components[2].pct_of_total_return * 100:.0f}% multiple expansion · {r.components[3].pct_of_total_return * 100:.0f}% leverage · {r.avg_ebitda_growth_pct * 100:.1f}% avg EBITDA growth",
     )
 
+    value_anchor = ck_value_anchor(
+        "Fund Return Attribution",
+        f"{r.fund_moic:.2f}x fund MOIC",
+        delta=f"{r.fund_irr * 100:.1f}% IRR · {r.avg_ebitda_growth_pct * 100:.0f}% EBITDA growth · {r.avg_multiple_expansion_x:+.2f}x multiple expansion",
+        tone="positive" if r.fund_moic >= 2.5 else "teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
@@ -301,6 +308,8 @@ def render_fund_attribution(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">
     {kpi_strip}
   </div>
+
+  {value_anchor}
 
   <div style="{cell}">
     <div style="{h3}">MOIC Attribution Waterfall</div>

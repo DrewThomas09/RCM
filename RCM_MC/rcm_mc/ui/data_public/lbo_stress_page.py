@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title, ck_bar_row
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title, ck_bar_row, ck_value_anchor
 
 
 def _scenarios_chart(items):
@@ -227,10 +227,18 @@ def render_lbo_stress(params: dict = None) -> str:
         meta=f"${b.purchase_price_mm:,.0f}M purchase at {b.entry_multiple:.2f}x entry / {b.initial_leverage:.2f}x leverage · base {b.projected_moic:.2f}x MOIC / {b.projected_irr_pct * 100:.1f}% IRR → probability-weighted {expected_moic:.2f}x / {expected_irr * 100:.1f}% · top sensitivity: {top_driver.driver} (±{abs(top_driver.swing_moic):.2f}x swing) · {len(r.tornado)} drivers stressed",
     )
 
+    value_anchor = ck_value_anchor(
+        "Base-Case LBO",
+        f"{b.projected_moic:.2f}x base MOIC",
+        delta=f"${b.purchase_price_mm:,.0f}M at {b.entry_multiple:.2f}x · ${b.equity_check_mm:,.0f}M equity · {b.initial_leverage:.2f}x leverage",
+        tone="positive" if b.projected_moic >= 2.5 else "teal" if b.projected_moic >= 1.5 else "warning",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
+  {value_anchor}
   {tornado_paired}
   <div style="{cell}"><div style="{h3}">Exit Multiple Sensitivity Grid</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Covenant Compliance Path</div>{c_tbl}</div>
