@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 import os
 import shutil
+import ssl
 import tempfile
 import urllib.error
 import urllib.request
@@ -22,6 +23,31 @@ logger = logging.getLogger(__name__)
 
 _CACHE_ENV = "RCM_MC_DATA_CACHE"
 _USER_AGENT = "rcm-mc/1.0 (+https://github.com/anthropics/rcm-mc)"
+
+_SSL_CTX: Optional[ssl.SSLContext] = None
+
+
+def ssl_context() -> ssl.SSLContext:
+    """Shared TLS context for every public-data fetch (CMS / IRS / SEC).
+
+    python.org Python builds (common on macOS) ship without a usable
+    system trust store, so ``urlopen`` against https://data.cms.gov,
+    the IRS, or SEC EDGAR fails with CERTIFICATE_VERIFY_FAILED and the
+    loaders silently fall back to estimates. When the optional ``certifi``
+    package is importable we point the context at its CA bundle so
+    verification succeeds; otherwise we use the stdlib default. The import
+    is guarded — certifi is NOT a hard dependency, so environments without
+    it keep their existing graceful-degradation behaviour. Cached so we
+    build the context once.
+    """
+    global _SSL_CTX
+    if _SSL_CTX is None:
+        try:
+            import certifi  # optional; not a declared runtime dep
+            _SSL_CTX = ssl.create_default_context(cafile=certifi.where())
+        except Exception:
+            _SSL_CTX = ssl.create_default_context()
+    return _SSL_CTX
 
 
 class CMSDownloadError(RuntimeError):
@@ -70,7 +96,7 @@ def fetch_url(
     part = dest.with_suffix(dest.suffix + ".part")
     req = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with urllib.request.urlopen(req, timeout=timeout, context=ssl_context()) as resp:
             with open(part, "wb") as fh:
                 shutil.copyfileobj(resp, fh)
     except (urllib.error.URLError, TimeoutError, OSError) as exc:

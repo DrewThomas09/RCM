@@ -68,8 +68,9 @@ def fetch_chronic_conditions_api(state: str = "", limit: int = 5000) -> List[Dic
         if state:
             params += f"&filter[Bene_Geo_Lvl]=County&filter[Bene_Geo_Desc]={state}"
         url = base + params
+        from ._cms_download import ssl_context
         req = urllib.request.Request(url, headers={"Accept": "application/json"})
-        with urllib.request.urlopen(req, timeout=15) as r:
+        with urllib.request.urlopen(req, timeout=15, context=ssl_context()) as r:
             data = json.loads(r.read().decode())
             if isinstance(data, list):
                 return data

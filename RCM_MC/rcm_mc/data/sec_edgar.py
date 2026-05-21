@@ -94,7 +94,8 @@ def _fetch_company_facts(cik: str) -> Optional[Dict[str, Any]]:
     url = _EDGAR_BASE.format(cik=cik.zfill(10))
     req = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
     try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        from ._cms_download import ssl_context
+        with urllib.request.urlopen(req, timeout=10, context=ssl_context()) as resp:
             return json.loads(resp.read().decode("utf-8"))
     except Exception as exc:  # noqa: BLE001
         logger.debug("EDGAR fetch for CIK %s failed: %s", cik, exc)
