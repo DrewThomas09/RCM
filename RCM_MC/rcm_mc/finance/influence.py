@@ -115,13 +115,21 @@ def compute_influence(
     p_plus = p + 1  # +1 for the intercept
     X_aug = np.column_stack([np.ones(n), X])
     try:
-        # Hat matrix H = X(XᵀX)⁻¹Xᵀ ; only need the diagonal
-        XtX_inv = np.linalg.inv(X_aug.T @ X_aug)
+        # Hat matrix H = X(XᵀX)⁻¹Xᵀ ; only need the diagonal. Use the
+        # pseudo-inverse: plain inv() on collinear HCRIS features (VIFs in
+        # the hundreds) is numerically unstable — it returns huge/garbage
+        # entries that push leverage outside [0,1] and produced the
+        # 4.89e18 Cook's-D the downstream guards were patched to catch.
+        # pinv gives the stable projection-matrix diagonal under rank
+        # deficiency, and leverage is then clipped to [0,1] (its valid
+        # range) so float noise can't leak through.
+        XtX_inv = np.linalg.pinv(X_aug.T @ X_aug)
         # h_ii = x_i (XᵀX)⁻¹ x_iᵀ — compute via einsum to avoid
         # building the full n×n hat matrix.
         leverage = np.einsum(
             "ij,jk,ik->i", X_aug, XtX_inv, X_aug,
         )
+        leverage = np.clip(leverage, 0.0, 1.0)
     except np.linalg.LinAlgError:
         leverage = np.full(n, np.nan)
 
