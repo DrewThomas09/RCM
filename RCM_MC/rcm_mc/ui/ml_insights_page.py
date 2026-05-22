@@ -916,7 +916,11 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
         f'</div>'
     )
 
-    body = _ML_CHART_CSS + "\n".join(sections)
+    # Per-deal context ribbon so the ML view links to every sibling
+    # analysis on the deal (integration spine).
+    from .models_page import _model_nav
+    deal_ribbon = _model_nav(ccn, active="ml")
+    body = deal_ribbon + _ML_CHART_CSS + "\n".join(sections)
     return chartis_shell(
         body,
         f"ML Analysis — {_html.escape(name)}",
