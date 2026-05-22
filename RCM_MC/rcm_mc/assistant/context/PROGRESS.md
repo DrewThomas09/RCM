@@ -741,3 +741,77 @@ question. Existing markup/contract tests retained.
 - In this no-SPA app, an actual route change is a full page reload (fresh
   panel), so cross-page stale-render is doubly guarded: the reload itself
   plus the `reqSeq`/abort logic for the in-page close/supersede cases.
+
+---
+
+# Task 8A — Finish the remaining placeholder contexts (2026-05-22)
+
+Authored the last 14 placeholder PageContexts from source. **Placeholder
+count is now 0.** Context-authoring only — no AI/RAG/uploads/memory/
+actions/exports/mutation.
+
+## Quality distribution (packet quality over all 72 registry routes)
+- **Start:** strong 52 · partial 6 · placeholder 14 · missing 0
+- **End:**   strong 66 · partial 6 · placeholder 0 · missing 0
+
+## Pages upgraded (all 14 → strong)
+Expanded existing manual entries: `/day-one`, `/my/AT`, `/escalations`,
+`/diligence/deal-mc`, `/diligence/deal-autopsy`, `/metric-glossary`,
+`/rcm-benchmarks`. New entries (were `needs_validation` stubs):
+`/diligence/covenant-stress`, `/diligence/exit-timing`,
+`/diligence/ingest`, `/diligence/management`,
+`/diligence/physician-attrition`, `/engagements`,
+`/market-data/state/CA`.
+
+## Conservatism calls (per the special-attention list)
+- **covenant-stress:** STRESS-TEST breach probabilities over simulated
+  paths — explicitly NOT a prediction of an actual breach.
+- **deal-mc:** SIMULATED distributions from the supplied assumptions, NOT
+  a forecast/guarantee; reads the downside tail.
+- **exit-timing:** SCENARIO analysis over hold years + buyer types, NOT a
+  market-timing prediction.
+- **deal-autopsy:** RETROSPECTIVE signature similarity — a signal to
+  investigate, NOT causal proof; similarity % is geometric closeness, not
+  outcome probability.
+- **ingest:** loads/normalizes and (per source) validates CPT/ICD +
+  reconciles 835/837 — but runs on demo fixtures here; production uploads
+  deferred, so not target data.
+- **management:** scoring-framework SUPPORT, NOT a definitive
+  management-quality judgment; demo roster is illustrative.
+- **physician-attrition:** model-estimated flight-risk SIGNAL, NOT
+  guaranteed departures; demo roster.
+- **metric-glossary / rcm-benchmarks:** REFERENCE pages (definitions /
+  peer bands), explicitly NOT target-specific conclusions.
+- **/my/AT:** owner-scoped dashboard; owner/deadlines user-entered,
+  MOIC/IRR/covenant from snapshots (`mixed`). Path segment is the owner
+  key.
+- **/market-data/state/CA:** public HCRIS, 1-2yr lag, Medicare-only
+  coverage; state code is a path filter, top-50 is partial.
+- **/engagements:** consulting-engagement records (user-entered); client
+  view is the read-only `/portal/<id>`, not this internal workspace.
+
+## Remaining non-strong (6 partial — by design, not placeholders)
+`/pe-intelligence` (methodology hub), `/conferences` (reference calendar),
+`/deals-library` (redirect to /library), `/research` (navigation index),
+`/notes` (search utility), `/users` (admin) — none is an analytic page
+with a registry metric/source to link, so they stay `partial` honestly.
+
+## Commands + results
+- `validate_page_context_coverage` → PASS (exit 0).
+- `validate_guide_context_quality` → PASS (exit 0): 0 invalid metric/
+  source refs, 0 duplicate ids, 0 ambiguous aliases.
+- `py_compile` on the context package → clean.
+- `pytest` guide page-context / metric-data / packet / context-endpoint /
+  prompt-builder / ollama-endpoint / sidebar-shell → **71 passed**.
+
+## Caveats
+- All 14 are `inferred_from_page` except `/metric-glossary` and
+  `/rcm-benchmarks` (reference pages whose source cites their benchmark
+  origins → `documented`).
+- `data_confidence` set honestly: live portfolio → `observed_target_data`;
+  MC/attrition outputs → `model_estimate`; fixture-driven ingest/management
+  → `demo_or_fixture`; covenant-stress/exit-timing/deal-autopsy (user
+  inputs + model + corpus) → `mixed`; HCRIS/benchmarks → `public_benchmark_data`;
+  engagements → `user_entered_data`.
+- No exact formulas added; model-logic summaries describe intent and point
+  to the implementing module.

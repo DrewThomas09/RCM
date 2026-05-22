@@ -117,23 +117,79 @@ _MANUAL: List[PageContext] = [
     ),
     _ctx(
         "/day-one", "Day One · Monday brief",
-        short_description="A start-of-week brief summarizing what changed "
-        "and what needs attention across the portfolio.",
-        primary_purpose="Give the team a single Monday-morning orientation "
+        short_description="A Monday-morning brief — five short editorial "
+        "sections (alerts, portfolio health, where you left off, this week's "
+        "pipeline, onboarding) in the order partners check them.",
+        primary_purpose="Give the team a single start-of-week orientation "
         "before they dive into individual deals.",
+        common_questions=["What changed over the weekend?",
+                         "What needs attention first this week?"],
+        inputs=["Live portfolio state (active alerts, health scores, recent "
+                "activity, last-7-day pipeline) from the store."],
+        outputs=["Per page labels: top alerts by severity, a portfolio "
+                 "health-mix read, recent activity, this week's new/advanced "
+                 "deals, and an onboarding checklist."],
+        key_metrics=["Top alerts", "Portfolio health mix",
+                     "New / advanced deals (7d)"],
+        data_sources=["The live portfolio store (alerts, health, activity, "
+                      "pipeline)."],
+        model_logic_summary="Composes existing reads (active alerts, health "
+        "scores, recent activity, recent packets) into a brief; it summarizes, "
+        "it does not run a model.",
         why_it_matters="Concentrates the week's signal so nothing urgent is "
         "missed.",
+        diligence_use_cases=["The weekly portfolio-monitoring starting point."],
+        interpretation_guidance=[
+            "This is a snapshot brief, not a trend analyzer — it shows current "
+            "state, not multi-week slopes.",
+            "Empty sections are an affirmative 'nothing this week', not "
+            "missing data.",
+        ],
+        limitations=["Reflects current live-store state; only as complete as "
+                     "what's tracked."],
         related_routes=["/app", "/alerts", "/escalations"],
+        metric_ids=["risk_score"],
+        data_source_ids=["portfolio_snapshot", "audit_log"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
         data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
     _ctx(
         "/my/AT", "My Dashboard",
-        short_description="A personal dashboard scoped to one owner's deals "
-        "(the path segment is the owner key).",
+        short_description="A personal dashboard scoped to one owner's deals — "
+        "their pulse, alerts, deadlines, and health mix.",
         primary_purpose="Show an individual team member their own deals, "
-        "pulse, and health mix.",
-        related_routes=["/app", "/portfolio"],
-        data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
+        "alerts, deadlines, and returns in one read.",
+        common_questions=["What's on my plate this week?",
+                         "Which of my deals have red alerts or overdue "
+                         "deadlines?"],
+        inputs=["The owner key in the path; deals owned by that owner + their "
+                "alerts, deadlines, and latest snapshots."],
+        outputs=["Per page labels: a pulse strip (My Deals, Red/Amber Alerts, "
+                 "Overdue/Upcoming Deadlines), a health-mix bar, alert and "
+                 "deadline cards, and a deals table (Health, Stage, Covenant, "
+                 "MOIC, IRR)."],
+        key_metrics=["My deals", "Red / amber alerts", "Overdue / upcoming "
+                     "deadlines", "MOIC", "IRR"],
+        data_sources=["The portfolio store filtered to the owner (deals, "
+                      "alerts, deadlines, snapshots)."],
+        model_logic_summary="Filters portfolio data to one owner and "
+        "aggregates counts + latest-snapshot figures; health scores are "
+        "computed per deal. No model runs here.",
+        why_it_matters="Gives each partner/associate a personal operating "
+        "view without trawling the whole book.",
+        diligence_use_cases=["Personal weekly triage of owned deals."],
+        interpretation_guidance=[
+            "Owner assignment and deadline labels are user-entered; MOIC / IRR "
+            "/ covenant come from the latest snapshot, not live.",
+            "Scoped to one owner — it is not the whole portfolio.",
+        ],
+        limitations=["Only as current as each deal's latest snapshot and the "
+                     "owner/deadline data entered."],
+        related_routes=["/app", "/portfolio", "/alerts"],
+        metric_ids=["moic", "irr", "covenant_cushion", "risk_score"],
+        data_source_ids=["portfolio_snapshot"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.MIXED,
         notes_for_assistant=["The trailing path segment (e.g. 'AT') is an "
                              "owner identifier, not part of the page name."],
     ),
@@ -177,11 +233,39 @@ _MANUAL: List[PageContext] = [
     ),
     _ctx(
         "/escalations", "Escalations",
-        short_description="Alerts that have been escalated for partner "
-        "attention.",
-        primary_purpose="Track the subset of alerts requiring a decision or "
-        "written response.",
-        related_routes=["/alerts", "/app"],
+        short_description="Every red alert that has been open at least N days "
+        "(default 30) — the aged-risk view a partner reviews before an LP "
+        "update or weekly check-in.",
+        primary_purpose="Surface unresolved red alerts that have persisted, so "
+        "they get a decision rather than sitting open.",
+        common_questions=["What red alerts are still open and for how long?",
+                         "What needs a partner decision before the LP update?"],
+        inputs=["A days-open threshold (7/14/30/60/90); red alerts from alert "
+                "history that meet it."],
+        outputs=["Per page labels: a table of aged red alerts (Deal, Title, "
+                 "Age in days + first-seen date, Detail, Acked badge); a CSV "
+                 "download."],
+        key_metrics=["Aged red alerts", "Days open"],
+        data_sources=["Alert history over the portfolio store (red alerts, "
+                      "first-seen/last-seen, ack status)."],
+        model_logic_summary="Filters alert history to red alerts older than "
+        "the threshold and flags ack status; it surfaces aged alerts, it does "
+        "not compute new ones.",
+        why_it_matters="Persistence is the signal — a red alert open for weeks "
+        "is the thing most likely to be slipping.",
+        diligence_use_cases=["Pre-LP-update / weekly review of unresolved "
+                            "portfolio risks."],
+        interpretation_guidance=[
+            "'Days open' measures persistence, not severity escalation; an "
+            "acked alert can still be open.",
+            "The page shows how long an alert has been red, not what was tried "
+            "to resolve it.",
+        ],
+        limitations=["Only red alerts past the threshold; reflects what the "
+                     "alert evaluators fired, not root cause."],
+        related_routes=["/alerts", "/app", "/lp-update"],
+        data_source_ids=["portfolio_snapshot", "audit_log"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
         data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
     _ctx(
@@ -1220,31 +1304,291 @@ _MANUAL: List[PageContext] = [
     ),
     _ctx(
         "/diligence/deal-mc", "Deal Monte Carlo",
-        short_description="Monte Carlo simulation of a deal's EBITDA / "
-        "returns outcomes.",
-        primary_purpose="Show the distribution of outcomes, not a single "
-        "point estimate.",
-        key_metrics=["Median MOIC", "P5/P95 band", "P(loss)"],
-        model_logic_summary="Multi-driver Monte Carlo. Exact driver "
-        "distributions: Needs source documentation.",
-        why_it_matters="Communicates uncertainty around the base case.",
-        interpretation_guidance=["Outputs are simulated distributions, not "
-                                "guarantees; read the downside tail."],
-        related_routes=["/diligence/risk-workbench", "/diligence/exit-timing"],
+        short_description="Monte Carlo over a deal's full 5-year hold — "
+        "distributions of EBITDA, MOIC, and IRR, not a single point estimate.",
+        primary_purpose="Show the spread of outcomes by simulating many "
+        "stochastic paths across the deal's value-creation levers.",
+        common_questions=["What's the range of outcomes, not just the base "
+                         "case?", "How likely is a sub-1x result?"],
+        inputs=["Capital structure + assumption inputs (EV, equity, debt, "
+                "entry multiple, revenue/EBITDA, growth mean/σ, denial "
+                "improvement, regulatory headwind, lease, cyber, exit multiple "
+                "mean/σ, hold years, #runs); a fixture hydrates a scenario."],
+        outputs=["Per page labels: P50/P75 MOIC, P50 IRR, P(MOIC<1x), "
+                 "P(MOIC≥3x), and per-hold-year EBITDA/return bands."],
+        key_metrics=["P50 MOIC", "P75 MOIC", "P50 IRR", "P(MOIC<1x)",
+                     "P(MOIC≥3x)"],
+        data_sources=["User-supplied assumptions + model-simulated paths "
+                      "(CCD-native when a fixture is picked)."],
+        model_logic_summary="Appears to draw stochastic paths over each lever "
+        "and aggregate to MOIC/IRR/EBITDA distributions. Exact driver "
+        "distributions: needs source documentation.",
+        why_it_matters="Communicates uncertainty around the base case — the "
+        "tail, not just the median.",
+        diligence_use_cases=["Stress-reading the downside distribution before "
+                            "underwriting a return."],
+        interpretation_guidance=[
+            "Outputs are SIMULATED distributions from the supplied "
+            "assumptions, NOT a forecast or a guarantee — change the inputs "
+            "and the distribution moves.",
+            "Read the downside tail (P(MOIC<1x)), not only the median.",
+        ],
+        limitations=["Only as good as the input assumptions and the (model) "
+                     "driver distributions; should be verified before IC use."],
+        related_routes=["/diligence/risk-workbench", "/diligence/exit-timing",
+                       "/diligence/covenant-stress"],
+        metric_ids=["moic", "irr", "ebitda", "exit_multiple"],
+        data_source_ids=["model_output", "canonical_claims_dataset"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
         data_confidence=DataConfidence.MODEL_ESTIMATE,
     ),
     _ctx(
         "/diligence/deal-autopsy", "Deal Autopsy",
-        short_description="Matches a live deal against a curated library of "
-        "historical PE-healthcare failures by signature similarity.",
-        primary_purpose="Flag pattern-match risk ('are we about to repeat a "
-        "known failure?').",
-        data_sources=["Curated failure-case library + similarity scorer."],
-        why_it_matters="Surfaces historical-analogue risk the bull case may "
-        "ignore.",
-        interpretation_guidance=["A high similarity to a failed deal is a "
-                                "prompt to investigate, not a verdict."],
-        related_routes=["/bear-cases", "/diligence/risk-workbench"],
+        short_description="Reduces a target to a 9-dimension signature and "
+        "ranks a curated library of historical PE-healthcare deals by "
+        "similarity, surfacing their outcomes.",
+        primary_purpose="Flag historical-analogue risk — 'whose playbook does "
+        "this deal most resemble, and how did theirs end?'",
+        common_questions=["Which historical deals does this most resemble?",
+                         "Are we about to repeat a known failure?"],
+        inputs=["A target signature (from a CCD fixture or query params) over "
+                "9 risk dimensions; the curated historical deal library."],
+        outputs=["Per page labels: a ranked matches table (Rank, Deal, "
+                 "Sponsor, Sector, Outcome, Year, Similarity, Distance) and a "
+                 "library table with each deal's primary driver."],
+        key_metrics=["Similarity %", "Signature distance", "Match outcomes"],
+        data_sources=["The target's 9-dim signature + a curated historical "
+                      "deal library (public precedents)."],
+        model_logic_summary="Ranks library deals by Euclidean distance in a "
+        "9-dimension signature space; outputs similarity, not a risk "
+        "probability.",
+        why_it_matters="Surfaces the historical-analogue risk the bull case "
+        "tends to ignore.",
+        diligence_use_cases=["Framing the bear case around the closest "
+                            "historical precedents."],
+        interpretation_guidance=[
+            "This is RETROSPECTIVE pattern matching — a similar historical "
+            "outcome is a signal to investigate, NOT causal proof the target "
+            "shares that fate.",
+            "Similarity % is geometric closeness of signatures, not a "
+            "probability of repeating the outcome.",
+        ],
+        limitations=["Bounded by the curated library and the 9 chosen "
+                     "dimensions; a near match still needs deal-level "
+                     "diligence."],
+        related_routes=["/bear-cases", "/screening/bankruptcy-survivor",
+                       "/diligence/risk-workbench"],
+        data_source_ids=["public_transaction_corpus", "canonical_claims_dataset"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/diligence/covenant-stress", "Covenant Stress",
+        short_description="A covenant & capital-structure stress lab — "
+        "quantifies per-covenant breach probability across simulated EBITDA "
+        "paths and quarters.",
+        primary_purpose="Stress-test how much headroom a deal's covenants have "
+        "under a range of EBITDA paths, not predict an actual breach.",
+        common_questions=["How much covenant headroom does this structure "
+                         "have?", "Under stress, when might a covenant get "
+                         "tight?"],
+        inputs=["Capital-structure inputs (total debt, EBITDA Y0, growth, "
+                "volatility) and covenant definitions; simulated EBITDA paths."],
+        outputs=["Per page labels: KPIs (Max Breach Prob, Earliest 50% "
+                 "Breach, Simulated Paths, Quarters Tested) and a per-covenant "
+                 "table (Peak Breach %, Peak Quarter, 50%/25% first-at, median "
+                 "cure $, interpretation)."],
+        key_metrics=["Max breach probability", "Earliest 50%-breach quarter",
+                     "Simulated paths", "Covenant cushion"],
+        data_sources=["User capital-structure inputs + model-simulated EBITDA "
+                      "paths."],
+        model_logic_summary="Appears to compose simulated EBITDA paths with "
+        "per-covenant breach-probability curves by quarter. Exact path/curve "
+        "math: needs source documentation.",
+        why_it_matters="Covenant headroom is a primary downside-risk lens in a "
+        "levered deal.",
+        diligence_use_cases=["Pressure-testing leverage and covenant package "
+                            "before committing to a structure."],
+        interpretation_guidance=[
+            "These are STRESS-TEST probabilities over simulated paths — a "
+            "'breach probability' is a what-if under the assumptions, NOT a "
+            "prediction that a covenant will actually breach.",
+            "Change the debt/EBITDA/volatility inputs and the probabilities "
+            "move; verify before IC use.",
+        ],
+        limitations=["Only as good as the input structure and the (model) "
+                     "EBITDA-path assumptions."],
+        related_routes=["/diligence/deal-mc", "/diligence/bridge-audit",
+                       "/regulatory-calendar"],
+        metric_ids=["covenant_cushion", "leverage", "ebitda"],
+        data_source_ids=["model_output"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/diligence/exit-timing", "Exit Timing",
+        short_description="Exit-timing + buyer-type fit — varies the hold year "
+        "(2–7) and buyer archetype to find the return-maximizing exit path.",
+        primary_purpose="Explore which hold year and buyer type look best for "
+        "a deal, as a scenario read — not a market-timing call.",
+        common_questions=["When might be the best time to exit?",
+                         "Which buyer type fits this deal?"],
+        inputs=["Capital structure + assumptions (equity, debt, EBITDA, "
+                "growth, peer multiple, regulatory verdict, payer share, "
+                "management score); Deal-MC year bands, market-intel peer "
+                "multiples, and historical buyer-fit patterns."],
+        outputs=["Per page labels: KPIs (optimal Year, Expected MOIC, Expected "
+                 "IRR, probability-weighted proceeds) and buyer-fit cards "
+                 "(multiple delta, close certainty, time to close)."],
+        key_metrics=["Optimal hold year", "Expected MOIC", "Expected IRR",
+                     "Probability-weighted proceeds"],
+        data_sources=["User inputs + model-simulated year bands + market-intel "
+                      "peer multiples + historical buyer patterns."],
+        model_logic_summary="Appears to combine Deal-MC year-band "
+        "distributions with buyer-type multiple/closing assumptions to rank "
+        "exit paths. Exact scoring: needs source documentation.",
+        why_it_matters="Exit timing and buyer fit are major IRR levers late in "
+        "the hold.",
+        diligence_use_cases=["Framing a base exit plan and the buyer "
+                            "archetypes to cultivate."],
+        interpretation_guidance=[
+            "This is SCENARIO analysis over hold years and buyer types — NOT a "
+            "prediction of market timing or a guaranteed exit multiple.",
+            "Expected proceeds are probability-weighted model outputs, to be "
+            "verified before IC use.",
+        ],
+        limitations=["Depends on input assumptions and the model/market peer "
+                     "data; not a market forecast."],
+        related_routes=["/diligence/deal-mc", "/diligence/deal-autopsy",
+                       "/hold-analysis"],
+        metric_ids=["moic", "irr", "exit_multiple", "hold_period"],
+        data_source_ids=["model_output", "public_market_data",
+                         "public_transaction_corpus"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/diligence/ingest", "Ingestion",
+        short_description="Phase 1 — ingestion & normalization: raw 837/835 "
+        "EDI, EHR exports, and spreadsheets funneled into a single versioned "
+        "Canonical Claims Dataset (CCD).",
+        primary_purpose="Turn messy multi-source claims data into one "
+        "normalized CCD, with a row-level transformation log.",
+        common_questions=["How is the claims data normalized?",
+                         "What was changed or flagged during ingest?"],
+        inputs=["Claims source files (837/835 EDI, EHR exports, CSV/XLSX). On "
+                "this page these are demo fixtures; production uploads are "
+                "deferred per source."],
+        outputs=["Per page labels: a transformation log (ccd_row_id, source "
+                 "file, row, rule, target field, severity) plus the resulting "
+                 "Canonical Claims Dataset."],
+        key_metrics=["Rows ingested", "Transformation rules applied",
+                     "Validation flags"],
+        data_sources=["Claims source files normalized into the Canonical "
+                      "Claims Dataset (837 / 835 / EHR exports)."],
+        model_logic_summary="Per source, dispatches readers by file type and "
+        "normalizes — it validates CPT/HCPCS and ICD-10 codes, reconciles "
+        "835↔837 remittances, dedups across EHRs, and row-logs every "
+        "coercion. No predictive model.",
+        why_it_matters="Every downstream KPI/QoE/bridge read sits on top of "
+        "this CCD — its normalization quality bounds everything after it.",
+        diligence_use_cases=["Confirming the claims data is clean and "
+                            "auditable before relying on derived KPIs."],
+        interpretation_guidance=[
+            "Based on source, ingest validates codes and reconciles 835/837 — "
+            "but on this page it runs on demo fixtures, so it is not target "
+            "data and not an auth-gated production upload.",
+            "The transformation log is an audit trail of coercions, not a "
+            "guarantee the source data was complete.",
+        ],
+        limitations=["Fixture-driven here; production / authenticated uploads "
+                     "are deferred per the page's own note."],
+        related_routes=["/diligence/benchmarks", "/diligence/qoe-memo",
+                       "/diligence/root-cause"],
+        data_source_ids=["canonical_claims_dataset", "edi_837", "edi_835",
+                         "ehr_export"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.DEMO_OR_FIXTURE,
+    ),
+    _ctx(
+        "/diligence/management", "Management",
+        short_description="A management scorecard — per-executive scored cards "
+        "across four dimensions, a roster aggregate, and a named EBITDA-bridge "
+        "haircut.",
+        primary_purpose="Support a structured read on management quality and "
+        "translate it into a bridge haircut input — not pass a definitive "
+        "verdict.",
+        common_questions=["How does this management team score?",
+                         "What haircut does management risk imply?"],
+        inputs=["An executive roster (demo team on this page) scored on "
+                "forecast reliability, comp structure, tenure, and prior-role "
+                "reputation; optional target name + guidance EBITDA."],
+        outputs=["Per page labels: per-exec cards (four dimension scores + "
+                 "weighted overall, with a red-flag override), a roster "
+                 "aggregate, a recommended haircut, and a JSON export."],
+        key_metrics=["Per-executive scores", "Overall management score",
+                     "Recommended EBITDA haircut"],
+        data_sources=["A demo executive roster (illustrative) + user-supplied "
+                      "target name / guidance EBITDA."],
+        model_logic_summary="Scores each executive on four dimensions, applies "
+        "a red-flag override, aggregates, and derives a bridge haircut. The "
+        "scoring inputs are the judgment; exact weights: needs source "
+        "documentation.",
+        why_it_matters="Management quality is a core qualitative diligence "
+        "axis and a real EBITDA-bridge input.",
+        diligence_use_cases=["Structuring the management assessment and its "
+                            "haircut into the value bridge."],
+        interpretation_guidance=[
+            "This SUPPORTS a management assessment via a scoring framework — "
+            "it is not a definitive management-quality judgment.",
+            "On this page the roster is an illustrative demo; real rosters "
+            "(CIM / reference notes) are not yet wired, per the page's banner.",
+        ],
+        limitations=["Demo-data driven; scores reflect the inputs entered, "
+                     "and should be verified before IC use."],
+        related_routes=["/diligence/bridge-audit", "/diligence/ic-packet"],
+        data_source_ids=["demo_fixture", "deal_profile"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.DEMO_OR_FIXTURE,
+    ),
+    _ctx(
+        "/diligence/physician-attrition", "Physician Attrition",
+        short_description="Scores each provider's 18-month flight-risk and "
+        "surfaces the EBITDA at risk from potential departures.",
+        primary_purpose="Quantify physician flight-risk as a diligence signal "
+        "and size the revenue/EBITDA exposure it implies.",
+        common_questions=["Which providers are flight risks?",
+                         "How much EBITDA is exposed to attrition?"],
+        inputs=["A provider roster (demo fixture on this page) with tenure, "
+                "age, collections trend, local competition, employment type."],
+        outputs=["Per page labels: total EBITDA-at-risk, band counts "
+                 "(Critical/High/Medium/Low), and a flight-risk roster "
+                 "(Provider, Specialty, Employment, Flight prob, Band, "
+                 "Collections, $ at risk, Top driver)."],
+        key_metrics=["Flight-risk probability", "EBITDA at risk",
+                     "Provider productivity"],
+        data_sources=["A provider roster (demo fixture) scored by a model."],
+        model_logic_summary="Appears to extract per-provider features and "
+        "score an 18-month flight-risk probability (logistic regression), with "
+        "feature contributions. Exact coefficients: needs source "
+        "documentation.",
+        why_it_matters="In provider-group deals, physician retention is a "
+        "first-order driver of post-close revenue.",
+        diligence_use_cases=["Prioritizing retention/comp focus on the highest "
+                            "flight-risk, highest-value providers."],
+        interpretation_guidance=[
+            "Flight-risk is a model-estimated RISK SIGNAL, NOT a prediction "
+            "that a given provider will leave.",
+            "On this page the roster is a demo fixture, not the target's "
+            "actual providers — verify before IC use.",
+        ],
+        limitations=["Demo-roster driven; scores are model estimates bounded "
+                     "by the inputs."],
+        related_routes=["/diligence/physician-eu", "/diligence/value",
+                       "/diligence/deal-mc"],
+        metric_ids=["physician_attrition", "provider_productivity"],
+        data_source_ids=["provider_roster", "model_output", "demo_fixture"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
         data_confidence=DataConfidence.MIXED,
     ),
     _ctx(
@@ -1292,11 +1636,36 @@ _MANUAL: List[PageContext] = [
     # ── Library & Reference ─────────────────────────────────────────
     _ctx(
         "/metric-glossary", "Metric Glossary",
-        short_description="Definitions of the metrics used across PEdesk.",
-        primary_purpose="Give every metric a single authoritative "
-        "definition.",
-        why_it_matters="A shared vocabulary keeps interpretation consistent.",
+        short_description="A reference glossary defining every metric used "
+        "across PEdesk — definition, why it matters, and how it's calculated, "
+        "grouped by category.",
+        primary_purpose="Give each metric a single authoritative definition so "
+        "interpretation stays consistent across the platform.",
+        common_questions=["What does this metric mean?",
+                         "How is this number calculated?"],
+        inputs=["None — it renders a curated definition set (no deal data)."],
+        outputs=["Per page labels: per-metric cards (label, units, typical "
+                 "range, definition, why it matters, how calculated) with a "
+                 "category table of contents."],
+        key_metrics=["Metrics defined", "Categories"],
+        data_sources=["A curated definition set (HFMA MAP keys + "
+                      "platform-supplied definitions)."],
+        model_logic_summary="Renders static definitions; no computation, no "
+        "deal data.",
+        why_it_matters="A shared vocabulary keeps interpretation consistent "
+        "across pages and partners.",
+        diligence_use_cases=["Looking up exactly what a metric means before "
+                            "relying on it."],
+        interpretation_guidance=[
+            "This is a REFERENCE page — definitions only, never a "
+            "target-specific conclusion.",
+            "Typical ranges are reference bands, not a given deal's values.",
+        ],
+        limitations=["Definitions are reference content; some 'how calculated' "
+                     "entries may still need source documentation."],
         related_routes=["/methodology", "/rcm-benchmarks"],
+        metric_ids=["denial_rate", "days_in_ar", "net_collection_rate",
+                    "clean_claim_rate", "moic", "irr", "ev_to_ebitda"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
@@ -1396,11 +1765,42 @@ _MANUAL: List[PageContext] = [
     ),
     _ctx(
         "/rcm-benchmarks", "RCM Benchmarks",
-        short_description="Revenue-cycle benchmark reference (denial, DAR, "
-        "collections, etc.).",
-        primary_purpose="Benchmark a target's RCM metrics against peers.",
-        data_sources=["Public/industry RCM benchmark references."],
-        related_routes=["/metric-glossary", "/comparables"],
+        short_description="A revenue-cycle benchmark reference — P25/P50/P75 "
+        "bands for seven RCM metrics across eight facility segments.",
+        primary_purpose="Provide industry benchmark bands so a target's RCM "
+        "metrics can be read against peers of the same segment.",
+        common_questions=["What's a good denial rate / days in A/R for this "
+                         "segment?", "Where do peers sit on these metrics?"],
+        inputs=["A facility segment selection; the curated benchmark set."],
+        outputs=["Per page labels: per-metric tables (Metric with better-"
+                 "direction arrow, P25, P50 median, P75) across segments like "
+                 "community / academic / critical-access / ASC / behavioral."],
+        key_metrics=["Initial denial rate", "Clean claim rate", "Days in A/R",
+                     "Net collection rate", "Write-off %", "Cost to collect",
+                     "Denial overturn rate"],
+        data_sources=["Curated industry benchmarks (per page: HFMA MAP, "
+                      "Advisory Board, MGMA, CMS HCRIS aggregates, payer "
+                      "denial surveys)."],
+        model_logic_summary="Renders curated benchmark bands by segment; no "
+        "target computation here.",
+        why_it_matters="Benchmarks turn a raw RCM metric into a 'better or "
+        "worse than peers' read.",
+        diligence_use_cases=["Setting expectations for a target's RCM metrics "
+                            "against the right peer segment."],
+        interpretation_guidance=[
+            "This is a REFERENCE page — peer bands, NOT a target-specific "
+            "conclusion. Apply them to a target on /diligence/benchmarks.",
+            "Bands depend on the source surveys and the segment chosen.",
+        ],
+        limitations=["Curated third-party benchmarks; vintage and segment "
+                     "definitions vary by source."],
+        related_routes=["/metric-glossary", "/diligence/benchmarks",
+                       "/comparables"],
+        metric_ids=["denial_rate", "clean_claim_rate", "days_in_ar",
+                    "net_collection_rate", "bad_debt_rate",
+                    "benchmark_percentile"],
+        data_source_ids=["benchmark_prior", "cms_hcris"],
+        source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
     _ctx(
@@ -2228,6 +2628,82 @@ _MANUAL: List[PageContext] = [
         data_source_ids=["portfolio_snapshot", "generated_export"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
+    ),
+    # ── Engagements + market data ───────────────────────────────────
+    _ctx(
+        "/engagements", "Engagements",
+        short_description="The cross-engagement workspace — a list of "
+        "consulting engagements with their client, status, and deliverables.",
+        primary_purpose="Manage consulting engagements (members, deliverables, "
+        "comment stream) in the Chartis-consulting workspace.",
+        common_questions=["What engagements are active?",
+                         "What's the status of this client engagement?"],
+        inputs=["Engagement records (id, name, client, status, created) from "
+                "the store; per-engagement members / deliverables / comments."],
+        outputs=["Per page labels: a table (ID, Name, Client, Status, Created) "
+                 "linking to each engagement's detail page."],
+        key_metrics=["Engagements", "Status mix"],
+        data_sources=["The engagement records store (engagement metadata, "
+                      "roles, deliverables, comments)."],
+        model_logic_summary="Lists engagement records and routes to detail "
+        "pages; role-based access governs members and deliverable visibility. "
+        "No analytic model.",
+        why_it_matters="It's the operational home for client-facing consulting "
+        "work, distinct from the PE deal pipeline.",
+        diligence_use_cases=["Tracking consulting engagements and their "
+                            "deliverable status."],
+        interpretation_guidance=[
+            "These are user-entered engagement records, not deal analytics.",
+            "Client-facing viewers see a filtered read-only portal "
+            "(/portal/<id>), not this internal workspace.",
+        ],
+        limitations=["Reflects what's been entered; the list does not link "
+                     "engagements to specific deals."],
+        related_routes=["/app", "/diligence/qoe-memo"],
+        data_source_ids=["engagement_record"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.USER_ENTERED_DATA,
+    ),
+    _ctx(
+        "/market-data/state/CA", "Market Data · State (CA)",
+        short_description="Per-state hospital market data from CMS HCRIS — the "
+        "Medicare-participating hospitals in one state, by revenue.",
+        primary_purpose="Show the hospital landscape in a given state (count, "
+        "beds, net patient revenue, margin) from public cost-report data.",
+        common_questions=["What hospitals are in this state?",
+                         "How big is this state's hospital market?"],
+        inputs=["The state code in the path (e.g. CA); CMS HCRIS hospital "
+                "filings filtered to that state."],
+        outputs=["Per page labels: KPIs (Hospitals, Total Beds, Total NPR) and "
+                 "a top-50-by-NPR table (Hospital, Beds, NPR, Margin) with "
+                 "profile / DCF links."],
+        key_metrics=["Hospital count", "Total beds", "Total net patient "
+                     "revenue", "Operating margin"],
+        data_sources=["CMS HCRIS public hospital cost reports (latest filed "
+                      "fiscal year), filtered to the state."],
+        model_logic_summary="Filters the latest HCRIS rows to the state and "
+        "aggregates count / beds / NPR; margin is (revenue − opex) / revenue. "
+        "No model.",
+        why_it_matters="A quick public read on a state's hospital market for "
+        "sourcing and market-context.",
+        diligence_use_cases=["Sizing a state market and finding candidate "
+                            "hospitals before deeper screening."],
+        interpretation_guidance=[
+            "Figures are public HCRIS, which lags 1-2 years and covers only "
+            "Medicare-participating hospitals — not a live or complete market "
+            "feed.",
+            "The state code is a path filter, not a different page type; "
+            "top-50-by-NPR is a partial view.",
+        ],
+        limitations=["HCRIS coverage excludes non-Medicare hospitals; filing "
+                     "lag and cost-report artifacts apply."],
+        related_routes=["/screen", "/market-rates", "/pipeline"],
+        metric_ids=["bed_count", "revenue", "operating_margin"],
+        data_source_ids=["cms_hcris"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+        notes_for_assistant=["The trailing path segment (e.g. 'CA') is a "
+                             "state code filter, not part of the page name."],
     ),
 ]
 
