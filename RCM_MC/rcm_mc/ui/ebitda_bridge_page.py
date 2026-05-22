@@ -22,7 +22,7 @@ from ._chartis_kit import (
     SafeHtml,
     chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
     ck_next_section, ck_page_title, ck_panel, ck_provenance_tooltip,
-    ck_section_header, ck_signal_badge,
+    ck_section_header, ck_signal_badge, ck_value_anchor,
 )
 
 _EXPLAINER_CSS = """<style>
@@ -1632,8 +1632,25 @@ def render_ebitda_bridge(
         "current vs benchmark target with data provenance."
         '</p>'
     )
+    # Lead takeaway — the computed financial stakes a partner reads
+    # before any chart/table: dollar uplift → margin gap to benchmark →
+    # EV created at 10x → pro-forma EBITDA. All figures are computed
+    # from the bridge; nothing is fabricated.
+    _uplift = bridge["total_ebitda_impact"]
+    _current = bridge["current_ebitda"]
+    _proforma = bridge["new_ebitda"]
+    lead_anchor = ck_value_anchor(
+        "RCM EBITDA UPLIFT",
+        f"+{_fm(_uplift)}",
+        delta=f"+{bridge['margin_improvement_bps']:.0f} bps margin",
+        opportunity=(
+            f"{_fm(_uplift * 10)} EV at 10x" if _uplift > 0 else ""
+        ),
+        target=f"pro forma {_fm(_proforma)}",
+        tone="positive",
+    )
     body = (
-        f'{page_title}{explainer_html}{provenance_banner}{kpis}{realization_section}{waterfall_section}'
+        f'{page_title}{lead_anchor}{explainer_html}{provenance_banner}{kpis}{realization_section}{waterfall_section}'
         f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
         f'<div>{detail_section}{timing_section}</div>'
         f'<div>{grid_section}{covenant_section}</div></div>'
