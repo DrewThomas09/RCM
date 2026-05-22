@@ -40,7 +40,9 @@ def _scenario_table(scenarios: list) -> str:
         moic_color = P["positive"] if stressed >= 3.0 else P["warning"] if stressed >= 2.0 else P["negative"]
         moic_html = f'<span class="mn" style="color:{moic_color}">{stressed:.2f}×</span>'
 
-        row_style = ' style="background:rgba(59,130,246,.07)"' if is_base else ""
+        # Faint editorial-teal wash marks the neutral baseline row
+        # (P["teal"] #155752); was an off-palette Tailwind blue.
+        row_style = ' style="background:rgba(21,87,82,.06)"' if is_base else ""
 
         rows.append(
             f"<tr{row_style}>"
