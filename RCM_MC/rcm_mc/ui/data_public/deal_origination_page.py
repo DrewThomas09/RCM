@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title, ck_bar_row
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title, ck_bar_row, ck_value_anchor
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
@@ -212,8 +212,24 @@ def render_deal_origination(params: dict = None) -> str:
         f"{r.corpus_deal_count:,} corpus deals"
     )
 
+    # Lead takeaway — surface the computed pipeline value (weighted +
+    # total active EV), otherwise buried as KPIs #1-2 and in the bottom
+    # thesis. All figures come from compute_deal_origination().
+    lead_anchor = ck_value_anchor(
+        "ORIGINATION PIPELINE",
+        f"${r.weighted_pipeline_ev_mm:,.0f}M weighted pipeline",
+        delta=f"{r.active_deals} active · {r.loi_stage} at LOI",
+        opportunity=f"${r.total_pipeline_ev_mm:,.0f}M total pipeline EV",
+        target=(
+            f"{len([w for w in r.whitespace if w.whitespace_score >= 75])} "
+            "whitespace sectors"
+        ),
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
+  {lead_anchor}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Sourcing Funnel — Latest Quarter</div>{funnel_svg}</div>
   <div style="{cell}"><div style="{h3}">Active Pipeline — Stage, Probability, Weighted EV</div>{pl_chart}{pl_tbl}</div>
