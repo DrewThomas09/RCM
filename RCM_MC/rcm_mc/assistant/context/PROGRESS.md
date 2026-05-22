@@ -160,3 +160,87 @@ inferred_from_page **and** ≥1 linked metric/source) → `placeholder`
   remain the reliable path.
 - No endpoint is wired: this is infrastructure the future Guide endpoint
   imports. Building that endpoint (and any UI) is explicitly out of scope.
+
+---
+
+# Task 4 — Upgrade placeholder PageContexts from source (Priority A) (2026-05-22)
+
+Read the actual page implementations (route handlers in `server.py`,
+renderers in `rcm_mc/ui/`, page docstrings, headings, table columns, KPI
+labels, data pulls) and authored conservative, source-grounded contexts
+for the Priority A pages. No formulas/lineage invented; unknowns stay
+"Needs source documentation." Scope: **Priority A only** (the spec
+permits stopping here and reporting the next batch).
+
+## Quality distribution (packet quality over all 72 registry routes)
+- **Start:** strong 8 · partial 2 · placeholder 62 · missing 0
+- **End:**   strong 23 · partial 2 · placeholder 47 · missing 0
+
+Strong target (20+) reached. Partial-20+/placeholder-<35 stretch needs
+Priority B/C (not in this PR, by design).
+
+## Pages upgraded (Priority A) — 16 routes
+Promoted to **strong** (filled core fields + linked reliable
+metric_ids/data_source_ids): `/alerts`, `/watchlist`,
+`/diligence/questions`, `/audit`, `/import`, `/pipeline`,
+`/diligence/deal`, `/diligence/ic-packet`, `/portfolio`,
+`/portfolio/risk-scan`, `/portfolio/heatmap`, `/lp-update`, `/app`
+(added MOIC/IRR/covenant + portfolio_snapshot links).
+Two **new** entries authored (were needs_validation stubs):
+`/diligence/checklist`, `/diligence/qoe-memo`.
+`/users` upgraded to **partial** (admin page — no analytic metric/source
+to link; intentionally not strong).
+
+## Conservatism calls worth noting
+- **`/pipeline` correction:** the prior context claimed a
+  "probability-weighted close value"; the actual `pipeline_page.py`
+  shows a stage funnel (screening→…→closed/passed) over HCRIS public
+  financials with **no** weighting. Rewritten to match source and noted
+  that any weighting "needs source confirmation."
+- **`/diligence/ic-packet` and `/diligence/qoe-memo` are NOT marked
+  IC-ready / signed.** Source shows only a rendered view (browser
+  Print → Save as PDF); the QoE engagement link writes a **DRAFT** only.
+  Both contexts explicitly say to verify before IC use — no sign-off
+  flow exists in source.
+- **localStorage pages** (`/diligence/deal`, `/diligence/questions`)
+  flagged as user-entered, browser-local — not server-side records.
+- **`data_confidence`** set honestly: fixture-driven diligence pages →
+  `mixed`; HCRIS-backed `/pipeline` → `public_benchmark_data`;
+  user-entered import/profile pages → `user_entered_data`.
+
+## Pages still placeholder (47) — next batches
+- **Priority B (14 placeholder):** /source, /screen-adjacent sourcing,
+  /pe-intelligence, /deal-screening, /find-comps, /conferences,
+  /diligence/{thesis-pipeline, benchmarks, root-cause, value,
+  risk-workbench, counterfactual, compare}, /screening/bankruptcy-survivor.
+- **Priority C (19 placeholder):** /library, /deals-library, /comparables,
+  /market-rates, /research, /notes, /sector-momentum, /irr-dispersion,
+  /hold-analysis, /comparable-outcomes, /bear-cases, /regulatory-calendar,
+  /market-intel, /corpus-backtest, /backtest, /portfolio/map,
+  /portfolio-analytics + remainder.
+- Plus other non-priority placeholders in the long tail.
+
+## Blocked / not upgraded
+- **`/home`** is not a discovered route (not in the registry) — no page
+  to read, so nothing authored. (`/app` is the actual command center.)
+- **`/users`** stays `partial` by design — it's platform administration,
+  not an analytic page; no registry metric/source applies.
+
+## Commands + results
+- `python -m rcm_mc.assistant.context.validate_page_context_coverage`
+  → PASS (exit 0).
+- `python -m rcm_mc.assistant.context.validate_guide_context_quality`
+  → PASS (exit 0): 0 invalid metric refs, 0 invalid source refs, 0
+  duplicate ids, 0 ambiguous aliases.
+- `py_compile` on the context package → clean.
+- `pytest tests/test_pedesk_guide_page_context.py
+  tests/test_pedesk_guide_metric_data_context.py
+  tests/test_pedesk_guide_context_packet.py` → **30 passed**.
+
+## Caveats
+- All upgrades are `inferred_from_page` unless the page/source explicitly
+  documented behavior (`/alerts`, `/pipeline` data, `/portfolio`,
+  `/portfolio/risk-scan`, `/lp-update`, `/app` keep `documented` where
+  the source supports it).
+- No exact formulas were added; model-logic summaries describe intent and
+  point to the implementing module for specifics.
