@@ -4362,6 +4362,336 @@ _TOAST_HTML = """
 """
 
 
+# ── PEdesk Guide sidebar (read-only) ─────────────────────────────────
+# Closed-by-default right-side panel. Explains the current page from the
+# GuideContextPacket (/api/guide/context) and asks read-only questions via
+# the local-Ollama endpoint (/api/guide/ask). No uploads, no actions, no
+# mutation, no persistence — the deterministic page guide always works;
+# Q&A is gated on /api/guide/ollama-health.
+_GUIDE_PANEL_HTML = """
+<aside id="ck-guide-panel" class="ck-guide-panel" hidden role="dialog"
+       aria-modal="false" aria-label="PEdesk Guide">
+  <div class="ck-guide-head">
+    <div class="ck-guide-head-row">
+      <span class="ck-guide-eyebrow">PEdesk Guide</span>
+      <button class="ck-guide-close" type="button" data-ck-guide-close
+              aria-label="Close PEdesk Guide">&times;</button>
+    </div>
+    <h2 class="ck-guide-title" data-ck-guide-page-title tabindex="-1">PEdesk Guide</h2>
+    <div class="ck-guide-meta">
+      <span class="ck-guide-quality" data-ck-guide-quality hidden></span>
+      <code class="ck-guide-route" data-ck-guide-route></code>
+    </div>
+  </div>
+  <div class="ck-guide-body">
+    <p class="ck-guide-loading" data-ck-guide-loading>Loading page context&hellip;</p>
+    <div class="ck-guide-error" data-ck-guide-error hidden>
+      <p data-ck-guide-error-msg>Couldn&rsquo;t load page context.</p>
+      <button type="button" class="ck-guide-btn" data-ck-guide-retry-context>Retry</button>
+    </div>
+    <div class="ck-guide-content" data-ck-guide-content hidden>
+      <section class="ck-guide-sec">
+        <h3 class="ck-guide-h3">Overview</h3>
+        <div data-ck-guide-overview></div>
+      </section>
+      <section class="ck-guide-sec">
+        <h3 class="ck-guide-h3">Key metrics</h3>
+        <div data-ck-guide-metrics></div>
+      </section>
+      <section class="ck-guide-sec">
+        <h3 class="ck-guide-h3">Data sources</h3>
+        <div data-ck-guide-sources></div>
+      </section>
+      <section class="ck-guide-sec">
+        <h3 class="ck-guide-h3">Limitations</h3>
+        <div data-ck-guide-limitations></div>
+      </section>
+      <section class="ck-guide-sec">
+        <h3 class="ck-guide-h3">Suggested questions</h3>
+        <div class="ck-guide-chips" data-ck-guide-suggested></div>
+      </section>
+      <section class="ck-guide-sec ck-guide-ask">
+        <h3 class="ck-guide-h3">Ask PEdesk Guide</h3>
+        <div class="ck-guide-ask-state" data-ck-guide-ask-state hidden></div>
+        <div class="ck-guide-history" data-ck-guide-history aria-live="polite"></div>
+        <form class="ck-guide-ask-form" data-ck-guide-ask-form>
+          <textarea class="ck-guide-input" data-ck-guide-input rows="2"
+                    aria-label="Ask a question about this page"
+                    placeholder="Ask about this page&hellip;"></textarea>
+          <button type="submit" class="ck-guide-btn ck-guide-send"
+                  data-ck-guide-send>Ask</button>
+        </form>
+      </section>
+    </div>
+  </div>
+  <div class="ck-guide-readonly">
+    PEdesk Guide is read-only. It can explain pages, metrics, data sources,
+    model intent, and limitations. It cannot change assumptions, run models,
+    create tasks, export files, or make final investment recommendations.
+  </div>
+</aside>
+"""
+
+_GUIDE_CSS = """
+<style>
+.ck-guide-trigger{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.45);
+  border-radius:3px;padding:5px 12px;font-size:12px;font-weight:600;letter-spacing:.04em;
+  cursor:pointer;font-family:'Inter Tight',Inter,sans-serif;}
+.ck-guide-trigger:hover{background:var(--sc-teal,#155752);border-color:var(--sc-teal,#155752);}
+.ck-guide-trigger:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
+.ck-guide-panel{position:fixed;top:0;right:0;height:100vh;width:min(400px,94vw);z-index:1200;
+  background:var(--paper,#FAF7F0);color:var(--ck-text,#1a2332);border-left:2px solid var(--sc-teal,#155752);
+  box-shadow:-8px 0 28px rgba(11,35,65,.18);display:flex;flex-direction:column;
+  font-family:'Inter Tight',Inter,sans-serif;font-size:13px;}
+.ck-guide-panel[hidden]{display:none;}
+.ck-guide-head{background:var(--sc-navy,#0b2341);color:#fff;padding:14px 16px;}
+.ck-guide-head-row{display:flex;align-items:center;justify-content:space-between;}
+.ck-guide-eyebrow{font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.8;
+  font-family:'JetBrains Mono',monospace;}
+.ck-guide-close{background:transparent;border:none;color:#fff;font-size:22px;line-height:1;
+  cursor:pointer;padding:0 4px;}
+.ck-guide-close:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
+.ck-guide-title{font-family:'Source Serif 4',Georgia,serif;font-size:18px;margin:6px 0 6px;
+  color:#fff;outline:none;}
+.ck-guide-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.ck-guide-route{font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(255,255,255,.7);}
+.ck-guide-quality{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  padding:2px 7px;border-radius:2px;background:#fff;color:var(--sc-navy,#0b2341);}
+.ck-guide-quality[data-q="strong"]{background:#0a8a5f;color:#fff;}
+.ck-guide-quality[data-q="partial"]{background:#b8732a;color:#fff;}
+.ck-guide-quality[data-q="placeholder"]{background:#8a8170;color:#fff;}
+.ck-guide-quality[data-q="missing"]{background:#b5321e;color:#fff;}
+.ck-guide-body{flex:1;overflow-y:auto;padding:14px 16px;}
+.ck-guide-loading{color:var(--ck-text-dim,#5C6878);font-style:italic;}
+.ck-guide-sec{margin-bottom:18px;}
+.ck-guide-h3{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--sc-teal,#155752);
+  font-family:'JetBrains Mono',monospace;margin:0 0 8px;border-bottom:1px solid var(--ck-border,#d6cfc0);
+  padding-bottom:4px;}
+.ck-guide-panel p{margin:0 0 8px;line-height:1.5;}
+.ck-guide-item{margin-bottom:12px;}
+.ck-guide-item-label{font-weight:700;color:var(--sc-navy,#0b2341);}
+.ck-guide-item-sub{font-size:11px;color:var(--ck-text-dim,#5C6878);font-family:'JetBrains Mono',monospace;}
+.ck-guide-caveat{font-size:12px;color:var(--ck-text-dim,#5C6878);}
+.ck-guide-muted{color:var(--ck-text-dim,#5C6878);font-style:italic;}
+.ck-guide-list{margin:0;padding-left:18px;}
+.ck-guide-list li{margin-bottom:4px;line-height:1.45;}
+.ck-guide-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.ck-guide-chip{background:#fff;border:1px solid var(--ck-border,#d6cfc0);border-radius:14px;
+  padding:5px 11px;font-size:12px;cursor:pointer;color:var(--sc-navy,#0b2341);text-align:left;}
+.ck-guide-chip:hover{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
+.ck-guide-chip:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:1px;}
+.ck-guide-ask-state{background:#ece5d6;border:1px solid var(--ck-border,#d6cfc0);border-radius:4px;
+  padding:9px 11px;font-size:12px;color:var(--ck-text-dim,#5C6878);margin-bottom:10px;}
+.ck-guide-history{display:flex;flex-direction:column;gap:10px;margin-bottom:10px;}
+.ck-guide-q{font-weight:700;color:var(--sc-navy,#0b2341);}
+.ck-guide-a{background:#fff;border:1px solid var(--ck-border,#d6cfc0);border-left:3px solid var(--sc-teal,#155752);
+  border-radius:3px;padding:9px 11px;white-space:pre-wrap;line-height:1.5;}
+.ck-guide-a-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:7px;font-size:10px;
+  font-family:'JetBrains Mono',monospace;color:var(--ck-text-dim,#5C6878);}
+.ck-guide-badge{padding:1px 6px;border-radius:2px;background:#0a8a5f;color:#fff;letter-spacing:.05em;}
+.ck-guide-thinking{font-style:italic;color:var(--ck-text-dim,#5C6878);}
+.ck-guide-thinking::after{content:'';animation:ckguidedots 1.2s steps(4,end) infinite;}
+@keyframes ckguidedots{0%{content:'';}25%{content:'.';}50%{content:'..';}75%{content:'...';}}
+.ck-guide-ask-form{display:flex;gap:6px;align-items:flex-end;}
+.ck-guide-input{flex:1;border:1px solid var(--ck-border,#d6cfc0);border-radius:4px;padding:7px 9px;
+  font-family:inherit;font-size:13px;resize:vertical;}
+.ck-guide-input:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:-1px;}
+.ck-guide-btn,.ck-guide-send{background:var(--sc-teal,#155752);color:#fff;border:none;border-radius:4px;
+  padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
+.ck-guide-btn:hover,.ck-guide-send:hover{filter:brightness(1.1);}
+.ck-guide-btn:disabled,.ck-guide-send:disabled{opacity:.5;cursor:not-allowed;}
+.ck-guide-btn:focus-visible,.ck-guide-send:focus-visible{outline:2px solid var(--sc-navy,#0b2341);outline-offset:2px;}
+.ck-guide-readonly{background:#ece5d6;border-top:1px solid var(--ck-border,#d6cfc0);
+  padding:10px 16px;font-size:11px;line-height:1.45;color:var(--ck-text-dim,#5C6878);}
+@media print{.ck-guide-panel,.ck-guide-trigger{display:none !important;}}
+</style>
+"""
+
+_GUIDE_JS = """
+<script>
+/* PEdesk Guide sidebar — read-only. Builds the page guide from
+ * /api/guide/context and answers questions via /api/guide/ask. No
+ * uploads, no actions, no mutation, no persistence. The global CSRF
+ * fetch-patch adds X-CSRF-Token on the POST in authenticated mode. */
+(function(){
+  var panel=document.getElementById('ck-guide-panel');
+  if(!panel) return;
+  var $=function(sel){return panel.querySelector(sel);};
+  var loadedRoute=null, health=null, lastQuestion=null, lastFocus=null, pending=false;
+
+  function esc(s){var d=document.createElement('div');d.textContent=(s==null?'':String(s));return d.innerHTML;}
+  function route(){return location.pathname+location.search;}  /* omit hash */
+  function show(el){if(el)el.hidden=false;}
+  function hide(el){if(el)el.hidden=true;}
+
+  function setListItems(host, items, emptyMsg){
+    if(!host)return;
+    var vals=(items||[]).filter(function(x){return x&&String(x).trim();});
+    if(!vals.length){host.innerHTML='<p class="ck-guide-muted">'+esc(emptyMsg)+'</p>';return;}
+    host.innerHTML='<ul class="ck-guide-list">'+vals.map(function(v){
+      return '<li>'+esc(v)+'</li>';}).join('')+'</ul>';
+  }
+
+  function renderContext(d){
+    $('[data-ck-guide-page-title]').textContent=(d.page_context&&d.page_context.title)||'PEdesk Guide';
+    var q=$('[data-ck-guide-quality]');
+    q.textContent=d.context_quality||''; q.setAttribute('data-q',d.context_quality||'');
+    if(d.context_quality){show(q);}else{hide(q);}
+    $('[data-ck-guide-route]').textContent=d.normalized_route||'';
+    var pc=d.page_context;
+    var ov=$('[data-ck-guide-overview]');
+    if(pc){
+      ov.innerHTML=
+        '<p>'+esc(pc.short_description)+'</p>'+
+        (pc.primary_purpose?'<p><span class="ck-guide-item-label">Purpose. </span>'+esc(pc.primary_purpose)+'</p>':'')+
+        (pc.why_it_matters?'<p><span class="ck-guide-item-label">Why it matters. </span>'+esc(pc.why_it_matters)+'</p>':'');
+    } else {
+      ov.innerHTML='<p class="ck-guide-muted">'+esc(d.fallback_message||'No documented context for this page yet.')+'</p>';
+    }
+    /* metrics */
+    var mh=$('[data-ck-guide-metrics]'), ms=d.metric_contexts||[];
+    if(!ms.length){mh.innerHTML='<p class="ck-guide-muted">No metric context has been linked for this page yet.</p>';}
+    else{mh.innerHTML=ms.map(function(m){
+      var f=(m.formula&&m.formula!=='Needs source documentation.')?'<div class="ck-guide-item-sub">Formula: '+esc(m.formula)+'</div>':'';
+      var cav=(m.caveats&&m.caveats.length)?'<div class="ck-guide-caveat">Caveats: '+esc(m.caveats.join('; '))+'</div>':'';
+      return '<div class="ck-guide-item"><div class="ck-guide-item-label">'+esc(m.label)+'</div>'+
+        '<div>'+esc(m.definition)+'</div>'+f+
+        (m.why_it_matters?'<div class="ck-guide-caveat">'+esc(m.why_it_matters)+'</div>':'')+cav+'</div>';
+    }).join('');}
+    /* data sources */
+    var sh=$('[data-ck-guide-sources]'), ss=d.data_source_contexts||[];
+    if(!ss.length){sh.innerHTML='<p class="ck-guide-muted">No data source context has been linked for this page yet.</p>';}
+    else{sh.innerHTML=ss.map(function(s){
+      var lim=(s.limitations&&s.limitations.length)?'<div class="ck-guide-caveat">Limitations: '+esc(s.limitations.join('; '))+'</div>':'';
+      return '<div class="ck-guide-item"><div class="ck-guide-item-label">'+esc(s.label)+
+        '</div><div class="ck-guide-item-sub">'+esc(s.source_type)+' &middot; '+esc(s.update_cadence)+
+        ' &middot; lag '+esc(s.freshness_lag)+'</div><div>'+esc(s.description)+'</div>'+lim+'</div>';
+    }).join('');}
+    /* limitations: page + known + missing notes */
+    var lim=[];
+    if(pc&&pc.limitations)lim=lim.concat(pc.limitations);
+    if(d.known_limitations)lim=lim.concat(d.known_limitations);
+    if(d.missing_context_notes)lim=lim.concat(d.missing_context_notes);
+    var seen={}; lim=lim.filter(function(x){if(!x||seen[x])return false;seen[x]=1;return true;});
+    setListItems($('[data-ck-guide-limitations]'), lim, 'No limitations documented.');
+    /* suggested questions as chips */
+    var ch=$('[data-ck-guide-suggested]'); var qs=d.suggested_questions||[];
+    ch.innerHTML=qs.map(function(x){return '<button type="button" class="ck-guide-chip">'+esc(x)+'</button>';}).join('');
+    Array.prototype.forEach.call(ch.querySelectorAll('.ck-guide-chip'),function(b){
+      b.addEventListener('click',function(){var inp=$('[data-ck-guide-input]');inp.value=b.textContent;inp.focus();});
+    });
+  }
+
+  function applyHealth(h){
+    var stateEl=$('[data-ck-guide-ask-state]'), input=$('[data-ck-guide-input]'), send=$('[data-ck-guide-send]');
+    var askable=false, msg='';
+    if(!h){msg='Could not check the local model status.';}
+    else if(!h.enabled){msg='Local PEdesk Guide Q&A is disabled. Enable PEDESK_GUIDE_OLLAMA_ENABLED=true and run Ollama locally to ask questions.';}
+    else if(!h.reachable){msg='PEdesk Guide local model is unavailable. The page guide is still available, but question answering requires Ollama to be running.';}
+    else{askable=true;}
+    if(askable){hide(stateEl);}else{stateEl.textContent=msg;show(stateEl);}
+    input.disabled=!askable; send.disabled=!askable;
+  }
+
+  function loadContext(force){
+    if(loadedRoute===route()&&!force) return;
+    var r=route();
+    hide($('[data-ck-guide-content]')); hide($('[data-ck-guide-error]'));
+    show($('[data-ck-guide-loading]'));
+    $('[data-ck-guide-history]').innerHTML='';  /* new page session */
+    Promise.all([
+      fetch('/api/guide/context?route='+encodeURIComponent(r)).then(function(x){return x.json();}),
+      fetch('/api/guide/ollama-health').then(function(x){return x.json();}).catch(function(){return null;})
+    ]).then(function(res){
+      loadedRoute=r; health=res[1];
+      hide($('[data-ck-guide-loading]'));
+      renderContext(res[0]); applyHealth(health);
+      show($('[data-ck-guide-content]'));
+    }).catch(function(){
+      hide($('[data-ck-guide-loading]'));
+      $('[data-ck-guide-error-msg]').textContent="Couldn't load page context. Check your connection and retry.";
+      show($('[data-ck-guide-error]'));
+    });
+  }
+
+  function addHistory(q){
+    var h=$('[data-ck-guide-history]');
+    var wrap=document.createElement('div');
+    wrap.innerHTML='<div class="ck-guide-q">'+esc(q)+'</div>'+
+      '<div class="ck-guide-a"><span class="ck-guide-thinking">PEdesk Guide is answering from the page context</span></div>';
+    h.appendChild(wrap);
+    h.scrollTop=h.scrollHeight;
+    return wrap.querySelector('.ck-guide-a');
+  }
+
+  function ask(q){
+    if(pending||!q.trim())return;
+    pending=true; lastQuestion=q;
+    var send=$('[data-ck-guide-send]'); send.disabled=true;
+    var aEl=addHistory(q);
+    fetch('/api/guide/ask',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({route:route(),question:q})})
+      .then(function(resp){return resp.json().then(function(j){return {status:resp.status,body:j};});})
+      .then(function(r){
+        pending=false; send.disabled=false;
+        if(r.status===200){
+          var b=r.body;
+          var meta='<div class="ck-guide-a-meta"><span class="ck-guide-badge">read-only</span>'+
+            (b.model?'<span>'+esc(b.model)+'</span>':'')+
+            (b.context_quality?'<span>quality: '+esc(b.context_quality)+'</span>':'')+'</div>';
+          var notes=(b.missing_context_notes&&b.missing_context_notes.length)?
+            '<div class="ck-guide-caveat">Missing context: '+esc(b.missing_context_notes.join('; '))+'</div>':'';
+          aEl.textContent=b.answer||'';  /* textContent: safe + preserves text */
+          aEl.insertAdjacentHTML('beforeend', notes+meta);
+        } else if(r.status===503){
+          aEl.classList.remove('ck-guide-a');
+          aEl.innerHTML='<p class="ck-guide-muted">'+esc((r.body&&r.body.error)||'PEdesk Guide local model is unavailable.')+'</p>'+
+            '<button type="button" class="ck-guide-btn" data-ck-guide-retry-ask>Retry</button>';
+          aEl.querySelector('[data-ck-guide-retry-ask]').addEventListener('click',function(){aEl.parentNode.remove();ask(lastQuestion);});
+        } else {
+          aEl.innerHTML='<p class="ck-guide-muted">'+esc((r.body&&r.body.error)||'Something went wrong.')+'</p>'+
+            '<button type="button" class="ck-guide-btn" data-ck-guide-retry-ask>Retry</button>';
+          aEl.querySelector('[data-ck-guide-retry-ask]').addEventListener('click',function(){aEl.parentNode.remove();ask(lastQuestion);});
+        }
+        $('[data-ck-guide-history]').scrollTop=999999;
+      }).catch(function(){
+        pending=false; send.disabled=false;
+        aEl.innerHTML='<p class="ck-guide-muted">PEdesk Guide local model is unavailable.</p>'+
+          '<button type="button" class="ck-guide-btn" data-ck-guide-retry-ask>Retry</button>';
+        aEl.querySelector('[data-ck-guide-retry-ask]').addEventListener('click',function(){aEl.parentNode.remove();ask(lastQuestion);});
+      });
+  }
+
+  function open(){
+    lastFocus=document.activeElement;
+    panel.hidden=false;
+    loadContext(false);
+    var t=$('[data-ck-guide-page-title]'); if(t)t.focus();
+  }
+  function close(){
+    panel.hidden=true;
+    if(lastFocus&&lastFocus.focus)lastFocus.focus();
+  }
+
+  document.addEventListener('click',function(e){
+    var o=e.target.closest('[data-ck-guide-open]'); if(o){e.preventDefault();open();return;}
+    if(e.target.closest('[data-ck-guide-close]')){e.preventDefault();close();}
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&!panel.hidden){close();}
+  });
+  var retry=$('[data-ck-guide-retry-context]'); if(retry)retry.addEventListener('click',function(){loadContext(true);});
+  var form=$('[data-ck-guide-ask-form]');
+  if(form)form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var inp=$('[data-ck-guide-input]'); var v=inp.value; if(!v.trim())return;
+    inp.value=''; ask(v);
+  });
+})();
+</script>
+"""
+
+
 _SORT_JS = """
 <style>
 table.ck-data-table th[data-sortable]:hover{color:var(--sc-teal,#155752);}
@@ -5490,6 +5820,11 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '<span class="ck-topbar-qpill-num" data-ck-qpill-num>0</span>'
         '<span class="ck-topbar-qpill-label">open Qs</span>'
         '</a>'
+        # PEdesk Guide trigger — opens the read-only context sidebar. The
+        # panel + behavior are injected at shell level (see _GUIDE_*).
+        '<button class="ck-guide-trigger" type="button" data-ck-guide-open '
+        'aria-haspopup="dialog" aria-controls="ck-guide-panel" '
+        'title="PEdesk Guide — explain this page">Guide</button>'
         '<form class="ck-search-form" action="/search" method="get" role="search">'
         '<input class="ck-search" type="search" name="q" '
         'placeholder="Search deals, hospitals, routes — ⌘K" '
@@ -5738,6 +6073,11 @@ def chartis_shell(
     extra_js_html = (
         f"<script>{extra_js}</script>" if extra_js else ""
     )
+    # PEdesk Guide sidebar rides on the global chrome only (it needs the
+    # topbar trigger). Login / forgot / bare pages don't get it.
+    guide_html = (
+        f"{_GUIDE_CSS}{_GUIDE_PANEL_HTML}{_GUIDE_JS}" if show_chrome else ""
+    )
     return (
         "<!doctype html>"
         '<html lang="en"><head>'
@@ -5770,6 +6110,7 @@ def chartis_shell(
         f"{_TABLE_BARS_JS}"
         f"{_TABLE_TOTALS_JS}"
         f"{_BARROW_HOVER_CSS}"
+        f"{guide_html}"
         f"{extra_js_html}"
         "</body></html>"
     )
