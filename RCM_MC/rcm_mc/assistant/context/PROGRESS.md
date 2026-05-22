@@ -574,3 +574,89 @@ the CSRF gate is skipped — reachable like other read endpoints.
 - Default-disabled means the endpoint returns 503 until an operator sets
   `PEDESK_GUIDE_OLLAMA_ENABLED=true` and a local Ollama is running with
   the model pulled.
+
+---
+
+# Task 6B — PEdesk Guide sidebar UI (read-only) (2026-05-22)
+
+First user-facing surface for the Guide: a closed-by-default right-side
+sidebar in the global shell that explains the current page and asks
+read-only questions. No RAG, uploads, memory, actions, tasks, exports,
+assumption editing, chat persistence, or DB writes.
+
+## Where it lives
+All in `rcm_mc/ui/_chartis_kit.py` (server-rendered HTML + a vanilla-JS
+shim, per the app's no-SPA convention):
+- A **Guide** trigger `<button data-ck-guide-open>` added to the topbar
+  (`_topbar`, in `ck-topbar-right`).
+- `_GUIDE_PANEL_HTML` — the `<aside id="ck-guide-panel" hidden role="dialog"
+  aria-label="PEdesk Guide">` with section skeletons (Overview, Key
+  metrics, Data sources, Limitations, Suggested questions, Ask) + the
+  read-only disclaimer.
+- `_GUIDE_CSS` — editorial palette only (navy head, paper body, teal
+  accents; reused `--sc-navy`/`--sc-teal`/`--ck-*` vars; quality-badge
+  colors are the existing semantic positive/warning/negative).
+- `_GUIDE_JS` — vanilla shim: opens/closes (Esc + close button, focus
+  save/restore), fetches `/api/guide/context?route=` + `/api/guide/
+  ollama-health` on open, renders sections, manages the ask flow.
+- Injected into `chartis_shell` **only when `show_chrome`** (so login /
+  forgot / bare pages don't get it).
+
+## Behavior
+- Closed by default (`hidden`). Route = `location.pathname +
+  location.search` (hash omitted). Per-route session cache; history
+  clears on route change.
+- Ask → `POST /api/guide/ask {route, question}` via plain `fetch()`; the
+  global `_CSRF_JS` fetch-patch adds `X-CSRF-Token` in authenticated mode
+  (no separate CSRF system). Answer rendered with `textContent` (XSS-safe)
+  + `white-space:pre-wrap`; meta shows `read-only` badge, model,
+  context_quality, and missing_context_notes.
+- 20s-aware loading: a deliberate "PEdesk Guide is answering from the page
+  context…" bubble with animated ellipsis; the send button is disabled
+  while pending (no duplicate submits); the panel stays scrollable.
+- Health gating: `enabled:false` → ask disabled with the enable-it copy;
+  `enabled:true, reachable:false` (or a 503 from /ask) → "local model is
+  unavailable" copy; page guide always renders regardless.
+- Suggested questions render as chips that populate the input (simpler
+  than auto-submit).
+
+## Tests — tests/test_guide_sidebar_shell.py (12)
+Trigger present + keyboard-accessible; panel closed by default; ARIA +
+heading + close; all six sections; all three endpoints wired; route uses
+pathname+search (no hash); ask form + deliberate loading copy; disabled +
+unavailable copy; read-only copy; no upload/`type=file`/multipart and no
+mutation-form `action=` in the panel; CSRF-safe plain `fetch()` (no
+home-rolled CSRF); absent on bare (`show_chrome=False`) pages.
+
+## Commands + results
+- `validate_page_context_coverage` → PASS (exit 0).
+- `validate_guide_context_quality` → PASS (exit 0).
+- `py_compile` on `_chartis_kit.py` + assistant/context + assistant
+  Ollama/prompt modules + server.py → clean.
+- `pytest` guide page-context / metric-data / packet / context-endpoint /
+  prompt-builder / ollama-endpoint / **sidebar-shell** / shell-intro /
+  page-titles → **76 passed**.
+- Shell-regression smoke (`test_universal_palette`, `test_command_palette`,
+  `test_hcris_xray`, `test_me_endpoint`) → 50 passed, 1 skipped.
+
+## Manual verification (live server, real gemma4:e4b)
+- `GET /portfolio` HTML contains the Guide trigger + `class="ck-guide-panel"
+  hidden` + `aria-label="PEdesk Guide"` (closed by default).
+- `/api/guide/context` for `/diligence/hcris-xray`,
+  `/diligence/risk-workbench?demo=steward`, `/portfolio`, `/methodology`
+  → all 200, all `context_quality=strong`; query-string route normalizes.
+- `/api/guide/ollama-health` → `{enabled:true, reachable:true}`.
+- Live `POST /api/guide/ask` on `/portfolio` ("Which numbers matter
+  most?") → grounded answer (Total Net Revenue, RCM health), no `<think>`,
+  `read_only:true`, ~20s.
+- Ollama disabled / unreachable → 503 + health `enabled:false` are
+  covered by the automated `test_guide_ollama_endpoint` suite.
+
+## Caveats
+- Frontend testing is server-side only (the app has no JS test harness):
+  static markup/contract is asserted; the JS-built rendering (metric/source
+  cards, answer bubbles, state toggles) is verified manually.
+- No streaming — the first version is non-streaming with the deliberate
+  loading state, as planned.
+- Session-only Q&A history (in-memory, cleared on route change / panel
+  reload); nothing persisted, no memory API called.
