@@ -885,8 +885,18 @@ def render_ic_memo(
             + '</div>'
         )
     else:
+        # Deal-context ribbon (no-print) so a reviewer can jump from the
+        # memo to any sibling analysis on the deal; hidden when the memo
+        # is printed/exported.
+        from .models_page import _model_nav
+        deal_ribbon = (
+            '<div class="no-print">'
+            + _model_nav(ccn, active="ic_memo")
+            + '</div>'
+        )
         body = (
-            f'<div class="ck-print-preview-cta">'
+            deal_ribbon
+            + f'<div class="ck-print-preview-cta">'
             f'<a href="/ic-memo/{_html.escape(ccn)}?print=1" '
             'class="ck-link">Preview print version →</a>'
             '</div>'
