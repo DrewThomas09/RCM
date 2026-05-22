@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _spend_bars_svg(cats) -> str:
@@ -234,9 +234,21 @@ def render_supply_chain(params: dict = None) -> str:
         meta=f"""GPO leverage, vendor contracts, CapEx, inventory — {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    # Lead takeaway — surface the computed savings opportunity + EV
+    # uplift, otherwise buried as KPIs #3-4 and in the bottom thesis.
+    # All figures come from compute_supply_chain().
+    lead_anchor = ck_value_anchor(
+        "SUPPLY-CHAIN SAVINGS",
+        f"${r.total_savings_opportunity_mm:,.1f}M savings opp",
+        delta=f"{r.supply_pct_revenue * 100:.1f}% of revenue",
+        opportunity=f"${r.ev_uplift_mm:,.0f}M EV uplift",
+        target=f"${r.total_supply_spend_mm:,.1f}M annual spend",
+        tone="teal",
+    )
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
+  {lead_anchor}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
