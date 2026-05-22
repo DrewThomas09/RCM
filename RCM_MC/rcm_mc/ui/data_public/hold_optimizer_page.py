@@ -383,7 +383,7 @@ def render_hold_optimizer(params: Dict[str, str]) -> str:
   font-size:12px; border-radius:3px; cursor:pointer; letter-spacing:.04em;
 }
 .ck-btn:hover { filter:brightness(1.15); }
-.opt-row { background:rgba(16,185,129,.06); }
+.opt-row { background:rgba(10,138,95,.06); }  /* editorial --ck-positive #0a8a5f, was Tailwind emerald */
 .badge-opt {
   display:inline-block; background:var(--ck-positive); color:#000;
   font-size:9px; padding:1px 5px; border-radius:2px; letter-spacing:.06em;
