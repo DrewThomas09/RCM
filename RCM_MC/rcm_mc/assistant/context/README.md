@@ -289,3 +289,28 @@ curl 'http://127.0.0.1:8080/api/guide/rag/search?q=What%20does%20denial%20rate%2
 Scope guardrail: RAG indexes only safe internal context — never secrets,
 credentials, audit logs, sessions, runtime data, or **user uploads**
 (document ingestion is a deliberate later phase).
+
+### Answer-quality evaluation (read-only quality gate)
+
+`rcm_mc/assistant/eval/guide_eval.py` runs a fixed set of representative
+questions across key routes in **packet-only** vs **RAG** mode through the
+real ask pipeline, scores each answer with read-only / honesty heuristics
+(no action-claims, no investment recommendations, admits-missing-context,
+mentions source/caveat, latency), and writes a JSONL + markdown report to
+the local (gitignored) `.pedesk_guide_eval/` folder. Needs a running
+Ollama; not a CI test (the analyzers themselves are unit-tested in
+`tests/test_guide_eval.py`).
+
+```bash
+# full matrix (9 routes x 10 questions x 2 modes)
+PEDESK_GUIDE_OLLAMA_ENABLED=true PEDESK_GUIDE_RAG_ENABLED=true \
+  .venv/bin/python -m rcm_mc.assistant.eval.guide_eval
+
+# quick subset
+PEDESK_GUIDE_OLLAMA_ENABLED=true PEDESK_GUIDE_RAG_ENABLED=true \
+  .venv/bin/python -m rcm_mc.assistant.eval.guide_eval \
+  --routes /diligence/hcris-xray --limit 4
+```
+
+The run prints a PASS/FAIL **gate**: zero action/mutation claims, zero
+final investment recommendations, `read_only` true everywhere.

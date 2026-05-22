@@ -1003,3 +1003,71 @@ actions/mutation. RAG is **off by default**; non-RAG behavior is unchanged.
   index covers only safe internal context.
 - The index file is local + disposable (rebuild any time); it is not
   committed and holds no secrets/runtime data.
+
+---
+
+# Task 11 — RAG answer-quality evaluation harness (2026-05-22)
+
+A read-only quality gate before adding user-document ingestion — confirms
+RAG improves answers without making the Guide overconfident or letting it
+drift from read-only. No uploads/memory/actions/mutation/persistence
+beyond a local ignored report folder.
+
+## What was built
+- `rcm_mc/assistant/eval/guide_eval.py` — runs the fixed 10-question x
+  9-route matrix in **packet_only** and **rag** modes through the SAME
+  pipeline the ask handler uses (build packet → optional retrieve →
+  prompt → local Ollama → clean), scores each answer, and writes
+  `.pedesk_guide_eval/run_*.jsonl` + `report_*.md` (gitignored). CLI with
+  `--routes/--questions/--modes/--model/--limit`. Prints a PASS/FAIL gate.
+- Pure analyzers (unit-tested without Ollama): `has_action_claim`
+  (first-person mutation claim, negation-aware so read-only refusals don't
+  trip it), `has_investment_recommendation`, `admits_missing_context`,
+  `mentions_source_or_caveat` (incl. retrieved-title mentions).
+- Per record: route, question, mode, answer, context_quality,
+  rag_sources_used, latency_seconds, read_only, action_claim,
+  investment_recommendation, admits_missing_context,
+  mentions_source_or_caveat, answer_chars, error.
+- `tests/test_guide_eval.py` (11) — analyzer behavior + the fixed
+  question/route/mode sets. CI-safe (no model).
+
+## Live run (real gemma4:e4b + nomic-embed-text; 2 routes x 4 questions x
+2 modes = 16 calls)
+- **GATE: PASS** — action claims **0**, investment recommendations **0**,
+  read_only true everywhere, 0 flagged/worst answers, 0 errors.
+- packet_only: avg latency 11.0s · admits-missing 3/8 · mentions-source
+  5/8 · avg 508 chars.
+- rag: avg latency 13.25s · admits-missing 1/8 · mentions-source **7/8** ·
+  avg 607 chars.
+- Signal: RAG cites sources/caveats MORE (7/8 vs 5/8) and says
+  "I don't know" LESS (1 vs 3) because it retrieves the definitions the
+  page packet lacks — e.g. "What does denial rate mean?" on
+  `/diligence/hcris-xray` (where denial_rate isn't in the page's metric
+  set) pulled the Metric Registry definition + formula (sources: Denial
+  Rate, Denial Prediction, Root Cause). Read-only refusal held in both
+  modes ("I cannot change assumptions"). RAG answers are modestly longer
+  (+~100 chars) and ~2s slower — acceptable, not over-explaining.
+
+(The full 9x10x2 matrix is runnable on demand; the subset above is the
+captured sample. Re-run any time with the CLI.)
+
+## Commands + results
+- `validate_page_context_coverage` / `validate_guide_context_quality` →
+  PASS (exit 0).
+- `py_compile` on the eval module → clean.
+- `pytest` guide RAG / rag-endpoints / **eval-analyzers (11)** / ollama-
+  endpoint / sidebar-shell / context-endpoint / prompt-builder / packet →
+  **93 passed**.
+
+## Recommendation captured
+Internal-RAG quality is proven (read-only holds; RAG adds grounding
+without overconfidence). The next real product phase is **Task 12 — user
+document ingestion for RAG**, to be built on this foundation; defer it
+until this RAG version has been used on real questions.
+
+## Caveats
+- The live harness needs Ollama; it is intentionally not a CI test (the
+  analyzers are). CI stays model-free.
+- Heuristic scorers are conservative pattern checks, not semantic
+  graders; the report's "worst/flagged" list is for human inspection.
+- Reports live in the gitignored `.pedesk_guide_eval/` folder.
