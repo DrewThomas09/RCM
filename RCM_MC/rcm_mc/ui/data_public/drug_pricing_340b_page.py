@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
 
 
 def _entities_chart(items):
@@ -255,9 +255,25 @@ def render_drug_pricing_340b(params: dict = None) -> str:
         meta=f"{r.total_covered_entities} covered entities on {platform} platform · ${r.total_drug_spend_mm:,.0f}M drug spend → ${r.total_program_savings_mm:,.0f}M ceiling savings · ${r.total_margin_mm:,.0f}M program margin at {r.program_margin_pct * 100:.1f}% · {r.audit_risk_weighted:.1f}/100 weighted audit risk",
     )
 
+    # Lead takeaway — surface the computed 340B program value (ceiling
+    # savings → program margin), otherwise buried as KPIs #3-4 and in
+    # the bottom thesis. All figures come from compute_drug_pricing_340b().
+    lead_anchor = ck_value_anchor(
+        "340B PROGRAM VALUE",
+        f"${r.total_program_savings_mm:,.0f}M ceiling savings",
+        delta=f"{r.program_margin_pct * 100:.1f}% program margin",
+        opportunity=f"${r.total_margin_mm:,.0f}M program margin",
+        target=(
+            f"${r.total_drug_spend_mm:,.0f}M spend · "
+            f"{r.total_covered_entities} entities"
+        ),
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
+  {lead_anchor}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Drug Category Savings Map</div>{svg}</div>
