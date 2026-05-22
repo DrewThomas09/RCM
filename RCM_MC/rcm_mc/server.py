@@ -2640,6 +2640,83 @@ class RCMHandler(BaseHTTPRequestHandler):
                     break
         set_workspace_mode(mode)
 
+    def _guide_context_route_param(self, parsed) -> Optional[str]:
+        """Extract the ?route= value, or None when absent/blank.
+
+        The route value may itself contain a nested query string (e.g.
+        ``route=/diligence/risk-workbench?demo=steward``); parse_qs splits
+        only on the outer ``&`` so the nested ``?...`` is preserved in the
+        value and the packet builder normalizes it away.
+        """
+        qs = urllib.parse.parse_qs(parsed.query)
+        vals = qs.get("route")
+        if not vals or not (vals[0] or "").strip():
+            return None
+        return vals[0]
+
+    def _route_guide_context(self, parsed) -> None:
+        """GET /api/guide/context?route=<route> — read-only packet JSON."""
+        from .assistant.context import (
+            build_guide_context_packet,
+            packet_to_dict,
+        )
+        route = self._guide_context_route_param(parsed)
+        if route is None:
+            return self._send_json(
+                {"error": "missing required query parameter 'route'",
+                 "code": "MISSING_ROUTE"},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+        packet = build_guide_context_packet(route)
+        return self._send_json(packet_to_dict(packet))
+
+    def _route_guide_context_debug(self, parsed) -> None:
+        """GET /guide/context-debug?route=<route> — minimal read-only HTML
+        dump of the packet JSON (debug aid; no UI polish)."""
+        import html as _html
+        import json as _json
+        from .assistant.context import (
+            build_guide_context_packet,
+            packet_to_dict,
+        )
+        from .ui._chartis_kit import chartis_shell, ck_page_title
+
+        route = self._guide_context_route_param(parsed)
+        form = (
+            '<form method="get" action="/guide/context-debug" '
+            'style="margin-bottom:16px">'
+            '<input type="text" name="route" placeholder="/diligence/hcris-xray" '
+            f'value="{_html.escape(route or "")}" '
+            'style="width:360px;padding:6px 10px;font-family:monospace">'
+            '<button type="submit" style="margin-left:8px;padding:6px 14px">'
+            'Inspect</button></form>'
+        )
+        if route is None:
+            body_inner = form + (
+                '<p>Provide a <code>?route=</code> to inspect the PEdesk '
+                'Guide context packet for a page.</p>'
+            )
+        else:
+            packet = build_guide_context_packet(route)
+            dump = _json.dumps(packet_to_dict(packet), indent=2, sort_keys=False)
+            body_inner = form + (
+                '<pre style="background:#0F1C2E;color:#FAF7F0;padding:16px;'
+                'overflow:auto;font-size:12px;border-radius:4px">'
+                f'{_html.escape(dump)}</pre>'
+            )
+        body = (
+            ck_page_title(
+                "Guide Context Debug",
+                eyebrow="PEDESK GUIDE",
+                meta="Read-only packet inspector",
+            )
+            + body_inner
+        )
+        return self._send_html(
+            chartis_shell(body, title="Guide Context Debug",
+                          active_nav="/guide/context-debug")
+        )
+
     def do_GET(self) -> None:
         if not self._auth_ok():
             return self._send_401()
@@ -2675,6 +2752,17 @@ class RCMHandler(BaseHTTPRequestHandler):
     def _do_get_inner(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
+
+        # ── PEdesk Guide context debug endpoint (read-only) ──
+        # Returns the GuideContextPacket the future (non-AI) PEdesk Guide
+        # would have for a page. Pure builder call: reads the static
+        # registries only — no model, no Ollama, no RAG, no DB writes, no
+        # task/artifact creation. Unknown routes return 200 with
+        # context_quality="missing"; a missing ?route= returns 400.
+        if path == "/api/guide/context":
+            return self._route_guide_context(parsed)
+        if path == "/guide/context-debug":
+            return self._route_guide_context_debug(parsed)
 
         if path == "/v3-status":
             # Internal campaign-progress dashboard. Reads

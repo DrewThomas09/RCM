@@ -429,3 +429,64 @@ but lack linked ids; a future pass can promote them.)
   navigation index → `unknown`; notes → `user_entered_data`.
 - No exact formulas added; model-logic summaries describe intent and point
   to the implementing module.
+
+---
+
+# Task 5 — Read-only Guide context debug endpoint (2026-05-22)
+
+Exposed the existing `GuideContextPacket` through a safe, read-only HTTP
+endpoint so the packet a future (non-AI) PEdesk Guide would have can be
+inspected. No AI / Ollama / RAG / chat / actions / DB memory — a pure
+builder call over the static registries.
+
+## Endpoint
+- **`GET /api/guide/context?route=<route>`** → JSON-safe `GuideContextPacket`.
+  - Missing/blank `route` → **HTTP 400** `{"error":..., "code":"MISSING_ROUTE"}`.
+  - Unknown route → **HTTP 200** with `context_quality="missing"` + clean
+    `fallback_message` (never a 500).
+  - Nested query strings in the route value (e.g.
+    `route=/diligence/risk-workbench?demo=steward`) are preserved by
+    `parse_qs` and normalized away by the packet builder.
+- **`GET /guide/context-debug?route=<route>`** (optional) → minimal
+  read-only HTML dump (chartis_shell + escaped `<pre>` JSON). No UI polish.
+
+## Integration point
+PEdesk has no API blueprint — it's a stdlib `http.server` `RCMHandler`
+that dispatches on `path` inside `_do_get_inner`. Added the two routes at
+the top of `_do_get_inner` and two handler methods
+(`_route_guide_context`, `_route_guide_context_debug`) plus a shared
+`_guide_context_route_param` helper. JSON is sent via the existing
+`_send_json`; the existing `do_GET` global error boundary already returns
+clean JSON (no stack traces). In single-user/open mode (no users) the
+endpoint is reachable without a session, matching other read endpoints.
+
+## Serialization
+Added `packet_to_dict(packet)` to `guide_context_packet.py` (exported
+from the package `__init__`): converts the dataclass recursively, Enums →
+`.value`, and trims to the documented response shape (page_context +
+metric_contexts + data_source_contexts subsets + suggested_questions +
+read_only_policy + known_limitations + missing_context_notes). Pure
+transform — reads nothing, mutates nothing.
+
+## Commands + results
+- `validate_page_context_coverage` → PASS (exit 0).
+- `validate_guide_context_quality` → PASS (exit 0).
+- `py_compile` on the context package + server.py → clean.
+- `pytest` page-context + metric/data + packet + endpoint suites →
+  **37 passed** (30 existing + 7 new endpoint tests).
+
+## Tests (tests/test_guide_context_endpoint.py)
+hcris-xray (200, strong, title, questions, policy, linked contexts);
+query-string normalization; dynamic /deal and /analysis routes; unknown
+route (200 + missing + fallback); missing `route` param (400, clean, no
+traceback); purity/idempotency (two identical GETs → identical JSON).
+No-mutation: PEdesk has no read-endpoint mutation-test convention, so
+purity is asserted via deterministic idempotency — the endpoint only
+calls the registry-backed packet builder.
+
+## Caveats
+- The endpoint is read-only and AI-free by construction; it neither
+  imports nor reaches any model/Ollama/RAG path.
+- The optional debug HTML reflects the user-supplied `route` — it is
+  `html.escape`d in both the input value and the JSON `<pre>` to avoid
+  reflected XSS.
