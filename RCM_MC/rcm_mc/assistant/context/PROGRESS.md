@@ -244,3 +244,92 @@ to link; intentionally not strong).
   the source supports it).
 - No exact formulas were added; model-logic summaries describe intent and
   point to the implementing module for specifics.
+
+---
+
+# Task 4B — Upgrade placeholder PageContexts from source (Priority B) (2026-05-22)
+
+Read the actual page implementations (server.py handlers, `rcm_mc/ui/`
+renderers, page docstrings, headings, table columns, KPI labels, and what
+each handler pulls) and authored conservative, source-grounded contexts
+for the Priority B sourcing / screening / diligence-interpretation pages.
+No formulas/lineage invented.
+
+## Quality distribution (packet quality over all 72 registry routes)
+- **Start (after PR #559):** strong 23 · partial 2 · placeholder 47 · missing 0
+- **End:** strong 36 · partial 3 · placeholder 33 · missing 0
+
+## Pages upgraded (all 15 Priority B routes)
+Promoted to **strong** (filled core fields + linked reliable
+metric_ids/data_source_ids): `/source`, `/screen`,
+`/predictive-screener`, `/deal-screening`, `/find-comps`,
+`/diligence/thesis-pipeline`, `/diligence/benchmarks`,
+`/diligence/root-cause`, `/diligence/value`, `/diligence/risk-workbench`,
+`/diligence/counterfactual`, `/diligence/compare`,
+`/screening/bankruptcy-survivor`.
+Upgraded to **partial** (no analytic metric/source applies, by nature):
+`/pe-intelligence` (a methodology/registry hub), `/conferences` (a
+curated reference calendar).
+Nine of these were previously `needs_validation` stubs now fully authored;
+six already had minimal manual entries that were expanded.
+
+## Conservatism calls worth noting
+- **`/predictive-screener`:** kept as model ESTIMATES from public HCRIS,
+  not observed target data; noted point estimates have no stated CI and
+  are not validated against realized outcomes (`data_confidence =
+  model_estimate`).
+- **`/pe-intelligence`:** described as a module registry / codified-judgment
+  catalog, explicitly NOT validated prediction; per-deal output lives on
+  deal routes.
+- **`/diligence/benchmarks`:** separated the target's own KPI VALUES
+  (observed from claims) from the external peer BENCHMARK bands; flagged
+  that claims are fixtures on this page.
+- **`/diligence/risk-workbench`:** flagged `?demo=steward` as a specific
+  named historical replay (Steward 2016), not a generic example, plus the
+  `?print=1` mode.
+- **`/screening/bankruptcy-survivor`:** described as deterministic
+  pattern-match SIGNAL (falsifiable structural claims + named precedent),
+  explicitly NOT a prediction/verdict; "pre-screening only."
+- **`/diligence/value`:** UNDERWRITTEN forward opportunity, NOT realized
+  value; contract/CMS rates are synthetic demo inputs.
+- **`/diligence/counterfactual`:** what-if / sensitivity ("what would
+  change the conclusion"), NOT an action recommender.
+- **`/find-comps` and `/diligence/compare`:** comparable MATCHING, not an
+  approved/governed comp set; both run on seeded/demo fixtures
+  (`/diligence/compare` → `data_confidence = demo_or_fixture`).
+- **`/source` vs `/screen` vs `/predictive-screener`:** thesis-fit ranking
+  vs metric filter vs ML estimate — none marked "predictive" beyond what
+  source supports; all on public HCRIS.
+
+## Pages still placeholder (33) — next batch (Priority C + long tail)
+Priority C examples: /library, /deals-library, /comparables, /market-rates,
+/research, /notes, /sector-momentum, /irr-dispersion, /hold-analysis,
+/comparable-outcomes, /bear-cases, /regulatory-calendar, /market-intel,
+/corpus-backtest, /backtest, /portfolio/map, /portfolio-analytics, plus
+the remaining non-priority long tail.
+
+## Pages partial / blocked
+- `/pe-intelligence`, `/conferences` stay **partial** by design — neither
+  is an analytic page with a registry metric/source to link.
+
+## Commands + results
+- `python -m rcm_mc.assistant.context.validate_page_context_coverage`
+  → PASS (exit 0).
+- `python -m rcm_mc.assistant.context.validate_guide_context_quality`
+  → PASS (exit 0): 0 invalid metric/source refs, 0 duplicate ids, 0
+  ambiguous aliases.
+- `py_compile` on the context package → clean.
+- `pytest tests/test_pedesk_guide_page_context.py
+  tests/test_pedesk_guide_metric_data_context.py
+  tests/test_pedesk_guide_context_packet.py` → **30 passed**.
+
+## Caveats
+- All Priority B upgrades are `inferred_from_page` except `/screen` and
+  `/deal-screening`, where the handler/module docstring explicitly
+  documents the behavior (`documented`).
+- `data_confidence` set honestly: fixture-driven diligence pages →
+  `mixed` (or `demo_or_fixture` for `/diligence/compare`); HCRIS sourcing →
+  `public_benchmark_data`; `/predictive-screener` → `model_estimate`;
+  methodology/reference pages → `unknown`.
+- No exact formulas added; model-logic summaries describe intent and point
+  to the implementing module.
