@@ -1177,3 +1177,31 @@ external APIs/new deps/streaming.
 No uploads, memory, actions/mutations, external APIs, new deps, model
 picker, or streaming. The page guide still works without AI; Q&A requires
 full local AI mode (Ollama + built RAG index).
+
+---
+
+# Task — Guide sidebar typography polish (2026-05-22)
+
+CSS-only. The narrow sidebar's serif headings + dense mono uppercase
+labels read awkwardly; switched the panel to a clean system-UI font and
+softened the hierarchy. No backend/endpoint/RAG/Ollama/JS/markup/scope
+changes; main-app typography untouched.
+
+- Panel font stack `--ck-guide-ui: Inter, ui-sans-serif, system-ui,
+  -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif` (system-safe;
+  **no external/Google fonts added**). Base 14px / line-height 1.55.
+- Page title 21px/600 (was Source Serif 4 18px); card titles 12px/.04em
+  UI (was JetBrains-Mono 10.5px/.12em); metric titles 15.5px/600 UI (was
+  serif); sub/meta labels 11px UI, lighter letter-spacing (were 9.5px
+  mono). Formula/route/answer-meta keep a subtle mono.
+- More breathing room (card 15×16, body 16/15/30), lighter metric
+  dividers (#ece5d6), quieter pills.
+- Behavior untouched: textContent rendering, CSRF, endpoint calls,
+  ai_ready gating, RAG source display, session history, dup-submit + stale
+  guards all unchanged.
+
+Tests: sidebar uses the system-UI font stack (title/card/metric titles),
+no `@import`/Google-fonts added by the Guide CSS; padding/closed-by-default
+/no-upload tests updated. `pytest` sidebar + guide + RAG + shell smoke →
+148 passed, 1 skipped. py_compile clean. Render-checked /app,
+/sponsor-track-record, /diligence/hcris-xray, /portfolio.
