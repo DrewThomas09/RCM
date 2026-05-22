@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _dso_trajectory_svg(bridge) -> str:
@@ -292,10 +292,25 @@ def render_working_capital(params: dict = None) -> str:
         meta=f"""AR/AP/DSO diligence for {_html.escape(sector)} — cash conversion cycle and RCM-driven FCF uplift across {hold} years — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    # Lead takeaway — surface the computed cash unlock (the load-bearing
+    # number, otherwise buried as KPI #7 and in the bottom thesis): the
+    # one-time AR cash release anchored to current DSO and the ongoing
+    # annual FCF uplift. All figures come from compute_working_capital().
+    lead_anchor = ck_value_anchor(
+        "WORKING-CAPITAL UNLOCK",
+        f"${r.total_cash_unlock_mm:,.1f}M one-time",
+        delta=f"from {b.dso_days:.0f}-day DSO",
+        opportunity=f"${r.annual_fcf_uplift_mm:,.2f}M/yr ongoing FCF",
+        target=f"${b.ar_balance_mm:,.1f}M AR tied up today",
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
   {page_title}
+
+  {lead_anchor}
 
   {form}
 
