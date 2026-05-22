@@ -10,7 +10,7 @@ from typing import Any, Dict, List
 
 from ._chartis_kit import (
     chartis_shell, ck_bar_row, ck_kpi_block, ck_next_section, ck_panel,
-    ck_section_header,
+    ck_section_header, ck_value_anchor,
 )
 from .models_page import _model_nav
 from .brand import PALETTE
@@ -150,8 +150,19 @@ def render_playbook(deal_id: str, deal_name: str, entries: List[Dict[str, Any]])
         )
 
     nav = _model_nav(deal_id, "playbook")
+    # Lead takeaway — surface the 100-day-plan value (total EBITDA
+    # impact + the equity value it creates at exit) at the top, before
+    # the KPI grid and the "What This Means" card.
+    lead_anchor = ck_value_anchor(
+        "100-DAY PLAN VALUE",
+        f"${total_impact / 1e6:.1f}M EBITDA impact",
+        delta=f"{len(entries)} initiatives",
+        opportunity=f"${total_impact * 11 / 1e6:.0f}M equity value at 11x",
+        target="100-day operational plan",
+        tone="teal",
+    )
     body = (
-        f'{nav}'
+        f'{nav}{lead_anchor}'
         f'<div class="cad-kpi-grid">'
         f'<div class="cad-kpi"><div class="cad-kpi-value">{len(entries)}</div>'
         f'<div class="cad-kpi-label">Initiatives</div></div>'
