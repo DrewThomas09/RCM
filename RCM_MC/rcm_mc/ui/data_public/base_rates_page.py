@@ -83,15 +83,24 @@ def _percentile_table(rows) -> str:
     cols = [("Metric","left"),("N","right"),("P25","right"),("P50 (Median)","right"),
             ("P75","right"),("P90","right"),("Mean","right"),("Min","right"),("Max","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
+    # Honest thin-sample flag: percentiles over fewer than this many
+    # matched deals swing on individual exits, so they're directional
+    # only — mark those N cells and footnote it rather than letting an
+    # n=4 row read as authoritatively as an n=200 row.
+    _THIN_N = 10
+    any_thin = False
     trs = []
     for i, r in enumerate(rows):
         rb = panel_alt if i % 2 == 0 else bg
         kind = _percentile_row_kind(r.metric)
         def _cell(v):
             return f'{ck_data_cell(f"""{_fmt(v, kind)}""", align="right", mono=True)}'
+        thin = r.n < _THIN_N
+        any_thin = any_thin or thin
+        n_label = f"{r.n:,} †" if thin else f"{r.n:,}"
         cells = [
             f'{ck_data_cell(f"""{_html.escape(r.metric)}""", mono=True, weight=600)}',
-            f'{ck_data_cell(f"""{r.n:,}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{n_label}""", align="right", mono=True, tone=("neg" if thin else "dim"))}',
             _cell(r.p25),
             f'{ck_data_cell(f"""{_fmt(r.p50, kind)}""", align="right", mono=True, tone="acc", weight=700)}',
             _cell(r.p75),
@@ -101,8 +110,15 @@ def _percentile_table(rows) -> str:
             _cell(r.max),
         ]
         trs.append(f'<tr>{"".join(cells)}</tr>')
+    footnote = (
+        f'<div style="font-family:var(--sc-mono,monospace);font-size:10.5px;'
+        f'color:var(--sc-warning,#b8732a);margin-top:6px;">'
+        f'† n &lt; {_THIN_N} — thin sample; percentiles are directional only, '
+        f'not a stable benchmark.</div>'
+    ) if any_thin else ""
     return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
-            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+            f'{footnote}')
 
 
 def _sector_table(rows) -> str:
