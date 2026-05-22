@@ -4801,7 +4801,14 @@ _GUIDE_JS = """
             (b.context_quality?'<span>quality: '+esc(b.context_quality)+'</span>':'')+'</div>';
           var notes=(b.missing_context_notes&&b.missing_context_notes.length)?
             '<div class="ck-guide-caveat">Missing context: '+esc(b.missing_context_notes.join('; '))+'</div>':'';
-          aEl.insertAdjacentHTML('beforeend', notes+meta);
+          /* RAG provenance: which Guide sources the answer drew on. */
+          var ragLine='';
+          if(b.rag_sources_used&&b.rag_sources_used.length){
+            var titles=b.rag_sources_used.map(function(s){return s.title;}).join(', ');
+            ragLine='<div class="ck-guide-caveat">Guide context used: '+esc(titles)+'</div>';
+          }
+          var ragWarn=b.rag_warning?'<div class="ck-guide-caveat">'+esc(b.rag_warning)+'</div>':'';
+          aEl.insertAdjacentHTML('beforeend', notes+ragLine+ragWarn+meta);
         } else if(r.status===503){
           aEl.classList.remove('ck-guide-a');
           failBubble(aEl, (r.body&&r.body.error)||'PEdesk Guide local model is unavailable.');

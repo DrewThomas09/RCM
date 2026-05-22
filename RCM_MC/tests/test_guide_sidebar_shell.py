@@ -228,6 +228,14 @@ class GuideSidebarPolishTests(unittest.TestCase):
         self.assertIn("white-space:pre-wrap", self.html)  # readable line breaks
         self.assertIn("aEl.textContent=b.answer", self.html)  # XSS-safe
 
+    def test_surfaces_rag_sources_and_warning(self):
+        # Sidebar renders RAG provenance + any rag_warning from the ask
+        # response (both escaped).
+        self.assertIn("rag_sources_used", self.html)
+        self.assertIn("Guide context used:", self.html)
+        self.assertIn("rag_warning", self.html)
+        self.assertIn("esc(b.rag_warning)", self.html)
+
 
 if __name__ == "__main__":
     unittest.main()

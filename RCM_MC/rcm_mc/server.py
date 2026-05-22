@@ -2718,34 +2718,73 @@ class RCMHandler(BaseHTTPRequestHandler):
         )
 
     def _route_guide_ollama_health(self) -> None:
-        """GET /api/guide/ollama-health — never fails the app."""
+        """GET /api/guide/ollama-health — never fails the app.
+
+        Reports Ollama + RAG operational state with a single actionable
+        suggested_fix covering disabled / unreachable / missing-model /
+        missing-index conditions."""
         from .assistant import ollama_client
+        from .assistant import rag
+        from .assistant.rag import retrieval as _rag_retrieval
+
         enabled = ollama_client.is_ollama_enabled()
         reachable = ollama_client.check_ollama_health() if enabled else False
+        installed = ollama_client.list_models() if reachable else []
+        chat_model = ollama_client.ollama_default_model()
+        embed_model = rag.rag_embed_model()
+        rag_enabled = rag.is_rag_enabled()
+        idx = _rag_retrieval.index_status()
+
+        def _model_present(name: str) -> bool:
+            # installed names may carry a :tag (e.g. nomic-embed-text:latest)
+            base = name.split(":")[0]
+            return any(m == name or m.split(":")[0] == base for m in installed)
+
+        chat_present = _model_present(chat_model) if reachable else None
+        embed_present = _model_present(embed_model) if reachable else None
+
+        # Single, ordered suggested_fix for the most blocking condition.
         if not enabled:
-            suggested_fix = ("Start PEdesk with "
-                             "PEDESK_GUIDE_OLLAMA_ENABLED=true.")
+            fix = "Start PEdesk with PEDESK_GUIDE_OLLAMA_ENABLED=true."
         elif not reachable:
-            suggested_fix = ("Start Ollama locally and confirm `ollama list` "
-                             "shows the configured model.")
+            fix = ("Start Ollama locally and confirm `ollama list` shows the "
+                   "configured model.")
+        elif chat_present is False:
+            fix = f"Pull the chat model: ollama pull {chat_model}"
+        elif rag_enabled and embed_present is False:
+            fix = f"Pull the embedding model: ollama pull {embed_model}"
+        elif rag_enabled and not idx.get("exists"):
+            fix = ("Build the local Guide RAG index with "
+                   "python -m rcm_mc.assistant.rag.index_builder")
+        elif rag_enabled and idx.get("exists") and not idx.get("embedded_count"):
+            fix = ("RAG index has no embeddings — rebuild with "
+                   "python -m rcm_mc.assistant.rag.index_builder")
         else:
-            suggested_fix = ""
+            fix = ""
+
         payload = {
             "enabled": enabled,
             "reachable": reachable,
             "base_url": ollama_client.ollama_base_url(),
-            "default_model": ollama_client.ollama_default_model(),
+            "default_model": chat_model,
+            "embed_model": embed_model,
             "timeout_seconds": ollama_client.ollama_timeout_seconds(),
-            "suggested_fix": suggested_fix,
+            "rag_enabled": rag_enabled,
+            "rag_index_path": rag.rag_index_path(),
+            "rag_index_exists": bool(idx.get("exists")),
+            "rag_chunk_count": idx.get("chunk_count", 0),
+            "rag_embedded_count": idx.get("embedded_count", 0),
+            "suggested_fix": fix,
             "required_env": {
                 "PEDESK_GUIDE_OLLAMA_ENABLED": "true",
-                "PEDESK_GUIDE_OLLAMA_MODEL": ollama_client.ollama_default_model(),
+                "PEDESK_GUIDE_OLLAMA_MODEL": chat_model,
                 "PEDESK_GUIDE_OLLAMA_BASE_URL": ollama_client.ollama_base_url(),
             },
         }
-        # Installed models only when reachable (cheap GET /api/tags).
         if reachable:
-            payload["installed_models"] = ollama_client.list_models()
+            payload["installed_models"] = installed
+            payload["chat_model_installed"] = chat_present
+            payload["embed_model_installed"] = embed_present
         return self._send_json(payload)
 
     def _route_guide_rag_search(self, parsed) -> None:
@@ -2879,20 +2918,36 @@ class RCMHandler(BaseHTTPRequestHandler):
         from .assistant import rag
         rag_context = ""
         rag_sources = []
+        rag_warning = ""
         rag_enabled = rag.is_rag_enabled()
         if rag_enabled:
-            try:
-                from .assistant.rag import retrieval as _rag_retrieval
-                from .assistant.rag import rag_prompt_context as _rag_ctx
-                results = _rag_retrieval.search(
-                    question, route=route,
-                    page_title=(pc.title if pc is not None else None),
+            from .assistant.rag import retrieval as _rag_retrieval
+            if not _rag_retrieval.index_exists():
+                rag_warning = (
+                    "RAG is enabled but the local index was not found — "
+                    "answered from page context only. Build it with "
+                    "python -m rcm_mc.assistant.rag.index_builder."
                 )
-                rag_context = _rag_ctx.format_rag_context(results)
-                rag_sources = _rag_ctx.rag_sources_used(results)
-            except Exception:  # noqa: BLE001 — RAG is supporting-only
-                rag_context = ""
-                rag_sources = []
+            else:
+                try:
+                    from .assistant.rag import rag_prompt_context as _rag_ctx
+                    results = _rag_retrieval.search(
+                        question, route=route,
+                        page_title=(pc.title if pc is not None else None),
+                    )
+                    rag_context = _rag_ctx.format_rag_context(results)
+                    rag_sources = _rag_ctx.rag_sources_used(results)
+                    if not results:
+                        rag_warning = ("RAG retrieved no matching context — "
+                                       "answered from page context only.")
+                except ollama_client.OllamaError:
+                    rag_warning = ("RAG embedding model is unavailable — "
+                                   "answered from page context only.")
+                except Exception:  # noqa: BLE001 — RAG is supporting-only
+                    rag_context = ""
+                    rag_sources = []
+                    rag_warning = ("RAG retrieval failed — answered from page "
+                                   "context only.")
 
         system_prompt = build_guide_system_prompt(packet)
         user_prompt = build_guide_user_prompt(question, packet, rag_context)
@@ -2929,6 +2984,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             "rag_enabled": rag_enabled,
             "rag_results_count": len(rag_sources),
             "rag_sources_used": rag_sources,
+            "rag_warning": rag_warning or None,
             "read_only": True,
         })
 

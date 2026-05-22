@@ -139,6 +139,53 @@ class VectorStoreTests(unittest.TestCase):
             self.assertEqual(vector_store.count_chunks(con), 1)
             con.close()
 
+    def test_search_skips_dimension_mismatched_vectors(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            con = self._store(tmp)
+            vector_store.upsert_chunk(con, self._chunk("good", "g"),
+                                      [1.0, 0.0, 0.0], "mock")
+            # Stale/other-model vector of a different dimension.
+            vector_store.upsert_chunk(con, self._chunk("bad", "b"),
+                                      [0.5, 0.5], "other")
+            con.commit()
+            results = vector_store.search_similar(con, [1.0, 0.0, 0.0], top_k=5)
+            titles = [r.title for r in results]
+            self.assertIn("good", titles)
+            self.assertNotIn("bad", titles)  # mismatched dim skipped
+            con.close()
+
+    def test_empty_index_search_returns_empty(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            con = self._store(tmp)
+            self.assertEqual(vector_store.search_similar(con, [1.0], top_k=5), [])
+            con.close()
+
+
+class IndexStatusTests(unittest.TestCase):
+    def test_missing_index_status(self):
+        from rcm_mc.assistant.rag import retrieval
+        st = retrieval.index_status(
+            os.path.join(tempfile.gettempdir(), "definitely_missing.sqlite3"))
+        self.assertFalse(st["exists"])
+        self.assertEqual(st["chunk_count"], 0)
+
+    def test_populated_index_status(self):
+        from rcm_mc.assistant.rag import retrieval
+        from rcm_mc.assistant.rag.chunking import chunk_document
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "rag.sqlite3")
+            con = vector_store.connect(path)
+            c = chunk_document(RagDocument(
+                source_id="metric:x", source_type="metric", title="X",
+                text="Metric: X", metric_id="x"))[0]
+            vector_store.upsert_chunk(con, c, [1.0, 2.0], "nomic-embed-text")
+            con.commit(); con.close()
+            st = retrieval.index_status(path)
+            self.assertTrue(st["exists"])
+            self.assertEqual(st["chunk_count"], 1)
+            self.assertEqual(st["embedded_count"], 1)
+            self.assertEqual(st["embedding_models"], ["nomic-embed-text"])
+
 
 class PromptContextTests(unittest.TestCase):
     def _results(self):
@@ -156,7 +203,12 @@ class PromptContextTests(unittest.TestCase):
         self.assertIn("Additional local Guide context", ctx)
         self.assertIn("Metric Registry — Denial Rate", ctx)
         self.assertIn("Data Source Registry — CMS HCRIS", ctx)
-        self.assertIn("current-page context above is primary", ctx)
+        self.assertIn("PRIMARY", ctx)
+        # explicit not-target-data instruction
+        self.assertIn("Do NOT treat retrieved context as target-specific", ctx)
+        # labeled with source_type + id
+        self.assertIn("[metric · denial_rate]", ctx)
+        self.assertIn("[data_source · cms_hcris]", ctx)
 
     def test_format_empty(self):
         self.assertEqual(format_rag_context([]), "")

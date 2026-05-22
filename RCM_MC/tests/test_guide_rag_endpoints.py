@@ -204,6 +204,73 @@ class OllamaHealthRichTests(unittest.TestCase):
             finally:
                 server.shutdown(); server.server_close()
 
+    def test_health_includes_rag_diagnostics(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.dict(os.environ, {"PEDESK_GUIDE_OLLAMA_ENABLED": "false"}):
+            server, port = _start(tmp)
+            try:
+                _, data = _get(port, "/api/guide/ollama-health")
+                for key in ("embed_model", "rag_enabled", "rag_index_path",
+                            "rag_index_exists", "rag_chunk_count"):
+                    self.assertIn(key, data)
+                self.assertEqual(data["embed_model"], "nomic-embed-text")
+            finally:
+                server.shutdown(); server.server_close()
+
+    def test_health_missing_index_suggests_build(self):
+        # Ollama enabled + reachable + models present, RAG enabled, but the
+        # index file is absent → suggested_fix points at index_builder.
+        missing = os.path.join(tempfile.gettempdir(), "no_such_rag_idx.sqlite3")
+        if os.path.exists(missing):
+            os.remove(missing)
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.dict(os.environ, {
+                    "PEDESK_GUIDE_OLLAMA_ENABLED": "true",
+                    "PEDESK_GUIDE_RAG_ENABLED": "true",
+                    "PEDESK_GUIDE_RAG_INDEX_PATH": missing}), \
+                mock.patch.object(ollama_client, "check_ollama_health",
+                                  return_value=True), \
+                mock.patch.object(ollama_client, "list_models",
+                                  return_value=["gemma4:e4b",
+                                                "nomic-embed-text:latest"]):
+            server, port = _start(tmp)
+            try:
+                _, data = _get(port, "/api/guide/ollama-health")
+                self.assertTrue(data["rag_enabled"])
+                self.assertFalse(data["rag_index_exists"])
+                self.assertIn("index_builder", data["suggested_fix"])
+            finally:
+                server.shutdown(); server.server_close()
+
+
+class AskMissingIndexWarningTests(unittest.TestCase):
+    def test_ask_rag_enabled_missing_index_warns_and_falls_back(self):
+        missing = os.path.join(tempfile.gettempdir(), "no_such_rag_idx2.sqlite3")
+        if os.path.exists(missing):
+            os.remove(missing)
+        with tempfile.TemporaryDirectory() as tmp, _ollama_on(), \
+                mock.patch.dict(os.environ, {
+                    "PEDESK_GUIDE_RAG_ENABLED": "true",
+                    "PEDESK_GUIDE_RAG_INDEX_PATH": missing}), \
+                mock.patch.object(ollama_client, "call_ollama_chat",
+                                  return_value="Answered from the page.") as chat:
+            server, port = _start(tmp)
+            try:
+                status, data = _post(port, {
+                    "route": "/diligence/hcris-xray",
+                    "question": "What does this page do?"})
+                self.assertEqual(status, 200)
+                self.assertTrue(data["rag_enabled"])
+                self.assertEqual(data["rag_results_count"], 0)
+                self.assertIsNotNone(data["rag_warning"])
+                self.assertIn("index_builder", data["rag_warning"])
+                self.assertTrue(data["read_only"])
+                # No retrieved-context block reached the prompt (fell back).
+                self.assertNotIn("Additional local Guide context",
+                                 chat.call_args[0][1])
+            finally:
+                server.shutdown(); server.server_close()
+
 
 if __name__ == "__main__":
     unittest.main()

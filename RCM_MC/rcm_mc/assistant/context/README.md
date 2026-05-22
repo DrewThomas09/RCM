@@ -265,6 +265,11 @@ PEDESK_GUIDE_OLLAMA_ENABLED=true PEDESK_GUIDE_RAG_ENABLED=true \
   rcm-mc serve --db p.db --port 8080
 ```
 
+**Operator scripts** (local):
+- `./scripts/build_guide_rag_index.sh` — build/refresh the index (idempotent).
+- `./scripts/check_guide_rag.sh` — validate it (counts, model consistency, test searches).
+- `GET /api/guide/ollama-health` reports `rag_enabled`, `rag_index_exists`, `rag_chunk_count`, and a `suggested_fix` (incl. "build the index" / "ollama pull …") for whatever is blocking.
+
 | Var | Default | Meaning |
 |-----|---------|---------|
 | `PEDESK_GUIDE_RAG_ENABLED` | `false` | Master switch for retrieval in `/api/guide/ask` + `/api/guide/rag/search`. |

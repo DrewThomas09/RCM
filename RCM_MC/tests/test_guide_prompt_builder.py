@@ -64,6 +64,32 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertNotIn("Based on the provided context", out)
         self.assertIn("HCRIS data may lag operations.", out)
 
+    def test_system_prompt_has_retrieved_context_rule(self):
+        sysp = build_guide_system_prompt(self.packet).lower()
+        self.assertIn("retrieved", sysp)
+        self.assertIn("primary", sysp)
+        self.assertIn("not this deal's data", sysp)
+
+    def test_user_prompt_with_rag_context_keeps_packet_primary(self):
+        rag_block = ("=== Additional local Guide context (retrieved) ===\n"
+                     "[1] Metric Registry — Denial Rate [metric · denial_rate]: "
+                     "Share of claims denied.")
+        prompt = build_guide_user_prompt(
+            "What does denial rate mean?", self.packet, rag_block)
+        # page packet still present + retrieved block appended after it
+        self.assertIn("HCRIS X-Ray", prompt)
+        self.assertIn("Additional local Guide context", prompt)
+        self.assertLess(prompt.index("HCRIS X-Ray"),
+                        prompt.index("Additional local Guide context"))
+        self.assertIn("page context is primary", prompt)
+
+    def test_user_prompt_without_rag_is_unchanged(self):
+        # Backward compatible: omitting rag_context reproduces the v1 prompt.
+        a = build_guide_user_prompt("Q?", self.packet)
+        b = build_guide_user_prompt("Q?", self.packet, "")
+        self.assertEqual(a, b)
+        self.assertNotIn("Additional local Guide context", a)
+
     def test_unknown_route_prompt_is_conservative(self):
         pkt = build_guide_context_packet("/unknown-route")
         prompt = build_guide_user_prompt("What does this page do?", pkt)
