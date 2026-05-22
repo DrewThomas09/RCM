@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _bridge_svg(bridge) -> str:
@@ -289,10 +289,27 @@ def render_value_creation_plan(params: dict = None) -> str:
         meta=f"""Post-close initiative tracking with EBITDA bridge, checkpoint milestones, category rollup — {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    # Lead takeaway — surface the computed plan net value and the EV it
+    # translates to at exit, otherwise buried as KPI #6 and in the
+    # bottom thesis. All figures come from compute_value_creation_plan().
+    lead_anchor = ck_value_anchor(
+        "VALUE CREATION PLAN",
+        f"${r.plan_net_value_mm:,.1f}M net value",
+        delta=f"{r.execution_score:.0f}/100 execution · Day {r.hold_day}",
+        opportunity=f"${r.plan_net_value_mm * 11:,.0f}M EV at 11x",
+        target=(
+            f"${r.entry_ebitda_mm:,.1f}M → "
+            f"${r.target_ebitda_mm:,.1f}M EBITDA"
+        ),
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
   {page_title}
+
+  {lead_anchor}
 
   {form}
 
