@@ -136,3 +136,77 @@ def call_ollama_chat(
     if not isinstance(content, str) or not content.strip():
         raise OllamaError("Ollama response contained no message content.")
     return content
+
+
+def embed_texts(texts: List[str], model: str) -> List[List[float]]:
+    """Embed ``texts`` with a local Ollama embedding model.
+
+    Tries the newer batch ``/api/embed`` first, falling back to the older
+    per-text ``/api/embeddings``. Raises ``OllamaError`` on unreachable
+    server, missing model, or malformed response. Does NOT gate on
+    ``is_ollama_enabled`` — the RAG layer has its own enable flag and the
+    index builder runs as a CLI.
+    """
+    if not texts:
+        return []
+    base = ollama_base_url().rstrip("/")
+
+    # 1) batch /api/embed
+    payload = json.dumps({"model": model, "input": list(texts)}).encode("utf-8")
+    req = urllib.request.Request(
+        base + "/api/embed", data=payload, method="POST",
+        headers={"Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=ollama_timeout_seconds()) as resp:
+            body = json.loads(resp.read().decode("utf-8", errors="replace"))
+        embs = body.get("embeddings")
+        if isinstance(embs, list) and len(embs) == len(texts):
+            return [[float(x) for x in e] for e in embs]
+    except urllib.error.HTTPError as exc:
+        if exc.code not in (404, 400, 405):
+            raise OllamaError(
+                f"Ollama embed returned HTTP {exc.code} from {base}."
+            ) from exc
+        # else fall through to the legacy endpoint
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        raise OllamaError(f"Ollama could not be reached at {base}.") from exc
+    except (ValueError, KeyError, TypeError) as exc:
+        raise OllamaError("Ollama embed returned a malformed response.") from exc
+
+    # 2) legacy per-text /api/embeddings
+    out: List[List[float]] = []
+    for text in texts:
+        p = json.dumps({"model": model, "prompt": text}).encode("utf-8")
+        r = urllib.request.Request(
+            base + "/api/embeddings", data=p, method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        try:
+            with urllib.request.urlopen(r, timeout=ollama_timeout_seconds()) as resp:
+                body = json.loads(resp.read().decode("utf-8", errors="replace"))
+        except urllib.error.HTTPError as exc:
+            raise OllamaError(
+                f"Ollama embed returned HTTP {exc.code} from {base}. "
+                "Is the embedding model pulled (ollama pull "
+                f"{model})?"
+            ) from exc
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            raise OllamaError(f"Ollama could not be reached at {base}.") from exc
+        emb = body.get("embedding")
+        if not isinstance(emb, list) or not emb:
+            raise OllamaError("Ollama embeddings response had no vector.")
+        out.append([float(x) for x in emb])
+    return out
+
+
+def list_models() -> List[str]:
+    """Return installed Ollama model names via GET /api/tags. [] on error."""
+    url = ollama_base_url().rstrip("/") + "/api/tags"
+    try:
+        req = urllib.request.Request(url, method="GET")
+        with urllib.request.urlopen(req, timeout=min(5, ollama_timeout_seconds())) as resp:
+            body = json.loads(resp.read().decode("utf-8", errors="replace"))
+        return [m.get("name", "") for m in (body.get("models") or []) if m.get("name")]
+    except Exception:  # noqa: BLE001 — diagnostics only, never throw
+        return []
