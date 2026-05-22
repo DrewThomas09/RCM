@@ -1595,22 +1595,22 @@ def render_ebitda_bridge(
         )
 
     # ── Navigation ──
+    # Generic deal-context navigation now comes from the standard
+    # _model_nav ribbon at the top of the page (consistent across all
+    # per-deal surfaces); this panel keeps only the bridge-specific
+    # actions that the ribbon doesn't carry.
+    from .models_page import _model_nav
+    deal_ribbon = _model_nav(ccn, active="ebitda_bridge")
     nav_inner = (
         '<p class="ck-section-body">'
         f'<form method="POST" action="/value-tracker/{_html.escape(ccn)}/freeze" class="ic-bridge-inline-form">'
         '<button type="submit" class="cad-btn cad-btn-primary">Freeze as Value Plan</button></form> '
         f'<a href="/export/bridge/{_html.escape(ccn)}" class="cad-btn">Download Excel</a> '
         f'<a href="/value-tracker/{_html.escape(ccn)}" class="cad-btn">Value Tracker</a> '
-        '<a href="/fund-learning" class="cad-btn">Fund Learning</a> '
-        f'<a href="/hospital/{_html.escape(ccn)}" class="cad-btn cad-btn-primary">Hospital Profile</a> '
-        f'<a href="/ml-insights/hospital/{_html.escape(ccn)}" class="cad-btn">ML Analysis</a> '
-        f'<a href="/models/returns/{_html.escape(ccn)}" class="cad-btn">PE Returns</a> '
-        f'<a href="/models/dcf/{_html.escape(ccn)}" class="cad-btn">DCF</a> '
-        f'<a href="/models/lbo/{_html.escape(ccn)}" class="cad-btn">LBO Model</a> '
-        '<a href="/predictive-screener" class="cad-btn">Deal Screener</a>'
+        '<a href="/fund-learning" class="cad-btn">Fund Learning</a>'
         '</p>'
     )
-    nav = ck_panel(nav_inner, title="Cross-links")
+    nav = ck_panel(nav_inner, title="Bridge actions")
 
     freshness = data_freshness_footer(
         hcris_year=2022, n_hospitals=6123,
@@ -1650,7 +1650,7 @@ def render_ebitda_bridge(
         tone="positive",
     )
     body = (
-        f'{page_title}{lead_anchor}{explainer_html}{provenance_banner}{kpis}{realization_section}{waterfall_section}'
+        f'{deal_ribbon}{page_title}{lead_anchor}{explainer_html}{provenance_banner}{kpis}{realization_section}{waterfall_section}'
         f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
         f'<div>{detail_section}{timing_section}</div>'
         f'<div>{grid_section}{covenant_section}</div></div>'
