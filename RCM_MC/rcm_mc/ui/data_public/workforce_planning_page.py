@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _role_spend_svg(inventory) -> str:
@@ -289,10 +289,27 @@ def render_workforce_planning(params: dict = None) -> str:
         meta=f"""Role inventory, hiring plan, turnover, agency reduction, labor initiatives — {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    # Lead takeaway — surface the computed labor EV impact (and the
+    # turnover cost it offsets), otherwise buried as KPIs #7-8. All
+    # figures come from compute_workforce_planning().
+    lead_anchor = ck_value_anchor(
+        "LABOR VALUE",
+        f"${r.ev_impact_from_labor_mm:,.0f}M EV impact",
+        delta=f"{r.blended_turnover_rate * 100:.1f}% blended turnover",
+        opportunity=f"${r.total_annual_turnover_cost_mm:,.1f}M annual turnover cost",
+        target=(
+            f"${r.total_labor_cost_mm:,.1f}M labor · "
+            f"{r.labor_pct_of_revenue * 100:.1f}% of rev"
+        ),
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
   {page_title}
+
+  {lead_anchor}
 
   {form}
 
