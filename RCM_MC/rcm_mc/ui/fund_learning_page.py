@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import (
     chartis_shell, ck_fmt_num, ck_fmt_pct, ck_kpi_block,
-    ck_next_section, ck_provenance_tooltip,
+    ck_next_section, ck_provenance_tooltip, ck_value_anchor,
 )
 from .brand import PALETTE
 
@@ -164,7 +164,24 @@ def render_fund_learning(db_path: str) -> str:
         eyebrow="Continue —",
         italic_word="validation",
     )
-    body = f'{kpis}{narrative}{lever_section}{flywheel}{nav}{next_up}'
+    # Lead takeaway — surface the fund's calibration signal (realized
+    # vs planned EBITDA uplift across closed deals) at the top, before
+    # the KPI grid and the lever-bias table. Tone tracks the 80%/60%
+    # realization bands.
+    _fl_tone = (
+        "positive" if accuracy.fund_realization_pct >= 0.80
+        else "warning" if accuracy.fund_realization_pct >= 0.60
+        else "negative"
+    )
+    lead_anchor = ck_value_anchor(
+        "FUND CALIBRATION",
+        f"{_fm(accuracy.total_realized)} realized",
+        delta=f"{accuracy.fund_realization_pct:.0%} of plan",
+        opportunity=f"{_fm(accuracy.total_planned)} planned uplift",
+        target=f"{accuracy.n_closed_deals} closed deals",
+        tone=_fl_tone,
+    )
+    body = f'{lead_anchor}{kpis}{narrative}{lever_section}{flywheel}{nav}{next_up}'
 
     return chartis_shell(
         body, "Fund Learning",
