@@ -4461,7 +4461,11 @@ _GUIDE_CSS = """
 .ck-guide-quality[data-q="partial"]{background:#b8732a;color:#fff;}
 .ck-guide-quality[data-q="placeholder"]{background:#8a8170;color:#fff;}
 .ck-guide-quality[data-q="missing"]{background:#b5321e;color:#fff;}
-.ck-guide-body{flex:1;overflow-y:auto;padding:14px 16px;}
+.ck-guide-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px 16px;}
+/* Layout safety: long answers / unbroken tokens (URLs, ids) must wrap,
+   never force horizontal overflow. */
+.ck-guide-panel,.ck-guide-panel *{overflow-wrap:break-word;word-break:break-word;max-width:100%;}
+.ck-guide-route{overflow-wrap:anywhere;}
 .ck-guide-loading{color:var(--ck-text-dim,#5C6878);font-style:italic;}
 .ck-guide-sec{margin-bottom:18px;}
 .ck-guide-h3{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--sc-teal,#155752);
@@ -4518,11 +4522,28 @@ _GUIDE_JS = """
   if(!panel) return;
   var $=function(sel){return panel.querySelector(sel);};
   var loadedRoute=null, health=null, lastQuestion=null, lastFocus=null, pending=false;
+  /* Stale-response protection: every ask captures reqSeq; close and
+   * route-change bump it (and abort the fetch) so a late response with a
+   * mismatched seq renders nothing. */
+  var reqSeq=0, activeAbort=null, activeTimer=null;
 
   function esc(s){var d=document.createElement('div');d.textContent=(s==null?'':String(s));return d.innerHTML;}
   function route(){return location.pathname+location.search;}  /* omit hash */
   function show(el){if(el)el.hidden=false;}
   function hide(el){if(el)el.hidden=true;}
+  function askable(){return !!(health&&health.enabled&&health.reachable);}
+
+  /* Invalidate any in-flight ask (close / route change). Bumps reqSeq so
+   * the pending response returns stale, aborts the fetch if supported,
+   * clears the slow-timer, and resets the pending/send state. */
+  function invalidateInFlight(){
+    reqSeq++;
+    if(activeAbort){try{activeAbort.abort();}catch(e){} activeAbort=null;}
+    if(activeTimer){clearTimeout(activeTimer); activeTimer=null;}
+    pending=false;
+    var send=$('[data-ck-guide-send]'); if(send) send.disabled=!askable();
+  }
+  function clearHistory(){var h=$('[data-ck-guide-history]'); if(h)h.innerHTML='';}
 
   function setListItems(host, items, emptyMsg){
     if(!host)return;
@@ -4596,9 +4617,12 @@ _GUIDE_JS = """
   function loadContext(force){
     if(loadedRoute===route()&&!force) return;
     var r=route();
+    /* Route changed (or forced reload): drop any in-flight answer and the
+     * previous page's Q&A so nothing leaks across pages. */
+    invalidateInFlight();
+    clearHistory();
     hide($('[data-ck-guide-content]')); hide($('[data-ck-guide-error]'));
     show($('[data-ck-guide-loading]'));
-    $('[data-ck-guide-history]').innerHTML='';  /* new page session */
     Promise.all([
       fetch('/api/guide/context?route='+encodeURIComponent(r)).then(function(x){return x.json();}),
       fetch('/api/guide/ollama-health').then(function(x){return x.json();}).catch(function(){return null;})
@@ -4624,41 +4648,74 @@ _GUIDE_JS = """
     return wrap.querySelector('.ck-guide-a');
   }
 
+  function failBubble(aEl, msg){
+    aEl.innerHTML='<p class="ck-guide-muted"></p>'+
+      '<button type="button" class="ck-guide-btn" data-ck-guide-retry-ask>Retry</button>';
+    aEl.querySelector('p').textContent=msg;  /* safe text */
+    aEl.querySelector('[data-ck-guide-retry-ask]').addEventListener('click',function(){
+      if(pending)return;                    /* don't stack a retry on a live request */
+      if(aEl.parentNode)aEl.parentNode.remove();
+      ask(lastQuestion);
+    });
+  }
+
   function ask(q){
+    /* Duplicate-submit guard: one request at a time. Blocks Enter,
+     * the send button, chips, and retry from firing a second request. */
     if(pending||!q.trim())return;
     pending=true; lastQuestion=q;
-    var send=$('[data-ck-guide-send]'); send.disabled=true;
+    var myseq=++reqSeq;                      /* claim this request */
+    var send=$('[data-ck-guide-send]'); if(send) send.disabled=true;
     var aEl=addHistory(q);
+    var thinkEl=aEl.querySelector('.ck-guide-thinking');
+    /* Long-response copy after 10s — only if this request is still the
+     * active one. */
+    activeTimer=setTimeout(function(){
+      if(myseq===reqSeq && thinkEl){
+        thinkEl.textContent='Local model responses can take a little while on this machine';
+      }
+    },10000);
+    var ctrl=(window.AbortController)?new AbortController():null;
+    activeAbort=ctrl;
+    function settle(){
+      if(activeTimer){clearTimeout(activeTimer); activeTimer=null;}
+      /* Stale guard: a newer request, a close, or a route change bumped
+       * reqSeq — drop this response entirely. */
+      if(myseq!==reqSeq) return false;
+      pending=false; activeAbort=null;
+      if(send) send.disabled=!askable();
+      return true;
+    }
     fetch('/api/guide/ask',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({route:route(),question:q})})
-      .then(function(resp){return resp.json().then(function(j){return {status:resp.status,body:j};});})
+      body:JSON.stringify({route:route(),question:q}),
+      signal:ctrl?ctrl.signal:undefined})
+      .then(function(resp){return resp.json().then(function(j){return {status:resp.status,body:j};},
+        function(){return {status:resp.status,body:{}};});})
       .then(function(r){
-        pending=false; send.disabled=false;
+        if(!settle())return;
         if(r.status===200){
-          var b=r.body;
+          var b=r.body||{};
+          aEl.textContent=b.answer||'';      /* textContent: XSS-safe, preserves text */
           var meta='<div class="ck-guide-a-meta"><span class="ck-guide-badge">read-only</span>'+
             (b.model?'<span>'+esc(b.model)+'</span>':'')+
             (b.context_quality?'<span>quality: '+esc(b.context_quality)+'</span>':'')+'</div>';
           var notes=(b.missing_context_notes&&b.missing_context_notes.length)?
             '<div class="ck-guide-caveat">Missing context: '+esc(b.missing_context_notes.join('; '))+'</div>':'';
-          aEl.textContent=b.answer||'';  /* textContent: safe + preserves text */
           aEl.insertAdjacentHTML('beforeend', notes+meta);
         } else if(r.status===503){
           aEl.classList.remove('ck-guide-a');
-          aEl.innerHTML='<p class="ck-guide-muted">'+esc((r.body&&r.body.error)||'PEdesk Guide local model is unavailable.')+'</p>'+
-            '<button type="button" class="ck-guide-btn" data-ck-guide-retry-ask>Retry</button>';
-          aEl.querySelector('[data-ck-guide-retry-ask]').addEventListener('click',function(){aEl.parentNode.remove();ask(lastQuestion);});
+          failBubble(aEl, (r.body&&r.body.error)||'PEdesk Guide local model is unavailable.');
         } else {
-          aEl.innerHTML='<p class="ck-guide-muted">'+esc((r.body&&r.body.error)||'Something went wrong.')+'</p>'+
-            '<button type="button" class="ck-guide-btn" data-ck-guide-retry-ask>Retry</button>';
-          aEl.querySelector('[data-ck-guide-retry-ask]').addEventListener('click',function(){aEl.parentNode.remove();ask(lastQuestion);});
+          aEl.classList.remove('ck-guide-a');
+          failBubble(aEl, (r.body&&r.body.error)||'Something went wrong. Please try again.');
         }
-        $('[data-ck-guide-history]').scrollTop=999999;
+        var h=$('[data-ck-guide-history]'); if(h)h.scrollTop=h.scrollHeight;
       }).catch(function(){
-        pending=false; send.disabled=false;
-        aEl.innerHTML='<p class="ck-guide-muted">PEdesk Guide local model is unavailable.</p>'+
-          '<button type="button" class="ck-guide-btn" data-ck-guide-retry-ask>Retry</button>';
-        aEl.querySelector('[data-ck-guide-retry-ask]').addEventListener('click',function(){aEl.parentNode.remove();ask(lastQuestion);});
+        /* Abort (from invalidateInFlight) or network error. settle()
+         * returns false on stale/abort so we never render an old error. */
+        if(!settle())return;
+        aEl.classList.remove('ck-guide-a');
+        failBubble(aEl, 'PEdesk Guide local model is unavailable.');
       });
   }
 
@@ -4669,6 +4726,10 @@ _GUIDE_JS = """
     var t=$('[data-ck-guide-page-title]'); if(t)t.focus();
   }
   function close(){
+    /* Drop any in-flight answer + the session Q&A so a late response
+     * cannot render after the panel is dismissed. */
+    invalidateInFlight();
+    clearHistory();
     panel.hidden=true;
     if(lastFocus&&lastFocus.focus)lastFocus.focus();
   }
@@ -4682,10 +4743,17 @@ _GUIDE_JS = """
   });
   var retry=$('[data-ck-guide-retry-context]'); if(retry)retry.addEventListener('click',function(){loadContext(true);});
   var form=$('[data-ck-guide-ask-form]');
-  if(form)form.addEventListener('submit',function(e){
-    e.preventDefault();
-    var inp=$('[data-ck-guide-input]'); var v=inp.value; if(!v.trim())return;
+  function submitQuestion(){
+    var inp=$('[data-ck-guide-input]'); if(!inp)return;
+    var v=inp.value; if(!v.trim()||pending)return;   /* duplicate-submit guard */
     inp.value=''; ask(v);
+  }
+  if(form)form.addEventListener('submit',function(e){e.preventDefault();submitQuestion();});
+  var input=$('[data-ck-guide-input]');
+  if(input)input.addEventListener('keydown',function(e){
+    /* Enter sends; Shift+Enter inserts a newline. The pending guard in
+     * submitQuestion/ask blocks duplicate Enter presses. */
+    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submitQuestion();}
   });
 })();
 </script>

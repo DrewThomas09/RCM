@@ -166,3 +166,67 @@ PEDESK_GUIDE_OLLAMA_ENABLED=true rcm-mc serve --db p.db --port 8080
 curl -X POST localhost:8080/api/guide/ask -H 'Content-Type: application/json' \
   -d '{"route":"/diligence/hcris-xray","question":"Where does this data come from?"}'
 ```
+
+### Guide sidebar (read-only)
+
+A closed-by-default right-side "Guide" panel ships on every chrome page
+(injected by `chartis_shell`). It renders the deterministic page guide
+from `/api/guide/context` and, when local Ollama is enabled, answers
+read-only questions via `/api/guide/ask`. No RAG / uploads / memory /
+actions / exports / mutation. Long answers wrap safely; in-flight answers
+are dropped on close or route change; duplicate submits are blocked.
+
+## Operating local Ollama (PEdesk Guide Q&A)
+
+The Q&A is **disabled by default**. To enable it locally:
+
+```bash
+# 1. Install Ollama (https://ollama.com), then pull the models:
+ollama pull gemma4:e4b          # the Guide answer model
+ollama pull nomic-embed-text    # reserved for future use (not used by v1)
+
+# 2. Confirm the models and that the server is up:
+ollama list
+curl -s http://localhost:11434/api/tags   # should return JSON
+
+# 3. Start PEdesk with the Guide enabled:
+PEDESK_GUIDE_OLLAMA_ENABLED=true \
+PEDESK_GUIDE_OLLAMA_MODEL=gemma4:e4b \
+PEDESK_GUIDE_OLLAMA_BASE_URL=http://localhost:11434 \
+  rcm-mc serve --db p.db --port 8080
+```
+
+**Environment variables**
+
+| Var | Default | Meaning |
+|-----|---------|---------|
+| `PEDESK_GUIDE_OLLAMA_ENABLED` | `false` | Master switch. Off → Q&A disabled (page guide still works). |
+| `PEDESK_GUIDE_OLLAMA_BASE_URL` | `http://localhost:11434` | Local Ollama HTTP API base. |
+| `PEDESK_GUIDE_OLLAMA_MODEL` | `gemma4:e4b` | Default chat model. |
+| `PEDESK_GUIDE_OLLAMA_TIMEOUT_SECONDS` | `30` | Per-request timeout. |
+
+**Expected latency.** On a typical laptop, a `gemma4:e4b` answer takes
+**~20 seconds**. The sidebar shows "PEdesk Guide is answering from the
+page context…", and after 10s adds "Local model responses can take a
+little while on this machine." The send button stays disabled while a
+request is pending — this is expected, not a hang.
+
+**Disabled behavior.** With `PEDESK_GUIDE_OLLAMA_ENABLED` unset/false the
+deterministic page guide (overview, metrics, data sources, limitations,
+suggested questions) renders normally; the ask box is disabled with copy
+explaining how to enable it, and `POST /api/guide/ask` returns a clean
+503.
+
+**Troubleshooting 503 / "local model is unavailable"**
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| `/api/guide/ollama-health` → `enabled:false` | env not set | start with `PEDESK_GUIDE_OLLAMA_ENABLED=true` |
+| `enabled:true, reachable:false` | Ollama not running / wrong URL | `ollama serve`; check `PEDESK_GUIDE_OLLAMA_BASE_URL` |
+| 503 on ask, health reachable | model not pulled | `ollama pull gemma4:e4b` (verify with `ollama list`) |
+| answer never returns | request slower than timeout | raise `PEDESK_GUIDE_OLLAMA_TIMEOUT_SECONDS` |
+
+The Guide is **read-only** in every mode: it explains pages, metrics,
+data sources, model intent, and limitations, and refuses to change
+assumptions, run models, create tasks, export files, or make investment
+recommendations.
