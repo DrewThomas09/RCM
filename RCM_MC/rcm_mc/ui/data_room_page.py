@@ -318,16 +318,12 @@ def render_data_room(
             )
 
     # ── Nav ──
-    nav = ck_panel(
-        '<p class="ck-section-body">'
-        f'<a href="/hospital/{_html.escape(ccn)}" class="cad-btn cad-btn-primary">Hospital Profile</a> '
-        f'<a href="/ebitda-bridge/{_html.escape(ccn)}" class="cad-btn">EBITDA Bridge</a> '
-        f'<a href="/ic-memo/{_html.escape(ccn)}" class="cad-btn">IC Memo</a> '
-        f'<a href="/competitive-intel/{_html.escape(ccn)}" class="cad-btn">Competitive Intel</a> '
-        f'<a href="/ml-insights/hospital/{_html.escape(ccn)}" class="cad-btn">ML Analysis</a>'
-        '</p>',
-        title="Cross-links",
-    )
+    # Standard per-deal context ribbon (consistent with every other
+    # per-deal surface) replaces the bespoke cad-btn cross-links bar.
+    # Data Room isn't one of the ribbon's own slots, so no pill is
+    # highlighted — it still gives one-click access to every analysis.
+    from .models_page import _model_nav
+    deal_ribbon = _model_nav(ccn, active="")
 
     dr_styles = """
 <style>
@@ -354,8 +350,8 @@ border-bottom:1px solid var(--cad-border);font-size:12.5px;}
         italic_word="checklist",
     )
     body = (
-        f'{dr_styles}{intro}{kpis}{entry_form}{surprise_html}'
-        f'{bridge_impact}{cal_section}{history_section}{nav}{next_up}'
+        f'{deal_ribbon}{dr_styles}{intro}{kpis}{entry_form}{surprise_html}'
+        f'{bridge_impact}{cal_section}{history_section}{next_up}'
     )
 
     return chartis_shell(
