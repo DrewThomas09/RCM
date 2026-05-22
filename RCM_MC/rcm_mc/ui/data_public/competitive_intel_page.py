@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title, ck_value_anchor
 
 
 def _share_landscape_svg(competitors, our_share: float) -> str:
@@ -298,10 +298,31 @@ def render_competitive_intel(params: dict = None) -> str:
         ),
     )
 
+    # Lead takeaway — surface the computed roll-up "so what" (top
+    # share-shift dollar opportunity, anchored to our share vs the
+    # top-5 hold and the market HHI) at the top, instead of leaving it
+    # buried in the Competitive Thesis callout below the charts/tables.
+    # All figures are computed by compute_competitive_intel(); the
+    # opportunity dollar is omitted when no share-shift opp exists.
+    top_opp = r.share_opportunities[0] if r.share_opportunities else None
+    lead_anchor = ck_value_anchor(
+        "ROLL-UP OPPORTUNITY",
+        f"{r.our_market_share_est:.2f}% share",
+        delta=f"top-5 hold {r.top_5_share:.1f}%",
+        opportunity=(
+            f"${top_opp.implied_revenue_mm:,.0f}M addressable"
+            if top_opp else ""
+        ),
+        target=f"HHI {r.market_hhi:,} · intensity {r.competitive_intensity_score}/100",
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
   {page_title}
+
+  {lead_anchor}
 
   {form}
 
