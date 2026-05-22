@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 
 from ._chartis_kit import (
     chartis_shell, ck_fmt_pct, ck_kpi_block, ck_next_section,
-    ck_provenance_tooltip,
+    ck_provenance_tooltip, ck_value_anchor,
 )
 from .models_page import _model_nav
 from .brand import PALETTE
@@ -194,7 +194,24 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
         eyebrow="Continue —",
         italic_word="pressure-test",
     )
-    body = f'{nav}{kpis}{interp}{cov_section}{actions}{next_up}'
+    # Lead takeaway — surface the computed return (MOIC/IRR + the
+    # dollar gain to LPs) at the top, before the dense KPI grid and the
+    # Returns Assessment card. All figures come from the returns dict;
+    # tone tracks the IRR hurdle so the band reads green/amber/red.
+    _ret_tone = (
+        "positive" if irr > 0.20
+        else "warning" if irr > 0.15
+        else "negative"
+    )
+    lead_anchor = ck_value_anchor(
+        "PE RETURNS",
+        f"{moic:.2f}x MOIC",
+        delta=f"{irr:.1%} levered IRR",
+        opportunity=f"${(total_dist - entry_eq) / 1e6:.0f}M total gain",
+        target=f"${entry_eq / 1e6:.0f}M in → ${exit_proc / 1e6:.0f}M exit",
+        tone=_ret_tone,
+    )
+    body = f'{nav}{lead_anchor}{kpis}{interp}{cov_section}{actions}{next_up}'
 
     return chartis_shell(body, f"Returns & Covenant — {html.escape(deal_name)}",
                     active_nav="/analysis",
