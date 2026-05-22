@@ -99,5 +99,64 @@ class GuideSidebarShellTests(unittest.TestCase):
         self.assertNotIn("data-ck-guide-open", bare)
 
 
+class GuideSidebarHardeningTests(unittest.TestCase):
+    """Task 7 hardening contract (static — the JS behavior is verified
+    manually; these assert the guard constructs are present in the shim)."""
+
+    def setUp(self):
+        self.html = chartis_shell("<p>b</p>", title="T", active_nav="/portfolio")
+
+    def test_slow_response_copy_after_10s(self):
+        self.assertIn("PEdesk Guide is answering from the page context",
+                      self.html)
+        self.assertIn("Local model responses can take a little while on this "
+                      "machine", self.html)
+        self.assertIn("10000", self.html)  # 10s timer
+
+    def test_duplicate_submit_guard(self):
+        # one request at a time: pending guard blocks re-entry
+        self.assertIn("if(pending||!q.trim())return;", self.html)
+        # send button disabled while pending
+        self.assertIn("send.disabled=true", self.html)
+        # Enter sends but the guard still applies; Shift+Enter = newline
+        self.assertIn("e.key==='Enter'&&!e.shiftKey", self.html)
+
+    def test_stale_response_protection(self):
+        # request sequence token + invalidate-on-close/route-change
+        self.assertIn("reqSeq", self.html)
+        self.assertIn("invalidateInFlight", self.html)
+        self.assertIn("if(myseq!==reqSeq) return", self.html)
+        # AbortController used when available
+        self.assertIn("AbortController", self.html)
+        self.assertIn("activeAbort.abort()", self.html)
+
+    def test_route_change_and_close_reset_state(self):
+        # both close() and loadContext() clear the session Q&A history
+        self.assertIn("clearHistory()", self.html)
+        # close invalidates in-flight before hiding
+        self.assertIn("invalidateInFlight();\n    clearHistory();\n    panel.hidden=true",
+                      self.html)
+
+    def test_layout_safety_css(self):
+        self.assertIn("overflow-wrap:break-word", self.html)
+        self.assertIn("word-break:break-word", self.html)
+        self.assertIn("overflow-x:hidden", self.html)
+        # answers preserve readable whitespace
+        self.assertIn("white-space:pre-wrap", self.html)
+
+    def test_safe_rendering_no_unescaped_answer(self):
+        # answer rendered via textContent (never innerHTML of model text)
+        self.assertIn("aEl.textContent=b.answer", self.html)
+        # error text via textContent too (failBubble sets p.textContent)
+        self.assertIn("aEl.querySelector('p').textContent=msg", self.html)
+        # there is an HTML-escape helper for any interpolated dynamic text
+        self.assertIn("function esc(", self.html)
+
+    def test_failed_request_preserves_question_for_retry(self):
+        self.assertIn("lastQuestion", self.html)
+        self.assertIn("data-ck-guide-retry-ask", self.html)
+        self.assertIn("ask(lastQuestion)", self.html)
+
+
 if __name__ == "__main__":
     unittest.main()

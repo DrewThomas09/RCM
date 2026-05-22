@@ -660,3 +660,84 @@ home-rolled CSRF); absent on bare (`show_chrome=False`) pages.
   loading state, as planned.
 - Session-only Q&A history (in-memory, cleared on route change / panel
   reload); nothing persisted, no memory API called.
+
+---
+
+# Task 7 — Harden PEdesk Guide v1 (2026-05-22)
+
+Reliability + safety pass on the sidebar after the full integration. No
+new RAG / uploads / memory / actions / exports / mutation / streaming /
+model-picker / persistence — behavior hardening + docs + tests only. All
+in `rcm_mc/ui/_chartis_kit.py` (`_GUIDE_JS` / `_GUIDE_CSS`).
+
+## What changed (JS)
+- **Long-response UX:** the deliberate "PEdesk Guide is answering from the
+  page context…" bubble; after **10s** still pending it switches to
+  "Local model responses can take a little while on this machine."
+- **Duplicate-submit guard:** a single `pending` request at a time blocks
+  the send button, Enter, suggested-question chips, and retry from firing
+  a second request. Enter sends; Shift+Enter newlines. Failed requests
+  preserve the question (`lastQuestion`) for one-click retry.
+- **Stale-response protection:** each ask claims a `reqSeq` token; `close()`
+  and `loadContext()` (route change) call `invalidateInFlight()` which
+  bumps `reqSeq`, aborts the fetch via `AbortController` (when supported),
+  clears the slow-timer, and resets pending/send. A response whose
+  `myseq !== reqSeq` is dropped — old answers/errors never render after a
+  close or route change, and route-specific Q&A can't leak across pages.
+- **Route-change / close reset:** both clear the session Q&A history,
+  re-fetch context (route change refetches health too), and update the
+  title/quality/normalized-route.
+
+## What changed (CSS)
+- Layout safety: `overflow-wrap:break-word; word-break:break-word;
+  max-width:100%` across the panel; `overflow-x:hidden` on the scroll
+  body; answers keep `white-space:pre-wrap`. Long answers / unbroken
+  tokens (URLs, ids) wrap instead of forcing horizontal scroll.
+
+## Error safety
+Answers render via `aEl.textContent` (never `innerHTML` of model text);
+error/`failBubble` text via `p.textContent`; all interpolated dynamic
+strings pass through the `esc()` HTML-escaper. No stack traces / raw
+exception reprs (the server already returns clean JSON; the client shows
+short user-safe copy).
+
+## Docs
+README gained an "Operating local Ollama" section: `ollama pull
+gemma4:e4b` + `ollama pull nomic-embed-text`, the four env vars + table,
+expected ~20s latency, disabled behavior, and a 503/unreachable
+troubleshooting table.
+
+## Tests — tests/test_guide_sidebar_shell.py (now 19; +7 hardening)
+slow-response copy + 10s timer; duplicate-submit guard (pending + Enter
+no-shift); stale-response protection (`reqSeq`, `invalidateInFlight`,
+`myseq!==reqSeq`, AbortController); route-change/close reset
+(`clearHistory`); layout-safety CSS; safe rendering (`textContent` for
+answer + error, `esc()` present); failed-request retry preserves the
+question. Existing markup/contract tests retained.
+
+## Commands + results
+- `validate_page_context_coverage` → PASS (exit 0).
+- `validate_guide_context_quality` → PASS (exit 0).
+- `py_compile` on `_chartis_kit.py` + assistant/context + Ollama/prompt
+  modules + server.py → clean.
+- `pytest` guide page-context / metric-data / packet / context-endpoint /
+  prompt-builder / ollama-endpoint / sidebar-shell (19) → all green.
+- Shell-regression smoke (universal-palette, command-palette, hcris-xray,
+  me-endpoint) → pass.
+
+## Manual verification (live gemma4:e4b)
+- Trigger present + panel closed by default on `/portfolio`,
+  `/diligence/hcris-xray`, `/diligence/risk-workbench?demo=steward`,
+  `/methodology`; context loads `strong` for all four.
+- Ask works; the send button disables while pending (duplicate Enter/click
+  blocked); the deliberate loading copy shows and is still honest past 10s.
+- Read-only refusal still works ("Can you change the assumptions?" →
+  refused). Disabled-Ollama still renders the deterministic page guide.
+
+## Caveats
+- Frontend hardening is contract-tested server-side (no JS harness); the
+  live behaviors (10s copy swap, abort-on-close, no-stale-render) are
+  verified manually.
+- In this no-SPA app, an actual route change is a full page reload (fresh
+  panel), so cross-page stale-render is doubly guarded: the reload itself
+  plus the `reqSeq`/abort logic for the in-page close/supersede cases.
