@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _histogram_svg(distribution, base_case: float, median: float) -> str:
@@ -316,10 +316,25 @@ def render_scenario_mc(params: dict = None) -> str:
         meta=f"""Multi-driver MOIC distribution — revenue growth, margin expansion, exit multiple, debt paydown — {r.n_simulations:,} sims / {r.corpus_deal_count:,} corpus deals""",
     )
     
+    # Lead takeaway — surface the computed MC outcome (median MOIC, the
+    # P5→P95 band, and the probability of clearing 2x), otherwise buried
+    # mid-strip and in the bottom thesis. All figures come from
+    # compute_scenario_mc().
+    lead_anchor = ck_value_anchor(
+        "MONTE CARLO OUTCOME",
+        f"{r.median_moic:.2f}x median MOIC",
+        delta=f"P5 {r.p5_moic:.2f}x → P95 {r.p95_moic:.2f}x",
+        opportunity=f"{r.prob_moic_gt_2x * 100:.1f}% chance ≥ 2x",
+        target=f"{r.prob_loss * 100:.1f}% loss prob · {r.n_simulations:,} sims",
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
   {page_title}
+
+  {lead_anchor}
 
   {form}
 
