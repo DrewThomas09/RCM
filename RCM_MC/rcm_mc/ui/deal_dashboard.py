@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from ._chartis_kit import (
     chartis_shell, ck_eyebrow, ck_fmt_currency, ck_fmt_num,
     ck_fmt_pct, ck_kpi_block, ck_next_section, ck_page_explainer,
-    ck_page_title, ck_provenance_tooltip,
+    ck_page_title, ck_provenance_tooltip, ck_value_anchor,
 )
 from .brand import PALETTE
 
@@ -488,8 +488,24 @@ def render_deal_dashboard(
         ),
     )
 
+    # Lead takeaway — orient the partner with the deal's scale and the
+    # recoverable-EBITDA opportunity before the model grid. EV /
+    # recoverable are the same indicative estimates the KPI strip and
+    # tiles show; opportunity is suppressed when there's nothing to
+    # recover rather than shown as $0.
+    lead_anchor = ck_value_anchor(
+        "DEAL SNAPSHOT",
+        f"${ev_est / 1e6:,.0f}M EV" if ev_est > 0 else "EV —",
+        delta=f"${rev_h / 1e6:,.0f}M net revenue" if rev_h > 0 else "",
+        opportunity=(
+            f"${recoverable / 1e6:,.1f}M recoverable EBITDA"
+            if recoverable > 0 else ""
+        ),
+        target=f"~{irr_est:.0%} indicative IRR" if irr_est else "",
+        tone="teal",
+    )
     body = (
-        title_block + explainer + action_row + kpi_strip
+        title_block + lead_anchor + explainer + action_row + kpi_strip
         + model_grid + exports + next_up
     )
 
