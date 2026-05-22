@@ -359,7 +359,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
     from . import _web_components as _wc
     from ._chartis_kit import (
         chartis_shell, ck_fmt_num, ck_kpi_block, ck_page_title,
-        ck_next_section, ck_provenance_tooltip,
+        ck_next_section, ck_provenance_tooltip, ck_value_anchor,
     )
 
     deals = _gather_per_deal(db_path)
@@ -584,9 +584,26 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         + '</div>'
     )
 
+    # Lead takeaway — surface the portfolio risk posture (red-severity
+    # deals needing a decision this week) at the top, before the KPI
+    # grid and the per-deal table. Tone tracks severity counts.
+    _rs_tone = (
+        "negative" if n_red > 0
+        else "warning" if n_amber > 0
+        else "positive"
+    )
+    lead_anchor = ck_value_anchor(
+        "PORTFOLIO RISK SCAN",
+        f"{n_red} red-severity",
+        delta=f"{n_amber} amber · watch list",
+        opportunity="",
+        target=f"{len(deals)} active deals scanned",
+        tone=_rs_tone,
+    )
     inner = (
         title_block
         + explainer
+        + lead_anchor
         + kpi_strip
         + summary_strip
         + legend
