@@ -80,3 +80,7 @@ package-lock.yml
 # already live above this .gitignore and are unaffected.
 **/profiles.yml
 !**/profiles.example.yml
+
+# PEdesk Guide local RAG index (local, disposable)
+.pedesk_guide_rag.sqlite3
+*.pedesk_guide_rag.sqlite3

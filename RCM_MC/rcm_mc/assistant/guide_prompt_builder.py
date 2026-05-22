@@ -70,7 +70,15 @@ def build_guide_system_prompt(packet: GuideContextPacket) -> str:
         "8. Be concise and practical; use PE-diligence language but stay "
         "understandable.\n"
         "9. Do NOT expose chain-of-thought or internal reasoning. Do NOT emit "
-        "<think> tags. Return only the final answer.\n\n"
+        "<think> tags. Return only the final answer.\n"
+        "10. If an 'Additional local Guide context (retrieved)' block is "
+        "present, treat the current-page context as PRIMARY and those "
+        "snippets as supporting reference (definitions, methodology, related "
+        "sources). They are not this deal's data unless their own text says "
+        "so. If retrieved context conflicts with the page context, say the "
+        "source context needs review. When you use them, add a short plain-"
+        "text line like: 'Guide context used: Metric Registry — Denial "
+        "Rate.'\n\n"
         "When it fits the question, structure the answer as: What it means · "
         "Where it comes from · Why it matters · Caveats / limitations · "
         "Related PEdesk pages. Do not force this shape when it does not fit."
@@ -164,16 +172,27 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
     return "\n".join(out)
 
 
-def build_guide_user_prompt(question: str, packet: GuideContextPacket) -> str:
-    """The context block + the user's question."""
+def build_guide_user_prompt(
+    question: str, packet: GuideContextPacket, rag_context: str = ""
+) -> str:
+    """The current-page context block + optional retrieved RAG context +
+    the user's question.
+
+    ``rag_context`` (when RAG is enabled) is appended AFTER the page packet
+    so the model treats the page context as primary. Backward compatible:
+    omitting it reproduces the v1 prompt exactly.
+    """
     context = packet_to_prompt_context(packet)
     q = (question or "").strip()
+    extra = ("\n\n" + rag_context.strip()) if rag_context and rag_context.strip() else ""
     return (
         context
+        + extra
         + "\n\n=== Question ===\n"
         + q
-        + "\n\nAnswer using only the context above. If it is not enough, say "
-        "so."
+        + "\n\nAnswer using only the context above (page context is primary; "
+        "any retrieved context is supporting reference). If it is not enough, "
+        "say so."
     )
 
 

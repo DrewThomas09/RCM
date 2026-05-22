@@ -4517,6 +4517,12 @@ _GUIDE_CSS = """
 .ck-guide-chip:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:1px;}
 .ck-guide-ask-state{background:#faf6ec;border:1px solid var(--ck-border,#d6cfc0);border-radius:5px;
   padding:10px 12px;font-size:12px;line-height:1.5;color:var(--ck-text-dim,#5C6878);margin-bottom:11px;}
+.ck-guide-state-primary{font-weight:700;color:var(--sc-navy,#0b2341);}
+.ck-guide-state-secondary{margin:3px 0 6px;}
+.ck-guide-setup summary{cursor:pointer;font-size:11px;font-weight:600;color:var(--sc-teal,#155752);}
+.ck-guide-setup summary:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
+.ck-guide-setup-pre{background:#fff;border:1px solid var(--ck-border,#d6cfc0);border-radius:4px;
+  padding:7px 9px;font-family:'JetBrains Mono',monospace;font-size:10.5px;white-space:pre-wrap;margin:6px 0;}
 .ck-guide-history{display:flex;flex-direction:column;gap:12px;margin-bottom:11px;}
 .ck-guide-history:empty{margin-bottom:0;}
 .ck-guide-q{font-weight:700;color:var(--sc-navy,#0b2341);line-height:1.4;}
@@ -4686,13 +4692,26 @@ _GUIDE_JS = """
 
   function applyHealth(h){
     var stateEl=$('[data-ck-guide-ask-state]'), input=$('[data-ck-guide-input]'), send=$('[data-ck-guide-send]');
-    var askable=false, msg='';
-    if(!h){msg='Could not check the local model status. The page guide still works.';}
-    else if(!h.enabled){msg='Local PEdesk Guide Q&A is disabled. The page guide still works. To enable questions, start PEdesk with PEDESK_GUIDE_OLLAMA_ENABLED=true and run Ollama locally.';}
-    else if(!h.reachable){msg='PEdesk Guide local model is unavailable. The page guide still works, but question answering requires Ollama to be running.';}
-    else{askable=true;}
-    if(askable){hide(stateEl);}else{stateEl.textContent=msg;show(stateEl);}
+    var askable=!!(h&&h.enabled&&h.reachable);
     input.disabled=!askable; send.disabled=!askable;
+    if(askable){hide(stateEl);return;}
+    /* Plain user-facing message up top; technical setup tucked into a
+       collapsed "Setup details" disclosure so it doesn't shout env vars. */
+    var fix=(h&&h.suggested_fix)?h.suggested_fix
+      :(h&&h.enabled?'Start Ollama locally and confirm `ollama list` shows the configured model.'
+                    :'Start PEdesk with PEDESK_GUIDE_OLLAMA_ENABLED=true.');
+    var envHtml='';
+    var env=(h&&h.required_env)||null;
+    if(env){var lines=[];for(var k in env){if(env.hasOwnProperty(k))lines.push(k+'='+env[k]);}
+      if(lines.length)envHtml='<pre class="ck-guide-setup-pre">'+esc(lines.join('\\n'))+'</pre>';}
+    stateEl.innerHTML=
+      '<div class="ck-guide-state-primary">Ask PEdesk Guide is unavailable.</div>'+
+      '<div class="ck-guide-state-secondary">The page guide still works, but question answering requires local Ollama to be enabled.</div>'+
+      '<details class="ck-guide-setup"><summary>Setup details</summary>'+
+      '<p class="ck-guide-muted">'+esc(fix)+'</p>'+envHtml+
+      '<p class="ck-guide-muted">Run ollama locally, then restart with the env above '+
+      '(or use scripts/run_with_guide_ollama.sh).</p></details>';
+    show(stateEl);
   }
 
   function loadContext(force){

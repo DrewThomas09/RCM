@@ -230,3 +230,62 @@ The Guide is **read-only** in every mode: it explains pages, metrics,
 data sources, model intent, and limitations, and refuses to change
 assumptions, run models, create tasks, export files, or make investment
 recommendations.
+
+### One-command local dev
+
+```bash
+./scripts/run_with_guide_ollama.sh            # serve with Guide Q&A enabled
+PEDESK_GUIDE_RAG_ENABLED=true ./scripts/run_with_guide_ollama.sh   # + RAG
+```
+
+## Local RAG (PEdesk Guide knowledge base)
+
+`rcm_mc/assistant/rag/` adds a **local, read-only** retrieval layer so the
+Guide can answer from the whole in-repo knowledge base — page contexts,
+metric/data-source registries, the read-only policy, and curated
+methodology docs — not just the current route packet. Local embeddings
+(Ollama `nomic-embed-text`), a local SQLite vector store, brute-force
+cosine search. No cloud calls, no user uploads, no conversation memory.
+**Disabled by default.**
+
+```bash
+# 1. Pull the models (one-time):
+ollama pull gemma4:e4b
+ollama pull nomic-embed-text
+
+# 2. Build the local index (Ollama must be running):
+PEDESK_GUIDE_RAG_ENABLED=true \
+  .venv/bin/python -m rcm_mc.assistant.rag.index_builder
+
+# 3. Validate it:
+.venv/bin/python -m rcm_mc.assistant.rag.validate_rag_index
+
+# 4. Serve with Ollama + RAG enabled:
+PEDESK_GUIDE_OLLAMA_ENABLED=true PEDESK_GUIDE_RAG_ENABLED=true \
+  rcm-mc serve --db p.db --port 8080
+```
+
+| Var | Default | Meaning |
+|-----|---------|---------|
+| `PEDESK_GUIDE_RAG_ENABLED` | `false` | Master switch for retrieval in `/api/guide/ask` + `/api/guide/rag/search`. |
+| `PEDESK_GUIDE_RAG_EMBED_MODEL` | `nomic-embed-text` | Local embedding model. |
+| `PEDESK_GUIDE_RAG_INDEX_PATH` | `.pedesk_guide_rag.sqlite3` | Local index file. |
+| `PEDESK_GUIDE_RAG_TOP_K` | `5` | Chunks retrieved per query. |
+
+**Endpoints**
+- `GET /api/guide/rag/search?q=…&route=…` — read-only retrieval (no LLM).
+  Returns a clean disabled payload when RAG is off, a 503 when the local
+  embedding model is unreachable.
+- `POST /api/guide/ask` — when RAG is enabled it adds retrieved snippets to
+  the prompt as *supporting* context (the route packet stays primary) and
+  returns `rag_enabled`, `rag_results_count`, `rag_sources_used`. When RAG
+  is disabled the behavior is exactly the v1 (packet-only) answer. RAG
+  failures fall back to packet-only — they never break the answer.
+
+```bash
+curl 'http://127.0.0.1:8080/api/guide/rag/search?q=What%20does%20denial%20rate%20mean'
+```
+
+Scope guardrail: RAG indexes only safe internal context — never secrets,
+credentials, audit logs, sessions, runtime data, or **user uploads**
+(document ingestion is a deliberate later phase).

@@ -68,8 +68,11 @@ class GuideSidebarShellTests(unittest.TestCase):
                       self.html)
 
     def test_disabled_and_unavailable_copy_present(self):
-        self.assertIn("Local PEdesk Guide Q&A is disabled.", self.html)
-        self.assertIn("PEdesk Guide local model is unavailable.", self.html)
+        # The disabled/unavailable state is now built from the health
+        # payload: a plain primary line + a collapsible Setup details.
+        self.assertIn("Ask PEdesk Guide is unavailable.", self.html)
+        self.assertIn("requires local Ollama to be enabled", self.html)
+        self.assertIn("Setup details", self.html)
 
     def test_read_only_copy_present(self):
         # Now a collapsible in-body card (was a sticky footer). Whitespace-
@@ -210,12 +213,15 @@ class GuideSidebarPolishTests(unittest.TestCase):
         self.assertNotIn("Caveats: Needs source documentation.", self.html)
 
     def test_disabled_qa_copy_is_full_and_actionable(self):
-        self.assertIn(
-            "Local PEdesk Guide Q&A is disabled. The page guide still works. "
-            "To enable questions, start PEdesk with "
-            "PEDESK_GUIDE_OLLAMA_ENABLED=true and run Ollama locally.",
-            self.flat,
-        )
+        # Primary user message + secondary + collapsible technical setup.
+        self.assertIn("Ask PEdesk Guide is unavailable.", self.flat)
+        self.assertIn("The page guide still works, but question answering "
+                      "requires local Ollama to be enabled.", self.flat)
+        self.assertIn("Setup details", self.flat)
+        # The env-var detail comes from the health payload (required_env),
+        # rendered inside the collapsed disclosure.
+        self.assertIn("required_env", self.flat)
+        self.assertIn("run_with_guide_ollama.sh", self.flat)
 
     def test_answer_card_class_and_safe_render(self):
         self.assertIn(".ck-guide-a{", self.html)          # answer bubble CSS

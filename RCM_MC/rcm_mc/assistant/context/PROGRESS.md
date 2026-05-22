@@ -902,3 +902,104 @@ hardening tests retained.
   full disabled copy) and the live render is browser-verified.
 - Editorial palette only — caution card uses the existing amber token;
   no off-palette colors, no shell redesign.
+
+---
+
+# Task 10 — Ollama enablement + local RAG foundation (2026-05-22)
+
+Made local Ollama easier to enable/diagnose, and added a local read-only
+RAG layer so the Guide can answer from the whole in-repo knowledge base,
+not just the current route packet. Local only: Ollama embeddings + SQLite
+vector store + brute-force cosine. No cloud, no uploads, no memory, no
+actions/mutation. RAG is **off by default**; non-RAG behavior is unchanged.
+
+## Part A — Ollama enablement
+- `scripts/run_with_guide_ollama.sh` — one-command local dev start with the
+  Guide env vars set (+ a reachability warning). Dev-only; no prod default
+  change.
+- `GET /api/guide/ollama-health` now returns `enabled`, `reachable`,
+  `base_url`, `default_model`, `timeout_seconds`, `suggested_fix`,
+  `required_env`, and `installed_models` (when reachable).
+- Sidebar disabled state rewritten: a plain primary line ("Ask PEdesk
+  Guide is unavailable.") + secondary, with the env/setup detail tucked
+  into a collapsible **Setup details** disclosure driven by the health
+  payload.
+
+## Part B-G — RAG package (`rcm_mc/assistant/rag/`)
+- `types.py` — `RagDocument` / `RagChunk` / `RagSearchResult` + config
+  (`is_rag_enabled`, `rag_embed_model`, `rag_index_path`, `rag_top_k`).
+- `document_sources.py` — gathers page contexts, metric registry,
+  data-source registry, read-only policy, and a curated docs allow-list
+  (keyword-matched `docs/*.md`, with a secrets/sessions deny-list).
+- `chunking.py` — registry entries → one chunk; long docs → ~600-word
+  paragraph-packed chunks with overlap; sha256 content hash.
+- `embeddings.py` — `embed_texts/embed_query` via Ollama + stdlib cosine.
+- `ollama_client.embed_texts` — `/api/embed` (batch) with `/api/embeddings`
+  fallback; `list_models()`.
+- `vector_store.py` — SQLite `guide_rag_chunks`; `upsert_chunk`
+  (idempotent by content_hash), `delete_stale_chunks`, `search_similar`
+  (cosine), counts.
+- `retrieval.py` — embed query (+ route/title) → top-k chunks.
+- `rag_prompt_context.py` — `format_rag_context` (supporting block),
+  `rag_sources_used`, `citation_line`.
+- `index_builder.py` (CLI) — gather → chunk → embed new/changed → upsert →
+  prune; prints sources/chunks/embedded/skipped/pruned/errors.
+- `validate_rag_index.py` (CLI) — checks DB/chunks/embeddings + runs the
+  three required test searches.
+
+## Part H/I/J — endpoints + prompt
+- `GET /api/guide/rag/search?q=&route=` — read-only retrieval; disabled →
+  clean payload, missing `q` → 400, embeddings unreachable → 503.
+- `POST /api/guide/ask` — when `PEDESK_GUIDE_RAG_ENABLED=true`, retrieves
+  supporting snippets and adds them to the prompt (page packet stays
+  primary); response gains `rag_enabled`, `rag_results_count`,
+  `rag_sources_used`. RAG retrieval failures fall back to packet-only —
+  never break the answer. Disabled → exact v1 behavior.
+- `guide_prompt_builder` — `build_guide_user_prompt(question, packet,
+  rag_context="")` (backward compatible) + a system-prompt rule: page
+  context primary, retrieved context supporting, cite source titles, never
+  treat retrieved docs as deal data.
+
+## Config
+`PEDESK_GUIDE_RAG_ENABLED` (false) · `PEDESK_GUIDE_RAG_EMBED_MODEL`
+(nomic-embed-text) · `PEDESK_GUIDE_RAG_INDEX_PATH`
+(.pedesk_guide_rag.sqlite3) · `PEDESK_GUIDE_RAG_TOP_K` (5).
+
+## RAG source / chunk counts
+172 sources (72 page contexts · 54 metrics · 32 data sources · 1 policy ·
+13 docs) → **193 chunks**.
+
+## Commands + results
+- `validate_page_context_coverage` → PASS (exit 0); `validate_guide_context_quality`
+  → PASS (exit 0).
+- `py_compile` on assistant/context, assistant/rag, Ollama/prompt modules,
+  server.py, `_chartis_kit.py` → clean.
+- `pytest` guide page-context/metric-data/packet/context-endpoint/
+  prompt-builder/ollama-endpoint/sidebar-shell/**rag**/**rag-endpoints** +
+  shell smoke → **125 passed, 1 skipped** (23 new RAG tests; embeddings +
+  retrieval mocked).
+
+## Manual local test (real gemma4:e4b + nomic-embed-text)
+- `index_builder` → 172 sources / 193 chunks / 193 embedded / 0 errors.
+- `validate_rag_index` → PASS; test searches: "denial rate" → Metric
+  Registry — Denial Rate; "HCRIS" → Data Catalog + data-source registry;
+  "change assumptions" → policy/metric refs.
+- `GET /api/guide/ollama-health` → enabled+reachable, lists installed
+  models, timeout 60.
+- `GET /api/guide/rag/search?q=What does denial rate mean&route=/diligence/
+  hcris-xray` → top: Denial Rate (0.83), Denial Prediction, RCM doc,
+  HCRIS X-Ray.
+- `POST /api/guide/ask` on `/diligence/hcris-xray`, "What does denial rate
+  mean?" → grounded answer (definition + formula pulled from the Metric
+  Registry via RAG — context the page packet alone lacks), `rag_enabled`
+  true, 5 sources used, `read_only` true, no `<think>`.
+
+## Caveats
+- RAG is opt-in and requires a built local index; without it the Guide is
+  exactly the v1 packet-only assistant.
+- v1 retrieval is brute-force cosine over a few hundred chunks — fine at
+  this scale; an ANN index would matter only at much larger corpora.
+- No user-upload / document ingestion yet (deliberate next phase); the
+  index covers only safe internal context.
+- The index file is local + disposable (rebuild any time); it is not
+  committed and holds no secrets/runtime data.

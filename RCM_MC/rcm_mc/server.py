@@ -2722,11 +2722,86 @@ class RCMHandler(BaseHTTPRequestHandler):
         from .assistant import ollama_client
         enabled = ollama_client.is_ollama_enabled()
         reachable = ollama_client.check_ollama_health() if enabled else False
-        return self._send_json({
+        if not enabled:
+            suggested_fix = ("Start PEdesk with "
+                             "PEDESK_GUIDE_OLLAMA_ENABLED=true.")
+        elif not reachable:
+            suggested_fix = ("Start Ollama locally and confirm `ollama list` "
+                             "shows the configured model.")
+        else:
+            suggested_fix = ""
+        payload = {
             "enabled": enabled,
+            "reachable": reachable,
             "base_url": ollama_client.ollama_base_url(),
             "default_model": ollama_client.ollama_default_model(),
-            "reachable": reachable,
+            "timeout_seconds": ollama_client.ollama_timeout_seconds(),
+            "suggested_fix": suggested_fix,
+            "required_env": {
+                "PEDESK_GUIDE_OLLAMA_ENABLED": "true",
+                "PEDESK_GUIDE_OLLAMA_MODEL": ollama_client.ollama_default_model(),
+                "PEDESK_GUIDE_OLLAMA_BASE_URL": ollama_client.ollama_base_url(),
+            },
+        }
+        # Installed models only when reachable (cheap GET /api/tags).
+        if reachable:
+            payload["installed_models"] = ollama_client.list_models()
+        return self._send_json(payload)
+
+    def _route_guide_rag_search(self, parsed) -> None:
+        """GET /api/guide/rag/search?q=...&route=... — read-only retrieval.
+
+        No LLM call, no mutation. Returns a clean disabled payload when RAG
+        is off, and a clean 503 when the local embedding model is
+        unreachable."""
+        from .assistant import ollama_client
+        from .assistant import rag
+        from .assistant.rag import retrieval
+
+        qs = urllib.parse.parse_qs(parsed.query)
+        q = (qs.get("q") or [""])[0].strip()
+        route = (qs.get("route") or [""])[0].strip() or None
+        top_k = rag.rag_top_k()
+        if not rag.is_rag_enabled():
+            return self._send_json({
+                "query": q, "enabled": False, "top_k": top_k, "results": [],
+                "detail": "RAG is disabled. Set PEDESK_GUIDE_RAG_ENABLED=true "
+                          "and build the index "
+                          "(python -m rcm_mc.assistant.rag.index_builder).",
+            })
+        if not q:
+            return self._send_json(
+                {"error": "missing required query parameter 'q'",
+                 "code": "MISSING_QUERY", "enabled": True},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+        try:
+            results = retrieval.search(q, top_k=top_k, route=route)
+        except ollama_client.OllamaError:
+            return self._send_json(
+                {"error": "PEdesk Guide local embedding model is unavailable.",
+                 "detail": "Could not reach Ollama at "
+                           f"{ollama_client.ollama_base_url()} for embeddings.",
+                 "enabled": True},
+                status=HTTPStatus.SERVICE_UNAVAILABLE,
+            )
+        return self._send_json({
+            "query": q,
+            "enabled": True,
+            "top_k": top_k,
+            "results": [{
+                "title": r.title,
+                "source_type": r.source_type,
+                "route": r.route,
+                "score": r.score,
+                "snippet": r.snippet(),
+                "metadata": {
+                    "source_id": r.source_id,
+                    "metric_id": r.metric_id,
+                    "data_source_id": r.data_source_id,
+                    "section": r.section,
+                },
+            } for r in results],
         })
 
     def _route_guide_ask(self) -> None:
@@ -2797,8 +2872,30 @@ class RCMHandler(BaseHTTPRequestHandler):
                 status=HTTPStatus.SERVICE_UNAVAILABLE,
             )
 
+        pc = packet.page_context
+        # Optional RAG: retrieve supporting local context. Best-effort —
+        # if RAG is disabled or embeddings are unreachable, fall back to the
+        # exact v1 (packet-only) behavior.
+        from .assistant import rag
+        rag_context = ""
+        rag_sources = []
+        rag_enabled = rag.is_rag_enabled()
+        if rag_enabled:
+            try:
+                from .assistant.rag import retrieval as _rag_retrieval
+                from .assistant.rag import rag_prompt_context as _rag_ctx
+                results = _rag_retrieval.search(
+                    question, route=route,
+                    page_title=(pc.title if pc is not None else None),
+                )
+                rag_context = _rag_ctx.format_rag_context(results)
+                rag_sources = _rag_ctx.rag_sources_used(results)
+            except Exception:  # noqa: BLE001 — RAG is supporting-only
+                rag_context = ""
+                rag_sources = []
+
         system_prompt = build_guide_system_prompt(packet)
-        user_prompt = build_guide_user_prompt(question, packet)
+        user_prompt = build_guide_user_prompt(question, packet, rag_context)
         try:
             raw_answer = ollama_client.call_ollama_chat(
                 system_prompt, user_prompt, model=model,
@@ -2813,7 +2910,6 @@ class RCMHandler(BaseHTTPRequestHandler):
             )
 
         answer = clean_guide_answer(raw_answer)
-        pc = packet.page_context
         return self._send_json({
             "answer": answer,
             "route": packet.route,
@@ -2830,6 +2926,9 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "limitations_count": len(packet.known_limitations),
             },
             "missing_context_notes": list(packet.missing_context_notes),
+            "rag_enabled": rag_enabled,
+            "rag_results_count": len(rag_sources),
+            "rag_sources_used": rag_sources,
             "read_only": True,
         })
 
@@ -2879,6 +2978,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_guide_context(parsed)
         if path == "/api/guide/ollama-health":
             return self._route_guide_ollama_health()
+        if path == "/api/guide/rag/search":
+            return self._route_guide_rag_search(parsed)
         if path == "/guide/context-debug":
             return self._route_guide_context_debug(parsed)
 
