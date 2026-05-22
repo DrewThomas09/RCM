@@ -72,3 +72,21 @@ class CuratedBatch3bTests(unittest.TestCase):
             html = _render_any(name)
             self.assertIn("ck-illus-note", html, name)
             self.assertIn("Illustrative template", html, name)
+
+
+_BATCH3C = [
+    "dpi_tracker", "dividend_recap", "escrow_earnout", "earnout",
+    "debt_financing", "debt_service", "covenant_headroom", "refi_optimizer",
+    "direct_lending", "sellside_process", "vdr_tracker", "transition_services",
+    "pmi_integration", "pmi_playbook", "vcp_tracker", "peer_transactions",
+    "vintage_cohorts", "payer_shift", "ref_pricing", "risk_adjustment",
+    "zbb_tracker",
+]
+
+
+class CuratedBatch3cTests(unittest.TestCase):
+    def test_each_curated_page_carries_marker(self):
+        for name in _BATCH3C:
+            html = _render_any(name)
+            self.assertIn("ck-illus-note", html, name)
+            self.assertIn("Illustrative template", html, name)

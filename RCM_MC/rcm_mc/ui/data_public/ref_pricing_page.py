@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_value_anchor
 
 
 def _rate_ladder_svg(cpt_rows) -> str:
@@ -306,6 +306,7 @@ def render_ref_pricing(params: dict = None) -> str:
 <div class="ck-page-wrap">
 
   {page_title}
+  {ck_illustrative_note("figures")}
 
   {form}
 
