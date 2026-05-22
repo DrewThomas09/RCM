@@ -293,8 +293,73 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["HCRIS lags real-time and has filing "
                                 "artifacts; treat as a public baseline."],
         related_routes=["/diligence/deal", "/comparables"],
+        metric_ids=["bed_count", "operating_margin",
+                    "cost_per_adjusted_discharge", "labor_cost_ratio",
+                    "medicare_exposure"],
+        data_source_ids=["cms_hcris"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/diligence/bridge-audit", "Bridge Audit",
+        short_description="Audits the EBITDA value-creation bridge — the "
+        "levers from current to target EBITDA and how achievable each is.",
+        primary_purpose="Pressure-test the adjusted-EBITDA bridge and the "
+        "probability-weighting behind the value-creation case.",
+        why_it_matters="The bridge is the upside thesis; the audit checks it "
+        "isn't built on optimistic add-backs or unweighted gross impacts.",
+        interpretation_guidance=[
+            "Distinguish gross lever impact from probability-weighted impact.",
+            "Add-backs into adjusted EBITDA are judgmental — see the QoE.",
+        ],
+        metric_ids=["adjusted_ebitda", "ebitda_bridge",
+                    "bridge_realization_probability",
+                    "value_creation_opportunity"],
+        data_source_ids=["seller_cim", "qoe_report", "model_output",
+                         "public_transaction_corpus"],
+        related_routes=["/diligence/value", "/diligence/qoe-memo"],
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/diligence/denial-prediction", "Denial Prediction",
+        short_description="Predicts claim denials and the recoverable "
+        "revenue-cycle opportunity from the target's claims data.",
+        primary_purpose="Quantify denial-driven leakage and the RCM uplift a "
+        "buyer could capture.",
+        why_it_matters="Denial reduction is the core operational lever in "
+        "RCM-led healthcare deals.",
+        interpretation_guidance=[
+            "Uplift figures are model estimates of opportunity, not realized "
+            "improvement.",
+            "Initial vs final denial rate differ — confirm which is shown.",
+        ],
+        metric_ids=["denial_rate", "clean_claim_rate", "rcm_uplift",
+                    "collections_leakage"],
+        data_source_ids=["canonical_claims_dataset", "edi_837", "edi_835",
+                         "model_output"],
+        related_routes=["/predictive-screener", "/rcm-benchmarks"],
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/diligence/physician-eu", "Provider Economics",
+        short_description="Per-provider economics — productivity, "
+        "compensation, and contribution.",
+        primary_purpose="Show which providers/sites are economically "
+        "additive and where comp is out of line with output.",
+        why_it_matters="Physician economics drive group margin and the "
+        "retention / comp-redesign value lever.",
+        interpretation_guidance=[
+            "wRVU is work-RVU only; comp-to-collections benchmarks vary by "
+            "specialty.",
+            "Shared-cost allocation changes contribution-margin answers.",
+        ],
+        metric_ids=["wrvu", "provider_productivity",
+                    "compensation_to_collections",
+                    "provider_contribution_margin"],
+        data_source_ids=["provider_roster", "compensation_file",
+                         "monthly_actuals"],
+        related_routes=["/diligence/physician-attrition"],
+        data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
     _ctx(
         "/diligence/risk-workbench", "Risk Workbench",
@@ -316,6 +381,10 @@ _MANUAL: List[PageContext] = [
         "rate pressure.",
         why_it_matters="Payer mix is a top driver of healthcare deal risk.",
         related_routes=["/payer-intelligence", "/diligence/risk-workbench"],
+        metric_ids=["payer_mix", "commercial_payer_exposure",
+                    "medicare_exposure", "medicaid_exposure",
+                    "payer_stress_impact"],
+        data_source_ids=["payer_contracts", "model_output", "benchmark_prior"],
         data_confidence=DataConfidence.MIXED,
     ),
     _ctx(
@@ -388,6 +457,15 @@ _MANUAL: List[PageContext] = [
         short_description="How PEdesk's models and analyses are constructed.",
         primary_purpose="Document the platform's analytical approach.",
         related_routes=["/metric-glossary"],
+        # The methodology page is where the core model / risk / PE metrics
+        # are explained, so it links the model + valuation metric set.
+        metric_ids=["ev_to_ebitda", "moic", "irr", "exit_multiple",
+                    "leverage", "adjusted_ebitda", "value_creation_opportunity",
+                    "rcm_uplift", "risk_score", "confidence_tier",
+                    "data_coverage_score", "imputation_share", "model_estimate",
+                    "benchmark_percentile", "bridge_realization_probability"],
+        data_source_ids=["public_transaction_corpus", "benchmark_prior",
+                         "model_output"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
@@ -443,6 +521,12 @@ _MANUAL: List[PageContext] = [
         primary_purpose="Document what external data is loaded and where it "
         "comes from.",
         related_routes=["/methodology"],
+        # The catalog covers the platform's external/public data feeds.
+        data_source_ids=["cms_hcris", "cms_care_compare",
+                         "medicare_utilization", "sec_edgar", "fred",
+                         "irs_form_990", "public_transaction_corpus",
+                         "public_market_data", "regulatory_calendar_sources",
+                         "benchmark_prior"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
@@ -548,6 +632,26 @@ _MANUAL: List[PageContext] = [
         data_sources=["Live portfolio store."],
         related_routes=["/portfolio", "/portfolio/risk-scan"],
         data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
+    ),
+    _ctx(
+        "/portfolio/monitor", "Portfolio Monitor",
+        short_description="Ongoing monitoring of portfolio-company performance "
+        "against plan.",
+        primary_purpose="Track each portfolio company's actuals (revenue, "
+        "EBITDA) against the value-creation plan over the hold.",
+        why_it_matters="Post-close, the question shifts from 'should we buy' "
+        "to 'are we realizing the plan' — this is that read.",
+        interpretation_guidance=[
+            "Monthly actuals are unaudited and can be reclassified; read "
+            "trends, not single months.",
+            "Plan vs actual gaps are the signal — model/synergy estimates are "
+            "the plan, not realized results.",
+        ],
+        metric_ids=["ebitda", "adjusted_ebitda", "revenue", "synergy_estimate"],
+        data_source_ids=["monthly_actuals", "portfolio_snapshot",
+                         "model_output"],
+        related_routes=["/portfolio", "/portfolio/risk-scan", "/lp-update"],
+        data_confidence=DataConfidence.MIXED,
     ),
     _ctx(
         "/sponsor-track-record", "Sponsor Track Record",

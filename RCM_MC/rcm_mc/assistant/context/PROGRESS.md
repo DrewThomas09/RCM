@@ -67,3 +67,44 @@ exit-timing, covenant-stress, bridge-audit}, /engagements,
 2. Pipeline: /source, /pe-intelligence, /deal-screening.
 3. Research: /hold-analysis, /corpus-backtest, /market-intel.
 4. Portfolio: /portfolio/map, /portfolio/monitor, /portfolio-analytics.
+
+---
+
+# Task 2 — Metric & Data Source Registries (2026-05-22)
+
+- **Metrics created:** 54 (`METRIC_REGISTRY`) — financial/PE, revenue
+  cycle, provider, hospital/HCRIS, risk/model (+ `ebitda_bridge`).
+- **Data sources created:** 32 (`DATA_SOURCE_REGISTRY`) — public/external,
+  uploaded/target, internal/system, special (+ `benchmark_prior`, added
+  so the payer-stress page reference resolves).
+- **Pages connected to metric/source ids:** 8 (hcris-xray, bridge-audit,
+  payer-stress, denial-prediction, physician-eu, portfolio/monitor, data,
+  methodology). `PageContext` gained optional `metric_ids` /
+  `data_source_ids` (default empty — existing entries unaffected).
+- **Lookups:** `get_metric_context`, `get_data_source_context` —
+  case-insensitive, alias-aware, clean fallback.
+
+## Commands + results
+- `validate_page_context_coverage` → PASS (exit 0).
+- `validate_guide_context_quality` → PASS (exit 0): 0 invalid metric/
+  source refs, 0 duplicate ids, 0 ambiguous aliases. (33 metrics
+  `needs_validation` and placeholder pages are allowed, not failures.)
+- `py_compile` on the package → clean.
+- `pytest tests/test_pedesk_guide_metric_data_context.py
+  tests/test_pedesk_guide_page_context.py` → 20 passed.
+
+## Caveats
+- Most metric formulas are `needs_validation` or `inferred` by design —
+  no model-specific formula is invented; standard textbook ratios are
+  marked `inferred`.
+- Removed the ambiguous bare alias "leakage" (claimed by both
+  collections_leakage and referral_leakage) so it cleanly falls back.
+- Many `data_confidence` values are `mixed`/`unknown` pending source
+  confirmation. The `/module-index` ~150-module long-tail remains out of
+  scope for the page manifest.
+
+## Next recommended batch
+- Upgrade more diligence placeholders to documented contexts and attach
+  metric/source ids (qoe-memo, covenant-stress, exit-timing, value).
+- Confirm exact formulas from code/methodology to promote key metrics
+  from `inferred`/`needs_validation` → `documented`.

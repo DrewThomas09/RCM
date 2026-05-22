@@ -97,6 +97,10 @@ class PageContext:
     notes_for_assistant: List[str]
     last_reviewed_at: Optional[str] = None
     owner: Optional[str] = None
+    # Optional links into the metric / data-source registries (normalized
+    # ids). Default empty so every existing construction is unaffected.
+    metric_ids: List[str] = field(default_factory=list)
+    data_source_ids: List[str] = field(default_factory=list)
 
 
 # A registry maps normalized_route -> PageContext.
@@ -112,3 +116,101 @@ class PageContextLookupResult:
     normalized_route: str
     context: Optional[PageContext] = None
     fallback_message: Optional[str] = None
+
+
+# ── Metric registry types ───────────────────────────────────────────
+
+
+class FormulaConfidence(str, Enum):
+    """How well a metric's *formula* is established."""
+
+    DOCUMENTED = "documented"
+    INFERRED = "inferred"
+    NEEDS_VALIDATION = "needs_validation"
+    NOT_APPLICABLE = "not_applicable"
+
+
+@dataclass
+class MetricContext:
+    """Conservative, read-only explanation of a single metric."""
+
+    metric_id: str
+    label: str
+    aliases: List[str]
+    definition: str
+    formula: str
+    formula_confidence: FormulaConfidence
+    source_types: List[DataConfidence]
+    why_it_matters: str
+    diligence_interpretation: str
+    common_misread: str
+    caveats: List[str]
+    related_metrics: List[str]
+    related_routes: List[str]
+    source_confidence: SourceConfidence
+    data_confidence: DataConfidence
+    notes_for_assistant: List[str]
+    last_reviewed_at: Optional[str] = None
+    owner: Optional[str] = None
+
+
+@dataclass
+class MetricLookupResult:
+    found: bool
+    query: str
+    metric_id: Optional[str] = None
+    context: Optional[MetricContext] = None
+    fallback_message: Optional[str] = None
+
+
+# ── Data-source registry types ──────────────────────────────────────
+
+
+class DataSourceType(str, Enum):
+    PUBLIC_DATASET = "public_dataset"
+    UPLOADED_TARGET_DATA = "uploaded_target_data"
+    SELLER_REPORTED = "seller_reported"
+    USER_ENTERED = "user_entered"
+    INTERNAL_MODEL_OUTPUT = "internal_model_output"
+    BENCHMARK_PRIOR = "benchmark_prior"
+    DEMO_FIXTURE = "demo_fixture"
+    SYSTEM_METADATA = "system_metadata"
+    UNKNOWN = "unknown"
+
+
+@dataclass
+class DataSourceContext:
+    """Conservative, read-only explanation of a data source."""
+
+    source_id: str
+    label: str
+    description: str
+    source_type: DataSourceType
+    update_cadence: str
+    freshness_lag: str
+    used_for: List[str]
+    related_routes: List[str]
+    related_metrics: List[str]
+    strengths: List[str]
+    limitations: List[str]
+    provenance_notes: str
+    source_confidence: SourceConfidence
+    data_confidence: DataConfidence
+    notes_for_assistant: List[str]
+    aliases: List[str] = field(default_factory=list)
+    ic_ready: Optional[bool] = None  # suitable as basis for IC-ready conclusions?
+    last_reviewed_at: Optional[str] = None
+    owner: Optional[str] = None
+
+
+@dataclass
+class DataSourceLookupResult:
+    found: bool
+    query: str
+    source_id: Optional[str] = None
+    context: Optional[DataSourceContext] = None
+    fallback_message: Optional[str] = None
+
+
+VALID_FORMULA_CONFIDENCE = {c.value for c in FormulaConfidence}
+VALID_DATA_SOURCE_TYPES = {c.value for c in DataSourceType}
