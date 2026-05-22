@@ -4390,28 +4390,29 @@ _GUIDE_PANEL_HTML = """
       <button type="button" class="ck-guide-btn" data-ck-guide-retry-context>Retry</button>
     </div>
     <div class="ck-guide-content" data-ck-guide-content hidden>
-      <section class="ck-guide-sec">
-        <h3 class="ck-guide-h3">Overview</h3>
+      <section class="ck-guide-card">
+        <h3 class="ck-guide-card-title">Page overview</h3>
         <div data-ck-guide-overview></div>
       </section>
-      <section class="ck-guide-sec">
-        <h3 class="ck-guide-h3">Key metrics</h3>
+      <section class="ck-guide-card">
+        <h3 class="ck-guide-card-title">Key metrics</h3>
         <div data-ck-guide-metrics></div>
       </section>
-      <section class="ck-guide-sec">
-        <h3 class="ck-guide-h3">Data sources</h3>
+      <section class="ck-guide-card">
+        <h3 class="ck-guide-card-title">Data sources</h3>
         <div data-ck-guide-sources></div>
       </section>
-      <section class="ck-guide-sec">
-        <h3 class="ck-guide-h3">Limitations</h3>
+      <section class="ck-guide-card ck-guide-card-caution">
+        <h3 class="ck-guide-card-title">Limitations &amp; caveats</h3>
         <div data-ck-guide-limitations></div>
       </section>
-      <section class="ck-guide-sec">
-        <h3 class="ck-guide-h3">Suggested questions</h3>
+      <section class="ck-guide-card">
+        <h3 class="ck-guide-card-title">Suggested questions</h3>
+        <p class="ck-guide-hint">Tap one to drop it into the ask box.</p>
         <div class="ck-guide-chips" data-ck-guide-suggested></div>
       </section>
-      <section class="ck-guide-sec ck-guide-ask">
-        <h3 class="ck-guide-h3">Ask PEdesk Guide</h3>
+      <section class="ck-guide-card ck-guide-ask-card">
+        <h3 class="ck-guide-card-title">Ask PEdesk Guide</h3>
         <div class="ck-guide-ask-state" data-ck-guide-ask-state hidden></div>
         <div class="ck-guide-history" data-ck-guide-history aria-live="polite"></div>
         <form class="ck-guide-ask-form" data-ck-guide-ask-form>
@@ -4422,12 +4423,14 @@ _GUIDE_PANEL_HTML = """
                   data-ck-guide-send>Ask</button>
         </form>
       </section>
+      <details class="ck-guide-card ck-guide-policy">
+        <summary class="ck-guide-card-title ck-guide-policy-summary">PEdesk Guide is read-only</summary>
+        <p class="ck-guide-muted">It can explain pages, metrics, data sources,
+          model intent, and limitations. It cannot change assumptions, run
+          models, create tasks, export files, or make final investment
+          recommendations.</p>
+      </details>
     </div>
-  </div>
-  <div class="ck-guide-readonly">
-    PEdesk Guide is read-only. It can explain pages, metrics, data sources,
-    model intent, and limitations. It cannot change assumptions, run models,
-    create tasks, export files, or make final investment recommendations.
   </div>
 </aside>
 """
@@ -4461,52 +4464,85 @@ _GUIDE_CSS = """
 .ck-guide-quality[data-q="partial"]{background:#b8732a;color:#fff;}
 .ck-guide-quality[data-q="placeholder"]{background:#8a8170;color:#fff;}
 .ck-guide-quality[data-q="missing"]{background:#b5321e;color:#fff;}
-.ck-guide-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px 16px;}
+/* Scroll body — generous bottom padding so the Ask card is fully
+   visible when scrolled to the end (no sticky footer covers it). */
+.ck-guide-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px 14px 28px;}
 /* Layout safety: long answers / unbroken tokens (URLs, ids) must wrap,
    never force horizontal overflow. */
 .ck-guide-panel,.ck-guide-panel *{overflow-wrap:break-word;word-break:break-word;max-width:100%;}
 .ck-guide-route{overflow-wrap:anywhere;}
 .ck-guide-loading{color:var(--ck-text-dim,#5C6878);font-style:italic;}
-.ck-guide-sec{margin-bottom:18px;}
-.ck-guide-h3{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--sc-teal,#155752);
-  font-family:'JetBrains Mono',monospace;margin:0 0 8px;border-bottom:1px solid var(--ck-border,#d6cfc0);
-  padding-bottom:4px;}
+.ck-guide-muted{color:var(--ck-text-dim,#5C6878);}
 .ck-guide-panel p{margin:0 0 8px;line-height:1.5;}
-.ck-guide-item{margin-bottom:12px;}
-.ck-guide-item-label{font-weight:700;color:var(--sc-navy,#0b2341);}
-.ck-guide-item-sub{font-size:11px;color:var(--ck-text-dim,#5C6878);font-family:'JetBrains Mono',monospace;}
-.ck-guide-caveat{font-size:12px;color:var(--ck-text-dim,#5C6878);}
-.ck-guide-muted{color:var(--ck-text-dim,#5C6878);font-style:italic;}
+.ck-guide-panel p:last-child{margin-bottom:0;}
+/* Card system */
+.ck-guide-card{background:#fff;border:1px solid var(--ck-border,#d6cfc0);border-radius:7px;
+  padding:13px 14px;margin-bottom:12px;}
+.ck-guide-card-caution{background:#faf6ec;border-left:3px solid var(--sc-amber,#b8732a);}
+.ck-guide-ask-card{border-left:3px solid var(--sc-teal,#155752);}
+.ck-guide-card-title{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--sc-teal,#155752);font-family:'JetBrains Mono',monospace;margin:0 0 9px;font-weight:700;}
+.ck-guide-hint{font-size:11px;color:var(--ck-text-dim,#5C6878);margin:-2px 0 8px;font-style:italic;}
+/* Labeled sub-rows (overview, metric why/formula) */
+.ck-guide-sub{margin:0 0 6px;line-height:1.5;}
+.ck-guide-sub:last-child{margin-bottom:0;}
+.ck-guide-sub-label{display:block;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ck-text-dim,#5C6878);font-family:'JetBrains Mono',monospace;margin-bottom:1px;}
+.ck-guide-sub code{font-family:'JetBrains Mono',monospace;font-size:12px;}
+/* Metric / source mini-cards */
+.ck-guide-metric{border-top:1px solid var(--ck-border,#d6cfc0);padding:11px 0 1px;}
+.ck-guide-metric:first-child{border-top:none;padding-top:2px;}
+.ck-guide-metric-title{font-family:'Source Serif 4',Georgia,serif;font-weight:600;font-size:14px;
+  color:var(--sc-navy,#0b2341);margin-bottom:3px;}
+.ck-guide-metric-def{line-height:1.5;margin-bottom:6px;}
+.ck-guide-meta-grid{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0 0 7px;font-size:12px;}
+.ck-guide-meta-k{font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ck-text-dim,#5C6878);
+  font-family:'JetBrains Mono',monospace;align-self:center;}
+.ck-guide-meta-v{color:var(--sc-navy,#0b2341);}
+.ck-guide-caveat{font-size:12px;color:var(--ck-text-dim,#5C6878);margin-top:5px;}
+.ck-guide-pill{display:inline-block;font-size:10px;letter-spacing:.04em;background:#ece5d6;
+  color:var(--ck-text-dim,#5C6878);border-radius:10px;padding:2px 9px;margin-top:4px;}
+.ck-guide-more-btn{margin-top:10px;background:transparent;border:1px solid var(--ck-border,#d6cfc0);
+  border-radius:4px;color:var(--sc-teal,#155752);font-size:11px;font-weight:600;padding:5px 11px;
+  cursor:pointer;font-family:inherit;}
+.ck-guide-more-btn:hover{border-color:var(--sc-teal,#155752);}
+.ck-guide-more-btn:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:1px;}
 .ck-guide-list{margin:0;padding-left:18px;}
-.ck-guide-list li{margin-bottom:4px;line-height:1.45;}
-.ck-guide-chips{display:flex;flex-wrap:wrap;gap:6px;}
-.ck-guide-chip{background:#fff;border:1px solid var(--ck-border,#d6cfc0);border-radius:14px;
-  padding:5px 11px;font-size:12px;cursor:pointer;color:var(--sc-navy,#0b2341);text-align:left;}
+.ck-guide-list li{margin-bottom:5px;line-height:1.45;}
+.ck-guide-chips{display:flex;flex-wrap:wrap;gap:7px;}
+.ck-guide-chip{background:var(--paper,#FAF7F0);border:1px solid var(--ck-border,#d6cfc0);border-radius:15px;
+  padding:6px 12px;font-size:12px;line-height:1.3;cursor:pointer;color:var(--sc-navy,#0b2341);text-align:left;
+  font-family:inherit;}
 .ck-guide-chip:hover{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
 .ck-guide-chip:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:1px;}
-.ck-guide-ask-state{background:#ece5d6;border:1px solid var(--ck-border,#d6cfc0);border-radius:4px;
-  padding:9px 11px;font-size:12px;color:var(--ck-text-dim,#5C6878);margin-bottom:10px;}
-.ck-guide-history{display:flex;flex-direction:column;gap:10px;margin-bottom:10px;}
-.ck-guide-q{font-weight:700;color:var(--sc-navy,#0b2341);}
-.ck-guide-a{background:#fff;border:1px solid var(--ck-border,#d6cfc0);border-left:3px solid var(--sc-teal,#155752);
-  border-radius:3px;padding:9px 11px;white-space:pre-wrap;line-height:1.5;}
-.ck-guide-a-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:7px;font-size:10px;
+.ck-guide-ask-state{background:#faf6ec;border:1px solid var(--ck-border,#d6cfc0);border-radius:5px;
+  padding:10px 12px;font-size:12px;line-height:1.5;color:var(--ck-text-dim,#5C6878);margin-bottom:11px;}
+.ck-guide-history{display:flex;flex-direction:column;gap:12px;margin-bottom:11px;}
+.ck-guide-history:empty{margin-bottom:0;}
+.ck-guide-q{font-weight:700;color:var(--sc-navy,#0b2341);line-height:1.4;}
+.ck-guide-a{background:var(--paper,#FAF7F0);border:1px solid var(--ck-border,#d6cfc0);
+  border-left:3px solid var(--sc-teal,#155752);border-radius:5px;padding:10px 12px;white-space:pre-wrap;
+  line-height:1.55;margin-top:5px;}
+.ck-guide-a-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:10px;
   font-family:'JetBrains Mono',monospace;color:var(--ck-text-dim,#5C6878);}
-.ck-guide-badge{padding:1px 6px;border-radius:2px;background:#0a8a5f;color:#fff;letter-spacing:.05em;}
+.ck-guide-badge{padding:1px 6px;border-radius:2px;background:var(--sc-teal,#155752);color:#fff;letter-spacing:.05em;}
 .ck-guide-thinking{font-style:italic;color:var(--ck-text-dim,#5C6878);}
 .ck-guide-thinking::after{content:'';animation:ckguidedots 1.2s steps(4,end) infinite;}
 @keyframes ckguidedots{0%{content:'';}25%{content:'.';}50%{content:'..';}75%{content:'...';}}
-.ck-guide-ask-form{display:flex;gap:6px;align-items:flex-end;}
-.ck-guide-input{flex:1;border:1px solid var(--ck-border,#d6cfc0);border-radius:4px;padding:7px 9px;
+.ck-guide-ask-form{display:flex;gap:7px;align-items:flex-end;}
+.ck-guide-input{flex:1;border:1px solid var(--ck-border,#d6cfc0);border-radius:5px;padding:8px 10px;
   font-family:inherit;font-size:13px;resize:vertical;}
 .ck-guide-input:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:-1px;}
-.ck-guide-btn,.ck-guide-send{background:var(--sc-teal,#155752);color:#fff;border:none;border-radius:4px;
-  padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
+.ck-guide-btn,.ck-guide-send{background:var(--sc-teal,#155752);color:#fff;border:none;border-radius:5px;
+  padding:9px 15px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
 .ck-guide-btn:hover,.ck-guide-send:hover{filter:brightness(1.1);}
 .ck-guide-btn:disabled,.ck-guide-send:disabled{opacity:.5;cursor:not-allowed;}
 .ck-guide-btn:focus-visible,.ck-guide-send:focus-visible{outline:2px solid var(--sc-navy,#0b2341);outline-offset:2px;}
-.ck-guide-readonly{background:#ece5d6;border-top:1px solid var(--ck-border,#d6cfc0);
-  padding:10px 16px;font-size:11px;line-height:1.45;color:var(--ck-text-dim,#5C6878);}
+/* Read-only policy as a quiet collapsible card (was a sticky footer) */
+.ck-guide-policy{background:#ece5d6;}
+.ck-guide-policy-summary{cursor:pointer;margin:0;list-style:revert;}
+.ck-guide-policy[open] .ck-guide-policy-summary{margin-bottom:8px;}
+.ck-guide-policy-summary:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
 @media print{.ck-guide-panel,.ck-guide-trigger{display:none !important;}}
 </style>
 """
@@ -4545,10 +4581,84 @@ _GUIDE_JS = """
   }
   function clearHistory(){var h=$('[data-ck-guide-history]'); if(h)h.innerHTML='';}
 
-  function setListItems(host, items, emptyMsg){
+  var NEEDS='Needs source documentation.';
+  function isNeeds(v){return /needs source documentation/i.test(String(v||''));}
+  function emptyMsg(t){return '<p class="ck-guide-muted">'+esc(t)+'</p>';}
+  function subRow(label,val){
+    if(!val||isNeeds(val))return '';
+    return '<div class="ck-guide-sub"><span class="ck-guide-sub-label">'+esc(label)+'</span>'+esc(val)+'</div>';
+  }
+
+  function renderOverview(d){
+    var pc=d.page_context, ov=$('[data-ck-guide-overview]');
+    if(!pc){ ov.innerHTML=emptyMsg(d.fallback_message||'No documented context for this page yet.'); return; }
+    var html=subRow('What it does', pc.short_description)
+            +subRow('Purpose', pc.primary_purpose)
+            +subRow('Why it matters', pc.why_it_matters);
+    ov.innerHTML=html||emptyMsg('No overview documented yet.');
+  }
+
+  function metricCard(m){
+    var html='<div class="ck-guide-metric">'+
+      '<div class="ck-guide-metric-title">'+esc(m.label)+'</div>'+
+      '<div class="ck-guide-metric-def">'+esc(m.definition)+'</div>';
+    if(m.why_it_matters&&!isNeeds(m.why_it_matters))
+      html+=subRow('Why it matters', m.why_it_matters);
+    if(m.formula&&!isNeeds(m.formula))
+      html+='<div class="ck-guide-sub"><span class="ck-guide-sub-label">Formula</span><code>'+esc(m.formula)+'</code></div>';
+    else
+      html+='<span class="ck-guide-pill">Formula not yet documented</span>';
+    var cav=(m.caveats||[]).filter(function(c){return c&&!isNeeds(c);});
+    if(cav.length) html+='<div class="ck-guide-caveat">'+esc(cav.join(' \\u00b7 '))+'</div>';
+    return html+'</div>';
+  }
+
+  /* Render cards with a Show-all toggle when there are more than 3. */
+  function renderCards(host, items, makeCard, emptyText, noun){
     if(!host)return;
-    var vals=(items||[]).filter(function(x){return x&&String(x).trim();});
-    if(!vals.length){host.innerHTML='<p class="ck-guide-muted">'+esc(emptyMsg)+'</p>';return;}
+    if(!items||!items.length){host.innerHTML=emptyMsg(emptyText);return;}
+    var cards=items.map(makeCard);
+    if(cards.length>3){
+      host.innerHTML=cards.slice(0,3).join('')
+        +'<div data-more hidden>'+cards.slice(3).join('')+'</div>'
+        +'<button type="button" class="ck-guide-more-btn" data-more-toggle>Show all '+noun+' ('+cards.length+')</button>';
+      var btn=host.querySelector('[data-more-toggle]'), more=host.querySelector('[data-more]');
+      btn.addEventListener('click',function(){
+        var opening=more.hidden; more.hidden=!opening;
+        btn.textContent=opening?('Show fewer '+noun):('Show all '+noun+' ('+cards.length+')');
+      });
+    } else { host.innerHTML=cards.join(''); }
+  }
+
+  function sourceCard(s){
+    var typ=String(s.source_type||'').replace(/_/g,' ');
+    var meta='<div class="ck-guide-meta-grid">'+
+      '<span class="ck-guide-meta-k">Type</span><span class="ck-guide-meta-v">'+esc(typ)+'</span>'+
+      '<span class="ck-guide-meta-k">Update cadence</span><span class="ck-guide-meta-v">'+esc(s.update_cadence)+'</span>'+
+      '<span class="ck-guide-meta-k">Freshness</span><span class="ck-guide-meta-v">'+esc(s.freshness_lag)+'</span>'+
+      '</div>';
+    var lim=(s.limitations||[]).filter(function(x){return x&&!isNeeds(x);});
+    var limHtml=lim.length?'<div class="ck-guide-caveat">Limitations: '+esc(lim.join(' \\u00b7 '))+'</div>':'';
+    return '<div class="ck-guide-metric"><div class="ck-guide-metric-title">'+esc(s.label)+'</div>'+
+      meta+'<div class="ck-guide-metric-def">'+esc(s.description)+'</div>'+limHtml+'</div>';
+  }
+
+  function renderLimitations(d){
+    var host=$('[data-ck-guide-limitations]');
+    var pc=d.page_context, items=[];
+    if(pc&&pc.limitations)items=items.concat(pc.limitations);
+    if(d.known_limitations)items=items.concat(d.known_limitations);
+    if(d.missing_context_notes)items=items.concat(d.missing_context_notes);
+    /* Collapse the repeated "Needs source documentation." sentinel into
+       one calm, readable line rather than alarming repetition. */
+    var hadNeeds=false, seen={}, vals=[];
+    items.forEach(function(x){
+      if(!x||!String(x).trim())return;
+      if(isNeeds(x)){hadNeeds=true;return;}
+      if(seen[x])return; seen[x]=1; vals.push(x);
+    });
+    if(hadNeeds)vals.push('Some formulas or source-lineage details still need source documentation.');
+    if(!vals.length){host.innerHTML=emptyMsg('No limitations documented.');return;}
     host.innerHTML='<ul class="ck-guide-list">'+vals.map(function(v){
       return '<li>'+esc(v)+'</li>';}).join('')+'</ul>';
   }
@@ -4559,45 +4669,16 @@ _GUIDE_JS = """
     q.textContent=d.context_quality||''; q.setAttribute('data-q',d.context_quality||'');
     if(d.context_quality){show(q);}else{hide(q);}
     $('[data-ck-guide-route]').textContent=d.normalized_route||'';
-    var pc=d.page_context;
-    var ov=$('[data-ck-guide-overview]');
-    if(pc){
-      ov.innerHTML=
-        '<p>'+esc(pc.short_description)+'</p>'+
-        (pc.primary_purpose?'<p><span class="ck-guide-item-label">Purpose. </span>'+esc(pc.primary_purpose)+'</p>':'')+
-        (pc.why_it_matters?'<p><span class="ck-guide-item-label">Why it matters. </span>'+esc(pc.why_it_matters)+'</p>':'');
-    } else {
-      ov.innerHTML='<p class="ck-guide-muted">'+esc(d.fallback_message||'No documented context for this page yet.')+'</p>';
-    }
-    /* metrics */
-    var mh=$('[data-ck-guide-metrics]'), ms=d.metric_contexts||[];
-    if(!ms.length){mh.innerHTML='<p class="ck-guide-muted">No metric context has been linked for this page yet.</p>';}
-    else{mh.innerHTML=ms.map(function(m){
-      var f=(m.formula&&m.formula!=='Needs source documentation.')?'<div class="ck-guide-item-sub">Formula: '+esc(m.formula)+'</div>':'';
-      var cav=(m.caveats&&m.caveats.length)?'<div class="ck-guide-caveat">Caveats: '+esc(m.caveats.join('; '))+'</div>':'';
-      return '<div class="ck-guide-item"><div class="ck-guide-item-label">'+esc(m.label)+'</div>'+
-        '<div>'+esc(m.definition)+'</div>'+f+
-        (m.why_it_matters?'<div class="ck-guide-caveat">'+esc(m.why_it_matters)+'</div>':'')+cav+'</div>';
-    }).join('');}
-    /* data sources */
-    var sh=$('[data-ck-guide-sources]'), ss=d.data_source_contexts||[];
-    if(!ss.length){sh.innerHTML='<p class="ck-guide-muted">No data source context has been linked for this page yet.</p>';}
-    else{sh.innerHTML=ss.map(function(s){
-      var lim=(s.limitations&&s.limitations.length)?'<div class="ck-guide-caveat">Limitations: '+esc(s.limitations.join('; '))+'</div>':'';
-      return '<div class="ck-guide-item"><div class="ck-guide-item-label">'+esc(s.label)+
-        '</div><div class="ck-guide-item-sub">'+esc(s.source_type)+' &middot; '+esc(s.update_cadence)+
-        ' &middot; lag '+esc(s.freshness_lag)+'</div><div>'+esc(s.description)+'</div>'+lim+'</div>';
-    }).join('');}
-    /* limitations: page + known + missing notes */
-    var lim=[];
-    if(pc&&pc.limitations)lim=lim.concat(pc.limitations);
-    if(d.known_limitations)lim=lim.concat(d.known_limitations);
-    if(d.missing_context_notes)lim=lim.concat(d.missing_context_notes);
-    var seen={}; lim=lim.filter(function(x){if(!x||seen[x])return false;seen[x]=1;return true;});
-    setListItems($('[data-ck-guide-limitations]'), lim, 'No limitations documented.');
-    /* suggested questions as chips */
+    renderOverview(d);
+    renderCards($('[data-ck-guide-metrics]'), d.metric_contexts||[], metricCard,
+      'No metric context has been linked for this page yet.', 'metrics');
+    renderCards($('[data-ck-guide-sources]'), d.data_source_contexts||[], sourceCard,
+      'No data source context has been linked for this page yet.', 'sources');
+    renderLimitations(d);
     var ch=$('[data-ck-guide-suggested]'); var qs=d.suggested_questions||[];
-    ch.innerHTML=qs.map(function(x){return '<button type="button" class="ck-guide-chip">'+esc(x)+'</button>';}).join('');
+    ch.innerHTML=qs.map(function(x){
+      return '<button type="button" class="ck-guide-chip" title="Fills the question box">'+esc(x)+'</button>';
+    }).join('');
     Array.prototype.forEach.call(ch.querySelectorAll('.ck-guide-chip'),function(b){
       b.addEventListener('click',function(){var inp=$('[data-ck-guide-input]');inp.value=b.textContent;inp.focus();});
     });
@@ -4606,9 +4687,9 @@ _GUIDE_JS = """
   function applyHealth(h){
     var stateEl=$('[data-ck-guide-ask-state]'), input=$('[data-ck-guide-input]'), send=$('[data-ck-guide-send]');
     var askable=false, msg='';
-    if(!h){msg='Could not check the local model status.';}
-    else if(!h.enabled){msg='Local PEdesk Guide Q&A is disabled. Enable PEDESK_GUIDE_OLLAMA_ENABLED=true and run Ollama locally to ask questions.';}
-    else if(!h.reachable){msg='PEdesk Guide local model is unavailable. The page guide is still available, but question answering requires Ollama to be running.';}
+    if(!h){msg='Could not check the local model status. The page guide still works.';}
+    else if(!h.enabled){msg='Local PEdesk Guide Q&A is disabled. The page guide still works. To enable questions, start PEdesk with PEDESK_GUIDE_OLLAMA_ENABLED=true and run Ollama locally.';}
+    else if(!h.reachable){msg='PEdesk Guide local model is unavailable. The page guide still works, but question answering requires Ollama to be running.';}
     else{askable=true;}
     if(askable){hide(stateEl);}else{stateEl.textContent=msg;show(stateEl);}
     input.disabled=!askable; send.disabled=!askable;

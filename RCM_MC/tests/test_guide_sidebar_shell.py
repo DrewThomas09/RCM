@@ -45,8 +45,9 @@ class GuideSidebarShellTests(unittest.TestCase):
         self.assertIn('aria-label="Close PEdesk Guide"', self.html)
 
     def test_all_sections_present(self):
-        for sec in ("Overview", "Key metrics", "Data sources",
-                    "Limitations", "Suggested questions", "Ask PEdesk Guide"):
+        for sec in ("Page overview", "Key metrics", "Data sources",
+                    "Limitations &amp; caveats", "Suggested questions",
+                    "Ask PEdesk Guide"):
             self.assertIn(sec, self.html)
 
     def test_wires_all_three_endpoints(self):
@@ -71,9 +72,12 @@ class GuideSidebarShellTests(unittest.TestCase):
         self.assertIn("PEdesk Guide local model is unavailable.", self.html)
 
     def test_read_only_copy_present(self):
-        self.assertIn("PEdesk Guide is read-only.", self.html)
-        self.assertIn("cannot change assumptions", self.html)
-        self.assertIn("make final investment recommendations", self.html)
+        # Now a collapsible in-body card (was a sticky footer). Whitespace-
+        # normalize so HTML line-wrapping doesn't break the assertions.
+        flat = " ".join(self.html.split())
+        self.assertIn("PEdesk Guide is read-only", flat)
+        self.assertIn("cannot change assumptions", flat)
+        self.assertIn("make final investment recommendations", flat)
 
     def test_no_upload_or_action_affordances_in_panel(self):
         # Scope to real affordances, not the read-only disclaimer text
@@ -156,6 +160,67 @@ class GuideSidebarHardeningTests(unittest.TestCase):
         self.assertIn("lastQuestion", self.html)
         self.assertIn("data-ck-guide-retry-ask", self.html)
         self.assertIn("ask(lastQuestion)", self.html)
+
+
+class GuideSidebarPolishTests(unittest.TestCase):
+    """Task 9 — card-based presentation polish (static contract; the
+    rendered cards are JS-built and verified manually)."""
+
+    def setUp(self):
+        self.html = chartis_shell("<p>b</p>", title="T", active_nav="/app")
+        self.flat = " ".join(self.html.split())
+
+    def test_card_based_layout(self):
+        self.assertIn(".ck-guide-card{", self.html)        # card CSS
+        self.assertIn('class="ck-guide-card"', self.html)  # card markup
+        self.assertIn("ck-guide-card-title", self.html)
+        self.assertIn(">Page overview<", self.html)
+
+    def test_read_only_policy_is_collapsible_in_body_not_sticky_footer(self):
+        # A <details> card inside the scroll body...
+        self.assertIn('<details class="ck-guide-card ck-guide-policy"',
+                      self.html)
+        self.assertIn("ck-guide-policy-summary", self.html)
+        # ...and the old sticky footer rule is gone.
+        self.assertNotIn(".ck-guide-readonly{", self.html)
+
+    def test_ask_card_after_content_with_body_bottom_padding(self):
+        # Ask section is its own card, present in the scrollable body.
+        self.assertIn("ck-guide-ask-card", self.html)
+        # Body has real bottom padding so the Ask card is fully visible.
+        self.assertIn("padding:14px 14px 28px", self.html)
+
+    def test_data_source_metadata_labels(self):
+        for label in (">Type<", ">Update cadence<", ">Freshness<"):
+            self.assertIn(label, self.html)
+        self.assertIn("ck-guide-meta-grid", self.html)
+
+    def test_metric_show_more_toggle(self):
+        self.assertIn("data-more-toggle", self.html)
+        self.assertIn("Show all ", self.html)
+        self.assertIn("Show fewer ", self.html)
+
+    def test_caveat_rendered_as_pill_not_raw_repeated_line(self):
+        # Formula sentinel becomes a pill, not "Caveats: Needs source ..."
+        self.assertIn("ck-guide-pill", self.html)
+        self.assertIn("Formula not yet documented", self.html)
+        # The needs-doc sentinel is collapsed into one calm limitations line.
+        self.assertIn("still need source documentation", self.html)
+        # Old raw repeated rendering is gone.
+        self.assertNotIn("Caveats: Needs source documentation.", self.html)
+
+    def test_disabled_qa_copy_is_full_and_actionable(self):
+        self.assertIn(
+            "Local PEdesk Guide Q&A is disabled. The page guide still works. "
+            "To enable questions, start PEdesk with "
+            "PEDESK_GUIDE_OLLAMA_ENABLED=true and run Ollama locally.",
+            self.flat,
+        )
+
+    def test_answer_card_class_and_safe_render(self):
+        self.assertIn(".ck-guide-a{", self.html)          # answer bubble CSS
+        self.assertIn("white-space:pre-wrap", self.html)  # readable line breaks
+        self.assertIn("aEl.textContent=b.answer", self.html)  # XSS-safe
 
 
 if __name__ == "__main__":
