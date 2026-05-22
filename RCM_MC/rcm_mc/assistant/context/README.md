@@ -71,3 +71,38 @@ established from source, the context field literally says
 the assistant not to invent specifics. Placeholder pages
 (`source_confidence = needs_validation`) are allowed; missing pages are
 not. Live-vs-illustrative honesty is carried by `data_confidence`.
+
+---
+
+## Task 2 — Metric Registry & Data Source Registry
+
+Two more read-only registries + lookup helpers + a quality validator,
+so the future Guide can also explain **metrics** and **data sources**.
+
+| File | Role |
+|------|------|
+| `metric_registry.py` | `METRIC_REGISTRY` — 54 `MetricContext` entries (definition, formula + `formula_confidence`, why-it-matters, interpretation, common misread, caveats, source/data confidence). |
+| `get_metric_context.py` | `get_metric_context(id_or_label)` — case-insensitive, alias-aware, clean fallback. |
+| `data_source_registry.py` | `DATA_SOURCE_REGISTRY` — 32 `DataSourceContext` entries (description, `source_type`, cadence/lag, used-for, strengths, limitations, `ic_ready`). |
+| `get_data_source_context.py` | `get_data_source_context(id_or_label)` — alias-aware, clean fallback. |
+| `validate_guide_context_quality.py` | Quality validator (fails on invalid metric/source refs, duplicate ids, ambiguous aliases). |
+
+New types in `types.py`: `FormulaConfidence`, `DataSourceType`,
+`MetricContext`, `DataSourceContext`, and their lookup-result dataclasses.
+`PageContext` gained optional `metric_ids` / `data_source_ids` links
+(default empty — backward compatible).
+
+**Conservative formulas.** Standard textbook formulas (EV/EBITDA, EBITDA
+margin, leverage, days in A/R, …) are stated with
+`formula_confidence = inferred`. Proprietary / model-derived metrics
+keep `formula = "Needs source documentation."` + `needs_validation`.
+No model-specific formula is invented.
+
+```bash
+.venv/bin/python -m rcm_mc.assistant.context.validate_guide_context_quality
+.venv/bin/python -m pytest tests/test_pedesk_guide_metric_data_context.py
+```
+
+Connected high-priority pages (metric_ids / data_source_ids): hcris-xray,
+bridge-audit, payer-stress, denial-prediction, physician-eu,
+portfolio/monitor, data, methodology.
