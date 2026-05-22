@@ -149,3 +149,20 @@ Ollama / RAG / DB writes. Optional HTML inspector at
 ```bash
 curl 'http://127.0.0.1:8080/api/guide/context?route=/diligence/hcris-xray'
 ```
+
+### Local-Ollama answer endpoint (read-only)
+
+`POST /api/guide/ask` `{"route","question","model"?}` builds the packet
+and asks a **local** model (`rcm_mc/assistant/ollama_client.py` +
+`guide_prompt_builder.py`) to explain the page using **only** that
+context — no RAG, no uploads, no mutation, no actions. Disabled by
+default; enable per env: `PEDESK_GUIDE_OLLAMA_ENABLED=true`,
+`PEDESK_GUIDE_OLLAMA_BASE_URL`, `PEDESK_GUIDE_OLLAMA_MODEL` (default
+`gemma4:e4b`), `PEDESK_GUIDE_OLLAMA_TIMEOUT_SECONDS`. Clean 400 (bad
+request) / 503 (Ollama unavailable). Health: `GET /api/guide/ollama-health`.
+
+```bash
+PEDESK_GUIDE_OLLAMA_ENABLED=true rcm-mc serve --db p.db --port 8080
+curl -X POST localhost:8080/api/guide/ask -H 'Content-Type: application/json' \
+  -d '{"route":"/diligence/hcris-xray","question":"Where does this data come from?"}'
+```

@@ -2717,6 +2717,122 @@ class RCMHandler(BaseHTTPRequestHandler):
                           active_nav="/guide/context-debug")
         )
 
+    def _route_guide_ollama_health(self) -> None:
+        """GET /api/guide/ollama-health — never fails the app."""
+        from .assistant import ollama_client
+        enabled = ollama_client.is_ollama_enabled()
+        reachable = ollama_client.check_ollama_health() if enabled else False
+        return self._send_json({
+            "enabled": enabled,
+            "base_url": ollama_client.ollama_base_url(),
+            "default_model": ollama_client.ollama_default_model(),
+            "reachable": reachable,
+        })
+
+    def _route_guide_ask(self) -> None:
+        """POST /api/guide/ask — read-only local-Ollama Guide answer.
+
+        Builds the GuideContextPacket for the route, then asks a local
+        model to answer ONLY from that packet. No mutation, no diligence
+        model, no RAG, no document ingestion, no task/artifact creation.
+        """
+        import json as _json
+        from .assistant import ollama_client
+        from .assistant.context import build_guide_context_packet
+        from .assistant.guide_prompt_builder import (
+            build_guide_system_prompt,
+            build_guide_user_prompt,
+            clean_guide_answer,
+        )
+
+        length = int(self.headers.get("Content-Length") or 0)
+        raw = (
+            self.rfile.read(length).decode("utf-8", errors="replace")
+            if length else ""
+        )
+        try:
+            data = _json.loads(raw) if raw.strip() else {}
+        except _json.JSONDecodeError:
+            return self._send_json(
+                {"error": "request body must be valid JSON",
+                 "code": "BAD_JSON", "read_only": True},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+        if not isinstance(data, dict):
+            return self._send_json(
+                {"error": "request body must be a JSON object",
+                 "code": "BAD_JSON", "read_only": True},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+
+        def _str_field(name: str) -> str:
+            v = data.get(name)
+            return v.strip() if isinstance(v, str) else ""
+
+        route = _str_field("route")
+        question = _str_field("question")
+        if not route:
+            return self._send_json(
+                {"error": "missing required field 'route'",
+                 "code": "MISSING_ROUTE", "read_only": True},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+        if not question:
+            return self._send_json(
+                {"error": "missing required field 'question'",
+                 "code": "MISSING_QUESTION", "read_only": True},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+        model = _str_field("model") or None
+
+        # Always build the packet first (pure, AI-free).
+        packet = build_guide_context_packet(route)
+
+        if not ollama_client.is_ollama_enabled():
+            return self._send_json(
+                {"error": "PEdesk Guide local model is unavailable.",
+                 "detail": "Ollama is disabled — set "
+                           "PEDESK_GUIDE_OLLAMA_ENABLED=true to enable it.",
+                 "read_only": True},
+                status=HTTPStatus.SERVICE_UNAVAILABLE,
+            )
+
+        system_prompt = build_guide_system_prompt(packet)
+        user_prompt = build_guide_user_prompt(question, packet)
+        try:
+            raw_answer = ollama_client.call_ollama_chat(
+                system_prompt, user_prompt, model=model,
+            )
+        except ollama_client.OllamaError:
+            return self._send_json(
+                {"error": "PEdesk Guide local model is unavailable.",
+                 "detail": "Ollama could not be reached at "
+                           f"{ollama_client.ollama_base_url()}.",
+                 "read_only": True},
+                status=HTTPStatus.SERVICE_UNAVAILABLE,
+            )
+
+        answer = clean_guide_answer(raw_answer)
+        pc = packet.page_context
+        return self._send_json({
+            "answer": answer,
+            "route": packet.route,
+            "normalized_route": packet.normalized_route,
+            "context_quality": packet.context_quality,
+            "model": model or ollama_client.ollama_default_model(),
+            "ollama_enabled": True,
+            "context_used": {
+                "page_title": pc.title if pc is not None else None,
+                "metrics": [m.metric_id for m in packet.metric_contexts],
+                "data_sources": [
+                    s.source_id for s in packet.data_source_contexts
+                ],
+                "limitations_count": len(packet.known_limitations),
+            },
+            "missing_context_notes": list(packet.missing_context_notes),
+            "read_only": True,
+        })
+
     def do_GET(self) -> None:
         if not self._auth_ok():
             return self._send_401()
@@ -2761,6 +2877,8 @@ class RCMHandler(BaseHTTPRequestHandler):
         # context_quality="missing"; a missing ?route= returns 400.
         if path == "/api/guide/context":
             return self._route_guide_context(parsed)
+        if path == "/api/guide/ollama-health":
+            return self._route_guide_ollama_health()
         if path == "/guide/context-debug":
             return self._route_guide_context_debug(parsed)
 
@@ -11729,6 +11847,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             cached = _IDEMPOTENCY_CACHE.get(self._idempotency_key)
             if cached is not None:
                 return self._send_json(cached)
+        # PEdesk Guide local-Ollama answer endpoint (read-only). Builds the
+        # GuideContextPacket and asks a local model to explain the page using
+        # only that context — no mutation, no diligence model, no RAG.
+        if path == "/api/guide/ask":
+            return self._route_guide_ask()
         if path == "/diligence/snapshot":
             return self._route_diligence_snapshot_post()
         if path == "/api/login":
