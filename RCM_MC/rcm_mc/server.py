@@ -6728,7 +6728,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._error_page("Deal Not Found", f"No deal or hospital found for ID '{html.escape(deal_id)}'. Try searching from the home page.")
         rev = float(profile.get("net_revenue", 200e6))
         margin = float(profile.get("ebitda_margin", 0.10))
-        ebitda = rev * margin
+        from .pe.pe_math import entry_ebitda_from_profile
+        ebitda = entry_ebitda_from_profile(rev, margin)
         try:
             from .analytics.counterfactual import build_counterfactual
             result = build_counterfactual(
@@ -7431,7 +7432,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._error_page("Deal Not Found", f"No deal or hospital found for ID '{html.escape(deal_id)}'. Try searching from the home page.")
         rev = float(profile.get("net_revenue", 200e6))
         margin = float(profile.get("ebitda_margin", 0.12))
-        ebitda = rev * margin
+        # Shared entry-EBITDA computation so /models/waterfall and
+        # /models/returns never show a different base EBITDA for the
+        # same deal (they previously used divergent inline formulas).
+        from .pe.pe_math import entry_ebitda_from_profile
+        ebitda = entry_ebitda_from_profile(rev, margin)
         entry_multiple = 11.0
         exit_multiple = 11.5
         hold = 5.0
@@ -7479,7 +7484,8 @@ class RCMHandler(BaseHTTPRequestHandler):
         margin = float(profile.get("ebitda_margin", 0.10))
         dr = float(profile.get("denial_rate", 12))
         ar = float(profile.get("days_in_ar", 48))
-        current_ebitda = rev * margin
+        from .pe.pe_math import entry_ebitda_from_profile
+        current_ebitda = entry_ebitda_from_profile(rev, margin)
         levers = [
             {"lever": "Denial Rate Reduction", "impact": rev * max(0, dr - 8) / 100 * 0.3,
              "probability": 0.7},
@@ -7681,8 +7687,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._error_page("Deal Not Found", f"No deal or hospital found for ID '{html.escape(deal_id)}'. Try searching from the home page.")
         rev = float(profile.get("net_revenue", 200e6))
         margin = float(profile.get("ebitda_margin", 0.12))
-        margin = max(-0.5, min(0.5, margin))
-        ebitda = max(rev * 0.05, rev * margin) if rev > 1e5 else rev * 0.10
+        # Shared entry-EBITDA computation (same helper /models/waterfall
+        # uses) so the two pages agree on the base EBITDA for a deal.
+        from .pe.pe_math import entry_ebitda_from_profile
+        ebitda = entry_ebitda_from_profile(rev, margin)
         leverage = 5.5
         hold = 5.0
         entry_multiple = 10.0
@@ -7757,7 +7765,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._error_page("Deal Not Found", f"No deal or hospital found for ID '{html.escape(deal_id)}'. Try searching from the home page.")
         rev = float(profile.get("net_revenue", 200e6))
         margin = float(profile.get("ebitda_margin", 0.12))
-        ebitda = rev * margin
+        from .pe.pe_math import entry_ebitda_from_profile
+        ebitda = entry_ebitda_from_profile(rev, margin)
         leverage = 5.5
         total_debt = ebitda * leverage
         rate = 0.065
