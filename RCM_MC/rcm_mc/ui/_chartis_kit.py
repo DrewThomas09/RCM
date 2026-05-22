@@ -514,6 +514,41 @@ def ck_signal_badge(text: str, *, tone: str = "neutral") -> str:
     return f'<span class="ck-badge tone-{tone}">{_esc(text)}</span>'
 
 
+def ck_illustrative_note(what: str = "figures") -> str:
+    """Honest provenance marker for curated / illustrative tracker pages.
+
+    Many ``data_public`` tracker pages render realistic-looking numbers
+    built from hardcoded dataclass lists — the analytic *surface* built
+    ahead of the live-data wiring (see docs/PEDESK_UNDERSTANDING/08).
+    This marker states that plainly so a partner / LP never mistakes an
+    illustrative template for this portfolio's sourced, live data.
+
+    ``what`` names the kind of figure shown (e.g. "savings figures",
+    "fund cashflows") for a slightly more specific sentence. Renders a
+    calm, non-alarming disclosure strip (a note, not an error) with a
+    self-contained style block — call it once per page, near the title.
+    """
+    return (
+        "<style>"
+        ".ck-illus-note{display:flex;align-items:baseline;gap:10px;"
+        "flex-wrap:wrap;margin:0 0 var(--sc-s-5,16px);padding:9px 14px;"
+        "background:var(--sc-parchment-2,#efe9dd);"
+        "border:1px solid var(--sc-rule,#d6cfc0);"
+        "border-left:3px solid var(--sc-warning,#b8732a);border-radius:2px;}"
+        ".ck-illus-note-tag{font-family:var(--sc-mono,monospace);font-size:10px;"
+        "font-weight:700;letter-spacing:0.1em;text-transform:uppercase;"
+        "color:var(--sc-warning,#b8732a);white-space:nowrap;}"
+        ".ck-illus-note-body{font-family:var(--sc-sans,sans-serif);font-size:12px;"
+        "line-height:1.5;color:var(--sc-text-dim,#465366);}"
+        "</style>"
+        '<div class="ck-illus-note" role="note">'
+        '<span class="ck-illus-note-tag">Illustrative template</span>'
+        f'<span class="ck-illus-note-body">Representative {_esc(what)} for '
+        "layout and methodology — not this portfolio's live, sourced data.</span>"
+        "</div>"
+    )
+
+
 # ── Action button primitive ─────────────────────────────────────────
 #
 # Single editorial primary-action button for the workbench. Emits
