@@ -10,7 +10,7 @@ from typing import Any, Dict, List
 
 from ._chartis_kit import (
     chartis_shell, ck_fmt_pct, ck_kpi_block, ck_next_section,
-    ck_provenance_tooltip,
+    ck_provenance_tooltip, ck_value_anchor,
 )
 from .models_page import _model_nav
 from .brand import PALETTE
@@ -164,7 +164,24 @@ def render_waterfall_page(deal_id: str, deal_name: str, result: Dict[str, Any]) 
         eyebrow="Continue —",
         italic_word="returns",
     )
-    body = f'{nav}{kpis}{split}{interp}{tier_section}{actions}{next_up}'
+    # Lead takeaway — surface the computed waterfall result (gross
+    # MOIC/IRR + the dollars that actually reach LPs vs GP carry) at the
+    # top, before the KPI grid and the LP/GP split card. All figures
+    # come from the result dict; tone tracks the gross IRR hurdle.
+    _wf_tone = (
+        "positive" if gross_irr > 0.20
+        else "warning" if gross_irr > 0.15
+        else "negative"
+    )
+    lead_anchor = ck_value_anchor(
+        "RETURNS WATERFALL",
+        f"{gross_moic:.2f}x gross MOIC",
+        delta=f"{gross_irr:.1%} gross IRR",
+        opportunity=f"${lp_total / 1e6:.0f}M to LPs ({lp_moic:.2f}x)",
+        target=f"${gp_total / 1e6:.0f}M GP carry",
+        tone=_wf_tone,
+    )
+    body = f'{nav}{lead_anchor}{kpis}{split}{interp}{tier_section}{actions}{next_up}'
 
     return chartis_shell(body, f"Returns Waterfall — {html.escape(deal_name)}",
                     active_nav="/analysis",
