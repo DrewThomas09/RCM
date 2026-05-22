@@ -26,11 +26,20 @@ TIER_COLORS = {
     "Critical": "#b5321e",
 }
 
+
+def _tint(hex_color: str, alpha: float) -> str:
+    """Faint background wash derived from an editorial tier color."""
+    h = hex_color.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return f"rgba({r},{g},{b},{alpha})"
+
+
+# Row washes derive from the same editorial palette as the tier badges
+# above — previously hardcoded Tailwind rgba (incl. an off-palette blue
+# Medium wash under a teal Medium badge), which drifted from the badges.
 TIER_BG = {
-    "Low":      "rgba(16,185,129,.07)",
-    "Medium":   "rgba(59,130,246,.07)",
-    "High":     "rgba(245,158,11,.07)",
-    "Critical": "rgba(239,68,68,.09)",
+    tier: _tint(color, 0.09 if tier == "Critical" else 0.07)
+    for tier, color in TIER_COLORS.items()
 }
 
 
