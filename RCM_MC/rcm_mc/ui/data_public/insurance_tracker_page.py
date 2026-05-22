@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
 
 
 def _coverages_chart(items):
@@ -219,9 +219,25 @@ def render_insurance(params: dict = None) -> str:
         meta=f"{sector} sector · ${r.total_annual_insurance_mm:,.2f}M annual insurance at {r.insurance_pct_of_revenue * 100:.2f}% of revenue · ${r.total_coverage_limits_mm:,.0f}M limits / ${r.risk_adjusted_reserve_mm:,.2f}M open reserves · ${r.total_deal_insurance_cost_mm:,.2f}M deal-tail cost (+${r.market_hardening_impact_mm:,.2f}M next renewal)",
     )
 
+    # Lead takeaway — surface the insurance cost exposure (annual spend
+    # + the transaction-specific deal-tail cost and renewal hardening)
+    # at the top instead of the bottom thesis. Tone warning (cost). All
+    # figures come from the page's computed result.
+    lead_anchor = ck_value_anchor(
+        "INSURANCE EXPOSURE",
+        f"${r.total_annual_insurance_mm:,.2f}M annual insurance",
+        delta=f"{r.insurance_pct_of_revenue * 100:.2f}% of revenue",
+        opportunity="",
+        target=(
+            f"${r.total_deal_insurance_cost_mm:,.2f}M deal tail · "
+            f"+${r.market_hardening_impact_mm:,.2f}M renewal"
+        ),
+        tone="warning",
+    )
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
+  {lead_anchor}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Premium by Coverage Type</div>{cov_svg}</div>
