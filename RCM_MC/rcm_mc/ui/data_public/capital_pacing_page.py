@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title, ck_bar_row
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title, ck_bar_row, ck_value_anchor
 
 
 def _commitments_chart(items):
@@ -246,7 +246,21 @@ def render_capital_pacing(params: dict = None) -> str:
         "and commitment utilization across the deployment lifecycle."
         "</p>"
     )
-    body = page_title + cp_explainer + f"""
+    # Lead takeaway — surface the computed fund return (TVPI/DPI/net
+    # IRR + current NAV), otherwise buried as KPIs #7-9 and in the
+    # bottom pacing thesis. All figures come from compute_capital_pacing().
+    lead_anchor = ck_value_anchor(
+        "FUND PERFORMANCE",
+        f"{r.current_tvpi:.2f}x TVPI",
+        delta=f"{r.current_dpi:.2f}x DPI · {r.current_net_irr * 100:+.1f}% net IRR",
+        opportunity=f"${r.current_nav_mm:,.0f}M NAV",
+        target=(
+            f"vintage {r.vintage_year} · {r.fund_age_years}y · "
+            f"${r.fund_size_mm:,.0f}M fund"
+        ),
+        tone="teal",
+    )
+    body = page_title + cp_explainer + lead_anchor + f"""
 <div class="ck-page-wrap">
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
