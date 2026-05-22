@@ -444,8 +444,14 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
         eyebrow="Continue —",
         italic_word="history",
     )
+    # Per-deal context ribbon at the top — the profile is the deal's
+    # landing page (the "PRF" slot), so the consistent spine lets a
+    # partner jump straight to any sibling analysis. Uses the raw
+    # (un-escaped) CCN; _model_nav escapes internally.
+    from .models_page import _model_nav
+    deal_ribbon = _model_nav(str(hospital.get("ccn", "")), active="profile")
     body = (
-        f'{hp_styles}{header}{thesis_html}{system_badge}{fundamentals}'
+        f'{hp_styles}{deal_ribbon}{header}{thesis_html}{system_badge}{fundamentals}'
         f'{payer_mix}{quality_section}{score_card}{comp_html}'
         f'{comments_html}{actions}{next_up}'
     )
