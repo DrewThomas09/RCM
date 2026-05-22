@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _ramp_svg(ramp) -> str:
@@ -309,10 +309,24 @@ def render_unit_economics(params: dict = None) -> str:
         meta=f"""Per-location, per-visit, per-provider economics with ramp curves and de novo IRR for {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    # Lead takeaway — surface the computed de-novo return (new-site IRR
+    # + payback), otherwise buried as KPIs #5-6 and in the bottom
+    # thesis. All figures come from compute_unit_economics().
+    lead_anchor = ck_value_anchor(
+        "DE NOVO RETURN",
+        f"{r.de_novo_irr * 100:.1f}% IRR",
+        delta=f"{r.payback_years:.1f}-yr payback",
+        opportunity=f"${r.revenue_per_location_mm:,.2f}M rev / location",
+        target=f"{r.num_locations} locations · ${r.total_revenue_mm:,.0f}M total",
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
   {page_title}
+
+  {lead_anchor}
 
   {form}
 
