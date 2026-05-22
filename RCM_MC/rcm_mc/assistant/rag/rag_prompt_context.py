@@ -13,24 +13,37 @@ from .types import RagSearchResult
 _PER_CHUNK_CHARS = 600
 
 
+def _result_id(r: RagSearchResult) -> str:
+    """A compact source id/route for the snippet label."""
+    return (r.route or r.metric_id or r.data_source_id or r.source_id or "")
+
+
 def format_rag_context(results: List[RagSearchResult]) -> str:
     """Render retrieved chunks as an 'Additional local Guide context'
-    block, or '' when there is nothing to add."""
+    block, or '' when there is nothing to add.
+
+    Each snippet is labeled with its source title, type, and id/route so
+    the model can cite it and never confuse it with target data."""
     if not results:
         return ""
     lines = [
         "=== Additional local Guide context (retrieved) ===",
-        "Supporting reference from the PEdesk Guide knowledge base "
-        "(registries, policy, methodology docs). The current-page context "
-        "above is primary; use these only to add definitions, methodology, "
-        "or related-source explanations. They are NOT this deal's data "
-        "unless their own text says so.",
+        "The current page packet above is PRIMARY. The snippets below are "
+        "supporting reference material from the PEdesk Guide knowledge base "
+        "(registries, policy, methodology docs) — use them only to add "
+        "definitions, methodology, or related-source explanations. Do NOT "
+        "treat retrieved context as target-specific / this-deal data unless "
+        "it is explicitly labeled as target data. Cite the source titles you "
+        "use.",
     ]
     for i, r in enumerate(results, 1):
         body = " ".join((r.text or "").split())
         if len(body) > _PER_CHUNK_CHARS:
             body = body[: _PER_CHUNK_CHARS - 1].rstrip() + "…"
-        lines.append(f"[{i}] {r.source_label()}: {body}")
+        ident = _result_id(r)
+        label = f"{r.source_label()} [{r.source_type}"
+        label += f" · {ident}]" if ident else "]"
+        lines.append(f"[{i}] {label}: {body}")
     return "\n".join(lines)
 
 

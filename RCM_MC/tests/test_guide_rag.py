@@ -203,7 +203,12 @@ class PromptContextTests(unittest.TestCase):
         self.assertIn("Additional local Guide context", ctx)
         self.assertIn("Metric Registry — Denial Rate", ctx)
         self.assertIn("Data Source Registry — CMS HCRIS", ctx)
-        self.assertIn("current-page context above is primary", ctx)
+        self.assertIn("PRIMARY", ctx)
+        # explicit not-target-data instruction
+        self.assertIn("Do NOT treat retrieved context as target-specific", ctx)
+        # labeled with source_type + id
+        self.assertIn("[metric · denial_rate]", ctx)
+        self.assertIn("[data_source · cms_hcris]", ctx)
 
     def test_format_empty(self):
         self.assertEqual(format_rag_context([]), "")
