@@ -31,7 +31,7 @@ border-bottom:1px solid {PALETTE["border"]};}}
 border-radius:4px;height:20px;position:relative;}}
 .pet-bar-fill{{border-radius:4px;height:20px;display:flex;
 align-items:center;justify-content:flex-end;padding-right:6px;
-font-size:10px;color:white;font-weight:600;}}
+font-size:9px;color:white;font-weight:600;white-space:nowrap;}}
 .pet-bar-meta{{font-size:11px;width:50px;}}
 .pet-bar-meta-r{{font-size:11px;width:70px;text-align:right;}}
 .pet-ramp{{font-size:9px;color:{PALETTE["text_muted"]};}}
