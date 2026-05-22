@@ -256,6 +256,15 @@ _STYLE = """
   color:var(--sc-navy); line-height:1.2; margin-bottom:4px; }
 .dir-card-route { font-family:var(--sc-mono); font-size:10.5px;
   margin-bottom:10px; letter-spacing:0.04em; }
+.dir-src { display:inline-block; margin-left:7px; padding:1px 6px;
+  font-family:var(--sc-mono); font-size:8.5px; font-weight:700;
+  letter-spacing:0.08em; text-transform:uppercase; border-radius:2px;
+  vertical-align:middle; color:var(--src-c); border:1px solid var(--src-c);
+  background:color-mix(in srgb, var(--src-c) 8%, transparent); }
+.dir-trust-legend { display:flex; gap:14px; flex-wrap:wrap;
+  font-family:var(--sc-sans); font-size:11px; color:var(--sc-text-dim);
+  margin:2px 0 4px; align-items:center; }
+.dir-trust-legend .dir-src { margin-left:0; }
 .dir-card-viz { background:var(--sc-parchment); border:1px solid var(--sc-rule);
   padding:10px 12px; margin-bottom:10px; }
 .dir-card-stats { display:grid; gap:8px; border-top:1px solid var(--sc-rule);
@@ -335,6 +344,56 @@ _SCRIPT = """
 
 # ── Section + card builders ──────────────────────────────────────────
 
+# ── Data-trust source classification ─────────────────────────────────
+#
+# Per-route data-source tag from docs/PEDESK_UNDERSTANDING/08, so a
+# partner sees at a glance which modules are computed from real data
+# vs illustrative templates. Routes left UNMAPPED render no badge —
+# honest silence beats a wrong label (only confident classifications
+# are tagged). Conservative: anything ambiguous is omitted.
+_SOURCE_META = {
+    "live":  ("var(--sc-positive,#0a8a5f)", "Live",
+              "Computed live from the realized-deal corpus"),
+    "cms":   ("var(--sc-teal,#155752)", "CMS",
+              "Computed from CMS public datasets"),
+    "illus": ("var(--sc-warning,#b8732a)", "Illustrative",
+              "Illustrative template — representative figures, not live data"),
+}
+_MODULE_SOURCE = {
+    # Live — realized-deal corpus
+    "/base-rates": "live", "/market-rates": "live", "/redflag-scanner": "live",
+    "/backtester": "live", "/antitrust-screener": "live",
+    "/rollup-economics": "live", "/sponsor-league": "live",
+    "/sponsor-heatmap": "live",
+    # CMS public data
+    "/cms-data-browser": "cms", "/cms-sources": "cms", "/msa-concentration": "cms",
+    # Illustrative templates — hardcoded representative data
+    "/deal-origination": "illus", "/payer-concentration": "illus",
+    "/fraud-detection": "illus", "/drug-shortage": "illus", "/cyber-risk": "illus",
+    "/ai-operating-model": "illus", "/health-equity": "illus",
+    "/physician-labor": "illus", "/phys-comp-plan": "illus",
+    "/locum-tracker": "illus", "/ma-contracts": "illus",
+    "/drug-pricing-340b": "illus", "/aco-economics": "illus",
+    "/denovo-expansion": "illus", "/pmi-playbook": "illus",
+    "/direct-employer": "illus", "/cin-analyzer": "illus", "/zbb-tracker": "illus",
+    "/capital-pacing": "illus", "/covenant-headroom": "illus",
+    "/direct-lending": "illus", "/reit-analyzer": "illus",
+    "/telehealth-econ": "illus", "/hcit-platform": "illus",
+    "/biosimilars": "illus", "/trial-site-econ": "illus",
+}
+
+
+def _source_badge(route: str) -> str:
+    key = _MODULE_SOURCE.get(route)
+    if not key:
+        return ""
+    color, label, title = _SOURCE_META[key]
+    return (
+        f'<span class="dir-src" style="--src-c:{color};" '
+        f'title="{_html.escape(title, quote=True)}">{_html.escape(label)}</span>'
+    )
+
+
 def _featured_card(mod, idx: int, tint: str) -> str:
     viz_html, stats = _VIZ_ROTATION[idx % len(_VIZ_ROTATION)](tint)
     stats_cells = "".join(
@@ -351,7 +410,8 @@ def _featured_card(mod, idx: int, tint: str) -> str:
         f'data-q="{haystack}" '
         f'style="border-top:3px solid {tint};">'
         f'<div class="dir-card-kicker">{_html.escape(mod.category)} '
-        f'<span style="color:{tint};">&middot; featured</span></div>'
+        f'<span style="color:{tint};">&middot; featured</span>'
+        f'{_source_badge(mod.route)}</div>'
         f'<div class="dir-card-title">{_html.escape(mod.name)}</div>'
         f'<div class="dir-card-route" style="color:{tint};">'
         f'{_html.escape(mod.route)}</div>'
@@ -375,7 +435,8 @@ def _compact_row(mod, tint: str) -> str:
         f'<a class="dir-row" href="{_html.escape(mod.route, quote=True)}" '
         f'data-q="{haystack}">'
         '<div style="min-width:0;">'
-        f'<div class="dir-row-title">{_html.escape(mod.name)}</div>'
+        f'<div class="dir-row-title">{_html.escape(mod.name)}'
+        f'{_source_badge(mod.route)}</div>'
         f'<div class="dir-row-route" style="color:{tint};">'
         f'{_html.escape(mod.route)}</div>'
         '</div>'
@@ -482,6 +543,13 @@ def render_module_index(params: dict = None) -> str:
         'letter-spacing:0.18em;text-transform:uppercase;'
         'color:var(--sc-teal-ink);margin:0 0 14px;">'
         f'{meta_line}</div>'
+        # Data-trust legend — what the per-module source badges mean.
+        '<div class="dir-trust-legend">'
+        '<span style="font-weight:600;">Data source:</span>'
+        f'{_source_badge("/base-rates")}<span>computed from the realized-deal corpus</span>'
+        f'{_source_badge("/cms-data-browser")}<span>CMS public datasets</span>'
+        f'{_source_badge("/locum-tracker")}<span>representative template, not live data</span>'
+        '</div>'
         # Controls — filter chips + search
         '<div class="dir-controls">'
         f'<div class="dir-chips">{chips}</div>'
