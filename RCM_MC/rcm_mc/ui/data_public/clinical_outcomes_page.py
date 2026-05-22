@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
 
 
 def _roi_chart(items):
@@ -308,7 +308,22 @@ def render_clinical_outcomes(params: dict = None) -> str:
         "</p>"
     )
 
-    body = page_title + co_explainer + f"""
+    # Lead takeaway — surface the computed clinical value (composite
+    # score → EV impact), otherwise buried as KPIs #1/#8 and in the
+    # bottom thesis. All figures come from compute_clinical_outcomes().
+    _star = (
+        f"{r.ma_star_rating:.1f}★ MA star"
+        if r.ma_star_rating else "MA star N/A"
+    )
+    lead_anchor = ck_value_anchor(
+        "CLINICAL VALUE",
+        f"{r.composite_quality_score:.0f}/100 composite",
+        delta=_star,
+        opportunity=f"${r.total_ev_impact_mm:,.0f}M EV impact",
+        target=f"${r.star_bonus_opportunity_mm:,.1f}M star bonus",
+        tone="teal",
+    )
+    body = page_title + co_explainer + lead_anchor + f"""
 <div class="ck-page-wrap">
 
   {form}
