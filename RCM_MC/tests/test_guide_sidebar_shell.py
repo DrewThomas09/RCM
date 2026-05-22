@@ -190,8 +190,13 @@ class GuideSidebarPolishTests(unittest.TestCase):
     def test_ask_card_after_content_with_body_bottom_padding(self):
         # Ask section is its own card, present in the scrollable body.
         self.assertIn("ck-guide-ask-card", self.html)
-        # Body has real bottom padding so the Ask card is fully visible.
-        self.assertIn("padding:14px 14px 28px", self.html)
+        # Body has real bottom padding so the Ask card is fully visible
+        # (3rd value is the bottom pad).
+        import re
+        m = re.search(r"\.ck-guide-body\{[^}]*padding:\d+px \d+px (\d+)px",
+                      self.html)
+        self.assertIsNotNone(m)
+        self.assertGreaterEqual(int(m.group(1)), 24)
 
     def test_data_source_metadata_labels(self):
         for label in (">Type<", ">Update cadence<", ">Freshness<"):
@@ -226,6 +231,32 @@ class GuideSidebarPolishTests(unittest.TestCase):
         # The ask box enables only when full AI mode is ready.
         self.assertIn("var ready=!!(h&&h.ai_ready);", self.html)
         self.assertIn("input.disabled=!ready; send.disabled=!ready;", self.html)
+
+    def _guide_css(self):
+        a = self.html.find(".ck-guide-panel{")
+        b = self.html.find("@media print{.ck-guide-panel")
+        return self.html[a:b]
+
+    def test_sidebar_uses_system_ui_font(self):
+        # Guide panel has its own clean system-UI font stack (no serif).
+        self.assertIn("--ck-guide-ui:Inter,ui-sans-serif,system-ui",
+                      self.html)
+        self.assertIn("font-family:var(--ck-guide-ui)", self.html)
+        css = self._guide_css()
+        self.assertNotIn("Source Serif 4", css)   # no serif inside the panel
+        # title + card + metric titles all use the UI font
+        self.assertIn(".ck-guide-title{font-family:var(--ck-guide-ui)",
+                      self.html)
+        self.assertIn(".ck-guide-card-title{font-family:var(--ck-guide-ui)",
+                      self.html)
+        self.assertIn(".ck-guide-metric-title{font-family:var(--ck-guide-ui)",
+                      self.html)
+
+    def test_sidebar_adds_no_external_font(self):
+        # System-safe only — no @import and no Google-fonts link added by the
+        # Guide CSS (formula/route/meta may keep the already-loaded mono).
+        self.assertNotIn("@import", self.html)
+        self.assertNotIn("fonts.googleapis", self._guide_css())
 
     def test_answer_card_class_and_safe_render(self):
         self.assertIn(".ck-guide-a{", self.html)          # answer bubble CSS
