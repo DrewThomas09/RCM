@@ -4517,6 +4517,8 @@ _GUIDE_CSS = """
 .ck-guide-chip:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:1px;}
 .ck-guide-ask-state{background:#faf6ec;border:1px solid var(--ck-border,#d6cfc0);border-radius:5px;
   padding:10px 12px;font-size:12px;line-height:1.5;color:var(--ck-text-dim,#5C6878);margin-bottom:11px;}
+.ck-guide-state-ready{font-weight:700;color:var(--sc-teal,#155752);
+  font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.04em;}
 .ck-guide-state-primary{font-weight:700;color:var(--sc-navy,#0b2341);}
 .ck-guide-state-secondary{margin:3px 0 6px;}
 .ck-guide-setup summary{cursor:pointer;font-size:11px;font-weight:600;color:var(--sc-teal,#155752);}
@@ -4690,27 +4692,42 @@ _GUIDE_JS = """
     });
   }
 
+  function aiReason(h){
+    if(!h) return 'Could not check local AI status.';
+    if(!(h.ollama_enabled||h.enabled)) return 'Local AI is turned off.';
+    if(!(h.ollama_reachable||h.reachable)) return 'Ollama is not running.';
+    if(h.chat_model_installed===false)
+      return 'The chat model ('+(h.chat_model||h.default_model)+') is not installed.';
+    if(!h.rag_enabled) return 'RAG is turned off.';
+    if(!h.rag_index_exists) return 'The RAG index has not been built.';
+    if(!h.rag_chunk_count||!h.rag_embedded_count) return 'The RAG index is empty.';
+    if(h.embed_model_installed===false)
+      return 'The embedding model ('+h.embed_model+') is not installed.';
+    return 'Local AI mode is not fully configured.';
+  }
+
   function applyHealth(h){
     var stateEl=$('[data-ck-guide-ask-state]'), input=$('[data-ck-guide-input]'), send=$('[data-ck-guide-send]');
-    var askable=!!(h&&h.enabled&&h.reachable);
-    input.disabled=!askable; send.disabled=!askable;
-    if(askable){hide(stateEl);return;}
-    /* Plain user-facing message up top; technical setup tucked into a
-       collapsed "Setup details" disclosure so it doesn't shout env vars. */
-    var fix=(h&&h.suggested_fix)?h.suggested_fix
-      :(h&&h.enabled?'Start Ollama locally and confirm `ollama list` shows the configured model.'
-                    :'Start PEdesk with PEDESK_GUIDE_OLLAMA_ENABLED=true.');
-    var envHtml='';
-    var env=(h&&h.required_env)||null;
-    if(env){var lines=[];for(var k in env){if(env.hasOwnProperty(k))lines.push(k+'='+env[k]);}
-      if(lines.length)envHtml='<pre class="ck-guide-setup-pre">'+esc(lines.join('\\n'))+'</pre>';}
+    /* Full AI mode = Ollama + chat model + RAG index all ready. The ask
+       box is active only then; otherwise the page guide still renders and
+       a calm status card explains exactly what's missing. */
+    var ready=!!(h&&h.ai_ready);
+    input.disabled=!ready; send.disabled=!ready;
+    if(ready){
+      stateEl.innerHTML='<div class="ck-guide-state-ready">AI Q&amp;A ready &middot; RAG enabled</div>';
+      show(stateEl);
+      return;
+    }
+    var fix=(h&&h.suggested_fix)||'';
+    var cmds=(h&&h.setup_commands)||[];
+    var cmdHtml=cmds.length?'<pre class="ck-guide-setup-pre">'+esc(cmds.join('\\n'))+'</pre>':'';
     stateEl.innerHTML=
-      '<div class="ck-guide-state-primary">Ask PEdesk Guide is unavailable.</div>'+
-      '<div class="ck-guide-state-secondary">The page guide still works, but question answering requires local Ollama to be enabled.</div>'+
+      '<div class="ck-guide-state-primary">Ask PEdesk Guide is not fully configured.</div>'+
+      '<div class="ck-guide-state-secondary">'+esc(aiReason(h))+' The page guide still works.</div>'+
       '<details class="ck-guide-setup"><summary>Setup details</summary>'+
-      '<p class="ck-guide-muted">'+esc(fix)+'</p>'+envHtml+
-      '<p class="ck-guide-muted">Run ollama locally, then restart with the env above '+
-      '(or use scripts/run_with_guide_ollama.sh).</p></details>';
+      (fix?'<p class="ck-guide-muted">'+esc(fix)+'</p>':'')+
+      '<p class="ck-guide-muted">Full local AI mode:</p>'+cmdHtml+
+      '</details>';
     show(stateEl);
   }
 
