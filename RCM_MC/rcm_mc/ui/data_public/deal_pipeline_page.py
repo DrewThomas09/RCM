@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title, ck_value_anchor
 
 
 def _funnel_svg(stages) -> str:
@@ -279,10 +279,24 @@ def render_deal_pipeline(params: dict = None) -> str:
         ),
     )
 
+    # Lead takeaway — surface the computed pipeline value (prob-weighted
+    # close + end-to-end conversion), otherwise buried as KPIs #4-5 and
+    # in the bottom thesis. All figures come from compute_deal_pipeline().
+    lead_anchor = ck_value_anchor(
+        "PIPELINE VALUE",
+        f"${r.weighted_closed_ev_mm:,.0f}M prob-weighted close",
+        delta=f"{r.end_to_end_conversion_pct:.2f}% end-to-end conv",
+        opportunity=f"${r.total_pipeline_ev_mm:,.0f}M total pipeline EV",
+        target=f"{sourced:,} sourced → {r.total_active_deals:,} active",
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
   {page_title}
+
+  {lead_anchor}
 
   {form}
 
