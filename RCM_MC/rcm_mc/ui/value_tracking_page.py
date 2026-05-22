@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import (
     chartis_shell, ck_fmt_num, ck_fmt_pct, ck_kpi_block,
-    ck_next_section, ck_provenance_tooltip,
+    ck_next_section, ck_provenance_tooltip, ck_value_anchor,
 )
 from ._glossary_link import metric_label_link
 from ._provenance_tooltip import provenance_tooltip
@@ -423,7 +423,26 @@ def render_value_tracker(
         eyebrow="Continue —",
         italic_word="bridge",
     )
-    body = f'{kpis}{ramp_banner}{lever_table}{entry_form}{plan_section}{nav}{next_up}'
+    # Lead takeaway — surface the computed realization (realized vs
+    # planned uplift) at the top, before the dense KPI grid. All figures
+    # come from the tracking summary; tone tracks the 85%/60% bands.
+    _vt_tone = (
+        "positive" if realization >= 0.85
+        else "warning" if realization >= 0.6
+        else "negative"
+    )
+    lead_anchor = ck_value_anchor(
+        "VALUE REALIZATION",
+        f"{_fm(total_realized)} realized",
+        delta=f"{realization:.0%} of plan",
+        opportunity=f"{_fm(total_planned)} planned uplift",
+        target=(
+            f"{summary.on_track_count if summary else 0} levers on track · "
+            f"{quarters}Q tracked"
+        ),
+        tone=_vt_tone,
+    )
+    body = f'{lead_anchor}{kpis}{ramp_banner}{lever_table}{entry_form}{plan_section}{nav}{next_up}'
 
     return chartis_shell(
         body,
