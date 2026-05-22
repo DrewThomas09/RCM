@@ -108,3 +108,55 @@ exit-timing, covenant-stress, bridge-audit}, /engagements,
   metric/source ids (qoe-memo, covenant-stress, exit-timing, value).
 - Confirm exact formulas from code/methodology to promote key metrics
   from `inferred`/`needs_validation` → `documented`.
+
+---
+
+# Task 3 — Guide Context Packet layer (2026-05-22)
+
+Single read-only builder that assembles all structured context the
+future Guide needs to explain a page. No AI / Ollama / RAG / chat /
+actions / DB memory / visual redesign / workbench port — text + lookups.
+
+| File | Role |
+|------|------|
+| `guide_prompt_policy.py` | `GUIDE_PROMPT_POLICY` (frozen) + `GUIDE_IDENTITY`, `ALLOWED_BEHAVIOR`, `DISALLOWED_BEHAVIOR` (10), `DEFAULT_UNCERTAINTY_MESSAGE`, `policy_as_dict()`. The behavioral contract; carries no behavior. |
+| `suggested_questions.py` | `get_suggested_questions_for_page(page_context)` — 5 defaults + category/data-source additions, deterministic, capped at 8. |
+| `guide_context_packet.py` | `GuideContextPacket` dataclass + `build_guide_context_packet(route)` + `summarize_context_packet(packet)`. |
+
+**Builder flow:** `get_page_context` → resolve metric contexts (explicit
+`metric_ids`, else conservative match from `key_metrics` labels) → resolve
+data-source contexts (same) → suggested questions → embed policy →
+compute `context_quality` → record `missing_context_notes`. Never invents
+formulas/lineage; unresolved items are recorded, not fabricated.
+
+**`context_quality` precedence:** `missing` (no page ctx) → `placeholder`
+(`source_confidence == needs_validation`) → `strong` (documented /
+inferred_from_page **and** ≥1 linked metric/source) → `placeholder`
+(≥3 core fields say "Needs source documentation.") → `partial`.
+
+## Quality distribution (all 72 registry routes)
+- **strong: 8** (the 8 metric/source-linked pages from Task 2)
+- **partial: 2**
+- **placeholder: 62**
+- **missing: 0** (every registry route resolves; only off-manifest
+  routes like `/unknown-route` grade `missing`)
+
+## Commands + results
+- `validate_page_context_coverage` → PASS (exit 0).
+- `validate_guide_context_quality` → PASS (exit 0).
+- `py_compile` on the package → clean.
+- `pytest tests/test_pedesk_guide_context_packet.py` → 10 passed.
+- `pytest tests/test_pedesk_guide_page_context.py
+  tests/test_pedesk_guide_metric_data_context.py` → 20 passed (unchanged).
+
+## Caveats
+- Packet quality is honest, not flattering: 62/72 routes grade
+  `placeholder` because their underlying page contexts are still
+  placeholders (Task 1/2 backlog). Promoting them is a context-authoring
+  task, not a packet-layer change.
+- Conservative metric/source matching only resolves *registered* aliases;
+  a page whose `key_metrics` are free-text prose won't auto-link (recorded
+  in `missing_context_notes`). Explicit `metric_ids`/`data_source_ids`
+  remain the reliable path.
+- No endpoint is wired: this is infrastructure the future Guide endpoint
+  imports. Building that endpoint (and any UI) is explicitly out of scope.
