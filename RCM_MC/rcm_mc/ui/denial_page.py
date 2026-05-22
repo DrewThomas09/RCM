@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 
 from ._chartis_kit import (
     chartis_shell, ck_fmt_num, ck_kpi_block, ck_next_section,
-    ck_provenance_tooltip,
+    ck_provenance_tooltip, ck_value_anchor,
 )
 from .models_page import _model_nav
 from .brand import PALETTE
@@ -199,7 +199,19 @@ def render_denial_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -
         eyebrow="Continue —",
         italic_word="bridge",
     )
-    body = f'{nav}{kpis}{drivers_section}{interp}{rec_html}{actions}{next_up}'
+    # Lead takeaway — surface the computed denial-recovery opportunity
+    # (recoverable EBITDA from moving denial rate to target) at the top,
+    # before the KPI grid and the driver table. All figures come from
+    # the analysis summary.
+    lead_anchor = ck_value_anchor(
+        "DENIAL RECOVERY",
+        f"{denial_rate:.1f}% denial rate",
+        delta=f"target {target_rate:.1f}%",
+        opportunity=f"${total_impact / 1e6:.1f}M recoverable EBITDA",
+        target=f"{len(drivers)} root causes identified",
+        tone="teal",
+    )
+    body = f'{nav}{lead_anchor}{kpis}{drivers_section}{interp}{rec_html}{actions}{next_up}'
 
     return chartis_shell(
         body, f"Denial Drivers — {html.escape(deal_name)}",
