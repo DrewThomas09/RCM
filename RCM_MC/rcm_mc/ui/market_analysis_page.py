@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 
 from ._chartis_kit import (
     chartis_shell, ck_fmt_num, ck_kpi_block, ck_next_section,
-    ck_provenance_tooltip,
+    ck_provenance_tooltip, ck_value_anchor,
 )
 from .models_page import _model_nav
 from .brand import PALETTE
@@ -301,7 +301,26 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
         eyebrow="Continue —",
         italic_word="competitive",
     )
-    body = f'{nav}{kpis}{moat_section}{interp}{comp_section}{payer_html}{actions}{next_up}'
+    # Lead takeaway — surface the market-position read (moat verdict +
+    # concentration + addressable market) at the top, before the KPI
+    # grid and the "What This Means" card. Tone tracks the moat rating.
+    _mkt_tone = (
+        "positive" if moat_rating == "wide"
+        else "warning" if moat_rating == "narrow"
+        else "teal"
+    )
+    lead_anchor = ck_value_anchor(
+        "MARKET POSITION",
+        f"{moat_label} moat",
+        delta=f"HHI {hhi:,.0f} ({hhi_label})",
+        opportunity=f"${market_size.get('total_revenue', 0) / 1e9:.1f}B market",
+        target=(
+            f"#{moat.get('market_share_rank', 0)} share rank · "
+            f"moat {moat.get('moat_score', 0)}/10"
+        ),
+        tone=_mkt_tone,
+    )
+    body = f'{nav}{lead_anchor}{kpis}{moat_section}{interp}{comp_section}{payer_html}{actions}{next_up}'
     return chartis_shell(
         body, f"Market Analysis — {html.escape(deal_name)}",
         active_nav="/analysis",
