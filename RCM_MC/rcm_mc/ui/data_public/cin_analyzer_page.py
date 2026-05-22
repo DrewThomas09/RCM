@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_value_anchor
 
 
 def _quality_chart(items) -> str:
@@ -276,7 +276,7 @@ def render_cin_analyzer(params: dict = None) -> str:
         target=f"${r.total_annual_contribution_mm:,.1f}M annual provider contribution",
         tone="positive",
     )
-    body = page_title + cin_explainer + f"""
+    body = page_title + ck_illustrative_note("figures") + cin_explainer + f"""
 <div class="ck-page-wrap">
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>

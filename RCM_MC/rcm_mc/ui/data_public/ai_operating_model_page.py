@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_bar_row
 
 _EXPLAINER_CSS = """<style>
 .ck-aim-explainer{font-family:var(--sc-serif,'Georgia',serif);
@@ -221,7 +221,7 @@ def render_ai_operating_model(params: dict = None) -> str:
         "model reveals on this deal."
         "</p>"
     )
-    body = page_title + aim_explainer + f"""
+    body = page_title + ck_illustrative_note("figures") + aim_explainer + f"""
 <div class="ck-page-wrap">
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {gov_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">

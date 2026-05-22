@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor, ck_scatter
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_bar_row, ck_value_anchor, ck_scatter
 
 
 def _outcomes_scatter(items):
@@ -289,7 +289,7 @@ def render_clinical_ai_tracker(params: dict = None) -> str:
         "FDA clearances, vendor evaluation pipeline, and governance compliance."
         "</p>"
     )
-    body = page_title + cai_explainer + f"""
+    body = page_title + ck_illustrative_note("figures") + cai_explainer + f"""
 <div class="ck-page-wrap">
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}

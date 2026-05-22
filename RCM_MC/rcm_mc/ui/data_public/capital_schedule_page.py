@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_value_anchor
 
 _EXPLAINER_CSS = """<style>
 .ck-csch-explainer{font-family:var(--sc-serif,'Georgia',serif);
@@ -319,7 +319,7 @@ def render_capital_schedule(params: dict = None) -> str:
         delta=f"${r.fund_size_mm:,.0f}M fund · {r.gross_moic:.2f}x gross · {r.gross_irr * 100:.1f}% gross IRR",
         tone="teal",
     )
-    body = page_title + csch_explainer + f"""
+    body = page_title + ck_illustrative_note("figures") + csch_explainer + f"""
 <div class="ck-page-wrap">
 
   {form}

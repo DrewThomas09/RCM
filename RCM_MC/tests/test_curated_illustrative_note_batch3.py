@@ -90,3 +90,18 @@ class CuratedBatch3cTests(unittest.TestCase):
             html = _render_any(name)
             self.assertIn("ck-illus-note", html, name)
             self.assertIn("Illustrative template", html, name)
+
+
+_BATCH3D = [
+    "aco_economics", "biosimilars_opp", "ai_operating_model",
+    "clinical_ai_tracker", "cin_analyzer", "board_governance",
+    "capex_budget", "capital_call_tracker", "capital_schedule",
+]
+
+
+class CuratedBatch3dTests(unittest.TestCase):
+    def test_each_curated_page_carries_marker(self):
+        for name in _BATCH3D:
+            html = _render_any(name)
+            self.assertIn("ck-illus-note", html, name)
+            self.assertIn("Illustrative template", html, name)
