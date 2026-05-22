@@ -84,3 +84,6 @@ package-lock.yml
 # PEdesk Guide local RAG index (local, disposable)
 .pedesk_guide_rag.sqlite3
 *.pedesk_guide_rag.sqlite3
+
+# PEdesk Guide eval reports (local, disposable)
+.pedesk_guide_eval/
