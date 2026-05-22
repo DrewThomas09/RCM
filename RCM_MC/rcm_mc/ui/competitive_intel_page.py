@@ -534,22 +534,11 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
     ) if peer_rows else ""
 
     # ── Nav ──
-    nav = (
-        f'<div class="cad-card" style="display:flex;gap:8px;flex-wrap:wrap;">'
-        f'<a href="/hospital/{_html.escape(ccn)}" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Hospital Profile</a>'
-        f'<a href="/ebitda-bridge/{_html.escape(ccn)}" class="cad-btn" '
-        f'style="text-decoration:none;">EBITDA Bridge</a>'
-        f'<a href="/ic-memo/{_html.escape(ccn)}" class="cad-btn" '
-        f'style="text-decoration:none;">IC Memo</a>'
-        f'<a href="/ml-insights/hospital/{_html.escape(ccn)}" class="cad-btn" '
-        f'style="text-decoration:none;">ML Analysis</a>'
-        f'<a href="/scenarios/{_html.escape(ccn)}" class="cad-btn" '
-        f'style="text-decoration:none;">Scenarios</a>'
-        f'<a href="/predictive-screener" class="cad-btn" '
-        f'style="text-decoration:none;">Deal Screener</a>'
-        f'</div>'
-    )
+    # Consistent per-deal context ribbon (same one the model pages
+    # use) replaces the bespoke cad-btn bar — every sibling analysis is
+    # one click away, in the editorial pill styling.
+    from .models_page import _model_nav
+    deal_ribbon = _model_nav(ccn, active="comp_intel")
 
     next_up = ck_next_section(
         "Take this peer view back into the deal profile",
@@ -574,7 +563,7 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
         "deal needs to support."
         "</p>"
     )
-    body = page_title + ci_explainer + f'{kpis}{percentile_section}{gap_section}{peer_section}{nav}{next_up}'
+    body = deal_ribbon + page_title + ci_explainer + f'{kpis}{percentile_section}{gap_section}{peer_section}{next_up}'
 
     return chartis_shell(
         body,
