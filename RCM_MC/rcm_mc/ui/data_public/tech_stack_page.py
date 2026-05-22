@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_illustrative_note
 
 
 def _modernness_heatmap_svg(systems) -> str:
@@ -314,6 +314,7 @@ def render_tech_stack(params: dict = None) -> str:
 
   {page_title}
 
+  {ck_illustrative_note("IT figures")}
   {lead_anchor}
 
   {form}

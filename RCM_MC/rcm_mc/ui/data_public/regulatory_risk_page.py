@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor, ck_illustrative_note
 
 
 def _materiality_chart(items):
@@ -297,6 +297,7 @@ def render_regulatory_risk(params: dict = None) -> str:
 
   {page_title}
 
+  {ck_illustrative_note("regulatory figures")}
   {lead_anchor}
 
   {form}
