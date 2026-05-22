@@ -15,16 +15,11 @@ from typing import Any, Dict, List, Optional
 
 
 def _load_corpus() -> List[Dict[str, Any]]:
-    from rcm_mc.data_public.deals_corpus import _SEED_DEALS
-    deals: List[Dict[str, Any]] = list(_SEED_DEALS)
-    for i in range(2, 39):
-        try:
-            mod = importlib.import_module(f"rcm_mc.data_public.extended_seed_{i}")
-            key = f"EXTENDED_SEED_DEALS_{i}"
-            deals += getattr(mod, key, [])
-        except Exception:
-            pass
-    return deals
+    # Canonical loader → the corpus-coverage page reports the FULL,
+    # authoritative corpus instead of a bespoke range(2,39) subset that
+    # under-counted it. The coverage page must reflect the real corpus.
+    from rcm_mc.data_public.corpus_loader import load_corpus_deals
+    return load_corpus_deals("all")
 
 
 from rcm_mc.ui._chartis_kit import (
