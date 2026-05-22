@@ -15,16 +15,13 @@ from typing import Any, Dict, List
 
 
 def _load_corpus() -> List[Dict[str, Any]]:
-    from rcm_mc.data_public.deals_corpus import _SEED_DEALS
-    from rcm_mc.data_public.extended_seed import EXTENDED_SEED_DEALS
-    result = list(_SEED_DEALS) + list(EXTENDED_SEED_DEALS)
-    for i in range(2, 32):
-        try:
-            mod = importlib.import_module(f"rcm_mc.data_public.extended_seed_{i}")
-            result += list(getattr(mod, f"EXTENDED_SEED_DEALS_{i}"))
-        except (ImportError, AttributeError):
-            pass
-    return result
+    # Use the canonical loader so the corpus dashboard reports the FULL,
+    # authoritative corpus (provenance-tagged) rather than a bespoke
+    # range(2,32) subset that under-counted it (~655 of ~1760 deals).
+    # This is the page whose job is to report the corpus, so the count
+    # here must be the real one.
+    from rcm_mc.data_public.corpus_loader import load_corpus_deals
+    return load_corpus_deals("all")
 
 
 def _pct(vals: List[float], p: float) -> float:
