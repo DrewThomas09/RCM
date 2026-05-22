@@ -388,15 +388,76 @@ _MANUAL: List[PageContext] = [
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
     _ctx(
+        "/source", "Deal Sourcing",
+        short_description="Thesis-matched sourcing — scores the public HCRIS "
+        "hospital universe against predefined investment theses and ranks the "
+        "best fits.",
+        primary_purpose="Surface hospitals that fit a chosen investment thesis "
+        "(e.g. rural consolidation, margin turnaround, commercial-payer mix).",
+        common_questions=["Which hospitals fit my thesis?",
+                         "What scores highest for this strategy?"],
+        inputs=["A selected thesis from the library; the public HCRIS hospital "
+                "universe."],
+        outputs=["Per page labels: a ranked match table (Hospital, State, "
+                 "Beds, fit Score 0-100) with a 'Screen →' link per row."],
+        key_metrics=["Fit score (0-100)", "Bed count", "Operating margin",
+                     "Commercial payer share"],
+        data_sources=["CMS HCRIS public hospital data; derived payer-mix and "
+                      "margin fields."],
+        model_logic_summary="Appears to score each hospital per-criterion "
+        "(bed ranges, payer-mix thresholds, margin, revenue), weight and "
+        "composite to 0-100 with a region bonus. The score is a thesis-FIT "
+        "ranking, not a prediction of returns. Exact weights: see "
+        "deal_sourcer.py — treat specifics as needing source confirmation.",
+        why_it_matters="Top-of-funnel sourcing aimed at a strategy rather than "
+        "raw size.",
+        diligence_use_cases=["Building a thesis-aligned candidate list before "
+                            "deeper screening."],
+        interpretation_guidance=[
+            "The fit score ranks alignment to the selected thesis — it is not "
+            "a predicted MOIC, denial rate, or uplift.",
+            "All inputs are public HCRIS figures, not target-reported data.",
+        ],
+        limitations=["Public HCRIS only; a high fit score is a sourcing "
+                     "signal, not deal-level diligence."],
+        related_routes=["/screen", "/predictive-screener", "/pipeline"],
+        metric_ids=["bed_count", "operating_margin", "commercial_payer_exposure"],
+        data_source_ids=["cms_hcris"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
         "/screen", "Hospital Screener",
-        short_description="Filter the public HCRIS hospital universe by "
-        "region, size, margin, etc.",
-        primary_purpose="Surface candidate hospitals from public data.",
-        inputs=["Region / bed / margin filters."],
-        outputs=["Matching hospitals with key public-data attributes."],
-        data_sources=["CMS HCRIS public hospital data."],
-        why_it_matters="Top-of-funnel sourcing over the public universe.",
-        related_routes=["/predictive-screener", "/find-comps"],
+        short_description="Metric-based filter over the public HCRIS hospital "
+        "universe by region, size, revenue, and margin.",
+        primary_purpose="Surface candidate hospitals from public data by "
+        "user-set metric ranges (with quick presets like turnaround / "
+        "large-cap / margin-expansion).",
+        common_questions=["Which hospitals match these financial criteria?",
+                         "Show me large turnaround candidates."],
+        inputs=["User filters (min/max beds, min revenue, max margin, state) "
+                "or a preset; the public HCRIS universe."],
+        outputs=["Per page labels: a matches table (Hospital, State, Beds, "
+                 "NPR $M, Margin %) with profile / diligence links."],
+        key_metrics=["Bed count", "Net patient revenue", "Operating margin"],
+        data_sources=["CMS HCRIS public hospital data (latest per CCN)."],
+        model_logic_summary="Filters HCRIS rows by the supplied metric ranges "
+        "(or hardcoded preset ranges) and returns matches — a metric filter, "
+        "not a model or ranking.",
+        why_it_matters="Top-of-funnel sourcing over the public universe by "
+        "explicit financial criteria.",
+        diligence_use_cases=["Free-form candidate search when you know the "
+                            "financial profile you want."],
+        interpretation_guidance=[
+            "Figures are public HCRIS, not target-reported data.",
+            "This is a filter — it does not score or predict; see /source for "
+            "thesis-fit ranking and /predictive-screener for estimates.",
+        ],
+        limitations=["Public HCRIS only; reflects filing data, which lags and "
+                     "has artifacts."],
+        related_routes=["/source", "/predictive-screener", "/find-comps"],
+        metric_ids=["bed_count", "revenue", "operating_margin"],
+        data_source_ids=["cms_hcris"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
@@ -422,19 +483,172 @@ _MANUAL: List[PageContext] = [
             "observed target financials — directional sourcing signal.",
         ],
         limitations=["Estimates from public data only; not a substitute for "
-                     "deal-level diligence."],
-        related_routes=["/screen", "/diligence/deal", "/find-comps"],
+                     "deal-level diligence.",
+                     "Point estimates with no stated confidence interval; not "
+                     "validated against realized RCM outcomes."],
+        related_routes=["/screen", "/source", "/find-comps"],
+        metric_ids=["denial_rate", "days_in_ar", "rcm_uplift",
+                    "operating_margin", "bed_count", "model_estimate"],
+        data_source_ids=["cms_hcris", "model_output"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.MODEL_ESTIMATE,
     ),
     _ctx(
         "/find-comps", "Find Comps",
-        short_description="Find comparable hospitals/deals by numeric "
+        short_description="Comparable-deal finder — user enters a target's "
+        "characteristics; the page returns ranked corpus comparables with "
+        "similarity scores and a peer benchmark block.",
+        primary_purpose="Identify peer deals for benchmarking and valuation by "
         "profile similarity.",
-        primary_purpose="Surface peers for benchmarking and valuation.",
-        data_sources=["Realized-deal corpus / public hospital data."],
-        related_routes=["/comparables", "/comparable-outcomes"],
-        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+        common_questions=["What deals are comparable to this target?",
+                         "What's the peer MOIC / EV/EBITDA?"],
+        inputs=["Target characteristics the user enters (sector, EV, EV/EBITDA, "
+                "payer mix, vintage)."],
+        outputs=["Per page labels: a ranked comps table (Rank, Deal, Sector, "
+                 "Buyer, Year, EV, EV/EBITDA, MOIC, IRR, Hold, Comm%, "
+                 "Similarity) plus peer/corpus MOIC P50 summary."],
+        key_metrics=["Similarity score", "EV/EBITDA", "MOIC", "IRR",
+                     "Hold period", "Peer MOIC P50"],
+        data_sources=["A seeded realized-deal corpus (comparison context, not "
+                      "the target's own data)."],
+        model_logic_summary="Scores corpus deals by weighted similarity to the "
+        "entered profile (per source: sector + EV + EV/EBITDA + payer mix + "
+        "vintage) and ranks them. Pure matching — no approved/locked comp-set "
+        "governance.",
+        why_it_matters="Peers anchor a valuation and a returns expectation.",
+        diligence_use_cases=["Assembling a quick comparable set to sanity-check "
+                            "entry multiple and return expectations."],
+        interpretation_guidance=[
+            "This finds comparables by similarity; it is not an approved or "
+            "signed-off comp set — verify the peer set before IC use.",
+            "Peer/corpus MOIC figures are realized-corpus comparison context, "
+            "not the target's own outcomes.",
+            "The corpus here is a seeded deal set, not live market data.",
+        ],
+        limitations=["Similarity weights and the corpus seed determine the "
+                     "matches; no governance over which comps are 'allowed'."],
+        related_routes=["/comparables", "/comparable-outcomes",
+                       "/diligence/compare"],
+        metric_ids=["ev_to_ebitda", "moic", "irr", "hold_period",
+                    "commercial_payer_exposure"],
+        data_source_ids=["public_transaction_corpus"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/deal-screening", "Deal Screening",
+        short_description="Runs every corpus deal through a rules-based screen "
+        "(composite risk, EV/EBITDA, MOIC floor, Medicaid exposure, heuristic "
+        "signal, data completeness) and returns PASS / WATCH / FAIL.",
+        primary_purpose="Apply tunable screening rules across the historical "
+        "deal corpus and see how the pass/watch/fail mix shifts.",
+        common_questions=["Which corpus deals pass the screen?",
+                         "What happens if I tighten the thresholds?"],
+        inputs=["The historical deal corpus; tunable thresholds via query "
+                "params (max composite risk, EV/EBITDA, MOIC floor, max "
+                "Medicaid %, min EV)."],
+        outputs=["Per page labels: KPI tiles (Corpus Deals, Pass/Watch/Fail "
+                 "rates) and a table (Deal, Decision, Risk, Heuristic, Data %, "
+                 "Top Reason)."],
+        key_metrics=["Pass / watch / fail rate", "Composite risk score",
+                     "EV/EBITDA", "MOIC", "Medicaid exposure",
+                     "Data completeness"],
+        data_sources=["The historical deal corpus (analysis packets / modeled "
+                      "financials), screened by rules."],
+        model_logic_summary="Applies deterministic rules with the supplied "
+        "thresholds to each corpus deal and emits PASS/WATCH/FAIL with reasons. "
+        "Rules-based, not a new prediction. Exact rule cutoffs: see "
+        "deal_screening_engine — treat specifics as needing source "
+        "confirmation.",
+        why_it_matters="Turns the corpus into a tunable screen so you can see "
+        "which deals clear a given risk bar.",
+        diligence_use_cases=["Calibrating a screening bar and seeing which "
+                            "historical deals would clear it."],
+        interpretation_guidance=[
+            "PASS/WATCH/FAIL are rule outcomes at the chosen thresholds, not "
+            "predictions or recommendations.",
+            "Operates on the historical corpus, not the public hospital "
+            "universe or a live target.",
+        ],
+        limitations=["Outcomes move with the thresholds you set; corpus "
+                     "coverage and data completeness bound the result."],
+        related_routes=["/deals-library", "/diligence/risk-workbench",
+                       "/comparable-outcomes"],
+        metric_ids=["risk_score", "ev_to_ebitda", "moic", "medicaid_exposure",
+                    "data_coverage_score"],
+        data_source_ids=["public_transaction_corpus"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/pe-intelligence", "PE Intelligence",
+        short_description="A hub/landing page for the PE-intelligence module "
+        "library — surfaces the partner 'reflexes' and links to the archetype, "
+        "reasonableness, red-flag, and bear-book inventories.",
+        primary_purpose="Orient users on what the codified PE-judgment library "
+        "can do and route them to per-deal reads.",
+        common_questions=["What can the PE-intelligence brain do?",
+                         "Where do I run it on a specific deal?"],
+        inputs=["None on the hub itself — it is a catalog / methodology "
+                "overview; per-deal output runs from deal routes."],
+        outputs=["Per page labels: a reflexes card grid, inventory links "
+                 "(archetype library, reasonableness matrix, red-flag catalog, "
+                 "bear book), and per-deal route links; counts like modules / "
+                 "reflexes."],
+        key_metrics=["Not applicable — this is a methodology/registry hub, not "
+                     "an analytic-metric page."],
+        data_sources=["The module registry / methodology itself (a catalog of "
+                      "decision logic), not deal or market data."],
+        model_logic_summary="Catalogs the partner-judgment modules and "
+        "reflexes and links to inventories; it does not itself screen deals or "
+        "produce predictions.",
+        why_it_matters="It's the map of the codified judgment layer — useful "
+        "for understanding what reads are available before opening a deal.",
+        diligence_use_cases=["Learning the available reflex/archetype reads "
+                            "and jumping to a deal's partner-review."],
+        interpretation_guidance=[
+            "This is a module registry and methodology overview — it codifies "
+            "judgment patterns; it does not produce validated predictions.",
+            "Actual per-deal output lives on deal routes (e.g. partner-review "
+            "/ red-flags), not on this hub.",
+        ],
+        limitations=["Descriptive hub only; nothing here is a deal-specific "
+                     "result."],
+        related_routes=["/diligence/deal", "/bear-cases"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.UNKNOWN,
+    ),
+    _ctx(
+        "/conferences", "Conferences",
+        short_description="A curated calendar of healthcare investment "
+        "conferences, PE summits, and industry events relevant to hospital "
+        "M&A teams.",
+        primary_purpose="Give diligence/sourcing teams a reference roadmap of "
+        "relevant industry events.",
+        common_questions=["What conferences are coming up?",
+                         "Which events matter for healthcare PE?"],
+        inputs=["A category filter (the events themselves are a curated list)."],
+        outputs=["Per page labels: events grouped by quarter with name, date, "
+                 "location, category, tier, and relevance."],
+        key_metrics=["Not applicable — this is a reference calendar, not an "
+                     "analytic-metric page."],
+        data_sources=["A curated, static healthcare-events list maintained in "
+                      "the page."],
+        model_logic_summary="Renders and filters a curated events list; no "
+        "model or computation.",
+        why_it_matters="Keeps the team's sourcing/relationship calendar in one "
+        "reference place.",
+        diligence_use_cases=["Planning sourcing/networking around the "
+                            "healthcare-PE event calendar."],
+        interpretation_guidance=[
+            "This is curated reference content, not deal data or a personal "
+            "attendance tracker.",
+        ],
+        limitations=["Static curated list — only as current as the page's "
+                     "maintained content."],
+        related_routes=["/pipeline", "/source"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.UNKNOWN,
     ),
     # ── Diligence Workspace ─────────────────────────────────────────
     _ctx(
@@ -554,14 +768,47 @@ _MANUAL: List[PageContext] = [
     ),
     _ctx(
         "/diligence/risk-workbench", "Risk Workbench",
-        short_description="A workbench for stress-testing a deal's risks.",
-        primary_purpose="Pressure-test the bear case and downside scenarios "
-        "for a deal.",
-        why_it_matters="Forces the downside into view before IC.",
+        short_description="A nine-panel risk panorama — runs the Tier-1/2/3 "
+        "diligence engines against the supplied deal metadata and shows a "
+        "severity band per panel.",
+        primary_purpose="Pressure-test a deal's structural risks (regulatory, "
+        "real-estate, physician, cyber, MA, labor, patient-pay) in one view.",
+        common_questions=["Where does this deal carry structural risk?",
+                         "What does the Steward precedent look like here?"],
+        inputs=["Deal metadata via query params (states, specialty, legal "
+                "structure, landlord, lease terms, etc.); panels without "
+                "inputs render 'not supplied' rather than fabricating numbers."],
+        outputs=["Per page labels: a metadata strip and a 9-panel grid, each "
+                 "panel showing a severity band (GREEN / YELLOW / RED / "
+                 "CRITICAL) with a headline number."],
+        key_metrics=["Per-panel severity band", "Risk score"],
+        data_sources=["The supplied deal metadata, run through the diligence "
+                      "engines; a hardcoded Steward replay in demo mode."],
+        model_logic_summary="Each panel runs its own engine on the metadata "
+        "and emits a severity band. No CCD/claims data is required. Exact "
+        "per-engine rules: see risk_workbench_page.py — treat specifics as "
+        "needing source confirmation.",
+        why_it_matters="Forces the structural downside into view before IC.",
+        diligence_use_cases=["A fast structural-risk read across many vectors "
+                            "early in diligence."],
+        interpretation_guidance=[
+            "Severity bands are rule-derived signals on the inputs, not a "
+            "verdict — should be verified before IC use.",
+            "Panels with no inputs say 'not supplied'; absence is not safety.",
+        ],
+        limitations=["Runs on metadata only; quality depends on what's "
+                     "supplied. A clean panorama is not proof of no risk."],
         related_routes=["/diligence/payer-stress", "/diligence/covenant-stress",
                        "/bear-cases"],
-        notes_for_assistant=["The palette links this with ?demo=steward; "
-                            "the query string is just an example dataset."],
+        notes_for_assistant=[
+            "?demo=steward is a SPECIFIC named historical replay (the Steward "
+            "Health 2016 pattern), not a generic example dataset — figures in "
+            "demo mode are a precedent reconstruction, not a live deal. There "
+            "is also a ?print=1 print-preview mode.",
+        ],
+        metric_ids=["risk_score"],
+        data_source_ids=["model_output", "demo_fixture"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
         data_confidence=DataConfidence.MIXED,
     ),
     _ctx(
@@ -718,9 +965,257 @@ _MANUAL: List[PageContext] = [
     ),
     _ctx(
         "/diligence/compare", "Compare Deals",
-        short_description="Side-by-side comparison of deals.",
-        primary_purpose="Compare candidate deals on common metrics.",
-        related_routes=["/comparables", "/pipeline"],
+        short_description="Side-by-side comparison of two datasets — each side "
+        "runs the QoR waterfall + KPI bundle + counterfactual advisor, with "
+        "delta badges on the headline metrics.",
+        primary_purpose="Put two specimens next to each other for an 'IC "
+        "bake-off / which do we lead with' read.",
+        common_questions=["How do these two deals compare?",
+                         "Which is the stronger lead?"],
+        inputs=["Two datasets chosen via query params (?left=…&right=…) from "
+                "the available fixtures."],
+        outputs=["Per page labels: two columns (KPIs, QoR waterfall, "
+                 "counterfactual / bridge levers) with delta badges between "
+                 "them."],
+        key_metrics=["Denial rate", "Days in A/R", "Net collection rate",
+                     "Headline deltas"],
+        data_sources=["Two demo fixtures, each run through the analysis "
+                      "pipeline."],
+        model_logic_summary="Runs the same pipeline on each side and diffs the "
+        "headline metrics; it is an ad-hoc side-by-side, not a governed "
+        "comp-set.",
+        why_it_matters="Makes a head-to-head choice between two candidates "
+        "explicit.",
+        diligence_use_cases=["Deciding which of two deals to lead with; "
+                            "pressure-testing one against the other."],
+        interpretation_guidance=[
+            "On this page both sides are demo fixtures — not target-uploaded "
+            "data; read it as a comparison method, not observed deal results.",
+            "This is matching/comparison, not an approved or locked comp set.",
+        ],
+        limitations=["Fixture-driven; no approval/governance over the pairing."],
+        related_routes=["/comparables", "/find-comps", "/pipeline"],
+        metric_ids=["denial_rate", "days_in_ar", "net_collection_rate"],
+        data_source_ids=["canonical_claims_dataset", "demo_fixture"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.DEMO_OR_FIXTURE,
+    ),
+    _ctx(
+        "/diligence/thesis-pipeline", "Thesis Pipeline",
+        short_description="A one-button orchestrator that runs the full "
+        "diligence chain end-to-end and reports each step's headline result.",
+        primary_purpose="Run the whole diligence analytic chain on a deal in "
+        "one pass and surface the headline numbers with deep links to each "
+        "individual analytic.",
+        common_questions=["What does the full diligence run say?",
+                         "Which step flagged the biggest issue?"],
+        inputs=["A claims dataset (fixture) plus deal metadata (EV, equity, "
+                "debt, revenue, EBITDA, lease terms, EHR vendor, roster, "
+                "market category, HCRIS CCN)."],
+        outputs=["Per page labels: a step-by-step execution log with headline "
+                 "numbers (e.g. P50 MOIC, P(sub-1x), denial recoverable $, "
+                 "attrition EBITDA-at-risk $, counterfactual lever $, Steward "
+                 "tier, bankruptcy verdict) and deep links to each analytic."],
+        key_metrics=["P50 MOIC", "P(sub-1x)", "Denial recoverable $",
+                     "Attrition EBITDA-at-risk $", "Bankruptcy verdict"],
+        data_sources=["A claims dataset (fixture on this page) + deal "
+                      "metadata; downstream analytics add model outputs and "
+                      "corpus lookups."],
+        model_logic_summary="Appears to chain multiple analytics (ingest, "
+        "benchmarks, denial prediction, bankruptcy scan, counterfactual, "
+        "attrition, autopsy, market intel, scenario assembly, Monte Carlo, "
+        "checklist) where each step is optional and failures short-circuit "
+        "only that step. Exact step math: needs source documentation.",
+        why_it_matters="Collapses the multi-tool diligence workflow into one "
+        "orchestrated run with a single headline read.",
+        diligence_use_cases=["A fast full-chain pass early in diligence, then "
+                            "drilling into the steps that flag risk."],
+        interpretation_guidance=[
+            "Each headline comes from a different analytic with its own "
+            "caveats — treat them as that tool's output, not a combined "
+            "verdict.",
+            "On this page the claims data are fixtures and several inputs are "
+            "user-entered; Monte Carlo outputs are simulated, not realized.",
+        ],
+        limitations=["Orchestration only — it does not add new math beyond the "
+                     "underlying analytics; fixture-driven here."],
+        related_routes=["/diligence/benchmarks", "/diligence/denial-prediction",
+                       "/diligence/counterfactual"],
+        metric_ids=["moic", "rcm_uplift", "physician_attrition",
+                    "value_creation_opportunity", "bankruptcy_pattern_match"],
+        data_source_ids=["canonical_claims_dataset", "model_output",
+                         "public_transaction_corpus"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/diligence/benchmarks", "Benchmarks",
+        short_description="Shows the target's revenue-cycle KPIs (from claims) "
+        "against external peer benchmark bands.",
+        primary_purpose="Place each of the target's RCM KPIs next to peer "
+        "quartile bands so off-benchmark gaps stand out.",
+        common_questions=["How does this target compare to peers?",
+                         "Which KPIs are off-benchmark?"],
+        inputs=["A claims dataset (fixture on this page) the KPIs are computed "
+                "from; built-in peer benchmark bands."],
+        outputs=["Per page labels: KPI cards (Days in A/R, First-Pass Denial "
+                 "Rate, A/R Aging >90d, Cost to Collect, Net Revenue "
+                 "Realization, Service→Bill and Bill→Cash lag), each with the "
+                 "target value and a delta vs the peer median."],
+        key_metrics=["Days in A/R", "First-pass denial rate",
+                     "Net revenue realization", "A/R aging >90 days",
+                     "Cost to collect"],
+        data_sources=["Target claims (computed KPIs) + external peer benchmark "
+                      "bands (e.g. HFMA-style quartiles)."],
+        model_logic_summary="Computes KPIs from the claims dataset and "
+        "compares each to peer bands, showing the signed delta to the peer "
+        "median. Exact KPI definitions: needs source documentation.",
+        why_it_matters="Benchmarking turns raw KPIs into a 'better or worse "
+        "than peers' read that frames where the RCM upside is.",
+        diligence_use_cases=["Spotting which revenue-cycle metrics lag peers "
+                            "and warrant a root-cause look."],
+        interpretation_guidance=[
+            "Two data types are mixed: the KPI VALUES are the target's own "
+            "(observed from claims), while the BANDS are external peer "
+            "benchmarks — don't read the bands as the target's data.",
+            "On this page the claims are a fixture; with a real upload the "
+            "values would be the target's observed data.",
+        ],
+        limitations=["Benchmark bands are peer references, not the target; "
+                     "comparison validity depends on the peer set."],
+        related_routes=["/diligence/root-cause", "/diligence/qoe-memo",
+                       "/rcm-benchmarks"],
+        metric_ids=["days_in_ar", "denial_rate", "net_collection_rate",
+                    "benchmark_percentile"],
+        data_source_ids=["canonical_claims_dataset", "benchmark_prior"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/diligence/root-cause", "Root Cause",
+        short_description="Decomposes off-benchmark denials into driver "
+        "categories (a Pareto) and surfaces zero-balance write-off claims from "
+        "the claims data.",
+        primary_purpose="Attribute denial dollars to their root-cause "
+        "categories so the recoverable opportunity is concrete and traceable.",
+        common_questions=["What's driving the denials?",
+                         "Where are the recoverable write-offs?"],
+        inputs=["A claims dataset (fixture on this page) the analysis is "
+                "computed from."],
+        outputs=["Per page labels: a denial Pareto (category, dollars, claim "
+                 "count) and a zero-balance-account autopsy table (claim, "
+                 "payer, charge, allowed, adjustment, denial codes)."],
+        key_metrics=["Denial dollars by category", "Recoverable write-offs",
+                     "Denial rate"],
+        data_sources=["Target claims (the page computes the decomposition "
+                      "directly from them)."],
+        model_logic_summary="Stratifies observed denials in the claims data "
+        "into driver categories and lists the underlying write-off rows — an "
+        "attribution/decomposition of what already happened, not a forward "
+        "projection.",
+        why_it_matters="Moves from 'denials are high' to 'here is exactly "
+        "what's driving them and what's recoverable'.",
+        diligence_use_cases=["Sizing and substantiating the recoverable RCM "
+                            "opportunity behind a denial gap."],
+        interpretation_guidance=[
+            "This decomposes ALREADY-OBSERVED denials in the data — it is not "
+            "a prediction of future denials.",
+            "On this page the claims are a fixture; recoverable $ are "
+            "directional until validated on the real claims.",
+        ],
+        limitations=["Only as complete as the claims data; categories depend "
+                     "on the denial-code mapping used."],
+        related_routes=["/diligence/benchmarks", "/diligence/denial-prediction",
+                       "/diligence/value"],
+        metric_ids=["denial_rate", "collections_leakage", "bad_debt_rate"],
+        data_source_ids=["canonical_claims_dataset"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/diligence/value", "Value Creation",
+        short_description="Maps RCM initiative levers to their expected EBITDA "
+        "contribution on the deal, to underwrite the value bridge.",
+        primary_purpose="Estimate what each RCM lever could be worth on this "
+        "deal's size / payer mix / denial profile, to prioritize the 100-day "
+        "plan and underwrite the bridge.",
+        common_questions=["What's the RCM upside worth on this deal?",
+                         "Which levers should the 100-day plan prioritize?"],
+        inputs=["A claims dataset (fixture) and the deal's size / payer-mix / "
+                "denial profile; payer-rate and CMS-regime schedules (demo on "
+                "this page)."],
+        outputs=["Per page labels: per-lever expected EBITDA contribution, a "
+                 "contract re-pricer view, and a CMS advisory regime read that "
+                 "feed the value bridge."],
+        key_metrics=["Expected EBITDA contribution per lever",
+                     "Recoverable EBITDA", "Payer leverage"],
+        data_sources=["Target claims (fixture here) + synthetic contract / CMS "
+                      "schedules + model outputs."],
+        model_logic_summary="Appears to map each RCM lever to an expected "
+        "EBITDA contribution given the deal shape and feed it into the value "
+        "bridge / IC memo. Exact lever math: needs source documentation.",
+        why_it_matters="It's the underwriting of the upside case — the bridge "
+        "that justifies the entry price.",
+        diligence_use_cases=["Underwriting the value-creation bridge and "
+                            "prioritizing the 100-day plan."],
+        interpretation_guidance=[
+            "These are UNDERWRITTEN / forward opportunity estimates, NOT "
+            "realized value creation — read them as what a lever COULD be "
+            "worth, to be verified before IC use.",
+            "On this page contract/CMS rates are synthetic demo inputs, not "
+            "the deal's actual contracts.",
+        ],
+        limitations=["Forward estimates on demo schedules; realized value "
+                     "depends on execution and actual contracts."],
+        related_routes=["/diligence/bridge-audit", "/diligence/root-cause",
+                       "/diligence/ic-packet"],
+        metric_ids=["value_creation_opportunity", "rcm_uplift", "ebitda_bridge",
+                    "adjusted_ebitda", "payer_mix"],
+        data_source_ids=["canonical_claims_dataset", "model_output"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/diligence/counterfactual", "Counterfactual",
+        short_description="For each lever, the smallest shift that would flip "
+        "the deal's verdict — a 'what would change your mind' / 'what we're "
+        "waiting for' surface.",
+        primary_purpose="Identify the minimum change on each lever (rate, "
+        "denial, AR, structure) that would move a RED/YELLOW band to GREEN, "
+        "and how feasible that change is.",
+        common_questions=["What would change the conclusion on this deal?",
+                         "Which lever is the binding constraint?"],
+        inputs=["A claims dataset (fixture) + deal metadata (legal structure, "
+                "states, specialty, landlord, lease terms, etc.)."],
+        outputs=["Per page labels: per-lever cards (module, action, original→"
+                 "target band, feasibility HIGH/MED/LOW, estimated $ impact); "
+                 "a JSON download of the same."],
+        key_metrics=["Minimum lever shift to flip the band", "Feasibility",
+                     "Estimated $ impact"],
+        data_sources=["Target claims (fixture here) + caller-supplied "
+                      "metadata; model outputs."],
+        model_logic_summary="Appears to solve, per lever, the smallest change "
+        "that flips the verdict band, tagging feasibility and dollar impact. "
+        "A sensitivity / what-if analysis. Exact solver logic: needs source "
+        "documentation.",
+        why_it_matters="Turns a verdict into an action map — it names the "
+        "binding constraints that diligence should target.",
+        diligence_use_cases=["Staging the 'what we're waiting for' list — the "
+                            "levers whose movement would change the call."],
+        interpretation_guidance=[
+            "This is a what-if / sensitivity read, NOT a guaranteed action or "
+            "recommendation — if a lever's feasibility is low, the verdict "
+            "holds.",
+            "On this page the claims are fixtures; treat $ impacts as "
+            "directional, to be verified before IC use.",
+        ],
+        limitations=["Only as good as the inputs and the bands it tests; it "
+                     "describes what WOULD change a conclusion, not what will."],
+        related_routes=["/diligence/risk-workbench", "/diligence/value",
+                       "/diligence/bridge-audit"],
+        metric_ids=["denial_rate", "days_in_ar", "value_creation_opportunity"],
+        data_source_ids=["canonical_claims_dataset", "model_output"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
         data_confidence=DataConfidence.MIXED,
     ),
     _ctx(
@@ -754,10 +1249,44 @@ _MANUAL: List[PageContext] = [
     ),
     _ctx(
         "/screening/bankruptcy-survivor", "Bankruptcy Scan",
-        short_description="Screens deals/hospitals for bankruptcy / distress "
-        "survival signals.",
-        primary_purpose="Flag distress risk early.",
-        related_routes=["/diligence/risk-workbench", "/bear-cases"],
+        short_description="A rapid pre-screen of a deal's structure against 12 "
+        "patterns drawn from PE-healthcare bankruptcies (Steward / Envision / "
+        "Mednax precedents).",
+        primary_purpose="Flag, early, whether a deal's structure matches the "
+        "moves that have already broken comparable deals.",
+        common_questions=["Does this deal match a known failure playbook?",
+                         "What structural patterns fire here?"],
+        inputs=["Deal structure inputs (specialty, states, legal structure, "
+                "landlord, lease terms, EBITDAR coverage, OON revenue share, "
+                "geography); no CCD/claims required."],
+        outputs=["Per page labels: a verdict band (GREEN / YELLOW / RED / "
+                 "CRITICAL) and a pattern-check table (Category, Check, "
+                 "Status, narrative) citing the named historical precedent."],
+        key_metrics=["Verdict band", "Patterns fired (of 12)",
+                     "Named-case matches"],
+        data_sources=["Named-case fingerprints from the public-deals corpus "
+                      "(entry EV + outcome) + the user's structure inputs."],
+        model_logic_summary="Deterministic, rule-based pattern matching (per "
+        "source: 0 fired = GREEN, 1-2 = YELLOW, 3+ or any critical = RED, full "
+        "named-case replay = CRITICAL). Not ML, not probabilistic.",
+        why_it_matters="Surfaces structural distress analogues the bull case "
+        "may overlook, with a named precedent attached.",
+        diligence_use_cases=["A fast pre-screen before committing diligence "
+                            "resources; framing the bear case."],
+        interpretation_guidance=[
+            "Each fired pattern is a falsifiable structural CLAIM and a "
+            "diligence signal — not a prediction or a verdict that the deal "
+            "will fail.",
+            "Per the page: pre-screening only, not a legal opinion and not a "
+            "replacement for the full analysis packet — verify before IC use.",
+        ],
+        limitations=["Matches structure to historical precedent; it cannot see "
+                     "deal-specific facts the inputs don't capture."],
+        related_routes=["/diligence/risk-workbench", "/diligence/deal-autopsy",
+                       "/bear-cases"],
+        metric_ids=["bankruptcy_pattern_match"],
+        data_source_ids=["public_transaction_corpus"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
         data_confidence=DataConfidence.MIXED,
     ),
     # ── Library & Reference ─────────────────────────────────────────
