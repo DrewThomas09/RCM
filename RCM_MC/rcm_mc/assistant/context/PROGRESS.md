@@ -1071,3 +1071,56 @@ until this RAG version has been used on real questions.
 - Heuristic scorers are conservative pattern checks, not semantic
   graders; the report's "worst/flagged" list is for human inspection.
 - Reports live in the gitignored `.pedesk_guide_eval/` folder.
+
+---
+
+# Task (autonomous loop) — Guide/Ollama/RAG backend hardening (2026-05-22)
+
+Bounded, read-only backend reliability pass — no uploads, memory,
+actions, mutations, streaming, external APIs, or new deps. Six small
+tested commits.
+
+1. **Health diagnostics** — `/api/guide/ollama-health` now reports
+   `embed_model`, `rag_enabled`, `rag_index_path/exists/chunk_count/
+   embedded_count`, `chat/embed_model_installed`, and one ordered
+   `suggested_fix` covering disabled → unreachable → missing chat model
+   (`ollama pull gemma4:e4b`) → missing embed model (`ollama pull
+   nomic-embed-text`) → missing/empty RAG index (`index_builder`). New
+   `retrieval.index_status()` (cheap, Ollama-free, never raises).
+2. **Ask fallback** — RAG enabled but index missing / no results /
+   embeddings unreachable / retrieval error → answer falls back to
+   packet-only with a clear `rag_warning` (rag_results_count 0). `read_only`
+   preserved; disabled = exact v1.
+3. **Index lifecycle** — `retrieval.search` normalizes top_k (ignore
+   ≤0/non-int, cap 50) and returns [] for missing/empty index;
+   `search_similar` skips malformed-JSON + dimension-mismatched vectors;
+   `validate_rag_index` reports embedding model(s), FAILs on invalid/empty
+   embeddings, WARNs on mixed/stale-model index.
+4. **Prompt grounding** — `format_rag_context` labels each snippet with
+   title + source_type + id/route and leads with an explicit "page packet
+   is PRIMARY; retrieved context is supporting; do not treat as
+   target-specific data unless labeled" instruction.
+5. **Sidebar** — renders a "Guide context used: …" provenance line and any
+   `rag_warning` in the answer bubble (escaped). No redesign/streaming.
+6. **Operator scripts** — `scripts/build_guide_rag_index.sh`,
+   `scripts/check_guide_rag.sh`; README operator notes.
+
+## Validation
+- `validate_page_context_coverage` / `validate_guide_context_quality` →
+  PASS (exit 0). `validate_rag_index` (live, existing index) → PASS.
+- `py_compile` on touched modules → clean.
+- `pytest` guide page-context/metric-data/packet/context-endpoint/
+  prompt-builder/ollama-endpoint/sidebar-shell/rag/rag-endpoints/eval →
+  green (see PR).
+
+## Deferred (documented, not built)
+- User-document ingestion (PDF/text/markdown), Excel parsing, chat memory,
+  streaming, model picker, actions/mutations — all out of scope by design.
+- Streaming was eligible only "if everything else complete and safe with
+  tests"; left deferred to keep the loop bounded and low-risk.
+
+## Confirmation
+No uploads, no memory, no actions/mutations, no external APIs, no new
+dependencies added. Guide remains read-only, local, and packet/RAG-
+grounded — now easier to diagnose and safer when Ollama/RAG are disabled,
+missing, stale, or misconfigured.
