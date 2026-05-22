@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 
 from ._chartis_kit import (
     chartis_shell, ck_fmt_num, ck_kpi_block, ck_next_section,
-    ck_provenance_tooltip,
+    ck_provenance_tooltip, ck_value_anchor,
 )
 from .brand import PALETTE
 
@@ -388,7 +388,24 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
         eyebrow="Continue —",
         italic_word="market",
     )
-    body = f'{kpis}{prevalence_section}{stick_section}{elas_section}{tw_section}{interp}{actions}{next_up}'
+    # Lead takeaway — surface the demand-profile read (structural
+    # density + stickiness + pricing power) at the top, before the KPI
+    # grid and the "What This Means for Diligence" card. Tone tracks
+    # whether demand is structurally strong.
+    _dem_tone = (
+        "positive" if density > 60 and stickiness > 60
+        else "negative" if density < 40 or stickiness < 40
+        else "warning"
+    )
+    lead_anchor = ck_value_anchor(
+        "DEMAND PROFILE",
+        f"{density:.0f}/100 disease density",
+        delta=f"{stickiness:.0f}/100 stickiness",
+        opportunity=f"{elas_label} pricing ({elasticity:.2f})",
+        target=f"{tailwind:+.0f} net tailwind",
+        tone=_dem_tone,
+    )
+    body = f'{lead_anchor}{kpis}{prevalence_section}{stick_section}{elas_section}{tw_section}{interp}{actions}{next_up}'
 
     return chartis_shell(
         body, f"Demand Analysis — {name}",
