@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title, ck_bar_row
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title, ck_bar_row, ck_value_anchor
 
 
 def _gaps_chart(items):
@@ -249,9 +249,22 @@ def render_locum_tracker(params: dict = None) -> str:
         meta=f"{sector} sector · ${r.locum_spend_mm:,.2f}M locum spend = {r.locum_pct_of_labor * 100:.1f}% of ${r.total_labor_mm:,.1f}M labor · {r.total_contract_fte:.1f} contract FTE across {len(r.roles)} roles · {len(r.gaps)} coverage gaps at ${total_gap_risk:,.1f}M revenue at risk · ${total_conv_savings:,.2f}M annual savings from permanent conversion",
     )
 
+    # Lead takeaway — the locum spend is the cost burden; the permanent-
+    # conversion pipeline is the recoverable opportunity. Surface both
+    # at the top instead of leaving them in the bottom thesis. All
+    # figures come from compute_locum_*; tone is warning (cost exposure).
+    lead_anchor = ck_value_anchor(
+        "LOCUM EXPOSURE",
+        f"${r.locum_spend_mm:,.2f}M locum spend",
+        delta=f"{r.locum_pct_of_labor * 100:.1f}% of labor",
+        opportunity=f"${total_conv_savings:,.2f}M conversion savings/yr",
+        target=f"{len(r.gaps)} coverage gaps · ${total_gap_risk:,.1f}M at risk",
+        tone="warning",
+    )
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
+  {lead_anchor}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {roles_paired}
