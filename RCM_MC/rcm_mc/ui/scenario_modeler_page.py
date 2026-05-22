@@ -609,16 +609,12 @@ def render_scenario_modeler(
     )
 
     # ── Nav ──
-    nav = ck_panel(
-        '<p class="ck-section-body">'
-        f'<a href="/ebitda-bridge/{_html.escape(ccn)}" class="cad-btn cad-btn-primary">Full EBITDA Bridge</a> '
-        f'<a href="/ic-memo/{_html.escape(ccn)}" class="cad-btn">IC Memo</a> '
-        f'<a href="/hospital/{_html.escape(ccn)}" class="cad-btn">Hospital Profile</a> '
-        f'<a href="/ml-insights/hospital/{_html.escape(ccn)}" class="cad-btn">ML Analysis</a> '
-        '<a href="/predictive-screener" class="cad-btn">Deal Screener</a>'
-        '</p>',
-        title="Cross-links",
-    )
+    # Standard per-deal context ribbon (same one every other per-deal
+    # surface uses) replaces the bespoke cad-btn cross-links bar — all
+    # those links plus the rest of the deal's analyses, in consistent
+    # editorial styling.
+    from .models_page import _model_nav
+    deal_ribbon = _model_nav(ccn, active="scenarios")
 
     sm_styles = """
 <style>
@@ -646,9 +642,9 @@ padding:4px 0;cursor:pointer;}
     )
     moic_bars = _scenario_moic_bars(results)
     body = (
-        f'{sm_styles}{_SM_CHART_CAPTION_CSS}{intro}{selector}{kpis}'
+        f'{deal_ribbon}{sm_styles}{_SM_CHART_CAPTION_CSS}{intro}{selector}{kpis}'
         f'{moic_bars}{comparison}'
-        f'{bridge_section}{timing_section}{nav}{next_up}'
+        f'{bridge_section}{timing_section}{next_up}'
     )
 
     best = max(results, key=lambda r: r["irr"])
