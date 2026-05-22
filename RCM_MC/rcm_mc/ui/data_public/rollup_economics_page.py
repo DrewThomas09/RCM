@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
 
 
 def _synergy_chart(items) -> str:
@@ -306,9 +306,25 @@ def render_rollup_economics(params: dict = None) -> str:
         meta=f"""Multiple arb · add-on cadence · synergy capture · debt capacity · exit waterfall — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    # Lead takeaway — surface the computed roll-up return (base MOIC/IRR
+    # and the value created), otherwise buried as KPIs #7-8 and in the
+    # bottom thesis. All figures come from compute_rollup_economics().
+    lead_anchor = ck_value_anchor(
+        "ROLL-UP RETURN",
+        f"{r.base_case_moic:.2f}x MOIC",
+        delta=f"{r.base_case_irr * 100:.1f}% base IRR",
+        opportunity=f"${r.multiple_arbitrage_mm:,.0f}M multiple arb",
+        target=(
+            f"${r.platform_entry_ebitda_mm:,.1f}M → "
+            f"${r.platform_exit_ebitda_mm:,.1f}M EBITDA"
+        ),
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
+  {lead_anchor}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Platform EBITDA Walk — Entry → Exit</div>{svg}</div>
