@@ -23,6 +23,28 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 
+def entry_ebitda_from_profile(net_revenue: float, ebitda_margin: float) -> float:
+    """Entry / current EBITDA derived from a deal profile, computed ONE
+    way so every per-deal page agrees on the base number.
+
+    Margin is clamped to a sane band (±50%) and the result floored at 5%
+    of revenue — a hospital reporting a thinner or negative margin is
+    treated as a 5%-margin turnaround base rather than rendering a
+    negative-EBITDA artifact. Below a nominal revenue floor, fall back
+    to a flat 10% of revenue.
+
+    Shared by the returns and waterfall route handlers (and any other
+    per-deal economics surface) so the same deal never shows two
+    different base EBITDAs — previously the two routes used divergent
+    inline formulas (clamped+floored vs raw ``rev*margin``).
+    """
+    rev = float(net_revenue or 0.0)
+    margin = max(-0.5, min(0.5, float(ebitda_margin or 0.0)))
+    if rev > 1e5:
+        return max(rev * 0.05, rev * margin)
+    return rev * 0.10
+
+
 # ── Data types ──────────────────────────────────────────────────────────────
 
 @dataclass
