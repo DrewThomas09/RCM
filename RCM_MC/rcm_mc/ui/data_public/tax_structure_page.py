@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _structure_comparison_svg(structures) -> str:
@@ -331,10 +331,24 @@ def render_tax_structure(params: dict = None) -> str:
         meta=f"""Stock vs. 338(h)(10) vs. F-reorg, PTE/SALT, rollover taxation, after-tax cash — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    # Lead takeaway — surface the computed tax optimization (savings +
+    # the recommended structure), otherwise buried as KPIs #3-4. All
+    # figures come from compute_tax_structure().
+    lead_anchor = ck_value_anchor(
+        "TAX OPTIMIZATION",
+        f"${r.total_tax_optimization_mm:,.1f}M tax savings",
+        delta=f"{r.effective_tax_rate * 100:.1f}% effective rate",
+        opportunity=f"${r.rollover_tax.deferred_gain_mm:,.1f}M rollover deferred",
+        target=f"recommended: {r.recommended_structure}",
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
   {page_title}
+
+  {lead_anchor}
 
   {form}
 
