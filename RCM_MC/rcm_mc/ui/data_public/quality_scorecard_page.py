@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
 
 
 def _impact_chart(items):
@@ -258,10 +258,24 @@ def render_quality_scorecard(params: dict = None) -> str:
         meta=f"""HEDIS, Stars, readmission, VBC participation — with quality-adjusted EBITDA and EV uplift modeling for {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    # Lead takeaway — surface the computed quality value (overall score
+    # → EV uplift from quality), otherwise buried as KPIs #1/#8 and in
+    # the bottom thesis. All figures come from compute_quality_scorecard().
+    lead_anchor = ck_value_anchor(
+        "QUALITY VALUE",
+        f"{r.overall_score:.0f}/100 quality",
+        delta=f"{r.tier.replace('_', ' ').title()} tier",
+        opportunity=f"${r.total_ev_uplift_from_quality_mm:,.1f}M EV uplift",
+        target=f"${r.total_annual_quality_bonus_mm:,.2f}M annual bonus",
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
   {page_title}
+
+  {lead_anchor}
 
   {form}
 
