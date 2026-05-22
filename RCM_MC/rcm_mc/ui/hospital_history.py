@@ -407,15 +407,16 @@ def render_hospital_history(
             )
 
     # === Actions ===
+    # Standard per-deal context ribbon (consistent with every other
+    # per-deal surface) handles generic deal navigation; the panel
+    # keeps only the state-market link the ribbon doesn't carry.
+    from .models_page import _model_nav
+    deal_ribbon = _model_nav(ccn, active="")
     actions = ck_panel(
         '<p class="ck-section-body">'
-        f'<a href="/hospital/{ccn_esc}" class="cad-btn cad-btn-primary">Hospital Profile</a> '
-        f'<a href="/models/dcf/{ccn_esc}" class="cad-btn">DCF Model</a> '
-        f'<a href="/models/market/{ccn_esc}" class="cad-btn">Market Analysis</a> '
-        f'<a href="/models/comparables/{ccn_esc}" class="cad-btn">Comparables</a> '
         f'<a href="/market-data/state/{state_esc}" class="cad-btn">{state_esc} Market</a>'
         '</p>',
-        title="Cross-links",
+        title="Market context",
     )
 
     hh_styles = f"""
@@ -431,7 +432,7 @@ border-bottom:1px solid {PALETTE['border']};}}
         italic_word="profile",
     )
     body = (
-        f'{hh_styles}{intro}{kpis}{timeline_table}{covid_section}'
+        f'{deal_ribbon}{hh_styles}{intro}{kpis}{timeline_table}{covid_section}'
         f'{trend_section}{peer_section}{proj_section}{actions}{next_up}'
     )
 
