@@ -1319,28 +1319,78 @@ _MANUAL: List[PageContext] = [
     ),
     _ctx(
         "/comparables", "Comparables",
-        short_description="Corpus-derived comparable deals/valuation "
-        "reference.",
-        primary_purpose="Benchmark a target against realized-deal comps.",
-        data_sources=["Realized-deal corpus."],
+        short_description="Given a query deal's characteristics, finds the "
+        "most similar realized deals in the corpus and shows peer benchmark "
+        "statistics.",
+        primary_purpose="Benchmark a target against similar realized-deal "
+        "comps by profile similarity.",
+        common_questions=["What deals are comparable to this profile?",
+                         "Where does the target sit vs the peer set?"],
+        inputs=["Query-deal characteristics via URL (sector, EV, EBITDA, hold, "
+                "commercial mix) or a free-text search; with no query it shows "
+                "recent realized corpus deals."],
+        outputs=["Per page labels: a comparable-transactions table (Deal, "
+                 "Sector, Year, EV, EV/EBITDA, MOIC, IRR, Hold, Payer Mix, "
+                 "Match) and peer stats (P25/P50/P75 MOIC, loss rate, 3×+ "
+                 "rate, target MOIC percentile)."],
+        key_metrics=["Peer P25/P50/P75 MOIC", "Peer loss rate", "3×+ rate",
+                     "Target MOIC percentile", "Comparables found"],
+        data_sources=["The realized-deal corpus (similarity-ranked)."],
+        model_logic_summary="Ranks corpus deals by distance-based similarity "
+        "(sector, size, entry multiple, payer mix) and summarizes the peer "
+        "set. Exact similarity weights: see comparables_page.py.",
         why_it_matters="Comps anchor valuation in observed outcomes.",
-        interpretation_guidance=["Thin comp sets are directional only — "
-                                "check the sample size."],
+        diligence_use_cases=["Sanity-checking entry multiple and return "
+                            "expectations against a peer set."],
+        interpretation_guidance=[
+            "These are algorithmically MATCHED comparables, not an approved or "
+            "locked comp set — verify the peer set before IC use.",
+            "Thin comp sets are directional only — check the count.",
+        ],
+        limitations=["Matches are similarity proximity over the corpus; no "
+                     "governance over which comps are 'allowed'."],
         related_routes=["/find-comps", "/market-rates", "/comparable-outcomes"],
+        metric_ids=["moic", "irr", "ev_to_ebitda", "hold_period", "payer_mix",
+                    "benchmark_percentile"],
+        data_source_ids=["public_transaction_corpus"],
         source_confidence=SourceConfidence.DOCUMENTED,
-        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+        data_confidence=DataConfidence.MIXED,
     ),
     _ctx(
         "/market-rates", "Market Rates",
-        short_description="Corpus percentile reference (EV/EBITDA, MOIC, IRR, "
-        "etc.) by segment.",
-        primary_purpose="Show where market pricing/returns sit by sector / "
-        "size / vintage.",
-        key_metrics=["P25/P50/P75/P90 by segment"],
-        data_sources=["Realized-deal corpus (percentiles, not means)."],
-        interpretation_guidance=["Percentiles over a thin segment swing on "
-                                "individual deals — read n."],
-        related_routes=["/comparables", "/base-rates" ],
+        short_description="Corpus percentile reference — P25/P50/P75 MOIC and "
+        "IRR by sector, payer-mix bucket, hold period, or region.",
+        primary_purpose="Show where realized returns sit by segment, computed "
+        "from the corpus.",
+        common_questions=["What's the typical MOIC/IRR for this segment?",
+                         "How wide is the spread by sector?"],
+        inputs=["A grouping choice (sector / payer-mix bucket / hold period / "
+                "region); the realized-deal corpus."],
+        outputs=["Per page labels: corpus P50 MOIC and loss-rate KPIs and a "
+                 "distribution table (N, P25/P50/P75 MOIC, P50 IRR, loss rate, "
+                 "3×+ rate, avg EV, avg hold) per group."],
+        key_metrics=["P25/P50/P75 MOIC by segment", "P50 IRR", "Loss rate",
+                     "3×+ rate"],
+        data_sources=["The realized-deal corpus (closed deals only; "
+                      "percentiles, not means)."],
+        model_logic_summary="Computes percentiles of realized MOIC/IRR within "
+        "each segment from the corpus; excludes unrealized deals.",
+        why_it_matters="Anchors pricing/return expectations in observed "
+        "segment distributions.",
+        diligence_use_cases=["Placing a deal's expected return inside its "
+                            "segment's realized distribution."],
+        interpretation_guidance=[
+            "These are CORPUS benchmark percentiles, NOT live market pricing "
+            "or real-time trading multiples.",
+            "Percentiles over a thin segment swing on individual deals — read "
+            "the N.",
+        ],
+        limitations=["Reflects the corpus composition and vintage; not a live "
+                     "market quote."],
+        related_routes=["/comparables", "/comparable-outcomes",
+                       "/irr-dispersion"],
+        metric_ids=["moic", "irr", "ev_to_ebitda", "benchmark_percentile"],
+        data_source_ids=["public_transaction_corpus"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
@@ -1355,11 +1405,61 @@ _MANUAL: List[PageContext] = [
     ),
     _ctx(
         "/library", "Deals Library",
-        short_description="The realized-deal corpus / library browser.",
-        primary_purpose="Browse the corpus of deals that powers benchmarks "
-        "and comps.",
-        data_sources=["Realized-deal corpus (real + synthetic split)."],
-        related_routes=["/comparables", "/market-rates"],
+        short_description="A dense, sortable browser over the realized-deal "
+        "corpus (600+ deals) that powers the platform's benchmarks and comps.",
+        primary_purpose="Browse and filter the corpus of deals behind the "
+        "benchmarks, comps, and backtests.",
+        common_questions=["What deals are in the corpus?",
+                         "Show me realized deals in this sector / regime."],
+        inputs=["Sector / regime / MOIC-bucket filters and name search."],
+        outputs=["Per page labels: KPIs (Total Deals, Realized, Corpus P50 "
+                 "MOIC, Loss Rate, Sectors) and a table (Deal, Sector, Year, "
+                 "Regime, EV, EV/EBITDA, MOIC, IRR, Hold, Lev%, Comm%, "
+                 "Sponsor, Region, data-quality Grade)."],
+        key_metrics=["Corpus P50 MOIC", "Loss rate", "MOIC", "IRR",
+                     "EV/EBITDA", "Data-quality grade"],
+        data_sources=["The realized-deal corpus (a seeded set of public deals "
+                      "plus extended seed data)."],
+        model_logic_summary="Renders and filters the corpus rows; the Grade "
+        "reflects per-deal data completeness (per source).",
+        why_it_matters="It's the reference universe everything else benchmarks "
+        "against — knowing its scope frames every comp/benchmark.",
+        diligence_use_cases=["Exploring realized precedents and the corpus's "
+                            "sector/regime composition."],
+        interpretation_guidance=[
+            "This is a reference/benchmarking corpus, not a governed deal-room "
+            "or source-of-truth for your live deals.",
+            "The corpus blends real public deals with seeded data — read it as "
+            "calibration context, not a live market feed.",
+        ],
+        limitations=["Coverage and grades bound what comps/benchmarks can "
+                     "say; not a live or exhaustive market database."],
+        related_routes=["/comparables", "/market-rates", "/portfolio-analytics"],
+        metric_ids=["moic", "irr", "ev_to_ebitda", "hold_period", "leverage",
+                    "commercial_payer_exposure"],
+        data_source_ids=["public_transaction_corpus"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/deals-library", "Deals Library (alt)",
+        short_description="A legacy URL that redirects to /library (the deals "
+        "corpus browser).",
+        primary_purpose="Preserve the older path; it points at the same corpus "
+        "library.",
+        common_questions=["Is this different from /library?"],
+        inputs=["None — it redirects."],
+        outputs=["A redirect to /library (query string preserved)."],
+        key_metrics=["Not applicable — redirect."],
+        data_sources=["None of its own — see /library."],
+        model_logic_summary="A 301 redirect to /library; no rendering of its "
+        "own.",
+        why_it_matters="Same content as /library under an older URL.",
+        diligence_use_cases=["Use /library — this alias resolves there."],
+        interpretation_guidance=["Treat this as identical to /library."],
+        limitations=["No independent page; it forwards to /library."],
+        related_routes=["/library"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
         data_confidence=DataConfidence.MIXED,
     ),
     _ctx(
@@ -1380,69 +1480,400 @@ _MANUAL: List[PageContext] = [
     ),
     # ── Research & Backtesting ──────────────────────────────────────
     _ctx(
+        "/research", "Research Hub",
+        short_description="A curated index of the platform's research surfaces "
+        "— methodology hubs, frameworks, healthcare-PE deep-dives, and the "
+        "conference roadmap.",
+        primary_purpose="Help users discover the reference/analysis pages "
+        "scattered across the platform from one searchable list.",
+        common_questions=["What research is available?",
+                         "Where's the methodology / a given framework?"],
+        inputs=["Topic and format filters; a keyword search over a curated "
+                "entry list."],
+        outputs=["Per page labels: a filtered, searchable list of research "
+                 "entries linking out to each surface."],
+        key_metrics=["Not applicable — this is a navigation/index page, not "
+                     "an analytic-metric page."],
+        data_sources=["A code-curated list of research entries (no stored "
+                      "documents)."],
+        model_logic_summary="Filters and renders a curated entry list; it "
+        "does not store, version, or compute anything.",
+        why_it_matters="It's the front door to the platform's reference "
+        "material.",
+        diligence_use_cases=["Finding the right methodology / framework page "
+                            "before a deep dive."],
+        interpretation_guidance=[
+            "This is a discovery/search index, not a governed diligence "
+            "record — it links to pages, it does not store or version content.",
+        ],
+        limitations=["As current as the curated entry list in code; no "
+                     "persistence layer."],
+        related_routes=["/methodology", "/conferences", "/market-intel"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.UNKNOWN,
+    ),
+    _ctx(
+        "/notes", "Notes",
+        short_description="Full-text and tag-filtered search across the "
+        "analyst notes saved on deals.",
+        primary_purpose="Find and review the notes the team has recorded "
+        "across deals.",
+        common_questions=["What did we note on this deal / topic?",
+                         "Show notes tagged X."],
+        inputs=["A keyword query and/or tag filters (and an optional deal "
+                "scope)."],
+        outputs=["Per page labels: matching notes with deal link, timestamp, "
+                 "author, tags, and a highlighted body excerpt."],
+        key_metrics=["Not applicable — this is a notes-search page, not an "
+                     "analytic-metric page."],
+        data_sources=["The server-stored deal-notes table (persisted; "
+                      "soft-deleted rather than hard-removed)."],
+        model_logic_summary="Full-text + tag-AND search over stored notes; "
+        "soft-delete preserves history.",
+        why_it_matters="Keeps the analyst voice/searchable across the book "
+        "rather than buried per deal.",
+        diligence_use_cases=["Recovering prior observations on a deal or "
+                            "theme during diligence."],
+        interpretation_guidance=[
+            "Notes are user-entered analyst commentary, not computed findings.",
+            "They persist server-side with soft-delete, but this is a search "
+            "utility — treat it as an archive, not a formal sign-off record.",
+        ],
+        limitations=["Only surfaces what analysts have written; coverage is "
+                     "uneven by deal."],
+        related_routes=["/diligence/questions", "/diligence/deal"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.USER_ENTERED_DATA,
+    ),
+    _ctx(
         "/sector-momentum", "Sector Momentum",
-        short_description="Corpus-derived sector trend/momentum read.",
-        primary_purpose="Show which healthcare sectors are trending in the "
-        "corpus.",
-        data_sources=["Realized-deal corpus."],
-        related_routes=["/market-intel", "/irr-dispersion"],
+        short_description="Compares recent vs prior deal activity (and MOIC) "
+        "by sector across the corpus to show acceleration / deceleration.",
+        primary_purpose="Show which healthcare sectors have been picking up or "
+        "cooling in corpus deal activity and returns.",
+        common_questions=["Which sectors are heating up or cooling?",
+                         "How has MOIC moved by sector?"],
+        inputs=["A window size (?years=N); the realized-deal corpus."],
+        outputs=["Per page labels: per-sector tables (Recent count, Prior "
+                 "count, Change %, momentum arrow, MOIC P50 recent vs prior)."],
+        key_metrics=["Recent vs prior deal count", "Change %",
+                     "MOIC P50 recent vs prior"],
+        data_sources=["The realized-deal corpus (sliced by sector and "
+                      "vintage)."],
+        model_logic_summary="Counts corpus deals (and MOIC P50) in a recent "
+        "window vs the prior window per sector; a backward-looking comparison.",
+        why_it_matters="Sector activity trends frame where sourcing attention "
+        "has been flowing.",
+        diligence_use_cases=["Framing a sector thesis against where corpus "
+                            "activity has trended."],
+        interpretation_guidance=[
+            "This describes HISTORICAL corpus activity — it is not a forecast "
+            "of future sector performance.",
+        ],
+        limitations=["Reflects corpus composition, which may not mirror the "
+                     "live market; thin sectors are noisy."],
+        related_routes=["/market-intel", "/irr-dispersion",
+                       "/portfolio-analytics"],
+        metric_ids=["moic"],
+        data_source_ids=["public_transaction_corpus"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
     _ctx(
         "/irr-dispersion", "IRR Dispersion",
-        short_description="Distribution / dispersion of IRRs across the "
-        "corpus.",
+        short_description="The distribution of realized IRRs across the corpus "
+        "— histogram, IRR-vs-MOIC scatter, and sector benchmarks.",
         primary_purpose="Show the spread of realized returns, not just the "
         "median.",
-        data_sources=["Realized-deal corpus."],
-        interpretation_guidance=["Dispersion is the point — a good median "
-                                "can hide a wide tail."],
-        related_routes=["/market-rates", "/comparable-outcomes"],
+        common_questions=["How wide is the realized IRR spread?",
+                         "What share clears a 20% hurdle?"],
+        inputs=["The realized-deal corpus (deals with realized IRR + MOIC)."],
+        outputs=["Per page labels: KPIs (With IRR Data, IRR P25/P50/P75, "
+                 "≥20% hurdle share) and a per-sector table (N, MOIC "
+                 "P25/P50/P75, loss %, 3×+ %)."],
+        key_metrics=["IRR P25/P50/P75", "≥20% hurdle share", "Loss rate",
+                     "3×+ rate"],
+        data_sources=["The realized-deal corpus."],
+        model_logic_summary="Computes the realized IRR/MOIC distribution and "
+        "sector cuts from the corpus; describes outcomes that already "
+        "happened.",
+        why_it_matters="A good median can hide a wide tail — dispersion is the "
+        "point.",
+        diligence_use_cases=["Setting return expectations with the realized "
+                            "spread, not just a point estimate."],
+        interpretation_guidance=[
+            "This is a HISTORICAL corpus distribution — not a forward "
+            "prediction of returns.",
+            "Dispersion is the signal; read the tail, not just the median.",
+        ],
+        limitations=["Only realized deals; corpus composition shapes the "
+                     "distribution."],
+        related_routes=["/market-rates", "/comparable-outcomes",
+                       "/hold-analysis"],
+        metric_ids=["irr", "moic", "benchmark_percentile"],
+        data_source_ids=["public_transaction_corpus"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/hold-analysis", "Hold Analysis",
+        short_description="The relationship between hold period and realized "
+        "returns across the corpus — distribution, MOIC-vs-hold scatter, "
+        "buckets, and outliers.",
+        primary_purpose="Show how realized returns vary with hold duration in "
+        "the corpus.",
+        common_questions=["How does hold length relate to realized MOIC?",
+                         "What's the typical hold for this sector?"],
+        inputs=["The realized-deal corpus (deals with hold + MOIC)."],
+        outputs=["Per page labels: hold KPIs (P25/P50/P75/mean), a hold-vs-"
+                 "MOIC scatter, hold-bucket stats (MOIC P25/P50/P75, IRR P50, "
+                 "win %), and long-hold/poor-return outliers."],
+        key_metrics=["Hold P25/P50/P75", "MOIC by hold bucket", "Win rate"],
+        data_sources=["The realized-deal corpus."],
+        model_logic_summary="Computes percentiles and buckets of realized "
+        "hold vs realized MOIC and flags outliers; a backward-looking "
+        "association, not an optimizer.",
+        why_it_matters="Hold duration is a major return lever; the corpus "
+        "shows how it has actually played out.",
+        diligence_use_cases=["Setting a realistic hold expectation against "
+                            "corpus norms for the sector."],
+        interpretation_guidance=[
+            "This describes the HISTORICAL hold/return association in the "
+            "corpus — it does not prescribe an optimal hold or predict a "
+            "deal's outcome.",
+        ],
+        limitations=["Association, not causation; corpus composition and "
+                     "survivorship shape the picture."],
+        related_routes=["/irr-dispersion", "/comparable-outcomes",
+                       "/diligence/exit-timing"],
+        metric_ids=["hold_period", "moic", "irr"],
+        data_source_ids=["public_transaction_corpus"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
     _ctx(
         "/comparable-outcomes", "Comparable Outcomes",
-        short_description="Realized outcomes (MOIC, win-rate) of comparable "
-        "deals from the corpus.",
-        primary_purpose="Provide an underwriting reality check from realized "
-        "comps.",
-        key_metrics=["Comp P50 MOIC", "Win rate (>=2.5x)", "Comparable count"],
-        data_sources=["Realized-deal corpus."],
-        interpretation_guidance=["If a target's projected MOIC sits above "
-                                "comp P75, the bear case must refute that."],
-        related_routes=["/comparables", "/market-rates"],
+        short_description="Given a sector + EV (or a corpus deal id), returns "
+        "the top-N most-similar realized deals and their MOIC / IRR "
+        "distribution.",
+        primary_purpose="Provide an underwriting reality check from the "
+        "realized outcomes of comparable deals.",
+        common_questions=["What did comparable deals actually return?",
+                         "Is the projected MOIC above what comps achieved?"],
+        inputs=["Sector, entry EV, year, optional sponsor (or a corpus "
+                "deal_id)."],
+        outputs=["Per page labels: an outcome strip (median MOIC and IRR with "
+                 "P25/P75, median hold, win rate ≥2.5×) and a comparable "
+                 "table (Match, Deal, Year, Buyer, EV, MOIC, IRR, Hold); a "
+                 "CSV / memo-bullet export."],
+        key_metrics=["Comp P50 MOIC", "Win rate (≥2.5×)", "Median IRR",
+                     "Comparable count"],
+        data_sources=["The realized-deal corpus (top-N by match score)."],
+        model_logic_summary="Ranks corpus deals by a weighted match score "
+        "(sector, size, year, payer mix, sponsor) and summarizes their "
+        "realized outcomes. Match weights are per source.",
+        why_it_matters="Realized comp outcomes are the reality check on an "
+        "underwriting case.",
+        diligence_use_cases=["Testing whether a projected return is supported "
+                            "by what comparable deals actually delivered."],
+        interpretation_guidance=[
+            "Comps are similarity-MATCHED, not an approved/locked comp set — "
+            "verify the peer set before IC use.",
+            "If a target's projected MOIC sits above comp P75, the bear case "
+            "must refute that.",
+        ],
+        limitations=["Thin matches are directional; outcomes are realized "
+                     "corpus history, not a forward guarantee."],
+        related_routes=["/comparables", "/market-rates",
+                       "/sponsor-track-record"],
+        metric_ids=["moic", "irr", "hold_period", "benchmark_percentile"],
+        data_source_ids=["public_transaction_corpus"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
     _ctx(
         "/bear-cases", "Bear Cases",
-        short_description="Auto-synthesized bear cases for deals (ranked "
-        "risks + EBITDA at risk).",
-        primary_purpose="Make the downside thesis explicit and cited.",
-        key_metrics=["EBITDA at risk", "Critical/high risk counts"],
-        why_it_matters="A defensible bear case is required at IC.",
-        related_routes=["/diligence/risk-workbench", "/diligence/deal-autopsy"],
+        short_description="Auto-synthesizes a deal's bear case — ranked "
+        "evidence cards by theme, EBITDA-at-risk, and an IC-memo drop-in — "
+        "from the deal's module outputs.",
+        primary_purpose="Make the downside thesis explicit, ranked, and cited "
+        "back to its source modules.",
+        common_questions=["What's the bear case on this deal?",
+                         "How much EBITDA is at risk and why?"],
+        inputs=["A deal's pipeline / module outputs (regulatory, credit, "
+                "operational, market, structural, pattern signals)."],
+        outputs=["Per page labels: KPIs (EBITDA at Risk, Critical/High/Medium "
+                 "items, Modules Pulled), themed evidence cards, and an "
+                 "IC-memo drop-in block with deep links to each source."],
+        key_metrics=["EBITDA at risk", "Critical / high / medium counts",
+                     "Modules pulled"],
+        data_sources=["Synthesized from the deal's analytic module outputs."],
+        model_logic_summary="Pulls the deal's module outputs and composes them "
+        "into ranked, themed downside evidence; it aggregates other engines "
+        "rather than computing new findings.",
+        why_it_matters="A defensible, cited bear case is expected at IC.",
+        diligence_use_cases=["Assembling the downside narrative and the "
+                            "EBITDA-at-risk tally for the deck."],
+        interpretation_guidance=[
+            "This is a counter-narrative SYNTHESIS that ranks downside "
+            "evidence — it is not a final verdict that the deal fails.",
+            "Each card inherits its source module's caveats; verify before "
+            "IC use.",
+        ],
+        limitations=["Only as complete as the modules it pulls; absence of a "
+                     "card is not absence of risk."],
+        related_routes=["/diligence/risk-workbench", "/diligence/deal-autopsy",
+                       "/screening/bankruptcy-survivor"],
+        metric_ids=["risk_score"],
+        data_source_ids=["model_output"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
         data_confidence=DataConfidence.MIXED,
     ),
     _ctx(
         "/regulatory-calendar", "Regulatory Calendar",
-        short_description="Calendar of regulatory events relevant to "
-        "healthcare deals.",
-        primary_purpose="Track upcoming regulatory dates that could move a "
-        "thesis.",
-        related_routes=["/market-intel"],
+        short_description="A curated timeline of regulatory events (CMS / OIG "
+        "/ FTC / DOJ) mapped to the thesis drivers each could 'kill'.",
+        primary_purpose="Track regulatory dates that could move or break a "
+        "thesis, tied to named events.",
+        common_questions=["What regulatory events are coming?",
+                         "Which thesis drivers does an event threaten?"],
+        inputs=["A curated event set (publish/effective dates, affected "
+                "specialties, thesis-driver kill map)."],
+        outputs=["Per page labels: a timeline of events with KPIs (events "
+                 "scanned, kill-switch events) and the thesis drivers each "
+                 "event affects."],
+        key_metrics=["Regulatory events scanned", "Kill-switch events"],
+        data_sources=["A curated list compiled from Federal Register / CMS "
+                      "rules / FTC-DOJ actions (a maintained snapshot)."],
+        model_logic_summary="Renders the curated events and maps each to the "
+        "thesis drivers it could affect; no live computation.",
+        why_it_matters="Regulatory timing can invalidate a thesis driver on a "
+        "specific date — this surfaces those dates.",
+        diligence_use_cases=["Stress-testing a thesis against upcoming "
+                            "regulatory events."],
+        interpretation_guidance=[
+            "This is a CURATED snapshot, not a live feed — per source it needs "
+            "quarterly refresh, so confirm dates against primary sources "
+            "before relying on them.",
+        ],
+        limitations=["Manually maintained; may lag the latest rulemaking "
+                     "between refreshes."],
+        related_routes=["/market-intel", "/bear-cases"],
+        data_source_ids=["regulatory_calendar_sources"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
     _ctx(
+        "/market-intel", "Market Intelligence",
+        short_description="A curated market overlay — public operator comps "
+        "(EV/EBITDA, EV/Revenue, payer mix), private transaction multiples, "
+        "and a context-filtered healthcare-PE news feed.",
+        primary_purpose="Give a target's category some public-market and "
+        "transaction context.",
+        common_questions=["How are public operators priced?",
+                         "What are private multiples for this specialty?"],
+        inputs=["The target's category / specialty / size (to filter the "
+                "curated comps, multiples, and news)."],
+        outputs=["Per page labels: a public-comp table (ticker, name, revenue, "
+                 "EV/EBITDA) with an EV/EBITDA-vs-revenue scatter, private "
+                 "transaction multiples, and a filtered news feed."],
+        key_metrics=["Public-operator EV/EBITDA", "Private transaction "
+                     "multiples"],
+        data_sources=["Curated public data — operator 10-K/10-Q filings and "
+                      "published transaction aggregates, plus curated news "
+                      "headlines."],
+        model_logic_summary="Filters and renders curated YAML content to the "
+        "target's context; it does not fetch live data.",
+        why_it_matters="Public comps and private multiples frame a deal's "
+        "pricing against the market.",
+        diligence_use_cases=["Sanity-checking entry pricing against public "
+                            "operators and recent transactions."],
+        interpretation_guidance=[
+            "This is CURATED public data, NOT a live data feed — per source it "
+            "is refreshed quarterly from filings, so verify recency before "
+            "IC use.",
+        ],
+        limitations=["Snapshot content; multiples and news lag between "
+                     "refreshes."],
+        related_routes=["/market-rates", "/regulatory-calendar", "/research"],
+        metric_ids=["ev_to_ebitda"],
+        data_source_ids=["public_market_data", "sec_edgar"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/corpus-backtest", "Corpus Backtest",
+        short_description="Cross-matches the platform's predicted outcomes "
+        "against the realized-deal corpus and scores forecast accuracy "
+        "(falling back to corpus self-analysis when no predictions match).",
+        primary_purpose="Validate how well the platform's deal predictions "
+        "lined up with realized corpus outcomes.",
+        common_questions=["How accurate were the platform's predictions?",
+                         "What's the match rate against the corpus?"],
+        inputs=["Platform predictions (where available) + the realized-deal "
+                "corpus."],
+        outputs=["Per page labels: KPIs (Corpus Deals, Matched %, Realized, "
+                 "Vintages) and a predictions-vs-realized panel; a corpus "
+                 "self-analysis fallback (realized MOIC by vintage / "
+                 "subsector) when no predictions match."],
+        key_metrics=["Match rate", "Realized MOIC by vintage / subsector"],
+        data_sources=["Platform predictions + the realized-deal corpus."],
+        model_logic_summary="Matches predicted deals to corpus realized "
+        "outcomes and scores accuracy; this is backward-looking validation, "
+        "not a forward forecast.",
+        why_it_matters="Backtesting is how forecast quality is checked before "
+        "anyone leans on a prediction.",
+        diligence_use_cases=["Gauging how much confidence the platform's "
+                            "forecasts have earned historically."],
+        interpretation_guidance=[
+            "This is VALIDATION / accuracy-scoring against past outcomes — not "
+            "a decision-ready forward prediction.",
+            "Distinct from /backtest (the corpus-formula calibration); this "
+            "scores platform predictions vs realized.",
+        ],
+        limitations=["Limited by how many predictions match the corpus; falls "
+                     "back to descriptive corpus stats otherwise."],
+        related_routes=["/backtest", "/comparable-outcomes"],
+        metric_ids=["moic", "irr"],
+        data_source_ids=["public_transaction_corpus", "model_output"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
         "/backtest", "Backtest",
-        short_description="Backtest the platform's predictions/screens "
-        "against realized outcomes.",
-        primary_purpose="Validate that the models would have worked "
-        "historically.",
-        data_sources=["Realized-deal corpus."],
-        interpretation_guidance=["Backtests are in-sample to the corpus; "
-                                "treat as validation, not a forward promise."],
-        related_routes=["/corpus-backtest", "/comparable-outcomes"],
+        short_description="Corpus-calibrated model validation — how well "
+        "entry-level signals (multiple, leverage, payer mix, sector) "
+        "retrodict realized MOIC across the corpus.",
+        primary_purpose="Validate that a simple corpus-fitted model tracks "
+        "realized returns (R² / MAE), as a calibration check.",
+        common_questions=["Do entry signals explain realized MOIC?",
+                         "What's the model's fit (R²/MAE)?"],
+        inputs=["The realized-deal corpus (no platform DB required)."],
+        outputs=["Per page labels: KPIs (N realized deals, P50 MOIC, model "
+                 "R², MAE), predicted-vs-realized and signal-vs-MOIC "
+                 "scatters, and a per-sector breakdown."],
+        key_metrics=["Model R²", "MAE", "P50 MOIC", "MOIC by sector"],
+        data_sources=["The realized-deal corpus."],
+        model_logic_summary="Fits/applies a simple corpus formula and compares "
+        "predicted vs realized MOIC; the page itself notes it retrodicts the "
+        "corpus (in-sample).",
+        why_it_matters="Calibration tells you whether the entry signals carry "
+        "real explanatory weight on outcomes.",
+        diligence_use_cases=["Judging how much to trust entry-signal-based "
+                            "expectations."],
+        interpretation_guidance=[
+            "Backtests here are IN-SAMPLE to the corpus — treat as validation "
+            "/ calibration, not a forward promise.",
+            "Distinct from /corpus-backtest (which scores platform "
+            "predictions vs realized).",
+        ],
+        limitations=["In-sample fit can overstate out-of-sample accuracy; "
+                     "simple formula only."],
+        related_routes=["/corpus-backtest", "/comparable-outcomes",
+                       "/market-rates"],
+        metric_ids=["moic", "ev_to_ebitda", "hold_period", "leverage"],
+        data_source_ids=["public_transaction_corpus", "model_output"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
         data_confidence=DataConfidence.MODEL_ESTIMATE,
     ),
     # ── Portfolio & LP ──────────────────────────────────────────────
@@ -1601,23 +2032,157 @@ _MANUAL: List[PageContext] = [
         data_confidence=DataConfidence.MIXED,
     ),
     _ctx(
+        "/portfolio/map", "Portfolio Map",
+        short_description="A geographic map of portfolio deals — markers at "
+        "state centroids colored by stage and sized by EBITDA opportunity, "
+        "with state shading for CON status.",
+        primary_purpose="Visualize where the portfolio's deals sit "
+        "geographically and how they cluster by stage and size.",
+        common_questions=["Where are our deals geographically?",
+                         "Which states carry the most opportunity?"],
+        inputs=["Portfolio deals (deal_id, name, state, EBITDA opportunity, "
+                "stage) from analysis packets."],
+        outputs=["Per page labels: an inline US SVG map with deal markers "
+                 "(color = stage, size = EBITDA opportunity), CON-state "
+                 "shading, and KPIs (Deals Mapped, States, CON States)."],
+        key_metrics=["Deals mapped", "States", "CON states",
+                     "EBITDA opportunity (marker size)"],
+        data_sources=["The portfolio store / analysis packets; CON-status "
+                      "shading from public state data."],
+        model_logic_summary="Places deals at state centroids and styles "
+        "markers by stage/opportunity; CON shading marks Certificate-of-Need "
+        "states. A visualization, not an analysis.",
+        why_it_matters="Geographic concentration is a portfolio-risk lens "
+        "partners read quickly on a map.",
+        diligence_use_cases=["Spotting geographic concentration across the "
+                            "book at a glance."],
+        interpretation_guidance=[
+            "This is a geographic VISUALIZATION — CON shading is a status "
+            "marker only; it is NOT a market-access / CON-barrier analysis.",
+        ],
+        limitations=["Markers sit at state centroids (not exact locations); "
+                     "shows distribution, not synergy or access analysis."],
+        related_routes=["/portfolio", "/portfolio-analytics",
+                       "/portfolio/risk-scan"],
+        metric_ids=["value_creation_opportunity"],
+        data_source_ids=["portfolio_snapshot", "analysis_run"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/portfolio-analytics", "Portfolio Analytics",
+        short_description="Corpus-wide analytics across the realized-deal "
+        "universe — scorecard, vintage cohorts, concentration, return "
+        "distribution, outliers, and payer-mix sensitivity.",
+        primary_purpose="Provide portfolio-scope views over the deal CORPUS "
+        "(not the user's live fund): what has worked across vintages, "
+        "sectors, sponsors, and geographies.",
+        common_questions=["What does the corpus say worked?",
+                         "Where is return concentration / outlier risk?"],
+        inputs=["The realized-deal corpus (655+ deals)."],
+        outputs=["Per page labels: a scorecard (MOIC/IRR quartiles, home-run "
+                 "rate, loss rate, outliers), vintage cohorts, deal-type mix, "
+                 "sector/geography/sponsor concentration, and realized-MOIC "
+                 "outliers."],
+        key_metrics=["MOIC P25/P50/P75", "IRR quartiles", "Home-run rate",
+                     "Loss rate", "Concentration", "Outliers (z≥2)"],
+        data_sources=["The realized-deal corpus."],
+        model_logic_summary="Aggregates the corpus into scorecard / cohort / "
+        "concentration views; describes historical corpus outcomes.",
+        why_it_matters="It's the 'what has worked' read across the reference "
+        "universe that frames a new thesis.",
+        diligence_use_cases=["Benchmarking a thesis against corpus-wide "
+                            "vintage and concentration patterns."],
+        interpretation_guidance=[
+            "Scope is the 655-deal CORPUS (historical reference), NOT your "
+            "actual fund/portfolio — read it as market history, not your "
+            "book's performance.",
+            "Concentration/outlier reads describe the corpus composition.",
+        ],
+        limitations=["Corpus composition and survivorship shape every figure; "
+                     "not your fund's actuals."],
+        related_routes=["/library", "/irr-dispersion", "/sponsor-track-record"],
+        metric_ids=["moic", "irr", "enterprise_value", "benchmark_percentile"],
+        data_source_ids=["public_transaction_corpus"],
+        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
         "/sponsor-track-record", "Sponsor Track Record",
-        short_description="Corpus-derived track record by sponsor.",
-        primary_purpose="Benchmark sponsors on realized outcomes.",
-        data_sources=["Realized-deal corpus."],
-        related_routes=["/comparable-outcomes", "/irr-dispersion"],
+        short_description="A sortable league table of every PE sponsor in the "
+        "corpus — MOIC quartiles, IRR, hold, loss rate, home-run rate, and a "
+        "0–1 consistency score.",
+        primary_purpose="Benchmark sponsors on their realized corpus outcomes "
+        "and outcome consistency.",
+        common_questions=["How has this sponsor performed historically?",
+                         "Which sponsors are consistent vs lottery-like?"],
+        inputs=["The realized-deal corpus, aggregated by sponsor."],
+        outputs=["Per page labels: KPIs (Sponsors Tracked, Deals Counted, "
+                 "Realized, Overall Median MOIC) and a league table (Med MOIC, "
+                 "P25/P75, Med IRR, Hold, Loss %, HR %, Consistency, Avg EV); "
+                 "a consistency-vs-MOIC scatter."],
+        key_metrics=["Median MOIC", "Median IRR", "Loss rate", "Home-run rate",
+                     "Consistency score (0–1)"],
+        data_sources=["The realized-deal corpus (sponsor-level aggregation)."],
+        model_logic_summary="Aggregates realized outcomes per sponsor and "
+        "blends MOIC + IRR dispersion into a 0–1 consistency score. Exact "
+        "score formula: see sponsor_track_record.py.",
+        why_it_matters="Sponsor history and consistency frame how much weight "
+        "to put on a sponsor's stated case.",
+        diligence_use_cases=["Reference-checking a sponsor's realized record "
+                            "before co-investing or competing."],
+        interpretation_guidance=[
+            "This is a HISTORICAL corpus reference — past outcomes and "
+            "consistency, NOT a guarantee or prediction of future "
+            "performance.",
+        ],
+        limitations=["Bounded by corpus coverage per sponsor; thin records "
+                     "are noisy."],
+        related_routes=["/comparable-outcomes", "/irr-dispersion",
+                       "/portfolio-analytics"],
+        metric_ids=["moic", "irr", "hold_period"],
+        data_source_ids=["public_transaction_corpus"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
     _ctx(
         "/payer-intelligence", "Payer Intelligence",
-        short_description="Corpus-derived payer-regime returns analysis "
-        "(by commercial-mix band).",
-        primary_purpose="Show how returns vary with payer mix / commercial "
-        "share.",
-        data_sources=["Realized-deal corpus."],
-        why_it_matters="Payer mix is empirically a major returns driver.",
-        related_routes=["/diligence/payer-stress", "/market-rates"],
+        short_description="Corpus-wide payer-mix analysis — average mix, the "
+        "rank correlation of commercial / Medicaid / self-pay share with "
+        "realized MOIC, and four payer-regime bands.",
+        primary_purpose="Show how realized returns vary across payer-mix "
+        "regimes and how strongly payer share co-moves with MOIC.",
+        common_questions=["Does payer mix relate to returns?",
+                         "How do returns differ by payer regime?"],
+        inputs=["The realized-deal corpus (payer mix + realized MOIC)."],
+        outputs=["Per page labels: corpus payer-mix averages, commercial/"
+                 "Medicaid ↔ MOIC correlation readouts, and a four-regime "
+                 "table (Gov-heavy / Balanced / Commercial-mix / Commercial) "
+                 "with MOIC quartiles, IRR, and loss rate."],
+        key_metrics=["Commercial / Medicare / Medicaid %",
+                     "Commercial%↔MOIC correlation", "MOIC quartiles by "
+                     "regime"],
+        data_sources=["The realized-deal corpus."],
+        model_logic_summary="Computes payer-mix averages and a rank "
+        "(Spearman) correlation of payer share vs realized MOIC, plus "
+        "per-regime outcome bands.",
+        why_it_matters="Payer mix is widely treated as a major returns driver; "
+        "this shows whether the corpus bears that out.",
+        diligence_use_cases=["Judging whether payer mix is load-bearing or "
+                            "incidental to a thesis."],
+        interpretation_guidance=[
+            "These are CORRELATIONS (rank-based), not causal claims — payer "
+            "mix co-moving with MOIC does not establish that it causes "
+            "returns.",
+            "Regime bands are corpus averages, not a target's outcome.",
+        ],
+        limitations=["Correlation over the corpus; confounders (sector, "
+                     "vintage, sponsor) are not controlled here."],
+        related_routes=["/diligence/payer-stress", "/market-rates",
+                       "/portfolio-analytics"],
+        metric_ids=["payer_mix", "commercial_payer_exposure",
+                    "medicaid_exposure", "moic"],
+        data_source_ids=["public_transaction_corpus"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
