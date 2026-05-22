@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _nps_gauge_svg(nps: int) -> str:
@@ -236,9 +236,22 @@ def render_patient_experience(params: dict = None) -> str:
         meta=f"""HCAHPS, Press Ganey, NPS, online reviews, retention drivers — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    # Lead takeaway — surface the computed experience value (PEX
+    # composite → EV uplift from improvement), otherwise buried as KPIs
+    # #1/#7 and in the bottom thesis. All figures come from
+    # compute_patient_experience().
+    lead_anchor = ck_value_anchor(
+        "EXPERIENCE VALUE",
+        f"{r.composite_pex_score}/100 PEX",
+        delta=f"NPS {r.nps_current} ({r.nps_trajectory})",
+        opportunity=f"${r.total_ev_impact_from_improvement_mm:,.0f}M EV uplift",
+        target=f"${r.total_revenue_at_risk_mm:,.1f}M revenue at risk",
+        tone="teal",
+    )
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
+  {lead_anchor}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:16px">
