@@ -106,3 +106,34 @@ No model-specific formula is invented.
 Connected high-priority pages (metric_ids / data_source_ids): hcris-xray,
 bridge-audit, payer-stress, denial-prediction, physician-eu,
 portfolio/monitor, data, methodology.
+
+---
+
+## Task 3 — Guide Context Packet layer
+
+A single read-only builder that assembles **all** structured context the
+future Guide needs to explain the current page — page context, the metric
+and data-source contexts it links to, deterministic suggested questions,
+the read-only behavioral policy, known limitations, and an honest quality
+grade. It reads the registries only; it modifies nothing, runs no model,
+performs no RAG, persists no memory, and makes no recommendation.
+
+| File | Role |
+|------|------|
+| `guide_prompt_policy.py` | The behavioral contract — `GUIDE_PROMPT_POLICY` + `GUIDE_IDENTITY` / `ALLOWED_BEHAVIOR` / `DISALLOWED_BEHAVIOR` / `DEFAULT_UNCERTAINTY_MESSAGE` + `policy_as_dict()`. Importable by the future assistant endpoint. |
+| `suggested_questions.py` | `get_suggested_questions_for_page(page_context)` — 5 defaults plus category/data-source-specific questions; deterministic, no AI, capped at 8. |
+| `guide_context_packet.py` | `GuideContextPacket` dataclass, `build_guide_context_packet(route)`, `summarize_context_packet(packet)` (debug-only). |
+
+`context_quality` ∈ {`strong`, `partial`, `placeholder`, `missing`} —
+graded from `source_confidence`, linked metric/source contexts, and how
+many core fields still say "Needs source documentation." Anything that
+can't be resolved goes to `missing_context_notes` — never invented.
+
+```bash
+.venv/bin/python -m pytest tests/test_pedesk_guide_context_packet.py
+```
+
+```python
+from rcm_mc.assistant.context import build_guide_context_packet, summarize_context_packet
+print(summarize_context_packet(build_guide_context_packet("/diligence/hcris-xray")))
+```
