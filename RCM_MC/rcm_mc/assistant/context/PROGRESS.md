@@ -815,3 +815,90 @@ with a registry metric/source to link, so they stay `partial` honestly.
   engagements → `user_entered_data`.
 - No exact formulas added; model-logic summaries describe intent and point
   to the implementing module.
+
+---
+
+# Task 9 — PEdesk Guide sidebar presentation polish (2026-05-22)
+
+UI polish after the first live visual review: the panel read like a long
+documentation blob and the sticky read-only footer overlapped the Ask
+section. CSS/markup/render-only — no backend, endpoint, or behavior
+changes. All in `rcm_mc/ui/_chartis_kit.py` (`_GUIDE_PANEL_HTML` /
+`_GUIDE_CSS` / `_GUIDE_JS`).
+
+## Before → after
+- **Before:** flat sections (h3 + paragraphs + repeated "Caveats: Needs
+  source documentation." lines); sticky bottom read-only footer that sat
+  over the Ask area.
+- **After:** a stack of editorial **cards** — Page overview · Key metrics
+  · Data sources · Limitations & caveats · Suggested questions · Ask
+  PEdesk Guide · (collapsible) read-only policy.
+
+## Presentation changes
+- **Card system** (`.ck-guide-card` / `.ck-guide-card-title`) on the
+  existing palette (white cards, paper bg, navy/teal accents, amber-left
+  caution card, teal-left Ask card). Stronger typographic hierarchy:
+  mono small-caps card titles, serif metric titles, body text, mono dim
+  metadata, muted caveats.
+- **Page overview** rendered as labeled rows (What it does / Purpose /
+  Why it matters), not a paragraph blob.
+- **Metric cards** — each metric is a mini-card (title / definition /
+  Why it matters / Formula). Missing formula → a muted **"Formula not yet
+  documented"** pill instead of a raw "Caveats: Needs source
+  documentation." line. >3 metrics → first 3 + **Show all metrics (N)** /
+  **Show fewer** toggle (same for data sources).
+- **Data source cards** — labeled metadata grid (**Type / Update cadence
+  / Freshness**) instead of the compressed "system_metadata · … · lag …"
+  line; underscores humanized.
+- **Limitations card** — the repeated needs-doc sentinel is collapsed
+  into one calm line ("Some formulas or source-lineage details still need
+  source documentation.").
+- **Suggested questions** — cleaner wrapping chips with a one-line hint
+  ("Tap one to drop it into the ask box").
+- **Read-only policy** — moved from the **sticky footer** into a quiet
+  collapsible `<details>` card in the scroll body; body gained bottom
+  padding (28px) so the **Ask card is fully visible** at the bottom.
+- **Disabled-Q&A copy** is now the full, actionable message and fully
+  visible in its own state box.
+
+## Preserved (no behavior change)
+Endpoint calls, route normalization, context/health/ask fetches, CSRF
+(global fetch-patch), read-only/no-mutation guarantees, session-only
+history, disabled/unavailable handling, 10s slow-copy, duplicate-submit
+guard, stale-response (`reqSeq` + AbortController), Enter-to-send, and
+`textContent` answer rendering are all unchanged. Same data-attribute
+hooks; same endpoints.
+
+## Tests — tests/test_guide_sidebar_shell.py (now 27; +8)
+Card-based layout; read-only policy is a collapsible in-body `<details>`
+(old `.ck-guide-readonly` sticky rule gone); Ask card + 28px body bottom
+padding; data-source metadata labels (Type / Update cadence / Freshness);
+metric show-more toggle; caveat pill + no raw repeated "Caveats: Needs
+source documentation."; full disabled-Q&A copy; answer card + pre-wrap +
+`textContent`. Existing closed-by-default / trigger / endpoint-wiring /
+hardening tests retained.
+
+## Commands + results
+- `validate_page_context_coverage` → PASS (exit 0).
+- `validate_guide_context_quality` → PASS (exit 0).
+- `py_compile` on `_chartis_kit.py` → clean.
+- `pytest` guide page-context / metric-data / packet / context-endpoint /
+  prompt-builder / ollama-endpoint / sidebar-shell (27) + shell smoke
+  (universal-palette, command-palette, hcris-xray) → **127 passed, 1
+  skipped**.
+
+## Manual verification (live gemma4:e4b)
+- `/app` served the card skeleton (Page overview card, Ask card,
+  collapsible policy `<details>`, panel closed by default).
+- Live ask on `/app` returned a grounded read-only answer (no `<think>`)
+  in ~18s — the ask path is unchanged by the polish.
+- Card-rendered content (metric/source cards, labeled metadata,
+  show-more, answer bubble) is JS-built and verified in the browser; no
+  JS test harness exists so static contract tests cover the structure.
+
+## Caveats
+- Visual rendering of the cards is client-side; the static tests assert
+  the contract (classes, labels, collapsible policy, no sticky footer,
+  full disabled copy) and the live render is browser-verified.
+- Editorial palette only — caution card uses the existing amber token;
+  no off-palette colors, no shell redesign.
