@@ -137,3 +137,15 @@ can't be resolved goes to `missing_context_notes` — never invented.
 from rcm_mc.assistant.context import build_guide_context_packet, summarize_context_packet
 print(summarize_context_packet(build_guide_context_packet("/diligence/hcris-xray")))
 ```
+
+### Read-only debug endpoint
+
+`GET /api/guide/context?route=<route>` returns the JSON-safe packet
+(`packet_to_dict`). Missing `route` → 400; unknown route → 200 with
+`context_quality="missing"`. It is a pure builder call — no model /
+Ollama / RAG / DB writes. Optional HTML inspector at
+`GET /guide/context-debug?route=<route>`.
+
+```bash
+curl 'http://127.0.0.1:8080/api/guide/context?route=/diligence/hcris-xray'
+```

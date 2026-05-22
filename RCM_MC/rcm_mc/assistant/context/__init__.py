@@ -16,6 +16,7 @@ from .get_data_source_context import get_data_source_context
 from .guide_context_packet import (
     GuideContextPacket,
     build_guide_context_packet,
+    packet_to_dict,
     summarize_context_packet,
 )
 from .guide_prompt_policy import GUIDE_PROMPT_POLICY, policy_as_dict
@@ -28,6 +29,7 @@ __all__ = [
     "get_data_source_context",
     "GuideContextPacket",
     "build_guide_context_packet",
+    "packet_to_dict",
     "summarize_context_packet",
     "GUIDE_PROMPT_POLICY",
     "policy_as_dict",

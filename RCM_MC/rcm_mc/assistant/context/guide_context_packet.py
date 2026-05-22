@@ -296,3 +296,88 @@ def summarize_context_packet(packet: GuideContextPacket) -> str:
         lines.append(f"Note: {packet.fallback_message}")
 
     return "\n".join(lines)
+
+
+def _page_context_to_dict(ctx: PageContext) -> Dict[str, object]:
+    return {
+        "route": ctx.route,
+        "title": ctx.title,
+        "category": ctx.category.value,
+        "short_description": ctx.short_description,
+        "primary_purpose": ctx.primary_purpose,
+        "intended_users": list(ctx.intended_users),
+        "common_questions": list(ctx.common_questions),
+        "inputs": list(ctx.inputs),
+        "outputs": list(ctx.outputs),
+        "key_metrics": list(ctx.key_metrics),
+        "data_sources": list(ctx.data_sources),
+        "model_logic_summary": ctx.model_logic_summary,
+        "why_it_matters": ctx.why_it_matters,
+        "diligence_use_cases": list(ctx.diligence_use_cases),
+        "interpretation_guidance": list(ctx.interpretation_guidance),
+        "limitations": list(ctx.limitations),
+        "related_routes": list(ctx.related_routes),
+        "source_confidence": ctx.source_confidence.value,
+        "data_confidence": ctx.data_confidence.value,
+        "notes_for_assistant": list(ctx.notes_for_assistant),
+    }
+
+
+def _metric_context_to_dict(m: MetricContext) -> Dict[str, object]:
+    return {
+        "metric_id": m.metric_id,
+        "label": m.label,
+        "definition": m.definition,
+        "formula": m.formula,
+        "formula_confidence": m.formula_confidence.value,
+        "why_it_matters": m.why_it_matters,
+        "diligence_interpretation": m.diligence_interpretation,
+        "caveats": list(m.caveats),
+    }
+
+
+def _data_source_context_to_dict(s: DataSourceContext) -> Dict[str, object]:
+    return {
+        "source_id": s.source_id,
+        "label": s.label,
+        "description": s.description,
+        "source_type": s.source_type.value,
+        "update_cadence": s.update_cadence,
+        "freshness_lag": s.freshness_lag,
+        "used_for": list(s.used_for),
+        "strengths": list(s.strengths),
+        "limitations": list(s.limitations),
+        "provenance_notes": s.provenance_notes,
+    }
+
+
+def packet_to_dict(packet: GuideContextPacket) -> Dict[str, object]:
+    """JSON-safe dict view of a GuideContextPacket.
+
+    Enums become their string values; dataclasses become plain dicts.
+    Only the fields the debug endpoint exposes are included — internal
+    link ids and the full dataclass surface are intentionally trimmed.
+    Pure transform; reads nothing and mutates nothing.
+    """
+    return {
+        "route": packet.route,
+        "normalized_route": packet.normalized_route,
+        "found_page_context": packet.found_page_context,
+        "context_quality": packet.context_quality,
+        "fallback_message": packet.fallback_message,
+        "page_context": (
+            _page_context_to_dict(packet.page_context)
+            if packet.page_context is not None
+            else None
+        ),
+        "metric_contexts": [
+            _metric_context_to_dict(m) for m in packet.metric_contexts
+        ],
+        "data_source_contexts": [
+            _data_source_context_to_dict(s) for s in packet.data_source_contexts
+        ],
+        "suggested_questions": list(packet.suggested_questions),
+        "read_only_policy": packet.read_only_policy,
+        "known_limitations": list(packet.known_limitations),
+        "missing_context_notes": list(packet.missing_context_notes),
+    }
