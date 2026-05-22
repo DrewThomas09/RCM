@@ -1124,3 +1124,56 @@ No uploads, no memory, no actions/mutations, no external APIs, no new
 dependencies added. Guide remains read-only, local, and packet/RAG-
 grounded — now easier to diagnose and safer when Ollama/RAG are disabled,
 missing, stale, or misconfigured.
+
+---
+
+# Task 12 — Full local AI-mode integration (Ollama + RAG + sidebar) (2026-05-22)
+
+Made the Ollama + RAG + sidebar path one obvious, diagnosable product
+flow. Integration glue only — no uploads/memory/actions/mutations/
+external APIs/new deps/streaming.
+
+## What changed
+- **Health `ai_ready`** — `/api/guide/ollama-health` adds `ai_ready` (true
+  only when Ollama enabled + reachable, chat model installed, embed model
+  installed, RAG enabled, index exists with chunks + embeddings) plus
+  `ollama_enabled`/`ollama_reachable`/`chat_model` aliases and
+  `setup_commands`. Existing fields preserved.
+- **`scripts/run_with_guide_ai.sh`** — preferred one-command full AI mode
+  (Ollama + RAG on, gemma4:e4b + nomic-embed-text, 45s timeout); runs the
+  preflight then `rcm-mc serve`. Local/dev only; no prod default change.
+- **`preflight_guide_ai` CLI** — PASS/WARN/FAIL over Ollama reachable,
+  chat/embed models installed, index exists/chunks/embeddings, and a live
+  retrieval test, each with the exact fix command. Exit 0 only when ready.
+- **Sidebar** — the Ask box is gated on `ai_ready`: shows "AI Q&A ready ·
+  RAG enabled" when ready; otherwise "Ask PEdesk Guide is not fully
+  configured." + the specific reason (AI off / Ollama not running / chat
+  model missing / RAG off / index not built / index empty / embed model
+  missing) + a Setup details disclosure listing the setup commands. The
+  page guide always renders.
+
+## Tests
+- Health `ai_ready` false (Ollama disabled; RAG enabled but index missing)
+  and true (all mocked incl. a real tiny index). Sidebar AI-ready /
+  not-configured copy + ask gated on `ai_ready`. Existing ask RAG /
+  fallback (rag_warning) / 503 / no-`<think>` tests retained.
+- `pytest` guide page-context/metric-data/packet/context-endpoint/
+  prompt-builder/ollama-endpoint/sidebar-shell/rag/rag-endpoints/eval +
+  shell smoke → green.
+
+## Manual live smoke (real gemma4:e4b + nomic-embed-text)
+- `preflight_guide_ai` → all PASS, RESULT: READY.
+- `/api/guide/ollama-health` → `ai_ready:true`, reachable, both models
+  installed, index 194 chunks/194 embeddings, suggested_fix "".
+- `/api/guide/rag/search?q=What does denial rate mean` → 5 results, top
+  "Denial Rate".
+- `POST /api/guide/ask` on `/diligence/hcris-xray` → rag_enabled true,
+  5 sources (Denial Rate, Denial Prediction, Root Cause, …), read_only
+  true, no `<think>`, answer defines denial rate from the Metric Registry.
+- Served `/diligence/hcris-xray` markup carries the AI-ready badge,
+  not-configured copy, and the ai_ready gate.
+
+## Confirmation
+No uploads, memory, actions/mutations, external APIs, new deps, model
+picker, or streaming. The page guide still works without AI; Q&A requires
+full local AI mode (Ollama + built RAG index).

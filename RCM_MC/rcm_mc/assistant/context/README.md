@@ -238,6 +238,41 @@ recommendations.
 PEDESK_GUIDE_RAG_ENABLED=true ./scripts/run_with_guide_ollama.sh   # + RAG
 ```
 
+## Full local AI mode (one command)
+
+The integrated path — Ollama Q&A **and** local RAG — in five steps:
+
+```bash
+# 1. Pull the models (one-time)
+ollama pull gemma4:e4b
+ollama pull nomic-embed-text
+
+# 2. Build the local Guide RAG index
+PEDESK_GUIDE_RAG_ENABLED=true ./scripts/build_guide_rag_index.sh
+
+# 3. Check it
+PEDESK_GUIDE_RAG_ENABLED=true ./scripts/check_guide_rag.sh
+
+# 4. Run PEdesk in full AI mode (enables Ollama + RAG, runs a preflight)
+PEDESK_GUIDE_RAG_ENABLED=true ./scripts/run_with_guide_ai.sh
+
+# 5. Confirm readiness
+curl localhost:8080/api/guide/ollama-health   # expect "ai_ready": true
+```
+
+Preflight any time without starting the server:
+`python -m rcm_mc.assistant.rag.preflight_guide_ai` (PASS/WARN/FAIL with
+exact fix commands).
+
+**What "ready" means.** The sidebar's Ask box is active only when
+`ai_ready` is true: Ollama enabled + reachable, the chat model installed,
+RAG enabled, and a populated index (with the embed model installed). When
+it isn't ready the sidebar shows *Ask PEdesk Guide is not fully
+configured*, names the specific reason, and tucks the setup commands into
+a **Setup details** disclosure — and the deterministic page guide still
+renders. Notes: the normal Guide works without AI; Q&A requires local AI
+mode; RAG requires a built index; **no user uploads are indexed yet**.
+
 ## Local RAG (PEdesk Guide knowledge base)
 
 `rcm_mc/assistant/rag/` adds a **local, read-only** retrieval layer so the
