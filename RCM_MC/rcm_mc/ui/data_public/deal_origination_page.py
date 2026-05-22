@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title, ck_bar_row, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title, ck_bar_row, ck_value_anchor, ck_illustrative_note
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
@@ -229,6 +229,7 @@ def render_deal_origination(params: dict = None) -> str:
 
     body = f"""
 <div class="ck-page-wrap">
+  {ck_illustrative_note("pipeline figures")}
   {lead_anchor}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Sourcing Funnel — Latest Quarter</div>{funnel_svg}</div>
