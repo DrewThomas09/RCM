@@ -2762,11 +2762,24 @@ class RCMHandler(BaseHTTPRequestHandler):
         else:
             fix = ""
 
+        # Full-AI readiness: Ollama up + chat model + RAG enabled with a
+        # populated index (+ embed model installed so query embedding works).
+        ai_ready = bool(
+            enabled and reachable and chat_present and embed_present
+            and rag_enabled and idx.get("exists")
+            and idx.get("chunk_count", 0) > 0 and idx.get("embedded_count", 0) > 0
+        )
+
         payload = {
             "enabled": enabled,
             "reachable": reachable,
+            # explicit aliases (clearer field names; existing ones kept)
+            "ollama_enabled": enabled,
+            "ollama_reachable": reachable,
+            "ai_ready": ai_ready,
             "base_url": ollama_client.ollama_base_url(),
             "default_model": chat_model,
+            "chat_model": chat_model,
             "embed_model": embed_model,
             "timeout_seconds": ollama_client.ollama_timeout_seconds(),
             "rag_enabled": rag_enabled,
@@ -2777,14 +2790,23 @@ class RCMHandler(BaseHTTPRequestHandler):
             "suggested_fix": fix,
             "required_env": {
                 "PEDESK_GUIDE_OLLAMA_ENABLED": "true",
+                "PEDESK_GUIDE_RAG_ENABLED": "true",
                 "PEDESK_GUIDE_OLLAMA_MODEL": chat_model,
+                "PEDESK_GUIDE_RAG_EMBED_MODEL": embed_model,
                 "PEDESK_GUIDE_OLLAMA_BASE_URL": ollama_client.ollama_base_url(),
             },
+            "setup_commands": [
+                f"ollama pull {chat_model}",
+                f"ollama pull {embed_model}",
+                "PEDESK_GUIDE_RAG_ENABLED=true ./scripts/build_guide_rag_index.sh",
+                "PEDESK_GUIDE_RAG_ENABLED=true ./scripts/run_with_guide_ai.sh",
+            ],
         }
+        # chat/embed install state defaults to None when unreachable.
+        payload["chat_model_installed"] = chat_present
+        payload["embed_model_installed"] = embed_present
         if reachable:
             payload["installed_models"] = installed
-            payload["chat_model_installed"] = chat_present
-            payload["embed_model_installed"] = embed_present
         return self._send_json(payload)
 
     def _route_guide_rag_search(self, parsed) -> None:

@@ -243,6 +243,83 @@ class OllamaHealthRichTests(unittest.TestCase):
                 server.shutdown(); server.server_close()
 
 
+class AiReadyHealthTests(unittest.TestCase):
+    def test_ai_ready_false_when_ollama_disabled(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.dict(os.environ, {"PEDESK_GUIDE_OLLAMA_ENABLED": "false"}):
+            server, port = _start(tmp)
+            try:
+                _, data = _get(port, "/api/guide/ollama-health")
+                self.assertIn("ai_ready", data)
+                self.assertFalse(data["ai_ready"])
+                self.assertFalse(data["ollama_enabled"])
+                self.assertIn("setup_commands", data)
+            finally:
+                server.shutdown(); server.server_close()
+
+    def test_ai_ready_false_when_rag_index_missing(self):
+        missing = os.path.join(tempfile.gettempdir(), "no_idx_aiready.sqlite3")
+        if os.path.exists(missing):
+            os.remove(missing)
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.dict(os.environ, {
+                    "PEDESK_GUIDE_OLLAMA_ENABLED": "true",
+                    "PEDESK_GUIDE_RAG_ENABLED": "true",
+                    "PEDESK_GUIDE_RAG_INDEX_PATH": missing}), \
+                mock.patch.object(ollama_client, "check_ollama_health",
+                                  return_value=True), \
+                mock.patch.object(ollama_client, "list_models",
+                                  return_value=["gemma4:e4b",
+                                                "nomic-embed-text:latest"]):
+            server, port = _start(tmp)
+            try:
+                _, data = _get(port, "/api/guide/ollama-health")
+                self.assertFalse(data["ai_ready"])
+                self.assertTrue(data["chat_model_installed"])
+                self.assertFalse(data["rag_index_exists"])
+                self.assertIn("index_builder", data["suggested_fix"])
+            finally:
+                server.shutdown(); server.server_close()
+
+    def test_ai_ready_true_when_all_present(self):
+        # Build a tiny real index file so rag_index_exists/counts are true,
+        # then mock Ollama reachability + installed models.
+        from rcm_mc.assistant.rag import vector_store
+        from rcm_mc.assistant.rag.chunking import chunk_document
+        from rcm_mc.assistant.rag.types import RagDocument
+        with tempfile.TemporaryDirectory() as tmp:
+            idx = os.path.join(tmp, "ai_ready.sqlite3")
+            con = vector_store.connect(idx)
+            c = chunk_document(RagDocument(
+                source_id="metric:x", source_type="metric", title="X",
+                text="Metric: X", metric_id="x"))[0]
+            vector_store.upsert_chunk(con, c, [1.0, 2.0], "nomic-embed-text")
+            con.commit(); con.close()
+            with mock.patch.dict(os.environ, {
+                        "PEDESK_GUIDE_OLLAMA_ENABLED": "true",
+                        "PEDESK_GUIDE_RAG_ENABLED": "true",
+                        "PEDESK_GUIDE_RAG_INDEX_PATH": idx}), \
+                    mock.patch.object(ollama_client, "check_ollama_health",
+                                      return_value=True), \
+                    mock.patch.object(ollama_client, "list_models",
+                                      return_value=["gemma4:e4b",
+                                                    "nomic-embed-text:latest"]):
+                server, port = _start(tmp)
+                try:
+                    _, data = _get(port, "/api/guide/ollama-health")
+                    self.assertTrue(data["ai_ready"])
+                    self.assertTrue(data["ollama_reachable"])
+                    self.assertTrue(data["chat_model_installed"])
+                    self.assertTrue(data["embed_model_installed"])
+                    self.assertTrue(data["rag_enabled"])
+                    self.assertTrue(data["rag_index_exists"])
+                    self.assertGreater(data["rag_chunk_count"], 0)
+                    self.assertGreater(data["rag_embedded_count"], 0)
+                    self.assertEqual(data["suggested_fix"], "")
+                finally:
+                    server.shutdown(); server.server_close()
+
+
 class AskMissingIndexWarningTests(unittest.TestCase):
     def test_ask_rag_enabled_missing_index_warns_and_falls_back(self):
         missing = os.path.join(tempfile.gettempdir(), "no_such_rag_idx2.sqlite3")
