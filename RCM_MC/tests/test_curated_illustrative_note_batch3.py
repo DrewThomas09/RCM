@@ -53,3 +53,22 @@ class CuratedBatch3Tests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+_BATCH3B = [
+    "partner_economics", "workforce_retention", "digital_front_door",
+    "hcit_platform", "trial_site_econ", "direct_employer",
+    "denovo_expansion", "demand_forecast", "real_estate",
+    "medical_realestate", "reit_analyzer", "hospital_anchor",
+    "operating_partners", "diligence_vendors", "compliance_attestation",
+    "treasury_tracker", "fundraising_tracker", "coinvest_pipeline",
+    "nav_loan_tracker", "secondaries_tracker", "continuation_vehicle",
+]
+
+
+class CuratedBatch3bTests(unittest.TestCase):
+    def test_each_curated_page_carries_marker(self):
+        for name in _BATCH3B:
+            html = _render_any(name)
+            self.assertIn("ck-illus-note", html, name)
+            self.assertIn("Illustrative template", html, name)
