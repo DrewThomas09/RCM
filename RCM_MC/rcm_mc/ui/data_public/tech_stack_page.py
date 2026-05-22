@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
 
 
 def _modernness_heatmap_svg(systems) -> str:
@@ -293,10 +293,28 @@ def render_tech_stack(params: dict = None) -> str:
         meta=f"""Systems inventory, modernness score, cyber posture, IT spend vs benchmark — {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    # Lead takeaway — surface the computed IT EV uplift (and the
+    # modernization investment to unlock it), otherwise buried as KPIs
+    # #7-8 and in the bottom thesis. All figures come from
+    # compute_tech_stack().
+    lead_anchor = ck_value_anchor(
+        "IT VALUE",
+        f"${r.total_ev_uplift_mm:,.0f}M EV uplift",
+        delta=f"modernness {r.modernness_composite}/100 · cyber {r.cyber_posture_score}/100",
+        opportunity=f"${r.total_modernization_cost_mm:,.2f}M to modernize",
+        target=(
+            f"${r.total_it_spend_mm:,.1f}M IT spend · "
+            f"{r.it_spend_pct_revenue * 100:.1f}% of rev"
+        ),
+        tone="teal",
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
   {page_title}
+
+  {lead_anchor}
 
   {form}
 
