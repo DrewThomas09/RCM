@@ -333,3 +333,99 @@ the remaining non-priority long tail.
   methodology/reference pages → `unknown`.
 - No exact formulas added; model-logic summaries describe intent and point
   to the implementing module.
+
+---
+
+# Task 4C — Upgrade placeholder PageContexts from source (Priority C) (2026-05-22)
+
+Read the actual page implementations (server.py handlers, `rcm_mc/ui/`
+renderers, page docstrings, headings, table columns, KPI labels, data
+pulls) and authored conservative, source-grounded contexts for the
+Priority C research / reference / backtesting / portfolio / market-intel
+pages. No formulas/lineage invented.
+
+## Quality distribution (packet quality over all 72 registry routes)
+- **Start (after PR #560):** strong 36 · partial 3 · placeholder 33 · missing 0
+- **End:** strong 52 · partial 6 · placeholder 14 · missing 0
+
+All quality targets met (strong 50+, partial 4+, placeholder <20, missing 0).
+
+## Pages upgraded (all 19 Priority C routes)
+Promoted to **strong** (16): `/library`, `/comparables`, `/market-rates`,
+`/sector-momentum`, `/irr-dispersion`, `/hold-analysis`,
+`/comparable-outcomes`, `/bear-cases`, `/regulatory-calendar`,
+`/market-intel`, `/corpus-backtest`, `/backtest`, `/portfolio/map`,
+`/portfolio-analytics`, `/sponsor-track-record`, `/payer-intelligence`.
+Upgraded to **partial** (3): `/deals-library` (a legacy redirect to
+/library), `/research` (a navigation/search index), `/notes` (a
+notes-search utility) — none has a registry metric/source to link.
+Eight of these were previously `needs_validation` stubs now fully
+authored (incl. five new entries: /research, /notes, /hold-analysis,
+/corpus-backtest, /market-intel, /portfolio/map, /portfolio-analytics,
+/deals-library); the rest expanded existing minimal manual entries.
+
+## Conservatism calls worth noting
+- **`/library` / `/deals-library`:** reference/benchmarking corpus, NOT a
+  governed deal-room/source-of-truth; `/deals-library` is a 301 redirect.
+- **`/comparables` / `/comparable-outcomes`:** similarity MATCHING, not an
+  approved/locked comp set.
+- **`/market-rates`:** CORPUS benchmark percentiles, explicitly NOT live
+  market pricing.
+- **`/research` / `/notes`:** `/research` is a discovery index (no
+  persistence); `/notes` is a search utility over persisted analyst notes
+  — described as an archive, not a formal sign-off record.
+- **`/sector-momentum`, `/irr-dispersion`, `/hold-analysis`:** HISTORICAL
+  corpus analyses, explicitly NOT forward predictions (and hold-analysis
+  does not prescribe an optimal hold).
+- **`/bear-cases`:** counter-narrative SYNTHESIS that ranks downside
+  evidence, NOT a final verdict.
+- **`/regulatory-calendar` / `/market-intel`:** CURATED snapshots needing
+  periodic refresh, explicitly NOT live feeds.
+- **`/corpus-backtest` / `/backtest`:** VALIDATION / calibration framing
+  (in-sample), NOT decision-ready forward prediction; the two are
+  distinguished (platform-predictions-vs-realized vs corpus-formula fit).
+- **`/portfolio/map`:** geographic VISUALIZATION (CON shading is a status
+  marker), NOT a market-access/CON analysis.
+- **`/portfolio-analytics`:** scope is the 655-deal CORPUS, explicitly NOT
+  the user's live fund.
+- **`/sponsor-track-record`:** historical reference, NOT guaranteed/
+  predictive sponsor performance.
+- **`/payer-intelligence`:** rank CORRELATION of payer mix with MOIC,
+  explicitly NOT a causal claim.
+
+## Pages still placeholder (14) — long tail
+/day-one, /diligence/covenant-stress, /diligence/deal-autopsy,
+/diligence/deal-mc, /diligence/exit-timing, /diligence/ingest,
+/diligence/management, /diligence/physician-attrition, /engagements,
+/escalations, /market-data/state/CA, /metric-glossary, /my/AT,
+/rcm-benchmarks. (Several of these — e.g. /diligence/deal-mc,
+/diligence/deal-autopsy, /rcm-benchmarks — already carry partial content
+but lack linked ids; a future pass can promote them.)
+
+## Pages partial / blocked
+- `/deals-library`, `/research`, `/notes` (this task) and
+  `/pe-intelligence`, `/conferences`, `/users` (earlier) stay **partial**
+  by design — navigation/admin/utility pages with no registry
+  metric/source to link.
+
+## Commands + results
+- `python -m rcm_mc.assistant.context.validate_page_context_coverage`
+  → PASS (exit 0).
+- `python -m rcm_mc.assistant.context.validate_guide_context_quality`
+  → PASS (exit 0): 0 invalid metric/source refs, 0 duplicate ids, 0
+  ambiguous aliases.
+- `py_compile` on the context package → clean.
+- `pytest tests/test_pedesk_guide_page_context.py
+  tests/test_pedesk_guide_metric_data_context.py
+  tests/test_pedesk_guide_context_packet.py` → **30 passed**.
+
+## Caveats
+- `/comparables`, `/market-rates`, `/comparable-outcomes`,
+  `/sponsor-track-record`, `/payer-intelligence` keep `documented` (their
+  source/docstrings document behavior); the rest are `inferred_from_page`.
+- `data_confidence`: corpus reference pages → `public_benchmark_data`;
+  prediction/validation pages → `model_estimate` (/backtest) or `mixed`
+  (/corpus-backtest); curated reference → `public_benchmark_data`;
+  navigation index → `unknown`; notes → `user_entered_data`.
+- No exact formulas added; model-logic summaries describe intent and point
+  to the implementing module.
