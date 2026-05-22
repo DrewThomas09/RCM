@@ -3,7 +3,8 @@ top local chunks. Read-only; no LLM call here."""
 from __future__ import annotations
 
 import os
-from typing import List, Optional
+import sqlite3
+from typing import Dict, List, Optional
 
 from . import vector_store
 from .embeddings import embed_query
@@ -12,6 +13,33 @@ from .types import RagSearchResult, rag_index_path, rag_top_k
 
 def index_exists(path: Optional[str] = None) -> bool:
     return os.path.exists(path or rag_index_path())
+
+
+def index_status(path: Optional[str] = None) -> Dict[str, object]:
+    """Cheap, Ollama-free index health: existence + chunk/embedding counts
+    + distinct embedding models. Never raises (a corrupt/locked DB reports
+    exists=True with an error note)."""
+    p = path or rag_index_path()
+    status: Dict[str, object] = {
+        "exists": os.path.exists(p), "chunk_count": 0,
+        "embedded_count": 0, "embedding_models": [],
+    }
+    if not status["exists"]:
+        return status
+    try:
+        con = vector_store.connect(p)
+        try:
+            status["chunk_count"] = vector_store.count_chunks(con)
+            status["embedded_count"] = vector_store.count_embedded(con)
+            rows = con.execute(
+                "SELECT DISTINCT embedding_model FROM guide_rag_chunks"
+            ).fetchall()
+            status["embedding_models"] = [r[0] for r in rows if r[0]]
+        finally:
+            con.close()
+    except sqlite3.Error as exc:
+        status["error"] = f"index unreadable: {exc}"
+    return status
 
 
 def search(query: str, top_k: Optional[int] = None,
