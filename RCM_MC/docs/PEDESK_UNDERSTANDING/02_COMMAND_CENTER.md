@@ -82,8 +82,7 @@ Eight **static** cards (no data, no queries) linking to: `/analysis`, `/portfoli
 
 ### 6. Metric catalog (`render_metric_catalog`) — "every number on this page"
 A 4-column cross-reference (RETURNS / RCM DRAG / COVENANTS / INITIATIVES).
-- **RETURNS:** Weighted MOIC + IRR are **live** (from rollup); DPI & TVPI are **always `—`** (those rollup keys don't exist).
-- ⚠ **RCM DRAG / COVENANTS / INITIATIVES columns are currently always `—`** even with a focused deal — a bug: the helper treats the `DealAnalysisPacket` *dataclass* as a dict (`isinstance(packet, Mapping)` + `.get`), which never matches. **Worth fixing** (switch to attribute access like the EBITDA-drag block does).
+- **Simplified (PR #500):** the catalog now shows only the live **RETURNS** column (Weighted MOIC + IRR from the rollup). The deal-level RCM-DRAG / COVENANTS / INITIATIVES columns and DPI/TVPI were dropped — they couldn't be sourced from the data the catalog receives (covenant data lives in `covenant_metrics`, initiative variance needs `store`, DPI/TVPI are never computed), and that deal-level data is already shown live in the dedicated EBITDA-drag / covenant-heatmap / initiative-tracker blocks below.
 
 ### 7. Pipeline funnel (`render_pipeline_funnel`)
 - Viz: one clickable bar per `DEAL_STAGES` stage; width = stage count / max stage count; click → `/app?stage=<stage>`.
@@ -144,8 +143,9 @@ Recent export manifest. **Primary:** `generated_exports` table (`list_exports`, 
 - ✅ **Focused initiative tracker** now reads the real `cumulative_actual`/`cumulative_plan`/`initiative_id` columns + resolves names (PR #497).
 - ✅ **Morning-brief FNL** now uses the canonical `DEAL_STAGES` so `sourced`/`spa` show (PR #497).
 
-**Still open — needs a wiring decision (renders `—`):**
-- **Metric catalog** RCM DRAG / COVENANTS / INITIATIVES columns + DPI/TVPI. These have two problems: (a) the helper treats the packet *dataclass* as a dict (`isinstance(packet, Mapping)`), and (b) more fundamentally, the catalog only receives `focused_packet` — but covenant + initiative data isn't on the packet (they live in the `covenant_metrics` table and need `initiative_variance_report(store, …)`), and DPI/TVPI are never computed. The dedicated blocks on the same page (EBITDA drag, covenant heatmap, initiative tracker) already show this data live. So the fix is a **decision**: either pass `store` into the catalog and wire it (costs queries against the 3-query budget), or simplify the catalog to the columns it can source. Documented, not yet decided.
+- ✅ **Metric catalog** simplified to the live RETURNS column (PR #500); the un-sourceable deal columns + DPI/TVPI were dropped. The deal-level data is shown live in the dedicated blocks below.
+
+**All `/app` dead-column defects found during this documentation pass are now resolved.**
 
 ---
 *Next: `03_DEAL_PAGES.md` — the per-deal surfaces, where the numbers DO come from a packet.*

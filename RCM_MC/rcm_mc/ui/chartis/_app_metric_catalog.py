@@ -1,12 +1,18 @@
-"""MetricCatalog — "Every number on this page" cross-reference block.
+"""MetricCatalog — fund-level returns cross-reference block.
 
-Direct port of the MetricCatalog component from cc-app.jsx. Renders 4
-columns of metric:value pairs grouped by category (RETURNS / RCM DRAG /
-COVENANTS / INITIATIVES). Each column has a header showing the category
-name + a fund/deal-level badge. Each row is a label + a tabular-num value.
+Renders the fund-level return metrics the /app page can source from
+``portfolio_rollup`` (Weighted MOIC / IRR). Each row is a label + a
+tabular-num value.
 
-The numbers themselves are sourced from the rollup + focused-deal packet
-that the /app page already fetches — this helper is purely presentational.
+History: this block originally tried to show 4 columns (RETURNS / RCM
+DRAG / COVENANTS / INITIATIVES), but the deal-level columns couldn't be
+sourced from the data this helper receives — covenant data lives in the
+``covenant_metrics`` table, initiative variance needs ``store``, DPI/TVPI
+are never computed — so they rendered as dead ``—``. Per the
+simplify-to-what-it-can-source decision, the catalog now shows only the
+live RETURNS metrics; the deal-level data is shown live in the dedicated
+EBITDA-drag / covenant-heatmap / initiative-tracker blocks on the same
+page.
 
 CSS lives in static/v3/chartis.css under the METRIC CATALOG header.
 """
@@ -24,32 +30,32 @@ _Group = Tuple[str, str, _GroupItems]
 def render_metric_catalog(
     *,
     rollup: Optional[Mapping[str, Any]] = None,
-    focused_packet: Optional[Mapping[str, Any]] = None,
+    focused_packet: Optional[Mapping[str, Any]] = None,  # noqa: ARG001 — kept for signature compat; deal-level data is shown in dedicated blocks
 ) -> str:
-    """Render the 4-column metric catalog.
+    """Render the fund-level returns catalog.
 
     Args:
-        rollup: Output of portfolio_rollup() — used for fund-level metrics
-            (Weighted MOIC / IRR / DPI / TVPI). When None, fund column shows
-            "—" placeholders.
-        focused_packet: Output of _resolve_focused_packet() — used for
-            deal-level metrics (RCM drag, covenants, initiatives). When
-            None, deal columns show "—".
+        rollup: Output of portfolio_rollup() — the fund-level return
+            metrics (Weighted MOIC / IRR). When None, shows "—".
+        focused_packet: accepted for backwards compatibility but no longer
+            used (the deal-level columns it backed couldn't be sourced
+            here; that data is shown in the EBITDA-drag / covenant-heatmap
+            / initiative-tracker blocks instead).
 
     Returns:
-        HTML string. Section header + 4-column catalog grid.
+        HTML string. Section header + the RETURNS column.
     """
-    groups = _build_groups(rollup, focused_packet)
+    groups = _build_groups(rollup)
     cols_html = "".join(_render_col(g) for g in groups)
     return (
         '<div class="sect">'
         '<div>'
         '<div class="micro">METRIC CATALOG</div>'
-        '<h2>Every number<br/>on this page</h2>'
+        '<h2>Fund returns<br/>at a glance</h2>'
         '</div>'
-        '<p class="desc">Cross-reference of fund- and deal-level metrics '
-        'with their visualization anchors below. Click any row to scroll '
-        'to its source.</p>'
+        '<p class="desc">Fund-level return metrics. Deal-level drag, '
+        'covenants, and initiative variance are shown live in the '
+        'dedicated blocks below.</p>'
         '</div>'
         f'<div class="catalog">{cols_html}</div>'
     )
@@ -77,37 +83,16 @@ def _render_col(group: _Group) -> str:
 
 def _build_groups(
     rollup: Optional[Mapping[str, Any]],
-    focused: Optional[Mapping[str, Any]],
 ) -> Sequence[_Group]:
-    """Pull values out of rollup + focused packet into the 4 groups.
+    """Pull the fund-level return metrics out of the rollup.
 
-    When data is missing, renders "—". This matches the "honest partial
-    wiring" rule — show the row, footnote the gap, never fake numbers.
+    Only the metrics the rollup actually computes are shown (Weighted
+    MOIC / IRR). Missing → "—" — never a faked number.
     """
     return [
         ("RETURNS", "fund", [
             ("Weighted MOIC", _fmt_moic(_get(rollup, "weighted_moic"))),
             ("Weighted IRR",  _fmt_pct(_get(rollup, "weighted_irr"))),
-            ("DPI",           _fmt_moic(_get(rollup, "weighted_dpi"))),
-            ("TVPI",          _fmt_moic(_get(rollup, "weighted_tvpi"))),
-        ]),
-        ("RCM DRAG", "deal", [
-            ("Denial write-off",     _fmt_dollars(_packet_metric(focused, "denial_writeoff"))),
-            ("DAR carry cost",       _fmt_dollars(_packet_metric(focused, "dar_carry_cost"))),
-            ("Underpayment leakage", _fmt_dollars(_packet_metric(focused, "underpayment_leakage"))),
-            ("Recovery cost",        _fmt_dollars(_packet_metric(focused, "recovery_cost"))),
-        ]),
-        ("COVENANTS", "deal", [
-            ("Net leverage",     _fmt_covenant(focused, "net_leverage")),
-            ("Interest coverage",_fmt_covenant(focused, "interest_coverage")),
-            ("Days cash",        _fmt_covenant(focused, "days_cash")),
-            ("EBITDA / Plan",    _fmt_covenant(focused, "ebitda_plan")),
-        ]),
-        ("INITIATIVES", "deal", [
-            ("Coding & CDI",       _fmt_signed_pct(_initiative_variance(focused, "coding_cdi"))),
-            ("Prior auth reform",  _fmt_signed_pct(_initiative_variance(focused, "prior_auth"))),
-            ("Denials workflow",   _fmt_signed_pct(_initiative_variance(focused, "denials"))),
-            ("Underpay recovery",  _fmt_signed_pct(_initiative_variance(focused, "underpay_recovery"))),
         ]),
     ]
 
@@ -121,27 +106,6 @@ def _get(d: Optional[Mapping[str, Any]], key: str) -> Any:
     if not d:
         return None
     return d.get(key) if isinstance(d, Mapping) else None
-
-
-def _packet_metric(packet: Optional[Mapping[str, Any]], key: str) -> Any:
-    """Fetch a per-metric impact dollar amount from the focused packet."""
-    if not packet:
-        return None
-    impacts = packet.get("per_metric_impacts") if isinstance(packet, Mapping) else None
-    if not isinstance(impacts, Mapping):
-        return None
-    return impacts.get(key)
-
-
-def _initiative_variance(packet: Optional[Mapping[str, Any]], key: str) -> Any:
-    """Fetch initiative variance fraction (e.g., -0.10 → -10.0%)."""
-    if not packet:
-        return None
-    inits = packet.get("initiatives") if isinstance(packet, Mapping) else None
-    if not isinstance(inits, Mapping):
-        return None
-    val = inits.get(key)
-    return val if val is not None else None
 
 
 def _fmt_moic(v: Any) -> str:
@@ -166,69 +130,3 @@ def _fmt_pct(v: Any) -> str:
     if f != f:
         return _DASH
     return f"{f * 100:.1f}%"
-
-
-def _fmt_signed_pct(v: Any) -> str:
-    if v is None or v == "":
-        return _DASH
-    try:
-        f = float(v)
-    except (TypeError, ValueError):
-        return _DASH
-    if f != f:
-        return _DASH
-    sign = "+" if f >= 0 else ""
-    return f"{sign}{f * 100:.1f}%"
-
-
-def _fmt_dollars(v: Any) -> str:
-    if v is None or v == "":
-        return _DASH
-    try:
-        f = float(v)
-    except (TypeError, ValueError):
-        return _DASH
-    if f != f:
-        return _DASH
-    af = abs(f)
-    if af >= 1_000_000_000:
-        return f"${f / 1_000_000_000:.1f}B".replace(".0B", "B")
-    if af >= 1_000_000:
-        return f"${f / 1_000_000:.1f}M".replace(".0M", "M")
-    if af >= 1_000:
-        return f"${f / 1_000:.1f}K".replace(".0K", "K")
-    return f"${f:,.0f}"
-
-
-def _fmt_covenant(packet: Optional[Mapping[str, Any]], metric: str) -> str:
-    """Render '<value> · <band>' for a covenant metric, or '—'.
-
-    Pulls from focused packet's covenant_status. Bands: SAFE/WATCH/TRIP.
-    """
-    if not packet:
-        return _DASH
-    covs = packet.get("covenants") if isinstance(packet, Mapping) else None
-    if not isinstance(covs, Mapping):
-        return _DASH
-    entry = covs.get(metric)
-    if not isinstance(entry, Mapping):
-        return _DASH
-    val = entry.get("value")
-    band = entry.get("band") or ""
-    if val is None:
-        return _DASH
-    try:
-        f = float(val)
-    except (TypeError, ValueError):
-        return _DASH
-    if f != f:
-        return _DASH
-    # Format value per metric type — leverage = "x", coverage = "x",
-    # days_cash = "d", ebitda_plan = "%"
-    if metric == "days_cash":
-        v_str = f"{f:.0f}d"
-    elif metric == "ebitda_plan":
-        v_str = f"{f * 100:.0f}%" if f <= 1 else f"{f:.0f}%"
-    else:
-        v_str = f"{f:.1f}x"
-    return f"{v_str} · {band.upper()}" if band else v_str
