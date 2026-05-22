@@ -490,3 +490,87 @@ calls the registry-backed packet builder.
 - The optional debug HTML reflects the user-supplied `route` — it is
   `html.escape`d in both the input value and the JSON `<pre>` to avoid
   reflected XSS.
+
+---
+
+# Task 6A — Local Ollama read-only Guide answer endpoint (2026-05-22)
+
+Got Ollama into PEdesk behind the existing context layer — a local model
+answers questions about a page using ONLY that page's
+`GuideContextPacket`. Still read-only: no RAG, no document ingestion, no
+mutation, no diligence model, no task/artifact creation, no autonomous
+behavior, no sidebar.
+
+## Endpoints
+- **`POST /api/guide/ask`** — body `{"route","question","model"?}`.
+  Builds the packet, prompts a local model, returns
+  `{answer, route, normalized_route, context_quality, model,
+  ollama_enabled, context_used{page_title,metrics,data_sources,
+  limitations_count}, missing_context_notes, read_only:true}`.
+  - Missing `question` / `route` / bad JSON → clean **400**.
+  - Ollama disabled or unreachable → clean **503**
+    (`{"error":"PEdesk Guide local model is unavailable.", "detail":...,
+    "read_only":true}`). Never a 500, never a stack trace.
+  - Unknown route → still answers conservatively (packet
+    `context_quality="missing"`), 200.
+- **`GET /api/guide/ollama-health`** — `{enabled, base_url, default_model,
+  reachable}`; never fails the app.
+
+## Files created / modified
+- **NEW** `rcm_mc/assistant/ollama_client.py` — `is_ollama_enabled()`,
+  `check_ollama_health()`, `call_ollama_chat(system, user, model=None)`
+  via stdlib `urllib` (no new dependency). Typed `OllamaError`.
+- **NEW** `rcm_mc/assistant/guide_prompt_builder.py` —
+  `build_guide_system_prompt`, `build_guide_user_prompt`,
+  `packet_to_prompt_context(packet, max_chars=12000)`,
+  `clean_guide_answer` (strips `<think>…</think>` incl. dangling tails,
+  trims a repetitive preamble, keeps caveats).
+- **MODIFIED** `rcm_mc/server.py` — `_route_guide_ask`,
+  `_route_guide_ollama_health` + dispatch (POST in `_do_post_inner`, GET
+  in `_do_get_inner`).
+- **NEW** `tests/test_guide_prompt_builder.py` (6),
+  `tests/test_guide_ollama_endpoint.py` (9, Ollama mocked).
+
+## Config (env vars — PEdesk has no central config system)
+- `PEDESK_GUIDE_OLLAMA_ENABLED` (default **false** — production-safe;
+  local dev opts in)
+- `PEDESK_GUIDE_OLLAMA_BASE_URL` (default `http://localhost:11434`)
+- `PEDESK_GUIDE_OLLAMA_MODEL` (default `gemma4:e4b`)
+- `PEDESK_GUIDE_OLLAMA_TIMEOUT_SECONDS` (default `30`)
+
+## CSRF / auth
+`/api/guide/ask` is NOT CSRF-exempt: in authenticated mode the app's
+shared CSRF JS auto-adds `X-CSRF-Token` for AJAX, and the future sidebar
+will too. In single-user/open mode (and the tests) there's no session, so
+the CSRF gate is skipped — reachable like other read endpoints.
+
+## Commands + results
+- `validate_page_context_coverage` → PASS (exit 0).
+- `validate_guide_context_quality` → PASS (exit 0).
+- `py_compile` on assistant/context + assistant Ollama/prompt modules +
+  server.py → clean.
+- `pytest` page-context + metric/data + packet + context-endpoint +
+  prompt-builder + ollama-endpoint → **52 passed**.
+
+## Manual local test (real gemma4:e4b, Ollama reachable)
+- `GET /api/guide/ollama-health` → `{enabled:true, reachable:true,
+  default_model:"gemma4:e4b"}`.
+- Q "Where does this data come from?" on `/diligence/hcris-xray` →
+  grounded answer citing **CMS HCRIS** (public dataset, annual cadence,
+  1-2yr lag, filing artifacts), no `<think>` tags, `read_only:true`,
+  `context_used` populated (~20s on this machine).
+- Q "Can you change the assumptions for me?" → "I cannot change
+  assumptions… restricted from modifying data, changing assumptions, or
+  running models." (read-only contract held by the live model.)
+
+## Caveats
+- Read-only and AI-boxed by construction: the model only ever sees the
+  packet text; it cannot reach a tool, the store, or any action.
+- No RAG / uploads / memory yet (deliberate next step is the sidebar
+  calling this endpoint).
+- `call_ollama_chat` takes `(system_prompt, user_prompt, model=None)`
+  rather than a single `prompt` — the /api/chat payload needs distinct
+  system + user roles; tests mock at this signature.
+- Default-disabled means the endpoint returns 503 until an operator sets
+  `PEDESK_GUIDE_OLLAMA_ENABLED=true` and a local Ollama is running with
+  the model pulled.
