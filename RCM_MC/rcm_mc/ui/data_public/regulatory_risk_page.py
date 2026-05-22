@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
 
 
 def _materiality_chart(items):
@@ -273,10 +273,31 @@ def render_regulatory_risk(params: dict = None) -> str:
         meta=f"""Sector-specific regulatory risk — Stark, AKS, HIPAA, OIG, 340B + active CMS/OIG events — {r.corpus_deal_count:,} corpus deals""",
     )
     
+    # Lead takeaway — surface the computed regulatory exposure (EV at
+    # risk → remediation cost to mitigate), otherwise buried as KPIs
+    # #6-7 and in the bottom thesis. All figures come from
+    # compute_regulatory_risk(). Tone tracks the risk score so the
+    # band reads green/amber/red at a glance.
+    _reg_tone = (
+        "negative" if r.risk_score >= 7
+        else "warning" if r.risk_score >= 4
+        else "positive"
+    )
+    lead_anchor = ck_value_anchor(
+        "REGULATORY EXPOSURE",
+        f"${r.total_ev_risk_mm:,.1f}M EV at risk",
+        delta=f"risk {r.risk_score}/10 · {r.risk_label}",
+        opportunity=f"{r.total_revenue_drag_pct * 100:+.1f}% revenue drag",
+        target=f"${r.total_remediation_cost_mm:,.1f}M to remediate",
+        tone=_reg_tone,
+    )
+
     body = f"""
 <div class="ck-page-wrap">
 
   {page_title}
+
+  {lead_anchor}
 
   {form}
 
