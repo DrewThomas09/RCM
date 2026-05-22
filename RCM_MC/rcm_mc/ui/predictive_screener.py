@@ -16,6 +16,7 @@ import pandas as pd
 
 from ._chartis_kit import (
     chartis_shell, ck_kpi_block, ck_next_section, ck_page_title, ck_panel,
+    ck_value_anchor,
 )
 
 _EXPLAINER_CSS = """
@@ -417,8 +418,19 @@ transition:filter 120ms ease;}
         eyebrow="Continue —",
         italic_word="deal",
     )
+    # Lead takeaway — surface the screen's aggregate opportunity (total
+    # estimated EBITDA uplift across the matched universe) at the top,
+    # before the KPI strip and results table.
+    lead_anchor = ck_value_anchor(
+        "SCREEN OPPORTUNITY",
+        f"{total_matches:,} matching hospitals",
+        delta=f"of {len(hcris_df):,} universe",
+        opportunity=f"{_fm(total_uplift)} total est. uplift",
+        target=f"avg denial {avg_denial:.1%} · margin {avg_margin:.1%}",
+        tone="teal",
+    )
     body = (
-        ps_styles + title_block + explainer_html + form
+        ps_styles + title_block + explainer_html + lead_anchor + form
         + kpis + table + save_form + quick + next_up
     )
 
