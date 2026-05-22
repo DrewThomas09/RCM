@@ -108,11 +108,16 @@ def search_similar(con: sqlite3.Connection, query_embedding: List[float],
         "SELECT title, source_type, route, metric_id, data_source_id, "
         "source_id, section, text, embedding_json FROM guide_rag_chunks"
     ).fetchall()
+    qlen = len(query_embedding or [])
     scored: List[Tuple[float, sqlite3.Row]] = []
     for r in rows:
         try:
             emb = json.loads(r["embedding_json"])
         except (ValueError, TypeError):
+            continue  # malformed embedding JSON — skip, don't crash
+        # Dimension mismatch (e.g. index built with a different embed
+        # model) → skip rather than score a meaningless 0.
+        if qlen and len(emb) != qlen:
             continue
         scored.append((cosine_similarity(query_embedding, emb), r))
     scored.sort(key=lambda t: t[0], reverse=True)

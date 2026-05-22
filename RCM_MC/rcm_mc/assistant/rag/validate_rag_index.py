@@ -38,20 +38,46 @@ def main(argv: Optional[List[str]] = None) -> int:
               "`python -m rcm_mc.assistant.rag.index_builder`.")
         return 1
 
+    import json as _json
+    from .types import rag_embed_model
     con = vector_store.connect(path)
     try:
         chunks = vector_store.count_chunks(con)
         embedded = vector_store.count_embedded(con)
+        rows = con.execute(
+            "SELECT embedding_model, embedding_json FROM guide_rag_chunks"
+        ).fetchall()
     finally:
         con.close()
+    models = sorted({r[0] for r in rows if r[0]})
+    invalid = 0
+    for r in rows:
+        try:
+            v = _json.loads(r[1])
+            if not isinstance(v, list) or not v:
+                invalid += 1
+        except (ValueError, TypeError):
+            invalid += 1
     print(f"  chunks    : {chunks}")
     print(f"  embedded  : {embedded}")
+    print(f"  models    : {models}")
     if chunks <= 0:
         print("  FAIL: index has no chunks.")
         return 1
     if embedded <= 0:
         print("  FAIL: index has no embeddings.")
         return 1
+    if invalid:
+        print(f"  FAIL: {invalid} chunk(s) have invalid/empty embeddings — "
+              "rebuild with python -m rcm_mc.assistant.rag.index_builder.")
+        return 1
+    if len(models) > 1:
+        print(f"  WARN: index mixes embedding models {models} — rebuild for a "
+              "consistent vector space.")
+    configured = rag_embed_model()
+    if models and configured not in models:
+        print(f"  WARN: index built with {models} but configured model is "
+              f"'{configured}' — searches will mismatch; rebuild.")
 
     print("  test searches:")
     try:

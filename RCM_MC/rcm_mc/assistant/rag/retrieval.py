@@ -61,9 +61,12 @@ def search(query: str, top_k: Optional[int] = None,
     extra = " ".join(x for x in (page_title, route) if x)
     if extra:
         enriched = f"{q}\n(context: {extra})"
+    # Normalize top_k: ignore <=0 / non-int; cap to a sane ceiling.
+    k = top_k if (isinstance(top_k, int) and top_k > 0) else rag_top_k()
+    k = min(k, 50)
     vec = embed_query(enriched)
     con = vector_store.connect(index_path)
     try:
-        return vector_store.search_similar(con, vec, top_k or rag_top_k())
+        return vector_store.search_similar(con, vec, k)
     finally:
         con.close()
