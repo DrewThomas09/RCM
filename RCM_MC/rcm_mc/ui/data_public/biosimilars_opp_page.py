@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_value_anchor
 
 def _waves_chart(items) -> str:
     """Lead chart for the LoE-wave table — waves ranked by reference
@@ -216,7 +216,7 @@ def render_biosimilars(params: dict = None) -> str:
         "infusion and dispensing sites."
         "</p>"
     )
-    body = page_title + bio_explainer + f"""
+    body = page_title + ck_illustrative_note("figures") + bio_explainer + f"""
 <div class="ck-page-wrap">
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}

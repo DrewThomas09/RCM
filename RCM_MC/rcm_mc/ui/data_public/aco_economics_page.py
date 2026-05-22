@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_value_anchor
 
 
 def _tracks_chart(items) -> str:
@@ -260,7 +260,7 @@ def render_aco_economics(params: dict = None) -> str:
         "what the ACO economics reveal on this deal."
         "</p>"
     )
-    body = page_title + ao_explainer + f"""
+    body = page_title + ck_illustrative_note("figures") + ao_explainer + f"""
 <div class="ck-page-wrap">
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
