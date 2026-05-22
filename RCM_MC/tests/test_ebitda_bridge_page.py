@@ -127,6 +127,21 @@ class TestEBITDABridgePage(unittest.TestCase):
         self.assertIn("%", html)
         self.assertIn("x", html)
 
+    def test_lead_value_anchor_present(self):
+        # The page must lead with the computed financial stakes — a
+        # ck_value_anchor band stating the dollar EBITDA uplift before
+        # any chart/table — so a partner reads the headline first.
+        from rcm_mc.ui.ebitda_bridge_page import render_ebitda_bridge
+        df = _sample_hcris()
+        html = render_ebitda_bridge("000001", df)
+        self.assertIn("ck-value-anchor", html)
+        self.assertIn("RCM EBITDA UPLIFT", html)
+        # The anchor renders ahead of the dense 6-up KPI grid.
+        self.assertLess(
+            html.index("ck-value-anchor"),
+            html.index("repeat(6,1fr)"),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
