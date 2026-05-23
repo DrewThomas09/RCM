@@ -1303,3 +1303,18 @@ primary (assembled in the prompt builder, not here). New pure-function
 tests (`RetrievalDedupeTests`, 3) — no Ollama needed. RAG unit (22) + RAG
 endpoints (14) green. Deferred (overfitting risk): metric-alias exact-hit
 boosting for "what does X mean?" queries.
+
+---
+
+# Guide quality loop (2026-05-22) — P4: registry-grounded suggested questions
+
+`get_suggested_questions_for_page` now leads its page-specific extras with
+two concrete, registry-grounded questions when the page documents them:
+"What does {first key metric} mean?" and "Where does {first data source}
+come from?". These name a real metric/source so they reliably hit the
+metric + data-source registries in RAG and yield specific answers instead
+of generic ones. Sentinel ("Needs source documentation.") and empty labels
+are skipped; only the first documented metric/source is used (deterministic,
+not noisy); still capped at 8 and deduped, defaults first. New
+`tests/test_guide_suggested_questions.py` (6, deterministic). Context
+endpoint + packet suites green.
