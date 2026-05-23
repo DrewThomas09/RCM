@@ -1,24 +1,62 @@
-# PEdesk production sign-in (Basic Auth deployments)
+# PEdesk production sign-in (shared-credential deployments)
 
 The DigitalOcean production deployment (https://pedesk.app) authenticates
-with **browser HTTP Basic Auth**, driven by the `RCM_MC_AUTH` env var in
-`.pedesk_prod.env`. This is **not** the same as the in-app `/login` form.
+against a single **shared credential** held in the `RCM_MC_AUTH` env var in
+`.pedesk_prod.env`. There are **two ways** to present that credential, chosen
+by `RCM_MC_AUTH_UI`:
+
+| Mode | `RCM_MC_AUTH_UI` | What the user sees | Notes |
+|---|---|---|---|
+| **Styled form-login** (recommended) | `form` | The pretty in-app `/login` page → session cookie | No browser popup; looks like a polished product |
+| **Basic Auth** (default/fallback) | unset / `basic` | The browser's native username/password popup | Technically simplest; feels like a server admin panel |
+
+Both modes use the **same** shared credential string (`user:password`) in
+`RCM_MC_AUTH`. Only the presentation differs. **For pedesk.app, use styled
+form-login** — set `RCM_MC_AUTH_UI=form` in `.pedesk_prod.env`.
 
 > See also: `docs/DIGITALOCEAN_DEPLOYMENT.md` for the full deploy guide.
 
-## Entry point
+## Styled form-login mode (recommended)
+
+`.pedesk_prod.env`:
+
+```
+RCM_MC_AUTH=andrewt@chartis.com:<strong-shared-password>
+RCM_MC_AUTH_UI=form
+```
+
+Flow: open **https://pedesk.app** → click **Sign In** → the styled PEdesk
+`/login` page renders → enter the shared `user` / `password` → a normal app
+session cookie is issued → land on `/app`. No native popup, ever.
+
+How it works: when `RCM_MC_AUTH_UI=form`, the server seeds the shared
+credential as a real DB user at startup and leaves HTTP Basic **off**. The
+existing session/cookie `/login` flow then authenticates it. A browser hitting
+a protected route while signed out is redirected to `/login?next=…` (not a
+401), so the friendly form always appears. Changing the password in
+`RCM_MC_AUTH` and restarting re-syncs the seeded user (and invalidates old
+sessions).
+
+## Basic Auth mode (fallback) — entry point
+
+Leave `RCM_MC_AUTH_UI` unset (or set it to `basic`).
 
 **Production entry URL: https://pedesk.app/app**
 
 Open `/app`; the browser shows a native username/password prompt. Enter the
 shared `RCM_MC_AUTH` credential (`user:password`). That's it.
 
-## Why not `/login`?
+### Why not `/login`? (Basic Auth mode only)
 
-`/login` is the **in-app** auth flow — it authenticates against DB users
-(scrypt + sessions). It does **not** accept the `RCM_MC_AUTH` shared
-credential and will say "Invalid credentials." To avoid that confusion, when
-`RCM_MC_AUTH` is set:
+> This section applies **only when `RCM_MC_AUTH_UI` is unset/`basic`**. In
+> styled form-login mode (`RCM_MC_AUTH_UI=form`) `/login` *is* the entry
+> point and renders normally — none of the redirects below apply.
+
+In Basic Auth mode, `/login` is the **in-app** auth flow — it authenticates
+against DB users (scrypt + sessions). It does **not** accept the
+`RCM_MC_AUTH` shared credential and will say "Invalid credentials." To avoid
+that confusion, when `RCM_MC_AUTH` is set (and `RCM_MC_AUTH_UI` is not
+`form`):
 
 - the public homepage **Sign In** CTAs point straight at `/app` (not `/login`); and
 - visiting `/login` **redirects to `/app`**, where the browser Basic Auth
@@ -45,7 +83,17 @@ longer serves it. To recover:
 
 Do not type into any `/login` form — production has no in-app accounts.
 
-## Expected behavior (unchanged auth contract)
+## Expected behavior (auth contract)
+
+**Styled form-login mode (`RCM_MC_AUTH_UI=form`):**
+
+```bash
+curl -sI https://pedesk.app/app -H 'Accept: text/html'      # 303 → /login?next=%2Fapp (no WWW-Authenticate)
+curl -sI https://pedesk.app/login                           # 200 (the styled form renders)
+# POST username/password to /api/login → 303 → /app + Set-Cookie: rcm_session
+```
+
+**Basic Auth mode (`RCM_MC_AUTH_UI` unset/`basic`):**
 
 ```bash
 curl -I https://pedesk.app/app                              # 401 (no auth)

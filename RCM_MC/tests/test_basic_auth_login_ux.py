@@ -13,8 +13,9 @@ import socket
 import tempfile
 import threading
 import unittest
+import urllib.parse
 
-from rcm_mc.server import build_server
+from rcm_mc.server import RCMHandler, build_server
 from rcm_mc.ui.chartis.marketing_page import render_marketing_page
 
 _TEST_USER = "tuser"
@@ -31,22 +32,24 @@ def _free_port() -> int:
 
 
 class _Server:
-    def __init__(self, auth=None):
+    def __init__(self, auth=None, auth_ui=None):
         self.tf = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
         self.tf.close()
         self.port = _free_port()
         self.server, _ = build_server(port=self.port, db_path=self.tf.name,
-                                      auth=auth)
+                                      auth=auth, auth_ui=auth_ui)
         self.t = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.t.start()
 
-    def get(self, path, auth_header=None, accept=None):
+    def get(self, path, auth_header=None, accept=None, cookie=None):
         c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=10)
         headers = {}
         if auth_header:
             headers["Authorization"] = auth_header
         if accept:
             headers["Accept"] = accept
+        if cookie:
+            headers["Cookie"] = cookie
         c.request("GET", path, headers=headers)
         r = c.getresponse()
         body = r.read().decode("utf-8", "replace")
@@ -55,6 +58,22 @@ class _Server:
         self._last_www_auth = r.getheader("WWW-Authenticate")
         c.close()
         return status, loc, cache, body
+
+    def post(self, path, fields, accept=None, cookie=None):
+        c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=10)
+        body = urllib.parse.urlencode(fields)
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        if accept:
+            headers["Accept"] = accept
+        if cookie:
+            headers["Cookie"] = cookie
+        c.request("POST", path, body=body, headers=headers)
+        r = c.getresponse()
+        rbody = r.read().decode("utf-8", "replace")
+        status, loc = r.status, r.getheader("Location")
+        set_cookies = r.msg.get_all("Set-Cookie") or []
+        c.close()
+        return status, loc, set_cookies, rbody
 
     def close(self):
         self.server.shutdown()
@@ -143,6 +162,89 @@ class NoAuthDefaultTests(unittest.TestCase):
             self.assertIn("password", body.lower())   # the form rendered
         finally:
             srv.close()
+
+
+def _session_cookie(set_cookies):
+    for sc in set_cookies:
+        if sc.startswith("rcm_session="):
+            return sc.split(";", 1)[0]
+    return None
+
+
+class StyledFormLoginTests(unittest.TestCase):
+    """Styled form-login mode (RCM_MC_AUTH + RCM_MC_AUTH_UI=form).
+
+    The shared credential is presented via the pretty in-app /login form
+    backed by a session cookie — never the native Basic Auth popup.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.srv = _Server(auth=_AUTH, auth_ui="form")
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.srv.close()
+
+    def setUp(self):
+        # _login_fail_log is class-level on RCMHandler and shared across
+        # instances; clear it so a prior test's bad attempt can't trip
+        # this one's rate limiter.
+        RCMHandler._login_fail_log.clear()
+
+    def test_app_unauthenticated_redirects_to_login_not_popup(self):
+        # No Basic Auth popup: a browser GET to /app gets a friendly 303
+        # to the styled /login form, with NO WWW-Authenticate header.
+        status, loc, _, _ = self.srv.get("/app", accept="text/html")
+        self.assertIn(status, (302, 303))
+        self.assertEqual(loc, "/login?next=%2Fapp")
+        self.assertIsNone(self.srv._last_www_auth)
+
+    def test_login_renders_the_styled_form(self):
+        # /login renders the in-app form (not a redirect to /app).
+        status, loc, _, body = self.srv.get("/login?next=%2Fapp",
+                                            accept="text/html")
+        self.assertEqual(status, 200)
+        self.assertIsNone(loc)
+        self.assertIn("password", body.lower())
+
+    def test_valid_shared_credential_creates_session_and_redirects(self):
+        status, loc, cookies, _ = self.srv.post(
+            "/api/login",
+            {"username": _TEST_USER, "password": _TEST_PASS, "next": "/app"},
+            accept="text/html",
+        )
+        self.assertIn(status, (302, 303))
+        self.assertEqual(loc, "/app")
+        sess = _session_cookie(cookies)
+        self.assertIsNotNone(sess)
+        # The minted session authenticates /app (200, no popup).
+        s2, _, _, _ = self.srv.get("/app", accept="text/html", cookie=sess)
+        self.assertEqual(s2, 200)
+
+    def test_invalid_credential_shows_invalid_message(self):
+        status, loc, cookies, _ = self.srv.post(
+            "/api/login",
+            {"username": _TEST_USER, "password": "wrongpass", "next": "/app"},
+            accept="text/html",
+        )
+        self.assertIn(status, (302, 303))
+        self.assertIn("/login?err=", loc)
+        self.assertIn("Invalid", urllib.parse.unquote(loc))
+        self.assertIsNone(_session_cookie(cookies))
+
+    def test_no_native_popup_for_browser_get(self):
+        # The defining contract: form mode never sends WWW-Authenticate to
+        # a browser navigation (that would pop the native prompt).
+        status, _, _, _ = self.srv.get("/app", accept="text/html")
+        self.assertNotEqual(status, 401)
+        self.assertIsNone(self.srv._last_www_auth)
+
+    def test_marketing_cta_targets_login_form_in_form_mode(self):
+        # Form mode keeps the in-app /login CTA (Basic mode points at /app).
+        status, _, _, body = self.srv.get("/")
+        self.assertEqual(status, 200)
+        self.assertIn("/login?next=/app", body)
 
 
 if __name__ == "__main__":
