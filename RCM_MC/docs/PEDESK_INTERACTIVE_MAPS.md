@@ -22,8 +22,19 @@ its approximate geographic position, shaded by a per-state metric, with:
 read, and never fabricates coastlines. It is a *metric map*, not a
 coastline map.
 
-First integration: **`/portfolio/map`** — states shaded by portfolio deal
-count, CON jurisdictions outlined in amber.
+### Integrations (Phase 1 + 1B)
+
+| Route | Status | Metric shaded |
+|-------|--------|---------------|
+| `/portfolio/map` | ✅ wired | portfolio deal count per state (CON states accented) |
+| `/market-data/map` | ✅ wired | selected HCRIS metric per state (margin / HHI / hospitals / NPR / Medicare %), above the existing heatmap table |
+| `/market-intel` | ⛔ not wired | no state-level data on the page (don't fabricate geography) |
+| `/payer-intelligence` | ⛔ not wired | no state-level payer data on the page |
+| `/rcm-benchmarks` | ⛔ not wired | benchmarks are by facility type / segment, not by state |
+| `/market-data/state/<ST>` | future | single-state detail; a map would just highlight one state — low value until county/facility overlays exist |
+
+Rule: wire the map only where a page already has state-keyed data. Pages
+without it keep their tables unchanged — no forced/empty map.
 
 ## Future phases (hooks — not yet built)
 
