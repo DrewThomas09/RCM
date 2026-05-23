@@ -97,6 +97,23 @@ class MetricGlossaryPageTests(unittest.TestCase):
             "_route_metric_glossary should call render_metric_glossary",
         )
 
+    def test_each_metric_has_clipboard_only_copy_link(self) -> None:
+        """Every metric card carries a clipboard-only "Copy link" button
+        that copies the metric's deep link — read-only, no persistence,
+        and hidden when the Clipboard API is unavailable."""
+        html = render_metric_glossary()
+        # One button per rendered metric card (class appears once each;
+        # data-attr/selector also occur in the wiring script, so count class).
+        n_cards = html.count('id="') and html.count('class="mg-copylink"')
+        self.assertGreater(n_cards, 0)
+        self.assertEqual(html.count('class="mg-copylink"'),
+                         html.count('scroll-margin-top:80px;'))  # one per card
+        self.assertIn("navigator.clipboard.writeText", html)
+        # builds the deep link from the current location (no hardcoded host)
+        self.assertIn("location.origin+location.pathname+'#'+key", html)
+        # graceful fallback when the Clipboard API is unavailable
+        self.assertIn("b.hidden=true", html)
+
 
 if __name__ == "__main__":
     unittest.main()
