@@ -371,6 +371,58 @@ _SOURCES: List[DataSourceContext] = [
        limitations=["Provenance unknown — do not assert where the data came from."],
        provenance_notes=_NEEDS,
        source_confidence=_NV, data_confidence=_UNK, ic_ready=False),
+
+    # ── Sector Intelligence: CMS Provider Data Catalog (public) ──────
+    _s("cms_provider_data_catalog", "CMS Provider Data Catalog",
+       "CMS's public Provider Data Catalog — agency/facility-level provider "
+       "and quality datasets across care settings (the source family behind "
+       "the Sector Intelligence pages).", _T.PUBLIC_DATASET,
+       aliases=["provider data catalog", "pdc"],
+       update_cadence="Refreshed by CMS on a rolling (often quarterly) basis.",
+       freshness_lag="Months behind the reporting period.",
+       used_for=["Sector market/provider/quality views (home health, hospice, …)."],
+       related_routes=["/sector-intelligence", "/home-health", "/hospice"],
+       strengths=["Free, comprehensive, comparable across Medicare-certified providers."],
+       limitations=["Medicare-certified providers only; public quality data, "
+                    "not commercial revenue or target-company financials."],
+       provenance_notes="Public CMS dataset; cite the specific dataset id + release.",
+       source_confidence=_DOCD, data_confidence=_PUB, ic_ready=False),
+    _s("cms_home_health_provider_data", "CMS Home Health Care Agencies",
+       "Vendored snapshot of CMS 'Home Health Care Agencies' (6jpm-sxkc): "
+       "Medicare-certified agency identity, ownership, certification, and "
+       "quality measures (star rating, timely initiation, functional "
+       "improvement, discharge to community).", _T.PUBLIC_DATASET,
+       aliases=["home health compare", "hha provider data", "6jpm-sxkc"],
+       update_cadence="Rolling CMS releases (quarterly).",
+       freshness_lag="Months behind the reporting period.",
+       used_for=["The /home-health screener + state map."],
+       related_routes=["/home-health"],
+       related_metrics=["home_health_star_rating", "timely_initiation_of_care",
+                        "discharge_to_community"],
+       strengths=["Comprehensive public quality read across all Medicare-certified HHAs."],
+       limitations=["Medicare-certified agencies only; commercial/private-pay "
+                    "home care not represented; public quality, not financials; "
+                    "claims-based ACH/ED measures are a separate dataset."],
+       provenance_notes="CMS Provider Data Catalog dataset 6jpm-sxkc.",
+       source_confidence=_DOCD, data_confidence=_PUB, ic_ready=False),
+    _s("cms_hospice_provider_data", "CMS Hospice Provider Data",
+       "Vendored snapshot of CMS 'Hospice - General Information' (yc9t-dgbk) + "
+       "'Hospice - Provider Data' HIS measures (252m-zfp9): Medicare-certified "
+       "hospice identity, ownership, and quality (Hospice Care Index, composite "
+       "process, visits in last days).", _T.PUBLIC_DATASET,
+       aliases=["hospice compare", "hospice provider data", "yc9t-dgbk", "252m-zfp9"],
+       update_cadence="Rolling CMS releases (quarterly).",
+       freshness_lag="Months behind the reporting period.",
+       used_for=["The /hospice screener + state map."],
+       related_routes=["/hospice"],
+       related_metrics=["hospice_care_index", "hospice_composite_process",
+                        "visits_in_last_days"],
+       strengths=["Comprehensive public quality read across all Medicare-certified hospices."],
+       limitations=["Medicare-certified hospices only; public quality, not "
+                    "financials; CAHPS survey + length-of-stay/live-discharge "
+                    "economics not in these files."],
+       provenance_notes="CMS Provider Data Catalog datasets yc9t-dgbk + 252m-zfp9.",
+       source_confidence=_DOCD, data_confidence=_PUB, ic_ready=False),
 ]
 
 DATA_SOURCE_REGISTRY: Dict[str, DataSourceContext] = {

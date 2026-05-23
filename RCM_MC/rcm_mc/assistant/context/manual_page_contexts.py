@@ -2705,6 +2705,131 @@ _MANUAL: List[PageContext] = [
         notes_for_assistant=["The trailing path segment (e.g. 'CA') is a "
                              "state code filter, not part of the page name."],
     ),
+
+    # ── Sector Intelligence (multi-sector expansion) ────────────────
+    _ctx(
+        "/sector-intelligence", "Sector Intelligence",
+        short_description="A directory of the healthcare-services sectors "
+        "PEdesk covers — Hospitals, Home Health, and Hospice are live; the "
+        "rest are roadmap.",
+        primary_purpose="Give the team one honest coverage map of which "
+        "sectors have data/pages now versus which are planned, with the "
+        "public-data basis (and limits) of each.",
+        common_questions=["Which sectors does PEdesk cover?",
+                          "Is dental supported?",
+                          "What data backs each sector?"],
+        inputs=["A static, hand-maintained sector status list (no data load)."],
+        outputs=["Sector cards tagged Live or Roadmap, each with its data "
+                 "status; live sectors link to their pages."],
+        key_metrics=[_NEEDS],
+        data_sources=["Navigation/status surface — links to sector pages; "
+                      "underlying data is CMS Provider Data Catalog per sector."],
+        model_logic_summary="Static directory; no computation.",
+        why_it_matters="Keeps the platform honest about coverage — only "
+        "sectors with real data are presented as live.",
+        diligence_use_cases=["Orientation: where to start for a given sector "
+                             "deal type."],
+        interpretation_guidance=[
+            "Roadmap sectors are not yet built — no page is linked until its "
+            "data is sourced.",
+        ],
+        limitations=["A directory, not an analytic page; it carries no data "
+                     "of its own."],
+        related_routes=["/home-health", "/hospice", "/market-data/map"],
+        data_source_ids=["cms_provider_data_catalog"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.UNKNOWN,
+    ),
+    _ctx(
+        "/home-health", "Home Health Agencies",
+        short_description="A screener of Medicare-certified home health "
+        "agencies with publicly reported quality, a state tile-grid map, and "
+        "per-state provider tables.",
+        primary_purpose="Provide market and provider diligence context for "
+        "home-health deals — agency density by state and public quality "
+        "(star rating, timely care, functional improvement, discharge to "
+        "community).",
+        common_questions=["How many home health agencies are in this state?",
+                          "What does the star rating mean here?",
+                          "Where does this data come from?",
+                          "Can I use this in IC?"],
+        inputs=["Vendored CMS 'Home Health Care Agencies' snapshot (6jpm-sxkc)."],
+        outputs=["KPI cards, a state tile-grid map shaded by agency count, "
+                 "per-state summaries, and provider/quality tables."],
+        key_metrics=["Home Health Star Rating", "Timely Initiation of Care",
+                     "Discharge to Community (HH)"],
+        data_sources=["CMS Provider Data Catalog — Home Health Care Agencies "
+                      "(6jpm-sxkc)."],
+        model_logic_summary="Counts and simple per-state averages over the "
+        "vendored CMS file; no composite scores are invented.",
+        why_it_matters="Home health is a common, fragmented PE deal type; this "
+        "is the public market/quality read to frame a target before diligence.",
+        diligence_use_cases=["Sizing the local agency market; spotting quality "
+                             "outliers; framing a target's competitive set."],
+        interpretation_guidance=[
+            "Public benchmark data — NOT the target company's own outcomes or "
+            "financials.",
+            "Medicare-certified agencies only; commercial/private-pay home "
+            "care is not represented.",
+            "It is market/provider context, not a final investment "
+            "recommendation.",
+        ],
+        limitations=["Medicare-certified only; public quality not financials; "
+                     "claims-based acute-care-hospitalization / ED-use are a "
+                     "separate CMS dataset not shown here."],
+        related_routes=["/sector-intelligence", "/hospice", "/market-data/map"],
+        metric_ids=["home_health_star_rating", "timely_initiation_of_care",
+                    "discharge_to_community"],
+        data_source_ids=["cms_home_health_provider_data",
+                         "cms_provider_data_catalog"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/hospice", "Hospice Providers",
+        short_description="A screener of Medicare-certified hospices with "
+        "publicly reported HIS quality, a state tile-grid map, and per-state "
+        "provider tables.",
+        primary_purpose="Provide market and provider diligence context for "
+        "hospice deals — hospice density by state and public quality (Hospice "
+        "Care Index, composite process measure, visits in last days).",
+        common_questions=["How many hospices are in this state?",
+                          "What does the Hospice Care Index mean?",
+                          "Where does this data come from?",
+                          "Can I use this in IC?"],
+        inputs=["Vendored CMS 'Hospice - General Information' (yc9t-dgbk) + "
+                "'Hospice - Provider Data' HIS measures (252m-zfp9)."],
+        outputs=["KPI cards, a state tile-grid map shaded by hospice count, "
+                 "per-state summaries, and provider/quality tables."],
+        key_metrics=["Hospice Care Index", "Hospice Composite Process Measure",
+                     "Hospice Visits in Last Days of Life"],
+        data_sources=["CMS Provider Data Catalog — Hospice General Information "
+                      "(yc9t-dgbk) + Hospice Provider Data (252m-zfp9)."],
+        model_logic_summary="Counts and simple per-state averages over the "
+        "vendored CMS files; no composite scores are invented.",
+        why_it_matters="Hospice is fragmented and referral-dependent with "
+        "heavy compliance scrutiny; public quality is a key early diligence "
+        "signal.",
+        diligence_use_cases=["Sizing the local hospice market; flagging "
+                             "quality/compliance outliers via the Care Index."],
+        interpretation_guidance=[
+            "Public benchmark data — NOT the target's own outcomes or "
+            "financials.",
+            "Medicare-certified hospices only.",
+            "It is market/provider context, not a final investment "
+            "recommendation.",
+        ],
+        limitations=["Medicare-certified only; public quality not financials; "
+                     "CAHPS survey + length-of-stay / live-discharge economics "
+                     "are not in these files."],
+        related_routes=["/sector-intelligence", "/home-health", "/market-data/map"],
+        metric_ids=["hospice_care_index", "hospice_composite_process",
+                    "visits_in_last_days"],
+        data_source_ids=["cms_hospice_provider_data",
+                         "cms_provider_data_catalog"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
 ]
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}

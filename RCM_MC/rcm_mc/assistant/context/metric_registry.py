@@ -453,6 +453,60 @@ _METRICS: List[MetricContext] = [
        source_types=[_EST], data_confidence=_EST,
        related_metrics=["ebitda_bridge", "value_creation_opportunity", "rcm_uplift"],
        related_routes=["/diligence/bridge-audit"]),
+
+    # ── Sector Intelligence: Home Health + Hospice (CMS public quality) ──
+    _m("home_health_star_rating", "Home Health Star Rating",
+       ["quality of patient care star rating", "hha star rating", "hh star rating"],
+       "CMS Home Health Care quality-of-patient-care star rating (1-5) per "
+       "Medicare-certified agency.",
+       "A quick public quality read across a fragmented agency market.",
+       "Public benchmark only — not the target's own outcomes; confirm the "
+       "agencies in scope match the deal.",
+       source_types=[_PUB], data_confidence=_PUB,
+       related_routes=["/home-health"]),
+    _m("timely_initiation_of_care", "Timely Initiation of Care",
+       ["timely care", "timely initiation", "started care timely"],
+       "Share of patients whose home-health team began care in a timely "
+       "manner (publicly reported HH process measure).",
+       "Operational responsiveness signal; weak timeliness can flag intake/"
+       "staffing issues.",
+       "Process measure, not outcomes or revenue; CMS-reported, not target data.",
+       source_types=[_PUB], data_confidence=_PUB,
+       related_routes=["/home-health"]),
+    _m("discharge_to_community", "Discharge to Community (HH)",
+       ["dtc", "discharge to community rate"],
+       "Risk-standardized rate of home-health patients discharged to the "
+       "community (publicly reported HH outcome).",
+       "A headline outcome measure for home-health quality.",
+       "Risk-standardized public measure; not the target's internal results.",
+       source_types=[_PUB], data_confidence=_PUB,
+       related_routes=["/home-health"]),
+    _m("hospice_care_index", "Hospice Care Index",
+       ["hci", "care index", "hospice care index overall"],
+       "CMS Hospice Care Index — a composite of ten care-pattern indicators "
+       "(0-10) per Medicare-certified hospice.",
+       "A single public read on hospice care patterns across a fragmented "
+       "market; outlier indices can flag compliance/quality concerns.",
+       "Composite of process/pattern indicators, not outcomes or economics; "
+       "CMS-reported, not target data.",
+       source_types=[_PUB], data_confidence=_PUB,
+       related_routes=["/hospice"]),
+    _m("hospice_composite_process", "Hospice Composite Process Measure",
+       ["his composite", "composite process measure", "hospice composite"],
+       "Share of patients who received all applicable HIS care processes at "
+       "admission (publicly reported hospice composite).",
+       "A bundled admission-quality signal for hospice diligence.",
+       "Process composite, not outcomes; public benchmark, not target actuals.",
+       source_types=[_PUB], data_confidence=_PUB,
+       related_routes=["/hospice"]),
+    _m("visits_in_last_days", "Hospice Visits in Last Days of Life",
+       ["visits last days", "visits in the last days of life"],
+       "Share of patients with hospice visits in the last days of life "
+       "(publicly reported HIS measure).",
+       "End-of-life engagement signal relevant to hospice quality/compliance.",
+       "Public process measure; not the target's own staffing/visit data.",
+       source_types=[_PUB], data_confidence=_PUB,
+       related_routes=["/hospice"]),
 ]
 
 METRIC_REGISTRY: Dict[str, MetricContext] = {m.metric_id: m for m in _METRICS}
