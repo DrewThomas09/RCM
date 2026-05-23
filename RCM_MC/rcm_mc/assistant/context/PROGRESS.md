@@ -1273,3 +1273,18 @@ name the retrieved source title in-line. Read-only contract unchanged
 (all disallowed-behavior rules intact). New test
 `test_system_prompt_has_answer_style_guidance`. prompt-builder + eval →
 21 passed.
+
+---
+
+# Guide quality loop (2026-05-22) — P2: grouped RAG provenance
+
+Sidebar JS/CSS render only (no endpoint/RAG/backend change). The flat
+"Guide context used" list is now grouped by registry type — Page context ·
+Metric Registry · Data Source Registry · Guide policy · Methodology · docs
+— each source shown as title + score under a type heading, so a guest can
+see *what kind* of context grounded the answer. When no RAG source was
+used, the block states "Answered from current page context." instead of
+showing nothing; a present `rag_warning` is still surfaced gently below.
+All values escaped via `esc()`; textContent answer rendering and all
+guards unchanged. New `.ck-guide-src-group` CSS; updated
+`test_surfaces_rag_sources_and_warning`. Sidebar shell → 31 passed.

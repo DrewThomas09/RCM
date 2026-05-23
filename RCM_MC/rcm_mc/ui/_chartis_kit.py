@@ -4539,6 +4539,9 @@ _GUIDE_CSS = """
 .ck-guide-sources{margin-top:9px;padding-top:8px;border-top:1px solid #ece5d6;}
 .ck-guide-src-head{font-size:11px;text-transform:uppercase;letter-spacing:.04em;font-weight:600;
   color:var(--ck-text-dim,#5C6878);margin-bottom:5px;}
+.ck-guide-src-group{margin-top:7px;}
+.ck-guide-src-group:first-child{margin-top:0;}
+.ck-guide-src-group .ck-guide-src-type{display:block;margin-bottom:3px;}
 .ck-guide-src-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;}
 .ck-guide-src-item{display:flex;align-items:baseline;gap:7px;font-size:12.5px;line-height:1.4;}
 .ck-guide-src-title{font-weight:600;color:var(--sc-navy,#0b2341);}
@@ -4833,21 +4836,38 @@ _GUIDE_JS = """
             (b.context_quality?'<span>quality: '+esc(b.context_quality)+'</span>':'')+'</div>';
           var notes=(b.missing_context_notes&&b.missing_context_notes.length)?
             '<div class="ck-guide-caveat">Missing context: '+esc(b.missing_context_notes.join('; '))+'</div>':'';
-          /* RAG provenance: an explicit "Guide context used" block listing
-             each retrieved source — title · type · score — so the answer's
-             grounding is visible, not buried in a comma list. */
-          var ragLine='';
-          if(b.rag_sources_used&&b.rag_sources_used.length){
-            var items=b.rag_sources_used.map(function(s){
-              var typ=s.source_type?'<span class="ck-guide-src-type">'+esc(String(s.source_type).replace(/_/g,' '))+'</span>':'';
+          /* RAG provenance: group retrieved sources by registry type so the
+             grounding is scannable (Page context / Metric Registry / Data
+             Source Registry / Guide policy / Methodology · docs), each with
+             title + score. When no RAG source was used, state plainly that
+             the answer came from the current page packet alone. */
+          var prov='';
+          var srcs=(b.rag_sources_used&&b.rag_sources_used.length)?b.rag_sources_used:null;
+          if(srcs){
+            var GROUPS=[['page_context','Page context'],['metric','Metric Registry'],
+              ['data_source','Data Source Registry'],['guide_policy','Guide policy'],
+              ['doc','Methodology · docs']];
+            var byType={};
+            srcs.forEach(function(s){var t=(s.source_type||'other');(byType[t]=byType[t]||[]).push(s);});
+            var srcLi=function(s){
               var sc=(typeof s.score==='number')?'<span class="ck-guide-src-score">'+esc(s.score.toFixed(2))+'</span>':'';
-              return '<li class="ck-guide-src-item"><span class="ck-guide-src-title">'+esc(s.title)+'</span>'+typ+sc+'</li>';
-            }).join('');
-            ragLine='<div class="ck-guide-sources"><div class="ck-guide-src-head">Guide context used</div>'+
-              '<ul class="ck-guide-src-list">'+items+'</ul></div>';
+              return '<li class="ck-guide-src-item"><span class="ck-guide-src-title">'+esc(s.title)+'</span>'+sc+'</li>';
+            };
+            var grp=function(label,arr){
+              return '<div class="ck-guide-src-group"><div class="ck-guide-src-type">'+esc(label)+
+                '</div><ul class="ck-guide-src-list">'+arr.map(srcLi).join('')+'</ul></div>';
+            };
+            var groupsHtml='';
+            GROUPS.forEach(function(g){
+              if(byType[g[0]]&&byType[g[0]].length){groupsHtml+=grp(g[1],byType[g[0]]);delete byType[g[0]];}
+            });
+            Object.keys(byType).forEach(function(t){groupsHtml+=grp(t.replace(/_/g,' '),byType[t]);});
+            prov='<div class="ck-guide-sources"><div class="ck-guide-src-head">Also used local Guide RAG sources</div>'+groupsHtml+'</div>';
+          } else {
+            prov='<div class="ck-guide-sources"><div class="ck-guide-src-head">Answered from current page context.</div></div>';
           }
           var ragWarn=b.rag_warning?'<div class="ck-guide-caveat">'+esc(b.rag_warning)+'</div>':'';
-          aEl.insertAdjacentHTML('beforeend', notes+ragLine+ragWarn+meta);
+          aEl.insertAdjacentHTML('beforeend', notes+prov+ragWarn+meta);
         } else if(r.status===503){
           aEl.classList.remove('ck-guide-a');
           failBubble(aEl, (r.body&&r.body.error)||'PEdesk Guide local model is unavailable.');

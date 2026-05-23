@@ -264,11 +264,18 @@ class GuideSidebarPolishTests(unittest.TestCase):
         self.assertIn("aEl.textContent=b.answer", self.html)  # XSS-safe
 
     def test_surfaces_rag_sources_and_warning(self):
-        # Sidebar renders RAG provenance as a "Guide context used" block
-        # (title + type + score) + any rag_warning (all escaped).
+        # RAG provenance renders as a grouped "Also used local Guide RAG
+        # sources" block (sources grouped by registry type, each with title +
+        # score). Packet-only answers state grounding plainly. rag_warning is
+        # surfaced (all escaped).
         self.assertIn("rag_sources_used", self.html)
-        self.assertIn("Guide context used", self.html)
+        self.assertIn("Also used local Guide RAG sources", self.html)
+        self.assertIn("Answered from current page context", self.html)
+        # group labels for the registry types
+        self.assertIn("Metric Registry", self.html)
+        self.assertIn("Data Source Registry", self.html)
         self.assertIn("ck-guide-sources", self.html)
+        self.assertIn("ck-guide-src-group", self.html)
         self.assertIn("ck-guide-src-title", self.html)
         self.assertIn("ck-guide-src-type", self.html)
         self.assertIn("ck-guide-src-score", self.html)
