@@ -852,13 +852,18 @@ def _footer() -> str:
 
 # ── Public entry point ──────────────────────────────────────────────
 
-def render_marketing_page() -> str:
+def render_marketing_page(basic_auth: bool = False) -> str:
     """Render the full standalone PE Desk marketing landing page.
 
     Returns one self-contained HTML document — no chartis_shell, no
     server-side state. Served at ``GET /`` for anonymous visitors.
+
+    ``basic_auth=True`` (deployment has ``RCM_MC_AUTH`` set): the Sign In
+    CTAs point straight at ``/app`` instead of the in-app ``/login`` form,
+    so the browser's native Basic Auth prompt collects the shared
+    credential. (The in-app form rejects the Basic Auth credential.)
     """
-    return (
+    html = (
         '<!doctype html><html lang="en"><head>'
         '<meta charset="utf-8"/>'
         '<meta name="viewport" content="width=device-width, initial-scale=1"/>'
@@ -888,3 +893,7 @@ def render_marketing_page() -> str:
         + _footer()
         + '</body></html>'
     )
+    if basic_auth:
+        # Retarget the Sign In CTAs to /app (browser Basic Auth prompt).
+        html = html.replace(_LOGIN, "/app")
+    return html

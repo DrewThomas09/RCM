@@ -3176,7 +3176,8 @@ class RCMHandler(BaseHTTPRequestHandler):
                 if self._current_user() is not None:
                     return self._redirect("/app")
                 from .ui.chartis.marketing_page import render_marketing_page
-                return self._send_html(render_marketing_page())
+                return self._send_html(render_marketing_page(
+                    basic_auth=self.config.auth_user is not None))
             return self._route_dashboard()
         if path == "/portfolio/regression":
             return self._route_regression_page()
@@ -15761,6 +15762,12 @@ class RCMHandler(BaseHTTPRequestHandler):
         shells, so the auth round-trip contract test stays green
         whichever shell rendered the form.
         """
+        # Basic Auth deployments (RCM_MC_AUTH set): the in-app /login form
+        # authenticates against DB users and rejects the shared HTTP-Basic
+        # credential, which confuses operators. Send them to /app, where the
+        # browser's native Basic Auth prompt collects the shared credential.
+        if self.config.auth_user is not None:
+            return self._redirect("/app")
         if getattr(self, "_ui_choice", "legacy") == "editorial":
             return self._route_login_page_editorial()
         return self._route_login_page_legacy()
