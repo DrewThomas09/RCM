@@ -207,7 +207,7 @@ def render_redflag_scanner(params: dict = None) -> str:
     page_title = ck_page_title(
         "Deal Red-Flag Scanner",
         eyebrow="REDFLAG SCANNER",
-        meta=f"""Rule-based red-flag detection · corpus-benchmarked · severity-ranked · IC-ready — {r.corpus_deal_count:,} corpus deals""",
+        meta=f"""Rule-based red-flag detection · corpus-benchmarked · severity-ranked · directional, verify before IC — {r.corpus_deal_count:,} corpus deals""",
     )
     
     body = f"""
