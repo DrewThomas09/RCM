@@ -56,5 +56,44 @@ class MarketDataMapTests(unittest.TestCase):
         self.assertIn("cells represent states, not geographic area", html)
 
 
+class StateDetailHospitalPointsTests(unittest.TestCase):
+    """/market-data/state/<ST> plots geocoded hospital points (join by CCN)."""
+
+    def _ca_hcris(self, n=4, with_uncoded=True):
+        from rcm_mc.data.hospital_coords import coords_for_state
+        rows = [{"state": "CA", "ccn": c.ccn, "name": c.facility_name,
+                 "beds": 100, "net_patient_revenue": 2e8,
+                 "operating_expenses": 1.8e8}
+                for c in coords_for_state("CA")[:n]]
+        if with_uncoded:
+            rows.append({"state": "CA", "ccn": "999999", "name": "No-Coord",
+                         "beds": 50, "net_patient_revenue": 1e8,
+                         "operating_expenses": 9e7})
+        return pd.DataFrame(rows)
+
+    def test_geocoded_hospitals_are_plotted(self):
+        from rcm_mc.ui.market_data_page import render_state_detail
+        html = render_state_detail("CA", self._ca_hcris(n=4))
+        self.assertIn("Hospital locations in CA", html)        # map panel
+        self.assertIn("Showing 4 geocoded hospital locations of 5 in CA", html)
+        self.assertIn("Census", html)                          # provenance
+
+    def test_uncoded_hospital_listed_not_plotted(self):
+        from rcm_mc.ui.market_data_page import render_state_detail
+        html = render_state_detail("CA", self._ca_hcris(n=4))
+        self.assertIn("Hospitals in CA", html)                 # table preserved
+        self.assertIn("not plotted", html)                     # honest note
+
+    def test_no_forced_map_when_no_coordinates(self):
+        import pandas as _pd
+        from rcm_mc.ui.market_data_page import render_state_detail
+        df = _pd.DataFrame([{"state": "CA", "ccn": "999999", "name": "X",
+                             "beds": 10, "net_patient_revenue": 1e8,
+                             "operating_expenses": 9e7}])
+        html = render_state_detail("CA", df)
+        self.assertNotIn("Hospital locations in CA", html)     # no forced map
+        self.assertIn("Hospitals in CA", html)                 # table still there
+
+
 if __name__ == "__main__":
     unittest.main()

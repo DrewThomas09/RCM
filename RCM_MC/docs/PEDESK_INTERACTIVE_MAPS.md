@@ -107,10 +107,35 @@ side panels (and vice-versa).
 Wire them one at a time, each with state-level data it actually has — never
 default a page to the map if it has no geographic data to show.
 
-## Hospital geography status (verified 2026-05-23)
+## Hospital geography status
 
-**Hospital *point* maps are blocked — PEdesk has no real per-facility
-coordinates.** Verified against the actual source files, not assumptions:
+**UPDATE 2026-05-23 — hospital point maps are now BUILT.** A local
+CCN→lat/lon crosswalk was created by a **one-time, offline** batch geocode
+of public CMS *Hospital General Information* addresses through the free US
+Census Geocoder (`Public_AR_Current`). The app reads only the vendored file
+`rcm_mc/data/hospital_coords.csv` (loader `rcm_mc/data/hospital_coords.py`)
+— **no runtime geocoding, no external calls, never private/deal data.**
+
+- Coverage: **4,630 of 5,432 CMS hospitals geocoded (85.2%)** — 3,681
+  exact + 949 approximate street matches. The 802 that didn't geocode are
+  **absent from the file** and get **no point** (never a fabricated or
+  state-centroid location).
+- Columns: `ccn, facility_name, address, city, state, zip, county, lat, lon,
+  match_quality, source, source_date` — provenance on every row.
+- Rendered by `render_state_hospital_points(...)` in `ui/us_map.py`
+  (local lat/lon→SVG projection), wired into **`/market-data/state/<ST>`**:
+  the state's HCRIS hospitals are joined to the crosswalk by CCN; geocoded
+  ones are plotted with an honest "N geocoded of M" note + source line;
+  the rest stay in the table, unplotted. Approximate (`Non_Exact`) matches
+  are visually distinguished and labeled.
+- **Rule still in force:** no live geocoding at render time, no
+  browser-to-geocoder calls, no ZIP/state/county-centroid substitution
+  presented as a real location.
+
+### Original discovery (why this needed sourcing)
+
+Verified against the actual source files, the raw data had **no
+coordinates** — which is why the offline crosswalk above was necessary:
 
 | Source | file | CCN | name | address/city | state | ZIP | county | lat/lon |
 |--------|------|-----|------|--------------|-------|-----|--------|---------|

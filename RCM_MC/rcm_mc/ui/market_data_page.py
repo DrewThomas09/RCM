@@ -688,6 +688,33 @@ def render_state_detail(
         italic_word=html.escape(state_upper),
         body=f"{n} HCRIS-filed hospitals · ${total_rev/1e9:.1f}B total NPR.",
     )
+
+    # Hospital point map — join this state's HCRIS hospitals to the vendored
+    # CCN->lat/lon crosswalk by CCN. Plots ONLY hospitals with a real
+    # geocoded coordinate; the rest stay in the table below (no fake points).
+    from ..data.hospital_coords import load_hospital_coords, coords_provenance
+    _coords = load_hospital_coords()
+
+    def _coord_for(ccn_val) -> Any:
+        s = str(ccn_val or "").strip()
+        return _coords.get(s) or _coords.get(s.zfill(6))
+
+    state_points = []
+    if _coords:
+        for _, h in sdf.iterrows():
+            c = _coord_for(h.get("ccn", ""))
+            if c is not None:
+                state_points.append(c)
+    map_panel = ""
+    if state_points:
+        from .us_map import render_state_hospital_points
+        map_panel = ck_panel(
+            render_state_hospital_points(
+                state_points, state=state_upper, total_in_state=n,
+                provenance=coords_provenance(),
+            ),
+            title=f"Hospital locations in {html.escape(state_upper)}",
+        )
     table_panel = ck_panel(
         '<table class="cad-table"><thead><tr>'
         '<th>Hospital</th><th>Beds</th><th>NPR</th><th>Margin</th><th>Actions</th>'
@@ -702,7 +729,7 @@ def render_state_detail(
         '</p>',
         title="Cross-links",
     )
-    body = f'{intro}{kpis}{table_panel}{actions}'
+    body = f'{intro}{kpis}{map_panel}{table_panel}{actions}'
 
     return chartis_shell(
         body, f"Market: {state_upper}",

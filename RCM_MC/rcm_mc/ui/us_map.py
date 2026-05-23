@@ -19,7 +19,8 @@ from __future__ import annotations
 
 import html as _html
 import itertools
-from typing import Callable, Dict, Iterable, Optional
+import math
+from typing import Any, Callable, Dict, Iterable, List, Optional
 
 # Standard US state tile-grid positions (row, col) — north→south = low→high
 # row, west→east = low→high col. Approximate geographic arrangement (tile
@@ -270,4 +271,138 @@ def render_us_state_map(
         + empty
         + '</div>'
         + _map_js(cid)
+    )
+
+
+# ── Hospital point map (geocoded lat/lon, single state) ──────────────────
+#
+# Plots real geocoded hospital locations for ONE state, projecting lat/lon
+# into a local SVG fit to the state's bounding box. Local only — the
+# coordinates come from the vendored crosswalk (rcm_mc/data/hospital_coords),
+# never from a runtime geocode or external map tile. Points are plotted ONLY
+# where a real coordinate exists; provenance is shown.
+
+_PT_VIEW_W = 480
+_PT_VIEW_H = 360
+_PT_PAD = 18
+
+
+def _project_points(pts: List[Any]) -> List[tuple]:
+    """Equirectangular fit of (lat,lon) points to the SVG viewport, aspect-
+    corrected for the state's mean latitude. Returns (x, y) per input point.
+    Single point / zero-range axes are centered (no divide-by-zero)."""
+    lats = [p.lat for p in pts]
+    lons = [p.lon for p in pts]
+    lat0, lat1 = min(lats), max(lats)
+    lon0, lon1 = min(lons), max(lons)
+    mean_lat = (lat0 + lat1) / 2.0
+    cos_lat = math.cos(math.radians(mean_lat)) or 1.0
+    # degree spans -> "display units" (longitude compressed by cos(lat))
+    w_deg = (lon1 - lon0) * cos_lat
+    h_deg = (lat1 - lat0)
+    avail_w = _PT_VIEW_W - 2 * _PT_PAD
+    avail_h = _PT_VIEW_H - 2 * _PT_PAD
+    if w_deg <= 0 and h_deg <= 0:
+        scale = 1.0
+    elif w_deg <= 0:
+        scale = avail_h / h_deg
+    elif h_deg <= 0:
+        scale = avail_w / w_deg
+    else:
+        scale = min(avail_w / w_deg, avail_h / h_deg)
+    draw_w = w_deg * scale
+    draw_h = h_deg * scale
+    off_x = _PT_PAD + (avail_w - draw_w) / 2.0
+    off_y = _PT_PAD + (avail_h - draw_h) / 2.0
+    out = []
+    for p in pts:
+        x = off_x + ((p.lon - lon0) * cos_lat) * scale
+        y = off_y + (lat1 - p.lat) * scale   # invert: north at top
+        out.append((x, y))
+    return out
+
+
+def render_state_hospital_points(
+    points: List[Any],
+    *,
+    state: str = "",
+    total_in_state: Optional[int] = None,
+    provenance: Optional[str] = None,
+    empty_message: Optional[str] = None,
+) -> str:
+    """Render geocoded hospital points for one state as a local SVG.
+
+    ``points`` are objects with ``.lat``, ``.lon``, ``.facility_name``,
+    ``.city`` and (optional) ``.match_quality``. Only points with real
+    coordinates are plotted — callers must not pass approximated ones.
+    ``total_in_state`` (hospitals the state actually has) drives an honest
+    "N of M geocoded" note. No external calls; no live geocoding.
+    """
+    pts = [p for p in (points or [])
+           if getattr(p, "lat", None) is not None
+           and getattr(p, "lon", None) is not None]
+    cid = f"usm-pts-{next(_uid)}"
+    st = _html.escape(state)
+    if not pts:
+        msg = empty_message or (
+            f"No geocoded hospital locations available for {st}." if st
+            else "No geocoded hospital locations available.")
+        return (f'<div id="{cid}"><p style="font-style:italic;'
+                f'color:var(--sc-text-dim,#465366);font-size:13px;margin:0;">'
+                f'{_html.escape(msg)}</p></div>')
+
+    xy = _project_points(pts)
+    dots = []
+    for p, (x, y) in zip(pts, xy):
+        q = getattr(p, "match_quality", "") or ""
+        approx = q and q != "Exact"
+        color = "var(--sc-warning,#b8732a)" if approx else "var(--sc-teal,#155752)"
+        label = f"{getattr(p, 'facility_name', '')}"
+        city = getattr(p, "city", "")
+        if city:
+            label += f" — {city}"
+        if approx:
+            label += " (approx. street match)"
+        le = _html.escape(label, quote=True)
+        dots.append(
+            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4" fill="{color}" '
+            f'fill-opacity="0.78" stroke="#fff" stroke-width="0.6" '
+            f'role="img" aria-label="{le}"><title>{le}</title></circle>'
+        )
+
+    n, m = len(pts), (total_in_state if total_in_state is not None else len(pts))
+    note = (f"Showing {n} geocoded hospital location"
+            f"{'s' if n != 1 else ''}"
+            + (f" of {m} in {st}" if (st and m) else "")
+            + ". Hospitals without a geocoded address are listed in the "
+              "table below but not plotted.")
+    prov = (f'<div style="font-size:10.5px;color:var(--sc-text-dim,#465366);'
+            f'margin-top:4px;">Source: {_html.escape(provenance)}</div>'
+            if provenance else "")
+    return (
+        "<style>"
+        f"#{cid} .usm-pt-frame{{background:var(--paper,#FAF7F0);"
+        "border:1px solid var(--sc-rule,#d6cfc0);border-radius:3px;}}"
+        f"#{cid} .usm-pt-legend{{display:flex;gap:14px;flex-wrap:wrap;"
+        "font-size:11px;color:var(--sc-text-dim,#465366);margin-top:8px;}}"
+        f"#{cid} .usm-pt-sw{{display:inline-block;width:9px;height:9px;"
+        "border-radius:50%;vertical-align:middle;margin-right:4px;}}"
+        f"#{cid} .usm-pt-note{{font-size:12px;color:var(--sc-text-dim,#465366);"
+        "margin:0 0 8px;}}"
+        "</style>"
+        f'<div id="{cid}">'
+        f'<p class="usm-pt-note">{_html.escape(note)}</p>'
+        f'<svg class="usm-pt-frame" viewBox="0 0 {_PT_VIEW_W} {_PT_VIEW_H}" '
+        f'style="width:100%;max-width:{_PT_VIEW_W}px;height:auto;display:block;" '
+        f'role="img" aria-label="Geocoded hospital locations in {st}">'
+        + "".join(dots) +
+        '</svg>'
+        '<div class="usm-pt-legend">'
+        f'<span><span class="usm-pt-sw" style="background:var(--sc-teal,#155752);">'
+        '</span>exact address match</span>'
+        f'<span><span class="usm-pt-sw" style="background:var(--sc-warning,#b8732a);">'
+        '</span>approx. street match</span>'
+        '</div>'
+        f'{prov}'
+        '</div>'
     )
