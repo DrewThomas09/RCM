@@ -63,6 +63,57 @@ Open `http://127.0.0.1:8080/` in a browser, sign in, open the **Guide**
 sidebar — it should read **"AI Q&A ready · RAG enabled"** with an active
 Ask box and source citations under answers.
 
+## 6. Host for guests on your LAN (Basic auth)
+
+Sections 1–5 host PEdesk for **you** on `127.0.0.1` (loopback only). To let
+others on your Wi-Fi use the Guide — with no install and no Ollama on their
+side — bind to all interfaces **and turn on a password**. Never bind to a
+network interface without auth.
+
+1. Create a local credential file (kept out of git, locked down):
+
+   ```bash
+   python -c "import secrets; print('RCM_MC_AUTH=pedesk:'+secrets.token_urlsafe(18))" \
+     > .pedesk_host_auth.env
+   chmod 600 .pedesk_host_auth.env
+   ```
+
+   `.pedesk_host_auth.env` is git-ignored — **never commit it**.
+
+2. Start the durable host (LAN bind + Basic auth + keep-awake):
+
+   ```bash
+   export $(cat .pedesk_host_auth.env)
+   caffeinate -dimsu ./scripts/run_with_guide_ai.sh \
+     serve --host 0.0.0.0 --port 8080
+   ```
+
+   Leave that Terminal open — closing it stops the server.
+
+3. Find your Mac's LAN address and share it with guests:
+
+   ```bash
+   ipconfig getifaddr en0      # e.g. 10.0.0.126
+   ```
+
+   Guests open `http://<mac-ip>:8080`, log in with the `user:pass` from your
+   env file, and use the **Guide** sidebar. They install nothing.
+
+**Expectations + safety for LAN hosting:**
+
+- **One user at a time.** This is a single-process server with one local
+  model; concurrent questions queue behind the local model. Fine for a small
+  trusted group, not a multi-tenant service.
+- **24 GB RAM** comfortably runs `gemma4:e4b`; use `gemma4:e2b`
+  (`PEDESK_GUIDE_OLLAMA_MODEL=gemma4:e2b`) if you want faster/lighter.
+- **Keep the Mac awake** (`caffeinate -dimsu`, already in the command above).
+- **Do not port-forward 8080** on your router — that exposes it to the public
+  internet. LAN (or Tailscale) only.
+- **Rotate the password** if it is ever pasted/shared in the wrong place:
+  rewrite `.pedesk_host_auth.env` (step 1) and restart the server.
+- Anyone on your current Wi-Fi who has the password can reach it — only host
+  on trusted networks.
+
 ## Keep it running
 
 Keep Ollama running and the Mac awake while serving:

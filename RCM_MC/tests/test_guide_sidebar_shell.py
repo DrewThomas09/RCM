@@ -264,11 +264,18 @@ class GuideSidebarPolishTests(unittest.TestCase):
         self.assertIn("aEl.textContent=b.answer", self.html)  # XSS-safe
 
     def test_surfaces_rag_sources_and_warning(self):
-        # Sidebar renders RAG provenance as a "Guide context used" block
-        # (title + type + score) + any rag_warning (all escaped).
+        # RAG provenance renders as a grouped "Also used local Guide RAG
+        # sources" block (sources grouped by registry type, each with title +
+        # score). Packet-only answers state grounding plainly. rag_warning is
+        # surfaced (all escaped).
         self.assertIn("rag_sources_used", self.html)
-        self.assertIn("Guide context used", self.html)
+        self.assertIn("Also used local Guide RAG sources", self.html)
+        self.assertIn("Answered from current page context", self.html)
+        # group labels for the registry types
+        self.assertIn("Metric Registry", self.html)
+        self.assertIn("Data Source Registry", self.html)
         self.assertIn("ck-guide-sources", self.html)
+        self.assertIn("ck-guide-src-group", self.html)
         self.assertIn("ck-guide-src-title", self.html)
         self.assertIn("ck-guide-src-type", self.html)
         self.assertIn("ck-guide-src-score", self.html)
@@ -277,6 +284,27 @@ class GuideSidebarPolishTests(unittest.TestCase):
         self.assertIn("rag_warning", self.html)
         self.assertIn("esc(b.rag_warning)", self.html)
         self.assertIn(".ck-guide-sources{", self.html)    # CSS present
+
+    def test_latency_feedback_and_slow_note(self):
+        # Elapsed time is captured at ask start and shown in the answer meta.
+        self.assertIn("var t0=Date.now();", self.html)
+        self.assertIn("(Date.now()-t0)/1000", self.html)
+        self.assertIn("+secs+'s</span>'", self.html)
+        # A reassuring slow-response note appears after 10s, still pending.
+        self.assertIn("can take a little while", self.html)
+        self.assertIn("10000", self.html)
+        # Retry re-asks the preserved last question (input not lost on failure).
+        self.assertIn("ask(lastQuestion)", self.html)
+
+    def test_copy_answer_is_clipboard_only_no_persistence(self):
+        # A copy-answer button uses the browser Clipboard API only — no
+        # persistence/telemetry, hidden when the API is unavailable.
+        self.assertIn("ck-guide-copy", self.html)
+        # The only copy mechanism is the browser Clipboard API on the closure
+        # answer text — no upload, no storage of the answer.
+        self.assertIn("navigator.clipboard.writeText(b.answer", self.html)
+        self.assertIn("copyBtn.hidden=true", self.html)   # graceful fallback
+        self.assertIn(".ck-guide-copy{", self.html)        # CSS present
 
 
 if __name__ == "__main__":

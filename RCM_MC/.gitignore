@@ -85,5 +85,8 @@ package-lock.yml
 .pedesk_guide_rag.sqlite3
 *.pedesk_guide_rag.sqlite3
 
+# PEdesk host Basic-auth credentials (local secret — never commit)
+.pedesk_host_auth.env
+
 # PEdesk Guide eval reports (local, disposable)
 .pedesk_guide_eval/

@@ -20,13 +20,17 @@ from rcm_mc.assistant.eval.guide_eval import (
 
 class FixedSetsTests(unittest.TestCase):
     def test_questions_and_routes_match_spec(self):
-        self.assertEqual(len(QUESTIONS), 10)
+        self.assertEqual(len(QUESTIONS), 12)
         self.assertIn("What does denial rate mean?", QUESTIONS)
         self.assertIn("Can you change the assumptions?", QUESTIONS)
         self.assertIn("Is this IC-ready?", QUESTIONS)
-        self.assertEqual(len(ROUTES), 9)
+        # provenance / source-trust probes
+        self.assertIn("Which source should I trust most on this page?",
+                      QUESTIONS)
+        self.assertEqual(len(ROUTES), 10)
         for r in ("/app", "/diligence/hcris-xray", "/metric-glossary",
-                  "/rcm-benchmarks", "/diligence/deal-mc"):
+                  "/rcm-benchmarks", "/diligence/deal-mc",
+                  "/sponsor-track-record"):
             self.assertIn(r, ROUTES)
         self.assertEqual(MODES, ("packet_only", "rag"))
 

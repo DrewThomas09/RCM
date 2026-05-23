@@ -54,6 +54,15 @@ def _has_data_sources(page_context: PageContext) -> bool:
     )
 
 
+def _first_documented(items: Optional[List[str]]) -> Optional[str]:
+    """First non-empty, non-sentinel label from a context list, else None."""
+    for it in items or []:
+        s = str(it).strip()
+        if s and s != _NEEDS:
+            return s
+    return None
+
+
 def get_suggested_questions_for_page(
     page_context: Optional[PageContext],
 ) -> List[str]:
@@ -67,9 +76,18 @@ def get_suggested_questions_for_page(
     if page_context is None:
         return questions
 
-    extras: List[str] = list(
-        _CATEGORY_QUESTIONS.get(page_context.category, [])
-    )
+    # Concrete, registry-grounded questions first — these name a real metric
+    # or data source on the page, so they reliably hit the metric/data-source
+    # registries in RAG and produce specific (not generic) answers.
+    extras: List[str] = []
+    metric = _first_documented(getattr(page_context, "key_metrics", None))
+    if metric:
+        extras.append(f"What does {metric} mean?")
+    source = _first_documented(getattr(page_context, "data_sources", None))
+    if source:
+        extras.append(f"Where does {source} come from?")
+
+    extras += _CATEGORY_QUESTIONS.get(page_context.category, [])
     if _has_data_sources(page_context):
         extras += _DATA_SOURCE_QUESTIONS
 

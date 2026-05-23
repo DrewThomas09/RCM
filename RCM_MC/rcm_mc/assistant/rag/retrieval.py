@@ -42,6 +42,39 @@ def index_status(path: Optional[str] = None) -> Dict[str, object]:
     return status
 
 
+def _source_key(r: RagSearchResult) -> tuple:
+    """Stable identity for de-duplication: the registry entry a chunk came
+    from, independent of which chunk of it matched."""
+    return (
+        r.source_type,
+        r.metric_id or r.data_source_id or r.route or r.source_id or r.title,
+    )
+
+
+def dedupe_keep_diverse(
+    results: List[RagSearchResult], k: int, per_source: int = 2
+) -> List[RagSearchResult]:
+    """Trim score-sorted ``results`` to ``k``, keeping at most ``per_source``
+    chunks from any one registry source.
+
+    A long doc or metric entry can otherwise occupy several of the top
+    slots and crowd out other useful sources; capping per-source preserves
+    source-type diversity without re-ranking (input order is kept)."""
+    if per_source <= 0:
+        per_source = 1
+    seen: Dict[tuple, int] = {}
+    out: List[RagSearchResult] = []
+    for r in results:
+        key = _source_key(r)
+        if seen.get(key, 0) >= per_source:
+            continue
+        seen[key] = seen.get(key, 0) + 1
+        out.append(r)
+        if len(out) >= k:
+            break
+    return out
+
+
 def search(query: str, top_k: Optional[int] = None,
            route: Optional[str] = None, page_title: Optional[str] = None,
            index_path: Optional[str] = None) -> List[RagSearchResult]:
@@ -64,9 +97,13 @@ def search(query: str, top_k: Optional[int] = None,
     # Normalize top_k: ignore <=0 / non-int; cap to a sane ceiling.
     k = top_k if (isinstance(top_k, int) and top_k > 0) else rag_top_k()
     k = min(k, 50)
+    # Over-fetch candidates so the per-source cap can promote diversity
+    # without returning fewer than k results.
+    fetch_k = min(max(k * 3, k), 50)
     vec = embed_query(enriched)
     con = vector_store.connect(index_path)
     try:
-        return vector_store.search_similar(con, vec, k)
+        raw = vector_store.search_similar(con, vec, fetch_k)
     finally:
         con.close()
+    return dedupe_keep_diverse(raw, k)

@@ -1258,3 +1258,114 @@ Tests: `pytest` guide sidebar shell (31) + guide context/ollama/prompt/RAG
 `chartis_shell` output for /app, /sponsor-track-record,
 /diligence/hcris-xray, /portfolio — compacted values confirmed, integrity
 markers present, no overflow rule lost, body bottom pad = 24.
+
+---
+
+# Guide quality loop (2026-05-22) — P1: answer readability
+
+Prompt-only. Added a dedicated ANSWER STYLE block to
+`build_guide_system_prompt`: open with a direct 1-2 sentence answer (no
+"Based on the provided context" filler), bullets only when they help,
+keep under ~150 words, use plain labels (What it means · Where it comes
+from · Why it matters · Caveat · Related PEdesk pages) when they fit,
+state confidence honestly (thin/benchmarked/estimated/demo/missing), and
+name the retrieved source title in-line. Read-only contract unchanged
+(all disallowed-behavior rules intact). New test
+`test_system_prompt_has_answer_style_guidance`. prompt-builder + eval →
+21 passed.
+
+---
+
+# Guide quality loop (2026-05-22) — P2: grouped RAG provenance
+
+Sidebar JS/CSS render only (no endpoint/RAG/backend change). The flat
+"Guide context used" list is now grouped by registry type — Page context ·
+Metric Registry · Data Source Registry · Guide policy · Methodology · docs
+— each source shown as title + score under a type heading, so a guest can
+see *what kind* of context grounded the answer. When no RAG source was
+used, the block states "Answered from current page context." instead of
+showing nothing; a present `rag_warning` is still surfaced gently below.
+All values escaped via `esc()`; textContent answer rendering and all
+guards unchanged. New `.ck-guide-src-group` CSS; updated
+`test_surfaces_rag_sources_and_warning`. Sidebar shell → 31 passed.
+
+---
+
+# Guide quality loop (2026-05-22) — P3: retrieval source diversity
+
+`retrieval.search()` now over-fetches candidates (k×3, capped 50) and
+applies `dedupe_keep_diverse`: at most 2 chunks from any one registry
+source (by source_type + metric/data_source/route/source id), preserving
+score order. A long doc or verbose metric entry can no longer occupy
+several top slots and crowd out other useful sources, so answers see more
+source-type variety. No new data ingested; current-page packet stays
+primary (assembled in the prompt builder, not here). New pure-function
+tests (`RetrievalDedupeTests`, 3) — no Ollama needed. RAG unit (22) + RAG
+endpoints (14) green. Deferred (overfitting risk): metric-alias exact-hit
+boosting for "what does X mean?" queries.
+
+---
+
+# Guide quality loop (2026-05-22) — P4: registry-grounded suggested questions
+
+`get_suggested_questions_for_page` now leads its page-specific extras with
+two concrete, registry-grounded questions when the page documents them:
+"What does {first key metric} mean?" and "Where does {first data source}
+come from?". These name a real metric/source so they reliably hit the
+metric + data-source registries in RAG and yield specific answers instead
+of generic ones. Sentinel ("Needs source documentation.") and empty labels
+are skipped; only the first documented metric/source is used (deterministic,
+not noisy); still capped at 8 and deduped, defaults first. New
+`tests/test_guide_suggested_questions.py` (6, deterministic). Context
+endpoint + packet suites green.
+
+---
+
+# Guide quality loop (2026-05-22) — P5: latency feedback
+
+Sidebar JS only. Each ask captures `t0=Date.now()`; on success the answer
+meta now shows elapsed seconds (e.g. "12.3s") next to the model + quality
+chips, so guests get a concrete latency read on this local-model host.
+Confirmed (and locked with tests) the existing latency UX: the pending
+bubble swaps to "Local model responses can take a little while…" after
+10s while still pending, and Retry re-asks the preserved `lastQuestion`
+(input not lost on failure). No streaming added (deferred). New test
+`test_latency_feedback_and_slow_note`. Sidebar shell → 32 passed.
+
+---
+
+# Guide quality loop (2026-05-22) — P6: LAN-hosting operator docs
+
+Docs only (`docs/MAC_HOSTED_PEDESK_GUIDE_AI.md`). Added section 6 "Host for
+guests on your LAN (Basic auth)" — the flow used to operationalize this
+Mac as a guest-reachable host: generate `.pedesk_host_auth.env`
+(`secrets.token_urlsafe`, chmod 600, git-ignored, never committed), start
+durable with `caffeinate -dimsu ./scripts/run_with_guide_ai.sh serve
+--host 0.0.0.0 --port 8080`, share `http://<mac-ip>:8080` via
+`ipconfig getifaddr en0`. Documents guardrails: one-user-at-a-time,
+24 GB RAM suits gemma4:e4b, keep Mac awake, never port-forward 8080, rotate
+password if leaked, trusted networks only. No code/secret changes.
+
+---
+
+# Guide quality loop (2026-05-22) — P7: expand eval coverage
+
+Read-only eval harness only. Added two provenance/source-trust probe
+questions ("Which source should I trust most on this page?", "How fresh is
+this data?") and the `/sponsor-track-record` route (resolves with quality
+"strong") to `guide_eval.QUESTIONS`/`ROUTES` — now 12 questions × 10
+routes × 2 modes. No tracking, no auto-collection; the harness still only
+writes local, git-ignored reports when invoked. Updated
+`test_questions_and_routes_match_spec`. Eval suite → 11 passed.
+
+---
+
+# Guide quality loop (2026-05-22) — P8: copy-answer button
+
+Sidebar JS/CSS only. Added a subtle "Copy" button to each answer's meta
+row. It uses the browser Clipboard API (`navigator.clipboard.writeText`)
+on the in-closure answer text only — no upload, no localStorage, no
+telemetry, no chat persistence — and hides itself when the Clipboard API
+is unavailable (non-secure context). Scoped `.ck-guide-copy` CSS. New test
+`test_copy_answer_is_clipboard_only_no_persistence`. Sidebar shell → 33
+passed.

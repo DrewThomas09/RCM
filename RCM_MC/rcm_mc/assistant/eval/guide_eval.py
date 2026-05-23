@@ -33,6 +33,9 @@ QUESTIONS: List[str] = [
     "Is this observed, estimated, benchmarked, or unknown?",
     "What are the limitations?",
     "What should I be careful about?",
+    # Provenance / source-trust probes — exercise the grounding behavior.
+    "Which source should I trust most on this page?",
+    "How fresh is this data?",
 ]
 
 ROUTES: List[str] = [
@@ -42,6 +45,7 @@ ROUTES: List[str] = [
     "/diligence/denial-prediction",
     "/diligence/physician-attrition",
     "/diligence/deal-mc",
+    "/sponsor-track-record",
     "/portfolio",
     "/metric-glossary",
     "/rcm-benchmarks",
