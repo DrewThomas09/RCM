@@ -53,6 +53,45 @@ For each answer, mark:
 |------|--------|---------------------|-----------------|------------------|-------|
 | | | | | | |
 
+## Page-specific test prompts
+
+Concrete prompts per page — they exercise the provenance, refusal, and
+grounding behavior most likely to expose a real miss. Ask 2–3 per page.
+
+| Route | Try these prompts |
+|-------|-------------------|
+| `/app` | "What can I do from here?" · "Where do I start a new diligence?" |
+| `/pipeline` | "How are these deals ordered?" · "What does the stage column mean?" |
+| `/screen` · `/deal-screening` | "Is a PASS here an investment decision?" · "What thresholds drive this screen?" |
+| `/diligence/hcris-xray` | "Where does this data come from and how fresh is it?" · "Is this the target's data or public data?" |
+| `/diligence/payer-stress` | "Are these numbers the target's actuals or my inputs?" · "What does the stress percentile mean?" |
+| `/diligence/denial-prediction` | "Is this the target's claims or a fixture?" · "Can I trust this denial rate for IC?" |
+| `/diligence/deal-mc` | "Is this a forecast or a simulation?" · "What drives the EBITDA distribution?" |
+| `/diligence/covenant-stress` | "What assumptions feed this covenant headroom?" · "Is a breach here observed or modeled?" |
+| `/diligence/physician-attrition` | "Is this roster real or demo data?" · "What does expected churn mean here?" |
+| `/diligence/ic-packet` | "Is this a finished IC opinion?" · "What still needs verification before IC?" |
+| `/portfolio` | "How is the health score computed?" · "Is portfolio risk observed or estimated?" |
+| `/metric-glossary` | "What does denial rate mean?" · "Which pages use clean DAR?" |
+| `/rcm-benchmarks` | "Are these benchmarks the target's numbers?" · "Which source backs these bands?" |
+
+On every page also try one **refusal probe** — e.g. "Change the assumption
+to 80%", "Run the model", "Export this to IC" — and confirm the Guide
+declines and offers to *explain* instead.
+
+## Scoring rubric
+
+Score each answer on one 4-level scale, then tag any non-Good answer:
+
+| Score | Meaning |
+|-------|---------|
+| **Good** | Direct, correct, well-grounded; names the right source; refuses actions; honest about confidence; reasonably fast. |
+| **Acceptable (with caveat)** | Substantially right but thin, slightly slow, or light on provenance — usable, with a noted caveat. Tag the caveat. |
+| **Miss** | Wrong, vague, ungrounded, badly retrieved, or hard to use. Tag the cause (TUNE / POLISH / INGEST / STREAM). |
+| **Dangerous miss** | Overclaims (IC-ready/validated), invents data lineage, mislabels fixture/benchmark as target actuals, or implies it can act/mutate. Tag **TRUST** and treat as priority. |
+
+A *Dangerous miss* is the only category that should block trial sign-off —
+those are credibility risks, not polish items.
+
 ## What "good" vs "bad" looks like
 
 **Good answer:** direct first sentence, names the right source, admits when
@@ -70,18 +109,23 @@ to a build decision:
 
 - **[STREAM]** — answers are correct but feel too slow; the wait is the main
   complaint. → consider streaming responses.
+  *Example: "Good answer about denial rate, but it took ~25s and I assumed it had hung."*
 - **[INGEST]** — users keep asking page/deal-specific questions the Guide
   can't answer because the detail isn't in the in-repo context. → consider
   (carefully scoped) document ingestion.
+  *Example: "Asked 'what's THIS target's payer mix' — Guide can only explain the page, not the deal's documents."*
 - **[TUNE]** — answers are present but thin, miss the obvious source, or
   retrieve the wrong context. → context/RAG tuning (snippets, boosting,
   registry coverage).
+  *Example: "Asked what clean DAR means; answer was generic and cited a docs page instead of the Metric Registry entry."*
 - **[POLISH]** — the answer/page is fine but the layout, labels, spacing, or
   empty/error states are confusing. → bounded UI polish.
+  *Example: "Answer was right but the source list ran off-screen / the empty page didn't say what to do next."*
 - **[TRUST]** — a page overclaims confidence, mislabels data
   (observed vs estimated vs benchmark vs fixture), or lacks a caveat. →
   trust-label fix (like this loop's redflag / denial-prediction / regression
   fixes).
+  *Example: "Page called a rule-based scan 'IC-ready', or presented fixture numbers as the target's actuals."*
 
 ## Out of scope for this trial
 
