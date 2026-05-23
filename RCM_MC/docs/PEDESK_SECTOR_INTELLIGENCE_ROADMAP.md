@@ -129,10 +129,42 @@ Data-level legend: **P** = provider/registry, **C** = claims/utilization,
   reimbursement exposure, **not** "perfect infusion revenue."
 - **In-repo:** POS spine ✓, Part B/D ✓; the Compare/supplier files need sourcing.
 
+## Phase 2A — Home Health + Hospice data sourced (2026-05-23)
+
+One-time vendored CMS Provider Data Catalog snapshots (normalized to compact
+CSVs under `rcm_mc/data/`; loaders read local files only — no runtime network).
+
+| Vendored file | Source dataset | Rows | Key fields |
+|---|---|---|---|
+| `home_health_providers.csv` | Home Health Care Agencies (`6jpm-sxkc`) | 12,392 | ccn, provider_name, address, city, state, zip, ownership, certification_date |
+| `home_health_quality.csv` | same | 12,392 | star_rating, timely_initiation_pct, improve_ambulation/bed_transfer/bathing_pct, discharge_to_community_rate |
+| `hospice_providers.csv` | Hospice - General Information (`yc9t-dgbk`) | 6,852 | ccn, facility_name, address, city, state, zip, county, ownership, certification_date |
+| `hospice_quality.csv` | Hospice - Provider Data (`252m-zfp9`, HIS measures pivoted) | 6,852 | composite_process, care_index_overall, visits_last_days, pain_screening, treatment_preferences, beliefs_values |
+
+Loaders: `rcm_mc/data/home_health.py`, `rcm_mc/data/hospice.py` —
+`load_*_providers()`, `load_*_quality()`, `*_providers_for_state()`,
+`load_*_summary_by_state()` (provider count, # rated, avg star / avg care
+index). Every row carries `source` + `source_date`.
+
+**Limitations (state in any future UI):** Medicare-certified agencies/
+hospices only (no commercial/private-pay home care; no commercial hospice
+economics). HH claims-based **acute-care-hospitalization / ED-use** measures
+are a *separate* CMS dataset, **not** vendored — don't imply them. Hospice
+**CAHPS survey** + **length-of-stay / live-discharge** economics are not in
+these quality files. NPI/CCN crosswalk not added here.
+
+**Phase 2B (next, UI):** Home Health Screener (`/home-health`) + Hospice
+Screener (`/hospice`) — provider tables + state tile-grid maps (reuse
+`render_us_state_map` shaded by agency/hospice count or avg rating) +
+provider profile pages + Guide contexts/RAG docs. Geocoding the
+agency/hospice addresses (same one-time offline method as hospitals) would
+add point maps — a later, separately-approved step.
+
 ## Build order
 
-1. **Phase 1 (this PR):** this roadmap + audit. No data downloaded.
-2. **Phase 2:** Home Health + Hospice (Compare + PUF; screener + map + profile + Guide contexts).
+1. **Phase 1:** roadmap + audit + `/sector-intelligence` landing. No data.
+2. **Phase 2A (this PR):** Home Health + Hospice data sourced + loaders + state summaries (above).
+3. **Phase 2B:** Home Health + Hospice UI (screeners, maps, profiles, Guide contexts).
 3. **Phase 3:** Outpatient / ASC / Physician groups (NPPES subset + Part B PUF + ASC quality).
 4. **Phase 4:** Dental / DSO (NPPES dental + HPSA; density page, supply-oriented).
 5. **Phase 5:** Infusion / DME (NPPES supplier + DMEPOS + Part B J-codes).
