@@ -107,6 +107,48 @@ side panels (and vice-versa).
 Wire them one at a time, each with state-level data it actually has — never
 default a page to the map if it has no geographic data to show.
 
+## Hospital geography status (verified 2026-05-23)
+
+**Hospital *point* maps are blocked — PEdesk has no real per-facility
+coordinates.** Verified against the actual source files, not assumptions:
+
+| Source | file | CCN | name | address/city | state | ZIP | county | lat/lon |
+|--------|------|-----|------|--------------|-------|-----|--------|---------|
+| HCRIS (6,123 hospitals) | `data/hcris.py` | ✅ | ✅ | city ✅ | ✅ | ✅ | ✅ (name) | ❌ |
+| CMS Hospital General Info | `data/general_sample.csv` (25-row sample; loader `data/cms_hospital_general.py`, override `RCM_MC_GENERAL_CSV`) | ✅ (`Facility ID`) | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| CMS Provider of Services | `data/cms_pos.py` | ✅ | ✅ | city ✅ | ✅ | ✅ | ❌ | ❌ |
+| `data/geo_lookup.py` | — | — | — | — | ✅ | — | — | **state-capital centroids only (50)** |
+
+The bundled CMS General Info sample columns are: `Facility ID, Facility
+Name, State, Hospital Type, Hospital Ownership, Emergency Services` + 5
+rating columns — **no coordinate column**, and the loader's candidate-column
+lists don't even anticipate one (it would be dropped if present).
+
+**Why state-capital centroids are NOT acceptable for hospital points:**
+`geo_lookup.STATE_CENTROIDS` is 50 state capitals; `city_state_to_latlon()`
+returns the *state* centroid for any city ("±50 miles error acceptable").
+`system_network.py` already plots hospitals at these — so every hospital in
+a state lands on one point. That's fine for coarse system-proximity math,
+but as a *map* it would stack all of a state's hospitals on the capital —
+misleading. Do not present it as hospital locations.
+
+**What unlocks real hospital maps:** a vendored coordinate source keyed to
+CCN, ideally `CCN | facility_name | address | city | state | zip | county |
+lat | lon | source | source_date`. Either (a) a fuller CMS export that
+actually carries geocoded lat/lon (the bundled sample does not; a real
+`RCM_MC_GENERAL_CSV` would need verification), or (b) a CCN→lat/lon
+crosswalk file committed to the repo. Then a small loader upgrade + a
+`render_hospital_points(...)` renderer.
+
+**What unlocks *approximate* hospital maps:** HCRIS + POS already carry ZIP.
+A vendored ZIP→lat/lon centroid table (~42k rows, public domain) gives
+ZIP-centroid points — acceptable **only if labeled "approximate (ZIP
+centroid), not actual facility location."**
+
+**Rule:** do not render hospital points unless the coordinate source is
+explicit and labeled. No live geocoding, no silent ZIP/county/state-centroid
+substitution presented as real locations.
+
 ## Guardrails
 
 - No external map APIs / tiles / CDNs. Local SVG only.
