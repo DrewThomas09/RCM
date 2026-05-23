@@ -1,0 +1,36 @@
+# PEdesk systemd service (example) — copy to /etc/systemd/system/pedesk.service
+#
+#   sudo cp docs/pedesk.service.example /etc/systemd/system/pedesk.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now pedesk
+#   sudo systemctl status pedesk
+#   journalctl -u pedesk -f          # logs
+#
+# Binds to 127.0.0.1:8080 (Caddy terminates HTTPS in front). Secrets live in
+# the EnvironmentFile (.pedesk_prod.env, mode 600, NEVER committed) — they are
+# not written into this unit. Ollama is reached privately over Tailscale; this
+# service never exposes port 11434.
+
+[Unit]
+Description=PEdesk web app (DigitalOcean prod)
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Run as a non-root user you create for the app (e.g. 'pedesk'); root also works.
+User=pedesk
+WorkingDirectory=/opt/RCM/RCM_MC
+EnvironmentFile=/opt/RCM/RCM_MC/.pedesk_prod.env
+# Bind loopback only — Caddy reverse-proxies pedesk.app -> 127.0.0.1:8080.
+Environment=PEDESK_BIND_HOST=127.0.0.1
+Environment=PEDESK_BIND_PORT=8080
+ExecStart=/opt/RCM/RCM_MC/scripts/do_run_pedesk.sh
+Restart=on-failure
+RestartSec=3
+# Light hardening (optional; loosen if it conflicts with your layout).
+NoNewPrivileges=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,14 @@
+# PEdesk Caddyfile (example) — copy to /etc/caddy/Caddyfile
+#
+#   sudo cp docs/Caddyfile.example /etc/caddy/Caddyfile
+#   sudo systemctl reload caddy
+#
+# Caddy automatically obtains + renews Let's Encrypt HTTPS certs for the
+# domains below (DNS for pedesk.app + www.pedesk.app must already point at
+# the Droplet's public IPv4). It reverse-proxies to PEdesk on loopback; the
+# app itself binds 127.0.0.1:8080 and is never exposed directly. Ollama
+# (11434) is NOT proxied and never reachable from the internet.
+
+pedesk.app, www.pedesk.app {
+    reverse_proxy 127.0.0.1:8080
+}

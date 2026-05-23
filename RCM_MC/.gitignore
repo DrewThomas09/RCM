@@ -88,5 +88,8 @@ package-lock.yml
 # PEdesk host Basic-auth credentials (local secret — never commit)
 .pedesk_host_auth.env
 
+# PEdesk production deployment env (DigitalOcean Droplet — secret, never commit)
+.pedesk_prod.env
+
 # PEdesk Guide eval reports (local, disposable)
 .pedesk_guide_eval/
