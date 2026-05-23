@@ -64,6 +64,20 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertNotIn("Based on the provided context", out)
         self.assertIn("HCRIS data may lag operations.", out)
 
+    def test_system_prompt_has_answer_style_guidance(self):
+        sysp = build_guide_system_prompt(self.packet).lower()
+        # A dedicated readability section with a direct-answer-first rule,
+        # a length ceiling, the plain labels, and a no-filler instruction.
+        self.assertIn("answer style", sysp)
+        self.assertIn("1-2 sentence", sysp)
+        self.assertIn("150 words", sysp)
+        self.assertIn("filler", sysp)
+        for label in ("what it means", "where it comes from",
+                      "why it matters", "caveat"):
+            self.assertIn(label, sysp)
+        # Readability guidance must not weaken the read-only contract.
+        self.assertIn("final investment recommendations", sysp)
+
     def test_system_prompt_has_retrieved_context_rule(self):
         sysp = build_guide_system_prompt(self.packet).lower()
         self.assertIn("retrieved", sysp)

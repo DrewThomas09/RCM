@@ -1258,3 +1258,18 @@ Tests: `pytest` guide sidebar shell (31) + guide context/ollama/prompt/RAG
 `chartis_shell` output for /app, /sponsor-track-record,
 /diligence/hcris-xray, /portfolio — compacted values confirmed, integrity
 markers present, no overflow rule lost, body bottom pad = 24.
+
+---
+
+# Guide quality loop (2026-05-22) — P1: answer readability
+
+Prompt-only. Added a dedicated ANSWER STYLE block to
+`build_guide_system_prompt`: open with a direct 1-2 sentence answer (no
+"Based on the provided context" filler), bullets only when they help,
+keep under ~150 words, use plain labels (What it means · Where it comes
+from · Why it matters · Caveat · Related PEdesk pages) when they fit,
+state confidence honestly (thin/benchmarked/estimated/demo/missing), and
+name the retrieved source title in-line. Read-only contract unchanged
+(all disallowed-behavior rules intact). New test
+`test_system_prompt_has_answer_style_guidance`. prompt-builder + eval →
+21 passed.
