@@ -1357,3 +1357,15 @@ this data?") and the `/sponsor-track-record` route (resolves with quality
 routes × 2 modes. No tracking, no auto-collection; the harness still only
 writes local, git-ignored reports when invoked. Updated
 `test_questions_and_routes_match_spec`. Eval suite → 11 passed.
+
+---
+
+# Guide quality loop (2026-05-22) — P8: copy-answer button
+
+Sidebar JS/CSS only. Added a subtle "Copy" button to each answer's meta
+row. It uses the browser Clipboard API (`navigator.clipboard.writeText`)
+on the in-closure answer text only — no upload, no localStorage, no
+telemetry, no chat persistence — and hides itself when the Clipboard API
+is unavailable (non-secure context). Scoped `.ck-guide-copy` CSS. New test
+`test_copy_answer_is_clipboard_only_no_persistence`. Sidebar shell → 33
+passed.

@@ -296,6 +296,16 @@ class GuideSidebarPolishTests(unittest.TestCase):
         # Retry re-asks the preserved last question (input not lost on failure).
         self.assertIn("ask(lastQuestion)", self.html)
 
+    def test_copy_answer_is_clipboard_only_no_persistence(self):
+        # A copy-answer button uses the browser Clipboard API only — no
+        # persistence/telemetry, hidden when the API is unavailable.
+        self.assertIn("ck-guide-copy", self.html)
+        # The only copy mechanism is the browser Clipboard API on the closure
+        # answer text — no upload, no storage of the answer.
+        self.assertIn("navigator.clipboard.writeText(b.answer", self.html)
+        self.assertIn("copyBtn.hidden=true", self.html)   # graceful fallback
+        self.assertIn(".ck-guide-copy{", self.html)        # CSS present
+
 
 if __name__ == "__main__":
     unittest.main()

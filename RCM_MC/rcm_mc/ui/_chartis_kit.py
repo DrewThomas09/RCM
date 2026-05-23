@@ -4552,6 +4552,11 @@ _GUIDE_CSS = """
 .ck-guide-a-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:10px;
   font-family:'JetBrains Mono',monospace;color:var(--ck-text-dim,#5C6878);}
 .ck-guide-badge{padding:1px 6px;border-radius:2px;background:var(--sc-teal,#155752);color:#fff;letter-spacing:.05em;}
+.ck-guide-copy{margin-left:auto;background:transparent;border:1px solid var(--ck-border,#d6cfc0);
+  border-radius:3px;color:var(--ck-text-dim,#5C6878);font-family:inherit;font-size:10px;
+  letter-spacing:.04em;text-transform:uppercase;padding:1px 7px;cursor:pointer;}
+.ck-guide-copy:hover{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
+.ck-guide-copy:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:1px;}
 .ck-guide-thinking{font-style:italic;color:var(--ck-text-dim,#5C6878);}
 .ck-guide-thinking::after{content:'';animation:ckguidedots 1.2s steps(4,end) infinite;}
 @keyframes ckguidedots{0%{content:'';}25%{content:'.';}50%{content:'..';}75%{content:'...';}}
@@ -4836,7 +4841,9 @@ _GUIDE_JS = """
           var meta='<div class="ck-guide-a-meta"><span class="ck-guide-badge">read-only</span>'+
             (b.model?'<span>'+esc(b.model)+'</span>':'')+
             '<span>'+secs+'s</span>'+
-            (b.context_quality?'<span>quality: '+esc(b.context_quality)+'</span>':'')+'</div>';
+            (b.context_quality?'<span>quality: '+esc(b.context_quality)+'</span>':'')+
+            '<button type="button" class="ck-guide-copy" data-ck-guide-copy>Copy</button>'+
+            '</div>';
           var notes=(b.missing_context_notes&&b.missing_context_notes.length)?
             '<div class="ck-guide-caveat">Missing context: '+esc(b.missing_context_notes.join('; '))+'</div>':'';
           /* RAG provenance: group retrieved sources by registry type so the
@@ -4871,6 +4878,20 @@ _GUIDE_JS = """
           }
           var ragWarn=b.rag_warning?'<div class="ck-guide-caveat">'+esc(b.rag_warning)+'</div>':'';
           aEl.insertAdjacentHTML('beforeend', notes+prov+ragWarn+meta);
+          /* Copy-answer: browser clipboard only, no persistence/telemetry.
+             Hidden when the Clipboard API is unavailable (e.g. non-secure
+             context). Copies the plain answer text held in this closure. */
+          var copyBtn=aEl.querySelector('[data-ck-guide-copy]');
+          if(copyBtn){
+            if(navigator.clipboard&&navigator.clipboard.writeText){
+              copyBtn.addEventListener('click',function(){
+                navigator.clipboard.writeText(b.answer||'').then(function(){
+                  copyBtn.textContent='Copied';
+                  setTimeout(function(){copyBtn.textContent='Copy';},1500);
+                },function(){});
+              });
+            } else { copyBtn.hidden=true; }
+          }
         } else if(r.status===503){
           aEl.classList.remove('ck-guide-a');
           failBubble(aEl, (r.body&&r.body.error)||'PEdesk Guide local model is unavailable.');
