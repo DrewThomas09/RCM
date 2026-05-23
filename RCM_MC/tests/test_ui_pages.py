@@ -54,39 +54,41 @@ def _start(db_path):
 
 class TestPortfolioMap(unittest.TestCase):
 
-    def test_renders_svg(self):
+    def test_renders_tile_map(self):
+        # The page renders the reusable US state tile-grid (state cells),
+        # not floating deal markers.
         deals = [
             {"deal_id": "d1", "name": "Acme", "state": "IL",
              "ebitda_opportunity": 8e6, "stage": "diligence"},
         ]
         html = render_portfolio_map(deals)
         self.assertIn("<svg", html)
-        self.assertIn("Acme", html)
+        self.assertIn("usm-cell", html)            # tile-grid cells
+        self.assertIn("Illinois", html)            # state shaded by count
 
-    def test_empty_deals(self):
+    def test_empty_deals_has_honest_empty_state(self):
         html = render_portfolio_map([])
-        self.assertIn("No deals to display", html)
+        # Map still draws; honest data-needed message (not "No deals").
+        self.assertIn("usm-cell", html)
+        self.assertIn("No state-level portfolio data is available yet", html)
 
-    def test_stage_color_in_marker(self):
-        deals = [
-            {"deal_id": "d1", "name": "A", "state": "TX",
-             "ebitda_opportunity": 5e6, "stage": "hold"},
-        ]
-        html = render_portfolio_map(deals)
-        # Hold-stage marker color from portfolio_map.py:_STAGE_COLORS.
-        # Editorial refactor: literal hexes (#10b981 / #0a8a5f) were
-        # replaced by the CSS custom property var(--green), which
-        # resolves to #3F7D4D in v3/chartis.css. Assert the variable.
-        self.assertIn("var(--green)", html)
+    def test_con_states_are_accented(self):
+        deals = [{"deal_id": "d1", "name": "A", "state": "TX"}]
+        html = render_portfolio_map(deals, con_states={"TX": True, "CA": False})
+        self.assertIn("usm-accent", html)          # CON outline
+        self.assertIn("Certificate-of-Need", html)  # CON tooltip/legend
 
-    def test_legend_present(self):
-        deals = [
-            {"deal_id": "d1", "name": "A", "state": "CA",
-             "ebitda_opportunity": 3e6, "stage": "pipeline"},
-        ]
+    def test_metric_legend_present(self):
+        deals = [{"deal_id": "d1", "name": "A", "state": "CA"}]
         html = render_portfolio_map(deals)
-        self.assertIn("pipeline", html)
-        self.assertIn("diligence", html)
+        self.assertIn("usm-legend", html)
+        self.assertIn("deals", html)
+
+    def test_no_external_map_dependency(self):
+        html = render_portfolio_map([{"deal_id": "d1", "state": "CA"}])
+        low = html.lower()
+        for bad in ("mapbox", "maps.googleapis", "leaflet", "cdn."):
+            self.assertNotIn(bad, low)
 
     def test_map_route(self):
         tf = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
