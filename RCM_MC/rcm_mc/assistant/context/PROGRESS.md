@@ -1331,3 +1331,17 @@ bubble swaps to "Local model responses can take a little while…" after
 10s while still pending, and Retry re-asks the preserved `lastQuestion`
 (input not lost on failure). No streaming added (deferred). New test
 `test_latency_feedback_and_slow_note`. Sidebar shell → 32 passed.
+
+---
+
+# Guide quality loop (2026-05-22) — P6: LAN-hosting operator docs
+
+Docs only (`docs/MAC_HOSTED_PEDESK_GUIDE_AI.md`). Added section 6 "Host for
+guests on your LAN (Basic auth)" — the flow used to operationalize this
+Mac as a guest-reachable host: generate `.pedesk_host_auth.env`
+(`secrets.token_urlsafe`, chmod 600, git-ignored, never committed), start
+durable with `caffeinate -dimsu ./scripts/run_with_guide_ai.sh serve
+--host 0.0.0.0 --port 8080`, share `http://<mac-ip>:8080` via
+`ipconfig getifaddr en0`. Documents guardrails: one-user-at-a-time,
+24 GB RAM suits gemma4:e4b, keep Mac awake, never port-forward 8080, rotate
+password if leaked, trusted networks only. No code/secret changes.
