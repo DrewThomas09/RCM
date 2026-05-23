@@ -2203,15 +2203,22 @@ class RCMHandler(BaseHTTPRequestHandler):
         return self._current_user() is not None
 
     def _send_401(self) -> None:
-        # Browser-friendly: if the request looks like HTML navigation,
-        # redirect to /login with a ?next= hint so the user can bounce
-        # back after signing in. Scripts (Accept: application/json or
-        # explicit Basic header) still get a classic 401.
+        # Browser-friendly: in SESSION / DB-user mode, an HTML navigation
+        # gets a redirect to /login with a ?next= hint so the user can bounce
+        # back after signing in. Scripts (Accept: application/json or explicit
+        # Basic header) still get a classic 401.
+        #
+        # In BASIC AUTH mode (RCM_MC_AUTH set -> config.auth_user), there is no
+        # in-app /login form — /login itself redirects to /app — so the
+        # friendly redirect would loop (/app -> /login?next=/app -> /app -> …).
+        # There, always send the real 401 + WWW-Authenticate so the browser
+        # shows its native Basic Auth prompt.
         accept = self.headers.get("Accept", "")
         wants_html = "text/html" in accept and "application/json" not in accept
         has_basic = (self.headers.get("Authorization", "")
                      .startswith("Basic "))
-        if wants_html and not has_basic:
+        basic_auth_mode = self.config.auth_user is not None
+        if wants_html and not has_basic and not basic_auth_mode:
             nxt = urllib.parse.quote(self.path, safe="")
             self.send_response(HTTPStatus.SEE_OTHER)
             self.send_header("Location", f"/login?next={nxt}")

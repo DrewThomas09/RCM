@@ -40,16 +40,19 @@ class _Server:
         self.t = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.t.start()
 
-    def get(self, path, auth_header=None):
+    def get(self, path, auth_header=None, accept=None):
         c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=10)
         headers = {}
         if auth_header:
             headers["Authorization"] = auth_header
+        if accept:
+            headers["Accept"] = accept
         c.request("GET", path, headers=headers)
         r = c.getresponse()
         body = r.read().decode("utf-8", "replace")
         status, loc = r.status, r.getheader("Location")
         cache = r.getheader("Cache-Control")
+        self._last_www_auth = r.getheader("WWW-Authenticate")
         c.close()
         return status, loc, cache, body
 
@@ -91,6 +94,26 @@ class BasicAuthLoginUXTests(unittest.TestCase):
         status, _, _, _ = self.srv.get("/app")
         self.assertEqual(status, 401)
 
+    def test_browser_get_app_is_401_not_login_redirect(self):
+        # The redirect-loop bug: a BROWSER GET (Accept: text/html) to a
+        # protected route under Basic Auth must 401 with WWW-Authenticate,
+        # NOT 303 to /login (which would loop with /login -> /app).
+        status, loc, _, _ = self.srv.get("/app", accept="text/html")
+        self.assertEqual(status, 401)
+        self.assertNotEqual(loc, "/login?next=%2Fapp")
+        self.assertIsNotNone(self.srv._last_www_auth)
+        self.assertIn("Basic", self.srv._last_www_auth)
+
+    def test_no_infinite_loop_login_then_app(self):
+        # Follow the chain manually: /login?next=/app -> 303 /app; then a
+        # browser GET /app -> 401 (terminates), never back to /login.
+        s1, loc1, _, _ = self.srv.get("/login?next=%2Fapp", accept="text/html")
+        self.assertIn(s1, (302, 303))
+        self.assertEqual(loc1, "/app")
+        s2, loc2, _, _ = self.srv.get(loc1, accept="text/html")
+        self.assertEqual(s2, 401)            # stops here — no bounce to /login
+        self.assertNotEqual(loc2, "/login?next=%2Fapp")
+
     def test_app_authenticated_is_200(self):
         status, _, _, _ = self.srv.get("/app", auth_header=self.basic)
         self.assertEqual(status, 200)
@@ -108,6 +131,18 @@ class NoAuthDefaultTests(unittest.TestCase):
         # Without RCM_MC_AUTH the CTA keeps the in-app /login flow.
         html = render_marketing_page(basic_auth=False)
         self.assertIn("/login?next=/app", html)
+
+    def test_login_form_still_renders_without_basic_auth(self):
+        # Session/DB-user mode: /login still renders the in-app form (not a
+        # redirect) — the loop fix is scoped to Basic Auth mode only.
+        srv = _Server(auth=None)
+        try:
+            status, loc, _, body = srv.get("/login", accept="text/html")
+            self.assertEqual(status, 200)
+            self.assertIsNone(loc)
+            self.assertIn("password", body.lower())   # the form rendered
+        finally:
+            srv.close()
 
 
 if __name__ == "__main__":

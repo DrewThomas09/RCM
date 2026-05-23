@@ -52,6 +52,13 @@ curl -I https://pedesk.app/app                              # 401 (no auth)
 curl -I -u 'user:password' https://pedesk.app/app           # 200 (authed)
 ```
 
+In Basic Auth mode, an **unauthenticated browser** request to a protected
+route (e.g. `/app`) returns `401 Unauthorized` with `WWW-Authenticate: Basic`
+— so the browser shows its native prompt. It must **not** redirect to
+`/login` (that would loop with the `/login → /app` redirect). The
+friendly `/login?next=…` bounce only happens in session/DB-user
+deployments where `RCM_MC_AUTH` is unset.
+
 `/api/guide/ollama-health` reports `ai_ready: true` once the Droplet can
 reach the home-Mac Ollama over Tailscale.
 
