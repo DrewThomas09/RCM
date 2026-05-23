@@ -27,6 +27,24 @@ credential and will say "Invalid credentials." To avoid that confusion, when
 So `RCM_MC_AUTH` (browser Basic Auth) and the `/login` form are two different
 mechanisms; in a Basic Auth deployment, users only ever use the browser prompt.
 
+**Every `/login` variant redirects.** With `RCM_MC_AUTH` set, the redirect to
+`/app` runs before any query parsing, so `/login`, `/login?err=Invalid`,
+`/login?next=…`, and `/login?tab=request` **all** 303 to `/app`. The in-app
+login form never renders, and the redirect is sent `Cache-Control: no-store`
+so it can't be cached.
+
+### If you still see a `/login?err=Invalid` page
+
+That's a **stale browser tab/cache** from before the fix — the server no
+longer serves it. To recover:
+
+1. Close every `pedesk.app` tab.
+2. Open a fresh (incognito) window at **https://pedesk.app/app**.
+3. If it persists: Chrome → Settings → Privacy → Site data → search
+   `pedesk.app` → Delete, then reopen `https://pedesk.app/app`.
+
+Do not type into any `/login` form — production has no in-app accounts.
+
 ## Expected behavior (unchanged auth contract)
 
 ```bash
