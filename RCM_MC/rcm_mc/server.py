@@ -3273,6 +3273,14 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/sector-intelligence":
             from .ui.sector_intelligence_page import render_sector_intelligence
             return self._send_html(render_sector_intelligence())
+        if path == "/home-health":
+            from .ui.home_health_page import render_home_health
+            _qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            return self._send_html(render_home_health(_qs))
+        if path == "/hospice":
+            from .ui.hospice_page import render_hospice
+            _qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            return self._send_html(render_hospice(_qs))
         if path == "/market-intel":
             return self._route_market_intel_page()
         # Market intel JSON endpoints — consumed by Deal Profile's
