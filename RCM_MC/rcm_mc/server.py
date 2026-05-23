@@ -3270,6 +3270,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/diligence/compare":
             return self._route_compare_page()
         # Market intelligence — public healthcare comps + PE news.
+        if path == "/sector-intelligence":
+            from .ui.sector_intelligence_page import render_sector_intelligence
+            return self._send_html(render_sector_intelligence())
         if path == "/market-intel":
             return self._route_market_intel_page()
         # Market intel JSON endpoints — consumed by Deal Profile's
