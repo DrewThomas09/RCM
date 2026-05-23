@@ -43,11 +43,19 @@ def _metric_card(m: MetricDefinition) -> str:
             f'<span class="num">{_html.escape(m.typical_range)}</span>'
             f'</div>'
         )
+    copy_link = (
+        f'<button type="button" class="mg-copylink" '
+        f'data-mg-copylink="{_html.escape(m.key, quote=True)}" '
+        f'title="Copy a shareable link to this metric" '
+        f'aria-label="Copy link to {_html.escape(m.label, quote=True)}">'
+        f'Copy link</button>'
+    )
     return (
         f'<div class="cad-card" id="{_html.escape(m.key)}" '
         f'style="scroll-margin-top:80px;">'
-        f'<h2 style="margin-bottom:6px;">'
-        f'{_html.escape(m.label)}{units_pill}</h2>'
+        f'<h2 style="margin-bottom:6px;display:flex;align-items:baseline;'
+        f'flex-wrap:wrap;gap:8px;">'
+        f'<span>{_html.escape(m.label)}{units_pill}</span>{copy_link}</h2>'
         f'<div style="font-size:11px;color:var(--cad-text3);'
         f'font-family:var(--ck-mono,monospace);margin-bottom:10px;">'
         f'{_html.escape(m.key)}</div>'
@@ -128,11 +136,40 @@ def render_metric_glossary() -> str:
         + '</div>'
     )
 
+    # Clipboard-only "Copy link" affordance: copies the metric's deep link
+    # (…/metric-glossary#<key>) so a partner can share a definition. No
+    # persistence, no upload; the button hides itself without the API.
+    copylink_assets = (
+        "<style>"
+        ".mg-copylink{margin-left:auto;background:transparent;"
+        "border:1px solid var(--cad-border,#d6cfc0);border-radius:3px;"
+        "color:var(--cad-text3,#6b6557);font-family:var(--ck-mono,monospace);"
+        "font-size:10px;letter-spacing:0.04em;text-transform:uppercase;"
+        "padding:2px 8px;cursor:pointer;}"
+        ".mg-copylink:hover{border-color:var(--cad-link,#155752);"
+        "color:var(--cad-link,#155752);}"
+        ".mg-copylink:focus-visible{outline:2px solid var(--cad-link,#155752);"
+        "outline-offset:1px;}"
+        "</style>"
+        "<script>(function(){"
+        "var ok=navigator.clipboard&&navigator.clipboard.writeText;"
+        "var btns=document.querySelectorAll('[data-mg-copylink]');"
+        "if(!ok){btns.forEach(function(b){b.hidden=true;});return;}"
+        "btns.forEach(function(btn){btn.addEventListener('click',function(){"
+        "var key=btn.getAttribute('data-mg-copylink');"
+        "var url=location.origin+location.pathname+'#'+key;"
+        "navigator.clipboard.writeText(url).then(function(){"
+        "var t=btn.textContent;btn.textContent='Copied';"
+        "setTimeout(function(){btn.textContent=t;},1500);},function(){});"
+        "});});})();</script>"
+    )
+
     body = (
         ck_eyebrow("Metric Glossary")
         + kpi_strip
         + _toc(keys)
         + "".join(cards)
+        + copylink_assets
         + ck_next_section(
             "Open the methodology reference",
             "/methodology",

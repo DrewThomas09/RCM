@@ -26,6 +26,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from .._chartis_kit import (
     P,
     chartis_shell,
+    ck_arrow_link,
     ck_kpi_block,
     ck_page_title,
     ck_section_header,
@@ -518,6 +519,16 @@ def render_rcm_benchmarks(
             count=n_segments,
         )
         + segments_panel
+        + ck_section_header(
+            "RELATED PAGES",
+            "where these benchmarks get applied to a target",
+        )
+        + '<div style="display:flex;flex-wrap:wrap;gap:18px;'
+        'margin:4px 0 8px;">'
+        + ck_arrow_link("Denial prediction", "/diligence/denial-prediction")
+        + ck_arrow_link("Payer mix stress", "/diligence/payer-stress")
+        + ck_arrow_link("HCRIS X-Ray", "/diligence/hcris-xray")
+        + "</div>"
     )
 
     return chartis_shell(

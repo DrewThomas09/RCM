@@ -240,8 +240,15 @@ def render_deal_screening(
     corpus = load_corpus_deals()
     if not corpus:
         body = small_panel(
-            "Deal screening — no corpus",
-            empty_note("No corpus available for screening."),
+            "Deal screening — no corpus loaded",
+            '<p style="font-size:13px;line-height:1.5;margin:0 0 8px;">'
+            '<strong>No deal corpus is loaded yet.</strong> Deal Screening '
+            'ranks the corpus deal library against your risk and valuation '
+            'thresholds (composite risk, EV/EBITDA, MOIC) — so it needs a '
+            'loaded corpus before it can score anything.</p>'
+            '<p style="font-size:12px;margin:0;">'
+            'Load the deal corpus from the Data Catalog, then reload this '
+            'page.</p>',
             code="NIL",
         )
         return chartis_shell(
