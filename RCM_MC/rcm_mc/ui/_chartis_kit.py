@@ -4450,16 +4450,16 @@ _GUIDE_CSS = """
   position:fixed;top:0;right:0;height:100vh;width:min(400px,94vw);z-index:1200;
   background:var(--paper,#FAF7F0);color:var(--ck-text,#1a2332);border-left:2px solid var(--sc-teal,#155752);
   box-shadow:-8px 0 28px rgba(11,35,65,.18);display:flex;flex-direction:column;
-  font-family:var(--ck-guide-ui);font-size:14px;line-height:1.55;}
+  font-family:var(--ck-guide-ui);font-size:14px;line-height:1.5;}
 .ck-guide-panel[hidden]{display:none;}
-.ck-guide-head{background:var(--sc-navy,#0b2341);color:#fff;padding:15px 16px 14px;}
+.ck-guide-head{background:var(--sc-navy,#0b2341);color:#fff;padding:12px 16px 11px;}
 .ck-guide-head-row{display:flex;align-items:center;justify-content:space-between;}
 .ck-guide-eyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.78;font-weight:600;}
 .ck-guide-close{background:transparent;border:none;color:#fff;font-size:22px;line-height:1;
   cursor:pointer;padding:0 4px;}
 .ck-guide-close:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
-.ck-guide-title{font-family:var(--ck-guide-ui);font-size:21px;font-weight:600;letter-spacing:-.01em;
-  margin:7px 0 7px;color:#fff;outline:none;}
+.ck-guide-title{font-family:var(--ck-guide-ui);font-size:18px;font-weight:600;letter-spacing:-.01em;
+  margin:5px 0 6px;color:#fff;outline:none;}
 .ck-guide-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .ck-guide-route{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:rgba(255,255,255,.7);}
 .ck-guide-quality{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
@@ -4470,58 +4470,58 @@ _GUIDE_CSS = """
 .ck-guide-quality[data-q="missing"]{background:#b5321e;color:#fff;}
 /* Scroll body — generous bottom padding so the Ask card is fully
    visible when scrolled to the end (no sticky footer covers it). */
-.ck-guide-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 15px 30px;}
+.ck-guide-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px 14px 24px;}
 /* Layout safety: long answers / unbroken tokens (URLs, ids) must wrap,
    never force horizontal overflow. */
 .ck-guide-panel,.ck-guide-panel *{overflow-wrap:break-word;word-break:break-word;max-width:100%;}
 .ck-guide-route{overflow-wrap:anywhere;}
 .ck-guide-loading{color:var(--ck-text-dim,#5C6878);font-style:italic;}
 .ck-guide-muted{color:var(--ck-text-dim,#5C6878);}
-.ck-guide-panel p{margin:0 0 9px;line-height:1.55;}
+.ck-guide-panel p{margin:0 0 7px;line-height:1.5;}
 .ck-guide-panel p:last-child{margin-bottom:0;}
 /* Card system */
 .ck-guide-card{background:#fff;border:1px solid var(--ck-border,#d6cfc0);border-radius:8px;
-  padding:15px 16px;margin-bottom:14px;}
+  padding:13px 15px;margin-bottom:11px;}
 .ck-guide-card-caution{background:#faf6ec;border-left:3px solid var(--sc-amber,#b8732a);}
 .ck-guide-ask-card{border-left:3px solid var(--sc-teal,#155752);}
-.ck-guide-card-title{font-family:var(--ck-guide-ui);font-size:12px;letter-spacing:.04em;
-  text-transform:uppercase;color:var(--sc-teal,#155752);margin:0 0 10px;font-weight:600;}
-.ck-guide-hint{font-size:12px;color:var(--ck-text-dim,#5C6878);margin:-3px 0 9px;}
+.ck-guide-card-title{font-family:var(--ck-guide-ui);font-size:11px;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--sc-teal,#155752);margin:0 0 7px;font-weight:600;}
+.ck-guide-hint{font-size:11.5px;color:var(--ck-text-dim,#5C6878);margin:-2px 0 7px;}
 /* Labeled sub-rows (overview, metric why/formula) */
-.ck-guide-sub{margin:0 0 8px;line-height:1.55;}
+.ck-guide-sub{margin:0 0 7px;line-height:1.5;}
 .ck-guide-sub:last-child{margin-bottom:0;}
 .ck-guide-sub-label{display:block;font-size:11px;letter-spacing:.02em;text-transform:uppercase;
-  color:var(--ck-text-dim,#5C6878);font-weight:600;margin-bottom:1px;}
+  color:var(--ck-text-dim,#5C6878);font-weight:600;margin-bottom:2px;}
 .ck-guide-sub code{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12.5px;
   color:var(--ck-text-dim,#5C6878);}
 /* Metric / source mini-cards */
-.ck-guide-metric{border-top:1px solid #ece5d6;padding:13px 0 2px;}
+.ck-guide-metric{border-top:1px solid #ece5d6;padding:11px 0 2px;}
 .ck-guide-metric:first-child{border-top:none;padding-top:2px;}
-.ck-guide-metric-title{font-family:var(--ck-guide-ui);font-weight:600;font-size:15.5px;
-  color:var(--sc-navy,#0b2341);margin-bottom:4px;}
-.ck-guide-metric-def{line-height:1.55;margin-bottom:7px;}
-.ck-guide-meta-grid{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:0 0 8px;font-size:13px;}
+.ck-guide-metric-title{font-family:var(--ck-guide-ui);font-weight:600;font-size:15px;
+  color:var(--sc-navy,#0b2341);margin-bottom:3px;}
+.ck-guide-metric-def{line-height:1.5;margin-bottom:6px;}
+.ck-guide-meta-grid{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0 0 6px;font-size:12.5px;}
 .ck-guide-meta-k{font-size:11px;letter-spacing:.02em;text-transform:uppercase;color:var(--ck-text-dim,#5C6878);
   font-weight:600;align-self:center;}
 .ck-guide-meta-v{color:var(--sc-navy,#0b2341);}
-.ck-guide-caveat{font-size:12.5px;color:var(--ck-text-dim,#5C6878);margin-top:6px;line-height:1.5;}
-.ck-guide-pill{display:inline-block;font-size:11px;letter-spacing:.01em;background:#f1ece0;
-  color:var(--ck-text-dim,#5C6878);border-radius:10px;padding:2px 9px;margin-top:5px;}
+.ck-guide-caveat{font-size:12px;color:var(--ck-text-dim,#5C6878);margin-top:5px;line-height:1.45;}
+.ck-guide-pill{display:inline-block;font-size:10.5px;letter-spacing:.01em;background:#f1ece0;
+  color:var(--ck-text-dim,#5C6878);border-radius:10px;padding:2px 8px;margin-top:4px;}
 .ck-guide-more-btn{margin-top:10px;background:transparent;border:1px solid var(--ck-border,#d6cfc0);
   border-radius:4px;color:var(--sc-teal,#155752);font-size:11px;font-weight:600;padding:5px 11px;
   cursor:pointer;font-family:inherit;}
 .ck-guide-more-btn:hover{border-color:var(--sc-teal,#155752);}
 .ck-guide-more-btn:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:1px;}
 .ck-guide-list{margin:0;padding-left:18px;}
-.ck-guide-list li{margin-bottom:6px;line-height:1.5;}
-.ck-guide-chips{display:flex;flex-wrap:wrap;gap:7px;}
-.ck-guide-chip{background:var(--paper,#FAF7F0);border:1px solid var(--ck-border,#d6cfc0);border-radius:15px;
-  padding:7px 13px;font-size:13px;line-height:1.3;cursor:pointer;color:var(--sc-navy,#0b2341);text-align:left;
+.ck-guide-list li{margin-bottom:5px;line-height:1.45;}
+.ck-guide-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.ck-guide-chip{background:var(--paper,#FAF7F0);border:1px solid var(--ck-border,#d6cfc0);border-radius:14px;
+  padding:6px 12px;font-size:12.5px;line-height:1.3;cursor:pointer;color:var(--sc-navy,#0b2341);text-align:left;
   font-family:inherit;}
 .ck-guide-chip:hover{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
 .ck-guide-chip:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:1px;}
 .ck-guide-ask-state{background:#faf6ec;border:1px solid var(--ck-border,#d6cfc0);border-radius:6px;
-  padding:11px 13px;font-size:13px;line-height:1.55;color:var(--ck-text-dim,#5C6878);margin-bottom:12px;}
+  padding:10px 12px;font-size:12.5px;line-height:1.5;color:var(--ck-text-dim,#5C6878);margin-bottom:10px;}
 .ck-guide-state-ready{font-weight:600;color:var(--sc-teal,#155752);font-size:12.5px;letter-spacing:.01em;}
 .ck-guide-state-primary{font-weight:600;color:var(--sc-navy,#0b2341);font-size:14px;}
 .ck-guide-state-secondary{margin:3px 0 6px;}
@@ -4529,7 +4529,7 @@ _GUIDE_CSS = """
 .ck-guide-setup summary:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
 .ck-guide-setup-pre{background:#fff;border:1px solid var(--ck-border,#d6cfc0);border-radius:4px;
   padding:7px 9px;font-family:'JetBrains Mono',monospace;font-size:10.5px;white-space:pre-wrap;margin:6px 0;}
-.ck-guide-history{display:flex;flex-direction:column;gap:12px;margin-bottom:11px;}
+.ck-guide-history{display:flex;flex-direction:column;gap:10px;margin-bottom:10px;}
 .ck-guide-history:empty{margin-bottom:0;}
 .ck-guide-q{font-weight:700;color:var(--sc-navy,#0b2341);line-height:1.4;}
 .ck-guide-a{background:var(--paper,#FAF7F0);border:1px solid var(--ck-border,#d6cfc0);

@@ -1219,3 +1219,42 @@ change. All text escaped via `esc()`; behavior (textContent rendering,
 ai_ready gating, guards, CSRF) untouched. New `.ck-guide-sources` /
 `-src-*` CSS in the editorial palette. Sidebar + guide + shell suites →
 77 passed, 1 skipped.
+
+---
+
+# Task — Compact the Guide sidebar (spacing/scale density) (2026-05-22)
+
+CSS-only. The card UI looked good but oversized: the Page Overview card
+ate most of the panel height and Ask sat too far down. Tightened the
+type scale, padding, and vertical rhythm so the panel reads as a compact
+utility sidebar, not a blown-up document. Same card design, ~20–30% more
+compact. No backend/endpoint/RAG/Ollama/JS/markup/scope changes; main-app
+typography untouched (all rules scoped to `.ck-guide-panel`).
+
+- Header: title 21px→**18px** (still prominent), head padding
+  15/16/14→**12/16/11**, title margin 7/7→5/6.
+- Body: padding 16/15/30→**14/14/24** (bottom stays ≥24 so the Ask card
+  clears the scroll end); panel line-height 1.55→**1.5**; `p` margin
+  9px→7px.
+- Cards: padding 15×16→**13×15**, margin-bottom 14→**11**; card-title
+  12px→**11px**, margin 10→**7**.
+- Overview/sub rows: `.ck-guide-sub` margin 8→7, line-height 1.55→1.5;
+  sub-label keeps 11px (margin-bottom 1→2 for label/value separation).
+  Net: each What/Purpose/Why field is noticeably shorter.
+- Metric/source cards: divider padding 13→**11**, metric title
+  15.5px→**15px** (margin 4→3), def line-height 1.55→1.5, meta-grid
+  13px→12.5px (gap 3→2), caveat 12.5px→12px, pill 11px→**10.5px**
+  (padding 2/9→2/8).
+- Chips: gap 7→6, padding 7/13→**6/12**, font 13px→12.5px (click target
+  still comfortable). Ask: ask-state padding 11/13→10/12 + font 13→12.5,
+  history gap 12→10 — fewer pixels above the Ask form.
+- Behavior untouched: endpoint calls, ai_ready gating, RAG provenance,
+  suggested-question behavior, CSRF, session-only history, dup-submit +
+  stale guards, safe textContent rendering, read-only policy,
+  overflow-wrap safety — all unchanged.
+
+Tests: `pytest` guide sidebar shell (31) + guide context/ollama/prompt/RAG
+/packet (68) → 99 passed. py_compile clean. Render-checked
+`chartis_shell` output for /app, /sponsor-track-record,
+/diligence/hcris-xray, /portfolio — compacted values confirmed, integrity
+markers present, no overflow rule lost, body bottom pad = 24.
