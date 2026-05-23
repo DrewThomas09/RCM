@@ -1205,3 +1205,17 @@ no `@import`/Google-fonts added by the Guide CSS; padding/closed-by-default
 /no-upload tests updated. `pytest` sidebar + guide + RAG + shell smoke →
 148 passed, 1 skipped. py_compile clean. Render-checked /app,
 /sponsor-track-record, /diligence/hcris-xray, /portfolio.
+
+---
+
+# Task — Richer RAG source citations in the sidebar (2026-05-22)
+
+CSS/JS-render only. Replaced the buried "Guide context used: a, b, c"
+caveat line with a proper provenance block under each answer: a "Guide
+context used" heading + one row per retrieved source showing **title ·
+type · score** (e.g. "Denial Rate · metric · 0.83"). Data already came
+from `rag_sources_used` in the ask response — no backend/endpoint/RAG
+change. All text escaped via `esc()`; behavior (textContent rendering,
+ai_ready gating, guards, CSRF) untouched. New `.ck-guide-sources` /
+`-src-*` CSS in the editorial palette. Sidebar + guide + shell suites →
+77 passed, 1 skipped.

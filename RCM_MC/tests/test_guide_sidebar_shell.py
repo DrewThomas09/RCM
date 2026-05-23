@@ -264,12 +264,19 @@ class GuideSidebarPolishTests(unittest.TestCase):
         self.assertIn("aEl.textContent=b.answer", self.html)  # XSS-safe
 
     def test_surfaces_rag_sources_and_warning(self):
-        # Sidebar renders RAG provenance + any rag_warning from the ask
-        # response (both escaped).
+        # Sidebar renders RAG provenance as a "Guide context used" block
+        # (title + type + score) + any rag_warning (all escaped).
         self.assertIn("rag_sources_used", self.html)
-        self.assertIn("Guide context used:", self.html)
+        self.assertIn("Guide context used", self.html)
+        self.assertIn("ck-guide-sources", self.html)
+        self.assertIn("ck-guide-src-title", self.html)
+        self.assertIn("ck-guide-src-type", self.html)
+        self.assertIn("ck-guide-src-score", self.html)
+        self.assertIn("s.score.toFixed(2)", self.html)   # score shown
+        self.assertIn("esc(s.title)", self.html)          # escaped
         self.assertIn("rag_warning", self.html)
         self.assertIn("esc(b.rag_warning)", self.html)
+        self.assertIn(".ck-guide-sources{", self.html)    # CSS present
 
 
 if __name__ == "__main__":
