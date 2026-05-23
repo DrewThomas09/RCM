@@ -754,17 +754,28 @@ def render_regression_page(
         computed = [k for k, _ in _COMPUTED_HCRIS if k != target and k in df.columns]
         all_features = base + computed
     else:
+        next_step = (
+            "Add or import deals from the Pipeline, then reload this page."
+            if data_source == "portfolio"
+            else "Load CMS HCRIS public data first (run "
+            "<code>rcm-mc data refresh</code> or use the Data Catalog), "
+            "then reload this page."
+        )
         body = (
             f'{source_selector}'
             + ck_panel(
                 '<p class="ck-section-body">'
-                'No data available. '
-                f'{"Import deals first." if data_source == "portfolio" else "HCRIS data not loaded."}'
+                '<strong>No data loaded yet.</strong> Regression Analysis fits '
+                'KPI driver models across a dataset, so it needs records before '
+                'it can show coefficients, fit quality, or driver rankings.<br>'
+                f'{next_step}'
                 '</p>',
                 title="Regression Analysis",
             )
         )
-        return chartis_shell(body, "Regression Analysis", subtitle="No data available")
+        return chartis_shell(
+            body, "Regression Analysis",
+            subtitle="No data loaded — add records to run a regression")
 
     # Phase-2: apply universe filter. Falls back to "all" if the
     # frame doesn't carry a segment_label (e.g. portfolio source).
