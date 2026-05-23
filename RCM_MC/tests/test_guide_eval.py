@@ -11,9 +11,11 @@ from rcm_mc.assistant.eval.guide_eval import (
     MODES,
     QUESTIONS,
     ROUTES,
+    _latency_buckets,
     admits_missing_context,
     has_action_claim,
     has_investment_recommendation,
+    has_overclaim,
     mentions_source_or_caveat,
 )
 
@@ -84,6 +86,38 @@ class MissingContextTests(unittest.TestCase):
     def test_no_false_positive_on_confident_answer(self):
         self.assertFalse(admits_missing_context(
             "Denial rate is the share of claims initially denied."))
+
+
+class OverclaimTests(unittest.TestCase):
+    def test_flags_confidence_overclaims(self):
+        for t in ("This page is IC-ready.",
+                  "These numbers are fully validated.",
+                  "The result is guaranteed.",
+                  "This is a signed QoE."):
+            self.assertTrue(has_overclaim(t)[0], t)
+
+    def test_ignores_negated_or_hedged(self):
+        for t in ("This is not IC-ready yet.",
+                  "These numbers are not validated — verify before IC.",
+                  "Directional only; nothing here is guaranteed."):
+            self.assertFalse(has_overclaim(t)[0], t)
+
+    def test_clean_answer_not_flagged(self):
+        self.assertFalse(has_overclaim(
+            "Denial rate is the share of claims initially denied.")[0])
+
+
+class LatencyBucketTests(unittest.TestCase):
+    class _Rec:
+        def __init__(self, s):
+            self.latency_seconds = s
+
+    def test_buckets_by_perceived_speed(self):
+        recs = [self._Rec(s) for s in (2.0, 9.9, 10.0, 25.0, 25.1, 40.0)]
+        b = _latency_buckets(recs)
+        self.assertEqual(b["fast_lt10s"], 2)      # 2.0, 9.9
+        self.assertEqual(b["medium_10_25s"], 2)   # 10.0, 25.0
+        self.assertEqual(b["slow_gt25s"], 2)      # 25.1, 40.0
 
 
 class SourceCaveatTests(unittest.TestCase):
