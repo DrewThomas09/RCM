@@ -1,41 +1,18 @@
-"""Geographic portfolio map (Prompt 69 UI).
+"""Geographic portfolio map.
 
-Route: GET /portfolio/map. Renders an inline SVG map of the US with
-deal markers positioned at state centroids. Color = deal stage,
-size = EBITDA opportunity. State shading by CON status.
+Route: GET /portfolio/map. Renders the reusable US state tile-grid
+cartogram (rcm_mc.ui.us_map), shading each state by the number of
+portfolio deals located there and flagging Certificate-of-Need (CON)
+jurisdictions. Local/static — no external map tiles or APIs.
 """
 from __future__ import annotations
 
 import html
-import math
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 
 def _esc(s: Any) -> str:
     return html.escape("" if s is None else str(s))
-
-
-# Simplified Albers projection for continental US.
-# Maps (lat, lon) → (x, y) in a 960×600 viewport.
-def _project(lat: float, lon: float) -> Tuple[float, float]:
-    """Cheap Albers-ish projection. Not cartographically precise but
-    good enough to place state-centroid dots on an SVG."""
-    # Center: 39°N, 98°W. Scale by eye to fill 960×600.
-    x = (lon + 98) * 12.0 + 480
-    y = -(lat - 39) * 16.0 + 300
-    return (max(20, min(940, x)), max(20, min(580, y)))
-
-
-# CON state shading colors.
-_CON_FILL = {True: "var(--paper-pure)", False: "var(--bg)"}
-
-_STAGE_COLORS = {
-    "pipeline": "var(--muted)",
-    "diligence": "var(--teal)",
-    "ic": "var(--amber)",
-    "hold": "var(--green)",
-    "exit": "var(--ink-2)",
-}
 
 
 _EXPLAINER_CSS = """
@@ -43,6 +20,8 @@ _EXPLAINER_CSS = """
 color:var(--sc-text-dim);max-width:68ch;
 margin:var(--sc-s-4) 0 var(--sc-s-6);}
 .ck-pm-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+.ck-pm-selected{font-family:var(--sc-sans);font-size:13px;
+color:var(--sc-text-dim);margin:10px 0 0;min-height:1.2em;}
 """
 
 
@@ -51,99 +30,54 @@ def render_portfolio_map(
     *,
     con_states: Optional[Dict[str, bool]] = None,
 ) -> str:
-    """Full-page HTML with an inline SVG US map + deal markers."""
+    """Full-page HTML with the reusable US state tile-grid map."""
     from ._chartis_kit import (
         chartis_shell, ck_fmt_num, ck_kpi_block,
         ck_next_section, ck_page_title, ck_provenance_tooltip,
     )
+    from .us_map import render_us_state_map
 
-    # State background rectangles (simplified — just shade CON vs non-CON).
-    state_bg = ""
-    if con_states:
-        try:
-            from ..data.geo_lookup import STATE_CENTROIDS
-            for st, has_con in con_states.items():
-                coords = STATE_CENTROIDS.get(st)
-                if not coords:
-                    continue
-                x, y = _project(coords[0], coords[1])
-                fill = _CON_FILL.get(has_con, "var(--bg)")
-                state_bg += (
-                    f'<circle cx="{x:.0f}" cy="{y:.0f}" r="18" '
-                    f'fill="{fill}" opacity="0.4"/>'
-                )
-        except Exception:  # noqa: BLE001
-            pass
-
-    # Deal markers.
-    markers = ""
+    # Per-state deal count — the metric the map shades by.
+    state_counts: Dict[str, int] = {}
     for d in deals:
-        lat = float(d.get("lat") or 0)
-        lon = float(d.get("lon") or 0)
-        if lat == 0 and lon == 0:
-            # Try state centroid fallback.
-            state = str(d.get("state") or "").upper()
-            try:
-                from ..data.geo_lookup import STATE_CENTROIDS
-                coords = STATE_CENTROIDS.get(state, (0, 0))
-                lat, lon = coords
-            except Exception:  # noqa: BLE001
-                continue
-            if lat == 0:
-                continue
-        x, y = _project(lat, lon)
-        ebitda = float(d.get("ebitda_opportunity") or 0)
-        radius = max(6, min(20, 6 + ebitda / 5e6))
-        stage = str(d.get("stage") or "diligence")
-        color = _STAGE_COLORS.get(stage, "var(--teal)")
-        name = _esc(d.get("name") or d.get("deal_id") or "")
-        markers += (
-            f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{radius:.0f}" '
-            f'fill="{color}" opacity="0.8" '
-            f'style="cursor:pointer;">'
-            f'<title>{name} ({stage})</title>'
-            f'</circle>'
-        )
+        st = str(d.get("state") or "").upper()
+        if st:
+            state_counts[st] = state_counts.get(st, 0) + 1
 
-    if not markers:
-        markers = (
-            '<text x="480" y="300" text-anchor="middle" '
-            'fill="var(--muted)" font-size="14">No deals to display</text>'
-        )
+    con_set = {str(s).upper() for s, v in (con_states or {}).items() if v}
+    # CON note shows on every state's tooltip where flagged (incl. states
+    # with deals); states with no deals still render as honest "no data".
+    notes = {st: "Certificate-of-Need (CON) jurisdiction" for st in con_set}
 
-    # Legend.
-    legend_y = 520
-    legend = ""
-    for i, (stage, color) in enumerate(_STAGE_COLORS.items()):
-        lx = 60 + i * 120
-        legend += (
-            f'<circle cx="{lx}" cy="{legend_y}" r="5" fill="{color}"/>'
-            f'<text x="{lx + 10}" y="{legend_y + 4}" fill="var(--muted)" '
-            f'font-size="10">{stage}</text>'
-        )
-
-    svg = (
-        '<svg viewBox="0 0 960 600" '
-        'style="width:100%;max-width:960px;height:auto;'
-        'background:var(--bg);border:1px solid var(--paper-pure);border-radius:4px;">'
-        f'{state_bg}{markers}{legend}'
-        '</svg>'
+    map_html = render_us_state_map(
+        state_counts,
+        metric_label="deals",
+        state_notes=notes,
+        accent_states=con_set,
+        accent_label="Certificate-of-Need (CON) state",
+        empty_message=(
+            "No state-level portfolio data is available yet. When deals "
+            "carry a state (or facility geography), this map shows "
+            "geographic exposure and concentration across markets."
+        ),
+    )
+    selected_panel = (
+        '<p class="ck-pm-selected" data-us-map-selected>'
+        'Click a state to see its portfolio detail.</p>'
+        if state_counts else ''
     )
 
-    css = """
-    .map-wrap { max-width:960px; margin:0 auto; }
-    """
-    # Cycle 46 — KPI strip + provenance + editorial chrome.
-    n_states = len({d.get("state") for d in deals if d.get("state")})
+    css = ".map-wrap { max-width:620px; margin:0 auto; }"
+    n_states = len(state_counts)
     n_con = sum(1 for s, v in (con_states or {}).items() if v)
     deals_value = ck_provenance_tooltip(
         "Deals plotted",
         ck_fmt_num(len(deals)),
         explainer=(
-            f"Each circle is one deal positioned at the state "
-            f"centroid. Circle size encodes EBITDA opportunity; "
-            f"color encodes deal stage (pipeline / diligence / "
-            f"IC / hold / exit)."
+            "Portfolio deals with a state, counted per state. The map is a "
+            "state tile-grid cartogram — each cell is one state, shaded by "
+            "its deal count; deeper teal = more deals. States with no deals "
+            "show as 'no data'."
         ),
     )
     states_value = ck_provenance_tooltip(
@@ -181,19 +115,22 @@ def render_portfolio_map(
     )
     explainer_html = (
         '<p class="ck-pm-explainer">'
-        '<em>Where the portfolio sits on the map.</em> '
-        "Each circle is one deal, positioned at the state centroid. "
-        "Circle size encodes EBITDA opportunity; color encodes deal "
-        "stage (pipeline / diligence / IC / hold / exit). "
-        "Faint background rings mark Certificate-of-Need (CON) states "
-        "— markets where new entry requires regulatory approval."
+        '<em>Where the portfolio sits, state by state.</em> '
+        "A state tile-grid cartogram: every state is an equal-size cell in "
+        "its approximate geographic position, shaded by how many portfolio "
+        "deals sit there. Cells outlined in amber are Certificate-of-Need "
+        "(CON) jurisdictions, where new market entry requires regulatory "
+        "approval. Hover a state for its detail; click to select it. "
+        "Equal-size cells keep large states from dominating the read — this "
+        "is a metric map, not a coastline map."
         '</p>'
     )
     body = (
         title_block
         + explainer_html
         + kpi_strip
-        + f'<div class="map-wrap">{svg}</div>'
+        + f'<div class="map-wrap">{map_html}</div>'
+        + selected_panel
         + next_up
     )
     return chartis_shell(body, "Portfolio Map",
