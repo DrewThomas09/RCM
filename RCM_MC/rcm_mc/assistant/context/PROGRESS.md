@@ -1345,3 +1345,15 @@ durable with `caffeinate -dimsu ./scripts/run_with_guide_ai.sh serve
 `ipconfig getifaddr en0`. Documents guardrails: one-user-at-a-time,
 24 GB RAM suits gemma4:e4b, keep Mac awake, never port-forward 8080, rotate
 password if leaked, trusted networks only. No code/secret changes.
+
+---
+
+# Guide quality loop (2026-05-22) — P7: expand eval coverage
+
+Read-only eval harness only. Added two provenance/source-trust probe
+questions ("Which source should I trust most on this page?", "How fresh is
+this data?") and the `/sponsor-track-record` route (resolves with quality
+"strong") to `guide_eval.QUESTIONS`/`ROUTES` — now 12 questions × 10
+routes × 2 modes. No tracking, no auto-collection; the harness still only
+writes local, git-ignored reports when invoked. Updated
+`test_questions_and_routes_match_spec`. Eval suite → 11 passed.
