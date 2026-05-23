@@ -449,6 +449,32 @@ def render_market_data(
     heatmap = _state_heatmap_table(stats, metric)
     regression = _regression_section(stats)
 
+    # Reusable US state tile-grid map, shaded by the selected metric. Real
+    # HCRIS per-state aggregates (same data as the heatmap table below,
+    # which is preserved). Local SVG — no external map tiles.
+    from .us_map import render_us_state_map
+    _MAP_FMT = {
+        "avg_margin": (lambda v: f"{v * 100:.1f}%", "operating margin"),
+        "hhi": (lambda v: f"{v:,.0f}", "HHI concentration"),
+        "hospitals": (lambda v: f"{int(v):,}", "hospitals"),
+        "total_revenue": (lambda v: f"${v / 1e9:.1f}B", "total NPR"),
+        "medicare_pct": (lambda v: f"{v * 100:.0f}%", "Medicare day %"),
+    }
+    _vfmt, _mlabel = _MAP_FMT.get(metric, (None, metric.replace("_", " ")))
+    state_map_panel = ""
+    if stats:
+        _state_vals = {
+            s["state"]: s.get(metric)
+            for s in stats if s.get(metric) is not None
+        }
+        state_map_panel = ck_panel(
+            render_us_state_map(
+                _state_vals, metric_label=_mlabel, value_format=_vfmt,
+                empty_message="No state-level HCRIS data available yet.",
+            ),
+            title=f"State Map · {_mlabel}",
+        )
+
     data_source = ck_panel(
         '<div class="ck-card-grid">'
         '<div><strong>HCRIS</strong><br>'
@@ -578,6 +604,7 @@ overflow:hidden;margin-bottom:8px;}
         f'{kpi_section}'
         f'{margin_dist}'
         f'{top_markets}'
+        + state_map_panel
         + ck_panel(heatmap, title="State Market Heatmap")
         + f'{regression}'
         f'{payer_section}'
