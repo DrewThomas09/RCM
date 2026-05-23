@@ -224,6 +224,17 @@ class DenialPredictionPageTests(unittest.TestCase):
         self.assertIn("PREDICTIVE DENIAL MODEL", h)
         self.assertIn("Run prediction", h)
 
+    def test_landing_source_label_is_honest_about_fixture(self):
+        # The page runs on a selected CCD *fixture*, not a live per-deal
+        # feed — the provenance label must say so (model training is live).
+        from rcm_mc.ui.denial_prediction_page import (
+            render_denial_prediction_page,
+        )
+        h = render_denial_prediction_page()
+        self.assertIn("not a live per-deal feed", h)
+        self.assertIn("trained live", h)            # model is genuinely live
+        self.assertNotIn("CCD feed (per-deal ingest)", h)   # old overclaim
+
     def test_live_render_includes_interpretability_elements(self):
         # PR #240 rewrote the "What this shows" callout + the
         # ">0.7 = usable" hero threshold copy into the editorial
