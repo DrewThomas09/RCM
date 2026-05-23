@@ -49,8 +49,9 @@ class _Server:
         r = c.getresponse()
         body = r.read().decode("utf-8", "replace")
         status, loc = r.status, r.getheader("Location")
+        cache = r.getheader("Cache-Control")
         c.close()
-        return status, loc, body
+        return status, loc, cache, body
 
     def close(self):
         self.server.shutdown()
@@ -69,22 +70,34 @@ class BasicAuthLoginUXTests(unittest.TestCase):
     def tearDownClass(cls):
         cls.srv.close()
 
-    def test_login_redirects_to_app_under_basic_auth(self):
-        status, loc, _ = self.srv.get("/login")
-        self.assertIn(status, (302, 303))
-        self.assertEqual(loc, "/app")
+    def test_every_login_variant_redirects_to_app(self):
+        # Plain + the stale-error + the next= variants all redirect; the
+        # in-app form never renders under Basic Auth.
+        for path in ("/login", "/login?err=Invalid", "/login?next=/app",
+                     "/login?tab=request&err=Invalid"):
+            status, loc, _, body = self.srv.get(path)
+            self.assertIn(status, (302, 303), path)
+            self.assertEqual(loc, "/app", path)
+            self.assertNotIn("Invalid credentials", body, path)
+            self.assertNotIn("name=\"password\"", body.lower(), path)
+
+    def test_login_redirect_is_not_cached(self):
+        # Cache-Control: no-store so a stale login page can't keep showing.
+        _, _, cache, _ = self.srv.get("/login?err=Invalid")
+        self.assertIsNotNone(cache)
+        self.assertIn("no-store", cache.lower())
 
     def test_app_unauthenticated_is_401(self):
-        status, _, _ = self.srv.get("/app")
+        status, _, _, _ = self.srv.get("/app")
         self.assertEqual(status, 401)
 
     def test_app_authenticated_is_200(self):
-        status, _, _ = self.srv.get("/app", auth_header=self.basic)
+        status, _, _, _ = self.srv.get("/app", auth_header=self.basic)
         self.assertEqual(status, 200)
 
-    def test_marketing_signin_targets_app(self):
-        # The public landing's Sign In CTA points at /app, not the /login form.
-        status, _, body = self.srv.get("/")
+    def test_marketing_ctas_target_app(self):
+        # Sign In AND Open Deal Workspace point at /app, not the /login form.
+        status, _, _, body = self.srv.get("/")
         self.assertEqual(status, 200)
         self.assertIn('href="/app"', body)
         self.assertNotIn("/login?next=/app", body)

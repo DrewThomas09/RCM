@@ -15766,8 +15766,11 @@ class RCMHandler(BaseHTTPRequestHandler):
         # authenticates against DB users and rejects the shared HTTP-Basic
         # credential, which confuses operators. Send them to /app, where the
         # browser's native Basic Auth prompt collects the shared credential.
+        # This runs before any query parsing, so EVERY /login variant
+        # (/login?err=Invalid, /login?next=…, …) redirects — the in-app form
+        # never renders. no_store so a stale login page can't be re-served.
         if self.config.auth_user is not None:
-            return self._redirect("/app")
+            return self._redirect("/app", no_store=True)
         if getattr(self, "_ui_choice", "legacy") == "editorial":
             return self._route_login_page_editorial()
         return self._route_login_page_legacy()
@@ -18764,15 +18767,20 @@ class RCMHandler(BaseHTTPRequestHandler):
             return "diligence"
         return "more"
 
-    def _redirect(self, location: str) -> None:
+    def _redirect(self, location: str, *, no_store: bool = False) -> None:
         """See Other redirect — browser re-GETs the target after form POST.
 
         Carries the standard security headers so a redirect response
         can't be framed or sniffed even before the browser follows it.
+        ``no_store=True`` adds ``Cache-Control: no-store`` so the redirect
+        itself is never cached (used for the Basic-Auth /login -> /app
+        redirect, so a stale login page can't keep showing).
         """
         self.send_response(HTTPStatus.SEE_OTHER)
         self.send_header("Location", location)
         self.send_header("Content-Length", "0")
+        if no_store:
+            self.send_header("Cache-Control", "no-store, must-revalidate")
         self._send_security_headers()
         self.end_headers()
 
