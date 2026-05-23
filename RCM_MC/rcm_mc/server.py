@@ -18823,6 +18823,29 @@ class RCMHandler(BaseHTTPRequestHandler):
 
 # ── Server lifecycle ───────────────────────────────────────────────────────
 
+def _seed_shared_form_user(store: "PortfolioStore", username: str,
+                           password: str) -> None:
+    """Idempotently mirror the shared ``RCM_MC_AUTH`` credential into the
+    ``users`` table so the styled ``/login`` form can authenticate it.
+
+    Form-login mode reuses the entire session-cookie flow, which resolves
+    a session only when a matching ``users`` row exists (the JOIN in
+    ``user_for_session``). So the shared credential must live there.
+
+    We only rotate when the password actually drifted from the env value;
+    rotating on every boot would call ``change_password``, which revokes
+    all live sessions — logging the shared user out on each restart.
+    """
+    from .auth.auth import create_user, verify_password, change_password
+    try:
+        create_user(store, username, password,
+                    display_name=username, role="admin")
+    except ValueError:
+        # Already exists (or invalid). Sync only if the password drifted.
+        if not verify_password(store, username, password):
+            change_password(store, username, password)
+
+
 def build_server(
     *,
     port: int = 8765,
@@ -18831,12 +18854,22 @@ def build_server(
     title: str = "RCM Portfolio",
     host: str = "127.0.0.1",
     auth: Optional[str] = None,
+    auth_ui: Optional[str] = None,
 ) -> Tuple[ThreadingHTTPServer, RCMHandler]:
     """Construct (but don't start) the server + configured handler.
 
     Auth precedence: explicit ``auth`` arg > ``RCM_MC_AUTH`` env var. Either
     must be ``user:pass`` form. None disables auth (the default for local
     laptop use). Writes apply to the handler's class-level config singleton.
+
+    ``auth_ui`` (or the ``RCM_MC_AUTH_UI`` env var) selects how the shared
+    credential is presented:
+
+    - ``"basic"`` (default): HTTP Basic — the browser's native popup.
+    - ``"form"``: the styled in-app ``/login`` page. The shared credential
+      is seeded as a DB user and Basic Auth is left **off** (``auth_user``
+      stays ``None``), so the gate redirects browsers to ``/login`` and the
+      existing session/cookie flow authenticates them — no native popup.
     """
     if db_path:
         RCMHandler.config.db_path = db_path
@@ -18847,10 +18880,25 @@ def build_server(
     RCMHandler.config.auth_user = None
     RCMHandler.config.auth_pass = None
     auth_raw = auth or os.environ.get("RCM_MC_AUTH")
+    auth_ui_mode = (auth_ui or os.environ.get("RCM_MC_AUTH_UI")
+                    or "basic").strip().lower()
     if auth_raw and ":" in auth_raw:
         u, _, p = auth_raw.partition(":")
-        RCMHandler.config.auth_user = u
-        RCMHandler.config.auth_pass = p
+        if auth_ui_mode == "form":
+            # Styled form-login: don't set auth_user (no Basic popup);
+            # seed the shared credential as a DB user so /login works.
+            try:
+                _seed_shared_form_user(
+                    PortfolioStore(RCMHandler.config.db_path), u, p)
+            except Exception as _seed_exc:  # noqa: BLE001
+                import sys as _sys
+                _sys.stderr.write(
+                    "[rcm-mc] WARNING: could not seed RCM_MC_AUTH form-login "
+                    f"user: {_seed_exc}\n")
+                _sys.stderr.flush()
+        else:
+            RCMHandler.config.auth_user = u
+            RCMHandler.config.auth_pass = p
 
     # SO_REUSEADDR so successive starts don't fail on TIME_WAIT
     socketserver.TCPServer.allow_reuse_address = True
@@ -18900,13 +18948,14 @@ def run_server(
     host: str = "127.0.0.1",
     open_browser: bool = False,
     auth: Optional[str] = None,
+    auth_ui: Optional[str] = None,
 ) -> None:
     """Start the server and block until Ctrl+C."""
     import time as _boot_time
     _boot_start = _boot_time.perf_counter()
     server, _ = build_server(
         port=port, db_path=db_path, outdir=outdir, title=title, host=host,
-        auth=auth,
+        auth=auth, auth_ui=auth_ui,
     )
     url = f"http://{host}:{port}/"
     from . import __version__
@@ -18923,9 +18972,17 @@ def run_server(
     sys.stdout.write(f"  deals:        {deal_count}\n")
     if RCMHandler.config.outdir:
         sys.stdout.write(f"  outputs dir:  {RCMHandler.config.outdir}\n")
+    _auth_ui_mode = (auth_ui or os.environ.get("RCM_MC_AUTH_UI")
+                     or "basic").strip().lower()
+    _shared_cred = auth or os.environ.get("RCM_MC_AUTH")
     if RCMHandler.config.auth_user:
         sys.stdout.write(
             f"  auth:         HTTP Basic as {RCMHandler.config.auth_user}\n"
+        )
+    elif _auth_ui_mode == "form" and _shared_cred and ":" in _shared_cred:
+        _form_user = _shared_cred.partition(":")[0]
+        sys.stdout.write(
+            f"  auth:         styled /login form as {_form_user}\n"
         )
     else:
         # Open-mode advisory. Open mode (no Basic auth + no DB users)
@@ -18998,12 +19055,20 @@ def main(argv: Optional[list] = None, prog: str = "rcm-mc serve") -> int:
             "RCM_MC_AUTH env var. Leave unset for single-user laptop."
         ),
     )
+    ap.add_argument(
+        "--auth-ui", default=None, choices=["basic", "form"],
+        help=(
+            "How the shared credential is presented: 'basic' (native "
+            "browser popup, default) or 'form' (styled in-app /login "
+            "page). Also read from RCM_MC_AUTH_UI env var."
+        ),
+    )
     args = ap.parse_args(argv)
 
     run_server(
         port=args.port, host=args.host,
         db_path=args.db, outdir=args.outdir,
         title=args.title, open_browser=args.open_browser,
-        auth=args.auth,
+        auth=args.auth, auth_ui=args.auth_ui,
     )
     return 0
