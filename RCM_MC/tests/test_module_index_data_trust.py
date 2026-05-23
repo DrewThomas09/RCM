@@ -1,10 +1,11 @@
-"""The /module-index shows per-module data-source trust badges.
+"""The /module-index shows a data-lineage status dot for EVERY module.
 
-Each module is tagged LIVE (realized-deal corpus) / CMS (public data) /
-ILLUSTRATIVE (representative template) per docs/PEDESK_UNDERSTANDING/08,
-so a partner sees at a glance which surfaces are sourced vs templates.
-Routes with an uncertain classification carry NO badge (honest silence
-over a wrong label).
+Each module carries a colored dot — LIVE (realized-deal corpus / live
+portfolio), CMS (public data), or ILLUSTRATIVE (representative template) —
+from the shared resolver in rcm_mc.ui.tool_status. Unlike the prior
+honest-silence map, every module now resolves to an explicit status; an
+unaudited route defaults conservatively to ILLUSTRATIVE (never overclaims
+live). Classifications + audit reasons live in tool_status._OVERRIDE.
 """
 from __future__ import annotations
 
@@ -21,16 +22,25 @@ class ModuleIndexDataTrustTests(unittest.TestCase):
         self.assertIn("Live", _source_badge("/base-rates"))
         self.assertIn("CMS", _source_badge("/cms-data-browser"))
         self.assertIn("Illustrative", _source_badge("/locum-tracker"))
-        # Unmapped / uncertain route → no badge (honest silence).
-        self.assertEqual(_source_badge("/platform-maturity"), "")
-        self.assertEqual(_source_badge("/some-unknown-route"), "")
+        # Previously-unmapped routes now resolve explicitly (no blank badge).
+        self.assertIn("Illustrative", _source_badge("/platform-maturity"))
+        # Safe default: an unknown route underclaims as illustrative.
+        self.assertIn("Illustrative", _source_badge("/some-unknown-route"))
 
-    def test_page_renders_badges_and_legend(self):
+    def test_every_badge_is_a_status_dot(self):
+        # No empty badges anymore — every call yields an accessible dot.
+        for route in ("/base-rates", "/platform-maturity", "/some-unknown-route"):
+            badge = _source_badge(route)
+            self.assertIn("tool-status-dot", badge)
+            self.assertIn("aria-label=", badge)
+
+    def test_page_renders_dots_and_legend(self):
         html = render_module_index({})
         self.assertIn("dir-trust-legend", html)
-        self.assertIn('class="dir-src"', html)
+        self.assertIn('class="tool-status-dot"', html)
+        self.assertIn(".tool-status-dot{", html)        # scoped CSS present
         self.assertIn("realized-deal corpus", html)
-        # a live and an illustrative module both surface their tag
+        # both a live and an illustrative module surface their label
         self.assertIn("Live", html)
         self.assertIn("Illustrative", html)
 
