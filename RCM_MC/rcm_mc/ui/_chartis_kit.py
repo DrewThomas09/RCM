@@ -3353,6 +3353,9 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "payer-stress",  "title": "Payer Stress",       "route": "/diligence/payer-stress"},
     {"id": "ic-packet",     "title": "IC Packet",          "route": "/diligence/ic-packet"},
     {"id": "engagements",   "title": "Engagements",        "route": "/engagements"},
+    {"id": "sector-intel",  "title": "Sector Intelligence","route": "/sector-intelligence"},
+    {"id": "home-health",   "title": "Home Health",        "route": "/home-health"},
+    {"id": "hospice",       "title": "Hospice",            "route": "/hospice"},
     # Library / reference
     {"id": "library",       "title": "Deals Library",      "route": "/library"},
     {"id": "deals-library", "title": "Deals Library (alt)","route": "/deals-library"},
