@@ -27,15 +27,15 @@ class SectorIntelligencePageTests(unittest.TestCase):
         for route in ("/market-data/map", "/portfolio/map", "/diligence/hcris-xray"):
             self.assertIn(route, self.html)
 
-    def test_roadmap_sectors_tagged_and_not_dead_linked(self):
-        # Planned sectors appear with phase tags...
+    def test_live_sectors_link_and_roadmap_sectors_do_not(self):
+        # Home Health + Hospice are now Live and link to real screeners...
         for sector in ("Home Health", "Hospice", "Dental / DSO", "Dialysis"):
             self.assertIn(sector, self.html)
-        self.assertIn("Phase 2", self.html)
+        self.assertIn('href="/home-health"', self.html)
+        self.assertIn('href="/hospice"', self.html)
+        # ...still-roadmap sectors carry NO link to an unbuilt route.
         self.assertIn("not yet built", self.html)
-        # ...but carry NO link to an unbuilt route (honest — no dead links).
-        for dead in ('href="/home-health"', 'href="/hospice"',
-                     'href="/dental"', 'href="/dialysis"'):
+        for dead in ('href="/dental"', 'href="/dialysis"', 'href="/outpatient"'):
             self.assertNotIn(dead, self.html)
 
     def test_data_honesty_labels_present(self):
