@@ -4535,6 +4535,17 @@ _GUIDE_CSS = """
 .ck-guide-a{background:var(--paper,#FAF7F0);border:1px solid var(--ck-border,#d6cfc0);
   border-left:3px solid var(--sc-teal,#155752);border-radius:5px;padding:10px 12px;white-space:pre-wrap;
   line-height:1.55;margin-top:5px;}
+/* Retrieved-source provenance block under an answer. */
+.ck-guide-sources{margin-top:9px;padding-top:8px;border-top:1px solid #ece5d6;}
+.ck-guide-src-head{font-size:11px;text-transform:uppercase;letter-spacing:.04em;font-weight:600;
+  color:var(--ck-text-dim,#5C6878);margin-bottom:5px;}
+.ck-guide-src-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;}
+.ck-guide-src-item{display:flex;align-items:baseline;gap:7px;font-size:12.5px;line-height:1.4;}
+.ck-guide-src-title{font-weight:600;color:var(--sc-navy,#0b2341);}
+.ck-guide-src-type{font-size:10.5px;text-transform:uppercase;letter-spacing:.02em;
+  color:var(--ck-text-dim,#5C6878);}
+.ck-guide-src-score{margin-left:auto;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10.5px;
+  color:var(--ck-text-dim,#5C6878);}
 .ck-guide-a-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:10px;
   font-family:'JetBrains Mono',monospace;color:var(--ck-text-dim,#5C6878);}
 .ck-guide-badge{padding:1px 6px;border-radius:2px;background:var(--sc-teal,#155752);color:#fff;letter-spacing:.05em;}
@@ -4822,11 +4833,18 @@ _GUIDE_JS = """
             (b.context_quality?'<span>quality: '+esc(b.context_quality)+'</span>':'')+'</div>';
           var notes=(b.missing_context_notes&&b.missing_context_notes.length)?
             '<div class="ck-guide-caveat">Missing context: '+esc(b.missing_context_notes.join('; '))+'</div>':'';
-          /* RAG provenance: which Guide sources the answer drew on. */
+          /* RAG provenance: an explicit "Guide context used" block listing
+             each retrieved source — title · type · score — so the answer's
+             grounding is visible, not buried in a comma list. */
           var ragLine='';
           if(b.rag_sources_used&&b.rag_sources_used.length){
-            var titles=b.rag_sources_used.map(function(s){return s.title;}).join(', ');
-            ragLine='<div class="ck-guide-caveat">Guide context used: '+esc(titles)+'</div>';
+            var items=b.rag_sources_used.map(function(s){
+              var typ=s.source_type?'<span class="ck-guide-src-type">'+esc(String(s.source_type).replace(/_/g,' '))+'</span>':'';
+              var sc=(typeof s.score==='number')?'<span class="ck-guide-src-score">'+esc(s.score.toFixed(2))+'</span>':'';
+              return '<li class="ck-guide-src-item"><span class="ck-guide-src-title">'+esc(s.title)+'</span>'+typ+sc+'</li>';
+            }).join('');
+            ragLine='<div class="ck-guide-sources"><div class="ck-guide-src-head">Guide context used</div>'+
+              '<ul class="ck-guide-src-list">'+items+'</ul></div>';
           }
           var ragWarn=b.rag_warning?'<div class="ck-guide-caveat">'+esc(b.rag_warning)+'</div>':'';
           aEl.insertAdjacentHTML('beforeend', notes+ragLine+ragWarn+meta);
