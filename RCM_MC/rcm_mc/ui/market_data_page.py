@@ -470,8 +470,12 @@ def render_market_data(
         state_map_panel = ck_panel(
             render_us_state_map(
                 _state_vals, metric_label=_mlabel, value_format=_vfmt,
+                state_link_template="/market-data/state/{state}",
                 empty_message="No state-level HCRIS data available yet.",
-            ),
+            )
+            + '<p style="font-size:11px;color:var(--sc-text-dim);margin:8px 0 0;">'
+            'State tile-grid map — cells represent states, not geographic area. '
+            'Click a state to drill into its hospitals.</p>',
             title=f"State Map · {_mlabel}",
         )
 

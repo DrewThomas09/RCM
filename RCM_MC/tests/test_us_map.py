@@ -71,5 +71,44 @@ class RendererTests(unittest.TestCase):
         self.assertNotIn('data-state="ZZ"', h)
 
 
+class GeographyAuditDocTests(unittest.TestCase):
+    def test_audit_doc_exists_and_lists_inspected_routes(self):
+        import pathlib
+        doc = (pathlib.Path(__file__).resolve().parents[1]
+               / "docs" / "PEDESK_INTERACTIVE_MAPS.md")
+        self.assertTrue(doc.exists())
+        text = doc.read_text(encoding="utf-8")
+        self.assertIn("Geography data audit", text)
+        for route in ("/portfolio/map", "/market-data/map",
+                      "/rcm-benchmarks", "/payer-intelligence"):
+            self.assertIn(route, text)
+        # honest data-gap notes for the blocked phases
+        self.assertIn("no county FIPS", text)
+        self.assertIn("no latitude/longitude", text)
+
+
+class StateLinkTemplateTests(unittest.TestCase):
+    def test_link_template_adds_drilldown_href(self):
+        h = render_us_state_map(
+            {"CA": 5, "TX": 3}, metric_label="hospitals",
+            state_link_template="/market-data/state/{state}")
+        self.assertIn('data-href="/market-data/state/CA"', h)
+        self.assertIn("window.location.href=href", h)   # JS navigates
+        self.assertIn('tabindex="0"', h)                  # keyboard-focusable
+
+    def test_no_template_keeps_select_behavior(self):
+        h = render_us_state_map({"CA": 5}, metric_label="x")
+        self.assertNotIn('data-href="/', h)               # no cell hrefs
+        self.assertIn("us-map-select", h)                  # selection event kept
+
+    def test_only_states_with_data_are_linked(self):
+        # A state with no metric value is not navigable (no invented link).
+        h = render_us_state_map(
+            {"CA": 5}, metric_label="x",
+            state_link_template="/market-data/state/{state}")
+        self.assertIn('data-href="/market-data/state/CA"', h)
+        self.assertNotIn('data-href="/market-data/state/WY"', h)
+
+
 if __name__ == "__main__":
     unittest.main()
