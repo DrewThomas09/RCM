@@ -4800,6 +4800,7 @@ _GUIDE_JS = """
     if(pending||!q.trim())return;
     pending=true; lastQuestion=q;
     var myseq=++reqSeq;                      /* claim this request */
+    var t0=Date.now();                       /* for elapsed-time feedback */
     var send=$('[data-ck-guide-send]'); if(send) send.disabled=true;
     var aEl=addHistory(q);
     var thinkEl=aEl.querySelector('.ck-guide-thinking');
@@ -4831,8 +4832,10 @@ _GUIDE_JS = """
         if(r.status===200){
           var b=r.body||{};
           aEl.textContent=b.answer||'';      /* textContent: XSS-safe, preserves text */
+          var secs=((Date.now()-t0)/1000).toFixed(1);   /* elapsed, local model */
           var meta='<div class="ck-guide-a-meta"><span class="ck-guide-badge">read-only</span>'+
             (b.model?'<span>'+esc(b.model)+'</span>':'')+
+            '<span>'+secs+'s</span>'+
             (b.context_quality?'<span>quality: '+esc(b.context_quality)+'</span>':'')+'</div>';
           var notes=(b.missing_context_notes&&b.missing_context_notes.length)?
             '<div class="ck-guide-caveat">Missing context: '+esc(b.missing_context_notes.join('; '))+'</div>':'';

@@ -285,6 +285,17 @@ class GuideSidebarPolishTests(unittest.TestCase):
         self.assertIn("esc(b.rag_warning)", self.html)
         self.assertIn(".ck-guide-sources{", self.html)    # CSS present
 
+    def test_latency_feedback_and_slow_note(self):
+        # Elapsed time is captured at ask start and shown in the answer meta.
+        self.assertIn("var t0=Date.now();", self.html)
+        self.assertIn("(Date.now()-t0)/1000", self.html)
+        self.assertIn("+secs+'s</span>'", self.html)
+        # A reassuring slow-response note appears after 10s, still pending.
+        self.assertIn("can take a little while", self.html)
+        self.assertIn("10000", self.html)
+        # Retry re-asks the preserved last question (input not lost on failure).
+        self.assertIn("ask(lastQuestion)", self.html)
+
 
 if __name__ == "__main__":
     unittest.main()

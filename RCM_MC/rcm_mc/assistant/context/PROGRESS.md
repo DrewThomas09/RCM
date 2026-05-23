@@ -1318,3 +1318,16 @@ are skipped; only the first documented metric/source is used (deterministic,
 not noisy); still capped at 8 and deduped, defaults first. New
 `tests/test_guide_suggested_questions.py` (6, deterministic). Context
 endpoint + packet suites green.
+
+---
+
+# Guide quality loop (2026-05-22) — P5: latency feedback
+
+Sidebar JS only. Each ask captures `t0=Date.now()`; on success the answer
+meta now shows elapsed seconds (e.g. "12.3s") next to the model + quality
+chips, so guests get a concrete latency read on this local-model host.
+Confirmed (and locked with tests) the existing latency UX: the pending
+bubble swaps to "Local model responses can take a little while…" after
+10s while still pending, and Retry re-asks the preserved `lastQuestion`
+(input not lost on failure). No streaming added (deferred). New test
+`test_latency_feedback_and_slow_note`. Sidebar shell → 32 passed.
