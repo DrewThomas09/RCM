@@ -131,13 +131,17 @@ def _map_js(cid: str) -> str:
         "tip.style.left=(e.clientX-r.left+12)+'px';tip.style.top=(e.clientY-r.top+12)+'px';});"
         "c.addEventListener('mouseleave',function(){if(tip)tip.style.display='none';});"
         "if(c.getAttribute('data-clickable')==='1'){"
-        "c.addEventListener('click',function(){"
+        "var href=c.getAttribute('data-href');"
+        "function act(){"
+        "if(href){window.location.href=href;return;}"
         "root.querySelectorAll('.usm-cell.usm-selected').forEach(function(o){o.classList.remove('usm-selected');});"
         "c.classList.add('usm-selected');"
         "var ab=c.getAttribute('data-state');"
         "if(sel)sel.textContent=c.getAttribute('data-tip')||ab;"
-        "root.dispatchEvent(new CustomEvent('us-map-select',{detail:{state:ab},bubbles:true}));"
-        "});}"
+        "root.dispatchEvent(new CustomEvent('us-map-select',{detail:{state:ab},bubbles:true}));}"
+        "c.addEventListener('click',act);"
+        "c.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();act();}});"
+        "}"
         "});})();</script>"
     )
 
@@ -152,12 +156,18 @@ def render_us_state_map(
     accent_label: Optional[str] = None,
     selected_state: Optional[str] = None,
     clickable: bool = True,
+    state_link_template: Optional[str] = None,
     empty_message: Optional[str] = None,
 ) -> str:
     """Render the state tile-grid cartogram as a self-contained HTML block.
 
     ``state_values`` maps UPPER-CASE postal abbreviation -> metric value.
     States absent from it render as "no data" (neutral), never invented.
+
+    ``state_link_template`` (e.g. ``"/market-data/state/{state}"``): when set,
+    clicking/Enter on a state with data navigates to that URL (drilldown).
+    Without it, clicking selects the state (fills any ``[data-us-map-selected]``
+    element + emits a ``us-map-select`` event).
     """
     values = {
         str(k).upper(): float(v)
@@ -192,11 +202,20 @@ def render_us_state_map(
             classes += " usm-accent"
         if abbr == selected:
             classes += " usm-selected"
-        clickable_attr = "1" if (clickable and val is not None) else "0"
+        is_clickable = bool(clickable and val is not None)
+        clickable_attr = "1" if is_clickable else "0"
         tip_esc = _html.escape(tip, quote=True)
+        href_attr = ""
+        kbd_attr = ""
+        if is_clickable and state_link_template:
+            href = state_link_template.format(state=abbr)
+            href_attr = f' data-href="{_html.escape(href, quote=True)}"'
+            # a navigable cell is keyboard-focusable + announces the action
+            kbd_attr = (f' tabindex="0" aria-label="{tip_esc} — open detail"'
+                        f' data-tip="{tip_esc}"')
         cells.append(
             f'<g class="{classes}" data-state="{abbr}" '
-            f'data-clickable="{clickable_attr}" '
+            f'data-clickable="{clickable_attr}"{href_attr}{kbd_attr} '
             f'data-tip="{tip_esc}" role="img" aria-label="{tip_esc}">'
             f'<rect class="usm-rect" x="{x}" y="{y}" '
             f'width="{_CELL}" height="{_CELL}" fill="{_shade(val, lo, hi)}"/>'

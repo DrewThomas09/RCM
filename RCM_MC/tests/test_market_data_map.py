@@ -49,6 +49,12 @@ class MarketDataMapTests(unittest.TestCase):
         for bad in ("mapbox", "maps.googleapis", "leaflet"):
             self.assertNotIn(bad, low)
 
+    def test_state_cells_drill_into_state_detail(self):
+        html = render_market_data(_hcris(), metric="hospitals")
+        self.assertIn('data-href="/market-data/state/CA"', html)
+        # honest tile-grid disclosure
+        self.assertIn("cells represent states, not geographic area", html)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -36,6 +36,42 @@ coastline map.
 Rule: wire the map only where a page already has state-keyed data. Pages
 without it keep their tables unchanged — no forced/empty map.
 
+`/market-data/map` cells now **drill down**: clicking a state navigates to
+`/market-data/state/<ST>` (its hospital detail), which links back to the
+national view. Enabled by the renderer's `state_link_template` option.
+
+## Geography data audit
+
+What geographic keys each candidate route actually has, and the honest map
+type it can support today.
+
+| Route | Geography present | Best map type | Status |
+|-------|-------------------|---------------|--------|
+| `/portfolio/map` | deal `state` | state_tile_grid | ✅ wired |
+| `/market-data/map` | HCRIS per-`state` aggregates | state_tile_grid (+ drilldown) | ✅ wired |
+| `/market-data/state/<ST>` | single state + hospital list (CCN/name/city/county/zip) | single_state_summary | ✅ already has hospital list + national back-link |
+| `/diligence/hcris-xray` | one target hospital + peers (`state`, "same-state" flag) | not_applicable | single-target, no multi-state aggregate |
+| `/market-intel` | none | not_applicable | no state key |
+| `/payer-intelligence` | none | not_applicable | payer data not keyed by state |
+| `/rcm-benchmarks` | facility-type/segment bands | not_applicable | no state dimension |
+| `/screen` · `/deal-screening` | hospital rows incl. `state` | state_tile_grid_future | possible later (counts by state) |
+| `/portfolio/risk-scan` · `/portfolio/monitor` | no per-item `state` today | not_applicable | needs state on portfolio items |
+| county view (any) | HCRIS `county` **name** only | county_drilldown_future | **blocked**: no county FIPS + no county geometry asset |
+| hospital points (any) | HCRIS CCN/name/city/state/zip/county | hospital_points_future | **blocked**: no lat/lon (and no ZIP/CCN→lat-lon lookup) |
+
+### Concrete data gaps (what unlocks the next phases)
+
+- **Boundary choropleth (Phase 2):** vendor a local `us-states`
+  GeoJSON/TopoJSON asset (see below). Nothing else missing.
+- **County map:** HCRIS carries a `county` *name* + `state`, but **no county
+  FIPS** and there is **no county geometry asset**. Need both: a
+  county-name/state → FIPS mapping *and* a simplified county boundary asset.
+- **Hospital points:** HCRIS has CCN, name, city, state, zip, county — but
+  **no latitude/longitude**. Need either per-facility lat/lon, or a
+  ZIP-centroid / CCN→lat-lon lookup table (with provenance). Until then a
+  hospital-location map would be fabricated and must not be built.
+- **MSA/CBSA region map:** no MSA/CBSA identifiers on these pages today.
+
 ## Future phases (hooks — not yet built)
 
 These need data and/or assets that don't exist in-repo yet. Build in order:
