@@ -143,3 +143,21 @@ Setup details name the cause, or run the preflight:
 | embed model missing | `ollama pull nomic-embed-text` |
 | index missing/empty | `PEDESK_GUIDE_RAG_ENABLED=true ./scripts/build_guide_rag_index.sh` |
 | answers slow | this is expected (~20s on a laptop); raise `PEDESK_GUIDE_OLLAMA_TIMEOUT_SECONDS` |
+
+### If guests can't connect (LAN hosting)
+
+Work down this list — the cause is almost always one of the first three:
+
+| Check | How to confirm / fix |
+|-------|----------------------|
+| Same Wi-Fi? | Guest device must be on the **same network** as the Mac (no guest/IoT VLAN isolation). |
+| Server bound to all interfaces? | Start with `--host 0.0.0.0` (not the `127.0.0.1` default). Confirm: `lsof -nP -iTCP:8080 -sTCP:LISTEN` shows `*:8080`, not `127.0.0.1:8080`. |
+| Right Mac IP? | `ipconfig getifaddr en0` — the LAN IP **changes** between networks/DHCP leases; re-share it. |
+| Correct password? | Guests use the `user:pass` from `.pedesk_host_auth.env`. A 401 means wrong/missing credentials, not a connection problem. |
+| macOS firewall blocking? | System Settings → Network → Firewall. If on, allow incoming connections for the Python process (or test with it off). |
+| Server still running? | The host stops if you close its Terminal or the Mac sleeps — keep the window open and use `caffeinate -dimsu`. |
+| Hitting Ollama by mistake? | Guests connect to **PEdesk on :8080**, never to Ollama on 11434. Do **not** expose 11434, and do **not** port-forward 8080 to the public internet. |
+
+For access beyond the local Wi-Fi, use **Tailscale** (a private mesh) and
+share the Mac's Tailscale IP instead of the LAN IP — never a public/
+port-forwarded address.
