@@ -44,7 +44,7 @@ def _landing() -> str:
         + ck_page_explainer(
             'Claim-level denial prediction from CCD data.',
             "Predicts the per-claim probability of a payer denial using the platform's ML denial model on the deal's CCD (consolidated clinical document) feed. Used to size the recoverable revenue from a denial-management initiative before underwriting it into the EBITDA bridge.",
-            source='CCD feed (per-deal ingest) + denial ML model (rcm_mc.ml.denial_model — live).',
+            source='Selected CCD fixture (sample claims, not a live per-deal feed) + denial ML model trained live on it (rcm_mc.ml.denial_model). Fixture data is for methodology — verify against the target’s own CCD before IC use.',
         )
     )
     explainer_html = (
