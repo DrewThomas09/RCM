@@ -224,5 +224,47 @@ class PromptContextTests(unittest.TestCase):
         self.assertIn("Guide context used:", citation_line(self._results()))
 
 
+class RetrievalDedupeTests(unittest.TestCase):
+    """The per-source diversity cap (search() over-fetches then trims)."""
+
+    def _r(self, title, stype, score, **ids):
+        return RagSearchResult(title=title, source_type=stype, text="x",
+                               score=score, **ids)
+
+    def test_caps_chunks_per_source(self):
+        from rcm_mc.assistant.rag.retrieval import dedupe_keep_diverse
+        # Three chunks from the same doc would otherwise dominate the top-3.
+        results = [
+            self._r("Denial doc", "doc", 0.95, source_id="d1"),
+            self._r("Denial doc", "doc", 0.94, source_id="d1"),
+            self._r("Denial doc", "doc", 0.93, source_id="d1"),
+            self._r("Denial Rate", "metric", 0.80, metric_id="denial_rate"),
+        ]
+        out = dedupe_keep_diverse(results, k=3, per_source=2)
+        # at most 2 from the doc, leaving room for the metric source
+        self.assertEqual(len(out), 3)
+        self.assertEqual(sum(1 for r in out if r.source_id == "d1"), 2)
+        self.assertIn("denial_rate", [r.metric_id for r in out])
+
+    def test_preserves_score_order_and_k(self):
+        from rcm_mc.assistant.rag.retrieval import dedupe_keep_diverse
+        results = [
+            self._r("A", "metric", 0.9, metric_id="a"),
+            self._r("B", "metric", 0.8, metric_id="b"),
+            self._r("C", "metric", 0.7, metric_id="c"),
+        ]
+        out = dedupe_keep_diverse(results, k=2, per_source=2)
+        self.assertEqual([r.title for r in out], ["A", "B"])
+
+    def test_distinct_sources_not_dropped(self):
+        from rcm_mc.assistant.rag.retrieval import dedupe_keep_diverse
+        results = [
+            self._r("A", "metric", 0.9, metric_id="a"),
+            self._r("B", "data_source", 0.8, data_source_id="b"),
+        ]
+        out = dedupe_keep_diverse(results, k=5, per_source=2)
+        self.assertEqual(len(out), 2)
+
+
 if __name__ == "__main__":
     unittest.main()

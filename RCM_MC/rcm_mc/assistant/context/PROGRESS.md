@@ -1288,3 +1288,18 @@ showing nothing; a present `rag_warning` is still surfaced gently below.
 All values escaped via `esc()`; textContent answer rendering and all
 guards unchanged. New `.ck-guide-src-group` CSS; updated
 `test_surfaces_rag_sources_and_warning`. Sidebar shell → 31 passed.
+
+---
+
+# Guide quality loop (2026-05-22) — P3: retrieval source diversity
+
+`retrieval.search()` now over-fetches candidates (k×3, capped 50) and
+applies `dedupe_keep_diverse`: at most 2 chunks from any one registry
+source (by source_type + metric/data_source/route/source id), preserving
+score order. A long doc or verbose metric entry can no longer occupy
+several top slots and crowd out other useful sources, so answers see more
+source-type variety. No new data ingested; current-page packet stays
+primary (assembled in the prompt builder, not here). New pure-function
+tests (`RetrievalDedupeTests`, 3) — no Ollama needed. RAG unit (22) + RAG
+endpoints (14) green. Deferred (overfitting risk): metric-alias exact-hit
+boosting for "what does X mean?" queries.
