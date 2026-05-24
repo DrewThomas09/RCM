@@ -84,6 +84,7 @@ def render_app_page(
     selected_stage: Optional[str] = None,
     phi_mode: Optional[str] = None,
     user: Optional[str] = None,
+    layout: Optional[str] = None,
 ) -> str:
     """Compose the editorial /app dashboard.
 
@@ -134,6 +135,30 @@ def render_app_page(
         deals_df[deals_df["stage"].astype(str).isin(["hold", "exit"])]
         if not deals_df.empty else None
     )
+
+    # ── Parallel dossier-grid preview (/app?layout=grid) ──
+    # Shipped behind a flag so the live flat-scroll /app is untouched while
+    # the redesigned 12-column grid is validated on the flagship page.
+    # Reuses the data already fetched above (no extra queries).
+    if (layout or "").lower() == "grid":
+        from ._app_grid import APP_GRID_CSS, render_app_grid
+        return editorial_chartis_shell(
+            render_app_grid(
+                store=store, rollup=rollup, deals_df=deals_df,
+                focused_deal_id=focused_deal_id,
+                selected_stage=selected_stage, focused_packet=focused_packet,
+            ),
+            title="Command center",
+            active_nav="PORTFOLIO",
+            breadcrumbs=[("Home", "/"), ("Portfolio & diligence", None),
+                         ("Command center", None)],
+            show_chrome=True,
+            show_phi_banner=True,
+            phi_mode=phi_mode,
+            show_sidebar=True,
+            sidebar_active_path="",
+            extra_css=APP_GRID_CSS,
+        )
 
     # Mode-aware page framing (two-view L1 lexicon): the PE-partner view
     # frames this as a fund-level command center; the Chartis Consulting
