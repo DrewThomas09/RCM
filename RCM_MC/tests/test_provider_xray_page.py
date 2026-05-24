@@ -57,6 +57,14 @@ class RenderTests(unittest.TestCase):
         self.assertIn("leading signals, not forecasts", h)
         self.assertIn("NOT trained predictive models", h)
 
+    def test_shares_hcris_xray_kit_grammar(self):
+        # Part 3: CMS X-Ray uses the shared xray_kit (navy ribbons + .xr scope
+        # + kit tokens) so it matches HCRIS X-Ray, not a generic sector table.
+        h = render_provider_xray({"ccn": _tx_snf(), "vertical": "nursing-homes"})
+        self.assertIn('<div class="xr">', h)
+        self.assertIn("xr-ribbon", h)
+        self.assertIn("--xr-navy:#0d2336", h)   # kit tokens resolve in .xr scope
+
     def test_not_found_is_honest(self):
         h = render_provider_xray({"q": "ZZZZZZ"})
         self.assertIn("No match", h)

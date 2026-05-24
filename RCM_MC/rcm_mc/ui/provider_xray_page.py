@@ -231,9 +231,14 @@ def _risk_sev(level: str) -> str:
 
 
 def render_xray_report(report: ProviderXrayReport) -> str:
-    from ._chartis_kit import (
-        chartis_shell, ck_page_title, ck_panel, ck_section_intro,
-    )
+    from ._chartis_kit import chartis_shell, ck_page_title
+    from . import xray_kit as k
+
+    def _section(tag: str, body: str, ribsub: str = "") -> str:
+        # HCRIS-X-Ray-style section: navy ribbon header + paper card body, so
+        # CMS X-Ray shares the same visual grammar (not a generic sector table).
+        return k.xr_ribbon(tag, ribsub) + f'<div class="xr-card">{body}</div>'
+
     m = report.match
     title = ck_page_title(
         "CMS X-Ray", eyebrow=f"DILIGENCE · {_e(m.vertical_label).upper()}",
@@ -260,13 +265,15 @@ def render_xray_report(report: ProviderXrayReport) -> str:
     )
     signals = f'<div class="ck-xr-signals">{sig_cards}</div>'
 
-    bench = ck_panel(_bench_table(report), title="Peer benchmarks")
+    bench = _section("Peer benchmarks", _bench_table(report),
+                     ribsub="NATIONAL · STATE · LOCALITY · OWNERSHIP")
 
     # Market context (when available)
     mk = report.market
     if mk is not None:
         own = ", ".join(f"{_e(lbl)} ({n})" for lbl, n in mk.ownership_mix[:4])
-        market = ck_panel(
+        market = _section(
+            f"Market context · {_e(mk.state)}",
             f'<p>{mk.provider_count} {_e(mk.sector_label)} providers in '
             f'{_e(mk.state)} across {mk.locality_count} localities · state '
             f'median {mk.headline_median}{_e(mk.headline_suffix)} '
@@ -275,29 +282,28 @@ def render_xray_report(report: ProviderXrayReport) -> str:
             f'<p class="ck-xr-prov">Ownership mix: {own or "—"} · ownership-count '
             f'HHI {mk.ownership_hhi if mk.ownership_hhi is not None else "—"} · '
             f'locality HHI {mk.locality_hhi if mk.locality_hhi is not None else "—"} '
-            '(composition proxy, not market share).</p>',
-            title=f"Market context · {_e(mk.state)}")
+            '(composition proxy, not market share).</p>')
     else:
         market = ""
 
-    questions = ck_panel(
-        "".join(f'<p class="ck-xr-q">{_e(q)}</p>' for q in report.suggested_questions),
-        title="Suggested diligence questions")
+    questions = _section(
+        "Suggested diligence questions",
+        "".join(f'<p class="ck-xr-q">{_e(q)}</p>' for q in report.suggested_questions))
 
-    caveats = ck_panel(
-        "".join(f'<p class="ck-xr-q">{_e(c)}</p>' for c in report.caveats),
-        title="Evidence & limitations")
+    caveats = _section(
+        "Evidence & limitations",
+        "".join(f'<p class="ck-xr-q">{_e(c)}</p>' for c in report.caveats))
 
     note = (f'<p class="ck-xr-empty">{_e(report.note)}</p>') if report.note else ""
 
-    risk = (ck_panel(_risk_section(report),
-                     title="Risk indicators · leading signals, not forecasts")
+    risk = (_section("Risk indicators · leading signals, not forecasts",
+                     _risk_section(report))
             if report.risk_indicators else "")
 
-    body = (title + identity + signals + note + bench + risk + market
-            + questions + caveats)
+    body = ('<div class="xr">' + title + identity + signals + note + bench
+            + risk + market + questions + caveats + '</div>')
     return chartis_shell(body, f"CMS X-Ray · {_e(m.name)}",
-                         active_nav="/diligence", extra_css=_XRAY_CSS)
+                         active_nav="/diligence", extra_css=_XRAY_CSS + k.XRAY_CSS)
 
 
 def render_provider_xray(qs: dict) -> str:
