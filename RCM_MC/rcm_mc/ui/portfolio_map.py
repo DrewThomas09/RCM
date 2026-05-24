@@ -1,16 +1,17 @@
 """Geographic portfolio map.
 
-Route: GET /portfolio/map. Renders the reusable US state tile-grid
-cartogram (rcm_mc.ui.us_map), shading each state by the number of
-portfolio deals located there and flagging Certificate-of-Need (CON)
-jurisdictions, inside the editorial "investment dossier" layout from the
-Claude handoff (~/Desktop/portfolio_map_redesign): a filter bar, a live
-4-cell stats strip, a click-to-select state detail panel, and a Top
-Exposures ranking. Local/static — no external map tiles, APIs, or geocoding.
+Route: GET /portfolio/map. Renders a real geographic US state map
+(rcm_mc.ui.us_geo_map — vendored Albers-projected Census boundaries),
+shading each state by the number of portfolio deals located there and
+flagging Certificate-of-Need (CON) jurisdictions, inside the editorial
+"investment dossier" layout from the Claude handoff
+(~/Desktop/portfolio_map_redesign): a filter bar, a live 4-cell stats strip,
+a click-to-select state detail panel, and a Top Exposures ranking.
+Local/static — no external map tiles, APIs, or geocoding.
 
 Honesty: every number is computed from real portfolio deals that carry a
 state. With no such deals the page renders the handoff's empty states (the
-cartogram still draws, all cells neutral). Sector / Revenue / Headcount
+map still draws, every state in the no-data shade). Sector / Revenue / Headcount
 controls are shown for layout fidelity but disabled, because portfolio deals
 carry no sector / revenue / headcount geography fields today — they are never
 faked.
@@ -135,7 +136,8 @@ def render_portfolio_map(
 ) -> str:
     """Full-page HTML with the editorial dossier portfolio map (handoff)."""
     from ._chartis_kit import chartis_shell, ck_next_section, ck_page_title
-    from .us_map import STATE_NAMES, render_us_state_map
+    from .us_map import STATE_NAMES
+    from .us_geo_map import render_us_geo_map
 
     # ── Real per-state aggregation (never fabricated) ───────────────────────
     state_counts: Dict[str, int] = {}
@@ -157,7 +159,7 @@ def render_portfolio_map(
     total_mapped = sum(state_counts.values())
     coverage_pct = round(100 * n_states / 51) if n_states else 0
 
-    map_html = render_us_state_map(
+    map_html = render_us_geo_map(
         {k: float(v) for k, v in state_counts.items()},
         metric_label="deals",
         state_notes=notes,
@@ -189,12 +191,13 @@ def render_portfolio_map(
     explainer = (
         '<p class="ck-pm-explainer">'
         '<em>Where the portfolio sits, state by state.</em> '
-        "Each state is an equal-size tile in its <em>approximate geographic "
-        "position</em>, shaded by how many portfolio deals sit there. Tiles "
-        "outlined in <em>amber</em> are Certificate-of-Need (CON) "
-        "jurisdictions, where new market entry needs regulatory approval. "
-        "Hover a state for detail; click to select it. This is an approximate "
-        "state layout — not a precise or coastline map."
+        "Each state is drawn in its <em>real geographic shape</em> and shaded "
+        "by how many portfolio deals sit there. States outlined in "
+        "<em>amber</em> are Certificate-of-Need (CON) jurisdictions, where new "
+        "market entry needs regulatory approval. Hover a state for detail; "
+        "click to select it. Alaska and Hawaii appear as bottom-left insets — "
+        "an Albers projection of US Census boundaries, not a coastline-precise "
+        "or facility-location map."
         '</p>'
     )
 
@@ -359,7 +362,7 @@ _PM_JS = """
  function applyDim(){
    var conOnly=toggle&&toggle.getAttribute('aria-pressed')==='true';
    var q=(search&&search.value||'').trim().toUpperCase();
-   document.querySelectorAll('.usm-cell').forEach(function(c){
+   document.querySelectorAll('.usgeo-state').forEach(function(c){
      var st=(c.getAttribute('data-state')||'').toUpperCase();
      var nm=((D.names&&D.names[st])||st).toUpperCase();
      var ok=true;
