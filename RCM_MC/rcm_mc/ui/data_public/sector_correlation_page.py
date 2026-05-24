@@ -10,6 +10,7 @@ import math
 from typing import Any, Dict, List, Optional, Tuple
 
 from rcm_mc.ui._chartis_kit import (
+    ck_illustrative_note,
     P, chartis_shell, ck_section_header, ck_kpi_block,
 )
 
@@ -302,8 +303,7 @@ def render_sector_correlation(params: Dict[str, str]) -> str:
 </p>
 """
 
-    return chartis_shell(
-        body,
+    return chartis_shell(ck_illustrative_note("sector-correlation figures — built from the bundled illustrative seed deals, not your ingested portfolio") + body,
         title="Sector Correlation Matrix",
         active_nav="/sector-correlation",
         subtitle="Pairwise MOIC correlations across healthcare sectors — portfolio diversification lens",
