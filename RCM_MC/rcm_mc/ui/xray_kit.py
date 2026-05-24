@@ -80,6 +80,45 @@ XRAY_CSS = """
  text-transform:uppercase;color:var(--xr-muted);margin-top:8px;}
 .xr-empty{font-family:var(--xr-serif);font-style:italic;color:var(--xr-muted);}
 .xr-band{display:block;}
+/* Results A-v2 primitives */
+.xr-trend{display:block;}
+.xr-trend-svg{display:block;height:auto;}
+.xr-trend-empty{padding:8px 0;}
+.xr-trend-x{display:flex;justify-content:space-between;font-family:var(--xr-mono);
+ font-size:9px;letter-spacing:.1em;color:var(--xr-muted);margin-top:2px;}
+.xr-spark{display:inline-block;vertical-align:middle;}
+.xr-payer{margin:0 0 12px;}
+.xr-payer-lab{font-family:var(--xr-mono);font-size:9.5px;letter-spacing:.12em;
+ text-transform:uppercase;color:var(--xr-muted);margin-bottom:4px;display:flex;
+ justify-content:space-between;}
+.xr-payer-sub{color:var(--xr-muted2);}
+.xr-payer-bar{display:flex;height:38px;border:1px solid var(--xr-rule);
+ background:var(--xr-paper3);overflow:hidden;}
+.xr-payer-seg{display:flex;align-items:center;justify-content:center;
+ border-right:1px solid var(--xr-paper);min-width:0;}
+.xr-payer-seg:last-child{border-right:0;}
+.xr-payer-seg-t{font-family:var(--xr-mono);font-size:11px;color:#fff;}
+.xr-payer-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;
+ font-family:var(--xr-mono);font-size:9.5px;letter-spacing:.06em;color:var(--xr-muted);}
+.xr-payer-leg i{display:inline-block;width:8px;height:8px;margin-right:5px;vertical-align:baseline;}
+.xr-dev{background:var(--xr-paper);border:1px solid var(--xr-rule);padding:14px;}
+.xr-dev-state{font-family:var(--xr-mono);font-size:9px;letter-spacing:.14em;
+ text-transform:uppercase;color:var(--xr-muted);}
+.xr-dev-title{font-family:var(--xr-serif);font-style:italic;font-size:15px;color:var(--xr-ink);margin:2px 0 6px;}
+.xr-dev-val{font-family:var(--xr-serif);font-size:26px;line-height:1;color:var(--xr-ink);margin-bottom:8px;}
+.xr-dev-delta{font-family:var(--xr-mono);font-size:11px;font-weight:600;margin-left:8px;}
+.xr-dev-div{border-top:1px dashed var(--xr-rule);margin:10px 0 6px;}
+.xr-dev-trendlab{font-family:var(--xr-mono);font-size:9px;letter-spacing:.14em;
+ text-transform:uppercase;color:var(--xr-muted);margin-bottom:4px;}
+.xr-dev-cap{font-family:var(--xr-serif);font-style:italic;font-size:11.5px;color:var(--xr-muted);margin-top:4px;}
+.xr-bridge{display:block;}
+.xr-bridge-rec{font-family:var(--xr-serif);font-size:24px;color:var(--xr-green-deep);
+ line-height:1.1;margin:0 0 10px;}
+.xr-bridge-row{display:grid;grid-template-columns:190px 1fr 150px;align-items:center;
+ gap:10px;padding:6px 0;border-bottom:1px dashed var(--xr-rule);}
+.xr-bridge-lab{font-family:var(--xr-serif);font-size:13px;color:var(--xr-ink2);}
+.xr-bridge-track{display:block;}
+.xr-bridge-val{font-family:var(--xr-mono);font-size:11px;text-align:right;color:var(--xr-ink2);}
 """
 
 # Peer-band target states → diamond fill.
@@ -189,3 +228,192 @@ def xr_benchmark_table(rows: Sequence[dict], headers: Sequence[str]) -> str:
         body += f"<tr>{tds}</tr>"
     return (f'<table class="xr-tbl"><thead><tr>{thead}</tr></thead>'
             f'<tbody>{body}</tbody></table>')
+
+
+# ────────────────────────────────────────────────────────────────────
+# Results-page primitives (handoff Results A-v2). All pure SVG/HTML, scoped
+# `.xr-*`, honest empty states, no fabricated geometry — they plot exactly the
+# values the caller passes (which come from the real HCRIS engine).
+# ────────────────────────────────────────────────────────────────────
+
+def _series_minmax(*series: Sequence[float]) -> Tuple[float, float]:
+    vals = [v for s in series for v in s if v is not None]
+    if not vals:
+        return 0.0, 1.0
+    lo, hi = min(vals), max(vals)
+    if hi == lo:
+        hi = lo + 1.0
+    pad = (hi - lo) * 0.18
+    return lo - pad, hi + pad
+
+
+def _poly_points(pts: Sequence[float], lo: float, hi: float,
+                 w: float, h: float, pad: float = 4.0) -> str:
+    n = len(pts)
+    if n < 2 or hi <= lo:
+        return ""
+    span = (w - 2 * pad) / (n - 1)
+    out = []
+    for i, v in enumerate(pts):
+        if v is None:
+            continue
+        x = pad + i * span
+        y = h - pad - (h - 2 * pad) * _clamp01((v - lo) / (hi - lo))
+        out.append(f"{x:.1f},{y:.1f}")
+    return " ".join(out)
+
+
+def xr_trend_chart(target: Sequence[float], peer: Optional[Sequence[float]] = None,
+                   *, unit: str = "", w: int = 460, h: int = 150,
+                   show_axes: bool = True, labels: Optional[Sequence[str]] = None) -> str:
+    """Two-line trend: target (red solid) + optional peer-median (ink dashed).
+
+    Renders target-only when ``peer`` is absent/too sparse and surfaces a
+    "peer trend unavailable" note — never a fabricated peer line. Empty target
+    series → honest empty state.
+    """
+    tgt = [v for v in (target or [])]
+    if len([v for v in tgt if v is not None]) < 2:
+        return ('<div class="xr-trend xr-trend-empty">'
+                '<span class="xr-source">Trend unavailable — need ≥2 periods.</span></div>')
+    peer_ok = peer is not None and len([v for v in peer if v is not None]) >= 2
+    lo, hi = _series_minmax(tgt, peer if peer_ok else [])
+    pad = 6.0
+    parts = [f'<svg class="xr-trend-svg" viewBox="0 0 {w} {h}" width="100%" '
+             f'preserveAspectRatio="none" role="img" aria-label="3-year trend">']
+    if show_axes and lo < 0 < hi:                       # zero line if span crosses 0
+        zy = h - pad - (h - 2 * pad) * _clamp01((0 - lo) / (hi - lo))
+        parts.append(f'<line x1="{pad}" y1="{zy:.1f}" x2="{w-pad}" y2="{zy:.1f}" '
+                     f'stroke="var(--xr-rule)" stroke-dasharray="2 3" stroke-width="0.7"/>')
+    if peer_ok:
+        pp = _poly_points(peer, lo, hi, w, h, pad)
+        if pp:
+            parts.append(f'<polyline points="{pp}" fill="none" stroke="var(--xr-ink2)" '
+                         f'stroke-width="1.4" stroke-dasharray="3 3"/>')
+    tp = _poly_points(tgt, lo, hi, w, h, pad)
+    parts.append(f'<polyline points="{tp}" fill="none" stroke="var(--xr-red)" stroke-width="2.2"/>')
+    # end dot on target
+    last = tp.split(" ")[-1] if tp else ""
+    if last:
+        lx, ly = last.split(",")
+        parts.append(f'<circle cx="{lx}" cy="{ly}" r="2.6" fill="var(--xr-red)"/>')
+    parts.append("</svg>")
+    note = ("" if peer_ok else
+            '<span class="xr-source">Peer trend unavailable for this metric/year set.</span>')
+    xlabels = ""
+    if labels:
+        xlabels = ('<div class="xr-trend-x">' +
+                   "".join(f"<span>{_e(l)}</span>" for l in labels) + "</div>")
+    return f'<div class="xr-trend">{"".join(parts)}{xlabels}{note}</div>'
+
+
+def xr_row_spark(pts: Sequence[float], state: str = "inband",
+                 *, w: int = 82, h: int = 22) -> str:
+    """Tiny single-line sparkline for table rows; faint dash when too sparse."""
+    vals = [v for v in (pts or [])]
+    if len([v for v in vals if v is not None]) < 2:
+        return (f'<svg class="xr-spark" viewBox="0 0 {w} {h}" width="{w}" height="{h}" '
+                f'role="img" aria-label="trend unavailable">'
+                f'<line x1="2" y1="{h/2}" x2="{w-2}" y2="{h/2}" stroke="var(--xr-rule)" '
+                f'stroke-dasharray="2 2" stroke-width="0.8"/></svg>')
+    lo, hi = _series_minmax(vals)
+    color = _STATE_FILL.get(state, "var(--xr-ink2)")
+    pp = _poly_points(vals, lo, hi, w, h, 3.0)
+    sx, sy = pp.split(" ")[0].split(",")
+    ex, ey = pp.split(" ")[-1].split(",")
+    return (f'<svg class="xr-spark" viewBox="0 0 {w} {h}" width="{w}" height="{h}" '
+            f'role="img" aria-label="3-year trend sparkline">'
+            f'<polyline points="{pp}" fill="none" stroke="{color}" stroke-width="1.4"/>'
+            f'<circle cx="{sx}" cy="{sy}" r="1.4" fill="var(--xr-rule)"/>'
+            f'<circle cx="{ex}" cy="{ey}" r="2" fill="{color}"/></svg>')
+
+
+_PAYER_SEG = [("medicare", "Medicare", "var(--xr-ink2)"),
+              ("medicaid", "Medicaid", "var(--xr-red)"),
+              ("commercial", "Commercial", "var(--xr-green)")]
+
+
+def xr_payer_stack(label: str, mix: dict, sub: str = "") -> str:
+    """Horizontal stacked payer-day-mix bar + dot legend. ``mix`` keys:
+    medicare / medicaid / commercial (percentages, 0–100). Honest empty when
+    the mix doesn't sum to a usable total."""
+    total = sum(float(mix.get(k, 0) or 0) for k, _, _ in _PAYER_SEG)
+    if total <= 0:
+        return (f'<div class="xr-payer"><div class="xr-payer-lab">{_e(label)}</div>'
+                '<span class="xr-source">Payer mix unavailable.</span></div>')
+    segs, legend = [], []
+    for key, name, color in _PAYER_SEG:
+        pct = float(mix.get(key, 0) or 0)
+        w = 100 * pct / total
+        if w > 0:
+            txt = (f'<span class="xr-payer-seg-t">{pct:.1f}%</span>' if w >= 8 else "")
+            segs.append(f'<span class="xr-payer-seg" style="width:{w:.2f}%;background:{color};">{txt}</span>')
+        legend.append(f'<span class="xr-payer-leg"><i style="background:{color}"></i>'
+                      f'{_e(name)} {pct:.1f}%</span>')
+    sub_html = f'<span class="xr-payer-sub">{_e(sub)}</span>' if sub else ""
+    return (f'<div class="xr-payer"><div class="xr-payer-lab">{_e(label)}{sub_html}</div>'
+            f'<div class="xr-payer-bar">{"".join(segs)}</div>'
+            f'<div class="xr-payer-legend">{"".join(legend)}</div></div>')
+
+
+def xr_dev_card(title: str, *, state: str, value_html: str, delta_html: str = "",
+                band: Optional[dict] = None, trend: Optional[Sequence[float]] = None,
+                caption: str = "") -> str:
+    """A flagged-metric deviation tile: state-colored top border, metric name,
+    big value, delta, peer-band box-plot, mini trend, caption."""
+    border = _STATE_FILL.get(state, "var(--xr-ink2)")
+    band_html = xr_peer_band(**band) if band else ""
+    trend_html = (xr_trend_chart(trend or [], show_axes=False, h=70, w=260)
+                  if trend is not None else "")
+    cap = f'<div class="xr-dev-cap">{_e(caption)}</div>' if caption else ""
+    delta = f'<span class="xr-dev-delta">{delta_html}</span>' if delta_html else ""
+    return (
+        f'<div class="xr-dev" style="border-top:3px solid {border};">'
+        f'<div class="xr-dev-state">{_e(state).upper()}</div>'
+        f'<div class="xr-dev-title">{_e(title)}</div>'
+        f'<div class="xr-dev-val">{value_html}{delta}</div>'
+        f'{band_html}'
+        f'<div class="xr-dev-div"></div>'
+        f'<div class="xr-dev-trendlab">3Y TREND</div>{trend_html}{cap}</div>'
+    )
+
+
+def xr_ebitda_bridge(rows: Sequence[dict], *, recoverable_html: str = "",
+                     assumption_note: str = "") -> str:
+    """Margin waterfall. Each row: {label, pp (float), kind, value_label}.
+    ``kind`` ∈ target/peer/comp (solid bar) | step (dashed overlay). The EV /
+    cap-multiple is NOT computed here — pass ``assumption_note`` to surface it
+    as an explicit, labeled assumption (never as a valuation)."""
+    if not rows:
+        return ('<div class="xr-bridge"><span class="xr-source">'
+                'EBITDA bridge unavailable — insufficient margin data.</span></div>')
+    pps = [float(r.get("pp", 0) or 0) for r in rows]
+    lo, hi = min(pps + [0.0]), max(pps + [0.0])
+    if hi == lo:
+        hi = lo + 1.0
+    span = hi - lo
+    def x0(): return 100 * _clamp01((0 - lo) / span)
+    bars = ""
+    kind_fill = {"target": "var(--xr-red)", "peer": "var(--xr-ink2)",
+                 "comp": "var(--xr-green)", "step": "var(--xr-green-deep)"}
+    for r in rows:
+        pp = float(r.get("pp", 0) or 0)
+        xv = 100 * _clamp01((pp - lo) / span)
+        zx = x0()
+        left, w = (min(zx, xv), abs(xv - zx))
+        fill = kind_fill.get(r.get("kind", "target"), "var(--xr-ink2)")
+        dashed = ' stroke-dasharray="3 2" fill-opacity="0.35"' if r.get("kind") == "step" else ""
+        bars += (
+            f'<div class="xr-bridge-row">'
+            f'<span class="xr-bridge-lab">{_e(r.get("label",""))}</span>'
+            f'<span class="xr-bridge-track">'
+            f'<svg viewBox="0 0 100 14" width="100%" height="14" preserveAspectRatio="none">'
+            f'<line x1="{zx:.1f}" y1="0" x2="{zx:.1f}" y2="14" stroke="var(--xr-rule)" stroke-width="0.6"/>'
+            f'<rect x="{left:.1f}" y="3" width="{max(w,0.6):.1f}" height="8" fill="{fill}"'
+            f' stroke="{fill}"{dashed}/></svg></span>'
+            f'<span class="xr-bridge-val">{_e(r.get("value_label",""))}</span>'
+            f'</div>'
+        )
+    rec = (f'<div class="xr-bridge-rec">{recoverable_html}</div>' if recoverable_html else "")
+    note = (xr_caveat(assumption_note) if assumption_note else "")
+    return f'<div class="xr-bridge">{rec}{bars}{note}</div>'
