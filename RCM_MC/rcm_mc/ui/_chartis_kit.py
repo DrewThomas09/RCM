@@ -221,6 +221,62 @@ _SUB_NAV = {
     ],
 }
 
+# Featured left panel for each section's mega-menu — the "what is this section"
+# card. Honest, descriptive copy only (no fabricated stats). `href` points at
+# the section landing so the panel doubles as the "open the whole section" CTA.
+_SECTION_FEATURE = {
+    "home": {"eyebrow": "SECTION · HOME", "title": "Operations",
+             "blurb": "Your daily driver — alerts, escalations, watchlist, and "
+                      "the Command Center in one canvas.", "href": "/app"},
+    "pipeline": {"eyebrow": "SECTION · PIPELINE", "title": "Sourcing & screening",
+                 "blurb": "Find, screen, and rank targets before they reach IC "
+                          "— hospital and predictive screeners, comps, intel.",
+                 "href": "/pipeline"},
+    "diligence": {"eyebrow": "SECTION · DILIGENCE", "title": "The analyst playbook",
+                  "blurb": "Run a live deal end to end: identity, ingestion, "
+                           "benchmarks, the CMS / HCRIS X-Ray, and the QoE memo.",
+                  "href": "/diligence"},
+    "library": {"eyebrow": "SECTION · LIBRARY", "title": "Reference desk",
+                "blurb": "Methodology, the metric glossary, RCM benchmarks, the "
+                         "data catalog, comps, and market rates.", "href": "/library"},
+    "research": {"eyebrow": "SECTION · RESEARCH", "title": "House views",
+                 "blurb": "The analyst notebook plus sector momentum, IRR "
+                          "dispersion, hold analysis, and market intel.",
+                 "href": "/research"},
+    "portfolio": {"eyebrow": "SECTION · PORTFOLIO", "title": "The active book",
+                  "blurb": "Monitor holdings by geography and risk — map, "
+                           "heatmap, risk scan, analytics, and LP reporting.",
+                  "href": "/portfolio"},
+}
+
+# One-line description per sub-nav page, keyed by href (used in the mega-menu
+# items so each link reads like a real destination, not a bare label). Kept
+# separate from _SUB_NAV so that structure stays untouched.
+_NAV_DESC = {
+    "/app": "Glance-level morning brief", "/my/AT": "Your owned deals & pulse",
+    "/alerts": "Fire / ack / snooze lifecycle", "/escalations": "What needs a partner",
+    "/watchlist": "Starred deals to track",
+    "/source": "Origination & market scan", "/screen": "Hospital target screener",
+    "/predictive-screener": "Model-ranked candidates", "/pe-intelligence": "Sponsor & deal intel",
+    "/deal-screening": "First-pass deal filter", "/find-comps": "Comparable transactions",
+    "/conferences": "Industry conference tracker",
+    "/deals-library": "The deal archive", "/methodology": "How the models work",
+    "/metric-glossary": "Every metric, defined", "/rcm-benchmarks": "RCM performance bands",
+    "/data": "CMS public-data catalog", "/comparables": "Comp sets & multiples",
+    "/market-rates": "Payer & Medicare rates",
+    "/notes": "The analyst notebook", "/sector-momentum": "Where sectors are moving",
+    "/irr-dispersion": "Return dispersion reads", "/hold-analysis": "Hold-period analytics",
+    "/market-intel": "Market structure & HHI", "/research": "Every research surface →",
+    "/portfolio/map": "Exposure by geography", "/portfolio/heatmap": "Risk × dimension grid",
+    "/portfolio/risk-scan": "Portfolio-wide risk flags", "/portfolio-analytics": "Cross-deal analytics",
+    "/sponsor-track-record": "Sponsor performance", "/payer-intelligence": "Payer mix & leverage",
+    "/lp-update": "LP-ready digest",
+    "/diligence/deal": "Deal profile & identity", "/diligence/ingest": "835/837 ingestion",
+    "/diligence/benchmarks": "Peer benchmark grid", "/diligence/xray": "CMS provider X-Ray",
+    "/diligence/hcris-xray": "HCRIS hospital X-Ray", "/diligence/qoe-memo": "Quality-of-earnings memo",
+    "/diligence": "Every diligence surface →",
+}
+
 # Legacy navigation kept for callers that haven't migrated.
 _LEGACY_NAV = [
     {"label": "Deals",        "href": "/deals",        "key": "deals"},
@@ -3845,13 +3901,47 @@ _CSS_INLINE_FALLBACK = """
   .ck-nav-group > a .ck-nav-caret { transition:transform .15s, opacity .15s, color .15s; }
   .ck-nav-group:hover > a .ck-nav-caret,
   .ck-nav-group:focus-within > a .ck-nav-caret { opacity:1; color:var(--tb-green); transform:rotate(180deg); }
-  .ck-nav-menu { position:absolute; top:100%; left:0; min-width:248px;
+  .ck-nav-menu { position:absolute; top:100%; left:0;
     background:var(--tb-paper); border:1px solid var(--tb-rule);
     border-top:2px solid var(--tb-green); box-shadow:0 14px 30px rgba(13,35,54,.18);
-    padding:7px 0; z-index:70; display:none; }
+    z-index:70; display:none; }
   .ck-nav-group:hover > .ck-nav-menu,
   .ck-nav-group:focus-within > .ck-nav-menu { display:block; }
-  /* Sub-page links inside the dropdown (reuse .ck-subnav-link tracking). */
+  /* Horizontal mega-menu: featured left panel + numbered destination grid. */
+  .ck-nav-mega { display:grid; grid-template-columns:236px 1fr; min-width:660px;
+    padding:0; }
+  /* Keep the rightmost sections' panels inside the viewport. */
+  .ck-nav-group:last-of-type .ck-nav-mega,
+  .ck-nav-group:nth-last-of-type(2) .ck-nav-mega { left:auto; right:0; }
+  .ck-mega-feat { display:flex; flex-direction:column; gap:8px; padding:20px 22px;
+    background:var(--tb-paper2); border-right:1px solid var(--tb-rule);
+    text-decoration:none; transition:background .12s; }
+  .ck-mega-feat:hover { background:var(--tb-green-soft); }
+  .ck-mega-feat-eyebrow { font-family:var(--sc-mono,monospace); font-size:9.5px;
+    letter-spacing:.16em; text-transform:uppercase; color:var(--tb-muted); }
+  .ck-mega-feat-title { font-family:var(--sc-serif,Georgia,serif); font-size:23px;
+    line-height:1.05; color:var(--tb-ink); }
+  .ck-mega-feat-blurb { font-family:var(--sc-serif,Georgia,serif); font-style:italic;
+    font-size:13px; line-height:1.5; color:var(--tb-ink2); }
+  .ck-mega-feat-go { margin-top:auto; font-family:var(--sc-mono,monospace);
+    font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--tb-green); }
+  .ck-mega-items { display:grid; grid-template-columns:1fr 1fr; gap:2px 18px;
+    padding:16px 20px; align-content:start; }
+  .ck-mega-item { display:flex; gap:10px; padding:9px 10px; text-decoration:none;
+    border-radius:2px; transition:background .12s; }
+  .ck-mega-item:hover { background:var(--tb-paper2); }
+  .ck-mega-idx { font-family:var(--sc-mono,monospace); font-size:11px;
+    color:var(--tb-green); padding-top:2px; }
+  .ck-mega-it-body { display:flex; flex-direction:column; gap:1px; }
+  .ck-mega-it-label { font-family:var(--sc-serif,Georgia,serif); font-size:15px;
+    color:var(--tb-ink); line-height:1.2; }
+  .ck-mega-item:hover .ck-mega-it-label { color:var(--tb-green); }
+  .ck-mega-it-desc { font-family:var(--sc-serif,Georgia,serif); font-style:italic;
+    font-size:11.5px; color:var(--tb-muted); line-height:1.3; }
+  @media (max-width:860px){ .ck-nav-mega { grid-template-columns:1fr; min-width:300px; }
+    .ck-mega-feat { border-right:0; border-bottom:1px solid var(--tb-rule); }
+    .ck-mega-items { grid-template-columns:1fr; } }
+  /* Legacy single-column dropdown links (kept for .ck-subnav-link reuse). */
   .ck-nav-menu .ck-subnav-link { display:block; padding:9px 20px; border:0;
     border-bottom:0; white-space:nowrap; color:var(--tb-ink2);
     border-left:2px solid transparent; }
@@ -3970,7 +4060,11 @@ _CSS_INLINE_FALLBACK = """
   .ck-subnav-link { font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#6a7480; text-decoration:none; padding:6px 1px; border-bottom:2px solid transparent; border-radius:0; white-space:nowrap; transition:color 0.15s, border-color 0.15s; }
   .ck-subnav-link:hover { color:#1f7a5a; border-bottom-color:#c9c1ac; }
   .ck-subnav-link.active { color:#1f7a5a; border-bottom-color:#1f7a5a; }
-  .ck-breadcrumbs { display:flex; gap:8px; padding:14px var(--sc-s-7); max-width:min(1920px, 95vw); margin:0 auto; font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); letter-spacing:0.08em; text-transform:uppercase; border-bottom:1px solid var(--sc-rule); }
+  /* Breadcrumbs are subtle inline wayfinding above the page title — NOT a
+   * second nav bar. The old full-width bottom-border strip read as a second
+   * bar under the topbar (partner-flagged as unprofessional); section
+   * navigation now lives entirely in the topbar mega-menu dropdowns. */
+  .ck-breadcrumbs { display:flex; gap:8px; padding:18px var(--sc-s-7) 0; max-width:min(1920px, 95vw); margin:0 auto; font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); letter-spacing:0.08em; text-transform:uppercase; }
   .ck-breadcrumbs a { color:var(--sc-text-dim); text-decoration:none; }
   .ck-breadcrumbs a:hover { color:var(--sc-teal-ink); }
   .ck-breadcrumbs .sep { color:var(--sc-rule-2); }
@@ -6360,16 +6454,34 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         )
         if not sect:
             return anchor
-        menu = "".join(
-            f'<a href="{_esc(s["href"])}" class="ck-subnav-link" role="menuitem">'
-            f'{_esc(s["label"])}</a>'
-            for s in _SUB_NAV[sect]
+        # Numbered destination items (right grid) — each reads like a real
+        # destination: index · label · one-line description.
+        items = "".join(
+            f'<a href="{_esc(s["href"])}" class="ck-mega-item" role="menuitem">'
+            f'<span class="ck-mega-idx">{i:02d}.</span>'
+            f'<span class="ck-mega-it-body"><span class="ck-mega-it-label">'
+            f'{_esc(s["label"])}</span>'
+            f'<span class="ck-mega-it-desc">{_esc(_NAV_DESC.get(s["href"], ""))}</span>'
+            f'</span></a>'
+            for i, s in enumerate(_SUB_NAV[sect], start=1)
+        )
+        # Featured left panel — the "what is this section" card.
+        feat = _SECTION_FEATURE.get(sect, {})
+        feature = (
+            '<a class="ck-mega-feat" href="' + _esc(feat.get("href", item["href"])) + '">'
+            f'<span class="ck-mega-feat-eyebrow">{_esc(feat.get("eyebrow", ""))}</span>'
+            f'<span class="ck-mega-feat-title">{_esc(feat.get("title", item["label"]))}</span>'
+            f'<span class="ck-mega-feat-blurb">{_esc(feat.get("blurb", ""))}</span>'
+            f'<span class="ck-mega-feat-go">Open {_esc(_nav_label(item["label"]))} &rarr;</span>'
+            '</a>'
         )
         return (
             '<div class="ck-nav-group" aria-haspopup="true">'
             f'{anchor}'
-            f'<div class="ck-nav-menu" role="menu" '
-            f'aria-label="{_esc(_nav_label(item["label"]))} menu">{menu}</div>'
+            f'<div class="ck-nav-menu ck-nav-mega" role="menu" '
+            f'aria-label="{_esc(_nav_label(item["label"]))} menu">'
+            f'{feature}<div class="ck-mega-items">{items}</div>'
+            '</div>'
             '</div>'
         )
 

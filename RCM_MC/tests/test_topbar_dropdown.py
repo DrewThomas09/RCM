@@ -26,16 +26,22 @@ class TopbarDropdownTests(unittest.TestCase):
         self.assertNotIn('class="ck-subnav-inner"', self.html)
 
     def test_each_section_item_has_a_dropdown_group_and_menu(self):
-        # Five section items (all but Home) → five hover groups + five menus.
+        # Five section items (all but Home) → five hover groups + five mega menus.
         self.assertEqual(self.html.count("ck-nav-group"), 5)
-        self.assertEqual(self.html.count('class="ck-nav-menu"'), 5)
+        self.assertEqual(self.html.count("ck-nav-mega"), 5)
 
     def test_menu_lists_the_sections_subpages(self):
-        # Research dropdown surfaces its sub-nav entries as menu links.
+        # Research mega-menu surfaces its sub-nav entries as numbered items.
         for item in _SUB_NAV["research"]:
             self.assertIn(item["label"], self.html)
-        # menu links reuse the ck-subnav-link class inside the menu
-        self.assertIn('class="ck-subnav-link" role="menuitem"', self.html)
+        self.assertIn('class="ck-mega-item" role="menuitem"', self.html)
+        self.assertIn(">01.<", self.html)              # numbered
+
+    def test_mega_menu_has_featured_left_panel(self):
+        # The "cool little thing on the left" — a featured section card.
+        self.assertIn("ck-mega-feat", self.html)
+        self.assertIn("SECTION · RESEARCH", self.html)
+        self.assertIn("Open Research", self.html)
 
     def test_home_has_no_dropdown(self):
         # Home is the dashboard root — bare link, no group/caret.
@@ -66,6 +72,14 @@ class TopbarCssTests(unittest.TestCase):
     def test_subnav_link_letter_spacing_rule_preserved(self):
         # Reused inside the dropdown; the lock-in rule must still exist.
         self.assertIn(".ck-subnav-link", self.css)
+
+    def test_breadcrumbs_are_not_a_second_bar(self):
+        # The breadcrumb strip must not render a full-width bottom-border bar
+        # under the topbar (partner-flagged "two bars" look).
+        import re
+        m = re.search(r"\.ck-breadcrumbs\s*\{[^}]*\}", self.css)
+        self.assertIsNotNone(m)
+        self.assertNotIn("border-bottom", m.group(0))
 
 
 if __name__ == "__main__":
