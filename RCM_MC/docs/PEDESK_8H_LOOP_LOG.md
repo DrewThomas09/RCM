@@ -14,6 +14,7 @@ data, no runtime CMS/map/chart APIs, no unsupported claims.
 | When (UTC) | PRs | main SHA | test | deploy | /healthz | notes |
 |---|---|---|---|---|---|---|
 | 2026-05-24 05:07 | #604 map · #605 pipeline · #606 analytics · #603 CC grid | `f25b1c72` | ✓ | ✓ | 200 | Queue cleared; concurrency collapsed the 4 merges into one deploy of `main`. All 4 features live. |
+| 2026-05-24 05:09 | #607 Phase 0 coverage audit (docs) | `fafcf89f` | ✓ | ✓ | 200 | Audit + loop log committed. |
 
 ## Phase ledger
 
@@ -25,8 +26,13 @@ data, no runtime CMS/map/chart APIs, no unsupported claims.
   curated Guide contexts; 236 on the safe generic fallback. Every page
   answers the Guide (fallback), so the work is upgrading high-priority
   pages from fallback → curated.
-- **Phase 1 (queued):** curated Guide context for high-priority CMS +
-  portfolio/diligence + source/provenance pages.
+- **Phase 1 (in progress):** curated Guide context for high-priority
+  fallback pages. Batch 1 (CMS/data): `/market-data`, `/cms-sources`,
+  `/cms-data-browser`, `/data/catalog`, `/benchmarks` upgraded
+  fallback → curated (accurate sources, honest caveats, 7–8 suggested
+  questions each). Remaining targets: `/comps`, `/diligence`,
+  `/deliverables`, `/proof`, `/about`, `/admin/data-sources`,
+  `/data-intelligence`.
 - **Phase 2 (queued):** RAG source cards (sectors + metrics).
 - **Phase 3 (queued):** investable-evidence + predictive-modeling framework.
 - **Phase 4 (queued):** CMS verticals (SNF data spine first; then
