@@ -22,6 +22,12 @@ from typing import Dict, List, Optional
 
 _PROVIDERS_CSV = Path(__file__).with_name("dialysis_providers.csv")
 _QUALITY_CSV = Path(__file__).with_name("dialysis_quality.csv")
+# Patient experience (ICH CAHPS in-center hemodialysis survey) — vendored from
+# the CMS facility file. Adds the patient-voice dimension to the clinical rates.
+_CAHPS_CSV = Path(__file__).with_name("dialysis_cahps.csv")
+_CAHPS_METRICS = ("cahps_facility_star", "cahps_nephrologist_comm_star",
+                  "cahps_center_care_star", "cahps_information_star",
+                  "cahps_nephrologist_star", "cahps_staff_star")
 
 _QUALITY_METRICS = (
     "five_star", "mortality_rate", "hospitalization_rate",
@@ -118,6 +124,29 @@ def load_dialysis_quality() -> Dict[str, Dict[str, Optional[float]]]:
             if not ccn:
                 continue
             out[ccn] = {m: _f(r.get(m, "")) for m in _QUALITY_METRICS}
+    # Merge the patient-experience (ICH CAHPS) star ratings so they flow
+    # through the screener, cross-sector benchmark, and X-Ray with the clinical
+    # rates. Facilities without a survey carry None (honest).
+    cahps = load_dialysis_cahps()
+    for ccn, row in out.items():
+        cr = cahps.get(ccn) or {}
+        for m in _CAHPS_METRICS:
+            row[m] = cr.get(m)
+    return out
+
+
+@functools.lru_cache(maxsize=1)
+def load_dialysis_cahps() -> Dict[str, Dict[str, Optional[float]]]:
+    """``{ccn: {cahps_metric: float|None}}`` from the vendored ICH-CAHPS file."""
+    out: Dict[str, Dict[str, Optional[float]]] = {}
+    if not _CAHPS_CSV.is_file():
+        return out
+    with _CAHPS_CSV.open(newline="", encoding="utf-8", errors="replace") as fh:
+        for r in csv.DictReader(fh):
+            ccn = _norm_ccn(r.get("ccn", ""))
+            if not ccn:
+                continue
+            out[ccn] = {m: _f(r.get(m, "")) for m in _CAHPS_METRICS}
     return out
 
 
