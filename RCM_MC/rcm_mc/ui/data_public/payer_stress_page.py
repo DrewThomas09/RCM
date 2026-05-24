@@ -231,6 +231,25 @@ def render_payer_stress(params: Dict[str, str]) -> str:
     base_mcare = _flt("mcare_pct", 0.25)
     base_mcaid = _flt("mcaid_pct", 0.10)
     sector = params.get("sector", "")
+
+    # Real-data wiring: when a hospital is attached (?ccn= or ?name=), seed the
+    # base mix from its ACTUAL HCRIS payer-day mix instead of the demo sliders.
+    # HCRIS reports day-share, and "other" = commercial + self-pay (no split),
+    # so we map other_day_pct → the commercial slider and label that honestly.
+    hcris_target = None
+    _ccn_q = (params.get("ccn") or params.get("name") or "").strip()
+    if _ccn_q:
+        try:
+            from rcm_mc.diligence.hcris_xray import find_hospital
+            h = find_hospital(_ccn_q, state=(params.get("state") or None))
+            if h is not None and (h.medicare_day_pct or h.medicaid_day_pct
+                                  or h.other_day_pct):
+                base_mcare = float(h.medicare_day_pct or 0.0)
+                base_mcaid = float(h.medicaid_day_pct or 0.0)
+                base_comm = float(h.other_day_pct or 0.0)
+                hcris_target = h
+        except Exception:  # noqa: BLE001 — degrade to the illustrative model
+            hcris_target = None
     ev_mm_raw = params.get("ev_mm")
     ev_mm = None
     try:
@@ -321,15 +340,28 @@ def render_payer_stress(params: Dict[str, str]) -> str:
 .ck-btn:hover { filter:brightness(1.15); }
 """
 
-    # Diligence-reform header: this page is an ILLUSTRATIVE corpus-calibrated
-    # model today — the payer-mix inputs are scenario sliders, not a target's
-    # real mix. PR 4 wires it to the real HCRIS payer-day mix.
-    body = ck_source_purpose(
-        purpose="Stress-test how a deal's MOIC bends as payer mix shifts — a "
-                "sensitivity framework, not a specific target's measured mix.",
-        universe="illustrative", source="Corpus-calibrated scenario model",
-        next_action="Attach a hospital to use its real HCRIS payer-day mix",
-        next_href="/diligence/hcris-xray") + body
+    # Diligence-reform header. When a hospital is attached, the base mix is the
+    # target's REAL HCRIS payer-day mix (LIVE); otherwise it's an illustrative
+    # corpus-calibrated sensitivity model. The MOIC regression layer is always
+    # a labeled corpus assumption, not the target's measured outcome.
+    if hcris_target is not None:
+        _sp = ck_source_purpose(
+            purpose=(f"Stress-test MOIC sensitivity from {hcris_target.name}'s "
+                     "real payer-day mix. 'Commercial' = HCRIS 'other' days "
+                     "(commercial + self-pay — HCRIS does not split them)."),
+            universe="hcris", source=f"CMS HCRIS · CCN {hcris_target.ccn} · "
+                                     f"FY{hcris_target.fiscal_year}",
+            confidence="derived",
+            next_action="Open the full HCRIS X-Ray",
+            next_href=f"/diligence/hcris-xray?ccn={hcris_target.ccn}")
+    else:
+        _sp = ck_source_purpose(
+            purpose="Stress-test how a deal's MOIC bends as payer mix shifts — a "
+                    "sensitivity framework, not a specific target's measured mix.",
+            universe="illustrative", source="Corpus-calibrated scenario model",
+            next_action="Attach a hospital to use its real HCRIS payer-day mix",
+            next_href="/diligence/hcris-xray")
+    body = _sp + body
     return chartis_shell(
         body,
         title="Payer Mix Stress Tester",
