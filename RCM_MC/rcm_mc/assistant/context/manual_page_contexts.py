@@ -2853,6 +2853,208 @@ _MANUAL: List[PageContext] = [
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
+    # ── 8h loop Phase 1: high-priority CMS / data pages (fallback → curated) ──
+    _ctx(
+        "/market-data", "Market Data",
+        short_description="National hospital market intelligence — heatmaps, "
+        "state comparisons, regression views, and hospital density maps over "
+        "the CMS HCRIS cost-report universe.",
+        primary_purpose="Explore the U.S. hospital market: where hospitals "
+        "cluster, how states compare on size/margin, and which markets are "
+        "concentrated — the data-exploration surface that frames a target's "
+        "geography before diligence.",
+        common_questions=[
+            "What does this page do and where does its data come from?",
+            "Which metrics here are observed CMS data versus derived?",
+            "How concentrated is the hospital market in this state?",
+            "How should I read these state comparisons in diligence?",
+            "What does the regression actually show — correlation, not cause?",
+            "What's the freshness/lag on HCRIS cost-report data?",
+            "What is NOT visible here that I'd diligence separately?",
+            "What would make a market signal investable versus noise?",
+        ],
+        inputs=["CMS HCRIS hospital cost reports (vendored); state/geography "
+                "rollups computed locally."],
+        outputs=["State heatmaps, state comparison tables, density maps, and "
+                 "regression/scatter views."],
+        key_metrics=["Net patient revenue", "Operating margin",
+                     "Hospital count / density by state", "Beds"],
+        data_sources=["CMS HCRIS (Healthcare Cost Report Information System)."],
+        model_logic_summary="Counts, per-state aggregates, and simple "
+        "regressions over the vendored HCRIS universe — no fabricated values; "
+        "regressions are associational, not causal.",
+        why_it_matters="Hospital geography + market structure frame a deal's "
+        "competitive set and reimbursement exposure before target diligence.",
+        diligence_use_cases=["Sizing a target's local hospital market; "
+                             "spotting concentrated vs fragmented geographies; "
+                             "benchmarking a state's margin profile."],
+        interpretation_guidance=[
+            "Medicare cost-report data — NOT commercial revenue or payer mix.",
+            "Regression/scatter views are associational; do not infer causation.",
+            "HCRIS lags ~1–2 years; treat as structural, not real-time.",
+            "Market context, not an investment recommendation.",
+        ],
+        limitations=["HCRIS Medicare cost reports only; commercial rates, "
+                     "payer mix, and real-time volume are not represented."],
+        related_routes=["/sector-intelligence", "/portfolio/map", "/cms-sources"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/cms-sources", "CMS Data Sources",
+        short_description="Registry of the CMS Open Data / Provider Data "
+        "Catalog endpoints PEdesk draws on — dataset IDs, granularity, update "
+        "cadence, and key columns.",
+        primary_purpose="Make every CMS dataset behind the product "
+        "explainable: what it is, its grain, its refresh cadence, and which "
+        "fields drive the analytics — the provenance backbone for diligence.",
+        common_questions=[
+            "Which CMS datasets power PEdesk and how fresh are they?",
+            "What is the grain (row meaning) of each dataset?",
+            "What are the key columns used for benchmarking?",
+            "How often does each source update, and what's the lag?",
+            "Which datasets are observed data versus provider-supply proxies?",
+            "What can these CMS sources NOT tell me?",
+            "Is any of this commercial revenue or payer-specific?",
+        ],
+        inputs=["Static registry of CMS Open Data / Provider Data Catalog "
+                "dataset descriptors."],
+        outputs=["Source table: name, dataset ID, description, update cadence, "
+                 "granularity, key columns."],
+        key_metrics=["Dataset ID", "Update cadence", "Granularity",
+                     "Record count (where known)"],
+        data_sources=["CMS Open Data API + CMS Provider Data Catalog (data.cms.gov)."],
+        model_logic_summary="Display-only registry; no computation. Surfaces "
+        "provenance so partners can judge each number's source level.",
+        why_it_matters="Diligence credibility depends on knowing exactly which "
+        "public dataset (and vintage) every figure came from.",
+        diligence_use_cases=["Citing a number's source in IC; judging whether "
+                             "a metric is observed data vs a Medicare proxy."],
+        interpretation_guidance=[
+            "Public CMS data — Medicare slice; not commercial volume/rates.",
+            "Cadence/lag varies per dataset — read the cadence column.",
+            "Provider-supply datasets count providers, not revenue or share.",
+        ],
+        limitations=["Medicare/Medicaid public data only; no commercial payer "
+                     "data, no private-pay visibility."],
+        related_routes=["/market-data", "/cms-data-browser", "/data/catalog"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/cms-data-browser", "CMS Public Data Browser",
+        short_description="Catalog of the public CMS datasets ingested into "
+        "PEdesk, ranked by record count with ingestion status.",
+        primary_purpose="Browse the ingested CMS corpus — which datasets "
+        "carry the most records, what each covers, and whether each is "
+        "current or stale.",
+        common_questions=[
+            "Which CMS datasets are ingested and how big is each?",
+            "Which sources are current versus stale?",
+            "What does each dataset cover and at what grain?",
+            "Where does this data come from originally?",
+            "What's missing from the ingested corpus?",
+        ],
+        inputs=["Ingested CMS public-dataset inventory (local)."],
+        outputs=["Dataset catalog grid + record-count chart + ingestion status."],
+        key_metrics=["Record count per dataset", "Ingestion status",
+                     "Dataset coverage"],
+        data_sources=["CMS Provider Data Catalog + CMS Open Data (vendored locally)."],
+        model_logic_summary="Inventory display + record-count ranking; no "
+        "fabricated counts — reflects what is actually ingested locally.",
+        why_it_matters="Shows the breadth and freshness of the public-data "
+        "foundation the diligence product is built on.",
+        diligence_use_cases=["Confirming a dataset is present and current "
+                             "before relying on its analytics."],
+        interpretation_guidance=[
+            "Record counts reflect the vendored snapshot, not a live feed.",
+            "Public CMS data only; not commercial performance.",
+        ],
+        limitations=["Snapshot-based; no runtime CMS API calls. Medicare/"
+                     "public scope only."],
+        related_routes=["/cms-sources", "/data/catalog", "/market-data"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/data/catalog", "Data Catalog",
+        short_description="Every public-data source PEdesk has ingested — a "
+        "KPI strip (sources / records / freshness) and a category-grouped "
+        "inventory table.",
+        primary_purpose="One place to see the full public-data foundation: "
+        "what's ingested, how many records, how fresh, grouped by category.",
+        common_questions=[
+            "What data sources does PEdesk have and how fresh are they?",
+            "How many records does each source carry?",
+            "Which sources are stale and need a refresh?",
+            "What categories of data are covered?",
+            "What is the provenance of a given source?",
+        ],
+        inputs=["PortfolioStore data-source inventory (local metadata)."],
+        outputs=["KPI strip (sources, records, avg quality, fresh/stale) + "
+                 "category-grouped source table."],
+        key_metrics=["Source count", "Record count", "Freshness",
+                     "Data quality flag"],
+        data_sources=["Local PortfolioStore data-source inventory."],
+        model_logic_summary="Inventory metadata display; portfolio-wide "
+        "infrastructure metadata (not deal analytics).",
+        why_it_matters="Establishes which public sources underpin every "
+        "analytic surface — the audit trail for diligence.",
+        diligence_use_cases=["Verifying source coverage + freshness before "
+                             "trusting a downstream metric."],
+        interpretation_guidance=[
+            "Catalog metadata, not analytics; counts are of ingested records.",
+            "All sources are public/official; none are commercial-payer data.",
+        ],
+        limitations=["Metadata only; reflects the local ingested snapshot."],
+        related_routes=["/cms-sources", "/cms-data-browser", "/market-data"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/benchmarks", "RCM Benchmarks",
+        short_description="HFMA revenue-cycle KPI scorecard vs benchmark "
+        "bands, payer-class liquidation curves, and a denial-driver Pareto — "
+        "rendered from an attached engagement's KPI bundle.",
+        primary_purpose="Benchmark a target's revenue-cycle KPIs against HFMA "
+        "bands and surface the dollar-weighted denial drivers — the RCM "
+        "diligence read.",
+        common_questions=[
+            "How does this target's revenue cycle compare to HFMA benchmarks?",
+            "Which KPIs are observed from the engagement data vs missing?",
+            "What are the biggest denial drivers by dollars?",
+            "How should I read the liquidation curves by payer class?",
+            "What's strong evidence here versus thin/insufficient data?",
+            "What should I ask management about these denial root causes?",
+            "What are the caveats on these benchmark bands?",
+        ],
+        inputs=["An attached engagement KPIBundle + CohortLiquidationReport "
+                "(no live re-ingest from this page)."],
+        outputs=["KPI scorecard vs bands, per-payer liquidation curves, "
+                 "denial-driver Pareto. 'Insufficient data' + reason when a "
+                 "KPI is absent — never a fabricated number."],
+        key_metrics=["Initial denial rate", "Final write-off", "Clean DAR",
+                     "Net collection rate"],
+        data_sources=["Engagement-supplied RCM data (KPI bundle); HFMA "
+                      "benchmark bands."],
+        model_logic_summary="Compares supplied KPIs to documented HFMA bands; "
+        "missing KPIs render 'Insufficient data' with the reason, not a guess.",
+        why_it_matters="Revenue-cycle performance vs peer bands is a core "
+        "value-creation lever in healthcare RCM diligence.",
+        diligence_use_cases=["Quantifying RCM upside vs benchmark; prioritizing "
+                             "denial root-cause remediation by dollars."],
+        interpretation_guidance=[
+            "Bands are HFMA reference ranges, not the target's covenant.",
+            "A missing KPI means data wasn't supplied — not zero.",
+            "Liquidation curves are descriptive, not a forecast.",
+        ],
+        limitations=["Requires an attached engagement bundle; with none, the "
+                     "page explains how to attach a CCD rather than inventing "
+                     "numbers."],
+        related_routes=["/diligence", "/comps", "/methodology"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
 ]
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
