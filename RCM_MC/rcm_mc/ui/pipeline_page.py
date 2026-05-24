@@ -11,12 +11,21 @@ from typing import Any, Dict, List, Optional
 
 from ..portfolio.store import PortfolioStore
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_next_section, ck_page_title, ck_panel,
+    chartis_shell, ck_data_universe, ck_kpi_block, ck_next_section,
+    ck_page_title, ck_panel,
 )
 from .brand import PALETTE
 
 
 _EXPLAINER_CSS = """
+.pp-actions{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 var(--sc-s-5);}
+.pp-action{display:inline-flex;align-items:center;gap:6px;font-family:var(--sc-mono);
+ font-size:11px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;
+ padding:8px 14px;border:1px solid var(--sc-rule,#c9c1ac);border-radius:2px;
+ color:var(--sc-text,#2a3a4a);background:var(--sc-paper,#faf6ec);}
+.pp-action:hover{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
+.pp-action-primary{background:var(--sc-navy,#15202b);color:var(--sc-paper,#faf6ec);border-color:var(--sc-navy,#15202b);}
+.pp-action-primary:hover{background:var(--sc-teal,#18573f);border-color:var(--sc-teal,#18573f);color:#fff;}
 .ck-pp-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
 color:var(--sc-text-dim);max-width:68ch;
 margin:var(--sc-s-4) 0 var(--sc-s-6);}
@@ -112,6 +121,15 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
             f"{summary.get('diligence', 0)} in diligence · "
             f"{len(searches)} saved searches"
         ),
+    ) + '<div style="margin:8px 0 0;">' + ck_data_universe("user-deals") + '</div>'
+    # Explicit deal-lifecycle actions: bring a target in, or jump back to Source
+    # to find one. Pipeline holds YOUR opportunities — these are how they enter.
+    actions_row = (
+        '<div class="pp-actions">'
+        '<a class="pp-action pp-action-primary" href="/new-deal">+ Create opportunity</a>'
+        '<a class="pp-action" href="/import">Import deal</a>'
+        '<a class="pp-action" href="/target-screener">&larr; Promote from Source</a>'
+        '</div>'
     )
     explainer_html = (
         '<p class="ck-pp-explainer">'
@@ -451,7 +469,7 @@ border-radius:2px;transition:background 0.12s;}
         italic_word="deal",
     )
     body = (
-        pp_styles + title_block + explainer_html + kpis
+        pp_styles + title_block + explainer_html + actions_row + kpis
         + '<div class="pp-grid">'
         + f'<div>{funnel}{search_section}</div>'
         + f'<div>{activity_section}</div></div>'

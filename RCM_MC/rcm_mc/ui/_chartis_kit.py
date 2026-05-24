@@ -162,16 +162,20 @@ _SUB_NAV = {
     "source": [
         {"label": "Target Screener",     "href": "/target-screener"},
         {"label": "Deal Sourcing",       "href": "/source"},
+        {"label": "Thesis Screening",    "href": "/deal-screening"},
         {"label": "Conferences",         "href": "/conferences"},
     ],
-    # Pipeline = real opportunities/deals only. Deal Sourcing/Conferences moved
-    # to Source; Find Comps (benchmark corpus) moved to Research. The screeners
-    # remain here until PR E unifies them under Source as the Target Screener.
+    # Pipeline = real opportunities/deals only — the deal-workflow surfaces.
+    # Market-discovery screeners live in Source (Target Screener); the
+    # CMS/HCRIS screener routes (/screen, /predictive-screener) are unchanged
+    # and reached from there. PE Intelligence moved to Research.
     "pipeline": [
-        {"label": "Hospital Screener",   "href": "/screen"},
-        {"label": "Predictive Screener", "href": "/predictive-screener"},
-        {"label": "PE Intelligence",     "href": "/pe-intelligence"},
-        {"label": "Deal Screening",      "href": "/deal-screening"},
+        {"label": "Deal Pipeline",       "href": "/pipeline"},
+        {"label": "New Deal / Import",   "href": "/new-deal"},
+        {"label": "Deal Quality",        "href": "/deal-quality"},
+        {"label": "Deal Risk",           "href": "/deal-risk-scores"},
+        {"label": "Deal-Flow Heatmap",   "href": "/deal-flow-heatmap"},
+        {"label": "EBITDA Bridge",       "href": "/pipeline/bridge"},
     ],
     "library": [
         {"label": "Deals Library",       "href": "/deals-library"},
@@ -196,6 +200,7 @@ _SUB_NAV = {
         {"label": "Find Comps",          "href": "/find-comps"},
         {"label": "Sponsor Track Record","href": "/sponsor-track-record"},
         {"label": "Payer Intelligence",  "href": "/payer-intelligence"},
+        {"label": "PE Intelligence",     "href": "/pe-intelligence"},
         {"label": "Notes",               "href": "/notes"},
         {"label": "Sector Momentum",     "href": "/sector-momentum"},
         {"label": "Market Intel",        "href": "/market-intel"},
@@ -278,8 +283,11 @@ _NAV_DESC = {
     "/target-screener": "Find targets — 3 modes", "/source": "Thesis-driven sourcing",
     "/screen": "Hospital target screener",
     "/predictive-screener": "Model-ranked candidates", "/pe-intelligence": "Sponsor & deal intel",
-    "/deal-screening": "First-pass deal filter", "/find-comps": "Comparable transactions",
+    "/deal-screening": "Thesis-testing workspace", "/find-comps": "Comparable transactions",
     "/conferences": "Industry conference tracker",
+    "/new-deal": "Create opportunity / import", "/deal-quality": "Score a target",
+    "/deal-risk-scores": "What can go wrong", "/deal-flow-heatmap": "Flow by stage",
+    "/pipeline/bridge": "Value-creation bridge",
     "/deals-library": "The deal archive", "/methodology": "How the models work",
     "/metric-glossary": "Every metric, defined", "/rcm-benchmarks": "RCM performance bands",
     "/data": "CMS public-data catalog", "/comparables": "Comp sets & multiples",
@@ -6465,12 +6473,16 @@ _SUB_SECTION_MAP = {
     "/escalations": "home", "/watchlist": "home", "/my": "home",
     # Source = target discovery. Target Screener anchors it; Deal Sourcing +
     # Conferences live here now.
+    # Source = target discovery (incl. the CMS screeners + thesis screening).
     "/target-screener": "source", "/source": "source", "/conferences": "source",
-    "/pipeline": "pipeline",
-    "/screen": "pipeline", "/predictive-screener": "pipeline",
-    "/pe-intelligence": "pipeline", "/deal-screening": "pipeline",
-    # Find Comps moved to Research (benchmark corpus comps).
-    "/find-comps": "research",
+    "/screen": "source", "/predictive-screener": "source",
+    "/deal-screening": "source",
+    # Pipeline = real deal-workflow surfaces only.
+    "/pipeline": "pipeline", "/new-deal": "pipeline", "/deal-pipeline": "pipeline",
+    "/deal-quality": "pipeline", "/deal-risk-scores": "pipeline",
+    "/deal-flow-heatmap": "pipeline", "/pipeline/bridge": "pipeline",
+    # Moved to Research: Find Comps (corpus comps) + PE Intelligence (generic).
+    "/find-comps": "research", "/pe-intelligence": "research",
     "/library": "library", "/deals-library": "library",
     "/methodology": "library", "/metric-glossary": "library",
     "/data": "library", "/comparables": "library",

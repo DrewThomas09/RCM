@@ -435,11 +435,18 @@ _MANUAL: List[PageContext] = [
     # ── Pipeline & Sourcing ─────────────────────────────────────────
     _ctx(
         "/pipeline", "Pipeline",
-        short_description="The deal pipeline — hospitals moving through stages "
-        "(screening → outreach → LOI → diligence → IC → closed / passed).",
-        primary_purpose="Track candidate hospitals through the sourcing funnel "
-        "and advance them stage by stage.",
-        common_questions=["What's in the pipeline?",
+        short_description="The deal pipeline — YOUR real opportunities moving "
+        "through stages (screening → outreach → LOI → diligence → IC → closed "
+        "/ passed). This is USER DEAL data, not the market or the corpus.",
+        primary_purpose="Track your actual opportunities through the deal "
+        "funnel and advance them stage by stage. Deals enter here by being "
+        "promoted from Source, created, or imported — the full lifecycle is: "
+        "Discover (Source) → Evaluate (X-Ray / Deal Quality) → Promote → "
+        "Manage (Pipeline) → Diligence → Decide → Monitor (Portfolio).",
+        common_questions=["What is the difference between Source and Pipeline?",
+                         "How do I promote a target into a deal?",
+                         "Is this my deals or the market/corpus?",
+                         "What's in the pipeline?",
                          "What stage is each hospital at?",
                          "How many are in diligence right now?",
                          "Which candidates are highest priority to advance?",
