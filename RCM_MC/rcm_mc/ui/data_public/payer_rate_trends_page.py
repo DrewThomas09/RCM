@@ -31,6 +31,7 @@ def _load_corpus() -> List[Dict[str, Any]]:
 from rcm_mc.ui._chartis_kit import (
     P, _MONO, _SANS, chartis_shell, ck_fmt_num, ck_fmt_pct,
     ck_kpi_block, ck_provenance_tooltip, ck_section_header,
+    ck_source_purpose,
 )
 
 
@@ -306,6 +307,10 @@ def render_payer_rate_trends() -> str:
   </div>
 </div>"""
 
+    body = ck_source_purpose(
+        purpose="Read payer rate-trend direction for the market.",
+        universe="illustrative", source="Reference rate tables (hardcoded)",
+        next_action="Verify a real reference rate source") + body
     return chartis_shell(body, "Payer Rate Trends", active_nav="/payer-rate-trends",
                          subtitle=f"{len(with_payer)} deals with payer data",
         editorial_intro={
