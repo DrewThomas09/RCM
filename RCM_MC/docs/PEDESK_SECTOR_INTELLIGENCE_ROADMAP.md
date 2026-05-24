@@ -160,15 +160,41 @@ provider profile pages + Guide contexts/RAG docs. Geocoding the
 agency/hospice addresses (same one-time offline method as hospitals) would
 add point maps — a later, separately-approved step.
 
+## Phase 2C/2D — Home Health + Hospice shipped (2026-05-23)
+
+Home Health + Hospice are **live**: screeners (`/home-health`, `/hospice`)
+with state tile-grid maps, single-provider profiles (`/home-health/<ccn>`,
+`/hospice/<ccn>`), and a **market-intelligence layer** (state market
+summary, ownership mix, quality-distribution quartiles, county/city
+competition with locality filter, per-provider state percentile + same-
+locality peers). Auto-deploy (`merge to main → tests → DigitalOcean`) is
+live and proven.
+
+## SNF / Nursing Home — *promoted to the next sector* (audit: PR #600)
+
+SNF is moved ahead of the original "Phase 6" slot: CMS **Nursing Home Care
+Compare** is the richest CMS-ready post-acute dataset (provider identity,
+four 5-star ratings, staffing, health-inspection survey results,
+penalties/enforcement, ownership, Special Focus Facility flags, bed/resident
+counts) and reuses the now-built sector scaffolds (`sector_screener.py`,
+`sector_provider_profile.py`, `sector_market_intel.py`). Full audit, dataset
+keys/grains, normalized-file + loader plan, and the #601–#603 UI plan:
+**[`PEDESK_SNF_DATA_SPINE.md`](PEDESK_SNF_DATA_SPINE.md)**. First ingest
+target = the **Provider Information** file → `snf_providers.csv` +
+`snf_quality.csv`. Strictly Medicare/Medicaid-certified, public quality —
+not commercial revenue (penalty "fines" are regulatory, not financials).
+
 ## Build order
 
 1. **Phase 1:** roadmap + audit + `/sector-intelligence` landing. No data.
-2. **Phase 2A (this PR):** Home Health + Hospice data sourced + loaders + state summaries (above).
-3. **Phase 2B:** Home Health + Hospice UI (screeners, maps, profiles, Guide contexts).
-3. **Phase 3:** Outpatient / ASC / Physician groups (NPPES subset + Part B PUF + ASC quality).
-4. **Phase 4:** Dental / DSO (NPPES dental + HPSA; density page, supply-oriented).
-5. **Phase 5:** Infusion / DME (NPPES supplier + DMEPOS + Part B J-codes).
-6. **Phase 6:** Broader post-acute (SNF, IRF, LTCH, Dialysis).
+2. **Phase 2A:** Home Health + Hospice data sourced + loaders + state summaries.
+3. **Phase 2B:** Home Health + Hospice UI (screeners, maps, profiles, Guide contexts). ✓ shipped
+4. **Phase 2C/2D:** Home Health + Hospice provider profiles + market intelligence. ✓ shipped
+5. **SNF / Nursing Home** *(next)* — audit (#600, this doc set) → data spine (Provider Information) → #601 screener+maps → #602 profiles → #603 market intelligence.
+6. **Phase 3:** Outpatient / ASC / Physician groups (NPPES subset + Part B PUF + ASC quality).
+7. **Phase 4:** Dental / DSO (NPPES dental + HPSA; density page, supply-oriented).
+8. **Phase 5:** Infusion / DME (NPPES supplier + DMEPOS + Part B J-codes).
+9. **Later post-acute:** IRF, LTCH, Dialysis.
 
 Each new dataset follows the hospital precedent: one-time vendored/cached
 source with provenance, a loader normalizing into the shared registry, and
