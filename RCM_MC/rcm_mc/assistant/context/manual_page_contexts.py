@@ -3409,6 +3409,67 @@ _MANUAL: List[PageContext] = [
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
+    _ctx(
+        "/long-term-care-hospital", "Long-Term Care Hospitals (LTCH)",
+        short_description="A screener of Medicare-certified long-term care "
+        "hospitals with publicly reported CMS measures — discharge to "
+        "community (risk-standardized), potentially-preventable readmissions, "
+        "Medicare spending per beneficiary, and bed counts — plus a state "
+        "tile-grid map, per-state market intelligence, and county competition.",
+        primary_purpose="Provide market + provider diligence context for LTCH "
+        "deals: facility density and bed capacity by state, the discharge-to-"
+        "community + readmission + spending profile, ownership mix, and county "
+        "competition.",
+        common_questions=[
+            "How many LTCHs are in this state and how do they perform?",
+            "What does discharge-to-community (risk-standardized) capture?",
+            "How does this hospital compare to same-state / same-county peers?",
+            "How should I read the readmission and Medicare-spending measures?",
+            "Is a performance gap an investable signal or just small-sample noise?",
+            "What share of the local LTCH market is for-profit vs nonprofit?",
+            "How many beds does this hospital operate?",
+            "What's missing from CMS LTCH data that I'd diligence separately?",
+            "Where does this data come from and how fresh is it?",
+        ],
+        inputs=["Vendored CMS LTCH Compare snapshot — General Information + "
+                "Provider Data (headline measures pivoted, Feb 2026)."],
+        outputs=["KPI cards, a state tile-grid map shaded by facility count, "
+                 "per-state market summary (ownership mix, county competition), "
+                 "provider tables (with bed counts), and per-facility profiles "
+                 "with state percentile + peers."],
+        key_metrics=["Discharge to community (risk-standardized)",
+                     "Potentially-preventable readmission rate",
+                     "Medicare spending per beneficiary", "Total beds"],
+        data_sources=["CMS Long-Term Care Hospital Compare — General "
+                      "Information + Provider Data."],
+        model_logic_summary="Counts, per-state discharge-to-community "
+        "averages, ownership-mix HHI, and same-state/county peer percentiles "
+        "over the vendored CMS file — no composite scores invented.",
+        why_it_matters="LTCH is a very small, CMS-measured post-acute sector; "
+        "discharge-to-community, readmissions, spend, and bed capacity are "
+        "useful early diligence signals when read with the tiny-universe caveat.",
+        diligence_use_cases=["Sizing the local LTCH market and bed capacity; "
+                             "reading ownership concentration; flagging quality "
+                             "outliers; framing the competitive set."],
+        interpretation_guidance=[
+            "Public CMS quality data — NOT commercial revenue or payer mix.",
+            "Very small national universe (~320 facilities); per-state samples "
+            "are often single-digit, so treat peer comparisons very cautiously.",
+            "Readmission (PPR) and Medicare-spending-per-beneficiary are "
+            "LOWER-is-better, risk-standardized ESTIMATES — read as risk "
+            "signals, not verdicts, and not under a 'higher percentile = "
+            "better' frame.",
+            "A performance gap may be case-mix driven — verify; it is peer "
+            "deviation, not an investment conclusion.",
+            "Market/provider context, not a final investment recommendation.",
+        ],
+        limitations=["Medicare-certified long-term care hospitals only; "
+                     "commercial rates and real-time census are not "
+                     "represented. Measure availability varies by facility."],
+        related_routes=["/sector-intelligence", "/inpatient-rehab", "/nursing-homes"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
 ]
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}

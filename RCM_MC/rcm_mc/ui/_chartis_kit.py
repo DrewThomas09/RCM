@@ -3359,6 +3359,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "nursing-homes", "title": "Nursing Homes (SNF)", "route": "/nursing-homes"},
     {"id": "dialysis",      "title": "Dialysis Facilities", "route": "/dialysis"},
     {"id": "inpatient-rehab", "title": "Inpatient Rehab (IRF)", "route": "/inpatient-rehab"},
+    {"id": "long-term-care-hospital", "title": "Long-Term Care Hospitals (LTCH)", "route": "/long-term-care-hospital"},
     # Library / reference
     {"id": "library",       "title": "Deals Library",      "route": "/library"},
     {"id": "deals-library", "title": "Deals Library (alt)","route": "/deals-library"},
