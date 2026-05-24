@@ -61,6 +61,7 @@ APP_GRID_CSS = """
 .cc-h1{font-family:var(--cc-serif);font-weight:400;font-size:50px;letter-spacing:-.02em;
   color:var(--cc-ink);margin:0;line-height:1;}
 .cc-h1-em{font-style:italic;color:var(--cc-green);}
+.cc-lede{font-family:var(--cc-serif);font-size:16px;line-height:1.5;color:var(--cc-ink2);margin:10px 0 0;max-width:74ch;}
 .cc-actions{display:flex;gap:8px;}
 .cc-btn{font-family:var(--cc-mono);font-size:11px;font-weight:600;letter-spacing:.08em;
   text-transform:uppercase;color:var(--cc-ink);background:var(--cc-paper);
@@ -197,24 +198,34 @@ def _kpi_card(*, tag: str, color: str, title: str, em: str,
 
 # ── Page ────────────────────────────────────────────────────────────────────
 
-def _page_top(crumb_slug: str) -> str:
+def _page_top(crumb_slug: str, *, section_label: str = "PORTFOLIO & DILIGENCE",
+              kicker_label: str = "FUND II", lede: str = "") -> str:
+    # Mono eyebrow carries the two-view lexicon (section · kicker · slug) so
+    # the dossier grid frames partner vs consulting identically to the flat
+    # page. Section/kicker are rendered uppercase exactly as passed.
+    eyebrow = (
+        '<div class="cc-crumb">'
+        f'{_esc(section_label)} <span class="cc-crumb-slug">&middot; '
+        f'{_esc(kicker_label)} &middot; {_esc(crumb_slug)}</span></div>'
+    )
+    lede_html = f'<p class="cc-lede">{_esc(lede)}</p>' if lede else ''
     return (
         '<div class="cc-top">'
-        '<div class="cc-crumb">Portfolio &amp; Diligence '
-        f'<span class="cc-crumb-slug">&middot; {_esc(crumb_slug)}</span></div>'
-        '<div class="cc-top-row">'
+        + eyebrow
+        + '<div class="cc-top-row">'
         '<h1 class="cc-h1">Command <span class="cc-h1-em">center</span>.</h1>'
         '<div class="cc-actions">'
         # No customize/add-card modes exist yet → safe disabled (honest);
         # Refresh is a real reload of the page's data.
         '<button type="button" class="cc-btn" disabled '
         'title="Customize coming soon">&#8862; Customize</button>'
-        '<a class="cc-btn" href="?layout=grid" title="Reload data">&#8635; Refresh</a>'
+        '<a class="cc-btn" href="/app" title="Reload data">&#8635; Refresh</a>'
         '<button type="button" class="cc-btn cc-btn-primary" disabled '
         'title="Add a card coming soon">+ Add card</button>'
         '</div>'
         '</div>'
-        '</div>'
+        + lede_html
+        + '</div>'
     )
 
 
@@ -277,6 +288,9 @@ def render_app_grid(
     focused_deal_id: Optional[str] = None,
     selected_stage: Optional[str] = None,
     focused_packet: Any = None,
+    section_label: str = "PORTFOLIO & DILIGENCE",
+    kicker_label: str = "FUND II",
+    lede: str = "",
 ) -> str:
     """Render the dossier-card grid body (caller wraps it in the shell)."""
     r = rollup or {}
@@ -362,7 +376,8 @@ def render_app_grid(
 
     return (
         '<div class="cc-page" data-cc-grid>'
-        + _page_top("/command-center")
+        + _page_top("/command-center", section_label=section_label,
+                    kicker_label=kicker_label, lede=lede)
         + '<div class="cc-grid">' + "".join(cards) + addcards + '</div>'
         + src_footer
         + '</div>'
