@@ -31,6 +31,10 @@ from typing import Any, List, Optional
 from .cross_sector import SECTOR_BY_ID, SectorStateBenchmark, sector_state_benchmark
 from .investable_evidence import EvidenceProfile, evidence_profile
 from .provider_xray import ProviderMatch
+from .provider_xray_benchmark import (
+    RISK_INDICATOR_DISCLAIMER, MetricBenchmark, RiskIndicator,
+    metric_benchmarks, risk_indicators,
+)
 
 # Signal severities (paired with text everywhere — never color-only).
 GREEN, AMBER, RED, GRAY = "green", "amber", "red", "gray"
@@ -53,6 +57,11 @@ class ProviderXrayReport:
     caveats: List[str] = field(default_factory=list)
     suggested_questions: List[str] = field(default_factory=list)
     note: str = ""           # for verticals without a benchmark layer (hospital)
+    # Deepened benchmarks: per-metric national/state/locality/ownership
+    # percentiles, and transparent rule-based risk indicators (NOT forecasts).
+    benchmarks: List[MetricBenchmark] = field(default_factory=list)
+    risk_indicators: List[RiskIndicator] = field(default_factory=list)
+    risk_disclaimer: str = RISK_INDICATOR_DISCLAIMER
 
 
 _BASE_QUESTIONS = [
@@ -176,8 +185,11 @@ def build_provider_xray_report(match: ProviderMatch) -> ProviderXrayReport:
             suggested_questions=_BASE_QUESTIONS,
             note="Open the hospital profile for HCRIS cost-report metrics.")
 
-    ev = evidence_profile(vid, match.ccn or match.provider_id)
+    _id = match.ccn or match.provider_id
+    ev = evidence_profile(vid, _id)
     mk = sector_state_benchmark(vid, match.state)
+    bm = metric_benchmarks(vid, _id)
+    ri = risk_indicators(vid, _id, bm)
 
     signals: List[DiligenceSignal] = [_quality_signal(ev), _sample_signal(ev)]
     for maybe in (_enforcement_signal(ev), _competition_signal(mk),
@@ -195,4 +207,5 @@ def build_provider_xray_report(match: ProviderMatch) -> ProviderXrayReport:
 
     return ProviderXrayReport(
         match=match, has_benchmarks=ev is not None, evidence=ev, market=mk,
-        signals=signals, caveats=caveats, suggested_questions=_BASE_QUESTIONS)
+        signals=signals, caveats=caveats, suggested_questions=_BASE_QUESTIONS,
+        benchmarks=bm, risk_indicators=ri)
