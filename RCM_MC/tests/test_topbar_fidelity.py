@@ -18,6 +18,16 @@ class TopBarFidelityTests(unittest.TestCase):
     def setUp(self):
         self.html = _topbar("home")
 
+    def test_nav_chevrons_on_sections_not_home(self):
+        # Handoff: nav items with a section sub-nav show a dropdown caret;
+        # Home (dashboard root) does not.
+        pipeline = _topbar("pipeline")
+        self.assertEqual(pipeline.count("ck-nav-caret"), 5)  # all but Home
+        # Home itself carries no caret immediately after its label.
+        self.assertNotIn('>Home<span class="ck-nav-caret"', pipeline)
+        # The active section's caret renders.
+        self.assertIn('class="active">Pipeline<span class="ck-nav-caret"', pipeline)
+
     def test_guide_has_green_glyph_and_is_not_disabled(self):
         self.assertIn("ck-guide-glyph", self.html)
         self.assertIn(">?</span>Guide</button>", self.html)
