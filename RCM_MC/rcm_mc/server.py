@@ -4515,8 +4515,11 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/portfolio-analytics":
             from .ui.chartis.portfolio_analytics_page import render_portfolio_analytics
             store = PortfolioStore(self.config.db_path)
+            _paq = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             return self._send_html(render_portfolio_analytics(
                 store=store, current_user=self._chartis_username(),
+                subsector=(_paq.get("subsector") or [None])[0],
+                vintage=(_paq.get("vintage") or [None])[0],
             ))
         if path.startswith("/library/"):
             # /library/<source_id> — single corpus-deal detail. The
