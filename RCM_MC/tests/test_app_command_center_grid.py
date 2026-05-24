@@ -108,17 +108,24 @@ class GridRealDataTests(unittest.TestCase):
         )
 
 
-class DefaultLayoutUnchangedTests(unittest.TestCase):
-    def test_default_app_is_not_the_grid(self):
+class DefaultLayoutIsGridTests(unittest.TestCase):
+    """Design-fidelity pass: the dossier grid is now the DEFAULT /app; the
+    old flat-scroll page is the ?layout=flat escape hatch."""
+
+    def test_default_app_is_the_grid(self):
         html = render_app_page(store=_fresh_store())   # no layout
-        self.assertNotIn("data-cc-grid", html)
-        self.assertNotIn('class="cc-grid"', html)
-        # Default still renders the flat-scroll command center.
+        self.assertIn("data-cc-grid", html)
+        self.assertIn('class="cc-grid"', html)
         self.assertIn("Command center", html)
 
-    def test_unknown_layout_falls_back_to_default(self):
+    def test_unknown_layout_still_renders_grid(self):
         html = render_app_page(store=_fresh_store(), layout="bogus")
+        self.assertIn("data-cc-grid", html)
+
+    def test_flat_escape_hatch_renders_old_page(self):
+        html = render_app_page(store=_fresh_store(), layout="flat")
         self.assertNotIn("data-cc-grid", html)
+        self.assertIn("Command center", html)
 
 
 if __name__ == "__main__":

@@ -136,36 +136,12 @@ def render_app_page(
         if not deals_df.empty else None
     )
 
-    # ── Parallel dossier-grid preview (/app?layout=grid) ──
-    # Shipped behind a flag so the live flat-scroll /app is untouched while
-    # the redesigned 12-column grid is validated on the flagship page.
-    # Reuses the data already fetched above (no extra queries).
-    if (layout or "").lower() == "grid":
-        from ._app_grid import APP_GRID_CSS, render_app_grid
-        return editorial_chartis_shell(
-            render_app_grid(
-                store=store, rollup=rollup, deals_df=deals_df,
-                focused_deal_id=focused_deal_id,
-                selected_stage=selected_stage, focused_packet=focused_packet,
-            ),
-            title="Command center",
-            active_nav="PORTFOLIO",
-            breadcrumbs=[("Home", "/"), ("Portfolio & diligence", None),
-                         ("Command center", None)],
-            show_chrome=True,
-            show_phi_banner=True,
-            phi_mode=phi_mode,
-            show_sidebar=True,
-            sidebar_active_path="",
-            extra_css=APP_GRID_CSS,
-        )
-
     # Mode-aware page framing (two-view L1 lexicon): the PE-partner view
     # frames this as a fund-level command center; the Chartis Consulting
     # view frames it as a client-engagement command center. Vocabulary
-    # only — the blocks, metrics, and layout are identical. Default
-    # (partner) copy is unchanged, so the partner render stays
-    # byte-identical; only the consulting cookie changes the strings.
+    # only — the blocks, metrics, and layout are identical. Computed before
+    # the layout branch so BOTH the dossier grid (default) and the
+    # flat-scroll escape hatch carry the same lexicon.
     from rcm_mc.ui._workspace_mode import current_workspace_mode, CONSULTING
     _is_consulting = current_workspace_mode() == CONSULTING
     _cc_section_label = (
@@ -176,10 +152,11 @@ def render_app_page(
         "Commercial diligence" if _is_consulting else "Portfolio & diligence"
     )
     _cc_lede = (
-        ("Engagement rollup, active diligence, screening flow — one canvas.")
+        ("Engagement rollup, active diligence, screening flow — one canvas. "
+         "The complete engagement view in one place.")
         if _is_consulting
         else ("Hold-period rollup, active diligence, screening flow — "
-              "one canvas.")
+              "one canvas. The complete hold-period view in one place.")
     )
     _cc_what_summary = (
         "Weighted MOIC & IRR · pipeline funnel · covenant heatmap · "
@@ -188,6 +165,33 @@ def render_app_page(
         + ("engagement" if _is_consulting else "hold-period")
         + " view in one place."
     )
+
+    # ── Command Center dossier grid (default since the design-fidelity pass) ──
+    # The 12-column dossier-card grid is now the default /app. The previous
+    # flat-scroll page remains available at ?layout=flat as an escape hatch.
+    # Reuses the data already fetched above (no extra queries). Mode framing
+    # is threaded through so the two-view lexicon is preserved.
+    if (layout or "").lower() != "flat":
+        from ._app_grid import APP_GRID_CSS, render_app_grid
+        return editorial_chartis_shell(
+            render_app_grid(
+                store=store, rollup=rollup, deals_df=deals_df,
+                focused_deal_id=focused_deal_id,
+                selected_stage=selected_stage, focused_packet=focused_packet,
+                section_label=_cc_section_label, kicker_label=_cc_kicker_label,
+                lede=_cc_lede,
+            ),
+            title="Command center",
+            active_nav="PORTFOLIO",
+            breadcrumbs=[("Home", "/"), (_cc_breadcrumb_label, None),
+                         ("Command center", None)],
+            show_chrome=True,
+            show_phi_banner=True,
+            phi_mode=phi_mode,
+            show_sidebar=True,
+            sidebar_active_path="",
+            extra_css=APP_GRID_CSS,
+        )
 
     # As-of for the page-head meta column. Use the most recent snapshot
     # if any deals tracked; else "—".

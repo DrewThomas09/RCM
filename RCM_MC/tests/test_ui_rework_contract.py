@@ -359,30 +359,38 @@ class TestUIReworkContract(unittest.TestCase):
             os.environ.pop("RCM_MC_PHI_MODE", None)
 
     def test_v3_app_route_renders_for_authenticated_user(self) -> None:
-        """GET /app?ui=v3 returns 200 with all 9 paired-block markers."""
+        """GET /app?ui=v3 renders the dossier-card grid (default since the
+        design-fidelity pass) with every section present.
+
+        The grid reimplements KPI / funnel / deals as dossier cards (cc-*)
+        and embeds the heavier analytic blocks via their existing renderers
+        (so app-cov-heat / app-drag / app-init / app-alerts / app-deliv
+        markers carry over). The flat-scroll layout stays at ?layout=flat.
+        """
         body = self._fetch_body("/app?ui=v3")
-        # Editorial markers
         self.assertIn("/static/v3/chartis.css", body,
                       "editorial CSS link missing")
-        self.assertIn("Command center", body,
-                      "page title missing")
-        # All 9 helper blocks present (per spec §6.3-6.11)
-        self.assertIn("app-kpi-strip", body, "KPI strip block missing")
-        self.assertIn("app-pipeline-funnel", body, "pipeline funnel missing")
-        self.assertIn("app-deals-table", body, "deals table missing")
+        self.assertIn("Command center", body, "page title missing")
+        # Dossier grid is the default layout.
+        self.assertIn("data-cc-grid", body, "dossier grid marker missing")
+        # Grid's own KPI / funnel / roster cards.
+        self.assertIn("cc-kpi", body, "KPI cards missing")
+        self.assertIn("cc-funnel", body, "pipeline funnel card missing")
+        self.assertIn("cc-roster", body, "deals roster card missing")
+        # Heavier analytic blocks embedded via existing renderers.
         self.assertIn("app-cov-heat", body, "covenant heatmap missing")
-        # EBITDA drag empty state OR bar present (depends on focused deal)
         self.assertTrue(
             "app-drag-empty" in body or "app-drag-bar" in body,
             "EBITDA drag block missing in some form",
         )
         self.assertIn("app-init", body, "initiative tracker missing")
-        # Alerts: either active cards or all-clear card
         self.assertTrue(
             "app-alerts" in body or "app-alerts-clear" in body,
             "alerts block missing",
         )
         self.assertIn("app-deliv", body, "deliverables missing")
+        # Source provenance still declared.
+        self.assertIn("portfolio.db", body, "source registry missing")
 
     def test_v3_app_handles_invalid_focused_deal_id(self) -> None:
         """?deal=<garbage> falls through to empty-state rather than 500."""

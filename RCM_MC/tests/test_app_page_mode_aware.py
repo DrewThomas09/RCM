@@ -64,17 +64,26 @@ class AppPageModeAwareTests(unittest.TestCase):
         self.assertIn("Command center", self._render(PARTNER))
         self.assertIn("Command center", self._render(CONSULTING))
 
+    def _render_flat(self, mode: str) -> str:
+        # The flat-scroll layout (now the ?layout=flat escape hatch) is where
+        # the block helpers — deals table, KPI strip, initiative tracker —
+        # render with their mode-aware column/scope labels. The default grid
+        # uses a roster + KPI cards instead, so these block labels are
+        # asserted on the flat layout.
+        set_workspace_mode(mode)
+        return render_app_page(store=self.store, layout="flat")
+
     def test_block_helper_labels_follow_mode(self) -> None:
         # The block helpers (deals table, initiative tracker, KPI strip)
         # carry partner vocabulary that swaps via the lexicon: the deals
         # table / initiative "Deal" column header and the KPI strip's
         # FUND-LEVEL scope. Lifecycle stage names (hold/exit/...) are
         # domain terms and are intentionally NOT swapped.
-        partner = self._render(PARTNER)
+        partner = self._render_flat(PARTNER)
         self.assertIn("FUND-LEVEL KPIs", partner)
         self.assertIn(">Deal</th>", partner)
 
-        consulting = self._render(CONSULTING)
+        consulting = self._render_flat(CONSULTING)
         self.assertIn("ENGAGEMENT-LEVEL KPIs", consulting)
         self.assertIn(">Engagement</th>", consulting)
         self.assertNotIn("FUND-LEVEL KPIs", consulting)
