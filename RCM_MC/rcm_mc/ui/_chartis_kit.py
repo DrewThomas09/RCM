@@ -712,6 +712,93 @@ def ck_illustrative_note(what: str = "figures") -> str:
     )
 
 
+# ── Route-level illustrative banner ──────────────────────────────────
+#
+# The ``data_public`` analyzer surface (~158 routes) renders realistic-looking
+# numbers from the bundled illustrative deal corpus (``data_public``
+# ``_SEED_DEALS`` / ``extended_seed*``) or modeled assumptions — NOT the
+# user's ingested portfolio. ``chartis_shell`` auto-injects ONE honest
+# disclosure per page for any route in this registry so a partner never
+# mistakes the template for live, sourced data.
+#
+# Idempotent: ``chartis_shell`` skips injection when the page already rendered
+# its own ``ck-illus-note`` (e.g. the per-page labels in PRs 7/9/10).
+# DELIBERATELY EXCLUDED (they carry their own per-state provenance):
+#   /payer-stress, /cost-structure, /debt-service — show real HCRIS data when a
+#     CCN is attached, illustrative only on degrade;
+#   /cms-apm — curated public CMMI catalog + its own scoped illustrative overlay.
+#   /scenario-mc — a live Monte-Carlo calculator on user inputs (deep-traced);
+#   /tax-structure-analyzer — a pure calculator on user inputs (deep-traced);
+#   /base-rates — a live/calc page (deep-traced).
+# Genuinely-real reference pages are excluded — /cms-sources (real CMS API
+# catalog), /cms-data-browser (real HCRIS/DRG samples), /module-index (nav),
+# /data-sources-admin (loaded-data status). NOTE: /corpus-dashboard and
+# /corpus-coverage ARE included — they present analytics over the illustrative
+# seed corpus, so they carry the disclosure too.
+# (The scenario-mc / tax-structure-analyzer exclusions match the prior
+# deep-trace pinned by tests/test_curated_illustrative_note.py.)
+#
+# Regenerate the set with the scan in tests/test_route_illustrative_banner.py.
+_ILLUSTRATIVE_ANALYZER_ROUTES = frozenset({
+    "/aco-economics", "/acq-timing", "/ai-operating-model", "/antitrust-screener",
+    "/backtest", "/backtester", "/biosimilars",
+    "/board-governance", "/bolton-analyzer", "/cap-structure", "/capex-budget",
+    "/capital-call", "/capital-efficiency", "/capital-pacing", "/capital-schedule",
+    "/cin-analyzer", "/clinical-ai", "/clinical-outcomes", "/coinvest-pipeline",
+    "/comparables", "/competitive-intel", "/compliance-attestation", "/concentration-risk",
+    "/continuation-vehicle", "/corpus-coverage", "/corpus-dashboard", "/corpus-ic-memo",
+    "/covenant-headroom", "/covenant-monitor",
+    "/cyber-risk", "/deal-flow-heatmap", "/deal-origination", "/deal-pipeline",
+    "/deal-postmortem", "/deal-quality", "/deal-risk-scores", "/deal-search",
+    "/deal-sourcing", "/debt-financing", "/demand-forecast", "/denovo-expansion",
+    "/digital-front-door", "/diligence-vendors", "/direct-employer", "/direct-lending",
+    "/dividend-recap", "/dpi-tracker", "/drug-shortage", "/earnout",
+    "/entry-multiple", "/escrow-earnout", "/esg-dashboard", "/esg-impact",
+    "/exit-multiple", "/exit-readiness", "/exit-timing", "/find-comps",
+    "/fraud-detection", "/fund-attribution", "/fundraising", "/geo-market",
+    "/gp-benchmarking", "/gpo-supply", "/growth-runway", "/hcit-platform",
+    "/health-equity", "/hold-analysis", "/hold-optimizer", "/hospital-anchor",
+    "/ic-memo-gen", "/insurance-tracker", "/irr-dispersion", "/key-person",
+    "/lbo-stress", "/leverage-intel", "/library", "/litigation",
+    "/locum-tracker", "/lp-dashboard", "/lp-reporting", "/ma-contracts",
+    "/ma-star", "/market-rates", "/medicaid-unwinding", "/medical-realestate",
+    "/mgmt-comp", "/mgmt-fee-tracker", "/msa-concentration", "/multiple-decomp",
+    "/nav-loan-tracker", "/nsa-tracker", "/operating-partners", "/partner-economics",
+    "/patient-experience", "/payer-concentration", "/payer-contracts", "/payer-intel",
+    "/payer-rate-trends", "/payer-shift", "/peer-transactions", "/peer-valuation",
+    "/phys-comp-plan", "/physician-labor", "/physician-productivity", "/platform-maturity",
+    "/pmi-integration", "/pmi-playbook", "/portfolio-optimizer", "/portfolio-sim",
+    "/provider-network", "/provider-retention", "/qoe-analyzer", "/quality-scorecard",
+    "/rcm-red-flags", "/real-estate", "/redflag-scanner", "/ref-pricing",
+    "/refi-optimizer", "/regulatory-risk", "/reinvestment", "/reit-analyzer",
+    "/return-attribution", "/revenue-leakage", "/risk-adjustment", "/risk-matrix",
+    "/rollup-economics", "/rw-insurance", "/secondaries-tracker",
+    "/sector-correlation", "/sector-intel", "/sector-momentum", "/sellside-process",
+    "/size-intel", "/specialty-benchmarks", "/sponsor-heatmap", "/sponsor-league",
+    "/supply-chain", "/tax-credits", "/tax-structure",
+    "/tech-stack", "/telehealth-econ", "/transition-services", "/treasury",
+    "/trial-site-econ", "/underwriting", "/underwriting-model", "/unit-economics",
+    "/value-creation", "/value-creation-plan", "/vcp-tracker", "/vdr-tracker",
+    "/vintage-cohorts", "/vintage-perf", "/workforce-planning", "/workforce-retention",
+    "/working-capital", "/zbb-tracker",
+})
+
+_ILLUSTRATIVE_ROUTE_NOTE = ("analyzer figures (built from the bundled "
+                            "illustrative seed corpus / modeled assumptions, "
+                            "not your ingested portfolio)")
+
+
+def _is_illustrative_route(active_nav: Optional[str]) -> bool:
+    """True if ``active_nav`` is a registered illustrative analyzer route.
+
+    Normalizes a trailing slash and strips any query/fragment so
+    ``/lbo-stress?ev=200`` and ``/lbo-stress/`` both resolve."""
+    if not active_nav:
+        return False
+    p = str(active_nav).split("?", 1)[0].split("#", 1)[0].rstrip("/") or "/"
+    return p in _ILLUSTRATIVE_ANALYZER_ROUTES
+
+
 # ── Action button primitive ─────────────────────────────────────────
 #
 # Single editorial primary-action button for the workbench. Emits
@@ -6968,6 +7055,15 @@ def chartis_shell(
         if subtitle:
             subtitle_consumed_by_title = True
     body_html = intro_html + body_html
+
+    # Route-level illustrative disclosure. Pages on the data_public analyzer
+    # surface render realistic numbers from the bundled seed corpus / modeled
+    # assumptions, not the user's ingested data. Auto-inject one honest banner
+    # for any registered route — idempotent: skip if the page already rendered
+    # its own ck-illus-note (per-page labels) so we never double-disclose.
+    if (_is_illustrative_route(active_nav)
+            and "ck-illus-note" not in body_html):
+        body_html = ck_illustrative_note(_ILLUSTRATIVE_ROUTE_NOTE) + body_html
 
     # Render the standalone subtitle_html only when the shell did
     # NOT auto-inject the subtitle into a ck_page_title AND the
