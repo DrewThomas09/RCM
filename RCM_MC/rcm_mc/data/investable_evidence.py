@@ -54,6 +54,9 @@ _QUALITY_METRICS: Dict[str, List[Tuple[str, str, str]]] = {
         ("composite_process", "Composite process measure", "%"),
         ("pain_screening", "Pain screening", "%"),
         ("treatment_preferences", "Treatment preferences", "%"),
+        # Family-caregiver experience (CAHPS Hospice) — higher is better.
+        ("cahps_summary_star", "Family-survey summary star", ""),
+        ("cahps_recommend_pct", "Would definitely recommend", "%"),
     ],
     "nursing-homes": [
         ("overall_rating", "Overall star rating", ""),

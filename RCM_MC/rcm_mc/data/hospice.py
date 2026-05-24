@@ -22,6 +22,13 @@ from typing import Dict, List, Optional
 
 _PROVIDERS_CSV = Path(__file__).with_name("hospice_providers.csv")
 _QUALITY_CSV = Path(__file__).with_name("hospice_quality.csv")
+# Family-caregiver experience (CAHPS Hospice Survey) — vendored from the CMS
+# facility file. Adds the patient/family-voice dimension to the HIS measures.
+_CAHPS_CSV = Path(__file__).with_name("hospice_cahps.csv")
+_CAHPS_METRICS = ("cahps_summary_star", "cahps_recommend_pct",
+                  "cahps_rating_9_10_pct", "cahps_communication_pct",
+                  "cahps_symptoms_pct", "cahps_respect_pct",
+                  "cahps_timely_pct", "cahps_emotional_pct")
 
 _QUALITY_METRICS = ("composite_process", "care_index_overall", "visits_last_days",
                     "pain_screening", "treatment_preferences", "beliefs_values")
@@ -99,6 +106,29 @@ def load_hospice_quality() -> Dict[str, Dict[str, Optional[float]]]:
             if not ccn:
                 continue
             out[ccn] = {m: _f(r.get(m, "")) for m in _QUALITY_METRICS}
+    # Merge the family-caregiver experience (CAHPS) measures so they flow
+    # through the screener, cross-sector benchmark, and X-Ray with the HIS
+    # process measures. Hospices without a survey carry None (honest).
+    cahps = load_hospice_cahps()
+    for ccn, row in out.items():
+        cr = cahps.get(ccn) or {}
+        for m in _CAHPS_METRICS:
+            row[m] = cr.get(m)
+    return out
+
+
+@functools.lru_cache(maxsize=1)
+def load_hospice_cahps() -> Dict[str, Dict[str, Optional[float]]]:
+    """``{ccn: {cahps_metric: float|None}}`` from the vendored CAHPS file."""
+    out: Dict[str, Dict[str, Optional[float]]] = {}
+    if not _CAHPS_CSV.is_file():
+        return out
+    with _CAHPS_CSV.open(newline="", encoding="utf-8", errors="replace") as fh:
+        for r in csv.DictReader(fh):
+            ccn = _norm_ccn(r.get("ccn", ""))
+            if not ccn:
+                continue
+            out[ccn] = {m: _f(r.get(m, "")) for m in _CAHPS_METRICS}
     return out
 
 
