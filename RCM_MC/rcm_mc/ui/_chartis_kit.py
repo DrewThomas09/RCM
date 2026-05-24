@@ -137,7 +137,7 @@ def ck_fmt_moic(v: Optional[float], *, dash: str = "—") -> str:
 
 _CORPUS_NAV = [
     {"label": "Home",      "href": "/home",      "key": "home"},
-    {"label": "Source",    "href": "/source",    "key": "source"},
+    {"label": "Source",    "href": "/target-screener", "key": "source"},
     {"label": "Pipeline",  "href": "/pipeline",  "key": "pipeline"},
     {"label": "Diligence", "href": "/diligence", "key": "diligence"},
     {"label": "Library",   "href": "/library",   "key": "library"},
@@ -160,6 +160,7 @@ _SUB_NAV = {
     # it; PR E folds Hospital + Predictive screeners into a unified Target
     # Screener here. Conferences moved in from Pipeline (it's a sourcing surface).
     "source": [
+        {"label": "Target Screener",     "href": "/target-screener"},
         {"label": "Deal Sourcing",       "href": "/source"},
         {"label": "Conferences",         "href": "/conferences"},
     ],
@@ -243,8 +244,9 @@ _SECTION_FEATURE = {
                       "the Command Center in one canvas.", "href": "/app"},
     "source": {"eyebrow": "SECTION · SOURCE", "title": "Target discovery",
                "blurb": "Find targets and generate opportunities from the CMS/"
-                        "market universe — sourcing, screeners, conferences.",
-               "href": "/source"},
+                        "market universe — one Target Screener, three modes, "
+                        "plus conferences.",
+               "href": "/target-screener"},
     "pipeline": {"eyebrow": "SECTION · PIPELINE", "title": "Live deals",
                  "blurb": "Track real opportunities once promoted from Source — "
                           "screen, score, and move deals toward IC.",
@@ -273,7 +275,8 @@ _NAV_DESC = {
     "/app": "Glance-level morning brief", "/my/AT": "Your owned deals & pulse",
     "/alerts": "Fire / ack / snooze lifecycle", "/escalations": "What needs a partner",
     "/watchlist": "Starred deals to track",
-    "/source": "Origination & market scan", "/screen": "Hospital target screener",
+    "/target-screener": "Find targets — 3 modes", "/source": "Thesis-driven sourcing",
+    "/screen": "Hospital target screener",
     "/predictive-screener": "Model-ranked candidates", "/pe-intelligence": "Sponsor & deal intel",
     "/deal-screening": "First-pass deal filter", "/find-comps": "Comparable transactions",
     "/conferences": "Industry conference tracker",
@@ -3428,6 +3431,7 @@ _DEFAULT_PALETTE_MODULES = [
         "route": "/diligence/questions"},
     # Pipeline / sourcing
     {"id": "pipeline",    "title": "Pipeline",             "route": "/pipeline"},
+    {"id": "target-screener","title": "Target Screener",    "route": "/target-screener"},
     {"id": "source",      "title": "Deal Sourcing",        "route": "/source"},
     {"id": "screen",      "title": "Hospital Screener",    "route": "/screen"},
     {"id": "predictive",  "title": "Predictive Screener",  "route": "/predictive-screener"},
@@ -6451,8 +6455,9 @@ _SUB_SECTION_MAP = {
     # leading-slash forms
     "/home": "home", "/app": "home", "/alerts": "home",
     "/escalations": "home", "/watchlist": "home", "/my": "home",
-    # Source = target discovery. Deal Sourcing + Conferences live here now.
-    "/source": "source", "/conferences": "source",
+    # Source = target discovery. Target Screener anchors it; Deal Sourcing +
+    # Conferences live here now.
+    "/target-screener": "source", "/source": "source", "/conferences": "source",
     "/pipeline": "pipeline",
     "/screen": "pipeline", "/predictive-screener": "pipeline",
     "/pe-intelligence": "pipeline", "/deal-screening": "pipeline",

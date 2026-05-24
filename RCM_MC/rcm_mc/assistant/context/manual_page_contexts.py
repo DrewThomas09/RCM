@@ -479,6 +479,32 @@ _MANUAL: List[PageContext] = [
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
     _ctx(
+        "/target-screener", "Target Screener",
+        short_description="The unified Source entry: one place to find targets "
+        "with three modes (Thesis Sourcing, Hospital Screener, Predictive "
+        "Screener), all searching the same public CMS/HCRIS hospital universe.",
+        primary_purpose="Give a single, clear starting point for target "
+        "discovery and explain which of the three screening modes to use — "
+        "they differ in HOW you search, not what they search.",
+        common_questions=[
+            "What is the difference between Target Screener and Pipeline?",
+            "Which screener mode should I use?",
+            "How do I promote a result into a deal?"],
+        inputs=["Choice of mode; the underlying screeners read public "
+                "CMS/HCRIS hospital data."],
+        outputs=["Routes to Thesis Sourcing (/source), Hospital Screener "
+                 "(/screen), or Predictive Screener (/predictive-screener)."],
+        data_sources=["Public CMS / HCRIS hospital universe (market data, "
+                      "not your deals)."],
+        why_it_matters="Removes the 'which screener do I use?' confusion by "
+        "giving one entry that explains and routes to each mode.",
+        interpretation_guidance=[
+            "This is CMS PUBLIC DATA (the market), not your pipeline or "
+            "portfolio. Promote a result into the Pipeline to track it as a "
+            "real opportunity.",
+        ],
+    ),
+    _ctx(
         "/source", "Deal Sourcing",
         short_description="Thesis-matched sourcing — scores the public HCRIS "
         "hospital universe against predefined investment theses and ranks the "
