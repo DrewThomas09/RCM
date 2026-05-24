@@ -93,3 +93,8 @@ design_handoff_pedesk_sidebar/
 # PEdesk login design handoff — static prototype, visual/spec reference only;
 # never shipped as runtime app code.
 design_handoff_pedesk_login/
+
+# PEdesk top-bar + command-center design handoffs — static prototypes,
+# visual/spec reference only; never shipped as runtime app code.
+design_handoff_pedesk_topbar/
+design_handoff_pedesk_command_center/
