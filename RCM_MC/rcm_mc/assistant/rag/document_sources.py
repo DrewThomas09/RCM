@@ -31,6 +31,8 @@ _DOC_KEYWORDS = (
     "portfolio", "screening", "library_corpus", "research_tooling",
     # investable-evidence + predictive-modeling framework docs (rag_sources/)
     "evidence", "predictive", "modeling", "statistic",
+    # CMS Provider X-Ray source cards (rag_sources/)
+    "xray", "vertical_metric",
 )
 _DOC_DENY = ("secret", "credential", "session", "password", "token", "auth_")
 _MAX_DOC_FILES = 40
