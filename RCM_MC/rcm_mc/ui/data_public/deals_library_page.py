@@ -334,7 +334,7 @@ def render_deals_library(
     ``render_insights_page``.
     """
     from rcm_mc.ui._chartis_kit import (
-        render_insights_page, ck_table, ck_page_title,
+        render_insights_page, ck_table, ck_page_title, ck_illustrative_note,
     )
     from rcm_mc.ui.chartis._helpers import render_page_explainer
 
@@ -453,9 +453,10 @@ def render_deals_library(
             "headline": "The healthcare-PE deal universe, cataloged.",
             "italic_word": "cataloged",
             "body": (
-                "Every deal we've ingested — name, sponsor, vintage, "
-                "EV/EBITDA, realized MOIC and IRR. Filter by sector, "
-                "regime, or MOIC bucket to assemble comparables."
+                "The bundled illustrative deal corpus — name, sponsor, "
+                "vintage, EV/EBITDA, realized MOIC and IRR. Filter by sector, "
+                "regime, or MOIC bucket to assemble comparables. This is the "
+                "built-in seed library, not your ingested portfolio."
             ),
         },
         chip_label_overrides={
@@ -466,6 +467,8 @@ def render_deals_library(
         #   1. ck_page_title (H1 + eyebrow + meta)
         #   2. KPI strip
         # Then the search hero, filter rail, and table below.
-        prelude_html=page_title + kpis,
+        prelude_html=ck_illustrative_note(
+            "deals-corpus aggregates — built from the bundled illustrative "
+            "seed deals, not your ingested portfolio") + page_title + kpis,
         prelude_position="before",
     )

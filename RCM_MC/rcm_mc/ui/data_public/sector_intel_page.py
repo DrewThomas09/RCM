@@ -134,7 +134,7 @@ def _moic_color(moic: float) -> str:
 
 
 def render_sector_intel(min_deals: int = 3, sort_by: str = "moic_p50") -> str:
-    from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_kpi_block
+    from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_kpi_block, ck_illustrative_note
     from rcm_mc.ui.chartis._helpers import render_page_explainer
     from rcm_mc.data_public.sector_intelligence import compute_sector_stats
 
@@ -286,7 +286,9 @@ def render_sector_intel(min_deals: int = 3, sort_by: str = "moic_p50") -> str:
     body = explainer + kpis + ck_section_header("SECTOR SCATTER", "P50 MOIC vs loss rate — portfolio positioning map") + scatter_panel + filter_bar + ck_section_header("SECTOR BENCHMARKS", f"P25/P50/P75 MOIC · IRR · loss rate · hold — sorted by {sort_by.replace('_',' ')}") + table
 
     return chartis_shell(
-        body,
+        ck_illustrative_note("sector-intelligence aggregates — built from the "
+                             "bundled illustrative seed deals, not your "
+                             "ingested portfolio") + body,
         title="Sector Intelligence",
         active_nav="/sector-intel",
         subtitle=(

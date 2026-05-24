@@ -323,7 +323,7 @@ def render_sponsor_league(
     sort_by: str = "median_moic",
     sector_filter: str = "",
 ) -> str:
-    from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header
+    from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_illustrative_note
     from rcm_mc.data_public.sponsor_track_record import sponsor_league_table
 
     corpus = _load_corpus()
@@ -373,7 +373,9 @@ def render_sponsor_league(
     body = kpis + scatter + controls + table + meth
 
     return chartis_shell(
-        body,
+        ck_illustrative_note("sponsor league table — built from the bundled "
+                             "illustrative seed deals, not your ingested "
+                             "portfolio") + body,
         title="Sponsor League Table",
         active_nav="/sponsor-league",
         subtitle=f"{len(records)} sponsors ranked · ≥{min_deals} corpus deals · sorted by {sort_by}",
