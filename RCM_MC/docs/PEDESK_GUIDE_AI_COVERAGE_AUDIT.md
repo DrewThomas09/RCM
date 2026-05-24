@@ -1,19 +1,19 @@
 # PEdesk Guide / AI coverage audit
 
-_Regenerated 2026-05-24 (Guide-coverage loop, Phase 2). Enumerated from `server.py` exact-match page routes + `get_page_context` resolution (exact→alias→dynamic→fallback), then classified by context depth._
+_Regenerated 2026-05-24 (Guide-coverage loop, Phase 2b). Enumerated from `server.py` exact-match page routes + `get_page_context` resolution, classified by context depth._
 
 ## Classification
 - **strong** — curated `PageContext` with **≥8 suggested questions** plus interpretation guidance, limitations, and data sources.
-- **partial** — curated context that exists but is thin (typically <8 questions): real but not yet investment-grade.
-- **missing** — resolves to the safe generic fallback (`found=False`): the Guide still answers, but generically.
+- **partial** — curated context that exists but is thin (typically <8 questions).
+- **missing** — resolves to the safe generic fallback (`found=False`): the Guide still answers, generically.
 
 ## Summary
-- Exact-match **page** routes audited: **320** (API/static/utility endpoints excluded).
-- **strong: 7**
-- **partial: 80**
+- Exact-match **page** routes audited: **320**.
+- **strong: 17**
+- **partial: 70**
 - **missing: 233**
 
-All six live CMS verticals (Home Health, Hospice, SNF, Dialysis, IRF, LTCH) + the Sector Intelligence hub are now **strong**. Next: high-traffic analytic pages (pipeline, portfolio, diligence core) from the partial table below.
+All six live CMS verticals + the Sector Intelligence hub + the core data/market/portfolio pages are now **strong**. Remaining gap: the long tail of low-traffic utility/diligence-subpage routes still on partial/fallback — the recommended next batch.
 
 ## Partial routes (curated but thin — upgrade targets)
 
@@ -25,17 +25,11 @@ All six live CMS verticals (Home Health, Hospice, SNF, Dialysis, IRF, LTCH) + th
 | `/audit` | 2 |
 | `/backtest` | 2 |
 | `/bear-cases` | 2 |
-| `/benchmarks` | 7 |
-| `/cms-data-browser` | 5 |
-| `/cms-sources` | 7 |
 | `/comparable-outcomes` | 2 |
 | `/comparables` | 2 |
-| `/competitive-intel` | 6 |
-| `/concentration-risk` | 6 |
 | `/conferences` | 2 |
 | `/corpus-backtest` | 2 |
 | `/data` | 2 |
-| `/data/catalog` | 5 |
 | `/day-one` | 2 |
 | `/deal-screening` | 2 |
 | `/deals-library` | 1 |
@@ -72,17 +66,13 @@ All six live CMS verticals (Home Health, Hospice, SNF, Dialysis, IRF, LTCH) + th
 | `/import` | 2 |
 | `/irr-dispersion` | 2 |
 | `/library` | 2 |
-| `/lp-dashboard` | 6 |
 | `/lp-update` | 3 |
 | `/market-intel` | 2 |
-| `/market-rates` | 2 |
 | `/methodology` | 2 |
 | `/metric-glossary` | 2 |
 | `/notes` | 2 |
 | `/payer-intelligence` | 2 |
 | `/pe-intelligence` | 2 |
-| `/pipeline` | 3 |
-| `/portfolio` | 3 |
 | `/portfolio-analytics` | 2 |
 | `/portfolio/heatmap` | 2 |
 | `/portfolio/map` | 2 |
@@ -120,7 +110,7 @@ All six live CMS verticals (Home Health, Hospice, SNF, Dialysis, IRF, LTCH) + th
 | `/backtester` | missing |
 | `/base-rates` | missing |
 | `/bear-cases` | partial |
-| `/benchmarks` | partial |
+| `/benchmarks` | strong |
 | `/biosimilars` | missing |
 | `/board-governance` | missing |
 | `/bolton-analyzer` | missing |
@@ -138,16 +128,16 @@ All six live CMS verticals (Home Health, Hospice, SNF, Dialysis, IRF, LTCH) + th
 | `/clinical-ai` | missing |
 | `/clinical-outcomes` | missing |
 | `/cms-apm` | missing |
-| `/cms-data-browser` | partial |
-| `/cms-sources` | partial |
+| `/cms-data-browser` | strong |
+| `/cms-sources` | strong |
 | `/cohorts` | missing |
 | `/coinvest-pipeline` | missing |
 | `/comparable-outcomes` | partial |
 | `/comparables` | partial |
 | `/compare` | missing |
-| `/competitive-intel` | partial |
+| `/competitive-intel` | strong |
 | `/compliance-attestation` | missing |
-| `/concentration-risk` | partial |
+| `/concentration-risk` | strong |
 | `/conferences` | partial |
 | `/continuation-vehicle` | missing |
 | `/corpus-backtest` | partial |
@@ -161,7 +151,7 @@ All six live CMS verticals (Home Health, Hospice, SNF, Dialysis, IRF, LTCH) + th
 | `/dashboard` | missing |
 | `/data` | partial |
 | `/data-intelligence` | missing |
-| `/data/catalog` | partial |
+| `/data/catalog` | strong |
 | `/data/refresh` | missing |
 | `/day-one` | partial |
 | `/deadlines` | missing |
@@ -273,7 +263,7 @@ All six live CMS verticals (Home Health, Hospice, SNF, Dialysis, IRF, LTCH) + th
 | `/locum-tracker` | missing |
 | `/login` | missing |
 | `/long-term-care-hospital` | strong |
-| `/lp-dashboard` | partial |
+| `/lp-dashboard` | strong |
 | `/lp-reporting` | missing |
 | `/lp-update` | partial |
 | `/ma-contracts` | missing |
@@ -282,7 +272,7 @@ All six live CMS verticals (Home Health, Hospice, SNF, Dialysis, IRF, LTCH) + th
 | `/market-data/map` | missing |
 | `/market-intel` | partial |
 | `/market-intel/seeking-alpha` | missing |
-| `/market-rates` | partial |
+| `/market-rates` | strong |
 | `/medicaid-unwinding` | missing |
 | `/medical-realestate` | missing |
 | `/methodology` | partial |
@@ -322,14 +312,14 @@ All six live CMS verticals (Home Health, Hospice, SNF, Dialysis, IRF, LTCH) + th
 | `/phys-comp-plan` | missing |
 | `/physician-labor` | missing |
 | `/physician-productivity` | missing |
-| `/pipeline` | partial |
+| `/pipeline` | strong |
 | `/pipeline/add` | missing |
 | `/pipeline/bridge` | missing |
 | `/pipeline/save-search` | missing |
 | `/platform-maturity` | missing |
 | `/pmi-integration` | missing |
 | `/pmi-playbook` | missing |
-| `/portfolio` | partial |
+| `/portfolio` | strong |
 | `/portfolio-analytics` | partial |
 | `/portfolio-optimizer` | missing |
 | `/portfolio-sim` | missing |
