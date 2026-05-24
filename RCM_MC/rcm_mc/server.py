@@ -3329,6 +3329,22 @@ class RCMHandler(BaseHTTPRequestHandler):
                     "facility in the loaded CMS data.</p>",
                     status=HTTPStatus.NOT_FOUND)
             return self._send_html(html_out)
+        if path == "/inpatient-rehab":
+            from .ui.irf_page import render_irf
+            _qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            return self._send_html(render_irf(_qs))
+        if path.startswith("/inpatient-rehab/"):
+            from html import escape as _esc_ccn
+            from .ui.irf_page import render_irf_profile
+            ccn = urllib.parse.unquote(path[len("/inpatient-rehab/"):]).strip("/")
+            html_out = render_irf_profile(ccn)
+            if html_out is None:
+                return self._send_html(
+                    "<h1>Facility Not Found</h1><p>CCN "
+                    f"{_esc_ccn(ccn)} is not a Medicare-certified inpatient "
+                    "rehabilitation facility in the loaded CMS data.</p>",
+                    status=HTTPStatus.NOT_FOUND)
+            return self._send_html(html_out)
         if path == "/hospice":
             from .ui.hospice_page import render_hospice
             _qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
