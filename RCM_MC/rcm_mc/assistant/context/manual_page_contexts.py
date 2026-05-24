@@ -439,8 +439,15 @@ _MANUAL: List[PageContext] = [
         "(screening → outreach → LOI → diligence → IC → closed / passed).",
         primary_purpose="Track candidate hospitals through the sourcing funnel "
         "and advance them stage by stage.",
-        common_questions=["What's in the pipeline?", "What stage is each "
-                         "hospital at?", "How many are in diligence?"],
+        common_questions=["What's in the pipeline?",
+                         "What stage is each hospital at?",
+                         "How many are in diligence right now?",
+                         "Which candidates are highest priority to advance?",
+                         "Where is the funnel bottlenecking by stage?",
+                         "How do I advance a hospital to the next stage?",
+                         "Which pipeline hospitals have the best HCRIS margin?",
+                         "How do I jump from a candidate to its bridge or memo?",
+                         "What does each stage in the funnel mean?"],
         inputs=["The pipeline hospital list (ccn, name, stage, priority); "
                 "HCRIS public financials joined per hospital."],
         outputs=["Per page labels: a funnel of stage counts (In Pipeline / "
@@ -1732,7 +1739,13 @@ _MANUAL: List[PageContext] = [
         primary_purpose="Show where realized returns sit by segment, computed "
         "from the corpus.",
         common_questions=["What's the typical MOIC/IRR for this segment?",
-                         "How wide is the spread by sector?"],
+                         "How wide is the spread (P25–P75) by sector?",
+                         "How do returns vary by payer-mix bucket?",
+                         "How does hold period relate to realized MOIC/IRR?",
+                         "Which region shows the strongest realized returns?",
+                         "Is this segment's sample large enough to trust?",
+                         "Are these realized or marked returns?",
+                         "What are the caveats on these corpus percentiles?"],
         inputs=["A grouping choice (sector / payer-mix bucket / hold period / "
                 "region); the realized-deal corpus."],
         outputs=["Per page labels: corpus P50 MOIC and loss-rate KPIs and a "
@@ -2284,8 +2297,14 @@ _MANUAL: List[PageContext] = [
         primary_purpose="Show portfolio scale and revenue-cycle health, with a "
         "health-score distribution and a per-deal table.",
         common_questions=["How is the portfolio doing operationally?",
-                         "Which deals are unhealthy?",
-                         "What's the average denial / AR / collection?"],
+                         "Which deals are unhealthy and why?",
+                         "What's the average denial / AR / collection?",
+                         "How is the portfolio's health mix distributed?",
+                         "Which deals are dragging the portfolio averages?",
+                         "What's total net revenue across active deals?",
+                         "Where should I focus operating attention first?",
+                         "How do I export this for an LP or IC update?",
+                         "What are the caveats on these portfolio-level averages?"],
         inputs=["The active deal list from the portfolio store."],
         outputs=["Per page labels: a KPI strip (Active Deals, Total Net "
                  "Revenue, Avg Denial Rate, Avg Days in AR, Avg Net "
@@ -2956,6 +2975,8 @@ _MANUAL: List[PageContext] = [
             "Which datasets are observed data versus provider-supply proxies?",
             "What can these CMS sources NOT tell me?",
             "Is any of this commercial revenue or payer-specific?",
+            "Which dataset backs a given vertical's screener and benchmarks?",
+            "How do I cite a specific figure's source and vintage in IC?",
         ],
         inputs=["Static registry of CMS Open Data / Provider Data Catalog "
                 "dataset descriptors."],
@@ -2994,6 +3015,9 @@ _MANUAL: List[PageContext] = [
             "What does each dataset cover and at what grain?",
             "Where does this data come from originally?",
             "What's missing from the ingested corpus?",
+            "Which datasets feed the live sector verticals?",
+            "How stale is too stale for a given analytic?",
+            "Are any of these commercial-payer or private-pay datasets?",
         ],
         inputs=["Ingested CMS public-dataset inventory (local)."],
         outputs=["Dataset catalog grid + record-count chart + ingestion status."],
@@ -3029,6 +3053,9 @@ _MANUAL: List[PageContext] = [
             "Which sources are stale and need a refresh?",
             "What categories of data are covered?",
             "What is the provenance of a given source?",
+            "Which sources underpin the sector screeners and benchmarks?",
+            "What does the data-quality flag on a source mean?",
+            "Is any of this commercial or private-pay data?",
         ],
         inputs=["PortfolioStore data-source inventory (local metadata)."],
         outputs=["KPI strip (sources, records, avg quality, fresh/stale) + "
@@ -3067,6 +3094,8 @@ _MANUAL: List[PageContext] = [
             "What's strong evidence here versus thin/insufficient data?",
             "What should I ask management about these denial root causes?",
             "What are the caveats on these benchmark bands?",
+            "How much EBITDA upside do the KPI gaps to benchmark imply?",
+            "Which denial drivers are quickest to remediate post-close?",
         ],
         inputs=["An attached engagement KPIBundle + CohortLiquidationReport "
                 "(no live re-ingest from this page)."],
@@ -3143,6 +3172,8 @@ _MANUAL: List[PageContext] = [
             "Which categories drive the concentration?",
             "What is a healthy versus risky concentration level?",
             "What are the caveats on these concentration measures?",
+            "How would a prospective new deal shift the HHI?",
+            "Which single-point exposures should I hedge or diversify first?",
         ],
         inputs=["Corpus deal list (subsector, geography, sponsor categories)."],
         outputs=["HHI + CR3/CR5 by category with diversification commentary."],
@@ -3179,6 +3210,8 @@ _MANUAL: List[PageContext] = [
             "Is a percentile gap an investable signal or just variance?",
             "What should I ask management about the largest gaps?",
             "What are the limitations of CMS-based peer ranking?",
+            "Which peer group's gap is most defensible to underwrite against?",
+            "How does a percentile here differ from the sector-screener percentile?",
         ],
         inputs=["CMS HCRIS hospital metrics; peer groups computed locally."],
         outputs=["Percentile ranks per metric per peer group + gap-to-P75/P90."],
@@ -3215,6 +3248,8 @@ _MANUAL: List[PageContext] = [
             "Which deals are the top and bottom performers?",
             "Are these realized or marked (unrealized) returns?",
             "What are the caveats on these LP metrics?",
+            "How much of TVPI is DPI (realized) versus RVPI (still marked)?",
+            "Which sector exposures are driving the fund's loss rate?",
         ],
         inputs=["Portfolio/corpus deal returns + vintages (local)."],
         outputs=["Fund KPI strip, vintage J-curve, sector exposure table, "
