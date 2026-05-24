@@ -3994,9 +3994,18 @@ _CSS_INLINE_FALLBACK = """
    * truth and no hover/focus stacking. */
   .ck-topbar[data-menu-js] .ck-nav-group:hover > .ck-nav-menu { display:none; }
   .ck-topbar[data-menu-js] .ck-nav-group.is-open > .ck-nav-menu { display:block; }
-  /* Horizontal mega-menu: featured left panel + numbered destination grid. */
-  .ck-nav-mega { display:grid; grid-template-columns:236px 1fr; min-width:660px;
-    padding:0; }
+  /* Horizontal mega-menu: featured left panel + numbered destination grid.
+   * CRITICAL: the base rule must NOT set `display`, so the panel inherits
+   * `.ck-nav-menu{display:none}` and stays hidden by default. A previous
+   * `display:grid` here overrode that and made EVERY mega-menu visible at once
+   * (the stacking-over-the-dashboard bug). Display is now owned solely by the
+   * show rules below, so only the hovered / .is-open panel renders. */
+  .ck-nav-mega { grid-template-columns:236px 1fr; min-width:660px; padding:0; }
+  /* Shown mega = grid (grid layout overrides the generic `display:block`). */
+  .ck-nav-group:hover > .ck-nav-mega,
+  .ck-nav-group.is-open > .ck-nav-mega { display:grid; }
+  .ck-topbar[data-menu-js] .ck-nav-group:hover > .ck-nav-mega { display:none; }
+  .ck-topbar[data-menu-js] .ck-nav-group.is-open > .ck-nav-mega { display:grid; }
   /* Keep the rightmost sections' panels inside the viewport. */
   .ck-nav-group:last-of-type .ck-nav-mega,
   .ck-nav-group:nth-last-of-type(2) .ck-nav-mega { left:auto; right:0; }
