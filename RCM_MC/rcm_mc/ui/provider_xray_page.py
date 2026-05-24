@@ -80,6 +80,11 @@ padding-left:18px;position:relative;}
 .ck-xr-empty{font-family:var(--sc-serif);font-style:italic;color:var(--sc-text-dim,#6a7480);}
 .ck-xr-prov{font-family:var(--sc-mono);font-size:10.5px;color:var(--sc-text-dim,#6a7480);
 margin-top:6px;}
+.ck-xr-coefbar{position:relative;height:10px;background:var(--sc-bone,#f3eddb);
+border:1px solid var(--sc-rule,#c9c1ac);min-width:80px;}
+.ck-xr-coef{position:absolute;top:0;bottom:0;left:0;}
+.ck-xr-coef.pos{background:var(--sc-positive,#0a8a5f);}
+.ck-xr-coef.neg{background:var(--sc-negative,#b5321e);}
 """
 
 
@@ -230,6 +235,133 @@ def _risk_sev(level: str) -> str:
             "insufficient": "gray"}.get(level, "gray")
 
 
+def _g(v, suffix: str = "") -> str:
+    return f"{v:g}{suffix}" if v is not None else "—"
+
+
+# Flag → signal-card color. All six vertical headlines are higher-is-better,
+# so a positive residual (above expectation) is encouraging (green); below is
+# amber = worth a question; never red, since this is descriptive, not a verdict.
+_EXP_SEV = {"above": "green", "below": "amber", "typical": "gray", "n/a": "gray"}
+
+
+def _expectation_section(sector_id: str, ccn: str):
+    """Both descriptive expected-vs-actual layers as paired signal cards.
+    Returns "" when the vertical isn't one of the six cross-sector verticals."""
+    from ..data.cross_sector import SECTOR_BY_ID
+    from ..data.sector_expected_value import expected_vs_actual
+    if sector_id not in SECTOR_BY_ID:
+        return None  # hospital / unknown — no cross-sector model
+    e = expected_vs_actual(sector_id, ccn)
+    if e is None:
+        return None
+    suf = SECTOR_BY_ID[sector_id].headline_suffix
+
+    mr = e.model_residual
+    if mr.expected is not None:
+        sev = _EXP_SEV[mr.flag]
+        word = {"above": "ABOVE", "below": "BELOW", "typical": "IN LINE"}.get(mr.flag, "—")
+        model_detail = (
+            f'Actual {_g(mr.actual, suf)} vs model expectation '
+            f'{_g(mr.expected, suf)} (residual {mr.residual:+g}{_e(suf)}, '
+            f'{mr.std_residual:+.1f} SD). This provider performs <strong>{word}</strong> '
+            f'what its other public measures predict.')
+    else:
+        sev, model_detail = "gray", (
+            'Not enough complete measures for this provider to score against '
+            'the model (no value is imputed).')
+
+    pb = e.profile
+    if pb.expected is not None:
+        psev = _EXP_SEV[pb.flag]
+        pword = {"above": "ABOVE", "below": "BELOW", "typical": "IN LINE"}.get(pb.flag, "—")
+        prof_detail = (
+            f'Actual {_g(pb.actual, suf)} vs cohort mean {_g(pb.expected, suf)} '
+            f'(residual {pb.residual:+g}{_e(suf)}) across {pb.cohort_n} '
+            f'structural peers [{_e(pb.cohort_label)}]. <strong>{pword}</strong> '
+            'its structural cohort.')
+    else:
+        psev, pword = "gray", "—"
+        prof_detail = (f'Structural cohort [{_e(pb.cohort_label)}] has only '
+                       f'{pb.cohort_n} rated peer(s) — expectation suppressed.')
+
+    cards = (
+        f'<div class="ck-xr-sig {sev}"><div class="ck-xr-sig-name">'
+        f'vs. its own measure profile<span class="ck-xr-sev {sev}">'
+        f'{_e(mr.flag).upper()}</span></div>'
+        f'<div class="ck-xr-sig-detail">{model_detail}</div></div>'
+        f'<div class="ck-xr-sig {psev}"><div class="ck-xr-sig-name">'
+        f'vs. structural peers<span class="ck-xr-sev {psev}">'
+        f'{_e(pb.flag).upper()}</span></div>'
+        f'<div class="ck-xr-sig-detail">{prof_detail}</div></div>')
+    prov = ('<p class="ck-xr-prov">Descriptive expected-vs-actual over public '
+            'CMS data — association, not causation; not a forecast or '
+            'recommendation. A large gap flags a provider to investigate.</p>')
+    return f'<div class="ck-xr-signals">{cards}</div>{prov}'
+
+
+def _model_section(sector_id: str):
+    """"What moves the headline" — the in-sample OLS coefficients with bars."""
+    from ..data.cross_sector import SECTOR_BY_ID
+    from ..data.sector_expected_value import _fit_measure_model
+    if sector_id not in SECTOR_BY_ID:
+        return None
+    fit = _fit_measure_model(sector_id)
+    if fit is None:
+        return None
+    model, _ = fit
+    top = model.predictors[:8]
+    mx = max((abs(c.std_coef) for c in top), default=1.0) or 1.0
+    rows = ""
+    for c in top:
+        pos = c.std_coef >= 0
+        w = round(100 * abs(c.std_coef) / mx)
+        bar = (f'<div class="ck-xr-coefbar"><span class="ck-xr-coef {"pos" if pos else "neg"}" '
+               f'style="width:{w}%"></span></div>')
+        rows += (f'<tr><td>{_e(c.label)}</td>'
+                 f'<td class="num">{c.std_coef:+.2f}</td>'
+                 f'<td>{bar}</td></tr>')
+    note = ("model expectation vs. the headline is a CMS composite — its "
+            "sub-ratings are excluded so the fit isn't mechanical"
+            if model.composite_target else "headline is a reported outcome")
+    return (
+        f'<p>In-sample ordinary-least-squares fit · n={model.n_fit:,} · '
+        f'R&sup2;={model.r2:g}. Standardized coefficients show which public '
+        f'measures move with <strong>{_e(model.target_label)}</strong> '
+        f'({note}):</p>'
+        '<table class="ck-xr-bench"><thead><tr><th>Measure</th>'
+        '<th>Std&nbsp;coef</th><th>Direction &amp; magnitude</th></tr></thead>'
+        f'<tbody>{rows}</tbody></table>'
+        '<p class="ck-xr-prov">Association, not causation. Standardized so '
+        'coefficients are comparable; sign shows co-movement with the headline, '
+        'not a causal effect.</p>')
+
+
+def _correlations_section(sector_id: str):
+    """Top pairwise measure associations for the vertical."""
+    from ..data.cross_sector import SECTOR_BY_ID
+    from ..data.sector_correlations import top_correlations
+    if sector_id not in SECTOR_BY_ID:
+        return None
+    pairs = top_correlations(sector_id, k=8)
+    if not pairs:
+        return None
+    rows = "".join(
+        f'<tr><td>{_e(p.label_a)}</td><td>{_e(p.label_b)}</td>'
+        f'<td class="num">{p.pearson_r:+.2f}</td>'
+        f'<td class="num">{(f"{p.spearman_rho:+.2f}") if p.spearman_rho is not None else "—"}</td>'
+        f'<td class="num">{p.n:,}</td></tr>'
+        for p in pairs)
+    return (
+        '<table class="ck-xr-bench"><thead><tr><th>Measure A</th>'
+        '<th>Measure B</th><th>Pearson&nbsp;r</th><th>Spearman&nbsp;&rho;</th>'
+        '<th>n</th></tr></thead>'
+        f'<tbody>{rows}</tbody></table>'
+        '<p class="ck-xr-prov">Pairwise-complete association across providers '
+        'reporting both measures — NOT causation. Both measures may track an '
+        'unmeasured factor (case mix, geography, size).</p>')
+
+
 def render_xray_report(report: ProviderXrayReport) -> str:
     from ._chartis_kit import chartis_shell, ck_page_title
     from . import xray_kit as k
@@ -300,7 +432,22 @@ def render_xray_report(report: ProviderXrayReport) -> str:
                      _risk_section(report))
             if report.risk_indicators else "")
 
+    # Analytic depth (six cross-sector verticals only): how this provider
+    # performs vs. expectation, what moves the headline, and how the vertical's
+    # measures co-move. Each returns None for Hospital/unknown → omitted.
+    sid = m.vertical
+    exp = _expectation_section(sid, m.ccn or m.provider_id)
+    expectation = _section("Performs vs. expectation · descriptive, not a forecast",
+                           exp, ribsub="MEASURE MODEL · STRUCTURAL PEERS") if exp else ""
+    mdl = _model_section(sid)
+    model_sec = _section("What moves the headline · standardized OLS", mdl,
+                         ribsub="ASSOCIATION, NOT CAUSATION") if mdl else ""
+    corr = _correlations_section(sid)
+    corr_sec = _section("Measure correlations · how the vertical co-moves", corr,
+                        ribsub="PAIRWISE · ASSOCIATION ONLY") if corr else ""
+
     body = ('<div class="xr">' + title + identity + signals + note + bench
+            + expectation + model_sec + corr_sec
             + risk + market + questions + caveats + '</div>')
     return chartis_shell(body, f"CMS X-Ray · {_e(m.name)}",
                          active_nav="/diligence", extra_css=_XRAY_CSS + k.XRAY_CSS)
