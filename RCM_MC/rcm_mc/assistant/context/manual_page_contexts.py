@@ -2489,14 +2489,16 @@ _MANUAL: List[PageContext] = [
         data_confidence=DataConfidence.MIXED,
     ),
     _ctx(
-        "/portfolio-analytics", "Portfolio Analytics",
-        short_description="Corpus-wide analytics across the realized-deal "
+        "/deal-corpus-analytics", "Deal Corpus Analytics",
+        short_description="Benchmark-corpus analytics across the realized-deal "
         "universe — scorecard, vintage cohorts, concentration, return "
-        "distribution, outliers, and payer-mix sensitivity.",
-        primary_purpose="Provide portfolio-scope views over the deal CORPUS "
-        "(not the user's live fund): what has worked across vintages, "
-        "sectors, sponsors, and geographies.",
-        common_questions=["What does the corpus say worked?",
+        "distribution, outliers, and payer-mix sensitivity. (Renamed/moved "
+        "from 'Portfolio Analytics'; /portfolio-analytics redirects here.)",
+        primary_purpose="Provide benchmark views over the 655-deal CORPUS "
+        "(NOT the user's live fund/portfolio): what has worked across "
+        "vintages, sectors, sponsors, and geographies.",
+        common_questions=["Is this my portfolio or a benchmark corpus?",
+                         "What does the corpus say worked?",
                          "Where is return concentration / outlier risk?"],
         inputs=["The realized-deal corpus (655+ deals)."],
         outputs=["Per page labels: a scorecard (MOIC/IRR quartiles, home-run "

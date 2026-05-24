@@ -183,6 +183,7 @@ _SUB_NAV = {
     # (Comparable Outcomes, Bear Cases, Reg Calendar, Corpus
     # Backtest, Backtest) alongside the original catalog.
     "research": [
+        {"label": "Deal Corpus Analytics", "href": "/deal-corpus-analytics"},
         {"label": "Notes",               "href": "/notes"},
         {"label": "Sector Momentum",     "href": "/sector-momentum"},
         {"label": "IRR Dispersion",      "href": "/irr-dispersion"},
@@ -190,11 +191,13 @@ _SUB_NAV = {
         {"label": "Market Intel",        "href": "/market-intel"},
         {"label": "All Research →",      "href": "/research"},
     ],
+    # Portfolio = the user's actual book. "Portfolio Analytics" was a 655-deal
+    # benchmark CORPUS mislabeled as portfolio — moved to Research as
+    # "Deal Corpus Analytics" (/portfolio-analytics redirects there).
     "portfolio": [
         {"label": "Portfolio Map",       "href": "/portfolio/map"},
         {"label": "Heatmap",             "href": "/portfolio/heatmap"},
         {"label": "Risk Scan",           "href": "/portfolio/risk-scan"},
-        {"label": "Portfolio Analytics", "href": "/portfolio-analytics"},
         {"label": "Sponsor Track Record","href": "/sponsor-track-record"},
         {"label": "Payer Intelligence",  "href": "/payer-intelligence"},
         {"label": "LP Update",           "href": "/lp-update"},
@@ -268,7 +271,8 @@ _NAV_DESC = {
     "/irr-dispersion": "Return dispersion reads", "/hold-analysis": "Hold-period analytics",
     "/market-intel": "Market structure & HHI", "/research": "Every research surface →",
     "/portfolio/map": "Exposure by geography", "/portfolio/heatmap": "Risk × dimension grid",
-    "/portfolio/risk-scan": "Portfolio-wide risk flags", "/portfolio-analytics": "Cross-deal analytics",
+    "/portfolio/risk-scan": "Portfolio-wide risk flags",
+    "/deal-corpus-analytics": "Benchmark corpus scorecard",
     "/sponsor-track-record": "Sponsor performance", "/payer-intelligence": "Payer mix & leverage",
     "/lp-update": "LP-ready digest",
     "/diligence/deal": "Deal profile & identity", "/diligence/ingest": "835/837 ingestion",
@@ -3480,7 +3484,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "port-heat",     "title": "Portfolio Heatmap",  "route": "/portfolio/heatmap"},
     {"id": "port-risk",     "title": "Portfolio Risk Scan","route": "/portfolio/risk-scan"},
     {"id": "port-mon",      "title": "Portfolio Monitor",  "route": "/portfolio/monitor"},
-    {"id": "port-an",       "title": "Portfolio Analytics","route": "/portfolio-analytics"},
+    {"id": "port-an",       "title": "Deal Corpus Analytics","route": "/deal-corpus-analytics"},
     {"id": "sponsor-tr",    "title": "Sponsor Track Record","route": "/sponsor-track-record"},
     {"id": "payer-intel",   "title": "Payer Intelligence", "route": "/payer-intelligence"},
     {"id": "lp-update",     "title": "LP Update",          "route": "/lp-update"},
@@ -6455,7 +6459,9 @@ _SUB_SECTION_MAP = {
     "/diligence/bear-case": "research",
     "/diligence/bear-cases": "research",
     "/portfolio": "portfolio", "/lp-update": "portfolio",
-    "/portfolio-analytics": "portfolio",
+    # Moved to Research as Deal Corpus Analytics (benchmark corpus, not portfolio).
+    "/deal-corpus-analytics": "research",
+    "/portfolio-analytics": "research",
     "/sponsor-track-record": "portfolio",
     "/payer-intelligence": "portfolio",
     # cross-section common deep paths
