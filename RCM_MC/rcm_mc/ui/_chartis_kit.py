@@ -4088,6 +4088,13 @@ _CSS_INLINE_FALLBACK = """
      preserved so the topbar JS (user dropdown, Guide trigger, command
      palette, q-pill) keeps working unchanged. Scoped to .ck-topbar* so no
      other page surface is affected. */
+  /* Positioning: the topbar is sticky and ONLY sticky — one mode, top:0, no
+     transforms and no JS scroll-repositioning, so it pins cleanly with no
+     upward jitter/glitch on momentum (trackpad) scroll. Do not add `position:
+     fixed` or a `transform` here: a transform makes the bar its own containing
+     block and was a known source of sub-pixel jitter on sticky bars. The
+     legacy second-line `.ck-subnav` rail is no longer rendered, so there is no
+     competing sticky element below this one. */
   .ck-topbar { --tb-paper:#faf6ec; --tb-paper2:#f3eddb; --tb-ink:#15202b;
     --tb-ink2:#2a3a4a; --tb-muted:#6a7480; --tb-rule:#c9c1ac; --tb-green:#1f7a5a;
     --tb-green-deep:#18573f; --tb-green-soft:#d6e8df; --tb-amber:#b8842e;
@@ -4131,6 +4138,14 @@ _CSS_INLINE_FALLBACK = """
     background:var(--tb-paper); border:1px solid var(--tb-rule);
     border-top:2px solid var(--tb-green); box-shadow:0 14px 30px rgba(13,35,54,.18);
     z-index:70; display:none; }
+  /* Invisible hover bridge spanning the nav-item↔panel seam. The panel sits at
+     top:100% (flush) but sub-pixel rounding can leave a 1px dead zone that
+     drops the hover and closes the menu mid-travel; this 8px transparent strip
+     (a panel descendant, so still inside `.ck-nav`) keeps the pointer "in" the
+     region while moving diagonally from the nav item into the panel. Only
+     rendered while the panel is shown (parent is display:none otherwise). */
+  .ck-nav-menu::before { content:""; position:absolute; left:0; right:0;
+    top:-8px; height:8px; background:transparent; }
   /* JS authoritative open state (.is-open) enforces ONE open menu at a time
    * and reliable dismissal. :hover is a no-JS fallback — it can only ever
    * match the single hovered group, so it cannot stack. (The old
@@ -6413,6 +6428,26 @@ _USER_MENU_JS = """
 # the open state entirely to .is-open. Drop-in safe; no-ops without a topbar.
 _NAV_MENU_JS = """
 <script>
+/* Topbar mega-menu controller — hover-intent + grace close.
+ *
+ * Goals (see fix/topbar-megamenu-stability): the menu must not require
+ * pixel-perfect movement, must not flicker when a trackpad sweeps across the
+ * nav, and must stay open long enough to travel diagonally into a panel item.
+ *
+ *   - OPEN_DELAY: hover intent. A pointer must dwell on a nav item briefly
+ *     before its panel opens, so brushing across the bar (or passing a
+ *     neighbour while aiming for a panel item) never thrashes menus open.
+ *     Leaving the item before the delay cancels the pending open.
+ *   - CLOSE_DELAY: grace period. The panels are DOM descendants of `.ck-nav`,
+ *     so moving from a nav item INTO its panel never leaves `.ck-nav`; the
+ *     close timer only arms when the pointer leaves the whole nav+panel
+ *     region, and re-entering cancels it.
+ *   - Keyboard (focusin) opens immediately; Escape / outside-click / focus-out
+ *     close. One panel open at a time.
+ *   - Coarse pointers (touch/most trackpads report hover:none): the nav item's
+ *     first tap opens its panel instead of navigating; a second tap follows
+ *     the link. Mouse/precise-hover devices keep click-to-navigate.
+ */
 (function(){
   var bar = document.querySelector('.ck-topbar');
   if (!bar) return;
@@ -6421,23 +6456,69 @@ _NAV_MENU_JS = """
   var groups = Array.prototype.slice.call(bar.querySelectorAll('.ck-nav-group'));
   if (!groups.length) return;
   bar.setAttribute('data-menu-js', '1');   // CSS: open state via .is-open only
-  var closeTimer = null;
-  function closeAll(){ groups.forEach(function(g){ g.classList.remove('is-open'); }); }
-  function openOnly(g){ closeAll(); g.classList.add('is-open'); }   // one at a time
+
+  var OPEN_DELAY = 90;     // ms of hover intent before a panel opens
+  var CLOSE_DELAY = 220;   // ms grace before closing once the pointer leaves
+  var openTimer = null, closeTimer = null, current = null;
+  var coarse = false;
+  try {
+    coarse = !!(window.matchMedia &&
+      window.matchMedia('(hover: none), (pointer: coarse)').matches);
+  } catch (e) { coarse = false; }
+
+  function cancelOpen(){ if (openTimer){ clearTimeout(openTimer); openTimer = null; } }
+  function cancelClose(){ if (closeTimer){ clearTimeout(closeTimer); closeTimer = null; } }
+  function closeAll(){
+    cancelOpen(); cancelClose();
+    groups.forEach(function(g){ g.classList.remove('is-open'); });
+    current = null;
+  }
+  function openOnly(g){            // one panel open at a time
+    if (current === g) return;
+    groups.forEach(function(x){ if (x !== g) x.classList.remove('is-open'); });
+    g.classList.add('is-open');
+    current = g;
+  }
+
   groups.forEach(function(g){
-    g.addEventListener('mouseenter', function(){ clearTimeout(closeTimer); openOnly(g); });
-    g.addEventListener('focusin', function(){ clearTimeout(closeTimer); openOnly(g); });
+    g.addEventListener('mouseenter', function(){
+      cancelClose();
+      if (current === g) return;
+      cancelOpen();
+      openTimer = setTimeout(function(){ openOnly(g); }, OPEN_DELAY);
+    });
+    // Leaving a single group cancels a pending open for it, but does NOT close
+    // an already-open panel — that is the nav-region's job (below), so diagonal
+    // travel into the panel survives.
+    g.addEventListener('mouseleave', cancelOpen);
+    g.addEventListener('focusin', function(){ cancelClose(); cancelOpen(); openOnly(g); });
+
+    if (coarse){
+      var trigger = g.querySelector('a');
+      if (trigger){
+        trigger.addEventListener('click', function(e){
+          // First tap opens the panel (no navigation); tapping the same item
+          // again (panel already open) follows the link.
+          if (current !== g){ e.preventDefault(); cancelClose(); openOnly(g); }
+        });
+      }
+    }
   });
-  // Leaving the whole nav region closes (tiny delay tolerates diagonal travel
-  // between the nav item and its panel); re-entering cancels the close.
-  nav.addEventListener('mouseleave', function(){ closeTimer = setTimeout(closeAll, 140); });
-  nav.addEventListener('mouseenter', function(){ clearTimeout(closeTimer); });
+
+  // The whole nav region (nav items + their absolutely-positioned panels, which
+  // are DOM descendants of `.ck-nav`) — leaving it arms the grace close,
+  // re-entering cancels it.
+  nav.addEventListener('mouseleave', function(){
+    cancelClose();
+    closeTimer = setTimeout(closeAll, CLOSE_DELAY);
+  });
+  nav.addEventListener('mouseenter', cancelClose);
+
   // Escape closes everything.
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeAll(); });
-  // Any pointer-down that is NOT inside an open nav group closes the menus —
-  // this covers clicking outside the topbar AND clicking the in-topbar
-  // Guide / Search / +New / avatar controls (so a nav menu never stays stuck
-  // over their surfaces).
+  // Any pointer-down NOT inside a nav group closes the menus — covers clicking
+  // outside the topbar AND clicking the in-topbar Guide / Search / +New /
+  // avatar controls (so a panel never stays stuck over their surfaces).
   document.addEventListener('pointerdown', function(e){
     var t = e.target;
     if (!t || !t.closest || !t.closest('.ck-nav-group')) closeAll();

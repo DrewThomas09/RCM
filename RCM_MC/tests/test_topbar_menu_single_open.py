@@ -39,10 +39,13 @@ class MenuControllerTests(unittest.TestCase):
                       self.h)
 
     def test_only_one_menu_open_at_a_time(self):
-        # openOnly() closes all before opening the entered group.
+        # openOnly() enforces a single open panel: it clears .is-open from
+        # every other group before opening the entered one. (The hardened
+        # controller inlines the clear instead of calling closeAll() so a
+        # pending open/close timer state is preserved during hover-intent.)
         self.assertIn("function openOnly", self.h)
         self.assertIn("function closeAll", self.h)
-        self.assertRegex(self.h, r"function openOnly\(g\)\{\s*closeAll\(\);")
+        self.assertIn("x.classList.remove('is-open')", self.h)
 
     def test_dismissal_handlers_present(self):
         self.assertIn("'Escape'", self.h)                 # Escape closes
