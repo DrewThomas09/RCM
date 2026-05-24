@@ -3285,10 +3285,34 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.home_health_page import render_home_health
             _qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             return self._send_html(render_home_health(_qs))
+        if path.startswith("/home-health/"):
+            from html import escape as _esc_ccn
+            from .ui.home_health_page import render_home_health_profile
+            ccn = urllib.parse.unquote(path[len("/home-health/"):]).strip("/")
+            html_out = render_home_health_profile(ccn)
+            if html_out is None:
+                return self._send_html(
+                    "<h1>Agency Not Found</h1><p>CCN "
+                    f"{_esc_ccn(ccn)} is not a Medicare-certified home "
+                    "health agency in the loaded CMS data.</p>",
+                    status=HTTPStatus.NOT_FOUND)
+            return self._send_html(html_out)
         if path == "/hospice":
             from .ui.hospice_page import render_hospice
             _qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             return self._send_html(render_hospice(_qs))
+        if path.startswith("/hospice/"):
+            from html import escape as _esc_ccn
+            from .ui.hospice_page import render_hospice_profile
+            ccn = urllib.parse.unquote(path[len("/hospice/"):]).strip("/")
+            html_out = render_hospice_profile(ccn)
+            if html_out is None:
+                return self._send_html(
+                    "<h1>Hospice Not Found</h1><p>CCN "
+                    f"{_esc_ccn(ccn)} is not a Medicare-certified hospice "
+                    "in the loaded CMS data.</p>",
+                    status=HTTPStatus.NOT_FOUND)
+            return self._send_html(html_out)
         if path == "/market-intel":
             return self._route_market_intel_page()
         # Market intel JSON endpoints — consumed by Deal Profile's

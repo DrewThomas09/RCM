@@ -10,7 +10,17 @@ from ..data.home_health import (
     load_home_health_quality,
     load_home_health_summary_by_state,
 )
+from .sector_provider_profile import render_sector_provider_profile
 from .sector_screener import render_sector_screener
+
+_PROVENANCE = "CMS Provider Data Catalog — Home Health Care Agencies (6jpm-sxkc)"
+_LIMITATIONS = [
+    "Medicare-certified agencies only — commercial / private-pay home "
+    "care is not represented.",
+    "Public quality data, not target-company financials.",
+    "Claims-based acute-care-hospitalization / ED-use measures are a "
+    "separate CMS dataset, not shown here.",
+]
 
 
 def _e(s: Any) -> str:
@@ -23,8 +33,8 @@ def _q(q: Dict[str, Optional[float]], key: str, suffix: str = "") -> str:
 
 
 _TABLE_COLS = [
-    ("Agency", lambda p, q: f'<strong>{_e(p.provider_name)}</strong>'),
-    ("CCN", lambda p, q: f'<span class="num">{_e(p.ccn)}</span>'),
+    ("Agency", lambda p, q: f'<a href="/home-health/{_e(p.ccn)}" class="ck-link"><strong>{_e(p.provider_name)}</strong></a>'),
+    ("CCN", lambda p, q: f'<a href="/home-health/{_e(p.ccn)}" class="ck-link num">{_e(p.ccn)}</a>'),
     ("Ownership", lambda p, q: _e(p.ownership) or "—"),
     ("Star", lambda p, q: f'<span class="num">{_q(q, "star_rating")}</span>'),
     ("Timely care", lambda p, q: f'<span class="num">{_q(q, "timely_initiation_pct", "%")}</span>'),
@@ -45,14 +55,8 @@ def render_home_health(qs: Optional[Dict[str, List[str]]] = None) -> str:
             "improvement, discharge to community). Use as market and provider "
             "diligence context — not a final investment recommendation."
         ),
-        provenance="CMS Provider Data Catalog — Home Health Care Agencies (6jpm-sxkc)",
-        limitations=[
-            "Medicare-certified agencies only — commercial / private-pay home "
-            "care is not represented.",
-            "Public quality data, not target-company financials.",
-            "Claims-based acute-care-hospitalization / ED-use measures are a "
-            "separate CMS dataset, not shown here.",
-        ],
+        provenance=_PROVENANCE,
+        limitations=_LIMITATIONS,
         providers=load_home_health_providers(),
         quality=load_home_health_quality(),
         summary=load_home_health_summary_by_state(),
@@ -63,4 +67,37 @@ def render_home_health(qs: Optional[Dict[str, List[str]]] = None) -> str:
         name_attr="provider_name",
         providers_for_state=home_health_providers_for_state,
         table_cols=_TABLE_COLS,
+    )
+
+
+def render_home_health_profile(ccn: str) -> Optional[str]:
+    """Single-agency deep dive — /home-health/<ccn>. None if CCN unknown."""
+    return render_sector_provider_profile(
+        ccn=ccn,
+        route="/home-health",
+        eyebrow="HOME HEALTH AGENCY",
+        kind_singular="agency",
+        providers=load_home_health_providers(),
+        quality=load_home_health_quality(),
+        name_attr="provider_name",
+        identity_rows=lambda p: [
+            ("Address", ", ".join(b for b in (p.address, p.city, p.state, p.zip) if b)),
+            ("Ownership", p.ownership),
+            ("Medicare-certified", p.certification_date),
+            ("Source", p.source),
+            ("Snapshot", p.source_date),
+        ],
+        headline=("Quality star rating", "star_rating", ""),
+        metrics=[
+            ("Quality star rating", "star_rating", ""),
+            ("Timely initiation of care", "timely_initiation_pct", "%"),
+            ("Improved in ambulation", "improve_ambulation_pct", "%"),
+            ("Improved bed transfer", "improve_bed_transfer_pct", "%"),
+            ("Improved bathing", "improve_bathing_pct", "%"),
+            ("Discharge to community", "discharge_to_community_rate", ""),
+        ],
+        avg_label="star rating",
+        higher_is_better=True,
+        provenance=_PROVENANCE,
+        limitations=_LIMITATIONS,
     )
