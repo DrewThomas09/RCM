@@ -1,17 +1,23 @@
-"""Editorial /login route renderer.
+"""Editorial /login route renderer — "Deal Team Login · Centered Card".
 
-Repositioned 2026-05-19 from "PE fund operating system" framing to
-"commercial diligence intelligence" — the platform is sold to
-client-facing deal teams who build per-target profiles, not to
-internal fund operating partners managing a hold portfolio. The
-contract-test pins (`console-teaser` class, `cta-btn submit` button
-class, POST to `/api/login`, `href="/forgot"`, server-side
-`?tab=request` switching) are all preserved; only the copy + visual
-polish change.
+Redesigned 2026-05-24 from the two-column editorial split to the
+single-centered-card design handoff (cream field, 480px paper card, no page
+chrome). This is a **skin swap over the existing auth flow** — it does NOT
+change the data contract:
 
-Tab switching (Sign In ↔ Request Access) is server-side via
-``?tab=request`` — no JS state, no client-side framework. This keeps
-behaviour deterministic and back-button-safe.
+  - the sign-in form still POSTs to ``/api/login`` (CSRF-exempt; the
+    server-side session/cookie flow in ``server.py`` is untouched),
+  - the hidden ``next`` field still echoes the redirect target,
+  - Request Access still switches server-side via ``?tab=request`` and POSTs
+    to ``/login?tab=request`` (deterministic, back-button-safe — no JS state),
+  - ``/forgot`` link and the ``cta-btn submit`` primary-button class are
+    preserved so the existing contract tests stay green.
+
+The only client JS is a tiny, login-scoped Show/Hide password toggle
+(``type="button"`` — never submits). No external fonts/CDN/React/Babel: the
+shell already loads Source Serif 4 / Inter / JetBrains Mono. Single sign-on
+is rendered **disabled** because no SSO/SAML route exists in PEdesk — we do
+not invent auth behavior.
 """
 from __future__ import annotations
 
@@ -22,238 +28,162 @@ from rcm_mc.ui._chartis_kit import editorial_chartis_shell
 
 
 _LOGIN_EXTRA_CSS = """
-.stage {
-  display: grid; grid-template-columns: 1fr 1fr;
-  min-height: calc(100vh - 72px - 80px);
+.pd-login-page{
+  --pl-navy:#0d2336;--pl-navy2:#14304a;--pl-cream:#f4ecd9;--pl-paper:#fbf7ee;
+  --pl-ink:#15202b;--pl-ink2:#2a3a4a;--pl-muted:#6a7480;--pl-muted2:#8b94a0;
+  --pl-rule:#d9cfb8;--pl-green:#1f7a5a;--pl-amber:#b8842e;
+  --pl-serif:'Source Serif 4',Georgia,serif;
+  --pl-sans:'Inter Tight',Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --pl-mono:'JetBrains Mono',ui-monospace,monospace;
+  box-sizing:border-box;min-height:100vh;width:100%;
+  display:flex;align-items:center;justify-content:center;padding:40px 16px;
+  background-color:var(--pl-cream);
+  background-image:
+    radial-gradient(60% 50% at 50% 0%, rgba(255,255,255,.5), transparent 70%),
+    radial-gradient(60% 50% at 50% 100%, rgba(13,35,54,.05), transparent 70%);
 }
-/* Left panel — editorial position statement.
- * Subtle teal-ink stripe on the inside edge so the panel reads as
- * an editorial document instead of a flat split-screen. */
-.panel-l {
-  padding: 4rem 3rem;
-  background: var(--paper);
-  border-right: 1px solid var(--rule);
-  display: flex; flex-direction: column; justify-content: space-between;
-  position: relative;
+/* Short viewports scroll from the top instead of clipping the card. */
+@media (max-height:720px){ .pd-login-page{align-items:flex-start;} }
+.pd-login-page *{box-sizing:border-box;}
+
+.pd-login-card{
+  width:480px;max-width:100%;background:var(--pl-paper);
+  border:1px solid var(--pl-rule);border-radius:4px;padding:56px 56px 44px;
+  box-shadow:0 1px 0 rgba(0,0,0,.04),0 30px 60px -20px rgba(13,35,54,.18),
+    0 16px 30px -16px rgba(13,35,54,.10);
+  color:var(--pl-ink);
+  font-family:var(--pl-sans);
 }
-.panel-l::before {
-  content: "";
-  position: absolute; top: 4rem; bottom: 4rem; left: 0;
-  width: 3px;
-  background: linear-gradient(
-    180deg,
-    var(--teal-deep) 0%,
-    var(--teal) 55%,
-    transparent 100%
-  );
-}
-.panel-r {
-  padding: 4rem 3rem;
-  /* Cream-paper background so the right panel reads as the working
-   * surface (where the form sits) vs the left's editorial surface. */
-  background: var(--paper-pure);
-}
-.panel-l h1 {
-  font-family: "Source Serif 4", serif; font-weight: 400;
-  font-size: clamp(2.4rem, 4vw, 3.4rem); line-height: 1.05;
-  letter-spacing: -0.022em; color: var(--ink); margin: 0 0 1rem;
-}
-.panel-l h1 em {
-  font-style: italic; color: var(--teal-deep); font-weight: 400;
-}
-.panel-l .lede {
-  font-family: "Source Serif 4", serif; font-size: 1.05rem;
-  color: var(--muted); margin: 0 0 2rem; max-width: 48ch;
-}
-.panel-l .what-card {
-  /* Sub-eyebrow + 3-line "what is this" card above the teaser.
-   * Gives the page a real what-the-product-does block partners
-   * read before signing in. Subtle teal-soft tint so the block
-   * pops on the parchment background. */
-  background: linear-gradient(
-    135deg,
-    var(--teal-soft) 0%,
-    var(--paper) 70%
-  );
-  border: 1px solid var(--rule);
-  border-left: 3px solid var(--teal-deep);
-  padding: 1.1rem 1.4rem;
-  margin-bottom: 1.5rem;
-  font-family: "Source Serif 4", serif;
-  font-size: .95rem; line-height: 1.55; color: var(--ink-2);
-}
-.panel-l .what-card .label {
-  display: block;
-  font-family: "JetBrains Mono", monospace;
-  font-size: .68rem; font-weight: 600; letter-spacing: .12em;
-  color: var(--teal-deep);
-  text-transform: uppercase;
-  margin-bottom: .4rem;
+@media (max-width:560px){
+  .pd-login-card{width:calc(100% - 32px);padding:40px 28px 32px;}
 }
 
-.console-teaser {
-  background: var(--paper-pure); border: 1px solid var(--rule);
-  padding: 1.5rem;
-  position: relative;
+.pd-login-eyebrow{
+  font-family:var(--pl-mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--pl-green);margin:0 0 24px;
 }
-.console-teaser::after {
-  /* Tiny pulse dot in the corner so the card feels alive. */
-  content: "";
-  position: absolute; top: 1.2rem; right: 1.4rem;
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 0 0 var(--green-soft);
-  animation: ck-pulse 2.4s ease-out infinite;
+.pd-login-h1{
+  font-family:var(--pl-serif);font-weight:400;font-size:44px;line-height:1.05;
+  letter-spacing:-.02em;color:var(--pl-ink);margin:0 0 14px;
 }
-@keyframes ck-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(63, 125, 77, 0.55); }
-  50%      { box-shadow: 0 0 0 6px rgba(63, 125, 77, 0); }
-}
-.teaser-h {
-  font-family: "Inter", sans-serif; font-size: .68rem;
-  font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
-  color: var(--muted); margin-bottom: .9rem;
-  display: flex; justify-content: space-between;
-}
-.teaser-h .src {
-  font-family: "JetBrains Mono", monospace; text-transform: none;
-  letter-spacing: 0; color: var(--teal-deep); font-size: .72rem;
-}
-.teaser-row {
-  display: flex; justify-content: space-between; align-items: baseline;
-  padding: .58rem 0; border-bottom: 1px solid var(--border);
-  font-family: "JetBrains Mono", monospace; font-size: .82rem;
-}
-.teaser-row:last-child { border-bottom: none; }
-.teaser-row .lbl {
-  font-family: "Inter", sans-serif; color: var(--muted); font-size: .85rem;
-}
-.teaser-row .v {
-  color: var(--ink); font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-.teaser-row .v.teal  { color: var(--teal-deep); }
-.teaser-row .v.amber { color: var(--amber); }
-.teaser-row .v.green { color: var(--green); }
-/* Slim progress bars visualising the proportional session metrics —
- * breaks up the otherwise text-only console without adding new data. */
-.teaser-bar {
-  height: 4px; background: var(--border); margin: -2px 0 2px;
-  border-radius: 2px; overflow: hidden;
-}
-.teaser-bar .fill { display: block; height: 100%; border-radius: 2px; }
-.teaser-bar .fill.teal  { background: var(--teal); }
-.teaser-bar .fill.amber { background: var(--amber); }
-
-.meta-stack {
-  display: grid; gap: .55rem; padding-top: 2rem;
-  border-top: 1px solid var(--rule);
-}
-.meta-stack .row {
-  display: flex; justify-content: space-between;
-  font-family: "JetBrains Mono", monospace; font-size: .76rem;
-}
-.meta-stack .k {
-  font-family: "Inter", sans-serif; font-size: .68rem;
-  font-weight: 700; letter-spacing: .14em; color: var(--muted);
-}
-.meta-stack .v { color: var(--ink); }
-
-.form-wrap { max-width: 440px; }
-.form-h {
-  font-family: "Source Serif 4", serif; font-weight: 400;
-  font-size: 1.85rem; line-height: 1.1; letter-spacing: -0.018em;
-  color: var(--ink); margin: .75rem 0 .85rem;
-}
-.form-h em {
-  font-style: italic; color: var(--teal-deep); font-weight: 400;
-}
-.form-sub {
-  font-family: "Source Serif 4", serif; font-size: .98rem;
-  color: var(--muted); margin: 0 0 1.75rem; max-width: 42ch;
+@media (max-width:560px){ .pd-login-h1{font-size:36px;} }
+.pd-login-h1 em{font-style:italic;color:var(--pl-green);font-weight:400;}
+.pd-login-sub{
+  font-family:var(--pl-serif);font-size:15.5px;line-height:1.55;
+  color:var(--pl-ink2);margin:0 0 36px;
 }
 
-.tabs {
-  display: flex; gap: 1.5rem; border-bottom: 1px solid var(--rule);
-  margin-bottom: 1.75rem;
+/* Segmented control (server-side tabs rendered as anchors). */
+.pd-login-seg{
+  display:grid;grid-template-columns:1fr 1fr;background:var(--pl-cream);
+  border:1px solid var(--pl-rule);border-radius:999px;padding:4px;margin:0 0 28px;
 }
-.tabs .tab { display: inline-block; }
+.pd-login-seg-btn{
+  text-align:center;text-decoration:none;padding:10px 14px;border-radius:999px;
+  font-family:var(--pl-mono);font-size:11.5px;letter-spacing:.10em;
+  text-transform:uppercase;color:var(--pl-muted);
+  transition:background .15s,color .15s;
+}
+.pd-login-seg-btn.on{background:var(--pl-navy);color:var(--pl-paper);}
+.pd-login-seg-btn:focus-visible{outline:2px solid var(--pl-green);outline-offset:2px;}
 
-.field { margin-bottom: 1.1rem; }
-.field label {
-  display: block; font-family: "Inter", sans-serif; font-size: .68rem;
-  font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
-  color: var(--muted); margin-bottom: .4rem;
+.pd-login-field{margin:0 0 16px;position:relative;}
+.pd-login-field label{
+  display:block;font-family:var(--pl-mono);font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--pl-muted2);margin:0 0 8px;
 }
-.field input { width: 100%; }
-.field-row {
-  display: flex; justify-content: space-between; align-items: center;
-  margin: .25rem 0 1.5rem; font-family: "Inter", sans-serif;
-  font-size: .82rem; color: var(--muted);
+.pd-login-field input{
+  width:100%;background:var(--pl-paper);border:1px solid var(--pl-rule);
+  border-radius:4px;padding:14px;font-family:var(--pl-sans);font-size:15px;
+  color:var(--pl-ink);
 }
-.field-row label.check { display: flex; align-items: center; gap: .5rem; }
-.field-row label.check input { width: auto; padding: 0; }
-.field-row a {
-  color: var(--teal-deep);
-  border-bottom: 1px solid transparent;
-  transition: border-color 0.12s;
+.pd-login-field input::placeholder{color:var(--pl-muted2);}
+.pd-login-field input:focus{
+  outline:none;border-color:var(--pl-green);box-shadow:0 0 0 3px rgba(31,122,90,.12);
 }
-.field-row a:hover { border-bottom-color: var(--teal-deep); }
-.submit { width: 100%; }
-/* Stronger hover state — gentle gradient + subtle lift so the
- * primary CTA reads as the next action. */
-.cta-btn.submit {
-  background: linear-gradient(
-    180deg,
-    var(--ink-2) 0%,
-    var(--ink) 100%
-  );
-  transition: transform 0.08s, box-shadow 0.12s;
+.pd-login-pw input{padding-right:70px;}
+.pd-login-show{
+  position:absolute;right:12px;top:34px;background:var(--pl-cream);border:none;
+  padding:4px 8px;border-radius:4px;cursor:pointer;
+  font-family:var(--pl-mono);font-size:10.5px;letter-spacing:.10em;
+  text-transform:uppercase;color:var(--pl-muted);
 }
-.cta-btn.submit:hover {
-  background: var(--teal-deep);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(21, 87, 82, 0.18);
-}
+.pd-login-show:focus-visible{outline:2px solid var(--pl-green);outline-offset:2px;}
 
-.footnote {
-  margin-top: 2rem; font-family: "Source Serif 4", serif;
-  font-size: .88rem; color: var(--muted); font-style: italic;
+.pd-login-row{
+  display:flex;justify-content:space-between;align-items:center;
+  margin:6px 0 26px;font-family:var(--pl-sans);font-size:13px;color:var(--pl-ink2);
 }
-.footnote a { color: var(--teal-deep); text-decoration: underline; }
+.pd-login-row label{display:flex;align-items:center;gap:8px;cursor:pointer;}
+.pd-login-row input[type=checkbox]{accent-color:var(--pl-green);width:auto;}
+.pd-login-row a{color:var(--pl-green);font-weight:500;text-decoration:none;}
+.pd-login-row a:hover{text-decoration:underline;}
+.pd-login-row a:focus-visible{outline:2px solid var(--pl-green);outline-offset:2px;}
 
-.req-ok {
-  margin-top: 1.5rem; padding: 1rem 1.25rem;
-  background: var(--teal-soft); border-left: 3px solid var(--teal);
-  font-family: "Source Serif 4", serif; font-style: italic;
-  color: var(--teal-deep);
+.pd-login-page .cta-btn.submit,.pd-login-submit{
+  width:100%;background:var(--pl-navy);color:var(--pl-paper);border:none;
+  padding:16px;border-radius:4px;cursor:pointer;
+  font-family:var(--pl-sans);font-size:14px;font-weight:600;letter-spacing:.02em;
 }
-
-.err {
-  margin: 0 0 1rem; padding: .75rem 1rem;
-  background: var(--red-soft); border-left: 3px solid var(--red);
-  font-family: "Inter", sans-serif; font-size: .88rem; color: var(--red);
+.pd-login-page .cta-btn.submit:hover,.pd-login-submit:hover{background:var(--pl-navy2);}
+.pd-login-page .cta-btn.submit:focus-visible,.pd-login-submit:focus-visible{
+  outline:2px solid var(--pl-green);outline-offset:2px;
 }
 
-@media (max-width: 900px) {
-  .stage { grid-template-columns: 1fr; }
-  .panel-l {
-    border-right: none; border-bottom: 1px solid var(--rule);
-    padding: 3rem 1.5rem;
-  }
-  .panel-l::before { display: none; }
-  .panel-r { padding: 3rem 1.5rem; }
+.pd-login-divider{
+  display:flex;align-items:center;gap:12px;margin:22px 0 16px;
+  font-family:var(--pl-mono);font-size:10.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--pl-muted);
 }
+.pd-login-divider::before,.pd-login-divider::after{
+  content:"";flex:1;height:1px;background:var(--pl-rule);
+}
+.pd-login-sso{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--pl-paper);border:1px solid var(--pl-rule);border-radius:4px;
+  padding:13px;font-family:var(--pl-sans);font-size:13.5px;color:var(--pl-ink2);
+  cursor:not-allowed;opacity:.65;
+}
+.pd-login-sso-badge{
+  font-family:var(--pl-mono);font-size:9px;letter-spacing:.12em;color:var(--pl-muted);
+  border:1px solid var(--pl-rule);padding:2px 6px;border-radius:3px;
+}
+
+.pd-login-error{
+  margin:0 0 18px;padding:12px 14px;border-left:3px solid var(--pl-amber);
+  background:rgba(184,132,46,.10);border-radius:0 4px 4px 0;
+  font-family:var(--pl-sans);font-size:12.5px;color:#6a4a12;
+}
+.pd-login-ok{
+  margin:0;padding:14px 16px;border-left:3px solid var(--pl-green);
+  background:rgba(31,122,90,.08);border-radius:0 4px 4px 0;
+  font-family:var(--pl-serif);font-style:italic;color:var(--pl-green);
+}
+.pd-login-foot{
+  margin:28px 0 0;font-family:var(--pl-serif);font-size:.86rem;font-style:italic;
+  color:var(--pl-muted);
+}
+.pd-login-foot a{color:var(--pl-green);text-decoration:underline;}
 """.strip()
+
+
+def _next_qs(next_url: str, *, extra: str = "") -> str:
+    """Build a ``?...`` query preserving ``next`` (and optional extra)."""
+    parts = []
+    if extra:
+        parts.append(extra)
+    if next_url and next_url != "/":
+        parts.append("next=" + _html.escape(next_url, quote=True))
+    return ("?" + "&".join(parts)) if parts else ""
 
 
 def _render_signin_form(*, error: Optional[str], next_url: str) -> str:
     err_html = (
-        f'<div class="err">{_html.escape(error)}</div>'
+        f'<div class="pd-login-error" role="alert">{_html.escape(error)}</div>'
         if error else ""
     )
     next_input = (
-        f'<input type="hidden" name="next" value="{_html.escape(next_url)}"/>'
+        f'<input type="hidden" name="next" value="{_html.escape(next_url, quote=True)}"/>'
         if next_url and next_url != "/" else ""
     )
     return (
@@ -261,31 +191,29 @@ def _render_signin_form(*, error: Optional[str], next_url: str) -> str:
         f'{err_html}'
         '<form method="POST" action="/api/login">'
         f'{next_input}'
-        '<div class="field">'
-        '<label for="login-email">Email or Username</label>'
-        # type="text" not "email" so the seeded demo / partner
-        # accounts (literal usernames like "demo") submit
-        # cleanly. The DB column is `username` and the regex
-        # at auth/auth.py:_USERNAME_RE accepts both bare names
-        # and email-style strings. inputmode="email" keeps the
-        # mobile keyboard helpful for the typical case.
+        '<div class="pd-login-field">'
+        '<label for="login-email">Email or username</label>'
+        # type="text" (not "email") so literal usernames like "demo" submit
+        # cleanly; the DB column is `username`. inputmode keeps the mobile
+        # keyboard helpful for the common email case.
         '<input type="text" id="login-email" name="username" '
         'placeholder="you@firm.com" required '
         'inputmode="email" autocomplete="username" autofocus/>'
         '</div>'
-        '<div class="field">'
+        '<div class="pd-login-field pd-login-pw">'
         '<label for="login-password">Password</label>'
         '<input type="password" id="login-password" name="password" '
-        'placeholder="••••••••••••" required '
-        'autocomplete="current-password"/>'
+        'placeholder="••••••••••••" required autocomplete="current-password"/>'
+        '<button type="button" class="pd-login-show" data-pl-show '
+        'aria-label="Show password" aria-pressed="false">Show</button>'
         '</div>'
-        '<div class="field-row">'
-        '<label class="check"><input type="checkbox" name="remember"/>'
-        ' Remember this device</label>'
+        '<div class="pd-login-row">'
+        '<label><input type="checkbox" name="remember" checked/> '
+        'Remember this device</label>'
         '<a href="/forgot">Forgot password?</a>'
         '</div>'
-        '<button type="submit" class="cta-btn submit">'
-        'Open Deal Workspace →</button>'
+        '<button type="submit" class="cta-btn submit pd-login-submit">'
+        'Open deal workspace →</button>'
         '</form>'
         '</div>'
     )
@@ -294,7 +222,7 @@ def _render_signin_form(*, error: Optional[str], next_url: str) -> str:
 def _render_request_form(*, success: bool) -> str:
     if success:
         return (
-            '<div class="req-ok">'
+            '<div class="pd-login-ok">'
             "Request received. A member of the team will reach out within "
             "one business day."
             '</div>'
@@ -302,28 +230,47 @@ def _render_request_form(*, success: bool) -> str:
     return (
         '<div id="requestForm">'
         '<form method="POST" action="/login?tab=request">'
-        '<div class="field">'
+        '<div class="pd-login-field">'
         '<label for="req-email">Work email</label>'
         '<input type="email" id="req-email" name="email" '
         'placeholder="you@firm.com" required autocomplete="email"/>'
         '</div>'
-        '<div class="field">'
+        '<div class="pd-login-field">'
         '<label for="req-firm">Firm</label>'
         '<input type="text" id="req-firm" name="firm" '
         'placeholder="Strategy Group · Consulting Firm · Advisory" required '
         'autocomplete="organization"/>'
         '</div>'
-        '<div class="field">'
+        '<div class="pd-login-field">'
         '<label for="req-role">Role</label>'
         '<input type="text" id="req-role" name="role" '
         'placeholder="Director · Engagement Manager · Associate" '
         'autocomplete="organization-title"/>'
         '</div>'
-        '<button type="submit" class="cta-btn submit">'
+        '<button type="submit" class="cta-btn submit pd-login-submit">'
         'Request Access →</button>'
         '</form>'
         '</div>'
     )
+
+
+_SHOW_HIDE_JS = """
+<script>
+(function(){
+  var btn=document.querySelector('[data-pl-show]');
+  var inp=document.getElementById('login-password');
+  if(!btn||!inp)return;
+  btn.addEventListener('click',function(){
+    var show=inp.type==='password';
+    inp.type=show?'text':'password';
+    btn.textContent=show?'Hide':'Show';
+    btn.setAttribute('aria-pressed',show?'true':'false');
+    btn.setAttribute('aria-label',show?'Hide password':'Show password');
+    inp.focus();
+  });
+})();
+</script>
+""".strip()
 
 
 def render_login_page(
@@ -333,103 +280,62 @@ def render_login_page(
     request_success: bool = False,
     next_url: str = "/",
 ) -> str:
-    """Editorial /login — split layout with sign-in / request-access tabs.
+    """Editorial /login — centered-card design.
 
-    Args:
-        tab: "signin" (default) or "request" — controls which form is
-             rendered (server-side, no JS state).
-        error: When set, renders an inline error block above the form.
-        request_success: When True (POST /login?tab=request), shows the
-                         confirmation block in the request form.
-        next_url: Target after successful login. Echoed into a hidden
-                  field on the form so /api/login can redirect there.
+    Args mirror the prior renderer (server.py calls are unchanged):
+      tab: "signin" (default) or "request" (server-side switch).
+      error: inline error block above the form when set.
+      request_success: confirmation block in the request tab.
+      next_url: redirect target, echoed into a hidden field for /api/login.
     """
     is_request_tab = (tab == "request")
-    signin_form = _render_signin_form(error=error, next_url=next_url) if not is_request_tab else ""
-    request_form = _render_request_form(success=request_success) if is_request_tab else ""
+    form_html = (
+        _render_request_form(success=request_success) if is_request_tab
+        else _render_signin_form(error=error, next_url=next_url)
+    )
 
-    tabs_html = (
-        '<div class="tabs">'
-        f'<a href="/login" class="tab{"" if is_request_tab else " active"}">Sign In</a>'
-        f'<a href="/login?tab=request" class="tab{" active" if is_request_tab else ""}">'
-        'Request Access</a>'
+    signin_href = "/login" + _next_qs(next_url)
+    request_href = "/login" + _next_qs(next_url, extra="tab=request")
+    seg = (
+        '<div class="pd-login-seg" role="tablist" aria-label="Login mode">'
+        f'<a class="pd-login-seg-btn{"" if is_request_tab else " on"}" role="tab" '
+        f'aria-selected="{"false" if is_request_tab else "true"}" '
+        f'href="{signin_href}">Sign in</a>'
+        f'<a class="pd-login-seg-btn{" on" if is_request_tab else ""}" role="tab" '
+        f'aria-selected="{"true" if is_request_tab else "false"}" '
+        f'href="{request_href}">Request access</a>'
         '</div>'
     )
 
-    panel_r = (
-        '<div class="panel-r">'
-        '<div class="form-wrap">'
-        '<div class="micro">DEAL TEAM LOGIN</div>'
-        '<h2 class="form-h">Sign in to your<br/><em>workspace</em>.</h2>'
-        '<p class="form-sub">Use your team credentials to open your '
-        'deal profiles, market briefs, and source library.</p>'
-        f'{tabs_html}'
-        f'{request_form if is_request_tab else signin_form}'
-        '<p class="footnote">'
-        'Teams with private data feeds: see the '
-        '<a href="/docs/deployment">deployment runbook</a> to wire up '
-        'CRM, market data, or research connectors after sign-in.</p>'
-        '</div>'
-        '</div>'
+    # Single sign-on: rendered disabled — PEdesk has no SSO/SAML route, so we
+    # show the design's affordance without inventing auth behavior.
+    sso = (
+        '<div class="pd-login-divider">or continue with</div>'
+        '<button type="button" class="pd-login-sso" disabled '
+        'title="Single sign-on is not configured for this workspace.">'
+        'Single sign-on <span class="pd-login-sso-badge">SAML</span></button>'
     )
 
-    panel_l = (
-        '<div class="panel-l">'
-        '<div>'
-        '<div class="eyebrow">'
-        '<span>COMMERCIAL DILIGENCE</span>'
-        '<span class="dot" style="margin:0 .35rem;color:var(--faint)">·</span>'
-        '<span>INTELLIGENCE LAYER</span>'
-        '<span class="dot" style="margin:0 .35rem;color:var(--faint)">·</span>'
-        '<span class="slug">/v1.0.0</span>'
-        '</div>'
-        '<h1>Open the<br/><em>deal</em>.</h1>'
-        '<p class="lede">Each deal team gets a dedicated workspace. '
-        'Profiles persist locally — refresh or return tomorrow and '
-        'pick up exactly where the diligence left off.</p>'
-        '<div class="what-card">'
-        '<span class="label">What this is</span>'
-        'Commercial diligence intelligence for client-facing deal '
-        'teams. Build living target-company profiles with market '
-        'research, customer signals, benchmarks, competitive context, '
-        'client priorities, and source-backed notes — organized '
-        'around the deal at hand, not buried in old decks or '
-        'one-off spreadsheets.'
-        '</div>'
-        '<div class="console-teaser">'
-        '<div class="teaser-h"><span>YOUR LAST SESSION</span>'
-        '<span class="src">deal.profile</span></div>'
-        '<div class="teaser-row"><span class="lbl">Active deal profiles</span>'
-        '<span class="v teal">4</span></div>'
-        '<div class="teaser-row"><span class="lbl">Market briefs in progress</span>'
-        '<span class="v teal">7</span></div>'
-        '<div class="teaser-row"><span class="lbl">Client priorities flagged</span>'
-        '<span class="v amber">2 of 6</span></div>'
-        '<div class="teaser-bar" aria-hidden="true">'
-        '<span class="fill amber" style="width:33%"></span></div>'
-        '<div class="teaser-row"><span class="lbl">Source-backed claims</span>'
-        '<span class="v">38 cited · 12 pending</span></div>'
-        '<div class="teaser-bar" aria-hidden="true">'
-        '<span class="fill teal" style="width:76%"></span></div>'
-        '<div class="teaser-row"><span class="lbl">Last accessed</span>'
-        '<span class="v">2026-04-15</span></div>'
+    card = (
+        '<div class="pd-login-page">'
+        '<div class="pd-login-card">'
+        '<div class="pd-login-eyebrow">DEAL TEAM LOGIN</div>'
+        '<h1 class="pd-login-h1">Sign in to your <em>workspace</em>.</h1>'
+        '<p class="pd-login-sub">Use your team credentials to open deal '
+        'profiles, market briefs, and your source library.</p>'
+        f'{seg}'
+        f'{form_html}'
+        f'{sso}'
+        '<p class="pd-login-foot">Teams with private data feeds: see the '
+        '<a href="/docs/deployment">deployment runbook</a> to wire up CRM, '
+        'market data, or research connectors after sign-in.</p>'
         '</div>'
         '</div>'
-        '<div class="meta-stack">'
-        '<div class="row"><span class="k">WORKSPACE</span>'
-        '<span class="v">CCF-DILIGENCE</span></div>'
-        '<div class="row"><span class="k">REGION</span>'
-        '<span class="v">us-east-1</span></div>'
-        '<div class="row"><span class="k">DATA</span>'
-        '<span class="v">Public sources only — no PHI</span></div>'
-        '<div class="row"><span class="k">STATUS</span>'
-        '<span class="v" style="color:var(--green)">● OPERATIONAL</span></div>'
-        '</div>'
-        '</div>'
+        f'{_SHOW_HIDE_JS}'
     )
 
     return editorial_chartis_shell(
-        f'<div class="stage">{panel_l}{panel_r}</div>',
+        card,
         title="Sign in",
         breadcrumbs=[("Home", "/"), ("Sign in", None)],
         show_chrome=False,
