@@ -1,7 +1,8 @@
 """The /sector-intelligence landing — honest coverage directory.
 
-Only Hospitals is Live (links to real routes); every other sector is a
-clearly-tagged Roadmap entry with NO link to a not-yet-built page.
+The six live CMS verticals (Hospitals, Home Health, Hospice, SNF, Dialysis,
+IRF, LTCH) link to real routes; every other sector is a clearly-tagged
+Roadmap entry with NO link to a not-yet-built page.
 """
 from __future__ import annotations
 
@@ -28,14 +29,19 @@ class SectorIntelligencePageTests(unittest.TestCase):
             self.assertIn(route, self.html)
 
     def test_live_sectors_link_and_roadmap_sectors_do_not(self):
-        # Home Health + Hospice are now Live and link to real screeners...
-        for sector in ("Home Health", "Hospice", "Dental / DSO", "Dialysis"):
+        # The six live CMS verticals link to real screeners...
+        for sector in ("Home Health", "Hospice", "SNF / Nursing Home",
+                       "Dialysis", "Inpatient Rehab / IRF",
+                       "Long-Term Care Hospital / LTCH", "Dental / DSO"):
             self.assertIn(sector, self.html)
-        self.assertIn('href="/home-health"', self.html)
-        self.assertIn('href="/hospice"', self.html)
+        for route in ('href="/home-health"', 'href="/hospice"',
+                      'href="/nursing-homes"', 'href="/dialysis"',
+                      'href="/inpatient-rehab"',
+                      'href="/long-term-care-hospital"'):
+            self.assertIn(route, self.html)
         # ...still-roadmap sectors carry NO link to an unbuilt route.
         self.assertIn("not yet built", self.html)
-        for dead in ('href="/dental"', 'href="/dialysis"', 'href="/outpatient"'):
+        for dead in ('href="/dental"', 'href="/outpatient"', 'href="/physician-groups"'):
             self.assertNotIn(dead, self.html)
 
     def test_data_honesty_labels_present(self):

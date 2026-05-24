@@ -1,10 +1,11 @@
-"""Guards for the SNF / Nursing Home data-spine audit (PR #600).
+"""Guards for the SNF / Nursing Home data-spine audit doc (PR #600).
 
-This PR is audit + roadmap only — it must NOT vendor data, add a loader, or
-make runtime network calls. These tests pin the doc's honesty discipline
-(Medicare/Medicaid-certified + public-CMS scope, no commercial-revenue
-claim) and assert the audit stayed scope-clean (no snf data files / loader
-shipped yet).
+The audit doc itself must keep its honesty discipline (Medicare/Medicaid-
+certified + public-CMS scope, no commercial-revenue claim, no runtime
+network) and stay the planning record for the spine. The scope-clean "no
+data/loader shipped yet" guards were intentionally retired once the SNF
+vertical was actually built and merged (PR #610): snf.py + the vendored
+CSVs now exist by design, so asserting their absence is obsolete.
 """
 from __future__ import annotations
 
@@ -61,16 +62,22 @@ class SnfSpineDocTests(unittest.TestCase):
                       _ROADMAP.read_text(encoding="utf-8"))
 
 
-class AuditStayedScopeCleanTests(unittest.TestCase):
-    def test_no_snf_data_vendored_yet(self):
-        # Audit PR must not have shipped any SNF data file.
-        offenders = [p.name for p in _DATA.glob("*snf*")] + \
-                    [p.name for p in _DATA.glob("*nursing*")]
-        self.assertEqual(offenders, [], f"unexpected SNF data files: {offenders}")
+class SpineWasSubsequentlyBuiltTests(unittest.TestCase):
+    """The spine the doc planned has since shipped (PR #610) — confirm the
+    plan and the built artifacts now agree, so the doc stays a true record."""
 
-    def test_no_snf_loader_module_yet(self):
-        self.assertFalse((_DATA / "snf.py").exists(),
-                         "snf.py loader should not exist until the data-spine PR")
+    def test_snf_loader_and_data_now_exist(self):
+        self.assertTrue((_DATA / "snf.py").exists(),
+                        "snf.py loader should exist now that #610 shipped")
+        self.assertTrue((_DATA / "snf_providers.csv").exists())
+        self.assertTrue((_DATA / "snf_quality.csv").exists())
+
+    def test_built_loader_matches_the_documented_api(self):
+        from rcm_mc.data import snf
+        for fn in ("load_snf_providers", "load_snf_quality",
+                   "load_snf_summary_by_state", "snf_providers_for_state",
+                   "snf_provider_by_ccn"):
+            self.assertTrue(hasattr(snf, fn), f"snf.{fn} missing")
 
 
 if __name__ == "__main__":
