@@ -40,6 +40,20 @@ data, no runtime CMS/map/chart APIs, no unsupported claims.
   count: 73 → 83 of 309 page routes.
 - **Phase 2 (queued):** RAG source cards (sectors + metrics).
 - **Phase 3 (queued):** investable-evidence + predictive-modeling framework.
-- **Phase 4 (queued):** CMS verticals (SNF data spine first; then
-  Dialysis / ASC / IRF / LTCH / DMEPOS as depth allows — depth over breadth).
+- **Phase 4 (in progress):** CMS verticals — **SNF / Nursing Home built**.
+  Vendored the official **CMS Nursing Home Care Compare — Provider
+  Information** file (`NH_ProviderInfo`, Apr 2026, downloaded once from
+  data.cms.gov) → normalized `snf_providers.csv` + `snf_quality.csv`
+  (**14,699 real facilities**, provenance columns, no synthetic data).
+  Built `data/snf.py` loader (providers / quality / state summary / state
+  filter / by-CCN), `ui/snf_page.py` screener + profile reusing the sector
+  scaffolds (state map, market intelligence, county competition, ownership
+  mix, rating distribution, peer percentiles), routes `/nursing-homes`
+  + `/nursing-homes/<ccn>`, curated Guide context (10 suggested questions),
+  command-palette entry, and `tests/test_snf_vertical.py`. Honesty: four CMS
+  star ratings + staffing + beds + SFF shown; lower-is-better signals
+  (fines/denials/turnover) deliberately kept out of the "higher = better"
+  percentile table; "total fines" labeled a regulatory penalty, not revenue.
+  Next verticals (Dialysis / ASC / IRF / LTCH / DMEPOS) queued — depth over
+  breadth.
 - **Phase 5 (queued):** re-run coverage audit + final report.

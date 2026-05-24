@@ -3297,6 +3297,22 @@ class RCMHandler(BaseHTTPRequestHandler):
                     "health agency in the loaded CMS data.</p>",
                     status=HTTPStatus.NOT_FOUND)
             return self._send_html(html_out)
+        if path == "/nursing-homes":
+            from .ui.snf_page import render_snf
+            _qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            return self._send_html(render_snf(_qs))
+        if path.startswith("/nursing-homes/"):
+            from html import escape as _esc_ccn
+            from .ui.snf_page import render_snf_profile
+            ccn = urllib.parse.unquote(path[len("/nursing-homes/"):]).strip("/")
+            html_out = render_snf_profile(ccn)
+            if html_out is None:
+                return self._send_html(
+                    "<h1>Facility Not Found</h1><p>CCN "
+                    f"{_esc_ccn(ccn)} is not a Medicare/Medicaid-certified "
+                    "nursing home in the loaded CMS data.</p>",
+                    status=HTTPStatus.NOT_FOUND)
+            return self._send_html(html_out)
         if path == "/hospice":
             from .ui.hospice_page import render_hospice
             _qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
