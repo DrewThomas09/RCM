@@ -3545,6 +3545,76 @@ _MANUAL: List[PageContext] = [
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
+    _ctx(
+        "/diligence/xray", "CMS X-Ray",
+        short_description="The universal CMS provider diligence scanner: enter "
+        "a CCN, provider ID, or facility name and PEdesk resolves the provider "
+        "across every live CMS vertical (Hospital, SNF, Home Health, Hospice, "
+        "Dialysis, IRF, LTCH), benchmarks it against peers, and renders a "
+        "transparent diligence report with red/amber/green/gray signals.",
+        primary_purpose="Turn any single CMS provider identifier into a "
+        "benchmarked diligence read — identity, detected vertical, source "
+        "datasets, peer percentiles, market context, risk signals, and "
+        "suggested questions — composing the cross-sector benchmark and "
+        "investable-evidence layers in one place.",
+        common_questions=[
+            "What is the strongest diligence signal for this provider?",
+            "What should I ask management given the weak metrics?",
+            "How does this provider compare to same-state peers?",
+            "What data is missing, and would it change the read?",
+            "Can I treat this as investment evidence?",
+            "Which benchmarks here are most reliable (sample size)?",
+            "Why did this CCN resolve to more than one vertical?",
+            "Is this provider an outlier or within normal variance?",
+            "How is the peer-relative quality index computed?",
+        ],
+        inputs=["A CCN / provider id / facility name (optional state), "
+                "resolved across the six cross-sector verticals + HCRIS."],
+        outputs=["A resolver table (ambiguous matches), or a benchmarked "
+                 "report: identity header, diligence signal strip, peer "
+                 "benchmark table (percentile + guarded z-score), market "
+                 "context, suggested questions, and evidence/limitations."],
+        key_metrics=["Peer-relative quality index", "Peer percentile",
+                     "z-score (n>=5, sd>0)", "Ownership / locality HHI",
+                     "Peer sample size", "Missingness"],
+        data_sources=["Reuses the six vertical CMS loaders + HCRIS via the "
+                      "cross-sector benchmark and investable-evidence layers."],
+        model_logic_summary="Composes existing layers only: percentile + "
+        "guarded z-score from investable_evidence, market context + HHI from "
+        "cross_sector. Signals are transparent and component-traceable; no "
+        "composite black-box score, no new math.",
+        why_it_matters="Diligence happens provider-by-provider; the X-Ray is "
+        "the analyst workflow that unifies the vertical libraries into one "
+        "benchmarked read.",
+        diligence_use_cases=["Screening a target by CCN; framing peer position "
+                             "and red flags before management meetings; finding "
+                             "the local competitive set."],
+        interpretation_guidance=[
+            "CMS public data only — NOT commercial revenue (except HCRIS "
+            "hospital cost-report fields), payer mix, or private-pay volume.",
+            "Percentile is peer deviation; the quality index is peer-relative "
+            "evidence, never an investment recommendation or a causal claim.",
+            "Concentration (HHI) is provider-count composition, NOT market share.",
+            "Below n=5 rated peers, percentile and z-score are suppressed "
+            "(insufficient sample).",
+            "Metrics benchmark across four peer sets — national, state, "
+            "locality (county; city for Home Health), and ownership type — "
+            "each with its own peer count.",
+            "Risk indicators are transparent, rule-based LEADING SIGNALS from "
+            "the current snapshot — NOT trained models, probabilities, or "
+            "forecasts (the data is single-snapshot; see the prediction-"
+            "readiness audit). Each shows the components it is built from.",
+            "A CCN can resolve to multiple verticals (hospital-based IRF/LTCH "
+            "units share the HCRIS CCN) — the resolver shows all, never guesses.",
+        ],
+        limitations=["Benchmarks depend on source completeness; hospital "
+                     "(HCRIS) financials are not peer-benchmarked in this "
+                     "post-acute view — use the native hospital profile."],
+        related_routes=["/diligence/hcris-xray", "/sector-intelligence",
+                        "/nursing-homes", "/diligence"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
 ]
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
