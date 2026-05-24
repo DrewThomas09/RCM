@@ -3793,45 +3793,88 @@ _CSS_INLINE_FALLBACK = """
   .ck-section-code { font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); letter-spacing:0.1em; }
   .ck-section-count { display:inline-block; font-family:var(--sc-mono); font-size:13px; font-weight:500; color:var(--sc-text-faint); margin-left:12px; vertical-align:baseline; letter-spacing:0.04em; }
 
-  /* Top bar — navy + white + teal accent rule, mirrors chartis.com */
-  .ck-topbar { position:sticky; top:0; z-index:50; background:var(--sc-navy); border-bottom:2px solid var(--sc-teal); }
-  .ck-topbar-inner { display:flex; align-items:center; gap:var(--sc-s-6); padding:18px var(--sc-s-7); max-width:min(1920px, 95vw); margin:0 auto; }
-  .ck-wordmark { display:inline-flex; align-items:center; gap:0.55rem; font-family:var(--sc-serif); font-weight:500; font-size:22px; color:var(--sc-on-navy); letter-spacing:-0.018em; text-decoration:none; line-height:1; }
+  /* ── Editorial paper top bar (2026-05-24 redesign) ──
+     Single 76px paper-toned bar with an ink bottom rule and serif nav
+     (green active state). Handoff tokens are inlined as --tb-* locals so
+     the bar is deterministic regardless of theme vars. Class names are
+     preserved so the topbar JS (user dropdown, Guide trigger, command
+     palette, q-pill) keeps working unchanged. Scoped to .ck-topbar* so no
+     other page surface is affected. */
+  .ck-topbar { --tb-paper:#faf6ec; --tb-paper2:#f3eddb; --tb-ink:#15202b;
+    --tb-ink2:#2a3a4a; --tb-muted:#6a7480; --tb-rule:#c9c1ac; --tb-green:#1f7a5a;
+    --tb-green-deep:#18573f; --tb-green-soft:#d6e8df; --tb-amber:#b8842e;
+    position:sticky; top:0; z-index:50; background:var(--tb-paper);
+    border-bottom:2px solid var(--tb-ink); }
+  .ck-topbar-inner { display:flex; align-items:center; gap:0; height:76px;
+    padding:0 32px; max-width:min(1920px, 95vw); margin:0 auto; }
+  .ck-wordmark { display:inline-flex; align-items:center; gap:0.5rem;
+    font-family:var(--sc-serif,'Source Serif 4',Georgia,serif); font-weight:400;
+    font-size:26px; color:var(--tb-ink); letter-spacing:-0.018em;
+    text-decoration:none; line-height:1; padding-right:32px;
+    border-right:1px solid var(--tb-rule); margin-right:16px; }
   .ck-wordmark-text { display:inline-flex; align-items:baseline; }
-  .ck-brand-mark { color:var(--sc-on-navy); flex:none; opacity:.92; transition:opacity .15s ease; }
-  .ck-wordmark:hover .ck-brand-mark { opacity:1; }
-  .ck-wordmark em { font-style:italic; font-weight:400; color:var(--sc-teal-2); margin-left:0.22em; }
-  .ck-wordmark:hover em { color:var(--sc-on-navy); }
-  .ck-nav { display:flex; gap:var(--sc-s-7); margin-left:var(--sc-s-6); }
-  .ck-nav a { font-family:var(--sc-sans); font-size:13px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--sc-on-navy-dim); padding:6px 0; border-bottom:2px solid transparent; text-decoration:none; transition:color 0.15s; }
-  .ck-nav a:hover { color:var(--sc-on-navy); }
-  .ck-nav a.active { color:var(--sc-on-navy); border-bottom-color:var(--sc-teal); }
-  .ck-topbar-right { margin-left:auto; display:flex; align-items:center; gap:var(--sc-s-4); }
-  /* Workspace-mode chip — distinct accent per audience so the active
-     interface reads at a glance. Partner = teal (fund ops); Consulting
-     = amber (Chartis commercial-diligence engagements). */
-  /* Editorial mode label — flat, ruled, no translucent fill (which read
-     as a modern SaaS pill). A thin accent underline carries the
-     workspace color (teal = partner / amber = consulting) the way the
-     nav active-state does, keeping the topbar typographic. */
-  .ck-mode-chip { font-family:var(--sc-mono); font-size:10px; font-weight:700;
-    letter-spacing:0.1em; text-transform:uppercase; text-decoration:none;
-    padding:4px 2px 3px; border-radius:0; white-space:nowrap;
-    border:0; border-bottom:2px solid var(--sc-teal); color:var(--sc-on-navy-dim);
+  .ck-brand-mark { display:none; }   /* text wordmark only, per handoff */
+  .ck-wordmark em { font-style:italic; font-weight:400; color:var(--tb-green); margin-left:0.18em; }
+  .ck-nav { display:flex; gap:0; flex:1; }
+  .ck-nav a { font-family:var(--sc-serif,'Source Serif 4',Georgia,serif);
+    font-size:17px; font-weight:400; letter-spacing:0; text-transform:none;
+    color:var(--tb-ink2); padding:0 18px; line-height:76px;
+    border-bottom:2px solid transparent; text-decoration:none; transition:color 0.15s; }
+  .ck-nav a:hover { color:var(--tb-green); }
+  .ck-nav a.active { color:var(--tb-green); font-style:italic;
+    border-bottom-color:var(--tb-green); margin-bottom:-1px; }
+  .ck-nav a:focus-visible { outline:2px solid var(--tb-green); outline-offset:2px; }
+  .ck-topbar-right { margin-left:auto; display:flex; align-items:center; gap:14px;
+    padding-left:24px; border-left:1px solid var(--tb-rule); }
+  /* Workspace-mode chip — green (partner) / amber (consulting) underline. */
+  .ck-mode-chip { font-family:var(--sc-mono,'JetBrains Mono',monospace); font-size:10px;
+    font-weight:600; letter-spacing:0.1em; text-transform:uppercase; text-decoration:none;
+    padding:4px 2px 3px; border-radius:0; white-space:nowrap; border:0;
+    border-bottom:2px solid var(--tb-green); color:var(--tb-muted);
     background:transparent; transition:color 0.15s, border-color 0.15s; }
-  .ck-mode-chip:hover { color:var(--sc-on-navy); }
-  .ck-mode-chip[data-mode="consulting"] { border-bottom-color:#d9a23a; }
-  .ck-mode-chip[data-mode="consulting"]:hover { color:#f5e3c4; }
+  .ck-mode-chip:hover { color:var(--tb-ink); }
+  .ck-mode-chip[data-mode="consulting"] { border-bottom-color:var(--tb-amber); }
+  .ck-mode-chip[data-mode="consulting"]:hover { color:var(--tb-ink); }
   @media (max-width:900px){ .ck-mode-chip { display:none; } }
-  .ck-search { border:1px solid var(--sc-navy-3); padding:7px 12px; font-size:12px; min-width:240px; border-radius:2px; background:var(--sc-navy-2); font-family:var(--sc-sans); color:var(--sc-on-navy); letter-spacing:0.02em; }
-  .ck-search::placeholder { color:var(--sc-on-navy-faint); }
-  .ck-search:focus { outline:none; border-color:var(--sc-teal); background:var(--sc-navy); }
+  .ck-search-form { margin:0; position:relative; display:flex; align-items:center; }
+  .ck-search { border:1px solid var(--tb-ink); padding:7px 44px 7px 12px; font-size:14px;
+    width:220px; border-radius:2px; background:var(--tb-paper2);
+    font-family:var(--sc-serif,'Source Serif 4',Georgia,serif); font-style:italic;
+    color:var(--tb-ink); letter-spacing:0; }
+  .ck-search::placeholder { color:var(--tb-muted); font-style:italic; }
+  .ck-search:focus { outline:none; border-color:var(--tb-green); box-shadow:0 0 0 3px rgba(31,122,90,.12); }
+  .ck-search-kbd { position:absolute; right:8px; font-family:var(--sc-mono,'JetBrains Mono',monospace);
+    font-size:10.5px; color:var(--tb-muted); border:1px solid var(--tb-rule); border-radius:3px;
+    padding:1px 5px; pointer-events:none; background:var(--tb-paper); }
+  @media (max-width:1280px){ .ck-search { width:160px; } }
+  /* Guide trigger — outlined ink button, green on hover. */
+  .ck-guide-trigger { font-family:var(--sc-mono,'JetBrains Mono',monospace); font-size:11px;
+    font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--tb-ink);
+    background:transparent; border:1px solid var(--tb-ink); border-radius:2px; padding:7px 14px;
+    cursor:pointer; transition:background .15s, color .15s, border-color .15s; }
+  .ck-guide-trigger:hover { background:var(--tb-paper2); color:var(--tb-green); border-color:var(--tb-green); }
+  .ck-guide-trigger:focus-visible { outline:2px solid var(--tb-green); outline-offset:2px; }
+  @media (max-width:1280px){ .ck-guide-trigger { display:none; } }  /* Guide stays in the avatar dropdown */
+  /* + New deal — primary CTA, solid ink, green-deep on hover. */
+  .ck-newdeal-cta { display:inline-flex; align-items:center; gap:6px;
+    font-family:var(--sc-mono,'JetBrains Mono',monospace); font-size:11px; font-weight:600;
+    letter-spacing:0.12em; text-transform:uppercase; color:var(--tb-paper); background:var(--tb-ink);
+    border:1px solid var(--tb-ink); border-radius:2px; padding:8px 14px; text-decoration:none;
+    white-space:nowrap; transition:background .15s, border-color .15s; }
+  .ck-newdeal-cta:hover { background:var(--tb-green-deep); border-color:var(--tb-green-deep); }
+  .ck-newdeal-cta:focus-visible { outline:2px solid var(--tb-green); outline-offset:2px; }
+  /* Legacy generic CTA (used on other surfaces) — unchanged. */
   .ck-cta { display:inline-flex; align-items:center; gap:8px; font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--sc-on-navy); border:1px solid var(--sc-on-navy); padding:8px 14px; border-radius:2px; text-decoration:none; transition:background 0.15s, color 0.15s; }
   .ck-cta:hover { background:var(--sc-teal); border-color:var(--sc-teal); color:var(--sc-navy); }
   .ck-cta-arrow { display:inline-block; width:10px; height:10px; }
-  .ck-user-chip { width:34px; height:34px; border-radius:50%; background:var(--sc-teal); color:var(--sc-navy); display:flex; align-items:center; justify-content:center; font-family:var(--sc-sans); font-weight:700; font-size:12px; letter-spacing:0.04em; cursor:pointer; border:0; padding:0; }
-  .ck-user-chip:hover { background:var(--sc-teal-2,var(--sc-teal)); }
-  .ck-search-form { margin:0; }
+  .ck-user-chip { width:38px; height:38px; border-radius:50%; background:var(--tb-green);
+    color:var(--tb-paper); display:flex; align-items:center; justify-content:center;
+    font-family:var(--sc-mono,'JetBrains Mono',monospace); font-weight:600; font-size:12.5px;
+    letter-spacing:0.04em; cursor:pointer; border:1px solid var(--tb-green-deep); padding:0;
+    transition:transform .12s, box-shadow .12s; }
+  .ck-user-chip:hover { transform:scale(1.04); box-shadow:0 0 0 3px var(--tb-green-soft); }
+  .ck-user-chip:focus-visible { outline:2px solid var(--tb-green); outline-offset:2px; }
+  @media (prefers-reduced-motion: reduce){ .ck-user-chip:hover { transform:none; } }
   /* Portfolio-wide diligence-questions pill in the topbar. JS
    * hydrates from rcm_deal_*_questions on DOMContentLoaded; hidden
    * when zero open across the portfolio. Warning-tone numeric +
@@ -3881,11 +3924,11 @@ _CSS_INLINE_FALLBACK = """
    * just below the navy topbar. Lets a partner click into a common
    * second-level page (Alerts, Heatmap, Find Comps, etc.) without
    * landing on a section index first. */
-  .ck-subnav { background:var(--sc-bone,#f2ede3); border-bottom:1px solid var(--sc-rule); position:sticky; top:60px; z-index:40; }
+  .ck-subnav { background:#f3eddb; border-bottom:1px solid #c9c1ac; position:sticky; top:76px; z-index:40; }
   .ck-subnav-inner { display:flex; gap:var(--sc-s-5); align-items:center; padding:10px var(--sc-s-7); max-width:min(1920px, 95vw); margin:0 auto; overflow-x:auto; }
-  .ck-subnav-link { font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--sc-text-dim); text-decoration:none; padding:6px 1px; border-bottom:2px solid transparent; border-radius:0; white-space:nowrap; transition:color 0.15s, border-color 0.15s; }
-  .ck-subnav-link:hover { color:var(--sc-teal-ink); border-bottom-color:var(--sc-rule-2,#bfb6a2); }
-  .ck-subnav-link.active { color:var(--sc-navy); border-bottom-color:var(--sc-teal); }
+  .ck-subnav-link { font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#6a7480; text-decoration:none; padding:6px 1px; border-bottom:2px solid transparent; border-radius:0; white-space:nowrap; transition:color 0.15s, border-color 0.15s; }
+  .ck-subnav-link:hover { color:#1f7a5a; border-bottom-color:#c9c1ac; }
+  .ck-subnav-link.active { color:#1f7a5a; border-bottom-color:#1f7a5a; }
   .ck-breadcrumbs { display:flex; gap:8px; padding:14px var(--sc-s-7); max-width:min(1920px, 95vw); margin:0 auto; font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); letter-spacing:0.08em; text-transform:uppercase; border-bottom:1px solid var(--sc-rule); }
   .ck-breadcrumbs a { color:var(--sc-text-dim); text-decoration:none; }
   .ck-breadcrumbs a:hover { color:var(--sc-teal-ink); }
@@ -6312,9 +6355,15 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         'title="PEdesk Guide — explain this page">Guide</button>'
         '<form class="ck-search-form" action="/search" method="get" role="search">'
         '<input class="ck-search" type="search" name="q" '
-        'placeholder="Search deals, hospitals, routes — ⌘K" '
-        'aria-label="Search" />'
+        'placeholder="Search deals, hospitals, routes" '
+        'aria-label="Search deals, hospitals, routes" />'
+        '<kbd class="ck-search-kbd" aria-hidden="true">⌘K</kbd>'
         '</form>'
+        # + New deal — primary CTA. No dedicated /deals/new route exists yet,
+        # so it routes to the Pipeline section (deal sourcing/origination)
+        # rather than inventing a flow or shipping a broken link.
+        '<a class="ck-newdeal-cta" href="/pipeline" '
+        'title="Start a new deal in the pipeline">+ New deal</a>'
         '<div class="ck-user-menu">'
         f'<button class="ck-user-chip" type="button" aria-haspopup="true" '
         f'aria-expanded="false" title="Signed in" '
