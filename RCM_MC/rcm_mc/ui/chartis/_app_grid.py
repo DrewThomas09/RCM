@@ -42,14 +42,18 @@ def _esc(s: Any) -> str:
 # shell as extra_css for the grid view only — does not affect the default
 # flat-scroll /app.
 APP_GRID_CSS = """
-.cc-page{--cc-page-bg:#ebe5d3;--cc-paper:#faf6ec;--cc-paper2:#f3eddb;
+.cc-page{--cc-paper:#faf6ec;--cc-paper2:#f3eddb;
   --cc-ink:#15202b;--cc-ink2:#2a3a4a;--cc-muted:#6a7480;--cc-muted2:#8b94a0;
   --cc-rule:#c9c1ac;--cc-green:#1f7a5a;--cc-amber:#b8842e;--cc-navy:#0d2336;
   --cc-red:#b14a3a;--cc-green-soft:#d6e8df;
   --cc-serif:'Source Serif 4',Georgia,serif;
   --cc-sans:'Inter Tight',Inter,ui-sans-serif,system-ui,sans-serif;
   --cc-mono:'JetBrains Mono',ui-monospace,monospace;
-  background:var(--cc-page-bg);padding:36px 48px 80px;max-width:1500px;margin:0 auto;
+  /* Transparent so the global PEdesk canvas (--sc-parchment) shows through —
+     one continuous page, not a tan box. The standalone handoff's own darker
+     page bg read as a yellower panel on PEdesk's lighter parchment. Cards
+     keep their own --cc-paper surfaces. */
+  background:transparent;padding:36px 48px 80px;max-width:1500px;margin:0 auto;
   box-sizing:border-box;}
 .cc-page *{box-sizing:border-box;}
 @media (max-width:1280px){ .cc-page{padding:24px 32px 60px;} }
