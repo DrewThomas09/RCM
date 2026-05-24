@@ -15,6 +15,9 @@ data, no runtime CMS/map/chart APIs, no unsupported claims.
 |---|---|---|---|---|---|---|
 | 2026-05-24 05:07 | #604 map · #605 pipeline · #606 analytics · #603 CC grid | `f25b1c72` | ✓ | ✓ | 200 | Queue cleared; concurrency collapsed the 4 merges into one deploy of `main`. All 4 features live. |
 | 2026-05-24 05:09 | #607 Phase 0 coverage audit (docs) | `fafcf89f` | ✓ | ✓ | 200 | Audit + loop log committed. |
+| 2026-05-24 05:1x | #608 Phase 1 batch 1 (CMS/data Guide context) | `6fb7945a` | ✓ | ✓ | 200 | 5 pages curated. |
+| 2026-05-24 05:2x | #609 Phase 1 batch 2 (portfolio/diligence/source context) | `36eac75d` | ✓ | ✓ | 200 | 5 pages curated (73→83). |
+| 2026-05-24 05:5x | #610 SNF / Nursing Home vertical | `ef9aa9c2` | ✓ | ✓ | 200 | 14,699 real CMS facilities; full screener/profile/market-intel/Guide/tests. |
 
 ## Phase ledger
 
@@ -56,4 +59,17 @@ data, no runtime CMS/map/chart APIs, no unsupported claims.
   percentile table; "total fines" labeled a regulatory penalty, not revenue.
   Next verticals (Dialysis / ASC / IRF / LTCH / DMEPOS) queued — depth over
   breadth.
+- **Phase 3 (done, separate from numeric order):** investable-evidence +
+  predictive-modeling framework — `PEDESK_INVESTABLE_EVIDENCE_FRAMEWORK.md`,
+  `PEDESK_PREDICTIVE_MODELING_ROADMAP.md`, and two `rag_sources/` cards
+  (statistics + modeling boundaries). All four RAG-indexed (199 docs). The
+  Guide can now explain peer percentile, z-score (n≥5 / sd=0 guards), HHI
+  (composition ≠ market share), quality composites, OLS/Ridge/Lasso/Elastic-
+  Net/logistic/fixed-effects/multilevel/survival, validation, uncertainty,
+  bias checks, and the 8-point investable-evidence threshold — with the
+  prediction≠causation and CMS≠commercial boundaries.
+- **Phase 2 (partial):** RAG coverage — every curated page context + the
+  framework docs are auto-indexed into the RAG corpus (page/metric/source/
+  doc documents). Dedicated metric/data-source registry cards for SNF +
+  the new statistics are a queued enhancement.
 - **Phase 5 (queued):** re-run coverage audit + final report.
