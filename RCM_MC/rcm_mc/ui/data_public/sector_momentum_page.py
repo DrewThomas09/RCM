@@ -26,6 +26,7 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 
 from rcm_mc.ui._chartis_kit import (
+    ck_illustrative_note,
     P, _MONO, _SANS, chartis_shell, ck_fmt_num, ck_kpi_block,
     ck_paired_block, ck_provenance_tooltip, ck_section_header,
 )
@@ -328,7 +329,7 @@ def render_sector_momentum(recent_years: int = 5) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Sector Momentum", active_nav="/sector-momentum",
+    return chartis_shell(ck_illustrative_note("deals-corpus aggregates — built from the bundled illustrative seed deals (data_public seed + extended_seed), not your ingested portfolio") + body, "Sector Momentum", active_nav="/sector-momentum",
                          subtitle=f"{recent_years}y window — {len(momentum_data)} sectors",
         editorial_intro={
             "eyebrow": "SECTOR MOMENTUM",

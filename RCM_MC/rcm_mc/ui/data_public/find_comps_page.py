@@ -28,7 +28,7 @@ def _load_corpus() -> List[Dict[str, Any]]:
 from rcm_mc.ui._chartis_kit import (
     P, _MONO, _SANS, chartis_shell, ck_fmt_moic, ck_fmt_num,
     ck_data_universe, ck_kpi_block, ck_next_section, ck_page_title,
-    ck_provenance_tooltip, ck_section_header,
+    ck_provenance_tooltip, ck_section_header, ck_illustrative_note,
 )
 
 _EXPLAINER_CSS = """
@@ -410,7 +410,9 @@ def render_find_comps(params: Dict[str, str]) -> str:
         italic_word="outcomes",
     )
     return chartis_shell(
-        title_block + explainer_html + body + next_up,
+        ck_illustrative_note("comparable-deal matches — drawn from the bundled "
+                             "illustrative seed deals, not your ingested "
+                             "portfolio") + title_block + explainer_html + body + next_up,
         "Find Comps", active_nav="/find-comps",
         extra_css=_EXPLAINER_CSS,
     )

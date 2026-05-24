@@ -167,7 +167,7 @@ def _regime_moic_bar(p25: float, p50: float, p75: float, width: int = 100) -> st
 
 
 def render_payer_intel() -> str:
-    from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_kpi_block, ck_value_anchor
+    from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_kpi_block, ck_value_anchor, ck_illustrative_note
     from rcm_mc.ui.chartis._helpers import render_page_explainer
     from rcm_mc.data_public.payer_intelligence import compute_payer_intelligence
 
@@ -314,7 +314,9 @@ def render_payer_intel() -> str:
     )
 
     return chartis_shell(
-        body,
+        ck_illustrative_note("payer-intelligence aggregates — built from the "
+                             "bundled illustrative seed deals, not your "
+                             "ingested portfolio") + body,
         title="Payer Intelligence",
         active_nav="/payer-intel",
         subtitle=(
