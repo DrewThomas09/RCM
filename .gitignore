@@ -85,3 +85,7 @@ output*/
 design_reference/SeekingChartis Command Center (standalone).html
 design_reference/handoff/SeekingChartis Rework (standalone).html
 design_reference/uploads/
+
+# PEdesk Guide sidebar design handoff — static React-in-browser prototypes
+# used as a visual/spec reference only; never shipped as runtime app code.
+design_handoff_pedesk_sidebar/

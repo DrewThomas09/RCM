@@ -4374,17 +4374,37 @@ _TOAST_HTML = """
 _GUIDE_PANEL_HTML = """
 <aside id="ck-guide-panel" class="ck-guide-panel" hidden role="dialog"
        aria-modal="false" aria-label="PEdesk Guide">
-  <div class="ck-guide-head">
-    <div class="ck-guide-head-row">
-      <span class="ck-guide-eyebrow">PEdesk Guide</span>
-      <button class="ck-guide-close" type="button" data-ck-guide-close
-              aria-label="Close PEdesk Guide">&times;</button>
-    </div>
-    <h2 class="ck-guide-title" data-ck-guide-page-title tabindex="-1">PEdesk Guide</h2>
+  <header class="ck-guide-head">
+    <span class="ck-guide-eyebrow">PEdesk Guide</span>
+    <h1 class="ck-guide-title" data-ck-guide-page-title tabindex="-1">PEdesk Guide</h1>
     <div class="ck-guide-meta">
-      <span class="ck-guide-quality" data-ck-guide-quality hidden></span>
+      <span class="ck-guide-ctx-badge" data-ck-guide-quality hidden>
+        <span class="ck-guide-ctx-dot"></span><span data-ck-guide-quality-label></span>
+      </span>
+      <span class="ck-guide-meta-sep" data-ck-guide-meta-sep hidden>&middot;</span>
       <code class="ck-guide-route" data-ck-guide-route></code>
     </div>
+    <button class="ck-guide-close" type="button" data-ck-guide-close
+            aria-label="Close PEdesk Guide">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+  </header>
+  <div class="ck-guide-tabs" role="tablist" aria-label="PEdesk Guide sections">
+    <button class="ck-guide-tab" role="tab" id="ck-guide-tab-overview"
+            aria-controls="ck-guide-panel-overview" aria-selected="true"
+            data-ck-guide-tab="overview" type="button" tabindex="0">Overview</button>
+    <button class="ck-guide-tab" role="tab" id="ck-guide-tab-metrics"
+            aria-controls="ck-guide-panel-metrics" aria-selected="false"
+            data-ck-guide-tab="metrics" type="button" tabindex="-1">Metrics<span
+            class="ck-guide-count" data-ck-guide-count-metrics hidden></span></button>
+    <button class="ck-guide-tab" role="tab" id="ck-guide-tab-sources"
+            aria-controls="ck-guide-panel-sources" aria-selected="false"
+            data-ck-guide-tab="sources" type="button" tabindex="-1">Sources<span
+            class="ck-guide-count" data-ck-guide-count-sources hidden></span></button>
+    <button class="ck-guide-tab" role="tab" id="ck-guide-tab-ask"
+            aria-controls="ck-guide-panel-ask" aria-selected="false"
+            data-ck-guide-tab="ask" type="button" tabindex="-1">Ask</button>
   </div>
   <div class="ck-guide-body">
     <p class="ck-guide-loading" data-ck-guide-loading>Loading page context&hellip;</p>
@@ -4393,190 +4413,287 @@ _GUIDE_PANEL_HTML = """
       <button type="button" class="ck-guide-btn" data-ck-guide-retry-context>Retry</button>
     </div>
     <div class="ck-guide-content" data-ck-guide-content hidden>
-      <section class="ck-guide-card">
-        <h3 class="ck-guide-card-title">Page overview</h3>
+      <section class="ck-guide-tabpanel" role="tabpanel" id="ck-guide-panel-overview"
+               aria-labelledby="ck-guide-tab-overview" data-ck-guide-panel="overview"
+               tabindex="0">
         <div data-ck-guide-overview></div>
+        <div class="ck-guide-caveat" data-ck-guide-caveat hidden>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+          <div data-ck-guide-caveat-text></div>
+        </div>
+        <div class="ck-guide-kicker">Try asking<span class="ck-guide-rule-line"></span></div>
+        <div class="ck-guide-chips" data-ck-guide-suggested-overview></div>
       </section>
-      <section class="ck-guide-card">
-        <h3 class="ck-guide-card-title">Key metrics</h3>
+      <section class="ck-guide-tabpanel" role="tabpanel" id="ck-guide-panel-metrics"
+               aria-labelledby="ck-guide-tab-metrics" data-ck-guide-panel="metrics"
+               tabindex="0" hidden>
         <div data-ck-guide-metrics></div>
       </section>
-      <section class="ck-guide-card">
-        <h3 class="ck-guide-card-title">Data sources</h3>
+      <section class="ck-guide-tabpanel" role="tabpanel" id="ck-guide-panel-sources"
+               aria-labelledby="ck-guide-tab-sources" data-ck-guide-panel="sources"
+               tabindex="0" hidden>
         <div data-ck-guide-sources></div>
       </section>
-      <section class="ck-guide-card ck-guide-card-caution">
-        <h3 class="ck-guide-card-title">Limitations &amp; caveats</h3>
-        <div data-ck-guide-limitations></div>
-      </section>
-      <section class="ck-guide-card">
-        <h3 class="ck-guide-card-title">Suggested questions</h3>
-        <p class="ck-guide-hint">Tap one to drop it into the ask box.</p>
-        <div class="ck-guide-chips" data-ck-guide-suggested></div>
-      </section>
-      <section class="ck-guide-card ck-guide-ask-card">
-        <h3 class="ck-guide-card-title">Ask PEdesk Guide</h3>
+      <section class="ck-guide-tabpanel" role="tabpanel" id="ck-guide-panel-ask"
+               aria-labelledby="ck-guide-tab-ask" data-ck-guide-panel="ask"
+               tabindex="0" hidden>
+        <p class="ck-guide-ask-intro">Ask anything about this page. The model is
+          grounded in the local guide, metric registry, and data source registry.</p>
         <div class="ck-guide-ask-state" data-ck-guide-ask-state hidden></div>
         <div class="ck-guide-history" data-ck-guide-history aria-live="polite"></div>
-        <form class="ck-guide-ask-form" data-ck-guide-ask-form>
-          <textarea class="ck-guide-input" data-ck-guide-input rows="2"
-                    aria-label="Ask a question about this page"
-                    placeholder="Ask about this page&hellip;"></textarea>
-          <button type="submit" class="ck-guide-btn ck-guide-send"
-                  data-ck-guide-send>Ask</button>
-        </form>
+        <div class="ck-guide-kicker">Suggestions<span class="ck-guide-rule-line"></span></div>
+        <div class="ck-guide-chips" data-ck-guide-suggested-ask></div>
+        <details class="ck-guide-policy">
+          <summary class="ck-guide-policy-summary">PEdesk Guide is read-only</summary>
+          <p class="ck-guide-muted">It can explain pages, metrics, data sources,
+            model intent, and limitations. It cannot change assumptions, run
+            models, create tasks, export files, or make final investment
+            recommendations.</p>
+        </details>
       </section>
-      <details class="ck-guide-card ck-guide-policy">
-        <summary class="ck-guide-card-title ck-guide-policy-summary">PEdesk Guide is read-only</summary>
-        <p class="ck-guide-muted">It can explain pages, metrics, data sources,
-          model intent, and limitations. It cannot change assumptions, run
-          models, create tasks, export files, or make final investment
-          recommendations.</p>
-      </details>
     </div>
   </div>
+  <form class="ck-guide-composer" data-ck-guide-ask-form>
+    <div class="ck-guide-composer-row">
+      <textarea class="ck-guide-input" data-ck-guide-input rows="1"
+                aria-label="Ask a question about this page"
+                placeholder="Ask about this page&hellip;"></textarea>
+      <button type="submit" class="ck-guide-ask-btn" data-ck-guide-send>Ask
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+    <div class="ck-guide-foot">
+      <span>PEdesk &middot; read-only</span>
+      <span class="ck-guide-foot-right">
+        <span class="ck-guide-rag" data-ck-guide-rag-status></span>
+        <span data-ck-guide-model></span>
+      </span>
+    </div>
+  </form>
 </aside>
 """
 
 _GUIDE_CSS = """
 <style>
-/* Guide sidebar uses a clean system-UI font (no external/Google fonts);
-   PEdesk's editorial feel is carried by spacing, cards, borders, color —
-   not serif type in this narrow utility panel. Scoped to the panel so the
-   main app typography is unchanged. */
+/* PEdesk Guide — "Variant B" tabbed sidebar (design handoff). Editorial
+   hierarchy: Source Serif 4 headlines, Inter Tight body, JetBrains Mono
+   labels/meta — all already loaded by the shell, so NO external/Google
+   font is added here. Tokens + component anatomy are scoped to the panel
+   so the main app typography/theme is untouched. */
 .ck-guide-trigger{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.45);
   border-radius:3px;padding:5px 12px;font-size:12px;font-weight:600;letter-spacing:.03em;cursor:pointer;
   font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
 .ck-guide-trigger:hover{background:var(--sc-teal,#155752);border-color:var(--sc-teal,#155752);}
 .ck-guide-trigger:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
-.ck-guide-panel{--ck-guide-ui:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  position:fixed;top:0;right:0;height:100vh;width:min(400px,94vw);z-index:1200;
-  background:var(--paper,#FAF7F0);color:var(--ck-text,#1a2332);border-left:2px solid var(--sc-teal,#155752);
-  box-shadow:-8px 0 28px rgba(11,35,65,.18);display:flex;flex-direction:column;
-  font-family:var(--ck-guide-ui);font-size:14px;line-height:1.5;}
+.ck-guide-panel{
+  --ck-g-navy:#0d2336;--ck-g-cream:#f4ecd9;--ck-g-cream2:#efe5cc;--ck-g-cream3:#e8dab8;
+  --ck-g-paper:#fbf7ee;--ck-g-ink:#15202b;--ck-g-ink2:#2a3a4a;--ck-g-muted:#6a7480;
+  --ck-g-muted2:#8b94a0;--ck-g-rule:#d9cfb8;--ck-g-rule-soft:#e6dec8;--ck-g-green:#1f7a5a;
+  --ck-g-green2:#2e8c6c;--ck-g-amber:#c2853a;--ck-g-amber-soft:#f3e2bc;--ck-g-mint:#6ed3a8;
+  --ck-g-serif:'Source Serif 4',Georgia,serif;
+  --ck-g-sans:'Inter Tight',Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --ck-g-mono:'JetBrains Mono',ui-monospace,monospace;
+  position:fixed;top:16px;right:16px;bottom:16px;width:min(440px,94vw);z-index:1200;
+  background:var(--ck-g-paper);color:var(--ck-g-ink);border:1px solid rgba(0,0,0,.06);
+  border-radius:14px;overflow:hidden;
+  box-shadow:0 24px 60px rgba(0,0,0,.18),0 2px 0 rgba(0,0,0,.06);
+  display:flex;flex-direction:column;font-family:var(--ck-g-sans);font-size:14px;line-height:1.5;}
 .ck-guide-panel[hidden]{display:none;}
-.ck-guide-head{background:var(--sc-navy,#0b2341);color:#fff;padding:12px 16px 11px;}
-.ck-guide-head-row{display:flex;align-items:center;justify-content:space-between;}
-.ck-guide-eyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.78;font-weight:600;}
-.ck-guide-close{background:transparent;border:none;color:#fff;font-size:22px;line-height:1;
-  cursor:pointer;padding:0 4px;}
-.ck-guide-close:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
-.ck-guide-title{font-family:var(--ck-guide-ui);font-size:18px;font-weight:600;letter-spacing:-.01em;
-  margin:5px 0 6px;color:#fff;outline:none;}
-.ck-guide-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.ck-guide-route{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:rgba(255,255,255,.7);}
-.ck-guide-quality{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
-  padding:2px 7px;border-radius:3px;background:#fff;color:var(--sc-navy,#0b2341);}
-.ck-guide-quality[data-q="strong"]{background:#0a8a5f;color:#fff;}
-.ck-guide-quality[data-q="partial"]{background:#b8732a;color:#fff;}
-.ck-guide-quality[data-q="placeholder"]{background:#8a8170;color:#fff;}
-.ck-guide-quality[data-q="missing"]{background:#b5321e;color:#fff;}
-/* Scroll body — generous bottom padding so the Ask card is fully
-   visible when scrolled to the end (no sticky footer covers it). */
-.ck-guide-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px 14px 24px;}
 /* Layout safety: long answers / unbroken tokens (URLs, ids) must wrap,
    never force horizontal overflow. */
 .ck-guide-panel,.ck-guide-panel *{overflow-wrap:break-word;word-break:break-word;max-width:100%;}
-.ck-guide-route{overflow-wrap:anywhere;}
-.ck-guide-loading{color:var(--ck-text-dim,#5C6878);font-style:italic;}
-.ck-guide-muted{color:var(--ck-text-dim,#5C6878);}
-.ck-guide-panel p{margin:0 0 7px;line-height:1.5;}
+/* HEADER (navy) */
+.ck-guide-head{background:var(--ck-g-navy);color:#e7eef5;padding:18px 22px 14px;position:relative;}
+.ck-guide-eyebrow{display:block;font-family:var(--ck-g-mono);font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:#8aa8c4;margin-bottom:8px;}
+.ck-guide-title{font-family:var(--ck-g-serif);font-weight:500;font-size:26px;line-height:1.15;
+  letter-spacing:-.01em;margin:0 0 12px;color:#fbf7ee;outline:none;}
+.ck-guide-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  font-family:var(--ck-g-mono);font-size:11px;color:#b9c7d5;}
+.ck-guide-route{font-family:var(--ck-g-mono);font-size:11px;color:#b9c7d5;opacity:.85;overflow-wrap:anywhere;}
+.ck-guide-ctx-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(46,140,108,.22);
+  color:#6ed3a8;border:1px solid rgba(110,211,168,.35);padding:2px 8px;border-radius:999px;
+  font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;}
+.ck-guide-ctx-dot{width:6px;height:6px;border-radius:50%;background:#6ed3a8;
+  box-shadow:0 0 0 3px rgba(110,211,168,.22);}
+.ck-guide-ctx-badge[data-q="partial"]{background:rgba(194,133,58,.20);color:#e0ab63;border-color:rgba(194,133,58,.40);}
+.ck-guide-ctx-badge[data-q="partial"] .ck-guide-ctx-dot{background:#e0ab63;box-shadow:0 0 0 3px rgba(194,133,58,.20);}
+.ck-guide-ctx-badge[data-q="placeholder"],.ck-guide-ctx-badge[data-q="missing"]{
+  background:rgba(255,255,255,.12);color:#c3cedb;border-color:rgba(255,255,255,.22);}
+.ck-guide-ctx-badge[data-q="placeholder"] .ck-guide-ctx-dot,
+.ck-guide-ctx-badge[data-q="missing"] .ck-guide-ctx-dot{background:#c3cedb;box-shadow:0 0 0 3px rgba(255,255,255,.12);}
+.ck-guide-close{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:8px;
+  display:grid;place-items:center;color:#8aa8c4;background:transparent;border:1px solid transparent;cursor:pointer;}
+.ck-guide-close:hover{background:rgba(255,255,255,.06);color:#fff;}
+.ck-guide-close:focus-visible{outline:2px solid var(--ck-g-mint);outline-offset:2px;}
+/* TABS (live in the navy block) */
+.ck-guide-tabs{display:flex;gap:2px;padding:0 14px;background:var(--ck-g-navy);
+  border-bottom:1px solid rgba(255,255,255,.06);}
+.ck-guide-tab{appearance:none;border:0;background:transparent;color:#8aa8c4;font-family:var(--ck-g-sans);
+  font-size:12.5px;font-weight:500;padding:10px 12px 12px;cursor:pointer;border-bottom:2px solid transparent;
+  margin-bottom:-1px;letter-spacing:.01em;}
+.ck-guide-tab[aria-selected="true"]{color:#fbf7ee;border-bottom-color:var(--ck-g-mint);}
+.ck-guide-tab:focus-visible{outline:2px solid var(--ck-g-mint);outline-offset:-2px;border-radius:3px;}
+.ck-guide-count{font-family:var(--ck-g-mono);font-size:10px;color:#6a7c8f;margin-left:4px;}
+.ck-guide-tab[aria-selected="true"] .ck-guide-count{color:#b9c7d5;}
+/* BODY (paper, scrolls) */
+.ck-guide-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:22px 22px 12px;background:var(--ck-g-paper);}
+.ck-guide-body::-webkit-scrollbar{width:8px;}
+.ck-guide-body::-webkit-scrollbar-thumb{background:var(--ck-g-rule);border-radius:4px;}
+.ck-guide-tabpanel[hidden]{display:none;}
+.ck-guide-tabpanel:focus-visible{outline:none;}
+.ck-guide-loading{color:var(--ck-g-muted);font-style:italic;}
+.ck-guide-muted{color:var(--ck-g-muted);}
+.ck-guide-panel p{margin:0 0 10px;line-height:1.5;}
 .ck-guide-panel p:last-child{margin-bottom:0;}
-/* Card system */
-.ck-guide-card{background:#fff;border:1px solid var(--ck-border,#d6cfc0);border-radius:8px;
-  padding:13px 15px;margin-bottom:11px;}
-.ck-guide-card-caution{background:#faf6ec;border-left:3px solid var(--sc-amber,#b8732a);}
-.ck-guide-ask-card{border-left:3px solid var(--sc-teal,#155752);}
-.ck-guide-card-title{font-family:var(--ck-guide-ui);font-size:11px;letter-spacing:.04em;
-  text-transform:uppercase;color:var(--sc-teal,#155752);margin:0 0 7px;font-weight:600;}
-.ck-guide-hint{font-size:11.5px;color:var(--ck-text-dim,#5C6878);margin:-2px 0 7px;}
-/* Labeled sub-rows (overview, metric why/formula) */
-.ck-guide-sub{margin:0 0 7px;line-height:1.5;}
+/* Overview typography */
+.ck-guide-lede{font-family:var(--ck-g-serif);font-size:17px;line-height:1.45;color:var(--ck-g-ink);
+  margin:0 0 14px;letter-spacing:-.005em;}
+.ck-guide-lede em{font-style:italic;color:var(--ck-g-ink2);}
+.ck-guide-p{margin:0 0 10px;color:var(--ck-g-ink2);}
+.ck-guide-p:last-child{margin-bottom:0;}
+.ck-guide-sub{margin:0 0 12px;}
 .ck-guide-sub:last-child{margin-bottom:0;}
-.ck-guide-sub-label{display:block;font-size:11px;letter-spacing:.02em;text-transform:uppercase;
-  color:var(--ck-text-dim,#5C6878);font-weight:600;margin-bottom:2px;}
-.ck-guide-sub code{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12.5px;
-  color:var(--ck-text-dim,#5C6878);}
-/* Metric / source mini-cards */
-.ck-guide-metric{border-top:1px solid #ece5d6;padding:11px 0 2px;}
-.ck-guide-metric:first-child{border-top:none;padding-top:2px;}
-.ck-guide-metric-title{font-family:var(--ck-guide-ui);font-weight:600;font-size:15px;
-  color:var(--sc-navy,#0b2341);margin-bottom:3px;}
-.ck-guide-metric-def{line-height:1.5;margin-bottom:6px;}
-.ck-guide-meta-grid{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0 0 6px;font-size:12.5px;}
-.ck-guide-meta-k{font-size:11px;letter-spacing:.02em;text-transform:uppercase;color:var(--ck-text-dim,#5C6878);
-  font-weight:600;align-self:center;}
-.ck-guide-meta-v{color:var(--sc-navy,#0b2341);}
-.ck-guide-caveat{font-size:12px;color:var(--ck-text-dim,#5C6878);margin-top:5px;line-height:1.45;}
-.ck-guide-pill{display:inline-block;font-size:10.5px;letter-spacing:.01em;background:#f1ece0;
-  color:var(--ck-text-dim,#5C6878);border-radius:10px;padding:2px 8px;margin-top:4px;}
-.ck-guide-more-btn{margin-top:10px;background:transparent;border:1px solid var(--ck-border,#d6cfc0);
-  border-radius:4px;color:var(--sc-teal,#155752);font-size:11px;font-weight:600;padding:5px 11px;
-  cursor:pointer;font-family:inherit;}
-.ck-guide-more-btn:hover{border-color:var(--sc-teal,#155752);}
-.ck-guide-more-btn:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:1px;}
-.ck-guide-list{margin:0;padding-left:18px;}
-.ck-guide-list li{margin-bottom:5px;line-height:1.45;}
+.ck-guide-sub-label{display:block;font-family:var(--ck-g-mono);font-size:10.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ck-g-muted);font-weight:500;margin-bottom:4px;}
+.ck-guide-sub-body{color:var(--ck-g-ink2);line-height:1.5;}
+.ck-guide-sub code{font-family:var(--ck-g-mono);font-size:12.5px;color:var(--ck-g-green);}
+/* Caveat callout */
+.ck-guide-caveat{background:var(--ck-g-amber-soft);border-left:3px solid var(--ck-g-amber);
+  padding:10px 12px;color:#4a3210;font-size:13px;border-radius:0 6px 6px 0;
+  display:flex;gap:10px;align-items:flex-start;margin:0 0 18px;}
+.ck-guide-caveat svg{flex:0 0 14px;margin-top:2px;color:var(--ck-g-amber);}
+.ck-guide-caveat b{color:#7a5418;}
+/* Kicker (label + rule line) */
+.ck-guide-kicker{font-family:var(--ck-g-mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ck-g-muted);margin-bottom:10px;display:flex;align-items:baseline;gap:8px;}
+.ck-guide-rule-line{flex:1;height:1px;background:var(--ck-g-rule);transform:translateY(-3px);}
+/* Metric */
+.ck-guide-metric{margin-bottom:20px;}
+.ck-guide-metric:last-child{margin-bottom:0;}
+.ck-guide-metric-head{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:6px 14px;margin-bottom:8px;}
+.ck-guide-metric-name{font-family:var(--ck-g-serif);font-size:22px;font-weight:500;letter-spacing:-.01em;color:var(--ck-g-ink);}
+.ck-guide-metric-formula{font-family:var(--ck-g-mono);font-size:12px;color:var(--ck-g-green);
+  background:rgba(31,122,90,.07);padding:3px 8px;border-radius:6px;}
+.ck-guide-metric-pill{font-family:var(--ck-g-mono);font-size:10.5px;color:var(--ck-g-muted);
+  background:var(--ck-g-cream2);padding:3px 8px;border-radius:6px;}
+.ck-guide-metric-desc{color:var(--ck-g-ink2);font-size:14px;margin:0 0 6px;}
+.ck-guide-metric-why{color:var(--ck-g-muted);font-size:13px;border-left:2px solid var(--ck-g-rule);
+  padding-left:10px;margin:0;}
+.ck-guide-metric-cav{color:var(--ck-g-amber);font-size:12px;margin-top:6px;}
+/* Data source row */
+.ck-guide-ds{display:grid;grid-template-columns:auto 1fr;column-gap:12px;row-gap:4px;
+  padding:12px 0;border-top:1px dashed var(--ck-g-rule);}
+.ck-guide-ds:first-child{border-top:0;padding-top:4px;}
+.ck-guide-ds-gem{width:8px;height:8px;background:var(--ck-g-green);transform:rotate(45deg);margin-top:8px;}
+.ck-guide-ds-name{font-weight:600;color:var(--ck-g-ink);font-size:14px;}
+.ck-guide-ds-meta{grid-column:2;font-family:var(--ck-g-mono);font-size:11px;color:var(--ck-g-muted);letter-spacing:.02em;}
+.ck-guide-ds-meta b{color:var(--ck-g-ink2);font-weight:500;}
+.ck-guide-ds-desc{grid-column:2;color:var(--ck-g-ink2);font-size:13px;margin-top:4px;}
+.ck-guide-ds-lim{grid-column:2;color:var(--ck-g-amber);font-size:12px;margin-top:4px;
+  display:flex;gap:6px;align-items:flex-start;}
+.ck-guide-ds-lim svg{flex:0 0 12px;margin-top:2px;}
+/* Chips */
 .ck-guide-chips{display:flex;flex-wrap:wrap;gap:6px;}
-.ck-guide-chip{background:var(--paper,#FAF7F0);border:1px solid var(--ck-border,#d6cfc0);border-radius:14px;
-  padding:6px 12px;font-size:12.5px;line-height:1.3;cursor:pointer;color:var(--sc-navy,#0b2341);text-align:left;
-  font-family:inherit;}
-.ck-guide-chip:hover{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
-.ck-guide-chip:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:1px;}
-.ck-guide-ask-state{background:#faf6ec;border:1px solid var(--ck-border,#d6cfc0);border-radius:6px;
-  padding:10px 12px;font-size:12.5px;line-height:1.5;color:var(--ck-text-dim,#5C6878);margin-bottom:10px;}
-.ck-guide-state-ready{font-weight:600;color:var(--sc-teal,#155752);font-size:12.5px;letter-spacing:.01em;}
-.ck-guide-state-primary{font-weight:600;color:var(--sc-navy,#0b2341);font-size:14px;}
+.ck-guide-chip{appearance:none;border:1px solid var(--ck-g-rule);background:var(--ck-g-paper);
+  color:var(--ck-g-ink2);padding:6px 11px 7px;border-radius:999px;font-size:12.5px;font-family:inherit;
+  cursor:pointer;line-height:1.2;text-align:left;transition:background .15s,border-color .15s,color .15s;}
+.ck-guide-chip:hover{background:var(--ck-g-cream2);border-color:var(--ck-g-cream3);color:var(--ck-g-ink);}
+.ck-guide-chip:focus-visible{outline:2px solid var(--ck-g-green);outline-offset:1px;}
+.ck-guide-chip .ck-guide-chip-arr{color:var(--ck-g-muted);margin-left:4px;}
+.ck-guide-empty{color:var(--ck-g-muted);font-size:13px;}
+.ck-guide-list{margin:0;padding-left:18px;color:var(--ck-g-ink2);}
+.ck-guide-list li{margin-bottom:5px;line-height:1.45;}
+/* Ask tab */
+.ck-guide-ask-intro{color:var(--ck-g-ink2);margin:0 0 16px;}
+.ck-guide-ask-state{background:var(--ck-g-amber-soft);border:1px solid var(--ck-g-cream3);border-radius:8px;
+  padding:10px 12px;font-size:12.5px;line-height:1.5;color:#4a3210;margin-bottom:14px;}
+.ck-guide-state-ready{font-weight:600;color:var(--ck-g-green);font-size:12.5px;letter-spacing:.01em;
+  background:var(--ck-g-green-soft,#d6e8df);}
+.ck-guide-ask-state .ck-guide-state-ready{display:block;background:transparent;}
+.ck-guide-state-primary{font-weight:600;color:var(--ck-g-ink);font-size:14px;}
 .ck-guide-state-secondary{margin:3px 0 6px;}
-.ck-guide-setup summary{cursor:pointer;font-size:11px;font-weight:600;color:var(--sc-teal,#155752);}
-.ck-guide-setup summary:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
-.ck-guide-setup-pre{background:#fff;border:1px solid var(--ck-border,#d6cfc0);border-radius:4px;
-  padding:7px 9px;font-family:'JetBrains Mono',monospace;font-size:10.5px;white-space:pre-wrap;margin:6px 0;}
-.ck-guide-history{display:flex;flex-direction:column;gap:10px;margin-bottom:10px;}
+.ck-guide-setup summary{cursor:pointer;font-size:11px;font-weight:600;color:var(--ck-g-green);}
+.ck-guide-setup summary:focus-visible{outline:2px solid var(--ck-g-green);outline-offset:2px;}
+.ck-guide-setup-pre{background:var(--ck-g-paper);border:1px solid var(--ck-g-rule);border-radius:6px;
+  padding:7px 9px;font-family:var(--ck-g-mono);font-size:10.5px;white-space:pre-wrap;margin:6px 0;}
+.ck-guide-history{display:flex;flex-direction:column;gap:12px;margin-bottom:16px;}
 .ck-guide-history:empty{margin-bottom:0;}
-.ck-guide-q{font-weight:700;color:var(--sc-navy,#0b2341);line-height:1.4;}
-.ck-guide-a{background:var(--paper,#FAF7F0);border:1px solid var(--ck-border,#d6cfc0);
-  border-left:3px solid var(--sc-teal,#155752);border-radius:5px;padding:10px 12px;white-space:pre-wrap;
-  line-height:1.55;margin-top:5px;}
+.ck-guide-q{font-family:var(--ck-g-serif);font-weight:500;font-size:18px;color:var(--ck-g-ink);line-height:1.3;}
+.ck-guide-a{background:var(--ck-g-paper);border:1px solid var(--ck-g-rule);border-left:3px solid var(--ck-g-green);
+  border-radius:0 8px 8px 0;padding:12px 14px;line-height:1.55;margin-top:6px;color:var(--ck-g-ink2);}
+/* Parsed-markdown answer body (renderer escapes first, then whitelists tags) */
+.ck-guide-a-body p{margin:0 0 9px;}
+.ck-guide-a-body p:last-child{margin-bottom:0;}
+.ck-guide-a-body ul,.ck-guide-a-body ol{margin:0 0 9px;padding-left:20px;}
+.ck-guide-a-body li{margin-bottom:4px;}
+.ck-guide-a-body code{font-family:var(--ck-g-mono);font-size:12.5px;background:var(--ck-g-cream2);
+  padding:1px 5px;border-radius:4px;color:var(--ck-g-ink);}
+.ck-guide-a-body strong{font-weight:700;color:var(--ck-g-ink);}
 /* Retrieved-source provenance block under an answer. */
-.ck-guide-sources{margin-top:9px;padding-top:8px;border-top:1px solid #ece5d6;}
-.ck-guide-src-head{font-size:11px;text-transform:uppercase;letter-spacing:.04em;font-weight:600;
-  color:var(--ck-text-dim,#5C6878);margin-bottom:5px;}
-.ck-guide-src-group{margin-top:7px;}
+.ck-guide-sources{margin-top:10px;padding-top:9px;border-top:1px solid var(--ck-g-rule-soft);}
+.ck-guide-src-head{font-family:var(--ck-g-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;
+  font-weight:500;color:var(--ck-g-muted);margin-bottom:6px;}
+.ck-guide-src-group{margin-top:8px;}
 .ck-guide-src-group:first-child{margin-top:0;}
-.ck-guide-src-group .ck-guide-src-type{display:block;margin-bottom:3px;}
 .ck-guide-src-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;}
 .ck-guide-src-item{display:flex;align-items:baseline;gap:7px;font-size:12.5px;line-height:1.4;}
-.ck-guide-src-title{font-weight:600;color:var(--sc-navy,#0b2341);}
-.ck-guide-src-type{font-size:10.5px;text-transform:uppercase;letter-spacing:.02em;
-  color:var(--ck-text-dim,#5C6878);}
-.ck-guide-src-score{margin-left:auto;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10.5px;
-  color:var(--ck-text-dim,#5C6878);}
-.ck-guide-a-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:10px;
-  font-family:'JetBrains Mono',monospace;color:var(--ck-text-dim,#5C6878);}
-.ck-guide-badge{padding:1px 6px;border-radius:2px;background:var(--sc-teal,#155752);color:#fff;letter-spacing:.05em;}
-.ck-guide-copy{margin-left:auto;background:transparent;border:1px solid var(--ck-border,#d6cfc0);
-  border-radius:3px;color:var(--ck-text-dim,#5C6878);font-family:inherit;font-size:10px;
+.ck-guide-src-title{font-weight:600;color:var(--ck-g-ink);}
+.ck-guide-src-type{display:block;font-family:var(--ck-g-mono);font-size:10px;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--ck-g-muted);margin-bottom:3px;}
+.ck-guide-src-score{margin-left:auto;font-family:var(--ck-g-mono);font-size:10.5px;color:var(--ck-g-muted);}
+.ck-guide-a-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:10px;
+  font-family:var(--ck-g-mono);color:var(--ck-g-muted);}
+.ck-guide-badge{padding:1px 6px;border-radius:3px;background:var(--ck-g-green);color:#fff;letter-spacing:.05em;}
+.ck-guide-copy{margin-left:auto;background:transparent;border:1px solid var(--ck-g-rule);
+  border-radius:4px;color:var(--ck-g-muted);font-family:inherit;font-size:10px;
   letter-spacing:.04em;text-transform:uppercase;padding:1px 7px;cursor:pointer;}
-.ck-guide-copy:hover{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
-.ck-guide-copy:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:1px;}
-.ck-guide-thinking{font-style:italic;color:var(--ck-text-dim,#5C6878);}
+.ck-guide-copy:hover{border-color:var(--ck-g-green);color:var(--ck-g-green);}
+.ck-guide-copy:focus-visible{outline:2px solid var(--ck-g-green);outline-offset:1px;}
+.ck-guide-thinking{font-style:italic;color:var(--ck-g-muted);}
 .ck-guide-thinking::after{content:'';animation:ckguidedots 1.2s steps(4,end) infinite;}
 @keyframes ckguidedots{0%{content:'';}25%{content:'.';}50%{content:'..';}75%{content:'...';}}
-.ck-guide-ask-form{display:flex;gap:7px;align-items:flex-end;}
-.ck-guide-input{flex:1;border:1px solid var(--ck-border,#d6cfc0);border-radius:5px;padding:8px 10px;
-  font-family:inherit;font-size:13px;resize:vertical;}
-.ck-guide-input:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:-1px;}
-.ck-guide-btn,.ck-guide-send{background:var(--sc-teal,#155752);color:#fff;border:none;border-radius:5px;
-  padding:9px 15px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
-.ck-guide-btn:hover,.ck-guide-send:hover{filter:brightness(1.1);}
-.ck-guide-btn:disabled,.ck-guide-send:disabled{opacity:.5;cursor:not-allowed;}
-.ck-guide-btn:focus-visible,.ck-guide-send:focus-visible{outline:2px solid var(--sc-navy,#0b2341);outline-offset:2px;}
-/* Read-only policy as a quiet collapsible card (was a sticky footer) */
-.ck-guide-policy{background:#ece5d6;}
-.ck-guide-policy-summary{cursor:pointer;margin:0;list-style:revert;}
+/* Read-only policy — quiet collapsible at the foot of the Ask tab. */
+.ck-guide-policy{margin-top:18px;border-top:1px solid var(--ck-g-rule-soft);padding-top:12px;}
+.ck-guide-policy-summary{cursor:pointer;font-family:var(--ck-g-mono);font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ck-g-muted);font-weight:500;}
 .ck-guide-policy[open] .ck-guide-policy-summary{margin-bottom:8px;}
-.ck-guide-policy-summary:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
+.ck-guide-policy-summary:focus-visible{outline:2px solid var(--ck-g-green);outline-offset:2px;}
+/* COMPOSER (cream, sticky footer) */
+.ck-guide-composer{border-top:1px solid var(--ck-g-rule);background:var(--ck-g-cream);
+  padding:14px 18px 16px;display:flex;flex-direction:column;gap:8px;}
+.ck-guide-composer-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:stretch;}
+.ck-guide-input{width:100%;box-sizing:border-box;appearance:none;border:1px solid var(--ck-g-rule);
+  background:var(--ck-g-paper);border-radius:10px;padding:10px 12px;font-family:inherit;font-size:13.5px;
+  color:var(--ck-g-ink);resize:none;min-height:42px;}
+.ck-guide-input::placeholder{color:var(--ck-g-muted2);}
+.ck-guide-input:focus{outline:none;border-color:var(--ck-g-green);box-shadow:0 0 0 3px rgba(31,122,90,.12);}
+.ck-guide-input:disabled{opacity:.6;cursor:not-allowed;}
+.ck-guide-ask-btn{appearance:none;border:0;background:var(--ck-g-green);color:#fff;padding:0 16px;
+  border-radius:10px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;
+  display:flex;align-items:center;gap:6px;}
+.ck-guide-ask-btn:hover{background:var(--ck-g-green2);}
+.ck-guide-ask-btn:disabled{opacity:.5;cursor:not-allowed;}
+.ck-guide-ask-btn:focus-visible{outline:2px solid var(--ck-g-green);outline-offset:2px;}
+.ck-guide-foot{display:flex;justify-content:space-between;align-items:center;font-family:var(--ck-g-mono);
+  font-size:10.5px;color:var(--ck-g-muted);letter-spacing:.04em;}
+.ck-guide-foot-right{display:flex;gap:10px;}
+.ck-guide-foot-right span{display:inline-flex;align-items:center;gap:5px;}
+.ck-guide-rag[data-state="ready"]{color:var(--ck-g-green);}
+.ck-guide-rag[data-state="thinking"]{color:var(--ck-g-green);}
+.ck-guide-rag[data-state="off"]{color:var(--ck-g-muted);}
+/* Generic small button (retry, etc.) */
+.ck-guide-btn{background:var(--ck-g-green);color:#fff;border:none;border-radius:8px;
+  padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
+.ck-guide-btn:hover{background:var(--ck-g-green2);}
+.ck-guide-btn:disabled{opacity:.5;cursor:not-allowed;}
+.ck-guide-btn:focus-visible{outline:2px solid var(--ck-g-green);outline-offset:2px;}
+/* Narrow viewports: full-width sheet, square edges. */
+@media (max-width:960px){
+  .ck-guide-panel{top:0;right:0;bottom:0;width:100vw;border-radius:0;border:none;}
+}
 @media print{.ck-guide-panel,.ck-guide-trigger{display:none !important;}}
 </style>
 """
@@ -4598,6 +4715,7 @@ _GUIDE_JS = """
   var reqSeq=0, activeAbort=null, activeTimer=null;
 
   function esc(s){var d=document.createElement('div');d.textContent=(s==null?'':String(s));return d.innerHTML;}
+  function escAttr(s){return esc(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
   function route(){return location.pathname+location.search;}  /* omit hash */
   function show(el){if(el)el.hidden=false;}
   function hide(el){if(el)el.hidden=true;}
@@ -4617,74 +4735,66 @@ _GUIDE_JS = """
 
   var NEEDS='Needs source documentation.';
   function isNeeds(v){return /needs source documentation/i.test(String(v||''));}
-  function emptyMsg(t){return '<p class="ck-guide-muted">'+esc(t)+'</p>';}
+  function emptyMsg(t){return '<p class="ck-guide-empty">'+esc(t)+'</p>';}
   function subRow(label,val){
     if(!val||isNeeds(val))return '';
-    return '<div class="ck-guide-sub"><span class="ck-guide-sub-label">'+esc(label)+'</span>'+esc(val)+'</div>';
+    return '<div class="ck-guide-sub"><span class="ck-guide-sub-label">'+esc(label)+
+      '</span><div class="ck-guide-sub-body">'+esc(val)+'</div></div>';
+  }
+
+  /* Tiny safe markdown renderer for model answers. HTML is escaped FIRST,
+   * then a whitelisted set of inline marks (**bold**, *italic*, `code`) and
+   * blocks (-, *, 1. lists + blank-line paragraphs) become tags. No raw
+   * model HTML ever reaches innerHTML, so it stays XSS-safe while killing
+   * the raw "**bold**" literals the old textContent path showed. No
+   * external markdown dependency is added. */
+  function mdInline(s){
+    return s
+      .replace(/\\*\\*([^*]+)\\*\\*/g,'<strong>$1</strong>')
+      .replace(/(^|[^*])\\*([^*\\n]+)\\*/g,'$1<em>$2</em>')
+      .replace(/`([^`]+)`/g,'<code>$1</code>');
+  }
+  function mdToHtml(src){
+    var text=esc(src==null?'':String(src));   /* escape everything up front */
+    var lines=text.split(/\\r?\\n/), out=[], list=null, para=[];
+    function flushPara(){ if(para.length){out.push('<p>'+mdInline(para.join(' '))+'</p>');para=[];} }
+    function flushList(){ if(list){out.push('<'+list.tag+'>'+list.items.join('')+'</'+list.tag+'>');list=null;} }
+    lines.forEach(function(ln){
+      var t=ln.trim();
+      var ul=/^[-*]\\s+(.*)$/.exec(t), ol=/^\\d+[.)]\\s+(.*)$/.exec(t);
+      if(ul){ flushPara(); if(!list||list.tag!=='ul'){flushList();list={tag:'ul',items:[]};}
+        list.items.push('<li>'+mdInline(ul[1])+'</li>'); return; }
+      if(ol){ flushPara(); if(!list||list.tag!=='ol'){flushList();list={tag:'ol',items:[]};}
+        list.items.push('<li>'+mdInline(ol[1])+'</li>'); return; }
+      if(t===''){ flushPara(); flushList(); return; }
+      flushList(); para.push(t);
+    });
+    flushPara(); flushList();
+    return out.join('')||'<p></p>';
   }
 
   function renderOverview(d){
     var pc=d.page_context, ov=$('[data-ck-guide-overview]');
-    if(!pc){ ov.innerHTML=emptyMsg(d.fallback_message||'No documented context for this page yet.'); return; }
-    var html=subRow('What it does', pc.short_description)
-            +subRow('Purpose', pc.primary_purpose)
-            +subRow('Why it matters', pc.why_it_matters);
+    if(!pc){ ov.innerHTML=emptyMsg(d.fallback_message||'No documented context for this page yet.');
+      renderCaveat(d); return; }
+    var html='';
+    if(pc.short_description&&!isNeeds(pc.short_description))
+      html+='<p class="ck-guide-lede">'+esc(pc.short_description)+'</p>';
+    html+=subRow('Purpose', pc.primary_purpose)+subRow('Why it matters', pc.why_it_matters);
     ov.innerHTML=html||emptyMsg('No overview documented yet.');
+    renderCaveat(d);
   }
 
-  function metricCard(m){
-    var html='<div class="ck-guide-metric">'+
-      '<div class="ck-guide-metric-title">'+esc(m.label)+'</div>'+
-      '<div class="ck-guide-metric-def">'+esc(m.definition)+'</div>';
-    if(m.why_it_matters&&!isNeeds(m.why_it_matters))
-      html+=subRow('Why it matters', m.why_it_matters);
-    if(m.formula&&!isNeeds(m.formula))
-      html+='<div class="ck-guide-sub"><span class="ck-guide-sub-label">Formula</span><code>'+esc(m.formula)+'</code></div>';
-    else
-      html+='<span class="ck-guide-pill">Formula not yet documented</span>';
-    var cav=(m.caveats||[]).filter(function(c){return c&&!isNeeds(c);});
-    if(cav.length) html+='<div class="ck-guide-caveat">'+esc(cav.join(' \\u00b7 '))+'</div>';
-    return html+'</div>';
-  }
-
-  /* Render cards with a Show-all toggle when there are more than 3. */
-  function renderCards(host, items, makeCard, emptyText, noun){
-    if(!host)return;
-    if(!items||!items.length){host.innerHTML=emptyMsg(emptyText);return;}
-    var cards=items.map(makeCard);
-    if(cards.length>3){
-      host.innerHTML=cards.slice(0,3).join('')
-        +'<div data-more hidden>'+cards.slice(3).join('')+'</div>'
-        +'<button type="button" class="ck-guide-more-btn" data-more-toggle>Show all '+noun+' ('+cards.length+')</button>';
-      var btn=host.querySelector('[data-more-toggle]'), more=host.querySelector('[data-more]');
-      btn.addEventListener('click',function(){
-        var opening=more.hidden; more.hidden=!opening;
-        btn.textContent=opening?('Show fewer '+noun):('Show all '+noun+' ('+cards.length+')');
-      });
-    } else { host.innerHTML=cards.join(''); }
-  }
-
-  function sourceCard(s){
-    var typ=String(s.source_type||'').replace(/_/g,' ');
-    var meta='<div class="ck-guide-meta-grid">'+
-      '<span class="ck-guide-meta-k">Type</span><span class="ck-guide-meta-v">'+esc(typ)+'</span>'+
-      '<span class="ck-guide-meta-k">Update cadence</span><span class="ck-guide-meta-v">'+esc(s.update_cadence)+'</span>'+
-      '<span class="ck-guide-meta-k">Freshness</span><span class="ck-guide-meta-v">'+esc(s.freshness_lag)+'</span>'+
-      '</div>';
-    var lim=(s.limitations||[]).filter(function(x){return x&&!isNeeds(x);});
-    var limHtml=lim.length?'<div class="ck-guide-caveat">Limitations: '+esc(lim.join(' \\u00b7 '))+'</div>':'';
-    return '<div class="ck-guide-metric"><div class="ck-guide-metric-title">'+esc(s.label)+'</div>'+
-      meta+'<div class="ck-guide-metric-def">'+esc(s.description)+'</div>'+limHtml+'</div>';
-  }
-
-  function renderLimitations(d){
-    var host=$('[data-ck-guide-limitations]');
+  /* Overview caveat callout — collapses page + known limitations + the
+   * needs-documentation sentinel into one calm amber note (was a separate
+   * "Limitations & caveats" card in the old single-scroll layout). */
+  function renderCaveat(d){
+    var box=$('[data-ck-guide-caveat]'), txt=$('[data-ck-guide-caveat-text]');
+    if(!box||!txt)return;
     var pc=d.page_context, items=[];
     if(pc&&pc.limitations)items=items.concat(pc.limitations);
     if(d.known_limitations)items=items.concat(d.known_limitations);
     if(d.missing_context_notes)items=items.concat(d.missing_context_notes);
-    /* Collapse the repeated "Needs source documentation." sentinel into
-       one calm, readable line rather than alarming repetition. */
     var hadNeeds=false, seen={}, vals=[];
     items.forEach(function(x){
       if(!x||!String(x).trim())return;
@@ -4692,30 +4802,95 @@ _GUIDE_JS = """
       if(seen[x])return; seen[x]=1; vals.push(x);
     });
     if(hadNeeds)vals.push('Some formulas or source-lineage details still need source documentation.');
-    if(!vals.length){host.innerHTML=emptyMsg('No limitations documented.');return;}
-    host.innerHTML='<ul class="ck-guide-list">'+vals.map(function(v){
-      return '<li>'+esc(v)+'</li>';}).join('')+'</ul>';
+    if(!vals.length){hide(box); txt.innerHTML=''; return;}
+    txt.innerHTML='<b>Caveats.</b> '+vals.map(esc).join(' \\u00b7 ');
+    show(box);
+  }
+
+  function metricCard(m){
+    var html='<div class="ck-guide-metric"><div class="ck-guide-metric-head">'+
+      '<span class="ck-guide-metric-name">'+esc(m.label)+'</span>';
+    if(m.formula&&!isNeeds(m.formula))
+      html+='<span class="ck-guide-metric-formula">'+esc(m.formula)+'</span>';
+    else
+      html+='<span class="ck-guide-metric-pill">formula not documented</span>';
+    html+='</div>';
+    if(m.definition&&!isNeeds(m.definition))
+      html+='<div class="ck-guide-metric-desc">'+esc(m.definition)+'</div>';
+    if(m.why_it_matters&&!isNeeds(m.why_it_matters))
+      html+='<div class="ck-guide-metric-why">'+esc(m.why_it_matters)+'</div>';
+    var cav=(m.caveats||[]).filter(function(c){return c&&!isNeeds(c);});
+    if(cav.length) html+='<div class="ck-guide-metric-cav">'+esc(cav.join(' \\u00b7 '))+'</div>';
+    return html+'</div>';
+  }
+
+  var WARN_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" '+
+    'stroke-width="2" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 '+
+    '1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>';
+  function sourceCard(s){
+    var typ=String(s.source_type||'').replace(/_/g,' ');
+    var meta=[];
+    if(typ&&!isNeeds(typ))meta.push('<b>'+esc(typ)+'</b>');
+    if(s.update_cadence&&!isNeeds(s.update_cadence))meta.push(esc(s.update_cadence));
+    if(s.freshness_lag&&!isNeeds(s.freshness_lag))meta.push(esc(s.freshness_lag));
+    var lim=(s.limitations||[]).filter(function(x){return x&&!isNeeds(x);});
+    var html='<div class="ck-guide-ds"><div class="ck-guide-ds-gem"></div>'+
+      '<div class="ck-guide-ds-name">'+esc(s.label)+'</div>';
+    if(meta.length)html+='<div class="ck-guide-ds-meta">'+meta.join(' &middot; ')+'</div>';
+    if(s.description&&!isNeeds(s.description))
+      html+='<div class="ck-guide-ds-desc">'+esc(s.description)+'</div>';
+    if(lim.length)
+      html+='<div class="ck-guide-ds-lim">'+WARN_SVG+'<span>'+esc(lim.join(' \\u00b7 '))+'</span></div>';
+    return html+'</div>';
+  }
+
+  function chipHtml(x){
+    return '<button type="button" class="ck-guide-chip" data-q="'+escAttr(x)+'" '+
+      'title="Fills the question box">'+esc(x)+
+      '<span class="ck-guide-chip-arr" aria-hidden="true">\\u2197</span></button>';
+  }
+  /* Chip click drops its text into the composer + focuses it — never
+   * auto-submits (the user reviews, then presses Ask). */
+  function wireChips(host){
+    if(!host)return;
+    Array.prototype.forEach.call(host.querySelectorAll('.ck-guide-chip'),function(b){
+      b.addEventListener('click',function(){
+        var inp=$('[data-ck-guide-input]'); if(!inp)return;
+        inp.value=b.getAttribute('data-q')||'';
+        inp.focus();
+      });
+    });
+  }
+
+  function setCount(sel, n){
+    var el=$(sel); if(!el)return;
+    if(n>0){el.textContent=String(n); show(el);}else{hide(el); el.textContent='';}
   }
 
   function renderContext(d){
     $('[data-ck-guide-page-title]').textContent=(d.page_context&&d.page_context.title)||'PEdesk Guide';
-    var q=$('[data-ck-guide-quality]');
-    q.textContent=d.context_quality||''; q.setAttribute('data-q',d.context_quality||'');
-    if(d.context_quality){show(q);}else{hide(q);}
+    var q=$('[data-ck-guide-quality]'), ql=$('[data-ck-guide-quality-label]'),
+        sep=$('[data-ck-guide-meta-sep]');
+    if(d.context_quality){
+      q.setAttribute('data-q',d.context_quality);
+      if(ql)ql.textContent=d.context_quality+' context';
+      show(q); show(sep);
+    }else{hide(q); hide(sep);}
     $('[data-ck-guide-route]').textContent=d.normalized_route||'';
     renderOverview(d);
-    renderCards($('[data-ck-guide-metrics]'), d.metric_contexts||[], metricCard,
-      'No metric context has been linked for this page yet.', 'metrics');
-    renderCards($('[data-ck-guide-sources]'), d.data_source_contexts||[], sourceCard,
-      'No data source context has been linked for this page yet.', 'sources');
-    renderLimitations(d);
-    var ch=$('[data-ck-guide-suggested]'); var qs=d.suggested_questions||[];
-    ch.innerHTML=qs.map(function(x){
-      return '<button type="button" class="ck-guide-chip" title="Fills the question box">'+esc(x)+'</button>';
-    }).join('');
-    Array.prototype.forEach.call(ch.querySelectorAll('.ck-guide-chip'),function(b){
-      b.addEventListener('click',function(){var inp=$('[data-ck-guide-input]');inp.value=b.textContent;inp.focus();});
-    });
+    var metrics=d.metric_contexts||[], sources=d.data_source_contexts||[];
+    var mh=$('[data-ck-guide-metrics]'), sh=$('[data-ck-guide-sources]');
+    if(mh)mh.innerHTML=metrics.length?metrics.map(metricCard).join(''):
+      emptyMsg('No metric context has been linked for this page yet.');
+    if(sh)sh.innerHTML=sources.length?sources.map(sourceCard).join(''):
+      emptyMsg('No data source context has been linked for this page yet.');
+    setCount('[data-ck-guide-count-metrics]', metrics.length);
+    setCount('[data-ck-guide-count-sources]', sources.length);
+    var qs=d.suggested_questions||[];
+    var ov=$('[data-ck-guide-suggested-overview]'), ak=$('[data-ck-guide-suggested-ask]');
+    /* Overview shows the first four "try asking" prompts; Ask shows the full set. */
+    if(ov){ov.innerHTML=qs.slice(0,4).map(chipHtml).join(''); wireChips(ov);}
+    if(ak){ak.innerHTML=qs.map(chipHtml).join(''); wireChips(ak);}
   }
 
   function aiReason(h){
@@ -4732,8 +4907,21 @@ _GUIDE_JS = """
     return 'Local AI mode is not fully configured.';
   }
 
+  /* Composer footer chrome — model id + the "● RAG ready / off" pill. The
+     pill flips to "● Thinking…" while an ask is in flight (see ask()). */
+  function setRag(state, label){
+    var rag=$('[data-ck-guide-rag-status]'); if(!rag)return;
+    rag.setAttribute('data-state', state); rag.textContent='\\u25cf '+label;
+  }
+  function applyFooter(h){
+    var model=$('[data-ck-guide-model]');
+    if(model)model.textContent=(h&&(h.chat_model||h.default_model))||'';
+    if(h&&h.ai_ready)setRag('ready','RAG ready'); else setRag('off','RAG off');
+  }
+
   function applyHealth(h){
     var stateEl=$('[data-ck-guide-ask-state]'), input=$('[data-ck-guide-input]'), send=$('[data-ck-guide-send]');
+    applyFooter(h);
     /* Full AI mode = Ollama + chat model + RAG index all ready. The ask
        box is active only then; otherwise the page guide still renders and
        a calm status card explains exactly what's missing. */
@@ -4810,6 +4998,7 @@ _GUIDE_JS = """
     var myseq=++reqSeq;                      /* claim this request */
     var t0=Date.now();                       /* for elapsed-time feedback */
     var send=$('[data-ck-guide-send]'); if(send) send.disabled=true;
+    setRag('thinking','Thinking\\u2026');     /* footer pill: live ask in flight */
     var aEl=addHistory(q);
     var thinkEl=aEl.querySelector('.ck-guide-thinking');
     /* Long-response copy after 10s — only if this request is still the
@@ -4828,6 +5017,7 @@ _GUIDE_JS = """
       if(myseq!==reqSeq) return false;
       pending=false; activeAbort=null;
       if(send) send.disabled=!askable();
+      applyFooter(health);                    /* restore footer RAG pill */
       return true;
     }
     fetch('/api/guide/ask',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -4839,7 +5029,9 @@ _GUIDE_JS = """
         if(!settle())return;
         if(r.status===200){
           var b=r.body||{};
-          aEl.textContent=b.answer||'';      /* textContent: XSS-safe, preserves text */
+          /* mdToHtml escapes the model text FIRST, then whitelists a few
+           * markdown marks — XSS-safe, and no raw "**bold**" literals. */
+          aEl.innerHTML='<div class="ck-guide-a-body">'+mdToHtml(b.answer||'')+'</div>';
           var secs=((Date.now()-t0)/1000).toFixed(1);   /* elapsed, local model */
           var meta='<div class="ck-guide-a-meta"><span class="ck-guide-badge">read-only</span>'+
             (b.model?'<span>'+esc(b.model)+'</span>':'')+
@@ -4848,7 +5040,7 @@ _GUIDE_JS = """
             '<button type="button" class="ck-guide-copy" data-ck-guide-copy>Copy</button>'+
             '</div>';
           var notes=(b.missing_context_notes&&b.missing_context_notes.length)?
-            '<div class="ck-guide-caveat">Missing context: '+esc(b.missing_context_notes.join('; '))+'</div>':'';
+            '<div class="ck-guide-metric-cav">Missing context: '+esc(b.missing_context_notes.join('; '))+'</div>':'';
           /* RAG provenance: group retrieved sources by registry type so the
              grounding is scannable (Page context / Metric Registry / Data
              Source Registry / Guide policy / Methodology · docs), each with
@@ -4879,7 +5071,7 @@ _GUIDE_JS = """
           } else {
             prov='<div class="ck-guide-sources"><div class="ck-guide-src-head">Answered from current page context.</div></div>';
           }
-          var ragWarn=b.rag_warning?'<div class="ck-guide-caveat">'+esc(b.rag_warning)+'</div>':'';
+          var ragWarn=b.rag_warning?'<div class="ck-guide-metric-cav">'+esc(b.rag_warning)+'</div>':'';
           aEl.insertAdjacentHTML('beforeend', notes+prov+ragWarn+meta);
           /* Copy-answer: browser clipboard only, no persistence/telemetry.
              Hidden when the Clipboard API is unavailable (e.g. non-secure
@@ -4912,9 +5104,39 @@ _GUIDE_JS = """
       });
   }
 
+  /* ── Tabs: ARIA tablist with roving tabindex + arrow-key navigation
+     (Left/Right/Up/Down move + select, Home/End jump, Enter/Space select).
+     Switching only toggles the body panels — the composer footer never
+     unmounts, so a question can be asked from any tab. ── */
+  var tabs=Array.prototype.slice.call(panel.querySelectorAll('[data-ck-guide-tab]'));
+  function activateTab(id, focusBtn){
+    tabs.forEach(function(btn){
+      var on=btn.getAttribute('data-ck-guide-tab')===id;
+      btn.setAttribute('aria-selected', on?'true':'false');
+      btn.tabIndex=on?0:-1;
+      if(on&&focusBtn)btn.focus();
+    });
+    Array.prototype.forEach.call(panel.querySelectorAll('[data-ck-guide-panel]'),function(p){
+      p.hidden=p.getAttribute('data-ck-guide-panel')!==id;
+    });
+  }
+  tabs.forEach(function(btn, i){
+    btn.addEventListener('click',function(){activateTab(btn.getAttribute('data-ck-guide-tab'));});
+    btn.addEventListener('keydown',function(e){
+      var idx=null;
+      if(e.key==='ArrowRight'||e.key==='ArrowDown')idx=(i+1)%tabs.length;
+      else if(e.key==='ArrowLeft'||e.key==='ArrowUp')idx=(i-1+tabs.length)%tabs.length;
+      else if(e.key==='Home')idx=0;
+      else if(e.key==='End')idx=tabs.length-1;
+      else if(e.key==='Enter'||e.key===' '){e.preventDefault();activateTab(btn.getAttribute('data-ck-guide-tab'));return;}
+      if(idx!==null){e.preventDefault();activateTab(tabs[idx].getAttribute('data-ck-guide-tab'), true);}
+    });
+  });
+
   function open(){
     lastFocus=document.activeElement;
     panel.hidden=false;
+    activateTab('overview');           /* always open on Overview */
     loadContext(false);
     var t=$('[data-ck-guide-page-title]'); if(t)t.focus();
   }
@@ -4939,13 +5161,15 @@ _GUIDE_JS = """
   function submitQuestion(){
     var inp=$('[data-ck-guide-input]'); if(!inp)return;
     var v=inp.value; if(!v.trim()||pending)return;   /* duplicate-submit guard */
-    inp.value=''; ask(v);
+    inp.value=''; activateTab('ask'); ask(v);        /* show the answer in Ask */
   }
   if(form)form.addEventListener('submit',function(e){e.preventDefault();submitQuestion();});
   var input=$('[data-ck-guide-input]');
   if(input)input.addEventListener('keydown',function(e){
-    /* Enter sends; Shift+Enter inserts a newline. The pending guard in
-     * submitQuestion/ask blocks duplicate Enter presses. */
+    /* Cmd/Ctrl+Enter submits (design-spec composer shortcut). Plain Enter
+     * also submits; Shift+Enter inserts a newline. The pending guard in
+     * submitQuestion/ask blocks duplicate presses. */
+    if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();submitQuestion();return;}
     if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submitQuestion();}
   });
 })();

@@ -1,10 +1,13 @@
 """Regression tests for the PEdesk Guide sidebar in the global shell.
 
 The sidebar is server-rendered markup + a vanilla-JS shim injected by
-``chartis_shell``. These tests assert the static contract (trigger,
-closed-by-default panel, ARIA, sections, endpoint wiring, read-only copy,
-and the absence of upload/action/mutation affordances). The dynamic
-rendering (metric/source cards, answers) is JS-built and verified
+``chartis_shell``. As of the "Variant B — Tabbed" redesign (design handoff)
+the panel is a navy header + tab strip (Overview · Metrics · Sources · Ask),
+a scrolling paper body, and a sticky cream composer. These tests assert the
+static contract (trigger, closed-by-default panel, ARIA tablist/tabpanel,
+the four tabs, endpoint wiring, read-only copy, no upload/action/mutation
+affordances, no external CDN/fonts) plus the JS hardening guards. The
+dynamic rendering (tab content, cards, answers) is JS-built and verified
 manually — see PROGRESS.md.
 """
 from __future__ import annotations
@@ -44,11 +47,50 @@ class GuideSidebarShellTests(unittest.TestCase):
         self.assertIn("data-ck-guide-close", self.html)
         self.assertIn('aria-label="Close PEdesk Guide"', self.html)
 
-    def test_all_sections_present(self):
-        for sec in ("Page overview", "Key metrics", "Data sources",
-                    "Limitations &amp; caveats", "Suggested questions",
-                    "Ask PEdesk Guide"):
-            self.assertIn(sec, self.html)
+    def test_tabbed_layout_aria(self):
+        # Navy block carries an ARIA tablist with four roving tabs, each
+        # controlling a labelled tabpanel.
+        self.assertIn('role="tablist"', self.html)
+        for tab in ("overview", "metrics", "sources", "ask"):
+            self.assertIn(f'data-ck-guide-tab="{tab}"', self.html)
+            self.assertIn(f'id="ck-guide-panel-{tab}"', self.html)
+            self.assertIn(f'data-ck-guide-panel="{tab}"', self.html)
+        # role=tab and role=tabpanel both present
+        self.assertIn('role="tab"', self.html)
+        self.assertIn('role="tabpanel"', self.html)
+        # Default tab selected; others not.
+        self.assertIn('aria-selected="true"', self.html)
+        self.assertIn('aria-selected="false"', self.html)
+
+    def test_tab_keyboard_navigation_and_switching(self):
+        # Roving-tabindex arrow/Home/End nav + click switch + select keys.
+        self.assertIn("function activateTab(", self.html)
+        self.assertIn("ArrowRight", self.html)
+        self.assertIn("ArrowLeft", self.html)
+        self.assertIn("'Home'", self.html)
+        self.assertIn("'End'", self.html)
+
+    def test_metrics_sources_tabs_have_count_badges(self):
+        self.assertIn("data-ck-guide-count-metrics", self.html)
+        self.assertIn("data-ck-guide-count-sources", self.html)
+        # Counts only show when > 0 (no alarming "0").
+        self.assertIn("function setCount(", self.html)
+
+    def test_context_strength_badge_in_header(self):
+        # Pill + dot in the navy header, label set from context_quality.
+        self.assertIn("ck-guide-ctx-badge", self.html)
+        self.assertIn("ck-guide-ctx-dot", self.html)
+        self.assertIn("data-ck-guide-quality-label", self.html)
+        self.assertIn("' context'", self.html)
+
+    def test_sticky_composer_footer(self):
+        frag = _guide_fragment(self.html)
+        self.assertIn('class="ck-guide-composer"', frag)
+        self.assertIn("data-ck-guide-input", frag)
+        self.assertIn("data-ck-guide-send", frag)
+        # Footer status line: read-only + RAG + model id slot.
+        self.assertIn("data-ck-guide-rag-status", frag)
+        self.assertIn("data-ck-guide-model", frag)
 
     def test_wires_all_three_endpoints(self):
         self.assertIn("/api/guide/context?route=", self.html)
@@ -75,12 +117,14 @@ class GuideSidebarShellTests(unittest.TestCase):
         self.assertIn("Setup details", self.html)
 
     def test_read_only_copy_present(self):
-        # Now a collapsible in-body card (was a sticky footer). Whitespace-
+        # Collapsible read-only policy at the foot of the Ask tab. Whitespace-
         # normalize so HTML line-wrapping doesn't break the assertions.
         flat = " ".join(self.html.split())
         self.assertIn("PEdesk Guide is read-only", flat)
         self.assertIn("cannot change assumptions", flat)
         self.assertIn("make final investment recommendations", flat)
+        # Composer footer also carries the read-only signal.
+        self.assertIn("PEdesk &middot; read-only", self.html)
 
     def test_no_upload_or_action_affordances_in_panel(self):
         # Scope to real affordances, not the read-only disclaimer text
@@ -89,8 +133,8 @@ class GuideSidebarShellTests(unittest.TestCase):
         self.assertTrue(frag)
         self.assertNotIn('type="file"', frag)            # no uploads
         self.assertNotIn("multipart/form-data", frag)
-        # The ask <form> has no action= and no method=post — it submits via
-        # JS fetch only, so there's no mutation-form affordance in the panel.
+        # The composer <form> has no action= and no method=post — it submits
+        # via JS fetch only, so there's no mutation-form affordance.
         self.assertNotIn("<form action=", frag)
         self.assertNotIn('method="post"', frag.lower())
 
@@ -100,6 +144,14 @@ class GuideSidebarShellTests(unittest.TestCase):
         self.assertIn("method:'POST'", self.html)
         self.assertNotIn("X-CSRF", _guide_fragment(self.html) or "")
 
+    def test_no_external_cdn_or_prototype_artifacts(self):
+        # The prototype shipped React/Babel via unpkg + Google Fonts; the
+        # production sidebar must NOT pull any external script/font/CDN.
+        frag = _guide_fragment(self.html)
+        for bad in ("unpkg.com", "babel", "react-dom", "cdn.jsdelivr",
+                    "fonts.googleapis", "fonts.gstatic"):
+            self.assertNotIn(bad, frag.lower())
+
     def test_absent_on_bare_pages(self):
         bare = chartis_shell("<p>x</p>", title="Login", show_chrome=False)
         self.assertNotIn("ck-guide-panel", bare)
@@ -107,8 +159,8 @@ class GuideSidebarShellTests(unittest.TestCase):
 
 
 class GuideSidebarHardeningTests(unittest.TestCase):
-    """Task 7 hardening contract (static — the JS behavior is verified
-    manually; these assert the guard constructs are present in the shim)."""
+    """Hardening contract (static — the JS behavior is verified manually;
+    these assert the guard constructs are present in the shim)."""
 
     def setUp(self):
         self.html = chartis_shell("<p>b</p>", title="T", active_nav="/portfolio")
@@ -127,6 +179,10 @@ class GuideSidebarHardeningTests(unittest.TestCase):
         self.assertIn("send.disabled=true", self.html)
         # Enter sends but the guard still applies; Shift+Enter = newline
         self.assertIn("e.key==='Enter'&&!e.shiftKey", self.html)
+
+    def test_cmd_ctrl_enter_submits(self):
+        # The design spec's composer shortcut: Cmd/Ctrl+Enter submits.
+        self.assertIn("e.metaKey||e.ctrlKey", self.html)
 
     def test_stale_response_protection(self):
         # request sequence token + invalidate-on-close/route-change
@@ -148,16 +204,19 @@ class GuideSidebarHardeningTests(unittest.TestCase):
         self.assertIn("overflow-wrap:break-word", self.html)
         self.assertIn("word-break:break-word", self.html)
         self.assertIn("overflow-x:hidden", self.html)
-        # answers preserve readable whitespace
-        self.assertIn("white-space:pre-wrap", self.html)
 
-    def test_safe_rendering_no_unescaped_answer(self):
-        # answer rendered via textContent (never innerHTML of model text)
-        self.assertIn("aEl.textContent=b.answer", self.html)
-        # error text via textContent too (failBubble sets p.textContent)
+    def test_answer_rendered_via_safe_markdown(self):
+        # Answers go through mdToHtml, which escapes the model text FIRST
+        # then whitelists a few markdown marks — XSS-safe AND no raw
+        # "**bold**" literals (the old textContent path showed them).
+        self.assertIn("function mdToHtml(", self.html)
+        self.assertIn("ck-guide-a-body", self.html)
+        self.assertIn("mdToHtml(b.answer", self.html)
+        # error text still via textContent (failBubble sets p.textContent)
         self.assertIn("aEl.querySelector('p').textContent=msg", self.html)
-        # there is an HTML-escape helper for any interpolated dynamic text
+        # escape helpers exist for any interpolated dynamic text
         self.assertIn("function esc(", self.html)
+        self.assertIn("function escAttr(", self.html)
 
     def test_failed_request_preserves_question_for_retry(self):
         self.assertIn("lastQuestion", self.html)
@@ -165,146 +224,118 @@ class GuideSidebarHardeningTests(unittest.TestCase):
         self.assertIn("ask(lastQuestion)", self.html)
 
 
-class GuideSidebarPolishTests(unittest.TestCase):
-    """Task 9 — card-based presentation polish (static contract; the
-    rendered cards are JS-built and verified manually)."""
+class GuideSidebarDesignTests(unittest.TestCase):
+    """Variant B tabbed-redesign contract: design tokens, editorial type
+    hierarchy (serif/sans/mono using already-loaded fonts), chip→composer
+    interaction, and the no-external-font invariant."""
 
     def setUp(self):
         self.html = chartis_shell("<p>b</p>", title="T", active_nav="/app")
         self.flat = " ".join(self.html.split())
-
-    def test_card_based_layout(self):
-        self.assertIn(".ck-guide-card{", self.html)        # card CSS
-        self.assertIn('class="ck-guide-card"', self.html)  # card markup
-        self.assertIn("ck-guide-card-title", self.html)
-        self.assertIn(">Page overview<", self.html)
-
-    def test_read_only_policy_is_collapsible_in_body_not_sticky_footer(self):
-        # A <details> card inside the scroll body...
-        self.assertIn('<details class="ck-guide-card ck-guide-policy"',
-                      self.html)
-        self.assertIn("ck-guide-policy-summary", self.html)
-        # ...and the old sticky footer rule is gone.
-        self.assertNotIn(".ck-guide-readonly{", self.html)
-
-    def test_ask_card_after_content_with_body_bottom_padding(self):
-        # Ask section is its own card, present in the scrollable body.
-        self.assertIn("ck-guide-ask-card", self.html)
-        # Body has real bottom padding so the Ask card is fully visible
-        # (3rd value is the bottom pad).
-        import re
-        m = re.search(r"\.ck-guide-body\{[^}]*padding:\d+px \d+px (\d+)px",
-                      self.html)
-        self.assertIsNotNone(m)
-        self.assertGreaterEqual(int(m.group(1)), 24)
-
-    def test_data_source_metadata_labels(self):
-        for label in (">Type<", ">Update cadence<", ">Freshness<"):
-            self.assertIn(label, self.html)
-        self.assertIn("ck-guide-meta-grid", self.html)
-
-    def test_metric_show_more_toggle(self):
-        self.assertIn("data-more-toggle", self.html)
-        self.assertIn("Show all ", self.html)
-        self.assertIn("Show fewer ", self.html)
-
-    def test_caveat_rendered_as_pill_not_raw_repeated_line(self):
-        # Formula sentinel becomes a pill, not "Caveats: Needs source ..."
-        self.assertIn("ck-guide-pill", self.html)
-        self.assertIn("Formula not yet documented", self.html)
-        # The needs-doc sentinel is collapsed into one calm limitations line.
-        self.assertIn("still need source documentation", self.html)
-        # Old raw repeated rendering is gone.
-        self.assertNotIn("Caveats: Needs source documentation.", self.html)
-
-    def test_disabled_qa_copy_is_full_and_actionable(self):
-        # Not-configured state: primary message + a reason + collapsible setup
-        # (driven by health.ai_ready / setup_commands).
-        self.assertIn("Ask PEdesk Guide is not fully configured.", self.flat)
-        self.assertIn("The page guide still works.", self.flat)
-        self.assertIn("Setup details", self.flat)
-        # The exact reason + setup commands come from the health payload.
-        self.assertIn("aiReason(", self.flat)
-        self.assertIn("h.setup_commands", self.flat)
-
-    def test_ask_gated_on_ai_ready(self):
-        # The ask box enables only when full AI mode is ready.
-        self.assertIn("var ready=!!(h&&h.ai_ready);", self.html)
-        self.assertIn("input.disabled=!ready; send.disabled=!ready;", self.html)
 
     def _guide_css(self):
         a = self.html.find(".ck-guide-panel{")
         b = self.html.find("@media print{.ck-guide-panel")
         return self.html[a:b]
 
-    def test_sidebar_uses_system_ui_font(self):
-        # Guide panel has its own clean system-UI font stack (no serif).
-        self.assertIn("--ck-guide-ui:Inter,ui-sans-serif,system-ui",
-                      self.html)
-        self.assertIn("font-family:var(--ck-guide-ui)", self.html)
+    def test_design_tokens_present(self):
         css = self._guide_css()
-        self.assertNotIn("Source Serif 4", css)   # no serif inside the panel
-        # title + card + metric titles all use the UI font
-        self.assertIn(".ck-guide-title{font-family:var(--ck-guide-ui)",
-                      self.html)
-        self.assertIn(".ck-guide-card-title{font-family:var(--ck-guide-ui)",
-                      self.html)
-        self.assertIn(".ck-guide-metric-title{font-family:var(--ck-guide-ui)",
-                      self.html)
+        for token, hexv in (("--ck-g-navy", "#0d2336"),
+                            ("--ck-g-paper", "#fbf7ee"),
+                            ("--ck-g-cream", "#f4ecd9"),
+                            ("--ck-g-green", "#1f7a5a"),
+                            ("--ck-g-amber", "#c2853a"),
+                            ("--ck-g-rule", "#d9cfb8")):
+            self.assertIn(f"{token}:{hexv}", css)
+        # 440px shell, 14px outer radius.
+        self.assertIn("width:min(440px,94vw)", css)
+        self.assertIn("border-radius:14px", css)
 
-    def test_sidebar_adds_no_external_font(self):
-        # System-safe only — no @import and no Google-fonts link added by the
-        # Guide CSS (formula/route/meta may keep the already-loaded mono).
-        self.assertNotIn("@import", self.html)
-        self.assertNotIn("fonts.googleapis", self._guide_css())
+    def test_editorial_type_hierarchy(self):
+        css = self._guide_css()
+        # Serif headlines (Source Serif 4), mono labels/meta (JetBrains Mono),
+        # house sans body (Inter Tight) — all fonts already loaded by the shell.
+        self.assertIn("Source Serif 4", css)
+        self.assertIn("JetBrains Mono", css)
+        self.assertIn("Inter Tight", css)
+        # Title + metric name use the serif family var.
+        self.assertIn(".ck-guide-title{font-family:var(--ck-g-serif)", css)
+        self.assertIn(".ck-guide-metric-name{font-family:var(--ck-g-serif)",
+                      css)
 
-    def test_answer_card_class_and_safe_render(self):
-        self.assertIn(".ck-guide-a{", self.html)          # answer bubble CSS
-        self.assertIn("white-space:pre-wrap", self.html)  # readable line breaks
-        self.assertIn("aEl.textContent=b.answer", self.html)  # XSS-safe
+    def test_no_external_font_added_by_guide(self):
+        # System/house fonts only — no @import, no Google-fonts link inside
+        # the Guide CSS block.
+        css = self._guide_css()
+        self.assertNotIn("@import", css)
+        self.assertNotIn("fonts.googleapis", css)
+
+    def test_chip_drops_into_composer_without_autosubmit(self):
+        # Chip click fills the composer textarea + focuses it; it must NOT
+        # call ask()/submitQuestion().
+        self.assertIn("function wireChips(", self.html)
+        self.assertIn("inp.value=b.getAttribute('data-q')", self.html)
+        self.assertIn("inp.focus();", self.html)
+        # Both Overview ("try asking") and Ask (full set) chip rails exist.
+        self.assertIn("data-ck-guide-suggested-overview", self.html)
+        self.assertIn("data-ck-guide-suggested-ask", self.html)
+
+    def test_submit_switches_to_ask_tab(self):
+        # Asking from any tab surfaces the answer in the Ask panel.
+        self.assertIn("activateTab('ask'); ask(v)", self.html)
+
+    def test_data_source_inline_meta_format(self):
+        # Sources render as diamond + name + "<type> · <cadence> · <freshness>"
+        # inline meta (replaces the old labelled meta-grid).
+        self.assertIn("ck-guide-ds-gem", self.html)
+        self.assertIn("ck-guide-ds-meta", self.html)
+        self.assertIn("ck-guide-ds-lim", self.html)
+
+    def test_metric_formula_chip_and_fallback(self):
+        self.assertIn("ck-guide-metric-formula", self.html)
+        self.assertIn("formula not documented", self.html)
+        self.assertIn("ck-guide-metric-why", self.html)
+
+    def test_caveat_collapses_needs_doc_sentinel(self):
+        # The needs-doc sentinel is collapsed into one calm line in the
+        # Overview caveat callout (not repeated alarmingly).
+        self.assertIn("still need source documentation", self.html)
+        self.assertIn("function renderCaveat(", self.html)
+
+    def test_disabled_qa_copy_is_full_and_actionable(self):
+        self.assertIn("Ask PEdesk Guide is not fully configured.", self.flat)
+        self.assertIn("The page guide still works.", self.flat)
+        self.assertIn("Setup details", self.flat)
+        self.assertIn("aiReason(", self.flat)
+        self.assertIn("h.setup_commands", self.flat)
+
+    def test_ask_gated_on_ai_ready(self):
+        self.assertIn("var ready=!!(h&&h.ai_ready);", self.html)
+        self.assertIn("input.disabled=!ready; send.disabled=!ready;", self.html)
 
     def test_surfaces_rag_sources_and_warning(self):
-        # RAG provenance renders as a grouped "Also used local Guide RAG
-        # sources" block (sources grouped by registry type, each with title +
-        # score). Packet-only answers state grounding plainly. rag_warning is
-        # surfaced (all escaped).
         self.assertIn("rag_sources_used", self.html)
         self.assertIn("Also used local Guide RAG sources", self.html)
         self.assertIn("Answered from current page context", self.html)
-        # group labels for the registry types
         self.assertIn("Metric Registry", self.html)
         self.assertIn("Data Source Registry", self.html)
-        self.assertIn("ck-guide-sources", self.html)
-        self.assertIn("ck-guide-src-group", self.html)
         self.assertIn("ck-guide-src-title", self.html)
-        self.assertIn("ck-guide-src-type", self.html)
         self.assertIn("ck-guide-src-score", self.html)
-        self.assertIn("s.score.toFixed(2)", self.html)   # score shown
-        self.assertIn("esc(s.title)", self.html)          # escaped
-        self.assertIn("rag_warning", self.html)
+        self.assertIn("s.score.toFixed(2)", self.html)
+        self.assertIn("esc(s.title)", self.html)
         self.assertIn("esc(b.rag_warning)", self.html)
-        self.assertIn(".ck-guide-sources{", self.html)    # CSS present
 
     def test_latency_feedback_and_slow_note(self):
-        # Elapsed time is captured at ask start and shown in the answer meta.
         self.assertIn("var t0=Date.now();", self.html)
         self.assertIn("(Date.now()-t0)/1000", self.html)
         self.assertIn("+secs+'s</span>'", self.html)
-        # A reassuring slow-response note appears after 10s, still pending.
         self.assertIn("can take a little while", self.html)
-        self.assertIn("10000", self.html)
-        # Retry re-asks the preserved last question (input not lost on failure).
         self.assertIn("ask(lastQuestion)", self.html)
 
     def test_copy_answer_is_clipboard_only_no_persistence(self):
-        # A copy-answer button uses the browser Clipboard API only — no
-        # persistence/telemetry, hidden when the API is unavailable.
         self.assertIn("ck-guide-copy", self.html)
-        # The only copy mechanism is the browser Clipboard API on the closure
-        # answer text — no upload, no storage of the answer.
         self.assertIn("navigator.clipboard.writeText(b.answer", self.html)
-        self.assertIn("copyBtn.hidden=true", self.html)   # graceful fallback
-        self.assertIn(".ck-guide-copy{", self.html)        # CSS present
+        self.assertIn("copyBtn.hidden=true", self.html)
 
 
 if __name__ == "__main__":
