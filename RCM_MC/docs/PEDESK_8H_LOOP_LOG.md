@@ -21,7 +21,8 @@ data, no runtime CMS/map/chart APIs, no unsupported claims.
 | 2026-05-24 06:0x | #611 Phase 3 evidence/prediction framework (docs+RAG) | `5a263347` | ✓ | ✓ | 200 | 4 RAG-indexed framework docs (199 docs). |
 | 2026-05-24 05:39 | #612 Dialysis vertical | `2c053ae8` | ✓ | ✓ | 200 | 7,557 real CMS Dialysis Facility Compare facilities; full factory. |
 | 2026-05-24 06:0x | #613 IRF / Inpatient Rehab vertical | `5f4f6727` | ✓ | ✓ | 200 | 1,221 real CMS IRF Compare facilities; full factory. |
-| 2026-05-24 06:xx | #6xx LTCH / Long-Term Care Hospital vertical | _pending merge_ | — | — | — | 317 real CMS LTCH Compare facilities; full factory. |
+| 2026-05-24 06:1x | #614 LTCH / Long-Term Care Hospital vertical | `43d3f97e` | ✓ | ✓ | 200 | 317 real CMS LTCH Compare facilities; full factory. |
+| 2026-05-24 06:2x | Phase 5 — coverage re-audit + final report (docs) | _pending merge_ | — | — | — | Audit regenerated (320 pages, 87 curated); final loop report. |
 
 ## Phase ledger
 
@@ -103,4 +104,12 @@ data, no runtime CMS/map/chart APIs, no unsupported claims.
   framework docs are auto-indexed into the RAG corpus (page/metric/source/
   doc documents). Dedicated metric/data-source registry cards for SNF +
   the new statistics are a queued enhancement.
-- **Phase 5 (queued):** re-run coverage audit + final report.
+- **Phase 5 (done):** coverage audit regenerated from `server.py` exact-match
+  page routes + `get_page_context` resolution —
+  `PEDESK_GUIDE_AI_COVERAGE_AUDIT.md` now reflects **320 page routes, 87
+  curated (73→87 over the loop), 233 safe-fallback**; all six verticals
+  resolve to curated context. Final loop report written to
+  `PEDESK_8H_LOOP_FINAL_REPORT.md`: 6 fully-built verticals (HH, Hospice,
+  SNF, Dialysis, IRF, LTCH) on 23,794 real CMS facilities, 202 RAG docs,
+  11,590 tests collected, every deploy green; ASC/DMEPOS/Dental honestly
+  queued rather than claimed.
