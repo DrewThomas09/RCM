@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_value_anchor, ck_source_purpose
 
 
 def _dscr_trend_svg(schedule) -> str:
@@ -421,6 +421,14 @@ def render_debt_service(params: dict = None) -> str:
 
 </div>"""
 
+    # Diligence-reform header: ILLUSTRATIVE today. PR 5 derives DSCR proxies
+    # from real HCRIS margin/NPR with a benchmark band and labeled assumptions.
+    body = ck_source_purpose(
+        purpose="Gauge debt-service coverage headroom vs benchmarks before "
+                "sizing leverage.",
+        universe="illustrative", source="Hardcoded benchmark figures",
+        next_action="Run HCRIS X-Ray for real margin / NPR inputs",
+        next_href="/diligence/hcris-xray") + body
     return chartis_shell(body, "Debt Service Coverage", active_nav="/debt-service",
         editorial_intro={
             "eyebrow": "DEBT SERVICE",

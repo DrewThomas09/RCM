@@ -11,7 +11,7 @@ from typing import Any, Dict, Optional
 
 from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_section_header, ck_kpi_block,
-    ck_fmt_moic, ck_fmt_pct,
+    ck_fmt_moic, ck_fmt_pct, ck_source_purpose,
 )
 
 
@@ -321,6 +321,15 @@ def render_payer_stress(params: Dict[str, str]) -> str:
 .ck-btn:hover { filter:brightness(1.15); }
 """
 
+    # Diligence-reform header: this page is an ILLUSTRATIVE corpus-calibrated
+    # model today — the payer-mix inputs are scenario sliders, not a target's
+    # real mix. PR 4 wires it to the real HCRIS payer-day mix.
+    body = ck_source_purpose(
+        purpose="Stress-test how a deal's MOIC bends as payer mix shifts — a "
+                "sensitivity framework, not a specific target's measured mix.",
+        universe="illustrative", source="Corpus-calibrated scenario model",
+        next_action="Attach a hospital to use its real HCRIS payer-day mix",
+        next_href="/diligence/hcris-xray") + body
     return chartis_shell(
         body,
         title="Payer Mix Stress Tester",
