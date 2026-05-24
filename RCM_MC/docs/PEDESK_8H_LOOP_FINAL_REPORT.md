@@ -93,7 +93,13 @@ investable-evidence threshold** and the **prediction ≠ causation** /
 ## Honestly queued (not built — would be fake breadth to claim)
 
 - **ASC** (Ambulatory Surgical Center) — quality-measure data exists
-  (`ASC_Facility`); mirrors the factory but not yet built.
+  (`ASC_Facility`, ~5,700 facilities), but the public file carries only
+  Facility Name / ID / NPI / City / State / ZIP plus the ASC-1…ASC-19
+  measures — **no county and no ownership type**. The shared sector factory's
+  market-intelligence layer (county competition + ownership-mix HHI) cannot
+  be built honestly from it, so a full-depth ASC vertical equal to the other
+  six is **not** possible from this dataset alone. Deferred rather than
+  shipped as a half-factory.
 - **DMEPOS** — supplier-supply proxy only; explicitly *not* a quality/outcome
   dataset, so a vertical would be supply context, not a quality screener.
 - **Dental** — no comparable CMS quality dataset; out of scope for this
