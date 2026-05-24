@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title, ck_value_anchor, ck_source_purpose
 
 
 def _cost_stack_svg(cost_lines, ebitda_margin: float) -> str:
@@ -314,6 +314,14 @@ def render_cost_structure(params: dict = None) -> str:
 
 </div>"""
 
+    # Diligence-reform header: ILLUSTRATIVE today (hardcoded cohort figures).
+    # PR 5 wires it to real HCRIS opex / opex-per-bed / opex-per-patient-day.
+    body = ck_source_purpose(
+        purpose="Break down a provider's cost structure vs peers to size the "
+                "operational gap behind the margin.",
+        universe="illustrative", source="Hardcoded cohort figures",
+        next_action="Run HCRIS X-Ray for real opex vs peers",
+        next_href="/diligence/hcris-xray") + body
     return chartis_shell(body, "Cost Structure Analyzer", active_nav="/cost-structure",
         editorial_intro={
             "eyebrow": "COST STRUCTURE",
