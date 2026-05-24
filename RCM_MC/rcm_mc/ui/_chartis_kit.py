@@ -616,21 +616,65 @@ _DATA_UNIVERSE = {
                        "Reference intelligence (payer/sponsor/sector) — not user-specific."),
     "mixed":          ("MIXED DATA", "mixed",
                        "Combines universes — each section is labeled separately."),
+    # HCRIS is CMS public data, called out separately because the HCRIS X-Ray
+    # gold-standard pulls it directly.
+    "hcris":          ("HCRIS PUBLIC DATA", "cms",
+                       "CMS HCRIS Medicare cost-report data — public, not your deals."),
+    # Diligence-reform confidence states (data-source matrix).
+    "derived":        ("DERIVED", "deals",
+                       "Computed from real values (assumptions labeled)."),
+    "illustrative":   ("ILLUSTRATIVE", "illus",
+                       "Hardcoded demo values — NOT a real source. Illustrative "
+                       "framework until a live data source is connected."),
+    "data-required":  ("DATA REQUIRED", "datareq",
+                       "Needs a user upload / CCD / internal file to activate."),
+    "experimental":   ("EXPERIMENTAL", "exp",
+                       "Real source exists but coverage/method is partial — caveated."),
 }
 
 
 def ck_data_universe(kind: str) -> str:
-    """A small mono chip naming the page's data universe.
+    """A small mono chip naming the page's data universe / confidence.
 
-    ``kind`` ∈ user-deals · user-portfolio · cms · corpus · research · mixed.
-    Renders nothing for an unknown kind (fail-safe). Style lives in the global
-    shell CSS (`.ck-universe`)."""
+    ``kind`` ∈ user-deals · user-portfolio · cms · hcris · corpus · research ·
+    mixed · derived · illustrative · data-required · experimental. Renders
+    nothing for an unknown kind (fail-safe). Style lives in the global shell
+    CSS (`.ck-universe`)."""
     rec = _DATA_UNIVERSE.get(kind)
     if rec is None:
         return ""
     label, cls, tip = rec
     return (f'<span class="ck-universe ck-universe-{cls}" title="{_esc(tip)}">'
             f'{_esc(label)}</span>')
+
+
+def ck_source_purpose(*, purpose: str, universe: str, source: str,
+                      confidence: str = "", next_action: str = "",
+                      next_href: str = "") -> str:
+    """Diligence source-and-purpose header band.
+
+    Declares, for any analyzer/diligence page: what decision it supports
+    (purpose), which data universe + confidence it uses (chips), the named
+    source, and the next action. The reform contract requires every Diligence
+    page to carry one so a deal team never mistakes an illustrative model for
+    live evidence. ``universe``/``confidence`` are ck_data_universe kinds."""
+    chips = ck_data_universe(universe)
+    if confidence and confidence != universe:
+        chips += ck_data_universe(confidence)
+    src = (f'<span class="ck-sp-src"><b>Source:</b> {_esc(source)}</span>'
+           if source else "")
+    nxt = ""
+    if next_action:
+        nxt = (f'<a class="ck-sp-next" href="{_esc(next_href or "#")}">'
+               f'{_esc(next_action)} &rarr;</a>') if next_href else (
+               f'<span class="ck-sp-next">{_esc(next_action)}</span>')
+    return (
+        '<div class="ck-sp">'
+        f'<div class="ck-sp-chips">{chips}</div>'
+        f'<p class="ck-sp-purpose">{_esc(purpose)}</p>'
+        f'<div class="ck-sp-meta">{src}{nxt}</div>'
+        '</div>'
+    )
 
 
 def ck_illustrative_note(what: str = "figures") -> str:
@@ -3902,6 +3946,21 @@ _CSS_INLINE_FALLBACK = """
   .ck-universe-corpus { color:var(--sc-warning,#b8732a); }
   .ck-universe-ref    { color:var(--sc-text-dim,#6a7480); }
   .ck-universe-mixed  { color:var(--sc-text-faint,#8b94a0); }
+  .ck-universe-illus  { color:var(--sc-warning,#b8732a); }   /* illustrative — amber */
+  .ck-universe-datareq{ color:var(--sc-critical,#b5321e); } /* data required — red */
+  .ck-universe-exp    { color:var(--sc-teal-ink,#155752); } /* experimental */
+  /* Diligence source-and-purpose header band */
+  .ck-sp { border:1px solid var(--sc-rule); border-left:3px solid var(--sc-teal,#155752);
+    background:var(--sc-paper,#faf6ec); padding:12px 16px; margin:0 0 var(--sc-s-5,20px); }
+  .ck-sp-chips { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+  .ck-sp-purpose { font-family:var(--sc-serif); font-size:14.5px; line-height:1.5;
+    color:var(--sc-text,#2a3a4a); margin:0 0 6px; max-width:80ch; }
+  .ck-sp-meta { display:flex; gap:18px; flex-wrap:wrap; font-family:var(--sc-mono);
+    font-size:10.5px; letter-spacing:.04em; color:var(--sc-text-dim,#6a7480); }
+  .ck-sp-src b { color:var(--sc-text,#2a3a4a); font-weight:600; }
+  .ck-sp-next { color:var(--sc-teal,#155752); text-decoration:none; text-transform:uppercase;
+    letter-spacing:.1em; }
+  .ck-sp-next:hover { color:var(--sc-teal-ink,#155752); }
   .ck-badge { display:inline-flex; align-items:center; padding:3px 8px; font-family:var(--sc-sans); font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; border:1px solid currentColor; border-radius:2px; }
   .ck-badge.tone-positive { color:var(--sc-positive); }
   .ck-badge.tone-warning  { color:var(--sc-warning); }
