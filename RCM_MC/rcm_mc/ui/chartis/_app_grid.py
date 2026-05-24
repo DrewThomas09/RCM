@@ -42,7 +42,7 @@ def _esc(s: Any) -> str:
 # shell as extra_css for the grid view only — does not affect the default
 # flat-scroll /app.
 APP_GRID_CSS = """
-.cc-page{--cc-page-bg:#ebe5d3;--cc-paper:#faf6ec;--cc-paper2:#f3eddb;
+.cc-page{--cc-page-bg:var(--sc-parchment,#f2ede3);--cc-paper:#faf6ec;--cc-paper2:#f3eddb;
   --cc-ink:#15202b;--cc-ink2:#2a3a4a;--cc-muted:#6a7480;--cc-muted2:#8b94a0;
   --cc-rule:#c9c1ac;--cc-green:#1f7a5a;--cc-amber:#b8842e;--cc-navy:#0d2336;
   --cc-red:#b14a3a;--cc-green-soft:#d6e8df;
@@ -71,7 +71,7 @@ APP_GRID_CSS = """
 .cc-btn-primary{background:var(--cc-ink);color:var(--cc-paper);}
 .cc-btn:focus-visible{outline:2px solid var(--cc-green);outline-offset:2px;}
 /* 12-column dossier grid */
-.cc-grid{display:grid;grid-template-columns:repeat(12,1fr);grid-auto-rows:140px;gap:14px;}
+.cc-grid{display:grid;grid-template-columns:repeat(12,1fr);grid-auto-rows:minmax(140px,auto);gap:14px;}
 .cc-5x2{grid-column:span 5;grid-row:span 2;}
 .cc-4x1{grid-column:span 4;grid-row:span 1;}
 .cc-3x1{grid-column:span 3;grid-row:span 1;}
@@ -91,7 +91,7 @@ APP_GRID_CSS = """
 }
 /* Dossier card */
 .cc-card{position:relative;background:var(--cc-paper);border:1px solid var(--cc-rule);
-  display:flex;flex-direction:column;overflow:hidden;min-height:0;}
+  display:flex;flex-direction:column;overflow:visible;min-height:0;}
 .cc-tag{position:absolute;top:0;left:0;padding:4px 12px 4px 14px;font-family:var(--cc-mono);
   font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--cc-paper);
   background:var(--cc-ink);}
@@ -105,7 +105,7 @@ APP_GRID_CSS = """
   color:var(--cc-ink2);margin:0;}
 .cc-title-em{font-style:normal;color:var(--cc-green);}
 .cc-pin{color:var(--cc-muted2);opacity:.35;font-size:14px;}
-.cc-body{flex:1;padding:16px 20px;overflow:hidden;min-height:0;}
+.cc-body{flex:1;padding:16px 20px;overflow:visible;min-height:0;}
 .cc-body-scroll{overflow:auto;}
 .cc-body-scroll::-webkit-scrollbar{width:7px;}
 .cc-body-scroll::-webkit-scrollbar-thumb{background:var(--cc-rule);border-radius:4px;}
