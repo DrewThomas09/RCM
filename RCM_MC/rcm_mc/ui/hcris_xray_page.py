@@ -1003,7 +1003,6 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
     workstation = _xray_workstation(q, state_filter, summary)
     body = (
         _scoped_styles()
-        + _WORKSTATION_CSS
         + landing_title
         + '<div class="hx-wrap xr">'
         + deal_context_bar(qs, active_surface="hcris")
@@ -1012,9 +1011,13 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
         + stats
         + '</div>'
     )
+    # _WORKSTATION_CSS is a raw CSS string — it MUST go through extra_css (which
+    # the shell wraps in <style>), never concatenated into the body, or it
+    # renders as visible CSS text at the top of the page. (Matches the results
+    # path below, which already passes it via extra_css.)
     return chartis_shell(
         body, "HCRIS X-Ray",
-        extra_css=_EXPLAINER_CSS + _xray_kit_css(),
+        extra_css=_EXPLAINER_CSS + _xray_kit_css() + _WORKSTATION_CSS,
     )
 
 
