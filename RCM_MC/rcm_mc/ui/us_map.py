@@ -22,24 +22,32 @@ import itertools
 import math
 from typing import Any, Callable, Dict, Iterable, List, Optional
 
-# Standard US state tile-grid positions (row, col) — north→south = low→high
-# row, west→east = low→high col. Approximate geographic arrangement (tile
-# grids are inherently stylized); all 50 states + DC, each a unique cell.
+# US state tile-grid positions (row, col) — north→south = low→high row,
+# west→east = low→high col. Geographic-ish equal-area cartogram covering all
+# 50 states + DC. Ported from the Portfolio Map design handoff's coordinate
+# table (`[col, row]` there → `(row, col)` here) so the shape reads as the US:
+# Florida (6,8) nests directly under SC/GA in the SE (no "floating Florida"),
+# Texas (7,3) sits south under Oklahoma, New England nests in the NE corner,
+# and the Pacific/Mountain states step down the west edge. Tile grids are
+# inherently stylized (equal-size cells, not coastline-accurate) — the legend
+# says so. Changing positions here improves every map that reuses this
+# renderer (portfolio map + sector screeners).
 _TILE: Dict[str, tuple] = {
-    "ME": (0, 10),
-    "VT": (1, 9), "NH": (1, 10),
-    "WA": (2, 0), "ID": (2, 1), "MT": (2, 2), "ND": (2, 3), "MN": (2, 4),
-    "IL": (2, 5), "WI": (2, 6), "MI": (2, 7), "NY": (2, 8), "RI": (2, 9),
-    "MA": (2, 10),
-    "OR": (3, 0), "NV": (3, 1), "WY": (3, 2), "SD": (3, 3), "IA": (3, 4),
-    "IN": (3, 5), "OH": (3, 6), "PA": (3, 7), "NJ": (3, 8), "CT": (3, 9),
-    "CA": (4, 0), "UT": (4, 1), "CO": (4, 2), "NE": (4, 3), "MO": (4, 4),
-    "KY": (4, 5), "WV": (4, 6), "VA": (4, 7), "MD": (4, 8), "DE": (4, 9),
-    "AZ": (5, 1), "NM": (5, 2), "KS": (5, 3), "AR": (5, 4), "TN": (5, 5),
-    "NC": (5, 6), "SC": (5, 7), "DC": (5, 8),
+    "ME": (0, 11),
+    "VT": (1, 10), "NH": (1, 11),
+    "WA": (2, 0), "MT": (2, 2), "ND": (2, 3), "MN": (2, 4), "WI": (2, 5),
+    "MI": (2, 6), "NY": (2, 9), "MA": (2, 10), "RI": (2, 11),
+    "ID": (3, 1), "WY": (3, 2), "SD": (3, 3), "IA": (3, 4), "IL": (3, 5),
+    "IN": (3, 6), "OH": (3, 7), "PA": (3, 8), "NJ": (3, 9), "CT": (3, 10),
+    "OR": (4, 0), "NV": (4, 1), "UT": (4, 2), "CO": (4, 3), "NE": (4, 4),
+    "MO": (4, 5), "KY": (4, 6), "WV": (4, 7), "VA": (4, 8), "MD": (4, 9),
+    "DE": (4, 10),
+    "CA": (5, 0), "AZ": (5, 1), "NM": (5, 2), "KS": (5, 3), "AR": (5, 4),
+    "TN": (5, 5), "NC": (5, 6), "SC": (5, 7), "DC": (5, 8),
     "OK": (6, 3), "LA": (6, 4), "MS": (6, 5), "AL": (6, 6), "GA": (6, 7),
-    "HI": (7, 0), "TX": (7, 3), "FL": (7, 8),
-    "AK": (8, 0),
+    "FL": (6, 8),
+    "TX": (7, 3),
+    "AK": (7, 0), "HI": (7, 1),
 }
 
 STATE_NAMES: Dict[str, str] = {
@@ -66,7 +74,9 @@ _PAD = 6            # gap between cells
 _STEP = _CELL + _PAD
 _MAX_ROW = max(r for r, _ in _TILE.values())
 _MAX_COL = max(c for _, c in _TILE.values())
-_NO_DATA_FILL = "var(--sc-parchment-2,#efe9dd)"
+# No-data cells use the handoff's neutral "heat-0" cream so empty cells read
+# as part of the oat page field rather than a separate bright cream block.
+_NO_DATA_FILL = "var(--sc-parchment-2,#ece3cb)"
 _ACCENT = "var(--sc-warning,#b8732a)"
 _uid = itertools.count(1)
 
