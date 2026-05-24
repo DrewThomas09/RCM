@@ -42,6 +42,108 @@ from .power_ui import (
 
 
 # ────────────────────────────────────────────────────────────────────
+# B · Workstation landing — shared xray_kit, two-up intake + sample preview
+# ────────────────────────────────────────────────────────────────────
+
+_WORKSTATION_CSS = """
+.xr-ws{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;margin-bottom:16px;}
+@media (max-width:1024px){.xr-ws{grid-template-columns:1fr;}}
+.xr-ws-field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+.xr-ws-field label{font-family:var(--xr-mono);font-size:10px;letter-spacing:.14em;
+ text-transform:uppercase;color:var(--xr-muted);}
+.xr-ws-field input{background:var(--xr-paper3);border:1px solid var(--xr-rule);
+ padding:10px 12px;font-family:var(--xr-mono);font-size:13px;color:var(--xr-ink);}
+.xr-ws-field input:focus{outline:2px solid var(--xr-green);outline-offset:-2px;}
+.xr-seg{display:flex;border:1px solid var(--xr-rule);background:var(--xr-paper3);width:max-content;}
+.xr-seg label{font-family:var(--xr-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+ padding:7px 12px;border-right:1px solid var(--xr-rule);cursor:pointer;color:var(--xr-muted);}
+.xr-seg label:last-child{border-right:0;}
+.xr-seg input{position:absolute;opacity:0;pointer-events:none;}
+.xr-seg input:checked + label,.xr-seg label:has(input:checked){background:var(--xr-navy);color:var(--xr-paper);}
+.xr-ws-actions{display:flex;align-items:center;gap:12px;margin-top:6px;flex-wrap:wrap;}
+.xr-ws-readout{font-family:var(--xr-mono);font-size:10px;letter-spacing:.08em;color:var(--xr-muted);}
+.xr-ws-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0;}
+.xr-ws-kpi .k{font-family:var(--xr-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--xr-muted);}
+.xr-ws-kpi .v{font-family:var(--xr-serif);font-size:24px;color:var(--xr-ink);line-height:1;}
+.xr-ws-kpi .v.red{color:var(--xr-red);}
+.xr-sample-tag{font-family:var(--xr-mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+ color:var(--xr-amber);background:var(--xr-amber-soft);border:1px solid var(--xr-amber);padding:2px 7px;}
+"""
+
+
+def _xray_kit_css() -> str:
+    from .xray_kit import XRAY_CSS
+    return XRAY_CSS
+
+
+def _xray_workstation(q: str, state_filter: str, summary: dict) -> str:
+    """B · Workstation landing: intake form (left) + labelled SAMPLE (right)."""
+    from . import xray_kit as k
+    # ── Left: intake (Identify + Peer engine + actions) ──
+    fy_seg = (
+        '<div class="xr-seg" role="radiogroup" aria-label="Fiscal year">'
+        + "".join(
+            f'<label>{lbl}<input type="radio" name="fiscal_year" value="{val}"'
+            f'{" checked" if i == 3 else ""}></label>'
+            for i, (lbl, val) in enumerate(
+                [("FY2022", "2022"), ("FY2021", "2021"),
+                 ("FY2020", "2020"), ("Any", "")]))
+        + '</div>'
+    )
+    intake = (
+        '<form method="get" action="/diligence/hcris-xray">'
+        + k.xr_eyebrow("① Identify the hospital")
+        + '<div class="xr-ws-field"><label>Name / CCN / city substring</label>'
+        f'<input name="q" value="{html.escape(q)}" '
+        'placeholder="e.g. REGIONAL, 010001, DOTHAN" autofocus></div>'
+        '<div class="xr-ws-field"><label>State filter (optional)</label>'
+        f'<input name="state" value="{html.escape(state_filter)}" '
+        'placeholder="e.g. AL" maxlength="2"></div>'
+        '<div class="xr-ws-field"><label>Fiscal year</label>' + fy_seg + '</div>'
+        + k.xr_eyebrow("② Peer engine")
+        + '<div class="xr-ws-grid">'
+        '<div class="xr-ws-field"><label>Peer pool size</label>'
+        '<input name="peer_k" value="25"></div>'
+        '<div class="xr-ws-field"><label>Bed band ±</label>'
+        '<input name="bed_band_pct" value="0.30"></div>'
+        '</div>'
+        '<div class="xr-ws-actions">'
+        '<button class="xr-btn" type="submit">▸ Run X-Ray</button>'
+        '<span class="xr-ws-readout">~2.4s · matched peer pool computed at run</span>'
+        '</div>'
+        '</form>'
+    )
+    left = f'<div class="xr-card">{intake}</div>'
+
+    # ── Right: labelled SAMPLE preview (handoff Stroger values, marked sample) ──
+    sample_band = k.xr_peer_band(2.0, 12.0, 2.7, 3.5, 8.8, 11.8, "aboveRed")
+    right = (
+        '<div class="xr-card">'
+        + k.xr_eyebrow("What you'll get")
+        + '<div style="margin-bottom:10px;"><span class="xr-sample-tag">Sample output</span></div>'
+        '<div class="xr-ws-grid">'
+        '<div class="xr-ws-kpi"><div class="k">Medicaid day share</div>'
+        '<div class="v red">11.8%</div></div>'
+        '<div class="xr-ws-kpi"><div class="k">Opex / patient-day</div>'
+        '<div class="v red">$13,169</div></div>'
+        '</div>'
+        '<div class="xr-source" style="margin:4px 0 2px;">Peer band · operating margin</div>'
+        + sample_band
+        + '<div style="font-family:var(--xr-mono);font-size:10px;color:var(--xr-muted);'
+        'display:flex;justify-content:space-between;margin-top:4px;">'
+        '<span>P25 2.7%</span><span style="color:var(--xr-red);font-weight:600;">'
+        'target 11.8%</span><span>P75 8.8%</span></div>'
+        + k.xr_caveat('Illustrative SAMPLE (Stroger Hospital · CCN 140124 · '
+                      'FY2022). Real runs render live HCRIS values for the '
+                      'matched peer pool — nothing here is your target.')
+        + k.xr_source(f"SOURCE: CMS HCRIS · {summary.get('total_rows', 0):,} "
+                      f"filings · {len(summary.get('states', []))} states")
+        + '</div>'
+    )
+    return f'<div class="xr-ws">{left}{right}</div>'
+
+
+# ────────────────────────────────────────────────────────────────────
 # Scoped CSS (hx- prefix)
 # ────────────────────────────────────────────────────────────────────
 
@@ -826,20 +928,24 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
             source='CMS HCRIS — refreshed quarterly from cms.gov',
         )
     )
+    # B · Workstation landing — two-up: intake form (left) + labelled SAMPLE
+    # preview (right), rebuilt on the shared xray_kit. The search/CCN engine
+    # path is unchanged (the form still submits q/state; results below).
+    workstation = _xray_workstation(q, state_filter, summary)
     body = (
         _scoped_styles()
+        + _WORKSTATION_CSS
         + landing_title
-        + '<div class="hx-wrap">'
+        + '<div class="hx-wrap xr">'
         + deal_context_bar(qs, active_surface="hcris")
-        + ck_panel(search_form, title="Find a hospital")
+        + workstation
         + search_block
-        + ck_panel(direct_form, title="Direct X-Ray by CCN")
         + stats
         + '</div>'
     )
     return chartis_shell(
         body, "HCRIS X-Ray",
-        extra_css=_EXPLAINER_CSS,
+        extra_css=_EXPLAINER_CSS + _xray_kit_css(),
     )
 
 
