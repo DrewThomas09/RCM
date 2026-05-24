@@ -2282,18 +2282,12 @@ class RCMHandler(BaseHTTPRequestHandler):
                 body = chartis_shell(body, title=title)
             except Exception:  # noqa: BLE001 — never let this safety net 500
                 pass
-        # Editorial-chrome augmentation: backfill the section subnav
-        # rail when the renderer didn't pass active_nav, and always
-        # promote the topbar nav-link + matching subnav pill to
-        # "active" based on the current request path.
-        # Bare "ck-subnav" appears in inline CSS (.ck-subnav{...}) on
-        # every editorial page — match the element opener instead so
-        # the rail backfill only triggers when no actual rail rendered.
-        needs_rail_backfill = (
-            status == HTTPStatus.OK
-            and "ck-topbar" in body
-            and '<nav class="ck-subnav"' not in body
-        )
+        # Editorial-chrome augmentation: promote the topbar nav-link to
+        # "active" based on the current request path, and auto-inject
+        # breadcrumbs. The section navigation now lives entirely in the
+        # topbar mega-menu dropdowns, so the legacy second-line ".ck-subnav"
+        # rail is NO LONGER backfilled here (it produced a persistent second
+        # nav bar under the topbar — two competing nav systems at once).
         needs_active_marks = (
             status == HTTPStatus.OK and "ck-topbar" in body
         )
@@ -2308,24 +2302,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 import html as _h
                 # Cached cleaned path used by breadcrumbs + pill match
                 req_path_clean = req_path.rstrip("/") or "/"
-                if needs_rail_backfill and section and section in _SUB_NAV:
-                    pills = "".join(
-                        f'<a href="{_h.escape(item["href"], quote=True)}" '
-                        f'class="ck-subnav-link">{_h.escape(item["label"])}</a>'
-                        for item in _SUB_NAV[section]
-                    )
-                    rail = (
-                        '<nav class="ck-subnav" aria-label="Section">'
-                        f'<div class="ck-subnav-inner">{pills}</div>'
-                        '</nav>'
-                    )
-                    import re as _re_subnav
-                    body = _re_subnav.sub(
-                        r"</header>", rail + "</header>",
-                        body, count=1,
-                    )
-                # Topbar active-link mark: applies whether the rail
-                # was kit-emitted or backfill-injected.
+                # Topbar active-link mark based on the resolved section.
                 if section:
                     for nav_item in _CORPUS_NAV:
                         if nav_item.get("key") == section:

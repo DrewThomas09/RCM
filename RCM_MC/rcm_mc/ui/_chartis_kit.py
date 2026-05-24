@@ -6266,9 +6266,17 @@ _NAV_MENU_JS = """
   // between the nav item and its panel); re-entering cancels the close.
   nav.addEventListener('mouseleave', function(){ closeTimer = setTimeout(closeAll, 140); });
   nav.addEventListener('mouseenter', function(){ clearTimeout(closeTimer); });
-  // Escape, click-outside, and focus leaving the topbar all close everything.
+  // Escape closes everything.
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeAll(); });
-  document.addEventListener('pointerdown', function(e){ if (!bar.contains(e.target)) closeAll(); });
+  // Any pointer-down that is NOT inside an open nav group closes the menus —
+  // this covers clicking outside the topbar AND clicking the in-topbar
+  // Guide / Search / +New / avatar controls (so a nav menu never stays stuck
+  // over their surfaces).
+  document.addEventListener('pointerdown', function(e){
+    var t = e.target;
+    if (!t || !t.closest || !t.closest('.ck-nav-group')) closeAll();
+  });
+  // Focus leaving the topbar entirely closes the menus.
   bar.addEventListener('focusout', function(e){ if (!bar.contains(e.relatedTarget)) closeAll(); });
 })();
 </script>
