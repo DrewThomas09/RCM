@@ -3650,6 +3650,173 @@ _MANUAL: List[PageContext] = [
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
+    # ── Diligence analyzer pages reformed in the honesty stack (PRs 4/5/8) ──
+    # These carry a nuanced real/derived/illustrative data story; the Guide
+    # must state it accurately so a deal team never reads an illustrative
+    # model as live evidence.
+    _ctx(
+        "/payer-stress", "Payer Stress",
+        short_description="Payer-mix stress model. When a target CCN is "
+        "attached it seeds the mix from the target's REAL HCRIS payer-day "
+        "split; with no/invalid CCN it falls back to illustrative slider "
+        "defaults.",
+        primary_purpose="Stress a target's revenue against shifts in "
+        "Medicare / Medicaid / commercial payer mix.",
+        common_questions=["How exposed is this target to a payer-mix shift?",
+                         "Where does the starting mix come from?",
+                         "Is this the target's real mix or a placeholder?"],
+        inputs=["Optional target CCN / name (?ccn=, ?name=) resolved via "
+                "HCRIS find_hospital; payer-mix sliders."],
+        outputs=["A stressed revenue/margin view and the seeded payer mix, "
+                 "with a header chip flipping to HCRIS / DERIVED when a CCN "
+                 "resolves."],
+        key_metrics=["Medicare / Medicaid / commercial day %", "Stressed "
+                     "revenue delta"],
+        data_sources=["HCRIS hospital cost reports (real) when a CCN is "
+                      "attached — medicare_day_pct / medicaid_day_pct / "
+                      "other_day_pct; illustrative slider defaults otherwise."],
+        model_logic_summary="Seeds base_mcare / base_mcaid / base_comm from "
+        "the resolved HCRIS day-mix, then applies the user's stress sliders. "
+        "Commercial is approximated by the HCRIS 'other' bucket "
+        "(commercial + self-pay). See payer_stress_page.py.",
+        why_it_matters="Payer mix is a first-order driver of revenue "
+        "durability and reimbursement risk.",
+        diligence_use_cases=["Testing a target's sensitivity to Medicaid "
+                            "expansion/contraction or a commercial-rate step-down."],
+        interpretation_guidance=[
+            "Real ONLY when a CCN resolves to a HCRIS hospital — otherwise the "
+            "starting mix is an illustrative default, not the target's data.",
+            "'Commercial' is the HCRIS 'other' day bucket (commercial + "
+            "self-pay), a labeled proxy, not a pure commercial figure.",
+        ],
+        limitations=["HCRIS is hospital-level; non-hospital targets have no "
+                     "CCN and stay illustrative.",
+                     "Day-mix is a volume proxy, not a revenue-mix measure."],
+        related_routes=["/diligence/hcris-xray", "/cost-structure",
+                        "/debt-service"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/cost-structure", "Cost Structure",
+        short_description="Operating-cost view. With a target CCN attached it "
+        "shows REAL HCRIS opex/bed, opex/patient-day and operating margin; the "
+        "COGS / SG&A / labor split stays illustrative-labeled.",
+        primary_purpose="Frame a target's cost base and operating efficiency "
+        "against real HCRIS aggregates where available.",
+        common_questions=["What is this target's operating cost per bed / "
+                         "patient-day?", "Which figures are real vs modeled?"],
+        inputs=["Optional target CCN (?ccn=) resolved via HCRIS; the "
+                "illustrative cost-split assumptions otherwise."],
+        outputs=["A real HCRIS fact strip (opex/bed, opex/patient-day, "
+                 "operating margin) with an HCRIS PUBLIC DATA / DERIVED header "
+                 "when a CCN resolves; an illustrative COGS/SG&A/labor split."],
+        key_metrics=["Opex per bed", "Opex per patient-day", "Operating margin"],
+        data_sources=["HCRIS hospital cost reports (real opex / bed / "
+                      "patient-day / margin) when a CCN is attached; "
+                      "illustrative constants for the cost-category split."],
+        model_logic_summary="Pulls real HCRIS opex aggregates for the resolved "
+        "hospital; the COGS/SG&A/labor breakdown is an illustrative template, "
+        "not derived from the target. See cost_structure_page.py.",
+        why_it_matters="Cost efficiency vs peers is a core lever in the EBITDA "
+        "bridge.",
+        diligence_use_cases=["Comparing a target's opex intensity to peer "
+                            "bands before underwriting cost-out theses."],
+        interpretation_guidance=[
+            "Only the opex aggregates + operating margin are real HCRIS; the "
+            "COGS/SG&A/labor split is illustrative and labeled as such.",
+            "Degrades to fully illustrative when no/invalid CCN.",
+        ],
+        limitations=["HCRIS opex is an aggregate; it does not decompose into "
+                     "the cost categories shown in the split."],
+        related_routes=["/diligence/hcris-xray", "/payer-stress",
+                        "/debt-service"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/debt-service", "Debt Service",
+        short_description="Debt-capacity view. With a target CCN attached it "
+        "shows a REAL HCRIS operating-cash PROXY (operating margin × net "
+        "patient revenue); actual debt balances and covenants are DATA "
+        "REQUIRED (no public source).",
+        primary_purpose="Frame a target's ability to service debt from "
+        "operations, using a clearly-labeled HCRIS proxy.",
+        common_questions=["Can this target cover debt service from "
+                         "operations?", "Which numbers are real vs required?"],
+        inputs=["Optional target CCN (?ccn=) resolved via HCRIS; user-entered "
+                "debt terms (not publicly sourced)."],
+        outputs=["A real HCRIS operating-cash proxy (labeled a proxy) and "
+                 "DATA REQUIRED placeholders for debt balances, rate and "
+                 "covenant tests."],
+        key_metrics=["Operating-cash proxy (margin × NPR)", "DSCR (only once "
+                     "real debt terms are supplied)"],
+        data_sources=["HCRIS hospital cost reports (operating margin × net "
+                      "patient revenue, a labeled operating-cash PROXY) when a "
+                      "CCN is attached; debt balances / covenants are DATA "
+                      "REQUIRED — no public source."],
+        model_logic_summary="Approximates operating cash as operating_margin × "
+        "NPR from HCRIS; it is NOT measured operating cash flow. Debt-side "
+        "inputs must be supplied to compute a real DSCR. See debt_service_page.py.",
+        why_it_matters="Debt serviceability gates leverage capacity and "
+        "covenant headroom.",
+        diligence_use_cases=["A first-pass read on operating-cash adequacy "
+                            "before real debt terms are loaded."],
+        interpretation_guidance=[
+            "The operating-cash figure is a PROXY (margin × NPR), not measured "
+            "cash flow — treat as directional.",
+            "DSCR / covenant headroom are not real until actual debt terms are "
+            "entered; the page labels these DATA REQUIRED.",
+        ],
+        limitations=["No public source for a target's debt stack; the page "
+                     "cannot compute a real DSCR without user-entered terms."],
+        related_routes=["/diligence/hcris-xray", "/cost-structure",
+                        "/covenant-headroom"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/cms-apm", "CMS APM Tracker",
+        short_description="CMS Innovation Center (CMMI) alternative-payment-"
+        "model tracker. The program catalog / timelines are REAL public "
+        "reference (curated); the portfolio-exposure and commercial-adjacency "
+        "figures are an ILLUSTRATIVE worked example.",
+        primary_purpose="Track which CMS APMs a target participates in and the "
+        "policy calendar that moves its value-based revenue.",
+        common_questions=["Which CMS APMs are active and when do they sunset?",
+                         "Is the portfolio exposure shown my real data?"],
+        inputs=["None required — renders the curated CMMI program catalog; "
+                "attach a real deal to map its actual APM participation."],
+        outputs=["A real CMMI program catalog (MSSP, ACO REACH, PCF, MCP, "
+                 "BPCI-A, TEAM, …) with structures and sunset dates, plus an "
+                 "explicitly-labeled ILLUSTRATIVE portfolio-exposure overlay."],
+        key_metrics=["Active programs", "Lives covered", "Annual CMS payments",
+                     "Avg savings rate"],
+        data_sources=["CMS Innovation Center (CMMI) program descriptions — "
+                      "public reference, curated approximations (not a live "
+                      "CMS feed); the portfolio-exposure / commercial-adjacency "
+                      "figures are illustrative, not the user's deals."],
+        model_logic_summary="Surfaces a curated CMMI program catalog + policy "
+        "calendar (public fact); the 'Project …' portfolio exposures are a "
+        "worked example scoped under an Illustrative-template marker. See "
+        "cms_apm_tracker.py / cms_apm_tracker_page.py.",
+        why_it_matters="APM participation and sunsets directly move a target's "
+        "value-based revenue and risk.",
+        diligence_use_cases=["Mapping a target's value-based-care exposure and "
+                            "the 2026–27 policy overhang."],
+        interpretation_guidance=[
+            "Program names, structures and timelines are public fact; the "
+            "figures are curated approximations, not a live CMS pull.",
+            "The portfolio-exposure / commercial-adjacency sections are a "
+            "worked example — attach a real deal for actual participation.",
+        ],
+        limitations=["No live CMS feed wired yet; figures are curated.",
+                     "Portfolio overlay is illustrative until a deal is attached."],
+        related_routes=["/payer-rate-trends", "/diligence/checklist",
+                        "/regulatory-calendar"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
 ]
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
