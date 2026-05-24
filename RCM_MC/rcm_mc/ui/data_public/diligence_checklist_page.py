@@ -1,7 +1,9 @@
 """Diligence Checklist Generator page — /diligence-checklist."""
 from __future__ import annotations
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_source_purpose,
+)
 
 
 _SECTORS = [
@@ -79,6 +81,9 @@ def _checklist_section(category: str, items: list) -> str:
         rf_badge = (f'<span style="color:{P["negative"]};font-size:9px;'
                     f'border:1px solid {P["negative"]};padding:1px 4px;margin-left:6px">RED FLAG</span>'
                     if item.is_red_flag else "")
+        # Heuristic risk weight derived from the item's status
+        # (CRITICAL/WARNING/MISSING/PASS) — NOT a measured corpus failure
+        # frequency. Labeled honestly in the column header + caveat below.
         fail_pct = f"{item.corpus_fail_rate * 100:.0f}%"
         rows.append(
             f'<tr style="background:{rbg}">'
@@ -105,7 +110,7 @@ def _checklist_section(category: str, items: list) -> str:
         f'<th {hdr_l}>Priority</th>'
         f'<th {hdr_l}>Item</th>'
         f'<th {hdr_l}>Description</th>'
-        f'<th {hdr_r}>Corpus Fail%</th>'
+        f'<th {hdr_r} title="Heuristic risk weight from item status — not a measured corpus failure rate">Risk Wt.</th>'
         f'<th {hdr_l}>Status</th>'
         f'</tr></thead>'
         f'<tbody>{"".join(rows)}</tbody>'
@@ -175,6 +180,24 @@ def render_diligence_checklist(params: dict) -> str:
     from rcm_mc.data_public.diligence_checklist import compute_diligence_checklist
     r = compute_diligence_checklist(sector, ev_mm, comm_pct=comm_pct, ar_days=ar_days)
 
+    # Honest provenance: returns analysis (MOIC/IRR/leverage vs corpus) and the
+    # corpus-deal count are computed against the real deals corpus; the rule
+    # thresholds and per-item "Risk Wt." are heuristic, not measured frequencies.
+    real_corpus = r.corpus_deal_count > 0
+    header = ck_source_purpose(
+        purpose=("Generate an IC-ready diligence checklist for a "
+                 f"{sector} target — flag red flags and open questions "
+                 "before the investment committee."),
+        universe="corpus" if real_corpus else "derived",
+        confidence="derived",
+        source=(f"Deals corpus (n={r.corpus_deal_count}; realized MOIC/IRR/"
+                "leverage benchmarks) + diligence rule engine"
+                if real_corpus else
+                "Diligence rule engine (no corpus deals loaded yet)"),
+        next_action="Attach a deal to benchmark returns against the corpus",
+        next_href="/diligence/checklist",
+    )
+
     kpis = ck_kpi_block("Total Items", str(r.total_items))
     kpis += ck_kpi_block("Critical", str(r.critical_items),
                          sub="Require immediate attention")
@@ -197,7 +220,19 @@ def render_diligence_checklist(params: dict) -> str:
     border = P["border"]
     tdim = P["text_dim"]
 
+    caveat = (
+        f'<p style="margin:8px 2px 0;font-family:\'JetBrains Mono\',monospace;'
+        f'font-size:10px;color:{tdim};line-height:1.5">'
+        f'<b>Risk Wt.</b> is a heuristic weight derived from each item’s '
+        f'status (CRITICAL/WARNING/MISSING/PASS) — not a measured corpus '
+        f'failure frequency. Returns benchmarks (MOIC/IRR/leverage vs corpus) '
+        f'and the corpus-deal count are computed against the real deals corpus.'
+        f'</p>'
+    )
+
     content = f'''
+{header}
+
 {_input_form(params)}
 
 <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:12px">
@@ -214,6 +249,7 @@ def render_diligence_checklist(params: dict) -> str:
 
 <div style="margin-top:12px">
   {sections}
+  {caveat}
 </div>
 '''
 
