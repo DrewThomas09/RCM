@@ -22,7 +22,7 @@ class TopBarFidelityTests(unittest.TestCase):
         # Handoff: nav items with a section sub-nav show a dropdown caret;
         # Home (dashboard root) does not.
         pipeline = _topbar("pipeline")
-        self.assertEqual(pipeline.count("ck-nav-caret"), 5)  # all but Home
+        self.assertEqual(pipeline.count("ck-nav-caret"), 6)  # all but Home (+Source)
         # Home itself carries no caret immediately after its label.
         self.assertNotIn('>Home<span class="ck-nav-caret"', pipeline)
         # The active section's caret renders.

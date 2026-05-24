@@ -27,8 +27,8 @@ class TopbarDropdownTests(unittest.TestCase):
 
     def test_each_section_item_has_a_dropdown_group_and_menu(self):
         # Five section items (all but Home) → five hover groups + five mega menus.
-        self.assertEqual(self.html.count("ck-nav-group"), 5)
-        self.assertEqual(self.html.count("ck-nav-mega"), 5)
+        self.assertEqual(self.html.count("ck-nav-group"), 6)  # +Source
+        self.assertEqual(self.html.count("ck-nav-mega"), 6)  # +Source
 
     def test_menu_lists_the_sections_subpages(self):
         # Research mega-menu surfaces its sub-nav entries as numbered items.
@@ -49,7 +49,7 @@ class TopbarDropdownTests(unittest.TestCase):
 
     def test_caret_count_unchanged(self):
         # Fidelity guard parity: still exactly five carets (one per section).
-        self.assertEqual(self.html.count("ck-nav-caret"), 5)
+        self.assertEqual(self.html.count("ck-nav-caret"), 6)  # +Source
 
 
 class TopbarCssTests(unittest.TestCase):
