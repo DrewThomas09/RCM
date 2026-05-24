@@ -15,6 +15,7 @@ import html as _html
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from ._chartis_kit import chartis_shell, ck_kpi_block, ck_page_title, ck_panel
+from .sector_market_intel import percentile_rank
 
 
 def _esc(s: Any) -> str:
@@ -49,6 +50,8 @@ def render_sector_provider_profile(
     higher_is_better: bool,
     provenance: str,
     limitations: List[str],
+    locality_attr: str = "",
+    locality_label: str = "",
 ) -> Optional[str]:
     """Render the profile, or ``None`` if the CCN isn't in ``providers``
     (the route turns that into a 404)."""
@@ -118,24 +121,33 @@ def render_sector_provider_profile(
         title="Provider identity",
     )
 
-    # ── Quality table: value + state-avg benchmark per metric ──
+    # ── Quality table: value + state-avg benchmark + state percentile ──
+    all_state = peer_ccns + [ccn]
     qrows = ""
     for label, key, suffix in metrics:
         val = q.get(key)
-        savg = _state_avg(quality, peer_ccns + [ccn], key)
+        savg = _state_avg(quality, all_state, key)
+        sorted_vals = sorted(
+            quality[c][key] for c in all_state
+            if c in quality and quality[c].get(key) is not None)
+        pctl = percentile_rank(sorted_vals, val)
+        pctl_txt = f"{pctl}th" if pctl is not None else "—"
         qrows += (
             f'<tr><td>{_esc(label)}</td>'
             f'<td class="num">{_fmt(val, suffix)}</td>'
-            f'<td class="num" style="color:var(--sc-text-dim);">{_fmt(savg, suffix)}</td></tr>'
+            f'<td class="num" style="color:var(--sc-text-dim);">{_fmt(savg, suffix)}</td>'
+            f'<td class="num" style="color:var(--sc-text-dim);">{pctl_txt}</td></tr>'
         )
     quality_panel = ck_panel(
         '<table class="ck-table"><thead><tr><th>Quality measure</th>'
         f'<th class="num">This {_esc(kind_singular)}</th>'
-        f'<th class="num">{_esc(state) or "State"} avg</th></tr></thead>'
+        f'<th class="num">{_esc(state) or "State"} avg</th>'
+        f'<th class="num">{_esc(state) or "State"} %ile</th></tr></thead>'
         f'<tbody>{qrows}</tbody></table>'
         '<p style="font-size:11px;color:var(--sc-text-dim);margin:8px 0 0;">'
-        'State average is the mean across same-state Medicare-certified '
-        f'{_esc(kind_singular)}s that publicly report each measure. '
+        'State average + percentile are computed across same-state '
+        f'Medicare-certified {_esc(kind_singular)}s that publicly report each '
+        'measure (higher percentile = better relative to state peers). '
         '&ldquo;&mdash;&rdquo; means not reported.</p>',
         title="Publicly reported quality",
     )
@@ -167,6 +179,50 @@ def render_sector_provider_profile(
         title=f"Peers in {_esc(state) or 'state'}",
     )
 
+    # ── Same-locality peer list (county for hospice, city for home health) ──
+    locality_panel = ""
+    locality = (getattr(provider, locality_attr, "") or "").strip() if locality_attr else ""
+    if locality:
+        loc_ccns = [c for c in peer_ccns
+                    if (getattr(providers[c], locality_attr, "") or "").strip().lower()
+                    == locality.lower()]
+        loc_rated = sorted(
+            ((c, quality.get(c, {}).get(h_key)) for c in loc_ccns),
+            key=lambda kv: (kv[1] is None,
+                            -(kv[1] or 0) if higher_is_better else (kv[1] or 0)),
+        )
+        loc_rows = ""
+        for c, val in loc_rated[:8]:
+            p = providers[c]
+            pname = _esc(getattr(p, name_attr, "") or c)
+            loc_rows += (
+                f'<tr><td><a href="{route}/{_esc(c)}" class="ck-link">{pname}</a></td>'
+                f'<td><span class="num">{_esc(c)}</span></td>'
+                f'<td class="num">{_fmt(val, h_suffix)}</td></tr>'
+            )
+        ll = (locality_label or "locality").lower()
+        if loc_rows:
+            link = (f'{route}?state={_esc(state)}&locality='
+                    + _html.escape(locality, quote=True).replace(" ", "%20"))
+            locality_panel = ck_panel(
+                f'<p class="ck-section-body">{len(loc_ccns):,} other Medicare-certified '
+                f'{_esc(kind_singular)}s in the same {_esc(ll)} '
+                f'(<strong>{_esc(locality)}</strong>), by {_esc(avg_label)}. '
+                f'<a href="{link}" class="ck-link">See all &rarr;</a></p>'
+                '<table class="ck-table"><thead><tr><th>Provider</th><th>CCN</th>'
+                f'<th class="num">{_esc(h_label)}</th></tr></thead>'
+                f'<tbody>{loc_rows}</tbody></table>',
+                title=f"Peers in {_esc(locality)}",
+            )
+        else:
+            locality_panel = ck_panel(
+                f'<p class="ck-section-body">This is the only Medicare-certified '
+                f'{_esc(kind_singular)} in {_esc(locality)} ({_esc(ll)}) in the '
+                'CMS data — local competition would come from providers not '
+                'visible in this public file.</p>',
+                title=f"Peers in {_esc(locality)}",
+            )
+
     # ── Provenance + limitations (trust) ──
     lim = "".join(f"<li>{_esc(x)}</li>" for x in limitations)
     prov_panel = ck_panel(
@@ -189,6 +245,7 @@ def render_sector_provider_profile(
 
     body = (
         ck_page_title(name, eyebrow=eyebrow, meta=" · ".join(meta_bits))
-        + back + kpis + identity_panel + quality_panel + peers_panel + prov_panel
+        + back + kpis + identity_panel + quality_panel
+        + peers_panel + locality_panel + prov_panel
     )
     return chartis_shell(body, name, active_nav=route)

@@ -11,6 +11,7 @@ import html as _html
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from ._chartis_kit import chartis_shell, ck_kpi_block, ck_page_title, ck_panel
+from .sector_market_intel import filter_by_locality, render_state_market_panels
 from .us_map import render_us_state_map
 
 
@@ -41,9 +42,14 @@ def render_sector_screener(
     name_attr: str,
     providers_for_state: Callable[[str], List[Any]],
     table_cols: List[Tuple[str, Callable[[Any, Dict[str, Optional[float]]], str]]],
+    locality_attr: str = "",
+    locality_label: str = "",
+    headline_metric_key: str = "",
+    headline_suffix: str = "",
 ) -> str:
     qs = qs or {}
     sel_state = (qs.get("state") or [""])[0].strip().upper()
+    sel_loc = (qs.get("locality") or [""])[0].strip()
 
     # ── Honest empty state (data file missing) ──
     if not providers:
@@ -104,20 +110,43 @@ def render_sector_screener(
 
     # ── Table: per-state summary (national) OR providers (state view) ──
     if sel_state:
-        rows = providers_for_state(sel_state)[:200]
+        # State competitive-market intelligence (summary cards, ownership mix,
+        # quality distribution, locality competition). Only when the caller
+        # wired locality + headline-metric params.
+        market = ""
+        if locality_attr and headline_metric_key:
+            market = render_state_market_panels(
+                providers=providers, quality=quality, state=sel_state,
+                route=route, kind_singular=count_label.rstrip("s").lower(),
+                locality_attr=locality_attr, locality_label=locality_label,
+                headline_label=avg_label, headline_suffix=headline_suffix,
+                headline_key=headline_metric_key, selected_locality=sel_loc,
+            )
+
+        state_rows = providers_for_state(sel_state)
+        if sel_loc and locality_attr:
+            state_rows = filter_by_locality(state_rows, locality_attr, sel_loc)
+        total_in_scope = len(state_rows)
+        rows = state_rows[:200]
         head = "".join(f"<th>{_esc(h)}</th>" for h, _ in table_cols)
         body_rows = ""
         for p in rows:
             q = quality.get(getattr(p, "ccn", ""), {})
             cells = "".join(f"<td>{fn(p, q)}</td>" for _, fn in table_cols)
             body_rows += f"<tr>{cells}</tr>"
-        table = ck_panel(
+        scope = f"in {_esc(sel_state)}"
+        clear = ""
+        if sel_loc:
+            scope = f"in {_esc(sel_loc)}, {_esc(sel_state)}"
+            clear = (f' · <a href="{route}?state={_esc(sel_state)}" class="ck-link">'
+                     f'clear {_esc(locality_label.lower() or "locality")} filter</a>')
+        table = market + ck_panel(
             f'<p class="ck-section-body"><a href="{route}" class="ck-link">'
-            f'&larr; All states</a> · showing up to 200 of '
-            f'{len(providers_for_state(sel_state))} in {_esc(sel_state)}.</p>'
+            f'&larr; All states</a>{clear} · showing up to 200 of '
+            f'{total_in_scope:,} {scope}.</p>'
             f'<table class="ck-table"><thead><tr>{head}</tr></thead>'
             f'<tbody>{body_rows}</tbody></table>',
-            title=f"{count_label} in {_esc(sel_state)}",
+            title=f"{count_label} {scope}",
         )
     else:
         srows = sorted(summary.items(), key=lambda kv: -int(kv[1].get(count_key, 0)))

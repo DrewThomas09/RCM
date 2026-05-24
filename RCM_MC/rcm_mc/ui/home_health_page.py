@@ -67,6 +67,12 @@ def render_home_health(qs: Optional[Dict[str, List[str]]] = None) -> str:
         name_attr="provider_name",
         providers_for_state=home_health_providers_for_state,
         table_cols=_TABLE_COLS,
+        # Market intelligence: the CMS HH file carries city (not county),
+        # so city is the honest sub-state locality here.
+        locality_attr="city",
+        locality_label="City",
+        headline_metric_key="star_rating",
+        headline_suffix="",
     )
 
 
@@ -100,4 +106,6 @@ def render_home_health_profile(ccn: str) -> Optional[str]:
         higher_is_better=True,
         provenance=_PROVENANCE,
         limitations=_LIMITATIONS,
+        locality_attr="city",
+        locality_label="City",
     )

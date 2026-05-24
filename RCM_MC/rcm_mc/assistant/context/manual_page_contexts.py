@@ -2755,7 +2755,15 @@ _MANUAL: List[PageContext] = [
                           "Can I use this in IC?"],
         inputs=["Vendored CMS 'Home Health Care Agencies' snapshot (6jpm-sxkc)."],
         outputs=["KPI cards, a state tile-grid map shaded by agency count, "
-                 "per-state summaries, and provider/quality tables."],
+                 "per-state summaries, and provider/quality tables.",
+                 "Picking a state opens a market-intelligence view: a market "
+                 "summary (agency count, cities represented, median star "
+                 "rating, ownership leader), the star-rating distribution "
+                 "(quartiles), an ownership mix, and a city-competition table "
+                 "(the CMS HH file carries city, not county) that filters the "
+                 "agency list. Each agency profile adds same-state and "
+                 "same-city peers plus the agency's state percentile per "
+                 "measure."],
         key_metrics=["Home Health Star Rating", "Timely Initiation of Care",
                      "Discharge to Community (HH)"],
         data_sources=["CMS Provider Data Catalog — Home Health Care Agencies "
@@ -2765,7 +2773,11 @@ _MANUAL: List[PageContext] = [
         why_it_matters="Home health is a common, fragmented PE deal type; this "
         "is the public market/quality read to frame a target before diligence.",
         diligence_use_cases=["Sizing the local agency market; spotting quality "
-                             "outliers; framing a target's competitive set."],
+                             "outliers; framing a target's competitive set.",
+                             "Reading state/city competition: how concentrated "
+                             "the market is, the ownership mix (proprietary vs "
+                             "non-profit vs government), and where a target sits "
+                             "in the state's quality distribution."],
         interpretation_guidance=[
             "Public benchmark data — NOT the target company's own outcomes or "
             "financials.",
@@ -2800,7 +2812,14 @@ _MANUAL: List[PageContext] = [
         inputs=["Vendored CMS 'Hospice - General Information' (yc9t-dgbk) + "
                 "'Hospice - Provider Data' HIS measures (252m-zfp9)."],
         outputs=["KPI cards, a state tile-grid map shaded by hospice count, "
-                 "per-state summaries, and provider/quality tables."],
+                 "per-state summaries, and provider/quality tables.",
+                 "Picking a state opens a market-intelligence view: a market "
+                 "summary (hospice count, counties represented, median Care "
+                 "Index, ownership leader), the Care-Index distribution "
+                 "(quartiles), an ownership mix, and a county-competition "
+                 "table that filters the hospice list. Each hospice profile "
+                 "adds same-state and same-county peers plus the hospice's "
+                 "state percentile per measure."],
         key_metrics=["Hospice Care Index", "Hospice Composite Process Measure",
                      "Hospice Visits in Last Days of Life"],
         data_sources=["CMS Provider Data Catalog — Hospice General Information "
@@ -2811,7 +2830,11 @@ _MANUAL: List[PageContext] = [
         "heavy compliance scrutiny; public quality is a key early diligence "
         "signal.",
         diligence_use_cases=["Sizing the local hospice market; flagging "
-                             "quality/compliance outliers via the Care Index."],
+                             "quality/compliance outliers via the Care Index.",
+                             "Reading state/county competition: market "
+                             "concentration, ownership mix (for-profit vs "
+                             "non-profit), and where a target sits in the "
+                             "state's Care-Index distribution."],
         interpretation_guidance=[
             "Public benchmark data — NOT the target's own outcomes or "
             "financials.",

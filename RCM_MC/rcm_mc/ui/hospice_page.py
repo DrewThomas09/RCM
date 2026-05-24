@@ -67,6 +67,11 @@ def render_hospice(qs: Optional[Dict[str, List[str]]] = None) -> str:
         name_attr="facility_name",
         providers_for_state=hospice_providers_for_state,
         table_cols=_TABLE_COLS,
+        # Market intelligence: hospice CMS file carries county.
+        locality_attr="county",
+        locality_label="County",
+        headline_metric_key="care_index_overall",
+        headline_suffix="",
     )
 
 
@@ -101,4 +106,6 @@ def render_hospice_profile(ccn: str) -> Optional[str]:
         higher_is_better=True,
         provenance=_PROVENANCE,
         limitations=_LIMITATIONS,
+        locality_attr="county",
+        locality_label="County",
     )
