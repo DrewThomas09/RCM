@@ -66,6 +66,9 @@ _QUALITY_METRICS: Dict[str, List[Tuple[str, str, str]]] = {
     ],
     "dialysis": [
         ("five_star", "Overall 5-star rating", ""),
+        # Patient experience (ICH CAHPS) — higher is better.
+        ("cahps_facility_star", "Patient-survey facility star", ""),
+        ("cahps_center_care_star", "Center care & operations star", ""),
     ],
     "inpatient-rehab": [
         ("dtc_rs_rate", "Discharge to community", "%"),
