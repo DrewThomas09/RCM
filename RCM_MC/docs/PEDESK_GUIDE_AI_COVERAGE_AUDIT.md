@@ -1,16 +1,15 @@
 # PEdesk Guide / AI coverage audit
 
-_Generated 2026-05-24 (8h loop Phase 0). Enumerated from `server.py` exact-match page routes + `get_page_context` resolution (exact→alias→dynamic→fallback)._
+_Regenerated 2026-05-24 (8h loop Phase 5). Enumerated from `server.py` exact-match page routes + `get_page_context` resolution (exact→alias→dynamic→fallback)._
 
 ## Summary
-- Exact-match **page** routes audited: **309** (API/static/data-file endpoints excluded).
-- **Curated** Guide context (real `PageContext` in the registry): **73**.
-- **Safe fallback** context (generic, `found=False`): **236** — every page still answers the Guide, but generically.
-- Parameterized page families (e.g. `/hospital/<ccn>`, `/home-health/<ccn>`) resolve via dynamic builders.
+- Exact-match **page** routes audited: **320** (API/static/data-file endpoints excluded).
+- **Curated** Guide context (real `PageContext` in the registry): **87**.
+- **Safe fallback** context (generic, `found=False`): **233** — every page still answers the Guide, but generically.
+- Parameterized page families (e.g. `/hospital/<ccn>`, `/nursing-homes/<ccn>`, `/long-term-care-hospital/<ccn>`) resolve via dynamic builders.
 
 ## Coverage policy
 Each page is one of: **curated** (strong, page-specific context) · **fallback** (generic safe context — acceptable for low-traffic/utility pages) · **deprecated** (unreachable). No page is silently missing — the fallback always answers.
-
 
 ## Page routes
 
@@ -21,7 +20,7 @@ Each page is one of: **curated** (strong, page-specific context) · **fallback**
 | `/acq-timing` | fallback |
 | `/activity` | fallback |
 | `/admin/audit-chain` | fallback |
-| `/admin/data-sources` | fallback |
+| `/admin/data-sources` | curated |
 | `/ai-operating-model` | fallback |
 | `/alerts` | curated |
 | `/analysis` | fallback |
@@ -32,10 +31,12 @@ Each page is one of: **curated** (strong, page-specific context) · **fallback**
 | `/backtester` | fallback |
 | `/base-rates` | fallback |
 | `/bear-cases` | curated |
-| `/benchmarks` | fallback |
+| `/benchmarks` | curated |
 | `/biosimilars` | fallback |
 | `/board-governance` | fallback |
 | `/bolton-analyzer` | fallback |
+| `/caduceus` | fallback |
+| `/calibrate` | fallback |
 | `/calibration` | fallback |
 | `/cap-structure` | fallback |
 | `/capex-budget` | fallback |
@@ -48,16 +49,16 @@ Each page is one of: **curated** (strong, page-specific context) · **fallback**
 | `/clinical-ai` | fallback |
 | `/clinical-outcomes` | fallback |
 | `/cms-apm` | fallback |
-| `/cms-data-browser` | fallback |
-| `/cms-sources` | fallback |
+| `/cms-data-browser` | curated |
+| `/cms-sources` | curated |
 | `/cohorts` | fallback |
 | `/coinvest-pipeline` | fallback |
 | `/comparable-outcomes` | curated |
 | `/comparables` | curated |
 | `/compare` | fallback |
-| `/competitive-intel` | fallback |
+| `/competitive-intel` | curated |
 | `/compliance-attestation` | fallback |
-| `/concentration-risk` | fallback |
+| `/concentration-risk` | curated |
 | `/conferences` | curated |
 | `/continuation-vehicle` | fallback |
 | `/corpus-backtest` | curated |
@@ -71,7 +72,7 @@ Each page is one of: **curated** (strong, page-specific context) · **fallback**
 | `/dashboard` | fallback |
 | `/data` | curated |
 | `/data-intelligence` | fallback |
-| `/data/catalog` | fallback |
+| `/data/catalog` | curated |
 | `/data/refresh` | fallback |
 | `/day-one` | curated |
 | `/deadlines` | fallback |
@@ -90,11 +91,13 @@ Each page is one of: **curated** (strong, page-specific context) · **fallback**
 | `/debt-service` | fallback |
 | `/demand-forecast` | fallback |
 | `/denovo-expansion` | fallback |
+| `/dialysis` | curated |
 | `/digest/morning` | fallback |
 | `/digital-front-door` | fallback |
-| `/diligence` | fallback |
+| `/diligence` | curated |
 | `/diligence-checklist` | fallback |
 | `/diligence-vendors` | fallback |
+| `/diligence/` | curated |
 | `/diligence/bear-case` | fallback |
 | `/diligence/benchmarks` | curated |
 | `/diligence/bridge-audit` | curated |
@@ -144,6 +147,7 @@ Each page is one of: **curated** (strong, page-specific context) · **fallback**
 | `/exports` | fallback |
 | `/exports/lp-update` | fallback |
 | `/find-comps` | curated |
+| `/foo` | fallback |
 | `/forgot` | fallback |
 | `/fraud-detection` | fallback |
 | `/fund-attribution` | fallback |
@@ -165,7 +169,9 @@ Each page is one of: **curated** (strong, page-specific context) · **fallback**
 | `/hospital-anchor` | fallback |
 | `/ic-memo-gen` | fallback |
 | `/import` | curated |
+| `/index.html` | fallback |
 | `/initiatives` | fallback |
+| `/inpatient-rehab` | curated |
 | `/insights` | fallback |
 | `/insurance-tracker` | fallback |
 | `/irr-dispersion` | curated |
@@ -177,11 +183,13 @@ Each page is one of: **curated** (strong, page-specific context) · **fallback**
 | `/litigation` | fallback |
 | `/locum-tracker` | fallback |
 | `/login` | fallback |
-| `/lp-dashboard` | fallback |
+| `/long-term-care-hospital` | curated |
+| `/lp-dashboard` | curated |
 | `/lp-reporting` | fallback |
 | `/lp-update` | curated |
 | `/ma-contracts` | fallback |
 | `/ma-star` | fallback |
+| `/manifest.json` | fallback |
 | `/market-data/map` | fallback |
 | `/market-intel` | curated |
 | `/market-intel/seeking-alpha` | fallback |
@@ -206,6 +214,7 @@ Each page is one of: **curated** (strong, page-specific context) · **fallback**
 | `/news` | fallback |
 | `/notes` | curated |
 | `/nsa-tracker` | fallback |
+| `/nursing-homes` | curated |
 | `/operating-partners` | fallback |
 | `/ops` | fallback |
 | `/owners` | fallback |
@@ -281,6 +290,7 @@ Each page is one of: **curated** (strong, page-specific context) · **fallback**
 | `/sector-intel` | fallback |
 | `/sector-intelligence` | curated |
 | `/sector-momentum` | curated |
+| `/seekingchartis` | fallback |
 | `/sellside-process` | fallback |
 | `/settings` | fallback |
 | `/settings/ai` | fallback |
