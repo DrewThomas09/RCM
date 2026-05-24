@@ -1,6 +1,6 @@
 # PEdesk Guide / AI coverage audit
 
-_Regenerated 2026-05-24 (Guide-coverage loop, Phase 1). Enumerated from `server.py` exact-match page routes + `get_page_context` resolution (exact→alias→dynamic→fallback), then classified by context depth._
+_Regenerated 2026-05-24 (Guide-coverage loop, Phase 2). Enumerated from `server.py` exact-match page routes + `get_page_context` resolution (exact→alias→dynamic→fallback), then classified by context depth._
 
 ## Classification
 - **strong** — curated `PageContext` with **≥8 suggested questions** plus interpretation guidance, limitations, and data sources.
@@ -9,11 +9,11 @@ _Regenerated 2026-05-24 (Guide-coverage loop, Phase 1). Enumerated from `server.
 
 ## Summary
 - Exact-match **page** routes audited: **320** (API/static/utility endpoints excluded).
-- **strong: 4**
-- **partial: 83**
+- **strong: 7**
+- **partial: 80**
 - **missing: 233**
 
-Goal of this loop: drive *strong* up — starting with the six live CMS verticals + hospital/market pages, then high-traffic analytic pages.
+All six live CMS verticals (Home Health, Hospice, SNF, Dialysis, IRF, LTCH) + the Sector Intelligence hub are now **strong**. Next: high-traffic analytic pages (pipeline, portfolio, diligence core) from the partial table below.
 
 ## Partial routes (curated but thin — upgrade targets)
 
@@ -69,8 +69,6 @@ Goal of this loop: drive *strong* up — starting with the six live CMS vertical
 | `/escalations` | 2 |
 | `/find-comps` | 2 |
 | `/hold-analysis` | 2 |
-| `/home-health` | 4 |
-| `/hospice` | 4 |
 | `/import` | 2 |
 | `/irr-dispersion` | 2 |
 | `/library` | 2 |
@@ -96,7 +94,6 @@ Goal of this loop: drive *strong* up — starting with the six live CMS vertical
 | `/research` | 2 |
 | `/screen` | 2 |
 | `/screening/bankruptcy-survivor` | 2 |
-| `/sector-intelligence` | 3 |
 | `/sector-momentum` | 2 |
 | `/source` | 2 |
 | `/sponsor-track-record` | 2 |
@@ -256,8 +253,8 @@ Goal of this loop: drive *strong* up — starting with the six live CMS vertical
 | `/hold-analysis` | partial |
 | `/hold-optimizer` | missing |
 | `/home` | missing |
-| `/home-health` | partial |
-| `/hospice` | partial |
+| `/home-health` | strong |
+| `/hospice` | strong |
 | `/hospital-anchor` | missing |
 | `/ic-memo-gen` | missing |
 | `/import` | partial |
@@ -380,7 +377,7 @@ Goal of this loop: drive *strong* up — starting with the six live CMS vertical
 | `/secondaries-tracker` | missing |
 | `/sector-correlation` | missing |
 | `/sector-intel` | missing |
-| `/sector-intelligence` | partial |
+| `/sector-intelligence` | strong |
 | `/sector-momentum` | partial |
 | `/seekingchartis` | missing |
 | `/sellside-process` | missing |

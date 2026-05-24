@@ -2709,15 +2709,25 @@ _MANUAL: List[PageContext] = [
     # ── Sector Intelligence (multi-sector expansion) ────────────────
     _ctx(
         "/sector-intelligence", "Sector Intelligence",
-        short_description="A directory of the healthcare-services sectors "
-        "PEdesk covers — Hospitals, Home Health, and Hospice are live; the "
-        "rest are roadmap.",
+        short_description="An honest coverage map of the healthcare-services "
+        "sectors PEdesk covers. Live today: Hospitals, Home Health, Hospice, "
+        "SNF / Nursing Home, Dialysis, IRF, and LTCH; Outpatient/ASC, "
+        "Physician Groups, Dental/DSO and Infusion/DME remain roadmap.",
         primary_purpose="Give the team one honest coverage map of which "
-        "sectors have data/pages now versus which are planned, with the "
-        "public-data basis (and limits) of each.",
-        common_questions=["Which sectors does PEdesk cover?",
-                          "Is dental supported?",
-                          "What data backs each sector?"],
+        "sectors have real data/pages now versus which are planned, with the "
+        "public-data basis (and limits) of each — and the live screeners to "
+        "jump to.",
+        common_questions=["Which sectors does PEdesk cover today?",
+                          "Which post-acute verticals are live and where are "
+                          "their screeners?",
+                          "What CMS data backs each live sector?",
+                          "Why are ASC, Dental and DMEPOS still roadmap?",
+                          "Which sectors have outcome quality vs supply-only data?",
+                          "Where do I start for a SNF / dialysis / home-health deal?",
+                          "How do I compare operators across these sectors in one state?",
+                          "What does 'Live' guarantee about a sector's data depth?",
+                          "What's the difference between a live screener and a "
+                          "roadmap proxy?"],
         inputs=["A static, hand-maintained sector status list (no data load)."],
         outputs=["Sector cards tagged Live or Roadmap, each with its data "
                  "status; live sectors link to their pages."],
@@ -2732,10 +2742,18 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=[
             "Roadmap sectors are not yet built — no page is linked until its "
             "data is sourced.",
+            "'Live' means a real screener backed by vendored CMS data; it does "
+            "NOT mean commercial revenue, payer mix, or census are visible.",
+            "Sectors differ in data depth: post-acute verticals carry outcome/"
+            "quality measures, while roadmap proxies (e.g. DMEPOS, Dental) "
+            "would be supply-only — read the per-sector data-status note.",
         ],
         limitations=["A directory, not an analytic page; it carries no data "
-                     "of its own."],
-        related_routes=["/home-health", "/hospice", "/market-data/map"],
+                     "of its own. Cross-sector comparison still happens on the "
+                     "individual screeners, not here."],
+        related_routes=["/home-health", "/hospice", "/nursing-homes",
+                        "/dialysis", "/inpatient-rehab",
+                        "/long-term-care-hospital"],
         data_source_ids=["cms_provider_data_catalog"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.UNKNOWN,
@@ -2750,9 +2768,20 @@ _MANUAL: List[PageContext] = [
         "(star rating, timely care, functional improvement, discharge to "
         "community).",
         common_questions=["How many home health agencies are in this state?",
-                          "What does the star rating mean here?",
-                          "Where does this data come from?",
-                          "Can I use this in IC?"],
+                          "What does the home health star rating mean here?",
+                          "How does this agency compare to same-state / "
+                          "same-city peers?",
+                          "How concentrated is this local market and who owns "
+                          "the most agencies?",
+                          "Is a star-rating or DTC gap an investable signal or "
+                          "just variance?",
+                          "What share of agencies are proprietary vs non-profit "
+                          "vs government?",
+                          "What should I ask management given these quality "
+                          "measures?",
+                          "What's missing from CMS home health data that I'd "
+                          "diligence separately?",
+                          "Where does this data come from and how fresh is it?"],
         inputs=["Vendored CMS 'Home Health Care Agencies' snapshot (6jpm-sxkc)."],
         outputs=["KPI cards, a state tile-grid map shaded by agency count, "
                  "per-state summaries, and provider/quality tables.",
@@ -2806,9 +2835,20 @@ _MANUAL: List[PageContext] = [
         "hospice deals — hospice density by state and public quality (Hospice "
         "Care Index, composite process measure, visits in last days).",
         common_questions=["How many hospices are in this state?",
-                          "What does the Hospice Care Index mean?",
-                          "Where does this data come from?",
-                          "Can I use this in IC?"],
+                          "What does the Hospice Care Index mean here?",
+                          "How does this hospice compare to same-state / "
+                          "same-county peers?",
+                          "How concentrated is this local market and who owns "
+                          "the most hospices?",
+                          "Is a Care-Index gap an investable signal or just "
+                          "variance?",
+                          "What share of hospices are for-profit vs non-profit?",
+                          "What compliance risks should I probe given these "
+                          "quality measures?",
+                          "What's missing from CMS hospice data (CAHPS, "
+                          "length-of-stay, live-discharge) that I'd diligence "
+                          "separately?",
+                          "Where does this data come from and how fresh is it?"],
         inputs=["Vendored CMS 'Hospice - General Information' (yc9t-dgbk) + "
                 "'Hospice - Provider Data' HIS measures (252m-zfp9)."],
         outputs=["KPI cards, a state tile-grid map shaded by hospice count, "

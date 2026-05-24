@@ -1,10 +1,11 @@
 """Sector Intelligence landing — /sector-intelligence.
 
 A read-only directory of the healthcare-services sectors PEdesk covers (or
-plans to). Honest by construction: only **Hospitals** is Live today (it
-links to real routes); every other sector is tagged **Roadmap** with its
-phase + data-status, and carries NO link to a non-existent page. The build
-plan lives in docs/PEDESK_SECTOR_INTELLIGENCE_ROADMAP.md.
+plans to). Honest by construction: only sectors tagged **Live** have real
+data + routes (Hospitals, Home Health, Hospice, SNF / Nursing Home, Dialysis,
+IRF, LTCH); every **Roadmap** sector carries its phase + data-status and NO
+link to a non-existent page. The build plan lives in
+docs/PEDESK_SECTOR_INTELLIGENCE_ROADMAP.md.
 
 No data loaders, no new datasets — this is a navigation/status surface.
 """
@@ -31,8 +32,25 @@ _SECTORS: List[Tuple[str, str, str, str, List[Tuple[str, str]]]] = [
      "Medicare-certified hospices + HIS quality (Care Index, composite, "
      "visits in last days). CMS public data, not target financials.",
      [("Hospice screener", "/hospice")]),
+    ("SNF / Nursing Home", "live", "Live",
+     "Medicare-certified SNFs + Nursing Home Compare (overall/health/staffing/"
+     "QM stars, beds, SFF). CMS public data, not target financials.",
+     [("Nursing Home screener", "/nursing-homes")]),
+    ("Dialysis", "live", "Live",
+     "Medicare-certified dialysis facilities + five-star and risk-adjusted "
+     "outcome rates. CMS public data, not target financials.",
+     [("Dialysis screener", "/dialysis")]),
+    ("Inpatient Rehab / IRF", "live", "Live",
+     "Medicare-certified IRFs + discharge-to-community, readmission, and "
+     "Medicare-spending measures. Small universe (~1,200). CMS public data.",
+     [("IRF screener", "/inpatient-rehab")]),
+    ("Long-Term Care Hospital / LTCH", "live", "Live",
+     "Medicare-certified LTCHs + discharge-to-community, readmission, spending, "
+     "and bed counts. Very small universe (~320). CMS public data.",
+     [("LTCH screener", "/long-term-care-hospital")]),
     ("Outpatient / ASC", "roadmap", "Phase 3",
-     "Medicare proxy (Part B + OPPS + ASC quality). Commercial volume unobserved.",
+     "Medicare proxy (Part B + OPPS + ASC quality). Commercial volume "
+     "unobserved; the public ASC quality file lacks county/ownership.",
      []),
     ("Physician Groups", "roadmap", "Phase 3",
      "Provider universe (NPPES) + Medicare Part B volume proxy.", []),
@@ -42,12 +60,6 @@ _SECTORS: List[Tuple[str, str, str, str, List[Tuple[str, str]]]] = [
     ("Infusion / DME", "roadmap", "Phase 5",
      "Supplier universe + drug/service-mix proxy (NPPES + DMEPOS + Part B "
      "J-codes). Not full revenue.", []),
-    ("SNF / Nursing Home", "roadmap", "Phase 6",
-     "Strong CMS data (Nursing Home Compare: ratings, staffing, inspections).",
-     []),
-    ("Dialysis", "roadmap", "Phase 6",
-     "Strong CMS data (Dialysis Facility Compare: quality, ownership, geo).",
-     []),
 ]
 
 _STATUS_COLOR = {
