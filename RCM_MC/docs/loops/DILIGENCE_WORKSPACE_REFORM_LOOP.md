@@ -40,15 +40,34 @@ computable from HCRIS fields), and **move/defer** the rest.
 ## PR log
 | PR | Title | Scope | Status |
 |---|---|---|---|
-| 0 | docs(diligence): workspace audit + data-source matrix | docs only | **in progress** |
-| 1 | feat(diligence): source-and-purpose headers (top pages) | visible UI | planned |
-| 2 | feat(diligence): illustrative-state guardrails | visible UI | planned |
-| 3 | feat(diligence): HCRIS X-Ray A-v2 results | visible UI | planned (#663 path) |
-| 4 | feat(diligence): Payer Stress repair / honest source | visible UI | planned |
-| 5 | feat(diligence): Cost Structure + Debt Service from HCRIS | visible UI | planned |
-| 6 | feat(diligence): Checklist honesty + source-aware | visible UI | planned |
-| 7 | feat(diligence): workforce/provider economics source pass | visible UI | planned |
-| 8 | docs(diligence): defer/delete/move candidates | docs only | planned |
+| 0 (#665) | docs: workspace audit + data-source matrix | docs | **merged + live** |
+| 1 (#666) | feat: source-and-purpose header component + chips | additive kit | **merged + live** |
+| 2 (#667) | feat: honest headers on Payer Stress / Cost Structure / Debt Service | visible UI | **open — awaiting approval** |
+| — (#668) | docs: real-data conversion backlog + ledger | docs | **open (this PR)** |
+| 3 | feat: HCRIS X-Ray A-v2 results | visible UI | queued (#663 merged → buildable) |
+| 4 | feat: Payer Stress real HCRIS payer-mix wiring | visible UI | queued (backlog mapped) |
+| 5 | feat: Cost Structure + Debt Service from HCRIS | visible UI | queued (backlog mapped) |
+| 6 | feat: Checklist honesty + source-aware | visible UI | queued |
+| 7 | feat: workforce/economics source pass | visible UI | queued |
+| 8 | docs: defer/delete/move candidates (ESG/HCIT/Biosimilars/…) | docs | queued |
+
+## Loop status (approval-gated ≠ idle)
+- **Actively working.** PR 2 (#667) awaits approval; instead of idling, this
+  tick produced the **real-data conversion backlog** (#668, docs, mergeable)
+  with concrete HCRIS field→formula maps for Payer Stress / Cost Structure /
+  Debt Service — which de-risks PRs 4/5.
+- **Blocked-on-approval:** #667 (visible UI). **Not a stop** — docs/feasibility
+  continue.
+
+## Next three tasks
+1. Merge #668 (docs) on green; continue labeling the remaining illustrative
+   analyzers (Physician Productivity, Provider Retention, Partner Economics,
+   Mgmt Comp, ESG, HCIT, Insurance, Biosimilars) in a follow-up header PR.
+2. On #667 approval → build PR 4 (Payer Stress: seed sliders from real HCRIS
+   payer-day mix when a CCN is attached; drop fabricated drivers; label proxy).
+3. Build PR 3 (HCRIS A-v2 results — #663 kit merged) and PR 5 (Cost Structure +
+   Debt Service HCRIS panels) per the backlog field maps.
 
 ## Deferrals / notes
-- (none yet)
+- ESG, HCIT/SaaS, Biosimilars, Insurance/Malpractice, Bankruptcy, Counterfactual
+  → P4 defer/delete pool (no clear PEdesk source); decisions in PR 8.
