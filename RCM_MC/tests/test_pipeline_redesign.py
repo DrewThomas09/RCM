@@ -38,6 +38,14 @@ class PipelineRenderTests(unittest.TestCase):
         self.assertIn('class="ck-funnel-row"', self.html)
         self.assertIn('href="/pipeline?stage=', self.html)
 
+    def test_funnel_shows_stage_conversion(self):
+        # Handoff funnel includes a stage-to-stage conversion figure per row.
+        self.assertIn("ck-funnel-conv", self.html)
+        self.assertIn("stage-to-stage conversion", self.html)
+        # Top-of-funnel / empty-prior conversion is an honest dash, not a
+        # fabricated percentage.
+        self.assertIn(">&mdash;</div>", self.html.replace("—", "&mdash;"))
+
     def test_saved_searches_and_cross_links_cards(self):
         # These render regardless of data. (Sortable table + quick actions
         # need rows → asserted in PipelineSeededTests.)

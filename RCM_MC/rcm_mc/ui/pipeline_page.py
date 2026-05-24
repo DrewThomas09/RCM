@@ -149,10 +149,25 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
     # the stage's plain-English meaning without hovering anything.
     funnel_bars = ""
     max_count = max(summary.values()) if summary else 1
+    prev_count: Optional[int] = None  # stage-to-stage conversion needs the prior stage
     for stage_key, stage_label, stage_desc in PIPELINE_STAGES:
         count = summary.get(stage_key, 0)
         pct = count / max_count * 100 if max_count > 0 and count > 0 else 0
         bar_color = _funnel_bar_color(stage_key)
+        # Stage-to-stage conversion: share of the PRIOR stage that advanced to
+        # this one. Real arithmetic over the live stage counts — "—" for the
+        # top of the funnel and whenever the prior stage is empty (no rate to
+        # compute, never a fabricated number).
+        if prev_count is None:
+            conv = "—"
+            conv_aria = ""
+        elif prev_count > 0:
+            conv = f"{count / prev_count * 100:.0f}%"
+            conv_aria = f", {conv} conversion from prior stage"
+        else:
+            conv = "—"
+            conv_aria = ""
+        prev_count = count
         # Greyed row when the stage is empty — keeps the structure
         # present (every stage visible) but doesn't draw the eye.
         # Each row is a click-to-filter link: filters the hospitals table
@@ -165,7 +180,7 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
         funnel_bars += (
             f'<a class="{row_cls}" href="/pipeline?stage={_html.escape(stage_key)}"'
             f'{style} aria-label="Filter pipeline to {_html.escape(stage_label)} '
-            f'({count})">'
+            f'({count}){conv_aria}">'
             f'<div class="ck-funnel-stage">{_stage_badge(stage_key)}'
             f'<span class="ck-funnel-stage-desc">{_html.escape(stage_desc)}</span>'
             f'</div>'
@@ -174,12 +189,13 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
             f'background:{bar_color};"></div>'
             f'</div>'
             f'<div class="ck-funnel-count">{count}</div>'
+            f'<div class="ck-funnel-conv" title="Conversion from prior stage">{conv}</div>'
             f'</a>'
         )
 
     funnel_css = (
         '<style>'
-        '.ck-funnel-row{display:grid;grid-template-columns:230px 1fr 56px;'
+        '.ck-funnel-row{display:grid;grid-template-columns:230px 1fr 56px 60px;'
         'align-items:center;gap:18px;padding:12px 8px;'
         'border-bottom:1px solid var(--sc-rule,#d6cfc0);'
         'text-decoration:none;color:inherit;cursor:pointer;'
@@ -199,7 +215,10 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
         '.ck-funnel-count{font-family:var(--sc-mono,JetBrains Mono,monospace);'
         'font-size:18px;font-weight:600;color:var(--sc-navy,#0b2341);'
         'text-align:right;font-variant-numeric:tabular-nums;}'
-        '@media (max-width:720px){.ck-funnel-row{grid-template-columns:1fr 56px;}'
+        '.ck-funnel-conv{font-family:var(--sc-mono,JetBrains Mono,monospace);'
+        'font-size:12px;color:var(--sc-text-dim,#465366);text-align:right;'
+        'font-variant-numeric:tabular-nums;}'
+        '@media (max-width:720px){.ck-funnel-row{grid-template-columns:1fr 56px 60px;}'
         '.ck-funnel-track{grid-column:1/-1;}}'
         '</style>'
     )
@@ -208,9 +227,11 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
         f'{funnel_css}'
         + ck_panel(
             '<p class="ck-section-body">'
-            'How prospects flow from screening to close. '
-            'Empty stages remain visible at low opacity so the funnel '
-            'shape stays readable.</p>'
+            'How prospects flow from screening to close. The right-hand '
+            'figure is stage-to-stage conversion — the share of the prior '
+            'stage that advanced ("—" at the top of the funnel or when the '
+            'prior stage is empty). Empty stages remain visible at low '
+            'opacity so the funnel shape stays readable.</p>'
             f'{funnel_bars}',
             title="Pipeline Funnel",
         )
