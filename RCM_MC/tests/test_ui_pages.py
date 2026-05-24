@@ -70,7 +70,10 @@ class TestPortfolioMap(unittest.TestCase):
         html = render_portfolio_map([])
         # Map still draws; honest data-needed message (not "No deals").
         self.assertIn("usm-cell", html)
-        self.assertIn("No state-level portfolio data is available yet", html)
+        self.assertIn("No state-level portfolio data yet", html)
+        # Handoff dossier scaffold renders even when empty.
+        self.assertIn("No exposure to rank yet", html)
+        self.assertIn("Click a state", html)
 
     def test_con_states_are_accented(self):
         deals = [{"deal_id": "d1", "name": "A", "state": "TX"}]
