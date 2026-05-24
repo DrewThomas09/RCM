@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor, ck_illustrative_note
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor, ck_illustrative_note, ck_source_purpose
 
 
 def _coverages_chart(items):
@@ -255,6 +255,10 @@ def render_insurance(params: dict = None) -> str:
   </div>
 </div>"""
 
+    body = ck_source_purpose(
+        purpose="Track insurance / malpractice exposure for holdings.",
+        universe="data-required", source="No portfolio insurance data attached",
+        next_action="Link to portfolio/deal insurance data") + body
     return chartis_shell(body, "Insurance Tracker", active_nav="/insurance-tracker",
         editorial_intro={
             "eyebrow": "INSURANCE TRACKER",

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_bar_row, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_bar_row, ck_value_anchor, ck_source_purpose
 
 
 def _drugs_chart(items) -> str:
@@ -235,6 +235,10 @@ def render_drug_shortage(params: dict = None) -> str:
   </div>
 </div>"""
 
+    body = ck_source_purpose(
+        purpose="Flag drug-shortage / supply-chain exposure for the target.",
+        universe="illustrative", source="Hardcoded shortage list",
+        next_action="Vendor the FDA drug-shortage feed") + body
     return chartis_shell(body, "Drug Shortage", active_nav="/drug-shortage",
         editorial_intro={
             "eyebrow": "DRUG SHORTAGE",

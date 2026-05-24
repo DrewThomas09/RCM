@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_source_purpose
 
 
 def _esg_ring_svg(overall: float, e: float, s: float, g: float, tier: str) -> str:
@@ -345,6 +345,10 @@ def render_esg_dashboard(params: dict = None) -> str:
 
 </div>"""
 
+    body = ck_source_purpose(
+        purpose="Summarize ESG / sustainability posture.",
+        universe="illustrative", source="No ESG metric source",
+        next_action="Define a real ESG metric source or defer") + body
     return chartis_shell(body, "ESG Dashboard", active_nav="/esg-dashboard",
         editorial_intro={
             "eyebrow": "ESG DASHBOARD",

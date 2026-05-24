@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor, ck_source_purpose
 
 
 def _programs_chart(items) -> str:
@@ -266,6 +266,10 @@ def render_cms_apm_tracker(params: dict = None) -> str:
   </div>
 </div>"""
 
+    body = ck_source_purpose(
+        purpose="Track CMS Alternative Payment Model exposure.",
+        universe="illustrative", source="Hardcoded figures",
+        next_action="Wire to CMS APM participation (public)") + body
     return chartis_shell(body, "CMS APM Tracker", active_nav="/cms-apm",
         editorial_intro={
             "eyebrow": "CMS APM TRACKER",

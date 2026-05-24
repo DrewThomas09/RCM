@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_value_anchor, ck_source_purpose
 
 def _waves_chart(items) -> str:
     """Lead chart for the LoE-wave table — waves ranked by reference
@@ -234,5 +234,9 @@ def render_biosimilars(params: dict = None) -> str:
   </div>
 </div>"""
 
+    body = ck_source_purpose(
+        purpose="Scan biosimilar / 340B opportunity for a sector thesis.",
+        universe="illustrative", source="No biosimilar pipeline source",
+        next_action="Define purpose/source or defer") + body
     return chartis_shell(body, "Biosimilars", active_nav="/biosimilars",
         extra_css=_EXPLAINER_CSS)

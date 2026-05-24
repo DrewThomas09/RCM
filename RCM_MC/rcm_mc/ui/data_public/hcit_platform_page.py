@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_bar_row, ck_value_anchor, ck_scatter
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_bar_row, ck_value_anchor, ck_scatter, ck_source_purpose
 
 
 def _tam_scatter(items):
@@ -237,6 +237,10 @@ def render_hcit_platform(params: dict = None) -> str:
   </div>
 </div>"""
 
+    body = ck_source_purpose(
+        purpose="Assess an HCIT / SaaS platform target.",
+        universe="illustrative", source="No platform-data source",
+        next_action="Define source/scope or defer") + body
     return chartis_shell(body, "HCIT Platform", active_nav="/hcit-platform",
         editorial_intro={
             "eyebrow": "HCIT PLATFORM",
