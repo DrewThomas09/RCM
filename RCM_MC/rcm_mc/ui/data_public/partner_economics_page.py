@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_bar_row, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_bar_row, ck_value_anchor, ck_source_purpose
 
 
 def _exit_chart(items):
@@ -282,6 +282,10 @@ def render_partner_economics(params: dict = None) -> str:
   </div>
 </div>"""
 
+    body = ck_source_purpose(
+        purpose="Model partner/physician buy-in economics and alignment.",
+        universe="data-required", source="Illustrative model — no deal model attached",
+        next_action="Enter the deal's partner-economics model") + body
     return chartis_shell(body, "Partner Economics", active_nav="/partner-economics",
         editorial_intro={
             "eyebrow": "PARTNER ECONOMICS",

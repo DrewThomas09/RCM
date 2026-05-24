@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_source_purpose
 
 
 def _alignment_gauge_svg(score: float) -> str:
@@ -315,6 +315,10 @@ def render_mgmt_comp(params: dict = None) -> str:
 
 </div>"""
 
+    body = ck_source_purpose(
+        purpose="Benchmark management compensation vs comparable roles.",
+        universe="illustrative", source="Hardcoded benchmark figures",
+        next_action="Wire to IRS 990 exec comp (non-profits)") + body
     return chartis_shell(body, "Mgmt Compensation Analyzer", active_nav="/mgmt-comp",
         editorial_intro={
             "eyebrow": "MGMT COMP",
