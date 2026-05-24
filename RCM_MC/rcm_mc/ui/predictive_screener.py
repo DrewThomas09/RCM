@@ -15,8 +15,8 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_next_section, ck_page_title, ck_panel,
-    ck_value_anchor,
+    chartis_shell, ck_data_universe, ck_kpi_block, ck_next_section,
+    ck_page_title, ck_panel, ck_value_anchor,
 )
 
 _EXPLAINER_CSS = """
@@ -264,7 +264,7 @@ def render_predictive_screener(
     title_block = ck_page_title(
         "Predictive Deal Screener", eyebrow="PREDICTIVE SCREENER",
         meta=f"{total_matches:,} matches · {len(hcris_df):,} hospitals in universe",
-    )
+    ) + '<div style="margin:8px 0 0;">' + ck_data_universe("cms") + '</div>'
     explainer_html = (
         '<p class="ck-ps-explainer">'
         '<em>Where the next deal hides in the universe.</em> '

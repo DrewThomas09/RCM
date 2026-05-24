@@ -23,6 +23,7 @@ from typing import Any, List, Optional
 from .._chartis_kit import (
     P,
     chartis_shell,
+    ck_data_universe,
     ck_kpi_block,
     ck_page_title,
     ck_section_header,
@@ -297,7 +298,7 @@ def render_sponsor_track_record(
             "Sponsor Track Record",
             eyebrow="SPONSOR TRACK RECORD",
             meta=meta,
-        )
+        ) + '<div style="margin:8px 0 0;">' + ck_data_universe("corpus") + '</div>'
     explainer_html = (
         '<p class="ck-str-explainer">'
         '<em>What the sponsor track record reveals.</em> '

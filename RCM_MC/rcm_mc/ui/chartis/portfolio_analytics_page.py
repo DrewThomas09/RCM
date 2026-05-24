@@ -18,6 +18,7 @@ from .._chartis_kit import (
     P,
     chartis_shell,
     ck_bar_row,
+    ck_data_universe,
     ck_kpi_block,
     ck_page_title,
     ck_section_header,
@@ -627,11 +628,14 @@ def render_portfolio_analytics(
     # <p> intro. Copy is "corpus-wide" not "portfolio-wide" to label the
     # semantic-confusion bug honestly while the Pattern D rename is pending.
     def _title(meta: str) -> str:
+        # Data-universe chip makes the semantic-confusion bug honest until the
+        # rename to "Deal Corpus Analytics" lands: this is a benchmark CORPUS,
+        # not the user's portfolio.
         return ck_page_title(
             "Portfolio Analytics",
             eyebrow="PORTFOLIO ANALYTICS",
             meta=meta,
-        )
+        ) + '<div style="margin:8px 0 0;">' + ck_data_universe("corpus") + '</div>'
     explainer_html = (
         '<p class="ck-pa-explainer">'
         '<em>Where the corpus tells you what worked.</em> '
