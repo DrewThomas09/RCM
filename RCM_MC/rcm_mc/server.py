@@ -16289,6 +16289,8 @@ class RCMHandler(BaseHTTPRequestHandler):
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         focused_deal_id = (qs.get("deal") or [None])[0]
         selected_stage = validate_stage((qs.get("stage") or [None])[0])
+        # Parallel dossier-grid preview: /app?layout=grid (default unchanged).
+        layout = (qs.get("layout") or [None])[0]
 
         # PHI mode read here, in the handler — passed down as kwarg.
         # (Per Phase 1 correction: helpers don't read globals.)
@@ -16305,6 +16307,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             selected_stage=selected_stage,
             phi_mode=phi_mode,
             user=user,
+            layout=layout,
         ))
 
     def _route_upload_page(self) -> None:
