@@ -98,3 +98,9 @@ design_handoff_pedesk_login/
 # visual/spec reference only; never shipped as runtime app code.
 design_handoff_pedesk_topbar/
 design_handoff_pedesk_command_center/
+
+# PEdesk map / pipeline / analytics design handoffs — static prototypes,
+# visual/spec reference only; never shipped as runtime app code.
+design_handoff_portfolio_map/
+design_handoff_pipeline/
+design_handoff_portfolio_analytics/
