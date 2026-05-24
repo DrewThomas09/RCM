@@ -1001,10 +1001,12 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
     # preview (right), rebuilt on the shared xray_kit. The search/CCN engine
     # path is unchanged (the form still submits q/state; results below).
     workstation = _xray_workstation(q, state_filter, summary)
+    from .xray_kit import xr_crumb
     body = (
         _scoped_styles()
         + landing_title
         + '<div class="hx-wrap xr">'
+        + xr_crumb("Home", "Diligence", "HCRIS X-Ray")
         + deal_context_bar(qs, active_surface="hcris")
         + workstation
         + search_block
