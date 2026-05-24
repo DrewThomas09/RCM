@@ -60,10 +60,23 @@ class DossierLayoutTests(unittest.TestCase):
         self.assertIn('href="/pipeline"', self.html)
         self.assertIn("disabled", self.html)
 
-    def test_copy_is_approximate_layout_not_precise_map(self):
+    def test_copy_is_real_geographic_map_not_tile_grid(self):
         low = self.html.lower()
-        self.assertIn("approximate", low)
-        self.assertIn("not a precise or coastline map", low)
+        # New real-geography language; old tile/cartogram copy must be gone.
+        self.assertIn("real geographic shape", low)
+        self.assertIn("albers", low)
+        self.assertNotIn("equal-size", low)
+        self.assertNotIn("cartogram", low)
+        # Honest about projection limits.
+        self.assertIn("facility-location map", low)
+
+    def test_real_svg_state_paths_present(self):
+        # Recognizable geography — actual per-state SVG paths, not square tiles.
+        self.assertIn("usgeo-svg", self.html)
+        self.assertNotIn("usm-cell", self.html)         # no tile-grid cells
+        self.assertIn('<path class="usgeo-state"', self.html)
+        for st in ("CA", "TX", "FL", "NY", "ME", "WA"):
+            self.assertIn(f'data-state="{st}"', self.html)
 
 
 class EmptyStateTests(unittest.TestCase):
@@ -71,7 +84,7 @@ class EmptyStateTests(unittest.TestCase):
         self.html = render_portfolio_map([], con_states=_CON)
 
     def test_honest_empty_states(self):
-        self.assertIn("usm-cell", self.html)          # map still draws
+        self.assertIn("usgeo-svg", self.html)         # map still draws
         self.assertIn("No state-level portfolio data yet", self.html)
         self.assertIn("No exposure to rank yet", self.html)
         self.assertIn("Click a state", self.html)
