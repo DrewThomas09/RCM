@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from rcm_mc.ui._chartis_kit import (
+    ck_illustrative_note,
     P, chartis_shell, ck_kpi_block, ck_page_title, ck_provenance_tooltip,
 )
 
@@ -470,8 +471,7 @@ def render_covenant_monitor(params: dict) -> str:
 </div>
 '''
 
-    return chartis_shell(
-        content,
+    return chartis_shell(ck_illustrative_note("covenant-headroom figures") + content,
         title=f"Covenant Monitor — {sector}",
         active_nav="/covenant-monitor",
         editorial_intro={

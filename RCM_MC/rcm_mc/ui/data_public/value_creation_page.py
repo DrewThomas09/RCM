@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from rcm_mc.ui._chartis_kit import (
+    ck_illustrative_note,
     P, chartis_shell, ck_kpi_block, ck_provenance_tooltip,
 )
 
@@ -382,8 +383,7 @@ def render_value_creation(params: dict) -> str:
 </div>
 '''
 
-    return chartis_shell(
-        content,
+    return chartis_shell(ck_illustrative_note("value-creation bridge figures") + content,
         title=f"Value Creation Tracker — {sector}",
         active_nav="/value-creation",
         editorial_intro={

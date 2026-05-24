@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from rcm_mc.ui._chartis_kit import (
+    ck_illustrative_note,
     P, chartis_shell, ck_fmt_moic, ck_kpi_block, ck_provenance_tooltip,
 )
 
@@ -430,8 +431,7 @@ def render_underwriting_model(params: dict) -> str:
 </div>
 '''
 
-    return chartis_shell(
-        content,
+    return chartis_shell(ck_illustrative_note("underwriting-model outputs") + content,
         title=f"Underwriting Model — {sector}",
         active_nav="/underwriting-model",
         editorial_intro={
