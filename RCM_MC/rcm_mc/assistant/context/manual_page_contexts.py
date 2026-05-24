@@ -3226,6 +3226,69 @@ _MANUAL: List[PageContext] = [
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
+    # ── 8h loop Phase 4: SNF / Nursing Home vertical ──
+    _ctx(
+        "/nursing-homes", "Nursing Homes (SNF)",
+        short_description="A screener of Medicare/Medicaid-certified nursing "
+        "homes with CMS five-star ratings (overall, health inspection, "
+        "staffing, quality measures), staffing hours, certified beds, Special "
+        "Focus status, ownership, and the enforcement-penalty summary — a "
+        "state tile-grid map, per-state market intelligence, and county "
+        "competition.",
+        primary_purpose="Provide market + provider diligence context for SNF "
+        "deals: facility density by state, the quality/staffing/survey-risk "
+        "profile, ownership mix, and county-level competition.",
+        common_questions=[
+            "How many nursing homes are in this state and how do they rate?",
+            "What do the four CMS star ratings mean and how are they set?",
+            "How does this facility compare to same-state / same-county peers?",
+            "Is a star-rating gap an investable signal or just variance?",
+            "What does the enforcement-penalty summary tell me — and what not?",
+            "What is a Special Focus Facility and why does it matter?",
+            "What should I ask management given this staffing / turnover read?",
+            "What's missing from CMS data that I'd diligence separately?",
+            "Where does this data come from and how fresh is it?",
+            "Why are 'total fines' not the same as facility revenue?",
+        ],
+        inputs=["Vendored CMS Nursing Home Care Compare 'Provider Information' "
+                "snapshot (NH_ProviderInfo, Apr 2026)."],
+        outputs=["KPI cards, a state tile-grid map shaded by facility count, "
+                 "per-state market summary (ownership mix, rating "
+                 "distribution, county competition), provider tables, and "
+                 "per-facility profiles with state percentile + peers."],
+        key_metrics=["Overall 5-star rating", "Health-inspection rating",
+                     "Staffing rating", "Quality-measure rating",
+                     "Certified beds", "RN hours per resident per day"],
+        data_sources=["CMS Nursing Home Care Compare — Provider Information."],
+        model_logic_summary="Counts, per-state averages, ownership-mix HHI, "
+        "rating quartiles, and same-state/county peer percentiles over the "
+        "vendored CMS file — no composite scores invented.",
+        why_it_matters="SNF is a rich, scrutinized post-acute sector; CMS "
+        "ratings, staffing (PBJ-based), survey results, and penalties are key "
+        "early quality + compliance signals before target diligence.",
+        diligence_use_cases=["Sizing the local SNF market; flagging "
+                             "quality/staffing/SFF/penalty outliers; framing a "
+                             "target's competitive set + value-creation levers."],
+        interpretation_guidance=[
+            "Public CMS quality/staffing/survey data — NOT commercial revenue "
+            "or payer mix. 'Total fines' is a regulatory penalty, not income.",
+            "Star ratings are CMS's methodology; the health-inspection "
+            "component is state-survey-driven and can lag.",
+            "Staffing is largely PBJ payroll-based but treat as a screening "
+            "signal, not audited truth.",
+            "A rating/staffing gap may be structural (case mix) — verify; it "
+            "is peer deviation, not an investment conclusion.",
+            "Market/provider context, not a final investment recommendation.",
+        ],
+        limitations=["Medicare/Medicaid-certified facilities only; private-"
+                     "pay-only facilities, commercial rates, and real-time "
+                     "census are not represented. Enforcement detail "
+                     "(per-penalty, per-deficiency) is a separate CMS file, "
+                     "not in this snapshot."],
+        related_routes=["/sector-intelligence", "/home-health", "/hospice"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
 ]
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
