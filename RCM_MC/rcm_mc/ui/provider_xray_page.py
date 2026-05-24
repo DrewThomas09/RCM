@@ -152,31 +152,82 @@ def render_xray_landing(q: str = "", state: str = "",
                          extra_css=_XRAY_CSS)
 
 
+_PEER_ORDER = ("national", "state", "locality", "ownership")
+_PEER_HEAD = {"national": "National", "state": "State", "locality": "Locality",
+              "ownership": "Ownership"}
+
+
+def _pct_cell(p) -> str:
+    if p is None:
+        return '<td class="num">—</td>'
+    if p.suppressed or p.percentile is None:
+        return f'<td class="num" title="{_e(p.label)}: n={p.peer_n} (&lt;5, suppressed)">n/a</td>'
+    return (f'<td class="num" title="{_e(p.label)} · n={p.peer_n}">'
+            f'{p.percentile}</td>')
+
+
 def _bench_table(report: ProviderXrayReport) -> str:
-    ev = report.evidence
-    if ev is None:
-        return ('<p class="ck-xr-empty">Peer benchmarks are not computed for '
-                'this vertical here — open the native profile.</p>')
+    bms = report.benchmarks
+    if not bms:
+        # Fall back to the single-percentile evidence view (or empty).
+        ev = report.evidence
+        if ev is None:
+            return ('<p class="ck-xr-empty">Peer benchmarks are not computed '
+                    'for this vertical here — open the native profile.</p>')
+        rows = "".join(
+            f'<tr><td>{_e(c.label)}</td>'
+            f'<td class="num">{(str(c.raw_value)+c.suffix) if c.raw_value is not None else "—"}</td>'
+            f'<td class="num">{c.peer_percentile if c.peer_percentile is not None else "—"}</td></tr>'
+            for c in ev.components)
+        return ('<table class="ck-xr-bench"><thead><tr><th>Metric</th>'
+                '<th>Value</th><th>State %ile</th></tr></thead>'
+                f'<tbody>{rows}</tbody></table>')
     rows = ""
-    for c in ev.components:
-        pctl = f'{c.peer_percentile}' if c.peer_percentile is not None else "—"
-        z = f'{c.z_score:+.2f}' if c.z_score is not None else "—"
-        raw = f'{c.raw_value:g}{c.suffix}' if c.raw_value is not None else "—"
-        note = f' · {_e(c.note)}' if c.note else ""
+    for b in bms:
+        by_set = {p.peer_set: p for p in b.percentiles}
+        raw = f'{b.value:g}{b.suffix}' if b.value is not None else "—"
+        z = f'{b.z_state:+.2f}' if b.z_state is not None else "—"
+        cells = "".join(_pct_cell(by_set.get(ps)) for ps in _PEER_ORDER)
         rows += (
-            f'<tr><td>{_e(c.label)}{note}</td>'
+            f'<tr><td>{_e(b.label)}</td>'
             f'<td class="num">{raw}</td>'
-            f'<td class="num">{pctl}</td>'
+            f'{cells}'
             f'<td class="num">{z}</td></tr>'
         )
+    heads = "".join(f'<th>{_PEER_HEAD[ps]}<br>%ile</th>' for ps in _PEER_ORDER)
     return (
         '<table class="ck-xr-bench"><thead><tr>'
         '<th>Metric (higher = better)</th><th>Value</th>'
-        f'<th>Peer %ile<br>(n={ev.sample_size})</th><th>z-score</th>'
+        f'{heads}<th>z<br>(state)</th>'
         '</tr></thead>'
         f'<tbody>{rows}</tbody></table>'
-        f'<p class="ck-xr-prov">{_e(ev.formula)}</p>'
+        '<p class="ck-xr-prov">Percentile is peer deviation within each peer '
+        'set (higher = better); "n/a" = fewer than 5 rated peers (suppressed). '
+        'z-score is vs state peers (n&ge;5, sd&gt;0). Not a recommendation.</p>'
     )
+
+
+def _risk_section(report: ProviderXrayReport) -> str:
+    """Transparent rule-based risk indicators — explicitly NOT forecasts."""
+    if not report.risk_indicators:
+        return ""
+    cards = "".join(
+        f'<div class="ck-xr-sig {_risk_sev(r.level)}">'
+        f'<div class="ck-xr-sig-name">{_e(r.name)}'
+        f'<span class="ck-xr-sev {_risk_sev(r.level)}">{_e(r.level).upper()}</span></div>'
+        f'<div class="ck-xr-sig-detail">{_e(r.basis)}</div></div>'
+        for r in report.risk_indicators
+    )
+    return (
+        f'<div class="ck-xr-signals">{cards}</div>'
+        f'<p class="ck-xr-prov">{_e(report.risk_disclaimer)}</p>'
+    )
+
+
+def _risk_sev(level: str) -> str:
+    # Map indicator levels to the signal-card color classes.
+    return {"elevated": "red", "moderate": "amber", "low": "green",
+            "insufficient": "gray"}.get(level, "gray")
 
 
 def render_xray_report(report: ProviderXrayReport) -> str:
@@ -239,7 +290,12 @@ def render_xray_report(report: ProviderXrayReport) -> str:
 
     note = (f'<p class="ck-xr-empty">{_e(report.note)}</p>') if report.note else ""
 
-    body = title + identity + signals + note + bench + market + questions + caveats
+    risk = (ck_panel(_risk_section(report),
+                     title="Risk indicators · leading signals, not forecasts")
+            if report.risk_indicators else "")
+
+    body = (title + identity + signals + note + bench + risk + market
+            + questions + caveats)
     return chartis_shell(body, f"CMS X-Ray · {_e(m.name)}",
                          active_nav="/diligence", extra_css=_XRAY_CSS)
 

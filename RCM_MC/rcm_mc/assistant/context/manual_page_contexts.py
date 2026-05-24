@@ -3597,6 +3597,13 @@ _MANUAL: List[PageContext] = [
             "Concentration (HHI) is provider-count composition, NOT market share.",
             "Below n=5 rated peers, percentile and z-score are suppressed "
             "(insufficient sample).",
+            "Metrics benchmark across four peer sets — national, state, "
+            "locality (county; city for Home Health), and ownership type — "
+            "each with its own peer count.",
+            "Risk indicators are transparent, rule-based LEADING SIGNALS from "
+            "the current snapshot — NOT trained models, probabilities, or "
+            "forecasts (the data is single-snapshot; see the prediction-"
+            "readiness audit). Each shows the components it is built from.",
             "A CCN can resolve to multiple verticals (hospital-based IRF/LTCH "
             "units share the HCRIS CCN) — the resolver shows all, never guesses.",
         ],

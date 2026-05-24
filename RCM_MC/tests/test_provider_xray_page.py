@@ -44,6 +44,19 @@ class RenderTests(unittest.TestCase):
         self.assertIn("not an investment recommendation", h.lower())
         self.assertIn("not market share", h.lower())
 
+    def test_multi_peer_benchmark_columns(self):
+        h = render_provider_xray({"ccn": _tx_snf(), "vertical": "nursing-homes"})
+        for col in ("National<br>%ile", "State<br>%ile", "Locality<br>%ile",
+                    "Ownership<br>%ile"):
+            self.assertIn(col, h)
+        self.assertIn("z<br>(state)", h)
+
+    def test_risk_indicators_section_not_a_forecast(self):
+        h = render_provider_xray({"ccn": _tx_snf(), "vertical": "nursing-homes"})
+        self.assertIn("Risk indicators", h)
+        self.assertIn("leading signals, not forecasts", h)
+        self.assertIn("NOT trained predictive models", h)
+
     def test_not_found_is_honest(self):
         h = render_provider_xray({"q": "ZZZZZZ"})
         self.assertIn("No match", h)
