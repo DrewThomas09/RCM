@@ -261,9 +261,12 @@ class TestUIReworkContract(unittest.TestCase):
         body = self._fetch_body("/login?ui=v3")
         # Editorial markers
         self.assertIn("/static/v3/chartis.css", body)
-        self.assertIn('class="cta-btn submit"', body)
-        self.assertIn("console-teaser", body,
-                      "editorial last-session card missing")
+        self.assertIn('class="cta-btn submit', body)   # primary CTA class preserved
+        # Centered-card redesign (2026-05-24): the two-column "last session"
+        # console card was retired for a single centered card. Pin the new
+        # card marker instead.
+        self.assertIn("pd-login-card", body,
+                      "centered login card missing")
         # The load-bearing invariant: form action is unchanged
         self.assertIn('action="/api/login"', body,
                       "editorial /login changed the form action — would break auth")

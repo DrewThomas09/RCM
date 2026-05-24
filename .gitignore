@@ -89,3 +89,7 @@ design_reference/uploads/
 # PEdesk Guide sidebar design handoff — static React-in-browser prototypes
 # used as a visual/spec reference only; never shipped as runtime app code.
 design_handoff_pedesk_sidebar/
+
+# PEdesk login design handoff — static prototype, visual/spec reference only;
+# never shipped as runtime app code.
+design_handoff_pedesk_login/
