@@ -78,114 +78,124 @@ def _scorecard_panel(sc: Dict[str, Any]) -> str:
     return "".join(items) or empty_note("No scorecard fields.")
 
 
-def _vintage_chart(cohorts: List[Dict[str, Any]]) -> str:
-    """SVG bar chart of median MOIC by vintage year.
+_VINTAGE_METRICS = {
+    # key: (field, axis label, value formatter, single-bar color or None=band)
+    "moic": ("median_moic", "Median MOIC", lambda v: f"{v:.1f}x", None),
+    "count": ("count", "Deal count", lambda v: f"{int(v)}", "#155752"),
+    "ev": ("total_ev_mm", "Total EV ($M)", lambda v: f"${v:,.0f}M", "#0b2341"),
+}
 
-    Turns the vintage cohort table into an at-a-glance shape view:
-    bar height = median MOIC, colored by performance band (green
-    ≥2.5x, amber 1.5–2.5x, red <1.5x). Sized in <small>-style at
-    100% width so it adapts to panel width. Skip entries with no
-    median MOIC (still-unrealized cohorts).
+
+def _vintage_chart(cohorts: List[Dict[str, Any]], metric: str = "moic") -> str:
+    """SVG bar chart of a vintage-cohort metric by year.
+
+    ``metric`` ∈ {moic, count, ev} — drives the field, axis label, value
+    format, and color (MOIC keeps the green/amber/red performance bands; the
+    others use a single editorial fill). Skips entries with no value for the
+    chosen metric (e.g. still-unrealized cohorts have no median MOIC).
     """
+    field, axis_label_txt, fmt, fixed_color = _VINTAGE_METRICS.get(
+        metric, _VINTAGE_METRICS["moic"])
     plotted = [
         c for c in cohorts
-        if c.get("median_moic") is not None
-        and isinstance(c.get("year"), (int, str))
+        if c.get(field) is not None and isinstance(c.get("year"), (int, str))
     ]
     if not plotted:
-        return ""
-    # Sort by year ascending — left-to-right time axis
+        return f'<p class="ck-pa-explainer" style="margin:8px 0;">No vintage data for {_html.escape(axis_label_txt.lower())}.</p>'
     plotted = sorted(plotted, key=lambda c: str(c.get("year", "")))
-    width = 720
-    height = 220
-    pad_l, pad_r, pad_t, pad_b = 48, 16, 28, 32
+    width, height = 720, 220
+    pad_l, pad_r, pad_t, pad_b = 56, 16, 28, 32
     inner_w = width - pad_l - pad_r
     inner_h = height - pad_t - pad_b
     n = len(plotted)
     bar_w = max(8.0, inner_w / max(n, 1) * 0.7)
     gap = inner_w / max(n, 1) - bar_w
-    # MOIC scale: 0 to max(3.0, observed max + 0.5)
-    max_moic = max(
-        (float(c.get("median_moic") or 0) for c in plotted),
-        default=3.0,
-    )
-    y_max = max(3.0, max_moic + 0.5)
+    obs_max = max((float(c.get(field) or 0) for c in plotted), default=1.0)
+    y_max = max(3.0, obs_max + 0.5) if metric == "moic" else max(obs_max * 1.15, 1.0)
 
     def sy(v: float) -> float:
         return pad_t + inner_h - (v / y_max) * inner_h
 
-    # 4 horizontal gridlines at 0, 1.0, 2.0, 3.0 (or scaled)
+    grid_vals = ([0.0, 1.0, 2.0, 3.0] if metric == "moic"
+                 else [y_max * f for f in (0, 0.25, 0.5, 0.75, 1.0)])
     grid_lines = []
-    for v in (0.0, 1.0, 2.0, 3.0):
+    for v in grid_vals:
         if v > y_max:
             continue
         y = sy(v)
+        glabel = f"{v:.1f}x" if metric == "moic" else fmt(v)
         grid_lines.append(
-            f'<line x1="{pad_l}" x2="{pad_l + inner_w}" '
-            f'y1="{y:.1f}" y2="{y:.1f}" stroke="#d6cfc0" '
-            f'stroke-dasharray="2,4" />'
-            f'<text x="{pad_l - 6}" y="{y + 3:.1f}" '
-            f'fill="#7a8699" text-anchor="end" font-size="10" '
-            f'font-family="JetBrains Mono, monospace">'
-            f'{v:.1f}x</text>'
+            f'<line x1="{pad_l}" x2="{pad_l + inner_w}" y1="{y:.1f}" y2="{y:.1f}" '
+            f'stroke="#d6cfc0" stroke-dasharray="2,4" />'
+            f'<text x="{pad_l - 6}" y="{y + 3:.1f}" fill="#7a8699" '
+            f'text-anchor="end" font-size="10" '
+            f'font-family="JetBrains Mono, monospace">{glabel}</text>'
         )
-    # Reference line at 1.0x (break-even)
-    bars = []
-    labels = []
+    bars, labels = [], []
     for i, c in enumerate(plotted):
-        moic = float(c.get("median_moic") or 0)
-        # Color by band
-        color = (
-            "#0a8a5f" if moic >= 2.5
-            else "#b8732a" if moic >= 1.5
-            else "#b5321e"
-        )
+        val = float(c.get(field) or 0)
+        if fixed_color:
+            color = fixed_color
+        else:
+            color = ("#0a8a5f" if val >= 2.5 else "#b8732a" if val >= 1.5 else "#b5321e")
         x = pad_l + i * (bar_w + gap) + gap / 2
-        y_top = sy(moic)
+        y_top = sy(val)
         bar_h = pad_t + inner_h - y_top
         bars.append(
-            f'<rect x="{x:.1f}" y="{y_top:.1f}" '
-            f'width="{bar_w:.1f}" height="{bar_h:.1f}" '
-            f'fill="{color}" fill-opacity="0.85" '
+            f'<rect x="{x:.1f}" y="{y_top:.1f}" width="{bar_w:.1f}" '
+            f'height="{max(bar_h,0):.1f}" fill="{color}" fill-opacity="0.85" '
             f'stroke="{color}" stroke-width="0.5">'
-            f'<title>Vintage {c.get("year")}: median MOIC '
-            f'{moic:.2f}x · {c.get("count", 0)} deals · '
-            f'{c.get("realized_count", 0)} realized</title>'
+            f'<title>Vintage {c.get("year")}: {axis_label_txt} {fmt(val)} · '
+            f'{c.get("count", 0)} deals · {c.get("realized_count", 0)} realized</title>'
             f'</rect>'
         )
-        # Year label at bottom
         labels.append(
-            f'<text x="{x + bar_w/2:.1f}" '
-            f'y="{height - pad_b + 14}" '
+            f'<text x="{x + bar_w/2:.1f}" y="{height - pad_b + 14}" '
             f'fill="#1a2332" text-anchor="middle" font-size="10" '
-            f'font-family="JetBrains Mono, monospace">'
-            f'{c.get("year")}</text>'
+            f'font-family="JetBrains Mono, monospace">{c.get("year")}</text>'
         )
-        # Value label above bar
         labels.append(
-            f'<text x="{x + bar_w/2:.1f}" y="{y_top - 4:.1f}" '
-            f'fill="{color}" text-anchor="middle" font-size="10" '
-            f'font-family="JetBrains Mono, monospace" '
-            f'font-weight="600">{moic:.1f}x</text>'
+            f'<text x="{x + bar_w/2:.1f}" y="{y_top - 4:.1f}" fill="{color}" '
+            f'text-anchor="middle" font-size="10" '
+            f'font-family="JetBrains Mono, monospace" font-weight="600">{fmt(val)}</text>'
         )
-
     axis_label = (
-        f'<text x="14" y="{pad_t + inner_h/2:.1f}" '
-        f'fill="#1a2332" text-anchor="middle" font-size="11" '
-        f'font-family="Inter, sans-serif" font-weight="600" '
-        f'transform="rotate(-90 14 {pad_t + inner_h/2:.1f})">'
-        f'Median MOIC</text>'
+        f'<text x="14" y="{pad_t + inner_h/2:.1f}" fill="#1a2332" '
+        f'text-anchor="middle" font-size="11" font-family="Inter, sans-serif" '
+        f'font-weight="600" transform="rotate(-90 14 {pad_t + inner_h/2:.1f})">'
+        f'{_html.escape(axis_label_txt)}</text>'
     )
-
     return (
         f'<svg viewBox="0 0 {width} {height}" width="100%" '
-        f'style="max-width:{width}px;background:transparent;'
-        f'margin:8px 0 16px;">'
-        f'{"".join(grid_lines)}'
-        f'{"".join(bars)}'
-        f'{"".join(labels)}'
-        f'{axis_label}'
-        f'</svg>'
+        f'style="max-width:{width}px;background:transparent;margin:8px 0 16px;">'
+        f'{"".join(grid_lines)}{"".join(bars)}{"".join(labels)}{axis_label}</svg>'
+    )
+
+
+def _vintage_chart_toggle(cohorts: List[Dict[str, Any]]) -> str:
+    """MOIC / Count / EV toggle over the vintage chart (vanilla JS — renders
+    all three SVGs, shows one). No external chart library."""
+    views = ""
+    btns = ""
+    for i, (key, label) in enumerate((("moic", "MOIC"), ("count", "Count"),
+                                      ("ev", "EV"))):
+        on = " on" if i == 0 else ""
+        btns += (f'<button type="button" class="pa-vint-btn{on}" '
+                 f'data-pa-vint="{key}">{label}</button>')
+        views += (f'<div class="pa-vint-view{on}" data-pa-vint-view="{key}">'
+                  f'{_vintage_chart(cohorts, key)}</div>')
+    js = (
+        "<script>(function(){var w=document.currentScript.closest('.pa-vint-wrap');"
+        "if(!w)return;w.querySelectorAll('[data-pa-vint]').forEach(function(b){"
+        "b.addEventListener('click',function(){var k=b.getAttribute('data-pa-vint');"
+        "w.querySelectorAll('[data-pa-vint]').forEach(function(o){o.classList.toggle('on',o===b);});"
+        "w.querySelectorAll('[data-pa-vint-view]').forEach(function(v){"
+        "v.classList.toggle('on',v.getAttribute('data-pa-vint-view')===k);});});});})();</script>"
+    )
+    return (
+        '<div class="pa-vint-wrap">'
+        f'<div class="pa-vint-toggle" role="group" aria-label="Vintage metric">{btns}</div>'
+        f'{views}{js}</div>'
     )
 
 
@@ -420,15 +430,32 @@ def _concentration_panel(deals: List[Dict[str, Any]]) -> str:
     state_table = _top_table(dict(state_counts), col1="State / Region")
     sponsor_table = _sponsor_ev_table()
 
+    # HHI over composition shares — labeled as PORTFOLIO COMPOSITION
+    # concentration, NOT market share (the denominator is the corpus, not a
+    # real addressable market). 0 = perfectly diffuse, 1 = single category.
+    def _hhi_note(counter: Counter, noun: str) -> str:
+        hhi = _hhi([float(v) for v in counter.values()])
+        if hhi is None:
+            return ""
+        if hhi < 0.15:
+            band = "diffuse"
+        elif hhi < 0.25:
+            band = "moderately concentrated"
+        else:
+            band = "concentrated"
+        return (f'<p class="pa-hhi">HHI {hhi:.3f} · {band} — portfolio '
+                f'<strong>composition</strong> across {len(counter)} {noun}, '
+                f'not market share.</p>')
+
     return (
         f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
         + small_panel(
             f"Subsector concentration (top 10 of {len(sector_counts)})",
-            sector_table, code="SEC",
+            sector_table + _hhi_note(sector_counts, "subsectors"), code="SEC",
         )
         + small_panel(
             f"Geographic concentration (top 10 of {len(state_counts)})",
-            state_table, code="GEO",
+            state_table + _hhi_note(state_counts, "states/regions"), code="GEO",
         )
         + f'</div>'
         + small_panel(
@@ -439,13 +466,32 @@ def _concentration_panel(deals: List[Dict[str, Any]]) -> str:
 
 
 def _outlier_panel(corpus: List[Dict[str, Any]]) -> str:
+    # Statistical guardrail: a z-score needs a real peer sample. With fewer
+    # than 3 realized deals, or zero variance (all the same MOIC), the z-score
+    # is undefined / meaningless — show an honest "insufficient sample" note
+    # rather than implying an investable outlier signal.
+    import statistics as _stats
+    realized = [float(d["realized_moic"]) for d in corpus
+                if isinstance(d.get("realized_moic"), (int, float))]
+    if len(realized) < 3:
+        return empty_note(
+            f"Insufficient peer sample — z-scores need at least 3 realized "
+            f"deals (this universe has {len(realized)}). No outlier call made.")
+    try:
+        if _stats.pstdev(realized) == 0:
+            return empty_note(
+                "Insufficient variance — every realized deal in this universe "
+                "has the same MOIC, so a z-score is undefined. No outlier "
+                "call made.")
+    except Exception:  # noqa: BLE001
+        pass
     try:
         from ...data_public.portfolio_analytics import outlier_deals
         outliers = outlier_deals(corpus, z=2.0)
     except Exception:
         return empty_note("outlier_deals failed.")
     if not outliers:
-        return empty_note("No MOIC outliers (|z| ≥ 2) in the corpus.")
+        return empty_note("No MOIC outliers (|z| ≥ 2) in this universe.")
     rows = []
     for d in outliers[:30]:
         name = _html.escape(str(d.get("deal_name", "—")))
@@ -485,9 +531,94 @@ margin:var(--sc-s-4) 0 var(--sc-s-6);}
 """
 
 
+def _hhi(shares: List[float]) -> Optional[float]:
+    """Herfindahl-Hirschman Index over category SHARES (decimals summing to
+    ~1). Returns sum(s_i^2) in [0,1]; None if no observations. Labeled in the
+    UI as portfolio COMPOSITION concentration — not market share (the
+    denominator is the corpus, not a real market)."""
+    tot = sum(shares)
+    if tot <= 0:
+        return None
+    return round(sum((s / tot) ** 2 for s in shares), 3)
+
+
+def _filter_bar(corpus: List[Dict[str, Any]], *, sel_sub: Optional[str],
+                sel_vint: Optional[str]) -> str:
+    """Universe filter bar — subsector + vintage. Server-side, query-param
+    backed (?subsector=&vintage=); selecting an option re-renders every panel
+    on the filtered universe so the scorecard never desyncs from the rows."""
+    subs = sorted({str(d.get("subsector") or d.get("sector") or "").strip()
+                   for d in corpus if (d.get("subsector") or d.get("sector"))})
+    years = sorted({str(d.get("year")) for d in corpus if d.get("year")},
+                   reverse=True)
+
+    def _seg(label_all: str, options: List[str], key: str,
+             sel: Optional[str]) -> str:
+        def _href(val: Optional[str]) -> str:
+            parts = []
+            other = ("vintage" if key == "subsector" else "subsector")
+            other_val = sel_vint if key == "subsector" else sel_sub
+            if val:
+                parts.append(f"{key}={_html.escape(str(val), quote=True)}")
+            if other_val:
+                parts.append(f"{other}={_html.escape(str(other_val), quote=True)}")
+            return "/portfolio-analytics" + ("?" + "&".join(parts) if parts else "")
+        cells = (f'<a class="pa-seg-btn{"" if sel else " on"}" '
+                 f'href="{_href(None)}">{_html.escape(label_all)}</a>')
+        for opt in options:
+            on = " on" if str(sel) == str(opt) else ""
+            cells += (f'<a class="pa-seg-btn{on}" href="{_href(opt)}">'
+                      f'{_html.escape(str(opt))}</a>')
+        return f'<div class="pa-seg" role="group" aria-label="{_html.escape(key)}">{cells}</div>'
+
+    return (
+        '<div class="pa-filterbar">'
+        '<span class="pa-filter-lab">Subsector</span>'
+        + _seg("All", subs[:12], "subsector", sel_sub)
+        + '<span class="pa-filter-lab">Vintage</span>'
+        + _seg("All", years, "vintage", sel_vint)
+        + ('<a class="pa-clear" href="/portfolio-analytics">clear filters</a>'
+           if (sel_sub or sel_vint) else '')
+        + '</div>'
+    )
+
+
+_PA_FILTER_CSS = """
+.pa-filterbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+background:var(--sc-panel,#faf6ec);border:1px solid var(--sc-rule,#c9c1ac);
+padding:12px 16px;margin:0 0 16px;}
+.pa-filter-lab{font-family:var(--sc-mono,monospace);font-size:10px;
+letter-spacing:.12em;text-transform:uppercase;color:var(--sc-text-dim,#6a7480);}
+.pa-seg{display:flex;flex-wrap:wrap;border:1px solid var(--sc-rule,#c9c1ac);}
+.pa-seg-btn{font-family:var(--sc-mono,monospace);font-size:11px;
+letter-spacing:.04em;padding:5px 11px;color:var(--sc-text-dim,#6a7480);
+text-decoration:none;border-right:1px solid var(--sc-rule,#c9c1ac);}
+.pa-seg-btn:last-child{border-right:0;}
+.pa-seg-btn.on{background:var(--sc-navy,#15202b);color:#faf6ec;}
+.pa-seg-btn:hover:not(.on){background:var(--sc-bone,#f3eddb);color:var(--sc-teal-ink,#1f7a5a);}
+.pa-seg-btn:focus-visible{outline:2px solid var(--sc-teal,#1f7a5a);outline-offset:-2px;}
+.pa-clear{font-family:var(--sc-sans);font-size:12px;color:var(--sc-teal-ink,#1f7a5a);
+margin-left:auto;text-decoration:none;}
+.pa-clear:hover{text-decoration:underline;}
+.pa-hhi{font-family:var(--sc-mono,monospace);font-size:11px;
+color:var(--sc-text-dim,#6a7480);margin:6px 0 0;letter-spacing:.02em;}
+.pa-vint-toggle{display:inline-flex;border:1px solid var(--sc-rule,#c9c1ac);margin:0 0 8px;}
+.pa-vint-toggle button{font-family:var(--sc-mono,monospace);font-size:10.5px;
+letter-spacing:.08em;text-transform:uppercase;padding:5px 12px;cursor:pointer;
+background:transparent;border:0;border-right:1px solid var(--sc-rule,#c9c1ac);
+color:var(--sc-text-dim,#6a7480);}
+.pa-vint-toggle button:last-child{border-right:0;}
+.pa-vint-toggle button.on{background:var(--sc-navy,#15202b);color:#faf6ec;}
+.pa-vint-view{display:none;}
+.pa-vint-view.on{display:block;}
+"""
+
+
 def render_portfolio_analytics(
     store: Any = None,
     current_user: Optional[str] = None,
+    subsector: Optional[str] = None,
+    vintage: Optional[str] = None,
 ) -> str:
     # Pattern A — durable title + italic explainer (mirrors PR #68 deal-profile,
     # PR #73 portfolio-heatmap, PR #74 portfolio-risk-scan). Replaces three
@@ -530,8 +661,8 @@ def render_portfolio_analytics(
             extra_css=_EXPLAINER_CSS,
         )
 
-    corpus = load_corpus_deals()
-    if not corpus:
+    full_corpus = load_corpus_deals()
+    if not full_corpus:
         body = small_panel(
             "Portfolio analytics — no corpus",
             empty_note("No corpus available."),
@@ -542,6 +673,39 @@ def render_portfolio_analytics(
             title="Portfolio Analytics",
             active_nav="/portfolio-analytics",
             extra_css=_EXPLAINER_CSS,
+        )
+
+    # ── Universe filter (server-side; recomputes every panel honestly) ──
+    # Validate the requested filters against the actual corpus so junk
+    # query params are ignored rather than yielding an empty page.
+    _all_subs = {str(d.get("subsector") or d.get("sector") or "").strip()
+                 for d in full_corpus}
+    _all_years = {str(d.get("year")) for d in full_corpus if d.get("year")}
+    sel_sub = subsector if subsector in _all_subs and subsector else None
+    sel_vint = vintage if vintage in _all_years and vintage else None
+    corpus = [
+        d for d in full_corpus
+        if (sel_sub is None
+            or str(d.get("subsector") or d.get("sector") or "").strip() == sel_sub)
+        and (sel_vint is None or str(d.get("year")) == sel_vint)
+    ]
+    filter_bar = _filter_bar(full_corpus, sel_sub=sel_sub, sel_vint=sel_vint)
+    if not corpus:
+        # Filter matched nothing — honest, with a clear path back.
+        body = (
+            _title("no deals match the filter") + explainer_html + filter_bar
+            + small_panel(
+                "No deals in this universe",
+                empty_note("No corpus deals match the selected subsector / "
+                           "vintage. <a href='/portfolio-analytics'>Clear "
+                           "filters</a> to see the full corpus."),
+                code="NIL",
+            )
+        )
+        return chartis_shell(
+            body, title="Portfolio Analytics",
+            active_nav="/portfolio-analytics",
+            extra_css=_EXPLAINER_CSS + _PA_FILTER_CSS,
         )
 
     try:
@@ -587,7 +751,7 @@ def render_portfolio_analytics(
     # table into an at-a-glance shape view; partners see which
     # vintages were home-run years vs. underwater without
     # reading the numbers.
-    vintage_body = _vintage_chart(vc) + _vintage_table(vc)
+    vintage_body = _vintage_chart_toggle(vc) + _vintage_table(vc)
     vintage_panel = small_panel(
         f"Vintage cohort summary ({len(vc)} years)",
         vintage_body, code="VNT",
@@ -610,9 +774,25 @@ def render_portfolio_analytics(
         f"loss {fmt_pct(sc.get('loss_rate'))}"
     )
 
+    scope_note = ""
+    if sel_sub or sel_vint:
+        bits = []
+        if sel_sub:
+            bits.append(_html.escape(sel_sub))
+        if sel_vint:
+            bits.append(f"vintage {_html.escape(sel_vint)}")
+        scope_note = (
+            f'<p class="ck-pa-explainer" style="margin-top:0;">Filtered to '
+            f'<em>{" · ".join(bits)}</em> — {len(corpus)} of '
+            f'{len(full_corpus)} corpus deals. Every panel below is '
+            f'recomputed on this universe.</p>'
+        )
+
     body = (
         _title(meta)
         + explainer_html
+        + filter_bar
+        + scope_note
         + kpi_strip
         + ck_section_header(
             "CORPUS SCORECARD",
@@ -642,5 +822,5 @@ def render_portfolio_analytics(
         body,
         title="Portfolio Analytics",
         active_nav="/portfolio-analytics",
-        extra_css=_EXPLAINER_CSS,
+        extra_css=_EXPLAINER_CSS + _PA_FILTER_CSS,
     )
