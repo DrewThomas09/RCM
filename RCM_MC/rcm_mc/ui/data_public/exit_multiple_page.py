@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from rcm_mc.ui._chartis_kit import (
+    ck_illustrative_note,
     P, chartis_shell, ck_fmt_moic, ck_kpi_block, ck_paired_block,
     ck_provenance_tooltip, ck_value_anchor,
 )
@@ -352,8 +353,7 @@ def render_exit_multiple(params: dict) -> str:
 </div>
 '''
 
-    return chartis_shell(
-        content,
+    return chartis_shell(ck_illustrative_note("exit-multiple scenarios") + content,
         title=f"Exit Multiple Analysis — {sector}",
         active_nav="/exit-multiple",
         editorial_intro={

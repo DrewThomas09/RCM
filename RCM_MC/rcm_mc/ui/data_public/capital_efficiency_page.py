@@ -10,6 +10,7 @@ import html as _html
 from typing import Any, Dict, List, Optional
 
 from rcm_mc.ui._chartis_kit import (
+    ck_illustrative_note,
     P, chartis_shell, ck_page_title, ck_section_header, ck_kpi_block, ck_fmt_moic, ck_value_anchor,
 )
 
@@ -299,8 +300,7 @@ def render_capital_efficiency(params: Dict[str, str]) -> str:
 </p>
 """
 
-    return chartis_shell(
-        body,
+    return chartis_shell(ck_illustrative_note("capital-efficiency figures") + body,
         title="Capital Efficiency Analysis",
         active_nav="/capital-efficiency",
         extra_css=_EXPLAINER_CSS,

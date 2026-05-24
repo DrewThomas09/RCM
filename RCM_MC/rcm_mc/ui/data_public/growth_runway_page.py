@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_illustrative_note
 
 
 def _market_nested_svg(sizes) -> str:
@@ -412,7 +412,7 @@ def render_growth_runway(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Growth Runway", active_nav="/growth-runway",
+    return chartis_shell(ck_illustrative_note("growth-runway projections") + body, "Growth Runway", active_nav="/growth-runway",
         editorial_intro={
             "eyebrow": "GROWTH RUNWAY",
             "headline": "What the growth runway page reveals on this deal.",

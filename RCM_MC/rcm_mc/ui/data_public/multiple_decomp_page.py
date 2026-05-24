@@ -10,6 +10,7 @@ import html as _html
 from typing import Any, Dict, List, Optional
 
 from rcm_mc.ui._chartis_kit import (
+    ck_illustrative_note,
     P, chartis_shell, ck_section_header, ck_kpi_block, ck_fmt_moic, ck_value_anchor,
 )
 
@@ -307,8 +308,7 @@ def render_multiple_decomp(params: Dict[str, str]) -> str:
 .ck-btn:hover { filter:brightness(1.15); }
 """
 
-    return chartis_shell(
-        body,
+    return chartis_shell(ck_illustrative_note("multiple-decomposition figures") + body,
         title="Acquisition Multiple Decomposition",
         active_nav="/multiple-decomp",
         subtitle="Entry EV/EBITDA decomposed: sector baseline, size, payer mix, unexplained premium",

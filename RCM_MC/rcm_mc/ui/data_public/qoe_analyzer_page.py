@@ -5,6 +5,7 @@ from typing import Dict
 
 from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_kpi_block, ck_provenance_tooltip, ck_value_anchor,
+    ck_illustrative_note,
 )
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
@@ -451,7 +452,7 @@ def render_qoe_analyzer(params: dict) -> str:
         page_key="qoe-analyzer",
     )
     return chartis_shell(
-        explainer + content,
+        ck_illustrative_note("quality-of-earnings add-back figures") + explainer + content,
         title=f"Quality of Earnings — {sector}",
         active_nav="/qoe-analyzer",
         editorial_intro={

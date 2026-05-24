@@ -9,6 +9,7 @@ import html as _html
 from typing import Any, Dict, List, Optional
 
 from rcm_mc.ui._chartis_kit import (
+    ck_illustrative_note,
     P, chartis_shell, ck_section_header, ck_kpi_block, ck_fmt_moic,
     ck_page_title, ck_provenance_tooltip,
 )
@@ -348,8 +349,7 @@ def render_acq_timing(params: Dict[str, str]) -> str:
 </p>
 """
 
-    return chartis_shell(
-        body,
+    return chartis_shell(ck_illustrative_note("acquisition-timing figures") + body,
         title="Acquisition Timing Analyzer",
         active_nav="/acq-timing",
         extra_css=_EXPLAINER_CSS,

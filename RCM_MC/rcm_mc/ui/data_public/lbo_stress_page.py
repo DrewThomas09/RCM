@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title, ck_bar_row, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title, ck_bar_row, ck_value_anchor, ck_illustrative_note
 
 
 def _scenarios_chart(items):
@@ -254,7 +254,7 @@ def render_lbo_stress(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "LBO Stress Test", active_nav="/lbo-stress",
+    return chartis_shell(ck_illustrative_note("LBO stress scenarios and break-even leverage") + body, "LBO Stress Test", active_nav="/lbo-stress",
         editorial_intro={
             "eyebrow": "LBO STRESS",
             "headline": "What the lbo stress page reveals on this deal.",

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_illustrative_note
 
 
 def _scenario_bars_svg(scenarios, entry_equity: float) -> str:
@@ -266,7 +266,7 @@ def render_reinvestment(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Reinvestment", active_nav="/reinvestment",
+    return chartis_shell(ck_illustrative_note("reinvestment scenarios") + body, "Reinvestment", active_nav="/reinvestment",
         editorial_intro={
             "eyebrow": "REINVESTMENT",
             "headline": "What the reinvestment page reveals on this deal.",

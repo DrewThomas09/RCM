@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_data_cell, ck_kpi_block, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_data_cell, ck_kpi_block, ck_page_title, ck_value_anchor, ck_illustrative_note
 
 
 def _plan_vs_actual_chart(items) -> str:
@@ -263,7 +263,7 @@ def render_deal_postmortem(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Deal Post-Mortem", active_nav="/deal-postmortem",
+    return chartis_shell(ck_illustrative_note("deal post-mortem figures") + body, "Deal Post-Mortem", active_nav="/deal-postmortem",
         editorial_intro={
             "eyebrow": "DEAL POSTMORTEM",
             "headline": "What the deal postmortem page reveals on this deal.",

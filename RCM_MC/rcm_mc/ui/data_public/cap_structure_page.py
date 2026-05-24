@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_illustrative_note
 
 _EXPLAINER_CSS = """<style>
 .ck-cs-explainer{font-family:var(--sc-serif,'Georgia',serif);
@@ -396,5 +396,5 @@ def render_cap_structure(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Capital Structure", active_nav="/cap-structure",
+    return chartis_shell(ck_illustrative_note("capital-structure figures") + body, "Capital Structure", active_nav="/cap-structure",
         extra_css=_EXPLAINER_CSS)
