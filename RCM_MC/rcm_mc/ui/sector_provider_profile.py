@@ -16,10 +16,27 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from ._chartis_kit import chartis_shell, ck_kpi_block, ck_page_title, ck_panel
 from .sector_market_intel import percentile_rank
+from .xray_kit import XRAY_CSS, xr_eyebrow
 
 
 def _esc(s: Any) -> str:
     return _html.escape("" if s is None else str(s))
+
+
+# Same handoff X-Ray skin the sector screener uses (scoped to `.xr`) so the
+# provider deep-dive matches its parent screener and the hospital HCRIS X-Ray:
+# green accent, navy ribbon panel heads, sharp corners, mono table headers.
+_PROFILE_SKIN = """
+.xr .ck-link{color:var(--xr-green);}
+.xr .ck-link:hover{color:var(--xr-green-deep);}
+.xr .ck-panel{border-radius:0;border-color:var(--xr-rule);}
+.xr .ck-panel-head{background:var(--xr-navy);border-radius:0;}
+.xr .ck-kpi-block,.xr .ck-kpi{border-radius:0;}
+.xr .ck-kpi-value em,.xr .ck-kpi-value .num{color:var(--xr-green);}
+.xr .ck-table th{font-family:var(--xr-mono);letter-spacing:.06em;text-transform:uppercase;}
+.xr .ck-table td a.ck-link{color:var(--xr-green);}
+.xr-profile-eyebrow{margin-bottom:6px;}
+"""
 
 
 def _fmt(v: Optional[float], suffix: str = "") -> str:
@@ -244,8 +261,12 @@ def render_sector_provider_profile(
     )
 
     body = (
-        ck_page_title(name, eyebrow=eyebrow, meta=" · ".join(meta_bits))
+        '<div class="xr">'
+        + f'<div class="xr-profile-eyebrow">{xr_eyebrow(eyebrow)}</div>'
+        + ck_page_title(name, eyebrow=eyebrow, meta=" · ".join(meta_bits))
         + back + kpis + identity_panel + quality_panel
         + peers_panel + locality_panel + prov_panel
+        + '</div>'
     )
-    return chartis_shell(body, name, active_nav=route)
+    return chartis_shell(body, name, active_nav=route,
+                         extra_css=XRAY_CSS + _PROFILE_SKIN)
