@@ -68,6 +68,17 @@ computable from HCRIS fields), and **move/defer** the rest.
 3. Build PR 3 (HCRIS A-v2 results — #663 kit merged) and PR 5 (Cost Structure +
    Debt Service HCRIS panels) per the backlog field maps.
 
+## Update — PRs 2/2b/2c + 8 shipped; PR 3 finding
+- **Merged + live:** #665 audit · #666 header · #668 backlog · #667 PR2 · #669 PR2b · #671 PR8 defer-doc.
+- **Open (awaiting approval):** #670 PR2c (final illustrative labels, green).
+- **14 illustrative analyzers now carry honest ILLUSTRATIVE / DATA REQUIRED headers** (PR 2/2b/2c).
+- **PR 3 finding (verified in code):** the HCRIS X-Ray **results page is already A-v2 + real-data** — headline top-finding lead, real engine benchmark table, real peer roster, trend chip, source attributions, honest caveats. **Public comps are REAL** (vendored `market_intel.public_comps`), not fabricated — component map corrected. So PR 3 is **substantially already implemented**; no hollow rebuild needed.
+
+## Next three tasks
+1. **PR 4 — Payer Stress real HCRIS wiring** (label merged in #667): when a CCN is attached, seed the model from the target's real HCRIS payer-day mix; drop unsupported drivers; degrade honestly. *(Substantial build — next.)*
+2. **PR 5 — Cost Structure + Debt Service HCRIS panels** (labels merged): opex/bed, opex/pt-day vs peer band (real); DSCR proxy + labeled assumption.
+3. **PR 6 — Diligence Checklist honesty / source-aware** behavior.
+
 ## Deferrals / notes
-- ESG, HCIT/SaaS, Biosimilars, Insurance/Malpractice, Bankruptcy, Counterfactual
-  → P4 defer/delete pool (no clear PEdesk source); decisions in PR 8.
+- ESG, HCIT/SaaS, Biosimilars → defer/delete (PR 8 doc); Insurance/Malpractice +
+  Provider Retention + Partner Economics → DATA REQUIRED (activate on attach).
