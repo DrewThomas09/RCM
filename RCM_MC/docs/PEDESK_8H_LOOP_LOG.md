@@ -20,7 +20,8 @@ data, no runtime CMS/map/chart APIs, no unsupported claims.
 | 2026-05-24 05:5x | #610 SNF / Nursing Home vertical | `ef9aa9c2` | ✓ | ✓ | 200 | 14,699 real CMS facilities; full screener/profile/market-intel/Guide/tests. |
 | 2026-05-24 06:0x | #611 Phase 3 evidence/prediction framework (docs+RAG) | `5a263347` | ✓ | ✓ | 200 | 4 RAG-indexed framework docs (199 docs). |
 | 2026-05-24 05:39 | #612 Dialysis vertical | `2c053ae8` | ✓ | ✓ | 200 | 7,557 real CMS Dialysis Facility Compare facilities; full factory. |
-| 2026-05-24 06:xx | #6xx IRF / Inpatient Rehab vertical | _pending merge_ | — | — | — | 1,221 real CMS IRF Compare facilities; full factory. |
+| 2026-05-24 06:0x | #613 IRF / Inpatient Rehab vertical | `5f4f6727` | ✓ | ✓ | 200 | 1,221 real CMS IRF Compare facilities; full factory. |
+| 2026-05-24 06:xx | #6xx LTCH / Long-Term Care Hospital vertical | _pending merge_ | — | — | — | 317 real CMS LTCH Compare facilities; full factory. |
 
 ## Phase ledger
 
@@ -78,8 +79,17 @@ data, no runtime CMS/map/chart APIs, no unsupported claims.
   percentile table since they're lower-is-better) + routes `/inpatient-rehab`
   + `/inpatient-rehab/<ccn>` + curated Guide context (9 Qs, explicit
   small-universe caveat) + palette + `tests/test_irf_vertical.py`.
-  **Verticals fully covered: Home Health, Hospice, SNF, Dialysis, IRF.**
-  Remaining (ASC / LTCH / DMEPOS) queued — depth over breadth.
+  **LTCH / Long-Term Care Hospital vertical built** (#6xx): vendored CMS
+  LTCH Compare General Information + Provider Data (Feb 2026; headline
+  measures pivoted) → `ltch_providers.csv` + `ltch_quality.csv` (**317 real
+  facilities**, incl. total-bed counts). `data/ltch.py` loader +
+  `ui/ltch_page.py` screener/profile (discharge-to-community risk-std
+  headline + beds column; readmission + MSPB lower-is-better, kept out of
+  the percentile table) + routes `/long-term-care-hospital` +
+  `/long-term-care-hospital/<ccn>` + curated Guide context (9 Qs, explicit
+  tiny-universe caveat) + palette + `tests/test_ltch_vertical.py`.
+  **Verticals fully covered: Home Health, Hospice, SNF, Dialysis, IRF, LTCH.**
+  Remaining (ASC / DMEPOS) queued — depth over breadth.
 - **Phase 3 (done, separate from numeric order):** investable-evidence +
   predictive-modeling framework — `PEDESK_INVESTABLE_EVIDENCE_FRAMEWORK.md`,
   `PEDESK_PREDICTIVE_MODELING_ROADMAP.md`, and two `rag_sources/` cards

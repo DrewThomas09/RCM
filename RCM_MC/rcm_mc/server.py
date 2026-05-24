@@ -3345,6 +3345,22 @@ class RCMHandler(BaseHTTPRequestHandler):
                     "rehabilitation facility in the loaded CMS data.</p>",
                     status=HTTPStatus.NOT_FOUND)
             return self._send_html(html_out)
+        if path == "/long-term-care-hospital":
+            from .ui.ltch_page import render_ltch
+            _qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            return self._send_html(render_ltch(_qs))
+        if path.startswith("/long-term-care-hospital/"):
+            from html import escape as _esc_ccn
+            from .ui.ltch_page import render_ltch_profile
+            ccn = urllib.parse.unquote(path[len("/long-term-care-hospital/"):]).strip("/")
+            html_out = render_ltch_profile(ccn)
+            if html_out is None:
+                return self._send_html(
+                    "<h1>Facility Not Found</h1><p>CCN "
+                    f"{_esc_ccn(ccn)} is not a Medicare-certified long-term "
+                    "care hospital in the loaded CMS data.</p>",
+                    status=HTTPStatus.NOT_FOUND)
+            return self._send_html(html_out)
         if path == "/hospice":
             from .ui.hospice_page import render_hospice
             _qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
