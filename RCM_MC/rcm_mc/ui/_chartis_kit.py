@@ -730,8 +730,11 @@ def ck_illustrative_note(what: str = "figures") -> str:
 #   /scenario-mc — a live Monte-Carlo calculator on user inputs (deep-traced);
 #   /tax-structure-analyzer — a pure calculator on user inputs (deep-traced);
 #   /base-rates — a live/calc page (deep-traced).
-# Meta/nav pages (/corpus-dashboard, /cms-sources, /module-index, …) are also
-# excluded — they report real loaded-data status, not modeled figures.
+# Genuinely-real reference pages are excluded — /cms-sources (real CMS API
+# catalog), /cms-data-browser (real HCRIS/DRG samples), /module-index (nav),
+# /data-sources-admin (loaded-data status). NOTE: /corpus-dashboard and
+# /corpus-coverage ARE included — they present analytics over the illustrative
+# seed corpus, so they carry the disclosure too.
 # (The scenario-mc / tax-structure-analyzer exclusions match the prior
 # deep-trace pinned by tests/test_curated_illustrative_note.py.)
 #
@@ -743,7 +746,8 @@ _ILLUSTRATIVE_ANALYZER_ROUTES = frozenset({
     "/capital-call", "/capital-efficiency", "/capital-pacing", "/capital-schedule",
     "/cin-analyzer", "/clinical-ai", "/clinical-outcomes", "/coinvest-pipeline",
     "/comparables", "/competitive-intel", "/compliance-attestation", "/concentration-risk",
-    "/continuation-vehicle", "/corpus-ic-memo", "/covenant-headroom", "/covenant-monitor",
+    "/continuation-vehicle", "/corpus-coverage", "/corpus-dashboard", "/corpus-ic-memo",
+    "/covenant-headroom", "/covenant-monitor",
     "/cyber-risk", "/deal-flow-heatmap", "/deal-origination", "/deal-pipeline",
     "/deal-postmortem", "/deal-quality", "/deal-risk-scores", "/deal-search",
     "/deal-sourcing", "/debt-financing", "/demand-forecast", "/denovo-expansion",

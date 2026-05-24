@@ -27,7 +27,7 @@ from rcm_mc.ui._chartis_kit import (
 _EXCLUDED_ROUTES = {
     "/payer-stress", "/cost-structure", "/debt-service", "/cms-apm",
     "/scenario-mc", "/tax-structure-analyzer", "/base-rates",
-    "/corpus-dashboard", "/cms-sources", "/module-index",
+    "/cms-sources", "/cms-data-browser", "/module-index", "/data-sources-admin",
 }
 
 
