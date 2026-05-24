@@ -4685,6 +4685,13 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "count": len(insights),
             })
         # Deal sourcing page (Prompt 61 UI).
+        if path == "/target-screener":
+            # Unified Source entry: explains and routes to the three screener
+            # modes (sourcing / hospital / predictive), which keep their own
+            # routes. Backward compatible — no existing route changes.
+            from .ui.target_screener_page import render_target_screener
+            _tsq = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            return self._send_html(render_target_screener(_tsq))
         if path == "/source":
             from .ui.source_page import render_source_page
             from .analysis.deal_sourcer import THESIS_LIBRARY, find_thesis_matches
