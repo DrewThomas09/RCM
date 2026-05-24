@@ -21,6 +21,13 @@ from typing import Dict, List, Optional
 
 _PROVIDERS_CSV = Path(__file__).with_name("home_health_providers.csv")
 _QUALITY_CSV = Path(__file__).with_name("home_health_quality.csv")
+# Patient-experience survey (HHCAHPS) — vendored from the CMS facility file.
+# Adds the patient-voice dimension the HH vertical previously lacked.
+_CAHPS_CSV = Path(__file__).with_name("home_health_cahps.csv")
+_CAHPS_METRICS = ("cahps_summary_star", "cahps_professional_star",
+                  "cahps_communication_star", "cahps_medicines_star",
+                  "cahps_overall_star", "cahps_overall_9_10_pct",
+                  "cahps_recommend_pct")
 
 
 @dataclass(frozen=True)
@@ -96,6 +103,30 @@ def load_home_health_quality() -> Dict[str, Dict[str, Optional[float]]]:
             if not ccn:
                 continue
             out[ccn] = {m: _f(r.get(m, "")) for m in metrics}
+    # Merge the patient-experience (HHCAHPS) measures so they flow through the
+    # screener, cross-sector benchmark, and X-Ray alongside the clinical ones.
+    # Agencies without a CAHPS row simply carry None for these keys (≈5.4k of
+    # 12.4k have no survey data — surfaced honestly, never fabricated).
+    cahps = load_home_health_cahps()
+    for ccn, row in out.items():
+        cr = cahps.get(ccn) or {}
+        for m in _CAHPS_METRICS:
+            row[m] = cr.get(m)
+    return out
+
+
+@functools.lru_cache(maxsize=1)
+def load_home_health_cahps() -> Dict[str, Dict[str, Optional[float]]]:
+    """``{ccn: {cahps_metric: float|None}}`` from the vendored HHCAHPS file."""
+    out: Dict[str, Dict[str, Optional[float]]] = {}
+    if not _CAHPS_CSV.is_file():
+        return out
+    with _CAHPS_CSV.open(newline="", encoding="utf-8", errors="replace") as fh:
+        for r in csv.DictReader(fh):
+            ccn = _norm_ccn(r.get("ccn", ""))
+            if not ccn:
+                continue
+            out[ccn] = {m: _f(r.get(m, "")) for m in _CAHPS_METRICS}
     return out
 
 
