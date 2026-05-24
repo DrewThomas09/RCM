@@ -75,12 +75,20 @@ def _fm(val: float) -> str:
     return f"${val:,.0f}"
 
 
-def render_pipeline(db_path: str) -> str:
-    """Render the deal pipeline page."""
+def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
+    """Render the deal pipeline page.
+
+    ``selected_stage`` (from ``?stage=``) filters the hospitals table to one
+    funnel stage; the funnel + KPI strip stay full (they're the context for
+    the filter) with the active stage highlighted. ``None`` shows all.
+    """
     from ..data.pipeline import (
         PIPELINE_STAGES, list_searches, list_pipeline,
         pipeline_summary, get_activity,
     )
+    # Normalize the stage filter against the real stage keys (ignore junk).
+    _stage_keys = {sk for sk, _, _ in PIPELINE_STAGES}
+    sel_stage = selected_stage if selected_stage in _stage_keys else None
 
     # Route through PortfolioStore (campaign target 4E) so the
     # connection inherits PRAGMA foreign_keys=ON, busy_timeout=
@@ -114,12 +122,22 @@ def render_pipeline(db_path: str) -> str:
         "and margin for quick-glance sizing."
         '</p>'
     )
+    # Clickable KPI strip: the stage-mapped cells filter the table (same
+    # ?stage= contract as the funnel); "In Pipeline" clears the filter.
+    def _kpi_link(href: str, block: str, active: bool = False) -> str:
+        cls = "ck-kpi-link" + (" ck-kpi-link-active" if active else "")
+        return f'<a class="{cls}" href="{href}">{block}</a>'
     kpis = (
         '<div class="ck-kpi-strip">'
-        + ck_kpi_block("In Pipeline", f"{total}")
+        + _kpi_link("/pipeline", ck_kpi_block("In Pipeline", f"{total}"),
+                    active=sel_stage is None)
         + ck_kpi_block("Active", f"{active}")
-        + ck_kpi_block("In Diligence", f"{summary.get('diligence', 0)}")
-        + ck_kpi_block("Closed", f"{summary.get('closed', 0)}")
+        + _kpi_link("/pipeline?stage=diligence",
+                    ck_kpi_block("In Diligence", f"{summary.get('diligence', 0)}"),
+                    active=sel_stage == "diligence")
+        + _kpi_link("/pipeline?stage=closed",
+                    ck_kpi_block("Closed", f"{summary.get('closed', 0)}"),
+                    active=sel_stage == "closed")
         + ck_kpi_block("Saved Searches", f"{len(searches)}")
         + '</div>'
     )
@@ -137,9 +155,17 @@ def render_pipeline(db_path: str) -> str:
         bar_color = _funnel_bar_color(stage_key)
         # Greyed row when the stage is empty — keeps the structure
         # present (every stage visible) but doesn't draw the eye.
-        empty_cls = ' style="opacity:0.45;"' if count == 0 else ""
+        # Each row is a click-to-filter link: filters the hospitals table
+        # to that stage. The active stage is highlighted; re-rendered
+        # server-side via ?stage= (URL-backed, back-button safe).
+        row_cls = "ck-funnel-row"
+        if sel_stage == stage_key:
+            row_cls += " ck-funnel-row-active"
+        style = ' style="opacity:0.45;"' if count == 0 else ""
         funnel_bars += (
-            f'<div class="ck-funnel-row"{empty_cls}>'
+            f'<a class="{row_cls}" href="/pipeline?stage={_html.escape(stage_key)}"'
+            f'{style} aria-label="Filter pipeline to {_html.escape(stage_label)} '
+            f'({count})">'
             f'<div class="ck-funnel-stage">{_stage_badge(stage_key)}'
             f'<span class="ck-funnel-stage-desc">{_html.escape(stage_desc)}</span>'
             f'</div>'
@@ -148,15 +174,21 @@ def render_pipeline(db_path: str) -> str:
             f'background:{bar_color};"></div>'
             f'</div>'
             f'<div class="ck-funnel-count">{count}</div>'
-            f'</div>'
+            f'</a>'
         )
 
     funnel_css = (
         '<style>'
         '.ck-funnel-row{display:grid;grid-template-columns:230px 1fr 56px;'
-        'align-items:center;gap:18px;padding:12px 4px;'
-        'border-bottom:1px solid var(--sc-rule,#d6cfc0);}'
+        'align-items:center;gap:18px;padding:12px 8px;'
+        'border-bottom:1px solid var(--sc-rule,#d6cfc0);'
+        'text-decoration:none;color:inherit;cursor:pointer;'
+        'border-left:3px solid transparent;transition:background 0.12s;}'
         '.ck-funnel-row:last-child{border-bottom:0;}'
+        '.ck-funnel-row:hover{background:var(--sc-bone,#ece5d6);}'
+        '.ck-funnel-row:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:-2px;}'
+        '.ck-funnel-row-active{background:var(--sc-bone,#ece5d6);'
+        'border-left-color:var(--sc-teal,#155752);}'
         '.ck-funnel-stage{display:flex;flex-direction:column;gap:4px;}'
         '.ck-funnel-stage-desc{font-family:var(--sc-serif,Georgia,serif);'
         'font-size:12.5px;color:var(--sc-text-dim,#465366);line-height:1.35;}'
@@ -239,9 +271,11 @@ def render_pipeline(db_path: str) -> str:
     except Exception:
         pass
 
-    # ── Pipeline hospitals table ──
+    # ── Pipeline hospitals table (filtered to the selected funnel stage) ──
+    table_hospitals = [h for h in hospitals
+                       if sel_stage is None or h.stage == sel_stage]
     hospital_rows = ""
-    for h in hospitals:
+    for h in table_hospitals:
         ccn = _html.escape(h.ccn)
         name = _html.escape(h.hospital_name[:25])
         hcris = hcris_lookup.get(h.ccn, {})
@@ -262,6 +296,7 @@ def render_pipeline(db_path: str) -> str:
                 f'<button type="submit" class="pp-advance-btn">→{ns_label[:8]}</button></form> '
             )
 
+        recent = _html.escape((h.updated_at or h.added_at or "")[:10] or "—")
         hospital_rows += (
             f'<tr>'
             f'<td>{_priority_dot(h.priority)}</td>'
@@ -270,6 +305,7 @@ def render_pipeline(db_path: str) -> str:
             f'<td class="num">{h.beds}</td>'
             f'<td class="num">{rev_str}</td>'
             f'<td class="num {margin_cls}">{margin_str}</td>'
+            f'<td class="num">{recent}</td>'
             f'<td>{_stage_badge(h.stage)} {advance_links}</td>'
             f'<td>'
             f'<a href="/ebitda-bridge/{ccn}" class="ck-link">Bridge</a> · '
@@ -279,14 +315,38 @@ def render_pipeline(db_path: str) -> str:
         )
 
     if hospital_rows:
+        # ck-data-table → auto click-to-sort (shell _SORT_JS): Beds / Revenue
+        # / Margin sort numerically, Hospital / State / Recent lexically.
+        n_shown = len(table_hospitals)
+        scope_line = (
+            f'showing <strong>{n_shown}</strong> in '
+            f'{_html.escape(sel_stage)} &middot; '
+            '<a href="/pipeline" class="ck-link">clear filter</a>'
+            if sel_stage else
+            f'all <strong>{n_shown}</strong> hospitals &middot; click a funnel '
+            'stage or KPI to filter &middot; click a column header to sort'
+        )
         pipeline_table = ck_panel(
+            f'<p class="ck-section-body">{scope_line}</p>'
             '<p class="ck-section-body">'
             f'<a href="/pipeline/bridge" class="cad-btn cad-btn-primary">Portfolio EBITDA Bridge</a></p>'
-            '<table class="cad-table"><thead><tr>'
-            '<th></th><th>Hospital</th><th>State</th><th>Beds</th>'
-            '<th>Revenue</th><th>Margin</th><th>Stage</th><th>Actions</th>'
+            '<table class="ck-data-table"><thead><tr>'
+            '<th></th><th data-sortable>Hospital</th><th data-sortable>State</th>'
+            '<th data-sortable>Beds</th><th data-sortable>Revenue</th>'
+            '<th data-sortable>Margin</th><th data-sortable>Recent</th>'
+            '<th>Stage</th><th>Actions</th>'
             f'</tr></thead><tbody>{hospital_rows}</tbody></table>',
-            title=f"Pipeline Hospitals ({total})",
+            title=(f"Pipeline Hospitals — {_html.escape(sel_stage)} ({n_shown})"
+                   if sel_stage else f"Pipeline Hospitals ({total})"),
+        )
+    elif sel_stage:
+        # Stage filter active but nothing in that stage — keep a clear-filter
+        # path rather than the generic get-started state.
+        pipeline_table = ck_panel(
+            '<p class="ck-section-body">No hospitals in '
+            f'<strong>{_html.escape(sel_stage)}</strong> right now &middot; '
+            '<a href="/pipeline" class="ck-link">clear filter</a> to see all.</p>',
+            title=f"Pipeline Hospitals — {_html.escape(sel_stage)} (0)",
         )
     else:
         # Replace the bare "No hospitals" line with an editorial
@@ -355,6 +415,12 @@ text-decoration-color:var(--cad-link);}
 border-bottom:1px solid var(--cad-border);}
 .pp-activity-date{color:var(--cad-text3);width:70px;font-size:10px;}
 .pp-activity-ccn{width:60px;}
+/* Clickable KPI cells filter the table (same ?stage= contract as funnel). */
+.ck-kpi-link{text-decoration:none;color:inherit;display:block;
+border-radius:2px;transition:background 0.12s;}
+.ck-kpi-link:hover{background:var(--sc-bone,#ece5d6);}
+.ck-kpi-link:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
+.ck-kpi-link-active{box-shadow:inset 0 -3px 0 var(--sc-teal,#155752);}
 </style>
 """
     next_up = ck_next_section(
