@@ -3289,6 +3289,66 @@ _MANUAL: List[PageContext] = [
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
+    # ── 8h loop Phase 4b: Dialysis vertical ──
+    _ctx(
+        "/dialysis", "Dialysis Facilities",
+        short_description="A screener of Medicare-certified dialysis "
+        "facilities with the CMS overall five-star rating, dialysis-station "
+        "count, ownership/chain, modality offerings, and risk-adjusted "
+        "outcome rates (mortality, hospitalization, readmission, transfusion) "
+        "— a state tile-grid map, per-state market intelligence, and county "
+        "competition.",
+        primary_purpose="Provide market + provider diligence context for "
+        "dialysis deals: facility density by state, the five-star + "
+        "outcome-rate profile, ownership/chain mix, and county competition.",
+        common_questions=[
+            "How many dialysis facilities are in this state and how do they rate?",
+            "What does the dialysis five-star rating capture?",
+            "How does this facility compare to same-state / same-county peers?",
+            "How should I read the mortality / hospitalization / readmission rates?",
+            "Is a rating or outcome gap an investable signal or just variance?",
+            "What share of the market is chain-owned (e.g. DaVita / Fresenius)?",
+            "What should I ask management given these outcome rates?",
+            "What's missing from CMS dialysis data that I'd diligence separately?",
+            "Where does this data come from and how fresh is it?",
+        ],
+        inputs=["Vendored CMS Dialysis Facility Compare 'Listing by Facility' "
+                "snapshot (DFC_FACILITY, Mar 2026)."],
+        outputs=["KPI cards, a state tile-grid map shaded by facility count, "
+                 "per-state market summary (ownership mix, five-star "
+                 "distribution, county competition), provider tables, and "
+                 "per-facility profiles with state percentile + peers."],
+        key_metrics=["Overall five-star rating", "Dialysis stations",
+                     "Mortality rate", "Hospitalization rate",
+                     "Readmission rate"],
+        data_sources=["CMS Dialysis Facility Compare — Listing by Facility."],
+        model_logic_summary="Counts, per-state averages, ownership-mix HHI, "
+        "five-star quartiles, and same-state/county peer percentiles over the "
+        "vendored CMS file — no composite scores invented.",
+        why_it_matters="Dialysis is a consolidated, CMS-rich post-acute "
+        "sector (two national chains dominate); five-star + outcome rates + "
+        "chain mix are strong early diligence signals.",
+        diligence_use_cases=["Sizing the local dialysis market; reading "
+                             "chain concentration; flagging outcome-rate "
+                             "outliers; framing the competitive set."],
+        interpretation_guidance=[
+            "Public CMS quality data — NOT commercial revenue or payer mix.",
+            "Outcome rates are LOWER-is-better, risk-adjusted ESTIMATES with "
+            "confidence intervals — read as risk signals, not verdicts, and "
+            "not under a 'higher percentile = better' frame.",
+            "Five-star availability varies; some facilities are unrated.",
+            "A rating/outcome gap may be case-mix driven — verify; it is peer "
+            "deviation, not an investment conclusion.",
+            "Market/provider context, not a final investment recommendation.",
+        ],
+        limitations=["Medicare-certified dialysis facilities only; commercial "
+                     "rates and real-time census are not represented. ESRD "
+                     "QIP / NHSN / ICH-CAHPS detail are separate CMS files, "
+                     "not in this snapshot."],
+        related_routes=["/sector-intelligence", "/nursing-homes", "/home-health"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
 ]
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
