@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor, ck_source_purpose
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor, ck_source_purpose, ck_illustrative_note
 
 
 def _programs_chart(items) -> str:
@@ -224,10 +224,14 @@ def render_cms_apm_tracker(params: dict = None) -> str:
     p_chart = _programs_chart(r.programs)
     p_tbl = _programs_table(r.programs)
     value_anchor = ck_value_anchor(
-        "CMS APM Exposure",
+        "CMS APM Landscape",
         f"${r.total_apm_payments_b:,.0f}B APM payments",
-        delta=f"{r.total_programs} programs \u00b7 {r.avg_savings_rate_pct:.1f}% avg savings \u00b7 {r.total_lives_covered_m:.1f}M lives \u00b7 {r.portfolio_share_at_risk_pct * 100:.0f}% portfolio at risk",
+        delta=f"{r.total_programs} programs \u00b7 {r.avg_savings_rate_pct:.1f}% avg savings \u00b7 {r.total_lives_covered_m:.1f}M lives covered (CMMI public reference)",
         tone="teal",
+    )
+    portfolio_illustrative = ck_illustrative_note(
+        "portfolio APM-exposure figures \u2014 the deal names and revenue shares "
+        "below are a worked example, not this portfolio's live data"
     )
     e_tbl = _exposures_table(r.exposures)
     e_chart = _exposures_chart(r.exposures)
@@ -242,34 +246,53 @@ def render_cms_apm_tracker(params: dict = None) -> str:
     page_title = ck_page_title(
         "CMS Innovation Models / APM Tracker",
         eyebrow="CMS APM",
-        meta=f"{r.total_programs} active CMS APMs · {r.total_lives_covered_m:.1f}M lives covered · ${r.total_apm_payments_b:.1f}B annual Medicare payments · ${r.total_portfolio_apm_revenue_m:.1f}M portfolio APM revenue at {r.portfolio_share_at_risk_pct * 100:.1f}% share at risk",
+        meta=f"{r.total_programs} active CMS APMs · {r.total_lives_covered_m:.1f}M lives covered · ${r.total_apm_payments_b:.1f}B annual Medicare payments",
+    )
+
+    # The program catalog / performance / calendar / risk-structure tables are
+    # curated from public CMS Innovation Center (CMMI) program descriptions —
+    # program names, structures and timelines are public fact; the figures are
+    # curated approximations, not a live CMS feed. The portfolio-exposure and
+    # commercial-adjacency halves are a worked example (the "Project ..." deals
+    # are not this portfolio's live data) and are scoped illustrative below.
+    source_header = ck_source_purpose(
+        purpose=("Track which CMS alternative-payment models a target "
+                 "participates in and the policy calendar that moves its "
+                 "value-based revenue."),
+        universe="cms",
+        confidence="derived",
+        source="CMS Innovation Center (CMMI) program catalog — curated public reference",
+        next_action="Attach a deal to map its real APM participation",
+        next_href="/diligence/checklist",
     )
 
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
+  {source_header}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">Program Catalog — CMMI & CMS APMs</div>{p_chart}{p_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Portfolio Exposure — Deals in APMs</div>{e_chart}{e_tbl}</div>
+  {portfolio_illustrative}
+  <div style="{cell}"><div style="{h3}">Portfolio Exposure — Deals in APMs <span style="color:{P['warning']}">· ILLUSTRATIVE</span></div>{e_chart}{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">Historical Performance — Top Programs</div>{t_tbl}</div>
   <div style="{cell}"><div style="{h3}">Risk Structure Options</div>{rs_tbl}</div>
   <div style="{cell}"><div style="{h3}">2026-2027 Policy Calendar & Portfolio Impact</div>{c_tbl}</div>
-  <div style="{cell}"><div style="{h3}">Commercial / MA Value-Based Adjacency</div>{pa_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Commercial / MA Value-Based Adjacency <span style="color:{P['warning']}">· ILLUSTRATIVE</span></div>{pa_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">CMS APM Portfolio Summary:</strong> {r.total_programs} active CMS APMs cover {r.total_lives_covered_m:.1f}M lives and route ${r.total_apm_payments_b:.1f}B in annual Medicare payments — avg {r.avg_savings_rate_pct:.2f}% savings rate across active programs.
-    Portfolio APM revenue ${r.total_portfolio_apm_revenue_m:.1f}M across {len(r.exposures)} platforms — {sum(1 for e in r.exposures if e.apm_share_of_rev_pct > 0.10)} deals at &gt;10% APM revenue share (Magnolia/MSK, Redwood/Behavioral, Cedar/Cardiology, Sage/Home Health, Linden/Behavioral).
-    Risk exposure: {r.portfolio_share_at_risk_pct * 100:.1f}% of portfolio revenue materially dependent on APM outcomes — concentrated in cardiology, home health, behavioral, and MSK.
-    Policy overhang: ACO REACH sunset 2026-12-31 ($42.5B program ending), PCF sunset 2026-12-31 ($12.8B), BPCI-A sunset 2025-12-31 ($18.5B) — transition paths to MCP, MSSP, and TEAM identified.
-    Commercial MA parallel: 35 commercial MA risk-based programs cover 28.5M lives at SOFR+ tighter to equity-implied cost — major sponsor targets include Humana, Clover, Alignment, Optum Care, ChenMed.
-    -2.8% 2026 physician fee schedule cut proposes $850M portfolio pressure (gross) — offset by APM shared savings realization target $40-60M net per year.
+    <strong style="color:{text}">CMS APM landscape (public reference):</strong> {r.total_programs} active CMS APMs cover {r.total_lives_covered_m:.1f}M lives and route ${r.total_apm_payments_b:.1f}B in annual Medicare payments — avg {r.avg_savings_rate_pct:.2f}% savings rate across active programs.
+    Policy overhang: ACO REACH sunset 2026-12-31 ($42.5B program ending), PCF sunset 2026-12-31 ($12.8B), BPCI-A sunset 2025-12-31 ($18.5B) — transition paths to MCP, MSSP, and TEAM.
+    -2.8% proposed 2026 physician fee schedule conversion-factor cut is the headline FFS pressure for the cycle.
+    <br><br><em style="color:{P['warning']}">Illustrative overlay:</em> the portfolio-exposure and commercial-adjacency figures (${r.total_portfolio_apm_revenue_m:.1f}M across {len(r.exposures)} example platforms, the "Project ..." deal names, and the {r.portfolio_share_at_risk_pct * 100:.1f}% at-risk share) are a worked example — attach a real deal to map its actual APM participation.
   </div>
 </div>"""
 
-    body = ck_source_purpose(
-        purpose="Track CMS Alternative Payment Model exposure.",
-        universe="illustrative", source="Hardcoded figures",
-        next_action="Wire to CMS APM participation (public)") + body
+    # NOTE: the source-and-purpose header is composed into `body` above via
+    # `source_header` (universe=cms, curated CMMI public reference). PR2c's
+    # lighter "universe=illustrative / Hardcoded figures" prepend was removed in
+    # the #670→#678 rebase — it both duplicated and contradicted the accurate
+    # CMMI framing (the program catalog is real public reference; only the
+    # portfolio overlay is illustrative, which is scoped separately).
     return chartis_shell(body, "CMS APM Tracker", active_nav="/cms-apm",
         editorial_intro={
             "eyebrow": "CMS APM TRACKER",
