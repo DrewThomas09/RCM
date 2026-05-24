@@ -29,6 +29,8 @@ _DOC_KEYWORDS = (
     "data_public", "data_acquisition", "hcris", "payer", "bridge",
     "provider", "physician", "attrition", "system_flow", "diligence",
     "portfolio", "screening", "library_corpus", "research_tooling",
+    # investable-evidence + predictive-modeling framework docs (rag_sources/)
+    "evidence", "predictive", "modeling", "statistic",
 )
 _DOC_DENY = ("secret", "credential", "session", "password", "token", "auth_")
 _MAX_DOC_FILES = 40
