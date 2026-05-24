@@ -3431,6 +3431,16 @@ class RCMHandler(BaseHTTPRequestHandler):
         # HCRIS X-Ray — Medicare cost-report peer benchmarking.
         if path == "/diligence/hcris-xray":
             return self._route_hcris_xray_page()
+        # CMS X-Ray — universal provider diligence scanner. Resolves a
+        # CCN/provider-id/name across every live CMS vertical, benchmarks it
+        # (reusing cross_sector + investable_evidence), and renders a
+        # transparent diligence report. Read-only; query-param driven
+        # (?q=&state= search, ?ccn=&vertical= direct report).
+        if path == "/diligence/xray":
+            from .ui.provider_xray_page import render_provider_xray
+            _qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            return self._send_html(render_provider_xray(_qp))
         # Diligence section landing — was 404, now an editorial
         # index that groups the 24 RCM playbook surfaces into four
         # pillars (Profile/Health, Thesis/Playbook, Audit/Stress,
