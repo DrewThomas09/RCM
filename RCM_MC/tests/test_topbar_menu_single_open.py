@@ -46,8 +46,10 @@ class MenuControllerTests(unittest.TestCase):
 
     def test_dismissal_handlers_present(self):
         self.assertIn("'Escape'", self.h)                 # Escape closes
-        self.assertIn("pointerdown", self.h)              # outside click closes
-        self.assertIn("!bar.contains(e.target)", self.h)
+        self.assertIn("pointerdown", self.h)              # click closes
+        # Any click not inside a nav group closes (covers outside-the-bar AND
+        # the in-topbar Guide/Search/avatar controls).
+        self.assertIn("closest('.ck-nav-group')", self.h)
         self.assertIn("'mouseleave'", self.h)             # leaving nav closes
         self.assertIn("setTimeout(closeAll", self.h)      # with a small delay
         self.assertIn("'focusout'", self.h)               # focus leaving closes
