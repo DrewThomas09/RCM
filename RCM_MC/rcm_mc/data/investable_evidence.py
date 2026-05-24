@@ -71,10 +71,19 @@ _QUALITY_METRICS: Dict[str, List[Tuple[str, str, str]]] = {
         ("cahps_center_care_star", "Center care & operations star", ""),
     ],
     "inpatient-rehab": [
-        ("dtc_rs_rate", "Discharge to community", "%"),
+        ("dtc_rs_rate", "Successful return to home/community", "%"),
+        ("selfcare_fn_pct", "Self-care function at/above expected", "%"),
+        ("mobility_fn_pct", "Mobility function at/above expected", "%"),
+        ("hcp_flu_pct", "Healthcare-personnel flu vaccination", "%"),
+        ("med_review_pct", "Medication review & follow-up", "%"),
+        ("med_list_next_pct", "Medication list to next provider", "%"),
     ],
     "long-term-care-hospital": [
-        ("dtc_rs_rate", "Discharge to community", "%"),
+        ("dtc_rs_rate", "Successful return to home/community", "%"),
+        ("selfcare_fn_pct", "Self-care function at/above expected", "%"),
+        ("hcp_flu_pct", "Healthcare-personnel flu vaccination", "%"),
+        ("med_review_pct", "Medication review & follow-up", "%"),
+        ("vent_weaning_pct", "Successfully weaned from ventilator", "%"),
     ],
 }
 

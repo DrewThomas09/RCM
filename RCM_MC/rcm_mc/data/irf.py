@@ -16,7 +16,16 @@ from typing import Dict, List, Optional
 
 _PROVIDERS_CSV = Path(__file__).with_name("irf_providers.csv")
 _QUALITY_CSV = Path(__file__).with_name("irf_quality.csv")
-_QUALITY_METRICS = ("dtc_rs_rate", "readmission_rsrr", "mspb_score")
+# Measures pivoted from the IRF Compare Provider Data file; names verified
+# against the official CMS IRF Data Dictionary. Higher-is-better functional /
+# process / vaccination measures + lower-is-better readmission / spend /
+# safety / infection measures.
+_QUALITY_METRICS = (
+    "dtc_rs_rate", "selfcare_fn_pct", "mobility_fn_pct", "hcp_flu_pct",
+    "med_review_pct", "med_list_next_pct",
+    "readmission_rsrr", "within_stay_readmit_rsrr", "mspb_score",
+    "pressure_ulcer_rate", "falls_major_injury_rate", "cauti_sir", "cdi_sir",
+)
 
 
 @dataclass(frozen=True)

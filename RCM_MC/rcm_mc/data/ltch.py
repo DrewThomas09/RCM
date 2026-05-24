@@ -17,7 +17,16 @@ from typing import Dict, List, Optional
 
 _PROVIDERS_CSV = Path(__file__).with_name("ltch_providers.csv")
 _QUALITY_CSV = Path(__file__).with_name("ltch_quality.csv")
-_QUALITY_METRICS = ("dtc_rs_rate", "readmission_rsrr", "mspb_score")
+# Measures pivoted from the LTCH Compare Provider Data file; names verified
+# against the official CMS LTCH Data Dictionary. Includes the LTCH-specific
+# ventilator-weaning measure. Higher-is-better function/process/vaccination +
+# lower-is-better readmission/spend/safety/infection.
+_QUALITY_METRICS = (
+    "dtc_rs_rate", "selfcare_fn_pct", "hcp_flu_pct", "med_review_pct",
+    "vent_weaning_pct",
+    "readmission_rsrr", "mspb_score", "pressure_ulcer_rate",
+    "falls_major_injury_rate", "cauti_sir", "clabsi_sir", "cdi_sir",
+)
 
 
 @dataclass(frozen=True)
