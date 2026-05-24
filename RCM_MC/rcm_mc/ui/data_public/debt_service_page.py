@@ -423,12 +423,46 @@ def render_debt_service(params: dict = None) -> str:
 
     # Diligence-reform header: ILLUSTRATIVE today. PR 5 derives DSCR proxies
     # from real HCRIS margin/NPR with a benchmark band and labeled assumptions.
-    body = ck_source_purpose(
-        purpose="Gauge debt-service coverage headroom vs benchmarks before "
-                "sizing leverage.",
-        universe="illustrative", source="Hardcoded benchmark figures",
-        next_action="Run HCRIS X-Ray for real margin / NPR inputs",
-        next_href="/diligence/hcris-xray") + body
+    # Real-data wiring: when a hospital is attached, surface a real HCRIS
+    # operating-cash PROXY (operating margin × NPR) as a DSCR input. Actual debt
+    # balances / interest / covenants are NOT in HCRIS → labeled DATA REQUIRED.
+    _hosp = None
+    _q = ((params or {}).get("ccn") or (params or {}).get("name") or "").strip()
+    if _q:
+        try:
+            from rcm_mc.diligence.hcris_xray import find_hospital
+            _hosp = find_hospital(_q, state=((params or {}).get("state") or None))
+        except Exception:  # noqa: BLE001
+            _hosp = None
+    if _hosp is not None:
+        op_cash = (_hosp.operating_margin_on_npr or 0.0) * (_hosp.net_patient_revenue or 0.0)
+        real = (
+            '<div class="ck-data-table-scroll" style="margin:0 0 14px;">'
+            '<table class="ck-data-table"><thead><tr>'
+            '<th style="text-align:left">Real HCRIS (DSCR proxy inputs)</th>'
+            '<th>Net patient revenue</th><th>Operating margin</th>'
+            '<th>Operating cash (proxy)</th></tr></thead>'
+            f'<tbody><tr><td>{_html.escape(_hosp.name)}</td>'
+            f'<td>${_hosp.net_patient_revenue/1e6:,.1f}M</td>'
+            f'<td>{_hosp.operating_margin_on_npr*100:+.1f}%</td>'
+            f'<td>${op_cash/1e6:,.1f}M</td>'
+            '</tr></tbody></table></div>'
+        )
+        body = ck_source_purpose(
+            purpose=(f"{_hosp.name}'s debt-service headroom. Operating-cash inputs "
+                     "are a real HCRIS PROXY (margin × NPR); actual debt balances "
+                     "/ interest / covenants are not in HCRIS."),
+            universe="hcris", source=f"CMS HCRIS · CCN {_hosp.ccn} · FY{_hosp.fiscal_year}",
+            confidence="derived",
+            next_action="Provide debt terms for a true DSCR (DATA REQUIRED)",
+            next_href=f"/diligence/hcris-xray?ccn={_hosp.ccn}") + real + body
+    else:
+        body = ck_source_purpose(
+            purpose="Gauge debt-service coverage headroom vs benchmarks before "
+                    "sizing leverage.",
+            universe="illustrative", source="Hardcoded benchmark figures",
+            next_action="Attach a hospital for real HCRIS margin / NPR inputs",
+            next_href="/diligence/hcris-xray") + body
     return chartis_shell(body, "Debt Service Coverage", active_nav="/debt-service",
         editorial_intro={
             "eyebrow": "DEBT SERVICE",

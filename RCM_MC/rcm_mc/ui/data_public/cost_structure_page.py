@@ -316,12 +316,42 @@ def render_cost_structure(params: dict = None) -> str:
 
     # Diligence-reform header: ILLUSTRATIVE today (hardcoded cohort figures).
     # PR 5 wires it to real HCRIS opex / opex-per-bed / opex-per-patient-day.
-    body = ck_source_purpose(
-        purpose="Break down a provider's cost structure vs peers to size the "
-                "operational gap behind the margin.",
-        universe="illustrative", source="Hardcoded cohort figures",
-        next_action="Run HCRIS X-Ray for real opex vs peers",
-        next_href="/diligence/hcris-xray") + body
+    # Real-data wiring: when a hospital is attached (?ccn=/?name=), surface its
+    # ACTUAL HCRIS opex facts and flip the header to LIVE; else illustrative.
+    _hosp = None
+    _q = ((params or {}).get("ccn") or (params or {}).get("name") or "").strip()
+    if _q:
+        try:
+            from rcm_mc.diligence.hcris_xray import find_hospital
+            _hosp = find_hospital(_q, state=((params or {}).get("state") or None))
+        except Exception:  # noqa: BLE001
+            _hosp = None
+    if _hosp is not None:
+        real = (
+            '<div class="ck-data-table-scroll" style="margin:0 0 14px;">'
+            '<table class="ck-data-table"><thead><tr>'
+            '<th style="text-align:left">Real HCRIS opex</th><th>Opex / bed</th>'
+            '<th>Opex / patient-day</th><th>Operating margin</th></tr></thead>'
+            f'<tbody><tr><td>{_html.escape(_hosp.name)}</td>'
+            f'<td>${_hosp.opex_per_bed:,.0f}</td>'
+            f'<td>${_hosp.opex_per_patient_day:,.0f}</td>'
+            f'<td>{_hosp.operating_margin_on_npr*100:+.1f}%</td>'
+            '</tr></tbody></table></div>'
+        )
+        body = ck_source_purpose(
+            purpose=(f"{_hosp.name}'s real HCRIS cost structure. Top-line opex "
+                     "is live; the COGS/SG&A and labor split below is an "
+                     "illustrative model (not in HCRIS)."),
+            universe="hcris", source=f"CMS HCRIS · CCN {_hosp.ccn} · FY{_hosp.fiscal_year}",
+            confidence="derived", next_action="Open full HCRIS X-Ray",
+            next_href=f"/diligence/hcris-xray?ccn={_hosp.ccn}") + real + body
+    else:
+        body = ck_source_purpose(
+            purpose="Break down a provider's cost structure vs peers to size the "
+                    "operational gap behind the margin.",
+            universe="illustrative", source="Hardcoded cohort figures",
+            next_action="Attach a hospital for real HCRIS opex vs peers",
+            next_href="/diligence/hcris-xray") + body
     return chartis_shell(body, "Cost Structure Analyzer", active_nav="/cost-structure",
         editorial_intro={
             "eyebrow": "COST STRUCTURE",
