@@ -3838,6 +3838,25 @@ _CSS_INLINE_FALLBACK = """
     display:inline-block; transition:opacity .15s, color .15s; }
   .ck-nav a:hover .ck-nav-caret, .ck-nav a.active .ck-nav-caret {
     opacity:1; color:var(--tb-green); }
+  /* Hover/focus dropdown menus (replace the old persistent second-line rail).
+     Each section nav item carries a paper panel of its sub-pages that opens on
+     hover or keyboard focus and overlays the page (no layout shift). */
+  .ck-nav-group { position:relative; display:inline-flex; align-items:stretch; }
+  .ck-nav-group > a .ck-nav-caret { transition:transform .15s, opacity .15s, color .15s; }
+  .ck-nav-group:hover > a .ck-nav-caret,
+  .ck-nav-group:focus-within > a .ck-nav-caret { opacity:1; color:var(--tb-green); transform:rotate(180deg); }
+  .ck-nav-menu { position:absolute; top:100%; left:0; min-width:248px;
+    background:var(--tb-paper); border:1px solid var(--tb-rule);
+    border-top:2px solid var(--tb-green); box-shadow:0 14px 30px rgba(13,35,54,.18);
+    padding:7px 0; z-index:70; display:none; }
+  .ck-nav-group:hover > .ck-nav-menu,
+  .ck-nav-group:focus-within > .ck-nav-menu { display:block; }
+  /* Sub-page links inside the dropdown (reuse .ck-subnav-link tracking). */
+  .ck-nav-menu .ck-subnav-link { display:block; padding:9px 20px; border:0;
+    border-bottom:0; white-space:nowrap; color:var(--tb-ink2);
+    border-left:2px solid transparent; }
+  .ck-nav-menu .ck-subnav-link:hover { color:var(--tb-green);
+    background:var(--tb-paper2); border-bottom:0; border-left-color:var(--tb-green); }
   .ck-topbar-right { margin-left:auto; display:flex; align-items:center; gap:14px;
     padding-left:24px; border-left:1px solid var(--tb-rule); }
   /* Workspace-mode chip — green (partner) / amber (consulting) underline. */
@@ -4547,11 +4566,11 @@ _GUIDE_CSS = """
    labels/meta — all already loaded by the shell, so NO external/Google
    font is added here. Tokens + component anatomy are scoped to the panel
    so the main app typography/theme is untouched. */
-.ck-guide-trigger{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.45);
-  border-radius:3px;padding:5px 12px;font-size:12px;font-weight:600;letter-spacing:.03em;cursor:pointer;
-  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
-.ck-guide-trigger:hover{background:var(--sc-teal,#155752);border-color:var(--sc-teal,#155752);}
-.ck-guide-trigger:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
+/* NOTE: the Guide TRIGGER button is styled by the paper-topbar block
+   (.ck-guide-trigger near the .ck-topbar rules) — ink text + green "?" glyph,
+   visible on the paper bar. The earlier white-on-navy override that lived here
+   washed the button out against the paper topbar and has been removed; only
+   the Guide PANEL styles remain below. */
 .ck-guide-panel{
   --ck-g-navy:#0d2336;--ck-g-cream:#f4ecd9;--ck-g-cream2:#efe5cc;--ck-g-cream3:#e8dab8;
   --ck-g-paper:#fbf7ee;--ck-g-ink:#15202b;--ck-g-ink2:#2a3a4a;--ck-g-muted:#6a7480;
@@ -6317,21 +6336,44 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
 
     # Chevron on nav items that open a section sub-nav (per handoff). A caret
     # appears when the item's key resolves to a _SUB_NAV section.
-    def _caret(item) -> str:
-        # Home is the dashboard root — no dropdown caret in the handoff.
+    def _section_of(item):
+        # The section key whose sub-nav this item opens, or None (Home is the
+        # dashboard root and never opens a dropdown).
         if item.get("key") == "home":
-            return ""
+            return None
         sect = _resolve_sub_section(item.get("key") or item.get("href"))
-        if sect and sect in _SUB_NAV:
-            return '<span class="ck-nav-caret" aria-hidden="true">▾</span>'
-        return ""
+        return sect if (sect and sect in _SUB_NAV) else None
 
-    links = "".join(
-        f'<a href="{_esc(item["href"])}" '
-        f'class="{"active" if item["key"] == active_nav else ""}">'
-        f'{_esc(_nav_label(item["label"]))}{_caret(item)}</a>'
-        for item in _CORPUS_NAV
-    )
+    def _nav_item(item) -> str:
+        # Each section item is a hover/focus group: the nav anchor plus a
+        # dropdown menu of its sub-pages. The anchor markup is kept identical
+        # to the legacy bare-link form (label + caret inside the <a>) so the
+        # active/caret fidelity guards still hold; the dropdown replaces the
+        # old persistent second-line sub-nav rail.
+        sect = _section_of(item)
+        caret = ('<span class="ck-nav-caret" aria-hidden="true">▾</span>'
+                 if sect else "")
+        anchor = (
+            f'<a href="{_esc(item["href"])}" '
+            f'class="{"active" if item["key"] == active_nav else ""}">'
+            f'{_esc(_nav_label(item["label"]))}{caret}</a>'
+        )
+        if not sect:
+            return anchor
+        menu = "".join(
+            f'<a href="{_esc(s["href"])}" class="ck-subnav-link" role="menuitem">'
+            f'{_esc(s["label"])}</a>'
+            for s in _SUB_NAV[sect]
+        )
+        return (
+            '<div class="ck-nav-group" aria-haspopup="true">'
+            f'{anchor}'
+            f'<div class="ck-nav-menu" role="menu" '
+            f'aria-label="{_esc(_nav_label(item["label"]))} menu">{menu}</div>'
+            '</div>'
+        )
+
+    links = "".join(_nav_item(item) for item in _CORPUS_NAV)
 
     # Sub-nav rail. Page renderers historically pass active_nav in
     # mixed conventions: bare key ("home"), leading-slash path
@@ -6345,20 +6387,8 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         current_workspace_mode(), "PE Partner",
     )
 
-    sub_section = _resolve_sub_section(active_nav)
-    sub_links_html = ""
-    if sub_section and sub_section in _SUB_NAV:
-        sub_links = "".join(
-            f'<a href="{_esc(item["href"])}" class="ck-subnav-link">'
-            f'{_esc(item["label"])}</a>'
-            for item in _SUB_NAV[sub_section]
-        )
-        sub_links_html = (
-            '<nav class="ck-subnav" aria-label="Section">'
-            f'<div class="ck-subnav-inner">{sub_links}</div>'
-            '</nav>'
-        )
-
+    # The section sub-nav now lives in the hover/focus dropdown built per nav
+    # item above (no persistent second-line rail under the topbar).
     return (
         '<header class="ck-topbar">'
         '<div class="ck-topbar-inner">'
@@ -6438,7 +6468,6 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '</div>'
         "</div>"
         "</div>"
-        f"{sub_links_html}"
         "</header>"
     )
 
