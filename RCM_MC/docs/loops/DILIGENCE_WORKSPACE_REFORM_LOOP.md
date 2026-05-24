@@ -121,6 +121,36 @@ meta/nav or genuinely corpus/CMS-backed — real).
 3. On approval, merge the green approval-gated stack (#670/#673/#674/#675/#676)
    with full deploy verification each.
 
+## Update — PRs 8/9/10 (honesty labels, parallel-lane)
+- **#678 PR8 — CMS APM honesty:** real CMMI program catalog kept as curated
+  public reference (`ck_source_purpose`, universe=cms); the fabricated
+  "Project …" portfolio-exposure + commercial-adjacency overlay demoted to a
+  clearly-labeled ILLUSTRATIVE section; removed the unqualified "portfolio APM
+  revenue at X% at risk" claim from the title meta + value anchor.
+- **#679 PR9 — seed-corpus aggregates labeled:** Payer Intelligence, Sector
+  Intelligence, Find Comps, Sponsor League, Deals Library, Sector Momentum.
+- **#680 PR10 — seed-corpus aggregates (cont.):** Geo Market, Sector
+  Correlation, Specialty Benchmarks.
+
+### Key finding — the "deals corpus" is illustrative seed data
+The pages above read `data_public.deals_corpus._SEED_DEALS + extended_seed*`
+**directly** (the 35 built-in seed deals + extended seeds), with **zero
+live-DB reads**. So every "corpus-calibrated" aggregate is built on bundled
+illustrative deals, not the user's ingested portfolio — now disclosed via
+`ck_illustrative_note` on each. Deals Library's "every deal we've ingested"
+intro was corrected.
+
+## Open approval-gated stack (all green unless noted)
+#670 (PR2c) · #673 (PR4 Payer Stress HCRIS) · #674 (PR5 Cost/Debt HCRIS) ·
+#675 (PR6 Checklist honesty) · #676 (PR7 22 calculator labels) · #678 (PR8 CMS
+APM) · #679 (PR9 6 seed-corpus) · #680 (PR10 3 seed-corpus). **#677 docs merged.**
+
+## Remaining to classify (likely REAL meta/nav — header only, no illus label)
+corpus_dashboard, corpus_coverage, corpus_flags_panel, cms_sources,
+cms_data_browser, data_sources_admin, module_index — these report actual
+loaded-data / module status; give a `ck_source_purpose` header at most, not an
+illustrative marker. Verify each before touching.
+
 ## Deferrals / notes
 - ESG, HCIT/SaaS, Biosimilars → defer/delete (PR 8 doc); Insurance/Malpractice +
   Provider Retention + Partner Economics → DATA REQUIRED (activate on attach).
