@@ -8324,10 +8324,16 @@ class RCMHandler(BaseHTTPRequestHandler):
         return self._send_html(render_analysis_landing(deals, recent))
 
     def _route_pipeline(self) -> None:
-        """GET /pipeline — deal pipeline and saved searches."""
+        """GET /pipeline — deal pipeline and saved searches.
+
+        ``?stage=<key>`` filters the hospitals table to one funnel stage.
+        """
         try:
             from .ui.pipeline_page import render_pipeline
-            return self._send_html(render_pipeline(self.config.db_path))
+            qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            stage = (qs.get("stage") or [None])[0]
+            return self._send_html(
+                render_pipeline(self.config.db_path, selected_stage=stage))
         except Exception as exc:
             return self._error_page("Pipeline Error", str(exc)[:200])
 
