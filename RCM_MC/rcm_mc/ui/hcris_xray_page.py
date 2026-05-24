@@ -143,6 +143,75 @@ def _xray_workstation(q: str, state_filter: str, summary: dict) -> str:
     return f'<div class="xr-ws">{left}{right}</div>'
 
 
+_TOPFIND_CSS = """
+.xr-topfind{background:var(--xr-paper);border:1px solid var(--xr-rule);
+ border-top:3px solid var(--xr-rule);padding:20px 24px;margin-bottom:16px;}
+.xr-topfind.bad{border-top-color:var(--xr-red);}
+.xr-topfind.good{border-top-color:var(--xr-green-deep);}
+.xr-topfind-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.xr-topfind-metric{font-family:var(--xr-serif);font-size:24px;line-height:1.1;color:var(--xr-ink);margin:6px 0 2px;}
+.xr-topfind-metric em{font-style:italic;color:var(--xr-green);}
+.xr-topfind-val{font-family:var(--xr-serif);font-size:40px;line-height:1;color:var(--xr-ink);}
+.xr-topfind-val.bad{color:var(--xr-red);}
+.xr-topfind-val.good{color:var(--xr-green-deep);}
+.xr-topfind-delta{font-family:var(--xr-mono);font-size:12px;font-weight:600;letter-spacing:.04em;margin-top:6px;}
+.xr-topfind-delta.bad{color:var(--xr-red);}
+.xr-topfind-delta.good{color:var(--xr-green-deep);}
+.xr-topfind-band{margin-top:14px;}
+.xr-topfind-scale{font-family:var(--xr-mono);font-size:10px;color:var(--xr-muted);
+ display:flex;justify-content:space-between;margin-top:4px;}
+"""
+
+
+def _xray_top_finding(report: "XRayReport", top_under: list, top_over: list) -> str:
+    """A v2 · Headline lead: the single most material real deviation first.
+
+    Computed from the engine's own top unfavorable (else top favorable) metric
+    — no fabricated values. Renders the kit peer-band box-plot positioned by
+    the real P25 / median / P75 / target. Honest in-band state when no outlier.
+    """
+    from . import xray_kit as k
+    bad = bool(top_under)
+    bm = (top_under or top_over or [None])[0]
+    if bm is None:
+        return (
+            '<div class="xr-topfind">'
+            + k.xr_eyebrow("Top finding")
+            + '<div class="xr-topfind-metric">Inside the peer band on every '
+            '<em>measured</em> metric.</div>'
+            '<div class="xr-source">No P25–P75 outlier — no single headline '
+            'signal; read the full benchmark below.</div></div>')
+    p25, med, p75, tgt = (bm.peer_p25, bm.peer_median, bm.peer_p75, bm.target_value)
+    tone = "bad" if bad else "good"
+    state = "aboveRed" if bad else "above"
+    # Axis from the real values (padded); xr_peer_band clamps anything outside.
+    vals = [v for v in (p25, med, p75, tgt) if v is not None]
+    lo, hi = (min(vals), max(vals)) if vals else (0.0, 1.0)
+    pad = (hi - lo) * 0.12 or (abs(hi) * 0.12 or 1.0)
+    band = k.xr_peer_band(lo - pad, hi + pad, p25, med, p75, tgt, state)
+    fmt = bm.spec.fmt
+    delta = (f"{bm.variance_vs_median_pct*100:+.1f}% vs peer median "
+             f"{fmt(med)} · {bm.verdict}")
+    label = html.escape(bm.spec.label)
+    return (
+        f'<div class="xr-topfind {tone}">'
+        + k.xr_eyebrow("Top finding · biggest peer gap" if bad
+                       else "Top finding · strongest beat")
+        + '<div class="xr-topfind-head"><div>'
+        f'<div class="xr-topfind-metric">{label}</div>'
+        f'<div class="xr-topfind-val {tone}">{fmt(tgt)}</div>'
+        f'<div class="xr-topfind-delta {tone}">{html.escape(delta)}</div>'
+        '</div></div>'
+        f'<div class="xr-topfind-band">{band}</div>'
+        '<div class="xr-topfind-scale">'
+        f'<span>P25 {fmt(p25)}</span><span>median {fmt(med)}</span>'
+        f'<span>P75 {fmt(p75)}</span></div>'
+        + k.xr_source("Source: CMS HCRIS cost reports · matched peer pool · "
+                      "peer deviation, not a recommendation")
+        + '</div>'
+    )
+
+
 # ────────────────────────────────────────────────────────────────────
 # Scoped CSS (hx- prefix)
 # ────────────────────────────────────────────────────────────────────
@@ -1086,8 +1155,11 @@ def render_hcris_xray_page(
             f"benchmarked on {len(report.metrics)} metrics."
         ),
     )
+    # A v2 · Headline: lead with the single most material real finding.
+    top_finding = _xray_top_finding(report, top_under, top_over)
     hero = (
-        main_intro
+        top_finding
+        + main_intro
         + _target_card(
             target,
             trend_signal=report.trend_signal,
@@ -1200,7 +1272,7 @@ def render_hcris_xray_page(
             f'<a href="/diligence/hcris-xray{_html.escape(exit_qstr)}" '
             'class="ck-print-preview-exit">Exit preview</a>'
             '</div>'
-            + '<div class="hx-wrap">'
+            + '<div class="hx-wrap xr">'
             + hero
             + metrics_panel
             + public_comp_block
@@ -1226,7 +1298,7 @@ def render_hcris_xray_page(
                     f"FY{target.fiscal_year}"
                 ),
             )
-            + '<div class="hx-wrap">'
+            + '<div class="hx-wrap xr">'
             + deal_context_bar(qs, active_surface="hcris")
             + print_cta
             + hero
@@ -1252,5 +1324,5 @@ def render_hcris_xray_page(
     return chartis_shell(
         body, f"HCRIS X-Ray — {target.name}",
         active_nav="/diligence/hcris-xray",
-        extra_css=_EXPLAINER_CSS,
+        extra_css=_EXPLAINER_CSS + _xray_kit_css() + _WORKSTATION_CSS + _TOPFIND_CSS,
     )
