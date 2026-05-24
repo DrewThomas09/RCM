@@ -4587,6 +4587,12 @@ class RCMHandler(BaseHTTPRequestHandler):
                 current_user=self._chartis_username(),
             ))
         if path == "/portfolio-analytics":
+            # Renamed/moved to Research as "Deal Corpus Analytics" — the page
+            # shows the 655-deal benchmark corpus, not the user's portfolio.
+            # Preserve the query string so bookmarked filters still resolve.
+            _q = urllib.parse.urlparse(self.path).query
+            return self._redirect("/deal-corpus-analytics" + (f"?{_q}" if _q else ""))
+        if path == "/deal-corpus-analytics":
             from .ui.chartis.portfolio_analytics_page import render_portfolio_analytics
             store = PortfolioStore(self.config.db_path)
             _paq = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)

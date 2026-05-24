@@ -1,4 +1,8 @@
-"""Portfolio Analytics — /portfolio-analytics.
+"""Deal Corpus Analytics — /deal-corpus-analytics (Research).
+
+Renamed/moved from "Portfolio Analytics" under Portfolio: this renders the
+655-deal BENCHMARK CORPUS, which is NOT the user's active portfolio.
+/portfolio-analytics now redirects here.
 
 Combines ``data_public/portfolio_analytics.py`` (corpus scorecard,
 vintage cohorts, deals-by-sponsor / type, return distribution,
@@ -563,7 +567,7 @@ def _filter_bar(corpus: List[Dict[str, Any]], *, sel_sub: Optional[str],
                 parts.append(f"{key}={_html.escape(str(val), quote=True)}")
             if other_val:
                 parts.append(f"{other}={_html.escape(str(other_val), quote=True)}")
-            return "/portfolio-analytics" + ("?" + "&".join(parts) if parts else "")
+            return "/deal-corpus-analytics" + ("?" + "&".join(parts) if parts else "")
         cells = (f'<a class="pa-seg-btn{"" if sel else " on"}" '
                  f'href="{_href(None)}">{_html.escape(label_all)}</a>')
         for opt in options:
@@ -578,7 +582,7 @@ def _filter_bar(corpus: List[Dict[str, Any]], *, sel_sub: Optional[str],
         + _seg("All", subs[:12], "subsector", sel_sub)
         + '<span class="pa-filter-lab">Vintage</span>'
         + _seg("All", years, "vintage", sel_vint)
-        + ('<a class="pa-clear" href="/portfolio-analytics">clear filters</a>'
+        + ('<a class="pa-clear" href="/deal-corpus-analytics">clear filters</a>'
            if (sel_sub or sel_vint) else '')
         + '</div>'
     )
@@ -628,12 +632,10 @@ def render_portfolio_analytics(
     # <p> intro. Copy is "corpus-wide" not "portfolio-wide" to label the
     # semantic-confusion bug honestly while the Pattern D rename is pending.
     def _title(meta: str) -> str:
-        # Data-universe chip makes the semantic-confusion bug honest until the
-        # rename to "Deal Corpus Analytics" lands: this is a benchmark CORPUS,
-        # not the user's portfolio.
+        # Benchmark CORPUS, not the user's portfolio — the chip + name say so.
         return ck_page_title(
-            "Portfolio Analytics",
-            eyebrow="PORTFOLIO ANALYTICS",
+            "Deal Corpus Analytics",
+            eyebrow="DEAL CORPUS ANALYTICS",
             meta=meta,
         ) + '<div style="margin:8px 0 0;">' + ck_data_universe("corpus") + '</div>'
     explainer_html = (
@@ -654,28 +656,28 @@ def render_portfolio_analytics(
         )
     except Exception as exc:  # noqa: BLE001
         body = small_panel(
-            "Portfolio analytics unavailable",
+            "Deal Corpus Analytics unavailable",
             empty_note(f"portfolio_analytics module failed: {exc!r}"),
             code="ERR",
         )
         return chartis_shell(
             _title("module unavailable") + explainer_html + body,
-            title="Portfolio Analytics",
-            active_nav="/portfolio-analytics",
+            title="Deal Corpus Analytics",
+            active_nav="/deal-corpus-analytics",
             extra_css=_EXPLAINER_CSS,
         )
 
     full_corpus = load_corpus_deals()
     if not full_corpus:
         body = small_panel(
-            "Portfolio analytics — no corpus",
+            "Deal Corpus Analytics — no corpus",
             empty_note("No corpus available."),
             code="NIL",
         )
         return chartis_shell(
             _title("no corpus available") + explainer_html + body,
-            title="Portfolio Analytics",
-            active_nav="/portfolio-analytics",
+            title="Deal Corpus Analytics",
+            active_nav="/deal-corpus-analytics",
             extra_css=_EXPLAINER_CSS,
         )
 
@@ -701,14 +703,14 @@ def render_portfolio_analytics(
             + small_panel(
                 "No deals in this universe",
                 empty_note("No corpus deals match the selected subsector / "
-                           "vintage. <a href='/portfolio-analytics'>Clear "
+                           "vintage. <a href='/deal-corpus-analytics'>Clear "
                            "filters</a> to see the full corpus."),
                 code="NIL",
             )
         )
         return chartis_shell(
-            body, title="Portfolio Analytics",
-            active_nav="/portfolio-analytics",
+            body, title="Deal Corpus Analytics",
+            active_nav="/deal-corpus-analytics",
             extra_css=_EXPLAINER_CSS + _PA_FILTER_CSS,
         )
 
@@ -718,14 +720,14 @@ def render_portfolio_analytics(
         dt = deals_by_type(corpus)
     except Exception as exc:  # noqa: BLE001
         body = small_panel(
-            "Portfolio analytics failed",
+            "Deal Corpus Analytics failed",
             empty_note(f"scorecard/vintage/type raised: {exc!r}"),
             code="ERR",
         )
         return chartis_shell(
             _title("analysis raised an error") + explainer_html + body,
-            title="Portfolio Analytics",
-            active_nav="/portfolio-analytics",
+            title="Deal Corpus Analytics",
+            active_nav="/deal-corpus-analytics",
             extra_css=_EXPLAINER_CSS,
         )
 
@@ -824,7 +826,7 @@ def render_portfolio_analytics(
 
     return chartis_shell(
         body,
-        title="Portfolio Analytics",
-        active_nav="/portfolio-analytics",
+        title="Deal Corpus Analytics",
+        active_nav="/deal-corpus-analytics",
         extra_css=_EXPLAINER_CSS + _PA_FILTER_CSS,
     )
