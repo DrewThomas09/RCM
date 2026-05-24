@@ -79,6 +79,48 @@ computable from HCRIS fields), and **move/defer** the rest.
 2. **PR 5 — Cost Structure + Debt Service HCRIS panels** (labels merged): opex/bed, opex/pt-day vs peer band (real); DSCR proxy + labeled assumption.
 3. **PR 6 — Diligence Checklist honesty / source-aware** behavior.
 
+## Update — PRs 4/5/6/7 (parallel-lane mode)
+- **Open, green, approval-gated (visible / real-data):**
+  - #670 PR2c — final illustrative labels.
+  - #673 PR4 — Payer Stress seeded from real HCRIS payer-day mix when a CCN
+    is attached; honest degradation otherwise.
+  - #674 PR5 — Cost Structure + Debt Service real HCRIS opex/bed, opex/pt-day,
+    operating margin; debt-service operating-cash **proxy** labeled, covenants
+    DATA REQUIRED.
+  - #675 PR6 — **Diligence Checklist honesty**: the per-item column was
+    mislabeled "Corpus Fail%" (implying a measured frequency) when it is a
+    hardcoded status→% map. Renamed to **Risk Wt.** + tooltip + caveat;
+    `ck_source_purpose` header (universe = corpus when deals loaded, else
+    derived). Returns benchmarks + corpus-deal count are *real*.
+  - #676 PR7 — **22 pure-calculator analyzers labeled ILLUSTRATIVE**
+    (`ck_illustrative_note`). Verified: their backing `data_public/*` compute
+    modules have **zero** real-data signals (no DB/loader/CMS/HCRIS).
+
+## Verified classification (this loop)
+Scanned all unlabeled `data_public/*_page.py`. **22 confirmed pure-calculator
+illustrative** (now labeled in #676): lbo_stress, peer_valuation,
+growth_runway, rollup_economics, reinvestment, concentration_risk,
+antitrust_screener, bolton_analyzer, cap_structure, deal_postmortem,
+platform_maturity, redflag_scanner, tax_structure, exit_multiple,
+value_creation, covenant_monitor, underwriting_model, multiple_decomp,
+capital_efficiency, acq_timing, qoe_analyzer, exit_readiness.
+
+**Still to classify** (heuristic flagged real-data signals — do NOT blanket
+label; verify each): cms_apm_tracker, cms_sources, cms_data_browser,
+corpus_dashboard, corpus_coverage, corpus_flags_panel, deals_library,
+find_comps, sponsor_league, payer_intel, sector_intel, geo_market,
+lp_dashboard/lp_reporting, module_index, data_sources_admin (several are
+meta/nav or genuinely corpus/CMS-backed — real).
+
+## Next three tasks
+1. **CMS APM real-data conversion** (Lane C) — wire `cms_apm_tracker` to a real
+   CMS public APM/ACO source (web/download authorized) or label DATA REQUIRED
+   if no clean public feed; drop any fabricated participation figures.
+2. Classify the "still to classify" set page-by-page; corpus/CMS-backed → add
+   `ck_source_purpose` (real); meta/nav → no marker needed.
+3. On approval, merge the green approval-gated stack (#670/#673/#674/#675/#676)
+   with full deploy verification each.
+
 ## Deferrals / notes
 - ESG, HCIT/SaaS, Biosimilars → defer/delete (PR 8 doc); Insurance/Malpractice +
   Provider Retention + Partner Economics → DATA REQUIRED (activate on attach).
