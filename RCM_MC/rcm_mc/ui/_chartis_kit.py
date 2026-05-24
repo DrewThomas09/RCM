@@ -3811,8 +3811,11 @@ _CSS_INLINE_FALLBACK = """
     --tb-green-deep:#18573f; --tb-green-soft:#d6e8df; --tb-amber:#b8842e;
     position:sticky; top:0; z-index:50; background:var(--tb-paper);
     border-bottom:2px solid var(--tb-ink); }
+  /* Full-bleed editorial bar (handoff is full-width with 32px gutters — the
+     old max-width:min(1920px,95vw) centering made it read narrow/compressed
+     and squeezed the right rail). */
   .ck-topbar-inner { display:flex; align-items:center; gap:0; height:76px;
-    padding:0 32px; max-width:min(1920px, 95vw); margin:0 auto; }
+    padding:0 32px; width:100%; box-sizing:border-box; }
   .ck-wordmark { display:inline-flex; align-items:center; gap:0.5rem;
     font-family:var(--sc-serif,'Source Serif 4',Georgia,serif); font-weight:400;
     font-size:26px; color:var(--tb-ink); letter-spacing:-0.018em;
@@ -3830,6 +3833,11 @@ _CSS_INLINE_FALLBACK = """
   .ck-nav a.active { color:var(--tb-green); font-style:italic;
     border-bottom-color:var(--tb-green); margin-bottom:-1px; }
   .ck-nav a:focus-visible { outline:2px solid var(--tb-green); outline-offset:2px; }
+  /* Chevron on nav items that open a section sub-nav (matches handoff). */
+  .ck-nav-caret { margin-left:7px; font-size:9px; line-height:1; opacity:.5;
+    display:inline-block; transition:opacity .15s, color .15s; }
+  .ck-nav a:hover .ck-nav-caret, .ck-nav a.active .ck-nav-caret {
+    opacity:1; color:var(--tb-green); }
   .ck-topbar-right { margin-left:auto; display:flex; align-items:center; gap:14px;
     padding-left:24px; border-left:1px solid var(--tb-rule); }
   /* Workspace-mode chip — green (partner) / amber (consulting) underline. */
@@ -3937,7 +3945,9 @@ _CSS_INLINE_FALLBACK = """
    * second-level page (Alerts, Heatmap, Find Comps, etc.) without
    * landing on a section index first. */
   .ck-subnav { background:#f3eddb; border-bottom:1px solid #c9c1ac; position:sticky; top:76px; z-index:40; }
-  .ck-subnav-inner { display:flex; gap:var(--sc-s-5); align-items:center; padding:10px var(--sc-s-7); max-width:min(1920px, 95vw); margin:0 auto; overflow-x:auto; }
+  /* Subnav rail aligns to the full-width top bar's 32px gutter (so its first
+     pill sits under the wordmark) instead of the old centered max-width. */
+  .ck-subnav-inner { display:flex; gap:var(--sc-s-5); align-items:center; padding:10px 32px; width:100%; box-sizing:border-box; overflow-x:auto; }
   .ck-subnav-link { font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#6a7480; text-decoration:none; padding:6px 1px; border-bottom:2px solid transparent; border-radius:0; white-space:nowrap; transition:color 0.15s, border-color 0.15s; }
   .ck-subnav-link:hover { color:#1f7a5a; border-bottom-color:#c9c1ac; }
   .ck-subnav-link.active { color:#1f7a5a; border-bottom-color:#1f7a5a; }
@@ -6305,8 +6315,21 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
     def _nav_label(lbl: str) -> str:
         return _ws_term(_NAV_TERM[lbl]) if lbl in _NAV_TERM else lbl
 
+    # Chevron on nav items that open a section sub-nav (per handoff). A caret
+    # appears when the item's key resolves to a _SUB_NAV section.
+    def _caret(item) -> str:
+        # Home is the dashboard root — no dropdown caret in the handoff.
+        if item.get("key") == "home":
+            return ""
+        sect = _resolve_sub_section(item.get("key") or item.get("href"))
+        if sect and sect in _SUB_NAV:
+            return '<span class="ck-nav-caret" aria-hidden="true">▾</span>'
+        return ""
+
     links = "".join(
-        f'<a href="{_esc(item["href"])}" class="{"active" if item["key"] == active_nav else ""}">{_esc(_nav_label(item["label"]))}</a>'
+        f'<a href="{_esc(item["href"])}" '
+        f'class="{"active" if item["key"] == active_nav else ""}">'
+        f'{_esc(_nav_label(item["label"]))}{_caret(item)}</a>'
         for item in _CORPUS_NAV
     )
 
