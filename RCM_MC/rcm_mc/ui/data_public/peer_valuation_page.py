@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_illustrative_note
 
 
 def _football_field_svg(ranges) -> str:
@@ -313,7 +313,7 @@ def render_peer_valuation(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Peer Valuation", active_nav="/peer-valuation",
+    return chartis_shell(ck_illustrative_note("peer valuation multiples") + body, "Peer Valuation", active_nav="/peer-valuation",
         editorial_intro={
             "eyebrow": "PEER VALUATION",
             "headline": "What the peer valuation page reveals on this deal.",

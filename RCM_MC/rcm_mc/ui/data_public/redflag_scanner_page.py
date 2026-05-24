@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_illustrative_note
 
 
 def _categories_chart(items):
@@ -232,7 +232,7 @@ def render_redflag_scanner(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Red-Flag Scanner", active_nav="/redflag-scanner",
+    return chartis_shell(ck_illustrative_note("red-flag scan results") + body, "Red-Flag Scanner", active_nav="/redflag-scanner",
         editorial_intro={
             "eyebrow": "REDFLAG SCANNER",
             "headline": "What the redflag scanner page reveals on this deal.",

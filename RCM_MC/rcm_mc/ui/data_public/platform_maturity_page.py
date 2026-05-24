@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor, ck_illustrative_note
 
 
 def _dimensions_chart(items) -> str:
@@ -223,7 +223,7 @@ def render_platform_maturity(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Platform Maturity", active_nav="/platform-maturity",
+    return chartis_shell(ck_illustrative_note("platform-maturity scores") + body, "Platform Maturity", active_nav="/platform-maturity",
         editorial_intro={
             "eyebrow": "PLATFORM MATURITY",
             "headline": "What the platform maturity page reveals on this deal.",

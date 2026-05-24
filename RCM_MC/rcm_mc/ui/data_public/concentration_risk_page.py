@@ -6,6 +6,7 @@ import math
 from typing import List
 
 from rcm_mc.ui._chartis_kit import (
+    ck_illustrative_note,
     P, _MONO, _SANS, chartis_shell, ck_fmt_num, ck_kpi_block,
     ck_page_title, ck_provenance_tooltip, ck_section_header,
 )
@@ -185,7 +186,7 @@ def render_concentration_risk() -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Concentration Risk", active_nav="/concentration-risk",
+    return chartis_shell(ck_illustrative_note("concentration-risk figures") + body, "Concentration Risk", active_nav="/concentration-risk",
                          subtitle=f"HHI analysis — {cr.corpus_size} deals",
         editorial_intro={
             "eyebrow": "CONCENTRATION RISK",

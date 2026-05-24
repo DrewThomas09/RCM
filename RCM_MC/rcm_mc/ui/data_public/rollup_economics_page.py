@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor, ck_illustrative_note
 
 
 def _synergy_chart(items) -> str:
@@ -344,7 +344,7 @@ def render_rollup_economics(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Roll-Up Economics", active_nav="/rollup-economics",
+    return chartis_shell(ck_illustrative_note("roll-up economics") + body, "Roll-Up Economics", active_nav="/rollup-economics",
         editorial_intro={
             "eyebrow": "ROLLUP ECONOMICS",
             "headline": "What the rollup economics page reveals on this deal.",
