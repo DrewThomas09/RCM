@@ -104,7 +104,7 @@ never fabricate).
 | **EBITDA gap — close-to-peer-median (pp + $)** | **DERIVED** | `(peer_median_op_margin − target_op_margin) × NPR` — all REAL inputs |
 | **EBITDA EV (`~$595M EV @ 9.0× cap`)** | **ASSUMPTION** | cap multiple is an *input*, not engine data → render with an explicit, user-visible assumption (e.g. "@ 9.0× — assumption") or omit the EV line until wired to a deal assumption |
 | **EBITDA "close gap to public comps" step (+$211M)** | **UNAVAILABLE** | needs public-comp margins (not in engine) → **omit this waterfall step** in v1 |
-| **⑧ Public-comp context (HCA/THC/UHS/ARDT, EV/EBITDA)** | **UNAVAILABLE / SAMPLE-ONLY** | no public-comp data source in the HCRIS engine → render an honest "Public comps not wired — insufficient data" empty state; the handoff's ticker values are **SAMPLE-ONLY, must not ship as real** |
+| **⑧ Public-comp context (HCA/THC/UHS/ARDT, EV/EBITDA)** | **REFERENCE (real) — CORRECTION** | Verified in code: public comps come from the vendored `market_intel.public_comps` module (real curated public-company op-margins + EV/EBITDA), NOT the handoff mock. The results page already renders them from this real source via `_public_comp_context`. Label RESEARCH REFERENCE; this supersedes the earlier "UNAVAILABLE" assumption. |
 | Footer cross-ref pre-seeded EV/EBITDA/equity/debt | DERIVED/ASSUMPTION | links are real routes; seeded $ values depend on the cap-multiple assumption — label or omit |
 
 **Net rule:** the report ships **identity, trend, payer mix, deviation cards,
