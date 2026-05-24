@@ -3055,6 +3055,177 @@ _MANUAL: List[PageContext] = [
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.MIXED,
     ),
+    # ── 8h loop Phase 1 batch 2: portfolio / diligence / source pages ──
+    _ctx(
+        "/diligence", "Diligence Workspace",
+        short_description="The diligence section index — the playbook of "
+        "per-target workbenches (deal profile, ingestion, benchmarks, HCRIS "
+        "X-ray, QoE memo, checklist, questions ledger).",
+        primary_purpose="Orient a deal team to the diligence surfaces for a "
+        "target and route into the right workbench.",
+        common_questions=[
+            "What diligence tools are available for a target?",
+            "Where do I start a new target's diligence?",
+            "How do the benchmark / QoE / HCRIS surfaces fit together?",
+            "What is observed target data versus public benchmark here?",
+            "What should the open-questions ledger capture?",
+        ],
+        inputs=["Navigation index; per-target data loads in the linked "
+                "workbenches, not this page."],
+        outputs=["Links/cards to the diligence workbenches + open-questions tracker."],
+        key_metrics=["(index page — metrics live on the linked workbenches)"],
+        data_sources=["Routes into HCRIS, engagement RCM data, corpus comps."],
+        model_logic_summary="Index/navigation page; no computation of its own.",
+        why_it_matters="A single entry point keeps the diligence workflow "
+        "coherent across per-target surfaces.",
+        diligence_use_cases=["Launching + tracking a target's diligence across "
+                             "benchmarks, QoE, and the questions ledger."],
+        interpretation_guidance=[
+            "This is a launcher; each workbench states its own data scope.",
+            "Not an investment recommendation.",
+        ],
+        limitations=["No analytics here — see each linked workbench's caveats."],
+        related_routes=["/benchmarks", "/diligence/questions", "/library"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/concentration-risk", "Concentration Risk",
+        short_description="Portfolio diversification analysis — HHI plus "
+        "CR3 / CR5 concentration ratios across the corpus by category.",
+        primary_purpose="Quantify how concentrated the portfolio/corpus is "
+        "(subsector, geography, sponsor) so single-point risk is visible "
+        "before committing a new deal.",
+        common_questions=[
+            "How concentrated is the portfolio by subsector / geography?",
+            "What do HHI and CR3/CR5 mean here?",
+            "Is this composition concentration or market share?",
+            "Which categories drive the concentration?",
+            "What is a healthy versus risky concentration level?",
+            "What are the caveats on these concentration measures?",
+        ],
+        inputs=["Corpus deal list (subsector, geography, sponsor categories)."],
+        outputs=["HHI + CR3/CR5 by category with diversification commentary."],
+        key_metrics=["HHI (sum of squared shares)", "CR3", "CR5"],
+        data_sources=["Corpus deal universe (local)."],
+        model_logic_summary="HHI = sum(share^2); CRn = top-n share sum — over "
+        "COMPOSITION shares (portfolio mix), not market volume.",
+        why_it_matters="Concentration is a core portfolio-construction risk; a "
+        "single subsector/geography shock hits a concentrated book harder.",
+        diligence_use_cases=["Stress-testing single-point exposure before "
+                             "adding a correlated deal."],
+        interpretation_guidance=[
+            "Portfolio COMPOSITION concentration, NOT market share — the "
+            "denominator is the corpus, not a real addressable market.",
+            "High HHI = concentrated mix, not a valuation claim.",
+        ],
+        limitations=["Composition-only; says nothing about true market share "
+                     "or competitive position."],
+        related_routes=["/portfolio-analytics", "/portfolio/heatmap"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/competitive-intel", "Competitive Intelligence",
+        short_description="Per-hospital percentile rank on every metric across "
+        "four peer groups (national, state, size-matched, system type), with "
+        "gaps to P75 / P90 quantifying value-creation headroom.",
+        primary_purpose="Show where a hospital sits versus peers on each "
+        "metric and how much improvement reaches the top quartile/decile.",
+        common_questions=[
+            "How does this hospital rank versus peers on each metric?",
+            "Which peer group is most relevant — state, size, or system?",
+            "How big is the gap to P75 / P90?",
+            "Is a percentile gap an investable signal or just variance?",
+            "What should I ask management about the largest gaps?",
+            "What are the limitations of CMS-based peer ranking?",
+        ],
+        inputs=["CMS HCRIS hospital metrics; peer groups computed locally."],
+        outputs=["Percentile ranks per metric per peer group + gap-to-P75/P90."],
+        key_metrics=["Percentile rank", "Gap to P75", "Gap to P90"],
+        data_sources=["CMS HCRIS hospital cost reports."],
+        model_logic_summary="Ranks the hospital within each peer set; gaps are "
+        "distance to peer P75/P90 — descriptive, not a forecast.",
+        why_it_matters="Peer gaps are the starting hypothesis for operational "
+        "value creation; large, stable gaps flag the biggest levers.",
+        diligence_use_cases=["Sizing improvement headroom by metric; framing "
+                             "management questions on underperformance."],
+        interpretation_guidance=[
+            "Percentile is peer deviation, NOT a causal/investment conclusion.",
+            "A gap can be structural (case mix), not addressable — verify.",
+            "Medicare cost-report metrics; not commercial performance.",
+        ],
+        limitations=["HCRIS Medicare data only; peer groups are CMS-derived, "
+                     "not commercial market peers."],
+        related_routes=["/market-data", "/benchmarks", "/methodology"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/lp-dashboard", "LP Portfolio Dashboard",
+        short_description="Fund-level LP reporting view — TVPI / DPI / RVPI, "
+        "gross/net MOIC, IRR, loss rate, a vintage J-curve, sector exposure, "
+        "and top/bottom performers.",
+        primary_purpose="A partner-ready, fund-level read of returns and "
+        "exposure for LP reporting.",
+        common_questions=[
+            "What are the fund's TVPI / DPI / RVPI and net MOIC/IRR?",
+            "What does the J-curve show about pacing?",
+            "Where is the fund concentrated by sector?",
+            "Which deals are the top and bottom performers?",
+            "Are these realized or marked (unrealized) returns?",
+            "What are the caveats on these LP metrics?",
+        ],
+        inputs=["Portfolio/corpus deal returns + vintages (local)."],
+        outputs=["Fund KPI strip, vintage J-curve, sector exposure table, "
+                 "performer leaderboard."],
+        key_metrics=["TVPI", "DPI", "RVPI", "Net MOIC", "IRR", "Loss rate"],
+        data_sources=["Portfolio deal data (local store / corpus)."],
+        model_logic_summary="Standard fund-return roll-ups over the deal set; "
+        "no fabricated marks — realized vs unrealized distinguished.",
+        why_it_matters="LP-facing returns + exposure are the headline fund "
+        "narrative; pacing and concentration drive LP questions.",
+        diligence_use_cases=["Fund-level performance review; LP-meeting prep."],
+        interpretation_guidance=[
+            "Distinguish realized (DPI) from marked (RVPI) — marks are estimates.",
+            "Sector exposure is composition, not market share.",
+            "Not an investment recommendation.",
+        ],
+        limitations=["Return marks depend on supplied data; unrealized values "
+                     "are estimates, not cash."],
+        related_routes=["/lp-reporting", "/lp-update", "/portfolio-analytics"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/admin/data-sources", "Data Source Admin",
+        short_description="Operational health view of PEdesk's ingested public "
+        "data sources — presence, freshness, and ingestion status.",
+        primary_purpose="Let an operator verify which public datasets are "
+        "loaded and current (admin / infrastructure view).",
+        common_questions=[
+            "Which data sources are loaded and are they fresh?",
+            "Which sources are stale or missing?",
+            "Where does each source come from?",
+            "When was each source last ingested?",
+        ],
+        inputs=["Local data-source inventory + ingestion metadata."],
+        outputs=["Source health table (presence, freshness, status)."],
+        key_metrics=["Source presence", "Freshness", "Ingestion status"],
+        data_sources=["Local ingested-source inventory (public CMS data)."],
+        model_logic_summary="Status/metadata display; no analytics.",
+        why_it_matters="Operators must confirm the data foundation is present "
+        "and current before partners rely on downstream analytics.",
+        diligence_use_cases=["Operational check that a source is loaded/current."],
+        interpretation_guidance=[
+            "Admin/infrastructure metadata, not deal analytics.",
+            "All sources are public/official; no commercial data.",
+        ],
+        limitations=["Reflects the local ingested snapshot; no live feeds."],
+        related_routes=["/data/catalog", "/cms-sources"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
 ]
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}

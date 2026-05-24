@@ -30,9 +30,14 @@ data, no runtime CMS/map/chart APIs, no unsupported claims.
   fallback pages. Batch 1 (CMS/data): `/market-data`, `/cms-sources`,
   `/cms-data-browser`, `/data/catalog`, `/benchmarks` upgraded
   fallback → curated (accurate sources, honest caveats, 7–8 suggested
-  questions each). Remaining targets: `/comps`, `/diligence`,
-  `/deliverables`, `/proof`, `/about`, `/admin/data-sources`,
-  `/data-intelligence`.
+  questions each).
+  Batch 2 (portfolio/diligence/source): `/diligence`,
+  `/concentration-risk` (HHI/CR3/CR5 labeled composition not market share),
+  `/competitive-intel` (peer percentile = deviation not conclusion),
+  `/lp-dashboard` (realized vs marked distinguished), `/admin/data-sources`
+  upgraded fallback → curated. Verified `/comps`, `/deliverables`, `/proof`,
+  `/about` are NOT real routes (skipped — no phantom contexts). Curated
+  count: 73 → 83 of 309 page routes.
 - **Phase 2 (queued):** RAG source cards (sectors + metrics).
 - **Phase 3 (queued):** investable-evidence + predictive-modeling framework.
 - **Phase 4 (queued):** CMS verticals (SNF data spine first; then
