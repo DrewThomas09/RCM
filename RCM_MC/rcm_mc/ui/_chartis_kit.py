@@ -3852,11 +3852,17 @@ _CSS_INLINE_FALLBACK = """
     padding:1px 5px; pointer-events:none; background:var(--tb-paper); }
   @media (max-width:1280px){ .ck-search { width:160px; } }
   /* Guide trigger — outlined ink button, green on hover. */
-  .ck-guide-trigger { font-family:var(--sc-mono,'JetBrains Mono',monospace); font-size:11px;
+  .ck-guide-trigger { display:inline-flex; align-items:center; gap:6px;
+    font-family:var(--sc-mono,'JetBrains Mono',monospace); font-size:11px;
     font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--tb-ink);
     background:transparent; border:1px solid var(--tb-ink); border-radius:2px; padding:7px 14px;
     cursor:pointer; transition:background .15s, color .15s, border-color .15s; }
+  /* Green italic-serif "?" accent — the handoff detail that keeps Guide
+     from reading as washed-out/disabled against the busy right zone. */
+  .ck-guide-glyph { font-family:var(--sc-serif,'Source Serif 4',Georgia,serif);
+    font-style:italic; font-size:13px; line-height:1; color:var(--tb-green); }
   .ck-guide-trigger:hover { background:var(--tb-paper2); color:var(--tb-green); border-color:var(--tb-green); }
+  .ck-guide-trigger:hover .ck-guide-glyph { color:var(--tb-green); }
   .ck-guide-trigger:focus-visible { outline:2px solid var(--tb-green); outline-offset:2px; }
   @media (max-width:1280px){ .ck-guide-trigger { display:none; } }  /* Guide stays in the avatar dropdown */
   /* + New deal — primary CTA, solid ink, green-deep on hover. */
@@ -6352,17 +6358,24 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '<span class="ck-topbar-qpill-num" data-ck-qpill-num>0</span>'
         '<span class="ck-topbar-qpill-label">open Qs</span>'
         '</a>'
-        # PEdesk Guide trigger — opens the read-only context sidebar. The
-        # panel + behavior are injected at shell level (see _GUIDE_*).
-        '<button class="ck-guide-trigger" type="button" data-ck-guide-open '
-        'aria-haspopup="dialog" aria-controls="ck-guide-panel" '
-        'title="PEdesk Guide — explain this page">Guide</button>'
+        # Search launcher first, then Guide — matching the handoff's
+        # search · Guide · +New · avatar right-zone order. Visible
+        # placeholder is short so it never truncates in the 220px field;
+        # the descriptive label stays on aria-label for screen readers.
         '<form class="ck-search-form" action="/search" method="get" role="search">'
         '<input class="ck-search" type="search" name="q" '
-        'placeholder="Search deals, hospitals, routes" '
+        'placeholder="Search…" '
         'aria-label="Search deals, hospitals, routes" />'
         '<kbd class="ck-search-kbd" aria-hidden="true">⌘K</kbd>'
         '</form>'
+        # PEdesk Guide trigger — opens the read-only context sidebar. The
+        # green italic-serif "?" glyph is the handoff accent that makes the
+        # button read as live, not washed out. Panel + behavior are injected
+        # at shell level (see _GUIDE_*).
+        '<button class="ck-guide-trigger" type="button" data-ck-guide-open '
+        'aria-haspopup="dialog" aria-controls="ck-guide-panel" '
+        'title="PEdesk Guide — explain this page">'
+        '<span class="ck-guide-glyph" aria-hidden="true">?</span>Guide</button>'
         # + New deal — primary CTA. No dedicated /deals/new route exists yet,
         # so it routes to the Pipeline section (deal sourcing/origination)
         # rather than inventing a flow or shipping a broken link.
