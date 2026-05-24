@@ -57,8 +57,12 @@ class TopbarCssTests(unittest.TestCase):
         self.css = chartis_shell(body="<main/>", title="x")
 
     def test_dropdown_opens_on_hover_and_focus(self):
+        # Hover opens (no-JS fallback); focus opens via the JS controller's
+        # `focusin → .is-open` (the old CSS :focus-within rule was removed
+        # because it left a focused panel stuck open alongside a hovered one).
         self.assertIn(".ck-nav-group:hover > .ck-nav-menu", self.css)
-        self.assertIn(":focus-within > .ck-nav-menu", self.css)
+        self.assertIn(".ck-nav-group.is-open > .ck-nav-menu", self.css)
+        self.assertIn("'focusin'", self.css)
 
     def test_guide_button_is_not_white_on_paper(self):
         # The washed-out white-on-navy override must be gone; the visible

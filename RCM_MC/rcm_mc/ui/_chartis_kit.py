@@ -3900,13 +3900,23 @@ _CSS_INLINE_FALLBACK = """
   .ck-nav-group { position:relative; display:inline-flex; align-items:stretch; }
   .ck-nav-group > a .ck-nav-caret { transition:transform .15s, opacity .15s, color .15s; }
   .ck-nav-group:hover > a .ck-nav-caret,
-  .ck-nav-group:focus-within > a .ck-nav-caret { opacity:1; color:var(--tb-green); transform:rotate(180deg); }
+  .ck-nav-group.is-open > a .ck-nav-caret { opacity:1; color:var(--tb-green); transform:rotate(180deg); }
   .ck-nav-menu { position:absolute; top:100%; left:0;
     background:var(--tb-paper); border:1px solid var(--tb-rule);
     border-top:2px solid var(--tb-green); box-shadow:0 14px 30px rgba(13,35,54,.18);
     z-index:70; display:none; }
+  /* JS authoritative open state (.is-open) enforces ONE open menu at a time
+   * and reliable dismissal. :hover is a no-JS fallback — it can only ever
+   * match the single hovered group, so it cannot stack. (The old
+   * :focus-within rule kept a panel "stuck" open after a nav item was
+   * clicked/focused, letting a focused menu + a hovered menu show at once.) */
   .ck-nav-group:hover > .ck-nav-menu,
-  .ck-nav-group:focus-within > .ck-nav-menu { display:block; }
+  .ck-nav-group.is-open > .ck-nav-menu { display:block; }
+  /* When JS has taken control (topbar marked data-menu-js), hover no longer
+   * opens panels — only .is-open does — so there is exactly one source of
+   * truth and no hover/focus stacking. */
+  .ck-topbar[data-menu-js] .ck-nav-group:hover > .ck-nav-menu { display:none; }
+  .ck-topbar[data-menu-js] .ck-nav-group.is-open > .ck-nav-menu { display:block; }
   /* Horizontal mega-menu: featured left panel + numbered destination grid. */
   .ck-nav-mega { display:grid; grid-template-columns:236px 1fr; min-width:660px;
     padding:0; }
@@ -6162,6 +6172,40 @@ _USER_MENU_JS = """
 """
 
 
+# Topbar mega-menu controller. Enforces ONE open menu at a time and reliable
+# dismissal (the CSS :focus-within fallback could leave a focused panel stuck
+# open alongside a hovered one). Marks the topbar [data-menu-js] so CSS hands
+# the open state entirely to .is-open. Drop-in safe; no-ops without a topbar.
+_NAV_MENU_JS = """
+<script>
+(function(){
+  var bar = document.querySelector('.ck-topbar');
+  if (!bar) return;
+  var nav = bar.querySelector('.ck-nav');
+  if (!nav) return;
+  var groups = Array.prototype.slice.call(bar.querySelectorAll('.ck-nav-group'));
+  if (!groups.length) return;
+  bar.setAttribute('data-menu-js', '1');   // CSS: open state via .is-open only
+  var closeTimer = null;
+  function closeAll(){ groups.forEach(function(g){ g.classList.remove('is-open'); }); }
+  function openOnly(g){ closeAll(); g.classList.add('is-open'); }   // one at a time
+  groups.forEach(function(g){
+    g.addEventListener('mouseenter', function(){ clearTimeout(closeTimer); openOnly(g); });
+    g.addEventListener('focusin', function(){ clearTimeout(closeTimer); openOnly(g); });
+  });
+  // Leaving the whole nav region closes (tiny delay tolerates diagonal travel
+  // between the nav item and its panel); re-entering cancels the close.
+  nav.addEventListener('mouseleave', function(){ closeTimer = setTimeout(closeAll, 140); });
+  nav.addEventListener('mouseenter', function(){ clearTimeout(closeTimer); });
+  // Escape, click-outside, and focus leaving the topbar all close everything.
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeAll(); });
+  document.addEventListener('pointerdown', function(e){ if (!bar.contains(e.target)) closeAll(); });
+  bar.addEventListener('focusout', function(e){ if (!bar.contains(e.relatedTarget)) closeAll(); });
+})();
+</script>
+"""
+
+
 _PALETTE_JS = """
 <script>
 /* Cmd+K palette behaviour:
@@ -6816,6 +6860,7 @@ def chartis_shell(
         f"{ck_quick_capture()}"
         f"{_CSRF_JS}"
         f"{_USER_MENU_JS}"
+        f"{_NAV_MENU_JS}"
         f"{_QPILL_JS}"
         f"{_INTRO_DISMISS_JS}"
         f"{_PALETTE_JS}"
