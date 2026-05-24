@@ -571,6 +571,39 @@ def ck_signal_badge(text: str, *, tone: str = "neutral") -> str:
     return f'<span class="ck-badge tone-{tone}">{_esc(text)}</span>'
 
 
+# Data-universe label chips. Every confusing page should declare WHICH data
+# universe it shows so a partner never mistakes a benchmark corpus for their
+# own portfolio (see docs/PEDESK_ROUTE_TAXONOMY.md). Self-describing tooltip.
+_DATA_UNIVERSE = {
+    "user-deals":     ("USER DEALS", "deals",
+                       "Your fund's actual opportunity/deal records."),
+    "user-portfolio": ("USER PORTFOLIO", "port",
+                       "Your fund's actual owned portfolio holdings."),
+    "cms":            ("CMS PUBLIC DATA", "cms",
+                       "Public CMS provider/facility data — the market, not your deals."),
+    "corpus":         ("BENCHMARK CORPUS", "corpus",
+                       "Historical benchmark deal corpus for comparison — NOT your portfolio."),
+    "research":       ("RESEARCH REFERENCE", "ref",
+                       "Reference intelligence (payer/sponsor/sector) — not user-specific."),
+    "mixed":          ("MIXED DATA", "mixed",
+                       "Combines universes — each section is labeled separately."),
+}
+
+
+def ck_data_universe(kind: str) -> str:
+    """A small mono chip naming the page's data universe.
+
+    ``kind`` ∈ user-deals · user-portfolio · cms · corpus · research · mixed.
+    Renders nothing for an unknown kind (fail-safe). Style lives in the global
+    shell CSS (`.ck-universe`)."""
+    rec = _DATA_UNIVERSE.get(kind)
+    if rec is None:
+        return ""
+    label, cls, tip = rec
+    return (f'<span class="ck-universe ck-universe-{cls}" title="{_esc(tip)}">'
+            f'{_esc(label)}</span>')
+
+
 def ck_illustrative_note(what: str = "figures") -> str:
     """Honest provenance marker for curated / illustrative tracker pages.
 
@@ -3825,6 +3858,20 @@ _CSS_INLINE_FALLBACK = """
   .ck-kpi-trend.tone-neutral  { color:var(--sc-text-faint); }
   .ck-kpi-sub { font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); margin-top:4px; }
   .ck-kpi-code { position:absolute; top:var(--sc-s-4); right:0; font-family:var(--sc-mono); font-size:10px; color:var(--sc-text-faint); letter-spacing:0.1em; }
+  /* Data-universe label chips (ck_data_universe) — declare which data
+   * universe a page shows so corpus is never mistaken for portfolio. */
+  .ck-universe { display:inline-flex; align-items:center; gap:6px; padding:3px 9px;
+    font-family:var(--sc-mono); font-size:10px; font-weight:600; letter-spacing:0.12em;
+    text-transform:uppercase; border:1px solid currentColor; border-radius:2px;
+    cursor:help; vertical-align:middle; }
+  .ck-universe::before { content:""; width:6px; height:6px; border-radius:50%;
+    background:currentColor; flex:none; }
+  .ck-universe-deals  { color:var(--sc-navy,#15202b); }
+  .ck-universe-port   { color:var(--sc-positive,#0a8a5f); }
+  .ck-universe-cms    { color:var(--sc-teal-ink,#155752); }
+  .ck-universe-corpus { color:var(--sc-warning,#b8732a); }
+  .ck-universe-ref    { color:var(--sc-text-dim,#6a7480); }
+  .ck-universe-mixed  { color:var(--sc-text-faint,#8b94a0); }
   .ck-badge { display:inline-flex; align-items:center; padding:3px 8px; font-family:var(--sc-sans); font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; border:1px solid currentColor; border-radius:2px; }
   .ck-badge.tone-positive { color:var(--sc-positive); }
   .ck-badge.tone-warning  { color:var(--sc-warning); }

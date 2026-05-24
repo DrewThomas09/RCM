@@ -135,7 +135,8 @@ def render_portfolio_map(
     con_states: Optional[Dict[str, bool]] = None,
 ) -> str:
     """Full-page HTML with the editorial dossier portfolio map (handoff)."""
-    from ._chartis_kit import chartis_shell, ck_next_section, ck_page_title
+    from ._chartis_kit import (chartis_shell, ck_data_universe,
+                               ck_next_section, ck_page_title)
     from .us_map import STATE_NAMES
     from .us_geo_map import render_us_geo_map
 
@@ -177,7 +178,7 @@ def render_portfolio_map(
         "Portfolio Map", eyebrow="PORTFOLIO · /portfolio/map",
         meta=(f"{total_mapped} deals · {n_states} states · {n_con} CON "
               "jurisdictions" if deals else "no state geography yet"),
-    )
+    ) + '<div style="margin:8px 0 0;">' + ck_data_universe("user-deals") + '</div>'
     actions = (
         '<div class="ck-pm-actions">'
         '<button class="ck-pm-btn" type="button" aria-disabled="true" disabled '

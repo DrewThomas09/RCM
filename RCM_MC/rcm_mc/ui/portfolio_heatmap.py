@@ -105,8 +105,9 @@ def render_heatmap(
     ``deltas`` maps ``deal_id`` → ``{metric: value_change}`` from
     :func:`rcm_mc.portfolio.portfolio_monitor.compute_deltas`.
     """
-    from ._chartis_kit import chartis_shell, ck_page_title
+    from ._chartis_kit import chartis_shell, ck_page_title, ck_data_universe
 
+    # MIXED: the rows are user deals, but ranked against the benchmark corpus.
     title_block = ck_page_title(
         "Portfolio Heatmap",
         eyebrow="PORTFOLIO HEATMAP",
@@ -114,7 +115,7 @@ def render_heatmap(
             f"{len(packets)} deals · percentile rank vs corpus"
             if packets else "no deals yet"
         ),
-    )
+    ) + '<div style="margin:8px 0 0;">' + ck_data_universe("mixed") + '</div>'
     explainer = (
         '<p class="ck-ph-explainer">'
         '<em>Where the deals stand against benchmarks.</em> '

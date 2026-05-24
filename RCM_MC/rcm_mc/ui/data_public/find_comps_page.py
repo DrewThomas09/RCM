@@ -27,8 +27,8 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 from rcm_mc.ui._chartis_kit import (
     P, _MONO, _SANS, chartis_shell, ck_fmt_moic, ck_fmt_num,
-    ck_kpi_block, ck_next_section, ck_page_title, ck_provenance_tooltip,
-    ck_section_header,
+    ck_data_universe, ck_kpi_block, ck_next_section, ck_page_title,
+    ck_provenance_tooltip, ck_section_header,
 )
 
 _EXPLAINER_CSS = """
@@ -392,7 +392,7 @@ def render_find_comps(params: Dict[str, str]) -> str:
     title_block = ck_page_title(
         "Find Comps", eyebrow="FIND COMPS",
         meta=f"{n:,} corpus deals · profile-distance similarity",
-    )
+    ) + '<div style="margin:8px 0 0;">' + ck_data_universe("corpus") + '</div>'
     explainer_html = (
         '<p class="ck-fc-explainer">'
         '<em>Where the closest realized deals live.</em> '
