@@ -19,7 +19,8 @@ data, no runtime CMS/map/chart APIs, no unsupported claims.
 | 2026-05-24 05:2x | #609 Phase 1 batch 2 (portfolio/diligence/source context) | `36eac75d` | ✓ | ✓ | 200 | 5 pages curated (73→83). |
 | 2026-05-24 05:5x | #610 SNF / Nursing Home vertical | `ef9aa9c2` | ✓ | ✓ | 200 | 14,699 real CMS facilities; full screener/profile/market-intel/Guide/tests. |
 | 2026-05-24 06:0x | #611 Phase 3 evidence/prediction framework (docs+RAG) | `5a263347` | ✓ | ✓ | 200 | 4 RAG-indexed framework docs (199 docs). |
-| 2026-05-24 06:1x | #6xx Dialysis vertical | _pending merge_ | — | — | — | 7,557 real CMS Dialysis Facility Compare facilities; full factory. |
+| 2026-05-24 05:39 | #612 Dialysis vertical | `2c053ae8` | ✓ | ✓ | 200 | 7,557 real CMS Dialysis Facility Compare facilities; full factory. |
+| 2026-05-24 06:xx | #6xx IRF / Inpatient Rehab vertical | _pending merge_ | — | — | — | 1,221 real CMS IRF Compare facilities; full factory. |
 
 ## Phase ledger
 
@@ -66,9 +67,19 @@ data, no runtime CMS/map/chart APIs, no unsupported claims.
   county competition; outcome rates shown raw in the table but kept out of
   the higher=better percentile table since they're lower-is-better) + routes
   `/dialysis` + `/dialysis/<ccn>` + curated Guide context (9 Qs) + palette +
-  `tests/test_dialysis_vertical.py`. **Verticals fully covered: Home Health,
-  Hospice, SNF, Dialysis.** Remaining (ASC / IRF / LTCH / DMEPOS) queued —
-  depth over breadth.
+  `tests/test_dialysis_vertical.py`.
+  **IRF / Inpatient Rehab vertical built** (#6xx): vendored CMS IRF Compare
+  General Information + Provider Data (Feb 2026; headline measures pivoted
+  from the long-format Provider Data file) → `irf_providers.csv` +
+  `irf_quality.csv` (**1,221 real facilities**). `data/irf.py` loader +
+  `ui/irf_page.py` screener/profile (discharge-to-community risk-standardized
+  as the higher-is-better headline; readmission + Medicare-spending-per-
+  beneficiary shown raw in the table but kept out of the higher=better
+  percentile table since they're lower-is-better) + routes `/inpatient-rehab`
+  + `/inpatient-rehab/<ccn>` + curated Guide context (9 Qs, explicit
+  small-universe caveat) + palette + `tests/test_irf_vertical.py`.
+  **Verticals fully covered: Home Health, Hospice, SNF, Dialysis, IRF.**
+  Remaining (ASC / LTCH / DMEPOS) queued — depth over breadth.
 - **Phase 3 (done, separate from numeric order):** investable-evidence +
   predictive-modeling framework — `PEDESK_INVESTABLE_EVIDENCE_FRAMEWORK.md`,
   `PEDESK_PREDICTIVE_MODELING_ROADMAP.md`, and two `rag_sources/` cards

@@ -3349,6 +3349,66 @@ _MANUAL: List[PageContext] = [
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
+    _ctx(
+        "/inpatient-rehab", "Inpatient Rehab (IRF)",
+        short_description="A screener of Medicare-certified inpatient "
+        "rehabilitation facilities with publicly reported CMS measures — "
+        "discharge to community (risk-standardized), potentially-preventable "
+        "readmissions, and Medicare spending per beneficiary — plus a state "
+        "tile-grid map, per-state market intelligence, and county competition.",
+        primary_purpose="Provide market + provider diligence context for IRF "
+        "deals: facility density by state, the discharge-to-community + "
+        "readmission + spending profile, ownership mix, and county competition.",
+        common_questions=[
+            "How many IRFs are in this state and how do they perform?",
+            "What does discharge-to-community (risk-standardized) capture?",
+            "How does this facility compare to same-state / same-county peers?",
+            "How should I read the readmission and Medicare-spending measures?",
+            "Is a performance gap an investable signal or just small-sample noise?",
+            "What share of the local IRF market is for-profit vs nonprofit?",
+            "What should I ask management given these quality measures?",
+            "What's missing from CMS IRF data that I'd diligence separately?",
+            "Where does this data come from and how fresh is it?",
+        ],
+        inputs=["Vendored CMS IRF Compare snapshot — General Information + "
+                "Provider Data (headline measures pivoted, Feb 2026)."],
+        outputs=["KPI cards, a state tile-grid map shaded by facility count, "
+                 "per-state market summary (ownership mix, county competition), "
+                 "provider tables, and per-facility profiles with state "
+                 "percentile + peers."],
+        key_metrics=["Discharge to community (risk-standardized)",
+                     "Potentially-preventable readmission rate",
+                     "Medicare spending per beneficiary"],
+        data_sources=["CMS Inpatient Rehabilitation Facility Compare — "
+                      "General Information + Provider Data."],
+        model_logic_summary="Counts, per-state discharge-to-community "
+        "averages, ownership-mix HHI, and same-state/county peer percentiles "
+        "over the vendored CMS file — no composite scores invented.",
+        why_it_matters="IRF is a small, CMS-measured post-acute sector; "
+        "discharge-to-community, readmissions, and spend are useful early "
+        "diligence signals when read with the small-universe caveat.",
+        diligence_use_cases=["Sizing the local IRF market; reading ownership "
+                             "concentration; flagging quality outliers; framing "
+                             "the competitive set."],
+        interpretation_guidance=[
+            "Public CMS quality data — NOT commercial revenue or payer mix.",
+            "Small national universe (~1,200 facilities); per-state samples can "
+            "be very small, so treat peer comparisons cautiously.",
+            "Readmission (PPR) and Medicare-spending-per-beneficiary are "
+            "LOWER-is-better, risk-standardized ESTIMATES — read as risk "
+            "signals, not verdicts, and not under a 'higher percentile = "
+            "better' frame.",
+            "A performance gap may be case-mix driven — verify; it is peer "
+            "deviation, not an investment conclusion.",
+            "Market/provider context, not a final investment recommendation.",
+        ],
+        limitations=["Medicare-certified inpatient rehabilitation facilities "
+                     "only; commercial rates and real-time census are not "
+                     "represented. Measure availability varies by facility."],
+        related_routes=["/sector-intelligence", "/nursing-homes", "/dialysis"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
 ]
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
