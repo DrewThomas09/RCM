@@ -137,6 +137,7 @@ def ck_fmt_moic(v: Optional[float], *, dash: str = "—") -> str:
 
 _CORPUS_NAV = [
     {"label": "Home",      "href": "/home",      "key": "home"},
+    {"label": "Source",    "href": "/source",    "key": "source"},
     {"label": "Pipeline",  "href": "/pipeline",  "key": "pipeline"},
     {"label": "Diligence", "href": "/diligence", "key": "diligence"},
     {"label": "Library",   "href": "/library",   "key": "library"},
@@ -155,14 +156,21 @@ _SUB_NAV = {
         {"label": "Escalations",         "href": "/escalations"},
         {"label": "Watchlist",           "href": "/watchlist"},
     ],
-    "pipeline": [
+    # Source = target/opportunity discovery (CMS/market). Deal Sourcing anchors
+    # it; PR E folds Hospital + Predictive screeners into a unified Target
+    # Screener here. Conferences moved in from Pipeline (it's a sourcing surface).
+    "source": [
         {"label": "Deal Sourcing",       "href": "/source"},
+        {"label": "Conferences",         "href": "/conferences"},
+    ],
+    # Pipeline = real opportunities/deals only. Deal Sourcing/Conferences moved
+    # to Source; Find Comps (benchmark corpus) moved to Research. The screeners
+    # remain here until PR E unifies them under Source as the Target Screener.
+    "pipeline": [
         {"label": "Hospital Screener",   "href": "/screen"},
         {"label": "Predictive Screener", "href": "/predictive-screener"},
         {"label": "PE Intelligence",     "href": "/pe-intelligence"},
         {"label": "Deal Screening",      "href": "/deal-screening"},
-        {"label": "Find Comps",          "href": "/find-comps"},
-        {"label": "Conferences",         "href": "/conferences"},
     ],
     "library": [
         {"label": "Deals Library",       "href": "/deals-library"},
@@ -184,22 +192,24 @@ _SUB_NAV = {
     # Backtest, Backtest) alongside the original catalog.
     "research": [
         {"label": "Deal Corpus Analytics", "href": "/deal-corpus-analytics"},
+        {"label": "Find Comps",          "href": "/find-comps"},
+        {"label": "Sponsor Track Record","href": "/sponsor-track-record"},
+        {"label": "Payer Intelligence",  "href": "/payer-intelligence"},
         {"label": "Notes",               "href": "/notes"},
         {"label": "Sector Momentum",     "href": "/sector-momentum"},
-        {"label": "IRR Dispersion",      "href": "/irr-dispersion"},
-        {"label": "Hold Analysis",       "href": "/hold-analysis"},
         {"label": "Market Intel",        "href": "/market-intel"},
         {"label": "All Research →",      "href": "/research"},
     ],
     # Portfolio = the user's actual book. "Portfolio Analytics" was a 655-deal
     # benchmark CORPUS mislabeled as portfolio — moved to Research as
     # "Deal Corpus Analytics" (/portfolio-analytics redirects there).
+    # Portfolio = the user's actual book only. Sponsor Track Record + Payer
+    # Intelligence are reference/corpus data (not user-specific) — moved to
+    # Research. Deal Corpus Analytics moved to Research in PR C.
     "portfolio": [
         {"label": "Portfolio Map",       "href": "/portfolio/map"},
         {"label": "Heatmap",             "href": "/portfolio/heatmap"},
         {"label": "Risk Scan",           "href": "/portfolio/risk-scan"},
-        {"label": "Sponsor Track Record","href": "/sponsor-track-record"},
-        {"label": "Payer Intelligence",  "href": "/payer-intelligence"},
         {"label": "LP Update",           "href": "/lp-update"},
     ],
     # Diligence — RCM analyst playbook surfaces. The full diligence
@@ -231,9 +241,13 @@ _SECTION_FEATURE = {
     "home": {"eyebrow": "SECTION · HOME", "title": "Operations",
              "blurb": "Your daily driver — alerts, escalations, watchlist, and "
                       "the Command Center in one canvas.", "href": "/app"},
-    "pipeline": {"eyebrow": "SECTION · PIPELINE", "title": "Sourcing & screening",
-                 "blurb": "Find, screen, and rank targets before they reach IC "
-                          "— hospital and predictive screeners, comps, intel.",
+    "source": {"eyebrow": "SECTION · SOURCE", "title": "Target discovery",
+               "blurb": "Find targets and generate opportunities from the CMS/"
+                        "market universe — sourcing, screeners, conferences.",
+               "href": "/source"},
+    "pipeline": {"eyebrow": "SECTION · PIPELINE", "title": "Live deals",
+                 "blurb": "Track real opportunities once promoted from Source — "
+                          "screen, score, and move deals toward IC.",
                  "href": "/pipeline"},
     "diligence": {"eyebrow": "SECTION · DILIGENCE", "title": "The analyst playbook",
                   "blurb": "Run a live deal end to end: identity, ingestion, "
@@ -6427,7 +6441,7 @@ _SUB_SECTION_MAP = {
     # bare keys
     "home": "home", "pipeline": "pipeline", "library": "library",
     "research": "research", "portfolio": "portfolio",
-    "diligence": "diligence",
+    "diligence": "diligence", "source": "source",
     "alerts": "home", "escalations": "home", "watchlist": "home",
     # All /diligence/* sub-paths land in the Diligence section so
     # the RCM playbook flow keeps a consistent active subnav.
@@ -6437,10 +6451,13 @@ _SUB_SECTION_MAP = {
     # leading-slash forms
     "/home": "home", "/app": "home", "/alerts": "home",
     "/escalations": "home", "/watchlist": "home", "/my": "home",
-    "/pipeline": "pipeline", "/source": "pipeline",
+    # Source = target discovery. Deal Sourcing + Conferences live here now.
+    "/source": "source", "/conferences": "source",
+    "/pipeline": "pipeline",
     "/screen": "pipeline", "/predictive-screener": "pipeline",
-    "/find-comps": "pipeline", "/conferences": "pipeline",
     "/pe-intelligence": "pipeline", "/deal-screening": "pipeline",
+    # Find Comps moved to Research (benchmark corpus comps).
+    "/find-comps": "research",
     "/library": "library", "/deals-library": "library",
     "/methodology": "library", "/metric-glossary": "library",
     "/data": "library", "/comparables": "library",
@@ -6462,8 +6479,9 @@ _SUB_SECTION_MAP = {
     # Moved to Research as Deal Corpus Analytics (benchmark corpus, not portfolio).
     "/deal-corpus-analytics": "research",
     "/portfolio-analytics": "research",
-    "/sponsor-track-record": "portfolio",
-    "/payer-intelligence": "portfolio",
+    # Moved to Research — reference/corpus data, not the user's portfolio.
+    "/sponsor-track-record": "research",
+    "/payer-intelligence": "research",
     # cross-section common deep paths
     "/analysis": "research", "/quant-lab": "research",
     "/market-data/map": "library",
