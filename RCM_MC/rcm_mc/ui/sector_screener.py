@@ -13,10 +13,29 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from ._chartis_kit import chartis_shell, ck_kpi_block, ck_page_title, ck_panel
 from .sector_market_intel import filter_by_locality, render_state_market_panels
 from .us_map import render_us_state_map
+from .xray_kit import XRAY_CSS, xr_eyebrow
 
 
 def _esc(s: Any) -> str:
     return _html.escape("" if s is None else str(s))
+
+
+# Skin that brings the shared sector screener into the handoff X-Ray look —
+# the same editorial system used by the hospital HCRIS X-Ray. Scoped to `.xr`
+# so it only retints THIS page: the green accent (links / KPI emphasis / map
+# legend), navy ribbon panel headers, sharp corners. No markup changes — the
+# map, market-intelligence panels, KPIs, and tables keep their structure.
+_SCREENER_SKIN = """
+.xr .ck-link{color:var(--xr-green);}
+.xr .ck-link:hover{color:var(--xr-green-deep);}
+.xr .ck-panel{border-radius:0;border-color:var(--xr-rule);}
+.xr .ck-panel-head{background:var(--xr-navy);border-radius:0;}
+.xr .ck-kpi-block,.xr .ck-kpi{border-radius:0;}
+.xr .ck-kpi-value em,.xr .ck-kpi-value .num{color:var(--xr-green);}
+.xr .ck-table th{font-family:var(--xr-mono);letter-spacing:.06em;text-transform:uppercase;}
+.xr .ck-table td a.ck-link{color:var(--xr-green);}
+.xr-screener-eyebrow{margin-bottom:6px;}
+"""
 
 
 def _fmt(v: Optional[float], suffix: str = "") -> str:
@@ -54,7 +73,8 @@ def render_sector_screener(
     # ── Honest empty state (data file missing) ──
     if not providers:
         body = (
-            ck_page_title(title, eyebrow=eyebrow, meta="data not loaded")
+            '<div class="xr">'
+            + ck_page_title(title, eyebrow=eyebrow, meta="data not loaded")
             + ck_panel(
                 '<p class="ck-section-body">No sector data is loaded yet. '
                 'This page reads vendored CMS Provider Data Catalog files; '
@@ -62,8 +82,10 @@ def render_sector_screener(
                 'state map.</p>',
                 title=title,
             )
+            + '</div>'
         )
-        return chartis_shell(body, title, active_nav=route)
+        return chartis_shell(body, title, active_nav=route,
+                             extra_css=XRAY_CSS + _SCREENER_SKIN)
 
     n_total = len(providers)
     n_states = len(summary)
@@ -176,9 +198,13 @@ def render_sector_screener(
     )
 
     body = (
-        ck_page_title(title, eyebrow=eyebrow,
+        '<div class="xr">'
+        + f'<div class="xr-screener-eyebrow">{xr_eyebrow(eyebrow)}</div>'
+        + ck_page_title(title, eyebrow=eyebrow,
                       meta=f"{n_total:,} providers · {n_states} states · CMS public data")
         + f'<p class="ck-section-body" style="max-width:70ch;margin:0 0 14px;">{_esc(description)}</p>'
         + kpis + map_panel + table + prov_card
+        + '</div>'
     )
-    return chartis_shell(body, title, active_nav=route)
+    return chartis_shell(body, title, active_nav=route,
+                         extra_css=XRAY_CSS + _SCREENER_SKIN)
