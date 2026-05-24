@@ -3313,6 +3313,22 @@ class RCMHandler(BaseHTTPRequestHandler):
                     "nursing home in the loaded CMS data.</p>",
                     status=HTTPStatus.NOT_FOUND)
             return self._send_html(html_out)
+        if path == "/dialysis":
+            from .ui.dialysis_page import render_dialysis
+            _qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            return self._send_html(render_dialysis(_qs))
+        if path.startswith("/dialysis/"):
+            from html import escape as _esc_ccn
+            from .ui.dialysis_page import render_dialysis_profile
+            ccn = urllib.parse.unquote(path[len("/dialysis/"):]).strip("/")
+            html_out = render_dialysis_profile(ccn)
+            if html_out is None:
+                return self._send_html(
+                    "<h1>Facility Not Found</h1><p>CCN "
+                    f"{_esc_ccn(ccn)} is not a Medicare-certified dialysis "
+                    "facility in the loaded CMS data.</p>",
+                    status=HTTPStatus.NOT_FOUND)
+            return self._send_html(html_out)
         if path == "/hospice":
             from .ui.hospice_page import render_hospice
             _qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)

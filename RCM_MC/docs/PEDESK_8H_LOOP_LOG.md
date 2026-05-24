@@ -18,6 +18,8 @@ data, no runtime CMS/map/chart APIs, no unsupported claims.
 | 2026-05-24 05:1x | #608 Phase 1 batch 1 (CMS/data Guide context) | `6fb7945a` | ✓ | ✓ | 200 | 5 pages curated. |
 | 2026-05-24 05:2x | #609 Phase 1 batch 2 (portfolio/diligence/source context) | `36eac75d` | ✓ | ✓ | 200 | 5 pages curated (73→83). |
 | 2026-05-24 05:5x | #610 SNF / Nursing Home vertical | `ef9aa9c2` | ✓ | ✓ | 200 | 14,699 real CMS facilities; full screener/profile/market-intel/Guide/tests. |
+| 2026-05-24 06:0x | #611 Phase 3 evidence/prediction framework (docs+RAG) | `5a263347` | ✓ | ✓ | 200 | 4 RAG-indexed framework docs (199 docs). |
+| 2026-05-24 06:1x | #6xx Dialysis vertical | _pending merge_ | — | — | — | 7,557 real CMS Dialysis Facility Compare facilities; full factory. |
 
 ## Phase ledger
 
@@ -57,8 +59,16 @@ data, no runtime CMS/map/chart APIs, no unsupported claims.
   star ratings + staffing + beds + SFF shown; lower-is-better signals
   (fines/denials/turnover) deliberately kept out of the "higher = better"
   percentile table; "total fines" labeled a regulatory penalty, not revenue.
-  Next verticals (Dialysis / ASC / IRF / LTCH / DMEPOS) queued — depth over
-  breadth.
+  **Dialysis vertical built** (#6xx): vendored CMS Dialysis Facility Compare
+  'Listing by Facility' (DFC_FACILITY, Mar 2026) → `dialysis_providers.csv` +
+  `dialysis_quality.csv` (**7,557 real facilities**). `data/dialysis.py`
+  loader + `ui/dialysis_page.py` screener/profile (five-star + chain mix +
+  county competition; outcome rates shown raw in the table but kept out of
+  the higher=better percentile table since they're lower-is-better) + routes
+  `/dialysis` + `/dialysis/<ccn>` + curated Guide context (9 Qs) + palette +
+  `tests/test_dialysis_vertical.py`. **Verticals fully covered: Home Health,
+  Hospice, SNF, Dialysis.** Remaining (ASC / IRF / LTCH / DMEPOS) queued —
+  depth over breadth.
 - **Phase 3 (done, separate from numeric order):** investable-evidence +
   predictive-modeling framework — `PEDESK_INVESTABLE_EVIDENCE_FRAMEWORK.md`,
   `PEDESK_PREDICTIVE_MODELING_ROADMAP.md`, and two `rag_sources/` cards

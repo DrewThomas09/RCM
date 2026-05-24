@@ -3357,6 +3357,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "home-health",   "title": "Home Health",        "route": "/home-health"},
     {"id": "hospice",       "title": "Hospice",            "route": "/hospice"},
     {"id": "nursing-homes", "title": "Nursing Homes (SNF)", "route": "/nursing-homes"},
+    {"id": "dialysis",      "title": "Dialysis Facilities", "route": "/dialysis"},
     # Library / reference
     {"id": "library",       "title": "Deals Library",      "route": "/library"},
     {"id": "deals-library", "title": "Deals Library (alt)","route": "/deals-library"},
