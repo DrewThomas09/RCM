@@ -22,7 +22,7 @@ data, no runtime CMS/map/chart APIs, no unsupported claims.
 | 2026-05-24 05:39 | #612 Dialysis vertical | `2c053ae8` | ✓ | ✓ | 200 | 7,557 real CMS Dialysis Facility Compare facilities; full factory. |
 | 2026-05-24 06:0x | #613 IRF / Inpatient Rehab vertical | `5f4f6727` | ✓ | ✓ | 200 | 1,221 real CMS IRF Compare facilities; full factory. |
 | 2026-05-24 06:1x | #614 LTCH / Long-Term Care Hospital vertical | `43d3f97e` | ✓ | ✓ | 200 | 317 real CMS LTCH Compare facilities; full factory. |
-| 2026-05-24 06:2x | Phase 5 — coverage re-audit + final report (docs) | _pending merge_ | — | — | — | Audit regenerated (320 pages, 87 curated); final loop report. |
+| 2026-05-24 06:2x | #615 Phase 5 — coverage re-audit + final report (docs) | `24a1d91a` | ✓ | ✓ | 200 | Audit regenerated (320 pages, 87 curated); final loop report; ASC limitation verified + documented. |
 
 ## Phase ledger
 
