@@ -546,6 +546,17 @@ _SOURCES: List[DataSourceContext] = [
        limitations=["Part D RETAIL spend, NOT 340B ceiling prices; not this deal's formulary."],
        provenance_notes="rcm_mc/data/partd_drug.py; CMS Part D Spending by Drug; registry cms_partd_drug_spending.",
        source_confidence=_DOCD, data_confidence=_PUB, ic_ready=False),
+    _s("clinicaltrials_gov", "ClinicalTrials.gov Trial Landscape",
+       "U.S. NLM clinical-trials registry counts (total / recruiting / "
+       "interventional / by phase) — a trial-volume / site-demand signal.",
+       _T.PUBLIC_DATASET, aliases=["clinicaltrials", "trials registry", "trial sites"],
+       update_cadence="Continuous (registry).", freshness_lag="Near-real-time.",
+       used_for=["Clinical-research-site demand / phase-mix context."],
+       related_routes=["/trial-site-econ"],
+       strengths=["Real 586K registered / 65K recruiting / 447K interventional studies."],
+       limitations=["Registry counts, not this deal's sites or revenue; not 100% of trials."],
+       provenance_notes="rcm_mc/data/clinical_trials.py; ClinicalTrials.gov v2 API; registry clinicaltrials_gov.",
+       source_confidence=_DOCD, data_confidence=_PUB, ic_ready=False),
 ]
 
 DATA_SOURCE_REGISTRY: Dict[str, DataSourceContext] = {

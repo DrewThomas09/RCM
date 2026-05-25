@@ -1,0 +1,14 @@
+{
+  "source": "ClinicalTrials.gov (U.S. NLM)",
+  "api": "clinicaltrials.gov/api/v2",
+  "extract_date": "2026-05-25",
+  "total_studies": 586282,
+  "recruiting": 65283,
+  "interventional": 447380,
+  "phases": {
+    "phase_1": 64472,
+    "phase_2": 88508,
+    "phase_3": 49116,
+    "phase_4": 35217
+  }
+}
