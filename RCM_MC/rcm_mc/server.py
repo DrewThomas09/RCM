@@ -4602,6 +4602,14 @@ class RCMHandler(BaseHTTPRequestHandler):
                     moic_bucket=moic_bucket,
                 )
             )
+        if path == "/deal-library/sponsors":
+            # Browsable sponsor-activity index over the licensed universe.
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _params = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.deal_library_page import render_sponsors_index
+            return self._send_html(
+                render_sponsors_index(PortfolioStore(self.config.db_path), _params)
+            )
         if path == "/deal-library":
             # Real licensed company universe (Capital IQ screening exports
             # ingested via scripts/ingest_deal_library_exports.py). Distinct

@@ -150,7 +150,10 @@ def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> 
             + _freq_table("Top sponsors", dl.top_values(store, "sponsor_owner", 10), "sponsor")
             + _freq_table("Top verticals", dl.top_values(store, "industry", 10))
             + _freq_table("Top states", dl.top_values(store, "state", 10), "state")
-            + "</div>")
+            + "</div>"
+            + f'<p style="margin:8px 2px 0;font-size:12px">'
+              f'<a href="/deal-library/sponsors" style="color:{P["accent"]};'
+              f'text-decoration:none">Browse all sponsors →</a></p>')
 
     # ── filters / search ──
     search = params.get("search", "")
@@ -237,3 +240,83 @@ def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> 
         + pager
     )
     return chartis_shell(body, title="Deal Library", active_nav="/deal-library")
+
+
+def render_sponsors_index(store: Any, params: Optional[Dict[str, str]] = None) -> str:
+    """/deal-library/sponsors — browsable, searchable index of every sponsor in
+    the licensed universe, ranked by # of healthcare companies backed. Each
+    sponsor links to its filtered Deal Library view."""
+    params = {k: str(v) for k, v in (params or {}).items() if v}
+    total_companies = dl.count(store)
+    title = ck_page_title(
+        "Sponsors — Deal Library",
+        eyebrow="SPONSOR ACTIVITY INDEX",
+        meta=("Investors backing the sponsor-backed healthcare universe "
+              "(VC / accelerator / REIT / PE) · current & prior owners"
+              if total_companies else "no export ingested yet"),
+    )
+    back = (f'<p style="margin:0 0 8px"><a href="/deal-library" '
+            f'style="color:{P["accent"]};text-decoration:none;font-size:12px">'
+            f'← Deal Library</a></p>')
+    if not total_companies:
+        empty = ck_empty_state(
+            "No sponsors yet",
+            "Ingest a licensed export first (see /deal-library).")
+        return chartis_shell(back + title + empty, title="Sponsors",
+                             active_nav="/deal-library")
+
+    name_like = params.get("q", "")
+    try:
+        offset = max(0, int(params.get("offset", "0")))
+    except ValueError:
+        offset = 0
+    page_size = 60
+    total = dl.sponsor_count(store, name_like=name_like or None)
+    rows = dl.sponsor_index(store, limit=page_size, offset=offset,
+                            name_like=name_like or None)
+
+    form = (
+        f'<form method="get" action="/deal-library/sponsors" '
+        f'style="display:flex;gap:10px;align-items:end;margin:14px 0">'
+        f'<input type="text" name="q" value="{_html.escape(name_like)}" '
+        f'placeholder="Search sponsor name" '
+        f'style="padding:7px 9px;border:1px solid {P["border"]};border-radius:2px;'
+        f'min-width:280px;font-size:13px">'
+        f'<button type="submit" style="padding:8px 16px;background:{P["accent"]};'
+        f'color:#fff;border:none;border-radius:2px;font-size:12px;cursor:pointer">'
+        f'Search</button>'
+        f'<a href="/deal-library/sponsors" style="font-size:12px;'
+        f'color:{P["text_dim"]};align-self:center">Clear</a></form>')
+
+    head = ('<tr><th class="align-left">Sponsor</th>'
+            '<th class="align-right">Companies</th>'
+            '<th class="align-right">Current</th>'
+            '<th class="align-right">Prior</th></tr>')
+    body_rows = "".join(
+        f'<tr><td class="align-left">'
+        f'<a href="/deal-library?sponsor={_url.quote(r["sponsor"])}" '
+        f'style="color:{P["accent"]};text-decoration:none">'
+        f'{_html.escape(r["sponsor"])}</a></td>'
+        f'<td class="align-right sc-num">{r["n_total"]:,}</td>'
+        f'<td class="align-right sc-num">{r["n_current"]:,}</td>'
+        f'<td class="align-right sc-num">{r["n_prior"]:,}</td></tr>'
+        for r in rows)
+    table = (f'<table class="ck-table ck-dense"><thead>{head}</thead>'
+             f'<tbody>{body_rows}</tbody></table>')
+
+    lo, hi = offset + 1, min(offset + page_size, total)
+    pager = (f'<div style="display:flex;justify-content:space-between;'
+             f'margin-top:10px;font-family:var(--sc-mono);font-size:11px;'
+             f'color:{P["text_dim"]}"><span>{total:,} sponsors · showing '
+             f'{lo:,}–{hi:,}</span><span>')
+    if offset > 0:
+        pp = dict(params); pp["offset"] = str(max(0, offset - page_size))
+        pager += f'<a href="/deal-library/sponsors?{_url.urlencode(pp)}" style="margin-right:14px">← Prev</a>'
+    if hi < total:
+        np = dict(params); np["offset"] = str(offset + page_size)
+        pager += f'<a href="/deal-library/sponsors?{_url.urlencode(np)}">Next →</a>'
+    pager += "</span></div>"
+
+    return chartis_shell(back + title + form + table + pager,
+                         title="Sponsors — Deal Library",
+                         active_nav="/deal-library")
