@@ -198,6 +198,7 @@ _SUB_NAV = {
     # Backtest, Backtest) alongside the original catalog.
     "research": [
         {"label": "Industry Intelligence", "href": "/industry"},
+        {"label": "Market Intel (Geographic)", "href": "/market-intel/geo"},
         {"label": "Deal Corpus Analytics", "href": "/deal-corpus-analytics"},
         {"label": "Find Comps",          "href": "/find-comps"},
         {"label": "Sponsor Track Record","href": "/sponsor-track-record"},
@@ -3630,6 +3631,7 @@ _DEFAULT_PALETTE_MODULES = [
     # Research
     {"id": "research",      "title": "Research Hub",       "route": "/research"},
     {"id": "industry",      "title": "Industry Intelligence", "route": "/industry"},
+    {"id": "market-geo",    "title": "Market Intel · Geographic", "route": "/market-intel/geo"},
     {"id": "notes",         "title": "Notes",              "route": "/notes"},
     {"id": "sector-mom",    "title": "Sector Momentum",    "route": "/sector-momentum"},
     {"id": "irr-disp",      "title": "IRR Dispersion",     "route": "/irr-dispersion"},
@@ -6754,6 +6756,7 @@ _SUB_SECTION_MAP = {
     "/market-rates": "library", "/data-catalog": "library",
     "/rcm-benchmarks": "library",
     "/research": "research", "/notes": "research", "/industry": "research",
+    "/market-intel/geo": "research",
     "/sector-momentum": "research", "/irr-dispersion": "research",
     "/hold-analysis": "research", "/backtest": "research",
     "/comparable-outcomes": "research", "/bear-cases": "research",

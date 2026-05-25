@@ -3354,6 +3354,15 @@ class RCMHandler(BaseHTTPRequestHandler):
                     "in the loaded CMS data.</p>",
                     status=HTTPStatus.NOT_FOUND)
             return self._send_html(html_out)
+        if path == "/market-intel/geo":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.market_geo_page import render_market_geo_index
+            return self._send_html(render_market_geo_index(_qp))
+        if path.startswith("/market-intel/geo/"):
+            _fips = path[len("/market-intel/geo/"):].strip("/").split("/", 1)[0]
+            from .ui.data_public.market_geo_page import render_market_geo_detail
+            return self._send_html(render_market_geo_detail(_fips))
         if path == "/market-intel":
             return self._route_market_intel_page()
         # Market intel JSON endpoints — consumed by Deal Profile's
