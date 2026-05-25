@@ -1,0 +1,2 @@
+milestone,date,buyer,buyer_type,bid,status
+<text>,<YYYY-MM-DD>,<text>,<text>,<number>,<text>

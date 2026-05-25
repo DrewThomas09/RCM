@@ -1,0 +1,2 @@
+instrument,lender,balance,rate_pct,maturity,covenant,headroom_pct
+<text>,<text>,<number>,<number>,<YYYY-MM-DD>,<text>,<number>

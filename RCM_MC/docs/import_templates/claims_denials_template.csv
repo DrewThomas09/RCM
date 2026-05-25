@@ -1,0 +1,2 @@
+claim_id,payer,cpt,billed,allowed,denial_code,denial_reason,service_date
+<text>,<text>,<text>,<number>,<number>,<text>,<text>,<YYYY-MM-DD>

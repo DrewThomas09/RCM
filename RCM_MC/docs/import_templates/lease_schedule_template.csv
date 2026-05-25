@@ -1,0 +1,2 @@
+property,type,sqft,annual_rent,term_end,renewal_options
+<text>,<text>,<number>,<number>,<YYYY-MM-DD>,<text>
