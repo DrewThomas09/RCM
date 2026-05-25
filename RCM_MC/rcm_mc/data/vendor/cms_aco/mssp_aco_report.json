@@ -1,0 +1,24 @@
+{
+  "snapshot_date": "2026-05-25",
+  "rows": 15370,
+  "distinct_acos": 511,
+  "source": "CMS data.cms.gov MSSP ACO Participants (public)",
+  "pii_dropped": [
+    "exec/contact names, emails, phones"
+  ],
+  "missingness_pct": {
+    "aco_id": 0.0,
+    "aco_name": 0.0,
+    "participant_org": 0.0,
+    "service_area": 0.0,
+    "agreement_period": 0.0,
+    "initial_start_date": 0.0,
+    "current_start_date": 0.0,
+    "basic_track": 0.0,
+    "basic_track_level": 0.0,
+    "enhanced_track": 0.0,
+    "high_revenue_aco": 0.0,
+    "low_revenue_aco": 0.0,
+    "public_website": 0.1
+  }
+}

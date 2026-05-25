@@ -254,6 +254,58 @@ def _colorado_apm_section() -> str:
         f'provider-specific.</p></div>')
 
 
+def _mssp_landscape_section() -> str:
+    """REAL national MSSP ACO participation landscape from CMS (public) — ACO
+    counts by risk track + top ACOs by participant orgs. LIVE; a participation
+    directory, NOT savings/performance and not provider-specific."""
+    try:
+        from rcm_mc.data import mssp_aco_data as _m
+        s = _m.mssp_summary()
+        tracks = _m.mssp_track_breakdown()
+        top = _m.top_acos_by_participants(10)
+    except Exception:
+        return ""
+    if not s.get("acos"):
+        return ""
+    hdr = ck_source_purpose(
+        purpose=("See the national Medicare Shared Savings Program landscape — "
+                 "how many ACOs, their risk tracks, and the largest by "
+                 "participant organizations — as value-based-care context."),
+        universe="cms", confidence="derived",
+        source=f"CMS data.cms.gov · MSSP ACO Participants (PY2026, snapshot {s.get('snapshot_date','')})",
+        next_action="Search a provider org in the MSSP directory")
+    track_rows = "".join(
+        f'<tr><td style="padding:3px 10px">{_html.escape(t["track"])}</td>'
+        f'<td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums">{t["acos"]:,}</td></tr>'
+        for t in tracks)
+    top_rows = "".join(
+        f'<tr><td style="padding:3px 10px">{_html.escape(str(a["aco_name"])[:38])}</td>'
+        f'<td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums">{a["participants"]:,}</td></tr>'
+        for a in top)
+    return (
+        f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
+        f'border-left:3px solid {P["accent"]};padding:14px 16px;margin-bottom:16px">'
+        f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
+        f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:8px">'
+        f'National MSSP ACO Landscape · LIVE (CMS)</div>{hdr}'
+        f'<p style="font-size:12px;color:{P["text_dim"]};margin:4px 0 8px">'
+        f'<b style="color:{P["text"]}">{s["acos"]:,}</b> MSSP ACOs · '
+        f'<b style="color:{P["text"]}">{s["enhanced_track_acos"]:,}</b> on the '
+        f'ENHANCED (full-risk) track · {s["high_revenue_acos"]:,} high-revenue · '
+        f'{s["participant_orgs"]:,} participant organizations.</p>'
+        f'<div style="display:flex;gap:18px;flex-wrap:wrap">'
+        f'<div style="flex:1;min-width:220px"><div style="font-size:10px;'
+        f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:4px">ACOs by risk track</div>'
+        f'<table style="width:100%;border-collapse:collapse;font-family:\'JetBrains Mono\',monospace;font-size:11px"><tbody>{track_rows}</tbody></table></div>'
+        f'<div style="flex:1.3;min-width:280px"><div style="font-size:10px;'
+        f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:4px">Largest ACOs (by participant orgs)</div>'
+        f'<table style="width:100%;border-collapse:collapse;font-family:\'JetBrains Mono\',monospace;font-size:11px"><tbody>{top_rows}</tbody></table></div></div>'
+        f'<p style="font-size:11px;color:{P["text_dim"]};margin:8px 0 0">'
+        f'National CMS participation directory — <b>not</b> savings/performance '
+        f'results and <b>not</b> provider-specific. Exec/contact PII excluded on '
+        f'ingest.</p></div>')
+
+
 def render_cms_apm_tracker(params: dict = None) -> str:
     from rcm_mc.data_public.cms_apm_tracker import compute_cms_apm_tracker
     r = compute_cms_apm_tracker()
@@ -322,6 +374,7 @@ def render_cms_apm_tracker(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   {source_header}
+  {_mssp_landscape_section()}
   {_colorado_apm_section()}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
