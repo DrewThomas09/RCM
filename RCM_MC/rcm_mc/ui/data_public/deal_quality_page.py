@@ -118,7 +118,7 @@ def _quality_histogram_svg(scores: List[float], width: int = 400, height: int = 
 def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", page: int = 1) -> str:
     from rcm_mc.ui._chartis_kit import (
         chartis_shell, ck_fmt_num, ck_kpi_block, ck_page_title,
-        ck_provenance_tooltip, ck_section_header,
+        ck_provenance_tooltip, ck_section_header, ck_illustrative_note,
     )
     from rcm_mc.data_public.deal_quality_score import score_corpus_quality, DealQualityScore
 
@@ -392,7 +392,8 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
             f"{n_flagged} flagged"
         ),
     )
-    body = page_title + kpis + dist_panel + filter_panel + table_html + page_links + method_panel
+    body = (page_title + ck_illustrative_note("deal-quality grades (illustrative seed corpus)")
+            + kpis + dist_panel + filter_panel + table_html + page_links + method_panel)
 
     return chartis_shell(
         body,

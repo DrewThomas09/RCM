@@ -12,7 +12,7 @@ import urllib.parse as _urlparse
 
 from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_section_header, ck_kpi_block, ck_fmt_moic,
-    ck_provenance_tooltip, ck_scatter,
+    ck_provenance_tooltip, ck_scatter, ck_illustrative_note,
 )
 
 _TIER_TONE = {
@@ -321,6 +321,7 @@ def render_deal_risk_scores(params: Dict[str, str]) -> str:
     title_suffix = f" — {tier_filter} Only" if tier_filter else ""
 
     body = f"""
+{ck_illustrative_note("risk scores (illustrative seed corpus)")}
 {filter_bar}
 {kpi_grid}
 {risk_return}
