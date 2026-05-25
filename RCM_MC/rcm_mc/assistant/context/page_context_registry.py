@@ -16,7 +16,15 @@ from .types import PageContext, SourceConfidence
 
 def _build_registry() -> Dict[str, PageContext]:
     registry: Dict[str, PageContext] = {}
-    # 1. stub for every discovered route (nothing missing)
+    # 0. honest placeholder for every SERVED route absent from the palette
+    #    (so the Guide is never empty for a served page; tells the assistant
+    #    not to invent specifics). Overridden by palette stubs + manual below.
+    try:
+        from .served_route_stubs import SERVED_ROUTE_STUBS
+        registry.update(SERVED_ROUTE_STUBS)
+    except Exception:
+        pass
+    # 1. stub for every discovered (palette) route
     registry.update(GENERATED_PAGE_CONTEXT_STUBS)
     # 2. manual contexts override stubs
     registry.update(MANUAL_PAGE_CONTEXTS)
