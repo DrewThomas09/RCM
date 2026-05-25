@@ -25,6 +25,7 @@ from ._chartis_kit import (
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
 )
+from .data_public._benchmark_panels import data_required_panel
 
 
 def _scoped_styles() -> str:
@@ -543,6 +544,7 @@ def render_physician_eu_page(
         + title
         + '<div class="peu-wrap">'
         + demo_banner
+        + data_required_panel(P, title="Physician Economic Unit", needed=[("provider_name","provider (PII)"),("specialty","specialty"),("wrvu","annual wRVU"),("collections","collections $"),("comp","total comp $"),("payer_mix","payer mix")], template="management_compensation_template.csv (+ provider roster / wRVU export)", request_from="CFO / practice management / RCM", activates="real per-provider P&L, contribution margin, and roster optimization", guide_hint="What provider-roster / economics data do I need to upload?")
         + hero_and_opt
         + crosslink
         + ck_panel(

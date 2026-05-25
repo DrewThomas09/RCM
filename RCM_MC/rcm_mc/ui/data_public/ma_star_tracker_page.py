@@ -256,6 +256,7 @@ def render_ma_star_tracker(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
+  <div style="background:{P['panel']};border:1px solid {P['border']};border-left:3px solid {P['warning']};padding:12px 16px;margin-bottom:16px;font-size:11px;color:{P['text_dim']}"><b style="color:{P['text']};font-family:JetBrains Mono,monospace;font-size:10px;letter-spacing:0.08em">REAL DATA DEFERRED &middot; CMS MA STAR RATINGS</b><br>CMS publishes Medicare Advantage &amp; Part D Star Ratings only as a zip-portal download (not a scriptable API), so this page shows <b>illustrative</b> star figures until that staged ingest is built. The real CMS Star Ratings file would activate this page directly. See docs/reports/RED_PAGE_ACTIVATION_PLAN.md.</div>
   {ck_illustrative_note("figures")}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}

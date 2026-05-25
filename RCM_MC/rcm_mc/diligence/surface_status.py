@@ -125,6 +125,8 @@ _DATA_REQUIRED = frozenset({
     "/insurance-tracker", "/rw-insurance", "/litigation", "/cyber-risk",
     "/medical-realestate", "/real-estate", "/hcit-platform", "/tech-stack",
     "/clinical-ai", "/digital-front-door", "/direct-employer",
+    # Batch 4 — calculator/workbench pages that activate on uploaded roster/risk data
+    "/diligence/physician-eu", "/diligence/risk-workbench",
 })
 
 
@@ -149,9 +151,10 @@ _YELLOW = frozenset({
 
 # ── RED: entirely synthetic / hardcoded fabricated values ───────────────────
 _RED = frozenset({
-    "/diligence/physician-eu",
+    # DEFERRED WITH REASON — CMS MA Star Ratings is zip-portal only (not a
+    # scriptable API); page is honestly labelled "real data deferred" until a
+    # staged ingest is built. See docs/reports/RED_PAGE_ACTIVATION_PLAN.md.
     "/ma-star",
-    "/diligence/risk-workbench",
 })
 
 _REASON = {
