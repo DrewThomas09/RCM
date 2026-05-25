@@ -1,0 +1,9 @@
+{
+  "snapshot_date": "2026-05-25",
+  "extract": "PPEF_Enrollment_Extract_2026.04.01",
+  "raw_rows": 2981799,
+  "states": 56,
+  "provider_types": 325,
+  "total_enrollments": 2981799,
+  "source": "CMS FFS Public Provider Enrollment (public); PII dropped at ingest"
+}

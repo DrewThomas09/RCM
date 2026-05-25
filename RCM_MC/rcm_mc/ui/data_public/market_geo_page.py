@@ -86,6 +86,22 @@ def market_context_panel(state, P_=None) -> str:
         rows += (f'<tr><td style="padding:3px 10px">{_html.escape(v.get("display_name", vid))}</td>'
                  f'<td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums">{_fmt(d.get("value"), d.get("unit",""))}</td>'
                  f'<td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums;color:{pal["text_dim"]}">{d.get("percentile_national","—")}</td></tr>')
+    # Real Medicare provider-supply density (CMS FFS enrollment) for this state.
+    supply_line = ""
+    try:
+        from rcm_mc.data import provider_supply as _ps
+        st_abbr = _FIPS_ABBR.get(fips, "")
+        tot = _ps.total_supply_for_state(st_abbr) if st_abbr else 0
+        pc = _ps.primary_care_supply_for_state(st_abbr) if st_abbr else 0
+        if tot:
+            supply_line = (
+                f'<p style="font-size:11px;color:{pal["text_dim"]};margin:6px 0 0">'
+                f'Provider supply (CMS FFS, real): <b style="color:{pal["text"]}">{tot:,}</b> '
+                f'Medicare-enrolled providers, <b style="color:{pal["text"]}">{pc:,}</b> '
+                f'primary-care (approx). Density signal, not all providers.</p>')
+    except Exception:
+        supply_line = ""
+
     miss = ", ".join(score.get("missing_export_required", [])) if score else ""
     score_line = ""
     if score and score.get("overall_market_score") is not None:
@@ -103,7 +119,7 @@ def market_context_panel(state, P_=None) -> str:
         f'<th style="padding:3px 10px;text-align:left">Variable</th>'
         f'<th style="padding:3px 10px;text-align:right">Value</th>'
         f'<th style="padding:3px 10px;text-align:right">Pctile</th></tr></thead>'
-        f'<tbody>{rows}</tbody></table>{score_line}'
+        f'<tbody>{rows}</tbody></table>{score_line}{supply_line}'
         f'<p style="font-size:11px;color:{pal["text_dim"]};margin:6px 0 0">'
         f'Market/area context — <b>not</b> provider-specific. Combine with CMS/HCRIS/'
         f'provider data before a decision. <a href="/market-intel/geo/{_html.escape(fips)}" '
