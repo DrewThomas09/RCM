@@ -6,7 +6,11 @@ analyzer pages that render figures with **no** data-source disclosure
 label). Cross-references the surface-status tier.
 
 - Pages: **173** · with disclosure: **168** · importing a real loader: **26** · **flagged (no disclosure): 0**
+<<<<<<< HEAD
 - By tier: {'green': 27, 'navy': 56, 'yellow': 37, 'red': 53}
+=======
+- By tier: {'green': 27, 'navy': 55, 'yellow': 37, 'red': 54}
+>>>>>>> ab8fc7e4 (feat(diligence): real CMS Open Payments anchor on GPO/Supply Tracker + RED→NAVY)
 
 ## Flagged — render data, disclose nothing (fix first)
 

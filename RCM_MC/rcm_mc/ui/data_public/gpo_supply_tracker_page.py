@@ -209,6 +209,66 @@ def _inflation_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _open_payments_vendor_panel() -> str:
+    """Real CMS Open Payments anchor — the device/implant/pharma
+    manufacturers a healthcare supply chain actually buys from. Industry
+    spend and the top reporting manufacturers are real public CMS data;
+    the deal-specific GPO savings, contracts, and bulk-buys below are
+    illustrative. Grounds the supply-vendor thesis in observed
+    manufacturer scale, not the seed corpus."""
+    from rcm_mc.data import open_payments as _op
+    summ = _op.open_payments_summary()
+    if not summ.get("total_payments_usd"):
+        return ""
+    top = _op.top_reporting_entities(6)
+
+    border = P["border"]; tprim = P["text"]; tdim = P["text_dim"]; acc = P["accent"]
+    mx = max((float(t["total_amount"]) for t in top), default=1.0) or 1.0
+    rows = "".join(
+        f'<tr>'
+        f'<td style="padding:3px 8px;font-family:JetBrains Mono,monospace;font-size:11px;color:{tprim}">{_html.escape(str(t["AMGPO_Name"]).title())}</td>'
+        f'<td style="padding:3px 8px;width:40%">'
+        f'<svg width="100%" height="9" preserveAspectRatio="none" viewBox="0 0 100 9">'
+        f'<rect x="0" y="1" width="{int(float(t["total_amount"])/mx*100)}" height="7" fill="{acc}" opacity="0.75"/></svg></td>'
+        f'<td style="padding:3px 8px;text-align:right;font-family:JetBrains Mono,monospace;font-size:11px;'
+        f'font-variant-numeric:tabular-nums;color:{tprim}">${float(t["total_amount"])/1e6:,.1f}M</td>'
+        f'</tr>'
+        for t in top
+    )
+    total_b = float(summ.get("total_payments_usd", 0)) / 1e9
+    txns = int(summ.get("total_transactions", 0))
+    entities = int(summ.get("reporting_entities", 0))
+    yr = summ.get("program_year", "")
+    return f'''
+<div style="background:{P["panel"]};border:1px solid {border};border-left:3px solid {acc};
+  padding:14px 16px;margin-bottom:16px">
+  <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{tdim};
+    text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">
+    Real CMS Open Payments &mdash; device / implant / pharma vendor landscape
+    <span style="color:{acc};font-weight:600"> · LIVE</span>
+  </div>
+  <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start">
+    <div style="white-space:nowrap">
+      <div style="font-family:JetBrains Mono,monospace;font-size:20px;color:{tprim};
+        font-variant-numeric:tabular-nums">${total_b:,.2f}B</div>
+      <div style="font-size:10px;color:{tdim};margin-bottom:8px">manufacturer payments, {yr}</div>
+      <div style="font-family:JetBrains Mono,monospace;font-size:13px;color:{tprim};
+        font-variant-numeric:tabular-nums">{entities:,}</div>
+      <div style="font-size:10px;color:{tdim}">reporting manufacturers / GPOs</div>
+    </div>
+    <div>
+      <div style="font-size:9px;color:{P["text_faint"]};margin-bottom:4px">LARGEST REPORTING MANUFACTURERS (BY PAYMENT $)</div>
+      <table style="width:100%;border-collapse:collapse">{rows}</table>
+    </div>
+  </div>
+  <div style="margin-top:8px;font-size:10px;color:{P["text_faint"]}">
+    CMS Open Payments {yr} ({txns:,} transactions). Real device/pharma vendor
+    scale &mdash; the deal-specific GPO savings, contracts, and bulk-buys below
+    are illustrative; use this panel as the observed-vendor reality.
+  </div>
+</div>'''
+
+
 def render_gpo_supply_tracker(params: dict = None) -> str:
     from rcm_mc.data_public.gpo_supply_tracker import compute_gpo_supply_tracker
     r = compute_gpo_supply_tracker()
@@ -257,6 +317,7 @@ def render_gpo_supply_tracker(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   {ck_illustrative_note("figures")}
+  {_open_payments_vendor_panel()}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">GPO Affiliations — Scale, Savings, Rebates</div>{a_chart}{a_tbl}</div>

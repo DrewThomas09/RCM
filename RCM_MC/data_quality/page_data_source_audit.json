@@ -6,9 +6,15 @@
     "flagged_no_disclosure": 0,
     "by_tier": {
       "green": 27,
+<<<<<<< HEAD
       "navy": 56,
       "yellow": 37,
       "red": 53
+=======
+      "navy": 55,
+      "yellow": 37,
+      "red": 54
+>>>>>>> ab8fc7e4 (feat(diligence): real CMS Open Payments anchor on GPO/Supply Tracker + RED→NAVY)
     }
   },
   "pages": [
@@ -717,7 +723,7 @@
       "file": "gpo_supply_tracker_page.py",
       "tier": "green",
       "has_disclosure": true,
-      "imports_real_loader": false,
+      "imports_real_loader": true,
       "uses_seed_corpus": true,
       "renders_data": true,
       "flag": ""
