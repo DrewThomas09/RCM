@@ -8,7 +8,7 @@
       "green": 27,
       "navy": 73,
       "yellow": 37,
-      "red": 26
+      "red": 13
     }
   },
   "pages": [
@@ -35,7 +35,7 @@
     {
       "route": "/ai-operating-model",
       "file": "ai_operating_model_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -255,7 +255,7 @@
     {
       "route": "/compliance-attestation",
       "file": "compliance_attestation_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -505,7 +505,7 @@
     {
       "route": "/diligence-vendors",
       "file": "diligence_vendors_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -525,7 +525,7 @@
     {
       "route": "/direct-lending",
       "file": "direct_lending_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -1035,7 +1035,7 @@
     {
       "route": "/operating-partners",
       "file": "operating_partners_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -1175,7 +1175,7 @@
     {
       "route": "/platform-maturity",
       "file": "platform_maturity_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -1185,7 +1185,7 @@
     {
       "route": "/pmi-integration",
       "file": "pmi_integration_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -1195,7 +1195,7 @@
     {
       "route": "/pmi-playbook",
       "file": "pmi_playbook_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -1455,7 +1455,7 @@
     {
       "route": "/sellside-process",
       "file": "sellside_process_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -1575,7 +1575,7 @@
     {
       "route": "/transition-services",
       "file": "transition_services_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -1665,7 +1665,7 @@
     {
       "route": "/vcp-tracker",
       "file": "vcp_tracker_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -1675,7 +1675,7 @@
     {
       "route": "/vdr-tracker",
       "file": "vdr_tracker_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -1735,7 +1735,7 @@
     {
       "route": "/zbb-tracker",
       "file": "zbb_tracker_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,

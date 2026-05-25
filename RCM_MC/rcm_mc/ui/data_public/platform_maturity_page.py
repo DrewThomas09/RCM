@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor, ck_illustrative_note
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
 
 
 def _dimensions_chart(items) -> str:
@@ -223,7 +224,7 @@ def render_platform_maturity(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(ck_illustrative_note("platform-maturity scores") + body, "Platform Maturity", active_nav="/platform-maturity",
+    return chartis_shell(data_required_panel(P, title="Platform Maturity", needed=[("dimension","maturity dimension"),("self_score","score 1-5"),("evidence","supporting evidence"),("target_score","target 1-5")], template="platform_maturity_template.csv", request_from="Management / portfolio operations", activates="maturity self-assessment vs target by dimension", guide_hint="What platform-maturity data do I need to upload?") + ck_illustrative_note("platform-maturity scores") + body, "Platform Maturity", active_nav="/platform-maturity",
         editorial_intro={
             "eyebrow": "PLATFORM MATURITY",
             "headline": "What the platform maturity page reveals on this deal.",
