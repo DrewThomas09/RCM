@@ -221,6 +221,34 @@ def render_industry(slug: str, params: dict = None) -> str:
     q_panel = (f'<div style="{cell}"><div style="{h3}">Diligence questions (PEdesk)</div>'
                f'<ul style="margin:0;padding-left:18px;font-size:12px;line-height:1.7">{q_rows}</ul></div>') if qs else ""
 
+    # Real CMS Open Payments industry-financial-relationship scale (physician
+    # industries only). Honest: scale signal, not provider-specific, not a flag.
+    op_panel = ""
+    if slug in ("specialist-doctors", "primary-care-doctors"):
+        try:
+            from rcm_mc.data import open_payments as _op
+            s = _op.open_payments_summary()
+            if s.get("total_payments_usd"):
+                tops = _op.top_reporting_entities(5)
+                trows = "".join(
+                    f'<li>{_html.escape(str(t["AMGPO_Name"]))} '
+                    f'<span style="color:{P["text_dim"]}">· ${float(t["total_amount"])/1e6:,.0f}M</span></li>'
+                    for t in tops)
+                op_panel = (
+                    f'<div style="{cell};border-left:3px solid {P["accent"]}">'
+                    f'<div style="{h3}">Industry financial relationships · LIVE (CMS Open Payments {s.get("program_year","")})</div>'
+                    f'<p style="font-size:12px;color:{P["text_dim"]};margin:0 0 8px">'
+                    f'<b style="color:{P["text"]}">${s["total_payments_usd"]/1e9:,.2f}bn</b> in industry '
+                    f'payments/transfers of value to physicians &amp; teaching hospitals across '
+                    f'{s["total_transactions"]:,} transactions ({s["reporting_entities"]:,} reporting '
+                    f'manufacturers/GPOs). Top payers:</p>'
+                    f'<ul style="margin:0;padding-left:18px;font-size:12px;line-height:1.7">{trows}</ul>'
+                    f'<p style="font-size:11px;color:{P["text_dim"]};margin:8px 0 0">'
+                    f'Real CMS data — financial-relationship <b>scale</b>, NOT provider-specific '
+                    f'and NOT a wrongdoing flag (disclosure is lawful/routine).</p></div>')
+        except Exception:
+            op_panel = ""
+
     body = (
         ck_page_title(r["title"], eyebrow="INDUSTRY",
                       meta=f'NAICS {r.get("naics_code","")} · {r.get("report_title","")} · {r.get("publication_date","")}')
@@ -235,7 +263,7 @@ def render_industry(slug: str, params: dict = None) -> str:
         + f'<a href="/industry/{_html.escape(slug)}/brief" style="margin-left:10px;'
         + f'color:{P["accent"]};font-size:12px;font-weight:600;text-decoration:none">'
         + f'Generate PEdesk brief &rarr;</a></p>'
-        + kpi_block + def_panel + seg_panel + drv_panel + bm_panel + conn_panel + q_panel)
+        + kpi_block + def_panel + seg_panel + drv_panel + bm_panel + op_panel + conn_panel + q_panel)
     return chartis_shell(body, r["title"], active_nav="/industry")
 
 
