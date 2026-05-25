@@ -260,7 +260,7 @@ def render_provider_retention(params: dict = None) -> str:
   </div>
   <div style="{cell}"><div style="{h3}">Cohort Detail</div>{cohort_tbl}</div>
   <div style="{cell}"><div style="{h3}">Churn Driver Diagnosis</div>{driver_tbl}</div>
-  <div style="{cell}"><div style="{h3}">At-Risk Provider Watchlist (Top 10)</div>{risk_tbl}</div>
+  <div style="{cell}"><div style="{h3}">At-Risk Provider Watchlist (Top 10) · illustrative structure</div>{risk_tbl}<div style="font-size:10px;color:{text_dim};margin-top:8px">Illustrative roster scaffold (anonymized placeholders) — connect this deal's HR roster to populate with real individuals.</div></div>
   <div style="{cell}"><div style="{h3}">Retention Lever Portfolio</div>{lever_tbl}</div>
   <div style="{cell}"><div style="{h3}">Leadership Succession Readiness</div>{succ_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {P['negative']};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
@@ -270,10 +270,53 @@ def render_provider_retention(params: dict = None) -> str:
   </div>
 </div>"""
 
+    # Real CMS nursing-home nurse-staff turnover benchmark (Care Compare).
+    # A real market anchor for retention diligence; not this deal's roster.
+    try:
+        from rcm_mc.data import snf as _snf
+        _ts = _snf.snf_turnover_summary()
+        _worst = _snf.snf_turnover_by_state(8)
+        if _ts.get("n"):
+            _rows = "".join(
+                f'<tr><td style="padding:3px 10px">{_html.escape(str(w["state"]))}</td>'
+                f'<td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums">{w["median_pct"]:.1f}%</td>'
+                f'<td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums">{int(w["facilities_reporting"]):,}</td></tr>'
+                for w in _worst)
+            _cms_panel = (
+                f'<div style="background:{panel};border:1px solid {border};'
+                f'border-left:3px solid {acc};padding:14px 16px;margin-bottom:16px">'
+                f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
+                f'text-transform:uppercase;color:{text_dim};margin-bottom:6px">'
+                f'Nursing-staff turnover benchmark · LIVE (CMS Care Compare)</div>'
+                f'<p style="font-size:12px;color:{text_dim};margin:0 0 8px">'
+                f'Across <b style="color:{text}">{_ts["n"]:,}</b> Medicare/Medicaid '
+                f'nursing homes, median annual nurse-staff turnover is '
+                f'<b style="color:{text}">{_ts["median_pct"]:.1f}%</b> '
+                f'(IQR {_ts["p25_pct"]:.1f}%–{_ts["p75_pct"]:.1f}%). A real-world '
+                f'reference for how high clinical-staff churn runs in this sector.</p>'
+                f'<table style="border-collapse:collapse;font-family:\'JetBrains Mono\',monospace;font-size:11px">'
+                f'<thead><tr style="border-bottom:1px solid {border};color:{text_dim}">'
+                f'<th style="padding:3px 10px;text-align:left">State (worst median)</th>'
+                f'<th style="padding:3px 10px;text-align:right">Median turnover</th>'
+                f'<th style="padding:3px 10px;text-align:right">Facilities</th></tr></thead>'
+                f'<tbody>{_rows}</tbody></table>'
+                f'<p style="font-size:11px;color:{text_dim};margin:8px 0 0">'
+                f'Real CMS facility-level workforce turnover (nursing homes) — '
+                f'<b>not</b> this deal’s roster and <b>not</b> a portfolio-specific '
+                f'retention figure. Use it to sanity-check the model’s churn '
+                f'assumptions below.</p></div>')
+            body = _cms_panel + body
+    except Exception:
+        pass
+
     body = ck_source_purpose(
-        purpose="Assess provider/staff retention and churn risk before close.",
-        universe="data-required", source="No retention source connected",
-        next_action="Attach a roster / SNF PBJ turnover source") + body
+        purpose="Assess provider/staff retention and churn risk before close — "
+                "a calculator on your inputs, anchored to a real CMS nursing-home "
+                "nurse-turnover benchmark.",
+        universe="derived", confidence="derived",
+        source="Representative role-level churn/cost assumptions (illustrative) "
+               "scaled by your inputs + real CMS Care Compare nurse-turnover benchmark",
+        next_action="Attach this deal's HR roster for deal-specific retention") + body
     return chartis_shell(body, "Provider Retention", active_nav="/provider-retention",
         editorial_intro={
             "eyebrow": "PROVIDER RETENTION",
