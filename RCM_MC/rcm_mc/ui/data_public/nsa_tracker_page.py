@@ -200,6 +200,68 @@ def _reg_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _oon_benchmark_panel() -> str:
+    """Real CIVHC commercial-vs-Medicare anchor — the No Surprises Act's
+    IDR/QPA process turns on how far commercial rates sit above Medicare,
+    so the real hospital-%-of-Medicare distribution is the benchmark OON
+    disputes reference. Provider-level public data; the deal's OON volume /
+    balance-bill / IDR model below is illustrative."""
+    try:
+        from rcm_mc.data import payer_data as _pd
+        df = _pd.reference_pricing_summary(claim_type="All")
+    except Exception:
+        return ""
+    if df is None or not len(df):
+        return ""
+    med = df["hospital_pct_medicare"].dropna()
+    if not len(med):
+        return ""
+    statewide_median = float(med.median())
+    p25 = float(med.quantile(0.25)); p75 = float(med.quantile(0.75))
+    n_prov = int(df["organization_name"].nunique())
+    n_cty = int(df["county"].nunique())
+
+    border = P["border"]; tprim = P["text"]; tdim = P["text_dim"]; acc = P["accent"]
+    top = df.sort_values("hospital_pct_medicare", ascending=False).head(6)
+    rows = "".join(
+        f'<tr>'
+        f'<td style="padding:3px 8px;font-family:JetBrains Mono,monospace;font-size:11px;color:{tprim}">{_html.escape(str(t.organization_name)[:32])}</td>'
+        f'<td style="padding:3px 8px;font-family:JetBrains Mono,monospace;font-size:10px;color:{tdim}">{_html.escape(str(t.county))}</td>'
+        f'<td style="padding:3px 8px;text-align:right;font-family:JetBrains Mono,monospace;font-size:11px;'
+        f'font-variant-numeric:tabular-nums;color:{tprim}">{t.hospital_pct_medicare:.2f}x</td>'
+        f'</tr>'
+        for t in top.itertuples() if t.hospital_pct_medicare == t.hospital_pct_medicare
+    )
+    return f'''
+<div style="background:{P["panel"]};border:1px solid {border};border-left:3px solid {acc};
+  padding:14px 16px;margin-bottom:16px">
+  <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{tdim};
+    text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">
+    Real commercial-vs-Medicare benchmark &mdash; the OON / QPA reference (CIVHC)
+    <span style="color:{acc};font-weight:600"> · LIVE</span>
+  </div>
+  <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start">
+    <div style="white-space:nowrap">
+      <div style="font-family:JetBrains Mono,monospace;font-size:20px;color:{tprim};
+        font-variant-numeric:tabular-nums">{statewide_median:.2f}x</div>
+      <div style="font-size:10px;color:{tdim};margin-bottom:8px">median commercial price<br>as % of Medicare</div>
+      <div style="font-family:JetBrains Mono,monospace;font-size:12px;color:{tdim};
+        font-variant-numeric:tabular-nums">{p25:.2f}x &ndash; {p75:.2f}x IQR</div>
+      <div style="font-size:10px;color:{tdim}">{n_prov} providers · {n_cty} counties</div>
+    </div>
+    <div>
+      <div style="font-size:9px;color:{P["text_faint"]};margin-bottom:4px">HIGHEST COMMERCIAL-%-OF-MEDICARE PROVIDERS</div>
+      <table style="width:100%;border-collapse:collapse">{rows}</table>
+    </div>
+  </div>
+  <div style="margin-top:8px;font-size:10px;color:{P["text_faint"]}">
+    CIVHC / CO all-payer claims (2021&ndash;2024). The commercial-%-of-Medicare ratio
+    is the real benchmark NSA IDR/QPA disputes reference &mdash; the deal's OON volume,
+    balance-bill exposure, and IDR figures below are illustrative.
+  </div>
+</div>'''
+
+
 def render_nsa_tracker(params: dict = None) -> str:
     from rcm_mc.data_public.nsa_tracker import compute_nsa_tracker
     r = compute_nsa_tracker()
@@ -250,6 +312,7 @@ def render_nsa_tracker(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   {ck_illustrative_note("figures")}
+  {_oon_benchmark_panel()}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">Portfolio NSA / IDR Exposure by Deal</div>{d_chart}{d_tbl}</div>

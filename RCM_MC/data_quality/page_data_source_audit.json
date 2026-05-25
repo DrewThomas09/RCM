@@ -2,13 +2,13 @@
   "summary": {
     "pages": 173,
     "with_disclosure": 168,
-    "with_real_loader": 36,
+    "with_real_loader": 37,
     "flagged_no_disclosure": 0,
     "by_tier": {
       "green": 27,
-      "navy": 66,
+      "navy": 67,
       "yellow": 37,
-      "red": 43
+      "red": 42
     }
   },
   "pages": [
@@ -1025,9 +1025,9 @@
     {
       "route": "/nsa-tracker",
       "file": "nsa_tracker_page.py",
-      "tier": "red",
+      "tier": "navy",
       "has_disclosure": true,
-      "imports_real_loader": false,
+      "imports_real_loader": true,
       "uses_seed_corpus": true,
       "renders_data": true,
       "flag": ""
