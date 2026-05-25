@@ -84,9 +84,18 @@ def render_target_screener(qs: Optional[Dict[str, List[str]]] = None) -> str:
         'result into the Pipeline to start tracking it as an opportunity.</p>'
     )
 
+    market_link = ck_panel(
+        'Rank and score geographic markets by senior demand (and, as exports '
+        'arrive, income / payer mix / provider supply) before screening targets '
+        'in them. <a href="/market-intel/geo" style="font-weight:600">Open '
+        'Geographic Market Intelligence &rarr;</a> '
+        '<span style="opacity:0.7">Market/area context (SimplyAnalytics-derived), '
+        'not provider-specific.</span>',
+        title="Screen the market, not just the target")
     body = (
         title + explainer
         + f'<div class="ts-modes">{cards}</div>'
+        + market_link
         + ck_panel(note, title="Same universe, three ways in")
     )
     return chartis_shell(body, "Target Screener", active_nav="/target-screener",

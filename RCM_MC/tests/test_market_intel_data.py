@@ -63,6 +63,19 @@ class MarketIntelDataTests(unittest.TestCase):
         self.assertEqual(fl["geo_name"], "Florida")
         self.assertIn("age_65_plus_pct", fl["variables"])
 
+    def test_market_score_is_partial_and_honest(self):
+        s = mi.market_demand_score("12")  # Florida
+        self.assertEqual(s["geo_name"], "Florida")
+        # demand_score is available (age 65+ export exists)...
+        self.assertIn("demand_score", s["components"])
+        self.assertTrue(0 <= s["overall_market_score"] <= 100)
+        # ...and the un-exported components are flagged, never invented.
+        self.assertIn("income_score", s["missing_export_required"])
+        self.assertIn("payer_score", s["missing_export_required"])
+        self.assertTrue(s["formula"])
+        # Unknown geo → empty, no crash.
+        self.assertEqual(mi.market_demand_score("99"), {})
+
     def test_provider_supply_export_required_is_empty_not_fabricated(self):
         # NAICS 621111 provider counts shown in screenshots but NOT yet exported
         # → loader returns [] honestly (never invented).
