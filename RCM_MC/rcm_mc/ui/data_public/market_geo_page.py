@@ -134,6 +134,23 @@ def market_context_panel(state, P_=None) -> str:
     except Exception:
         ma_line = ""
 
+    # Real social-determinants burden (CDC PLACES, full-population model est).
+    places_line = ""
+    try:
+        from rcm_mc.data import cdc_places_agg as _places
+        st_abbr4 = _FIPS_ABBR.get(fips, "")
+        pl = _places.places_equity_state(st_abbr4) if st_abbr4 else {}
+        if pl.get("uninsured_18_64") is not None:
+            places_line = (
+                f'<p style="font-size:11px;color:{pal["text_dim"]};margin:6px 0 0">'
+                f'Social determinants (CDC PLACES, real): '
+                f'<b style="color:{pal["text"]}">{float(pl["uninsured_18_64"]):.1f}%</b> uninsured 18–64, '
+                f'<b style="color:{pal["text"]}">{float(pl["food_insecurity"]):.1f}%</b> food-insecure, '
+                f'<b style="color:{pal["text"]}">{float(pl["lack_transportation"]):.1f}%</b> lack transport. '
+                f'Full-population SDOH burden — demand-mix / equity context.</p>')
+    except Exception:
+        places_line = ""
+
     miss = ", ".join(score.get("missing_export_required", [])) if score else ""
     score_line = ""
     if score and score.get("overall_market_score") is not None:
@@ -151,7 +168,7 @@ def market_context_panel(state, P_=None) -> str:
         f'<th style="padding:3px 10px;text-align:left">Variable</th>'
         f'<th style="padding:3px 10px;text-align:right">Value</th>'
         f'<th style="padding:3px 10px;text-align:right">Pctile</th></tr></thead>'
-        f'<tbody>{rows}</tbody></table>{score_line}{supply_line}{chow_line}{ma_line}'
+        f'<tbody>{rows}</tbody></table>{score_line}{supply_line}{chow_line}{ma_line}{places_line}'
         f'<p style="font-size:11px;color:{pal["text_dim"]};margin:6px 0 0">'
         f'Market/area context — <b>not</b> provider-specific. Combine with CMS/HCRIS/'
         f'provider data before a decision. <a href="/market-intel/geo/{_html.escape(fips)}" '
