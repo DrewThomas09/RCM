@@ -1,0 +1,2 @@
+variable_id,display_name,category,unit,year,source,geography_level,description,diligence_use,caveat
+age_65_plus_pct,% Age 65 and over,AGE,pct,2025,SimplyAnalytics (licensed),state,"% Age | 65 years and over, 2025 [Estimated]",Senior demand density — higher = more Medicare-age demand.,County values can mask submarket variation; verify source/year.
