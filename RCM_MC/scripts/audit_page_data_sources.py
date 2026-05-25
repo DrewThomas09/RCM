@@ -37,6 +37,16 @@ _REAL_LOADERS = (
 _DISCLOSURE = ("ck_source_purpose", "ck_illustrative_note", 'universe="',
                "universe='", "DATA REQUIRED", "EXPORT REQUIRED")
 
+# Real-data / admin / navigation pages: disclosure is BY SOURCE (they render
+# real CMS/deal/registry data or are pure navigation indexes), so an
+# "illustrative" banner would be dishonest. They carry no synthetic-data risk
+# and are excluded from the NO_DISCLOSURE flag. Documented in
+# docs/DATA_VERIFICATION_POLICY.md.
+_REAL_OR_NAV_ROUTES = frozenset({
+    "/cms-data-browser", "/cms-sources", "/data-sources-admin",
+    "/deal-search", "/module-index",
+})
+
 
 def _route_for(fname: str) -> str:
     return "/" + fname[:-len("_page.py")].replace("_", "-")
@@ -55,10 +65,13 @@ def main() -> int:
         uses_corpus = bool(re.search(r"_SEED_DEALS|deals_corpus|extended_seed|corpus", txt))
         renders_data = bool(re.search(r"ck_kpi_block|ck_value_anchor|compute_|<table", txt))
         # Flag: renders figures but discloses nothing.
+        # Real-data pages (import a real loader) and known real/admin/nav routes
+        # disclose by source — not a synthetic-data risk.
+        disclosed_by_source = has_real or route in _REAL_OR_NAV_ROUTES
         flag = ""
-        if renders_data and not has_disc:
+        if renders_data and not has_disc and not disclosed_by_source:
             flag = "NO_DISCLOSURE"
-        elif tier["tier"] == "red" and not has_disc:
+        elif tier["tier"] == "red" and not has_disc and not disclosed_by_source:
             flag = "RED_NO_DISCLOSURE"
         rows.append({
             "route": route, "file": p.name, "tier": tier["tier"],

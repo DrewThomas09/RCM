@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 from rcm_mc.ui._chartis_kit import (
     P, _MONO, _SANS,
     chartis_shell, ck_fmt_moic, ck_fmt_pct, ck_fmt_num,
-    ck_section_header, ck_kpi_block, ck_provenance_tooltip,
+    ck_section_header, ck_kpi_block, ck_provenance_tooltip, ck_illustrative_note,
 )
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
@@ -443,7 +443,7 @@ def render_ic_memo_gen(params: Dict[str, str]) -> str:
         page_key="corpus-ic-memo",
     )
     subtitle = f"Target: {html.escape(deal_name)}" if has_inputs else "Corpus benchmarking"
-    return chartis_shell(explainer + body, "IC Memo Generator", active_nav="/corpus-ic-memo", subtitle=subtitle,
+    return chartis_shell(explainer + ck_illustrative_note("IC memo figures (benchmark corpus)") + body, "IC Memo Generator", active_nav="/corpus-ic-memo", subtitle=subtitle,
         editorial_intro={
             "eyebrow": "IC MEMO GENERATOR",
             "headline": "Where the corpus drafts the memo for you.",

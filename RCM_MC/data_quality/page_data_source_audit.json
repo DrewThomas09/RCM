@@ -1,9 +1,9 @@
 {
   "summary": {
     "pages": 173,
-    "with_disclosure": 166,
+    "with_disclosure": 168,
     "with_real_loader": 19,
-    "flagged_no_disclosure": 7,
+    "flagged_no_disclosure": 0,
     "by_tier": {
       "green": 27,
       "navy": 50,
@@ -210,7 +210,7 @@
       "imports_real_loader": true,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/cms-sources",
@@ -220,7 +220,7 @@
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/coinvest-pipeline",
@@ -350,7 +350,7 @@
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/deal-flow-heatmap",
@@ -420,7 +420,7 @@
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/deal-sourcing",
@@ -786,21 +786,21 @@
       "route": "/ic-memo-generator",
       "file": "ic_memo_generator_page.py",
       "tier": "green",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/ic-memo",
       "file": "ic_memo_page.py",
       "tier": "green",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/industry",
@@ -990,7 +990,7 @@
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/msa-concentration",

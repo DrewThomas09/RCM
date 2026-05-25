@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_illustrative_note
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
@@ -259,7 +259,7 @@ def render_ic_memo_generator(params: dict = None) -> str:
         source="data_public/ic_memo_generator.py (standardized memo template).",
         page_key="ic-memo-gen",
     )
-    return chartis_shell(explainer + body, "IC Memo Generator", active_nav="/ic-memo-gen",
+    return chartis_shell(explainer + ck_illustrative_note("IC memo figures (benchmark corpus)") + body, "IC Memo Generator", active_nav="/ic-memo-gen",
         editorial_intro={
             "eyebrow": "IC MEMO GENERATOR",
             "headline": "What the ic memo generator page reveals on this deal.",
