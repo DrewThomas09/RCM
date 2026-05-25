@@ -47,6 +47,8 @@ _CASES = [
      {}, "workforce supply", "/workforce-planning"),
     ("rcm_mc.ui.data_public.drug_pricing_340b_page", "render_drug_pricing_340b",
      {}, "Real CMS Part D drug spend", "/drug-pricing-340b"),
+    ("rcm_mc.ui.data_public.tracker_340b_page", "render_tracker_340b",
+     {}, "Real CMS Part D drug spend", "/tracker-340b"),
 ]
 
 
