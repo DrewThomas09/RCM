@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_bar_row
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
 
 
 def _status_color(status: str) -> str:
@@ -268,6 +269,7 @@ def render_vdr_tracker(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
+  {data_required_panel(P, title="VDR Tracker", needed=[("document","data-room document"),("category","financial / legal / HR / clinical"),("status","received / requested / outstanding"),("request_date","request date (YYYY-MM-DD)"),("owner","responsible party")], template="vdr_tracker_template.csv", request_from="Deal team / seller", activates="data-room completeness + outstanding-request tracking", guide_hint="What VDR/data-room data do I need to upload?")}
   {ck_illustrative_note("figures")}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Workstream Completion Summary</div>{ws_chart}{ws_tbl}</div>

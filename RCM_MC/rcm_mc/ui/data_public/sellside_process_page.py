@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_value_anchor, ck_bar_row
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
 
 
 def _valuations_chart(items):
@@ -249,6 +250,7 @@ def render_sellside_process(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
+  {data_required_panel(P, title="Sell-Side Process", needed=[("milestone","process milestone"),("date","date (YYYY-MM-DD)"),("buyer","buyer name"),("buyer_type","strategic / sponsor"),("bid","indicated bid $")], template="sellside_process_template.csv", request_from="Sell-side advisor / banker", activates="process timeline + buyer bid tracking", guide_hint="What sell-side process data do I need to upload?")}
   {ck_illustrative_note("figures")}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}

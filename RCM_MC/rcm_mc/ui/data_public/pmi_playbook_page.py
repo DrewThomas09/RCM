@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_bar_row
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
 
 
 def _workstreams_chart(items) -> str:
@@ -212,6 +213,7 @@ def render_pmi_playbook(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
+  {data_required_panel(P, title="PMI Playbook", needed=[("workstream","playbook workstream / function"),("owner","owner (PII)"),("milestone","task / milestone"),("due_date","due date (YYYY-MM-DD)"),("status","status")], template="pmi_integration_template.csv", request_from="Integration lead / IMO", activates="100-day playbook task tracking by function", guide_hint="What integration-playbook data do I need to upload?")}
   {ck_illustrative_note("figures")}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {prog_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">

@@ -8,6 +8,7 @@ from __future__ import annotations
 import html as _html
 
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
 
 
 def _cost_stack_svg(tsa_cost: float, standup_cost: float, integration_cost: float) -> str:
@@ -280,6 +281,7 @@ def render_transition_services(params: dict = None) -> str:
 <div class="ck-page-wrap">
 
   {page_title}
+  {data_required_panel(P, title="Transition Services (TSA)", needed=[("service","transition service"),("provider","seller / 3rd party"),("duration_months","duration (months)"),("monthly_cost","cost $/mo"),("exit_plan","standalone plan")], template="tsa_template.csv", request_from="Seller / integration management office", activates="TSA cost + exit-timeline tracking", guide_hint="What TSA data do I need to upload?")}
   {ck_illustrative_note("figures")}
 
   {form}

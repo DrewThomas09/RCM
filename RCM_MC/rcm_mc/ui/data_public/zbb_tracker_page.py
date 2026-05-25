@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_bar_row
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
 
 
 def _categories_chart(items) -> str:
@@ -203,6 +204,7 @@ def render_zbb_tracker(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
+  {data_required_panel(P, title="Zero-Based Budget Tracker", needed=[("cost_line","cost line item"),("baseline","baseline $"),("target","zero-based target $"),("savings","savings $"),("owner","owner")], template="zbb_tracker_template.csv", request_from="FP&A / portfolio-company CFO", activates="zero-based savings vs baseline tracking", guide_hint="What ZBB cost data do I need to upload?")}
   {ck_illustrative_note("figures")}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {r_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">

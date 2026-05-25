@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title, ck_illustrative_note, ck_bar_row
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
 
 
 def _sev_color(s: str) -> str:
@@ -288,6 +289,7 @@ def render_compliance_attestation(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
+  {data_required_panel(P, title="Compliance Attestation", needed=[("attestation","attestation item"),("owner","owner (PII)"),("due_date","due date (YYYY-MM-DD)"),("status","complete / pending / overdue"),("evidence_link","evidence reference")], template="compliance_attestation_template.csv", request_from="Compliance officer / GC", activates="attestation completion rate + overdue tracking", guide_hint="What compliance-attestation data do I need to upload?")}
   {ck_illustrative_note("figures")}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Attestation Status — SOC 2, HITRUST, HIPAA, PCI, ISO</div>{a_chart}{a_tbl}</div>

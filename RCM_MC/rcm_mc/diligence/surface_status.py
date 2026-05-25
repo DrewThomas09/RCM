@@ -114,6 +114,11 @@ _DATA_REQUIRED = frozenset({
     # Batch 1b
     "/nav-loan-tracker", "/secondaries-tracker", "/continuation-vehicle",
     "/coinvest-pipeline", "/board-governance", "/capex-budget",
+    # Batch 1c — remaining internal/fund/process pages
+    "/operating-partners", "/compliance-attestation", "/transition-services",
+    "/pmi-integration", "/pmi-playbook", "/sellside-process", "/diligence-vendors",
+    "/vdr-tracker", "/vcp-tracker", "/zbb-tracker", "/platform-maturity",
+    "/ai-operating-model", "/direct-lending",
 })
 
 
@@ -146,15 +151,10 @@ _RED = frozenset({
     "/ma-star",
     "/risk-matrix",
     "/revenue-leakage",
-    "/operating-partners", "/compliance-attestation",
-    "/transition-services", "/pmi-integration", "/pmi-playbook",
-    "/digital-front-door", "/direct-employer", "/direct-lending",
+    "/digital-front-door", "/direct-employer",
     "/tech-stack",
-    "/medical-realestate", "/real-estate", "/platform-maturity",
-    "/ai-operating-model",
-    "/zbb-tracker", "/vcp-tracker",
-    "/vdr-tracker", "/diligence-vendors", "/diligence/risk-workbench",
-    "/sellside-process", "/platform-maturity",
+    "/medical-realestate", "/real-estate",
+    "/diligence/risk-workbench",
 })
 
 _REASON = {
