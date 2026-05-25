@@ -9,17 +9,25 @@ no wakeup was scheduled — fixed by this self-rescheduling rule.)
 ## Current run
 - loop_start:      2026-05-25T14:20Z
 - loop_end:        2026-05-25T22:20Z   (loop_start + 8h)
-- last_tick:       2026-05-25T14:20Z
+- last_tick:       2026-05-25T15:10Z
 - next_tick_due:   +180s after each turn
-- last_deploy_sha: 46ea6b1e  (/healthz 200)
-- active PRs:      none in-scope open
+- last_deploy_sha: e03da5f1  (/healthz 200)
+- active PRs:      quality-scorecard CMS star benchmark (opening)
+
+## Done this run (worst-first RED→NAVY conversions, real-data-anchored)
+- #710 Physician Productivity: real HRSA shortage context; RED→NAVY. (deployed)
+- #711 Provider Retention: real CMS nurse-turnover benchmark (median 45.3%);
+  RED→NAVY; At-Risk Watchlist labeled illustrative scaffold. (deployed)
+- (this tick) Quality Scorecard: real CMS 5-star Care Compare distribution
+  (overall 3.01★); RED→NAVY.
 
 ## Queue (next 5 actions)
-1. Merge this runtime-control docs PR (green) + sync/deploy-verify.
+1. Merge quality-scorecard PR (green) + deploy-verify.
 2. Audit Deal Quality / Deal Risk for real HCRIS-distress / CMS signals vs honest labels.
-3. Onboard next small public dataset (HRSA/HPSA shortage areas) via the engine.
-4. DATA-REQUIRED honest treatment for user-data pages (Provider Retention,
-   Physician Productivity, Partner Economics, Mgmt Comp).
+3. Next RED page with a real anchor (clinical-outcomes / patient-experience via
+   Care Compare; ma-star / risk-adjustment via CMS MA Star Ratings).
+4. Keep Partner Economics + Mgmt Comp RED (no public anchor for comp; honest
+   illustrative labels already present) — revisit only if real comp data attached.
 5. Guide/RAG source cards + coverage-matrix updates for each change.
 
 ## Per-tick rule
