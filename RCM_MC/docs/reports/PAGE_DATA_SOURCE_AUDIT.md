@@ -5,17 +5,11 @@ analyzer pages that render figures with **no** data-source disclosure
 (no source/purpose header, illustrative banner, or DATA/EXPORT REQUIRED
 label). Cross-references the surface-status tier.
 
-- Pages: **173** · with disclosure: **166** · importing a real loader: **19** · **flagged (no disclosure): 7**
+- Pages: **173** · with disclosure: **168** · importing a real loader: **19** · **flagged (no disclosure): 0**
 - By tier: {'green': 27, 'navy': 50, 'yellow': 37, 'red': 59}
 
 ## Flagged — render data, disclose nothing (fix first)
 
 | Route | File | Tier | Real loader? | Flag |
 |---|---|---|---|---|
-| `/cms-data-browser` | cms_data_browser_page.py | green | yes | NO_DISCLOSURE |
-| `/cms-sources` | cms_sources_page.py | green | no | NO_DISCLOSURE |
-| `/data-sources-admin` | data_sources_admin_page.py | green | no | NO_DISCLOSURE |
-| `/deal-search` | deal_search_page.py | green | no | NO_DISCLOSURE |
-| `/ic-memo` | ic_memo_page.py | green | no | NO_DISCLOSURE |
-| `/ic-memo-generator` | ic_memo_generator_page.py | green | no | NO_DISCLOSURE |
-| `/module-index` | module_index_page.py | green | no | NO_DISCLOSURE |
+| _(none — every data-rendering page discloses its basis)_ | | | | |

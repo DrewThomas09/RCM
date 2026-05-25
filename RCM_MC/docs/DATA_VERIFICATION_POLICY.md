@@ -25,6 +25,14 @@ A page that renders `ck_kpi_block` / `ck_value_anchor` / tables or calls a
 `compute_*` model **and** carries none of the above is **flagged NO_DISCLOSURE**
 and must be fixed (add the matching label; never fabricate a source).
 
+**Disclosure by source.** Pages that import a real-data loader, or that are
+known real-data / admin / navigation surfaces (CMS data browser, CMS source
+catalog, data-sources admin, deal search, module index), disclose their basis
+**by source** — they render real CMS/deal/registry data or are pure navigation,
+so an "illustrative" banner would be *dishonest*. These are excluded from the
+NO_DISCLOSURE flag (see `_REAL_OR_NAV_ROUTES` in the audit script). Current
+status: **0 undisclosed data pages.**
+
 ## Tier taxonomy (single source of truth)
 
 `rcm_mc/diligence/surface_status.py` — green (real) / navy (calculator on your
