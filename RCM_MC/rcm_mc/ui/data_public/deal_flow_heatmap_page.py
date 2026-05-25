@@ -327,9 +327,47 @@ def render_deal_flow_heatmap(min_sector_deals: int = 3) -> str:
             f"{year_span}"
         ),
     )
+    # Real CMS consolidation-activity trend (SNF + Hospital Change-of-Ownership)
+    # — a real M&A-velocity anchor next to the illustrative seed-corpus heatmap.
+    real_panel = ""
+    try:
+        from rcm_mc.data import snf_chow as _chow
+        snf_yrs = {r["year"]: r["chow_count"] for r in _chow.chow_by_year()}
+        h = _chow._hospital_state_year()
+        hosp_yrs = {}
+        if len(h):
+            for yr, sub in h.groupby("year"):
+                hosp_yrs[int(yr)] = int(sub["chow_count"].sum())
+        years_all = sorted(set(snf_yrs) | set(hosp_yrs))
+        if years_all:
+            cells = ""
+            mx = max((snf_yrs.get(y, 0) + hosp_yrs.get(y, 0)) for y in years_all) or 1
+            for y in years_all:
+                tot = snf_yrs.get(y, 0) + hosp_yrs.get(y, 0)
+                ht = max(2, int(tot / mx * 48))
+                cells += (f'<div style="text-align:center;flex:1">'
+                          f'<div style="font-size:8px;color:{P["text_dim"]};font-family:{_SANS}">{tot}</div>'
+                          f'<div style="height:{ht}px;background:{P["accent"]};opacity:.8;margin:2px 2px 0"></div>'
+                          f'<div style="font-size:8px;color:{P["text_dim"]};margin-top:2px">{y}</div></div>')
+            real_panel = (
+                f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
+                f'border-left:3px solid {P["accent"]};padding:12px 14px;margin-bottom:14px">'
+                f'<div style="font-size:10px;font-weight:600;letter-spacing:.08em;'
+                f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:6px">'
+                f'Real consolidation activity · LIVE (CMS SNF + Hospital Change-of-Ownership)</div>'
+                f'<p style="font-size:11px;color:{P["text_dim"]};margin:0 0 6px">'
+                f'Medicare-enrolled SNF + hospital ownership changes per year — real '
+                f'M&amp;A velocity. The heatmaps below are illustrative seed-corpus deal flow.</p>'
+                f'<div style="display:flex;align-items:flex-end;height:62px;max-width:520px">{cells}</div>'
+                f'<p style="font-size:10px;color:{P["text_dim"]};margin:6px 0 0">'
+                f'Consolidation signal — not a PE-specific flag, not deal values.</p></div>')
+    except Exception:
+        real_panel = ""
+
     body = f"""
 <div style="padding:16px 20px;max-width:1600px">
   {page_title}
+  {real_panel}
   {kpi_strip}
 
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px">
