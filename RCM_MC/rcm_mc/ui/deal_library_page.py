@@ -24,17 +24,52 @@ from rcm_mc.ui._chartis_kit import (
 from rcm_mc.data import deal_library as dl
 
 
-def _freq_table(title: str, rows: List[Dict[str, Any]]) -> str:
-    body = ck_table(
-        [{"value": r["value"], "n": r["n"]} for r in rows],
-        [{"key": "value", "label": title, "align": "left"},
-         {"key": "n", "label": "Companies", "align": "right", "kind": "number"}],
-        dense=True,
-    )
+def _freq_table(title: str, rows: List[Dict[str, Any]],
+                link_param: Optional[str] = None) -> str:
+    # When link_param is set, each value links to the filtered library view —
+    # so "Top sponsors" / "Top states" double as a one-click drill-down.
+    disp = []
+    for r in rows:
+        val = r["value"]
+        if link_param and val:
+            cell = (f'<a href="/deal-library?{link_param}={_url.quote(str(val))}" '
+                    f'style="color:{P["accent"]};text-decoration:none">'
+                    f'{_html.escape(str(val))}</a>')
+        else:
+            cell = _html.escape(str(val)) if val else "—"
+        disp.append({"value": cell, "n": r["n"]})
+    # ck_table escapes cell content; pre-built anchor must bypass that, so
+    # render the small table inline here rather than via ck_table.
+    head = (f'<tr><th class="align-left">{_html.escape(title)}</th>'
+            f'<th class="align-right">Companies</th></tr>')
+    body = "".join(
+        f'<tr><td class="align-left">{d["value"]}</td>'
+        f'<td class="align-right sc-num">{d["n"]:,}</td></tr>' for d in disp)
+    tbl = f'<table class="ck-table ck-dense"><thead>{head}</thead><tbody>{body}</tbody></table>'
     return (f'<div style="flex:1;min-width:220px">'
             f'<div style="font-family:var(--sc-mono);font-size:10px;'
             f'letter-spacing:0.08em;text-transform:uppercase;color:{P["text_dim"]};'
-            f'margin-bottom:6px">{_html.escape(title)}</div>{body}</div>')
+            f'margin-bottom:6px">{_html.escape(title)}</div>{tbl}</div>')
+
+
+def _sponsor_rollup_card(roll: Dict[str, Any]) -> str:
+    if not roll.get("n_total"):
+        return ""
+    states = " · ".join(f'{s["state"]} {s["n"]}' for s in roll["top_states"]) or "—"
+    return (
+        f'<div style="border:1px solid {P["border"]};border-left:3px solid '
+        f'{P["accent"]};border-radius:2px;padding:12px 16px;margin:14px 0;'
+        f'background:{P["panel"] if "panel" in P else "#fff"}">'
+        f'<div style="font-family:var(--sc-mono);font-size:10px;'
+        f'letter-spacing:0.08em;text-transform:uppercase;color:{P["text_dim"]}">'
+        f'Sponsor footprint</div>'
+        f'<div style="font-size:18px;font-weight:600;margin:2px 0 6px">'
+        f'{_html.escape(roll["sponsor"])}</div>'
+        f'<div style="font-family:var(--sc-mono);font-size:12px;color:{P["text_dim"]}">'
+        f'<b style="color:{P["text"]}">{roll["n_total"]:,}</b> healthcare companies '
+        f'· {roll["n_current"]:,} current · {roll["n_prior"]:,} prior '
+        f'· {roll["n_with_revenue"]:,} disclose revenue<br>'
+        f'top states: {_html.escape(states)}</div></div>')
 
 
 def _missingness_strip(miss: Dict[str, float]) -> str:
@@ -112,18 +147,22 @@ def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> 
     )
 
     freq = ('<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:14px">'
-            + _freq_table("Top sponsors", dl.top_values(store, "sponsor_owner", 10))
+            + _freq_table("Top sponsors", dl.top_values(store, "sponsor_owner", 10), "sponsor")
             + _freq_table("Top verticals", dl.top_values(store, "industry", 10))
-            + _freq_table("Top states", dl.top_values(store, "state", 10))
+            + _freq_table("Top states", dl.top_values(store, "state", 10), "state")
             + "</div>")
 
     # ── filters / search ──
     search = params.get("search", "")
     state = params.get("state", "")
+    sponsor = params.get("sponsor", "")
+    rollup = _sponsor_rollup_card(dl.sponsor_rollup(store, sponsor)) if sponsor else ""
     form = (
         f'<form method="get" action="/deal-library" '
         f'style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin:16px 0">'
-        f'<input type="text" name="search" value="{_html.escape(search)}" '
+        + (f'<input type="hidden" name="sponsor" value="{_html.escape(sponsor)}">'
+           if sponsor else "")
+        + f'<input type="text" name="search" value="{_html.escape(search)}" '
         f'placeholder="Search name / sponsor / vertical" '
         f'style="padding:7px 9px;border:1px solid {P["border"]};border-radius:2px;'
         f'min-width:260px;font-size:13px">'
@@ -143,9 +182,14 @@ def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> 
     except ValueError:
         offset = 0
     page_size = 50
+    _filters = {}
+    if state:
+        _filters["state"] = state.upper()
+    if sponsor:
+        _filters["sponsor_owner"] = sponsor
     res = dl.query(
         store,
-        filters={"state": state.upper()} if state else None,
+        filters=_filters or None,
         search=search or None,
         sort_by=params.get("sort_by", "company_name"),
         sort_dir=params.get("sort_dir", "asc"),
@@ -188,6 +232,7 @@ def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> 
         + _missingness_strip(miss)
         + freq
         + form
+        + rollup
         + table
         + pager
     )
