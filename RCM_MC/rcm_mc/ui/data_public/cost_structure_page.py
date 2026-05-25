@@ -352,6 +352,12 @@ def render_cost_structure(params: dict = None) -> str:
             universe="illustrative", source="Hardcoded cohort figures",
             next_action="Attach a hospital for real HCRIS opex vs peers",
             next_href="/diligence/hcris-xray") + body
+    # Real Colorado all-payer cost context (market framing, not facility opex).
+    try:
+        from ._colorado_context import colorado_cost_context_panel
+        body = body + colorado_cost_context_panel()
+    except Exception:
+        pass
     return chartis_shell(body, "Cost Structure Analyzer", active_nav="/cost-structure",
         editorial_intro={
             "eyebrow": "COST STRUCTURE",
