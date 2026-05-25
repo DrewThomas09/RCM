@@ -178,6 +178,7 @@ _SUB_NAV = {
         {"label": "EBITDA Bridge",       "href": "/pipeline/bridge"},
     ],
     "library": [
+        {"label": "Deal Library",        "href": "/deal-library"},
         {"label": "Deals Library",       "href": "/deals-library"},
         {"label": "Methodology",         "href": "/methodology"},
         {"label": "Metric Glossary",     "href": "/metric-glossary"},
@@ -288,6 +289,7 @@ _NAV_DESC = {
     "/new-deal": "Create opportunity / import", "/deal-quality": "Score a target",
     "/deal-risk-scores": "What can go wrong", "/deal-flow-heatmap": "Flow by stage",
     "/pipeline/bridge": "Value-creation bridge",
+    "/deal-library": "Licensed sponsor-backed company universe",
     "/deals-library": "The deal archive", "/methodology": "How the models work",
     "/metric-glossary": "Every metric, defined", "/rcm-benchmarks": "RCM performance bands",
     "/data": "CMS public-data catalog", "/comparables": "Comp sets & multiples",
@@ -3613,6 +3615,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "inpatient-rehab", "title": "Inpatient Rehab (IRF)", "route": "/inpatient-rehab"},
     {"id": "long-term-care-hospital", "title": "Long-Term Care Hospitals (LTCH)", "route": "/long-term-care-hospital"},
     # Library / reference
+    {"id": "deal-library",  "title": "Deal Library (licensed)", "route": "/deal-library"},
     {"id": "library",       "title": "Deals Library",      "route": "/library"},
     {"id": "deals-library", "title": "Deals Library (alt)","route": "/deals-library"},
     {"id": "methodology",   "title": "Methodology",        "route": "/methodology"},
@@ -6638,7 +6641,7 @@ _SUB_SECTION_MAP = {
     "/deal-flow-heatmap": "pipeline", "/pipeline/bridge": "pipeline",
     # Moved to Research: Find Comps (corpus comps) + PE Intelligence (generic).
     "/find-comps": "research", "/pe-intelligence": "research",
-    "/library": "library", "/deals-library": "library",
+    "/library": "library", "/deals-library": "library", "/deal-library": "library",
     "/methodology": "library", "/metric-glossary": "library",
     "/data": "library", "/comparables": "library",
     "/market-rates": "library", "/data-catalog": "library",

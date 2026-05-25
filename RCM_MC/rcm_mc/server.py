@@ -4602,6 +4602,17 @@ class RCMHandler(BaseHTTPRequestHandler):
                     moic_bucket=moic_bucket,
                 )
             )
+        if path == "/deal-library":
+            # Real licensed company universe (Capital IQ screening exports
+            # ingested via scripts/ingest_deal_library_exports.py). Distinct
+            # from /library (the illustrative seed corpus) — renders an honest
+            # empty state until an export has been ingested into this DB.
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _params = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.deal_library_page import render_deal_library
+            return self._send_html(
+                render_deal_library(PortfolioStore(self.config.db_path), _params)
+            )
         if path == "/research":
             # /research surfaces the curated research catalog —
             # methodology hubs, frameworks, deep-dives, and field
