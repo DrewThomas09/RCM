@@ -79,6 +79,7 @@ from ._chartis_kit import (
     ck_page_title, ck_panel, ck_section_header, ck_section_intro,
     ck_signal_badge,
 )
+from .data_public._benchmark_panels import data_required_panel
 
 
 # ── Input dataclass ────────────────────────────────────────────────
@@ -1305,7 +1306,8 @@ def render_risk_workbench(
             )
         )
     return chartis_shell(
-        body, "RCM Diligence — Risk Workbench",
+        data_required_panel(P, title="Risk Workbench", needed=[("risk","risk / regulatory item"),("category","tier 1-3 / cyber / labor / quality"),("likelihood","high / med / low"),("impact","high / med / low"),("owner","owner"),("mitigation","mitigation")], template="risk_register_template.csv", request_from="Deal team / risk owners", activates="the nine-panel risk panorama from your deal's real risk inputs")
+        + body, "RCM Diligence — Risk Workbench",
         subtitle="Tier 1-3 + Counterfactual Advisor",
     )
 
