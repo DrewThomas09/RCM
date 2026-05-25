@@ -233,6 +233,70 @@ def _input_form(params: dict) -> str:
 </form>'''
 
 
+def _cms_supply_panel() -> str:
+    """Real CMS FFS provider-supply anchor — national enrolled-provider
+    universe + top provider types. This is genuine Medicare-enrollment
+    data (not this network's roster); it grounds the network-density
+    discussion in the real supply backdrop a buyer is acquiring into."""
+    import html as _html
+    from rcm_mc.data import provider_supply as _ps
+    summ = _ps.supply_summary()
+    if not summ.get("total_enrollments"):
+        return ""
+    top = _ps.supply_national_by_type(6)
+
+    border = P["border"]
+    tprim = P["text"]
+    tdim = P["text_dim"]
+    acc = P["accent"]
+
+    rows = []
+    for i, t in enumerate(top):
+        name = _html.escape(str(t.get("provider_type", "")).title())
+        cnt = int(t.get("enrolled_count", 0))
+        rows.append(
+            f'<tr>'
+            f'<td style="padding:4px 8px;color:{tprim};font-size:11px">{name}</td>'
+            f'<td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums;'
+            f'color:{tprim};font-family:\'JetBrains Mono\',monospace;font-size:11px">{cnt:,}</td>'
+            f'</tr>'
+        )
+    extract = _html.escape(str(summ.get("extract", "")))
+    total = int(summ.get("total_enrollments", 0))
+    n_types = int(summ.get("provider_types", 0))
+    n_states = int(summ.get("states", 0))
+
+    return f'''
+<div style="margin-top:12px;background:{P["panel"]};border:1px solid {border};
+  border-left:3px solid {acc};padding:12px">
+  <div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:{tdim};
+    text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">
+    Real CMS provider supply &mdash; the network you are buying into
+    <span style="color:{acc};font-weight:600"> · LIVE</span>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 2fr;gap:14px;align-items:start">
+    <div>
+      <div style="font-family:\'JetBrains Mono\',monospace;font-size:22px;
+        color:{tprim};font-variant-numeric:tabular-nums">{total:,}</div>
+      <div style="font-size:11px;color:{tdim};margin-top:2px">
+        Medicare-enrolled providers nationally, across {n_types:,}
+        provider types and {n_states} states/territories.
+      </div>
+      <div style="font-size:10px;color:{P["text_faint"]};margin-top:8px">
+        CMS PPEF enrollment extract {extract}. FFS-enrolled supply &mdash;
+        not this deal's network roster; use as the market-supply backdrop,
+        not the target's headcount.
+      </div>
+    </div>
+    <div>
+      <div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:{tdim};
+        margin-bottom:4px">LARGEST ENROLLED PROVIDER TYPES (NATIONAL)</div>
+      <table style="width:100%;border-collapse:collapse">{"".join(rows)}</table>
+    </div>
+  </div>
+</div>'''
+
+
 # ---------------------------------------------------------------------------
 # Main render
 # ---------------------------------------------------------------------------
@@ -324,7 +388,8 @@ def render_provider_network(params: dict) -> str:
 {kpis}
 </div>
 
-<div style="margin-top:12px">{value_anchor}</div>'''
+<div style="margin-top:12px">{value_anchor}</div>
+{_cms_supply_panel()}'''
     content += f'''
 
 <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px;margin-top:12px">
