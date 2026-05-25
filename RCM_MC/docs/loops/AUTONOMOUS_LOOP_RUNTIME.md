@@ -9,28 +9,42 @@ no wakeup was scheduled — fixed by this self-rescheduling rule.)
 ## Current run
 - loop_start:      2026-05-25T14:20Z
 - loop_end:        2026-05-25T22:20Z   (loop_start + 8h)
-- last_tick:       2026-05-25T15:45Z
+- last_tick:       2026-05-25T17:10Z
 - next_tick_due:   +180s after each turn
-- last_deploy_sha: ff0dba0b  (/healthz 200)
-- active PRs:      coverage-matrix + MIPS RAG card docs (opening)
+- last_deploy_sha: da60d52d  (/healthz 200)
+- active PRs:      esg honesty-label (opening)
 
-## Done this run (worst-first RED→NAVY conversions, real-data-anchored)
-- #710 Physician Productivity: real HRSA shortage + CMS MIPS quality. RED→NAVY.
-- #711 Provider Retention: real CMS nurse-turnover (median 45.3%). RED→NAVY.
-- #712 Quality Scorecard: real CMS 5-star Care Compare (3.01★). RED→NAVY.
-- #713 Clinical Outcomes: real CMS quality-measure (3.65★). RED→NAVY.
-- #714 Onboard CMS MIPS physician-quality dataset (541k → PII-free aggregates).
-- #715 Sector-aware quality benchmark (MIPS for physician sectors, SNF for nursing).
-- #716 Regulatory Risk: real CMS enforcement base rate (45% fined, $467M). RED→NAVY.
-- (this tick) Generated coverage-matrix doc + MIPS RAG source card.
-- Surface counts now: red 72, yellow 56, navy 62, green 143 (of 333 live).
+## Done this run (all merged + deployed)
+- #710-713 RED→NAVY: Physician Productivity (HRSA+MIPS), Provider Retention
+  (CMS turnover 45.3%), Quality Scorecard (CMS 5-star 3.01★), Clinical Outcomes
+  (CMS QM 3.65★).
+- #714 Onboard CMS MIPS dataset (541k → PII-free aggregates).
+- #715 Sector-aware quality benchmark (MIPS physician / SNF nursing).
+- #716 Regulatory Risk RED→NAVY (CMS enforcement 45% fined, $467M).
+- #717 Generated surface-status doc (gen script) + MIPS RAG card + coverage matrix.
+- #718 Deal Quality + Deal Risk honest illustrative banners (stay yellow).
+- #719 Supply Chain RED→NAVY (FDA drug shortage, 1,156 active).
+- #720-724 INDUSTRY INTELLIGENCE LAYER (licensed IBISWorld, derived only):
+  audit+policy, extractor+data+loader, /industry pages, RAG card, brief builder.
+- #725 Payer Shift RED→NAVY (CIVHC payer-mix trend).
+- (this tick) ESG dashboard honest illustrative banner.
+- Surface counts now: red 70, yellow 56, navy 64, green 144 (of 334 live).
+
+## Honest state of the conversion
+Cleanly-anchorable RED calculators (vendored data) are converted. Remaining RED
+splits into: (a) genuinely synthetic dashboards with NO public source (esg,
+litigation, cyber, key-person, mgmt-comp, partner-economics, board-governance,
+hcit, telehealth-econ) — correct to STAY RED with honest illustrative labels;
+(b) pages needing a NEW dataset.
 
 ## Queue (next 5 actions)
-1. Merge coverage-matrix/RAG docs PR (green) + deploy-verify.
-2. Audit Deal Quality / Deal Risk (yellow) for real HCRIS-distress / CMS signals.
-3. Remaining RED pages with a real anchor (e.g. supply-chain via FDA shortage).
-4. Keep Partner Economics + Mgmt Comp RED (no public comp anchor) — honest labels.
-5. Onboard next public dataset (CMS Open Payments / price-transparency MRFs).
+1. Onboard CMS MA Star Ratings (Excel on cms.gov, multi-sheet) → unlocks
+   ma-star / ma-contracts / risk-adjustment. Fresh full-budget tick.
+2. FDA biosimilar approvals dataset → biosimilars page.
+3. CMS Open Payments (industry→physician payments) → conflicts pages.
+4. Verify all remaining RED dashboards carry ck_illustrative_note (sweep).
+5. Wire industry_intel as anchor where genuinely relevant (hospital/physician
+   market-structure pages).
 
 ## Per-tick rule
 Until loop_end, each tick does >=1 concrete action (merge / fix / open PR / tests
