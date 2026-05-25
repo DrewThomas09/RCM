@@ -17,11 +17,12 @@ from rcm_mc.server import RCMHandler
 
 _OUT = Path(__file__).resolve().parent.parent / "docs" / "PEDESK_DILIGENCE_SURFACE_STATUS.md"
 
-_CIRCLE = {"green": "🟢", "navy": "🔵", "yellow": "🟡", "red": "🔴"}
+_CIRCLE = {"green": "🟢", "navy": "🔵", "data_required": "🟣", "yellow": "🟡", "red": "🔴"}
 # worst-first
-_ORDER = ["red", "yellow", "navy", "green"]
+_ORDER = ["red", "data_required", "yellow", "navy", "green"]
 _HEADING = {
     "red": "RED 🔴 — entirely synthetic (highest priority to fix)",
+    "data_required": "DATA REQUIRED 🟣 — activates on your uploaded deal/fund data (no fabricated values)",
     "yellow": "YELLOW 🟡 — realistic figures on the illustrative seed corpus",
     "navy": "NAVY 🔵 — diligence calculator (computes off your inputs)",
     "green": "GREEN 🟢 — real CMS/public or your own deal/system data",
@@ -29,6 +30,7 @@ _HEADING = {
 _LEGEND_MEANING = {
     "green": "Real CMS/public or your own deal/system data",
     "navy": "Diligence calculator — computes off your inputs",
+    "data_required": "Activates on your uploaded deal/fund data — shows what to upload, no fabricated values",
     "yellow": "Realistic figures on the illustrative seed corpus",
     "red": "Entirely synthetic / hardcoded values",
 }
@@ -56,7 +58,7 @@ def main() -> int:
         "| Tier | Circle | Meaning | Count |",
         "|---|---|---|---|",
     ]
-    for t in ["green", "navy", "yellow", "red"]:
+    for t in ["green", "navy", "data_required", "yellow", "red"]:
         lines.append(f"| {t.upper()} | {_CIRCLE[t]} | {_LEGEND_MEANING[t]} | {counts[t]} |")
     lines.append("")
 
@@ -69,7 +71,8 @@ def main() -> int:
 
     _OUT.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"Wrote {len(routes)} surfaces "
-          f"(red {counts['red']}, yellow {counts['yellow']}, "
+          f"(red {counts['red']}, data_required {counts['data_required']}, "
+          f"yellow {counts['yellow']}, "
           f"navy {counts['navy']}, green {counts['green']}) → {_OUT}")
     return 0
 
