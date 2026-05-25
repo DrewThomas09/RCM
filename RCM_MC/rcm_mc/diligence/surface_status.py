@@ -73,7 +73,7 @@ _GREEN = frozenset({
 # ── NAVY: diligence calculators (compute off your inputs) ───────────────────
 _NAVY = frozenset({
     "/physician-productivity", "/phys-comp-plan", "/physician-labor",
-    "/provider-retention", "/quality-scorecard",
+    "/provider-retention", "/quality-scorecard", "/clinical-outcomes",
     "/lbo-stress", "/scenario-mc", "/scenarios", "/diligence/deal-mc",
     "/diligence/covenant-stress", "/diligence/bridge-audit", "/ebitda-bridge/",
     "/multiple-decomp", "/rollup-economics", "/cap-structure", "/entry-multiple",
@@ -118,7 +118,7 @@ _RED = frozenset({
     "/mgmt-fee-tracker", "/key-person", "/esg-dashboard", "/esg-impact",
     "/hcit-platform", "/biosimilars", "/insurance-tracker", "/rw-insurance",
     "/litigation", "/cyber-risk", "/drug-pricing-340b", "/tracker-340b",
-    "/locum-tracker", "/clinical-ai", "/clinical-outcomes",
+    "/locum-tracker", "/clinical-ai",
     "/patient-experience", "/provider-network", "/competitive-intel",
     "/antitrust-screener", "/redflag-scanner", "/rcm-red-flags",
     "/concentration-risk", "/msa-concentration", "/payer-concentration",

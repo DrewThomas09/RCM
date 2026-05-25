@@ -323,7 +323,41 @@ def render_clinical_outcomes(params: dict = None) -> str:
         target=f"${r.star_bonus_opportunity_mm:,.1f}M star bonus",
         tone="teal",
     )
-    body = page_title + co_explainer + ck_illustrative_note("clinical figures") + lead_anchor + f"""
+    # Real CMS quality-measure benchmark (Care Compare nursing homes) — a real
+    # anchor for the sector's published clinical-outcome quality distribution.
+    cms_panel = ""
+    try:
+        from rcm_mc.data import snf as _snf
+        _qm = _snf.snf_rating_distribution("qm_rating")
+        if _qm.get("n"):
+            _cells = ""
+            for s in range(1, 6):
+                pct = _qm["dist"][str(s)]["pct"] or 0
+                _cells += (
+                    f'<div style="text-align:center;flex:1">'
+                    f'<div style="font-size:9px;color:{text_dim};font-family:JetBrains Mono,monospace">{pct:.0f}%</div>'
+                    f'<div style="height:{max(2, pct):.0f}px;background:{acc};opacity:0.8;margin:2px 3px 0"></div>'
+                    f'<div style="font-size:9px;color:{text_dim};margin-top:2px">{s}★</div></div>')
+            cms_panel = (
+                f'<div style="background:{panel};border:1px solid {border};'
+                f'border-left:3px solid {acc};padding:14px 16px;margin-bottom:16px">'
+                f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
+                f'text-transform:uppercase;color:{text_dim};margin-bottom:6px">'
+                f'CMS quality-measure benchmark · LIVE (Care Compare, nursing homes)</div>'
+                f'<p style="font-size:12px;color:{text_dim};margin:0 0 8px">'
+                f'Across <b style="color:{text}">{_qm["n"]:,}</b> Medicare/Medicaid '
+                f'nursing homes, the mean CMS quality-measure (clinical-outcome) '
+                f'rating is <b style="color:{text}">{_qm["mean"]:.2f}★</b> — the real '
+                f'published clinical-quality distribution for this sector.</p>'
+                f'<div style="display:flex;align-items:flex-end;height:64px;max-width:280px">{_cells}</div>'
+                f'<p style="font-size:11px;color:{text_dim};margin:8px 0 0">'
+                f'Real CMS facility-level quality-measure ratings (nursing homes) — '
+                f'a sector benchmark, <b>not</b> this deal’s outcomes. The model '
+                f'below is illustrative, scaled by your inputs.</p></div>')
+    except Exception:
+        cms_panel = ""
+
+    body = page_title + co_explainer + ck_illustrative_note("clinical figures") + lead_anchor + cms_panel + f"""
 <div class="ck-page-wrap">
 
   {form}
