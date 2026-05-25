@@ -1,0 +1,413 @@
+# PEdesk diligence surface status
+
+Data-honesty status for every PEdesk surface. Source of truth: `rcm_mc/diligence/surface_status.py` (the `/tools` index renders the matching circle). First-pass classification driving the page-by-page conversion loop — as a page is wired to real data, move it to GREEN/NAVY here and the circle updates everywhere.
+
+| Tier | Circle | Meaning | Count |
+|---|---|---|---|
+| GREEN | 🟢 | Real CMS/public or your own deal/system data | 188 |
+| NAVY | 🔵 | Diligence calculator — computes off your inputs | 57 |
+| YELLOW | 🟡 | Realistic figures on the illustrative seed corpus | 56 |
+| RED | 🔴 | Entirely synthetic / hardcoded values | 81 |
+
+
+## RED 🔴 — entirely synthetic (highest priority to fix)  (81)
+
+| Route | Status |
+|---|---|
+| `/ai-operating-model` | 🔴 Synthetic / hardcoded data |
+| `/antitrust-screener` | 🔴 Synthetic / hardcoded data |
+| `/biosimilars` | 🔴 Synthetic / hardcoded data |
+| `/board-governance` | 🔴 Synthetic / hardcoded data |
+| `/capex-budget` | 🔴 Synthetic / hardcoded data |
+| `/cin-analyzer` | 🔴 Synthetic / hardcoded data |
+| `/clinical-ai` | 🔴 Synthetic / hardcoded data |
+| `/clinical-outcomes` | 🔴 Synthetic / hardcoded data |
+| `/coinvest-pipeline` | 🔴 Synthetic / hardcoded data |
+| `/competitive-intel` | 🔴 Synthetic / hardcoded data |
+| `/competitive-intel/` | 🔴 Synthetic / hardcoded data |
+| `/compliance-attestation` | 🔴 Synthetic / hardcoded data |
+| `/concentration-risk` | 🔴 Synthetic / hardcoded data |
+| `/continuation-vehicle` | 🔴 Synthetic / hardcoded data |
+| `/cyber-risk` | 🔴 Synthetic / hardcoded data |
+| `/digital-front-door` | 🔴 Synthetic / hardcoded data |
+| `/diligence-vendors` | 🔴 Synthetic / hardcoded data |
+| `/diligence/physician-attrition` | 🔴 Synthetic / hardcoded data |
+| `/diligence/physician-eu` | 🔴 Synthetic / hardcoded data |
+| `/diligence/risk-workbench` | 🔴 Synthetic / hardcoded data |
+| `/diligence/risk-workbench?demo=steward` | 🔴 Synthetic / hardcoded data |
+| `/direct-employer` | 🔴 Synthetic / hardcoded data |
+| `/direct-lending` | 🔴 Synthetic / hardcoded data |
+| `/drug-pricing-340b` | 🔴 Synthetic / hardcoded data |
+| `/esg-dashboard` | 🔴 Synthetic / hardcoded data |
+| `/esg-impact` | 🔴 Synthetic / hardcoded data |
+| `/fraud-detection` | 🔴 Synthetic / hardcoded data |
+| `/fundraising` | 🔴 Synthetic / hardcoded data |
+| `/gpo-supply` | 🔴 Synthetic / hardcoded data |
+| `/hcit-platform` | 🔴 Synthetic / hardcoded data |
+| `/health-equity` | 🔴 Synthetic / hardcoded data |
+| `/insurance-tracker` | 🔴 Synthetic / hardcoded data |
+| `/key-person` | 🔴 Synthetic / hardcoded data |
+| `/litigation` | 🔴 Synthetic / hardcoded data |
+| `/locum-tracker` | 🔴 Synthetic / hardcoded data |
+| `/ma-contracts` | 🔴 Synthetic / hardcoded data |
+| `/ma-star` | 🔴 Synthetic / hardcoded data |
+| `/medicaid-unwinding` | 🔴 Synthetic / hardcoded data |
+| `/medical-realestate` | 🔴 Synthetic / hardcoded data |
+| `/mgmt-comp` | 🔴 Synthetic / hardcoded data |
+| `/mgmt-fee-tracker` | 🔴 Synthetic / hardcoded data |
+| `/msa-concentration` | 🔴 Synthetic / hardcoded data |
+| `/nav-loan-tracker` | 🔴 Synthetic / hardcoded data |
+| `/nsa-tracker` | 🔴 Synthetic / hardcoded data |
+| `/operating-partners` | 🔴 Synthetic / hardcoded data |
+| `/partner-economics` | 🔴 Synthetic / hardcoded data |
+| `/patient-experience` | 🔴 Synthetic / hardcoded data |
+| `/payer-concentration` | 🔴 Synthetic / hardcoded data |
+| `/payer-contracts` | 🔴 Synthetic / hardcoded data |
+| `/payer-shift` | 🔴 Synthetic / hardcoded data |
+| `/phys-comp-plan` | 🔴 Synthetic / hardcoded data |
+| `/physician-labor` | 🔴 Synthetic / hardcoded data |
+| `/physician-productivity` | 🔴 Synthetic / hardcoded data |
+| `/platform-maturity` | 🔴 Synthetic / hardcoded data |
+| `/pmi-integration` | 🔴 Synthetic / hardcoded data |
+| `/pmi-playbook` | 🔴 Synthetic / hardcoded data |
+| `/provider-network` | 🔴 Synthetic / hardcoded data |
+| `/provider-retention` | 🔴 Synthetic / hardcoded data |
+| `/quality-scorecard` | 🔴 Synthetic / hardcoded data |
+| `/rcm-red-flags` | 🔴 Synthetic / hardcoded data |
+| `/real-estate` | 🔴 Synthetic / hardcoded data |
+| `/redflag-scanner` | 🔴 Synthetic / hardcoded data |
+| `/regulatory-risk` | 🔴 Synthetic / hardcoded data |
+| `/revenue-leakage` | 🔴 Synthetic / hardcoded data |
+| `/risk-adjustment` | 🔴 Synthetic / hardcoded data |
+| `/risk-matrix` | 🔴 Synthetic / hardcoded data |
+| `/rw-insurance` | 🔴 Synthetic / hardcoded data |
+| `/secondaries-tracker` | 🔴 Synthetic / hardcoded data |
+| `/sellside-process` | 🔴 Synthetic / hardcoded data |
+| `/supply-chain` | 🔴 Synthetic / hardcoded data |
+| `/tech-stack` | 🔴 Synthetic / hardcoded data |
+| `/telehealth-econ` | 🔴 Synthetic / hardcoded data |
+| `/tracker-340b` | 🔴 Synthetic / hardcoded data |
+| `/transition-services` | 🔴 Synthetic / hardcoded data |
+| `/treasury` | 🔴 Synthetic / hardcoded data |
+| `/trial-site-econ` | 🔴 Synthetic / hardcoded data |
+| `/vcp-tracker` | 🔴 Synthetic / hardcoded data |
+| `/vdr-tracker` | 🔴 Synthetic / hardcoded data |
+| `/workforce-planning` | 🔴 Synthetic / hardcoded data |
+| `/workforce-retention` | 🔴 Synthetic / hardcoded data |
+| `/zbb-tracker` | 🔴 Synthetic / hardcoded data |
+
+## YELLOW 🟡 — illustrative seed-corpus (make real or relabel)  (56)
+
+| Route | Status |
+|---|---|
+| `/backtest` | 🟡 Illustrative seed-corpus data |
+| `/backtester` | 🟡 Illustrative seed-corpus data |
+| `/base-rates` | 🟡 Illustrative seed-corpus data |
+| `/bear-cases` | 🟡 Illustrative seed-corpus data |
+| `/comparables` | 🟡 Illustrative seed-corpus data |
+| `/compare` | 🟡 Illustrative seed-corpus data |
+| `/corpus-backtest` | 🟡 Illustrative seed-corpus data |
+| `/corpus-coverage` | 🟡 Illustrative seed-corpus data |
+| `/corpus-dashboard` | 🟡 Illustrative seed-corpus data |
+| `/corpus-ic-memo` | 🟡 Illustrative seed-corpus data |
+| `/deal-corpus-analytics` | 🟡 Illustrative seed-corpus data |
+| `/deal-flow-heatmap` | 🟡 Illustrative seed-corpus data |
+| `/deal-origination` | 🟡 Illustrative seed-corpus data |
+| `/deal-postmortem` | 🟡 Illustrative seed-corpus data |
+| `/deal-quality` | 🟡 Illustrative seed-corpus data |
+| `/deal-risk-scores` | 🟡 Illustrative seed-corpus data |
+| `/deal-screening` | 🟡 Illustrative seed-corpus data |
+| `/deal-sourcing` | 🟡 Illustrative seed-corpus data |
+| `/deals-library` | 🟡 Illustrative seed-corpus data |
+| `/diligence/bear-case` | 🟡 Illustrative seed-corpus data |
+| `/diligence/compare` | 🟡 Illustrative seed-corpus data |
+| `/diligence/root-cause` | 🟡 Illustrative seed-corpus data |
+| `/diligence/thesis-pipeline` | 🟡 Illustrative seed-corpus data |
+| `/dpi-tracker` | 🟡 Illustrative seed-corpus data |
+| `/find-comps` | 🟡 Illustrative seed-corpus data |
+| `/fund-attribution` | 🟡 Illustrative seed-corpus data |
+| `/fund-learning` | 🟡 Illustrative seed-corpus data |
+| `/geo-market` | 🟡 Illustrative seed-corpus data |
+| `/gp-benchmarking` | 🟡 Illustrative seed-corpus data |
+| `/hold-analysis` | 🟡 Illustrative seed-corpus data |
+| `/ic-memo-gen` | 🟡 Illustrative seed-corpus data |
+| `/irr-dispersion` | 🟡 Illustrative seed-corpus data |
+| `/leverage-intel` | 🟡 Illustrative seed-corpus data |
+| `/lp-dashboard` | 🟡 Illustrative seed-corpus data |
+| `/lp-reporting` | 🟡 Illustrative seed-corpus data |
+| `/market-rates` | 🟡 Illustrative seed-corpus data |
+| `/payer-intel` | 🟡 Illustrative seed-corpus data |
+| `/payer-intelligence` | 🟡 Illustrative seed-corpus data |
+| `/pe-intelligence` | 🟡 Illustrative seed-corpus data |
+| `/peer-transactions` | 🟡 Illustrative seed-corpus data |
+| `/portfolio-analytics` | 🟡 Illustrative seed-corpus data |
+| `/predictive-screener` | 🟡 Illustrative seed-corpus data |
+| `/reit-analyzer` | 🟡 Illustrative seed-corpus data |
+| `/return-attribution` | 🟡 Illustrative seed-corpus data |
+| `/screening/bankruptcy-survivor` | 🟡 Illustrative seed-corpus data |
+| `/sector-correlation` | 🟡 Illustrative seed-corpus data |
+| `/sector-intel` | 🟡 Illustrative seed-corpus data |
+| `/sector-intelligence` | 🟡 Illustrative seed-corpus data |
+| `/sector-momentum` | 🟡 Illustrative seed-corpus data |
+| `/size-intel` | 🟡 Illustrative seed-corpus data |
+| `/specialty-benchmarks` | 🟡 Illustrative seed-corpus data |
+| `/sponsor-heatmap` | 🟡 Illustrative seed-corpus data |
+| `/sponsor-league` | 🟡 Illustrative seed-corpus data |
+| `/sponsor-track-record` | 🟡 Illustrative seed-corpus data |
+| `/vintage-cohorts` | 🟡 Illustrative seed-corpus data |
+| `/vintage-perf` | 🟡 Illustrative seed-corpus data |
+
+## NAVY 🔵 — diligence calculators (legitimate; label as such)  (57)
+
+| Route | Status |
+|---|---|
+| `/aco-economics` | 🔵 Diligence calculator (your inputs) |
+| `/acq-timing` | 🔵 Diligence calculator (your inputs) |
+| `/bolton-analyzer` | 🔵 Diligence calculator (your inputs) |
+| `/cap-structure` | 🔵 Diligence calculator (your inputs) |
+| `/capital-call` | 🔵 Diligence calculator (your inputs) |
+| `/capital-efficiency` | 🔵 Diligence calculator (your inputs) |
+| `/capital-pacing` | 🔵 Diligence calculator (your inputs) |
+| `/capital-schedule` | 🔵 Diligence calculator (your inputs) |
+| `/covenant-headroom` | 🔵 Diligence calculator (your inputs) |
+| `/covenant-monitor` | 🔵 Diligence calculator (your inputs) |
+| `/debt-financing` | 🔵 Diligence calculator (your inputs) |
+| `/demand-forecast` | 🔵 Diligence calculator (your inputs) |
+| `/denovo-expansion` | 🔵 Diligence calculator (your inputs) |
+| `/diligence/bridge-audit` | 🔵 Diligence calculator (your inputs) |
+| `/diligence/counterfactual` | 🔵 Diligence calculator (your inputs) |
+| `/diligence/covenant-stress` | 🔵 Diligence calculator (your inputs) |
+| `/diligence/deal-autopsy` | 🔵 Diligence calculator (your inputs) |
+| `/diligence/deal-mc` | 🔵 Diligence calculator (your inputs) |
+| `/diligence/denial-prediction` | 🔵 Diligence calculator (your inputs) |
+| `/diligence/exit-timing` | 🔵 Diligence calculator (your inputs) |
+| `/diligence/qoe-memo` | 🔵 Diligence calculator (your inputs) |
+| `/diligence/value` | 🔵 Diligence calculator (your inputs) |
+| `/dividend-recap` | 🔵 Diligence calculator (your inputs) |
+| `/earnout` | 🔵 Diligence calculator (your inputs) |
+| `/ebitda-bridge/` | 🔵 Diligence calculator (your inputs) |
+| `/entry-multiple` | 🔵 Diligence calculator (your inputs) |
+| `/escrow-earnout` | 🔵 Diligence calculator (your inputs) |
+| `/exit-multiple` | 🔵 Diligence calculator (your inputs) |
+| `/exit-readiness` | 🔵 Diligence calculator (your inputs) |
+| `/exit-timing` | 🔵 Diligence calculator (your inputs) |
+| `/growth-runway` | 🔵 Diligence calculator (your inputs) |
+| `/hold-optimizer` | 🔵 Diligence calculator (your inputs) |
+| `/lbo-stress` | 🔵 Diligence calculator (your inputs) |
+| `/multiple-decomp` | 🔵 Diligence calculator (your inputs) |
+| `/peer-valuation` | 🔵 Diligence calculator (your inputs) |
+| `/portfolio-optimizer` | 🔵 Diligence calculator (your inputs) |
+| `/portfolio-sim` | 🔵 Diligence calculator (your inputs) |
+| `/portfolio/monte-carlo` | 🔵 Diligence calculator (your inputs) |
+| `/portfolio/regression` | 🔵 Diligence calculator (your inputs) |
+| `/qoe-analyzer` | 🔵 Diligence calculator (your inputs) |
+| `/quant-lab` | 🔵 Diligence calculator (your inputs) |
+| `/refi-optimizer` | 🔵 Diligence calculator (your inputs) |
+| `/reinvestment` | 🔵 Diligence calculator (your inputs) |
+| `/rollup-economics` | 🔵 Diligence calculator (your inputs) |
+| `/scenario-mc` | 🔵 Diligence calculator (your inputs) |
+| `/scenarios` | 🔵 Diligence calculator (your inputs) |
+| `/scenarios/` | 🔵 Diligence calculator (your inputs) |
+| `/surrogate` | 🔵 Diligence calculator (your inputs) |
+| `/tax-credits` | 🔵 Diligence calculator (your inputs) |
+| `/tax-structure` | 🔵 Diligence calculator (your inputs) |
+| `/tax-structure-analyzer` | 🔵 Diligence calculator (your inputs) |
+| `/underwriting` | 🔵 Diligence calculator (your inputs) |
+| `/underwriting-model` | 🔵 Diligence calculator (your inputs) |
+| `/unit-economics` | 🔵 Diligence calculator (your inputs) |
+| `/value-creation` | 🔵 Diligence calculator (your inputs) |
+| `/value-creation-plan` | 🔵 Diligence calculator (your inputs) |
+| `/working-capital` | 🔵 Diligence calculator (your inputs) |
+
+## GREEN 🟢 — real data (verify + extend)  (188)
+
+| Route | Status |
+|---|---|
+| `/activity` | 🟢 LIVE — real data |
+| `/admin/audit-chain` | 🟢 LIVE — real data |
+| `/admin/data-sources` | 🟢 LIVE — real data |
+| `/alerts` | 🟢 LIVE — real data |
+| `/analysis` | 🟢 LIVE — real data |
+| `/analysis/` | 🟢 LIVE — real data |
+| `/app` | 🟢 LIVE — real data |
+| `/audit` | 🟢 LIVE — real data |
+| `/bayesian/hospital/` | 🟢 LIVE — real data |
+| `/benchmarks` | 🟢 LIVE — real data |
+| `/calibrate` | 🟢 LIVE — real data |
+| `/calibration` | 🟢 LIVE — real data |
+| `/cli-runs` | 🟢 LIVE — real data |
+| `/cms-apm` | 🟢 LIVE — real data |
+| `/cms-data-browser` | 🟢 LIVE — real data |
+| `/cms-sources` | 🟢 LIVE — real data |
+| `/cohort/` | 🟢 LIVE — real data |
+| `/cohorts` | 🟢 LIVE — real data |
+| `/comparable-outcomes` | 🟢 LIVE — real data |
+| `/conferences` | 🟢 LIVE — real data |
+| `/cost-structure` | 🟢 LIVE — real data |
+| `/dashboard` | 🟢 LIVE — real data |
+| `/data` | 🟢 LIVE — real data |
+| `/data-intelligence` | 🟢 LIVE — real data |
+| `/data-room/` | 🟢 LIVE — real data |
+| `/data/catalog` | 🟢 LIVE — real data |
+| `/data/refresh` | 🟢 LIVE — real data |
+| `/day-one` | 🟢 LIVE — real data |
+| `/deadlines` | 🟢 LIVE — real data |
+| `/deal-library` | 🟢 LIVE — real data |
+| `/deal-library/comps` | 🟢 LIVE — real data |
+| `/deal-library/sponsors` | 🟢 LIVE — real data |
+| `/deal-pipeline` | 🟢 LIVE — real data |
+| `/deal-search` | 🟢 LIVE — real data |
+| `/deal/` | 🟢 LIVE — real data |
+| `/deals` | 🟢 LIVE — real data |
+| `/debt-service` | 🟢 LIVE — real data |
+| `/dialysis` | 🟢 LIVE — real data |
+| `/dialysis/` | 🟢 LIVE — real data |
+| `/digest/morning` | 🟢 LIVE — real data |
+| `/diligence` | 🟢 LIVE — real data |
+| `/diligence-checklist` | 🟢 LIVE — real data |
+| `/diligence/` | 🟢 LIVE — real data |
+| `/diligence/benchmarks` | 🟢 LIVE — real data |
+| `/diligence/checklist` | 🟢 LIVE — real data |
+| `/diligence/comparable-outcomes` | 🟢 LIVE — real data |
+| `/diligence/deal` | 🟢 LIVE — real data |
+| `/diligence/deal/` | 🟢 LIVE — real data |
+| `/diligence/hcris-xray` | 🟢 LIVE — real data |
+| `/diligence/ic-memo/` | 🟢 LIVE — real data |
+| `/diligence/ic-packet` | 🟢 LIVE — real data |
+| `/diligence/ingest` | 🟢 LIVE — real data |
+| `/diligence/management` | 🟢 LIVE — real data |
+| `/diligence/payer-stress` | 🟢 LIVE — real data |
+| `/diligence/questions` | 🟢 LIVE — real data |
+| `/diligence/regulatory-calendar` | 🟢 LIVE — real data |
+| `/diligence/snapshot` | 🟢 LIVE — real data |
+| `/diligence/sponsor-detail` | 🟢 LIVE — real data |
+| `/diligence/synthesis/` | 🟢 LIVE — real data |
+| `/diligence/xray` | 🟢 LIVE — real data |
+| `/drug-shortage` | 🟢 LIVE — real data |
+| `/engagements` | 🟢 LIVE — real data |
+| `/engagements/` | 🟢 LIVE — real data |
+| `/engagements/create` | 🟢 LIVE — real data |
+| `/escalations` | 🟢 LIVE — real data |
+| `/export/bridge/` | 🟢 LIVE — real data |
+| `/exports` | 🟢 LIVE — real data |
+| `/exports/lp-update` | 🟢 LIVE — real data |
+| `/global-search` | 🟢 LIVE — real data |
+| `/guide/context-debug` | 🟢 LIVE — real data |
+| `/hold/` | 🟢 LIVE — real data |
+| `/home` | 🟢 LIVE — real data |
+| `/home-health` | 🟢 LIVE — real data |
+| `/home-health/` | 🟢 LIVE — real data |
+| `/hospice` | 🟢 LIVE — real data |
+| `/hospice/` | 🟢 LIVE — real data |
+| `/hospital-anchor` | 🟢 LIVE — real data |
+| `/hospital/` | 🟢 LIVE — real data |
+| `/ic-memo/` | 🟢 LIVE — real data |
+| `/import` | 🟢 LIVE — real data |
+| `/initiative/` | 🟢 LIVE — real data |
+| `/initiatives` | 🟢 LIVE — real data |
+| `/inpatient-rehab` | 🟢 LIVE — real data |
+| `/inpatient-rehab/` | 🟢 LIVE — real data |
+| `/insights` | 🟢 LIVE — real data |
+| `/jobs` | 🟢 LIVE — real data |
+| `/jobs/` | 🟢 LIVE — real data |
+| `/library` | 🟢 LIVE — real data |
+| `/library/` | 🟢 LIVE — real data |
+| `/long-term-care-hospital` | 🟢 LIVE — real data |
+| `/long-term-care-hospital/` | 🟢 LIVE — real data |
+| `/lp-update` | 🟢 LIVE — real data |
+| `/market-data/map` | 🟢 LIVE — real data |
+| `/market-data/state/` | 🟢 LIVE — real data |
+| `/market-data/state/CA` | 🟢 LIVE — real data |
+| `/market-intel` | 🟢 LIVE — real data |
+| `/market-intel/seeking-alpha` | 🟢 LIVE — real data |
+| `/methodology` | 🟢 LIVE — real data |
+| `/methodology/calculations` | 🟢 LIVE — real data |
+| `/metric-glossary` | 🟢 LIVE — real data |
+| `/ml-insights` | 🟢 LIVE — real data |
+| `/ml-insights/hospital/` | 🟢 LIVE — real data |
+| `/model-validation` | 🟢 LIVE — real data |
+| `/models/anomalies/` | 🟢 LIVE — real data |
+| `/models/bridge/` | 🟢 LIVE — real data |
+| `/models/causal/` | 🟢 LIVE — real data |
+| `/models/challenge/` | 🟢 LIVE — real data |
+| `/models/comparables/` | 🟢 LIVE — real data |
+| `/models/completeness/` | 🟢 LIVE — real data |
+| `/models/counterfactual/` | 🟢 LIVE — real data |
+| `/models/dcf/` | 🟢 LIVE — real data |
+| `/models/debt/` | 🟢 LIVE — real data |
+| `/models/denial/` | 🟢 LIVE — real data |
+| `/models/financials/` | 🟢 LIVE — real data |
+| `/models/importance` | 🟢 LIVE — real data |
+| `/models/irs990/` | 🟢 LIVE — real data |
+| `/models/lbo/` | 🟢 LIVE — real data |
+| `/models/market/` | 🟢 LIVE — real data |
+| `/models/memo/` | 🟢 LIVE — real data |
+| `/models/playbook/` | 🟢 LIVE — real data |
+| `/models/predicted/` | 🟢 LIVE — real data |
+| `/models/quality` | 🟢 LIVE — real data |
+| `/models/questions/` | 🟢 LIVE — real data |
+| `/models/returns/` | 🟢 LIVE — real data |
+| `/models/service-lines/` | 🟢 LIVE — real data |
+| `/models/trends/` | 🟢 LIVE — real data |
+| `/models/validate/` | 🟢 LIVE — real data |
+| `/models/waterfall/` | 🟢 LIVE — real data |
+| `/module-index` | 🟢 LIVE — real data |
+| `/my/` | 🟢 LIVE — real data |
+| `/my/AT` | 🟢 LIVE — real data |
+| `/new-deal` | 🟢 LIVE — real data |
+| `/new-deal/manual` | 🟢 LIVE — real data |
+| `/new-deal/upload` | 🟢 LIVE — real data |
+| `/news` | 🟢 LIVE — real data |
+| `/notes` | 🟢 LIVE — real data |
+| `/nursing-homes` | 🟢 LIVE — real data |
+| `/nursing-homes/` | 🟢 LIVE — real data |
+| `/ops` | 🟢 LIVE — real data |
+| `/outputs/` | 🟢 LIVE — real data |
+| `/owner/` | 🟢 LIVE — real data |
+| `/owners` | 🟢 LIVE — real data |
+| `/payer-rate-trends` | 🟢 LIVE — real data |
+| `/payer-stress` | 🟢 LIVE — real data |
+| `/pipeline` | 🟢 LIVE — real data |
+| `/pipeline/` | 🟢 LIVE — real data |
+| `/pipeline/add` | 🟢 LIVE — real data |
+| `/pipeline/bridge` | 🟢 LIVE — real data |
+| `/pipeline/save-search` | 🟢 LIVE — real data |
+| `/pipeline/stage/` | 🟢 LIVE — real data |
+| `/portfolio` | 🟢 LIVE — real data |
+| `/portfolio/heatmap` | 🟢 LIVE — real data |
+| `/portfolio/map` | 🟢 LIVE — real data |
+| `/portfolio/monitor` | 🟢 LIVE — real data |
+| `/portfolio/regression/hospital/` | 🟢 LIVE — real data |
+| `/portfolio/risk-scan` | 🟢 LIVE — real data |
+| `/pressure` | 🟢 LIVE — real data |
+| `/query` | 🟢 LIVE — real data |
+| `/quick-import` | 🟢 LIVE — real data |
+| `/quick-import-json` | 🟢 LIVE — real data |
+| `/rcm-benchmarks` | 🟢 LIVE — real data |
+| `/ready` | 🟢 LIVE — real data |
+| `/ref-pricing` | 🟢 LIVE — real data |
+| `/regulatory-calendar` | 🟢 LIVE — real data |
+| `/research` | 🟢 LIVE — real data |
+| `/runs` | 🟢 LIVE — real data |
+| `/screen` | 🟢 LIVE — real data |
+| `/screening/` | 🟢 LIVE — real data |
+| `/screening/dashboard` | 🟢 LIVE — real data |
+| `/search` | 🟢 LIVE — real data |
+| `/settings` | 🟢 LIVE — real data |
+| `/settings/` | 🟢 LIVE — real data |
+| `/settings/ai` | 🟢 LIVE — real data |
+| `/settings/workspace` | 🟢 LIVE — real data |
+| `/source` | 🟢 LIVE — real data |
+| `/target-screener` | 🟢 LIVE — real data |
+| `/team` | 🟢 LIVE — real data |
+| `/team/` | 🟢 LIVE — real data |
+| `/team/comment` | 🟢 LIVE — real data |
+| `/tools` | 🟢 LIVE — real data |
+| `/upload` | 🟢 LIVE — real data |
+| `/users` | 🟢 LIVE — real data |
+| `/v3-status` | 🟢 LIVE — real data |
+| `/v5-status` | 🟢 LIVE — real data |
+| `/value-tracker/` | 🟢 LIVE — real data |
+| `/variance` | 🟢 LIVE — real data |
+| `/verticals` | 🟢 LIVE — real data |
+| `/watchlist` | 🟢 LIVE — real data |

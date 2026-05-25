@@ -18598,11 +18598,12 @@ class RCMHandler(BaseHTTPRequestHandler):
                     'curated palette. Title generated from the URL '
                     'slug.">auto</span>'
                 )
+                from .diligence.surface_status import status_dot
                 rows.append(
                     f'<a href="{html.escape(m["route"], quote=True)}" '
                     'class="ck-tool-row">'
                     f'<span class="ck-tool-title">'
-                    f'{html.escape(m["title"])}{badge}</span>'
+                    f'{status_dot(m["route"])}{html.escape(m["title"])}{badge}</span>'
                     f'<span class="ck-tool-route">'
                     f'{html.escape(m["route"])}</span>'
                     '</a>'
@@ -18657,7 +18658,20 @@ class RCMHandler(BaseHTTPRequestHandler):
             'border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;}'
             '</style>'
         )
-        body = f"{title_html}{page_css}{''.join(cards)}"
+        # Status legend (matches the circle on each tool — see
+        # diligence/surface_status.py).
+        _dot = ('display:inline-block;width:8px;height:8px;border-radius:50%;'
+                'margin-right:5px;vertical-align:middle')
+        legend = (
+            '<div style="display:flex;flex-wrap:wrap;gap:16px;margin:0 0 18px;'
+            'font-family:var(--sc-mono,monospace);font-size:11px;'
+            'color:var(--sc-text-dim,#465366)">'
+            f'<span><span style="{_dot};background:#0a8a5f"></span>LIVE — real data</span>'
+            f'<span><span style="{_dot};background:#0b2341"></span>Diligence calculator (your inputs)</span>'
+            f'<span><span style="{_dot};background:#b8842e"></span>Illustrative seed-corpus data</span>'
+            f'<span><span style="{_dot};background:#b5321e"></span>Synthetic / hardcoded</span>'
+            '</div>')
+        body = f"{title_html}{page_css}{legend}{''.join(cards)}"
         self._send_html(chartis_shell(
             body, "Tools",
             active_nav="/tools",
