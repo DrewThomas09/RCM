@@ -49,6 +49,8 @@ _CASES = [
      {}, "Real CMS Part D drug spend", "/drug-pricing-340b"),
     ("rcm_mc.ui.data_public.tracker_340b_page", "render_tracker_340b",
      {}, "Real CMS Part D drug spend", "/tracker-340b"),
+    ("rcm_mc.ui.data_public.trial_site_econ_page", "render_trial_site_econ",
+     {}, "Real ClinicalTrials.gov landscape", "/trial-site-econ"),
 ]
 
 

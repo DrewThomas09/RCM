@@ -174,6 +174,59 @@ def _cost_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _ctgov_panel() -> str:
+    """Real ClinicalTrials.gov landscape anchor — the trial volume + phase mix
+    that drives clinical-research-site demand. Registry counts are real public
+    NLM data; the deal's per-site P&L / enrollment model below is illustrative."""
+    from rcm_mc.data import clinical_trials as _ct
+    s = _ct.clinical_trials_summary()
+    if not s.get("total_studies"):
+        return ""
+    ph = _ct.phase_breakdown()
+    border = P["border"]; tprim = P["text"]; tdim = P["text_dim"]; acc = P["accent"]
+    mx = max((p["count"] for p in ph), default=1) or 1
+    rows = "".join(
+        f'<tr>'
+        f'<td style="padding:3px 8px;font-family:JetBrains Mono,monospace;font-size:11px;color:{tprim}">{_html.escape(p["phase"])}</td>'
+        f'<td style="padding:3px 8px;width:55%">'
+        f'<svg width="100%" height="9" preserveAspectRatio="none" viewBox="0 0 100 9">'
+        f'<rect x="0" y="1" width="{int(p["count"]/mx*100)}" height="7" fill="{acc}" opacity="0.75"/></svg></td>'
+        f'<td style="padding:3px 8px;text-align:right;font-family:JetBrains Mono,monospace;font-size:11px;'
+        f'font-variant-numeric:tabular-nums;color:{tprim}">{p["count"]:,}</td>'
+        f'</tr>'
+        for p in ph
+    )
+    total = int(s["total_studies"]); rec = int(s["recruiting"]); intv = int(s["interventional"])
+    return f'''
+<div style="background:{P["panel"]};border:1px solid {border};border-left:3px solid {acc};
+  padding:14px 16px;margin-bottom:16px">
+  <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{tdim};
+    text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">
+    Real ClinicalTrials.gov landscape &mdash; the trial-site demand driver
+    <span style="color:{acc};font-weight:600"> · LIVE</span>
+  </div>
+  <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start">
+    <div style="white-space:nowrap">
+      <div style="font-family:JetBrains Mono,monospace;font-size:20px;color:{tprim};
+        font-variant-numeric:tabular-nums">{rec:,}</div>
+      <div style="font-size:10px;color:{tdim};margin-bottom:8px">currently recruiting<br>(of {total:,} registered)</div>
+      <div style="font-family:JetBrains Mono,monospace;font-size:13px;color:{tprim};
+        font-variant-numeric:tabular-nums">{intv:,}</div>
+      <div style="font-size:10px;color:{tdim}">interventional studies</div>
+    </div>
+    <div>
+      <div style="font-size:9px;color:{P["text_faint"]};margin-bottom:4px">REGISTERED STUDIES BY PHASE</div>
+      <table style="width:100%;border-collapse:collapse">{rows}</table>
+    </div>
+  </div>
+  <div style="margin-top:8px;font-size:10px;color:{P["text_faint"]}">
+    ClinicalTrials.gov (US NLM) registry counts. Real trial volume / phase mix &mdash;
+    the site-demand backdrop. NOT this deal's sites or revenue; the per-site P&amp;L,
+    enrollment, and margin figures below are illustrative.
+  </div>
+</div>'''
+
+
 def render_trial_site_econ(params: dict = None) -> str:
     from rcm_mc.data_public.trial_site_econ import compute_trial_site_econ
     r = compute_trial_site_econ()
@@ -221,6 +274,7 @@ def render_trial_site_econ(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   {ck_illustrative_note("figures")}
+  {_ctgov_panel()}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">Site Roster (Top 30 by Revenue)</div>{s_chart}{s_scatter}{s_tbl}</div>
