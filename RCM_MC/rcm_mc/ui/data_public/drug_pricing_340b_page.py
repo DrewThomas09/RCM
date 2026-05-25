@@ -196,6 +196,65 @@ def _drugs_svg(drugs) -> str:
             f'<text x="10" y="15" fill="{text_dim}" font-size="10" font-family="Inter,sans-serif">340B Annual Savings by Drug Category ($M)</text></svg>')
 
 
+def _partd_drug_panel() -> str:
+    """Real CMS Part D drug-spend / price-inflation anchor — 340B economics
+    are driven by drug prices and their growth. National Part D spend + the
+    most expensive and fastest-inflating drugs are real public CMS data; the
+    deal's 340B savings/covered-entity model below is illustrative."""
+    from rcm_mc.data import partd_drug as _pd
+    summ = _pd.partd_drug_summary()
+    if not summ.get("total_spending_2023"):
+        return ""
+    top = _pd.top_drugs_by_spend(6)
+
+    border = P["border"]; tprim = P["text"]; tdim = P["text_dim"]; acc = P["accent"]
+    mx = max((float(t.get("spend_2023") or 0) for t in top), default=1.0) or 1.0
+    rows = "".join(
+        f'<tr>'
+        f'<td style="padding:3px 8px;font-family:JetBrains Mono,monospace;font-size:11px;color:{tprim}">{_html.escape(str(t.get("brand","")))}</td>'
+        f'<td style="padding:3px 8px;width:42%">'
+        f'<svg width="100%" height="9" preserveAspectRatio="none" viewBox="0 0 100 9">'
+        f'<rect x="0" y="1" width="{int(float(t.get("spend_2023") or 0)/mx*100)}" height="7" fill="{acc}" opacity="0.75"/></svg></td>'
+        f'<td style="padding:3px 8px;text-align:right;font-family:JetBrains Mono,monospace;font-size:11px;'
+        f'font-variant-numeric:tabular-nums;color:{tprim}">${float(t.get("spend_2023") or 0)/1e9:,.1f}B</td>'
+        f'</tr>'
+        for t in top
+    )
+    total_b = float(summ.get("total_spending_2023", 0)) / 1e9
+    n_drugs = int(summ.get("drugs", 0))
+    med_cagr = float(summ.get("median_price_cagr_19_23") or 0) * 100
+    n_infl = int(summ.get("drugs_price_up_over_10pct_cagr", 0))
+    yr = summ.get("data_year", "")
+    return f'''
+<div style="background:{P["panel"]};border:1px solid {border};border-left:3px solid {acc};
+  padding:14px 16px;margin-bottom:16px">
+  <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{tdim};
+    text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">
+    Real CMS Part D drug spend &amp; price inflation &mdash; the 340B cost driver
+    <span style="color:{acc};font-weight:600"> · LIVE</span>
+  </div>
+  <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start">
+    <div style="white-space:nowrap">
+      <div style="font-family:JetBrains Mono,monospace;font-size:20px;color:{tprim};
+        font-variant-numeric:tabular-nums">${total_b:,.0f}B</div>
+      <div style="font-size:10px;color:{tdim};margin-bottom:8px">Part D drug spend, {yr}<br>({n_drugs:,} drugs)</div>
+      <div style="font-family:JetBrains Mono,monospace;font-size:13px;color:{tprim};
+        font-variant-numeric:tabular-nums">{med_cagr:.1f}%</div>
+      <div style="font-size:10px;color:{tdim}">median price CAGR '19–'23<br>({n_infl:,} drugs &gt;10%/yr)</div>
+    </div>
+    <div>
+      <div style="font-size:9px;color:{P["text_faint"]};margin-bottom:4px">LARGEST DRUGS BY PART D SPEND</div>
+      <table style="width:100%;border-collapse:collapse">{rows}</table>
+    </div>
+  </div>
+  <div style="margin-top:8px;font-size:10px;color:{P["text_faint"]}">
+    CMS Medicare Part D Spending by Drug ({yr}). Real retail drug spend + per-unit
+    price growth &mdash; the cost pressure 340B addresses. NOT 340B ceiling prices
+    and NOT this deal's formulary; the savings model below is illustrative.
+  </div>
+</div>'''
+
+
 def render_drug_pricing_340b(params: dict = None) -> str:
     params = params or {}
 
@@ -274,6 +333,7 @@ def render_drug_pricing_340b(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   {ck_illustrative_note("340B savings figures")}
+  {_partd_drug_panel()}
   {lead_anchor}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
