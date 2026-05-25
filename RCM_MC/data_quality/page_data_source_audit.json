@@ -2,7 +2,7 @@
   "summary": {
     "pages": 173,
     "with_disclosure": 168,
-    "with_real_loader": 19,
+    "with_real_loader": 20,
     "flagged_no_disclosure": 0,
     "by_tier": {
       "green": 27,
@@ -357,7 +357,7 @@
       "file": "deal_flow_heatmap_page.py",
       "tier": "yellow",
       "has_disclosure": true,
-      "imports_real_loader": false,
+      "imports_real_loader": true,
       "uses_seed_corpus": true,
       "renders_data": true,
       "flag": ""
