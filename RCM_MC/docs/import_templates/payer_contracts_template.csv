@@ -1,0 +1,2 @@
+payer,product,rate_basis,rate_pct_medicare,effective_date,renewal_date,escalator_pct
+<text>,<text>,<text>,<number>,<YYYY-MM-DD>,<YYYY-MM-DD>,<number>

@@ -1,0 +1,2 @@
+borrower,facility,commitment,spread_bps,covenant,status
+<text>,<text>,<number>,<number>,<text>,<text>

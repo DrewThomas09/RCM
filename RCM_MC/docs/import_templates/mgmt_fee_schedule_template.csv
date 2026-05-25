@@ -1,0 +1,2 @@
+fund,period,committed_capital,fee_rate_pct,fee_basis,offsets
+<text>,<YYYY-MM-DD>,<number>,<number>,<text>,<number>

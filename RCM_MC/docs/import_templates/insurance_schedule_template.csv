@@ -1,0 +1,2 @@
+policy,carrier,limit,premium,renewal_date,claims_history
+<text>,<text>,<number>,<number>,<YYYY-MM-DD>,<text>

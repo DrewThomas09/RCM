@@ -1,0 +1,2 @@
+service,provider,duration_months,monthly_cost,exit_plan
+<text>,<text>,<number>,<number>,<text>
