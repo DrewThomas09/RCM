@@ -36,12 +36,24 @@ CMS MA Geographic Variation, CIVHC (CO payer/APM/RBP), openFDA drug shortages,
 CMS MSSP ACO, HRSA HPSA, licensed IBISWorld (industry, derived),
 licensed SimplyAnalytics (market, derived).
 
+## Progress
+- #735 Phase 4 data-verification framework — merged + deployed (01172dac). 35 flagged.
+- #736 /tools route audit (335) + disclosed 6 pages — merged + deployed (876ada7b). 35→29.
+- #737 disclosure batch 2: 14 more seed-corpus pages disclosed — open. 29→15.
+- Remaining 15 flagged: 7 GREEN real/admin (not synthetic) + 8 NAVY calculators
+  needing ck_source_purpose headers (batch 3 next).
+
 ## Next 5 actions
-1. Build Phase 4 data-verification: page_data_source audit script + matrix docs.
-2. Generate PAGE_DATA_SOURCE_AUDIT from surface_status + label scan.
-3. Diligence page classification pass (extend surface_status coverage).
-4. /tools per-tool audit table.
+1. Disclosure batch 2: remaining flagged YELLOW seed-corpus pages (base-rates,
+   corpus-coverage, deal-flow-heatmap, fund-attribution, gp-benchmarking,
+   hold-analysis, irr-dispersion, lp-dashboard, lp-reporting, return-attribution,
+   sponsor-heatmap, vintage-perf, deal-sourcing, market-rates).
+3. NAVY calculators missing source headers (entry-multiple, exit-timing,
+   hold-optimizer, portfolio-optimizer, portfolio-sim, scenario-mc,
+   tax-structure-analyzer, underwriting) → add ck_source_purpose.
+4. GREEN false-positives (cms-sources, cms-data-browser, deal-search, ic-memo,
+   module-index, data-sources-admin) → add real-source header (low priority).
 5. Continue dataset backlog (NPPES supply / Open Payments) per feasibility.
 
 ## Next wakeup
-+180–300s while work remains.
++180–300s while work remains (CI-watch re-invokes sooner).

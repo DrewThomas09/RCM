@@ -379,7 +379,8 @@ def render_irr_dispersion() -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "IRR Dispersion", active_nav="/irr-dispersion",
+    from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
+    return chartis_shell(_ckn("IRR figures (illustrative seed corpus)") + body, "IRR Dispersion", active_nav="/irr-dispersion",
                          subtitle=f"{len(has_irr)} deals with IRR data",
         editorial_intro={
             "eyebrow": "IRR DISPERSION",

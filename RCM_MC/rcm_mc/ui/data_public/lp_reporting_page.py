@@ -255,7 +255,8 @@ def render_lp_reporting(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "LP Reporting", active_nav="/lp-reporting",
+    from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
+    return chartis_shell(_ckn("LP figures (illustrative seed corpus)") + body, "LP Reporting", active_nav="/lp-reporting",
         editorial_intro={
             "eyebrow": "LP REPORTING",
             "headline": "What the lp reporting page reveals on this deal.",

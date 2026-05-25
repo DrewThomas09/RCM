@@ -232,7 +232,8 @@ def render_return_attribution() -> str:
   {_dim_panel("BY ENTRY MULTIPLE (EV/EBITDA) — MOIC DISTRIBUTION", ra.by_ev_ebitda_bucket, cp50)}
 </div>"""
 
-    return chartis_shell(body, "Return Attribution", active_nav="/return-attribution", subtitle=f"Corpus: {ra.corpus_size} deals",
+    from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
+    return chartis_shell(_ckn("attribution figures (illustrative seed corpus)") + body, "Return Attribution", active_nav="/return-attribution", subtitle=f"Corpus: {ra.corpus_size} deals",
         editorial_intro={
             "eyebrow": "RETURN ATTRIBUTION",
             "headline": "Where the realized MOIC came from.",

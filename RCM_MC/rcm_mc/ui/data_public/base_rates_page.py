@@ -351,5 +351,6 @@ def render_base_rates(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Base Rates", active_nav="/base-rates",
+    from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
+    return chartis_shell(_ckn("base rates (illustrative seed corpus)") + body, "Base Rates", active_nav="/base-rates",
         extra_css=_EXPLAINER_CSS)

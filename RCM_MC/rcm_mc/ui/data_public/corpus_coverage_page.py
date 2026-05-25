@@ -286,7 +286,8 @@ def render_corpus_coverage() -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Corpus Coverage Report", active_nav="/corpus-coverage",
+    from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
+    return chartis_shell(_ckn("corpus coverage (illustrative seed corpus)") + body, "Corpus Coverage Report", active_nav="/corpus-coverage",
                          subtitle=f"{n:,} deals — Trust grade {trust_grade}",
         editorial_intro={
             "eyebrow": "CORPUS COVERAGE",

@@ -248,8 +248,9 @@ def render_vintage_perf() -> str:
 
     body = kpis + ck_section_header("VINTAGE HEATMAP", "P50 MOIC by entry year — macro timing view") + heatmap_panel + ck_section_header("PERFORMANCE CHARTS", "P50 MOIC with P25/P75 range · deal count by year") + chart_grid + ck_section_header("VINTAGE DETAIL", "year-by-year breakdown") + table
 
+    from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
     return chartis_shell(
-        body,
+        _ckn("vintage figures (illustrative seed corpus)") + body,
         title="Vintage Performance",
         active_nav="/vintage-perf",
         subtitle=(

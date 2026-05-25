@@ -1,9 +1,9 @@
 {
   "summary": {
     "pages": 173,
-    "with_disclosure": 144,
+    "with_disclosure": 158,
     "with_real_loader": 19,
-    "flagged_no_disclosure": 29,
+    "flagged_no_disclosure": 15,
     "by_tier": {
       "green": 27,
       "navy": 50,
@@ -66,11 +66,11 @@
       "route": "/base-rates",
       "file": "base_rates_page.py",
       "tier": "yellow",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/biosimilars-opp",
@@ -286,11 +286,11 @@
       "route": "/corpus-coverage",
       "file": "corpus_coverage_page.py",
       "tier": "yellow",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/corpus-dashboard",
@@ -356,11 +356,11 @@
       "route": "/deal-flow-heatmap",
       "file": "deal_flow_heatmap_page.py",
       "tier": "yellow",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/deal-origination",
@@ -426,11 +426,11 @@
       "route": "/deal-sourcing",
       "file": "deal_sourcing_page.py",
       "tier": "yellow",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/deals-library",
@@ -676,11 +676,11 @@
       "route": "/fund-attribution",
       "file": "fund_attribution_page.py",
       "tier": "yellow",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/fundraising-tracker",
@@ -706,11 +706,11 @@
       "route": "/gp-benchmarking",
       "file": "gp_benchmarking_page.py",
       "tier": "yellow",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/gpo-supply-tracker",
@@ -756,11 +756,11 @@
       "route": "/hold-analysis",
       "file": "hold_analysis_page.py",
       "tier": "yellow",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/hold-optimizer",
@@ -826,11 +826,11 @@
       "route": "/irr-dispersion",
       "file": "irr_dispersion_page.py",
       "tier": "yellow",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/key-person",
@@ -886,21 +886,21 @@
       "route": "/lp-dashboard",
       "file": "lp_dashboard_page.py",
       "tier": "yellow",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/lp-reporting",
       "file": "lp_reporting_page.py",
       "tier": "yellow",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/ma-contracts",
@@ -936,11 +936,11 @@
       "route": "/market-rates",
       "file": "market_rates_page.py",
       "tier": "yellow",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/medicaid-unwinding",
@@ -1346,11 +1346,11 @@
       "route": "/return-attribution",
       "file": "return_attribution_page.py",
       "tier": "yellow",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/revenue-leakage",
@@ -1486,11 +1486,11 @@
       "route": "/sponsor-heatmap",
       "file": "sponsor_heatmap_page.py",
       "tier": "yellow",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/sponsor-league",
@@ -1696,11 +1696,11 @@
       "route": "/vintage-perf",
       "file": "vintage_perf_page.py",
       "tier": "yellow",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/workforce-planning",

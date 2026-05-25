@@ -507,7 +507,8 @@ def render_lp_dashboard(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "LP Portfolio Dashboard", active_nav="/lp-dashboard",
+    from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
+    return chartis_shell(_ckn("LP figures (illustrative seed corpus)") + body, "LP Portfolio Dashboard", active_nav="/lp-dashboard",
         editorial_intro={
             "eyebrow": "LP DASHBOARD",
             "headline": "What the lp dashboard page reveals on this deal.",

@@ -325,7 +325,8 @@ def render_sponsor_heatmap(params: dict = None) -> str:
         source="data_public/sponsor_heatmap.py (sponsor × sector roll-up).",
         page_key="sponsor-heatmap",
     )
-    return chartis_shell(explainer + body, "Sponsor Heatmap", active_nav="/sponsor-heatmap",
+    from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
+    return chartis_shell(explainer + _ckn("sponsor figures (illustrative seed corpus)") + body, "Sponsor Heatmap", active_nav="/sponsor-heatmap",
         editorial_intro={
             "eyebrow": "SPONSOR HEATMAP",
             "headline": "What the sponsor heatmap page reveals on this deal.",
