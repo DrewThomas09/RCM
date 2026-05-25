@@ -1,0 +1,11 @@
+{
+  "snapshot_date": "2026-05-25",
+  "extract": "SNF_All_Owners_2026.05.01",
+  "facilities": 14425,
+  "owner_rows": 280207,
+  "avg_owners_per_facility": 19.4,
+  "median_owners_per_facility": 15,
+  "pct_with_organizational_owner": 88.7,
+  "pct_with_indirect_ownership": 51.0,
+  "source": "CMS SNF All Owners (public); owner names/identifiers dropped at ingest"
+}

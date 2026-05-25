@@ -211,6 +211,20 @@ def snf_turnover_summary(state: str = "") -> Dict[str, object]:
     }
 
 
+def snf_ownership_summary() -> Dict[str, object]:
+    """Real CMS nursing-home ownership-COMPLEXITY aggregate (SNF All Owners).
+
+    National PII-free metrics from ``vendor/snf_ownership/`` (owner names dropped
+    at ingest): owners per facility, % with organizational owners, % with
+    indirect ownership. A corporate-complexity / chain-ownership signal — NOT a
+    private-equity flag (CMS does not label PE here), NOT provider-specific.
+    Returns ``{}`` if absent.
+    """
+    import json as _json
+    p = Path(__file__).resolve().parent / "vendor" / "snf_ownership" / "snf_ownership_summary.json"
+    return _json.loads(p.read_text()) if p.exists() else {}
+
+
 def snf_enforcement_summary() -> Dict[str, object]:
     """Real CMS nursing-home regulatory-enforcement benchmark (Care Compare).
 

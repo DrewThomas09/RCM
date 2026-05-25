@@ -53,6 +53,21 @@ _TABLE_COLS = [
 ]
 
 
+def _ownership_note() -> str:
+    """Real CMS ownership-complexity stat for the SNF page description."""
+    try:
+        from rcm_mc.data.snf import snf_ownership_summary
+        o = snf_ownership_summary()
+        if o.get("facilities"):
+            return (f" Ownership complexity (CMS SNF All Owners): median "
+                    f"{o['median_owners_per_facility']} owners per facility, "
+                    f"{o['pct_with_indirect_ownership']:.0f}% with indirect "
+                    f"ownership — a chain/corporate-complexity signal (not a PE flag).")
+    except Exception:
+        pass
+    return ""
+
+
 def render_snf(qs: Optional[Dict[str, List[str]]] = None) -> str:
     return render_sector_screener(
         qs=qs,
@@ -66,6 +81,7 @@ def render_snf(qs: Optional[Dict[str, List[str]]] = None) -> str:
             "staffing hours, certified beds, Special Focus status, and the "
             "enforcement-penalty summary. Use as market and provider "
             "diligence context — not a final investment recommendation."
+            + _ownership_note()
         ),
         provenance=_PROVENANCE,
         limitations=_LIMITATIONS,
