@@ -102,6 +102,22 @@ def market_context_panel(state, P_=None) -> str:
     except Exception:
         supply_line = ""
 
+    # Real SNF consolidation velocity (CMS Change-of-Ownership) for this state.
+    chow_line = ""
+    try:
+        from rcm_mc.data import snf_chow as _chow
+        st_abbr2 = _FIPS_ABBR.get(fips, "")
+        n_chow = _chow.total_chows_for_state(st_abbr2) if st_abbr2 else 0
+        if n_chow:
+            sm = _chow.chow_summary()
+            chow_line = (
+                f'<p style="font-size:11px;color:{pal["text_dim"]};margin:6px 0 0">'
+                f'SNF consolidation (CMS, real): <b style="color:{pal["text"]}">{n_chow:,}</b> '
+                f'nursing-home ownership changes {sm.get("year_min","")}–{sm.get("year_max","")}. '
+                f'M&A/consolidation signal — not a PE-specific flag.</p>')
+    except Exception:
+        chow_line = ""
+
     miss = ", ".join(score.get("missing_export_required", [])) if score else ""
     score_line = ""
     if score and score.get("overall_market_score") is not None:
@@ -119,7 +135,7 @@ def market_context_panel(state, P_=None) -> str:
         f'<th style="padding:3px 10px;text-align:left">Variable</th>'
         f'<th style="padding:3px 10px;text-align:right">Value</th>'
         f'<th style="padding:3px 10px;text-align:right">Pctile</th></tr></thead>'
-        f'<tbody>{rows}</tbody></table>{score_line}{supply_line}'
+        f'<tbody>{rows}</tbody></table>{score_line}{supply_line}{chow_line}'
         f'<p style="font-size:11px;color:{pal["text_dim"]};margin:6px 0 0">'
         f'Market/area context — <b>not</b> provider-specific. Combine with CMS/HCRIS/'
         f'provider data before a decision. <a href="/market-intel/geo/{_html.escape(fips)}" '

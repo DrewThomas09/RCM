@@ -1,0 +1,9 @@
+{
+  "snapshot_date": "2026-05-25",
+  "extract": "SNF_CHOW_2026.04.01",
+  "total_chows": 5141,
+  "states": 51,
+  "year_min": 2016,
+  "year_max": 2025,
+  "source": "CMS SNF Change of Ownership (public); identifiers dropped"
+}
