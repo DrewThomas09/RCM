@@ -4103,8 +4103,14 @@ _CSS_INLINE_FALLBACK = """
   /* Full-bleed editorial bar (handoff is full-width with 32px gutters — the
      old max-width:min(1920px,95vw) centering made it read narrow/compressed
      and squeezed the right rail). */
-  .ck-topbar-inner { display:flex; align-items:center; gap:0; height:76px;
-    padding:0 32px; width:100%; box-sizing:border-box; }
+  /* One row, never wrap. `flex-wrap:nowrap` is the default but is declared
+     explicitly because the bug it guards against — at narrower-than-fullscreen
+     widths the nav links wrapped to a line ABOVE the wordmark and were clipped
+     by the fixed 76px height — is a wrap/clip interaction. `min-height` (not a
+     hard `height`) means that if anything ever does grow, the bar grows rather
+     than clipping its top edge. */
+  .ck-topbar-inner { display:flex; flex-wrap:nowrap; align-items:center; gap:0;
+    min-height:76px; padding:0 32px; width:100%; box-sizing:border-box; }
   .ck-wordmark { display:inline-flex; align-items:center; gap:0.5rem;
     font-family:var(--sc-serif,'Source Serif 4',Georgia,serif); font-weight:400;
     font-size:26px; color:var(--tb-ink); letter-spacing:-0.018em;
@@ -4113,11 +4119,23 @@ _CSS_INLINE_FALLBACK = """
   .ck-wordmark-text { display:inline-flex; align-items:baseline; }
   .ck-brand-mark { display:none; }   /* text wordmark only, per handoff */
   .ck-wordmark em { font-style:italic; font-weight:400; color:var(--tb-green); margin-left:0.18em; }
-  .ck-nav { display:flex; gap:0; flex:1; }
+  /* `min-width:0` lets the nav shrink inside the flex row instead of forcing
+     the inner past 100% (which pushed the right-rail off and triggered the
+     wrap/clip). No `overflow` here — the mega-menu panels must be free to
+     escape the bar — so the responsive padding steps below keep the links
+     fitting at common laptop window widths. */
+  .ck-nav { display:flex; flex-wrap:nowrap; gap:0; flex:1 1 auto; min-width:0; }
   .ck-nav a { font-family:var(--sc-serif,'Source Serif 4',Georgia,serif);
     font-size:17px; font-weight:400; letter-spacing:0; text-transform:none;
-    color:var(--tb-ink2); padding:0 18px; line-height:76px;
+    color:var(--tb-ink2); padding:0 18px; line-height:76px; white-space:nowrap;
     border-bottom:2px solid transparent; text-decoration:none; transition:color 0.15s; }
+  /* Tighten the nav row before the full-width right rail (mode chip + search +
+     Guide + New Deal) collides with it. Steps chosen so the 7 links + wordmark
+     + right rail fit without wrapping down to common laptop widths. */
+  @media (max-width:1480px){ .ck-nav a { padding:0 13px; } }
+  @media (max-width:1320px){ .ck-nav a { padding:0 10px; font-size:16px; }
+    .ck-topbar-inner { padding:0 22px; } }
+  @media (max-width:1180px){ .ck-nav a { padding:0 8px; font-size:15px; } }
   .ck-nav a:hover { color:var(--tb-green); }
   .ck-nav a.active { color:var(--tb-green); font-style:italic;
     border-bottom-color:var(--tb-green); margin-bottom:-1px; }

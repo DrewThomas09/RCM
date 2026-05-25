@@ -37,6 +37,34 @@ class TestTopbarPositioning(unittest.TestCase):
         self.assertNotIn("transform:", block)
 
 
+class TestTopbarRowDoesNotWrap(unittest.TestCase):
+    """Regression: at narrower-than-fullscreen widths the nav links wrapped to
+    a row above the wordmark and were clipped by the fixed-height bar. The row
+    must stay single-line (nowrap) and shrink gracefully."""
+
+    def test_inner_row_is_nowrap(self):
+        html = _app_shell()
+        m = re.search(r"\.ck-topbar-inner\s*\{[^}]*\}", html)
+        self.assertIsNotNone(m)
+        block = m.group(0)
+        self.assertIn("flex-wrap:nowrap", block)
+        # min-height (not a hard height) so a grown child cannot clip the top.
+        self.assertIn("min-height:76px", block)
+
+    def test_nav_can_shrink(self):
+        html = _app_shell()
+        m = re.search(r"\.ck-nav\s*\{[^}]*\}", html)
+        self.assertIsNotNone(m)
+        self.assertIn("min-width:0", m.group(0))
+
+    def test_responsive_padding_steps_present(self):
+        # Nav-link padding tightens below fullscreen so 7 links + wordmark +
+        # right rail fit without wrapping.
+        html = _app_shell()
+        self.assertIn("@media (max-width:1480px)", html)
+        self.assertIn("@media (max-width:1320px)", html)
+
+
 class TestMegaMenuHardening(unittest.TestCase):
     def test_hover_intent_open_delay(self):
         self.assertIn("OPEN_DELAY", _NAV_MENU_JS)
