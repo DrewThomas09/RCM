@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_value_anchor
+from rcm_mc.ui.data_public._benchmark_panels import community_health_panel
 
 
 def _score_color(s: float) -> str:
@@ -287,6 +288,7 @@ def render_esg_impact(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   {ck_illustrative_note("figures")}
+  {community_health_panel(P)}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">ESG Composite Scorecards</div>{s_chart}{s_tbl}</div>

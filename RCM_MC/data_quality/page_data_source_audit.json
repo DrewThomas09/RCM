@@ -6,9 +6,9 @@
     "flagged_no_disclosure": 0,
     "by_tier": {
       "green": 27,
-      "navy": 70,
+      "navy": 72,
       "yellow": 37,
-      "red": 39
+      "red": 37
     }
   },
   "pages": [
@@ -605,7 +605,7 @@
     {
       "route": "/esg-dashboard",
       "file": "esg_dashboard_page.py",
-      "tier": "red",
+      "tier": "navy",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": false,
@@ -615,7 +615,7 @@
     {
       "route": "/esg-impact",
       "file": "esg_impact_page.py",
-      "tier": "red",
+      "tier": "navy",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,

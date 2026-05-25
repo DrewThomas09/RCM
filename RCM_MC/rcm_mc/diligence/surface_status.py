@@ -82,6 +82,7 @@ _NAVY = frozenset({
     "/patient-experience", "/locum-tracker", "/workforce-retention",
     "/antitrust-screener", "/cin-analyzer", "/nsa-tracker", "/drug-pricing-340b",
     "/tracker-340b", "/trial-site-econ", "/biosimilars",
+    "/esg-dashboard", "/esg-impact",
     "/lbo-stress", "/scenario-mc", "/scenarios", "/diligence/deal-mc",
     "/diligence/covenant-stress", "/diligence/bridge-audit", "/ebitda-bridge/",
     "/multiple-decomp", "/rollup-economics", "/cap-structure", "/entry-multiple",
@@ -123,7 +124,7 @@ _YELLOW = frozenset({
 _RED = frozenset({
     "/mgmt-comp", "/partner-economics",
     "/diligence/physician-attrition", "/diligence/physician-eu",
-    "/mgmt-fee-tracker", "/key-person", "/esg-dashboard", "/esg-impact",
+    "/mgmt-fee-tracker", "/key-person",
     "/hcit-platform", "/insurance-tracker", "/rw-insurance",
     "/litigation", "/cyber-risk",
     "/clinical-ai",
