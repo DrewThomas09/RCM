@@ -93,3 +93,10 @@ package-lock.yml
 
 # PEdesk Guide eval reports (local, disposable)
 .pedesk_guide_eval/
+
+# Licensed industry reports — raw PDFs stay private/internal (never commit)
+Industry Information Pages/
+**/Industry Information Pages/
+*Industry Report.pdf
+data/industry_intel/**/*.pdf
+docs/industry/**/*.pdf
