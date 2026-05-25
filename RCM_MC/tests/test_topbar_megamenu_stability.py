@@ -1,0 +1,122 @@
+"""Regression — topbar scroll + mega-menu hover stability.
+
+Covers the fix/topbar-megamenu-stability hardening:
+  - the topbar has exactly ONE positioning mode (sticky top:0), with no
+    competing position:fixed or transform that would jitter on scroll;
+  - the mega-menu JS implements hover-intent open + grace-period close, keeps
+    at most one panel open, and closes on Escape / outside-click / focus-out;
+  - the topbar still exposes Guide / Search / avatar controls;
+  - /login renders no topbar element.
+"""
+import re
+import unittest
+
+from rcm_mc.ui._chartis_kit import chartis_shell, _NAV_MENU_JS
+from rcm_mc.ui.chartis.login_page import render_login_page
+
+
+def _app_shell() -> str:
+    return chartis_shell("<p>body</p>", "App", active_nav="/app")
+
+
+class TestTopbarPositioning(unittest.TestCase):
+    def test_topbar_is_sticky_top_zero(self):
+        html = _app_shell()
+        self.assertIn("position:sticky; top:0", html)
+
+    def test_topbar_has_single_positioning_mode(self):
+        """The .ck-topbar rule must not declare position:fixed nor a transform
+        — either would conflict with sticky and cause scroll jitter."""
+        html = _app_shell()
+        # Isolate the .ck-topbar { ... } declaration block.
+        m = re.search(r"\.ck-topbar\s*\{[^}]*\}", html)
+        self.assertIsNotNone(m, "no .ck-topbar rule found")
+        block = m.group(0)
+        self.assertIn("position:sticky", block)
+        self.assertNotIn("position:fixed", block)
+        self.assertNotIn("transform:", block)
+
+
+class TestTopbarRowDoesNotWrap(unittest.TestCase):
+    """Regression: at narrower-than-fullscreen widths the nav links wrapped to
+    a row above the wordmark and were clipped by the fixed-height bar. The row
+    must stay single-line (nowrap) and shrink gracefully."""
+
+    def test_inner_row_is_nowrap(self):
+        html = _app_shell()
+        m = re.search(r"\.ck-topbar-inner\s*\{[^}]*\}", html)
+        self.assertIsNotNone(m)
+        block = m.group(0)
+        self.assertIn("flex-wrap:nowrap", block)
+        # min-height (not a hard height) so a grown child cannot clip the top.
+        self.assertIn("min-height:76px", block)
+
+    def test_nav_can_shrink(self):
+        html = _app_shell()
+        m = re.search(r"\.ck-nav\s*\{[^}]*\}", html)
+        self.assertIsNotNone(m)
+        self.assertIn("min-width:0", m.group(0))
+
+    def test_responsive_padding_steps_present(self):
+        # Nav-link padding tightens below fullscreen so 7 links + wordmark +
+        # right rail fit without wrapping.
+        html = _app_shell()
+        self.assertIn("@media (max-width:1480px)", html)
+        self.assertIn("@media (max-width:1320px)", html)
+
+
+class TestMegaMenuHardening(unittest.TestCase):
+    def test_hover_intent_open_delay(self):
+        self.assertIn("OPEN_DELAY", _NAV_MENU_JS)
+        self.assertRegex(_NAV_MENU_JS, r"OPEN_DELAY\s*=\s*\d+")
+
+    def test_grace_period_close(self):
+        self.assertIn("CLOSE_DELAY", _NAV_MENU_JS)
+        # Close happens on a timer, not instantly.
+        self.assertIn("setTimeout(closeAll", _NAV_MENU_JS)
+        m = re.search(r"CLOSE_DELAY\s*=\s*(\d+)", _NAV_MENU_JS)
+        self.assertIsNotNone(m)
+        self.assertGreaterEqual(int(m.group(1)), 150)
+
+    def test_reentering_cancels_close(self):
+        self.assertIn("cancelClose", _NAV_MENU_JS)
+
+    def test_one_menu_open_max(self):
+        # openOnly removes is-open from every other group.
+        self.assertIn("function openOnly", _NAV_MENU_JS)
+        self.assertIn("x.classList.remove('is-open')", _NAV_MENU_JS)
+
+    def test_escape_closes(self):
+        self.assertIn("'Escape'", _NAV_MENU_JS)
+        self.assertIn("closeAll", _NAV_MENU_JS)
+
+    def test_outside_click_closes(self):
+        self.assertIn("pointerdown", _NAV_MENU_JS)
+        self.assertIn(".ck-nav-group", _NAV_MENU_JS)
+
+    def test_focus_out_closes(self):
+        self.assertIn("focusout", _NAV_MENU_JS)
+
+    def test_coarse_pointer_tap_toggle(self):
+        # Touch/trackpad (hover:none) gets tap-to-open instead of navigate.
+        self.assertIn("hover: none", _NAV_MENU_JS)
+        self.assertIn("preventDefault", _NAV_MENU_JS)
+
+    def test_hover_bridge_present(self):
+        self.assertIn(".ck-nav-menu::before", _app_shell())
+
+
+class TestTopbarControlsAndLogin(unittest.TestCase):
+    def test_guide_search_avatar_triggers_exist(self):
+        html = _app_shell()
+        self.assertIn("ck-guide-trigger", html)        # Guide
+        self.assertIn("ck-topbar-right", html)         # right-rail controls
+        self.assertIn("ck-palette", html)              # Search / Cmd+K
+
+    def test_login_has_no_topbar_element(self):
+        html = render_login_page()
+        self.assertNotIn('class="ck-topbar"', html)
+
+
+if __name__ == "__main__":
+    unittest.main()
