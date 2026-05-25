@@ -132,6 +132,24 @@ def apm_summary_by_model(year: str = "2024") -> pd.DataFrame:
     return df[keep].sort_values("pct_apm", ascending=False, na_position="last")
 
 
+def apm_adoption_by_payer(metric: str = "Total Medical Spending") -> pd.DataFrame:
+    """Clean Colorado APM-adoption slice: %APM / %FFS by payer × year for one
+    metric, fixed to the integrated-systems-included / value-based-included
+    variant so each payer×year appears once. Payer label keeps CIVHC's leading
+    sort digit stripped for display. NaN preserved (Unknown payer has no value).
+    """
+    df = load_apm_public()
+    if not len(df):
+        return df
+    sl = df[(df["metric"] == metric)
+            & (df["integrated_systems"] == "Yes")
+            & (df["value_based_payments"] == "Included")].copy()
+    sl["payer"] = sl["payer_type"].astype(str).str.replace(r"^\d+\s+", "", regex=True)
+    keep = ["payer", "year", "pct_apm", "pct_ffs", "apm_spend", "ffs_spend",
+            "total_spend"]
+    return sl[[c for c in keep if c in sl.columns]].sort_values(["payer", "year"])
+
+
 def reference_pricing_summary(claim_type: str = "All") -> pd.DataFrame:
     """Provider RBP (% of Medicare) — per organization, optionally by claim
     type. Sorted by hospital_pct_medicare desc; NaN last."""

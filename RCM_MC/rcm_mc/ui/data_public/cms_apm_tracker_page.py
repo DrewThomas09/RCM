@@ -202,6 +202,58 @@ def _payer_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _colorado_apm_section() -> str:
+    """REAL Colorado APM adoption from CIVHC (public) — %APM / %FFS by payer ×
+    year. LIVE-labeled and distinct from the illustrative national overlay
+    below. State-specific caveat included; missing (Unknown payer) shows '—'."""
+    try:
+        from rcm_mc.data import payer_data as _pd
+        df = _pd.apm_adoption_by_payer("Total Medical Spending")
+    except Exception:
+        return ""
+    if df is None or not len(df):
+        return ""
+    hdr = ck_source_purpose(
+        purpose=("Gauge value-based-care penetration in Colorado — the share "
+                 "of total medical spend flowing through alternative payment "
+                 "models vs fee-for-service, by payer and year."),
+        universe="cms", confidence="derived",
+        source="CIVHC / CO APCD — APM public dataset (FY2026), Total Medical Spending",
+        next_action="Compare a target's payer mix to Colorado's APM trajectory")
+    yrs = sorted(df["year"].dropna().astype(int).unique().tolist())
+    payers = [p for p in df["payer"].unique().tolist()]
+    # pivot %APM by payer × year
+    head = "".join(f'<th style="padding:4px 10px;text-align:right">{y}</th>' for y in yrs)
+    rows = []
+    for p in payers:
+        cells = []
+        for y in yrs:
+            m = df[(df["payer"] == p) & (df["year"].astype(int) == y)]
+            v = m["pct_apm"].iloc[0] if len(m) else None
+            cells.append(f'<td style="padding:4px 10px;text-align:right;'
+                         f'font-variant-numeric:tabular-nums">'
+                         f'{("%.1f%%" % (v*100)) if (v is not None and v==v) else "—"}</td>')
+        rows.append(f'<tr><td style="padding:4px 10px">{_html.escape(str(p))}</td>'
+                    + "".join(cells) + "</tr>")
+    table = (
+        f'<table style="width:100%;border-collapse:collapse;'
+        f'font-family:\'JetBrains Mono\',monospace;font-size:11px">'
+        f'<thead><tr style="border-bottom:1px solid {P["border"]};color:{P["text_dim"]}">'
+        f'<th style="padding:4px 10px;text-align:left">Payer (% of medical spend in APMs)</th>'
+        f'{head}</tr></thead><tbody>{"".join(rows)}</tbody></table>')
+    return (
+        f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
+        f'border-left:3px solid {P["accent"]};padding:14px 16px;margin-bottom:16px">'
+        f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
+        f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:8px">'
+        f'Colorado APM Adoption · LIVE (CIVHC)</div>{hdr}{table}'
+        f'<p style="font-size:11px;color:{P["text_dim"]};margin:8px 0 0">'
+        f'Real all-payer market data for <b>Colorado</b> (integrated systems '
+        f'included). <b>Colorado CIVHC APM data is state-specific and should '
+        f'not be generalized nationally</b>; it is market-level, not '
+        f'provider-specific.</p></div>')
+
+
 def render_cms_apm_tracker(params: dict = None) -> str:
     from rcm_mc.data_public.cms_apm_tracker import compute_cms_apm_tracker
     r = compute_cms_apm_tracker()
@@ -270,6 +322,7 @@ def render_cms_apm_tracker(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   {source_header}
+  {_colorado_apm_section()}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">Program Catalog — CMMI & CMS APMs</div>{p_chart}{p_tbl}</div>
