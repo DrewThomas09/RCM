@@ -201,6 +201,61 @@ def _compliance_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _mssp_aco_panel() -> str:
+    """Real CMS MSSP ACO anchor — clinically integrated networks are the
+    vehicle for value-based / ACO participation, so the national MSSP ACO
+    landscape is the real benchmark for a CIN's shared-savings posture.
+    ACO counts, participant orgs, and risk-track mix are real public CMS
+    data; the deal's CIN roster / contract model below is illustrative."""
+    from rcm_mc.data import mssp_aco_data as _m
+    summ = _m.mssp_summary()
+    if not summ.get("acos"):
+        return ""
+    tracks = _m.mssp_track_breakdown()
+
+    border = P["border"]; tprim = P["text"]; tdim = P["text_dim"]; acc = P["accent"]
+    mx = max((int(t["acos"]) for t in tracks), default=1) or 1
+    rows = "".join(
+        f'<tr>'
+        f'<td style="padding:3px 8px;font-family:JetBrains Mono,monospace;font-size:11px;color:{tprim}">{_html.escape(str(t["track"]))}</td>'
+        f'<td style="padding:3px 8px;width:55%">'
+        f'<svg width="100%" height="9" preserveAspectRatio="none" viewBox="0 0 100 9">'
+        f'<rect x="0" y="1" width="{int(int(t["acos"])/mx*100)}" height="7" fill="{acc}" opacity="0.75"/></svg></td>'
+        f'<td style="padding:3px 8px;text-align:right;font-family:JetBrains Mono,monospace;font-size:11px;'
+        f'font-variant-numeric:tabular-nums;color:{tprim}">{int(t["acos"]):,}</td>'
+        f'</tr>'
+        for t in tracks[:6]
+    )
+    acos = int(summ.get("acos", 0)); orgs = int(summ.get("participant_orgs", 0))
+    enh = int(summ.get("enhanced_track_acos", 0)); snap = summ.get("snapshot_date", "")
+    return f'''
+<div style="background:{P["panel"]};border:1px solid {border};border-left:3px solid {acc};
+  padding:14px 16px;margin-bottom:16px">
+  <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{tdim};
+    text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">
+    Real CMS MSSP ACO landscape &mdash; the value-based benchmark for CINs
+    <span style="color:{acc};font-weight:600"> · LIVE</span>
+  </div>
+  <div style="display:grid;grid-template-columns:auto auto 1fr;gap:18px;align-items:start">
+    <div><div style="font-family:JetBrains Mono,monospace;font-size:18px;color:{tprim};
+      font-variant-numeric:tabular-nums">{acos:,}</div>
+      <div style="font-size:10px;color:{tdim}">Medicare Shared<br>Savings ACOs</div></div>
+    <div><div style="font-family:JetBrains Mono,monospace;font-size:18px;color:{tprim};
+      font-variant-numeric:tabular-nums">{orgs:,}</div>
+      <div style="font-size:10px;color:{tdim}">participant orgs<br>({enh:,} on ENHANCED risk)</div></div>
+    <div>
+      <div style="font-size:9px;color:{P["text_faint"]};margin-bottom:4px">ACOs BY RISK TRACK</div>
+      <table style="width:100%;border-collapse:collapse">{rows}</table>
+    </div>
+  </div>
+  <div style="margin-top:8px;font-size:10px;color:{P["text_faint"]}">
+    CMS MSSP public-use file{(" (" + str(snap) + ")") if snap else ""}. Real ACO/value-based
+    landscape &mdash; the CIN's own member roster, payer contracts, and quality figures
+    below are illustrative.
+  </div>
+</div>'''
+
+
 def render_cin_analyzer(params: dict = None) -> str:
     params = params or {}
 
@@ -281,6 +336,7 @@ def render_cin_analyzer(params: dict = None) -> str:
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
+  {_mssp_aco_panel()}
   <div style="{cell}"><div style="{h3}">Provider Member Roster — Specialty, Lives, Quality, Engagement</div>{pv_tbl}</div>
   <div style="{cell}"><div style="{h3}">Payer Contract Portfolio — Shared Savings &amp; Risk</div>{ct_tbl}</div>
   <div style="{cell}"><div style="{h3}">Quality Measure Performance vs HEDIS/STARS Benchmark</div>{qm_chart}{qm_tbl}</div>
