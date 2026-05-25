@@ -308,10 +308,24 @@ def render_geo_market(params: dict = None) -> str:
         meta=f"{sector} sector · {len(r.markets)} CBSAs analyzed covering {r.total_addressable_pop_mm:,.1f}M people · {r.priority_markets} priority / {r.watch_markets} watch / {r.secondary_markets} secondary / {r.avoid_markets} avoid · top market: {top_name} (score {top_score:.0f})",
     )
 
+    # Cross-link to the real-data companion. /geo-market is the illustrative
+    # CBSA white-space analyzer; /market-intel/geo does the same geographic-
+    # attractiveness job with REAL CMS/SimplyAnalytics data (demand, provider
+    # supply, consolidation, MA). Steer users to the real page.
+    real_xlink = (
+        f'<div style="background:{panel};border:1px solid {border};'
+        f'border-left:3px solid {acc};padding:10px 14px;margin:0 0 14px;font-size:12px;'
+        f'color:{text_dim}">For <b style="color:{text}">real</b> state-level market data — '
+        f'senior demand, provider supply, SNF/hospital consolidation, Medicare Advantage — '
+        f'see <a href="/market-intel/geo" style="color:{acc};font-weight:600">'
+        f'Market Intelligence (Geographic) &rarr;</a>. This page is an illustrative '
+        f'CBSA white-space analyzer (seed corpus).</div>')
+
     body = f"""
 <div class="ck-page-wrap">
 
   {page_title}
+  {real_xlink}
 
   {form}
 
