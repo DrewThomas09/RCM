@@ -21,6 +21,8 @@ from rcm_mc.data.snf import (
     load_snf_summary_by_state,
     snf_provider_by_ccn,
     snf_providers_for_state,
+    snf_turnover_summary,
+    snf_turnover_by_state,
 )
 from rcm_mc.server import build_server
 from rcm_mc.ui.snf_page import render_snf, render_snf_profile
@@ -61,6 +63,39 @@ class SnfLoaderTests(unittest.TestCase):
         # the .is_file() check; we just confirm the functions are callable
         # and the live (present) files are non-empty.
         self.assertTrue(load_snf_providers())
+
+
+class SnfTurnoverBenchmarkTests(unittest.TestCase):
+    """Real CMS nurse-staff turnover benchmark (used by Provider Retention)."""
+
+    def test_national_summary_is_real_and_sane(self):
+        s = snf_turnover_summary()
+        # Thousands of facilities report turnover; missing stays out of the sample.
+        self.assertGreater(s["n"], 10000)
+        self.assertLessEqual(s["n"], s["facilities"])
+        # Nursing-home nurse turnover is high but bounded — a real sanity band.
+        self.assertTrue(20 < s["median_pct"] < 80, s["median_pct"])
+        self.assertLessEqual(s["p25_pct"], s["median_pct"])
+        self.assertLessEqual(s["median_pct"], s["p75_pct"])
+        self.assertEqual(s["state"], "US")
+
+    def test_state_scope_and_empty_state_safe(self):
+        tx = snf_turnover_summary("TX")
+        self.assertEqual(tx["state"], "TX")
+        self.assertGreater(tx["n"], 100)
+        # Unknown state → empty sample, no crash, None medians (never 0).
+        zz = snf_turnover_summary("ZZ")
+        self.assertEqual(zz["n"], 0)
+        self.assertIsNone(zz["median_pct"])
+
+    def test_by_state_worst_first_and_min_sample(self):
+        rows = snf_turnover_by_state(8)
+        self.assertTrue(rows)
+        self.assertLessEqual(len(rows), 8)
+        # Worst-first ordering, and no state with <10 facilities masquerades.
+        meds = [r["median_pct"] for r in rows]
+        self.assertEqual(meds, sorted(meds, reverse=True))
+        self.assertTrue(all(r["facilities_reporting"] >= 10 for r in rows))
 
 
 class SnfScreenerTests(unittest.TestCase):

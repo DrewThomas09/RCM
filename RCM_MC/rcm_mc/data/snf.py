@@ -158,3 +158,79 @@ def load_snf_summary_by_state() -> Dict[str, Dict[str, object]]:
         )
         del s["_star_sum"]
     return summary
+
+
+def _median(vals: List[float]) -> Optional[float]:
+    if not vals:
+        return None
+    s = sorted(vals)
+    n = len(s)
+    mid = n // 2
+    return s[mid] if n % 2 else (s[mid - 1] + s[mid]) / 2.0
+
+
+def snf_turnover_summary(state: str = "") -> Dict[str, object]:
+    """Real CMS nurse-staff turnover benchmark (Care Compare ``Total nursing
+    staff turnover``). National by default; pass a 2-letter ``state`` to scope.
+
+    Turnover here is a **facility-level workforce** measure CMS publishes for
+    each nursing home — the share of nursing staff who left in the trailing
+    12 months. It is real market context for SNF/nursing-home diligence; it is
+    NOT a portfolio-specific retention figure and says nothing about a deal's
+    own roster. Missing values stay missing (never coerced to 0). Returns
+    ``{n, facilities, median_pct, mean_pct, p25_pct, p75_pct, worst_quartile_pct,
+    state}`` with ``None`` where the sample is empty.
+    """
+    quality = load_snf_quality()
+    st = _norm_state(state) if state else ""
+    by_ccn_state = {ccn: p.state for ccn, p in load_snf_providers().items()} if st else {}
+    vals: List[float] = []
+    facilities = 0
+    for ccn, q in quality.items():
+        if st and by_ccn_state.get(ccn) != st:
+            continue
+        facilities += 1
+        tv = q.get("total_nurse_turnover_pct")
+        if tv is not None:
+            vals.append(float(tv))
+    n = len(vals)
+    if not n:
+        return {"n": 0, "facilities": facilities, "median_pct": None,
+                "mean_pct": None, "p25_pct": None, "p75_pct": None,
+                "worst_quartile_pct": None, "state": st or "US"}
+    s = sorted(vals)
+    p25 = s[int(0.25 * (n - 1))]
+    p75 = s[int(0.75 * (n - 1))]
+    return {
+        "n": n, "facilities": facilities,
+        "median_pct": round(_median(vals), 1),
+        "mean_pct": round(sum(vals) / n, 1),
+        "p25_pct": round(p25, 1), "p75_pct": round(p75, 1),
+        "worst_quartile_pct": round(p75, 1),
+        "state": st or "US",
+    }
+
+
+def snf_turnover_by_state(top_n: int = 10) -> List[Dict[str, object]]:
+    """Per-state median nurse-staff turnover (real CMS), worst first.
+
+    Only states with >=10 facilities reporting turnover are returned, so a
+    single facility can't masquerade as a state benchmark. Each row is
+    ``{state, facilities_reporting, median_pct}``.
+    """
+    quality = load_snf_quality()
+    prov_state = {ccn: p.state for ccn, p in load_snf_providers().items()}
+    buckets: Dict[str, List[float]] = {}
+    for ccn, q in quality.items():
+        tv = q.get("total_nurse_turnover_pct")
+        st = prov_state.get(ccn)
+        if tv is None or not st:
+            continue
+        buckets.setdefault(st, []).append(float(tv))
+    rows = [
+        {"state": st, "facilities_reporting": len(v),
+         "median_pct": round(_median(v), 1)}
+        for st, v in buckets.items() if len(v) >= 10
+    ]
+    rows.sort(key=lambda r: r["median_pct"], reverse=True)
+    return rows[:top_n]
