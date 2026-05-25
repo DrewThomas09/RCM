@@ -124,6 +124,15 @@ class SnfTurnoverBenchmarkTests(unittest.TestCase):
             self.assertNotIn("name", k.lower())
             self.assertNotIn("first", k.lower())
 
+    def test_top_owner_orgs_real_and_sorted(self):
+        from rcm_mc.data.snf import snf_top_owner_orgs
+        rows = snf_top_owner_orgs(10)
+        self.assertTrue(rows)
+        counts = [r["facilities_owned"] for r in rows]
+        self.assertEqual(counts, sorted(counts, reverse=True))
+        self.assertGreater(counts[0], 50)        # largest owners hold 100s
+        self.assertTrue(all(r["owner_organization"] for r in rows))
+
     def test_enforcement_summary_is_real_and_sane(self):
         e = snf_enforcement_summary()
         self.assertGreater(e["facilities"], 10000)

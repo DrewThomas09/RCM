@@ -225,6 +225,22 @@ def snf_ownership_summary() -> Dict[str, object]:
     return _json.loads(p.read_text()) if p.exists() else {}
 
 
+def snf_top_owner_orgs(limit: int = 10) -> List[Dict[str, object]]:
+    """Largest SNF owner-organizations by distinct facilities owned (real CMS).
+
+    A chain/consolidation signal. ``owner_organization`` is the owner-of-record
+    org (public entity) — note this includes REITs and indirect owners/agents,
+    not purely operators (e.g. Welltower = REIT; some entries are accounting
+    agents). PII-free (org names only)."""
+    p = _CSV_DIR_OWN = Path(__file__).resolve().parent / "vendor" / "snf_ownership" / "snf_top_owner_orgs.csv"
+    if not p.exists():
+        return []
+    with p.open(newline="") as fh:
+        return [{"owner_organization": r["owner_organization"],
+                 "facilities_owned": int(r["facilities_owned"])}
+                for r in csv.DictReader(fh)][:limit]
+
+
 def snf_enforcement_summary() -> Dict[str, object]:
     """Real CMS nursing-home regulatory-enforcement benchmark (Care Compare).
 
