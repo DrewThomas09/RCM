@@ -216,6 +216,69 @@ def _opps_table(opps) -> str:
     )
 
 
+def _chow_activity_panel() -> str:
+    """Real CMS change-of-ownership anchor — actual M&A / ownership-change
+    activity is the live competitive-move signal. The competitor roster
+    and strategic-move table below are illustrative; this panel is real
+    public CMS CHOW data, so the page grounds its competitive thesis in
+    observed deal activity, not the seed corpus."""
+    from rcm_mc.data import snf_chow as _c
+    snf = _c.chow_summary()
+    if not snf.get("total_chows"):
+        return ""
+    hosp = _c.hospital_chow_summary()
+    by_year = _c.chow_by_year()
+    top = _c.top_chow_states(5)
+
+    border = P["border"]; tprim = P["text"]; tdim = P["text_dim"]; acc = P["accent"]
+    yrs = [r for r in by_year if int(r["year"]) < snf.get("year_max", 0)] or by_year
+    spark = ""
+    if yrs:
+        mx = max(int(r["chow_count"]) for r in yrs) or 1
+        bars = "".join(
+            f'<rect x="{i*16}" y="{32-int(int(r["chow_count"])/mx*30)}" width="11" '
+            f'height="{int(int(r["chow_count"])/mx*30)}" fill="{acc}" opacity="0.75"/>'
+            f'<text x="{i*16+5}" y="42" text-anchor="middle" font-size="6" '
+            f'fill="{P["text_faint"]}" font-family="JetBrains Mono,monospace">{str(r["year"])[2:]}</text>'
+            for i, r in enumerate(yrs)
+        )
+        spark = f'<svg width="{len(yrs)*16}" height="44">{bars}</svg>'
+    top_cells = "".join(
+        f'<span style="display:inline-block;margin-right:10px;font-family:JetBrains Mono,monospace;'
+        f'font-size:11px;color:{tprim}">{_html.escape(str(r["state"]))} '
+        f'<span style="color:{acc};font-variant-numeric:tabular-nums">{int(r["chow_count"]):,}</span></span>'
+        for r in top
+    )
+    snf_n = int(snf.get("total_chows", 0)); hosp_n = int(hosp.get("total_chows", 0))
+    y0, y1 = snf.get("year_min"), snf.get("year_max")
+    return f'''
+<div style="background:{P["panel"]};border:1px solid {border};border-left:3px solid {acc};
+  padding:14px 16px;margin-bottom:16px">
+  <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{tdim};
+    text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">
+    Real CMS ownership-change activity &mdash; competitive M&amp;A signal
+    <span style="color:{acc};font-weight:600"> · LIVE</span>
+  </div>
+  <div style="display:grid;grid-template-columns:auto auto 1fr;gap:18px;align-items:start">
+    <div><div style="font-family:JetBrains Mono,monospace;font-size:18px;color:{tprim};
+      font-variant-numeric:tabular-nums">{snf_n:,}</div>
+      <div style="font-size:10px;color:{tdim}">SNF ownership changes<br>{y0}&ndash;{y1}</div></div>
+    <div><div style="font-family:JetBrains Mono,monospace;font-size:18px;color:{tprim};
+      font-variant-numeric:tabular-nums">{hosp_n:,}</div>
+      <div style="font-size:10px;color:{tdim}">Hospital ownership changes<br>{y0}&ndash;{y1}</div></div>
+    <div><div style="font-size:9px;color:{P["text_faint"]};margin-bottom:2px">SNF CHOWs BY YEAR</div>{spark}</div>
+  </div>
+  <div style="margin-top:8px;font-size:10px;color:{tdim}">
+    <span style="color:{P["text_faint"]}">Most active states:</span> {top_cells}
+  </div>
+  <div style="margin-top:6px;font-size:10px;color:{P["text_faint"]}">
+    CMS public ownership/CHOW files. Real consolidation/M&amp;A activity &mdash; the
+    competitor roster and strategic-move table below are illustrative; use this
+    panel as the observed-market reality.
+  </div>
+</div>'''
+
+
 def render_competitive_intel(params: dict = None) -> str:
     params = params or {}
     sector = params.get("sector", "Physician Services") or "Physician Services"
@@ -323,6 +386,7 @@ def render_competitive_intel(params: dict = None) -> str:
   {page_title}
 
   {ck_illustrative_note("competitive figures")}
+  {_chow_activity_panel()}
   {lead_anchor}
 
   {form}

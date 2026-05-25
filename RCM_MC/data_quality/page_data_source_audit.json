@@ -2,13 +2,13 @@
   "summary": {
     "pages": 173,
     "with_disclosure": 168,
-    "with_real_loader": 24,
+    "with_real_loader": 26,
     "flagged_no_disclosure": 0,
     "by_tier": {
       "green": 27,
-      "navy": 54,
+      "navy": 56,
       "yellow": 37,
-      "red": 55
+      "red": 53
     }
   },
   "pages": [
@@ -245,10 +245,10 @@
     {
       "route": "/competitive-intel",
       "file": "competitive_intel_page.py",
-      "tier": "red",
+      "tier": "navy",
       "has_disclosure": true,
-      "imports_real_loader": false,
-      "uses_seed_corpus": false,
+      "imports_real_loader": true,
+      "uses_seed_corpus": true,
       "renders_data": true,
       "flag": ""
     },
