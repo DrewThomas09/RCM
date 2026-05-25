@@ -348,11 +348,53 @@ def render_payer_shift(params: dict = None) -> str:
         tone="teal",
     )
 
+    # Real Colorado payer-mix cost trend (CIVHC / CO APCD) — a real anchor for
+    # how payer economics shift, by payer type. Market context, not this deal.
+    cms_panel = ""
+    try:
+        from rcm_mc.data import payer_data as _pd
+        _t = _pd.payer_cost_trend("All")
+        if len(_t):
+            _yrs = [c for c in _t.columns if str(c).isdigit()]
+            _first, _last = (_yrs[0], _yrs[-1]) if len(_yrs) >= 2 else ("", "")
+            _rows = ""
+            for _, row in _t.iterrows():
+                pct = row.get("pct_change")
+                pct_s = f"{pct:+.1f}%" if pct == pct else "—"  # NaN check
+                _rows += (
+                    f'<tr><td style="padding:3px 10px">{_html.escape(str(row["payer_type"]))}</td>'
+                    f'<td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums">${row[_first]:,.0f}</td>'
+                    f'<td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums">${row[_last]:,.0f}</td>'
+                    f'<td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums">{pct_s}</td></tr>')
+            cms_panel = (
+                f'<div style="background:{panel};border:1px solid {border};'
+                f'border-left:3px solid {acc};padding:14px 16px;margin-bottom:16px">'
+                f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
+                f'text-transform:uppercase;color:{text_dim};margin-bottom:6px">'
+                f'Payer-mix cost trend · LIVE (CIVHC / CO All-Payer Claims)</div>'
+                f'<p style="font-size:12px;color:{text_dim};margin:0 0 8px">'
+                f'Real Colorado per-person-per-year spend by payer type, '
+                f'{_html.escape(str(_first))}–{_html.escape(str(_last))} — how payer '
+                f'economics actually shifted in one state market.</p>'
+                f'<table style="border-collapse:collapse;font-family:\'JetBrains Mono\',monospace;font-size:11px">'
+                f'<thead><tr style="border-bottom:1px solid {border};color:{text_dim}">'
+                f'<th style="padding:3px 10px;text-align:left">Payer</th>'
+                f'<th style="padding:3px 10px;text-align:right">{_html.escape(str(_first))} PPPY</th>'
+                f'<th style="padding:3px 10px;text-align:right">{_html.escape(str(_last))} PPPY</th>'
+                f'<th style="padding:3px 10px;text-align:right">Change</th></tr></thead>'
+                f'<tbody>{_rows}</tbody></table>'
+                f'<p style="font-size:11px;color:{text_dim};margin:8px 0 0">'
+                f'Real CIVHC all-payer market data (Colorado) — <b>not</b> this deal’s '
+                f'payer mix. The shift model below is illustrative, scaled by your inputs.</p></div>')
+    except Exception:
+        cms_panel = ""
+
     body = f"""
 <div class="ck-page-wrap">
 
   {page_title}
   {ck_illustrative_note("figures")}
+  {cms_panel}
 
   {form}
 
