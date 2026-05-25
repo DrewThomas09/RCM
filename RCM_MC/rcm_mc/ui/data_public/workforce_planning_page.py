@@ -304,12 +304,46 @@ def render_workforce_planning(params: dict = None) -> str:
         tone="teal",
     )
 
+    # Real CMS provider-supply benchmark (FFS enrollment) — the actual national
+    # clinical-workforce supply, a real anchor for workforce planning.
+    cms_panel = ""
+    try:
+        from rcm_mc.data import provider_supply as _ps
+        s = _ps.supply_summary()
+        tops = _ps.supply_national_by_type(6)
+        if s.get("total_enrollments"):
+            _rows = "".join(
+                f'<tr><td style="padding:3px 10px">{_html.escape(str(t["provider_type"])[:42])}</td>'
+                f'<td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums">{int(t["enrolled_count"]):,}</td></tr>'
+                for t in tops)
+            cms_panel = (
+                f'<div style="background:{panel};border:1px solid {border};'
+                f'border-left:3px solid {acc};padding:14px 16px;margin-bottom:16px">'
+                f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
+                f'text-transform:uppercase;color:{text_dim};margin-bottom:6px">'
+                f'Clinical workforce supply · LIVE (CMS FFS Provider Enrollment)</div>'
+                f'<p style="font-size:12px;color:{text_dim};margin:0 0 8px">'
+                f'<b style="color:{text}">{s["total_enrollments"]:,}</b> Medicare-enrolled '
+                f'providers across {s["provider_types"]} provider types — the real national '
+                f'clinical-workforce supply. Largest types:</p>'
+                f'<table style="border-collapse:collapse;font-family:\'JetBrains Mono\',monospace;font-size:11px">'
+                f'<thead><tr style="border-bottom:1px solid {border};color:{text_dim}">'
+                f'<th style="padding:3px 10px;text-align:left">Provider type</th>'
+                f'<th style="padding:3px 10px;text-align:right">Enrolled</th></tr></thead>'
+                f'<tbody>{_rows}</tbody></table>'
+                f'<p style="font-size:11px;color:{text_dim};margin:8px 0 0">'
+                f'Real CMS supply data (FFS-enrolled, national) — <b>not</b> this deal’s '
+                f'workforce. The planning model below is illustrative, scaled by your inputs.</p></div>')
+    except Exception:
+        cms_panel = ""
+
     body = f"""
 <div class="ck-page-wrap">
 
   {page_title}
 
   {ck_illustrative_note("labor figures")}
+  {cms_panel}
   {lead_anchor}
 
   {form}

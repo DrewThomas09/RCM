@@ -75,6 +75,7 @@ _NAVY = frozenset({
     "/physician-productivity", "/phys-comp-plan", "/physician-labor",
     "/provider-retention", "/quality-scorecard", "/clinical-outcomes",
     "/regulatory-risk", "/supply-chain", "/payer-shift", "/ma-contracts",
+    "/workforce-planning",
     "/lbo-stress", "/scenario-mc", "/scenarios", "/diligence/deal-mc",
     "/diligence/covenant-stress", "/diligence/bridge-audit", "/ebitda-bridge/",
     "/multiple-decomp", "/rollup-economics", "/cap-structure", "/entry-multiple",
@@ -134,7 +135,7 @@ _RED = frozenset({
     "/telehealth-econ", "/trial-site-econ", "/tech-stack", "/health-equity",
     "/medical-realestate", "/real-estate", "/platform-maturity",
     "/ai-operating-model", "/cin-analyzer", "/fraud-detection",
-    "/workforce-planning", "/workforce-retention", "/zbb-tracker", "/vcp-tracker",
+    "/workforce-retention", "/zbb-tracker", "/vcp-tracker",
     "/vdr-tracker", "/diligence-vendors", "/diligence/risk-workbench",
     "/sellside-process", "/platform-maturity",
 })
