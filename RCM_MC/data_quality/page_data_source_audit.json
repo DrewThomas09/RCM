@@ -2,13 +2,13 @@
   "summary": {
     "pages": 173,
     "with_disclosure": 168,
-    "with_real_loader": 38,
+    "with_real_loader": 39,
     "flagged_no_disclosure": 0,
     "by_tier": {
       "green": 27,
-      "navy": 68,
+      "navy": 69,
       "yellow": 37,
-      "red": 41
+      "red": 40
     }
   },
   "pages": [
@@ -1565,9 +1565,9 @@
     {
       "route": "/tracker-340b",
       "file": "tracker_340b_page.py",
-      "tier": "red",
+      "tier": "navy",
       "has_disclosure": true,
-      "imports_real_loader": false,
+      "imports_real_loader": true,
       "uses_seed_corpus": true,
       "renders_data": true,
       "flag": ""
