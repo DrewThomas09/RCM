@@ -137,6 +137,71 @@ def _demographics_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _places_sdoh_panel() -> str:
+    """Real CDC PLACES social-determinants anchor — full-population,
+    model-based county estimates rolled up to national + state prevalence
+    of the SDOH measures that drive health equity. The HEI/Star scorecard
+    below is illustrative; this panel is real public CDC data, grounding
+    the equity thesis in observed population SDOH burden."""
+    from rcm_mc.data import cdc_places_agg as _c
+    summ = _c.places_equity_summary()
+    if not summ.get("national_prevalence_pct"):
+        return ""
+    nat = summ["national_prevalence_pct"]
+    labels = _c.measure_labels()
+
+    border = P["border"]; tprim = P["text"]; tdim = P["text_dim"]; acc = P["accent"]
+    # headline SDOH measures (national prevalence) + highest-burden states
+    show = [
+        ("uninsured_18_64", "uninsured"),
+        ("food_insecurity", "food_insecurity"),
+        ("lack_transportation", "lack_transportation"),
+        ("utility_shutoff_threat", "utility_shutoff_threat"),
+    ]
+    cards = "".join(
+        f'<div style="text-align:center;padding:0 10px">'
+        f'<div style="font-family:JetBrains Mono,monospace;font-size:18px;color:{tprim};'
+        f'font-variant-numeric:tabular-nums">{nat.get(key,0):.1f}%</div>'
+        f'<div style="font-size:9px;color:{tdim}">{_html.escape(labels.get(key,key))}</div></div>'
+        for key, _ in show if nat.get(key) is not None
+    )
+    # top food-insecurity states as the equity-disparity lens
+    top = _c.top_states_by("food_insecurity", 6)
+    mx = max((float(t["food_insecurity"]) for t in top), default=1.0) or 1.0
+    rows = "".join(
+        f'<tr>'
+        f'<td style="padding:3px 8px;font-family:JetBrains Mono,monospace;font-size:11px;color:{tprim}">{_html.escape(str(t["state"]))}</td>'
+        f'<td style="padding:3px 8px;width:50%">'
+        f'<svg width="100%" height="9" preserveAspectRatio="none" viewBox="0 0 100 9">'
+        f'<rect x="0" y="1" width="{int(float(t["food_insecurity"])/mx*100)}" height="7" fill="{acc}" opacity="0.75"/></svg></td>'
+        f'<td style="padding:3px 8px;text-align:right;font-family:JetBrains Mono,monospace;font-size:11px;'
+        f'font-variant-numeric:tabular-nums;color:{tprim}">{float(t["food_insecurity"]):.1f}%</td>'
+        f'</tr>'
+        for t in top
+    )
+    rel = summ.get("release", ""); n_cty = int(summ.get("counties", 0))
+    return f'''
+<div style="background:{P["panel"]};border:1px solid {border};border-left:3px solid {acc};
+  padding:14px 16px;margin-bottom:16px">
+  <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{tdim};
+    text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">
+    Real CDC PLACES social determinants &mdash; national + state SDOH burden
+    <span style="color:{acc};font-weight:600"> · LIVE</span>
+  </div>
+  <div style="display:flex;gap:6px;justify-content:space-between;margin-bottom:12px;
+    border-bottom:1px solid {border};padding-bottom:10px">{cards}</div>
+  <div>
+    <div style="font-size:9px;color:{P["text_faint"]};margin-bottom:4px">HIGHEST FOOD-INSECURITY STATES (% OF ADULTS)</div>
+    <table style="width:100%;border-collapse:collapse">{rows}</table>
+  </div>
+  <div style="margin-top:8px;font-size:10px;color:{P["text_faint"]}">
+    CDC PLACES {rel} ({n_cty:,} counties, model-based BRFSS+ACS estimates,
+    population-weighted). Real FULL-POPULATION SDOH prevalence &mdash; the HEI /
+    Star scorecard below is illustrative and scaled to your inputs.
+  </div>
+</div>'''
+
+
 def render_health_equity(params: dict = None) -> str:
     from rcm_mc.data_public.health_equity import compute_health_equity
     r = compute_health_equity()
@@ -185,6 +250,7 @@ def render_health_equity(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   {ck_illustrative_note("figures")}
+  {_places_sdoh_panel()}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">HEI Measure Components — LIS/Dual vs Non-LIS Performance</div>{c_chart}{c_tbl}</div>
