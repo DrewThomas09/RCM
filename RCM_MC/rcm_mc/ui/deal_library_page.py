@@ -157,11 +157,18 @@ def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> 
                 f'color:{P["text_dim"]};margin:8px 0 0">Ingested from '
                 f'{len(srcs)} licensed export(s): {files}</p>')
 
+    vert_tbl = _freq_table("Est. verticals (from name)",
+                           dl.top_values(store, "healthcare_vertical_est", 10), "vertical")
     freq = ('<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:14px">'
             + _freq_table("Top sponsors", dl.top_values(store, "sponsor_owner", 10), "sponsor")
-            + _freq_table("Top verticals", dl.top_values(store, "industry", 10))
+            + vert_tbl
             + _freq_table("Top states", dl.top_values(store, "state", 10), "state")
             + "</div>"
+            + f'<p style="font-family:var(--sc-mono);font-size:10px;'
+              f'color:{P["text_dim"]};margin:6px 2px 0">Vertical is <b>estimated '
+              f'from the company name</b> (the licensed industry field is a single '
+              f'coarse value); ~76% are unclassified and left blank — it is a '
+              f'heuristic tag, not an authoritative classification.</p>'
             + f'<p style="margin:8px 2px 0;font-size:12px">'
               f'<a href="/deal-library/sponsors" style="color:{P["accent"]};'
               f'text-decoration:none">Browse all sponsors →</a>'
@@ -173,12 +180,15 @@ def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> 
     search = params.get("search", "")
     state = params.get("state", "")
     sponsor = params.get("sponsor", "")
+    vertical = params.get("vertical", "")
     rollup = _sponsor_rollup_card(dl.sponsor_rollup(store, sponsor)) if sponsor else ""
     form = (
         f'<form method="get" action="/deal-library" '
         f'style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin:16px 0">'
         + (f'<input type="hidden" name="sponsor" value="{_html.escape(sponsor)}">'
            if sponsor else "")
+        + (f'<input type="hidden" name="vertical" value="{_html.escape(vertical)}">'
+           if vertical else "")
         + f'<input type="text" name="search" value="{_html.escape(search)}" '
         f'placeholder="Search name / sponsor / vertical" '
         f'style="padding:7px 9px;border:1px solid {P["border"]};border-radius:2px;'
@@ -204,6 +214,8 @@ def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> 
         _filters["state"] = state.upper()
     if sponsor:
         _filters["sponsor_owner"] = sponsor
+    if vertical:
+        _filters["healthcare_vertical_est"] = vertical
     res = dl.query(
         store,
         filters=_filters or None,

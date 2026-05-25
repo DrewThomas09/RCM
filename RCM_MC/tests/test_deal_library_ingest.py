@@ -107,6 +107,35 @@ class TestLoader(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
+    def test_vertical_estimate_is_labeled_heuristic(self):
+        # Inferred from name; unmatched stays None (never guessed).
+        self.assertEqual(ing.infer_vertical("Beacon Dialysis Inc."), "Dialysis/Renal")
+        self.assertEqual(ing.infer_vertical("42 North Dental LLC"), "Dental")
+        self.assertIsNone(ing.infer_vertical("Acme Health Partners LLC"))
+        self.assertIsNone(ing.infer_vertical(""))
+        # populated on the record + canonical field present
+        recs, _ = ing.ingest_file(_FIXTURE, source_system="Capital IQ")
+        beacon = next(r for r in recs if r["company_name"].startswith("Beacon"))
+        self.assertEqual(beacon["healthcare_vertical_est"], "Dialysis/Renal")
+        acme = next(r for r in recs if r["company_name"].startswith("Acme"))
+        self.assertIsNone(acme["healthcare_vertical_est"])
+
+    def test_migration_adds_vertical_column_to_old_table(self):
+        # A table created by an earlier schema must gain the column on load.
+        with self.store.connect() as con:
+            con.execute("CREATE TABLE deal_library_companies "
+                        "(company_id TEXT PRIMARY KEY, company_name TEXT)")
+            con.commit()
+        recs, info = ing.ingest_file(_FIXTURE, source_system="Capital IQ")
+        ing.flag_duplicates(recs)
+        ing.write_outputs(recs, ing.build_report(recs, [info], "Capital IQ"), self.out)
+        n = deal_library.load_companies_csv(
+            self.store, self.out / "deal_library_companies.csv")
+        self.assertEqual(n, 4)
+        res = deal_library.query(
+            self.store, filters={"healthcare_vertical_est": "Dialysis/Renal"})
+        self.assertEqual(res["total"], 1)
+
     def test_sources_provenance_table(self):
         recs, info = ing.ingest_file(_FIXTURE, source_system="Capital IQ")
         ing.flag_duplicates(recs)

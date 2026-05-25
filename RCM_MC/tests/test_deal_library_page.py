@@ -55,6 +55,16 @@ class TestDealLibraryPage(unittest.TestCase):
         self.assertIn("Synthetic Capital", html)      # sponsor present
         self.assertIn("—", html)                       # missing financials as dash
 
+    def test_estimated_vertical_filter_and_caveat(self):
+        self._load()
+        html = render_deal_library(self.store, {})
+        self.assertIn("Est. verticals", html)
+        self.assertIn("estimated from the company name", html)  # honesty caveat
+        self.assertIn("?vertical=", html)                        # clickable
+        # filter narrows to the dialysis company
+        html2 = render_deal_library(self.store, {"vertical": "Dialysis/Renal"})
+        self.assertIn("Beacon Dialysis", html2)
+
     def test_search_filters_rows(self):
         self._load()
         html = render_deal_library(self.store, {"search": "Dialysis"})
