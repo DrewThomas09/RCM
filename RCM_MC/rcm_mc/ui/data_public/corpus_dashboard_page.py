@@ -98,7 +98,7 @@ def _nav_tile(title: str, href: str, subtitle: str, value: str, value_color: str
 
 
 def render_corpus_dashboard() -> str:
-    from rcm_mc.ui._chartis_kit import chartis_shell, ck_kpi_block, ck_page_title, ck_section_header
+    from rcm_mc.ui._chartis_kit import chartis_shell, ck_kpi_block, ck_page_title, ck_section_header, ck_illustrative_note
     from rcm_mc.ui.chartis._helpers import render_page_explainer
     from rcm_mc.data_public.sector_intelligence import compute_sector_stats
     from rcm_mc.data_public.vintage_analytics import compute_vintage_stats
@@ -348,7 +348,7 @@ def render_corpus_dashboard() -> str:
         meta=f"{n:,} deals · {n_sectors} sectors · P50 MOIC {moic_p50:.2f}x",
     )
     return chartis_shell(
-        page_title + explainer + body,
+        page_title + explainer + ck_illustrative_note("corpus figures (illustrative seed corpus)") + body,
         title="Corpus Dashboard",
         active_nav="/corpus-dashboard",
         subtitle=(

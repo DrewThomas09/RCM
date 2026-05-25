@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title, ck_bar_row
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_paired_block, ck_page_title, ck_bar_row, ck_illustrative_note
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
@@ -320,7 +320,7 @@ def render_value_backtester(params: dict = None) -> str:
         page_key="value-backtester",
     )
     return chartis_shell(
-        explainer + body, "Value Backtester", active_nav="/backtester",
+        ck_illustrative_note("backtest figures (illustrative seed corpus)") + explainer + body, "Value Backtester", active_nav="/backtester",
         editorial_intro={
             "eyebrow": "VALUE BACKTESTER",
             "headline": "What the bridge looked like in retrospect.",

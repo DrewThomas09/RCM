@@ -1,9 +1,9 @@
 {
   "summary": {
     "pages": 173,
-    "with_disclosure": 138,
+    "with_disclosure": 144,
     "with_real_loader": 19,
-    "flagged_no_disclosure": 35,
+    "flagged_no_disclosure": 29,
     "by_tier": {
       "green": 27,
       "navy": 50,
@@ -56,11 +56,11 @@
       "route": "/backtest",
       "file": "backtest_page.py",
       "tier": "yellow",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/base-rates",
@@ -236,11 +236,11 @@
       "route": "/comparables",
       "file": "comparables_page.py",
       "tier": "yellow",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/competitive-intel",
@@ -296,11 +296,11 @@
       "route": "/corpus-dashboard",
       "file": "corpus_dashboard_page.py",
       "tier": "yellow",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/cost-structure",
@@ -856,11 +856,11 @@
       "route": "/leverage-intel",
       "file": "leverage_intel_page.py",
       "tier": "yellow",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/litigation-tracker",
@@ -1466,11 +1466,11 @@
       "route": "/size-intel",
       "file": "size_intel_page.py",
       "tier": "yellow",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/specialty-benchmarks",
@@ -1636,11 +1636,11 @@
       "route": "/value-backtester",
       "file": "value_backtester_page.py",
       "tier": "yellow",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/value-creation",

@@ -139,7 +139,7 @@ def _bucket_chart(buckets: List[Any], width: int = 300, height: int = 100) -> st
 
 
 def render_leverage_intel() -> str:
-    from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_kpi_block
+    from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_kpi_block, ck_illustrative_note
     from rcm_mc.data_public.leverage_analytics import compute_leverage_analytics
 
     corpus = _load_corpus()
@@ -254,7 +254,7 @@ def render_leverage_intel() -> str:
     )
 
     return chartis_shell(
-        body,
+        ck_illustrative_note("leverage figures (illustrative seed corpus)") + body,
         title="Leverage Intelligence",
         active_nav="/leverage-intel",
         subtitle=(

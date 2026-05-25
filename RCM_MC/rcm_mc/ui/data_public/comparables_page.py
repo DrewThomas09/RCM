@@ -363,6 +363,7 @@ def render_comparables(
 ) -> str:
     from rcm_mc.ui._chartis_kit import (
         chartis_shell, ck_kpi_block, ck_page_title, ck_section_header,
+        ck_illustrative_note,
     )
     from rcm_mc.data_public.deal_comparables_enhanced import find_enhanced_comps
 
@@ -458,7 +459,7 @@ def render_comparables(
     )
 
     return chartis_shell(
-        body,
+        ck_illustrative_note("comparables figures (illustrative seed corpus)") + body,
         title="Corpus Comparables",
         active_nav="/comparables",
         extra_css=_EXPLAINER_CSS,
