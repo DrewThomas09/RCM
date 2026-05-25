@@ -345,10 +345,48 @@ def render_physician_productivity(params: dict = None) -> str:
 
 </div>"""
 
+    # Real HRSA primary-care shortage CONTEXT (market workforce framing).
+    try:
+        from rcm_mc.data import hrsa_data as _hrsa
+        _hs = _hrsa.hpsa_summary()
+        _top = _hrsa.top_shortage_states(8)
+        if _hs.get("total_designated"):
+            _rows = "".join(
+                f'<tr><td style="padding:3px 10px">{_html.escape(str(t["state"]))}</td>'
+                f'<td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums">{int(t["designated_pc_hpsas"]):,}</td>'
+                f'<td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums">{t["median_hpsa_score"]:.0f}</td></tr>'
+                for t in _top)
+            _hrsa_panel = (
+                f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
+                f'border-left:3px solid {P["accent"]};padding:14px 16px;margin-bottom:16px">'
+                f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
+                f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:6px">'
+                f'Primary-care workforce shortage context · LIVE (HRSA)</div>'
+                f'<p style="font-size:12px;color:{P["text_dim"]};margin:0 0 8px">'
+                f'<b style="color:{P["text"]}">{_hs["total_designated"]:,}</b> designated '
+                f'primary-care HPSAs nationally — context for recruitment/retention '
+                f'risk. Higher HPSA score = greater shortage.</p>'
+                f'<table style="border-collapse:collapse;font-family:\'JetBrains Mono\',monospace;font-size:11px">'
+                f'<thead><tr style="border-bottom:1px solid {P["border"]};color:{P["text_dim"]}">'
+                f'<th style="padding:3px 10px;text-align:left">State</th>'
+                f'<th style="padding:3px 10px;text-align:right">PC HPSAs</th>'
+                f'<th style="padding:3px 10px;text-align:right">Median score</th></tr></thead>'
+                f'<tbody>{_rows}</tbody></table>'
+                f'<p style="font-size:11px;color:{P["text_dim"]};margin:8px 0 0">'
+                f'Real HRSA market/access context — <b>not</b> provider-specific and '
+                f'<b>not</b> a productivity measure.</p></div>')
+            body = _hrsa_panel + body
+    except Exception:
+        pass
+
     body = ck_source_purpose(
-        purpose="Gauge physician productivity (wRVU / panel) vs benchmarks.",
-        universe="illustrative", source="Hardcoded benchmark figures",
-        next_action="Wire to CMS Part B / PECOS provider data") + body
+        purpose="Gauge physician productivity (wRVU / panel) vs specialty "
+                "benchmarks — a calculator on the inputs you provide, plus real "
+                "HRSA workforce-shortage context.",
+        universe="derived", confidence="derived",
+        source="Representative MGMA/AMGA-style specialty benchmark ranges "
+               "(illustrative, not licensed MGMA tables) + real HRSA shortage context",
+        next_action="Attach CMS Part B / PECOS provider data for real utilization") + body
     return chartis_shell(body, "Physician Productivity", active_nav="/physician-productivity",
         editorial_intro={
             "eyebrow": "PHYSICIAN PRODUCTIVITY",

@@ -13,7 +13,7 @@ class TestSurfaceStatus(unittest.TestCase):
             "/sponsor-league": "yellow", "/find-comps": "yellow",
             "/sector-intel": "yellow",
             "/mgmt-comp": "red", "/partner-economics": "red",
-            "/provider-retention": "red", "/physician-productivity": "red",
+            "/provider-retention": "red", "/physician-productivity": "navy",
         }
         for route, tier in cases.items():
             self.assertEqual(classify_surface(route)["tier"], tier, route)
