@@ -1,9 +1,9 @@
 {
   "summary": {
     "pages": 173,
-    "with_disclosure": 158,
+    "with_disclosure": 166,
     "with_real_loader": 19,
-    "flagged_no_disclosure": 15,
+    "flagged_no_disclosure": 7,
     "by_tier": {
       "green": 27,
       "navy": 50,
@@ -586,11 +586,11 @@
       "route": "/entry-multiple",
       "file": "entry_multiple_page.py",
       "tier": "navy",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/escrow-earnout",
@@ -646,11 +646,11 @@
       "route": "/exit-timing",
       "file": "exit_timing_page.py",
       "tier": "navy",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/find-comps",
@@ -766,11 +766,11 @@
       "route": "/hold-optimizer",
       "file": "hold_optimizer_page.py",
       "tier": "navy",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/hospital-anchor",
@@ -1206,21 +1206,21 @@
       "route": "/portfolio-optimizer",
       "file": "portfolio_optimizer_page.py",
       "tier": "navy",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/portfolio-sim",
       "file": "portfolio_sim_page.py",
       "tier": "navy",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/provider-network",
@@ -1406,11 +1406,11 @@
       "route": "/scenario-mc",
       "file": "scenario_mc_page.py",
       "tier": "navy",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/secondaries-tracker",
@@ -1526,11 +1526,11 @@
       "route": "/tax-structure-analyzer",
       "file": "tax_structure_analyzer_page.py",
       "tier": "navy",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/tax-structure",
@@ -1616,11 +1616,11 @@
       "route": "/underwriting",
       "file": "underwriting_page.py",
       "tier": "navy",
-      "has_disclosure": false,
+      "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
       "renders_data": true,
-      "flag": "NO_DISCLOSURE"
+      "flag": ""
     },
     {
       "route": "/unit-economics",

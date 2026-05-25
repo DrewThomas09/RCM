@@ -271,7 +271,8 @@ def render_entry_multiple() -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Entry Multiple Analysis", active_nav="/entry-multiple",
+    from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
+    return chartis_shell(_ckn("entry-multiple model (illustrative defaults; computes off your inputs)") + body, "Entry Multiple Analysis", active_nav="/entry-multiple",
                          subtitle=f"{len(has_mult)} deals with multiple data",
         editorial_intro={
             "eyebrow": "ENTRY MULTIPLE",

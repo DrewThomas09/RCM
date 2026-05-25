@@ -385,7 +385,8 @@ def render_scenario_mc(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Scenario Monte Carlo", active_nav="/scenario-mc",
+    from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
+    return chartis_shell(_ckn("scenario figures (illustrative defaults; Monte Carlo on your inputs)") + body, "Scenario Monte Carlo", active_nav="/scenario-mc",
         editorial_intro={
             "eyebrow": "SCENARIO MC",
             "headline": "What the scenario mc page reveals on this deal.",

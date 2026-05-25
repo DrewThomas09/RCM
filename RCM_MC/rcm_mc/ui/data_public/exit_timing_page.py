@@ -480,8 +480,9 @@ def render_exit_timing() -> str:
 
     body = kpis + section_dist + dist_panel + section_sector + sector_panel + section_vintage + vintage_panel
 
+    from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
     return chartis_shell(
-        body,
+        _ckn("exit-timing model (illustrative defaults; computes off your inputs)") + body,
         title="Exit Timing Analysis",
         active_nav="/exit-timing",
         subtitle=(
