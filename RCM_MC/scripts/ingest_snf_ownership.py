@@ -29,6 +29,9 @@ def main(argv=None) -> int:
                          capture_output=True, check=True)
     rows = list(csv.DictReader(io.StringIO(res.stdout.decode("latin-1"))))
     fac = collections.defaultdict(lambda: {"owners": 0, "org": 0, "indirect": 0})
+    # Owner-organization → set of facilities it owns (chain-operator signal).
+    # Org names are public business entities (no individual PII).
+    org_facilities = collections.defaultdict(set)
     for r in rows:
         eid = r.get("ENROLLMENT ID", "")
         if not eid:
@@ -37,8 +40,19 @@ def main(argv=None) -> int:
         f["owners"] += 1
         if r.get("TYPE - OWNER", "") == "O":
             f["org"] += 1
+            org = (r.get("ORGANIZATION NAME - OWNER", "") or "").strip()
+            if org:
+                org_facilities[org].add(eid)
         if "INDIRECT" in (r.get("ROLE TEXT - OWNER", "") or ""):
             f["indirect"] += 1
+    # Top owner-organizations by distinct facilities owned.
+    top_orgs = sorted(((o, len(s)) for o, s in org_facilities.items()),
+                      key=lambda x: x[1], reverse=True)[:50]
+    with (_OUT / "snf_top_owner_orgs.csv").open("w", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(["owner_organization", "facilities_owned"])
+        for o, c in top_orgs:
+            w.writerow([o, c])
     n = len(fac)
     if not n:
         print("no facilities parsed", file=sys.stderr)
