@@ -1,0 +1,17 @@
+{
+  "snapshot_date": "2026-05-25",
+  "rows": 1679,
+  "source": "openFDA drug/shortages (public domain / CC0)",
+  "missingness_pct": {
+    "generic_name": 0.0,
+    "company_name": 0.0,
+    "therapeutic_category": 0.0,
+    "dosage_form": 0.7,
+    "status": 0.0,
+    "availability": 31.1,
+    "package_ndc": 0.0,
+    "initial_posting_date": 0.0,
+    "update_date": 0.0,
+    "update_type": 0.0
+  }
+}
