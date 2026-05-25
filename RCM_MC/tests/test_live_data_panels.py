@@ -57,6 +57,8 @@ _CASES = [
      {}, "Real CDC PLACES community health", "/esg-dashboard"),
     ("rcm_mc.ui.data_public.esg_impact_page", "render_esg_impact",
      {}, "Real CDC PLACES community health", "/esg-impact"),
+    ("rcm_mc.ui.physician_attrition_page", "render_physician_attrition_page",
+     None, "Real HRSA shortage areas", "/diligence/physician-attrition"),
 ]
 
 
