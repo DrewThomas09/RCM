@@ -100,3 +100,10 @@ Industry Information Pages/
 *Industry Report.pdf
 data/industry_intel/**/*.pdf
 docs/industry/**/*.pdf
+
+# Licensed market-intel raw files (SimplyAnalytics) — exports/screenshots stay private
+I_Made_It/
+**/I_Made_It/
+*SimplyAnalytics*
+data/market_intel/**/*.png
+data/market_intel/**/*.xlsx
