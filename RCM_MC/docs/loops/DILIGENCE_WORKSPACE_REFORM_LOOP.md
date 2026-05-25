@@ -154,3 +154,27 @@ illustrative marker. Verify each before touching.
 ## Deferrals / notes
 - ESG, HCIT/SaaS, Biosimilars → defer/delete (PR 8 doc); Insurance/Malpractice +
   Provider Retention + Partner Economics → DATA REQUIRED (activate on attach).
+
+## Update — data-expansion loop (2026-05-25)
+The repeatable data engine (profile → normalize → registry → loaders → tests →
+connect → Guide) is proven on both file-upload and API-snapshot sources.
+
+- **#696** Colorado CIVHC ingest foundation (cost/APM/RBP) — merged + deployed.
+- **#697** `/ref-pricing` → real CO provider % of Medicare (LIVE) — merged.
+- **#698** `/cms-apm` → real Colorado APM adoption (%APM/%FFS by payer/year, LIVE,
+  state-caveated) — merged.
+- **#699** `/cost-structure` + `/payer-stress` → real CO cost + RBP CONTEXTUAL
+  panels — merged.
+- **#700** diligence data coverage matrix + 3 Colorado RAG source cards — merged.
+- **#701** public-data discovery backlog (NPPES, MSSP/ACO, FDA, state APCDs, …).
+- **#702** `/drug-shortage` → real openFDA shortage data (LIVE; 1,679 records,
+  public domain), illustrative supplier/GPO model scoped below — merged + deployed.
+- **this PR** — statistical benchmarking policy + FDA row in the coverage matrix.
+
+Four real datasets now power live diligence: HCRIS, Colorado CIVHC (cost/APM/RBP),
+and national FDA shortages. Every figure source-backed; missingness preserved;
+zero fabricated values; production healthy.
+
+**Next:** evaluate NPPES/NPI (provider entity-resolution unlock; check size/feasibility
+— bulk file is large, may need API-snapshot subset or defer to MSSP/ACO); continue
+illustrative→LIVE/CONTEXTUAL/DATA-REQUIRED conversions; Guide cards for each.
