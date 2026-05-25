@@ -343,7 +343,8 @@ def render_fund_attribution(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Fund Attribution", active_nav="/fund-attribution",
+    from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
+    return chartis_shell(_ckn("attribution figures (illustrative seed corpus)") + body, "Fund Attribution", active_nav="/fund-attribution",
         editorial_intro={
             "eyebrow": "FUND ATTRIBUTION",
             "headline": "What the fund attribution page reveals on this deal.",

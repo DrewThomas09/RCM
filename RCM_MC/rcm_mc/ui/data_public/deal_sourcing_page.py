@@ -260,7 +260,8 @@ def render_deal_sourcing(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Deal Sourcing", active_nav="/deal-sourcing",
+    from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
+    return chartis_shell(_ckn("sourcing figures (illustrative seed corpus)") + body, "Deal Sourcing", active_nav="/deal-sourcing",
         editorial_intro={
             "eyebrow": "DEAL SOURCING",
             "headline": "What the deal sourcing page reveals on this deal.",

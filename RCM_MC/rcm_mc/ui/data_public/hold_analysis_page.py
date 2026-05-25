@@ -354,7 +354,8 @@ def render_hold_analysis() -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Hold Duration Analysis", active_nav="/hold-analysis",
+    from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
+    return chartis_shell(_ckn("hold figures (illustrative seed corpus)") + body, "Hold Duration Analysis", active_nav="/hold-analysis",
                          subtitle=f"{len(has_hold)} deals with hold data",
         editorial_intro={
             "eyebrow": "HOLD DURATION",

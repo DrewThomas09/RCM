@@ -19,16 +19,12 @@ _ROOT = Path(__file__).resolve().parent.parent
 # This set may only SHRINK. Remove entries as pages get a source/illustrative/
 # data-required label. Do NOT add to it without an explicit honest reason.
 _KNOWN_BACKLOG = {
-    "/base-rates", "/cms-data-browser", "/cms-sources",
-    "/corpus-coverage",
-    "/data-sources-admin", "/deal-flow-heatmap", "/deal-search",
-    "/deal-sourcing", "/entry-multiple", "/exit-timing", "/fund-attribution",
-    "/gp-benchmarking", "/hold-analysis", "/hold-optimizer", "/ic-memo",
-    "/ic-memo-generator", "/irr-dispersion", "/lp-dashboard",
-    "/lp-reporting", "/market-rates", "/module-index", "/portfolio-optimizer",
-    "/portfolio-sim", "/return-attribution", "/scenario-mc",
-    "/sponsor-heatmap", "/tax-structure-analyzer", "/underwriting",
-    "/vintage-perf",
+    # GREEN real/admin pages (not synthetic — lower-priority source headers):
+    "/cms-data-browser", "/cms-sources", "/data-sources-admin", "/deal-search",
+    "/ic-memo", "/ic-memo-generator", "/module-index",
+    # NAVY calculators still needing a ck_source_purpose header:
+    "/entry-multiple", "/exit-timing", "/hold-optimizer", "/portfolio-optimizer",
+    "/portfolio-sim", "/scenario-mc", "/tax-structure-analyzer", "/underwriting",
 }
 
 

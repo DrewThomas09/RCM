@@ -269,7 +269,8 @@ def render_gp_benchmarking(params: Dict[str, str]) -> str:
 </div>"""
 
     title = f"GP Benchmarking — {html.escape(gp_name)}" if gp_name else "GP Benchmarking"
-    return chartis_shell(body, title, active_nav="/gp-benchmarking",
+    from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
+    return chartis_shell(_ckn("GP benchmark figures (illustrative seed corpus)") + body, title, active_nav="/gp-benchmarking",
                          subtitle=f"{len(gps)} GPs in corpus",
         editorial_intro={
             "eyebrow": "GP BENCHMARKING",
