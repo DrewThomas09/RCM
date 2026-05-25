@@ -345,6 +345,41 @@ def render_physician_productivity(params: dict = None) -> str:
 
 </div>"""
 
+    # Real CMS MIPS physician-quality benchmark (PY2023 distribution).
+    try:
+        from rcm_mc.data import mips_data as _mips
+        _ms = _mips.mips_score_summary()
+        _bands = _mips.mips_score_bands()
+        if _ms.get("n"):
+            _bcells = ""
+            for b in _bands:
+                pct = b["pct"]
+                _bcells += (
+                    f'<div style="text-align:center;flex:1">'
+                    f'<div style="font-size:9px;color:{P["text_dim"]};font-family:JetBrains Mono,monospace">{pct:.0f}%</div>'
+                    f'<div style="height:{max(2, pct):.0f}px;background:{P["accent"]};opacity:0.8;margin:2px 3px 0"></div>'
+                    f'<div style="font-size:9px;color:{P["text_dim"]};margin-top:2px">{_html.escape(str(b["band"]))}</div></div>')
+            _mips_panel = (
+                f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
+                f'border-left:3px solid {P["accent"]};padding:14px 16px;margin-bottom:16px">'
+                f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
+                f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:6px">'
+                f'Physician quality benchmark · LIVE (CMS MIPS, PY{_ms.get("performance_year","2023")})</div>'
+                f'<p style="font-size:12px;color:{P["text_dim"]};margin:0 0 8px">'
+                f'Across <b style="color:{P["text"]}">{_ms["n"]:,}</b> scored '
+                f'clinicians, the median MIPS final score is '
+                f'<b style="color:{P["text"]}">{_ms["median"]:.1f}</b>/100 '
+                f'(mean {_ms["mean"]:.1f}; IQR {_ms["p25"]:.1f}–{_ms["p75"]:.1f}). '
+                f'The real national physician quality-performance distribution.</p>'
+                f'<div style="display:flex;align-items:flex-end;height:60px;max-width:320px">{_bcells}</div>'
+                f'<p style="font-size:11px;color:{P["text_dim"]};margin:8px 0 0">'
+                f'Real CMS MIPS final-score distribution — a national physician-quality '
+                f'benchmark, <b>not</b> this deal’s clinicians and <b>not</b> a '
+                f'payment figure.</p></div>')
+            body = _mips_panel + body
+    except Exception:
+        pass
+
     # Real HRSA primary-care shortage CONTEXT (market workforce framing).
     try:
         from rcm_mc.data import hrsa_data as _hrsa
@@ -382,10 +417,11 @@ def render_physician_productivity(params: dict = None) -> str:
     body = ck_source_purpose(
         purpose="Gauge physician productivity (wRVU / panel) vs specialty "
                 "benchmarks — a calculator on the inputs you provide, plus real "
-                "HRSA workforce-shortage context.",
+                "CMS MIPS physician-quality and HRSA workforce-shortage context.",
         universe="derived", confidence="derived",
         source="Representative MGMA/AMGA-style specialty benchmark ranges "
-               "(illustrative, not licensed MGMA tables) + real HRSA shortage context",
+               "(illustrative, not licensed MGMA tables) + real CMS MIPS "
+               "physician-quality distribution + real HRSA shortage context",
         next_action="Attach CMS Part B / PECOS provider data for real utilization") + body
     return chartis_shell(body, "Physician Productivity", active_nav="/physician-productivity",
         editorial_intro={

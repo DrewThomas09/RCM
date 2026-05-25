@@ -1,0 +1,7 @@
+scope,n,mean,median,p10,p25,p75,p90,source_id
+All clinicians,541334,83.2,85.5,72.3,77.4,94.1,98.2,cms_mips_py2023
+source: apm,120576,94.2,94.3,90.3,92.3,97.1,98.3,cms_mips_py2023
+source: group,375314,82.9,82.9,73.1,76.7,90.3,98.0,cms_mips_py2023
+source: individual,45043,56.2,75.0,0.0,17.8,85.3,97.8,cms_mips_py2023
+source: subgroup,101,90.0,93.6,66.0,93.2,93.6,93.6,cms_mips_py2023
+source: virtual group,300,74.9,75.0,75.0,75.0,75.0,75.0,cms_mips_py2023
