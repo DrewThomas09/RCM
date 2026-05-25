@@ -4207,24 +4207,32 @@ _CSS_INLINE_FALLBACK = """
   .ck-mega-feat-eyebrow { font-family:var(--sc-mono,monospace); font-size:9.5px;
     letter-spacing:.16em; text-transform:uppercase; color:var(--tb-muted); }
   .ck-mega-feat-title { font-family:var(--sc-serif,Georgia,serif); font-size:23px;
-    line-height:1.05; color:var(--tb-ink); overflow-wrap:break-word; }
+    line-height:1.05; color:var(--tb-ink); overflow-wrap:anywhere; }
   .ck-mega-feat-blurb { font-family:var(--sc-serif,Georgia,serif); font-style:italic;
-    font-size:13px; line-height:1.5; color:var(--tb-ink2); overflow-wrap:break-word; }
+    font-size:13px; line-height:1.5; color:var(--tb-ink2); overflow-wrap:anywhere; }
   .ck-mega-feat-go { margin-top:auto; font-family:var(--sc-mono,monospace);
     font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--tb-green); }
   .ck-mega-items { display:grid; grid-template-columns:1fr 1fr; gap:2px 18px;
     padding:16px 20px; align-content:start; min-width:0; }
+  /* align-items:flex-start so the index number top-aligns with the label's
+     first line (default `stretch` let the number drift off-center vs multi-
+     line labels). */
   .ck-mega-item { display:flex; gap:10px; padding:9px 10px; text-decoration:none;
-    border-radius:2px; transition:background .12s; min-width:0; }
+    border-radius:2px; transition:background .12s; min-width:0;
+    align-items:flex-start; }
   .ck-mega-item:hover { background:var(--tb-paper2); }
   .ck-mega-idx { font-family:var(--sc-mono,monospace); font-size:11px;
-    color:var(--tb-green); padding-top:2px; flex-shrink:0; }
-  .ck-mega-it-body { display:flex; flex-direction:column; gap:1px; min-width:0; }
+    color:var(--tb-green); line-height:1.2; flex-shrink:0; }
+  .ck-mega-it-body { display:flex; flex-direction:column; gap:1px; min-width:0;
+    flex:1 1 auto; }
+  /* overflow-wrap:anywhere (not just break-word) guarantees even a long
+     unbroken token wraps inside its column instead of bleeding out of the
+     panel/into the neighbour. */
   .ck-mega-it-label { font-family:var(--sc-serif,Georgia,serif); font-size:15px;
-    color:var(--tb-ink); line-height:1.2; overflow-wrap:break-word; }
+    color:var(--tb-ink); line-height:1.2; overflow-wrap:anywhere; }
   .ck-mega-item:hover .ck-mega-it-label { color:var(--tb-green); }
   .ck-mega-it-desc { font-family:var(--sc-serif,Georgia,serif); font-style:italic;
-    font-size:11.5px; color:var(--tb-muted); line-height:1.3; overflow-wrap:break-word; }
+    font-size:11.5px; color:var(--tb-muted); line-height:1.3; overflow-wrap:anywhere; }
   @media (max-width:860px){ .ck-nav-mega { grid-template-columns:1fr; min-width:300px; }
     .ck-mega-feat { border-right:0; border-bottom:1px solid var(--tb-rule); }
     .ck-mega-items { grid-template-columns:1fr; } }
