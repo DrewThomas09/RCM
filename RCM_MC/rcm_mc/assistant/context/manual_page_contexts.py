@@ -3817,6 +3817,111 @@ _MANUAL: List[PageContext] = [
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.MIXED,
     ),
+    # ── Deal Library (licensed Capital IQ company universe) ──
+    _ctx(
+        "/deal-library", "Deal Library",
+        short_description="A benchmark universe of sponsor-backed healthcare "
+        "companies ingested from user-licensed Capital IQ screening exports "
+        "(~12.3k companies). Browse / sort / filter / search.",
+        primary_purpose="Reference the sponsor-backed healthcare company "
+        "universe for sourcing and sponsor intelligence — NOT your live "
+        "Pipeline and NOT your Portfolio.",
+        common_questions=["What companies has sponsor X backed?",
+                         "Which healthcare companies are sponsor-owned in state Y?",
+                         "Is this real or illustrative? Where's it from?"],
+        inputs=["Filters via URL: ?sponsor= / ?state= / ?search=. Data loaded "
+                "by scripts/ingest_deal_library_exports.py from licensed exports."],
+        outputs=["Total count, source breakdown, per-field missingness, Top "
+                 "sponsors/verticals/states, and a paged company table."],
+        key_metrics=["Company count", "Sponsor coverage", "Per-field missingness"],
+        data_sources=["Capital IQ company screening exports (LICENSED, "
+                      "user-provided) — not scraped, not public. Distinct from "
+                      "/library (the illustrative seed corpus)."],
+        model_logic_summary="No model — a normalized directory. Sponsor is "
+        "parsed from CapIQ Ownership Status; state from the address. See "
+        "rcm_mc/data/deal_library.py + scripts/ingest_deal_library_exports.py.",
+        why_it_matters="Maps which investors back which healthcare companies — "
+        "a sourcing and sponsor-activity graph.",
+        diligence_use_cases=["Sourcing targets by sponsor / vertical / geography; "
+                            "mapping a sponsor's healthcare footprint."],
+        interpretation_guidance=[
+            "Financials are sparse (EV/EBITDA ~97% blank, revenue ~74% blank — "
+            "private companies). Missing shows as '—', never 0.",
+            "This is the broad SPONSOR-BACKED universe (VC / accelerator / REIT "
+            "/ PE), not a PE-buyout-only set.",
+        ],
+        limitations=["Licensed export, not a live feed; reflects the export "
+                     "date. The industry field is coarse (no fine verticals). "
+                     "Most companies do not map to CMS provider registries."],
+        related_routes=["/deal-library/sponsors", "/deal-library/comps", "/library"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/deal-library/sponsors", "Deal Library — Sponsors",
+        short_description="Searchable index of every sponsor in the licensed "
+        "universe (~4,900), ranked by # of healthcare companies backed, with "
+        "the current/prior split. Each links to its filtered company list.",
+        primary_purpose="See which investors are most active across the "
+        "sponsor-backed healthcare universe.",
+        common_questions=["Which sponsors back the most healthcare companies?",
+                         "How many of sponsor X's are current vs prior?"],
+        inputs=["?q= sponsor-name search; pagination via ?offset="],
+        outputs=["Ranked sponsor table: companies / current / prior."],
+        key_metrics=["Companies per sponsor", "Current vs prior ownership"],
+        data_sources=["Aggregated from the Deal Library (licensed Capital IQ "
+                      "exports); sponsor parsed from Ownership Status."],
+        model_logic_summary="GROUP BY parsed sponsor over the company table. "
+        "No model.",
+        why_it_matters="Sponsor activity is the densest, most reliable signal "
+        "in this dataset (~99% coverage).",
+        diligence_use_cases=["Identifying active healthcare sponsors; building "
+                            "a sponsor-relationship map for sourcing."],
+        interpretation_guidance=[
+            "Sponsors span VC, accelerators, healthcare REITs and PE — not a "
+            "PE-buyout-only league table.",
+        ],
+        limitations=["Counts reflect the export's coverage, not the full market."],
+        related_routes=["/deal-library", "/deal-library/comps"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/deal-library/comps", "Deal Library — Multiples",
+        short_description="EV/Revenue and EV/EBITDA distributions over the small "
+        "subset of the universe that discloses both (mostly public companies; "
+        "~274 / ~135 of ~12.3k).",
+        primary_purpose="A benchmark multiples distribution from disclosed "
+        "financials — for sanity-checking, not a curated comp set or forecast.",
+        common_questions=["What EV/Revenue / EV/EBITDA do disclosed healthcare "
+                         "companies trade at?", "How big is the sample?"],
+        inputs=["None; pagination via ?offset="],
+        outputs=["P25/median/P75 + sample size for EV/Revenue & EV/EBITDA, and "
+                 "a company table with computed multiples."],
+        key_metrics=["EV/Revenue P25/median/P75", "EV/EBITDA P25/median/P75",
+                     "Sample size n"],
+        data_sources=["Deal Library companies disclosing EV + a positive "
+                      "denominator (licensed Capital IQ exports)."],
+        model_logic_summary="EV/Revenue = EV / revenue; EV/EBITDA = EV / EBITDA, "
+        "computed only where both are present and the denominator is positive. "
+        "Percentiles over that subset.",
+        why_it_matters="The only financial-multiple view this export honestly "
+        "supports.",
+        diligence_use_cases=["Sanity-checking a target's multiple against "
+                            "disclosed-financial healthcare companies."],
+        interpretation_guidance=[
+            "Small, mostly-public sample (~2% of the universe) — directional, "
+            "not a governed comp set.",
+            "Missing financials are EXCLUDED, never treated as 0; negative "
+            "EBITDA is excluded (no fake 0x).",
+            "This is a benchmark distribution, NOT a prediction.",
+        ],
+        limitations=["~98% of companies disclose no usable financials, so the "
+                     "sample is small and skews public/large-cap."],
+        related_routes=["/deal-library", "/comparables", "/market-rates"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
 ]
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
