@@ -111,6 +111,19 @@ class SnfTurnoverBenchmarkTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             snf_rating_distribution("not_a_rating")
 
+    def test_ownership_summary_is_real_and_pii_free(self):
+        from rcm_mc.data.snf import snf_ownership_summary
+        import csv as _csv
+        from pathlib import Path as _P
+        o = snf_ownership_summary()
+        self.assertGreater(o["facilities"], 10000)          # ~14.4k SNFs
+        self.assertTrue(1 <= o["median_owners_per_facility"] <= 100)
+        self.assertTrue(0 <= o["pct_with_indirect_ownership"] <= 100)
+        # The committed aggregate is a summary JSON — no owner-name columns/keys.
+        for k in o:
+            self.assertNotIn("name", k.lower())
+            self.assertNotIn("first", k.lower())
+
     def test_enforcement_summary_is_real_and_sane(self):
         e = snf_enforcement_summary()
         self.assertGreater(e["facilities"], 10000)
