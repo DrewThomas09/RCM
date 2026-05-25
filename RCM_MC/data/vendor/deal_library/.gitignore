@@ -1,0 +1,18 @@
+# Licensed vendor data (Capital IQ exports + anything derived from them) MUST
+# NOT be committed — it is proprietary S&P data the user holds under license,
+# and committing it to git would be redistribution. Only the pipeline code,
+# the column-alias map, the manifest template, and this .gitignore are tracked.
+#
+# Drop your Capital IQ Screening exports here and run:
+#   .venv/bin/python scripts/ingest_deal_library_exports.py \
+#       --in data/vendor/deal_library --source-system "Capital IQ"
+*.xls
+*.xlsx
+*.csv
+*.json
+# ...but keep the tracked scaffolding:
+!column_aliases.py
+!source_manifests/
+source_manifests/*.csv
+!source_manifests/capiq_export_manifest.template.csv
+!README.md

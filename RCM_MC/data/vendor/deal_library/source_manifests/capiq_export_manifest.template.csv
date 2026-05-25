@@ -1,0 +1,3 @@
+batch_id,source_system,export_file,export_date,exported_by,query_name,time_period,sector_filter,geography_filter,deal_size_filter,deal_status_filter,row_count,notes
+capiq_hc_sponsored_1,Capital IQ,Company Screening Report.xls,2026-05-24,,Healthcare sponsor-backed companies,,Health Care (Primary),US/Canada,,Operating,8051,Company screen (not transactions)
+capiq_hc_sponsored_2,Capital IQ,Company Screening Report 2.xls,2026-05-24,,Healthcare sponsor-backed companies (cont.),,Health Care Equipment & Services,US,,Operating,4214,Company screen (not transactions)
