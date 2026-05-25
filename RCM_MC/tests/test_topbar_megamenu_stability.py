@@ -120,3 +120,29 @@ class TestTopbarControlsAndLogin(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestMegaMenuTextWraps(unittest.TestCase):
+    """Regression: the Source feature blurb overflowed its 236px column into
+    the destination items. Grid items need min-width:0 (default min-width:auto
+    lets content overflow the track) + overflow-wrap on the text."""
+
+    def test_grid_items_have_min_width_zero(self):
+        html = _app_shell()
+        for rule in (".ck-mega-feat {", ".ck-mega-items {", ".ck-mega-item {",
+                     ".ck-mega-it-body {"):
+            m = re.search(re.escape(rule) + r"[^}]*}", html)
+            self.assertIsNotNone(m, rule)
+            self.assertIn("min-width:0", m.group(0), rule)
+
+    def test_feature_and_item_text_wrap(self):
+        html = _app_shell()
+        for rule in (".ck-mega-feat-blurb {", ".ck-mega-it-desc {",
+                     ".ck-mega-it-label {", ".ck-mega-feat-title {"):
+            m = re.search(re.escape(rule) + r"[^}]*}", html)
+            self.assertIsNotNone(m, rule)
+            self.assertIn("overflow-wrap:break-word", m.group(0), rule)
+
+
+if __name__ == "__main__":
+    unittest.main()

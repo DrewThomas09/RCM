@@ -4191,31 +4191,36 @@ _CSS_INLINE_FALLBACK = """
   /* Keep the rightmost sections' panels inside the viewport. */
   .ck-nav-group:last-of-type .ck-nav-mega,
   .ck-nav-group:nth-last-of-type(2) .ck-nav-mega { left:auto; right:0; }
+  /* min-width:0 on grid items is required: the default min-width:auto lets a
+     long blurb/label overflow its track and bleed into the neighbouring column
+     (the Source feature blurb was overlapping the destination items).
+     Combined with overflow-wrap:break-word below, every cell's text now wraps
+     inside its own column. */
   .ck-mega-feat { display:flex; flex-direction:column; gap:8px; padding:20px 22px;
-    background:var(--tb-paper2); border-right:1px solid var(--tb-rule);
+    min-width:0; background:var(--tb-paper2); border-right:1px solid var(--tb-rule);
     text-decoration:none; transition:background .12s; }
   .ck-mega-feat:hover { background:var(--tb-green-soft); }
   .ck-mega-feat-eyebrow { font-family:var(--sc-mono,monospace); font-size:9.5px;
     letter-spacing:.16em; text-transform:uppercase; color:var(--tb-muted); }
   .ck-mega-feat-title { font-family:var(--sc-serif,Georgia,serif); font-size:23px;
-    line-height:1.05; color:var(--tb-ink); }
+    line-height:1.05; color:var(--tb-ink); overflow-wrap:break-word; }
   .ck-mega-feat-blurb { font-family:var(--sc-serif,Georgia,serif); font-style:italic;
-    font-size:13px; line-height:1.5; color:var(--tb-ink2); }
+    font-size:13px; line-height:1.5; color:var(--tb-ink2); overflow-wrap:break-word; }
   .ck-mega-feat-go { margin-top:auto; font-family:var(--sc-mono,monospace);
     font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--tb-green); }
   .ck-mega-items { display:grid; grid-template-columns:1fr 1fr; gap:2px 18px;
-    padding:16px 20px; align-content:start; }
+    padding:16px 20px; align-content:start; min-width:0; }
   .ck-mega-item { display:flex; gap:10px; padding:9px 10px; text-decoration:none;
-    border-radius:2px; transition:background .12s; }
+    border-radius:2px; transition:background .12s; min-width:0; }
   .ck-mega-item:hover { background:var(--tb-paper2); }
   .ck-mega-idx { font-family:var(--sc-mono,monospace); font-size:11px;
-    color:var(--tb-green); padding-top:2px; }
-  .ck-mega-it-body { display:flex; flex-direction:column; gap:1px; }
+    color:var(--tb-green); padding-top:2px; flex-shrink:0; }
+  .ck-mega-it-body { display:flex; flex-direction:column; gap:1px; min-width:0; }
   .ck-mega-it-label { font-family:var(--sc-serif,Georgia,serif); font-size:15px;
-    color:var(--tb-ink); line-height:1.2; }
+    color:var(--tb-ink); line-height:1.2; overflow-wrap:break-word; }
   .ck-mega-item:hover .ck-mega-it-label { color:var(--tb-green); }
   .ck-mega-it-desc { font-family:var(--sc-serif,Georgia,serif); font-style:italic;
-    font-size:11.5px; color:var(--tb-muted); line-height:1.3; }
+    font-size:11.5px; color:var(--tb-muted); line-height:1.3; overflow-wrap:break-word; }
   @media (max-width:860px){ .ck-nav-mega { grid-template-columns:1fr; min-width:300px; }
     .ck-mega-feat { border-right:0; border-bottom:1px solid var(--tb-rule); }
     .ck-mega-items { grid-template-columns:1fr; } }
