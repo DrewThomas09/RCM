@@ -3,6 +3,15 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_value_anchor
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
+
+_FUNDRAISING_NEEDED = [
+    ("lp_name", "LP / prospect"),
+    ("status", "committed / soft-circle / pipeline"),
+    ("commitment", "commitment $"),
+    ("probability_pct", "close probability %"),
+    ("close_date", "expected close (YYYY-MM-DD)"),
+]
 
 
 def _targets_chart(items) -> str:
@@ -253,6 +262,10 @@ def render_fundraising_tracker(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
+  {data_required_panel(P, title="Fundraising", needed=_FUNDRAISING_NEEDED,
+      template="fundraising_template.csv", request_from="IR / fundraising team",
+      activates="fund-close tracking, LP pipeline coverage vs target",
+      guide_hint="What fundraising / LP-pipeline data do I need to upload?")}
   {ck_illustrative_note("figures")}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}

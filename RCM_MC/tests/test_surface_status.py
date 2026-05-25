@@ -12,7 +12,9 @@ class TestSurfaceStatus(unittest.TestCase):
             "/scenario-mc": "navy",
             "/sponsor-league": "yellow", "/find-comps": "yellow",
             "/sector-intel": "yellow",
-            "/mgmt-comp": "red", "/partner-economics": "red",
+            # converted to DATA REQUIRED (activate on uploaded fund/deal data)
+            "/mgmt-comp": "data_required", "/partner-economics": "data_required",
+            "/treasury": "data_required", "/fundraising": "data_required",
             "/provider-retention": "navy", "/physician-productivity": "navy",
         }
         for route, tier in cases.items():
@@ -33,16 +35,18 @@ class TestSurfaceStatus(unittest.TestCase):
         self.assertIn(classify_surface("/some-new-admin-page")["tier"], TIERS)
 
     def test_status_dot_has_color_and_tooltip(self):
-        dot = status_dot("/mgmt-comp")
+        dot = status_dot("/ma-star")                  # still RED (zip-portal deferred)
         self.assertIn("background:#b5321e", dot)      # red
         self.assertIn("title=", dot)
+        # DATA REQUIRED dot renders its own color
+        self.assertIn("background:#6b5b95", status_dot("/mgmt-comp"))
 
     def test_tools_index_renders_dots_and_legend(self):
         # Render the /tools page via the handler's building blocks.
         from rcm_mc.diligence.surface_status import status_dot as sd
         # green + red dots both appear when a mixed route set is rendered
         self.assertIn("#0a8a5f", sd("/cms-apm"))
-        self.assertIn("#b5321e", sd("/mgmt-comp"))
+        self.assertIn("#b5321e", sd("/ma-star"))
 
 
 if __name__ == "__main__":

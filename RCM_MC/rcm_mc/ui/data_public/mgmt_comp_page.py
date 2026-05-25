@@ -8,6 +8,15 @@ from __future__ import annotations
 import html as _html
 
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_source_purpose
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
+
+_MGMT_COMP_NEEDED = [
+    ("executive_name", "executive / role (PII — handle per policy)"),
+    ("base_salary", "annual base $"),
+    ("bonus_target_pct", "target bonus % of base"),
+    ("equity_value", "equity / options value $"),
+    ("fmv_benchmark", "FMV benchmark $ for the role"),
+]
 
 
 def _alignment_gauge_svg(score: float) -> str:
@@ -275,6 +284,10 @@ def render_mgmt_comp(params: dict = None) -> str:
 <div class="ck-page-wrap">
 
   {page_title}
+  {data_required_panel(P, title="Management Compensation", needed=_MGMT_COMP_NEEDED,
+      template="management_compensation_template.csv", request_from="CFO / HR / comp consultant",
+      activates="comp-vs-FMV benchmarking, retention-risk and Stark/AKS overlap flags",
+      guide_hint="What compensation data do I need to activate this page?")}
   {ck_illustrative_note("figures")}
 
   {form}
