@@ -178,3 +178,11 @@ zero fabricated values; production healthy.
 **Next:** evaluate NPPES/NPI (provider entity-resolution unlock; check size/feasibility
 — bulk file is large, may need API-snapshot subset or defer to MSSP/ACO); continue
 illustrative→LIVE/CONTEXTUAL/DATA-REQUIRED conversions; Guide cards for each.
+
+## Runtime control re-armed (2026-05-25T14:20Z)
+loop_start 14:20Z · loop_end 22:20Z · last_deploy 46ea6b1e (/healthz 200).
+Self-rescheduling every 180s until loop_end (see AUTONOMOUS_LOOP_RUNTIME.md).
+Datasets live: HCRIS, CIVHC cost/APM/RBP, FDA shortages, CMS MSSP ACO.
+Pages real-data-backed: ref-pricing, cms-apm (MSSP+CO APM), cost-structure,
+payer-stress, drug-shortage, payer-rate-trends. Next: Deal Quality/Risk audit,
+HRSA onboarding, DATA-REQUIRED labels for user-data pages.
