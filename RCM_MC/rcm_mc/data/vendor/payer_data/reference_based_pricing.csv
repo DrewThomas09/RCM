@@ -1,0 +1,1350 @@
+organization_name,claim_type,year,county,urban_rural,doi_region,cah_flag,amb_flag,hospital_pct_medicare,claims,urf_pct_medicare,payer_min,payer_median,payer_max,source_id
+Aberdeen Ambulatory Surgical Center,Outpatient,2021,Pueblo,Urban,Pueblo,0,1,1.3069,112,3.2958,3.2958,2.4991,0.0013,civhc_rbp_fy26
+AdventHealth Avista,Outpatient,2023,Boulder,Urban,Boulder,0,0,2.8104,9190,2.2475,2.2475,2.4647,0.0355,civhc_rbp_fy26
+AdventHealth Parker,Inpatient/Outpatient Combined,2023,Douglas,Urban,Denver,0,0,2.5177,11849,2.1927,2.2619,2.3251,0.1418,civhc_rbp_fy26
+AdventHealth Porter,Inpatient,2023,Denver,Urban,Denver,0,0,1.9373,890,1.941,1.6885,1.9517,0.0101,civhc_rbp_fy26
+AdventHealth Porter,Outpatient,2023,Denver,Urban,Denver,0,0,2.3925,12090,2.2485,1.722,2.4647,0.0549,civhc_rbp_fy26
+Animas Surgical Hospital,Inpatient/Outpatient Combined,2023,La Plata,Rural,West,0,0,2.4986,1655,2.5901,2.6492,2.4878,0.0028,civhc_rbp_fy26
+Ascent Surgery Center,Outpatient,2021,El Paso,Urban,Colorado Springs,0,1,0.9964,318,2.5464,2.5524,2.4991,0.0013,civhc_rbp_fy26
+Aspen Valley Hospital District,Inpatient,2021,Pitkin,Rural,West,1,0,0.5318,156,1.5537,0.5318,1.5263,0.36,civhc_rbp_fy26
+Aspen Valley Hospital District,Inpatient,2022,Pitkin,Rural,West,1,0,0.6373,178,1.6768,0.6373,1.6034,0.2475,civhc_rbp_fy26
+Aspen Valley Hospital District,Inpatient,2024,Pitkin,Rural,West,1,0,0.937,131,1.5961,0.937,1.5378,0.0004,civhc_rbp_fy26
+Banner Fort Collins Medical Center,Inpatient,2022,Larimer,Urban,Ft. Collins,0,0,1.1288,435,2.2229,2.2229,1.99,0.0009,civhc_rbp_fy26
+Banner Fort Collins Medical Center,Outpatient,2022,Larimer,Urban,Ft. Collins,0,0,3.0341,3147,2.9914,2.9914,2.528,0.0372,civhc_rbp_fy26
+Banner McKee Medical Center,Outpatient,2021,Larimer,Urban,Ft. Collins,0,0,2.5569,5125,2.9767,2.9767,2.4991,0.7875,civhc_rbp_fy26
+Banner North Colorado Medical Center,Inpatient,2021,Weld,Urban,Greeley,0,0,2.0911,676,1.9998,1.9998,1.9401,0.1228,civhc_rbp_fy26
+Basalt Orthopedic Surgery Center,Outpatient,2022,Eagle,Rural,West,0,1,4.1643,59,2.8235,4.1645,2.7132,0.918,civhc_rbp_fy26
+Belmar Ambulatory Surgical Center,Outpatient,2022,Jefferson,Urban,Denver,0,1,1.4162,96,2.3542,2.3461,2.528,0.0032,civhc_rbp_fy26
+Boulder Community Health,Inpatient,2023,Boulder,Urban,Boulder,0,0,1.9327,872,1.7876,1.7876,1.9517,0.7131,civhc_rbp_fy26
+Boulder Community Health,Inpatient/Outpatient Combined,2022,Boulder,Urban,Boulder,0,0,2.0454,25540,1.916,1.916,2.3666,0.1546,civhc_rbp_fy26
+Boulder Community Musculoskeletal Surgery Center,Outpatient,2023,Boulder,Urban,Boulder,0,1,1.848,725,2.2475,2.2475,2.4647,0.0007,civhc_rbp_fy26
+Boulder Medical Center,Outpatient,2021,Boulder,Urban,Boulder,0,1,1.5149,676,2.0417,2.0417,2.4991,0.0022,civhc_rbp_fy26
+Castle Rock Surgicenter,Outpatient,2021,Douglas,Urban,Denver,0,1,1.3742,138,2.3417,2.2521,2.4991,0.8717,civhc_rbp_fy26
+Colorado Urologic Surgery Center - Superior,Outpatient,2024,Boulder,Urban,Boulder,0,1,1.8054,585,2.2621,2.2621,2.524,0.0014,civhc_rbp_fy26
+CommonSpirit Longmont United Hospital,Inpatient/Outpatient Combined,2022,Boulder,Urban,Boulder,0,0,2.268,4067,1.916,1.916,2.3666,0.055,civhc_rbp_fy26
+CommonSpirit Longmont United Hospital,Outpatient,2021,Boulder,Urban,Boulder,0,0,2.229,5159,2.0417,2.0417,2.4991,0.0567,civhc_rbp_fy26
+CommonSpirit Mercy Hospital,Inpatient/Outpatient Combined,2024,La Plata,Rural,West,0,0,2.6175,14780,2.5642,2.5484,2.4831,1.6211,civhc_rbp_fy26
+CommonSpirit St. Anthony North Hospital,Inpatient,2021,Broomfield,Urban,Denver,0,0,1.5239,451,1.8993,1.5239,1.9401,0.01,civhc_rbp_fy26
+CommonSpirit St. Anthony North Hospital,Inpatient/Outpatient Combined,2024,Broomfield,Urban,Denver,0,0,2.5894,10413,2.3072,2.5894,2.3717,1.862,civhc_rbp_fy26
+CommonSpirit St. Anthony Summit Medical Center,Inpatient,2023,Summit,Rural,West,0,0,1.6165,213,1.7735,1.6165,1.6874,0.0016,civhc_rbp_fy26
+CommonSpirit St. Anthony Summit Medical Center,Inpatient/Outpatient Combined,2022,Summit,Rural,West,0,0,3.9494,4904,2.3988,3.9494,2.3417,0.1249,civhc_rbp_fy26
+CommonSpirit St. Anthony Summit Medical Center,Outpatient,2024,Summit,Rural,West,0,0,5.9481,4773,3.0338,4.9487,2.891,1.7901,civhc_rbp_fy26
+CommonSpirit St. Elizabeth Hospital,Inpatient,2023,Morgan,Rural,East,0,0,1.0226,57,1.2034,0.9783,1.6874,0.2337,civhc_rbp_fy26
+CommonSpirit St. Elizabeth Hospital,Outpatient,2022,Morgan,Rural,East,0,0,5.5848,2011,2.3479,3.4439,2.7132,0.2178,civhc_rbp_fy26
+CommonSpirit St. Mary-Corwin Hospital,Inpatient,2021,Pueblo,Urban,Pueblo,0,0,1.7641,60,2.0631,2.0631,1.9401,0.0003,civhc_rbp_fy26
+CommonSpirit St. Mary-Corwin Hospital,Inpatient,2022,Pueblo,Urban,Pueblo,0,0,1.6982,57,1.9427,1.9427,1.99,0.0007,civhc_rbp_fy26
+CommonSpirit St. Mary-Corwin Hospital,Inpatient/Outpatient Combined,2021,Pueblo,Urban,Pueblo,0,0,2.9921,5927,2.8407,2.8407,2.2969,0.0066,civhc_rbp_fy26
+CommonSpirit St. Mary-Corwin Hospital,Inpatient/Outpatient Combined,2023,Pueblo,Urban,Pueblo,0,0,3.1039,5836,2.9153,2.9153,2.3251,0.0922,civhc_rbp_fy26
+CommonSpirit St. Mary-Corwin Hospital,Outpatient,2021,Pueblo,Urban,Pueblo,0,0,3.3249,5867,3.2958,3.2958,2.4991,0.0075,civhc_rbp_fy26
+Delta Health,Inpatient,2024,Delta,Rural,West,0,0,1.972,55,1.5961,1.972,1.5378,0.2309,civhc_rbp_fy26
+Delta Health,Inpatient/Outpatient Combined,2024,Delta,Rural,West,0,0,2.9439,7408,2.5642,2.9439,2.4831,1.1137,civhc_rbp_fy26
+Delta Health,Outpatient,2022,Delta,Rural,West,0,0,3.5401,9295,2.8235,3.5401,2.7132,0.0057,civhc_rbp_fy26
+Denver Eye Surgery Center,Outpatient,2023,Jefferson,Urban,Denver,0,1,0.8508,439,2.2485,2.426,2.4647,0.0009,civhc_rbp_fy26
+Denver Health,Inpatient/Outpatient Combined,2021,Denver,Urban,Denver,0,0,0.8104,103223,2.1842,1.8191,2.2969,0.0764,civhc_rbp_fy26
+Denver Health,Outpatient,2024,Denver,Urban,Denver,0,0,1.2855,89187,2.4045,1.9042,2.524,0.6355,civhc_rbp_fy26
+Dry Creek Surgery Center,Outpatient,2021,Arapahoe,Urban,Denver,0,1,1.3711,173,2.3417,2.5878,2.4991,0.7327,civhc_rbp_fy26
+Dry Creek Surgery Center,Outpatient,2024,Arapahoe,Urban,Denver,0,1,1.3144,181,2.4045,2.6401,2.524,0.265,civhc_rbp_fy26
+East Morgan County Hospital,Inpatient,2023,Morgan,Rural,East,1,0,0.9132,38,1.2034,0.9783,1.6874,0.0001,civhc_rbp_fy26
+East Morgan County Hospital,Inpatient/Outpatient Combined,2021,Morgan,Rural,East,1,0,1.7899,2121,2.1124,2.8151,2.2483,0.0079,civhc_rbp_fy26
+East Morgan County Hospital,Outpatient,2022,Morgan,Rural,East,1,0,2.0712,2065,2.3479,3.4439,2.7132,0.0081,civhc_rbp_fy26
+East Morgan County Hospital,Outpatient,2024,Morgan,Rural,East,1,0,1.8591,2363,2.4156,3.2045,2.891,0.0909,civhc_rbp_fy26
+Endoscopy Center of Colorado Springs,Outpatient,2022,El Paso,Urban,Colorado Springs,0,1,1.9535,2709,2.6399,2.6428,2.528,0.326,civhc_rbp_fy26
+Endoscopy Center of Colorado Springs,Outpatient,2023,El Paso,Urban,Colorado Springs,0,1,1.9396,2461,2.5173,2.5332,2.4647,0.7291,civhc_rbp_fy26
+Endoscopy Center of Western Colorado,Outpatient,2023,Mesa,Urban,Grand Junction,0,1,1.1428,291,3.7218,3.7218,2.4647,0.0019,civhc_rbp_fy26
+Endoscopy Center of the Rockies - Lafayette,Outpatient,2023,Boulder,Urban,Boulder,0,1,3.5219,1081,2.2475,2.2475,2.4647,0.0844,civhc_rbp_fy26
+Estes Park Health,Outpatient,2021,Larimer,Urban,Ft. Collins,1,0,1.6806,2245,2.9767,2.9767,2.4991,0.5851,civhc_rbp_fy26
+Family Health West,Inpatient/Outpatient Combined,2022,Mesa,Urban,Grand Junction,1,0,1.8058,3923,3.086,3.086,2.3666,0.1016,civhc_rbp_fy26
+Family Health West,Inpatient/Outpatient Combined,2024,Mesa,Urban,Grand Junction,1,0,1.7509,4705,2.9432,2.9432,2.3717,0.0048,civhc_rbp_fy26
+Front Range Endoscopy Centers,Outpatient,2023,El Paso,Urban,Colorado Springs,0,1,1.0852,1092,2.5173,2.5332,2.4647,0.0024,civhc_rbp_fy26
+Functional Neurosurgical Ambulatory Surgery Center,Outpatient,2023,Arapahoe,Urban,Denver,0,1,1.0479,38,2.2485,2.4517,2.4647,0.0001,civhc_rbp_fy26
+Golden Ridge Ambulatory Surgery Center,Outpatient,2021,Jefferson,Urban,Denver,0,1,1.8103,1395,2.3417,2.5164,2.4991,0.9565,civhc_rbp_fy26
+Grand River Hospital District,Inpatient/Outpatient Combined,2023,Garfield,Rural,West,1,0,1.7276,8900,2.5901,3.1476,2.4878,0.0803,civhc_rbp_fy26
+Grand River Hospital District,Outpatient,2022,Garfield,Rural,West,1,0,1.6514,10224,2.8235,2.8492,2.7132,0.0291,civhc_rbp_fy26
+Greeley Endoscopy Center,Outpatient,2023,Weld,Urban,Greeley,0,1,1.4705,1039,2.9683,2.9683,2.4647,0.0022,civhc_rbp_fy26
+Gunnison Valley Hospital,Inpatient/Outpatient Combined,2022,Gunnison,Rural,West,1,0,1.9369,7380,2.3988,1.9369,2.3417,0.0697,civhc_rbp_fy26
+Gunnison Valley Hospital,Outpatient,2022,Gunnison,Rural,West,1,0,1.9478,7322,2.8235,1.9726,2.7132,0.0754,civhc_rbp_fy26
+Haxtun Health,Inpatient/Outpatient Combined,2024,Phillips,Rural,East,1,0,1.1936,432,2.2207,1.3003,2.4831,0.0146,civhc_rbp_fy26
+Healthone Ridge View Endoscopy Center - Englewood,Outpatient,2024,Arapahoe,Urban,Denver,0,1,2.8271,1666,2.4045,2.6401,2.524,0.2843,civhc_rbp_fy26
+Healthone Ridge View Endoscopy Center - Lone Tree,Outpatient,2021,Douglas,Urban,Denver,0,1,3.1551,2093,2.3417,2.2521,2.4991,0.0022,civhc_rbp_fy26
+Heart of the Rockies Regional Medical Center,Inpatient/Outpatient Combined,2021,Chaffee,Rural,East,1,0,2.1172,6774,2.1124,2.1172,2.2483,0.0245,civhc_rbp_fy26
+Heart of the Rockies Regional Medical Center,Inpatient/Outpatient Combined,2022,Chaffee,Rural,East,1,0,2.2762,6909,2.1472,2.2762,2.3417,0.0917,civhc_rbp_fy26
+Highline South Ambulatory Surgery Center,Outpatient,2021,Arapahoe,Urban,Denver,0,1,1.1227,194,2.3417,2.5878,2.4991,0.0031,civhc_rbp_fy26
+Intermountain Health Good Samaritan Medical Center,Outpatient,2022,Boulder,Urban,Boulder,0,0,2.0902,14410,2.169,2.169,2.528,0.0517,civhc_rbp_fy26
+Intermountain Health Platte Valley Hospital,Inpatient/Outpatient Combined,2022,Adams,Urban,Denver,0,0,2.725,5623,2.284,2.858,2.3666,0.0555,civhc_rbp_fy26
+Intermountain Health Saint Joseph Hospital,Inpatient,2021,Denver,Urban,Denver,0,0,1.646,5728,1.8993,1.6468,1.9401,0.1138,civhc_rbp_fy26
+Intermountain Health Saint Joseph Hospital,Inpatient/Outpatient Combined,2023,Denver,Urban,Denver,0,0,1.7125,26769,2.1927,1.7678,2.3251,0.0778,civhc_rbp_fy26
+Kit Carson County Health Services District,Outpatient,2022,Kit Carson,Rural,East,1,0,1.5977,1821,2.3479,1.5977,2.7132,0.8915,civhc_rbp_fy26
+Lincoln Health,Inpatient/Outpatient Combined,2024,Lincoln,Rural,East,1,0,0.9965,1832,2.2207,0.9965,2.4831,0.5009,civhc_rbp_fy26
+Lutheran Campus Ambulatory Surgery Center,Outpatient,2021,Jefferson,Urban,Denver,0,1,1.539,1039,2.3417,2.5164,2.4991,0.001,civhc_rbp_fy26
+Memorial Regional Health,Inpatient/Outpatient Combined,2023,Moffat,Rural,West,0,0,1.9122,2577,2.5901,1.9122,2.4878,0.1779,civhc_rbp_fy26
+Memorial Regional Health,Outpatient,2023,Moffat,Rural,West,0,0,1.8389,2567,2.9891,1.8389,2.8358,0.1779,civhc_rbp_fy26
+Middle Park Health - Granby,Inpatient/Outpatient Combined,2023,Grand,Rural,West,1,0,1.8213,343,2.5901,1.8937,2.4878,0.0005,civhc_rbp_fy26
+Montrose Regional Health,Inpatient,2022,Montrose,Rural,West,0,0,2.6239,143,1.6768,2.6239,1.6034,1.1674,civhc_rbp_fy26
+Montrose Regional Health,Inpatient,2023,Montrose,Rural,West,0,0,2.6307,163,1.7735,2.6307,1.6874,0.0014,civhc_rbp_fy26
+Montrose Regional Health,Outpatient,2022,Montrose,Rural,West,0,0,4.2879,11942,2.8235,3.9313,2.7132,0.0744,civhc_rbp_fy26
+Montrose Regional Health,Outpatient,2024,Montrose,Rural,West,0,0,4.5842,13402,3.0338,4.187,2.891,0.4459,civhc_rbp_fy26
+Mountain Vista Orthopaedic Surgery Center,Outpatient,2021,Weld,Urban,Greeley,0,1,1.6158,525,3.048,3.048,2.4991,0.0019,civhc_rbp_fy26
+National Jewish Health,Inpatient/Outpatient Combined,2023,Denver,Urban,Denver,0,0,2.4818,13720,2.1927,1.7678,2.3251,0.0885,civhc_rbp_fy26
+North Care Ambulatory Surgery Center,Outpatient,2021,El Paso,Urban,Colorado Springs,0,1,1.1246,245,2.5464,2.5524,2.4991,0.3923,civhc_rbp_fy26
+North Suburban Medical Center,Outpatient,2021,Adams,Urban,Denver,0,0,3.8644,9198,2.3417,2.9458,2.4991,0.1145,civhc_rbp_fy26
+Novamed Surgery Center of Colorado Springs,Outpatient,2022,El Paso,Urban,Colorado Springs,0,1,1.1016,232,2.6399,2.6428,2.528,0.2083,civhc_rbp_fy26
+Optum Peak Endoscopy Center,Outpatient,2024,El Paso,Urban,Colorado Springs,0,1,1.2693,1110,2.5757,2.5887,2.524,0.2739,civhc_rbp_fy26
+Orthopaedic and Spine Center of the Rockies - Fort Collins,Outpatient,2024,Larimer,Urban,Ft. Collins,0,1,2.5383,804,2.7664,2.7664,2.524,0.0886,civhc_rbp_fy26
+Orthopaedic and Spine Center of the Rockies - Loveland,Outpatient,2022,Larimer,Urban,Ft. Collins,0,1,2.2612,1268,2.9914,2.9914,2.528,0.7502,civhc_rbp_fy26
+Pagosa Springs Medical Center,Inpatient/Outpatient Combined,2024,Archuleta,Rural,West,1,0,1.5422,2352,2.5642,1.5422,2.4831,0.8507,civhc_rbp_fy26
+Park Meadows Outpatient Surgery,Outpatient,2023,Douglas,Urban,Denver,0,1,1.1678,46,2.2485,2.2354,2.4647,0.0005,civhc_rbp_fy26
+Park Ridge Surgery Center,Outpatient,2022,Douglas,Urban,Denver,0,1,2.7242,353,2.3542,2.204,2.528,1.4287,civhc_rbp_fy26
+Peak One Surgery Center,Outpatient,2022,Summit,Rural,West,0,1,4.0345,488,2.8235,4.6584,2.7132,0.1426,civhc_rbp_fy26
+Peak Surgery Center,Outpatient,2022,El Paso,Urban,Colorado Springs,0,1,1.1116,176,2.6399,2.6428,2.528,0.6827,civhc_rbp_fy26
+Peak Surgery Center,Outpatient,2023,El Paso,Urban,Colorado Springs,0,1,1.0974,199,2.5173,2.5332,2.4647,0.0003,civhc_rbp_fy26
+Premier Eye Surgery Center of Colorado,Outpatient,2022,Boulder,Urban,Boulder,0,1,1.9209,183,2.169,2.169,2.528,1.1014,civhc_rbp_fy26
+Presbyterian/St. Luke's Medical Center,Inpatient,2022,Denver,Urban,Denver,0,0,2.6833,1354,2.0119,1.8302,1.99,0.0187,civhc_rbp_fy26
+Presbyterian/St. Luke's Medical Center,Inpatient/Outpatient Combined,2023,Denver,Urban,Denver,0,0,2.4642,12290,2.1927,1.7678,2.3251,0.0119,civhc_rbp_fy26
+Presbyterian/St. Luke's Medical Center,Outpatient,2023,Denver,Urban,Denver,0,0,1.8622,11158,2.2485,1.722,2.4647,0.0385,civhc_rbp_fy26
+Prowers Medical Center,Inpatient/Outpatient Combined,2023,Prowers,Rural,East,1,0,1.7633,3767,2.1433,1.7633,2.4878,0.0062,civhc_rbp_fy26
+Prowers Medical Center,Inpatient/Outpatient Combined,2024,Prowers,Rural,East,1,0,1.5981,3539,2.2207,1.5981,2.4831,0.0022,civhc_rbp_fy26
+Red Rocks Surgery Centers,Outpatient,2022,Jefferson,Urban,Denver,0,1,1.3868,286,2.3542,2.3461,2.528,0.1553,civhc_rbp_fy26
+Research Surgical Center,Outpatient,2024,El Paso,Urban,Colorado Springs,0,1,1.2899,516,2.5757,2.5887,2.524,0.1277,civhc_rbp_fy26
+Rio Grande Hospital,Outpatient,2024,Rio Grande,Rural,East,1,0,1.2367,1764,2.4156,1.2367,2.891,0.2091,civhc_rbp_fy26
+River Point Surgery Center,Outpatient,2024,Arapahoe,Urban,Denver,0,1,1.1487,211,2.4045,2.6401,2.524,0.8605,civhc_rbp_fy26
+Rocky Mountain Endoscopy Center - Thornton,Outpatient,2021,Adams,Urban,Denver,0,1,2.3618,2527,2.3417,2.9458,2.4991,0.5436,civhc_rbp_fy26
+Rocky Mountain Endoscopy Center - Thornton,Outpatient,2022,Adams,Urban,Denver,0,1,2.6498,2894,2.3542,3.2477,2.528,1.1705,civhc_rbp_fy26
+Rocky Mountain Surgery Center,Outpatient,2021,Arapahoe,Urban,Denver,0,1,1.868,894,2.3417,2.5878,2.4991,0.1512,civhc_rbp_fy26
+Rose Medical Center,Inpatient/Outpatient Combined,2021,Denver,Urban,Denver,0,0,2.0769,14769,2.1842,1.8191,2.2969,0.0098,civhc_rbp_fy26
+STATEWIDE,Inpatient/Outpatient Combined,2021,STATEWIDE,STATEWIDE,STATEWIDE,0,0,2.2899,989451,,,,,civhc_rbp_fy26
+San Luis Valley Health,Inpatient/Outpatient Combined,2023,Alamosa,Rural,East,0,0,2.1662,6913,2.1433,2.1662,2.4878,0.0039,civhc_rbp_fy26
+San Luis Valley Health Conejos County Hospital,Inpatient/Outpatient Combined,2021,Conejos,Rural,East,1,0,1.4441,351,2.1124,1.4441,2.2483,0.0109,civhc_rbp_fy26
+San Luis Valley Health Conejos County Hospital,Inpatient/Outpatient Combined,2023,Conejos,Rural,East,1,0,1.7098,666,2.1433,1.7098,2.4878,0.0069,civhc_rbp_fy26
+Shady Grove Fertility Colorado Surgery Center,Outpatient,2024,Arapahoe,Urban,Denver,0,1,1.9226,321,2.4045,2.6401,2.524,0.9908,civhc_rbp_fy26
+Sky Ridge Medical Center,Inpatient,2022,Douglas,Urban,Denver,0,0,1.8567,4163,2.0119,1.8649,1.99,0.001,civhc_rbp_fy26
+Southeast Colorado Hospital District,Inpatient/Outpatient Combined,2021,Baca,Rural,East,1,0,2.055,654,2.1124,2.055,2.2483,0.0041,civhc_rbp_fy26
+Southeast Colorado Hospital District,Inpatient/Outpatient Combined,2023,Baca,Rural,East,1,0,2.0568,991,2.1433,2.0568,2.4878,0.0273,civhc_rbp_fy26
+St. Vincent Health,Inpatient/Outpatient Combined,2022,Lake,Rural,West,1,0,0.9509,995,2.3988,0.9509,2.3417,0.1001,civhc_rbp_fy26
+St. Vincent Health,Outpatient,2022,Lake,Rural,West,1,0,0.9747,986,2.8235,0.9747,2.7132,0.1001,civhc_rbp_fy26
+Sterling Regional MedCenter,Inpatient/Outpatient Combined,2021,Logan,Rural,East,0,0,2.4449,3662,2.1124,2.4449,2.2483,0.7448,civhc_rbp_fy26
+Summit Orthopedic Surgery Center,Outpatient,2022,Summit,Rural,West,0,1,3.5934,133,2.8235,4.6584,2.7132,0.8007,civhc_rbp_fy26
+Summit Surgery Center,Outpatient,2021,Larimer,Urban,Ft. Collins,0,1,1.1192,40,2.9767,2.9767,2.4991,0.5099,civhc_rbp_fy26
+Surgery Affiliates,Outpatient,2022,El Paso,Urban,Colorado Springs,0,1,1.482,650,2.6399,2.6428,2.528,0.6086,civhc_rbp_fy26
+Surgical Center of Peak Endoscopy,Outpatient,2023,El Paso,Urban,Colorado Springs,0,1,1.1083,642,2.5173,2.5332,2.4647,0.6928,civhc_rbp_fy26
+Swedish Medical Center,Inpatient,2024,Arapahoe,Urban,Denver,0,0,2.534,1339,1.9574,2.2722,1.9367,1.3902,civhc_rbp_fy26
+The Medical Center of Aurora,Inpatient,2022,Arapahoe,Urban,Denver,0,0,1.9526,800,2.0119,2.3832,1.99,0.0009,civhc_rbp_fy26
+The Orthopaedic and Spine Center of Southern Colorado,Outpatient,2022,El Paso,Urban,Colorado Springs,0,1,1.4651,591,2.6399,2.6428,2.528,0.1751,civhc_rbp_fy26
+The Orthopaedic and Spine Center of Southern Colorado,Outpatient,2023,El Paso,Urban,Colorado Springs,0,1,1.4868,772,2.5173,2.5332,2.4647,0.0602,civhc_rbp_fy26
+The Surgery Center at Lone Tree,Outpatient,2021,Douglas,Urban,Denver,0,1,1.7166,614,2.3417,2.2521,2.4991,0.0033,civhc_rbp_fy26
+UCHealth Ambulatory Surgery Center - Denver,Outpatient,2021,Denver,Urban,Denver,0,1,1.2388,778,2.3417,1.9352,2.4991,0.0008,civhc_rbp_fy26
+UCHealth Broomfield Hospital,Outpatient,2022,Jefferson,Urban,Denver,0,0,3.2713,4178,2.3542,2.3461,2.528,0.048,civhc_rbp_fy26
+UCHealth Greeley  Hospital,Inpatient,2021,Weld,Urban,Greeley,0,0,1.9448,364,1.9998,1.9998,1.9401,0.0014,civhc_rbp_fy26
+UCHealth Highlands Ranch Hospital,Inpatient,2023,Douglas,Urban,Denver,0,0,1.871,822,1.941,1.886,1.9517,0.8491,civhc_rbp_fy26
+UCHealth Highlands Ranch Hospital,Inpatient/Outpatient Combined,2023,Douglas,Urban,Denver,0,0,2.3741,10313,2.1927,2.2619,2.3251,0.4475,civhc_rbp_fy26
+UCHealth Longs Peak Hospital,Inpatient,2021,Weld,Urban,Greeley,0,0,1.8805,506,1.9998,1.9998,1.9401,0.0008,civhc_rbp_fy26
+UCHealth Longs Peak Hospital,Inpatient,2022,Weld,Urban,Greeley,0,0,1.7187,514,1.8494,1.8494,1.99,0.0005,civhc_rbp_fy26
+UCHealth Longs Peak Hospital,Outpatient,2021,Weld,Urban,Greeley,0,0,3.126,16429,3.048,3.048,2.4991,0.202,civhc_rbp_fy26
+UCHealth Medical Center of the Rockies,Inpatient/Outpatient Combined,2022,Larimer,Urban,Ft. Collins,0,0,3.1267,24697,2.8913,2.8913,2.3666,0.4816,civhc_rbp_fy26
+UCHealth Memorial Hospital,Inpatient/Outpatient Combined,2021,El Paso,Urban,Colorado Springs,0,0,2.4434,69338,2.3855,2.3882,2.2969,0.1502,civhc_rbp_fy26
+UCHealth Memorial Hospital,Inpatient/Outpatient Combined,2023,El Paso,Urban,Colorado Springs,0,0,2.4581,67676,2.389,2.3967,2.3251,0.1612,civhc_rbp_fy26
+UCHealth Parkview Medical Center,Inpatient/Outpatient Combined,2021,Pueblo,Urban,Pueblo,0,0,2.7996,13904,2.8407,2.8407,2.2969,0.183,civhc_rbp_fy26
+UCHealth Parkview Medical Center,Outpatient,2023,Pueblo,Urban,Pueblo,0,0,3.4724,9310,3.4403,3.4403,2.4647,0.2114,civhc_rbp_fy26
+UCHealth Parkview Pueblo West,Outpatient,2022,Pueblo,Urban,Pueblo,0,0,4.249,874,3.4625,3.4625,2.528,0.0043,civhc_rbp_fy26
+UCHealth Parkview Pueblo West,Outpatient,2024,Pueblo,Urban,Pueblo,0,0,3.9373,3754,3.7342,3.7342,2.524,2.3095,civhc_rbp_fy26
+UCHealth Poudre Valley Hospital,Outpatient,2023,Larimer,Urban,Ft. Collins,0,0,3.2412,41645,2.8627,2.8627,2.4647,0.0548,civhc_rbp_fy26
+UCHealth University of Colorado Hospital,Inpatient/Outpatient Combined,2024,Adams,Urban,Denver,0,0,2.8086,125879,2.3072,2.7948,2.3717,0.8472,civhc_rbp_fy26
+UCHealth Yampa Valley Medical Center,Inpatient/Outpatient Combined,2023,Routt,Rural,West,0,0,2.6603,15277,2.5901,2.6603,2.4878,0.181,civhc_rbp_fy26
+UCHealth Yampa Valley Medical Center,Outpatient,2021,Routt,Rural,West,0,0,3.0111,15770,2.7793,2.9617,2.6902,0.4989,civhc_rbp_fy26
+Vail Health Hospital,Inpatient,2023,Eagle,Rural,West,0,0,1.0788,235,1.7735,1.0788,1.6874,0.0003,civhc_rbp_fy26
+Vail Valley Surgery Center - Vail,Outpatient,2022,Eagle,Rural,West,0,1,4.9308,837,2.8235,4.1645,2.7132,0.8987,civhc_rbp_fy26
+Valley View Hospital,Inpatient/Outpatient Combined,2021,Garfield,Rural,West,0,0,3.3737,18869,2.2831,2.8485,2.2483,0.1786,civhc_rbp_fy26
+Valley View Hospital,Inpatient/Outpatient Combined,2024,Garfield,Rural,West,0,0,3.7659,18984,2.5642,3.1788,2.4831,0.5229,civhc_rbp_fy26
+Weisbrod Memorial County Hospital,Outpatient,2022,Kiowa,Rural,East,1,0,0.7964,641,2.3479,0.7964,2.7132,0.0024,civhc_rbp_fy26
+Wray Community District Hospital,Inpatient,2021,Yuma,Rural,East,1,0,0.7078,55,1.3842,0.7537,1.5263,0.5284,civhc_rbp_fy26
+Wray Community District Hospital,Outpatient,2024,Yuma,Rural,East,1,0,1.754,1895,2.4156,1.5149,2.891,0.5362,civhc_rbp_fy26
+Yuma District Hospital,Inpatient/Outpatient Combined,2023,Yuma,Rural,East,1,0,1.2977,1555,2.1433,1.3973,2.4878,0.0046,civhc_rbp_fy26
+Yuma District Hospital,Outpatient,2021,Yuma,Rural,East,1,0,1.1696,1911,2.3528,1.4436,2.6902,0.1336,civhc_rbp_fy26
+Yuma District Hospital,Outpatient,2024,Yuma,Rural,East,1,0,1.1465,1304,2.4156,1.5149,2.891,0.0066,civhc_rbp_fy26
+Advanced Vision Surgery Center,Outpatient,2023,Boulder,Urban,Boulder,0,1,1.1315,358,2.2475,2.2475,2.4647,0.0028,civhc_rbp_fy26
+Advanced Vision Surgery Center,Outpatient,2024,Boulder,Urban,Boulder,0,1,1.0498,375,2.2621,2.2621,2.524,0.8602,civhc_rbp_fy26
+AdventHealth Castle Rock,Inpatient,2021,Douglas,Urban,Denver,0,0,1.5389,1278,1.8993,1.8516,1.9401,0.2599,civhc_rbp_fy26
+AdventHealth Castle Rock,Inpatient/Outpatient Combined,2022,Douglas,Urban,Denver,0,0,1.92,10068,2.284,2.2702,2.3666,0.1123,civhc_rbp_fy26
+AdventHealth Castle Rock,Outpatient,2024,Douglas,Urban,Denver,0,0,2.891,8931,2.4045,2.3549,2.524,0.4001,civhc_rbp_fy26
+AdventHealth Littleton,Inpatient,2022,Arapahoe,Urban,Denver,0,0,1.8338,1232,2.0119,2.3832,1.99,0.0004,civhc_rbp_fy26
+AdventHealth Littleton,Inpatient/Outpatient Combined,2023,Arapahoe,Urban,Denver,0,0,2.2274,12536,2.1927,2.5534,2.3251,0.1344,civhc_rbp_fy26
+AdventHealth Littleton,Outpatient,2021,Arapahoe,Urban,Denver,0,0,2.6015,8669,2.3417,2.5878,2.4991,0.3654,civhc_rbp_fy26
+Alpine Surgery Center,Outpatient,2021,Gunnison,Rural,West,0,1,2.8658,122,2.7793,2.0322,2.6902,1.0511,civhc_rbp_fy26
+Ambulatory Surgery Center Lone Tree,Outpatient,2022,Arapahoe,Urban,Denver,0,1,0.9727,208,2.3542,2.5388,2.528,0.5187,civhc_rbp_fy26
+Arapahoe Surgicenter,Outpatient,2022,Arapahoe,Urban,Denver,0,1,3.3069,1385,2.3542,2.5388,2.528,0.0022,civhc_rbp_fy26
+Arkansas Valley Regional Medical Center,Inpatient,2022,Otero,Rural,East,1,0,1.2024,47,1.2105,1.2024,1.6034,0.0007,civhc_rbp_fy26
+Aspen Valley Hospital District,Inpatient/Outpatient Combined,2021,Pitkin,Rural,West,1,0,1.0036,11365,2.2831,1.0036,2.2483,0.1798,civhc_rbp_fy26
+Aspen Valley Hospital District,Inpatient/Outpatient Combined,2024,Pitkin,Rural,West,1,0,1.2371,9717,2.5642,1.2371,2.4831,0.1854,civhc_rbp_fy26
+Aurora Endoscopy Surgicenter,Outpatient,2021,Arapahoe,Urban,Denver,0,1,2.9633,841,2.3417,2.5878,2.4991,1.5148,civhc_rbp_fy26
+Aurora Endoscopy Surgicenter,Outpatient,2024,Arapahoe,Urban,Denver,0,1,2.8189,809,2.4045,2.6401,2.524,0.9667,civhc_rbp_fy26
+Banner Fort Collins Medical Center,Inpatient,2023,Larimer,Urban,Ft. Collins,0,0,1.0303,361,2.0765,2.0765,1.9517,0.0014,civhc_rbp_fy26
+Banner Fort Collins Medical Center,Inpatient/Outpatient Combined,2021,Larimer,Urban,Ft. Collins,0,0,1.8277,3633,2.9294,2.9294,2.2969,0.1082,civhc_rbp_fy26
+Banner Fort Collins Medical Center,Outpatient,2023,Larimer,Urban,Ft. Collins,0,0,2.9827,3096,2.8627,2.8627,2.4647,0.0077,civhc_rbp_fy26
+Banner McKee Medical Center,Inpatient/Outpatient Combined,2023,Larimer,Urban,Ft. Collins,0,0,2.699,3265,2.7432,2.7432,2.3251,0.0085,civhc_rbp_fy26
+Banner North Colorado Medical Center,Inpatient/Outpatient Combined,2022,Weld,Urban,Greeley,0,0,2.2871,6537,2.5344,2.5344,2.3666,0.0441,civhc_rbp_fy26
+Banner North Colorado Medical Center,Outpatient,2023,Weld,Urban,Greeley,0,0,2.7374,5908,2.9683,2.9683,2.4647,0.0943,civhc_rbp_fy26
+Belmar Ambulatory Surgical Center,Outpatient,2023,Jefferson,Urban,Denver,0,1,1.2375,81,2.2485,2.426,2.4647,0.0029,civhc_rbp_fy26
+Belmar Ambulatory Surgical Center,Outpatient,2024,Jefferson,Urban,Denver,0,1,1.2145,70,2.4045,2.5063,2.524,0.7803,civhc_rbp_fy26
+Black Canyon Surgical Center,Outpatient,2023,Montrose,Rural,West,0,1,1.6124,586,2.9891,4.2666,2.8358,0.001,civhc_rbp_fy26
+Boulder Community Health,Inpatient,2021,Boulder,Urban,Boulder,0,0,1.9464,952,1.6794,1.6794,1.9401,0.0009,civhc_rbp_fy26
+Boulder Community Health,Inpatient/Outpatient Combined,2021,Boulder,Urban,Boulder,0,0,2.0356,45912,1.8368,1.8368,2.2969,0.0969,civhc_rbp_fy26
+Boulder Community Musculoskeletal Surgery Center,Outpatient,2021,Boulder,Urban,Boulder,0,1,1.9392,834,2.0417,2.0417,2.4991,1.3056,civhc_rbp_fy26
+Clear Creek Surgery Center,Outpatient,2022,Jefferson,Urban,Denver,0,1,1.3415,374,2.3542,2.3461,2.528,0.0011,civhc_rbp_fy26
+Clear Creek Surgery Center,Outpatient,2023,Jefferson,Urban,Denver,0,1,1.2573,379,2.2485,2.426,2.4647,0.0009,civhc_rbp_fy26
+Colorado Urologic Surgery Center - Lone Tree,Outpatient,2023,Douglas,Urban,Denver,0,1,2.1427,599,2.2485,2.2354,2.4647,0.0017,civhc_rbp_fy26
+CommonSpirit - Penrose Hospital,Inpatient,2023,El Paso,Urban,Colorado Springs,0,0,1.9221,1771,1.9349,1.9349,1.9517,0.1816,civhc_rbp_fy26
+CommonSpirit - Penrose Hospital,Outpatient,2023,El Paso,Urban,Colorado Springs,0,0,2.7118,13973,2.5173,2.5332,2.4647,0.0202,civhc_rbp_fy26
+CommonSpirit Longmont United Hospital,Inpatient,2021,Boulder,Urban,Boulder,0,0,1.6577,261,1.6794,1.6794,1.9401,0.8293,civhc_rbp_fy26
+CommonSpirit Longmont United Hospital,Inpatient,2022,Boulder,Urban,Boulder,0,0,1.5707,167,1.6805,1.6805,1.99,0.0001,civhc_rbp_fy26
+CommonSpirit Mercy Hospital,Inpatient,2023,La Plata,Rural,West,0,0,1.754,436,1.7735,1.7698,1.6874,0.2617,civhc_rbp_fy26
+CommonSpirit Mercy Hospital,Inpatient/Outpatient Combined,2022,La Plata,Rural,West,0,0,2.7569,14698,2.3988,2.7452,2.3417,0.1175,civhc_rbp_fy26
+CommonSpirit St. Anthony Hospital,Inpatient/Outpatient Combined,2021,Jefferson,Urban,Denver,0,0,2.5435,9483,2.1842,2.5482,2.2969,0.5949,civhc_rbp_fy26
+CommonSpirit St. Anthony North Hospital,Inpatient,2022,Broomfield,Urban,Denver,0,0,1.8217,604,2.0119,1.8217,1.99,0.0006,civhc_rbp_fy26
+CommonSpirit St. Anthony Summit Medical Center,Outpatient,2021,Summit,Rural,West,0,0,5.0162,4999,2.7793,4.8218,2.6902,1.3758,civhc_rbp_fy26
+CommonSpirit St. Anthony Summit Medical Center,Outpatient,2022,Summit,Rural,West,0,0,4.9129,4700,2.8235,4.6584,2.7132,0.1249,civhc_rbp_fy26
+CommonSpirit St. Elizabeth Hospital,Inpatient,2022,Morgan,Rural,East,0,0,1.2978,52,1.2105,1.2499,1.6034,0.4869,civhc_rbp_fy26
+CommonSpirit St. Elizabeth Hospital,Inpatient/Outpatient Combined,2022,Morgan,Rural,East,0,0,3.5491,2063,2.1472,2.7541,2.3417,0.2178,civhc_rbp_fy26
+CommonSpirit St. Elizabeth Hospital,Outpatient,2024,Morgan,Rural,East,0,0,5.0446,2459,2.4156,3.2045,2.891,2.0097,civhc_rbp_fy26
+CommonSpirit St. Francis Hospital,Inpatient/Outpatient Combined,2022,El Paso,Urban,Colorado Springs,0,0,3.2772,44,2.4589,2.4585,2.3666,1.3907,civhc_rbp_fy26
+CommonSpirit St. Francis Hospital - Interquest,Outpatient,2024,El Paso,Urban,Colorado Springs,0,0,3.7132,740,2.5757,2.5887,2.524,0.0027,civhc_rbp_fy26
+CommonSpirit St. Mary-Corwin Hospital,Outpatient,2022,Pueblo,Urban,Pueblo,0,0,3.5514,6036,3.4625,3.4625,2.528,0.0417,civhc_rbp_fy26
+CommonSpirit St. Mary-Corwin Hospital,Outpatient,2023,Pueblo,Urban,Pueblo,0,0,3.4988,5760,3.4403,3.4403,2.4647,0.0922,civhc_rbp_fy26
+CommonSpirit St. Thomas More Hospital,Inpatient/Outpatient Combined,2024,Fremont,Rural,East,1,0,5.2041,2792,2.2207,5.2,2.4831,1.2621,civhc_rbp_fy26
+CommonSpirit St. Thomas More Hospital,Outpatient,2023,Fremont,Rural,East,0,0,1.7204,40,2.3176,5.0737,2.8358,0.0204,civhc_rbp_fy26
+CommonSpirit St. Thomas More Hospital,Outpatient,2024,Fremont,Rural,East,0,0,6.5264,1309,2.4156,5.4084,2.891,1.2621,civhc_rbp_fy26
+Crown Point Surgery Center,Outpatient,2024,Douglas,Urban,Denver,0,1,2.0213,504,2.4045,2.3549,2.524,0.2405,civhc_rbp_fy26
+Delta Health,Inpatient,2021,Delta,Rural,West,0,0,1.699,88,1.5537,1.699,1.5263,0.0001,civhc_rbp_fy26
+Delta Health,Outpatient,2024,Delta,Rural,West,0,0,3.1132,7353,3.0338,3.1132,2.891,1.074,civhc_rbp_fy26
+Denver Diagnostic Ambulatory Surgery Center,Outpatient,2022,Arapahoe,Urban,Denver,0,1,0.6741,78,2.3542,2.5388,2.528,0.0073,civhc_rbp_fy26
+Denver Health,Inpatient/Outpatient Combined,2023,Denver,Urban,Denver,0,0,0.7377,86176,2.1927,1.7678,2.3251,0.0051,civhc_rbp_fy26
+Denver Surgicenter,Outpatient,2024,Denver,Urban,Denver,0,1,2.8334,1424,2.4045,1.9042,2.524,1.2206,civhc_rbp_fy26
+Denver West Endoscopy Center,Outpatient,2023,Jefferson,Urban,Denver,0,1,2.0148,1377,2.2485,2.426,2.4647,0.0022,civhc_rbp_fy26
+East Morgan County Hospital,Inpatient,2021,Morgan,Rural,East,1,0,1.1413,43,1.3842,1.4155,1.5263,0.759,civhc_rbp_fy26
+East Morgan County Hospital,Inpatient/Outpatient Combined,2024,Morgan,Rural,East,1,0,1.6481,2403,2.2207,2.5632,2.4831,0.0909,civhc_rbp_fy26
+Endoscopy Center of Grand Junction,Outpatient,2023,Mesa,Urban,Grand Junction,0,1,1.7908,1717,3.7218,3.7218,2.4647,0.004,civhc_rbp_fy26
+Endoscopy Center of the Rockies - Lafayette,Outpatient,2021,Boulder,Urban,Boulder,0,1,3.5379,1031,2.0417,2.0417,2.4991,0.0014,civhc_rbp_fy26
+Endoscopy Center of the Rockies - Lafayette,Outpatient,2022,Boulder,Urban,Boulder,0,1,3.4666,1041,2.169,2.169,2.528,0.2,civhc_rbp_fy26
+Family Health West,Outpatient,2021,Mesa,Urban,Grand Junction,1,0,1.8833,3863,3.2289,3.2289,2.4991,0.0477,civhc_rbp_fy26
+Flatirons Surgery Center,Outpatient,2021,Douglas,Urban,Denver,0,1,1.9089,513,2.3417,2.2521,2.4991,0.001,civhc_rbp_fy26
+Flatirons Surgery Center,Outpatient,2023,Douglas,Urban,Denver,0,1,1.54,292,2.2485,2.2354,2.4647,0.0513,civhc_rbp_fy26
+Front Range Orthopedic Surgery Center,Outpatient,2021,Boulder,Urban,Boulder,0,1,1.0385,318,2.0417,2.0417,2.4991,0.6544,civhc_rbp_fy26
+Golden Ridge Ambulatory Surgery Center,Outpatient,2024,Jefferson,Urban,Denver,0,1,1.716,839,2.4045,2.5063,2.524,0.1386,civhc_rbp_fy26
+Grand River Hospital District,Inpatient,2021,Garfield,Rural,West,1,0,1.973,39,1.5537,2.3281,1.5263,0.0004,civhc_rbp_fy26
+Grand River Hospital District,Inpatient/Outpatient Combined,2021,Garfield,Rural,West,1,0,1.614,10093,2.2831,2.8485,2.2483,0.0087,civhc_rbp_fy26
+Greenwood Ambulatory Surgery Center - Greenwood Village,Outpatient,2021,Arapahoe,Urban,Denver,0,1,2.2686,688,2.3417,2.5878,2.4991,0.0031,civhc_rbp_fy26
+Greenwood Ambulatory Surgery Center - Lakewood,Outpatient,2022,Jefferson,Urban,Denver,0,1,2.9498,90,2.3542,2.3461,2.528,0.0031,civhc_rbp_fy26
+Healthone Ridge View Endoscopy Center - Englewood,Outpatient,2022,Arapahoe,Urban,Denver,0,1,3.2265,1605,2.3542,2.5388,2.528,0.0024,civhc_rbp_fy26
+Heart of the Rockies Regional Medical Center,Inpatient,2021,Chaffee,Rural,East,1,0,1.3498,74,1.3842,1.3498,1.5263,0.0032,civhc_rbp_fy26
+Insight Surgery Center,Outpatient,2022,Douglas,Urban,Denver,0,1,0.877,344,2.3542,2.204,2.528,0.2175,civhc_rbp_fy26
+Intermountain Health Platte Valley Hospital,Inpatient/Outpatient Combined,2021,Adams,Urban,Denver,0,0,2.5352,5326,2.1842,2.6347,2.2969,0.2211,civhc_rbp_fy26
+Intermountain Health Platte Valley Hospital,Inpatient/Outpatient Combined,2023,Adams,Urban,Denver,0,0,2.5621,6543,2.1927,2.6515,2.3251,0.1941,civhc_rbp_fy26
+Intermountain Health Platte Valley Hospital,Outpatient,2021,Adams,Urban,Denver,0,0,3.1429,5006,2.3417,2.9458,2.4991,0.2693,civhc_rbp_fy26
+Intermountain Health Saint Joseph Hospital,Inpatient,2022,Denver,Urban,Denver,0,0,1.7506,5076,2.0119,1.8302,1.99,0.0099,civhc_rbp_fy26
+Intermountain Health St. Mary's Medical Center,Inpatient/Outpatient Combined,2022,Mesa,Urban,Grand Junction,0,0,3.1242,18413,3.086,3.086,2.3666,0.0709,civhc_rbp_fy26
+Kaiser Foundation Health Plan of Colorado - Lone Tree,Outpatient,2024,Douglas,Urban,Denver,0,1,0.2701,3149,2.4045,2.3549,2.524,0.0286,civhc_rbp_fy26
+Keefe Memorial Hospital,Inpatient/Outpatient Combined,2021,Cheyenne,Rural,East,1,0,3.2435,893,2.1124,3.2435,2.2483,0.0171,civhc_rbp_fy26
+Kit Carson County Health Services District,Inpatient/Outpatient Combined,2023,Kit Carson,Rural,East,1,0,1.6821,2170,2.1433,1.6821,2.4878,0.0424,civhc_rbp_fy26
+Lafayette Surgery Center,Outpatient,2022,Boulder,Urban,Boulder,0,1,1.5415,103,2.169,2.169,2.528,1.3436,civhc_rbp_fy26
+Lincoln Surgery Center,Outpatient,2021,Douglas,Urban,Denver,0,1,2.0349,330,2.3417,2.2521,2.4991,0.0009,civhc_rbp_fy26
+Lincoln Surgery Center,Outpatient,2022,Douglas,Urban,Denver,0,1,1.6459,227,2.3542,2.204,2.528,0.0484,civhc_rbp_fy26
+Littleton Day Surgery Center,Outpatient,2021,Arapahoe,Urban,Denver,0,1,1.1527,59,2.3417,2.5878,2.4991,0.001,civhc_rbp_fy26
+Littleton Day Surgery Center,Outpatient,2024,Arapahoe,Urban,Denver,0,1,1.0766,98,2.4045,2.6401,2.524,0.6273,civhc_rbp_fy26
+Lone Tree Surgery Center,Outpatient,2023,Douglas,Urban,Denver,0,1,1.0637,1044,2.2485,2.2354,2.4647,0.0111,civhc_rbp_fy26
+Loveland Endoscopy Center,Outpatient,2022,Larimer,Urban,Ft. Collins,0,1,1.4632,1884,2.9914,2.9914,2.528,0.0023,civhc_rbp_fy26
+Lutheran Campus Ambulatory Surgery Center,Outpatient,2022,Jefferson,Urban,Denver,0,1,1.3993,809,2.3542,2.3461,2.528,0.0103,civhc_rbp_fy26
+Melissa Memorial Hospital,Inpatient/Outpatient Combined,2023,Phillips,Rural,East,1,0,1.4966,1300,2.1433,1.4112,2.4878,0.0117,civhc_rbp_fy26
+Melissa Memorial Hospital,Outpatient,2021,Phillips,Rural,East,1,0,1.3504,1659,2.3528,1.2474,2.6902,0.0069,civhc_rbp_fy26
+Memorial Regional Health,Inpatient/Outpatient Combined,2022,Moffat,Rural,West,0,0,1.78,2288,2.3988,1.78,2.3417,0.0405,civhc_rbp_fy26
+Memorial Regional Health,Outpatient,2021,Moffat,Rural,West,0,0,1.5875,2213,2.7793,1.5875,2.6902,0.0372,civhc_rbp_fy26
+Middle Park Health - Granby,Inpatient/Outpatient Combined,2021,Grand,Rural,West,1,0,1.7839,883,2.2831,1.7865,2.2483,0.006,civhc_rbp_fy26
+Middle Park Health - Kremmling,Outpatient,2022,Grand,Rural,West,1,0,1.9616,2892,2.8235,1.9894,2.7132,0.183,civhc_rbp_fy26
+Middle Park Health - Kremmling,Outpatient,2023,Grand,Rural,West,1,0,1.9052,3383,2.9891,1.8989,2.8358,0.1579,civhc_rbp_fy26
+Mile High Surgicenter,Outpatient,2021,Arapahoe,Urban,Denver,0,1,1.5629,311,2.3417,2.5878,2.4991,0.3715,civhc_rbp_fy26
+Montrose Regional Health,Inpatient/Outpatient Combined,2021,Montrose,Rural,West,0,0,3.6976,14065,2.2831,3.6976,2.2483,0.0981,civhc_rbp_fy26
+Montrose Regional Health,Inpatient/Outpatient Combined,2023,Montrose,Rural,West,0,0,4.2182,13258,2.5901,4.2182,2.4878,0.0068,civhc_rbp_fy26
+Mountain Vista Orthopaedic Surgery Center,Outpatient,2023,Weld,Urban,Greeley,0,1,1.7293,603,2.9683,2.9683,2.4647,0.0006,civhc_rbp_fy26
+National Jewish Health,Inpatient/Outpatient Combined,2024,Denver,Urban,Denver,0,0,2.6235,12706,2.3072,1.8564,2.3717,0.6066,civhc_rbp_fy26
+North Care Ambulatory Surgery Center,Outpatient,2022,El Paso,Urban,Colorado Springs,0,1,1.245,164,2.6399,2.6428,2.528,0.5156,civhc_rbp_fy26
+North Suburban Medical Center,Inpatient,2023,Adams,Urban,Denver,0,0,1.6085,714,1.941,2.2969,1.9517,0.0009,civhc_rbp_fy26
+Northglenn Endoscopy Center,Outpatient,2024,Adams,Urban,Denver,0,1,1.939,1351,2.4045,3.0768,2.524,0.7156,civhc_rbp_fy26
+Novamed Surgery Center of Denver,Outpatient,2021,Arapahoe,Urban,Denver,0,1,1.1297,371,2.3417,2.5878,2.4991,0.0589,civhc_rbp_fy26
+Orthopedic Center of Colorado at Iverness,Outpatient,2024,Arapahoe,Urban,Denver,0,1,1.6686,524,2.4045,2.6401,2.524,0.6227,civhc_rbp_fy26
+Parkwest Surgery Center,Outpatient,2022,Pueblo,Urban,Pueblo,0,1,0.8445,183,3.4625,3.4625,2.528,0.3162,civhc_rbp_fy26
+Pioneers Medical Center,Inpatient/Outpatient Combined,2022,Rio Blanco,Rural,West,1,0,2.0404,2368,2.3988,1.4814,2.3417,0.079,civhc_rbp_fy26
+Presbyterian/St. Luke's Medical Center,Outpatient,2021,Denver,Urban,Denver,0,0,3.06,12021,2.3417,1.9352,2.4991,0.1816,civhc_rbp_fy26
+Pueblo Ambulatory Surgery Center,Outpatient,2024,Pueblo,Urban,Pueblo,0,1,1.763,48,3.7342,3.7342,2.524,1.1329,civhc_rbp_fy26
+Rangely District Hospital,Inpatient/Outpatient Combined,2023,Rio Blanco,Rural,West,1,0,0.7987,1200,2.5901,1.2629,2.4878,0.0117,civhc_rbp_fy26
+Rangely District Hospital,Inpatient/Outpatient Combined,2024,Rio Blanco,Rural,West,1,0,0.837,1148,2.5642,1.3524,2.4831,0.0015,civhc_rbp_fy26
+Rangely District Hospital,Outpatient,2021,Rio Blanco,Rural,West,1,0,0.7827,975,2.7793,1.2341,2.6902,0.0129,civhc_rbp_fy26
+Redlands Mesa Surgery Center,Outpatient,2021,Mesa,Urban,Grand Junction,0,1,1.2006,87,3.2289,3.2289,2.4991,0.0041,civhc_rbp_fy26
+Rocky Mountain Endoscopy Center - Lakewood,Outpatient,2023,Jefferson,Urban,Denver,0,1,2.1241,47,2.2485,2.426,2.4647,1.3812,civhc_rbp_fy26
+Rocky Mountain Endoscopy Center - Thornton,Outpatient,2023,Adams,Urban,Denver,0,1,2.6811,2688,2.2485,2.9273,2.4647,0.4378,civhc_rbp_fy26
+Rocky Mountain Laser and Surgery Center,Outpatient,2024,Pueblo,Urban,Pueblo,0,1,1.2172,115,3.7342,3.7342,2.524,0.5834,civhc_rbp_fy26
+Rocky Mountain Surgery Center,Outpatient,2024,Arapahoe,Urban,Denver,0,1,1.7858,833,2.4045,2.6401,2.524,0.7865,civhc_rbp_fy26
+Rose Medical Center,Inpatient,2024,Denver,Urban,Denver,0,0,1.4994,1984,1.9574,1.6515,1.9367,0.8213,civhc_rbp_fy26
+Rose Medical Center,Inpatient/Outpatient Combined,2024,Denver,Urban,Denver,0,0,2.0359,13018,2.3072,1.8564,2.3717,1.3539,civhc_rbp_fy26
+Rose Medical Center,Outpatient,2022,Denver,Urban,Denver,0,0,3.0034,11567,2.3542,1.8823,2.528,0.0531,civhc_rbp_fy26
+Saint Joseph East Campus Ambulatory Surgical Center,Outpatient,2024,Denver,Urban,Denver,0,1,1.4955,518,2.4045,1.9042,2.524,0.3245,civhc_rbp_fy26
+San Luis Valley Health,Inpatient/Outpatient Combined,2021,Alamosa,Rural,East,0,0,2.3672,6245,2.1124,2.3672,2.2483,0.1743,civhc_rbp_fy26
+San Luis Valley Health,Outpatient,2023,Alamosa,Rural,East,0,0,2.488,6791,2.3176,2.488,2.8358,0.0058,civhc_rbp_fy26
+Sedgwick County Health Center,Inpatient/Outpatient Combined,2022,Sedgwick,Rural,East,1,0,1.2111,504,2.1472,1.2111,2.3417,0.0026,civhc_rbp_fy26
+Sedgwick County Health Center,Inpatient/Outpatient Combined,2024,Sedgwick,Rural,East,1,0,1.4739,452,2.2207,1.4739,2.4831,0.5441,civhc_rbp_fy26
+Sky Ridge Medical Center,Inpatient,2023,Douglas,Urban,Denver,0,0,1.8612,3634,1.941,1.886,1.9517,0.1347,civhc_rbp_fy26
+Sky Ridge Medical Center,Inpatient/Outpatient Combined,2021,Douglas,Urban,Denver,0,0,2.269,18351,2.1842,2.2152,2.2969,0.1426,civhc_rbp_fy26
+Sky Ridge Surgery Center,Outpatient,2022,Douglas,Urban,Denver,0,1,1.6698,990,2.3542,2.204,2.528,0.2,civhc_rbp_fy26
+Skyline Surgery Center,Outpatient,2022,Pueblo,Urban,Pueblo,0,1,1.0625,30,3.4625,3.4625,2.528,0.2,civhc_rbp_fy26
+Skyline Surgery Center,Outpatient,2023,Pueblo,Urban,Pueblo,0,1,0.977,59,3.4403,3.4403,2.4647,0.6789,civhc_rbp_fy26
+Southwest Endoscopy Center,Outpatient,2024,La Plata,Rural,West,0,1,1.6431,244,3.0338,2.8762,2.891,0.881,civhc_rbp_fy26
+Southwest Health System,Outpatient,2024,Montezuma,Rural,West,1,0,1.9968,3159,3.0338,1.9968,2.891,0.1665,civhc_rbp_fy26
+St. Vincent Health,Outpatient,2024,Lake,Rural,West,1,0,0.9383,802,3.0338,0.9383,2.891,0.6098,civhc_rbp_fy26
+Sterling Regional MedCenter,Inpatient,2021,Logan,Rural,East,0,0,1.1291,124,1.3842,1.1291,1.5263,1.022,civhc_rbp_fy26
+Sterling Regional MedCenter,Inpatient,2023,Logan,Rural,East,0,0,0.6685,56,1.2034,0.6685,1.6874,0.5653,civhc_rbp_fy26
+Sterling Regional MedCenter,Outpatient,2024,Logan,Rural,East,0,0,3.603,2785,2.4156,3.603,2.891,0.5156,civhc_rbp_fy26
+Surgery Center of Fort Collins,Outpatient,2021,Larimer,Urban,Ft. Collins,0,1,1.2019,397,2.9767,2.9767,2.4991,0.2406,civhc_rbp_fy26
+Surgery Center of Loveland,Outpatient,2021,Larimer,Urban,Ft. Collins,0,1,1.1234,287,2.9767,2.9767,2.4991,0.0012,civhc_rbp_fy26
+Surgical Center of Peak Endoscopy,Outpatient,2022,El Paso,Urban,Colorado Springs,0,1,1.1232,478,2.6399,2.6428,2.528,0.3,civhc_rbp_fy26
+Swedish Medical Center,Outpatient,2023,Arapahoe,Urban,Denver,0,0,2.889,11665,2.2485,2.4517,2.4647,0.0446,civhc_rbp_fy26
+Telluride Medical Center,Outpatient,2024,San Miguel,Rural,West,0,0,1.7774,190,3.0338,1.7774,2.891,1.0858,civhc_rbp_fy26
+UCHealth Broomfield Hospital,Inpatient/Outpatient Combined,2021,Jefferson,Urban,Denver,0,0,2.5846,2857,2.1842,2.5482,2.2969,0.0206,civhc_rbp_fy26
+UCHealth Grandview Hospital,Inpatient,2021,El Paso,Urban,Colorado Springs,0,0,1.5845,52,1.947,1.9486,1.9401,0.001,civhc_rbp_fy26
+UCHealth Highlands Ranch Hospital,Inpatient,2022,Douglas,Urban,Denver,0,0,1.9434,861,2.0119,1.8649,1.99,1.154,civhc_rbp_fy26
+UCHealth Highlands Ranch Hospital,Inpatient/Outpatient Combined,2022,Douglas,Urban,Denver,0,0,2.3821,9310,2.284,2.2702,2.3666,0.7879,civhc_rbp_fy26
+UCHealth Highlands Ranch Hospital,Inpatient/Outpatient Combined,2024,Douglas,Urban,Denver,0,0,2.4329,10821,2.3072,2.3331,2.3717,1.8223,civhc_rbp_fy26
+UCHealth Highlands Ranch Hospital,Outpatient,2022,Douglas,Urban,Denver,0,0,2.9096,8449,2.3542,2.204,2.528,0.1283,civhc_rbp_fy26
+UCHealth Longs Peak Hospital,Inpatient,2023,Weld,Urban,Greeley,0,0,1.9279,505,1.8989,1.8989,1.9517,0.4159,civhc_rbp_fy26
+UCHealth Longs Peak Hospital,Inpatient/Outpatient Combined,2021,Weld,Urban,Greeley,0,0,2.537,16935,2.59,2.59,2.2969,0.1341,civhc_rbp_fy26
+UCHealth Longs Peak Hospital,Outpatient,2024,Weld,Urban,Greeley,0,0,3.2076,17387,2.9093,2.9093,2.524,0.6246,civhc_rbp_fy26
+UCHealth Medical Center of the Rockies,Inpatient,2023,Larimer,Urban,Ft. Collins,0,0,2.4608,1152,2.0765,2.0765,1.9517,1.8995,civhc_rbp_fy26
+UCHealth Medical Center of the Rockies,Inpatient,2024,Larimer,Urban,Ft. Collins,0,0,2.3506,1176,2.0148,2.0148,1.9367,1.3136,civhc_rbp_fy26
+UCHealth Medical Center of the Rockies,Inpatient/Outpatient Combined,2024,Larimer,Urban,Ft. Collins,0,0,2.7962,21072,2.6442,2.6442,2.3717,1.4626,civhc_rbp_fy26
+UCHealth Memorial Hospital,Inpatient,2021,El Paso,Urban,Colorado Springs,0,0,1.8748,2073,1.947,1.9486,1.9401,0.0657,civhc_rbp_fy26
+UCHealth Parkview Medical Center,Inpatient,2021,Pueblo,Urban,Pueblo,0,0,2.0972,968,2.0631,2.0631,1.9401,0.1654,civhc_rbp_fy26
+UCHealth Poudre Valley Hospital,Inpatient,2024,Larimer,Urban,Ft. Collins,0,0,1.9085,1322,2.0148,2.0148,1.9367,0.547,civhc_rbp_fy26
+UCHealth Poudre Valley Hospital,Inpatient/Outpatient Combined,2021,Larimer,Urban,Ft. Collins,0,0,3.0437,50757,2.9294,2.9294,2.2969,0.3522,civhc_rbp_fy26
+UCHealth Poudre Valley Hospital,Inpatient/Outpatient Combined,2022,Larimer,Urban,Ft. Collins,0,0,3.0163,42432,2.8913,2.8913,2.3666,0.2938,civhc_rbp_fy26
+UCHealth University of Colorado Hospital,Inpatient/Outpatient Combined,2022,Adams,Urban,Denver,0,0,2.9598,103093,2.284,2.858,2.3666,0.2383,civhc_rbp_fy26
+UCHealth University of Colorado Hospital,Outpatient,2021,Adams,Urban,Denver,0,0,2.8047,105285,2.3417,2.9458,2.4991,0.1977,civhc_rbp_fy26
+UCHealth University of Colorado Hospital,Outpatient,2022,Adams,Urban,Denver,0,0,3.2399,101137,2.3542,3.2477,2.528,0.2337,civhc_rbp_fy26
+UCHealth Yampa Valley Medical Center,Inpatient,2021,Routt,Rural,West,0,0,1.5431,197,1.5537,1.5431,1.5263,0.9848,civhc_rbp_fy26
+UCHealth Yampa Valley Medical Center,Inpatient/Outpatient Combined,2022,Routt,Rural,West,0,0,2.6769,15050,2.3988,2.6769,2.3417,0.1505,civhc_rbp_fy26
+UCHealth Yampa Valley Medical Center,Outpatient,2023,Routt,Rural,West,0,0,3.3447,15078,2.9891,3.1952,2.8358,0.1367,civhc_rbp_fy26
+Urology Surgery Center of Colorado,Outpatient,2023,Denver,Urban,Denver,0,1,2.0173,796,2.2485,1.722,2.4647,0.0013,civhc_rbp_fy26
+Vail Health Hospital,Inpatient,2024,Eagle,Rural,West,0,0,1.2442,173,1.5961,1.2442,1.5378,0.6849,civhc_rbp_fy26
+Vail Health Hospital,Outpatient,2021,Eagle,Rural,West,0,0,3.1519,12791,2.7793,3.9793,2.6902,0.7653,civhc_rbp_fy26
+Vail Valley Surgery Center - Edwards,Outpatient,2021,Eagle,Rural,West,0,1,5.1634,2524,2.7793,3.9793,2.6902,2.7431,civhc_rbp_fy26
+Vail Valley Surgery Center - Edwards,Outpatient,2022,Eagle,Rural,West,0,1,5.0827,2468,2.8235,4.1645,2.7132,2.3106,civhc_rbp_fy26
+Valley View Hospital,Inpatient/Outpatient Combined,2022,Garfield,Rural,West,0,0,3.3942,17321,2.3988,2.7545,2.3417,0.6145,civhc_rbp_fy26
+Valley View Hospital,Outpatient,2021,Garfield,Rural,West,0,0,3.8051,18569,2.7793,3.0031,2.6902,0.2344,civhc_rbp_fy26
+Weisbrod Memorial County Hospital,Inpatient/Outpatient Combined,2023,Kiowa,Rural,East,1,0,0.6269,544,2.1433,0.6269,2.4878,0.3535,civhc_rbp_fy26
+Yuma District Hospital,Inpatient/Outpatient Combined,2021,Yuma,Rural,East,1,0,1.1618,1921,2.1124,1.3028,2.2483,0.1336,civhc_rbp_fy26
+AdventHealth Avista,Inpatient,2023,Boulder,Urban,Boulder,0,0,1.6505,809,1.7876,1.7876,1.9517,0.0005,civhc_rbp_fy26
+AdventHealth Avista,Inpatient,2024,Boulder,Urban,Boulder,0,0,1.6374,656,1.7934,1.7934,1.9367,0.8409,civhc_rbp_fy26
+AdventHealth Castle Rock,Inpatient,2024,Douglas,Urban,Denver,0,0,1.6796,628,1.9574,1.8439,1.9367,1.0715,civhc_rbp_fy26
+AdventHealth Castle Rock,Outpatient,2021,Douglas,Urban,Denver,0,0,2.3485,12989,2.3417,2.2521,2.4991,0.0872,civhc_rbp_fy26
+AdventHealth Castle Rock,Outpatient,2022,Douglas,Urban,Denver,0,0,2.3739,9301,2.3542,2.204,2.528,0.1419,civhc_rbp_fy26
+AdventHealth Littleton,Outpatient,2023,Arapahoe,Urban,Denver,0,0,2.6745,11286,2.2485,2.4517,2.4647,0.1752,civhc_rbp_fy26
+AdventHealth Littleton,Outpatient,2024,Arapahoe,Urban,Denver,0,0,3.1875,10961,2.4045,2.6401,2.524,1.4447,civhc_rbp_fy26
+AdventHealth Porter,Inpatient/Outpatient Combined,2024,Denver,Urban,Denver,0,0,2.3506,11910,2.3072,1.8564,2.3717,0.3963,civhc_rbp_fy26
+Ambulatory Surgery Center Lone Tree,Outpatient,2021,Arapahoe,Urban,Denver,0,1,1.0402,197,2.3417,2.5878,2.4991,0.001,civhc_rbp_fy26
+Ambulatory Surgery Center Lone Tree,Outpatient,2023,Arapahoe,Urban,Denver,0,1,0.9559,205,2.2485,2.4517,2.4647,0.1156,civhc_rbp_fy26
+Arete Surgical Center,Outpatient,2023,Weld,Urban,Greeley,0,1,1.0038,76,2.9683,2.9683,2.4647,0.0004,civhc_rbp_fy26
+Arkansas Valley Regional Medical Center,Inpatient,2021,Otero,Rural,East,1,0,2.0158,62,1.3842,2.0158,1.5263,0.7723,civhc_rbp_fy26
+Arkansas Valley Regional Medical Center,Inpatient/Outpatient Combined,2024,Otero,Rural,East,1,0,2.2224,2723,2.2207,2.2224,2.4831,0.4086,civhc_rbp_fy26
+Ascent Surgery Center,Outpatient,2022,El Paso,Urban,Colorado Springs,0,1,1.2437,316,2.6399,2.6428,2.528,0.0031,civhc_rbp_fy26
+Ascent Surgery Center,Outpatient,2024,El Paso,Urban,Colorado Springs,0,1,1.1063,396,2.5757,2.5887,2.524,0.2513,civhc_rbp_fy26
+Aspen Valley Hospital District,Outpatient,2021,Pitkin,Rural,West,1,0,1.1348,11209,2.7793,1.1348,2.6902,0.1798,civhc_rbp_fy26
+Aspen Valley Hospital District,Outpatient,2023,Pitkin,Rural,West,1,0,1.2602,10532,2.9891,1.2602,2.8358,0.0255,civhc_rbp_fy26
+Aspen Valley Hospital District,Outpatient,2024,Pitkin,Rural,West,1,0,1.3346,9586,3.0338,1.3346,2.891,0.289,civhc_rbp_fy26
+Banner Fort Collins Medical Center,Inpatient,2024,Larimer,Urban,Ft. Collins,0,0,1.0239,291,2.0148,2.0148,1.9367,0.0014,civhc_rbp_fy26
+Banner Fort Collins Medical Center,Outpatient,2024,Larimer,Urban,Ft. Collins,0,0,3.0019,2918,2.7664,2.7664,2.524,0.2931,civhc_rbp_fy26
+Banner McKee Medical Center,Inpatient,2021,Larimer,Urban,Ft. Collins,0,0,1.7009,268,2.4221,2.4221,1.9401,0.0008,civhc_rbp_fy26
+Banner McKee Medical Center,Inpatient/Outpatient Combined,2021,Larimer,Urban,Ft. Collins,0,0,2.2489,5393,2.9294,2.9294,2.2969,0.5788,civhc_rbp_fy26
+Banner North Colorado Medical Center,Inpatient,2024,Weld,Urban,Greeley,0,0,1.9529,392,1.9078,1.9078,1.9367,0.001,civhc_rbp_fy26
+Canyon View Ambulatory Surgery Center,Outpatient,2022,Mesa,Urban,Grand Junction,0,1,1.007,206,3.2804,3.2804,2.528,0.0006,civhc_rbp_fy26
+Centrum Surgery Center,Outpatient,2024,Arapahoe,Urban,Denver,0,1,1.9078,656,2.4045,2.6401,2.524,0.0012,civhc_rbp_fy26
+Clear Creek Surgery Center,Outpatient,2021,Jefferson,Urban,Denver,0,1,1.4426,458,2.3417,2.5164,2.4991,0.0013,civhc_rbp_fy26
+Colorado Urologic Surgery Center - St. Anthony Hospital Campus,Outpatient,2023,Jefferson,Urban,Denver,0,1,1.8705,261,2.2485,2.426,2.4647,0.3337,civhc_rbp_fy26
+CommonSpirit - Penrose Hospital,Inpatient/Outpatient Combined,2023,El Paso,Urban,Colorado Springs,0,0,2.2698,15744,2.389,2.3967,2.3251,0.0654,civhc_rbp_fy26
+CommonSpirit - Penrose Hospital,Inpatient/Outpatient Combined,2024,El Paso,Urban,Colorado Springs,0,0,2.3724,12685,2.4187,2.424,2.3717,0.6656,civhc_rbp_fy26
+CommonSpirit Longmont United Hospital,Inpatient,2024,Boulder,Urban,Boulder,0,0,1.6578,113,1.7934,1.7934,1.9367,0.8155,civhc_rbp_fy26
+CommonSpirit Longmont United Hospital,Outpatient,2023,Boulder,Urban,Boulder,0,0,2.5038,2635,2.2475,2.2475,2.4647,0.0158,civhc_rbp_fy26
+CommonSpirit Longmont United Hospital,Outpatient,2024,Boulder,Urban,Boulder,0,0,2.4482,2508,2.2621,2.2621,2.524,0.3676,civhc_rbp_fy26
+CommonSpirit Mercy Hospital,Inpatient,2024,La Plata,Rural,West,0,0,1.7078,331,1.5961,1.6736,1.5378,0.9127,civhc_rbp_fy26
+CommonSpirit Mercy Hospital,Outpatient,2022,La Plata,Rural,West,0,0,3.548,14291,2.8235,3.2928,2.7132,0.1449,civhc_rbp_fy26
+CommonSpirit St. Anthony Hospital,Inpatient,2024,Jefferson,Urban,Denver,0,0,2.4739,675,1.9574,2.4459,1.9367,1.8614,civhc_rbp_fy26
+CommonSpirit St. Anthony Hospital,Inpatient/Outpatient Combined,2024,Jefferson,Urban,Denver,0,0,2.7526,9827,2.3072,2.8249,2.3717,0.9744,civhc_rbp_fy26
+CommonSpirit St. Anthony North Hospital,Inpatient,2024,Broomfield,Urban,Denver,0,0,1.7565,579,1.9574,1.7565,1.9367,1.3698,civhc_rbp_fy26
+CommonSpirit St. Anthony North Hospital,Inpatient/Outpatient Combined,2022,Broomfield,Urban,Denver,0,0,2.5728,10876,2.284,2.5728,2.3666,0.0339,civhc_rbp_fy26
+CommonSpirit St. Anthony North Hospital,Outpatient,2021,Broomfield,Urban,Denver,0,0,3.5278,6724,2.3417,3.5278,2.4991,0.3113,civhc_rbp_fy26
+CommonSpirit St. Anthony Summit Medical Center,Inpatient/Outpatient Combined,2024,Summit,Rural,West,0,0,3.4519,4958,2.5642,3.4519,2.4831,1.4301,civhc_rbp_fy26
+CommonSpirit St. Francis Hospital - Interquest,Outpatient,2023,El Paso,Urban,Colorado Springs,0,0,6.7403,159,2.5173,2.5332,2.4647,0.0046,civhc_rbp_fy26
+CommonSpirit St. Thomas More Hospital,Inpatient/Outpatient Combined,2021,Fremont,Rural,East,0,0,4.1351,1196,2.1124,4.7386,2.2483,0.0045,civhc_rbp_fy26
+CommonSpirit St. Thomas More Hospital,Outpatient,2023,Fremont,Rural,East,1,0,5.2793,4614,2.3176,5.0737,2.8358,0.0204,civhc_rbp_fy26
+Community Hospital,Inpatient,2021,Mesa,Urban,Grand Junction,0,0,3.1083,282,2.6603,2.6603,1.9401,0.0012,civhc_rbp_fy26
+Community Hospital,Inpatient/Outpatient Combined,2023,Mesa,Urban,Grand Junction,0,0,3.7822,17455,3.5199,3.5199,2.3251,0.2496,civhc_rbp_fy26
+Community Hospital,Inpatient/Outpatient Combined,2024,Mesa,Urban,Grand Junction,0,0,3.3377,16528,2.9432,2.9432,2.3717,0.792,civhc_rbp_fy26
+Crown Point Surgery Center,Outpatient,2022,Douglas,Urban,Denver,0,1,1.8458,814,2.3542,2.204,2.528,0.1504,civhc_rbp_fy26
+Day Surgery of Grand Junction,Outpatient,2021,Mesa,Urban,Grand Junction,0,1,1.0517,162,3.2289,3.2289,2.4991,0.5871,civhc_rbp_fy26
+Delta Health,Outpatient,2023,Delta,Rural,West,0,0,4.1675,10198,2.9891,4.1675,2.8358,0.2116,civhc_rbp_fy26
+Denver Diagnostic Ambulatory Surgery Center,Outpatient,2021,Arapahoe,Urban,Denver,0,1,1.3908,72,2.3417,2.5878,2.4991,0.0031,civhc_rbp_fy26
+Denver Diagnostic Ambulatory Surgery Center,Outpatient,2024,Arapahoe,Urban,Denver,0,1,1.0693,76,2.4045,2.6401,2.524,0.0002,civhc_rbp_fy26
+Denver Mid-Town Surgery Center,Outpatient,2021,Denver,Urban,Denver,0,1,1.5943,843,2.3417,1.9352,2.4991,0.2342,civhc_rbp_fy26
+Denver Mid-Town Surgery Center,Outpatient,2022,Denver,Urban,Denver,0,1,1.6335,946,2.3542,1.8823,2.528,0.0007,civhc_rbp_fy26
+Denver West Endoscopy Center,Outpatient,2024,Jefferson,Urban,Denver,0,1,2.0148,1382,2.4045,2.5063,2.524,1.4659,civhc_rbp_fy26
+Dry Creek Surgery Center,Outpatient,2023,Arapahoe,Urban,Denver,0,1,1.2417,173,2.2485,2.4517,2.4647,0.2164,civhc_rbp_fy26
+Durango Surgery Center,Outpatient,2022,La Plata,Rural,West,0,1,1.6922,49,2.8235,3.2928,2.7132,0.1266,civhc_rbp_fy26
+Endoscopy Center of the Rockies - Longmont,Outpatient,2024,Boulder,Urban,Boulder,0,1,3.3635,599,2.2621,2.2621,2.524,1.8374,civhc_rbp_fy26
+Estes Park Health,Inpatient/Outpatient Combined,2021,Larimer,Urban,Ft. Collins,1,0,1.6212,2278,2.9294,2.9294,2.2969,0.5851,civhc_rbp_fy26
+Family Health West,Inpatient/Outpatient Combined,2021,Mesa,Urban,Grand Junction,1,0,1.7931,3875,3.152,3.152,2.2969,0.0477,civhc_rbp_fy26
+Foothills Surgery Center,Outpatient,2021,Boulder,Urban,Boulder,0,1,1.9993,687,2.0417,2.0417,2.4991,1.0168,civhc_rbp_fy26
+Foothills Surgery Center,Outpatient,2024,Boulder,Urban,Boulder,0,1,1.8085,514,2.2621,2.2621,2.524,0.6157,civhc_rbp_fy26
+Golden Ridge Ambulatory Surgery Center,Outpatient,2023,Jefferson,Urban,Denver,0,1,1.6679,1265,2.2485,2.426,2.4647,0.0162,civhc_rbp_fy26
+Grand River Hospital District,Inpatient,2022,Garfield,Rural,West,1,0,1.6456,42,1.6768,2.4884,1.6034,0.7268,civhc_rbp_fy26
+Grand River Hospital District,Outpatient,2021,Garfield,Rural,West,1,0,1.589,10054,2.7793,3.0031,2.6902,0.0239,civhc_rbp_fy26
+Grand River Hospital District,Outpatient,2024,Garfield,Rural,West,1,0,1.9121,9124,3.0338,3.2259,2.891,0.363,civhc_rbp_fy26
+Grand Valley Surgical Center,Outpatient,2021,Mesa,Urban,Grand Junction,0,1,1.064,501,3.2289,3.2289,2.4991,0.0015,civhc_rbp_fy26
+Gunnison Valley Hospital,Inpatient,2024,Gunnison,Rural,West,1,0,2.0164,89,1.5961,2.0164,1.5378,1.5137,civhc_rbp_fy26
+Gunnison Valley Hospital,Inpatient/Outpatient Combined,2024,Gunnison,Rural,West,1,0,2.6321,7238,2.5642,2.6321,2.4831,0.2344,civhc_rbp_fy26
+Gunnison Valley Hospital,Outpatient,2021,Gunnison,Rural,West,1,0,2.005,7728,2.7793,2.0322,2.6902,0.0361,civhc_rbp_fy26
+Harmony Surgery Center,Outpatient,2021,Larimer,Urban,Ft. Collins,0,1,1.4265,3838,2.9767,2.9767,2.4991,0.8269,civhc_rbp_fy26
+Harvard Park Surgery Center,Outpatient,2022,Denver,Urban,Denver,0,1,1.7331,577,2.3542,1.8823,2.528,0.0011,civhc_rbp_fy26
+Healthone Ridge View Endoscopy Center - Lone Tree,Outpatient,2023,Douglas,Urban,Denver,0,1,3.0549,2381,2.2485,2.2354,2.4647,0.9229,civhc_rbp_fy26
+Heart of the Rockies Regional Medical Center,Outpatient,2023,Chaffee,Rural,East,1,0,2.5137,8929,2.3176,2.5137,2.8358,0.0855,civhc_rbp_fy26
+Insight Surgery Center,Outpatient,2023,Douglas,Urban,Denver,0,1,0.9618,306,2.2485,2.2354,2.4647,0.0016,civhc_rbp_fy26
+Intermountain Health Platte Valley Hospital,Inpatient,2021,Adams,Urban,Denver,0,0,1.8682,320,1.8993,2.2662,1.9401,0.0015,civhc_rbp_fy26
+Intermountain Health Platte Valley Hospital,Inpatient,2023,Adams,Urban,Denver,0,0,1.58,367,1.941,2.2969,1.9517,0.0314,civhc_rbp_fy26
+Intermountain Health St. Mary's Medical Center,Outpatient,2022,Mesa,Urban,Grand Junction,0,0,3.7168,17777,3.2804,3.2804,2.528,0.0957,civhc_rbp_fy26
+Intermountain Health St. Mary's Medical Center,Outpatient,2023,Mesa,Urban,Grand Junction,0,0,4.4551,23573,3.7218,3.7218,2.4647,0.0705,civhc_rbp_fy26
+Keefe Memorial Hospital,Inpatient/Outpatient Combined,2024,Cheyenne,Rural,East,1,0,5.8128,1787,2.2207,5.8128,2.4831,0.0941,civhc_rbp_fy26
+Lincoln Health,Inpatient/Outpatient Combined,2023,Lincoln,Rural,East,1,0,0.9825,1989,2.1433,0.9825,2.4878,0.223,civhc_rbp_fy26
+Lincoln Surgery Center,Outpatient,2023,Douglas,Urban,Denver,0,1,1.8023,229,2.2485,2.2354,2.4647,0.0011,civhc_rbp_fy26
+Lone Tree Surgery Center,Outpatient,2024,Douglas,Urban,Denver,0,1,1.1243,969,2.4045,2.3549,2.524,0.4845,civhc_rbp_fy26
+Melissa Memorial Hospital,Inpatient/Outpatient Combined,2024,Phillips,Rural,East,1,0,1.3313,1471,2.2207,1.3003,2.4831,1.0917,civhc_rbp_fy26
+Middle Park Health - Granby,Outpatient,2021,Grand,Rural,West,1,0,1.7724,882,2.7793,1.8037,2.6902,0.006,civhc_rbp_fy26
+Middle Park Health - Granby,Outpatient,2024,Grand,Rural,West,1,0,1.9682,1145,3.0338,1.8849,2.891,0.0024,civhc_rbp_fy26
+Middle Park Health - Kremmling,Inpatient/Outpatient Combined,2023,Grand,Rural,West,1,0,1.899,3385,2.5901,1.8937,2.4878,0.1579,civhc_rbp_fy26
+Mile High Surgicenter,Outpatient,2024,Arapahoe,Urban,Denver,0,1,1.5681,477,2.4045,2.6401,2.524,0.4003,civhc_rbp_fy26
+Milestone Surgical Center,Outpatient,2024,Douglas,Urban,Denver,0,1,1.0403,40,2.4045,2.3549,2.524,0.892,civhc_rbp_fy26
+Montrose Regional Health,Inpatient/Outpatient Combined,2022,Montrose,Rural,West,0,0,3.8451,12085,2.3988,3.8451,2.3417,0.2989,civhc_rbp_fy26
+Montrose Regional Health,Inpatient/Outpatient Combined,2024,Montrose,Rural,West,0,0,4.1208,13543,2.5642,4.1208,2.4831,0.4459,civhc_rbp_fy26
+Mt. San Rafael Hospital,Outpatient,2021,Las Animas,Rural,East,1,0,2.9606,1804,2.3528,2.9606,2.6902,0.0061,civhc_rbp_fy26
+Mt. San Rafael Hospital,Outpatient,2024,Las Animas,Rural,East,1,0,2.7448,1850,2.4156,2.7448,2.891,0.7055,civhc_rbp_fy26
+National Jewish Health,Inpatient/Outpatient Combined,2022,Denver,Urban,Denver,0,0,2.5165,14120,2.284,1.9245,2.3666,0.2743,civhc_rbp_fy26
+North Care Ambulatory Surgery Center,Outpatient,2023,El Paso,Urban,Colorado Springs,0,1,1.2676,231,2.5173,2.5332,2.4647,0.2638,civhc_rbp_fy26
+North Suburban Spine Center,Outpatient,2023,Adams,Urban,Denver,0,1,1.5484,157,2.2485,2.9273,2.4647,0.0005,civhc_rbp_fy26
+Novamed Surgery Center of Colorado Springs,Outpatient,2023,El Paso,Urban,Colorado Springs,0,1,1.1185,241,2.5173,2.5332,2.4647,0.4157,civhc_rbp_fy26
+Orthopaedic and Spine Center of the Rockies - Fort Collins,Outpatient,2023,Larimer,Urban,Ft. Collins,0,1,2.3279,921,2.8627,2.8627,2.4647,0.1191,civhc_rbp_fy26
+Orthopedic Center of Colorado at Iverness,Outpatient,2021,Arapahoe,Urban,Denver,0,1,1.4016,487,2.3417,2.5878,2.4991,0.2361,civhc_rbp_fy26
+Park Meadows Outpatient Surgery,Outpatient,2024,Douglas,Urban,Denver,0,1,1.0844,76,2.4045,2.3549,2.524,0.9234,civhc_rbp_fy26
+Park Ridge Surgery Center,Outpatient,2021,Douglas,Urban,Denver,0,1,2.5442,370,2.3417,2.2521,2.4991,0.0035,civhc_rbp_fy26
+Park Ridge Surgery Center,Outpatient,2024,Douglas,Urban,Denver,0,1,2.0618,286,2.4045,2.3549,2.524,1.7986,civhc_rbp_fy26
+Peak One Surgery Center,Outpatient,2023,Summit,Rural,West,0,1,4.1967,514,2.9891,4.8531,2.8358,0.7743,civhc_rbp_fy26
+Pikes Peak Endoscopy and Surgery Center,Outpatient,2023,El Paso,Urban,Colorado Springs,0,1,1.1151,1728,2.5173,2.5332,2.4647,0.0022,civhc_rbp_fy26
+Pioneers Medical Center,Inpatient,2021,Rio Blanco,Rural,West,1,0,1.9558,38,1.5537,1.8869,1.5263,0.725,civhc_rbp_fy26
+Pioneers Medical Center,Inpatient/Outpatient Combined,2021,Rio Blanco,Rural,West,1,0,1.6992,2434,2.2831,1.3928,2.2483,1.3745,civhc_rbp_fy26
+Pioneers Medical Center,Outpatient,2023,Rio Blanco,Rural,West,1,0,1.3498,2468,2.9891,1.1168,2.8358,0.2444,civhc_rbp_fy26
+Presbyterian/St. Luke's Medical Center,Inpatient/Outpatient Combined,2022,Denver,Urban,Denver,0,0,2.7423,13414,2.284,1.9245,2.3666,0.0195,civhc_rbp_fy26
+Presbyterian/St. Luke's Medical Center,Inpatient/Outpatient Combined,2024,Denver,Urban,Denver,0,0,2.9075,11755,2.3072,1.8564,2.3717,0.6246,civhc_rbp_fy26
+Prowers Medical Center,Inpatient,2021,Prowers,Rural,East,1,0,1.4008,51,1.3842,1.4008,1.5263,0.0012,civhc_rbp_fy26
+Prowers Medical Center,Outpatient,2023,Prowers,Rural,East,1,0,1.8436,3729,2.3176,1.8436,2.8358,0.0062,civhc_rbp_fy26
+Research Surgical Center,Outpatient,2023,El Paso,Urban,Colorado Springs,0,1,1.2998,514,2.5173,2.5332,2.4647,0.1284,civhc_rbp_fy26
+Rocky Mountain Endoscopy Center - Thornton,Outpatient,2024,Adams,Urban,Denver,0,1,2.7878,877,2.4045,3.0768,2.524,1.081,civhc_rbp_fy26
+Rocky Mountain Laser and Surgery Center,Outpatient,2023,Pueblo,Urban,Pueblo,0,1,1.1549,214,3.4403,3.4403,2.4647,0.2,civhc_rbp_fy26
+Rose Ambulatory Surgery Center,Outpatient,2021,Denver,Urban,Denver,0,1,2.0023,1803,2.3417,1.9352,2.4991,1.0719,civhc_rbp_fy26
+Rose Medical Center,Inpatient,2022,Denver,Urban,Denver,0,0,1.6819,2441,2.0119,1.8302,1.99,0.0006,civhc_rbp_fy26
+Rose Medical Center,Inpatient,2023,Denver,Urban,Denver,0,0,1.5164,2133,1.941,1.6885,1.9517,0.1659,civhc_rbp_fy26
+STATEWIDE,Inpatient,2024,STATEWIDE,STATEWIDE,STATEWIDE,0,0,1.9116,38903,,,,,civhc_rbp_fy26
+STATEWIDE,Outpatient,2023,STATEWIDE,STATEWIDE,STATEWIDE,0,0,2.5316,988659,,,,,civhc_rbp_fy26
+San Luis Valley Health,Inpatient,2022,Alamosa,Rural,East,0,0,1.3318,115,1.2105,1.3318,1.6034,0.5698,civhc_rbp_fy26
+San Luis Valley Health,Inpatient,2024,Alamosa,Rural,East,0,0,1.1747,89,1.2459,1.1747,1.5378,0.7978,civhc_rbp_fy26
+San Luis Valley Health,Inpatient/Outpatient Combined,2024,Alamosa,Rural,East,0,0,2.2936,5741,2.2207,2.2936,2.4831,0.6131,civhc_rbp_fy26
+San Luis Valley Health,Outpatient,2024,Alamosa,Rural,East,0,0,2.7121,5652,2.4156,2.7121,2.891,0.6131,civhc_rbp_fy26
+San Luis Valley Health Conejos County Hospital,Outpatient,2024,Conejos,Rural,East,1,0,2.0213,737,2.4156,2.0213,2.891,0.0254,civhc_rbp_fy26
+Sedgwick County Health Center,Inpatient/Outpatient Combined,2021,Sedgwick,Rural,East,1,0,1.3583,578,2.1124,1.3583,2.2483,0.0053,civhc_rbp_fy26
+Sedgwick County Health Center,Inpatient/Outpatient Combined,2023,Sedgwick,Rural,East,1,0,1.1854,473,2.1433,1.1854,2.4878,0.0148,civhc_rbp_fy26
+Sedgwick County Health Center,Outpatient,2023,Sedgwick,Rural,East,1,0,1.1754,472,2.3176,1.1754,2.8358,0.0148,civhc_rbp_fy26
+Sky Ridge Medical Center,Inpatient,2024,Douglas,Urban,Denver,0,0,1.8188,3507,1.9574,1.8439,1.9367,0.8546,civhc_rbp_fy26
+Sky Ridge Medical Center,Outpatient,2023,Douglas,Urban,Denver,0,0,2.6403,13123,2.2485,2.2354,2.4647,0.0386,civhc_rbp_fy26
+South Denver Gastroenterology Castle Rock Endoscopy Center,Outpatient,2021,Douglas,Urban,Denver,0,1,2.2521,43,2.3417,2.2521,2.4991,0.0019,civhc_rbp_fy26
+South Denver Gastroenterology Castle Rock Endoscopy Center,Outpatient,2024,Douglas,Urban,Denver,0,1,2.0852,766,2.4045,2.3549,2.524,1.7456,civhc_rbp_fy26
+South Denver Musculoskeletal Surgical Partners,Outpatient,2021,Arapahoe,Urban,Denver,0,1,1.948,879,2.3417,2.5878,2.4991,0.3333,civhc_rbp_fy26
+Southeast Colorado Hospital District,Outpatient,2024,Baca,Rural,East,1,0,2.0698,772,2.4156,2.0698,2.891,0.2527,civhc_rbp_fy26
+Southwest Health System,Inpatient/Outpatient Combined,2022,Montezuma,Rural,West,1,0,1.8727,3409,2.3988,1.8727,2.3417,0.0041,civhc_rbp_fy26
+Southwest Health System,Outpatient,2022,Montezuma,Rural,West,1,0,1.9628,3381,2.8235,1.9628,2.7132,0.0053,civhc_rbp_fy26
+Spanish Peaks Regional Health Center,Inpatient/Outpatient Combined,2021,Huerfano,Rural,East,1,0,1.3338,1053,2.1124,1.3338,2.2483,0.0021,civhc_rbp_fy26
+Spanish Peaks Regional Health Center,Inpatient/Outpatient Combined,2023,Huerfano,Rural,East,1,0,1.5287,935,2.1433,1.5287,2.4878,0.004,civhc_rbp_fy26
+Spanish Peaks Regional Health Center,Outpatient,2023,Huerfano,Rural,East,1,0,1.4001,930,2.3176,1.4001,2.8358,0.004,civhc_rbp_fy26
+St. Vincent Health,Inpatient/Outpatient Combined,2024,Lake,Rural,West,1,0,0.7543,805,2.5642,0.7543,2.4831,0.4571,civhc_rbp_fy26
+Sterling Regional MedCenter,Inpatient/Outpatient Combined,2023,Logan,Rural,East,0,0,2.8472,3125,2.1433,2.8472,2.4878,0.2716,civhc_rbp_fy26
+Sterling Regional MedCenter,Inpatient/Outpatient Combined,2024,Logan,Rural,East,0,0,2.4156,2870,2.2207,2.4156,2.4831,1.3417,civhc_rbp_fy26
+Surgery Center of Northern Colorado,Outpatient,2022,Larimer,Urban,Ft. Collins,0,1,1.0016,899,2.9914,2.9914,2.528,0.0008,civhc_rbp_fy26
+Swedish Medical Center,Inpatient/Outpatient Combined,2024,Arapahoe,Urban,Denver,0,0,2.7737,12448,2.3072,2.652,2.3717,1.2978,civhc_rbp_fy26
+Swedish Medical Center,Outpatient,2022,Arapahoe,Urban,Denver,0,0,3.0511,11051,2.3542,2.5388,2.528,0.1207,civhc_rbp_fy26
+Swedish Medical Center,Outpatient,2024,Arapahoe,Urban,Denver,0,0,3.1127,11109,2.4045,2.6401,2.524,0.8415,civhc_rbp_fy26
+Telluride Medical Center,Inpatient/Outpatient Combined,2021,San Miguel,Rural,West,0,0,4.081,186,2.2831,4.081,2.2483,1.763,civhc_rbp_fy26
+Telluride Medical Center,Inpatient/Outpatient Combined,2022,San Miguel,Rural,West,0,0,3.5569,215,2.3988,3.5569,2.3417,0.0107,civhc_rbp_fy26
+Telluride Medical Center,Outpatient,2022,San Miguel,Rural,West,0,0,3.5569,215,2.8235,3.5569,2.7132,0.0107,civhc_rbp_fy26
+Telluride Medical Center,Outpatient,2023,San Miguel,Rural,West,0,0,2.0463,53,2.9891,2.0463,2.8358,0.0166,civhc_rbp_fy26
+The Orthopaedic and Spine Center of Southern Colorado,Outpatient,2021,El Paso,Urban,Colorado Springs,0,1,1.4528,726,2.5464,2.5524,2.4991,0.2107,civhc_rbp_fy26
+UCHealth Ambulatory Surgery Center - Denver,Outpatient,2022,Denver,Urban,Denver,0,1,0.9294,1370,2.3542,1.8823,2.528,0.5652,civhc_rbp_fy26
+UCHealth Ambulatory Surgery Center - Denver,Outpatient,2023,Denver,Urban,Denver,0,1,0.9583,1660,2.2485,1.722,2.4647,0.024,civhc_rbp_fy26
+UCHealth Ambulatory Surgery Center - Denver,Outpatient,2024,Denver,Urban,Denver,0,1,1.135,1550,2.4045,1.9042,2.524,0.3361,civhc_rbp_fy26
+UCHealth Ambulatory Surgery Center - Longmont,Outpatient,2021,Weld,Urban,Greeley,0,1,1.7801,690,3.048,3.048,2.4991,0.0015,civhc_rbp_fy26
+UCHealth Broomfield Hospital,Inpatient,2023,Jefferson,Urban,Denver,0,0,1.185,49,1.941,2.169,1.9517,0.0001,civhc_rbp_fy26
+UCHealth Grandview Hospital,Outpatient,2023,El Paso,Urban,Colorado Springs,0,0,2.7986,4261,2.5173,2.5332,2.4647,0.059,civhc_rbp_fy26
+UCHealth Greeley  Hospital,Inpatient/Outpatient Combined,2021,Weld,Urban,Greeley,0,0,2.8846,12118,2.59,2.59,2.2969,0.072,civhc_rbp_fy26
+UCHealth Greeley  Hospital,Outpatient,2022,Weld,Urban,Greeley,0,0,3.4701,11462,2.9279,2.9279,2.528,0.0958,civhc_rbp_fy26
+UCHealth Highlands Ranch Hospital,Outpatient,2021,Douglas,Urban,Denver,0,0,2.8294,9733,2.3417,2.2521,2.4991,0.1764,civhc_rbp_fy26
+UCHealth Longs Peak Hospital,Inpatient/Outpatient Combined,2022,Weld,Urban,Greeley,0,0,2.5319,15922,2.5344,2.5344,2.3666,0.0615,civhc_rbp_fy26
+UCHealth Medical Center of the Rockies,Inpatient/Outpatient Combined,2021,Larimer,Urban,Ft. Collins,0,0,3.2763,35956,2.9294,2.9294,2.2969,0.9008,civhc_rbp_fy26
+UCHealth Medical Center of the Rockies,Outpatient,2022,Larimer,Urban,Ft. Collins,0,0,3.732,23590,2.9914,2.9914,2.528,0.065,civhc_rbp_fy26
+UCHealth Medical Center of the Rockies,Outpatient,2024,Larimer,Urban,Ft. Collins,0,0,3.2333,19896,2.7664,2.7664,2.524,1.6427,civhc_rbp_fy26
+UCHealth Memorial Hospital,Inpatient,2022,El Paso,Urban,Colorado Springs,0,0,1.9262,1898,1.947,1.948,1.99,0.1575,civhc_rbp_fy26
+UCHealth Memorial Hospital,Inpatient,2023,El Paso,Urban,Colorado Springs,0,0,1.9351,2243,1.9349,1.9349,1.9517,0.1711,civhc_rbp_fy26
+UCHealth Memorial Hospital,Inpatient/Outpatient Combined,2022,El Paso,Urban,Colorado Springs,0,0,2.5677,57393,2.4589,2.4585,2.3666,0.1635,civhc_rbp_fy26
+UCHealth Memorial Hospital,Outpatient,2022,El Paso,Urban,Colorado Springs,0,0,3.1266,55495,2.6399,2.6428,2.528,0.1671,civhc_rbp_fy26
+UCHealth Parkview Medical Center,Inpatient,2023,Pueblo,Urban,Pueblo,0,0,1.7941,679,1.8114,1.8114,1.9517,0.0294,civhc_rbp_fy26
+UCHealth Parkview Medical Center,Inpatient/Outpatient Combined,2023,Pueblo,Urban,Pueblo,0,0,2.7359,9989,2.9153,2.9153,2.3251,0.1072,civhc_rbp_fy26
+UCHealth Parkview Medical Center,Outpatient,2022,Pueblo,Urban,Pueblo,0,0,3.5692,11165,3.4625,3.4625,2.528,0.0405,civhc_rbp_fy26
+UCHealth Pikes Peak Regional Hospital,Outpatient,2021,Teller,Urban,Colorado Springs,1,0,2.3246,3903,2.5464,2.3246,2.4991,0.1017,civhc_rbp_fy26
+UCHealth University of Colorado Hospital,Inpatient,2023,Adams,Urban,Denver,0,0,2.4908,2686,1.941,2.2969,1.9517,0.6496,civhc_rbp_fy26
+UCHealth Yampa Valley Medical Center,Inpatient,2022,Routt,Rural,West,0,0,1.3789,185,1.6768,1.3789,1.6034,0.0007,civhc_rbp_fy26
+UCHealth Yampa Valley Medical Center,Inpatient,2023,Routt,Rural,West,0,0,1.1796,199,1.7735,1.1796,1.6874,0.2496,civhc_rbp_fy26
+Weisbrod Memorial County Hospital,Inpatient/Outpatient Combined,2024,Kiowa,Rural,East,1,0,0.6773,556,2.2207,0.6773,2.4831,0.0037,civhc_rbp_fy26
+Wray Community District Hospital,Inpatient/Outpatient Combined,2023,Yuma,Rural,East,1,0,1.4326,2480,2.1433,1.3973,2.4878,0.0066,civhc_rbp_fy26
+Wray Community District Hospital,Outpatient,2021,Yuma,Rural,East,1,0,1.5981,3964,2.3528,1.4436,2.6902,0.0024,civhc_rbp_fy26
+Wray Community District Hospital,Outpatient,2023,Yuma,Rural,East,1,0,1.5184,2441,2.3176,1.4513,2.8358,0.0066,civhc_rbp_fy26
+Yuma District Hospital,Outpatient,2022,Yuma,Rural,East,1,0,1.2983,1657,2.3479,1.4304,2.7132,0.101,civhc_rbp_fy26
+Yuma District Hospital,Outpatient,2023,Yuma,Rural,East,1,0,1.2881,1554,2.3176,1.4513,2.8358,0.0046,civhc_rbp_fy26
+AdventHealth Castle Rock,Outpatient,2023,Douglas,Urban,Denver,0,0,2.5337,9331,2.2485,2.2354,2.4647,0.1239,civhc_rbp_fy26
+AdventHealth Littleton,Inpatient,2024,Arapahoe,Urban,Denver,0,0,2.0507,1022,1.9574,2.2722,1.9367,0.4344,civhc_rbp_fy26
+AdventHealth Littleton,Inpatient/Outpatient Combined,2022,Arapahoe,Urban,Denver,0,0,2.2752,13900,2.284,2.6168,2.3666,0.2998,civhc_rbp_fy26
+Alpine Surgery Center,Outpatient,2023,Gunnison,Rural,West,0,1,1.4814,59,2.9891,1.9693,2.8358,0.0011,civhc_rbp_fy26
+Ambulatory Surgery Center Lone Tree,Outpatient,2024,Arapahoe,Urban,Denver,0,1,0.9229,272,2.4045,2.6401,2.524,0.0208,civhc_rbp_fy26
+Arkansas Valley Regional Medical Center,Inpatient/Outpatient Combined,2022,Otero,Rural,East,1,0,2.3708,3376,2.1472,2.3708,2.3417,0.5355,civhc_rbp_fy26
+Arkansas Valley Regional Medical Center,Inpatient/Outpatient Combined,2023,Otero,Rural,East,1,0,1.7789,3089,2.1433,1.7789,2.4878,0.1708,civhc_rbp_fy26
+Arkansas Valley Regional Medical Center,Outpatient,2021,Otero,Rural,East,1,0,2.6847,2829,2.3528,2.6847,2.6902,0.0351,civhc_rbp_fy26
+Arkansas Valley Regional Medical Center,Outpatient,2022,Otero,Rural,East,1,0,2.7263,3329,2.3479,2.7263,2.7132,0.6463,civhc_rbp_fy26
+Audubon Ambulatory Surgery Center,Outpatient,2023,El Paso,Urban,Colorado Springs,0,1,1.3881,1265,2.5173,2.5332,2.4647,0.0477,civhc_rbp_fy26
+Aurora Endoscopy Surgicenter,Outpatient,2023,Arapahoe,Urban,Denver,0,1,2.957,863,2.2485,2.4517,2.4647,0.15,civhc_rbp_fy26
+Banner Fort Collins Medical Center,Inpatient/Outpatient Combined,2023,Larimer,Urban,Ft. Collins,0,0,1.7263,3457,2.7432,2.7432,2.3251,0.0057,civhc_rbp_fy26
+Banner McKee Medical Center,Outpatient,2022,Larimer,Urban,Ft. Collins,0,0,2.9028,3685,2.9914,2.9914,2.528,0.1021,civhc_rbp_fy26
+Banner North Colorado Medical Center,Inpatient/Outpatient Combined,2021,Weld,Urban,Greeley,0,0,2.4413,7032,2.59,2.59,2.2969,0.1039,civhc_rbp_fy26
+Banner North Colorado Medical Center,Inpatient/Outpatient Combined,2023,Weld,Urban,Greeley,0,0,2.3549,6426,2.623,2.623,2.3251,0.2668,civhc_rbp_fy26
+Banner North Colorado Medical Center,Outpatient,2021,Weld,Urban,Greeley,0,0,2.9663,6356,3.048,3.048,2.4991,0.0808,civhc_rbp_fy26
+Banner North Colorado Medical Center,Outpatient,2022,Weld,Urban,Greeley,0,0,2.7,5990,2.9279,2.9279,2.528,0.0701,civhc_rbp_fy26
+Belmar Ambulatory Surgical Center,Outpatient,2021,Jefferson,Urban,Denver,0,1,2.2437,140,2.3417,2.5164,2.4991,0.0155,civhc_rbp_fy26
+Black Canyon Surgical Center,Outpatient,2022,Montrose,Rural,West,0,1,1.6323,482,2.8235,3.9313,2.7132,0.0007,civhc_rbp_fy26
+Boulder Community Health,Inpatient/Outpatient Combined,2024,Boulder,Urban,Boulder,0,0,2.1607,23378,2.0548,2.0548,2.3717,1.556,civhc_rbp_fy26
+Boulder Community Health,Outpatient,2023,Boulder,Urban,Boulder,0,0,2.2776,24617,2.2475,2.2475,2.4647,0.1348,civhc_rbp_fy26
+Boulder Medical Center,Outpatient,2022,Boulder,Urban,Boulder,0,1,1.5088,841,2.169,2.169,2.528,0.0025,civhc_rbp_fy26
+Boulder Medical Center,Outpatient,2024,Boulder,Urban,Boulder,0,1,1.3124,678,2.2621,2.2621,2.524,0.0016,civhc_rbp_fy26
+Canon City Colorado Multi-Specialty Ambulatory Surgical Center,Outpatient,2022,Fremont,Rural,East,0,1,3.8963,179,2.3479,5.1008,2.7132,0.0019,civhc_rbp_fy26
+Canon City Colorado Multi-Specialty Ambulatory Surgical Center,Outpatient,2024,Fremont,Rural,East,0,1,3.3435,156,2.4156,5.4084,2.891,0.0016,civhc_rbp_fy26
+Castle Rock Surgicenter,Outpatient,2023,Douglas,Urban,Denver,0,1,1.3526,180,2.2485,2.2354,2.4647,0.0147,civhc_rbp_fy26
+Centrum Surgery Center,Outpatient,2022,Arapahoe,Urban,Denver,0,1,2.2438,788,2.3542,2.5388,2.528,0.15,civhc_rbp_fy26
+Centrum Surgery Center,Outpatient,2023,Arapahoe,Urban,Denver,0,1,1.9422,545,2.2485,2.4517,2.4647,0.2587,civhc_rbp_fy26
+Colorado Springs Surgicenter,Outpatient,2024,El Paso,Urban,Colorado Springs,0,1,1.7681,55,2.5757,2.5887,2.524,0.6484,civhc_rbp_fy26
+CommonSpirit - Penrose Hospital,Inpatient/Outpatient Combined,2022,El Paso,Urban,Colorado Springs,0,0,2.3266,17942,2.4589,2.4585,2.3666,0.0318,civhc_rbp_fy26
+CommonSpirit Mercy Hospital,Inpatient,2021,La Plata,Rural,West,0,0,1.6291,972,1.5537,1.6492,1.5263,0.0002,civhc_rbp_fy26
+CommonSpirit Mercy Hospital,Outpatient,2023,La Plata,Rural,West,0,0,3.1801,16180,2.9891,2.9897,2.8358,0.2683,civhc_rbp_fy26
+CommonSpirit Mercy Hospital,Outpatient,2024,La Plata,Rural,West,0,0,3.1446,14449,3.0338,2.8762,2.891,1.6325,civhc_rbp_fy26
+CommonSpirit St. Anthony Hospital,Inpatient,2021,Jefferson,Urban,Denver,0,0,2.205,682,1.8993,2.1562,1.9401,0.1262,civhc_rbp_fy26
+CommonSpirit St. Anthony Hospital,Outpatient,2021,Jefferson,Urban,Denver,0,0,3.1888,8801,2.3417,2.5164,2.4991,0.2,civhc_rbp_fy26
+CommonSpirit St. Anthony Hospital,Outpatient,2022,Jefferson,Urban,Denver,0,0,2.6627,12338,2.3542,2.3461,2.528,0.1022,civhc_rbp_fy26
+CommonSpirit St. Anthony North Hospital,Outpatient,2022,Broomfield,Urban,Denver,0,0,3.1835,10272,2.3542,3.1693,2.528,0.0434,civhc_rbp_fy26
+CommonSpirit St. Anthony North Hospital,Outpatient,2023,Broomfield,Urban,Denver,0,0,3.1467,10806,2.2485,3.0582,2.4647,0.1054,civhc_rbp_fy26
+CommonSpirit St. Elizabeth Hospital,Inpatient,2024,Morgan,Rural,East,0,0,1.6787,62,1.2459,1.4587,1.5378,0.0013,civhc_rbp_fy26
+CommonSpirit St. Elizabeth Hospital,Outpatient,2021,Morgan,Rural,East,0,0,6.0048,2446,2.3528,3.568,2.6902,0.1555,civhc_rbp_fy26
+CommonSpirit St. Elizabeth Hospital,Outpatient,2023,Morgan,Rural,East,0,0,4.567,2580,2.3176,3.1037,2.8358,0.0663,civhc_rbp_fy26
+CommonSpirit St. Francis Hospital,Inpatient/Outpatient Combined,2023,El Paso,Urban,Colorado Springs,0,0,3.2808,209,2.389,2.3967,2.3251,0.0009,civhc_rbp_fy26
+CommonSpirit St. Francis Hospital,Inpatient/Outpatient Combined,2024,El Paso,Urban,Colorado Springs,0,0,3.0538,426,2.4187,2.424,2.3717,0.0872,civhc_rbp_fy26
+CommonSpirit St. Francis Hospital,Outpatient,2023,El Paso,Urban,Colorado Springs,0,0,2.7289,187,2.5173,2.5332,2.4647,2.7289,civhc_rbp_fy26
+CommonSpirit St. Francis Hospital - Interquest,Inpatient/Outpatient Combined,2024,El Paso,Urban,Colorado Springs,0,0,3.414,750,2.4187,2.424,2.3717,0.0027,civhc_rbp_fy26
+CommonSpirit St. Mary-Corwin Hospital,Inpatient,2024,Pueblo,Urban,Pueblo,0,0,1.6044,55,1.8092,1.8092,1.9367,0.0002,civhc_rbp_fy26
+CommonSpirit St. Thomas More Hospital,Inpatient/Outpatient Combined,2022,Fremont,Rural,East,0,0,6.0106,239,2.1472,5.1922,2.3417,0.0062,civhc_rbp_fy26
+CommonSpirit St. Thomas More Hospital,Outpatient,2022,Fremont,Rural,East,1,0,5.1498,4125,2.3479,5.1008,2.7132,0.0062,civhc_rbp_fy26
+Community Hospital,Inpatient,2023,Mesa,Urban,Grand Junction,0,0,2.8098,231,2.7195,2.7195,1.9517,0.0002,civhc_rbp_fy26
+Denver Eye Surgery Center,Outpatient,2022,Jefferson,Urban,Denver,0,1,0.9629,350,2.3542,2.3461,2.528,0.0013,civhc_rbp_fy26
+Denver Eye Surgery Center,Outpatient,2024,Jefferson,Urban,Denver,0,1,0.8585,481,2.4045,2.5063,2.524,0.2124,civhc_rbp_fy26
+Denver Health,Inpatient,2021,Denver,Urban,Denver,0,0,0.6889,1403,1.8993,1.6468,1.9401,0.0006,civhc_rbp_fy26
+Denver Health,Outpatient,2022,Denver,Urban,Denver,0,0,1.0493,78048,2.3542,1.8823,2.528,0.0356,civhc_rbp_fy26
+Durango Surgery Center,Outpatient,2024,La Plata,Rural,West,0,1,1.4062,138,3.0338,2.8762,2.891,0.5298,civhc_rbp_fy26
+East Morgan County Hospital,Outpatient,2021,Morgan,Rural,East,1,0,2.0663,2078,2.3528,3.568,2.6902,0.0079,civhc_rbp_fy26
+Endoscopy Center of Colorado Springs,Outpatient,2021,El Paso,Urban,Colorado Springs,0,1,1.577,2132,2.5464,2.5524,2.4991,0.961,civhc_rbp_fy26
+Endoscopy Center of Grand Junction,Outpatient,2024,Mesa,Urban,Grand Junction,0,1,1.5815,1253,2.9996,2.9996,2.524,0.002,civhc_rbp_fy26
+Endoscopy Center of Western Colorado,Outpatient,2024,Mesa,Urban,Grand Junction,0,1,0.9773,159,2.9996,2.9996,2.524,0.0021,civhc_rbp_fy26
+Endoscopy Center of the Rockies - Lafayette,Outpatient,2024,Boulder,Urban,Boulder,0,1,3.5826,1073,2.2621,2.2621,2.524,2.4025,civhc_rbp_fy26
+Estes Park Health,Inpatient,2021,Larimer,Urban,Ft. Collins,1,0,1.3647,33,2.4221,2.4221,1.9401,0.913,civhc_rbp_fy26
+Front Range Endoscopy Centers,Outpatient,2022,El Paso,Urban,Colorado Springs,0,1,1.1003,743,2.6399,2.6428,2.528,0.3488,civhc_rbp_fy26
+Front Range Orthopedic Surgery Center,Outpatient,2022,Boulder,Urban,Boulder,0,1,1.3723,367,2.169,2.169,2.528,0.0008,civhc_rbp_fy26
+Golden Ridge Surgery Center,Outpatient,2024,Jefferson,Urban,Denver,0,1,1.7221,248,2.4045,2.5063,2.524,0.0015,civhc_rbp_fy26
+Grand River Hospital District,Inpatient/Outpatient Combined,2024,Garfield,Rural,West,1,0,1.9201,9142,2.5642,3.1788,2.4831,0.363,civhc_rbp_fy26
+Haxtun Health,Outpatient,2023,Phillips,Rural,East,1,0,1.1099,442,2.3176,1.4355,2.8358,0.0148,civhc_rbp_fy26
+Healthone Ridge View Endoscopy Center - Englewood,Outpatient,2021,Arapahoe,Urban,Denver,0,1,3.0639,1422,2.3417,2.5878,2.4991,0.6937,civhc_rbp_fy26
+Heart of the Rockies Regional Medical Center,Outpatient,2021,Chaffee,Rural,East,1,0,2.3209,6700,2.3528,2.3209,2.6902,0.0274,civhc_rbp_fy26
+Intermountain Health Good Samaritan Medical Center,Inpatient,2024,Boulder,Urban,Boulder,0,0,1.8126,2727,1.7934,1.7934,1.9367,1.5105,civhc_rbp_fy26
+Intermountain Health Good Samaritan Medical Center,Outpatient,2021,Boulder,Urban,Boulder,0,0,2.0626,15926,2.0417,2.0417,2.4991,0.1003,civhc_rbp_fy26
+Intermountain Health Good Samaritan Medical Center,Outpatient,2023,Boulder,Urban,Boulder,0,0,2.1369,15564,2.2475,2.2475,2.4647,0.0521,civhc_rbp_fy26
+Intermountain Health Good Samaritan Medical Center,Outpatient,2024,Boulder,Urban,Boulder,0,0,2.131,14830,2.2621,2.2621,2.524,0.9561,civhc_rbp_fy26
+Intermountain Health Platte Valley Hospital,Outpatient,2023,Adams,Urban,Denver,0,0,3.1928,6176,2.2485,2.9273,2.4647,0.2777,civhc_rbp_fy26
+Intermountain Health Saint Joseph Hospital,Outpatient,2023,Denver,Urban,Denver,0,0,1.9415,21801,2.2485,1.722,2.4647,0.0848,civhc_rbp_fy26
+Intermountain Health St. Mary's Medical Center,Inpatient,2022,Mesa,Urban,Grand Junction,0,0,2.5213,636,2.4128,2.4128,1.99,0.0019,civhc_rbp_fy26
+Intermountain Health St. Mary's Medical Center,Outpatient,2021,Mesa,Urban,Grand Junction,0,0,3.835,18412,3.2289,3.2289,2.4991,0.8986,civhc_rbp_fy26
+Kaiser Foundation Health Plan of Colorado - Lone Tree,Outpatient,2021,Douglas,Urban,Denver,0,1,0.3011,3955,2.3417,2.2521,2.4991,0.0005,civhc_rbp_fy26
+Kaiser Foundation Health Plan of Colorado - Lone Tree,Outpatient,2023,Douglas,Urban,Denver,0,1,0.2985,3259,2.2485,2.2354,2.4647,0.0003,civhc_rbp_fy26
+Keefe Memorial Hospital,Inpatient/Outpatient Combined,2022,Cheyenne,Rural,East,1,0,3.2857,1224,2.1472,3.2857,2.3417,0.699,civhc_rbp_fy26
+Loveland Endoscopy Center,Outpatient,2021,Larimer,Urban,Ft. Collins,0,1,1.434,1711,2.9767,2.9767,2.4991,0.0022,civhc_rbp_fy26
+Loveland Surgical Enterprises,Outpatient,2021,Larimer,Urban,Ft. Collins,0,1,1.4145,292,2.9767,2.9767,2.4991,0.0007,civhc_rbp_fy26
+Loveland Surgical Enterprises,Outpatient,2022,Larimer,Urban,Ft. Collins,0,1,1.4815,309,2.9914,2.9914,2.528,0.0007,civhc_rbp_fy26
+Madison Street Surgery Center,Outpatient,2022,Denver,Urban,Denver,0,1,1.2674,328,2.3542,1.8823,2.528,0.2,civhc_rbp_fy26
+Melissa Memorial Hospital,Outpatient,2023,Phillips,Rural,East,1,0,1.5203,1296,2.3176,1.4355,2.8358,0.0117,civhc_rbp_fy26
+Memorial Regional Health,Inpatient/Outpatient Combined,2024,Moffat,Rural,West,0,0,2.0688,2388,2.5642,2.0688,2.4831,0.2286,civhc_rbp_fy26
+Middle Park Health - Kremmling,Inpatient/Outpatient Combined,2022,Grand,Rural,West,1,0,1.9473,2899,2.3988,1.9791,2.3417,0.183,civhc_rbp_fy26
+Middle Park Health - Kremmling,Outpatient,2024,Grand,Rural,West,1,0,1.838,2558,3.0338,1.8849,2.891,1.4395,civhc_rbp_fy26
+Mt. San Rafael Hospital,Inpatient/Outpatient Combined,2024,Las Animas,Rural,East,1,0,2.7172,1852,2.2207,2.7172,2.4831,0.7055,civhc_rbp_fy26
+North Care Ambulatory Surgery Center,Outpatient,2024,El Paso,Urban,Colorado Springs,0,1,1.3,213,2.5757,2.5887,2.524,1.2007,civhc_rbp_fy26
+North Suburban Medical Center,Inpatient/Outpatient Combined,2024,Adams,Urban,Denver,0,0,2.5172,7371,2.3072,2.7948,2.3717,1.5999,civhc_rbp_fy26
+North Suburban Spine Center,Outpatient,2021,Adams,Urban,Denver,0,1,1.7458,244,2.3417,2.9458,2.4991,0.0009,civhc_rbp_fy26
+Northglenn Endoscopy Center,Outpatient,2022,Adams,Urban,Denver,0,1,2.1673,959,2.3542,3.2477,2.528,0.0022,civhc_rbp_fy26
+Novamed Surgery Center of Colorado Springs,Outpatient,2021,El Paso,Urban,Colorado Springs,0,1,1.2463,310,2.5464,2.5524,2.4991,0.1238,civhc_rbp_fy26
+Optumcare Colorado Ambulatory Surgery Center,Outpatient,2022,El Paso,Urban,Colorado Springs,0,1,1.1698,413,2.6399,2.6428,2.528,0.0028,civhc_rbp_fy26
+Orthopaedic and Spine Center of the Rockies - Loveland,Outpatient,2024,Larimer,Urban,Ft. Collins,0,1,2.674,1090,2.7664,2.7664,2.524,0.2973,civhc_rbp_fy26
+Pagosa Springs Medical Center,Inpatient/Outpatient Combined,2021,Archuleta,Rural,West,1,0,1.478,2594,2.2831,1.478,2.2483,0.2613,civhc_rbp_fy26
+Park Avenue Surgery Center,Outpatient,2021,Denver,Urban,Denver,0,1,1.03,86,2.3417,1.9352,2.4991,0.0008,civhc_rbp_fy26
+Park Avenue Surgery Center,Outpatient,2024,Denver,Urban,Denver,0,1,1.0355,83,2.4045,1.9042,2.524,0.001,civhc_rbp_fy26
+Presbyterian/St. Luke's Medical Center,Inpatient,2021,Denver,Urban,Denver,0,0,2.4005,1378,1.8993,1.6468,1.9401,0.0318,civhc_rbp_fy26
+Pueblo Ambulatory Surgery Center,Outpatient,2021,Pueblo,Urban,Pueblo,0,1,1.6447,341,3.2958,3.2958,2.4991,1.1718,civhc_rbp_fy26
+Rangely District Hospital,Outpatient,2024,Rio Blanco,Rural,West,1,0,0.837,1148,3.0338,1.2677,2.891,0.0015,civhc_rbp_fy26
+Rocky Mountain Endoscopy Center - Lakewood,Outpatient,2024,Jefferson,Urban,Denver,0,1,2.4741,1304,2.4045,2.5063,2.524,1.081,civhc_rbp_fy26
+Rocky Mountain Laser and Surgery Center,Outpatient,2021,Pueblo,Urban,Pueblo,0,1,1.2659,238,3.2958,3.2958,2.4991,0.0011,civhc_rbp_fy26
+Rocky Mountain Laser and Surgery Center,Outpatient,2022,Pueblo,Urban,Pueblo,0,1,1.143,215,3.4625,3.4625,2.528,0.0082,civhc_rbp_fy26
+Rose Medical Center,Inpatient,2021,Denver,Urban,Denver,0,0,1.592,2626,1.8993,1.6468,1.9401,0.0008,civhc_rbp_fy26
+STATEWIDE,Inpatient,2021,STATEWIDE,STATEWIDE,STATEWIDE,0,0,1.9057,47926,,,,,civhc_rbp_fy26
+STATEWIDE,Outpatient,2021,STATEWIDE,STATEWIDE,STATEWIDE,0,0,2.535,1017690,,,,,civhc_rbp_fy26
+Saint Joseph East Campus Ambulatory Surgical Center,Outpatient,2023,Denver,Urban,Denver,0,1,1.4888,601,2.2485,1.722,2.4647,0.1601,civhc_rbp_fy26
+San Luis Valley Health Conejos County Hospital,Outpatient,2023,Conejos,Rural,East,1,0,1.6506,663,2.3176,1.6506,2.8358,0.0069,civhc_rbp_fy26
+Sky Ridge Surgery Center,Outpatient,2023,Douglas,Urban,Denver,0,1,1.7165,1144,2.2485,2.2354,2.4647,0.0012,civhc_rbp_fy26
+Skyline Surgery Center,Outpatient,2024,Pueblo,Urban,Pueblo,0,1,0.9045,41,3.7342,3.7342,2.524,0.7448,civhc_rbp_fy26
+South Denver Gastroenterology Castle Rock Endoscopy Center,Outpatient,2023,Douglas,Urban,Denver,0,1,2.1776,303,2.2485,2.2354,2.4647,1.6612,civhc_rbp_fy26
+South Denver Musculoskeletal Surgical Partners,Outpatient,2022,Arapahoe,Urban,Denver,0,1,2.0098,862,2.3542,2.5388,2.528,0.3872,civhc_rbp_fy26
+Southwest Health System,Inpatient/Outpatient Combined,2023,Montezuma,Rural,West,1,0,1.8161,2809,2.5901,1.8161,2.4878,0.1034,civhc_rbp_fy26
+Spanish Peaks Regional Health Center,Outpatient,2022,Huerfano,Rural,East,1,0,1.2572,802,2.3479,1.2572,2.7132,0.0038,civhc_rbp_fy26
+St. Vincent Health,Inpatient/Outpatient Combined,2021,Lake,Rural,West,1,0,1.0961,781,2.2831,1.0961,2.2483,0.0032,civhc_rbp_fy26
+Steamboat Surgery Center,Outpatient,2024,Routt,Rural,West,0,1,2.137,149,3.0338,3.2997,2.891,1.9382,civhc_rbp_fy26
+Summit View Surgery Center,Outpatient,2021,Arapahoe,Urban,Denver,0,1,1.7658,342,2.3417,2.5878,2.4991,0.0005,civhc_rbp_fy26
+Summit View Surgery Center,Outpatient,2022,Arapahoe,Urban,Denver,0,1,1.629,354,2.3542,2.5388,2.528,0.0009,civhc_rbp_fy26
+Surgery Center of Northern Colorado,Outpatient,2024,Larimer,Urban,Ft. Collins,0,1,0.9826,706,2.7664,2.7664,2.524,0.3589,civhc_rbp_fy26
+Surgical Center of Peak Endoscopy,Outpatient,2024,El Paso,Urban,Colorado Springs,0,1,1.2261,900,2.5757,2.5887,2.524,0.8357,civhc_rbp_fy26
+Swedish Medical Center,Inpatient,2022,Arapahoe,Urban,Denver,0,0,2.8258,1618,2.0119,2.3832,1.99,0.0433,civhc_rbp_fy26
+Swedish Medical Center,Inpatient/Outpatient Combined,2022,Arapahoe,Urban,Denver,0,0,2.9041,12669,2.284,2.6168,2.3666,0.0993,civhc_rbp_fy26
+Telluride Medical Center,Inpatient/Outpatient Combined,2024,San Miguel,Rural,West,0,0,1.7774,190,2.5642,1.7774,2.4831,1.0858,civhc_rbp_fy26
+The Medical Center of Aurora,Inpatient,2021,Arapahoe,Urban,Denver,0,0,2.2893,934,1.8993,2.5192,1.9401,0.0017,civhc_rbp_fy26
+The Medical Center of Aurora,Outpatient,2021,Arapahoe,Urban,Denver,0,0,3.5042,4407,2.3417,2.5878,2.4991,0.2,civhc_rbp_fy26
+UCHealth Ambulatory Surgery Center - Englewood,Outpatient,2022,Arapahoe,Urban,Denver,0,1,0.9691,1076,2.3542,2.5388,2.528,0.0919,civhc_rbp_fy26
+UCHealth Broomfield Hospital,Inpatient,2024,Jefferson,Urban,Denver,0,0,1.8269,49,1.9574,2.4459,1.9367,0.4872,civhc_rbp_fy26
+UCHealth Broomfield Hospital,Outpatient,2023,Jefferson,Urban,Denver,0,0,3.6492,4905,2.2485,2.426,2.4647,0.0337,civhc_rbp_fy26
+UCHealth Grandview Hospital,Inpatient/Outpatient Combined,2022,El Paso,Urban,Colorado Springs,0,0,2.5791,3527,2.4589,2.4585,2.3666,0.1227,civhc_rbp_fy26
+UCHealth Grandview Hospital,Inpatient/Outpatient Combined,2023,El Paso,Urban,Colorado Springs,0,0,2.726,4274,2.389,2.3967,2.3251,0.059,civhc_rbp_fy26
+UCHealth Grandview Hospital,Outpatient,2021,El Paso,Urban,Colorado Springs,0,0,2.8351,2810,2.5464,2.5524,2.4991,0.2151,civhc_rbp_fy26
+UCHealth Greeley  Hospital,Outpatient,2024,Weld,Urban,Greeley,0,0,3.2446,14477,2.9093,2.9093,2.524,1.6213,civhc_rbp_fy26
+UCHealth Highlands Ranch Hospital,Inpatient,2021,Douglas,Urban,Denver,0,0,1.7932,800,1.8993,1.8516,1.9401,0.5141,civhc_rbp_fy26
+UCHealth Highlands Ranch Hospital,Inpatient,2024,Douglas,Urban,Denver,0,0,1.9492,756,1.9574,1.8439,1.9367,0.794,civhc_rbp_fy26
+UCHealth Highlands Ranch Hospital,Inpatient/Outpatient Combined,2021,Douglas,Urban,Denver,0,0,2.178,10533,2.1842,2.2152,2.2969,0.277,civhc_rbp_fy26
+UCHealth Longs Peak Hospital,Inpatient/Outpatient Combined,2023,Weld,Urban,Greeley,0,0,2.7332,18318,2.623,2.623,2.3251,0.1932,civhc_rbp_fy26
+UCHealth Parkview Pueblo West,Inpatient/Outpatient Combined,2022,Pueblo,Urban,Pueblo,0,0,4.1443,878,2.9285,2.9285,2.3666,0.0043,civhc_rbp_fy26
+UCHealth Pikes Peak Regional Hospital,Outpatient,2023,Teller,Urban,Colorado Springs,1,0,2.0659,5099,2.5173,2.0659,2.4647,0.0739,civhc_rbp_fy26
+UCHealth Poudre Valley Hospital,Inpatient,2023,Larimer,Urban,Ft. Collins,0,0,1.9552,1370,2.0765,2.0765,1.9517,0.0003,civhc_rbp_fy26
+UCHealth University of Colorado Hospital,Inpatient,2024,Adams,Urban,Denver,0,0,2.5903,2547,1.9574,2.4352,1.9367,1.0328,civhc_rbp_fy26
+UCHealth University of Colorado Hospital,Inpatient/Outpatient Combined,2021,Adams,Urban,Denver,0,0,2.6851,107218,2.1842,2.6347,2.2969,0.2163,civhc_rbp_fy26
+UCHealth University of Colorado Hospital,Inpatient/Outpatient Combined,2023,Adams,Urban,Denver,0,0,2.7155,136381,2.1927,2.6515,2.3251,0.423,civhc_rbp_fy26
+Urology Surgery Center of Colorado,Outpatient,2021,Denver,Urban,Denver,0,1,2.1861,828,2.3417,1.9352,2.4991,0.0004,civhc_rbp_fy26
+Urology Surgery Center of Colorado,Outpatient,2024,Denver,Urban,Denver,0,1,1.8782,376,2.4045,1.9042,2.524,0.1613,civhc_rbp_fy26
+Vail Health Hospital,Inpatient/Outpatient Combined,2023,Eagle,Rural,West,0,0,2.4909,13790,2.5901,2.4909,2.4878,0.114,civhc_rbp_fy26
+Vail Health Hospital,Outpatient,2022,Eagle,Rural,West,0,0,3.4433,11606,2.8235,4.1645,2.7132,0.7356,civhc_rbp_fy26
+Vail Health Hospital,Outpatient,2024,Eagle,Rural,West,0,0,3.4463,12552,3.0338,4.0407,2.891,0.8953,civhc_rbp_fy26
+Valley View Hospital,Outpatient,2023,Garfield,Rural,West,0,0,4.2257,18514,2.9891,3.2604,2.8358,0.1416,civhc_rbp_fy26
+Valley View Hospital,Outpatient,2024,Garfield,Rural,West,0,0,4.0646,18690,3.0338,3.2259,2.891,0.6717,civhc_rbp_fy26
+Weisbrod Memorial County Hospital,Inpatient/Outpatient Combined,2021,Kiowa,Rural,East,1,0,0.8456,742,2.1124,0.8456,2.2483,0.0053,civhc_rbp_fy26
+Women's Health Surgery Center,Outpatient,2021,Adams,Urban,Denver,0,1,1.3258,37,2.3417,2.9458,2.4991,0.0008,civhc_rbp_fy26
+Wray Community District Hospital,Inpatient,2022,Yuma,Rural,East,1,0,0.7568,59,1.2105,0.786,1.6034,0.0002,civhc_rbp_fy26
+Wray Community District Hospital,Inpatient,2023,Yuma,Rural,East,1,0,0.9467,39,1.2034,0.98,1.6874,0.6555,civhc_rbp_fy26
+Advanced Heart and Vein Surgery Center,Outpatient,2023,Broomfield,Urban,Denver,0,1,1.2475,46,2.2485,3.0582,2.4647,0.0003,civhc_rbp_fy26
+Advanced Vision Surgery Center,Outpatient,2022,Boulder,Urban,Boulder,0,1,1.1618,334,2.169,2.169,2.528,0.0016,civhc_rbp_fy26
+AdventHealth Avista,Inpatient,2021,Boulder,Urban,Boulder,0,0,1.3633,1055,1.6794,1.6794,1.9401,0.1076,civhc_rbp_fy26
+AdventHealth Avista,Outpatient,2021,Boulder,Urban,Boulder,0,0,1.7868,11147,2.0417,2.0417,2.4991,0.0065,civhc_rbp_fy26
+AdventHealth Castle Rock,Inpatient,2022,Douglas,Urban,Denver,0,0,1.4643,767,2.0119,1.8649,1.99,0.0893,civhc_rbp_fy26
+AdventHealth Castle Rock,Inpatient,2023,Douglas,Urban,Denver,0,0,1.594,627,1.941,1.886,1.9517,0.0317,civhc_rbp_fy26
+AdventHealth Castle Rock,Inpatient/Outpatient Combined,2023,Douglas,Urban,Denver,0,0,2.1193,9958,2.1927,2.2619,2.3251,0.0975,civhc_rbp_fy26
+AdventHealth Littleton,Inpatient/Outpatient Combined,2021,Arapahoe,Urban,Denver,0,0,2.2794,9418,2.1842,2.7136,2.2969,0.2086,civhc_rbp_fy26
+AdventHealth Parker,Inpatient,2021,Douglas,Urban,Denver,0,0,2.0143,932,1.8993,1.8516,1.9401,0.8708,civhc_rbp_fy26
+AdventHealth Parker,Inpatient,2022,Douglas,Urban,Denver,0,0,2.0912,997,2.0119,1.8649,1.99,0.0019,civhc_rbp_fy26
+AdventHealth Parker,Inpatient/Outpatient Combined,2022,Douglas,Urban,Denver,0,0,2.4356,14332,2.284,2.2702,2.3666,0.2938,civhc_rbp_fy26
+AdventHealth Parker,Outpatient,2023,Douglas,Urban,Denver,0,0,2.877,10945,2.2485,2.2354,2.4647,0.1357,civhc_rbp_fy26
+Animas Surgical Hospital,Inpatient/Outpatient Combined,2024,La Plata,Rural,West,0,0,2.2057,1719,2.5642,2.5484,2.4831,1.0287,civhc_rbp_fy26
+Animas Surgical Hospital,Outpatient,2022,La Plata,Rural,West,0,0,2.6977,1444,2.8235,3.2928,2.7132,0.285,civhc_rbp_fy26
+Banner Fort Collins Medical Center,Inpatient/Outpatient Combined,2022,Larimer,Urban,Ft. Collins,0,0,1.7318,3582,2.8913,2.8913,2.3666,0.0078,civhc_rbp_fy26
+Banner McKee Medical Center,Inpatient,2023,Larimer,Urban,Ft. Collins,0,0,2.068,106,2.0765,2.0765,1.9517,0.0007,civhc_rbp_fy26
+Black Canyon Surgical Center,Outpatient,2024,Montrose,Rural,West,0,1,1.6002,650,3.0338,4.187,2.891,0.0008,civhc_rbp_fy26
+Boulder Community Health,Inpatient,2024,Boulder,Urban,Boulder,0,0,1.8558,831,1.7934,1.7934,1.9367,1.6177,civhc_rbp_fy26
+Boulder Community Health,Outpatient,2022,Boulder,Urban,Boulder,0,0,2.2336,24622,2.169,2.169,2.528,0.0536,civhc_rbp_fy26
+Boulder Community Health,Outpatient,2024,Boulder,Urban,Boulder,0,0,2.3878,22547,2.2621,2.2621,2.524,1.1814,civhc_rbp_fy26
+Colorado Urologic Surgery Center - Lone Tree,Outpatient,2024,Douglas,Urban,Denver,0,1,1.9273,737,2.4045,2.3549,2.524,0.6518,civhc_rbp_fy26
+Colorado Urologic Surgery Center - Superior,Outpatient,2023,Boulder,Urban,Boulder,0,1,1.789,759,2.2475,2.2475,2.4647,0.0202,civhc_rbp_fy26
+CommonSpirit - Penrose Hospital,Inpatient,2021,El Paso,Urban,Colorado Springs,0,0,2.0233,2072,1.947,1.9486,1.9401,0.1595,civhc_rbp_fy26
+CommonSpirit - Penrose Hospital,Inpatient,2022,El Paso,Urban,Colorado Springs,0,0,1.9596,1936,1.947,1.948,1.99,0.0007,civhc_rbp_fy26
+CommonSpirit - Penrose Hospital,Inpatient,2024,El Paso,Urban,Colorado Springs,0,0,1.9437,1335,1.8668,1.8666,1.9367,0.8964,civhc_rbp_fy26
+CommonSpirit - Penrose Hospital,Inpatient/Outpatient Combined,2021,El Paso,Urban,Colorado Springs,0,0,2.307,18696,2.3855,2.3882,2.2969,0.1453,civhc_rbp_fy26
+CommonSpirit - Penrose Hospital,Outpatient,2022,El Paso,Urban,Colorado Springs,0,0,2.7493,16006,2.6399,2.6428,2.528,0.0455,civhc_rbp_fy26
+CommonSpirit Longmont United Hospital,Inpatient/Outpatient Combined,2023,Boulder,Urban,Boulder,0,0,2.1984,2793,2.0361,2.0361,2.3251,0.0137,civhc_rbp_fy26
+CommonSpirit Mercy Hospital,Inpatient,2022,La Plata,Rural,West,0,0,1.7484,407,1.6768,1.7676,1.6034,0.0003,civhc_rbp_fy26
+CommonSpirit St. Anthony Hospital,Inpatient/Outpatient Combined,2022,Jefferson,Urban,Denver,0,0,2.4457,13114,2.284,2.4506,2.3666,0.0485,civhc_rbp_fy26
+CommonSpirit St. Anthony North Hospital,Inpatient/Outpatient Combined,2023,Broomfield,Urban,Denver,0,0,2.499,11416,2.1927,2.499,2.3251,0.0715,civhc_rbp_fy26
+CommonSpirit St. Anthony Summit Medical Center,Inpatient,2021,Summit,Rural,West,0,0,2.0888,197,1.5537,2.0888,1.5263,0.5701,civhc_rbp_fy26
+CommonSpirit St. Anthony Summit Medical Center,Inpatient,2022,Summit,Rural,West,0,0,1.8135,204,1.6768,1.8135,1.6034,0.5943,civhc_rbp_fy26
+CommonSpirit St. Elizabeth Hospital,Inpatient,2021,Morgan,Rural,East,0,0,1.6792,44,1.3842,1.4155,1.5263,0.8874,civhc_rbp_fy26
+CommonSpirit St. Francis Hospital,Outpatient,2024,El Paso,Urban,Colorado Springs,0,0,3.0126,404,2.5757,2.5887,2.524,3.0072,civhc_rbp_fy26
+CommonSpirit St. Francis Hospital - Interquest,Inpatient/Outpatient Combined,2023,El Paso,Urban,Colorado Springs,0,0,5.6224,161,2.389,2.3967,2.3251,0.0046,civhc_rbp_fy26
+CommonSpirit St. Mary-Corwin Hospital,Inpatient,2023,Pueblo,Urban,Pueblo,0,0,1.8113,76,1.8114,1.8114,1.9517,0.9497,civhc_rbp_fy26
+CommonSpirit St. Thomas More Hospital,Inpatient,2021,Fremont,Rural,East,0,0,2.3147,49,1.3842,2.3147,1.5263,0.002,civhc_rbp_fy26
+CommonSpirit St. Thomas More Hospital,Inpatient/Outpatient Combined,2022,Fremont,Rural,East,1,0,5.1498,4125,2.1472,5.1922,2.3417,0.0062,civhc_rbp_fy26
+CommonSpirit St. Thomas More Hospital,Inpatient/Outpatient Combined,2023,Fremont,Rural,East,0,0,1.0123,44,2.1433,5.1927,2.4878,0.0204,civhc_rbp_fy26
+CommonSpirit St. Thomas More Hospital,Inpatient/Outpatient Combined,2024,Fremont,Rural,East,0,0,5.193,1339,2.2207,5.2,2.4831,1.2621,civhc_rbp_fy26
+CommonSpirit St. Thomas More Hospital,Outpatient,2024,Fremont,Rural,East,1,0,5.2041,2792,2.4156,5.4084,2.891,1.2621,civhc_rbp_fy26
+Community Hospital,Inpatient,2022,Mesa,Urban,Grand Junction,0,0,2.2442,230,2.4128,2.4128,1.99,0.0006,civhc_rbp_fy26
+Community Hospital,Inpatient/Outpatient Combined,2022,Mesa,Urban,Grand Junction,0,0,3.4986,17637,3.086,3.086,2.3666,0.0162,civhc_rbp_fy26
+Community Hospital,Outpatient,2023,Mesa,Urban,Grand Junction,0,0,4.1143,17224,3.7218,3.7218,2.4647,0.2993,civhc_rbp_fy26
+Delta Health,Inpatient/Outpatient Combined,2021,Delta,Rural,West,0,0,3.4387,10099,2.2831,3.4387,2.2483,0.5774,civhc_rbp_fy26
+Denver Health,Inpatient,2022,Denver,Urban,Denver,0,0,0.7987,1443,2.0119,1.8302,1.99,0.0441,civhc_rbp_fy26
+Denver Health,Inpatient,2023,Denver,Urban,Denver,0,0,0.6573,1292,1.941,1.6885,1.9517,0.0051,civhc_rbp_fy26
+Dry Creek Surgery Center,Outpatient,2022,Arapahoe,Urban,Denver,0,1,1.1216,158,2.3542,2.5388,2.528,0.437,civhc_rbp_fy26
+East Morgan County Hospital,Inpatient/Outpatient Combined,2022,Morgan,Rural,East,1,0,1.9265,2091,2.1472,2.7541,2.3417,0.0081,civhc_rbp_fy26
+Endoscopy Center of the Rockies - Boulder,Outpatient,2023,Boulder,Urban,Boulder,0,1,3.3775,1049,2.2475,2.2475,2.4647,0.0022,civhc_rbp_fy26
+Endoscopy Center of the Rockies - Boulder,Outpatient,2024,Boulder,Urban,Boulder,0,1,3.2873,1191,2.2621,2.2621,2.524,1.4457,civhc_rbp_fy26
+Estes Park Health,Inpatient/Outpatient Combined,2022,Larimer,Urban,Ft. Collins,1,0,1.7334,2918,2.8913,2.8913,2.3666,0.6843,civhc_rbp_fy26
+Estes Park Health,Outpatient,2023,Larimer,Urban,Ft. Collins,1,0,1.4463,2458,2.8627,2.8627,2.4647,0.0712,civhc_rbp_fy26
+Family Health West,Outpatient,2022,Mesa,Urban,Grand Junction,1,0,1.889,3916,3.2804,3.2804,2.528,0.1016,civhc_rbp_fy26
+Focus Hand Surgicenter,Outpatient,2021,Arapahoe,Urban,Denver,0,1,1.9232,476,2.3417,2.5878,2.4991,1.4641,civhc_rbp_fy26
+Focus Hand Surgicenter,Outpatient,2023,Arapahoe,Urban,Denver,0,1,1.6717,492,2.2485,2.4517,2.4647,0.0632,civhc_rbp_fy26
+Grand Valley Surgical Center,Outpatient,2024,Mesa,Urban,Grand Junction,0,1,1.0186,396,2.9996,2.9996,2.524,0.4108,civhc_rbp_fy26
+Greeley Endoscopy Center,Outpatient,2021,Weld,Urban,Greeley,0,1,1.5043,610,3.048,3.048,2.4991,0.3626,civhc_rbp_fy26
+Greeley Endoscopy Center,Outpatient,2024,Weld,Urban,Greeley,0,1,1.4222,1000,2.9093,2.9093,2.524,0.0025,civhc_rbp_fy26
+Greenwood Ambulatory Surgery Center - Lakewood,Outpatient,2021,Jefferson,Urban,Denver,0,1,3.0096,304,2.3417,2.5164,2.4991,1.2808,civhc_rbp_fy26
+Gunnison Valley Hospital,Outpatient,2023,Gunnison,Rural,West,1,0,1.98,7188,2.9891,1.9693,2.8358,0.0044,civhc_rbp_fy26
+Harmony Surgery Center,Outpatient,2022,Larimer,Urban,Ft. Collins,0,1,1.3729,4164,2.9914,2.9914,2.528,0.3838,civhc_rbp_fy26
+Haxtun Health,Inpatient/Outpatient Combined,2021,Phillips,Rural,East,1,0,1.0091,783,2.1124,1.2897,2.2483,0.02,civhc_rbp_fy26
+Haxtun Health,Inpatient/Outpatient Combined,2022,Phillips,Rural,East,1,0,1.1094,616,2.1472,1.3759,2.3417,0.0075,civhc_rbp_fy26
+Haxtun Health,Outpatient,2021,Phillips,Rural,East,1,0,0.9869,779,2.3528,1.2474,2.6902,0.02,civhc_rbp_fy26
+Haxtun Health,Outpatient,2024,Phillips,Rural,East,1,0,1.0451,431,2.4156,1.2809,2.891,0.0146,civhc_rbp_fy26
+Healthone Ridge View Endoscopy Center - Lone Tree,Outpatient,2024,Douglas,Urban,Denver,0,1,2.7992,2449,2.4045,2.3549,2.524,0.6364,civhc_rbp_fy26
+Heart of the Rockies Regional Medical Center,Inpatient,2022,Chaffee,Rural,East,1,0,1.6695,76,1.2105,1.6695,1.6034,0.0007,civhc_rbp_fy26
+Heart of the Rockies Regional Medical Center,Inpatient/Outpatient Combined,2023,Chaffee,Rural,East,1,0,2.4125,8990,2.1433,2.4125,2.4878,0.0855,civhc_rbp_fy26
+Heart of the Rockies Regional Medical Center,Outpatient,2024,Chaffee,Rural,East,1,0,2.4954,7983,2.4156,2.4954,2.891,1.4325,civhc_rbp_fy26
+Highline South Ambulatory Surgery Center,Outpatient,2022,Arapahoe,Urban,Denver,0,1,1.1024,83,2.3542,2.5388,2.528,0.1548,civhc_rbp_fy26
+Intermountain Health Good Samaritan Medical Center,Inpatient,2023,Boulder,Urban,Boulder,0,0,1.7812,3022,1.7876,1.7876,1.9517,0.2663,civhc_rbp_fy26
+Intermountain Health Platte Valley Hospital,Outpatient,2022,Adams,Urban,Denver,0,0,3.2255,5309,2.3542,3.2477,2.528,0.0665,civhc_rbp_fy26
+Intermountain Health Saint Joseph Hospital,Inpatient/Outpatient Combined,2022,Denver,Urban,Denver,0,0,1.8087,24417,2.284,1.9245,2.3666,0.058,civhc_rbp_fy26
+Intermountain Health Saint Joseph Hospital,Inpatient/Outpatient Combined,2024,Denver,Urban,Denver,0,0,1.748,24312,2.3072,1.8564,2.3717,1.0953,civhc_rbp_fy26
+Intermountain Health St. Mary's Medical Center,Inpatient,2024,Mesa,Urban,Grand Junction,0,0,2.2227,464,2.2157,2.2157,1.9367,0.4426,civhc_rbp_fy26
+Intermountain Health St. Mary's Medical Center,Inpatient/Outpatient Combined,2024,Mesa,Urban,Grand Junction,0,0,3.0119,17925,2.9432,2.9432,2.3717,0.6991,civhc_rbp_fy26
+Kaiser Foundation Health Plan of Colorado - Denver,Outpatient,2021,Denver,Urban,Denver,0,1,0.3563,5050,2.3417,1.9352,2.4991,0.0005,civhc_rbp_fy26
+Kaiser Foundation Health Plan of Colorado - Denver,Outpatient,2022,Denver,Urban,Denver,0,1,0.348,4967,2.3542,1.8823,2.528,0.0005,civhc_rbp_fy26
+Keefe Memorial Hospital,Inpatient/Outpatient Combined,2023,Cheyenne,Rural,East,1,0,4.3779,1567,2.1433,4.3779,2.4878,0.7483,civhc_rbp_fy26
+Kit Carson County Health Services District,Inpatient/Outpatient Combined,2022,Kit Carson,Rural,East,1,0,1.4874,1833,2.1472,1.4874,2.3417,0.4774,civhc_rbp_fy26
+Kit Carson County Health Services District,Inpatient/Outpatient Combined,2024,Kit Carson,Rural,East,1,0,1.6828,1886,2.2207,1.6828,2.4831,0.4319,civhc_rbp_fy26
+Kit Carson County Health Services District,Outpatient,2024,Kit Carson,Rural,East,1,0,1.7225,1883,2.4156,1.7225,2.891,0.4319,civhc_rbp_fy26
+Lincoln Health,Inpatient/Outpatient Combined,2022,Lincoln,Rural,East,1,0,1.0459,1534,2.1472,1.0459,2.3417,0.0045,civhc_rbp_fy26
+Lincoln Health,Outpatient,2023,Lincoln,Rural,East,1,0,1.0265,1978,2.3176,1.0265,2.8358,0.223,civhc_rbp_fy26
+Lone Tree Surgery Center,Outpatient,2022,Douglas,Urban,Denver,0,1,0.9051,834,2.3542,2.204,2.528,0.0056,civhc_rbp_fy26
+Lutheran Campus Ambulatory Surgery Center,Outpatient,2023,Jefferson,Urban,Denver,0,1,1.3713,663,2.2485,2.426,2.4647,0.0009,civhc_rbp_fy26
+Lutheran Campus Ambulatory Surgery Center,Outpatient,2024,Jefferson,Urban,Denver,0,1,1.4539,555,2.4045,2.5063,2.524,0.2847,civhc_rbp_fy26
+Madison Street Surgery Center,Outpatient,2021,Denver,Urban,Denver,0,1,1.3081,336,2.3417,1.9352,2.4991,0.6755,civhc_rbp_fy26
+Melissa Memorial Hospital,Inpatient/Outpatient Combined,2022,Phillips,Rural,East,1,0,1.4345,1242,2.1472,1.3759,2.3417,0.0035,civhc_rbp_fy26
+Memorial Regional Health,Outpatient,2022,Moffat,Rural,West,0,0,1.7163,2277,2.8235,1.7163,2.7132,0.0405,civhc_rbp_fy26
+Middle Park Health - Kremmling,Inpatient/Outpatient Combined,2021,Grand,Rural,West,1,0,1.7875,2396,2.2831,1.7865,2.2483,0.0159,civhc_rbp_fy26
+Montrose Regional Health,Outpatient,2021,Montrose,Rural,West,0,0,4.2595,13894,2.7793,3.953,2.6902,0.0981,civhc_rbp_fy26
+National Jewish Health,Outpatient,2021,Denver,Urban,Denver,0,0,2.2313,14939,2.3417,1.9352,2.4991,0.5342,civhc_rbp_fy26
+National Jewish Health,Outpatient,2022,Denver,Urban,Denver,0,0,2.5762,14113,2.3542,1.8823,2.528,0.2743,civhc_rbp_fy26
+North Suburban Medical Center,Inpatient,2021,Adams,Urban,Denver,0,0,1.7028,1009,1.8993,2.2662,1.9401,0.0375,civhc_rbp_fy26
+North Suburban Medical Center,Inpatient/Outpatient Combined,2022,Adams,Urban,Denver,0,0,2.4929,9656,2.284,2.858,2.3666,0.0709,civhc_rbp_fy26
+North Suburban Medical Center,Inpatient/Outpatient Combined,2023,Adams,Urban,Denver,0,0,2.3125,8816,2.1927,2.6515,2.3251,0.0335,civhc_rbp_fy26
+North Suburban Spine Center,Outpatient,2022,Adams,Urban,Denver,0,1,1.5854,245,2.3542,3.2477,2.528,0.0016,civhc_rbp_fy26
+Novamed Surgery Center of Denver,Outpatient,2024,Arapahoe,Urban,Denver,0,1,1.0406,363,2.4045,2.6401,2.524,0.0448,civhc_rbp_fy26
+Orthopaedic and Spine Center of the Rockies - Loveland,Outpatient,2023,Larimer,Urban,Ft. Collins,0,1,2.3129,1207,2.8627,2.8627,2.4647,0.438,civhc_rbp_fy26
+Orthopedic Center of Colorado at Iverness,Outpatient,2022,Arapahoe,Urban,Denver,0,1,1.5351,585,2.3542,2.5388,2.528,0.2446,civhc_rbp_fy26
+Orthopedic Center of Colorado at Iverness,Outpatient,2023,Arapahoe,Urban,Denver,0,1,1.462,478,2.2485,2.4517,2.4647,0.0405,civhc_rbp_fy26
+Pagosa Springs Medical Center,Outpatient,2021,Archuleta,Rural,West,1,0,1.5155,2577,2.7793,1.5155,2.6902,0.2613,civhc_rbp_fy26
+Pikes Peak Endoscopy and Surgery Center,Outpatient,2021,El Paso,Urban,Colorado Springs,0,1,1.1326,1300,2.5464,2.5524,2.4991,0.6324,civhc_rbp_fy26
+Presbyterian/St. Luke's Medical Center,Inpatient,2024,Denver,Urban,Denver,0,0,2.8971,1008,1.9574,1.6515,1.9367,1.3826,civhc_rbp_fy26
+Prowers Medical Center,Inpatient/Outpatient Combined,2021,Prowers,Rural,East,1,0,1.7709,3953,2.1124,1.7709,2.2483,0.0041,civhc_rbp_fy26
+Red Rocks Surgery Centers,Outpatient,2024,Jefferson,Urban,Denver,0,1,1.6,359,2.4045,2.5063,2.524,1.3983,civhc_rbp_fy26
+Research Surgical Center,Outpatient,2021,El Paso,Urban,Colorado Springs,0,1,1.2758,525,2.5464,2.5524,2.4991,0.2697,civhc_rbp_fy26
+Rio Grande Hospital,Outpatient,2021,Rio Grande,Rural,East,1,0,1.38,1786,2.3528,1.38,2.6902,0.0155,civhc_rbp_fy26
+Rio Grande Hospital,Outpatient,2022,Rio Grande,Rural,East,1,0,1.3313,2013,2.3479,1.3313,2.7132,0.0257,civhc_rbp_fy26
+River Point Surgery Center,Outpatient,2023,Arapahoe,Urban,Denver,0,1,1.1861,34,2.2485,2.4517,2.4647,0.56,civhc_rbp_fy26
+Rose Ambulatory Surgery Center,Outpatient,2024,Denver,Urban,Denver,0,1,1.8074,2093,2.4045,1.9042,2.524,0.8365,civhc_rbp_fy26
+STATEWIDE,Inpatient/Outpatient Combined,2022,STATEWIDE,STATEWIDE,STATEWIDE,0,0,2.3633,881385,,,,,civhc_rbp_fy26
+STATEWIDE,Inpatient/Outpatient Combined,2023,STATEWIDE,STATEWIDE,STATEWIDE,0,0,2.347,945690,,,,,civhc_rbp_fy26
+STATEWIDE,Outpatient,2022,STATEWIDE,STATEWIDE,STATEWIDE,0,0,2.5613,916415,,,,,civhc_rbp_fy26
+STATEWIDE,Outpatient,2024,STATEWIDE,STATEWIDE,STATEWIDE,0,0,2.5837,962942,,,,,civhc_rbp_fy26
+Saint Joseph East Campus Ambulatory Surgical Center,Outpatient,2021,Denver,Urban,Denver,0,1,1.4813,642,2.3417,1.9352,2.4991,0.0563,civhc_rbp_fy26
+Saint Joseph East Campus Ambulatory Surgical Center,Outpatient,2022,Denver,Urban,Denver,0,1,1.5076,692,2.3542,1.8823,2.528,0.0004,civhc_rbp_fy26
+San Luis Valley Health,Inpatient/Outpatient Combined,2022,Alamosa,Rural,East,0,0,2.2285,6373,2.1472,2.2285,2.3417,0.0142,civhc_rbp_fy26
+San Luis Valley Health,Outpatient,2022,Alamosa,Rural,East,0,0,2.655,6258,2.3479,2.655,2.7132,0.0142,civhc_rbp_fy26
+Shady Grove Fertility Colorado Surgery Center,Outpatient,2023,Arapahoe,Urban,Denver,0,1,2.6247,82,2.2485,2.4517,2.4647,0.0028,civhc_rbp_fy26
+Sky Ridge Medical Center,Inpatient/Outpatient Combined,2022,Douglas,Urban,Denver,0,0,2.2603,17646,2.284,2.2702,2.3666,0.0011,civhc_rbp_fy26
+Sky Ridge Medical Center,Inpatient/Outpatient Combined,2023,Douglas,Urban,Denver,0,0,2.1756,16757,2.1927,2.2619,2.3251,0.0649,civhc_rbp_fy26
+Sky Ridge Medical Center,Inpatient/Outpatient Combined,2024,Douglas,Urban,Denver,0,0,2.1609,15902,2.3072,2.3331,2.3717,0.6356,civhc_rbp_fy26
+Sky Ridge Medical Center,Outpatient,2021,Douglas,Urban,Denver,0,0,2.9381,13862,2.3417,2.2521,2.4991,0.2129,civhc_rbp_fy26
+Sky Ridge Medical Center,Outpatient,2022,Douglas,Urban,Denver,0,0,3.0048,13483,2.3542,2.204,2.528,0.0494,civhc_rbp_fy26
+South Denver Musculoskeletal Surgical Partners,Outpatient,2024,Arapahoe,Urban,Denver,0,1,2.0401,901,2.4045,2.6401,2.524,0.3069,civhc_rbp_fy26
+Southwest Endoscopy Center,Outpatient,2023,La Plata,Rural,West,0,1,1.6425,363,2.9891,2.9897,2.8358,0.0024,civhc_rbp_fy26
+Southwest Health System,Outpatient,2023,Montezuma,Rural,West,1,0,1.8732,2789,2.9891,1.8732,2.8358,0.1034,civhc_rbp_fy26
+St. Vincent Health,Outpatient,2023,Lake,Rural,West,1,0,1.071,928,2.9891,1.071,2.8358,0.0023,civhc_rbp_fy26
+Sterling Regional MedCenter,Inpatient,2022,Logan,Rural,East,0,0,1.042,88,1.2105,1.042,1.6034,0.0008,civhc_rbp_fy26
+Summit View Surgery Center,Outpatient,2024,Arapahoe,Urban,Denver,0,1,1.7178,151,2.4045,2.6401,2.524,0.9406,civhc_rbp_fy26
+Surgery Affiliates,Outpatient,2021,El Paso,Urban,Colorado Springs,0,1,1.6109,558,2.5464,2.5524,2.4991,0.0488,civhc_rbp_fy26
+Telluride Medical Center,Outpatient,2021,San Miguel,Rural,West,0,0,4.081,186,2.7793,4.081,2.6902,1.763,civhc_rbp_fy26
+The Medical Center of Aurora,Inpatient/Outpatient Combined,2024,Arapahoe,Urban,Denver,0,0,2.5181,7119,2.3072,2.652,2.3717,0.2987,civhc_rbp_fy26
+The Medical Center of Aurora,Outpatient,2023,Arapahoe,Urban,Denver,0,0,3.5077,5120,2.2485,2.4517,2.4647,0.1069,civhc_rbp_fy26
+The Orthopaedic and Spine Center of Southern Colorado,Outpatient,2024,El Paso,Urban,Colorado Springs,0,1,1.5,683,2.5757,2.5887,2.524,0.0223,civhc_rbp_fy26
+UCHealth Ambulatory Surgery Center - Longmont,Outpatient,2023,Weld,Urban,Greeley,0,1,0.9962,885,2.9683,2.9683,2.4647,0.0313,civhc_rbp_fy26
+UCHealth Broomfield Hospital,Inpatient,2021,Jefferson,Urban,Denver,0,0,1.3064,51,1.8993,2.1562,1.9401,0.0003,civhc_rbp_fy26
+UCHealth Broomfield Hospital,Inpatient,2022,Jefferson,Urban,Denver,0,0,1.0093,59,2.0119,2.158,1.99,0.0005,civhc_rbp_fy26
+UCHealth Broomfield Hospital,Inpatient/Outpatient Combined,2024,Jefferson,Urban,Denver,0,0,3.4153,5644,2.3072,2.8249,2.3717,0.6911,civhc_rbp_fy26
+UCHealth Greeley  Hospital,Inpatient,2023,Weld,Urban,Greeley,0,0,1.735,416,1.8989,1.8989,1.9517,0.0002,civhc_rbp_fy26
+UCHealth Greeley  Hospital,Inpatient/Outpatient Combined,2022,Weld,Urban,Greeley,0,0,2.9087,11891,2.5344,2.5344,2.3666,0.0881,civhc_rbp_fy26
+UCHealth Greeley  Hospital,Inpatient/Outpatient Combined,2023,Weld,Urban,Greeley,0,0,2.8518,13791,2.623,2.623,2.3251,0.0072,civhc_rbp_fy26
+UCHealth Longs Peak Hospital,Inpatient,2024,Weld,Urban,Greeley,0,0,1.9715,492,1.9078,1.9078,1.9367,1.3451,civhc_rbp_fy26
+UCHealth Longs Peak Hospital,Outpatient,2022,Weld,Urban,Greeley,0,0,3.2006,15408,2.9279,2.9279,2.528,0.0977,civhc_rbp_fy26
+UCHealth Medical Center of the Rockies,Inpatient,2021,Larimer,Urban,Ft. Collins,0,0,2.8185,1116,2.4221,2.4221,1.9401,1.3061,civhc_rbp_fy26
+UCHealth Medical Center of the Rockies,Outpatient,2023,Larimer,Urban,Ft. Collins,0,0,3.4241,20844,2.8627,2.8627,2.4647,0.0754,civhc_rbp_fy26
+UCHealth Parkview Medical Center,Inpatient/Outpatient Combined,2024,Pueblo,Urban,Pueblo,0,0,2.7876,11229,3.0446,3.0446,2.3717,1.4624,civhc_rbp_fy26
+UCHealth Pikes Peak Regional Hospital,Inpatient/Outpatient Combined,2023,Teller,Urban,Colorado Springs,1,0,2.0617,5110,2.389,2.0617,2.3251,0.0739,civhc_rbp_fy26
+UCHealth Pikes Peak Regional Hospital,Outpatient,2024,Teller,Urban,Colorado Springs,1,0,2.1925,5212,2.5757,2.1925,2.524,0.7568,civhc_rbp_fy26
+UCHealth Poudre Valley Hospital,Inpatient,2021,Larimer,Urban,Ft. Collins,0,0,2.4913,1589,2.4221,2.4221,1.9401,0.7435,civhc_rbp_fy26
+UCHealth Yampa Valley Medical Center,Inpatient/Outpatient Combined,2024,Routt,Rural,West,0,0,2.6833,16017,2.5642,2.6833,2.4831,1.0588,civhc_rbp_fy26
+Vail Health Hospital,Inpatient,2021,Eagle,Rural,West,0,0,1.0826,270,1.5537,1.0826,1.5263,0.0008,civhc_rbp_fy26
+Vail Health Hospital,Inpatient,2022,Eagle,Rural,West,0,0,1.2469,254,1.6768,1.2469,1.6034,0.1932,civhc_rbp_fy26
+Vail Health Hospital,Inpatient/Outpatient Combined,2022,Eagle,Rural,West,0,0,2.4069,11860,2.3988,2.4069,2.3417,0.7288,civhc_rbp_fy26
+Valley View Hospital,Inpatient,2023,Garfield,Rural,West,0,0,2.8294,362,1.7735,2.815,1.6874,0.0005,civhc_rbp_fy26
+Weisbrod Memorial County Hospital,Outpatient,2021,Kiowa,Rural,East,1,0,0.8941,739,2.3528,0.8941,2.6902,0.0053,civhc_rbp_fy26
+Weisbrod Memorial County Hospital,Outpatient,2023,Kiowa,Rural,East,1,0,0.6519,542,2.3176,0.6519,2.8358,0.4457,civhc_rbp_fy26
+Women's Health Surgery Center,Outpatient,2022,Adams,Urban,Denver,0,1,1.22,78,2.3542,3.2477,2.528,1.0085,civhc_rbp_fy26
+AdventHealth Avista,Inpatient/Outpatient Combined,2021,Boulder,Urban,Boulder,0,0,1.5681,12202,1.8368,1.8368,2.2969,0.0663,civhc_rbp_fy26
+AdventHealth Avista,Inpatient/Outpatient Combined,2023,Boulder,Urban,Boulder,0,0,2.1934,9999,2.0361,2.0361,2.3251,0.0232,civhc_rbp_fy26
+AdventHealth Avista,Inpatient/Outpatient Combined,2024,Boulder,Urban,Boulder,0,0,2.1759,9462,2.0548,2.0548,2.3717,0.7125,civhc_rbp_fy26
+AdventHealth Littleton,Inpatient,2021,Arapahoe,Urban,Denver,0,0,2.0048,749,1.8993,2.5192,1.9401,0.0012,civhc_rbp_fy26
+AdventHealth Parker,Inpatient,2023,Douglas,Urban,Denver,0,0,2.1472,904,1.941,1.886,1.9517,0.1621,civhc_rbp_fy26
+AdventHealth Porter,Inpatient,2024,Denver,Urban,Denver,0,0,1.9513,716,1.9574,1.6515,1.9367,0.4573,civhc_rbp_fy26
+AdventHealth Porter,Outpatient,2021,Denver,Urban,Denver,0,0,2.2222,15815,2.3417,1.9352,2.4991,0.0122,civhc_rbp_fy26
+Animas Surgical Hospital,Outpatient,2021,La Plata,Rural,West,0,0,2.4874,1469,2.7793,2.896,2.6902,0.0152,civhc_rbp_fy26
+Animas Surgical Hospital,Outpatient,2023,La Plata,Rural,West,0,0,2.4846,1652,2.9891,2.9897,2.8358,0.0028,civhc_rbp_fy26
+Animas Surgical Hospital,Outpatient,2024,La Plata,Rural,West,0,0,2.291,1718,3.0338,2.8762,2.891,1.0287,civhc_rbp_fy26
+Arapahoe Surgicenter,Outpatient,2024,Arapahoe,Urban,Denver,0,1,2.957,1455,2.4045,2.6401,2.524,0.0019,civhc_rbp_fy26
+Arkansas Valley Regional Medical Center,Outpatient,2023,Otero,Rural,East,1,0,1.9359,3057,2.3176,1.9359,2.8358,0.1708,civhc_rbp_fy26
+Ascent Surgery Center,Outpatient,2023,El Paso,Urban,Colorado Springs,0,1,1.0395,288,2.5173,2.5332,2.4647,0.0006,civhc_rbp_fy26
+Aspen Valley Hospital District,Inpatient,2023,Pitkin,Rural,West,1,0,1.0612,169,1.7735,1.0612,1.6874,0.0004,civhc_rbp_fy26
+Aspen Valley Hospital District,Inpatient/Outpatient Combined,2023,Pitkin,Rural,West,1,0,1.2116,10701,2.5901,1.2116,2.4878,0.0246,civhc_rbp_fy26
+Aurora Endoscopy Surgicenter,Outpatient,2022,Arapahoe,Urban,Denver,0,1,3.151,771,2.3542,2.5388,2.528,0.002,civhc_rbp_fy26
+Banner Fort Collins Medical Center,Inpatient,2021,Larimer,Urban,Ft. Collins,0,0,1.2482,382,2.4221,2.4221,1.9401,0.0016,civhc_rbp_fy26
+Banner Fort Collins Medical Center,Outpatient,2021,Larimer,Urban,Ft. Collins,0,0,3.0757,3251,2.9767,2.9767,2.4991,0.1877,civhc_rbp_fy26
+Banner McKee Medical Center,Inpatient,2022,Larimer,Urban,Ft. Collins,0,0,1.9938,131,2.2229,2.2229,1.99,0.5787,civhc_rbp_fy26
+Banner North Colorado Medical Center,Inpatient/Outpatient Combined,2024,Weld,Urban,Greeley,0,0,2.4947,6064,2.6212,2.6212,2.3717,0.3272,civhc_rbp_fy26
+Basalt Orthopedic Surgery Center,Outpatient,2023,Eagle,Rural,West,0,1,3.3875,777,2.9891,3.8956,2.8358,0.0012,civhc_rbp_fy26
+Basalt Orthopedic Surgery Center,Outpatient,2024,Eagle,Rural,West,0,1,3.7108,586,3.0338,4.0407,2.891,0.0006,civhc_rbp_fy26
+Boulder Community Musculoskeletal Surgery Center,Outpatient,2022,Boulder,Urban,Boulder,0,1,1.9134,750,2.169,2.169,2.528,0.7264,civhc_rbp_fy26
+Boulder Medical Center,Outpatient,2023,Boulder,Urban,Boulder,0,1,1.4073,809,2.2475,2.2475,2.4647,0.0021,civhc_rbp_fy26
+Canyon View Ambulatory Surgery Center,Outpatient,2024,Mesa,Urban,Grand Junction,0,1,1.0023,298,2.9996,2.9996,2.524,0.675,civhc_rbp_fy26
+Castle Rock Surgicenter,Outpatient,2022,Douglas,Urban,Denver,0,1,1.499,169,2.3542,2.204,2.528,0.5404,civhc_rbp_fy26
+Centrum Surgery Center,Outpatient,2021,Arapahoe,Urban,Denver,0,1,2.2553,969,2.3417,2.5878,2.4991,0.1826,civhc_rbp_fy26
+Colorado Urologic Surgery Center - St. Anthony Hospital Campus,Outpatient,2024,Jefferson,Urban,Denver,0,1,2.1307,264,2.4045,2.5063,2.524,0.1801,civhc_rbp_fy26
+CommonSpirit - Penrose Hospital,Outpatient,2021,El Paso,Urban,Colorado Springs,0,0,2.6574,16624,2.5464,2.5524,2.4991,0.1243,civhc_rbp_fy26
+CommonSpirit - Penrose Hospital,Outpatient,2024,El Paso,Urban,Colorado Springs,0,0,2.8767,11350,2.5757,2.5887,2.524,0.4223,civhc_rbp_fy26
+CommonSpirit Longmont United Hospital,Outpatient,2022,Boulder,Urban,Boulder,0,0,2.6545,3900,2.169,2.169,2.528,0.1906,civhc_rbp_fy26
+CommonSpirit Mercy Hospital,Inpatient/Outpatient Combined,2021,La Plata,Rural,West,0,0,2.2473,24650,2.2831,2.2665,2.2483,0.2544,civhc_rbp_fy26
+CommonSpirit St. Anthony Hospital,Inpatient,2023,Jefferson,Urban,Denver,0,0,2.2294,701,1.941,2.169,1.9517,0.2111,civhc_rbp_fy26
+CommonSpirit St. Anthony Hospital,Outpatient,2023,Jefferson,Urban,Denver,0,0,2.9437,9249,2.2485,2.426,2.4647,0.0398,civhc_rbp_fy26
+CommonSpirit St. Anthony Hospital,Outpatient,2024,Jefferson,Urban,Denver,0,0,3.1191,9152,2.4045,2.5063,2.524,0.9744,civhc_rbp_fy26
+CommonSpirit St. Anthony North Hospital,Inpatient/Outpatient Combined,2021,Broomfield,Urban,Denver,0,0,2.4371,7175,2.1842,2.4371,2.2969,0.0504,civhc_rbp_fy26
+CommonSpirit St. Anthony North Hospital,Outpatient,2024,Broomfield,Urban,Denver,0,0,3.3215,9834,2.4045,3.0786,2.524,2.24,civhc_rbp_fy26
+CommonSpirit St. Anthony Summit Medical Center,Inpatient,2024,Summit,Rural,West,0,0,1.0533,185,1.5961,1.0533,1.5378,0.4992,civhc_rbp_fy26
+CommonSpirit St. Anthony Summit Medical Center,Inpatient/Outpatient Combined,2021,Summit,Rural,West,0,0,3.9829,5196,2.2831,3.9829,2.2483,1.1117,civhc_rbp_fy26
+CommonSpirit St. Elizabeth Hospital,Inpatient/Outpatient Combined,2021,Morgan,Rural,East,0,0,4.1953,2490,2.1124,2.8151,2.2483,0.1555,civhc_rbp_fy26
+CommonSpirit St. Elizabeth Hospital,Inpatient/Outpatient Combined,2024,Morgan,Rural,East,0,0,3.4322,2521,2.2207,2.5632,2.4831,1.2539,civhc_rbp_fy26
+CommonSpirit St. Mary-Corwin Hospital,Inpatient/Outpatient Combined,2024,Pueblo,Urban,Pueblo,0,0,3.4765,5099,3.0446,3.0446,2.3717,0.4125,civhc_rbp_fy26
+CommonSpirit St. Thomas More Hospital,Inpatient/Outpatient Combined,2023,Fremont,Rural,East,1,0,5.2793,4614,2.1433,5.1927,2.4878,0.0204,civhc_rbp_fy26
+CommonSpirit St. Thomas More Hospital,Outpatient,2021,Fremont,Rural,East,0,0,5.6367,1147,2.3528,5.1827,2.6902,0.0063,civhc_rbp_fy26
+CommonSpirit St. Thomas More Hospital,Outpatient,2021,Fremont,Rural,East,1,0,5.1472,2478,2.3528,5.1827,2.6902,0.0063,civhc_rbp_fy26
+Community Hospital,Inpatient,2024,Mesa,Urban,Grand Junction,0,0,2.3749,216,2.2157,2.2157,1.9367,1.3845,civhc_rbp_fy26
+Community Hospital,Outpatient,2022,Mesa,Urban,Grand Junction,0,0,4.0067,17407,3.2804,3.2804,2.528,0.0692,civhc_rbp_fy26
+Crown Point Surgery Center,Outpatient,2023,Douglas,Urban,Denver,0,1,1.9685,752,2.2485,2.2354,2.4647,0.2355,civhc_rbp_fy26
+Day Surgery of Grand Junction,Outpatient,2022,Mesa,Urban,Grand Junction,0,1,1.1219,214,3.2804,3.2804,2.528,0.6632,civhc_rbp_fy26
+Delta Health,Inpatient/Outpatient Combined,2022,Delta,Rural,West,0,0,3.1705,9388,2.3988,3.1705,2.3417,0.0057,civhc_rbp_fy26
+Delta Health,Outpatient,2021,Delta,Rural,West,0,0,3.8436,10011,2.7793,3.8436,2.6902,1.5922,civhc_rbp_fy26
+Denver Health,Inpatient,2024,Denver,Urban,Denver,0,0,0.9428,1244,1.9574,1.6515,1.9367,0.3128,civhc_rbp_fy26
+Denver Health,Inpatient/Outpatient Combined,2024,Denver,Urban,Denver,0,0,1.1279,90431,2.3072,1.8564,2.3717,0.742,civhc_rbp_fy26
+Denver Health,Outpatient,2023,Denver,Urban,Denver,0,0,0.8133,84884,2.2485,1.722,2.4647,0.0625,civhc_rbp_fy26
+Denver Mid-Town Surgery Center,Outpatient,2024,Denver,Urban,Denver,0,1,1.6004,1029,2.4045,1.9042,2.524,0.7579,civhc_rbp_fy26
+Denver Surgicenter,Outpatient,2021,Denver,Urban,Denver,0,1,3.1363,1423,2.3417,1.9352,2.4991,0.002,civhc_rbp_fy26
+Denver Surgicenter,Outpatient,2023,Denver,Urban,Denver,0,1,3.0442,1546,2.2485,1.722,2.4647,0.002,civhc_rbp_fy26
+Denver West Endoscopy Center,Outpatient,2021,Jefferson,Urban,Denver,0,1,2.2189,890,2.3417,2.5164,2.4991,1.2209,civhc_rbp_fy26
+Denver West Endoscopy Center,Outpatient,2022,Jefferson,Urban,Denver,0,1,2.2202,989,2.3542,2.3461,2.528,0.0022,civhc_rbp_fy26
+Endoscopy Center of the Rockies - Boulder,Outpatient,2021,Boulder,Urban,Boulder,0,1,3.4522,925,2.0417,2.0417,2.4991,0.0024,civhc_rbp_fy26
+Endoscopy Center of the Rockies - Boulder,Outpatient,2022,Boulder,Urban,Boulder,0,1,3.58,940,2.169,2.169,2.528,0.0021,civhc_rbp_fy26
+Endoscopy Center of the Rockies - Longmont,Outpatient,2021,Boulder,Urban,Boulder,0,1,3.5399,579,2.0417,2.0417,2.4991,0.0022,civhc_rbp_fy26
+Endoscopy Center of the Rockies - Longmont,Outpatient,2022,Boulder,Urban,Boulder,0,1,3.5327,609,2.169,2.169,2.528,0.8035,civhc_rbp_fy26
+Estes Park Health,Inpatient/Outpatient Combined,2023,Larimer,Urban,Ft. Collins,1,0,1.4535,2460,2.7432,2.7432,2.3251,0.0712,civhc_rbp_fy26
+Estes Park Health,Outpatient,2024,Larimer,Urban,Ft. Collins,1,0,1.3015,2057,2.7664,2.7664,2.524,0.9747,civhc_rbp_fy26
+Family Health West,Outpatient,2023,Mesa,Urban,Grand Junction,1,0,2.0482,4638,3.7218,3.7218,2.4647,0.1225,civhc_rbp_fy26
+Flatirons Surgery Center,Outpatient,2022,Douglas,Urban,Denver,0,1,1.6276,421,2.3542,2.204,2.528,0.0008,civhc_rbp_fy26
+Foothills Surgery Center,Outpatient,2023,Boulder,Urban,Boulder,0,1,1.874,619,2.2475,2.2475,2.4647,0.1422,civhc_rbp_fy26
+Front Range Endoscopy Centers,Outpatient,2021,El Paso,Urban,Colorado Springs,0,1,1.1156,510,2.5464,2.5524,2.4991,0.3543,civhc_rbp_fy26
+Front Range Orthopedic Surgery Center,Outpatient,2024,Boulder,Urban,Boulder,0,1,2.2857,392,2.2621,2.2621,2.524,0.0004,civhc_rbp_fy26
+Functional Neurosurgical Ambulatory Surgery Center,Outpatient,2024,Arapahoe,Urban,Denver,0,1,1.59,32,2.4045,2.6401,2.524,0.2927,civhc_rbp_fy26
+Golden Ridge Surgery Center,Outpatient,2023,Jefferson,Urban,Denver,0,1,1.9084,41,2.2485,2.426,2.4647,1.9084,civhc_rbp_fy26
+Grand River Hospital District,Outpatient,2023,Garfield,Rural,West,1,0,1.7068,8884,2.9891,3.2604,2.8358,0.0803,civhc_rbp_fy26
+Grand Valley Surgical Center,Outpatient,2022,Mesa,Urban,Grand Junction,0,1,1.2248,474,3.2804,3.2804,2.528,0.0013,civhc_rbp_fy26
+Gunnison Valley Hospital,Inpatient,2021,Gunnison,Rural,West,1,0,1.2295,71,1.5537,1.2295,1.5263,0.6998,civhc_rbp_fy26
+Harmony Surgery Center,Outpatient,2024,Larimer,Urban,Ft. Collins,0,1,1.2793,4495,2.7664,2.7664,2.524,0.4493,civhc_rbp_fy26
+Harvard Park Surgery Center,Outpatient,2023,Denver,Urban,Denver,0,1,1.5934,532,2.2485,1.722,2.4647,0.0014,civhc_rbp_fy26
+Haxtun Health,Outpatient,2022,Phillips,Rural,East,1,0,1.1201,615,2.3479,1.3655,2.7132,0.0075,civhc_rbp_fy26
+Healthone Ridge View Endoscopy Center - Englewood,Outpatient,2023,Arapahoe,Urban,Denver,0,1,3.1127,1843,2.2485,2.4517,2.4647,0.0026,civhc_rbp_fy26
+Heart of the Rockies Regional Medical Center,Inpatient/Outpatient Combined,2024,Chaffee,Rural,East,1,0,2.3967,8044,2.2207,2.3967,2.4831,0.5513,civhc_rbp_fy26
+Intermountain Health Good Samaritan Medical Center,Inpatient,2021,Boulder,Urban,Boulder,0,0,1.6909,3591,1.6794,1.6794,1.9401,0.1225,civhc_rbp_fy26
+Intermountain Health Platte Valley Hospital,Inpatient,2022,Adams,Urban,Denver,0,0,1.854,314,2.0119,2.41,1.99,0.0015,civhc_rbp_fy26
+Intermountain Health Platte Valley Hospital,Inpatient/Outpatient Combined,2024,Adams,Urban,Denver,0,0,3.0733,5618,2.3072,2.7948,2.3717,2.0207,civhc_rbp_fy26
+Intermountain Health Platte Valley Hospital,Outpatient,2024,Adams,Urban,Denver,0,0,3.7797,5364,2.4045,3.0768,2.524,2.3495,civhc_rbp_fy26
+Intermountain Health Saint Joseph Hospital,Inpatient/Outpatient Combined,2021,Denver,Urban,Denver,0,0,1.7966,25852,2.1842,1.8191,2.2969,0.0886,civhc_rbp_fy26
+Kaiser Foundation Health Plan of Colorado - Denver,Outpatient,2024,Denver,Urban,Denver,0,1,0.3211,4390,2.4045,1.9042,2.524,0.0054,civhc_rbp_fy26
+Keefe Memorial Hospital,Outpatient,2022,Cheyenne,Rural,East,1,0,3.2857,1224,2.3479,3.2857,2.7132,0.699,civhc_rbp_fy26
+Keefe Memorial Hospital,Outpatient,2023,Cheyenne,Rural,East,1,0,4.4669,1566,2.3176,4.4669,2.8358,0.7483,civhc_rbp_fy26
+Kit Carson County Health Services District,Outpatient,2023,Kit Carson,Rural,East,1,0,1.6921,2167,2.3176,1.6921,2.8358,0.0424,civhc_rbp_fy26
+Lafayette Surgery Center,Outpatient,2023,Boulder,Urban,Boulder,0,1,1.3451,455,2.2475,2.2475,2.4647,0.0008,civhc_rbp_fy26
+Lafayette Surgery Center,Outpatient,2024,Boulder,Urban,Boulder,0,1,1.556,769,2.2621,2.2621,2.524,0.0675,civhc_rbp_fy26
+Lincoln Health,Inpatient/Outpatient Combined,2021,Lincoln,Rural,East,1,0,1.2205,1818,2.1124,1.2205,2.2483,0.0128,civhc_rbp_fy26
+Melissa Memorial Hospital,Inpatient/Outpatient Combined,2021,Phillips,Rural,East,1,0,1.4057,1666,2.1124,1.2897,2.2483,0.0069,civhc_rbp_fy26
+Middle Park Health - Granby,Outpatient,2023,Grand,Rural,West,1,0,1.8116,342,2.9891,1.8989,2.8358,0.0005,civhc_rbp_fy26
+Middle Park Health - Kremmling,Inpatient/Outpatient Combined,2024,Grand,Rural,West,1,0,1.8393,2559,2.5642,1.8624,2.4831,1.4832,civhc_rbp_fy26
+Middle Park Health - Kremmling,Outpatient,2021,Grand,Rural,West,1,0,1.816,2391,2.7793,1.8037,2.6902,0.0377,civhc_rbp_fy26
+Mile High Surgicenter,Outpatient,2022,Arapahoe,Urban,Denver,0,1,1.3863,476,2.3542,2.5388,2.528,0.0871,civhc_rbp_fy26
+Montrose Regional Health,Outpatient,2023,Montrose,Rural,West,0,0,4.6403,13095,2.9891,4.2666,2.8358,0.0069,civhc_rbp_fy26
+Mountain Vista Orthopaedic Surgery Center,Outpatient,2024,Weld,Urban,Greeley,0,1,1.6853,502,2.9093,2.9093,2.524,0.8731,civhc_rbp_fy26
+Mt. San Rafael Hospital,Inpatient/Outpatient Combined,2022,Las Animas,Rural,East,1,0,2.507,2040,2.1472,2.507,2.3417,0.0059,civhc_rbp_fy26
+Mt. San Rafael Hospital,Outpatient,2022,Las Animas,Rural,East,1,0,2.576,2035,2.3479,2.576,2.7132,0.0059,civhc_rbp_fy26
+National Jewish Health,Inpatient/Outpatient Combined,2021,Denver,Urban,Denver,0,0,2.1374,14945,2.1842,1.8191,2.2969,0.5342,civhc_rbp_fy26
+National Jewish Health,Outpatient,2023,Denver,Urban,Denver,0,0,2.4887,13716,2.2485,1.722,2.4647,0.0885,civhc_rbp_fy26
+National Jewish Health,Outpatient,2024,Denver,Urban,Denver,0,0,2.6647,12702,2.4045,1.9042,2.524,0.6066,civhc_rbp_fy26
+North Denver Musculoskeletal Surgical Partners,Outpatient,2024,Broomfield,Urban,Denver,0,1,2.0109,371,2.4045,3.0786,2.524,0.0015,civhc_rbp_fy26
+North Suburban Medical Center,Inpatient/Outpatient Combined,2021,Adams,Urban,Denver,0,0,2.4893,10207,2.1842,2.6347,2.2969,0.0756,civhc_rbp_fy26
+North Suburban Medical Center,Outpatient,2022,Adams,Urban,Denver,0,0,3.6495,8761,2.3542,3.2477,2.528,0.0614,civhc_rbp_fy26
+North Suburban Medical Center,Outpatient,2024,Adams,Urban,Denver,0,0,3.621,6883,2.4045,3.0768,2.524,1.6603,civhc_rbp_fy26
+North Suburban Spine Center,Outpatient,2024,Adams,Urban,Denver,0,1,1.5483,186,2.4045,3.0768,2.524,0.0028,civhc_rbp_fy26
+Northglenn Endoscopy Center,Outpatient,2021,Adams,Urban,Denver,0,1,2.2205,849,2.3417,2.9458,2.4991,0.0025,civhc_rbp_fy26
+Novamed Surgery Center of Colorado Springs,Outpatient,2024,El Paso,Urban,Colorado Springs,0,1,1.1227,295,2.5757,2.5887,2.524,0.6273,civhc_rbp_fy26
+Novamed Surgery Center of Denver,Outpatient,2022,Arapahoe,Urban,Denver,0,1,1.1805,396,2.3542,2.5388,2.528,0.0008,civhc_rbp_fy26
+Novamed Surgery Center of Denver,Outpatient,2023,Arapahoe,Urban,Denver,0,1,1.1785,413,2.2485,2.4517,2.4647,0.0014,civhc_rbp_fy26
+Pagosa Springs Medical Center,Inpatient/Outpatient Combined,2022,Archuleta,Rural,West,1,0,1.3852,1661,2.3988,1.3852,2.3417,0.1911,civhc_rbp_fy26
+Pagosa Springs Medical Center,Outpatient,2023,Archuleta,Rural,West,1,0,1.5022,2190,2.9891,1.5022,2.8358,0.0024,civhc_rbp_fy26
+Park Avenue Surgery Center,Outpatient,2022,Denver,Urban,Denver,0,1,0.9254,91,2.3542,1.8823,2.528,0.5957,civhc_rbp_fy26
+Park Avenue Surgery Center,Outpatient,2023,Denver,Urban,Denver,0,1,1.0281,138,2.2485,1.722,2.4647,0.0011,civhc_rbp_fy26
+Peak One Surgery Center,Outpatient,2024,Summit,Rural,West,0,1,3.827,506,3.0338,4.9487,2.891,1.9038,civhc_rbp_fy26
+Peak Surgery Center,Outpatient,2021,El Paso,Urban,Colorado Springs,0,1,1.0917,235,2.5464,2.5524,2.4991,0.0013,civhc_rbp_fy26
+Pioneers Medical Center,Inpatient/Outpatient Combined,2023,Rio Blanco,Rural,West,1,0,1.571,2486,2.5901,1.2629,2.4878,0.1821,civhc_rbp_fy26
+Pioneers Medical Center,Outpatient,2021,Rio Blanco,Rural,West,1,0,1.5638,2396,2.7793,1.2341,2.6902,1.1183,civhc_rbp_fy26
+Premier Eye Surgery Center of Colorado,Outpatient,2021,Boulder,Urban,Boulder,0,1,2.1807,157,2.0417,2.0417,2.4991,0.0038,civhc_rbp_fy26
+Presbyterian/St. Luke's Medical Center,Inpatient/Outpatient Combined,2021,Denver,Urban,Denver,0,0,2.5589,13399,2.1842,1.8191,2.2969,0.0637,civhc_rbp_fy26
+Presbyterian/St. Luke's Medical Center,Outpatient,2022,Denver,Urban,Denver,0,0,2.9653,12060,2.3542,1.8823,2.528,0.0211,civhc_rbp_fy26
+Prowers Medical Center,Inpatient,2023,Prowers,Rural,East,1,0,1.2147,38,1.2034,1.2147,1.6874,1.0426,civhc_rbp_fy26
+Prowers Medical Center,Inpatient/Outpatient Combined,2022,Prowers,Rural,East,1,0,1.8392,2953,2.1472,1.8392,2.3417,0.0053,civhc_rbp_fy26
+Rangely District Hospital,Inpatient/Outpatient Combined,2021,Rio Blanco,Rural,West,1,0,0.775,978,2.2831,1.3928,2.2483,0.0129,civhc_rbp_fy26
+Red Rocks Surgery Centers,Outpatient,2023,Jefferson,Urban,Denver,0,1,1.3632,276,2.2485,2.426,2.4647,0.1013,civhc_rbp_fy26
+Rio Grande Hospital,Inpatient/Outpatient Combined,2022,Rio Grande,Rural,East,1,0,1.3251,2024,2.1472,1.3251,2.3417,0.0205,civhc_rbp_fy26
+Rio Grande Hospital,Inpatient/Outpatient Combined,2023,Rio Grande,Rural,East,1,0,1.3399,2234,2.1433,1.3399,2.4878,0.0069,civhc_rbp_fy26
+Rocky Mountain Surgery Center,Outpatient,2023,Arapahoe,Urban,Denver,0,1,1.8249,867,2.2485,2.4517,2.4647,0.0948,civhc_rbp_fy26
+Rose Ambulatory Surgery Center,Outpatient,2022,Denver,Urban,Denver,0,1,1.9419,1911,2.3542,1.8823,2.528,0.0014,civhc_rbp_fy26
+Rose Ambulatory Surgery Center,Outpatient,2023,Denver,Urban,Denver,0,1,1.9308,2074,2.2485,1.722,2.4647,0.0784,civhc_rbp_fy26
+Rose Medical Center,Outpatient,2021,Denver,Urban,Denver,0,0,2.9561,12143,2.3417,1.9352,2.4991,0.0119,civhc_rbp_fy26
+STATEWIDE,Inpatient,2022,STATEWIDE,STATEWIDE,STATEWIDE,0,0,1.965,44306,,,,,civhc_rbp_fy26
+STATEWIDE,Inpatient,2023,STATEWIDE,STATEWIDE,STATEWIDE,0,0,1.9346,42578,,,,,civhc_rbp_fy26
+San Luis Valley Health Conejos County Hospital,Inpatient/Outpatient Combined,2022,Conejos,Rural,East,1,0,1.6239,557,2.1472,1.6239,2.3417,0.0122,civhc_rbp_fy26
+San Luis Valley Health Conejos County Hospital,Outpatient,2022,Conejos,Rural,East,1,0,1.7804,554,2.3479,1.7804,2.7132,0.0122,civhc_rbp_fy26
+Sky Ridge Medical Center,Inpatient,2021,Douglas,Urban,Denver,0,0,1.9124,4489,1.8993,1.8516,1.9401,0.0275,civhc_rbp_fy26
+Sky Ridge Medical Center,Outpatient,2024,Douglas,Urban,Denver,0,0,2.6803,12395,2.4045,2.3549,2.524,0.6356,civhc_rbp_fy26
+Sky Ridge Surgery Center,Outpatient,2024,Douglas,Urban,Denver,0,1,1.6668,1307,2.4045,2.3549,2.524,0.8519,civhc_rbp_fy26
+South Denver Gastroenterology Castle Rock Endoscopy Center,Outpatient,2022,Douglas,Urban,Denver,0,1,2.3451,253,2.3542,2.204,2.528,2.1271,civhc_rbp_fy26
+Southeast Colorado Hospital District,Inpatient/Outpatient Combined,2024,Baca,Rural,East,1,0,2.0698,772,2.2207,2.0698,2.4831,0.2527,civhc_rbp_fy26
+Southwest Endoscopy Center,Outpatient,2022,La Plata,Rural,West,0,1,1.5102,206,2.8235,3.2928,2.7132,0.0024,civhc_rbp_fy26
+Southwest Health System,Inpatient,2021,Montezuma,Rural,West,1,0,1.5682,52,1.5537,1.5682,1.5263,0.0003,civhc_rbp_fy26
+Spanish Peaks Regional Health Center,Inpatient/Outpatient Combined,2022,Huerfano,Rural,East,1,0,1.2372,810,2.1472,1.2372,2.3417,0.0038,civhc_rbp_fy26
+Spanish Peaks Regional Health Center,Outpatient,2024,Huerfano,Rural,East,1,0,1.2694,905,2.4156,1.2694,2.891,0.5288,civhc_rbp_fy26
+St. Vincent Health,Outpatient,2021,Lake,Rural,West,1,0,1.0841,777,2.7793,1.0841,2.6902,0.0032,civhc_rbp_fy26
+Sterling Regional MedCenter,Inpatient,2024,Logan,Rural,East,0,0,0.9726,85,1.2459,0.9726,1.5378,0.8213,civhc_rbp_fy26
+Sterling Regional MedCenter,Outpatient,2022,Logan,Rural,East,0,0,3.4143,2937,2.3479,3.4143,2.7132,0.0094,civhc_rbp_fy26
+Summit Orthopedic Surgery Center,Outpatient,2024,Summit,Rural,West,0,1,3.4383,505,3.0338,4.9487,2.891,1.1577,civhc_rbp_fy26
+Summit View Surgery Center,Outpatient,2023,Arapahoe,Urban,Denver,0,1,1.3081,261,2.2485,2.4517,2.4647,0.0015,civhc_rbp_fy26
+Surgery Center of Loveland,Outpatient,2022,Larimer,Urban,Ft. Collins,0,1,1.2056,270,2.9914,2.9914,2.528,0.1817,civhc_rbp_fy26
+Surgery Center of Loveland,Outpatient,2023,Larimer,Urban,Ft. Collins,0,1,1.3616,398,2.8627,2.8627,2.4647,0.0015,civhc_rbp_fy26
+Surgery Center of Northern Colorado,Outpatient,2021,Larimer,Urban,Ft. Collins,0,1,1.0387,969,2.9767,2.9767,2.4991,0.0011,civhc_rbp_fy26
+The Medical Center of Aurora,Inpatient,2023,Arapahoe,Urban,Denver,0,0,2.1779,776,1.941,2.3093,1.9517,0.0414,civhc_rbp_fy26
+The Medical Center of Aurora,Inpatient,2024,Arapahoe,Urban,Denver,0,0,2.0192,812,1.9574,2.2722,1.9367,0.2987,civhc_rbp_fy26
+The Surgery Center at Lone Tree,Outpatient,2022,Douglas,Urban,Denver,0,1,1.8831,597,2.3542,2.204,2.528,0.0385,civhc_rbp_fy26
+UCHealth Ambulatory Surgery Center - Colorado Springs,Outpatient,2024,El Paso,Urban,Colorado Springs,0,1,1.2597,83,2.5757,2.5887,2.524,0.5763,civhc_rbp_fy26
+UCHealth Ambulatory Surgery Center - Englewood,Outpatient,2024,Arapahoe,Urban,Denver,0,1,1.118,1073,2.4045,2.6401,2.524,0.4971,civhc_rbp_fy26
+UCHealth Broomfield Hospital,Inpatient/Outpatient Combined,2022,Jefferson,Urban,Denver,0,0,2.4872,4237,2.284,2.4506,2.3666,0.0322,civhc_rbp_fy26
+UCHealth Broomfield Hospital,Inpatient/Outpatient Combined,2023,Jefferson,Urban,Denver,0,0,2.8818,4954,2.1927,2.5541,2.3251,0.0315,civhc_rbp_fy26
+UCHealth Grandview Hospital,Outpatient,2024,El Paso,Urban,Colorado Springs,0,0,2.8517,4276,2.5757,2.5887,2.524,1.1488,civhc_rbp_fy26
+UCHealth Highlands Ranch Hospital,Outpatient,2024,Douglas,Urban,Denver,0,0,2.8951,10065,2.4045,2.3549,2.524,1.6581,civhc_rbp_fy26
+UCHealth Medical Center of the Rockies,Inpatient/Outpatient Combined,2023,Larimer,Urban,Ft. Collins,0,0,2.9477,21996,2.7432,2.7432,2.3251,0.5778,civhc_rbp_fy26
+UCHealth Parkview Medical Center,Inpatient,2024,Pueblo,Urban,Pueblo,0,0,1.8253,707,1.8092,1.8092,1.9367,1.1225,civhc_rbp_fy26
+UCHealth Parkview Medical Center,Inpatient/Outpatient Combined,2022,Pueblo,Urban,Pueblo,0,0,2.7719,12032,2.9285,2.9285,2.3666,0.0262,civhc_rbp_fy26
+UCHealth Parkview Medical Center,Outpatient,2021,Pueblo,Urban,Pueblo,0,0,3.5208,12936,3.2958,3.2958,2.4991,0.2524,civhc_rbp_fy26
+UCHealth Parkview Medical Center,Outpatient,2024,Pueblo,Urban,Pueblo,0,0,3.6203,10522,3.7342,3.7342,2.524,1.5125,civhc_rbp_fy26
+UCHealth Parkview Pueblo West,Inpatient,2023,Pueblo,Urban,Pueblo,0,0,2.0798,43,1.8114,1.8114,1.9517,0.0018,civhc_rbp_fy26
+UCHealth Parkview Pueblo West,Inpatient,2024,Pueblo,Urban,Pueblo,0,0,1.9995,31,1.8092,1.8092,1.9367,1.0012,civhc_rbp_fy26
+UCHealth Pikes Peak Regional Hospital,Inpatient/Outpatient Combined,2022,Teller,Urban,Colorado Springs,1,0,2.4798,4436,2.4589,2.4798,2.3666,0.0447,civhc_rbp_fy26
+UCHealth Poudre Valley Hospital,Inpatient/Outpatient Combined,2024,Larimer,Urban,Ft. Collins,0,0,2.7152,39194,2.6442,2.6442,2.3717,0.547,civhc_rbp_fy26
+UCHealth University of Colorado Hospital,Inpatient,2021,Adams,Urban,Denver,0,0,2.5333,1933,1.8993,2.2662,1.9401,0.2658,civhc_rbp_fy26
+UCHealth University of Colorado Hospital,Outpatient,2024,Adams,Urban,Denver,0,0,2.9949,123332,2.4045,3.0768,2.524,0.8472,civhc_rbp_fy26
+UCHealth Yampa Valley Medical Center,Inpatient,2024,Routt,Rural,West,0,0,1.1475,176,1.5961,1.1475,1.5378,0.6794,civhc_rbp_fy26
+UCHealth Yampa Valley Medical Center,Outpatient,2022,Routt,Rural,West,0,0,3.2134,14865,2.8235,3.1321,2.7132,0.2589,civhc_rbp_fy26
+Urology Surgery Center of Colorado,Outpatient,2022,Denver,Urban,Denver,0,1,2.1544,749,2.3542,1.8823,2.528,0.3586,civhc_rbp_fy26
+Vail Valley Surgery Center - Vail,Outpatient,2021,Eagle,Rural,West,0,1,5.1504,783,2.7793,3.9793,2.6902,3.653,civhc_rbp_fy26
+Valley View Hospital,Inpatient/Outpatient Combined,2023,Garfield,Rural,West,0,0,3.7414,18876,2.5901,3.1476,2.4878,0.1416,civhc_rbp_fy26
+Weisbrod Memorial County Hospital,Outpatient,2024,Kiowa,Rural,East,1,0,0.6773,556,2.4156,0.6773,2.891,0.0037,civhc_rbp_fy26
+Yuma District Hospital,Inpatient/Outpatient Combined,2022,Yuma,Rural,East,1,0,1.2968,1660,2.1472,1.3381,2.3417,0.101,civhc_rbp_fy26
+Aberdeen Ambulatory Surgical Center,Outpatient,2022,Pueblo,Urban,Pueblo,0,1,1.343,34,3.4625,3.4625,2.528,0.0015,civhc_rbp_fy26
+Advanced Heart and Vein Surgery Center,Outpatient,2024,Broomfield,Urban,Denver,0,1,1.5473,100,2.4045,3.0786,2.524,0.0003,civhc_rbp_fy26
+AdventHealth Avista,Inpatient,2022,Boulder,Urban,Boulder,0,0,1.4962,815,1.6805,1.6805,1.99,0.2669,civhc_rbp_fy26
+AdventHealth Avista,Outpatient,2024,Boulder,Urban,Boulder,0,0,2.6357,8806,2.2621,2.2621,2.524,0.7125,civhc_rbp_fy26
+AdventHealth Castle Rock,Inpatient/Outpatient Combined,2021,Douglas,Urban,Denver,0,0,1.8909,14267,2.1842,2.2152,2.2969,0.1758,civhc_rbp_fy26
+AdventHealth Castle Rock,Inpatient/Outpatient Combined,2024,Douglas,Urban,Denver,0,0,2.3434,9559,2.3072,2.3331,2.3717,0.4001,civhc_rbp_fy26
+AdventHealth Parker,Outpatient,2022,Douglas,Urban,Denver,0,0,2.77,13335,2.3542,2.204,2.528,0.4132,civhc_rbp_fy26
+AdventHealth Parker,Outpatient,2024,Douglas,Urban,Denver,0,0,3.3592,12857,2.4045,2.3549,2.524,0.2568,civhc_rbp_fy26
+AdventHealth Porter,Inpatient,2022,Denver,Urban,Denver,0,0,2.0684,984,2.0119,1.8302,1.99,0.0076,civhc_rbp_fy26
+AdventHealth Porter,Inpatient/Outpatient Combined,2023,Denver,Urban,Denver,0,0,2.2124,12980,2.1927,1.7678,2.3251,0.0101,civhc_rbp_fy26
+AdventHealth Porter,Outpatient,2022,Denver,Urban,Denver,0,0,2.3398,14408,2.3542,1.8823,2.528,0.1158,civhc_rbp_fy26
+AdventHealth Porter,Outpatient,2024,Denver,Urban,Denver,0,0,2.5941,11194,2.4045,1.9042,2.524,0.1524,civhc_rbp_fy26
+Arapahoe Surgicenter,Outpatient,2021,Arapahoe,Urban,Denver,0,1,3.2656,1424,2.3417,2.5878,2.4991,0.0025,civhc_rbp_fy26
+Arkansas Valley Regional Medical Center,Inpatient,2023,Otero,Rural,East,1,0,1.1266,32,1.2034,1.1266,1.6874,0.6701,civhc_rbp_fy26
+Aspen Valley Hospital District,Inpatient/Outpatient Combined,2022,Pitkin,Rural,West,1,0,1.2017,10571,2.3988,1.2017,2.3417,0.0121,civhc_rbp_fy26
+Aspen Valley Hospital District,Outpatient,2022,Pitkin,Rural,West,1,0,1.3549,10393,2.8235,1.3549,2.7132,0.0121,civhc_rbp_fy26
+Audubon Ambulatory Surgery Center,Outpatient,2021,El Paso,Urban,Colorado Springs,0,1,1.308,1496,2.5464,2.5524,2.4991,0.0007,civhc_rbp_fy26
+Audubon Ambulatory Surgery Center,Outpatient,2022,El Paso,Urban,Colorado Springs,0,1,1.6173,1473,2.6399,2.6428,2.528,0.0941,civhc_rbp_fy26
+Audubon Ambulatory Surgery Center,Outpatient,2024,El Paso,Urban,Colorado Springs,0,1,1.4665,1233,2.5757,2.5887,2.524,0.2941,civhc_rbp_fy26
+Banner Fort Collins Medical Center,Inpatient/Outpatient Combined,2024,Larimer,Urban,Ft. Collins,0,0,1.8713,3209,2.6442,2.6442,2.3717,0.1496,civhc_rbp_fy26
+Banner McKee Medical Center,Inpatient,2024,Larimer,Urban,Ft. Collins,0,0,2.0008,75,2.0148,2.0148,1.9367,0.0011,civhc_rbp_fy26
+Banner McKee Medical Center,Inpatient/Outpatient Combined,2022,Larimer,Urban,Ft. Collins,0,0,2.5672,3816,2.8913,2.8913,2.3666,0.3079,civhc_rbp_fy26
+Banner McKee Medical Center,Inpatient/Outpatient Combined,2024,Larimer,Urban,Ft. Collins,0,0,2.7428,3136,2.6442,2.6442,2.3717,0.7423,civhc_rbp_fy26
+Banner North Colorado Medical Center,Inpatient,2022,Weld,Urban,Greeley,0,0,1.8789,547,1.8494,1.8494,1.99,0.0013,civhc_rbp_fy26
+Banner North Colorado Medical Center,Inpatient,2023,Weld,Urban,Greeley,0,0,1.9762,518,1.8989,1.8989,1.9517,0.4192,civhc_rbp_fy26
+Black Canyon Surgical Center,Outpatient,2021,Montrose,Rural,West,0,1,1.6419,502,2.7793,3.953,2.6902,0.6553,civhc_rbp_fy26
+Boulder Community Health,Outpatient,2021,Boulder,Urban,Boulder,0,0,2.1045,44960,2.0417,2.0417,2.4991,0.1573,civhc_rbp_fy26
+Canon City Colorado Multi-Specialty Ambulatory Surgical Center,Outpatient,2021,Fremont,Rural,East,0,1,4.1364,170,2.3528,5.1827,2.6902,0.0019,civhc_rbp_fy26
+Canyon View Ambulatory Surgery Center,Outpatient,2021,Mesa,Urban,Grand Junction,0,1,1.2246,243,3.2289,3.2289,2.4991,0.6237,civhc_rbp_fy26
+Canyon View Ambulatory Surgery Center,Outpatient,2023,Mesa,Urban,Grand Junction,0,1,0.9727,306,3.7218,3.7218,2.4647,0.0337,civhc_rbp_fy26
+Clear Creek Surgery Center,Outpatient,2024,Jefferson,Urban,Denver,0,1,1.3793,447,2.4045,2.5063,2.524,0.6454,civhc_rbp_fy26
+CommonSpirit Longmont United Hospital,Inpatient,2023,Boulder,Urban,Boulder,0,0,1.588,158,1.7876,1.7876,1.9517,0.0003,civhc_rbp_fy26
+CommonSpirit Longmont United Hospital,Inpatient/Outpatient Combined,2021,Boulder,Urban,Boulder,0,0,1.9837,5420,1.8368,1.8368,2.2969,0.2568,civhc_rbp_fy26
+CommonSpirit Longmont United Hospital,Inpatient/Outpatient Combined,2024,Boulder,Urban,Boulder,0,0,2.2011,2621,2.0548,2.0548,2.3717,1.0843,civhc_rbp_fy26
+CommonSpirit Mercy Hospital,Inpatient/Outpatient Combined,2023,La Plata,Rural,West,0,0,2.6733,16616,2.5901,2.6492,2.4878,0.2683,civhc_rbp_fy26
+CommonSpirit Mercy Hospital,Outpatient,2021,La Plata,Rural,West,0,0,2.9667,23678,2.7793,2.896,2.6902,0.9189,civhc_rbp_fy26
+CommonSpirit St. Anthony Hospital,Inpatient/Outpatient Combined,2023,Jefferson,Urban,Denver,0,0,2.5153,9950,2.1927,2.5541,2.3251,0.2175,civhc_rbp_fy26
+CommonSpirit St. Mary-Corwin Hospital,Inpatient/Outpatient Combined,2022,Pueblo,Urban,Pueblo,0,0,3.2558,6093,2.9285,2.9285,2.3666,0.0341,civhc_rbp_fy26
+Community Hospital,Inpatient/Outpatient Combined,2021,Mesa,Urban,Grand Junction,0,0,3.4578,17862,3.152,3.152,2.2969,0.0152,civhc_rbp_fy26
+Community Hospital,Outpatient,2024,Mesa,Urban,Grand Junction,0,0,3.6133,16312,2.9996,2.9996,2.524,0.7136,civhc_rbp_fy26
+Delta Health,Inpatient/Outpatient Combined,2023,Delta,Rural,West,0,0,3.8748,10271,2.5901,3.8748,2.4878,0.2091,civhc_rbp_fy26
+Denver Diagnostic Ambulatory Surgery Center,Outpatient,2023,Arapahoe,Urban,Denver,0,1,1.0768,89,2.2485,2.4517,2.4647,0.0002,civhc_rbp_fy26
+Denver Health,Inpatient/Outpatient Combined,2022,Denver,Urban,Denver,0,0,0.9093,79491,2.284,1.9245,2.3666,0.0407,civhc_rbp_fy26
+East Morgan County Hospital,Inpatient/Outpatient Combined,2023,Morgan,Rural,East,1,0,1.7357,2379,2.1433,2.3758,2.4878,0.029,civhc_rbp_fy26
+Endoscopy Center of Colorado Springs,Outpatient,2024,El Paso,Urban,Colorado Springs,0,1,1.7919,2025,2.5757,2.5887,2.524,1.3033,civhc_rbp_fy26
+Endoscopy Center of Grand Junction,Outpatient,2022,Mesa,Urban,Grand Junction,0,1,1.6648,1364,3.2804,3.2804,2.528,0.0025,civhc_rbp_fy26
+Endoscopy Center of Western Colorado,Outpatient,2021,Mesa,Urban,Grand Junction,0,1,1.2692,297,3.2289,3.2289,2.4991,0.621,civhc_rbp_fy26
+Estes Park Health,Inpatient/Outpatient Combined,2024,Larimer,Urban,Ft. Collins,1,0,1.2699,2060,2.6442,2.6442,2.3717,0.9298,civhc_rbp_fy26
+Family Health West,Outpatient,2024,Mesa,Urban,Grand Junction,1,0,1.8132,4692,2.9996,2.9996,2.524,0.0057,civhc_rbp_fy26
+Focus Hand Surgicenter,Outpatient,2024,Arapahoe,Urban,Denver,0,1,1.7941,468,2.4045,2.6401,2.524,0.121,civhc_rbp_fy26
+Foothills Surgery Center,Outpatient,2022,Boulder,Urban,Boulder,0,1,1.9384,555,2.169,2.169,2.528,0.4774,civhc_rbp_fy26
+Front Range Endoscopy Centers,Outpatient,2024,El Paso,Urban,Colorado Springs,0,1,0.9958,282,2.5757,2.5887,2.524,0.7985,civhc_rbp_fy26
+Functional Neurosurgical Ambulatory Surgery Center,Outpatient,2022,Arapahoe,Urban,Denver,0,1,1.7258,49,2.3542,2.5388,2.528,0.0008,civhc_rbp_fy26
+Grand Junction Endoscopy Center,Outpatient,2024,Mesa,Urban,Grand Junction,0,1,2.0093,500,2.9996,2.9996,2.524,0.0023,civhc_rbp_fy26
+Grand River Hospital District,Inpatient/Outpatient Combined,2022,Garfield,Rural,West,1,0,1.651,10266,2.3988,2.7545,2.3417,0.0291,civhc_rbp_fy26
+Grand Valley Surgical Center,Outpatient,2023,Mesa,Urban,Grand Junction,0,1,1.1772,337,3.7218,3.7218,2.4647,0.2039,civhc_rbp_fy26
+Greeley Endoscopy Center,Outpatient,2022,Weld,Urban,Greeley,0,1,1.5343,721,2.9279,2.9279,2.528,0.0025,civhc_rbp_fy26
+Gunnison Valley Hospital,Inpatient,2022,Gunnison,Rural,West,1,0,1.8041,58,1.6768,1.8041,1.6034,0.0009,civhc_rbp_fy26
+Gunnison Valley Hospital,Outpatient,2024,Gunnison,Rural,West,1,0,2.715,7149,3.0338,2.6907,2.891,0.2344,civhc_rbp_fy26
+Harvard Park Surgery Center,Outpatient,2021,Denver,Urban,Denver,0,1,1.7305,736,2.3417,1.9352,2.4991,0.0012,civhc_rbp_fy26
+Harvard Park Surgery Center,Outpatient,2024,Denver,Urban,Denver,0,1,1.3856,362,2.4045,1.9042,2.524,0.0009,civhc_rbp_fy26
+Healthone Ridge View Endoscopy Center - Lone Tree,Outpatient,2022,Douglas,Urban,Denver,0,1,3.1628,2220,2.3542,2.204,2.528,0.4613,civhc_rbp_fy26
+Heart of the Rockies Regional Medical Center,Inpatient,2024,Chaffee,Rural,East,1,0,1.696,61,1.2459,1.696,1.5378,0.4671,civhc_rbp_fy26
+Insight Surgery Center,Outpatient,2024,Douglas,Urban,Denver,0,1,0.9607,342,2.4045,2.3549,2.524,0.0013,civhc_rbp_fy26
+Intermountain Health Good Samaritan Medical Center,Inpatient/Outpatient Combined,2022,Boulder,Urban,Boulder,0,0,1.8523,17572,1.916,1.916,2.3666,0.0037,civhc_rbp_fy26
+Intermountain Health Good Samaritan Medical Center,Inpatient/Outpatient Combined,2023,Boulder,Urban,Boulder,0,0,1.9297,18586,2.0361,2.0361,2.3251,0.1664,civhc_rbp_fy26
+Intermountain Health Saint Joseph Hospital,Outpatient,2021,Denver,Urban,Denver,0,0,2.1917,20124,2.3417,1.9352,2.4991,0.0592,civhc_rbp_fy26
+Intermountain Health Saint Joseph Hospital,Outpatient,2024,Denver,Urban,Denver,0,0,2.021,19653,2.4045,1.9042,2.524,0.6807,civhc_rbp_fy26
+Intermountain Health St. Mary's Medical Center,Inpatient,2021,Mesa,Urban,Grand Junction,0,0,2.5615,677,2.6603,2.6603,1.9401,0.7515,civhc_rbp_fy26
+Intermountain Health St. Mary's Medical Center,Inpatient,2023,Mesa,Urban,Grand Junction,0,0,2.7127,694,2.7195,2.7195,1.9517,0.106,civhc_rbp_fy26
+Intermountain Health St. Mary's Medical Center,Inpatient/Outpatient Combined,2021,Mesa,Urban,Grand Junction,0,0,3.2002,19089,3.152,3.152,2.2969,0.7515,civhc_rbp_fy26
+Kaiser Foundation Health Plan of Colorado - Denver,Outpatient,2023,Denver,Urban,Denver,0,1,0.3278,4963,2.2485,1.722,2.4647,0.0006,civhc_rbp_fy26
+Kit Carson County Health Services District,Outpatient,2021,Kit Carson,Rural,East,1,0,1.4301,1883,2.3528,1.4301,2.6902,0.0134,civhc_rbp_fy26
+Lafayette Surgery Center,Outpatient,2021,Boulder,Urban,Boulder,0,1,1.3249,126,2.0417,2.0417,2.4991,1.041,civhc_rbp_fy26
+Lincoln Health,Outpatient,2022,Lincoln,Rural,East,1,0,1.1204,1529,2.3479,1.1204,2.7132,0.0045,civhc_rbp_fy26
+Lincoln Health,Outpatient,2024,Lincoln,Rural,East,1,0,1.0046,1828,2.4156,1.0046,2.891,0.5009,civhc_rbp_fy26
+Littleton Day Surgery Center,Outpatient,2022,Arapahoe,Urban,Denver,0,1,1.2602,85,2.3542,2.5388,2.528,0.001,civhc_rbp_fy26
+Littleton Day Surgery Center,Outpatient,2023,Arapahoe,Urban,Denver,0,1,1.2061,83,2.2485,2.4517,2.4647,1.0036,civhc_rbp_fy26
+Longmont Surgery Center,Outpatient,2024,Boulder,Urban,Boulder,0,1,1.1425,91,2.2621,2.2621,2.524,0.0032,civhc_rbp_fy26
+Loveland Endoscopy Center,Outpatient,2023,Larimer,Urban,Ft. Collins,0,1,1.462,2024,2.8627,2.8627,2.4647,0.002,civhc_rbp_fy26
+Loveland Surgical Enterprises,Outpatient,2023,Larimer,Urban,Ft. Collins,0,1,1.462,60,2.8627,2.8627,2.4647,0.0007,civhc_rbp_fy26
+Madison Street Surgery Center,Outpatient,2023,Denver,Urban,Denver,0,1,1.19,198,2.2485,1.722,2.4647,0.8846,civhc_rbp_fy26
+Melissa Memorial Hospital,Outpatient,2024,Phillips,Rural,East,1,0,1.3487,1469,2.4156,1.2809,2.891,1.0917,civhc_rbp_fy26
+Memorial Regional Health,Inpatient/Outpatient Combined,2021,Moffat,Rural,West,0,0,1.487,2237,2.2831,1.487,2.2483,0.0372,civhc_rbp_fy26
+Middle Park Health - Granby,Inpatient/Outpatient Combined,2022,Grand,Rural,West,1,0,2.0453,482,2.3988,1.9791,2.3417,0.0021,civhc_rbp_fy26
+Middle Park Health - Granby,Outpatient,2022,Grand,Rural,West,1,0,2.0453,482,2.8235,1.9894,2.7132,0.0021,civhc_rbp_fy26
+Mountain Vista Orthopaedic Surgery Center,Outpatient,2022,Weld,Urban,Greeley,0,1,1.6842,485,2.9279,2.9279,2.528,0.6437,civhc_rbp_fy26
+Mt. San Rafael Hospital,Inpatient/Outpatient Combined,2023,Las Animas,Rural,East,1,0,2.3568,2273,2.1433,2.3568,2.4878,1.3597,civhc_rbp_fy26
+Mt. San Rafael Hospital,Outpatient,2023,Las Animas,Rural,East,1,0,2.4713,2261,2.3176,2.4713,2.8358,1.3597,civhc_rbp_fy26
+North Denver Musculoskeletal Surgical Partners,Outpatient,2023,Broomfield,Urban,Denver,0,1,1.9849,125,2.2485,3.0582,2.4647,0.1907,civhc_rbp_fy26
+North Suburban Medical Center,Inpatient,2024,Adams,Urban,Denver,0,0,1.5266,488,1.9574,2.4352,1.9367,0.9435,civhc_rbp_fy26
+North Suburban Medical Center,Outpatient,2023,Adams,Urban,Denver,0,0,3.1847,8102,2.2485,2.9273,2.4647,0.0427,civhc_rbp_fy26
+Northglenn Endoscopy Center,Outpatient,2023,Adams,Urban,Denver,0,1,1.8283,1431,2.2485,2.9273,2.4647,0.0024,civhc_rbp_fy26
+Optumcare Colorado Ambulatory Surgery Center,Outpatient,2021,El Paso,Urban,Colorado Springs,0,1,1.1921,567,2.5464,2.5524,2.4991,0.0026,civhc_rbp_fy26
+Optumcare Colorado Ambulatory Surgery Center,Outpatient,2023,El Paso,Urban,Colorado Springs,0,1,1.1014,639,2.5173,2.5332,2.4647,0.3232,civhc_rbp_fy26
+Pagosa Springs Medical Center,Inpatient/Outpatient Combined,2023,Archuleta,Rural,West,1,0,1.5345,2199,2.5901,1.5345,2.4878,0.0024,civhc_rbp_fy26
+Pagosa Springs Medical Center,Outpatient,2022,Archuleta,Rural,West,1,0,1.4086,1650,2.8235,1.4086,2.7132,0.1911,civhc_rbp_fy26
+Pagosa Springs Medical Center,Outpatient,2024,Archuleta,Rural,West,1,0,1.5883,2346,3.0338,1.5883,2.891,0.8507,civhc_rbp_fy26
+Peak One Surgery Center,Outpatient,2021,Summit,Rural,West,0,1,3.931,491,2.7793,4.8218,2.6902,3.0504,civhc_rbp_fy26
+Pikes Peak Endoscopy and Surgery Center,Outpatient,2022,El Paso,Urban,Colorado Springs,0,1,1.1323,1528,2.6399,2.6428,2.528,0.0027,civhc_rbp_fy26
+Pikes Peak Endoscopy and Surgery Center,Outpatient,2024,El Paso,Urban,Colorado Springs,0,1,1.1124,1542,2.5757,2.5887,2.524,0.0022,civhc_rbp_fy26
+Pioneers Medical Center,Inpatient,2022,Rio Blanco,Rural,West,1,0,2.8832,44,1.6768,2.6183,1.6034,0.0009,civhc_rbp_fy26
+Pioneers Medical Center,Outpatient,2024,Rio Blanco,Rural,West,1,0,1.5848,2336,3.0338,1.2677,2.891,0.4639,civhc_rbp_fy26
+Premier Eye Surgery Center of Colorado,Outpatient,2023,Boulder,Urban,Boulder,0,1,1.7163,200,2.2475,2.2475,2.4647,0.043,civhc_rbp_fy26
+Presbyterian/St. Luke's Medical Center,Inpatient,2023,Denver,Urban,Denver,0,0,2.8243,1132,1.941,1.6885,1.9517,0.0001,civhc_rbp_fy26
+Prowers Medical Center,Outpatient,2024,Prowers,Rural,East,1,0,1.6677,3520,2.4156,1.6677,2.891,0.0023,civhc_rbp_fy26
+Pueblo Ambulatory Surgery Center,Outpatient,2022,Pueblo,Urban,Pueblo,0,1,1.6957,297,3.4625,3.4625,2.528,0.0026,civhc_rbp_fy26
+Rangely District Hospital,Inpatient/Outpatient Combined,2022,Rio Blanco,Rural,West,1,0,0.6514,1112,2.3988,1.4814,2.3417,0.0063,civhc_rbp_fy26
+Red Rocks Surgery Centers,Outpatient,2021,Jefferson,Urban,Denver,0,1,1.623,268,2.3417,2.5164,2.4991,0.0009,civhc_rbp_fy26
+Research Surgical Center,Outpatient,2022,El Paso,Urban,Colorado Springs,0,1,1.2103,511,2.6399,2.6428,2.528,0.0011,civhc_rbp_fy26
+Rio Grande Hospital,Outpatient,2023,Rio Grande,Rural,East,1,0,1.277,2221,2.3176,1.277,2.8358,0.0069,civhc_rbp_fy26
+Rose Medical Center,Outpatient,2023,Denver,Urban,Denver,0,0,2.8723,12026,2.2485,1.722,2.4647,0.0083,civhc_rbp_fy26
+Rose Medical Center,Outpatient,2024,Denver,Urban,Denver,0,0,2.9183,11034,2.4045,1.9042,2.524,2.0166,civhc_rbp_fy26
+Sedgwick County Health Center,Outpatient,2024,Sedgwick,Rural,East,1,0,1.4739,452,2.4156,1.4739,2.891,0.5441,civhc_rbp_fy26
+Sky Ridge Surgery Center,Outpatient,2021,Douglas,Urban,Denver,0,1,1.5696,850,2.3417,2.2521,2.4991,0.2406,civhc_rbp_fy26
+South Denver Surgical Services,Outpatient,2024,Arapahoe,Urban,Denver,0,1,1.3277,42,2.4045,2.6401,2.524,1.0148,civhc_rbp_fy26
+Southeast Colorado Hospital District,Outpatient,2021,Baca,Rural,East,1,0,1.9511,647,2.3528,1.9511,2.6902,0.0041,civhc_rbp_fy26
+Southeast Colorado Hospital District,Outpatient,2022,Baca,Rural,East,1,0,1.8531,660,2.3479,1.8531,2.7132,0.0169,civhc_rbp_fy26
+Southwest Endoscopy Center,Outpatient,2021,La Plata,Rural,West,0,1,1.54,252,2.7793,2.896,2.6902,1.1909,civhc_rbp_fy26
+Southwest Health System,Outpatient,2021,Montezuma,Rural,West,1,0,1.9432,3818,2.7793,1.9432,2.6902,0.0105,civhc_rbp_fy26
+Spanish Peaks Regional Health Center,Outpatient,2021,Huerfano,Rural,East,1,0,1.296,1046,2.3528,1.296,2.6902,0.0021,civhc_rbp_fy26
+St. Vincent Health,Inpatient/Outpatient Combined,2023,Lake,Rural,West,1,0,1.0375,931,2.5901,1.0375,2.4878,0.0023,civhc_rbp_fy26
+Steamboat Surgery Center,Outpatient,2021,Routt,Rural,West,0,1,2.4126,194,2.7793,2.9617,2.6902,1.2649,civhc_rbp_fy26
+Steamboat Surgery Center,Outpatient,2023,Routt,Rural,West,0,1,2.0698,227,2.9891,3.1952,2.8358,0.2946,civhc_rbp_fy26
+Summit Orthopedic Surgery Center,Outpatient,2023,Summit,Rural,West,0,1,3.4655,489,2.9891,4.8531,2.8358,0.3859,civhc_rbp_fy26
+Surgery Affiliates,Outpatient,2023,El Paso,Urban,Colorado Springs,0,1,1.431,713,2.5173,2.5332,2.4647,0.1141,civhc_rbp_fy26
+Swedish Medical Center,Inpatient/Outpatient Combined,2023,Arapahoe,Urban,Denver,0,0,2.7206,13077,2.1927,2.5534,2.3251,0.1955,civhc_rbp_fy26
+Telluride Medical Center,Inpatient/Outpatient Combined,2023,San Miguel,Rural,West,0,0,2.0463,53,2.5901,2.0463,2.4878,0.0166,civhc_rbp_fy26
+The Medical Center of Aurora,Inpatient/Outpatient Combined,2023,Arapahoe,Urban,Denver,0,0,2.5859,5896,2.1927,2.5534,2.3251,0.1884,civhc_rbp_fy26
+The Surgery Center at Lone Tree,Outpatient,2024,Douglas,Urban,Denver,0,1,1.494,507,2.4045,2.3549,2.524,0.0046,civhc_rbp_fy26
+UCHealth Ambulatory Surgery Center - Englewood,Outpatient,2023,Arapahoe,Urban,Denver,0,1,0.9865,1208,2.2485,2.4517,2.4647,0.1375,civhc_rbp_fy26
+UCHealth Ambulatory Surgery Center - Longmont,Outpatient,2024,Weld,Urban,Greeley,0,1,1.1909,765,2.9093,2.9093,2.524,0.5319,civhc_rbp_fy26
+UCHealth Broomfield Hospital,Outpatient,2024,Jefferson,Urban,Denver,0,0,3.8378,5595,2.4045,2.5063,2.524,0.6911,civhc_rbp_fy26
+UCHealth Grandview Hospital,Inpatient/Outpatient Combined,2024,El Paso,Urban,Colorado Springs,0,0,2.7519,4290,2.4187,2.424,2.3717,1.1488,civhc_rbp_fy26
+UCHealth Grandview Hospital,Outpatient,2022,El Paso,Urban,Colorado Springs,0,0,2.7212,3499,2.6399,2.6428,2.528,0.1227,civhc_rbp_fy26
+UCHealth Greeley  Hospital,Inpatient/Outpatient Combined,2024,Weld,Urban,Greeley,0,0,2.682,14955,2.6212,2.6212,2.3717,1.6889,civhc_rbp_fy26
+UCHealth Greeley  Hospital,Outpatient,2021,Weld,Urban,Greeley,0,0,3.5227,11754,3.048,3.048,2.4991,0.1061,civhc_rbp_fy26
+UCHealth Highlands Ranch Hospital,Outpatient,2023,Douglas,Urban,Denver,0,0,2.9266,9491,2.2485,2.2354,2.4647,0.1036,civhc_rbp_fy26
+UCHealth Medical Center of the Rockies,Inpatient,2022,Larimer,Urban,Ft. Collins,0,0,2.5128,1107,2.2229,2.2229,1.99,1.3335,civhc_rbp_fy26
+UCHealth Medical Center of the Rockies,Outpatient,2021,Larimer,Urban,Ft. Collins,0,0,3.7612,34840,2.9767,2.9767,2.4991,0.2945,civhc_rbp_fy26
+UCHealth Memorial Hospital,Inpatient/Outpatient Combined,2024,El Paso,Urban,Colorado Springs,0,0,2.417,84869,2.4187,2.424,2.3717,0.647,civhc_rbp_fy26
+UCHealth Memorial Hospital,Outpatient,2021,El Paso,Urban,Colorado Springs,0,0,2.9471,67265,2.5464,2.5524,2.4991,0.1757,civhc_rbp_fy26
+UCHealth Memorial Hospital,Outpatient,2023,El Paso,Urban,Colorado Springs,0,0,2.8994,65433,2.5173,2.5332,2.4647,0.1276,civhc_rbp_fy26
+UCHealth Memorial Hospital,Outpatient,2024,El Paso,Urban,Colorado Springs,0,0,2.8943,82456,2.5757,2.5887,2.524,0.9059,civhc_rbp_fy26
+UCHealth Parkview Medical Center,Inpatient,2022,Pueblo,Urban,Pueblo,0,0,1.9646,867,1.9427,1.9427,1.99,0.001,civhc_rbp_fy26
+UCHealth Parkview Pueblo West,Inpatient/Outpatient Combined,2024,Pueblo,Urban,Pueblo,0,0,3.7536,3785,3.0446,3.0446,2.3717,1.7303,civhc_rbp_fy26
+UCHealth Pikes Peak Regional Hospital,Inpatient/Outpatient Combined,2024,Teller,Urban,Colorado Springs,1,0,2.193,5215,2.4187,2.193,2.3717,0.7568,civhc_rbp_fy26
+UCHealth Pikes Peak Regional Hospital,Outpatient,2022,Teller,Urban,Colorado Springs,1,0,2.5393,4426,2.6399,2.5393,2.528,0.0447,civhc_rbp_fy26
+UCHealth Poudre Valley Hospital,Inpatient/Outpatient Combined,2023,Larimer,Urban,Ft. Collins,0,0,2.8103,43015,2.7432,2.7432,2.3251,0.0376,civhc_rbp_fy26
+UCHealth Poudre Valley Hospital,Outpatient,2021,Larimer,Urban,Ft. Collins,0,0,3.3827,49168,2.9767,2.9767,2.4991,0.2885,civhc_rbp_fy26
+UCHealth University of Colorado Hospital,Inpatient,2022,Adams,Urban,Denver,0,0,2.6499,1956,2.0119,2.41,1.99,0.2508,civhc_rbp_fy26
+UCHealth Yampa Valley Medical Center,Inpatient/Outpatient Combined,2021,Routt,Rural,West,0,0,2.579,15967,2.2831,2.579,2.2483,0.4989,civhc_rbp_fy26
+Vail Health Hospital,Outpatient,2023,Eagle,Rural,West,0,0,3.4379,13555,2.9891,3.8956,2.8358,0.1834,civhc_rbp_fy26
+Vail Valley Surgery Center - Edwards,Outpatient,2023,Eagle,Rural,West,0,1,4.9431,2464,2.9891,3.8956,2.8358,0.6989,civhc_rbp_fy26
+Vail Valley Surgery Center - Edwards,Outpatient,2024,Eagle,Rural,West,0,1,5.0044,1846,3.0338,4.0407,2.891,1.6609,civhc_rbp_fy26
+Vail Valley Surgery Center - Vail,Outpatient,2023,Eagle,Rural,West,0,1,4.4802,1044,2.9891,3.8956,2.8358,0.2623,civhc_rbp_fy26
+Vail Valley Surgery Center - Vail,Outpatient,2024,Eagle,Rural,West,0,1,4.6965,1083,3.0338,4.0407,2.891,0.456,civhc_rbp_fy26
+Valley View Hospital,Inpatient,2021,Garfield,Rural,West,0,0,2.3609,300,1.5537,2.3281,1.5263,0.0008,civhc_rbp_fy26
+Valley View Hospital,Inpatient,2024,Garfield,Rural,West,0,0,3.0437,294,1.5961,3.001,1.5378,0.0007,civhc_rbp_fy26
+Valley View Hospital,Outpatient,2022,Garfield,Rural,West,0,0,3.8855,16968,2.8235,2.8492,2.7132,0.6692,civhc_rbp_fy26
+Wray Community District Hospital,Inpatient/Outpatient Combined,2021,Yuma,Rural,East,1,0,1.3669,4019,2.1124,1.3028,2.2483,0.0024,civhc_rbp_fy26
+Wray Community District Hospital,Inpatient/Outpatient Combined,2022,Yuma,Rural,East,1,0,1.3521,2982,2.1472,1.3381,2.3417,0.0023,civhc_rbp_fy26
+Yuma District Hospital,Inpatient/Outpatient Combined,2024,Yuma,Rural,East,1,0,1.1505,1306,2.2207,1.4325,2.4831,0.0066,civhc_rbp_fy26
+Advanced Vision Surgery Center,Outpatient,2021,Boulder,Urban,Boulder,0,1,1.0896,273,2.0417,2.0417,2.4991,0.001,civhc_rbp_fy26
+AdventHealth Avista,Inpatient/Outpatient Combined,2022,Boulder,Urban,Boulder,0,0,1.803,9969,1.916,1.916,2.3666,0.2097,civhc_rbp_fy26
+AdventHealth Avista,Outpatient,2022,Boulder,Urban,Boulder,0,0,2.12,9154,2.169,2.169,2.528,0.1657,civhc_rbp_fy26
+AdventHealth Littleton,Inpatient,2023,Arapahoe,Urban,Denver,0,0,1.9073,1250,1.941,2.3093,1.9517,0.0638,civhc_rbp_fy26
+AdventHealth Littleton,Inpatient/Outpatient Combined,2024,Arapahoe,Urban,Denver,0,0,2.5634,11983,2.3072,2.652,2.3717,0.9651,civhc_rbp_fy26
+AdventHealth Littleton,Outpatient,2022,Arapahoe,Urban,Denver,0,0,2.7664,12668,2.3542,2.5388,2.528,0.2998,civhc_rbp_fy26
+AdventHealth Parker,Inpatient,2024,Douglas,Urban,Denver,0,0,1.9812,682,1.9574,1.8439,1.9367,0.8482,civhc_rbp_fy26
+AdventHealth Parker,Inpatient/Outpatient Combined,2021,Douglas,Urban,Denver,0,0,2.4172,12634,2.1842,2.2152,2.2969,0.5941,civhc_rbp_fy26
+AdventHealth Parker,Inpatient/Outpatient Combined,2024,Douglas,Urban,Denver,0,0,2.7946,13539,2.3072,2.3331,2.3717,0.2568,civhc_rbp_fy26
+AdventHealth Parker,Outpatient,2021,Douglas,Urban,Denver,0,0,2.9051,11702,2.3417,2.2521,2.4991,0.4621,civhc_rbp_fy26
+AdventHealth Porter,Inpatient,2021,Denver,Urban,Denver,0,0,1.8471,1091,1.8993,1.6468,1.9401,0.0049,civhc_rbp_fy26
+AdventHealth Porter,Inpatient/Outpatient Combined,2021,Denver,Urban,Denver,0,0,2.0374,16906,2.1842,1.8191,2.2969,0.079,civhc_rbp_fy26
+AdventHealth Porter,Inpatient/Outpatient Combined,2022,Denver,Urban,Denver,0,0,2.2271,15392,2.284,1.9245,2.3666,0.0077,civhc_rbp_fy26
+Alpine Surgery Center,Outpatient,2022,Gunnison,Rural,West,0,1,2.7529,84,2.8235,1.9726,2.7132,0.0203,civhc_rbp_fy26
+Animas Surgical Hospital,Inpatient/Outpatient Combined,2021,La Plata,Rural,West,0,0,2.5245,1489,2.2831,2.2665,2.2483,0.0152,civhc_rbp_fy26
+Animas Surgical Hospital,Inpatient/Outpatient Combined,2022,La Plata,Rural,West,0,0,2.6886,1451,2.3988,2.7452,2.3417,0.285,civhc_rbp_fy26
+Arapahoe Surgicenter,Outpatient,2023,Arapahoe,Urban,Denver,0,1,3.1958,1582,2.2485,2.4517,2.4647,0.2506,civhc_rbp_fy26
+Arete Surgical Center,Outpatient,2022,Weld,Urban,Greeley,0,1,0.7,34,2.9279,2.9279,2.528,0.0002,civhc_rbp_fy26
+Arkansas Valley Regional Medical Center,Inpatient/Outpatient Combined,2021,Otero,Rural,East,1,0,2.4608,2891,2.1124,2.4608,2.2483,0.0351,civhc_rbp_fy26
+Arkansas Valley Regional Medical Center,Outpatient,2024,Otero,Rural,East,1,0,2.423,2698,2.4156,2.423,2.891,0.4086,civhc_rbp_fy26
+Banner McKee Medical Center,Outpatient,2023,Larimer,Urban,Ft. Collins,0,0,2.9685,3159,2.8627,2.8627,2.4647,0.0185,civhc_rbp_fy26
+Banner McKee Medical Center,Outpatient,2024,Larimer,Urban,Ft. Collins,0,0,2.9889,3061,2.7664,2.7664,2.524,0.8239,civhc_rbp_fy26
+Banner North Colorado Medical Center,Outpatient,2024,Weld,Urban,Greeley,0,0,2.8561,5672,2.9093,2.9093,2.524,2.281,civhc_rbp_fy26
+Boulder Community Health,Inpatient,2022,Boulder,Urban,Boulder,0,0,1.8059,918,1.6805,1.6805,1.99,0.3612,civhc_rbp_fy26
+Boulder Community Health,Inpatient/Outpatient Combined,2023,Boulder,Urban,Boulder,0,0,2.1251,25489,2.0361,2.0361,2.3251,0.5228,civhc_rbp_fy26
+Boulder Community Musculoskeletal Surgery Center,Outpatient,2024,Boulder,Urban,Boulder,0,1,2.1134,606,2.2621,2.2621,2.524,1.0061,civhc_rbp_fy26
+Canon City Colorado Multi-Specialty Ambulatory Surgical Center,Outpatient,2023,Fremont,Rural,East,0,1,3.529,213,2.3176,5.0737,2.8358,0.0011,civhc_rbp_fy26
+Castle Rock Surgicenter,Outpatient,2024,Douglas,Urban,Denver,0,1,1.6955,259,2.4045,2.3549,2.524,0.0012,civhc_rbp_fy26
+Colorado Urologic Surgery Center - St. Anthony Hospital Campus,Outpatient,2022,Jefferson,Urban,Denver,0,1,1.468,42,2.3542,2.3461,2.528,0.2,civhc_rbp_fy26
+Colorado Urologic Surgery Center - Superior,Outpatient,2022,Boulder,Urban,Boulder,0,1,1.5731,267,2.169,2.169,2.528,0.1641,civhc_rbp_fy26
+CommonSpirit St. Anthony Hospital,Inpatient,2022,Jefferson,Urban,Denver,0,0,2.2582,776,2.0119,2.158,1.99,0.0004,civhc_rbp_fy26
+CommonSpirit St. Anthony North Hospital,Inpatient,2023,Broomfield,Urban,Denver,0,0,1.6703,610,1.941,1.6703,1.9517,0.0004,civhc_rbp_fy26
+CommonSpirit St. Anthony Summit Medical Center,Inpatient/Outpatient Combined,2023,Summit,Rural,West,0,0,4.0337,5250,2.5901,4.0337,2.4878,0.231,civhc_rbp_fy26
+CommonSpirit St. Anthony Summit Medical Center,Outpatient,2023,Summit,Rural,West,0,0,5.5547,5037,2.9891,4.8531,2.8358,0.2386,civhc_rbp_fy26
+CommonSpirit St. Elizabeth Hospital,Inpatient/Outpatient Combined,2023,Morgan,Rural,East,0,0,3.0658,2637,2.1433,2.3758,2.4878,0.0663,civhc_rbp_fy26
+CommonSpirit St. Mary-Corwin Hospital,Outpatient,2024,Pueblo,Urban,Pueblo,0,0,4.0216,5044,3.7342,3.7342,2.524,0.697,civhc_rbp_fy26
+CommonSpirit St. Thomas More Hospital,Inpatient,2024,Fremont,Rural,East,0,0,1.7611,30,1.2459,1.7611,1.5378,0.2251,civhc_rbp_fy26
+CommonSpirit St. Thomas More Hospital,Inpatient/Outpatient Combined,2021,Fremont,Rural,East,1,0,5.1472,2478,2.1124,4.7386,2.2483,0.0045,civhc_rbp_fy26
+CommonSpirit St. Thomas More Hospital,Outpatient,2022,Fremont,Rural,East,0,0,6.1304,238,2.3479,5.1008,2.7132,0.0062,civhc_rbp_fy26
+Community Hospital,Outpatient,2021,Mesa,Urban,Grand Junction,0,0,3.6156,17580,3.2289,3.2289,2.4991,0.0205,civhc_rbp_fy26
+Cornerstone Surgical Suites,Outpatient,2024,Jefferson,Urban,Denver,0,1,1.0415,102,2.4045,2.5063,2.524,0.7741,civhc_rbp_fy26
+Crown Point Surgery Center,Outpatient,2021,Douglas,Urban,Denver,0,1,1.8747,897,2.3417,2.2521,2.4991,0.1147,civhc_rbp_fy26
+Day Surgery of Grand Junction,Outpatient,2023,Mesa,Urban,Grand Junction,0,1,0.9735,271,3.7218,3.7218,2.4647,0.0988,civhc_rbp_fy26
+Day Surgery of Grand Junction,Outpatient,2024,Mesa,Urban,Grand Junction,0,1,1.0241,188,2.9996,2.9996,2.524,0.5273,civhc_rbp_fy26
+Delta Health,Inpatient,2022,Delta,Rural,West,0,0,1.5662,93,1.6768,1.5662,1.6034,1.0103,civhc_rbp_fy26
+Delta Health,Inpatient,2023,Delta,Rural,West,0,0,2.3491,73,1.7735,2.3491,1.6874,0.0085,civhc_rbp_fy26
+Denver Eye Surgery Center,Outpatient,2021,Jefferson,Urban,Denver,0,1,1.0327,246,2.3417,2.5164,2.4991,0.0451,civhc_rbp_fy26
+Denver Health,Outpatient,2021,Denver,Urban,Denver,0,0,0.9798,101820,2.3417,1.9352,2.4991,0.1415,civhc_rbp_fy26
+Denver Mid-Town Surgery Center,Outpatient,2023,Denver,Urban,Denver,0,1,1.6205,912,2.2485,1.722,2.4647,0.0008,civhc_rbp_fy26
+Denver Surgicenter,Outpatient,2022,Denver,Urban,Denver,0,1,3.1218,1415,2.3542,1.8823,2.528,0.0023,civhc_rbp_fy26
+Durango Surgery Center,Outpatient,2023,La Plata,Rural,West,0,1,1.3242,101,2.9891,2.9897,2.8358,0.0031,civhc_rbp_fy26
+East Morgan County Hospital,Inpatient,2024,Morgan,Rural,East,1,0,1.0145,40,1.2459,1.4587,1.5378,0.6766,civhc_rbp_fy26
+East Morgan County Hospital,Outpatient,2023,Morgan,Rural,East,1,0,2.0359,2341,2.3176,3.1037,2.8358,0.0897,civhc_rbp_fy26
+Endoscopy Center of Grand Junction,Outpatient,2021,Mesa,Urban,Grand Junction,0,1,1.698,1334,3.2289,3.2289,2.4991,0.4235,civhc_rbp_fy26
+Endoscopy Center of Western Colorado,Outpatient,2022,Mesa,Urban,Grand Junction,0,1,1.3841,207,3.2804,3.2804,2.528,0.0033,civhc_rbp_fy26
+Endoscopy Center of the Rockies - Longmont,Outpatient,2023,Boulder,Urban,Boulder,0,1,3.4731,617,2.2475,2.2475,2.4647,1.3913,civhc_rbp_fy26
+Estes Park Health,Outpatient,2022,Larimer,Urban,Ft. Collins,1,0,1.7152,2902,2.9914,2.9914,2.528,0.6843,civhc_rbp_fy26
+Family Health West,Inpatient/Outpatient Combined,2023,Mesa,Urban,Grand Junction,1,0,2.0366,4651,3.5199,3.5199,2.3251,0.1225,civhc_rbp_fy26
+Flatirons Surgery Center,Outpatient,2024,Douglas,Urban,Denver,0,1,2.9103,67,2.4045,2.3549,2.524,1.8486,civhc_rbp_fy26
+Focus Hand Surgicenter,Outpatient,2022,Arapahoe,Urban,Denver,0,1,1.792,525,2.3542,2.5388,2.528,0.1381,civhc_rbp_fy26
+Front Range Orthopedic Surgery Center,Outpatient,2023,Boulder,Urban,Boulder,0,1,1.5732,494,2.2475,2.2475,2.4647,0.0004,civhc_rbp_fy26
+Golden Ridge Ambulatory Surgery Center,Outpatient,2022,Jefferson,Urban,Denver,0,1,1.774,1443,2.3542,2.3461,2.528,0.2396,civhc_rbp_fy26
+Grand Junction Endoscopy Center,Outpatient,2023,Mesa,Urban,Grand Junction,0,1,1.9526,46,3.7218,3.7218,2.4647,0.0026,civhc_rbp_fy26
+Greenwood Ambulatory Surgery Center - Greenwood Village,Outpatient,2022,Arapahoe,Urban,Denver,0,1,2.0948,222,2.3542,2.5388,2.528,0.0481,civhc_rbp_fy26
+Gunnison Valley Hospital,Inpatient,2023,Gunnison,Rural,West,1,0,2.8621,70,1.7735,2.8621,1.6874,0.0004,civhc_rbp_fy26
+Gunnison Valley Hospital,Inpatient/Outpatient Combined,2021,Gunnison,Rural,West,1,0,1.9052,7799,2.2831,1.9052,2.2483,0.0361,civhc_rbp_fy26
+Gunnison Valley Hospital,Inpatient/Outpatient Combined,2023,Gunnison,Rural,West,1,0,2.0283,7258,2.5901,2.0283,2.4878,0.0041,civhc_rbp_fy26
+Harmony Surgery Center,Outpatient,2023,Larimer,Urban,Ft. Collins,0,1,1.3567,4050,2.8627,2.8627,2.4647,0.2547,civhc_rbp_fy26
+Haxtun Health,Inpatient/Outpatient Combined,2023,Phillips,Rural,East,1,0,1.1119,445,2.1433,1.4112,2.4878,0.0148,civhc_rbp_fy26
+Heart of the Rockies Regional Medical Center,Inpatient,2023,Chaffee,Rural,East,1,0,1.6228,61,1.2034,1.6228,1.6874,1.1516,civhc_rbp_fy26
+Heart of the Rockies Regional Medical Center,Outpatient,2022,Chaffee,Rural,East,1,0,2.3791,6833,2.3479,2.3791,2.7132,0.102,civhc_rbp_fy26
+Insight Surgery Center,Outpatient,2021,Douglas,Urban,Denver,0,1,0.8915,294,2.3417,2.2521,2.4991,0.0012,civhc_rbp_fy26
+Intermountain Health Good Samaritan Medical Center,Inpatient,2022,Boulder,Urban,Boulder,0,0,1.6955,3162,1.6805,1.6805,1.99,0.0013,civhc_rbp_fy26
+Intermountain Health Good Samaritan Medical Center,Inpatient/Outpatient Combined,2021,Boulder,Urban,Boulder,0,0,1.8234,19517,1.8368,1.8368,2.2969,0.1103,civhc_rbp_fy26
+Intermountain Health Good Samaritan Medical Center,Inpatient/Outpatient Combined,2024,Boulder,Urban,Boulder,0,0,1.9623,17557,2.0548,2.0548,2.3717,1.4767,civhc_rbp_fy26
+Intermountain Health Platte Valley Hospital,Inpatient,2024,Adams,Urban,Denver,0,0,1.8352,254,1.9574,2.4352,1.9367,1.2473,civhc_rbp_fy26
+Intermountain Health Saint Joseph Hospital,Inpatient,2023,Denver,Urban,Denver,0,0,1.5923,4968,1.941,1.6885,1.9517,0.075,civhc_rbp_fy26
+Intermountain Health Saint Joseph Hospital,Inpatient,2024,Denver,Urban,Denver,0,0,1.5921,4659,1.9574,1.6515,1.9367,0.947,civhc_rbp_fy26
+Intermountain Health Saint Joseph Hospital,Outpatient,2022,Denver,Urban,Denver,0,0,1.9356,19341,2.3542,1.8823,2.528,0.0977,civhc_rbp_fy26
+Intermountain Health St. Mary's Medical Center,Inpatient/Outpatient Combined,2023,Mesa,Urban,Grand Junction,0,0,3.6288,24267,3.5199,3.5199,2.3251,0.0786,civhc_rbp_fy26
+Intermountain Health St. Mary's Medical Center,Outpatient,2024,Mesa,Urban,Grand Junction,0,0,3.6001,17461,2.9996,2.9996,2.524,1.6281,civhc_rbp_fy26
+Kaiser Foundation Health Plan of Colorado - Lone Tree,Outpatient,2022,Douglas,Urban,Denver,0,1,0.2731,4211,2.3542,2.204,2.528,0.0004,civhc_rbp_fy26
+Keefe Memorial Hospital,Outpatient,2021,Cheyenne,Rural,East,1,0,3.5241,890,2.3528,3.5241,2.6902,0.0171,civhc_rbp_fy26
+Keefe Memorial Hospital,Outpatient,2024,Cheyenne,Rural,East,1,0,5.9475,1786,2.4156,5.9475,2.891,0.0941,civhc_rbp_fy26
+Kit Carson County Health Services District,Inpatient/Outpatient Combined,2021,Kit Carson,Rural,East,1,0,1.4458,1902,2.1124,1.4458,2.2483,0.0134,civhc_rbp_fy26
+Lincoln Health,Outpatient,2021,Lincoln,Rural,East,1,0,1.2493,1811,2.3528,1.2493,2.6902,0.0128,civhc_rbp_fy26
+Lincoln Surgery Center,Outpatient,2024,Douglas,Urban,Denver,0,1,1.8753,275,2.4045,2.3549,2.524,1.0561,civhc_rbp_fy26
+Loveland Endoscopy Center,Outpatient,2024,Larimer,Urban,Ft. Collins,0,1,1.4429,1953,2.7664,2.7664,2.524,0.4071,civhc_rbp_fy26
+Madison Street Surgery Center,Outpatient,2024,Denver,Urban,Denver,0,1,1.0784,189,2.4045,1.9042,2.524,0.0034,civhc_rbp_fy26
+Melissa Memorial Hospital,Outpatient,2022,Phillips,Rural,East,1,0,1.4185,1236,2.3479,1.3655,2.7132,0.0035,civhc_rbp_fy26
+Memorial Regional Health,Outpatient,2024,Moffat,Rural,West,0,0,2.0589,2385,3.0338,2.0589,2.891,0.2286,civhc_rbp_fy26
+Middle Park Health - Granby,Inpatient/Outpatient Combined,2024,Grand,Rural,West,1,0,1.9022,1147,2.5642,1.8624,2.4831,0.0024,civhc_rbp_fy26
+Mile High Surgicenter,Outpatient,2023,Arapahoe,Urban,Denver,0,1,1.4013,596,2.2485,2.4517,2.4647,0.0684,civhc_rbp_fy26
+Montrose Regional Health,Inpatient,2021,Montrose,Rural,West,0,0,2.3315,171,1.5537,2.3315,1.5263,1.7446,civhc_rbp_fy26
+Montrose Regional Health,Inpatient,2024,Montrose,Rural,West,0,0,2.0571,141,1.5961,2.0571,1.5378,0.7106,civhc_rbp_fy26
+Mt. San Rafael Hospital,Inpatient/Outpatient Combined,2021,Las Animas,Rural,East,1,0,2.9289,1819,2.1124,2.9289,2.2483,0.0061,civhc_rbp_fy26
+North Suburban Medical Center,Inpatient,2022,Adams,Urban,Denver,0,0,1.7839,895,2.0119,2.41,1.99,0.0811,civhc_rbp_fy26
+Northwest Surgery Center,Outpatient,2024,Jefferson,Urban,Denver,0,1,1.3855,75,2.4045,2.5063,2.524,0.0007,civhc_rbp_fy26
+Optumcare Colorado Ambulatory Surgery Center,Outpatient,2024,El Paso,Urban,Colorado Springs,0,1,1.0783,191,2.5757,2.5887,2.524,0.0022,civhc_rbp_fy26
+Orthopaedic and Spine Center of the Rockies - Loveland,Outpatient,2021,Larimer,Urban,Ft. Collins,0,1,2.2263,1192,2.9767,2.9767,2.4991,1.2134,civhc_rbp_fy26
+Park Ridge Surgery Center,Outpatient,2023,Douglas,Urban,Denver,0,1,2.149,299,2.2485,2.2354,2.4647,0.0005,civhc_rbp_fy26
+Parkwest Surgery Center,Outpatient,2021,Pueblo,Urban,Pueblo,0,1,1.0431,279,3.2958,3.2958,2.4991,0.3066,civhc_rbp_fy26
+Peak Surgery Center,Outpatient,2024,El Paso,Urban,Colorado Springs,0,1,1.1105,175,2.5757,2.5887,2.524,0.7625,civhc_rbp_fy26
+Pioneers Medical Center,Inpatient/Outpatient Combined,2024,Rio Blanco,Rural,West,1,0,1.6915,2346,2.5642,1.3524,2.4831,0.4639,civhc_rbp_fy26
+Pioneers Medical Center,Outpatient,2022,Rio Blanco,Rural,West,1,0,1.6039,2324,2.8235,1.1428,2.7132,0.2136,civhc_rbp_fy26
+Premier Eye Surgery Center of Colorado,Outpatient,2024,Boulder,Urban,Boulder,0,1,1.8155,239,2.2621,2.2621,2.524,1.4564,civhc_rbp_fy26
+Presbyterian/St. Luke's Medical Center,Outpatient,2024,Denver,Urban,Denver,0,0,2.9245,10747,2.4045,1.9042,2.524,0.6246,civhc_rbp_fy26
+Prowers Medical Center,Outpatient,2021,Prowers,Rural,East,1,0,1.868,3902,2.3528,1.868,2.6902,0.0055,civhc_rbp_fy26
+Prowers Medical Center,Outpatient,2022,Prowers,Rural,East,1,0,1.8538,2945,2.3479,1.8538,2.7132,0.0053,civhc_rbp_fy26
+Pueblo Ambulatory Surgery Center,Outpatient,2023,Pueblo,Urban,Pueblo,0,1,1.5508,198,3.4403,3.4403,2.4647,0.0009,civhc_rbp_fy26
+Rangely District Hospital,Outpatient,2022,Rio Blanco,Rural,West,1,0,0.6612,1109,2.8235,1.1428,2.7132,0.0063,civhc_rbp_fy26
+Rangely District Hospital,Outpatient,2023,Rio Blanco,Rural,West,1,0,0.8011,1195,2.9891,1.1168,2.8358,0.0117,civhc_rbp_fy26
+Rio Grande Hospital,Inpatient/Outpatient Combined,2021,Rio Grande,Rural,East,1,0,1.4919,1807,2.1124,1.4919,2.2483,0.0155,civhc_rbp_fy26
+Rio Grande Hospital,Inpatient/Outpatient Combined,2024,Rio Grande,Rural,East,1,0,1.2854,1775,2.2207,1.2854,2.4831,0.2091,civhc_rbp_fy26
+Rocky Mountain Surgery Center,Outpatient,2022,Arapahoe,Urban,Denver,0,1,1.8154,858,2.3542,2.5388,2.528,0.4278,civhc_rbp_fy26
+Rose Medical Center,Inpatient/Outpatient Combined,2022,Denver,Urban,Denver,0,0,2.1587,14008,2.284,1.9245,2.3666,0.0389,civhc_rbp_fy26
+Rose Medical Center,Inpatient/Outpatient Combined,2023,Denver,Urban,Denver,0,0,2.0957,14159,2.1927,1.7678,2.3251,0.0083,civhc_rbp_fy26
+STATEWIDE,Inpatient/Outpatient Combined,2024,STATEWIDE,STATEWIDE,STATEWIDE,0,0,2.3856,920356,,,,,civhc_rbp_fy26
+San Luis Valley Health,Inpatient,2021,Alamosa,Rural,East,0,0,1.4963,127,1.3842,1.4963,1.5263,0.0024,civhc_rbp_fy26
+San Luis Valley Health,Inpatient,2023,Alamosa,Rural,East,0,0,1.4321,122,1.2034,1.4321,1.6874,0.0003,civhc_rbp_fy26
+San Luis Valley Health,Outpatient,2021,Alamosa,Rural,East,0,0,2.9677,6118,2.3528,2.9677,2.6902,0.2161,civhc_rbp_fy26
+San Luis Valley Health Conejos County Hospital,Inpatient/Outpatient Combined,2024,Conejos,Rural,East,1,0,2.0963,739,2.2207,2.0963,2.4831,0.0254,civhc_rbp_fy26
+San Luis Valley Health Conejos County Hospital,Outpatient,2021,Conejos,Rural,East,1,0,1.6531,350,2.3528,1.6531,2.6902,0.0109,civhc_rbp_fy26
+Sedgwick County Health Center,Outpatient,2021,Sedgwick,Rural,East,1,0,1.3671,575,2.3528,1.3671,2.6902,0.0053,civhc_rbp_fy26
+Sedgwick County Health Center,Outpatient,2022,Sedgwick,Rural,East,1,0,1.1993,501,2.3479,1.1993,2.7132,0.0026,civhc_rbp_fy26
+South Denver Musculoskeletal Surgical Partners,Outpatient,2023,Arapahoe,Urban,Denver,0,1,1.7905,1103,2.2485,2.4517,2.4647,0.0011,civhc_rbp_fy26
+Southeast Colorado Hospital District,Inpatient/Outpatient Combined,2022,Baca,Rural,East,1,0,1.7131,664,2.1472,1.7131,2.3417,0.0169,civhc_rbp_fy26
+Southeast Colorado Hospital District,Outpatient,2023,Baca,Rural,East,1,0,1.9969,986,2.3176,1.9969,2.8358,0.0273,civhc_rbp_fy26
+Southwest Health System,Inpatient/Outpatient Combined,2021,Montezuma,Rural,West,1,0,1.8569,3870,2.2831,1.8569,2.2483,0.0059,civhc_rbp_fy26
+Southwest Health System,Inpatient/Outpatient Combined,2024,Montezuma,Rural,West,1,0,1.9239,3182,2.5642,1.9239,2.4831,0.1665,civhc_rbp_fy26
+Spanish Peaks Regional Health Center,Inpatient/Outpatient Combined,2024,Huerfano,Rural,East,1,0,1.2016,910,2.2207,1.2016,2.4831,0.5288,civhc_rbp_fy26
+Steamboat Surgery Center,Outpatient,2022,Routt,Rural,West,0,1,2.5313,232,2.8235,3.1321,2.7132,0.0013,civhc_rbp_fy26
+Sterling Regional MedCenter,Inpatient/Outpatient Combined,2022,Logan,Rural,East,0,0,2.5464,3025,2.1472,2.5464,2.3417,0.0054,civhc_rbp_fy26
+Sterling Regional MedCenter,Outpatient,2021,Logan,Rural,East,0,0,3.5285,3538,2.3528,3.5285,2.6902,0.7448,civhc_rbp_fy26
+Sterling Regional MedCenter,Outpatient,2023,Logan,Rural,East,0,0,3.6658,3069,2.3176,3.6658,2.8358,0.2716,civhc_rbp_fy26
+Surgery Affiliates,Outpatient,2024,El Paso,Urban,Colorado Springs,0,1,1.5357,636,2.5757,2.5887,2.524,0.0009,civhc_rbp_fy26
+Surgery Center of Fort Collins,Outpatient,2022,Larimer,Urban,Ft. Collins,0,1,1.162,212,2.9914,2.9914,2.528,0.0008,civhc_rbp_fy26
+Surgery Center of Loveland,Outpatient,2024,Larimer,Urban,Ft. Collins,0,1,1.3051,360,2.7664,2.7664,2.524,0.0007,civhc_rbp_fy26
+Surgery Center of Northern Colorado,Outpatient,2023,Larimer,Urban,Ft. Collins,0,1,1.0061,869,2.8627,2.8627,2.4647,0.1048,civhc_rbp_fy26
+Surgical Center of Peak Endoscopy,Outpatient,2021,El Paso,Urban,Colorado Springs,0,1,1.1285,429,2.5464,2.5524,2.4991,0.3562,civhc_rbp_fy26
+Swedish Medical Center,Inpatient,2021,Arapahoe,Urban,Denver,0,0,2.7875,1674,1.8993,2.5192,1.9401,0.1861,civhc_rbp_fy26
+Swedish Medical Center,Inpatient,2023,Arapahoe,Urban,Denver,0,0,2.6021,1412,1.941,2.3093,1.9517,0.4687,civhc_rbp_fy26
+Swedish Medical Center,Inpatient/Outpatient Combined,2021,Arapahoe,Urban,Denver,0,0,2.9224,14065,2.1842,2.7136,2.2969,0.1872,civhc_rbp_fy26
+Swedish Medical Center,Outpatient,2021,Arapahoe,Urban,Denver,0,0,3.1743,12391,2.3417,2.5878,2.4991,0.0878,civhc_rbp_fy26
+The Medical Center of Aurora,Inpatient/Outpatient Combined,2021,Arapahoe,Urban,Denver,0,0,2.5914,5341,2.1842,2.7136,2.2969,0.1128,civhc_rbp_fy26
+The Medical Center of Aurora,Inpatient/Outpatient Combined,2022,Arapahoe,Urban,Denver,0,0,2.3844,4871,2.284,2.6168,2.3666,0.1048,civhc_rbp_fy26
+The Medical Center of Aurora,Outpatient,2022,Arapahoe,Urban,Denver,0,0,3.5422,4071,2.3542,2.5388,2.528,0.3193,civhc_rbp_fy26
+The Medical Center of Aurora,Outpatient,2024,Arapahoe,Urban,Denver,0,0,3.3555,6307,2.4045,2.6401,2.524,2.2827,civhc_rbp_fy26
+The Surgery Center at Lone Tree,Outpatient,2023,Douglas,Urban,Denver,0,1,1.6525,500,2.2485,2.2354,2.4647,0.0896,civhc_rbp_fy26
+UCHealth Ambulatory Surgery Center - Englewood,Outpatient,2021,Arapahoe,Urban,Denver,0,1,1.1986,1058,2.3417,2.5878,2.4991,0.1968,civhc_rbp_fy26
+UCHealth Ambulatory Surgery Center - Longmont,Outpatient,2022,Weld,Urban,Greeley,0,1,1.0658,790,2.9279,2.9279,2.528,0.4171,civhc_rbp_fy26
+UCHealth Broomfield Hospital,Outpatient,2021,Jefferson,Urban,Denver,0,0,3.1057,2806,2.3417,2.5164,2.4991,0.0375,civhc_rbp_fy26
+UCHealth Grandview Hospital,Inpatient/Outpatient Combined,2021,El Paso,Urban,Colorado Springs,0,0,2.5086,2862,2.3855,2.3882,2.2969,0.1324,civhc_rbp_fy26
+UCHealth Greeley  Hospital,Inpatient,2022,Weld,Urban,Greeley,0,0,1.9692,429,1.8494,1.8494,1.99,0.0033,civhc_rbp_fy26
+UCHealth Greeley  Hospital,Inpatient,2024,Weld,Urban,Greeley,0,0,1.7888,478,1.9078,1.9078,1.9367,1.4952,civhc_rbp_fy26
+UCHealth Greeley  Hospital,Outpatient,2023,Weld,Urban,Greeley,0,0,3.5691,13375,2.9683,2.9683,2.4647,0.0132,civhc_rbp_fy26
+UCHealth Longs Peak Hospital,Inpatient/Outpatient Combined,2024,Weld,Urban,Greeley,0,0,2.6943,17879,2.6212,2.6212,2.3717,1.1868,civhc_rbp_fy26
+UCHealth Longs Peak Hospital,Outpatient,2023,Weld,Urban,Greeley,0,0,3.2961,17813,2.9683,2.9683,2.4647,0.0908,civhc_rbp_fy26
+UCHealth Memorial Hospital,Inpatient,2024,El Paso,Urban,Colorado Springs,0,0,1.8215,2413,1.8668,1.8666,1.9367,0.2042,civhc_rbp_fy26
+UCHealth Parkview Pueblo West,Inpatient/Outpatient Combined,2023,Pueblo,Urban,Pueblo,0,0,3.4757,3168,2.9153,2.9153,2.3251,0.022,civhc_rbp_fy26
+UCHealth Parkview Pueblo West,Outpatient,2023,Pueblo,Urban,Pueblo,0,0,3.68,3125,3.4403,3.4403,2.4647,0.0241,civhc_rbp_fy26
+UCHealth Pikes Peak Regional Hospital,Inpatient/Outpatient Combined,2021,Teller,Urban,Colorado Springs,1,0,2.2404,3922,2.3855,2.2404,2.2969,0.1017,civhc_rbp_fy26
+UCHealth Poudre Valley Hospital,Inpatient,2022,Larimer,Urban,Ft. Collins,0,0,2.2982,1451,2.2229,2.2229,1.99,0.5385,civhc_rbp_fy26
+UCHealth Poudre Valley Hospital,Outpatient,2022,Larimer,Urban,Ft. Collins,0,0,3.4124,40981,2.9914,2.9914,2.528,0.1535,civhc_rbp_fy26
+UCHealth Poudre Valley Hospital,Outpatient,2024,Larimer,Urban,Ft. Collins,0,0,3.1503,37872,2.7664,2.7664,2.524,1.6329,civhc_rbp_fy26
+UCHealth University of Colorado Hospital,Outpatient,2023,Adams,Urban,Denver,0,0,2.8982,133695,2.2485,2.9273,2.4647,0.2593,civhc_rbp_fy26
+UCHealth Yampa Valley Medical Center,Outpatient,2024,Routt,Rural,West,0,0,3.4273,15841,3.0338,3.2997,2.891,1.0588,civhc_rbp_fy26
+Vail Health Hospital,Inpatient/Outpatient Combined,2021,Eagle,Rural,West,0,0,2.2082,13061,2.2831,2.2082,2.2483,0.5234,civhc_rbp_fy26
+Vail Health Hospital,Inpatient/Outpatient Combined,2024,Eagle,Rural,West,0,0,2.549,12725,2.5642,2.549,2.4831,0.8399,civhc_rbp_fy26
+Valley View Hospital,Inpatient,2022,Garfield,Rural,West,0,0,2.5771,353,1.6768,2.4884,1.6034,0.0018,civhc_rbp_fy26
+Weisbrod Memorial County Hospital,Inpatient/Outpatient Combined,2022,Kiowa,Rural,East,1,0,0.7964,641,2.1472,0.7964,2.3417,0.0024,civhc_rbp_fy26
+Wray Community District Hospital,Inpatient/Outpatient Combined,2024,Yuma,Rural,East,1,0,1.5919,1920,2.2207,1.4325,2.4831,0.5362,civhc_rbp_fy26
+Wray Community District Hospital,Outpatient,2022,Yuma,Rural,East,1,0,1.4834,2923,2.3479,1.4304,2.7132,0.0027,civhc_rbp_fy26

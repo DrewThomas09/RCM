@@ -1,0 +1,22 @@
+{
+  "outputs": {
+    "cost_of_care_total.csv": 1843,
+    "cost_of_care_outpatient.csv": 4265,
+    "apm_public.csv": 144,
+    "reference_based_pricing.csv": 1349
+  },
+  "missingness_pct": {
+    "cost_of_care_total.csv": {},
+    "cost_of_care_outpatient.csv": {},
+    "apm_public.csv": {
+      "pct_ffs": 16.7,
+      "pct_apm": 16.7
+    },
+    "reference_based_pricing.csv": {
+      "urf_pct_medicare": 0.9,
+      "payer_min": 0.9,
+      "payer_median": 0.9,
+      "payer_max": 0.9
+    }
+  }
+}
