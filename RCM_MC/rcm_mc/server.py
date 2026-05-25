@@ -3909,6 +3909,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.supply_chain_page import render_supply_chain
             return self._send_html(render_supply_chain(_qp))
+        if path == "/industry":
+            from .ui.data_public.industry_page import render_industry_index
+            return self._send_html(render_industry_index())
+        if path.startswith("/industry/"):
+            _slug = path[len("/industry/"):].strip("/").split("/", 1)[0]
+            from .ui.data_public.industry_page import render_industry
+            return self._send_html(render_industry(_slug))
         if path == "/patient-experience":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
