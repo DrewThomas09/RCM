@@ -103,5 +103,19 @@ guarded by a regression test with an EMPTY backlog.
 #748 Guide ctx (9 converted Diligence) · #749 market opportunity ranking ·
 (this) industry→market cross-links + dataset-feasibility findings.
 
+## Session 2026-05-25 (PRs #767–#786, all merged & deployed; RED 68→51)
+Topbar mega-menu layout fix #771 (BLOCKED: needs user screenshot to verify).
+RED→NAVY conversions (real LIVE panel + honest illustrative caveat + retier):
+provider-network/concentration-risk/msa-concentration/payer-concentration/
+competitive-intel/gpo-supply/risk-adjustment(retier)/medicaid-unwinding/
+payer-contracts/health-equity/telehealth-econ/patient-experience/locum-tracker/
+workforce-retention/antitrust-screener/cin-analyzer/nsa-tracker.
+NEW data pipelines: CDC PLACES SDOH (#777), CMS HCAHPS (#780), Census/ACS-via-CHR
+county demographics (#781). Market panel now 5 real layers (supply/CHOW/MA/SDOH/
+demographics). CLEAN CONVERSIONS EXHAUSTED — remaining ~51 RED are anchorless
+internal/financial/governance/tech/drug/RE. NEXT: Guide DATA_SOURCE_REGISTRY does
+NOT yet include the new sources (HCAHPS/PLACES/CHR/HRSA/CHOW/MSSP) — register them
++ promote converted pages to DOCUMENTED Guide contexts; then CMS ownership profile.
+
 ## Next wakeup
 +180–300s while work remains (CI-watch re-invokes sooner).
