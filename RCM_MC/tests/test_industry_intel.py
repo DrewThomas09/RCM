@@ -8,11 +8,24 @@ network (loaders read committed files only).
 """
 from __future__ import annotations
 
+import http.client
+import socket
 import subprocess
+import tempfile
+import threading
 import unittest
 from pathlib import Path
 
 from rcm_mc.data import industry_intel as ii
+from rcm_mc.server import build_server
+
+
+def _free_port() -> int:
+    s = socket.socket()
+    s.bind(("127.0.0.1", 0))
+    p = s.getsockname()[1]
+    s.close()
+    return p
 
 _MAX_SUMMARY = 400
 _EXPECTED_SLUGS = {
@@ -83,6 +96,58 @@ class IndustryIntelLoaderTests(unittest.TestCase):
         src = ii.industry_intel_sources()
         self.assertTrue(src)
         self.assertEqual(src[0]["source_id"], "industry_intel")
+
+
+class IndustryRouteTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.tf = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+        cls.tf.close()
+        cls.port = _free_port()
+        cls.server, _ = build_server(port=cls.port, db_path=cls.tf.name)
+        threading.Thread(target=cls.server.serve_forever, daemon=True).start()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.shutdown()
+        cls.server.server_close()
+        import os
+        os.unlink(cls.tf.name)
+
+    def _get(self, path):
+        c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=10)
+        c.request("GET", path)
+        r = c.getresponse()
+        b = r.read().decode("utf-8", "replace")
+        c.close()
+        return r.status, b
+
+    def test_index_and_detail_render(self):
+        s, b = self._get("/industry")
+        self.assertEqual(s, 200)
+        self.assertIn("Industry Intelligence", b)
+        s, b = self._get("/industry/hospitals")
+        self.assertEqual(s, 200)
+        self.assertIn("Hospitals in the US", b)
+        # Hospital page links to the real HCRIS X-Ray surface (value-add).
+        self.assertIn("/diligence/hcris-xray", b)
+        # Provenance / license chip present.
+        self.assertIn("Licensed report derived", b)
+
+    def test_primary_care_shows_real_and_connections(self):
+        s, b = self._get("/industry/primary-care-doctors")
+        self.assertEqual(s, 200)
+        self.assertIn("Public data connections", b)
+        self.assertIn("/physician-productivity", b)
+
+    def test_unknown_slug_safe(self):
+        s, b = self._get("/industry/not-an-industry")
+        self.assertEqual(s, 200)
+        self.assertIn("not found", b.lower())
+
+    def test_login_unaffected(self):
+        s, _ = self._get("/login")
+        self.assertIn(s, (200, 303, 302))
 
 
 if __name__ == "__main__":
