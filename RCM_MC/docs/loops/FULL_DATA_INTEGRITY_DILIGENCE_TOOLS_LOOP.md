@@ -58,5 +58,25 @@ guarded by a regression test with an EMPTY backlog.
 4. Guide/RAG source card for provider supply.
 5. Next dataset (Open Payments / NPPES taxonomy if size feasible).
 
+## Dataset-feasibility findings (override Wave 3; document blocker, move on)
+- DONE this run: CMS FFS Provider Enrollment (supply), CMS SNF CHOW, CMS Hospital
+  CHOW — all real, small aggregates, wired to market context + opportunity ranking.
+- BLOCKED (large / separate portal — documented, deferred, not stopped):
+  - Open Payments — openpaymentsdata.cms.gov, GB-scale annual zips; not in the
+    data.cms.gov opendata API. Needs a staged large-file ingest; deferred.
+  - NPPES full file (~1GB+) — deferred (size); MSSP/HRSA/MIPS cover the
+    provider/quality need for now.
+  - CMS price-transparency MRFs — huge, per-hospital; deferred.
+- MARGINAL (lower value vs existing): PY2023 Group MIPS is measures/attestations
+  only (no overall score); clinician overall MIPS already onboarded. Skipped.
+- Net: the high-value, cleanly-feasible public-dataset queue is largely
+  exhausted; remaining candidates are large-download/separate-portal or marginal.
+
+## Recent waves (this run)
+#742 SNF CHOW · #743 profile KPIs · #744 Hospital CHOW · #745 integrity refresh ·
+#746 Guide ctx (market/industry) · #747 deal-flow real consolidation ·
+#748 Guide ctx (9 converted Diligence) · #749 market opportunity ranking ·
+(this) industry→market cross-links + dataset-feasibility findings.
+
 ## Next wakeup
 +180–300s while work remains (CI-watch re-invokes sooner).
