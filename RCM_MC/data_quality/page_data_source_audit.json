@@ -2,13 +2,13 @@
   "summary": {
     "pages": 173,
     "with_disclosure": 168,
-    "with_real_loader": 28,
+    "with_real_loader": 29,
     "flagged_no_disclosure": 0,
     "by_tier": {
       "green": 27,
-      "navy": 58,
+      "navy": 59,
       "yellow": 37,
-      "red": 51
+      "red": 50
     }
   },
   "pages": [
@@ -1075,9 +1075,9 @@
     {
       "route": "/payer-contracts",
       "file": "payer_contracts_page.py",
-      "tier": "red",
+      "tier": "navy",
       "has_disclosure": true,
-      "imports_real_loader": false,
+      "imports_real_loader": true,
       "uses_seed_corpus": true,
       "renders_data": true,
       "flag": ""
