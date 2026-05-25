@@ -118,6 +118,22 @@ def market_context_panel(state, P_=None) -> str:
     except Exception:
         chow_line = ""
 
+    # Real Medicare Advantage penetration (CMS MA Geographic Variation).
+    ma_line = ""
+    try:
+        from rcm_mc.data import ma_data as _ma
+        st_abbr3 = _FIPS_ABBR.get(fips, "")
+        ma = _ma.ma_state(st_abbr3) if st_abbr3 else {}
+        if ma.get("ma_enrollment"):
+            ma_line = (
+                f'<p style="font-size:11px;color:{pal["text_dim"]};margin:6px 0 0">'
+                f'Medicare Advantage (CMS, real): '
+                f'<b style="color:{pal["text"]}">{int(ma["ma_enrollment"]):,}</b> MA enrollees, '
+                f'{float(ma["dual_eligible_pct"])*100:.0f}% dual-eligible, avg age '
+                f'{float(ma["avg_age"]):.0f}. Payer-mix / risk-adjustment context.</p>')
+    except Exception:
+        ma_line = ""
+
     miss = ", ".join(score.get("missing_export_required", [])) if score else ""
     score_line = ""
     if score and score.get("overall_market_score") is not None:
@@ -135,7 +151,7 @@ def market_context_panel(state, P_=None) -> str:
         f'<th style="padding:3px 10px;text-align:left">Variable</th>'
         f'<th style="padding:3px 10px;text-align:right">Value</th>'
         f'<th style="padding:3px 10px;text-align:right">Pctile</th></tr></thead>'
-        f'<tbody>{rows}</tbody></table>{score_line}{supply_line}{chow_line}'
+        f'<tbody>{rows}</tbody></table>{score_line}{supply_line}{chow_line}{ma_line}'
         f'<p style="font-size:11px;color:{pal["text_dim"]};margin:6px 0 0">'
         f'Market/area context — <b>not</b> provider-specific. Combine with CMS/HCRIS/'
         f'provider data before a decision. <a href="/market-intel/geo/{_html.escape(fips)}" '
@@ -312,6 +328,14 @@ def render_market_geo_detail(fips: str, params: dict = None) -> str:
             if nh:
                 kpis += ck_kpi_block("Hospital Consolidation", f"{nh:,}",
                                      "hospital ownership changes · CMS", "")
+    except Exception:
+        pass
+    try:
+        from rcm_mc.data import ma_data as _ma
+        ma = _ma.ma_state(st_abbr) if st_abbr else {}
+        if ma.get("ma_enrollment"):
+            kpis += ck_kpi_block("MA Enrollment", f'{int(ma["ma_enrollment"]):,}',
+                                 f'{float(ma["dual_eligible_pct"])*100:.0f}% dual · CMS', "")
     except Exception:
         pass
     # Export-required variables for transparency
