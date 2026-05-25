@@ -183,6 +183,64 @@ def _operators_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _chow_state_panel() -> str:
+    """Real CMS change-of-ownership anchor at the state level — the
+    observable consolidation behind market concentration. The MSA HHI
+    detail below is illustrative; this panel is real public CMS CHOW
+    data, so the page grounds its rollup/concentration thesis in
+    actual ownership-change behaviour."""
+    from rcm_mc.data import snf_chow as _c
+    snf = _c.chow_summary()
+    if not snf.get("total_chows"):
+        return ""
+    hosp = _c.hospital_chow_summary()
+    top = _c.top_chow_states(10)
+
+    border = P["border"]; tprim = P["text"]; tdim = P["text_dim"]; acc = P["accent"]
+    mx = max((int(r["chow_count"]) for r in top), default=1) or 1
+    rows = "".join(
+        f'<tr>'
+        f'<td style="padding:3px 8px;font-family:JetBrains Mono,monospace;font-size:11px;color:{tprim}">{_html.escape(str(r["state"]))}</td>'
+        f'<td style="padding:3px 8px;width:60%">'
+        f'<svg width="100%" height="9" preserveAspectRatio="none" viewBox="0 0 100 9">'
+        f'<rect x="0" y="1" width="{int(int(r["chow_count"])/mx*100)}" height="7" fill="{acc}" opacity="0.75"/></svg></td>'
+        f'<td style="padding:3px 8px;text-align:right;font-family:JetBrains Mono,monospace;font-size:11px;'
+        f'font-variant-numeric:tabular-nums;color:{tprim}">{int(r["chow_count"]):,}</td>'
+        f'</tr>'
+        for r in top
+    )
+    snf_n = int(snf.get("total_chows", 0)); hosp_n = int(hosp.get("total_chows", 0))
+    y0, y1 = snf.get("year_min"), snf.get("year_max")
+    return f'''
+<div style="background:{P["panel"]};border:1px solid {border};border-left:3px solid {acc};
+  padding:14px 16px;margin-bottom:16px">
+  <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{tdim};
+    text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">
+    Real CMS consolidation by state &mdash; change-of-ownership
+    <span style="color:{acc};font-weight:600"> · LIVE</span>
+  </div>
+  <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start">
+    <div style="white-space:nowrap">
+      <div style="font-family:JetBrains Mono,monospace;font-size:18px;color:{tprim};
+        font-variant-numeric:tabular-nums">{snf_n:,}</div>
+      <div style="font-size:10px;color:{tdim};margin-bottom:8px">SNF CHOWs {y0}&ndash;{y1}</div>
+      <div style="font-family:JetBrains Mono,monospace;font-size:18px;color:{tprim};
+        font-variant-numeric:tabular-nums">{hosp_n:,}</div>
+      <div style="font-size:10px;color:{tdim}">Hospital CHOWs {y0}&ndash;{y1}</div>
+    </div>
+    <div>
+      <div style="font-size:9px;color:{P["text_faint"]};margin-bottom:4px">TOP CONSOLIDATING STATES (SNF CHOW COUNT)</div>
+      <table style="width:100%;border-collapse:collapse">{rows}</table>
+    </div>
+  </div>
+  <div style="margin-top:8px;font-size:10px;color:{P["text_faint"]}">
+    CMS public ownership/CHOW files. State-level real consolidation &mdash; the
+    MSA HHI / operator detail below is illustrative; use this panel as the
+    observed-market reality, the MSA tables as the structural framework.
+  </div>
+</div>'''
+
+
 def render_msa_concentration(params: dict = None) -> str:
     from rcm_mc.data_public.msa_concentration import compute_msa_concentration
     r = compute_msa_concentration()
@@ -230,6 +288,7 @@ def render_msa_concentration(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   {ck_illustrative_note("concentration figures")}
+  {_chow_state_panel()}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">MSA-Level Concentration Analysis</div>{m_chart}{m_scatter}{m_tbl}</div>
