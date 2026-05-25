@@ -45,6 +45,8 @@ _CASES = [
      {}, "the OON / QPA reference", "/nsa-tracker"),
     ("rcm_mc.ui.data_public.workforce_planning_page", "render_workforce_planning",
      {}, "workforce supply", "/workforce-planning"),
+    ("rcm_mc.ui.data_public.drug_pricing_340b_page", "render_drug_pricing_340b",
+     {}, "Real CMS Part D drug spend", "/drug-pricing-340b"),
 ]
 
 

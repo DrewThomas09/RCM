@@ -534,6 +534,18 @@ _SOURCES: List[DataSourceContext] = [
        limitations=["ACS survey estimates; area-level, not provider-specific."],
        provenance_notes="rcm_mc/data/county_demographics.py; CHR analytic file; registry chr_county_demographics.",
        source_confidence=_DOCD, data_confidence=_PUB, ic_ready=False),
+    _s("cms_partd_drug_spending", "CMS Part D Spending by Drug",
+       "Medicare Part D retail drug spend + per-dosage-unit price and its "
+       "2019-2023 CAGR — a real drug-cost / price-inflation signal.",
+       _T.PUBLIC_DATASET, aliases=["part d spending", "drug spending", "drug pricing",
+                                   "drug price inflation"],
+       update_cadence="Annual.", freshness_lag="~1-2 years (2023 DY).",
+       used_for=["Drug-cost / price-inflation context (340B / drug-pricing)."],
+       related_routes=["/drug-pricing-340b", "/tracker-340b"],
+       strengths=["Real $275.9B Part D spend across 3,598 drugs + per-unit price CAGR."],
+       limitations=["Part D RETAIL spend, NOT 340B ceiling prices; not this deal's formulary."],
+       provenance_notes="rcm_mc/data/partd_drug.py; CMS Part D Spending by Drug; registry cms_partd_drug_spending.",
+       source_confidence=_DOCD, data_confidence=_PUB, ic_ready=False),
 ]
 
 DATA_SOURCE_REGISTRY: Dict[str, DataSourceContext] = {

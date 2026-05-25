@@ -1,0 +1,207 @@
+{
+  "data_year": "2023",
+  "source": "CMS Medicare Part D Spending by Drug",
+  "extract_date": "2026-05-25",
+  "drugs": 3598,
+  "total_spending_2023": 275924520551.0,
+  "total_claims_2023": 1617636450,
+  "total_beneficiaries_2023": 478580886,
+  "median_price_cagr_19_23": 0.0179,
+  "drugs_price_up_over_10pct_cagr": 265,
+  "top_spend": [
+    {
+      "brand": "Eliquis",
+      "generic": "Apixaban",
+      "spend_2023": 18273451967.0,
+      "claims_2023": 21195452,
+      "price_per_unit_2023": 9.7447,
+      "price_cagr_19_23": 0.0693
+    },
+    {
+      "brand": "Ozempic",
+      "generic": "Semaglutide",
+      "spend_2023": 9194048435.0,
+      "claims_2023": 6927972,
+      "price_per_unit_2023": 355.9027,
+      "price_cagr_19_23": -0.0419
+    },
+    {
+      "brand": "Jardiance",
+      "generic": "Empagliflozin",
+      "spend_2023": 8839935063.0,
+      "claims_2023": 8153238,
+      "price_per_unit_2023": 20.318,
+      "price_cagr_19_23": 0.055
+    },
+    {
+      "brand": "Trulicity",
+      "generic": "Dulaglutide",
+      "spend_2023": 7363856224.0,
+      "claims_2023": 5316020,
+      "price_per_unit_2023": 483.2053,
+      "price_cagr_19_23": 0.0609
+    },
+    {
+      "brand": "Xarelto",
+      "generic": "Rivaroxaban",
+      "spend_2023": 6309246823.0,
+      "claims_2023": 6654162,
+      "price_per_unit_2023": 18.2258,
+      "price_cagr_19_23": 0.0526
+    },
+    {
+      "brand": "Trelegy Ellipta",
+      "generic": "Fluticasone/Umeclidin/Vilanter",
+      "spend_2023": 4455884010.0,
+      "claims_2023": 5009961,
+      "price_per_unit_2023": 11.1795,
+      "price_cagr_19_23": 0.0485
+    },
+    {
+      "brand": "Humira(Cf) Pen",
+      "generic": "Adalimumab",
+      "spend_2023": 4419828188.0,
+      "claims_2023": 478808,
+      "price_per_unit_2023": 3750.0635,
+      "price_cagr_19_23": 0.0921
+    },
+    {
+      "brand": "Farxiga",
+      "generic": "Dapagliflozin Propanediol",
+      "spend_2023": 4342182307.0,
+      "claims_2023": 4298827,
+      "price_per_unit_2023": 19.5479,
+      "price_cagr_19_23": 0.0452
+    },
+    {
+      "brand": "Januvia",
+      "generic": "Sitagliptin Phosphate",
+      "spend_2023": 4090836821.0,
+      "claims_2023": 4029094,
+      "price_per_unit_2023": 18.8803,
+      "price_cagr_19_23": 0.059
+    },
+    {
+      "brand": "Revlimid",
+      "generic": "Lenalidomide",
+      "spend_2023": 3859804789.0,
+      "claims_2023": 216207,
+      "price_per_unit_2023": 878.2122,
+      "price_cagr_19_23": 0.0418
+    },
+    {
+      "brand": "Entresto",
+      "generic": "Sacubitril/Valsartan",
+      "spend_2023": 3430441590.0,
+      "claims_2023": 3200200,
+      "price_per_unit_2023": 11.6419,
+      "price_cagr_19_23": 0.0808
+    },
+    {
+      "brand": "Lantus Solostar",
+      "generic": "Insulin Glargine,Hum.Rec.Anlog",
+      "spend_2023": 3157233282.0,
+      "claims_2023": 4936965,
+      "price_per_unit_2023": 30.2786,
+      "price_cagr_19_23": 0.0168
+    }
+  ],
+  "top_inflation": [
+    {
+      "brand": "Lagevrio (Eua)",
+      "generic": "Molnupiravir",
+      "spend_2023": 11460715.0,
+      "claims_2023": 383878,
+      "price_per_unit_2023": 0.747,
+      "price_cagr_19_23": 2.0485
+    },
+    {
+      "brand": "Leukeran",
+      "generic": "Chlorambucil",
+      "spend_2023": 14311940.0,
+      "claims_2023": 1401,
+      "price_per_unit_2023": 321.414,
+      "price_cagr_19_23": 0.8959
+    },
+    {
+      "brand": "Paxlovid (Eua)",
+      "generic": "Nirmatrelvir/Ritonavir",
+      "spend_2023": 23199106.0,
+      "claims_2023": 2245294,
+      "price_per_unit_2023": 0.3686,
+      "price_cagr_19_23": 0.8262
+    },
+    {
+      "brand": "Ultomiris",
+      "generic": "Ravulizumab-Cwvz",
+      "spend_2023": 159533070.0,
+      "claims_2023": 2503,
+      "price_per_unit_2023": 2218.0268,
+      "price_cagr_19_23": 0.8028
+    },
+    {
+      "brand": "Clemastine Fumarate",
+      "generic": "Clemastine Fumarate",
+      "spend_2023": 21270220.0,
+      "claims_2023": 5624,
+      "price_per_unit_2023": 8.8689,
+      "price_cagr_19_23": 0.7613
+    },
+    {
+      "brand": "Lactulose",
+      "generic": "Lactulose",
+      "spend_2023": 72482220.0,
+      "claims_2023": 1556076,
+      "price_per_unit_2023": 0.3357,
+      "price_cagr_19_23": 0.6576
+    },
+    {
+      "brand": "Xpovio",
+      "generic": "Selinexor",
+      "spend_2023": 85562246.0,
+      "claims_2023": 3219,
+      "price_per_unit_2023": 5276.8376,
+      "price_cagr_19_23": 0.496
+    },
+    {
+      "brand": "Rufinamide",
+      "generic": "Rufinamide",
+      "spend_2023": 39245407.0,
+      "claims_2023": 23294,
+      "price_per_unit_2023": 7.9118,
+      "price_cagr_19_23": 0.3609
+    },
+    {
+      "brand": "Teflaro",
+      "generic": "Ceftaroline Fosamil Acetate",
+      "spend_2023": 11267093.0,
+      "claims_2023": 3876,
+      "price_per_unit_2023": 50.2889,
+      "price_cagr_19_23": 0.3435
+    },
+    {
+      "brand": "Qutenza",
+      "generic": "Capsaicin/Skin Cleanser",
+      "spend_2023": 12460288.0,
+      "claims_2023": 3559,
+      "price_per_unit_2023": 2395.7485,
+      "price_cagr_19_23": 0.3422
+    },
+    {
+      "brand": "Zerbaxa",
+      "generic": "Ceftolozane/Tazobactam",
+      "spend_2023": 12776957.0,
+      "claims_2023": 4189,
+      "price_per_unit_2023": 20.1139,
+      "price_cagr_19_23": 0.3065
+    },
+    {
+      "brand": "Entyvio",
+      "generic": "Vedolizumab",
+      "spend_2023": 99999923.0,
+      "claims_2023": 11695,
+      "price_per_unit_2023": 8230.9659,
+      "price_cagr_19_23": 0.3019
+    }
+  ]
+}
