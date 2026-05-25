@@ -25,6 +25,7 @@ from typing import Dict
 TIERS = {
     "green":  ("#0a8a5f", "LIVE — real data"),
     "navy":   ("#0b2341", "Diligence calculator (your inputs)"),
+    "data_required": ("#6b5b95", "DATA REQUIRED — upload your deal/fund data to activate"),
     "yellow": ("#b8842e", "Illustrative seed-corpus data"),
     "red":    ("#b5321e", "Synthetic / hardcoded data"),
 }
@@ -102,6 +103,14 @@ _NAVY = frozenset({
     "/aco-economics", "/scenarios/", "/diligence/deal-autopsy",
 })
 
+# ── DATA REQUIRED: honest pages with no public anchor that activate on the
+#    user's own deal/fund data. Converted from fabricated-RED — they present a
+#    "Data needed to activate this analysis" panel + import template + Guide
+#    context, and no fabricated values as real. ──────────────────────────────
+_DATA_REQUIRED = frozenset({
+})
+
+
 # ── YELLOW: realistic figures built on the illustrative seed-deal corpus ────
 _YELLOW = frozenset({
     "/sponsor-league", "/sponsor-heatmap", "/sponsor-track-record",
@@ -149,6 +158,7 @@ _RED = frozenset({
 _REASON = {
     "green": "Real data (CMS/HCRIS/CIVHC/FDA/MSSP/HRSA public, or your own deal/portfolio/system data).",
     "navy": "Diligence calculator: illustrative defaults but the output is computed from the inputs you provide.",
+    "data_required": "No public dataset anchors this page; it activates on YOUR uploaded deal/fund data. Shows what to upload + an import template — no fabricated values.",
     "yellow": "Realistic figures built on the bundled ILLUSTRATIVE seed-deal corpus — not this market's real data.",
     "red": "Entirely synthetic / hardcoded values that do not change with input — replace with real data or relabel.",
 }
@@ -169,6 +179,7 @@ def classify_surface(route: str) -> Dict[str, str]:
     r = _norm(route)
     rs = r.rstrip("/") or "/"
     for tier, members in (("green", _GREEN), ("navy", _NAVY),
+                          ("data_required", _DATA_REQUIRED),
                           ("red", _RED), ("yellow", _YELLOW)):
         if r in members or rs in members:
             color, label = TIERS[tier]
