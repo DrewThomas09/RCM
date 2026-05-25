@@ -729,7 +729,16 @@ def render_state_detail(
         '</p>',
         title="Cross-links",
     )
-    body = f'{intro}{kpis}{map_panel}{table_panel}{actions}'
+    # Market context (licensed SimplyAnalytics-derived) — demographic/payer
+    # context for this state; market context, not provider-specific.
+    market_ctx = ""
+    try:
+        from .data_public.market_geo_page import market_context_panel
+        market_ctx = market_context_panel(state_upper)
+    except Exception:
+        market_ctx = ""
+
+    body = f'{intro}{kpis}{market_ctx}{map_panel}{table_panel}{actions}'
 
     return chartis_shell(
         body, f"Market: {state_upper}",

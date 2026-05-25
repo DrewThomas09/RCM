@@ -142,9 +142,29 @@ class MarketGeoRouteTests(unittest.TestCase):
         s, _ = self._get("/market-intel")
         self.assertEqual(s, 200)
 
+    def test_market_context_panel_on_state_page(self):
+        # Phase 7: provider/diligence pages can show market context.
+        s, b = self._get("/market-data/state/CA")
+        self.assertEqual(s, 200)
+        self.assertIn("Market context", b)
+        self.assertIn("/market-intel/geo/06", b)        # links to full profile
+        self.assertIn("not</b> provider-specific", b)   # honest caveat
+
     def test_login_unaffected(self):
         s, _ = self._get("/login")
         self.assertIn(s, (200, 302, 303))
+
+
+class MarketContextPanelTests(unittest.TestCase):
+    def test_panel_by_abbr_and_fips(self):
+        from rcm_mc.ui.data_public.market_geo_page import market_context_panel
+        self.assertIn("Market context", market_context_panel("CA"))
+        self.assertIn("Market context", market_context_panel("06"))
+
+    def test_panel_empty_for_unknown_geo(self):
+        from rcm_mc.ui.data_public.market_geo_page import market_context_panel
+        self.assertEqual(market_context_panel("ZZ"), "")
+        self.assertEqual(market_context_panel(""), "")
 
 
 if __name__ == "__main__":
