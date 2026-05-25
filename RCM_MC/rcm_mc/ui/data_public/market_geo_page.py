@@ -200,6 +200,38 @@ def render_market_geo_index(params: dict = None) -> str:
              f'<th style="padding:6px 10px">Market</th><th style="padding:6px 10px;text-align:right">{_html.escape(var["display_name"])}</th>'
              f'<th style="padding:6px 10px;text-align:right">Pctile</th></tr></thead><tbody>{trows}</tbody></table>')
 
+    # Opportunity ranking — states by senior demand with real CMS supply +
+    # consolidation columns (a market-screening view over all real data).
+    opp_panel = ""
+    try:
+        from rcm_mc.data import provider_supply as _ps, snf_chow as _chow
+        demand_rows = _mi.rank_markets("age_65_plus_pct", "state")
+        orows = ""
+        for r in demand_rows[:15]:
+            ab = _FIPS_ABBR.get(r["fips"], "")
+            sup = _ps.total_supply_for_state(ab) if ab else 0
+            pc = _ps.primary_care_supply_for_state(ab) if ab else 0
+            cons = (_chow.total_chows_for_state(ab) + _chow.total_hospital_chows_for_state(ab)) if ab else 0
+            orows += (
+                f'<tr style="border-bottom:1px solid {P["border"]}">'
+                f'<td style="padding:5px 10px"><a href="/market-intel/geo/{_html.escape(r["fips"])}" style="color:{P["accent"]};text-decoration:none">{_html.escape(r["geo_name"])}</a></td>'
+                f'<td style="padding:5px 10px;text-align:right;font-variant-numeric:tabular-nums">{float(r["value"])*100:.1f}%</td>'
+                f'<td style="padding:5px 10px;text-align:right;font-variant-numeric:tabular-nums">{float(r.get("percentile_national") or 0):.0f}</td>'
+                f'<td style="padding:5px 10px;text-align:right;font-variant-numeric:tabular-nums">{sup:,}</td>'
+                f'<td style="padding:5px 10px;text-align:right;font-variant-numeric:tabular-nums">{pc:,}</td>'
+                f'<td style="padding:5px 10px;text-align:right;font-variant-numeric:tabular-nums">{cons:,}</td></tr>')
+        opp_panel = (
+            f'<table style="width:100%;border-collapse:collapse;background:{P["panel"]};border:1px solid {P["border"]}">'
+            f'<thead><tr style="text-align:left;color:{P["text_dim"]};font-size:11px;text-transform:uppercase;border-bottom:2px solid {P["border"]}">'
+            f'<th style="padding:6px 10px">Market</th><th style="padding:6px 10px;text-align:right">% 65+</th>'
+            f'<th style="padding:6px 10px;text-align:right">Demand pctile</th>'
+            f'<th style="padding:6px 10px;text-align:right">Providers</th>'
+            f'<th style="padding:6px 10px;text-align:right">Primary care</th>'
+            f'<th style="padding:6px 10px;text-align:right">Consolidation</th></tr></thead>'
+            f'<tbody>{orows}</tbody></table>')
+    except Exception:
+        opp_panel = ""
+
     backlog = "".join(f'<li>{_html.escape(n)} <span style="color:{P["text_dim"]}">· {c}</span></li>'
                       for n, c in _BACKLOG)
     cell = f"background:{P['panel']};border:1px solid {P['border']};padding:16px;margin-bottom:16px"
@@ -222,6 +254,10 @@ def render_market_geo_index(params: dict = None) -> str:
         + f'<div style="{cell}"><div style="{h3}">Top markets — {_html.escape(var["display_name"])}</div>{table}'
         + f'<p style="font-size:11px;color:{P["text_dim"]};margin:8px 0 0">Percentile = national rank among states with real values. '
         + f'{_html.escape(var.get("diligence_use",""))}</p></div>'
+        + (f'<div style="{cell}"><div style="{h3}">Market opportunity ranking — demand × real CMS supply &amp; consolidation</div>{opp_panel}'
+           f'<p style="font-size:11px;color:{P["text_dim"]};margin:8px 0 0">States by senior demand with real CMS provider supply (FFS-enrolled) '
+           f'and SNF+hospital consolidation. High demand + low supply = potential opportunity; consolidation = M&amp;A velocity (not a PE flag). '
+           f'Market context, not provider-specific.</p></div>' if opp_panel else "")
         + f'<div style="{cell}"><div style="{h3}">Export backlog (design refs, not yet data)</div>'
         + f'<p style="font-size:12px;color:{P["text_dim"]};margin:0 0 8px">The map screenshots show these variables; they render '
         + f'as EXPORT REQUIRED until the underlying SimplyAnalytics export is ingested (never fabricated):</p>'
