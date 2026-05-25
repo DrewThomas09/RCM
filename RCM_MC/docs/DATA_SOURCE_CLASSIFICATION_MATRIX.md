@@ -26,6 +26,9 @@ Single index of how every PEdesk surface is classified and disclosed.
 | HRSA HPSA shortage | `data/hrsa_data` | CMS/HRSA PUBLIC DATA |
 | IBISWorld industry reports | `data/industry_intel` | LICENSED REPORT DERIVED |
 | SimplyAnalytics market data | `data/market_intel` | LICENSED MARKET DATA DERIVED |
+| CMS FFS provider enrollment (supply) | `data/provider_supply` | CMS PUBLIC DATA |
+| CMS SNF Change-of-Ownership | `data/snf_chow` | CMS PUBLIC DATA |
+| CMS Hospital Change-of-Ownership | `data/snf_chow` (hospital fns) | CMS PUBLIC DATA |
 
 All registered in `rcm_mc/data/vendor/source_registry.csv`.
 
