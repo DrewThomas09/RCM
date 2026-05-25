@@ -4602,6 +4602,14 @@ class RCMHandler(BaseHTTPRequestHandler):
                     moic_bucket=moic_bucket,
                 )
             )
+        if path == "/deal-library/comps":
+            # EV/Revenue & EV/EBITDA over the disclosed-financial subset.
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _params = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.deal_library_page import render_deal_comps
+            return self._send_html(
+                render_deal_comps(PortfolioStore(self.config.db_path), _params)
+            )
         if path == "/deal-library/sponsors":
             # Browsable sponsor-activity index over the licensed universe.
             _qs = urllib.parse.parse_qs(parsed.query)

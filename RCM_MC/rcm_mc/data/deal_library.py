@@ -267,3 +267,72 @@ def sponsor_rollup(store: Any, sponsor: str) -> Dict[str, Any]:
         "n_with_revenue": row[3] or 0,
         "top_states": [{"state": s[0], "n": s[1]} for s in states],
     }
+
+
+# ── multiples (the only honestly-supportable financial use) ────────────────
+# EV/Revenue and EV/EBITDA are computable only for the small subset of the
+# universe (mostly public companies) that discloses both numerator and a
+# positive denominator. Missing financials are EXCLUDED (never treated as 0),
+# and the distribution is reported with its sample size + a caveat — this is a
+# benchmark distribution over disclosed-financial companies, NOT a curated comp
+# set or a prediction.
+def _percentiles(vals: List[float]) -> Dict[str, Any]:
+    vals = sorted(v for v in vals if v is not None)
+    n = len(vals)
+    if not n:
+        return {"n": 0, "p25": None, "median": None, "p75": None}
+    def at(p: float) -> float:
+        return vals[min(n - 1, int(p * n))]
+    med = (vals[n // 2] if n % 2 else (vals[n // 2 - 1] + vals[n // 2]) / 2)
+    return {"n": n, "p25": round(at(0.25), 2), "median": round(med, 2),
+            "p75": round(at(0.75), 2)}
+
+
+def multiples_summary(store: Any) -> Dict[str, Any]:
+    """EV/Revenue and EV/EBITDA distributions over companies disclosing both,
+    with positive denominators. Returns sample size + P25/median/P75 each."""
+    _ensure_table(store)
+    with store.connect() as con:
+        evrev = [r[0] / r[1] for r in con.execute(
+            "SELECT enterprise_value, revenue FROM deal_library_companies "
+            "WHERE enterprise_value IS NOT NULL AND revenue IS NOT NULL "
+            "AND revenue > 0").fetchall()]
+        evebitda = [r[0] / r[1] for r in con.execute(
+            "SELECT enterprise_value, ebitda FROM deal_library_companies "
+            "WHERE enterprise_value IS NOT NULL AND ebitda IS NOT NULL "
+            "AND ebitda > 0").fetchall()]
+    return {"ev_revenue": _percentiles(evrev),
+            "ev_ebitda": _percentiles(evebitda)}
+
+
+def companies_with_multiples(store: Any, *, limit: int = 100, offset: int = 0
+                             ) -> Dict[str, Any]:
+    """Companies that disclose EV + revenue, with EV/Revenue (and EV/EBITDA
+    where EBITDA is present and positive) computed. Sorted by EV desc. Returns
+    ``{total, rows}``; each row includes ev_revenue_multiple / ev_ebitda_multiple
+    (None when not computable)."""
+    _ensure_table(store)
+    limit = max(1, min(int(limit), 500))
+    offset = max(0, int(offset))
+    with store.connect() as con:
+        total = con.execute(
+            "SELECT COUNT(*) FROM deal_library_companies "
+            "WHERE enterprise_value IS NOT NULL AND revenue IS NOT NULL "
+            "AND revenue > 0").fetchone()[0]
+        cur = con.execute(
+            "SELECT company_name, ticker, sponsor_owner, state, "
+            "enterprise_value, revenue, ebitda FROM deal_library_companies "
+            "WHERE enterprise_value IS NOT NULL AND revenue IS NOT NULL "
+            "AND revenue > 0 ORDER BY enterprise_value DESC LIMIT ? OFFSET ?",
+            (limit, offset))
+        rows = []
+        for cn, tk, sp, st, ev, rev, eb in cur.fetchall():
+            rows.append({
+                "company_name": cn, "ticker": tk, "sponsor_owner": sp,
+                "state": st, "enterprise_value": ev, "revenue": rev,
+                "ebitda": eb,
+                "ev_revenue_multiple": round(ev / rev, 2) if rev else None,
+                "ev_ebitda_multiple": (round(ev / eb, 2)
+                                       if (eb and eb > 0) else None),
+            })
+    return {"total": total, "rows": rows}

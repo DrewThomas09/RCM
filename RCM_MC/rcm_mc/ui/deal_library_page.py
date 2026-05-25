@@ -153,7 +153,10 @@ def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> 
             + "</div>"
             + f'<p style="margin:8px 2px 0;font-size:12px">'
               f'<a href="/deal-library/sponsors" style="color:{P["accent"]};'
-              f'text-decoration:none">Browse all sponsors →</a></p>')
+              f'text-decoration:none">Browse all sponsors →</a>'
+              f'<span style="color:{P["text_dim"]};margin:0 10px">·</span>'
+              f'<a href="/deal-library/comps" style="color:{P["accent"]};'
+              f'text-decoration:none">Disclosed-financial multiples →</a></p>')
 
     # ── filters / search ──
     search = params.get("search", "")
@@ -319,4 +322,98 @@ def render_sponsors_index(store: Any, params: Optional[Dict[str, str]] = None) -
 
     return chartis_shell(back + title + form + table + pager,
                          title="Sponsors — Deal Library",
+                         active_nav="/deal-library")
+
+
+def _dist_card(label: str, d: Dict[str, Any], suffix: str = "x") -> str:
+    if not d.get("n"):
+        return (f'<div style="flex:1;min-width:220px;border:1px solid {P["border"]};'
+                f'border-radius:2px;padding:12px 16px">'
+                f'<div style="font-family:var(--sc-mono);font-size:10px;'
+                f'text-transform:uppercase;color:{P["text_dim"]}">{_html.escape(label)}</div>'
+                f'<div style="color:{P["text_dim"]};font-size:13px;margin-top:6px">'
+                f'no companies disclose this</div></div>')
+    return (
+        f'<div style="flex:1;min-width:220px;border:1px solid {P["border"]};'
+        f'border-left:3px solid {P["accent"]};border-radius:2px;padding:12px 16px">'
+        f'<div style="font-family:var(--sc-mono);font-size:10px;'
+        f'text-transform:uppercase;color:{P["text_dim"]}">{_html.escape(label)}</div>'
+        f'<div style="font-size:20px;font-weight:600;margin:4px 0">'
+        f'{d["median"]:.2f}{suffix} <span style="font-size:12px;font-weight:400;'
+        f'color:{P["text_dim"]}">median</span></div>'
+        f'<div style="font-family:var(--sc-mono);font-size:12px;color:{P["text_dim"]}">'
+        f'P25 {d["p25"]:.2f}{suffix} · P75 {d["p75"]:.2f}{suffix} · '
+        f'<b style="color:{P["text"]}">n={d["n"]:,}</b></div></div>')
+
+
+def render_deal_comps(store: Any, params: Optional[Dict[str, str]] = None) -> str:
+    """/deal-library/comps — EV/Revenue & EV/EBITDA over the disclosed-financial
+    subset (mostly public companies). Honestly scoped: small n, missing excluded
+    (never 0), benchmark distribution not a curated comp set or a prediction."""
+    params = {k: str(v) for k, v in (params or {}).items() if v}
+    total_companies = dl.count(store)
+    title = ck_page_title(
+        "Comparables — Deal Library",
+        eyebrow="DISCLOSED-FINANCIAL MULTIPLES",
+        meta=("EV/Revenue & EV/EBITDA for the subset that discloses them"
+              if total_companies else "no export ingested yet"),
+    )
+    back = (f'<p style="margin:0 0 8px"><a href="/deal-library" '
+            f'style="color:{P["accent"]};text-decoration:none;font-size:12px">'
+            f'← Deal Library</a></p>')
+    if not total_companies:
+        return chartis_shell(
+            back + title + ck_empty_state(
+                "No data yet", "Ingest a licensed export first (see /deal-library)."),
+            title="Comparables", active_nav="/deal-library")
+
+    summ = dl.multiples_summary(store)
+    cards = ('<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:14px">'
+             + _dist_card("EV / Revenue", summ["ev_revenue"])
+             + _dist_card("EV / EBITDA", summ["ev_ebitda"])
+             + "</div>")
+    caveat = (
+        f'<p style="font-family:var(--sc-mono);font-size:11px;color:{P["text_dim"]};'
+        f'line-height:1.5;margin:10px 0 0">Computed only for companies that '
+        f'disclose enterprise value <b>and</b> a positive denominator — a small, '
+        f'mostly-public slice of the {total_companies:,}-company universe (the rest '
+        f'report no public financials). Missing values are <b>excluded, never '
+        f'treated as zero</b>. This is a benchmark distribution over disclosed '
+        f'financials — not a curated comp set and not a prediction.</p>')
+
+    try:
+        offset = max(0, int(params.get("offset", "0")))
+    except ValueError:
+        offset = 0
+    page_size = 50
+    res = dl.companies_with_multiples(store, limit=page_size, offset=offset)
+    head = ('<tr><th class="align-left">Company</th><th class="align-left">Ticker</th>'
+            '<th class="align-right">EV ($mm)</th><th class="align-right">Revenue ($mm)</th>'
+            '<th class="align-right">EV/Rev</th><th class="align-right">EV/EBITDA</th></tr>')
+    def fmt(v, suf=""):
+        return (f"{v:,.1f}{suf}" if isinstance(v, (int, float)) else "—")
+    body = "".join(
+        f'<tr><td class="align-left">{_html.escape(str(r["company_name"]))}</td>'
+        f'<td class="align-left">{_html.escape(str(r["ticker"] or "—"))}</td>'
+        f'<td class="align-right sc-num">{fmt(r["enterprise_value"])}</td>'
+        f'<td class="align-right sc-num">{fmt(r["revenue"])}</td>'
+        f'<td class="align-right sc-num">{fmt(r["ev_revenue_multiple"],"x")}</td>'
+        f'<td class="align-right sc-num">{fmt(r["ev_ebitda_multiple"],"x")}</td></tr>'
+        for r in res["rows"])
+    table = (f'<table class="ck-table ck-dense"><thead>{head}</thead>'
+             f'<tbody>{body}</tbody></table>')
+    lo, hi = offset + 1, min(offset + page_size, res["total"])
+    pager = (f'<div style="display:flex;justify-content:space-between;margin-top:10px;'
+             f'font-family:var(--sc-mono);font-size:11px;color:{P["text_dim"]}">'
+             f'<span>{res["total"]:,} with EV+revenue · showing {lo:,}–{hi:,}</span><span>')
+    if offset > 0:
+        pp = dict(params); pp["offset"] = str(max(0, offset - page_size))
+        pager += f'<a href="/deal-library/comps?{_url.urlencode(pp)}" style="margin-right:14px">← Prev</a>'
+    if hi < res["total"]:
+        np = dict(params); np["offset"] = str(offset + page_size)
+        pager += f'<a href="/deal-library/comps?{_url.urlencode(np)}">Next →</a>'
+    pager += "</span></div>"
+
+    return chartis_shell(back + title + cards + caveat + table + pager,
+                         title="Comparables — Deal Library",
                          active_nav="/deal-library")
