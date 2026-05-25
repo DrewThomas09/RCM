@@ -74,6 +74,7 @@ _GREEN = frozenset({
 _NAVY = frozenset({
     "/physician-productivity", "/phys-comp-plan", "/physician-labor",
     "/provider-retention", "/quality-scorecard", "/clinical-outcomes",
+    "/regulatory-risk",
     "/lbo-stress", "/scenario-mc", "/scenarios", "/diligence/deal-mc",
     "/diligence/covenant-stress", "/diligence/bridge-audit", "/ebitda-bridge/",
     "/multiple-decomp", "/rollup-economics", "/cap-structure", "/entry-multiple",
@@ -124,7 +125,7 @@ _RED = frozenset({
     "/concentration-risk", "/msa-concentration", "/payer-concentration",
     "/payer-contracts", "/payer-shift", "/ma-contracts", "/ma-star",
     "/nsa-tracker", "/medicaid-unwinding", "/risk-adjustment", "/risk-matrix",
-    "/regulatory-risk", "/revenue-leakage", "/supply-chain", "/gpo-supply",
+    "/revenue-leakage", "/supply-chain", "/gpo-supply",
     "/capex-budget", "/treasury", "/fundraising", "/nav-loan-tracker",
     "/secondaries-tracker", "/continuation-vehicle", "/coinvest-pipeline",
     "/operating-partners", "/board-governance", "/compliance-attestation",

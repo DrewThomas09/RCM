@@ -211,6 +211,48 @@ def snf_turnover_summary(state: str = "") -> Dict[str, object]:
     }
 
 
+def snf_enforcement_summary() -> Dict[str, object]:
+    """Real CMS nursing-home regulatory-enforcement benchmark (Care Compare).
+
+    Aggregates the publicly-reported penalty fields (``total_fines_usd``,
+    ``num_fines``, ``num_payment_denials``, ``num_penalties``) into a sector
+    benchmark: how common enforcement is and how large fines run. A real
+    regulatory-risk reference, NOT a deal-specific exposure. Facilities missing
+    a field are excluded from that field's sample (never counted as 0). Returns
+    ``{facilities, pct_fined, total_fines_usd, median_fine_usd, mean_fine_usd,
+    pct_payment_denial, pct_any_penalty}`` with ``None`` where empty.
+    """
+    quality = load_snf_quality()
+    fines, fined = [], 0
+    facilities = denials = penalties = 0
+    for q in quality.values():
+        facilities += 1
+        tf = q.get("total_fines_usd")
+        if tf is not None:
+            if tf > 0:
+                fines.append(float(tf))
+                fined += 1
+        pd_ = q.get("num_payment_denials")
+        if pd_ is not None and pd_ > 0:
+            denials += 1
+        pen = q.get("num_penalties")
+        if pen is not None and pen > 0:
+            penalties += 1
+    if not facilities:
+        return {"facilities": 0, "pct_fined": None, "total_fines_usd": None,
+                "median_fine_usd": None, "mean_fine_usd": None,
+                "pct_payment_denial": None, "pct_any_penalty": None}
+    return {
+        "facilities": facilities,
+        "pct_fined": round(100 * fined / facilities, 1),
+        "total_fines_usd": int(sum(fines)) if fines else 0,
+        "median_fine_usd": int(_median(fines)) if fines else None,
+        "mean_fine_usd": int(sum(fines) / len(fines)) if fines else None,
+        "pct_payment_denial": round(100 * denials / facilities, 1),
+        "pct_any_penalty": round(100 * penalties / facilities, 1),
+    }
+
+
 def snf_rating_distribution(metric: str = "overall_rating") -> Dict[str, object]:
     """Real CMS 5-star rating distribution for a nursing-home quality metric.
 

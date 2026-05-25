@@ -292,6 +292,37 @@ def render_regulatory_risk(params: dict = None) -> str:
         tone=_reg_tone,
     )
 
+    # Real CMS nursing-home enforcement benchmark — shown for nursing/post-acute
+    # sectors (where we have real regulatory-penalty data). Other sectors keep
+    # the calculator without a fabricated enforcement anchor.
+    cms_panel = ""
+    try:
+        from rcm_mc.ui.data_public._benchmark_panels import _is_snf_sector
+        if _is_snf_sector(sector):
+            from rcm_mc.data import snf as _snf
+            e = _snf.snf_enforcement_summary()
+            if e.get("facilities") and e.get("median_fine_usd"):
+                cms_panel = (
+                    f'<div style="background:{panel};border:1px solid {border};'
+                    f'border-left:3px solid {acc};padding:14px 16px;margin-bottom:16px">'
+                    f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
+                    f'text-transform:uppercase;color:{text_dim};margin-bottom:6px">'
+                    f'Regulatory-enforcement benchmark · LIVE (CMS Care Compare, nursing homes)</div>'
+                    f'<p style="font-size:12px;color:{text_dim};margin:0 0 8px">'
+                    f'Of <b style="color:{text}">{e["facilities"]:,}</b> Medicare/Medicaid '
+                    f'nursing homes, <b style="color:{text}">{e["pct_fined"]:.0f}%</b> '
+                    f'carry a CMS fine (median <b style="color:{text}">${e["median_fine_usd"]:,}</b>, '
+                    f'${e["total_fines_usd"]/1e6:,.0f}M total); '
+                    f'{e["pct_payment_denial"]:.0f}% have a payment denial and '
+                    f'{e["pct_any_penalty"]:.0f}% any penalty. The real published '
+                    f'enforcement base rate for this sector.</p>'
+                    f'<p style="font-size:11px;color:{text_dim};margin:0">'
+                    f'Real CMS enforcement data (nursing homes) — a sector base rate, '
+                    f'<b>not</b> this deal’s exposure. The model below is illustrative, '
+                    f'scaled by your inputs.</p></div>')
+    except Exception:
+        cms_panel = ""
+
     body = f"""
 <div class="ck-page-wrap">
 
@@ -299,6 +330,7 @@ def render_regulatory_risk(params: dict = None) -> str:
 
   {ck_illustrative_note("regulatory figures")}
   {lead_anchor}
+  {cms_panel}
 
   {form}
 
