@@ -4461,6 +4461,197 @@ _MANUAL: List[PageContext] = [
         related_routes=["/fund-learning", "/deal-quality"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.DEMO_OR_FIXTURE,
     ),
+
+    # ── Pages converted RED→NAVY this session: input-driven model/illustrative
+    #    corpus + a real LIVE public-data anchor panel (honest, labeled). ──
+    _ctx(
+        "/provider-network", "Provider Network Intelligence",
+        short_description="Payer-mix HHI / network-concentration calculator on your "
+        "inputs, anchored to the real CMS FFS provider-supply universe.",
+        primary_purpose="Gauge network payer concentration and the real provider-"
+        "supply backdrop a deal acquires into.",
+        data_sources=["Illustrative corpus peers/regime stats (labeled) + real CMS "
+                      "FFS provider enrollment (2.98M)."],
+        interpretation_guidance=["HHI/regime compute off YOUR payer mix.",
+                                 "Supply panel is the market backdrop, NOT this deal's roster."],
+        limitations=["Peer/regime comps are illustrative seed-corpus."],
+        related_routes=["/workforce-planning", "/market-intel/geo"],
+        source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/msa-concentration", "MSA Provider Market Concentration",
+        short_description="MSA-level HHI/CR3/CR5 framework (illustrative MSA detail) "
+        "anchored to real CMS change-of-ownership consolidation by state.",
+        primary_purpose="Frame market concentration / rollup whitespace against real "
+        "observed consolidation activity.",
+        data_sources=["Illustrative MSA HHI/operator detail (labeled) + real CMS CHOW "
+                      "(5,141 SNF + 755 hospital)."],
+        interpretation_guidance=["MSA tables are the structural lens (illustrative).",
+                                 "CHOW panel is real observed consolidation by state."],
+        limitations=["MSA-level HHI/operators are illustrative, not this market."],
+        related_routes=["/concentration-risk", "/competitive-intel", "/market-intel/geo"],
+        source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/payer-concentration", "Payer Concentration Tracker",
+        short_description="CR1/CR3/CR5/HHI payer-concentration calculator on your "
+        "revenue + top-payer inputs, anchored to real CMS MA enrollment.",
+        primary_purpose="Frame payer concentration and the real MA-market backdrop.",
+        data_sources=["Illustrative payer roster/renewals/denials (labeled) + real "
+                      "CMS MA geographic enrollment (29.7M)."],
+        interpretation_guidance=["Concentration metrics compute off YOUR inputs.",
+                                 "MA panel is the observed market, NOT this deal's roster."],
+        limitations=["Payer roster/renewal/denial detail is illustrative."],
+        related_routes=["/payer-contracts", "/payer-rate-trends", "/market-intel/geo"],
+        source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/gpo-supply", "GPO / Supply Chain Savings Tracker",
+        short_description="Supply-chain savings model (illustrative) anchored to the "
+        "real CMS Open Payments device/pharma vendor landscape.",
+        primary_purpose="Frame GPO savings against the real manufacturer-vendor scale.",
+        data_sources=["Illustrative GPO savings/contracts/bulk-buys (labeled) + real "
+                      "CMS Open Payments ($3.31bn, top vendors)."],
+        interpretation_guidance=["Savings/contract figures are illustrative scaffold.",
+                                 "Open Payments panel is real industry vendor scale."],
+        limitations=["Deal GPO savings require the target's actual spend data."],
+        related_routes=["/cost-structure"],
+        source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/medicaid-unwinding", "Medicaid Unwinding Tracker",
+        short_description="Medicaid redetermination impact model (illustrative) "
+        "anchored to the real CMS dual-eligible population by state.",
+        primary_purpose="Frame disenrollment / coverage-shift exposure against the "
+        "real at-risk dual-eligible cohort.",
+        data_sources=["Illustrative disenrollment/coverage-shift/bad-debt (labeled) + "
+                      "real CMS dual-eligible share by state."],
+        interpretation_guidance=["Deal-level impact figures are illustrative.",
+                                 "Dual-eligible panel is the real at-risk population."],
+        limitations=["Deal exposure requires the target's real payer mix."],
+        related_routes=["/payer-concentration", "/risk-adjustment"],
+        source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/payer-contracts", "Payer Contracts",
+        short_description="Payer contract-book / negotiation model (illustrative) "
+        "anchored to the real CIVHC commercial-vs-Medicare rate benchmark.",
+        primary_purpose="Frame contract rates against the real commercial-%-of-"
+        "Medicare benchmark contracts negotiate against.",
+        data_sources=["Illustrative contract book/negotiations/escalators (labeled) + "
+                      "real CIVHC / CO APCD reference-based pricing."],
+        interpretation_guidance=["Contract book is illustrative scaffold.",
+                                 "CIVHC ratio is a real Colorado rate benchmark."],
+        limitations=["Deal contracts require the target's actual rate sheets."],
+        related_routes=["/payer-concentration", "/ref-pricing", "/payer-rate-trends"],
+        source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/health-equity", "Health Equity / SDOH Scorecard",
+        short_description="HEI / Star-bonus model (illustrative) anchored to real CDC "
+        "PLACES full-population social-determinants prevalence.",
+        primary_purpose="Frame health-equity posture against real SDOH burden.",
+        data_sources=["Illustrative HEI/Star scorecard (labeled) + real CDC PLACES SDOH "
+                      "(uninsured, food/transport insecurity)."],
+        interpretation_guidance=["HEI/Star figures are illustrative, scaled to inputs.",
+                                 "PLACES panel is real full-population SDOH (not patients)."],
+        limitations=["Model-based estimates; area-level, not this deal's panel."],
+        related_routes=["/risk-adjustment", "/market-intel/geo"],
+        source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/telehealth-econ", "Telehealth Economics Analyzer",
+        short_description="Telehealth visit-economics model (illustrative) anchored to "
+        "real CDC PLACES access barriers (transportation, uninsured).",
+        primary_purpose="Frame telehealth demand against real access-barrier prevalence.",
+        data_sources=["Illustrative visit P&L / parity / productivity (labeled) + real "
+                      "CDC PLACES access barriers."],
+        interpretation_guidance=["Visit economics are illustrative.",
+                                 "PLACES panel is real access-barrier prevalence by state."],
+        limitations=["Model-based estimates; area-level."],
+        related_routes=["/health-equity"],
+        source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/patient-experience", "Patient Experience",
+        short_description="NPS/complaint/service-recovery model (illustrative) anchored "
+        "to the real CMS HCAHPS patient-survey top-box by state.",
+        primary_purpose="Frame patient-experience posture against the real HCAHPS "
+        "benchmark.",
+        data_sources=["Illustrative NPS/complaint model (labeled) + real CMS HCAHPS "
+                      "state top-box (overall 9-10, would-recommend)."],
+        interpretation_guidance=["NPS/complaint figures are illustrative.",
+                                 "HCAHPS panel is the real survey benchmark (not this facility)."],
+        limitations=["State-level HCAHPS; national figure = state mean."],
+        related_routes=["/quality-scorecard", "/clinical-outcomes"],
+        source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/locum-tracker", "Locum / Contract-Labor Tracker",
+        short_description="Locum spend/coverage model (illustrative) anchored to real "
+        "HRSA Health Professional Shortage Areas — the locum-demand driver.",
+        primary_purpose="Frame locum/temp-staffing demand against real shortage-area data.",
+        data_sources=["Illustrative locum spend/coverage/rates (labeled) + real HRSA "
+                      "HPSA (7,635 designated PC shortage areas)."],
+        interpretation_guidance=["Locum figures are illustrative.",
+                                 "HPSA panel is real shortage-area designations by state."],
+        limitations=["Deal locum spend requires the target's actuals."],
+        related_routes=["/workforce-planning", "/workforce-retention"],
+        source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/workforce-retention", "Workforce Turnover / Retention Tracker",
+        short_description="Turnover/engagement/retention model (illustrative) anchored "
+        "to real HRSA shortage areas — the retention-pressure backdrop.",
+        primary_purpose="Frame retention difficulty against real labor-shortage data.",
+        data_sources=["Illustrative turnover/engagement/programs (labeled) + real HRSA "
+                      "HPSA shortage designations."],
+        interpretation_guidance=["Turnover/engagement figures are illustrative.",
+                                 "HPSA panel is real shortage data (deeper shortage = harder retention)."],
+        limitations=["Deal turnover requires the target's HR roster."],
+        related_routes=["/locum-tracker", "/workforce-planning"],
+        source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/antitrust-screener", "Anti-Trust Screener",
+        short_description="HHI / HSR / market-overlap screen computed off your deal-"
+        "size input, anchored to real CMS change-of-ownership consolidation.",
+        primary_purpose="Frame antitrust/HSR risk against real observed consolidation.",
+        data_sources=["Illustrative HHI/HSR/overlap/precedent model (labeled) + real "
+                      "CMS CHOW consolidation activity."],
+        interpretation_guidance=["HHI/HSR/overlap compute off your deal-size input.",
+                                 "CHOW panel is the real serial-acquisition backdrop FTC scrutinizes."],
+        limitations=["Market-overlap specifics are illustrative."],
+        related_routes=["/concentration-risk", "/msa-concentration", "/competitive-intel"],
+        source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/cin-analyzer", "Clinically Integrated Network Analyzer",
+        short_description="CIN shared-savings/quality model on your inputs, anchored "
+        "to the real CMS MSSP ACO landscape.",
+        primary_purpose="Frame a CIN's value-based posture against the real ACO landscape.",
+        data_sources=["Illustrative CIN roster/contracts/quality (labeled) + real CMS "
+                      "MSSP ACO landscape (511 ACOs, 15,293 orgs)."],
+        interpretation_guidance=["CIN roster/contract figures are illustrative.",
+                                 "MSSP panel is the real ACO/value-based benchmark."],
+        limitations=["Deal CIN data requires the target's network roster."],
+        related_routes=["/aco-economics", "/quality-scorecard"],
+        source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/nsa-tracker", "No Surprises Act / OON Tracker",
+        short_description="OON volume / balance-bill / IDR model (illustrative) "
+        "anchored to the real CIVHC commercial-vs-Medicare OON/QPA benchmark.",
+        primary_purpose="Frame NSA OON/IDR exposure against the real rate benchmark "
+        "disputes reference.",
+        data_sources=["Illustrative OON volume/balance-bill/IDR (labeled) + real CIVHC "
+                      "commercial-%-of-Medicare distribution."],
+        interpretation_guidance=["OON/IDR figures are illustrative.",
+                                 "CIVHC ratio is the real OON/QPA rate benchmark (Colorado APCD)."],
+        limitations=["Deal OON exposure requires the target's claims."],
+        related_routes=["/payer-contracts", "/ref-pricing"],
+        source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
+    ),
 ]
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
