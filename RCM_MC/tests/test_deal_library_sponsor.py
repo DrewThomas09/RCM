@@ -14,7 +14,9 @@ _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT / "scripts"))
 import ingest_deal_library_exports as ing  # noqa: E402
 from rcm_mc.data import deal_library as dl  # noqa: E402
-from rcm_mc.ui.deal_library_page import render_deal_library  # noqa: E402
+from rcm_mc.ui.deal_library_page import (  # noqa: E402
+    render_deal_library, render_sponsors_index,
+)
 from rcm_mc.portfolio.store import PortfolioStore  # noqa: E402
 
 _FIXTURE = _ROOT / "tests" / "fixtures" / "deal_library_capiq_sample.csv"
@@ -58,6 +60,30 @@ class TestSponsorIntel(unittest.TestCase):
         roll = dl.sponsor_rollup(self.store, "Nonexistent Fund XYZ")
         self.assertEqual(roll["n_total"], 0)
         self.assertEqual(roll["top_states"], [])
+
+    def test_sponsor_count_and_search(self):
+        self.assertGreaterEqual(dl.sponsor_count(self.store), 2)
+        self.assertEqual(dl.sponsor_count(self.store, name_like="Synthetic"), 1)
+
+    def test_sponsor_index_pagination(self):
+        page1 = dl.sponsor_index(self.store, limit=1, offset=0)
+        page2 = dl.sponsor_index(self.store, limit=1, offset=1)
+        self.assertEqual(len(page1), 1)
+        self.assertNotEqual(page1[0]["sponsor"], page2[0]["sponsor"] if page2 else None)
+
+    def test_sponsors_index_page(self):
+        html = render_sponsors_index(self.store, {})
+        self.assertIn("SPONSOR ACTIVITY INDEX", html)
+        self.assertIn("/deal-library?sponsor=", html)   # each sponsor links to filtered view
+        self.assertIn("sponsors · showing", html)         # pager
+        # search
+        html2 = render_sponsors_index(self.store, {"q": "Synthetic"})
+        self.assertIn("Synthetic Capital", html2)
+
+    def test_sponsors_index_empty_state(self):
+        from rcm_mc.portfolio.store import PortfolioStore
+        empty = PortfolioStore(os.path.join(self.tmp.name, "empty.db"))
+        self.assertIn("No sponsors yet", render_sponsors_index(empty, {}))
 
     def test_page_renders_rollup_and_clickable_sponsors(self):
         # Unfiltered: Top sponsors link to the filtered view.

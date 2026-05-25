@@ -187,15 +187,39 @@ def query(
 # The dense, validated dimension of this dataset: ~99% of rows carry a parsed
 # sponsor, across ~4,900 distinct sponsors (a mix of PE, VC/accelerators, and
 # healthcare REITs — the broad "sponsor-backed" universe, not PE-buyout only).
-def sponsor_index(store: Any, *, limit: int = 100, min_companies: int = 1
+def sponsor_count(store: Any, *, min_companies: int = 1,
+                  name_like: Optional[str] = None) -> int:
+    """Number of distinct sponsors matching the filters (for pagination)."""
+    _ensure_table(store)
+    where = ["sponsor_owner IS NOT NULL", "sponsor_owner != ''"]
+    params: List[Any] = []
+    if name_like:
+        where.append("sponsor_owner LIKE ?")
+        params.append(f"%{name_like}%")
+    with store.connect() as con:
+        rows = con.execute(
+            f"SELECT sponsor_owner FROM deal_library_companies "
+            f"WHERE {' AND '.join(where)} GROUP BY sponsor_owner "
+            f"HAVING COUNT(*) >= ?", params + [int(min_companies)]).fetchall()
+    return len(rows)
+
+
+def sponsor_index(store: Any, *, limit: int = 100, offset: int = 0,
+                  min_companies: int = 1, name_like: Optional[str] = None
                   ) -> List[Dict[str, Any]]:
     """Sponsors ranked by # of healthcare companies backed, with the
     current/prior split (read from the raw ownership_status). Useful as a
-    sourcing / sponsor-activity map."""
+    sourcing / sponsor-activity map. ``name_like`` does a substring search;
+    ``offset``/``limit`` paginate."""
     _ensure_table(store)
+    where = ["sponsor_owner IS NOT NULL", "sponsor_owner != ''"]
+    params: List[Any] = []
+    if name_like:
+        where.append("sponsor_owner LIKE ?")
+        params.append(f"%{name_like}%")
     with store.connect() as con:
         rows = con.execute(
-            """
+            f"""
             SELECT sponsor_owner,
                    COUNT(*) AS n_total,
                    SUM(CASE WHEN lower(ownership_status) LIKE '%current sponsor%'
@@ -203,13 +227,13 @@ def sponsor_index(store: Any, *, limit: int = 100, min_companies: int = 1
                    SUM(CASE WHEN lower(ownership_status) LIKE '%prior sponsor%'
                             THEN 1 ELSE 0 END) AS n_prior
             FROM deal_library_companies
-            WHERE sponsor_owner IS NOT NULL AND sponsor_owner != ''
+            WHERE {' AND '.join(where)}
             GROUP BY sponsor_owner
             HAVING n_total >= ?
             ORDER BY n_total DESC, sponsor_owner ASC
-            LIMIT ?
+            LIMIT ? OFFSET ?
             """,
-            (int(min_companies), int(limit)),
+            params + [int(min_companies), max(1, min(int(limit), 500)), max(0, int(offset))],
         ).fetchall()
     return [{"sponsor": r[0], "n_total": r[1], "n_current": r[2],
              "n_prior": r[3]} for r in rows]
