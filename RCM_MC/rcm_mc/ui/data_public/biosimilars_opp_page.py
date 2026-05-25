@@ -162,6 +162,63 @@ def _dynamics_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _partd_biologic_panel() -> str:
+    """Real CMS Part D drug-spend / price-inflation anchor — biosimilars exist
+    to relieve the cost of high-spend, price-inflating biologics, which Part D
+    measures directly. National spend + the fastest-inflating high-spend drugs
+    are real public CMS data; the biosimilar-savings model below is illustrative."""
+    from rcm_mc.data import partd_drug as _pd
+    summ = _pd.partd_drug_summary()
+    if not summ.get("total_spending_2023"):
+        return ""
+    infl = _pd.top_drugs_by_price_inflation(6)
+    border = P["border"]; tprim = P["text"]; tdim = P["text_dim"]; acc = P["accent"]
+    mx = max((float(t.get("price_cagr_19_23") or 0) for t in infl), default=1.0) or 1.0
+    rows = "".join(
+        f'<tr>'
+        f'<td style="padding:3px 8px;font-family:JetBrains Mono,monospace;font-size:11px;color:{tprim}">{_html.escape(str(t.get("brand","")))}</td>'
+        f'<td style="padding:3px 8px;width:42%">'
+        f'<svg width="100%" height="9" preserveAspectRatio="none" viewBox="0 0 100 9">'
+        f'<rect x="0" y="1" width="{int(max(0,float(t.get("price_cagr_19_23") or 0))/mx*100)}" height="7" fill="{acc}" opacity="0.75"/></svg></td>'
+        f'<td style="padding:3px 8px;text-align:right;font-family:JetBrains Mono,monospace;font-size:11px;'
+        f'font-variant-numeric:tabular-nums;color:{tprim}">{float(t.get("price_cagr_19_23") or 0)*100:+.0f}%/yr</td>'
+        f'</tr>'
+        for t in infl
+    )
+    total_b = float(summ.get("total_spending_2023", 0)) / 1e9
+    med_cagr = float(summ.get("median_price_cagr_19_23") or 0) * 100
+    n_infl = int(summ.get("drugs_price_up_over_10pct_cagr", 0))
+    yr = summ.get("data_year", "")
+    return f'''
+<div style="background:{P["panel"]};border:1px solid {border};border-left:3px solid {acc};
+  padding:14px 16px;margin-bottom:16px">
+  <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{tdim};
+    text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">
+    Real CMS Part D drug-price inflation &mdash; the cost biosimilars target
+    <span style="color:{acc};font-weight:600"> · LIVE</span>
+  </div>
+  <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start">
+    <div style="white-space:nowrap">
+      <div style="font-family:JetBrains Mono,monospace;font-size:20px;color:{tprim};
+        font-variant-numeric:tabular-nums">${total_b:,.0f}B</div>
+      <div style="font-size:10px;color:{tdim};margin-bottom:8px">Part D drug spend, {yr}</div>
+      <div style="font-family:JetBrains Mono,monospace;font-size:13px;color:{tprim};
+        font-variant-numeric:tabular-nums">{n_infl:,}</div>
+      <div style="font-size:10px;color:{tdim}">drugs inflating &gt;10%/yr<br>(median {med_cagr:.1f}%)</div>
+    </div>
+    <div>
+      <div style="font-size:9px;color:{P["text_faint"]};margin-bottom:4px">FASTEST PRICE-INFLATING HIGH-SPEND DRUGS ('19–'23 CAGR)</div>
+      <table style="width:100%;border-collapse:collapse">{rows}</table>
+    </div>
+  </div>
+  <div style="margin-top:8px;font-size:10px;color:{P["text_faint"]}">
+    CMS Medicare Part D Spending by Drug ({yr}). Real drug-price inflation &mdash; the
+    pressure biosimilars relieve. NOT a biosimilar-specific dataset and NOT this deal's
+    formulary; the biosimilar adoption/savings figures below are illustrative.
+  </div>
+</div>'''
+
+
 def render_biosimilars(params: dict = None) -> str:
     from rcm_mc.data_public.biosimilars_opp import compute_biosimilars_opp
     r = compute_biosimilars_opp()
@@ -218,6 +275,7 @@ def render_biosimilars(params: dict = None) -> str:
     )
     body = page_title + ck_illustrative_note("figures") + bio_explainer + f"""
 <div class="ck-page-wrap">
+  {_partd_biologic_panel()}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">LoE Wave Schedule &amp; Adoption Curves</div>{w_chart}{w_tbl}</div>

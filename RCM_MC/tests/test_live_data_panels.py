@@ -51,6 +51,8 @@ _CASES = [
      {}, "Real CMS Part D drug spend", "/tracker-340b"),
     ("rcm_mc.ui.data_public.trial_site_econ_page", "render_trial_site_econ",
      {}, "Real ClinicalTrials.gov landscape", "/trial-site-econ"),
+    ("rcm_mc.ui.data_public.biosimilars_opp_page", "render_biosimilars",
+     {}, "Real CMS Part D drug-price inflation", "/biosimilars"),
 ]
 
 

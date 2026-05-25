@@ -2,7 +2,7 @@
   "summary": {
     "pages": 173,
     "with_disclosure": 168,
-    "with_real_loader": 40,
+    "with_real_loader": 41,
     "flagged_no_disclosure": 0,
     "by_tier": {
       "green": 27,
@@ -77,7 +77,7 @@
       "file": "biosimilars_opp_page.py",
       "tier": "green",
       "has_disclosure": true,
-      "imports_real_loader": false,
+      "imports_real_loader": true,
       "uses_seed_corpus": true,
       "renders_data": true,
       "flag": ""
