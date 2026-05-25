@@ -4010,6 +4010,158 @@ _MANUAL: List[PageContext] = [
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.MIXED,
     ),
+    # ── Diligence calculators converted with real CMS/FDA/CIVHC anchors ──
+    _ctx(
+        "/physician-productivity", "Physician Productivity",
+        short_description="An input-driven productivity calculator (wRVU / panel "
+        "vs specialty benchmark ranges), anchored to real CMS MIPS physician-"
+        "quality and HRSA workforce-shortage context.",
+        primary_purpose="Gauge a physician group's productivity against "
+        "representative benchmarks, framed by real physician-quality and "
+        "shortage data.",
+        data_sources=["Representative MGMA/AMGA-style benchmark ranges "
+                      "(illustrative); real CMS MIPS distribution; real HRSA HPSA."],
+        interpretation_guidance=[
+            "Computes off YOUR inputs; benchmark ranges are illustrative.",
+            "MIPS/HRSA panels are national/market context — NOT this group's "
+            "providers and NOT a payment figure.",
+        ],
+        limitations=["Benchmark ranges are representative, not licensed MGMA."],
+        related_routes=["/quality-scorecard", "/clinical-outcomes", "/market-intel/geo"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/provider-retention", "Provider Retention",
+        short_description="A retention/churn calculator on your inputs, anchored "
+        "to the real CMS Care Compare nurse-staff turnover benchmark.",
+        primary_purpose="Frame provider/staff churn risk and cost, against a "
+        "real sector turnover benchmark.",
+        data_sources=["Representative role-level churn assumptions (illustrative) "
+                      "+ real CMS nurse-staff turnover (median ~45%)."],
+        interpretation_guidance=[
+            "Calculator on your inputs; the at-risk watchlist is illustrative "
+            "scaffold — connect an HR roster for real individuals.",
+            "CMS turnover is a sector benchmark, NOT this deal's roster.",
+        ],
+        limitations=["Deal-specific retention requires the target's HR roster."],
+        related_routes=["/physician-productivity", "/market-intel/geo"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/quality-scorecard", "Quality Scorecard",
+        short_description="A quality-adjusted value calculator on your inputs, "
+        "anchored to a sector-aware real CMS benchmark (MIPS for physician "
+        "sectors, Care Compare 5-star for nursing).",
+        primary_purpose="Frame quality posture and EV uplift against a real "
+        "CMS quality distribution.",
+        data_sources=["Illustrative quality model + real CMS MIPS (physician) / "
+                      "Care Compare 5-star (nursing) distribution."],
+        interpretation_guidance=[
+            "Calculator on your inputs; benchmark is real CMS sector data, NOT "
+            "this deal's score.",
+        ],
+        limitations=["Benchmark picked by sector; deal-specific quality needs "
+                     "the target's measure data."],
+        related_routes=["/clinical-outcomes", "/physician-productivity"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/clinical-outcomes", "Clinical Outcomes",
+        short_description="An outcomes/EV calculator on your inputs, anchored to "
+        "the real CMS Care Compare quality-measure distribution.",
+        primary_purpose="Frame clinical-quality value against a real CMS "
+        "quality-measure benchmark.",
+        data_sources=["Illustrative outcomes model + real CMS quality-measure "
+                      "rating distribution."],
+        interpretation_guidance=["Calculator on your inputs; CMS benchmark is "
+                                "sector context, not this deal's outcomes."],
+        limitations=["Deal-specific outcomes need the target's measure data."],
+        related_routes=["/quality-scorecard", "/physician-productivity"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/regulatory-risk", "Regulatory Risk",
+        short_description="A regulatory-risk calculator on your inputs; for "
+        "nursing/post-acute it shows the real CMS enforcement base rate.",
+        primary_purpose="Frame regulatory exposure, anchored (for SNF) to real "
+        "CMS enforcement data.",
+        data_sources=["Illustrative risk model + real CMS SNF enforcement "
+                      "(45% fined, $467M total)."],
+        interpretation_guidance=["Calculator on your inputs; CMS enforcement is "
+                                "a sector base rate, not this deal's exposure."],
+        limitations=["Enforcement anchor is nursing-sector only."],
+        related_routes=["/market-intel/geo"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/supply-chain", "Supply Chain",
+        short_description="A supply-savings calculator on your inputs, anchored "
+        "to the real FDA drug-shortage signal.",
+        primary_purpose="Frame supply-chain savings/risk against real active "
+        "drug shortages.",
+        data_sources=["Illustrative savings model + real FDA drug shortages "
+                      "(1,156 active across 58 categories)."],
+        interpretation_guidance=["Calculator on your inputs; FDA shortage is a "
+                                "national product-level signal, not this deal's book."],
+        limitations=["Shortage data is product-level, not provider-specific."],
+        related_routes=["/drug-shortage", "/market-intel/geo"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/payer-shift", "Payer Shift",
+        short_description="A payer-mix economics calculator on your inputs, "
+        "anchored to the real CIVHC Colorado payer-cost trend.",
+        primary_purpose="Frame payer-mix shift economics against a real "
+        "all-payer cost trend.",
+        data_sources=["Illustrative shift model + real CIVHC CO payer-cost "
+                      "trend by payer type."],
+        interpretation_guidance=["Calculator on your inputs; CIVHC is Colorado "
+                                "all-payer market context, NOT this deal's mix."],
+        limitations=["CIVHC anchor is Colorado-only."],
+        related_routes=["/payer-rate-trends", "/cost-structure"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/ma-contracts", "MA Contracts",
+        short_description="An MA-contract economics calculator on your inputs, "
+        "anchored to the real CMS MA enrollment market size.",
+        primary_purpose="Frame MA contract economics against the real MA market.",
+        data_sources=["Illustrative PMPM/risk model + real CMS MA Geographic "
+                      "Variation enrollment (29.7M across 53 states)."],
+        interpretation_guidance=["Calculator on your inputs; MA enrollment is "
+                                "market context, not this deal's contract."],
+        limitations=["No Star Ratings / risk scores in the anchor (enrollment "
+                     "+ demographics only)."],
+        related_routes=["/risk-adjustment", "/market-intel/geo"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/risk-adjustment", "Risk Adjustment",
+        short_description="An illustrative RAF model (fixed, not input-driven) "
+        "with a real CMS MA population-context panel (dual-eligible/age mix).",
+        primary_purpose="Frame risk-adjustment intensity, with the real "
+        "population drivers shown as context.",
+        data_sources=["Illustrative RAF model + real CMS MA dual-eligible / age "
+                      "population mix by state."],
+        interpretation_guidance=[
+            "The RAF figures are illustrative (fixed model); the MA population "
+            "panel is real CMS context — NOT a Star Rating, NOT a risk score, "
+            "NOT this deal.",
+        ],
+        limitations=["RAF model is illustrative; real coding intensity needs "
+                     "the target's encounter data."],
+        related_routes=["/ma-contracts", "/market-intel/geo"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
 ]
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
