@@ -311,6 +311,11 @@ def render_quality_scorecard(params: dict = None) -> str:
     except Exception:
         cms_panel = ""
 
+    # Match the benchmark to the selected sector: SNF Care Compare for
+    # nursing/post-acute, otherwise the CMS MIPS physician-quality distribution.
+    from rcm_mc.ui.data_public._benchmark_panels import sector_quality_panel
+    cms_panel = sector_quality_panel(sector, P, snf_panel=cms_panel)
+
     body = f"""
 <div class="ck-page-wrap">
 
