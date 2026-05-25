@@ -4301,18 +4301,8 @@ _MANUAL: List[PageContext] = [
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
-    _ctx(
-        "/portfolio/monitor", "Portfolio Monitor",
-        short_description="Live portfolio monitoring — health, covenants, "
-        "concerning deals across the book.",
-        primary_purpose="Monitor the portfolio's current state and risk posture.",
-        data_sources=["Live deal store roll-ups."],
-        interpretation_guidance=["Portfolio-level roll-ups of YOUR tracked "
-                                "deals; not a single deal's IC case."],
-        related_routes=["/portfolio", "/app", "/escalations"],
-        source_confidence=SourceConfidence.DOCUMENTED,
-        data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
-    ),
+    # (/portfolio/monitor already documented earlier with metric/data-source
+    #  links — no duplicate here.)
     # ── More live-deal-store workflow pages (Queue 6, batch 2) ──
     _ctx(
         "/cohorts", "Cohorts",
