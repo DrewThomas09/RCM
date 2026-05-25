@@ -7,10 +7,35 @@ audit work. Schedule next wakeup 180–300s while work remains.
 
 ## Current run
 - loop_start:   2026-05-25T18:30Z
-- last_tick:    2026-05-25T18:30Z
-- main_sha:     4c96e2ed
+- last_tick:    2026-05-25T19:25Z
+- main_sha:     6d2deaed
 - deploy:       healthy (/healthz 200)
 - blocked?:     no
+- status:       **TRUE IDLE on high-value work** (see determination below)
+
+## TRUE IDLE determination (2026-05-25T19:25Z)
+Across every loop axis, the high-value work is complete; what remains is
+low-value busywork or blocked-by-size/portal:
+- Open PRs to merge/fix: none in scope (only parked #579/#580).
+- Datasets to profile: feasible high-value ones onboarded; remainder
+  (Open Payments, NPPES, price-transparency) are large/separate-portal —
+  documented blockers, need a staged ingest or user go-ahead; group MIPS marginal.
+- Tools pages: audited + 100% disclosed (0 undisclosed data pages; regression-guarded).
+- Diligence pages: cleanly-anchorable calculators converted (12 RED→NAVY);
+  rest lack a real public anchor (need user/deal data).
+- Guide docs: all important analytic/data/LIVE pages documented; the ~83
+  remaining "gaps" are workflow/admin routes (/activity, /audit, /cohorts,
+  /dashboard, …) where inferred context is adequate — manual stubs = busywork.
+- Validators: page data-source audit + regression test + tier doc all current.
+- Market/Industry: built, enriched, cross-linked, Guide-documented.
+Therefore: scaling cadence back to a long heartbeat. Will resume active 180–300s
+cadence immediately on a new data drop, a new in-scope PR, a CI/deploy failure,
+or explicit user direction.
+
+## This run's merged PRs (#742–#751, all deployed, prod healthy)
+SNF CHOW · market profile KPIs · Hospital CHOW · integrity refresh · Guide ctx
+(market/industry) · deal-flow real consolidation · Guide ctx (9 Diligence) ·
+market opportunity ranking · industry→market cross-links · Guide ctx (3 LIVE).
 
 ## Open-PR inventory (Phase 1)
 | PR | Title | Class | Action |
