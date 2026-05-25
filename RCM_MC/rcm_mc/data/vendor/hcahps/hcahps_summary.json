@@ -1,0 +1,27 @@
+{
+  "dataset_id": "84jm-wiui",
+  "source": "CMS Care Compare \u2014 Patient survey (HCAHPS), State",
+  "extract_date": "2026-05-25",
+  "survey_period_end": "06/30/2025",
+  "states": 52,
+  "national_mean_pct": {
+    "overall_rating_9_10": 71.7,
+    "would_definitely_recommend": 70.9,
+    "nurse_comm_always": 79.9,
+    "doctor_comm_always": 80.1,
+    "staff_explained_meds_always": 62.0,
+    "given_discharge_info": 86.6,
+    "room_always_clean": 73.4,
+    "always_quiet_night": 59.9
+  },
+  "measures": {
+    "overall_rating_9_10": "H_HSP_RATING_9_10",
+    "would_definitely_recommend": "H_RECMND_DY",
+    "nurse_comm_always": "H_COMP_1_A_P",
+    "doctor_comm_always": "H_COMP_2_A_P",
+    "staff_explained_meds_always": "H_COMP_5_A_P",
+    "given_discharge_info": "H_COMP_6_Y_P",
+    "room_always_clean": "H_CLEAN_HSP_A_P",
+    "always_quiet_night": "H_QUIET_HSP_A_P"
+  }
+}
