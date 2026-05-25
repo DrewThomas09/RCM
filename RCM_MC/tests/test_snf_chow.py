@@ -47,8 +47,16 @@ class SnfChowTests(unittest.TestCase):
 
     def test_source_registered(self):
         src = c.chow_sources()
-        self.assertTrue(src)
-        self.assertEqual(src[0]["source_id"], "cms_snf_chow")
+        ids = {s["source_id"] for s in src}
+        self.assertIn("cms_snf_chow", ids)
+        self.assertIn("cms_hospital_chow", ids)
+
+    def test_hospital_chow_real(self):
+        s = c.hospital_chow_summary()
+        self.assertGreater(s["total_chows"], 100)       # ~755 hospital CHOWs
+        self.assertGreaterEqual(s["states"], 30)
+        self.assertGreater(c.total_hospital_chows_for_state("TX"), 0)
+        self.assertEqual(c.total_hospital_chows_for_state("ZZ"), 0)
 
 
 if __name__ == "__main__":

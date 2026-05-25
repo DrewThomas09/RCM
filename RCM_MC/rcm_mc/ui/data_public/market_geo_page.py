@@ -272,6 +272,10 @@ def render_market_geo_detail(fips: str, params: dict = None) -> str:
                 sm = _chow.chow_summary()
                 kpis += ck_kpi_block("SNF Consolidation", f"{nc:,}",
                                      f'ownership changes {sm.get("year_min","")}–{sm.get("year_max","")} · CMS', "")
+            nh = _chow.total_hospital_chows_for_state(st_abbr)
+            if nh:
+                kpis += ck_kpi_block("Hospital Consolidation", f"{nh:,}",
+                                     "hospital ownership changes · CMS", "")
     except Exception:
         pass
     # Export-required variables for transparency

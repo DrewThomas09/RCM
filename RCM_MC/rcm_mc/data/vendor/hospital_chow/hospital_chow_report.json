@@ -1,0 +1,9 @@
+{
+  "snapshot_date": "2026-05-25",
+  "extract": "Hospital_CHOW_2026.04.01",
+  "total_chows": 755,
+  "states": 49,
+  "year_min": 2016,
+  "year_max": 2025,
+  "source": "CMS Hospital Change of Ownership (public); identifiers dropped"
+}
