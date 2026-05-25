@@ -21,9 +21,9 @@ from typing import Any, Dict, List, Optional
 _TEXT_COLS = [
     "company_id", "source_system", "source_batch_id", "source_file",
     "source_sheet", "source_row_id", "ticker", "company_name", "clean_name",
-    "industry", "ownership_status", "sponsor_owner", "company_status",
-    "website", "address", "geography", "state", "missing_fields",
-    "provenance_note",
+    "industry", "healthcare_vertical_est", "ownership_status", "sponsor_owner",
+    "company_status", "website", "address", "geography", "state",
+    "missing_fields", "provenance_note",
 ]
 _NUM_COLS = ["enterprise_value", "ebitda", "revenue", "market_cap",
              "employees", "amount_raised", "completeness_score"]
@@ -36,7 +36,7 @@ SORTABLE = {"company_name", "sponsor_owner", "industry", "state", "geography",
             "revenue", "ebitda", "enterprise_value", "amount_raised",
             "employees", "completeness_score", "company_status"}
 FILTERABLE = {"source_system", "state", "company_status", "sponsor_owner",
-              "industry", "geography"}
+              "industry", "geography", "healthcare_vertical_est"}
 
 
 def _ensure_table(store: Any) -> None:
@@ -48,6 +48,16 @@ def _ensure_table(store: Any) -> None:
     with store.connect() as con:
         con.execute(f"CREATE TABLE IF NOT EXISTS deal_library_companies (\n"
                     f"  {cols_sql},\n  PRIMARY KEY (company_id)\n)")
+        # Lightweight additive migration BEFORE indexing: a table created by an
+        # earlier schema is missing newer columns (CREATE TABLE IF NOT EXISTS
+        # won't alter it), and the indexes below reference some of them.
+        have = {r[1] for r in con.execute(
+            "PRAGMA table_info(deal_library_companies)").fetchall()}
+        for col in _ALL_COLS:
+            if col not in have:
+                kind = ("REAL" if col in _NUM_COLS
+                        else "INTEGER" if col in _INT_COLS else "TEXT")
+                con.execute(f"ALTER TABLE deal_library_companies ADD COLUMN {col} {kind}")
         con.execute("CREATE INDEX IF NOT EXISTS idx_dlc_sponsor "
                     "ON deal_library_companies(sponsor_owner)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_dlc_state "

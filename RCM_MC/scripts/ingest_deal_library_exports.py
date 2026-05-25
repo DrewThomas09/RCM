@@ -149,12 +149,54 @@ def parse_state(address: Optional[str]) -> Optional[str]:
 _CANONICAL_FIELDS = [
     "company_id", "source_system", "source_batch_id", "source_file",
     "source_sheet", "source_row_id", "ticker", "company_name", "clean_name",
-    "industry", "ownership_status", "sponsor_owner", "company_status",
-    "website", "address", "geography", "state",
+    "industry", "healthcare_vertical_est", "ownership_status", "sponsor_owner",
+    "company_status", "website", "address", "geography", "state",
     "enterprise_value", "ebitda", "revenue", "market_cap", "employees",
     "amount_raised", "missing_fields", "completeness_score",
     "duplicate_candidate", "provenance_note",
 ]
+
+# Heuristic vertical tag inferred from the COMPANY NAME (the CapIQ industry
+# field is one coarse value, so name keywords are the only available signal).
+# This is an ESTIMATE, never an observed fact: the column is suffixed `_est`,
+# unmatched names stay None (NOT a guessed bucket), and the UI labels it as a
+# name-based estimate with the unclassified share shown. First match wins.
+_VERTICAL_KEYWORDS = [
+    ("Dialysis/Renal", ("dialysis", "renal", "nephrol", "kidney")),
+    ("Dental", ("dental", "dentist", "orthodont", "oral surg")),
+    ("Home Health/Hospice", ("home health", "home care", "homecare", "hospice", "in-home")),
+    ("SNF/Senior", ("nursing", "skilled nursing", "assisted living", "senior living",
+                    "long-term care", "memory care")),
+    ("Behavioral", ("behavioral", "mental health", "psychiatr", "addiction",
+                    "substance", "counseling", "autism")),
+    ("Dermatology", ("dermatolog",)),
+    ("Ophthalmology/Optical", ("ophthalmol", "eye care", "optical", "optomet", "lasik")),
+    ("Veterinary", ("veterinar", "animal hospital")),
+    ("Pharmacy/Pharma", ("pharmac", "pharma", "therapeutics", "biotech", "bioscience")),
+    ("Dx/Labs", ("laborator", "diagnostic", "pathology", "imaging", "radiolog")),
+    ("Surgery/ASC", ("surgery", "surgical", "ambulatory surg")),
+    ("Physician/Clinic", ("physician", "medical group", "clinic", "family practice",
+                          "urgent care", "primary care", "medical center", "health center")),
+    ("Devices/Equipment", ("medical device", "medical equipment", "medtech", "implant")),
+    ("HCIT/Digital", ("software", "health it", "digital health", "telehealth",
+                      "analytics", "technolog")),
+    ("Fertility/Womens", ("fertility", "ivf", "obgyn", "ob/gyn", "maternity")),
+    ("Cardiology", ("cardio", "vascular")),
+    ("Oncology", ("oncolog", "cancer")),
+    ("Wellness/Therapy", ("wellness", "chiropract", "physical therapy")),
+]
+
+
+def infer_vertical(name: Optional[str]) -> Optional[str]:
+    """Best-effort healthcare vertical from the company name, or None when no
+    keyword matches (left unclassified — never guessed into a bucket)."""
+    s = (name or "").lower()
+    if not s:
+        return None
+    for vert, kws in _VERTICAL_KEYWORDS:
+        if any(k in s for k in kws):
+            return vert
+    return None
 
 _NUMERIC_FIELDS = {"enterprise_value", "ebitda", "revenue", "market_cap",
                    "amount_raised", "employees"}
@@ -184,6 +226,7 @@ def _row_to_record(
         "clean_name": clean,
         "ticker": norm_str(mapped.get("ticker")),
         "industry": norm_str(mapped.get("industry")),
+        "healthcare_vertical_est": infer_vertical(name),
         "ownership_status": norm_str(mapped.get("ownership_status")),
         "sponsor_owner": parse_sponsor(mapped.get("ownership_status")),
         "company_status": norm_str(mapped.get("company_status")),
