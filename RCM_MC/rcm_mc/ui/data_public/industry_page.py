@@ -226,6 +226,104 @@ def render_industry(slug: str, params: dict = None) -> str:
             source=attribution + " Non-verbatim PEdesk analysis; industry-level, "
                    "not provider-specific; forecasts are report-derived.",
             next_action="Use the Public Data Connections to confirm with CMS/HCRIS")
-        + f'<p style="margin:6px 0 16px">{_LICENSE_CHIP}</p>'
+        + f'<p style="margin:6px 0 16px">{_LICENSE_CHIP} '
+        + f'<a href="/industry/{_html.escape(slug)}/brief" style="margin-left:10px;'
+        + f'color:{P["accent"]};font-size:12px;font-weight:600;text-decoration:none">'
+        + f'Generate PEdesk brief &rarr;</a></p>'
         + kpi_block + def_panel + seg_panel + drv_panel + bm_panel + conn_panel + q_panel)
     return chartis_shell(body, r["title"], active_nav="/industry")
+
+
+# ── PEdesk industry brief builder — /industry/<slug>/brief ──────────────────
+# Composes PEdesk's OWN industry brief (non-verbatim analysis) by combining the
+# licensed-report-derived structured facts with PEdesk's real public-data
+# connections. NOT a copy of the report.
+def render_industry_brief(slug: str, params: dict = None) -> str:
+    r = _ii.report_by_slug(slug)
+    if not r:
+        body = ck_page_title("Brief not found", eyebrow="INDUSTRY BRIEF") + \
+            f'<p style="color:{P["text_dim"]}">No industry report for "{_html.escape(str(slug))}". ' \
+            f'<a href="/industry" style="color:{P["accent"]}">Industry Intelligence</a>.</p>'
+        return chartis_shell(body, "Industry Brief", active_nav="/industry")
+
+    iid = r["industry_id"]
+    metrics = _ii.load_industry_metrics(iid)
+    segs = _ii.load_industry_segments(iid)
+    drivers = _ii.load_industry_drivers(iid)
+    bms = _ii.load_industry_benchmarks(iid)
+    qs = _ii.load_industry_questions(iid)
+    conns = _CONNECTIONS.get(slug, [])
+    attribution = f'{_ii.ATTRIBUTION}, {r["report_title"]}, {r.get("publication_date","")}.'
+
+    sec = f"margin:0 0 18px"
+    h = f"font-size:12px;font-weight:700;letter-spacing:0.06em;color:{P['text']};text-transform:uppercase;margin:18px 0 6px;border-bottom:1px solid {P['border']};padding-bottom:4px"
+    dim = f"font-size:12px;color:{P['text_dim']};line-height:1.6;margin:0 0 8px"
+
+    def _m(name):
+        row = next((x for x in metrics if x["metric_name"] == name), None)
+        return _fmt_metric(row) if row else "—"
+
+    largest_cost = max(bms, key=lambda b: float(b.get("value") or 0), default=None)
+    top_seg = max(segs, key=lambda s: float(s.get("share") or 0), default=None)
+
+    parts = [f'<div style="{h}">1 · Industry snapshot</div>',
+             f'<p style="{dim}">Market revenue {_m("Revenue")} at a {_m("Profit Margin")} profit margin, '
+             f'with {_m("Employment")} employees across {_m("Establishments")} establishments '
+             f'(period per report). Figures are licensed-report-derived industry aggregates.</p>']
+
+    parts.append(f'<div style="{h}">2 · Market structure</div>')
+    parts.append(f'<p style="{dim}">{_html.escape(r.get("summary_nonverbatim","")[:300])} '
+                 f'Players: {_html.escape(", ".join(r.get("major_players", [])) or "see report")}.</p>')
+
+    if top_seg:
+        parts.append(f'<div style="{h}">3 · Demand & segment mix</div>')
+        parts.append(f'<p style="{dim}">Largest segment: <b>{_html.escape(top_seg["segment_name"])}</b> '
+                     f'(~{_html.escape(str(top_seg.get("share","")))}% of revenue). '
+                     f'{len(segs)} segments extracted.</p>')
+
+    if drivers:
+        dl = "".join(f'<li>{_html.escape(d["driver"])} · <span style="color:{P["text_dim"]}">{_html.escape(d.get("direction",""))}</span></li>'
+                     for d in drivers[:6])
+        parts.append(f'<div style="{h}">4 · Demand drivers & reimbursement pressure</div>')
+        parts.append(f'<ul style="{dim};padding-left:18px">{dl}</ul>')
+
+    if bms:
+        parts.append(f'<div style="{h}">5 · Financial benchmark view</div>')
+        lc = f'{_html.escape(largest_cost["benchmark_name"])} at {largest_cost.get("value")}% of revenue' if largest_cost else "see report"
+        parts.append(f'<p style="{dim}">Cost structure (industry, % of revenue): largest line is {lc}. '
+                     f'Profit margin {_m("Profit Margin")}. Benchmarks are industry vs sector.</p>')
+
+    if conns:
+        cl = "".join(f'<li>{_tag_chip(tag)} <a href="{href}" style="color:{P["accent"]};text-decoration:none">{_html.escape(label)}</a></li>'
+                     for label, href, tag in conns)
+        parts.append(f'<div style="{h}">6 · CMS / HCRIS validation layer (PEdesk value-add)</div>')
+        parts.append(f'<p style="{dim}">Confirm or challenge the report with real public/provider data:</p>')
+        parts.append(f'<ul style="{dim};padding-left:18px;line-height:1.9">{cl}</ul>')
+
+    if qs:
+        ql = "".join(f'<li>{_html.escape(q["question"])}</li>' for q in qs)
+        parts.append(f'<div style="{h}">7 · Diligence questions</div>')
+        parts.append(f'<ul style="{dim};padding-left:18px;line-height:1.7">{ql}</ul>')
+
+    parts.append(f'<div style="{h}">8 · Data gaps</div>')
+    parts.append(f'<p style="{dim}">Report-derived figures are industry-level. Deal-specific evidence '
+                 f'requires the target\'s own financials and the linked CMS/HCRIS/provider data above. '
+                 f'Forecasts are report-derived, not PEdesk predictions.</p>')
+
+    parts.append(f'<div style="{h}">9 · Sources</div>')
+    parts.append(f'<p style="{dim}">{_html.escape(attribution)} PEdesk public data: CMS / HCRIS / '
+                 f'CIVHC / FDA where linked. PEdesk analysis is non-verbatim.</p>')
+
+    body = (
+        ck_page_title(f'{r["title"]} — PEdesk Brief', eyebrow="INDUSTRY BRIEF",
+                      meta=f'NAICS {r.get("naics_code","")} · {r.get("publication_date","")} · '
+                           f'<a href="/industry/{_html.escape(slug)}" style="color:inherit">full dossier</a>')
+        + ck_source_purpose(
+            purpose="A PEdesk-generated industry brief: licensed industry "
+                    "intelligence synthesized with real public-data validation.",
+            universe="licensed-report-derived", confidence="derived",
+            source=attribution + " Non-verbatim PEdesk synthesis; industry-level, not provider-specific.",
+            next_action="Use the CMS/HCRIS validation layer to ground the thesis")
+        + f'<p style="margin:6px 0 16px">{_LICENSE_CHIP}</p>'
+        + f'<div style="{sec}">{"".join(parts)}</div>')
+    return chartis_shell(body, f'{r["title"]} Brief', active_nav="/industry")

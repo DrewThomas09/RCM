@@ -145,6 +145,17 @@ class IndustryRouteTests(unittest.TestCase):
         self.assertEqual(s, 200)
         self.assertIn("not found", b.lower())
 
+    def test_brief_builder_renders(self):
+        s, b = self._get("/industry/hospitals/brief")
+        self.assertEqual(s, 200)
+        self.assertIn("PEdesk Brief", b)
+        # The brief includes the CMS/HCRIS validation layer (value-add).
+        self.assertIn("/diligence/hcris-xray", b)
+        self.assertIn("Diligence questions", b)
+        s2, b2 = self._get("/industry/not-real/brief")
+        self.assertEqual(s2, 200)
+        self.assertIn("not found", b2.lower())
+
     def test_login_unaffected(self):
         s, _ = self._get("/login")
         self.assertIn(s, (200, 303, 302))
