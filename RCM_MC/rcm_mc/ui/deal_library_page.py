@@ -146,6 +146,17 @@ def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> 
                        sub="rest report no public revenue")
     )
 
+    # Provenance line from the sources table (if the operator loaded it).
+    srcs = dl.sources(store)
+    prov = ""
+    if srcs:
+        files = " · ".join(
+            f'{_html.escape(str(s.get("source_file") or "?"))} '
+            f'({int(s.get("row_count") or 0):,})' for s in srcs[:6])
+        prov = (f'<p style="font-family:var(--sc-mono);font-size:10px;'
+                f'color:{P["text_dim"]};margin:8px 0 0">Ingested from '
+                f'{len(srcs)} licensed export(s): {files}</p>')
+
     freq = ('<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:14px">'
             + _freq_table("Top sponsors", dl.top_values(store, "sponsor_owner", 10), "sponsor")
             + _freq_table("Top verticals", dl.top_values(store, "industry", 10))
@@ -235,6 +246,7 @@ def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> 
     body = (
         title + purpose_hdr + not_note
         + f'<div class="ck-kpi-grid" style="margin-top:14px">{kpis}</div>'
+        + prov
         + _missingness_strip(miss)
         + freq
         + form
