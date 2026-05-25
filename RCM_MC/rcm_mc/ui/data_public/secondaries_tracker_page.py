@@ -3,6 +3,13 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_value_anchor, ck_scatter
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
+
+_SECONDARIES_NEEDED = [
+    ("position", "fund / position"), ("nav", "NAV $"),
+    ("offer_price", "offer $"), ("discount_pct", "discount to NAV %"),
+    ("buyer", "buyer"), ("status", "status"),
+]
 
 
 def _transactions_scatter(items):
@@ -235,6 +242,10 @@ def render_secondaries_tracker(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
+  {data_required_panel(P, title="Secondaries Tracker", needed=_SECONDARIES_NEEDED,
+      template="secondaries_template.csv", request_from="Fund CFO / secondary advisor",
+      activates="offer-vs-NAV discount tracking, buyer pipeline",
+      guide_hint="What secondaries data do I need to upload?")}
   {ck_illustrative_note("figures")}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}

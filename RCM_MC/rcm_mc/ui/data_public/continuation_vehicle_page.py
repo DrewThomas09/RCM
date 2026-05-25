@@ -7,6 +7,13 @@ from __future__ import annotations
 import html as _html
 
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title, ck_illustrative_note, ck_value_anchor
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
+
+_CV_NEEDED = [
+    ("asset", "asset rolled into CV"), ("nav", "NAV $"),
+    ("rollover_pct", "existing-LP rollover %"), ("new_capital", "new capital $"),
+    ("terms", "CV terms"),
+]
 
 
 def _pricing_svg(pricing, current_nav: float) -> str:
@@ -339,6 +346,10 @@ def render_continuation_vehicle(params: dict = None) -> str:
 <div class="ck-page-wrap">
 
   {page_title}
+  {data_required_panel(P, title="Continuation Vehicle", needed=_CV_NEEDED,
+      template="continuation_vehicle_template.csv", request_from="Fund CFO / CV advisor",
+      activates="rollover-vs-new-capital mix, CV NAV and terms summary",
+      guide_hint="What continuation-vehicle data do I need to upload?")}
   {ck_illustrative_note("figures")}
 
   {form}

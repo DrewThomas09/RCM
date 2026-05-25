@@ -3,6 +3,13 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_value_anchor, ck_scatter
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
+
+_CAPEX_NEEDED = [
+    ("project", "capex project"), ("category", "maintenance / growth"),
+    ("budget", "budget $"), ("actual", "actual-to-date $"),
+    ("expected_roi_pct", "expected ROI %"), ("status", "status"),
+]
 
 
 def _projects_scatter(items):
@@ -279,7 +286,10 @@ def render_capex_budget(params: dict = None) -> str:
         delta=f"${r.total_ytd_spent_m:,.1f}M spent YTD · {r.weighted_avg_roi_pct * 100:.1f}% wtd ROI · {r.projects_at_risk} at risk",
         tone="teal",
     )
-    body = page_title + ck_illustrative_note("figures") + cx_explainer + f"""
+    body = page_title + data_required_panel(P, title="Capex Budget", needed=_CAPEX_NEEDED,
+        template="capex_budget_template.csv", request_from="Portfolio-company CFO / FP&A",
+        activates="budget-vs-actual, maintenance-vs-growth split, ROI ranking",
+        guide_hint="What capex data do I need to upload?") + ck_illustrative_note("figures") + cx_explainer + f"""
 <div class="ck-page-wrap">
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
