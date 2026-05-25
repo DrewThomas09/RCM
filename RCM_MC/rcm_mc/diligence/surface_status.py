@@ -119,6 +119,8 @@ _DATA_REQUIRED = frozenset({
     "/pmi-integration", "/pmi-playbook", "/sellside-process", "/diligence-vendors",
     "/vdr-tracker", "/vcp-tracker", "/zbb-tracker", "/platform-maturity",
     "/ai-operating-model", "/direct-lending",
+    # Batch 2 — RCM / revenue-cycle / risk (activate on claims/AR/risk-register)
+    "/revenue-leakage", "/rcm-red-flags", "/redflag-scanner", "/risk-matrix",
 })
 
 
@@ -147,10 +149,7 @@ _RED = frozenset({
     "/hcit-platform", "/insurance-tracker", "/rw-insurance",
     "/litigation", "/cyber-risk",
     "/clinical-ai",
-    "/redflag-scanner", "/rcm-red-flags",
     "/ma-star",
-    "/risk-matrix",
-    "/revenue-leakage",
     "/digital-front-door", "/direct-employer",
     "/tech-stack",
     "/medical-realestate", "/real-estate",

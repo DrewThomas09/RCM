@@ -7,6 +7,7 @@ from __future__ import annotations
 import html as _html
 
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_illustrative_note
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
 
 
 def _leakage_bars_svg(buckets) -> str:
@@ -305,6 +306,7 @@ def render_revenue_leakage(params: dict = None) -> str:
 <div class="ck-page-wrap">
 
   {page_title}
+  {data_required_panel(P, title="Revenue Leakage", needed=[("claim_id","claim id (de-identify)"),("denial_code","CARC/RARC denial code"),("billed","billed $"),("allowed","allowed $"),("payer","payer")], template="claims_denials_template.csv (+ ar_aging_template.csv, charge master, 835 remittance)", request_from="RCM / revenue-cycle lead", activates="denial-driven leakage quantification + underpayment detection", guide_hint="What claims/denial/AR data do I need to upload?")}
   {ck_illustrative_note("leakage figures")}
 
   {form}
