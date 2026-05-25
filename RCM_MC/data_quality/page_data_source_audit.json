@@ -2,13 +2,13 @@
   "summary": {
     "pages": 173,
     "with_disclosure": 168,
-    "with_real_loader": 34,
+    "with_real_loader": 35,
     "flagged_no_disclosure": 0,
     "by_tier": {
       "green": 27,
-      "navy": 64,
+      "navy": 65,
       "yellow": 37,
-      "red": 45
+      "red": 44
     }
   },
   "pages": [
@@ -45,9 +45,9 @@
     {
       "route": "/antitrust-screener",
       "file": "antitrust_screener_page.py",
-      "tier": "red",
+      "tier": "navy",
       "has_disclosure": true,
-      "imports_real_loader": false,
+      "imports_real_loader": true,
       "uses_seed_corpus": true,
       "renders_data": true,
       "flag": ""

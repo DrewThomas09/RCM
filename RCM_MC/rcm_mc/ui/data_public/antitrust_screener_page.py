@@ -190,6 +190,61 @@ def _remediations_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _chow_antitrust_panel() -> str:
+    """Real CMS change-of-ownership anchor — antitrust review IS consolidation
+    review, and CHOW is the observed consolidation it scrutinizes. National +
+    most-active states are real public CMS data; the HHI/HSR/overlap model
+    below is illustrative (computed off your deal-size input)."""
+    from rcm_mc.data import snf_chow as _c
+    snf = _c.chow_summary()
+    if not snf.get("total_chows"):
+        return ""
+    hosp = _c.hospital_chow_summary()
+    top = _c.top_chow_states(6)
+
+    border = P["border"]; tprim = P["text"]; tdim = P["text_dim"]; acc = P["accent"]
+    mx = max((int(r["chow_count"]) for r in top), default=1) or 1
+    rows = "".join(
+        f'<tr>'
+        f'<td style="padding:3px 8px;font-family:JetBrains Mono,monospace;font-size:11px;color:{tprim}">{_html.escape(str(r["state"]))}</td>'
+        f'<td style="padding:3px 8px;width:50%">'
+        f'<svg width="100%" height="9" preserveAspectRatio="none" viewBox="0 0 100 9">'
+        f'<rect x="0" y="1" width="{int(int(r["chow_count"])/mx*100)}" height="7" fill="{acc}" opacity="0.75"/></svg></td>'
+        f'<td style="padding:3px 8px;text-align:right;font-family:JetBrains Mono,monospace;font-size:11px;'
+        f'font-variant-numeric:tabular-nums;color:{tprim}">{int(r["chow_count"]):,}</td>'
+        f'</tr>'
+        for r in top
+    )
+    snf_n = int(snf.get("total_chows", 0)); hosp_n = int(hosp.get("total_chows", 0))
+    y0, y1 = snf.get("year_min"), snf.get("year_max")
+    return f'''
+<div style="background:{P["panel"]};border:1px solid {border};border-left:3px solid {acc};
+  padding:14px 16px;margin-bottom:16px">
+  <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{tdim};
+    text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">
+    Real CMS ownership-change activity &mdash; the consolidation antitrust scrutinizes
+    <span style="color:{acc};font-weight:600"> · LIVE</span>
+  </div>
+  <div style="display:grid;grid-template-columns:auto auto 1fr;gap:18px;align-items:start">
+    <div><div style="font-family:JetBrains Mono,monospace;font-size:18px;color:{tprim};
+      font-variant-numeric:tabular-nums">{snf_n:,}</div>
+      <div style="font-size:10px;color:{tdim}">SNF ownership changes<br>{y0}&ndash;{y1}</div></div>
+    <div><div style="font-family:JetBrains Mono,monospace;font-size:18px;color:{tprim};
+      font-variant-numeric:tabular-nums">{hosp_n:,}</div>
+      <div style="font-size:10px;color:{tdim}">Hospital ownership changes<br>{y0}&ndash;{y1}</div></div>
+    <div>
+      <div style="font-size:9px;color:{P["text_faint"]};margin-bottom:4px">MOST ACTIVE CONSOLIDATION STATES (SNF CHOW)</div>
+      <table style="width:100%;border-collapse:collapse">{rows}</table>
+    </div>
+  </div>
+  <div style="margin-top:8px;font-size:10px;color:{P["text_faint"]}">
+    CMS public ownership/CHOW files. Real consolidation activity &mdash; the serial-
+    acquisition theory FTC pursues post-USAP. The HHI / HSR / market-overlap figures
+    below are illustrative and computed off your deal-size input.
+  </div>
+</div>'''
+
+
 def render_antitrust_screener(params: dict = None) -> str:
     params = params or {}
 
@@ -266,6 +321,7 @@ def render_antitrust_screener(params: dict = None) -> str:
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
+  {_chow_antitrust_panel()}
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {score_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Screening Verdict</div>
     <div style="color:{score_c};font-weight:700;font-size:14px">Risk {r.overall_risk_score}/100 · Second Request probability {r.second_request_probability * 100:.0f}% · Recommended timeline {r.recommended_timeline_months} months</div>
