@@ -245,11 +245,46 @@ def render_supply_chain(params: dict = None) -> str:
         target=f"${r.total_supply_spend_mm:,.1f}M annual spend",
         tone="teal",
     )
+    # Real FDA drug-shortage benchmark — a live national supply-risk signal.
+    cms_panel = ""
+    try:
+        from rcm_mc.data import drug_shortage_data as _ds
+        _s = _ds.drug_shortage_summary()
+        _cats = _ds.shortages_by_category(current_only=True, limit=6)
+        if _s.get("current"):
+            _rows = "".join(
+                f'<tr><td style="padding:3px 10px">{_html.escape(str(c["category"])[:46])}</td>'
+                f'<td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums">{int(c["n"]):,}</td></tr>'
+                for c in _cats)
+            cms_panel = (
+                f'<div style="background:{panel};border:1px solid {border};'
+                f'border-left:3px solid {acc};padding:14px 16px;margin-bottom:16px">'
+                f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
+                f'text-transform:uppercase;color:{text_dim};margin-bottom:6px">'
+                f'Drug-shortage benchmark · LIVE (FDA / openFDA)</div>'
+                f'<p style="font-size:12px;color:{text_dim};margin:0 0 8px">'
+                f'<b style="color:{text}">{_s["current"]:,}</b> active national drug '
+                f'shortages across <b style="color:{text}">{_s["categories"]}</b> '
+                f'therapeutic categories — a real supply-risk signal for '
+                f'pharmacy-dependent operations.</p>'
+                f'<table style="border-collapse:collapse;font-family:\'JetBrains Mono\',monospace;font-size:11px">'
+                f'<thead><tr style="border-bottom:1px solid {border};color:{text_dim}">'
+                f'<th style="padding:3px 10px;text-align:left">Therapeutic category</th>'
+                f'<th style="padding:3px 10px;text-align:right">Active shortages</th></tr></thead>'
+                f'<tbody>{_rows}</tbody></table>'
+                f'<p style="font-size:11px;color:{text_dim};margin:8px 0 0">'
+                f'Real FDA shortage data (product-level, national) — <b>not</b> this '
+                f'deal’s supply book. The savings model below is illustrative, scaled '
+                f'by your inputs.</p></div>')
+    except Exception:
+        cms_panel = ""
+
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   {ck_illustrative_note("savings figures")}
   {lead_anchor}
+  {cms_panel}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">

@@ -5,12 +5,12 @@ Data-honesty status for every PEdesk surface. Source of truth: `rcm_mc/diligence
 | Tier | Circle | Meaning | Count |
 |---|---|---|---|
 | GREEN | 🟢 | Real CMS/public or your own deal/system data | 143 |
-| NAVY | 🔵 | Diligence calculator — computes off your inputs | 62 |
+| NAVY | 🔵 | Diligence calculator — computes off your inputs | 63 |
 | YELLOW | 🟡 | Realistic figures on the illustrative seed corpus | 56 |
-| RED | 🔴 | Entirely synthetic / hardcoded values | 72 |
+| RED | 🔴 | Entirely synthetic / hardcoded values | 71 |
 
 
-## RED 🔴 — entirely synthetic (highest priority to fix)  (72)
+## RED 🔴 — entirely synthetic (highest priority to fix)  (71)
 
 | Route | Status |
 |---|---|
@@ -74,7 +74,6 @@ Data-honesty status for every PEdesk surface. Source of truth: `rcm_mc/diligence
 | `/rw-insurance` | 🔴 Synthetic / hardcoded data |
 | `/secondaries-tracker` | 🔴 Synthetic / hardcoded data |
 | `/sellside-process` | 🔴 Synthetic / hardcoded data |
-| `/supply-chain` | 🔴 Synthetic / hardcoded data |
 | `/tech-stack` | 🔴 Synthetic / hardcoded data |
 | `/telehealth-econ` | 🔴 Synthetic / hardcoded data |
 | `/tracker-340b` | 🔴 Synthetic / hardcoded data |
@@ -148,7 +147,7 @@ Data-honesty status for every PEdesk surface. Source of truth: `rcm_mc/diligence
 | `/vintage-cohorts` | 🟡 Illustrative seed-corpus data |
 | `/vintage-perf` | 🟡 Illustrative seed-corpus data |
 
-## NAVY 🔵 — diligence calculator (computes off your inputs)  (62)
+## NAVY 🔵 — diligence calculator (computes off your inputs)  (63)
 
 | Route | Status |
 |---|---|
@@ -204,6 +203,7 @@ Data-honesty status for every PEdesk surface. Source of truth: `rcm_mc/diligence
 | `/rollup-economics` | 🔵 Diligence calculator (your inputs) |
 | `/scenario-mc` | 🔵 Diligence calculator (your inputs) |
 | `/scenarios` | 🔵 Diligence calculator (your inputs) |
+| `/supply-chain` | 🔵 Diligence calculator (your inputs) |
 | `/surrogate` | 🔵 Diligence calculator (your inputs) |
 | `/tax-credits` | 🔵 Diligence calculator (your inputs) |
 | `/tax-structure` | 🔵 Diligence calculator (your inputs) |
