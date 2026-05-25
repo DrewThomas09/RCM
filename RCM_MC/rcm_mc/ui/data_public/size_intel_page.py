@@ -106,7 +106,7 @@ def _ev_histogram(evs: List[float], width: int = 480, height: int = 90) -> str:
 
 
 def render_size_intel() -> str:
-    from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_kpi_block
+    from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_kpi_block, ck_illustrative_note
     from rcm_mc.data_public.size_analytics import compute_size_analytics
 
     corpus = _load_corpus()
@@ -215,7 +215,7 @@ def render_size_intel() -> str:
     )
 
     return chartis_shell(
-        body,
+        ck_illustrative_note("size figures (illustrative seed corpus)") + body,
         title="Size Intelligence",
         active_nav="/size-intel",
         subtitle=(

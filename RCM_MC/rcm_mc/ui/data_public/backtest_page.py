@@ -749,6 +749,7 @@ def _sector_rows(rows: List[Dict[str, Any]]) -> tuple:
 def render_backtest() -> str:
     from rcm_mc.ui._chartis_kit import (
         chartis_shell, ck_page_title, ck_paired_block, ck_section_header,
+        ck_illustrative_note,
     )
 
     deals = _load_corpus()
@@ -812,7 +813,7 @@ def render_backtest() -> str:
     )
 
     return chartis_shell(
-        body,
+        ck_illustrative_note("backtest figures (illustrative seed corpus)") + body,
         title="Model Calibration / Backtest",
         active_nav="/backtest",
         extra_css=_EXPLAINER_CSS,

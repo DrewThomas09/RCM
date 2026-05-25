@@ -5,20 +5,17 @@ analyzer pages that render figures with **no** data-source disclosure
 (no source/purpose header, illustrative banner, or DATA/EXPORT REQUIRED
 label). Cross-references the surface-status tier.
 
-- Pages: **173** · with disclosure: **138** · importing a real loader: **19** · **flagged (no disclosure): 35**
+- Pages: **173** · with disclosure: **144** · importing a real loader: **19** · **flagged (no disclosure): 29**
 - By tier: {'green': 27, 'navy': 50, 'yellow': 37, 'red': 59}
 
 ## Flagged — render data, disclose nothing (fix first)
 
 | Route | File | Tier | Real loader? | Flag |
 |---|---|---|---|---|
-| `/backtest` | backtest_page.py | yellow | no | NO_DISCLOSURE |
 | `/base-rates` | base_rates_page.py | yellow | no | NO_DISCLOSURE |
 | `/cms-data-browser` | cms_data_browser_page.py | green | yes | NO_DISCLOSURE |
 | `/cms-sources` | cms_sources_page.py | green | no | NO_DISCLOSURE |
-| `/comparables` | comparables_page.py | yellow | no | NO_DISCLOSURE |
 | `/corpus-coverage` | corpus_coverage_page.py | yellow | no | NO_DISCLOSURE |
-| `/corpus-dashboard` | corpus_dashboard_page.py | yellow | no | NO_DISCLOSURE |
 | `/data-sources-admin` | data_sources_admin_page.py | green | no | NO_DISCLOSURE |
 | `/deal-flow-heatmap` | deal_flow_heatmap_page.py | yellow | no | NO_DISCLOSURE |
 | `/deal-search` | deal_search_page.py | green | no | NO_DISCLOSURE |
@@ -32,7 +29,6 @@ label). Cross-references the surface-status tier.
 | `/ic-memo` | ic_memo_page.py | green | no | NO_DISCLOSURE |
 | `/ic-memo-generator` | ic_memo_generator_page.py | green | no | NO_DISCLOSURE |
 | `/irr-dispersion` | irr_dispersion_page.py | yellow | no | NO_DISCLOSURE |
-| `/leverage-intel` | leverage_intel_page.py | yellow | no | NO_DISCLOSURE |
 | `/lp-dashboard` | lp_dashboard_page.py | yellow | no | NO_DISCLOSURE |
 | `/lp-reporting` | lp_reporting_page.py | yellow | no | NO_DISCLOSURE |
 | `/market-rates` | market_rates_page.py | yellow | no | NO_DISCLOSURE |
@@ -41,9 +37,7 @@ label). Cross-references the surface-status tier.
 | `/portfolio-sim` | portfolio_sim_page.py | navy | no | NO_DISCLOSURE |
 | `/return-attribution` | return_attribution_page.py | yellow | no | NO_DISCLOSURE |
 | `/scenario-mc` | scenario_mc_page.py | navy | no | NO_DISCLOSURE |
-| `/size-intel` | size_intel_page.py | yellow | no | NO_DISCLOSURE |
 | `/sponsor-heatmap` | sponsor_heatmap_page.py | yellow | no | NO_DISCLOSURE |
 | `/tax-structure-analyzer` | tax_structure_analyzer_page.py | navy | no | NO_DISCLOSURE |
 | `/underwriting` | underwriting_page.py | navy | no | NO_DISCLOSURE |
-| `/value-backtester` | value_backtester_page.py | yellow | no | NO_DISCLOSURE |
 | `/vintage-perf` | vintage_perf_page.py | yellow | no | NO_DISCLOSURE |

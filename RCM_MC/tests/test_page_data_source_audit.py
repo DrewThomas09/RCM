@@ -19,16 +19,16 @@ _ROOT = Path(__file__).resolve().parent.parent
 # This set may only SHRINK. Remove entries as pages get a source/illustrative/
 # data-required label. Do NOT add to it without an explicit honest reason.
 _KNOWN_BACKLOG = {
-    "/backtest", "/base-rates", "/cms-data-browser", "/cms-sources",
-    "/comparables", "/corpus-coverage", "/corpus-dashboard",
+    "/base-rates", "/cms-data-browser", "/cms-sources",
+    "/corpus-coverage",
     "/data-sources-admin", "/deal-flow-heatmap", "/deal-search",
     "/deal-sourcing", "/entry-multiple", "/exit-timing", "/fund-attribution",
     "/gp-benchmarking", "/hold-analysis", "/hold-optimizer", "/ic-memo",
-    "/ic-memo-generator", "/irr-dispersion", "/leverage-intel", "/lp-dashboard",
+    "/ic-memo-generator", "/irr-dispersion", "/lp-dashboard",
     "/lp-reporting", "/market-rates", "/module-index", "/portfolio-optimizer",
-    "/portfolio-sim", "/return-attribution", "/scenario-mc", "/size-intel",
+    "/portfolio-sim", "/return-attribution", "/scenario-mc",
     "/sponsor-heatmap", "/tax-structure-analyzer", "/underwriting",
-    "/value-backtester", "/vintage-perf",
+    "/vintage-perf",
 }
 
 
