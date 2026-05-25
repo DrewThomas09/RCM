@@ -418,7 +418,7 @@ def render_physician_productivity(params: dict = None) -> str:
         purpose="Gauge physician productivity (wRVU / panel) vs specialty "
                 "benchmarks — a calculator on the inputs you provide, plus real "
                 "CMS MIPS physician-quality and HRSA workforce-shortage context.",
-        universe="derived", confidence="derived",
+        universe="illustrative", confidence="derived",
         source="Representative MGMA/AMGA-style specialty benchmark ranges "
                "(illustrative, not licensed MGMA tables) + real CMS MIPS "
                "physician-quality distribution + real HRSA shortage context",
