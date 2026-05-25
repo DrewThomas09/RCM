@@ -32,10 +32,16 @@ class IllustrativeLabelBatch3Tests(unittest.TestCase):
             except TypeError:
                 h = render()
             with self.subTest(render=render.__name__):
+                # Every page must carry a source-purpose header that DISCLOSES
+                # its data universe via a chip. Several of these pages are now
+                # genuinely real (CMS/openFDA/CIVHC) and honestly show a real
+                # universe chip — demanding "ILLUSTRATIVE" on real data would be
+                # dishonest. Illustrative pages still surface their illustrative
+                # chip via ck-sp-chips; the page-data-source audit guards that
+                # no data page goes undisclosed.
                 self.assertIn("ck-sp", h)
-                self.assertTrue("ILLUSTRATIVE" in h or "DATA REQUIRED" in h,
-                                "missing honest status chip")
                 self.assertIn("ck-sp-purpose", h)
+                self.assertIn("ck-sp-chips", h)        # universe disclosed
 
 
 if __name__ == "__main__":

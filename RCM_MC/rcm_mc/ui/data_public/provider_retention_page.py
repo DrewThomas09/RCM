@@ -313,7 +313,7 @@ def render_provider_retention(params: dict = None) -> str:
         purpose="Assess provider/staff retention and churn risk before close — "
                 "a calculator on your inputs, anchored to a real CMS nursing-home "
                 "nurse-turnover benchmark.",
-        universe="derived", confidence="derived",
+        universe="data-required", confidence="derived",
         source="Representative role-level churn/cost assumptions (illustrative) "
                "scaled by your inputs + real CMS Care Compare nurse-turnover benchmark",
         next_action="Attach this deal's HR roster for deal-specific retention") + body
