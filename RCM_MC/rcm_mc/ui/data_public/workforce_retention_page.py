@@ -204,6 +204,63 @@ def _benefits_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _hpsa_retention_panel() -> str:
+    """Real HRSA shortage-area anchor — provider retention is structurally
+    harder where the labor market is already short. Designated HPSAs and
+    their shortage scores are real public HRSA data; the deal's turnover /
+    engagement / retention-program model below is illustrative."""
+    from rcm_mc.data import hrsa_data as _h
+    summ = _h.hpsa_summary()
+    if not summ.get("total_designated"):
+        return ""
+    top = _h.top_shortage_states(6)
+
+    border = P["border"]; tprim = P["text"]; tdim = P["text_dim"]; acc = P["accent"]
+    mx = max((int(t["designated_pc_hpsas"]) for t in top), default=1) or 1
+    rows = "".join(
+        f'<tr>'
+        f'<td style="padding:3px 8px;font-family:JetBrains Mono,monospace;font-size:11px;color:{tprim}">{_html.escape(str(t["state"]))}</td>'
+        f'<td style="padding:3px 8px;width:50%">'
+        f'<svg width="100%" height="9" preserveAspectRatio="none" viewBox="0 0 100 9">'
+        f'<rect x="0" y="1" width="{int(int(t["designated_pc_hpsas"])/mx*100)}" height="7" fill="{acc}" opacity="0.75"/></svg></td>'
+        f'<td style="padding:3px 8px;text-align:right;font-family:JetBrains Mono,monospace;font-size:11px;'
+        f'font-variant-numeric:tabular-nums;color:{tprim}">{int(t["designated_pc_hpsas"]):,}</td>'
+        f'</tr>'
+        for t in top
+    )
+    total = int(summ.get("total_designated", 0))
+    med = summ.get("national_median_score", "")
+    snap = summ.get("snapshot_date", "")
+    return f'''
+<div style="background:{P["panel"]};border:1px solid {border};border-left:3px solid {acc};
+  padding:14px 16px;margin-bottom:16px">
+  <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{tdim};
+    text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">
+    Real HRSA shortage areas &mdash; the retention-pressure backdrop
+    <span style="color:{acc};font-weight:600"> · LIVE</span>
+  </div>
+  <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start">
+    <div style="white-space:nowrap">
+      <div style="font-family:JetBrains Mono,monospace;font-size:20px;color:{tprim};
+        font-variant-numeric:tabular-nums">{total:,}</div>
+      <div style="font-size:10px;color:{tdim};margin-bottom:8px">designated primary-care<br>shortage areas (HPSAs)</div>
+      <div style="font-family:JetBrains Mono,monospace;font-size:13px;color:{tprim};
+        font-variant-numeric:tabular-nums">{med}</div>
+      <div style="font-size:10px;color:{tdim}">national median HPSA score</div>
+    </div>
+    <div>
+      <div style="font-size:9px;color:{P["text_faint"]};margin-bottom:4px">MOST PRIMARY-CARE SHORTAGE AREAS BY STATE</div>
+      <table style="width:100%;border-collapse:collapse">{rows}</table>
+    </div>
+  </div>
+  <div style="margin-top:8px;font-size:10px;color:{P["text_faint"]}">
+    HRSA HPSA designations{(" (" + str(snap) + ")") if snap else ""}. Real labor-shortage
+    signal &mdash; deeper shortage = harder retention. The deal's turnover, engagement,
+    and retention-program figures below are illustrative.
+  </div>
+</div>'''
+
+
 def render_workforce_retention(params: dict = None) -> str:
     from rcm_mc.data_public.workforce_retention import compute_workforce_retention
     r = compute_workforce_retention()
@@ -254,6 +311,7 @@ def render_workforce_retention(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   {ck_illustrative_note("figures")}
+  {_hpsa_retention_panel()}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">Turnover by Role (portfolio aggregate)</div>{r_chart}{r_scatter}{r_tbl}</div>

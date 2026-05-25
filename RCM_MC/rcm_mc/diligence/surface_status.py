@@ -79,7 +79,7 @@ _NAVY = frozenset({
     "/msa-concentration", "/payer-concentration", "/competitive-intel",
     "/gpo-supply", "/risk-adjustment", "/medicaid-unwinding",
     "/payer-contracts", "/health-equity", "/telehealth-econ",
-    "/patient-experience", "/locum-tracker",
+    "/patient-experience", "/locum-tracker", "/workforce-retention",
     "/lbo-stress", "/scenario-mc", "/scenarios", "/diligence/deal-mc",
     "/diligence/covenant-stress", "/diligence/bridge-audit", "/ebitda-bridge/",
     "/multiple-decomp", "/rollup-economics", "/cap-structure", "/entry-multiple",
@@ -137,7 +137,7 @@ _RED = frozenset({
     "/trial-site-econ", "/tech-stack",
     "/medical-realestate", "/real-estate", "/platform-maturity",
     "/ai-operating-model", "/cin-analyzer", "/fraud-detection",
-    "/workforce-retention", "/zbb-tracker", "/vcp-tracker",
+    "/zbb-tracker", "/vcp-tracker",
     "/vdr-tracker", "/diligence-vendors", "/diligence/risk-workbench",
     "/sellside-process", "/platform-maturity",
 })
