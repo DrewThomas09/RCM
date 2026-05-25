@@ -5,6 +5,16 @@ from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_fmt_moic, ck_kpi_block, ck_provenance_tooltip, ck_value_anchor,
     ck_illustrative_note,
 )
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
+
+_MGMT_FEE_NEEDED = [
+    ("fund", "fund name"),
+    ("period", "period (YYYY-Qn)"),
+    ("committed_capital", "committed capital $"),
+    ("fee_rate_pct", "management fee %"),
+    ("fee_basis", "committed / invested / NAV"),
+    ("offsets", "fee offsets $"),
+]
 
 
 # ---------------------------------------------------------------------------
@@ -346,7 +356,11 @@ def render_mgmt_fee_tracker(params: dict) -> str:
 '''
 
     return chartis_shell(
-        ck_illustrative_note("fee figures") + content,
+        data_required_panel(P, title="Management Fee Tracker", needed=_MGMT_FEE_NEEDED,
+            template="mgmt_fee_schedule_template.csv", request_from="Fund CFO / fund administrator",
+            activates="fee drag, offset tracking, committed-vs-invested basis comparison",
+            guide_hint="What management-fee data do I need to upload?")
+        + ck_illustrative_note("fee figures") + content,
         title="Management Fee Tracker",
         active_nav="/mgmt-fee-tracker",
         editorial_intro={

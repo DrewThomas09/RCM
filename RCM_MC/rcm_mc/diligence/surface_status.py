@@ -108,6 +108,9 @@ _NAVY = frozenset({
 #    "Data needed to activate this analysis" panel + import template + Guide
 #    context, and no fabricated values as real. ──────────────────────────────
 _DATA_REQUIRED = frozenset({
+    # Batch 1a — internal/fund pages (activate on uploaded fund/deal data)
+    "/mgmt-comp", "/partner-economics", "/mgmt-fee-tracker", "/key-person",
+    "/treasury", "/fundraising",
 })
 
 
@@ -132,9 +135,7 @@ _YELLOW = frozenset({
 
 # ── RED: entirely synthetic / hardcoded fabricated values ───────────────────
 _RED = frozenset({
-    "/mgmt-comp", "/partner-economics",
     "/diligence/physician-eu",
-    "/mgmt-fee-tracker", "/key-person",
     "/hcit-platform", "/insurance-tracker", "/rw-insurance",
     "/litigation", "/cyber-risk",
     "/clinical-ai",
@@ -142,7 +143,7 @@ _RED = frozenset({
     "/ma-star",
     "/risk-matrix",
     "/revenue-leakage",
-    "/capex-budget", "/treasury", "/fundraising", "/nav-loan-tracker",
+    "/capex-budget", "/nav-loan-tracker",
     "/secondaries-tracker", "/continuation-vehicle", "/coinvest-pipeline",
     "/operating-partners", "/board-governance", "/compliance-attestation",
     "/transition-services", "/pmi-integration", "/pmi-playbook",

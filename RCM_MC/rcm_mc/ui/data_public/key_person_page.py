@@ -8,6 +8,15 @@ from __future__ import annotations
 import html as _html
 
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_value_anchor
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
+
+_KEY_PERSON_NEEDED = [
+    ("name", "key person (PII)"),
+    ("role", "role"),
+    ("criticality", "high / med / low"),
+    ("successor", "named successor (if any)"),
+    ("retention_status", "retained / at-risk"),
+]
 
 
 def _concentration_gauge_svg(score: float) -> str:
@@ -314,6 +323,10 @@ def render_key_person(params: dict = None) -> str:
 <div class="ck-page-wrap">
 
   {page_title}
+  {data_required_panel(P, title="Key Person", needed=_KEY_PERSON_NEEDED,
+      template="key_person_template.csv", request_from="Management / HR",
+      activates="key-person dependency scoring + succession-gap risk",
+      guide_hint="What key-person data do I need to upload?")}
   {ck_illustrative_note("figures")}
 
   {form}

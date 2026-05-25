@@ -8,7 +8,7 @@
       "green": 27,
       "navy": 73,
       "yellow": 37,
-      "red": 36
+      "red": 32
     }
   },
   "pages": [
@@ -835,7 +835,7 @@
     {
       "route": "/key-person",
       "file": "key_person_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": false,
@@ -965,7 +965,7 @@
     {
       "route": "/mgmt-comp",
       "file": "mgmt_comp_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -975,7 +975,7 @@
     {
       "route": "/mgmt-fee-tracker",
       "file": "mgmt_fee_tracker_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": false,
@@ -1045,7 +1045,7 @@
     {
       "route": "/partner-economics",
       "file": "partner_economics_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,

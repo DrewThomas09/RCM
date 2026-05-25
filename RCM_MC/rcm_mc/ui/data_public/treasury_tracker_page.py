@@ -3,6 +3,16 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_value_anchor, ck_scatter
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
+
+_TREASURY_NEEDED = [
+    ("instrument", "facility / tranche name"),
+    ("balance", "outstanding $"),
+    ("rate_pct", "interest rate %"),
+    ("maturity", "maturity (YYYY-MM-DD)"),
+    ("covenant", "key covenant"),
+    ("headroom_pct", "covenant headroom %"),
+]
 
 
 def _accounts_scatter(items):
@@ -260,6 +270,10 @@ def render_treasury_tracker(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
+  {data_required_panel(P, title="Treasury", needed=_TREASURY_NEEDED,
+      template="treasury_debt_schedule_template.csv", request_from="Portfolio-company CFO",
+      activates="liquidity runway, covenant headroom, refinancing timeline",
+      guide_hint="What treasury / debt-schedule data do I need to upload?")}
   {ck_illustrative_note("figures")}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
