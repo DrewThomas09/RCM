@@ -53,6 +53,10 @@ _CASES = [
      {}, "Real ClinicalTrials.gov landscape", "/trial-site-econ"),
     ("rcm_mc.ui.data_public.biosimilars_opp_page", "render_biosimilars",
      {}, "Real CMS Part D drug-price inflation", "/biosimilars"),
+    ("rcm_mc.ui.data_public.esg_dashboard_page", "render_esg_dashboard",
+     {}, "Real CDC PLACES community health", "/esg-dashboard"),
+    ("rcm_mc.ui.data_public.esg_impact_page", "render_esg_impact",
+     {}, "Real CDC PLACES community health", "/esg-impact"),
 ]
 
 

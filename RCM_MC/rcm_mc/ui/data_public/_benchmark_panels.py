@@ -62,3 +62,41 @@ def sector_quality_panel(sector: str, P: Dict[str, Any], snf_panel: str = "") ->
     if _is_snf_sector(sector):
         return snf_panel
     return mips_quality_panel(P) or snf_panel
+
+
+def community_health_panel(P: Dict[str, Any]) -> str:
+    """Real CDC PLACES community-health panel — the population-health / social
+    ('S' in ESG) backdrop a healthcare deal operates within. Full-population
+    model estimates; not this deal's patients. Returns '' if data is absent."""
+    try:
+        from rcm_mc.data import cdc_places_agg as _places
+        s = _places.places_equity_summary()
+        nat = s.get("national_prevalence_pct") or {}
+        if not nat:
+            return ""
+        labels = _places.measure_labels()
+        border = P["border"]; tprim = P["text"]; tdim = P["text_dim"]
+        faint = P.get("text_faint", tdim); acc = P["accent"]
+        show = ["obesity", "diabetes", "depression", "uninsured_18_64", "food_insecurity"]
+        cards = "".join(
+            f'<div style="text-align:center;padding:0 8px">'
+            f'<div style="font-family:JetBrains Mono,monospace;font-size:17px;color:{tprim};'
+            f'font-variant-numeric:tabular-nums">{nat.get(k,0):.1f}%</div>'
+            f'<div style="font-size:9px;color:{tdim}">{_html.escape(labels.get(k,k))}</div></div>'
+            for k in show if nat.get(k) is not None
+        )
+        rel = s.get("release", ""); n_cty = int(s.get("counties", 0))
+        return (
+            f'<div style="background:{P["panel"]};border:1px solid {border};'
+            f'border-left:3px solid {acc};padding:14px 16px;margin-bottom:16px">'
+            f'<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{tdim};'
+            f'text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">'
+            f'Real CDC PLACES community health &mdash; the social / population-health context'
+            f'<span style="color:{acc};font-weight:600"> · LIVE</span></div>'
+            f'<div style="display:flex;gap:6px;justify-content:space-between">{cards}</div>'
+            f'<div style="margin-top:8px;font-size:10px;color:{faint}">'
+            f'CDC PLACES {rel} ({n_cty:,} counties, model-based full-population prevalence). '
+            f'Real community-health burden &mdash; the ESG "S" / population context, '
+            f'NOT this deal\'s patients; the ESG scores below are illustrative.</div></div>')
+    except Exception:
+        return ""

@@ -8,6 +8,7 @@ from __future__ import annotations
 import html as _html
 
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_source_purpose, ck_illustrative_note
+from rcm_mc.ui.data_public._benchmark_panels import community_health_panel
 
 
 def _esg_ring_svg(overall: float, e: float, s: float, g: float, tier: str) -> str:
@@ -285,6 +286,8 @@ def render_esg_dashboard(params: dict = None) -> str:
 
   {page_title}
   {ck_illustrative_note("ESG figures")}
+
+  {community_health_panel(P)}
 
   {form}
 
