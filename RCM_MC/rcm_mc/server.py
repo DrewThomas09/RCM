@@ -3912,6 +3912,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/industry":
             from .ui.data_public.industry_page import render_industry_index
             return self._send_html(render_industry_index())
+        if path.startswith("/industry/") and path.endswith("/brief"):
+            _slug = path[len("/industry/"):-len("/brief")].strip("/")
+            from .ui.data_public.industry_page import render_industry_brief
+            return self._send_html(render_industry_brief(_slug))
         if path.startswith("/industry/"):
             _slug = path[len("/industry/"):].strip("/").split("/", 1)[0]
             from .ui.data_public.industry_page import render_industry
