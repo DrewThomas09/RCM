@@ -1,0 +1,40 @@
+{
+  "chr_year": "2024",
+  "source": "County Health Rankings & Roadmaps (UW Population Health Institute)",
+  "underlying_sources": "U.S. Census Bureau \u2014 ACS / Population Estimates / SAHIE / SAIPE",
+  "note": "Census ACS demographics delivered via the keyless CHR analytic file; direct api.census.gov ACS now requires an API key.",
+  "extract_date": "2026-05-25",
+  "counties": 3143,
+  "states": 51,
+  "national": {
+    "population": 333266949,
+    "pct_age_65_plus": 0.1734,
+    "median_household_income": 78095.1823,
+    "child_poverty_rate": 0.1615,
+    "uninsured_rate": 0.1024,
+    "pct_white_nh": 0.5888,
+    "pct_black_nh": 0.1262,
+    "pct_hispanic": 0.191,
+    "pct_rural": 0.2012
+  },
+  "columns": {
+    "Population raw value": "population",
+    "% 65 and Older raw value": "pct_age_65_plus",
+    "Median Household Income raw value": "median_household_income",
+    "Children in Poverty raw value": "child_poverty_rate",
+    "Uninsured raw value": "uninsured_rate",
+    "% Non-Hispanic White raw value": "pct_white_nh",
+    "% Non-Hispanic Black raw value": "pct_black_nh",
+    "% Hispanic raw value": "pct_hispanic",
+    "% Rural raw value": "pct_rural"
+  },
+  "pct_keys_are_fractions": [
+    "child_poverty_rate",
+    "pct_age_65_plus",
+    "pct_black_nh",
+    "pct_hispanic",
+    "pct_rural",
+    "pct_white_nh",
+    "uninsured_rate"
+  ]
+}
