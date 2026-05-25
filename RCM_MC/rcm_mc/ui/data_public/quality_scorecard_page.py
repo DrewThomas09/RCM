@@ -270,6 +270,47 @@ def render_quality_scorecard(params: dict = None) -> str:
         tone="teal",
     )
 
+    # Real CMS 5-star quality benchmark (Care Compare nursing homes) — a real
+    # anchor for what the sector's published quality distribution looks like.
+    cms_panel = ""
+    try:
+        from rcm_mc.data import snf as _snf
+        _ov = _snf.snf_rating_distribution("overall_rating")
+        _st = _snf.snf_rating_distribution("staffing_rating")
+        if _ov.get("n"):
+            def _bars(dist):
+                cells = ""
+                for s in range(1, 6):
+                    pct = dist[str(s)]["pct"] or 0
+                    cells += (
+                        f'<div style="text-align:center;flex:1">'
+                        f'<div style="font-size:9px;color:{text_dim};font-family:JetBrains Mono,monospace">{pct:.0f}%</div>'
+                        f'<div style="height:{max(2, pct):.0f}px;background:{acc};opacity:0.8;margin:2px 3px 0"></div>'
+                        f'<div style="font-size:9px;color:{text_dim};margin-top:2px">{s}★</div></div>')
+                return f'<div style="display:flex;align-items:flex-end;height:64px">{cells}</div>'
+            cms_panel = (
+                f'<div style="background:{panel};border:1px solid {border};'
+                f'border-left:3px solid {acc};padding:14px 16px;margin-bottom:16px">'
+                f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
+                f'text-transform:uppercase;color:{text_dim};margin-bottom:6px">'
+                f'CMS 5-star quality benchmark · LIVE (Care Compare, nursing homes)</div>'
+                f'<p style="font-size:12px;color:{text_dim};margin:0 0 8px">'
+                f'Across <b style="color:{text}">{_ov["n"]:,}</b> Medicare/Medicaid '
+                f'nursing homes, mean overall rating is '
+                f'<b style="color:{text}">{_ov["mean"]:.2f}★</b> '
+                f'(staffing {_st["mean"]:.2f}★) — the real published quality '
+                f'distribution for this sector.</p>'
+                f'<div style="display:flex;gap:24px;flex-wrap:wrap">'
+                f'<div><div style="font-size:10px;color:{text_dim};margin-bottom:2px">Overall rating</div>{_bars(_ov["dist"])}</div>'
+                f'<div><div style="font-size:10px;color:{text_dim};margin-bottom:2px">Staffing rating</div>{_bars(_st["dist"])}</div>'
+                f'</div>'
+                f'<p style="font-size:11px;color:{text_dim};margin:8px 0 0">'
+                f'Real CMS facility-level quality ratings (nursing homes) — a sector '
+                f'benchmark, <b>not</b> this deal’s score. The scorecard below is an '
+                f'illustrative model scaled by your inputs.</p></div>')
+    except Exception:
+        cms_panel = ""
+
     body = f"""
 <div class="ck-page-wrap">
 
@@ -277,6 +318,7 @@ def render_quality_scorecard(params: dict = None) -> str:
 
   {ck_illustrative_note("quality figures")}
   {lead_anchor}
+  {cms_panel}
 
   {form}
 

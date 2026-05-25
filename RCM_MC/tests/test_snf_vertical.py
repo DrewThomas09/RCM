@@ -23,6 +23,7 @@ from rcm_mc.data.snf import (
     snf_providers_for_state,
     snf_turnover_summary,
     snf_turnover_by_state,
+    snf_rating_distribution,
 )
 from rcm_mc.server import build_server
 from rcm_mc.ui.snf_page import render_snf, render_snf_profile
@@ -96,6 +97,18 @@ class SnfTurnoverBenchmarkTests(unittest.TestCase):
         meds = [r["median_pct"] for r in rows]
         self.assertEqual(meds, sorted(meds, reverse=True))
         self.assertTrue(all(r["facilities_reporting"] >= 10 for r in rows))
+
+    def test_rating_distribution_is_real_and_complete(self):
+        r = snf_rating_distribution("overall_rating")
+        self.assertGreater(r["n"], 10000)
+        self.assertTrue(1.0 <= r["mean"] <= 5.0, r["mean"])
+        # All five star buckets present; percentages sum to ~100.
+        self.assertEqual(set(r["dist"]), {"1", "2", "3", "4", "5"})
+        self.assertEqual(sum(d["count"] for d in r["dist"].values()), r["n"])
+        self.assertAlmostEqual(sum(d["pct"] for d in r["dist"].values()), 100.0, delta=0.5)
+        # Unknown metric is rejected, not silently wrong.
+        with self.assertRaises(ValueError):
+            snf_rating_distribution("not_a_rating")
 
 
 class SnfScreenerTests(unittest.TestCase):

@@ -211,6 +211,37 @@ def snf_turnover_summary(state: str = "") -> Dict[str, object]:
     }
 
 
+def snf_rating_distribution(metric: str = "overall_rating") -> Dict[str, object]:
+    """Real CMS 5-star rating distribution for a nursing-home quality metric.
+
+    ``metric`` is one of the CMS star ratings (``overall_rating``,
+    ``health_inspection_rating``, ``staffing_rating``, ``qm_rating``). Returns
+    ``{metric, n, mean, dist}`` where ``dist`` maps each star value 1..5 to its
+    facility count and ``pct``. A real sector quality benchmark — facility-level
+    CMS Care Compare ratings, not a deal-specific score. Missing ratings are
+    excluded from the sample (never counted as 0 stars).
+    """
+    if metric not in _QUALITY_METRICS:
+        raise ValueError(f"unknown rating metric: {metric}")
+    quality = load_snf_quality()
+    counts: Dict[int, int] = {s: 0 for s in range(1, 6)}
+    total = 0.0
+    n = 0
+    for q in quality.values():
+        v = q.get(metric)
+        if v is None:
+            continue
+        star = int(round(float(v)))
+        if 1 <= star <= 5:
+            counts[star] += 1
+            total += star
+            n += 1
+    dist = {str(s): {"count": c, "pct": round(100 * c / n, 1) if n else None}
+            for s, c in counts.items()}
+    return {"metric": metric, "n": n,
+            "mean": round(total / n, 2) if n else None, "dist": dist}
+
+
 def snf_turnover_by_state(top_n: int = 10) -> List[Dict[str, object]]:
     """Per-state median nurse-staff turnover (real CMS), worst first.
 
