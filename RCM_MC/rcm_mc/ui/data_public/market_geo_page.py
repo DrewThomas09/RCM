@@ -253,6 +253,27 @@ def render_market_geo_detail(fips: str, params: dict = None) -> str:
         v = _mi.load_market_variable(vid) or {}
         kpis += ck_kpi_block(v.get("display_name", vid), _fmt(d.get("value"), d.get("unit", "")),
                              f'pctile {d.get("percentile_national","—")} · {d.get("year","")}', "")
+    # Real CMS provider-supply + consolidation KPIs (state-level).
+    st_abbr = _FIPS_ABBR.get(str(fips), "")
+    try:
+        from rcm_mc.data import provider_supply as _ps
+        if st_abbr:
+            tot = _ps.total_supply_for_state(st_abbr)
+            if tot:
+                kpis += ck_kpi_block("Provider Supply", f"{tot:,}",
+                                     f"{_ps.primary_care_supply_for_state(st_abbr):,} primary-care · CMS FFS", "")
+    except Exception:
+        pass
+    try:
+        from rcm_mc.data import snf_chow as _chow
+        if st_abbr:
+            nc = _chow.total_chows_for_state(st_abbr)
+            if nc:
+                sm = _chow.chow_summary()
+                kpis += ck_kpi_block("SNF Consolidation", f"{nc:,}",
+                                     f'ownership changes {sm.get("year_min","")}–{sm.get("year_max","")} · CMS', "")
+    except Exception:
+        pass
     # Export-required variables for transparency
     backlog = "".join(f'<li>{_html.escape(n)} <span style="color:{P["text_dim"]}">· EXPORT REQUIRED</span></li>'
                       for n, _ in _BACKLOG)
