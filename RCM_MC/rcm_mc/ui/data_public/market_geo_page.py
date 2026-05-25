@@ -59,6 +59,57 @@ def _fmt(value: Optional[float], unit: str) -> str:
     return f"{value:,.1f}"
 
 
+_ABBR_FIPS = {v: k for k, v in _FIPS_ABBR.items()}
+
+
+def market_context_panel(state, P_=None) -> str:
+    """Reusable 'Market context' panel for diligence/provider pages.
+
+    ``state`` may be a 2-letter abbreviation (e.g. 'CA') or a FIPS string. Shows
+    the real market variables on record for that state + the partial market
+    score, with an honest caveat. Returns '' if the geography isn't on record
+    (so callers can drop it in unconditionally). Variables not yet exported are
+    listed as EXPORT REQUIRED — never fabricated.
+    """
+    pal = P_ or P
+    s = str(state or "").strip().upper()
+    fips = _ABBR_FIPS.get(s, s if s.isdigit() else "")
+    if not fips:
+        return ""
+    prof = _mi.market_profile_for_geo(fips)
+    if not prof:
+        return ""
+    score = _mi.market_demand_score(fips)
+    rows = ""
+    for vid, d in prof["variables"].items():
+        v = _mi.load_market_variable(vid) or {}
+        rows += (f'<tr><td style="padding:3px 10px">{_html.escape(v.get("display_name", vid))}</td>'
+                 f'<td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums">{_fmt(d.get("value"), d.get("unit",""))}</td>'
+                 f'<td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums;color:{pal["text_dim"]}">{d.get("percentile_national","—")}</td></tr>')
+    miss = ", ".join(score.get("missing_export_required", [])) if score else ""
+    score_line = ""
+    if score and score.get("overall_market_score") is not None:
+        score_line = (f'<p style="font-size:11px;color:{pal["text_dim"]};margin:6px 0 0">'
+                      f'Market score <b style="color:{pal["text"]}">{score["overall_market_score"]:.0f}</b> '
+                      f'(partial — {miss or "none"} EXPORT REQUIRED).</p>')
+    return (
+        f'<div style="background:{pal["panel"]};border:1px solid {pal["border"]};'
+        f'border-left:3px solid {pal["accent"]};padding:14px 16px;margin-bottom:16px">'
+        f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
+        f'text-transform:uppercase;color:{pal["text_dim"]};margin-bottom:6px">'
+        f'Market context · {_html.escape(prof["geo_name"])} · SimplyAnalytics-derived</div>'
+        f'<table style="border-collapse:collapse;font-family:\'JetBrains Mono\',monospace;font-size:11px;width:100%;max-width:420px">'
+        f'<thead><tr style="border-bottom:1px solid {pal["border"]};color:{pal["text_dim"]}">'
+        f'<th style="padding:3px 10px;text-align:left">Variable</th>'
+        f'<th style="padding:3px 10px;text-align:right">Value</th>'
+        f'<th style="padding:3px 10px;text-align:right">Pctile</th></tr></thead>'
+        f'<tbody>{rows}</tbody></table>{score_line}'
+        f'<p style="font-size:11px;color:{pal["text_dim"]};margin:6px 0 0">'
+        f'Market/area context — <b>not</b> provider-specific. Combine with CMS/HCRIS/'
+        f'provider data before a decision. <a href="/market-intel/geo/{_html.escape(fips)}" '
+        f'style="color:{pal["accent"]}">Full market profile &rarr;</a></p></div>')
+
+
 def _default_variable() -> Optional[dict]:
     vs = _mi.load_market_variables()
     return vs[0] if vs else None
