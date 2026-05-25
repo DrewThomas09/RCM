@@ -103,6 +103,20 @@ guarded by a regression test with an EMPTY backlog.
 #748 Guide ctx (9 converted Diligence) · #749 market opportunity ranking ·
 (this) industry→market cross-links + dataset-feasibility findings.
 
+## Session 2026-05-25 PRODUCT-READINESS mode (PRs #801–#812; RED 43→1)
+User: switch from public-data conversion to product-readiness — convert
+anchorless RED pages to honest DATA REQUIRED states (not fabricated anchors).
+Delivered: new `data_required` surface tier (🟣) + shared `data_required_panel`
+(needed fields + import template + request-from + once-activated; no fake
+values) → `docs/reports/RED_PAGE_ACTIVATION_PLAN.md` (43 routes triaged) → 35
+schema-only import templates in `docs/import_templates/` → 42 pages converted
+RED→DATA REQUIRED (batches 1a/1b/1c/2/3/4) → 42 DOCUMENTED Guide contexts
+(what-to-upload/who-to-ask; Guide DOCUMENTED 107→149) → panel template links to
+`/import`. Validators: activation-plan, import-templates, panel-presence,
+guide-context. Only `/ma-star` stays RED (DEFERRED WITH REASON — CMS Star
+Ratings is zip-portal only; page carries a "REAL DATA DEFERRED" note).
+**RED 43→1, DATA REQUIRED 0→42.** All merged & deployed, prod healthy.
+
 ## Session 2026-05-25 cont. (PRs #793–#799; RED 51→43)
 After user "continue getting rid of synthetic data" directive: 6 NEW public-data
 pipelines + conversions. CMS Part D Spending by Drug (#793) → drug-pricing-340b,

@@ -128,7 +128,9 @@ def data_required_panel(
         for f, d in needed
     )
     tmpl = (f'<div style="margin-top:8px;font-size:10px;color:{fa}">Import template: '
-            f'<span style="font-family:JetBrains Mono,monospace;color:{td}">{_html.escape(template)}</span></div>'
+            f'<span style="font-family:JetBrains Mono,monospace;color:{td}">{_html.escape(template)}</span>'
+            f' &middot; <a href="/import" style="color:{ac};text-decoration:none">Go to import &rarr;</a>'
+            f'</div>'
             if template else "")
     req = (f'<div style="font-size:10px;color:{fa};margin-top:2px">Request from: '
            f'{_html.escape(request_from)}</div>' if request_from else "")
