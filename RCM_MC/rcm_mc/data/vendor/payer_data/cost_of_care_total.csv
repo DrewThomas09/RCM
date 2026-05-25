@@ -1,0 +1,1844 @@
+year,payer_type,category,doi_region,claim_type,total_spend,member_months,pppy,source_id
+2017,All,Medical,All,Professional,6460409702.7,41677695,1860.105661611085,civhc_coc_fy23_total
+2017,All,Medical,All,Outpatient,5603218716.86895,41677695,1613.299982218964,civhc_coc_fy23_total
+2017,All,Medical,All,Long Term Care,1794991786.29018,41677695,516.820842311029,civhc_coc_fy23_total
+2017,All,Medical,All,Inpatient,5066097176.90702,41677695,1458.6499114906483,civhc_coc_fy23_total
+2017,All,Medical,All,DME,184594802.949557,41677695,53.14923570976475,civhc_coc_fy23_total
+2017,All,Medical,Boulder,Professional,365406879.18,2225082,1970.6611037975229,civhc_coc_fy23_total
+2017,All,Medical,Boulder,Outpatient,241419195.69465,2225082,1301.988128228892,civhc_coc_fy23_total
+2017,All,Medical,Boulder,Long Term Care,92859513.1467908,2225082,500.79689546789274,civhc_coc_fy23_total
+2017,All,Medical,Boulder,Inpatient,218337624.912053,2225082,1177.507839686194,civhc_coc_fy23_total
+2017,All,Medical,Boulder,DME,6952555.32128915,2225082,37.495545717177976,civhc_coc_fy23_total
+2017,All,Medical,Colorado Springs,Outpatient,590343528.534447,5178956,1367.8668717041355,civhc_coc_fy23_total
+2017,All,Medical,Colorado Springs,Professional,780174331.51,5178956,1807.7179991720336,civhc_coc_fy23_total
+2017,All,Medical,Colorado Springs,Long Term Care,249934046.060912,5178956,579.1145073893164,civhc_coc_fy23_total
+2017,All,Medical,Colorado Springs,Inpatient,512040488.7083,5178956,1186.4333013255182,civhc_coc_fy23_total
+2017,All,Medical,Colorado Springs,DME,24656830.6802187,5178956,57.1315856250998,civhc_coc_fy23_total
+2017,All,Medical,Denver,Professional,3411769586.81,21251713,1926.4910570606708,civhc_coc_fy23_total
+2017,All,Medical,Denver,Outpatient,2528573920.97666,21251713,1427.7854708333355,civhc_coc_fy23_total
+2017,All,Medical,Denver,Long Term Care,805640992.038841,21251713,454.91353588607626,civhc_coc_fy23_total
+2017,All,Medical,Denver,Inpatient,2564906111.15102,21251713,1448.3008185651784,civhc_coc_fy23_total
+2017,All,Medical,Denver,DME,82693073.4952188,21251713,46.693500987079275,civhc_coc_fy23_total
+2017,All,Medical,East,Inpatient,385719396.524443,2363553,1958.3367744634097,civhc_coc_fy23_total
+2017,All,Medical,East,Outpatient,480123499.380329,2363553,2437.63604732534,civhc_coc_fy23_total
+2017,All,Medical,East,DME,16705974.69,2363553,84.81793988964918,civhc_coc_fy23_total
+2017,All,Medical,East,Professional,326765624.09,2363553,1659.0224501333373,civhc_coc_fy23_total
+2017,All,Medical,East,Long Term Care,142806660.868657,2363553,725.044003846702,civhc_coc_fy23_total
+2017,All,Medical,Ft. Collins,Outpatient,379889850.350884,2431050,1875.188994142699,civhc_coc_fy23_total
+2017,All,Medical,Ft. Collins,Long Term Care,88300698.1217278,2431050,435.86449372112196,civhc_coc_fy23_total
+2017,All,Medical,Ft. Collins,Inpatient,302094999.736812,2431050,1491.1828209381724,civhc_coc_fy23_total
+2017,All,Medical,Ft. Collins,DME,9684471.55,2431050,47.80389486024558,civhc_coc_fy23_total
+2017,All,Medical,Ft. Collins,Professional,356316062.97,2431050,1758.825509816746,civhc_coc_fy23_total
+2017,All,Medical,Grand Junction,Professional,179291271.96,1291941,1665.3200599098566,civhc_coc_fy23_total
+2017,All,Medical,Grand Junction,Outpatient,176632730.918233,1291941,1640.6266006100868,civhc_coc_fy23_total
+2017,All,Medical,Grand Junction,Long Term Care,89481398.4389087,1291941,831.1345342139497,civhc_coc_fy23_total
+2017,All,Medical,Grand Junction,Inpatient,146639521.679888,1291941,1362.039179930551,civhc_coc_fy23_total
+2017,All,Medical,Grand Junction,DME,6680021.71084164,1291941,62.04637868919686,civhc_coc_fy23_total
+2017,All,Medical,Greeley,Long Term Care,83048436.89,2391075,416.79213018412224,civhc_coc_fy23_total
+2017,All,Medical,Greeley,Inpatient,282370773.058917,2391075,1417.1237944050285,civhc_coc_fy23_total
+2017,All,Medical,Greeley,DME,10585977.0179128,2391075,53.12745280468141,civhc_coc_fy23_total
+2017,All,Medical,Greeley,Outpatient,348294959.128263,2391075,1747.9750779624878,civhc_coc_fy23_total
+2017,All,Medical,Greeley,Professional,333382175.48,2391075,1673.1328401493056,civhc_coc_fy23_total
+2017,All,Medical,Pueblo,Long Term Care,140443857.856926,1586629,1062.2056538000452,civhc_coc_fy23_total
+2017,All,Medical,Pueblo,DME,10510108.2760778,1586629,79.49010090760575,civhc_coc_fy23_total
+2017,All,Medical,Pueblo,Inpatient,213631158.348813,1586629,1615.7361930140921,civhc_coc_fy23_total
+2017,All,Medical,Pueblo,Outpatient,219041224.574751,1586629,1656.6536316284473,civhc_coc_fy23_total
+2017,All,Medical,Pueblo,Professional,260125493.29,1586629,1967.3823682032785,civhc_coc_fy23_total
+2017,All,Medical,West,Professional,447178277.41,3246628,1652.8346730577082,civhc_coc_fy23_total
+2017,All,Medical,West,DME,16125790.2079988,3246628,59.603219862572985,civhc_coc_fy23_total
+2017,All,Medical,West,Inpatient,440357102.786777,3246628,1627.6226390708525,civhc_coc_fy23_total
+2017,All,Medical,West,Long Term Care,102476182.867415,3246628,378.7665831776785,civhc_coc_fy23_total
+2017,All,Medical,West,Outpatient,638899807.31073,3246628,2361.464783685953,civhc_coc_fy23_total
+2017,All,Pharmacy,All,Pharmacy,3973304802.0114,37617866,1267.4737483550184,civhc_coc_fy23_total
+2017,All,Pharmacy,Boulder,Pharmacy,207640008.93,1987700,1253.5493822810283,civhc_coc_fy23_total
+2017,All,Pharmacy,Colorado Springs,Pharmacy,481133656.03,4458878,1294.8557624496566,civhc_coc_fy23_total
+2017,All,Pharmacy,Denver,Pharmacy,1993438174.8114,19738747,1211.8934447934714,civhc_coc_fy23_total
+2017,All,Pharmacy,East,Pharmacy,234014275.43,2059066,1363.808301997119,civhc_coc_fy23_total
+2017,All,Pharmacy,Ft. Collins,Pharmacy,233174570.9,2106572,1328.2692691253847,civhc_coc_fy23_total
+2017,All,Pharmacy,Grand Junction,Pharmacy,140655186.24,1098275,1536.8302427716194,civhc_coc_fy23_total
+2017,All,Pharmacy,Greeley,Pharmacy,233631037.06,2143283,1308.073849659611,civhc_coc_fy23_total
+2017,All,Pharmacy,Pueblo,Pharmacy,187456662.01,1436884,1565.526475428775,civhc_coc_fy23_total
+2017,All,Pharmacy,West,Pharmacy,262161230.6,2674165,1176.4175984653155,civhc_coc_fy23_total
+2017,CHP+,Medical,All,Professional,51318333.09,852567,722.3127297678658,civhc_coc_fy23_total
+2017,CHP+,Medical,All,DME,384128.65,852567,5.406664578854214,civhc_coc_fy23_total
+2017,CHP+,Medical,All,Inpatient,21678751.48,852567,305.1314650461489,civhc_coc_fy23_total
+2017,CHP+,Medical,All,Outpatient,44568437.6904939,852567,627.3070061190813,civhc_coc_fy23_total
+2017,CHP+,Medical,Boulder,Outpatient,1482022.50077579,32171,552.8043893354102,civhc_coc_fy23_total
+2017,CHP+,Medical,Boulder,Inpatient,929138.76,32171,346.57502471169687,civhc_coc_fy23_total
+2017,CHP+,Medical,Boulder,DME,27854.23,32171,10.389815672500077,civhc_coc_fy23_total
+2017,CHP+,Medical,Boulder,Professional,2172626.75,32171,810.4044325634889,civhc_coc_fy23_total
+2017,CHP+,Medical,Colorado Springs,Professional,5385378.95,84469,765.0682191099693,civhc_coc_fy23_total
+2017,CHP+,Medical,Colorado Springs,Outpatient,2379237.86374384,84469,338.0039347562547,civhc_coc_fy23_total
+2017,CHP+,Medical,Colorado Springs,Inpatient,1098884.48,84469,156.11187252128,civhc_coc_fy23_total
+2017,CHP+,Medical,Colorado Springs,DME,39729.59,84469,5.644142584853615,civhc_coc_fy23_total
+2017,CHP+,Medical,Denver,DME,172088.43,412197,5.0098888638199695,civhc_coc_fy23_total
+2017,CHP+,Medical,Denver,Professional,22697269.96,412197,660.7695823113705,civhc_coc_fy23_total
+2017,CHP+,Medical,Denver,Outpatient,28747279.0236641,412197,836.8992212072606,civhc_coc_fy23_total
+2017,CHP+,Medical,Denver,Inpatient,12594241.98,412197,366.64726759292284,civhc_coc_fy23_total
+2017,CHP+,Medical,East,DME,27516.61,56591,5.8348380484529345,civhc_coc_fy23_total
+2017,CHP+,Medical,East,Inpatient,874139.37,56591,185.35937587248856,civhc_coc_fy23_total
+2017,CHP+,Medical,East,Outpatient,1552844.87939001,56591,329.277421368771,civhc_coc_fy23_total
+2017,CHP+,Medical,East,Professional,2766272.13,56591,586.5820635790144,civhc_coc_fy23_total
+2017,CHP+,Medical,Ft. Collins,Professional,2998236.0,49471,727.271168967678,civhc_coc_fy23_total
+2017,CHP+,Medical,Ft. Collins,Outpatient,1542570.81852541,49471,374.1757761578485,civhc_coc_fy23_total
+2017,CHP+,Medical,Ft. Collins,DME,7196.43,49471,1.7456117725536173,civhc_coc_fy23_total
+2017,CHP+,Medical,Ft. Collins,Inpatient,777142.91,49471,188.50872066463182,civhc_coc_fy23_total
+2017,CHP+,Medical,Grand Junction,Outpatient,652787.26,28847,271.551534648317,civhc_coc_fy23_total
+2017,CHP+,Medical,Grand Junction,Inpatient,761187.96,28847,316.64490310950873,civhc_coc_fy23_total
+2017,CHP+,Medical,Grand Junction,DME,9168.43,28847,3.8139550039865497,civhc_coc_fy23_total
+2017,CHP+,Medical,Grand Junction,Professional,2017934.47,28847,839.4361160605956,civhc_coc_fy23_total
+2017,CHP+,Medical,Greeley,Professional,4886913.92,68907,851.0451338760939,civhc_coc_fy23_total
+2017,CHP+,Medical,Greeley,Inpatient,1428566.39,68907,248.78164308415688,civhc_coc_fy23_total
+2017,CHP+,Medical,Greeley,DME,21992.61,68907,3.829963864338892,civhc_coc_fy23_total
+2017,CHP+,Medical,Greeley,Outpatient,3166386.64737551,68907,551.4191557970325,civhc_coc_fy23_total
+2017,CHP+,Medical,Pueblo,Professional,1171376.63,19210,731.7292847475272,civhc_coc_fy23_total
+2017,CHP+,Medical,Pueblo,DME,2922.24,19210,1.8254492451847995,civhc_coc_fy23_total
+2017,CHP+,Medical,Pueblo,Inpatient,210873.69,19210,131.72744820406038,civhc_coc_fy23_total
+2017,CHP+,Medical,Pueblo,Outpatient,668754.415484645,19210,417.7539295062853,civhc_coc_fy23_total
+2017,CHP+,Medical,West,DME,75660.08,100850,9.002686762518593,civhc_coc_fy23_total
+2017,CHP+,Medical,West,Inpatient,3004575.94,100850,357.5102754586019,civhc_coc_fy23_total
+2017,CHP+,Medical,West,Outpatient,4376554.28153459,100850,520.7600533308387,civhc_coc_fy23_total
+2017,CHP+,Medical,West,Professional,7222324.28,100850,859.374232622707,civhc_coc_fy23_total
+2017,CHP+,Pharmacy,All,Pharmacy,25024134.13,852567,352.2181946521505,civhc_coc_fy23_total
+2017,CHP+,Pharmacy,Boulder,Pharmacy,729318.83,32171,272.04084299524413,civhc_coc_fy23_total
+2017,CHP+,Pharmacy,Colorado Springs,Pharmacy,3394698.05,84469,482.2642223774402,civhc_coc_fy23_total
+2017,CHP+,Pharmacy,Denver,Pharmacy,12039268.22,412197,350.490708666002,civhc_coc_fy23_total
+2017,CHP+,Pharmacy,East,Pharmacy,1157935.75,56591,245.53778869431534,civhc_coc_fy23_total
+2017,CHP+,Pharmacy,Ft. Collins,Pharmacy,3251075.5,49471,788.6015241252451,civhc_coc_fy23_total
+2017,CHP+,Pharmacy,Grand Junction,Pharmacy,591602.95,28847,246.09960827815715,civhc_coc_fy23_total
+2017,CHP+,Pharmacy,Greeley,Pharmacy,1599919.98,68907,278.62248770081413,civhc_coc_fy23_total
+2017,CHP+,Pharmacy,Pueblo,Pharmacy,500990.35,19210,312.9559708485164,civhc_coc_fy23_total
+2017,CHP+,Pharmacy,West,Pharmacy,1759324.5,100850,209.3395537927615,civhc_coc_fy23_total
+2017,Commercial,Medical,All,Inpatient,1437272363.85,16717736,1031.6748850562062,civhc_coc_fy23_total
+2017,Commercial,Medical,All,DME,26757418.98,16717736,19.206489907485082,civhc_coc_fy23_total
+2017,Commercial,Medical,All,Outpatient,2105971185.25,16717736,1511.6672630193466,civhc_coc_fy23_total
+2017,Commercial,Medical,All,Professional,2346047869.2,16717736,1683.9944374286085,civhc_coc_fy23_total
+2017,Commercial,Medical,Boulder,Professional,148520517.12,1120740,1590.2405602012957,civhc_coc_fy23_total
+2017,Commercial,Medical,Boulder,Outpatient,103604932.01,1120740,1109.3198994592858,civhc_coc_fy23_total
+2017,Commercial,Medical,Boulder,Inpatient,72625992.39,1120740,777.6218468868783,civhc_coc_fy23_total
+2017,Commercial,Medical,Boulder,DME,1327701.96,1120740,14.215985438192622,civhc_coc_fy23_total
+2017,Commercial,Medical,Colorado Springs,Professional,220987157.51,1613226,1643.8154915182372,civhc_coc_fy23_total
+2017,Commercial,Medical,Colorado Springs,Outpatient,192279396.78,1613226,1430.272485913319,civhc_coc_fy23_total
+2017,Commercial,Medical,Colorado Springs,Inpatient,118844724.44,1613226,884.0278381826229,civhc_coc_fy23_total
+2017,Commercial,Medical,Colorado Springs,DME,2967008.15,1613226,22.070123962792564,civhc_coc_fy23_total
+2017,Commercial,Medical,Denver,Outpatient,974494583.08,9416701,1241.8292772553787,civhc_coc_fy23_total
+2017,Commercial,Medical,Denver,Inpatient,786516027.62,9416701,1002.2822569645143,civhc_coc_fy23_total
+2017,Commercial,Medical,Denver,DME,14259507.92,9416701,18.171342069797056,civhc_coc_fy23_total
+2017,Commercial,Medical,Denver,Professional,1382303979.99,9416701,1761.5136935833473,civhc_coc_fy23_total
+2017,Commercial,Medical,East,Outpatient,135697753.74,648282,2511.8282551112015,civhc_coc_fy23_total
+2017,Commercial,Medical,East,Inpatient,77119556.85,648282,1427.5187066739472,civhc_coc_fy23_total
+2017,Commercial,Medical,East,DME,1335056.83,648282,24.712520106990482,civhc_coc_fy23_total
+2017,Commercial,Medical,East,Professional,79897065.33,648282,1478.9316747341434,civhc_coc_fy23_total
+2017,Commercial,Medical,Ft. Collins,Professional,124794007.75,1028084,1456.6203666237388,civhc_coc_fy23_total
+2017,Commercial,Medical,Ft. Collins,Outpatient,155896994.34,1028084,1819.6605842324168,civhc_coc_fy23_total
+2017,Commercial,Medical,Ft. Collins,Inpatient,87365997.41,1028084,1019.7532195034646,civhc_coc_fy23_total
+2017,Commercial,Medical,Ft. Collins,DME,1464472.16,1028084,17.093609004711677,civhc_coc_fy23_total
+2017,Commercial,Medical,Grand Junction,Professional,44660639.62,378602,1415.543698765458,civhc_coc_fy23_total
+2017,Commercial,Medical,Grand Junction,Outpatient,66166328.92,378602,2097.178427583584,civhc_coc_fy23_total
+2017,Commercial,Medical,Grand Junction,Inpatient,38575503.13,378602,1222.6719287272651,civhc_coc_fy23_total
+2017,Commercial,Medical,Grand Junction,DME,641894.09,378602,20.345188562131206,civhc_coc_fy23_total
+2017,Commercial,Medical,Greeley,DME,1530972.61,922904,19.906373057219387,civhc_coc_fy23_total
+2017,Commercial,Medical,Greeley,Inpatient,84757598.26,922904,1102.0552290595774,civhc_coc_fy23_total
+2017,Commercial,Medical,Greeley,Outpatient,136568747.23,922904,1775.7263667293673,civhc_coc_fy23_total
+2017,Commercial,Medical,Greeley,Professional,112972776.61,922904,1468.9212738486342,civhc_coc_fy23_total
+2017,Commercial,Medical,Pueblo,Professional,50161193.71,371176,1621.6951648813501,civhc_coc_fy23_total
+2017,Commercial,Medical,Pueblo,Outpatient,57722757.78,371176,1866.158085005496,civhc_coc_fy23_total
+2017,Commercial,Medical,Pueblo,Inpatient,34831700.83,371176,1126.0976193503889,civhc_coc_fy23_total
+2017,Commercial,Medical,Pueblo,DME,931890.31,371176,30.12771224432614,civhc_coc_fy23_total
+2017,Commercial,Medical,West,Inpatient,136635262.92,1228218,1334.9610207959824,civhc_coc_fy23_total
+2017,Commercial,Medical,West,DME,2298914.95,1228218,22.460979565516872,civhc_coc_fy23_total
+2017,Commercial,Medical,West,Professional,181750531.56,1228218,1775.7485875634457,civhc_coc_fy23_total
+2017,Commercial,Medical,West,Outpatient,283539691.37,1228218,2770.2543819094003,civhc_coc_fy23_total
+2017,Commercial,Pharmacy,All,Pharmacy,1311111190.0514,15572489,1010.3288100326672,civhc_coc_fy23_total
+2017,Commercial,Pharmacy,Boulder,Pharmacy,87645499.79,1042750,1008.6271853080797,civhc_coc_fy23_total
+2017,Commercial,Pharmacy,Colorado Springs,Pharmacy,143578627.49,1509860,1141.128005166042,civhc_coc_fy23_total
+2017,Commercial,Pharmacy,Denver,Pharmacy,732729542.2014,9065309,969.9343405080622,civhc_coc_fy23_total
+2017,Commercial,Pharmacy,East,Pharmacy,56506311.41,583766,1161.554007804497,civhc_coc_fy23_total
+2017,Commercial,Pharmacy,Ft. Collins,Pharmacy,71236231.09,875971,975.8710882894525,civhc_coc_fy23_total
+2017,Commercial,Pharmacy,Grand Junction,Pharmacy,28312332.17,328558,1034.0578711825615,civhc_coc_fy23_total
+2017,Commercial,Pharmacy,Greeley,Pharmacy,72023134.37,827058,1045.0024211603056,civhc_coc_fy23_total
+2017,Commercial,Pharmacy,Pueblo,Pharmacy,34357742.34,364126,1132.280881013715,civhc_coc_fy23_total
+2017,Commercial,Pharmacy,West,Pharmacy,84721769.19,981998,1035.2986770645152,civhc_coc_fy23_total
+2017,Medicaid,Medical,All,DME,83381055.0195579,16665330,60.03917475589711,civhc_coc_fy23_total
+2017,Medicaid,Medical,All,Inpatient,1267096511.75888,16665330,912.3826615558503,civhc_coc_fy23_total
+2017,Medicaid,Medical,All,Long Term Care,1794986001.77018,16665330,1292.493579259586,civhc_coc_fy23_total
+2017,Medicaid,Medical,All,Outpatient,1350088412.49172,16665330,972.1416227521831,civhc_coc_fy23_total
+2017,Medicaid,Medical,All,Professional,1380026161.72,16665330,993.6985310605911,civhc_coc_fy23_total
+2017,Medicaid,Medical,Boulder,DME,2503235.50128915,645600,46.52854091615521,civhc_coc_fy23_total
+2017,Medicaid,Medical,Boulder,Professional,60348988.05,645600,1121.7284024163569,civhc_coc_fy23_total
+2017,Medicaid,Medical,Boulder,Inpatient,37394909.5520531,645600,695.0726682537751,civhc_coc_fy23_total
+2017,Medicaid,Medical,Boulder,Outpatient,41490374.8938745,645600,771.1965593656971,civhc_coc_fy23_total
+2017,Medicaid,Medical,Boulder,Long Term Care,92859513.1467908,645600,1726.0132555165578,civhc_coc_fy23_total
+2017,Medicaid,Medical,Colorado Springs,DME,12367135.9302187,2509314,59.14191335266308,civhc_coc_fy23_total
+2017,Medicaid,Medical,Colorado Springs,Inpatient,134875917.3983,2509314,645.0013863468661,civhc_coc_fy23_total
+2017,Medicaid,Medical,Colorado Springs,Long Term Care,249932754.910912,2509314,1195.2242959354408,civhc_coc_fy23_total
+2017,Medicaid,Medical,Colorado Springs,Outpatient,166546285.427754,2509314,796.4548976863989,civhc_coc_fy23_total
+2017,Medicaid,Medical,Colorado Springs,Professional,212813309.56,2509314,1017.7122969544664,civhc_coc_fy23_total
+2017,Medicaid,Medical,Denver,DME,35231496.9152188,7987709,52.92856349456717,civhc_coc_fy23_total
+2017,Medicaid,Medical,Denver,Professional,633864311.05,7987709,952.2594942554867,civhc_coc_fy23_total
+2017,Medicaid,Medical,Denver,Outpatient,635904707.004486,7987709,955.3247976427072,civhc_coc_fy23_total
+2017,Medicaid,Medical,Denver,Long Term Care,805636498.668841,7987709,1210.314244550733,civhc_coc_fy23_total
+2017,Medicaid,Medical,Denver,Inpatient,647402216.911023,7987709,972.597600004241,civhc_coc_fy23_total
+2017,Medicaid,Medical,East,Long Term Care,142806660.868657,1140037,1503.1792217479642,civhc_coc_fy23_total
+2017,Medicaid,Medical,East,Outpatient,125897346.835661,1140037,1325.1922192244042,civhc_coc_fy23_total
+2017,Medicaid,Medical,East,Professional,92417724.67,1140037,972.7865815232312,civhc_coc_fy23_total
+2017,Medicaid,Medical,East,Inpatient,101745416.344443,1140037,1070.9696230326877,civhc_coc_fy23_total
+2017,Medicaid,Medical,East,DME,9012663.15,1140037,94.867059402458,civhc_coc_fy23_total
+2017,Medicaid,Medical,Ft. Collins,DME,4207379.91,823913,61.27899295192576,civhc_coc_fy23_total
+2017,Medicaid,Medical,Ft. Collins,Inpatient,61704839.1768123,823913,898.7090507392743,civhc_coc_fy23_total
+2017,Medicaid,Medical,Ft. Collins,Long Term Care,88300698.1217278,823913,1286.0682832540979,civhc_coc_fy23_total
+2017,Medicaid,Medical,Ft. Collins,Outpatient,61118307.3023587,823913,890.1664224600223,civhc_coc_fy23_total
+2017,Medicaid,Medical,Ft. Collins,Professional,68239863.39,823913,993.8893556479871,civhc_coc_fy23_total
+2017,Medicaid,Medical,Grand Junction,Professional,50098479.5,596849,1007.2593805133292,civhc_coc_fy23_total
+2017,Medicaid,Medical,Grand Junction,Long Term Care,89481398.4389087,596849,1799.076116851841,civhc_coc_fy23_total
+2017,Medicaid,Medical,Grand Junction,Inpatient,36961917.0298882,596849,743.1410697825721,civhc_coc_fy23_total
+2017,Medicaid,Medical,Grand Junction,DME,2532062.31084164,596849,50.908601220911294,civhc_coc_fy23_total
+2017,Medicaid,Medical,Grand Junction,Outpatient,44709056.6182337,596849,898.9018653274185,civhc_coc_fy23_total
+2017,Medicaid,Medical,Greeley,DME,5389928.32791284,1009606,64.06374361379991,civhc_coc_fy23_total
+2017,Medicaid,Medical,Greeley,Inpatient,67427832.4307762,1009606,801.4354007100933,civhc_coc_fy23_total
+2017,Medicaid,Medical,Greeley,Long Term Care,83048436.89,1009606,987.0991680715051,civhc_coc_fy23_total
+2017,Medicaid,Medical,Greeley,Outpatient,81609864.2708884,1009606,970.0005460057298,civhc_coc_fy23_total
+2017,Medicaid,Medical,Greeley,Professional,83068600.21,1009606,987.3388257597518,civhc_coc_fy23_total
+2017,Medicaid,Medical,Pueblo,Long Term Care,140443857.856926,880092,1914.9433176112404,civhc_coc_fy23_total
+2017,Medicaid,Medical,Pueblo,Professional,95667253.44,880092,1304.417085122919,civhc_coc_fy23_total
+2017,Medicaid,Medical,Pueblo,Inpatient,71401839.2788131,880092,973.5596634735427,civhc_coc_fy23_total
+2017,Medicaid,Medical,Pueblo,Outpatient,68457517.0692669,880092,933.4140122069089,civhc_coc_fy23_total
+2017,Medicaid,Medical,Pueblo,DME,6130634.44607787,880092,83.59082158789586,civhc_coc_fy23_total
+2017,Medicaid,Medical,West,Professional,83507631.85,1272091,787.7514912062107,civhc_coc_fy23_total
+2017,Medicaid,Medical,West,Outpatient,124354953.069195,1272091,1173.0760117242712,civhc_coc_fy23_total
+2017,Medicaid,Medical,West,Long Term Care,102476182.867415,1272091,966.687284485921,civhc_coc_fy23_total
+2017,Medicaid,Medical,West,Inpatient,108181623.636777,1272091,1020.5083469982288,civhc_coc_fy23_total
+2017,Medicaid,Medical,West,DME,6006518.52799885,1272091,56.661215538814595,civhc_coc_fy23_total
+2017,Medicaid,Pharmacy,All,Pharmacy,1113483687.8,15429285,866.0028156586648,civhc_coc_fy23_total
+2017,Medicaid,Pharmacy,Boulder,Pharmacy,40399044.16,565466,857.3256922962653,civhc_coc_fy23_total
+2017,Medicaid,Pharmacy,Colorado Springs,Pharmacy,156642956.18,2251270,834.9578123281526,civhc_coc_fy23_total
+2017,Medicaid,Pharmacy,Denver,Pharmacy,490251064.44,7497659,784.6466174681991,civhc_coc_fy23_total
+2017,Medicaid,Pharmacy,East,Pharmacy,75610232.67,987545,918.7660228546548,civhc_coc_fy23_total
+2017,Medicaid,Pharmacy,Ft. Collins,Pharmacy,58808453.54,764246,923.3956638045865,civhc_coc_fy23_total
+2017,Medicaid,Pharmacy,Grand Junction,Pharmacy,70502003.32,545261,1551.5946305347345,civhc_coc_fy23_total
+2017,Medicaid,Pharmacy,Greeley,Pharmacy,68594020.13,931944,883.2378786279004,civhc_coc_fy23_total
+2017,Medicaid,Pharmacy,Pueblo,Pharmacy,69615385.77,768614,1086.8714715578951,civhc_coc_fy23_total
+2017,Medicaid,Pharmacy,West,Pharmacy,83060527.59,1153385,864.1748688252405,civhc_coc_fy23_total
+2017,Medicare,Medical,All,Inpatient,1623791284.02,6357594,3064.916603394303,civhc_coc_fy23_total
+2017,Medicare,Medical,All,DME,44300143.91,6357594,83.61680958551301,civhc_coc_fy23_total
+2017,Medicare,Medical,All,Professional,1628216013.7,6357594,3073.2683094264908,civhc_coc_fy23_total
+2017,Medicare,Medical,All,Outpatient,1553739723.12,6357594,2932.693826853366,civhc_coc_fy23_total
+2017,Medicare,Medical,Boulder,Professional,98198234.59,334811,3519.534349468805,civhc_coc_fy23_total
+2017,Medicare,Medical,Boulder,DME,1844175.81,334811,66.09731974158555,civhc_coc_fy23_total
+2017,Medicare,Medical,Boulder,Outpatient,70078268.66,334811,2511.6833793393885,civhc_coc_fy23_total
+2017,Medicare,Medical,Boulder,Inpatient,73586006.49,334811,2637.404618964132,civhc_coc_fy23_total
+2017,Medicare,Medical,Colorado Springs,DME,6641722.7,872471,91.35051182216945,civhc_coc_fy23_total
+2017,Medicare,Medical,Colorado Springs,Inpatient,207752974.65,872471,2857.442477515012,civhc_coc_fy23_total
+2017,Medicare,Medical,Colorado Springs,Outpatient,188733060.76,872471,2595.8418435913627,civhc_coc_fy23_total
+2017,Medicare,Medical,Colorado Springs,Professional,251238397.39,872471,3455.542669819398,civhc_coc_fy23_total
+2017,Medicare,Medical,Denver,DME,16753950.47,2432356,82.65541953562719,civhc_coc_fy23_total
+2017,Medicare,Medical,Denver,Inpatient,647325401.29,2432356,3193.5723288367326,civhc_coc_fy23_total
+2017,Medicare,Medical,Denver,Outpatient,562520891.84,2432356,2775.19026905601,civhc_coc_fy23_total
+2017,Medicare,Medical,Denver,Professional,681599643.09,2432356,3362.6639016163754,civhc_coc_fy23_total
+2017,Medicare,Medical,East,DME,4891858.66,605465,96.9540830931598,civhc_coc_fy23_total
+2017,Medicare,Medical,East,Inpatient,178092377.97,605465,3529.6978944117336,civhc_coc_fy23_total
+2017,Medicare,Medical,East,Outpatient,189351290.7,605465,3752.8436629697835,civhc_coc_fy23_total
+2017,Medicare,Medical,East,Professional,124554920.8,605465,2468.613461719505,civhc_coc_fy23_total
+2017,Medicare,Medical,Ft. Collins,Professional,119468749.25,466938,3070.2684103671154,civhc_coc_fy23_total
+2017,Medicare,Medical,Ft. Collins,Outpatient,122708402.3,466938,3153.5253665368846,civhc_coc_fy23_total
+2017,Medicare,Medical,Ft. Collins,Inpatient,114865556.64,466938,2951.969382830269,civhc_coc_fy23_total
+2017,Medicare,Medical,Ft. Collins,DME,2992233.03,466938,76.89842411626383,civhc_coc_fy23_total
+2017,Medicare,Medical,Grand Junction,Outpatient,52622611.53,253192,2494.0414324307244,civhc_coc_fy23_total
+2017,Medicare,Medical,Grand Junction,Inpatient,57538224.99,253192,2727.016255963854,civhc_coc_fy23_total
+2017,Medicare,Medical,Grand Junction,DME,1165873.61,253192,55.25641931814592,civhc_coc_fy23_total
+2017,Medicare,Medical,Grand Junction,Professional,43580599.53,253192,2065.49651789946,civhc_coc_fy23_total
+2017,Medicare,Medical,Greeley,DME,2288710.03,354011,77.58098013903522,civhc_coc_fy23_total
+2017,Medicare,Medical,Greeley,Inpatient,93311735.46,354011,3163.0113909454785,civhc_coc_fy23_total
+2017,Medicare,Medical,Greeley,Outpatient,92831581.17,354011,3146.735480083952,civhc_coc_fy23_total
+2017,Medicare,Medical,Greeley,Professional,88343387.23,354011,2994.5980400609023,civhc_coc_fy23_total
+2017,Medicare,Medical,Pueblo,DME,2131824.96,279738,91.44949745833601,civhc_coc_fy23_total
+2017,Medicare,Medical,Pueblo,Professional,77144886.36,279738,3309.305980310147,civhc_coc_fy23_total
+2017,Medicare,Medical,Pueblo,Inpatient,74130355.14,279738,3179.990783089891,civhc_coc_fy23_total
+2017,Medicare,Medical,Pueblo,Outpatient,68498243.99,279738,2938.3885202582414,civhc_coc_fy23_total
+2017,Medicare,Medical,West,DME,5589794.64,758887,88.38935925902011,civhc_coc_fy23_total
+2017,Medicare,Medical,West,Inpatient,177188651.39,758887,2801.8187380729933,civhc_coc_fy23_total
+2017,Medicare,Medical,West,Outpatient,206395372.17,758887,3263.653832573229,civhc_coc_fy23_total
+2017,Medicare,Medical,West,Professional,144087195.46,758887,2278.397634325005,civhc_coc_fy23_total
+2017,Medicare,Pharmacy,All,Pharmacy,776606952.21,3637084,2562.2953515838517,civhc_coc_fy23_total
+2017,Medicare,Pharmacy,Boulder,Pharmacy,44498623.5,206972,2579.979330537464,civhc_coc_fy23_total
+2017,Medicare,Pharmacy,Colorado Springs,Pharmacy,88017274.77,388237,2720.5219936276035,civhc_coc_fy23_total
+2017,Medicare,Pharmacy,Denver,Pharmacy,314514153.24,1321721,2855.4966130370935,civhc_coc_fy23_total
+2017,Medicare,Pharmacy,East,Pharmacy,75742747.89,405419,2241.9101588233407,civhc_coc_fy23_total
+2017,Medicare,Pharmacy,Ft. Collins,Pharmacy,63001870.2,299419,2524.964823207612,civhc_coc_fy23_total
+2017,Medicare,Pharmacy,Grand Junction,Pharmacy,24482219.18,140328,2093.5709919616897,civhc_coc_fy23_total
+2017,Medicare,Pharmacy,Greeley,Pharmacy,49817772.87,226092,2644.115114378217,civhc_coc_fy23_total
+2017,Medicare,Pharmacy,Pueblo,Pharmacy,40569330.18,177615,2740.939459842919,civhc_coc_fy23_total
+2017,Medicare,Pharmacy,West,Pharmacy,75962960.38,471439,1933.5598551668404,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,All,Outpatient,548850958.316736,3637692,1810.5467697102536,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,All,Professional,1054801324.99,3637692,3479.5732843462283,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,All,Long Term Care,5784.52,3637692,0.019081945365358035,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,All,DME,29772056.39,3637692,98.21190927654128,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,All,Inpatient,716258265.798141,3637692,2362.7891502572766,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Boulder,DME,1249587.82,199077,75.3228843110957,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Boulder,Inpatient,33801577.72,199077,2037.4977151554422,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Boulder,Outpatient,24763597.63,199077,1492.704689944092,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Boulder,Professional,56166512.67,199077,3385.6153751563465,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Colorado Springs,Outpatient,40405547.7029485,390558,1241.4713626026914,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Colorado Springs,Long Term Care,1291.15,390558,0.0396709323583181,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Colorado Springs,Inpatient,49467987.74,390558,1519.9172795845943,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Colorado Springs,DME,2641234.31,390558,81.1526373035503,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Colorado Springs,Professional,89750088.1,390558,2757.595689244619,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Denver,Professional,691304382.72,2203028,3765.5683870745174,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Denver,Outpatient,326906460.028509,2203028,1780.6752888942437,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Denver,Long Term Care,4493.37,2203028,0.02447560357834762,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Denver,Inpatient,471068223.35,2203028,2565.931381807222,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Denver,DME,16276029.76,2203028,88.65632080935876,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,East,Professional,27129641.16,108146,3010.3350463262627,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,East,Outpatient,27624263.2252779,108146,3065.218858795839,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,East,Inpatient,27887905.99,108146,3094.4729521202817,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,East,DME,1438879.44,108146,159.65965713017584,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Ft. Collins,Professional,40815206.58,196146,2497.0301661007616,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Ft. Collins,DME,1013190.02,196146,61.985868893579266,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Ft. Collins,Inpatient,37381463.6,196146,2286.957486770059,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Ft. Collins,Outpatient,38623575.59,196146,2362.9485540362793,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Grand Junction,Outpatient,12481946.59,109095,1372.962638801045,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Grand Junction,Professional,38933618.84,109095,4282.537477244604,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Grand Junction,Inpatient,12802688.57,109095,1408.2429335899903,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Grand Junction,DME,2331023.27,109095,256.40294458957794,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Greeley,Professional,44110497.51,184830,2863.853108910891,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Greeley,Outpatient,34118379.81,184830,2215.119611102094,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Greeley,Inpatient,35445040.5181414,184830,2301.2524277319526,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Greeley,DME,1354373.44,184830,87.93205258886545,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Pueblo,Professional,35980783.15,152179,2837.246911860375,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Pueblo,Outpatient,23693951.32,152179,1868.3748469894008,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Pueblo,Inpatient,33056389.41,152179,2606.645285617595,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,Pueblo,DME,1312836.32,152179,103.52306060625975,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,West,DME,2154902.01,101963,253.60987926993124,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,West,Inpatient,15346988.9,101963,1806.183290016967,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,West,Outpatient,20233236.42,101963,2381.244540078264,civhc_coc_fy23_total
+2017,Medicare Advantage,Medical,West,Professional,30610594.26,101963,3602.55319204025,civhc_coc_fy23_total
+2017,Medicare Advantage,Pharmacy,All,Pharmacy,747078837.82,3553471,2522.8701891305714,civhc_coc_fy23_total
+2017,Medicare Advantage,Pharmacy,Boulder,Pharmacy,34367522.65,193993,2125.902851133804,civhc_coc_fy23_total
+2017,Medicare Advantage,Pharmacy,Colorado Springs,Pharmacy,89500099.54,376391,2853.418903427553,civhc_coc_fy23_total
+2017,Medicare Advantage,Pharmacy,Denver,Pharmacy,443904146.71,2154880,2471.9936889850014,civhc_coc_fy23_total
+2017,Medicare Advantage,Pharmacy,East,Pharmacy,24997047.71,105270,2849.478222855514,civhc_coc_fy23_total
+2017,Medicare Advantage,Pharmacy,Ft. Collins,Pharmacy,36876940.57,189799,2331.5364508769803,civhc_coc_fy23_total
+2017,Medicare Advantage,Pharmacy,Grand Junction,Pharmacy,16767028.62,107396,1873.4807948154491,civhc_coc_fy23_total
+2017,Medicare Advantage,Pharmacy,Greeley,Pharmacy,41596189.71,180761,2761.4047085377933,civhc_coc_fy23_total
+2017,Medicare Advantage,Pharmacy,Pueblo,Pharmacy,42413213.37,149455,3405.430132414439,civhc_coc_fy23_total
+2017,Medicare Advantage,Pharmacy,West,Pharmacy,16656648.94,96991,2060.807572661381,civhc_coc_fy23_total
+2018,All,Medical,All,Outpatient,6197463617.49032,41441192,1794.580701488602,civhc_coc_fy23_total
+2018,All,Medical,All,DME,162935361.217814,41441192,47.180697278537934,civhc_coc_fy23_total
+2018,All,Medical,All,Professional,6992283121.12,41441192,2024.734169167721,civhc_coc_fy23_total
+2018,All,Medical,All,Inpatient,5347968778.62761,41441192,1548.5950631808882,civhc_coc_fy23_total
+2018,All,Medical,All,Long Term Care,1851823932.00432,41441192,536.2270270616694,civhc_coc_fy23_total
+2018,All,Medical,Boulder,Professional,383882362.03,2194501,2099.1507155202935,civhc_coc_fy23_total
+2018,All,Medical,Boulder,Outpatient,269837302.048836,2194501,1475.5279786092747,civhc_coc_fy23_total
+2018,All,Medical,Boulder,Long Term Care,91089660.25,2194501,498.0977101400273,civhc_coc_fy23_total
+2018,All,Medical,Boulder,Inpatient,232926670.606821,2194501,1273.6927653629923,civhc_coc_fy23_total
+2018,All,Medical,Boulder,DME,6039626.36156032,2194501,33.02596642185346,civhc_coc_fy23_total
+2018,All,Medical,Colorado Springs,Long Term Care,269875264.978398,5100024,634.9976352544177,civhc_coc_fy23_total
+2018,All,Medical,Colorado Springs,Inpatient,546343358.790149,5100024,1285.5077359404168,civhc_coc_fy23_total
+2018,All,Medical,Colorado Springs,DME,20465283.9336467,5100024,48.15338265148564,civhc_coc_fy23_total
+2018,All,Medical,Colorado Springs,Professional,857605428.75,5100024,2017.8856305382092,civhc_coc_fy23_total
+2018,All,Medical,Colorado Springs,Outpatient,647188900.052466,5100024,1522.7902458164103,civhc_coc_fy23_total
+2018,All,Medical,Denver,DME,75162470.7920055,21186043,42.572822565500594,civhc_coc_fy23_total
+2018,All,Medical,Denver,Inpatient,2709115258.74968,21186043,1534.4716852031388,civhc_coc_fy23_total
+2018,All,Medical,Denver,Long Term Care,834630145.311842,21186043,472.7433878871153,civhc_coc_fy23_total
+2018,All,Medical,Denver,Outpatient,2829647887.48888,21186043,1602.7426475942939,civhc_coc_fy23_total
+2018,All,Medical,Denver,Professional,3728831037.66,21186043,2112.04954374538,civhc_coc_fy23_total
+2018,All,Medical,East,DME,13917298.9094943,2326445,71.78660441744017,civhc_coc_fy23_total
+2018,All,Medical,East,Inpatient,397056174.201393,2326445,2048.0493157657784,civhc_coc_fy23_total
+2018,All,Medical,East,Professional,338265840.36,2326445,1744.8038033652201,civhc_coc_fy23_total
+2018,All,Medical,East,Long Term Care,146179861.302489,2326445,754.0080834190657,civhc_coc_fy23_total
+2018,All,Medical,East,Outpatient,514225126.046044,2326445,2652.4166754651533,civhc_coc_fy23_total
+2018,All,Medical,Ft. Collins,Inpatient,311802586.645334,2430217,1539.6283705298779,civhc_coc_fy23_total
+2018,All,Medical,Ft. Collins,Professional,385776745.15,2430217,1904.9002380445859,civhc_coc_fy23_total
+2018,All,Medical,Ft. Collins,DME,7917861.74994517,2430217,39.097060467991966,civhc_coc_fy23_total
+2018,All,Medical,Ft. Collins,Long Term Care,89938050.7906066,2430217,444.09886421141783,civhc_coc_fy23_total
+2018,All,Medical,Ft. Collins,Outpatient,424724513.86226,2430217,2097.2177243213755,civhc_coc_fy23_total
+2018,All,Medical,Grand Junction,Professional,184457310.66,1276220,1734.4092146495118,civhc_coc_fy23_total
+2018,All,Medical,Grand Junction,Outpatient,191279788.838333,1276220,1798.5593910610994,civhc_coc_fy23_total
+2018,All,Medical,Grand Junction,Long Term Care,93439338.2686808,1276220,878.588377571398,civhc_coc_fy23_total
+2018,All,Medical,Grand Junction,Inpatient,161557221.137511,1276220,1519.0849960431053,civhc_coc_fy23_total
+2018,All,Medical,Grand Junction,DME,6638031.46,1276220,62.4158667941264,civhc_coc_fy23_total
+2018,All,Medical,Greeley,Outpatient,395099126.091518,2379880,1992.1968809764426,civhc_coc_fy23_total
+2018,All,Medical,Greeley,DME,8867531.99,2379880,44.712499739482666,civhc_coc_fy23_total
+2018,All,Medical,Greeley,Inpatient,307861712.714626,2379880,1552.3221979996943,civhc_coc_fy23_total
+2018,All,Medical,Greeley,Long Term Care,83866902.3274078,2379880,422.879652725723,civhc_coc_fy23_total
+2018,All,Medical,Greeley,Professional,363103871.8,2379880,1830.8681368808514,civhc_coc_fy23_total
+2018,All,Medical,Pueblo,DME,8388691.42,1564092,64.35957542139465,civhc_coc_fy23_total
+2018,All,Medical,Pueblo,Inpatient,228597396.804988,1564092,1753.8410538893213,civhc_coc_fy23_total
+2018,All,Medical,Pueblo,Long Term Care,137700350.100803,1564092,1056.4622804858254,civhc_coc_fy23_total
+2018,All,Medical,Pueblo,Outpatient,238055678.808578,1564092,1826.406723966964,civhc_coc_fy23_total
+2018,All,Medical,Pueblo,Professional,272812063.13,1564092,2093.0640637251518,civhc_coc_fy23_total
+2018,All,Medical,West,Professional,477548461.58,3188344,1797.3535913816072,civhc_coc_fy23_total
+2018,All,Medical,West,DME,15538564.6011627,3188344,58.48264027154924,civhc_coc_fy23_total
+2018,All,Medical,West,Inpatient,452708398.977109,3188344,1703.8628164731622,civhc_coc_fy23_total
+2018,All,Medical,West,Long Term Care,105104358.6741,3188344,395.58225338583287,civhc_coc_fy23_total
+2018,All,Medical,West,Outpatient,687405294.253402,3188344,2587.193706526279,civhc_coc_fy23_total
+2018,All,Pharmacy,All,Pharmacy,4491765721.95,36939746,1459.1651134634224,civhc_coc_fy23_total
+2018,All,Pharmacy,Boulder,Pharmacy,231318922.0,1957515,1418.036165240113,civhc_coc_fy23_total
+2018,All,Pharmacy,Colorado Springs,Pharmacy,536761300.78,4355203,1478.9518673090554,civhc_coc_fy23_total
+2018,All,Pharmacy,Denver,Pharmacy,2281966584.81,19461251,1407.0831837953274,civhc_coc_fy23_total
+2018,All,Pharmacy,East,Pharmacy,269622298.65,1998027,1619.3312621901505,civhc_coc_fy23_total
+2018,All,Pharmacy,Ft. Collins,Pharmacy,265325018.52,2060910,1544.900176252238,civhc_coc_fy23_total
+2018,All,Pharmacy,Grand Junction,Pharmacy,137410186.74,1079620,1527.317242066653,civhc_coc_fy23_total
+2018,All,Pharmacy,Greeley,Pharmacy,264286781.5,2088923,1518.2184206885559,civhc_coc_fy23_total
+2018,All,Pharmacy,Pueblo,Pharmacy,211364253.01,1402080,1809.0059312735364,civhc_coc_fy23_total
+2018,All,Pharmacy,West,Pharmacy,293710375.94,2614575,1348.0296075958806,civhc_coc_fy23_total
+2018,CHP+,Medical,All,Professional,61227551.54,988156,743.5370715555034,civhc_coc_fy23_total
+2018,CHP+,Medical,All,Outpatient,56953303.6344522,988156,691.6313250270467,civhc_coc_fy23_total
+2018,CHP+,Medical,All,Inpatient,26015637.7134791,988156,315.92952181816355,civhc_coc_fy23_total
+2018,CHP+,Medical,All,DME,311104.51,988156,3.778000761013443,civhc_coc_fy23_total
+2018,CHP+,Medical,Boulder,Professional,2392257.74,36488,786.7543543082658,civhc_coc_fy23_total
+2018,CHP+,Medical,Boulder,Outpatient,2112005.9794706,36488,694.5864874382592,civhc_coc_fy23_total
+2018,CHP+,Medical,Boulder,Inpatient,684267.26,36488,225.03856391142293,civhc_coc_fy23_total
+2018,CHP+,Medical,Boulder,DME,6306.57,36488,2.074074764306073,civhc_coc_fy23_total
+2018,CHP+,Medical,Colorado Springs,Inpatient,2119545.47,107031,237.63718586203998,civhc_coc_fy23_total
+2018,CHP+,Medical,Colorado Springs,Professional,8012825.05,107031,898.3743083779466,civhc_coc_fy23_total
+2018,CHP+,Medical,Colorado Springs,Outpatient,3374849.19916254,107031,378.3781370813174,civhc_coc_fy23_total
+2018,CHP+,Medical,Colorado Springs,DME,41934.25,107031,4.701544412366511,civhc_coc_fy23_total
+2018,CHP+,Medical,Denver,Inpatient,14651044.8102628,476145,369.24159179063855,civhc_coc_fy23_total
+2018,CHP+,Medical,Denver,Outpatient,37891548.6823068,476145,954.9582253046478,civhc_coc_fy23_total
+2018,CHP+,Medical,Denver,Professional,27041654.91,476145,681.5147883942917,civhc_coc_fy23_total
+2018,CHP+,Medical,Denver,DME,131318.74,476145,3.309548309863592,civhc_coc_fy23_total
+2018,CHP+,Medical,East,DME,15502.26,63444,2.9321467751087575,civhc_coc_fy23_total
+2018,CHP+,Medical,East,Professional,2990335.31,63444,565.6015339512011,civhc_coc_fy23_total
+2018,CHP+,Medical,East,Outpatient,1994017.71760556,63444,377.15485485257426,civhc_coc_fy23_total
+2018,CHP+,Medical,East,Inpatient,793060.25,63444,150.00193871760922,civhc_coc_fy23_total
+2018,CHP+,Medical,Ft. Collins,Outpatient,1688269.42574026,55405,365.6571267734522,civhc_coc_fy23_total
+2018,CHP+,Medical,Ft. Collins,Inpatient,1236599.87,55405,267.83139500045127,civhc_coc_fy23_total
+2018,CHP+,Medical,Ft. Collins,DME,10432.56,55405,2.259556357729447,civhc_coc_fy23_total
+2018,CHP+,Medical,Ft. Collins,Professional,3600855.74,55405,779.8983644075445,civhc_coc_fy23_total
+2018,CHP+,Medical,Grand Junction,DME,19739.63,32491,7.2904976762795854,civhc_coc_fy23_total
+2018,CHP+,Medical,Grand Junction,Inpatient,629871.22,32491,232.63225631713397,civhc_coc_fy23_total
+2018,CHP+,Medical,Grand Junction,Outpatient,775722.784557584,32491,286.5000589298885,civhc_coc_fy23_total
+2018,CHP+,Medical,Grand Junction,Professional,2150192.44,32491,794.1371235111261,civhc_coc_fy23_total
+2018,CHP+,Medical,Greeley,Professional,5770039.01,81122,853.5350228051577,civhc_coc_fy23_total
+2018,CHP+,Medical,Greeley,Outpatient,4372741.74216634,81122,646.83933958724,civhc_coc_fy23_total
+2018,CHP+,Medical,Greeley,Inpatient,1921647.57,81122,284.26038361973326,civhc_coc_fy23_total
+2018,CHP+,Medical,Greeley,DME,18321.52,81122,2.7102172037178573,civhc_coc_fy23_total
+2018,CHP+,Medical,Pueblo,Professional,1594589.26,25445,752.0169432108469,civhc_coc_fy23_total
+2018,CHP+,Medical,Pueblo,Outpatient,465078.24,25445,219.33342031833365,civhc_coc_fy23_total
+2018,CHP+,Medical,Pueblo,Inpatient,172582.81,25445,81.39098919237571,civhc_coc_fy23_total
+2018,CHP+,Medical,Pueblo,DME,7102.48,25445,3.3495680880330116,civhc_coc_fy23_total
+2018,CHP+,Medical,West,Professional,7674802.08,110694,832.0019599978318,civhc_coc_fy23_total
+2018,CHP+,Medical,West,Outpatient,4279069.86344247,110694,463.8809543544333,civhc_coc_fy23_total
+2018,CHP+,Medical,West,DME,60446.5,110694,6.5528212911268895,civhc_coc_fy23_total
+2018,CHP+,Medical,West,Inpatient,3807018.45321638,110694,412.7072961370676,civhc_coc_fy23_total
+2018,CHP+,Pharmacy,All,Pharmacy,27175914.56,988156,330.01972838296786,civhc_coc_fy23_total
+2018,CHP+,Pharmacy,Boulder,Pharmacy,777622.41,36488,255.74076189432142,civhc_coc_fy23_total
+2018,CHP+,Pharmacy,Colorado Springs,Pharmacy,4589346.59,107031,514.5440020181069,civhc_coc_fy23_total
+2018,CHP+,Pharmacy,Denver,Pharmacy,12665630.16,476145,319.20436404876665,civhc_coc_fy23_total
+2018,CHP+,Pharmacy,East,Pharmacy,1688086.1,63444,319.2899754113864,civhc_coc_fy23_total
+2018,CHP+,Pharmacy,Ft. Collins,Pharmacy,1883899.64,55405,408.0280783322805,civhc_coc_fy23_total
+2018,CHP+,Pharmacy,Grand Junction,Pharmacy,694667.59,32491,256.5636970237912,civhc_coc_fy23_total
+2018,CHP+,Pharmacy,Greeley,Pharmacy,2138336.92,81122,316.31423091146667,civhc_coc_fy23_total
+2018,CHP+,Pharmacy,Pueblo,Pharmacy,929544.96,25445,438.37844448811154,civhc_coc_fy23_total
+2018,CHP+,Pharmacy,West,Pharmacy,1808780.19,110694,196.0843612119898,civhc_coc_fy23_total
+2018,Commercial,Medical,All,Outpatient,2314539351.16,16722956,1660.8590140355568,civhc_coc_fy23_total
+2018,Commercial,Medical,All,DME,27708881.13,16722956,19.883241548922328,civhc_coc_fy23_total
+2018,Commercial,Medical,All,Professional,2523235537.96,16722956,1810.614490375984,civhc_coc_fy23_total
+2018,Commercial,Medical,All,Inpatient,1551490195.85,16722956,1113.3128826147722,civhc_coc_fy23_total
+2018,Commercial,Medical,Boulder,Professional,160840209.23,1103603,1748.8920479194057,civhc_coc_fy23_total
+2018,Commercial,Medical,Boulder,Outpatient,113826155.9,1103603,1237.6858986428997,civhc_coc_fy23_total
+2018,Commercial,Medical,Boulder,Inpatient,80453497.63,1103603,874.8091220846627,civhc_coc_fy23_total
+2018,Commercial,Medical,Boulder,DME,1299199.66,1103603,14.126815458094985,civhc_coc_fy23_total
+2018,Commercial,Medical,Colorado Springs,Professional,236162348.78,1538355,1842.1938924110495,civhc_coc_fy23_total
+2018,Commercial,Medical,Colorado Springs,Outpatient,205490629.09,1538355,1602.937910352292,civhc_coc_fy23_total
+2018,Commercial,Medical,Colorado Springs,DME,3063506.79,1538355,23.897007829792216,civhc_coc_fy23_total
+2018,Commercial,Medical,Colorado Springs,Inpatient,131683967.26,1538355,1027.2060786489465,civhc_coc_fy23_total
+2018,Commercial,Medical,Denver,DME,15344626.7,9558159,19.26474757325129,civhc_coc_fy23_total
+2018,Commercial,Medical,Denver,Professional,1505953233.34,9558159,1890.681960833671,civhc_coc_fy23_total
+2018,Commercial,Medical,Denver,Outpatient,1108767497.38,9558159,1392.0264319269015,civhc_coc_fy23_total
+2018,Commercial,Medical,Denver,Inpatient,867255461.63,9558159,1088.8148585475508,civhc_coc_fy23_total
+2018,Commercial,Medical,East,Outpatient,133851287.03,612550,2622.1785068320955,civhc_coc_fy23_total
+2018,Commercial,Medical,East,DME,1262177.2,612550,24.72635115500775,civhc_coc_fy23_total
+2018,Commercial,Medical,East,Inpatient,73794777.58,612550,1445.6572213860093,civhc_coc_fy23_total
+2018,Commercial,Medical,East,Professional,79140221.46,612550,1550.3757367072076,civhc_coc_fy23_total
+2018,Commercial,Medical,Ft. Collins,Inpatient,91275023.08,1042070,1051.0812872071933,civhc_coc_fy23_total
+2018,Commercial,Medical,Ft. Collins,Professional,129057806.17,1042070,1486.1704818678209,civhc_coc_fy23_total
+2018,Commercial,Medical,Ft. Collins,Outpatient,168963194.78,1042070,1945.702627808113,civhc_coc_fy23_total
+2018,Commercial,Medical,Ft. Collins,DME,1357338.09,1042070,15.630482673908663,civhc_coc_fy23_total
+2018,Commercial,Medical,Grand Junction,Professional,43263674.21,380432,1364.6698766665265,civhc_coc_fy23_total
+2018,Commercial,Medical,Grand Junction,Outpatient,68457953.74,380432,2159.3752494006812,civhc_coc_fy23_total
+2018,Commercial,Medical,Grand Junction,DME,617564.41,380432,19.479888442612612,civhc_coc_fy23_total
+2018,Commercial,Medical,Grand Junction,Inpatient,39697750.03,380432,1252.1896169617698,civhc_coc_fy23_total
+2018,Commercial,Medical,Greeley,Outpatient,156411696.7,934955,2007.519463931419,civhc_coc_fy23_total
+2018,Commercial,Medical,Greeley,Inpatient,91486624.28,934955,1174.2163968961072,civhc_coc_fy23_total
+2018,Commercial,Medical,Greeley,DME,1467074.12,934955,18.829664999919785,civhc_coc_fy23_total
+2018,Commercial,Medical,Greeley,Professional,125066375.01,934955,1605.2072026140297,civhc_coc_fy23_total
+2018,Commercial,Medical,Pueblo,Professional,52986627.89,358870,1771.7823576225373,civhc_coc_fy23_total
+2018,Commercial,Medical,Pueblo,Outpatient,62046739.31,358870,2074.7370126229553,civhc_coc_fy23_total
+2018,Commercial,Medical,Pueblo,Inpatient,37114126.07,358870,1241.0330003622482,civhc_coc_fy23_total
+2018,Commercial,Medical,Pueblo,DME,867616.24,358870,29.011605539610443,civhc_coc_fy23_total
+2018,Commercial,Medical,West,Outpatient,296724197.23,1202570,2960.9007099461987,civhc_coc_fy23_total
+2018,Commercial,Medical,West,DME,2429777.92,1202570,24.2458526655413,civhc_coc_fy23_total
+2018,Commercial,Medical,West,Inpatient,138728968.29,1202570,1384.3249203622242,civhc_coc_fy23_total
+2018,Commercial,Medical,West,Professional,190765041.87,1202570,1903.5735985763824,civhc_coc_fy23_total
+2018,Commercial,Pharmacy,All,Pharmacy,1647030458.52,15191631,1301.003526365273,civhc_coc_fy23_total
+2018,Commercial,Pharmacy,Boulder,Pharmacy,99463189.35,1020551,1169.5233968709058,civhc_coc_fy23_total
+2018,Commercial,Pharmacy,Colorado Springs,Pharmacy,173432463.56,1405470,1480.7783607761105,civhc_coc_fy23_total
+2018,Commercial,Pharmacy,Denver,Pharmacy,937041386.42,9000771,1249.281493445395,civhc_coc_fy23_total
+2018,Commercial,Pharmacy,East,Pharmacy,77685733.58,525683,1773.36684458124,civhc_coc_fy23_total
+2018,Commercial,Pharmacy,Ft. Collins,Pharmacy,89762771.63,845383,1274.1600665733754,civhc_coc_fy23_total
+2018,Commercial,Pharmacy,Grand Junction,Pharmacy,31013006.34,316562,1175.6182867179257,civhc_coc_fy23_total
+2018,Commercial,Pharmacy,Greeley,Pharmacy,92754686.74,800966,1389.6423080130742,civhc_coc_fy23_total
+2018,Commercial,Pharmacy,Pueblo,Pharmacy,43513234.45,336302,1552.648552194159,civhc_coc_fy23_total
+2018,Commercial,Pharmacy,West,Pharmacy,102363986.45,946273,1298.1114724820427,civhc_coc_fy23_total
+2018,Medicaid,Medical,All,Inpatient,1285673186.04334,15962571,966.5158721937763,civhc_coc_fy23_total
+2018,Medicaid,Medical,All,DME,55136340.0278148,15962571,41.44921769392772,civhc_coc_fy23_total
+2018,Medicaid,Medical,All,Professional,1450040647.33,15962571,1090.0805244944563,civhc_coc_fy23_total
+2018,Medicaid,Medical,All,Outpatient,1434968051.44288,15962571,1078.7495709378245,civhc_coc_fy23_total
+2018,Medicaid,Medical,All,Long Term Care,1851777523.88432,15962571,1392.089675692709,civhc_coc_fy23_total
+2018,Medicaid,Medical,Boulder,Professional,48339306.06,604603,959.4257268323181,civhc_coc_fy23_total
+2018,Medicaid,Medical,Boulder,Long Term Care,91089660.25,604603,1807.923419169273,civhc_coc_fy23_total
+2018,Medicaid,Medical,Boulder,Inpatient,39874970.0668219,604603,791.4278308276055,civhc_coc_fy23_total
+2018,Medicaid,Medical,Boulder,DME,1571400.97156032,604603,31.18874973945521,civhc_coc_fy23_total
+2018,Medicaid,Medical,Boulder,Outpatient,43706779.6993654,604603,867.4805721975987,civhc_coc_fy23_total
+2018,Medicaid,Medical,Colorado Springs,DME,8277619.15364674,2438850,40.728798345023634,civhc_coc_fy23_total
+2018,Medicaid,Medical,Colorado Springs,Professional,234522010.09,2438850,1153.9307956946923,civhc_coc_fy23_total
+2018,Medicaid,Medical,Colorado Springs,Outpatient,182868772.240124,2438850,899.7786935980023,civhc_coc_fy23_total
+2018,Medicaid,Medical,Colorado Springs,Long Term Care,269860784.778398,2438850,1327.8099995246841,civhc_coc_fy23_total
+2018,Medicaid,Medical,Colorado Springs,Inpatient,142822431.577383,2438850,702.73660902827,civhc_coc_fy23_total
+2018,Medicaid,Medical,Denver,Professional,692365974.39,7580001,1096.0937462514846,civhc_coc_fy23_total
+2018,Medicaid,Medical,Denver,Outpatient,663415572.695184,7580001,1050.2619818047792,civhc_coc_fy23_total
+2018,Medicaid,Medical,Denver,Long Term Care,834627291.841842,7580001,1321.309522532003,civhc_coc_fy23_total
+2018,Medicaid,Medical,Denver,Inpatient,643857138.641389,7580001,1019.2987657517021,civhc_coc_fy23_total
+2018,Medicaid,Medical,Denver,DME,24507687.5720055,7580001,38.79844486353841,civhc_coc_fy23_total
+2018,Medicaid,Medical,East,Long Term Care,146159787.152489,1113854,1574.6385485259898,civhc_coc_fy23_total
+2018,Medicaid,Medical,East,Professional,90975368.76,1113854,980.1144720223656,civhc_coc_fy23_total
+2018,Medicaid,Medical,East,Inpatient,101916135.001393,1113854,1097.9837752674193,civhc_coc_fy23_total
+2018,Medicaid,Medical,East,DME,4919650.1894943,1113854,53.0013828328772,civhc_coc_fy23_total
+2018,Medicaid,Medical,East,Outpatient,138740538.506073,1113854,1494.7079797467854,civhc_coc_fy23_total
+2018,Medicaid,Medical,Ft. Collins,Professional,78510089.5,778796,1209.7148341799393,civhc_coc_fy23_total
+2018,Medicaid,Medical,Ft. Collins,DME,2576584.05994517,778796,39.70103688172774,civhc_coc_fy23_total
+2018,Medicaid,Medical,Ft. Collins,Inpatient,67363137.5453342,778796,1037.9581437809265,civhc_coc_fy23_total
+2018,Medicaid,Medical,Ft. Collins,Long Term Care,89938050.7906066,778796,1385.8014287275219,civhc_coc_fy23_total
+2018,Medicaid,Medical,Ft. Collins,Outpatient,71440877.4288149,778796,1100.7895895019733,civhc_coc_fy23_total
+2018,Medicaid,Medical,Grand Junction,Long Term Care,93439338.2686808,562021,1995.071463920689,civhc_coc_fy23_total
+2018,Medicaid,Medical,Grand Junction,Inpatient,37966548.9675113,562021,810.6433524906287,civhc_coc_fy23_total
+2018,Medicaid,Medical,Grand Junction,Professional,49305285.01,562021,1052.7425489794864,civhc_coc_fy23_total
+2018,Medicaid,Medical,Grand Junction,Outpatient,44641877.4608761,562021,953.1717311817765,civhc_coc_fy23_total
+2018,Medicaid,Medical,Grand Junction,DME,2176396.58,562021,46.46936495255515,civhc_coc_fy23_total
+2018,Medicaid,Medical,Greeley,Professional,81774535.94,963247,1018.7360368420561,civhc_coc_fy23_total
+2018,Medicaid,Medical,Greeley,DME,3546808.25,963247,44.185654354490595,civhc_coc_fy23_total
+2018,Medicaid,Medical,Greeley,Inpatient,70586982.1546263,963247,879.3630147361118,civhc_coc_fy23_total
+2018,Medicaid,Medical,Greeley,Outpatient,88653407.899352,963247,1104.4320872966373,civhc_coc_fy23_total
+2018,Medicaid,Medical,Greeley,Long Term Care,83866902.3274078,963247,1044.8024524643147,civhc_coc_fy23_total
+2018,Medicaid,Medical,Pueblo,Inpatient,76642711.6749888,854993,1075.695988271092,civhc_coc_fy23_total
+2018,Medicaid,Medical,Pueblo,Long Term Care,137691349.800803,854993,1932.5259944930965,civhc_coc_fy23_total
+2018,Medicaid,Medical,Pueblo,Professional,89805729.44,854993,1260.4416097909573,civhc_coc_fy23_total
+2018,Medicaid,Medical,Pueblo,Outpatient,69360794.9328245,854993,973.4928112790328,civhc_coc_fy23_total
+2018,Medicaid,Medical,Pueblo,DME,3634143.8,854993,51.005944610072824,civhc_coc_fy23_total
+2018,Medicaid,Medical,West,DME,3926049.45116276,1195717,39.40112368892733,civhc_coc_fy23_total
+2018,Medicaid,Medical,West,Professional,84442348.14,1195717,847.4481651427554,civhc_coc_fy23_total
+2018,Medicaid,Medical,West,Long Term Care,105104358.6741,1195717,1054.8083736278734,civhc_coc_fy23_total
+2018,Medicaid,Medical,West,Outpatient,132139430.580268,1195717,1326.1274757850026,civhc_coc_fy23_total
+2018,Medicaid,Medical,West,Inpatient,104643130.413893,1195717,1050.1795700543826,civhc_coc_fy23_total
+2018,Medicaid,Pharmacy,All,Pharmacy,1126179163.82,14766457,915.192450419217,civhc_coc_fy23_total
+2018,Medicaid,Pharmacy,Boulder,Pharmacy,42421260.01,534357,952.6498579039855,civhc_coc_fy23_total
+2018,Medicaid,Pharmacy,Colorado Springs,Pharmacy,157916310.53,2197461,862.3569320957233,civhc_coc_fy23_total
+2018,Medicaid,Pharmacy,Denver,Pharmacy,495588385.54,7124251,834.7629282685297,civhc_coc_fy23_total
+2018,Medicaid,Pharmacy,East,Pharmacy,77508922.73,964127,964.7142676846515,civhc_coc_fy23_total
+2018,Medicaid,Pharmacy,Ft. Collins,Pharmacy,59956948.93,720868,998.0792421913582,civhc_coc_fy23_total
+2018,Medicaid,Pharmacy,Grand Junction,Pharmacy,67271266.77,529613,1524.2360010800337,civhc_coc_fy23_total
+2018,Medicaid,Pharmacy,Greeley,Pharmacy,66792696.68,881527,909.2317764061679,civhc_coc_fy23_total
+2018,Medicaid,Pharmacy,Pueblo,Pharmacy,73023985.62,749855,1168.609701128885,civhc_coc_fy23_total
+2018,Medicaid,Pharmacy,West,Pharmacy,85699387.01,1102291,932.9593039587551,civhc_coc_fy23_total
+2018,Medicare,Medical,All,Professional,1759716324.85,6561020,3218.4928407778057,civhc_coc_fy23_total
+2018,Medicare,Medical,All,Outpatient,1712070725.35,6561020,3131.349806005773,civhc_coc_fy23_total
+2018,Medicare,Medical,All,DME,46998522.91,6561020,85.9595421016854,civhc_coc_fy23_total
+2018,Medicare,Medical,All,Inpatient,1684726779.91,6561020,3081.3381698150597,civhc_coc_fy23_total
+2018,Medicare,Medical,Boulder,DME,1925103.74,348354,66.31542878795707,civhc_coc_fy23_total
+2018,Medicare,Medical,Boulder,Professional,107918444.71,348354,3717.544040028247,civhc_coc_fy23_total
+2018,Medicare,Medical,Boulder,Outpatient,79548911.06,348354,2740.2783740677587,civhc_coc_fy23_total
+2018,Medicare,Medical,Boulder,Inpatient,75097219.4,348354,2586.927759692727,civhc_coc_fy23_total
+2018,Medicare,Medical,Colorado Springs,DME,6148925.84,898258,82.1446734457138,civhc_coc_fy23_total
+2018,Medicare,Medical,Colorado Springs,Inpatient,210308017.97,898258,2809.5449365772415,civhc_coc_fy23_total
+2018,Medicare,Medical,Colorado Springs,Outpatient,205132420.62,898258,2740.403144130083,civhc_coc_fy23_total
+2018,Medicare,Medical,Colorado Springs,Professional,267611295.82,898258,3575.0703582267006,civhc_coc_fy23_total
+2018,Medicare,Medical,Denver,Outpatient,619074248.93,2498356,2973.511776208034,civhc_coc_fy23_total
+2018,Medicare,Medical,Denver,Inpatient,666207125.51,2498356,3199.8984556724504,civhc_coc_fy23_total
+2018,Medicare,Medical,Denver,DME,16870827.85,2498356,81.03326115253391,civhc_coc_fy23_total
+2018,Medicare,Medical,Denver,Professional,730690506.47,2498356,3509.622358719094,civhc_coc_fy23_total
+2018,Medicare,Medical,East,Professional,133903093.57,621495,2585.4385358530635,civhc_coc_fy23_total
+2018,Medicare,Medical,East,Outpatient,205946279.27,621495,3976.468597880916,civhc_coc_fy23_total
+2018,Medicare,Medical,East,Inpatient,189746855.62,621495,3663.685576617672,civhc_coc_fy23_total
+2018,Medicare,Medical,East,DME,6195477.29,621495,119.62401544662468,civhc_coc_fy23_total
+2018,Medicare,Medical,Ft. Collins,Inpatient,108958244.9,482963,2707.2445276346225,civhc_coc_fy23_total
+2018,Medicare,Medical,Ft. Collins,Professional,127052255.22,482963,3156.8195962009513,civhc_coc_fy23_total
+2018,Medicare,Medical,Ft. Collins,Outpatient,133922227.97,482963,3327.5152250586484,civhc_coc_fy23_total
+2018,Medicare,Medical,Ft. Collins,DME,2942030.27,482963,73.09951950770557,civhc_coc_fy23_total
+2018,Medicare,Medical,Grand Junction,Inpatient,66613961.35,271386,2945.500269726515,civhc_coc_fy23_total
+2018,Medicare,Medical,Grand Junction,Professional,50121018.09,271386,2216.224186509253,civhc_coc_fy23_total
+2018,Medicare,Medical,Grand Junction,Outpatient,60540171.57,271386,2676.9327041188567,civhc_coc_fy23_total
+2018,Medicare,Medical,Grand Junction,DME,1284703.79,271386,56.806340341800976,civhc_coc_fy23_total
+2018,Medicare,Medical,Greeley,DME,2367285.96,365154,77.79575609195025,civhc_coc_fy23_total
+2018,Medicare,Medical,Greeley,Inpatient,99852855.8,365154,3281.4491135247044,civhc_coc_fy23_total
+2018,Medicare,Medical,Greeley,Professional,96736354.47,365154,3179.032007427003,civhc_coc_fy23_total
+2018,Medicare,Medical,Greeley,Outpatient,101742243.09,365154,3343.5397587867037,civhc_coc_fy23_total
+2018,Medicare,Medical,Pueblo,Professional,84651497.37,280978,3615.293611741845,civhc_coc_fy23_total
+2018,Medicare,Medical,Pueblo,Outpatient,74368366.45,280978,3176.121964708981,civhc_coc_fy23_total
+2018,Medicare,Medical,Pueblo,Inpatient,78721400.34,280978,3362.031205574814,civhc_coc_fy23_total
+2018,Medicare,Medical,Pueblo,DME,2325659.06,280978,99.32417740890746,civhc_coc_fy23_total
+2018,Medicare,Medical,West,Professional,161031859.13,794388,2432.542170274475,civhc_coc_fy23_total
+2018,Medicare,Medical,West,Outpatient,231795856.39,794388,3501.5008744845086,civhc_coc_fy23_total
+2018,Medicare,Medical,West,Inpatient,189221099.02,794388,2858.3679363736615,civhc_coc_fy23_total
+2018,Medicare,Medical,West,DME,6938509.11,794388,104.81289913744922,civhc_coc_fy23_total
+2018,Medicare,Pharmacy,All,Pharmacy,895609208.84,3797619,2830.012833325302,civhc_coc_fy23_total
+2018,Medicare,Pharmacy,Boulder,Pharmacy,52068393.65,218344,2861.6345024365223,civhc_coc_fy23_total
+2018,Medicare,Pharmacy,Colorado Springs,Pharmacy,99243625.75,407041,2925.807250375269,civhc_coc_fy23_total
+2018,Medicare,Pharmacy,Denver,Pharmacy,359817928.29,1375506,3139.0740131122657,civhc_coc_fy23_total
+2018,Medicare,Pharmacy,East,Pharmacy,87289290.64,418367,2503.71441265683,civhc_coc_fy23_total
+2018,Medicare,Pharmacy,Ft. Collins,Pharmacy,74185615.16,312005,2853.247165654396,civhc_coc_fy23_total
+2018,Medicare,Pharmacy,Grand Junction,Pharmacy,28831442.91,154756,2235.631025097573,civhc_coc_fy23_total
+2018,Medicare,Pharmacy,Greeley,Pharmacy,57038473.0,234418,2919.8341253657995,civhc_coc_fy23_total
+2018,Medicare,Pharmacy,Pueblo,Pharmacy,47213809.57,177976,3183.3826742931633,civhc_coc_fy23_total
+2018,Medicare,Pharmacy,West,Pharmacy,89920629.87,499391,2160.726882222547,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,All,Professional,1198063059.44,3796212,3787.132202648324,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,All,Outpatient,678932185.902992,3796212,2146.135735000022,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,All,Long Term Care,46408.12,3796212,0.14669819283011593,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,All,Inpatient,800062979.110796,3796212,2529.0357201677757,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,All,DME,32780512.64,3796212,103.6207018153886,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Boulder,Outpatient,30643449.41,207257,1774.2290630473278,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Boulder,DME,1237615.42,207257,71.65685617373599,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Boulder,Inpatient,36816716.25,207257,2131.655842745963,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Boulder,Professional,64392144.29,207257,3728.24913744771,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Colorado Springs,Professional,111296949.01,415082,3217.5892669882096,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Colorado Springs,Outpatient,50322228.9031796,415082,1454.813137737014,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Colorado Springs,Long Term Care,14480.2,415082,0.4186218626680993,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Colorado Springs,Inpatient,59409396.5127659,415082,1717.5227019075528,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Colorado Springs,DME,2933297.9,415082,84.80149657176173,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Denver,Inpatient,517144488.15803,2278558,2723.5356123900992,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Denver,Long Term Care,2853.47,2278558,0.015027767561764941,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Denver,Outpatient,400499019.801396,2278558,2109.2235692998606,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Denver,Professional,772779668.55,2278558,4069.835405813677,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Denver,DME,18308009.93,2278558,96.41892774289704,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,East,Professional,31256821.26,114009,3289.931980106834,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,East,Outpatient,33693003.5223646,114009,3546.3519745667027,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,East,Long Term Care,20074.15,114009,2.1129016130305502,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,East,Inpatient,30805345.75,114009,3242.4119937899636,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,East,DME,1524491.97,114009,160.4601710391285,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Ft. Collins,Inpatient,42969581.25,208642,2471.3862740962986,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Ft. Collins,DME,1031476.77,208642,59.32516578637091,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Ft. Collins,Outpatient,48709944.257705,208642,2801.54202458019,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Ft. Collins,Professional,47555738.52,208642,2735.158128468861,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Grand Junction,DME,2539627.05,109863,277.3957073810109,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Grand Junction,Professional,39617140.91,109863,4327.259322246799,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Grand Junction,Outpatient,16864063.2829002,109863,1842.0101343928563,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Grand Junction,Inpatient,16649089.57,109863,1818.52921220065,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Greeley,Outpatient,43919036.66,197453,2669.1336162023363,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Greeley,Professional,53756567.37,197453,3266.999278005399,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Greeley,Inpatient,44013602.91,197453,2674.880781350498,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Greeley,DME,1468042.14,197453,89.21872891270327,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Pueblo,Inpatient,35946575.91,160079,2694.6627035401266,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Pueblo,DME,1554169.84,160079,116.50521355080929,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Pueblo,Long Term Care,9000.3,160079,0.6746893721225145,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Pueblo,Outpatient,31814699.8757535,160079,2384.924933995352,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,Pueblo,Professional,43773619.17,160079,3281.4012458848447,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,West,DME,2183781.62,107142,244.585498123985,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,West,Professional,33634410.36,107142,3767.084096992776,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,West,Outpatient,22466740.1896921,107142,2516.295031605768,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,West,Long Term Care,0.0,107142,0.0,civhc_coc_fy23_total
+2018,Medicare Advantage,Medical,West,Inpatient,16308182.8,107142,1826.5310858486869,civhc_coc_fy23_total
+2018,Medicare Advantage,Pharmacy,All,Pharmacy,795770976.21,3692603,2586.0488426511056,civhc_coc_fy23_total
+2018,Medicare Advantage,Pharmacy,Boulder,Pharmacy,36588456.58,201962,2173.980644675731,civhc_coc_fy23_total
+2018,Medicare Advantage,Pharmacy,Colorado Springs,Pharmacy,101579554.35,398877,3055.9662557630545,civhc_coc_fy23_total
+2018,Medicare Advantage,Pharmacy,Denver,Pharmacy,476853254.4,2222806,2574.3312969282965,civhc_coc_fy23_total
+2018,Medicare Advantage,Pharmacy,East,Pharmacy,25450265.6,110663,2759.7587920081687,civhc_coc_fy23_total
+2018,Medicare Advantage,Pharmacy,Ft. Collins,Pharmacy,39535783.16,201440,2355.1896243050037,civhc_coc_fy23_total
+2018,Medicare Advantage,Pharmacy,Grand Junction,Pharmacy,9599803.13,107813,1068.4948713049448,civhc_coc_fy23_total
+2018,Medicare Advantage,Pharmacy,Greeley,Pharmacy,45562588.16,193440,2826.4632853598014,civhc_coc_fy23_total
+2018,Medicare Advantage,Pharmacy,Pueblo,Pharmacy,46683678.41,156911,3570.2031146318614,civhc_coc_fy23_total
+2018,Medicare Advantage,Pharmacy,West,Pharmacy,13917592.42,100493,1661.9178354711275,civhc_coc_fy23_total
+2019,All,Medical,All,DME,167058538.972679,40990532,48.90647595576823,civhc_coc_fy23_total
+2019,All,Medical,All,Professional,7463881473.0,40990532,2185.05526290803,civhc_coc_fy23_total
+2019,All,Medical,All,Outpatient,6575089228.90487,40990532,1924.8608616950482,civhc_coc_fy23_total
+2019,All,Medical,All,Long Term Care,2199947293.92689,40990532,644.0357379875596,civhc_coc_fy23_total
+2019,All,Medical,All,Inpatient,5364396379.77942,40990532,1570.4298875006803,civhc_coc_fy23_total
+2019,All,Medical,Boulder,Professional,401734491.32,2165905,2225.7734738319546,civhc_coc_fy23_total
+2019,All,Medical,Boulder,Outpatient,280163365.312751,2165905,1552.2196881917775,civhc_coc_fy23_total
+2019,All,Medical,Boulder,Long Term Care,90181339.65,2165905,499.6415243512527,civhc_coc_fy23_total
+2019,All,Medical,Boulder,Inpatient,228980405.937321,2165905,1268.6451489090482,civhc_coc_fy23_total
+2019,All,Medical,Boulder,DME,6532802.67,2165905,36.19440004986368,civhc_coc_fy23_total
+2019,All,Medical,Colorado Springs,Professional,911318464.7,4961425,2204.1694828401114,civhc_coc_fy23_total
+2019,All,Medical,Colorado Springs,Outpatient,716792904.813327,4961425,1733.6782996336585,civhc_coc_fy23_total
+2019,All,Medical,Colorado Springs,DME,19870018.78,4961425,48.05881885950106,civhc_coc_fy23_total
+2019,All,Medical,Colorado Springs,Inpatient,582783234.84652,4961425,1409.5544764172066,civhc_coc_fy23_total
+2019,All,Medical,Colorado Springs,Long Term Care,321937512.353689,4961425,778.6573712681877,civhc_coc_fy23_total
+2019,All,Medical,Denver,Professional,3999646220.86,20987379,2286.886545019271,civhc_coc_fy23_total
+2019,All,Medical,Denver,Outpatient,2984698658.42558,20987379,1706.567737739284,civhc_coc_fy23_total
+2019,All,Medical,Denver,Long Term Care,1060942767.42611,20987379,606.6175871276408,civhc_coc_fy23_total
+2019,All,Medical,Denver,Inpatient,2674402939.69791,20987379,1529.1492699671987,civhc_coc_fy23_total
+2019,All,Medical,Denver,DME,75516028.8613875,20987379,43.177966450057916,civhc_coc_fy23_total
+2019,All,Medical,East,Professional,351185705.13,2313863,1821.2955829969187,civhc_coc_fy23_total
+2019,All,Medical,East,Long Term Care,170182509.600871,2313863,882.5890362612013,civhc_coc_fy23_total
+2019,All,Medical,East,Inpatient,396694294.065475,2313863,2057.309153042207,civhc_coc_fy23_total
+2019,All,Medical,East,DME,16511476.1027104,2313863,85.63070209105933,civhc_coc_fy23_total
+2019,All,Medical,East,Outpatient,541668311.119175,2313863,2809.163607970783,civhc_coc_fy23_total
+2019,All,Medical,Ft. Collins,Outpatient,444790209.94061,2438668,2188.6876439463344,civhc_coc_fy23_total
+2019,All,Medical,Ft. Collins,Long Term Care,103598910.025542,2438668,509.78112654387724,civhc_coc_fy23_total
+2019,All,Medical,Ft. Collins,Inpatient,317644937.539014,2438668,1563.0414843136368,civhc_coc_fy23_total
+2019,All,Medical,Ft. Collins,DME,7879850.49,2438668,38.77453014514481,civhc_coc_fy23_total
+2019,All,Medical,Ft. Collins,Professional,410748601.18,2438668,2021.178452401065,civhc_coc_fy23_total
+2019,All,Medical,Grand Junction,Outpatient,214918183.01986,1248107,2066.3438280839064,civhc_coc_fy23_total
+2019,All,Medical,Grand Junction,Long Term Care,104260886.67631,1248107,1002.4225808490138,civhc_coc_fy23_total
+2019,All,Medical,Grand Junction,Inpatient,177602366.842778,1248107,1707.568663674938,civhc_coc_fy23_total
+2019,All,Medical,Grand Junction,DME,5949952.38,1248107,57.206175880753804,civhc_coc_fy23_total
+2019,All,Medical,Grand Junction,Professional,196276664.7,1248107,1887.1138262985464,civhc_coc_fy23_total
+2019,All,Medical,Greeley,Long Term Care,98622102.83,2389953,495.1834759763058,civhc_coc_fy23_total
+2019,All,Medical,Greeley,Professional,389406141.67,2389953,1955.2157302005521,civhc_coc_fy23_total
+2019,All,Medical,Greeley,Outpatient,403202345.968534,2389953,2024.4867374473088,civhc_coc_fy23_total
+2019,All,Medical,Greeley,Inpatient,300674301.964822,2389953,1509.6914556804522,civhc_coc_fy23_total
+2019,All,Medical,Greeley,DME,8955042.68,2389953,44.9634416074291,civhc_coc_fy23_total
+2019,All,Medical,Pueblo,DME,8462114.8,1539694,65.95166156392115,civhc_coc_fy23_total
+2019,All,Medical,Pueblo,Inpatient,221380717.698109,1539694,1725.3873902069554,civhc_coc_fy23_total
+2019,All,Medical,Pueblo,Long Term Care,132440043.08,1539694,1032.205436249021,civhc_coc_fy23_total
+2019,All,Medical,Pueblo,Outpatient,233462464.886683,1539694,1819.5495849436288,civhc_coc_fy23_total
+2019,All,Medical,Pueblo,Professional,294394980.57,1539694,2294.4427703426786,civhc_coc_fy23_total
+2019,All,Medical,West,Professional,509170202.87,3163699,1931.2970148045058,civhc_coc_fy23_total
+2019,All,Medical,West,Outpatient,755392785.418351,3163699,2865.2262509866496,civhc_coc_fy23_total
+2019,All,Medical,West,Inpatient,464233181.187463,3163699,1760.849617567776,civhc_coc_fy23_total
+2019,All,Medical,West,DME,17381252.2085816,3163699,65.92758239737068,civhc_coc_fy23_total
+2019,All,Medical,West,Long Term Care,117781222.28437,3163699,446.74751530168965,civhc_coc_fy23_total
+2019,All,Pharmacy,All,Pharmacy,4765660808.77,36455417,1568.7086971255878,civhc_coc_fy23_total
+2019,All,Pharmacy,Boulder,Pharmacy,241459326.8,1922622,1507.0627099866745,civhc_coc_fy23_total
+2019,All,Pharmacy,Colorado Springs,Pharmacy,558727486.89,4243801,1579.8878982968333,civhc_coc_fy23_total
+2019,All,Pharmacy,Denver,Pharmacy,2430568362.58,19217641,1517.7107508127558,civhc_coc_fy23_total
+2019,All,Pharmacy,East,Pharmacy,276714563.8,1964721,1690.0998999857995,civhc_coc_fy23_total
+2019,All,Pharmacy,Ft. Collins,Pharmacy,277953545.93,2069255,1611.9050340146575,civhc_coc_fy23_total
+2019,All,Pharmacy,Grand Junction,Pharmacy,154226224.18,1062698,1741.5245819226157,civhc_coc_fy23_total
+2019,All,Pharmacy,Greeley,Pharmacy,283386691.57,2066594,1645.5289712638282,civhc_coc_fy23_total
+2019,All,Pharmacy,Pueblo,Pharmacy,221094601.64,1375024,1929.5192081592759,civhc_coc_fy23_total
+2019,All,Pharmacy,West,Pharmacy,321530005.38,2603084,1482.2264915615478,civhc_coc_fy23_total
+2019,CHP+,Medical,All,Outpatient,61967560.2663648,949035,783.5440454739578,civhc_coc_fy23_total
+2019,CHP+,Medical,All,Professional,63061267.31,949035,797.3733399927294,civhc_coc_fy23_total
+2019,CHP+,Medical,All,Long Term Care,20431.099578712,949035,0.25833946582006356,civhc_coc_fy23_total
+2019,CHP+,Medical,All,Inpatient,25427763.244928,949035,321.519394900226,civhc_coc_fy23_total
+2019,CHP+,Medical,All,DME,290665.3,949035,3.6752950101945663,civhc_coc_fy23_total
+2019,CHP+,Medical,Boulder,Inpatient,669053.04,33679,238.38702099230977,civhc_coc_fy23_total
+2019,CHP+,Medical,Boulder,Outpatient,2319354.54910704,33679,826.397891543231,civhc_coc_fy23_total
+2019,CHP+,Medical,Boulder,Professional,2703440.39,33679,963.2496416164375,civhc_coc_fy23_total
+2019,CHP+,Medical,Boulder,DME,3647.73,33679,1.2997048605956234,civhc_coc_fy23_total
+2019,CHP+,Medical,Colorado Springs,Long Term Care,6385.99,101361,0.7560292420161601,civhc_coc_fy23_total
+2019,CHP+,Medical,Colorado Springs,Outpatient,6333394.41989139,101361,749.802518115416,civhc_coc_fy23_total
+2019,CHP+,Medical,Colorado Springs,Professional,5754659.55,101361,681.2868322135732,civhc_coc_fy23_total
+2019,CHP+,Medical,Colorado Springs,Inpatient,1687061.9421641,101361,199.72911974003017,civhc_coc_fy23_total
+2019,CHP+,Medical,Colorado Springs,DME,31133.61,101361,3.685868529316009,civhc_coc_fy23_total
+2019,CHP+,Medical,Denver,Inpatient,15392585.3620124,458162,403.1565785555083,civhc_coc_fy23_total
+2019,CHP+,Medical,Denver,DME,119710.58,458162,3.135412714280102,civhc_coc_fy23_total
+2019,CHP+,Medical,Denver,Long Term Care,8443.03,458162,0.2211365412234101,civhc_coc_fy23_total
+2019,CHP+,Medical,Denver,Outpatient,38854702.4011568,458162,1017.6671762692707,civhc_coc_fy23_total
+2019,CHP+,Medical,Denver,Professional,29299522.2,458162,767.4016317372458,civhc_coc_fy23_total
+2019,CHP+,Medical,East,DME,18293.7,62275,3.5250806904857486,civhc_coc_fy23_total
+2019,CHP+,Medical,East,Inpatient,771483.73,62275,148.66005234845443,civhc_coc_fy23_total
+2019,CHP+,Medical,East,Professional,3189399.63,62275,614.5772069048575,civhc_coc_fy23_total
+2019,CHP+,Medical,East,Outpatient,2300000.4212025,62275,443.19558497679645,civhc_coc_fy23_total
+2019,CHP+,Medical,Ft. Collins,DME,10798.74,50672,2.5573271234606882,civhc_coc_fy23_total
+2019,CHP+,Medical,Ft. Collins,Inpatient,972448.51,50672,230.29251105146827,civhc_coc_fy23_total
+2019,CHP+,Medical,Ft. Collins,Professional,3468984.05,50672,821.5150102620776,civhc_coc_fy23_total
+2019,CHP+,Medical,Ft. Collins,Outpatient,1664988.45508338,50672,394.29786590228446,civhc_coc_fy23_total
+2019,CHP+,Medical,Ft. Collins,Long Term Care,1519.8,50672,0.35991474581622984,civhc_coc_fy23_total
+2019,CHP+,Medical,Grand Junction,DME,9870.6,33114,3.5769523464395725,civhc_coc_fy23_total
+2019,CHP+,Medical,Grand Junction,Inpatient,775339.61,33114,280.9710491030984,civhc_coc_fy23_total
+2019,CHP+,Medical,Grand Junction,Long Term Care,246.72,33114,0.08940750135894185,civhc_coc_fy23_total
+2019,CHP+,Medical,Grand Junction,Outpatient,1001357.08959418,33114,362.8762781642254,civhc_coc_fy23_total
+2019,CHP+,Medical,Grand Junction,Professional,2552618.18,33114,925.0292371806488,civhc_coc_fy23_total
+2019,CHP+,Medical,Greeley,Professional,6154045.43,78720,938.1166814024389,civhc_coc_fy23_total
+2019,CHP+,Medical,Greeley,Outpatient,3976422.17606234,78720,606.1619170826738,civhc_coc_fy23_total
+2019,CHP+,Medical,Greeley,Long Term Care,1936.31,78720,0.2951692073170732,civhc_coc_fy23_total
+2019,CHP+,Medical,Greeley,Inpatient,1866650.33,78720,284.55035518292686,civhc_coc_fy23_total
+2019,CHP+,Medical,Greeley,DME,20943.02,78720,3.1925335365853664,civhc_coc_fy23_total
+2019,CHP+,Medical,Pueblo,Professional,1769637.46,24930,851.8110517448856,civhc_coc_fy23_total
+2019,CHP+,Medical,Pueblo,Outpatient,737051.38524806,24930,354.77804344070273,civhc_coc_fy23_total
+2019,CHP+,Medical,Pueblo,Inpatient,698474.05075146,24930,336.208929362917,civhc_coc_fy23_total
+2019,CHP+,Medical,Pueblo,DME,6403.06,24930,3.082098676293622,civhc_coc_fy23_total
+2019,CHP+,Medical,West,Professional,8168960.42,106248,922.6293675175062,civhc_coc_fy23_total
+2019,CHP+,Medical,West,DME,69864.26,106248,7.890700248475264,civhc_coc_fy23_total
+2019,CHP+,Medical,West,Inpatient,2594666.67,106248,293.05022249830586,civhc_coc_fy23_total
+2019,CHP+,Medical,West,Long Term Care,1899.249578712,106248,0.21450751961960693,civhc_coc_fy23_total
+2019,CHP+,Medical,West,Outpatient,4780289.36901912,106248,539.9016680617935,civhc_coc_fy23_total
+2019,CHP+,Pharmacy,All,Pharmacy,28684778.02,949035,362.70246749593,civhc_coc_fy23_total
+2019,CHP+,Pharmacy,Boulder,Pharmacy,1362101.13,33679,485.3236010570385,civhc_coc_fy23_total
+2019,CHP+,Pharmacy,Colorado Springs,Pharmacy,4069762.12,101361,481.81396631840653,civhc_coc_fy23_total
+2019,CHP+,Pharmacy,Denver,Pharmacy,14004083.76,458162,366.7894873865576,civhc_coc_fy23_total
+2019,CHP+,Pharmacy,East,Pharmacy,1772942.51,62275,341.6348473705339,civhc_coc_fy23_total
+2019,CHP+,Pharmacy,Ft. Collins,Pharmacy,1135346.03,50672,268.86944190085256,civhc_coc_fy23_total
+2019,CHP+,Pharmacy,Grand Junction,Pharmacy,733109.77,33114,265.6676100742888,civhc_coc_fy23_total
+2019,CHP+,Pharmacy,Greeley,Pharmacy,3083378.42,78720,470.0271981707317,civhc_coc_fy23_total
+2019,CHP+,Pharmacy,Pueblo,Pharmacy,509782.14,24930,245.38249819494587,civhc_coc_fy23_total
+2019,CHP+,Pharmacy,West,Pharmacy,2014272.14,106248,227.4985475491303,civhc_coc_fy23_total
+2019,Commercial,Medical,All,DME,26882454.36,16719269,19.294471087222774,civhc_coc_fy23_total
+2019,Commercial,Medical,All,Professional,2601158741.33,16719269,1866.941963548765,civhc_coc_fy23_total
+2019,Commercial,Medical,All,Outpatient,2387231624.11,16719269,1713.3990421064464,civhc_coc_fy23_total
+2019,Commercial,Medical,All,Inpatient,1509217470.17,16719269,1083.2177915218663,civhc_coc_fy23_total
+2019,Commercial,Medical,Boulder,Professional,161134980.25,1087793,1777.5622411616919,civhc_coc_fy23_total
+2019,Commercial,Medical,Boulder,Outpatient,112046112.26,1087793,1236.0378740440508,civhc_coc_fy23_total
+2019,Commercial,Medical,Boulder,Inpatient,75454961.31,1087793,832.3822048128642,civhc_coc_fy23_total
+2019,Commercial,Medical,Boulder,DME,1347925.48,1087793,14.869654208107608,civhc_coc_fy23_total
+2019,Commercial,Medical,Colorado Springs,DME,2824339.02,1564829,21.658640170906853,civhc_coc_fy23_total
+2019,Commercial,Medical,Colorado Springs,Outpatient,220802626.97,1564829,1693.2402988697168,civhc_coc_fy23_total
+2019,Commercial,Medical,Colorado Springs,Professional,240581651.47,1564829,1844.9171236218142,civhc_coc_fy23_total
+2019,Commercial,Medical,Colorado Springs,Inpatient,133674611.92,1564829,1025.0930568387985,civhc_coc_fy23_total
+2019,Commercial,Medical,Denver,DME,14920992.04,9531050,18.786167786340435,civhc_coc_fy23_total
+2019,Commercial,Medical,Denver,Professional,1561508504.12,9531050,1966.0060590847806,civhc_coc_fy23_total
+2019,Commercial,Medical,Denver,Outpatient,1134744861.15,9531050,1428.692361681032,civhc_coc_fy23_total
+2019,Commercial,Medical,Denver,Inpatient,831615989.16,9531050,1047.040134079666,civhc_coc_fy23_total
+2019,Commercial,Medical,East,Outpatient,133124293.34,600950,2658.276928330144,civhc_coc_fy23_total
+2019,Commercial,Medical,East,Inpatient,63442009.84,600950,1266.8343757051334,civhc_coc_fy23_total
+2019,Commercial,Medical,East,DME,1242633.05,600950,24.81337315916466,civhc_coc_fy23_total
+2019,Commercial,Medical,East,Professional,75907869.85,600950,1515.7574477077958,civhc_coc_fy23_total
+2019,Commercial,Medical,Ft. Collins,DME,1418861.65,1039776,16.37500750161573,civhc_coc_fy23_total
+2019,Commercial,Medical,Ft. Collins,Inpatient,95010839.36,1039776,1096.5150881728373,civhc_coc_fy23_total
+2019,Commercial,Medical,Ft. Collins,Outpatient,171837779.28,1039776,1983.170751546487,civhc_coc_fy23_total
+2019,Commercial,Medical,Ft. Collins,Professional,132584724.39,1039776,1530.1533144446496,civhc_coc_fy23_total
+2019,Commercial,Medical,Grand Junction,Professional,42048097.61,379224,1330.5517881779633,civhc_coc_fy23_total
+2019,Commercial,Medical,Grand Junction,Outpatient,71197084.27,379224,2252.9296965381936,civhc_coc_fy23_total
+2019,Commercial,Medical,Grand Junction,Inpatient,38164051.97,379224,1207.646730270236,civhc_coc_fy23_total
+2019,Commercial,Medical,Grand Junction,DME,529193.01,379224,16.74555439529144,civhc_coc_fy23_total
+2019,Commercial,Medical,Greeley,Inpatient,95172921.88,937459,1218.2666789267585,civhc_coc_fy23_total
+2019,Commercial,Medical,Greeley,DME,1516534.73,937459,19.41249351704981,civhc_coc_fy23_total
+2019,Commercial,Medical,Greeley,Outpatient,161323540.44,937459,2065.0316283485463,civhc_coc_fy23_total
+2019,Commercial,Medical,Greeley,Professional,134261195.89,937459,1718.618468306347,civhc_coc_fy23_total
+2019,Commercial,Medical,Pueblo,Professional,53706569.3,363421,1773.3670635433832,civhc_coc_fy23_total
+2019,Commercial,Medical,Pueblo,Outpatient,59431694.93,363421,1962.4081689280476,civhc_coc_fy23_total
+2019,Commercial,Medical,Pueblo,Inpatient,34846154.06,363421,1150.604529512604,civhc_coc_fy23_total
+2019,Commercial,Medical,Pueblo,DME,828230.67,363421,27.347808849791292,civhc_coc_fy23_total
+2019,Commercial,Medical,West,Professional,199425148.45,1223679,1955.6613960033633,civhc_coc_fy23_total
+2019,Commercial,Medical,West,Outpatient,322723631.47,1223679,3164.787152218842,civhc_coc_fy23_total
+2019,Commercial,Medical,West,Inpatient,141835930.67,1223679,1390.913113684226,civhc_coc_fy23_total
+2019,Commercial,Medical,West,DME,2253744.71,1223679,22.101332555351526,civhc_coc_fy23_total
+2019,Commercial,Pharmacy,All,Pharmacy,1799329590.31,15195089,1420.9824689885002,civhc_coc_fy23_total
+2019,Commercial,Pharmacy,Boulder,Pharmacy,107563723.58,994798,1297.5143526223414,civhc_coc_fy23_total
+2019,Commercial,Pharmacy,Colorado Springs,Pharmacy,181418303.92,1433858,1518.2951498962937,civhc_coc_fy23_total
+2019,Commercial,Pharmacy,Denver,Pharmacy,1034065618.81,8974125,1382.7295057423426,civhc_coc_fy23_total
+2019,Commercial,Pharmacy,East,Pharmacy,71360653.43,508870,1682.8027613339361,civhc_coc_fy23_total
+2019,Commercial,Pharmacy,Ft. Collins,Pharmacy,102002293.66,863051,1418.2563068926402,civhc_coc_fy23_total
+2019,Commercial,Pharmacy,Grand Junction,Pharmacy,35924299.39,314502,1370.711768700994,civhc_coc_fy23_total
+2019,Commercial,Pharmacy,Greeley,Pharmacy,102913809.31,799324,1545.0126753606796,civhc_coc_fy23_total
+2019,Commercial,Pharmacy,Pueblo,Pharmacy,48340237.22,343275,1689.8487994756392,civhc_coc_fy23_total
+2019,Commercial,Pharmacy,West,Pharmacy,115740650.99,969310,1432.8623576358439,civhc_coc_fy23_total
+2019,Medicaid,Medical,All,Professional,1566161726.35,15089696,1245.4817324484204,civhc_coc_fy23_total
+2019,Medicaid,Medical,All,Long Term Care,2199320824.07731,15089696,1748.9981169221514,civhc_coc_fy23_total
+2019,Medicaid,Medical,All,Inpatient,1284853249.52664,15089696,1021.7726715183446,civhc_coc_fy23_total
+2019,Medicaid,Medical,All,DME,57590015.2726796,15089696,45.798151485103155,civhc_coc_fy23_total
+2019,Medicaid,Medical,All,Outpatient,1502477778.30523,15089696,1194.8374135345575,civhc_coc_fy23_total
+2019,Medicaid,Medical,Boulder,DME,1764219.01,566474,37.37263867361962,civhc_coc_fy23_total
+2019,Medicaid,Medical,Boulder,Inpatient,39236760.164936,566474,831.1786983678544,civhc_coc_fy23_total
+2019,Medicaid,Medical,Boulder,Long Term Care,90179549.67,566474,1910.3340948393043,civhc_coc_fy23_total
+2019,Medicaid,Medical,Boulder,Outpatient,49586663.1568481,566474,1050.4276593138911,civhc_coc_fy23_total
+2019,Medicaid,Medical,Boulder,Professional,48435458.4,566474,1026.0409141461037,civhc_coc_fy23_total
+2019,Medicaid,Medical,Colorado Springs,DME,7788389.67,2217315,42.15038280081991,civhc_coc_fy23_total
+2019,Medicaid,Medical,Colorado Springs,Inpatient,162630938.867812,2217315,880.1506625868421,civhc_coc_fy23_total
+2019,Medicaid,Medical,Colorado Springs,Professional,254406794.78,2217315,1376.8370923211182,civhc_coc_fy23_total
+2019,Medicaid,Medical,Colorado Springs,Outpatient,206835715.25482,2217315,1119.3847437363838,civhc_coc_fy23_total
+2019,Medicaid,Medical,Colorado Springs,Long Term Care,321766784.093689,2217315,1741.3860498505032,civhc_coc_fy23_total
+2019,Medicaid,Medical,Denver,Inpatient,622024891.344647,7221499,1033.621786298906,civhc_coc_fy23_total
+2019,Medicaid,Medical,Denver,DME,25281923.3313875,7221499,42.011094923180075,civhc_coc_fy23_total
+2019,Medicaid,Medical,Denver,Long Term Care,1060563582.93611,7221499,1762.3436623384314,civhc_coc_fy23_total
+2019,Medicaid,Medical,Denver,Outpatient,686841335.21741,7221499,1141.3275862267542,civhc_coc_fy23_total
+2019,Medicaid,Medical,Denver,Professional,747599694.07,7221499,1242.290046545738,civhc_coc_fy23_total
+2019,Medicaid,Medical,East,Outpatient,150655267.194115,1089381,1659.5325293257183,civhc_coc_fy23_total
+2019,Medicaid,Medical,East,Professional,99539593.21,1089381,1096.4714076342434,civhc_coc_fy23_total
+2019,Medicaid,Medical,East,DME,6409924.82271045,1089381,70.60807731411269,civhc_coc_fy23_total
+2019,Medicaid,Medical,East,Inpatient,108747768.759765,1089381,1197.903419572381,civhc_coc_fy23_total
+2019,Medicaid,Medical,East,Long Term Care,170155045.680871,1089381,1874.3309715980472,civhc_coc_fy23_total
+2019,Medicaid,Medical,Ft. Collins,DME,2629011.72,761215,41.44445477296165,civhc_coc_fy23_total
+2019,Medicaid,Medical,Ft. Collins,Inpatient,64256954.0536022,761215,1012.9640753837305,civhc_coc_fy23_total
+2019,Medicaid,Medical,Ft. Collins,Long Term Care,103593072.055542,761215,1633.0693229462165,civhc_coc_fy23_total
+2019,Medicaid,Medical,Ft. Collins,Outpatient,72447555.2469769,761215,1142.0829370988786,civhc_coc_fy23_total
+2019,Medicaid,Medical,Ft. Collins,Professional,82168795.8,761215,1295.3312133891213,civhc_coc_fy23_total
+2019,Medicaid,Medical,Grand Junction,DME,1942880.61,517210,45.07756485760136,civhc_coc_fy23_total
+2019,Medicaid,Medical,Grand Junction,Inpatient,45125684.8927789,517210,1046.9794062631172,civhc_coc_fy23_total
+2019,Medicaid,Medical,Grand Junction,Long Term Care,104254932.74631,517210,2418.8611839595524,civhc_coc_fy23_total
+2019,Medicaid,Medical,Grand Junction,Outpatient,46738415.2318309,517210,1084.3970201310315,civhc_coc_fy23_total
+2019,Medicaid,Medical,Grand Junction,Professional,56293256.41,517210,1306.0827844009202,civhc_coc_fy23_total
+2019,Medicaid,Medical,Greeley,Long Term Care,98608573.85,945670,1251.2852117546288,civhc_coc_fy23_total
+2019,Medicaid,Medical,Greeley,Outpatient,80472383.6497194,945670,1021.1475501989413,civhc_coc_fy23_total
+2019,Medicaid,Medical,Greeley,Professional,85329403.82,945670,1082.7802995125148,civhc_coc_fy23_total
+2019,Medicaid,Medical,Greeley,DME,3620172.74,945670,45.93787777977519,civhc_coc_fy23_total
+2019,Medicaid,Medical,Greeley,Inpatient,62626956.403489,945670,794.699500715755,civhc_coc_fy23_total
+2019,Medicaid,Medical,Pueblo,Outpatient,68646896.3134398,812825,1013.4564706563868,civhc_coc_fy23_total
+2019,Medicaid,Medical,Pueblo,Long Term Care,132428915.27,812825,1955.0911736720695,civhc_coc_fy23_total
+2019,Medicaid,Medical,Pueblo,Professional,101984998.04,812825,1505.6377159659214,civhc_coc_fy23_total
+2019,Medicaid,Medical,Pueblo,DME,3548405.36,812825,52.38626311936764,civhc_coc_fy23_total
+2019,Medicaid,Medical,Pueblo,Inpatient,72413612.7325733,812825,1069.0657309886872,civhc_coc_fy23_total
+2019,Medicaid,Medical,West,Professional,90403731.82,1104812,981.9270444564324,civhc_coc_fy23_total
+2019,Medicaid,Medical,West,Outpatient,140253547.040074,1104812,1523.374623448051,civhc_coc_fy23_total
+2019,Medicaid,Medical,West,Long Term Care,117770367.774791,1104812,1279.17185303698,civhc_coc_fy23_total
+2019,Medicaid,Medical,West,Inpatient,107789682.307042,1104812,1170.7658748135466,civhc_coc_fy23_total
+2019,Medicaid,Medical,West,DME,4605088.00858165,1104812,50.018515460530665,civhc_coc_fy23_total
+2019,Medicaid,Pharmacy,All,Pharmacy,1150801049.42,13887567,994.3867484520508,civhc_coc_fy23_total
+2019,Medicaid,Pharmacy,Boulder,Pharmacy,41716817.78,502889,995.451905609389,civhc_coc_fy23_total
+2019,Medicaid,Pharmacy,Colorado Springs,Pharmacy,162378749.25,2002887,972.8681603105916,civhc_coc_fy23_total
+2019,Medicaid,Pharmacy,Denver,Pharmacy,498609415.19,6733597,888.5760437222482,civhc_coc_fy23_total
+2019,Medicaid,Pharmacy,East,Pharmacy,83633003.67,923016,1087.3008095634311,civhc_coc_fy23_total
+2019,Medicaid,Pharmacy,Ft. Collins,Pharmacy,59994781.43,680127,1058.5337402573343,civhc_coc_fy23_total
+2019,Medicaid,Pharmacy,Grand Junction,Pharmacy,70572247.73,502867,1684.0774454478023,civhc_coc_fy23_total
+2019,Medicaid,Pharmacy,Greeley,Pharmacy,66813267.78,835959,959.0891579132469,civhc_coc_fy23_total
+2019,Medicaid,Pharmacy,Pueblo,Pharmacy,76994446.79,702450,1315.3012477471707,civhc_coc_fy23_total
+2019,Medicaid,Pharmacy,West,Pharmacy,90088319.8,1036131,1043.3621208129086,civhc_coc_fy23_total
+2019,Medicare,Medical,All,Professional,1755704577.28,6351769,3316.9428748684027,civhc_coc_fy23_total
+2019,Medicare,Medical,All,Outpatient,1741051888.97,6351769,3289.2604670667342,civhc_coc_fy23_total
+2019,Medicare,Medical,All,Inpatient,1631843898.45,6351769,3082.940639277027,civhc_coc_fy23_total
+2019,Medicare,Medical,All,DME,45747184.11,6351769,86.42729439940274,civhc_coc_fy23_total
+2019,Medicare,Medical,Boulder,DME,2005009.16,336315,71.54040087418045,civhc_coc_fy23_total
+2019,Medicare,Medical,Boulder,Outpatient,78734381.57,336315,2809.30847223585,civhc_coc_fy23_total
+2019,Medicare,Medical,Boulder,Inpatient,71852576.41,336315,2563.759918290888,civhc_coc_fy23_total
+2019,Medicare,Medical,Boulder,Professional,108055797.44,336315,3855.5210718522812,civhc_coc_fy23_total
+2019,Medicare,Medical,Colorado Springs,Professional,265993210.76,872199,3659.621862808832,civhc_coc_fy23_total
+2019,Medicare,Medical,Colorado Springs,Outpatient,210045540.49,872199,2889.8754594765646,civhc_coc_fy23_total
+2019,Medicare,Medical,Colorado Springs,Inpatient,213143109.59,872199,2932.492831429525,civhc_coc_fy23_total
+2019,Medicare,Medical,Colorado Springs,DME,5680630.17,872199,78.15597362528506,civhc_coc_fy23_total
+2019,Medicare,Medical,Denver,Professional,739359335.86,2447921,3624.427434676201,civhc_coc_fy23_total
+2019,Medicare,Medical,Denver,Outpatient,637783514.65,2447921,3126.4906734326796,civhc_coc_fy23_total
+2019,Medicare,Medical,Denver,Inpatient,650804621.42,2447921,3190.321688093692,civhc_coc_fy23_total
+2019,Medicare,Medical,Denver,DME,14975313.47,2447921,73.41076841940568,civhc_coc_fy23_total
+2019,Medicare,Medical,East,Professional,130233390.88,591097,2643.898870337694,civhc_coc_fy23_total
+2019,Medicare,Medical,East,Inpatient,181750526.32,591097,3689.76042145367,civhc_coc_fy23_total
+2019,Medicare,Medical,East,DME,6988888.4,591097,141.88307638171062,civhc_coc_fy23_total
+2019,Medicare,Medical,East,Outpatient,204719563.04,591097,4156.060268416182,civhc_coc_fy23_total
+2019,Medicare,Medical,Ft. Collins,DME,2384733.51,449583,63.651877673310594,civhc_coc_fy23_total
+2019,Medicare,Medical,Ft. Collins,Inpatient,104038450.18,449583,2776.931961751223,civhc_coc_fy23_total
+2019,Medicare,Medical,Ft. Collins,Outpatient,132003728.13,449583,3523.3644011450606,civhc_coc_fy23_total
+2019,Medicare,Medical,Ft. Collins,Professional,123251317.64,449583,3289.7503056832666,civhc_coc_fy23_total
+2019,Medicare,Medical,Grand Junction,Inpatient,66239088.52,272109,2921.142124075279,civhc_coc_fy23_total
+2019,Medicare,Medical,Grand Junction,DME,1420199.13,272109,62.630745620321264,civhc_coc_fy23_total
+2019,Medicare,Medical,Grand Junction,Professional,51834408.85,272109,2285.896115894733,civhc_coc_fy23_total
+2019,Medicare,Medical,Grand Junction,Outpatient,67884302.6,272109,2993.6960232847864,civhc_coc_fy23_total
+2019,Medicare,Medical,Greeley,Inpatient,89958259.71,345310,3126.17392059309,civhc_coc_fy23_total
+2019,Medicare,Medical,Greeley,Outpatient,99781315.79,345310,3467.5387028467176,civhc_coc_fy23_total
+2019,Medicare,Medical,Greeley,Professional,93561444.41,345310,3251.3895714575306,civhc_coc_fy23_total
+2019,Medicare,Medical,Greeley,DME,1961093.73,345310,68.15071894819148,civhc_coc_fy23_total
+2019,Medicare,Medical,Pueblo,Outpatient,62363944.6,247231,3026.9963523991737,civhc_coc_fy23_total
+2019,Medicare,Medical,Pueblo,DME,2093665.32,247231,101.62149503905255,civhc_coc_fy23_total
+2019,Medicare,Medical,Pueblo,Professional,75776315.82,247231,3678.0006950584675,civhc_coc_fy23_total
+2019,Medicare,Medical,Pueblo,Inpatient,67531794.77,247231,3277.8314096533195,civhc_coc_fy23_total
+2019,Medicare,Medical,West,Professional,167639355.62,790279,2545.5216036867996,civhc_coc_fy23_total
+2019,Medicare,Medical,West,DME,8237651.22,790279,125.08470380713646,civhc_coc_fy23_total
+2019,Medicare,Medical,West,Inpatient,186525471.53,790279,2832.2980344410016,civhc_coc_fy23_total
+2019,Medicare,Medical,West,Outpatient,247735598.1,790279,3761.7438615982455,civhc_coc_fy23_total
+2019,Medicare,Pharmacy,All,Pharmacy,883274424.87,3569713,2969.2283661011406,civhc_coc_fy23_total
+2019,Medicare,Pharmacy,Boulder,Pharmacy,50723606.36,204803,2972.0427743734226,civhc_coc_fy23_total
+2019,Medicare,Pharmacy,Colorado Springs,Pharmacy,96134069.98,377301,3057.5292399437058,civhc_coc_fy23_total
+2019,Medicare,Pharmacy,Denver,Pharmacy,361150328.8,1317716,3288.875558618094,civhc_coc_fy23_total
+2019,Medicare,Pharmacy,East,Pharmacy,87676736.06,388429,2708.6567499337075,civhc_coc_fy23_total
+2019,Medicare,Pharmacy,Ft. Collins,Pharmacy,64028422.0,277918,2764.632244043207,civhc_coc_fy23_total
+2019,Medicare,Pharmacy,Grand Junction,Pharmacy,32532777.89,154401,2528.437864262537,civhc_coc_fy23_total
+2019,Medicare,Pharmacy,Greeley,Pharmacy,56274997.03,212425,3179.0041867011887,civhc_coc_fy23_total
+2019,Medicare,Pharmacy,Pueblo,Pharmacy,40601341.41,145250,3354.3276896385537,civhc_coc_fy23_total
+2019,Medicare,Pharmacy,West,Pharmacy,94152145.34,491649,2298.0332393231756,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,All,Inpatient,913053998.387846,4356473,2515.0271746557714,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,All,Outpatient,882360377.253277,4356473,2430.4809250600943,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,All,Long Term Care,606038.75,4356473,1.6693469694406462,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,All,Professional,1477795160.73,4356473,4070.619037179847,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,All,DME,36548219.93,4356473,100.67286981005049,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Boulder,DME,1412001.29,241987,70.0203543165542,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Boulder,Inpatient,41767055.0123857,241987,2071.204900050947,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Boulder,Long Term Care,1789.98,241987,0.08876410716278146,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Boulder,Outpatient,37476853.7767959,241987,1858.456220051287,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Boulder,Professional,81404814.84,241987,4036.8192426865908,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Colorado Springs,DME,3545526.31,490027,86.82443155173083,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Colorado Springs,Inpatient,71647512.5265438,490027,1754.5362813039394,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Colorado Springs,Long Term Care,164342.27,490027,4.024486895620037,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Colorado Springs,Outpatient,72775627.678615,490027,1782.162068913305,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Colorado Springs,Professional,144582148.14,490027,3540.592207531421,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Denver,Inpatient,554564852.411256,2470079,2694.156028586564,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Denver,Outpatient,486474245.007016,2470079,2363.362038252296,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Denver,Long Term Care,370741.46,2470079,1.8011154784927932,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Denver,DME,20218089.44,2470079,98.22239421492188,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Denver,Professional,921879164.61,2470079,4478.6219288209,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,East,Professional,42315451.56,163995,3096.3469539925,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,East,DME,1851736.13,163995,135.49701856763926,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,East,Inpatient,41982505.4157099,163995,3071.9842982317678,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,East,Long Term Care,27463.92,163995,2.00961639074362,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,East,Outpatient,50869187.1238577,163995,3722.2491264141736,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Ft. Collins,Professional,69274779.3,272656,3048.8870650196586,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Ft. Collins,Inpatient,53366245.4354117,272656,2348.728600232309,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Ft. Collins,DME,1436444.87,272656,63.22009579836865,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Ft. Collins,Long Term Care,4318.17,272656,0.19004914617686758,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Ft. Collins,Outpatient,66836158.8285505,272656,2941.55971606202,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Grand Junction,Inpatient,27298201.85,124896,2622.809555149885,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Grand Junction,Professional,43548283.65,124896,4184.116415257494,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Grand Junction,Outpatient,28097023.8284349,124896,2699.5603217174194,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Grand Junction,Long Term Care,5707.21,124896,0.548348385857033,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Grand Junction,DME,2047809.03,124896,196.75336568024596,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Greeley,Outpatient,57648683.9127531,240724,2873.765004540624,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Greeley,Long Term Care,11592.67,240724,0.5778901979029927,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Greeley,DME,1836298.46,240724,91.53878101061797,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Greeley,Inpatient,51049513.6413334,240724,2544.798872135727,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Greeley,Professional,70100052.12,240724,3494.46098203752,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Pueblo,Inpatient,45890682.0847845,203332,2708.320308743405,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Pueblo,Professional,61157459.95,203332,3609.3163860090885,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Pueblo,Outpatient,42282877.6579956,203332,2495.3993070247043,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Pueblo,Long Term Care,11127.81,203332,0.6567275195247182,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,Pueblo,DME,1985410.39,203332,117.17252906576437,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,West,DME,2214904.01,150013,177.17696546299317,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,West,Long Term Care,8955.26,150013,0.7163587155779833,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,West,Inpatient,25487430.0104208,150013,2038.8177032993779,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,West,Outpatient,39899719.4392579,150013,3191.7009410590736,civhc_coc_fy23_total
+2019,Medicare Advantage,Medical,West,Professional,43533006.56,150013,3482.3387221107505,civhc_coc_fy23_total
+2019,Medicare Advantage,Pharmacy,All,Pharmacy,903570966.15,4255530,2547.9438739240472,civhc_coc_fy23_total
+2019,Medicare Advantage,Pharmacy,Boulder,Pharmacy,40093077.95,236480,2034.4931300744252,civhc_coc_fy23_total
+2019,Medicare Advantage,Pharmacy,Colorado Springs,Pharmacy,114726601.62,473886,2905.1696387738825,civhc_coc_fy23_total
+2019,Medicare Advantage,Pharmacy,Denver,Pharmacy,522738916.02,2418583,2593.6124549953424,civhc_coc_fy23_total
+2019,Medicare Advantage,Pharmacy,East,Pharmacy,32271228.13,160538,2412.230983069429,civhc_coc_fy23_total
+2019,Medicare Advantage,Pharmacy,Ft. Collins,Pharmacy,50792702.81,265088,2299.2833840837757,civhc_coc_fy23_total
+2019,Medicare Advantage,Pharmacy,Grand Junction,Pharmacy,14463789.4,122704,1414.5054179162862,civhc_coc_fy23_total
+2019,Medicare Advantage,Pharmacy,Greeley,Pharmacy,54301239.03,236497,2755.277523012977,civhc_coc_fy23_total
+2019,Medicare Advantage,Pharmacy,Pueblo,Pharmacy,54648794.08,200212,3275.4556617984936,civhc_coc_fy23_total
+2019,Medicare Advantage,Pharmacy,West,Pharmacy,19534617.11,142758,1642.0474181481945,civhc_coc_fy23_total
+2020,All,Medical,All,DME,169126221.860973,41070234,49.41570730596948,civhc_coc_fy23_total
+2020,All,Medical,All,Inpatient,5350816043.70595,41070234,1563.414333711159,civhc_coc_fy23_total
+2020,All,Medical,All,Long Term Care,2391989632.57723,41070234,698.8972984893819,civhc_coc_fy23_total
+2020,All,Medical,All,Outpatient,6369330101.32698,41070234,1861.0062269409946,civhc_coc_fy23_total
+2020,All,Medical,All,Professional,7104768486.72,41070234,2075.8883876980103,civhc_coc_fy23_total
+2020,All,Medical,Boulder,Outpatient,275025490.619851,2157951,1529.3701698686448,civhc_coc_fy23_total
+2020,All,Medical,Boulder,Long Term Care,91260364.6248128,2157951,507.48343011391523,civhc_coc_fy23_total
+2020,All,Medical,Boulder,Inpatient,218080350.195357,2157951,1212.707889263604,civhc_coc_fy23_total
+2020,All,Medical,Boulder,Professional,384628179.31,2157951,2138.8521573103376,civhc_coc_fy23_total
+2020,All,Medical,Boulder,DME,6361876.23,2157951,35.37731614851311,civhc_coc_fy23_total
+2020,All,Medical,Colorado Springs,DME,21305084.4863661,4975920,51.37964714794313,civhc_coc_fy23_total
+2020,All,Medical,Colorado Springs,Inpatient,571719443.889436,4975920,1378.7668062736602,civhc_coc_fy23_total
+2020,All,Medical,Colorado Springs,Long Term Care,355758066.255473,4975920,857.9512522439421,civhc_coc_fy23_total
+2020,All,Medical,Colorado Springs,Outpatient,699461674.635477,4975920,1686.8318010791418,civhc_coc_fy23_total
+2020,All,Medical,Colorado Springs,Professional,879096767.31,4975920,2120.0423655766167,civhc_coc_fy23_total
+2020,All,Medical,Denver,Professional,3777466900.34,20914157,2167.4123802398535,civhc_coc_fy23_total
+2020,All,Medical,Denver,Long Term Care,1191745071.04985,20914157,683.7923638326995,civhc_coc_fy23_total
+2020,All,Medical,Denver,Inpatient,2747757873.01727,20914157,1576.5920890910038,civhc_coc_fy23_total
+2020,All,Medical,Denver,DME,73382170.8643778,20914157,42.10478339492878,civhc_coc_fy23_total
+2020,All,Medical,Denver,Outpatient,2866095337.09963,20914157,1644.4910519317398,civhc_coc_fy23_total
+2020,All,Medical,East,Inpatient,379364424.853631,2332333,1951.8538297248174,civhc_coc_fy23_total
+2020,All,Medical,East,Professional,336067080.47,2332333,1729.0862692591495,civhc_coc_fy23_total
+2020,All,Medical,East,DME,17405631.6809388,2332333,89.55306989665095,civhc_coc_fy23_total
+2020,All,Medical,East,Outpatient,524534811.752646,2332333,2698.764602238082,civhc_coc_fy23_total
+2020,All,Medical,East,Long Term Care,172579813.188963,2332333,887.9339949602204,civhc_coc_fy23_total
+2020,All,Medical,Ft. Collins,Outpatient,428320817.530022,2473847,2077.6748967742406,civhc_coc_fy23_total
+2020,All,Medical,Ft. Collins,Professional,391825550.73,2473847,1900.6456780714411,civhc_coc_fy23_total
+2020,All,Medical,Ft. Collins,Long Term Care,106121405.59,2473847,514.7678361192103,civhc_coc_fy23_total
+2020,All,Medical,Ft. Collins,Inpatient,274301785.466057,2473847,1330.567907228169,civhc_coc_fy23_total
+2020,All,Medical,Ft. Collins,DME,8755940.67292129,2473847,42.472832020353515,civhc_coc_fy23_total
+2020,All,Medical,Grand Junction,Professional,182375771.84,1217715,1797.2261671080673,civhc_coc_fy23_total
+2020,All,Medical,Grand Junction,Long Term Care,104959479.897893,1217715,1034.3255677845111,civhc_coc_fy23_total
+2020,All,Medical,Grand Junction,DME,5905195.3,1217715,58.19288060014043,civhc_coc_fy23_total
+2020,All,Medical,Grand Junction,Inpatient,156920502.117769,1217715,1546.376636087449,civhc_coc_fy23_total
+2020,All,Medical,Grand Junction,Outpatient,216410684.239621,1217715,2132.6239808784912,civhc_coc_fy23_total
+2020,All,Medical,Greeley,Outpatient,392596435.111203,2457749,1916.8585650261423,civhc_coc_fy23_total
+2020,All,Medical,Greeley,Long Term Care,108439505.05,2457749,529.4576706571745,civhc_coc_fy23_total
+2020,All,Medical,Greeley,Inpatient,309891096.514493,2457749,1513.0483862159706,civhc_coc_fy23_total
+2020,All,Medical,Greeley,DME,9707567.12103651,2457749,47.39735646416218,civhc_coc_fy23_total
+2020,All,Medical,Greeley,Professional,382242353.59,2457749,1866.304591347611,civhc_coc_fy23_total
+2020,All,Medical,Pueblo,Inpatient,233618471.528987,1540397,1819.9345093166526,civhc_coc_fy23_total
+2020,All,Medical,Pueblo,DME,9377308.98,1540397,73.051108097458,civhc_coc_fy23_total
+2020,All,Medical,Pueblo,Long Term Care,139980178.55,1540397,1090.4735224750505,civhc_coc_fy23_total
+2020,All,Medical,Pueblo,Outpatient,219265397.239787,1540397,1708.1211965989573,civhc_coc_fy23_total
+2020,All,Medical,Pueblo,Professional,285890112.48,1540397,2227.141022580543,civhc_coc_fy23_total
+2020,All,Medical,West,Outpatient,747619453.098738,3159977,2839.0818785025513,civhc_coc_fy23_total
+2020,All,Medical,West,Long Term Care,121145748.370233,3159977,460.0504941785323,civhc_coc_fy23_total
+2020,All,Medical,West,Inpatient,459162096.122947,3159977,1743.666220822292,civhc_coc_fy23_total
+2020,All,Medical,West,DME,16925446.5253326,3159977,64.2743153839383,civhc_coc_fy23_total
+2020,All,Medical,West,Professional,485175770.65,3159977,1842.4530456392563,civhc_coc_fy23_total
+2020,All,Pharmacy,All,Pharmacy,5383058228.94,36584728,1765.6738830279123,civhc_coc_fy23_total
+2020,All,Pharmacy,Boulder,Pharmacy,289236534.62,1912004,1815.2882606103335,civhc_coc_fy23_total
+2020,All,Pharmacy,Colorado Springs,Pharmacy,630973275.48,4269372,1773.4878351570208,civhc_coc_fy23_total
+2020,All,Pharmacy,Denver,Pharmacy,2746786736.86,19146171,1721.568288631706,civhc_coc_fy23_total
+2020,All,Pharmacy,East,Pharmacy,289361474.32,1998790,1737.2198639376822,civhc_coc_fy23_total
+2020,All,Pharmacy,Ft. Collins,Pharmacy,310784072.58,2130696,1750.3242466123745,civhc_coc_fy23_total
+2020,All,Pharmacy,Grand Junction,Pharmacy,183222511.44,1037913,2118.3568731483274,civhc_coc_fy23_total
+2020,All,Pharmacy,Greeley,Pharmacy,330457457.94,2148149,1846.0029985257074,civhc_coc_fy23_total
+2020,All,Pharmacy,Pueblo,Pharmacy,240256201.34,1388594,2076.2544099139127,civhc_coc_fy23_total
+2020,All,Pharmacy,West,Pharmacy,361979964.36,2612799,1662.4928179779617,civhc_coc_fy23_total
+2020,CHP+,Medical,All,Professional,47088330.11,901944,626.4911805167504,civhc_coc_fy23_total
+2020,CHP+,Medical,All,Outpatient,48301259.8271414,901944,642.6287196607514,civhc_coc_fy23_total
+2020,CHP+,Medical,All,Long Term Care,16426.63,901944,0.21854966605465528,civhc_coc_fy23_total
+2020,CHP+,Medical,All,Inpatient,15712600.2111197,901944,209.04978860487614,civhc_coc_fy23_total
+2020,CHP+,Medical,All,DME,227057.21,901944,3.0209043133498312,civhc_coc_fy23_total
+2020,CHP+,Medical,Boulder,Professional,1995115.81,30652,781.0710465874984,civhc_coc_fy23_total
+2020,CHP+,Medical,Boulder,Outpatient,1932989.15371887,30652,756.7489835777906,civhc_coc_fy23_total
+2020,CHP+,Medical,Boulder,Long Term Care,1549.13,30652,0.606471355865849,civhc_coc_fy23_total
+2020,CHP+,Medical,Boulder,Inpatient,467366.893527695,30652,182.97020495668602,civhc_coc_fy23_total
+2020,CHP+,Medical,Boulder,DME,4274.49,30652,1.673426856322589,civhc_coc_fy23_total
+2020,CHP+,Medical,Colorado Springs,Professional,4969758.1,97311,612.8505225514073,civhc_coc_fy23_total
+2020,CHP+,Medical,Colorado Springs,Inpatient,2502148.97582419,97311,308.5549188672429,civhc_coc_fy23_total
+2020,CHP+,Medical,Colorado Springs,DME,29193.31,97311,3.600001233159664,civhc_coc_fy23_total
+2020,CHP+,Medical,Colorado Springs,Outpatient,5891446.44600719,97311,726.5094115987533,civhc_coc_fy23_total
+2020,CHP+,Medical,Denver,DME,88512.51,433815,2.448394177241451,civhc_coc_fy23_total
+2020,CHP+,Medical,Denver,Outpatient,28889610.9874359,433815,799.1317309203941,civhc_coc_fy23_total
+2020,CHP+,Medical,Denver,Professional,20734206.51,433815,573.5405140901075,civhc_coc_fy23_total
+2020,CHP+,Medical,Denver,Long Term Care,12962.36,433815,0.35855910929774215,civhc_coc_fy23_total
+2020,CHP+,Medical,Denver,Inpatient,7489927.46289815,433815,207.18308392927355,civhc_coc_fy23_total
+2020,CHP+,Medical,East,Outpatient,2594305.96653425,60505,514.5305610843898,civhc_coc_fy23_total
+2020,CHP+,Medical,East,Inpatient,595724.757054035,60505,118.1505178852726,civhc_coc_fy23_total
+2020,CHP+,Medical,East,DME,12334.85,60505,2.4463796380464427,civhc_coc_fy23_total
+2020,CHP+,Medical,East,Professional,2449851.92,60505,485.88088653830266,civhc_coc_fy23_total
+2020,CHP+,Medical,Ft. Collins,DME,9697.2,46738,2.489759938379905,civhc_coc_fy23_total
+2020,CHP+,Medical,Ft. Collins,Professional,2618047.53,46738,672.1847396123069,civhc_coc_fy23_total
+2020,CHP+,Medical,Ft. Collins,Outpatient,1592835.86103679,46738,408.96123780310415,civhc_coc_fy23_total
+2020,CHP+,Medical,Ft. Collins,Inpatient,1163640.21,46738,298.7650845136719,civhc_coc_fy23_total
+2020,CHP+,Medical,Grand Junction,Professional,1840998.28,32434,681.136442005303,civhc_coc_fy23_total
+2020,CHP+,Medical,Grand Junction,DME,10865.4,32434,4.020003699821175,civhc_coc_fy23_total
+2020,CHP+,Medical,Grand Junction,Inpatient,621450.596277925,32434,229.92560755180057,civhc_coc_fy23_total
+2020,CHP+,Medical,Grand Junction,Outpatient,781972.802920097,32434,289.31595347601785,civhc_coc_fy23_total
+2020,CHP+,Medical,Greeley,Inpatient,771649.725537757,76997,120.2617856079209,civhc_coc_fy23_total
+2020,CHP+,Medical,Greeley,Professional,4820672.63,76997,751.3029281660324,civhc_coc_fy23_total
+2020,CHP+,Medical,Greeley,Outpatient,2636874.79547759,76997,410.95753790058154,civhc_coc_fy23_total
+2020,CHP+,Medical,Greeley,Long Term Care,1915.14,76997,0.2984750055196956,civhc_coc_fy23_total
+2020,CHP+,Medical,Greeley,DME,14876.04,76997,2.318434224710054,civhc_coc_fy23_total
+2020,CHP+,Medical,Pueblo,Outpatient,779986.303214168,24649,379.72476118990687,civhc_coc_fy23_total
+2020,CHP+,Medical,Pueblo,DME,7202.45,24649,3.5064059393890217,civhc_coc_fy23_total
+2020,CHP+,Medical,Pueblo,Professional,1605483.38,24649,781.6057673739299,civhc_coc_fy23_total
+2020,CHP+,Medical,Pueblo,Inpatient,301540.88,24649,146.80070428820642,civhc_coc_fy23_total
+2020,CHP+,Medical,West,Professional,6054195.95,100958,719.6096535192853,civhc_coc_fy23_total
+2020,CHP+,Medical,West,Outpatient,3201237.51079652,100958,380.5032798743858,civhc_coc_fy23_total
+2020,CHP+,Medical,West,Inpatient,1799150.71,100958,213.84940787258068,civhc_coc_fy23_total
+2020,CHP+,Medical,West,DME,50100.96,100958,5.9550656708730365,civhc_coc_fy23_total
+2020,CHP+,Pharmacy,All,Pharmacy,49053176.33,901944,652.6326645113222,civhc_coc_fy23_total
+2020,CHP+,Pharmacy,Boulder,Pharmacy,1137944.93,30652,445.4958619339684,civhc_coc_fy23_total
+2020,CHP+,Pharmacy,Colorado Springs,Pharmacy,5766979.27,97311,711.1606215124702,civhc_coc_fy23_total
+2020,CHP+,Pharmacy,Denver,Pharmacy,25246695.15,433815,698.3629929808789,civhc_coc_fy23_total
+2020,CHP+,Pharmacy,East,Pharmacy,2626345.04,60505,520.8848934798777,civhc_coc_fy23_total
+2020,CHP+,Pharmacy,Ft. Collins,Pharmacy,1864859.38,46738,478.80338397021694,civhc_coc_fy23_total
+2020,CHP+,Pharmacy,Grand Junction,Pharmacy,1623567.58,32434,600.6909712030586,civhc_coc_fy23_total
+2020,CHP+,Pharmacy,Greeley,Pharmacy,5627875.6,76997,877.105695027079,civhc_coc_fy23_total
+2020,CHP+,Pharmacy,Pueblo,Pharmacy,1816708.58,24649,884.4376226216074,civhc_coc_fy23_total
+2020,CHP+,Pharmacy,West,Pharmacy,3342200.8,100958,397.2583609025535,civhc_coc_fy23_total
+2020,Commercial,Medical,All,Outpatient,2204337616.72,16070215,1646.029714016894,civhc_coc_fy23_total
+2020,Commercial,Medical,All,Inpatient,1518549114.53,16070215,1133.9356302551023,civhc_coc_fy23_total
+2020,Commercial,Medical,All,DME,25910758.93,16070215,19.3481610022019,civhc_coc_fy23_total
+2020,Commercial,Medical,All,Professional,2363971162.6,16070215,1765.2317626864356,civhc_coc_fy23_total
+2020,Commercial,Medical,Boulder,DME,1190461.71,1049938,13.60608009234831,civhc_coc_fy23_total
+2020,Commercial,Medical,Boulder,Inpatient,68886251.99,1049938,787.3179405641094,civhc_coc_fy23_total
+2020,Commercial,Medical,Boulder,Outpatient,105117716.27,1049938,1201.4162695702032,civhc_coc_fy23_total
+2020,Commercial,Medical,Boulder,Professional,150501427.48,1049938,1720.1178829226105,civhc_coc_fy23_total
+2020,Commercial,Medical,Colorado Springs,Inpatient,130679800.15,1491083,1051.6903497659084,civhc_coc_fy23_total
+2020,Commercial,Medical,Colorado Springs,Professional,218301577.28,1491083,1756.8565447798683,civhc_coc_fy23_total
+2020,Commercial,Medical,Colorado Springs,Outpatient,212836577.27,1491083,1712.8750896093645,civhc_coc_fy23_total
+2020,Commercial,Medical,Colorado Springs,DME,2870798.19,1491083,23.103729490578324,civhc_coc_fy23_total
+2020,Commercial,Medical,Denver,Professional,1413390597.23,9069473,1870.0851931264365,civhc_coc_fy23_total
+2020,Commercial,Medical,Denver,Outpatient,1044115367.91,9069473,1381.4897971381579,civhc_coc_fy23_total
+2020,Commercial,Medical,Denver,Inpatient,884437077.03,9069473,1170.2162765532241,civhc_coc_fy23_total
+2020,Commercial,Medical,Denver,DME,14253296.3,9069473,18.85881964696295,civhc_coc_fy23_total
+2020,Commercial,Medical,East,Outpatient,123128736.92,604137,2445.7115572130165,civhc_coc_fy23_total
+2020,Commercial,Medical,East,Inpatient,60967003.03,604137,1210.990282601463,civhc_coc_fy23_total
+2020,Commercial,Medical,East,DME,1161462.37,604137,23.070178519110733,civhc_coc_fy23_total
+2020,Commercial,Medical,East,Professional,68143451.86,604137,1353.5364036965125,civhc_coc_fy23_total
+2020,Commercial,Medical,Ft. Collins,Professional,123897072.5,1029820,1443.713338253287,civhc_coc_fy23_total
+2020,Commercial,Medical,Ft. Collins,DME,1385015.31,1029820,16.138921093006545,civhc_coc_fy23_total
+2020,Commercial,Medical,Ft. Collins,Inpatient,77206183.34,1029820,899.6467344584491,civhc_coc_fy23_total
+2020,Commercial,Medical,Ft. Collins,Outpatient,159023227.03,1029820,1853.0216196616884,civhc_coc_fy23_total
+2020,Commercial,Medical,Grand Junction,Professional,37331475.4,374472,1196.2915913606357,civhc_coc_fy23_total
+2020,Commercial,Medical,Grand Junction,Outpatient,62875136.93,374472,2014.8412782798177,civhc_coc_fy23_total
+2020,Commercial,Medical,Grand Junction,Inpatient,30682943.08,374472,983.2385784784976,civhc_coc_fy23_total
+2020,Commercial,Medical,Grand Junction,DME,475038.65,374472,15.222670319810293,civhc_coc_fy23_total
+2020,Commercial,Medical,Greeley,DME,1640962.44,928400,21.21019956915123,civhc_coc_fy23_total
+2020,Commercial,Medical,Greeley,Inpatient,94092263.49,928400,1216.186085609651,civhc_coc_fy23_total
+2020,Commercial,Medical,Greeley,Outpatient,141242540.78,928400,1825.6252578199053,civhc_coc_fy23_total
+2020,Commercial,Medical,Greeley,Professional,123878534.66,928400,1601.1874363636364,civhc_coc_fy23_total
+2020,Commercial,Medical,Pueblo,Professional,47196639.13,351202,1612.6322445771953,civhc_coc_fy23_total
+2020,Commercial,Medical,Pueblo,DME,733119.45,351202,25.049496870746747,civhc_coc_fy23_total
+2020,Commercial,Medical,Pueblo,Inpatient,36348843.32,351202,1241.980739973007,civhc_coc_fy23_total
+2020,Commercial,Medical,Pueblo,Outpatient,54574263.92,351202,1864.7136606283564,civhc_coc_fy23_total
+2020,Commercial,Medical,West,Professional,181330387.06,1179612,1844.644378592283,civhc_coc_fy23_total
+2020,Commercial,Medical,West,Outpatient,301424049.69,1179612,3066.337572252571,civhc_coc_fy23_total
+2020,Commercial,Medical,West,Inpatient,135248749.1,1179612,1375.8634103417055,civhc_coc_fy23_total
+2020,Commercial,Medical,West,DME,2200604.51,1179612,22.386389863785716,civhc_coc_fy23_total
+2020,Commercial,Pharmacy,All,Pharmacy,2224849934.4,14522032,1838.461670708342,civhc_coc_fy23_total
+2020,Commercial,Pharmacy,Boulder,Pharmacy,151993008.07,952312,1915.2505658229657,civhc_coc_fy23_total
+2020,Commercial,Pharmacy,Colorado Springs,Pharmacy,222393579.45,1358636,1964.2663328514773,civhc_coc_fy23_total
+2020,Commercial,Pharmacy,Denver,Pharmacy,1271125059.17,8501300,1794.2550798160282,civhc_coc_fy23_total
+2020,Commercial,Pharmacy,East,Pharmacy,81018068.34,507254,1916.6272125601772,civhc_coc_fy23_total
+2020,Commercial,Pharmacy,Ft. Collins,Pharmacy,125078118.09,855490,1754.47686949,civhc_coc_fy23_total
+2020,Commercial,Pharmacy,Grand Junction,Pharmacy,45428918.5,309335,1762.319239659269,civhc_coc_fy23_total
+2020,Commercial,Pharmacy,Greeley,Pharmacy,130618137.02,790234,1983.4854539794542,civhc_coc_fy23_total
+2020,Commercial,Pharmacy,Pueblo,Pharmacy,52753868.29,329029,1923.9836594342748,civhc_coc_fy23_total
+2020,Commercial,Pharmacy,West,Pharmacy,144441177.47,923121,1877.645649530235,civhc_coc_fy23_total
+2020,Medicaid,Medical,All,Inpatient,1313364521.73703,14904095,1057.4526169381209,civhc_coc_fy23_total
+2020,Medicaid,Medical,All,Long Term Care,2390003214.65469,14904095,1924.3059424846847,civhc_coc_fy23_total
+2020,Medicaid,Medical,All,Outpatient,1536194771.3768,14904095,1236.8639126710882,civhc_coc_fy23_total
+2020,Medicaid,Medical,All,Professional,1552694676.32,14904095,1250.1487756109982,civhc_coc_fy23_total
+2020,Medicaid,Medical,All,DME,57522324.7538262,14904095,46.31397592714717,civhc_coc_fy23_total
+2020,Medicaid,Medical,Boulder,DME,1440970.16,556614,31.06576895299076,civhc_coc_fy23_total
+2020,Medicaid,Medical,Boulder,Inpatient,41359075.0297829,556614,891.6572352786577,civhc_coc_fy23_total
+2020,Medicaid,Medical,Boulder,Long Term Care,91218702.3448128,556614,1966.5772476756847,civhc_coc_fy23_total
+2020,Medicaid,Medical,Boulder,Outpatient,55094559.5138116,556614,1187.779527941696,civhc_coc_fy23_total
+2020,Medicaid,Medical,Boulder,Professional,49532884.99,556614,1067.8757988121033,civhc_coc_fy23_total
+2020,Medicaid,Medical,Colorado Springs,Professional,242201640.28,2200751,1320.6490345159448,civhc_coc_fy23_total
+2020,Medicaid,Medical,Colorado Springs,Outpatient,203990018.540325,2200751,1112.2931319735399,civhc_coc_fy23_total
+2020,Medicaid,Medical,Colorado Springs,Long Term Care,355445780.365473,2200751,1938.1335573109704,civhc_coc_fy23_total
+2020,Medicaid,Medical,Colorado Springs,Inpatient,163752199.999831,2200751,892.889018338727,civhc_coc_fy23_total
+2020,Medicaid,Medical,Colorado Springs,DME,8282693.20636613,2200751,45.162909605127325,civhc_coc_fy23_total
+2020,Medicaid,Medical,Denver,Long Term Care,1190354737.60985,7194264,1985.5063494081119,civhc_coc_fy23_total
+2020,Medicaid,Medical,Denver,Professional,745119525.21,7194264,1242.8560173104574,civhc_coc_fy23_total
+2020,Medicaid,Medical,Denver,DME,24764307.6543778,7194264,41.30675380449391,civhc_coc_fy23_total
+2020,Medicaid,Medical,Denver,Outpatient,706232259.825838,7194264,1177.9922335224362,civhc_coc_fy23_total
+2020,Medicaid,Medical,Denver,Inpatient,668038953.36749,7194264,1114.285970101998,civhc_coc_fy23_total
+2020,Medicaid,Medical,East,DME,6763340.94093882,1057104,76.77588136197181,civhc_coc_fy23_total
+2020,Medicaid,Medical,East,Professional,100532717.7,1057104,1141.2241486173548,civhc_coc_fy23_total
+2020,Medicaid,Medical,East,Outpatient,151896629.08497,1057104,1724.2953853354447,civhc_coc_fy23_total
+2020,Medicaid,Medical,East,Long Term Care,172497846.126426,1057104,1958.1556341827409,civhc_coc_fy23_total
+2020,Medicaid,Medical,East,Inpatient,99456750.2617653,1057104,1129.0100152314094,civhc_coc_fy23_total
+2020,Medicaid,Medical,Ft. Collins,Professional,77512944.24,725489,1282.1081103641818,civhc_coc_fy23_total
+2020,Medicaid,Medical,Ft. Collins,Outpatient,67974434.5611907,725489,1124.3357442143001,civhc_coc_fy23_total
+2020,Medicaid,Medical,Ft. Collins,Inpatient,50034158.5201968,725489,827.593391825874,civhc_coc_fy23_total
+2020,Medicaid,Medical,Ft. Collins,DME,2651651.98292129,725489,43.85982943236284,civhc_coc_fy23_total
+2020,Medicaid,Medical,Ft. Collins,Long Term Care,106084382.21,725489,1754.695917539756,civhc_coc_fy23_total
+2020,Medicaid,Medical,Grand Junction,Professional,54206761.07,481216,1351.744607078734,civhc_coc_fy23_total
+2020,Medicaid,Medical,Grand Junction,Outpatient,44930475.539763,481216,1120.423482338817,civhc_coc_fy23_total
+2020,Medicaid,Medical,Grand Junction,Long Term Care,104951696.257893,481216,2617.162262050131,civhc_coc_fy23_total
+2020,Medicaid,Medical,Grand Junction,Inpatient,41627539.0957613,481216,1038.0587286148748,civhc_coc_fy23_total
+2020,Medicaid,Medical,Grand Junction,DME,1669987.97,481216,41.644200608458576,civhc_coc_fy23_total
+2020,Medicaid,Medical,Greeley,DME,3361022.10388954,940316,42.892246060552495,civhc_coc_fy23_total
+2020,Medicaid,Medical,Greeley,Inpatient,69971024.0199749,940316,892.9469329881643,civhc_coc_fy23_total
+2020,Medicaid,Medical,Greeley,Long Term Care,108385776.56,940316,1383.1832264047405,civhc_coc_fy23_total
+2020,Medicaid,Medical,Greeley,Outpatient,86075974.7840136,940316,1098.4729573974741,civhc_coc_fy23_total
+2020,Medicaid,Medical,Greeley,Professional,90051255.16,940316,1149.204163196202,civhc_coc_fy23_total
+2020,Medicaid,Medical,Pueblo,DME,4051012.78,807550,60.19708174106866,civhc_coc_fy23_total
+2020,Medicaid,Medical,Pueblo,Professional,103458527.49,807550,1537.3689924834375,civhc_coc_fy23_total
+2020,Medicaid,Medical,Pueblo,Outpatient,72421710.4321133,807550,1076.16930863149,civhc_coc_fy23_total
+2020,Medicaid,Medical,Pueblo,Long Term Care,139958273.86,807550,2079.7465003033867,civhc_coc_fy23_total
+2020,Medicaid,Medical,Pueblo,Inpatient,72847213.6127164,807550,1082.4921842023366,civhc_coc_fy23_total
+2020,Medicaid,Medical,West,Outpatient,147578709.094779,1031869,1716.2493583365217,civhc_coc_fy23_total
+2020,Medicaid,Medical,West,Long Term Care,121106019.320233,1031869,1408.3883049522722,civhc_coc_fy23_total
+2020,Medicaid,Medical,West,Inpatient,106277607.829511,1031869,1235.943025669084,civhc_coc_fy23_total
+2020,Medicaid,Medical,West,DME,4537337.95533265,1031869,52.76644173242126,civhc_coc_fy23_total
+2020,Medicaid,Medical,West,Professional,90078420.18,1031869,1047.5564651714512,civhc_coc_fy23_total
+2020,Medicaid,Pharmacy,All,Pharmacy,1257675482.47,13782209,1095.04258639816,civhc_coc_fy23_total
+2020,Medicaid,Pharmacy,Boulder,Pharmacy,44587009.46,495180,1080.5042883799829,civhc_coc_fy23_total
+2020,Medicaid,Pharmacy,Colorado Springs,Pharmacy,185125985.78,1983234,1120.1460994315346,civhc_coc_fy23_total
+2020,Medicaid,Pharmacy,Denver,Pharmacy,534132849.51,6701500,956.4417211251211,civhc_coc_fy23_total
+2020,Medicaid,Pharmacy,East,Pharmacy,91112337.74,903176,1210.5592408124219,civhc_coc_fy23_total
+2020,Medicaid,Pharmacy,Ft. Collins,Pharmacy,64256363.16,694599,1110.1028909054,civhc_coc_fy23_total
+2020,Medicaid,Pharmacy,Grand Junction,Pharmacy,80887956.55,474315,2046.4363948009236,civhc_coc_fy23_total
+2020,Medicaid,Pharmacy,Greeley,Pharmacy,74745660.32,845181,1061.2495120453489,civhc_coc_fy23_total
+2020,Medicaid,Pharmacy,Pueblo,Pharmacy,84292108.71,702438,1439.9922904512568,civhc_coc_fy23_total
+2020,Medicaid,Pharmacy,West,Pharmacy,98535211.24,1006774,1174.466697471329,civhc_coc_fy23_total
+2020,Medicare,Medical,All,DME,47994961.82,6320599,91.12103802819954,civhc_coc_fy23_total
+2020,Medicare,Medical,All,Inpatient,1538371973.45,6320599,2920.682625396739,civhc_coc_fy23_total
+2020,Medicare,Medical,All,Outpatient,1649271908.81,6320599,3131.232167349961,civhc_coc_fy23_total
+2020,Medicare,Medical,All,Professional,1682153634.53,6320599,3193.659906974007,civhc_coc_fy23_total
+2020,Medicare,Medical,Boulder,Outpatient,72109559.13,339690,2547.36586169743,civhc_coc_fy23_total
+2020,Medicare,Medical,Boulder,Professional,103361718.67,339690,3651.3898673496424,civhc_coc_fy23_total
+2020,Medicare,Medical,Boulder,Inpatient,66656452.92,339690,2354.72764885631,civhc_coc_fy23_total
+2020,Medicare,Medical,Boulder,DME,2238471.1,339690,79.07696193588272,civhc_coc_fy23_total
+2020,Medicare,Medical,Colorado Springs,DME,6104100.66,862096,84.96641664037415,civhc_coc_fy23_total
+2020,Medicare,Medical,Colorado Springs,Inpatient,196411911.75,862096,2733.9680743211893,civhc_coc_fy23_total
+2020,Medicare,Medical,Colorado Springs,Outpatient,197637579.42,862096,2751.0288332621885,civhc_coc_fy23_total
+2020,Medicare,Medical,Colorado Springs,Professional,257507736.89,862096,3584.3952908724777,civhc_coc_fy23_total
+2020,Medicare,Medical,Denver,DME,14617162.06,2417454,72.55813129019208,civhc_coc_fy23_total
+2020,Medicare,Medical,Denver,Inpatient,608153192.62,2417454,3018.811655336565,civhc_coc_fy23_total
+2020,Medicare,Medical,Denver,Professional,707940742.05,2417454,3514.1470756423905,civhc_coc_fy23_total
+2020,Medicare,Medical,Denver,Outpatient,591966739.85,2417454,2938.46372183297,civhc_coc_fy23_total
+2020,Medicare,Medical,East,DME,7327789.43,584738,150.3809794472054,civhc_coc_fy23_total
+2020,Medicare,Medical,East,Inpatient,179021406.22,584738,3673.879369290178,civhc_coc_fy23_total
+2020,Medicare,Medical,East,Outpatient,194764791.84,584738,3996.9653110965937,civhc_coc_fy23_total
+2020,Medicare,Medical,East,Professional,120378808.67,584738,2470.4153040164997,civhc_coc_fy23_total
+2020,Medicare,Medical,Ft. Collins,DME,3044993.05,449747,81.24549268811131,civhc_coc_fy23_total
+2020,Medicare,Medical,Ft. Collins,Inpatient,90687205.4,449747,2419.6858785050263,civhc_coc_fy23_total
+2020,Medicare,Medical,Ft. Collins,Professional,116870635.13,449747,3118.3034496283467,civhc_coc_fy23_total
+2020,Medicare,Medical,Ft. Collins,Outpatient,125319704.5,449747,3343.7387108752255,civhc_coc_fy23_total
+2020,Medicare,Medical,Grand Junction,Professional,49067214.62,272285,2162.464239454983,civhc_coc_fy23_total
+2020,Medicare,Medical,Grand Junction,Inpatient,55420581.35,272285,2442.4664458196376,civhc_coc_fy23_total
+2020,Medicare,Medical,Grand Junction,Outpatient,69805186.59,272285,3076.4171330774743,civhc_coc_fy23_total
+2020,Medicare,Medical,Grand Junction,DME,1705959.16,272285,75.18412663202159,civhc_coc_fy23_total
+2020,Medicare,Medical,Greeley,Inpatient,84768386.51,345552,2943.7556087651064,civhc_coc_fy23_total
+2020,Medicare,Medical,Greeley,DME,2677537.51,345552,92.98296673149048,civhc_coc_fy23_total
+2020,Medicare,Medical,Greeley,Outpatient,97177603.98,345552,3374.691067509377,civhc_coc_fy23_total
+2020,Medicare,Medical,Greeley,Professional,90521985.21,345552,3143.5610921655784,civhc_coc_fy23_total
+2020,Medicare,Medical,Pueblo,Professional,70420848.23,238261,3546.7415093531886,civhc_coc_fy23_total
+2020,Medicare,Medical,Pueblo,DME,2315087.02,238261,116.59920943838898,civhc_coc_fy23_total
+2020,Medicare,Medical,Pueblo,Inpatient,69509996.85,238261,3500.8665379562744,civhc_coc_fy23_total
+2020,Medicare,Medical,Pueblo,Outpatient,51851722.47,238261,2611.5086801448833,civhc_coc_fy23_total
+2020,Medicare,Medical,West,Inpatient,187742839.83,811049,2777.778010896999,civhc_coc_fy23_total
+2020,Medicare,Medical,West,Professional,166083945.06,811049,2457.3205080334233,civhc_coc_fy23_total
+2020,Medicare,Medical,West,Outpatient,248639021.03,811049,3678.776809243338,civhc_coc_fy23_total
+2020,Medicare,Medical,West,DME,7963861.83,811049,117.83054039891547,civhc_coc_fy23_total
+2020,Medicare,Pharmacy,All,Pharmacy,907278452.28,3589238,3033.3294775548457,civhc_coc_fy23_total
+2020,Medicare,Pharmacy,Boulder,Pharmacy,50824925.0,209027,2917.8005712180725,civhc_coc_fy23_total
+2020,Medicare,Pharmacy,Colorado Springs,Pharmacy,96945806.33,375620,3097.1451891805546,civhc_coc_fy23_total
+2020,Medicare,Pharmacy,Denver,Pharmacy,373754541.11,1311415,3420.0115854401547,civhc_coc_fy23_total
+2020,Medicare,Pharmacy,East,Pharmacy,84941725.71,387590,2629.842639180577,civhc_coc_fy23_total
+2020,Medicare,Pharmacy,Ft. Collins,Pharmacy,65678617.17,281985,2794.9834425235385,civhc_coc_fy23_total
+2020,Medicare,Pharmacy,Grand Junction,Pharmacy,31721348.59,154960,2456.480272844605,civhc_coc_fy23_total
+2020,Medicare,Pharmacy,Greeley,Pharmacy,60804704.27,214183,3406.6963822525604,civhc_coc_fy23_total
+2020,Medicare,Pharmacy,Pueblo,Pharmacy,39918990.38,140378,3412.4142284403542,civhc_coc_fy23_total
+2020,Medicare,Pharmacy,West,Pharmacy,102687793.72,514274,2396.103098037233,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,All,Professional,1458860683.16,4580803,3821.6723569906853,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,All,Long Term Care,1969991.29253672,4580803,5.160644435143935,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,All,Inpatient,964817833.777799,4580803,2527.463854117627,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,All,DME,37471119.1471469,4580803,98.16039453470555,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,All,Outpatient,931224544.593032,4580803,2439.461931699832,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Boulder,Professional,79237032.36,258871,3673.043285342893,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Boulder,Outpatient,40770666.5523207,258871,1889.9297280415665,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Boulder,Long Term Care,40113.15,258871,1.8594504598815624,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Boulder,Inpatient,40711203.362047,258871,1887.173303863948,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Boulder,DME,1487698.77,258871,68.96247644579734,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Colorado Springs,Professional,156116054.76,539618,3471.7015687393678,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Colorado Springs,Outpatient,79106052.9591448,539618,1759.1567284815142,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Colorado Springs,Long Term Care,312285.89,539618,6.944599105293003,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Colorado Springs,Inpatient,78373383.0137808,539618,1742.863648294478,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Colorado Springs,DME,4018299.12,539618,89.35874904098826,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Denver,Outpatient,494891358.526357,2609667,2275.6529098602555,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Denver,Professional,890281829.34,2609667,4093.7720989229665,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Denver,DME,19658892.34,2609667,90.39724534969403,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Denver,Inpatient,579638722.536881,2609667,2665.3456822048834,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Denver,Long Term Care,1377371.08,2609667,6.333548671152297,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,East,Professional,44562250.32,175839,3041.117180147749,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,East,Outpatient,52150347.941141,175839,3558.9611820682103,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,East,Long Term Care,81967.0625367259,175839,5.5937803925221985,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,East,Inpatient,39323540.5848123,175839,2683.6053834345485,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,East,DME,2140704.09,175839,146.09073686724787,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Ft. Collins,DME,1664583.13,298916,66.8247854246678,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Ft. Collins,Inpatient,55210597.9958603,298916,2216.432629736527,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Ft. Collins,Long Term Care,37023.38,298916,1.4863057179943528,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Ft. Collins,Outpatient,74410615.5777948,298916,2987.2184390716375,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Ft. Collins,Professional,70926851.33,298916,2847.362523116862,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Grand Junction,Inpatient,28567987.9957299,88538,3871.9629531812197,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Grand Junction,DME,2043344.12,88538,276.94469538503245,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Grand Junction,Professional,39929322.47,88538,5411.821699609207,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Grand Junction,Outpatient,38017912.3769387,88538,5152.758685798915,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Grand Junction,Long Term Care,7783.64,88538,1.0549558381711808,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Greeley,Long Term Care,51813.35,263494,2.35967498311157,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Greeley,Professional,72969905.93,263494,3323.183340645328,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Greeley,Outpatient,65463440.7717119,263494,2981.3251507075793,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Greeley,Inpatient,60287772.7689802,263494,2745.615737845121,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Greeley,DME,2013169.02714697,263494,91.68340958717708,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Pueblo,Professional,63208614.25,217250,3491.384906789413,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Pueblo,DME,2270887.28,217250,125.43451028768698,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Pueblo,Inpatient,54610876.8662708,217250,3016.4811157433815,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Pueblo,Long Term Care,21904.69,217250,1.209925339470656,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,Pueblo,Outpatient,39637714.11446,217250,2189.4249453326584,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,West,Long Term Care,39729.05,129725,3.675071111967624,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,West,Outpatient,46776435.7731625,129725,4326.978063426093,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,West,Professional,41628822.4,129725,3850.8064659857387,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,West,DME,2173541.27,129725,201.05989778377338,civhc_coc_fy23_total
+2020,Medicare Advantage,Medical,West,Inpatient,28093748.6534365,129725,2598.7664971380846,civhc_coc_fy23_total
+2020,Medicare Advantage,Pharmacy,All,Pharmacy,944201183.46,4449034,2546.713331819896,civhc_coc_fy23_total
+2020,Medicare Advantage,Pharmacy,Boulder,Pharmacy,40693647.16,251466,1941.9077168285173,civhc_coc_fy23_total
+2020,Medicare Advantage,Pharmacy,Colorado Springs,Pharmacy,120740924.65,522657,2772.1643368404134,civhc_coc_fy23_total
+2020,Medicare Advantage,Pharmacy,Denver,Pharmacy,542527591.92,2535893,2567.2735809594487,civhc_coc_fy23_total
+2020,Medicare Advantage,Pharmacy,East,Pharmacy,29662997.49,171879,2070.9683549473757,civhc_coc_fy23_total
+2020,Medicare Advantage,Pharmacy,Ft. Collins,Pharmacy,53906114.78,289141,2237.2246667196973,civhc_coc_fy23_total
+2020,Medicare Advantage,Pharmacy,Grand Junction,Pharmacy,23560720.22,85880,3292.1360344666978,civhc_coc_fy23_total
+2020,Medicare Advantage,Pharmacy,Greeley,Pharmacy,58661080.73,257738,2731.1958995569144,civhc_coc_fy23_total
+2020,Medicare Advantage,Pharmacy,Pueblo,Pharmacy,61474525.38,214174,3444.3690856966764,civhc_coc_fy23_total
+2020,Medicare Advantage,Pharmacy,West,Pharmacy,12973581.13,121309,1283.358807343231,civhc_coc_fy23_total
+2021,All,Medical,All,Professional,8468143605.1,43503955,2335.8272428610226,civhc_coc_fy23_total
+2021,All,Medical,All,Outpatient,7327875481.07457,43503955,2021.299115744645,civhc_coc_fy23_total
+2021,All,Medical,All,Long Term Care,2494185412.21666,43503955,687.9885965908138,civhc_coc_fy23_total
+2021,All,Medical,All,Inpatient,5799464455.60469,43503955,1599.7068190066002,civhc_coc_fy23_total
+2021,All,Medical,All,DME,177502524.492056,43503955,48.96176207208453,civhc_coc_fy23_total
+2021,All,Medical,Boulder,Professional,466114677.02,2256119,2479.2026148620707,civhc_coc_fy23_total
+2021,All,Medical,Boulder,Outpatient,316046455.342795,2256119,1681.0094964465702,civhc_coc_fy23_total
+2021,All,Medical,Boulder,Long Term Care,89719613.04,2256119,477.20681244207424,civhc_coc_fy23_total
+2021,All,Medical,Boulder,Inpatient,232462305.941226,2256119,1236.4364075187132,civhc_coc_fy23_total
+2021,All,Medical,Boulder,DME,6415341.27331967,2256119,34.12235581537855,civhc_coc_fy23_total
+2021,All,Medical,Colorado Springs,Long Term Care,374103888.306107,5352931,838.6520692445473,civhc_coc_fy23_total
+2021,All,Medical,Colorado Springs,Inpatient,636060577.109522,5352931,1425.8967517635224,civhc_coc_fy23_total
+2021,All,Medical,Colorado Springs,Professional,1006588101.93,5352931,2256.5314634468477,civhc_coc_fy23_total
+2021,All,Medical,Colorado Springs,DME,23374600.2528978,5352931,52.4003023828952,civhc_coc_fy23_total
+2021,All,Medical,Colorado Springs,Outpatient,799303802.91079,5352931,1791.8492943266929,civhc_coc_fy23_total
+2021,All,Medical,Denver,Inpatient,2914576469.4335,21957090,1592.875815201468,civhc_coc_fy23_total
+2021,All,Medical,Denver,Long Term Care,1294998013.90438,21957090,707.7429735385044,civhc_coc_fy23_total
+2021,All,Medical,Denver,Outpatient,3212373177.15408,21957090,1755.627823443314,civhc_coc_fy23_total
+2021,All,Medical,Denver,Professional,4498129163.61,21957090,2458.3198394377396,civhc_coc_fy23_total
+2021,All,Medical,Denver,DME,75202566.0509519,21957090,41.09974466613849,civhc_coc_fy23_total
+2021,All,Medical,East,Professional,388566109.24,2448384,1904.4370943773529,civhc_coc_fy23_total
+2021,All,Medical,East,Outpatient,610585361.626727,2448384,2992.596071335511,civhc_coc_fy23_total
+2021,All,Medical,East,Long Term Care,163730782.958912,2448384,802.4759986615431,civhc_coc_fy23_total
+2021,All,Medical,East,Inpatient,418507394.822961,2448384,2051.185082844657,civhc_coc_fy23_total
+2021,All,Medical,East,DME,17972502.6987895,2448384,88.0866859060809,civhc_coc_fy23_total
+2021,All,Medical,Ft. Collins,Professional,490635999.23,2669976,2205.1254358690867,civhc_coc_fy23_total
+2021,All,Medical,Ft. Collins,DME,10110661.350675,2669976,45.441583073443354,civhc_coc_fy23_total
+2021,All,Medical,Ft. Collins,Inpatient,311696147.577851,2669976,1400.8941544546512,civhc_coc_fy23_total
+2021,All,Medical,Ft. Collins,Long Term Care,104192651.062999,2669976,468.28578712167746,civhc_coc_fy23_total
+2021,All,Medical,Ft. Collins,Outpatient,498417837.065448,2669976,2240.100302319338,civhc_coc_fy23_total
+2021,All,Medical,Grand Junction,DME,6627025.36,1291541,61.573193820405244,civhc_coc_fy23_total
+2021,All,Medical,Grand Junction,Long Term Care,98554604.0,1291541,915.6931510497924,civhc_coc_fy23_total
+2021,All,Medical,Grand Junction,Outpatient,292276137.352773,1291541,2715.6038006019758,civhc_coc_fy23_total
+2021,All,Medical,Grand Junction,Professional,224422480.39,1291541,2085.160103070673,civhc_coc_fy23_total
+2021,All,Medical,Grand Junction,Inpatient,206045996.791913,1291541,1914.4200311898394,civhc_coc_fy23_total
+2021,All,Medical,Greeley,Long Term Care,116469684.44,2692858,519.01593521827,civhc_coc_fy23_total
+2021,All,Medical,Greeley,Inpatient,354715844.687747,2692858,1580.6960991827139,civhc_coc_fy23_total
+2021,All,Medical,Greeley,Outpatient,456272069.605087,2692858,2033.254198795868,civhc_coc_fy23_total
+2021,All,Medical,Greeley,Professional,471579565.98,2692858,2101.4679540324814,civhc_coc_fy23_total
+2021,All,Medical,Greeley,DME,10485854.2557999,2692858,46.72739931685919,civhc_coc_fy23_total
+2021,All,Medical,Pueblo,Professional,334124941.98,1617770,2478.411210345105,civhc_coc_fy23_total
+2021,All,Medical,Pueblo,Long Term Care,138116061.82,1617770,1024.4921971850138,civhc_coc_fy23_total
+2021,All,Medical,Pueblo,Inpatient,247416321.128227,1617770,1835.2397766918189,civhc_coc_fy23_total
+2021,All,Medical,Pueblo,DME,10109313.7387874,1617770,74.9870283572132,civhc_coc_fy23_total
+2021,All,Medical,Pueblo,Outpatient,247172364.253291,1617770,1833.430197765747,civhc_coc_fy23_total
+2021,All,Medical,West,Professional,587982565.72,3369503,2094.0152861237993,civhc_coc_fy23_total
+2021,All,Medical,West,DME,17204659.510835,3369503,61.271918775564224,civhc_coc_fy23_total
+2021,All,Medical,West,Inpatient,477983398.111733,3369503,1702.2690816244403,civhc_coc_fy23_total
+2021,All,Medical,West,Long Term Care,114300112.684262,3369503,407.0634014010802,civhc_coc_fy23_total
+2021,All,Medical,West,Outpatient,895428275.763578,3369503,3188.938935256308,civhc_coc_fy23_total
+2021,All,Pharmacy,All,Pharmacy,6096430111.67,37891660,1930.6929635714034,civhc_coc_fy23_total
+2021,All,Pharmacy,Boulder,Pharmacy,330654076.41,1962931,2021.3899097421154,civhc_coc_fy23_total
+2021,All,Pharmacy,Colorado Springs,Pharmacy,725676745.01,4445553,1958.8386282021606,civhc_coc_fy23_total
+2021,All,Pharmacy,Denver,Pharmacy,3188809705.8,19785879,1933.991230291058,civhc_coc_fy23_total
+2021,All,Pharmacy,East,Pharmacy,285199410.0,2010472,1702.2833046170254,civhc_coc_fy23_total
+2021,All,Pharmacy,Ft. Collins,Pharmacy,357255017.68,2226786,1925.2232644537912,civhc_coc_fy23_total
+2021,All,Pharmacy,Grand Junction,Pharmacy,205949912.98,1068454,2313.0606986917546,civhc_coc_fy23_total
+2021,All,Pharmacy,Greeley,Pharmacy,392262973.42,2288539,2056.8387434253905,civhc_coc_fy23_total
+2021,All,Pharmacy,Pueblo,Pharmacy,252555639.16,1416822,2139.0602841570785,civhc_coc_fy23_total
+2021,All,Pharmacy,West,Pharmacy,358066631.21,2724921,1576.8528975775812,civhc_coc_fy23_total
+2021,CHP+,Medical,All,DME,147890.63,706023,2.5136398672564493,civhc_coc_fy23_total
+2021,CHP+,Medical,All,Long Term Care,6061.54,706023,0.10302565213881135,civhc_coc_fy23_total
+2021,CHP+,Medical,All,Outpatient,39100902.6428917,706023,664.5829267809977,civhc_coc_fy23_total
+2021,CHP+,Medical,All,Professional,38634828.06,706023,656.6612372684743,civhc_coc_fy23_total
+2021,CHP+,Medical,All,Inpatient,13689575.9503843,706023,232.67643037778035,civhc_coc_fy23_total
+2021,CHP+,Medical,Boulder,Inpatient,174554.653671013,24231,86.445290910493,civhc_coc_fy23_total
+2021,CHP+,Medical,Boulder,Outpatient,1498638.82423496,24231,742.1759684214237,civhc_coc_fy23_total
+2021,CHP+,Medical,Boulder,Professional,1413366.81,24231,699.9464207007553,civhc_coc_fy23_total
+2021,CHP+,Medical,Boulder,DME,3793.5,24231,1.878667822211217,civhc_coc_fy23_total
+2021,CHP+,Medical,Colorado Springs,Professional,3602019.95,76641,563.9832387364465,civhc_coc_fy23_total
+2021,CHP+,Medical,Colorado Springs,Outpatient,4477299.96280716,76641,701.0294692616995,civhc_coc_fy23_total
+2021,CHP+,Medical,Colorado Springs,Long Term Care,1260.32,76641,0.19733354209887657,civhc_coc_fy23_total
+2021,CHP+,Medical,Colorado Springs,Inpatient,844050.533237054,76641,132.15650107442033,civhc_coc_fy23_total
+2021,CHP+,Medical,Colorado Springs,DME,12168.26,76641,1.9052350569538499,civhc_coc_fy23_total
+2021,CHP+,Medical,Denver,Professional,17518124.64,332675,631.9004905087547,civhc_coc_fy23_total
+2021,CHP+,Medical,Denver,Outpatient,22472556.8867709,332675,810.6130086157686,civhc_coc_fy23_total
+2021,CHP+,Medical,Denver,Long Term Care,4547.25,332675,0.16402494927481776,civhc_coc_fy23_total
+2021,CHP+,Medical,Denver,Inpatient,8052302.5704397,332675,290.45654421064523,civhc_coc_fy23_total
+2021,CHP+,Medical,Denver,DME,51493.19,332675,1.8574232509205681,civhc_coc_fy23_total
+2021,CHP+,Medical,East,DME,3833.6,48299,0.9524669247810513,civhc_coc_fy23_total
+2021,CHP+,Medical,East,Inpatient,610442.782543411,48299,151.6659431980151,civhc_coc_fy23_total
+2021,CHP+,Medical,East,Outpatient,1980391.01962284,48299,492.0328005853968,civhc_coc_fy23_total
+2021,CHP+,Medical,East,Professional,1707147.2,48299,424.14473177498496,civhc_coc_fy23_total
+2021,CHP+,Medical,Ft. Collins,Professional,2021864.6,36885,657.7843350955673,civhc_coc_fy23_total
+2021,CHP+,Medical,Ft. Collins,DME,12984.86,36885,4.224435949572998,civhc_coc_fy23_total
+2021,CHP+,Medical,Ft. Collins,Outpatient,1287271.47361446,36885,418.7951113833136,civhc_coc_fy23_total
+2021,CHP+,Medical,Ft. Collins,Inpatient,470498.063524915,36885,153.06972379826433,civhc_coc_fy23_total
+2021,CHP+,Medical,Grand Junction,Inpatient,715295.682777851,25477,336.9136159412102,civhc_coc_fy23_total
+2021,CHP+,Medical,Grand Junction,DME,11101.68,25477,5.229036385759705,civhc_coc_fy23_total
+2021,CHP+,Medical,Grand Junction,Long Term Care,122.1,25477,0.057510695921811836,civhc_coc_fy23_total
+2021,CHP+,Medical,Grand Junction,Outpatient,1006018.26195133,25477,473.84775065415704,civhc_coc_fy23_total
+2021,CHP+,Medical,Grand Junction,Professional,1974649.71,25477,930.0858232915964,civhc_coc_fy23_total
+2021,CHP+,Medical,Greeley,Professional,3606124.68,62097,696.8693521426156,civhc_coc_fy23_total
+2021,CHP+,Medical,Greeley,Outpatient,2269434.91806375,62097,438.55933485941347,civhc_coc_fy23_total
+2021,CHP+,Medical,Greeley,Inpatient,843058.668665018,62097,162.91775808783382,civhc_coc_fy23_total
+2021,CHP+,Medical,Greeley,DME,7552.52,62097,1.4594946615778541,civhc_coc_fy23_total
+2021,CHP+,Medical,Pueblo,Professional,1163627.73,18312,762.5345543905635,civhc_coc_fy23_total
+2021,CHP+,Medical,Pueblo,Outpatient,607591.178135154,18312,398.1593565761166,civhc_coc_fy23_total
+2021,CHP+,Medical,Pueblo,Long Term Care,131.87,18312,0.08641546526867627,civhc_coc_fy23_total
+2021,CHP+,Medical,Pueblo,Inpatient,110680.764238313,18312,72.5299896712405,civhc_coc_fy23_total
+2021,CHP+,Medical,Pueblo,DME,4226.96,18312,2.7699606815203146,civhc_coc_fy23_total
+2021,CHP+,Medical,West,DME,40736.06,83209,5.874757778605679,civhc_coc_fy23_total
+2021,CHP+,Medical,West,Professional,5627902.74,83209,811.6289449458592,civhc_coc_fy23_total
+2021,CHP+,Medical,West,Outpatient,3501700.11769117,83209,504.99827437289287,civhc_coc_fy23_total
+2021,CHP+,Medical,West,Inpatient,1868692.23128707,83209,269.4937660042164,civhc_coc_fy23_total
+2021,CHP+,Pharmacy,All,Pharmacy,36588129.77,706023,621.874297636196,civhc_coc_fy23_total
+2021,CHP+,Pharmacy,Boulder,Pharmacy,833209.96,24231,412.6333836820602,civhc_coc_fy23_total
+2021,CHP+,Pharmacy,Colorado Springs,Pharmacy,4650529.45,76641,728.1527302618703,civhc_coc_fy23_total
+2021,CHP+,Pharmacy,Denver,Pharmacy,18150725.08,332675,654.7191732471631,civhc_coc_fy23_total
+2021,CHP+,Pharmacy,East,Pharmacy,2099025.82,48299,521.507895401561,civhc_coc_fy23_total
+2021,CHP+,Pharmacy,Ft. Collins,Pharmacy,1219795.85,36885,396.8428954859699,civhc_coc_fy23_total
+2021,CHP+,Pharmacy,Grand Junction,Pharmacy,1536320.92,25477,723.6272339757428,civhc_coc_fy23_total
+2021,CHP+,Pharmacy,Greeley,Pharmacy,4467050.1,62097,863.2397893618049,civhc_coc_fy23_total
+2021,CHP+,Pharmacy,Pueblo,Pharmacy,871815.34,18312,571.3075622542596,civhc_coc_fy23_total
+2021,CHP+,Pharmacy,West,Pharmacy,2759657.25,83209,397.9844367796753,civhc_coc_fy23_total
+2021,Commercial,Medical,All,Inpatient,1642401891.79,16332878,1206.6962541127168,civhc_coc_fy23_total
+2021,Commercial,Medical,All,Professional,2841930145.89,16332878,2088.006887131588,civhc_coc_fy23_total
+2021,Commercial,Medical,All,Outpatient,2569789952.43,16332878,1888.061579175452,civhc_coc_fy23_total
+2021,Commercial,Medical,All,DME,25369814.27,16332878,18.63956684425121,civhc_coc_fy23_total
+2021,Commercial,Medical,Boulder,Outpatient,122790803.52,1062399,1386.9456223509246,civhc_coc_fy23_total
+2021,Commercial,Medical,Boulder,Inpatient,71116555.72,1062399,803.2751053417783,civhc_coc_fy23_total
+2021,Commercial,Medical,Boulder,Professional,176027679.65,1062399,1988.2663253636347,civhc_coc_fy23_total
+2021,Commercial,Medical,Boulder,DME,1091539.75,1062399,12.329150347468323,civhc_coc_fy23_total
+2021,Commercial,Medical,Colorado Springs,Professional,263242935.41,1594831,1980.7209822984378,civhc_coc_fy23_total
+2021,Commercial,Medical,Colorado Springs,DME,3023025.01,1594831,22.74617192668063,civhc_coc_fy23_total
+2021,Commercial,Medical,Colorado Springs,Inpatient,158812222.92,1594831,1194.9521140735287,civhc_coc_fy23_total
+2021,Commercial,Medical,Colorado Springs,Outpatient,260546282.26,1594831,1960.4305328401565,civhc_coc_fy23_total
+2021,Commercial,Medical,Denver,DME,13306212.29,9091050,17.56392798191628,civhc_coc_fy23_total
+2021,Commercial,Medical,Denver,Inpatient,919637630.13,9091050,1213.9028562773276,civhc_coc_fy23_total
+2021,Commercial,Medical,Denver,Professional,1709366658.53,9091050,2256.3290161598493,civhc_coc_fy23_total
+2021,Commercial,Medical,Denver,Outpatient,1192330023.39,9091050,1573.8512361806393,civhc_coc_fy23_total
+2021,Commercial,Medical,East,Professional,79069239.09,605029,1568.2403142328717,civhc_coc_fy23_total
+2021,Commercial,Medical,East,Inpatient,77518134.56,605029,1537.476079196204,civhc_coc_fy23_total
+2021,Commercial,Medical,East,Outpatient,142405275.95,605029,2824.432070859413,civhc_coc_fy23_total
+2021,Commercial,Medical,East,DME,1217304.33,605029,24.143721970351837,civhc_coc_fy23_total
+2021,Commercial,Medical,Ft. Collins,Outpatient,193139575.43,1111835,2084.549330755013,civhc_coc_fy23_total
+2021,Commercial,Medical,Ft. Collins,Inpatient,94082199.02,1111835,1015.4261992471904,civhc_coc_fy23_total
+2021,Commercial,Medical,Ft. Collins,DME,1684594.31,1111835,18.18177312281049,civhc_coc_fy23_total
+2021,Commercial,Medical,Ft. Collins,Professional,156531916.15,1111835,1689.4440216399016,civhc_coc_fy23_total
+2021,Commercial,Medical,Grand Junction,DME,572038.12,359678,19.08500781254344,civhc_coc_fy23_total
+2021,Commercial,Medical,Grand Junction,Inpatient,44291962.31,359678,1477.7204825427189,civhc_coc_fy23_total
+2021,Commercial,Medical,Grand Junction,Professional,42842668.04,359678,1429.3674244185077,civhc_coc_fy23_total
+2021,Commercial,Medical,Grand Junction,Outpatient,77939221.38,359678,2600.2998697724074,civhc_coc_fy23_total
+2021,Commercial,Medical,Greeley,Professional,154885094.35,986585,1883.8935643659695,civhc_coc_fy23_total
+2021,Commercial,Medical,Greeley,Outpatient,174785675.37,986585,2125.9476927380815,civhc_coc_fy23_total
+2021,Commercial,Medical,Greeley,DME,1632669.26,986585,19.858431985079847,civhc_coc_fy23_total
+2021,Commercial,Medical,Greeley,Inpatient,106509886.74,986585,1295.4977431037366,civhc_coc_fy23_total
+2021,Commercial,Medical,Pueblo,Professional,55124079.53,361255,1831.0859485958672,civhc_coc_fy23_total
+2021,Commercial,Medical,Pueblo,DME,741226.61,361255,24.621719616337494,civhc_coc_fy23_total
+2021,Commercial,Medical,Pueblo,Inpatient,35925278.29,361255,1193.3491286764197,civhc_coc_fy23_total
+2021,Commercial,Medical,Pueblo,Outpatient,67177473.12,361255,2231.4699518068956,civhc_coc_fy23_total
+2021,Commercial,Medical,West,Professional,204839875.14,1170308,2100.368878688345,civhc_coc_fy23_total
+2021,Commercial,Medical,West,Outpatient,338675622.01,1170308,3472.6819470771793,civhc_coc_fy23_total
+2021,Commercial,Medical,West,Inpatient,134508022.1,1170308,1379.206384302252,civhc_coc_fy23_total
+2021,Commercial,Medical,West,DME,2101204.59,1170308,21.54514459441446,civhc_coc_fy23_total
+2021,Commercial,Pharmacy,All,Pharmacy,3497806059.68,14678340,2859.565367484334,civhc_coc_fy23_total
+2021,Commercial,Pharmacy,Boulder,Pharmacy,230919523.9,969935,2856.927821761252,civhc_coc_fy23_total
+2021,Commercial,Pharmacy,Colorado Springs,Pharmacy,369402886.33,1415468,3131.709537735929,civhc_coc_fy23_total
+2021,Commercial,Pharmacy,Denver,Pharmacy,1929073653.1,8591643,2694.348896619657,civhc_coc_fy23_total
+2021,Commercial,Pharmacy,East,Pharmacy,140300799.26,453498,3712.4961766534802,civhc_coc_fy23_total
+2021,Commercial,Pharmacy,Ft. Collins,Pharmacy,218798099.9,919278,2856.1297004823355,civhc_coc_fy23_total
+2021,Commercial,Pharmacy,Grand Junction,Pharmacy,76962752.54,275796,3348.6817447678723,civhc_coc_fy23_total
+2021,Commercial,Pharmacy,Greeley,Pharmacy,227424571.36,834497,3270.3471148727917,civhc_coc_fy23_total
+2021,Commercial,Pharmacy,Pueblo,Pharmacy,86850806.07,328457,3173.0475308487867,civhc_coc_fy23_total
+2021,Commercial,Pharmacy,West,Pharmacy,218072967.22,896521,2918.922821261298,civhc_coc_fy23_total
+2021,Medicaid,Medical,All,DME,60433309.6367805,17063896,42.49907029680479,civhc_coc_fy23_total
+2021,Medicaid,Medical,All,Inpatient,1522873885.38727,17063896,1070.944561819132,civhc_coc_fy23_total
+2021,Medicaid,Medical,All,Long Term Care,2492883018.79666,17063896,1753.0929762792694,civhc_coc_fy23_total
+2021,Medicaid,Medical,All,Professional,1927230731.62,17063896,1355.304133325707,civhc_coc_fy23_total
+2021,Medicaid,Medical,All,Outpatient,1754916118.65118,17063896,1234.1257485285987,civhc_coc_fy23_total
+2021,Medicaid,Medical,Boulder,DME,1606870.00331967,638947,30.178465568875104,civhc_coc_fy23_total
+2021,Medicaid,Medical,Boulder,Inpatient,46521231.3521864,638947,873.7106148494895,civhc_coc_fy23_total
+2021,Medicaid,Medical,Boulder,Outpatient,57551555.1235135,638947,1080.8700275330534,civhc_coc_fy23_total
+2021,Medicaid,Medical,Boulder,Professional,62305468.28,638947,1170.1527972742654,civhc_coc_fy23_total
+2021,Medicaid,Medical,Boulder,Long Term Care,89689807.51,638947,1684.4553462493761,civhc_coc_fy23_total
+2021,Medicaid,Medical,Colorado Springs,Professional,284994459.4,2486145,1375.5969634916707,civhc_coc_fy23_total
+2021,Medicaid,Medical,Colorado Springs,Long Term Care,374008326.766107,2486145,1805.2446342402732,civhc_coc_fy23_total
+2021,Medicaid,Medical,Colorado Springs,Outpatient,211161672.542496,2486145,1019.224570775217,civhc_coc_fy23_total
+2021,Medicaid,Medical,Colorado Springs,Inpatient,184525797.127106,2486145,890.659863171807,civhc_coc_fy23_total
+2021,Medicaid,Medical,Colorado Springs,DME,9040444.74289781,2486145,43.63596528552185,civhc_coc_fy23_total
+2021,Medicaid,Medical,Denver,DME,25915504.5921116,8275652,37.578435524516884,civhc_coc_fy23_total
+2021,Medicaid,Medical,Denver,Professional,921067052.69,8275652,1335.5811279014633,civhc_coc_fy23_total
+2021,Medicaid,Medical,Denver,Outpatient,818461260.881124,8275652,1186.7989531910584,civhc_coc_fy23_total
+2021,Medicaid,Medical,Denver,Long Term Care,1293988332.76438,8275652,1876.3307100362074,civhc_coc_fy23_total
+2021,Medicaid,Medical,Denver,Inpatient,787595088.51177,8275652,1142.0418671714615,civhc_coc_fy23_total
+2021,Medicaid,Medical,East,Inpatient,113543261.69287,1173424,1161.148178590552,civhc_coc_fy23_total
+2021,Medicaid,Medical,East,Professional,119037661.9,1173424,1217.3365661517064,civhc_coc_fy23_total
+2021,Medicaid,Medical,East,Outpatient,180736082.73218,1173424,1848.2943870128447,civhc_coc_fy23_total
+2021,Medicaid,Medical,East,Long Term Care,163685016.338912,1173424,1673.9219549514448,civhc_coc_fy23_total
+2021,Medicaid,Medical,East,DME,7202530.28878957,1173424,73.6565499473974,civhc_coc_fy23_total
+2021,Medicaid,Medical,Ft. Collins,Inpatient,65882246.5531928,832082,950.1310671764485,civhc_coc_fy23_total
+2021,Medicaid,Medical,Ft. Collins,Long Term Care,104139174.412999,832082,1501.859303477287,civhc_coc_fy23_total
+2021,Medicaid,Medical,Ft. Collins,Outpatient,68167522.4480198,832082,983.0885289866114,civhc_coc_fy23_total
+2021,Medicaid,Medical,Ft. Collins,Professional,105120603.64,832082,1516.013137743636,civhc_coc_fy23_total
+2021,Medicaid,Medical,Ft. Collins,DME,2760137.05639803,832082,39.80574592020541,civhc_coc_fy23_total
+2021,Medicaid,Medical,Grand Junction,DME,1797700.77,533067,40.468476270337504,civhc_coc_fy23_total
+2021,Medicaid,Medical,Grand Junction,Outpatient,63293122.5133979,533067,1424.806769431938,civhc_coc_fy23_total
+2021,Medicaid,Medical,Grand Junction,Long Term Care,98547385.4,533067,2218.423996983494,civhc_coc_fy23_total
+2021,Medicaid,Medical,Grand Junction,Inpatient,45384694.9184594,533067,1021.6658300392123,civhc_coc_fy23_total
+2021,Medicaid,Medical,Grand Junction,Professional,67568635.24,533067,1521.0538691759195,civhc_coc_fy23_total
+2021,Medicaid,Medical,Greeley,Inpatient,93789329.8101892,1120511,1004.4274065335105,civhc_coc_fy23_total
+2021,Medicaid,Medical,Greeley,DME,3625312.04364138,1120511,38.82491517146781,civhc_coc_fy23_total
+2021,Medicaid,Medical,Greeley,Professional,118134091.94,1120511,1265.1451911493953,civhc_coc_fy23_total
+2021,Medicaid,Medical,Greeley,Long Term Care,116438993.17,1120511,1246.9917011434961,civhc_coc_fy23_total
+2021,Medicaid,Medical,Greeley,Outpatient,97510799.6940874,1120511,1044.282114436225,civhc_coc_fy23_total
+2021,Medicaid,Medical,Pueblo,DME,3823366.05878741,886507,51.75412343664395,civhc_coc_fy23_total
+2021,Medicaid,Medical,Pueblo,Inpatient,84516036.8706472,886507,1144.0320747019105,civhc_coc_fy23_total
+2021,Medicaid,Medical,Pueblo,Long Term Care,138104488.56,886507,1869.4199399666331,civhc_coc_fy23_total
+2021,Medicaid,Medical,Pueblo,Outpatient,75858643.859132,886507,1026.8432469338472,civhc_coc_fy23_total
+2021,Medicaid,Medical,Pueblo,Professional,125741304.06,886507,1702.0685101414879,civhc_coc_fy23_total
+2021,Medicaid,Medical,West,DME,4661444.08083502,1188814,47.05305369050183,civhc_coc_fy23_total
+2021,Medicaid,Medical,West,Inpatient,101116198.550852,1188814,1020.6763905961942,civhc_coc_fy23_total
+2021,Medicaid,Medical,West,Long Term Care,114281493.874262,1188814,1153.5681161991229,civhc_coc_fy23_total
+2021,Medicaid,Medical,West,Outpatient,182175458.857237,1188814,1838.8961656632946,civhc_coc_fy23_total
+2021,Medicaid,Medical,West,Professional,123261454.47,1188814,1244.21268057072,civhc_coc_fy23_total
+2021,Medicaid,Pharmacy,All,Pharmacy,1449228284.18,14559161,1194.487746248565,civhc_coc_fy23_total
+2021,Medicaid,Pharmacy,Boulder,Pharmacy,51816658.59,511491,1215.6614741608357,civhc_coc_fy23_total
+2021,Medicaid,Pharmacy,Colorado Springs,Pharmacy,212262996.02,2065353,1233.2787432656792,civhc_coc_fy23_total
+2021,Medicaid,Pharmacy,Denver,Pharmacy,627602503.57,7123663,1057.2131279708208,civhc_coc_fy23_total
+2021,Medicaid,Pharmacy,East,Pharmacy,99764227.24,945779,1265.803879003446,civhc_coc_fy23_total
+2021,Medicaid,Pharmacy,Ft. Collins,Pharmacy,73104206.49,699680,1253.7881286873999,civhc_coc_fy23_total
+2021,Medicaid,Pharmacy,Grand Junction,Pharmacy,88499396.78,500026,2123.875081215777,civhc_coc_fy23_total
+2021,Medicaid,Pharmacy,Greeley,Pharmacy,90592918.77,925192,1175.0155916177398,civhc_coc_fy23_total
+2021,Medicaid,Pharmacy,Pueblo,Pharmacy,94172648.05,728171,1551.9318629827335,civhc_coc_fy23_total
+2021,Medicaid,Pharmacy,West,Pharmacy,111412728.67,1070900,1248.4384574096553,civhc_coc_fy23_total
+2021,Medicare,Medical,All,DME,50830635.6,6212168,98.18917118790091,civhc_coc_fy23_total
+2021,Medicare,Medical,All,Inpatient,1536459297.67,6212168,2967.9673138331095,civhc_coc_fy23_total
+2021,Medicare,Medical,All,Outpatient,1803265711.52,6212168,3483.3553339574846,civhc_coc_fy23_total
+2021,Medicare,Medical,All,Professional,1904860715.35,6212168,3679.605668133894,civhc_coc_fy23_total
+2021,Medicare,Medical,Boulder,DME,2171707.09,341259,76.36570780550842,civhc_coc_fy23_total
+2021,Medicare,Medical,Boulder,Inpatient,67971279.67,341259,2390.135808989653,civhc_coc_fy23_total
+2021,Medicare,Medical,Boulder,Outpatient,82184722.8,341259,2889.93601223704,civhc_coc_fy23_total
+2021,Medicare,Medical,Boulder,Professional,122801442.36,341259,4318.178592564592,civhc_coc_fy23_total
+2021,Medicare,Medical,Colorado Springs,DME,6493184.17,829862,93.89297261472389,civhc_coc_fy23_total
+2021,Medicare,Medical,Colorado Springs,Inpatient,192408968.47,829862,2782.2790074012305,civhc_coc_fy23_total
+2021,Medicare,Medical,Colorado Springs,Outpatient,210086094.19,829862,3037.894409287327,civhc_coc_fy23_total
+2021,Medicare,Medical,Colorado Springs,Professional,281476536.24,829862,4070.2170178656206,civhc_coc_fy23_total
+2021,Medicare,Medical,Denver,DME,16459822.41,2364775,83.52501566533815,civhc_coc_fy23_total
+2021,Medicare,Medical,Denver,Professional,796337037.07,2364775,4040.9952087788483,civhc_coc_fy23_total
+2021,Medicare,Medical,Denver,Outpatient,618526383.9,2364775,3138.698864289415,civhc_coc_fy23_total
+2021,Medicare,Medical,Denver,Inpatient,592802827.65,2364775,3008.165230011312,civhc_coc_fy23_total
+2021,Medicare,Medical,East,DME,6982542.13,558947,149.9077829561658,civhc_coc_fy23_total
+2021,Medicare,Medical,East,Inpatient,178360673.63,558947,3829.2147261904975,civhc_coc_fy23_total
+2021,Medicare,Medical,East,Outpatient,217019520.3,558947,4659.179213055979,civhc_coc_fy23_total
+2021,Medicare,Medical,East,Professional,130031076.34,558947,2791.6294676955063,civhc_coc_fy23_total
+2021,Medicare,Medical,Ft. Collins,Outpatient,138793980.62,447338,3723.1975987731876,civhc_coc_fy23_total
+2021,Medicare,Medical,Ft. Collins,Inpatient,91098184.03,447338,2443.740993074588,civhc_coc_fy23_total
+2021,Medicare,Medical,Ft. Collins,DME,3438034.28,447338,92.22648502921727,civhc_coc_fy23_total
+2021,Medicare,Medical,Ft. Collins,Professional,134802749.84,447338,3616.1314220567,civhc_coc_fy23_total
+2021,Medicare,Medical,Grand Junction,DME,1816817.92,276458,78.86121957042299,civhc_coc_fy23_total
+2021,Medicare,Medical,Grand Junction,Inpatient,61349362.14,276458,2662.9446269596106,civhc_coc_fy23_total
+2021,Medicare,Medical,Grand Junction,Outpatient,80607224.79,276458,3498.8558749611157,civhc_coc_fy23_total
+2021,Medicare,Medical,Grand Junction,Professional,59961644.95,276458,2602.709053093056,civhc_coc_fy23_total
+2021,Medicare,Medical,Greeley,DME,2749594.04,338032,97.60948217920196,civhc_coc_fy23_total
+2021,Medicare,Medical,Greeley,Inpatient,87240558.86,338032,3097.0047401429456,civhc_coc_fy23_total
+2021,Medicare,Medical,Greeley,Outpatient,102048623.55,338032,3622.685078927439,civhc_coc_fy23_total
+2021,Medicare,Medical,Greeley,Professional,101464711.11,338032,3601.956422232215,civhc_coc_fy23_total
+2021,Medicare,Medical,Pueblo,Inpatient,67831527.01,224414,3627.1280941474242,civhc_coc_fy23_total
+2021,Medicare,Medical,Pueblo,Outpatient,52690795.56,224414,2817.513821419341,civhc_coc_fy23_total
+2021,Medicare,Medical,Pueblo,Professional,75647623.55,224414,4045.0750960278765,civhc_coc_fy23_total
+2021,Medicare,Medical,Pueblo,DME,2558421.89,224414,136.8054697122283,civhc_coc_fy23_total
+2021,Medicare,Medical,West,DME,8160511.67,831278,117.80191469039238,civhc_coc_fy23_total
+2021,Medicare,Medical,West,Inpatient,197395916.21,831278,2849.5292724215005,civhc_coc_fy23_total
+2021,Medicare,Medical,West,Outpatient,301308365.81,831278,4349.5682427779875,civhc_coc_fy23_total
+2021,Medicare,Medical,West,Professional,202337893.89,831278,2920.8697050565515,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,All,DME,40720874.3552759,4970827,98.30366099309246,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,All,Inpatient,1084039804.80703,4970827,2616.9644724478158,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,All,Long Term Care,1296331.88,4970827,3.12945563384121,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,All,Outpatient,1160802795.83049,4970827,2802.276874645986,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,All,Professional,1755487184.18,4970827,4237.895668097079,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Boulder,Professional,103566719.92,273296,4547.4527217376035,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Boulder,Outpatient,52020735.0750471,273296,2284.1491309809335,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Boulder,Long Term Care,29805.53,273296,1.3087142146244364,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Boulder,Inpatient,46678684.5453693,273296,2049.5880457248977,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Boulder,DME,1541430.93,273296,67.68182176102101,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Colorado Springs,DME,4805778.07,591996,97.41507854782803,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Colorado Springs,Inpatient,99469538.0591789,591996,2016.2880436863543,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Colorado Springs,Long Term Care,94301.22,591996,1.9115241319198104,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Colorado Springs,Outpatient,113032453.955486,591996,2291.2138721643933,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Colorado Springs,Professional,173272150.93,591996,3512.2970613990638,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Denver,Professional,1053840290.68,2750709,4597.390523010613,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Denver,Outpatient,560582952.096185,2750709,2445.549647437886,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Denver,Long Term Care,1005133.89,2750709,4.384908283646144,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Denver,Inpatient,606488620.571296,2750709,2645.813659989316,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Denver,DME,19469533.5688403,2750709,84.93606660176835,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,East,DME,2566292.35,221653,138.93567062029388,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,East,Inpatient,48474882.1575473,221653,2624.365949888193,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,East,Long Term Care,45766.62,221653,2.477744221824203,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,East,Outpatient,68444091.6249241,221653,3705.472515594596,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,East,Professional,58720984.71,221653,3179.0763784834858,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Ft. Collins,DME,2214910.84427699,322477,82.42116532752375,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Ft. Collins,Professional,92158865.0,322477,3429.4116479624904,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Ft. Collins,Outpatient,97029487.0938142,322477,3610.6570239916964,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Ft. Collins,Long Term Care,53476.65,322477,1.9899707576044183,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Ft. Collins,Inpatient,60163019.9111339,322477,2238.7836618847446,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Grand Junction,DME,2429366.87,119663,243.62085556939073,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Grand Junction,Inpatient,54304681.7406757,119663,5445.761688141769,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Grand Junction,Long Term Care,7096.5,119663,0.7116485463342888,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Grand Junction,Outpatient,69430550.4074237,119663,6962.608365903283,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Grand Junction,Professional,52074882.45,119663,5222.153793570276,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Greeley,DME,2470726.3921586,286396,103.52350139632955,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Greeley,Professional,93489543.9,286396,3917.2143703124348,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Greeley,Outpatient,79657536.0729366,286396,3337.6528753028642,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Greeley,Long Term Care,30691.27,286396,1.2859650274445174,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Greeley,Inpatient,66333010.6088935,286396,2779.354904770744,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Pueblo,Professional,76448307.11,232670,3942.8361426913652,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Pueblo,Outpatient,50837860.536024,232670,2621.9724349176427,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Pueblo,Long Term Care,11441.39,232670,0.5900918898010057,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Pueblo,Inpatient,59032798.1933423,232670,3044.6279207465836,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,Pueblo,DME,2982072.22,232670,153.8009482958697,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,West,DME,2240763.11,172960,155.46460060129507,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,West,Inpatient,43094569.0195945,172960,2989.909968982042,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,West,Long Term Care,18618.81,172960,1.291776827012026,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,West,Outpatient,69767128.9686496,172960,4840.457606520555,civhc_coc_fy23_total
+2021,Medicare Advantage,Medical,West,Professional,51915439.48,172960,3601.9037567067526,civhc_coc_fy23_total
+2021,Medicare Advantage,Pharmacy,All,Pharmacy,1112807638.04,4711769,2834.1142480626704,civhc_coc_fy23_total
+2021,Medicare Advantage,Pharmacy,Boulder,Pharmacy,47084683.96,258485,2185.8761921194655,civhc_coc_fy23_total
+2021,Medicare Advantage,Pharmacy,Colorado Springs,Pharmacy,139360333.21,559504,2988.9402015356463,civhc_coc_fy23_total
+2021,Medicare Advantage,Pharmacy,Denver,Pharmacy,613982824.05,2635185,2795.9304142213923,civhc_coc_fy23_total
+2021,Medicare Advantage,Pharmacy,East,Pharmacy,43035357.68,204231,2528.6283285103636,civhc_coc_fy23_total
+2021,Medicare Advantage,Pharmacy,Ft. Collins,Pharmacy,64132915.44,299525,2569.3848102161755,civhc_coc_fy23_total
+2021,Medicare Advantage,Pharmacy,Grand Junction,Pharmacy,38951442.74,110800,4218.567805776174,civhc_coc_fy23_total
+2021,Medicare Advantage,Pharmacy,Greeley,Pharmacy,69778433.19,272043,3077.973696364178,civhc_coc_fy23_total
+2021,Medicare Advantage,Pharmacy,Pueblo,Pharmacy,70660369.7,221734,3824.0614267545798,civhc_coc_fy23_total
+2021,Medicare Advantage,Pharmacy,West,Pharmacy,25821278.07,151233,2048.860611374502,civhc_coc_fy23_total
+All,Commercial,Medical,Boulder,DME,6256828.56,5424473,13.841334028208822,civhc_coc_fy23_total
+All,Commercial,Medical,Boulder,Inpatient,368537259.04,5424473,815.276822002801,civhc_coc_fy23_total
+All,Commercial,Medical,Boulder,Outpatient,557385719.96,5424473,1233.0467198417248,civhc_coc_fy23_total
+All,Commercial,Medical,Boulder,Professional,797024813.73,5424473,1763.175476172524,civhc_coc_fy23_total
+All,Commercial,Medical,Colorado Springs,Inpatient,673695326.69,7802324,1036.145630491633,civhc_coc_fy23_total
+All,Commercial,Medical,Colorado Springs,Outpatient,1091955512.37,7802324,1679.431173127391,civhc_coc_fy23_total
+All,Commercial,Medical,Colorado Springs,Professional,1179275670.45,7802324,1813.7298637431618,civhc_coc_fy23_total
+All,Commercial,Medical,Colorado Springs,DME,14748677.16,7802324,22.683514029922364,civhc_coc_fy23_total
+All,Commercial,Medical,Denver,Inpatient,4289462185.57,46666433,1103.0100849327823,civhc_coc_fy23_total
+All,Commercial,Medical,Denver,Outpatient,5454452332.91,46666433,1402.5804799548318,civhc_coc_fy23_total
+All,Commercial,Medical,Denver,Professional,7572522973.21,46666433,1947.2299431696442,civhc_coc_fy23_total
+All,Commercial,Medical,Denver,DME,72084635.25,46666433,18.536141877396112,civhc_coc_fy23_total
+All,Commercial,Medical,East,Professional,382157847.59,3070948,1493.3154749217504,civhc_coc_fy23_total
+All,Commercial,Medical,East,DME,6218633.78,3070948,24.299859639433816,civhc_coc_fy23_total
+All,Commercial,Medical,East,Inpatient,352841481.86,3070948,1378.7591917284176,civhc_coc_fy23_total
+All,Commercial,Medical,East,Outpatient,668207346.98,3070948,2611.079107741323,civhc_coc_fy23_total
+All,Commercial,Medical,Ft. Collins,Professional,666865526.96,5251585,1523.8040179336335,civhc_coc_fy23_total
+All,Commercial,Medical,Ft. Collins,Outpatient,848860770.86,5251585,1939.6675956535028,civhc_coc_fy23_total
+All,Commercial,Medical,Ft. Collins,Inpatient,444940242.21,5251585,1016.6993215419725,civhc_coc_fy23_total
+All,Commercial,Medical,Ft. Collins,DME,7310281.52,5251585,16.70417183383683,civhc_coc_fy23_total
+All,Commercial,Medical,Grand Junction,Professional,210146554.88,1872408,1346.799767230219,civhc_coc_fy23_total
+All,Commercial,Medical,Grand Junction,DME,2835728.28,1872408,18.173784431598243,civhc_coc_fy23_total
+All,Commercial,Medical,Grand Junction,Outpatient,346635725.24,1872408,2221.539698014535,civhc_coc_fy23_total
+All,Commercial,Medical,Grand Junction,Inpatient,191412210.52,1872408,1226.7339843880181,civhc_coc_fy23_total
+All,Commercial,Medical,Greeley,Outpatient,770332200.52,4710303,1962.5035600130184,civhc_coc_fy23_total
+All,Commercial,Medical,Greeley,Inpatient,472019294.65,4710303,1202.5195695054013,civhc_coc_fy23_total
+All,Commercial,Medical,Greeley,DME,7788213.16,4710303,19.841304884208085,civhc_coc_fy23_total
+All,Commercial,Medical,Greeley,Professional,651063976.52,4710303,1658.6550203330867,civhc_coc_fy23_total
+All,Commercial,Medical,Pueblo,DME,4102083.28,1805924,27.25751435830079,civhc_coc_fy23_total
+All,Commercial,Medical,Pueblo,Professional,259175109.56,1805924,1722.166223340517,civhc_coc_fy23_total
+All,Commercial,Medical,Pueblo,Outpatient,300952929.06,1805924,1999.7713905568562,civhc_coc_fy23_total
+All,Commercial,Medical,Pueblo,Inpatient,179066102.57,1805924,1189.8580620446928,civhc_coc_fy23_total
+All,Commercial,Medical,West,Professional,958110984.08,6004387,1914.8219142037315,civhc_coc_fy23_total
+All,Commercial,Medical,West,Inpatient,686956933.08,6004387,1372.9100401023452,civhc_coc_fy23_total
+All,Commercial,Medical,West,Outpatient,1543087191.77,6004387,3083.91952438109,civhc_coc_fy23_total
+All,Commercial,Medical,West,DME,11284246.68,6004387,22.552004086345534,civhc_coc_fy23_total
+All,Commercial,Pharmacy,Boulder,Pharmacy,677584944.69,4980346,1632.6213753582585,civhc_coc_fy23_total
+All,Commercial,Pharmacy,Colorado Springs,Pharmacy,1090225860.75,7123292,1836.6101416311449,civhc_coc_fy23_total
+All,Commercial,Pharmacy,Denver,Pharmacy,5904035259.7014,44133148,1605.3335492047108,civhc_coc_fy23_total
+All,Commercial,Pharmacy,East,Pharmacy,426871566.02,2579071,1986.1643173995599,civhc_coc_fy23_total
+All,Commercial,Pharmacy,Ft. Collins,Pharmacy,606877514.37,4359173,1670.6219671575318,civhc_coc_fy23_total
+All,Commercial,Pharmacy,Grand Junction,Pharmacy,217641308.94,1544753,1690.6882247712092,civhc_coc_fy23_total
+All,Commercial,Pharmacy,Greeley,Pharmacy,625734338.8,4052079,1853.0764246205467,civhc_coc_fy23_total
+All,Commercial,Pharmacy,Pueblo,Pharmacy,265815888.37,1701189,1875.0360250624713,civhc_coc_fy23_total
+All,Commercial,Pharmacy,West,Pharmacy,665340551.32,4717223,1692.5395758987866,civhc_coc_fy23_total
+All,Medicaid,Medical,Boulder,Professional,279638913.28,3012238,1114.0112299758518,civhc_coc_fy23_total
+All,Medicaid,Medical,Boulder,Long Term Care,455038782.051603,3012238,1812.7602747921103,civhc_coc_fy23_total
+All,Medicaid,Medical,Boulder,Outpatient,256774943.39472,3012238,1022.9269137221694,civhc_coc_fy23_total
+All,Medicaid,Medical,Boulder,Inpatient,207311326.772979,3012238,825.8762824437338,civhc_coc_fy23_total
+All,Medicaid,Medical,Boulder,DME,8932572.16616916,3012238,35.58512507777603,civhc_coc_fy23_total
+All,Medicaid,Medical,Colorado Springs,Professional,1256662855.71,11852375,1272.3149806279332,civhc_coc_fy23_total
+All,Medicaid,Medical,Colorado Springs,Outpatient,993858691.897134,11852375,1006.2375095932762,civhc_coc_fy23_total
+All,Medicaid,Medical,Colorado Springs,Long Term Care,1571022077.22458,11852375,1590.5896435689015,civhc_coc_fy23_total
+All,Medicaid,Medical,Colorado Springs,Inpatient,796858976.37166,11852375,806.7841016218201,civhc_coc_fy23_total
+All,Medicaid,Medical,Colorado Springs,DME,45910441.7231294,11852375,46.48227048819775,civhc_coc_fy23_total
+All,Medicaid,Medical,Denver,Outpatient,3667710833.60537,38259125,1150.3799421252952,civhc_coc_fy23_total
+All,Medicaid,Medical,Denver,DME,136264043.515101,38259125,42.73930786920014,civhc_coc_fy23_total
+All,Medicaid,Medical,Denver,Inpatient,3427098390.96193,38259125,1074.9116894739009,civhc_coc_fy23_total
+All,Medicaid,Medical,Denver,Long Term Care,5185196396.46104,38259125,1626.3402980996684,civhc_coc_fy23_total
+All,Medicaid,Medical,Denver,Professional,3857307335.63,38259125,1209.8470110740902,civhc_coc_fy23_total
+All,Medicaid,Medical,East,DME,34385590.4119331,5573800,74.02976155283599,civhc_coc_fy23_total
+All,Medicaid,Medical,East,Inpatient,529054182.949834,5573800,1139.016504969322,civhc_coc_fy23_total
+All,Medicaid,Medical,East,Long Term Care,795304356.167357,5573800,1712.2344314486136,civhc_coc_fy23_total
+All,Medicaid,Medical,East,Outpatient,758347424.357357,5573800,1632.6687524289148,civhc_coc_fy23_total
+All,Medicaid,Medical,East,Professional,515606072.43,5573800,1110.0636673651727,civhc_coc_fy23_total
+All,Medicaid,Medical,Ft. Collins,DME,14875874.5192645,3921495,45.521030686300506,civhc_coc_fy23_total
+All,Medicaid,Medical,Ft. Collins,Inpatient,313861665.412663,3921495,960.434728324773,civhc_coc_fy23_total
+All,Medicaid,Medical,Ft. Collins,Long Term Care,492056897.390876,3921495,1505.7223759536892,civhc_coc_fy23_total
+All,Medicaid,Medical,Ft. Collins,Outpatient,348924633.021361,3921495,1067.729423665294,civhc_coc_fy23_total
+All,Medicaid,Medical,Ft. Collins,Professional,426260284.49,3921495,1304.3809602919296,civhc_coc_fy23_total
+All,Medicaid,Medical,Grand Junction,Outpatient,248530805.563125,2690363,1108.538017642043,civhc_coc_fy23_total
+All,Medicaid,Medical,Grand Junction,Long Term Care,490675119.931793,2690363,2188.589955772331,civhc_coc_fy23_total
+All,Medicaid,Medical,Grand Junction,Professional,288008810.31,2690363,1284.6243141613234,civhc_coc_fy23_total
+All,Medicaid,Medical,Grand Junction,Inpatient,210569529.973455,2690363,939.21688622742,civhc_coc_fy23_total
+All,Medicaid,Medical,Grand Junction,DME,10179773.9808416,2690363,45.40550393017567,civhc_coc_fy23_total
+All,Medicaid,Medical,Greeley,DME,19626929.1754437,4979350,47.29997893406256,civhc_coc_fy23_total
+All,Medicaid,Medical,Greeley,Inpatient,371233697.503258,4979350,894.6558024720287,civhc_coc_fy23_total
+All,Medicaid,Medical,Greeley,Long Term Care,490352534.247407,4979350,1181.726613105904,civhc_coc_fy23_total
+All,Medicaid,Medical,Greeley,Outpatient,450744290.577206,4979350,1086.2726032366618,civhc_coc_fy23_total
+All,Medicaid,Medical,Greeley,Professional,483595682.74,4979350,1165.442917826624,civhc_coc_fy23_total
+All,Medicaid,Medical,Pueblo,DME,21215419.6348652,4241967,60.015798241330586,civhc_coc_fy23_total
+All,Medicaid,Medical,Pueblo,Inpatient,379315566.364728,4241967,1073.0368238076194,civhc_coc_fy23_total
+All,Medicaid,Medical,Pueblo,Long Term Care,688627017.217729,4241967,1948.0406628841638,civhc_coc_fy23_total
+All,Medicaid,Medical,Pueblo,Outpatient,358004024.128858,4241967,1012.7491066164106,civhc_coc_fy23_total
+All,Medicaid,Medical,Pueblo,Professional,523962526.93,4241967,1482.2251854293067,civhc_coc_fy23_total
+All,Medicaid,Medical,West,Long Term Care,560740321.760382,5793303,1161.4935143431278,civhc_coc_fy23_total
+All,Medicaid,Medical,West,Inpatient,541082346.74258,5793303,1120.7748258482184,civhc_coc_fy23_total
+All,Medicaid,Medical,West,DME,24033245.8839109,5793303,49.781437395373736,civhc_coc_fy23_total
+All,Medicaid,Medical,West,Outpatient,746640949.784038,5793303,1546.5601225084301,civhc_coc_fy23_total
+All,Medicaid,Medical,West,Professional,506441771.93,5793303,1049.0218210854846,civhc_coc_fy23_total
+All,Medicaid,Pharmacy,Boulder,Pharmacy,225780987.26,2609383,1038.3189616549198,civhc_coc_fy23_total
+All,Medicaid,Pharmacy,Colorado Springs,Pharmacy,896798313.24,10500205,1024.892348185583,civhc_coc_fy23_total
+All,Medicaid,Pharmacy,Denver,Pharmacy,2728290620.62,35180670,930.6101176424439,civhc_coc_fy23_total
+All,Medicaid,Pharmacy,East,Pharmacy,436973059.27,4723643,1110.0916625663708,civhc_coc_fy23_total
+All,Medicaid,Pharmacy,Ft. Collins,Pharmacy,325475729.95,3559520,1097.2571468624983,civhc_coc_fy23_total
+All,Medicaid,Pharmacy,Grand Junction,Pharmacy,382912139.96,2552082,1800.4694518122851,civhc_coc_fy23_total
+All,Medicaid,Pharmacy,Greeley,Pharmacy,384455124.7,4419803,1043.8160923461974,civhc_coc_fy23_total
+All,Medicaid,Pharmacy,Pueblo,Pharmacy,402727416.31,3651528,1323.481292138524,civhc_coc_fy23_total
+All,Medicaid,Pharmacy,West,Pharmacy,480480409.19,5369481,1073.8030193756156,civhc_coc_fy23_total
+All,Medicare,Medical,Boulder,Professional,540335637.77,1700429,3813.171648589856,civhc_coc_fy23_total
+All,Medicare,Medical,Boulder,Outpatient,382655843.22,1700429,2700.4186112092893,civhc_coc_fy23_total
+All,Medicare,Medical,Boulder,Inpatient,355163534.89,1700429,2506.4042183942993,civhc_coc_fy23_total
+All,Medicare,Medical,Boulder,DME,10184466.9,1700429,71.87221742277978,civhc_coc_fy23_total
+All,Medicare,Medical,Colorado Springs,Outpatient,1011634695.48,4334886,2800.4465044201856,civhc_coc_fy23_total
+All,Medicare,Medical,Colorado Springs,Professional,1323827177.1,4334886,3664.6698725641227,civhc_coc_fy23_total
+All,Medicare,Medical,Colorado Springs,Inpatient,1020024982.43,4334886,2823.672823036177,civhc_coc_fy23_total
+All,Medicare,Medical,Colorado Springs,DME,31068563.54,4334886,86.00520578395833,civhc_coc_fy23_total
+All,Medicare,Medical,Denver,DME,79677076.26,12160862,78.62312022947057,civhc_coc_fy23_total
+All,Medicare,Medical,Denver,Outpatient,3029871779.17,12160862,2989.793104307902,civhc_coc_fy23_total
+All,Medicare,Medical,Denver,Professional,3655927264.54,12160862,3607.5672246325958,civhc_coc_fy23_total
+All,Medicare,Medical,Denver,Inpatient,3165293168.49,12160862,3123.4231604535926,civhc_coc_fy23_total
+All,Medicare,Medical,East,DME,32386555.91,2961742,131.2196237619617,civhc_coc_fy23_total
+All,Medicare,Medical,East,Inpatient,906971839.76,2961742,3674.7502237264416,civhc_coc_fy23_total
+All,Medicare,Medical,East,Outpatient,1011801445.15,2961742,4099.485148199945,civhc_coc_fy23_total
+All,Medicare,Medical,East,Professional,639101290.26,2961742,2589.4272637927274,civhc_coc_fy23_total
+All,Medicare,Medical,Ft. Collins,Professional,621445707.08,2296569,3247.1693578377135,civhc_coc_fy23_total
+All,Medicare,Medical,Ft. Collins,Outpatient,652748043.52,2296569,3410.7298854247356,civhc_coc_fy23_total
+All,Medicare,Medical,Ft. Collins,Inpatient,509647641.15,2296569,2663.0036780083683,civhc_coc_fy23_total
+All,Medicare,Medical,Ft. Collins,DME,14802024.14,2296569,77.34332810379308,civhc_coc_fy23_total
+All,Medicare,Medical,Grand Junction,Inpatient,307161218.35,1345430,2739.595980615863,civhc_coc_fy23_total
+All,Medicare,Medical,Grand Junction,Outpatient,331459497.08,1345430,2956.3143121232615,civhc_coc_fy23_total
+All,Medicare,Medical,Grand Junction,DME,7393553.61,1345430,65.94370819737928,civhc_coc_fy23_total
+All,Medicare,Medical,Grand Junction,Professional,254564886.04,1345430,2270.484999204715,civhc_coc_fy23_total
+All,Medicare,Medical,Greeley,Professional,470627882.43,1748059,3230.7459812054394,civhc_coc_fy23_total
+All,Medicare,Medical,Greeley,DME,12044221.27,1748059,82.68065050435939,civhc_coc_fy23_total
+All,Medicare,Medical,Greeley,Inpatient,455131796.34,1748059,3124.36911802176,civhc_coc_fy23_total
+All,Medicare,Medical,Greeley,Outpatient,493581367.58,1748059,3388.3160756930974,civhc_coc_fy23_total
+All,Medicare,Medical,Pueblo,Outpatient,309773073.07,1270622,2925.5568350304025,civhc_coc_fy23_total
+All,Medicare,Medical,Pueblo,Inpatient,357725074.11,1270622,3378.4248103055043,civhc_coc_fy23_total
+All,Medicare,Medical,Pueblo,DME,11424658.25,1270622,107.89668288444557,civhc_coc_fy23_total
+All,Medicare,Medical,Pueblo,Professional,383641171.33,1270622,3623.1814465356333,civhc_coc_fy23_total
+All,Medicare,Medical,West,Outpatient,1235874213.5,3985881,3720.7559789165807,civhc_coc_fy23_total
+All,Medicare,Medical,West,DME,36890328.47,3985881,111.06301006979385,civhc_coc_fy23_total
+All,Medicare,Medical,West,Inpatient,938073977.98,3985881,2824.1906207837114,civhc_coc_fy23_total
+All,Medicare,Medical,West,Professional,841180249.16,3985881,2532.4797679408894,civhc_coc_fy23_total
+All,Medicare,Pharmacy,Boulder,Pharmacy,198115548.51,1051565,2260.808016736959,civhc_coc_fy23_total
+All,Medicare,Pharmacy,Colorado Springs,Pharmacy,380340776.83,1907388,2392.8478746642004,civhc_coc_fy23_total
+All,Medicare,Pharmacy,Denver,Pharmacy,1409236951.44,6614841,2556.500362938429,civhc_coc_fy23_total
+All,Medicare,Pharmacy,East,Pharmacy,335650500.3,1969779,2044.800966808967,civhc_coc_fy23_total
+All,Medicare,Pharmacy,Ft. Collins,Pharmacy,266894524.53,1454299,2202.2529716103772,civhc_coc_fy23_total
+All,Medicare,Pharmacy,Grand Junction,Pharmacy,117567788.57,767608,1837.9348089649923,civhc_coc_fy23_total
+All,Medicare,Pharmacy,Greeley,Pharmacy,223935947.17,1095183,2453.6825042390174,civhc_coc_fy23_total
+All,Medicare,Pharmacy,Pueblo,Pharmacy,168303471.54,772086,2615.8247377623734,civhc_coc_fy23_total
+All,Medicare,Pharmacy,West,Pharmacy,362723529.31,2515254,1730.5140362444508,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Boulder,Long Term Care,71708.66,1180488,0.7289391505885702,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Boulder,Professional,384767224.08,1180488,3911.269482586862,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Boulder,Outpatient,185675302.444163,1180488,1887.4428451030049,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Boulder,Inpatient,199775236.889802,1180488,2030.7727335454695,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Boulder,DME,6928334.23,1180488,70.42850987049424,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Colorado Springs,DME,17944135.71,2427281,88.71227868549212,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Colorado Springs,Inpatient,358367817.852269,2427281,1771.7000274081279,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Colorado Springs,Long Term Care,586700.73,2427281,2.9005330491195704,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Colorado Springs,Outpatient,355641911.199374,2427281,1758.2236808974685,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Colorado Springs,Professional,675017390.94,2427281,3337.153255548081,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Denver,Professional,4330085335.9,12312041,4220.34202377981,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Denver,Outpatient,2269354035.45946,12312041,2211.8386728498967,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Denver,Long Term Care,2760593.27,12312041,2.6906277553819065,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Denver,Inpatient,2728904907.02746,12312041,2659.7425142045518,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Denver,DME,93930555.0388403,12312041,91.54994370682192,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,East,Professional,203985149.01,783642,3123.6480282067573,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,East,DME,9522103.98,783642,145.8130724999426,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,East,Inpatient,188474179.898069,783642,2886.1267757175187,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,East,Outpatient,232780893.437565,783642,3564.6005717544235,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,East,Long Term Care,175271.752536725,783642,2.683956488346337,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Ft. Collins,Professional,320731440.73,1298837,2963.248882469471,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Ft. Collins,Outpatient,325609781.347864,1298837,3008.320040293253,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Ft. Collins,Long Term Care,94818.2,1298837,0.8760286317682666,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Ft. Collins,Inpatient,249090908.192406,1298837,2301.359522641311,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Ft. Collins,DME,7360605.63427699,1298837,68.00489022973927,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Grand Junction,Outpatient,164891496.485697,552055,3584.240624264546,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Grand Junction,Professional,214103248.32,552055,4653.954732481365,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Grand Junction,DME,11391170.34,552055,247.60946659300254,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Grand Junction,Inpatient,139622649.726405,552055,3034.9725964203926,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Grand Junction,Long Term Care,20587.35,552055,0.44750649844671264,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Greeley,DME,9142609.45930557,1172897,93.53874510009561,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Greeley,Inpatient,257128940.447348,1172897,2630.706093858349,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Greeley,Long Term Care,94097.29,1172897,0.9627166579844607,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Greeley,Outpatient,280807077.227401,1172897,2872.958944160325,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Greeley,Professional,334426566.83,1172897,3421.5440929254655,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Pueblo,Inpatient,228537322.464397,965510,2840.413739446266,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Pueblo,DME,10105376.05,965510,125.59633002247517,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Pueblo,Professional,280568783.63,965510,3487.0953211877663,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Pueblo,Long Term Care,53474.19,965510,0.6646127745958095,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,Pueblo,Outpatient,188267103.504233,965510,2339.9086928678066,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,West,DME,10967892.02,661803,198.8729338488946,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,West,Inpatient,128330919.383452,661803,2326.932686315148,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,West,Long Term Care,67303.12,661803,1.2203592912090153,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,West,Outpatient,199143260.790762,661803,3610.9221769758433,civhc_coc_fy23_total
+All,Medicare Advantage,Medical,West,Professional,201322273.06,661803,3650.4326464521923,civhc_coc_fy23_total
+All,Medicare Advantage,Pharmacy,Boulder,Pharmacy,198827388.3,1142386,2088.548581302642,civhc_coc_fy23_total
+All,Medicare Advantage,Pharmacy,Colorado Springs,Pharmacy,565907513.37,2331315,2912.9011568320884,civhc_coc_fy23_total
+All,Medicare Advantage,Pharmacy,Denver,Pharmacy,2600006733.1,11967347,2607.100871830657,civhc_coc_fy23_total
+All,Medicare Advantage,Pharmacy,East,Pharmacy,155416896.61,752581,2478.1422322912754,civhc_coc_fy23_total
+All,Medicare Advantage,Pharmacy,Ft. Collins,Pharmacy,245244456.76,1244993,2363.8152833951676,civhc_coc_fy23_total
+All,Medicare Advantage,Pharmacy,Grand Junction,Pharmacy,103342784.11,534593,2319.7337213917876,civhc_coc_fy23_total
+All,Medicare Advantage,Pharmacy,Greeley,Pharmacy,269899530.82,1140479,2839.85445575061,civhc_coc_fy23_total
+All,Medicare Advantage,Pharmacy,Pueblo,Pharmacy,275880580.94,942486,3512.5900769666605,civhc_coc_fy23_total
+All,Medicare Advantage,Pharmacy,West,Pharmacy,88903717.67,612784,1740.9798755189431,civhc_coc_fy23_total
