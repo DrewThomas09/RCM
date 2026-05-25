@@ -1,0 +1,145 @@
+[
+  {
+    "industry_id": "62",
+    "slug": "healthcare-social-assistance",
+    "naics_code": "62",
+    "code_label": "62",
+    "title": "Healthcare and Social",
+    "report_title": "Healthcare and Social",
+    "publisher": "IBISWorld",
+    "publication_date": "August 2025",
+    "source_file": "62 Healthcare and Social Assistance in the US Industry Report.pdf",
+    "source_kind": "LICENSED_REPORT_DERIVED",
+    "license_note": "Licensed business report (IBISWorld); derived structured facts only.",
+    "pedesk_verticals": [
+      "all"
+    ],
+    "summary_nonverbatim": "The Healthcare and Social Assistance sector encompasses industries that provide individuals with medical care, social services and assistance. It includes a wide range of services to improve public health, well-being and social support via direct care or support.",
+    "included_services": [
+      "Ambulatory healthcare services",
+      "Hospitals",
+      "Nursing homes and residential care facilities",
+      "Social assistance"
+    ],
+    "related_industries": [],
+    "related_terms": [],
+    "major_players": [
+      "Fragmented \u2014 no company >5% market share"
+    ]
+  },
+  {
+    "industry_id": "62111a",
+    "slug": "primary-care-doctors",
+    "naics_code": "621111",
+    "code_label": "62111a",
+    "title": "Primary Care Doctors in",
+    "report_title": "Primary Care Doctors in",
+    "publisher": "IBISWorld",
+    "publication_date": "February 2026",
+    "source_file": "62111A Primary Care Doctors in the US Industry Report.pdf",
+    "source_kind": "LICENSED_REPORT_DERIVED",
+    "license_note": "Licensed business report (IBISWorld); derived structured facts only.",
+    "pedesk_verticals": [
+      "primary_care",
+      "physician"
+    ],
+    "summary_nonverbatim": "This industry includes general practitioners with a Doctor of Medicine (MD) or Doctor of Osteopathy (DO) degree. These doctors primarily work with a broad understanding of all illnesses and do not restrict their practice to one particular field of medicine. Doctors in this industry are trained for comprehensive first contact and continued care for individuals with any undiagnosed health concern.",
+    "included_services": [
+      "Family medicine and general practice doctors",
+      "Internal medicine practitioners",
+      "Pediatric medicine",
+      "Geriatric medicne"
+    ],
+    "related_industries": [],
+    "related_terms": [],
+    "major_players": [
+      "Fragmented \u2014 no company >5% market share"
+    ]
+  },
+  {
+    "industry_id": "62111b",
+    "slug": "specialist-doctors",
+    "naics_code": "621112",
+    "code_label": "62111b",
+    "title": "Specialist Doctors in the",
+    "report_title": "Specialist Doctors in the",
+    "publisher": "IBISWorld",
+    "publication_date": "March 2026",
+    "source_file": "62111B Specialist Doctors in the US Industry Report.pdf",
+    "source_kind": "LICENSED_REPORT_DERIVED",
+    "license_note": "Licensed business report (IBISWorld); derived structured facts only.",
+    "pedesk_verticals": [
+      "specialist",
+      "physician"
+    ],
+    "summary_nonverbatim": "A specialist doctor is a physician whose practice is limited to a particular branch of medicine or surgery. This industry includes enterprises or health practitioners with a Doctor of Medicine (MD) or Doctor of Osteopathic Medicine (DO) degree. These individuals primarily practice specialized medicine, such as anesthesiology, oncology, ophthalmology or surgery.",
+    "included_services": [
+      "Obstetrics and gynecology",
+      "Anesthesiology",
+      "Psychiatry",
+      "Ophthalmology",
+      "Cardiology",
+      "All other medical specialties"
+    ],
+    "related_industries": [],
+    "related_terms": [],
+    "major_players": [
+      "Fragmented \u2014 no company >5% market share"
+    ]
+  },
+  {
+    "industry_id": "62149",
+    "slug": "outpatient-care-centers",
+    "naics_code": "621498",
+    "code_label": "62149",
+    "title": "Emergency & Other",
+    "report_title": "Emergency & Other",
+    "publisher": "IBISWorld",
+    "publication_date": "January 2026",
+    "source_file": "62149 Emergency  Other Outpatient Care Centers in the US Industry Report.pdf",
+    "source_kind": "LICENSED_REPORT_DERIVED",
+    "license_note": "Licensed business report (IBISWorld); derived structured facts only.",
+    "pedesk_verticals": [
+      "outpatient",
+      "asc",
+      "dialysis"
+    ],
+    "summary_nonverbatim": "This industry includes establishments with medical staff that primarily provide emergency, general, or specialized outpatient care. This industry also includes centers or clinics with various health practitioners, each with different specializations and operating in other industries, who practice in the same establishment.",
+    "included_services": [
+      "HMO medical center services",
+      "Kidney dialysis center services",
+      "Freestanding ambulatory surgical and emergency center services",
+      "Other outpatient care center services"
+    ],
+    "related_industries": [],
+    "related_terms": [],
+    "major_players": [
+      "Fragmented \u2014 no company >5% market share"
+    ]
+  },
+  {
+    "industry_id": "62211",
+    "slug": "hospitals",
+    "naics_code": "622110",
+    "code_label": "62211",
+    "title": "Hospitals in the US",
+    "report_title": "Hospitals in the US",
+    "publisher": "IBISWorld",
+    "publication_date": "December 2025",
+    "source_file": "62211 Hospitals in the US Industry Report.pdf",
+    "source_kind": "LICENSED_REPORT_DERIVED",
+    "license_note": "Licensed business report (IBISWorld); derived structured facts only.",
+    "pedesk_verticals": [
+      "hospital"
+    ],
+    "summary_nonverbatim": "The industry includes establishments licensed as general medical and surgical hospitals that provide surgical and nonsurgical diagnostic and medical treatment to inpatients. Hospitals typically maintain inpatient beds and offer a range of services, including outpatient, operating room and pharmacy services.",
+    "included_services": [
+      "Inpatient care",
+      "Outpatient care",
+      "Other"
+    ],
+    "related_industries": [],
+    "related_terms": [],
+    "major_players": []
+  }
+]
