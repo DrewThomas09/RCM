@@ -164,6 +164,75 @@ def _gpo_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _fda_shortage_section(params: dict) -> str:
+    """REAL FDA (openFDA) drug-shortage landscape — LIVE, product-level. Build-
+    time snapshot; not provider-specific. Optional ?drug= search."""
+    try:
+        from rcm_mc.data import drug_shortage_data as _ds
+        summ = _ds.drug_shortage_summary()
+        cats = _ds.shortages_by_category(current_only=True, limit=12)
+        search = (params.get("drug") or "").strip()
+        tbl = _ds.current_shortages(search=search, limit=30)
+    except Exception:
+        return ""
+    if not summ.get("total"):
+        return ""
+    hdr = ck_source_purpose(
+        purpose=("See the current national drug-shortage landscape (FDA) and "
+                 "which therapeutic categories are most affected — context for a "
+                 "target's pharmacy/infusion supply risk."),
+        universe="cms", confidence="derived",
+        source=f"openFDA drug/shortages (public domain) · snapshot {summ.get('snapshot_date','')}",
+        next_action="Search a drug to check its current FDA shortage status")
+    cat_rows = "".join(
+        f'<tr><td style="padding:3px 10px">{_html.escape(str(c["category"]))}</td>'
+        f'<td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums">{c["n"]:,}</td></tr>'
+        for c in cats)
+    form = (
+        f'<form method="get" action="/drug-shortage" style="margin:8px 0;display:flex;gap:8px">'
+        f'<input type="text" name="drug" value="{_html.escape(params.get("drug",""))}" '
+        f'placeholder="Search drug / company" style="padding:6px 9px;border:1px solid '
+        f'{P["border"]};border-radius:2px;min-width:240px;font-size:13px">'
+        f'<button type="submit" style="padding:6px 14px;background:{P["accent"]};color:#fff;'
+        f'border:none;border-radius:2px;font-size:12px;cursor:pointer">Search</button></form>')
+    drug_rows = "".join(
+        f'<tr><td style="padding:3px 10px">{_html.escape(str(t.generic_name))}</td>'
+        f'<td style="padding:3px 10px">{_html.escape(str(t.company_name)[:32])}</td>'
+        f'<td style="padding:3px 10px">{_html.escape(str(t.therapeutic_category)[:28])}</td>'
+        f'<td style="padding:3px 10px">{_html.escape(str(t.availability) or "—")}</td></tr>'
+        for t in tbl.itertuples())
+    return (
+        f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
+        f'border-left:3px solid {P["accent"]};padding:14px 16px;margin-bottom:16px">'
+        f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
+        f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:8px">'
+        f'FDA Drug Shortages · LIVE (openFDA)</div>{hdr}'
+        f'<p style="font-size:12px;color:{P["text_dim"]};margin:4px 0 8px">'
+        f'<b style="color:{P["text"]}">{summ["current"]:,}</b> current shortages across '
+        f'<b style="color:{P["text"]}">{summ["categories"]}</b> therapeutic categories '
+        f'(FDA, national).</p>'
+        f'<div style="display:flex;gap:18px;flex-wrap:wrap">'
+        f'<div style="flex:1;min-width:240px"><div style="font-size:10px;'
+        f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:4px">'
+        f'Most-affected categories (current)</div>'
+        f'<table style="width:100%;border-collapse:collapse;font-family:\'JetBrains Mono\',monospace;font-size:11px">'
+        f'<tbody>{cat_rows}</tbody></table></div>'
+        f'<div style="flex:1.4;min-width:300px"><div style="font-size:10px;'
+        f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:4px">Current shortages</div>'
+        f'{form}<table style="width:100%;border-collapse:collapse;font-family:\'JetBrains Mono\',monospace;font-size:11px">'
+        f'<thead><tr style="border-bottom:1px solid {P["border"]};color:{P["text_dim"]}">'
+        f'<th style="padding:3px 10px;text-align:left">Drug</th>'
+        f'<th style="padding:3px 10px;text-align:left">Company</th>'
+        f'<th style="padding:3px 10px;text-align:left">Category</th>'
+        f'<th style="padding:3px 10px;text-align:left">Availability</th></tr></thead>'
+        f'<tbody>{drug_rows}</tbody></table></div></div>'
+        f'<p style="font-size:11px;color:{P["text_dim"]};margin:8px 0 0">'
+        f'National FDA shortage data — <b>product-level, not provider-specific</b>; '
+        f'a listed shortage does not by itself imply impact on a given target. The '
+        f'supplier / GPO / scenario model below is an illustrative planning '
+        f'calculator.</p></div>')
+
+
 def render_drug_shortage(params: dict = None) -> str:
     from rcm_mc.data_public.drug_shortage import compute_drug_shortage
     r = compute_drug_shortage()
@@ -213,7 +282,9 @@ def render_drug_shortage(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
-  {ck_illustrative_note("figures")}
+  {_fda_shortage_section(params or {})}
+  <div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:{text_dim};margin:18px 0 4px">Illustrative supply-chain planning model (calculator below)</div>
+  {ck_illustrative_note("supplier concentration, GPO performance, and scenario figures")}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {tier_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
@@ -236,9 +307,12 @@ def render_drug_shortage(params: dict = None) -> str:
 </div>"""
 
     body = ck_source_purpose(
-        purpose="Flag drug-shortage / supply-chain exposure for the target.",
-        universe="illustrative", source="Hardcoded shortage list",
-        next_action="Vendor the FDA drug-shortage feed") + body
+        purpose="Flag drug-shortage / supply-chain exposure: real national FDA "
+                "shortage landscape (live) above; an illustrative supplier/GPO "
+                "planning model below.",
+        universe="cms", confidence="derived",
+        source="openFDA drug shortages (live snapshot) + illustrative model",
+        next_action="Search a drug in the FDA section") + body
     return chartis_shell(body, "Drug Shortage", active_nav="/drug-shortage",
         editorial_intro={
             "eyebrow": "DRUG SHORTAGE",
