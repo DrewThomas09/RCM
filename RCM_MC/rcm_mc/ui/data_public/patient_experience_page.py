@@ -176,6 +176,66 @@ def _retention_table(retention) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _hcahps_panel() -> str:
+    """Real CMS HCAHPS anchor — the official, published patient-experience
+    survey (state-level top-box %). The NPS / experience model below is
+    illustrative; this panel is real public CMS Care Compare data, grounding
+    the patient-experience thesis in observed survey results."""
+    from rcm_mc.data import hcahps_data as _h
+    summ = _h.hcahps_summary()
+    if not summ.get("national_mean_pct"):
+        return ""
+    nat = summ["national_mean_pct"]
+    labels = _h.measure_labels()
+
+    border = P["border"]; tprim = P["text"]; tdim = P["text_dim"]; acc = P["accent"]
+    show = ["overall_rating_9_10", "would_definitely_recommend",
+            "nurse_comm_always", "always_quiet_night"]
+    cards = "".join(
+        f'<div style="text-align:center;padding:0 10px">'
+        f'<div style="font-family:JetBrains Mono,monospace;font-size:18px;color:{tprim};'
+        f'font-variant-numeric:tabular-nums">{nat.get(k,0):.0f}%</div>'
+        f'<div style="font-size:9px;color:{tdim}">{_html.escape(labels.get(k,k))}</div></div>'
+        for k in show if nat.get(k) is not None
+    )
+    top = _h.top_states_by("would_definitely_recommend", 6)
+    mn = min((float(t["would_definitely_recommend"]) for t in top), default=0.0)
+    mx = max((float(t["would_definitely_recommend"]) for t in top), default=1.0)
+    rng = (mx - mn) or 1.0
+    rows = "".join(
+        f'<tr>'
+        f'<td style="padding:3px 8px;font-family:JetBrains Mono,monospace;font-size:11px;color:{tprim}">{_html.escape(str(t["state"]))}</td>'
+        f'<td style="padding:3px 8px;width:50%">'
+        f'<svg width="100%" height="9" preserveAspectRatio="none" viewBox="0 0 100 9">'
+        f'<rect x="0" y="1" width="{int((float(t["would_definitely_recommend"])-mn)/rng*90+10)}" height="7" fill="{acc}" opacity="0.75"/></svg></td>'
+        f'<td style="padding:3px 8px;text-align:right;font-family:JetBrains Mono,monospace;font-size:11px;'
+        f'font-variant-numeric:tabular-nums;color:{tprim}">{float(t["would_definitely_recommend"]):.0f}%</td>'
+        f'</tr>'
+        for t in top
+    )
+    period = summ.get("survey_period_end", "")
+    return f'''
+<div style="background:{P["panel"]};border:1px solid {border};border-left:3px solid {acc};
+  padding:14px 16px;margin-bottom:16px">
+  <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{tdim};
+    text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">
+    Real CMS HCAHPS patient experience &mdash; national top-box + by state
+    <span style="color:{acc};font-weight:600"> · LIVE</span>
+  </div>
+  <div style="display:flex;gap:6px;justify-content:space-between;margin-bottom:12px;
+    border-bottom:1px solid {border};padding-bottom:10px">{cards}</div>
+  <div>
+    <div style="font-size:9px;color:{P["text_faint"]};margin-bottom:4px">HIGHEST "WOULD DEFINITELY RECOMMEND" STATES (% OF PATIENTS)</div>
+    <table style="width:100%;border-collapse:collapse">{rows}</table>
+  </div>
+  <div style="margin-top:8px;font-size:10px;color:{P["text_faint"]}">
+    CMS Care Compare HCAHPS survey, state-level{(" through " + str(period)) if period else ""}.
+    Real published patient-experience benchmark &mdash; the NPS, complaint, and
+    service-recovery figures below are illustrative and scale to your inputs.
+  </div>
+</div>'''
+
+
 def render_patient_experience(params: dict = None) -> str:
     params = params or {}
     sector = params.get("sector", "Physician Services") or "Physician Services"
@@ -252,6 +312,7 @@ def render_patient_experience(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   {ck_illustrative_note("experience figures")}
+  {_hcahps_panel()}
   {lead_anchor}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
