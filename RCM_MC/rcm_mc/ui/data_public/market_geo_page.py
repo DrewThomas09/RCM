@@ -162,6 +162,10 @@ def render_market_geo_detail(fips: str, params: dict = None) -> str:
         return chartis_shell(body, "Market", active_nav="/market-intel")
 
     kpis = ""
+    score = _mi.market_demand_score(fips)
+    if score.get("overall_market_score") is not None:
+        kpis += ck_kpi_block("Market Score", f'{score["overall_market_score"]:.0f}',
+                             f'{len(score["components"])} of {len(score["components"])+len(score["missing_export_required"])} components', "")
     for vid, d in prof["variables"].items():
         v = _mi.load_market_variable(vid) or {}
         kpis += ck_kpi_block(v.get("display_name", vid), _fmt(d.get("value"), d.get("unit", "")),
@@ -184,6 +188,12 @@ def render_market_geo_detail(fips: str, params: dict = None) -> str:
             next_action="Cross-reference HCRIS X-Ray / provider profiles in this market")
         + f'<p style="margin:6px 0 14px">{_LICENSE_CHIP}</p>'
         + f'<div class="ck-kpi-grid" style="margin-bottom:16px">{kpis}</div>'
+        + (f'<div style="{cell}"><div style="{h3}">Market score — formula</div>'
+           f'<p style="font-size:12px;color:{P["text_dim"]};margin:0">'
+           f'{_html.escape(score.get("formula",""))} Components present: '
+           f'{_html.escape(", ".join(score.get("components",{}).keys()) or "none")}. '
+           f'EXPORT REQUIRED: {_html.escape(", ".join(score.get("missing_export_required",[])) or "none")}.'
+           f'</p></div>' if score.get("overall_market_score") is not None else "")
         + f'<div style="{cell}"><div style="{h3}">Diligence questions</div>'
         + f'<ul style="margin:0;padding-left:18px;font-size:12px;line-height:1.7;color:{P["text"]}">'
         + '<li>Is this market older / higher-demand than the national median?</li>'

@@ -103,6 +103,49 @@ def market_profile_for_geo(fips: str) -> Dict[str, Any]:
     }
 
 
+# Market-score weights — VISIBLE and documented (per spec: no fabricated
+# scores). Each component is a national percentile (0-100) of a real variable;
+# a component is only included if its underlying export exists.
+_SCORE_COMPONENTS = {
+    "demand_score": ("age_65_plus_pct", False),          # higher 65+ = more demand
+    "income_score": ("median_household_income", False),  # higher income = better
+    "payer_score": ("private_insurance_pct", False),     # higher commercial = better
+    "uninsured_penalty": ("uninsured_pct", True),        # higher uninsured = worse (inverted)
+}
+
+
+def market_demand_score(fips: str) -> Dict[str, Any]:
+    """Formula-driven, PARTIAL market score for a geography.
+
+    Each available component = the national percentile of a real variable
+    (0-100); the uninsured component is inverted (100 - pctile). The overall is
+    the simple average of AVAILABLE components only. Components whose export is
+    not yet ingested are returned under ``missing`` as EXPORT REQUIRED — never
+    invented. ``overall`` is ``None`` if no component is available.
+    """
+    prof = market_profile_for_geo(fips)
+    if not prof:
+        return {}
+    vars_ = prof["variables"]
+    components: Dict[str, float] = {}
+    missing: List[str] = []
+    for score_name, (vid, invert) in _SCORE_COMPONENTS.items():
+        row = vars_.get(vid)
+        pct = row.get("percentile_national") if row else None
+        if pct is None:
+            missing.append(score_name)
+            continue
+        components[score_name] = round(100 - pct if invert else pct, 1)
+    overall = round(sum(components.values()) / len(components), 1) if components else None
+    return {
+        "fips": prof["fips"], "geo_name": prof["geo_name"],
+        "components": components, "overall_market_score": overall,
+        "missing_export_required": missing,
+        "formula": "overall = mean(available national-percentile components); "
+                   "uninsured inverted; missing components excluded (not zero-filled).",
+    }
+
+
 def provider_supply_for_naics(naics_code: str) -> List[Dict[str, Any]]:
     """Provider-supply rows for a NAICS code (EXPORT REQUIRED until the
     SimplyAnalytics provider-count export is ingested — returns [] honestly)."""
