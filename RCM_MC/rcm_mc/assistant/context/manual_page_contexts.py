@@ -3922,6 +3922,94 @@ _MANUAL: List[PageContext] = [
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.MIXED,
     ),
+    _ctx(
+        "/market-intel/geo", "Market Intelligence — Geographic",
+        short_description="Geographic market intelligence — ranks/scores US "
+        "markets by senior demand and real CMS supply/consolidation signals, "
+        "from licensed SimplyAnalytics exports plus public CMS data.",
+        primary_purpose="Frame whether a geographic market is attractive "
+        "(senior demand, provider supply, consolidation velocity) before "
+        "screening targets in it — then validate with CMS/HCRIS.",
+        common_questions=[
+            "Which states have the highest senior (65+) demand?",
+            "Is this market over- or under-supplied with providers?",
+            "How active is nursing-home / hospital consolidation here?",
+            "Is this market data or provider-specific?",
+        ],
+        inputs=["?var= (variable selector); /market-intel/geo/<FIPS> for a "
+                "state profile."],
+        outputs=["State choropleth + ranked markets by the selected variable; "
+                 "per-state profile with demographic, provider-supply, and "
+                 "consolidation KPIs + a documented partial market score."],
+        key_metrics=["% Age 65+ (national percentile)", "Provider supply "
+                     "(CMS FFS enrollment)", "SNF/Hospital ownership-change "
+                     "counts", "Partial market score"],
+        data_sources=["Licensed SimplyAnalytics exports (% Age 65+, FIPS-keyed); "
+                      "CMS FFS Provider Enrollment (supply); CMS SNF/Hospital "
+                      "Change-of-Ownership (consolidation)."],
+        model_logic_summary="Real values only; national percentiles computed "
+        "over states with data. Market score = mean of AVAILABLE percentile "
+        "components; un-exported components are flagged EXPORT REQUIRED, never "
+        "invented.",
+        why_it_matters="Turns demographic + supply + M&A data into a real, "
+        "honest market-attractiveness read for sourcing and diligence.",
+        diligence_use_cases=["Rank markets by senior demand; spot over/under-"
+                            "supply; gauge consolidation velocity by state."],
+        interpretation_guidance=[
+            "Market/area context — NOT provider-specific; combine with "
+            "CMS/HCRIS/provider data before a decision.",
+            "Screenshots are design references only; only variables with a "
+            "real export are shown (rest are EXPORT REQUIRED).",
+            "Consolidation counts are a signal, NOT a PE-specific flag.",
+        ],
+        limitations=["Only % Age 65+ is exported so far (state level); income/"
+                     "insurance/uninsured and county detail are export-required. "
+                     "Provider supply is FFS-Medicare-enrolled only."],
+        related_routes=["/target-screener", "/industry", "/market-data/map"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/industry", "Industry Intelligence",
+        short_description="Licensed-IBISWorld-derived industry intelligence for "
+        "five healthcare industries, connected to PEdesk's real CMS/HCRIS data.",
+        primary_purpose="Ground a deal's sector thesis in licensed industry "
+        "context (market size, mix, drivers, cost structure), then validate it "
+        "against real public/provider data.",
+        common_questions=[
+            "What does the industry report say about growth and margins?",
+            "Which public CMS datasets can validate this thesis?",
+            "Which metrics are report-derived vs provider-specific?",
+            "What should I ask management about this sector?",
+        ],
+        inputs=["/industry/<slug> for a dossier; /industry/<slug>/brief for a "
+                "PEdesk-generated brief."],
+        outputs=["Per-industry at-a-glance metrics, segment mix, drivers, "
+                 "cost-structure benchmarks, definition, diligence questions, "
+                 "and a Public Data Connections panel to real CMS/HCRIS surfaces."],
+        key_metrics=["Industry revenue / profit margin / employment",
+                     "Segment revenue share", "Cost structure (% of revenue)"],
+        data_sources=["Licensed IBISWorld reports (structured derived facts; "
+                      "raw PDFs never committed/served)."],
+        model_logic_summary="Structured extraction (metrics/segments/drivers/"
+        "benchmarks), non-verbatim. Forecasts are report-derived. The brief "
+        "synthesizes report facts with the CMS/HCRIS validation layer.",
+        why_it_matters="Connects licensed industry context to real provider "
+        "data so the sector thesis can be confirmed or challenged.",
+        diligence_use_cases=["Frame a sector's size/growth/margins; build the "
+                            "management-question and data-request list."],
+        interpretation_guidance=[
+            "Report-derived industry context — NOT provider-specific unless "
+            "joined to CMS/HCRIS/user data.",
+            "Forecasts are report-derived, not PEdesk predictions.",
+            "Industry context is not a final investment conclusion.",
+        ],
+        limitations=["Five industries only (62 / 621111 / 621112 / 62149 / "
+                     "622110); derived facts, not the full reports."],
+        related_routes=["/market-intel/geo", "/diligence/hcris-xray", "/research"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
 ]
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
