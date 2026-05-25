@@ -4219,6 +4219,100 @@ _MANUAL: List[PageContext] = [
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
+    # ── Core deal/portfolio workflow pages (operate on the live deal store) ──
+    _ctx(
+        "/pipeline", "Deal Pipeline",
+        short_description="The deal pipeline — deals by stage (sourcing → LOI → "
+        "diligence → IC → close) on the live deal store.",
+        primary_purpose="Track and move deals through the funnel; saved searches "
+        "re-run against the corpus.",
+        data_sources=["Live SQLite deal store (the user's real deals)."],
+        interpretation_guidance=["Operates on YOUR tracked deals; empty/— means "
+                                "no deals at that stage, not zero value."],
+        related_routes=["/deal-pipeline", "/portfolio", "/diligence/checklist"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
+    ),
+    _ctx(
+        "/diligence/checklist", "Diligence Checklist",
+        short_description="Per-deal diligence checklist — items, status, owners.",
+        primary_purpose="Track diligence completeness for a deal.",
+        data_sources=["Live deal store (per-deal checklist items)."],
+        interpretation_guidance=["Per-deal workflow state; reflects what's been "
+                                "entered for the selected deal."],
+        related_routes=["/diligence-checklist", "/diligence/questions", "/diligence/ic-packet"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
+    ),
+    _ctx(
+        "/diligence/ingest", "Diligence Ingest",
+        short_description="Ingest a deal's documents/financials into the deal "
+        "store for analysis.",
+        primary_purpose="Load deal-specific data (the user's own) for diligence.",
+        data_sources=["User-uploaded deal data → live deal store."],
+        interpretation_guidance=["USER DATA REQUIRED — outputs reflect what you "
+                                "ingest for the deal."],
+        related_routes=["/diligence/checklist", "/import", "/new-deal/upload"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.USER_ENTERED_DATA,
+    ),
+    _ctx(
+        "/diligence/questions", "Diligence Questions",
+        short_description="Generated + tracked diligence questions for a deal.",
+        primary_purpose="Build and manage the management-question / data-request "
+        "list for a deal.",
+        data_sources=["Live deal store + packet-derived question generation."],
+        interpretation_guidance=["Per-deal; combine with real CMS/HCRIS data "
+                                "when answering."],
+        related_routes=["/diligence/checklist", "/diligence/ic-packet"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
+    ),
+    _ctx(
+        "/diligence/ic-packet", "IC Packet Assembler",
+        short_description="One-click investment-committee packet for a deal from "
+        "the live analysis packet.",
+        primary_purpose="Assemble an IC-ready memo/packet for a tracked deal.",
+        data_sources=["Live deal store + the deal's analysis packet."],
+        interpretation_guidance=["Per-deal; honest empty states where inputs "
+                                "are missing."],
+        related_routes=["/diligence/questions", "/ic-memo", "/exports"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
+    ),
+    _ctx(
+        "/watchlist", "Watchlist",
+        short_description="Starred/watched deals for quick monitoring.",
+        primary_purpose="Track a focused subset of deals.",
+        data_sources=["Live deal store (watchlist flags)."],
+        interpretation_guidance=["Operates on YOUR watched deals."],
+        related_routes=["/pipeline", "/alerts", "/portfolio/monitor"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
+    ),
+    _ctx(
+        "/escalations", "Escalations",
+        short_description="Escalated alerts/issues across the portfolio.",
+        primary_purpose="Surface deals/issues that need partner attention.",
+        data_sources=["Live deal store + alerts lifecycle."],
+        interpretation_guidance=["Reflects current alert/escalation state of "
+                                "tracked deals."],
+        related_routes=["/alerts", "/portfolio/monitor", "/watchlist"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
+    ),
+    _ctx(
+        "/portfolio/monitor", "Portfolio Monitor",
+        short_description="Live portfolio monitoring — health, covenants, "
+        "concerning deals across the book.",
+        primary_purpose="Monitor the portfolio's current state and risk posture.",
+        data_sources=["Live deal store roll-ups."],
+        interpretation_guidance=["Portfolio-level roll-ups of YOUR tracked "
+                                "deals; not a single deal's IC case."],
+        related_routes=["/portfolio", "/app", "/escalations"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
+    ),
 ]
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
