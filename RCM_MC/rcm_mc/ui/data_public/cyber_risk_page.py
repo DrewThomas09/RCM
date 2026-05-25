@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_data_cell, ck_kpi_block, ck_page_title, ck_illustrative_note, ck_value_anchor
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
 
 
 def _domains_chart(items) -> str:
@@ -249,6 +250,7 @@ def render_cyber_risk(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
+  {data_required_panel(P, title="Cyber Risk", needed=[("control","control / framework item"),("framework","NIST / HITRUST / SOC2"),("status","implemented / partial / none"),("last_tested","last tested (YYYY-MM-DD)"),("owner","owner")], template="cyber_controls_template.csv", request_from="CISO / IT security", activates="control-framework coverage + gap assessment", guide_hint="What cyber-controls data do I need to upload?")}
   {ck_illustrative_note("figures")}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
