@@ -6741,7 +6741,7 @@ _SUB_SECTION_MAP = {
     # Moved to Research: Find Comps (corpus comps) + PE Intelligence (generic).
     "/find-comps": "research", "/pe-intelligence": "research",
     "/library": "library", "/deals-library": "library", "/deal-library": "library",
-    "/deal-library/sponsors": "library",
+    "/deal-library/sponsors": "library", "/deal-library/comps": "library",
     "/methodology": "library", "/metric-glossary": "library",
     "/data": "library", "/comparables": "library",
     "/market-rates": "library", "/data-catalog": "library",
