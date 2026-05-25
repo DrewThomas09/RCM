@@ -43,17 +43,20 @@ licensed SimplyAnalytics (market, derived).
 - Remaining 15 flagged: 7 GREEN real/admin (not synthetic) + 8 NAVY calculators
   needing ck_source_purpose headers (batch 3 next).
 
+## Disclosure milestone
+Undisclosed data pages driven **35 → 0** across batches #736–#739. Every data
+page now discloses (real-source / illustrative / benchmark-corpus / data-required),
+guarded by a regression test with an EMPTY backlog.
+
 ## Next 5 actions
-1. Disclosure batch 2: remaining flagged YELLOW seed-corpus pages (base-rates,
-   corpus-coverage, deal-flow-heatmap, fund-attribution, gp-benchmarking,
-   hold-analysis, irr-dispersion, lp-dashboard, lp-reporting, return-attribution,
-   sponsor-heatmap, vintage-perf, deal-sourcing, market-rates).
-3. NAVY calculators missing source headers (entry-multiple, exit-timing,
-   hold-optimizer, portfolio-optimizer, portfolio-sim, scenario-mc,
-   tax-structure-analyzer, underwriting) → add ck_source_purpose.
-4. GREEN false-positives (cms-sources, cms-data-browser, deal-search, ic-memo,
-   module-index, data-sources-admin) → add real-source header (low priority).
-5. Continue dataset backlog (NPPES supply / Open Payments) per feasibility.
+1. Phase 8 dataset: onboard CMS FFS Provider Enrollment → provider-supply
+   counts by state × provider_type (aggregate, drop PII). URL confirmed:
+   data.cms.gov PPEF_Enrollment_Extract_2026.04.01.csv. Lights up the
+   market-intel provider-supply (621111-style) backlog + real supply density.
+2. Wire provider supply into market-intel + a diligence page.
+3. Deeper Diligence per-page classification (use the tools route audit).
+4. Guide/RAG source card for provider supply.
+5. Next dataset (Open Payments / NPPES taxonomy if size feasible).
 
 ## Next wakeup
 +180–300s while work remains (CI-watch re-invokes sooner).
