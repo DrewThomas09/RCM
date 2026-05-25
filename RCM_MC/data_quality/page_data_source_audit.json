@@ -8,7 +8,7 @@
       "green": 27,
       "navy": 73,
       "yellow": 37,
-      "red": 13
+      "red": 9
     }
   },
   "pages": [
@@ -1265,7 +1265,7 @@
     {
       "route": "/rcm-red-flags",
       "file": "rcm_red_flags_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -1285,7 +1285,7 @@
     {
       "route": "/redflag-scanner",
       "file": "redflag_scanner_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -1355,7 +1355,7 @@
     {
       "route": "/revenue-leakage",
       "file": "revenue_leakage_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -1375,7 +1375,7 @@
     {
       "route": "/risk-matrix",
       "file": "risk_matrix_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,

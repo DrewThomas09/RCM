@@ -287,7 +287,9 @@ def _kpi_bar(pts: List[Tuple[float, float, str, str]]) -> str:
 
 
 def render_risk_matrix(sector_filter: str = "") -> str:
-    from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_illustrative_note
+    from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_section_header, ck_illustrative_note
+    from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
+    _dr_panel = data_required_panel(P, title="Risk Matrix", needed=[("risk","risk description"),("category","operational/financial/regulatory"),("likelihood","high/med/low"),("impact","high/med/low"),("owner","owner"),("mitigation","mitigation")], template="risk_register_template.csv", request_from="Deal team / risk owners", activates="likelihood×impact risk heatmap from your own risk register", guide_hint="What risk-register data do I need to upload?")
 
     corpus = _load_corpus()
     if sector_filter:
@@ -330,7 +332,7 @@ def render_risk_matrix(sector_filter: str = "") -> str:
     section_heatmap = ck_section_header("SECTOR RISK-RETURN MATRIX", "average entry risk vs realized MOIC outcomes")
     heatmap = _sector_risk_heatmap(sector_rows)
 
-    body = ck_illustrative_note("risk-matrix figures") + kpis + filter_bar + section_scatter + scatter_panel + section_heatmap + heatmap
+    body = _dr_panel + ck_illustrative_note("risk-matrix figures") + kpis + filter_bar + section_scatter + scatter_panel + section_heatmap + heatmap
 
     return chartis_shell(
         body,

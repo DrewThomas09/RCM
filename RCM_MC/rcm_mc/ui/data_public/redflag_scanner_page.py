@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_illustrative_note
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
 
 
 def _categories_chart(items):
@@ -232,7 +233,7 @@ def render_redflag_scanner(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(ck_illustrative_note("red-flag scan results") + body, "Red-Flag Scanner", active_nav="/redflag-scanner",
+    return chartis_shell(data_required_panel(P, title="Red-Flag Scanner", needed=[("metric","financial / KPI metric"),("value","target value"),("payer","payer mix line"),("ar_bucket","AR aging bucket")], template="ar_aging_template.csv (+ target financials, payer mix)", request_from="CFO / FP&A / deal team", activates="cross-financial red-flag scan (margins, AR, payer concentration, KPIs)", guide_hint="What financial/KPI/AR data do I need to upload?") + ck_illustrative_note("red-flag scan results") + body, "Red-Flag Scanner", active_nav="/redflag-scanner",
         editorial_intro={
             "eyebrow": "REDFLAG SCANNER",
             "headline": "What the redflag scanner page reveals on this deal.",

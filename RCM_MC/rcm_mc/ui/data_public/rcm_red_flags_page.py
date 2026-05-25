@@ -30,6 +30,7 @@ from rcm_mc.ui._chartis_kit import (
     P, _MONO, _SANS, chartis_shell, ck_fmt_num, ck_kpi_block,
     ck_provenance_tooltip, ck_section_header, ck_illustrative_note,
 )
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
 
 
 def _percentile(vals: List[float], p: float) -> Optional[float]:
@@ -390,7 +391,7 @@ def render_rcm_red_flags(params: Dict[str, str]) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(ck_illustrative_note("red-flag figures") + body, "RCM Red Flag Detector", active_nav="/rcm-red-flags",
+    return chartis_shell(data_required_panel(P, title="RCM Red Flags", needed=[("claim_id","claim id (de-identify)"),("denial_code","CARC/RARC code"),("payer","payer"),("service_date","service date")], template="claims_denials_template.csv (+ ar_aging_template.csv, encounter volume)", request_from="RCM / revenue-cycle lead", activates="RCM red-flag detection (denial rate, DAR, aged AR, payer concentration)", guide_hint="What claims/denial/AR data do I need to upload?") + ck_illustrative_note("red-flag figures") + body, "RCM Red Flag Detector", active_nav="/rcm-red-flags",
                          subtitle=f"{len(_RISK_FACTORS)} risk factors — {len(corpus):,} deal corpus",
         editorial_intro={
             "eyebrow": "RCM RED FLAG DETECTOR",
