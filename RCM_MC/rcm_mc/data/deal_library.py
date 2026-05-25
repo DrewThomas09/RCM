@@ -181,3 +181,65 @@ def query(
         cols = [d[0] for d in cur.description]
         rows = [dict(zip(cols, r)) for r in cur.fetchall()]
     return {"total": total, "rows": rows}
+
+
+# ── sponsor intelligence ───────────────────────────────────────────────────
+# The dense, validated dimension of this dataset: ~99% of rows carry a parsed
+# sponsor, across ~4,900 distinct sponsors (a mix of PE, VC/accelerators, and
+# healthcare REITs — the broad "sponsor-backed" universe, not PE-buyout only).
+def sponsor_index(store: Any, *, limit: int = 100, min_companies: int = 1
+                  ) -> List[Dict[str, Any]]:
+    """Sponsors ranked by # of healthcare companies backed, with the
+    current/prior split (read from the raw ownership_status). Useful as a
+    sourcing / sponsor-activity map."""
+    _ensure_table(store)
+    with store.connect() as con:
+        rows = con.execute(
+            """
+            SELECT sponsor_owner,
+                   COUNT(*) AS n_total,
+                   SUM(CASE WHEN lower(ownership_status) LIKE '%current sponsor%'
+                            THEN 1 ELSE 0 END) AS n_current,
+                   SUM(CASE WHEN lower(ownership_status) LIKE '%prior sponsor%'
+                            THEN 1 ELSE 0 END) AS n_prior
+            FROM deal_library_companies
+            WHERE sponsor_owner IS NOT NULL AND sponsor_owner != ''
+            GROUP BY sponsor_owner
+            HAVING n_total >= ?
+            ORDER BY n_total DESC, sponsor_owner ASC
+            LIMIT ?
+            """,
+            (int(min_companies), int(limit)),
+        ).fetchall()
+    return [{"sponsor": r[0], "n_total": r[1], "n_current": r[2],
+             "n_prior": r[3]} for r in rows]
+
+
+def sponsor_rollup(store: Any, sponsor: str) -> Dict[str, Any]:
+    """One sponsor's healthcare footprint: company count, current/prior split,
+    how many disclose revenue, and its top states. Returns ``n_total=0`` for an
+    unknown sponsor (never invents)."""
+    _ensure_table(store)
+    with store.connect() as con:
+        row = con.execute(
+            """
+            SELECT COUNT(*),
+                   SUM(CASE WHEN lower(ownership_status) LIKE '%current sponsor%'
+                            THEN 1 ELSE 0 END),
+                   SUM(CASE WHEN lower(ownership_status) LIKE '%prior sponsor%'
+                            THEN 1 ELSE 0 END),
+                   SUM(CASE WHEN revenue IS NOT NULL THEN 1 ELSE 0 END)
+            FROM deal_library_companies WHERE sponsor_owner = ?
+            """, (sponsor,)).fetchone()
+        states = con.execute(
+            "SELECT state, COUNT(*) n FROM deal_library_companies "
+            "WHERE sponsor_owner = ? AND state IS NOT NULL AND state != '' "
+            "GROUP BY state ORDER BY n DESC LIMIT 6", (sponsor,)).fetchall()
+    return {
+        "sponsor": sponsor,
+        "n_total": row[0] or 0,
+        "n_current": row[1] or 0,
+        "n_prior": row[2] or 0,
+        "n_with_revenue": row[3] or 0,
+        "top_states": [{"state": s[0], "n": s[1]} for s in states],
+    }
