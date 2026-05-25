@@ -107,6 +107,25 @@ class TestLoader(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
+    def test_sources_provenance_table(self):
+        recs, info = ing.ingest_file(_FIXTURE, source_system="Capital IQ")
+        ing.flag_duplicates(recs)
+        srcs = ing.build_sources([info], "Capital IQ")
+        self.assertEqual(len(srcs), 1)
+        self.assertEqual(srcs[0]["source_file"], _FIXTURE.name)
+        self.assertEqual(srcs[0]["row_count"], len(recs))
+        ing.write_outputs(recs, ing.build_report(recs, [info], "Capital IQ"),
+                          self.out, sources=srcs)
+        n = deal_library.load_sources_csv(
+            self.store, self.out / "deal_library_sources.csv")
+        self.assertEqual(n, 1)
+        # idempotent
+        self.assertEqual(deal_library.load_sources_csv(
+            self.store, self.out / "deal_library_sources.csv"), 1)
+        rows = deal_library.sources(self.store)
+        self.assertEqual(rows[0]["source_system"], "Capital IQ")
+        self.assertIn("not redistributed", rows[0]["license_scope_note"])
+
     def test_load_and_query_roundtrip(self):
         n = deal_library.load_companies_csv(
             self.store, self.out / "deal_library_companies.csv")

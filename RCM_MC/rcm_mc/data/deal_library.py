@@ -97,6 +97,60 @@ def load_companies_csv(store: Any, csv_path: str | Path) -> int:
     return n
 
 
+# ── sources / provenance table ─────────────────────────────────────────────
+_SOURCE_COLS = ["source_id", "source_system", "source_type", "source_file",
+                "source_date", "license_scope_note", "ingestion_date",
+                "row_count", "notes"]
+
+
+def _ensure_sources_table(store: Any) -> None:
+    with store.connect() as con:
+        con.execute(
+            "CREATE TABLE IF NOT EXISTS deal_library_sources ("
+            + ", ".join(f"{c} TEXT" for c in _SOURCE_COLS if c != "row_count")
+            + ", row_count INTEGER, PRIMARY KEY (source_id))")
+        con.commit()
+
+
+def load_sources_csv(store: Any, csv_path: str | Path) -> int:
+    """Upsert deal_library_sources.csv — one provenance row per ingested
+    export. Returns rows written. Idempotent on source_id."""
+    _ensure_sources_table(store)
+    p = Path(csv_path)
+    ph = ",".join("?" for _ in _SOURCE_COLS)
+    upd = ",".join(f"{c}=excluded.{c}" for c in _SOURCE_COLS if c != "source_id")
+    n = 0
+    with store.connect() as con, p.open(newline="", encoding="utf-8") as fh:
+        for row in csv.DictReader(fh):
+            vals = []
+            for c in _SOURCE_COLS:
+                v = row.get(c)
+                if c == "row_count":
+                    try:
+                        v = int(float(v)) if v not in (None, "") else 0
+                    except (TypeError, ValueError):
+                        v = 0
+                else:
+                    v = v if (v is not None and str(v) != "") else None
+                vals.append(v)
+            con.execute(
+                f"INSERT INTO deal_library_sources ({','.join(_SOURCE_COLS)}) "
+                f"VALUES ({ph}) ON CONFLICT(source_id) DO UPDATE SET {upd}", vals)
+            n += 1
+        con.commit()
+    return n
+
+
+def sources(store: Any) -> List[Dict[str, Any]]:
+    """Provenance rows — what licensed exports built the library, when, how big."""
+    _ensure_sources_table(store)
+    with store.connect() as con:
+        cur = con.execute(
+            "SELECT * FROM deal_library_sources ORDER BY ingestion_date DESC")
+        cols = [d[0] for d in cur.description]
+        return [dict(zip(cols, r)) for r in cur.fetchall()]
+
+
 # ── read API (page / comps / priors) ──────────────────────────────────────
 def count(store: Any) -> int:
     _ensure_table(store)

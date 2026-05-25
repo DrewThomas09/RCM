@@ -323,7 +323,7 @@ def build_report(records, file_infos, source_system) -> Dict[str, Any]:
         "source_system": source_system,
         "files": file_infos,
         "rows_output": n,
-        "duplicate_candidates": sum(r.get("duplicate_candidate", 0) for r in records),
+        "duplicate_candidates": sum((r.get("duplicate_candidate") or 0) for r in records),
         "missingness_pct_by_field": miss,
         "completeness_mean": round(
             sum(r["completeness_score"] for r in records) / n, 4) if n else 0.0,
@@ -331,16 +331,55 @@ def build_report(records, file_infos, source_system) -> Dict[str, Any]:
     }
 
 
-def write_outputs(records, report, out_dir: Path) -> Dict[str, Path]:
+_SOURCE_FIELDS = ["source_id", "source_system", "source_type", "source_file",
+                  "source_date", "license_scope_note", "ingestion_date",
+                  "row_count", "notes"]
+
+
+def build_sources(file_infos, source_system: str) -> List[Dict[str, Any]]:
+    """One provenance row per ingested export (the deal_library_sources table).
+    Deterministic source_id from system+file so re-ingests upsert cleanly."""
+    now = datetime.now(timezone.utc).isoformat()
+    out = []
+    for info in file_infos:
+        fname = info.get("file", "")
+        sid = "src_" + hashlib.sha1(
+            f"{source_system}|{fname}".encode("utf-8")).hexdigest()[:16]
+        out.append({
+            "source_id": sid,
+            "source_system": source_system,
+            "source_type": "screening_export",
+            "source_file": fname,
+            "source_date": "",   # filled from the manifest if one is supplied
+            "license_scope_note": ("Licensed vendor export, user-provided; "
+                                   "not redistributed beyond licensed env"),
+            "ingestion_date": now,
+            "row_count": info.get("rows_out", 0),
+            "notes": f"sheet={info.get('sheet', '')}",
+        })
+    return out
+
+
+def write_outputs(records, report, out_dir: Path,
+                  sources: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
     comp = out_dir / "deal_library_companies.csv"
     with comp.open("w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=_CANONICAL_FIELDS)
         w.writeheader()
         w.writerows(records)
+    paths = {"companies": comp}
+    if sources is not None:
+        src = out_dir / "deal_library_sources.csv"
+        with src.open("w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=_SOURCE_FIELDS)
+            w.writeheader()
+            w.writerows(sources)
+        paths["sources"] = src
     rep = out_dir / "deal_library_ingest_report.json"
     rep.write_text(json.dumps(report, indent=2))
-    return {"companies": comp, "report": rep}
+    paths["report"] = rep
+    return paths
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -368,9 +407,11 @@ def main(argv: Optional[List[str]] = None) -> int:
               f"(sheet '{info.get('sheet')}')", file=sys.stderr)
     dups = flag_duplicates(all_recs)
     report = build_report(all_recs, infos, args.source_system)
-    paths = write_outputs(all_recs, report, outdir)
+    sources = build_sources(infos, args.source_system)
+    paths = write_outputs(all_recs, report, outdir, sources=sources)
     print(f"\nWrote {len(all_recs)} records ({dups} dup candidates) → {paths['companies']}",
           file=sys.stderr)
+    print(f"Sources ({len(sources)}) → {paths['sources']}", file=sys.stderr)
     print(f"Ingest report → {paths['report']}", file=sys.stderr)
     return 0
 
