@@ -183,6 +183,66 @@ def _comp_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _places_access_panel() -> str:
+    """Real CDC PLACES access-barrier anchor — telehealth's core value
+    proposition is overcoming transportation and access barriers, which
+    PLACES measures directly (lack of transportation, uninsured, fair/poor
+    health) at full-population scale. The visit-economics model below is
+    illustrative; this panel is real public CDC data, grounding the
+    telehealth demand thesis in observed access barriers."""
+    from rcm_mc.data import cdc_places_agg as _c
+    summ = _c.places_equity_summary()
+    if not summ.get("national_prevalence_pct"):
+        return ""
+    nat = summ["national_prevalence_pct"]
+    labels = _c.measure_labels()
+
+    border = P["border"]; tprim = P["text"]; tdim = P["text_dim"]; acc = P["accent"]
+    show = ["lack_transportation", "uninsured_18_64", "fair_poor_health", "routine_checkup"]
+    cards = "".join(
+        f'<div style="text-align:center;padding:0 10px">'
+        f'<div style="font-family:JetBrains Mono,monospace;font-size:18px;color:{tprim};'
+        f'font-variant-numeric:tabular-nums">{nat.get(k,0):.1f}%</div>'
+        f'<div style="font-size:9px;color:{tdim}">{_html.escape(labels.get(k,k))}</div></div>'
+        for k in show if nat.get(k) is not None
+    )
+    # states with the worst transportation access = highest telehealth demand
+    top = _c.top_states_by("lack_transportation", 6)
+    mx = max((float(t["lack_transportation"]) for t in top), default=1.0) or 1.0
+    rows = "".join(
+        f'<tr>'
+        f'<td style="padding:3px 8px;font-family:JetBrains Mono,monospace;font-size:11px;color:{tprim}">{_html.escape(str(t["state"]))}</td>'
+        f'<td style="padding:3px 8px;width:50%">'
+        f'<svg width="100%" height="9" preserveAspectRatio="none" viewBox="0 0 100 9">'
+        f'<rect x="0" y="1" width="{int(float(t["lack_transportation"])/mx*100)}" height="7" fill="{acc}" opacity="0.75"/></svg></td>'
+        f'<td style="padding:3px 8px;text-align:right;font-family:JetBrains Mono,monospace;font-size:11px;'
+        f'font-variant-numeric:tabular-nums;color:{tprim}">{float(t["lack_transportation"]):.1f}%</td>'
+        f'</tr>'
+        for t in top
+    )
+    rel = summ.get("release", ""); n_cty = int(summ.get("counties", 0))
+    return f'''
+<div style="background:{P["panel"]};border:1px solid {border};border-left:3px solid {acc};
+  padding:14px 16px;margin-bottom:16px">
+  <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{tdim};
+    text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">
+    Real CDC PLACES access barriers &mdash; the telehealth demand driver
+    <span style="color:{acc};font-weight:600"> · LIVE</span>
+  </div>
+  <div style="display:flex;gap:6px;justify-content:space-between;margin-bottom:12px;
+    border-bottom:1px solid {border};padding-bottom:10px">{cards}</div>
+  <div>
+    <div style="font-size:9px;color:{P["text_faint"]};margin-bottom:4px">HIGHEST TRANSPORTATION-BARRIER STATES (% OF ADULTS) &mdash; TOP TELEHEALTH DEMAND</div>
+    <table style="width:100%;border-collapse:collapse">{rows}</table>
+  </div>
+  <div style="margin-top:8px;font-size:10px;color:{P["text_faint"]}">
+    CDC PLACES {rel} ({n_cty:,} counties, model-based, population-weighted).
+    Real FULL-POPULATION access-barrier prevalence &mdash; the visit-type
+    economics, parity, and productivity figures below are illustrative.
+  </div>
+</div>'''
+
+
 def render_telehealth_econ(params: dict = None) -> str:
     from rcm_mc.data_public.telehealth_econ import compute_telehealth_econ
     r = compute_telehealth_econ()
@@ -232,6 +292,7 @@ def render_telehealth_econ(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   {ck_illustrative_note("figures")}
+  {_places_access_panel()}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">Visit-Type Economics (P&amp;L by Visit Category)</div>{v_chart}{v_tbl}</div>

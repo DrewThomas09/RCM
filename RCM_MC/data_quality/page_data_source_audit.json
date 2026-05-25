@@ -2,13 +2,13 @@
   "summary": {
     "pages": 173,
     "with_disclosure": 168,
-    "with_real_loader": 30,
+    "with_real_loader": 31,
     "flagged_no_disclosure": 0,
     "by_tier": {
       "green": 27,
-      "navy": 60,
+      "navy": 61,
       "yellow": 37,
-      "red": 49
+      "red": 48
     }
   },
   "pages": [
@@ -1555,9 +1555,9 @@
     {
       "route": "/telehealth-econ",
       "file": "telehealth_econ_page.py",
-      "tier": "red",
+      "tier": "navy",
       "has_disclosure": true,
-      "imports_real_loader": false,
+      "imports_real_loader": true,
       "uses_seed_corpus": true,
       "renders_data": true,
       "flag": ""
