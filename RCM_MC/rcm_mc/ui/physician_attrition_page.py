@@ -996,6 +996,52 @@ def _filter_by_band(
     return filtered
 
 
+def _hrsa_attrition_panel() -> str:
+    """Real HRSA shortage-area anchor — physician attrition is structurally
+    worse where the labor market is already short. The flight-risk model
+    below runs on a demo roster; this panel is real public HRSA data."""
+    try:
+        from rcm_mc.data import hrsa_data as _h
+        summ = _h.hpsa_summary()
+        if not summ.get("total_designated"):
+            return ""
+        top = _h.top_shortage_states(6)
+    except Exception:
+        return ""
+    bd = P["border"]; tp = P["text"]; td = P["text_dim"]; ac = P["accent"]
+    fa = P.get("text_faint", td)
+    mx = max((int(t["designated_pc_hpsas"]) for t in top), default=1) or 1
+    rows = "".join(
+        f'<tr><td style="padding:3px 8px;font-family:JetBrains Mono,monospace;font-size:11px;color:{tp}">{html.escape(str(t["state"]))}</td>'
+        f'<td style="padding:3px 8px;width:55%"><svg width="100%" height="9" preserveAspectRatio="none" viewBox="0 0 100 9">'
+        f'<rect x="0" y="1" width="{int(int(t["designated_pc_hpsas"])/mx*100)}" height="7" fill="{ac}" opacity="0.75"/></svg></td>'
+        f'<td style="padding:3px 8px;text-align:right;font-family:JetBrains Mono,monospace;font-size:11px;'
+        f'font-variant-numeric:tabular-nums;color:{tp}">{int(t["designated_pc_hpsas"]):,}</td></tr>'
+        for t in top
+    )
+    total = int(summ.get("total_designated", 0)); med = summ.get("national_median_score", "")
+    return (
+        f'<div style="background:{P["panel"]};border:1px solid {bd};border-left:3px solid {ac};'
+        f'padding:14px 16px;margin-bottom:16px">'
+        f'<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{td};'
+        f'text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">'
+        f'Real HRSA shortage areas &mdash; the attrition-pressure backdrop'
+        f'<span style="color:{ac};font-weight:600"> · LIVE</span></div>'
+        f'<div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start">'
+        f'<div style="white-space:nowrap"><div style="font-family:JetBrains Mono,monospace;font-size:20px;'
+        f'color:{tp};font-variant-numeric:tabular-nums">{total:,}</div>'
+        f'<div style="font-size:10px;color:{td};margin-bottom:8px">designated primary-care<br>shortage areas (HPSAs)</div>'
+        f'<div style="font-family:JetBrains Mono,monospace;font-size:13px;color:{tp};'
+        f'font-variant-numeric:tabular-nums">{med}</div>'
+        f'<div style="font-size:10px;color:{td}">national median HPSA score</div></div>'
+        f'<div><div style="font-size:9px;color:{fa};margin-bottom:4px">MOST PRIMARY-CARE SHORTAGE AREAS BY STATE</div>'
+        f'<table style="width:100%;border-collapse:collapse">{rows}</table></div></div>'
+        f'<div style="margin-top:8px;font-size:10px;color:{fa}">HRSA HPSA designations. Real labor-shortage '
+        f'signal &mdash; deeper shortage = higher attrition risk. The per-provider flight-risk scores below '
+        f'run on a demo roster (illustrative), not this deal\'s physicians.</div></div>'
+    )
+
+
 def render_physician_attrition_page(
     qs: Optional[Dict[str, List[str]]] = None,
 ) -> str:
@@ -1135,6 +1181,7 @@ def render_physician_attrition_page(
         + explainer_html
         + '<div class="pa-wrap">'
         + demo_banner
+        + _hrsa_attrition_panel()
         + hero_and_bridge
         + crosslink
         + _band_filter_chips(band_filter)
