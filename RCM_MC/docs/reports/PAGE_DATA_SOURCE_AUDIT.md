@@ -6,7 +6,7 @@ analyzer pages that render figures with **no** data-source disclosure
 label). Cross-references the surface-status tier.
 
 - Pages: **173** · with disclosure: **168** · importing a real loader: **27** · **flagged (no disclosure): 0**
-- By tier: {'green': 27, 'navy': 56, 'yellow': 37, 'red': 53}
+- By tier: {'green': 27, 'navy': 57, 'yellow': 37, 'red': 52}
 
 ## Flagged — render data, disclose nothing (fix first)
 
