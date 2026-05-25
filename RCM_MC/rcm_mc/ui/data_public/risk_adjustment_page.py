@@ -245,10 +245,49 @@ def render_risk_adjustment(params: dict = None) -> str:
         opportunity=f"${r.total_raf_gap_opportunity_m:,.1f}M RAF-gap opportunity",
         tone="positive",
     )
+    # Real CMS Medicare Advantage population context (Geographic Variation PUF)
+    # — the demographic drivers of risk adjustment (dual %, age), by state.
+    cms_panel = ""
+    try:
+        from rcm_mc.data import ma_data as _ma
+        _s = _ma.ma_summary()
+        _dual = _ma.top_dual_states(8)
+        if _s.get("total_ma_enrollment"):
+            _rows = "".join(
+                f'<tr><td style="padding:3px 10px">{_html.escape(str(d["state"]))}</td>'
+                f'<td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums">{d["dual_eligible_pct"]*100:.1f}%</td>'
+                f'<td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums">{int(d["ma_enrollment"]):,}</td></tr>'
+                for d in _dual)
+            cms_panel = (
+                f'<div style="background:{panel};border:1px solid {border};'
+                f'border-left:3px solid {acc};padding:14px 16px;margin-bottom:16px">'
+                f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
+                f'text-transform:uppercase;color:{text_dim};margin-bottom:6px">'
+                f'MA population context · LIVE (CMS MA Geographic Variation, {_html.escape(str(_s.get("data_year","")))})</div>'
+                f'<p style="font-size:12px;color:{text_dim};margin:0 0 8px">'
+                f'<b style="color:{text}">{_s["total_ma_enrollment"]:,}</b> MA enrollees '
+                f'across {_s["states"]} states; median dual-eligible share '
+                f'<b style="color:{text}">{_s["median_dual_pct"]*100:.1f}%</b>, median age '
+                f'{_s["median_avg_age"]:.0f}. Dual-eligible and age mix are the real '
+                f'population drivers of risk-adjustment intensity. Highest-dual states:</p>'
+                f'<table style="border-collapse:collapse;font-family:\'JetBrains Mono\',monospace;font-size:11px">'
+                f'<thead><tr style="border-bottom:1px solid {border};color:{text_dim}">'
+                f'<th style="padding:3px 10px;text-align:left">State</th>'
+                f'<th style="padding:3px 10px;text-align:right">Dual %</th>'
+                f'<th style="padding:3px 10px;text-align:right">MA enrollees</th></tr></thead>'
+                f'<tbody>{_rows}</tbody></table>'
+                f'<p style="font-size:11px;color:{text_dim};margin:8px 0 0">'
+                f'Real CMS MA market/population data — <b>not</b> a Star Rating, '
+                f'<b>not</b> a risk score, and not this deal. The RAF model below is '
+                f'illustrative, scaled by your inputs.</p></div>')
+    except Exception:
+        cms_panel = ""
+
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
   {ck_illustrative_note("figures")}
+  {cms_panel}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">Portfolio RAF Roll-up</div>{p_chart}{p_tbl}</div>
