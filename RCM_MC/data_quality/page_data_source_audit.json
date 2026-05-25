@@ -2,13 +2,13 @@
   "summary": {
     "pages": 173,
     "with_disclosure": 168,
-    "with_real_loader": 27,
+    "with_real_loader": 28,
     "flagged_no_disclosure": 0,
     "by_tier": {
       "green": 27,
-      "navy": 57,
+      "navy": 58,
       "yellow": 37,
-      "red": 52
+      "red": 51
     }
   },
   "pages": [
@@ -945,9 +945,9 @@
     {
       "route": "/medicaid-unwinding",
       "file": "medicaid_unwinding_page.py",
-      "tier": "red",
+      "tier": "navy",
       "has_disclosure": true,
-      "imports_real_loader": false,
+      "imports_real_loader": true,
       "uses_seed_corpus": true,
       "renders_data": true,
       "flag": ""

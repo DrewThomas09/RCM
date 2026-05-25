@@ -204,6 +204,64 @@ def _timelines_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _dual_population_panel() -> str:
+    """Real CMS dual-eligible population anchor — dual-eligibles are the
+    population most exposed to Medicaid redetermination/unwinding. Their
+    share by state is real public CMS MA data; the deal-level unwinding
+    impact below is illustrative. Grounds the unwinding thesis in the
+    observed at-risk population, not the seed corpus."""
+    from rcm_mc.data import ma_data as _ma
+    summ = _ma.ma_summary()
+    if not summ.get("total_ma_enrollment"):
+        return ""
+    dual = _ma.top_dual_states(8)
+
+    border = P["border"]; tprim = P["text"]; tdim = P["text_dim"]; acc = P["accent"]
+    mx = max((float(d["dual_eligible_pct"]) for d in dual), default=1.0) or 1.0
+    rows = "".join(
+        f'<tr>'
+        f'<td style="padding:3px 8px;font-family:JetBrains Mono,monospace;font-size:11px;color:{tprim}">{_html.escape(str(d["state"]))}</td>'
+        f'<td style="padding:3px 8px;width:45%">'
+        f'<svg width="100%" height="9" preserveAspectRatio="none" viewBox="0 0 100 9">'
+        f'<rect x="0" y="1" width="{int(float(d["dual_eligible_pct"])/mx*100)}" height="7" fill="{acc}" opacity="0.75"/></svg></td>'
+        f'<td style="padding:3px 8px;text-align:right;font-family:JetBrains Mono,monospace;font-size:11px;'
+        f'font-variant-numeric:tabular-nums;color:{tprim}">{float(d["dual_eligible_pct"])*100:.1f}%</td>'
+        f'<td style="padding:3px 8px;text-align:right;font-family:JetBrains Mono,monospace;font-size:10px;'
+        f'font-variant-numeric:tabular-nums;color:{tdim}">{int(d["ma_enrollment"]):,}</td>'
+        f'</tr>'
+        for d in dual
+    )
+    med_dual = float(summ.get("median_dual_pct", 0)) * 100
+    n_states = int(summ.get("states", 0))
+    yr = summ.get("data_year", "")
+    return f'''
+<div style="background:{P["panel"]};border:1px solid {border};border-left:3px solid {acc};
+  padding:14px 16px;margin-bottom:16px">
+  <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{tdim};
+    text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">
+    Real CMS dual-eligible population &mdash; the at-risk unwinding cohort
+    <span style="color:{acc};font-weight:600"> · LIVE</span>
+  </div>
+  <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start">
+    <div style="white-space:nowrap">
+      <div style="font-family:JetBrains Mono,monospace;font-size:20px;color:{tprim};
+        font-variant-numeric:tabular-nums">{med_dual:.1f}%</div>
+      <div style="font-size:10px;color:{tdim};margin-bottom:8px">median dual-eligible share<br>({n_states} states, {yr})</div>
+    </div>
+    <div>
+      <div style="font-size:9px;color:{P["text_faint"]};margin-bottom:4px">HIGHEST DUAL-ELIGIBLE STATES (% · MA ENROLLEES)</div>
+      <table style="width:100%;border-collapse:collapse">{rows}</table>
+    </div>
+  </div>
+  <div style="margin-top:8px;font-size:10px;color:{P["text_faint"]}">
+    CMS MA geographic enrollment ({yr}). Dual-eligibles are the cohort most
+    exposed to Medicaid redetermination &mdash; the deal-level unwinding impact,
+    coverage-shift, and bad-debt figures below are illustrative; use this panel
+    as the observed at-risk population.
+  </div>
+</div>'''
+
+
 def render_medicaid_unwinding(params: dict = None) -> str:
     from rcm_mc.data_public.medicaid_unwinding import compute_medicaid_unwinding
     r = compute_medicaid_unwinding()
@@ -255,6 +313,7 @@ def render_medicaid_unwinding(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   {ck_illustrative_note("figures")}
+  {_dual_population_panel()}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="{cell}"><div style="{h3}">Portfolio Deal Impact</div>{d_chart}{d_tbl}</div>
