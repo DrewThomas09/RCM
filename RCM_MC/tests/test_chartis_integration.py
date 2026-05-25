@@ -349,12 +349,12 @@ class TestChartisPhase2CPortfolioRoutes(unittest.TestCase):
         )
 
     def test_portfolio_analytics_renders(self):
+        # /portfolio-analytics was deliberately renamed/redirected to
+        # "Deal Corpus Analytics" (the 655-deal benchmark CORPUS was mislabeled
+        # as portfolio and moved to Research). Title tracks that intended rename.
         self._assert_renders(
             "/portfolio-analytics",
-            expect_title="Portfolio Analytics",
-            expect_substrings=("CORPUS SCORECARD",
-                               "VINTAGE MIX",
-                               "CONCENTRATION RISK"),
+            expect_title="Deal Corpus Analytics",
         )
 
 
@@ -623,10 +623,11 @@ class TestExplainerHelper(unittest.TestCase):
     shows, what the scale means, and how partners should use it."""
 
     def test_explainer_with_all_three_parts_renders(self):
-        # PR #240 rewrote render_page_explainer from a bordered
-        # "About this page" card to an editorial italic-paragraph
-        # ("ck-page-explainer"). Scale / How to use / Source render
-        # as inline sub-segments instead of separate <h4> headings.
+        # Commit 80de585b ("collapse page explainer to one small paragraph")
+        # deliberately reduced render_page_explainer to a single editorial
+        # italic paragraph carrying the `what`; the scale/use/source sub-
+        # segments were intentionally dropped. These assertions track that
+        # intended collapsed behavior.
         from rcm_mc.ui.chartis._helpers import render_page_explainer
         html = render_page_explainer(
             what="This page shows HHI for the target's local market.",
@@ -635,15 +636,12 @@ class TestExplainerHelper(unittest.TestCase):
             source="FTC Horizontal Merger Guidelines (2023).",
             page_key="market-structure",
         )
-        # Lead italic paragraph carries the "what" content
+        # Lead italic paragraph carries the "what" content.
         self.assertIn("ck-page-explainer", html)
         self.assertIn("HHI", html)
-        # Scale + Use sub-labels rendered inline
-        self.assertIn("Scale.", html)
-        self.assertIn("How to use.", html)
-        # Source attribution still present
-        self.assertIn("Source:", html)
-        self.assertIn("FTC Horizontal Merger Guidelines", html)
+        # Collapsed: scale/use/source are no longer rendered as sub-segments.
+        self.assertNotIn("Scale.", html)
+        self.assertNotIn("How to use.", html)
 
     def test_explainer_with_only_what_renders(self):
         from rcm_mc.ui.chartis._helpers import render_page_explainer
@@ -660,6 +658,8 @@ class TestExplainerHelper(unittest.TestCase):
         self.assertIn("ck-page-explainer", html)
 
     def test_explainer_omits_source_line_when_source_empty(self):
+        # Collapsed explainer (commit 80de585b): renders only the `what`
+        # paragraph; never a "Source:" line.
         from rcm_mc.ui.chartis._helpers import render_page_explainer
         html = render_page_explainer(
             what="No source needed.",
@@ -668,8 +668,8 @@ class TestExplainerHelper(unittest.TestCase):
             source="",
             page_key="page",
         )
-        self.assertIn("Scale.", html)
-        self.assertIn("How to use.", html)
+        self.assertIn("ck-page-explainer", html)
+        self.assertIn("No source needed.", html)
         self.assertNotIn("Source:", html)
 
     def test_explainer_html_is_safe(self):
