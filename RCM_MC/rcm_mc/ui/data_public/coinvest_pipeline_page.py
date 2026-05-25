@@ -3,6 +3,13 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title, ck_illustrative_note, ck_bar_row, ck_value_anchor
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
+
+_COINVEST_NEEDED = [
+    ("opportunity", "co-invest opportunity"), ("sponsor", "lead sponsor"),
+    ("size", "co-invest size $"), ("lp_demand", "indicated LP demand $"),
+    ("status", "status"),
+]
 
 
 def _deals_chart(items) -> str:
@@ -269,6 +276,10 @@ def render_coinvest_pipeline(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
+  {data_required_panel(P, title="Co-Invest Pipeline", needed=_COINVEST_NEEDED,
+      template="coinvest_pipeline_template.csv", request_from="Deal team / IR",
+      activates="co-invest sizing vs LP demand coverage",
+      guide_hint="What co-invest pipeline data do I need to upload?")}
   {ck_illustrative_note("figures")}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}

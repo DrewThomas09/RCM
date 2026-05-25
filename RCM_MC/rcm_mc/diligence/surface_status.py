@@ -111,6 +111,9 @@ _DATA_REQUIRED = frozenset({
     # Batch 1a — internal/fund pages (activate on uploaded fund/deal data)
     "/mgmt-comp", "/partner-economics", "/mgmt-fee-tracker", "/key-person",
     "/treasury", "/fundraising",
+    # Batch 1b
+    "/nav-loan-tracker", "/secondaries-tracker", "/continuation-vehicle",
+    "/coinvest-pipeline", "/board-governance", "/capex-budget",
 })
 
 
@@ -143,9 +146,7 @@ _RED = frozenset({
     "/ma-star",
     "/risk-matrix",
     "/revenue-leakage",
-    "/capex-budget", "/nav-loan-tracker",
-    "/secondaries-tracker", "/continuation-vehicle", "/coinvest-pipeline",
-    "/operating-partners", "/board-governance", "/compliance-attestation",
+    "/operating-partners", "/compliance-attestation",
     "/transition-services", "/pmi-integration", "/pmi-playbook",
     "/digital-front-door", "/direct-employer", "/direct-lending",
     "/tech-stack",

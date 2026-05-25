@@ -3,6 +3,13 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_bar_row
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
+
+_BOARD_NEEDED = [
+    ("director_name", "director (PII)"), ("role", "chair / member / observer"),
+    ("committee", "audit / comp / nom"), ("independent", "yes / no"),
+    ("meeting_cadence", "monthly / quarterly"),
+]
 
 
 def _holdcos_chart(items) -> str:
@@ -241,7 +248,10 @@ def render_board_governance(params: dict = None) -> str:
         "governance gaps, and executive compensation benchmarks across the portfolio."
         "</p>"
     )
-    body = page_title + ck_illustrative_note("figures") + bg_explainer + f"""
+    body = page_title + data_required_panel(P, title="Board Governance", needed=_BOARD_NEEDED,
+        template="board_governance_template.csv", request_from="Corporate secretary / GC",
+        activates="board independence, committee coverage, meeting cadence",
+        guide_hint="What board-governance data do I need to upload?") + ck_illustrative_note("figures") + bg_explainer + f"""
 <div class="ck-page-wrap">
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Holdco Board Composition</div>{h_chart}{h_tbl}</div>

@@ -8,7 +8,7 @@
       "green": 27,
       "navy": 73,
       "yellow": 37,
-      "red": 32
+      "red": 26
     }
   },
   "pages": [
@@ -85,7 +85,7 @@
     {
       "route": "/board-governance",
       "file": "board_governance_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -115,7 +115,7 @@
     {
       "route": "/capex-budget",
       "file": "capex_budget_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -225,7 +225,7 @@
     {
       "route": "/coinvest-pipeline",
       "file": "coinvest_pipeline_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -275,7 +275,7 @@
     {
       "route": "/continuation-vehicle",
       "file": "continuation_vehicle_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": false,
@@ -1015,7 +1015,7 @@
     {
       "route": "/nav-loan-tracker",
       "file": "nav_loan_tracker_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -1415,7 +1415,7 @@
     {
       "route": "/secondaries-tracker",
       "file": "secondaries_tracker_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
