@@ -1,0 +1,374 @@
+{
+  "source": "HHS OIG \u2014 List of Excluded Individuals/Entities (LEIE)",
+  "url": "https://oig.hhs.gov/exclusions/downloadables/UPDATED.csv",
+  "extract_date": "2026-05-25",
+  "total_exclusions": 83256,
+  "states": 57,
+  "by_state": [
+    {
+      "state": "CA",
+      "count": 9676
+    },
+    {
+      "state": "FL",
+      "count": 8991
+    },
+    {
+      "state": "TX",
+      "count": 5880
+    },
+    {
+      "state": "NY",
+      "count": 4410
+    },
+    {
+      "state": "OH",
+      "count": 3787
+    },
+    {
+      "state": "PA",
+      "count": 3563
+    },
+    {
+      "state": "AZ",
+      "count": 2669
+    },
+    {
+      "state": "IL",
+      "count": 2384
+    },
+    {
+      "state": "MS",
+      "count": 2048
+    },
+    {
+      "state": "LA",
+      "count": 1941
+    },
+    {
+      "state": "AL",
+      "count": 1870
+    },
+    {
+      "state": "NC",
+      "count": 1827
+    },
+    {
+      "state": "TN",
+      "count": 1820
+    },
+    {
+      "state": "CO",
+      "count": 1766
+    },
+    {
+      "state": "KY",
+      "count": 1741
+    },
+    {
+      "state": "MA",
+      "count": 1711
+    },
+    {
+      "state": "OK",
+      "count": 1663
+    },
+    {
+      "state": "VA",
+      "count": 1571
+    },
+    {
+      "state": "MI",
+      "count": 1559
+    },
+    {
+      "state": "MN",
+      "count": 1394
+    },
+    {
+      "state": "NJ",
+      "count": 1355
+    },
+    {
+      "state": "WA",
+      "count": 1351
+    },
+    {
+      "state": "IN",
+      "count": 1322
+    },
+    {
+      "state": "GA",
+      "count": 1293
+    },
+    {
+      "state": "AR",
+      "count": 1274
+    },
+    {
+      "state": "MO",
+      "count": 1171
+    },
+    {
+      "state": "IA",
+      "count": 1118
+    },
+    {
+      "state": "OR",
+      "count": 907
+    },
+    {
+      "state": "MD",
+      "count": 890
+    },
+    {
+      "state": "WV",
+      "count": 845
+    },
+    {
+      "state": "WI",
+      "count": 777
+    },
+    {
+      "state": "UT",
+      "count": 773
+    },
+    {
+      "state": "CT",
+      "count": 768
+    },
+    {
+      "state": "SC",
+      "count": 704
+    },
+    {
+      "state": "NV",
+      "count": 689
+    },
+    {
+      "state": "KS",
+      "count": 689
+    },
+    {
+      "state": "ME",
+      "count": 634
+    },
+    {
+      "state": "VT",
+      "count": 578
+    },
+    {
+      "state": "RI",
+      "count": 520
+    },
+    {
+      "state": "NH",
+      "count": 422
+    },
+    {
+      "state": "ID",
+      "count": 358
+    },
+    {
+      "state": "NE",
+      "count": 314
+    },
+    {
+      "state": "NM",
+      "count": 297
+    },
+    {
+      "state": "AK",
+      "count": 269
+    },
+    {
+      "state": "MT",
+      "count": 256
+    },
+    {
+      "state": "SD",
+      "count": 238
+    },
+    {
+      "state": "PR",
+      "count": 232
+    },
+    {
+      "state": "DE",
+      "count": 229
+    },
+    {
+      "state": "ND",
+      "count": 182
+    },
+    {
+      "state": "HI",
+      "count": 177
+    },
+    {
+      "state": "WY",
+      "count": 164
+    },
+    {
+      "state": "DC",
+      "count": 93
+    },
+    {
+      "state": "XX",
+      "count": 82
+    },
+    {
+      "state": "GU",
+      "count": 5
+    },
+    {
+      "state": "VI",
+      "count": 5
+    },
+    {
+      "state": "FM",
+      "count": 3
+    },
+    {
+      "state": "MP",
+      "count": 1
+    }
+  ],
+  "by_exclusion_type": [
+    {
+      "code": "1128b4",
+      "label": "License revocation/suspension",
+      "count": 33136
+    },
+    {
+      "code": "1128a1",
+      "label": "Program-related crime conviction",
+      "count": 25760
+    },
+    {
+      "code": "1128a2",
+      "label": "Patient abuse/neglect conviction",
+      "count": 8073
+    },
+    {
+      "code": "1128a3",
+      "label": "Health-care fraud felony",
+      "count": 5826
+    },
+    {
+      "code": "1128a4",
+      "label": "Felony controlled-substance conviction",
+      "count": 3551
+    },
+    {
+      "code": "1128b14",
+      "label": "1128B14",
+      "count": 2167
+    },
+    {
+      "code": "1128b8",
+      "label": "Entity controlled by a sanctioned party",
+      "count": 1497
+    },
+    {
+      "code": "1128b1",
+      "label": "Misdemeanor health-care fraud",
+      "count": 936
+    },
+    {
+      "code": "1128b5",
+      "label": "Federal/state program exclusion",
+      "count": 803
+    },
+    {
+      "code": "1128b7",
+      "label": "Fraud, kickbacks, prohibited activities",
+      "count": 735
+    }
+  ],
+  "by_year_recent": [
+    {
+      "year": 2017,
+      "count": 2770
+    },
+    {
+      "year": 2018,
+      "count": 2398
+    },
+    {
+      "year": 2019,
+      "count": 2206
+    },
+    {
+      "year": 2020,
+      "count": 2057
+    },
+    {
+      "year": 2021,
+      "count": 1518
+    },
+    {
+      "year": 2022,
+      "count": 2489
+    },
+    {
+      "year": 2023,
+      "count": 2252
+    },
+    {
+      "year": 2024,
+      "count": 3132
+    },
+    {
+      "year": 2025,
+      "count": 2545
+    },
+    {
+      "year": 2026,
+      "count": 1135
+    }
+  ],
+  "top_specialties": [
+    {
+      "key": "NURSE/NURSES AIDE",
+      "count": 34538
+    },
+    {
+      "key": "PERSONAL CARE PROVID",
+      "count": 3185
+    },
+    {
+      "key": "OWNER/OPERATOR",
+      "count": 3180
+    },
+    {
+      "key": "HEALTH CARE AIDE",
+      "count": 2949
+    },
+    {
+      "key": "NO KNOWN AFFILIATION",
+      "count": 2143
+    },
+    {
+      "key": "CHIROPRACTIC",
+      "count": 2024
+    },
+    {
+      "key": "GENERAL PRACTICE/FP",
+      "count": 1864
+    },
+    {
+      "key": "EMPLOYEE",
+      "count": 1805
+    },
+    {
+      "key": "PHARMACIST",
+      "count": 1724
+    },
+    {
+      "key": "HOME HEALTH AGENCY",
+      "count": 1447
+    }
+  ],
+  "pii_note": "Names, NPI, DOB, address DROPPED at ingest \u2014 counts only."
+}

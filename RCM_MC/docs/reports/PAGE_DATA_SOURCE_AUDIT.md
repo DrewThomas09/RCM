@@ -5,8 +5,8 @@ analyzer pages that render figures with **no** data-source disclosure
 (no source/purpose header, illustrative banner, or DATA/EXPORT REQUIRED
 label). Cross-references the surface-status tier.
 
-- Pages: **173** · with disclosure: **168** · importing a real loader: **41** · **flagged (no disclosure): 0**
-- By tier: {'green': 27, 'navy': 72, 'yellow': 37, 'red': 37}
+- Pages: **173** · with disclosure: **168** · importing a real loader: **42** · **flagged (no disclosure): 0**
+- By tier: {'green': 27, 'navy': 73, 'yellow': 37, 'red': 36}
 
 ## Flagged — render data, disclose nothing (fix first)
 

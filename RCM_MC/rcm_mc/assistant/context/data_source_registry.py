@@ -557,6 +557,17 @@ _SOURCES: List[DataSourceContext] = [
        limitations=["Registry counts, not this deal's sites or revenue; not 100% of trials."],
        provenance_notes="rcm_mc/data/clinical_trials.py; ClinicalTrials.gov v2 API; registry clinicaltrials_gov.",
        source_confidence=_DOCD, data_confidence=_PUB, ic_ready=False),
+    _s("oig_leie", "OIG LEIE Exclusions",
+       "HHS OIG List of Excluded Individuals/Entities — the realized "
+       "Medicare/Medicaid fraud-&-abuse / sanction record.", _T.PUBLIC_DATASET,
+       aliases=["leie", "oig exclusions", "excluded providers", "sanctions"],
+       update_cadence="Monthly.", freshness_lag="Current month.",
+       used_for=["Fraud/abuse base rate; exclusion screening context."],
+       related_routes=["/fraud-detection"],
+       strengths=["Real 83K+ excluded entities by state / type / year (PII dropped)."],
+       limitations=["Realized exclusions, NOT a prediction; not this deal's providers; names/NPI dropped at ingest."],
+       provenance_notes="rcm_mc/data/oig_leie.py; oig.hhs.gov LEIE; registry oig_leie.",
+       source_confidence=_DOCD, data_confidence=_PUB, ic_ready=False),
 ]
 
 DATA_SOURCE_REGISTRY: Dict[str, DataSourceContext] = {

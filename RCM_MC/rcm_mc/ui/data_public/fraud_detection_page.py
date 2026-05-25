@@ -174,6 +174,54 @@ def _events_table(items) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _leie_panel() -> str:
+    """Real OIG LEIE exclusions anchor — the realized Medicare/Medicaid
+    fraud-&-abuse / sanction record (excluded providers). PII-free counts;
+    the deal's fraud-risk scoring model below is illustrative."""
+    from rcm_mc.data import oig_leie as _l
+    s = _l.leie_summary()
+    if not s.get("total_exclusions"):
+        return ""
+    types = _l.by_exclusion_type(6)
+    states = _l.top_states(6)
+    border = P["border"]; tp = P["text"]; td = P["text_dim"]; ac = P["accent"]
+    fa = P.get("text_faint", td)
+    mx = max((int(t["count"]) for t in types), default=1) or 1
+    rows = "".join(
+        f'<tr><td style="padding:3px 8px;font-size:11px;color:{tp}">{_html.escape(t["label"])}</td>'
+        f'<td style="padding:3px 8px;width:38%"><svg width="100%" height="9" preserveAspectRatio="none" viewBox="0 0 100 9">'
+        f'<rect x="0" y="1" width="{int(int(t["count"])/mx*100)}" height="7" fill="{ac}" opacity="0.75"/></svg></td>'
+        f'<td style="padding:3px 8px;text-align:right;font-family:JetBrains Mono,monospace;font-size:11px;'
+        f'font-variant-numeric:tabular-nums;color:{tp}">{int(t["count"]):,}</td></tr>'
+        for t in types
+    )
+    st_chips = "".join(
+        f'<span style="display:inline-block;margin-right:10px;font-family:JetBrains Mono,monospace;'
+        f'font-size:11px;color:{tp}">{_html.escape(s2["state"])} '
+        f'<span style="color:{ac};font-variant-numeric:tabular-nums">{int(s2["count"]):,}</span></span>'
+        for s2 in states
+    )
+    total = int(s["total_exclusions"]); nst = int(s.get("states", 0))
+    return (
+        f'<div style="background:{P["panel"]};border:1px solid {border};border-left:3px solid {ac};'
+        f'padding:14px 16px;margin-bottom:16px">'
+        f'<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{td};'
+        f'text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">'
+        f'Real OIG LEIE exclusions &mdash; the realized fraud/abuse record'
+        f'<span style="color:{ac};font-weight:600"> · LIVE</span></div>'
+        f'<div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start">'
+        f'<div style="white-space:nowrap"><div style="font-family:JetBrains Mono,monospace;font-size:20px;'
+        f'color:{tp};font-variant-numeric:tabular-nums">{total:,}</div>'
+        f'<div style="font-size:10px;color:{td}">excluded individuals/entities<br>({nst} states)</div></div>'
+        f'<div><div style="font-size:9px;color:{fa};margin-bottom:4px">TOP EXCLUSION TYPES</div>'
+        f'<table style="width:100%;border-collapse:collapse">{rows}</table></div></div>'
+        f'<div style="margin-top:8px;font-size:10px;color:{td}"><span style="color:{fa}">Most exclusions:</span> {st_chips}</div>'
+        f'<div style="margin-top:6px;font-size:10px;color:{fa}">HHS OIG LEIE (PII dropped at ingest). '
+        f'Real realized exclusions &mdash; the fraud/abuse base rate. NOT this deal\'s providers and NOT a '
+        f'prediction; the fraud-risk scores below are illustrative.</div></div>'
+    )
+
+
 def render_fraud_detection(params: dict = None) -> str:
     from rcm_mc.data_public.fraud_detection import compute_fraud_detection
     r = compute_fraud_detection()
@@ -225,6 +273,7 @@ def render_fraud_detection(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   {ck_illustrative_note("figures")}
+  {_leie_panel()}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {tier_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
