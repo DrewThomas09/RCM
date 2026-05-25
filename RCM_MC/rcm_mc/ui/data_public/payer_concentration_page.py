@@ -212,6 +212,68 @@ def _payer_share_svg(payers) -> str:
             f'<text x="10" y="15" fill="{text_dim}" font-size="10" font-family="Inter,sans-serif">Payer Revenue Share (red = >20% single-payer concentration risk)</text></svg>')
 
 
+def _ma_payer_landscape_panel() -> str:
+    """Real CMS Medicare Advantage enrollment anchor — the actual
+    payer-market backdrop a healthcare deal underwrites into. MA plans
+    are the fastest-growing payer channel; their geographic penetration
+    is real public CMS data. The deal-specific payer roster below is
+    illustrative — this panel grounds the payer thesis in observed
+    enrollment, not the seed corpus."""
+    from rcm_mc.data import ma_data as _ma
+    summ = _ma.ma_summary()
+    if not summ.get("total_ma_enrollment"):
+        return ""
+    top = _ma.top_ma_states(6)
+
+    border = P["border"]; tprim = P["text"]; tdim = P["text_dim"]; acc = P["accent"]
+    mx = max((int(s["ma_enrollment"]) for s in top), default=1) or 1
+    rows = "".join(
+        f'<tr>'
+        f'<td style="padding:3px 8px;font-family:JetBrains Mono,monospace;font-size:11px;color:{tprim}">{_html.escape(str(s["state"]))}</td>'
+        f'<td style="padding:3px 8px;width:45%">'
+        f'<svg width="100%" height="9" preserveAspectRatio="none" viewBox="0 0 100 9">'
+        f'<rect x="0" y="1" width="{int(int(s["ma_enrollment"])/mx*100)}" height="7" fill="{acc}" opacity="0.75"/></svg></td>'
+        f'<td style="padding:3px 8px;text-align:right;font-family:JetBrains Mono,monospace;font-size:11px;'
+        f'font-variant-numeric:tabular-nums;color:{tprim}">{int(s["ma_enrollment"]):,}</td>'
+        f'<td style="padding:3px 8px;text-align:right;font-family:JetBrains Mono,monospace;font-size:10px;'
+        f'font-variant-numeric:tabular-nums;color:{tdim}">{float(s["dual_eligible_pct"])*100:.0f}% dual</td>'
+        f'</tr>'
+        for s in top
+    )
+    total = int(summ.get("total_ma_enrollment", 0))
+    yr = summ.get("data_year", "")
+    dual = float(summ.get("median_dual_pct", 0)) * 100
+    n_states = int(summ.get("states", 0))
+    return f'''
+<div style="background:{P["panel"]};border:1px solid {border};border-left:3px solid {acc};
+  padding:14px 16px;margin-bottom:16px">
+  <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{tdim};
+    text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">
+    Real CMS Medicare Advantage payer landscape
+    <span style="color:{acc};font-weight:600"> · LIVE</span>
+  </div>
+  <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start">
+    <div style="white-space:nowrap">
+      <div style="font-family:JetBrains Mono,monospace;font-size:20px;color:{tprim};
+        font-variant-numeric:tabular-nums">{total:,}</div>
+      <div style="font-size:10px;color:{tdim};margin-bottom:8px">MA enrollees, {n_states} states ({yr})</div>
+      <div style="font-family:JetBrains Mono,monospace;font-size:14px;color:{tprim};
+        font-variant-numeric:tabular-nums">{dual:.1f}%</div>
+      <div style="font-size:10px;color:{tdim}">median dual-eligible share</div>
+    </div>
+    <div>
+      <div style="font-size:9px;color:{P["text_faint"]};margin-bottom:4px">LARGEST MA MARKETS BY ENROLLMENT</div>
+      <table style="width:100%;border-collapse:collapse">{rows}</table>
+    </div>
+  </div>
+  <div style="margin-top:8px;font-size:10px;color:{P["text_faint"]}">
+    CMS MA geographic enrollment ({yr}). Real payer-market backdrop &mdash;
+    the deal-specific payer roster, denials, and renewal calendar below are
+    illustrative; use this panel as the observed MA-market reality.
+  </div>
+</div>'''
+
+
 def render_payer_concentration(params: dict = None) -> str:
     params = params or {}
 
@@ -303,6 +365,7 @@ def render_payer_concentration(params: dict = None) -> str:
 <div class="ck-page-wrap">
   {page_title}
   {ck_illustrative_note("figures")}
+  {_ma_payer_landscape_panel()}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
