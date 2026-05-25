@@ -265,9 +265,9 @@
     {
       "route": "/concentration-risk",
       "file": "concentration_risk_page.py",
-      "tier": "red",
+      "tier": "navy",
       "has_disclosure": true,
-      "imports_real_loader": false,
+      "imports_real_loader": true,
       "uses_seed_corpus": true,
       "renders_data": true,
       "flag": ""

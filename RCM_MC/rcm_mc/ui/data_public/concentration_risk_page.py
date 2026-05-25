@@ -112,6 +112,88 @@ def _dim_card(dim) -> str:
 </div>"""
 
 
+def _chow_consolidation_panel() -> str:
+    """Real CMS change-of-ownership (CHOW) anchor — actual provider
+    consolidation in SNF + hospital, the live market force behind
+    rising concentration. The corpus HHI dimensions below are
+    illustrative; this panel is real public CMS ownership-change data,
+    so the page anchors its concentration thesis in observable
+    market behaviour rather than the seed corpus alone."""
+    from rcm_mc.data import snf_chow as _c
+    snf = _c.chow_summary()
+    if not snf.get("total_chows"):
+        return ""
+    hosp = _c.hospital_chow_summary()
+    top = _c.top_chow_states(5)
+    by_year = _c.chow_by_year()
+
+    border = P["border"]
+    tprim = P["text"]
+    tdim = P["text_dim"]
+    acc = P["accent"]
+
+    top_cells = "".join(
+        f'<span style="display:inline-block;margin-right:10px;font-family:{_MONO};'
+        f'font-size:11px;color:{tprim}">{html.escape(str(r["state"]))} '
+        f'<span style="color:{acc};font-variant-numeric:tabular-nums">{int(r["chow_count"]):,}</span></span>'
+        for r in top
+    )
+    # compact year sparkline of CHOW counts (full years only)
+    yrs = [r for r in by_year if int(r["year"]) < snf.get("year_max", 0)] or by_year
+    spark = ""
+    if yrs:
+        mx = max(int(r["chow_count"]) for r in yrs) or 1
+        bars = "".join(
+            f'<rect x="{i*14}" y="{30-int(int(r["chow_count"])/mx*28)}" width="10" '
+            f'height="{int(int(r["chow_count"])/mx*28)}" fill="{acc}" opacity="0.75"/>'
+            for i, r in enumerate(yrs)
+        )
+        labels = "".join(
+            f'<text x="{i*14+5}" y="40" text-anchor="middle" font-size="6" '
+            f'fill="{P["text_faint"]}" font-family="{_MONO}">{str(r["year"])[2:]}</text>'
+            for i, r in enumerate(yrs)
+        )
+        spark = f'<svg width="{len(yrs)*14}" height="42">{bars}{labels}</svg>'
+
+    snf_n = int(snf.get("total_chows", 0))
+    hosp_n = int(hosp.get("total_chows", 0))
+    y0, y1 = snf.get("year_min"), snf.get("year_max")
+
+    return f'''
+<div style="background:{P["panel"]};border:1px solid {border};border-left:3px solid {acc};
+  padding:12px;margin-bottom:16px">
+  <div style="font-family:{_MONO};font-size:10px;color:{tdim};
+    text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">
+    Real CMS consolidation backdrop &mdash; change-of-ownership
+    <span style="color:{acc};font-weight:600"> · LIVE</span>
+  </div>
+  <div style="display:grid;grid-template-columns:auto auto 1fr;gap:18px;align-items:start">
+    <div>
+      <div style="font-family:{_MONO};font-size:20px;color:{tprim};
+        font-variant-numeric:tabular-nums">{snf_n:,}</div>
+      <div style="font-size:10px;color:{tdim}">SNF ownership changes<br>{y0}&ndash;{y1}</div>
+    </div>
+    <div>
+      <div style="font-family:{_MONO};font-size:20px;color:{tprim};
+        font-variant-numeric:tabular-nums">{hosp_n:,}</div>
+      <div style="font-size:10px;color:{tdim}">Hospital ownership changes<br>{y0}&ndash;{y1}</div>
+    </div>
+    <div>
+      <div style="font-size:9px;color:{P["text_faint"]};font-family:{_SANS};margin-bottom:2px">SNF CHOWs BY YEAR</div>
+      {spark}
+    </div>
+  </div>
+  <div style="margin-top:8px;font-size:10px;color:{tdim}">
+    <span style="color:{P["text_faint"]}">Top SNF CHOW states:</span> {top_cells}
+  </div>
+  <div style="margin-top:6px;font-size:10px;color:{P["text_faint"]}">
+    CMS public ownership/CHOW files. Real market consolidation &mdash;
+    the corpus HHI dimensions below are illustrative; use them as the
+    structural lens, this panel as the observed-market reality.
+  </div>
+</div>'''
+
+
 def render_concentration_risk() -> str:
     from rcm_mc.data_public.concentration_analytics import compute_concentration
 
@@ -173,6 +255,7 @@ def render_concentration_risk() -> str:
     body = f"""
 <div style="padding:16px 20px;max-width:1200px">
   {page_title}
+  {_chow_consolidation_panel()}
   {kpi_strip}
   {hhi_legend}
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
