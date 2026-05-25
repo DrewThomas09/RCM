@@ -391,8 +391,9 @@ def render_hold_optimizer(params: Dict[str, str]) -> str:
 }
 """
 
+    from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
     return chartis_shell(
-        body,
+        _ckn("hold-optimizer model (illustrative defaults; computes off your inputs)") + body,
         title="Hold Period Optimizer",
         active_nav="/hold-optimizer",
         subtitle="Corpus-calibrated optimal hold period from peer deal distribution",

@@ -295,8 +295,9 @@ def render_portfolio_sim(params: Dict[str, str]) -> str:
 .ck-link:hover { text-decoration:underline; }
 """
 
+    from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
     return chartis_shell(
-        body,
+        _ckn("portfolio-sim model (illustrative defaults; computes off your inputs)") + body,
         title="Portfolio Scenario Simulator",
         active_nav="/portfolio-sim",
         subtitle="Stress-test custom portfolio composition against 5 macro scenarios",

@@ -257,8 +257,9 @@ def render_portfolio_optimizer(sectors: Optional[List[str]] = None) -> str:
 
     body = kpis + form_html + sec_hhi + hhi_p + sec_weights + weight_panels
 
+    from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
     return chartis_shell(
-        body,
+        _ckn("portfolio-optimizer model (illustrative defaults; computes off your inputs)") + body,
         title="Portfolio Construction",
         active_nav="/portfolio-optimizer",
         subtitle=(

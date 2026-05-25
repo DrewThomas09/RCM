@@ -230,7 +230,8 @@ def render_tax_structure_analyzer(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Tax Structure", active_nav="/tax-structure-analyzer",
+    from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
+    return chartis_shell(_ckn("tax-structure model (illustrative defaults; computes off your inputs)") + body, "Tax Structure", active_nav="/tax-structure-analyzer",
         editorial_intro={
             "eyebrow": "TAX STRUCTURE ANALYZER",
             "headline": "What the tax structure analyzer page reveals on this deal.",

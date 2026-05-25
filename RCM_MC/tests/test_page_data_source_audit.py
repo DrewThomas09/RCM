@@ -19,12 +19,11 @@ _ROOT = Path(__file__).resolve().parent.parent
 # This set may only SHRINK. Remove entries as pages get a source/illustrative/
 # data-required label. Do NOT add to it without an explicit honest reason.
 _KNOWN_BACKLOG = {
-    # GREEN real/admin pages (not synthetic — lower-priority source headers):
+    # GREEN real/admin pages (not synthetic — real-data browsers / admin /
+    # IC-memo generators operating on real deal/CMS data). Lowest priority;
+    # carry no synthetic-data risk. Adding an explicit source header zeroes this.
     "/cms-data-browser", "/cms-sources", "/data-sources-admin", "/deal-search",
     "/ic-memo", "/ic-memo-generator", "/module-index",
-    # NAVY calculators still needing a ck_source_purpose header:
-    "/entry-multiple", "/exit-timing", "/hold-optimizer", "/portfolio-optimizer",
-    "/portfolio-sim", "/scenario-mc", "/tax-structure-analyzer", "/underwriting",
 }
 
 

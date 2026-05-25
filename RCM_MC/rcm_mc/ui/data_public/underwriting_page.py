@@ -397,8 +397,9 @@ def render_underwriting(
         + (ck_section_header("UNDERWRITING RESULTS", f"EV ${ev:.0f}M · EBITDA ${eb:.0f}M · {eq*100:.0f}% equity · {cagr*100:.0f}% CAGR · {hold:.1f}yr hold · {exit_mult:.1f}× exit") + results_html + benchmark_html)
     )
 
+    from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
     return chartis_shell(
-        body,
+        _ckn("underwriting model (illustrative defaults; computes off your inputs)") + body,
         title="Deal Underwriting",
         active_nav="/underwriting",
         subtitle=(
