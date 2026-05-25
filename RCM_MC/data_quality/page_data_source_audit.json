@@ -1,0 +1,1746 @@
+{
+  "summary": {
+    "pages": 173,
+    "with_disclosure": 138,
+    "with_real_loader": 19,
+    "flagged_no_disclosure": 35,
+    "by_tier": {
+      "green": 27,
+      "navy": 50,
+      "yellow": 37,
+      "red": 59
+    }
+  },
+  "pages": [
+    {
+      "route": "/aco-economics",
+      "file": "aco_economics_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/acq-timing",
+      "file": "acq_timing_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/ai-operating-model",
+      "file": "ai_operating_model_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/antitrust-screener",
+      "file": "antitrust_screener_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/backtest",
+      "file": "backtest_page.py",
+      "tier": "yellow",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/base-rates",
+      "file": "base_rates_page.py",
+      "tier": "yellow",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/biosimilars-opp",
+      "file": "biosimilars_opp_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/board-governance",
+      "file": "board_governance_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/bolton-analyzer",
+      "file": "bolton_analyzer_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/cap-structure",
+      "file": "cap_structure_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/capex-budget",
+      "file": "capex_budget_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/capital-call-tracker",
+      "file": "capital_call_tracker_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/capital-efficiency",
+      "file": "capital_efficiency_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/capital-pacing",
+      "file": "capital_pacing_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/capital-schedule",
+      "file": "capital_schedule_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/cin-analyzer",
+      "file": "cin_analyzer_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/clinical-ai-tracker",
+      "file": "clinical_ai_tracker_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/clinical-outcomes",
+      "file": "clinical_outcomes_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": true,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/cms-apm-tracker",
+      "file": "cms_apm_tracker_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": true,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/cms-data-browser",
+      "file": "cms_data_browser_page.py",
+      "tier": "green",
+      "has_disclosure": false,
+      "imports_real_loader": true,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/cms-sources",
+      "file": "cms_sources_page.py",
+      "tier": "green",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/coinvest-pipeline",
+      "file": "coinvest_pipeline_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/comparables",
+      "file": "comparables_page.py",
+      "tier": "yellow",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/competitive-intel",
+      "file": "competitive_intel_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/compliance-attestation",
+      "file": "compliance_attestation_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/concentration-risk",
+      "file": "concentration_risk_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/continuation-vehicle",
+      "file": "continuation_vehicle_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/corpus-coverage",
+      "file": "corpus_coverage_page.py",
+      "tier": "yellow",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/corpus-dashboard",
+      "file": "corpus_dashboard_page.py",
+      "tier": "yellow",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/cost-structure",
+      "file": "cost_structure_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": true,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/covenant-headroom",
+      "file": "covenant_headroom_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/covenant-monitor",
+      "file": "covenant_monitor_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/cyber-risk",
+      "file": "cyber_risk_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/data-sources-admin",
+      "file": "data_sources_admin_page.py",
+      "tier": "green",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/deal-flow-heatmap",
+      "file": "deal_flow_heatmap_page.py",
+      "tier": "yellow",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/deal-origination",
+      "file": "deal_origination_page.py",
+      "tier": "yellow",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/deal-pipeline",
+      "file": "deal_pipeline_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/deal-postmortem",
+      "file": "deal_postmortem_page.py",
+      "tier": "yellow",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/deal-quality",
+      "file": "deal_quality_page.py",
+      "tier": "yellow",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/deal-risk-scores",
+      "file": "deal_risk_scores_page.py",
+      "tier": "yellow",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/deal-search",
+      "file": "deal_search_page.py",
+      "tier": "green",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/deal-sourcing",
+      "file": "deal_sourcing_page.py",
+      "tier": "yellow",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/deals-library",
+      "file": "deals_library_page.py",
+      "tier": "yellow",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/debt-financing",
+      "file": "debt_financing_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/debt-service",
+      "file": "debt_service_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": true,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/demand-forecast",
+      "file": "demand_forecast_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/denovo-expansion",
+      "file": "denovo_expansion_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/digital-front-door",
+      "file": "digital_front_door_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/diligence-checklist",
+      "file": "diligence_checklist_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/diligence-vendors",
+      "file": "diligence_vendors_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/direct-employer",
+      "file": "direct_employer_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/direct-lending",
+      "file": "direct_lending_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/dividend-recap",
+      "file": "dividend_recap_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/dpi-tracker",
+      "file": "dpi_tracker_page.py",
+      "tier": "yellow",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/drug-pricing-340b",
+      "file": "drug_pricing_340b_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/drug-shortage",
+      "file": "drug_shortage_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": true,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/earnout",
+      "file": "earnout_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/entry-multiple",
+      "file": "entry_multiple_page.py",
+      "tier": "navy",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/escrow-earnout",
+      "file": "escrow_earnout_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/esg-dashboard",
+      "file": "esg_dashboard_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/esg-impact",
+      "file": "esg_impact_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/exit-multiple",
+      "file": "exit_multiple_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/exit-readiness",
+      "file": "exit_readiness_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/exit-timing",
+      "file": "exit_timing_page.py",
+      "tier": "navy",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/find-comps",
+      "file": "find_comps_page.py",
+      "tier": "yellow",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/fraud-detection",
+      "file": "fraud_detection_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/fund-attribution",
+      "file": "fund_attribution_page.py",
+      "tier": "yellow",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/fundraising-tracker",
+      "file": "fundraising_tracker_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/geo-market",
+      "file": "geo_market_page.py",
+      "tier": "yellow",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/gp-benchmarking",
+      "file": "gp_benchmarking_page.py",
+      "tier": "yellow",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/gpo-supply-tracker",
+      "file": "gpo_supply_tracker_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/growth-runway",
+      "file": "growth_runway_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/hcit-platform",
+      "file": "hcit_platform_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/health-equity",
+      "file": "health_equity_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/hold-analysis",
+      "file": "hold_analysis_page.py",
+      "tier": "yellow",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/hold-optimizer",
+      "file": "hold_optimizer_page.py",
+      "tier": "navy",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/hospital-anchor",
+      "file": "hospital_anchor_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/ic-memo-generator",
+      "file": "ic_memo_generator_page.py",
+      "tier": "green",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/ic-memo",
+      "file": "ic_memo_page.py",
+      "tier": "green",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/industry",
+      "file": "industry_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": true,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/insurance-tracker",
+      "file": "insurance_tracker_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/irr-dispersion",
+      "file": "irr_dispersion_page.py",
+      "tier": "yellow",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/key-person",
+      "file": "key_person_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/lbo-stress",
+      "file": "lbo_stress_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/leverage-intel",
+      "file": "leverage_intel_page.py",
+      "tier": "yellow",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/litigation-tracker",
+      "file": "litigation_tracker_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/locum-tracker",
+      "file": "locum_tracker_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/lp-dashboard",
+      "file": "lp_dashboard_page.py",
+      "tier": "yellow",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/lp-reporting",
+      "file": "lp_reporting_page.py",
+      "tier": "yellow",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/ma-contracts",
+      "file": "ma_contracts_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": true,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/ma-star-tracker",
+      "file": "ma_star_tracker_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/market-geo",
+      "file": "market_geo_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": true,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/market-rates",
+      "file": "market_rates_page.py",
+      "tier": "yellow",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/medicaid-unwinding",
+      "file": "medicaid_unwinding_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/medical-realestate",
+      "file": "medical_realestate_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/mgmt-comp",
+      "file": "mgmt_comp_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/mgmt-fee-tracker",
+      "file": "mgmt_fee_tracker_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/module-index",
+      "file": "module_index_page.py",
+      "tier": "green",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/msa-concentration",
+      "file": "msa_concentration_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/multiple-decomp",
+      "file": "multiple_decomp_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/nav-loan-tracker",
+      "file": "nav_loan_tracker_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/nsa-tracker",
+      "file": "nsa_tracker_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/operating-partners",
+      "file": "operating_partners_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/partner-economics",
+      "file": "partner_economics_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/patient-experience",
+      "file": "patient_experience_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/payer-concentration",
+      "file": "payer_concentration_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/payer-contracts",
+      "file": "payer_contracts_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/payer-intel",
+      "file": "payer_intel_page.py",
+      "tier": "yellow",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/payer-rate-trends",
+      "file": "payer_rate_trends_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": true,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/payer-shift",
+      "file": "payer_shift_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": true,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/payer-stress",
+      "file": "payer_stress_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": true,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/peer-transactions",
+      "file": "peer_transactions_page.py",
+      "tier": "yellow",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/peer-valuation",
+      "file": "peer_valuation_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/phys-comp-plan",
+      "file": "phys_comp_plan_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/physician-labor",
+      "file": "physician_labor_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/physician-productivity",
+      "file": "physician_productivity_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": true,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/platform-maturity",
+      "file": "platform_maturity_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/pmi-integration",
+      "file": "pmi_integration_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/pmi-playbook",
+      "file": "pmi_playbook_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/portfolio-optimizer",
+      "file": "portfolio_optimizer_page.py",
+      "tier": "navy",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/portfolio-sim",
+      "file": "portfolio_sim_page.py",
+      "tier": "navy",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/provider-network",
+      "file": "provider_network_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/provider-retention",
+      "file": "provider_retention_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": true,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/qoe-analyzer",
+      "file": "qoe_analyzer_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/quality-scorecard",
+      "file": "quality_scorecard_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": true,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/rcm-red-flags",
+      "file": "rcm_red_flags_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/real-estate",
+      "file": "real_estate_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/redflag-scanner",
+      "file": "redflag_scanner_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/ref-pricing",
+      "file": "ref_pricing_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": true,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/refi-optimizer",
+      "file": "refi_optimizer_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/regulatory-risk",
+      "file": "regulatory_risk_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": true,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/reinvestment",
+      "file": "reinvestment_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/reit-analyzer",
+      "file": "reit_analyzer_page.py",
+      "tier": "yellow",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/return-attribution",
+      "file": "return_attribution_page.py",
+      "tier": "yellow",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/revenue-leakage",
+      "file": "revenue_leakage_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/risk-adjustment",
+      "file": "risk_adjustment_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": true,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/risk-matrix",
+      "file": "risk_matrix_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/rollup-economics",
+      "file": "rollup_economics_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/rw-insurance",
+      "file": "rw_insurance_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/scenario-mc",
+      "file": "scenario_mc_page.py",
+      "tier": "navy",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/secondaries-tracker",
+      "file": "secondaries_tracker_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/sector-correlation",
+      "file": "sector_correlation_page.py",
+      "tier": "yellow",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/sector-intel",
+      "file": "sector_intel_page.py",
+      "tier": "yellow",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/sector-momentum",
+      "file": "sector_momentum_page.py",
+      "tier": "yellow",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/sellside-process",
+      "file": "sellside_process_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/size-intel",
+      "file": "size_intel_page.py",
+      "tier": "yellow",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/specialty-benchmarks",
+      "file": "specialty_benchmarks_page.py",
+      "tier": "yellow",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/sponsor-heatmap",
+      "file": "sponsor_heatmap_page.py",
+      "tier": "yellow",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/sponsor-league",
+      "file": "sponsor_league_page.py",
+      "tier": "yellow",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/supply-chain",
+      "file": "supply_chain_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": true,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/tax-credits",
+      "file": "tax_credits_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/tax-structure-analyzer",
+      "file": "tax_structure_analyzer_page.py",
+      "tier": "navy",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/tax-structure",
+      "file": "tax_structure_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/tech-stack",
+      "file": "tech_stack_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/telehealth-econ",
+      "file": "telehealth_econ_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/tracker-340b",
+      "file": "tracker_340b_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/transition-services",
+      "file": "transition_services_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/treasury-tracker",
+      "file": "treasury_tracker_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/trial-site-econ",
+      "file": "trial_site_econ_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/underwriting-model",
+      "file": "underwriting_model_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/underwriting",
+      "file": "underwriting_page.py",
+      "tier": "navy",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/unit-economics",
+      "file": "unit_economics_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/value-backtester",
+      "file": "value_backtester_page.py",
+      "tier": "yellow",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/value-creation",
+      "file": "value_creation_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/value-creation-plan",
+      "file": "value_creation_plan_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/vcp-tracker",
+      "file": "vcp_tracker_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/vdr-tracker",
+      "file": "vdr_tracker_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/vintage-cohorts",
+      "file": "vintage_cohorts_page.py",
+      "tier": "yellow",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/vintage-perf",
+      "file": "vintage_perf_page.py",
+      "tier": "yellow",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
+    },
+    {
+      "route": "/workforce-planning",
+      "file": "workforce_planning_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/workforce-retention",
+      "file": "workforce_retention_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/working-capital",
+      "file": "working_capital_page.py",
+      "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/zbb-tracker",
+      "file": "zbb_tracker_page.py",
+      "tier": "red",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    }
+  ]
+}
