@@ -74,4 +74,30 @@ def chow_sources() -> List[Dict[str, str]]:
     if not reg.exists():
         return []
     df = pd.read_csv(reg)
-    return df[df["source_id"].astype(str) == "cms_snf_chow"].to_dict("records")
+    return df[df["source_id"].astype(str).isin(["cms_snf_chow", "cms_hospital_chow"])].to_dict("records")
+
+
+# ── Hospital Change of Ownership (parallel CMS dataset) ─────────────────────
+_HDIR = Path(__file__).resolve().parent / "vendor" / "hospital_chow"
+
+
+@functools.lru_cache(maxsize=None)
+def _hospital_state_year() -> pd.DataFrame:
+    p = _HDIR / "hospital_chow_state_year.csv"
+    return pd.read_csv(p, dtype={"state": str}) if p.exists() else pd.DataFrame()
+
+
+def hospital_chow_summary() -> Dict[str, Any]:
+    rp = _HDIR / "hospital_chow_report.json"
+    snap = json.loads(rp.read_text()) if rp.exists() else {}
+    return {"total_chows": snap.get("total_chows", 0),
+            "states": snap.get("states", 0),
+            "year_min": snap.get("year_min"), "year_max": snap.get("year_max")}
+
+
+def total_hospital_chows_for_state(state: str) -> int:
+    df = _hospital_state_year()
+    if not len(df) or not state:
+        return 0
+    st = str(state).strip().upper()
+    return int(df[df["state"] == st]["chow_count"].sum())
