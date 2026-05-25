@@ -5,17 +5,16 @@ Data-honesty status for every PEdesk surface. Source of truth: `rcm_mc/diligence
 | Tier | Circle | Meaning | Count |
 |---|---|---|---|
 | GREEN | 🟢 | Real CMS/public or your own deal/system data | 145 |
-| NAVY | 🔵 | Diligence calculator — computes off your inputs | 83 |
+| NAVY | 🔵 | Diligence calculator — computes off your inputs | 91 |
 | YELLOW | 🟡 | Realistic figures on the illustrative seed corpus | 56 |
-| RED | 🔴 | Entirely synthetic / hardcoded values | 51 |
+| RED | 🔴 | Entirely synthetic / hardcoded values | 43 |
 
 
-## RED 🔴 — entirely synthetic (highest priority to fix)  (51)
+## RED 🔴 — entirely synthetic (highest priority to fix)  (43)
 
 | Route | Status |
 |---|---|
 | `/ai-operating-model` | 🔴 Synthetic / hardcoded data |
-| `/biosimilars` | 🔴 Synthetic / hardcoded data |
 | `/board-governance` | 🔴 Synthetic / hardcoded data |
 | `/capex-budget` | 🔴 Synthetic / hardcoded data |
 | `/clinical-ai` | 🔴 Synthetic / hardcoded data |
@@ -25,15 +24,10 @@ Data-honesty status for every PEdesk surface. Source of truth: `rcm_mc/diligence
 | `/cyber-risk` | 🔴 Synthetic / hardcoded data |
 | `/digital-front-door` | 🔴 Synthetic / hardcoded data |
 | `/diligence-vendors` | 🔴 Synthetic / hardcoded data |
-| `/diligence/physician-attrition` | 🔴 Synthetic / hardcoded data |
 | `/diligence/physician-eu` | 🔴 Synthetic / hardcoded data |
 | `/diligence/risk-workbench` | 🔴 Synthetic / hardcoded data |
 | `/direct-employer` | 🔴 Synthetic / hardcoded data |
 | `/direct-lending` | 🔴 Synthetic / hardcoded data |
-| `/drug-pricing-340b` | 🔴 Synthetic / hardcoded data |
-| `/esg-dashboard` | 🔴 Synthetic / hardcoded data |
-| `/esg-impact` | 🔴 Synthetic / hardcoded data |
-| `/fraud-detection` | 🔴 Synthetic / hardcoded data |
 | `/fundraising` | 🔴 Synthetic / hardcoded data |
 | `/hcit-platform` | 🔴 Synthetic / hardcoded data |
 | `/insurance-tracker` | 🔴 Synthetic / hardcoded data |
@@ -58,10 +52,8 @@ Data-honesty status for every PEdesk surface. Source of truth: `rcm_mc/diligence
 | `/secondaries-tracker` | 🔴 Synthetic / hardcoded data |
 | `/sellside-process` | 🔴 Synthetic / hardcoded data |
 | `/tech-stack` | 🔴 Synthetic / hardcoded data |
-| `/tracker-340b` | 🔴 Synthetic / hardcoded data |
 | `/transition-services` | 🔴 Synthetic / hardcoded data |
 | `/treasury` | 🔴 Synthetic / hardcoded data |
-| `/trial-site-econ` | 🔴 Synthetic / hardcoded data |
 | `/vcp-tracker` | 🔴 Synthetic / hardcoded data |
 | `/vdr-tracker` | 🔴 Synthetic / hardcoded data |
 | `/zbb-tracker` | 🔴 Synthetic / hardcoded data |
@@ -127,13 +119,14 @@ Data-honesty status for every PEdesk surface. Source of truth: `rcm_mc/diligence
 | `/vintage-cohorts` | 🟡 Illustrative seed-corpus data |
 | `/vintage-perf` | 🟡 Illustrative seed-corpus data |
 
-## NAVY 🔵 — diligence calculator (computes off your inputs)  (83)
+## NAVY 🔵 — diligence calculator (computes off your inputs)  (91)
 
 | Route | Status |
 |---|---|
 | `/aco-economics` | 🔵 Diligence calculator (your inputs) |
 | `/acq-timing` | 🔵 Diligence calculator (your inputs) |
 | `/antitrust-screener` | 🔵 Diligence calculator (your inputs) |
+| `/biosimilars` | 🔵 Diligence calculator (your inputs) |
 | `/bolton-analyzer` | 🔵 Diligence calculator (your inputs) |
 | `/cap-structure` | 🔵 Diligence calculator (your inputs) |
 | `/capital-call` | 🔵 Diligence calculator (your inputs) |
@@ -156,15 +149,20 @@ Data-honesty status for every PEdesk surface. Source of truth: `rcm_mc/diligence
 | `/diligence/deal-mc` | 🔵 Diligence calculator (your inputs) |
 | `/diligence/denial-prediction` | 🔵 Diligence calculator (your inputs) |
 | `/diligence/exit-timing` | 🔵 Diligence calculator (your inputs) |
+| `/diligence/physician-attrition` | 🔵 Diligence calculator (your inputs) |
 | `/diligence/qoe-memo` | 🔵 Diligence calculator (your inputs) |
 | `/diligence/value` | 🔵 Diligence calculator (your inputs) |
 | `/dividend-recap` | 🔵 Diligence calculator (your inputs) |
+| `/drug-pricing-340b` | 🔵 Diligence calculator (your inputs) |
 | `/earnout` | 🔵 Diligence calculator (your inputs) |
 | `/entry-multiple` | 🔵 Diligence calculator (your inputs) |
 | `/escrow-earnout` | 🔵 Diligence calculator (your inputs) |
+| `/esg-dashboard` | 🔵 Diligence calculator (your inputs) |
+| `/esg-impact` | 🔵 Diligence calculator (your inputs) |
 | `/exit-multiple` | 🔵 Diligence calculator (your inputs) |
 | `/exit-readiness` | 🔵 Diligence calculator (your inputs) |
 | `/exit-timing` | 🔵 Diligence calculator (your inputs) |
+| `/fraud-detection` | 🔵 Diligence calculator (your inputs) |
 | `/gpo-supply` | 🔵 Diligence calculator (your inputs) |
 | `/growth-runway` | 🔵 Diligence calculator (your inputs) |
 | `/health-equity` | 🔵 Diligence calculator (your inputs) |
@@ -206,6 +204,8 @@ Data-honesty status for every PEdesk surface. Source of truth: `rcm_mc/diligence
 | `/tax-structure` | 🔵 Diligence calculator (your inputs) |
 | `/tax-structure-analyzer` | 🔵 Diligence calculator (your inputs) |
 | `/telehealth-econ` | 🔵 Diligence calculator (your inputs) |
+| `/tracker-340b` | 🔵 Diligence calculator (your inputs) |
+| `/trial-site-econ` | 🔵 Diligence calculator (your inputs) |
 | `/underwriting` | 🔵 Diligence calculator (your inputs) |
 | `/underwriting-model` | 🔵 Diligence calculator (your inputs) |
 | `/unit-economics` | 🔵 Diligence calculator (your inputs) |
