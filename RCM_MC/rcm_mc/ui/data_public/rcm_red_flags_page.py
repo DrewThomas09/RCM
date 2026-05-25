@@ -28,7 +28,7 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 from rcm_mc.ui._chartis_kit import (
     P, _MONO, _SANS, chartis_shell, ck_fmt_num, ck_kpi_block,
-    ck_provenance_tooltip, ck_section_header,
+    ck_provenance_tooltip, ck_section_header, ck_illustrative_note,
 )
 
 
@@ -390,7 +390,7 @@ def render_rcm_red_flags(params: Dict[str, str]) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "RCM Red Flag Detector", active_nav="/rcm-red-flags",
+    return chartis_shell(ck_illustrative_note("red-flag figures") + body, "RCM Red Flag Detector", active_nav="/rcm-red-flags",
                          subtitle=f"{len(_RISK_FACTORS)} risk factors — {len(corpus):,} deal corpus",
         editorial_intro={
             "eyebrow": "RCM RED FLAG DETECTOR",

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_fmt_moic, ck_kpi_block, ck_provenance_tooltip, ck_value_anchor,
+    ck_illustrative_note,
 )
 
 
@@ -369,7 +370,7 @@ def render_provider_network(params: dict) -> str:
 '''
 
     return chartis_shell(
-        content,
+        ck_illustrative_note("network figures") + content,
         title=f"Provider Network Intelligence — {sector}",
         active_nav="/provider-network",
         editorial_intro={
