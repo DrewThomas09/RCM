@@ -1,0 +1,39 @@
+{
+  "release": "2025",
+  "dataset_id": "i46a-9kgh",
+  "source": "CDC PLACES: County Data (GIS Friendly Format)",
+  "extract_date": "2026-05-25",
+  "counties": 3143,
+  "states": 51,
+  "total_population": 334914852,
+  "national_prevalence_pct": {
+    "uninsured_18_64": 11.06,
+    "fair_poor_health": 19.77,
+    "poor_mental_health": 16.47,
+    "poor_physical_health": 13.29,
+    "routine_checkup": 76.82,
+    "food_insecurity": 15.88,
+    "snap_participation": 12.78,
+    "utility_shutoff_threat": 8.05,
+    "lack_transportation": 8.46,
+    "lack_emotional_support": 24.59,
+    "depression": 21.58,
+    "diabetes": 12.06,
+    "obesity": 33.28
+  },
+  "measures": {
+    "uninsured_18_64": "access2_crudeprev",
+    "fair_poor_health": "ghlth_crudeprev",
+    "poor_mental_health": "mhlth_crudeprev",
+    "poor_physical_health": "phlth_crudeprev",
+    "routine_checkup": "checkup_crudeprev",
+    "food_insecurity": "foodinsecu_crudeprev",
+    "snap_participation": "foodstamp_crudeprev",
+    "utility_shutoff_threat": "shututility_crudeprev",
+    "lack_transportation": "lacktrpt_crudeprev",
+    "lack_emotional_support": "emotionspt_crudeprev",
+    "depression": "depression_crudeprev",
+    "diabetes": "diabetes_crudeprev",
+    "obesity": "obesity_crudeprev"
+  }
+}
