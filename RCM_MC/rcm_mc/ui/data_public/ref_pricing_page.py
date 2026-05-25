@@ -6,7 +6,9 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_value_anchor
+import html as _html
+
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_value_anchor, ck_source_purpose
 
 
 def _rate_ladder_svg(cpt_rows) -> str:
@@ -213,6 +215,71 @@ def _scenarios_table(scenarios) -> str:
     )
 
 
+def _colorado_rbp_section(params: dict) -> str:
+    """REAL Colorado provider reimbursement-vs-Medicare from CIVHC RBP data
+    (public). LIVE-labeled, distinct from the illustrative CPT/contract model
+    below. Optional ?org= name filter, ?claim_type= filter."""
+    try:
+        from rcm_mc.data import payer_data as _pd
+        df = _pd.reference_pricing_summary(
+            claim_type=params.get("claim_type", "All"))
+    except Exception:
+        return ""
+    if df is None or not len(df):
+        return ""
+    org_q = (params.get("org") or "").strip().lower()
+    if org_q:
+        df = df[df["organization_name"].astype(str).str.lower().str.contains(org_q)]
+    n_prov = int(df["organization_name"].nunique())
+    med = df["hospital_pct_medicare"].dropna()
+    statewide_median = float(med.median()) if len(med) else None
+
+    hdr = ck_source_purpose(
+        purpose=("Benchmark a Colorado provider's commercial reimbursement "
+                 "against Medicare (hospital % of Medicare) using real CIVHC "
+                 "all-payer data — provider-level, 2021–2024."),
+        universe="cms", confidence="derived",
+        source="CIVHC / CO APCD — Medicare Reference-Based Pricing (public, FY2026)",
+        next_action="Search a provider name to compare its % of Medicare")
+
+    rows = "".join(
+        f'<tr><td style="padding:4px 8px">{_html.escape(str(r.organization_name))}</td>'
+        f'<td style="padding:4px 8px">{_html.escape(str(r.claim_type))}</td>'
+        f'<td style="padding:4px 8px">{_html.escape(str(r.county))}</td>'
+        f'<td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums">'
+        f'{("%.2fx" % r.hospital_pct_medicare) if r.hospital_pct_medicare==r.hospital_pct_medicare else "—"}</td>'
+        f'<td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums">'
+        f'{int(r.claims):,}</td></tr>'
+        for r in df.head(40).itertuples())
+    med_txt = f"{statewide_median:.2f}x" if statewide_median is not None else "—"
+    form = (
+        f'<form method="get" action="/ref-pricing" style="margin:10px 0;display:flex;gap:8px">'
+        f'<input type="text" name="org" value="{_html.escape(params.get("org",""))}" '
+        f'placeholder="Search Colorado provider" style="padding:6px 9px;border:1px solid '
+        f'{P["border"]};border-radius:2px;min-width:260px;font-size:13px">'
+        f'<button type="submit" style="padding:7px 14px;background:{P["accent"]};color:#fff;'
+        f'border:none;border-radius:2px;font-size:12px;cursor:pointer">Search</button></form>')
+    return (
+        f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
+        f'border-left:3px solid {P["accent"]};padding:14px 16px;margin-bottom:18px">'
+        f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
+        f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:8px">'
+        f'Colorado provider reimbursement vs Medicare · LIVE (CIVHC)</div>'
+        f'{hdr}{form}'
+        f'<p style="font-size:12px;color:{P["text_dim"]};margin:4px 0 8px">'
+        f'<b style="color:{P["text"]}">{n_prov:,}</b> Colorado providers · statewide '
+        f'median <b style="color:{P["text"]}">{med_txt}</b> of Medicare · % of Medicare '
+        f'= commercial-to-Medicare reimbursement ratio (higher = more expensive vs Medicare).</p>'
+        f'<table style="width:100%;border-collapse:collapse;font-family:\'JetBrains Mono\',monospace;font-size:11px">'
+        f'<thead><tr style="border-bottom:1px solid {P["border"]};color:{P["text_dim"]}">'
+        f'<th style="padding:4px 8px;text-align:left">Provider</th>'
+        f'<th style="padding:4px 8px;text-align:left">Claim Type</th>'
+        f'<th style="padding:4px 8px;text-align:left">County</th>'
+        f'<th style="padding:4px 8px;text-align:right">% of Medicare</th>'
+        f'<th style="padding:4px 8px;text-align:right">Claims</th></tr></thead>'
+        f'<tbody>{rows}</tbody></table></div>')
+
+
 def render_ref_pricing(params: dict = None) -> str:
     params = params or {}
     sector = params.get("sector", "Physician Services") or "Physician Services"
@@ -306,7 +373,11 @@ def render_ref_pricing(params: dict = None) -> str:
 <div class="ck-page-wrap">
 
   {page_title}
-  {ck_illustrative_note("figures")}
+
+  {_colorado_rbp_section(params or {})}
+
+  <div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:{text_dim};margin:18px 0 4px">Illustrative rate-negotiation model (calculator below)</div>
+  {ck_illustrative_note("CPT rate ladders, contract calendar, and uplift scenarios")}
 
   {form}
 
