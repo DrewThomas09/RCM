@@ -237,6 +237,54 @@ def _payer_regime_shift_table(corpus: List[Dict]) -> str:
 </table></div>"""
 
 
+def _colorado_payer_trend_section() -> str:
+    """REAL Colorado payer cost trend (CIVHC) — total per-person-per-year spend
+    by payer × year, 2017-2021, with % change. LIVE; all-payer market cost
+    trajectory (not contracted rates), Colorado-specific."""
+    try:
+        from rcm_mc.data import payer_data as _pd
+        t = _pd.payer_cost_trend()
+    except Exception:
+        return ""
+    if t is None or not len(t):
+        return ""
+    years = [c for c in t.columns if str(c).isdigit()]
+    hdr = ck_source_purpose(
+        purpose=("Read real payer cost trajectories — how per-person-per-year "
+                 "spend has moved by payer type in Colorado (2017-2021)."),
+        universe="cms", confidence="derived",
+        source="CIVHC / CO APCD Cost of Care (all-payer, statewide)",
+        next_action="Compare a target's payer mix to these trajectories")
+    head = "".join(f'<th style="padding:4px 10px;text-align:right">{y}</th>' for y in years)
+    rows = []
+    for d in t.to_dict("records"):
+        cells = "".join(
+            f'<td style="padding:4px 10px;text-align:right;font-variant-numeric:tabular-nums">'
+            f'${d[y]:,.0f}</td>' for y in years)
+        pc = d.get("pct_change")
+        tone = (P["negative"] if (pc is not None and pc < 0) else P["positive"])
+        pc_txt = (f'<span style="color:{tone}">{pc:+.1f}%</span>'
+                  if pc is not None and pc == pc else "—")
+        rows.append(f'<tr><td style="padding:4px 10px">{html.escape(str(d["payer_type"]))}</td>'
+                    f'{cells}<td style="padding:4px 10px;text-align:right;'
+                    f'font-variant-numeric:tabular-nums">{pc_txt}</td></tr>')
+    return (
+        f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
+        f'border-left:3px solid {P["accent"]};padding:14px 16px;margin-bottom:16px">'
+        f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
+        f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:8px">'
+        f'Colorado payer cost trend (PPPY) · LIVE (CIVHC)</div>{hdr}'
+        f'<table style="width:100%;border-collapse:collapse;font-family:\'JetBrains Mono\',monospace;font-size:11px">'
+        f'<thead><tr style="border-bottom:1px solid {P["border"]};color:{P["text_dim"]}">'
+        f'<th style="padding:4px 10px;text-align:left">Payer</th>{head}'
+        f'<th style="padding:4px 10px;text-align:right">Δ 17→21</th></tr></thead>'
+        f'<tbody>{"".join(rows)}</tbody></table>'
+        f'<p style="font-size:11px;color:{P["text_dim"]};margin:8px 0 0">'
+        f'Real all-payer <b>market</b> per-person-per-year cost trajectory in '
+        f'Colorado — <b>not</b> contracted reimbursement rates and <b>not</b> '
+        f'provider-specific; do not generalize nationally.</p></div>')
+
+
 def render_payer_rate_trends() -> str:
     corpus = _load_corpus()
     with_payer = [d for d in corpus if isinstance(d.get("payer_mix"), dict)]
@@ -284,6 +332,7 @@ def render_payer_rate_trends() -> str:
 
     body = f"""
 <div style="padding:16px 20px;max-width:1200px">
+  {_colorado_payer_trend_section()}
   {kpi_strip}
 
   <div style="margin-bottom:20px;background:{P['panel_alt']};border:1px solid {P['border']};padding:12px">
@@ -308,9 +357,11 @@ def render_payer_rate_trends() -> str:
 </div>"""
 
     body = ck_source_purpose(
-        purpose="Read payer rate-trend direction for the market.",
-        universe="illustrative", source="Reference rate tables (hardcoded)",
-        next_action="Verify a real reference rate source") + body
+        purpose="Read payer rate-trend direction: real Colorado payer cost "
+                "trajectories (live) above; an illustrative corpus rate model below.",
+        universe="cms", confidence="derived",
+        source="CIVHC CO Cost of Care (live) + illustrative corpus regime model",
+        next_action="See the Colorado payer cost trend above") + body
     return chartis_shell(body, "Payer Rate Trends", active_nav="/payer-rate-trends",
                          subtitle=f"{len(with_payer)} deals with payer data",
         editorial_intro={

@@ -132,6 +132,29 @@ def apm_summary_by_model(year: str = "2024") -> pd.DataFrame:
     return df[keep].sort_values("pct_apm", ascending=False, na_position="last")
 
 
+def payer_cost_trend(region: str = "All") -> pd.DataFrame:
+    """Real Colorado payer cost trend: total per-person-per-year spend by payer
+    type × year (summed across claim types), with % change first→last year.
+    Excludes the 'All' year aggregate. One row per payer with year columns +
+    pct_change. Returns empty if data is absent."""
+    df = load_cost_of_care("total")
+    if not len(df):
+        return df
+    df = df[df["doi_region"].astype(str) == str(region)]
+    df = df[df["year"].astype(str) != "All"]
+    if not len(df):
+        return df.head(0)
+    grp = (df.groupby(["payer_type", "year"])["pppy"].sum()
+           .reset_index())
+    pivot = grp.pivot(index="payer_type", columns="year", values="pppy")
+    years = sorted(c for c in pivot.columns)
+    if len(years) >= 2:
+        first, last = years[0], years[-1]
+        pivot["pct_change"] = ((pivot[last] - pivot[first]) / pivot[first]) * 100
+    pivot = pivot.reset_index().rename_axis(None, axis=1)
+    return pivot
+
+
 def apm_adoption_by_payer(metric: str = "Total Medical Spending") -> pd.DataFrame:
     """Clean Colorado APM-adoption slice: %APM / %FFS by payer × year for one
     metric, fixed to the integrated-systems-included / value-based-included
