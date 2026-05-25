@@ -14,6 +14,8 @@ user/company data), **ILLUSTRATIVE** (calculator/prototype, not evidence).
 | CO Medicare RBP | CIVHC / CO APCD | Colorado | 2021–24 | `vendor/payer_data/reference_based_pricing.csv` | `data/payer_data.py` | `civhc_rbp_fy26` | Ref Pricing (LIVE); Payer Stress (CONTEXTUAL) | provider % of Medicare, claims, payer min/med/max | ~1% | provider-level (resolvable to CCN); CO-only | entity-resolve to CCN |
 | Deal Library (CapIQ) | Capital IQ (licensed) | US/Canada | latest | `data/vendor/deal_library/*` (git-ignored) | `data/deal_library.py` | — | Deal Library / sponsors / comps (LIVE); Find Comps (candidate) | company, sponsor, EV/EBITDA/rev (sparse), est. vertical | financials ~97% blank | licensed (not committed); company not transaction set | Transactions screen |
 | FDA drug shortages | openFDA (FDA) | US (national) | 2017–26 | `vendor/drug_data/fda_drug_shortages.csv` | `data/drug_shortage_data.py` | `openfda_drug_shortages` | Drug Shortage (LIVE section) | shortage status, therapeutic category, company, availability | availability ~31% | public domain (CC0); product-level, not provider-specific; build-time snapshot | provider/formulary join |
+| CMS MIPS clinician perf | CMS Provider Data Catalog | US (national) | 2023 | `vendor/mips/*.csv` (PII-free aggregates) | `data/mips_data.py` | `cms_mips_py2023` | Physician Productivity / Quality Scorecard / Clinical Outcomes (physician-sector benchmark) | MIPS final-score distribution by source, 5-band histogram, category sub-scores | scores missing excluded | public; **PII dropped at ingest**, aggregates only; distribution not a payment figure | TIN/NPI roster join |
+| CMS SNF enforcement | CMS Care Compare (NH) | US (national) | 2026 | `data/snf_quality.csv` | `data/snf.py` (`snf_enforcement_summary`) | (snf spine) | Regulatory Risk (nursing-sector benchmark) | % fined, median/total fine, payment-denial/penalty rates | fields missing excluded | public; sector base rate, not deal exposure | per-deal enforcement history |
 | Public company comps | `market_intel.public_comps` | US | — | (vendored) | `market_intel` | — | HCRIS X-Ray public comps (LIVE) | EV/EBITDA, multiples | — | curated public set | — |
 | Seed deal corpus | bundled illustrative | — | — | `data_public` `_SEED_DEALS`/`extended_seed` | `data_public.deals_corpus` | — | /library, sponsor-league, sector-intel (**ILLUSTRATIVE**, labeled) | synthetic deals | — | **illustrative seed data, not ingested** | — |
 
@@ -23,7 +25,7 @@ user/company data), **ILLUSTRATIVE** (calculator/prototype, not evidence).
 |---|---|---|---|
 | Hospitals | HCRIS + CO RBP/cost | HCRIS X-Ray, Ref Pricing, Cost Structure | per-service price transparency |
 | Home Health / Hospice / SNF / Dialysis / IRF / LTCH | CMS Care Compare (existing) | vertical profile pages | payer/cost by vertical |
-| Physician / specialty | — | Physician Productivity (DATA-REQUIRED) | NPPES supply, Part B utilization |
+| Physician / specialty | CMS MIPS quality distribution; HRSA shortage context | Physician Productivity / Quality Scorecard / Clinical Outcomes (NAVY calculators + real benchmark) | NPPES supply, Part B utilization, deal-specific TIN/NPI roster |
 | Dental / Behavioral / ASC | — | (illustrative) | public source TBD |
 
 ## Next datasets (see discovery backlog)
