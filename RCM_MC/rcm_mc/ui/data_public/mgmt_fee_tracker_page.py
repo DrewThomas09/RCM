@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_fmt_moic, ck_kpi_block, ck_provenance_tooltip, ck_value_anchor,
+    ck_illustrative_note,
 )
 
 
@@ -345,7 +346,7 @@ def render_mgmt_fee_tracker(params: dict) -> str:
 '''
 
     return chartis_shell(
-        content,
+        ck_illustrative_note("fee figures") + content,
         title="Management Fee Tracker",
         active_nav="/mgmt-fee-tracker",
         editorial_intro={

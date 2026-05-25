@@ -287,7 +287,7 @@ def _kpi_bar(pts: List[Tuple[float, float, str, str]]) -> str:
 
 
 def render_risk_matrix(sector_filter: str = "") -> str:
-    from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header
+    from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_illustrative_note
 
     corpus = _load_corpus()
     if sector_filter:
@@ -330,7 +330,7 @@ def render_risk_matrix(sector_filter: str = "") -> str:
     section_heatmap = ck_section_header("SECTOR RISK-RETURN MATRIX", "average entry risk vs realized MOIC outcomes")
     heatmap = _sector_risk_heatmap(sector_rows)
 
-    body = kpis + filter_bar + section_scatter + scatter_panel + section_heatmap + heatmap
+    body = ck_illustrative_note("risk-matrix figures") + kpis + filter_bar + section_scatter + scatter_panel + section_heatmap + heatmap
 
     return chartis_shell(
         body,
