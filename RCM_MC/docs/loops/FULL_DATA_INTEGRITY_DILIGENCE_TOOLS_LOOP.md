@@ -103,6 +103,20 @@ guarded by a regression test with an EMPTY backlog.
 #748 Guide ctx (9 converted Diligence) · #749 market opportunity ranking ·
 (this) industry→market cross-links + dataset-feasibility findings.
 
+## Session 2026-05-25 cont. (PRs #793–#799; RED 51→43)
+After user "continue getting rid of synthetic data" directive: 6 NEW public-data
+pipelines + conversions. CMS Part D Spending by Drug (#793) → drug-pricing-340b,
++reuse tracker-340b (#794) + biosimilars (#796). ClinicalTrials.gov v2 (#795) →
+trial-site-econ. ESG pages ← CDC PLACES community-health via shared
+community_health_panel (#797). physician-attrition ← HRSA (#798). OIG LEIE
+exclusions (PII-dropped) (#799) → fraud-detection. Each: committed PII-free
+aggregate + lru_cache loader + registry + test + Guide source + LIVE-panel
+regression-guard entry (tests/test_live_data_panels.py).
+**Genuine public-data anchors now EXHAUSTED at RED ~43** — remainder are
+anchorless internal PE-fund ops / comp / governance / PMI / tech / insurance /
+RE / RCM-denials (need the user's own deal/fund data) + ma-star (zip-portal,
+deferred). Do NOT fabricate anchors for these.
+
 ## Session 2026-05-25 (PRs #767–#786, all merged & deployed; RED 68→51)
 Topbar mega-menu layout fix #771 (BLOCKED: needs user screenshot to verify).
 RED→NAVY conversions (real LIVE panel + honest illustrative caveat + retier):
