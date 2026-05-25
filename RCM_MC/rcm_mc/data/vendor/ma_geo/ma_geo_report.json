@@ -1,0 +1,10 @@
+{
+  "snapshot_date": "2026-05-25",
+  "registry_year": "RY2025",
+  "data_year": 2022,
+  "states": 53,
+  "total_ma_enrollment": 29674598,
+  "median_dual_pct": 0.2259,
+  "median_avg_age": 72.0,
+  "source": "CMS Medicare Advantage Geographic Variation PUF (public)"
+}
