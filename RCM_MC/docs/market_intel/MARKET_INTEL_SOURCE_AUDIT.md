@@ -40,6 +40,13 @@ become real data; until then they render as `EXPORT REQUIRED`, never fabricated)
 - % No Health Insurance by Sex/Age, 2025 — county
 - NAICS 621111 provider counts (primary-care physician offices) — county/marker
 
+**Provider supply — now FULFILLED via CMS (not SimplyAnalytics):** the
+provider-supply layer the Map-5 screenshots show is now real at state level via
+the CMS FFS Provider Enrollment dataset (`rcm_mc/data/provider_supply.py`,
+`docs/rag_sources/provider_supply.md`) — rendered on the market-context panel
+(e.g. CA 262,214 Medicare-enrolled, 45,282 primary-care approx). County-level /
+exact NAICS 621111 counts remain on the SimplyAnalytics export backlog.
+
 The county-level age-65+ map exists as a screenshot but the export we have is
 **state-level**; county age-65+ values are therefore also `EXPORT REQUIRED`.
 
