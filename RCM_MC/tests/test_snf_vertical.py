@@ -24,6 +24,7 @@ from rcm_mc.data.snf import (
     snf_turnover_summary,
     snf_turnover_by_state,
     snf_rating_distribution,
+    snf_enforcement_summary,
 )
 from rcm_mc.server import build_server
 from rcm_mc.ui.snf_page import render_snf, render_snf_profile
@@ -109,6 +110,17 @@ class SnfTurnoverBenchmarkTests(unittest.TestCase):
         # Unknown metric is rejected, not silently wrong.
         with self.assertRaises(ValueError):
             snf_rating_distribution("not_a_rating")
+
+    def test_enforcement_summary_is_real_and_sane(self):
+        e = snf_enforcement_summary()
+        self.assertGreater(e["facilities"], 10000)
+        # Enforcement is common but not universal in this sector.
+        self.assertTrue(10 < e["pct_fined"] < 90, e["pct_fined"])
+        self.assertGreater(e["total_fines_usd"], 0)
+        # Median fine is a positive dollar amount, mean >= 0.
+        self.assertGreater(e["median_fine_usd"], 0)
+        self.assertGreaterEqual(e["pct_payment_denial"], 0)
+        self.assertGreaterEqual(e["pct_any_penalty"], 0)
 
 
 class SnfScreenerTests(unittest.TestCase):
