@@ -4162,6 +4162,63 @@ _MANUAL: List[PageContext] = [
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.MIXED,
     ),
+    # ── LIVE real-data pages (public sources) ───────────────────────────
+    _ctx(
+        "/drug-shortage", "Drug Shortage",
+        short_description="Live national drug-shortage tracker from FDA/openFDA "
+        "— current active shortages by therapeutic category.",
+        primary_purpose="Surface real drug-shortage exposure for pharmacy-"
+        "dependent operations and supply-chain risk framing.",
+        data_sources=["openFDA drug shortages (committed snapshot; no runtime "
+                      "network)."],
+        key_metrics=["Active shortages", "Therapeutic categories",
+                     "Resolved count"],
+        interpretation_guidance=[
+            "Real FDA data; product-level and national — NOT provider-specific.",
+            "Availability field is ~31% blank (preserved, not zero-filled).",
+        ],
+        limitations=["Product-level; build-time snapshot refreshed on re-ingest."],
+        related_routes=["/supply-chain", "/market-intel/geo"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/payer-rate-trends", "Payer Rate Trends",
+        short_description="Live Colorado payer cost trend (CIVHC / CO All-Payer "
+        "Claims) — per-person-per-year spend by payer type over time.",
+        primary_purpose="Show how payer economics actually shifted in a real "
+        "all-payer market, as context for payer-mix diligence.",
+        data_sources=["CIVHC CO APCD public cost-of-care (committed snapshot)."],
+        key_metrics=["PPPY spend by payer type", "% change over years"],
+        interpretation_guidance=[
+            "Real Colorado all-payer market data — NOT this deal's payer mix "
+            "and NOT national.",
+            "Missing values preserved as NaN, never zero.",
+        ],
+        limitations=["Colorado-only; all-payer aggregate, not provider-level."],
+        related_routes=["/payer-shift", "/cost-structure", "/ref-pricing"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/ref-pricing", "Reference-Based Pricing",
+        short_description="Live Colorado provider reimbursement as a % of "
+        "Medicare (CIVHC / CO APCD) — by organization, county, claim type.",
+        primary_purpose="Show real commercial-vs-Medicare reimbursement ratios "
+        "for benchmarking provider pricing posture.",
+        data_sources=["CIVHC CO Medicare Reference-Based Pricing (committed "
+                      "snapshot)."],
+        key_metrics=["Hospital % of Medicare", "Claims", "Payer min/median/max"],
+        interpretation_guidance=[
+            "Real Colorado provider-level data (resolvable to CCN by name); "
+            "% of Medicare = commercial/Medicare ratio.",
+            "CO-only; ~1% missing on URF/payer fields (preserved).",
+        ],
+        limitations=["Colorado-only; provider names resolve to CCN imperfectly."],
+        related_routes=["/payer-rate-trends", "/cost-structure", "/payer-stress"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
 ]
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
