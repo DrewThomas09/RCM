@@ -59,6 +59,8 @@ _CASES = [
      {}, "Real CDC PLACES community health", "/esg-impact"),
     ("rcm_mc.ui.physician_attrition_page", "render_physician_attrition_page",
      None, "Real HRSA shortage areas", "/diligence/physician-attrition"),
+    ("rcm_mc.ui.data_public.fraud_detection_page", "render_fraud_detection",
+     {}, "Real OIG LEIE exclusions", "/fraud-detection"),
 ]
 
 
