@@ -362,6 +362,12 @@ def render_payer_stress(params: Dict[str, str]) -> str:
             next_action="Attach a hospital to use its real HCRIS payer-day mix",
             next_href="/diligence/hcris-xray")
     body = _sp + body
+    # Real Colorado payer-pressure context (APM penetration + RBP), market-level.
+    try:
+        from ._colorado_context import colorado_payer_pressure_panel
+        body = body + colorado_payer_pressure_panel()
+    except Exception:
+        pass
     return chartis_shell(
         body,
         title="Payer Mix Stress Tester",
