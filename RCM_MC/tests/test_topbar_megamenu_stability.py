@@ -141,7 +141,16 @@ class TestMegaMenuTextWraps(unittest.TestCase):
                      ".ck-mega-it-label {", ".ck-mega-feat-title {"):
             m = re.search(re.escape(rule) + r"[^}]*}", html)
             self.assertIsNotNone(m, rule)
-            self.assertIn("overflow-wrap:break-word", m.group(0), rule)
+            # `overflow-wrap:anywhere` is the (stronger) intended value — it
+            # breaks even an unbroken token, which `break-word` will not. Accept
+            # either so the assertion tracks the wrapping intent, not the exact
+            # keyword.
+            block = m.group(0)
+            self.assertTrue(
+                "overflow-wrap:anywhere" in block
+                or "overflow-wrap:break-word" in block,
+                rule,
+            )
 
 
 if __name__ == "__main__":

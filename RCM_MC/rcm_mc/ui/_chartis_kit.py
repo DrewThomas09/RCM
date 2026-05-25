@@ -4186,15 +4186,27 @@ _CSS_INLINE_FALLBACK = """
    * `display:grid` here overrode that and made EVERY mega-menu visible at once
    * (the stacking-over-the-dashboard bug). Display is now owned solely by the
    * show rules below, so only the hovered / .is-open panel renders. */
-  .ck-nav-mega { grid-template-columns:236px 1fr; min-width:660px; padding:0; }
+  /* `minmax(0,1fr)` (not bare `1fr`) on the items track is REQUIRED: a bare
+     `1fr` track carries an implicit `min-width:auto` sized to its widest
+     content, so a wide destinations grid forces the whole panel past
+     `min-width` and off the right edge of the viewport (the "panel runs off
+     screen / text doesn't wrap" bug). minmax(0,…) lets the track shrink so
+     the inner cells wrap instead. `max-width` clamps to the viewport on
+     narrow windows (overrides min-width when smaller). */
+  .ck-nav-mega { grid-template-columns:236px minmax(0,1fr); min-width:660px;
+    max-width:calc(100vw - 24px); padding:0; }
   /* Shown mega = grid (grid layout overrides the generic `display:block`). */
   .ck-nav-group:hover > .ck-nav-mega,
   .ck-nav-group.is-open > .ck-nav-mega { display:grid; }
   .ck-topbar[data-menu-js] .ck-nav-group:hover > .ck-nav-mega { display:none; }
   .ck-topbar[data-menu-js] .ck-nav-group.is-open > .ck-nav-mega { display:grid; }
-  /* Keep the rightmost sections' panels inside the viewport. */
+  /* Keep the right-hand sections' panels inside the viewport: anchor the three
+     rightmost mega groups to their right edge so a 660px panel extends left
+     (on-screen) instead of off the right edge. The left-hand groups keep
+     left:0. */
   .ck-nav-group:last-of-type .ck-nav-mega,
-  .ck-nav-group:nth-last-of-type(2) .ck-nav-mega { left:auto; right:0; }
+  .ck-nav-group:nth-last-of-type(2) .ck-nav-mega,
+  .ck-nav-group:nth-last-of-type(3) .ck-nav-mega { left:auto; right:0; }
   /* min-width:0 on grid items is required: the default min-width:auto lets a
      long blurb/label overflow its track and bleed into the neighbouring column
      (the Source feature blurb was overlapping the destination items).
@@ -4212,8 +4224,8 @@ _CSS_INLINE_FALLBACK = """
     font-size:13px; line-height:1.5; color:var(--tb-ink2); overflow-wrap:anywhere; }
   .ck-mega-feat-go { margin-top:auto; font-family:var(--sc-mono,monospace);
     font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--tb-green); }
-  .ck-mega-items { display:grid; grid-template-columns:1fr 1fr; gap:2px 18px;
-    padding:16px 20px; align-content:start; min-width:0; }
+  .ck-mega-items { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:2px 18px; padding:16px 20px; align-content:start; min-width:0; }
   /* align-items:flex-start so the index number top-aligns with the label's
      first line (default `stretch` let the number drift off-center vs multi-
      line labels). */
@@ -4221,8 +4233,11 @@ _CSS_INLINE_FALLBACK = """
     border-radius:2px; transition:background .12s; min-width:0;
     align-items:flex-start; }
   .ck-mega-item:hover { background:var(--tb-paper2); }
+  /* Match the label's first-line box height (15px × 1.2 = 18px) so the
+     smaller index glyph centres against the title's first line instead of
+     top-floating above it (the "number off-center" look). */
   .ck-mega-idx { font-family:var(--sc-mono,monospace); font-size:11px;
-    color:var(--tb-green); line-height:1.2; flex-shrink:0; }
+    color:var(--tb-green); line-height:18px; flex-shrink:0; }
   .ck-mega-it-body { display:flex; flex-direction:column; gap:1px; min-width:0;
     flex:1 1 auto; }
   /* overflow-wrap:anywhere (not just break-word) guarantees even a long
