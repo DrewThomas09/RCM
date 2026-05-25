@@ -6,57 +6,63 @@ Data-honesty status for every PEdesk surface. Source of truth: `rcm_mc/diligence
 |---|---|---|---|
 | GREEN | 🟢 | Real CMS/public or your own deal/system data | 145 |
 | NAVY | 🔵 | Diligence calculator — computes off your inputs | 91 |
+| DATA_REQUIRED | 🟣 | Activates on your uploaded deal/fund data — shows what to upload, no fabricated values | 42 |
 | YELLOW | 🟡 | Realistic figures on the illustrative seed corpus | 56 |
-| RED | 🔴 | Entirely synthetic / hardcoded values | 43 |
+| RED | 🔴 | Entirely synthetic / hardcoded values | 1 |
 
 
-## RED 🔴 — entirely synthetic (highest priority to fix)  (43)
+## RED 🔴 — entirely synthetic (highest priority to fix)  (1)
 
 | Route | Status |
 |---|---|
-| `/ai-operating-model` | 🔴 Synthetic / hardcoded data |
-| `/board-governance` | 🔴 Synthetic / hardcoded data |
-| `/capex-budget` | 🔴 Synthetic / hardcoded data |
-| `/clinical-ai` | 🔴 Synthetic / hardcoded data |
-| `/coinvest-pipeline` | 🔴 Synthetic / hardcoded data |
-| `/compliance-attestation` | 🔴 Synthetic / hardcoded data |
-| `/continuation-vehicle` | 🔴 Synthetic / hardcoded data |
-| `/cyber-risk` | 🔴 Synthetic / hardcoded data |
-| `/digital-front-door` | 🔴 Synthetic / hardcoded data |
-| `/diligence-vendors` | 🔴 Synthetic / hardcoded data |
-| `/diligence/physician-eu` | 🔴 Synthetic / hardcoded data |
-| `/diligence/risk-workbench` | 🔴 Synthetic / hardcoded data |
-| `/direct-employer` | 🔴 Synthetic / hardcoded data |
-| `/direct-lending` | 🔴 Synthetic / hardcoded data |
-| `/fundraising` | 🔴 Synthetic / hardcoded data |
-| `/hcit-platform` | 🔴 Synthetic / hardcoded data |
-| `/insurance-tracker` | 🔴 Synthetic / hardcoded data |
-| `/key-person` | 🔴 Synthetic / hardcoded data |
-| `/litigation` | 🔴 Synthetic / hardcoded data |
 | `/ma-star` | 🔴 Synthetic / hardcoded data |
-| `/medical-realestate` | 🔴 Synthetic / hardcoded data |
-| `/mgmt-comp` | 🔴 Synthetic / hardcoded data |
-| `/mgmt-fee-tracker` | 🔴 Synthetic / hardcoded data |
-| `/nav-loan-tracker` | 🔴 Synthetic / hardcoded data |
-| `/operating-partners` | 🔴 Synthetic / hardcoded data |
-| `/partner-economics` | 🔴 Synthetic / hardcoded data |
-| `/platform-maturity` | 🔴 Synthetic / hardcoded data |
-| `/pmi-integration` | 🔴 Synthetic / hardcoded data |
-| `/pmi-playbook` | 🔴 Synthetic / hardcoded data |
-| `/rcm-red-flags` | 🔴 Synthetic / hardcoded data |
-| `/real-estate` | 🔴 Synthetic / hardcoded data |
-| `/redflag-scanner` | 🔴 Synthetic / hardcoded data |
-| `/revenue-leakage` | 🔴 Synthetic / hardcoded data |
-| `/risk-matrix` | 🔴 Synthetic / hardcoded data |
-| `/rw-insurance` | 🔴 Synthetic / hardcoded data |
-| `/secondaries-tracker` | 🔴 Synthetic / hardcoded data |
-| `/sellside-process` | 🔴 Synthetic / hardcoded data |
-| `/tech-stack` | 🔴 Synthetic / hardcoded data |
-| `/transition-services` | 🔴 Synthetic / hardcoded data |
-| `/treasury` | 🔴 Synthetic / hardcoded data |
-| `/vcp-tracker` | 🔴 Synthetic / hardcoded data |
-| `/vdr-tracker` | 🔴 Synthetic / hardcoded data |
-| `/zbb-tracker` | 🔴 Synthetic / hardcoded data |
+
+## DATA REQUIRED 🟣 — activates on your uploaded deal/fund data (no fabricated values)  (42)
+
+| Route | Status |
+|---|---|
+| `/ai-operating-model` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/board-governance` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/capex-budget` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/clinical-ai` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/coinvest-pipeline` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/compliance-attestation` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/continuation-vehicle` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/cyber-risk` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/digital-front-door` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/diligence-vendors` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/diligence/physician-eu` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/diligence/risk-workbench` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/direct-employer` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/direct-lending` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/fundraising` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/hcit-platform` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/insurance-tracker` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/key-person` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/litigation` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/medical-realestate` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/mgmt-comp` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/mgmt-fee-tracker` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/nav-loan-tracker` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/operating-partners` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/partner-economics` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/platform-maturity` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/pmi-integration` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/pmi-playbook` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/rcm-red-flags` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/real-estate` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/redflag-scanner` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/revenue-leakage` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/risk-matrix` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/rw-insurance` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/secondaries-tracker` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/sellside-process` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/tech-stack` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/transition-services` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/treasury` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/vcp-tracker` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/vdr-tracker` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
+| `/zbb-tracker` | 🟣 DATA REQUIRED — upload your deal/fund data to activate |
 
 ## YELLOW 🟡 — realistic figures on the illustrative seed corpus  (56)
 
