@@ -2,13 +2,13 @@
   "summary": {
     "pages": 173,
     "with_disclosure": 168,
-    "with_real_loader": 20,
+    "with_real_loader": 21,
     "flagged_no_disclosure": 0,
     "by_tier": {
       "green": 27,
-      "navy": 50,
+      "navy": 51,
       "yellow": 37,
-      "red": 59
+      "red": 58
     }
   },
   "pages": [
@@ -1705,9 +1705,9 @@
     {
       "route": "/workforce-planning",
       "file": "workforce_planning_page.py",
-      "tier": "red",
+      "tier": "navy",
       "has_disclosure": true,
-      "imports_real_loader": false,
+      "imports_real_loader": true,
       "uses_seed_corpus": true,
       "renders_data": true,
       "flag": ""

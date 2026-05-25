@@ -5,12 +5,12 @@ Data-honesty status for every PEdesk surface. Source of truth: `rcm_mc/diligence
 | Tier | Circle | Meaning | Count |
 |---|---|---|---|
 | GREEN | 🟢 | Real CMS/public or your own deal/system data | 145 |
-| NAVY | 🔵 | Diligence calculator — computes off your inputs | 65 |
+| NAVY | 🔵 | Diligence calculator — computes off your inputs | 66 |
 | YELLOW | 🟡 | Realistic figures on the illustrative seed corpus | 56 |
-| RED | 🔴 | Entirely synthetic / hardcoded values | 69 |
+| RED | 🔴 | Entirely synthetic / hardcoded values | 68 |
 
 
-## RED 🔴 — entirely synthetic (highest priority to fix)  (69)
+## RED 🔴 — entirely synthetic (highest priority to fix)  (68)
 
 | Route | Status |
 |---|---|
@@ -80,7 +80,6 @@ Data-honesty status for every PEdesk surface. Source of truth: `rcm_mc/diligence
 | `/trial-site-econ` | 🔴 Synthetic / hardcoded data |
 | `/vcp-tracker` | 🔴 Synthetic / hardcoded data |
 | `/vdr-tracker` | 🔴 Synthetic / hardcoded data |
-| `/workforce-planning` | 🔴 Synthetic / hardcoded data |
 | `/workforce-retention` | 🔴 Synthetic / hardcoded data |
 | `/zbb-tracker` | 🔴 Synthetic / hardcoded data |
 
@@ -145,7 +144,7 @@ Data-honesty status for every PEdesk surface. Source of truth: `rcm_mc/diligence
 | `/vintage-cohorts` | 🟡 Illustrative seed-corpus data |
 | `/vintage-perf` | 🟡 Illustrative seed-corpus data |
 
-## NAVY 🔵 — diligence calculator (computes off your inputs)  (65)
+## NAVY 🔵 — diligence calculator (computes off your inputs)  (66)
 
 | Route | Status |
 |---|---|
@@ -213,6 +212,7 @@ Data-honesty status for every PEdesk surface. Source of truth: `rcm_mc/diligence
 | `/unit-economics` | 🔵 Diligence calculator (your inputs) |
 | `/value-creation` | 🔵 Diligence calculator (your inputs) |
 | `/value-creation-plan` | 🔵 Diligence calculator (your inputs) |
+| `/workforce-planning` | 🔵 Diligence calculator (your inputs) |
 | `/working-capital` | 🔵 Diligence calculator (your inputs) |
 
 ## GREEN 🟢 — real CMS/public or your own deal/system data  (145)
