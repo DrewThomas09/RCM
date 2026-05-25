@@ -100,3 +100,51 @@ def community_health_panel(P: Dict[str, Any]) -> str:
             f'NOT this deal\'s patients; the ESG scores below are illustrative.</div></div>')
     except Exception:
         return ""
+
+
+def data_required_panel(
+    P: Dict[str, Any],
+    *,
+    title: str,
+    needed: list,
+    template: str = "",
+    request_from: str = "",
+    activates: str = "",
+    guide_hint: str = "",
+) -> str:
+    """Honest 'Data needed to activate this analysis' panel for USER/DATA
+    REQUIRED pages. Renders the required user/deal data, an import-template
+    reference, who to request it from, and what the page computes once
+    activated — instead of presenting fabricated values as real.
+
+    ``needed`` is a list of (field, description) tuples.
+    """
+    border = P["border"]; tp = P["text"]; td = P["text_dim"]
+    fa = P.get("text_faint", td); ac = P["accent"]
+    rows = "".join(
+        f'<tr><td style="padding:3px 10px;font-family:JetBrains Mono,monospace;'
+        f'font-size:11px;color:{tp};white-space:nowrap">{_html.escape(str(f))}</td>'
+        f'<td style="padding:3px 10px;font-size:11px;color:{td}">{_html.escape(str(d))}</td></tr>'
+        for f, d in needed
+    )
+    tmpl = (f'<div style="margin-top:8px;font-size:10px;color:{fa}">Import template: '
+            f'<span style="font-family:JetBrains Mono,monospace;color:{td}">{_html.escape(template)}</span></div>'
+            if template else "")
+    req = (f'<div style="font-size:10px;color:{fa};margin-top:2px">Request from: '
+           f'{_html.escape(request_from)}</div>' if request_from else "")
+    act = (f'<div style="margin-top:8px;font-size:11px;color:{td}"><b style="color:{tp}">Once activated:</b> '
+           f'{_html.escape(activates)}</div>' if activates else "")
+    gh = (f'<div style="margin-top:6px;font-size:10px;color:{fa}">Ask the Guide: '
+          f'<i>{_html.escape(guide_hint)}</i></div>' if guide_hint else "")
+    return (
+        f'<div style="background:{P["panel"]};border:1px solid {border};'
+        f'border-left:3px solid {ac};padding:14px 16px;margin-bottom:16px">'
+        f'<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{td};'
+        f'text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">'
+        f'Data needed to activate this analysis'
+        f'<span style="color:{ac};font-weight:600"> · DATA REQUIRED</span></div>'
+        f'<div style="font-size:11px;color:{td};margin-bottom:8px">{_html.escape(title)} has no public-data anchor '
+        f'&mdash; it activates on your own deal/fund data. Upload the following (no values are fabricated here):</div>'
+        f'<table style="width:100%;border-collapse:collapse">{rows}</table>'
+        f'{tmpl}{req}{act}{gh}</div>'
+    )
