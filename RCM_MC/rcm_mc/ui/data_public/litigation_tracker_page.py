@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_bar_row, ck_value_anchor, ck_scatter
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
 
 
 def _matters_scatter(items):
@@ -268,6 +269,7 @@ def render_litigation_tracker(params: dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
+  {data_required_panel(P, title="Litigation", needed=[("matter","matter name"),("type","employment / malpractice / contract"),("status","open / settled / closed"),("exposure_estimate","exposure $"),("reserve","reserve $")], template="litigation_matters_template.csv", request_from="General counsel / litigation counsel", activates="litigation exposure roll-up + reserve adequacy", guide_hint="What litigation-matter data do I need to upload?")}
   {ck_illustrative_note("figures")}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}

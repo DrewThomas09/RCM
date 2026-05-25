@@ -7,6 +7,7 @@ from __future__ import annotations
 import html as _html
 
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_value_anchor
+from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
 
 
 def _ownership_svg(total_sqft: int, owned_sqft: int, leased_sqft: int) -> str:
@@ -276,6 +277,7 @@ def render_real_estate(params: dict = None) -> str:
 <div class="ck-page-wrap">
 
   {page_title}
+  {data_required_panel(P, title="Real Estate", needed=[("property","property / site"),("type","lease / own"),("sqft","square feet"),("annual_rent","annual rent $"),("term_end","term end (YYYY-MM-DD)"),("renewal_options","renewal options")], template="lease_schedule_template.csv", request_from="Real estate / facilities", activates="owned-vs-leased mix, NOI, lease exposure", guide_hint="What real-estate / lease data do I need to upload?")}
   {ck_illustrative_note("figures")}
 
   {form}

@@ -121,6 +121,10 @@ _DATA_REQUIRED = frozenset({
     "/ai-operating-model", "/direct-lending",
     # Batch 2 — RCM / revenue-cycle / risk (activate on claims/AR/risk-register)
     "/revenue-leakage", "/rcm-red-flags", "/redflag-scanner", "/risk-matrix",
+    # Batch 3 — insurance / litigation / cyber / real-estate / HCIT
+    "/insurance-tracker", "/rw-insurance", "/litigation", "/cyber-risk",
+    "/medical-realestate", "/real-estate", "/hcit-platform", "/tech-stack",
+    "/clinical-ai", "/digital-front-door", "/direct-employer",
 })
 
 
@@ -146,13 +150,7 @@ _YELLOW = frozenset({
 # ── RED: entirely synthetic / hardcoded fabricated values ───────────────────
 _RED = frozenset({
     "/diligence/physician-eu",
-    "/hcit-platform", "/insurance-tracker", "/rw-insurance",
-    "/litigation", "/cyber-risk",
-    "/clinical-ai",
     "/ma-star",
-    "/digital-front-door", "/direct-employer",
-    "/tech-stack",
-    "/medical-realestate", "/real-estate",
     "/diligence/risk-workbench",
 })
 

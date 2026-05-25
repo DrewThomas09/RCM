@@ -8,7 +8,7 @@
       "green": 27,
       "navy": 73,
       "yellow": 37,
-      "red": 9
+      "red": 0
     }
   },
   "pages": [
@@ -335,7 +335,7 @@
     {
       "route": "/cyber-risk",
       "file": "cyber_risk_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -485,7 +485,7 @@
     {
       "route": "/digital-front-door",
       "file": "digital_front_door_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -515,7 +515,7 @@
     {
       "route": "/direct-employer",
       "file": "direct_employer_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -735,7 +735,7 @@
     {
       "route": "/hcit-platform",
       "file": "hcit_platform_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -815,7 +815,7 @@
     {
       "route": "/insurance-tracker",
       "file": "insurance_tracker_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": false,
@@ -955,7 +955,7 @@
     {
       "route": "/medical-realestate",
       "file": "medical_realestate_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -1275,7 +1275,7 @@
     {
       "route": "/real-estate",
       "file": "real_estate_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -1395,7 +1395,7 @@
     {
       "route": "/rw-insurance",
       "file": "rw_insurance_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
@@ -1545,7 +1545,7 @@
     {
       "route": "/tech-stack",
       "file": "tech_stack_page.py",
-      "tier": "red",
+      "tier": "data_required",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
