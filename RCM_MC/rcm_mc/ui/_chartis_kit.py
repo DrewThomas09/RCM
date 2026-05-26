@@ -252,9 +252,9 @@ _SECTION_FEATURE = {
              "blurb": "Your daily driver — alerts, escalations, watchlist, and "
                       "the Command Center in one canvas.", "href": "/app"},
     "source": {"eyebrow": "SECTION · SOURCE", "title": "Target discovery",
-               "blurb": "Find targets and generate opportunities from the CMS/"
-                        "market universe — one Target Screener, three modes, "
-                        "plus conferences.",
+               "blurb": "Find targets across every public CMS/provider universe "
+                        "— the Target Screener workbench (map, table, compare, "
+                        "just-missed, saved screens) plus conferences.",
                "href": "/target-screener"},
     "pipeline": {"eyebrow": "SECTION · PIPELINE", "title": "Live deals",
                  "blurb": "Track real opportunities once promoted from Source — "
@@ -284,7 +284,7 @@ _NAV_DESC = {
     "/app": "Glance-level morning brief", "/my/AT": "Your owned deals & pulse",
     "/alerts": "Fire / ack / snooze lifecycle", "/escalations": "What needs a partner",
     "/watchlist": "Starred deals to track",
-    "/target-screener": "Find targets — 3 modes", "/source": "Thesis-driven sourcing",
+    "/target-screener": "Target screening workbench — 9 universes", "/source": "Thesis-driven sourcing",
     "/screen": "Hospital target screener",
     "/predictive-screener": "Model-ranked candidates", "/pe-intelligence": "Sponsor & deal intel",
     "/deal-screening": "Thesis-testing workspace", "/find-comps": "Comparable transactions",
