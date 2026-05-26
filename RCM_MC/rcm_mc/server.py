@@ -4510,6 +4510,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_quant_lab()
         if path == "/data-intelligence":
             return self._route_data_intelligence()
+        if path == "/data-activation":
+            from .ui.data_public.data_activation_page import render_data_activation
+            return self._send_html(render_data_activation())
         if path == "/predictive-screener":
             return self._route_predictive_screener()
         if path.startswith("/data-room/") and not path.endswith("/add"):
