@@ -199,3 +199,60 @@ def render_state_profile(params: Dict = None) -> str:
   </p>
 </div>"""
     return chartis_shell(body, f"State Profile — {name}", active_nav="/state-profile")
+
+
+# ── Reusable drop-in for target-aware pages ──────────────────────────────
+_CONTEXT_KEYS = ["population", "pct_age_65_plus", "uninsured_acs",
+                 "providers_per_1k", "ma_enrollment", "mssp_acos"]
+
+
+def state_context_panel(state: str, Pal: Dict = None) -> str:
+    """Compact 'market context' panel for a US state, for embedding in
+    target-aware pages (e.g. HCRIS X-Ray). Shows a few key real metrics with
+    the state's national rank — area-level context, NOT the target's own
+    figures. Returns "" if the state is unknown or has no data. Nothing is
+    fabricated: missing metrics are skipped.
+    """
+    pal = Pal or P
+    s = (state or "").strip().upper()
+    if s not in _VALID:
+        return ""
+    ranked = _all_ranked()
+    border = pal["border"]; tp = pal["text"]; td = pal["text_dim"]
+    fa = pal.get("text_faint", td); ac = pal["accent"]
+    name = _STATE_NAMES.get(s, s)
+    cells = ""
+    shown = 0
+    for key in _CONTEXT_KEYS:
+        m = _METRIC_BY_KEY.get(key)
+        if not m:
+            continue
+        pairs = ranked.get(key, [])
+        n = len(pairs)
+        val = next((v for st, v in pairs if st == s), None)
+        if val is None:
+            continue
+        pos = next((i for i, (st, _) in enumerate(pairs, start=1) if st == s), None)
+        rank = f'#{pos}/{n}' if pos else ''
+        cells += (
+            f'<div style="text-align:center;padding:0 10px">'
+            f'<div style="font-family:JetBrains Mono,monospace;font-size:15px;color:{tp};'
+            f'font-variant-numeric:tabular-nums">{_html.escape(_fmt(key, val))}</div>'
+            f'<div style="font-size:9px;color:{td}">{_html.escape(m[1])}</div>'
+            f'<div style="font-size:9px;color:{fa};font-family:JetBrains Mono,monospace">{rank}</div></div>'
+        )
+        shown += 1
+    if not shown:
+        return ""
+    return (
+        f'<div style="background:{pal["panel"]};border:1px solid {border};'
+        f'border-left:3px solid {ac};padding:14px 16px;margin:16px 0">'
+        f'<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{td};'
+        f'text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">'
+        f'{_html.escape(name)} market context · LIVE (real public data)</div>'
+        f'<div style="display:flex;gap:6px;justify-content:space-between;flex-wrap:wrap">{cells}</div>'
+        f'<div style="margin-top:8px;font-size:10px;color:{fa}">'
+        f'State-level real public data (Census/ACS · CMS · CDC · OIG) with national rank — '
+        f'the market this target sits in, <b>not</b> the target\'s own figures. '
+        f'Full dossier on <a href="/state-profile?state={s}" style="color:{ac};text-decoration:none">State Profile &rarr;</a></div></div>'
+    )

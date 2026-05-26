@@ -12,6 +12,7 @@ from rcm_mc.ui.data_public.state_profile_page import (
     _us_median,
     profile_dataframe,
     render_state_profile,
+    state_context_panel,
 )
 
 
@@ -51,6 +52,15 @@ class StateProfileTests(unittest.TestCase):
         # population is way above the median → a large positive delta
         vs = df.loc[df["Metric"] == "Population", "VsUSMedianPct"].iloc[0]
         self.assertGreater(vs, 0)
+
+    def test_context_panel_for_target_pages(self):
+        # reusable drop-in: real panel for a known state, "" for unknown/blank
+        h = state_context_panel("OH")
+        self.assertIn("market context", h)
+        self.assertIn("/state-profile?state=OH", h)
+        self.assertIn("not</b> the target", h)  # honesty: not the target's own figures
+        self.assertEqual(state_context_panel("ZZ"), "")
+        self.assertEqual(state_context_panel(""), "")
 
     def test_surface_is_green(self):
         self.assertEqual(classify_surface("/state-profile")["tier"], "green")
