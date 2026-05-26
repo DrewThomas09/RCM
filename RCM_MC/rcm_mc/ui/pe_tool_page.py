@@ -56,7 +56,19 @@ PE_TOOL_REGISTRY: Dict[str, Dict[str, str]] = {
         "builder": "derive_negotiation_position",
         "render": "render_negotiation_markdown", "mode": "report",
     },
+    "diligence_tracker": {
+        "title": "Diligence Board",
+        "builder": "board_from_review", "render": "render_board_markdown",
+        "mode": "report",
+    },
 }
+# Honesty guard: only tools whose output genuinely VARIES with the deal belong
+# here. Several pe_intelligence tools (named_failure_library_v2,
+# historical_failure_library, partner_traps_library, quality_of_diligence_scorer,
+# data_room_gap_signal_reader) accept a PartnerReview by duck-typing but ignore
+# it — their output is constant. Wiring those here would falsely imply
+# "computed from your deal", so they are deliberately excluded; they belong in a
+# deal-independent reference view instead.
 
 
 def _inline(s: str) -> str:

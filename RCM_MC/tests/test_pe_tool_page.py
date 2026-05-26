@@ -47,6 +47,22 @@ class RunReviewToolTests(unittest.TestCase):
         self.assertEqual(md, "")
         self.assertIsNotNone(err)
 
+    def test_registry_excludes_deal_independent_tools(self):
+        # Honesty guard: tools that ignore the review (constant output) must NOT
+        # be wired as deal-driven — they'd falsely imply "computed from your
+        # deal". Audited and excluded; keep them out.
+        for slug in ("named_failure_library_v2", "historical_failure_library",
+                     "partner_traps_library", "quality_of_diligence_scorer",
+                     "data_room_gap_signal_reader"):
+            self.assertNotIn(slug, PE_TOOL_REGISTRY)
+
+    def test_diligence_board_is_deal_driven(self):
+        # The newly-added tool must genuinely vary with the deal.
+        self.assertIn("diligence_tracker", PE_TOOL_REGISTRY)
+        md, err = run_review_tool("diligence_tracker", self.review)
+        self.assertIsNone(err)
+        self.assertIn("Diligence Board", md)
+
 
 class MarkdownTests(unittest.TestCase):
     def test_renders_headings_tables_bold(self):
