@@ -24,7 +24,7 @@ from ..diligence.bridge_audit import (
 )
 from ._chartis_kit import (
     P, chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
-    ck_section_header, ck_section_intro, ck_signal_badge,
+    ck_section_header, ck_section_intro, ck_signal_badge, ck_source_purpose,
 )
 from .power_ui import (
     benchmark_chip, bookmark_hint, deal_context_bar,
@@ -931,6 +931,14 @@ def render_bridge_audit_page(
         _scoped_styles()
         + '<div class="ba-wrap">'
         + deal_context_bar(qs, active_surface="bridge")
+        + ck_source_purpose(
+            purpose="Audit the EBITDA value-creation bridge — decompose entry→exit EBITDA into RCM, growth, margin and multiple levers — so IC sees what each lever must deliver.",
+            universe="user-deals",
+            confidence="derived",
+            source="Your entered deal economics + initiative assumptions; the bridge is a model of YOUR plan, not realized results.",
+            next_action="Pressure-test the levers in Deal MC / Payer Stress",
+            next_href="/diligence/deal-mc",
+        )
         + hero
         + chart_panel
         + detail_panel
