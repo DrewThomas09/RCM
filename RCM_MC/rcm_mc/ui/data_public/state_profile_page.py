@@ -192,7 +192,7 @@ def render_state_profile(params: Dict = None) -> str:
     </tr></thead><tbody>{rows}</tbody></table>
   </div>
   <p style="font-size:10px;color:{fa};margin-top:10px">
-    Sources: Census/ACS · CMS FFS · HRSA HPSA · CMS CHOW · CMS MA · CDC PLACES · CMS HCAHPS.
+    Sources: Census/ACS · CMS FFS · HRSA HPSA · CMS CHOW · CMS MA · CDC PLACES · CMS HCAHPS · CMS MSSP.
     Area-level public data — a screening signal, not a deal-level figure.
     Compare states side by side on <a href="/state-compare?states={state}" style="color:{ac};text-decoration:none">State Comparison &rarr;</a>
     or rank all states on one metric in <a href="/state-rankings" style="color:{ac};text-decoration:none">State Rankings &rarr;</a>
