@@ -108,14 +108,25 @@ class CuratedPagesBatch2CarryNoteTests(unittest.TestCase):
             self.assertIn("ck-illus-note", html, fn.__name__)
             self.assertIn("Illustrative template", html, fn.__name__)
 
-    def test_live_and_calc_pages_do_not_carry_marker(self):
-        # Genuinely live / calculator pages must NOT be mislabeled.
+    def test_calculator_pages_label_illustrative_defaults_honestly(self):
+        # scenario_mc + tax_structure_analyzer are calculators that compute off
+        # the user's inputs but render with ILLUSTRATIVE DEFAULT figures until
+        # those inputs are supplied. The honest label is exactly that — an
+        # "illustrative defaults; computes off your inputs" note — NOT a blanket
+        # "illustrative" mislabel and NOT presenting the defaults as live.
+        # (Updated from the original "must not carry any marker" expectation,
+        # which predated these pages adopting the honest illustrative-defaults
+        # note.)
         from rcm_mc.ui.data_public.scenario_mc_page import render_scenario_mc
         from rcm_mc.ui.data_public.tax_structure_analyzer_page import (
             render_tax_structure_analyzer,
         )
-        self.assertNotIn("ck-illus-note", render_scenario_mc({}))
-        self.assertNotIn("ck-illus-note", render_tax_structure_analyzer({}))
+        for html in (render_scenario_mc({}), render_tax_structure_analyzer({})):
+            self.assertIn("ck-illus-note", html)
+            # the note must clarify the figures are defaults computed off inputs,
+            # not a static illustrative dashboard
+            self.assertIn("illustrative defaults", html)
+            self.assertIn("your inputs", html)
 
 
 if __name__ == "__main__":
