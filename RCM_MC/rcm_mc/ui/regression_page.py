@@ -508,6 +508,20 @@ def _run_ols(
             _math.exp(rmse) - 1.0 if log_target else 0.0
         )
 
+        # Multicollinearity summary — condition number + plain-English
+        # verdict + the VIF-pruned ("optimized") feature set. This is what
+        # stops the page from presenting a high-R²/high-F fit built on
+        # inter-correlated predictors as if its coefficients were reliable.
+        from ..finance.regression import (
+            condition_number as _cond_num,
+            multicollinearity_verdict as _mc_verdict,
+            prune_collinear as _prune_collinear,
+        )
+        cond_num = _cond_num(clean[available])
+        max_vif = max((v["vif"] for v in vifs), default=1.0)
+        verdict = _mc_verdict(max_vif, cond_num)
+        opt_features, opt_dropped = _prune_collinear(clean[available])
+
         return {
             "r2": r2,
             "adj_r2": adj_r2,
@@ -541,6 +555,11 @@ def _run_ols(
             "y_raw_max": float(y_raw.max()),
             "log_target": log_target,
             "typical_fractional_error": typical_fractional_error,
+            "condition_number": cond_num,
+            "max_vif": max_vif,
+            "verdict": verdict,
+            "optimized_features": opt_features,
+            "optimized_dropped": opt_dropped,
         }
     except Exception:
         return None
@@ -900,7 +919,68 @@ def render_regression_page(
                 ),
             },
         )
+        + ck_kpi_block(
+            "Condition #",
+            ("&infin;" if result.get("condition_number", 0) == float("inf")
+             else f"{result.get('condition_number', 0):,.0f}"),
+            help={
+                "definition": (
+                    "Belsley condition number of the design matrix — the "
+                    "single-number multicollinearity diagnostic. <30 is "
+                    "fine; 30–100 moderate; >100 means predictors are so "
+                    "inter-correlated that individual coefficients are "
+                    "numerically unstable and the R² is inflated."
+                ),
+            },
+        )
         + '</div>'
+    )
+
+    # ── Multicollinearity verdict banner ──
+    # The reader must never mistake a high-R²/high-F fit propped up by
+    # inter-correlated predictors for a trustworthy one. This banner states
+    # the verdict in plain English and, when collinearity is real, names the
+    # optimized (VIF-pruned) feature set that fixes it.
+    _verdict = result.get("verdict") or {}
+    _sev = _verdict.get("severity", "low")
+    _sev_color = {"severe": "#b5321e", "moderate": "#b8732a",
+                  "low": "#0a8a5f"}.get(_sev, "#6a7480")
+    _sev_label = {"severe": "Severe multicollinearity",
+                  "moderate": "Moderate multicollinearity",
+                  "low": "Low multicollinearity"}.get(_sev, "Multicollinearity")
+    _opt = result.get("optimized_features") or []
+    _dropped = result.get("optimized_dropped") or []
+    if _dropped:
+        _drop_names = ", ".join(
+            _html.escape(d["feature"].replace("_", " ")) for d in _dropped)
+        _opt_html = (
+            f'<div style="margin-top:8px;font-size:12.5px;line-height:1.55;'
+            f'color:var(--sc-text,#1a2332);"><b>Optimized feature set</b> '
+            f'(VIF-pruned to &le;10): drop <b>{_drop_names}</b> &rarr; '
+            f'{len(_opt)} stable predictors with interpretable coefficients.'
+            f'</div>')
+    else:
+        _opt_html = (
+            '<div style="margin-top:8px;font-size:12.5px;color:'
+            'var(--sc-text-dim,#465366);">No features need pruning — every '
+            'predictor is below the VIF&nbsp;10 threshold.</div>')
+    multicollinearity_banner = (
+        f'<div style="background:var(--sc-paper,#faf6ec);border:1px solid '
+        f'var(--sc-rule,#c9c1ac);border-left:4px solid {_sev_color};'
+        f'border-radius:3px;padding:13px 16px;margin:0 0 16px;">'
+        f'<div style="display:flex;align-items:baseline;gap:10px;'
+        f'flex-wrap:wrap;margin-bottom:4px;">'
+        f'<span style="font-family:var(--sc-mono);font-size:10px;'
+        f'font-weight:700;letter-spacing:0.08em;text-transform:uppercase;'
+        f'color:{_sev_color};">{_html.escape(_sev_label)}</span>'
+        f'<span style="font-family:var(--sc-mono);font-size:10px;'
+        f'color:var(--sc-text-faint,#8b94a0);">condition # '
+        f'{("&infin;" if result.get("condition_number",0)==float("inf") else format(result.get("condition_number",0), ",.0f"))}'
+        f' · max VIF {min(result.get("max_vif",1.0),999):.0f}</span></div>'
+        f'<div style="font-size:12.5px;line-height:1.55;color:'
+        f'var(--sc-text,#1a2332);">{_html.escape(_verdict.get("message",""))} '
+        f'<i>{_html.escape(_verdict.get("recommendation",""))}</i></div>'
+        f'{_opt_html}</div>'
     )
 
     # ── Intercept interpretation ──
@@ -2032,7 +2112,7 @@ letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
         f'{leakage_banner}{formula_related_banner}'
         f'{leakage_section}{cv_section}{cluster_section}'
         f'{buyability_section}{segmented_section}'
-        f'{kpis}{intercept_section}'
+        f'{kpis}{multicollinearity_banner}{intercept_section}'
         '<div class="rg-grid">'
         f'<div>{left_col}</div><div>{right_col}</div></div>'
         f'{nav_section}{next_up}'
