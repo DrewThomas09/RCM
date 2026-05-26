@@ -241,6 +241,7 @@ _SUB_NAV = {
         {"label": "HCRIS X-Ray",        "href": "/diligence/hcris-xray"},
         {"label": "QoE Memo",           "href": "/diligence/qoe-memo"},
         {"label": "Cliff Calendar",     "href": "/diligence/cliff-calendar"},
+        {"label": "PE Intel Library",   "href": "/diligence/pe-library"},
         {"label": "All Diligence →",    "href": "/diligence"},
     ],
 }
@@ -3639,6 +3640,7 @@ _DEFAULT_PALETTE_MODULES = [
     # Diligence playbook
     {"id": "deal-profile",  "title": "Deal Profile",       "route": "/diligence/deal"},
     {"id": "cliff-calendar","title": "Reimbursement Cliff Calendar · 2026-2029 Medicare/340B rate events by subsector", "route": "/diligence/cliff-calendar"},
+    {"id": "pe-library",    "title": "PE Intelligence Library · the full ~222-tool analytic toolkit, searchable", "route": "/diligence/pe-library"},
     {"id": "thesis-pipe",   "title": "Thesis Pipeline",    "route": "/diligence/thesis-pipeline"},
     {"id": "checklist",     "title": "Diligence Checklist","route": "/diligence/checklist"},
     {"id": "data-activation","title": "Data Activation Center · activate analyses with your data", "route": "/data-activation"},
