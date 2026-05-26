@@ -248,10 +248,12 @@ def _num_or_none(v) -> Optional[float]:
     return None if f != f else f  # NaN != NaN
 
 
-def _vertical_rows(vertical: str, state: str = "") -> List[Dict]:
+def _vertical_rows(vertical: str, state: str = "",
+                   limit: Optional[int] = _TABLE_LIMIT) -> List[Dict]:
     """Normalized provider rows for the active vertical from the REAL loaders.
     Each row: ccn, name, city, state, ownership, size/size_label, q/q_label,
     source. Missing values are None (rendered '—'); never fabricated.
+    ``limit=None`` returns the full universe (the just-missed scan needs it).
     """
     state = (state or "").upper()
     try:
@@ -263,7 +265,7 @@ def _vertical_rows(vertical: str, state: str = "") -> List[Dict]:
             if state:
                 df = df[df["state"].str.upper() == state]
             rows = []
-            for _, r in df.head(800).iterrows():
+            for _, r in (df if limit is None else df.head(800)).iterrows():
                 margin = r.get("operating_margin")
                 rows.append({
                     "ccn": str(r.get("ccn", "")), "name": str(r.get("name", "") or "—"),
@@ -274,7 +276,7 @@ def _vertical_rows(vertical: str, state: str = "") -> List[Dict]:
                     "q_label": "Op margin", "q_pct": True, "source": "CMS HCRIS",
                 })
             rows.sort(key=lambda x: (x["q"] is None, -(x["q"] or -9)))
-            return rows[:_TABLE_LIMIT]
+            return rows[:limit] if limit else rows
         cfg = _VERTICAL_TABLE.get(vertical)
         if not cfg:
             return []
@@ -299,7 +301,7 @@ def _vertical_rows(vertical: str, state: str = "") -> List[Dict]:
                 "q_pct": False, "source": cfg["src"],
             })
         rows.sort(key=lambda x: (x["q"] is None, -(x["q"] if isinstance(x["q"], (int, float)) else -9)))
-        return rows[:_TABLE_LIMIT]
+        return rows[:limit] if limit else rows
     except Exception:  # noqa: BLE001 — loader hiccup → honest empty table
         return []
 
@@ -693,14 +695,142 @@ def _screen_compare(qs, ck) -> str:
     )
 
 
+def _f_or_none(qs, key):
+    v = _q1(qs, key)
+    try:
+        return float(v) if v != "" else None
+    except ValueError:
+        return None
+
+
 def _screen_missed(qs, ck) -> str:
-    return _scaffold("Just-missed scan", "PR 6", [
-        "Providers/markets that failed the active filters by one or two "
-        "criteria — with which criteria and how far off.",
-        "“Relax this filter to include N”, recomputed server-side from query params.",
-        "“Data missing, not failed” when exclusion was a missing value.",
-        "Open in Compare · Save screen.",
-    ])
+    import html as _h
+    vertical = _q1(qs, "vertical", "hospitals") or "hospitals"
+    if vertical not in _VERTICAL_KEYS:
+        vertical = "hospitals"
+    vinfo = next((v for v in _VERTICALS if v["key"] == vertical), _VERTICALS[0])
+    state = _q1(qs, "state").upper()
+    min_q = _f_or_none(qs, "min_quality")
+    min_size = _f_or_none(qs, "min_size")
+
+    rows = _vertical_rows(vertical, state, limit=None)
+    q_label = (rows[0]["q_label"] if rows else "Quality")
+    size_label = (rows[0].get("size_label") if rows and rows[0].get("size_label") else "Size")
+    has_size = any(r.get("size") is not None for r in rows)
+
+    # GET filter form (server-first, shareable). Hidden view/vertical keep state.
+    form = (
+        '<form method="get" action="/target-screener" class="tsw-verticals" '
+        'style="align-items:flex-end;gap:14px;">'
+        '<input type="hidden" name="view" value="missed">'
+        f'<input type="hidden" name="vertical" value="{vertical}">'
+        '<label style="font-family:var(--sc-mono);font-size:10px;">State'
+        f'<br><input name="state" value="{_h.escape(state)}" size="3" '
+        'style="font-family:var(--sc-mono);padding:3px 6px;"></label>'
+        f'<label style="font-family:var(--sc-mono);font-size:10px;">Min {q_label}'
+        f'<br><input name="min_quality" value="{min_q if min_q is not None else ""}" '
+        'size="6" style="font-family:var(--sc-mono);padding:3px 6px;"></label>'
+        + (f'<label style="font-family:var(--sc-mono);font-size:10px;">Min {size_label}'
+           f'<br><input name="min_size" value="{min_size if min_size is not None else ""}" '
+           'size="6" style="font-family:var(--sc-mono);padding:3px 6px;"></label>' if has_size else "")
+        + '<button type="submit" class="tsw-vert" style="cursor:pointer;">Scan</button>'
+        '</form>'
+    )
+
+    if min_q is None and min_size is None:
+        return (form + '<p class="ck-section-body">Set a <strong>minimum '
+                f'{q_label}</strong>' + (f' or <strong>minimum {size_label}</strong>'
+                if has_size else "") + ' threshold and Scan. Just-missed surfaces real '
+                f'{vinfo["label"]} providers that fail your filters by a single '
+                'criterion — and flags those excluded only because a value is '
+                '<em>missing</em> (not because they failed). No fabricated counts.</p>')
+
+    # Evaluate each provider against the active numeric filters.
+    just_missed, missing_data = [], []
+    relax_q = relax_size = 0
+    for r in rows:
+        fails, dist_bits, miss_bits = [], [], []
+        if min_q is not None:
+            if r["q"] is None:
+                miss_bits.append(f"{q_label} not reported")
+            elif r["q"] < min_q:
+                fails.append("q")
+                dist_bits.append(f"{q_label} short by {min_q - r['q']:.3g}")
+        if min_size is not None and has_size:
+            if r.get("size") is None:
+                miss_bits.append(f"{size_label} not reported")
+            elif r["size"] < min_size:
+                fails.append("size")
+                dist_bits.append(f"{size_label} short by {min_size - r['size']:.0f}")
+        if miss_bits and not fails:
+            missing_data.append((r, miss_bits))
+        elif len(fails) == 1:
+            # near-miss distance for sorting (relative to threshold)
+            if fails == ["q"]:
+                d = (min_q - r["q"]) / (abs(min_q) or 1)
+                relax_q += 1
+            else:
+                d = (min_size - r["size"]) / (abs(min_size) or 1)
+                relax_size += 1
+            just_missed.append((d, r, dist_bits))
+    just_missed.sort(key=lambda t: t[0])
+
+    relax_links = []
+    if min_q is not None and relax_q:
+        keep = {"view": "missed", "vertical": vertical}
+        if state:
+            keep["state"] = state
+        if min_size is not None:
+            keep["min_size"] = min_size
+        href = "/target-screener?" + "&".join(f"{k}={v}" for k, v in keep.items())
+        relax_links.append(f'<a class="ck-link" href="{href}">Relax {q_label} → +{relax_q} providers</a>')
+    if min_size is not None and relax_size:
+        keep = {"view": "missed", "vertical": vertical}
+        if state:
+            keep["state"] = state
+        if min_q is not None:
+            keep["min_quality"] = min_q
+        href = "/target-screener?" + "&".join(f"{k}={v}" for k, v in keep.items())
+        relax_links.append(f'<a class="ck-link" href="{href}">Relax {size_label} → +{relax_size} providers</a>')
+
+    def _row_html(r, bits):
+        ccn = _h.escape(r["ccn"])
+        cmp_href = f'/target-screener?view=compare&compare={ccn}'
+        return (
+            '<tr style="border-bottom:1px solid var(--sc-rule,#e4ddca);">'
+            f'<td style="padding:5px 8px;font-weight:600;">{_h.escape(r["name"])}'
+            f'<span style="font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-faint,#8b94a0);"> · {ccn}</span></td>'
+            f'<td style="padding:5px 8px;">{_h.escape(", ".join([p for p in (r["city"], r["state"]) if p]) or "—")}</td>'
+            f'<td style="padding:5px 8px;color:var(--sc-warning,#b8732a);">{_h.escape("; ".join(bits))}</td>'
+            f'<td style="padding:5px 8px;white-space:nowrap;">'
+            f'<a class="ck-link" href="/diligence/xray?ccn={ccn}&vertical={vertical}">X-Ray</a> · '
+            f'<a class="ck-link" href="{cmp_href}">+Cmp</a></td></tr>'
+        )
+
+    jm = "".join(_row_html(r, bits) for _, r, bits in just_missed[:50])
+    md = "".join(_row_html(r, bits) for r, bits in missing_data[:30])
+    out = [form]
+    out.append(f'<p class="ck-section-body" style="margin:6px 0;"><strong>{len(just_missed)}</strong> '
+               f'{vinfo["label"]} providers <em>just missed</em> by exactly one criterion'
+               + (f' · {" · ".join(relax_links)}' if relax_links else "") + '.</p>')
+    if jm:
+        out.append('<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;">'
+                   '<thead><tr style="text-align:left;border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
+                   '<th style="padding:6px 8px;">Provider</th><th style="padding:6px 8px;">Location</th>'
+                   '<th style="padding:6px 8px;">Just missed because…</th><th style="padding:6px 8px;">Open</th></tr></thead>'
+                   f'<tbody>{jm}</tbody></table></div>')
+    else:
+        out.append('<p class="ck-section-body">No single-criterion near-misses at these thresholds.</p>')
+    if md:
+        out.append(f'<p class="ck-section-body" style="margin:14px 0 4px;"><strong>Excluded only '
+                   f'for missing data</strong> ({len(missing_data)}) — these were not failed, the '
+                   f'value simply is not reported:</p>'
+                   '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;">'
+                   '<thead><tr style="text-align:left;border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
+                   '<th style="padding:6px 8px;">Provider</th><th style="padding:6px 8px;">Location</th>'
+                   '<th style="padding:6px 8px;">Missing</th><th style="padding:6px 8px;">Open</th></tr></thead>'
+                   f'<tbody>{md}</tbody></table></div>')
+    return "".join(out)
 
 
 def _screen_saved(qs, ck) -> str:

@@ -102,7 +102,8 @@ class WorkbenchShellTests(unittest.TestCase):
 
     def test_unbuilt_screens_are_labeled_scaffolds_not_fake(self):
         # Honest: not-yet-wired screens declare themselves, never fake data.
-        for view in ("inspector", "columns", "compare", "missed", "saved"):
+        # (compare→PR5, missed→PR6 are now built; inspector/columns/saved remain.)
+        for view in ("inspector", "columns", "saved"):
             self.assertIn("Scaffold", self._render(view=view), view)
 
 
@@ -244,6 +245,43 @@ class WorkbenchCompareTests(unittest.TestCase):
         h = self._render(view="main", vertical="snf")
         self.assertIn("+Cmp", h)
         self.assertIn("view=compare&compare=", h)
+
+
+class WorkbenchJustMissedTests(unittest.TestCase):
+    """PR 6 — just-missed scan: single-criterion near-misses + missing-data."""
+
+    def _render(self, **params):
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        return render_target_screener({k: [v] for k, v in params.items()})
+
+    def test_uncapped_rows_for_scan(self):
+        from rcm_mc.ui.target_screener_page import _vertical_rows, _TABLE_LIMIT
+        full = _vertical_rows("snf", limit=None)
+        self.assertGreater(len(full), _TABLE_LIMIT)  # scan sees the whole universe
+
+    def test_prompt_without_thresholds(self):
+        h = self._render(view="missed", vertical="snf")
+        self.assertIn("Set a", h)
+        self.assertIn("Scan", h)              # the GET filter form
+
+    def test_scan_with_thresholds_shows_just_missed(self):
+        h = self._render(view="missed", vertical="snf", min_quality="4", min_size="100")
+        self.assertIn("just missed", h.lower())
+        self.assertIn("Just missed because", h)  # the near-miss table header
+
+    def test_missing_data_not_failed(self):
+        h = self._render(view="missed", vertical="hospice", min_quality="50")
+        # Providers with no reported metric are surfaced as missing, not failed.
+        self.assertTrue("not reported" in h.lower() or "missing data" in h.lower())
+
+    def test_relax_link_present_when_near_misses(self):
+        h = self._render(view="missed", vertical="dialysis", min_quality="4")
+        self.assertTrue("Relax" in h or "No single-criterion" in h)
+
+    def test_filter_form_is_get_and_shareable(self):
+        h = self._render(view="missed", vertical="irf", min_quality="50")
+        self.assertIn('method="get"', h)
+        self.assertIn('name="min_quality"', h)
 
 
 class NavAndRouteTests(unittest.TestCase):
