@@ -529,15 +529,45 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
     has_size = any(r.get("size") is not None for r in rows)
     size_label = rows[0].get("size_label") or "Size"
     q_label = rows[0].get("q_label") or "Quality"
+
+    # Optional sort (?sort=name|location|size|quality & direction=asc|desc).
+    # No sort param → keep the default quality-desc ranking from _vertical_rows.
+    sort_key = _q1(qs, "sort").lower()
+    direction = (_q1(qs, "direction").lower() or "desc")
+    rev = direction != "asc"
+    _keys = {
+        "name": lambda r: (r.get("name") or "").lower(),
+        "location": lambda r: (r.get("state") or "", (r.get("city") or "").lower()),
+        "size": lambda r: (r.get("size") is None, -(r.get("size") or 0) if rev else (r.get("size") or 0)),
+        "quality": lambda r: (r.get("q") is None, -(r.get("q") or 0) if rev else (r.get("q") or 0)),
+    }
+    if sort_key in _keys:
+        if sort_key in ("name", "location"):
+            rows = sorted(rows, key=_keys[sort_key], reverse=rev)
+        else:  # numeric keys already fold direction into the key; None sinks last
+            rows = sorted(rows, key=_keys[sort_key])
+
+    def _sh(label, col, align="left"):
+        # Clickable header: sets sort=col and toggles asc/desc when re-clicked.
+        nd = "asc" if (sort_key == col and direction == "desc") else "desc"
+        keep = {"view": "main", "vertical": vertical, "sort": col, "direction": nd}
+        if state:
+            keep["state"] = state
+        href = "/target-screener?" + "&".join(f"{k}={v}" for k, v in keep.items())
+        arrow = (" ▾" if direction == "desc" else " ▴") if sort_key == col else ""
+        ta = f"text-align:{align};"
+        return (f'<th style="padding:6px 8px;{ta}"><a class="ck-link" href="{href}">'
+                f'{label}{arrow}</a></th>')
+
     head = (
-        '<tr style="text-align:left;border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
-        '<th style="padding:6px 8px;">Provider</th>'
-        '<th style="padding:6px 8px;">Location</th>'
-        '<th style="padding:6px 8px;">Ownership</th>'
-        + (f'<th style="padding:6px 8px;text-align:right;">{size_label}</th>' if has_size else "")
-        + f'<th style="padding:6px 8px;text-align:right;">{q_label}</th>'
-        '<th style="padding:6px 8px;">Source</th>'
-        '<th style="padding:6px 8px;">Open</th></tr>'
+        '<tr style="border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
+        + _sh("Provider", "name")
+        + _sh("Location", "location")
+        + '<th style="padding:6px 8px;text-align:left;">Ownership</th>'
+        + (_sh(size_label, "size", "right") if has_size else "")
+        + _sh(q_label, "quality", "right")
+        + '<th style="padding:6px 8px;text-align:left;">Source</th>'
+        + '<th style="padding:6px 8px;text-align:left;">Open</th></tr>'
     )
     cur_cmp = [c for c in _q1(qs, "compare").split(",") if c]
     trs = []

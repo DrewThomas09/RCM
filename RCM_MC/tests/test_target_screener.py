@@ -472,6 +472,44 @@ class WorkbenchMapLayerTests(unittest.TestCase):
         self.assertTrue(_LAYER_BY_KEY["age65"].get("live"))
 
 
+class WorkbenchSortTests(unittest.TestCase):
+    """PR 16 — sortable provider table columns (?sort=&direction=)."""
+
+    def _render(self, **params):
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        return render_target_screener({k: [v] for k, v in params.items()})
+
+    def _names(self, html):
+        import re
+        return re.findall(r'font-weight:600;">(.*?)<span style="font-family:var\(--sc-mono\)', html)
+
+    def test_headers_are_sortable_links(self):
+        h = self._render(view="main", vertical="snf")
+        for col in ("sort=name", "sort=quality", "sort=size", "sort=location"):
+            self.assertIn(col, h)
+
+    def test_name_asc_orders_alphabetically(self):
+        h = self._render(view="main", vertical="snf", sort="name", direction="asc")
+        nm = [n.lower() for n in self._names(h)]
+        self.assertEqual(nm, sorted(nm))
+        self.assertTrue(nm)
+
+    def test_name_desc_reverses(self):
+        h = self._render(view="main", vertical="snf", sort="name", direction="desc")
+        nm = [n.lower() for n in self._names(h)]
+        self.assertEqual(nm, sorted(nm, reverse=True))
+
+    def test_sort_arrow_shown(self):
+        h = self._render(view="main", vertical="snf", sort="quality", direction="desc")
+        self.assertTrue(("▾" in h) or ("▴" in h))
+
+    def test_default_unsorted_is_quality_ranked(self):
+        from rcm_mc.ui.target_screener_page import _vertical_rows
+        rows = _vertical_rows("snf", "TX")
+        qs = [r["q"] for r in rows if r["q"] is not None]
+        self.assertEqual(qs, sorted(qs, reverse=True))
+
+
 class WorkbenchCsvExportTests(unittest.TestCase):
     """PR 14 — CSV export of the current screen (real loader rows)."""
 
