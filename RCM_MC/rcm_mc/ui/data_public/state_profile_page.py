@@ -137,8 +137,15 @@ def render_state_profile(params: Dict = None) -> str:
                 hint = "highest first"
             else:
                 hint = "largest first"
+            # Rank-position bar: width = how close to #1 (best) on this metric.
+            # Direction-aware rank already puts the best state at pos 1, so a
+            # fuller bar = stronger. Honest visual of the real rank, no fabrication.
+            pct = round((n - pos + 1) / n * 100) if n else 0
+            barw = max(3, pct)
+            bar = (f'<div style="height:3px;width:{barw}%;background:{ac};opacity:0.55;'
+                   f'margin:3px 0 0 auto;border-radius:1px"></div>')
             rank_cell = (f'#{pos} <span style="color:{fa}">of {n}</span> '
-                         f'<span style="color:{fa};font-size:9px">· {hint}</span>')
+                         f'<span style="color:{fa};font-size:9px">· {hint}</span>{bar}')
 
         # vs U.S. median — robust to outliers (e.g. CA population). Tinted by
         # the metric's direction: better-than-median = positive, worse = warning;
