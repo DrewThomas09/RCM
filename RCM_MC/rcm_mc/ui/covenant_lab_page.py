@@ -23,7 +23,7 @@ from ..diligence.covenant_lab.simulator import (
 )
 from ._chartis_kit import (
     P, chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
-    ck_section_header, ck_section_intro, ck_signal_badge,
+    ck_section_header, ck_section_intro, ck_signal_badge, ck_source_purpose,
 )
 from .power_ui import (
     benchmark_chip, bookmark_hint, deal_context_bar,
@@ -1070,6 +1070,13 @@ def render_covenant_lab_page(
         _scoped_styles()
         + '<div class="cl-wrap">'
         + deal_context_bar(qs, active_surface="covenant")
+        + ck_source_purpose(
+            purpose="Stress-test covenant headroom (DSCR / leverage) against EBITDA and rate shocks before underwriting the debt package.",
+            universe="user-deals",
+            confidence="derived",
+            source="Your entered deal capital structure + covenant terms × modeled shock scenarios — a calculator on your inputs, not the lender's actual compliance certificate.",
+            next_action="Confirm the real covenant terms with management / lender",
+        )
         + hero
         + reg_note
         + breach_panel

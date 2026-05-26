@@ -26,6 +26,7 @@ _REQUIRE_SOURCE_PURPOSE = {
     "target_screener_page.py": _UI / "target_screener_page.py",
     "predictive_screener.py": _UI / "predictive_screener.py",
     "market_intel_page.py": _UI / "market_intel_page.py",
+    "covenant_lab_page.py": _UI / "covenant_lab_page.py",
     "data_public/cost_structure_page.py": _UI / "data_public" / "cost_structure_page.py",
     "data_public/debt_service_page.py": _UI / "data_public" / "debt_service_page.py",
     "data_public/ref_pricing_page.py": _UI / "data_public" / "ref_pricing_page.py",
