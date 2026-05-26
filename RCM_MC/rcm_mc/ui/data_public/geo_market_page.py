@@ -316,10 +316,17 @@ def render_geo_market(params: dict = None) -> str:
         f'<div style="background:{panel};border:1px solid {border};'
         f'border-left:3px solid {acc};padding:10px 14px;margin:0 0 14px;font-size:12px;'
         f'color:{text_dim}">For <b style="color:{text}">real</b> state-level market data — '
-        f'senior demand, provider supply, SNF/hospital consolidation, Medicare Advantage — '
-        f'see <a href="/market-intel/geo" style="color:{acc};font-weight:600">'
-        f'Market Intelligence (Geographic) &rarr;</a>. This page is an illustrative '
-        f'CBSA white-space analyzer (seed corpus).</div>')
+        f'demographics, provider supply, shortage areas, SNF consolidation, Medicare '
+        f'Advantage, patient experience — use the real-data '
+        f'<a href="/geo-intel" style="color:{acc};font-weight:600">Geographic Intelligence</a> '
+        f'suite (<a href="/state-rankings" style="color:{acc}">rank states</a> · '
+        f'<a href="/state-compare" style="color:{acc}">compare</a> · '
+        f'<a href="/state-profile" style="color:{acc}">profile</a> · '
+        f'<a href="/state-peers" style="color:{acc}">find similar</a>), or '
+        f'<a href="/market-intel/geo" style="color:{acc}">Market Intelligence (Geographic) &rarr;</a>. '
+        f'This page is an <b style="color:{text}">illustrative</b> CBSA white-space analyzer '
+        f'(seed corpus); its competitive-density (HHI), 5-yr-growth and payer-mix inputs are '
+        f'synthetic, so the tiers are directional, not real-data screening.</div>')
 
     body = f"""
 <div class="ck-page-wrap">
