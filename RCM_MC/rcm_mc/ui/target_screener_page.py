@@ -535,6 +535,108 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
     )
 
 
+# Market/geography verticals are screened at the STATE level (not individual
+# providers). Each maps a (state -> value) layer + a ranked state table.
+_MARKET_METRICS = [
+    ("population", "Population", lambda v: f"{v/1e6:.2f}M"),
+    ("age_65_plus", "Age 65+ %", lambda v: f"{v*100:.1f}%"),
+    ("median_income", "Median income", lambda v: f"${v:,.0f}"),
+    ("uninsured_acs", "Uninsured %", lambda v: f"{v*100:.1f}%"),
+    ("provider_supply", "Provider supply", lambda v: f"{v:,.0f}"),
+]
+
+
+def _geo_state_values(vertical: str, metric: str):
+    """Real (state -> value) map for a geography vertical. Returns
+    (values, label, formatter, source). {} on failure → honest empty map."""
+    try:
+        if vertical == "provider_supply":
+            from ..data.provider_supply import _state_type
+            df = _state_type()
+            g = df.groupby(df["state"].str.upper())["enrolled_count"].sum()
+            return ({str(k): float(v) for k, v in g.items() if str(k).strip()},
+                    "Medicare-enrolled providers", lambda v: f"{int(v):,}",
+                    "CMS PECOS / provider enrollment")
+        if vertical == "market":
+            from ..data.state_demographics import STATE_ABBRS  # may not exist
+    except Exception:  # noqa: BLE001
+        pass
+    if vertical == "market":
+        try:
+            from .us_geo_map import US_STATE_PATHS
+            from .data_public.state_compare_page import _raw
+            mk = next((m for m in _MARKET_METRICS if m[0] == metric), _MARKET_METRICS[0])
+            vals = {}
+            for st in US_STATE_PATHS.keys():
+                v = (_raw(st) or {}).get(mk[0])
+                if isinstance(v, (int, float)):
+                    vals[st] = float(v)
+            return vals, mk[1], mk[2], "ACS / CMS public geographic data"
+        except Exception:  # noqa: BLE001
+            return {}, "metric", (lambda v: f"{v:g}"), "public geo"
+    return {}, "value", (lambda v: f"{v:g}"), "—"
+
+
+def _render_geo_view(vertical: str, qs: Dict[str, List[str]], ck) -> str:
+    import html as _h
+    from .us_geo_map import render_us_geo_map
+    vinfo = next((v for v in _VERTICALS if v["key"] == vertical), _VERTICALS[0])
+    sel = _q1(qs, "state").upper()
+    metric = _q1(qs, "metric") or ("population" if vertical == "market" else "supply")
+    values, mlabel, fmt, source = _geo_state_values(vertical, metric)
+    map_html = render_us_geo_map(
+        values, metric_label=mlabel, value_format=fmt, selected_state=sel or None,
+        map_title=f"{vinfo['label']} — {mlabel} by state",
+        exposure_label=f"{mlabel} (low&nbsp;→&nbsp;high)",
+        caveat_text=(f"Real {source} — state-level {mlabel}. This is a MARKET/"
+                     "geography view, not individual providers. Click a state for "
+                     "its market detail. Approximate Albers SVG."),
+        empty_message=f"No state-level {mlabel} available right now.")
+    # Metric selector for the market vertical.
+    layer_bar = ""
+    if vertical == "market":
+        chips = []
+        for key, lab, _f in _MARKET_METRICS:
+            cls = "tsw-vert is-active" if key == metric else "tsw-vert"
+            chips.append(f'<a class="{cls}" href="/target-screener?view=main&vertical=market&metric={key}'
+                         + (f"&state={sel}" if sel else "") + f'">{lab}</a>')
+        layer_bar = ('<div style="font-family:var(--sc-mono);font-size:9px;letter-spacing:.12em;'
+                     'text-transform:uppercase;color:var(--sc-text-faint,#8b94a0);margin:2px 0 5px;">'
+                     'Market metric</div><div class="tsw-verticals">' + "".join(chips) + '</div>')
+    # Ranked state table.
+    rows = sorted(values.items(), key=lambda kv: -kv[1])
+    trs = "".join(
+        '<tr style="border-bottom:1px solid var(--sc-rule,#e4ddca);">'
+        f'<td style="padding:5px 8px;font-weight:600;">{_h.escape(st)}</td>'
+        f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;">{fmt(v)}</td>'
+        f'<td style="padding:5px 8px;"><a class="ck-link" href="/geo-intel?state={_h.escape(st)}">market →</a> · '
+        f'<a class="ck-link" href="/diligence/xray?state={_h.escape(st)}">X-Ray search →</a></td></tr>'
+        for st, v in rows[:60]
+    )
+    table = ('<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;">'
+             '<thead><tr style="text-align:left;border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
+             f'<th style="padding:6px 8px;">State</th><th style="padding:6px 8px;text-align:right;">{_h.escape(mlabel)}</th>'
+             '<th style="padding:6px 8px;">Open</th></tr></thead>'
+             f'<tbody>{trs}</tbody></table></div>') if rows else (
+             '<p class="ck-section-body">No state-level values available.</p>')
+    listener = (
+        "<script>(function(){document.addEventListener('us-map-select',function(e){"
+        "var st=e&&e.detail&&e.detail.state;if(!st)return;"
+        "window.location.href='/geo-intel?state='+encodeURIComponent(st);});})();</script>")
+    return (
+        _vertical_bar(vertical, qs)
+        + ck["panel"](
+            f'<p class="ck-section-body" style="margin:0;"><strong>{vinfo["label"]}</strong> is a '
+            f'<strong>market/geography</strong> view — it screens states (and, later, counties), '
+            f'not individual providers. Real {source}. Click a state to open its '
+            f'<a href="/geo-intel" class="ck-link">Geographic Intelligence</a> market detail.</p>',
+            title="Market-level universe (not individual providers)")
+        + ck["panel"](layer_bar + map_html + listener,
+                      title=f"{mlabel} by state · click a state for market detail")
+        + ck["panel"](table, title=f"States ranked by {mlabel}")
+    )
+
+
 def _scaffold(title: str, pr: str, bullets: List[str]) -> str:
     items = "".join(f"<li>{b}</li>" for b in bullets)
     return (
@@ -548,6 +650,9 @@ def _scaffold(title: str, pr: str, bullets: List[str]) -> str:
 
 
 def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
+    # Market/geography verticals screen states, not providers → geo view.
+    if vertical in ("provider_supply", "market"):
+        return _render_geo_view(vertical, qs, ck)
     active_mode = _q1(qs, "mode").lower()
     cards = "".join(
         f'<a class="ts-mode{" is-active" if m["key"] == active_mode else ""}" '
