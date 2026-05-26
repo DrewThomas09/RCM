@@ -162,6 +162,7 @@ _SUB_NAV = {
     "source": [
         {"label": "Target Screener",     "href": "/target-screener"},
         {"label": "Deal Sourcing",       "href": "/source"},
+        {"label": "Geographic Intel",    "href": "/geo-intel"},
         {"label": "Thesis Screening",    "href": "/deal-screening"},
         {"label": "Conferences",         "href": "/conferences"},
     ],
@@ -3587,6 +3588,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "thesis-pipe",   "title": "Thesis Pipeline",    "route": "/diligence/thesis-pipeline"},
     {"id": "checklist",     "title": "Diligence Checklist","route": "/diligence/checklist"},
     {"id": "data-activation","title": "Data Activation Center · activate analyses with your data", "route": "/data-activation"},
+    {"id": "geo-intel",     "title": "Geographic Intelligence · real-data state analysis hub", "route": "/geo-intel"},
     {"id": "state-compare", "title": "State Comparison · compare states across real public data", "route": "/state-compare"},
     {"id": "state-rankings","title": "State Rankings · rank all states on one real metric", "route": "/state-rankings"},
     {"id": "state-profile", "title": "State Profile · one state's metrics + national ranks", "route": "/state-profile"},
@@ -6770,6 +6772,9 @@ _SUB_SECTION_MAP = {
     "/target-screener": "source", "/source": "source", "/conferences": "source",
     "/screen": "source", "/predictive-screener": "source",
     "/deal-screening": "source",
+    # Geographic Intelligence trio — real-data origination screening.
+    "/geo-intel": "source", "/state-compare": "source",
+    "/state-rankings": "source", "/state-profile": "source",
     # Pipeline = real deal-workflow surfaces only.
     "/pipeline": "pipeline", "/new-deal": "pipeline", "/deal-pipeline": "pipeline",
     "/deal-quality": "pipeline", "/deal-risk-scores": "pipeline",
