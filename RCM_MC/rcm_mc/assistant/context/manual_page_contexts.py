@@ -487,29 +487,67 @@ _MANUAL: List[PageContext] = [
     ),
     _ctx(
         "/target-screener", "Target Screener",
-        short_description="The unified Source entry: one place to find targets "
-        "with three modes (Thesis Sourcing, Hospital Screener, Predictive "
-        "Screener), all searching the same public CMS/HCRIS hospital universe.",
-        primary_purpose="Give a single, clear starting point for target "
-        "discovery and explain which of the three screening modes to use — "
-        "they differ in HOW you search, not what they search.",
+        short_description="The Source workbench: a six-screen, server-rendered "
+        "target-screening surface (Main · Inspector · Columns · Compare · Just "
+        "missed · Saved screens) over every public CMS/provider universe — "
+        "hospitals/HCRIS, home health, hospice, SNF, dialysis, IRF, LTCH, "
+        "provider supply, and markets. Driven by ?view= and shareable query "
+        "params; a real US map (not squares) shades states by provider count.",
+        primary_purpose="Find acquisition targets across every onboarded CMS/"
+        "provider universe — by filter, map, score, compare, and just-missed "
+        "scan — then open a target's X-Ray and promote it to Pipeline. One "
+        "workflow: Source → Target Screener → evaluate → compare → just-missed "
+        "→ save → X-Ray → promote.",
         common_questions=[
-            "What is the difference between Target Screener and Pipeline?",
-            "Which screener mode should I use?",
-            "How do I promote a result into a deal?"],
-        inputs=["Choice of mode; the underlying screeners read public "
-                "CMS/HCRIS hospital data."],
-        outputs=["Routes to Thesis Sourcing (/source), Hospital Screener "
-                 "(/screen), or Predictive Screener (/predictive-screener)."],
-        data_sources=["Public CMS / HCRIS hospital universe (market data, "
-                      "not your deals)."],
-        why_it_matters="Removes the 'which screener do I use?' confusion by "
-        "giving one entry that explains and routes to each mode.",
+            "What is Target Screener for?",
+            "Which vertical/universe should I use?",
+            "What data powers this result?",
+            "How is the opportunity/quality score computed?",
+            "What does the map layer mean?",
+            "Why did this target just miss my filters?",
+            "Which filters are excluding targets?",
+            "Can I compare targets across verticals?",
+            "What should I open next?",
+            "What data is missing for this target?",
+            "Is this investment advice?",
+            "How do I promote a target to Pipeline?"],
+        inputs=["Vertical/universe selection; query-param filters (state, "
+                "min_quality, min_size, …); compare basket (CCNs); map state "
+                "clicks. All read public CMS/provider data, never your deals."],
+        outputs=["Real US provider-density map (click a state to filter); a "
+                 "ranked provider table from the live loader with source + "
+                 "missingness per row; metric-by-metric Compare; a just-missed "
+                 "scan; shareable saved-screen URLs; X-Ray / Inspector links."],
+        key_metrics=["Provider count by state (per vertical)",
+                     "Vertical-specific quality (HH star, SNF overall rating, "
+                     "dialysis five-star, hospice care index, IRF/LTCH "
+                     "discharge-to-community, hospital operating margin)",
+                     "Size (beds / stations / certified beds)"],
+        data_sources=["Real CMS public universes via the live loaders: HCRIS, "
+                      "Home Health / Hospice / SNF / Dialysis / IRF / LTCH "
+                      "Compare, provider supply; geo/market intelligence for "
+                      "map layers. The historical deal corpus is NEVER an "
+                      "active target universe (research/benchmark label only)."],
+        model_logic_summary="Counts and quality come straight from the CMS "
+        "loaders (no model). Scores, where shown, are formula-documented, "
+        "missingness-aware blends of real metrics — never AI black boxes — and "
+        "show DATA REQUIRED when they cannot be computed.",
+        why_it_matters="Replaces three overlapping screeners with one workbench "
+        "that screens every real provider universe, keeps market data distinct "
+        "from your deals, and is honest about what is missing.",
         interpretation_guidance=[
-            "This is CMS PUBLIC DATA (the market), not your pipeline or "
-            "portfolio. Promote a result into the Pipeline to track it as a "
-            "real opportunity.",
+            "This is CMS PUBLIC DATA (the market), not your pipeline/portfolio; "
+            "promote a result into the Pipeline to track it.",
+            "A '—' means the metric is not reported for that provider — it was "
+            "not fabricated, and (on Just missed) it is 'missing, not failed'.",
+            "Cross-vertical Compare only shares identity/size/quality columns, "
+            "and those use each vertical's own metric — they are not directly "
+            "comparable across verticals.",
+            "Nothing here is investment advice; it is a screening signal.",
         ],
+        related_routes=["/diligence/xray", "/diligence/hcris-xray", "/geo-intel",
+                        "/market-intel/geo", "/pipeline", "/source", "/screen",
+                        "/predictive-screener"],
     ),
     _ctx(
         "/source", "Deal Sourcing",
