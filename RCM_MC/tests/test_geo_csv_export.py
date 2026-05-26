@@ -39,7 +39,8 @@ class GeoCsvDataFrameTests(unittest.TestCase):
 
     def test_profile_dataframe_has_rank(self):
         df = profile_dataframe("CA")
-        self.assertEqual(list(df.columns), ["Metric", "Value", "NationalRank", "Of", "Source"])
+        self.assertEqual(list(df.columns),
+                         ["Metric", "Value", "VsUSMedianPct", "NationalRank", "Of", "Source"])
         self.assertEqual(len(df), 15)
         pop_rank = df.loc[df["Metric"] == "Population", "NationalRank"].iloc[0]
         self.assertEqual(pop_rank, 1)
@@ -71,7 +72,7 @@ class GeoCsvRouteTests(unittest.TestCase):
         for path, needle in (
             ("/state-compare.csv?states=CA,TX", "Metric,Source,CA,TX"),
             ("/state-rankings.csv?metric=population", "Rank,State,Population,Source"),
-            ("/state-profile.csv?state=CA", "Metric,Value,NationalRank,Of,Source"),
+            ("/state-profile.csv?state=CA", "Metric,Value,VsUSMedianPct,NationalRank,Of,Source"),
         ):
             status, ctype, body = self._get(path)
             self.assertEqual(status, 200, path)

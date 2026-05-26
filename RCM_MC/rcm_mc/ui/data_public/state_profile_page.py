@@ -47,6 +47,17 @@ def _parse_state(params: Dict) -> str:
     return s if s in _VALID else _DEFAULT
 
 
+def _us_median(vals: List[float]):
+    """National median across reporting states — robust to outliers (e.g. CA
+    population). Returns None when no state reports the metric."""
+    s = sorted(v for v in vals if v is not None and v == v)
+    k = len(s)
+    if k == 0:
+        return None
+    mid = k // 2
+    return s[mid] if k % 2 else (s[mid - 1] + s[mid]) / 2.0
+
+
 def _all_ranked() -> Dict[str, List[Tuple[str, float]]]:
     """For every metric, the states that have a value, sorted in the metric's
     natural direction. One _raw pass over the 51 jurisdictions; no fabrication."""
@@ -70,9 +81,15 @@ def profile_dataframe(state: str):
         pairs = ranked.get(key, [])
         pos = next((i for i, (s, _) in enumerate(pairs, start=1) if s == state), "")
         val = next((v for s, v in pairs if s == state), "")
-        rows.append({"Metric": label, "Value": val, "NationalRank": pos,
-                     "Of": len(pairs), "Source": source})
-    return _pd.DataFrame(rows, columns=["Metric", "Value", "NationalRank", "Of", "Source"])
+        vs = ""
+        if val != "":
+            med = _us_median([v for _, v in pairs])
+            if med:
+                vs = round((val - med) / abs(med) * 100.0, 1)
+        rows.append({"Metric": label, "Value": val, "VsUSMedianPct": vs,
+                     "NationalRank": pos, "Of": len(pairs), "Source": source})
+    return _pd.DataFrame(rows, columns=["Metric", "Value", "VsUSMedianPct",
+                                        "NationalRank", "Of", "Source"])
 
 
 def render_state_profile(params: Dict = None) -> str:
@@ -100,6 +117,8 @@ def render_state_profile(params: Dict = None) -> str:
         f'</form>'
     )
 
+    pos_c = P["positive"]; warn_c = P["warning"]
+
     rows = ""
     for i, (key, label, source, _f, higher) in enumerate(_METRICS):
         bg = P["panel_alt"] if i % 2 else P["panel"]
@@ -120,11 +139,30 @@ def render_state_profile(params: Dict = None) -> str:
                 hint = "largest first"
             rank_cell = (f'#{pos} <span style="color:{fa}">of {n}</span> '
                          f'<span style="color:{fa};font-size:9px">· {hint}</span>')
+
+        # vs U.S. median — robust to outliers (e.g. CA population). Tinted by
+        # the metric's direction: better-than-median = positive, worse = warning;
+        # neutral metrics (no inherent good/bad direction) stay un-tinted.
+        med = _us_median([v for _, v in pairs])
+        if val is None or med is None or med == 0:
+            vs_cell = '<span style="opacity:0.55">—</span>'
+        else:
+            delta = (val - med) / abs(med) * 100.0
+            arrow = "▲" if delta > 0 else ("▼" if delta < 0 else "·")
+            if higher is None:
+                col = td
+            else:
+                better = (delta > 0) if higher else (delta < 0)
+                col = pos_c if delta != 0 and better else (warn_c if delta != 0 else td)
+            vs_cell = f'<span style="color:{col}">{arrow} {abs(delta):.0f}%</span>'
+
         rows += (
             f'<tr>'
             f'<td style="padding:5px 10px;font-size:11px;color:{td};background:{bg}">{_html.escape(label)}</td>'
             f'<td style="padding:5px 10px;text-align:right;font-family:JetBrains Mono,monospace;'
             f'font-size:12px;font-variant-numeric:tabular-nums;color:{tp};background:{bg}">{_html.escape(val_str)}</td>'
+            f'<td style="padding:5px 10px;text-align:right;font-family:JetBrains Mono,monospace;'
+            f'font-size:11px;background:{bg};white-space:nowrap">{vs_cell}</td>'
             f'<td style="padding:5px 10px;text-align:right;font-family:JetBrains Mono,monospace;'
             f'font-size:11px;color:{td};background:{bg};white-space:nowrap">{rank_cell}</td>'
             f'<td style="padding:5px 10px;font-size:10px;color:{fa};background:{bg}">{_html.escape(source)}</td>'
@@ -136,9 +174,11 @@ def render_state_profile(params: Dict = None) -> str:
   {ck_page_title(f"State Profile — {name}", eyebrow="MARKET INTEL", meta=f"Every real public-data metric for {name} ({state}), with its national rank")}
   <p style="font-size:13px;color:{td};max-width:72ch;margin:0 0 14px">
     A single-state dossier across PEdesk's real public-data layers — each metric
-    shown with {_html.escape(name)}'s national rank among the states that report it.
-    Every figure is real and sourced; metrics with no value on record show
-    &ldquo;&mdash;&rdquo; and are left unranked, never fabricated.
+    shown with {_html.escape(name)}'s gap to the U.S. median and its national rank
+    among the states that report it. Better-than-median is tinted positive, worse
+    is tinted amber (neutral metrics are left un-tinted). Every figure is real and
+    sourced; metrics with no value on record show &ldquo;&mdash;&rdquo; and are
+    left unranked, never fabricated.
   </p>
   {form}
   <div style="overflow-x:auto;border:1px solid {border};border-radius:3px">
@@ -146,6 +186,7 @@ def render_state_profile(params: Dict = None) -> str:
     <thead><tr>
       <th style="text-align:left;padding:6px 10px;border-bottom:2px solid {border};font-size:10px;color:{td};text-transform:uppercase;letter-spacing:0.06em">Metric</th>
       <th style="text-align:right;padding:6px 10px;border-bottom:2px solid {border};font-size:10px;color:{td};text-transform:uppercase;letter-spacing:0.06em">{_html.escape(name)}</th>
+      <th style="text-align:right;padding:6px 10px;border-bottom:2px solid {border};font-size:10px;color:{td};text-transform:uppercase;letter-spacing:0.06em">vs U.S. median</th>
       <th style="text-align:right;padding:6px 10px;border-bottom:2px solid {border};font-size:10px;color:{td};text-transform:uppercase;letter-spacing:0.06em">National rank</th>
       <th style="text-align:left;padding:6px 10px;border-bottom:2px solid {border};font-size:10px;color:{td};text-transform:uppercase;letter-spacing:0.06em">Source</th>
     </tr></thead><tbody>{rows}</tbody></table>
