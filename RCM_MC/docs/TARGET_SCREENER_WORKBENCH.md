@@ -122,6 +122,30 @@ client JS may enhance.
     how scores compute, why a target just missed, what's missing, not advice,
     how to promote to Pipeline).
 
+## Build status (2026-05-26) — COMPLETE
+
+Shipped + deployed (server-rendered, real CMS data, no iframe/CDN/squares):
+
+| PR | What | Status |
+|---|---|---|
+| 1 (#902) | Component map + plan | ✅ merged |
+| 2 (#903) | Six-screen `view=` shell | ✅ merged |
+| 3 (#904) | Real US map + state click→filter + layers | ✅ merged |
+| 4 (#905) | Ranked provider table (7 verticals) + X-Ray/Inspect | ✅ merged |
+| 5 (#906) | Compare basket (same/cross-vertical) | ✅ merged |
+| 6 (#908) | Just-missed scan (miss-distance + relax + missing≠failed) | ✅ merged |
+| 7 (#909) | Column picker / metric dictionary + live availability | ✅ merged |
+| 8 (#910) | Inspector drawer (peer percentile, links, Guide) | ✅ merged |
+| 9 (#911) | Saved screens (shareable URLs + honest persistence caveat) | ✅ merged |
+| 10 (#912) | Geographic verticals (provider supply + market) | ✅ merged |
+| 11 (#907) | Workbench Guide context (answers every screen question) | ✅ merged |
+
+All six screens × nine universes are live. `test_target_screener.py` carries
+61 tests; the broad TS + map + guide + nav surface is green (515 passed).
+Optional follow-ups: county-geometry drilldown, named saved-screen
+persistence (schema documented above), more scored opportunity columns,
+dedicated RAG source cards.
+
 ## Invariants
 
 No fake data · every row carries data-universe + source status + year +
