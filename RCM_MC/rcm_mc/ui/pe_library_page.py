@@ -38,6 +38,7 @@ _LIVE_ROUTES: Dict[str, str] = {
     "failure_archetype_library": "/diligence/pe-reference?library=archetypes",
     "bidder_landscape_reader": "/diligence/pe-reference?library=bidders",
     "banker_narrative_decoder": "/diligence/pe-reference?library=narratives",
+    "signing_to_close_risk_register": "/diligence/pe-reference?library=signing",
 }
 
 

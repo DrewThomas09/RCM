@@ -220,6 +220,20 @@ _LIBRARIES: Dict[str, Dict[str, Any]] = {
             "highlight": ("partner_counter", "Partner counter"),
         },
     },
+    "signing": {
+        "title": "Signing-to-Close Risks",
+        "intro": "What can break a deal between signing and close — frequency, "
+                 "severity, the early warnings, and the pre-close counter.",
+        "load": _from_const("signing_to_close_risk_register", "RISK_LIBRARY"),
+        "spec": {
+            "title": "name",
+            "badge": ("typical_cost_to_buyer_pct", "{:.1f}% cost"),
+            "metas": [("frequency", "frequency"), ("severity", "severity")],
+            "bodies": [("description", "Risk", False)],
+            "chips": ("early_warning_signals", "Early-warning signals"),
+            "highlight": ("partner_counter_pre_close", "Counter · pre-close"),
+        },
+    },
 }
 _DEFAULT_LIB = "failures"
 
