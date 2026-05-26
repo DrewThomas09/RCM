@@ -32,7 +32,7 @@ from ..market_intel import (
 )
 from ._chartis_kit import (
     P, chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
-    ck_section_intro,
+    ck_section_intro, ck_source_purpose,
 )
 from .power_ui import provenance, sortable_table
 
@@ -644,6 +644,14 @@ def render_market_intel_page(
     body = (
         _MI_STYLES
         + _hero(category, specialty)
+        + ck_source_purpose(
+            purpose="Frame a target against listed public-operator comps and named PE transactions — the public-market read before/around a deal.",
+            universe="research",
+            confidence="mixed",
+            source="Curated public-operator comps (HCA/THC/CYH/UHS/… from SEC filings + analyst aggregators) and a curated PE-transaction library; refreshed quarterly. Public-market context, not your deal's terms.",
+            next_action="Pull the full public-comp + PE deal flow",
+            next_href="/market-intel/seeking-alpha",
+        )
         + _geo_intel_section()
         + _public_comps_section(
             category, revenue_usd, target_ev_usd=ev_usd,
