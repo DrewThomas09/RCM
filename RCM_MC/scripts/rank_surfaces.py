@@ -82,6 +82,32 @@ def _route_module_map() -> Dict[str, str]:
         mod = (imp.group(1) if imp
                else mod_by_fn.get(fn.group(1)) if fn
                else handler_mod.get(handler.group(1)) if handler else None)
+        if mod is None:
+            # Additive fallback: a few page routes (the diligence ._pages /
+            # snapshot_page set, plus pages whose import sits just past the
+            # 400-char window after a long comment) still resolve to None above.
+            # Recover them — but conservatively, to avoid grabbing a neighbour's
+            # import (which silently mis-ranks pages). Two safeguards:
+            #   * bound the block to this route's own preamble — the earlier of
+            #     the next routing branch (`if/elif path...`) or its first
+            #     `return`. Real page routes import-then-render (the
+            #     `from .. import render_X` precedes the return, so it survives
+            #     the cut); routes that render inline or fan out to a
+            #     multi-renderer dict yield an empty preamble and stay None.
+            #   * require the import to bind a ``render_*`` name (the same
+            #     signal the .ui resolver uses) and accept .diligence.* too.
+            #     This rejects helper imports (``from .portfolio_monitor import
+            #     PortfolioAsset``) and non-page modules (``surface_status``).
+            rest = src[m.end():]
+            bounds = [mm.start() for mm in (
+                re.search(r'\n\s+(?:el)?if path[ .]', rest),
+                re.search(r'\n\s+return ', rest)) if mm]
+            block = rest[: min(bounds) if bounds else 600]
+            own = re.search(
+                r'from \.(?:ui|diligence)(?:\.[\w.]+)?\.([\w]+) import '
+                r'(?:\(\s*)?(render_\w+)', block)
+            if own:
+                mod = own.group(1)
         route = m.group(1)
         if mod and not route.endswith(".csv") and not route.startswith("/api"):
             out.setdefault(route, mod)
@@ -89,8 +115,11 @@ def _route_module_map() -> Dict[str, str]:
 
 
 def _module_path(stem: str) -> Optional[pathlib.Path]:
+    # .ui first; the diligence page modules (_pages, snapshot_page) live
+    # outside ui/ and are searched last so a ui stem always wins a name clash.
     for cand in (_UI / f"{stem}.py", _UI / "data_public" / f"{stem}.py",
-                 _UI / "chartis" / f"{stem}.py"):
+                 _UI / "chartis" / f"{stem}.py",
+                 _ROOT / "rcm_mc" / "diligence" / f"{stem}.py"):
         if cand.is_file():
             return cand
     return None

@@ -33,8 +33,26 @@ class RankingEngineTests(unittest.TestCase):
                      "/diligence/covenant-stress", "/diligence/ic-packet"):
             self.assertIn(must, routes, f"{must} dropped from ranking (crossover)")
         dil = [r for r in self.rows if r["route"].startswith("/diligence/")]
-        self.assertGreaterEqual(len(dil), 20, "diligence under-captured")
-        self.assertGreaterEqual(len(self.rows), 270, "coverage regressed")
+        self.assertGreaterEqual(len(dil), 28, "diligence under-captured")
+        self.assertGreaterEqual(len(self.rows), 290, "coverage regressed")
+
+    def test_diligence_pages_module_routes_captured(self):
+        # Second crossover guard: pages that inline-import a render_* from a
+        # NON-.ui module (.diligence._pages / snapshot_page) or whose import
+        # sits past the 400-char window were dropped until the conservative
+        # render_*-bound fallback. The fallback must stay precise — it accepts
+        # only import-then-render page routes, never a neighbour's import.
+        routes = {r["route"] for r in self.rows}
+        for must in ("/diligence/value", "/diligence/benchmarks",
+                     "/diligence/ingest", "/diligence/qoe-memo",
+                     "/diligence/root-cause", "/diligence/snapshot",
+                     "/diligence/sponsor-detail"):
+            self.assertIn(must, routes, f"{must} dropped (._pages crossover)")
+        # Precision guard: the fallback must not mis-attribute inline-render or
+        # helper-import routes (the failure mode that regressed prior attempts).
+        by_route = {r["route"]: r["module"] for r in self.rows}
+        self.assertNotEqual(by_route.get("/portfolio/monitor"), "_chartis_kit")
+        self.assertNotIn("surface_status", {r["module"] for r in self.rows})
 
     def test_scores_in_range(self):
         for r in self.rows:
