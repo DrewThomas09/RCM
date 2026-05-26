@@ -33,11 +33,14 @@ Part of the Diligence Workbench Excellence Loop.
 | 4 | `tests/test_xray_rag_cards.py` + `document_sources` always indexes `docs/rag_sources/`. |
 | 5 | `tests/test_payer_stress*.py`, `tests/test_deal_mc.py`, `tests/test_ref_pricing_real_data.py`, `tests/test_payer_stress_hcris_wiring.py` (no-CCN ⇒ illustrative). |
 
-## Known pre-existing exceptions (tracked, not introduced by this loop)
-- `test_curated_illustrative_note{,_batch3}` — `scenario_mc` / `base_rates`
-  carry `ck-illus-note` where the test asserts they should not. Pre-existing on
-  clean main; not regressed by loop work. Candidate fix: reconcile the test's
-  live/calc allow-list with those pages' actual (honest) labels.
+## Resolved
+- `test_curated_illustrative_note{,_batch3}` — previously asserted `scenario_mc`
+  / `base_rates` must NOT carry `ck-illus-note`. Reconciled (loop): those pages
+  are correctly labeled — `scenario_mc`/`tax_structure_analyzer` render
+  ILLUSTRATIVE DEFAULTS that compute off user inputs, and `base_rates` derives
+  from the illustrative SEED CORPUS. The tests now assert the honest label is
+  present (not absent); the original expectation predated the pages adopting
+  the honest illustrative-defaults / seed-corpus note.
 
 ## How to extend
 When a new Diligence analyzer page ships: add its renderer to

@@ -43,12 +43,21 @@ class CuratedBatch3Tests(unittest.TestCase):
             self.assertIn("ck-illus-note", html, name)
             self.assertIn("Illustrative template", html, name)
 
-    def test_live_pages_never_labeled(self):
-        # Genuinely live / calc pages must never carry the marker.
+    def test_corpus_and_calc_pages_are_labeled_honestly(self):
+        # base_rates derives its rates from the illustrative SEED CORPUS, and
+        # scenario_mc renders ILLUSTRATIVE DEFAULT figures until the user
+        # supplies inputs — so both correctly carry an honest illustrative
+        # marker. (Updated from the original "never labeled" expectation, which
+        # wrongly treated these as fully-live pages; the seed corpus is not a
+        # verified live benchmark and default scenario figures are not live.)
         from rcm_mc.ui.data_public.base_rates_page import render_base_rates
         from rcm_mc.ui.data_public.scenario_mc_page import render_scenario_mc
-        self.assertNotIn("ck-illus-note", render_base_rates())
-        self.assertNotIn("ck-illus-note", render_scenario_mc({}))
+        br = render_base_rates()
+        self.assertIn("ck-illus-note", br)
+        self.assertIn("corpus", br.lower())
+        sc = render_scenario_mc({})
+        self.assertIn("ck-illus-note", sc)
+        self.assertIn("illustrative defaults", sc)
 
 
 if __name__ == "__main__":
