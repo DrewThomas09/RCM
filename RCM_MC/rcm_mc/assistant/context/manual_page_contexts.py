@@ -4900,6 +4900,39 @@ _MANUAL: List[PageContext] = [
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
+    _ctx(
+        "/state-peers", "Similar States",
+        category=PageContextCategory.PIPELINE_SOURCING,
+        short_description="Finds the states whose real public-data profile is "
+        "most similar to a chosen state — a comp-set read for origination.",
+        primary_purpose="Answer 'if the thesis works in state X, where else "
+        "looks like X?' for building a target-geography comp set.",
+        common_questions=["Which states are most like Ohio?",
+                          "Where else resembles this market?"],
+        inputs=["?state=OH — one validated US state (50 + DC)."],
+        outputs=["States ranked by similarity (closest-first) with a distance."],
+        key_metrics=["Standardized (z-score) Euclidean distance over the 15 "
+                     "shared geo metrics, normalized by the number shared."],
+        data_sources=["Derived from the same real public datasets as the rest "
+                      "of the geo trio (Census/ACS · CMS · HRSA · CDC PLACES · "
+                      "HCAHPS)."],
+        model_logic_summary="Each metric is standardized across reporting "
+        "states; distance is the RMS of per-metric z-score gaps over the "
+        "metrics both states report. Smaller = more alike. States sharing "
+        "fewer than 6 metrics are listed separately, not scored.",
+        why_it_matters="A fast, transparent comp-set heuristic for deciding "
+        "where a working thesis might travel.",
+        diligence_use_cases=["Building a comparable-market set from a known "
+                             "good market."],
+        interpretation_guidance=["Similarity is a DERIVED screening heuristic "
+                                 "from real data — not a fabricated score and "
+                                 "not a deal-level judgment.",
+                                 "States with too few shared metrics are listed "
+                                 "separately, never given a misleading score."],
+        related_routes=["/geo-intel", "/state-profile", "/state-compare"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
 ]
 
 # ── DATA REQUIRED pages: DOCUMENTED Guide contexts (table-driven). Each page

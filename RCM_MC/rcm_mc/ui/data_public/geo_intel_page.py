@@ -24,6 +24,9 @@ _CARDS = [
     ("State Profile", "/state-profile",
      "One state's full metric set, each shown with its national rank (#k of n).",
      "Best for: a quick dossier on a single market you're underwriting."),
+    ("Similar States", "/state-peers",
+     "Find the states whose real public-data profile is most like a chosen state.",
+     "Best for: building a comp set — “if the thesis works here, where else?”"),
 ]
 
 _DATASETS = [
