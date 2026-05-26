@@ -24,6 +24,7 @@ _COLS = [
     ("pct_age_65_plus",          "Age 65+",          lambda x: f"{x*100:.1f}%", False),
     ("median_household_income",  "Median HH income", lambda x: f"${x:,.0f}",    True),
     ("uninsured_rate",           "Uninsured",        lambda x: f"{x*100:.1f}%", False),
+    ("child_poverty_rate",       "Child poverty",    lambda x: f"{x*100:.1f}%", False),
     ("pct_rural",                "Rural",            lambda x: f"{x*100:.1f}%", False),
 ]
 _COL_BY_KEY = {c[0]: c for c in _COLS}

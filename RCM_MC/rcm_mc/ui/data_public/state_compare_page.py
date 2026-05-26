@@ -58,6 +58,7 @@ def _raw(state: str) -> Dict[str, float]:
         _set("age_65_plus", lambda: dm.get("pct_age_65_plus"))
         _set("median_income", lambda: dm.get("median_household_income"))
         _set("uninsured_acs", lambda: dm.get("uninsured_rate"))
+        _set("child_poverty", lambda: dm.get("child_poverty_rate"))
     except Exception:
         pass
     try:
@@ -123,6 +124,7 @@ _METRICS = [
     ("age_65_plus",      "Age 65+",                       "Census/ACS",  lambda x: f"{x*100:.1f}%",   True),
     ("median_income",    "Median HH income",              "Census/ACS",  lambda x: f"${x:,.0f}",      True),
     ("uninsured_acs",    "Uninsured (ACS)",               "Census/ACS",  lambda x: f"{x*100:.1f}%",   False),
+    ("child_poverty",    "Child poverty (ACS)",           "Census/ACS",  lambda x: f"{x*100:.1f}%",   False),
     ("provider_supply",  "Provider supply (CMS FFS)",     "CMS FFS",     lambda x: f"{int(x):,}",     True),
     ("pc_supply",        "Primary-care supply (approx)",  "CMS FFS",     lambda x: f"{int(x):,}",     True),
     ("hpsa_pc",          "PC shortage areas (HRSA HPSA)", "HRSA HPSA",   lambda x: f"{int(x):,}",     False),

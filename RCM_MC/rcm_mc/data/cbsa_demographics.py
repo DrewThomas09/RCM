@@ -28,7 +28,7 @@ _DIR = Path(__file__).resolve().parent / "vendor" / "cbsa_crosswalk"
 # (county-demographics column, weighted? ) — population is summed; the rest are
 # population-weighted means.
 _WEIGHTED_COLS = ["pct_age_65_plus", "median_household_income",
-                  "uninsured_rate", "pct_rural"]
+                  "uninsured_rate", "child_poverty_rate", "pct_rural"]
 
 
 @functools.lru_cache(maxsize=None)
