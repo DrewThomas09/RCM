@@ -80,9 +80,11 @@ def _inline(s: str) -> str:
 
 
 def _md_to_html(md: str) -> str:
-    """Compact markdown → Chartis-styled HTML for tool output (headings,
-    pipe tables, bullet lists, bold/italic, paragraphs). Self-contained so the
-    page carries no cross-package CSS dependency."""
+    """Compact markdown → Chartis-styled HTML for tool output. Handles
+    headings, pipe tables, bullet *and* numbered lists, blockquotes, horizontal
+    rules, bold/italic, and paragraphs — the full set the pe_intelligence tools
+    emit, so none of it leaks through as literal ``>``/``---``/``1.``. Self-
+    contained so the page carries no cross-package CSS dependency."""
     th = (f'padding:6px 10px;font-family:var(--ck-mono);font-size:9.5px;'
           f'letter-spacing:0.06em;text-transform:uppercase;color:{P["text_faint"]};'
           f'text-align:left;border-bottom:2px solid {P["border"]};')
@@ -90,7 +92,7 @@ def _md_to_html(md: str) -> str:
           f'border-bottom:1px solid {P["border_dim"]};vertical-align:top;')
     out: List[str] = []
     table: List[str] = []
-    in_list = False
+    list_kind = None   # None | "ul" | "ol"
 
     def flush_table() -> None:
         rows = [r.strip() for r in table if r.strip()]
@@ -111,17 +113,32 @@ def _md_to_html(md: str) -> str:
         out.append("".join(html))
 
     def close_list() -> None:
-        nonlocal in_list
-        if in_list:
-            out.append("</ul>")
-            in_list = False
+        nonlocal list_kind
+        if list_kind:
+            out.append(f"</{list_kind}>")
+            list_kind = None
 
-    for line in md.split("\n"):
+    def open_list(kind: str) -> None:
+        nonlocal list_kind
+        if list_kind != kind:
+            close_list()
+            tag = "ul" if kind == "ul" else "ol"
+            out.append(f'<{tag} style="margin:6px 0 6px 20px;padding:0;">')
+            list_kind = kind
+
+    li = (f'style="font-size:12.5px;line-height:1.55;'
+          f'color:{P["text"]};margin:2px 0;"')
+    ol_re = re.compile(r'^(\d+)\.\s+(.*)')
+
+    for raw in md.split("\n"):
+        line = raw.rstrip()
         if line.startswith("|"):
             table.append(line)
             continue
         if table:
             flush_table()
+        stripped = line.strip()
+        m_ol = ol_re.match(line.lstrip())
         if line.startswith("# "):
             close_list()
             out.append(f'<h2 style="font-family:var(--sc-serif);color:{P["text"]};'
@@ -136,13 +153,24 @@ def _md_to_html(md: str) -> str:
                        f'letter-spacing:0.06em;text-transform:uppercase;'
                        f'color:{P["text_dim"]};margin:10px 0 4px;">'
                        f'{_inline(line[4:])}</h4>')
+        elif stripped in ("---", "***", "___"):
+            close_list()
+            out.append(f'<hr style="border:0;border-top:1px solid '
+                       f'{P["border_dim"]};margin:12px 0;">')
+        elif line.startswith((">", "&gt;")) or stripped.startswith(">"):
+            close_list()
+            quote = stripped.lstrip(">").strip()
+            out.append(f'<blockquote style="margin:6px 0 6px 4px;padding:4px 0 '
+                       f'4px 12px;border-left:3px solid {P["border"]};'
+                       f'color:{P["text_dim"]};font-size:12px;line-height:1.55;'
+                       f'font-style:italic;">{_inline(quote)}</blockquote>')
         elif line.startswith(("- ", "* ")):
-            if not in_list:
-                out.append('<ul style="margin:6px 0 6px 18px;padding:0;">')
-                in_list = True
-            out.append(f'<li style="font-size:12.5px;line-height:1.55;'
-                       f'color:{P["text"]};margin:2px 0;">{_inline(line[2:])}</li>')
-        elif line.strip() == "":
+            open_list("ul")
+            out.append(f'<li {li}>{_inline(line[2:])}</li>')
+        elif m_ol:
+            open_list("ol")
+            out.append(f'<li {li}>{_inline(m_ol.group(2))}</li>')
+        elif stripped == "":
             close_list()
         else:
             close_list()

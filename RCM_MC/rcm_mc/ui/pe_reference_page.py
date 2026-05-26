@@ -86,7 +86,7 @@ def _failure_card(p: Any) -> str:
         stat = (
             f'<span style="font-family:var(--ck-mono);font-size:11px;'
             f'font-weight:700;color:{P["negative"]};white-space:nowrap;">'
-            f'-{dest * 100:.0f}% EBITDA</span>'
+            f'-{dest * 100:.1f}% EBITDA</span>'
         )
     signals = getattr(p, "early_warning_signals", []) or []
     sig_html = ("".join(_chip(s) for s in signals)) if signals else ""

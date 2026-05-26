@@ -64,6 +64,19 @@ class RunReviewToolTests(unittest.TestCase):
         self.assertIn("Diligence Board", md)
 
 
+class DefaultDealTests(unittest.TestCase):
+    def test_deals_with_packets_prefers_built(self):
+        # The runner defaults to a deal that already has a packet so the page
+        # looks filled out rather than hollow. Helper must surface built deals.
+        from tests.test_alerts import _seed_with_pe_math
+        from rcm_mc.analysis.analysis_store import (
+            deals_with_packets, get_or_build_packet)
+        store = _seed_with_pe_math(tempfile.mkdtemp(), "ccf", headroom=-0.5)
+        self.assertEqual(deals_with_packets(store), [])
+        get_or_build_packet(store, "ccf", skip_simulation=True)
+        self.assertIn("ccf", deals_with_packets(store))
+
+
 class MarkdownTests(unittest.TestCase):
     def test_renders_headings_tables_bold(self):
         md = "# Title\n\nLead **bold**.\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\n- item"
@@ -75,6 +88,27 @@ class MarkdownTests(unittest.TestCase):
 
     def test_escapes_html(self):
         self.assertIn("&lt;script&gt;", _md_to_html("<script>"))
+
+    def test_blockquote_hr_ordered_not_literal(self):
+        # Regression: these constructs used to leak through as literal
+        # &gt; / --- / "1." (old-looking output). They must render as elements.
+        h = _md_to_html("> a quote\n\n1. first\n2. second\n\n---\n\ntail")
+        self.assertIn("<blockquote", h)
+        self.assertIn("<ol ", h)
+        self.assertIn("<hr ", h)
+        # no literal markdown left in paragraphs
+        self.assertNotRegex(h, r"<p[^>]*>\s*&gt;")
+        self.assertNotRegex(h, r"<p[^>]*>\d+\.\s")
+
+    def test_real_tool_output_has_no_literal_markdown(self):
+        # The two tools that emit blockquotes / hr / numbered lists must render
+        # clean (no &gt;/---/"1." leaking) on a real deal.
+        review = _real_review()
+        for slug in ("analyst_cheatsheet", "partner_discussion"):
+            md, _ = run_review_tool(slug, review)
+            html = _md_to_html(md)
+            self.assertNotRegex(html, r"<p[^>]*>\s*&gt;", slug)
+            self.assertNotRegex(html, r"<p[^>]*>-{3,}</p>", slug)
 
 
 class ToolPageTests(unittest.TestCase):
