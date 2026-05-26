@@ -635,6 +635,15 @@ _DATA_UNIVERSE = {
                        "Needs a user upload / CCD / internal file to activate."),
     "experimental":   ("EXPERIMENTAL", "exp",
                        "Real source exists but coverage/method is partial — caveated."),
+    # Licensed third-party data, used only as derived/structured facts (raw
+    # reports/exports never served). Distinct from public CMS/research.
+    "licensed-report-derived": ("LICENSED REPORT", "ref",
+                       "Derived from a licensed industry report (e.g. IBISWorld) — "
+                       "structured facts only; the raw report is never served."),
+    "licensed-market-derived": ("LICENSED MARKET DATA", "ref",
+                       "Derived from a licensed market-data export (e.g. "
+                       "SimplyAnalytics) — area-level, not your deals; unexported "
+                       "variables show EXPORT REQUIRED, never fabricated."),
 }
 
 
@@ -642,7 +651,8 @@ def ck_data_universe(kind: str) -> str:
     """A small mono chip naming the page's data universe / confidence.
 
     ``kind`` ∈ user-deals · user-portfolio · cms · hcris · corpus · research ·
-    mixed · derived · illustrative · data-required · experimental. Renders
+    mixed · derived · illustrative · data-required · experimental ·
+    licensed-report-derived · licensed-market-derived. Renders
     nothing for an unknown kind (fail-safe). Style lives in the global shell
     CSS (`.ck-universe`)."""
     rec = _DATA_UNIVERSE.get(kind)
