@@ -31,7 +31,7 @@ from ..diligence.regulatory_calendar.killswitch import (
 from ._chartis_kit import (
     P, chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
     ck_next_section, ck_provenance_tooltip, ck_section_intro,
-    ck_signal_badge,
+    ck_signal_badge, ck_source_purpose,
 )
 from .power_ui import (
     benchmark_chip, bookmark_hint, deal_context_bar,
@@ -925,6 +925,13 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
         _scoped_styles()
         + '<div class="rc-wrap">'
         + deal_context_bar(qs or {}, active_surface="reg")
+        + ck_source_purpose(
+            purpose="Map which thesis drivers face regulatory kill-switches and when — tie deal value to specific upcoming CMS/OIG/FTC/DOJ dates.",
+            universe="research",
+            source="Curated regulatory-event library (CMS / OIG / FTC / DOJ) — each event carries a primary-source citation; the margin/revenue impact figures are PEdesk scenario estimates, not regulator forecasts.",
+            next_action="Log the binding events as risks in the Risk Workbench",
+            next_href="/diligence/risk-workbench",
+        )
         + f'<div style="padding:22px 0 16px 0;">'
         + '<div class="rc-eyebrow">Regulatory Calendar × '
         + 'Thesis Kill-Switch</div>'

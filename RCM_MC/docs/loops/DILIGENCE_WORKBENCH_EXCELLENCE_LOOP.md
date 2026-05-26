@@ -43,10 +43,14 @@ enhancements, real-data wiring on existing/public data, tests.
 - #853 RAG indexer fix · #854 target-screener · #855 bear-case header
 
 ### PRs merged
-- #849–#859 (11 PRs, all green-merged + deployed): scorecard/ledger, payer-stress,
-  hcris-xray, provider-xray, RAG-indexer fix, target-screener, bear-case,
-  data-honesty guards, model-page Guide contexts, predictive-screener,
-  market-intel header.
+- #849–#869 (all green-merged + deployed). First sweep (#849–859): scorecard/
+  ledger, payer-stress, hcris-xray, provider-xray, RAG-indexer fix,
+  target-screener, bear-case, data-honesty guards, model-page Guide contexts,
+  predictive-screener, market-intel header. Header/guard sweep (#860–869):
+  scorecard re-score, guard expansion, State-Comparison magnitude bars, and
+  source/purpose headers for covenant-stress, bridge-audit, exit-timing,
+  counterfactual, management-scorecard, deal-autopsy, comparable-outcomes.
+  **Regression guard now protects 25 analyzer pages** (incl. regulatory-calendar, #870).
 
 ### Deployed SHAs
 - 878fcb65 (loop start) → fbc3a50f (after #854); /healthz ok throughout
