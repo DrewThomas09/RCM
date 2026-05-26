@@ -64,6 +64,19 @@ class RunReviewToolTests(unittest.TestCase):
         self.assertIn("Diligence Board", md)
 
 
+class DefaultDealTests(unittest.TestCase):
+    def test_deals_with_packets_prefers_built(self):
+        # The runner defaults to a deal that already has a packet so the page
+        # looks filled out rather than hollow. Helper must surface built deals.
+        from tests.test_alerts import _seed_with_pe_math
+        from rcm_mc.analysis.analysis_store import (
+            deals_with_packets, get_or_build_packet)
+        store = _seed_with_pe_math(tempfile.mkdtemp(), "ccf", headroom=-0.5)
+        self.assertEqual(deals_with_packets(store), [])
+        get_or_build_packet(store, "ccf", skip_simulation=True)
+        self.assertIn("ccf", deals_with_packets(store))
+
+
 class MarkdownTests(unittest.TestCase):
     def test_renders_headings_tables_bold(self):
         md = "# Title\n\nLead **bold**.\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\n- item"

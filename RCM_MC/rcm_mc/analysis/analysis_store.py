@@ -138,6 +138,23 @@ def load_latest_packet(
         return None
 
 
+def deals_with_packets(store: Any) -> List[str]:
+    """Deal ids that already have a cached analysis packet, most-recent first.
+
+    Used to pick a sensible default deal for tools that run off a packet — a
+    deal with a built packet renders rich output immediately (and fast, from
+    cache) instead of a hollow "no data" first impression."""
+    _ensure_table(store)
+    with store.connect() as con:
+        rows = con.execute(
+            """SELECT deal_id, MAX(created_at) AS latest
+                 FROM analysis_runs
+                GROUP BY deal_id
+                ORDER BY latest DESC"""
+        ).fetchall()
+    return [str(r["deal_id"]) for r in rows]
+
+
 def find_cached_packet(
     store: Any,
     deal_id: str,

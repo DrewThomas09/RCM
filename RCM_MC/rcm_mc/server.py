@@ -3238,7 +3238,16 @@ class RCMHandler(BaseHTTPRequestHandler):
                 deals = []
             deal_id = (qs.get("deal") or [""])[0]
             if not deal_id and deals:
-                deal_id = deals[0][0]
+                # Default to a deal that already has a built packet so the page
+                # looks filled out (rich, cached output) rather than a hollow
+                # "no data" first impression; fall back to the first deal.
+                try:
+                    from .analysis.analysis_store import deals_with_packets
+                    have = [d for d in deals_with_packets(store)
+                            if d in {x[0] for x in deals}]
+                except Exception:  # noqa: BLE001
+                    have = []
+                deal_id = have[0] if have else deals[0][0]
             review = None
             err = ""
             deal_name = ""
