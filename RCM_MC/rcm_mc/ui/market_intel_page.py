@@ -590,6 +590,42 @@ margin-bottom:10px;}}
 """
 
 
+def _geo_intel_section() -> str:
+    """Surface the real-data Geographic Intelligence suite on the market-intel
+    page — public-market comps + PE deal flow are one lens; real state/metro
+    public data is the other. Pure navigation; renders no figures."""
+    border = P["border"]; tp = P["text"]; td = P["text_dim"]
+    fa = P.get("text_faint", td); ac = P["accent"]
+    links = [
+        ("Map", "/geo-map", "shade states by any metric"),
+        ("Compare", "/state-compare", "states side by side"),
+        ("Rank", "/state-rankings", "all states on one metric"),
+        ("Profile", "/state-profile", "one state + national rank"),
+        ("Metros", "/metro-markets", "real CBSA demographics"),
+        ("Counties", "/county-explorer", "drill into a state"),
+    ]
+    chips = "".join(
+        f'<a href="{href}" style="display:inline-block;background:{P["panel_alt"]};'
+        f'border:1px solid {border};border-radius:2px;padding:5px 10px;margin:0 6px 6px 0;'
+        f'text-decoration:none;color:{ac};font-family:Inter Tight,sans-serif;font-size:12px">'
+        f'{lbl} <span style="color:{fa};font-size:10px">· {hint}</span></a>'
+        for lbl, href, hint in links
+    )
+    return (
+        f'<div style="background:{P["panel"]};border:1px solid {border};'
+        f'border-left:3px solid {ac};padding:14px 16px;margin:0 0 18px">'
+        f'<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{td};'
+        f'text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">'
+        f'Geographic Intelligence · real public data</div>'
+        f'<div style="font-size:12px;color:{td};margin-bottom:10px;max-width:72ch">'
+        f'The public-market and PE-deal overlay below is one lens; the '
+        f'<a href="/geo-intel" style="color:{ac};text-decoration:none;font-weight:600">'
+        f'Geographic Intelligence</a> suite is the other — 50 states + DC and 918 metros '
+        f'on real Census/ACS · CMS · HRSA · CDC · OIG data (no synthetic values).</div>'
+        f'<div>{chips}</div></div>'
+    )
+
+
 def render_market_intel_page(
     *,
     category: Optional[str] = None,
@@ -608,6 +644,7 @@ def render_market_intel_page(
     body = (
         _MI_STYLES
         + _hero(category, specialty)
+        + _geo_intel_section()
         + _public_comps_section(
             category, revenue_usd, target_ev_usd=ev_usd,
         )
