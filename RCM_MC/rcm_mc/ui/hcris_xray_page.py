@@ -139,7 +139,8 @@ def _xray_workstation(q: str, state_filter: str, summary: dict) -> str:
                       'FY2022). Real runs render live HCRIS values for the '
                       'matched peer pool — nothing here is your target.')
         + k.xr_source(f"SOURCE: CMS HCRIS · {summary.get('total_rows', 0):,} "
-                      f"filings · {len(summary.get('states', []))} states")
+                      f"filings · {len(summary.get('states', []))} states "
+                      "& territories")
         + '</div>'
     )
     return f'<div class="xr-ws">{left}{right}</div>'
@@ -941,8 +942,9 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
             },
         )
         + ck_kpi_block(
-            "States",
+            "States & territories",
             f"{len(summary['states'])}",
+            sub="incl. DC, PR, VI, GU, AS, MP",
         )
         + ck_kpi_block(
             "Fiscal years",
