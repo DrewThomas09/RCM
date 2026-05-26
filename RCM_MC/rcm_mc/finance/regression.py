@@ -332,8 +332,11 @@ def prune_collinear(
     whose coefficients are actually interpretable.
 
     Returns ``(kept_features, dropped)`` where ``dropped`` is an ordered list
-    of ``{"feature", "vif"}`` (highest-VIF first, in drop order) so the UI can
-    explain exactly what was removed and why.
+    of ``{"feature", "vif", "explained_by"}`` (highest-VIF first, in drop
+    order). ``explained_by`` is the 1–2 still-present features most correlated
+    with the dropped one — so the UI can say *"dropped bed_days_available
+    (VIF 143): nearly determined by beds, total_patient_days"* instead of an
+    unexplained removal.
     """
     clean = features_df.select_dtypes(include=[np.number]).dropna()
     cols = list(clean.columns)
@@ -346,9 +349,23 @@ def prune_collinear(
         worst_vif = vifs[worst]
         if worst_vif <= max_vif:
             break
+        # Which surviving features explain this one? Rank the other current
+        # columns by |correlation| with the dropped feature.
+        others = [c for c in cols if c != worst]
+        explained_by: List[Dict[str, Any]] = []
+        if others:
+            try:
+                corrs = clean[others].corrwith(clean[worst]).abs()
+                for feat, r in corrs.sort_values(ascending=False).head(2).items():
+                    if r >= 0.5:
+                        explained_by.append(
+                            {"feature": str(feat), "r": round(float(r), 3)})
+            except Exception:  # noqa: BLE001
+                explained_by = []
         dropped.append({"feature": worst,
                         "vif": (round(worst_vif, 2)
-                                if worst_vif != float("inf") else None)})
+                                if worst_vif != float("inf") else None),
+                        "explained_by": explained_by})
         cols.remove(worst)
     return cols, dropped
 
