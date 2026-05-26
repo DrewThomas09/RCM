@@ -3442,6 +3442,12 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/diligence" or path == "/diligence/":
             from .ui.diligence_index_page import render_diligence_index
             return self._send_html(render_diligence_index())
+        # Ranked "best of <section>" index — the page each nav bar's "show more"
+        # opens (top surfaces by usefulness-weighted ranking). Read-only.
+        if path.startswith("/best/"):
+            from .ui.section_best_page import render_section_best
+            _sec = path[len("/best/"):].strip("/").lower()
+            return self._send_html(render_section_best(_sec))
         # Diligence Checklist — orchestration layer + open-questions tracker.
         if path == "/diligence/checklist":
             return self._route_diligence_checklist_page()
