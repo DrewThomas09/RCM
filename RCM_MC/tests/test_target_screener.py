@@ -151,6 +151,52 @@ class WorkbenchMapTests(unittest.TestCase):
         self.assertIn("No data", h)
 
 
+class WorkbenchTableTests(unittest.TestCase):
+    """PR 4 — ranked provider table from the real CMS loaders, state-scoped,
+    with X-Ray / Inspect links and honest missingness."""
+
+    def _render(self, **params):
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        return render_target_screener({k: [v] for k, v in params.items()})
+
+    def test_table_renders_real_rows_per_vertical(self):
+        from rcm_mc.ui.target_screener_page import _vertical_rows
+        for v in ("hospitals", "home_health", "hospice", "snf", "dialysis", "irf", "ltch"):
+            rows = _vertical_rows(v)
+            self.assertGreater(len(rows), 10, v)
+            self.assertTrue(all(r["ccn"] for r in rows), v)
+
+    def test_rows_link_to_universal_xray(self):
+        h = self._render(view="main", vertical="snf")
+        self.assertIn("/diligence/xray?ccn=", h)
+        self.assertIn("&vertical=snf", h)
+
+    def test_state_filter_narrows_rows(self):
+        from rcm_mc.ui.target_screener_page import _vertical_rows
+        allrows = _vertical_rows("ltch")
+        tx = _vertical_rows("ltch", "TX")
+        self.assertLess(len(tx), len(allrows))
+        self.assertTrue(all(r["state"] == "TX" for r in tx))
+
+    def test_missing_values_render_dash_not_fake(self):
+        # A real provider with no reported quality shows '—', never a number.
+        h = self._render(view="main", vertical="hospice")
+        self.assertIn("—", h)
+        self.assertIn("not reported", h)  # honest caveat copy
+
+    def test_source_chip_present(self):
+        h = self._render(view="main", vertical="dialysis")
+        self.assertIn("CMS Dialysis Compare", h)
+
+    def test_rows_safe_on_unknown_vertical(self):
+        from rcm_mc.ui.target_screener_page import _vertical_rows
+        self.assertEqual(_vertical_rows("nope"), [])
+
+    def test_table_capped(self):
+        from rcm_mc.ui.target_screener_page import _vertical_rows, _TABLE_LIMIT
+        self.assertLessEqual(len(_vertical_rows("home_health")), _TABLE_LIMIT)
+
+
 class NavAndRouteTests(unittest.TestCase):
     def test_source_anchor_is_target_screener(self):
         from rcm_mc.ui._chartis_kit import _CORPUS_NAV, _SUB_NAV, _resolve_sub_section

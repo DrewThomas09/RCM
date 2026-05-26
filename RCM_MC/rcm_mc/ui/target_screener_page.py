@@ -151,8 +151,102 @@ _LAYERS = [
 ]
 
 
+# Per-vertical table config: provider name attr, optional size metric, and
+# the primary quality metric (key in the vertical's quality dict + label +
+# whether higher is better). All real fields from the live CMS loaders.
+_VERTICAL_TABLE = {
+    "home_health": {"mod": "home_health", "pf": "load_home_health_providers",
+                    "qf": "load_home_health_quality", "name": "provider_name",
+                    "size": None, "q": ("star_rating", "Quality ★"), "src": "CMS Home Health Compare"},
+    "hospice": {"mod": "hospice", "pf": "load_hospice_providers",
+                "qf": "load_hospice_quality", "name": "facility_name",
+                "size": None, "q": ("care_index_overall", "Care index"), "src": "CMS Hospice Compare"},
+    "snf": {"mod": "snf", "pf": "load_snf_providers", "qf": "load_snf_quality",
+            "name": "provider_name", "size": ("certified_beds", "Beds"),
+            "q": ("overall_rating", "CMS ★"), "src": "CMS Nursing Home Compare"},
+    "dialysis": {"mod": "dialysis", "pf": "load_dialysis_providers",
+                 "qf": "load_dialysis_quality", "name": "facility_name",
+                 "size": ("dialysis_stations", "Stations"),
+                 "q": ("five_star", "5-star"), "src": "CMS Dialysis Compare"},
+    "irf": {"mod": "irf", "pf": "load_irf_providers", "qf": "load_irf_quality",
+            "name": "provider_name", "size": None,
+            "q": ("dtc_rs_rate", "Disch→comm %"), "src": "CMS IRF Compare"},
+    "ltch": {"mod": "ltch", "pf": "load_ltch_providers", "qf": "load_ltch_quality",
+             "name": "provider_name", "size": None,
+             "q": ("dtc_rs_rate", "Disch→comm %"), "src": "CMS LTCH Compare"},
+}
+
+_TABLE_LIMIT = 150
+
+
 def _q1(qs: Dict[str, List[str]], key: str, default: str = "") -> str:
     return (qs.get(key) or [default])[0].strip()
+
+
+def _num_or_none(v) -> Optional[float]:
+    """Coerce to float, returning None for None / NaN / non-numeric — so the
+    table renders '—' rather than crashing or fabricating a value."""
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return None if f != f else f  # NaN != NaN
+
+
+def _vertical_rows(vertical: str, state: str = "") -> List[Dict]:
+    """Normalized provider rows for the active vertical from the REAL loaders.
+    Each row: ccn, name, city, state, ownership, size/size_label, q/q_label,
+    source. Missing values are None (rendered '—'); never fabricated.
+    """
+    state = (state or "").upper()
+    try:
+        if vertical == "hospitals":
+            from ..data.hcris import load_hcris
+            df = load_hcris()
+            if df is None or "ccn" not in df.columns:
+                return []
+            if state:
+                df = df[df["state"].str.upper() == state]
+            rows = []
+            for _, r in df.head(800).iterrows():
+                margin = r.get("operating_margin")
+                rows.append({
+                    "ccn": str(r.get("ccn", "")), "name": str(r.get("name", "") or "—"),
+                    "city": str(r.get("city", "") or ""), "state": str(r.get("state", "") or ""),
+                    "ownership": str(r.get("control_type", "") or r.get("ownership", "") or "—"),
+                    "size": _num_or_none(r.get("beds")), "size_label": "Beds",
+                    "q": _num_or_none(margin),
+                    "q_label": "Op margin", "q_pct": True, "source": "CMS HCRIS",
+                })
+            rows.sort(key=lambda x: (x["q"] is None, -(x["q"] or -9)))
+            return rows[:_TABLE_LIMIT]
+        cfg = _VERTICAL_TABLE.get(vertical)
+        if not cfg:
+            return []
+        import importlib
+        mod = importlib.import_module(f"..data.{cfg['mod']}", __package__)
+        providers = getattr(mod, cfg["pf"])()
+        quality = getattr(mod, cfg["qf"])() if hasattr(mod, cfg["qf"]) else {}
+        qkey, qlabel = cfg["q"]
+        size_attr, size_label = (cfg["size"] or (None, None))
+        rows = []
+        for ccn, p in providers.items():
+            st = (getattr(p, "state", "") or "").strip().upper()
+            if state and st != state:
+                continue
+            qv = (quality.get(ccn, {}) or {}).get(qkey)
+            rows.append({
+                "ccn": str(ccn), "name": str(getattr(p, cfg["name"], "") or "—"),
+                "city": str(getattr(p, "city", "") or ""), "state": st,
+                "ownership": str(getattr(p, "ownership", "") or "—"),
+                "size": (_num_or_none(getattr(p, size_attr, None)) if size_attr else None),
+                "size_label": size_label, "q": _num_or_none(qv), "q_label": qlabel,
+                "q_pct": False, "source": cfg["src"],
+            })
+        rows.sort(key=lambda x: (x["q"] is None, -(x["q"] if isinstance(x["q"], (int, float)) else -9)))
+        return rows[:_TABLE_LIMIT]
+    except Exception:  # noqa: BLE001 — loader hiccup → honest empty table
+        return []
 
 
 def _provider_counts_by_state(vertical: str) -> Dict[str, int]:
@@ -318,6 +412,68 @@ def _render_map(vertical: str, qs: Dict[str, List[str]]) -> str:
             + summary + map_html + listener + filt)
 
 
+def _fmt_q(row: Dict) -> str:
+    v = row.get("q")
+    if v is None:
+        return '<span style="color:var(--sc-text-faint,#8b94a0)">—</span>'
+    return f"{v:.1%}" if row.get("q_pct") else (f"{v:g}")
+
+
+def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
+    import html as _h
+    vinfo = next((v for v in _VERTICALS if v["key"] == vertical), _VERTICALS[0])
+    state = _q1(qs, "state").upper()
+    rows = _vertical_rows(vertical, state)
+    if not rows:
+        return (f'<p class="ck-section-body">No {vinfo["label"]} rows available '
+                f'{("for " + state) if state else ""} from the loader right now. '
+                f'Try another vertical or clear the state filter.</p>')
+    has_size = any(r.get("size") is not None for r in rows)
+    size_label = rows[0].get("size_label") or "Size"
+    q_label = rows[0].get("q_label") or "Quality"
+    head = (
+        '<tr style="text-align:left;border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
+        '<th style="padding:6px 8px;">Provider</th>'
+        '<th style="padding:6px 8px;">Location</th>'
+        '<th style="padding:6px 8px;">Ownership</th>'
+        + (f'<th style="padding:6px 8px;text-align:right;">{size_label}</th>' if has_size else "")
+        + f'<th style="padding:6px 8px;text-align:right;">{q_label}</th>'
+        '<th style="padding:6px 8px;">Source</th>'
+        '<th style="padding:6px 8px;">Open</th></tr>'
+    )
+    trs = []
+    for r in rows:
+        ccn = _h.escape(r["ccn"])
+        xray = f'/diligence/xray?ccn={ccn}&vertical={vertical}'
+        insp = _href("inspector", qs).split("?")[0] + f'?view=inspector&vertical={vertical}&ccn={ccn}'
+        loc = _h.escape(", ".join([p for p in (r["city"], r["state"]) if p]) or "—")
+        size_td = (f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;">'
+                   f'{int(r["size"]) if r.get("size") is not None else "—"}</td>') if has_size else ""
+        trs.append(
+            '<tr style="border-bottom:1px solid var(--sc-rule,#e4ddca);">'
+            f'<td style="padding:5px 8px;font-weight:600;">{_h.escape(r["name"])}'
+            f'<span style="font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-faint,#8b94a0);"> · {ccn}</span></td>'
+            f'<td style="padding:5px 8px;">{loc}</td>'
+            f'<td style="padding:5px 8px;">{_h.escape(str(r["ownership"]))}</td>'
+            f'{size_td}'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;">{_fmt_q(r)}</td>'
+            f'<td style="padding:5px 8px;font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-dim,#6a7480);">{_h.escape(r["source"])}</td>'
+            f'<td style="padding:5px 8px;white-space:nowrap;">'
+            f'<a class="ck-link" href="{xray}">X-Ray</a> · '
+            f'<a class="ck-link" href="{insp}">Inspect</a></td>'
+            '</tr>'
+        )
+    scope = f" · {state}" if state else ""
+    return (
+        f'<p class="ck-section-body" style="margin:0 0 8px;">Showing {len(rows)} '
+        f'{vinfo["label"]} providers{scope} (ranked by {q_label.lower()}; real '
+        f'{vinfo["universe"]} data, "—" = not reported). Capped at {_TABLE_LIMIT}.</p>'
+        '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;'
+        'font-size:12.5px;font-family:var(--sc-sans,Inter Tight,sans-serif);">'
+        f'<thead>{head}</thead><tbody>{"".join(trs)}</tbody></table></div>'
+    )
+
+
 def _scaffold(title: str, pr: str, bullets: List[str]) -> str:
     items = "".join(f"<li>{b}</li>" for b in bullets)
     return (
@@ -351,13 +507,8 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
             title="Active universe")
         + ck["panel"](_render_map(vertical, qs),
                       title="Provider density · click a state to filter")
-        + _scaffold("Ranked provider table", "PR 4", [
-            "Ranked provider table from the live loader, scoped by the "
-            "state filter set on the map above.",
-            "Source + missingness chips per row; profile / X-Ray / compare / "
-            "save row actions.",
-            "Documented, missingness-aware scoring columns.",
-        ])
+        + ck["panel"](_render_table(vertical, qs),
+                      title="Ranked providers · real loader · X-Ray / Inspect")
         + ck["panel"](
             '<p class="ck-section-body">Three established ways into the SAME '
             'public universe — preserved and unchanged:</p>'
