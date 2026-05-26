@@ -33,6 +33,9 @@ _CARDS = [
     ("Metro Markets", "/metro-markets",
      "Rank U.S. metro/micro areas (CBSAs) on real demographics rolled up from counties.",
      "Best for: metro-level market sizing — the standard healthcare market unit."),
+    ("Geo Map", "/geo-map",
+     "Shade all 50 states + DC by any real metric on a US tile-cartogram.",
+     "Best for: spotting geographic patterns at a glance — click through to detail."),
 ]
 
 _DATASETS = [
