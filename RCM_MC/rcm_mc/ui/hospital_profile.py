@@ -12,6 +12,7 @@ from ._chartis_kit import (
     chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
     ck_section_intro, ck_signal_badge,
 )
+from .data_public.state_profile_page import state_context_panel
 from ._provenance_tooltip import provenance_tooltip
 from .brand import PALETTE
 from .provenance import build_provenance_graph
@@ -450,9 +451,10 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
     # (un-escaped) CCN; _model_nav escapes internally.
     from .models_page import _model_nav
     deal_ribbon = _model_nav(str(hospital.get("ccn", "")), active="profile")
+    geo_ctx = state_context_panel(state)
     body = (
         f'{hp_styles}{deal_ribbon}{header}{thesis_html}{system_badge}{fundamentals}'
-        f'{payer_mix}{quality_section}{score_card}{comp_html}'
+        f'{payer_mix}{quality_section}{score_card}{comp_html}{geo_ctx}'
         f'{comments_html}{actions}{next_up}'
     )
 
