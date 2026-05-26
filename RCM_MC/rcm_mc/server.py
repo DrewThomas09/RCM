@@ -3215,6 +3215,14 @@ class RCMHandler(BaseHTTPRequestHandler):
                                      default=5, min_v=1, max_v=10)
             return self._send_html(render_cliff_calendar_page(
                 subsector=sub, hold_start=hstart, hold_years=hyears))
+        if path == "/diligence/pe-library":
+            # Unified catalog of the pe_intelligence toolkit (~222 analytic
+            # modules), most of which were built but never linked to any UI.
+            from .ui.pe_library_page import render_pe_library_page
+            qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_pe_library_page(
+                q=(qs.get("q") or [""])[0],
+                category=(qs.get("category") or [""])[0]))
         if path == "/diligence/root-cause":
             from .diligence._pages import render_root_cause_page
             qs = urllib.parse.parse_qs(parsed.query)
