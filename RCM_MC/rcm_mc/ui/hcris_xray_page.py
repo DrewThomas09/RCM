@@ -27,7 +27,8 @@ from ..diligence.hcris_xray import (
 )
 from ._chartis_kit import (
     P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
-    ck_panel, ck_section_header, ck_section_intro, ck_signal_badge, ck_page_explainer)
+    ck_panel, ck_section_header, ck_section_intro, ck_signal_badge, ck_page_explainer,
+    ck_source_purpose)
 from .data_public.state_profile_page import state_context_panel
 
 _EXPLAINER_CSS = """
@@ -1306,12 +1307,37 @@ def render_hcris_xray_page(
             )
             + '<div class="hx-wrap xr">'
             + deal_context_bar(qs, active_surface="hcris")
+            + ck_source_purpose(
+                purpose="Benchmark this hospital's financial / RCM profile against its real HCRIS peer cohort.",
+                universe="hcris",
+                source=f"CMS HCRIS cost reports · FY{getattr(target, 'fiscal_year', '')}",
+                next_action="Carry the percentile gaps into the IC packet",
+                next_href="#hx-ic",
+            )
             + print_cta
             + hero
             + metrics_panel
             + public_comp_block
             + peers_panel
             + state_context_panel(getattr(target, "state", ""))
+            + ck_panel(
+                '<p class="ck-section-body">Each percentile gap below the peer median is a '
+                '<b>value-creation hypothesis</b> the deal must support — not yet proof. '
+                'What public HCRIS shows: where this hospital sits vs peers on margin, NPR/bed, '
+                'cost structure and patient days. What it does <b>not</b> prove: the cause, the '
+                'fixability, or the deal\'s own contracts/quality.</p>'
+                '<ul class="ck-section-body" style="margin:6px 0 10px 18px">'
+                '<li>For each below-median metric: is the gap payer-mix, labor cost, case mix, or scale — and is it addressable?</li>'
+                '<li>What management actions (RCM, staffing, service-line) close the gap, and over what horizon?</li>'
+                '<li>Which gaps are structural (market/regulatory) vs operational (fixable post-close)?</li>'
+                '</ul>'
+                '<p class="ck-section-body" style="font-size:12px">Next: '
+                '<a href="/diligence/payer-stress" class="ck-link">stress the payer mix</a> · '
+                '<a href="/diligence/ic-packet" class="ck-link">build the IC packet</a> · '
+                '<a href="/diligence/risk-workbench" class="ck-link">log risks</a>.</p>',
+                title="What this means for IC",
+                anchor_id="hx-ic",
+            )
             + cross_link
             + export_json_panel(
                 '<div class="hx-section-label" style="margin-top:22px;">'
