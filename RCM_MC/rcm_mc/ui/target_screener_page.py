@@ -594,13 +594,22 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         else:  # numeric keys already fold direction into the key; None sinks last
             rows = sorted(rows, key=_keys[sort_key])
 
+    # Optional column visibility (?hide=ownership,size,quality,source). Identity
+    # (Provider) + Location + Open always show; the Columns screen toggles these.
+    hide = {c for c in _q1(qs, "hide").split(",") if c}
+    show_own = "ownership" not in hide
+    show_size = has_size and "size" not in hide
+    show_q = "quality" not in hide
+    show_src = "source" not in hide
+    hide_param = ("&hide=" + ",".join(sorted(hide))) if hide else ""
+
     def _sh(label, col, align="left"):
         # Clickable header: sets sort=col and toggles asc/desc when re-clicked.
         nd = "asc" if (sort_key == col and direction == "desc") else "desc"
         keep = {"view": "main", "vertical": vertical, "sort": col, "direction": nd}
         if state:
             keep["state"] = state
-        href = "/target-screener?" + "&".join(f"{k}={v}" for k, v in keep.items())
+        href = "/target-screener?" + "&".join(f"{k}={v}" for k, v in keep.items()) + hide_param
         arrow = (" ▾" if direction == "desc" else " ▴") if sort_key == col else ""
         ta = f"text-align:{align};"
         return (f'<th style="padding:6px 8px;{ta}"><a class="ck-link" href="{href}">'
@@ -610,10 +619,10 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         '<tr style="border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
         + _sh("Provider", "name")
         + _sh("Location", "location")
-        + '<th style="padding:6px 8px;text-align:left;">Ownership</th>'
-        + (_sh(size_label, "size", "right") if has_size else "")
-        + _sh(q_label, "quality", "right")
-        + '<th style="padding:6px 8px;text-align:left;">Source</th>'
+        + ('<th style="padding:6px 8px;text-align:left;">Ownership</th>' if show_own else "")
+        + (_sh(size_label, "size", "right") if show_size else "")
+        + (_sh(q_label, "quality", "right") if show_q else "")
+        + ('<th style="padding:6px 8px;text-align:left;">Source</th>' if show_src else "")
         + '<th style="padding:6px 8px;text-align:left;">Open</th></tr>'
     )
     cur_cmp = [c for c in _q1(qs, "compare").split(",") if c]
@@ -626,16 +635,19 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         cmp_href = f'/target-screener?view=compare&compare={cmp_list}'
         loc = _h.escape(", ".join([p for p in (r["city"], r["state"]) if p]) or "—")
         size_td = (f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;">'
-                   f'{int(r["size"]) if r.get("size") is not None else "—"}</td>') if has_size else ""
+                   f'{int(r["size"]) if r.get("size") is not None else "—"}</td>') if show_size else ""
+        own_td = (f'<td style="padding:5px 8px;">{_h.escape(str(r["ownership"]))}</td>'
+                  if show_own else "")
+        q_td = (f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;">{_fmt_q(r)}</td>'
+                if show_q else "")
+        src_td = (f'<td style="padding:5px 8px;font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-dim,#6a7480);">{_h.escape(r["source"])}</td>'
+                  if show_src else "")
         trs.append(
             '<tr style="border-bottom:1px solid var(--sc-rule,#e4ddca);">'
             f'<td style="padding:5px 8px;font-weight:600;">{_h.escape(r["name"])}'
             f'<span style="font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-faint,#8b94a0);"> · {ccn}</span></td>'
             f'<td style="padding:5px 8px;">{loc}</td>'
-            f'<td style="padding:5px 8px;">{_h.escape(str(r["ownership"]))}</td>'
-            f'{size_td}'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;">{_fmt_q(r)}</td>'
-            f'<td style="padding:5px 8px;font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-dim,#6a7480);">{_h.escape(r["source"])}</td>'
+            f'{own_td}{size_td}{q_td}{src_td}'
             f'<td style="padding:5px 8px;white-space:nowrap;">'
             f'<a class="ck-link" href="{xray}">X-Ray</a> · '
             f'<a class="ck-link" href="{insp}">Inspect</a> · '
@@ -949,6 +961,27 @@ def _screen_columns(qs, ck) -> str:
     cols.append((q_label, "Quality", "q", f"{src} quality"))
     cols.append(("Source", "Source / provenance", "source", "PEdesk provenance"))
 
+    # Optional column visibility — these fields toggle on the Main table via
+    # ?hide=. Identity/geography columns always show, so they read "always".
+    state = _q1(qs, "state").upper()
+    hide = {c for c in _q1(qs, "hide").split(",") if c}
+    _toggle = {"ownership": "ownership", "size": "size", "q": "quality",
+               "source": "source"}
+
+    def _vis_cell(field) -> str:
+        key = _toggle.get(field)
+        if not key:
+            return '<span style="color:var(--sc-text-faint,#8b94a0)">always</span>'
+        hidden = key in hide
+        new = (hide - {key}) if hidden else (hide | {key})
+        base = f"/target-screener?view=main&vertical={vertical}"
+        if state:
+            base += f"&state={state}"
+        if new:
+            base += "&hide=" + ",".join(sorted(new))
+        word = "Hidden · show" if hidden else "Shown · hide"
+        return f'<a class="ck-link" href="{_h.escape(base)}">{word}</a>'
+
     # Group rows by category.
     from collections import OrderedDict
     groups: "OrderedDict[str, list]" = OrderedDict()
@@ -961,7 +994,8 @@ def _screen_columns(qs, ck) -> str:
             f'<tr style="border-bottom:1px solid var(--sc-rule,#e4ddca);">'
             f'<td style="padding:5px 8px;font-weight:600;">{_h.escape(label)}</td>'
             f'<td style="padding:5px 8px;font-family:var(--sc-mono);font-size:10px;color:var(--sc-text-dim,#6a7480);">{_h.escape(source)}</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;">{_avail(field)}</td></tr>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;">{_avail(field)}</td>'
+            f'<td style="padding:5px 8px;font-size:11px;">{_vis_cell(field)}</td></tr>'
             for label, field, source in items
         )
         body.append(
@@ -969,7 +1003,8 @@ def _screen_columns(qs, ck) -> str:
             '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;">'
             '<thead><tr style="text-align:left;border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
             '<th style="padding:6px 8px;">Column</th><th style="padding:6px 8px;">Source</th>'
-            '<th style="padding:6px 8px;text-align:right;">Availability</th></tr></thead>'
+            '<th style="padding:6px 8px;text-align:right;">Availability</th>'
+            '<th style="padding:6px 8px;">On Main table</th></tr></thead>'
             f'<tbody>{trs}</tbody></table></div>'
         )
 
