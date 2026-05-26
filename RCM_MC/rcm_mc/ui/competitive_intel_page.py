@@ -16,6 +16,7 @@ from ._chartis_kit import (
     chartis_shell, ck_fmt_num, ck_fmt_pct, ck_kpi_block, ck_next_section,
     ck_page_title, ck_provenance_tooltip,
 )
+from .data_public.state_profile_page import state_context_panel
 _EXPLAINER_CSS = """<style>
 .ck-ci-explainer{font-family:var(--sc-serif,'Georgia',serif);
   font-size:15px;line-height:1.55;color:var(--sc-text-dim,#465366);
@@ -563,7 +564,8 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
         "deal needs to support."
         "</p>"
     )
-    body = deal_ribbon + page_title + ci_explainer + f'{kpis}{percentile_section}{gap_section}{peer_section}{next_up}'
+    geo_ctx = state_context_panel(state)
+    body = deal_ribbon + page_title + ci_explainer + f'{kpis}{percentile_section}{gap_section}{peer_section}{geo_ctx}{next_up}'
 
     return chartis_shell(
         body,
