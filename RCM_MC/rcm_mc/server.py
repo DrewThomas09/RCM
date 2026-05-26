@@ -18721,7 +18721,20 @@ class RCMHandler(BaseHTTPRequestHandler):
             )
 
     def _route_tools_index(self) -> None:
-        """GET /tools — full platform tool index grouped by section.
+        """GET /tools — curated showcase by default; ``?view=all`` for the full
+        index. The showcase leads with the top-ranked surfaces + top diligence
+        layers so a partner isn't overwhelmed by ~355 routes; the exhaustive
+        flat index is one click away on the secondary tab."""
+        parsed = urllib.parse.urlparse(self.path)
+        qs = urllib.parse.parse_qs(parsed.query)
+        if (qs.get("view") or [""])[0] != "all":
+            from .ui.tools_showcase_page import render_tools_showcase
+            total = len(self._discover_all_routes())
+            return self._send_html(render_tools_showcase(total_surfaces=total))
+        return self._route_tools_index_full()
+
+    def _route_tools_index_full(self) -> None:
+        """GET /tools?view=all — full platform tool index grouped by section.
 
         Discoverability fallback for partners who haven't learned the
         Cmd+K palette yet. Lists *every* GET-renderable route in
@@ -18834,12 +18847,18 @@ class RCMHandler(BaseHTTPRequestHandler):
             total += len(entries)
 
         title_html = ck_page_title(
-            "Tools",
+            "Tools — full index",
             eyebrow="PLATFORM INDEX",
             meta=(
                 f"{total} surfaces · "
                 "press Cmd+K anywhere to jump to one"
             ),
+        )
+        back_link = (
+            '<div style="margin:0 0 16px;font-family:var(--sc-mono,monospace);'
+            'font-size:12px;"><a href="/tools" style="color:var(--sc-teal,#155752);'
+            'text-decoration:none;font-weight:600;">&larr; Back to the best tools'
+            '</a></div>'
         )
         page_css = (
             '<style>'
@@ -18885,7 +18904,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             f'<span><span style="{_dot};background:#b8842e"></span>Illustrative seed-corpus data</span>'
             f'<span><span style="{_dot};background:#b5321e"></span>Synthetic / hardcoded</span>'
             '</div>')
-        body = f"{title_html}{page_css}{legend}{''.join(cards)}"
+        body = f"{title_html}{back_link}{page_css}{legend}{''.join(cards)}"
         self._send_html(chartis_shell(
             body, "Tools",
             active_nav="/tools",
