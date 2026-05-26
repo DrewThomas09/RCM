@@ -32,6 +32,7 @@ _REQUIRE_SOURCE_PURPOSE = {
     "counterfactual_page.py": _UI / "counterfactual_page.py",
     "management_scorecard_page.py": _UI / "management_scorecard_page.py",
     "deal_autopsy_page.py": _UI / "deal_autopsy_page.py",
+    "comparable_outcomes_page.py": _UI / "comparable_outcomes_page.py",
     "data_public/cost_structure_page.py": _UI / "data_public" / "cost_structure_page.py",
     "data_public/debt_service_page.py": _UI / "data_public" / "debt_service_page.py",
     "data_public/ref_pricing_page.py": _UI / "data_public" / "ref_pricing_page.py",

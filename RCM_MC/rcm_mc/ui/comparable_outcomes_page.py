@@ -259,7 +259,8 @@ def render_comparable_outcomes_page(
     from . import _web_components as _wc
     from ._chartis_kit import (
         chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-        ck_next_section, ck_page_title, ck_provenance_tooltip, ck_page_explainer)
+        ck_next_section, ck_page_title, ck_provenance_tooltip, ck_page_explainer,
+        ck_source_purpose)
     from ..diligence.comparable_outcomes import benchmark_deal
     from ..data_public.deals_corpus import DealsCorpus
 
@@ -504,6 +505,14 @@ def render_comparable_outcomes_page(
             eyebrow="COMPARABLE OUTCOMES",
             meta=f"{n_comp} matched · {sector_label}" if sector_label else f"{n_comp} matched",
         )
+            + ck_source_purpose(
+                purpose="Sanity-check bid pricing against realized MOIC/IRR/exit-multiple distributions on comparable deals (sector × size × hold × exit channel).",
+                universe="corpus",
+                confidence="illustrative",
+                source="Platform deal-outcome corpus — an illustrative seed corpus, not a verified live-fund benchmark. Read the distributions as directional context.",
+                next_action="Carry the comp distribution into the IC narrative",
+                next_href="/diligence/ic-packet",
+            )
             + ck_page_explainer(
                 'Realized outcomes on comparable deals.',
                 'Pulls the realized MOIC / IRR / exit-multiple distributions from the platform corpus filtered to comparables of the focused deal (sector × size × hold × exit channel). Used as a sanity check on bid pricing and to set the IC narrative on "what funds like ours have actually done with deals like this."',
