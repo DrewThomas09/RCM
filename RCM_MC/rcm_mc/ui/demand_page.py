@@ -12,6 +12,7 @@ from ._chartis_kit import (
     ck_provenance_tooltip, ck_value_anchor,
 )
 from .brand import PALETTE
+from .data_public.state_profile_page import state_context_panel
 
 
 def _prevalence_delta_chart(
@@ -405,7 +406,8 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
         target=f"{tailwind:+.0f} net tailwind",
         tone=_dem_tone,
     )
-    body = f'{lead_anchor}{kpis}{prevalence_section}{stick_section}{elas_section}{tw_section}{interp}{actions}{next_up}'
+    geo_ctx = state_context_panel(state)
+    body = f'{lead_anchor}{kpis}{prevalence_section}{geo_ctx}{stick_section}{elas_section}{tw_section}{interp}{actions}{next_up}'
 
     return chartis_shell(
         body, f"Demand Analysis — {name}",
