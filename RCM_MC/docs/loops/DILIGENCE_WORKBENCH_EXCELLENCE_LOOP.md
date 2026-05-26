@@ -53,7 +53,7 @@ enhancements, real-data wiring on existing/public data, tests.
   **Regression guard now protects 25 analyzer pages** (incl. regulatory-calendar, #870).
 
 ### Deployed SHAs
-- 878fcb65 (loop start) → fbc3a50f (after #854); /healthz ok throughout
+- 878fcb65 (loop start) → 16ca622e (after #875); /healthz ok throughout (27 deploys)
 
 ### Pages improved
 - Payer Stress (#850) — source/purpose header + management-questions panel
@@ -65,28 +65,40 @@ enhancements, real-data wiring on existing/public data, tests.
 - ML audit — denial-prediction + deal-mc verified already honest (no invented model performance); predictor engine mature (RidgeCV/LOO + heteroscedasticity/nonlinearity/VIF/Cook's-D diagnostics). Log-transform diagnostic flagged as a careful future PR, not a 180s tick.
 
 ### Charts improved
-- (none yet)
+- State Comparison (#862) — per-row magnitude bars
+- State Profile (#872) — rank-position bars
+- Metro Markets (#874) + County Explorer (#875) — sorted-column magnitude bars
+- (geo-suite inline-bar visual set complete across all 4 table modes)
 
 ### Guide contexts added
-- (none yet)
+- bear-case, deal-mc, denial-prediction (#857) — DOCUMENTED, method + honest limits
 
 ### Data sources added
-- (none yet)
+- (none new — public anchors already broadly wired; ML log-transform diagnostic added to ridge predictor #871)
 
 ### Synthetic / DATA REQUIRED pages fixed
-- (none yet)
+- bear-case, deal-autopsy, comparable-outcomes (illustrative-corpus labels);
+  management-scorecard (DATA REQUIRED); predictive-screener (model-estimate label)
 
-### Next 10 tasks (refreshed after #854)
-1. Cost Structure (/cost-structure) — source/purpose header + caveats + next-actions.
-2. Debt Service (/debt-service) — source/purpose header + management questions.
-3. Reference-based Pricing (/ref-pricing) — header + source-confidence + next-actions.
-4. CMS APM tracker (/cms-apm) + Payer Rate Trends (/payer-rate-trends) — header + caveats.
-5. Risk Workbench + Physician EU (DATA REQUIRED) — confirm/polish activation path + import template + management request list + evidence checklist.
-6. Drug Shortage / Risk Adjustment / Provider Network — header + interpretation + next-actions.
-7. Predictive Screener + Deal Screening (YELLOW) — honest model-status label + activation path.
-8. Market Intelligence / Industry — source-confidence strips + Guide + validation panels.
-9. Data-honesty regression guards doc + validators (no unlabeled illustrative tables, no fake trends, no unknown-source Diligence/Tools page).
-10. Guide context for newly-headed pages (payer-stress, target-screener, bear-case) + suggested questions.
+### Source/purpose-header contract (regression guard test_diligence_source_purpose_headers — 27 pages)
+payer-stress, hcris-xray, provider-xray, bear-case, target-screener,
+predictive-screener, market-intel, covenant-lab, bridge-audit, exit-timing,
+counterfactual, management-scorecard, deal-autopsy, comparable-outcomes,
+regulatory-calendar, market-data/state + data_public: cost-structure,
+debt-service, ref-pricing, cms-apm, payer-rate-trends, drug-shortage,
+risk-adjustment, provider-network.
+
+### Next 10 tasks (refreshed after #875)
+1. compare-page / thesis-pipeline source/purpose headers (completeness).
+2. Guide suggested-questions audit on the newly-headed pages.
+3. Broaden inline visuals to a provider/industry analytic page.
+4. Surface the ridge log-transform advisory wherever model diagnostics render (plumbing).
+5. Verify market-intel/geo provenance strip + Guide.
+6. Re-score scorecard with the header-contract coverage.
+7. Risk Workbench / Physician EU evidence-checklist depth.
+8. Tools index honesty-dot accuracy pass.
+9. Add more curated RAG source cards for recently-headed pages.
+10. Periodic full-suite regression sweep (sanity, already clean at 682 touched-surface tests).
 
 ---
 
