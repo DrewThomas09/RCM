@@ -744,7 +744,7 @@ def _render_geo_view(vertical: str, qs: Dict[str, List[str]], ck) -> str:
         '<tr style="border-bottom:1px solid var(--sc-rule,#e4ddca);">'
         f'<td style="padding:5px 8px;font-weight:600;">{_h.escape(st)}</td>'
         f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;">{fmt(v)}</td>'
-        f'<td style="padding:5px 8px;"><a class="ck-link" href="/geo-intel?state={_h.escape(st)}">market →</a> · '
+        f'<td style="padding:5px 8px;"><a class="ck-link" href="/state-profile?state={_h.escape(st)}">market →</a> · '
         f'<a class="ck-link" href="/diligence/xray?state={_h.escape(st)}">X-Ray search →</a></td></tr>'
         for st, v in rows[:60]
     )
@@ -757,7 +757,7 @@ def _render_geo_view(vertical: str, qs: Dict[str, List[str]], ck) -> str:
     listener = (
         "<script>(function(){document.addEventListener('us-map-select',function(e){"
         "var st=e&&e.detail&&e.detail.state;if(!st)return;"
-        "window.location.href='/geo-intel?state='+encodeURIComponent(st);});})();</script>")
+        "window.location.href='/state-profile?state='+encodeURIComponent(st);});})();</script>")
     return (
         _vertical_bar(vertical, qs)
         + ck["panel"](
@@ -900,7 +900,7 @@ def _screen_inspector(qs, ck) -> str:
     links = ck["panel"](
         f'<a class="ck-link" href="/diligence/xray?ccn={_h.escape(ccn)}&vertical={vertical}">CMS X-Ray (full diligence) →</a><br>'
         + (f'<a class="ck-link" href="/diligence/hcris-xray?ccn={_h.escape(ccn)}">HCRIS X-Ray →</a><br>' if vertical == "hospitals" else "")
-        + f'<a class="ck-link" href="/geo-intel?state={state}">{state} market context →</a><br>'
+        + f'<a class="ck-link" href="/state-profile?state={state}">{state} market context →</a><br>'
         f'<a class="ck-link" href="/target-screener?view=compare&compare={_h.escape(ccn)}">Add to Compare →</a><br>'
         f'<a class="ck-link" href="/pipeline">Promote to Pipeline →</a>',
         title="Open next")
