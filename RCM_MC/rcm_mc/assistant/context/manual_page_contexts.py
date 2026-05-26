@@ -4964,6 +4964,87 @@ _MANUAL: List[PageContext] = [
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
+    # ── Model / scenario diligence pages — Guide must state method + limits ──
+    _ctx(
+        "/diligence/bear-case", "Bear Case",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="Auto-assembles the downside / bear-case risk thesis "
+        "from the deal's evidence so IC sees the strongest objections first.",
+        primary_purpose="Surface the critical risks and EBITDA-at-risk a deal "
+        "must withstand, for the IC memo's bear case.",
+        common_questions=["What's the bear case for this deal?",
+                          "Which risks put the most EBITDA at risk?",
+                          "Is this real or illustrative?"],
+        inputs=["A dataset fixture (full pipeline) OR live deal inputs "
+                "(standalone regulatory/covenant/bridge/HCRIS extractors)."],
+        outputs=["Ranked risk evidence by theme + an IC-memo bear-case preview."],
+        data_sources=["Fixture-driven runs are ILLUSTRATIVE; standalone runs "
+                      "use real public extractors (HCRIS, regulatory). Mixed."],
+        model_logic_summary="Aggregates evidence from the thesis pipeline / "
+        "standalone extractors; EBITDA-at-risk sums per-theme impacts.",
+        why_it_matters="Forces the downside into IC before committing capital.",
+        interpretation_guidance=[
+            "Fixture figures are illustrative — re-run against the target's own data before IC.",
+            "It surfaces objections; it does not prove they will occur.",
+        ],
+        limitations=["Evidence quality depends on the inputs supplied; not a forecast."],
+        related_routes=["/diligence/ic-packet", "/diligence/payer-stress", "/diligence/risk-workbench"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/diligence/deal-mc", "Deal Monte Carlo",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="Monte Carlo of the deal's RCM initiatives + base "
+        "business to produce a 5-year EBITDA cone (base / downside / upside).",
+        primary_purpose="Size the spread between base, downside and upside "
+        "EBITDA for IC and LP reporting.",
+        common_questions=["What's the EBITDA range?",
+                          "How wide is the downside?",
+                          "What assumptions drive the cone?"],
+        inputs=["The deal's RCM initiative assumptions + base-business inputs (user/deal data)."],
+        outputs=["A 5-year EBITDA distribution cone + assumption sensitivity."],
+        data_sources=["USER/DEAL inputs + assumed distributions — a model, not observed outcomes."],
+        model_logic_summary="N simulations over the initiative + base assumptions; "
+        "the cone is the simulated EBITDA percentile band.",
+        why_it_matters="Quantifies uncertainty around the base case for underwriting.",
+        interpretation_guidance=[
+            "Runs on YOUR assumptions — the cone is only as good as the inputs.",
+            "Distribution width reflects assumed volatility, not a guarantee.",
+        ],
+        limitations=["Not a forecast; no model-accuracy claim — it propagates assumptions."],
+        related_routes=["/diligence/payer-stress", "/diligence/bridge-audit", "/diligence/ic-packet"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.USER_ENTERED_DATA,
+    ),
+    _ctx(
+        "/diligence/denial-prediction", "Denial Prediction",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="Trains a per-claim denial model on a CCD claims feed "
+        "and sizes the recoverable revenue from denial management.",
+        primary_purpose="Estimate recoverable denied revenue to underwrite an "
+        "RCM denial-management initiative into the EBITDA bridge.",
+        common_questions=["How much denied revenue is recoverable?",
+                          "How good is the model?",
+                          "Is this the deal's real claims?"],
+        inputs=["A CCD (consolidated clinical document) claims feed — a fixture "
+                "sample unless the deal's own CCD is provided."],
+        outputs=["Per-claim denial probabilities, AUC, denial Pareto, recoverable $."],
+        data_sources=["Selected CCD FIXTURE (sample claims) + a denial model trained live on it — methodology, not a live per-deal feed."],
+        model_logic_summary="Naive Bayes per-claim denial model fit on the CCD; "
+        "AUC reports separation; recoverable $ sums avoidable denials.",
+        why_it_matters="Sizes a concrete RCM value-creation lever for the bridge.",
+        interpretation_guidance=[
+            "Fixture data is for methodology — verify against the target's own CCD before IC use.",
+            "AUC describes the model on this sample, not a guaranteed live result.",
+        ],
+        limitations=["Model performance is sample-specific; requires the deal's real claims to be actionable."],
+        related_routes=["/diligence/payer-stress", "/diligence/bridge-audit", "/revenue-leakage"],
+        data_source_ids=["canonical_claims_dataset", "edi_837"],
+        metric_ids=["denial_rate", "clean_claim_rate", "rcm_uplift"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.DEMO_OR_FIXTURE,
+    ),
 ]
 
 # ── DATA REQUIRED pages: DOCUMENTED Guide contexts (table-driven). Each page
