@@ -46,6 +46,66 @@ class TargetScreenerRenderTests(unittest.TestCase):
         self.assertIn("is-active", render_target_screener({"mode": ["hospital"]}))
 
 
+class WorkbenchShellTests(unittest.TestCase):
+    """PR 2 — the six-screen workbench shell (view= states), recreated
+    PEdesk-native from the workbench-full.html handoff."""
+
+    def _render(self, **params):
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        return render_target_screener({k: [v] for k, v in params.items()})
+
+    def test_six_screens_render(self):
+        for view in ("main", "inspector", "columns", "compare", "missed", "saved"):
+            h = self._render(view=view)
+            self.assertIn("<!doctype html>", h.lower(), view)
+            self.assertIn("Target Screener", h, view)
+
+    def test_view_param_selects_active_tab(self):
+        h = self._render(view="compare")
+        # The active tab carries aria-current=page on the Compare link.
+        self.assertIn('aria-current="page"', h)
+        self.assertIn("view=compare", h)  # tab links carry view=
+
+    def test_bogus_view_falls_back_to_main(self):
+        h = self._render(view="nope")
+        self.assertIn("<!doctype html>", h.lower())
+
+    def test_all_six_tabs_present(self):
+        h = self._render()
+        # Tabs italicize an emphasis word (e.g. "Just <em>missed</em>"), so
+        # assert the rendered tokens + the workbench numerals 01..06.
+        for token in ("Main", "Inspector", "Columns", "Compare",
+                      "missed", "Saved"):
+            self.assertIn(token, h, token)
+        for num in ("01", "02", "03", "04", "05", "06"):
+            self.assertIn(f'tsw-num">{num}', h, num)
+
+    def test_vertical_selector_includes_live_verticals(self):
+        h = self._render()
+        for label in ("Hospitals", "Home Health", "Hospice", "SNF",
+                      "Dialysis", "IRF", "LTCH"):
+            self.assertIn(label, h, label)
+
+    def test_vertical_param_activates(self):
+        h = self._render(vertical="hospice")
+        self.assertIn("tsw-vert is-active", h)
+        self.assertIn("Hospice", h)
+
+    def test_no_iframe_prototype_shipped(self):
+        for view in ("main", "compare", "saved"):
+            self.assertNotIn("<iframe", self._render(view=view).lower())
+
+    def test_no_prototype_external_font(self):
+        # The shell loads PEdesk house fonts; the page must not add the
+        # prototype's Public Sans / a bespoke CDN font.
+        self.assertNotIn("Public Sans", self._render())
+
+    def test_unbuilt_screens_are_labeled_scaffolds_not_fake(self):
+        # Honest: not-yet-wired screens declare themselves, never fake data.
+        for view in ("inspector", "columns", "compare", "missed", "saved"):
+            self.assertIn("Scaffold", self._render(view=view), view)
+
+
 class NavAndRouteTests(unittest.TestCase):
     def test_source_anchor_is_target_screener(self):
         from rcm_mc.ui._chartis_kit import _CORPUS_NAV, _SUB_NAV, _resolve_sub_section
