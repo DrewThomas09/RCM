@@ -4551,6 +4551,14 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.data_public.geo_map_page import render_geo_map
             _gm_qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             return self._send_html(render_geo_map(_gm_qs))
+        if path == "/target-screener.csv":
+            from .ui.target_screener_page import vertical_dataframe
+            _q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            _v = (_q.get("vertical") or ["hospitals"])[0]
+            _st = (_q.get("state") or [""])[0].upper()
+            return self._send_csv_df(
+                vertical_dataframe(_v, _st),
+                f"target-screener-{_v}{('-' + _st) if _st else ''}.csv")
         if path == "/metro-markets.csv":
             from .ui.data_public.metro_markets_page import _parse_sort as _mms, _parse_type as _mmt, metro_dataframe
             _q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)

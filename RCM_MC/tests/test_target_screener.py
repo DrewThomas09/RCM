@@ -472,6 +472,29 @@ class WorkbenchMapLayerTests(unittest.TestCase):
         self.assertTrue(_LAYER_BY_KEY["age65"].get("live"))
 
 
+class WorkbenchCsvExportTests(unittest.TestCase):
+    """PR 14 — CSV export of the current screen (real loader rows)."""
+
+    def test_vertical_dataframe_real(self):
+        from rcm_mc.ui.target_screener_page import vertical_dataframe
+        df = vertical_dataframe("snf", "TX")
+        self.assertGreater(len(df), 5)
+        for col in ("ccn", "name", "state", "ownership", "source"):
+            self.assertIn(col, df.columns)
+        self.assertTrue((df["state"] == "TX").all())
+
+    def test_dataframe_empty_unknown_vertical(self):
+        from rcm_mc.ui.target_screener_page import vertical_dataframe
+        self.assertTrue(vertical_dataframe("nope").empty)
+
+    def test_download_link_on_main(self):
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        h = render_target_screener({"view": ["main"], "vertical": ["dialysis"],
+                                    "state": ["CA"]})
+        self.assertIn("/target-screener.csv?vertical=dialysis", h)
+        self.assertIn("Download CSV", h)
+
+
 class NavAndRouteTests(unittest.TestCase):
     def test_source_anchor_is_target_screener(self):
         from rcm_mc.ui._chartis_kit import _CORPUS_NAV, _SUB_NAV, _resolve_sub_section
@@ -514,6 +537,9 @@ class BackwardCompatTests(unittest.TestCase):
         # view exercises the list_screens persistence path too).
         for view in ("main", "inspector", "columns", "compare", "missed", "saved"):
             self.assertEqual(self._status(f"/target-screener?view={view}"), 200, msg=view)
+
+    def test_csv_export_route_200(self):
+        self.assertEqual(self._status("/target-screener.csv?vertical=ltch&state=TX"), 200)
 
     def test_old_screener_routes_still_work(self):
         # No redirects/deletes — the three screeners are unchanged.

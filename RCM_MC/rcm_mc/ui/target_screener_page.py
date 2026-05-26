@@ -310,6 +310,26 @@ def _vertical_rows(vertical: str, state: str = "",
         return []
 
 
+def vertical_dataframe(vertical: str, state: str = ""):
+    """A pandas DataFrame of the screened providers for CSV export — same
+    real loader rows as the on-screen table, named columns, "—" for missing.
+    Returns an empty DataFrame on unknown/failed verticals."""
+    import pandas as pd
+    rows = _vertical_rows(vertical, state, limit=None)
+    if not rows:
+        return pd.DataFrame()
+    out = []
+    for r in rows:
+        out.append({
+            "ccn": r["ccn"], "name": r["name"], "city": r["city"],
+            "state": r["state"], "ownership": r["ownership"],
+            (r.get("size_label") or "size"): (r["size"] if r.get("size") is not None else ""),
+            (r["q_label"]): (r["q"] if r.get("q") is not None else ""),
+            "source": r["source"], "vertical": vertical,
+        })
+    return pd.DataFrame(out)
+
+
 def _provider_counts_by_state(vertical: str) -> Dict[str, int]:
     """Real provider counts per state for the active vertical, from the live
     CMS loaders. Returns {} on any load failure so the map shows an honest
@@ -694,8 +714,13 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
             title="Active universe")
         + ck["panel"](_render_map(vertical, qs),
                       title="Provider density · click a state to filter")
-        + ck["panel"](_render_table(vertical, qs),
-                      title="Ranked providers · real loader · X-Ray / Inspect")
+        + ck["panel"](
+            _render_table(vertical, qs)
+            + (f'<p style="margin:10px 0 0;"><a class="ck-link" '
+               f'href="/target-screener.csv?vertical={vertical}'
+               + (f'&state={_q1(qs, "state").upper()}' if _q1(qs, "state") else "")
+               + '">Download CSV (this screen) ↓</a></p>'),
+            title="Ranked providers · real loader · X-Ray / Inspect / CSV")
         + ck["panel"](
             '<p class="ck-section-body">Three established ways into the SAME '
             'public universe — preserved and unchanged:</p>'
