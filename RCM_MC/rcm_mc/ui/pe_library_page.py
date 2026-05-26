@@ -34,6 +34,10 @@ _LIVE_ROUTES: Dict[str, str] = {
     "reimbursement_cliff_calendar_2026_2029": "/diligence/cliff-calendar",
     "historical_failure_library": "/diligence/pe-reference?library=failures",
     "partner_traps_library": "/diligence/pe-reference?library=traps",
+    "seller_motivation_decoder": "/diligence/pe-reference?library=motivations",
+    "failure_archetype_library": "/diligence/pe-reference?library=archetypes",
+    "bidder_landscape_reader": "/diligence/pe-reference?library=bidders",
+    "banker_narrative_decoder": "/diligence/pe-reference?library=narratives",
 }
 
 

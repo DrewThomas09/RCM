@@ -31,6 +31,30 @@ class ReferenceLibraryTests(unittest.TestCase):
         self.assertIn("Seller pitch", h)
         self.assertIn("Partner rebuttal", h)
 
+    def test_all_six_libraries_present_and_render(self):
+        # The reference page covers six curated libraries, each from a real
+        # dataclass constant — not just the original two.
+        self.assertEqual(set(_LIBRARIES),
+                         {"failures", "traps", "motivations", "archetypes",
+                          "bidders", "narratives"})
+        for key in _LIBRARIES:
+            h = render_pe_reference_page(key)
+            self.assertIn("DILIGENCE", h.upper())
+            self.assertGreaterEqual(len(_load(key)), 5, key)
+
+    def test_new_libraries_render_curated_content(self):
+        self.assertIn("Partner play", render_pe_reference_page("motivations"))
+        self.assertIn("Partner counter", render_pe_reference_page("bidders"))
+        self.assertIn("What the banker says",
+                      render_pe_reference_page("narratives"))
+        self.assertIn("Why it breaks", render_pe_reference_page("archetypes"))
+
+    def test_premium_badge_is_one_decimal_pct(self):
+        # Standards: percentages at 1dp. Bidder premium badge must comply.
+        import re
+        h = render_pe_reference_page("bidders")
+        self.assertRegex(h, r"\+\d+\.\d% premium")
+
     def test_honest_corpus_label(self):
         h = render_pe_reference_page()
         self.assertIn("Illustrative template", h)
@@ -38,7 +62,8 @@ class ReferenceLibraryTests(unittest.TestCase):
 
     def test_unknown_library_falls_back(self):
         h = render_pe_reference_page("nope")
-        self.assertIn("Historical Failure Library", h)
+        self.assertIn("Historical Failures", h)
+        self.assertIn("Envision", h)
 
     def test_route_wired(self):
         src = _SERVER.read_text()
