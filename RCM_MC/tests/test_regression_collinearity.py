@@ -136,15 +136,19 @@ class PageBannerTests(unittest.TestCase):
                           "net_patient_revenue", feats)
         self.assertEqual(res["verdict"]["severity"], "severe")
         self.assertTrue(res["optimized_dropped"])
-        html = rp.render_regression_page(hcris_df=df, features=feats)
+        # Full model (optimized off): must flag severe + offer the clean model
+        # one click away, and explain WHY each feature is collinear.
+        html = rp.render_regression_page(
+            hcris_df=df, features=feats, optimized=False)
         self.assertIn("Severe multicollinearity", html)
-        self.assertIn("Optimized feature set", html)
         self.assertIn("Condition #", html)
-        # The optimized set is one click away.
+        self.assertIn("Switch to the clean model", html)
         self.assertIn("optimized=1", html)
-        self.assertIn("Apply the optimized model", html)
+        # Per-feature reason is present (not a black-box drop).
+        self.assertTrue("nearly determined by" in html
+                        or "explained by the other predictors" in html)
 
-    def test_optimized_toggle_refits_and_offers_full(self):
+    def test_optimized_default_builds_clean_model_with_reasons(self):
         from tests.test_regression_page_phase2 import _synthetic_hcris
         import rcm_mc.ui.regression_page as rp
         df = _synthetic_hcris(150).copy()
@@ -154,9 +158,10 @@ class PageBannerTests(unittest.TestCase):
         feats = ["beds", "bed_days_available", "total_patient_days"]
         html = rp.render_regression_page(
             hcris_df=df, features=feats, optimized=True)
-        # Applied state: confirms the de-collinearized fit + a way back.
-        self.assertIn("Optimized model applied", html)
-        self.assertIn("View the full", html)
+        # Auto-cleaned by default, with a plain-language reason + a way back.
+        self.assertIn("Built you a clean model", html)
+        self.assertIn("See the full", html)
+        self.assertIn("optimized=0", html)
 
     def test_f_pvalue_shown(self):
         from tests.test_regression_page_phase2 import _synthetic_hcris

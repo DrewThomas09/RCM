@@ -7745,10 +7745,15 @@ class RCMHandler(BaseHTTPRequestHandler):
             (qs.get("buyability") or ["0"])[0] in ("1", "true", "on")
         )
         # Optimized lens: refit on the VIF-pruned feature set so collinear
-        # designs surface an interpretable model, not just a warning.
-        optimized = (
-            (qs.get("optimized") or ["0"])[0] in ("1", "true", "on")
-        )
+        # designs surface an interpretable model, not just a warning. Honest-
+        # by-default — ON unless the reader explicitly asks for the full
+        # (collinear) model via ?optimized=0, so the headline is always the
+        # statistically defensible fit and no linearly-dependent feature slips
+        # through silently.
+        if "optimized" in qs:
+            optimized = (qs.get("optimized") or ["1"])[0] in ("1", "true", "on")
+        else:
+            optimized = True
         hcris_df = _get_latest_per_ccn()
         store = PortfolioStore(self.config.db_path)
         try:

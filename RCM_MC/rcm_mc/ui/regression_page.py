@@ -870,16 +870,36 @@ def render_regression_page(
                 optimized_applied = True
 
     # ── Editorial intro + KPI strip ──
+    # Guided, plain-language lead — what you're predicting and what the model
+    # found, not a row of statistics the reader has to decode. Every value is
+    # interpolated from the live fit (no static copy), and the wording reflects
+    # whether we auto-cleaned the feature set.
+    _tgt_words = target.replace('_', ' ')
+    _n_drop = len(_orig_dropped)
+    if optimized_applied and _n_drop:
+        _clean_clause = (
+            f" We automatically dropped {_n_drop} collinear "
+            f"feature{'s' if _n_drop != 1 else ''} so each coefficient is "
+            f"trustworthy — see exactly why just below.")
+    elif _orig_dropped:
+        _clean_clause = (
+            f" You're viewing the full model; {len(result.get('optimized_features') or [])} "
+            "of these predictors are collinear and a cleaner model is one "
+            "click away below.")
+    else:
+        _clean_clause = (" No predictors are collinear, so every coefficient "
+                         "can be read directly.")
+    _r2_pct = f"{result['r2']:.0%}"
     intro = ck_section_intro(
-        eyebrow=f"REGRESSION · {_html.escape(target.replace('_', ' ').upper())}",
-        headline=f"OLS regression on {result['n']:,} observations.",
-        italic_word="regression",
+        eyebrow=f"REGRESSION · {_html.escape(_tgt_words.upper())}",
+        headline=(f"Predicting {_html.escape(_tgt_words)} across "
+                  f"{result['n']:,} hospitals."),
+        italic_word="Predicting",
         body=(
-            f"R² = {result['r2']:.1%} · Adj R² = {result['adj_r2']:.1%} · "
-            f"{result['p']} features · F = {min(result['f_stat'], 9999):.1f}. "
-            "RMSE measures average prediction miss in target units; "
-            "F-statistic tests whether the model explains more than "
-            "random chance."
+            f"These {result['p']} predictors explain {_r2_pct} of the "
+            f"variation in {_html.escape(_tgt_words)} "
+            f"(R² = {result['r2']:.1%}, adjusted {result['adj_r2']:.1%})."
+            f"{_clean_clause}"
         ),
     )
     kpis = (
@@ -987,36 +1007,62 @@ def render_regression_page(
             parts.append("drop_leakage=1")
         if cv:
             parts.append("cv=1")
-        if opt_on:
-            parts.append("optimized=1")
+        # Always explicit so it survives the honest-by-default (optimized-on)
+        # route logic: =1 forces the pruned model, =0 forces the full one.
+        parts.append("optimized=1" if opt_on else "optimized=0")
         return "/portfolio/regression?" + "&amp;".join(parts)
 
+    def _why_dropped(drops: List[Dict[str, Any]]) -> str:
+        # Per-feature plain-language reason — what each dropped feature was
+        # collinear with — so a removal is never a black box.
+        items = []
+        for d in drops:
+            feat = _html.escape(d["feature"].replace("_", " "))
+            vif = d.get("vif")
+            vtxt = "VIF &infin;" if vif is None else f"VIF&nbsp;{vif:.0f}"
+            eb = d.get("explained_by") or []
+            if eb:
+                partners = ", ".join(
+                    f'{_html.escape(e["feature"].replace("_", " "))} '
+                    f'(r&nbsp;{e["r"]:.2f})' for e in eb)
+                reason = f"nearly determined by {partners}"
+            else:
+                reason = "almost fully explained by the other predictors"
+            items.append(
+                f'<li style="margin:3px 0;"><b>{feat}</b> &mdash; {vtxt}; '
+                f'{reason}.</li>')
+        return ('<ul style="margin:6px 0 0;padding-left:18px;font-size:12px;'
+                'line-height:1.5;color:var(--sc-text-dim,#465366);">'
+                f'{"".join(items)}</ul>')
+
     if optimized_applied:
-        _dn = ", ".join(_html.escape(d["feature"].replace("_", " "))
-                        for d in _orig_dropped)
+        _n = len(_orig_dropped)
         _opt_html = (
             f'<div style="margin-top:8px;font-size:12.5px;line-height:1.55;'
-            f'color:var(--sc-text,#1a2332);">&#10003; <b>Optimized model '
-            f'applied</b> — dropped <b>{_dn}</b>; the coefficients below are '
-            f'from the VIF-pruned fit. '
+            f'color:var(--sc-text,#1a2332);">&#10003; <b>Built you a clean '
+            f'model</b> — dropped {_n} collinear '
+            f'feature{"s" if _n != 1 else ""} so every coefficient below is '
+            f'trustworthy:'
+            f'{_why_dropped(_orig_dropped)}'
+            f'<div style="margin-top:6px;">'
             f'<a href="{_toggle_url(False)}" style="color:var(--sc-teal,#155752);">'
-            f'View the full (collinear) model &rarr;</a></div>')
+            f'See the full (collinear) model instead &rarr;</a></div></div>')
     elif _orig_dropped:
-        _drop_names = ", ".join(
-            _html.escape(d["feature"].replace("_", " ")) for d in _orig_dropped)
         _opt = result.get("optimized_features") or []
         _opt_html = (
             f'<div style="margin-top:8px;font-size:12.5px;line-height:1.55;'
-            f'color:var(--sc-text,#1a2332);"><b>Optimized feature set</b> '
-            f'(VIF-pruned to &le;10): drop <b>{_drop_names}</b> &rarr; '
-            f'{len(_opt)} stable predictors with interpretable coefficients. '
+            f'color:var(--sc-text,#1a2332);">You are viewing the full model. '
+            f'A cleaner {len(_opt)}-feature model drops these collinear '
+            f'predictors:'
+            f'{_why_dropped(_orig_dropped)}'
+            f'<div style="margin-top:6px;">'
             f'<a href="{_toggle_url(True)}" style="color:var(--sc-teal,#155752);'
-            f'font-weight:600;">Apply the optimized model &rarr;</a></div>')
+            f'font-weight:600;">Switch to the clean model &rarr;</a></div></div>')
     else:
         _opt_html = (
             '<div style="margin-top:8px;font-size:12.5px;color:'
-            'var(--sc-text-dim,#465366);">No features need pruning — every '
-            'predictor is below the VIF&nbsp;10 threshold.</div>')
+            'var(--sc-text-dim,#465366);">&#10003; Every predictor is below the '
+            'VIF&nbsp;10 threshold — no collinear features to drop.</div>')
     multicollinearity_banner = (
         f'<div style="background:var(--sc-paper,#faf6ec);border:1px solid '
         f'var(--sc-rule,#c9c1ac);border-left:4px solid {_sev_color};'
