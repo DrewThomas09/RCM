@@ -55,21 +55,18 @@ def render_section_best(section: str, qs: Optional[Dict] = None) -> str:
     rows: List[Dict] = list(RANKINGS.get(section, []))
 
     head = ck_page_title(
-        f"{title} — best surfaces",
-        eyebrow=f"{title.upper()} · RANKED",
-        meta=(f"{len(rows)} surfaces, ranked by usefulness to PE / Chartis "
-              "advisory" if rows else "no ranked surfaces yet"),
+        f"All {title} tools",
+        eyebrow=f"{title.upper()}",
+        meta=(f"{len(rows)} tools" if rows else "no tools yet"),
     )
     src = ck_source_purpose(
-        purpose=f"The strongest {title} surfaces, ranked by how useful they are "
-                "for deal work and how much real analysis backs them — so a "
-                "partner can go straight to the best pages.",
+        purpose=f"Everything in {title}, ordered best-first. Open any tool — "
+                "the dot shows whether it runs on live data, a computed model, "
+                "or illustrative figures.",
         universe="derived",
-        source="Ranking from scripts/rank_surfaces.py (data-honesty tier + "
-               "deal-workflow fit + source/purpose header + real-data wiring + "
-               "renderer depth). Every row is a real route-backed page.",
+        source="Every row is a real, route-backed page.",
         confidence="derived",
-        next_action="Open the top-ranked surface",
+        next_action=f"Open the first {title} tool",
         next_href=(rows[0]["route"] if rows else "/home"),
     )
 
@@ -82,26 +79,17 @@ def render_section_best(section: str, qs: Optional[Dict] = None) -> str:
                              extra_css=_CSS)
 
     cards = []
-    for i, r in enumerate(rows, 1):
+    for r in rows:
         color, label = _TIER_DOT.get(r.get("tier", ""), ("#8b94a0", "—"))
         cards.append(
             f'<a class="sb-card" href="{_h.escape(r["route"])}">'
-            f'<div class="sb-meta"><span class="sb-rank">{i:02d}</span>'
+            f'<div class="sb-meta">'
             f'<span class="sb-dot" style="background:{color}"></span>'
-            f'<span>{_h.escape(label)}</span>'
-            f'<span class="sb-score">{r["total"]:.1f}/10</span></div>'
+            f'<span>{_h.escape(label)}</span></div>'
             f'<div class="sb-label">{_h.escape(r["label"])}</div>'
             f'<div class="sb-route">{_h.escape(r["route"])}</div></a>'
         )
     grid = f'<div class="sb-grid">{"".join(cards)}</div>'
-    legend = ck_panel(
-        '<p class="ck-section-body" style="margin:0;">Score = usefulness×1.5 + '
-        'effort, normalized to 10. The dot is the data-honesty tier: '
-        '<b style="color:#0a8a5f">green</b> = LIVE real data, '
-        '<b style="color:#15324f">navy</b> = computed/model, '
-        '<b style="color:#b8732a">amber</b> = DATA REQUIRED. Ranked surfaces are '
-        'real route-backed pages — nothing fabricated.</p>',
-        title="How this is ranked")
-    body = head + src + grid + legend
-    return chartis_shell(body, f"{title} — best", active_nav="/" + section,
+    body = head + src + grid
+    return chartis_shell(body, f"All {title} tools", active_nav="/" + section,
                          extra_css=_CSS)

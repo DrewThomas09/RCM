@@ -48,19 +48,21 @@ class SectionBestPageTests(unittest.TestCase):
         for s in ("source", "diligence", "portfolio", "research", "library", "pipeline"):
             h = self._r(s)
             self.assertIn("<!doctype html>", h.lower(), s)
-            self.assertIn("best surfaces", h.lower(), s)
+            self.assertIn("tools", h.lower(), s)
 
-    def test_shows_rank_score_and_tier(self):
+    def test_shows_tools_in_order_without_score(self):
+        # Ranked order is used, but the numeric score is never surfaced.
         h = self._r("source")
         self.assertIn("Target Screener", h)
-        self.assertIn("9.6/10", h)            # score shown
-        self.assertIn("LIVE — real data", h)  # tier evidence
+        self.assertIn("LIVE — real data", h)   # honesty tier kept
+        self.assertNotRegex(h, r"\d\.\d/10")    # score hidden
 
-    def test_carries_source_purpose_evidence(self):
-        # Front-facing gate: the index declares its basis (no fabrication).
+    def test_no_ranking_methodology(self):
+        # "Don't explain the ranking" — no score formula / source attribution.
         h = self._r("diligence")
-        self.assertIn("Ranking from", h)
-        self.assertIn("real route-backed page", h)
+        self.assertNotIn("Ranking from", h)
+        self.assertNotIn("usefulness×1.5", h)
+        self.assertNotIn("How this is ranked", h)
 
     def test_unknown_section_safe(self):
         h = self._r("nope")

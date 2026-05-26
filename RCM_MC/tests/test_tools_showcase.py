@@ -1,58 +1,59 @@
-"""The /tools showcase — curated default (top-6 + diligence spotlight) with the
-full index demoted to ?view=all.
+"""The /tools showcase — a clean, grouped, ranked catalogue (no scores, no
+ranking methodology) with the raw index behind ?view=all.
 
-Guards the "don't overwhelm, lead with the best" redesign: the showcase shows a
-bounded set of top-ranked, front-facing surfaces and always offers a path to
-the full index; the full index stays reachable and links back.
+Guards the "show everything in ranked order, don't explain the ranking"
+redesign: tools appear ordered best-first, but the score and the methodology
+are never surfaced to the user.
 """
 from __future__ import annotations
 
+import re
 import unittest
 
-from rcm_mc.ui.tools_showcase_page import render_tools_showcase, _gated_sorted
+from rcm_mc.ui.tools_showcase_page import render_tools_showcase
 from rcm_mc.ui._surface_rankings import RANKINGS
 
 
 class ShowcaseTests(unittest.TestCase):
-    def test_renders_bounded_hero(self):
+    def test_renders_workspace_sections(self):
         h = render_tools_showcase(355)
-        # exactly the top 6 hero cards (anchor count, not CSS class defs)
-        self.assertEqual(h.count('class="tsh-card"'), 6)
+        for label in ("Diligence", "Source", "Pipeline", "Portfolio",
+                      "Research", "Library"):
+            self.assertIn(f">{label}</h2>", h)
 
-    def test_hero_is_top_ranked_front_facing(self):
+    def test_shows_all_tools_in_a_section(self):
+        # Every diligence tool in the manifest is listed (not just a top-6).
         h = render_tools_showcase(355)
-        # The overall #1 (Target Screener) must lead.
-        self.assertIn("/target-screener", h)
-        # No illustrative/placeholder tiers leak into the showcase.
-        weak = [r for sec in RANKINGS.values() for r in sec
-                if r.get("tier") in ("yellow", "red")]
-        # Pick a weak route (if any) and assert it's not a hero card link.
-        for r in weak[:20]:
-            self.assertNotIn(f'class="tsh-card" href="{r["route"]}"', h)
+        for r in RANKINGS.get("diligence", []):
+            self.assertIn(r["route"], h)
 
-    def test_spotlights_diligence(self):
+    def test_ranked_order_best_first(self):
+        # Within diligence, rows appear in descending ranking order even though
+        # the score is hidden.
         h = render_tools_showcase(355)
-        self.assertIn("Top diligence layers", h)
-        self.assertIn("/best/diligence", h)
+        routes = re.findall(r'tx-row" href="([^"]+)"', h)
+        dil = [r["route"] for r in
+               sorted(RANKINGS.get("diligence", []),
+                      key=lambda r: -r.get("total", 0.0))]
+        seen = [r for r in routes if r in set(dil)]
+        self.assertEqual(seen[:len(dil)], dil)
 
-    def test_always_offers_full_index(self):
+    def test_no_scores_or_methodology(self):
         h = render_tools_showcase(355)
-        self.assertIn("/tools?view=all", h)
+        self.assertNotRegex(h, r"\d\.\d/10")          # no "9.6/10" badges
+        self.assertNotIn("scored by usefulness", h)
+        self.assertNotIn("rank_surfaces", h)
+        self.assertNotIn("usefulness×1.5", h)
+        self.assertNotIn("THE #1 SURFACE", h.upper())
 
-    def test_gated_sort_descending_front_facing(self):
-        rows = _gated_sorted(RANKINGS.get("diligence", []))
-        totals = [r["total"] for r in rows]
-        self.assertEqual(totals, sorted(totals, reverse=True))
-        self.assertTrue(all(r["tier"] in ("green", "navy", "data_required")
-                            for r in rows))
+    def test_offers_full_index(self):
+        self.assertIn("/tools?view=all", render_tools_showcase(355))
 
-    def test_route_dispatches_both_views(self):
-        import pathlib
-        src = (pathlib.Path(__file__).resolve().parents[1]
-               / "rcm_mc" / "server.py").read_text()
-        self.assertIn("render_tools_showcase", src)
-        self.assertIn("_route_tools_index_full", src)
-        self.assertIn('qs.get("view")', src)
+    def test_honesty_dots_kept(self):
+        # The data-honesty legend stays — that's labelling, not ranking.
+        h = render_tools_showcase(355)
+        self.assertIn("Live data", h)
+        self.assertIn("Illustrative", h)
 
 
 if __name__ == "__main__":
