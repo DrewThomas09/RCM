@@ -4539,6 +4539,15 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/geo-metrics":
             from .ui.data_public.geo_metrics_page import render_geo_metrics
             return self._send_html(render_geo_metrics())
+        if path == "/metro-markets":
+            from .ui.data_public.metro_markets_page import render_metro_markets
+            _mm_qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            return self._send_html(render_metro_markets(_mm_qs))
+        if path == "/metro-markets.csv":
+            from .ui.data_public.metro_markets_page import _parse_sort as _mms, _parse_type as _mmt, metro_dataframe
+            _q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            _t = _mmt(_q)
+            return self._send_csv_df(metro_dataframe(_t, _mms(_q)), f"metro-markets-{_t.lower()}.csv")
         if path == "/state-compare.csv":
             from .ui.data_public.state_compare_page import _parse_states, compare_dataframe
             _q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
