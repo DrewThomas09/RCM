@@ -3507,8 +3507,20 @@ class RCMHandler(BaseHTTPRequestHandler):
         # Ranked "best of <section>" index — the page each nav bar's "show more"
         # opens (top surfaces by usefulness-weighted ranking). Read-only.
         if path.startswith("/best/"):
-            from .ui.section_best_page import render_section_best
+            # Retired the standalone ranked /best list — these now render the
+            # grouped section catalog (the /diligence pattern), so every
+            # section has one consistent, explained landing. Diligence keeps
+            # its own richer pillars. Falls back to the ranked-list renderer
+            # only if a section has neither curated pillars nor ranked rows.
             _sec = path[len("/best/"):].strip("/").lower()
+            if _sec == "diligence":
+                from .ui.diligence_index_page import render_diligence_index
+                return self._send_html(render_diligence_index())
+            from .ui.section_landings import render_section_landing
+            _cat = render_section_landing(_sec)
+            if _cat is not None:
+                return self._send_html(_cat)
+            from .ui.section_best_page import render_section_best
             return self._send_html(render_section_best(_sec))
         # Diligence Checklist — orchestration layer + open-questions tracker.
         if path == "/diligence/checklist":

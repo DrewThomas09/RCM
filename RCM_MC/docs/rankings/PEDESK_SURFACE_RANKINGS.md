@@ -12,13 +12,12 @@ Ranked 302 route-backed page modules.
 
 | Route | Page | Tier | Effort | PE-use | **Total** | LOC | Tests |
 |---|---|---|---:|---:|---:|---:|:--:|
-| `/target-screener` | target_screener_page | green | 4.5 | 5.0 | **9.6** | 1,426 | ✓ |
-| `/diligence/hcris-xray` | hcris_xray_page | green | 4.5 | 5.0 | **9.6** | 1,361 | ✓ |
+| `/target-screener` | target_screener_page | green | 4.5 | 5.0 | **9.6** | 1,464 | ✓ |
+| `/diligence/hcris-xray` | hcris_xray_page | green | 4.5 | 5.0 | **9.6** | 1,363 | ✓ |
 | `/diligence/payer-stress` | payer_stress_page | green | 4.5 | 5.0 | **9.6** | 1,069 | ✓ |
 | `/diligence/ic-packet` | ic_packet_page | green | 4.5 | 5.0 | **9.6** | 925 | ✓ |
 | `/diligence/ingest` | _pages | green | 4.5 | 4.5 | **9.0** | 1,045 | ✓ |
 | `/diligence/benchmarks` | _pages | green | 4.5 | 4.5 | **9.0** | 1,045 | ✓ |
-| `/diligence/management` | management_scorecard_page | green | 3.5 | 5.0 | **8.8** | 574 | ✓ |
 | `/diligence/sponsor-detail` | sponsor_detail_page | green | 3.5 | 5.0 | **8.8** | 536 | ✓ |
 | `/diligence/xray` | provider_xray_page | green | 3.5 | 5.0 | **8.8** | 490 | ✓ |
 | `/diligence/regulatory-calendar` | regulatory_calendar_page | green | 4.5 | 4.0 | **8.4** | 1,219 | ✓ |
@@ -29,7 +28,7 @@ Ranked 302 route-backed page modules.
 | `/diligence/counterfactual` | counterfactual_page | navy | 4.5 | 4.0 | **8.4** | 915 | ✓ |
 | `/diligence/exit-timing` | exit_timing_page | navy | 4.5 | 4.0 | **8.4** | 912 | ✓ |
 | `/diligence/deal-autopsy` | deal_autopsy_page | navy | 4.5 | 4.0 | **8.4** | 891 | ✓ |
-| `/portfolio/regression` | regression_page | navy | 5.0 | 3.5 | **8.2** | 2,067 | ✓ |
+| `/portfolio/regression` | regression_page | navy | 5.0 | 3.5 | **8.2** | 2,246 | ✓ |
 | `/new-deal/manual` | onboarding_wizard | green | 3.5 | 4.5 | **8.2** | 746 | ✓ |
 | `/portfolio/risk-scan` | portfolio_risk_scan_page | green | 3.5 | 4.5 | **8.2** | 637 | ✓ |
 | `/pipeline` | pipeline_page | green | 3.5 | 4.5 | **8.2** | 483 | ✓ |
@@ -37,6 +36,7 @@ Ranked 302 route-backed page modules.
 | `/diligence/qoe-memo` | _pages | navy | 4.5 | 3.5 | **7.8** | 1,045 | ✓ |
 | `/ml-insights` | ml_insights_page | green | 4.5 | 3.5 | **7.8** | 957 | ✓ |
 | `/pipeline/bridge` | day_one_page | green | 3.0 | 4.5 | **7.8** | 648 | — |
+| `/portfolio` | day_one_page | green | 3.0 | 4.5 | **7.8** | 648 | — |
 
 ## Buried gems — strong but not in the nav (4)
 _High-scoring pages that aren't surfaced in a nav section — the prime candidates to migrate into the bars._
@@ -52,7 +52,7 @@ _High-scoring pages that aren't surfaced in a nav section — the prime candidat
 
 | Route | Page | Tier | Effort | PE-use | **Total** | LOC | Tests |
 |---|---|---|---:|---:|---:|---:|:--:|
-| `/target-screener` | target_screener_page | green | 4.5 | 5.0 | **9.6** | 1,426 | ✓ |
+| `/target-screener` | target_screener_page | green | 4.5 | 5.0 | **9.6** | 1,464 | ✓ |
 | `/conferences` | conference_page | green | 3.5 | 4.0 | **7.6** | 469 | ✓ |
 | `/screen` | deal_comparison | green | 2.5 | 4.0 | **6.8** | 435 | ✓ |
 | `/state-compare` | state_compare_page | green | 2.5 | 4.0 | **6.8** | 333 | ✓ |
@@ -84,12 +84,11 @@ _High-scoring pages that aren't surfaced in a nav section — the prime candidat
 
 | Route | Page | Tier | Effort | PE-use | **Total** | LOC | Tests |
 |---|---|---|---:|---:|---:|---:|:--:|
-| `/diligence/hcris-xray` | hcris_xray_page | green | 4.5 | 5.0 | **9.6** | 1,361 | ✓ |
+| `/diligence/hcris-xray` | hcris_xray_page | green | 4.5 | 5.0 | **9.6** | 1,363 | ✓ |
 | `/diligence/payer-stress` | payer_stress_page | green | 4.5 | 5.0 | **9.6** | 1,069 | ✓ |
 | `/diligence/ic-packet` | ic_packet_page | green | 4.5 | 5.0 | **9.6** | 925 | ✓ |
 | `/diligence/ingest` | _pages | green | 4.5 | 4.5 | **9.0** | 1,045 | ✓ |
 | `/diligence/benchmarks` | _pages | green | 4.5 | 4.5 | **9.0** | 1,045 | ✓ |
-| `/diligence/management` | management_scorecard_page | green | 3.5 | 5.0 | **8.8** | 574 | ✓ |
 | `/diligence/sponsor-detail` | sponsor_detail_page | green | 3.5 | 5.0 | **8.8** | 536 | ✓ |
 | `/diligence/xray` | provider_xray_page | green | 3.5 | 5.0 | **8.8** | 490 | ✓ |
 | `/diligence/covenant-stress` | covenant_lab_page | navy | 4.5 | 4.0 | **8.4** | 1,109 | ✓ |
@@ -101,19 +100,20 @@ _High-scoring pages that aren't surfaced in a nav section — the prime candidat
 | `/diligence/qoe-memo` | _pages | navy | 4.5 | 3.5 | **7.8** | 1,045 | ✓ |
 | `/diligence/checklist` | diligence_checklist_page | green | 3.5 | 4.0 | **7.6** | 653 | ✓ |
 | `/engagements` | engagement_pages | green | 3.5 | 4.0 | **7.6** | 462 | ✓ |
+| `/diligence` | diligence_index_page | green | 2.5 | 4.5 | **7.4** | 311 | ✓ |
+| `/diligence/` | diligence_index_page | green | 2.5 | 4.5 | **7.4** | 311 | ✓ |
 | `/diligence/risk-workbench` | risk_workbench_page | data_required | 4.5 | 3.0 | **7.2** | 1,362 | ✓ |
 | `/diligence/physician-attrition` | physician_attrition_page | navy | 4.5 | 3.0 | **7.2** | 1,208 | ✓ |
 | `/diligence/questions` | questions_aggregator_page | green | 3.0 | 4.0 | **7.2** | 592 | — |
 | `/diligence/deal-mc` | deal_mc_page | navy | 3.5 | 3.5 | **7.0** | 660 | ✓ |
-| `/diligence` | diligence_index_page | green | 2.0 | 4.5 | **7.0** | 285 | — |
-| `/diligence/` | diligence_index_page | green | 2.0 | 4.5 | **7.0** | 285 | — |
+| `/diligence/pe-reference` | pe_reference_page | navy | 2.5 | 4.0 | **6.8** | 380 | ✓ |
 | `/diligence/deal` | library_page | green | 2.5 | 4.0 | **6.8** | 378 | ✓ |
 | `/diligence/pe-tool` | pe_tool_page | navy | 2.5 | 4.0 | **6.8** | 316 | ✓ |
-| `/diligence/pe-library` | pe_library_page | navy | 2.5 | 4.0 | **6.8** | 252 | ✓ |
+| `/diligence/pe-library` | pe_library_page | navy | 2.5 | 4.0 | **6.8** | 259 | ✓ |
 | `/diligence/root-cause` | _pages | yellow | 4.5 | 2.5 | **6.6** | 1,045 | ✓ |
 | `/diligence/thesis-pipeline` | thesis_pipeline_page | yellow | 3.5 | 3.0 | **6.4** | 726 | ✓ |
+| `/diligence/management` | management_scorecard_page | yellow | 3.5 | 3.0 | **6.4** | 574 | ✓ |
 | `/diligence/denial-prediction` | denial_prediction_page | navy | 3.5 | 3.0 | **6.4** | 547 | ✓ |
-| `/diligence/cliff-calendar` | cliff_calendar_page | navy | 1.5 | 4.0 | **6.0** | 244 | ✓ |
 
 ## Library (13)
 
@@ -166,7 +166,7 @@ _High-scoring pages that aren't surfaced in a nav section — the prime candidat
 
 | Route | Page | Tier | Effort | PE-use | **Total** | LOC | Tests |
 |---|---|---|---:|---:|---:|---:|:--:|
-| `/portfolio/regression` | regression_page | navy | 5.0 | 3.5 | **8.2** | 2,067 | ✓ |
+| `/portfolio/regression` | regression_page | navy | 5.0 | 3.5 | **8.2** | 2,246 | ✓ |
 | `/portfolio/risk-scan` | portfolio_risk_scan_page | green | 3.5 | 4.5 | **8.2** | 637 | ✓ |
 | `/portfolio` | day_one_page | green | 3.0 | 4.5 | **7.8** | 648 | — |
 | `/portfolio/monitor` | day_one_page | green | 3.0 | 4.5 | **7.8** | 648 | — |
@@ -202,7 +202,6 @@ _High-scoring pages that aren't surfaced in a nav section — the prime candidat
 | `/deal-search` | deal_search_page | green | 2.5 | 3.5 | **6.2** | 410 | ✓ |
 | `/corpus-ic-memo` | ic_memo_page | yellow | 4.5 | 2.0 | **6.0** | 938 | ✓ |
 | `/news` | news_page | green | 3.0 | 3.0 | **6.0** | 505 | — |
-| `/tools` | tools_showcase_page | green | 1.5 | 4.0 | **6.0** | 187 | ✓ |
 | `/competitive-intel` | competitive_intel_page | navy | 3.5 | 2.5 | **5.8** | 574 | ✓ |
 | `/provider-network` | provider_network_page | navy | 3.5 | 2.5 | **5.8** | 453 | ✓ |
 | `/cms-sources` | cms_sources_page | green | 2.0 | 3.5 | **5.8** | 296 | — |
@@ -212,3 +211,4 @@ _High-scoring pages that aren't surfaced in a nav section — the prime candidat
 | `/search` | deal_comparison | green | 2.5 | 3.0 | **5.6** | 435 | ✓ |
 | `/physician-productivity` | physician_productivity_page | navy | 2.5 | 3.0 | **5.6** | 431 | ✓ |
 | `/models/quality` | model_quality_dashboard | green | 2.5 | 3.0 | **5.6** | 395 | ✓ |
+| `/models/importance` | feature_importance_viz | green | 2.5 | 3.0 | **5.6** | 368 | ✓ |

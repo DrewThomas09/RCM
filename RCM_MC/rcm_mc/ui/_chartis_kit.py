@@ -135,14 +135,19 @@ def ck_fmt_moic(v: Optional[float], *, dash: str = "—") -> str:
 # Navigation — top bar primary + Platform Index secondary
 # ---------------------------------------------------------------------------
 
+# Each section's nav click lands on its grouped catalog (the /diligence
+# pattern) — "they should all have pages like this when you click on that".
+# Diligence keeps its dedicated /diligence catalog; the others use the section
+# catalog at /best/<key>. The functional pages (target-screener, pipeline,
+# portfolio, …) remain the first links inside each catalog and in the mega-menu.
 _CORPUS_NAV = [
     {"label": "Home",      "href": "/home",      "key": "home"},
-    {"label": "Source",    "href": "/target-screener", "key": "source"},
-    {"label": "Pipeline",  "href": "/pipeline",  "key": "pipeline"},
+    {"label": "Source",    "href": "/best/source", "key": "source"},
+    {"label": "Pipeline",  "href": "/best/pipeline",  "key": "pipeline"},
     {"label": "Diligence", "href": "/diligence", "key": "diligence"},
-    {"label": "Library",   "href": "/library",   "key": "library"},
-    {"label": "Research",  "href": "/research",  "key": "research"},
-    {"label": "Portfolio", "href": "/portfolio", "key": "portfolio"},
+    {"label": "Library",   "href": "/best/library",   "key": "library"},
+    {"label": "Research",  "href": "/best/research",   "key": "research"},
+    {"label": "Portfolio", "href": "/best/portfolio", "key": "portfolio"},
 ]
 
 # Per-section sub-nav. Surfaces the most-clicked second-level pages
