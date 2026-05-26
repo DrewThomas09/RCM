@@ -30,7 +30,7 @@ from ..diligence._pages import AVAILABLE_FIXTURES, _resolve_dataset
 from ..diligence.checklist import compute_status, DealObservations
 from ._chartis_kit import (
     P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
-    ck_panel, ck_section_intro,
+    ck_panel, ck_section_intro, ck_source_purpose,
 )
 from .power_ui import (
     bookmark_hint, deal_context_bar, export_json_panel,
@@ -694,6 +694,14 @@ def render_thesis_pipeline_page(
         )
         + '<div class="tp-wrap">'
         + deal_context_bar(qs, active_surface="pipeline")
+        + ck_source_purpose(
+            purpose="Run the full 13-step diligence chain (intake → analysis → risk → bridge → memo) on a deal in one pass to produce an IC-ready synthesis.",
+            universe="illustrative",
+            confidence="derived",
+            source=f"Orchestrated over the selected '{html.escape(str(inp.dataset))}' CCD fixture + your entered deal economics — fixture claims are a sample, not the target's own. Re-run on the target's CCD before IC.",
+            next_action="Open the IC packet",
+            next_href="/diligence/ic-packet",
+        )
         + export_json_panel(
             hero + _headline_grid(report),
             payload=report.to_dict(),

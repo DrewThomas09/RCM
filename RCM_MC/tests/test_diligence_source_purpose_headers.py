@@ -35,6 +35,7 @@ _REQUIRE_SOURCE_PURPOSE = {
     "comparable_outcomes_page.py": _UI / "comparable_outcomes_page.py",
     "regulatory_calendar_page.py": _UI / "regulatory_calendar_page.py",
     "compare_page.py": _UI / "compare_page.py",
+    "thesis_pipeline_page.py": _UI / "thesis_pipeline_page.py",
     "data_public/cost_structure_page.py": _UI / "data_public" / "cost_structure_page.py",
     "data_public/debt_service_page.py": _UI / "data_public" / "debt_service_page.py",
     "data_public/ref_pricing_page.py": _UI / "data_public" / "ref_pricing_page.py",
