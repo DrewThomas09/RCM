@@ -4528,6 +4528,22 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/geo-intel":
             from .ui.data_public.geo_intel_page import render_geo_intel
             return self._send_html(render_geo_intel())
+        if path == "/state-compare.csv":
+            from .ui.data_public.state_compare_page import _parse_states, compare_dataframe
+            _q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            _states = _parse_states(_q)
+            return self._send_csv_df(compare_dataframe(_states),
+                                     f"state-compare-{'-'.join(_states)}.csv")
+        if path == "/state-rankings.csv":
+            from .ui.data_public.state_rankings_page import _parse_metric, rankings_dataframe
+            _q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            _key = _parse_metric(_q)
+            return self._send_csv_df(rankings_dataframe(_key), f"state-rankings-{_key}.csv")
+        if path == "/state-profile.csv":
+            from .ui.data_public.state_profile_page import _parse_state, profile_dataframe
+            _q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            _st = _parse_state(_q)
+            return self._send_csv_df(profile_dataframe(_st), f"state-profile-{_st}.csv")
         if path == "/predictive-screener":
             return self._route_predictive_screener()
         if path.startswith("/data-room/") and not path.endswith("/add"):
