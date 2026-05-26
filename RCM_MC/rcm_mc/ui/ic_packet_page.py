@@ -25,7 +25,7 @@ from typing import Any, Dict, List, Optional
 from ..diligence._pages import AVAILABLE_FIXTURES, _resolve_dataset
 from ._chartis_kit import (
     P, chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
-    ck_section_header, ck_section_intro, ck_signal_badge,
+    ck_section_header, ck_section_intro, ck_signal_badge, ck_source_purpose,
     ck_sticky_toc,
 )
 
@@ -667,7 +667,14 @@ def render_ic_packet_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         else "warning"
     )
     runtime_header = (
-        ck_section_header(
+        ck_source_purpose(
+            purpose="Assemble a one-click, IC-ready packet — KPIs, bridge, bear case, regulatory, comps — from the full diligence pipeline in one pass.",
+            universe="illustrative",
+            confidence="derived",
+            source=f"Run against the '{html.escape(str(dataset))}' CCD fixture + your entered deal economics; module outputs are illustrative on fixture data — re-run on the target's own data before a real IC.",
+            next_action="Export the packet / preview the print version",
+        )
+        + ck_section_header(
             "Modules assembled into this packet",
             eyebrow="IC packet · runtime",
         )
