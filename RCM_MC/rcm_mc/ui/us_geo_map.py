@@ -99,9 +99,23 @@ def render_us_geo_map(
     selected_state: Optional[str] = None,
     state_link_template: str = "",
     empty_message: str = "",
+    map_title: str = "United States portfolio map",
+    exposure_label: str = "Portfolio exposure (low&nbsp;→&nbsp;high concentration)",
+    caveat_text: str = (
+        "Approximate geographic SVG map (Albers projection of US Census state "
+        "boundaries, public domain). State shading reflects PEdesk portfolio "
+        "records with state-level geography; outlined states are the accent "
+        "jurisdictions named in the legend. This is not a precise coastline or "
+        "facility-location map."
+    ),
 ) -> str:
     """Self-contained SVG geographic US map. Signature mirrors
-    ``us_map.render_us_state_map`` so it is a drop-in replacement."""
+    ``us_map.render_us_state_map`` so it is a drop-in replacement.
+
+    ``map_title`` / ``exposure_label`` / ``caveat_text`` default to the
+    portfolio-map wording (so /portfolio/map is unchanged) but let other
+    surfaces — e.g. the Target Screener shading states by provider count —
+    relabel the title, legend gradient, and caveat honestly."""
     _uid[0] += 1
     cid = f"usgeo{_uid[0]}"
     values = {str(k).upper(): float(v) for k, v in (values or {}).items()}
@@ -149,7 +163,7 @@ def render_us_geo_map(
     svg = (
         f'<svg class="usgeo-svg" viewBox="{vb}" role="img" '
         f'aria-labelledby="{cid}-t {cid}-d" preserveAspectRatio="xMidYMid meet">'
-        f'<title id="{cid}-t">United States portfolio map</title>'
+        f'<title id="{cid}-t">{_esc(map_title)}</title>'
         f'<desc id="{cid}-d">Geographic map of US states shaded by '
         f'{_esc(metric_label)}; Alaska and Hawaii shown as bottom-left insets. '
         'Outlined states are accent jurisdictions.</desc>'
@@ -159,19 +173,12 @@ def render_us_geo_map(
     legend = (
         '<div class="usgeo-legend">'
         f'<span class="it"><span class="sw" style="background:{_NODATA}"></span>No data</span>'
-        '<span class="it"><span class="sw grad"></span>Portfolio exposure '
-        '(low&nbsp;→&nbsp;high concentration)</span>'
+        f'<span class="it"><span class="sw grad"></span>{exposure_label}</span>'
         f'<span class="it"><span class="sw con"></span>{_esc(accent_label)}</span>'
         '<span class="it"><span class="sw sel"></span>Selected state</span>'
         '</div>'
     )
-    caveat = (
-        '<p class="usgeo-caveat">Approximate geographic SVG map '
-        '(Albers projection of US Census state boundaries, public domain). '
-        'State shading reflects PEdesk portfolio records with state-level '
-        'geography; outlined states are the accent jurisdictions named in the '
-        'legend. This is not a precise coastline or facility-location map.</p>'
-    )
+    caveat = f'<p class="usgeo-caveat">{_esc(caveat_text)}</p>'
     empty = ""
     if not has_data and empty_message:
         empty = f'<p class="usgeo-empty">{_esc(empty_message)}</p>'

@@ -106,6 +106,51 @@ class WorkbenchShellTests(unittest.TestCase):
             self.assertIn("Scaffold", self._render(view=view), view)
 
 
+class WorkbenchMapTests(unittest.TestCase):
+    """PR 3 — real US map (reuses render_us_geo_map), state click→filter,
+    layer selector, legend, real provider-count shading."""
+
+    def _render(self, **params):
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        return render_target_screener({k: [v] for k, v in params.items()})
+
+    def test_real_geo_map_not_squares(self):
+        h = self._render(view="main", vertical="home_health")
+        self.assertIn("usgeo-state", h)          # real SVG choropleth
+        self.assertIn("<path", h)                # vector paths, not tiles
+        self.assertNotIn("usm-tile", h)          # not the square cartogram
+
+    def test_state_click_listener_present(self):
+        self.assertIn("us-map-select", self._render(view="main"))
+
+    def test_state_param_selects_and_shows_filter(self):
+        h = self._render(view="main", vertical="hospice", state="TX")
+        self.assertIn("usgeo-selected", h)       # TX highlighted
+        self.assertIn("Filtered to", h)
+        self.assertIn("clear state filter", h)
+
+    def test_layer_selector_present(self):
+        h = self._render(view="main")
+        self.assertIn("Map layer", h)
+        self.assertIn("Provider count", h)
+
+    def test_real_provider_counts_present(self):
+        # The map summary states a real provider total for the vertical.
+        from rcm_mc.ui.target_screener_page import _provider_counts_by_state
+        counts = _provider_counts_by_state("home_health")
+        self.assertGreater(sum(counts.values()), 100)   # real CMS HHA universe
+        self.assertGreater(len(counts), 30)
+
+    def test_provider_counts_safe_on_unknown_vertical(self):
+        from rcm_mc.ui.target_screener_page import _provider_counts_by_state
+        self.assertEqual(_provider_counts_by_state("nope"), {})
+
+    def test_map_has_legend(self):
+        h = self._render(view="main", vertical="dialysis")
+        self.assertIn("usgeo-legend", h)
+        self.assertIn("No data", h)
+
+
 class NavAndRouteTests(unittest.TestCase):
     def test_source_anchor_is_target_screener(self):
         from rcm_mc.ui._chartis_kit import _CORPUS_NAV, _SUB_NAV, _resolve_sub_section

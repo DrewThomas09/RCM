@@ -138,8 +138,58 @@ _CSS = """
 """
 
 
+# Map layers. ``provider_count`` is always real (derived from the active
+# vertical's loader). Demographic/market layers link out to the geo-intel
+# surfaces that own that real data rather than fabricating a shade here.
+_LAYERS = [
+    {"key": "provider_count", "label": "Provider count", "live": True},
+    {"key": "age65", "label": "Age 65+", "live": False, "href": "/geo-intel"},
+    {"key": "income", "label": "Median HH income", "live": False, "href": "/geo-intel"},
+    {"key": "uninsured", "label": "Uninsured %", "live": False, "href": "/geo-intel"},
+    {"key": "ma_penetration", "label": "MA penetration", "live": False, "href": "/geo-intel"},
+    {"key": "market_score", "label": "Market opportunity", "live": False, "href": "/market-intel/geo"},
+]
+
+
 def _q1(qs: Dict[str, List[str]], key: str, default: str = "") -> str:
     return (qs.get(key) or [default])[0].strip()
+
+
+def _provider_counts_by_state(vertical: str) -> Dict[str, int]:
+    """Real provider counts per state for the active vertical, from the live
+    CMS loaders. Returns {} on any load failure so the map shows an honest
+    empty state rather than fabricated shading."""
+    try:
+        if vertical == "hospitals":
+            from ..data.hcris import load_hcris
+            df = load_hcris()
+            if df is None or "state" not in df.columns:
+                return {}
+            vc = df.dropna(subset=["state"]).groupby(
+                df["state"].str.upper())["ccn"].nunique()
+            return {str(k): int(v) for k, v in vc.items() if str(k).strip()}
+        _loaders = {
+            "home_health": ("home_health", "load_home_health_providers"),
+            "hospice": ("hospice", "load_hospice_providers"),
+            "snf": ("snf", "load_snf_providers"),
+            "dialysis": ("dialysis", "load_dialysis_providers"),
+            "irf": ("irf", "load_irf_providers"),
+            "ltch": ("ltch", "load_ltch_providers"),
+        }
+        if vertical in _loaders:
+            mod_name, fn_name = _loaders[vertical]
+            import importlib
+            mod = importlib.import_module(f"..data.{mod_name}", __package__)
+            providers = getattr(mod, fn_name)()
+            counts: Dict[str, int] = {}
+            for p in providers.values():
+                st = (getattr(p, "state", "") or "").strip().upper()
+                if st:
+                    counts[st] = counts.get(st, 0) + 1
+            return counts
+    except Exception:  # noqa: BLE001 — any loader hiccup → honest empty map
+        return {}
+    return {}
 
 
 def _href(view: str, qs: Dict[str, List[str]]) -> str:
@@ -200,6 +250,74 @@ def _vertical_bar(active_vertical: str, qs: Dict[str, List[str]]) -> str:
             'Vertical / universe</div><div class="tsw-verticals">' + "".join(chips) + '</div>')
 
 
+def _layer_bar(active_layer: str, qs: Dict[str, List[str]]) -> str:
+    chips = []
+    for ly in _LAYERS:
+        if ly["live"]:
+            keep = {"view": "main", "vertical": _q1(qs, "vertical", "hospitals"),
+                    "layer": ly["key"]}
+            st = _q1(qs, "state")
+            if st:
+                keep["state"] = st
+            href = "/target-screener?" + "&".join(f"{k}={v}" for k, v in keep.items())
+            cls = "tsw-vert is-active" if ly["key"] == active_layer else "tsw-vert"
+            chips.append(f'<a class="{cls}" href="{href}">{ly["label"]}</a>')
+        else:
+            # No fabricated shade — point at the surface that owns the real data.
+            chips.append(
+                f'<a class="tsw-vert" href="{ly["href"]}" '
+                f'title="Lives on the geo/market intelligence surface (real data)">'
+                f'{ly["label"]} <span class="u">↗ geo</span></a>')
+    return ('<div style="font-family:var(--sc-mono);font-size:9px;letter-spacing:.12em;'
+            'text-transform:uppercase;color:var(--sc-text-faint,#8b94a0);margin:2px 0 5px;">'
+            'Map layer</div><div class="tsw-verticals">' + "".join(chips) + '</div>')
+
+
+def _render_map(vertical: str, qs: Dict[str, List[str]]) -> str:
+    from .us_geo_map import render_us_geo_map
+    vinfo = next((v for v in _VERTICALS if v["key"] == vertical), _VERTICALS[0])
+    sel = _q1(qs, "state").upper()
+    counts = _provider_counts_by_state(vertical)
+    total = sum(counts.values())
+    n_states = len(counts)
+    map_html = render_us_geo_map(
+        {k: float(v) for k, v in counts.items()},
+        metric_label=f"{vinfo['label']} providers",
+        value_format=lambda v: f"{int(v):,}",
+        selected_state=sel or None,
+        map_title=f"{vinfo['label']} provider density ({vinfo['universe']})",
+        exposure_label=f"{vinfo['label']} provider count (low&nbsp;→&nbsp;high)",
+        caveat_text=(
+            f"Real CMS provider counts by state for the {vinfo['label']} "
+            f"universe ({vinfo['universe']}). Click a state to filter the "
+            "screen to it. Approximate Albers-projection SVG, not a precise "
+            "facility-location map."),
+        empty_message=(
+            f"No state-level {vinfo['label']} provider counts available from "
+            "the loader right now. Pick another vertical, or open the table "
+            "(PR 4) once the loader is wired for this universe."),
+    )
+    # Click a state → server round-trip adding state= (server owns filter truth).
+    listener = (
+        "<script>(function(){document.addEventListener('us-map-select',"
+        "function(e){var st=e&&e.detail&&e.detail.state;if(!st)return;"
+        "var u=new URL(window.location.href);u.searchParams.set('state',st);"
+        "u.searchParams.set('view','main');window.location.href=u.pathname+u.search;});"
+        "})();</script>")
+    filt = ""
+    if sel:
+        clear = _vhref(vertical, {})
+        filt = (f'<p class="ck-section-body" style="margin:8px 0 0;">Filtered to '
+                f'<strong>{sel}</strong> · <a class="ck-link" href="{clear}">clear '
+                f'state filter</a>. <span style="opacity:.7">Table filter applies '
+                f'in PR 4.</span></p>')
+    summary = (f'<p class="ck-section-body" style="margin:0 0 6px;">'
+               f'{total:,} {vinfo["label"]} providers across {n_states} states '
+               f'(real {vinfo["universe"]} counts).</p>' if counts else "")
+    return (_layer_bar(_q1(qs, "layer", "provider_count") or "provider_count", qs)
+            + summary + map_html + listener + filt)
+
+
 def _scaffold(title: str, pr: str, bullets: List[str]) -> str:
     items = "".join(f"<li>{b}</li>" for b in bullets)
     return (
@@ -231,12 +349,14 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
             f'font-size:11px;">{vinfo["universe"]}</span>. {vinfo["note"]} '
             f'This is market data, not your deals.</p>',
             title="Active universe")
-        + _scaffold("Real US map + ranked provider table", "PR 3 & PR 4", [
-            "Real SVG US map (reuses render_us_geo_map — the /portfolio/map "
-            "renderer, not squares); click a state to filter.",
-            "Layer selector + legend shaded by the chosen metric.",
-            "Ranked provider table from the live loader with source + "
-            "missingness chips and profile / X-Ray / compare / save actions.",
+        + ck["panel"](_render_map(vertical, qs),
+                      title="Provider density · click a state to filter")
+        + _scaffold("Ranked provider table", "PR 4", [
+            "Ranked provider table from the live loader, scoped by the "
+            "state filter set on the map above.",
+            "Source + missingness chips per row; profile / X-Ray / compare / "
+            "save row actions.",
+            "Documented, missingness-aware scoring columns.",
         ])
         + ck["panel"](
             '<p class="ck-section-body">Three established ways into the SAME '
