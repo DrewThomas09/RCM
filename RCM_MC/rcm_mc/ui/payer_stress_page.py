@@ -28,7 +28,7 @@ from ..diligence.payer_stress import (
 )
 from ._chartis_kit import (
     P, chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
-    ck_section_header, ck_section_intro, ck_signal_badge,
+    ck_section_header, ck_section_intro, ck_signal_badge, ck_source_purpose,
 )
 from .power_ui import (
     benchmark_chip, bookmark_hint, deal_context_bar,
@@ -1003,15 +1003,46 @@ def render_payer_stress_page(
         title="Cross-reference",
     )
 
+    source_purpose = ck_source_purpose(
+        purpose="Stress-test EBITDA against multi-year payer rate moves on this target's payer mix.",
+        universe="user-deals",
+        confidence="derived",
+        source="Your entered payer mix × modeled rate-move scenarios (Monte Carlo); not the deal's actual contract terms.",
+        next_action="Request actual contract terms from management",
+        next_href="#ps-mgmt",
+    )
+    mgmt_panel = ck_panel(
+        '<p class="ck-section-body">This model runs on the payer mix you entered '
+        'and <b>assumed</b> rate-move volatility — it is a directional stress, not '
+        'the deal\'s real contracts. Confirm the real picture with management:</p>'
+        '<ul class="ck-section-body" style="margin:6px 0 10px 18px">'
+        '<li>Contracted rate escalators and method (CPI, fixed %, fee-schedule %) by top payer</li>'
+        '<li>Renewal / expiry dates and any evergreen or auto-renew terms</li>'
+        '<li>Payer concentration — top-3 payers as % of NPR, and single-payer dependency</li>'
+        '<li>Value-based / risk arrangements (upside/downside, withholds, quality bonuses)</li>'
+        '<li>Recent rate-change history (last 3 renewals) and out-of-network exposure</li>'
+        '</ul>'
+        '<p class="ck-section-body" style="font-size:12px">'
+        'Next: subtract the P10 drag in '
+        '<a href="/diligence/deal-mc" class="ck-link">Deal MC</a>, '
+        'feed <a href="/diligence/bridge-audit" class="ck-link">Bridge Audit</a>, '
+        'and capture the questions for the '
+        '<a href="/diligence/ic-packet" class="ck-link">IC packet</a>.</p>',
+        title="Management questions & next actions",
+        anchor_id="ps-mgmt",
+    )
+
     body = (
         _scoped_styles()
         + '<div class="ps-wrap">'
         + deal_context_bar(qs, active_surface="payer")
+        + source_purpose
         + hero
         + mix_panel
         + cone_panel
         + cards_panel
         + table_panel
+        + mgmt_panel
         + cross_link
         + export_json_panel(
             '<div class="ps-section-label" style="margin-top:22px;">'
