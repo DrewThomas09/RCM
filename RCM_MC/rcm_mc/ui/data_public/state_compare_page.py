@@ -274,16 +274,27 @@ def render_state_compare(params: Dict = None) -> str:
                 worst_v = min(vals) if higher else max(vals)
                 best_s = next(s for s, v in present if v == best_v)
                 worst_s = next(s for s, v in present if v == worst_v)
+        # Row-scaled magnitude bar: width = |value| / row max across the
+        # selected states. An honest visual of the real values (no fabrication);
+        # only drawn when ≥2 states report and the row has positive magnitude.
+        row_max = max((abs(v) for _, v in present), default=0.0)
+        raw_by_state = {s: v for s, v in present}
         for s in states:
             v = data[s].get(metric, "—")
-            col = tp; weight = "normal"
+            col = tp; weight = "normal"; bar_c = ac
             if s == best_s:
-                col = pos_c; weight = "600"
+                col = pos_c; weight = "600"; bar_c = pos_c
             elif s == worst_s:
-                col = warn_c
+                col = warn_c; bar_c = warn_c
+            rv = raw_by_state.get(s)
+            bar = ""
+            if rv is not None and row_max > 0 and len(present) >= 2:
+                bw = max(2, round(abs(rv) / row_max * 100))
+                bar = (f'<div style="height:3px;width:{bw}%;background:{bar_c};opacity:0.55;'
+                       f'margin:3px 0 0 auto;border-radius:1px"></div>')
             cells += (f'<td style="padding:5px 10px;text-align:right;font-family:JetBrains Mono,monospace;'
                       f'font-size:12px;font-variant-numeric:tabular-nums;color:{col};font-weight:{weight};'
-                      f'background:{bg}">{_html.escape(str(v))}</td>')
+                      f'background:{bg}">{_html.escape(str(v))}{bar}</td>')
         med_str = _fmt(key, meds.get(key))
         cells += (f'<td style="padding:5px 10px;text-align:right;font-family:JetBrains Mono,monospace;'
                   f'font-size:12px;font-variant-numeric:tabular-nums;color:{td};background:{bg};'
