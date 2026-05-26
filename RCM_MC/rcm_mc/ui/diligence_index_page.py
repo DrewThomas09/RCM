@@ -155,13 +155,39 @@ _PILLARS: List[Mapping[str, object]] = [
 
 
 def render_diligence_index() -> str:
-    """Render the /diligence section landing page.
+    """Render the /diligence section landing — the gold-standard grouped
+    catalog, now via the shared renderer so it carries honesty dots and every
+    other section landing matches it."""
+    from .section_catalog_page import render_grouped_catalog
+    return render_grouped_catalog(
+        section="diligence",
+        title="Diligence",
+        eyebrow="RCM PLAYBOOK",
+        pillars=_PILLARS,
+        explainer_head="The diligence workspace at a glance.",
+        explainer_body=(
+            "Catalog of every diligence surface the platform offers, grouped "
+            "into four pillars: Profile/Health, Thesis/Playbook, Audit/Stress, "
+            "and Exit/Synthesis. Use this as the partner-facing entry point "
+            "when you don't yet know which specific tool you need."),
+        explainer_source="Curated catalog of /diligence/* routes.",
+        intro_headline="Where the diligence work actually lives.",
+        intro_italic="lives",
+        intro_body=(
+            "Diligence surfaces grouped into the four pillars a partner "
+            "mentally walks: profile the target, frame the thesis, stress the "
+            "assumptions, then synthesize for IC. Each tile names the surface, "
+            "the one-line job it does, and a dot for whether it's live data, "
+            "a computed model, or illustrative."),
+        next_label="Open the portfolio-wide question ledger",
+        next_href="/diligence/questions",
+        next_italic="question",
+        subtitle="RCM diligence playbook · grouped into 4 pillars",
+    )
 
-    Spec: replicate chartis.com /insights triplet (eyebrow + serif
-    title + body) but for an internal navigation index. Eight visible
-    pillars on chartis.com → four here, sized to one screen-fold so
-    the partner reads "what's in this section" without scrolling.
-    """
+
+def _render_diligence_index_legacy() -> str:
+    """Original hand-rolled renderer (kept for reference; unused)."""
     pillars_html: List[str] = []
     for p in _PILLARS:
         link_rows: List[str] = []
