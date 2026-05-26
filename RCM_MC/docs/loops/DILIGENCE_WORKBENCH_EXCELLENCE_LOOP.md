@@ -72,6 +72,25 @@ advisory chip + tooltip (#880). Advisory-only; never alters the fit. Confirmed
 weighting (weighted-median) + clustering modules + heteroscedasticity/
 nonlinearity/VIF/Cook's-D diagnostics already existed.
 
+**Weighted-ridge finding (2026-05-26).** `_assemble_xy` computes real
+similarity weights (from `comparable_finder.similarity_score`) but
+`_predict_ridge` discards them (`X, y, _ = …`) — the ridge point estimate,
+LOO-R², α-selection, conformal interval, and the Tier-2 diagnostic/failure
+chain are all **unweighted**. Wiring the weights into the fit is the user's
+"weighted regression" ask and is genuinely meaningful (weights are
+non-uniform in practice). **But it is NOT auto-merge-safe:** doing it
+honestly requires threading the weights consistently through the *entire*
+locked chain (weighted normal-equation fit → weighted LOO-R² and α-MSE →
+weighted Breusch-Pagan / Cook's-D / VIF, which are research-grade under WLS →
+conformal calibration). A fit-only weighting would leave the reported R²/CI/
+diagnostics inconsistent with the fit = invented model performance. The
+log-transform advisory was auto-mergeable precisely because it never changed
+predictions; weighted ridge *does* change every prediction and its reported
+reliability, so it is **approval-gated** and must ship as a dedicated PR that
+*measures* LOO-R² improvement on a held-out corpus (not asserts it), with
+uniform-weight == current-behavior as the regression anchor. Flagged for the
+user rather than rushed autonomously.
+
 ### Extra guards / fixes
 - RAG indexer prioritizes curated Guide cards (#853, 9→22 indexed).
 - Licensed-data provenance chips registered + guarded (#881, #882) — were

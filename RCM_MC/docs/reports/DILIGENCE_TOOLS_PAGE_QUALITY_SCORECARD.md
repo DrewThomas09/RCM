@@ -94,3 +94,35 @@ data-source audit (0 flagged) keep it from regressing.
 6. **Covenant-stress / bridge-audit / exit-timing / counterfactual / management** — confirm source/purpose header + add to the regression guard.
 7. **Tools index** — keep honesty dots accurate as pages change tier.
 8. **Re-score remaining pending routes** and fold into the regression guard's `_REQUIRE_SOURCE_PURPOSE` list.
+
+## Re-score (2026-05-26 session, PRs #892–#893)
+Two queue items were found **already shipped**, not gaps — confirming the
+loop's recurring finding that the workbench is more built than conservative
+loop_start grades implied:
+
+- **#1 On-page Guide suggested-questions → DONE (via shell).** The Chartis
+  Guide drawer (`ck-guide-panel`, every page) already renders suggested-
+  question chips in both the Overview and Ask tabs, populated from the page
+  context packet (`get_suggested_questions_for_page`). A separate on-page
+  panel would duplicate this. Item closed.
+- **#2 Visual upgrades / "table-only real-data pages" → mostly DONE.** The
+  three real-data pages with no `<svg>` (drug-shortage, risk-adjustment,
+  cms-apm) already render `ck_bar_row` HTML-bar visuals on LIVE FDA/CMS data.
+  Not table-only. No fake-trend charts were added (honest: those pages are
+  cross-sectional, not time-series).
+
+Stewardship / guard hardening this session:
+- **#892** — greened the two remaining pre-existing test failures and
+  reconciled two *mutually contradictory* `_vintage_chart` empty-data tests
+  (root cause of why both were "pre-existing"). Deployed; healthz ok.
+- **#893** — extended `test_diligence_source_purpose_headers` to lock the
+  source/purpose header on **14 more** headed pages (queue item #8 advanced):
+  data_public payer_stress, biosimilars_opp, diligence_checklist,
+  esg_dashboard, hcit_platform, industry, insurance_tracker, market_geo,
+  mgmt_comp, partner_economics, physician_productivity, provider_retention,
+  + deal_library, market_data. Guard now locks ~42 pages.
+- **#5 ML weighted ridge** — re-scoped: the log-transform advisory shipped
+  (#871–880); weighted ridge is the remaining ML ask but is **approval-gated**
+  (changes every prediction + its reported reliability; must be measured, not
+  asserted). See the ledger's ML-predictor section for the full finding.
+- Page data-source audit re-run: **0 flagged** (honesty invariant holds).
