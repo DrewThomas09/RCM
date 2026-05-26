@@ -293,9 +293,23 @@ def _ranked_subnav_items(sect: str):
         total_ranked = len(RANKINGS.get(sect, []))
     except Exception:  # noqa: BLE001
         score, total_ranked = {}, 0
-    ordered = sorted(items, key=lambda s: -score.get(s.get("href", ""), 0.0))
+    # Front-facing gate: the bars lead with "evidence of good things" — only
+    # real or honestly-labelled surfaces (green/navy/data-required). Yellow/red
+    # (illustrative) entries are demoted to the ranked /best/<section> index
+    # (where they show an honest tier dot), reachable via "More →". If a section
+    # somehow has no strong entry, fall back to its curated set so a bar is
+    # never empty.
+    try:
+        from ..diligence.surface_status import classify_surface
+        strong = [s for s in items
+                  if classify_surface(s.get("href", "")).get("tier")
+                  in ("green", "navy", "data_required")]
+    except Exception:  # noqa: BLE001
+        strong = items
+    pool = strong or items
+    ordered = sorted(pool, key=lambda s: -score.get(s.get("href", ""), 0.0))
     top = ordered[:6]
-    has_more = len(items) > 6 or total_ranked > len(top)
+    has_more = total_ranked > len(top) or len(items) > len(top)
     return top, has_more
 
 
