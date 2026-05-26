@@ -109,6 +109,10 @@ def _raw(state: str) -> Dict[str, float]:
         _set("oig_exclusions", lambda: _leie.exclusions_for_state(state) or None)
     except Exception:
         pass
+    # Derived: Medicare-FFS-enrolled providers per 1,000 residents — a real
+    # capacity signal computed from two real values already pulled above.
+    if out.get("provider_supply") and out.get("population"):
+        out["providers_per_1k"] = out["provider_supply"] / (out["population"] / 1000.0)
     return out
 
 
@@ -132,6 +136,7 @@ _METRICS = [
     ("hcahps_overall",   "Overall 9–10 (HCAHPS)",         "CMS HCAHPS",  lambda x: f"{x:.0f}%",       True),
     ("mssp_acos",        "MSSP ACOs (CMS)",               "CMS MSSP",    lambda x: f"{int(x):,}",     True),
     ("oig_exclusions",   "OIG exclusions (count)",        "OIG LEIE",    lambda x: f"{int(x):,}",     None),
+    ("providers_per_1k", "Providers per 1k (CMS FFS)",    "CMS FFS",     lambda x: f"{x:.2f}",        True),
 ]
 _METRIC_BY_KEY = {m[0]: m for m in _METRICS}
 _ROW_ORDER = [m[1] for m in _METRICS]
