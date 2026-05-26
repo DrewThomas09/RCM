@@ -374,16 +374,35 @@ class WorkbenchSavedTests(unittest.TestCase):
         self.assertIn("Prebuilt screens", h)
         self.assertIn("Open screen", h)
 
-    def test_persistence_caveat_is_honest(self):
+    def test_anonymous_persistence_caveat_is_honest(self):
+        # No session → honest "sign in to save", screens still shareable URLs.
         h = self._render(view="saved")
-        self.assertIn("not wired yet", h.lower())
-        self.assertIn("saved_screens(", h)   # documented future schema
-        self.assertNotIn("fake", h.lower()[:0] or "")  # no fake alerts shown
+        self.assertIn("sign in to save", h.lower())
+        self.assertIn("shareable", h.lower())
 
     def test_no_fake_alerts(self):
         h = self._render(view="saved")
         # Honest: we never claim alerts that aren't implemented.
         self.assertNotIn("alert enabled", h.lower())
+
+    def test_owner_save_form_and_listing(self):
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        # Empty list for a signed-in user → save form + empty message.
+        h = render_target_screener({"view": ["saved"], "vertical": ["snf"]},
+                                   saved=[], owner="alice")
+        self.assertIn("Your saved screens (0)", h)
+        self.assertIn("/api/target-screener/save", h)
+        self.assertIn("Save current screen as", h)
+        # With saved rows → list + per-row delete.
+        h2 = render_target_screener(
+            {"view": ["saved"]},
+            saved=[{"id": 3, "title": "TX SNFs",
+                    "query_params": "view=main&vertical=snf&state=TX",
+                    "created_at": "2026-05-26T00:00:00+00:00"}],
+            owner="alice")
+        self.assertIn("TX SNFs", h2)
+        self.assertIn("/api/target-screener/delete", h2)
+        self.assertIn("owner-scoped", h2)
 
 
 class WorkbenchGeoVerticalTests(unittest.TestCase):
@@ -489,6 +508,12 @@ class BackwardCompatTests(unittest.TestCase):
 
     def test_target_screener_route_200(self):
         self.assertEqual(self._status("/target-screener"), 200)
+
+    def test_all_six_views_route_200(self):
+        # Every screen renders end-to-end through the real server (the saved
+        # view exercises the list_screens persistence path too).
+        for view in ("main", "inspector", "columns", "compare", "missed", "saved"):
+            self.assertEqual(self._status(f"/target-screener?view={view}"), 200, msg=view)
 
     def test_old_screener_routes_still_work(self):
         # No redirects/deletes — the three screeners are unchanged.

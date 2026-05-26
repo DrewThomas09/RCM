@@ -1125,8 +1125,9 @@ _PRESET_SCREENS = [
 ]
 
 
-def _screen_saved(qs, ck) -> str:
+def _screen_saved(qs, ck, saved: Optional[List[Dict]] = None, owner: str = "") -> str:
     import html as _h
+    saved = saved or []
     # A screen IS its shareable URL. Build the current screen's link from the
     # active params (server-first state) — paste it anywhere to reopen.
     keep = {}
@@ -1139,6 +1140,40 @@ def _screen_saved(qs, ck) -> str:
     keep.setdefault("view", "main")
     cur_qs = "&".join(f"{k}={_h.escape(v)}" for k, v in keep.items())
     cur_url = f"/target-screener?{cur_qs}"
+
+    # Persisted, owner-scoped saved screens (real storage). When no user/owner
+    # is resolvable, fall back to the honest shareable-URL-only state.
+    saved_panel = ""
+    if owner:
+        if saved:
+            cards = "".join(
+                '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;'
+                'padding:8px 0;border-bottom:1px solid var(--sc-rule,#e4ddca);">'
+                f'<a class="ck-link" href="/target-screener?{_h.escape(s["query_params"])}">'
+                f'{_h.escape(s["title"])}</a>'
+                f'<span style="font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-faint,#8b94a0);">'
+                f'{_h.escape(str(s["created_at"])[:10])}</span>'
+                f'<form method="post" action="/api/target-screener/delete" style="margin:0;">'
+                f'<input type="hidden" name="id" value="{int(s["id"])}">'
+                f'<button type="submit" class="ck-link" style="background:none;border:0;cursor:pointer;'
+                f'font-size:11px;color:var(--sc-negative,#b5321e);">✕</button></form></div>'
+                for s in saved
+            )
+        else:
+            cards = ('<p class="ck-section-body" style="margin:0;">No saved screens yet — '
+                     'name and save the current screen below.</p>')
+        save_form = (
+            '<form method="post" action="/api/target-screener/save" '
+            'style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;flex-wrap:wrap;">'
+            f'<input type="hidden" name="query_params" value="{_h.escape(cur_qs)}">'
+            '<label style="font-family:var(--sc-mono);font-size:10px;">Save current screen as'
+            '<br><input name="title" required maxlength="160" placeholder="e.g. TX SNFs 4★" '
+            'style="padding:5px 8px;border:1px solid var(--sc-rule,#c9c1ac);min-width:220px;"></label>'
+            '<button type="submit" class="tsw-vert" style="cursor:pointer;">Save screen</button>'
+            '</form>')
+        saved_panel = ck["panel"](
+            cards + save_form,
+            title=f"Your saved screens ({len(saved)})")
 
     presets = "".join(
         f'<a class="ts-mode" href="/target-screener?{p["params"]}" '
@@ -1165,20 +1200,23 @@ def _screen_saved(qs, ck) -> str:
         f'<div class="ts-modes">{presets}</div>',
         title="Prebuilt screens")
 
-    caveat = ck["panel"](
-        '<p class="ck-section-body" style="margin:0;"><strong>Named / starred '
-        'saved-screen persistence is not wired yet.</strong> Screens today are '
-        'shareable URLs (server-first state) — fully functional, just not stored '
-        'under a title with a last-run timestamp or alerts. No fake saved '
-        'screens or alerts are shown.</p>'
-        '<p class="ck-section-body" style="margin:8px 0 0;font-family:var(--sc-mono);'
-        'font-size:11px;color:var(--sc-text-dim,#6a7480);">Future storage schema '
-        '(documented for wiring): saved_screens(id, owner, title, vertical, '
-        'query_params TEXT, created_at, last_run_at, result_count, alert_enabled). '
-        'Until then the URL is the source of truth.</p>',
-        title="Persistence status — honest")
+    if owner:
+        caveat = ck["panel"](
+            '<p class="ck-section-body" style="margin:0;">Saved screens are now '
+            'persisted per user (the <code>saved_screens</code> table). Each is a '
+            'stored title + query string — open it to re-run live. Alerts on '
+            'saved screens are <strong>not</strong> implemented; none are shown '
+            '(no fake alerts).</p>',
+            title="Persistence — live, owner-scoped")
+    else:
+        caveat = ck["panel"](
+            '<p class="ck-section-body" style="margin:0;"><strong>Sign in to save '
+            'named screens.</strong> Persistence is owner-scoped; without a '
+            'session, screens are still fully usable as shareable URLs (above). '
+            'No fake saved screens or alerts are shown.</p>',
+            title="Persistence status — honest")
 
-    return current + preset_panel + caveat
+    return current + saved_panel + preset_panel + caveat
 
 
 _SCREENS = {
@@ -1187,7 +1225,9 @@ _SCREENS = {
 }
 
 
-def render_target_screener(qs: Optional[Dict[str, List[str]]] = None) -> str:
+def render_target_screener(qs: Optional[Dict[str, List[str]]] = None,
+                           *, saved: Optional[List[Dict]] = None,
+                           owner: str = "") -> str:
     from ._chartis_kit import (chartis_shell, ck_data_universe, ck_page_title,
                                ck_panel, ck_source_purpose)
     qs = qs or {}
@@ -1219,6 +1259,8 @@ def render_target_screener(qs: Optional[Dict[str, List[str]]] = None) -> str:
     tab_bar = _tab_bar(view, qs)
     if view == "main":
         screen = _screen_main(vertical, qs, ck)
+    elif view == "saved":
+        screen = _screen_saved(qs, ck, saved=saved or [], owner=owner)
     else:
         screen = _SCREENS[view](qs, ck)
 

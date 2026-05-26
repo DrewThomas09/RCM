@@ -4787,8 +4787,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             # modes (sourcing / hospital / predictive), which keep their own
             # routes. Backward compatible — no existing route changes.
             from .ui.target_screener_page import render_target_screener
+            from .portfolio.saved_screens import list_screens as _list_screens
             _tsq = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-            return self._send_html(render_target_screener(_tsq))
+            _ts_owner = self._current_username() or ""
+            try:
+                _ts_saved = (_list_screens(PortfolioStore(self.config.db_path),
+                                           _ts_owner) if _ts_owner else [])
+            except Exception:  # noqa: BLE001
+                _ts_saved = []
+            return self._send_html(render_target_screener(
+                _tsq, saved=_ts_saved, owner=_ts_owner))
         if path == "/source":
             from .ui.source_page import render_source_page
             from .analysis.deal_sourcer import THESIS_LIBRARY, find_thesis_matches
@@ -12269,6 +12277,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_guide_ask()
         if path == "/diligence/snapshot":
             return self._route_diligence_snapshot_post()
+        if path == "/api/target-screener/save":
+            return self._route_target_screener_save_post()
+        if path == "/api/target-screener/delete":
+            return self._route_target_screener_delete_post()
         if path == "/api/login":
             return self._route_login_post()
         if path == "/api/logout":
@@ -12862,6 +12874,35 @@ class RCMHandler(BaseHTTPRequestHandler):
         store = PortfolioStore(self.config.db_path)
         store.upsert_deal(deal_id, name=name, profile=profile)
         return self._redirect(f"/deal/{deal_id}")
+
+    def _route_target_screener_save_post(self) -> None:
+        """POST /api/target-screener/save — persist a named screen for the
+        current user (Target Screener Saved-screens tab)."""
+        from .portfolio.saved_screens import save_screen
+        form = self._read_form_body()
+        owner = self._current_username() or ""
+        title = (form.get("title", "") or "").strip()
+        params = (form.get("query_params", "") or "").strip()
+        if owner and title and params:
+            try:
+                save_screen(PortfolioStore(self.config.db_path), owner, title, params)
+            except Exception:  # noqa: BLE001 — never 500 on a save hiccup
+                pass
+        return self._redirect("/target-screener?view=saved")
+
+    def _route_target_screener_delete_post(self) -> None:
+        """POST /api/target-screener/delete — remove one of the current user's
+        saved screens by id."""
+        from .portfolio.saved_screens import delete_screen
+        form = self._read_form_body()
+        owner = self._current_username() or ""
+        sid = self._clamp_int(form.get("id", "0"), default=0, min_v=0, max_v=10**9)
+        if owner and sid:
+            try:
+                delete_screen(PortfolioStore(self.config.db_path), owner, sid)
+            except Exception:  # noqa: BLE001
+                pass
+        return self._redirect("/target-screener?view=saved")
 
     def _route_quick_import_post(self) -> None:
         """POST /quick-import — create a deal from browser form."""
