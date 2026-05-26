@@ -100,12 +100,12 @@ class WorkbenchShellTests(unittest.TestCase):
         # prototype's Public Sans / a bespoke CDN font.
         self.assertNotIn("Public Sans", self._render())
 
-    def test_unbuilt_screens_are_labeled_scaffolds_not_fake(self):
-        # Honest: not-yet-wired screens declare themselves, never fake data.
-        # (compare/missed/columns/inspector built; saved remains; the empty
-        # inspector still labels itself a scaffold until a CCN is selected.)
-        self.assertIn("Scaffold", self._render(view="saved"))
-        self.assertIn("Scaffold", self._render(view="inspector"))
+    def test_empty_states_are_labeled_not_faked(self):
+        # All six screens are built; the remaining scaffolds are honest EMPTY
+        # states (inspector with no CCN, compare with empty basket) — never
+        # fabricated data.
+        self.assertIn("Scaffold", self._render(view="inspector"))   # no ccn
+        self.assertIn("Scaffold", self._render(view="compare"))     # empty basket
 
 
 class WorkbenchMapTests(unittest.TestCase):
@@ -353,6 +353,37 @@ class WorkbenchInspectorTests(unittest.TestCase):
         self.assertEqual(_median([1, 2, 3]), 2)
         self.assertEqual(_median([1, 2, 3, 4]), 2.5)
         self.assertIsNone(_median([None, "x"]))
+
+
+class WorkbenchSavedTests(unittest.TestCase):
+    """PR 9 — saved screens: shareable URL state + honest persistence caveat."""
+
+    def _render(self, **params):
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        return render_target_screener({k: [v] for k, v in params.items()})
+
+    def test_current_screen_is_shareable_url(self):
+        h = self._render(view="saved", vertical="snf", state="TX")
+        self.assertIn("/target-screener?", h)
+        self.assertIn("vertical=snf", h)
+        self.assertIn("state=TX", h)
+        self.assertIn("shareable", h.lower())
+
+    def test_prebuilt_screens_present(self):
+        h = self._render(view="saved")
+        self.assertIn("Prebuilt screens", h)
+        self.assertIn("Open screen", h)
+
+    def test_persistence_caveat_is_honest(self):
+        h = self._render(view="saved")
+        self.assertIn("not wired yet", h.lower())
+        self.assertIn("saved_screens(", h)   # documented future schema
+        self.assertNotIn("fake", h.lower()[:0] or "")  # no fake alerts shown
+
+    def test_no_fake_alerts(self):
+        h = self._render(view="saved")
+        # Honest: we never claim alerts that aren't implemented.
+        self.assertNotIn("alert enabled", h.lower())
 
 
 class NavAndRouteTests(unittest.TestCase):

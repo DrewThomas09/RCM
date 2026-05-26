@@ -980,14 +980,79 @@ def _screen_missed(qs, ck) -> str:
     return "".join(out)
 
 
+_PRESET_SCREENS = [
+    {"title": "SNF · TX · 4★ near-misses",
+     "desc": "Texas nursing homes that just miss a 4-star overall rating.",
+     "params": "view=missed&vertical=snf&state=TX&min_quality=4"},
+    {"title": "Dialysis · CA",
+     "desc": "California dialysis facilities ranked by 5-star score.",
+     "params": "view=main&vertical=dialysis&state=CA"},
+    {"title": "Home Health · FL",
+     "desc": "Florida home-health agencies by quality star.",
+     "params": "view=main&vertical=home_health&state=FL"},
+    {"title": "Hospitals · TX",
+     "desc": "Texas hospitals (HCRIS) ranked by operating margin.",
+     "params": "view=main&vertical=hospitals&state=TX"},
+    {"title": "Hospice · metric dictionary",
+     "desc": "What hospice columns exist and how complete they are.",
+     "params": "view=columns&vertical=hospice"},
+]
+
+
 def _screen_saved(qs, ck) -> str:
-    return _scaffold("Saved screens", "PR 9", [
-        "Screens captured as shareable /target-screener?… URLs (server-first "
-        "state) so a screen is a link you can paste.",
-        "Title, vertical, filters, last-run — when real persistence exists.",
-        "Until storage is wired: an honest “persistence not wired yet” "
-        "state, plus a documented schema for future storage. No fake alerts.",
-    ])
+    import html as _h
+    # A screen IS its shareable URL. Build the current screen's link from the
+    # active params (server-first state) — paste it anywhere to reopen.
+    keep = {}
+    for k in ("view", "vertical", "state", "county", "metric", "layer",
+              "min_quality", "min_size", "ownership", "provider_type",
+              "compare", "sort", "direction"):
+        v = _q1(qs, k)
+        if v:
+            keep[k] = v
+    keep.setdefault("view", "main")
+    cur_qs = "&".join(f"{k}={_h.escape(v)}" for k, v in keep.items())
+    cur_url = f"/target-screener?{cur_qs}"
+
+    presets = "".join(
+        f'<a class="ts-mode" href="/target-screener?{p["params"]}" '
+        f'style="border-top-color:var(--sc-teal,#155752);">'
+        f'<span class="ts-mode-label" style="font-size:16px;">{_h.escape(p["title"])}</span>'
+        f'<span class="ts-mode-how">{_h.escape(p["desc"])}</span>'
+        f'<span class="ts-mode-go">Open screen →</span></a>'
+        for p in _PRESET_SCREENS
+    )
+
+    current = ck["panel"](
+        '<p class="ck-section-body" style="margin:0 0 6px;">Your current screen '
+        'is a shareable link — copy it to save or send:</p>'
+        f'<input type="text" readonly value="{cur_url}" '
+        'onclick="this.select()" style="width:100%;font-family:var(--sc-mono);'
+        'font-size:11px;padding:7px 9px;border:1px solid var(--sc-rule,#c9c1ac);'
+        'border-radius:2px;background:var(--sc-paper,#faf6ec);">'
+        f'<p style="margin:6px 0 0;"><a class="ck-link" href="{cur_url}">Open this screen →</a></p>',
+        title="Current screen (shareable URL)")
+
+    preset_panel = ck["panel"](
+        '<p class="ck-section-body" style="margin:0 0 8px;">Prebuilt screens — '
+        'real query-param screens over live CMS data:</p>'
+        f'<div class="ts-modes">{presets}</div>',
+        title="Prebuilt screens")
+
+    caveat = ck["panel"](
+        '<p class="ck-section-body" style="margin:0;"><strong>Named / starred '
+        'saved-screen persistence is not wired yet.</strong> Screens today are '
+        'shareable URLs (server-first state) — fully functional, just not stored '
+        'under a title with a last-run timestamp or alerts. No fake saved '
+        'screens or alerts are shown.</p>'
+        '<p class="ck-section-body" style="margin:8px 0 0;font-family:var(--sc-mono);'
+        'font-size:11px;color:var(--sc-text-dim,#6a7480);">Future storage schema '
+        '(documented for wiring): saved_screens(id, owner, title, vertical, '
+        'query_params TEXT, created_at, last_run_at, result_count, alert_enabled). '
+        'Until then the URL is the source of truth.</p>',
+        title="Persistence status — honest")
+
+    return current + preset_panel + caveat
 
 
 _SCREENS = {
