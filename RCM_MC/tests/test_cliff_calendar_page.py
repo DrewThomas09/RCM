@@ -20,6 +20,14 @@ _SERVER = (pathlib.Path(__file__).resolve().parents[1] / "rcm_mc" / "server.py")
 
 
 class CliffCalendarPageTests(unittest.TestCase):
+    def test_table_uses_well_formed_panel(self):
+        # Regression: the calendar table used a bare ck-panel with a floating
+        # ck-panel-title (no navy header bar / body padding) — the "wrong UI".
+        # It must now route through ck_panel (head + body present).
+        h = render_cliff_calendar_page("hospital_general", 2026, 5)
+        self.assertIn("ck-panel-head", h)
+        self.assertIn("ck-panel-body", h)
+
     def test_renders_real_events(self):
         h = render_cliff_calendar_page("hospital_general", 2026, 5)
         # Real named regulatory events from the curated calendar appear.

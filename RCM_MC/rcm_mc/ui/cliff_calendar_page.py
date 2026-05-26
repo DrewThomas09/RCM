@@ -30,6 +30,7 @@ from ._chartis_kit import (
     ck_illustrative_note,
     ck_kpi_block,
     ck_page_title,
+    ck_panel,
     ck_section_header,
     ck_source_purpose,
 )
@@ -183,11 +184,8 @@ def render_cliff_calendar_page(
         _calendar_row(ev, ev.id in in_hold_ids)
         for ev in sorted(CLIFF_CALENDAR, key=lambda e: (e.effective_year, e.name))
     )
-    table = (
-        f'<div class="ck-panel"><div class="ck-panel-title">'
-        f'Full calendar — highlighted rows hit the {_label(subsector)} hold '
-        f'({report.hold_start_year}–{report.hold_end_year})</div>'
-        f'<div style="overflow-x:auto;padding:4px 6px;">'
+    _table_inner = (
+        f'<div style="overflow-x:auto;">'
         f'<table style="width:100%;border-collapse:collapse;">'
         f'<thead><tr style="border-bottom:2px solid {P["border"]};text-align:left;">'
         f'<th style="padding:7px 10px;font-family:var(--ck-mono);font-size:9.5px;'
@@ -204,7 +202,12 @@ def render_cliff_calendar_page(
         f'<th style="padding:7px 10px;font-family:var(--ck-mono);font-size:9.5px;'
         f'letter-spacing:0.08em;color:{P["text_faint"]};text-transform:uppercase;'
         f'text-align:center;">In hold</th>'
-        f'</tr></thead><tbody>{full_rows}</tbody></table></div></div>'
+        f'</tr></thead><tbody>{full_rows}</tbody></table></div>'
+    )
+    table = ck_panel(
+        _table_inner,
+        title=(f"Full calendar — highlighted rows hit the {_label(subsector)} "
+               f"hold ({report.hold_start_year}–{report.hold_end_year})"),
     )
 
     partner_note = (
