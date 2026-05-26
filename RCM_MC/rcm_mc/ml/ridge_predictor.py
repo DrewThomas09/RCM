@@ -233,6 +233,12 @@ class PredictedMetric:
     #: AggregatedFailure pattern from A.10. Ordered tier-severity
     #: first, then signal strength within tier.
     contributing_sources: List[str] = field(default_factory=list)
+    #: Advisory (not a FailureReason): the fit's target was strictly positive
+    #: and right-skewed (see DiagnosticReport.log_transform_suggested), so a
+    #: log/Box-Cox transform would likely stabilize variance. Surfaced as model-
+    #: quality guidance; does not change the prediction. False for non-ridge
+    #: methods and clean/symmetric targets.
+    log_transform_suggested: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
         d = asdict(self)
@@ -946,6 +952,7 @@ def _predict_ridge(
         failure_reason=failure_reason,
         cohort_alpha=float(alpha_selected),
         contributing_sources=contributing_sources,
+        log_transform_suggested=bool(diag.log_transform_suggested),
     )
 
 

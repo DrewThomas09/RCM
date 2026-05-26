@@ -63,6 +63,24 @@ class DiagnosticLogHintTests(unittest.TestCase):
         rep = _compute_diagnostics(X, y, alpha=1.0)
         self.assertFalse(rep.log_transform_suggested)
 
+    def test_flag_threads_into_predicted_metric(self):
+        # the advisory must reach PredictedMetric (and thus its to_dict / packet)
+        from rcm_mc.ml.ridge_predictor import PredictedMetric, _predict_ridge
+        # always present in the serialized form, default False
+        self.assertIn("log_transform_suggested", PredictedMetric(value=0.0).to_dict())
+        rng = np.random.default_rng(7)
+        comps = []
+        for _ in range(40):
+            comps.append({
+                "beds": float(rng.normal()), "occupancy_rate": float(rng.normal()),
+                # strictly-positive right-skewed target
+                "net_patient_revenue": float(np.exp(rng.normal(0, 1)) + 0.5),
+            })
+        pm = _predict_ridge("net_patient_revenue", {}, comps, coverage=0.8, seed=0)
+        if pm is not None and pm.method == "ridge_regression":
+            self.assertTrue(pm.log_transform_suggested)
+            self.assertIn("log_transform_suggested", pm.to_dict())
+
     def test_hint_does_not_add_failure_reasons(self):
         # advisory only — it must not change the locked Tier-2 failure set
         rng = np.random.default_rng(3)
