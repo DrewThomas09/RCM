@@ -28,6 +28,7 @@ from ..diligence.hcris_xray import (
 from ._chartis_kit import (
     P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
     ck_panel, ck_section_header, ck_section_intro, ck_signal_badge, ck_page_explainer)
+from .data_public.state_profile_page import state_context_panel
 
 _EXPLAINER_CSS = """
 .ck-hx-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
@@ -1310,6 +1311,7 @@ def render_hcris_xray_page(
             + metrics_panel
             + public_comp_block
             + peers_panel
+            + state_context_panel(getattr(target, "state", ""))
             + cross_link
             + export_json_panel(
                 '<div class="hx-section-label" style="margin-top:22px;">'
