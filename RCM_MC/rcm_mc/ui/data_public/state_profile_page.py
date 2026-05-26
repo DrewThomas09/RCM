@@ -202,7 +202,8 @@ def render_state_profile(params: Dict = None) -> str:
     Sources: Census/ACS · CMS FFS · HRSA HPSA · CMS CHOW · CMS MA · CDC PLACES · CMS HCAHPS · CMS MSSP.
     Area-level public data — a screening signal, not a deal-level figure.
     Compare states side by side on <a href="/state-compare?states={state}" style="color:{ac};text-decoration:none">State Comparison &rarr;</a>
-    or rank all states on one metric in <a href="/state-rankings" style="color:{ac};text-decoration:none">State Rankings &rarr;</a>
+    or rank all states on one metric in <a href="/state-rankings" style="color:{ac};text-decoration:none">State Rankings &rarr;</a>.
+    Move from market to target: <a href="/screen?state={state}" style="color:{ac};text-decoration:none">screen {name}'s hospitals &rarr;</a>
   </p>
 </div>"""
     return chartis_shell(body, f"State Profile — {name}", active_nav="/state-profile")
