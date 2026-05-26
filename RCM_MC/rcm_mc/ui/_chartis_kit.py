@@ -277,6 +277,28 @@ _SECTION_FEATURE = {
                   "href": "/portfolio"},
 }
 
+def _ranked_subnav_items(sect: str):
+    """The section's curated sub-nav entries, ordered by the surface ranking
+    (usefulness-weighted) and capped at the top 6. Returns (items, has_more).
+
+    Curated entries are kept (vetted labels/descriptions/breadcrumbs) but
+    re-ordered so each bar leads with its strongest pages; entries not in the
+    ranking manifest sort last (still shown if within the 6). ``has_more`` is
+    True when the full ranked /best/<section> index has more than is shown.
+    """
+    items = list(_SUB_NAV.get(sect, []))
+    try:
+        from ._surface_rankings import RANKINGS
+        score = {r["route"]: r["total"] for r in RANKINGS.get(sect, [])}
+        total_ranked = len(RANKINGS.get(sect, []))
+    except Exception:  # noqa: BLE001
+        score, total_ranked = {}, 0
+    ordered = sorted(items, key=lambda s: -score.get(s.get("href", ""), 0.0))
+    top = ordered[:6]
+    has_more = len(items) > 6 or total_ranked > len(top)
+    return top, has_more
+
+
 # One-line description per sub-nav page, keyed by href (used in the mega-menu
 # items so each link reads like a real destination, not a bare label). Kept
 # separate from _SUB_NAV so that structure stays untouched.
@@ -6913,7 +6935,11 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         if not sect:
             return anchor
         # Numbered destination items (right grid) — each reads like a real
-        # destination: index · label · one-line description.
+        # destination: index · label · one-line description. Ordered by the
+        # surface ranking (usefulness-weighted) and capped at the top 6, with a
+        # "More →" to the full ranked /best/<section> index — so each bar leads
+        # with its strongest pages and "show more" opens the ranked catalogue.
+        _top, _has_more = _ranked_subnav_items(sect)
         items = "".join(
             f'<a href="{_esc(s["href"])}" class="ck-mega-item" role="menuitem">'
             f'<span class="ck-mega-idx">{i:02d}.</span>'
@@ -6921,7 +6947,15 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
             f'{_esc(s["label"])}</span>'
             f'<span class="ck-mega-it-desc">{_esc(_NAV_DESC.get(s["href"], ""))}</span>'
             f'</span></a>'
-            for i, s in enumerate(_SUB_NAV[sect], start=1)
+            for i, s in enumerate(_top, start=1)
+        )
+        items += (
+            f'<a href="/best/{_esc(sect)}" class="ck-mega-item ck-mega-more" '
+            f'role="menuitem"><span class="ck-mega-idx">→</span>'
+            f'<span class="ck-mega-it-body"><span class="ck-mega-it-label">'
+            f'More — all {_esc(_nav_label(item["label"]))}, ranked</span>'
+            f'<span class="ck-mega-it-desc">The best surfaces for this section, '
+            f'scored by usefulness + depth.</span></span></a>'
         )
         # Featured left panel — the "what is this section" card.
         feat = _SECTION_FEATURE.get(sect, {})
