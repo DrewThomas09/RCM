@@ -24,6 +24,18 @@ class RankingEngineTests(unittest.TestCase):
     def test_produces_rows(self):
         self.assertGreater(len(self.rows), 50)
 
+    def test_full_coverage_includes_diligence(self):
+        # Crossover guard: the diligence namespace (dispatched via _route_X()
+        # handlers, not inline imports) must be captured — it was silently
+        # dropped before the handler-indirection fix.
+        routes = {r["route"] for r in self.rows}
+        for must in ("/diligence/payer-stress", "/diligence/hcris-xray",
+                     "/diligence/covenant-stress", "/diligence/ic-packet"):
+            self.assertIn(must, routes, f"{must} dropped from ranking (crossover)")
+        dil = [r for r in self.rows if r["route"].startswith("/diligence/")]
+        self.assertGreaterEqual(len(dil), 20, "diligence under-captured")
+        self.assertGreaterEqual(len(self.rows), 270, "coverage regressed")
+
     def test_scores_in_range(self):
         for r in self.rows:
             self.assertGreaterEqual(r["effort"], 0.0)

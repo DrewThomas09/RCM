@@ -47,17 +47,41 @@ _EFFORT_WEIGHT = 1.0
 _TOTAL_MAX = 5.0 * _USEFUL_WEIGHT + 5.0 * _EFFORT_WEIGHT  # 12.5
 
 
+def _handler_module_map(src: str) -> Dict[str, str]:
+    """``_route_<name>`` handler → ui module stem it renders. Most diligence
+    (and many other) routes dispatch via ``return self._route_X()`` rather than
+    an inline import — without following that hop the ranking silently drops
+    them (the crossover bug). Scans each handler body for its ui import."""
+    out: Dict[str, str] = {}
+    for h in re.finditer(r'def (_route_\w+)\(self', src):
+        body = src[h.end():h.end() + 1200]  # handler body window
+        imp = re.search(r'from \.ui(?:\.[\w.]+)?\.([\w]+) import', body)
+        if imp:
+            out[h.group(1)] = imp.group(1)
+    return out
+
+
 def _route_module_map() -> Dict[str, str]:
-    """route → ui module stem, parsed from the GET dispatch in server.py."""
+    """route → ui module stem, from the GET dispatch in server.py.
+
+    Resolves both forms: an inline ``from .ui...import render_X`` near the path,
+    AND the handler indirection ``return self._route_X()`` (→ that handler's ui
+    import). The second hop surfaces the diligence namespace + ~100 other pages
+    the inline-only scan missed (the crossover bug).
+    """
     src = _SERVER.read_text(errors="replace")
     mod_by_fn = {fn: mod for mod, fn in
                  re.findall(r'from \.ui(?:\.[\w.]+)?\.([\w]+) import (render_\w+)', src)}
+    handler_mod = _handler_module_map(src)
     out: Dict[str, str] = {}
     for m in re.finditer(r'path == "(/[\w\-./]+)"', src):
         seg = src[m.end():m.end() + 400]
         imp = re.search(r'from \.ui(?:\.[\w.]+)?\.([\w]+) import', seg)
         fn = re.search(r'(render_\w+)\(', seg)
-        mod = imp.group(1) if imp else (mod_by_fn.get(fn.group(1)) if fn else None)
+        handler = re.search(r'self\.(_route_\w+)\(', seg)
+        mod = (imp.group(1) if imp
+               else mod_by_fn.get(fn.group(1)) if fn
+               else handler_mod.get(handler.group(1)) if handler else None)
         route = m.group(1)
         if mod and not route.endswith(".csv") and not route.startswith("/api"):
             out.setdefault(route, mod)
@@ -160,11 +184,22 @@ def _label_map() -> Dict[str, str]:
     return out
 
 
+# Acronyms / proper casings so front-facing labels read clean, not "Ic Packet".
+_ACRONYMS = {
+    "ic": "IC", "cms": "CMS", "hcris": "HCRIS", "lp": "LP", "qoe": "QoE",
+    "ebitda": "EBITDA", "moic": "MOIC", "snf": "SNF", "irf": "IRF",
+    "ltch": "LTCH", "roi": "ROI", "ar": "AR", "rcm": "RCM", "mc": "MC",
+    "xray": "X-Ray", "x-ray": "X-Ray", "eu": "EU", "apm": "APM", "ma": "MA",
+    "us": "US", "dpi": "DPI", "nav": "NAV", "esg": "ESG",
+}
+
+
 def _derive_label(route: str, labels: Dict[str, str]) -> str:
     if labels.get(route):
         return labels[route]
     seg = route.rstrip("/").split("/")[-1] or route
-    return seg.replace("-", " ").replace("_", " ").title()
+    words = seg.replace("-", " ").replace("_", " ").split()
+    return " ".join(_ACRONYMS.get(w.lower(), w.title()) for w in words)
 
 
 def _write_manifest(rows: List[dict]) -> pathlib.Path:

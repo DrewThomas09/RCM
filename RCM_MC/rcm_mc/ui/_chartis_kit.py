@@ -278,38 +278,44 @@ _SECTION_FEATURE = {
 }
 
 def _ranked_subnav_items(sect: str):
-    """The section's curated sub-nav entries, ordered by the surface ranking
-    (usefulness-weighted) and capped at the top 6. Returns (items, has_more).
+    """The section's top-6 surfaces by the surface ranking, for the nav bar.
+    Returns (items, has_more) where each item is {label, href}.
 
-    Curated entries are kept (vetted labels/descriptions/breadcrumbs) but
-    re-ordered so each bar leads with its strongest pages; entries not in the
-    ranking manifest sort last (still shown if within the 6). ``has_more`` is
-    True when the full ranked /best/<section> index has more than is shown.
+    Drawn from the FULL ranked manifest (not just the hand-curated _SUB_NAV) so
+    a bar genuinely leads with its best pages — including strong pages that were
+    never wired into the curated rail (the diligence crossover gap). Front-
+    facing gate: only green/navy/data-required tiers (illustrative/placeholder
+    demoted to the ranked /best/<section> index, reachable via "More →").
+    Curated labels/descriptions win where available (vetted copy); otherwise the
+    manifest's derived label is used. Falls back to the curated rail if the
+    manifest has no entry, so a bar is never empty.
     """
-    items = list(_SUB_NAV.get(sect, []))
+    cur = {s["href"]: s for s in _SUB_NAV.get(sect, []) if isinstance(s, dict)}
     try:
         from ._surface_rankings import RANKINGS
-        score = {r["route"]: r["total"] for r in RANKINGS.get(sect, [])}
-        total_ranked = len(RANKINGS.get(sect, []))
+        ranked = list(RANKINGS.get(sect, []))
     except Exception:  # noqa: BLE001
-        score, total_ranked = {}, 0
-    # Front-facing gate: the bars lead with "evidence of good things" — only
-    # real or honestly-labelled surfaces (green/navy/data-required). Yellow/red
-    # (illustrative) entries are demoted to the ranked /best/<section> index
-    # (where they show an honest tier dot), reachable via "More →". If a section
-    # somehow has no strong entry, fall back to its curated set so a bar is
-    # never empty.
-    try:
-        from ..diligence.surface_status import classify_surface
-        strong = [s for s in items
-                  if classify_surface(s.get("href", "")).get("tier")
-                  in ("green", "navy", "data_required")]
-    except Exception:  # noqa: BLE001
-        strong = items
-    pool = strong or items
-    ordered = sorted(pool, key=lambda s: -score.get(s.get("href", ""), 0.0))
-    top = ordered[:6]
-    has_more = total_ranked > len(top) or len(items) > len(top)
+        ranked = []
+    strong = [r for r in ranked
+              if r.get("tier") in ("green", "navy", "data_required")]
+    pool = strong or ranked
+    # Dedupe alias routes for the same page (e.g. /regulatory-calendar and
+    # /diligence/regulatory-calendar) by label, keeping the highest-ranked —
+    # so a bar never shows the same destination twice.
+    top, seen = [], set()
+    for r in pool:
+        c = cur.get(r["route"], {})
+        label = c.get("label") or r.get("label") or r["route"]
+        key = label.strip().lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        top.append({"label": label, "href": r["route"]})
+        if len(top) >= 6:
+            break
+    if not top:  # manifest empty for this section — keep the curated rail
+        top = list(_SUB_NAV.get(sect, []))[:6]
+    has_more = len(ranked) > len(top) or len(cur) > len(top)
     return top, has_more
 
 
