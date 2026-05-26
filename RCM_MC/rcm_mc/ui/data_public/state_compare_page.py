@@ -148,19 +148,38 @@ def compare_dataframe(states: List[str]):
     can compute on. Missing values are blank cells, never fabricated."""
     import pandas as _pd
     raws = {s: _raw(s) for s in states}
+    meds = national_medians()
     rows = []
     for key, label, source, _f, _h in _METRICS:
         row = {"Metric": label, "Source": source}
         for s in states:
             v = raws[s].get(key)
             row[s] = v if (v is not None and v == v) else ""
+        row["US_Median"] = meds.get(key, "")
         rows.append(row)
-    return _pd.DataFrame(rows, columns=["Metric", "Source"] + list(states))
+    return _pd.DataFrame(rows, columns=["Metric", "Source"] + list(states) + ["US_Median"])
+
+
+def national_medians() -> Dict[str, float]:
+    """National median per metric across all reporting states (50 + DC) — the
+    benchmark column. Robust to outliers; states with no value are ignored,
+    and a metric no state reports is simply absent (never fabricated)."""
+    raws = [_raw(s) for s in sorted(_VALID)]
+    out: Dict[str, float] = {}
+    for key, *_rest in _METRICS:
+        vals = sorted(r[key] for r in raws
+                      if r.get(key) is not None and r[key] == r[key])
+        k = len(vals)
+        if k:
+            mid = k // 2
+            out[key] = vals[mid] if k % 2 else (vals[mid - 1] + vals[mid]) / 2.0
+    return out
 
 
 def render_state_compare(params: Dict = None) -> str:
     states = _parse_states(params)
     data = {s: _collect(s) for s in states}
+    meds = national_medians()
     border = P["border"]; tp = P["text"]; td = P["text_dim"]; fa = P.get("text_faint", td); ac = P["accent"]
 
     inp = (f'background:{P["panel_alt"]};color:{tp};border:1px solid {border};'
@@ -180,21 +199,30 @@ def render_state_compare(params: Dict = None) -> str:
     for s in states:
         th += (f'<th style="text-align:right;padding:6px 10px;border-bottom:2px solid {border};'
                f'font-family:JetBrains Mono,monospace;font-size:13px;color:{tp}">{_html.escape(s)}</th>')
+    # trailing benchmark column
+    th += (f'<th style="text-align:right;padding:6px 10px;border-bottom:2px solid {border};'
+           f'border-left:1px solid {border};font-size:10px;color:{td};text-transform:uppercase;'
+           f'letter-spacing:0.06em">U.S. median</th>')
     rows = ""
-    for i, metric in enumerate(_ROW_ORDER):
+    for i, (key, metric, _src, _f, _h) in enumerate(_METRICS):
         bg = P["panel_alt"] if i % 2 else P["panel"]
         cells = (f'<td style="padding:5px 10px;font-size:11px;color:{td};background:{bg}">{_html.escape(metric)}</td>')
         for s in states:
             v = data[s].get(metric, "—")
             cells += (f'<td style="padding:5px 10px;text-align:right;font-family:JetBrains Mono,monospace;'
                       f'font-size:12px;font-variant-numeric:tabular-nums;color:{tp};background:{bg}">{_html.escape(str(v))}</td>')
+        med_str = _fmt(key, meds.get(key))
+        cells += (f'<td style="padding:5px 10px;text-align:right;font-family:JetBrains Mono,monospace;'
+                  f'font-size:12px;font-variant-numeric:tabular-nums;color:{td};background:{bg};'
+                  f'border-left:1px solid {border}">{_html.escape(med_str)}</td>')
         rows += f"<tr>{cells}</tr>"
 
     body = f"""
 <div class="ck-page-wrap">
   {ck_page_title("State Comparison", eyebrow="MARKET INTEL", meta="Side-by-side across every real state-keyed public dataset — CMS · CDC · HRSA · Census")}
   <p style="font-size:13px;color:{td};max-width:72ch;margin:0 0 14px">
-    Compare states across PEdesk's real public-data layers. Every figure is sourced
+    Compare states across PEdesk's real public-data layers, with a trailing
+    U.S.-median column for national context. Every figure is sourced
     (CMS provider supply / CHOW / MA · CDC PLACES · CMS HCAHPS · Census/ACS · HRSA HPSA);
     nothing is fabricated, and states without data on record show &ldquo;&mdash;&rdquo;.
   </p>

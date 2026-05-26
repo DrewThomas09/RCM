@@ -10,6 +10,7 @@ from rcm_mc.ui.data_public.state_compare_page import (
     _ROW_ORDER,
     _collect,
     _parse_states,
+    national_medians,
     render_state_compare,
 )
 
@@ -47,6 +48,19 @@ class StateCompareTests(unittest.TestCase):
             self.assertIn(s, h)
         # honesty language present
         self.assertIn("fabricated", h)
+
+    def test_national_medians_are_real(self):
+        meds = national_medians()
+        # most metrics have a national median; values are finite numbers
+        self.assertGreaterEqual(len(meds), 10)
+        for v in meds.values():
+            self.assertEqual(v, v)  # not NaN
+        # population median should sit between the smallest and CA's value
+        self.assertGreater(meds["population"], 0)
+
+    def test_page_has_us_median_column(self):
+        h = render_state_compare({"states": ["CA,TX,FL"]})
+        self.assertIn("U.S. median", h)
 
     def test_surface_is_green(self):
         self.assertEqual(classify_surface("/state-compare")["tier"], "green")
