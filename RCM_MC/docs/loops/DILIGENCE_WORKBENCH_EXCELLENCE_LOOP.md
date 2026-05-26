@@ -53,7 +53,29 @@ enhancements, real-data wiring on existing/public data, tests.
   **Regression guard now protects 25 analyzer pages** (incl. regulatory-calendar, #870).
 
 ### Deployed SHAs
-- 878fcb65 (loop start) → 16ca622e (after #875); /healthz ok throughout (27 deploys)
+- 878fcb65 (loop start) → 698b3f80 (after #885); /healthz ok throughout (37 deploys)
+
+### Honesty-header contract (test_diligence_source_purpose_headers — 32 pages)
+Every analytic Diligence/Market/Source page now declares its data basis via
+ck_source_purpose / illustrative / DATA REQUIRED, guarded against regression.
+Added in the #863–#885 sweep: covenant-stress, bridge-audit, exit-timing,
+counterfactual, management-scorecard, deal-autopsy, comparable-outcomes,
+regulatory-calendar, compare, thesis-pipeline, ic-packet, sponsor-detail,
+ic-memo, market-data/state (+ the earlier payer-stress/hcris-xray/provider-xray/
+target-screener/predictive-screener/market-intel/cost-structure/debt-service/
+ref-pricing/cms-apm/payer-rate-trends/drug-shortage/risk-adjustment/provider-network).
+
+### ML predictor (the original ask)
+Ridge predictor now reports target skewness + a log-transform advisory (#871),
+threaded through PredictedMetric → packet JSON (#879) → a visible workbench
+advisory chip + tooltip (#880). Advisory-only; never alters the fit. Confirmed
+weighting (weighted-median) + clustering modules + heteroscedasticity/
+nonlinearity/VIF/Cook's-D diagnostics already existed.
+
+### Extra guards / fixes
+- RAG indexer prioritizes curated Guide cards (#853, 9→22 indexed).
+- Licensed-data provenance chips registered + guarded (#881, #882) — were
+  silently empty on Industry / Market-Intel-Geo.
 
 ### Pages improved
 - Payer Stress (#850) — source/purpose header + management-questions panel
