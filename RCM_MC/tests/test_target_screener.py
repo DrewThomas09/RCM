@@ -197,6 +197,55 @@ class WorkbenchTableTests(unittest.TestCase):
         self.assertLessEqual(len(_vertical_rows("home_health")), _TABLE_LIMIT)
 
 
+class WorkbenchCompareTests(unittest.TestCase):
+    """PR 5 — compare basket: same-vertical full, cross-vertical shared-only."""
+
+    def _render(self, **params):
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        return render_target_screener({k: [v] for k, v in params.items()})
+
+    def _ccns(self, vertical, n=2):
+        from rcm_mc.ui.target_screener_page import _vertical_rows
+        return [r["ccn"] for r in _vertical_rows(vertical)[:n]]
+
+    def test_find_provider_resolves_real_ccn(self):
+        from rcm_mc.ui.target_screener_page import _find_provider, _vertical_rows
+        ccn = _vertical_rows("dialysis")[0]["ccn"]
+        r = _find_provider(ccn)
+        self.assertIsNotNone(r)
+        self.assertEqual(r["vertical"], "dialysis")
+
+    def test_find_provider_none_for_bogus(self):
+        from rcm_mc.ui.target_screener_page import _find_provider
+        self.assertIsNone(_find_provider("ZZZZZZ"))
+
+    def test_empty_basket_state(self):
+        self.assertIn("Compare basket (empty)", self._render(view="compare"))
+
+    def test_same_vertical_compare_full(self):
+        ccns = self._ccns("home_health", 3)
+        h = self._render(view="compare", compare=",".join(ccns))
+        self.assertIn("Comparing 3", h)
+        self.assertIn("CMS X-Ray", h)
+        self.assertNotIn("not directly comparable", h)  # single vertical
+
+    def test_cross_vertical_shows_not_comparable(self):
+        hh = self._ccns("home_health", 1)[0]
+        dz = self._ccns("dialysis", 1)[0]
+        h = self._render(view="compare", compare=f"{hh},{dz}")
+        self.assertIn("verticals", h)
+        self.assertIn("not directly comparable", h)
+
+    def test_missing_ccn_reported_not_faked(self):
+        h = self._render(view="compare", compare="ZZZZZZ")
+        self.assertTrue("resolved to a live provider" in h or "Not found" in h)
+
+    def test_table_has_add_to_compare(self):
+        h = self._render(view="main", vertical="snf")
+        self.assertIn("+Cmp", h)
+        self.assertIn("view=compare&compare=", h)
+
+
 class NavAndRouteTests(unittest.TestCase):
     def test_source_anchor_is_target_screener(self):
         from rcm_mc.ui._chartis_kit import _CORPUS_NAV, _SUB_NAV, _resolve_sub_section
