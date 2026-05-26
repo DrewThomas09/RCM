@@ -521,14 +521,61 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
     import html as _h
     vinfo = next((v for v in _VERTICALS if v["key"] == vertical), _VERTICALS[0])
     state = _q1(qs, "state").upper()
-    rows = _vertical_rows(vertical, state)
-    if not rows:
+    # Load the full universe so the filters operate on everything, then cap
+    # for display.
+    all_rows = _vertical_rows(vertical, state, limit=None)
+    if not all_rows:
         return (f'<p class="ck-section-body">No {vinfo["label"]} rows available '
                 f'{("for " + state) if state else ""} from the loader right now. '
                 f'Try another vertical or clear the state filter.</p>')
+    total_universe = len(all_rows)
+    # Apply the optional filter panel (min_quality / min_size / ownership).
+    min_q = _f_or_none(qs, "min_quality")
+    min_size = _f_or_none(qs, "min_size")
+    own = _q1(qs, "ownership").strip().lower()
+    rows = all_rows
+    if min_q is not None:
+        rows = [r for r in rows if isinstance(r.get("q"), (int, float)) and r["q"] >= min_q]
+    if min_size is not None:
+        rows = [r for r in rows if isinstance(r.get("size"), (int, float)) and r["size"] >= min_size]
+    if own:
+        rows = [r for r in rows if own in str(r.get("ownership", "")).lower()]
+    n_matching = len(rows)
+    rows = rows[:_TABLE_LIMIT]
+
+    size_label0 = (all_rows[0].get("size_label") or "Size")
+    q_label0 = (all_rows[0].get("q_label") or "Quality")
+    has_size_any = any(r.get("size") is not None for r in all_rows)
+    # GET filter form (server-first, shareable). Keeps vertical/state/sort.
+    filter_form = (
+        '<form method="get" action="/target-screener" style="display:flex;gap:12px;'
+        'align-items:flex-end;flex-wrap:wrap;margin:0 0 10px;">'
+        '<input type="hidden" name="view" value="main">'
+        f'<input type="hidden" name="vertical" value="{vertical}">'
+        + (f'<input type="hidden" name="state" value="{_h.escape(state)}">' if state else "")
+        + f'<label style="font-family:var(--sc-mono);font-size:10px;">Min {q_label0}'
+        f'<br><input name="min_quality" value="{min_q if min_q is not None else ""}" size="6" '
+        'style="padding:4px 7px;border:1px solid var(--sc-rule,#c9c1ac);"></label>'
+        + (f'<label style="font-family:var(--sc-mono);font-size:10px;">Min {size_label0}'
+           f'<br><input name="min_size" value="{min_size if min_size is not None else ""}" size="6" '
+           'style="padding:4px 7px;border:1px solid var(--sc-rule,#c9c1ac);"></label>' if has_size_any else "")
+        + f'<label style="font-family:var(--sc-mono);font-size:10px;">Ownership contains'
+        f'<br><input name="ownership" value="{_h.escape(own)}" size="14" '
+        'style="padding:4px 7px;border:1px solid var(--sc-rule,#c9c1ac);"></label>'
+        '<button type="submit" class="tsw-vert" style="cursor:pointer;">Apply filters</button>'
+        + (f'<a class="ck-link" style="font-size:11px;" href="/target-screener?view=main&vertical={vertical}'
+           + (f"&state={state}" if state else "") + '">clear</a>'
+           if (min_q is not None or min_size is not None or own) else "")
+        + '</form>'
+    )
+    size_label = size_label0
+    q_label = q_label0
+    if not rows:
+        return (filter_form + f'<p class="ck-section-body">No {vinfo["label"]} '
+                f'providers match these filters (of {total_universe:,} in '
+                f'{("scope " + state) if state else "the universe"}). Relax a '
+                'filter — or open Just-missed to see who narrowly failed.</p>')
     has_size = any(r.get("size") is not None for r in rows)
-    size_label = rows[0].get("size_label") or "Size"
-    q_label = rows[0].get("q_label") or "Quality"
 
     # Optional sort (?sort=name|location|size|quality & direction=asc|desc).
     # No sort param → keep the default quality-desc ranking from _vertical_rows.
@@ -596,10 +643,15 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
             '</tr>'
         )
     scope = f" · {state}" if state else ""
+    filtered = (min_q is not None or min_size is not None or own)
+    match_txt = (f"{n_matching:,} match of {total_universe:,}" if filtered
+                 else f"{total_universe:,}")
     return (
-        f'<p class="ck-section-body" style="margin:0 0 8px;">Showing {len(rows)} '
-        f'{vinfo["label"]} providers{scope} (ranked by {q_label.lower()}; real '
-        f'{vinfo["universe"]} data, "—" = not reported). Capped at {_TABLE_LIMIT}.</p>'
+        filter_form
+        + f'<p class="ck-section-body" style="margin:0 0 8px;">Showing {len(rows)} '
+        f'of {match_txt} {vinfo["label"]} providers{scope} (ranked by '
+        f'{q_label.lower()}; real {vinfo["universe"]} data, "—" = not reported). '
+        f'Capped at {_TABLE_LIMIT}.</p>'
         '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;'
         'font-size:12.5px;font-family:var(--sc-sans,Inter Tight,sans-serif);">'
         f'<thead>{head}</thead><tbody>{"".join(trs)}</tbody></table></div>'
