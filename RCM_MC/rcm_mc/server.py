@@ -4548,6 +4548,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             _st = _parse_state(_q)
             return self._send_csv_df(profile_dataframe(_st), f"state-profile-{_st}.csv")
+        if path == "/state-peers.csv":
+            from .ui.data_public.state_peers_page import _parse_state as _pps, peers_dataframe
+            _q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            _st = _pps(_q)
+            return self._send_csv_df(peers_dataframe(_st), f"state-peers-{_st}.csv")
         if path == "/predictive-screener":
             return self._route_predictive_screener()
         if path.startswith("/data-room/") and not path.endswith("/add"):

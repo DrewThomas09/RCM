@@ -11,6 +11,7 @@ import unittest
 import urllib.request
 
 from rcm_mc.ui.data_public.state_compare_page import compare_dataframe
+from rcm_mc.ui.data_public.state_peers_page import peers_dataframe
 from rcm_mc.ui.data_public.state_profile_page import profile_dataframe
 from rcm_mc.ui.data_public.state_rankings_page import rankings_dataframe
 
@@ -36,6 +37,13 @@ class GeoCsvDataFrameTests(unittest.TestCase):
         self.assertEqual(list(df.columns), ["Rank", "State", "Population", "Source"])
         self.assertEqual(df.iloc[0]["State"], "CA")  # most populous
         self.assertEqual(df.iloc[0]["Rank"], 1)
+
+    def test_peers_dataframe_sorted(self):
+        df = peers_dataframe("OH")
+        self.assertEqual(list(df.columns), ["Rank", "State", "Name", "Distance", "SharedMetrics"])
+        self.assertNotIn("OH", list(df["State"]))  # target excluded
+        dists = list(df["Distance"])
+        self.assertEqual(dists, sorted(dists))  # closest-first
 
     def test_profile_dataframe_has_rank(self):
         df = profile_dataframe("CA")
@@ -73,6 +81,7 @@ class GeoCsvRouteTests(unittest.TestCase):
             ("/state-compare.csv?states=CA,TX", "Metric,Source,CA,TX"),
             ("/state-rankings.csv?metric=population", "Rank,State,Population,Source"),
             ("/state-profile.csv?state=CA", "Metric,Value,VsUSMedianPct,NationalRank,Of,Source"),
+            ("/state-peers.csv?state=OH", "Rank,State,Name,Distance,SharedMetrics"),
         ):
             status, ctype, body = self._get(path)
             self.assertEqual(status, 200, path)
