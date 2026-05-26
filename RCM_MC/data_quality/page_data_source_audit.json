@@ -1,11 +1,11 @@
 {
   "summary": {
-    "pages": 175,
+    "pages": 181,
     "with_disclosure": 169,
-    "with_real_loader": 43,
+    "with_real_loader": 48,
     "flagged_no_disclosure": 0,
     "by_tier": {
-      "green": 29,
+      "green": 35,
       "navy": 73,
       "yellow": 37,
       "red": 0
@@ -307,6 +307,16 @@
       "file": "cost_structure_page.py",
       "tier": "green",
       "has_disclosure": true,
+      "imports_real_loader": true,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/county-explorer",
+      "file": "county_explorer_page.py",
+      "tier": "green",
+      "has_disclosure": false,
       "imports_real_loader": true,
       "uses_seed_corpus": false,
       "renders_data": true,
@@ -703,12 +713,32 @@
       "flag": ""
     },
     {
+      "route": "/geo-intel",
+      "file": "geo_intel_page.py",
+      "tier": "green",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": false,
+      "renders_data": false,
+      "flag": ""
+    },
+    {
       "route": "/geo-market",
       "file": "geo_market_page.py",
       "tier": "yellow",
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/geo-metrics",
+      "file": "geo_metrics_page.py",
+      "tier": "green",
+      "has_disclosure": false,
+      "imports_real_loader": true,
+      "uses_seed_corpus": false,
       "renders_data": true,
       "flag": ""
     },
@@ -1515,6 +1545,36 @@
     {
       "route": "/state-compare",
       "file": "state_compare_page.py",
+      "tier": "green",
+      "has_disclosure": false,
+      "imports_real_loader": true,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/state-peers",
+      "file": "state_peers_page.py",
+      "tier": "green",
+      "has_disclosure": false,
+      "imports_real_loader": true,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/state-profile",
+      "file": "state_profile_page.py",
+      "tier": "green",
+      "has_disclosure": false,
+      "imports_real_loader": true,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/state-rankings",
+      "file": "state_rankings_page.py",
       "tier": "green",
       "has_disclosure": false,
       "imports_real_loader": true,
