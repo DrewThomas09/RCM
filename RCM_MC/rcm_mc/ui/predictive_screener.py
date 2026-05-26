@@ -16,7 +16,7 @@ import pandas as pd
 
 from ._chartis_kit import (
     chartis_shell, ck_data_universe, ck_kpi_block, ck_next_section,
-    ck_page_title, ck_panel, ck_value_anchor,
+    ck_page_title, ck_panel, ck_source_purpose, ck_value_anchor,
 )
 
 _EXPLAINER_CSS = """
@@ -265,6 +265,14 @@ def render_predictive_screener(
         "Predictive Deal Screener", eyebrow="PREDICTIVE SCREENER",
         meta=f"{total_matches:,} matches · {len(hcris_df):,} hospitals in universe",
     ) + '<div style="margin:8px 0 0;">' + ck_data_universe("cms") + '</div>'
+    source_purpose = ck_source_purpose(
+        purpose="Surface acquisition candidates from the public hospital universe by their MODEL-ESTIMATED RCM opportunity, before committing diligence effort.",
+        universe="cms",
+        confidence="derived",
+        source="CMS HCRIS public universe + PEdesk RCM quant stack. The denial/AR/uplift figures are MODEL ESTIMATES from public financials — not observed RCM performance (which isn't public). Confirm against a target's own claims before underwriting.",
+        next_action="Open a candidate's HCRIS X-Ray, then promote to Pipeline",
+        next_href="/diligence/hcris-xray",
+    )
     explainer_html = (
         '<p class="ck-ps-explainer">'
         '<em>Where the next deal hides in the universe.</em> '
@@ -430,7 +438,7 @@ transition:filter 120ms ease;}
         tone="teal",
     )
     body = (
-        ps_styles + title_block + explainer_html + lead_anchor + form
+        ps_styles + title_block + source_purpose + explainer_html + lead_anchor + form
         + kpis + table + save_form + quick + next_up
     )
 
