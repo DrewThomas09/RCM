@@ -24,8 +24,16 @@ _REQUIRE_SOURCE_PURPOSE = {
     "provider_xray_page.py": _UI / "provider_xray_page.py",
     "bear_case_page.py": _UI / "bear_case_page.py",
     "target_screener_page.py": _UI / "target_screener_page.py",
+    "predictive_screener.py": _UI / "predictive_screener.py",
+    "market_intel_page.py": _UI / "market_intel_page.py",
     "data_public/cost_structure_page.py": _UI / "data_public" / "cost_structure_page.py",
     "data_public/debt_service_page.py": _UI / "data_public" / "debt_service_page.py",
+    "data_public/ref_pricing_page.py": _UI / "data_public" / "ref_pricing_page.py",
+    "data_public/cms_apm_tracker_page.py": _UI / "data_public" / "cms_apm_tracker_page.py",
+    "data_public/payer_rate_trends_page.py": _UI / "data_public" / "payer_rate_trends_page.py",
+    "data_public/drug_shortage_page.py": _UI / "data_public" / "drug_shortage_page.py",
+    "data_public/risk_adjustment_page.py": _UI / "data_public" / "risk_adjustment_page.py",
+    "data_public/provider_network_page.py": _UI / "data_public" / "provider_network_page.py",
 }
 
 _HONEST_MARKERS = (
