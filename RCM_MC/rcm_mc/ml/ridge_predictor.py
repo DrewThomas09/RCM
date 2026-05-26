@@ -61,6 +61,19 @@ _MIN_FOR_MEDIAN = 5
 _RIDGE_ALPHA = 1.0
 _DEFAULT_COVERAGE = 0.90
 
+#: Off-by-default flag for similarity-weighted ridge. When False (the
+#: shipped default), ``_predict_ridge`` discards comparable similarity
+#: weights and the fit/LOO/α/diagnostics/conformal chain behaves exactly
+#: as the locked unweighted predictor — so flipping this constant is the
+#: ONLY behavior change, and uniform/absent weights reproduce the current
+#: numbers regardless. When True, closer comparables (higher
+#: ``similarity_score``) drive the fit. Gated for explicit review before
+#: it goes live: turning it on changes every ridge prediction and its
+#: reported reliability. Validation lives in
+#: tests/test_weighted_ridge_regression.py (regression anchor at uniform
+#: weights + a measured LOO-R² improvement on a heteroscedastic corpus).
+_USE_SIMILARITY_WEIGHTS = False
+
 # Relative-CI-width threshold for the CI_UNSTABLE chip. A fit lands here
 # when (ci_high - ci_low) > _CI_UNSTABLE_REL_WIDTH × |point|. The 2.0
 # value is a 200%-relative-width rule of thumb calibrated for unitless
@@ -324,6 +337,31 @@ class DiagnosticReport:
 
 # ── Ridge core (closed-form, numpy) ──────────────────────────────────
 
+def _normalize_weights(
+    sample_weight: Optional[np.ndarray], n: int,
+) -> "np.ndarray":
+    """Return per-row weights summing to ``n`` (so they reduce to all-ones
+    when uniform — the unweighted baseline).
+
+    ``None`` → all-ones. Non-finite or non-positive entries are zeroed.
+    If every weight is invalid (sum ≤ 0) we fall back to all-ones rather
+    than divide by zero — a degenerate weight vector must never silently
+    blank the fit. Scaling to sum=n keeps α on the same scale as the
+    unweighted solve, so a uniform weight vector is numerically identical
+    to ``sample_weight=None`` (pinned by the regression-anchor test).
+    """
+    if sample_weight is None:
+        return np.ones(n, dtype=float)
+    w = np.asarray(sample_weight, dtype=float).reshape(-1)
+    if w.shape[0] != n:
+        return np.ones(n, dtype=float)
+    w = np.where(np.isfinite(w) & (w > 0.0), w, 0.0)
+    s = float(w.sum())
+    if s <= 0.0:
+        return np.ones(n, dtype=float)
+    return w * (n / s)
+
+
 class _RidgeModel:
     """Minimal Ridge estimator with a sklearn-ish fit/predict surface.
 
@@ -343,7 +381,22 @@ class _RidgeModel:
         # outgoing PredictedMetric. Reset per ``fit`` call below.
         self.used_pinv: bool = False
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "_RidgeModel":
+    def fit(
+        self, X: np.ndarray, y: np.ndarray,
+        sample_weight: Optional[np.ndarray] = None,
+    ) -> "_RidgeModel":
+        """Fit ridge coefficients, optionally with per-row sample weights.
+
+        ``sample_weight=None`` (the default) is the unweighted fit and is
+        the locked baseline. When weights are supplied they are normalized
+        to sum to ``n`` and used in a weighted normal-equation solve
+        (weighted standardization + ``Xzᵀ W Xz + αI``). Uniform weights
+        reproduce the unweighted fit *numerically* (weighted mean → simple
+        mean, weighted population variance → ``X.std``, ``W=I``), which the
+        weighted-ridge regression-anchor test pins. Weights let
+        similarity-weighted comparables (closer peers → larger weight)
+        drive the fit when the caller opts in via the off-by-default flag.
+        """
         X = np.asarray(X, dtype=float)
         y = np.asarray(y, dtype=float)
         if X.ndim == 1:
@@ -355,25 +408,29 @@ class _RidgeModel:
             self.feature_mu_ = np.zeros(self.coef_.shape[0])
             self.feature_sd_ = np.ones(self.coef_.shape[0])
             return self
-        mu = X.mean(axis=0)
-        sd = X.std(axis=0)
+        w = _normalize_weights(sample_weight, X.shape[0])
+        wsum = float(w.sum())
+        mu = (w[:, None] * X).sum(axis=0) / wsum
+        var = (w[:, None] * (X - mu) ** 2).sum(axis=0) / wsum
+        sd = np.sqrt(var)
         sd_safe = np.where(sd > 1e-12, sd, 1.0)
         Xz = (X - mu) / sd_safe
-        y_mean = float(y.mean())
+        y_mean = float((w * y).sum() / wsum)
         yc = y - y_mean
-        A = Xz.T @ Xz + self.alpha * np.eye(Xz.shape[1])
+        XtW = Xz.T * w  # (p×n): row j scaled by w → Xzᵀ W
+        A = XtW @ Xz + self.alpha * np.eye(Xz.shape[1])
         self.used_pinv = False
         try:
-            w = np.linalg.solve(A, Xz.T @ yc)
+            coef = np.linalg.solve(A, XtW @ yc)
         except np.linalg.LinAlgError:
             # Singular / near-singular design matrix. Pinv recovers
             # numerically but the resulting coefficients are unstable;
             # callers should surface this as a diagnostic chip (the
             # PINV_FALLBACK FailureReason) rather than silently use
             # the recovered fit.
-            w = np.linalg.pinv(A) @ (Xz.T @ yc)
+            coef = np.linalg.pinv(A) @ (XtW @ yc)
             self.used_pinv = True
-        self.coef_ = w
+        self.coef_ = coef
         self.intercept_ = y_mean
         self.feature_mu_ = mu
         self.feature_sd_ = sd_safe
@@ -387,12 +444,19 @@ class _RidgeModel:
         return Xz @ self.coef_ + self.intercept_
 
 
-def _loo_r_squared(X: np.ndarray, y: np.ndarray, alpha: float) -> float:
+def _loo_r_squared(
+    X: np.ndarray, y: np.ndarray, alpha: float,
+    sample_weight: Optional[np.ndarray] = None,
+) -> float:
     """Leave-one-out R² — honest out-of-sample score. Returns 0 on <3.
 
     Uses the naive refit-N-times implementation. For B.1's RidgeCV
     alpha search, see :func:`_loo_r_squared_shortcut` (O(N·p²)
     hat-matrix shortcut, 30x faster at K=25 alphas).
+
+    ``sample_weight`` (default ``None`` = unweighted) weights both the
+    per-fold refit and the weighted-PRESS sums; uniform weights reproduce
+    the unweighted score exactly.
 
     A.10 follow-up amendment: returns ``max(-1.0, ...)`` so negative
     R² propagates honestly. Callers that want the "clamped to 0"
@@ -402,17 +466,21 @@ def _loo_r_squared(X: np.ndarray, y: np.ndarray, alpha: float) -> float:
     n = X.shape[0]
     if n < 3:
         return 0.0
+    wts = _normalize_weights(sample_weight, n)
+    y_mean_w = float((wts * y).sum() / wts.sum())
     preds = np.zeros(n)
     for i in range(n):
         mask = np.ones(n, dtype=bool)
         mask[i] = False
         try:
-            m = _RidgeModel(alpha=alpha).fit(X[mask], y[mask])
+            m = _RidgeModel(alpha=alpha).fit(
+                X[mask], y[mask], sample_weight=wts[mask])
             preds[i] = m.predict(X[i])[0]
         except Exception:  # noqa: BLE001
-            preds[i] = float(y.mean())
-    ss_res = float(np.sum((y - preds) ** 2))
-    ss_tot = float(np.sum((y - y.mean()) ** 2))
+            preds[i] = y_mean_w
+    # Weighted PRESS — reduces to the unweighted sums at uniform weights.
+    ss_res = float(np.sum(wts * (y - preds) ** 2))
+    ss_tot = float(np.sum(wts * (y - y_mean_w) ** 2))
     if ss_tot <= 1e-12:
         return 0.0
     # B.1: return raw 1 - SS_res/SS_tot (can be negative) so R2_NEGATIVE
@@ -424,17 +492,23 @@ def _loo_r_squared(X: np.ndarray, y: np.ndarray, alpha: float) -> float:
 
 def _loo_r_squared_shortcut(
     X: np.ndarray, y: np.ndarray, alpha: float,
+    sample_weight: Optional[np.ndarray] = None,
 ) -> float:
     """LOO R² via the hat-matrix shortcut.
 
     For ridge fits, the LOO residual at row i has closed form:
         ê^{LOO}_i = ê_i / (1 - h_ii)
     where ê_i is the in-sample residual and h_ii is the i-th diagonal
-    of the hat matrix H = Xz (Xzᵀ Xz + α I)⁻¹ Xzᵀ. This is
-    Allen (1974) / Hastie-Tibshirani-Friedman ESL §7.10 eq 7.65.
+    of the hat matrix H = Xz (Xzᵀ W Xz + α I)⁻¹ Xzᵀ W. This is
+    Allen (1974) / Hastie-Tibshirani-Friedman ESL §7.10 eq 7.65,
+    generalized to weighted least squares (h_ii carries the row weight).
 
     Cost: O(N·p²) — one fit + N divisions. Naive LOO is O(N²·p²).
     At K=25 alphas in RidgeCV, that's 30x speedup at N=30/p=10.
+
+    ``sample_weight`` (default ``None`` = unweighted) drives a weighted
+    standardization + weighted hat matrix + weighted PRESS; uniform
+    weights reproduce the unweighted score exactly.
 
     Returns same scale as :func:`_loo_r_squared` (raw 1 - SS/SS_tot,
     can be negative, floored at -1). Returns 0 when n < 3 OR when the
@@ -443,29 +517,31 @@ def _loo_r_squared_shortcut(
     n = X.shape[0]
     if n < 3 or X.shape[1] == 0:
         return 0.0
-    mu = X.mean(axis=0)
-    sd = X.std(axis=0)
-    sd_safe = np.where(sd > 1e-12, sd, 1.0)
+    wts = _normalize_weights(sample_weight, n)
+    wsum = float(wts.sum())
+    mu = (wts[:, None] * X).sum(axis=0) / wsum
+    var = (wts[:, None] * (X - mu) ** 2).sum(axis=0) / wsum
+    sd_safe = np.where(np.sqrt(var) > 1e-12, np.sqrt(var), 1.0)
     Xz = (X - mu) / sd_safe
-    y_mean = float(y.mean())
+    y_mean = float((wts * y).sum() / wsum)
     yc = y - y_mean
-    A = Xz.T @ Xz + alpha * np.eye(Xz.shape[1])
+    XtW = Xz.T * wts  # Xzᵀ W
+    A = XtW @ Xz + alpha * np.eye(Xz.shape[1])
     try:
         A_inv = np.linalg.inv(A)
     except np.linalg.LinAlgError:
         return 0.0
     # Coefficients + in-sample fit
-    w = A_inv @ (Xz.T @ yc)
-    y_hat_centered = Xz @ w
+    coef = A_inv @ (XtW @ yc)
+    y_hat_centered = Xz @ coef
     resid = yc - y_hat_centered
-    # Hat-matrix diagonal: h_ii = Xz[i] @ A_inv @ Xz[i].T
-    # Vectorize: h = sum((Xz @ A_inv) * Xz, axis=1)
-    h_diag = np.sum((Xz @ A_inv) * Xz, axis=1)
+    # Weighted hat-matrix diagonal: h_ii = w_i · (Xz[i] @ A_inv @ Xz[i].T)
+    h_diag = wts * np.sum((Xz @ A_inv) * Xz, axis=1)
     # Guard 1 - h_ii against numerical underflow at high-leverage rows
     denom = np.clip(1.0 - h_diag, 1e-9, None)
     loo_resid = resid / denom
-    ss_res = float(np.sum(loo_resid ** 2))
-    ss_tot = float(np.sum(yc ** 2))
+    ss_res = float(np.sum(wts * loo_resid ** 2))
+    ss_tot = float(np.sum(wts * yc ** 2))
     if ss_tot <= 1e-12:
         return 0.0
     return max(-1.0, 1.0 - ss_res / ss_tot)
@@ -474,6 +550,7 @@ def _loo_r_squared_shortcut(
 def _loo_select_alpha(
     X: np.ndarray, y: np.ndarray,
     grid: Optional[np.ndarray] = None,
+    sample_weight: Optional[np.ndarray] = None,
 ) -> Tuple[float, bool]:
     """Select α via LOO MSE minimization across the search grid.
 
@@ -502,14 +579,17 @@ def _loo_select_alpha(
     best_alpha = float(grid[0])
     best_ss = float("inf")
     best_idx = 0
-    mu = X.mean(axis=0)
-    sd = X.std(axis=0)
-    sd_safe = np.where(sd > 1e-12, sd, 1.0)
+    wts = _normalize_weights(sample_weight, n)
+    wsum = float(wts.sum())
+    mu = (wts[:, None] * X).sum(axis=0) / wsum
+    var = (wts[:, None] * (X - mu) ** 2).sum(axis=0) / wsum
+    sd_safe = np.where(np.sqrt(var) > 1e-12, np.sqrt(var), 1.0)
     Xz = (X - mu) / sd_safe
-    y_mean = float(y.mean())
+    y_mean = float((wts * y).sum() / wsum)
     yc = y - y_mean
-    XtX = Xz.T @ Xz
-    Xtyc = Xz.T @ yc
+    XtW = Xz.T * wts  # Xzᵀ W
+    XtX = XtW @ Xz
+    Xtyc = XtW @ yc
     eye = np.eye(Xz.shape[1])
     for i, alpha in enumerate(grid):
         A = XtX + float(alpha) * eye
@@ -520,10 +600,10 @@ def _loo_select_alpha(
         w = A_inv @ Xtyc
         y_hat_centered = Xz @ w
         resid = yc - y_hat_centered
-        h_diag = np.sum((Xz @ A_inv) * Xz, axis=1)
+        h_diag = wts * np.sum((Xz @ A_inv) * Xz, axis=1)
         denom = np.clip(1.0 - h_diag, 1e-9, None)
         loo_resid = resid / denom
-        ss = float(np.sum(loo_resid ** 2))
+        ss = float(np.sum(wts * loo_resid ** 2))
         if ss < best_ss:
             best_ss = ss
             best_alpha = float(alpha)
@@ -539,11 +619,22 @@ def _loo_select_alpha(
 
 def _compute_diagnostics(
     X: np.ndarray, y: np.ndarray, alpha: float,
+    sample_weight: Optional[np.ndarray] = None,
 ) -> DiagnosticReport:
     """Compute the five B.1 diagnostics + return DiagnosticReport.
 
     Single one-time fit on (X, y). Cost: O(N·p³) dominated by VIF
     (p separate ridge fits, each O(N·p²)). At N=50/p=10, < 1ms.
+
+    ``sample_weight`` (default ``None`` = unweighted) threads through the
+    whole diagnostic chain consistently with the weighted fit: weighted
+    standardization, weighted hat matrix / Cook's D / leverage, weighted-
+    ridge VIF, sqrt(w)-scaled Breusch-Pagan, and weighted RESET slope.
+    Each weighted form reduces *exactly* to the unweighted statistic at
+    uniform weights (pinned by the regression-anchor test) so the reported
+    reliability stays consistent with the fit — never invented. Target
+    skewness stays unweighted: it is a property of y itself (drives the
+    log-transform advisory), not of the comparable weighting.
 
     Returns a DiagnosticReport with safe defaults on degenerate inputs
     (n < 4 or empty X) — callers can call .failure_reasons_at(n, p)
@@ -552,32 +643,35 @@ def _compute_diagnostics(
     n, p = X.shape
     if n < 4 or p == 0:
         return DiagnosticReport()
-    mu = X.mean(axis=0)
-    sd = X.std(axis=0)
-    sd_safe = np.where(sd > 1e-12, sd, 1.0)
+    wts = _normalize_weights(sample_weight, n)
+    wsum = float(wts.sum())
+    mu = (wts[:, None] * X).sum(axis=0) / wsum
+    var = (wts[:, None] * (X - mu) ** 2).sum(axis=0) / wsum
+    sd_safe = np.where(np.sqrt(var) > 1e-12, np.sqrt(var), 1.0)
     Xz = (X - mu) / sd_safe
-    y_mean = float(y.mean())
+    y_mean = float((wts * y).sum() / wsum)
     yc = y - y_mean
-    A = Xz.T @ Xz + alpha * np.eye(p)
+    XtW = Xz.T * wts  # Xzᵀ W
+    A = XtW @ Xz + alpha * np.eye(p)
     try:
         A_inv = np.linalg.inv(A)
     except np.linalg.LinAlgError:
         return DiagnosticReport()
-    w = A_inv @ (Xz.T @ yc)
+    w = A_inv @ (XtW @ yc)
     fitted = Xz @ w
     resid = yc - fitted
-    # ── Hat-matrix diagonal (for Cook's D + leverage) ──
-    h_diag = np.sum((Xz @ A_inv) * Xz, axis=1)
+    # ── Weighted hat-matrix diagonal (for Cook's D + leverage) ──
+    h_diag = wts * np.sum((Xz @ A_inv) * Xz, axis=1)
     max_leverage = float(np.max(h_diag))
-    # σ̂² for Cook's D denominator
-    sigma2 = float(np.sum(resid ** 2)) / max(n - p, 1)
+    # σ̂² for Cook's D denominator (weighted residual variance)
+    sigma2 = float(np.sum(wts * resid ** 2)) / max(n - p, 1)
     sigma2 = max(sigma2, 1e-12)
-    # Cook's D per row: (resid_i² / (p · σ̂²)) × (h_ii / (1-h_ii)²)
+    # Cook's D per row: (w_i·resid_i² / (p · σ̂²)) × (h_ii / (1-h_ii)²)
     denom_h = np.clip((1.0 - h_diag) ** 2, 1e-12, None)
-    cooks_d = (resid ** 2 / (p * sigma2)) * (h_diag / denom_h)
+    cooks_d = (wts * resid ** 2 / (p * sigma2)) * (h_diag / denom_h)
     cooks_d_argmax = int(np.argmax(cooks_d))
     max_cooks_d = float(cooks_d[cooks_d_argmax])
-    # ── VIF per column: ridge fit of Xz[:,j] ~ Xz[:,~j] ──
+    # ── VIF per column: weighted ridge fit of Xz[:,j] ~ Xz[:,~j] ──
     max_vif = 0.0
     if p > 1:
         for j in range(p):
@@ -585,16 +679,17 @@ def _compute_diagnostics(
             mask[j] = False
             X_others = Xz[:, mask]
             y_j = Xz[:, j]
+            XoW = X_others.T * wts  # X_othersᵀ W
             # Ridge fit (same α — ridge VIF is correctly regularized)
-            A_j = X_others.T @ X_others + alpha * np.eye(p - 1)
+            A_j = XoW @ X_others + alpha * np.eye(p - 1)
             try:
                 A_j_inv = np.linalg.inv(A_j)
             except np.linalg.LinAlgError:
                 continue
-            w_j = A_j_inv @ (X_others.T @ y_j)
+            w_j = A_j_inv @ (XoW @ y_j)
             yhat_j = X_others @ w_j
-            ss_res_j = float(np.sum((y_j - yhat_j) ** 2))
-            ss_tot_j = float(np.sum(y_j ** 2))  # y_j is already z-scored, mean ≈ 0
+            ss_res_j = float(np.sum(wts * (y_j - yhat_j) ** 2))
+            ss_tot_j = float(np.sum(wts * y_j ** 2))  # weighted-z-scored, mean ≈ 0
             if ss_tot_j > 1e-12:
                 r2_j = 1.0 - ss_res_j / ss_tot_j
                 if r2_j < 0.999:
@@ -605,14 +700,17 @@ def _compute_diagnostics(
     bp_pvalue = 1.0
     if n > p + 2:
         u = resid ** 2
-        u_mean = float(u.mean())
-        u_c = u - u_mean
-        # OLS regression u_c ~ Xz (no ridge here — BP is an OLS test)
+        u_mean = float((wts * u).sum() / wsum)
+        # sqrt(w)-scaled aux regression → weighted LM test; reduces to the
+        # OLS BP test at uniform weights.
+        sw = np.sqrt(wts)
+        u_c_s = sw * (u - u_mean)
+        Xz_s = sw[:, None] * Xz
         try:
-            beta_bp, *_ = np.linalg.lstsq(Xz, u_c, rcond=None)
-            u_hat = Xz @ beta_bp
-            ss_res_bp = float(np.sum((u_c - u_hat) ** 2))
-            ss_tot_bp = float(np.sum(u_c ** 2))
+            beta_bp, *_ = np.linalg.lstsq(Xz_s, u_c_s, rcond=None)
+            u_hat = Xz_s @ beta_bp
+            ss_res_bp = float(np.sum((u_c_s - u_hat) ** 2))
+            ss_tot_bp = float(np.sum(u_c_s ** 2))
             if ss_tot_bp > 1e-12:
                 r2_bp = 1.0 - ss_res_bp / ss_tot_bp
                 lm_stat = n * max(r2_bp, 0.0)
@@ -626,20 +724,21 @@ def _compute_diagnostics(
     # fitted alone has very low power. Slope on fitted² catches the
     # quadratic-component-of-residual pattern that signals the linear
     # model is missing curvature (Ramsey RESET, simplified to one
-    # added power).
+    # added power). Weighted form reduces to the unweighted slope test
+    # at uniform weights.
     resid_fit_t_slope = 0.0
     if n >= 5:
         fit_squared = fitted ** 2
-        fs_centered = fit_squared - float(fit_squared.mean())
-        ss_x = float(np.sum(fs_centered ** 2))
+        fs_centered = fit_squared - float((wts * fit_squared).sum() / wsum)
+        ss_x = float(np.sum(wts * fs_centered ** 2))
         if ss_x > 1e-12:
-            slope = float(np.sum(fs_centered * resid) / ss_x)
+            slope = float(np.sum(wts * fs_centered * resid) / ss_x)
             # SE from the auxiliary regression's own residuals, not
             # the original fit's σ̂ (which understates the SE when
             # residuals are highly variable around their relationship
             # with fitted²).
             aux_resid = resid - slope * fs_centered
-            aux_sigma2 = float(np.sum(aux_resid ** 2)) / max(n - 2, 1)
+            aux_sigma2 = float(np.sum(wts * aux_resid ** 2)) / max(n - 2, 1)
             slope_se = (aux_sigma2 / ss_x) ** 0.5
             if slope_se > 1e-12:
                 resid_fit_t_slope = slope / slope_se
@@ -773,6 +872,7 @@ def _compose_failure_reason(
     value: float,
     ci_low: float,
     ci_high: float,
+    sample_weight: Optional[np.ndarray] = None,
 ) -> Tuple[Optional[FailureReason], List[str]]:
     """Apply the D2 priority chain to derive (failure_reason, contributing_sources).
 
@@ -821,7 +921,10 @@ def _compose_failure_reason(
             # Verify: recompute LOO R² without the high-Cook's-D row
             mask = np.ones(n, dtype=bool)
             mask[diag.cooks_d_argmax] = False
-            r2_no_outlier = _loo_r_squared_shortcut(X[mask], y[mask], alpha)
+            w_masked = (sample_weight[mask]
+                        if sample_weight is not None else None)
+            r2_no_outlier = _loo_r_squared_shortcut(
+                X[mask], y[mask], alpha, sample_weight=w_masked)
             if r2_no_outlier >= 0:
                 # Hypothesis held — outlier caused negative R²
                 failure_reason = FailureReason.INFLUENTIAL_OUTLIER
@@ -872,27 +975,47 @@ def _predict_ridge(
     features = _feature_keys(known, comparables, exclude=target)
     if not features:
         return None
-    X, y, _ = _assemble_xy(
+    X, y, sim_w = _assemble_xy(
         [p for p in comparables if _is_finite_number(p.get(target))],
         features, target,
     )
     if X.shape[0] < _MIN_FOR_RIDGE or X.shape[1] == 0:
         return None
 
+    # Similarity weighting is opt-in via _USE_SIMILARITY_WEIGHTS (off by
+    # default). When on, the comparable similarity_score drives every
+    # downstream step (α-search, fit, LOO, diagnostics, conformal base
+    # fit) consistently; when off, ``fit_w is None`` and the whole chain
+    # is the locked unweighted predictor.
+    fit_w = sim_w if _USE_SIMILARITY_WEIGHTS else None
+
     # ── Step 2: RidgeCV α-search (D1) ──
-    alpha_selected, alpha_at_boundary = _loo_select_alpha(X, y)
+    alpha_selected, alpha_at_boundary = _loo_select_alpha(
+        X, y, sample_weight=fit_w)
 
     # ── Step 3: ConformalPredictor at chosen α ──
-    X_tr, y_tr, X_cal, y_cal = split_train_calibration(
-        X, y, cal_fraction=0.30, random_state=seed,
-    )
+    # When weighting, carry the per-row weight through the (value-
+    # independent, index-based) split as an appended column so the train
+    # weights stay aligned with X_tr, then peel it back off.
+    w_tr: Optional[np.ndarray] = None
+    if fit_w is not None:
+        Xw = np.column_stack([X, fit_w])
+        Xw_tr, y_tr, Xw_cal, y_cal = split_train_calibration(
+            Xw, y, cal_fraction=0.30, random_state=seed,
+        )
+        X_tr, w_tr = Xw_tr[:, :-1], Xw_tr[:, -1]
+        X_cal = Xw_cal[:, :-1]
+    else:
+        X_tr, y_tr, X_cal, y_cal = split_train_calibration(
+            X, y, cal_fraction=0.30, random_state=seed,
+        )
     if len(X_tr) < 3:
         return None
     cp = ConformalPredictor(
         _RidgeModel(alpha=alpha_selected), coverage=coverage,
     )
     try:
-        cp.fit(X_tr, y_tr, X_cal, y_cal)
+        cp.fit(X_tr, y_tr, X_cal, y_cal, train_weight=w_tr)
     except Exception:  # noqa: BLE001
         return None
 
@@ -909,11 +1032,11 @@ def _predict_ridge(
     ci_high = float(high[0])
 
     # ── Step 5: LOO R² on full X/y at chosen α (via shortcut) ──
-    r2 = _loo_r_squared_shortcut(X, y, alpha_selected)
+    r2 = _loo_r_squared_shortcut(X, y, alpha_selected, sample_weight=fit_w)
     if r2 == 0.0 and X.shape[0] >= 3:
         # Shortcut returned the "solve failed" sentinel — fall back
         # to naive LOO for an honest score.
-        r2 = _loo_r_squared(X, y, alpha_selected)
+        r2 = _loo_r_squared(X, y, alpha_selected, sample_weight=fit_w)
 
     # Feature importances = |standardized coefficient|, normalized
     coefs = getattr(cp.base_model, "coef_", np.zeros(len(features)))
@@ -922,7 +1045,7 @@ def _predict_ridge(
     importances = {f: float(abs_c[i] / total) for i, f in enumerate(features)}
 
     # ── Step 6: B.1 diagnostics on full X/y ──
-    diag = _compute_diagnostics(X, y, alpha_selected)
+    diag = _compute_diagnostics(X, y, alpha_selected, sample_weight=fit_w)
 
     # ── Step 7: failure_reason composition via shared helper ──
     # Same _compose_failure_reason() runs from EnsemblePredictor when
@@ -937,6 +1060,7 @@ def _predict_ridge(
         value=value,
         ci_low=ci_low,
         ci_high=ci_high,
+        sample_weight=fit_w,
     )
 
     return PredictedMetric(
