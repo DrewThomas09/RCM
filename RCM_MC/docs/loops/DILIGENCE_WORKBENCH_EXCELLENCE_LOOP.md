@@ -91,6 +91,25 @@ reliability, so it is **approval-gated** and must ship as a dedicated PR that
 uniform-weight == current-behavior as the regression anchor. Flagged for the
 user rather than rushed autonomously.
 
+**BUILT → PR #898 (2026-05-26, user-approved "build it, measured + flagged").**
+Threaded similarity weights through the entire chain consistently: weighted
+normal-equation fit, weighted PRESS LOO-R² (naive + hat-matrix shortcut with
+weighted h_ii), weighted α-MSE, weighted diagnostics (Cook's-D / leverage /
+σ̂², weighted-ridge VIF, sqrt(w)-scaled Breusch-Pagan, weighted RESET slope;
+skewness left unweighted as a property of y), and the conformal *base* fit
+(`ConformalPredictor.fit(train_weight=…)`) — split-conformal calibration
+deliberately left unweighted (distribution-free coverage holds for any
+estimator). Gated by module flag `_USE_SIMILARITY_WEIGHTS = False` (off);
+flipping it is the only behavior change, and every weighted formula reduces
+numerically to the locked unweighted statistic at uniform weights.
+`tests/test_weighted_ridge_regression.py` (18) pins the regression anchor +
+a *measured* improvement (down-weighting noisy/regime-shifted comparables
+lowers held-out RMSE on reliable peers, ≥10/12 seeds; positive mean weighted-
+LOO-R² gain). 1028 predictor/packet/analysis/ML/workbench tests pass with the
+flag off. **PR #898 left OPEN for user review — NOT auto-merged**; enable
+`_USE_SIMILARITY_WEIGHTS=True` (or promote to config/env) only after validating
+LOO-R² deltas on live cohorts.
+
 ### Extra guards / fixes
 - RAG indexer prioritizes curated Guide cards (#853, 9→22 indexed).
 - Licensed-data provenance chips registered + guarded (#881, #882) — were
