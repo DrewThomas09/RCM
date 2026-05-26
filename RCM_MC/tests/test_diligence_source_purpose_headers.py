@@ -28,6 +28,7 @@ _REQUIRE_SOURCE_PURPOSE = {
     "market_intel_page.py": _UI / "market_intel_page.py",
     "covenant_lab_page.py": _UI / "covenant_lab_page.py",
     "bridge_audit_page.py": _UI / "bridge_audit_page.py",
+    "exit_timing_page.py": _UI / "exit_timing_page.py",
     "data_public/cost_structure_page.py": _UI / "data_public" / "cost_structure_page.py",
     "data_public/debt_service_page.py": _UI / "data_public" / "debt_service_page.py",
     "data_public/ref_pricing_page.py": _UI / "data_public" / "ref_pricing_page.py",

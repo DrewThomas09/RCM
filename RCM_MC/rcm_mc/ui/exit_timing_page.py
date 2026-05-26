@@ -712,7 +712,7 @@ def render_exit_timing_page(
     # Cycle 52 — KPI strip with provenance.
     from ._chartis_kit import (
         ck_eyebrow, ck_fmt_num, ck_fmt_pct, ck_kpi_block,
-        ck_provenance_tooltip,
+        ck_provenance_tooltip, ck_source_purpose,
     )
     peak_irr = report.peak_irr_point.irr if report.peak_irr_point else 0
     peak_year = report.peak_irr_point.year if report.peak_irr_point else 0
@@ -863,6 +863,14 @@ def render_exit_timing_page(
         _scoped_styles()
         + '<div class="et-wrap">'
         + deal_context_bar(qs, active_surface="exit_timing")
+        + ck_source_purpose(
+            purpose="Model the optimal exit window — weigh hold-value growth against multiple/market timing — to inform the hold-vs-sell decision.",
+            universe="user-deals",
+            confidence="derived",
+            source="Your entered deal economics + hold assumptions × modeled exit scenarios; a planning model, not a market forecast.",
+            next_action="Stress the assumptions in Deal MC",
+            next_href="/diligence/deal-mc",
+        )
         + export_json_panel(
             hero, payload=report.to_dict(),
             name="exit_timing_report",
