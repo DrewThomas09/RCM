@@ -38,6 +38,7 @@ _REQUIRE_SOURCE_PURPOSE = {
     "thesis_pipeline_page.py": _UI / "thesis_pipeline_page.py",
     "ic_packet_page.py": _UI / "ic_packet_page.py",
     "sponsor_detail_page.py": _UI / "sponsor_detail_page.py",
+    "ic_memo_page.py": _UI / "ic_memo_page.py",
     "data_public/cost_structure_page.py": _UI / "data_public" / "cost_structure_page.py",
     "data_public/debt_service_page.py": _UI / "data_public" / "debt_service_page.py",
     "data_public/ref_pricing_page.py": _UI / "data_public" / "ref_pricing_page.py",
