@@ -104,6 +104,11 @@ def render_metro_markets(params: Dict = None) -> str:
     th = (_hdr("", "CBSA", "left") + _hdr("", "Counties")
           + "".join(_hdr(k, lbl) for k, lbl, *_ in _COLS))
 
+    # Max of the sorted column across visible rows — for an inline magnitude
+    # bar on that column (honest visual of the real values; sorted column only
+    # to keep the wide table readable).
+    sort_max = max((abs(r[sort_key]) for r in rows
+                    if r.get(sort_key) is not None), default=0.0)
     body_rows = ""
     for i, r in enumerate(rows):
         bg = P["panel_alt"] if i % 2 else P["panel"]
@@ -113,8 +118,13 @@ def render_metro_markets(params: Dict = None) -> str:
             v = r.get(key)
             s = fmt(v) if v is not None else "—"
             hl = "font-weight:600;" if key == sort_key and v is not None else ""
+            bar = ""
+            if key == sort_key and v is not None and sort_max > 0:
+                bw = max(2, round(abs(v) / sort_max * 100))
+                bar = (f'<div style="height:3px;width:{bw}%;background:{ac};opacity:0.5;'
+                       f'margin:3px 0 0 auto;border-radius:1px"></div>')
             cells += (f'<td style="padding:5px 10px;text-align:right;font-family:JetBrains Mono,monospace;'
-                      f'font-size:12px;font-variant-numeric:tabular-nums;color:{tp};{hl}background:{bg}">{_html.escape(s)}</td>')
+                      f'font-size:12px;font-variant-numeric:tabular-nums;color:{tp};{hl}background:{bg}">{_html.escape(s)}{bar}</td>')
         body_rows += f"<tr>{cells}</tr>"
 
     body = f"""
