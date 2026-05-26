@@ -74,6 +74,9 @@ class RegressionResult:
     # collinear with the others". Empty dict means VIF wasn't
     # computed (e.g. matrix was singular).
     vifs: Dict[str, float] = field(default_factory=dict)
+    # Belsley condition number of the scaled design matrix — the
+    # single-number multicollinearity diagnostic (κ>100 = severe).
+    condition_number: float = 0.0
 
     @property
     def typical_fractional_error(self) -> float:
@@ -108,6 +111,7 @@ class RegressionResult:
             "target_mean": round(self.target_mean, 4),
             "target_was_log_transformed": self.target_was_log_transformed,
             "vifs": {k: round(v, 3) for k, v in self.vifs.items()},
+            "condition_number": round(self.condition_number, 1),
             "typical_fractional_error": round(
                 self.typical_fractional_error, 4,
             ),
@@ -221,6 +225,113 @@ def compute_vif(features_df: pd.DataFrame) -> Dict[str, float]:
         except np.linalg.LinAlgError:
             vifs[feat] = float("inf")
     return vifs
+
+
+def condition_number(features_df: pd.DataFrame) -> float:
+    """Belsley condition number of the scaled design matrix.
+
+    The single-number multicollinearity diagnostic that complements VIF:
+    VIF flags *which* feature is collinear, the condition number says *how
+    bad the design matrix is overall*. Columns are scaled to unit length
+    (Belsley/Kuh/Welsch convention) with an intercept column added, then
+    κ = σ_max / σ_min of the scaled matrix.
+
+    Rules of thumb: κ < 30 fine · 30–100 moderate collinearity · > 100
+    severe (coefficient estimates are numerically unstable and individual
+    effects can't be trusted). Returns 1.0 for a degenerate input and
+    ``inf`` for an exactly rank-deficient design.
+    """
+    clean = features_df.select_dtypes(include=[np.number]).dropna()
+    if clean.shape[1] < 1 or len(clean) < 2:
+        return 1.0
+    X = np.column_stack([np.ones(len(clean)), clean.values.astype(float)])
+    norms = np.linalg.norm(X, axis=0)
+    norms[norms == 0] = 1.0
+    Xs = X / norms
+    sv = np.linalg.svd(Xs, compute_uv=False)
+    smin = float(sv.min())
+    if smin <= 1e-12:
+        return float("inf")
+    return float(sv.max() / smin)
+
+
+def prune_collinear(
+    features_df: pd.DataFrame, max_vif: float = 10.0,
+) -> Tuple[List[str], List[Dict[str, Any]]]:
+    """Greedy stepwise VIF reduction → a stable, low-collinearity feature set.
+
+    Iteratively drops the single highest-VIF feature until every remaining
+    feature has VIF ≤ ``max_vif`` (the textbook threshold). This is the
+    automated alternative to hand-curating which collinear columns to
+    exclude — feed it the candidate set and it returns the parsimonious set
+    whose coefficients are actually interpretable.
+
+    Returns ``(kept_features, dropped)`` where ``dropped`` is an ordered list
+    of ``{"feature", "vif"}`` (highest-VIF first, in drop order) so the UI can
+    explain exactly what was removed and why.
+    """
+    clean = features_df.select_dtypes(include=[np.number]).dropna()
+    cols = list(clean.columns)
+    dropped: List[Dict[str, Any]] = []
+    while len(cols) > 1:
+        vifs = compute_vif(clean[cols])
+        if not vifs:
+            break
+        worst = max(vifs, key=lambda k: vifs[k])
+        worst_vif = vifs[worst]
+        if worst_vif <= max_vif:
+            break
+        dropped.append({"feature": worst,
+                        "vif": (round(worst_vif, 2)
+                                if worst_vif != float("inf") else None)})
+        cols.remove(worst)
+    return cols, dropped
+
+
+def multicollinearity_verdict(
+    max_vif: float, cond: float,
+) -> Dict[str, str]:
+    """Plain-English multicollinearity assessment for the partner.
+
+    Synthesizes the worst VIF and the condition number into a single
+    severity + message + recommendation, so a reader who isn't a
+    statistician immediately knows whether to trust the individual
+    coefficients (and the headline R²) or only the joint fit.
+    """
+    severe = (max_vif >= 30.0) or (cond >= 100.0)
+    moderate = (max_vif >= 10.0) or (cond >= 30.0)
+    if severe:
+        return {
+            "severity": "severe",
+            "message": (
+                "Severe multicollinearity. Predictors are highly "
+                "inter-correlated, so individual coefficients (and their "
+                "signs) are numerically unstable and the headline R² is "
+                "inflated — a high overall F with few individually "
+                "significant coefficients is the classic tell."),
+            "recommendation": (
+                "Do not read individual effects. Use the optimized "
+                "(VIF-pruned) feature set below, which keeps the fit "
+                "honest with interpretable coefficients."),
+        }
+    if moderate:
+        return {
+            "severity": "moderate",
+            "message": (
+                "Moderate multicollinearity. The joint fit is usable but "
+                "some coefficient standard errors are inflated, so treat "
+                "individual slopes with caution."),
+            "recommendation": (
+                "Prefer the optimized feature set, or interpret only the "
+                "coefficients whose VIF is below 10."),
+        }
+    return {
+        "severity": "low",
+        "message": ("Low multicollinearity. Predictors are sufficiently "
+                    "independent that individual coefficients are "
+                    "interpretable."),
+        "recommendation": "Coefficients can be read directly.",
+    }
 
 
 def run_regression(
@@ -364,6 +475,7 @@ def run_regression(
     mae = float(np.mean(np.abs(err)))
 
     vifs = compute_vif(clean[features]) if compute_vifs else {}
+    cond = condition_number(clean[features]) if compute_vifs else 0.0
 
     return RegressionResult(
         target=target,
@@ -380,6 +492,7 @@ def run_regression(
         target_mean=target_mean,
         target_was_log_transformed=log_transform_target,
         vifs=vifs,
+        condition_number=cond,
     )
 
 
