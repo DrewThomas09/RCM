@@ -33,6 +33,7 @@ from ._chartis_kit import (
 _LIVE_ROUTES: Dict[str, str] = {
     "reimbursement_cliff_calendar_2026_2029": "/diligence/cliff-calendar",
     "historical_failure_library": "/diligence/pe-reference?library=failures",
+    "named_failure_library_v2": "/diligence/pe-reference?library=failures",
     "partner_traps_library": "/diligence/pe-reference?library=traps",
     "seller_motivation_decoder": "/diligence/pe-reference?library=motivations",
     "failure_archetype_library": "/diligence/pe-reference?library=archetypes",

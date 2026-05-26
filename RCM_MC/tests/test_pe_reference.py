@@ -26,6 +26,17 @@ class ReferenceLibraryTests(unittest.TestCase):
         self.assertIn("Envision", h)
         self.assertIn("Partner lesson", h)
 
+    def test_failures_combines_both_libraries(self):
+        # The failures tab merges historical_failure_library + the distinct
+        # named_failure_library_v2 set (zero name overlap) into one tab.
+        rows = _load("failures")
+        names = {getattr(p, "name", "") for p in rows}
+        self.assertGreaterEqual(len(rows), 18)
+        self.assertIn("ma_startup_unwind_2023", names)   # v2-only entry
+        # newest-first ordering
+        years = [getattr(p, "year", 0) for p in rows]
+        self.assertEqual(years, sorted(years, reverse=True))
+
     def test_traps_render_pitch_and_rebuttal(self):
         h = render_pe_reference_page("traps")
         self.assertIn("Seller pitch", h)
