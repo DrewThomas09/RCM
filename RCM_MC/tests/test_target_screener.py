@@ -423,6 +423,36 @@ class WorkbenchGeoVerticalTests(unittest.TestCase):
         self.assertEqual(vals, {})
 
 
+class WorkbenchMapLayerTests(unittest.TestCase):
+    """PR 12 — functional demographic map layers (real ACS shading) overlaid
+    on the provider screen; provider table stays."""
+
+    def _render(self, **params):
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        return render_target_screener({k: [v] for k, v in params.items()})
+
+    def test_default_layer_is_provider_count(self):
+        self.assertIn("provider count", self._render(view="main", vertical="snf").lower())
+
+    def test_age65_layer_shades_real_acs(self):
+        h = self._render(view="main", vertical="snf", layer="age65")
+        self.assertIn("Age 65+", h)
+        self.assertIn("market layer", h.lower())
+        self.assertIn("usgeo-state", h)            # real map still
+        self.assertIn("Ranked providers", h)        # provider table preserved
+
+    def test_income_and_uninsured_layers(self):
+        self.assertIn("Median HH income",
+                      self._render(view="main", vertical="dialysis", layer="income"))
+        self.assertIn("Uninsured",
+                      self._render(view="main", vertical="hospice", layer="uninsured"))
+
+    def test_unsourced_layers_link_out_not_faked(self):
+        from rcm_mc.ui.target_screener_page import _LAYER_BY_KEY
+        self.assertFalse(_LAYER_BY_KEY["market_score"].get("live"))
+        self.assertTrue(_LAYER_BY_KEY["age65"].get("live"))
+
+
 class NavAndRouteTests(unittest.TestCase):
     def test_source_anchor_is_target_screener(self):
         from rcm_mc.ui._chartis_kit import _CORPUS_NAV, _SUB_NAV, _resolve_sub_section
