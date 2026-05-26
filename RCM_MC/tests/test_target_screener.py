@@ -472,6 +472,40 @@ class WorkbenchMapLayerTests(unittest.TestCase):
         self.assertTrue(_LAYER_BY_KEY["age65"].get("live"))
 
 
+class WorkbenchFilterTests(unittest.TestCase):
+    """PR 17 — Main filter panel (?min_quality / min_size / ownership)."""
+
+    def _render(self, **params):
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        return render_target_screener({k: [v] for k, v in params.items()})
+
+    def test_filter_form_present(self):
+        h = self._render(view="main", vertical="snf")
+        self.assertIn("Apply filters", h)
+        self.assertIn('name="min_quality"', h)
+        self.assertIn("Ownership contains", h)
+
+    def test_min_quality_narrows_matches(self):
+        import re
+        h = self._render(view="main", vertical="snf", min_quality="5")
+        m = re.search(r"([\d,]+) match of ([\d,]+)", h)
+        self.assertIsNotNone(m)
+        self.assertLess(int(m.group(1).replace(",", "")),
+                        int(m.group(2).replace(",", "")))
+
+    def test_ownership_filter_applies(self):
+        self.assertIn("match of",
+                      self._render(view="main", vertical="dialysis", ownership="profit"))
+
+    def test_impossible_filter_is_honest_no_match(self):
+        h = self._render(view="main", vertical="snf", min_quality="99")
+        self.assertIn("match these filters", h)
+        self.assertIn("Just-missed", h)   # points to near-misses, never fakes rows
+
+    def test_clear_link_when_filtered(self):
+        self.assertIn(">clear<", self._render(view="main", vertical="snf", min_quality="4"))
+
+
 class WorkbenchSortTests(unittest.TestCase):
     """PR 16 — sortable provider table columns (?sort=&direction=)."""
 
