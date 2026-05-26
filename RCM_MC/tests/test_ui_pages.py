@@ -63,13 +63,13 @@ class TestPortfolioMap(unittest.TestCase):
         ]
         html = render_portfolio_map(deals)
         self.assertIn("<svg", html)
-        self.assertIn("usm-cell", html)            # tile-grid cells
+        self.assertIn("usgeo-state", html)            # geographic choropleth state paths
         self.assertIn("Illinois", html)            # state shaded by count
 
     def test_empty_deals_has_honest_empty_state(self):
         html = render_portfolio_map([])
         # Map still draws; honest data-needed message (not "No deals").
-        self.assertIn("usm-cell", html)
+        self.assertIn("usgeo-state", html)
         self.assertIn("No state-level portfolio data yet", html)
         # Handoff dossier scaffold renders even when empty.
         self.assertIn("No exposure to rank yet", html)
@@ -78,13 +78,13 @@ class TestPortfolioMap(unittest.TestCase):
     def test_con_states_are_accented(self):
         deals = [{"deal_id": "d1", "name": "A", "state": "TX"}]
         html = render_portfolio_map(deals, con_states={"TX": True, "CA": False})
-        self.assertIn("usm-accent", html)          # CON outline
+        self.assertIn("usgeo-accent", html)          # CON accent outline
         self.assertIn("Certificate-of-Need", html)  # CON tooltip/legend
 
     def test_metric_legend_present(self):
         deals = [{"deal_id": "d1", "name": "A", "state": "CA"}]
         html = render_portfolio_map(deals)
-        self.assertIn("usm-legend", html)
+        self.assertIn("usgeo-legend", html)
         self.assertIn("deals", html)
 
     def test_no_external_map_dependency(self):
