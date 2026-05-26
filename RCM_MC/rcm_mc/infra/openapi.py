@@ -327,6 +327,21 @@ _SPEC: Dict[str, Any] = {
                 "responses": {"200": {"description": "Request count, error count, response time percentiles"}},
             },
         },
+        "/api/geo/states": {
+            "get": {
+                "summary": "Geographic Intelligence — real per-state metric matrix (Census/CMS/HRSA/CDC/OIG)",
+                "tags": ["Market Intelligence"],
+                "responses": {"200": {"description": "Metric metadata, national median, and per-state raw values (null where no data on record)"}},
+            },
+        },
+        "/api/geo/states/{state}": {
+            "get": {
+                "summary": "Geographic Intelligence — one state's real metric values",
+                "tags": ["Market Intelligence"],
+                "parameters": [{"name": "state", "in": "path", "required": True, "schema": {"type": "string"}, "description": "2-letter state/DC postal code (e.g. CA)"}],
+                "responses": {"200": {"description": "Same payload restricted to the requested state"}},
+            },
+        },
         "/api/backup": {
             "get": {
                 "summary": "Download a full SQLite database backup",
