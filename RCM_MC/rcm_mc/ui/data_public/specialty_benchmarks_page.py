@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_bar_row, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_illustrative_note
+from rcm_mc.ui.data_public._benchmark_panels import mips_quality_panel
 
 
 def _econ_chart(items) -> str:
@@ -207,6 +208,9 @@ def render_specialty_benchmarks(params: dict = None) -> str:
     a_tbl = _anc_table(r.ancillary)
     q_tbl = _quality_table(r.quality)
     s_tbl = _staffing_table(r.staffing)
+    # Real CMS MIPS physician-quality distribution — a LIVE public-data anchor
+    # alongside the illustrative comp/quality benchmarks above.
+    mips_panel = mips_quality_panel(P)
 
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
@@ -233,6 +237,7 @@ def render_specialty_benchmarks(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">New Patient Acquisition Benchmarks</div>{n_tbl}</div>
   <div style="{cell}"><div style="{h3}">Ancillary Revenue Opportunities</div>{a_tbl}</div>
   <div style="{cell}"><div style="{h3}">Clinical Quality Benchmarks</div>{q_tbl}</div>
+  {mips_panel}
   <div style="{cell}"><div style="{h3}">Staffing Ratios & Labor Benchmarks</div>{s_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Specialty Library Summary:</strong> {r.total_specialties} specialty benchmarks cover physician services, medical specialties, surgical specialties, hospital-based, and procedural categories.
