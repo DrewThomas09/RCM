@@ -1508,6 +1508,16 @@ def _render_rcm_profile(packet: DealAnalysisPacket) -> str:
                     f'title="Ridge penalty tuned per-cohort via RidgeCV LOO — see methodology doc">'
                     f'α={cohort_alpha:.2f}</span>'
                 )
+            # Advisory: the prediction's target was strictly positive and
+            # right-skewed, so a log/Box-Cox transform would likely improve the
+            # fit. Model-quality guidance only — does not change the value.
+            if getattr(pm, "log_transform_suggested", False):
+                alpha_html += (
+                    f'<span class="ck-cohort-alpha" style="margin-left:4px;" '
+                    f'title="Target is right-skewed and strictly positive — a log/Box-Cox '
+                    f'transform would likely stabilize variance and improve the fit. '
+                    f'Model-quality advisory; the predicted value is unchanged.">log?</span>'
+                )
             # Prompt 27: inline trend arrow + sparkline for metrics
             # with uploaded history.
             forecast = (packet.metric_forecasts or {}).get(metric_key)
@@ -2947,6 +2957,7 @@ def _build_explain_data(packet: DealAnalysisPacket) -> str:
             # apply its own chip / styling. Mirrors the DOM-chip
             # treatment on the workbench HTML render.
             "failure_reason": pm.failure_reason,
+            "log_transform_suggested": getattr(pm, "log_transform_suggested", False),
         }
     return _json.dumps(data, default=str)
 
