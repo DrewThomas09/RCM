@@ -24,7 +24,8 @@ from ..diligence.counterfactual import (
 from ..diligence._pages import AVAILABLE_FIXTURES, _resolve_dataset
 from ._chartis_kit import (
     P, chartis_shell, ck_action_button, ck_fmt_num, ck_kpi_block,
-    ck_next_section, ck_page_title, ck_provenance_tooltip, ck_page_explainer)
+    ck_next_section, ck_page_title, ck_provenance_tooltip, ck_page_explainer,
+    ck_source_purpose)
 from .power_ui import diff_badge
 
 _EXPLAINER_CSS = """
@@ -412,6 +413,13 @@ def _render_comparison(
         "Compare",
         eyebrow="RCM DILIGENCE",
         meta=f"{left['name']} vs {right['name']} · side-by-side",
+    ) + ck_source_purpose(
+        purpose="Compare two candidates side-by-side on the same RCM/financial metrics to support a relative pick.",
+        universe="illustrative",
+        confidence="derived",
+        source="Built from the selected demo fixtures (sample deals) — methodology, not your live deals. Compare your own targets by ingesting them first.",
+        next_action="Take the comparison into the IC packet",
+        next_href="/diligence/ic-packet",
     )
     next_up = ck_next_section(
         "Take this comparison into the IC packet",
