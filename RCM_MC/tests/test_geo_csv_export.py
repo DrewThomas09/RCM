@@ -27,7 +27,7 @@ class GeoCsvDataFrameTests(unittest.TestCase):
         self.assertEqual(list(df.columns)[:2], ["Metric", "Source"])
         self.assertIn("CA", df.columns)
         self.assertIn("TX", df.columns)
-        self.assertEqual(len(df), 17)  # 17 metrics
+        self.assertEqual(len(df), 18)  # 18 metrics
         # CA population cell is a real number, not a formatted string
         pop = df.loc[df["Metric"] == "Population", "CA"].iloc[0]
         self.assertIsInstance(pop, (int, float))
@@ -49,7 +49,7 @@ class GeoCsvDataFrameTests(unittest.TestCase):
         df = profile_dataframe("CA")
         self.assertEqual(list(df.columns),
                          ["Metric", "Value", "VsUSMedianPct", "NationalRank", "Of", "Source"])
-        self.assertEqual(len(df), 17)
+        self.assertEqual(len(df), 18)
         pop_rank = df.loc[df["Metric"] == "Population", "NationalRank"].iloc[0]
         self.assertEqual(pop_rank, 1)
 
