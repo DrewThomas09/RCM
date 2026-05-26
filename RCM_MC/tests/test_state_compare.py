@@ -62,6 +62,15 @@ class StateCompareTests(unittest.TestCase):
         h = render_state_compare({"states": ["CA,TX,FL"]})
         self.assertIn("U.S. median", h)
 
+    def test_page_highlights_best_and_worst(self):
+        from rcm_mc.ui._chartis_kit import P
+        h = render_state_compare({"states": ["CA,TX,FL"]})
+        # directional best/worst tints are applied + explained in the legend
+        self.assertIn(P["positive"], h)
+        self.assertIn(P["warning"], h)
+        self.assertIn("best", h)
+        self.assertIn("weakest", h)
+
     def test_surface_is_green(self):
         self.assertEqual(classify_surface("/state-compare")["tier"], "green")
 

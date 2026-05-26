@@ -179,8 +179,10 @@ def national_medians() -> Dict[str, float]:
 def render_state_compare(params: Dict = None) -> str:
     states = _parse_states(params)
     data = {s: _collect(s) for s in states}
+    raws = {s: _raw(s) for s in states}
     meds = national_medians()
     border = P["border"]; tp = P["text"]; td = P["text_dim"]; fa = P.get("text_faint", td); ac = P["accent"]
+    pos_c = P["positive"]; warn_c = P["warning"]
 
     inp = (f'background:{P["panel_alt"]};color:{tp};border:1px solid {border};'
            f'padding:6px 8px;font-family:JetBrains Mono,monospace;font-size:12px;border-radius:2px')
@@ -204,13 +206,31 @@ def render_state_compare(params: Dict = None) -> str:
            f'border-left:1px solid {border};font-size:10px;color:{td};text-transform:uppercase;'
            f'letter-spacing:0.06em">U.S. median</th>')
     rows = ""
-    for i, (key, metric, _src, _f, _h) in enumerate(_METRICS):
+    for i, (key, metric, _src, _f, higher) in enumerate(_METRICS):
         bg = P["panel_alt"] if i % 2 else P["panel"]
         cells = (f'<td style="padding:5px 10px;font-size:11px;color:{td};background:{bg}">{_html.escape(metric)}</td>')
+        # direction-aware best/worst across the selected states (only when the
+        # metric has a good/bad direction and there's a real spread to call)
+        present = [(s, raws[s][key]) for s in states
+                   if raws[s].get(key) is not None and raws[s][key] == raws[s][key]]
+        best_s = worst_s = None
+        if higher is not None and len(present) >= 2:
+            vals = [v for _, v in present]
+            if max(vals) != min(vals):
+                best_v = max(vals) if higher else min(vals)
+                worst_v = min(vals) if higher else max(vals)
+                best_s = next(s for s, v in present if v == best_v)
+                worst_s = next(s for s, v in present if v == worst_v)
         for s in states:
             v = data[s].get(metric, "—")
+            col = tp; weight = "normal"
+            if s == best_s:
+                col = pos_c; weight = "600"
+            elif s == worst_s:
+                col = warn_c
             cells += (f'<td style="padding:5px 10px;text-align:right;font-family:JetBrains Mono,monospace;'
-                      f'font-size:12px;font-variant-numeric:tabular-nums;color:{tp};background:{bg}">{_html.escape(str(v))}</td>')
+                      f'font-size:12px;font-variant-numeric:tabular-nums;color:{col};font-weight:{weight};'
+                      f'background:{bg}">{_html.escape(str(v))}</td>')
         med_str = _fmt(key, meds.get(key))
         cells += (f'<td style="padding:5px 10px;text-align:right;font-family:JetBrains Mono,monospace;'
                   f'font-size:12px;font-variant-numeric:tabular-nums;color:{td};background:{bg};'
@@ -222,7 +242,10 @@ def render_state_compare(params: Dict = None) -> str:
   {ck_page_title("State Comparison", eyebrow="MARKET INTEL", meta="Side-by-side across every real state-keyed public dataset — CMS · CDC · HRSA · Census")}
   <p style="font-size:13px;color:{td};max-width:72ch;margin:0 0 14px">
     Compare states across PEdesk's real public-data layers, with a trailing
-    U.S.-median column for national context. Every figure is sourced
+    U.S.-median column for national context. Per metric, the
+    <b style="color:{pos_c}">best</b> selected state is highlighted and the
+    <b style="color:{warn_c}">weakest</b> tinted (directional metrics only).
+    Every figure is sourced
     (CMS provider supply / CHOW / MA · CDC PLACES · CMS HCAHPS · Census/ACS · HRSA HPSA);
     nothing is fabricated, and states without data on record show &ldquo;&mdash;&rdquo;.
   </p>
