@@ -3595,6 +3595,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "state-peers",   "title": "Similar States · states most like a chosen state (real data)", "route": "/state-peers"},
     {"id": "county-explorer","title": "County Explorer · drill into a state's counties (real ACS data)", "route": "/county-explorer"},
     {"id": "geo-metrics",   "title": "Geo Metrics & Sources · what every geo metric measures + coverage", "route": "/geo-metrics"},
+    {"id": "metro-markets", "title": "Metro Markets · real CBSA/metro demographics (Census ACS)", "route": "/metro-markets"},
     {"id": "ingest",        "title": "Ingestion",          "route": "/diligence/ingest"},
     {"id": "benchmarks",    "title": "Benchmarks",         "route": "/diligence/benchmarks"},
     {"id": "cms-xray",      "title": "CMS X-Ray · Provider scanner", "route": "/diligence/xray"},
@@ -6779,7 +6780,7 @@ _SUB_SECTION_MAP = {
     "/geo-intel": "source", "/state-compare": "source",
     "/state-rankings": "source", "/state-profile": "source",
     "/state-peers": "source", "/county-explorer": "source",
-    "/geo-metrics": "source",
+    "/geo-metrics": "source", "/metro-markets": "source",
     # Pipeline = real deal-workflow surfaces only.
     "/pipeline": "pipeline", "/new-deal": "pipeline", "/deal-pipeline": "pipeline",
     "/deal-quality": "pipeline", "/deal-risk-scores": "pipeline",

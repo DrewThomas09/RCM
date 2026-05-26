@@ -30,6 +30,9 @@ _CARDS = [
     ("County Explorer", "/county-explorer",
      "Drill into a state's counties on real Census/ACS demographics, sortable.",
      "Best for: sub-state targeting — which counties carry the market?"),
+    ("Metro Markets", "/metro-markets",
+     "Rank U.S. metro/micro areas (CBSAs) on real demographics rolled up from counties.",
+     "Best for: metro-level market sizing — the standard healthcare market unit."),
 ]
 
 _DATASETS = [
