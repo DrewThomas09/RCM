@@ -25,7 +25,7 @@ from ..diligence.bear_case import (
 )
 from ._chartis_kit import (
     P, chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
-    ck_section_intro, ck_signal_badge,
+    ck_section_intro, ck_signal_badge, ck_source_purpose,
 )
 from .power_ui import (
     benchmark_chip, bookmark_hint, deal_context_bar,
@@ -520,6 +520,13 @@ def _render_bear_case_no_ccd(
         _scoped_styles()
         + '<div class="bc-wrap">'
         + deal_context_bar(qs, active_surface="bear")
+        + ck_source_purpose(
+            purpose="Auto-assemble the downside / bear-case risk thesis from the deal's evidence so IC sees the strongest objections before committing.",
+            universe="mixed",
+            source="Standalone evidence extractors (regulatory, covenant, bridge, HCRIS) on the supplied deal inputs; supply a dataset fixture for the full pipeline. Verify against the target's own data before IC.",
+            next_action="Carry the critical risks into the IC packet",
+            next_href="/diligence/ic-packet",
+        )
         + hero
         + (
             f'<div class="bc-section-label">Evidence</div>'
@@ -785,6 +792,14 @@ def render_bear_case_page(
             _scoped_styles()
             + '<div class="bc-wrap">'
             + deal_context_bar(qs, active_surface="bear")
+            + ck_source_purpose(
+                purpose="Auto-assemble the downside / bear-case risk thesis from the deal's evidence so IC sees the strongest objections before committing.",
+                universe="illustrative",
+                confidence="mixed",
+                source=f"Evidence generated from the selected '{_html.escape(dataset)}' fixture pipeline + real public extractors (HCRIS, regulatory); fixture figures are illustrative — re-run against the target's own data before IC.",
+                next_action="Carry the critical risks into the IC packet",
+                next_href="/diligence/ic-packet",
+            )
             + print_cta
             + hero
             + evidence_panel
