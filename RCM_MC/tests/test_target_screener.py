@@ -102,8 +102,8 @@ class WorkbenchShellTests(unittest.TestCase):
 
     def test_unbuilt_screens_are_labeled_scaffolds_not_fake(self):
         # Honest: not-yet-wired screens declare themselves, never fake data.
-        # (compare→PR5, missed→PR6 are now built; inspector/columns/saved remain.)
-        for view in ("inspector", "columns", "saved"):
+        # (compare/missed/columns now built; inspector/saved remain.)
+        for view in ("inspector", "saved"):
             self.assertIn("Scaffold", self._render(view=view), view)
 
 
@@ -282,6 +282,36 @@ class WorkbenchJustMissedTests(unittest.TestCase):
         h = self._render(view="missed", vertical="irf", min_quality="50")
         self.assertIn('method="get"', h)
         self.assertIn('name="min_quality"', h)
+
+
+class WorkbenchColumnsTests(unittest.TestCase):
+    """PR 7 — column picker / metric dictionary: grouped, sourced, live
+    availability counts."""
+
+    def _render(self, **params):
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        return render_target_screener({k: [v] for k, v in params.items()})
+
+    def test_columns_grouped_with_source_and_availability(self):
+        h = self._render(view="columns", vertical="snf")
+        for cat in ("Identity", "Geography", "Ownership", "Quality", "Source"):
+            self.assertIn(cat, h, cat)
+        self.assertIn("Availability", h)
+
+    def test_availability_is_real_fraction(self):
+        # Availability cells read "<count>/<total> (NN%)" from the universe.
+        import re
+        h = self._render(view="columns", vertical="dialysis")
+        self.assertRegex(h, r"\d[\d,]*/\d[\d,]*\s*\(\d+%\)")
+
+    def test_additional_quality_columns_listed(self):
+        from rcm_mc.ui.target_screener_page import _quality_keys
+        self.assertGreater(len(_quality_keys("snf")), 3)
+        self.assertIn("Additional", self._render(view="columns", vertical="snf"))
+
+    def test_columns_safe_unknown_vertical(self):
+        h = self._render(view="columns", vertical="nope")
+        self.assertIn("<!doctype html>", h.lower())  # falls back to hospitals
 
 
 class NavAndRouteTests(unittest.TestCase):

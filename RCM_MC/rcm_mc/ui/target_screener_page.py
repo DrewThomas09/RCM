@@ -600,15 +600,91 @@ def _screen_inspector(qs, ck) -> str:
     ])
 
 
+def _quality_keys(vertical: str) -> List[str]:
+    """The real extra quality-metric columns the vertical's loader exposes."""
+    cfg = _VERTICAL_TABLE.get(vertical)
+    if not cfg or not cfg.get("qf"):
+        return []
+    try:
+        import importlib
+        mod = importlib.import_module(f"..data.{cfg['mod']}", __package__)
+        q = getattr(mod, cfg["qf"])()
+        return list(next(iter(q.values())).keys()) if q else []
+    except Exception:  # noqa: BLE001
+        return []
+
+
 def _screen_columns(qs, ck) -> str:
-    return _scaffold("Column picker + metric dictionary", "PR 7", [
-        "Columns grouped by category: identity, geography, quality, "
-        "financial/HCRIS, payer/reimbursement, market intelligence, "
-        "ownership/consolidation, SDOH/access, source/provenance.",
-        "Per-metric description, source, and data-availability count.",
-        "Visibility toggles persisted via query params.",
-        "A metric with no source is never displayed.",
-    ])
+    import html as _h
+    vertical = _q1(qs, "vertical", "hospitals") or "hospitals"
+    if vertical not in _VERTICAL_KEYS:
+        vertical = "hospitals"
+    vinfo = next((v for v in _VERTICALS if v["key"] == vertical), _VERTICALS[0])
+    rows = _vertical_rows(vertical, limit=None)
+    n = len(rows) or 1
+    src = vinfo["universe"]
+
+    def _avail(field) -> str:
+        c = sum(1 for r in rows if r.get(field) not in (None, "", "—"))
+        pct = 100.0 * c / n
+        return f'{c:,}/{len(rows):,} ({pct:.0f}%)'
+
+    size_label = (rows[0].get("size_label") if rows and rows[0].get("size_label") else None)
+    q_label = (rows[0]["q_label"] if rows else "Quality")
+    # The columns the Main table currently surfaces, grouped by category, each
+    # with its real source + a live availability count over the full universe.
+    cols = [
+        ("Provider name", "Identity", "name", src),
+        ("CCN", "Identity", "ccn", src),
+        ("City", "Geography", "city", src),
+        ("State", "Geography", "state", src),
+        ("Ownership", "Ownership / consolidation", "ownership", src),
+    ]
+    if size_label:
+        cols.append((size_label, "Size / operational", "size", src))
+    cols.append((q_label, "Quality", "q", f"{src} quality"))
+    cols.append(("Source", "Source / provenance", "source", "PEdesk provenance"))
+
+    # Group rows by category.
+    from collections import OrderedDict
+    groups: "OrderedDict[str, list]" = OrderedDict()
+    for label, cat, field, source in cols:
+        groups.setdefault(cat, []).append((label, field, source))
+
+    body = []
+    for cat, items in groups.items():
+        trs = "".join(
+            f'<tr style="border-bottom:1px solid var(--sc-rule,#e4ddca);">'
+            f'<td style="padding:5px 8px;font-weight:600;">{_h.escape(label)}</td>'
+            f'<td style="padding:5px 8px;font-family:var(--sc-mono);font-size:10px;color:var(--sc-text-dim,#6a7480);">{_h.escape(source)}</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;">{_avail(field)}</td></tr>'
+            for label, field, source in items
+        )
+        body.append(
+            f'<h3 style="font-family:var(--sc-serif);font-size:15px;margin:14px 0 4px;color:var(--sc-navy,#15202b);">{_h.escape(cat)}</h3>'
+            '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;">'
+            '<thead><tr style="text-align:left;border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
+            '<th style="padding:6px 8px;">Column</th><th style="padding:6px 8px;">Source</th>'
+            '<th style="padding:6px 8px;text-align:right;">Availability</th></tr></thead>'
+            f'<tbody>{trs}</tbody></table></div>'
+        )
+
+    extra_q = [k for k in _quality_keys(vertical) if k != _VERTICAL_TABLE.get(vertical, {}).get("q", ("",))[0]]
+    extra = ""
+    if extra_q:
+        chips = " · ".join(_h.escape(k) for k in extra_q[:18])
+        extra = (f'<h3 style="font-family:var(--sc-serif);font-size:15px;margin:14px 0 4px;color:var(--sc-navy,#15202b);">'
+                 f'Additional {vinfo["label"]} quality columns available</h3>'
+                 f'<p class="ck-section-body" style="margin:0;">From {src}, not yet surfaced in the '
+                 f'table (real, available to add): <span style="font-family:var(--sc-mono);font-size:11px;">{chips}</span>.</p>')
+
+    return (
+        f'<p class="ck-section-body" style="margin:0 0 8px;">Columns for the '
+        f'<strong>{vinfo["label"]}</strong> universe ({src}), grouped by category '
+        f'with real source + availability across {len(rows):,} providers. A column '
+        f'with no source is never shown; "{q_label}" availability reflects how many '
+        f'providers actually report it.</p>' + "".join(body) + extra
+    )
 
 
 def _screen_compare(qs, ck) -> str:
