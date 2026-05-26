@@ -28,8 +28,10 @@ def _field(
     pattern: str = "",
     min_: str = "",
     max_: str = "",
+    value: str = "",
 ) -> str:
     req = " required" if required else ""
+    val = f' value="{html.escape(value)}"' if value else ""
     req_mark = ' <span style="color:var(--cad-amber);">*</span>' if required else ""
     ml = f' maxlength="{maxlength}"' if maxlength else ""
     st = f' step="{step}"' if step else ""
@@ -48,14 +50,24 @@ def _field(
         f'<div class="cad-field">'
         f'<label>{html.escape(label)}{req_mark}</label>'
         f'<input class="cad-input" type="{type_}" name="{name}" '
-        f'placeholder="{html.escape(placeholder)}"{req}{st}{ml}{pat}{mn}{mx}>'
+        f'placeholder="{html.escape(placeholder)}"{val}{req}{st}{ml}{pat}{mn}{mx}>'
         f'{hint_html}'
         f'</div>'
     )
 
 
-def render_quick_import(success_msg: str = "", error_msg: str = "") -> str:
-    """Render the quick import form page."""
+def render_quick_import(success_msg: str = "", error_msg: str = "",
+                        prefill: "dict | None" = None) -> str:
+    """Render the quick import form page.
+
+    ``prefill`` (e.g. from the Target Screener's "Promote to Pipeline" link)
+    pre-populates deal_id / name / state so a screened provider becomes a deal
+    in one step — completing the Source → Pipeline workflow.
+    """
+    prefill = prefill or {}
+
+    def _pf(key: str) -> str:
+        return str(prefill.get(key, "") or "")
 
     alert = ""
     if success_msg:
@@ -95,6 +107,7 @@ def render_quick_import(success_msg: str = "", error_msg: str = "") -> str:
             pattern="[a-z0-9_-]+",
             hint="Lowercase, digits, _ or - only. Becomes part of the URL.",
             maxlength="64",
+            value=_pf("deal_id"),
         )
         + _field(
             "name", "Hospital Name",
@@ -102,6 +115,7 @@ def render_quick_import(success_msg: str = "", error_msg: str = "") -> str:
             required=True,
             hint="Free text — appears in headlines and IC memo.",
             maxlength="200",
+            value=_pf("name"),
         )
         + '</div>'
     )
@@ -164,7 +178,7 @@ def render_quick_import(success_msg: str = "", error_msg: str = "") -> str:
         f'<div class="cad-form-row" style="margin-bottom:18px;">'
         + _field("net_revenue", "Net Revenue ($)", placeholder="386,000,000", type_="text")
         + _field("bed_count", "Bed Count", placeholder="332", type_="number", step="1")
-        + _field("state", "State", placeholder="AL", maxlength="2")
+        + _field("state", "State", placeholder="AL", maxlength="2", value=_pf("state"))
         + '</div>'
     )
 

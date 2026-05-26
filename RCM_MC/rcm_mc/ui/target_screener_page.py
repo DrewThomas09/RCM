@@ -23,6 +23,7 @@ active target universe — only ever a labeled benchmark/research reference.
 from __future__ import annotations
 
 from typing import Dict, List, Optional
+from urllib.parse import quote as _uq
 
 # ── Six workbench screens (the view= states) ─────────────────────────────
 # group: "states" (01-03 workbench states) | "linked" (04-06 linked screens).
@@ -902,7 +903,11 @@ def _screen_inspector(qs, ck) -> str:
         + (f'<a class="ck-link" href="/diligence/hcris-xray?ccn={_h.escape(ccn)}">HCRIS X-Ray →</a><br>' if vertical == "hospitals" else "")
         + f'<a class="ck-link" href="/state-profile?state={state}">{state} market context →</a><br>'
         f'<a class="ck-link" href="/target-screener?view=compare&compare={_h.escape(ccn)}">Add to Compare →</a><br>'
-        f'<a class="ck-link" href="/pipeline">Promote to Pipeline →</a>',
+        + (lambda slug, nm: (
+            f'<a class="ck-link" href="/import?deal_id={_uq(slug)}&name={_uq(r["name"])}'
+            f'{("&state=" + _uq(state)) if state else ""}">Promote to Pipeline '
+            f'(prefilled deal) →</a>')
+           )(f"{vertical}_{ccn}".lower().replace(" ", "_"), r["name"]),
         title="Open next")
     qs_list = "".join(f'<li>{_h.escape(q)}</li>' for q in _guide_questions())
     guide = ck["panel"](
