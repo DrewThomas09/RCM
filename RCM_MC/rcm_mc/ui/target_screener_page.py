@@ -141,14 +141,18 @@ _CSS = """
 # Map layers. ``provider_count`` is always real (derived from the active
 # vertical's loader). Demographic/market layers link out to the geo-intel
 # surfaces that own that real data rather than fabricating a shade here.
+# ``geo`` maps the layer to a real ACS/CMS state metric (_MARKET_METRICS key)
+# so the provider map can shade by real market demographics. Layers without a
+# real per-state source stay as honest links out (no fabricated shade).
 _LAYERS = [
     {"key": "provider_count", "label": "Provider count", "live": True},
-    {"key": "age65", "label": "Age 65+", "live": False, "href": "/geo-intel"},
-    {"key": "income", "label": "Median HH income", "live": False, "href": "/geo-intel"},
-    {"key": "uninsured", "label": "Uninsured %", "live": False, "href": "/geo-intel"},
+    {"key": "age65", "label": "Age 65+", "live": True, "geo": "age_65_plus"},
+    {"key": "income", "label": "Median HH income", "live": True, "geo": "median_income"},
+    {"key": "uninsured", "label": "Uninsured %", "live": True, "geo": "uninsured_acs"},
     {"key": "ma_penetration", "label": "MA penetration", "live": False, "href": "/geo-intel"},
     {"key": "market_score", "label": "Market opportunity", "live": False, "href": "/market-intel/geo"},
 ]
+_LAYER_BY_KEY = {ly["key"]: ly for ly in _LAYERS}
 
 
 # Per-vertical table config: provider name attr, optional size metric, and
@@ -428,26 +432,48 @@ def _render_map(vertical: str, qs: Dict[str, List[str]]) -> str:
     from .us_geo_map import render_us_geo_map
     vinfo = next((v for v in _VERTICALS if v["key"] == vertical), _VERTICALS[0])
     sel = _q1(qs, "state").upper()
+    layer_key = _q1(qs, "layer", "provider_count") or "provider_count"
+    ly = _LAYER_BY_KEY.get(layer_key)
     counts = _provider_counts_by_state(vertical)
     total = sum(counts.values())
     n_states = len(counts)
-    map_html = render_us_geo_map(
-        {k: float(v) for k, v in counts.items()},
-        metric_label=f"{vinfo['label']} providers",
-        value_format=lambda v: f"{int(v):,}",
-        selected_state=sel or None,
-        map_title=f"{vinfo['label']} provider density ({vinfo['universe']})",
-        exposure_label=f"{vinfo['label']} provider count (low&nbsp;→&nbsp;high)",
-        caveat_text=(
-            f"Real CMS provider counts by state for the {vinfo['label']} "
-            f"universe ({vinfo['universe']}). Click a state to filter the "
-            "screen to it. Approximate Albers-projection SVG, not a precise "
-            "facility-location map."),
-        empty_message=(
-            f"No state-level {vinfo['label']} provider counts available from "
-            "the loader right now. Pick another vertical, or open the table "
-            "(PR 4) once the loader is wired for this universe."),
-    )
+    if ly and ly.get("geo"):
+        # Shade by a REAL market-demographic layer (ACS/CMS) overlaid on the
+        # provider screen; the table below still lists providers.
+        vals, mlabel, fmt, src = _geo_state_values("market", ly["geo"])
+        map_html = render_us_geo_map(
+            vals, metric_label=mlabel, value_format=fmt, selected_state=sel or None,
+            map_title=f"{vinfo['label']} screen · {mlabel} market layer",
+            exposure_label=f"{mlabel} (low&nbsp;→&nbsp;high)",
+            caveat_text=(
+                f"Real {src} — state-level {mlabel}, overlaid as market context on "
+                f"the {vinfo['label']} screen. Click a state to filter providers; "
+                f"the table below still lists {vinfo['label']} providers."),
+            empty_message=f"No state-level {mlabel} available right now.")
+        summary = (f'<p class="ck-section-body" style="margin:0 0 6px;">Map layer: '
+                   f'<strong>{mlabel}</strong> (real {src}) as market context over '
+                   f'the {vinfo["label"]} screen. The provider table below is '
+                   f'unchanged — {total:,} providers across {n_states} states.</p>')
+    else:
+        map_html = render_us_geo_map(
+            {k: float(v) for k, v in counts.items()},
+            metric_label=f"{vinfo['label']} providers",
+            value_format=lambda v: f"{int(v):,}",
+            selected_state=sel or None,
+            map_title=f"{vinfo['label']} provider density ({vinfo['universe']})",
+            exposure_label=f"{vinfo['label']} provider count (low&nbsp;→&nbsp;high)",
+            caveat_text=(
+                f"Real CMS provider counts by state for the {vinfo['label']} "
+                f"universe ({vinfo['universe']}). Click a state to filter the "
+                "screen to it. Approximate Albers-projection SVG, not a precise "
+                "facility-location map."),
+            empty_message=(
+                f"No state-level {vinfo['label']} provider counts available from "
+                "the loader right now. Pick another vertical."),
+        )
+        summary = (f'<p class="ck-section-body" style="margin:0 0 6px;">'
+                   f'{total:,} {vinfo["label"]} providers across {n_states} states '
+                   f'(real {vinfo["universe"]} counts).</p>' if counts else "")
     # Click a state → server round-trip adding state= (server owns filter truth).
     listener = (
         "<script>(function(){document.addEventListener('us-map-select',"
@@ -460,13 +486,8 @@ def _render_map(vertical: str, qs: Dict[str, List[str]]) -> str:
         clear = _vhref(vertical, {})
         filt = (f'<p class="ck-section-body" style="margin:8px 0 0;">Filtered to '
                 f'<strong>{sel}</strong> · <a class="ck-link" href="{clear}">clear '
-                f'state filter</a>. <span style="opacity:.7">Table filter applies '
-                f'in PR 4.</span></p>')
-    summary = (f'<p class="ck-section-body" style="margin:0 0 6px;">'
-               f'{total:,} {vinfo["label"]} providers across {n_states} states '
-               f'(real {vinfo["universe"]} counts).</p>' if counts else "")
-    return (_layer_bar(_q1(qs, "layer", "provider_count") or "provider_count", qs)
-            + summary + map_html + listener + filt)
+                f'state filter</a>.</span></p>')
+    return (_layer_bar(layer_key, qs) + summary + map_html + listener + filt)
 
 
 def _fmt_q(row: Dict) -> str:
