@@ -3202,6 +3202,19 @@ class RCMHandler(BaseHTTPRequestHandler):
             qs = urllib.parse.parse_qs(parsed.query)
             ds = (qs.get("dataset") or [""])[0]
             return self._send_html(render_benchmarks_page(dataset=ds))
+        if path == "/diligence/cliff-calendar":
+            # Brings the dark pe_intelligence cliff-calendar module to life:
+            # which 2026-2029 Medicare/340B rate events hit a subsector's hold
+            # window. Curated partner-judgment magnitudes (labeled illustrative).
+            from .ui.cliff_calendar_page import render_cliff_calendar_page
+            qs = urllib.parse.parse_qs(parsed.query)
+            sub = (qs.get("subsector") or [""])[0]
+            hstart = self._clamp_int((qs.get("hold_start") or [""])[0],
+                                     default=2026, min_v=2026, max_v=2035)
+            hyears = self._clamp_int((qs.get("hold_years") or [""])[0],
+                                     default=5, min_v=1, max_v=10)
+            return self._send_html(render_cliff_calendar_page(
+                subsector=sub, hold_start=hstart, hold_years=hyears))
         if path == "/diligence/root-cause":
             from .diligence._pages import render_root_cause_page
             qs = urllib.parse.parse_qs(parsed.query)

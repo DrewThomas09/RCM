@@ -90,6 +90,7 @@ _NAVY = frozenset({
     "/fraud-detection",
     "/lbo-stress", "/scenario-mc", "/scenarios", "/diligence/deal-mc",
     "/diligence/covenant-stress", "/diligence/bridge-audit", "/ebitda-bridge/",
+    "/diligence/cliff-calendar",
     "/multiple-decomp", "/rollup-economics", "/cap-structure", "/entry-multiple",
     "/exit-multiple", "/exit-readiness", "/exit-timing", "/diligence/exit-timing",
     "/value-creation", "/value-creation-plan", "/diligence/value",
