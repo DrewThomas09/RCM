@@ -3592,6 +3592,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "state-compare", "title": "State Comparison · compare states across real public data", "route": "/state-compare"},
     {"id": "state-rankings","title": "State Rankings · rank all states on one real metric", "route": "/state-rankings"},
     {"id": "state-profile", "title": "State Profile · one state's metrics + national ranks", "route": "/state-profile"},
+    {"id": "state-peers",   "title": "Similar States · states most like a chosen state (real data)", "route": "/state-peers"},
     {"id": "ingest",        "title": "Ingestion",          "route": "/diligence/ingest"},
     {"id": "benchmarks",    "title": "Benchmarks",         "route": "/diligence/benchmarks"},
     {"id": "cms-xray",      "title": "CMS X-Ray · Provider scanner", "route": "/diligence/xray"},
@@ -6775,6 +6776,7 @@ _SUB_SECTION_MAP = {
     # Geographic Intelligence trio — real-data origination screening.
     "/geo-intel": "source", "/state-compare": "source",
     "/state-rankings": "source", "/state-profile": "source",
+    "/state-peers": "source",
     # Pipeline = real deal-workflow surfaces only.
     "/pipeline": "pipeline", "/new-deal": "pipeline", "/deal-pipeline": "pipeline",
     "/deal-quality": "pipeline", "/deal-risk-scores": "pipeline",

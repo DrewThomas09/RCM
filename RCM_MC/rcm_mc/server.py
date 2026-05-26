@@ -4528,6 +4528,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/geo-intel":
             from .ui.data_public.geo_intel_page import render_geo_intel
             return self._send_html(render_geo_intel())
+        if path == "/state-peers":
+            from .ui.data_public.state_peers_page import render_state_peers
+            _spe_qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            return self._send_html(render_state_peers(_spe_qs))
         if path == "/state-compare.csv":
             from .ui.data_public.state_compare_page import _parse_states, compare_dataframe
             _q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)

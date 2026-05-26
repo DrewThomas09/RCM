@@ -10,10 +10,11 @@ from rcm_mc.ui.data_public.geo_intel_page import render_geo_intel
 
 
 class GeoIntelHubTests(unittest.TestCase):
-    def test_hub_links_all_three_modes(self):
+    def test_hub_links_all_modes(self):
         h = render_geo_intel()
         self.assertIn("Geographic Intelligence", h)
-        for route in ("/state-compare", "/state-rankings", "/state-profile"):
+        for route in ("/state-compare", "/state-rankings", "/state-profile",
+                      "/state-peers"):
             self.assertIn(route, h)
 
     def test_hub_is_green(self):
