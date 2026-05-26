@@ -4197,7 +4197,12 @@ _CSS_INLINE_FALLBACK = """
      wrap/clip). No `overflow` here — the mega-menu panels must be free to
      escape the bar — so the responsive padding steps below keep the links
      fitting at common laptop window widths. */
-  .ck-nav { display:flex; flex-wrap:nowrap; gap:0; flex:1 1 auto; min-width:0; }
+  /* flex:0 1 auto (NOT 1 1 auto): the nav must size to its content, never
+     force-grow to fill the row. Force-growing consumed all free space, which
+     defeated `margin-left:auto` on the right zone and let the last nav item
+     ("Portfolio") butt up against / overlap the mode chip ("PE PARTNER").
+     Content-sized + a non-shrinking right zone keeps a real gap between them. */
+  .ck-nav { display:flex; flex-wrap:nowrap; gap:0; flex:0 1 auto; min-width:0; }
   .ck-nav a { font-family:var(--sc-serif,'Source Serif 4',Georgia,serif);
     font-size:17px; font-weight:400; letter-spacing:0; text-transform:none;
     color:var(--tb-ink2); padding:0 18px; line-height:76px; white-space:nowrap;
@@ -4326,7 +4331,8 @@ _CSS_INLINE_FALLBACK = """
     border-left:2px solid transparent; }
   .ck-nav-menu .ck-subnav-link:hover { color:var(--tb-green);
     background:var(--tb-paper2); border-bottom:0; border-left-color:var(--tb-green); }
-  .ck-topbar-right { margin-left:auto; display:flex; align-items:center; gap:14px;
+  .ck-topbar-right { margin-left:auto; flex:0 0 auto; display:flex;
+    align-items:center; gap:14px;
     padding-left:24px; border-left:1px solid var(--tb-rule); }
   /* Workspace-mode chip — green (partner) / amber (consulting) underline. */
   .ck-mode-chip { font-family:var(--sc-mono,'JetBrains Mono',monospace); font-size:10px;
@@ -4337,12 +4343,17 @@ _CSS_INLINE_FALLBACK = """
   .ck-mode-chip:hover { color:var(--tb-ink); }
   .ck-mode-chip[data-mode="consulting"] { border-bottom-color:var(--tb-amber); }
   .ck-mode-chip[data-mode="consulting"]:hover { color:var(--tb-ink); }
-  @media (max-width:900px){ .ck-mode-chip { display:none; } }
+  /* The mode chip is redundant with the user dropdown, so it's the first thing
+     to shed when the row gets crowded — hiding it by 1360px keeps the 7 nav
+     items from colliding with the right zone on common laptops. */
+  @media (max-width:1360px){ .ck-mode-chip { display:none; } }
   .ck-search-form { margin:0; position:relative; display:flex; align-items:center; }
   .ck-search { border:1px solid var(--tb-ink); padding:7px 44px 7px 12px; font-size:14px;
     width:220px; border-radius:2px; background:var(--tb-paper2);
     font-family:var(--sc-serif,'Source Serif 4',Georgia,serif); font-style:italic;
     color:var(--tb-ink); letter-spacing:0; }
+  /* Shrink the search field before it crowds the nav into the right zone. */
+  @media (max-width:1480px){ .ck-search { width:150px; } }
   .ck-search::placeholder { color:var(--tb-muted); font-style:italic; }
   .ck-search:focus { outline:none; border-color:var(--tb-green); box-shadow:0 0 0 3px rgba(31,122,90,.12); }
   .ck-search-kbd { position:absolute; right:8px; font-family:var(--sc-mono,'JetBrains Mono',monospace);
@@ -6979,9 +6990,7 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
             f'<a href="/best/{_esc(sect)}" class="ck-mega-item ck-mega-more" '
             f'role="menuitem"><span class="ck-mega-idx">→</span>'
             f'<span class="ck-mega-it-body"><span class="ck-mega-it-label">'
-            f'More — all {_esc(_nav_label(item["label"]))}, ranked</span>'
-            f'<span class="ck-mega-it-desc">The best surfaces for this section, '
-            f'scored by usefulness + depth.</span></span></a>'
+            f'All {_esc(_nav_label(item["label"]))} tools</span></span></a>'
         )
         # Featured left panel — the "what is this section" card.
         feat = _SECTION_FEATURE.get(sect, {})
