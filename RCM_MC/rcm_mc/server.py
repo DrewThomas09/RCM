@@ -4532,6 +4532,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.data_public.state_peers_page import render_state_peers
             _spe_qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             return self._send_html(render_state_peers(_spe_qs))
+        if path == "/county-explorer":
+            from .ui.data_public.county_explorer_page import render_county_explorer
+            _cx_qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            return self._send_html(render_county_explorer(_cx_qs))
         if path == "/state-compare.csv":
             from .ui.data_public.state_compare_page import _parse_states, compare_dataframe
             _q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
@@ -4553,6 +4557,12 @@ class RCMHandler(BaseHTTPRequestHandler):
             _q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             _st = _pps(_q)
             return self._send_csv_df(peers_dataframe(_st), f"state-peers-{_st}.csv")
+        if path == "/county-explorer.csv":
+            from .ui.data_public.county_explorer_page import (
+                _parse_sort as _cxsort, _parse_state as _cxst, county_dataframe)
+            _q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            _st = _cxst(_q)
+            return self._send_csv_df(county_dataframe(_st, _cxsort(_q)), f"county-explorer-{_st}.csv")
         if path == "/predictive-screener":
             return self._route_predictive_screener()
         if path.startswith("/data-room/") and not path.endswith("/add"):

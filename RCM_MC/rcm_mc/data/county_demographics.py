@@ -56,6 +56,17 @@ def demographics_county(fips: str) -> Dict[str, Any]:
     return rows.iloc[0].to_dict() if len(rows) else {}
 
 
+def counties_for_state(state: str) -> List[Dict[str, Any]]:
+    """All counties on record for a state (real ACS/CHR rows), newest-largest
+    not implied — caller sorts. Empty list if the state has no rows."""
+    df = _county()
+    if not len(df) or not state:
+        return []
+    s = str(state).strip().upper()
+    rows = df[df["state"] == s]
+    return rows.to_dict("records") if len(rows) else []
+
+
 def measure_labels() -> Dict[str, str]:
     return {
         "population": "Population",
