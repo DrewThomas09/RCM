@@ -4525,6 +4525,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.data_public.state_profile_page import render_state_profile
             _sp_qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             return self._send_html(render_state_profile(_sp_qs))
+        if path == "/geo-intel":
+            from .ui.data_public.geo_intel_page import render_geo_intel
+            return self._send_html(render_geo_intel())
         if path == "/predictive-screener":
             return self._route_predictive_screener()
         if path.startswith("/data-room/") and not path.endswith("/add"):
