@@ -16,10 +16,25 @@ import pandas as pd
 from rcm_mc.finance.regression import (
     compute_vif,
     condition_number,
+    f_pvalue,
     multicollinearity_verdict,
     prune_collinear,
     run_regression,
 )
+
+
+class FPValueTests(unittest.TestCase):
+    def test_known_critical_values(self):
+        # F at the 5% critical value should return p ~ 0.05.
+        self.assertAlmostEqual(f_pvalue(4.96, 1, 10), 0.05, places=2)
+        self.assertAlmostEqual(f_pvalue(1.0, 10, 10), 0.5, places=2)
+
+    def test_large_f_is_tiny_p(self):
+        self.assertLess(f_pvalue(1000.0, 7, 200), 1e-20)
+
+    def test_degenerate_is_one(self):
+        self.assertEqual(f_pvalue(0.0, 5, 30), 1.0)
+        self.assertEqual(f_pvalue(-1.0, 5, 30), 1.0)
 
 
 def _frames(seed: int = 0):
@@ -125,6 +140,29 @@ class PageBannerTests(unittest.TestCase):
         self.assertIn("Severe multicollinearity", html)
         self.assertIn("Optimized feature set", html)
         self.assertIn("Condition #", html)
+        # The optimized set is one click away.
+        self.assertIn("optimized=1", html)
+        self.assertIn("Apply the optimized model", html)
+
+    def test_optimized_toggle_refits_and_offers_full(self):
+        from tests.test_regression_page_phase2 import _synthetic_hcris
+        import rcm_mc.ui.regression_page as rp
+        df = _synthetic_hcris(150).copy()
+        df["bed_days_available"] = df["beds"] * 250.0
+        df["total_patient_days"] = df["beds"] * 200.0 + \
+            np.random.default_rng(1).normal(scale=5, size=len(df))
+        feats = ["beds", "bed_days_available", "total_patient_days"]
+        html = rp.render_regression_page(
+            hcris_df=df, features=feats, optimized=True)
+        # Applied state: confirms the de-collinearized fit + a way back.
+        self.assertIn("Optimized model applied", html)
+        self.assertIn("View the full", html)
+
+    def test_f_pvalue_shown(self):
+        from tests.test_regression_page_phase2 import _synthetic_hcris
+        import rcm_mc.ui.regression_page as rp
+        html = rp.render_regression_page(hcris_df=_synthetic_hcris(80))
+        self.assertRegex(html, r"p (&lt;|=) ")
 
 
 if __name__ == "__main__":

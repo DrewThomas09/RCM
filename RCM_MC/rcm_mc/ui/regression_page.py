@@ -395,8 +395,10 @@ def _run_ols(
         # VIF
         vifs = _compute_vif(X_norm, available)
 
-        # F-statistic
+        # F-statistic + its upper-tail p-value (joint significance).
         f_stat = ((ss_tot - ss_res) / p) / (ss_res / (n - p - 1)) if p > 0 and n > p + 1 and ss_res > 0 else 0
+        from ..finance.regression import f_pvalue as _f_pvalue
+        f_pval = _f_pvalue(f_stat, p, n - p - 1)
 
         # Residual analysis — top outliers
         std_resid = resid / rmse if rmse > 0 else resid
@@ -528,6 +530,7 @@ def _run_ols(
             "n": n,
             "p": p,
             "f_stat": f_stat,
+            "f_pvalue": f_pval,
             "rmse": rmse,
             "intercept": intercept_raw,
             "intercept_se": intercept_se,
@@ -591,6 +594,7 @@ def render_regression_page(
     cluster: bool = False,
     cluster_k: int = 6,
     buyability: bool = False,
+    optimized: bool = False,
 ) -> str:
     """Render the interactive regression analysis page.
 
@@ -851,6 +855,20 @@ def render_regression_page(
         )
         return chartis_shell(body, "Regression Analysis", subtitle="Insufficient data")
 
+    # Optimized mode: refit on the VIF-pruned feature set so the partner gets a
+    # model with interpretable coefficients instead of the collinear one. The
+    # verdict banner links here when collinearity is real; we keep the original
+    # drop list around so the banner can say what was removed.
+    optimized_applied = False
+    _orig_dropped = list(result.get("optimized_dropped") or [])
+    if optimized and _orig_dropped:
+        opt_feats = result.get("optimized_features") or features
+        if len(opt_feats) >= 1:
+            opt_result = _run_ols(df, target, opt_feats, log_target=log_target)
+            if opt_result is not None:
+                result = opt_result
+                optimized_applied = True
+
     # ── Editorial intro + KPI strip ──
     intro = ck_section_intro(
         eyebrow=f"REGRESSION · {_html.escape(target.replace('_', ' ').upper())}",
@@ -895,14 +913,20 @@ def render_regression_page(
         + ck_kpi_block("Features", f"{result['p']}")
         + ck_kpi_block(
             "F-Statistic", f"{min(result['f_stat'], 9999):.1f}",
+            sub=(
+                "p &lt; 0.001" if result.get("f_pvalue", 1.0) < 0.001
+                else f"p = {result.get('f_pvalue', 1.0):.3f}"
+            ),
             help={
                 "definition": (
                     "Joint significance of all features taken "
                     "together vs the null model (intercept only). "
                     "Higher F means the regression as a whole is "
-                    "statistically meaningful. Compare to the F "
-                    "p-value below — F is the test statistic, the "
-                    "p-value is the verdict."
+                    "statistically meaningful. The p-value is the "
+                    "verdict — but note a tiny p next to a high F with "
+                    "few individually-significant coefficients is the "
+                    "classic multicollinearity signature (see the "
+                    "verdict banner)."
                 ),
             },
         )
@@ -948,17 +972,46 @@ def render_regression_page(
     _sev_label = {"severe": "Severe multicollinearity",
                   "moderate": "Moderate multicollinearity",
                   "low": "Low multicollinearity"}.get(_sev, "Multicollinearity")
-    _opt = result.get("optimized_features") or []
-    _dropped = result.get("optimized_dropped") or []
-    if _dropped:
+    # Self-referential link that toggles ?optimized, preserving the other
+    # controls so a partner can flip between the full and the de-collinearized
+    # model without losing their target / universe / log selection.
+    def _toggle_url(opt_on: bool) -> str:
+        parts = [f"source={_html.escape(data_source, quote=True)}",
+                 f"target={_html.escape(target, quote=True)}",
+                 f"universe={_html.escape(universe, quote=True)}"]
+        if log_target:
+            parts.append("log=1")
+        if segmented:
+            parts.append("segmented=1")
+        if drop_leakage:
+            parts.append("drop_leakage=1")
+        if cv:
+            parts.append("cv=1")
+        if opt_on:
+            parts.append("optimized=1")
+        return "/portfolio/regression?" + "&amp;".join(parts)
+
+    if optimized_applied:
+        _dn = ", ".join(_html.escape(d["feature"].replace("_", " "))
+                        for d in _orig_dropped)
+        _opt_html = (
+            f'<div style="margin-top:8px;font-size:12.5px;line-height:1.55;'
+            f'color:var(--sc-text,#1a2332);">&#10003; <b>Optimized model '
+            f'applied</b> — dropped <b>{_dn}</b>; the coefficients below are '
+            f'from the VIF-pruned fit. '
+            f'<a href="{_toggle_url(False)}" style="color:var(--sc-teal,#155752);">'
+            f'View the full (collinear) model &rarr;</a></div>')
+    elif _orig_dropped:
         _drop_names = ", ".join(
-            _html.escape(d["feature"].replace("_", " ")) for d in _dropped)
+            _html.escape(d["feature"].replace("_", " ")) for d in _orig_dropped)
+        _opt = result.get("optimized_features") or []
         _opt_html = (
             f'<div style="margin-top:8px;font-size:12.5px;line-height:1.55;'
             f'color:var(--sc-text,#1a2332);"><b>Optimized feature set</b> '
             f'(VIF-pruned to &le;10): drop <b>{_drop_names}</b> &rarr; '
-            f'{len(_opt)} stable predictors with interpretable coefficients.'
-            f'</div>')
+            f'{len(_opt)} stable predictors with interpretable coefficients. '
+            f'<a href="{_toggle_url(True)}" style="color:var(--sc-teal,#155752);'
+            f'font-weight:600;">Apply the optimized model &rarr;</a></div>')
     else:
         _opt_html = (
             '<div style="margin-top:8px;font-size:12.5px;color:'

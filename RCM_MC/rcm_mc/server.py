@@ -7744,6 +7744,11 @@ class RCMHandler(BaseHTTPRequestHandler):
         buyability = (
             (qs.get("buyability") or ["0"])[0] in ("1", "true", "on")
         )
+        # Optimized lens: refit on the VIF-pruned feature set so collinear
+        # designs surface an interpretable model, not just a warning.
+        optimized = (
+            (qs.get("optimized") or ["0"])[0] in ("1", "true", "on")
+        )
         hcris_df = _get_latest_per_ccn()
         store = PortfolioStore(self.config.db_path)
         try:
@@ -7761,6 +7766,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             cluster=cluster,
             cluster_k=cluster_k,
             buyability=buyability,
+            optimized=optimized,
         ))
 
     def _route_hospital_regression(self, ccn: str) -> None:
