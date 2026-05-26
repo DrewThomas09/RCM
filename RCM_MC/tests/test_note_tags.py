@@ -153,9 +153,14 @@ class TestNoteTagsHttp(unittest.TestCase):
                     body = r.read().decode()
                     # Body text: the word "notes" follows the highlighted match
                     # for the n1 note. The n2 note body ("covenant chat")
-                    # must not appear since its tag is absent.
+                    # must not appear since its tag is absent. Match the
+                    # rendered note-body cell precisely (" chat</div>",
+                    # mirroring the n1 " notes</div>" assertion) rather than the
+                    # bare word "chat": the shell Guide drawer's Ollama JS
+                    # legitimately contains "chat_model", so a bare substring
+                    # check yields a false positive unrelated to note filtering.
                     self.assertIn(" notes</div>", body)
-                    self.assertNotIn("chat", body)
+                    self.assertNotIn(" chat</div>", body)
                     # Pill rendered
                     self.assertIn(">board_meeting<", body)
             finally:
