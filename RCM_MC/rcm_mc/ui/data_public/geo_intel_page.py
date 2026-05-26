@@ -76,5 +76,9 @@ def render_geo_intel(params=None) -> str:
   </div>
   <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{td};text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Powered by these real datasets</div>
   <div>{chips}</div>
+  <p style="font-size:11px;color:{td};margin-top:14px">
+    See exactly what each metric measures, its source and coverage on
+    <a href="/geo-metrics" style="color:{ac};text-decoration:none">Metrics &amp; Sources &rarr;</a>
+  </p>
 </div>"""
     return chartis_shell(body, "Geographic Intelligence", active_nav="/geo-intel")
