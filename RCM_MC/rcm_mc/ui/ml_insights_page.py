@@ -269,7 +269,9 @@ _ML_CHART_CSS = """
 
 def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str:
     """Render the ML Insights page — national view or hospital-specific."""
-    from ..ml.hospital_clustering import cluster_hospitals
+    from ..ml.hospital_clustering import (
+        cluster_hospitals, overall_silhouette, silhouette_quality_label,
+    )
     from ..ml.distress_predictor import screen_distressed, train_distress_model
 
     # Train models
@@ -397,16 +399,30 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
             f'<p style="font-size:11.5px;color:var(--cad-text2);margin:0 0 6px;line-height:1.5;">'
             f'{_html.escape(cp.pe_relevance)}</p>'
             f'<div style="font-size:10.5px;color:var(--cad-text3);">Representative: {_html.escape(top_names)}</div>'
+            f'<div style="font-size:10.5px;color:var(--cad-text3);margin-top:4px;">'
+            f'Cluster separation (silhouette): <strong>{cp.silhouette:.2f}</strong> '
+            f'· {_html.escape(silhouette_quality_label(cp.silhouette))}</div>'
             f'</div>'
         )
 
+    overall_sil = overall_silhouette(cluster_profiles)
+    sil_note = (
+        f'<p style="font-size:11px;color:var(--cad-text3);margin:0 0 12px;line-height:1.5;">'
+        f'Cluster quality &mdash; overall silhouette <strong>{overall_sil:.2f}</strong> '
+        f'({_html.escape(silhouette_quality_label(overall_sil))}). '
+        f'Simplified (centroid-based) silhouette in [-1, 1]; higher means the '
+        f'archetypes are more cleanly separated. Lower values mean the boundaries '
+        f'are soft &mdash; read the archetypes as indicative groupings, not hard categories.</p>'
+        if cluster_profiles else ""
+    )
     cluster_section = (
         f'<div class="cad-card">'
         f'<h2>Hospital Archetypes (K-Means Clustering)</h2>'
-        f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:12px;">'
+        f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:6px;">'
         f'Unsupervised clustering of {n_hospitals:,} US hospitals into {n_clusters} investable archetypes '
         f'based on size, revenue, margins, payer mix, and occupancy. Each cluster has a distinct '
         f'risk/return profile for PE evaluation.</p>'
+        f'{sil_note}'
         f'{cluster_cards}</div>'
     )
 

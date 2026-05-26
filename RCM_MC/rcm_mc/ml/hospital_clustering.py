@@ -52,6 +52,12 @@ class ClusterProfile:
     percentiles: Dict[str, Dict[str, float]]
     top_hospitals: List[Dict[str, Any]]
     pe_relevance: str
+    #: Mean simplified-silhouette of this cluster's members in [-1, 1]
+    #: (higher = better separated). Defaulted so the field is additive /
+    #: non-breaking. An honest cluster-quality signal: low values mean the
+    #: archetype boundary is soft and the grouping should be read as
+    #: indicative, not definitive — see ``_simplified_silhouette``.
+    silhouette: float = 0.0
 
 
 @dataclass
@@ -91,6 +97,33 @@ def _kmeans(X: np.ndarray, k: int, max_iter: int = 100, seed: int = 42) -> Tuple
     dists = np.linalg.norm(X[:, None, :] - centroids[None, :, :], axis=2)
     labels = np.argmin(dists, axis=1)
     return labels, centroids
+
+
+def _simplified_silhouette(
+    X_norm: np.ndarray, centroids_norm: np.ndarray, labels: np.ndarray,
+) -> np.ndarray:
+    """Per-point *simplified* (centroid-based) silhouette coefficient.
+
+    Standard silhouette is O(n²·d) — prohibitive for the full HCRIS panel.
+    The simplified silhouette (Vendramin, Campello & Hruschka 2010) swaps
+    per-point cohesion/separation for distance to the OWN vs the NEAREST
+    OTHER centroid: ``s_i = (b_i - a_i) / max(a_i, b_i)`` where ``a_i`` is
+    the distance to point i's own centroid and ``b_i`` the distance to the
+    nearest other centroid. Cost is O(n·k·d) — the same order as the
+    k-means assignment step. Range [-1, 1]; higher = better separated.
+    Returns 0 for degenerate rows (a_i == b_i == 0).
+    """
+    if len(labels) == 0 or centroids_norm.shape[0] < 2:
+        return np.zeros(len(labels))
+    # n×k distance from every point to every centroid.
+    D = np.linalg.norm(X_norm[:, None, :] - centroids_norm[None, :, :], axis=2)
+    rows = np.arange(len(labels))
+    a = D[rows, labels]                      # distance to own centroid
+    D_other = D.copy()
+    D_other[rows, labels] = np.inf           # mask own centroid
+    b = D_other.min(axis=1)                  # nearest other centroid
+    denom = np.maximum(a, b)
+    return np.where(denom > 1e-12, (b - a) / denom, 0.0)
 
 
 def _assign_archetype(centroid: Dict[str, float], cluster_stats: Dict) -> Tuple[str, str, str, str]:
@@ -165,6 +198,8 @@ def cluster_hospitals(
     clean["cluster_id"] = labels
     dists = np.linalg.norm(X_norm - centroids_norm[labels], axis=1)
     clean["distance_to_centroid"] = dists
+    # Honest cluster-quality signal (per-point simplified silhouette).
+    clean["_silhouette"] = _simplified_silhouette(X_norm, centroids_norm, labels)
 
     df["cluster_id"] = np.nan
     df.loc[clean.index, "cluster_id"] = clean["cluster_id"]
@@ -193,6 +228,9 @@ def cluster_hospitals(
 
         label, archetype, desc, pe_rel = _assign_archetype(centroid_dict, stats)
 
+        sil_vals = cluster_df["_silhouette"].dropna()
+        cluster_silhouette = float(sil_vals.mean()) if len(sil_vals) else 0.0
+
         top = cluster_df.nsmallest(5, "distance_to_centroid")
         top_list = []
         for _, row in top.iterrows():
@@ -209,10 +247,35 @@ def cluster_hospitals(
             description=desc, n_hospitals=n,
             centroid=centroid_dict, percentiles=stats,
             top_hospitals=top_list, pe_relevance=pe_rel,
+            silhouette=cluster_silhouette,
         ))
 
     profiles.sort(key=lambda p: -p.n_hospitals)
     return df, profiles
+
+
+def overall_silhouette(profiles: List[ClusterProfile]) -> float:
+    """Size-weighted mean silhouette across clusters — one honest number
+    for how well-separated the whole k-means solution is. Returns 0.0 when
+    there are no sized clusters."""
+    total = sum(p.n_hospitals for p in profiles)
+    if total <= 0:
+        return 0.0
+    return sum(p.silhouette * p.n_hospitals for p in profiles) / total
+
+
+def silhouette_quality_label(score: float) -> str:
+    """Plain-language reading of a (simplified) silhouette score. Bands
+    follow the conventional Kaufman & Rousseeuw (1990) interpretation,
+    kept deliberately conservative so a soft grouping is never oversold as
+    a clean one."""
+    if score >= 0.50:
+        return "strong separation"
+    if score >= 0.25:
+        return "moderate separation"
+    if score >= 0.10:
+        return "weak separation"
+    return "overlapping — read archetypes as indicative, not definitive"
 
 
 def get_hospital_cluster(
