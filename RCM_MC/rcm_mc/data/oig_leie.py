@@ -26,6 +26,19 @@ def top_states(limit: int = 8) -> List[Dict[str, Any]]:
     return (leie_summary().get("by_state") or [])[:limit]
 
 
+def exclusions_for_state(state: str) -> int:
+    """Count of OIG LEIE excluded individuals/entities on record for a state.
+    A real provider-integrity signal; a raw count (population-confounded), so
+    read alongside state size. 0 if the state is absent — never fabricated."""
+    if not state:
+        return 0
+    s = str(state).strip().upper()
+    for row in (leie_summary().get("by_state") or []):
+        if (row.get("state") or "").upper() == s:
+            return int(row.get("count") or 0)
+    return 0
+
+
 def by_exclusion_type(limit: int = 8) -> List[Dict[str, Any]]:
     return (leie_summary().get("by_exclusion_type") or [])[:limit]
 

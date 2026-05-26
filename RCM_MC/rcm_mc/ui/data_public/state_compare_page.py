@@ -104,6 +104,11 @@ def _raw(state: str) -> Dict[str, float]:
         _set("mssp_acos", lambda: _aco.acos_for_state(state) or None)
     except Exception:
         pass
+    try:
+        from rcm_mc.data import oig_leie as _leie
+        _set("oig_exclusions", lambda: _leie.exclusions_for_state(state) or None)
+    except Exception:
+        pass
     return out
 
 
@@ -126,6 +131,7 @@ _METRICS = [
     ("hcahps_recommend", "Would recommend (HCAHPS)",      "CMS HCAHPS",  lambda x: f"{x:.0f}%",       True),
     ("hcahps_overall",   "Overall 9–10 (HCAHPS)",         "CMS HCAHPS",  lambda x: f"{x:.0f}%",       True),
     ("mssp_acos",        "MSSP ACOs (CMS)",               "CMS MSSP",    lambda x: f"{int(x):,}",     True),
+    ("oig_exclusions",   "OIG exclusions (count)",        "OIG LEIE",    lambda x: f"{int(x):,}",     None),
 ]
 _METRIC_BY_KEY = {m[0]: m for m in _METRICS}
 _ROW_ORDER = [m[1] for m in _METRICS]

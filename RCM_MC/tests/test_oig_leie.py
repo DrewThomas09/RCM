@@ -27,6 +27,14 @@ class OigLeieTests(unittest.TestCase):
         self.assertTrue(rows)
         self.assertEqual(rows[0]["source_id"], "oig_leie")
 
+    def test_exclusions_for_state(self):
+        # real per-state counts from the by_state summary; large states lead
+        ca = l.exclusions_for_state("CA")
+        self.assertGreater(ca, 0)
+        self.assertGreaterEqual(ca, l.exclusions_for_state("WY"))
+        self.assertEqual(l.exclusions_for_state("ZZ"), 0)  # absent → 0, not faked
+        self.assertEqual(l.exclusions_for_state(""), 0)
+
 
 if __name__ == "__main__":
     unittest.main()
