@@ -588,16 +588,87 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
     )
 
 
+def _median(vals):
+    vals = sorted(v for v in vals if isinstance(v, (int, float)))
+    if not vals:
+        return None
+    m = len(vals) // 2
+    return vals[m] if len(vals) % 2 else (vals[m - 1] + vals[m]) / 2.0
+
+
+def _guide_questions() -> List[str]:
+    try:
+        from ..assistant.context.suggested_questions import get_suggested_questions_for_page
+        from ..assistant.context.manual_page_contexts import MANUAL_PAGE_CONTEXTS
+        return get_suggested_questions_for_page(MANUAL_PAGE_CONTEXTS.get("/target-screener"))[:6]
+    except Exception:  # noqa: BLE001
+        return ["What does this page do?", "What data powers this result?"]
+
+
 def _screen_inspector(qs, ck) -> str:
+    import html as _h
     ccn = _q1(qs, "ccn")
-    sel = (f' for <code>{ccn}</code>' if ccn else " — no target selected "
-           "(open a row from Main)")
-    return _scaffold(f"Inspector drawer{sel}", "PR 8", [
-        "Selected provider/market identity + source/status chips.",
-        "Key metrics, market context, peer context, data caveats.",
-        "Links: provider profile, HCRIS / CMS X-Ray, market profile.",
-        "Guide suggested questions. No fabricated notes.",
-    ])
+    if not ccn:
+        return _scaffold("Inspector — no target selected", "now", [
+            "Open a row from Main (“Inspect”) or pass ?view=inspector&ccn=…&vertical=…",
+            "Shows identity, source, key metrics, peer + market context, "
+            "caveats, X-Ray / market links, and Guide questions — all real.",
+        ])
+    r = _find_provider(ccn)
+    if not r:
+        return (f'<p class="ck-section-body">CCN <code>{_h.escape(ccn)}</code> did '
+                'not resolve to any live provider universe. Check the ID or pick '
+                'a row from Main.</p>')
+    vertical = r["vertical"]
+    vinfo = next((v for v in _VERTICALS if v["key"] == vertical), _VERTICALS[0])
+    state = r["state"]
+    peers = _vertical_rows(vertical, state, limit=None)
+    qvals = [p["q"] for p in peers if isinstance(p.get("q"), (int, float))]
+    med = _median(qvals)
+    rank_txt = "—"
+    if isinstance(r.get("q"), (int, float)) and qvals:
+        better = sum(1 for v in qvals if v <= r["q"])
+        rank_txt = f"{100.0 * better / len(qvals):.0f}th percentile of {len(qvals)} {state} peers"
+    q_label = r["q_label"]
+
+    def _kv(label, val):
+        return (f'<div style="display:flex;justify-content:space-between;gap:14px;'
+                f'padding:5px 0;border-bottom:1px solid var(--sc-rule,#e4ddca);">'
+                f'<span style="color:var(--sc-text-dim,#6a7480);">{label}</span>'
+                f'<span style="font-weight:600;font-variant-numeric:tabular-nums;">{val}</span></div>')
+
+    qcur = _fmt_q(r)
+    qmed = (f"{med:.1%}" if (med is not None and r.get("q_pct")) else (f"{med:g}" if med is not None else "—"))
+    identity = ck["panel"](
+        f'<div style="font-family:var(--sc-serif);font-size:20px;color:var(--sc-navy,#15202b);">'
+        f'{_h.escape(r["name"])}</div>'
+        f'<div style="font-family:var(--sc-mono);font-size:10px;color:var(--sc-text-faint,#8b94a0);'
+        f'margin-bottom:8px;">{_h.escape(ccn)} · {_h.escape(vertical)} · {_h.escape(vinfo["universe"])}</div>'
+        + _kv("Location", _h.escape(", ".join([p for p in (r["city"], state) if p]) or "—"))
+        + _kv("Ownership", _h.escape(str(r["ownership"])))
+        + _kv(r.get("size_label") or "Size", f'{int(r["size"]):,}' if r.get("size") is not None else "—")
+        + _kv(f"{q_label}", qcur)
+        + _kv(f"{q_label} — {state} median", qmed)
+        + _kv("Peer rank", rank_txt)
+        + _kv("Source", f'<span style="font-family:var(--sc-mono);font-size:10px;">{_h.escape(r["source"])}</span>'),
+        title="Selected target")
+    links = ck["panel"](
+        f'<a class="ck-link" href="/diligence/xray?ccn={_h.escape(ccn)}&vertical={vertical}">CMS X-Ray (full diligence) →</a><br>'
+        + (f'<a class="ck-link" href="/diligence/hcris-xray?ccn={_h.escape(ccn)}">HCRIS X-Ray →</a><br>' if vertical == "hospitals" else "")
+        + f'<a class="ck-link" href="/geo-intel?state={state}">{state} market context →</a><br>'
+        f'<a class="ck-link" href="/target-screener?view=compare&compare={_h.escape(ccn)}">Add to Compare →</a><br>'
+        f'<a class="ck-link" href="/pipeline">Promote to Pipeline →</a>',
+        title="Open next")
+    qs_list = "".join(f'<li>{_h.escape(q)}</li>' for q in _guide_questions())
+    guide = ck["panel"](
+        '<p class="ck-section-body" style="margin:0 0 6px;">Ask the Guide (drawer, top-right):</p>'
+        f'<ul style="margin:0 0 0 18px;font-family:var(--sc-serif);font-size:13px;line-height:1.6;">{qs_list}</ul>',
+        title="Guide")
+    caveat = ('<p class="ck-section-body" style="font-style:italic;">Real CMS '
+              f'{vinfo["universe"]} data; "—" = not reported. Peer rank is within '
+              f'{state} for this vertical only — not a cross-vertical or investment '
+              'judgment. No notes are fabricated.</p>')
+    return identity + links + guide + caveat
 
 
 def _quality_keys(vertical: str) -> List[str]:

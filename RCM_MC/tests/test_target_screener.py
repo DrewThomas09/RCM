@@ -102,9 +102,10 @@ class WorkbenchShellTests(unittest.TestCase):
 
     def test_unbuilt_screens_are_labeled_scaffolds_not_fake(self):
         # Honest: not-yet-wired screens declare themselves, never fake data.
-        # (compare/missed/columns now built; inspector/saved remain.)
-        for view in ("inspector", "saved"):
-            self.assertIn("Scaffold", self._render(view=view), view)
+        # (compare/missed/columns/inspector built; saved remains; the empty
+        # inspector still labels itself a scaffold until a CCN is selected.)
+        self.assertIn("Scaffold", self._render(view="saved"))
+        self.assertIn("Scaffold", self._render(view="inspector"))
 
 
 class WorkbenchMapTests(unittest.TestCase):
@@ -312,6 +313,46 @@ class WorkbenchColumnsTests(unittest.TestCase):
     def test_columns_safe_unknown_vertical(self):
         h = self._render(view="columns", vertical="nope")
         self.assertIn("<!doctype html>", h.lower())  # falls back to hospitals
+
+
+class WorkbenchInspectorTests(unittest.TestCase):
+    """PR 8 — inspector drawer: real identity, peer/market context, links, Guide."""
+
+    def _render(self, **params):
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        return render_target_screener({k: [v] for k, v in params.items()})
+
+    def _ccn(self, vertical):
+        from rcm_mc.ui.target_screener_page import _vertical_rows
+        return _vertical_rows(vertical)[0]["ccn"]
+
+    def test_no_ccn_prompts(self):
+        self.assertIn("no target selected", self._render(view="inspector").lower())
+
+    def test_bad_ccn_reported(self):
+        self.assertIn("did not resolve", self._render(view="inspector", ccn="ZZZZZZ"))
+
+    def test_selected_target_shows_identity_and_peer_context(self):
+        h = self._render(view="inspector", ccn=self._ccn("snf"))
+        self.assertIn("Selected target", h)
+        self.assertIn("Peer rank", h)
+        self.assertIn("median", h.lower())
+
+    def test_inspector_links_to_xray_and_pipeline(self):
+        h = self._render(view="inspector", ccn=self._ccn("dialysis"))
+        self.assertIn("/diligence/xray?ccn=", h)
+        self.assertIn("Promote to Pipeline", h)
+        self.assertIn("market context", h.lower())
+
+    def test_inspector_has_guide_questions(self):
+        h = self._render(view="inspector", ccn=self._ccn("hospice"))
+        self.assertIn("Ask the Guide", h)
+
+    def test_median_helper(self):
+        from rcm_mc.ui.target_screener_page import _median
+        self.assertEqual(_median([1, 2, 3]), 2)
+        self.assertEqual(_median([1, 2, 3, 4]), 2.5)
+        self.assertIsNone(_median([None, "x"]))
 
 
 class NavAndRouteTests(unittest.TestCase):
