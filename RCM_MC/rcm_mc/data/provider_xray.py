@@ -185,11 +185,30 @@ def resolve_provider_xray(identifier: str, state: Optional[str] = None):
     return Ambiguous(matches=matches)
 
 
+# Caller-vertical aliases → canonical resolver sector ids. The Target Screener
+# (and other callers) pass loader-style keys (home_health, snf, irf, ltch,
+# hospitals); the resolver's sector ids are hyphenated CMS-compare names. Map
+# them so ?vertical= from those surfaces resolves a real report instead of
+# falling back to the search page.
+_VERTICAL_ALIASES = {
+    "hospitals": "hospital",
+    "home_health": "home-health", "homehealth": "home-health", "hha": "home-health",
+    "snf": "nursing-homes", "nursing": "nursing-homes", "nursing_homes": "nursing-homes",
+    "irf": "inpatient-rehab", "inpatient_rehab": "inpatient-rehab",
+    "ltch": "long-term-care-hospital", "long_term_care_hospital": "long-term-care-hospital",
+}
+
+
 def provider_match_by_ccn(ccn: str, vertical: str) -> Optional[ProviderMatch]:
     """Direct lookup for a specific (ccn, vertical) — used by the report route
-    once the vertical is known (e.g. from ?vertical=). None if not found."""
+    once the vertical is known (e.g. from ?vertical=). None if not found.
+
+    Accepts caller-vertical aliases (e.g. ``home_health`` → ``home-health``,
+    ``snf`` → ``nursing-homes``, ``hospitals`` → ``hospital``) so screener-style
+    keys resolve."""
     ident = _s(ccn)
     vid = _s(vertical)
+    vid = _VERTICAL_ALIASES.get(vid, vid)
     if vid == "hospital":
         for row in _hospital_rows():
             if _s(row.get("ccn")) == ident:
