@@ -34,7 +34,7 @@ from ..diligence.deal_autopsy.library import outcomes_summary
 from ..diligence.deal_autopsy.matcher import FEATURE_LABELS
 from ._chartis_kit import (
     P, chartis_shell, ck_action_button, ck_next_section, ck_page_title,
-    ck_panel, ck_section_header, ck_page_explainer)
+    ck_panel, ck_section_header, ck_page_explainer, ck_source_purpose)
 from .power_ui import provenance, sortable_table
 
 _EXPLAINER_CSS = """
@@ -855,6 +855,14 @@ def render_deal_autopsy_page(
     body = (
         _scoped_styles()
         + '<div class="da-wrap">'
+        + ck_source_purpose(
+            purpose="Pattern-match this target against historical deal outcomes to surface the failure modes and early-warning signs most associated with similar deals.",
+            universe="corpus",
+            confidence="illustrative",
+            source="Matched against the bundled deal-outcome library (an illustrative seed corpus, not your live deals or a verified benchmark set). Read the matches as pattern hypotheses, not predictions.",
+            next_action="Log the early-warning signs in the Risk Workbench",
+            next_href="/diligence/risk-workbench",
+        )
         + _summary_hero(target, matches, dataset_label)
         + _target_signature_panel(
             target, heading=heading, dataset_label=dataset_label,
