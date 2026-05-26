@@ -50,6 +50,30 @@ def mssp_summary() -> Dict[str, Any]:
     }
 
 
+@functools.lru_cache(maxsize=None)
+def _acos_by_state() -> Dict[str, int]:
+    """Distinct MSSP ACOs operating in each state, parsed from each ACO's
+    comma-separated ``service_area`` (an ACO can span several states). A
+    Value-Based-Care penetration signal — real CMS MSSP data."""
+    df = load_mssp_aco()
+    counts: Dict[str, set] = {}
+    if not len(df):
+        return {}
+    for aco_id, area in zip(df["aco_id"], df["service_area"].fillna("")):
+        for tok in str(area).split(","):
+            st = tok.strip().upper()
+            if len(st) == 2 and st.isalpha():
+                counts.setdefault(st, set()).add(aco_id)
+    return {st: len(ids) for st, ids in counts.items()}
+
+
+def acos_for_state(state: str) -> int:
+    """Count of distinct MSSP ACOs whose service area includes the state."""
+    if not state:
+        return 0
+    return _acos_by_state().get(str(state).strip().upper(), 0)
+
+
 def mssp_track_breakdown() -> List[Dict[str, Any]]:
     """ACO counts by risk track (ENHANCED vs BASIC level), deduped to ACO."""
     df = load_mssp_aco()

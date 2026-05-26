@@ -37,6 +37,16 @@ class TestMsspLoader(unittest.TestCase):
     def test_registry(self):
         self.assertTrue(m.mssp_sources())
 
+    def test_acos_for_state(self):
+        # real per-state ACO counts parsed from service_area; large states lead
+        ca = m.acos_for_state("CA")
+        wy = m.acos_for_state("WY")
+        self.assertGreater(ca, wy)
+        self.assertGreater(ca, 0)
+        # sum of distinct-per-state counts >= the 511 distinct ACOs (multi-state)
+        self.assertEqual(m.acos_for_state("ZZ"), 0)  # unknown → 0, never fabricated
+        self.assertEqual(m.acos_for_state(""), 0)
+
 
 class TestCmsApmMsspSection(unittest.TestCase):
     def test_live_section_and_caveat(self):

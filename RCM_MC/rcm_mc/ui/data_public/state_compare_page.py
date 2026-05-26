@@ -99,6 +99,11 @@ def _raw(state: str) -> Dict[str, float]:
         _set("hpsa_pc", lambda: hp.get("designated_pc_hpsas"))
     except Exception:
         pass
+    try:
+        from rcm_mc.data import mssp_aco_data as _aco
+        _set("mssp_acos", lambda: _aco.acos_for_state(state) or None)
+    except Exception:
+        pass
     return out
 
 
@@ -120,6 +125,7 @@ _METRICS = [
     ("obesity",          "Obesity (PLACES)",              "CDC PLACES",  lambda x: f"{x:.1f}%",       False),
     ("hcahps_recommend", "Would recommend (HCAHPS)",      "CMS HCAHPS",  lambda x: f"{x:.0f}%",       True),
     ("hcahps_overall",   "Overall 9–10 (HCAHPS)",         "CMS HCAHPS",  lambda x: f"{x:.0f}%",       True),
+    ("mssp_acos",        "MSSP ACOs (CMS)",               "CMS MSSP",    lambda x: f"{int(x):,}",     True),
 ]
 _METRIC_BY_KEY = {m[0]: m for m in _METRICS}
 _ROW_ORDER = [m[1] for m in _METRICS]
@@ -256,7 +262,7 @@ def render_state_compare(params: Dict = None) -> str:
   <p style="font-size:10px;color:{fa};margin-top:10px">
     Sources: CMS FFS provider enrollment · CMS SNF CHOW · CMS MA geographic enrollment ·
     CDC PLACES (model-based, full-population) · CMS HCAHPS (state) · Census/ACS via County
-    Health Rankings · HRSA HPSA. Area-level — combine with deal-specific data before a decision.
+    Health Rankings · HRSA HPSA · CMS MSSP ACOs. Area-level — combine with deal-specific data before a decision.
   </p>
 </div>"""
     return chartis_shell(body, "State Comparison", active_nav="/state-compare")
