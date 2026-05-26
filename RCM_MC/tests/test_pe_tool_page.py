@@ -89,6 +89,27 @@ class MarkdownTests(unittest.TestCase):
     def test_escapes_html(self):
         self.assertIn("&lt;script&gt;", _md_to_html("<script>"))
 
+    def test_blockquote_hr_ordered_not_literal(self):
+        # Regression: these constructs used to leak through as literal
+        # &gt; / --- / "1." (old-looking output). They must render as elements.
+        h = _md_to_html("> a quote\n\n1. first\n2. second\n\n---\n\ntail")
+        self.assertIn("<blockquote", h)
+        self.assertIn("<ol ", h)
+        self.assertIn("<hr ", h)
+        # no literal markdown left in paragraphs
+        self.assertNotRegex(h, r"<p[^>]*>\s*&gt;")
+        self.assertNotRegex(h, r"<p[^>]*>\d+\.\s")
+
+    def test_real_tool_output_has_no_literal_markdown(self):
+        # The two tools that emit blockquotes / hr / numbered lists must render
+        # clean (no &gt;/---/"1." leaking) on a real deal.
+        review = _real_review()
+        for slug in ("analyst_cheatsheet", "partner_discussion"):
+            md, _ = run_review_tool(slug, review)
+            html = _md_to_html(md)
+            self.assertNotRegex(html, r"<p[^>]*>\s*&gt;", slug)
+            self.assertNotRegex(html, r"<p[^>]*>-{3,}</p>", slug)
+
 
 class ToolPageTests(unittest.TestCase):
     def test_no_deals_empty_state(self):
