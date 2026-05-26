@@ -3370,6 +3370,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         # peer-comparison data.
         if path == "/api/market-intel/peer-snapshot":
             return self._route_peer_snapshot_api()
+        if path == "/api/geo/states" or path.startswith("/api/geo/states/"):
+            from .ui.data_public.state_compare_page import geo_states_payload
+            _gs = path[len("/api/geo/states/"):].strip("/") if path != "/api/geo/states" else ""
+            return self._send_json(geo_states_payload(_gs))
         # IC Packet Assembler — one-click IC memo.
         if path == "/diligence/ic-packet":
             return self._route_ic_packet_page()

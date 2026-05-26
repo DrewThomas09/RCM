@@ -160,6 +160,40 @@ def _collect(state: str) -> Dict[str, str]:
     return {m[1]: _fmt(m[0], raw.get(m[0])) for m in _METRICS}
 
 
+def _direction(higher) -> str:
+    return "higher_better" if higher else "lower_better" if higher is False else "neutral"
+
+
+def geo_states_payload(only_state: str = "") -> Dict:
+    """JSON-serializable view of the shared real-metric layer for the API.
+
+    Raw numeric values per state (``None`` where a state has no value on record
+    — never fabricated), plus metric metadata and the national median. If
+    ``only_state`` is given and valid, restricts ``states`` to that one.
+    """
+    sel = (only_state or "").strip().upper()
+    states = [sel] if sel in _VALID else sorted(_VALID)
+    meds = national_medians()
+    metrics_meta = [
+        {"key": k, "label": lbl, "source": src, "direction": _direction(h)}
+        for k, lbl, src, _f, h in _METRICS
+    ]
+    data: Dict[str, Dict] = {}
+    for s in states:
+        r = _raw(s)
+        data[s] = {
+            k: (float(r[k]) if (r.get(k) is not None and r.get(k) == r.get(k)) else None)
+            for k, *_rest in _METRICS
+        }
+    return {
+        "source": "PEdesk Geographic Intelligence — shared real public-data metric registry",
+        "jurisdictions": len(_VALID),
+        "metrics": metrics_meta,
+        "national_median": {k: meds.get(k) for k, *_rest in _METRICS},
+        "states": data,
+    }
+
+
 def compare_dataframe(states: List[str]):
     """Raw (unformatted) metric×state table for CSV export — numbers a partner
     can compute on. Missing values are blank cells, never fabricated."""
