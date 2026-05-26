@@ -3642,6 +3642,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "cliff-calendar","title": "Reimbursement Cliff Calendar · 2026-2029 Medicare/340B rate events by subsector", "route": "/diligence/cliff-calendar"},
     {"id": "pe-library",    "title": "PE Intelligence Library · the full ~222-tool analytic toolkit, searchable", "route": "/diligence/pe-library"},
     {"id": "pe-tool",       "title": "Run PE Tool on a Deal · run an analytic tool against a real deal's packet", "route": "/diligence/pe-tool"},
+    {"id": "pe-reference",  "title": "PE Reference Libraries · historical failures + partner traps (curated knowledge)", "route": "/diligence/pe-reference"},
     {"id": "thesis-pipe",   "title": "Thesis Pipeline",    "route": "/diligence/thesis-pipeline"},
     {"id": "checklist",     "title": "Diligence Checklist","route": "/diligence/checklist"},
     {"id": "data-activation","title": "Data Activation Center · activate analyses with your data", "route": "/data-activation"},
