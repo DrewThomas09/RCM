@@ -386,6 +386,43 @@ class WorkbenchSavedTests(unittest.TestCase):
         self.assertNotIn("alert enabled", h.lower())
 
 
+class WorkbenchGeoVerticalTests(unittest.TestCase):
+    """PR 10 — provider_supply + market screened as STATE-level geography
+    views (map + ranked state table), clearly not individual providers."""
+
+    def _render(self, **params):
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        return render_target_screener({k: [v] for k, v in params.items()})
+
+    def test_provider_supply_geo_view_real(self):
+        from rcm_mc.ui.target_screener_page import _geo_state_values
+        vals, label, fmt, src = _geo_state_values("provider_supply", "supply")
+        self.assertGreater(len(vals), 40)               # ~all states
+        self.assertGreater(vals.get("TX", 0), 1000)     # real PECOS supply
+        h = self._render(view="main", vertical="provider_supply")
+        self.assertIn("usgeo-state", h)                 # real map
+        self.assertIn("not individual providers", h.lower())
+        self.assertIn("States ranked", h)
+
+    def test_market_geo_view_metric_selector(self):
+        from rcm_mc.ui.target_screener_page import _geo_state_values
+        vals, *_ = _geo_state_values("market", "population")
+        self.assertGreater(len(vals), 40)
+        h = self._render(view="main", vertical="market", metric="age_65_plus")
+        self.assertIn("Market metric", h)
+        self.assertIn("Age 65+", h)
+        self.assertIn("usgeo-state", h)
+
+    def test_market_state_click_goes_to_geo_intel(self):
+        h = self._render(view="main", vertical="market")
+        self.assertIn("/geo-intel?state=", h)
+
+    def test_geo_value_safe_on_failure(self):
+        from rcm_mc.ui.target_screener_page import _geo_state_values
+        vals, *_ = _geo_state_values("nope", "x")
+        self.assertEqual(vals, {})
+
+
 class NavAndRouteTests(unittest.TestCase):
     def test_source_anchor_is_target_screener(self):
         from rcm_mc.ui._chartis_kit import _CORPUS_NAV, _SUB_NAV, _resolve_sub_section
