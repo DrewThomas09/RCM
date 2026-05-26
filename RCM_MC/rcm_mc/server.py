@@ -4536,6 +4536,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.data_public.county_explorer_page import render_county_explorer
             _cx_qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             return self._send_html(render_county_explorer(_cx_qs))
+        if path == "/geo-metrics":
+            from .ui.data_public.geo_metrics_page import render_geo_metrics
+            return self._send_html(render_geo_metrics())
         if path == "/state-compare.csv":
             from .ui.data_public.state_compare_page import _parse_states, compare_dataframe
             _q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
