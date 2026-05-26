@@ -25,7 +25,7 @@ import pandas as pd
 
 from ._chartis_kit import (
     chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
-    ck_section_header, ck_section_intro, ck_signal_badge,
+    ck_section_header, ck_section_intro, ck_signal_badge, ck_source_purpose,
     ck_sticky_toc,
 )
 from .brand import PALETTE
@@ -420,7 +420,14 @@ def render_ic_memo(
         )
 
     ts = datetime.now(timezone.utc).strftime("%B %d, %Y")
-    sections = []
+    sections = [ck_source_purpose(
+        purpose="Generate an IC-ready memo for a target hospital — headline financials, grade, risks, recommendation — from its real CMS filings plus modeled analysis.",
+        universe="hcris",
+        confidence="derived",
+        source="CMS HCRIS cost reports for this CCN (real) + PEdesk derived analysis (bridge / scenarios). Deal-specific terms (debt, contracts, comp) need management data before a real IC.",
+        next_action="Assemble the full IC packet",
+        next_href="/diligence/ic-packet",
+    )]
 
     # ── HEADER ──
     invest_grade = data["invest"].grade if data["invest"] else "—"
