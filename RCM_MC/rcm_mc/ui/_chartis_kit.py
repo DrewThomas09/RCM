@@ -3586,6 +3586,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "deal-profile",  "title": "Deal Profile",       "route": "/diligence/deal"},
     {"id": "thesis-pipe",   "title": "Thesis Pipeline",    "route": "/diligence/thesis-pipeline"},
     {"id": "checklist",     "title": "Diligence Checklist","route": "/diligence/checklist"},
+    {"id": "data-activation","title": "Data Activation Center · activate analyses with your data", "route": "/data-activation"},
     {"id": "ingest",        "title": "Ingestion",          "route": "/diligence/ingest"},
     {"id": "benchmarks",    "title": "Benchmarks",         "route": "/diligence/benchmarks"},
     {"id": "cms-xray",      "title": "CMS X-Ray · Provider scanner", "route": "/diligence/xray"},

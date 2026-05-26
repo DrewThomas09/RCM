@@ -43,7 +43,7 @@ _GREEN = frozenset({
     "/inpatient-rehab", "/long-term-care-hospital", "/hospital-anchor",
     # data catalogs / public sources
     "/cms-sources", "/cms-data-browser", "/data", "/data/catalog",
-    "/data/refresh", "/data-intelligence", "/market-data/map",
+    "/data/refresh", "/data-intelligence", "/data-activation", "/market-data/map",
     "/market-data/state/CA", "/methodology", "/methodology/calculations",
     "/metric-glossary", "/rcm-benchmarks", "/library", "/verticals",
     "/module-index", "/tools", "/benchmarks", "/diligence/benchmarks",
