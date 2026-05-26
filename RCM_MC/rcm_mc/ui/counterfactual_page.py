@@ -32,7 +32,7 @@ from ..diligence.counterfactual import (
 from ._chartis_kit import (
     P, chartis_shell, ck_action_button, ck_eyebrow, ck_fmt_currency,
     ck_fmt_num, ck_kpi_block, ck_next_section, ck_page_title,
-    ck_provenance_tooltip, ck_page_explainer)
+    ck_provenance_tooltip, ck_page_explainer, ck_source_purpose)
 
 _EXPLAINER_CSS = """
 .ck-cf-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
@@ -887,6 +887,14 @@ def render_counterfactual_page(
     body = (
         _page_style()
         + results_title
+        + ck_source_purpose(
+            purpose="Quantify what-if RCM interventions on a claims feed — how much each lever would have changed denials / recovery — to size value-creation levers.",
+            universe="illustrative",
+            confidence="derived",
+            source=f"Counterfactual replay over the selected '{html.escape(str(dataset))}' CCD dataset (a fixture sample) — methodology, not the deal's own claims. Re-run on the target's CCD before IC.",
+            next_action="Feed the sized levers into the EBITDA bridge",
+            next_href="/diligence/bridge-audit",
+        )
         + results_explainer
         + _render_hero(dataset, cf_set, lever, download_url)
         + _render_ccd_summary(ccd_summary)
