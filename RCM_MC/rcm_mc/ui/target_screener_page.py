@@ -49,7 +49,7 @@ _CSS = """
 
 def render_target_screener(qs: Optional[Dict[str, List[str]]] = None) -> str:
     from ._chartis_kit import (chartis_shell, ck_data_universe, ck_page_title,
-                               ck_panel)
+                               ck_panel, ck_source_purpose)
     qs = qs or {}
     active = (qs.get("mode") or [""])[0].strip().lower()
 
@@ -57,6 +57,14 @@ def render_target_screener(qs: Optional[Dict[str, List[str]]] = None) -> str:
         "Target Screener", eyebrow="SOURCE · /target-screener",
         meta="one entry · three modes · same CMS/HCRIS universe",
     ) + '<div style="margin:8px 0 0;">' + ck_data_universe("cms") + '</div>'
+
+    source_purpose = ck_source_purpose(
+        purpose="Find acquisition targets in the public hospital universe — by thesis, filters, or model rank — before committing diligence effort.",
+        universe="cms",
+        source="CMS / HCRIS public hospital universe (market data, not your deals).",
+        next_action="Promote a result into the Pipeline to track it",
+        next_href="/pipeline",
+    )
 
     explainer = (
         '<p class="ck-section-body" style="max-width:74ch;margin:14px 0 0;">'
@@ -85,17 +93,29 @@ def render_target_screener(qs: Optional[Dict[str, List[str]]] = None) -> str:
     )
 
     market_link = ck_panel(
-        'Rank and score geographic markets by senior demand (and, as exports '
-        'arrive, income / payer mix / provider supply) before screening targets '
-        'in them. <a href="/market-intel/geo" style="font-weight:600">Open '
-        'Geographic Market Intelligence &rarr;</a> '
-        '<span style="opacity:0.7">Market/area context (SimplyAnalytics-derived), '
-        'not provider-specific.</span>',
+        'Rank and score geographic markets on real public data before screening '
+        'targets in them — <a href="/geo-intel" style="font-weight:600">Geographic '
+        'Intelligence</a> (state/metro/county demographics, provider supply, MA, '
+        'shortage areas, SDOH — all real) and '
+        '<a href="/market-intel/geo" style="font-weight:600">Geographic Market '
+        'Intelligence &rarr;</a> '
+        '<span style="opacity:0.7">Market/area context, not provider-specific.</span>',
         title="Screen the market, not just the target")
+    next_actions = ck_panel(
+        '<p class="ck-section-body">Each mode answers a different sourcing '
+        'question: <b>Thesis Sourcing</b> — "where does my thesis fit?"; '
+        '<b>filters</b> — "which hospitals match hard criteria?"; '
+        '<b>model rank</b> — "which look most investable by the public signals?" '
+        'Next: open a candidate\'s <a href="/diligence/hcris-xray" class="ck-link">'
+        'HCRIS X-Ray</a> or <a href="/diligence/xray" class="ck-link">CMS X-Ray</a>, '
+        'check its <a href="/geo-intel" class="ck-link">market</a>, then '
+        '<a href="/pipeline" class="ck-link">promote it to Pipeline</a>.</p>',
+        title="What each mode answers · next steps")
     body = (
-        title + explainer
+        title + source_purpose + explainer
         + f'<div class="ts-modes">{cards}</div>'
         + market_link
+        + next_actions
         + ck_panel(note, title="Same universe, three ways in")
     )
     return chartis_shell(body, "Target Screener", active_nav="/target-screener",
