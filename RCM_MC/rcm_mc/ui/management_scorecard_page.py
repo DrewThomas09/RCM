@@ -19,7 +19,7 @@ from ..diligence.management_scorecard import (
 )
 from ._chartis_kit import (
     P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
-    ck_section_intro,
+    ck_section_intro, ck_source_purpose,
 )
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
@@ -544,6 +544,13 @@ def render_management_scorecard_page(
             meta=f"Target: {target_name} · 4-dimension exec read",
         )
         + '<div class="ms-wrap">'
+        + ck_source_purpose(
+            purpose="Structure an executive-team read (credibility, forecast reliability, retention, alignment) into a value haircut for underwriting.",
+            universe="illustrative",
+            confidence="data-required",
+            source="Illustrative scaffold — the forecast-miss / retention histories are NOT this team's real record. Upload management track-record data to activate; until then read it as a framework, not findings.",
+            next_action="Provide management track-record + comp data to activate",
+        )
         + demo_banner
         + hero_and_haircut
         + howto
