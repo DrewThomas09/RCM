@@ -44,7 +44,7 @@ _GREEN = frozenset({
     # data catalogs / public sources
     "/cms-sources", "/cms-data-browser", "/data", "/data/catalog",
     "/data/refresh", "/data-intelligence", "/data-activation", "/state-compare",
-    "/state-rankings", "/market-data/map",
+    "/state-rankings", "/state-profile", "/market-data/map",
     "/market-data/state/CA", "/methodology", "/methodology/calculations",
     "/metric-glossary", "/rcm-benchmarks", "/library", "/verticals",
     "/module-index", "/tools", "/benchmarks", "/diligence/benchmarks",
