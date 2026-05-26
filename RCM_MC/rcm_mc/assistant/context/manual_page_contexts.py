@@ -4933,6 +4933,37 @@ _MANUAL: List[PageContext] = [
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
+    _ctx(
+        "/county-explorer", "County Explorer",
+        category=PageContextCategory.PIPELINE_SOURCING,
+        short_description="Drills into one state's counties on real Census/ACS "
+        "demographics — the sub-state level of the geo suite.",
+        primary_purpose="Sub-state targeting: see which counties carry a "
+        "state's population, age mix, income, uninsured rate and rural share.",
+        common_questions=["Which Ohio counties are largest / oldest / poorest?",
+                          "What does this state look like county by county?"],
+        inputs=["?state=OH and ?sort=<column> — validated state + sort key."],
+        outputs=["A sortable county table with a state-total + population-"
+                 "weighted-mean footer."],
+        key_metrics=["Population", "Age 65+", "Median HH income",
+                     "Uninsured rate", "Rural share"],
+        data_sources=["County Health Rankings & Roadmaps (republishing U.S. "
+                      "Census Bureau ACS / SAHIE / SAIPE), keyless — 3,143 "
+                      "counties; the same real source as State Profile."],
+        model_logic_summary="Real per-county rows; the footer is the state "
+        "total population and population-weighted means over the counties that "
+        "report each measure. Counties missing a value show '—'.",
+        why_it_matters="Markets are local — county detail shows where a "
+        "state's opportunity actually concentrates.",
+        diligence_use_cases=["Narrowing a state thesis to specific counties/"
+                             "metros for outreach."],
+        interpretation_guidance=["Area-level survey estimates, not deal-level "
+                                 "figures.",
+                                 "'—' means no value on record for that county."],
+        related_routes=["/geo-intel", "/state-profile", "/state-compare"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
 ]
 
 # ── DATA REQUIRED pages: DOCUMENTED Guide contexts (table-driven). Each page
