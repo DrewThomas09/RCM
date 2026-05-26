@@ -81,6 +81,17 @@ def rank_peers(state: str):
     return peers, thin
 
 
+def peers_dataframe(state: str):
+    """Ranked peer table for CSV export: rank, state, distance, shared-metric
+    count. States sharing too few metrics are omitted — never given a score."""
+    import pandas as _pd
+    peers, _thin = rank_peers(state)
+    rows = [{"Rank": i, "State": s, "Name": _STATE_NAMES.get(s, s),
+             "Distance": round(d, 4), "SharedMetrics": n}
+            for i, (s, d, n) in enumerate(peers, start=1)]
+    return _pd.DataFrame(rows, columns=["Rank", "State", "Name", "Distance", "SharedMetrics"])
+
+
 def render_state_peers(params: Dict = None) -> str:
     state = _parse_state(params)
     name = _STATE_NAMES.get(state, state)
@@ -101,6 +112,8 @@ def render_state_peers(params: Dict = None) -> str:
         f'<select name="state" onchange="this.form.submit()" style="{sel};margin-left:6px">{opts}</select></label>'
         f'<noscript><button type="submit" style="background:{ac};color:#fff;border:none;padding:7px 16px;'
         f'font-family:JetBrains Mono,monospace;font-size:12px;border-radius:2px;cursor:pointer">Find</button></noscript>'
+        f'<a href="/state-peers.csv?state={state}" '
+        f'style="font-size:11px;color:{ac};text-decoration:none;margin-left:4px">Export CSV &#8595;</a>'
         f'</form>'
     )
 
