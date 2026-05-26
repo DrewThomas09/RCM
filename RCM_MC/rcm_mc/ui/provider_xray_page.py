@@ -363,7 +363,7 @@ def _correlations_section(sector_id: str):
 
 
 def render_xray_report(report: ProviderXrayReport) -> str:
-    from ._chartis_kit import chartis_shell, ck_page_title
+    from ._chartis_kit import chartis_shell, ck_page_title, ck_source_purpose
     from . import xray_kit as k
 
     def _section(tag: str, body: str, ribsub: str = "") -> str:
@@ -446,7 +446,16 @@ def render_xray_report(report: ProviderXrayReport) -> str:
     corr_sec = _section("Measure correlations · how the vertical co-moves", corr,
                         ribsub="PAIRWISE · ASSOCIATION ONLY") if corr else ""
 
-    body = ('<div class="xr">' + title + identity + signals + note + bench
+    source_purpose = ck_source_purpose(
+        purpose=f"Scan this {_e(m.vertical_label)} provider's CMS public profile for diligence signals vs its peer cohort.",
+        universe="cms",
+        source=_e(m.source_dataset),
+        next_action="Take the signals into the diligence question set",
+        next_href="#xr-questions",
+    )
+    questions = questions.replace('<div class="xr-card">',
+                                  '<div class="xr-card" id="xr-questions">', 1)
+    body = ('<div class="xr">' + title + source_purpose + identity + signals + note + bench
             + expectation + model_sec + corr_sec
             + risk + market + questions + caveats + '</div>')
     return chartis_shell(body, f"CMS X-Ray · {_e(m.name)}",
