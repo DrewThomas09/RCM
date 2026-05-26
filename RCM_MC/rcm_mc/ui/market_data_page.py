@@ -14,6 +14,7 @@ import pandas as pd
 from ._chartis_kit import (
     chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
     ck_panel, ck_section_header, ck_section_intro, ck_signal_badge,
+    ck_source_purpose,
 )
 from .brand import PALETTE
 
@@ -738,7 +739,14 @@ def render_state_detail(
     except Exception:
         market_ctx = ""
 
-    body = f'{intro}{kpis}{market_ctx}{map_panel}{table_panel}{actions}'
+    source_purpose = ck_source_purpose(
+        purpose=f"Size the {html.escape(state_upper)} hospital market — count, revenue, margins — from real CMS cost-report filings before screening targets in it.",
+        universe="hcris",
+        source="CMS HCRIS hospital cost reports (state aggregate); market context, not a single deal.",
+        next_action=f"Screen {html.escape(state_upper)} hospitals",
+        next_href=f"/screen?state={html.escape(state_upper)}",
+    )
+    body = f'{intro}{source_purpose}{kpis}{market_ctx}{map_panel}{table_panel}{actions}'
 
     return chartis_shell(
         body, f"Market: {state_upper}",
