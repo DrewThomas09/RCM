@@ -99,12 +99,44 @@ def _compute_auc(y_true: np.ndarray, y_score: np.ndarray) -> float:
     return float(auc)
 
 
+def _cv_auc(X_norm: np.ndarray, y: np.ndarray, k: int = 5, seed: int = 42) -> float:
+    """Honest k-fold cross-validated AUC.
+
+    The reported model AUC must be out-of-sample: fitting and scoring on
+    the same rows yields an optimistic in-sample number that overstates how
+    the model generalizes (and the UI labels it "held-out"/"cross-validated",
+    which must be true, not aspirational — no invented model performance).
+    Refits the logistic model on each train fold and scores the held-out
+    fold; averages AUC over folds where both classes are present. Falls back
+    to 0.5 (no discrimination claim) when the target is single-class or the
+    sample is too small to split honestly.
+    """
+    n = len(y)
+    if n < 50 or len(np.unique(y)) < 2:
+        return 0.5
+    rng = np.random.RandomState(seed)
+    folds = np.array_split(rng.permutation(n), k)
+    aucs: List[float] = []
+    for i in range(k):
+        test_idx = folds[i]
+        train_idx = np.concatenate([folds[j] for j in range(k) if j != i])
+        if len(np.unique(y[train_idx])) < 2 or len(np.unique(y[test_idx])) < 2:
+            continue
+        beta_f = _fit_logistic(X_norm[train_idx], y[train_idx])
+        X_aug = np.column_stack([np.ones(len(test_idx)), X_norm[test_idx]])
+        aucs.append(_compute_auc(y[test_idx], _sigmoid(X_aug @ beta_f)))
+    return float(np.mean(aucs)) if aucs else 0.5
+
+
 def train_distress_model(
     hcris_df: pd.DataFrame,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, float, int, List[str]]:
     """Train logistic regression distress model on HCRIS data.
 
-    Returns (beta, X_mean, X_std, auc, n_training, features_used).
+    Returns (beta, X_mean, X_std, auc, n_training, features_used). The
+    returned ``beta`` is fit on ALL clean rows (the production scoring
+    model); the reported ``auc`` is the honest k-fold cross-validated AUC
+    (see :func:`_cv_auc`), NOT an optimistic in-sample number.
     """
     df = hcris_df.copy()
 
@@ -144,10 +176,10 @@ def train_distress_model(
 
     beta = _fit_logistic(X_norm, y)
 
-    # Compute AUC
-    X_aug = np.column_stack([np.ones(len(X_norm)), X_norm])
-    y_pred = _sigmoid(X_aug @ beta)
-    auc = _compute_auc(y, y_pred)
+    # Honest out-of-sample AUC (k-fold CV). The in-sample AUC the page used
+    # to report was optimistically biased and contradicted the UI's
+    # "held-out"/"cross-validated" wording.
+    auc = _cv_auc(X_norm, y)
 
     return beta, X_mean, X_std, auc, len(clean), feat_cols
 

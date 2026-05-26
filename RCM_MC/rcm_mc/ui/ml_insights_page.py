@@ -291,10 +291,12 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
         "Distress model AUC",
         f"{auc:.3f}",
         explainer=(
-            "Area under the ROC curve for the gradient-boosted "
-            "distress predictor on a held-out test split. >0.85 "
-            "is industry-good; <0.75 means the model isn't "
-            "earning its keep against simpler alternatives."
+            "Area under the ROC curve for the logistic-regression "
+            "distress predictor, measured by 5-fold cross-validation "
+            "(out-of-sample). >0.85 is industry-good; <0.75 means the "
+            "model isn't earning its keep against simpler alternatives. "
+            "Note the target is a current-margin distress proxy on "
+            "cross-sectional HCRIS, not a forward outcome."
         ),
     )
     distress_value = ck_provenance_tooltip(
@@ -339,14 +341,14 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
             },
         )
         + ck_kpi_block(
-            "Distress Model AUC", auc_value, "held-out test",
+            "Distress Model AUC", auc_value, "5-fold CV",
             help={
                 "definition": (
-                    "Discriminatory power of the distress predictor on "
-                    "the held-out test set. 0.50 = coin flip; 0.75 = "
-                    "usable for ranking; 0.85+ = strong. Healthcare-"
-                    "specific distress models top out around 0.85-"
-                    "0.90 because the underlying signal is noisy."
+                    "Discriminatory power of the distress predictor under "
+                    "5-fold cross-validation (out-of-sample). 0.50 = coin "
+                    "flip; 0.75 = usable for ranking; 0.85+ = strong. "
+                    "Healthcare-specific distress models top out around "
+                    "0.85-0.90 because the underlying signal is noisy."
                 ),
             },
         )
@@ -517,7 +519,7 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
         f'<h3 style="font-size:12px;color:var(--cad-accent);margin-bottom:4px;">Distress Predictor</h3>'
         f'<p style="color:var(--cad-text2);">L2-regularized logistic regression predicting P(margin &lt; -5%). '
         f'Trained on cross-sectional HCRIS data. Features: occupancy, Medicare %, Medicaid %, '
-        f'revenue/bed, net-to-gross ratio, beds. AUC validated on held-out data.</p>'
+        f'revenue/bed, net-to-gross ratio, beds. AUC measured by 5-fold cross-validation (out-of-sample).</p>'
         f'</div>'
         f'<div>'
         f'<h3 style="font-size:12px;color:var(--cad-accent);margin-bottom:4px;">RCM Opportunity Scorer</h3>'
