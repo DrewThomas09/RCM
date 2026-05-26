@@ -472,6 +472,38 @@ class WorkbenchMapLayerTests(unittest.TestCase):
         self.assertTrue(_LAYER_BY_KEY["age65"].get("live"))
 
 
+class WorkbenchColumnVisibilityTests(unittest.TestCase):
+    """PR 18 — column-visibility toggles (?hide=) wired Columns ↔ Main."""
+
+    def _render(self, **params):
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        return render_target_screener({k: [v] for k, v in params.items()})
+
+    def test_default_shows_all_columns(self):
+        h = self._render(view="main", vertical="snf")
+        self.assertIn(">Ownership<", h)
+        self.assertIn(">Source<", h)
+
+    def test_hide_removes_columns_from_main(self):
+        h = self._render(view="main", vertical="snf", hide="ownership,source")
+        self.assertNotIn(">Ownership</th>", h)
+        self.assertNotIn(">Source</th>", h)
+        self.assertIn(">Provider", h)   # identity always shown
+
+    def test_sort_links_preserve_hide(self):
+        h = self._render(view="main", vertical="snf", hide="ownership")
+        self.assertIn("hide=ownership", h)
+
+    def test_columns_screen_has_visibility_toggles(self):
+        h = self._render(view="columns", vertical="snf")
+        self.assertIn("On Main table", h)
+        self.assertIn("Shown · hide", h)
+
+    def test_columns_screen_reflects_hidden_state(self):
+        h = self._render(view="columns", vertical="snf", hide="quality")
+        self.assertIn("Hidden · show", h)
+
+
 class WorkbenchFilterTests(unittest.TestCase):
     """PR 17 — Main filter panel (?min_quality / min_size / ownership)."""
 
