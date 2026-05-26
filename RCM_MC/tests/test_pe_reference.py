@@ -31,16 +31,20 @@ class ReferenceLibraryTests(unittest.TestCase):
         self.assertIn("Seller pitch", h)
         self.assertIn("Partner rebuttal", h)
 
-    def test_all_six_libraries_present_and_render(self):
-        # The reference page covers six curated libraries, each from a real
-        # dataclass constant — not just the original two.
+    def test_all_libraries_present_and_render(self):
+        # Each tab is a real curated dataclass constant — not just the originals.
         self.assertEqual(set(_LIBRARIES),
                          {"failures", "traps", "motivations", "archetypes",
-                          "bidders", "narratives"})
+                          "bidders", "narratives", "signing"})
         for key in _LIBRARIES:
             h = render_pe_reference_page(key)
             self.assertIn("DILIGENCE", h.upper())
             self.assertGreaterEqual(len(_load(key)), 5, key)
+
+    def test_signing_library_renders(self):
+        h = render_pe_reference_page("signing")
+        self.assertIn("Counter · pre-close", h)
+        self.assertRegex(h, r"\d+\.\d% cost")  # 1dp pct standard
 
     def test_new_libraries_render_curated_content(self):
         self.assertIn("Partner play", render_pe_reference_page("motivations"))
