@@ -137,6 +137,26 @@ def _from_const(module: str, const: str) -> Callable[[], List[Any]]:
         f"..pe_intelligence.{module}", __package__), const))
 
 
+def _combined_failures() -> List[Any]:
+    """Both curated failure libraries in one tab — historical_failure_library
+    plus the distinct named_failure_library_v2 set — deduped by name, newest
+    first. They share the same FailurePattern shape, so one card spec renders
+    both; merging avoids a confusing v1/v2 tab split."""
+    out: List[Any] = []
+    seen = set()
+    for mod, attr, is_fn in (
+        ("historical_failure_library", "list_all_patterns", True),
+        ("named_failure_library_v2", "FAILURE_LIBRARY_V2", False),
+    ):
+        obj = getattr(importlib.import_module(
+            f"..pe_intelligence.{mod}", __package__), attr)
+        for p in (obj() if is_fn else obj):
+            if p.name not in seen:
+                seen.add(p.name)
+                out.append(p)
+    return sorted(out, key=lambda p: getattr(p, "year", 0), reverse=True)
+
+
 def _from_chains(module: str, const: str) -> Callable[[], List[Any]]:
     """A dict of thesis-id → builder() → [implications]. Returns
     [(thesis_id, [implications]), …] for the custom chain renderer."""
@@ -193,7 +213,7 @@ _LIBRARIES: Dict[str, Dict[str, Any]] = {
         "intro": "Dated PE-healthcare deals that broke — thesis at entry, what "
                  "happened, and the lesson. Pattern-match a live deal before "
                  "you repeat one.",
-        "load": _from_list("historical_failure_library", "list_all_patterns"),
+        "load": _combined_failures,
         "spec": {
             "title": "name", "title_suffix": "year",
             "badge": ("ebitda_destruction_pct", "-{:.1f}% EBITDA"),
