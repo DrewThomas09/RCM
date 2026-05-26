@@ -34,76 +34,113 @@ def _parse_states(params: Dict) -> List[str]:
     return (out or _DEFAULT)[:4]
 
 
-def _collect(state: str) -> Dict[str, str]:
-    """Pull real metrics for one state from the committed public-data loaders.
-    Every value is real or '—' (never fabricated)."""
-    def _num(v, fmt):
+def _raw(state: str) -> Dict[str, float]:
+    """Pull every real state-keyed metric as a raw number (or absent).
+
+    One source of truth shared by the comparison table (/state-compare) and the
+    rankings leaderboard (/state-rankings). A loader miss or non-finite value is
+    simply omitted from the dict — it is never replaced with a fabricated number.
+    """
+    out: Dict[str, float] = {}
+
+    def _set(key, fn):
         try:
-            return fmt(v) if v is not None and v == v else "—"
+            v = fn()
+            if v is not None and v == v:  # not None, not NaN
+                out[key] = float(v)
         except Exception:
-            return "—"
-    row: Dict[str, str] = {}
+            pass
+
     try:
         from rcm_mc.data import county_demographics as _d
         dm = _d.demographics_state(state)
-        row["Population"] = _num(dm.get("population"), lambda x: f"{int(x):,}")
-        row["Age 65+"] = _num(dm.get("pct_age_65_plus"), lambda x: f"{x*100:.1f}%")
-        row["Median HH income"] = _num(dm.get("median_household_income"), lambda x: f"${x:,.0f}")
-        row["Uninsured (ACS)"] = _num(dm.get("uninsured_rate"), lambda x: f"{x*100:.1f}%")
+        _set("population", lambda: dm.get("population"))
+        _set("age_65_plus", lambda: dm.get("pct_age_65_plus"))
+        _set("median_income", lambda: dm.get("median_household_income"))
+        _set("uninsured_acs", lambda: dm.get("uninsured_rate"))
     except Exception:
         pass
     try:
         from rcm_mc.data import provider_supply as _ps
-        tot = _ps.total_supply_for_state(state); pc = _ps.primary_care_supply_for_state(state)
-        row["Provider supply (CMS FFS)"] = f"{tot:,}" if tot else "—"
-        row["Primary-care supply (approx)"] = f"{pc:,}" if pc else "—"
+        _set("provider_supply", lambda: _ps.total_supply_for_state(state) or None)
+        _set("pc_supply", lambda: _ps.primary_care_supply_for_state(state) or None)
     except Exception:
         pass
     try:
         from rcm_mc.data import snf_chow as _c
-        n = _c.total_chows_for_state(state)
-        row["SNF ownership changes (CHOW)"] = f"{n:,}" if n else "—"
+        _set("snf_chow", lambda: _c.total_chows_for_state(state) or None)
     except Exception:
         pass
     try:
         from rcm_mc.data import ma_data as _ma
         ma = _ma.ma_state(state)
-        row["MA enrollment (CMS)"] = _num(ma.get("ma_enrollment"), lambda x: f"{int(x):,}")
-        row["Dual-eligible % (MA)"] = _num(ma.get("dual_eligible_pct"), lambda x: f"{x*100:.1f}%")
+        _set("ma_enrollment", lambda: ma.get("ma_enrollment"))
+        _set("dual_pct", lambda: ma.get("dual_eligible_pct"))
     except Exception:
         pass
     try:
         from rcm_mc.data import cdc_places_agg as _pl
         pl = _pl.places_equity_state(state)
-        row["Uninsured 18–64 (PLACES)"] = _num(pl.get("uninsured_18_64"), lambda x: f"{x:.1f}%")
-        row["Food insecurity (PLACES)"] = _num(pl.get("food_insecurity"), lambda x: f"{x:.1f}%")
-        row["Obesity (PLACES)"] = _num(pl.get("obesity"), lambda x: f"{x:.1f}%")
+        _set("uninsured_places", lambda: pl.get("uninsured_18_64"))
+        _set("food_insecurity", lambda: pl.get("food_insecurity"))
+        _set("obesity", lambda: pl.get("obesity"))
     except Exception:
         pass
     try:
         from rcm_mc.data import hcahps_data as _h
         hc = _h.hcahps_state(state)
-        row["Would recommend (HCAHPS)"] = _num(hc.get("would_definitely_recommend"), lambda x: f"{x:.0f}%")
-        row["Overall 9–10 (HCAHPS)"] = _num(hc.get("overall_rating_9_10"), lambda x: f"{x:.0f}%")
+        _set("hcahps_recommend", lambda: hc.get("would_definitely_recommend"))
+        _set("hcahps_overall", lambda: hc.get("overall_rating_9_10"))
     except Exception:
         pass
     try:
         from rcm_mc.data import hrsa_data as _hr
         hp = _hr.hpsa_state(state)
-        row["PC shortage areas (HRSA HPSA)"] = _num(hp.get("designated_pc_hpsas"), lambda x: f"{int(x):,}")
+        _set("hpsa_pc", lambda: hp.get("designated_pc_hpsas"))
     except Exception:
         pass
-    return row
+    return out
 
 
-_ROW_ORDER = [
-    "Population", "Age 65+", "Median HH income", "Uninsured (ACS)",
-    "Provider supply (CMS FFS)", "Primary-care supply (approx)",
-    "PC shortage areas (HRSA HPSA)", "SNF ownership changes (CHOW)",
-    "MA enrollment (CMS)", "Dual-eligible % (MA)",
-    "Uninsured 18–64 (PLACES)", "Food insecurity (PLACES)", "Obesity (PLACES)",
-    "Would recommend (HCAHPS)", "Overall 9–10 (HCAHPS)",
+# Single metric registry: (key, label, source, formatter, higher_is_better).
+# Order here drives both the comparison rows and the ranking metric picker.
+_METRICS = [
+    ("population",       "Population",                    "Census/ACS",  lambda x: f"{int(x):,}",     True),
+    ("age_65_plus",      "Age 65+",                       "Census/ACS",  lambda x: f"{x*100:.1f}%",   True),
+    ("median_income",    "Median HH income",              "Census/ACS",  lambda x: f"${x:,.0f}",      True),
+    ("uninsured_acs",    "Uninsured (ACS)",               "Census/ACS",  lambda x: f"{x*100:.1f}%",   False),
+    ("provider_supply",  "Provider supply (CMS FFS)",     "CMS FFS",     lambda x: f"{int(x):,}",     True),
+    ("pc_supply",        "Primary-care supply (approx)",  "CMS FFS",     lambda x: f"{int(x):,}",     True),
+    ("hpsa_pc",          "PC shortage areas (HRSA HPSA)", "HRSA HPSA",   lambda x: f"{int(x):,}",     False),
+    ("snf_chow",         "SNF ownership changes (CHOW)",  "CMS CHOW",    lambda x: f"{int(x):,}",     None),
+    ("ma_enrollment",    "MA enrollment (CMS)",           "CMS MA",      lambda x: f"{int(x):,}",     True),
+    ("dual_pct",         "Dual-eligible % (MA)",          "CMS MA",      lambda x: f"{x*100:.1f}%",   None),
+    ("uninsured_places", "Uninsured 18–64 (PLACES)",      "CDC PLACES",  lambda x: f"{x:.1f}%",       False),
+    ("food_insecurity",  "Food insecurity (PLACES)",      "CDC PLACES",  lambda x: f"{x:.1f}%",       False),
+    ("obesity",          "Obesity (PLACES)",              "CDC PLACES",  lambda x: f"{x:.1f}%",       False),
+    ("hcahps_recommend", "Would recommend (HCAHPS)",      "CMS HCAHPS",  lambda x: f"{x:.0f}%",       True),
+    ("hcahps_overall",   "Overall 9–10 (HCAHPS)",         "CMS HCAHPS",  lambda x: f"{x:.0f}%",       True),
 ]
+_METRIC_BY_KEY = {m[0]: m for m in _METRICS}
+_ROW_ORDER = [m[1] for m in _METRICS]
+
+
+def _fmt(key: str, v) -> str:
+    """Format a raw metric value with its registered formatter, or '—'."""
+    m = _METRIC_BY_KEY.get(key)
+    if m is None or v is None or v != v:
+        return "—"
+    try:
+        return m[3](v)
+    except Exception:
+        return "—"
+
+
+def _collect(state: str) -> Dict[str, str]:
+    """Real metrics for one state, keyed by display label. Every value is real
+    or '—' (never fabricated). Derived from the shared :func:`_raw` extractor."""
+    raw = _raw(state)
+    return {m[1]: _fmt(m[0], raw.get(m[0])) for m in _METRICS}
 
 
 def render_state_compare(params: Dict = None) -> str:

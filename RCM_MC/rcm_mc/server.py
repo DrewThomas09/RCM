@@ -4517,6 +4517,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.data_public.state_compare_page import render_state_compare
             _sc_qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             return self._send_html(render_state_compare(_sc_qs))
+        if path == "/state-rankings":
+            from .ui.data_public.state_rankings_page import render_state_rankings
+            _sr_qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            return self._send_html(render_state_rankings(_sr_qs))
         if path == "/predictive-screener":
             return self._route_predictive_screener()
         if path.startswith("/data-room/") and not path.endswith("/add"):
