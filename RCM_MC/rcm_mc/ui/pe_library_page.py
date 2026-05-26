@@ -35,6 +35,15 @@ _LIVE_ROUTES: Dict[str, str] = {
 }
 
 
+def _runnable() -> Dict[str, str]:
+    """slug → /diligence/pe-tool run URL for tools wired to run on a real deal."""
+    try:
+        from .pe_tool_page import PE_TOOL_REGISTRY
+        return {s: f"/diligence/pe-tool?tool={s}" for s in PE_TOOL_REGISTRY}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
 def _categories() -> List[str]:
     seen: List[str] = []
     for r in CATALOG:
@@ -50,9 +59,21 @@ def _matches(row: Dict, q: str) -> bool:
     return q.lower() in hay
 
 
-def _tool_row(row: Dict) -> str:
+def _tool_row(row: Dict, runnable: Dict[str, str]) -> str:
+    run_url = runnable.get(row["slug"])
     live = _LIVE_ROUTES.get(row["slug"])
-    if live:
+    if run_url and not live:
+        # Wired to run on a real deal — link the title to the tool runner.
+        title_cell = (
+            f'<a href="{_html.escape(run_url)}" style="color:{P["accent"]};'
+            f'text-decoration:none;font-weight:600;">'
+            f'{_html.escape(row["title"])} &rarr;</a>'
+            f'<span style="font-family:var(--ck-mono);font-size:8.5px;'
+            f'font-weight:700;letter-spacing:0.08em;color:{P["accent"]};'
+            f'border:1px solid {P["accent"]};border-radius:2px;padding:1px 4px;'
+            f'margin-left:7px;">RUN ON DEAL</span>'
+        )
+    elif live:
         title_cell = (
             f'<a href="{_html.escape(live)}" style="color:{P["accent"]};'
             f'text-decoration:none;font-weight:600;">'
@@ -97,10 +118,11 @@ def _tool_row(row: Dict) -> str:
     )
 
 
-def _category_block(category: str, rows: List[Dict]) -> str:
+def _category_block(category: str, rows: List[Dict],
+                    runnable: Dict[str, str]) -> str:
     head = ck_section_header(category.upper(), f"{len(rows)} tools",
                              count=len(rows))
-    body = "".join(_tool_row(r) for r in rows)
+    body = "".join(_tool_row(r, runnable) for r in rows)
     table = (
         f'<div class="ck-panel"><div style="overflow-x:auto;padding:4px 6px;">'
         f'<table style="width:100%;border-collapse:collapse;">'
@@ -124,14 +146,15 @@ def render_pe_library_page(q: str = "", category: str = "") -> str:
 
     rows = [r for r in CATALOG if _matches(r, q)
             and (not category or r["category"] == category)]
+    runnable = _runnable()
     live_n = sum(1 for r in CATALOG if r["slug"] in _LIVE_ROUTES)
-    wired_n = sum(1 for r in CATALOG if r["wired"])
+    run_n = sum(1 for r in CATALOG if r["slug"] in runnable)
 
     kpis = (
         ck_kpi_block("Tools in toolkit", f"{len(CATALOG):,}",
                      f"{len(cats)} categories")
-        + ck_kpi_block("Surfaced live", str(live_n + wired_n),
-                       f"{live_n} dedicated page · {wired_n} in deal view")
+        + ck_kpi_block("Runnable now", str(live_n + run_n),
+                       f"{live_n} dedicated page · {run_n} run on a deal")
         + ck_kpi_block("Showing", f"{len(rows):,}",
                        (f'filtered: "{_html.escape(q)}"' if q else
                         category or "all tools"))
@@ -195,7 +218,8 @@ def render_pe_library_page(q: str = "", category: str = "") -> str:
     for r in rows:
         by_cat.setdefault(r["category"], []).append(r)
     if by_cat:
-        blocks = "".join(_category_block(c, by_cat[c]) for c in sorted(by_cat))
+        blocks = "".join(_category_block(c, by_cat[c], runnable)
+                         for c in sorted(by_cat))
     else:
         blocks = (
             f'<div class="ck-panel" style="padding:24px;text-align:center;'
