@@ -3,27 +3,26 @@
 Surfaces the deal-independent *curated knowledge* libraries from the
 pe_intelligence package, which were built but never linked to any UI. Unlike
 the deal-driven tool runner (/diligence/pe-tool), these are reference content:
-real, named historical events and partner-judgment analysis that don't change
-per deal — so they're shown as a browsable library, not "computed from your
-deal".
+real, named patterns and partner-judgment analysis that don't change per deal
+— so they're shown as a browsable library, not "computed from your deal".
 
-Two libraries are wired (both back rich dataclasses):
-  * Historical Failure Library — dated PE-healthcare blow-ups (Envision/KKR
-    No Surprises Act 2023, etc.), each with thesis-at-entry, what-went-wrong,
-    EBITDA destruction, early-warning signals, and the partner lesson.
-  * Partner Traps — common seller pitches paired with the partner's rebuttal
-    and a realistic number to underwrite to.
+Six libraries are wired, each backed by a curated dataclass list:
+  * Historical failures — dated PE-healthcare blow-ups + the partner lesson.
+  * Partner traps — seller pitch vs the rebuttal + realistic number.
+  * Seller motivations — what's really driving the sale + the partner play.
+  * Failure archetypes — structural failure shapes + the counter.
+  * Bidder landscape — buyer profiles, expected premium, partner posture.
+  * Banker narratives — the CIM/management-meeting plays + how to defuse them.
 
-Honesty: the events are real and public; the analysis (lessons, magnitudes) is
-partner judgment. Labeled as a curated corpus, not a live feed. String-ID-only
-libraries (seller motivations, failure archetypes, …) need a per-id expander
-and are surfaced as the registry grows.
+Honesty: the patterns/events are real partner knowledge; framing and any
+magnitudes are partner judgment, not a live feed. Labeled a curated corpus.
 """
 from __future__ import annotations
 
+import dataclasses
 import html as _html
 import importlib
-from typing import Any, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Optional
 
 from ._chartis_kit import (
     P,
@@ -35,29 +34,12 @@ from ._chartis_kit import (
     ck_source_purpose,
 )
 
-# library key → (module, list_fn, title, one-line intro)
-_LIBRARIES: Dict[str, Tuple[str, str, str, str]] = {
-    "failures": (
-        "historical_failure_library", "list_all_patterns",
-        "Historical Failure Library",
-        "Dated PE-healthcare deals that broke — what the thesis was, what "
-        "actually happened, and the lesson. Fingerprint-match a live deal "
-        "against these before you repeat one.",
-    ),
-    "traps": (
-        "partner_traps_library", "list_all_traps",
-        "Partner Traps",
-        "Seller pitches a partner has heard before, each paired with the "
-        "rebuttal and the realistic number to underwrite to.",
-    ),
-}
-_DEFAULT_LIB = "failures"
-
 
 def _humanize(name: str) -> str:
-    return " ".join(w.capitalize() for w in name.replace("_", " ").split())
+    return " ".join(w.capitalize() for w in str(name).replace("_", " ").split())
 
 
+# ── generic card primitives ────────────────────────────────────────────────
 def _chip(text: str) -> str:
     return (
         f'<span style="display:inline-block;font-family:var(--ck-mono);'
@@ -68,99 +50,198 @@ def _chip(text: str) -> str:
     )
 
 
-def _field(label: str, value: str) -> str:
+def _meta_badge(label: str, value: str) -> str:
+    return (
+        f'<span style="display:inline-block;font-family:var(--ck-mono);'
+        f'font-size:9px;letter-spacing:0.04em;margin:0 6px 5px 0;'
+        f'color:{P["text_dim"]};"><span style="color:{P["text_faint"]};'
+        f'text-transform:uppercase;">{_html.escape(label)}</span> '
+        f'{_html.escape(_humanize(value))}</span>'
+    )
+
+
+def _field(label: str, value: str, *, italic: bool = False) -> str:
+    quote = ('&ldquo;' + _html.escape(value) + '&rdquo;') if italic \
+        else _html.escape(value)
+    style = (f'font-size:12.5px;line-height:1.55;color:'
+             f'{P["text_dim"] if italic else P["text"]};'
+             + ('font-style:italic;' if italic else ''))
     return (
         f'<div style="margin:7px 0;"><div style="font-family:var(--ck-mono);'
         f'font-size:9px;letter-spacing:0.1em;text-transform:uppercase;'
         f'color:{P["text_faint"]};margin-bottom:2px;">{_html.escape(label)}</div>'
-        f'<div style="font-size:12.5px;line-height:1.55;color:{P["text"]};">'
-        f'{_html.escape(value)}</div></div>'
+        f'<div style="{style}">{quote}</div></div>'
     )
 
 
-def _failure_card(p: Any) -> str:
-    year = getattr(p, "year", "")
-    dest = getattr(p, "ebitda_destruction_pct", None)
-    stat = ""
-    if isinstance(dest, (int, float)):
-        stat = (
-            f'<span style="font-family:var(--ck-mono);font-size:11px;'
-            f'font-weight:700;color:{P["negative"]};white-space:nowrap;">'
-            f'-{dest * 100:.1f}% EBITDA</span>'
-        )
-    signals = getattr(p, "early_warning_signals", []) or []
-    sig_html = ("".join(_chip(s) for s in signals)) if signals else ""
-    return (
-        f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-radius:3px;padding:14px 16px;margin-bottom:12px;">'
+def _render_card(item: Any, spec: Dict[str, Any]) -> str:
+    g = lambda f: getattr(item, f, None)  # noqa: E731
+    title = _humanize(g(spec["title"]) or "")
+    if spec.get("title_suffix") and g(spec["title_suffix"]) is not None:
+        title += f' &middot; {_html.escape(str(g(spec["title_suffix"])))}'
+    badge = ""
+    if spec.get("badge"):
+        field, fmt = spec["badge"]
+        v = g(field)
+        if isinstance(v, (int, float)):
+            badge = (f'<span style="font-family:var(--ck-mono);font-size:11px;'
+                     f'font-weight:700;color:{P["negative"] if fmt.startswith("-") else P["accent"]};'
+                     f'white-space:nowrap;">{fmt.format(v * 100)}</span>')
+    metas = "".join(_meta_badge(lbl, str(g(f))) for f, lbl in spec.get("metas", [])
+                    if g(f) not in (None, ""))
+    bodies = "".join(_field(lbl, str(g(f)), italic=ital)
+                     for f, lbl, ital in spec.get("bodies", []) if g(f))
+    chips = ""
+    if spec.get("chips"):
+        field, lbl = spec["chips"]
+        vals = g(field) or []
+        if vals:
+            chips = (f'<div style="margin:7px 0;"><div style="font-family:'
+                     f'var(--ck-mono);font-size:9px;letter-spacing:0.1em;'
+                     f'text-transform:uppercase;color:{P["text_faint"]};'
+                     f'margin-bottom:3px;">{_html.escape(lbl)}</div>'
+                     + "".join(_chip(str(v)) for v in vals) + '</div>')
+    hi = ""
+    if spec.get("highlight"):
+        field, lbl = spec["highlight"]
+        v = g(field)
+        if v:
+            hi = (f'<div style="margin-top:8px;padding-top:8px;border-top:1px '
+                  f'solid {P["border_dim"]};"><span style="font-family:'
+                  f'var(--ck-mono);font-size:9px;letter-spacing:0.1em;'
+                  f'text-transform:uppercase;color:{P["accent"]};">'
+                  f'{_html.escape(lbl)}</span><div style="font-size:12.5px;'
+                  f'line-height:1.55;color:{P["text"]};margin-top:3px;">'
+                  f'{_html.escape(str(v))}</div></div>')
+    head = (
         f'<div style="display:flex;justify-content:space-between;'
-        f'align-items:baseline;gap:12px;margin-bottom:8px;">'
+        f'align-items:baseline;gap:12px;margin-bottom:6px;">'
         f'<span style="font-family:var(--sc-serif);font-size:16px;font-weight:600;'
-        f'color:{P["text"]};">{_html.escape(_humanize(getattr(p,"name","")))}</span>'
-        f'{stat}</div>'
-        + _field(f"The deal · {year}", getattr(p, "deal_summary", ""))
-        + _field("Thesis at entry", getattr(p, "thesis_at_entry", ""))
-        + _field("What went wrong", getattr(p, "what_went_wrong", ""))
-        + (f'<div style="margin:7px 0;"><div style="font-family:var(--ck-mono);'
-           f'font-size:9px;letter-spacing:0.1em;text-transform:uppercase;'
-           f'color:{P["text_faint"]};margin-bottom:3px;">Early-warning signals'
-           f'</div>{sig_html}</div>' if sig_html else "")
-        + f'<div style="margin-top:8px;padding-top:8px;border-top:1px solid '
-        f'{P["border_dim"]};"><span style="font-family:var(--ck-mono);'
-        f'font-size:9px;letter-spacing:0.1em;text-transform:uppercase;'
-        f'color:{P["accent"]};">Partner lesson</span>'
-        f'<div style="font-size:12.5px;line-height:1.55;color:{P["text"]};'
-        f'font-style:italic;margin-top:3px;">'
-        f'{_html.escape(getattr(p,"partner_lesson",""))}</div></div>'
-        f'</div>'
+        f'color:{P["text"]};">{title}</span>{badge}</div>'
     )
-
-
-def _trap_card(t: Any) -> str:
     return (
         f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
         f'border-radius:3px;padding:14px 16px;margin-bottom:12px;">'
-        f'<div style="font-family:var(--sc-serif);font-size:15px;font-weight:600;'
-        f'color:{P["text"]};margin-bottom:8px;">'
-        f'{_html.escape(_humanize(getattr(t,"name","")))}</div>'
-        f'<div style="margin:7px 0;"><div style="font-family:var(--ck-mono);'
-        f'font-size:9px;letter-spacing:0.1em;text-transform:uppercase;'
-        f'color:{P["text_faint"]};margin-bottom:2px;">Seller pitch</div>'
-        f'<div style="font-size:12.5px;line-height:1.55;color:{P["text_dim"]};'
-        f'font-style:italic;">&ldquo;{_html.escape(getattr(t,"seller_pitch",""))}'
-        f'&rdquo;</div></div>'
-        f'<div style="margin-top:8px;padding-top:8px;border-top:1px solid '
-        f'{P["border_dim"]};"><span style="font-family:var(--ck-mono);'
-        f'font-size:9px;letter-spacing:0.1em;text-transform:uppercase;'
-        f'color:{P["accent"]};">Partner rebuttal</span>'
-        f'<div style="font-size:12.5px;line-height:1.55;color:{P["text"]};'
-        f'margin-top:3px;">{_html.escape(getattr(t,"partner_rebuttal",""))}</div>'
-        f'</div></div>'
+        f'{head}{metas}{bodies}{chips}{hi}</div>'
     )
+
+
+# ── per-library config: loader + intro + card spec ──────────────────────────
+def _from_list(module: str, fn: str) -> Callable[[], List[Any]]:
+    return lambda: list(getattr(importlib.import_module(
+        f"..pe_intelligence.{module}", __package__), fn)())
+
+
+def _from_const(module: str, const: str) -> Callable[[], List[Any]]:
+    return lambda: list(getattr(importlib.import_module(
+        f"..pe_intelligence.{module}", __package__), const))
+
+
+_LIBRARIES: Dict[str, Dict[str, Any]] = {
+    "failures": {
+        "title": "Historical Failures",
+        "intro": "Dated PE-healthcare deals that broke — thesis at entry, what "
+                 "happened, and the lesson. Pattern-match a live deal before "
+                 "you repeat one.",
+        "load": _from_list("historical_failure_library", "list_all_patterns"),
+        "spec": {
+            "title": "name", "title_suffix": "year",
+            "badge": ("ebitda_destruction_pct", "-{:.1f}% EBITDA"),
+            "bodies": [("deal_summary", "The deal", False),
+                       ("thesis_at_entry", "Thesis at entry", False),
+                       ("what_went_wrong", "What went wrong", False)],
+            "chips": ("early_warning_signals", "Early-warning signals"),
+            "highlight": ("partner_lesson", "Partner lesson"),
+        },
+    },
+    "traps": {
+        "title": "Partner Traps",
+        "intro": "Seller pitches a partner has heard before, each paired with "
+                 "the rebuttal and the realistic number to underwrite to.",
+        "load": _from_list("partner_traps_library", "list_all_traps"),
+        "spec": {
+            "title": "name",
+            "bodies": [("seller_pitch", "Seller pitch", True)],
+            "highlight": ("partner_rebuttal", "Partner rebuttal"),
+        },
+    },
+    "motivations": {
+        "title": "Seller Motivations",
+        "intro": "What's really driving the sale — urgency, leverage, and the "
+                 "partner play that uses it.",
+        "load": _from_const("seller_motivation_decoder", "MOTIVATION_LIBRARY"),
+        "spec": {
+            "title": "name",
+            "metas": [("seller_urgency", "urgency"),
+                      ("buyer_leverage", "our leverage"),
+                      ("price_sensitivity", "price sens.")],
+            "bodies": [("description", "Signal", False),
+                       ("common_seller_position", "Typical seller position", False)],
+            "highlight": ("negotiation_counter", "Partner play"),
+        },
+    },
+    "archetypes": {
+        "title": "Failure Archetypes",
+        "intro": "Structural shapes a deal fails in — the mechanism and the "
+                 "counter, independent of any single named deal.",
+        "load": _from_const("failure_archetype_library", "ARCHETYPES"),
+        "spec": {
+            "title": "name",
+            "bodies": [("shape_description", "Shape", False),
+                       ("structural_reason", "Why it breaks", False)],
+            "chips": ("signals", "Signals to watch"),
+            "highlight": ("partner_counter", "Partner counter"),
+        },
+    },
+    "bidders": {
+        "title": "Bidder Landscape",
+        "intro": "Buyer profiles in a process — typical behavior, the premium "
+                 "they'll pay, and the posture to take against each.",
+        "load": _from_const("bidder_landscape_reader", "PROFILE_LIBRARY"),
+        "spec": {
+            "title": "name",
+            "badge": ("expected_price_premium_pct", "+{:.1f}% premium"),
+            "metas": [("concession_posture", "concedes on"),
+                      ("partner_posture", "our posture")],
+            "bodies": [("typical_behavior", "Typical behavior", False)],
+            "highlight": ("partner_counter", "Partner counter"),
+        },
+    },
+    "narratives": {
+        "title": "Banker Narratives",
+        "intro": "The CIM and management-meeting plays a banker runs — name the "
+                 "play, know why it works, and defuse it.",
+        "load": _from_const("banker_narrative_decoder", "NARRATIVE_LIBRARY"),
+        "spec": {
+            "title": "name",
+            "bodies": [("what_banker_says", "What the banker says", True),
+                       ("why_it_works", "Why it works", False)],
+            "chips": ("tells", "Tells"),
+            "highlight": ("partner_counter", "Partner counter"),
+        },
+    },
+}
+_DEFAULT_LIB = "failures"
 
 
 def _load(library: str) -> List[Any]:
-    mod_name, list_fn, _, _ = _LIBRARIES[library]
-    mod = importlib.import_module(f"..pe_intelligence.{mod_name}", __package__)
-    return list(getattr(mod, list_fn)())
+    cfg = _LIBRARIES.get(library) or _LIBRARIES[_DEFAULT_LIB]
+    return cfg["load"]()
 
 
 def render_pe_reference_page(library: str = "") -> str:
     """Render a curated reference library (deal-independent)."""
     library = library if library in _LIBRARIES else _DEFAULT_LIB
-    _, _, title, intro = _LIBRARIES[library]
+    cfg = _LIBRARIES[library]
+    title, intro, spec = cfg["title"], cfg["intro"], cfg["spec"]
     items = _load(library)
 
-    cards = "".join(
-        (_failure_card(it) if library == "failures" else _trap_card(it))
-        for it in items
-    )
+    cards = "".join(_render_card(it, spec) for it in items)
 
-    # Library switcher chips.
     tabs = []
-    for key, (_, _, t, _) in _LIBRARIES.items():
+    for key, c in _LIBRARIES.items():
         on = key == library
-        n = len(_load(key))
+        n = len(c["load"]())
         tabs.append(
             f'<a href="/diligence/pe-reference?library={key}" '
             f'style="font-family:var(--ck-mono);font-size:11px;padding:5px 11px;'
@@ -168,22 +249,24 @@ def render_pe_reference_page(library: str = "") -> str:
             f'text-decoration:none;border:1px solid '
             f'{P["accent"] if on else P["border"]};'
             f'background:{P["accent"] if on else P["panel"]};'
-            f'color:{"#fff" if on else P["text_dim"]};">{_html.escape(t)} ({n})</a>'
+            f'color:{"#fff" if on else P["text_dim"]};">'
+            f'{_html.escape(c["title"])} ({n})</a>'
         )
 
     kpis = (
         ck_kpi_block("Entries", str(len(items)), title)
-        + ck_kpi_block("Libraries", str(len(_LIBRARIES)), "curated, deal-independent")
+        + ck_kpi_block("Libraries", str(len(_LIBRARIES)),
+                       "curated, deal-independent")
         + ck_kpi_block("Use", "Pattern-match", "against a live deal before you "
-                       "repeat one")
+                       "commit")
     )
 
     sp = ck_source_purpose(
         purpose=intro,
         universe="corpus",
         confidence="derived",
-        source="rcm_mc.pe_intelligence curated libraries — real named public "
-               "events + partner-judgment analysis (not a live data feed)",
+        source="rcm_mc.pe_intelligence curated libraries — real partner "
+               "knowledge + judgment analysis (not a live data feed)",
         next_action="Run a tool on a deal",
         next_href="/diligence/pe-tool",
     )
@@ -191,8 +274,8 @@ def render_pe_reference_page(library: str = "") -> str:
     body = (
         ck_page_title(title, eyebrow="DILIGENCE · REFERENCE",
                       meta=f"{len(items)} entries · curated knowledge base")
-        + ck_illustrative_note("a curated knowledge base — real named events "
-                               "with partner-judgment analysis, not live data")
+        + ck_illustrative_note("a curated knowledge base — real patterns with "
+                               "partner-judgment analysis, not live data")
         + sp
         + f'<div style="margin:10px 0 14px;">{"".join(tabs)}</div>'
         + f'<div class="ck-kpi-grid">{kpis}</div>'
