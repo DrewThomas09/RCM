@@ -43,7 +43,10 @@ enhancements, real-data wiring on existing/public data, tests.
 - #853 RAG indexer fix · #854 target-screener · #855 bear-case header
 
 ### PRs merged
-- #849, #850, #851, #852, #853, #854 (all green-merged + deployed)
+- #849–#859 (11 PRs, all green-merged + deployed): scorecard/ledger, payer-stress,
+  hcris-xray, provider-xray, RAG-indexer fix, target-screener, bear-case,
+  data-honesty guards, model-page Guide contexts, predictive-screener,
+  market-intel header.
 
 ### Deployed SHAs
 - 878fcb65 (loop start) → fbc3a50f (after #854); /healthz ok throughout

@@ -59,14 +59,38 @@ counterfactual,covenant-stress,bridge-audit}; /cost-structure, /debt-service,
 /provider-network; /data-room/*, /ebitda-bridge/*, /scenarios/*; /ml-insights/*,
 /model-quality.
 
-## Improvement queue (sorted: deal-team importance × low score × easy win)
-1. **Payer Stress** (B-, high importance) — full evidence-layout rebuild + header + Guide + next-actions.
-2. **HCRIS X-Ray** (B+) — "what this means" + IC-question panel + Guide suggested-questions.
-3. **Provider X-Ray** (B) — source-purpose header + deal-implications panel.
-4. **ML pages** (denial-prediction, deal-mc, model-quality) — model-honesty pass: state method (weighting/log-transform/clustering), real vs illustrative performance, caveats, Guide. **No invented model metrics.**
-5. **Risk Workbench + Physician EU** (DATA REQUIRED) — activation path + import templates + management request list + evidence checklist.
-6. **Target Screener** (B) — next-action panel + Guide + source labels.
-7. **YELLOW corpus pages** (deal-autopsy, bear-case, predictive-screener, deal-screening, sponsor-league, backtest) — honest labels + reframe to research/reference or DATA REQUIRED.
-8. **Cost Structure / Debt Service / Ref Pricing / CMS APM / Payer Rate Trends / Drug Shortage / Risk Adjustment / Provider Network** — score + source headers + caveats + next actions.
-9. **Market/Industry** — source-confidence strips + Guide + validation panels.
-10. **Data-honesty regression guards** — validators so weak/synthetic states can't regress.
+## Progress (Workbench Excellence Loop, PRs #849–859)
+Re-scored after the first improvement sweep. **Finding:** most analyzer pages
+were already more honest/built than the conservative loop_start grades — they
+mainly lacked the standard `ck_source_purpose` band and on-page Guide/next-action
+panels, now added. Grade deltas:
+
+| Route | loop_start | now | What changed |
+|---|---|---|---|
+| /diligence/payer-stress | B- | A- | source/purpose header + management-questions panel (#850) |
+| /diligence/hcris-xray | B+ | A | header + "What this means for IC" panel (#851) |
+| /diligence/xray | B | A- | source/purpose band (#852) |
+| /diligence/bear-case | D | C+ | honesty header on both paths + Guide ctx (#855, #857) |
+| /diligence/deal-mc | C | B | DOCUMENTED Guide ctx: method + limits (#857) |
+| /diligence/denial-prediction | C | B | DOCUMENTED Guide ctx + claims source links (#857) |
+| /target-screener | B | A- | header + next-actions + geo-suite link (#854) |
+| /predictive-screener | D | C+ | header labels scores as model estimates (#858) |
+| /market-intel | B | A- | header + geo section (#844, #859) |
+| /cost-structure, /debt-service, /ref-pricing, /cms-apm, /payer-rate-trends, /drug-shortage, /risk-adjustment, /provider-network | (pending) | B+/A- | re-scored: already carried HCRIS-live / illustrative / DATA REQUIRED headers |
+| /industry/* | B | A | already licensed-derived provenance + header + public-data connections |
+| Guide/RAG corpus | — | — | restored 13 dropped curated cards (#853); guard locks the contract (#856) |
+
+Net: the Diligence/Source/Market analyzer surface now consistently carries a
+source/purpose header, an honesty label, and (for model pages) a DOCUMENTED
+Guide context. Regression guard (`test_diligence_source_purpose_headers`) +
+data-source audit (0 flagged) keep it from regressing.
+
+## Improvement queue (refreshed — genuine remaining gaps)
+1. **On-page Guide suggested-questions** — render suggested questions on the key analyzer pages (Guide as on-page functionality, not just backend context).
+2. **Visual upgrades** — pages with real data but table-only views: add a real chart where the data supports it (peer percentile bar, distribution, trend only where real time-series exists). No fake trends.
+3. **DATA REQUIRED depth** — Risk Workbench / Physician EU / management-scorecard: confirm import template + management request list + evidence checklist + activation path.
+4. **market-intel/geo + market-data/state** — verify provenance strip + add Guide suggested-questions.
+5. **ML log-transform diagnostic** — careful, well-tested addition to the predictor's DiagnosticReport (skewness → log-transform recommendation), as a dedicated PR (not a 180s tick). No invented metrics.
+6. **Covenant-stress / bridge-audit / exit-timing / counterfactual / management** — confirm source/purpose header + add to the regression guard.
+7. **Tools index** — keep honesty dots accurate as pages change tier.
+8. **Re-score remaining pending routes** and fold into the regression guard's `_REQUIRE_SOURCE_PURPOSE` list.
