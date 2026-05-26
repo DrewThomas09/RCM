@@ -45,7 +45,7 @@ _GREEN = frozenset({
     "/cms-sources", "/cms-data-browser", "/data", "/data/catalog",
     "/data/refresh", "/data-intelligence", "/data-activation", "/state-compare",
     "/state-rankings", "/state-profile", "/state-peers", "/geo-intel",
-    "/market-data/map",
+    "/county-explorer", "/market-data/map",
     "/market-data/state/CA", "/methodology", "/methodology/calculations",
     "/metric-glossary", "/rcm-benchmarks", "/library", "/verticals",
     "/module-index", "/tools", "/benchmarks", "/diligence/benchmarks",

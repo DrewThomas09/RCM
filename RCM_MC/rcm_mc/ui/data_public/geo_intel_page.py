@@ -27,6 +27,9 @@ _CARDS = [
     ("Similar States", "/state-peers",
      "Find the states whose real public-data profile is most like a chosen state.",
      "Best for: building a comp set — “if the thesis works here, where else?”"),
+    ("County Explorer", "/county-explorer",
+     "Drill into a state's counties on real Census/ACS demographics, sortable.",
+     "Best for: sub-state targeting — which counties carry the market?"),
 ]
 
 _DATASETS = [
