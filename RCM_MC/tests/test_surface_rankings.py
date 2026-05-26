@@ -30,7 +30,9 @@ class RankingEngineTests(unittest.TestCase):
             self.assertLessEqual(r["effort"], 5.0)
             self.assertGreaterEqual(r["useful"], 0.0)
             self.assertLessEqual(r["useful"], 5.0)
-            self.assertAlmostEqual(r["total"], round(r["effort"] + r["useful"], 1))
+            # Usefulness weighted 1.5×, normalized to 0-10.
+            expected = round((r["useful"] * 1.5 + r["effort"]) * 10.0 / 12.5, 1)
+            self.assertAlmostEqual(r["total"], expected)
             self.assertLessEqual(r["total"], 10.0)
 
     def test_sorted_descending(self):

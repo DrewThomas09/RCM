@@ -21,7 +21,9 @@ signals only, **no hand-tuned per-page numbers**:
 | **Effort / depth** | renderer LOC (≥1500→5 · ≥800→4 · ≥450→3 · ≥250→2 · ≥100→1) + 0.5 if the page has tests | how much real work the page represents |
 | **PE / Chartis-advisory usefulness** | data-honesty tier (green 3 · navy 2 · data-required 1.5 · yellow 1) + 1 if in a core deal-workflow section (Source/Diligence/Portfolio/Pipeline) + 0.5 for a declared `ck_source_purpose` header + 0.5 for real-data wiring | how useful for a partner / advisory team |
 
-**Total = effort + usefulness (0–10).** The full ranked tables — overall top,
+**Total = (usefulness × 1.5 + effort × 1.0), normalized to 0–10** — usefulness
+weighted above raw effort, so a real-data page a partner actually uses beats a
+big page nobody needs. The full ranked tables — overall top,
 per-category, and "buried gems" — live in
 [`PEDESK_SURFACE_RANKINGS.md`](PEDESK_SURFACE_RANKINGS.md). Regenerate any time:
 

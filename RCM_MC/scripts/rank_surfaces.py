@@ -39,6 +39,13 @@ _EXCLUDE_MODULES = {"_chartis_kit", "_ui_kit", "_web_components", "brand",
                     "_html_polish", "_workbook_style", "csv_to_html",
                     "json_to_html", "text_to_html"}
 
+# Usefulness weighted above raw effort (agreed rubric): a real-data page a
+# partner actually uses beats a big page nobody needs. Total = useful*1.5 +
+# effort*1.0, scaled to a 0-10 range (max 5*1.5 + 5 = 12.5 → normalize).
+_USEFUL_WEIGHT = 1.5
+_EFFORT_WEIGHT = 1.0
+_TOTAL_MAX = 5.0 * _USEFUL_WEIGHT + 5.0 * _EFFORT_WEIGHT  # 12.5
+
 
 def _route_module_map() -> Dict[str, str]:
     """route → ui module stem, parsed from the GET dispatch in server.py."""
@@ -131,7 +138,9 @@ def build_rankings():
         rows.append({
             "route": route, "module": stem, "loc": loc, "tier": tier,
             "section": section, "tested": tested, "src_purpose": src_purpose,
-            "effort": effort, "useful": useful, "total": round(effort + useful, 1),
+            "effort": effort, "useful": useful,
+            "total": round(
+                (useful * _USEFUL_WEIGHT + effort * _EFFORT_WEIGHT) * 10.0 / _TOTAL_MAX, 1),
         })
     rows.sort(key=lambda r: (-r["total"], -r["loc"]))
     return rows
@@ -165,7 +174,7 @@ def main() -> int:
            "(green 3 · navy 2 · data-required 1.5 · yellow 1) + 1 for a core "
            "deal-workflow section (Source/Diligence/Portfolio/Pipeline) + 0.5 "
            "for a declared source/purpose header + 0.5 for real-data wiring.\n",
-           "- **Total = effort + usefulness (0-10).**\n",
+           "- **Total = (usefulness × 1.5 + effort × 1.0), normalized to 0-10** (usefulness weighted above effort).**\n",
            f"\nRanked {len(rows)} route-backed page modules.\n"]
 
     out.append("\n## Top 25 overall (front-facing candidates)\n\n")
