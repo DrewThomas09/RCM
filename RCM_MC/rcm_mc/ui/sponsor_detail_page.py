@@ -194,6 +194,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
     from ._chartis_kit import (
         chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
         ck_next_section, ck_page_title, ck_provenance_tooltip,
+        ck_source_purpose,
     )
     from ..data_public.deals_corpus import DealsCorpus
     from ..data_public.sponsor_track_record import (
@@ -210,6 +211,13 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
             "timeline. Use when evaluating a sponsor's pitched "
             "base case."
         ),
+    ) + ck_source_purpose(
+        purpose="Compute a sponsor's realized track record (median MOIC, win rate, sectors, vintages) vs the corpus to sanity-check a pitched base case.",
+        universe="corpus",
+        confidence="illustrative",
+        source="Built from the platform deal-outcome corpus — an illustrative seed corpus, not a verified live-fund record. Directional context, not attribution.",
+        next_action="Compare the sponsor's deals on Comparable Outcomes",
+        next_href="/diligence/comparable-outcomes",
     )
 
     # Pull corpus + build records once
