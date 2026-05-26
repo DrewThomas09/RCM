@@ -39,16 +39,23 @@ enhancements, real-data wiring on existing/public data, tests.
 - **start main SHA:** 878fcb65
 
 ### PRs opened
-- (none yet — scorecard PR in flight)
+- #849 scorecard+ledger · #850 payer-stress · #851 hcris-xray · #852 provider-xray
+- #853 RAG indexer fix · #854 target-screener · #855 bear-case header
 
 ### PRs merged
-- (none yet this loop)
+- #849, #850, #851, #852, #853, #854 (all green-merged + deployed)
 
 ### Deployed SHAs
-- 878fcb65 (loop start, /healthz ok)
+- 878fcb65 (loop start) → fbc3a50f (after #854); /healthz ok throughout
 
 ### Pages improved
-- (none yet)
+- Payer Stress (#850) — source/purpose header + management-questions panel
+- HCRIS X-Ray (#851) — source/purpose header + "What this means for IC" panel
+- Provider/CMS X-Ray (#852) — source/purpose header band
+- Target Screener (#854) — header + next-actions + real geo-suite link
+- Bear Case (#855) — honesty source/purpose header on both render paths
+- Guide/RAG (#853) — restored 13 dropped curated cards (9→22 indexed)
+- ML audit — denial-prediction + deal-mc verified already honest (no invented model performance); predictor engine mature (RidgeCV/LOO + heteroscedasticity/nonlinearity/VIF/Cook's-D diagnostics). Log-transform diagnostic flagged as a careful future PR, not a 180s tick.
 
 ### Charts improved
 - (none yet)
@@ -62,17 +69,17 @@ enhancements, real-data wiring on existing/public data, tests.
 ### Synthetic / DATA REQUIRED pages fixed
 - (none yet)
 
-### Next 10 tasks
-1. Create the quality scorecard (this PR) — score Diligence/Tools/X-Ray/Market/Industry/provider/screener routes.
-2. Payer Stress (/diligence/payer-stress) — source/purpose header + evidence layout + Guide + next-actions.
-3. HCRIS X-Ray — interpretation/"what this means" + IC-question panel + Guide suggested questions.
-4. Provider X-Ray (/diligence/xray) — source-purpose header + deal-implications panel.
-5. Risk Workbench (DATA REQUIRED) — confirm activation path + import template + Guide context.
-6. Physician EU (DATA REQUIRED) — activation path polish + evidence checklist.
-7. ML/prediction quality: denial-prediction + deal-mc + model_quality — honesty on model performance, log-transform/weighting/clustering review (no invented metrics).
-8. Cost Structure / Debt Service / Ref Pricing — source headers + caveats + next actions.
-9. Target Screener — next-action panel + Guide questions + source labels.
-10. Data-honesty regression guards doc + validators (no unlabeled illustrative tables, no fake trends).
+### Next 10 tasks (refreshed after #854)
+1. Cost Structure (/cost-structure) — source/purpose header + caveats + next-actions.
+2. Debt Service (/debt-service) — source/purpose header + management questions.
+3. Reference-based Pricing (/ref-pricing) — header + source-confidence + next-actions.
+4. CMS APM tracker (/cms-apm) + Payer Rate Trends (/payer-rate-trends) — header + caveats.
+5. Risk Workbench + Physician EU (DATA REQUIRED) — confirm/polish activation path + import template + management request list + evidence checklist.
+6. Drug Shortage / Risk Adjustment / Provider Network — header + interpretation + next-actions.
+7. Predictive Screener + Deal Screening (YELLOW) — honest model-status label + activation path.
+8. Market Intelligence / Industry — source-confidence strips + Guide + validation panels.
+9. Data-honesty regression guards doc + validators (no unlabeled illustrative tables, no fake trends, no unknown-source Diligence/Tools page).
+10. Guide context for newly-headed pages (payer-stress, target-screener, bear-case) + suggested questions.
 
 ---
 
