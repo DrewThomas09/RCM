@@ -183,6 +183,61 @@ def _q1(qs: Dict[str, List[str]], key: str, default: str = "") -> str:
     return (qs.get(key) or [default])[0].strip()
 
 
+def _find_provider(ccn: str) -> Optional[Dict]:
+    """Resolve a single CCN to its normalized row across every vertical
+    (first match wins). Used by Compare, which only carries CCNs in
+    ?compare=. Returns None if the CCN isn't in any live universe."""
+    ccn = (ccn or "").strip()
+    if not ccn:
+        return None
+    # Provider-dict verticals: O(1) dict lookup each.
+    import importlib
+    for vkey, cfg in _VERTICAL_TABLE.items():
+        try:
+            mod = importlib.import_module(f"..data.{cfg['mod']}", __package__)
+            providers = getattr(mod, cfg["pf"])()
+            p = providers.get(ccn)
+            if p is None:
+                continue
+            quality = getattr(mod, cfg["qf"])() if hasattr(mod, cfg["qf"]) else {}
+            qkey, qlabel = cfg["q"]
+            size_attr, size_label = (cfg["size"] or (None, None))
+            return {
+                "ccn": ccn, "vertical": vkey,
+                "name": str(getattr(p, cfg["name"], "") or "—"),
+                "city": str(getattr(p, "city", "") or ""),
+                "state": (getattr(p, "state", "") or "").strip().upper(),
+                "ownership": str(getattr(p, "ownership", "") or "—"),
+                "size": (_num_or_none(getattr(p, size_attr, None)) if size_attr else None),
+                "size_label": size_label,
+                "q": _num_or_none((quality.get(ccn, {}) or {}).get(qkey)),
+                "q_label": qlabel, "q_pct": False, "source": cfg["src"],
+            }
+        except Exception:  # noqa: BLE001
+            continue
+    # Hospitals (HCRIS dataframe) — checked last (heavier).
+    try:
+        from ..data.hcris import load_hcris
+        df = load_hcris()
+        if df is not None and "ccn" in df.columns:
+            m = df[df["ccn"].astype(str) == ccn]
+            if not m.empty:
+                r = m.iloc[0]
+                return {
+                    "ccn": ccn, "vertical": "hospitals",
+                    "name": str(r.get("name", "") or "—"),
+                    "city": str(r.get("city", "") or ""),
+                    "state": str(r.get("state", "") or "").upper(),
+                    "ownership": str(r.get("control_type", "") or "—"),
+                    "size": _num_or_none(r.get("beds")), "size_label": "Beds",
+                    "q": _num_or_none(r.get("operating_margin")),
+                    "q_label": "Op margin", "q_pct": True, "source": "CMS HCRIS",
+                }
+    except Exception:  # noqa: BLE001
+        pass
+    return None
+
+
 def _num_or_none(v) -> Optional[float]:
     """Coerce to float, returning None for None / NaN / non-numeric — so the
     table renders '—' rather than crashing or fabricating a value."""
@@ -441,11 +496,14 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         '<th style="padding:6px 8px;">Source</th>'
         '<th style="padding:6px 8px;">Open</th></tr>'
     )
+    cur_cmp = [c for c in _q1(qs, "compare").split(",") if c]
     trs = []
     for r in rows:
         ccn = _h.escape(r["ccn"])
         xray = f'/diligence/xray?ccn={ccn}&vertical={vertical}'
         insp = _href("inspector", qs).split("?")[0] + f'?view=inspector&vertical={vertical}&ccn={ccn}'
+        cmp_list = ",".join(dict.fromkeys(cur_cmp + [r["ccn"]]))  # append, de-dup
+        cmp_href = f'/target-screener?view=compare&compare={cmp_list}'
         loc = _h.escape(", ".join([p for p in (r["city"], r["state"]) if p]) or "—")
         size_td = (f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;">'
                    f'{int(r["size"]) if r.get("size") is not None else "—"}</td>') if has_size else ""
@@ -460,7 +518,8 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
             f'<td style="padding:5px 8px;font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-dim,#6a7480);">{_h.escape(r["source"])}</td>'
             f'<td style="padding:5px 8px;white-space:nowrap;">'
             f'<a class="ck-link" href="{xray}">X-Ray</a> · '
-            f'<a class="ck-link" href="{insp}">Inspect</a></td>'
+            f'<a class="ck-link" href="{insp}">Inspect</a> · '
+            f'<a class="ck-link" href="{cmp_href}">+Cmp</a></td>'
             '</tr>'
         )
     scope = f" · {state}" if state else ""
@@ -551,15 +610,87 @@ def _screen_columns(qs, ck) -> str:
 
 
 def _screen_compare(qs, ck) -> str:
+    import html as _h
     comp = _q1(qs, "compare")
-    n = len([c for c in comp.split(",") if c]) if comp else 0
-    return _scaffold(f"Compare basket ({n} selected)", "PR 5", [
-        "Add/remove targets via ?compare=ccn1,ccn2,…",
-        "Metric-by-metric comparison with source/status chips per target.",
-        "Same-vertical targets compare fully; cross-vertical only on shared "
-        "metrics — non-comparable metrics show “not comparable”, never fake values.",
-        "Percentile/rank + market context where available.",
-    ])
+    ccns = [c.strip() for c in comp.split(",") if c.strip()][:6]
+    if not ccns:
+        return _scaffold("Compare basket (empty)", "now", [
+            "Add targets from Main with “+ Compare”, or pass "
+            "?compare=ccn1,ccn2,… (CCNs from any vertical).",
+            "Same-vertical targets compare on every metric; cross-vertical "
+            "targets compare only on shared metrics — vertical-specific rows "
+            "show “not comparable”, never fabricated values.",
+        ])
+    found = [(c, _find_provider(c)) for c in ccns]
+    cols = [(c, r) for c, r in found if r]
+    missing = [c for c, r in found if not r]
+    if not cols:
+        return ('<p class="ck-section-body">None of the requested CCNs '
+                f'({_h.escape(", ".join(ccns))}) resolved to a live provider '
+                'universe. Check the IDs or add targets from Main.</p>')
+    verticals = {r["vertical"] for _, r in cols}
+    cross = len(verticals) > 1
+
+    def _rm_link(drop):
+        keep = [c for c, _ in cols if c != drop]
+        return _href("compare", qs).split("?")[0] + (
+            f'?view=compare&compare={",".join(keep)}' if keep else "?view=compare")
+
+    # Header row: one column per provider with a remove (✕) control.
+    ths = ['<th style="padding:6px 8px;text-align:left;">Metric</th>']
+    for c, r in cols:
+        ths.append(
+            f'<th style="padding:6px 8px;text-align:left;vertical-align:top;">'
+            f'{_h.escape(r["name"])}'
+            f'<div style="font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-faint,#8b94a0);font-weight:400;">'
+            f'{_h.escape(c)} · {_h.escape(r["vertical"])}</div>'
+            f'<a class="ck-link" style="font-size:10px;" href="{_rm_link(c)}">✕ remove</a></th>')
+
+    def _row(label, fn):
+        tds = "".join(f'<td style="padding:5px 8px;">{fn(r)}</td>' for _, r in cols)
+        return (f'<tr style="border-bottom:1px solid var(--sc-rule,#e4ddca);">'
+                f'<td style="padding:5px 8px;font-weight:600;">{label}</td>{tds}</tr>')
+
+    def _q_cell(r):
+        # Cross-vertical quality metrics aren't the same scale → label each;
+        # if labels differ across the basket, say so rather than imply parity.
+        val = _fmt_q(r)
+        return f'{val} <span style="font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-faint,#8b94a0);">{_h.escape(r["q_label"])}</span>'
+
+    def _size_cell(r):
+        if r.get("size") is None:
+            return '<span style="color:var(--sc-text-faint,#8b94a0)">—</span>'
+        return f'{int(r["size"]):,} <span style="font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-faint,#8b94a0);">{_h.escape(r.get("size_label") or "")}</span>'
+
+    rows_html = (
+        _row("Vertical", lambda r: _h.escape(r["vertical"]))
+        + _row("Location", lambda r: _h.escape(", ".join([p for p in (r["city"], r["state"]) if p]) or "—"))
+        + _row("Ownership", lambda r: _h.escape(str(r["ownership"])))
+        + _row("Size", _size_cell)
+        + _row("Quality", _q_cell)
+        + _row("Source", lambda r: f'<span style="font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-dim,#6a7480);">{_h.escape(r["source"])}</span>')
+        + _row("Open", lambda r: f'<a class="ck-link" href="/diligence/xray?ccn={_h.escape(r["ccn"])}&vertical={_h.escape(r["vertical"])}">CMS X-Ray →</a>')
+    )
+    note = ""
+    if cross:
+        note = ('<p class="ck-section-body" style="font-style:italic;margin:10px 0 0;">'
+                'Cross-vertical comparison: only shared identity/size/quality rows '
+                'are shown, and Size/Quality use each vertical&rsquo;s own metric '
+                '(labeled per cell) — they are <strong>not directly comparable</strong> '
+                'across verticals. Stick to one vertical for full metric parity.</p>')
+    miss = ""
+    if missing:
+        miss = (f'<p class="ck-section-body" style="margin:8px 0 0;">Not found in any '
+                f'live universe: {_h.escape(", ".join(missing))}.</p>')
+    return (
+        f'<p class="ck-section-body" style="margin:0 0 8px;">Comparing {len(cols)} '
+        f'target(s){" across " + str(len(verticals)) + " verticals" if cross else ""}. '
+        'Real CMS data; “—” = not reported.</p>'
+        '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;'
+        'font-size:12.5px;font-family:var(--sc-sans,Inter Tight,sans-serif);">'
+        f'<thead><tr style="border-bottom:2px solid var(--sc-rule,#c9c1ac);">{"".join(ths)}</tr></thead>'
+        f'<tbody>{rows_html}</tbody></table></div>{note}{miss}'
+    )
 
 
 def _screen_missed(qs, ck) -> str:
