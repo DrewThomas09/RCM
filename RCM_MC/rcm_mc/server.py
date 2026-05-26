@@ -4513,6 +4513,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/data-activation":
             from .ui.data_public.data_activation_page import render_data_activation
             return self._send_html(render_data_activation())
+        if path == "/state-compare":
+            from .ui.data_public.state_compare_page import render_state_compare
+            _sc_qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            return self._send_html(render_state_compare(_sc_qs))
         if path == "/predictive-screener":
             return self._route_predictive_screener()
         if path.startswith("/data-room/") and not path.endswith("/add"):

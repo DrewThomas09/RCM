@@ -1,11 +1,11 @@
 {
   "summary": {
-    "pages": 174,
+    "pages": 175,
     "with_disclosure": 169,
-    "with_real_loader": 42,
+    "with_real_loader": 43,
     "flagged_no_disclosure": 0,
     "by_tier": {
-      "green": 28,
+      "green": 29,
       "navy": 73,
       "yellow": 37,
       "red": 0
@@ -1509,6 +1509,16 @@
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/state-compare",
+      "file": "state_compare_page.py",
+      "tier": "green",
+      "has_disclosure": false,
+      "imports_real_loader": true,
+      "uses_seed_corpus": false,
       "renders_data": true,
       "flag": ""
     },
