@@ -182,6 +182,71 @@ def _t_dist_cdf_approx(t: float, df: int) -> float:
     return min(2 * one_tail, 1.0)
 
 
+def _betacf(a: float, b: float, x: float) -> float:
+    """Continued-fraction for the incomplete beta (Numerical Recipes)."""
+    import math
+    MAXIT, EPS, FPMIN = 200, 3e-12, 1e-300
+    qab, qap, qam = a + b, a + 1.0, a - 1.0
+    c = 1.0
+    d = 1.0 - qab * x / qap
+    if abs(d) < FPMIN:
+        d = FPMIN
+    d = 1.0 / d
+    h = d
+    for m in range(1, MAXIT + 1):
+        m2 = 2 * m
+        aa = m * (b - m) * x / ((qam + m2) * (a + m2))
+        d = 1.0 + aa * d
+        if abs(d) < FPMIN:
+            d = FPMIN
+        c = 1.0 + aa / c
+        if abs(c) < FPMIN:
+            c = FPMIN
+        d = 1.0 / d
+        h *= d * c
+        aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2))
+        d = 1.0 + aa * d
+        if abs(d) < FPMIN:
+            d = FPMIN
+        c = 1.0 + aa / c
+        if abs(c) < FPMIN:
+            c = FPMIN
+        d = 1.0 / d
+        de = d * c
+        h *= de
+        if abs(de - 1.0) < EPS:
+            break
+    return h
+
+
+def _betai(a: float, b: float, x: float) -> float:
+    """Regularized incomplete beta I_x(a, b)."""
+    import math
+    if x <= 0.0:
+        return 0.0
+    if x >= 1.0:
+        return 1.0
+    lbeta = math.lgamma(a + b) - math.lgamma(a) - math.lgamma(b)
+    bt = math.exp(lbeta + a * math.log(x) + b * math.log(1.0 - x))
+    if x < (a + 1.0) / (a + b + 2.0):
+        return bt * _betacf(a, b, x) / a
+    return 1.0 - bt * _betacf(b, a, 1.0 - x) / b
+
+
+def f_pvalue(f_stat: float, df_model: int, df_resid: int) -> float:
+    """Upper-tail p-value of an F statistic — P(F > f_stat).
+
+    Exact (to ~1e-10) via the incomplete beta, no scipy. Lets the regression
+    page report the F test's verdict, not just the statistic: a tiny p-value
+    next to a high F with few significant coefficients is precisely the
+    multicollinearity signature — the model is jointly significant while no
+    single predictor is."""
+    if f_stat <= 0 or df_model < 1 or df_resid < 1:
+        return 1.0
+    x = df_resid / (df_resid + df_model * float(f_stat))
+    return float(_betai(df_resid / 2.0, df_model / 2.0, x))
+
+
 def compute_vif(features_df: pd.DataFrame) -> Dict[str, float]:
     """Variance Inflation Factor per feature column.
 
