@@ -32,6 +32,8 @@ from ._chartis_kit import (
 # Tools that already have a dedicated live page — link the title straight there.
 _LIVE_ROUTES: Dict[str, str] = {
     "reimbursement_cliff_calendar_2026_2029": "/diligence/cliff-calendar",
+    "historical_failure_library": "/diligence/pe-reference?library=failures",
+    "partner_traps_library": "/diligence/pe-reference?library=traps",
 }
 
 

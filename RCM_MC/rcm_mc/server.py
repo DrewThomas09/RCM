@@ -3248,6 +3248,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_html(render_pe_tool_page(
                 slug=tool, review=review, deal_id=deal_id,
                 deal_name=deal_name, deals=deals, error=err or ""))
+        if path == "/diligence/pe-reference":
+            # Curated deal-independent reference libraries (historical failures,
+            # partner traps) from the pe_intelligence package.
+            from .ui.pe_reference_page import render_pe_reference_page
+            qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_pe_reference_page(
+                library=(qs.get("library") or [""])[0]))
         if path == "/diligence/root-cause":
             from .diligence._pages import render_root_cause_page
             qs = urllib.parse.parse_qs(parsed.query)
