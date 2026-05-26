@@ -17,6 +17,7 @@ from rcm_mc.ui.chartis.portfolio_analytics_page import (
     _hhi,
     _outlier_panel,
     _vintage_chart,
+    _vintage_chart_toggle,
     render_portfolio_analytics,
 )
 
@@ -121,7 +122,12 @@ class VintageChartMetricTests(unittest.TestCase):
             self.assertIn("<svg", svg)
 
     def test_empty_cohorts_degrade(self):
-        self.assertIn("No vintage data", _vintage_chart([], "moic"))
+        # The low-level SVG renderer returns "" for no plottable data (the
+        # caller owns the empty-state — see test_portfolio_analytics_vintage_chart).
+        self.assertEqual(_vintage_chart([], "moic"), "")
+        # The MOIC/Count/EV toggle wrapper degrades gracefully with an honest
+        # per-metric note so a partner toggling to an empty metric sees why.
+        self.assertIn("No vintage data", _vintage_chart_toggle([]))
 
 
 if __name__ == "__main__":

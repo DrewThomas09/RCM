@@ -106,7 +106,11 @@ def _vintage_chart(cohorts: List[Dict[str, Any]], metric: str = "moic") -> str:
         if c.get(field) is not None and isinstance(c.get("year"), (int, str))
     ]
     if not plotted:
-        return f'<p class="ck-pa-explainer" style="margin:8px 0;">No vintage data for {_html.escape(axis_label_txt.lower())}.</p>'
+        # No plottable value for this metric → return empty so the caller
+        # owns the empty-state. The MOIC/Count/EV toggle substitutes an
+        # honest per-metric note (see _vintage_chart_toggle); the sibling
+        # _vintage_table renders the page-level "No vintage data." state.
+        return ""
     plotted = sorted(plotted, key=lambda c: str(c.get("year", "")))
     width, height = 720, 220
     pad_l, pad_r, pad_t, pad_b = 56, 16, 28, 32
@@ -187,8 +191,15 @@ def _vintage_chart_toggle(cohorts: List[Dict[str, Any]]) -> str:
         on = " on" if i == 0 else ""
         btns += (f'<button type="button" class="pa-vint-btn{on}" '
                  f'data-pa-vint="{key}">{label}</button>')
+        chart = _vintage_chart(cohorts, key)
+        if not chart:
+            # Honest per-metric empty state so toggling to an unrealized
+            # metric explains itself instead of showing a blank panel.
+            axis_txt = _VINTAGE_METRICS.get(key, _VINTAGE_METRICS["moic"])[1]
+            chart = (f'<p class="ck-pa-explainer" style="margin:8px 0;">'
+                     f'No vintage data for {_html.escape(axis_txt.lower())}.</p>')
         views += (f'<div class="pa-vint-view{on}" data-pa-vint-view="{key}">'
-                  f'{_vintage_chart(cohorts, key)}</div>')
+                  f'{chart}</div>')
     js = (
         "<script>(function(){var w=document.currentScript.closest('.pa-vint-wrap');"
         "if(!w)return;w.querySelectorAll('[data-pa-vint]').forEach(function(b){"

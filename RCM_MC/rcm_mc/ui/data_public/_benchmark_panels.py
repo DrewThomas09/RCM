@@ -32,7 +32,7 @@ def mips_quality_panel(P: Dict[str, Any]) -> str:
             return ""
         hist = _hist_cells(bands, "band", "pct", P)
         return (
-            f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
+            f'<div style="background:#fff;border:1px solid {P["border"]};'
             f'border-left:3px solid {P["accent"]};padding:14px 16px;margin-bottom:16px">'
             f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
             f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:6px">'
@@ -87,7 +87,7 @@ def community_health_panel(P: Dict[str, Any]) -> str:
         )
         rel = s.get("release", ""); n_cty = int(s.get("counties", 0))
         return (
-            f'<div style="background:{P["panel"]};border:1px solid {border};'
+            f'<div style="background:#fff;border:1px solid {border};'
             f'border-left:3px solid {acc};padding:14px 16px;margin-bottom:16px">'
             f'<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{tdim};'
             f'text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">'
@@ -139,7 +139,7 @@ def data_required_panel(
     gh = (f'<div style="margin-top:6px;font-size:10px;color:{fa}">Ask the Guide: '
           f'<i>{_html.escape(guide_hint)}</i></div>' if guide_hint else "")
     return (
-        f'<div style="background:{P["panel"]};border:1px solid {border};'
+        f'<div style="background:#fff;border:1px solid {border};'
         f'border-left:3px solid {ac};padding:14px 16px;margin-bottom:16px">'
         f'<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{td};'
         f'text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">'
