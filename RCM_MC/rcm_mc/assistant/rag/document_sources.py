@@ -35,7 +35,10 @@ _DOC_KEYWORDS = (
     "xray", "vertical_metric",
 )
 _DOC_DENY = ("secret", "credential", "session", "password", "token", "auth_")
-_MAX_DOC_FILES = 40
+# Raised from 40: the curated Guide source cards (docs/rag_sources/) are now
+# always prioritized below, and the doc corpus has grown — 40 silently dropped
+# ~13 curated cards by sort order (e.g. xray_benchmark_visuals).
+_MAX_DOC_FILES = 72
 
 
 def _join(label: str, val) -> str:
@@ -146,14 +149,21 @@ def _policy_document() -> RagDocument:
 
 def _curated_doc_paths() -> List[pathlib.Path]:
     docs_dir = _REPO_ROOT / "docs"
-    found: List[pathlib.Path] = []
+    rag_cards: List[pathlib.Path] = []
+    others: List[pathlib.Path] = []
     if docs_dir.is_dir():
         for p in sorted(docs_dir.rglob("*.md")):
             name = p.name.lower()
             if any(d in name for d in _DOC_DENY):
                 continue
-            if any(k in name for k in _DOC_KEYWORDS):
-                found.append(p)
+            # The deliberate Guide source cards in docs/rag_sources/ are the
+            # highest-value RAG docs — always index them ahead of the general
+            # keyword-matched corpus so the cap never silently drops one.
+            if p.parent.name == "rag_sources":
+                rag_cards.append(p)
+            elif any(k in name for k in _DOC_KEYWORDS):
+                others.append(p)
+    found: List[pathlib.Path] = rag_cards + others
     # Always include the Guide's own README (setup + behavior docs).
     readme = _REPO_ROOT / "rcm_mc" / "assistant" / "context" / "README.md"
     if readme.is_file():
