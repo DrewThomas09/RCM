@@ -47,6 +47,23 @@ _REQUIRE_SOURCE_PURPOSE = {
     "data_public/drug_shortage_page.py": _UI / "data_public" / "drug_shortage_page.py",
     "data_public/risk_adjustment_page.py": _UI / "data_public" / "risk_adjustment_page.py",
     "data_public/provider_network_page.py": _UI / "data_public" / "provider_network_page.py",
+    # Workbench Excellence Loop coverage extension: these analyzer/intelligence
+    # pages already declare their data basis via ck_source_purpose; lock them
+    # so the header can't be silently removed (honesty regression).
+    "data_public/payer_stress_page.py": _UI / "data_public" / "payer_stress_page.py",
+    "data_public/biosimilars_opp_page.py": _UI / "data_public" / "biosimilars_opp_page.py",
+    "data_public/diligence_checklist_page.py": _UI / "data_public" / "diligence_checklist_page.py",
+    "data_public/esg_dashboard_page.py": _UI / "data_public" / "esg_dashboard_page.py",
+    "data_public/hcit_platform_page.py": _UI / "data_public" / "hcit_platform_page.py",
+    "data_public/industry_page.py": _UI / "data_public" / "industry_page.py",
+    "data_public/insurance_tracker_page.py": _UI / "data_public" / "insurance_tracker_page.py",
+    "data_public/market_geo_page.py": _UI / "data_public" / "market_geo_page.py",
+    "data_public/mgmt_comp_page.py": _UI / "data_public" / "mgmt_comp_page.py",
+    "data_public/partner_economics_page.py": _UI / "data_public" / "partner_economics_page.py",
+    "data_public/physician_productivity_page.py": _UI / "data_public" / "physician_productivity_page.py",
+    "data_public/provider_retention_page.py": _UI / "data_public" / "provider_retention_page.py",
+    "deal_library_page.py": _UI / "deal_library_page.py",
+    "market_data_page.py": _UI / "market_data_page.py",
 }
 
 _HONEST_MARKERS = (
