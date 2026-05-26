@@ -35,7 +35,7 @@ class ReferenceLibraryTests(unittest.TestCase):
         # Each tab is a real curated dataclass constant — not just the originals.
         self.assertEqual(set(_LIBRARIES),
                          {"failures", "traps", "motivations", "archetypes",
-                          "bidders", "narratives", "signing"})
+                          "bidders", "narratives", "signing", "thesis"})
         for key in _LIBRARIES:
             h = render_pe_reference_page(key)
             self.assertIn("DILIGENCE", h.upper())
@@ -45,6 +45,13 @@ class ReferenceLibraryTests(unittest.TestCase):
         h = render_pe_reference_page("signing")
         self.assertIn("Counter · pre-close", h)
         self.assertRegex(h, r"\d+\.\d% cost")  # 1dp pct standard
+
+    def test_thesis_chains_render(self):
+        # Custom "chains" layout: each thesis lists its implicit claims to check.
+        h = render_pe_reference_page("thesis")
+        self.assertIn("Thesis Chains", h)
+        self.assertIn("Denial Reduction", h)
+        self.assertIn("implicit claims to check", h)
 
     def test_new_libraries_render_curated_content(self):
         self.assertIn("Partner play", render_pe_reference_page("motivations"))
