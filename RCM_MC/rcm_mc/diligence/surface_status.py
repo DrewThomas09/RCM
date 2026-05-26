@@ -152,6 +152,11 @@ _YELLOW = frozenset({
     "/deal-origination", "/deal-sourcing", "/screening/bankruptcy-survivor",
     "/diligence/thesis-pipeline", "/deal-postmortem", "/fund-learning",
     "/dpi-tracker", "/diligence/root-cause",
+    # Management scorecard: the page itself declares universe="illustrative"
+    # (leadership tenure/comp + forecast-miss histories are illustrative, not
+    # sourced) — it must NOT classify green/LIVE. Flagged after it ranked high
+    # on /diligence while showing made-up content under a LIVE dot.
+    "/diligence/management",
 })
 
 # ── RED: entirely synthetic / hardcoded fabricated values ───────────────────
