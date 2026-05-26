@@ -602,6 +602,18 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
     show_size = has_size and "size" not in hide
     show_q = "quality" not in hide
     show_src = "source" not in hide
+    # Force-hide a data column when this universe carries NO values for it
+    # (e.g. hospitals report no ownership / operating margin in HCRIS). An
+    # all-"—" column is dropped, never rendered blank — "the owner table
+    # shouldn't be there if we can't give any information".
+    def _has_any(field) -> bool:
+        return any(r.get(field) not in (None, "", "—") for r in rows)
+    if not _has_any("ownership"):
+        show_own = False
+    if has_size and not _has_any("size"):
+        show_size = False
+    if not _has_any("q"):
+        show_q = False
     hide_param = ("&hide=" + ",".join(sorted(hide))) if hide else ""
 
     def _sh(label, col, align="left"):
@@ -945,8 +957,11 @@ def _screen_columns(qs, ck) -> str:
     n = len(rows) or 1
     src = vinfo["universe"]
 
+    def _field_count(field) -> int:
+        return sum(1 for r in rows if r.get(field) not in (None, "", "—"))
+
     def _avail(field) -> str:
-        c = sum(1 for r in rows if r.get(field) not in (None, "", "—"))
+        c = _field_count(field)
         pct = 100.0 * c / n
         return f'{c:,}/{len(rows):,} ({pct:.0f}%)'
 
@@ -954,16 +969,30 @@ def _screen_columns(qs, ck) -> str:
     q_label = (rows[0]["q_label"] if rows else "Quality")
     # The columns the Main table currently surfaces, grouped by category, each
     # with its real source + a live availability count over the full universe.
+    # Identity/Geography/Source are structural (always shown); the data columns
+    # (ownership, size, quality) are only listed when this universe actually
+    # carries them — a column CMS doesn't report (0 rows) is dropped entirely,
+    # not shown at 0% (per "hide them entirely; an empty owner column shouldn't
+    # be there"). _HIDDEN_ZERO is surfaced to the reader as a short footnote.
     cols = [
         ("Provider name", "Identity", "name", src),
         ("CCN", "Identity", "ccn", src),
         ("City", "Geography", "city", src),
         ("State", "Geography", "state", src),
-        ("Ownership", "Ownership / consolidation", "ownership", src),
     ]
-    if size_label:
+    _hidden_zero: List[str] = []
+    if _field_count("ownership") > 0:
+        cols.append(("Ownership", "Ownership / consolidation", "ownership", src))
+    else:
+        _hidden_zero.append("Ownership")
+    if size_label and _field_count("size") > 0:
         cols.append((size_label, "Size / operational", "size", src))
-    cols.append((q_label, "Quality", "q", f"{src} quality"))
+    elif size_label:
+        _hidden_zero.append(size_label)
+    if _field_count("q") > 0:
+        cols.append((q_label, "Quality", "q", f"{src} quality"))
+    else:
+        _hidden_zero.append(q_label)
     cols.append(("Source", "Source / provenance", "source", "PEdesk provenance"))
 
     # Optional column visibility — these fields toggle on the Main table via
@@ -1022,12 +1051,21 @@ def _screen_columns(qs, ck) -> str:
                  f'<p class="ck-section-body" style="margin:0;">From {src}, not yet surfaced in the '
                  f'table (real, available to add): <span style="font-family:var(--sc-mono);font-size:11px;">{chips}</span>.</p>')
 
+    hidden_note = ""
+    if _hidden_zero:
+        hidden_note = (
+            f'<p class="ck-section-body" style="margin:8px 0 0;color:'
+            f'var(--sc-text-dim,#6a7480);font-size:11.5px;">Hidden for this '
+            f'universe (CMS reports no values, so they\'re left off rather than '
+            f'shown empty): '
+            f'<span style="font-family:var(--sc-mono);font-size:11px;">'
+            f'{_h.escape(", ".join(_hidden_zero))}</span>.</p>')
     return (
         f'<p class="ck-section-body" style="margin:0 0 8px;">Columns for the '
         f'<strong>{vinfo["label"]}</strong> universe ({src}), grouped by category '
-        f'with real source + availability across {len(rows):,} providers. A column '
-        f'with no source is never shown; "{q_label}" availability reflects how many '
-        f'providers actually report it.</p>' + "".join(body) + extra
+        f'with real source + availability across {len(rows):,} providers. Columns '
+        f'CMS doesn\'t report are dropped entirely — never shown at 0%.</p>'
+        + "".join(body) + extra + hidden_note
     )
 
 

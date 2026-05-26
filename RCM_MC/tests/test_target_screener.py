@@ -680,6 +680,23 @@ class BackwardCompatTests(unittest.TestCase):
         for path in ("/source", "/screen", "/predictive-screener"):
             self.assertEqual(self._status(path), 200, msg=path)
 
+    def test_no_data_columns_hidden_not_shown_at_zero(self):
+        # Hospitals report no ownership / operating-margin in HCRIS — those
+        # columns must be dropped entirely (never shown at 0%), and the page
+        # tells the reader they were hidden.
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        h = render_target_screener({"view": ["columns"], "vertical": ["hospitals"]})
+        self.assertNotIn("Ownership / consolidation", h)   # 0% → dropped
+        self.assertIn("Hidden for this universe", h)
+        self.assertNotIn("(0%)", h)                         # no empty columns
+
+    def test_data_columns_still_shown_where_available(self):
+        # A universe that DOES carry ownership keeps the column — the hide is
+        # data-driven, not blanket.
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        h = render_target_screener({"view": ["columns"], "vertical": ["snf"]})
+        self.assertIn("Ownership / consolidation", h)
+
 
 if __name__ == "__main__":
     unittest.main()
