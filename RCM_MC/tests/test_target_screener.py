@@ -432,9 +432,12 @@ class WorkbenchGeoVerticalTests(unittest.TestCase):
         self.assertIn("Age 65+", h)
         self.assertIn("usgeo-state", h)
 
-    def test_market_state_click_goes_to_geo_intel(self):
+    def test_market_state_links_to_state_profile(self):
+        # State rows/clicks deep-link to the real per-state page (/state-profile
+        # consumes ?state=), not the generic /geo-intel hub which ignores it.
         h = self._render(view="main", vertical="market")
-        self.assertIn("/geo-intel?state=", h)
+        self.assertIn("/state-profile?state=", h)
+        self.assertNotIn("/geo-intel?state=", h)
 
     def test_geo_value_safe_on_failure(self):
         from rcm_mc.ui.target_screener_page import _geo_state_values
