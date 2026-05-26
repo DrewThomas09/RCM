@@ -28,11 +28,15 @@ _JSON = _ROOT / "data_quality" / "page_data_source_audit.json"
 _MD = _ROOT / "docs" / "reports" / "PAGE_DATA_SOURCE_AUDIT.md"
 
 # real-data loader modules — importing one signals a live/derived source.
+# Importing the shared Geographic-Intelligence metric layer (state_compare_page:
+# _METRICS/_raw, all real public loaders) is also a real-data signal — the
+# rankings/profile/peers/metrics pages pull their figures through it rather than
+# importing rcm_mc.data directly.
 _REAL_LOADERS = (
     "rcm_mc.data import", "from ..data", "from rcm_mc.data.",
     "snf", "mips_data", "ma_data", "payer_data", "hrsa_data",
     "drug_shortage_data", "mssp_aco_data", "industry_intel", "market_intel",
-    "hcris",
+    "hcris", "state_compare_page import",
 )
 _DISCLOSURE = ("ck_source_purpose", "ck_illustrative_note", 'universe="',
                "universe='", "DATA REQUIRED", "EXPORT REQUIRED")
