@@ -301,6 +301,10 @@ def render_state_compare(params: Dict = None) -> str:
                   f'border-left:1px solid {border}">{_html.escape(med_str)}</td>')
         rows += f"<tr>{cells}</tr>"
 
+    screen_html = " · ".join(
+        f'<a href="/screen?state={s}" style="color:{ac};text-decoration:none">{s}</a>'
+        for s in states
+    )
     body = f"""
 <div class="ck-page-wrap">
   {ck_page_title("State Comparison", eyebrow="MARKET INTEL", meta="Side-by-side across every real state-keyed public dataset — CMS · CDC · HRSA · Census")}
@@ -317,6 +321,9 @@ def render_state_compare(params: Dict = None) -> str:
   <div style="overflow-x:auto;border:1px solid {border};border-radius:3px">
   <table style="width:100%;border-collapse:collapse"><thead><tr>{th}</tr></thead><tbody>{rows}</tbody></table>
   </div>
+  <p style="font-size:11px;color:{td};margin-top:10px">
+    Move from market to targets — screen hospitals in: {screen_html}.
+  </p>
   <p style="font-size:10px;color:{fa};margin-top:10px">
     Sources: CMS FFS provider enrollment · CMS SNF CHOW · CMS MA geographic enrollment ·
     CDC PLACES (model-based, full-population) · CMS HCAHPS (state) · Census/ACS via County
