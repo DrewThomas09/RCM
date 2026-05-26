@@ -3223,6 +3223,31 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_html(render_pe_library_page(
                 q=(qs.get("q") or [""])[0],
                 category=(qs.get("category") or [""])[0]))
+        if path == "/diligence/pe-tool":
+            # Run a pe_intelligence tool against a REAL deal's analysis packet,
+            # with a deal picker so an analyst can swap in their live deal.
+            from .ui.pe_tool_page import render_pe_tool_page, PE_TOOL_REGISTRY
+            qs = urllib.parse.parse_qs(parsed.query)
+            tool = (qs.get("tool") or [""])[0]
+            store = self._require_store()
+            try:
+                df = store.list_deals()
+                deals = [(str(r["deal_id"]), str(r.get("name") or r["deal_id"]))
+                         for _, r in df.iterrows()]
+            except Exception:  # noqa: BLE001
+                deals = []
+            deal_id = (qs.get("deal") or [""])[0]
+            if not deal_id and deals:
+                deal_id = deals[0][0]
+            review = None
+            err = ""
+            deal_name = ""
+            if deal_id and tool in PE_TOOL_REGISTRY:
+                review, err, meta = self._build_partner_review_context(deal_id)
+                deal_name = str(meta.get("deal_name") or "")
+            return self._send_html(render_pe_tool_page(
+                slug=tool, review=review, deal_id=deal_id,
+                deal_name=deal_name, deals=deals, error=err or ""))
         if path == "/diligence/root-cause":
             from .diligence._pages import render_root_cause_page
             qs = urllib.parse.parse_qs(parsed.query)
