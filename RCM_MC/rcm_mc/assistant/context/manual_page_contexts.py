@@ -4791,6 +4791,115 @@ _MANUAL: List[PageContext] = [
         related_routes=["/dialysis", "/home-health", "/hospice", "/nursing-homes"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
+    # ── Geographic Intelligence trio (real public data, shared metric layer) ──
+    _ctx(
+        "/geo-intel", "Geographic Intelligence",
+        category=PageContextCategory.PIPELINE_SOURCING,
+        short_description="Landing hub for the three real-data state-analysis "
+        "modes: State Comparison, State Rankings, and State Profile.",
+        primary_purpose="Help a partner pick the right way to read U.S. "
+        "healthcare markets by state for origination/screening.",
+        common_questions=["How do I compare states?",
+                          "Which states lead/lag on a metric?",
+                          "What does the data say about one state?"],
+        data_sources=["Navigation surface only — links to the three modes; "
+                      "renders no data itself."],
+        key_metrics=["(none — hub page)"],
+        interpretation_guidance=["A navigation surface; the linked modes carry "
+                                 "the real data and the source labels."],
+        why_it_matters="Makes the all-real-data state trio discoverable from "
+        "the Source nav for origination screening.",
+        related_routes=["/state-compare", "/state-rankings", "/state-profile"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/state-compare", "State Comparison",
+        category=PageContextCategory.PIPELINE_SOURCING,
+        short_description="Compare 2–4 states side by side across every real "
+        "state-keyed public dataset PEdesk has ingested.",
+        primary_purpose="Give a head-to-head read on a shortlist of target "
+        "geographies in one table.",
+        common_questions=["How does CA compare to TX and FL?",
+                          "Which of these states has the most providers / "
+                          "highest uninsured rate?"],
+        inputs=["?states=CA,TX,FL — up to 4 validated US states (50 + DC)."],
+        outputs=["A metric×state comparison table (15 metrics)."],
+        key_metrics=["Population", "Median HH income", "Uninsured rate",
+                     "Provider supply", "HRSA HPSA shortage areas",
+                     "MA enrollment + dual %", "CDC PLACES SDOH", "HCAHPS"],
+        data_sources=["Census/ACS (via County Health Rankings), CMS FFS "
+                      "provider enrollment, HRSA HPSA, CMS SNF CHOW, CMS MA "
+                      "geographic enrollment, CDC PLACES, CMS HCAHPS — all "
+                      "real public data."],
+        model_logic_summary="Each metric is pulled per state from a committed "
+        "public-data loader; a missing value renders '—' (never fabricated).",
+        why_it_matters="Area-level market structure is a first-pass screen on "
+        "where a healthcare thesis is more/less supported.",
+        diligence_use_cases=["Comparing target markets before prioritizing "
+                             "outreach or underwriting."],
+        interpretation_guidance=["Area-level public data — combine with "
+                                 "deal-specific data before a decision.",
+                                 "'—' means no value on record, not zero."],
+        limitations=["State-level aggregates; not the deal's own catchment."],
+        related_routes=["/geo-intel", "/state-rankings", "/state-profile"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/state-rankings", "State Rankings",
+        category=PageContextCategory.PIPELINE_SOURCING,
+        short_description="Rank all 50 states + DC on any single real metric, "
+        "best-first, with an inline bar for scale.",
+        primary_purpose="Origination screening — see where opportunity or risk "
+        "concentrates on one metric.",
+        common_questions=["Which states have the most provider-shortage areas?",
+                          "Where is MA penetration / the uninsured rate highest?"],
+        inputs=["?metric=<key> — one of the 15 registered metrics."],
+        outputs=["A ranked leaderboard of states for the chosen metric."],
+        key_metrics=["Any one of the 15 shared geo metrics."],
+        data_sources=["Same real public datasets as State Comparison "
+                      "(Census/ACS · CMS · HRSA · CDC PLACES)."],
+        model_logic_summary="Sort direction is metric-aware: 'lower is better' "
+        "metrics (uninsured, shortage areas) rank lowest-first; size/quality "
+        "metrics rank highest-first. States with no value are listed "
+        "separately and never ranked or estimated.",
+        why_it_matters="A fast cross-state screen to build or narrow a target "
+        "geography list.",
+        diligence_use_cases=["Building a shortlist of states to investigate."],
+        interpretation_guidance=["States with no value on record are listed "
+                                 "as 'no data on record', not ranked.",
+                                 "Area-level signal, not a deal-level figure."],
+        related_routes=["/geo-intel", "/state-compare", "/state-profile"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/state-profile", "State Profile",
+        category=PageContextCategory.PIPELINE_SOURCING,
+        short_description="A single-state dossier: every real metric for one "
+        "state, each with that state's national rank (#k of n).",
+        primary_purpose="Give a quick, ranked read on a single market being "
+        "underwritten.",
+        common_questions=["What does the data say about California?",
+                          "Where does this state rank nationally on each metric?"],
+        inputs=["?state=CA — one validated US state (50 + DC)."],
+        outputs=["A metric table with the state's value and national rank per row."],
+        key_metrics=["All 15 shared geo metrics, each with a national rank."],
+        data_sources=["Same real public datasets as State Comparison "
+                      "(Census/ACS · CMS · HRSA · CDC PLACES)."],
+        model_logic_summary="Ranks are computed once over the 51 jurisdictions "
+        "in each metric's natural direction; metrics with no value show '—' "
+        "and are left 'unranked' (never fabricated).",
+        why_it_matters="Puts one market in national context at a glance.",
+        diligence_use_cases=["A first-look dossier on a single target market."],
+        interpretation_guidance=["'unranked' means no value on record for that "
+                                 "metric — not a zero or a bottom rank.",
+                                 "Area-level public data, not the deal's catchment."],
+        related_routes=["/geo-intel", "/state-compare", "/state-rankings"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
 ]
 
 # ── DATA REQUIRED pages: DOCUMENTED Guide contexts (table-driven). Each page
