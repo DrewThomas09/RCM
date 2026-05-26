@@ -3589,6 +3589,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "data-activation","title": "Data Activation Center · activate analyses with your data", "route": "/data-activation"},
     {"id": "state-compare", "title": "State Comparison · compare states across real public data", "route": "/state-compare"},
     {"id": "state-rankings","title": "State Rankings · rank all states on one real metric", "route": "/state-rankings"},
+    {"id": "state-profile", "title": "State Profile · one state's metrics + national ranks", "route": "/state-profile"},
     {"id": "ingest",        "title": "Ingestion",          "route": "/diligence/ingest"},
     {"id": "benchmarks",    "title": "Benchmarks",         "route": "/diligence/benchmarks"},
     {"id": "cms-xray",      "title": "CMS X-Ray · Provider scanner", "route": "/diligence/xray"},
