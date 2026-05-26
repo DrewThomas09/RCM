@@ -3177,7 +3177,11 @@ class RCMHandler(BaseHTTPRequestHandler):
                 self.config.db_path))
         if path == "/import":
             from .ui.quick_import import render_quick_import
-            return self._send_html(render_quick_import())
+            _imp_qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            _prefill = {k: (_imp_qs.get(k) or [""])[0]
+                        for k in ("deal_id", "name", "state")}
+            return self._send_html(render_quick_import(
+                prefill={k: v for k, v in _prefill.items() if v}))
         # RCM Diligence workspace — Phase 1 ingest is live; Phases 2–4
         # render placeholder tabs until their implementations land.
         # Load lazily to avoid import cost on every request.

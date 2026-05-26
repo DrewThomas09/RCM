@@ -475,6 +475,33 @@ class WorkbenchMapLayerTests(unittest.TestCase):
         self.assertTrue(_LAYER_BY_KEY["age65"].get("live"))
 
 
+class WorkbenchPromoteTests(unittest.TestCase):
+    """Promote-to-Pipeline carries the target into a prefilled deal form,
+    completing Source → Pipeline (was a dead generic /pipeline link)."""
+
+    def test_inspector_promote_carries_target(self):
+        from rcm_mc.ui.target_screener_page import render_target_screener, _vertical_rows
+        ccn = _vertical_rows("snf")[0]["ccn"]
+        h = render_target_screener({"view": ["inspector"], "ccn": [ccn]})
+        self.assertIn(f"/import?deal_id=snf_{ccn.lower()}", h)
+        self.assertIn("name=", h)
+        self.assertIn("Promote to Pipeline (prefilled", h)
+
+    def test_import_form_prefills_from_params(self):
+        from rcm_mc.ui.quick_import import render_quick_import
+        h = render_quick_import(prefill={"deal_id": "snf_015010",
+                                         "name": "Coosa Valley", "state": "AL"})
+        self.assertIn('value="snf_015010"', h)
+        self.assertIn('value="Coosa Valley"', h)
+        self.assertIn('value="AL"', h)
+
+    def test_import_form_empty_without_prefill(self):
+        import re
+        from rcm_mc.ui.quick_import import render_quick_import
+        m = re.search(r'name="deal_id"[^>]*>', render_quick_import())
+        self.assertNotIn("value=", m.group(0))
+
+
 class WorkbenchColumnVisibilityTests(unittest.TestCase):
     """PR 18 — column-visibility toggles (?hide=) wired Columns ↔ Main."""
 
