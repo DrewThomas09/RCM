@@ -94,6 +94,24 @@ del _np_for_grid
 _DIAG_VIF_MAX = 10.0
 _DIAG_BP_PVALUE_MAX = 0.05
 _DIAG_T_SLOPE_MAX = 2.0
+#: Advisory skewness threshold for the log-transform hint. |g1| > 1 is the
+#: conventional "highly skewed" cutoff; we only suggest a log transform for
+#: strictly-positive right-skewed targets (log is undefined for <= 0).
+_SKEW_LOG_THRESH = 1.0
+
+
+def _sample_skewness(y: "np.ndarray") -> float:
+    """Sample skewness g1 = m3 / m2**1.5. Returns 0.0 for n<3 or zero variance
+    (a symmetric/degenerate target), so it never raises on edge inputs."""
+    n = y.shape[0]
+    if n < 3:
+        return 0.0
+    yc = y - y.mean()
+    m2 = float((yc ** 2).mean())
+    if m2 <= 1e-18:
+        return 0.0
+    m3 = float((yc ** 3).mean())
+    return m3 / (m2 ** 1.5)
 # Cook's D and leverage thresholds depend on N and p — computed per fit.
 
 
@@ -246,6 +264,14 @@ class DiagnosticReport:
     max_leverage: float = 0.0
     resid_fit_t_slope: float = 0.0
     cooks_d_argmax: int = -1   # row index of max Cook's D, for R2_NEGATIVE-Cook's-D verify
+    #: Sample skewness (g1) of the target y. 0.0 on degenerate inputs.
+    target_skewness: float = 0.0
+    #: Advisory only (not a FailureReason): True when the target is strictly
+    #: positive and at least moderately right-skewed (g1 > _SKEW_LOG_THRESH),
+    #: i.e. a log/Box-Cox transform would likely stabilize variance and improve
+    #: fit. Surfaced as guidance; does NOT alter the fit or the locked Tier-2
+    #: failure-reason logic.
+    log_transform_suggested: bool = False
 
     @property
     def failure_reasons_fired(self) -> List["FailureReason"]:
@@ -611,6 +637,9 @@ def _compute_diagnostics(
             slope_se = (aux_sigma2 / ss_x) ** 0.5
             if slope_se > 1e-12:
                 resid_fit_t_slope = slope / slope_se
+    # ── Target distribution: skewness + advisory log-transform hint ──
+    skew = _sample_skewness(y)
+    log_hint = bool(skew > _SKEW_LOG_THRESH and float(np.min(y)) > 0.0)
     return DiagnosticReport(
         max_vif=float(max_vif),
         max_cooks_d=max_cooks_d,
@@ -618,6 +647,8 @@ def _compute_diagnostics(
         max_leverage=max_leverage,
         resid_fit_t_slope=float(resid_fit_t_slope),
         cooks_d_argmax=cooks_d_argmax,
+        target_skewness=float(skew),
+        log_transform_suggested=log_hint,
     )
 
 
