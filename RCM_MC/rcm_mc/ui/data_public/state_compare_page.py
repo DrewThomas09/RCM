@@ -143,6 +143,21 @@ def _collect(state: str) -> Dict[str, str]:
     return {m[1]: _fmt(m[0], raw.get(m[0])) for m in _METRICS}
 
 
+def compare_dataframe(states: List[str]):
+    """Raw (unformatted) metric×state table for CSV export — numbers a partner
+    can compute on. Missing values are blank cells, never fabricated."""
+    import pandas as _pd
+    raws = {s: _raw(s) for s in states}
+    rows = []
+    for key, label, source, _f, _h in _METRICS:
+        row = {"Metric": label, "Source": source}
+        for s in states:
+            v = raws[s].get(key)
+            row[s] = v if (v is not None and v == v) else ""
+        rows.append(row)
+    return _pd.DataFrame(rows, columns=["Metric", "Source"] + list(states))
+
+
 def render_state_compare(params: Dict = None) -> str:
     states = _parse_states(params)
     data = {s: _collect(s) for s in states}
@@ -155,7 +170,9 @@ def render_state_compare(params: Dict = None) -> str:
         f'<label style="font-size:11px;color:{td}">States (comma-separated, max 4)'
         f'<input name="states" value="{_html.escape(",".join(states))}" style="{inp};margin-left:6px;width:200px"></label>'
         f'<button type="submit" style="background:{ac};color:#fff;border:none;padding:7px 16px;'
-        f'font-family:JetBrains Mono,monospace;font-size:12px;border-radius:2px;cursor:pointer">Compare</button></form>'
+        f'font-family:JetBrains Mono,monospace;font-size:12px;border-radius:2px;cursor:pointer">Compare</button>'
+        f'<a href="/state-compare.csv?states={_html.escape(",".join(states))}" '
+        f'style="font-size:11px;color:{ac};text-decoration:none;margin-left:4px">Export CSV &#8595;</a></form>'
     )
 
     th = (f'<th style="text-align:left;padding:6px 10px;border-bottom:2px solid {border};'

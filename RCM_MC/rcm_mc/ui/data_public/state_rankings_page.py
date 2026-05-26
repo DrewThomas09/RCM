@@ -54,6 +54,17 @@ def _ranking(key: str):
     return pairs, missing
 
 
+def rankings_dataframe(key: str):
+    """Ranked (state, raw value) table for CSV export. States with no value are
+    omitted — never given a fabricated number or rank."""
+    import pandas as _pd
+    ranked, _missing = _ranking(key)
+    label = _METRIC_BY_KEY[key][1]; source = _METRIC_BY_KEY[key][2]
+    rows = [{"Rank": i, "State": s, label: v, "Source": source}
+            for i, (s, v) in enumerate(ranked, start=1)]
+    return _pd.DataFrame(rows, columns=["Rank", "State", label, "Source"])
+
+
 def render_state_rankings(params: Dict = None) -> str:
     key = _parse_metric(params)
     label, source, _, higher_is_better = (
@@ -78,6 +89,8 @@ def render_state_rankings(params: Dict = None) -> str:
         f'<select name="metric" onchange="this.form.submit()" style="{sel};margin-left:6px">{opts}</select></label>'
         f'<noscript><button type="submit" style="background:{ac};color:#fff;border:none;padding:7px 16px;'
         f'font-family:JetBrains Mono,monospace;font-size:12px;border-radius:2px;cursor:pointer">Rank</button></noscript>'
+        f'<a href="/state-rankings.csv?metric={_html.escape(key)}" '
+        f'style="font-size:11px;color:{ac};text-decoration:none;margin-left:4px">Export CSV &#8595;</a>'
         f'</form>'
     )
 
