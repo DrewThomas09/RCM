@@ -509,4 +509,109 @@ _METRICS: List[MetricContext] = [
        related_routes=["/hospice"]),
 ]
 
+# ── Added metrics (standard textbook definitions; formula_confidence=INFERRED
+#    where the formula is the standard one but PEdesk's exact computation isn't
+#    confirmed from code; NOT_APPLICABLE for externally-defined composites). ──
+_METRICS.extend([
+    _m("hhi", "Herfindahl-Hirschman Index (HHI)",
+       ["herfindahl", "hhi", "market concentration", "concentration index"],
+       "Market-concentration index: the sum of squared market shares of all "
+       "competitors in a market.",
+       "The standard antitrust/market-structure gauge — high HHI means a "
+       "concentrated (less competitive, often more pricing-power) market; low "
+       "HHI means fragmented (roll-up runway).",
+       "Read the scale: shares as percentages give 0–10,000 (DOJ: <1,500 "
+       "unconcentrated, 1,500–2,500 moderate, >2,500 concentrated); shares as "
+       "fractions give 0–1. Confirm which scale a page uses before comparing.",
+       formula="sum over competitors of (market_share_i)^2",
+       formula_confidence=_INF, source_types=[_PUB, _EST], data_confidence=_MIX,
+       related_metrics=["benchmark_percentile"],
+       related_routes=["/concentration-risk", "/market-intel"]),
+    _m("concentration_ratio", "Concentration Ratio (CR3 / CR5)",
+       ["cr3", "cr5", "concentration ratio", "top-n share"],
+       "Combined market share of the largest N competitors (CR3 = top 3, "
+       "CR5 = top 5).",
+       "A simpler concentration read than HHI — how much of a market the few "
+       "biggest players control.",
+       "CRn ignores the distribution below the top N; pair with HHI. A high CR3 "
+       "in a target's market signals entrenched incumbents.",
+       formula="sum of market shares of the top N competitors",
+       formula_confidence=_INF, source_types=[_PUB, _EST], data_confidence=_MIX,
+       related_metrics=["hhi"], related_routes=["/concentration-risk"]),
+    _m("dscr", "Debt Service Coverage Ratio (DSCR)",
+       ["dscr", "debt service coverage", "coverage ratio"],
+       "Cash available for debt service divided by total debt service "
+       "(interest + scheduled principal) over a period.",
+       "The core covenant/solvency test — DSCR below ~1.0x means the business "
+       "isn't generating enough cash to cover its debt payments.",
+       "Definitions of the numerator vary (EBITDA vs operating cash flow vs "
+       "EBITDA−capex); confirm which a page uses. DSCR is only meaningful once "
+       "real cash-flow and debt-service figures are loaded.",
+       formula="operating cash flow / (interest + scheduled principal)",
+       formula_confidence=_INF, source_types=[_OBS, _USR], data_confidence=_MIX,
+       related_metrics=["leverage", "debt", "covenant_cushion"],
+       related_routes=["/debt-service", "/covenant-headroom"]),
+    _m("tvpi", "TVPI (Total Value to Paid-In)",
+       ["tvpi", "total value to paid-in", "gross multiple", "total value mult"],
+       "Total value (cumulative distributions + residual NAV) divided by "
+       "capital paid in by LPs.",
+       "The headline fund-level multiple LPs track — total value created per "
+       "dollar called, realized and unrealized combined.",
+       "TVPI includes UNREALIZED NAV, so it can flatter a young fund; read it "
+       "alongside DPI (realized cash) and the fund's age.",
+       formula="(cumulative distributions + residual NAV) / paid-in capital",
+       formula_confidence=_INF, source_types=[_USR, _OBS], data_confidence=_MIX,
+       related_metrics=["dpi", "rvpi", "moic", "irr"],
+       related_routes=["/lp-dashboard", "/dpi-tracker"]),
+    _m("dpi", "DPI (Distributions to Paid-In)",
+       ["dpi", "distributions to paid-in", "realized multiple", "cash-on-cash"],
+       "Cumulative cash distributions to LPs divided by capital paid in.",
+       "The realized-cash truth of fund performance — money actually returned, "
+       "with no unrealized marks.",
+       "A low DPI on an older fund is a real concern; on a young fund it's "
+       "expected (the j-curve). DPI + RVPI = TVPI.",
+       formula="cumulative distributions / paid-in capital",
+       formula_confidence=_INF, source_types=[_USR, _OBS], data_confidence=_MIX,
+       related_metrics=["tvpi", "rvpi", "moic"],
+       related_routes=["/lp-dashboard", "/dpi-tracker"]),
+    _m("rvpi", "RVPI (Residual Value to Paid-In)",
+       ["rvpi", "residual value to paid-in", "unrealized multiple"],
+       "Residual (unrealized) NAV divided by capital paid in.",
+       "The unrealized half of TVPI — value still in the ground that exits "
+       "must convert to cash.",
+       "RVPI is a MARK, not cash; its reliability depends on how conservatively "
+       "the GP carries NAV. DPI + RVPI = TVPI.",
+       formula="residual NAV / paid-in capital",
+       formula_confidence=_INF, source_types=[_USR, _EST], data_confidence=_MIX,
+       related_metrics=["tvpi", "dpi"], related_routes=["/lp-dashboard"]),
+    _m("cms_star_rating", "CMS Five-Star Rating",
+       ["star rating", "five-star", "overall rating", "cms stars",
+        "quality rating"],
+       "CMS's 1–5 star composite quality rating for a provider (nursing home, "
+       "dialysis facility, hospital, etc.).",
+       "A standardized, public quality signal — relevant to reimbursement "
+       "(e.g. MA bonus), survey risk, and reputational diligence.",
+       "It is CMS's OWN composite methodology (health inspection, staffing, "
+       "quality measures), refreshed on CMS's schedule and can lag; it is a "
+       "quality signal, NOT a financial or revenue metric.",
+       formula="CMS composite methodology (externally defined)",
+       formula_confidence=_NA, source_types=[_PUB], data_confidence=_PUB,
+       related_metrics=["home_health_star_rating"],
+       related_routes=["/nursing-homes", "/dialysis", "/ma-star"]),
+    _m("days_cash_on_hand", "Days Cash on Hand",
+       ["days cash on hand", "dcoh", "liquidity days", "cash days"],
+       "Number of days a provider could cover operating expenses from cash and "
+       "short-term investments at the current burn rate.",
+       "A core liquidity/solvency gauge — low days cash on hand is an early "
+       "distress signal, especially for thin-margin providers.",
+       "Excludes access to revolver/credit; a low figure with ample undrawn "
+       "liquidity is less alarming than it looks. Needs real balance-sheet "
+       "data to compute.",
+       formula="(cash + short-term investments) / (annual operating expenses "
+       "/ 365)",
+       formula_confidence=_INF, source_types=[_OBS, _USR], data_confidence=_MIX,
+       related_metrics=["dscr", "covenant_cushion"],
+       related_routes=["/treasury", "/debt-service"]),
+])
+
 METRIC_REGISTRY: Dict[str, MetricContext] = {m.metric_id: m for m in _METRICS}

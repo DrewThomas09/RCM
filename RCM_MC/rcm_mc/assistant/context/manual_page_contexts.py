@@ -7149,5 +7149,31 @@ for _c in _MANUAL:
     if _patch and not _c.metric_ids:
         _c.metric_ids = list(_patch)
 
+# Newly-added registry metrics (hhi, dscr, tvpi/dpi/rvpi, cms_star_rating, …)
+# — APPEND to each page's links (dedup), so pages that already had links also
+# pick up the now-documentable metric.
+_METRIC_LINK_EXTEND: Dict[str, List[str]] = {
+    "/concentration-risk": ["hhi", "concentration_ratio"],
+    "/msa-concentration": ["hhi", "concentration_ratio"],
+    "/payer-concentration": ["hhi", "concentration_ratio"],
+    "/debt-service": ["dscr", "days_cash_on_hand"],
+    "/covenant-headroom": ["dscr"],
+    "/covenant-monitor": ["dscr"],
+    "/treasury": ["days_cash_on_hand"],
+    "/lp-dashboard": ["tvpi", "dpi", "rvpi"],
+    "/dpi-tracker": ["dpi", "tvpi"],
+    "/nursing-homes": ["cms_star_rating"],
+    "/dialysis": ["cms_star_rating"],
+    "/ma-star": ["cms_star_rating"],
+}
+for _c in _MANUAL:
+    _ext = _METRIC_LINK_EXTEND.get(_c.route)
+    if _ext:
+        _have = list(_c.metric_ids or [])
+        for _mid in _ext:
+            if _mid not in _have:
+                _have.append(_mid)
+        _c.metric_ids = _have
+
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
