@@ -86,6 +86,28 @@ PR behind green CI (3.11/3.12/3.14) and auto-deployed to https://pedesk.app._
   State Rankings, State Profile, County Explorer, and Metro Markets**. Each has
   a test pinning the strip renders with computed (not hard-coded) values.
 
+
+### 7. Guide layer fully completed (#986–#989)
+After the user asked to "finish all the Ollama work — every page, every metric,
+every formula", I closed every remaining gap in the model-surfaced fields:
+- **Every metric formula filled** (#986): 41 placeholders → 0 (61 standard
+  textbook formulas, 10 NOT_APPLICABLE counts/CMS-composites, 7 proprietary
+  scores honestly marked model-driven — no fabrication).
+- **Last page context** (#987): /ebitda-bridge (the per-hospital 7-lever RCM
+  bridge) documented STRONG → 344/344 pages, 0 placeholders.
+- **Every metric caveat filled** (#988): 75 placeholders → 0 (caveats are sent
+  to the model verbatim).
+- **Every page why_it_matters filled** (#989): 64 placeholders → 0.
+- Deliberately left `common_misread` and `model_logic_summary` placeholders:
+  verified neither is sent to the model, and they are the honest "unconfirmed"
+  state — inventing them would fabricate.
+
+**Result:** 0 placeholders across all model-surfaced Guide fields (page
+short_description / primary_purpose / why_it_matters; metric formula / caveats).
+The static Guide knowledge layer is complete. The only remaining Ollama step
+requires enabling Ollama on the box: rebuild the RAG embedding index
+(`python -m rcm_mc.assistant.rag.index_builder`) and run the live eval.
+
 ## Recommended next improvements
 
 1. Enable Ollama on the droplet and run the Guide eval harness
