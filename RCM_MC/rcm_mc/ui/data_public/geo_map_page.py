@@ -1,7 +1,7 @@
 """Geo Map — /geo-map.
 
-A US choropleth (tile-grid cartogram) view of the Geographic Intelligence
-suite: shade all 50 states + DC by any one of the real shared-registry metrics,
+A US choropleth (real Albers-projected geographic map) view of the Geographic
+Intelligence suite: shade all 50 states + DC by any one of the real shared-registry metrics,
 for instant geographic pattern recognition. Clicking a state drills into its
 State Profile.
 
@@ -71,7 +71,7 @@ def render_geo_map(params: Dict = None) -> str:
 
     direction = ("lower = lighter (lower is better)" if higher is False
                  else "higher = darker" if higher else "darker = larger")
-    cartogram = render_us_geo_map(
+    geo_map = render_us_geo_map(
         values, metric_label=label, value_format=fmt,
         state_link_template="/state-profile?state={state}",
         empty_message="No data on record for this metric.",
@@ -87,7 +87,7 @@ def render_geo_map(params: Dict = None) -> str:
     states with no value on record show as &ldquo;no data&rdquo;, never invented.
   </p>
   {form}
-  {cartogram}
+  {geo_map}
   <p style="font-size:10px;color:{fa};margin-top:12px">
     Source: {_html.escape(source)} (via the shared real-metric layer). Area-level —
     a screening signal, not a deal-level figure. Compare a shortlist on

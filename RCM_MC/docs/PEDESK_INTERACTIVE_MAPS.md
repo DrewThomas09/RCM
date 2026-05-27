@@ -4,30 +4,36 @@ PEdesk renders geographic data **locally** — inline SVG, no external map
 tiles, no Mapbox/Google Maps, no CDN, no runtime network. This keeps the
 Mac-hosted, offline-capable, single-tenant setup private and dependency-free.
 
-## Current: Phase 1 — US state tile-grid cartogram
+## Current: Phase 2 — real US geographic map (Albers boundary choropleth)
 
-`rcm_mc/ui/us_map.py :: render_us_state_map(...)` is the reusable renderer.
-
-It draws a **state tile-grid** — every state + DC is an equal-size cell in
-its approximate geographic position, shaded by a per-state metric, with:
+`rcm_mc/ui/us_geo_map.py :: render_us_geo_map(...)` is the reusable renderer,
+shading **real US state boundaries** (Albers Equal-Area Conic projection of US
+Census cartographic boundaries, vendored offline in `rcm_mc/ui/_us_geo_paths.py`
+— public domain, no runtime network). Alaska & Hawaii are scaled bottom-left
+insets. It is a drop-in replacement for the old tile grid (same
+`us-map-select` event, same `state_link_template` drilldown), with:
 - hover tooltip (state name + metric; never color-only)
-- click selection (emits a `us-map-select` event; fills any
-  `[data-us-map-selected]` element)
-- a metric legend + accent outlines (e.g. CON states) + a "no data" swatch
+- click-through navigation when a `state_link_template` is set; otherwise
+  click selection (emits `us-map-select`; fills any `[data-us-map-selected]`)
+- a metric legend + an honest "no data" swatch
 - an honest empty state (the map still draws; absent states show "no data",
-  never invented values)
+  never invented values) + an honest projection caveat line
 
-**Why a tile grid, not boundary outlines:** it needs no geometry asset
-(fully local + tiny), is equal-area so large states don't dominate a metric
-read, and never fabricates coastlines. It is a *metric map*, not a
-coastline map.
+**Superseded:** the Phase-1 **state tile-grid cartogram**
+(`rcm_mc/ui/us_map.py :: render_us_state_map(...)`) — equal-size cells in
+approximate geographic position. It still exists as a fallback renderer but no
+page calls it; every choropleth surface was migrated to the real geographic map
+(#1019). The point-overlay helper `render_state_hospital_points(...)` in the
+same module is unrelated and still in use (real lat/lon scatter — see below).
 
-### Integrations (Phase 1 + 1B)
+### Integrations (live)
 
 | Route | Status | Metric shaded |
 |-------|--------|---------------|
 | `/portfolio/map` | ✅ wired | portfolio deal count per state (CON states accented) |
 | `/market-data/map` | ✅ wired | selected HCRIS metric per state (margin / HHI / hospitals / NPR / Medicare %), above the existing heatmap table |
+| `/geo-map` | ✅ wired | any shared-registry metric across all 50 states + DC, drilldown to State Profile |
+| `/sector-screener` · `/target-screener` | ✅ wired | universe/sector geographic distribution |
 | `/market-intel` | ⛔ not wired | no state-level data on the page (don't fabricate geography) |
 | `/payer-intelligence` | ⛔ not wired | no state-level payer data on the page |
 | `/rcm-benchmarks` | ⛔ not wired | benchmarks are by facility type / segment, not by state |
@@ -47,22 +53,24 @@ type it can support today.
 
 | Route | Geography present | Best map type | Status |
 |-------|-------------------|---------------|--------|
-| `/portfolio/map` | deal `state` | state_tile_grid | ✅ wired |
-| `/market-data/map` | HCRIS per-`state` aggregates | state_tile_grid (+ drilldown) | ✅ wired |
+| `/portfolio/map` | deal `state` | state_geo_map (real Albers) | ✅ wired |
+| `/market-data/map` | HCRIS per-`state` aggregates | state_geo_map (+ drilldown) | ✅ wired |
 | `/market-data/state/<ST>` | single state + hospital list (CCN/name/city/county/zip) | single_state_summary | ✅ already has hospital list + national back-link |
 | `/diligence/hcris-xray` | one target hospital + peers (`state`, "same-state" flag) | not_applicable | single-target, no multi-state aggregate |
 | `/market-intel` | none | not_applicable | no state key |
 | `/payer-intelligence` | none | not_applicable | payer data not keyed by state |
 | `/rcm-benchmarks` | facility-type/segment bands | not_applicable | no state dimension |
-| `/screen` · `/deal-screening` | hospital rows incl. `state` | state_tile_grid_future | possible later (counts by state) |
+| `/screen` · `/deal-screening` | hospital rows incl. `state` | state_geo_map_future | possible later (counts by state) |
 | `/portfolio/risk-scan` · `/portfolio/monitor` | no per-item `state` today | not_applicable | needs state on portfolio items |
 | county view (any) | HCRIS `county` **name** only | county_drilldown_future | **blocked**: no county FIPS + no county geometry asset |
 | hospital points (any) | HCRIS CCN/name/city/state/zip/county | hospital_points_future | **blocked**: no lat/lon (and no ZIP/CCN→lat-lon lookup) |
 
 ### Concrete data gaps (what unlocks the next phases)
 
-- **Boundary choropleth (Phase 2):** vendor a local `us-states`
-  GeoJSON/TopoJSON asset (see below). Nothing else missing.
+- **Boundary choropleth (Phase 2):** ✅ **SHIPPED** (#1019). The simplified
+  Albers-projected `us-states` paths are vendored in
+  `rcm_mc/ui/_us_geo_paths.py` and rendered by `render_us_geo_map`; every
+  choropleth page now uses the real geographic map.
 - **County map:** HCRIS carries a `county` *name* + `state`, but **no county
   FIPS** and there is **no county geometry asset**. Need both: a
   county-name/state → FIPS mapping *and* a simplified county boundary asset.
@@ -76,12 +84,13 @@ type it can support today.
 
 These need data and/or assets that don't exist in-repo yet. Build in order:
 
-### Phase 2 — real boundary choropleth (optional upgrade)
-Vendor a **simplified** `us-states` GeoJSON/TopoJSON (~60–100 KB) into a
-static asset path (e.g. `rcm_mc/ui/assets/`), public-domain source (US
-Census cartographic boundary files / Natural Earth). Add a
-`render_us_state_choropleth(...)` alongside the tile grid; pages opt in.
-Still local — the asset ships in the repo, no runtime fetch.
+### Phase 2 — real boundary choropleth ✅ SHIPPED (#1019)
+Done. A simplified, Albers-projected `us-states` path set is vendored in
+`rcm_mc/ui/_us_geo_paths.py` (public-domain US Census cartographic boundaries,
+generated offline by `tools/build_us_geo_paths.py`). `render_us_geo_map(...)`
+renders it as a drop-in replacement for the tile grid, and every choropleth
+page was migrated to it. Still 100% local — the paths ship in the repo, no
+runtime fetch.
 
 ### Phase 3 — state → county drilldown
 Requires county geometry (Census county boundaries) **and** county-level

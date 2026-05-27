@@ -450,9 +450,9 @@ def render_market_data(
     heatmap = _state_heatmap_table(stats, metric)
     regression = _regression_section(stats)
 
-    # Reusable US state tile-grid map, shaded by the selected metric. Real
-    # HCRIS per-state aggregates (same data as the heatmap table below,
-    # which is preserved). Local SVG — no external map tiles.
+    # Reusable real US geographic map (Albers projection), shaded by the
+    # selected metric. Real HCRIS per-state aggregates (same data as the
+    # heatmap table below, which is preserved). Local SVG — no external map tiles.
     from .us_geo_map import render_us_geo_map
     _MAP_FMT = {
         "avg_margin": (lambda v: f"{v * 100:.1f}%", "operating margin"),
