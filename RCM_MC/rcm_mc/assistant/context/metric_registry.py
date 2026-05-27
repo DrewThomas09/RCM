@@ -120,7 +120,7 @@ _METRICS: List[MetricContext] = [
        source_types=[_OBS, _EST], data_confidence=_MIX,
        related_metrics=["debt", "covenant_cushion", "ebitda"],
        related_routes=["/diligence/covenant-stress"]),
-    _m("debt", "Debt", ["total debt", "net debt", "borrowings"],
+    _m("debt", "Debt", ["total debt", "gross debt", "borrowings"],
        "Total/net interest-bearing debt in the capital structure.",
        "The denominator of deleveraging and the covenant base.",
        "Gross vs net debt (net of cash) differ — confirm which.",
@@ -612,6 +612,133 @@ _METRICS.extend([
        formula_confidence=_INF, source_types=[_OBS, _USR], data_confidence=_MIX,
        related_metrics=["dscr", "covenant_cushion"],
        related_routes=["/treasury", "/debt-service"]),
+])
+
+# ── Batch 2 of added metrics (standard operational / credit / liquidity
+#    definitions; INFERRED where the formula is the standard one). ──
+_METRICS.extend([
+    _m("length_of_stay", "Average Length of Stay (ALOS)",
+       ["alos", "length of stay", "los", "avg length of stay"],
+       "Average number of days a patient stays per admission over a period.",
+       "A core efficiency/throughput gauge — shorter ALOS (at constant "
+       "quality) frees capacity and improves margin; rising ALOS can signal "
+       "acuity shifts or discharge friction.",
+       "Read ALOS WITH acuity/case-mix — a higher ALOS at higher case-mix is "
+       "expected, not inefficiency. Compare against the same service line.",
+       formula="total patient days / total admissions (discharges)",
+       formula_confidence=_INF, source_types=[_OBS, _PUB], data_confidence=_MIX,
+       related_metrics=["case_mix_index", "occupancy_rate", "bed_count"]),
+    _m("readmission_rate", "30-Day Readmission Rate",
+       ["readmission rate", "30-day readmission", "readmissions"],
+       "Share of discharges followed by an unplanned readmission within 30 "
+       "days.",
+       "A quality + cost signal tied to CMS penalties (HRRP) and a marker of "
+       "care-transition effectiveness.",
+       "CMS's published rate is RISK-ADJUSTED and condition-specific; a raw "
+       "readmissions/discharges ratio is not directly comparable to it. Treat "
+       "the CMS figure as its own methodology.",
+       formula="unplanned 30-day readmissions / eligible discharges "
+       "(CMS publishes a risk-adjusted version)",
+       formula_confidence=_INF, source_types=[_PUB, _OBS], data_confidence=_MIX,
+       related_metrics=["discharge_to_community", "length_of_stay",
+                        "cms_star_rating"]),
+    _m("cost_to_charge_ratio", "Cost-to-Charge Ratio (CCR)",
+       ["cost to charge", "cost-to-charge ratio", "cost charge ratio"],
+       "Ratio of a provider's costs to its gross charges, from the Medicare "
+       "cost report.",
+       "Used to estimate actual cost behind billed charges (charges are list "
+       "prices, not realized revenue); a building block for cost analytics.",
+       "Charges are not revenue and CCR varies widely by department; an "
+       "aggregate CCR hides departmental spread. Cost-report based, so it lags.",
+       formula="total costs / total gross charges (HCRIS)",
+       formula_confidence=_INF, source_types=[_PUB], data_confidence=_PUB,
+       related_metrics=["operating_margin", "cost_per_adjusted_discharge"],
+       related_routes=["/cost-structure"]),
+    _m("current_ratio", "Current Ratio",
+       ["current ratio", "working capital ratio"],
+       "Current assets divided by current liabilities — a short-term "
+       "liquidity gauge.",
+       "Flags whether a business can cover near-term obligations; <1.0x means "
+       "current liabilities exceed current assets.",
+       "A snapshot that ignores timing and access to revolver/credit; pair "
+       "with days cash on hand and the cash-conversion cycle.",
+       formula="current assets / current liabilities",
+       formula_confidence=_INF, source_types=[_OBS, _USR], data_confidence=_MIX,
+       related_metrics=["days_cash_on_hand", "cash_conversion_cycle"],
+       related_routes=["/working-capital", "/treasury"]),
+    _m("gross_margin", "Gross Margin",
+       ["gross margin", "gross profit margin"],
+       "Revenue less direct cost of services, as a percentage of revenue.",
+       "The first-line profitability read before overhead — isolates "
+       "service-delivery economics from SG&A.",
+       "For provider businesses 'cost of services' (clinical labor, supplies) "
+       "is defined inconsistently; confirm what's in/out before comparing. "
+       "Distinct from operating and EBITDA margin.",
+       formula="(revenue - cost of services) / revenue",
+       formula_confidence=_INF, source_types=[_OBS, _USR], data_confidence=_MIX,
+       related_metrics=["ebitda_margin", "operating_margin",
+                        "provider_contribution_margin"],
+       related_routes=["/unit-economics", "/cost-structure"]),
+    _m("capex_intensity", "Capex Intensity",
+       ["capex intensity", "capex / revenue", "capital intensity"],
+       "Capital expenditure as a percentage of revenue.",
+       "How capital-hungry the business is — high capex intensity reduces free "
+       "cash flow and the cash available for debt service / distributions.",
+       "Separate maintenance vs growth capex; a high figure driven by growth "
+       "capex is an investment choice, not a structural burden. Lumpy "
+       "year-to-year.",
+       formula="capital expenditures / revenue",
+       formula_confidence=_INF, source_types=[_OBS, _USR], data_confidence=_MIX,
+       related_metrics=["ebitda", "revenue", "days_cash_on_hand"],
+       related_routes=["/capex-budget"]),
+    _m("fixed_charge_coverage", "Fixed-Charge Coverage Ratio (FCCR)",
+       ["fccr", "fixed charge coverage", "fixed-charge coverage"],
+       "Cash available for fixed charges divided by total fixed charges "
+       "(interest + scheduled principal + lease/rent).",
+       "A stricter covenant test than DSCR because it includes lease "
+       "obligations — important for lease-heavy provider models.",
+       "Definitions of the numerator vary (EBITDA vs EBITDA−unfinanced capex); "
+       "confirm which the credit agreement uses. Needs real fixed-charge data.",
+       formula="(EBITDA - unfinanced capex) / (interest + principal + leases)",
+       formula_confidence=_INF, source_types=[_OBS, _USR], data_confidence=_MIX,
+       related_metrics=["dscr", "interest_coverage", "leverage",
+                        "covenant_cushion"],
+       related_routes=["/debt-service", "/covenant-headroom"]),
+    _m("interest_coverage", "Interest Coverage Ratio",
+       ["interest coverage", "ebitda / interest", "times interest earned"],
+       "EBITDA divided by interest expense over a period.",
+       "How comfortably operating earnings cover the cost of debt; a fast read "
+       "on whether leverage is sustainable.",
+       "Ignores principal amortization (DSCR/FCCR capture that); high coverage "
+       "with a near-term maturity wall can still be risky.",
+       formula="EBITDA / interest expense",
+       formula_confidence=_INF, source_types=[_OBS, _USR], data_confidence=_MIX,
+       related_metrics=["dscr", "fixed_charge_coverage", "leverage", "debt"],
+       related_routes=["/debt-service", "/covenant-headroom"]),
+    _m("cash_conversion_cycle", "Cash Conversion Cycle (CCC)",
+       ["ccc", "cash conversion cycle", "cash cycle"],
+       "Days to convert operating investment into cash: days sales "
+       "outstanding + days inventory − days payable outstanding.",
+       "The net working-capital drag in days — lower (or negative) frees cash; "
+       "in provider RCM the DSO/AR-days leg usually dominates.",
+       "Inventory is small for most providers, so CCC is largely an AR/AP "
+       "story; needs real balance-sheet/AR data to compute.",
+       formula="DSO + DIO - DPO",
+       formula_confidence=_INF, source_types=[_OBS, _USR], data_confidence=_MIX,
+       related_metrics=["days_in_ar", "net_collection_rate", "current_ratio"],
+       related_routes=["/working-capital"]),
+    _m("net_debt", "Net Debt",
+       ["net debt", "net financial debt"],
+       "Total interest-bearing debt minus cash and cash equivalents.",
+       "The leverage figure that actually matters for EV and covenants — cash "
+       "on hand offsets gross debt.",
+       "Not all cash is freely available (restricted/escrow); confirm what's "
+       "netted. Net debt feeds leverage (net debt / EBITDA) and equity value "
+       "(EV − net debt).",
+       formula="total interest-bearing debt - cash & equivalents",
+       formula_confidence=_INF, source_types=[_OBS, _USR], data_confidence=_MIX,
+       related_metrics=["debt", "leverage", "enterprise_value"],
+       related_routes=["/debt-service", "/cap-structure"]),
 ])
 
 METRIC_REGISTRY: Dict[str, MetricContext] = {m.metric_id: m for m in _METRICS}
