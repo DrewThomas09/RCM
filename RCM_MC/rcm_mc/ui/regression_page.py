@@ -24,6 +24,7 @@ from ..finance.regression import run_segmented_regression as _run_segmented
 from ..finance.regression import breusch_pagan_test as _breusch_pagan
 from ..finance.regression import hc1_robust_se as _hc1_robust_se
 from ..finance.regression import information_criteria as _information_criteria
+from ..finance.regression import ramsey_reset_test as _ramsey_reset
 from ..finance.leakage import (
     audit_features as _audit_leakage,
     forecasting_safe_features as _safe_features,
@@ -534,6 +535,7 @@ def _run_ols(
         except Exception:  # noqa: BLE001
             se = classical_se
         bp_test = _breusch_pagan(X_aug, resid)
+        reset_test = _ramsey_reset(X_aug, y, y_hat)
         info_criteria = _information_criteria(n, float(ss_res), p)
         t_stats = beta / np.where(se > 0, se, 1)
 
@@ -770,6 +772,7 @@ def _run_ols(
             # homoskedasticity assumption is actually violated for this fit.
             "robust_se": True,
             "breusch_pagan": bp_test,
+            "ramsey_reset": reset_test,
             # Model-selection criteria (lower = better; BIC penalizes params
             # harder than AIC). Lets the reader see the fit is parsimony-
             # justified, not just high-R².
@@ -1383,6 +1386,22 @@ def render_regression_page(
         )
     else:
         _bp_verdict = "Heteroskedasticity test not available for this fit."
+    # Ramsey RESET: is the linear form the right shape?
+    _rs = result.get("ramsey_reset") or {}
+    if _rs.get("misspecified") is True:
+        _reset_verdict = (
+            f' <strong>Ramsey RESET</strong> (F={_rs.get("f_stat", 0):.1f}, '
+            f'p={_rs.get("p_value", 1):.4f}) flags <strong>functional-form '
+            'misspecification</strong> — the linear shape is missing curvature; '
+            'a transform (the log toggle) or a nonlinear term would fit better.'
+        )
+    elif _rs.get("misspecified") is False:
+        _reset_verdict = (
+            f' Ramsey RESET (p={_rs.get("p_value", 1):.2f}) finds no '
+            'functional-form misspecification — the linear shape is adequate.'
+        )
+    else:
+        _reset_verdict = ""
     coef_section = ck_panel(
         '<p class="ck-section-body">'
         f'Target: <strong>{_html.escape(target.replace("_", " ").title())}</strong>. '
@@ -1392,7 +1411,7 @@ def render_regression_page(
         '<p class="ck-section-body" style="font-size:12px;">'
         'Standard errors are <strong>HC1 heteroskedasticity-robust</strong> '
         '(White sandwich) &mdash; the t-stats, p-values and 95% CIs below use '
-        f'them. {_bp_verdict}</p>'
+        f'them. {_bp_verdict}{_reset_verdict}</p>'
         f'{_coef_fig}'
         '<table class="cad-table"><thead><tr>'
         '<th>Variable</th><th>Strength</th><th>t</th><th>p-value</th>'

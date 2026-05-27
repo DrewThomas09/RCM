@@ -316,6 +316,53 @@ def breusch_pagan_test(
     return out
 
 
+def ramsey_reset_test(
+    x_with_intercept: np.ndarray,
+    y: np.ndarray,
+    fitted: np.ndarray,
+    n_powers: int = 2,
+) -> Dict[str, Any]:
+    """Ramsey RESET test for functional-form misspecification (F-form).
+
+    Heteroskedasticity (Breusch–Pagan) asks whether the *error variance* is
+    constant; RESET asks whether the *mean model* is the right SHAPE. It
+    refits with powers of the fitted values (ŷ², ŷ³) added as regressors: if
+    they jointly add explanatory power, the linear form is missing curvature /
+    an interaction and the coefficients are biased. F-test of the added powers
+    reuses ``f_pvalue`` (no chi-square). p < 0.05 ⇒ the linear spec is
+    misspecified — consider a transform (e.g. log) or a nonlinear term.
+
+    Powers are built from the standardized fitted values for numerical
+    stability (ŷ³ on raw dollars overflows); standardizing spans the same
+    column space, so the joint F is unchanged.
+    """
+    x = np.asarray(x_with_intercept, dtype=float)
+    y = np.asarray(y, dtype=float)
+    yh = np.asarray(fitted, dtype=float)
+    n, kp1 = x.shape
+    q = max(1, int(n_powers))
+    df2 = n - (kp1 + q)
+    out: Dict[str, Any] = {"f_stat": 0.0, "p_value": 1.0, "df_model": q,
+                           "df_resid": max(df2, 0), "misspecified": None}
+    if df2 < 1:
+        return out
+    sd = float(yh.std()) or 1.0
+    yh_s = (yh - yh.mean()) / sd
+    powers = [yh_s ** d for d in range(2, 2 + q)]
+    z = np.column_stack([x] + powers)
+    ss_r = float(np.sum((y - yh) ** 2))                 # restricted (original)
+    beta_u = np.linalg.lstsq(z, y, rcond=None)[0]
+    ss_u = float(np.sum((y - z @ beta_u) ** 2))         # unrestricted
+    if ss_u <= 0 or ss_r <= ss_u:
+        out["misspecified"] = False                     # powers add nothing
+        return out
+    f_stat = ((ss_r - ss_u) / q) / (ss_u / df2)
+    p = f_pvalue(f_stat, q, df2)
+    out.update({"f_stat": float(f_stat), "p_value": float(p),
+                "misspecified": bool(p < 0.05)})
+    return out
+
+
 def information_criteria(
     n: int, ss_res: float, n_features: int
 ) -> Dict[str, float]:

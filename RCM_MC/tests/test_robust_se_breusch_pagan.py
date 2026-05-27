@@ -16,6 +16,7 @@ from rcm_mc.finance.regression import (
     f_pvalue,
     hc1_robust_se,
     information_criteria,
+    ramsey_reset_test,
 )
 
 
@@ -28,6 +29,11 @@ def _classical_se(X, resid):
 def _fit(X, y):
     beta = np.linalg.lstsq(X, y, rcond=None)[0]
     return beta, y - X @ beta
+
+
+def _fitted(X, y):
+    beta = np.linalg.lstsq(X, y, rcond=None)[0]
+    return X @ beta
 
 
 class HC1RobustSE(unittest.TestCase):
@@ -105,6 +111,37 @@ class BreuschPagan(unittest.TestCase):
         bp = breusch_pagan_test(X, np.zeros(5))   # perfect fit / no residual var
         self.assertIn(bp["heteroskedastic"], (False, None))
         self.assertEqual(f_pvalue(0.0, 1, 3), 1.0)
+
+
+class RamseyReset(unittest.TestCase):
+    def test_not_misspecified_when_truly_linear(self):
+        rng = np.random.default_rng(31)
+        n = 1500
+        x = rng.normal(0, 1, n)
+        X = np.column_stack([np.ones(n), x])
+        y = 1.0 + 2.0 * x + rng.normal(0, 1, n)
+        yh = _fitted(X, y)
+        r = ramsey_reset_test(X, y, yh)
+        self.assertFalse(r["misspecified"], f"false positive: p={r['p_value']}")
+        self.assertGreater(r["p_value"], 0.05)
+
+    def test_fires_on_unmodeled_curvature(self):
+        # True relationship is quadratic but we fit a line → RESET must flag it.
+        rng = np.random.default_rng(32)
+        n = 1500
+        x = rng.normal(0, 1, n)
+        X = np.column_stack([np.ones(n), x])
+        y = 1.0 + 2.0 * x + 1.5 * x ** 2 + rng.normal(0, 1, n)
+        yh = _fitted(X, y)
+        r = ramsey_reset_test(X, y, yh)
+        self.assertTrue(r["misspecified"], f"missed curvature: p={r['p_value']}")
+        self.assertLess(r["p_value"], 0.01)
+
+    def test_degenerate_inputs_safe(self):
+        rng = np.random.default_rng(33)
+        X = np.column_stack([np.ones(4), rng.normal(0, 1, 4)])
+        r = ramsey_reset_test(X, rng.normal(0, 1, 4), rng.normal(0, 1, 4))
+        self.assertIn(r["misspecified"], (False, None))  # too few dof → undefined
 
 
 class InformationCriteria(unittest.TestCase):
