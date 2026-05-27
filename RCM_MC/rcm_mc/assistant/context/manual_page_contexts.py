@@ -6628,4 +6628,163 @@ for (_r, _t, _sd, _pp, _cq, _km, _mids, _dsids, _ml, _why, _dc2, _bucket) in _BA
     ))
 
 
+# ── Sector / specialty analytic tools (batch 7) ────────────────────────
+# (route, title, short_desc, common_qs, key_metrics, metric_ids, why, bucket)
+# bucket: "model" = illustrative analyzer · "user" = entered-data tracker.
+_BATCH7 = [
+    ("/biosimilars", "Biosimilars Opportunity Analyzer",
+     "Models the savings opportunity from biosimilar substitution for a "
+     "drug-spend base.",
+     ["What's the biosimilar savings?", "Which molecules switch?",
+      "How big is the opportunity?"],
+     ["Savings opportunity"], [],
+     "Biosimilar substitution is a concrete, near-term drug-cost lever.", "model"),
+    ("/drug-pricing-340b", "340B Drug Pricing Analyzer",
+     "Estimates 340B program savings vs non-340B acquisition cost.",
+     ["What's the 340B savings?", "Which sites qualify?", "How much margin "
+      "does 340B add?"],
+     ["340B savings"], [],
+     "340B economics materially change pharmacy margin for eligible providers.",
+     "model"),
+    ("/reit-analyzer", "REIT / Sale-Leaseback Analyzer",
+     "Models a healthcare sale-leaseback / REIT scenario — cap rate, proceeds, "
+     "and rent drag.",
+     ["What does a sale-leaseback yield?", "What's the rent drag on EBITDA?",
+      "Is the cap rate attractive?"],
+     ["Proceeds", "EBITDA", "Enterprise value"], ["ebitda", "enterprise_value"],
+     "Real-estate monetization can fund a deal but burdens future EBITDA.",
+     "model"),
+    ("/trial-site-econ", "Clinical Trial Site Economics",
+     "Models the economics of running clinical-trial sites — per-site revenue "
+     "and contribution.",
+     ["What does a trial site earn?", "Is the contribution positive?",
+      "How many sites to break even?"],
+     ["Revenue/site", "Contribution margin"],
+     ["revenue", "provider_contribution_margin"],
+     "Trial revenue is a distinct, often-overlooked provider income stream.",
+     "model"),
+    ("/specialty-benchmarks", "Specialty Benchmarks Library",
+     "A library of operating benchmarks by clinical specialty.",
+     ["What are typical margins for this specialty?", "How does this specialty "
+      "benchmark?", "What's the productivity norm?"],
+     ["EBITDA margin", "Revenue"], ["ebitda_margin", "revenue"],
+     "Specialty norms anchor what 'good' looks like for a target.", "model"),
+    ("/phys-comp-plan", "Physician Compensation Plan Designer",
+     "Models physician compensation plan structures (wRVU, base+incentive) and "
+     "their cost.",
+     ["What does this comp plan cost?", "Is comp aligned to production?",
+      "How does wRVU-based pay compare?"],
+     ["Comp-to-collections", "Productivity"],
+     ["compensation_to_collections", "provider_productivity"],
+     "Physician comp is the largest cost line and the key retention lever.",
+     "model"),
+    ("/workforce-planning", "Workforce Planning Analyzer",
+     "Models staffing levels, labor cost, and workforce gaps.",
+     ["What's the labor cost ratio?", "Where are staffing gaps?", "What's the "
+      "right staffing level?"],
+     ["Labor cost ratio", "FTE gap"], ["labor_cost_ratio"],
+     "Labor is the dominant operating cost in provider businesses.", "model"),
+    ("/esg-dashboard", "ESG Dashboard",
+     "Summarizes ESG metrics and scores for a platform.",
+     ["What's the ESG profile?", "Where are the ESG gaps?", "What do LPs "
+      "want here?"],
+     ["ESG score"], [],
+     "ESG posture increasingly affects LP appetite and exit buyer lists.",
+     "model"),
+    ("/fraud-detection", "Fraud / Waste / Abuse Detection",
+     "Flags potential fraud, waste, and abuse patterns in claims/operations "
+     "data.",
+     ["Any FWA red flags?", "Which patterns look anomalous?", "What needs a "
+      "compliance look?"],
+     ["Risk score", "Flag count"], ["risk_score"],
+     "Undetected FWA is a compliance and valuation landmine.", "model"),
+    ("/geo-market", "Geographic Market Analyzer",
+     "Analyzes a geographic market — demand, competition, and positioning.",
+     ["What's this market like?", "Who competes here?", "Is there room to "
+      "grow?"],
+     ["Market size", "Competitor count"], [],
+     "Geography shapes demand, competition, and reimbursement.", "model"),
+    # Trackers (user-entered)
+    ("/denovo-expansion", "De Novo Expansion Tracker",
+     "Tracks de novo (greenfield) site openings — pipeline, ramp, and "
+     "economics.",
+     ["What de novos are planned?", "How are they ramping?", "What's the "
+      "expansion economics?"],
+     ["Site count", "Revenue", "Ramp"], ["revenue", "ebitda_margin"],
+     "Organic de novo growth complements M&A in a platform thesis.", "user"),
+    ("/tracker-340b", "340B Pharmacy Program Tracker",
+     "Tracks 340B program participation, contract pharmacies, and compliance.",
+     ["What's our 340B footprint?", "Which contract pharmacies?", "Any "
+      "compliance gaps?"],
+     ["Site count", "Savings"], [],
+     "340B compliance is high-scrutiny; tracking it protects the savings.",
+     "user"),
+    ("/physician-labor", "Physician Labor Market Tracker",
+     "Tracks physician supply, attrition, and recruiting in target markets.",
+     ["What's physician attrition?", "Is the market tight?", "What's the "
+      "recruiting pipeline?"],
+     ["Attrition", "Productivity"],
+     ["physician_attrition", "provider_productivity"],
+     "Physician supply/retention is a first-order risk in provider deals.",
+     "user"),
+    ("/hospital-anchor", "Hospital Anchor Contract Tracker",
+     "Tracks anchor hospital / health-system contracts and their terms.",
+     ["What anchor contracts exist?", "When do they renew?", "What's the "
+      "concentration risk?"],
+     ["Contract count", "Concentration"], [],
+     "Anchor-contract concentration is a major revenue-durability risk.",
+     "user"),
+    ("/ma-star", "Medicare Advantage / Star Ratings Tracker",
+     "Tracks Medicare Advantage Star ratings and their revenue impact.",
+     ["What are the Star ratings?", "How do they affect revenue?", "Where's "
+      "the bonus risk?"],
+     ["Star rating", "Bonus impact"], [],
+     "Star ratings drive MA bonus payments and plan competitiveness.", "user"),
+    ("/esg-impact", "ESG / Impact Reporting Tracker",
+     "Tracks ESG / impact metrics and reporting commitments over time.",
+     ["What ESG do we report?", "Are we hitting commitments?", "What's due "
+      "to LPs?"],
+     ["ESG metrics", "Commitments"], [],
+     "Impact reporting is increasingly an LP requirement, not a nicety.",
+     "user"),
+]
+_existing_b7 = {c.route for c in _MANUAL}
+for (_r, _t, _sd, _cq, _km, _mids, _why, _bucket) in _BATCH7:
+    if _r in _existing_b7:
+        continue
+    if _bucket == "user":
+        _inputs = ["Your entered records; illustrative scaffold until "
+                   "populated."]
+        _guidance = ["Tracks YOUR entered data; figures before you populate it "
+                     "are an illustrative scaffold, not real activity."]
+        _limits = ["Only as complete as what you enter."]
+        _srcs = ["User-entered data."]
+        _dc2 = _DC.MIXED
+    else:
+        _inputs = ["Scenario assumptions (query parameters); illustrative "
+                   "example with no inputs."]
+        _guidance = list(_ILLUS_GUIDANCE)
+        _limits = ["Deterministic point scenarios, no probability distribution.",
+                   "Illustrative assumptions unless overridden."]
+        _srcs = ["None — computed from the entered/illustrative assumptions."]
+        _dc2 = _DC.MODEL_ESTIMATE
+    _MANUAL.append(_ctx(
+        _r, _t,
+        short_description=_sd,
+        primary_purpose=_sd,
+        common_questions=_cq,
+        inputs=_inputs,
+        outputs=["Computed tables/charts for the analysis above."],
+        key_metrics=_km, data_sources=_srcs,
+        model_logic_summary=("Computes the analysis above from entered/"
+                             "illustrative assumptions (data_public tool); "
+                             "no live external data."),
+        why_it_matters=_why, diligence_use_cases=[_sd],
+        interpretation_guidance=_guidance, limitations=_limits,
+        related_routes=["/quant-lab", "/verticals", "/industry"],
+        metric_ids=_mids, data_source_ids=[],
+        source_confidence=SourceConfidence.DOCUMENTED, data_confidence=_dc2,
+    ))
+
+
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
