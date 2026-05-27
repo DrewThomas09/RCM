@@ -742,3 +742,117 @@ _METRICS.extend([
 ])
 
 METRIC_REGISTRY: Dict[str, MetricContext] = {m.metric_id: m for m in _METRICS}
+
+# ── Formula completion ─────────────────────────────────────────────────
+# Fill every remaining placeholder formula with an HONEST value, so the Guide
+# can answer "how is X computed" on every metric. Three honest categories:
+#   _INF  — standard textbook definition (the formula is standard; PEdesk's
+#           exact computation is inferred, not confirmed from code);
+#   _NA   — no formula applies (a count, an identifier, a label, or an
+#           externally-defined CMS composite — stated as such, not invented);
+#   _NV   — a proprietary/model-derived score with NO closed-form formula; we
+#           describe the approach at a truthful level and DO NOT fabricate one.
+# (metric_id -> (formula_text, formula_confidence))
+_FORMULA_PATCHES: Dict[str, Any] = {
+    # Standard definitions (INFERRED)
+    "ebitda": ("net income + interest + taxes + depreciation + amortization "
+               "(≈ operating income + D&A)", _INF),
+    "adjusted_ebitda": ("EBITDA + non-recurring / normalizing add-backs "
+                        "(one-time, owner, and run-rate adjustments)", _INF),
+    "revenue": ("gross patient revenue − contractual allowances − bad debt "
+                "(= net patient revenue)", _INF),
+    "irr": ("the discount rate r solving Σ cash_flow_t / (1+r)^t = 0", _INF),
+    "debt": ("sum of interest-bearing obligations (net debt = gross debt − "
+             "cash & equivalents)", _INF),
+    "covenant_cushion": ("headroom to the covenant — e.g. (max-leverage "
+                         "covenant − current leverage), or the EBITDA decline "
+                         "tolerable before a breach", _INF),
+    "ebitda_bridge": ("starting EBITDA + Σ (per-lever EBITDA contributions) = "
+                      "pro-forma EBITDA", _INF),
+    "bad_debt_rate": ("bad-debt write-offs / gross patient revenue", _INF),
+    "clean_claim_rate": ("claims accepted on first submission (no edits/"
+                         "rejections) / total claims submitted", _INF),
+    "underpayment_rate": ("underpaid claim amount / contracted (expected) "
+                          "amount", _INF),
+    "collections_leakage": ("expected collectible revenue − actual collections, "
+                            "attributable to denials, underpayments and "
+                            "write-offs", _INF),
+    "cost_per_adjusted_discharge": ("total operating cost / adjusted discharges "
+                                    "(discharges grossed up for outpatient "
+                                    "volume)", _INF),
+    "case_mix_index": ("sum of DRG weights / number of cases", _INF),
+    "benchmark_percentile": ("percentile rank (0–100) of the target's value "
+                             "within the peer distribution", _INF),
+    "payer_mix": ("share of revenue (or volume) by payer class "
+                  "(Medicare / Medicaid / commercial / self-pay); classes "
+                  "sum to 100%", _INF),
+    "app_support_ratio": ("advanced-practice providers (NP + PA) / physicians",
+                          _INF),
+    "physician_attrition": ("providers departing in the period / average "
+                            "provider headcount (annualized)", _INF),
+    "provider_contribution_margin": ("(provider-attributable revenue − direct "
+                                     "costs) / provider revenue", _INF),
+    "provider_productivity": ("output per provider FTE (e.g. wRVUs or visits "
+                              "per FTE)", _INF),
+    "referral_leakage": ("referrals directed outside the network / total "
+                         "referrals", _INF),
+    "data_coverage_score": ("populated required inputs / total required inputs",
+                            _INF),
+    "imputation_share": ("imputed (prior/benchmark-filled) inputs / total "
+                         "inputs", _INF),
+    "timely_initiation_of_care": ("home-health patients whose care began within "
+                                  "2 days of start-of-care / eligible patients "
+                                  "(CMS measure definition)", _INF),
+    "visits_in_last_days": ("hospice patients with a visit in the last 3 (and "
+                            "7) days of life / decedents (CMS measure "
+                            "definition)", _INF),
+    "hospice_composite_process": ("patients who received ALL applicable "
+                                  "admission care-process measures / eligible "
+                                  "patients (CMS composite)", _INF),
+    # No formula applies (NOT_APPLICABLE) — counts, identifiers, labels,
+    # externally-defined CMS composites.
+    "bed_count": ("a count of licensed/staffed beds — not a computed ratio",
+                  _NA),
+    "panel_size": ("a count of attributed patients — not a computed ratio",
+                   _NA),
+    "wrvu": ("CMS-assigned work RVU per CPT/HCPCS code (set by the Medicare "
+             "fee schedule, not computed by PEdesk)", _NA),
+    "medicare_cost_report_year": ("an identifier — the HCRIS cost-report "
+                                  "fiscal year, not a computed metric", _NA),
+    "confidence_tier": ("a graded label (e.g. A–D), not a numeric formula", _NA),
+    "model_estimate": ("a provenance category (the value came from a model), "
+                       "not a metric with a formula", _NA),
+    "home_health_star_rating": ("CMS Home Health quality-of-patient-care "
+                                "composite methodology (externally defined)",
+                                _NA),
+    "hospice_care_index": ("CMS Hospice Care Index — composite of 10 indicators "
+                           "(externally defined by CMS)", _NA),
+    "discharge_to_community": ("CMS risk-standardized rate (CMS's "
+                               "risk-adjustment model, externally defined)",
+                               _NA),
+    # Proprietary / model-derived — NO closed-form formula; described honestly,
+    # not fabricated (formula_confidence stays NEEDS_VALIDATION).
+    "rcm_uplift": ("model estimate ≈ Σ (KPI gap closed × revenue at risk); "
+                   "assumption-driven, not a closed-form figure", _NV),
+    "value_creation_opportunity": ("model estimate = Σ value-creation lever "
+                                   "contributions; assumption-driven, not "
+                                   "closed-form", _NV),
+    "synergy_estimate": ("analyst/model estimate of cost + revenue synergy "
+                         "dollars; not a closed-form figure", _NV),
+    "payer_stress_impact": ("modeled EBITDA/return delta under an adverse "
+                            "payer-rate scenario; scenario output, not "
+                            "closed-form", _NV),
+    "bridge_realization_probability": ("model-estimated (calibrated) "
+                                       "probability a lever is realized; not a "
+                                       "closed-form ratio", _NV),
+    "bankruptcy_pattern_match": ("model similarity between the deal's financial "
+                                 "signature and historical distress cases; not "
+                                 "a closed-form ratio", _NV),
+    "risk_score": ("weighted composite of risk-flag signals (model-defined "
+                   "weights); not a single closed-form ratio", _NV),
+}
+for _mid, (_f, _conf) in _FORMULA_PATCHES.items():
+    _m_obj = METRIC_REGISTRY.get(_mid)
+    if _m_obj is not None:
+        _m_obj.formula = _f
+        _m_obj.formula_confidence = _conf
