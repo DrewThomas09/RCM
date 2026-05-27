@@ -48,6 +48,14 @@ class StateRankingsTests(unittest.TestCase):
         self.assertIn("<table", h)
         self.assertIn("fabricated", h)
 
+    def test_page_leads_with_real_kpi_strip(self):
+        # X-Ray pattern: leading KPI strip computed from the real ranking
+        # (states ranked / #1 state / national median), not just a table.
+        h = render_state_rankings({"metric": ["population"]})
+        self.assertIn("ck-kpi-strip", h)
+        self.assertIn("States ranked", h)
+        self.assertIn("National median", h)
+
     def test_surface_is_green(self):
         self.assertEqual(classify_surface("/state-rankings")["tier"], "green")
 
