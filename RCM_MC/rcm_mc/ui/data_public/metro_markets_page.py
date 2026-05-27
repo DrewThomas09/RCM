@@ -16,7 +16,7 @@ from __future__ import annotations
 import html as _html
 from typing import Dict
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_page_title
 
 # (key, label, formatter, is_estimate)
 _COLS = [
@@ -68,6 +68,37 @@ def metro_dataframe(area_type: str, sort_key: str):
         out.append(rec)
     cols = ["CBSA", "Type", "Counties"] + [lbl for _k, lbl, *_ in _COLS]
     return _pd.DataFrame(out, columns=cols)
+
+
+def _fmt_pop(v) -> str:
+    if v is None:
+        return "—"
+    if v >= 1e6:
+        return f"{v / 1e6:.1f}M"
+    if v >= 1e3:
+        return f"{v / 1e3:.0f}K"
+    return f"{int(v):,}"
+
+
+def _metro_kpi_strip(rows, area_type: str) -> str:
+    """Leading KPI strip (X-Ray pattern) from the real CBSA rows: market count,
+    total population covered, and the largest market by population. No
+    fabrication; markets without a population value are excluded from the
+    'largest' pick and the total."""
+    n = len(rows)
+    pop_rows = [r for r in rows if r.get("population")]
+    total_pop = sum(r["population"] for r in pop_rows)
+    top = max(pop_rows, key=lambda r: r["population"], default=None)
+    strip = (
+        '<div class="ck-kpi-strip" style="margin-bottom:14px">'
+        + ck_kpi_block(f"{area_type} areas", str(n))
+        + ck_kpi_block("Population covered", _fmt_pop(total_pop))
+    )
+    if top is not None:
+        strip += ck_kpi_block(
+            "Largest market", _html.escape(str(top.get("cbsa_title", "—"))),
+            sub=_fmt_pop(top["population"]))
+    return strip + '</div>'
 
 
 def render_metro_markets(params: Dict = None) -> str:
@@ -130,6 +161,7 @@ def render_metro_markets(params: Dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {ck_page_title("Metro Markets", eyebrow="MARKET INTEL", meta=f"{len(rows)} U.S. {area_type.lower()} areas on real CBSA demographics — click a column to sort")}
+  {_metro_kpi_strip(rows, area_type)}
   <p style="font-size:13px;color:{td};max-width:74ch;margin:0 0 14px">
     The metro level of the Geographic Intelligence suite — U.S. Core-Based
     Statistical Areas ranked on real, derived demographics rolled up from county
