@@ -7082,6 +7082,64 @@ for (_r, _cat, _sd, _cq) in _BATCH8_SYSTEM:
     ))
 
 
+if "/ebitda-bridge" not in {c.route for c in _MANUAL}:
+    _MANUAL.append(_ctx(
+        "/ebitda-bridge", "EBITDA Bridge",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="Per-hospital 7-lever RCM EBITDA bridge with returns "
+        "math — decomposes current → pro-forma EBITDA lever by lever and runs "
+        "the MOIC/IRR. Parameterized: /ebitda-bridge/<ccn>.",
+        primary_purpose="Show exactly how revenue-cycle improvement converts to "
+        "EBITDA (and therefore returns) for a specific hospital, lever by lever, "
+        "so the value-creation thesis is concrete and auditable.",
+        intended_users=["Deal team underwriting an RCM value-creation thesis."],
+        common_questions=[
+            "How does RCM improvement bridge to EBITDA here?",
+            "Which lever contributes the most?",
+            "What MOIC/IRR does this bridge imply?",
+            "How were the lever targets set?"],
+        inputs=["The hospital's CMS HCRIS data (by CCN in the URL) plus "
+                "RCM benchmark targets / any data-room overrides."],
+        outputs=["A 7-lever bridge (denial rate, days in AR, clean-claim, "
+                 "underpayments, cost, working capital, …) from current to "
+                 "pro-forma EBITDA, a ramp curve, peer targets, and a "
+                 "MOIC/IRR returns grid."],
+        key_metrics=["EBITDA", "EBITDA bridge", "RCM uplift", "MOIC", "IRR",
+                     "EV/EBITDA"],
+        data_sources=["CMS HCRIS for the hospital + RCM benchmark targets; "
+                      "optional data-room overrides."],
+        model_logic_summary=(
+            "Builds the bridge in rcm_mc/ui/ebitda_bridge_page (_compute_bridge) "
+            "+ rcm_mc/pe/rcm_ebitda_bridge: each lever's EBITDA impact = the "
+            "KPI gap to a peer/benchmark target × the revenue or cost at risk; "
+            "the levers sum onto current EBITDA to a pro-forma figure, which "
+            "feeds a standard LBO returns grid. Lever targets are benchmark-"
+            "driven assumptions, not realized results."),
+        why_it_matters="The bridge is where an RCM thesis becomes a number — it "
+        "makes the EBITDA (and return) case explicit and challengeable.",
+        diligence_use_cases=[
+            "Underwriting the RCM value-creation case for a target hospital.",
+            "Pressure-testing which levers actually move EBITDA."],
+        interpretation_guidance=[
+            "Lever impacts are MODEL ESTIMATES from benchmark gaps × revenue at "
+            "risk — assumptions, not realized EBITDA.",
+            "Requires a hospital CCN (/ebitda-bridge/<ccn>); the bare route has "
+            "no hospital context.",
+            "The returns grid inherits the bridge's assumptions — read them "
+            "before quoting a MOIC/IRR."],
+        limitations=[
+            "Only as good as the HCRIS data and the benchmark targets; "
+            "hospital-specific reality can differ.",
+            "Per-hospital model output, not an audited financial statement."],
+        related_routes=["/models/bridge", "/rcm-benchmarks", "/diligence/xray",
+                        "/quant-lab"],
+        metric_ids=["ebitda", "ebitda_bridge", "rcm_uplift", "moic", "irr",
+                    "ev_to_ebitda"],
+        data_source_ids=["cms_hcris", "benchmark_prior"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ))
+
 if "/compare" not in {c.route for c in _MANUAL}:
     _MANUAL.append(_ctx(
         "/compare", "Compare Deals",
