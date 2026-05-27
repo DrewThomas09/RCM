@@ -7192,6 +7192,8 @@ _DATA_SOURCE_LINK_PATCHES: Dict[str, List[str]] = {
     "/inpatient-rehab": ["cms_care_compare"],
     "/long-term-care-hospital": ["cms_care_compare"],
     "/lp-reporting": ["portfolio_snapshot"],
+    "/deal-library/comps": ["public_transaction_corpus"],
+    "/diligence/bear-case": ["analysis_run"],
 }
 for _c in _MANUAL:
     _sp = _DATA_SOURCE_LINK_PATCHES.get(_c.route)
@@ -7213,6 +7215,8 @@ _METRIC_LINK_EXTEND_2: Dict[str, List[str]] = {
     "/capex-budget": ["capex_intensity"],
     "/inpatient-rehab": ["length_of_stay", "readmission_rate"],
     "/long-term-care-hospital": ["length_of_stay", "readmission_rate"],
+    "/deal-library/comps": ["ev_to_ebitda", "benchmark_percentile"],
+    "/diligence/bear-case": ["risk_score", "bankruptcy_pattern_match"],
 }
 for _c in _MANUAL:
     _ext2 = _METRIC_LINK_EXTEND_2.get(_c.route)
