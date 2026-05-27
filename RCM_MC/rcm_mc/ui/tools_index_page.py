@@ -234,10 +234,12 @@ _TOOLS_CSS = """
   --ti-green:#1f7a5a;--ti-green2:#2e8c6c;--ti-green-deep:#18573f;
   --ti-green-soft:#d6e8df;--ti-amber:#b8842e;--ti-ochre:#7a4f6e;
   --ti-max:1320px;}
-/* sticky controls (filter toolbar — contextual to this page, not global nav) */
-.ti-controls{position:sticky;top:76px;z-index:20;background:var(--sc-bg,#ebe5d3);
-  border-bottom:1px solid var(--ti-rule);margin:0 0 0;}
-.ti-controls-inner{max-width:var(--ti-max);margin:0 auto;padding:12px 0;
+/* sticky controls (filter toolbar — contextual to this page, not global nav).
+   top:58px == the shrunk topbar height (_chartis_kit .ck-topbar-inner
+   min-height), so this bar sits flush under it with no see-through gap. */
+.ti-controls{position:sticky;top:58px;z-index:20;background:var(--sc-bg,#ebe5d3);
+  border-bottom:1px solid var(--ti-rule);margin:0;}
+.ti-controls-inner{max-width:var(--ti-max);margin:0 auto;padding:10px 0;
   display:flex;gap:24px;align-items:center;justify-content:space-between;}
 .ti-search{flex:1;max-width:520px;background:var(--ti-paper);
   border:1px solid var(--ti-rule);padding:8px 12px;display:flex;
@@ -263,14 +265,14 @@ _TOOLS_CSS = """
 .ti-tab.on{background:var(--ti-ink);color:var(--ti-paper);border-color:var(--ti-ink);}
 .ti-tab:hover:not(.on){color:var(--ti-ink);background:var(--ti-paper);}
 /* masthead */
-.ti-mast{max-width:var(--ti-max);margin:0 auto;padding:40px 0 28px;
-  display:grid;grid-template-columns:1.6fr 1fr;gap:56px;align-items:end;}
+.ti-mast{max-width:var(--ti-max);margin:0 auto;padding:28px 0 22px;
+  display:grid;grid-template-columns:1.6fr 1fr;gap:40px;align-items:end;}
 .ti-eyebrow{font-family:var(--sc-mono,monospace);font-size:10.5px;
   letter-spacing:.2em;text-transform:uppercase;color:var(--ti-green);
-  margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+  margin-bottom:10px;display:flex;align-items:center;gap:10px;}
 .ti-eyebrow-dot{width:5px;height:5px;border-radius:50%;background:var(--ti-green);}
 .ti-mast h1{font-family:var(--sc-serif,Georgia,serif);font-weight:400;
-  font-size:64px;line-height:.95;letter-spacing:-.03em;margin:0 0 14px;
+  font-size:46px;line-height:1.0;letter-spacing:-.025em;margin:0 0 12px;
   color:var(--ti-ink);}
 .ti-mast h1 em{font-style:italic;color:var(--ti-green);}
 .ti-standfirst{font-family:var(--sc-serif,Georgia,serif);font-size:16.5px;
