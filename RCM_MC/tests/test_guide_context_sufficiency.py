@@ -153,6 +153,17 @@ class CoverageBackfillResolves(unittest.TestCase):
             self.assertEqual(pkt.context_quality, "strong",
                              f"{route} should grade strong with sources")
 
+    def test_public_data_pages_have_verified_source_lineage(self):
+        # Public-data pages link the source they actually cite (verified from
+        # each page's ck_source_purpose) so the Guide can answer provenance.
+        for route, sid in (("/payer-rate-trends", "civhc_rbp"),
+                           ("/ref-pricing", "civhc_rbp"),
+                           ("/cms-data-browser", "cms_provider_data_catalog"),
+                           ("/cms-sources", "cms_provider_data_catalog")):
+            pkt = build_guide_context_packet(route)
+            sids = {s.source_id for s in pkt.data_source_contexts}
+            self.assertIn(sid, sids, f"{route} missing source {sid}")
+
     def test_synonym_aliases_resolve_to_their_metric(self):
         from rcm_mc.assistant.context.get_metric_context import get_metric_context
         for label, mid in (("Weighted MOIC", "moic"), ("Median IRR", "irr"),

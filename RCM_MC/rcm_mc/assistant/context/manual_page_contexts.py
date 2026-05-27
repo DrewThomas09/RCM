@@ -7635,6 +7635,19 @@ for _c in _MANUAL:
     if _sids and not (getattr(_c, "data_source_ids", None) or []):
         _c.data_source_ids = list(_sids)
 
+# ── Other public-data pages: source lineage (verified from each page's own
+# ck_source_purpose declaration — no guessing) ────────────────────────────
+_PUBLIC_SOURCE_LINKS = {
+    "/payer-rate-trends": ["civhc_rbp"],   # CIVHC / CO APCD Cost of Care
+    "/ref-pricing": ["civhc_rbp"],         # CIVHC / CO APCD reference pricing
+    "/cms-data-browser": ["cms_provider_data_catalog"],
+    "/cms-sources": ["cms_provider_data_catalog"],
+}
+for _c in _MANUAL:
+    _sids = _PUBLIC_SOURCE_LINKS.get(_c.route)
+    if _sids and not (getattr(_c, "data_source_ids", None) or []):
+        _c.data_source_ids = list(_sids)
+
 # ── Related-route hygiene ──────────────────────────────────────────────
 # The Guide must never hand the user a cross-link that points nowhere. Repoint
 # a few known-wrong/sub-action links to the right mapped page, normalize
