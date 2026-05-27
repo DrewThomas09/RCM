@@ -5572,98 +5572,17 @@ class RCMHandler(BaseHTTPRequestHandler):
                     "score": ins.get("score"),
                 },
             })
-        if path == "/api/insights":
-            # Full ranked list — every cross-portfolio signal the
-            # tool can compute, highest-score first. Same /insights
-            # HTML view's data, JSON-shaped for external consumers.
-            from .ui.dashboard_page import _all_insights
-            return self._send_json({
-                "insights": _all_insights(self.config.db_path),
-                "count": len(_all_insights(self.config.db_path)),
-            })
-        # ── Portfolio monitoring dashboard ──
+        # (/api/insights is handled earlier — this duplicate was removed. The
+        #  full ranked list lives in dashboard_page._all_insights, used by the
+        #  /insights HTML page + the dashboard headline; the JSON endpoint keeps
+        #  its established daily-insights {insights, count} contract.)
+        # ── Portfolio monitoring dashboard — uses the standard chartis page
+        #    (ui/portfolio_monitor_page via _route_portfolio_monitor). A legacy
+        #    inline, shell-less dashboard used to shadow this and render
+        #    /portfolio/monitor without the topbar/nav; removed so the route
+        #    serves the proper page (a later dup handler delegated here too).
         if path == "/portfolio/monitor":
-            try:
-                from .portfolio_monitor import (
-                    PortfolioAsset, PortfolioSnapshot,
-                    compute_variance, render_monitor_dashboard,
-                )
-                store = PortfolioStore(self.config.db_path)
-                with store.connect() as con:
-                    rows = con.execute(
-                        "SELECT deal_id, name, profile_json "
-                        "FROM deals WHERE archived_at IS NULL"
-                    ).fetchall()
-                import json as _json
-                assets = []
-                for row in rows:
-                    try:
-                        prof = _json.loads(
-                            row["profile_json"] or "{}")
-                    except (TypeError,
-                            _json.JSONDecodeError):
-                        prof = {}
-                    assets.append(PortfolioAsset(
-                        deal_id=row["deal_id"],
-                        name=row["name"] or row["deal_id"],
-                        sector=prof.get("sector") or "hospital",
-                        entry_year=int(
-                            prof.get("entry_year") or 0),
-                        held_years=float(
-                            prof.get("held_years") or 0),
-                        entry_ebitda_mm=float(
-                            prof.get("entry_ebitda_mm") or 0),
-                        plan_ebitda_mm=float(
-                            prof.get("plan_ebitda_mm") or 0),
-                        actual_ebitda_mm=float(
-                            prof.get("actual_ebitda_mm")
-                            or prof.get("ebitda_mm") or 0),
-                        plan_revenue_mm=float(
-                            prof.get("plan_revenue_mm") or 0),
-                        actual_revenue_mm=float(
-                            prof.get("actual_revenue_mm")
-                            or prof.get("revenue_mm") or 0),
-                        comparable_moic_p50=(
-                            prof.get("comparable_moic_p50")),
-                        comparable_moic_p25=(
-                            prof.get("comparable_moic_p25")),
-                        current_moic=(
-                            prof.get("current_moic")),
-                    ))
-                snapshot = PortfolioSnapshot(
-                    fund_name=self.config.title or "Portfolio",
-                    assets=assets,
-                )
-                pv = compute_variance(snapshot)
-                # Wrap the bespoke dashboard body in chartis_shell so
-                # /portfolio/monitor renders inside the v5 chrome
-                # without rewriting the renderer.
-                from .ui._chartis_kit import chartis_shell
-                inner = render_monitor_dashboard(pv)
-                # The renderer returns a full <html>...</html> doc.
-                # Previously only the <body> was extracted, which
-                # stripped the page-specific <style> block in <head>
-                # and the page rendered totally unstyled (user-
-                # reported). Now pull BOTH the <style> contents
-                # (passed as extra_css) AND the <body> contents.
-                import re as _re_pm
-                style_match = _re_pm.search(
-                    r"<style[^>]*>(.*?)</style>", inner, _re_pm.S)
-                body_match = _re_pm.search(
-                    r"<body[^>]*>(.*?)</body>", inner, _re_pm.S)
-                body_html = body_match.group(1) if body_match else inner
-                extra_css = (
-                    style_match.group(1) if style_match else ""
-                )
-                return self._send_html(chartis_shell(
-                    body_html, "Portfolio Monitor",
-                    subtitle="plan-vs-actual variance, fund-level",
-                    extra_css=extra_css))
-            except Exception as exc:  # noqa: BLE001
-                return self._send_html(
-                    f"<h1>500</h1><p>Monitor failed: "
-                    f"{type(exc).__name__}: {exc}</p>",
-                    status=HTTPStatus.INTERNAL_SERVER_ERROR)
+            return self._route_portfolio_monitor()
 
         # ── IC memo generator (deal_id-based; the older
         # ── /ic-memo/<ccn> route handles hospital CCNs).
@@ -6645,8 +6564,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_fund_learning()
         if path == "/portfolio":
             return self._route_portfolio_overview()
-        if path == "/portfolio/monitor":
-            return self._route_portfolio_monitor()
+        # (/portfolio/monitor is handled earlier — this duplicate was removed.)
         if path == "/day-one":
             from .ui.day_one_page import render_day_one
             from .portfolio.store import PortfolioStore as _PS
