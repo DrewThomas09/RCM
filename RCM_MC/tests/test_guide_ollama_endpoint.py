@@ -82,6 +82,56 @@ class GuideAskEndpointTests(unittest.TestCase):
                 server.shutdown()
                 server.server_close()
 
+    def test_onscreen_figures_reach_the_prompt_and_are_counted(self):
+        # The live KPI values the user is viewing must be passed through to
+        # the model prompt (so the Guide can analyze actual on-screen numbers)
+        # and reflected in the response count.
+        captured = {}
+
+        def _capture(system_prompt, user_prompt, model=None):
+            captured["user"] = user_prompt
+            return "Operating margin of 12.3% is below the page benchmark."
+
+        with tempfile.TemporaryDirectory() as tmp, _enabled_env(), \
+                mock.patch.object(ollama_client, "call_ollama_chat",
+                                  side_effect=_capture):
+            server, port = _start(tmp)
+            try:
+                status, data = _post(port, {
+                    "route": "/diligence/hcris-xray",
+                    "question": "How is the operating margin?",
+                    "onscreen_figures": [
+                        {"label": "Operating Margin", "value": "12.3%"},
+                        {"label": "Net Revenue", "value": "$450.25M"},
+                    ],
+                })
+                self.assertEqual(status, 200)
+                self.assertEqual(data["onscreen_figures_used"], 2)
+                self.assertIn("On-screen figures", captured["user"])
+                self.assertIn("Operating Margin: 12.3%", captured["user"])
+            finally:
+                server.shutdown()
+                server.server_close()
+
+    def test_malformed_onscreen_figures_do_not_crash(self):
+        # A garbage onscreen_figures payload must be sanitized away (0 used),
+        # never 500. Read-only contract holds.
+        with tempfile.TemporaryDirectory() as tmp, _enabled_env(), \
+                mock.patch.object(ollama_client, "call_ollama_chat",
+                                  return_value="ok"):
+            server, port = _start(tmp)
+            try:
+                status, data = _post(port, {
+                    "route": "/diligence/hcris-xray",
+                    "question": "What is this?",
+                    "onscreen_figures": "not-a-list",
+                })
+                self.assertEqual(status, 200)
+                self.assertEqual(data["onscreen_figures_used"], 0)
+            finally:
+                server.shutdown()
+                server.server_close()
+
     def test_missing_question_is_400(self):
         with tempfile.TemporaryDirectory() as tmp, _enabled_env():
             server, port = _start(tmp)
