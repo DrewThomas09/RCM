@@ -53,6 +53,12 @@ _PILLARS: List[Mapping[str, object]] = [
             {"href": "/diligence/management",
              "label": "Management",
              "blurb": "Leadership tenure, comp, change history."},
+            {"href": "/diligence/xray",
+             "label": "CMS X-Ray",
+             "blurb": "Provider-level CMS quality + utilization drill-down."},
+            {"href": "/diligence/sponsor-detail",
+             "label": "Sponsor Detail",
+             "blurb": "Single-sponsor realized-MOIC + vintage drill-down."},
         ],
     },
     {
@@ -83,6 +89,9 @@ _PILLARS: List[Mapping[str, object]] = [
             {"href": "/diligence/denial-prediction",
              "label": "Denial Predict",
              "blurb": "ML scores future denials by claim line."},
+            {"href": "/diligence/snapshot",
+             "label": "VDR Snapshot",
+             "blurb": "Upload 835/837 → revenue-leakage findings + memo."},
         ],
     },
     {
@@ -122,6 +131,12 @@ _PILLARS: List[Mapping[str, object]] = [
             {"href": "/diligence/deal-autopsy",
              "label": "Deal Autopsy",
              "blurb": "Decompose realized return vs underwriting."},
+            {"href": "/diligence/comparable-outcomes",
+             "label": "Comparable Outcomes",
+             "blurb": "How similar deals actually played out."},
+            {"href": "/diligence/bear-case",
+             "label": "Bear Case",
+             "blurb": "The defensible bear case for this deal."},
         ],
     },
     {
@@ -146,9 +161,35 @@ _PILLARS: List[Mapping[str, object]] = [
             {"href": "/diligence/regulatory-calendar",
              "label": "Reg Calendar",
              "blurb": "CMS rule cycles overlaid on hold."},
+            {"href": "/diligence/cliff-calendar",
+             "label": "Cliff Calendar",
+             "blurb": "2026-29 Medicare/340B rate events on the hold window."},
             {"href": "/engagements",
              "label": "Engagements",
              "blurb": "Track active diligence engagements."},
+        ],
+    },
+    {
+        "title": "PE Intelligence Toolkit",
+        "eyebrow": "THE PARTNER BRAIN",
+        "body": (
+            "The codified partner-judgment layer — a searchable toolkit of "
+            "analytic modules, runnable against a real deal, plus the curated "
+            "reference libraries and the open-question ledger."
+        ),
+        "links": [
+            {"href": "/diligence/pe-library",
+             "label": "PE Intelligence Library",
+             "blurb": "The full ~222-tool analytic toolkit, searchable."},
+            {"href": "/diligence/pe-tool",
+             "label": "Run a Tool on a Deal",
+             "blurb": "Run an analytic tool against a real deal's packet."},
+            {"href": "/diligence/pe-reference",
+             "label": "Reference Libraries",
+             "blurb": "Historical failures, partner traps, archetypes, more."},
+            {"href": "/diligence/questions",
+             "label": "Questions Ledger",
+             "blurb": "Open diligence questions across the portfolio."},
         ],
     },
 ]
