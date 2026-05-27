@@ -7362,5 +7362,62 @@ for _c in _MANUAL:
     if _w and isinstance(_c.why_it_matters, str) and _NEEDS_WHY in _c.why_it_matters:
         _c.why_it_matters = _w
 
+# /tools is a real, served page (the Cmd-K / all-tools index) that was never
+# mapped — add it so the Guide can explain it and cross-links to it resolve.
+if "/tools" not in {c.route for c in _MANUAL}:
+    _MANUAL.append(_ctx(
+        "/tools", "All Tools",
+        category=PageContextCategory.HOME_OPERATIONS,
+        short_description="The full, searchable index of every PEdesk tool / "
+        "analytic surface (the Cmd-K command palette opens the same set).",
+        primary_purpose="Let a partner jump straight to any surface without "
+        "trawling URLs — the catalog of everything the platform can do.",
+        common_questions=["What tools are available?", "Where do I find X?",
+                          "How do I open the command palette?"],
+        inputs=["The platform's registered surfaces / command-palette modules."],
+        outputs=["A grouped, searchable list of tools with links."],
+        key_metrics=[],
+        data_sources=["Application surface registry (not an analytic dataset)."],
+        model_logic_summary="A navigation index over the registered surfaces; "
+        "not an analytic model — no computed figures.",
+        why_it_matters="Discoverability — a large toolkit is only useful if you "
+        "can find the right surface fast.",
+        diligence_use_cases=["Finding the right analytic surface for the "
+                            "question at hand."],
+        interpretation_guidance=["This is a navigation surface, not an analytic "
+                                "output — nothing here is a diligence finding."],
+        limitations=["Lists what's registered; not an analytic dataset."],
+        related_routes=["/app", "/diligence", "/module-index"],
+        metric_ids=[], data_source_ids=[],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ))
+
+# ── Related-route hygiene ──────────────────────────────────────────────
+# The Guide must never hand the user a cross-link that points nowhere. Repoint
+# a few known-wrong/sub-action links to the right mapped page, normalize
+# trailing slashes, and DROP any related_route that still doesn't resolve to a
+# real context (better an honest shorter list than a dead pointer).
+_RELATED_ROUTE_FIXES = {
+    "/comps": "/deal-library/comps",
+    "/upload": "/diligence/snapshot",
+    "/new-deal/upload": "/diligence/snapshot",
+    "/engagements/create": "/engagements",
+    "/exports/lp-update": "/lp-update",
+}
+_known_routes_rr = {c.route for c in _MANUAL}
+for _c in _MANUAL:
+    if not _c.related_routes:
+        continue
+    _fixed: List[str] = []
+    for _rr in _c.related_routes:
+        if not _rr:
+            continue
+        _base = _rr.split("?")[0].rstrip("/") or "/"
+        _base = _RELATED_ROUTE_FIXES.get(_base, _base)
+        if _base in _known_routes_rr and _base != _c.route and _base not in _fixed:
+            _fixed.append(_base)
+    _c.related_routes = _fixed
+
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
