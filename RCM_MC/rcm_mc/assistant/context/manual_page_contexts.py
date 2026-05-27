@@ -7393,6 +7393,224 @@ if "/tools" not in {c.route for c in _MANUAL}:
         data_confidence=DataConfidence.MIXED,
     ))
 
+# ── Guide-blindness backfill (2026-05-27) ─────────────────────────────────
+# Live /tools pages that had NO page context — the Guide was blind on them.
+# Grounded in each page's own module docstring + render (no fabricated data).
+_GUIDE_BACKFILL = [
+    _ctx(
+        "/data-activation", "Data Activation Center",
+        category=PageContextCategory.HOME_OPERATIONS,
+        short_description="One hub that surfaces every DATA-REQUIRED analysis — "
+        "what to upload to activate each one.",
+        primary_purpose="Show the partner exactly which analyses need their own "
+        "deal/fund data and how to turn each on (upload + template), so no "
+        "data-gated surface is left dark.",
+        common_questions=["What do I need to upload?",
+                          "Which analyses aren't active yet?"],
+        outputs=["A catalog of data-required surfaces with the input each needs."],
+        key_metrics=[], data_sources=["Your uploaded deal/fund data (none is "
+                                      "fabricated — surfaces stay inert until fed)."],
+        why_it_matters="A data-gated tool is useless if you don't know what it "
+        "wants — this removes that friction.",
+        limitations=["A directory of what-to-upload, not an analysis itself."],
+        related_routes=["/tools", "/diligence/ingest"],
+        metric_ids=[], data_source_ids=[],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.USER_ENTERED_DATA,
+    ),
+    _ctx(
+        "/diligence/cliff-calendar", "Reimbursement Cliff Calendar",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="The 2026–2029 reimbursement-cliff calendar — dated "
+        "regulatory/payment events that can step a target's revenue down.",
+        primary_purpose="Put the known reimbursement cliffs (340B, IRF, payer "
+        "rate resets, sequestration, etc.) on a timeline against the hold so a "
+        "thesis isn't blindsided by a scheduled rate cut.",
+        common_questions=["What reimbursement cliffs hit during the hold?",
+                          "When does the next rate reset land?"],
+        outputs=["A dated calendar of reimbursement-affecting events with "
+                 "magnitude/impact notes."],
+        key_metrics=[], data_sources=["pe_intelligence reimbursement-cliff "
+                                      "calendar (public regulatory schedule)."],
+        why_it_matters="Entry/exit timing and underwriting both move on when a "
+        "revenue cliff lands relative to the hold.",
+        limitations=["A calendar of scheduled events; the dollar impact on a "
+                     "specific target still needs the deal's payer mix."],
+        related_routes=["/diligence/regulatory-calendar", "/diligence"],
+        metric_ids=[], data_source_ids=[],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/diligence/pe-library", "PE Intelligence Library",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="The searchable catalog of the pe_intelligence analytic "
+        "toolkit (~222 modules).",
+        primary_purpose="Let a partner find and open the right PE-intelligence "
+        "analytic among the full toolkit, rather than only the handful wired "
+        "into the nav.",
+        common_questions=["What PE-intelligence tools exist?",
+                          "Is there a tool for X?"],
+        outputs=["A grouped, searchable index of the toolkit's modules."],
+        key_metrics=[], data_sources=["The pe_intelligence module registry "
+                                      "(a catalog, not a dataset)."],
+        why_it_matters="A 222-tool toolkit is only useful if you can find the "
+        "right analytic fast.",
+        limitations=["A catalog/navigation surface — not an analytic output."],
+        related_routes=["/diligence/pe-tool", "/diligence/pe-reference",
+                        "/diligence"],
+        metric_ids=[], data_source_ids=[],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/diligence/pe-reference", "PE Intelligence Reference",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="The deal-independent curated-knowledge libraries from "
+        "the pe_intelligence toolkit (playbooks, partner traps, reference sets).",
+        primary_purpose="Surface the static reference knowledge — the things "
+        "true regardless of a specific deal — so the team can consult vetted "
+        "playbooks and watch-outs.",
+        common_questions=["What are the known partner traps here?",
+                          "Is there a playbook for this situation?"],
+        outputs=["Curated reference libraries (read-only knowledge)."],
+        key_metrics=[], data_sources=["pe_intelligence curated reference "
+                                      "libraries (editorial knowledge)."],
+        why_it_matters="Codified house knowledge keeps diligence consistent and "
+        "stops repeated mistakes.",
+        limitations=["Reference knowledge, not deal-specific computed output."],
+        related_routes=["/diligence/pe-library", "/diligence/pe-tool"],
+        metric_ids=[], data_source_ids=[],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/diligence/pe-tool", "PE Intelligence Tool Runner",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="Runs a chosen pe_intelligence analytic against a real "
+        "deal's analysis packet.",
+        primary_purpose="Execute any toolkit analytic on the active deal's data "
+        "(not a sample), so the output reflects this target.",
+        common_questions=["Run tool X on this deal.",
+                          "What does this analytic say for my target?"],
+        outputs=["The selected analytic's output computed on the deal packet."],
+        key_metrics=[], data_sources=["The deal's analysis packet (its real "
+                                      "ingested/observed data)."],
+        why_it_matters="Connects the broad toolkit to the deal in front of you "
+        "— the analytic runs on real target data, not a demo.",
+        limitations=["Output is only as good as the deal packet's completeness."],
+        related_routes=["/diligence/pe-library", "/diligence/deal"],
+        metric_ids=[], data_source_ids=[],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
+    ),
+    _ctx(
+        "/geo-map", "Geo Map",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="A US choropleth (tile-grid cartogram) of the "
+        "Geographic Intelligence suite — all 50 states + DC shaded by a real "
+        "metric.",
+        primary_purpose="Give a national, at-a-glance read of where a chosen "
+        "metric concentrates, then click a state for its full profile.",
+        common_questions=["Which states lead/lag on this metric?",
+                          "Where is demand/supply concentrated?"],
+        outputs=["A shaded national map; click-through to per-state profiles."],
+        key_metrics=[], data_sources=["The shared geo metrics registry "
+                                      "(real public CMS/Census-class data)."],
+        why_it_matters="Geographic concentration drives sourcing and roll-up "
+        "strategy — the map makes it legible fast.",
+        limitations=["A visualization layer; the metric definitions live in "
+                     "the geo metrics reference."],
+        related_routes=["/geo-intel", "/geo-metrics", "/state-profile",
+                        "/metro-markets"],
+        metric_ids=[], data_source_ids=[],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/geo-metrics", "Geographic Intelligence — Metrics & Sources",
+        category=PageContextCategory.LIBRARY_REFERENCE,
+        short_description="A transparency reference for the geo suite — every "
+        "metric the state-analysis modes use, with its real source and coverage.",
+        primary_purpose="Document, for each geo metric, exactly what it measures, "
+        "where it comes from, and how complete the coverage is — so the maps and "
+        "rankings are auditable, not black boxes.",
+        common_questions=["Where does this geo metric come from?",
+                          "What's the coverage/vintage of this data?"],
+        outputs=["A per-metric table: definition, source, coverage."],
+        key_metrics=[], data_sources=["The shared geo metrics registry and its "
+                                      "underlying public datasets."],
+        why_it_matters="Defensibility — a geographic claim is only usable if you "
+        "can cite its source and coverage.",
+        limitations=["A reference/transparency surface, not an analysis."],
+        related_routes=["/geo-intel", "/geo-map", "/metro-markets",
+                        "/methodology"],
+        metric_ids=[], data_source_ids=[],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/metro-markets", "Metro Markets",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="The CBSA (metro/micro) level of the Geographic "
+        "Intelligence suite — ranks metro markets by a real metric.",
+        primary_purpose="Drop below the state level to the metro market — where "
+        "deals actually compete — and rank/compare CBSAs on a chosen metric.",
+        common_questions=["Which metros lead on this metric?",
+                          "How does this metro compare to peers?"],
+        outputs=["A ranked CBSA table on the selected metric."],
+        key_metrics=[], data_sources=["The shared geo metrics registry at the "
+                                      "CBSA level (real public data)."],
+        why_it_matters="Healthcare markets are local — metro-level structure "
+        "matters more than state averages for siting and roll-ups.",
+        limitations=["CBSA coverage depends on the underlying public dataset."],
+        related_routes=["/geo-intel", "/geo-map", "/geo-metrics",
+                        "/state-profile"],
+        metric_ids=[], data_source_ids=[],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+]
+for _bf in _GUIDE_BACKFILL:
+    if _bf.route not in {c.route for c in _MANUAL}:
+        _MANUAL.append(_bf)
+
+# CSV export endpoints (download the data behind a page). Light context so the
+# Guide can explain what each is rather than being blind — they're exports,
+# not analytic pages.
+_CSV_EXPORTS = {
+    "/target-screener.csv": ("Target Screener", "/target-screener"),
+    "/county-explorer.csv": ("County Explorer", "/county-explorer"),
+    "/metro-markets.csv": ("Metro Markets", "/metro-markets"),
+    "/state-compare.csv": ("State Compare", "/state-compare"),
+    "/state-peers.csv": ("State Peers", "/state-peers"),
+    "/state-profile.csv": ("State Profile", "/state-profile"),
+    "/state-rankings.csv": ("State Rankings", "/state-rankings"),
+}
+for _csv, (_parent_label, _parent_route) in _CSV_EXPORTS.items():
+    if _csv in {c.route for c in _MANUAL}:
+        continue
+    _MANUAL.append(_ctx(
+        _csv, f"{_parent_label} (CSV export)",
+        category=PageContextCategory.LIBRARY_REFERENCE,
+        short_description=f"A CSV download of the data shown on the "
+        f"{_parent_label} page.",
+        primary_purpose=f"Export the {_parent_label} dataset as CSV for offline "
+        "analysis (Excel, a model, a memo appendix).",
+        common_questions=["What's in this export?",
+                          "How do I get this data into Excel?"],
+        outputs=["A CSV file of the parent page's rows."],
+        key_metrics=[], data_sources=[f"The same data as the {_parent_label} "
+                                      "page (real public/source data)."],
+        why_it_matters="Lets the team take the data into their own tools.",
+        limitations=["A data export, not an analytic surface — open the parent "
+                     "page for the interpreted view."],
+        related_routes=[_parent_route],
+        metric_ids=[], data_source_ids=[],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ))
+
 # ── Related-route hygiene ──────────────────────────────────────────────
 # The Guide must never hand the user a cross-link that points nowhere. Repoint
 # a few known-wrong/sub-action links to the right mapped page, normalize
