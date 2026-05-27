@@ -5359,9 +5359,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .integrations.pms.base import PMSConnector  # noqa: F401
             from .integrations.pms.epic import EpicConnector  # noqa: F401
             from .auth.rbac import Role  # noqa: F401
-            # AI Assistant status — key present vs. not; drives the
-            # subtitle on the card so operators can tell at a glance.
-            _ai_on = bool(os.environ.get("ANTHROPIC_API_KEY"))
+            # AI Assistant status — local Ollama (primary, on-box) or the
+            # Anthropic key (fallback); drives the subtitle on the card so
+            # operators can tell at a glance which brain is active.
+            try:
+                from .assistant.ollama_client import is_ollama_enabled as _oe
+                _ai_ollama = _oe()
+            except Exception:  # noqa: BLE001
+                _ai_ollama = False
+            _ai_key = bool(os.environ.get("ANTHROPIC_API_KEY"))
+            _ai_on = _ai_ollama or _ai_key
             _ai_badge = (
                 '<span class="cad-badge cad-badge-green" '
                 'style="margin-left:8px;">CONNECTED</span>'
@@ -5369,13 +5376,22 @@ class RCMHandler(BaseHTTPRequestHandler):
                 '<span class="cad-badge cad-badge-muted" '
                 'style="margin-left:8px;">NOT CONFIGURED</span>'
             )
-            _ai_sub = (
-                "Claude-backed IC memos, document QA, multi-turn chat. "
-                "Key found — click to see call volume, cost, model."
-                if _ai_on else
-                "Claude-backed memos, Q&A, chat — not yet configured. "
-                "Click to connect via ANTHROPIC_API_KEY."
-            )
+            if _ai_ollama:
+                _ai_sub = (
+                    "Local Ollama-backed IC memos, document QA, multi-turn "
+                    "chat — running on-box, no data leaves the host. Click for "
+                    "call volume + model."
+                )
+            elif _ai_key:
+                _ai_sub = (
+                    "Claude-backed IC memos, document QA, multi-turn chat "
+                    "(legacy fallback). Click to see call volume, cost, model."
+                )
+            else:
+                _ai_sub = (
+                    "AI-backed memos, Q&A, chat — not yet configured. Click to "
+                    "enable local Ollama or connect an ANTHROPIC_API_KEY."
+                )
             # Workspace-mode card — shows the active audience framing.
             from .ui._workspace_mode import (
                 current_workspace_mode as _cwm, MODE_LABELS as _ws_labels,
