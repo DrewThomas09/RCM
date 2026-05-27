@@ -6240,4 +6240,148 @@ for (_r, _t, _sd, _pp, _cq, _km, _mids, _dsids, _ml, _why, _dc2) in _PE_TOOLS_4:
     ))
 
 
+# ── Per-deal model family (/models/<type>/<deal_id>, batch 5) ──────────
+# Each renders one section of the selected deal's analysis packet (model
+# output over that deal's observed/entered inputs). Parameterized routes; the
+# Guide resolves /models/<type>/<deal_id> back to the /models/<type> context.
+# (route, title, short_desc, key_metrics, metric_ids, extra_data_source)
+_MODEL_FAMILY = [
+    ("/models/lbo", "LBO Model", "Leveraged-buyout returns model for the deal "
+     "— entry/exit, leverage, and the resulting MOIC/IRR.",
+     ["MOIC", "IRR", "Leverage", "EV/EBITDA"],
+     ["moic", "irr", "leverage", "ev_to_ebitda", "ebitda"], None),
+    ("/models/dcf", "DCF Valuation", "Discounted-cash-flow valuation of the "
+     "deal — projected FCF, WACC, terminal value.",
+     ["Enterprise value", "EV/EBITDA"],
+     ["enterprise_value", "ev_to_ebitda", "ebitda"], None),
+    ("/models/returns", "Returns Model", "MOIC/IRR returns bridge for the deal "
+     "across the hold.",
+     ["MOIC", "IRR", "Hold period"], ["moic", "irr", "hold_period"], None),
+    ("/models/waterfall", "Distribution Waterfall", "Carry / distribution "
+     "waterfall — how proceeds split between LPs and GP.",
+     ["MOIC", "IRR", "Carry"], ["moic", "irr"], None),
+    ("/models/bridge", "EBITDA Bridge", "Seven-lever EBITDA value-creation "
+     "bridge from entry to exit for the deal.",
+     ["EBITDA", "EBITDA bridge", "RCM uplift", "Synergy"],
+     ["ebitda", "ebitda_bridge", "rcm_uplift", "synergy_estimate"], None),
+    ("/models/debt", "Debt & Covenant Model", "Debt schedule, leverage, and "
+     "covenant headroom for the deal.",
+     ["Leverage", "Debt/EBITDA", "Covenant cushion"],
+     ["leverage", "debt", "covenant_cushion"], None),
+    ("/models/financials", "Financial Statements", "Normalized financial "
+     "statements view for the deal.",
+     ["Revenue", "EBITDA", "EBITDA margin"],
+     ["revenue", "ebitda", "ebitda_margin"], None),
+    ("/models/predicted", "Predicted KPIs", "Predicted RCM KPI outcomes for "
+     "the deal (ridge predictor + conformal interval).",
+     ["Denial rate", "Days in AR", "Net collection rate", "Clean claim rate"],
+     ["denial_rate", "days_in_ar", "net_collection_rate", "clean_claim_rate"],
+     None),
+    ("/models/denial", "Denial-Rate Model", "Predicted initial-denial rate for "
+     "the deal and its drivers.",
+     ["Denial rate"], ["denial_rate"], None),
+    ("/models/comparables", "Comparable Deals", "Comparable deals / companies "
+     "for the deal, from the licensed corpus.",
+     ["Benchmark percentile", "EV/EBITDA"],
+     ["benchmark_percentile", "ev_to_ebitda"], "public_transaction_corpus"),
+    ("/models/market", "Market Model", "Market context for the deal — size, "
+     "growth, and competitive position.",
+     ["Revenue", "Benchmark percentile"],
+     ["revenue", "benchmark_percentile"], None),
+    ("/models/service-lines", "Service-Line Profitability", "Per-service-line "
+     "profitability decomposition for the deal.",
+     ["Contribution margin", "EBITDA margin"],
+     ["provider_contribution_margin", "ebitda_margin"], None),
+    ("/models/causal", "Causal Impact", "Causal-inference estimate of an "
+     "initiative's impact for the deal (not just correlation).",
+     ["RCM uplift", "Value-creation opportunity"],
+     ["rcm_uplift", "value_creation_opportunity"], None),
+    ("/models/counterfactual", "Counterfactual", "What-if counterfactual "
+     "scenario for the deal — outcome under an alternative path.",
+     ["EBITDA", "MOIC"], ["ebitda", "moic"], None),
+    ("/models/anomalies", "Anomaly Detection", "Statistical anomaly flags on "
+     "the deal's data — outliers worth a closer look.",
+     ["Risk score"], ["risk_score"], None),
+    ("/models/trends", "Trend Forecast", "Temporal trend / forecast of the "
+     "deal's key series (Mann-Kendall trend + projection).",
+     ["Revenue growth"], ["revenue_growth"], None),
+    ("/models/quality", "Model Quality", "Held-out quality metrics for the "
+     "deal's models — cross-validated R²/AUC and conformal coverage.",
+     ["CV R²/AUC", "Confidence tier"],
+     ["model_estimate", "confidence_tier"], None),
+    ("/models/importance", "Feature Importance", "Which features drive the "
+     "deal's model predictions, ranked.",
+     ["Feature importance"], ["model_estimate"], None),
+    ("/models/validate", "Model Validation", "Validation / backtest of the "
+     "deal's predictive models against held-out data.",
+     ["Validation score", "Confidence tier"],
+     ["model_estimate", "confidence_tier"], None),
+    ("/models/completeness", "Data Completeness", "Data-completeness grade for "
+     "the deal — what's present, missing, or imputed.",
+     ["Data coverage score"], ["data_coverage_score"], None),
+    ("/models/challenge", "Thesis Challenge", "Red-team challenge of the deal "
+     "thesis — the bear case and key risks.",
+     ["Risk score"], ["risk_score"], None),
+    ("/models/questions", "Diligence Questions", "Auto-generated diligence "
+     "questions for the deal, prioritized by risk.",
+     ["Open questions"], [], None),
+    ("/models/memo", "IC / Exit Memo", "Drafted investment-committee / exit "
+     "memo for the deal from its packet.",
+     ["MOIC", "IRR"], ["moic", "irr"], None),
+    ("/models/playbook", "Value-Creation Playbook", "Value-creation playbook "
+     "for the deal — the prioritized initiative set.",
+     ["Value-creation opportunity", "RCM uplift"],
+     ["value_creation_opportunity", "rcm_uplift"], None),
+    ("/models/irs990", "IRS 990 Financials", "IRS Form 990 financials view for "
+     "the deal (nonprofit / tax-exempt provider).",
+     ["Revenue", "EBITDA"], ["revenue", "ebitda"], "irs_form_990"),
+]
+_existing_routes_b5 = {c.route for c in _MANUAL}
+for (_r, _t, _sd, _km, _mids, _extra_ds) in _MODEL_FAMILY:
+    if _r in _existing_routes_b5:
+        continue
+    _dsids = ["analysis_run", "model_output"] + ([_extra_ds] if _extra_ds else [])
+    _MANUAL.append(_ctx(
+        _r, _t,
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description=_sd,
+        primary_purpose=f"Give the deal team the {_t.lower()} for a specific "
+        "deal, built from its analysis packet, as one section of the modeling "
+        "workbench.",
+        intended_users=["Deal team analyzing a specific deal."],
+        common_questions=[f"What does the {_t.lower()} show for this deal?",
+                          "What assumptions drive it?",
+                          "How confident is this output?"],
+        inputs=["The selected deal's analysis packet (deal_id in the URL) — "
+                "model output over that deal's observed / entered inputs."],
+        outputs=[f"The {_t.lower()} for the selected deal."],
+        key_metrics=_km,
+        data_sources=["The deal's stored analysis packet (model output)."]
+        + (["IRS Form 990 (nonprofit financials)."] if _extra_ds == "irs_form_990"
+           else ["Licensed PE deal corpus."] if _extra_ds else []),
+        model_logic_summary=f"Renders the {_t.lower()} section of the deal's "
+        "analysis packet (rcm_mc/analysis), which is built once per deal and "
+        "cached; figures are model output over that deal's inputs, not "
+        "realized results.",
+        why_it_matters="Per-deal models turn the universe-level analytics into "
+        "a concrete underwriting view for the deal in hand.",
+        diligence_use_cases=[f"Reviewing the {_t.lower()} during diligence / "
+                            "IC prep for a specific deal."],
+        interpretation_guidance=[
+            "Outputs are model estimates for THIS deal from its packet inputs, "
+            "not realized or audited figures.",
+            "Requires the deal to have a built analysis packet; otherwise the "
+            "page prompts to build one."],
+        limitations=[
+            "Only as good as the deal's input data and the packet's "
+            "assumptions.",
+            "Per-deal — needs a deal_id; the bare route has no deal context."],
+        related_routes=["/analysis", "/quant-lab", "/diligence"],
+        metric_ids=_mids,
+        data_source_ids=_dsids,
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ))
+
+
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
