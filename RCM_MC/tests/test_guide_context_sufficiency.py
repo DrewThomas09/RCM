@@ -57,6 +57,9 @@ class HardQuestionContextIsPresent(unittest.TestCase):
         ("/quant-lab", "operating_margin"),
         ("/nursing-homes", "cms_star_rating"),
         ("/treasury", "days_cash_on_hand"),
+        ("/debt-service", "fixed_charge_coverage"),
+        ("/working-capital", "cash_conversion_cycle"),
+        ("/unit-economics", "gross_margin"),
     ]
 
     def test_packet_surfaces_the_needed_metric(self):
@@ -73,7 +76,10 @@ class NewMetricsAreUsable(unittest.TestCase):
         # Standard metrics added this sprint must carry a real (non-placeholder)
         # formula so the Guide can explain "how is X computed".
         for mid in ("hhi", "concentration_ratio", "dscr", "tvpi", "dpi",
-                    "rvpi", "days_cash_on_hand"):
+                    "rvpi", "days_cash_on_hand", "length_of_stay",
+                    "cost_to_charge_ratio", "current_ratio", "gross_margin",
+                    "capex_intensity", "fixed_charge_coverage",
+                    "interest_coverage", "cash_conversion_cycle", "net_debt"):
             m = METRIC_REGISTRY.get(mid)
             self.assertIsNotNone(m, f"metric {mid} missing from registry")
             self.assertNotEqual(m.formula, _NEEDS,
