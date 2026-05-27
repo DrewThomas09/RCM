@@ -19159,11 +19159,14 @@ class RCMHandler(BaseHTTPRequestHandler):
         "/home", "/dashboard", "/portal", "/index.html", "/ready",
         "/portfolio-analytics",   # 301 → /deal-corpus-analytics (renamed)
         "/deals-library",         # 301 → /library (renamed)
+        "/deals",                 # 301 → /pipeline (renamed)
+        # Audit-window action endpoints (token-gated / redirect), not pages.
+        "/audit/enter", "/audit/exit",
         # Internal/legacy
         "/seekingchartis", "/caduceus",
         # Source-parser false positives + test/scratch routes
         "/pressure?", "/diligence/", "/static", "/api",
-        "/X", "/foo",
+        "/X", "/foo", "/x",
         # The tools index itself
         "/tools",
     })
@@ -19186,11 +19189,16 @@ class RCMHandler(BaseHTTPRequestHandler):
         except OSError:
             cls._CACHED_ROUTES = []
             return []
+        # Only EXACT `path == "/x"` handlers are real bare-GET pages. Routes
+        # served solely via `path.startswith("/x/")` are parametric (they need a
+        # deal/CCN/section sub-path) and 404 on the bare slug — surfacing them
+        # as tool cards produced 33 dead links (all of /models/*, /ic-memo,
+        # /data-room, /diligence/synthesis, /best, /hold, …). An empirical HTTP
+        # smoke test confirmed prefix-only == exactly the set that 404s, so we
+        # exclude them here; curated default-param variants (e.g. /my/AT,
+        # /market-data/state/CA) still reach the index via the Cmd-K palette.
         exact = _re.findall(r"""path\s*==\s*['"](/[^'"]+)['"]""", src)
-        prefix = _re.findall(
-            r"""path\.startswith\(\s*['"](/[^'"]+)['"]""", src
-        )
-        routes = set(exact) | {p.rstrip("/") for p in prefix}
+        routes = set(exact)
         # Filter system / API / static / hidden
         keep = []
         for r in sorted(routes):
