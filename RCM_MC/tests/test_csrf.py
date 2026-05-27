@@ -294,6 +294,39 @@ class TestCsrfCookieSelfHeal(unittest.TestCase):
             finally:
                 server.shutdown(); server.server_close()
 
+    def test_guide_ask_is_csrf_exempt_readonly(self):
+        # /api/guide/ask is read-only, so it's CSRF-exempt: a session POST with
+        # NO csrf token must NOT 403. (It 503s here because Ollama is disabled
+        # in tests — the point is it got *past* the CSRF gate.) This is what
+        # guarantees the Guide never throws a CSRF error, even mid-session
+        # across a deploy that the cookie self-heal can't reach.
+        with tempfile.TemporaryDirectory() as tmp:
+            create_user(PortfolioStore(os.path.join(tmp, "p.db")),
+                        "at", "supersecret1")
+            server, port = self._start(tmp)
+            try:
+                token, _ = _login_and_get_tokens(port, "at", "supersecret1")
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/api/guide/ask",
+                    data=json.dumps({"route": "/app",
+                                     "question": "what is this"}).encode(),
+                    method="POST",
+                    headers={"Content-Type": "application/json",
+                             "Cookie": f"rcm_session={token}"},  # no csrf
+                )
+                code = None
+                try:
+                    with _u.urlopen(req) as r:
+                        code = r.status
+                except HTTPError as e:
+                    code = e.code
+                    detail = e.read().decode()
+                    self.assertNotIn("CSRF", detail)
+                self.assertNotEqual(code, 403,
+                                    "read-only Guide ask must not 403 on CSRF")
+            finally:
+                server.shutdown(); server.server_close()
+
 
 if __name__ == "__main__":
     unittest.main()

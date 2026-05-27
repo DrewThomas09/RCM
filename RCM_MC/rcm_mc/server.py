@@ -2010,8 +2010,18 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     # POST paths exempt from CSRF. Login must be exempt (no session yet);
     # logout and health are idempotent / non-sensitive.
+    # /api/guide/ask is exempt because it is strictly READ-ONLY (no DB write,
+    # no mutation, no persistence — it only asks the local Ollama model to
+    # explain the current page from its context). CSRF tokens defend
+    # state-changing requests; a read-only query has no state to forge. It is
+    # still auth-gated (do_POST → _auth_ok) and its response can't be read
+    # cross-origin (same-origin policy + connect-src 'self'), so exempting it
+    # removes the spurious CSRF failures partners hit after a deploy without
+    # weakening any real protection. (The cookie self-heal still covers every
+    # genuinely state-changing POST.)
     _CSRF_EXEMPT_POSTS: tuple = ("/api/login", "/api/logout", "/health",
-                                 "/quick-import", "/quick-import-json", "/screen")
+                                 "/quick-import", "/quick-import-json", "/screen",
+                                 "/api/guide/ask")
 
     # B155: track audit-write failures so silently-lost audit events
     # can be surfaced. Class-level counter + timestamp of last failure.
