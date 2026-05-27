@@ -108,6 +108,24 @@ The static Guide knowledge layer is complete. The only remaining Ollama step
 requires enabling Ollama on the box: rebuild the RAG embedding index
 (`python -m rcm_mc.assistant.rag.index_builder`) and run the live eval.
 
+## Guide depth follow-ups (2026-05-27)
+
+- **Cross-link hygiene + /tools + acronym glossary (#1000, merged):** a
+  related-routes gap scan found 7 pages whose "open this next" links pointed at
+  unmapped routes (dead Guide cross-links). Added a post-build
+  `_RELATED_ROUTE_FIXES` pass (repoint known-wrong, normalize trailing slashes,
+  drop unresolved), mapped `/tools` (the searchable tool index), and added
+  `docs/rag_sources/pe_healthcare_glossary.md` so the Guide can expand
+  healthcare-PE acronyms. Guards: no dead cross-links, `/tools` mapped, glossary
+  in corpus. Documented contexts 344→345.
+- **On-screen figures (this PR):** the Guide can now analyze the live KPI
+  values the user is viewing. The widget scrapes visible `.ck-kpi` label+value
+  pairs and posts them; `/api/guide/ask` sanitizes (typed pairs, length/count
+  caps) and the prompt builder renders them as an "as-displayed, NOT validated"
+  block after the page packet, with a system rule that keeps every guardrail
+  (carry the page's data confidence, never IC-ready, never invent figures).
+  Backward compatible (omitting them = v1 prompt byte-for-byte).
+
 ## Recommended next improvements
 
 1. Enable Ollama on the droplet and run the Guide eval harness
