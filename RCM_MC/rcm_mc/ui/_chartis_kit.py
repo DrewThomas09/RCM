@@ -4208,9 +4208,15 @@ _CSS_INLINE_FALLBACK = """
      ("Portfolio") butt up against / overlap the mode chip ("PE PARTNER").
      Content-sized + a non-shrinking right zone keeps a real gap between them. */
   .ck-nav { display:flex; flex-wrap:nowrap; gap:0; flex:0 1 auto; min-width:0; }
+  /* Flex-centre the label inside a fixed-height anchor so the text stays
+     vertically centred even if the bar grows past 76px (a tall right-rail
+     control used to leave the link text floating high because the old
+     line-height:76px only centres when the bar is exactly 76px). */
   .ck-nav a { font-family:var(--sc-serif,'Source Serif 4',Georgia,serif);
     font-size:17px; font-weight:400; letter-spacing:0; text-transform:none;
-    color:var(--tb-ink2); padding:0 18px; line-height:76px; white-space:nowrap;
+    color:var(--tb-ink2); padding:0 18px;
+    display:inline-flex; align-items:center; height:76px; line-height:1.1;
+    white-space:nowrap;
     border-bottom:2px solid transparent; text-decoration:none; transition:color 0.15s; }
   /* Tighten the nav row before the full-width right rail (mode chip + search +
      Guide + New Deal) collides with it. Steps chosen so the 7 links + wordmark
@@ -4272,8 +4278,14 @@ _CSS_INLINE_FALLBACK = """
      screen / text doesn't wrap" bug). minmax(0,…) lets the track shrink so
      the inner cells wrap instead. `max-width` clamps to the viewport on
      narrow windows (overrides min-width when smaller). */
-  .ck-nav-mega { grid-template-columns:236px minmax(0,1fr); min-width:660px;
-    max-width:calc(100vw - 24px); padding:0; }
+  /* DEFINITE width (not min-width) + minmax(0,1fr) items track. A fixed
+     min-width:660px let a left-anchored group's panel run off the right edge
+     on a narrow/embedded viewport, clipping the destinations column so the
+     feature blurb looked like it "flooded" across. A definite width that
+     clamps to the viewport, plus the earlier single-column stack below,
+     keeps the two columns intact at every width. */
+  .ck-nav-mega { grid-template-columns:212px minmax(0,1fr); width:632px;
+    max-width:calc(100vw - 20px); padding:0; overflow:hidden; }
   /* Shown mega = grid (grid layout overrides the generic `display:block`). */
   .ck-nav-group:hover > .ck-nav-mega,
   .ck-nav-group.is-open > .ck-nav-mega { display:grid; }
@@ -4292,15 +4304,18 @@ _CSS_INLINE_FALLBACK = """
      Combined with overflow-wrap:break-word below, every cell's text now wraps
      inside its own column. */
   .ck-mega-feat { display:flex; flex-direction:column; gap:8px; padding:20px 22px;
-    min-width:0; background:var(--tb-paper2); border-right:1px solid var(--tb-rule);
+    min-width:0; overflow:hidden; background:var(--tb-paper2);
+    border-right:1px solid var(--tb-rule);
     text-decoration:none; transition:background .12s; }
   .ck-mega-feat:hover { background:var(--tb-green-soft); }
   .ck-mega-feat-eyebrow { font-family:var(--sc-mono,monospace); font-size:9.5px;
     letter-spacing:.16em; text-transform:uppercase; color:var(--tb-muted); }
   .ck-mega-feat-title { font-family:var(--sc-serif,Georgia,serif); font-size:23px;
-    line-height:1.05; color:var(--tb-ink); overflow-wrap:anywhere; }
+    line-height:1.05; color:var(--tb-ink); max-width:100%;
+    white-space:normal; overflow-wrap:anywhere; word-break:break-word; }
   .ck-mega-feat-blurb { font-family:var(--sc-serif,Georgia,serif); font-style:italic;
-    font-size:13px; line-height:1.5; color:var(--tb-ink2); overflow-wrap:anywhere; }
+    font-size:13px; line-height:1.5; color:var(--tb-ink2); max-width:100%;
+    white-space:normal; overflow-wrap:anywhere; word-break:break-word; }
   .ck-mega-feat-go { margin-top:auto; font-family:var(--sc-mono,monospace);
     font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--tb-green); }
   .ck-mega-items { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);
@@ -4327,7 +4342,13 @@ _CSS_INLINE_FALLBACK = """
   .ck-mega-item:hover .ck-mega-it-label { color:var(--tb-green); }
   .ck-mega-it-desc { font-family:var(--sc-serif,Georgia,serif); font-style:italic;
     font-size:11.5px; color:var(--tb-muted); line-height:1.3; overflow-wrap:anywhere; }
-  @media (max-width:860px){ .ck-nav-mega { grid-template-columns:1fr; min-width:300px; }
+  /* Stack to a single column earlier (1100px, not 860px): on embedded /
+     half-width browser panes the two-column panel was wider than the space a
+     left-anchored group had before the viewport edge, clipping the right
+     column. Stacked, the feature card sits above its destinations and nothing
+     can overlap. */
+  @media (max-width:1100px){ .ck-nav-mega { grid-template-columns:1fr;
+    width:min(420px, calc(100vw - 20px)); }
     .ck-mega-feat { border-right:0; border-bottom:1px solid var(--tb-rule); }
     .ck-mega-items { grid-template-columns:1fr; } }
   /* Legacy single-column dropdown links (kept for .ck-subnav-link reuse). */
