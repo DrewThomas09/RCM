@@ -670,23 +670,43 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
             f'<td style="padding:5px 8px;">{loc}</td>'
             f'{own_td}{size_td}{q_td}{src_td}'
             f'<td style="padding:5px 8px;white-space:nowrap;">'
-            f'<a class="ck-link" href="{xray}">X-Ray</a> · '
-            f'<a class="ck-link" href="{insp}">Inspect</a> · '
-            f'<a class="ck-link" href="{cmp_href}">+Cmp</a></td>'
+            f'<a class="ts-act" href="{xray}">X-Ray</a>'
+            f'<a class="ts-act" href="{insp}">Inspect</a>'
+            f'<a class="ts-act" href="{cmp_href}">+Cmp</a></td>'
             '</tr>'
         )
     scope = f" · {state}" if state else ""
     filtered = (min_q is not None or min_size is not None or own)
     match_txt = (f"{n_matching:,} match of {total_universe:,}" if filtered
                  else f"{total_universe:,}")
+    # Scoped editorial styling for the ranked table — a sticky shaded header,
+    # zebra rows, row hover, tabular numerics, and the row actions rendered as
+    # small chips (the bare "X-Ray · Inspect · +Cmp" text read as unformatted).
+    table_css = (
+        '<style>'
+        '.ts-screen-table{width:100%;border-collapse:collapse;font-size:12.5px;'
+        'font-family:var(--sc-sans,Inter Tight,sans-serif);}'
+        '.ts-screen-table thead th{position:sticky;top:0;background:var(--sc-bone,#ece5d6);'
+        'z-index:1;}'
+        '.ts-screen-table tbody tr:nth-child(even){background:var(--sc-paper,#faf6ec);}'
+        '.ts-screen-table tbody tr:hover{background:var(--sc-bone,#ece5d6);}'
+        '.ts-screen-table td,.ts-screen-table th{vertical-align:middle;}'
+        '.ts-act{display:inline-block;font-family:var(--sc-mono);font-size:10px;'
+        'letter-spacing:.03em;padding:2px 7px;border:1px solid var(--sc-rule,#c9c1ac);'
+        'border-radius:3px;text-decoration:none;color:var(--sc-teal,#155752);'
+        'background:#fff;margin:0 4px 0 0;white-space:nowrap;}'
+        '.ts-act:hover{background:var(--sc-teal,#155752);color:#fff;'
+        'border-color:var(--sc-teal,#155752);}'
+        '</style>'
+    )
     return (
-        filter_form
+        table_css
+        + filter_form
         + f'<p class="ck-section-body" style="margin:0 0 8px;">Showing {len(rows)} '
         f'of {match_txt} {vinfo["label"]} providers{scope} (ranked by '
         f'{q_label.lower()}; real {vinfo["universe"]} data, "—" = not reported). '
         f'Capped at {_TABLE_LIMIT}.</p>'
-        '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;'
-        'font-size:12.5px;font-family:var(--sc-sans,Inter Tight,sans-serif);">'
+        '<div style="overflow-x:auto;"><table class="ts-screen-table">'
         f'<thead>{head}</thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
