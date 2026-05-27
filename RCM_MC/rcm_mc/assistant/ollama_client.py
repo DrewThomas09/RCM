@@ -5,33 +5,47 @@ Stdlib ``urllib`` only — no third-party HTTP dependency (matching
 when it is disabled or unreachable, callers get a typed ``OllamaError``
 rather than a crash, so the Guide endpoint can return a clean 503.
 
-Config (environment variables; PEdesk has no central config system, so we
-read ``os.environ`` directly):
+Built to work across environments (local dev, a Tailscale-reachable box, a
+container) without code change, and to ride out a slow first call:
 
   PEDESK_GUIDE_OLLAMA_ENABLED          true/false  (default: DISABLED)
   PEDESK_GUIDE_OLLAMA_BASE_URL         default http://localhost:11434
+                                       (may be a COMMA-SEPARATED list of hosts
+                                        tried in order with failover)
+  OLLAMA_HOST                          the standard Ollama env var — also
+                                       honoured, so a normal Ollama install
+                                       works with no PEdesk-specific config
   PEDESK_GUIDE_OLLAMA_MODEL            default gemma4:e4b
   PEDESK_GUIDE_OLLAMA_TIMEOUT_SECONDS  default 30
+  PEDESK_GUIDE_OLLAMA_RETRIES          transient-error retries per host
+                                       (default 2 — the first call after a
+                                        model load is often slow)
+  PEDESK_GUIDE_OLLAMA_NUM_CTX          context window override (e.g. 8192) so
+                                       large page contexts fit
+  PEDESK_GUIDE_OLLAMA_KEEP_ALIVE       how long Ollama keeps the model warm
+                                       (default "5m") — faster repeat calls
 
 Default-disabled is deliberate: production / unknown environments make no
-model calls unless someone explicitly opts in. Local dev sets
-``PEDESK_GUIDE_OLLAMA_ENABLED=true``.
+model calls unless someone explicitly opts in.
 
-This module is read-only: it sends a chat request and returns text. It
-never writes to disk, never touches the portfolio store, and performs no
+This module is read-only: it sends chat/embedding requests and returns data.
+It never writes to disk, never touches the portfolio store, and performs no
 diligence computation.
 """
 from __future__ import annotations
 
 import json
 import os
+import time
 import urllib.error
 import urllib.request
-from typing import Optional
+from typing import Any, List, Optional, Tuple
 
 DEFAULT_BASE_URL = "http://localhost:11434"
 DEFAULT_MODEL = "gemma4:e4b"
 DEFAULT_TIMEOUT_SECONDS = 30
+DEFAULT_RETRIES = 2
+DEFAULT_KEEP_ALIVE = "5m"
 
 
 class OllamaError(RuntimeError):
@@ -43,8 +57,41 @@ def _env(name: str, default: Optional[str] = None) -> Optional[str]:
     return val or default
 
 
+def _normalize_host(raw: str) -> str:
+    """Trim, strip a trailing slash, and add http:// if no scheme is given."""
+    h = (raw or "").strip().rstrip("/")
+    if not h:
+        return ""
+    if not h.startswith(("http://", "https://")):
+        h = "http://" + h
+    return h
+
+
+def ollama_base_urls() -> List[str]:
+    """Ordered, de-duplicated list of candidate Ollama hosts to try.
+
+    Priority: PEDESK_GUIDE_OLLAMA_BASE_URL (comma-separated allowed) → the
+    standard OLLAMA_HOST → the localhost default. This lets the same build
+    reach Ollama wherever it lives (local, Tailscale, sidecar) with failover,
+    and works out-of-the-box for a normal Ollama install via OLLAMA_HOST.
+    """
+    urls: List[str] = []
+    for src in (_env("PEDESK_GUIDE_OLLAMA_BASE_URL"), _env("OLLAMA_HOST")):
+        if not src:
+            continue
+        for part in src.split(","):
+            u = _normalize_host(part)
+            if u and u not in urls:
+                urls.append(u)
+    default = _normalize_host(DEFAULT_BASE_URL)
+    if default not in urls:
+        urls.append(default)
+    return urls
+
+
 def ollama_base_url() -> str:
-    return _env("PEDESK_GUIDE_OLLAMA_BASE_URL", DEFAULT_BASE_URL) or DEFAULT_BASE_URL
+    """The primary host (first candidate). Back-compat for older callers."""
+    return ollama_base_urls()[0]
 
 
 def ollama_default_model() -> str:
@@ -61,6 +108,31 @@ def ollama_timeout_seconds() -> int:
         return DEFAULT_TIMEOUT_SECONDS
 
 
+def ollama_max_retries() -> int:
+    raw = _env("PEDESK_GUIDE_OLLAMA_RETRIES")
+    if not raw:
+        return DEFAULT_RETRIES
+    try:
+        return max(0, min(5, int(raw)))
+    except ValueError:
+        return DEFAULT_RETRIES
+
+
+def ollama_num_ctx() -> Optional[int]:
+    raw = _env("PEDESK_GUIDE_OLLAMA_NUM_CTX")
+    if not raw:
+        return None
+    try:
+        n = int(raw)
+        return n if n > 0 else None
+    except ValueError:
+        return None
+
+
+def ollama_keep_alive() -> str:
+    return _env("PEDESK_GUIDE_OLLAMA_KEEP_ALIVE", DEFAULT_KEEP_ALIVE) or DEFAULT_KEEP_ALIVE
+
+
 def is_ollama_enabled() -> bool:
     """True only when PEDESK_GUIDE_OLLAMA_ENABLED is explicitly truthy."""
     return (_env("PEDESK_GUIDE_OLLAMA_ENABLED", "") or "").lower() in (
@@ -68,16 +140,72 @@ def is_ollama_enabled() -> bool:
     )
 
 
+def _request_json(
+    path: str,
+    payload: Optional[dict] = None,
+    *,
+    method: str = "POST",
+    timeout: Optional[int] = None,
+    retries: Optional[int] = None,
+) -> Tuple[str, Any]:
+    """Try every configured host until one answers; return (base_used, json).
+
+    Per host, transient connection errors are retried with a short backoff
+    (the first call after a model load is often slow); an HTTP error from a
+    responding server moves on to the next host. Raises ``OllamaError`` only
+    when every candidate host has failed, with an aggregated reason.
+    """
+    timeout = ollama_timeout_seconds() if timeout is None else timeout
+    retries = ollama_max_retries() if retries is None else retries
+    data = json.dumps(payload).encode("utf-8") if payload is not None else None
+    headers = {"Content-Type": "application/json"} if data is not None else {}
+    errors: List[str] = []
+
+    for base in ollama_base_urls():
+        url = base + path
+        for attempt in range(retries + 1):
+            try:
+                req = urllib.request.Request(
+                    url, data=data, method=method, headers=headers)
+                with urllib.request.urlopen(req, timeout=timeout) as resp:
+                    raw = resp.read().decode("utf-8", errors="replace")
+                try:
+                    return base, json.loads(raw)
+                except json.JSONDecodeError as exc:
+                    raise OllamaError(
+                        f"Ollama at {base} returned a non-JSON response."
+                    ) from exc
+            except urllib.error.HTTPError as exc:
+                try:
+                    detail = exc.read().decode("utf-8", errors="replace")[:300]
+                except Exception:  # noqa: BLE001
+                    detail = ""
+                errors.append(f"{base}: HTTP {exc.code} {detail}".strip())
+                break  # server responded with an error — try the next host
+            except (urllib.error.URLError, TimeoutError, OSError):
+                errors.append(f"{base}: unreachable")
+                if attempt < retries:
+                    time.sleep(min(2.0, 0.4 * (attempt + 1)))
+                    continue
+                break  # retries exhausted — try the next host
+
+    if errors:
+        raise OllamaError("Ollama unavailable — tried " + "; ".join(errors))
+    raise OllamaError("No Ollama host configured.")
+
+
 def check_ollama_health() -> bool:
-    """True if the local Ollama server answers GET /api/tags. Never raises."""
-    url = ollama_base_url().rstrip("/") + "/api/tags"
-    try:
-        req = urllib.request.Request(url, method="GET")
-        timeout = min(5, ollama_timeout_seconds())
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return 200 <= resp.status < 300
-    except Exception:  # noqa: BLE001 — health check must never throw
-        return False
+    """True if ANY configured Ollama host answers GET /api/tags. Never raises."""
+    t = min(5, ollama_timeout_seconds())
+    for base in ollama_base_urls():
+        try:
+            req = urllib.request.Request(base + "/api/tags", method="GET")
+            with urllib.request.urlopen(req, timeout=t) as resp:
+                if 200 <= resp.status < 300:
+                    return True
+        except Exception:  # noqa: BLE001 — health check must never throw
+            continue
+    return False
 
 
 def call_ollama_chat(
@@ -86,17 +214,19 @@ def call_ollama_chat(
     model: Optional[str] = None,
     temperature: float = 0.2,
 ) -> str:
-    """POST /api/chat to local Ollama; return the assistant message text.
+    """POST /api/chat to a reachable Ollama host; return the message text.
 
-    Raises ``OllamaError`` when disabled, unreachable, on HTTP error
-    (e.g. the model is not pulled), or on a malformed response. Never
-    leaks a raw stack trace to the caller.
+    Tries every configured host with retries/backoff and failover. Raises
+    ``OllamaError`` when disabled or when no host can serve the request, never
+    leaking a raw stack trace to the caller.
     """
     if not is_ollama_enabled():
         raise OllamaError("PEdesk Guide local model is disabled.")
 
-    base = ollama_base_url().rstrip("/")
-    url = base + "/api/chat"
+    options: dict = {"temperature": temperature}
+    num_ctx = ollama_num_ctx()
+    if num_ctx:
+        options["num_ctx"] = num_ctx
     payload = {
         "model": model or ollama_default_model(),
         "messages": [
@@ -104,34 +234,10 @@ def call_ollama_chat(
             {"role": "user", "content": user_prompt},
         ],
         "stream": False,
-        "options": {"temperature": temperature},
+        "options": options,
+        "keep_alive": ollama_keep_alive(),
     }
-    data = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(
-        url, data=data, method="POST",
-        headers={"Content-Type": "application/json"},
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=ollama_timeout_seconds()) as resp:
-            body = resp.read().decode("utf-8", errors="replace")
-    except urllib.error.HTTPError as exc:
-        try:
-            detail = exc.read().decode("utf-8", errors="replace")[:500]
-        except Exception:  # noqa: BLE001
-            detail = ""
-        raise OllamaError(
-            f"Ollama returned HTTP {exc.code} from {base}. {detail}".strip()
-        ) from exc
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        raise OllamaError(
-            f"Ollama could not be reached at {base}."
-        ) from exc
-
-    try:
-        parsed = json.loads(body)
-    except json.JSONDecodeError as exc:
-        raise OllamaError("Ollama returned a non-JSON response.") from exc
-
+    _, parsed = _request_json("/api/chat", payload)
     content = (parsed.get("message") or {}).get("content")
     if not isinstance(content, str) or not content.strip():
         raise OllamaError("Ollama response contained no message content.")
@@ -141,58 +247,35 @@ def call_ollama_chat(
 def embed_texts(texts: List[str], model: str) -> List[List[float]]:
     """Embed ``texts`` with a local Ollama embedding model.
 
-    Tries the newer batch ``/api/embed`` first, falling back to the older
-    per-text ``/api/embeddings``. Raises ``OllamaError`` on unreachable
-    server, missing model, or malformed response. Does NOT gate on
-    ``is_ollama_enabled`` — the RAG layer has its own enable flag and the
+    Tries the newer batch ``/api/embed`` first (across all hosts), falling
+    back to the older per-text ``/api/embeddings``. Raises ``OllamaError`` when
+    no host can serve the request or the response is malformed. Does NOT gate
+    on ``is_ollama_enabled`` — the RAG layer has its own enable flag and the
     index builder runs as a CLI.
     """
     if not texts:
         return []
-    base = ollama_base_url().rstrip("/")
 
-    # 1) batch /api/embed
-    payload = json.dumps({"model": model, "input": list(texts)}).encode("utf-8")
-    req = urllib.request.Request(
-        base + "/api/embed", data=payload, method="POST",
-        headers={"Content-Type": "application/json"},
-    )
+    # 1) batch /api/embed (with host failover). Any failure here (404 on an
+    #    older Ollama, or a transient miss) falls through to the legacy path.
     try:
-        with urllib.request.urlopen(req, timeout=ollama_timeout_seconds()) as resp:
-            body = json.loads(resp.read().decode("utf-8", errors="replace"))
+        _, body = _request_json("/api/embed", {"model": model, "input": list(texts)})
         embs = body.get("embeddings")
         if isinstance(embs, list) and len(embs) == len(texts):
             return [[float(x) for x in e] for e in embs]
-    except urllib.error.HTTPError as exc:
-        if exc.code not in (404, 400, 405):
-            raise OllamaError(
-                f"Ollama embed returned HTTP {exc.code} from {base}."
-            ) from exc
-        # else fall through to the legacy endpoint
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        raise OllamaError(f"Ollama could not be reached at {base}.") from exc
-    except (ValueError, KeyError, TypeError) as exc:
-        raise OllamaError("Ollama embed returned a malformed response.") from exc
+    except OllamaError:
+        pass  # fall back to the legacy per-text endpoint
 
-    # 2) legacy per-text /api/embeddings
+    # 2) legacy per-text /api/embeddings (with host failover per text).
     out: List[List[float]] = []
     for text in texts:
-        p = json.dumps({"model": model, "prompt": text}).encode("utf-8")
-        r = urllib.request.Request(
-            base + "/api/embeddings", data=p, method="POST",
-            headers={"Content-Type": "application/json"},
-        )
         try:
-            with urllib.request.urlopen(r, timeout=ollama_timeout_seconds()) as resp:
-                body = json.loads(resp.read().decode("utf-8", errors="replace"))
-        except urllib.error.HTTPError as exc:
+            _, body = _request_json(
+                "/api/embeddings", {"model": model, "prompt": text})
+        except OllamaError as exc:
             raise OllamaError(
-                f"Ollama embed returned HTTP {exc.code} from {base}. "
-                "Is the embedding model pulled (ollama pull "
-                f"{model})?"
+                f"{exc} — is the embedding model pulled (ollama pull {model})?"
             ) from exc
-        except (urllib.error.URLError, TimeoutError, OSError) as exc:
-            raise OllamaError(f"Ollama could not be reached at {base}.") from exc
         emb = body.get("embedding")
         if not isinstance(emb, list) or not emb:
             raise OllamaError("Ollama embeddings response had no vector.")
@@ -201,12 +284,49 @@ def embed_texts(texts: List[str], model: str) -> List[List[float]]:
 
 
 def list_models() -> List[str]:
-    """Return installed Ollama model names via GET /api/tags. [] on error."""
-    url = ollama_base_url().rstrip("/") + "/api/tags"
-    try:
-        req = urllib.request.Request(url, method="GET")
-        with urllib.request.urlopen(req, timeout=min(5, ollama_timeout_seconds())) as resp:
-            body = json.loads(resp.read().decode("utf-8", errors="replace"))
-        return [m.get("name", "") for m in (body.get("models") or []) if m.get("name")]
-    except Exception:  # noqa: BLE001 — diagnostics only, never throw
-        return []
+    """Installed model names from the first reachable host. [] on error."""
+    t = min(5, ollama_timeout_seconds())
+    for base in ollama_base_urls():
+        try:
+            req = urllib.request.Request(base + "/api/tags", method="GET")
+            with urllib.request.urlopen(req, timeout=t) as resp:
+                body = json.loads(resp.read().decode("utf-8", errors="replace"))
+            names = [m.get("name", "")
+                     for m in (body.get("models") or []) if m.get("name")]
+            if names:
+                return names
+        except Exception:  # noqa: BLE001 — diagnostics only, never throw
+            continue
+    return []
+
+
+def ollama_status() -> dict:
+    """Best-effort diagnostic snapshot for operators / the settings page.
+
+    Never raises. Reports config + which host (if any) is reachable and what
+    models it has — useful when wiring Ollama up in a new environment.
+    """
+    hosts = ollama_base_urls()
+    reachable = ""
+    t = min(5, ollama_timeout_seconds())
+    for base in hosts:
+        try:
+            req = urllib.request.Request(base + "/api/tags", method="GET")
+            with urllib.request.urlopen(req, timeout=t) as resp:
+                if 200 <= resp.status < 300:
+                    reachable = base
+                    break
+        except Exception:  # noqa: BLE001
+            continue
+    return {
+        "enabled": is_ollama_enabled(),
+        "hosts": hosts,
+        "reachable_host": reachable,
+        "healthy": bool(reachable),
+        "model": ollama_default_model(),
+        "models": list_models() if reachable else [],
+        "num_ctx": ollama_num_ctx(),
+        "keep_alive": ollama_keep_alive(),
+        "timeout_seconds": ollama_timeout_seconds(),
+        "retries": ollama_max_retries(),
+    }
