@@ -5709,4 +5709,278 @@ for (_r, _t, _sd, _pp, _cq, _km, _mids, _dsids, _ml, _why, _dc) in _ILLUSTRATIVE
     ))
 
 
+# ── Corpus intelligence + fund-ops tools (data_public family, batch 3) ──
+# (route, title, short_desc, purpose, common_qs, key_metrics, metric_ids,
+#  data_source_ids, model_logic, why, data_conf)
+_PE_TOOLS_3 = [
+    ("/deal-flow-heatmap", "Deal Flow Heatmap",
+     "Year × sector deal-activity matrix from the licensed deal corpus.",
+     "See where and when deal activity concentrated, to read sector cycles.",
+     ["Which sectors are most active?", "How has activity shifted by year?",
+      "Where is deal flow heating up or cooling?"],
+     ["Deal count by year × sector"], [], ["public_transaction_corpus"],
+     "Counts corpus deals per (year, sector) cell and renders a heatmap; "
+     "reflects the corpus's disclosed-deal coverage.",
+     "Activity cycles signal entry timing and competitive intensity.",
+     _DC.PUBLIC_BENCHMARK_DATA),
+    ("/sponsor-heatmap", "Sponsor × Sector Heatmap",
+     "Realized-performance heatmap of sponsors against sectors, from the deal "
+     "corpus.",
+     "See which sponsors win in which sectors.",
+     ["Who's strong in this sector?", "Where does a sponsor concentrate?",
+      "Which sponsor/sector cells outperform?"],
+     ["MOIC", "IRR", "Deal count"], ["moic", "irr"],
+     ["public_transaction_corpus"],
+     "Aggregates corpus realized returns per (sponsor, sector); reflects "
+     "corpus coverage, not the full market.",
+     "Sponsor specialization shapes competition and co-invest decisions.",
+     _DC.PUBLIC_BENCHMARK_DATA),
+    ("/sector-intel", "Sector Intelligence",
+     "Corpus-calibrated performance benchmarks by sector — returns, multiples, "
+     "and margins.",
+     "Ground a sector view in how comparable deals actually performed.",
+     ["How does this sector perform?", "What multiples are typical here?",
+      "Which sectors return best?"],
+     ["MOIC", "IRR", "EV/EBITDA", "EBITDA margin"],
+     ["moic", "irr", "ev_to_ebitda", "ebitda_margin"],
+     ["public_transaction_corpus"],
+     "Summarizes corpus deals by sector into benchmark distributions; "
+     "descriptive, not predictive.",
+     "Sector base rates anchor underwriting and pattern-match new deals.",
+     _DC.PUBLIC_BENCHMARK_DATA),
+    ("/sector-correlation", "Sector Correlation Matrix",
+     "Pairwise correlations of sector returns across the deal corpus.",
+     "See which sectors move together — for portfolio diversification.",
+     ["Which sectors are correlated?", "What diversifies this book?",
+      "Are these two sectors a hedge or a double-down?"],
+     ["Pairwise return correlation"], [], ["public_transaction_corpus"],
+     "Pearson correlations of sector return series from the corpus; sample-"
+     "limited by corpus coverage.",
+     "Correlation drives true portfolio diversification, not sector labels.",
+     _DC.PUBLIC_BENCHMARK_DATA),
+    ("/leverage-intel", "Leverage Intelligence",
+     "Corpus-calibrated capital-structure analysis — leverage levels and their "
+     "relationship to returns.",
+     "Ground a leverage view in what comparable deals used and how it related "
+     "to outcomes.",
+     ["What leverage is typical here?", "Does more leverage help returns?",
+      "How levered are peer deals?"],
+     ["Leverage", "Debt/EBITDA", "EV/EBITDA"],
+     ["leverage", "debt", "ev_to_ebitda"], ["public_transaction_corpus"],
+     "Summarizes corpus leverage and its correlation with returns; "
+     "descriptive.",
+     "Leverage amplifies returns and risk; base rates discipline structuring.",
+     _DC.PUBLIC_BENCHMARK_DATA),
+    ("/size-intel", "Deal Size Intelligence",
+     "EV distribution across the corpus and performance by deal-size band.",
+     "See whether smaller or larger deals returned better in comparable data.",
+     ["What deal sizes are typical?", "Do small deals out-return large?",
+      "Where does this deal sit on size?"],
+     ["Enterprise value", "MOIC by size band"],
+     ["enterprise_value", "moic"], ["public_transaction_corpus"],
+     "Bins corpus deals by EV and compares return distributions; descriptive.",
+     "Size correlates with competition, multiple, and the return ceiling.",
+     _DC.PUBLIC_BENCHMARK_DATA),
+    ("/payer-intel", "Payer Intelligence",
+     "Corpus-calibrated payer-mix analysis — exposure bands and their link to "
+     "outcomes.",
+     "Ground payer-mix risk in how comparable provider deals fared.",
+     ["What payer mix is typical?", "Does Medicare exposure hurt returns?",
+      "How risky is this payer profile?"],
+     ["Payer mix", "Medicare exposure", "Commercial exposure"],
+     ["payer_mix", "medicare_exposure", "commercial_payer_exposure"],
+     ["public_transaction_corpus"],
+     "Summarizes corpus payer-mix bands vs outcomes; descriptive.",
+     "Payer mix is the dominant reimbursement-risk axis in healthcare deals.",
+     _DC.PUBLIC_BENCHMARK_DATA),
+    ("/vintage-perf", "Vintage Performance",
+     "Year-by-year corpus performance — P50 MOIC and IRR by vintage.",
+     "See how each entry vintage performed, to read cycle timing.",
+     ["Which vintages performed best?", "How does my vintage compare?",
+      "Is this a good year to deploy?"],
+     ["MOIC by vintage", "IRR by vintage"], ["moic", "irr"],
+     ["public_transaction_corpus"],
+     "Groups corpus deals by entry year and reports the MOIC/IRR distribution; "
+     "descriptive.",
+     "Vintage is a major, largely-exogenous return driver.",
+     _DC.PUBLIC_BENCHMARK_DATA),
+    ("/gp-benchmarking", "GP Benchmarking",
+     "Compare a chosen GP's portfolio performance against corpus peers.",
+     "Benchmark a manager objectively for co-invest / LP diligence.",
+     ["How does this GP rank?", "Is their track record corpus-validated?",
+      "Where do they out/underperform?"],
+     ["MOIC", "IRR", "Hold period"], ["moic", "irr", "hold_period"],
+     ["public_transaction_corpus"],
+     "Computes the selected GP's corpus deals vs peer distribution; reflects "
+     "corpus coverage, not audited fund returns.",
+     "GP selection is the LP's primary lever; objective benchmarks cut "
+     "through marketing.",
+     _DC.PUBLIC_BENCHMARK_DATA),
+    ("/multiple-decomp", "Acquisition Multiple Decomposition",
+     "Breaks entry EV/EBITDA into its drivers (sector, size, growth, quality).",
+     "Understand WHY a multiple is what it is, not just its level.",
+     ["Why is this multiple high?", "What drives entry pricing?",
+      "Is the premium justified?"],
+     ["EV/EBITDA", "EBITDA"], ["ev_to_ebitda", "ebitda"],
+     ["public_transaction_corpus"],
+     "Attributes entry-multiple variation to deal attributes across the "
+     "corpus; descriptive decomposition.",
+     "Knowing what you're paying for separates a fair price from a stretch.",
+     _DC.PUBLIC_BENCHMARK_DATA),
+    ("/peer-transactions", "Peer Transaction Database",
+     "Comparable-transaction (comps) library drawn from the licensed deal "
+     "corpus.",
+     "Pull precedent transactions to triangulate valuation.",
+     ["What did comparable deals trade at?", "Any recent precedents here?",
+      "What multiples are defensible?"],
+     ["EV/EBITDA", "Exit multiple"], ["ev_to_ebitda", "exit_multiple"],
+     ["public_transaction_corpus"],
+     "Filters the corpus to comparable transactions; coverage is disclosed "
+     "deals only.",
+     "Precedent transactions are the market's own valuation evidence.",
+     _DC.PUBLIC_BENCHMARK_DATA),
+    ("/vintage-cohorts", "Vintage Cohort Tracker",
+     "Tracks performance of entry-year cohorts over time from the corpus.",
+     "Follow how cohorts mature, to calibrate j-curve and hold expectations.",
+     ["How do cohorts mature?", "Where is my cohort on the j-curve?",
+      "Which cohorts have realized?"],
+     ["MOIC", "IRR", "Hold period"], ["moic", "irr", "hold_period"],
+     ["public_transaction_corpus"],
+     "Groups corpus deals into entry-year cohorts and tracks realized metrics; "
+     "descriptive.",
+     "Cohort maturation sets realistic DPI/TVPI expectations.",
+     _DC.PUBLIC_BENCHMARK_DATA),
+    ("/fund-attribution", "Fund Performance Attribution",
+     "Decomposes fund IRR into operational, multiple-expansion, and leverage "
+     "components.",
+     "Show where a fund's returns actually came from.",
+     ["What drove this fund's IRR?", "How much was multiple expansion?",
+      "Was it operations or leverage?"],
+     ["IRR", "MOIC", "Leverage"], ["irr", "moic", "leverage"],
+     ["public_transaction_corpus"],
+     "Bridges IRR into operational / multiple / leverage contributions from "
+     "corpus or entered fund data; descriptive.",
+     "Attribution distinguishes repeatable skill from market beta.",
+     _DC.PUBLIC_BENCHMARK_DATA),
+    ("/peer-valuation", "Peer Valuation Analyzer",
+     "Football-field valuation range from trading comps and precedent "
+     "transactions.",
+     "Triangulate a defensible valuation range, not a single point.",
+     ["What's the valuation range?", "What do comps imply?",
+      "Where's the midpoint?"],
+     ["EV/EBITDA", "Enterprise value", "EBITDA"],
+     ["ev_to_ebitda", "enterprise_value", "ebitda"],
+     ["public_transaction_corpus"],
+     "Builds a football-field from comp/precedent multiples applied to the "
+     "target's metrics; ranges reflect corpus coverage.",
+     "A range with method beats a precise number with none.",
+     _DC.PUBLIC_BENCHMARK_DATA),
+    # Illustrative scenario tools
+    ("/capital-pacing", "Capital Call Pacing Model",
+     "Models the pace of capital calls and deployment over a fund's life.",
+     "Plan commitment pacing so capital is deployed without over/under-calling.",
+     ["How fast should we call capital?", "When is the fund fully deployed?",
+      "What's the pacing curve?"],
+     ["Commitment", "Called %", "Pacing curve"], [], [],
+     "Projects a call schedule from entered commitment/deployment assumptions; "
+     "illustrative unless populated with a real fund plan.",
+     "Pacing errors strand capital or force rushed deals.",
+     _DC.MODEL_ESTIMATE),
+    ("/reinvestment", "Reinvestment Analyzer",
+     "Models reinvesting realized proceeds — recycling and its return impact.",
+     "Evaluate whether recycling proceeds improves fund-level returns.",
+     ["Should we recycle proceeds?", "What's the return impact?",
+      "How much can we reinvest?"],
+     ["MOIC", "IRR"], ["moic", "irr"], [],
+     "Computes recycled-capital return impact across entered scenarios; "
+     "illustrative.",
+     "Recycling can lift net returns but tightens liquidity timing.",
+     _DC.MODEL_ESTIMATE),
+    ("/underwriting-model", "Underwriting Model",
+     "Entry-to-exit underwriting — builds MOIC/IRR from entry, growth, "
+     "leverage, and exit assumptions.",
+     "Underwrite a base-case return from explicit assumptions.",
+     ["What return does this underwrite to?", "How sensitive is it?",
+      "What has to be true to hit target?"],
+     ["MOIC", "IRR", "EV/EBITDA", "Leverage", "EBITDA"],
+     ["moic", "irr", "ev_to_ebitda", "leverage", "ebitda"], [],
+     "Standard LBO underwriting arithmetic over entered assumptions; "
+     "illustrative unless a deal's inputs are supplied.",
+     "The base-case underwrite is the spine every other analysis hangs on.",
+     _DC.MODEL_ESTIMATE),
+    # Workflow trackers (user-entered pipeline / LP data)
+    ("/deal-sourcing", "Deal Sourcing Tracker",
+     "Proprietary deal-flow / sourcing tracker — leads, stages, and channels.",
+     "Manage the top of the funnel: where leads come from and how they "
+     "progress.",
+     ["What's in the sourcing funnel?", "Which channels produce leads?",
+      "What needs follow-up?"],
+     ["Lead count", "By channel", "By stage"], [], [],
+     "Tracks entered sourcing leads through channels/stages; seed figures are "
+     "illustrative until you add your own pipeline.",
+     "Proprietary flow is the cheapest, least-competitive deal source.",
+     _DC.MIXED),
+    ("/deal-origination", "Deal Origination Tracker",
+     "M&A origination / pipeline tracker — targets, outreach, and status.",
+     "Manage active origination targets and outreach status.",
+     ["What's in the origination pipeline?", "Which targets are warm?",
+      "What's the next action?"],
+     ["Target count", "By status"], [], [],
+     "Tracks entered origination targets and outreach; seed figures "
+     "illustrative until populated.",
+     "Disciplined origination tracking keeps a thesis-driven pipeline alive.",
+     _DC.MIXED),
+    ("/capital-call", "Capital Call / LP Tracker",
+     "Capital-call and LP-communication tracker — calls, distributions, and "
+     "notices.",
+     "Keep LP capital calls and communications organized and auditable.",
+     ["What calls are outstanding?", "What have we distributed?",
+      "What's due to LPs?"],
+     ["Called", "Distributed", "Outstanding"], [], [],
+     "Tracks entered call/distribution records; seed figures illustrative "
+     "until populated with the fund's actuals.",
+     "Clean LP-capital records are table stakes for fund operations.",
+     _DC.MIXED),
+]
+for (_r, _t, _sd, _pp, _cq, _km, _mids, _dsids, _ml, _why, _dc2) in _PE_TOOLS_3:
+    _is_corpus = "public_transaction_corpus" in _dsids
+    _is_tracker = _dc2 == _DC.MIXED
+    if _is_corpus:
+        _inputs = ["Licensed PE deal corpus (public_transaction_corpus); some "
+                   "tools also take a selection/filter."]
+        _guidance = ["Benchmarks reflect the licensed corpus's disclosed-deal "
+                     "coverage, not the full market — descriptive, not a "
+                     "forecast."]
+        _limits = ["Corpus is a sample of disclosed deals; private/undisclosed "
+                   "transactions are absent."]
+        _srcs = ["Licensed PE deal corpus (public_transaction_corpus)."]
+    elif _is_tracker:
+        _inputs = ["Your entered pipeline / LP records; renders illustrative "
+                   "seed data until you add your own."]
+        _guidance = ["Tracks YOUR entered data; any figures shown before you "
+                     "populate it are an illustrative scaffold, not real "
+                     "activity."]
+        _limits = ["Only as complete as what you enter; not a market dataset."]
+        _srcs = ["User-entered pipeline / LP data."]
+    else:
+        _inputs = ["Scenario assumptions (query parameters); renders an "
+                   "illustrative example with no inputs."]
+        _guidance = list(_ILLUS_GUIDANCE)
+        _limits = ["Deterministic point scenarios, no probability distribution.",
+                   "Illustrative assumptions unless overridden via parameters."]
+        _srcs = ["None — computed from the entered/illustrative assumptions."]
+    _MANUAL.append(_ctx(
+        _r, _t,
+        short_description=_sd, primary_purpose=_pp, common_questions=_cq,
+        inputs=_inputs,
+        outputs=["Computed tables/charts for the analysis above."],
+        key_metrics=_km, data_sources=_srcs, model_logic_summary=_ml,
+        why_it_matters=_why, diligence_use_cases=[_pp],
+        interpretation_guidance=_guidance, limitations=_limits,
+        related_routes=["/quant-lab", "/sponsor-league", "/return-attribution"],
+        metric_ids=_mids, data_source_ids=_dsids,
+        source_confidence=SourceConfidence.DOCUMENTED, data_confidence=_dc2,
+    ))
+
+
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
