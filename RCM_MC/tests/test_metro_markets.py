@@ -43,6 +43,14 @@ class MetroMarketsTests(unittest.TestCase):
         self.assertIn("estimate", h)  # income-estimate honesty
         self.assertIn("fabricated", h)
 
+    def test_page_leads_with_real_kpi_strip(self):
+        # X-Ray pattern: leading KPI strip from the real CBSA rows
+        # (area count / population covered / largest market).
+        h = render_metro_markets({"type": ["Metropolitan"]})
+        self.assertIn("ck-kpi-strip", h)
+        self.assertIn("Population covered", h)
+        self.assertIn("Largest market", h)
+
     def test_surface_is_green(self):
         self.assertEqual(classify_surface("/metro-markets")["tier"], "green")
 
