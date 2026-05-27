@@ -5158,4 +5158,293 @@ for _route, _title, _upload, _who, _activates, _tmpl in _DATA_REQUIRED_GUIDE:
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ))
 
+# ── Quant / modeling surfaces (documented from the live handlers) ──────
+# High-traffic analytic pages where partners ask hard quantitative
+# questions; documented by reading the real route handlers + page modules
+# so the Guide can explain the method honestly (and flag illustrative vs
+# real-data surfaces correctly).
+_MANUAL.extend([
+    _ctx(
+        "/quant-lab", "Quant Lab",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="The full quant stack on one page — Bayesian "
+        "calibration, DEA efficiency frontier, queueing theory, and margin "
+        "survival analysis, all computed live over public CMS HCRIS data.",
+        primary_purpose="Give the deal team a single analytical surface that "
+        "applies the platform's statistical models to the latest hospital "
+        "cost-report universe, so a partner can sanity-check a target against "
+        "rigorously-computed peer benchmarks rather than rules of thumb.",
+        intended_users=["Principals/associates doing quantitative diligence "
+                        "and benchmarking."],
+        common_questions=[
+            "How is the margin survival probability computed?",
+            "What does the efficiency frontier say about this hospital?",
+            "How does Bayesian calibration shrink a thin-data KPI toward peers?",
+            "Is the denial-rate estimate observed or a prior?",
+        ],
+        inputs=["Latest-per-CCN CMS HCRIS cost reports with computed features "
+                "(_get_latest_per_ccn + _add_computed_features)."],
+        outputs=["Bayesian KPI posteriors with credible intervals, a DEA "
+                 "efficiency frontier scatter + scores, M/M/c queueing "
+                 "metrics, and a margin survival curve with years-to-distress."],
+        key_metrics=["Operating margin", "Days in AR", "Denial rate",
+                     "Net collection rate", "Clean claim rate",
+                     "Occupancy rate", "Efficiency score", "Survival probability"],
+        data_sources=["CMS HCRIS (Medicare cost reports), latest filed year "
+                      "per provider."],
+        model_logic_summary=(
+            "Several distinct models, each honest about its method: "
+            "(1) Bayesian calibration — a real Beta-Binomial conjugate "
+            "posterior for rate metrics (denial/collection/clean-claim) and a "
+            "Normal-Normal conjugate mean update for continuous metrics (AR "
+            "days, cost-to-collect) where the dispersion is read from the "
+            "spread of the hospital-type priors, not a magic constant. "
+            "(2) DEA — an output-oriented data-envelopment efficiency frontier. "
+            "(3) Queueing — M/M/c (Erlang-C) wait-time/SLA math on RCM "
+            "operations. (4) Survival — NOT Kaplan-Meier/Cox (no time-to-event "
+            "data); it fits operating margin vs. year by OLS on the provider's "
+            "HCRIS history and reports P(margin>0) at horizon t as the normal "
+            "CDF of the OLS prediction interval, so uncertainty widens with the "
+            "forecast horizon. See rcm_mc/ml/{bayesian_calibration,"
+            "efficiency_frontier,queueing_model,survival_analysis}.py."),
+        why_it_matters="Turns a raw public cost-report universe into "
+        "defensible, uncertainty-aware benchmarks — the analytical moat over "
+        "a Bloomberg trailing-financials read.",
+        diligence_use_cases=[
+            "Benchmarking a target's RCM KPIs against a calibrated peer "
+            "posterior instead of a point peer median.",
+            "Reading a target's margin runway / distress odds before IC."],
+        interpretation_guidance=[
+            "A Bayesian posterior labeled 'prior_only' or 'weak' is shrunk "
+            "toward the peer prior — the credible interval is wide on purpose; "
+            "it is not a measured value.",
+            "Survival probabilities are model estimates from the margin trend, "
+            "not actuarial life-table figures.",
+            "Everything here is computed over public HCRIS, not a specific "
+            "deal's internal data."],
+        limitations=[
+            "HCRIS lags (cost reports are filed with a delay), so the 'latest' "
+            "year is not the current quarter.",
+            "Survival/queueing/DEA outputs are model estimates and inherit the "
+            "noise and gaps in HCRIS."],
+        related_routes=["/portfolio/regression", "/data-intelligence",
+                        "/target-screener", "/state-compare"],
+        metric_ids=["operating_margin", "days_in_ar", "denial_rate",
+                    "net_collection_rate", "clean_claim_rate", "occupancy_rate"],
+        data_source_ids=["cms_hcris"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/portfolio/regression", "Regression Analysis",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="Interactive OLS regression over the CMS HCRIS "
+        "universe with built-in multicollinearity diagnostics (VIF, Belsley "
+        "condition number) and a VIF-pruned optimized model.",
+        primary_purpose="Let the team fit and interpret a transparent linear "
+        "model of a hospital financial outcome on operating drivers, while "
+        "actively guarding against the high-R²-but-meaningless trap that "
+        "multicollinearity creates.",
+        intended_users=["Quantitatively-inclined principals/associates."],
+        common_questions=[
+            "Which features actually drive the target, net of collinearity?",
+            "Why was a feature dropped from the optimized model?",
+            "Is this R² real or inflated by multicollinearity?",
+            "What does the condition number tell me?",
+        ],
+        inputs=["CMS HCRIS latest-per-CCN data; query controls for target "
+                "variable, universe filter, log-target, and segmented "
+                "regression. Honest-by-default on first load: leaky features "
+                "are dropped and dollar targets log-transformed."],
+        outputs=["Coefficient table with significance, R²/adjusted R², an F "
+                 "test, per-feature VIF, the Belsley condition number with a "
+                 "verdict banner, and a VIF-pruned optimized model."],
+        key_metrics=["R² / adjusted R²", "F statistic", "VIF",
+                     "Condition number", "Coefficient significance"],
+        data_sources=["CMS HCRIS (Medicare cost reports)."],
+        model_logic_summary=(
+            "Ordinary least squares fit in-page (the page has its own _run_ols), "
+            "plus rcm_mc/finance/regression.py for VIF, the Belsley condition "
+            "number, prune_collinear, and a multicollinearity verdict. The "
+            "F-test p-value uses an incomplete-beta implementation (no scipy). "
+            "The default view is the defensible model: algebraically-leaky "
+            "features removed and dollar targets log-transformed; an explicit "
+            "form submit lets a partner inspect the leaky/raw-dollar version."),
+        why_it_matters="A high R² from a collinear model is a classic "
+        "diligence false-positive; this page makes the model honest and the "
+        "dropped-feature reasoning explicit.",
+        diligence_use_cases=[
+            "Identifying which operating levers move a financial outcome.",
+            "Pressure-testing a thesis claim that 'X drives Y' for collinearity."],
+        interpretation_guidance=[
+            "A high condition number (or red verdict banner) means coefficients "
+            "are unstable — read the optimized/pruned model, not the raw one.",
+            "A feature dropped for collinearity is not 'unimportant'; it is "
+            "redundant with another feature already in the model.",
+            "This fits public HCRIS, not a single deal's financials."],
+        limitations=[
+            "Cross-sectional HCRIS only — no causal claim, just association.",
+            "OLS assumptions (linearity, homoskedasticity) are not fully "
+            "tested on the page."],
+        related_routes=["/quant-lab", "/data-intelligence", "/target-screener"],
+        metric_ids=["operating_margin", "revenue", "occupancy_rate", "payer_mix"],
+        data_source_ids=["cms_hcris"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/lbo-stress", "LBO Stress Test",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="An ILLUSTRATIVE LBO model stress test — sweeps "
+        "exit multiple, leverage and growth assumptions and reports the "
+        "resulting equity outcomes (MOIC, IRR, proceeds) and break-even "
+        "leverage.",
+        primary_purpose="Show how an LBO's returns flex under different "
+        "entry/exit/leverage assumptions, so a partner can see where the "
+        "deal breaks rather than reading a single base-case number.",
+        intended_users=["Deal team underwriting or pressure-testing a thesis."],
+        common_questions=[
+            "How sensitive is MOIC to the exit multiple?",
+            "At what leverage does this deal stop working?",
+            "What IRR do these assumptions imply?",
+        ],
+        inputs=["Scenario assumptions from query parameters (entry/exit "
+                "multiple, leverage, EBITDA growth). With no parameters it "
+                "renders a clearly-labeled illustrative example."],
+        outputs=["Scenario table and chart of exit EBITDA → EV → net debt → "
+                 "equity proceeds → MOIC/IRR, plus an exit-multiple "
+                 "sensitivity grid and a break-even leverage read."],
+        key_metrics=["MOIC", "IRR", "Equity proceeds", "Exit multiple",
+                     "Leverage", "EV/EBITDA"],
+        data_sources=["No external data — computes outcomes deterministically "
+                      "from the entered/illustrative assumptions."],
+        model_logic_summary=(
+            "Standard LBO arithmetic: exit EV = exit EBITDA × exit multiple; "
+            "equity proceeds = exit EV − net debt at exit; MOIC = proceeds / "
+            "entry equity; IRR annualizes MOIC over the hold. Run across a grid "
+            "of exit-multiple/leverage scenarios. Page carries an explicit "
+            "illustrative-note banner (ck_illustrative_note)."),
+        why_it_matters="Returns are dominated by entry/exit multiple and "
+        "leverage; making the sensitivity explicit prevents anchoring on a "
+        "single base case.",
+        diligence_use_cases=[
+            "Bounding the return range before committing to an underwriting.",
+            "Finding the leverage/exit-multiple combination that breaks the deal."],
+        interpretation_guidance=[
+            "These are ILLUSTRATIVE scenario outputs from assumptions, NOT a "
+            "specific portfolio deal's modeled returns unless you supply its "
+            "parameters.",
+            "MOIC/IRR move mechanically with the assumptions — read the grid, "
+            "not one cell."],
+        limitations=[
+            "Deterministic point scenarios — no probability distribution over "
+            "outcomes (use the Monte Carlo surfaces for that).",
+            "Illustrative assumptions unless overridden via parameters."],
+        related_routes=["/portfolio/monte-carlo", "/scenarios", "/quant-lab"],
+        metric_ids=["moic", "irr", "exit_multiple", "leverage", "ev_to_ebitda",
+                    "enterprise_value", "ebitda"],
+        data_source_ids=[],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MODEL_ESTIMATE,
+    ),
+    _ctx(
+        "/scenarios", "Scenario Explorer",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="A library of preset macro/operational shock "
+        "scenarios (payer rate cuts, volume shocks, etc.) that can be layered "
+        "onto a simulation.",
+        primary_purpose="Give the team a curated set of named, reusable shock "
+        "definitions so scenario analysis is consistent and explainable rather "
+        "than ad hoc.",
+        intended_users=["Deal team doing scenario / downside analysis."],
+        common_questions=[
+            "What preset shocks are available?",
+            "What does the 'payer rate cut' scenario actually change?",
+            "How do I stress a deal's payer mix?",
+        ],
+        inputs=["Preset shock definitions (PRESET_SHOCKS from "
+                "scenarios/scenario_shocks.py)."],
+        outputs=["A catalog of each preset's shocks — e.g. per-payer rate "
+                 "deltas and volume adjustments — with descriptions."],
+        key_metrics=["Payer rate shock", "Volume shock", "EBITDA impact"],
+        data_sources=["In-repo preset shock library (definitions, not deal "
+                      "data)."],
+        model_logic_summary=(
+            "Renders the PRESET_SHOCKS definitions. Each preset is a structured "
+            "set of multiplicative/additive shocks (payer-level rate deltas, "
+            "volume adjustments) intended to be applied to a deal's simulation "
+            "via the scenario overlay layer. This page is the catalog/explainer; "
+            "the impact materializes when a preset is applied to a specific "
+            "simulation."),
+        why_it_matters="Consistent, named downside scenarios make IC "
+        "discussions comparable across deals.",
+        diligence_use_cases=[
+            "Selecting a standard downside scenario to apply to a target's model.",
+            "Explaining to IC exactly what a stress case assumes."],
+        interpretation_guidance=[
+            "These are scenario TEMPLATES — the dollar impact depends entirely "
+            "on the deal they are applied to; the page itself shows definitions, "
+            "not a specific deal's results."],
+        limitations=[
+            "A catalog of assumptions, not live results; presets are "
+            "illustrative templates, not predictions."],
+        related_routes=["/lbo-stress", "/portfolio/monte-carlo", "/quant-lab"],
+        metric_ids=["ebitda", "payer_mix"],
+        data_source_ids=[],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.DEMO_OR_FIXTURE,
+    ),
+    _ctx(
+        "/portfolio/monte-carlo", "Portfolio Monte Carlo",
+        category=PageContextCategory.PORTFOLIO_LP,
+        short_description="Fund-level correlated Monte Carlo that aggregates "
+        "the per-deal EBITDA simulations stored in saved analysis packets into "
+        "a portfolio-wide outcome distribution.",
+        primary_purpose="Show the fund-level return distribution and downside "
+        "risk that emerges from the individual deal simulations, accounting for "
+        "correlation between deals rather than summing point estimates.",
+        intended_users=["Partners and LP-reporting staff assessing fund-level "
+                        "risk."],
+        common_questions=[
+            "What's the fund-level EBITDA / return distribution?",
+            "How much does cross-deal correlation widen the downside?",
+            "Which deals drive portfolio risk?",
+        ],
+        inputs=["Saved analysis packets (one per deal) from the analysis store; "
+                "each carries its own EBITDA simulation p50/std."],
+        outputs=["A correlated fund-level Monte Carlo outcome distribution "
+                 "built from the per-deal simulations."],
+        key_metrics=["EBITDA", "MOIC", "IRR", "Portfolio downside"],
+        data_sources=["Stored analysis packets (model output over each deal's "
+                      "observed/entered inputs)."],
+        model_logic_summary=(
+            "Loads the latest analysis packet per deal (analysis_store), pulls "
+            "each deal's EBITDA simulation summary, and runs a correlated "
+            "portfolio Monte Carlo (mc/portfolio_monte_carlo.run_portfolio_mc) "
+            "to combine them into a fund-level distribution."),
+        why_it_matters="Portfolio risk is not the sum of point estimates; "
+        "correlation can fatten the downside materially, which matters for LP "
+        "reporting and reserve planning.",
+        diligence_use_cases=[
+            "Fund-level downside and reserve discussions.",
+            "Seeing how concentration/correlation shapes portfolio risk."],
+        interpretation_guidance=[
+            "Only as meaningful as the saved deal packets — if few deals have "
+            "been analyzed, the portfolio view is sparse.",
+            "Outputs are model estimates built on each deal's own assumptions, "
+            "not realized returns."],
+        limitations=[
+            "Requires saved analysis packets; empty/sparse if deals haven't "
+            "been run through the analysis builder.",
+            "Correlation assumptions drive the aggregate downside — read them "
+            "before quoting a fund-level number."],
+        related_routes=["/lbo-stress", "/scenarios", "/analysis", "/lp-dashboard"],
+        metric_ids=["ebitda", "moic", "irr"],
+        data_source_ids=["analysis_run", "portfolio_snapshot"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+])
+
+
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
