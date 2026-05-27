@@ -74,6 +74,37 @@ class CompletenessContract(unittest.TestCase):
         self.assertGreaterEqual(ti, len(RCMHandler._discover_all_routes()))
 
 
+class NoDuplicates(unittest.TestCase):
+    def test_no_duplicate_card_labels_in_either_view(self):
+        # Two cards must never read identically — distinct pages get distinct
+        # names (de-collision); true redirect aliases are merged away.
+        from collections import Counter
+        ws, index, _, _ = _data()
+        for view_name, secs in (("A–Z", index), ("workspace", ws)):
+            names = [t["name"] for sec in secs for t in sec["tools"]]
+            dupes = {n for n, c in Counter(x.lower() for x in names).items()
+                     if c > 1}
+            self.assertEqual(dupes, set(),
+                             f"{view_name}: duplicate card labels {dupes}")
+
+    def test_redirect_aliases_are_safe_merged_not_carded(self):
+        # Pure "renamed →" redirects shouldn't appear as their own card — the
+        # canonical target is the real card. (Hidden at discovery.)
+        ws, index, _, _ = _data()
+        az = {t["path"] for sec in index for t in sec["tools"]}
+        for alias, canonical in (("/portfolio-analytics", "/deal-corpus-analytics"),
+                                 ("/deals-library", "/library")):
+            self.assertNotIn(alias, az, f"{alias} is a redirect — should merge")
+            self.assertIn(canonical, az, f"canonical {canonical} missing")
+
+    def test_no_query_param_variants_as_cards(self):
+        # A ?param variant of a base route is not its own card.
+        ws, index, _, _ = _data()
+        for sec in index:
+            for t in sec["tools"]:
+                self.assertNotIn("?", t["path"], f"query variant carded: {t['path']}")
+
+
 class StatusBuckets(unittest.TestCase):
     def test_every_card_has_a_valid_status(self):
         ws, index, _, _ = _data()

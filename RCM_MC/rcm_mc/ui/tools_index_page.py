@@ -38,6 +38,17 @@ TIER_TO_STATUS = {
     "red": "illustrative",
 }
 
+# Disambiguation overrides for routes that share a title with a *different*
+# page (not aliases — different renderers/data context). These name each by
+# what it actually is so two cards never read identically. The canonical
+# deal-workspace tool keeps the plain name; the standalone/public variant is
+# qualified. Names taken from each page's own description — not invented.
+TITLE_OVERRIDES = {
+    "/diligence-checklist": "Checklist Dashboard",   # vs deal /diligence/checklist
+    "/payer-stress": "Payer-Mix Stress",             # vs deal /diligence/payer-stress
+    "/value-creation": "Value Creation Tracker",     # vs deal /diligence/value
+}
+
 _STATUS_LABEL = {
     "live": "Live", "computed": "Comp.", "needs": "Needs", "illustrative": "Illus.",
 }
