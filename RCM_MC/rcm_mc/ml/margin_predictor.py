@@ -16,6 +16,7 @@ Every prediction includes:
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -168,18 +169,39 @@ def train_margin_model(hcris_df: pd.DataFrame) -> TrainedModel:
     alpha = 1.0
     I = np.eye(X_aug.shape[1])
     I[0, 0] = 0  # don't regularize intercept
-    beta = np.linalg.solve(X_aug.T @ X_aug + alpha * I, X_aug.T @ y)
+
+    def _ridge(Xa: np.ndarray, yv: np.ndarray) -> np.ndarray:
+        return np.linalg.solve(Xa.T @ Xa + alpha * I, Xa.T @ yv)
+
+    beta = _ridge(X_aug, y)  # production model: all rows
 
     y_hat = X_aug @ beta
     ss_res = np.sum((y - y_hat) ** 2)
     ss_tot = np.sum((y - y.mean()) ** 2)
     r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0
 
-    # Split conformal: use last 30% as calibration
+    # Split conformal — the calibration model must NEVER see the calibration
+    # rows, or the residuals are in-sample and the interval comes out
+    # optimistically narrow (the previous code calibrated on rows the full-data
+    # fit had already seen). So: fit a separate model on a training split, then
+    # measure residuals on a disjoint holdout. A seeded shuffle makes the split
+    # exchangeable regardless of how the frame was ordered (e.g. sorted by
+    # state), which is the assumption the coverage guarantee rests on.
     n = len(y)
+    rng = np.random.RandomState(42)
+    perm = rng.permutation(n)
     cal_start = int(n * 0.7)
-    cal_resid = np.abs(y[cal_start:] - y_hat[cal_start:])
-    conformal_margin = float(np.quantile(cal_resid, 0.90)) if len(cal_resid) > 10 else 0.15
+    tr_idx, cal_idx = perm[:cal_start], perm[cal_start:]
+    if len(cal_idx) > 10:
+        beta_cal = _ridge(X_aug[tr_idx], y[tr_idx])
+        cal_resid = np.abs(y[cal_idx] - X_aug[cal_idx] @ beta_cal)
+        # ceil((1-α)(n+1))/n — the finite-sample split-conformal quantile
+        # level (matches rcm_mc.ml.conformal), clamped to 1.0 on small sets.
+        n_cal = len(cal_resid)
+        q_level = min(1.0, math.ceil(0.90 * (n_cal + 1)) / n_cal)
+        conformal_margin = float(np.quantile(cal_resid, q_level))
+    else:
+        conformal_margin = 0.15
 
     return TrainedModel(
         beta=beta, x_mean=x_mean, x_std=x_std,

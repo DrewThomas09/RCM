@@ -285,15 +285,15 @@ def predict_distress(
 
     distress_probability uses a normal approximation:
       P(future_margin < threshold) = Φ((threshold - μ) / σ)
-    where μ = predicted margin, σ = CV residual SD (estimated from
-    cv_residual_p90 / 1.282 since p90 of |residual| under
-    half-normal ≈ 1.282 σ).
+    where μ = predicted margin and σ = CV residual SD. cv_residual_p90 is
+    the 90th percentile of |residual|, and for residuals ~ N(0, σ²) the
+    folded (half-normal) 90th percentile is 1.645σ — i.e. P(|Z| ≤ 1.645) =
+    2Φ(1.645) − 1 = 0.90 — so σ = cv_residual_p90 / 1.645.
     """
     features = build_forward_distress_features(panel)
     yhat = predictor.predict_one(features)
-    # Recover residual SD from the p90 interval.
-    # For half-normal: P(|Z| < c) = 0.9 → c ≈ 1.645
-    # For full-normal of residual itself: same factor 1.645.
+    # Recover residual SD from the p90 of |residual|. For residual ~ N(0,σ²),
+    # |residual| is half-normal with P(|Z| ≤ 1.645σ) = 2Φ(1.645) − 1 = 0.90.
     sigma = predictor.cv_residual_p90 / 1.645
     if sigma <= 0:
         sigma = 0.05  # defensive floor

@@ -1,12 +1,15 @@
-"""Hospital financial distress predictor.
+"""Hospital financial distress classifier.
 
-Logistic regression model that estimates the probability a hospital will
-experience financial distress (operating margin < -5%) within the next
-fiscal year. Uses only publicly available HCRIS features.
+Logistic regression that estimates P(operating margin < -5%) from a
+hospital's HCRIS features. HONEST SCOPE: HCRIS here is cross-sectional, so
+the target is the hospital's *current* distressed state — this is a
+same-year classifier, not a forward predictor (it learns what distress
+looks like from peer features, useful when a hospital's own margin is
+missing/stale). The genuine forward, next-fiscal-year predictor lives in
+``forward_distress_predictor`` and requires the multi-year panel.
 
-This is a core moat: Bloomberg shows trailing financials; we predict
-forward distress probability and flag acquisition opportunities before
-the market recognizes them.
+Bloomberg shows trailing financials; pairing this classifier with the
+forward predictor flags acquisition opportunities before the market does.
 """
 from __future__ import annotations
 

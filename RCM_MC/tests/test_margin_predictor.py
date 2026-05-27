@@ -42,6 +42,34 @@ class TestTrainModel(unittest.TestCase):
         model = train_margin_model(_add_computed_features(_sample_hcris()))
         self.assertGreater(model.conformal_margin, 0)
 
+    def test_conformal_holdout_coverage_near_nominal(self):
+        # The conformal margin is only honest if it covers ~90% of points the
+        # model never saw. Calibrating on in-sample residuals (the old bug)
+        # produces an optimistically narrow band; a true split must hold up
+        # out-of-sample. Train on one slice, measure coverage on a disjoint one.
+        from rcm_mc.ml.margin_predictor import train_margin_model, predict_margin
+        from rcm_mc.ui.regression_page import _add_computed_features
+        df = _add_computed_features(_sample_hcris(400))
+        train_df = df.iloc[:300].reset_index(drop=True)
+        test_df = df.iloc[300:].reset_index(drop=True)
+        model = train_margin_model(train_df)
+        covered = 0
+        total = 0
+        for ccn in test_df["ccn"]:
+            pred = predict_margin(ccn, test_df, model=model)
+            if pred is None:
+                continue
+            actual = float(
+                test_df.loc[test_df["ccn"] == ccn, "operating_margin"].iloc[0])
+            total += 1
+            if pred.ci_low <= actual <= pred.ci_high:
+                covered += 1
+        self.assertGreater(total, 50)
+        coverage = covered / total
+        # Nominal is 0.90; allow sampling slack but it must not be wildly under
+        # (which is exactly what in-sample calibration would have produced).
+        self.assertGreaterEqual(coverage, 0.80)
+
 
 class TestPredictMargin(unittest.TestCase):
 
