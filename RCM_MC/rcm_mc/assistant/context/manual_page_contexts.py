@@ -6384,4 +6384,248 @@ for (_r, _t, _sd, _km, _mids, _extra_ds) in _MODEL_FAMILY:
     ))
 
 
+# ── Analytics / diligence / corpus pages (batch 6) ─────────────────────
+# Heterogeneous real pages. bucket controls inputs/guidance/limitations:
+#   "corpus"=licensed deal corpus benchmark · "model"=illustrative scenario ·
+#   "user"=user-entered/ingested data · "deal"=per-deal packet model output.
+# (route, title, short_desc, purpose, common_qs, key_metrics, metric_ids,
+#  data_source_ids, model_logic, why, data_conf, bucket)
+_BATCH6 = [
+    ("/diligence/comparable-outcomes", "Comparable Outcomes",
+     "Benchmarks a deal against comparable-deal outcomes from the licensed "
+     "corpus.",
+     "Ground an outcome expectation in how genuinely comparable deals fared.",
+     ["How did comparable deals do?", "What outcome is realistic here?",
+      "Where does this sit vs peers?"],
+     ["Benchmark percentile", "MOIC", "EV/EBITDA"],
+     ["benchmark_percentile", "moic", "ev_to_ebitda"],
+     ["public_transaction_corpus"],
+     "Matches the deal to corpus comparables and summarizes their realized "
+     "outcomes; descriptive, reflects corpus coverage.",
+     "Comparable outcomes are the empirical prior for an underwrite.",
+     _DC.PUBLIC_BENCHMARK_DATA, "corpus"),
+    ("/backtester", "Value-Creation Backtester",
+     "Backtests value-creation theses against realized corpus outcomes.",
+     "Check whether a value-creation thesis has actually worked in comparable "
+     "deals before betting on it.",
+     ["Has this thesis worked before?", "What's the historical hit rate?",
+      "Which levers backtest well?"],
+     ["MOIC", "Value-creation opportunity", "Hit rate"],
+     ["moic", "value_creation_opportunity"], ["public_transaction_corpus"],
+     "Replays value-creation theses over corpus deals and reports realized "
+     "outcomes; descriptive backtest, not a forecast.",
+     "A thesis that never backtested is a hope, not a plan.",
+     _DC.PUBLIC_BENCHMARK_DATA, "corpus"),
+    ("/base-rates", "Base-Rate Engine",
+     "Outcome base rates (frequencies) from the deal corpus — how often "
+     "things actually happen.",
+     "Anchor judgment in base rates instead of the inside view of one deal.",
+     ["What's the base rate for this outcome?", "How often does this work?",
+      "What are the odds historically?"],
+     ["Outcome frequency", "MOIC", "Benchmark percentile"],
+     ["moic", "irr", "benchmark_percentile"], ["public_transaction_corpus"],
+     "Computes empirical outcome frequencies across corpus deals; descriptive.",
+     "Base rates are the single best antidote to deal-team optimism.",
+     _DC.PUBLIC_BENCHMARK_DATA, "corpus"),
+    ("/portfolio-sim", "Portfolio Scenario Simulator",
+     "Simulates portfolio-level outcomes by drawing from corpus return "
+     "distributions.",
+     "See the range of fund-level outcomes a portfolio construction could "
+     "produce.",
+     ["What's the portfolio outcome range?", "What's the downside?",
+      "How does construction change the distribution?"],
+     ["MOIC", "IRR", "Downside"], ["moic", "irr"],
+     ["public_transaction_corpus"],
+     "Monte-Carlo draws from corpus return distributions to build a "
+     "portfolio outcome distribution; reflects corpus coverage.",
+     "Fund outcomes are a distribution, not a point — sizing the tails "
+     "matters.",
+     _DC.PUBLIC_BENCHMARK_DATA, "corpus"),
+    ("/corpus-coverage", "Corpus Coverage Report",
+     "Data-completeness and field-coverage report for the licensed deal "
+     "corpus.",
+     "Show how complete and trustworthy the corpus is, field by field, before "
+     "anyone relies on it.",
+     ["How complete is the corpus?", "Which fields are sparse?", "Can I trust "
+      "this benchmark?"],
+     ["Field coverage %", "Data coverage score"], ["data_coverage_score"],
+     ["public_transaction_corpus"],
+     "Computes per-field non-null/quality rates across the corpus; this is a "
+     "data-quality surface, not an analytic one.",
+     "A benchmark is only as good as the coverage behind it; this makes the "
+     "gaps explicit.",
+     _DC.PUBLIC_BENCHMARK_DATA, "corpus"),
+    ("/corpus-dashboard", "Corpus Intelligence Dashboard",
+     "Overview dashboard of the licensed deal corpus — counts, sectors, "
+     "sponsors, and return summaries.",
+     "Give a single read on what the corpus contains and what it says.",
+     ["What's in the corpus?", "What does it say about the market?", "Where's "
+      "the coverage strong?"],
+     ["Deal count", "MOIC", "IRR", "EV/EBITDA"],
+     ["moic", "irr", "ev_to_ebitda"], ["public_transaction_corpus"],
+     "Aggregates corpus counts and return summaries; descriptive.",
+     "The corpus is the empirical backbone under the benchmarking tools.",
+     _DC.PUBLIC_BENCHMARK_DATA, "corpus"),
+    ("/diligence/snapshot", "Snapshot Ingestion",
+     "Upload UI for the V2 healthcare data snapshot (835/837 claims) — "
+     "ingestion, validation, and a data-quality summary.",
+     "Turn an uploaded claims/financial snapshot into normalized, "
+     "quality-checked records the rest of diligence runs on.",
+     ["How do I upload a snapshot?", "What's the data quality?", "What rows "
+      "failed validation?"],
+     ["Rows ingested", "Valid/invalid", "Data quality"], [],
+     ["edi_835", "edi_837"],
+     "Parses, validates, normalizes and summarizes an uploaded snapshot "
+     "(rcm_mc/diligence ingestion); surfaces row-level errors/warnings rather "
+     "than hiding them.",
+     "Clean, versioned, quality-scored ingestion is the foundation every "
+     "downstream module depends on.",
+     _DC.USER_ENTERED_DATA, "user"),
+    ("/ic-memo-gen", "IC Memo Generator",
+     "Generates a standardized investment-committee memo from a deal's "
+     "analysis packet.",
+     "Produce a consistent, packet-backed IC memo draft instead of a "
+     "from-scratch document.",
+     ["Draft the IC memo", "What goes in the memo?", "What's missing for IC?"],
+     ["MOIC", "IRR"], ["moic", "irr"], ["analysis_run"],
+     "Composes memo sections from the deal's packet; surfaces missing data "
+     "rather than inventing conclusions.",
+     "A standardized, evidence-linked memo speeds and de-risks IC.",
+     _DC.MIXED, "deal"),
+    ("/corpus-ic-memo", "Corpus IC Memo",
+     "IC memo draft enriched with corpus benchmarks for the deal.",
+     "Draft an IC memo that situates the deal against comparable corpus "
+     "evidence.",
+     ["Draft a benchmarked IC memo", "How does this compare to the corpus?",
+      "What's the peer context?"],
+     ["MOIC", "IRR", "Benchmark percentile"],
+     ["moic", "irr"], ["analysis_run", "public_transaction_corpus"],
+     "Composes a memo from the deal's packet plus corpus comparables; "
+     "benchmarks reflect corpus coverage.",
+     "Peer-anchored memos are harder to wave away at IC.",
+     _DC.MIXED, "deal"),
+    ("/ic-memo", "IC Memo",
+     "Investment-committee memo view for a deal.",
+     "Review the IC memo for a deal in one place.",
+     ["Show the IC memo", "What's the recommendation?", "What are the risks?"],
+     ["MOIC", "IRR"], ["moic", "irr"], ["analysis_run"],
+     "Renders the deal's IC memo from its packet; surfaces gaps honestly.",
+     "The IC memo is where the thesis is made or broken.",
+     _DC.MIXED, "deal"),
+    ("/surrogate", "Surrogate Model",
+     "A fast surrogate that approximates the Monte-Carlo EBITDA-drag without "
+     "the full simulation.",
+     "Get an instant approximate read where running the full MC would be too "
+     "slow.",
+     ["What's the quick EBITDA-drag estimate?", "How close is it to the full "
+      "MC?", "When should I run the real sim?"],
+     ["EBITDA drag (approx)"], [], [],
+     "A trained/stubbed surrogate approximating the MC's mean output; an "
+     "approximation, not the full simulation — use the MC for decisions.",
+     "Surrogates make interactive what-ifs cheap; the MC remains the "
+     "decision-grade tool.",
+     _DC.MODEL_ESTIMATE, "model"),
+    ("/pressure", "Pressure Test",
+     "Stress / target-assessment that pressure-tests a deal against adverse "
+     "assumptions.",
+     "See where a deal breaks under stress before committing capital.",
+     ["How does this hold up under stress?", "What breaks the deal?",
+      "Where's the fragility?"],
+     ["EBITDA under stress", "Risk score"], ["ebitda", "risk_score"], [],
+     "Applies adverse-scenario shocks to entered assumptions and reports the "
+     "outcome; illustrative unless deal inputs are supplied.",
+     "A thesis you haven't stressed is a thesis you don't understand.",
+     _DC.MODEL_ESTIMATE, "model"),
+    ("/demand-forecast", "Demand Forecast",
+     "Projects future demand / volume from entered trend assumptions.",
+     "Stress-test the volume assumptions a revenue thesis rests on.",
+     ["What demand is assumed?", "How sensitive is revenue to volume?",
+      "Is the growth realistic?"],
+     ["Revenue growth", "Volume"], ["revenue_growth"], [],
+     "Projects demand from entered trend/seasonality assumptions; "
+     "illustrative.",
+     "Volume assumptions silently drive most revenue models.",
+     _DC.MODEL_ESTIMATE, "model"),
+    ("/exit-timing", "Exit Timing & Buyer Fit",
+     "Models exit timing and buyer-type fit (strategic vs sponsor vs "
+     "public).",
+     "Think about when to exit and to whom, not just at what multiple.",
+     ["When should we exit?", "Who's the natural buyer?", "Strategic or "
+      "sponsor exit?"],
+     ["Exit multiple", "MOIC", "Buyer fit"], ["exit_multiple", "moic"], [],
+     "Scores exit timing/buyer fit from entered assumptions; illustrative.",
+     "The right buyer at the right time can out-matter the entry price.",
+     _DC.MODEL_ESTIMATE, "model"),
+    ("/hold", "Hold-Period Dashboard",
+     "Tracks portfolio holdings by hold period — age, value progression, and "
+     "exit readiness.",
+     "See where each holding is in its hold and which are nearing exit.",
+     ["How long have we held each deal?", "Which are near exit?", "How's "
+      "value progressing?"],
+     ["Hold period", "MOIC", "IRR"], ["hold_period", "moic", "irr"],
+     ["portfolio_snapshot"],
+     "Reads portfolio holdings and computes hold age / value progression from "
+     "stored snapshots.",
+     "Hold discipline — not holding winners too short or losers too long — "
+     "drives realized returns.",
+     _DC.MIXED, "deal"),
+    ("/value-tracker", "Value Creation Tracker",
+     "Tracks actual vs plan, lever by lever, for value-creation initiatives.",
+     "Hold post-close execution accountable against the value-creation plan.",
+     ["Are we hitting the plan?", "Which levers are behind?", "What's the "
+      "EBITDA gap to plan?"],
+     ["Value-creation opportunity", "EBITDA", "Actual vs plan"],
+     ["value_creation_opportunity", "ebitda"], ["monthly_actuals"],
+     "Compares entered monthly actuals against the plan per lever; only "
+     "meaningful once actuals are loaded.",
+     "Plans don't create value; tracked execution against them does.",
+     _DC.USER_ENTERED_DATA, "user"),
+]
+_existing_b6 = {c.route for c in _MANUAL}
+for (_r, _t, _sd, _pp, _cq, _km, _mids, _dsids, _ml, _why, _dc2, _bucket) in _BATCH6:
+    if _r in _existing_b6:
+        continue
+    if _bucket == "corpus":
+        _inputs = ["Licensed PE deal corpus (public_transaction_corpus); some "
+                   "tools also take a deal/selection."]
+        _guidance = ["Benchmarks reflect the corpus's disclosed-deal coverage, "
+                     "not the full market — descriptive, not a forecast."]
+        _limits = ["Corpus is a sample of disclosed deals."]
+        _srcs = ["Licensed PE deal corpus (public_transaction_corpus)."]
+    elif _bucket == "user":
+        _inputs = ["Your uploaded / entered data; until you provide it the "
+                   "page shows an illustrative scaffold."]
+        _guidance = ["Runs on YOUR data — figures before you upload are an "
+                     "illustrative scaffold, not real values."]
+        _limits = ["Only as complete/correct as the data you provide."]
+        _srcs = ["User-uploaded / entered data."]
+    elif _bucket == "deal":
+        _inputs = ["The selected deal's analysis packet / portfolio data "
+                   "(model output over its inputs)."]
+        _guidance = ["Outputs are model estimates / tracked figures for the "
+                     "deal, not realized or audited results.",
+                     "Requires a built analysis packet for the deal."]
+        _limits = ["Only as good as the deal's inputs and packet assumptions."]
+        _srcs = ["The deal's stored analysis packet / portfolio snapshots."]
+    else:  # model
+        _inputs = ["Scenario assumptions (query parameters); illustrative "
+                   "example with no inputs."]
+        _guidance = list(_ILLUS_GUIDANCE)
+        _limits = ["Deterministic point scenarios, no probability distribution.",
+                   "Illustrative assumptions unless overridden."]
+        _srcs = ["None — computed from the entered/illustrative assumptions."]
+    _MANUAL.append(_ctx(
+        _r, _t,
+        short_description=_sd, primary_purpose=_pp, common_questions=_cq,
+        inputs=_inputs,
+        outputs=["Computed tables/charts for the analysis above."],
+        key_metrics=_km, data_sources=_srcs, model_logic_summary=_ml,
+        why_it_matters=_why, diligence_use_cases=[_pp],
+        interpretation_guidance=_guidance, limitations=_limits,
+        related_routes=["/quant-lab", "/analysis", "/corpus-dashboard"],
+        metric_ids=_mids, data_source_ids=_dsids,
+        source_confidence=SourceConfidence.DOCUMENTED, data_confidence=_dc2,
+    ))
+
+
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
