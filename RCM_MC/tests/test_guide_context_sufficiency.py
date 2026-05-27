@@ -114,6 +114,18 @@ class BackendConceptDocsArePresent(unittest.TestCase):
             self.assertIn(concept, blob,
                           f"Guide corpus missing a backend concept doc: {concept}")
 
+    def test_nuanced_pe_and_process_concept_docs(self):
+        # The Guide should also be able to explain nuanced PE concepts and the
+        # backend workflows, like an analyst assistant — pin those cards too.
+        blob = self._doc_blob()
+        for concept in ("pe_fund_economics", "pe_deal_structuring",
+                        "pe_value_creation_and_exit", "pe_healthcare_concepts",
+                        "process_alerts_lifecycle", "process_deal_lifecycle",
+                        "process_exports", "process_portfolio_ops",
+                        "process_data_ingestion"):
+            self.assertIn(concept, blob,
+                          f"Guide corpus missing a concept doc: {concept}")
+
     def test_survival_doc_states_not_kaplan_meier(self):
         # Honesty guard: the survival concept card must NOT claim KM/Cox.
         from rcm_mc.assistant.rag.document_sources import iter_guide_documents
