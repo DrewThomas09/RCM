@@ -105,6 +105,58 @@ class NoDuplicates(unittest.TestCase):
                 self.assertNotIn("?", t["path"], f"query variant carded: {t['path']}")
 
 
+class NoDeadCards(unittest.TestCase):
+    def test_known_parametric_and_redirect_routes_are_not_carded(self):
+        # Fast guard: routes that 404 on a bare GET (parametric — need a
+        # deal/section sub-path) or redirect (renamed) must not be cards.
+        ws, index, _, _ = _data()
+        az = {t["path"] for sec in index for t in sec["tools"]}
+        for dead in ("/models/causal", "/models/lbo", "/best", "/hold",
+                     "/data-room", "/diligence/synthesis", "/ic-memo",
+                     "/screening", "/outputs", "/deals", "/audit/enter"):
+            self.assertNotIn(dead, az, f"dead/parametric route carded: {dead}")
+
+    def test_every_az_card_returns_200(self):
+        # The definitive health contract: boot a real server and GET every A–Z
+        # card. None may 404/redirect/500 — a card that doesn't render is worse
+        # than no card. (Empty temp DB; well-built pages show an empty state.)
+        import os, socket, tempfile, threading, time
+        import urllib.error as _ue
+        import urllib.request as _u
+        from rcm_mc.server import build_server
+
+        ws, index, _, _ = _data()
+        routes = [t["path"] for sec in index for t in sec["tools"]]
+
+        class _NoRedirect(_u.HTTPRedirectHandler):
+            def redirect_request(self, *a, **k):
+                return None
+        opener = _u.build_opener(_NoRedirect)
+
+        sk = socket.socket(); sk.bind(("127.0.0.1", 0))
+        port = sk.getsockname()[1]; sk.close()
+        tmp = tempfile.mkdtemp()
+        server, _ = build_server(port=port, db_path=os.path.join(tmp, "p.db"))
+        t = threading.Thread(target=server.serve_forever, daemon=True)
+        t.start(); time.sleep(0.3)
+        bad = {}
+        try:
+            for r in routes:
+                try:
+                    code = opener.open(
+                        _u.Request(f"http://127.0.0.1:{port}{r}"), timeout=20
+                    ).status
+                    if code != 200:
+                        bad[r] = code
+                except _ue.HTTPError as e:
+                    bad[r] = e.code
+                except Exception as e:  # noqa: BLE001
+                    bad[r] = f"ERR:{type(e).__name__}"
+        finally:
+            server.shutdown(); server.server_close()
+        self.assertEqual(bad, {}, f"cards that do not render 200: {bad}")
+
+
 class StatusBuckets(unittest.TestCase):
     def test_every_card_has_a_valid_status(self):
         ws, index, _, _ = _data()
