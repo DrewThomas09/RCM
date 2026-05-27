@@ -106,6 +106,61 @@ class TestMegaMenuHardening(unittest.TestCase):
         self.assertIn(".ck-nav-menu::before", _app_shell())
 
 
+class TestNavLinksAreLive(unittest.TestCase):
+    """Every route reachable from the topbar — nav targets, mega-menu leaves,
+    'All X tools' catalogs, and section landings — must render a live 200. A
+    nav link that 404s or redirects is a broken click (this caught the Pipeline
+    'Manual' leaf → /new-deal/manual, a form-POST target that 303'd)."""
+
+    def test_every_nav_reachable_route_returns_200(self):
+        import os, socket, tempfile, threading, time
+        import urllib.error as _ue
+        import urllib.request as _u
+        from rcm_mc.server import build_server
+        from rcm_mc.ui._chartis_kit import (
+            _CORPUS_NAV, _SECTION_FEATURE, _ranked_subnav_items,
+        )
+        routes = set()
+        for it in _CORPUS_NAV:
+            routes.add(it["href"])
+        for sect in ("source", "pipeline", "diligence", "library",
+                     "research", "portfolio"):
+            routes.add(f"/best/{sect}")
+            top, _ = _ranked_subnav_items(sect)
+            for t in top:
+                routes.add(t["href"])
+        for f in _SECTION_FEATURE.values():
+            if f.get("href"):
+                routes.add(f["href"])
+
+        class _NoRedirect(_u.HTTPRedirectHandler):
+            def redirect_request(self, *a, **k):
+                return None
+        opener = _u.build_opener(_NoRedirect)
+        sk = socket.socket(); sk.bind(("127.0.0.1", 0))
+        port = sk.getsockname()[1]; sk.close()
+        server, _ = build_server(
+            port=port, db_path=os.path.join(tempfile.mkdtemp(), "p.db"))
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        time.sleep(0.3)
+        bad = {}
+        try:
+            for r in sorted(routes):
+                try:
+                    code = opener.open(
+                        _u.Request(f"http://127.0.0.1:{port}{r}"), timeout=20
+                    ).status
+                    if code != 200:
+                        bad[r] = code
+                except _ue.HTTPError as e:
+                    bad[r] = e.code
+                except Exception as e:  # noqa: BLE001
+                    bad[r] = f"ERR:{type(e).__name__}"
+        finally:
+            server.shutdown(); server.server_close()
+        self.assertEqual(bad, {}, f"nav links that don't render 200: {bad}")
+
+
 class TestTopbarControlsAndLogin(unittest.TestCase):
     def test_guide_search_avatar_triggers_exist(self):
         html = _app_shell()
