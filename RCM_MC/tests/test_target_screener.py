@@ -701,6 +701,18 @@ class BackwardCompatTests(unittest.TestCase):
         h = render_target_screener({"view": ["columns"], "vertical": ["snf"]})
         self.assertIn("Ownership / consolidation", h)
 
+    def test_universe_kpi_strip_shows_real_counts(self):
+        # The main view leads with a computed at-a-glance read of the universe
+        # (real provider count + jurisdictions), so it's informative pre-filter.
+        from rcm_mc.ui.target_screener_page import render_target_screener, _vertical_rows
+        h = render_target_screener({"view": ["main"], "vertical": ["hospitals"]})
+        self.assertIn("ck-kpi-grid", h)
+        self.assertIn("Providers", h)
+        self.assertIn("territories", h)   # "States &amp; territories" (escaped)
+        # the real provider count is shown verbatim
+        n = len(_vertical_rows("hospitals", limit=None))
+        self.assertIn(f"{n:,}", h)
+
 
 if __name__ == "__main__":
     unittest.main()
