@@ -217,6 +217,52 @@ def _setup_instructions() -> str:
     )
 
 
+def _ollama_config_card() -> str:
+    """Config-only snapshot of the local-Ollama connection (no network calls,
+    so the page stays fast). Shows the failover host order + the knobs that
+    make it work across environments, so an operator can wire it up anywhere."""
+    try:
+        from rcm_mc.assistant.ollama_client import (
+            ollama_base_urls, ollama_default_model, ollama_num_ctx,
+            ollama_keep_alive, ollama_max_retries, ollama_timeout_seconds,
+            is_ollama_enabled,
+        )
+    except Exception:  # noqa: BLE001
+        return ""
+    on = is_ollama_enabled()
+    hosts = ollama_base_urls()
+    rows = [
+        ("Status", "Enabled" if on
+         else "Disabled — set PEDESK_GUIDE_OLLAMA_ENABLED=1 to turn on"),
+        ("Candidate hosts (tried in order, with failover)", " · ".join(hosts)),
+        ("Model", ollama_default_model()),
+        ("Context window (num_ctx)", str(ollama_num_ctx() or "model default")),
+        ("Keep model warm (keep_alive)", ollama_keep_alive()),
+        ("Timeout / retries per host",
+         f"{ollama_timeout_seconds()}s · {ollama_max_retries()} retries"),
+    ]
+    trs = "".join(
+        f'<tr><td style="padding:5px 12px;color:{P["text_dim"]};font-size:12px;">'
+        f'{_html.escape(k)}</td>'
+        f'<td style="padding:5px 12px;font-family:var(--ck-mono);font-size:12px;'
+        f'color:{P["text"]};">{_html.escape(v)}</td></tr>'
+        for k, v in rows
+    )
+    note = (
+        f'<div style="color:{P["text_dim"]};font-size:11px;line-height:1.5;'
+        f'margin-top:8px;">Set <code>OLLAMA_HOST</code> (standard) or a '
+        f'comma-separated <code>PEDESK_GUIDE_OLLAMA_BASE_URL</code> to reach '
+        f'Ollama wherever it runs — local, a Tailscale box, or a sidecar. The '
+        f'client tries each host in order and retries a slow first call.</div>'
+    )
+    return (
+        f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
+        f'border-radius:3px;padding:8px 8px 12px;margin-bottom:14px;">'
+        f'<table style="width:100%;border-collapse:collapse;">{trs}</table>'
+        f'{note}</div>'
+    )
+
+
 def render_ai_settings(store: Any) -> str:
     key_set = bool(os.environ.get("ANTHROPIC_API_KEY"))
     fp = _env_key_fingerprint()
@@ -310,6 +356,8 @@ def render_ai_settings(store: Any) -> str:
     body = (
         header_card
         + kpi_strip
+        + ck_section_header("LOCAL OLLAMA", "on-box model — connection & config")
+        + _ollama_config_card()
         + ck_section_header("FEATURES", "what Claude powers on this platform")
         + _features_card()
         + ck_section_header("MODELS", "Claude 4 lineup")
