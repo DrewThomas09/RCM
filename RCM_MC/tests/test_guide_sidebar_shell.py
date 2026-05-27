@@ -101,6 +101,18 @@ class GuideSidebarShellTests(unittest.TestCase):
         # route() = pathname + search; comment documents the hash omission.
         self.assertIn("location.pathname+location.search", self.html)
 
+    def test_onscreen_scraper_reads_value_anchor_and_kpis(self):
+        # The Guide must be able to see the live numbers the user is looking
+        # at: the headline value-anchor band AND the KPI blocks. It posts them
+        # on the ask, and never scrapes its own panel.
+        self.assertIn("function scrapeOnscreen", self.html)
+        self.assertIn(".ck-value-anchor", self.html)
+        self.assertIn(".ck-va-value", self.html)
+        self.assertIn(".ck-kpi", self.html)
+        self.assertIn("onscreen_figures:scrapeOnscreen()", self.html)
+        # excludes the Guide's own panel from the scrape
+        self.assertIn("panel.contains", self.html)
+
     def test_ask_form_and_deliberate_loading_copy(self):
         self.assertIn("data-ck-guide-ask-form", self.html)
         self.assertIn("data-ck-guide-input", self.html)
