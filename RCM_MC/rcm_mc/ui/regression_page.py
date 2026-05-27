@@ -26,6 +26,7 @@ from ..finance.regression import hc1_robust_se as _hc1_robust_se
 from ..finance.regression import information_criteria as _information_criteria
 from ..finance.regression import ramsey_reset_test as _ramsey_reset
 from ..finance.regression import jarque_bera_test as _jarque_bera
+from ..finance.regression import robust_joint_f_test as _robust_joint_f
 from ..finance.regression import shapley_r2_decomposition as _shapley_r2
 from ..finance.regression import t_critical_value as _t_critical_value
 from ..finance.regression import t_two_tailed_pvalue as _t_two_tailed_p
@@ -604,6 +605,10 @@ def _run_ols(
         f_stat = ((ss_tot - ss_res) / p) / (ss_res / (n - p - 1)) if p > 0 and n > p + 1 and ss_res > 0 else 0
         from ..finance.regression import f_pvalue as _f_pvalue
         f_pval = _f_pvalue(f_stat, p, n - p - 1)
+        # Heteroskedasticity-robust joint significance (Wald/F on the slopes).
+        # The classical F above assumes homoskedasticity; when BP fires this is
+        # the consistent headline test of "is the model jointly significant?".
+        robust_f = _robust_joint_f(X_aug, beta, resid)
 
         # Residual analysis — top outliers
         std_resid = resid / rmse if rmse > 0 else resid
@@ -746,6 +751,9 @@ def _run_ols(
             "p": p,
             "f_stat": f_stat,
             "f_pvalue": f_pval,
+            # Robust (HC1) joint-significance test — valid under the
+            # heteroskedasticity the page detects, unlike the classical F.
+            "robust_f": robust_f,
             "rmse": rmse,
             "intercept": intercept_raw,
             "intercept_se": intercept_se,
@@ -1198,6 +1206,30 @@ def render_regression_page(
                     "verdict banner)."
                 ),
             },
+        )
+        + (
+            ck_kpi_block(
+                "Robust F", f"{min((result.get('robust_f') or {}).get('f_stat', 0), 9999):.1f}",
+                sub=(
+                    "p &lt; 0.001"
+                    if (result.get('robust_f') or {}).get('p_value', 1.0) < 0.001
+                    else f"p = {(result.get('robust_f') or {}).get('p_value', 1.0):.3f}"
+                ),
+                help={
+                    "definition": (
+                        "Heteroskedasticity-robust (HC1 Wald) version of the "
+                        "joint F-test. The classical F-statistic assumes a "
+                        "constant error variance; when Breusch&ndash;Pagan "
+                        "detects heteroskedasticity (common on hospital data) "
+                        "that assumption fails and this is the valid headline "
+                        "test of whether the model is jointly significant. "
+                        "Reported in F-form (Wald/p) so it's directly "
+                        "comparable to the classical F above."
+                    ),
+                },
+            )
+            if (result.get("robust_f") or {}).get("significant") is not None
+            else ""
         )
         + ck_kpi_block(
             "RMSE (avg error)", _fmt_num(result["rmse"]),
