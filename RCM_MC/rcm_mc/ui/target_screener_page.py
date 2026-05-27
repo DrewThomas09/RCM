@@ -421,9 +421,14 @@ def _vertical_bar(active_vertical: str, qs: Dict[str, List[str]]) -> str:
             f'<a class="{cls}" href="{_vhref(v["key"], qs)}" title="{v["note"]}">'
             f'{v["label"]} <span class="u">{v["universe"]}</span></a>'
         )
-    return ('<div style="font-family:var(--sc-mono);font-size:9px;letter-spacing:.12em;'
-            'text-transform:uppercase;color:var(--sc-text-faint,#8b94a0);margin-bottom:5px;">'
-            'Vertical / universe</div><div class="tsw-verticals">' + "".join(chips) + '</div>')
+    # Make the universe switch obvious — this is what makes it more than a
+    # hospital screener. A clear prompt + the count of toggleable universes.
+    return ('<div style="font-family:var(--sc-mono);font-size:11px;'
+            'letter-spacing:.08em;text-transform:uppercase;'
+            'color:var(--sc-teal,#155752);font-weight:600;margin-bottom:7px;">'
+            f'Screen which universe? &middot; {len(_VERTICALS)} CMS provider '
+            'universes — toggle to switch</div>'
+            '<div class="tsw-verticals">' + "".join(chips) + '</div>')
 
 
 def _layer_bar(active_layer: str, qs: Dict[str, List[str]]) -> str:
