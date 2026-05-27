@@ -14,7 +14,7 @@ from __future__ import annotations
 import html as _html
 from typing import Dict, List
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_page_title
 from rcm_mc.ui.data_public.state_compare_page import _VALID
 from rcm_mc.ui.data_public.state_profile_page import _STATE_NAMES
 
@@ -100,6 +100,37 @@ def county_dataframe(state: str, sort_key: str):
     return _pd.DataFrame(out, columns=cols)
 
 
+def _fmt_pop(v: float) -> str:
+    if v is None:
+        return "—"
+    if v >= 1e6:
+        return f"{v / 1e6:.1f}M"
+    if v >= 1e3:
+        return f"{v / 1e3:.0f}K"
+    return f"{int(v):,}"
+
+
+def _county_kpi_strip(rows, footer, name) -> str:
+    """Leading KPI strip (X-Ray pattern) from the real county data: county
+    count, total state population, and the largest county. No fabrication —
+    derived from the same rows as the table; counties with no population are
+    excluded from the 'largest' pick."""
+    n = len(rows)
+    total_pop = footer.get("population") or 0
+    pop_rows = [r for r in rows if r.get("population")]
+    top = max(pop_rows, key=lambda r: r["population"], default=None)
+    strip = (
+        '<div class="ck-kpi-strip" style="margin-bottom:14px">'
+        + ck_kpi_block("Counties", str(n))
+        + ck_kpi_block("Total population", _fmt_pop(total_pop))
+    )
+    if top is not None:
+        strip += ck_kpi_block(
+            "Largest county", _html.escape(str(top.get("name", "—"))),
+            sub=_fmt_pop(top["population"]))
+    return strip + '</div>'
+
+
 def render_county_explorer(params: Dict = None) -> str:
     state = _parse_state(params)
     sort_key = _parse_sort(params)
@@ -168,6 +199,7 @@ def render_county_explorer(params: Dict = None) -> str:
     body = f"""
 <div class="ck-page-wrap">
   {ck_page_title(f"County Explorer — {name}", eyebrow="MARKET INTEL", meta=f"{len(rows)} {name} counties on real Census/ACS demographics — click a column to sort")}
+  {_county_kpi_strip(rows, footer, name)}
   <p style="font-size:13px;color:{td};max-width:74ch;margin:0 0 14px">
     Drill into {_html.escape(name)}'s counties on real public demographics
     (County Health Rankings / Census ACS). Click any column to re-sort. The

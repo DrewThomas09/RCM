@@ -53,6 +53,15 @@ class CountyExplorerTests(unittest.TestCase):
         self.assertIn("<table", h)
         self.assertIn("fabricated", h)
 
+    def test_page_leads_with_real_kpi_strip(self):
+        # X-Ray pattern: leading KPI strip from the real county data
+        # (counties / total population / largest county).
+        h = render_county_explorer({"state": ["OH"]})
+        self.assertIn("ck-kpi-strip", h)
+        self.assertIn("Counties", h)
+        self.assertIn("Total population", h)
+        self.assertIn("Largest county", h)
+
     def test_surface_is_green(self):
         self.assertEqual(classify_surface("/county-explorer")["tier"], "green")
 
