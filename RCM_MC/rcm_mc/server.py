@@ -18827,26 +18827,62 @@ class RCMHandler(BaseHTTPRequestHandler):
         except Exception:  # noqa: BLE001 — descriptions are best-effort
             PAGE_CONTEXT_REGISTRY = {}
 
+        from collections import Counter
+        from .ui.tools_index_page import TITLE_OVERRIDES
+
         discovered = cls._discover_all_routes()
         palette_by_route = {m["route"]: m for m in _DEFAULT_PALETTE_MODULES}
         # Union of discovered + curated palette routes (palette includes a few
-        # startswith-served routes like /my/AT). Deduped, order-stable.
-        all_routes = list(dict.fromkeys(
-            list(discovered) + list(palette_by_route.keys())
-        ))
+        # startswith-served routes like /my/AT). Skip query-param palette
+        # variants (e.g. /diligence/risk-workbench?demo=steward) — the base
+        # route is already the card; the variant would be a duplicate.
+        all_routes = [
+            r for r in dict.fromkeys(list(discovered) + list(palette_by_route))
+            if "?" not in r and r not in cls._TOOLS_HIDDEN_ROUTES
+        ]
+
+        def _pref_title(route):
+            pc = PAGE_CONTEXT_REGISTRY.get(route)
+            pc_title = (getattr(pc, "title", "") or "").strip() if pc else ""
+            # Preferred title: explicit disambiguation override > curated palette
+            # label > vetted page-context title > slug-derived.
+            return (TITLE_OVERRIDES.get(route)
+                    or palette_by_route.get(route, {}).get("title")
+                    or pc_title
+                    or cls._title_from_route(route))
+
+        # ── De-collide titles GLOBALLY so no two cards ever read identically ──
+        # Keep the nice preferred title when it's unique; otherwise fall back to
+        # the slug-derived title (which embeds the path and is unique per route),
+        # then a last-resort route suffix. Different pages that merely shared a
+        # generic title (e.g. /sector-intel vs /sector-intelligence both
+        # "Sector Intelligence") thus get distinct, honest names — no manual
+        # per-pair list to maintain. True redirect aliases were already removed
+        # at discovery (see _TOOLS_HIDDEN_ROUTES), so this only renames genuinely
+        # distinct surfaces.
+        pref = {r: _pref_title(r) for r in all_routes}
+        title_map = dict(pref)
+        for _ in range(4):  # converges fast; bounded for safety
+            counts = Counter(t.lower() for t in title_map.values())
+            collided = [r for r in all_routes if counts[title_map[r].lower()] > 1]
+            if not collided:
+                break
+            for r in collided:
+                title_map[r] = cls._title_from_route(r)
+        # final guarantee — if any slug titles still tie, suffix the route
+        counts = Counter(t.lower() for t in title_map.values())
+        for r in all_routes:
+            if counts[title_map[r].lower()] > 1:
+                title_map[r] = f"{title_map[r]} · {r}"
 
         def _meta(route):
-            title = (palette_by_route.get(route, {}).get("title")
-                     or cls._title_from_route(route))
+            pc = PAGE_CONTEXT_REGISTRY.get(route)
             tier = (classify_surface(route) or {}).get("tier") or "green"
             status = TIER_TO_STATUS.get(tier, "live")
-            desc = ""
-            pc = PAGE_CONTEXT_REGISTRY.get(route)
-            if pc is not None:
-                desc = (getattr(pc, "short_description", "") or "").strip()
+            desc = (getattr(pc, "short_description", "") or "").strip() if pc else ""
             if not desc:
                 desc = _NAV_DESC.get(route, "")
-            return {"name": title, "path": route, "status": status,
+            return {"name": title_map[route], "path": route, "status": status,
                     "desc": desc, "auto": route not in palette_by_route}
 
         # ── A–Z organizational buckets (handoff names) ──
@@ -19117,8 +19153,12 @@ class RCMHandler(BaseHTTPRequestHandler):
         # (e.g. /my/AT, /market-data/state/CA), so hiding the bare
         # slug keeps partners from clicking a dead orphan link.
         "/my", "/market-data/state",
-        # Redirect aliases (resolve to a different canonical route)
+        # Redirect aliases (resolve to a different canonical route) — the
+        # canonical target is the real tools card, so the alias would just be a
+        # confusing duplicate that bounces. Safe-merge = hide the alias here.
         "/home", "/dashboard", "/portal", "/index.html", "/ready",
+        "/portfolio-analytics",   # 301 → /deal-corpus-analytics (renamed)
+        "/deals-library",         # 301 → /library (renamed)
         # Internal/legacy
         "/seekingchartis", "/caduceus",
         # Source-parser false positives + test/scratch routes
