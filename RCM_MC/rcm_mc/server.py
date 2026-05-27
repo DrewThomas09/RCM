@@ -2945,6 +2945,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             build_guide_system_prompt,
             build_guide_user_prompt,
             clean_guide_answer,
+            sanitize_onscreen_figures,
         )
 
         length = int(self.headers.get("Content-Length") or 0)
@@ -2986,6 +2987,11 @@ class RCMHandler(BaseHTTPRequestHandler):
                 status=HTTPStatus.BAD_REQUEST,
             )
         model = _str_field("model") or None
+        # Optional: the live KPI values the user is currently viewing, scraped
+        # client-side. Sanitized (bounded count + per-string length, typed
+        # pairs only) so the Guide can analyze the actual on-screen numbers
+        # without trusting an unbounded client payload.
+        onscreen_figures = sanitize_onscreen_figures(data.get("onscreen_figures"))
 
         # Always build the packet first (pure, AI-free).
         packet = build_guide_context_packet(route)
@@ -3038,7 +3044,9 @@ class RCMHandler(BaseHTTPRequestHandler):
                                    "context only.")
 
         system_prompt = build_guide_system_prompt(packet)
-        user_prompt = build_guide_user_prompt(question, packet, rag_context)
+        user_prompt = build_guide_user_prompt(
+            question, packet, rag_context, onscreen_figures,
+        )
         try:
             raw_answer = ollama_client.call_ollama_chat(
                 system_prompt, user_prompt, model=model,
@@ -3069,6 +3077,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "limitations_count": len(packet.known_limitations),
             },
             "missing_context_notes": list(packet.missing_context_notes),
+            "onscreen_figures_used": len(onscreen_figures),
             "rag_enabled": rag_enabled,
             "rag_results_count": len(rag_sources),
             "rag_sources_used": rag_sources,

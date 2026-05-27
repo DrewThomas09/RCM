@@ -9,6 +9,7 @@ from rcm_mc.assistant.guide_prompt_builder import (
     build_guide_user_prompt,
     clean_guide_answer,
     packet_to_prompt_context,
+    sanitize_onscreen_figures,
 )
 
 
@@ -124,6 +125,63 @@ class PromptBuilderTests(unittest.TestCase):
         b = build_guide_user_prompt("Q?", self.packet, "")
         self.assertEqual(a, b)
         self.assertNotIn("Additional local Guide context", a)
+
+    def test_system_prompt_has_onscreen_figures_rule(self):
+        # The Guide must know it may analyze the live on-screen numbers but
+        # treat them as displayed (not validated) — and the guardrails stay.
+        sysp = build_guide_system_prompt(self.packet).lower()
+        self.assertIn("on-screen figures", sysp)
+        self.assertIn("displayed, not re-validated", sysp)
+        self.assertIn("never invent figures", sysp)
+        # guardrail intact: as-displayed values don't become IC-ready
+        self.assertIn("ic-ready", sysp)
+
+    def test_user_prompt_includes_onscreen_block_after_page_context(self):
+        figs = [{"label": "Operating Margin", "value": "12.3%"},
+                {"label": "Net Revenue", "value": "$450.25M"}]
+        prompt = build_guide_user_prompt(
+            "Is the margin healthy?", self.packet, "", figs)
+        self.assertIn("On-screen figures", prompt)
+        self.assertIn("Operating Margin: 12.3%", prompt)
+        self.assertIn("$450.25M", prompt)
+        # as-displayed framing present (honesty)
+        self.assertIn("NOT been", prompt)
+        self.assertIn("re-validated", prompt)
+        # page context stays primary (appears before the on-screen block)
+        self.assertLess(prompt.index("HCRIS X-Ray"),
+                        prompt.index("On-screen figures"))
+
+    def test_user_prompt_without_onscreen_is_unchanged(self):
+        # Backward compatible: omitting on-screen figures (or passing []) must
+        # reproduce the v1 prompt exactly.
+        a = build_guide_user_prompt("Q?", self.packet)
+        b = build_guide_user_prompt("Q?", self.packet, "", [])
+        c = build_guide_user_prompt("Q?", self.packet, "", None)
+        self.assertEqual(a, b)
+        self.assertEqual(a, c)
+        self.assertNotIn("On-screen figures", a)
+
+    def test_sanitize_onscreen_figures_bounds_and_filters(self):
+        # caps the count at 24
+        many = [{"label": f"L{i}", "value": f"{i}"} for i in range(100)]
+        self.assertEqual(len(sanitize_onscreen_figures(many)), 24)
+        # caps per-string length and collapses whitespace
+        out = sanitize_onscreen_figures(
+            [{"label": "x" * 200, "value": "  9 \n 9  "}])
+        self.assertEqual(len(out[0]["label"]), 80)
+        self.assertEqual(out[0]["value"], "9 9")
+        # drops malformed / empty / wrong-typed entries
+        bad = sanitize_onscreen_figures([
+            {"label": "ok", "value": ""},          # empty value
+            {"label": "", "value": "9"},            # empty label
+            {"label": 1, "value": 2},               # wrong types
+            "not a dict",
+            {"value": "9"},                          # missing label
+        ])
+        self.assertEqual(bad, [])
+        # non-list input is safe
+        self.assertEqual(sanitize_onscreen_figures("nope"), [])
+        self.assertEqual(sanitize_onscreen_figures(None), [])
 
     def test_unknown_route_prompt_is_conservative(self):
         pkt = build_guide_context_packet("/unknown-route")

@@ -84,7 +84,16 @@ def build_guide_system_prompt(packet: GuideContextPacket) -> str:
         "so. If retrieved context conflicts with the page context, say the "
         "source context needs review. When you use them, add a short plain-"
         "text line like: 'Guide context used: Metric Registry — Denial "
-        "Rate.'\n\n"
+        "Rate.'\n"
+        "11. If an 'On-screen figures' block is present, those are the exact "
+        "values the user is currently looking at on this page. You MAY "
+        "reference and analyze them (compare a figure to its benchmark or "
+        "caveat, flag the driver/risk, note what's notable) — but treat them "
+        "as DISPLAYED, not re-validated: they carry this page's data "
+        "confidence, so never call them IC-ready, validated, or real-time "
+        "unless the context says so, and never invent figures that aren't in "
+        "that block. If an on-screen value looks inconsistent with the page's "
+        "stated data confidence or a metric's caveat, say so plainly.\n\n"
         "ANSWER STYLE (how to write the answer):\n"
         "- Open with a direct 1-2 sentence answer to the exact question. Never "
         "open with filler such as 'Based on the provided context' or "
@@ -196,27 +205,88 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
     return "\n".join(out)
 
 
+# On-screen figures caps — keep the scraped block small so it can't crowd
+# out the page packet or be abused to stuff the prompt.
+_MAX_ONSCREEN_FIGURES = 24
+_MAX_ONSCREEN_LABEL_CHARS = 80
+_MAX_ONSCREEN_VALUE_CHARS = 60
+
+
+def sanitize_onscreen_figures(raw) -> List[dict]:
+    """Coerce an untrusted on-screen-figures payload into a safe, bounded list.
+
+    The Guide widget scrapes the page's visible KPI blocks (label + value) and
+    posts them so the model can analyze the numbers the user is actually
+    looking at. Because that payload is client-supplied we defensively bound it:
+    accept only ``{"label": str, "value": str}`` pairs, strip/cap each string,
+    drop empties, and cap the count. Returns ``[]`` for anything malformed so
+    callers can treat "no figures" and "bad figures" identically.
+    """
+    if not isinstance(raw, list):
+        return []
+    out: List[dict] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        label = item.get("label")
+        value = item.get("value")
+        if not isinstance(label, str) or not isinstance(value, str):
+            continue
+        label = " ".join(label.split())[:_MAX_ONSCREEN_LABEL_CHARS].strip()
+        value = " ".join(value.split())[:_MAX_ONSCREEN_VALUE_CHARS].strip()
+        if not label or not value:
+            continue
+        out.append({"label": label, "value": value})
+        if len(out) >= _MAX_ONSCREEN_FIGURES:
+            break
+    return out
+
+
+def _render_onscreen_block(figures: List[dict]) -> str:
+    if not figures:
+        return ""
+    lines = [
+        "=== On-screen figures (as currently displayed on this page) ===",
+        "These are the values the user is looking at right now, scraped from "
+        "this page's KPI blocks. They are shown AS RENDERED and have NOT been "
+        "re-validated by the Guide — treat them with this page's stated data "
+        "confidence.",
+    ]
+    lines += [f"- {f['label']}: {f['value']}" for f in figures]
+    return "\n".join(lines)
+
+
 def build_guide_user_prompt(
-    question: str, packet: GuideContextPacket, rag_context: str = ""
+    question: str,
+    packet: GuideContextPacket,
+    rag_context: str = "",
+    onscreen_figures: List[dict] = None,
 ) -> str:
     """The current-page context block + optional retrieved RAG context +
-    the user's question.
+    optional on-screen figures + the user's question.
 
     ``rag_context`` (when RAG is enabled) is appended AFTER the page packet
-    so the model treats the page context as primary. Backward compatible:
-    omitting it reproduces the v1 prompt exactly.
+    so the model treats the page context as primary. ``onscreen_figures``
+    (already sanitized via :func:`sanitize_onscreen_figures`) are the live
+    KPI values the user is viewing — appended as clearly-labeled, as-displayed
+    reference so the Guide can analyze the actual numbers without treating them
+    as validated. Backward compatible: omitting both reproduces the v1 prompt
+    exactly.
     """
     context = packet_to_prompt_context(packet)
     q = (question or "").strip()
     extra = ("\n\n" + rag_context.strip()) if rag_context and rag_context.strip() else ""
+    onscreen = _render_onscreen_block(onscreen_figures or [])
+    onscreen_block = ("\n\n" + onscreen) if onscreen else ""
     return (
         context
         + extra
+        + onscreen_block
         + "\n\n=== Question ===\n"
         + q
         + "\n\nAnswer using only the context above (page context is primary; "
-        "any retrieved context is supporting reference). If it is not enough, "
-        "say so."
+        "any retrieved context is supporting reference; on-screen figures are "
+        "as-displayed, not validated). If it is not enough, say so."
     )
 
 

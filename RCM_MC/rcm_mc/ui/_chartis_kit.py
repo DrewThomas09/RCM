@@ -5311,6 +5311,32 @@ _GUIDE_JS = """
   function esc(s){var d=document.createElement('div');d.textContent=(s==null?'':String(s));return d.innerHTML;}
   function escAttr(s){return esc(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
   function route(){return location.pathname+location.search;}  /* omit hash */
+  /* Scrape the live KPI values the user is looking at (label + value from the
+   * page's .ck-kpi blocks) so the Guide can analyze the actual on-screen
+   * numbers. Read-only: collects visible text only, never page-private data;
+   * skips anything inside the Guide panel; bounded to 24 (server re-caps and
+   * re-sanitizes — this is a convenience, not a trust boundary). */
+  function scrapeOnscreen(){
+    try{
+      var panel=document.getElementById('ck-guide-panel');
+      var out=[], seen={};
+      var kpis=document.querySelectorAll('.ck-kpi');
+      for(var i=0;i<kpis.length && out.length<24;i++){
+        var k=kpis[i];
+        if(panel && panel.contains(k))continue;             /* skip our own UI */
+        var lEl=k.querySelector('.ck-kpi-label'), vEl=k.querySelector('.ck-kpi-value');
+        if(!lEl||!vEl)continue;
+        var label=(lEl.textContent||'').replace(/\\s+/g,' ').trim();
+        var value=(vEl.textContent||'').replace(/\\s+/g,' ').trim();
+        if(!label||!value)continue;
+        var key=label+'\\u0001'+value;
+        if(seen[key])continue;                               /* de-dupe repeats */
+        seen[key]=1;
+        out.push({label:label.slice(0,80), value:value.slice(0,60)});
+      }
+      return out;
+    }catch(e){return [];}                                    /* never block an ask */
+  }
   function show(el){if(el)el.hidden=false;}
   function hide(el){if(el)el.hidden=true;}
   function askable(){return !!(health&&health.enabled&&health.reachable);}
@@ -5615,7 +5641,7 @@ _GUIDE_JS = """
       return true;
     }
     fetch('/api/guide/ask',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({route:route(),question:q}),
+      body:JSON.stringify({route:route(),question:q,onscreen_figures:scrapeOnscreen()}),
       signal:ctrl?ctrl.signal:undefined})
       .then(function(resp){return resp.json().then(function(j){return {status:resp.status,body:j};},
         function(){return {status:resp.status,body:{}};});})
