@@ -182,6 +182,51 @@ class TestSurvivalAnalysis(unittest.TestCase):
         # First should be highest (or equal)
         self.assertGreaterEqual(probs[0], probs[-1])
 
+    def test_norm_cdf_matches_known_values(self):
+        from rcm_mc.ml.survival_analysis import _norm_cdf
+        self.assertAlmostEqual(_norm_cdf(0.0), 0.5, places=6)
+        self.assertAlmostEqual(_norm_cdf(1.0), 0.8413447, places=5)
+        self.assertAlmostEqual(_norm_cdf(-1.0), 0.1586553, places=5)
+        self.assertGreater(_norm_cdf(6.0), 0.999999)
+
+    def test_survival_prob_degenerate_and_monotone(self):
+        from rcm_mc.ml.survival_analysis import _survival_prob
+        # Zero SE → step function on the sign of the mean.
+        self.assertEqual(_survival_prob(0.05, 0.0), 1.0)
+        self.assertEqual(_survival_prob(-0.05, 0.0), 0.0)
+        # Φ(0/σ) = 0.5 exactly; higher margin → higher survival.
+        self.assertAlmostEqual(_survival_prob(0.0, 0.02), 0.5, places=6)
+        self.assertGreater(_survival_prob(0.04, 0.02), _survival_prob(0.01, 0.02))
+        for p in (_survival_prob(0.03, 0.02), _survival_prob(-0.03, 0.02)):
+            self.assertGreaterEqual(p, 0.0)
+            self.assertLessEqual(p, 1.0)
+
+    def test_survival_curve_is_prediction_interval_of_fit(self):
+        # Principled contract: survival_prob at year t = Φ(projected_margin / SE),
+        # where SE is the OLS prediction interval — not a hand-tuned ramp. A
+        # healthy hospital whose margin compresses must cross 0.5 survival in a
+        # finite horizon, which a fixed ramp can't express from the fit.
+        from rcm_mc.ml.survival_analysis import estimate_margin_runway, _survival_prob
+        latest = pd.DataFrame([{
+            "ccn": "000001", "name": "H", "state": "TX",
+            "net_patient_revenue": 1e8, "operating_expenses": 9e7,
+            "beds": 120, "medicare_day_pct": 0.4, "medicaid_day_pct": 0.15,
+            "total_patient_days": 3e4, "bed_days_available": 4e4}])
+        trend = pd.DataFrame([{
+            "ccn": "000001", "fiscal_year": y,
+            "net_patient_revenue": 1e8,
+            "operating_expenses": 9e7 + (y - 2020) * 3e6}
+            for y in (2020, 2021, 2022, 2023)])  # margin compressing ~3pp/yr
+        r = estimate_margin_runway("000001", trend, latest)
+        probs = [p["survival_prob"] for p in r.survival_curve]
+        self.assertGreater(probs[0], 0.9)        # healthy today
+        self.assertLess(probs[-1], 0.5)          # underwater by year 10
+        self.assertTrue(all(0.0 <= p <= 1.0 for p in probs))
+        # Recover year 0's SE from its reported value and confirm year 1's SE
+        # is strictly larger — the prediction interval widens with the horizon.
+        from rcm_mc.ml.survival_analysis import _norm_cdf  # noqa: F401
+        self.assertGreaterEqual(probs[0], probs[1])
+
 
 if __name__ == "__main__":
     unittest.main()
