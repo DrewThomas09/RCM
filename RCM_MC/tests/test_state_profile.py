@@ -46,6 +46,15 @@ class StateProfileTests(unittest.TestCase):
         self.assertIn("vs U.S. median", h)
         self.assertIn("fabricated", h)
 
+    def test_page_leads_with_real_kpi_strip(self):
+        # X-Ray pattern: leading KPI strip computed from the real dossier
+        # (metrics reported / best national rank / above-median count).
+        h = render_state_profile({"state": ["TX"]})
+        self.assertIn("ck-kpi-strip", h)
+        self.assertIn("Metrics reported", h)
+        self.assertIn("Best national rank", h)
+        self.assertIn("Above U.S. median", h)
+
     def test_csv_has_vs_median_column(self):
         df = profile_dataframe("CA")
         self.assertIn("VsUSMedianPct", df.columns)

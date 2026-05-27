@@ -14,7 +14,7 @@ from __future__ import annotations
 import html as _html
 from typing import Dict, List, Tuple
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_page_title
 from rcm_mc.ui.data_public.state_compare_page import (
     _METRIC_BY_KEY,
     _METRICS,
@@ -176,9 +176,49 @@ def render_state_profile(params: Dict = None) -> str:
             f'</tr>'
         )
 
+    # Leading KPI strip (X-Ray pattern) — real computed summary of this state's
+    # dossier: how many metrics report it, its single best national rank, and
+    # how many directional metrics it beats the U.S. median on. No fabrication.
+    _reported = 0
+    _best_pos = None
+    _best_label = "—"
+    _best_n = 0
+    _above = 0
+    _direc = 0
+    for _key, _label, _src, _f2, _higher in _METRICS:
+        _pairs = ranked.get(_key, [])
+        _n = len(_pairs)
+        _pos = next((idx for idx, (s, _) in enumerate(_pairs, 1) if s == state),
+                    None)
+        _val = next((v for s, v in _pairs if s == state), None)
+        if _val is not None:
+            _reported += 1
+        if _pos is not None and (_best_pos is None or _pos < _best_pos):
+            _best_pos, _best_label, _best_n = _pos, _label, _n
+        if _val is not None and _higher is not None:
+            _med = _us_median([v for _, v in _pairs])
+            if _med not in (None, 0):
+                _delta = _val - _med
+                if _delta != 0:
+                    _direc += 1
+                    if (_delta > 0) if _higher else (_delta < 0):
+                        _above += 1
+    kpi_strip = (
+        '<div class="ck-kpi-strip" style="margin-bottom:14px">'
+        + ck_kpi_block("Metrics reported", str(_reported))
+        + ck_kpi_block(
+            "Best national rank",
+            (f"#{_best_pos}" if _best_pos is not None else "—"),
+            sub=(_html.escape(_best_label) + (f" · of {_best_n}" if _best_n
+                 else "")) if _best_pos is not None else "")
+        + ck_kpi_block("Above U.S. median",
+                       (f"{_above}/{_direc}" if _direc else "—"))
+        + '</div>'
+    )
     body = f"""
 <div class="ck-page-wrap">
   {ck_page_title(f"State Profile — {name}", eyebrow="MARKET INTEL", meta=f"Every real public-data metric for {name} ({state}), with its national rank")}
+  {kpi_strip}
   <p style="font-size:13px;color:{td};max-width:72ch;margin:0 0 14px">
     A single-state dossier across PEdesk's real public-data layers — each metric
     shown with {_html.escape(name)}'s gap to the U.S. median and its national rank
