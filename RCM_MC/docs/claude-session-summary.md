@@ -13,6 +13,39 @@ PR behind green CI (3.11/3.12/3.14) and auto-deployed to https://pedesk.app._
 - **DB**: SQLite via `rcm_mc/portfolio/store.py` (only module that talks to it).
 - **Tests**: stdlib `unittest` via pytest (~12.4k tests).
 
+## Addendum — 2026-05-27: regression inference/diagnostic suite
+
+A focused sprint making `/portfolio/regression` statistically complete. Every
+statistic is implemented from the correct formula in `finance/regression.py`
+(reusable + unit-tested), wired into the page's `_run_ols`, and surfaced with a
+plain-language verdict. No scipy — exact p-values reuse the incomplete-beta
+machinery already present (`f_pvalue`). All behaviorally verified against data
+with known properties; all merged behind green CI and deployed.
+
+- **#1021** — HC1 heteroskedasticity-robust (White sandwich) SEs + Breusch–Pagan
+  test + AIC/BIC. Coefficient inference now uses robust SEs; BP reports whether
+  that mattered.
+- **#1022** — Ramsey RESET functional-form test (is the linear shape right?).
+- **#1023** — **exact Student-t** coefficient p-values + t-based CIs, replacing
+  the normal approximation (`erfc`) and the flat 1.96 multiplier. The legacy
+  `_t_dist_cdf_approx` (which ignored df) now delegates to the exact function,
+  so `run_regression` is corrected too. Honest at small n (tight universe
+  filters), unchanged for large n.
+- **#1024** — Jarque–Bera residual-normality test (exact χ²(2) p = exp(−JB/2)).
+  Completes the residual trio: BP (variance) / RESET (mean shape) / JB
+  (distribution) — the normality JB checks is what validates the small-sample
+  t/F inference from #1023.
+- **#1025** — Shapley R² driver-importance decomposition (fair, additive split
+  of R² across correlated drivers; capped at 8 features, O(2^p)).
+- **#1026** — heteroskedasticity-robust joint F-test (HC1 Wald on the slopes,
+  F-form). The classical overall F assumed homoskedasticity that BP routinely
+  rejects on HCRIS data; this is the valid headline significance test.
+
+Considered but **deliberately not done**: an always-on CV R² (already exists via
+`run_cv_regression` behind the "Cross-validate" toggle — would have duplicated
+well-built code). Durbin–Watson autocorrelation (meaningless on cross-sectional
+data). Full-page render verified: all seven diagnostics appear, no NaN/inf leaks.
+
 ## Work completed this session
 
 ### 1. Statistical rigor (#960–#962, merged + deployed)
