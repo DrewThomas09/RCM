@@ -25,6 +25,8 @@ from ..finance.regression import breusch_pagan_test as _breusch_pagan
 from ..finance.regression import hc1_robust_se as _hc1_robust_se
 from ..finance.regression import information_criteria as _information_criteria
 from ..finance.regression import ramsey_reset_test as _ramsey_reset
+from ..finance.regression import t_critical_value as _t_critical_value
+from ..finance.regression import t_two_tailed_pvalue as _t_two_tailed_p
 from ..finance.leakage import (
     audit_features as _audit_leakage,
     forecasting_safe_features as _safe_features,
@@ -539,19 +541,20 @@ def _run_ols(
         info_criteria = _information_criteria(n, float(ss_res), p)
         t_stats = beta / np.where(se > 0, se, 1)
 
-        # P-values from t-distribution (approximation via normal for large n)
-        from math import erfc, sqrt
-        def _pval(t, df_):
-            return erfc(abs(t) / sqrt(2))
-
+        # Coefficient p-values use the EXACT Student-t distribution (incomplete
+        # beta), not a normal approximation: with a tight universe filter df can
+        # be small (n=15 targets → df≈12), where the normal tail overstates
+        # significance. The 95% CI uses the matching t critical value (2.18 at
+        # df=12, not 1.96) so interval width is honest at every sample size.
         dof = max(1, n - p - 1)
+        t_crit = _t_critical_value(dof, 0.05)
 
         coefficients = []
         for i, feat in enumerate(available):
             coef = beta[i + 1]
             se_i = se[i + 1] if i + 1 < len(se) else 0
             t_val = t_stats[i + 1]
-            p_val = _pval(t_val, dof)
+            p_val = _t_two_tailed_p(t_val, dof)
             sig = "***" if p_val < 0.001 else ("**" if p_val < 0.01 else ("*" if p_val < 0.05 else ""))
             # Unstandardized coefficient (in original units)
             unstd_coef = coef * y_std / X_std[i] if X_std[i] > 0 else 0
@@ -563,8 +566,8 @@ def _run_ols(
                 "t_stat": t_val,
                 "p_value": p_val,
                 "significance": sig,
-                "ci_low": coef - 1.96 * se_i,
-                "ci_high": coef + 1.96 * se_i,
+                "ci_low": coef - t_crit * se_i,
+                "ci_high": coef + t_crit * se_i,
             })
 
         # Intercept interpretation
@@ -771,6 +774,10 @@ def _run_ols(
             # Inference diagnostics: SEs are HC1-robust; BP reports whether the
             # homoskedasticity assumption is actually violated for this fit.
             "robust_se": True,
+            # Inference uses the exact Student-t (df = n - p - 1); CIs use the
+            # matching t critical value, so small-sample fits aren't overstated.
+            "resid_df": int(dof),
+            "t_critical": float(t_crit),
             "breusch_pagan": bp_test,
             "ramsey_reset": reset_test,
             # Model-selection criteria (lower = better; BIC penalizes params
@@ -1410,8 +1417,11 @@ def render_regression_page(
         '*** p&lt;0.001, ** p&lt;0.01, * p&lt;0.05.</p>'
         '<p class="ck-section-body" style="font-size:12px;">'
         'Standard errors are <strong>HC1 heteroskedasticity-robust</strong> '
-        '(White sandwich) &mdash; the t-stats, p-values and 95% CIs below use '
-        f'them. {_bp_verdict}{_reset_verdict}</p>'
+        '(White sandwich). P-values use the <strong>exact Student-t</strong> '
+        f'distribution (df={int(result.get("resid_df", 0))}) and the 95% CIs use '
+        f't<sub>0.975</sub>={result.get("t_critical", 1.96):.2f} &mdash; honest '
+        'at small sample sizes, not the 1.96 normal value. '
+        f'{_bp_verdict}{_reset_verdict}</p>'
         f'{_coef_fig}'
         '<table class="cad-table"><thead><tr>'
         '<th>Variable</th><th>Strength</th><th>t</th><th>p-value</th>'
