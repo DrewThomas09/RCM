@@ -11,7 +11,7 @@ class HomeHealthPageTests(unittest.TestCase):
     def test_national_view_has_map_summary_provenance(self):
         h = render_home_health({})
         self.assertIn("ck-page-title", h)
-        self.assertIn("usm-cell", h)                       # state tile-grid map
+        self.assertIn("usgeo-state", h)                     # real US state map
         self.assertIn("by state", h)                       # per-state summary table
         self.assertIn("6jpm-sxkc", h)                      # provenance
         self.assertIn("Medicare-certified agencies only", h)  # limitation
@@ -33,7 +33,7 @@ class HospicePageTests(unittest.TestCase):
     def test_national_view(self):
         h = render_hospice({})
         self.assertIn("ck-page-title", h)
-        self.assertIn("usm-cell", h)
+        self.assertIn("usgeo-state", h)
         self.assertIn("yc9t-dgbk", h)                      # provenance
         self.assertIn("Medicare-certified hospices only", h)
         self.assertIn("/hospice?state=", h)

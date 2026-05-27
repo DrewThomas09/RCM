@@ -453,7 +453,7 @@ def render_market_data(
     # Reusable US state tile-grid map, shaded by the selected metric. Real
     # HCRIS per-state aggregates (same data as the heatmap table below,
     # which is preserved). Local SVG — no external map tiles.
-    from .us_map import render_us_state_map
+    from .us_geo_map import render_us_geo_map
     _MAP_FMT = {
         "avg_margin": (lambda v: f"{v * 100:.1f}%", "operating margin"),
         "hhi": (lambda v: f"{v:,.0f}", "HHI concentration"),
@@ -469,13 +469,13 @@ def render_market_data(
             for s in stats if s.get(metric) is not None
         }
         state_map_panel = ck_panel(
-            render_us_state_map(
+            render_us_geo_map(
                 _state_vals, metric_label=_mlabel, value_format=_vfmt,
                 state_link_template="/market-data/state/{state}",
                 empty_message="No state-level HCRIS data available yet.",
             )
             + '<p style="font-size:11px;color:var(--sc-text-dim);margin:8px 0 0;">'
-            'State tile-grid map — cells represent states, not geographic area. '
+            'Real US state map shaded by the metric. '
             'Click a state to drill into its hospitals.</p>',
             title=f"State Map · {_mlabel}",
         )
