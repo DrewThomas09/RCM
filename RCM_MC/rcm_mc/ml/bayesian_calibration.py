@@ -1,13 +1,21 @@
 """Hierarchical Bayesian calibration for hospital KPI estimation.
 
-Beta-Binomial partial pooling for rate metrics (denial rate, collection
-rate, clean claim rate). Gamma-Lognormal for dollar metrics (AR days,
-cost to collect). Multilevel shrinkage by payer, state, hospital type.
+Rate metrics (denial rate, collection rate, clean claim rate) use a real
+Beta-Binomial conjugate update — the credible interval is the Beta
+posterior's own variance, not an assumption.
 
-When target data is thin, estimates shrink toward peer-group priors.
-When target data is rich, they converge to the observed values.
-This prevents unstable estimates from small samples while letting
-real evidence dominate as data grows.
+Continuous metrics (AR days, cost to collect) use a Normal-Normal conjugate
+mean update. We do NOT observe within-group dispersion, so the interval
+can't be a full Gamma/Lognormal posterior; instead the observation SD is
+approximated as cv * value, where cv is taken from the *spread of that
+metric's hospital-type priors* (see ``_prior_cv``) — a data-anchored proxy,
+not a blanket constant. A metric that swings a lot across hospital types
+honestly gets a wider band than a stable one.
+
+Either way: when target data is thin, estimates shrink toward peer-group
+priors; when it is rich, they converge to the observed values. This
+prevents unstable estimates from small samples while letting real evidence
+dominate as data grows.
 
 References: Gelman et al., Bayesian Data Analysis (3rd ed.)
 """
@@ -67,23 +75,53 @@ def _beta_posterior(
     return post_mean, post_strength, shrinkage, (ci_lo, ci_hi)
 
 
+_DEFAULT_CV = 0.15  # fallback dispersion when a prior has no by_type spread
+
+
+def _prior_cv(prior_info: Dict[str, Any]) -> float:
+    """Assumed coefficient of variation for a continuous metric, derived from
+    the spread of its hospital-type priors rather than a blanket constant.
+
+    We have no within-group observations to estimate dispersion from, so the
+    between-type spread (e.g. days_in_ar runs 38→52 across large→rural) is
+    the best data-anchored proxy: a metric that varies a lot by type gets a
+    wider interval. Falls back to ``_DEFAULT_CV`` when there's no by_type
+    structure to measure.
+    """
+    vals = list(prior_info.get("by_type", {}).values())
+    if len(vals) >= 2:
+        mean = float(np.mean(vals))
+        if mean:
+            cv = float(np.std(vals)) / abs(mean)
+            if cv > 0:
+                return cv
+    return _DEFAULT_CV
+
+
 def _gamma_posterior(
     prior_mean: float, prior_strength: float,
     observed_mean: float, observed_n: int,
+    cv: float = _DEFAULT_CV,
 ) -> Tuple[float, float, float, Tuple[float, float]]:
-    """Gamma conjugate update for positive-valued metrics (AR days, cost).
+    """Normal-Normal conjugate mean update for positive-valued metrics.
 
-    Uses Normal-Gamma approximation for simplicity.
+    Precision-weighted posterior mean of prior (worth ``prior_strength``
+    pseudo-obs) and data. The interval is the SE of that posterior mean under
+    an assumed observation SD of ``cv * post_mean`` — scaled off the
+    *posterior* mean (not the prior) so the band sits around the estimate it
+    describes. NOT a full Gamma/Lognormal posterior: we don't observe
+    within-group dispersion, so ``cv`` stands in for it (see ``_prior_cv``).
     """
     if observed_n == 0:
-        return prior_mean, prior_strength, 1.0, (prior_mean * 0.5, prior_mean * 1.5)
+        se = cv * prior_mean / sqrt(max(1.0, prior_strength))
+        return prior_mean, prior_strength, 1.0, (
+            max(0, prior_mean - 1.645 * se), prior_mean + 1.645 * se)
 
     total_weight = prior_strength + observed_n
     post_mean = (prior_mean * prior_strength + observed_mean * observed_n) / total_weight
     shrinkage = prior_strength / total_weight
 
-    # Approximate 90% CI
-    se = prior_mean * 0.15 / sqrt(max(1, total_weight))
+    se = cv * post_mean / sqrt(total_weight)
     ci_lo = max(0, post_mean - 1.645 * se)
     ci_hi = post_mean + 1.645 * se
 
@@ -189,18 +227,16 @@ def calibrate_continuous_metric(
     hosp_type = _classify_hospital_type(beds)
     prior_mean = prior_info["by_type"].get(hosp_type, prior_info["mean"])
     prior_strength = prior_info["strength"]
+    cv = _prior_cv(prior_info)
 
     if observed_mean is not None and observed_n > 0:
         post_mean, post_strength, shrinkage, ci = _gamma_posterior(
-            prior_mean, prior_strength, observed_mean, observed_n)
+            prior_mean, prior_strength, observed_mean, observed_n, cv)
         obs_mean = observed_mean
         quality = "strong" if observed_n >= 100 else ("moderate" if observed_n >= 30 else "weak")
     else:
-        post_mean = prior_mean
-        post_strength = prior_strength
-        shrinkage = 1.0
-        se = prior_mean * 0.15
-        ci = (max(0, prior_mean - 1.645 * se), prior_mean + 1.645 * se)
+        post_mean, post_strength, shrinkage, ci = _gamma_posterior(
+            prior_mean, prior_strength, 0.0, 0, cv)
         obs_mean = 0
         quality = "prior_only"
 
