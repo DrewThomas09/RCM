@@ -94,5 +94,35 @@ class NewMetricsAreUsable(unittest.TestCase):
         self.assertEqual(m.formula_confidence.name, "NOT_APPLICABLE")
 
 
+class BackendConceptDocsArePresent(unittest.TestCase):
+    """The Guide must be able to explain the backend ENGINES, not just pages /
+    metrics. These concept cards (docs/rag_sources/) are what RAG retrieves for
+    "how does the simulation / bridge / quant stack / prediction work" — pin
+    that they're in the corpus. Offline: enumerates the RAG sources, no Ollama."""
+
+    def _doc_blob(self):
+        from rcm_mc.assistant.rag.document_sources import iter_guide_documents
+        docs = [d for d in iter_guide_documents() if d.source_type == "doc"]
+        return " ".join((d.title + " " + (d.file_path or "")).lower()
+                        for d in docs)
+
+    def test_core_engines_have_a_concept_doc(self):
+        blob = self._doc_blob()
+        for concept in ("monte_carlo", "value_creation_bridge", "quant_stack",
+                        "analysis_packet", "ridge_conformal", "scenario_engine",
+                        "provenance_and_data_quality"):
+            self.assertIn(concept, blob,
+                          f"Guide corpus missing a backend concept doc: {concept}")
+
+    def test_survival_doc_states_not_kaplan_meier(self):
+        # Honesty guard: the survival concept card must NOT claim KM/Cox.
+        from rcm_mc.assistant.rag.document_sources import iter_guide_documents
+        qs = next((d for d in iter_guide_documents()
+                   if d.source_type == "doc" and "quant_stack" in (d.file_path or "")),
+                  None)
+        self.assertIsNotNone(qs, "quant_stack concept doc missing")
+        self.assertIn("NOT Kaplan-Meier", qs.text)
+
+
 if __name__ == "__main__":
     unittest.main()
