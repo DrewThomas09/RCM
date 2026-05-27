@@ -170,16 +170,14 @@ class SegmentedRegressionResult:
 
 
 def _t_dist_cdf_approx(t: float, df: int) -> float:
-    """Approximate two-tailed p-value for t-distribution."""
-    x = abs(t)
-    if df <= 0:
-        return 1.0
-    a = 1.0 / (1.0 + 0.2316419 * x)
-    poly = a * (0.319381530 + a * (-0.356563782 + a * (
-        1.781477937 + a * (-1.821255978 + 1.330274429 * a))))
-    pdf = np.exp(-0.5 * x * x) / np.sqrt(2 * np.pi)
-    one_tail = pdf * poly
-    return min(2 * one_tail, 1.0)
+    """Two-tailed p-value for a t statistic.
+
+    Back-compat shim: the original body was a normal-tail approximation that
+    ignored ``df`` (Abramowitz–Stegun 26.2.17) and so overstated significance
+    in small samples. It now delegates to the EXACT ``t_two_tailed_pvalue``;
+    the name is retained only because existing call sites reference it.
+    """
+    return t_two_tailed_pvalue(t, df)
 
 
 def _betacf(a: float, b: float, x: float) -> float:
@@ -245,6 +243,48 @@ def f_pvalue(f_stat: float, df_model: int, df_resid: int) -> float:
         return 1.0
     x = df_resid / (df_resid + df_model * float(f_stat))
     return float(_betai(df_resid / 2.0, df_model / 2.0, x))
+
+
+def t_two_tailed_pvalue(t_stat: float, df: int) -> float:
+    """Exact two-tailed p-value of a Student-t statistic — P(|T_df| > |t|).
+
+    Uses the incomplete beta (same machinery as ``f_pvalue``) because
+    F(1, df) = t²(df), so P(|T_df| > |t|) = P(F_{1,df} > t²) = I_x(df/2, 1/2)
+    with x = df/(df + t²). This is EXACT (to ~1e-10), not the normal-tail
+    approximation the legacy ``_t_dist_cdf_approx`` returned — which ignored
+    df entirely and so overstated significance for small samples. For a
+    universe filter that leaves only n=15 hospitals, df is tiny and the
+    normal approximation is materially too optimistic; this is the honest
+    p-value at every sample size and converges to the normal as df→∞.
+    """
+    if df < 1:
+        return 1.0
+    t = abs(float(t_stat))
+    if t == 0.0:
+        return 1.0
+    x = df / (df + t * t)
+    return float(_betai(df / 2.0, 0.5, x))
+
+
+def t_critical_value(df: int, alpha: float = 0.05) -> float:
+    """Two-sided critical t value t_{df, 1-alpha/2} for confidence intervals.
+
+    Inverts ``t_two_tailed_pvalue`` by bisection (monotone in t), so a 95%
+    CI uses the correct t multiplier — 2.57 at df=5, 2.23 at df=10 — instead
+    of the flat 1.96 normal value, which understates interval width (and thus
+    overstates precision) for the small samples a tight universe filter
+    produces. Converges to 1.96 as df→∞.
+    """
+    if df < 1:
+        return 1.959963985
+    lo, hi = 0.0, 1000.0
+    for _ in range(100):
+        mid = 0.5 * (lo + hi)
+        if t_two_tailed_pvalue(mid, df) > alpha:
+            lo = mid
+        else:
+            hi = mid
+    return 0.5 * (lo + hi)
 
 
 def hc1_robust_se(
