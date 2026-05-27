@@ -31,11 +31,20 @@ class TopbarDropdownTests(unittest.TestCase):
         self.assertEqual(self.html.count("ck-nav-mega"), 6)  # +Source
 
     def test_menu_lists_the_sections_subpages(self):
-        # Research mega-menu surfaces its sub-nav entries as numbered items.
-        for item in _SUB_NAV["research"]:
+        # The mega-menu surfaces the section's TOP-RANKED surfaces (top-6 +
+        # a "More →" link), not every curated _SUB_NAV entry — that's the
+        # post-#924 ranked-nav design. Assert it shows exactly the items it
+        # ranked in (self-consistent → robust across environments / ranking
+        # data) rather than pinning to a specific page that may rank in or out.
+        from rcm_mc.ui._chartis_kit import _ranked_subnav_items
+        top, has_more = _ranked_subnav_items("research")
+        self.assertTrue(top, "research mega-menu surfaced no ranked items")
+        for item in top:
             self.assertIn(item["label"], self.html)
         self.assertIn('class="ck-mega-item" role="menuitem"', self.html)
         self.assertIn(">01.<", self.html)              # numbered
+        if has_more:
+            self.assertIn("All Research tools", self.html)  # More → link
 
     def test_mega_menu_has_featured_left_panel(self):
         # The "cool little thing on the left" — a featured section card.
