@@ -26,6 +26,7 @@ from ..finance.regression import hc1_robust_se as _hc1_robust_se
 from ..finance.regression import information_criteria as _information_criteria
 from ..finance.regression import ramsey_reset_test as _ramsey_reset
 from ..finance.regression import jarque_bera_test as _jarque_bera
+from ..finance.regression import shapley_r2_decomposition as _shapley_r2
 from ..finance.regression import t_critical_value as _t_critical_value
 from ..finance.regression import t_two_tailed_pvalue as _t_two_tailed_p
 from ..finance.leakage import (
@@ -541,6 +542,10 @@ def _run_ols(
         reset_test = _ramsey_reset(X_aug, y, y_hat)
         jb_test = _jarque_bera(resid)
         info_criteria = _information_criteria(n, float(ss_res), p)
+        # Relative importance: fairly split R² across (possibly correlated)
+        # drivers via Shapley values. Capped at 8 features (2^8 subset fits);
+        # None above that, so the panel simply doesn't render.
+        shapley = _shapley_r2(X_norm, y, available, max_features=8)
         t_stats = beta / np.where(se > 0, se, 1)
 
         # Coefficient p-values use the EXACT Student-t distribution (incomplete
@@ -783,6 +788,9 @@ def _run_ols(
             "breusch_pagan": bp_test,
             "ramsey_reset": reset_test,
             "jarque_bera": jb_test,
+            # Shapley R² decomposition (None when > 8 features) — each driver's
+            # fair, additive share of the explained variance.
+            "shapley_r2": shapley,
             # Model-selection criteria (lower = better; BIC penalizes params
             # harder than AIC). Lets the reader see the fit is parsimony-
             # justified, not just high-R².
@@ -1472,6 +1480,39 @@ def render_regression_page(
         f'{_vif_bar_chart(result["vifs"])}',
         title="Variance Inflation Factors",
     ) if result.get("vifs") else ""
+
+    # ── Relative importance (Shapley R² decomposition) ──
+    # The unique fair, additive split of the model's R² across drivers — it
+    # answers "which lever explains the most?" without the double-counting a
+    # univariate r suffers on correlated predictors. Capped at 8 features.
+    _shap = result.get("shapley_r2")
+    if _shap:
+        _shap_rows = "".join(
+            '<tr>'
+            f'<td>{_html.escape(s["feature"].replace("_", " ").title())}</td>'
+            f'<td class="num">{s["r2_share"]:.3f}</td>'
+            f'<td class="num">{s["pct_of_r2"]:.1f}%</td>'
+            '<td><div style="background:#155752;height:10px;'
+            f'width:{max(1.0, min(100.0, s["pct_of_r2"])):.1f}%;"></div></td>'
+            '</tr>'
+            for s in _shap
+        )
+        shapley_section = ck_panel(
+            '<p class="ck-section-body">'
+            'Each driver&rsquo;s <strong>fair share of the explained variance</strong>, '
+            'computed as Shapley values (the average marginal R&sup2; contribution over '
+            'every order features could enter the model). Unlike a univariate correlation '
+            'it does not double-count variance shared between correlated predictors, and '
+            'unlike a standardized coefficient the shares are <strong>additive</strong> '
+            f'&mdash; they sum to the model&rsquo;s R&sup2; ({result.get("r2", 0):.1%}). '
+            'This is the honest answer to &ldquo;which lever matters most?&rdquo;</p>'
+            '<table class="cad-table"><thead><tr>'
+            '<th>Driver</th><th>R&sup2; share</th><th>% of R&sup2;</th><th>&nbsp;</th>'
+            f'</tr></thead><tbody>{_shap_rows}</tbody></table>',
+            title="Driver Importance (Shapley R&sup2;)",
+        )
+    else:
+        shapley_section = ""
 
     # ── Hospital outliers (residual analysis) ──
     # Phase-2: surface segment_label so the partner immediately
@@ -2291,7 +2332,7 @@ def render_regression_page(
     )
 
     # ── Layout: 2-column for some sections ──
-    left_col = f'{coef_section}{tcorr_section}{outlier_section}'
+    left_col = f'{coef_section}{shapley_section}{tcorr_section}{outlier_section}'
     right_col = f'{vif_section}{state_section}{corr_section}'
 
     rg_styles = """

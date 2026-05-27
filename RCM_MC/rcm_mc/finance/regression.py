@@ -471,6 +471,78 @@ def information_criteria(
     return out
 
 
+def _subset_r2(x: np.ndarray, y: np.ndarray) -> float:
+    """In-sample R² of OLS(y ~ x + intercept) for a column subset (helper)."""
+    if x.shape[1] == 0:
+        return 0.0
+    xa = np.column_stack([np.ones(len(y)), x])
+    beta = np.linalg.lstsq(xa, y, rcond=None)[0]
+    resid = y - xa @ beta
+    ss_tot = float(np.sum((y - y.mean()) ** 2))
+    if ss_tot <= 0:
+        return 0.0
+    return 1.0 - float(np.sum(resid ** 2)) / ss_tot
+
+
+def shapley_r2_decomposition(
+    x: np.ndarray, y: np.ndarray, feature_names: List[str], max_features: int = 8
+) -> Optional[List[Dict[str, Any]]]:
+    """Fairly attribute the model's R² to each feature (Shapley / LMG values).
+
+    A standardized coefficient is a *partial* effect (holding the others fixed)
+    and a univariate correlation *double-counts* variance shared between
+    correlated predictors — neither answers "what share of the explained
+    variance does this driver actually own?". The Shapley value averages a
+    feature's marginal R² contribution over every order in which features could
+    enter the model, which is the unique attribution that is both fair to
+    correlated predictors and exactly additive: the shares sum to the full-model
+    R². For two collinear drivers with equal effect it splits their shared
+    variance 50/50 rather than crediting both fully.
+
+        φ_i = Σ_{S ⊆ N\\{i}}  |S|!(p-|S|-1)!/p! · (R²(S∪{i}) − R²(S))
+
+    Each marginal is ≥ 0 (R² is monotone in OLS), so every share is non-negative.
+
+    Cost is O(2^p) subset fits, so this is capped at ``max_features`` (default 8
+    ⇒ 256 fits); above the cap it returns None and the caller shows nothing
+    rather than an approximation. Returns a list sorted by descending share,
+    each entry carrying the absolute R² share and its percent of total R².
+    """
+    from itertools import combinations
+    from math import factorial
+
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    p = x.shape[1] if x.ndim == 2 else 0
+    if p < 1 or p != len(feature_names) or p > max_features or len(y) <= p + 1:
+        return None
+    feats = list(range(p))
+    # Cache R² for every subset so each is fit exactly once.
+    cache: Dict[Tuple[int, ...], float] = {(): 0.0}
+    for r in range(1, p + 1):
+        for S in combinations(feats, r):
+            cache[S] = _subset_r2(x[:, list(S)], y)
+    full_r2 = cache[tuple(feats)]
+    phi = np.zeros(p)
+    for i in feats:
+        others = [f for f in feats if f != i]
+        for r in range(len(others) + 1):
+            w = factorial(r) * factorial(p - r - 1) / factorial(p)
+            for S in combinations(others, r):
+                with_i = tuple(sorted(S + (i,)))
+                phi[i] += w * (cache[with_i] - cache[tuple(sorted(S))])
+    out = []
+    for i, name in enumerate(feature_names):
+        share = float(phi[i])
+        out.append({
+            "feature": name,
+            "r2_share": share,
+            "pct_of_r2": (share / full_r2 * 100.0) if full_r2 > 0 else 0.0,
+        })
+    out.sort(key=lambda d: -d["r2_share"])
+    return out
+
+
 def compute_vif(features_df: pd.DataFrame) -> Dict[str, float]:
     """Variance Inflation Factor per feature column.
 
