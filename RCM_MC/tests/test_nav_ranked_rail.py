@@ -36,11 +36,21 @@ class RankedRailTests(unittest.TestCase):
             h = chartis_shell("<p>x</p>", "T", active_nav="/" + sec)
             self.assertIn(f"/best/{sec}", h, sec)
 
-    def test_short_section_not_padded(self):
+    def test_short_section_backfilled_to_full_bar_with_real_routes_only(self):
+        # A section short on strong-ranked pages is backfilled from the curated
+        # rail to a fuller bar (target 4-6), but ONLY with real-tier routes —
+        # never padded with illustrative/synthetic pages. (User ask: 4-6
+        # functions per top button; honesty gate still holds.)
         from rcm_mc.ui._chartis_kit import _ranked_subnav_items
-        # portfolio has 4 curated entries → all shown, no fabrication.
-        top, _ = _ranked_subnav_items("portfolio")
-        self.assertEqual(len(top), 4)
+        from rcm_mc.diligence.surface_status import classify_surface
+        for sec in ("pipeline", "portfolio"):
+            top, _ = _ranked_subnav_items(sec)
+            self.assertGreaterEqual(len(top), 4, f"{sec} bar too sparse: {top}")
+            self.assertLessEqual(len(top), 6, sec)
+            for s in top:
+                tier = classify_surface(s["href"]).get("tier")
+                self.assertIn(tier, ("green", "navy", "data_required"),
+                              f"{sec}: padded with non-real {s['href']} ({tier})")
 
     def test_front_facing_gate_no_weak_tiers_in_bars(self):
         # "Front facing shows evidence of good things": no illustrative (yellow)

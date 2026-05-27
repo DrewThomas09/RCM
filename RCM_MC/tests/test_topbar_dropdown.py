@@ -47,10 +47,13 @@ class TopbarDropdownTests(unittest.TestCase):
             self.assertIn("All Research tools", self.html)  # More → link
 
     def test_mega_menu_has_featured_left_panel(self):
-        # The "cool little thing on the left" — a featured section card.
+        # The "cool little thing on the left" — a featured section card: a
+        # clickable lede (kicker · headline · pull-quote) linking to the
+        # section, plus the "All X tools" CTA below it.
         self.assertIn("ck-mega-feat", self.html)
         self.assertIn("SECTION · RESEARCH", self.html)
-        self.assertIn("Open Research", self.html)
+        self.assertIn('class="ck-mega-feat" href=', self.html)  # lede is a link
+        self.assertIn("All Research tools", self.html)           # explicit CTA
 
     def test_home_has_no_dropdown(self):
         # Home is the dashboard root — bare link, no group/caret.

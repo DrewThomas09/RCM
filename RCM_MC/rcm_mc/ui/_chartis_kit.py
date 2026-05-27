@@ -308,20 +308,47 @@ def _ranked_subnav_items(sect: str):
     pool = strong or ranked
     # Dedupe alias routes for the same page (e.g. /regulatory-calendar and
     # /diligence/regulatory-calendar) by label, keeping the highest-ranked —
-    # so a bar never shows the same destination twice.
+    # so a bar never shows the same destination twice. Skip "All X →" sentinel
+    # links (they aren't real leaves; the mega-menu has its own all-tools CTA).
     top, seen = [], set()
+
+    def _add(label: str, href: str) -> None:
+        label = (label or "").strip()
+        key = label.lower()
+        if not label or not href or key in seen or "→" in label:
+            return
+        seen.add(key)
+        top.append({"label": label, "href": href})
+
     for r in pool:
         c = cur.get(r["route"], {})
-        label = c.get("label") or r.get("label") or r["route"]
-        key = label.strip().lower()
-        if key in seen:
-            continue
-        seen.add(key)
-        top.append({"label": label, "href": r["route"]})
+        _add(c.get("label") or r.get("label") or r["route"], r["route"])
         if len(top) >= 6:
             break
-    if not top:  # manifest empty for this section — keep the curated rail
-        top = list(_SUB_NAV.get(sect, []))[:6]
+    # Backfill to a fuller bar (target 4-6 destinations) from the curated rail
+    # when the strong-ranked pool is short, so every section button opens a
+    # populated mega-menu rather than 2-3 lonely links. GATED to real tiers
+    # (green / navy / data_required): never pad the prime nav with yellow
+    # (illustrative seed-corpus) or red (synthetic) pages — that honesty gate is
+    # foundational ("front facing shows real things"); illustrative surfaces
+    # stay demoted to the ranked /best/<section> index with their tier dot.
+    if len(top) < 6:
+        try:
+            from rcm_mc.diligence.surface_status import classify_surface as _cls
+        except Exception:  # noqa: BLE001
+            _cls = None
+        for s in _SUB_NAV.get(sect, []):
+            if not isinstance(s, dict):
+                continue
+            href = s.get("href", "")
+            if _cls is not None and _cls(href).get("tier") not in (
+                    "green", "navy", "data_required"):
+                continue
+            _add(s.get("label", ""), href)
+            if len(top) >= 6:
+                break
+    if not top:  # manifest + curated both empty — nothing to show
+        top = [s for s in _SUB_NAV.get(sect, []) if isinstance(s, dict)][:6]
     has_more = len(ranked) > len(top) or len(cur) > len(top)
     return top, has_more
 
@@ -4299,7 +4326,7 @@ _CSS_INLINE_FALLBACK = """
     to{opacity:1; transform:translateY(0);} }
   .ck-mega-inner { max-width:var(--content-max); margin:0 auto;
     padding:32px 32px 28px; display:grid; grid-template-columns:2fr 3fr;
-    gap:56px; align-items:stretch; }
+    gap:56px; align-items:start; }
   /* Shown mega = block (the centered 2fr/3fr grid lives on .ck-mega-inner). */
   .ck-nav-group:hover > .ck-nav-mega,
   .ck-nav-group.is-open > .ck-nav-mega { display:block; }
@@ -4334,13 +4361,12 @@ _CSS_INLINE_FALLBACK = """
     font-size:15px; line-height:1.45; color:var(--tb-ink2); max-width:40ch;
     border-left:2px solid var(--tb-green); padding-left:14px;
     white-space:normal; overflow-wrap:anywhere; word-break:break-word; }
-  .ck-mega-feat-go { font-family:var(--sc-mono,monospace);
-    font-size:10.5px; letter-spacing:.12em; text-transform:uppercase;
-    color:var(--tb-muted); transition:color .12s; }
-  .ck-mega-feat:hover .ck-mega-feat-go { color:var(--tb-green); }
-  /* Anchored all-tools CTA — pinned to the bottom of the lede with a dashed
-     top rule (design's "open the whole section" link → ranked /best index). */
-  .ck-mega-all { margin-top:auto; padding-top:16px;
+  /* All-tools CTA — flows directly under the pull-quote with a dashed top
+     rule (design's "open the whole section" link → ranked /best index). Uses
+     a fixed top margin in normal flow — NOT margin-top:auto — so it can never
+     float onto/over the blurb when a short section's listing column is
+     shorter than the lede (the overlap bug). */
+  .ck-mega-all { margin-top:20px; padding-top:14px;
     border-top:1px dashed var(--tb-rule);
     font-family:var(--sc-mono,monospace); font-size:11px; letter-spacing:.14em;
     text-transform:uppercase; color:var(--tb-green); text-decoration:none;
@@ -7104,6 +7130,10 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
             f'{_esc(_head)} <em>{_esc(_tail)}</em>' if _head
             else f'<em>{_esc(_title)}</em>'
         )
+        # The lede card is one clickable link to the section landing (kicker ·
+        # headline · pull-quote); the explicit CTA below it is "All X tools".
+        # No separate "Open X →" line — it stacked awkwardly with the all-tools
+        # CTA and cluttered the column.
         feature = (
             '<a class="ck-mega-feat" href="' + _esc(feat.get("href", item["href"])) + '">'
             '<span class="ck-mega-kicker">'
@@ -7111,7 +7141,6 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
             f'<span class="ck-mega-feat-eyebrow">{_esc(feat.get("eyebrow", ""))}</span></span>'
             f'<span class="ck-mega-feat-title">{_title_html}</span>'
             f'<span class="ck-mega-feat-blurb">{_esc(feat.get("blurb", ""))}</span>'
-            f'<span class="ck-mega-feat-go">Open {_esc(_nav_label(item["label"]))} &rarr;</span>'
             '</a>'
         )
         # All-tools CTA — anchored at the bottom of the lede column (design),
