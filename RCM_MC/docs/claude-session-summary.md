@@ -68,16 +68,33 @@ PR behind green CI (3.11/3.12/3.14) and auto-deployed to https://pedesk.app._
   and the `/diligence/snapshot` upload UI. The generic prompt's "build a
   snapshot ingestion framework" is largely done; improve it, don't rebuild it.
 
+### 5. Guide depth — metric/source links + registry expansion (#974–#977)
+- Wired real `metric_ids` onto 12 core analytic pages (#974); expanded the
+  metric registry **60 → 68** with HHI, CR3/CR5, DSCR, TVPI/DPI/RVPI, CMS
+  five-star (NOT_APPLICABLE formula), and days-cash-on-hand, each with a
+  textbook formula + honest caveats, and linked them to the pages that use
+  them (#975); linked `data_source_ids` on HCRIS / CMS Care Compare / portfolio
+  pages (#977, "no data sources" advisory 149 → 6).
+- Added an offline context-sufficiency regression guard
+  (`tests/test_guide_context_sufficiency.py`, #976) pinning placeholders ≈ 0,
+  core routes STRONG, and (route → metric) sufficiency.
+
+### 6. Surgical UI enrichment — geo suite KPI strips (#978–#982)
+- The geographic-intelligence suite rendered dense real-data tables but lacked
+  the leading KPI strip that defines the X-Ray / Command Center look. Added one
+  — computed from the SAME real data, no fabrication — to **State Comparison,
+  State Rankings, State Profile, County Explorer, and Metro Markets**. Each has
+  a test pinning the strip renders with computed (not hard-coded) values.
+
 ## Recommended next improvements
 
-1. Expand the metric registry (60) and data-source registry (49) so the Guide
-   answers even deeper quantitative questions; wire metric_ids onto any
-   remaining documented pages that lack them.
-2. Enable Ollama on the droplet and run the Guide eval harness
+1. Enable Ollama on the droplet and run the Guide eval harness
    (`tests/test_guide_eval.py`) against real questions to validate answer
    quality end-to-end.
-3. Surgical UI enrichment of any verified thin/table-only page (KPI lead + a
-   chart), one PR at a time — not a blanket migration.
+2. Continue surgical UI enrichment only where a page is genuinely thin AND
+   real-data-backed (verified case-by-case) — not a blanket migration.
+3. Further metric/data-source registry depth as new pages reference new
+   concepts.
 
 ## Guardrails honored
 
