@@ -49,6 +49,16 @@ class StateCompareTests(unittest.TestCase):
         # honesty language present
         self.assertIn("fabricated", h)
 
+    def test_page_leads_with_real_kpi_strip(self):
+        # X-Ray pattern: the page leads with a KPI strip computed from the
+        # real data (states compared / metrics with data / leading state),
+        # not just a table.
+        h = render_state_compare({"states": ["CA,TX,NY"]})
+        self.assertIn("ck-kpi-strip", h)
+        self.assertIn("States compared", h)
+        self.assertIn("Metrics with data", h)
+        self.assertIn(">3<", h)  # 3 states compared, computed not hard-coded
+
     def test_national_medians_are_real(self):
         meds = national_medians()
         # most metrics have a national median; values are finite numbers

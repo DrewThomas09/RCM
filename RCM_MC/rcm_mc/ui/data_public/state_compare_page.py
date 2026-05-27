@@ -14,7 +14,7 @@ from __future__ import annotations
 import html as _html
 from typing import Dict, List
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_page_title
 
 _DEFAULT = ["CA", "TX", "FL"]
 _VALID = {
@@ -305,9 +305,40 @@ def render_state_compare(params: Dict = None) -> str:
         f'<a href="/screen?state={s}" style="color:{ac};text-decoration:none">{s}</a>'
         for s in states
     )
+
+    # Leading KPI strip (real computed values, X-Ray pattern): how much is being
+    # compared and who leads on the first directional metric that actually has
+    # a spread. No fabrication — derived from the same real data as the table.
+    _n_metrics = sum(
+        1 for k, *_ in _METRICS
+        if any(raws[s].get(k) is not None and raws[s][k] == raws[s][k]
+               for s in states))
+    _lead_label = _lead_state = "—"
+    for _key, _metric, _src2, _f2, _higher in _METRICS:
+        _present = [(s, raws[s][_key]) for s in states
+                    if raws[s].get(_key) is not None
+                    and raws[s][_key] == raws[s][_key]]
+        if _higher is not None and len(_present) >= 2:
+            _vals = [v for _, v in _present]
+            if max(_vals) != min(_vals):
+                _best_v = max(_vals) if _higher else min(_vals)
+                _lead_state = next(s for s, v in _present if v == _best_v)
+                _lead_label = _metric
+                break
+    kpi_strip = (
+        '<div class="ck-kpi-strip" style="margin-bottom:14px">'
+        + ck_kpi_block("States compared", str(len(states)))
+        + ck_kpi_block("Metrics with data", str(_n_metrics))
+        + ck_kpi_block(
+            "Leads " + _html.escape(_lead_label) if _lead_label != "—"
+            else "Leading state",
+            _html.escape(_lead_state))
+        + '</div>'
+    )
     body = f"""
 <div class="ck-page-wrap">
   {ck_page_title("State Comparison", eyebrow="MARKET INTEL", meta="Side-by-side across every real state-keyed public dataset — CMS · CDC · HRSA · Census")}
+  {kpi_strip}
   <p style="font-size:13px;color:{td};max-width:72ch;margin:0 0 14px">
     Compare states across PEdesk's real public-data layers, with a trailing
     U.S.-median column for national context. Per metric, the
