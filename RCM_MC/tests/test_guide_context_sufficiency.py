@@ -142,6 +142,17 @@ class CoverageBackfillResolves(unittest.TestCase):
             self.assertTrue(m.definition and m.caveats and m.caveats != [_NEEDS],
                             f"{mid} lacks definition/caveats")
 
+    def test_geo_suite_has_real_data_source_lineage(self):
+        # The geo pages render from real public sources (CHR/Census, CDC PLACES,
+        # CMS, HRSA, OIG) — the Guide must be able to answer "where's this from".
+        for route in ("/state-compare", "/geo-map", "/county-explorer",
+                      "/geo-metrics", "/state-profile", "/metro-markets"):
+            pkt = build_guide_context_packet(route)
+            sids = {s.source_id for s in pkt.data_source_contexts}
+            self.assertTrue(sids, f"{route} has no linked data source")
+            self.assertEqual(pkt.context_quality, "strong",
+                             f"{route} should grade strong with sources")
+
     def test_synonym_aliases_resolve_to_their_metric(self):
         from rcm_mc.assistant.context.get_metric_context import get_metric_context
         for label, mid in (("Weighted MOIC", "moic"), ("Median IRR", "irr"),

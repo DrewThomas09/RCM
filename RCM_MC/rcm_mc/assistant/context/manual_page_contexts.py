@@ -7611,6 +7611,30 @@ for _csv, (_parent_label, _parent_route) in _CSV_EXPORTS.items():
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ))
 
+# ── Geographic Intelligence data-source lineage ───────────────────────────
+# The geo suite renders from a shared metric table (state_compare._METRICS)
+# whose every metric carries a real public source — all 9 are registered. Link
+# them so the Guide can answer "where does this come from / how fresh is it"
+# with real cadence + limitations, instead of going source-blind. Verified
+# against the page modules (no fabrication): state-mode pages + county-explorer
+# use the full set; metro-markets uses CBSA + Census demographics.
+_GEO_SOURCES_9 = [
+    "chr_county_demographics", "cdc_places", "cms_hcahps", "cms_ma_geo",
+    "cms_mssp_aco", "cms_ffs_provider_enrollment", "cms_chow", "hrsa_hpsa",
+    "oig_leie",
+]
+_GEO_SOURCE_LINKS = {
+    "/geo-intel": _GEO_SOURCES_9, "/geo-map": _GEO_SOURCES_9,
+    "/geo-metrics": _GEO_SOURCES_9, "/state-compare": _GEO_SOURCES_9,
+    "/state-peers": _GEO_SOURCES_9, "/state-profile": _GEO_SOURCES_9,
+    "/state-rankings": _GEO_SOURCES_9, "/county-explorer": _GEO_SOURCES_9,
+    "/metro-markets": ["cbsa_crosswalk", "chr_county_demographics"],
+}
+for _c in _MANUAL:
+    _sids = _GEO_SOURCE_LINKS.get(_c.route)
+    if _sids and not (getattr(_c, "data_source_ids", None) or []):
+        _c.data_source_ids = list(_sids)
+
 # ── Related-route hygiene ──────────────────────────────────────────────
 # The Guide must never hand the user a cross-link that points nowhere. Repoint
 # a few known-wrong/sub-action links to the right mapped page, normalize
