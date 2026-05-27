@@ -7175,5 +7175,28 @@ for _c in _MANUAL:
                 _have.append(_mid)
         _c.metric_ids = _have
 
+# Data-source links for data-backed analytic pages that had a metric link but
+# no source link, so the Guide can answer "where does this come from / how
+# fresh / what are its limits". Only HIGH-confidence, unambiguous provenance —
+# illustrative scenario tools are correctly left source-less, and pages whose
+# provenance is ambiguous are skipped rather than mislabeled.
+_DATA_SOURCE_LINK_PATCHES: Dict[str, List[str]] = {
+    "/cost-structure": ["cms_hcris"],
+    "/debt-service": ["cms_hcris"],
+    "/diligence/xray": ["cms_hcris"],
+    "/market-data": ["cms_hcris"],
+    "/payer-stress": ["cms_hcris"],
+    "/competitive-intel": ["cms_hcris"],
+    "/dialysis": ["cms_care_compare"],
+    "/nursing-homes": ["cms_care_compare"],
+    "/inpatient-rehab": ["cms_care_compare"],
+    "/long-term-care-hospital": ["cms_care_compare"],
+    "/lp-reporting": ["portfolio_snapshot"],
+}
+for _c in _MANUAL:
+    _sp = _DATA_SOURCE_LINK_PATCHES.get(_c.route)
+    if _sp and not _c.data_source_ids:
+        _c.data_source_ids = list(_sp)
+
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
