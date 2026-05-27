@@ -7198,5 +7198,30 @@ for _c in _MANUAL:
     if _sp and not _c.data_source_ids:
         _c.data_source_ids = list(_sp)
 
+# Batch-2 metric links (length_of_stay, FCCR, interest_coverage, CCC, net_debt,
+# current_ratio, gross_margin, capex_intensity, cost_to_charge_ratio,
+# readmission_rate). Append (dedup); only applies to routes already documented.
+_METRIC_LINK_EXTEND_2: Dict[str, List[str]] = {
+    "/working-capital": ["cash_conversion_cycle", "current_ratio"],
+    "/debt-service": ["fixed_charge_coverage", "interest_coverage", "net_debt"],
+    "/covenant-headroom": ["fixed_charge_coverage", "interest_coverage"],
+    "/covenant-monitor": ["interest_coverage"],
+    "/cost-structure": ["cost_to_charge_ratio"],
+    "/unit-economics": ["gross_margin"],
+    "/cap-structure": ["net_debt"],
+    "/treasury": ["current_ratio"],
+    "/capex-budget": ["capex_intensity"],
+    "/inpatient-rehab": ["length_of_stay", "readmission_rate"],
+    "/long-term-care-hospital": ["length_of_stay", "readmission_rate"],
+}
+for _c in _MANUAL:
+    _ext2 = _METRIC_LINK_EXTEND_2.get(_c.route)
+    if _ext2:
+        _have2 = list(_c.metric_ids or [])
+        for _mid in _ext2:
+            if _mid not in _have2:
+                _have2.append(_mid)
+        _c.metric_ids = _have2
+
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
