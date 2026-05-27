@@ -25,6 +25,7 @@ from ..finance.regression import breusch_pagan_test as _breusch_pagan
 from ..finance.regression import hc1_robust_se as _hc1_robust_se
 from ..finance.regression import information_criteria as _information_criteria
 from ..finance.regression import ramsey_reset_test as _ramsey_reset
+from ..finance.regression import jarque_bera_test as _jarque_bera
 from ..finance.regression import t_critical_value as _t_critical_value
 from ..finance.regression import t_two_tailed_pvalue as _t_two_tailed_p
 from ..finance.leakage import (
@@ -538,6 +539,7 @@ def _run_ols(
             se = classical_se
         bp_test = _breusch_pagan(X_aug, resid)
         reset_test = _ramsey_reset(X_aug, y, y_hat)
+        jb_test = _jarque_bera(resid)
         info_criteria = _information_criteria(n, float(ss_res), p)
         t_stats = beta / np.where(se > 0, se, 1)
 
@@ -780,6 +782,7 @@ def _run_ols(
             "t_critical": float(t_crit),
             "breusch_pagan": bp_test,
             "ramsey_reset": reset_test,
+            "jarque_bera": jb_test,
             # Model-selection criteria (lower = better; BIC penalizes params
             # harder than AIC). Lets the reader see the fit is parsimony-
             # justified, not just high-R².
@@ -1409,6 +1412,24 @@ def render_regression_page(
         )
     else:
         _reset_verdict = ""
+    # Jarque–Bera: are the residuals normal enough to trust the small-sample
+    # t/F p-values? (With robust SEs and large n this is informational.)
+    _jb = result.get("jarque_bera") or {}
+    if _jb.get("normal") is False:
+        _jb_verdict = (
+            f' <strong>Jarque&ndash;Bera</strong> (JB={_jb.get("jb_stat", 0):.1f}, '
+            f'p={_jb.get("p_value", 1):.4f}; skew={_jb.get("skewness", 0):.2f}, '
+            f'kurt={_jb.get("kurtosis", 3):.2f}) flags <strong>non-normal '
+            'residuals</strong> — lean on the robust SEs and the effect '
+            'direction rather than a borderline p-value.'
+        )
+    elif _jb.get("normal") is True:
+        _jb_verdict = (
+            f' Jarque&ndash;Bera (p={_jb.get("p_value", 1):.2f}) finds residuals '
+            'consistent with normality — the t/F inference is well-grounded.'
+        )
+    else:
+        _jb_verdict = ""
     coef_section = ck_panel(
         '<p class="ck-section-body">'
         f'Target: <strong>{_html.escape(target.replace("_", " ").title())}</strong>. '
@@ -1421,7 +1442,7 @@ def render_regression_page(
         f'distribution (df={int(result.get("resid_df", 0))}) and the 95% CIs use '
         f't<sub>0.975</sub>={result.get("t_critical", 1.96):.2f} &mdash; honest '
         'at small sample sizes, not the 1.96 normal value. '
-        f'{_bp_verdict}{_reset_verdict}</p>'
+        f'{_bp_verdict}{_reset_verdict}{_jb_verdict}</p>'
         f'{_coef_fig}'
         '<table class="cad-table"><thead><tr>'
         '<th>Variable</th><th>Strength</th><th>t</th><th>p-value</th>'
