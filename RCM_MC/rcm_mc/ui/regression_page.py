@@ -153,6 +153,87 @@ def _coefficient_forest_chart(
     return "".join(parts)
 
 
+def _vif_bar_chart(vifs: List[Dict[str, Any]]) -> str:
+    """Horizontal VIF bars with the VIF=5 (caution) and VIF=10 (severe)
+    thresholds drawn in, so an over-collinear feature is visually obvious
+    instead of buried in a column of numbers. Bars are colour-zoned: green
+    below 5, amber 5–10, red above 10 (where coefficients are unreliable)."""
+    rows = list(vifs or [])[:12]
+    if not rows:
+        return ""
+    pos = PALETTE["positive"]; warn = PALETTE["warning"]; neg = PALETTE["negative"]
+    txt = "var(--sc-text-dim,#465366)"
+    scale = 20.0  # full bar width == VIF 20; higher clamps and shows ">"
+    t5 = 5 / scale * 100.0
+    t10 = 10 / scale * 100.0
+    out = ['<div style="margin:4px 0 2px;">']
+    for v in rows:
+        vif = float(v["vif"])
+        color = neg if vif > 10 else (warn if vif > 5 else pos)
+        w = min(vif, scale) / scale * 100.0
+        val = "&infin;" if vif >= 999 else (f"{vif:.0f}" if vif >= 10 else f"{vif:.1f}")
+        over = "&nbsp;&gt;" if vif > scale else ""
+        name = _html.escape(str(v["feature"]).replace("_", " ").title())
+        out.append(
+            f'<div style="display:grid;grid-template-columns:150px 1fr 50px;'
+            f'align-items:center;gap:10px;margin:5px 0;font-size:12px;">'
+            f'<span style="color:{txt};text-align:right;overflow:hidden;'
+            f'text-overflow:ellipsis;white-space:nowrap;">{name}</span>'
+            f'<div style="position:relative;height:16px;background:#ece6d6;'
+            f'border-radius:2px;">'
+            f'<span style="position:absolute;left:{t5:.0f}%;top:-2px;bottom:-2px;'
+            f'width:1px;background:{warn};opacity:.65;"></span>'
+            f'<span style="position:absolute;left:{t10:.0f}%;top:-2px;bottom:-2px;'
+            f'width:1px;background:{neg};opacity:.65;"></span>'
+            f'<div style="height:100%;width:{w:.0f}%;background:{color};'
+            f'border-radius:2px;"></div></div>'
+            f'<span style="font-family:var(--sc-mono,monospace);color:{color};'
+            f'font-weight:700;text-align:right;">{val}{over}</span></div>')
+    out.append(
+        f'<div style="font-size:10.5px;color:{txt};margin-top:8px;'
+        f'font-family:var(--sc-mono,monospace);">'
+        f'<span style="color:{pos};">&#9632;</span> &lt;5 ok&nbsp;&nbsp;'
+        f'<span style="color:{warn};">&#9632;</span> 5&ndash;10 caution&nbsp;&nbsp;'
+        f'<span style="color:{neg};">&#9632;</span> &gt;10 unreliable'
+        f' &middot; thin lines mark the 5 &amp; 10 thresholds</div></div>')
+    return "".join(out)
+
+
+def _univariate_corr_chart(corrs: List[Dict[str, Any]]) -> str:
+    """Diverging bar chart of each feature's raw correlation with the target —
+    positive right (green), negative left (red), from a centre zero line. Read
+    alongside the model: a feature can correlate strongly here yet be dropped
+    as a redundant transform, which is exactly the univariate-vs-multivariate
+    distinction the coefficients answer."""
+    rows = sorted(list(corrs or []), key=lambda c: -abs(c.get("correlation", 0)))[:14]
+    if not rows:
+        return ""
+    pos = PALETTE["positive"]; neg = PALETTE["negative"]
+    txt = "var(--sc-text-dim,#465366)"
+    out = ['<div style="margin:4px 0 2px;">']
+    for c in rows:
+        r = float(c.get("correlation", 0))
+        color = pos if r >= 0 else neg
+        half = min(abs(r), 1.0) * 50.0
+        left = 50.0 - half if r < 0 else 50.0
+        name = _html.escape(str(c["feature"]).replace("_", " ").title())
+        out.append(
+            f'<div style="display:grid;grid-template-columns:150px 1fr 46px;'
+            f'align-items:center;gap:10px;margin:4px 0;font-size:12px;">'
+            f'<span style="color:{txt};text-align:right;overflow:hidden;'
+            f'text-overflow:ellipsis;white-space:nowrap;">{name}</span>'
+            f'<div style="position:relative;height:14px;background:#ece6d6;'
+            f'border-radius:2px;">'
+            f'<span style="position:absolute;left:50%;top:0;bottom:0;width:1px;'
+            f'background:#b7ae98;"></span>'
+            f'<div style="position:absolute;left:{left:.1f}%;width:{half:.1f}%;'
+            f'top:0;bottom:0;background:{color};border-radius:2px;"></div></div>'
+            f'<span style="font-family:var(--sc-mono,monospace);color:{color};'
+            f'text-align:right;">{r:+.2f}</span></div>')
+    out.append('</div>')
+    return "".join(out)
+
+
 _AVAILABLE_METRICS = [
     ("denial_rate", "Denial Rate"),
     ("days_in_ar", "Days in AR"),
@@ -217,6 +298,91 @@ _CURATED_DEFAULTS: Dict[str, List[str]] = {
         "operating_expenses",
     ],
 }
+
+
+# Features that are transforms / proxies of ONE underlying quantity. Linear
+# VIF cannot always catch these: payer_diversity = 1-(mc²+md²+comm²) and
+# medicare_intensity = mc·beds are NONLINEAR functions of the payer shares, so
+# their VIF stays low even though they carry no independent information. Left
+# in, they invite p-hacking — a dozen "significant" coefficients that are
+# really one driver wearing several hats. Before VIF pruning we collapse each
+# family to its most target-correlated member(s) so the model keeps exactly one
+# clean representative per real dimension. (members, max_keep).
+_FEATURE_FAMILIES: List[Tuple[set, int]] = [
+    # Size / volume — beds, days, per-bed ratios, and the size quartile all
+    # move together; keep the single most predictive size proxy.
+    ({"beds", "bed_days_available", "total_patient_days", "size_quartile",
+      "revenue_per_bed", "expense_per_bed", "medicare_days", "medicaid_days"}, 1),
+    # Dollar scale — every P&L line scales with the others; keep one.
+    ({"net_patient_revenue", "gross_patient_revenue", "operating_expenses",
+      "net_income", "contractual_allowances", "total_patient_revenue"}, 1),
+    # Payer mix — the three day-shares sum to 1 (only 2 are independent), and
+    # payer_diversity / medicare_intensity are derived from them. Keep 2.
+    ({"medicare_day_pct", "medicaid_day_pct", "commercial_pct",
+      "payer_diversity", "medicare_intensity"}, 2),
+]
+
+# Engineered / derived features — ratios, interactions, quartiles, and the
+# linearly-dependent third payer share. When a family must pick a
+# representative we prefer a RAW, directly-interpretable measure over one of
+# these (so the headline model reads "medicare %, medicaid %" rather than
+# "medicare intensity, payer diversity"), unless no raw member is present.
+_ENGINEERED_FEATURES = {
+    "size_quartile", "revenue_per_bed", "expense_per_bed", "revenue_per_day",
+    "commercial_pct", "payer_diversity", "medicare_intensity",
+    "net_to_gross_ratio",
+}
+
+
+def _abs_target_corr(df: pd.DataFrame, feature: str, target: str) -> float:
+    """|Pearson r| of one feature with the target, 0 if undefined."""
+    try:
+        sub = df[[feature, target]].dropna()
+        if len(sub) < 3 or sub[feature].std() == 0 or sub[target].std() == 0:
+            return 0.0
+        return abs(float(np.corrcoef(sub[feature], sub[target])[0, 1]))
+    except Exception:
+        return 0.0
+
+
+def _dedupe_feature_families(
+    df: pd.DataFrame, target: str, features: List[str],
+) -> Tuple[List[str], List[Dict[str, Any]]]:
+    """Collapse each structural family to its most target-correlated member(s).
+
+    Returns ``(kept, dropped)`` where each dropped entry is
+    ``{"feature", "reason": "redundant", "explained_by": [{"feature","r"}],
+    "univariate_r"}`` so the UI can say *why* a feature that looks individually
+    predictive was excluded — it is a transform of one already in the model,
+    not independent signal. This runs BEFORE VIF pruning; VIF then cleans up
+    any residual linear collinearity among the survivors.
+    """
+    kept = list(features)
+    dropped: List[Dict[str, Any]] = []
+    for members, max_keep in _FEATURE_FAMILIES:
+        present = [f for f in kept if f in members]
+        if len(present) <= max_keep:
+            continue
+        # Prefer raw measures over engineered transforms, then by how strongly
+        # each correlates with the target.
+        ranked = sorted(
+            present,
+            key=lambda f: (f not in _ENGINEERED_FEATURES,
+                           _abs_target_corr(df, f, target)),
+            reverse=True)
+        keepers = ranked[:max_keep]
+        for f in ranked[max_keep:]:
+            kept.remove(f)
+            dropped.append({
+                "feature": f,
+                "reason": "redundant",
+                "univariate_r": round(_abs_target_corr(df, f, target), 3),
+                "explained_by": [
+                    {"feature": k,
+                     "r": round(_abs_target_corr(df, k, target), 3)}
+                    for k in keepers],
+            })
+    return kept, dropped
 
 
 def _add_computed_features(df: pd.DataFrame) -> pd.DataFrame:
@@ -522,7 +688,17 @@ def _run_ols(
         cond_num = _cond_num(clean[available])
         max_vif = max((v["vif"] for v in vifs), default=1.0)
         verdict = _mc_verdict(max_vif, cond_num)
-        opt_features, opt_dropped = _prune_collinear(clean[available])
+        # The "optimized" (clean) feature set is built in two passes:
+        #   1. structural dedup — drop transforms/proxies of a dimension already
+        #      represented (catches the NONLINEAR duplicates VIF misses), then
+        #   2. VIF pruning at 5.0 (textbook "serious collinearity"), tighter
+        #      than the old 10 so every surviving coefficient is interpretable.
+        fam_keep, fam_dropped = _dedupe_feature_families(clean, target, available)
+        vif_keep, vif_dropped = _prune_collinear(clean[fam_keep], max_vif=5.0)
+        for d in vif_dropped:
+            d["reason"] = "high_vif"
+        opt_features = vif_keep
+        opt_dropped = fam_dropped + vif_dropped
 
         return {
             "r2": r2,
@@ -1018,18 +1194,28 @@ def render_regression_page(
         items = []
         for d in drops:
             feat = _html.escape(d["feature"].replace("_", " "))
-            vif = d.get("vif")
-            vtxt = "VIF &infin;" if vif is None else f"VIF&nbsp;{vif:.0f}"
             eb = d.get("explained_by") or []
-            if eb:
-                partners = ", ".join(
-                    f'{_html.escape(e["feature"].replace("_", " "))} '
-                    f'(r&nbsp;{e["r"]:.2f})' for e in eb)
-                reason = f"nearly determined by {partners}"
+            partners = ", ".join(
+                f'{_html.escape(e["feature"].replace("_", " "))} '
+                f'(r&nbsp;{e["r"]:.2f})' for e in eb)
+            if d.get("reason") == "redundant":
+                # Structural duplicate: individually it may correlate with the
+                # target, but it carries no information beyond its family rep.
+                uni = d.get("univariate_r")
+                uni_txt = (f" — its own correlation with the target "
+                           f"(r&nbsp;{uni:.2f}) is already captured"
+                           if uni is not None else "")
+                tag = "redundant transform"
+                reason = (f"a transform of {partners}{uni_txt}"
+                          if partners else "a transform of a predictor already "
+                          "in the model")
             else:
-                reason = "almost fully explained by the other predictors"
+                vif = d.get("vif")
+                tag = "VIF &infin;" if vif is None else f"VIF&nbsp;{vif:.0f}"
+                reason = (f"nearly determined by {partners}" if partners
+                          else "almost fully explained by the other predictors")
             items.append(
-                f'<li style="margin:3px 0;"><b>{feat}</b> &mdash; {vtxt}; '
+                f'<li style="margin:3px 0;"><b>{feat}</b> &mdash; {tag}; '
                 f'{reason}.</li>')
         return ('<ul style="margin:6px 0 0;padding-left:18px;font-size:12px;'
                 'line-height:1.5;color:var(--sc-text-dim,#465366);">'
@@ -1142,56 +1328,27 @@ def render_regression_page(
         title="Coefficients (Standardized)",
     )
 
-    # ── Target correlations ──
-    tcorr_rows = ""
-    for tc in result["target_correlations"]:
-        r = tc["correlation"]
-        cls = "cad-pos" if r > 0 else "cad-neg"
-        bar_w = min(100, abs(r) * 100)
-        strength = "Strong" if abs(r) > 0.7 else ("Moderate" if abs(r) > 0.4 else "Weak")
-        tcorr_rows += (
-            f'<tr>'
-            f'<td>{_html.escape(tc["feature"].replace("_", " ").title())}</td>'
-            f'<td class="num {cls}"><strong>{r:.3f}</strong></td>'
-            f'<td>{strength}</td>'
-            f'<td><div class="rg-bar-track rg-bar-track-sm">'
-            f'<div class="rg-bar-fill rg-bar-fill-sm" style="width:{bar_w:.0f}%;background:var(--cad-{"pos" if r > 0 else "neg"});"></div></div></td>'
-            f'</tr>'
-        )
-
+    # ── Target correlations (univariate) ──
     tcorr_section = ck_panel(
         '<p class="ck-section-body">'
         f'Pearson r for each feature vs {_html.escape(target.replace("_", " ").title())}. '
-        'Shows raw linear relationship before controlling for other variables.</p>'
-        '<table class="cad-table"><thead><tr>'
-        '<th>Feature</th><th>r</th><th>Strength</th><th></th>'
-        f'</tr></thead><tbody>{tcorr_rows}</tbody></table>',
+        'Shows the raw linear relationship <em>before</em> controlling for other '
+        'variables &mdash; a feature can land high here yet be dropped from the '
+        'model as a redundant transform of another driver.</p>'
+        f'{_univariate_corr_chart(result["target_correlations"])}',
         title="Univariate Correlations with Target",
-    ) if tcorr_rows else ""
+    ) if result.get("target_correlations") else ""
 
     # ── VIF (multicollinearity) ──
-    vif_rows = ""
-    for v in result["vifs"][:12]:
-        vif_val = v["vif"]
-        vif_cls = "cad-neg" if vif_val > 10 else ("cad-warn" if vif_val > 5 else "cad-pos")
-        flag = "High" if vif_val > 10 else ("Moderate" if vif_val > 5 else "OK")
-        vif_rows += (
-            f'<tr>'
-            f'<td>{_html.escape(v["feature"].replace("_", " ").title())}</td>'
-            f'<td class="num {vif_cls}"><strong>{vif_val:.1f}</strong></td>'
-            f'<td class="{vif_cls}">{flag}</td>'
-            f'</tr>'
-        )
-
     vif_section = ck_panel(
         '<p class="ck-section-body">'
-        'VIF &gt; 10 = severe multicollinearity (coefficient estimates unreliable). '
-        'VIF &gt; 5 = moderate. Consider removing high-VIF features.</p>'
-        '<table class="cad-table"><thead><tr>'
-        '<th>Feature</th><th>VIF</th><th>Status</th>'
-        f'</tr></thead><tbody>{vif_rows}</tbody></table>',
+        'How much each coefficient&rsquo;s variance is inflated by correlation '
+        'with the other predictors. VIF&nbsp;&gt;&nbsp;10 = severe (estimates '
+        'unreliable); 5&ndash;10 = caution. The clean model keeps every feature '
+        'below&nbsp;5.</p>'
+        f'{_vif_bar_chart(result["vifs"])}',
         title="Variance Inflation Factors",
-    ) if vif_rows else ""
+    ) if result.get("vifs") else ""
 
     # ── Hospital outliers (residual analysis) ──
     # Phase-2: surface segment_label so the partner immediately

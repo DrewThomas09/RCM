@@ -144,9 +144,44 @@ class PageBannerTests(unittest.TestCase):
         self.assertIn("Condition #", html)
         self.assertIn("Switch to the clean model", html)
         self.assertIn("optimized=1", html)
-        # Per-feature reason is present (not a black-box drop).
+        # Per-feature reason is present (not a black-box drop) — either a
+        # VIF/collinearity reason or a structural-redundancy ("transform of")
+        # reason, depending on which pass removed it.
         self.assertTrue("nearly determined by" in html
-                        or "explained by the other predictors" in html)
+                        or "explained by the other predictors" in html
+                        or "transform of" in html)
+
+    def test_structural_families_collapse_and_prefer_raw(self):
+        # Structural redundancy VIF can't see: payer_diversity & medicare_
+        # intensity are NONLINEAR transforms of the payer shares, so their VIF
+        # stays low — yet they carry no independent signal. The clean model
+        # must (a) keep at most one representative per size/dollar family and
+        # at most two payer-mix features, (b) prefer the RAW share over an
+        # engineered transform, and (c) leave every survivor below VIF 5.
+        import rcm_mc.ui.regression_page as rp
+        from rcm_mc.data.hcris import _get_latest_per_ccn
+        df = rp.derive_taxonomy(rp._add_computed_features(_get_latest_per_ccn()))
+        feats = ["beds", "bed_days_available", "total_patient_days",
+                 "size_quartile", "medicare_day_pct", "medicaid_day_pct",
+                 "commercial_pct", "payer_diversity", "medicare_intensity",
+                 "occupancy_rate"]
+        res = rp._run_ols(df, "net_patient_revenue", feats, log_target=True)
+        clean = rp._run_ols(df, "net_patient_revenue",
+                            res["optimized_features"], log_target=True)
+        # every surviving coefficient is interpretable
+        self.assertLess(clean["max_vif"], 5.0)
+        # at most ONE of the size family survives
+        size_fam = {"beds", "bed_days_available", "total_patient_days",
+                    "size_quartile"}
+        self.assertLessEqual(
+            len(size_fam & set(res["optimized_features"])), 1)
+        # engineered payer transforms are dropped in favour of the raw shares
+        self.assertNotIn("payer_diversity", res["optimized_features"])
+        self.assertNotIn("medicare_intensity", res["optimized_features"])
+        # and the drop is explained as a redundant transform, not a black box
+        reasons = {d["feature"]: d.get("reason")
+                   for d in res["optimized_dropped"]}
+        self.assertEqual(reasons.get("payer_diversity"), "redundant")
 
     def test_optimized_default_builds_clean_model_with_reasons(self):
         from tests.test_regression_page_phase2 import _synthetic_hcris
