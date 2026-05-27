@@ -7306,6 +7306,15 @@ def _breadcrumbs(crumbs: Optional[Sequence[Any]]) -> str:
     return f'<nav class="ck-breadcrumbs">{"".join(parts)}</nav>'
 
 
+# Global ~2% size trim ("everything a little too big"). A single root zoom
+# scales fonts, spacing, and chrome uniformly — far safer than re-tuning
+# hundreds of px values. Screen-only so print output is unaffected; loaded
+# AFTER the base CSS and BEFORE per-page extra_css so a page can still override
+# if it ever needs to. Modern browsers (Chrome/Edge/Safari/Firefox 126+)
+# support `zoom`; older engines simply render at 100% (graceful).
+_GLOBAL_SCALE_CSS = "<style>@media screen{html{zoom:0.98;}}</style>"
+
+
 def chartis_shell(
     body_html: Optional[str] = None,
     title: Optional[str] = None,
@@ -7505,6 +7514,7 @@ def chartis_shell(
         f"{fonts}"
         f"{_CSS_LINK}"
         f"{_CSS_INLINE_FALLBACK}"
+        f"{_GLOBAL_SCALE_CSS}"
         f"{extra_css_html}"
         "</head><body>"
         f"{chrome_html}"
