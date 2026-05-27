@@ -30,14 +30,14 @@ def _hcris():
 class MarketDataMapTests(unittest.TestCase):
     def test_state_map_renders_with_data(self):
         html = render_market_data(_hcris(), metric="avg_margin")
-        self.assertIn("usm-cell", html)              # tile-grid present
+        self.assertIn("usgeo-state", html)           # real US state map present
         self.assertIn("State Map", html)             # map panel title
-        self.assertIn("California:", html)           # real state shaded
+        self.assertIn('data-state="CA"', html)       # real CA state path shaded
 
     def test_existing_heatmap_table_preserved(self):
         html = render_market_data(_hcris(), metric="hospitals")
         self.assertIn("State Market Heatmap", html)  # table panel kept
-        self.assertIn("usm-cell", html)
+        self.assertIn("usgeo-state", html)
 
     def test_map_not_forced_when_no_state_data(self):
         html = render_market_data(pd.DataFrame(), metric="avg_margin")
@@ -51,9 +51,9 @@ class MarketDataMapTests(unittest.TestCase):
 
     def test_state_cells_drill_into_state_detail(self):
         html = render_market_data(_hcris(), metric="hospitals")
-        self.assertIn('data-href="/market-data/state/CA"', html)
-        # honest tile-grid disclosure
-        self.assertIn("cells represent states, not geographic area", html)
+        self.assertIn("/market-data/state/{state}", html)  # JS drill-down template
+        # real geographic map disclosure
+        self.assertIn("Real US state map", html)
 
 
 class StateDetailHospitalPointsTests(unittest.TestCase):

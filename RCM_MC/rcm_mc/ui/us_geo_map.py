@@ -71,17 +71,26 @@ _CSS = """
 """
 
 
-def _js(cid: str) -> str:
+def _js(cid: str, link_template: str = "") -> str:
+    # When a link template is supplied, clicking/Enter on a state navigates to
+    # the templated URL (drill-down) — restoring the click-through the tile-grid
+    # map had. With no template, click just highlights + emits us-map-select for
+    # pages that drive their own behavior off the event.
+    import json as _json
+    tpl = _json.dumps(link_template or "")
     return (
         "<script>(function(){var root=document.getElementById('" + cid + "');"
-        "if(!root)return;"
+        "if(!root)return;var TPL=" + tpl + ";"
         "function sel(st){root.querySelectorAll('.usgeo-state.usgeo-selected')"
         ".forEach(function(o){o.classList.remove('usgeo-selected');});"
         "var t=root.querySelector('.usgeo-state[data-state=\"'+st+'\"]');"
         "if(t)t.classList.add('usgeo-selected');"
         "document.dispatchEvent(new CustomEvent('us-map-select',{detail:{state:st}}));}"
         "root.querySelectorAll('.usgeo-state[data-clickable=\"1\"]').forEach(function(p){"
-        "function go(){sel(p.getAttribute('data-state'));}"
+        "function go(){var st=p.getAttribute('data-state');"
+        "if(TPL){window.location.href=TPL.replace('{state}',encodeURIComponent(st));return;}"
+        "sel(st);}"
+        "p.style.cursor=TPL?'pointer':'';"
         "p.addEventListener('click',go);"
         "p.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' ')"
         "{e.preventDefault();go();}});});})();</script>"
@@ -186,5 +195,5 @@ def render_us_geo_map(
     css = _CSS.format(cid=cid, ac=_ACCENT)
     return (
         f'<div id="{cid}"><style>{css}</style>'
-        + empty + svg + legend + caveat + _js(cid) + '</div>'
+        + empty + svg + legend + caveat + _js(cid, state_link_template) + '</div>'
     )

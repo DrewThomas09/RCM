@@ -1,7 +1,7 @@
 """Shared scaffold for sector provider screeners (Home Health, Hospice, …).
 
 Renders, from the vendored sector loaders, a consistent surface:
-KPI cards · state tile-grid map (drilldown via ?state=) · per-state summary
+KPI cards · real US state map (drilldown via ?state=) · per-state summary
 table (national view) OR provider/quality table (state view) · a provenance
 + limitations card. No external calls; honest empty state.
 """
@@ -12,7 +12,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from ._chartis_kit import chartis_shell, ck_kpi_block, ck_page_title, ck_panel
 from .sector_market_intel import filter_by_locality, render_state_market_panels
-from .us_map import render_us_state_map
+from .us_geo_map import render_us_geo_map
 from .xray_kit import XRAY_CSS, xr_eyebrow
 
 
@@ -91,14 +91,14 @@ def render_sector_screener(
     n_states = len(summary)
     n_rated = sum(int(s.get("rated", 0)) for s in summary.values())
 
-    # ── State tile-grid map: shaded by provider count, drilldown by state ──
+    # ── Real US state map: shaded by provider count, drilldown by state ──
     state_values = {st: int(s.get(count_key, 0)) for st, s in summary.items()}
     state_notes = {
         st: f"avg {avg_label}: {_fmt(s.get(avg_key))}"
         for st, s in summary.items() if s.get(avg_key) is not None
     }
     map_panel = ck_panel(
-        render_us_state_map(
+        render_us_geo_map(
             state_values, metric_label=count_label.lower(),
             value_format=lambda v: f"{int(v):,}",
             state_notes=state_notes,
@@ -106,7 +106,7 @@ def render_sector_screener(
             state_link_template=f"{route}?state={{state}}",
         )
         + '<p style="font-size:11px;color:var(--sc-text-dim);margin:8px 0 0;">'
-        'State tile-grid map — cells represent states, not geographic area. '
+        f'Geographic US map — shaded by {count_label.lower()}. '
         f'Click a state to list its {count_label.lower()}.</p>',
         title=f"{count_label} by state",
     )

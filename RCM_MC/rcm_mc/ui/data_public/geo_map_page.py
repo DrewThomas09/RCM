@@ -7,7 +7,7 @@ State Profile.
 
 100% real public data via the shared ``_METRICS``/``_raw`` layer — states with
 no value on record render as "no data" (neutral), never invented. Reuses the
-local inline-SVG ``render_us_state_map`` cartogram (no external map tiles).
+local inline-SVG ``render_us_geo_map`` real geographic map (no external map tiles).
 """
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ import html as _html
 from typing import Dict
 
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_page_title
-from rcm_mc.ui.us_map import render_us_state_map
+from rcm_mc.ui.us_geo_map import render_us_geo_map
 from rcm_mc.ui.data_public.state_compare_page import (
     _METRIC_BY_KEY,
     _METRICS,
@@ -71,7 +71,7 @@ def render_geo_map(params: Dict = None) -> str:
 
     direction = ("lower = lighter (lower is better)" if higher is False
                  else "higher = darker" if higher else "darker = larger")
-    cartogram = render_us_state_map(
+    cartogram = render_us_geo_map(
         values, metric_label=label, value_format=fmt,
         state_link_template="/state-profile?state={state}",
         empty_message="No data on record for this metric.",
@@ -83,8 +83,7 @@ def render_geo_map(params: Dict = None) -> str:
   <p style="font-size:13px;color:{td};max-width:74ch;margin:0 0 12px">
     A geographic view of the Geographic Intelligence suite — every state shaded
     by <b style="color:{tp}">{_html.escape(label)}</b> ({_html.escape(source)};
-    {direction}). It's an equal-area tile cartogram, so small states stay
-    readable. Click a state to open its full profile. Real public data only;
+    {direction}). It's the real US geographic map. Click a state to open its full profile. Real public data only;
     states with no value on record show as &ldquo;no data&rdquo;, never invented.
   </p>
   {form}
