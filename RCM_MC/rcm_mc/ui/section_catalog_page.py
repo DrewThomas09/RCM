@@ -129,9 +129,23 @@ def render_grouped_catalog(
         pillars_html.append(ck_panel(inner))
 
     n = sum(len(p["links"]) for p in pillars)  # type: ignore[arg-type]
+    # Real, computed honesty coverage across the section's surfaces — so a
+    # partner sees at a glance how much of the section runs on live data vs a
+    # computed model vs illustrative figures (derived from surface_status, can't
+    # drift from truth).
+    from collections import Counter
+    tiers = Counter(_tier(l["href"]) for p in pillars for l in p["links"])
+    parts = []
+    for key, word in (("green", "live"), ("navy", "computed"),
+                      ("data_required", "need data"), ("yellow", "illustrative")):
+        if tiers.get(key):
+            parts.append(f"{tiers[key]} {word}")
+    coverage = " · ".join(parts)
     head = (
-        ck_page_title(title, eyebrow=eyebrow,
-                      meta=f"{n} surfaces · grouped into {len(pillars)} pillars")
+        ck_page_title(
+            title, eyebrow=eyebrow,
+            meta=(f"{n} surfaces · {len(pillars)} pillars"
+                  + (f" · {coverage}" if coverage else "")))
         + ck_page_explainer(explainer_head, explainer_body,
                             source=explainer_source)
     )
