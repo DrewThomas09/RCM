@@ -38,7 +38,7 @@ _DOC_DENY = ("secret", "credential", "session", "password", "token", "auth_")
 # Raised from 40: the curated Guide source cards (docs/rag_sources/) are now
 # always prioritized below, and the doc corpus has grown — 40 silently dropped
 # ~13 curated cards by sort order (e.g. xray_benchmark_visuals).
-_MAX_DOC_FILES = 72
+_MAX_DOC_FILES = 110
 
 
 def _join(label: str, val) -> str:
