@@ -584,6 +584,14 @@ def _build_parser(prog: str) -> argparse.ArgumentParser:
     us_pw.add_argument("--username", required=True)
     us_pw.add_argument("--new-password", required=True)
 
+    al = sub.add_parser(
+        "audit-link",
+        help="Mint a time-boxed READ-ONLY audit link (needs RCM_MC_AUDIT_SECRET)")
+    al.add_argument("--hours", type=float, default=2.0,
+                    help="Window length in hours (max 24; default 2)")
+    al.add_argument("--base-url", default="https://pedesk.app",
+                    help="Site base URL for the printed link")
+
     # B122: Rerun simulation by deal (uses stored sim-input paths)
     rr = sub.add_parser("rerun",
                         help="Rerun a simulation for a deal with stored paths")
@@ -669,8 +677,35 @@ def main(argv: Optional[List[str]] = None, prog: str = "rcm-mc portfolio") -> in
         return _cmd_sim_inputs(args)
     if args.cmd == "users":
         return _cmd_users(args)
+    if args.cmd == "audit-link":
+        return _cmd_audit_link(args)
     ap.print_help()
     return 2
+
+
+def _cmd_audit_link(args) -> int:
+    """Print a time-boxed read-only audit link, or explain why it can't.
+
+    Reads RCM_MC_AUDIT_SECRET from THIS process's env — so it must run on (or
+    with the same secret as) the live server. To close the window early, unset
+    that env var on the server and restart; or just wait for the link to expire.
+    """
+    import sys
+    from .auth.audit_token import mint, audit_enabled
+    if not audit_enabled():
+        sys.stderr.write(
+            "Audit access is OFF. Set RCM_MC_AUDIT_SECRET (a strong random "
+            "string) in the server's environment AND this shell, then re-run.\n"
+            "To close an open window later: unset it on the server + restart.\n")
+        return 1
+    token = mint(args.hours)
+    base = args.base_url.rstrip("/")
+    print(f"{base}/audit/enter?token={token}")
+    sys.stderr.write(
+        f"Read-only audit link valid ~{min(args.hours, 24)}h. It can SEE every "
+        "page but cannot write. Close early: unset RCM_MC_AUDIT_SECRET + restart "
+        "(kills all links), or hit /audit/exit.\n")
+    return 0
 
 
 def _cmd_users(args) -> int:

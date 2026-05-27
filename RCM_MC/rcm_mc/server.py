@@ -2153,7 +2153,84 @@ class RCMHandler(BaseHTTPRequestHandler):
                             "display_name": self.config.auth_user,
                             "role": "admin",
                         }
+        # Time-boxed READ-ONLY audit session (off unless RCM_MC_AUDIT_SECRET is
+        # set). Identified by the rcm_audit cookie carrying a signed, unexpired
+        # token. role="auditor" → mutating methods are refused (see do_POST/etc).
+        from .auth.audit_token import verify as _audit_verify
+        audit_tok = None
+        for part in cookie.split(";"):
+            k, _, v = part.strip().partition("=")
+            if k == "rcm_audit" and v:
+                audit_tok = v.strip()
+                break
+        if audit_tok and _audit_verify(audit_tok) is not None:
+            return {"username": "auditor", "display_name": "Auditor (read-only)",
+                    "role": "auditor"}
         return None
+
+    def _is_audit_session(self) -> bool:
+        cu = self._current_user()
+        return bool(cu and cu.get("role") == "auditor")
+
+    def _audit_readonly_blocked(self) -> bool:
+        """A read-only audit session may never mutate. Returns True (and sends
+        403) for any write method, so audit access stays GET-only even though
+        it can see every page."""
+        if self._is_audit_session():
+            self.send_response(HTTPStatus.FORBIDDEN)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self._send_security_headers()
+            self.end_headers()
+            self.wfile.write(
+                b"Read-only audit session: write actions are disabled.")
+            return True
+        return False
+
+    def _route_audit_enter(self) -> None:
+        """GET /audit/enter?token=<signed> — open a read-only audit window.
+
+        Validates the signed, unexpired token (no-op if the feature is off),
+        sets the rcm_audit cookie scoped to the token's remaining lifetime, and
+        redirects to /app. Logged so the audit window is on the record."""
+        import time as _t
+        from .auth.audit_token import verify as _verify, audit_enabled
+        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        token = (qs.get("token") or [""])[0].strip()
+        exp = _verify(token) if token else None
+        if exp is None:
+            self.send_response(HTTPStatus.FORBIDDEN)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self._send_security_headers()
+            self.end_headers()
+            msg = ("Audit access is not available."
+                   if not audit_enabled() else
+                   "Invalid or expired audit link.")
+            self.wfile.write(msg.encode("utf-8"))
+            return
+        try:
+            from .auth.audit_log import log_event
+            log_event(PortfolioStore(self.config.db_path), actor="auditor",
+                      action="audit_session_open", detail={"expires": exp})
+        except Exception:  # noqa: BLE001
+            pass
+        max_age = max(1, int(exp - _t.time()))
+        self.send_response(HTTPStatus.SEE_OTHER)
+        self.send_header("Location", "/app")
+        self.send_header(
+            "Set-Cookie",
+            f"rcm_audit={token}; Max-Age={max_age}; Path=/; HttpOnly; "
+            "SameSite=Lax")
+        self._send_security_headers()
+        self.end_headers()
+
+    def _route_audit_exit(self) -> None:
+        """GET /audit/exit — end the audit window by clearing the cookie."""
+        self.send_response(HTTPStatus.SEE_OTHER)
+        self.send_header("Location", "/login")
+        self.send_header(
+            "Set-Cookie", "rcm_audit=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax")
+        self._send_security_headers()
+        self.end_headers()
 
     def _auth_ok(self) -> bool:
         """Gate: True when request is authenticated or auth is disabled.
@@ -2178,6 +2255,11 @@ class RCMHandler(BaseHTTPRequestHandler):
         # masking the design intent and pushing first-time visitors
         # to /login instead of the marketing splash.
         if pure_path in ("/", "/health", "/healthz", "/login", "/forgot"):
+            return True
+        # /audit/enter validates a signed audit token and sets the read-only
+        # session cookie — it must be reachable without prior auth (that's the
+        # whole point), but it grants nothing unless the token verifies.
+        if pure_path == "/audit/enter":
             return True
         if pure_path == "/api/login":
             return True
@@ -2995,8 +3077,20 @@ class RCMHandler(BaseHTTPRequestHandler):
         })
 
     def do_GET(self) -> None:
+        # Read-only audit window: /audit/enter?token=<signed> sets the cookie
+        # (only if the token verifies against RCM_MC_AUDIT_SECRET) then bounces
+        # to /app; /audit/exit clears it. Both before the auth gate so an
+        # external reviewer with a valid link can let themselves in (read-only),
+        # and anyone can let themselves out.
+        _audit_path = urllib.parse.urlparse(self.path).path
+        if _audit_path == "/audit/enter":
+            return self._route_audit_enter()
+        if _audit_path == "/audit/exit":
+            return self._route_audit_exit()
         if not self._auth_ok():
             return self._send_401()
+        # (GET is allowed for audit sessions — read-only means they can SEE
+        # everything; writes are blocked in do_POST/PUT/PATCH/DELETE.)
         # Audit AFTER auth — we don't care that somebody tried to hit
         # /admin without creds (the 401 attempt already gets logged).
         try:
@@ -12229,6 +12323,8 @@ class RCMHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         if not self._auth_ok():
             return self._send_401()
+        if self._audit_readonly_blocked():
+            return
         self._compute_ui_choice()
         try:
             self._do_post_inner()
@@ -12405,6 +12501,8 @@ class RCMHandler(BaseHTTPRequestHandler):
         """
         if not self._auth_ok():
             return self._send_401()
+        if self._audit_readonly_blocked():
+            return
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
         if (self._session_token() is not None
@@ -12429,6 +12527,8 @@ class RCMHandler(BaseHTTPRequestHandler):
         """HTTP PATCH — field-level profile updates."""
         if not self._auth_ok():
             return self._send_401()
+        if self._audit_readonly_blocked():
+            return
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
         if (self._session_token() is not None
@@ -12471,7 +12571,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.send_error(HTTPStatus.METHOD_NOT_ALLOWED,
                          f"PATCH not allowed on {path}")
 
-    def do_HEAD(self) -> None:
+    def do_HEAD(self) -> None:  # noqa: D401 — read-only; no audit write-guard
         """HEAD /path — returns headers only. Monitoring tools use this."""
         if not self._auth_ok():
             return self._send_401()
@@ -12510,6 +12610,8 @@ class RCMHandler(BaseHTTPRequestHandler):
         """HTTP DELETE — sibling to do_PUT for the override API."""
         if not self._auth_ok():
             return self._send_401()
+        if self._audit_readonly_blocked():
+            return
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
         if (self._session_token() is not None
