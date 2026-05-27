@@ -7119,4 +7119,35 @@ if "/compare" not in {c.route for c in _MANUAL}:
     ))
 
 
+# ── Metric-link enrichment ─────────────────────────────────────────────
+# Wire real metric_ids onto core analytic pages that had prose key_metrics but
+# no registry link, so the Guide context packet resolves each metric's formula
+# + caveats (lifts these pages toward STRONG). Only UNAMBIGUOUS links — pages
+# whose metrics aren't in the registry (HHI, star ratings, TVPI/RVPI) are left
+# unlinked rather than mapped to a loose proxy. Applied post-build; never
+# overrides an existing link.
+_METRIC_LINK_PATCHES: Dict[str, List[str]] = {
+    "/benchmarks": ["denial_rate", "net_collection_rate", "days_in_ar",
+                    "bad_debt_rate", "clean_claim_rate"],
+    "/cost-structure": ["operating_margin", "cost_per_adjusted_discharge",
+                        "labor_cost_ratio"],
+    "/debt-service": ["covenant_cushion", "leverage", "debt"],
+    "/payer-stress": ["medicare_exposure", "medicaid_exposure",
+                     "commercial_payer_exposure", "payer_stress_impact"],
+    "/lp-dashboard": ["moic", "irr", "hold_period"],
+    "/market-data": ["revenue", "operating_margin", "bed_count",
+                    "occupancy_rate"],
+    "/competitive-intel": ["benchmark_percentile"],
+    "/diligence/xray": ["benchmark_percentile", "operating_margin"],
+    "/diligence/deal-autopsy": ["bankruptcy_pattern_match", "risk_score"],
+    "/industry": ["revenue", "ebitda_margin"],
+    "/inpatient-rehab": ["discharge_to_community"],
+    "/long-term-care-hospital": ["discharge_to_community"],
+}
+for _c in _MANUAL:
+    _patch = _METRIC_LINK_PATCHES.get(_c.route)
+    if _patch and not _c.metric_ids:
+        _c.metric_ids = list(_patch)
+
+
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
