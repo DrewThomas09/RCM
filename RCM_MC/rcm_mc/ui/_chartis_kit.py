@@ -284,6 +284,15 @@ _SECTION_FEATURE = {
                   "href": "/portfolio"},
 }
 
+# Routes that appear in the ranking manifest but are NOT navigable bare-GET
+# pages (form-POST targets / redirects that 303 on a plain click). They must
+# never become a mega-menu leaf — clicking would bounce. The canonical page is
+# surfaced instead (e.g. /new-deal, not its /new-deal/manual POST target).
+_NAV_NONNAVIGABLE = frozenset({
+    "/new-deal/manual",   # manual-entry POST target → 303 on GET; use /new-deal
+})
+
+
 def _ranked_subnav_items(sect: str):
     """The section's top-6 surfaces by the surface ranking, for the nav bar.
     Returns (items, has_more) where each item is {label, href}.
@@ -315,7 +324,8 @@ def _ranked_subnav_items(sect: str):
     def _add(label: str, href: str) -> None:
         label = (label or "").strip()
         key = label.lower()
-        if not label or not href or key in seen or "→" in label:
+        if (not label or not href or key in seen or "→" in label
+                or href in _NAV_NONNAVIGABLE):
             return
         seen.add(key)
         top.append({"label": label, "href": href})
