@@ -630,12 +630,16 @@ class WorkbenchCsvExportTests(unittest.TestCase):
 
 
 class NavAndRouteTests(unittest.TestCase):
-    def test_source_anchor_is_target_screener(self):
+    def test_source_nav_lands_on_catalog_target_screener_first(self):
+        # Source nav now lands on the grouped catalog (the /diligence pattern),
+        # with Target Screener still the first tool in it + leading the sub-nav.
         from rcm_mc.ui._chartis_kit import _CORPUS_NAV, _SUB_NAV, _resolve_sub_section
         src = next(n for n in _CORPUS_NAV if n["key"] == "source")
-        self.assertEqual(src["href"], "/target-screener")
+        self.assertEqual(src["href"], "/best/source")
         self.assertEqual(_SUB_NAV["source"][0]["label"], "Target Screener")
         self.assertEqual(_resolve_sub_section("/target-screener"), "source")
+        from rcm_mc.ui.section_landings import render_section_landing
+        self.assertIn("/target-screener", render_section_landing("source"))
 
 
 class BackwardCompatTests(unittest.TestCase):

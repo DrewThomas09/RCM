@@ -546,7 +546,15 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
 
     size_label0 = (all_rows[0].get("size_label") or "Size")
     q_label0 = (all_rows[0].get("q_label") or "Quality")
+    # Only offer a filter for a field this universe actually carries — a filter
+    # on an all-empty field (e.g. hospitals' op margin / ownership in HCRIS)
+    # does nothing, which read as "the top filters aren't working". Mirrors the
+    # column-hiding: no data → no control.
     has_size_any = any(r.get("size") is not None for r in all_rows)
+    has_q_any = any(r.get("q") is not None for r in all_rows)
+    has_own_any = any(r.get("ownership") not in (None, "", "—") for r in all_rows)
+    _inp = 'style="padding:4px 7px;border:1px solid var(--sc-rule,#c9c1ac);"'
+    _lbl = 'style="font-family:var(--sc-mono);font-size:10px;"'
     # GET filter form (server-first, shareable). Keeps vertical/state/sort.
     filter_form = (
         '<form method="get" action="/target-screener" style="display:flex;gap:12px;'
@@ -554,16 +562,16 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         '<input type="hidden" name="view" value="main">'
         f'<input type="hidden" name="vertical" value="{vertical}">'
         + (f'<input type="hidden" name="state" value="{_h.escape(state)}">' if state else "")
-        + f'<label style="font-family:var(--sc-mono);font-size:10px;">Min {q_label0}'
-        f'<br><input name="min_quality" value="{min_q if min_q is not None else ""}" size="6" '
-        'style="padding:4px 7px;border:1px solid var(--sc-rule,#c9c1ac);"></label>'
-        + (f'<label style="font-family:var(--sc-mono);font-size:10px;">Min {size_label0}'
+        + (f'<label {_lbl}>Min {q_label0}'
+           f'<br><input name="min_quality" value="{min_q if min_q is not None else ""}" size="6" '
+           f'{_inp}></label>' if has_q_any else "")
+        + (f'<label {_lbl}>Min {size_label0}'
            f'<br><input name="min_size" value="{min_size if min_size is not None else ""}" size="6" '
-           'style="padding:4px 7px;border:1px solid var(--sc-rule,#c9c1ac);"></label>' if has_size_any else "")
-        + f'<label style="font-family:var(--sc-mono);font-size:10px;">Ownership contains'
-        f'<br><input name="ownership" value="{_h.escape(own)}" size="14" '
-        'style="padding:4px 7px;border:1px solid var(--sc-rule,#c9c1ac);"></label>'
-        '<button type="submit" class="tsw-vert" style="cursor:pointer;">Apply filters</button>'
+           f'{_inp}></label>' if has_size_any else "")
+        + (f'<label {_lbl}>Ownership contains'
+           f'<br><input name="ownership" value="{_h.escape(own)}" size="14" '
+           f'{_inp}></label>' if has_own_any else "")
+        + '<button type="submit" class="tsw-vert" style="cursor:pointer;">Apply filters</button>'
         + (f'<a class="ck-link" style="font-size:11px;" href="/target-screener?view=main&vertical={vertical}'
            + (f"&state={state}" if state else "") + '">clear</a>'
            if (min_q is not None or min_size is not None or own) else "")
