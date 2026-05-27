@@ -108,7 +108,7 @@ def _tool_row(row: Dict, runnable: Dict[str, str]) -> str:
             f'<span style="font-family:var(--ck-mono);font-size:8.5px;'
             f'letter-spacing:0.08em;color:{P["text_faint"]};border:1px solid '
             f'{P["border_dim"]};border-radius:2px;padding:1px 4px;margin-left:7px;">'
-            f'AVAILABLE</span>'
+            f'REFERENCE</span>'
         )
     in_type = row["input_type"] or "—"
     return (
@@ -124,6 +124,36 @@ def _tool_row(row: Dict, runnable: Dict[str, str]) -> str:
         f'color:{P["text_dim"]};text-align:right;vertical-align:top;'
         f'font-variant-numeric:tabular-nums;">{row["loc"]:,}</td>'
         f'</tr>'
+    )
+
+
+def _badge_legend() -> str:
+    """One-line key so it's obvious which tools you can click. Green-linked
+    titles (LIVE / RUN ON DEAL) open something; the others are reference
+    entries in the catalog."""
+    acc = P["accent"]; dim = P["text_dim"]; faint = P["text_faint"]
+    bd = P["border"]; bdd = P["border_dim"]
+    def chip(label, color, border, note):
+        return (
+            f'<span style="display:inline-flex;align-items:baseline;gap:6px;'
+            f'margin:0 16px 6px 0;font-size:11.5px;color:{dim};">'
+            f'<span style="font-family:var(--ck-mono);font-size:8.5px;'
+            f'font-weight:700;letter-spacing:0.08em;color:{color};'
+            f'border:1px solid {border};border-radius:2px;padding:1px 4px;">'
+            f'{label}</span>{note}</span>'
+        )
+    return (
+        f'<div style="margin:2px 0 16px;padding:10px 14px;'
+        f'background:{P["panel_alt"]};border:1px solid {bdd};border-radius:3px;'
+        f'line-height:1.7;">'
+        f'<span style="font-family:var(--ck-mono);font-size:10px;'
+        f'letter-spacing:0.1em;text-transform:uppercase;color:{faint};'
+        f'margin-right:14px;">What you can open &rarr;</span>'
+        + chip("LIVE", acc, acc, "opens its own page")
+        + chip("RUN ON DEAL", acc, acc, "runs on your active deal")
+        + chip("IN DEAL VIEW", dim, bd, "appears inside the deal workbench")
+        + chip("REFERENCE", faint, bdd, "catalog entry — built, no page yet")
+        + '</div>'
     )
 
 
@@ -248,6 +278,7 @@ def render_pe_library_page(q: str = "", category: str = "") -> str:
                                "curated/illustrative defaults — not live data)")
         + source_purpose
         + f'<div class="ck-kpi-grid">{kpis}</div>'
+        + _badge_legend()
         + search
         + blocks
     )
