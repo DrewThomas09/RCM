@@ -23,6 +23,7 @@ from ..data.hospital_taxonomy import (
 from ..finance.regression import run_segmented_regression as _run_segmented
 from ..finance.regression import breusch_pagan_test as _breusch_pagan
 from ..finance.regression import hc1_robust_se as _hc1_robust_se
+from ..finance.regression import information_criteria as _information_criteria
 from ..finance.leakage import (
     audit_features as _audit_leakage,
     forecasting_safe_features as _safe_features,
@@ -533,6 +534,7 @@ def _run_ols(
         except Exception:  # noqa: BLE001
             se = classical_se
         bp_test = _breusch_pagan(X_aug, resid)
+        info_criteria = _information_criteria(n, float(ss_res), p)
         t_stats = beta / np.where(se > 0, se, 1)
 
         # P-values from t-distribution (approximation via normal for large n)
@@ -768,6 +770,12 @@ def _run_ols(
             # homoskedasticity assumption is actually violated for this fit.
             "robust_se": True,
             "breusch_pagan": bp_test,
+            # Model-selection criteria (lower = better; BIC penalizes params
+            # harder than AIC). Lets the reader see the fit is parsimony-
+            # justified, not just high-R².
+            "aic": info_criteria.get("aic", 0.0),
+            "bic": info_criteria.get("bic", 0.0),
+            "log_likelihood": info_criteria.get("log_likelihood", 0.0),
         }
     except Exception:
         return None
@@ -1131,6 +1139,21 @@ def render_regression_page(
                     "new feature contributes more than chance. Use "
                     "this — not raw R² — when comparing model "
                     "specifications side-by-side."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "BIC", f"{result.get('bic', 0):,.0f}",
+            sub="lower = better",
+            help={
+                "definition": (
+                    "Bayesian Information Criterion — balances fit against "
+                    "model size, penalising each extra parameter by ln(n). "
+                    "Only meaningful as a COMPARISON: refit with more/fewer "
+                    "features and the lower BIC is the better-justified model. "
+                    "It penalises complexity harder than AIC, so it favours the "
+                    "parsimonious (VIF-pruned) specification — which is why a "
+                    "smaller model can beat a higher-R² one here."
                 ),
             },
         )

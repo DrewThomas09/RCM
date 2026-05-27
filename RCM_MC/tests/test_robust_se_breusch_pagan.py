@@ -15,6 +15,7 @@ from rcm_mc.finance.regression import (
     breusch_pagan_test,
     f_pvalue,
     hc1_robust_se,
+    information_criteria,
 )
 
 
@@ -104,6 +105,58 @@ class BreuschPagan(unittest.TestCase):
         bp = breusch_pagan_test(X, np.zeros(5))   # perfect fit / no residual var
         self.assertIn(bp["heteroskedastic"], (False, None))
         self.assertEqual(f_pvalue(0.0, 1, 3), 1.0)
+
+
+class InformationCriteria(unittest.TestCase):
+    def test_basic_shape_and_finiteness(self):
+        ic = information_criteria(n=200, ss_res=150.0, n_features=3)
+        self.assertEqual(ic["n_params"], 3 + 1 + 1)
+        for key in ("log_likelihood", "aic", "bic"):
+            self.assertTrue(np.isfinite(ic[key]))
+        # BIC penalizes parameters harder than AIC (ln n > 2 for n>7).
+        self.assertGreater(ic["bic"], ic["aic"])
+
+    def test_useless_feature_worsens_bic(self):
+        # Add a pure-noise feature: SSR barely improves but the parameter
+        # penalty rises → BIC must go UP (the model is not really better).
+        rng = np.random.default_rng(11)
+        n = 500
+        x1 = rng.normal(0, 1, n)
+        y = 1.0 + 2.0 * x1 + rng.normal(0, 1, n)
+        noise = rng.normal(0, 1, n)
+
+        def _ssr(cols):
+            X = np.column_stack([np.ones(n)] + cols)
+            beta = np.linalg.lstsq(X, y, rcond=None)[0]
+            return float(np.sum((y - X @ beta) ** 2))
+
+        bic_small = information_criteria(n, _ssr([x1]), 1)["bic"]
+        bic_big = information_criteria(n, _ssr([x1, noise]), 2)["bic"]
+        self.assertGreater(bic_big, bic_small,
+                           "adding a useless feature should worsen (raise) BIC")
+
+    def test_real_feature_improves_bic(self):
+        # A genuinely predictive feature should LOWER BIC (fit gain beats the
+        # complexity penalty).
+        rng = np.random.default_rng(12)
+        n = 500
+        x1 = rng.normal(0, 1, n)
+        x2 = rng.normal(0, 1, n)
+        y = 1.0 + 2.0 * x1 + 1.5 * x2 + rng.normal(0, 0.5, n)
+
+        def _ssr(cols):
+            X = np.column_stack([np.ones(n)] + cols)
+            beta = np.linalg.lstsq(X, y, rcond=None)[0]
+            return float(np.sum((y - X @ beta) ** 2))
+
+        bic_one = information_criteria(n, _ssr([x1]), 1)["bic"]
+        bic_two = information_criteria(n, _ssr([x1, x2]), 2)["bic"]
+        self.assertLess(bic_two, bic_one,
+                        "adding a real driver should improve (lower) BIC")
+
+    def test_degenerate_inputs_safe(self):
+        self.assertEqual(information_criteria(1, 10.0, 2)["aic"], 0.0)
+        self.assertEqual(information_criteria(50, 0.0, 2)["aic"], 0.0)
 
 
 if __name__ == "__main__":

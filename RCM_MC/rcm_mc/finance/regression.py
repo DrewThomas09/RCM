@@ -316,6 +316,37 @@ def breusch_pagan_test(
     return out
 
 
+def information_criteria(
+    n: int, ss_res: float, n_features: int
+) -> Dict[str, float]:
+    """Gaussian-OLS log-likelihood, AIC and BIC for a fitted model.
+
+    Information criteria reward fit and penalize complexity, so they say
+    whether dropping a collinear feature actually *improves* the model rather
+    than just shrinking it — lower is better, and BIC penalizes extra
+    parameters harder than AIC (ln n vs 2 per param), so it's the stricter
+    parsimony test. Parameter count = (n_features + intercept) + 1 for the
+    estimated error variance, matching the standard OLS convention.
+
+        ln L = -n/2 · (ln 2π + ln(SSR/n) + 1)
+        AIC  = 2k − 2 ln L      BIC = (ln n)·k − 2 ln L   (k = params)
+
+    Returns NaN-free zeros for degenerate inputs (n<2 or a perfect fit, where
+    ln(0) is undefined).
+    """
+    import math
+    out = {"log_likelihood": 0.0, "aic": 0.0, "bic": 0.0, "n_params": 0}
+    k = (int(n_features) + 1) + 1   # coefficients (incl. intercept) + variance
+    out["n_params"] = k
+    if n < 2 or ss_res <= 0:
+        return out
+    ll = -0.5 * n * (math.log(2.0 * math.pi) + math.log(ss_res / n) + 1.0)
+    out["log_likelihood"] = float(ll)
+    out["aic"] = float(2.0 * k - 2.0 * ll)
+    out["bic"] = float(math.log(n) * k - 2.0 * ll)
+    return out
+
+
 def compute_vif(features_df: pd.DataFrame) -> Dict[str, float]:
     """Variance Inflation Factor per feature column.
 
