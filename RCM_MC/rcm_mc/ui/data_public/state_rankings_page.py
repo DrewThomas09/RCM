@@ -15,7 +15,7 @@ from __future__ import annotations
 import html as _html
 from typing import Dict, List
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_page_title
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_page_title
 from rcm_mc.ui.data_public.state_compare_page import (
     _METRIC_BY_KEY,
     _METRICS,
@@ -122,9 +122,29 @@ def render_state_rankings(params: Dict = None) -> str:
             f'{_html.escape(", ".join(missing))} — listed honestly, not ranked or estimated.</p>'
         )
 
+    # Leading KPI strip (X-Ray pattern) — real computed values from the ranking:
+    # how many states have data, the #1 state + its value, and the national
+    # median for context. No fabrication; missing states are excluded, not zeroed.
+    _vals = sorted(v for _, v in ranked)
+    if _vals:
+        _n = len(_vals)
+        _median = (_vals[_n // 2] if _n % 2
+                   else (_vals[_n // 2 - 1] + _vals[_n // 2]) / 2.0)
+        _top_state, _top_val = ranked[0]
+        kpi_strip = (
+            '<div class="ck-kpi-strip" style="margin-bottom:14px">'
+            + ck_kpi_block("States ranked", str(_n))
+            + ck_kpi_block("#1 " + _html.escape(label), _html.escape(_top_state),
+                           sub=_html.escape(_fmt(key, _top_val)))
+            + ck_kpi_block("National median", _html.escape(_fmt(key, _median)))
+            + '</div>'
+        )
+    else:
+        kpi_strip = ""
     body = f"""
 <div class="ck-page-wrap">
   {ck_page_title("State Rankings", eyebrow="MARKET INTEL", meta="Screen all 50 states + DC on one real public-data metric")}
+  {kpi_strip}
   <p style="font-size:13px;color:{td};max-width:72ch;margin:0 0 14px">
     Origination screening across PEdesk's real public-data layers — pick a metric
     and rank every state. Currently ranking by <b style="color:{tp}">{_html.escape(label)}</b>
