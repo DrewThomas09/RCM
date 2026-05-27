@@ -222,8 +222,42 @@ def render_ai_settings(store: Any) -> str:
     fp = _env_key_fingerprint()
     stats = _call_stats(store)
 
-    status_color = P["positive"] if key_set else P["text_faint"]
-    status_text = "CONNECTED" if key_set else "NOT CONFIGURED"
+    # Local Ollama is the PRIMARY brain (free, on-box); Anthropic is a legacy
+    # fallback used only when Ollama is off.
+    try:
+        from rcm_mc.assistant.ollama_client import (
+            is_ollama_enabled, ollama_default_model,
+        )
+        ollama_on = is_ollama_enabled()
+        ollama_model = ollama_default_model() if ollama_on else ""
+    except Exception:  # noqa: BLE001 — assistant layer optional
+        ollama_on, ollama_model = False, ""
+
+    configured = ollama_on or key_set
+    if ollama_on:
+        backend_name = "Local Ollama"
+        backend_desc = (
+            f"Running fully on-box via local Ollama (model "
+            f"<code>{_html.escape(ollama_model)}</code>) — no deal data leaves "
+            f"the host and there is no per-call API cost."
+        )
+    elif key_set:
+        backend_name = "Anthropic Claude API"
+        backend_desc = (
+            "Using the Anthropic Claude API (legacy fallback). Enable local "
+            "Ollama (PEDESK_GUIDE_OLLAMA_ENABLED=1) to keep deal data on-box "
+            "and remove API cost."
+        )
+    else:
+        backend_name = "AI assistant"
+        backend_desc = (
+            "Not configured. Enable local Ollama "
+            "(PEDESK_GUIDE_OLLAMA_ENABLED=1, preferred) or set an "
+            "ANTHROPIC_API_KEY. Every feature degrades gracefully meanwhile."
+        )
+
+    status_color = P["positive"] if configured else P["text_faint"]
+    status_text = "CONNECTED" if configured else "NOT CONFIGURED"
     status_badge = (
         f'<span style="display:inline-block;padding:3px 10px;'
         f'font-family:var(--ck-mono);font-size:10px;font-weight:700;'
@@ -234,8 +268,9 @@ def render_ai_settings(store: Any) -> str:
 
     key_line = (
         f'<div style="color:{P["text_dim"]};font-size:11px;margin-top:8px;'
-        f'font-family:var(--ck-mono);">Key fingerprint: '
-        f'<span style="color:{P["accent"]};">{_html.escape(fp)}</span></div>'
+        f'font-family:var(--ck-mono);">Anthropic key fingerprint: '
+        f'<span style="color:{P["accent"]};">{_html.escape(fp)}</span>'
+        f'{" · local Ollama active (key unused)" if ollama_on else ""}</div>'
         if key_set else ""
     )
 
@@ -245,13 +280,13 @@ def render_ai_settings(store: Any) -> str:
         f'padding:16px 20px;margin-bottom:14px;">'
         f'<div style="display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;">'
         f'<div style="font-size:15px;font-weight:600;color:{P["text"]};">'
-        f'Anthropic Claude API</div>'
+        f'{_html.escape(backend_name)}</div>'
         f'{status_badge}</div>'
         f'<div style="color:{P["text_dim"]};font-size:12px;line-height:1.55;'
         f'margin-top:6px;">'
         f'Backs the AI-assist features on this platform — IC memo '
         f'drafting, document Q&amp;A, conversational portfolio queries. '
-        f'Every feature degrades gracefully when the key is absent.</div>'
+        f'{backend_desc}</div>'
         f'{key_line}</div>'
     )
 

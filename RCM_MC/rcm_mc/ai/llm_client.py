@@ -149,7 +149,26 @@ class LLMClient:
 
     @property
     def is_configured(self) -> bool:
+        # Configured if EITHER the local Ollama model is enabled (preferred,
+        # free, on-box) OR an Anthropic API key is set (legacy fallback).
+        try:
+            from ..assistant.ollama_client import is_ollama_enabled
+            if is_ollama_enabled():
+                return True
+        except Exception:  # noqa: BLE001 — assistant layer optional
+            pass
         return bool(self._api_key)
+
+    @property
+    def backend(self) -> str:
+        """Which brain is active: 'ollama' (local), 'anthropic', or 'none'."""
+        try:
+            from ..assistant.ollama_client import is_ollama_enabled
+            if is_ollama_enabled():
+                return "ollama"
+        except Exception:  # noqa: BLE001
+            pass
+        return "anthropic" if self._api_key else "none"
 
     def complete(
         self,
@@ -167,18 +186,54 @@ class LLMClient:
         reasoning (IC memo drafting, complex Q&A) should pass
         ``model="claude-sonnet-4-6"`` or ``"claude-opus-4-7"``.
         """
+        # Prefer the LOCAL Ollama model as the primary brain — it's free and
+        # keeps deal data on-box. The external Anthropic API is a legacy
+        # fallback used only when Ollama is disabled. When Ollama is off (the
+        # default), this whole block is skipped and behaviour is unchanged.
+        _use_ollama = False
+        try:
+            from ..assistant.ollama_client import is_ollama_enabled
+            _use_ollama = is_ollama_enabled()
+        except Exception:  # noqa: BLE001 — assistant layer optional
+            _use_ollama = False
+
+        effective_model = "ollama" if _use_ollama else model
+
+        # Cache check (keyed on the effective backend so Ollama/Anthropic
+        # responses don't collide).
+        phash = _prompt_hash(system_prompt, user_prompt)
+        if self._store is not None:
+            cached = _lookup_cache(self._store, phash, effective_model)
+            if cached is not None:
+                return cached
+
+        if _use_ollama:
+            from ..assistant.ollama_client import call_ollama_chat, OllamaError
+            t0 = time.monotonic()
+            try:
+                text = call_ollama_chat(
+                    system_prompt, user_prompt, temperature=temperature)
+            except OllamaError as exc:
+                logger.warning("Ollama LLM unavailable, falling back: %s", exc)
+                text = None
+            if text is not None:
+                result = LLMResponse(
+                    text=text or "[empty response]",
+                    model=effective_model,
+                    latency_ms=(time.monotonic() - t0) * 1000,
+                    cost_usd_estimate=0.0,  # local model — no API cost
+                )
+                if self._store is not None:
+                    _save_cache(self._store, phash, result)
+                    _log_call(self._store, result)
+                return result
+            # Ollama errored — fall through to the Anthropic / no-op fallback.
+
         if not self._api_key:
             return LLMResponse(
                 text="[LLM not configured]",
                 model=_FALLBACK_MODEL,
             )
-
-        # Cache check
-        phash = _prompt_hash(system_prompt, user_prompt)
-        if self._store is not None:
-            cached = _lookup_cache(self._store, phash, model)
-            if cached is not None:
-                return cached
 
         # Build request
         body = json.dumps({
