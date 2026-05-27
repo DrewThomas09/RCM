@@ -7507,9 +7507,9 @@ _GUIDE_BACKFILL = [
     _ctx(
         "/geo-map", "Geo Map",
         category=PageContextCategory.RESEARCH_BACKTESTING,
-        short_description="A US choropleth (tile-grid cartogram) of the "
-        "Geographic Intelligence suite — all 50 states + DC shaded by a real "
-        "metric.",
+        short_description="A US choropleth (real Albers-projected geographic "
+        "map) of the Geographic Intelligence suite — all 50 states + DC shaded "
+        "by a real metric.",
         primary_purpose="Give a national, at-a-glance read of where a chosen "
         "metric concentrates, then click a state for its full profile.",
         common_questions=["Which states lead/lag on this metric?",
