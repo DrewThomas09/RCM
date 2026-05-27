@@ -5311,28 +5311,49 @@ _GUIDE_JS = """
   function esc(s){var d=document.createElement('div');d.textContent=(s==null?'':String(s));return d.innerHTML;}
   function escAttr(s){return esc(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
   function route(){return location.pathname+location.search;}  /* omit hash */
-  /* Scrape the live KPI values the user is looking at (label + value from the
-   * page's .ck-kpi blocks) so the Guide can analyze the actual on-screen
-   * numbers. Read-only: collects visible text only, never page-private data;
-   * skips anything inside the Guide panel; bounded to 24 (server re-caps and
-   * re-sanitizes — this is a convenience, not a trust boundary). */
+  /* Scrape the live figures the user is looking at so the Guide can analyze
+   * the actual on-screen numbers. Captures, in priority order: the page's
+   * value-anchor band (the headline metric + benchmark delta / dollar
+   * opportunity / target — the load-bearing number on analytic pages), then
+   * the .ck-kpi blocks. Read-only: collects visible text only, never
+   * page-private data; skips anything inside the Guide panel; bounded to 24
+   * (server re-caps and re-sanitizes — this is a convenience, not a trust
+   * boundary). */
   function scrapeOnscreen(){
     try{
       var panel=document.getElementById('ck-guide-panel');
       var out=[], seen={};
+      var clean=function(s){return (s||'').replace(/\\s+/g,' ').trim();};
+      var push=function(label,value){
+        label=clean(label); value=clean(value);
+        if(!label||!value)return;
+        var key=label+'\\u0001'+value;
+        if(seen[key])return;                                 /* de-dupe repeats */
+        seen[key]=1;
+        out.push({label:label.slice(0,80), value:value.slice(0,60)});
+      };
+      /* Value-anchor band first — it's the page's headline number. */
+      var anchors=document.querySelectorAll('.ck-value-anchor');
+      for(var a=0;a<anchors.length && out.length<24;a++){
+        var an=anchors[a];
+        if(panel && panel.contains(an))continue;
+        var eyebrow=clean((an.querySelector('.ck-va-eyebrow')||{}).textContent);
+        push(eyebrow||'Headline', (an.querySelector('.ck-va-value')||{}).textContent);
+        var facts=an.querySelectorAll('.ck-va-fact');
+        for(var f=0;f<facts.length && out.length<24;f++){
+          var fl=clean((facts[f].querySelector('.ck-va-fact-label')||{}).textContent);
+          var fv=(facts[f].querySelector('.ck-va-fact-value')||{}).textContent;
+          push((eyebrow?eyebrow+' \\u2014 ':'')+(fl||'fact'), fv);
+        }
+      }
+      /* Then the KPI blocks. */
       var kpis=document.querySelectorAll('.ck-kpi');
       for(var i=0;i<kpis.length && out.length<24;i++){
         var k=kpis[i];
         if(panel && panel.contains(k))continue;             /* skip our own UI */
         var lEl=k.querySelector('.ck-kpi-label'), vEl=k.querySelector('.ck-kpi-value');
         if(!lEl||!vEl)continue;
-        var label=(lEl.textContent||'').replace(/\\s+/g,' ').trim();
-        var value=(vEl.textContent||'').replace(/\\s+/g,' ').trim();
-        if(!label||!value)continue;
-        var key=label+'\\u0001'+value;
-        if(seen[key])continue;                               /* de-dupe repeats */
-        seen[key]=1;
-        out.push({label:label.slice(0,80), value:value.slice(0,60)});
+        push(lEl.textContent, vEl.textContent);
       }
       return out;
     }catch(e){return [];}                                    /* never block an ask */
