@@ -7286,4 +7286,81 @@ for _c in _MANUAL:
         _c.metric_ids = _have2
 
 
+# ── why_it_matters completion ──────────────────────────────────────────
+# `why_it_matters` IS sent to the model, so a placeholder degrades answers.
+# Fill every page still on the default with honest value-framing derived from
+# what the page does (general PE/diligence rationale — no fabricated internals).
+_WHY_PATCHES: Dict[str, str] = {
+    "/aco-economics": "ACO shared-savings economics can make or break a value-based-care thesis — sizing them early frames the deal.",
+    "/acq-timing": "Entry timing materially moves returns; testing it avoids overpaying at a cycle peak.",
+    "/activity": "A clean activity trail keeps the deal team coordinated and the audit history intact.",
+    "/antitrust-screener": "Market-overlap/HSR risk can block or delay a deal — screening it early avoids a late surprise.",
+    "/bolton-analyzer": "Multiple-arbitrage accretion from bolt-ons is the core of a roll-up thesis; quantifying it tests the plan.",
+    "/cap-structure": "Capital structure sets both the return amplification and the downside risk of the deal.",
+    "/capital-efficiency": "Return per dollar invested — not just gross return — is what compounds a fund.",
+    "/cin-analyzer": "CIN shared-savings/quality economics drive value-based upside for clinically-integrated networks.",
+    "/clinical-outcomes": "Outcomes increasingly tie to reimbursement and exit attractiveness, not just quality.",
+    "/cohorts": "Slicing deals into cohorts surfaces patterns a deal-by-deal view hides.",
+    "/covenant-headroom": "Covenant headroom is the early-warning line between a healthy deal and a restructuring.",
+    "/covenant-monitor": "Catching a covenant drift before a breach is the difference between a fixable problem and a crisis.",
+    "/data": "Knowing exactly which public datasets feed the platform is the basis for trusting any analysis built on them.",
+    "/data-intelligence": "Transparency about the real data sources behind the analytics is what makes them defensible.",
+    "/data-room": "A well-organized data room is the backbone of efficient, auditable diligence.",
+    "/deadlines": "Missed deal deadlines (exclusivity, financing, regulatory) can kill or reprice a transaction.",
+    "/deal-pipeline": "A disciplined, staged pipeline is how a thesis-driven sourcing effort actually converts.",
+    "/deal-postmortem": "Learning from realized outcomes turns a track record into a repeatable playbook.",
+    "/deal-quality": "A consistent quality grade keeps scarce diligence attention on the best opportunities.",
+    "/deal-risk-scores": "Comparable risk scoring lets the team triage where to spend diligence effort.",
+    "/deal-search": "Fast retrieval across the live deal book keeps the team working from current truth.",
+    "/deals": "The deal book is the single source of truth the whole workflow runs on.",
+    "/diligence/checklist": "A live checklist is how a deal team avoids diligence gaps under time pressure.",
+    "/diligence/ic-packet": "A consistent, packet-backed IC memo speeds and de-risks the investment decision.",
+    "/diligence/ingest": "Clean ingestion of a deal's documents/financials is the foundation every later analysis depends on.",
+    "/diligence/questions": "A tracked open-questions list prevents diligence items from slipping before IC.",
+    "/drug-shortage": "Active drug shortages directly affect provider operations, cost, and continuity of care.",
+    "/engagements": "Tracking operating/consulting engagements keeps value-creation work accountable to the thesis.",
+    "/escalations": "Surfacing escalated issues across the book ensures the most urgent problems get partner attention.",
+    "/exports": "Reliable, repeatable exports are what get analysis in front of IC and LPs.",
+    "/gpo-supply": "Group-purchasing/supply savings are a concrete, near-term margin lever in provider deals.",
+    "/health-equity": "Health-equity (HEI) performance increasingly affects Star bonuses and payer/LP expectations.",
+    "/initiatives": "Tracked value-creation initiatives are where the return thesis becomes realized EBITDA.",
+    "/locum-tracker": "Locum/agency spend is a fast-moving cost line that erodes provider margin if unmanaged.",
+    "/ma-contracts": "Medicare Advantage contract economics drive a large and growing share of provider revenue.",
+    "/medicaid-unwinding": "Medicaid redetermination shifts payer mix and volume — a near-term revenue risk to size.",
+    "/methodology": "Transparent methodology is what lets a partner trust and defend the platform's outputs.",
+    "/methodology/calculations": "Documented calculations let the team and IC challenge any number on its merits.",
+    "/module-index": "A navigable index keeps a large analytic toolkit usable rather than overwhelming.",
+    "/msa-concentration": "Market concentration shapes pricing power, antitrust risk, and roll-up runway.",
+    "/notes": "Searchable, shared deal notes preserve institutional memory across the team.",
+    "/nsa-tracker": "No Surprises Act / out-of-network dynamics directly affect provider reimbursement and risk.",
+    "/owners": "Clear deal ownership keeps accountability unambiguous across the portfolio.",
+    "/patient-experience": "Patient-experience scores tie to reimbursement, reputation, and volume retention.",
+    "/payer-concentration": "Payer concentration is a core revenue-durability risk — one contract loss can reprice a deal.",
+    "/payer-contracts": "Payer contracts are the single biggest determinant of provider revenue and margin.",
+    "/payer-rate-trends": "Payer rate trends signal where reimbursement — and therefore revenue — is heading.",
+    "/payer-shift": "Shifts in payer mix move margin materially because payers reimburse very differently.",
+    "/physician-productivity": "Provider productivity drives both revenue capacity and compensation cost.",
+    "/pipeline": "The staged pipeline is how sourcing discipline turns into closed deals.",
+    "/pipeline/bridge": "Jumping straight from a pipeline deal to its EBITDA bridge keeps underwriting fast and grounded.",
+    "/provider-network": "Network/payer concentration shapes negotiating leverage and revenue risk.",
+    "/provider-retention": "Provider churn is a first-order risk in provider deals — losing providers loses revenue.",
+    "/quality-scorecard": "Quality increasingly converts to reimbursement and exit multiple, not just compliance.",
+    "/ref-pricing": "Reimbursement as a % of Medicare benchmarks a provider's true pricing power.",
+    "/regulatory-risk": "A single rule change can erase a thesis — sizing regulatory exposure is risk management.",
+    "/risk-adjustment": "Risk-adjustment (RAF) coding drives Medicare Advantage revenue and audit exposure.",
+    "/screening": "Disciplined screening focuses scarce diligence capacity on the targets that fit the thesis.",
+    "/screening/dashboard": "A funnel view keeps the sourcing-to-shortlist process measurable and honest.",
+    "/supply-chain": "Supply-cost savings are a concrete, controllable margin lever in provider businesses.",
+    "/telehealth-econ": "Telehealth economics affect access, cost, and the durability of visit volume.",
+    "/verticals": "Each healthcare vertical has distinct economics; grouping them keeps comparisons honest.",
+    "/watchlist": "A watchlist keeps the deals that matter most in front of the team without noise.",
+    "/workforce-retention": "Workforce turnover is a major hidden cost and operational risk in labor-intensive providers.",
+}
+_NEEDS_WHY = "Needs source documentation."
+for _c in _MANUAL:
+    _w = _WHY_PATCHES.get(_c.route)
+    if _w and isinstance(_c.why_it_matters, str) and _NEEDS_WHY in _c.why_it_matters:
+        _c.why_it_matters = _w
+
+
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
