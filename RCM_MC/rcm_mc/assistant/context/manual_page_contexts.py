@@ -7642,6 +7642,8 @@ _PUBLIC_SOURCE_LINKS = {
     "/ref-pricing": ["civhc_rbp"],         # CIVHC / CO APCD reference pricing
     "/cms-data-browser": ["cms_provider_data_catalog"],
     "/cms-sources": ["cms_provider_data_catalog"],
+    "/drug-shortage": ["openfda_drug_shortages"],   # openFDA (now registered)
+    "/cms-apm": ["cms_cmmi_apm"],                    # CMMI (now registered)
 }
 for _c in _MANUAL:
     _sids = _PUBLIC_SOURCE_LINKS.get(_c.route)

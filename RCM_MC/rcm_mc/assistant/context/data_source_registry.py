@@ -584,6 +584,33 @@ _SOURCES: List[DataSourceContext] = [
        limitations=["Realized exclusions, NOT a prediction; not this deal's providers; names/NPI dropped at ingest."],
        provenance_notes="rcm_mc/data/oig_leie.py; oig.hhs.gov LEIE; registry oig_leie.",
        source_confidence=_DOCD, data_confidence=_PUB, ic_ready=False),
+    _s("openfda_drug_shortages", "openFDA Drug Shortages",
+       "FDA's openFDA drug-shortage feed — current and resolved national drug "
+       "shortages by product.", _T.PUBLIC_DATASET,
+       aliases=["openfda", "fda drug shortage", "drug shortage", "drug shortages"],
+       update_cadence="Live API (near-real-time snapshot).",
+       freshness_lag="Current at fetch.",
+       used_for=["Drug-shortage / supply-risk exposure screening."],
+       related_routes=["/drug-shortage"],
+       strengths=["Authoritative FDA shortage status; live."],
+       limitations=["National product-level shortage status — NOT a specific "
+                    "target's exposure; pair with the target's drug mix."],
+       provenance_notes="FDA openFDA drug-shortages API (live snapshot).",
+       source_confidence=_DOCD, data_confidence=_PUB, ic_ready=False),
+    _s("cms_cmmi_apm", "CMS Innovation Center (CMMI) APM Landscape",
+       "CMS Innovation Center alternative-payment-model (APM) landscape — the "
+       "active CMMI models and their scope.", _T.PUBLIC_DATASET,
+       aliases=["cmmi", "cms apm", "alternative payment models",
+                "innovation center", "apm"],
+       update_cadence="Periodic CMS / CMMI updates.",
+       freshness_lag="Months.",
+       used_for=["Tracking value-based-care / APM exposure for a thesis."],
+       related_routes=["/cms-apm"],
+       strengths=["Authoritative federal APM model list."],
+       limitations=["Model landscape, not a target's participation or APM "
+                    "economics."],
+       provenance_notes="CMS Innovation Center (CMMI) public model listings.",
+       source_confidence=_DOCD, data_confidence=_PUB, ic_ready=False),
 ]
 
 DATA_SOURCE_REGISTRY: Dict[str, DataSourceContext] = {
