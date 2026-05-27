@@ -18789,17 +18789,126 @@ class RCMHandler(BaseHTTPRequestHandler):
             )
 
     def _route_tools_index(self) -> None:
-        """GET /tools — curated showcase by default; ``?view=all`` for the full
-        index. The showcase leads with the top-ranked surfaces + top diligence
-        layers so a partner isn't overwhelmed by ~355 routes; the exhaustive
-        flat index is one click away on the secondary tab."""
-        parsed = urllib.parse.urlparse(self.path)
-        qs = urllib.parse.parse_qs(parsed.query)
-        if (qs.get("view") or [""])[0] != "all":
-            from .ui.tools_showcase_page import render_tools_showcase
-            total = len(self._discover_all_routes())
-            return self._send_html(render_tools_showcase(total_surfaces=total))
-        return self._route_tools_index_full()
+        """GET /tools — editorial card-grid index (design handoff · Card Grid).
+
+        Two views in one page (client-side toggle): **By workspace** and
+        **Full A–Z**. The A–Z is the completeness contract — EVERY discovered
+        route renders as a card (guarded by tests); a safety-net bucket means
+        a route can never be dropped on the floor. Data is assembled live from
+        the route registry, the Cmd-K palette (titles), surface_status
+        (honest status), and the page-context registry (descriptions)."""
+        from .ui.tools_index_page import render_tools_index
+        workspaces, index, total_ws, total_idx = self._build_tools_index_data()
+        return self._send_html(render_tools_index(
+            workspaces=workspaces, index=index,
+            total_ws=total_ws, total_idx=total_idx,
+        ))
+
+    @classmethod
+    def _build_tools_index_data(cls):
+        """Assemble (workspaces, index, total_ws, total_idx) for the Tools page.
+
+        Pulls from the live registry — never hard-coded. Every discovered route
+        (plus curated palette routes) is placed into exactly one A–Z bucket and
+        one workspace bucket; unrecognised routes fall to a safety-net bucket
+        ('More Surfaces' / 'Operations') so nothing is lost (no ghost pages).
+        A classmethod so the completeness tests can call it without a live
+        socket."""
+        from .ui._chartis_kit import (
+            _DEFAULT_PALETTE_MODULES, _resolve_sub_section,
+            _SECTION_FEATURE, _NAV_DESC,
+        )
+        from .diligence.surface_status import classify_surface
+        from .ui.tools_index_page import TIER_TO_STATUS
+        try:
+            from .assistant.context.page_context_registry import (
+                PAGE_CONTEXT_REGISTRY,
+            )
+        except Exception:  # noqa: BLE001 — descriptions are best-effort
+            PAGE_CONTEXT_REGISTRY = {}
+
+        discovered = cls._discover_all_routes()
+        palette_by_route = {m["route"]: m for m in _DEFAULT_PALETTE_MODULES}
+        # Union of discovered + curated palette routes (palette includes a few
+        # startswith-served routes like /my/AT). Deduped, order-stable.
+        all_routes = list(dict.fromkeys(
+            list(discovered) + list(palette_by_route.keys())
+        ))
+
+        def _meta(route):
+            title = (palette_by_route.get(route, {}).get("title")
+                     or cls._title_from_route(route))
+            tier = (classify_surface(route) or {}).get("tier") or "green"
+            status = TIER_TO_STATUS.get(tier, "live")
+            desc = ""
+            pc = PAGE_CONTEXT_REGISTRY.get(route)
+            if pc is not None:
+                desc = (getattr(pc, "short_description", "") or "").strip()
+            if not desc:
+                desc = _NAV_DESC.get(route, "")
+            return {"name": title, "path": route, "status": status,
+                    "desc": desc, "auto": route not in palette_by_route}
+
+        # ── A–Z organizational buckets (handoff names) ──
+        org_order = ["home", "pipeline", "diligence", "library",
+                     "research", "portfolio", "other", "more"]
+        org_labels = {
+            "home": "Home & Operations", "pipeline": "Pipeline & Sourcing",
+            "diligence": "Diligence Workspace", "library": "Library & Reference",
+            "research": "Research & Backtesting", "portfolio": "Portfolio & LP",
+            "other": "Admin & System", "more": "More Surfaces",
+        }
+
+        def _org(route):
+            sec = _resolve_sub_section(route) or cls._heuristic_section(route)
+            if sec == "source":
+                sec = "pipeline"          # "Pipeline & Sourcing" holds Source
+            return sec if sec in org_order else "more"   # safety net
+
+        # ── Workspace buckets (the nav tabs + an Operations catch-all) ──
+        ws_order = ["home", "source", "pipeline", "diligence", "library",
+                    "research", "portfolio", "operations"]
+        ws_labels = {"home": "Home", "source": "Source", "pipeline": "Pipeline",
+                     "diligence": "Diligence", "library": "Library",
+                     "research": "Research", "portfolio": "Portfolio",
+                     "operations": "Operations"}
+
+        def _ws(route):
+            sec = _resolve_sub_section(route) or cls._heuristic_section(route)
+            if sec in ("other", "more"):
+                sec = "operations"
+            return sec if sec in ws_order else "operations"   # safety net
+
+        org_groups = {k: [] for k in org_order}
+        ws_groups = {k: [] for k in ws_order}
+        for route in all_routes:
+            m = _meta(route)
+            org_groups[_org(route)].append(m)
+            ws_groups[_ws(route)].append(m)
+
+        def _sorted(tools):
+            # curated (non-auto) first, then alphabetical — matches handoff.
+            return sorted(tools, key=lambda t: (1 if t["auto"] else 0,
+                                                t["name"].lower()))
+
+        index = [
+            {"id": k, "label": org_labels[k], "tools": _sorted(org_groups[k])}
+            for k in org_order if org_groups[k]
+        ]
+        workspaces = []
+        for k in ws_order:
+            if not ws_groups[k]:
+                continue
+            feat = _SECTION_FEATURE.get(k, {})
+            workspaces.append({
+                "id": k, "label": ws_labels[k],
+                "blurb": feat.get("blurb", ""),
+                "route": feat.get("href", ""),
+                "tools": _sorted(ws_groups[k]),
+            })
+        total_idx = sum(len(s["tools"]) for s in index)
+        total_ws = sum(len(s["tools"]) for s in workspaces)
+        return workspaces, index, total_ws, total_idx
 
     def _route_tools_index_full(self) -> None:
         """GET /tools?view=all — full platform tool index grouped by section.
