@@ -5983,4 +5983,261 @@ for (_r, _t, _sd, _pp, _cq, _km, _mids, _dsids, _ml, _why, _dc2) in _PE_TOOLS_3:
     ))
 
 
+# ── Financing / tax / fund-structure tools (data_public family, batch 4) ──
+# (route, title, short_desc, purpose, common_qs, key_metrics, metric_ids,
+#  data_source_ids, model_logic, why, data_conf)
+_PE_TOOLS_4 = [
+    ("/capital-efficiency", "Capital Efficiency",
+     "Corpus-calibrated capital-efficiency benchmarks — return per dollar "
+     "invested across the deal corpus.",
+     "Benchmark how efficiently capital converts to return vs comparable deals.",
+     ["How capital-efficient is this profile?", "What's typical return per "
+      "dollar?", "Where does this deal rank?"],
+     ["MOIC", "IRR", "EV/EBITDA"], ["moic", "irr", "ev_to_ebitda"],
+     ["public_transaction_corpus"],
+     "Summarizes corpus return-per-capital metrics into benchmark bands; "
+     "descriptive, reflects corpus coverage.",
+     "Capital efficiency, not just gross return, is what compounds a fund.",
+     _DC.PUBLIC_BENCHMARK_DATA),
+    ("/tax-structure", "Tax Structure Analyzer",
+     "Models acquisition tax-structure scenarios (asset vs stock, step-up, "
+     "entity choice) and their after-tax return impact.",
+     "See how deal structure changes after-tax returns before lawyers do.",
+     ["Asset or stock deal?", "What's the step-up benefit?", "How does "
+      "structure change IRR?"],
+     ["After-tax IRR"], ["irr"], [],
+     "Computes after-tax return deltas across entered structure assumptions; "
+     "illustrative, NOT tax advice.",
+     "Structure can swing after-tax returns by hundreds of bps.",
+     _DC.MODEL_ESTIMATE),
+    ("/tax-structure-analyzer", "Tax Structure Analyzer",
+     "Acquisition tax-structure scenario analyzer (asset vs stock, step-up, "
+     "entity choice).",
+     "Compare tax structures' after-tax return impact.",
+     ["Which structure is most tax-efficient?", "What's the step-up worth?",
+      "Asset vs stock trade-off?"],
+     ["After-tax IRR"], ["irr"], [],
+     "Same engine as /tax-structure; computes after-tax deltas from entered "
+     "assumptions. Illustrative, NOT tax advice.",
+     "Structure choice is a controllable, material return lever.",
+     _DC.MODEL_ESTIMATE),
+    ("/earnout", "Earnout & Contingent Consideration",
+     "Models earnout / contingent-consideration structures and their expected "
+     "cost vs the seller's targets.",
+     "Quantify what an earnout is likely to cost and how it bridges a "
+     "valuation gap.",
+     ["What will the earnout cost?", "How likely is it to pay out?",
+      "Does it bridge the bid-ask?"],
+     ["Enterprise value", "EBITDA"], ["enterprise_value", "ebitda"], [],
+     "Computes expected earnout cost across entered targets/probabilities; "
+     "illustrative.",
+     "Earnouts bridge valuation gaps but create alignment and accounting risk.",
+     _DC.MODEL_ESTIMATE),
+    ("/cap-structure", "Capital Structure Optimizer",
+     "Optimizes the debt/equity mix — leverage, cost of capital, and the "
+     "return/risk trade-off.",
+     "Find the capital structure that maximizes returns within covenant and "
+     "risk limits.",
+     ["What's the optimal leverage?", "How much debt can this support?",
+      "What's the WACC trade-off?"],
+     ["Leverage", "Debt/EBITDA", "EV/EBITDA"],
+     ["leverage", "debt", "ev_to_ebitda"], [],
+     "Sweeps debt/equity mixes and reports return/risk across entered "
+     "assumptions; illustrative.",
+     "Structure sets both the return amplification and the downside risk.",
+     _DC.MODEL_ESTIMATE),
+    ("/capital-schedule", "Capital Schedule",
+     "Builds a sources-and-uses / capital deployment schedule for a deal.",
+     "Lay out exactly how capital is sourced and deployed at close.",
+     ["What are the sources and uses?", "How much equity is needed?",
+      "What's the funding schedule?"],
+     ["Sources", "Uses", "Equity check"], [], [],
+     "Composes a sources-and-uses schedule from entered figures; illustrative "
+     "until a deal's terms are supplied.",
+     "A clean sources-and-uses is the backbone of the funding plan.",
+     _DC.MODEL_ESTIMATE),
+    ("/platform-maturity", "Platform Maturity / Exit Readiness",
+     "Scores a platform's maturity across operational / commercial / "
+     "financial / governance dimensions.",
+     "Gauge how built-out a platform is and what's left before exit.",
+     ["How mature is this platform?", "What's left to build?", "Is it "
+      "exit-ready?"],
+     ["Maturity score", "EBITDA margin", "Revenue growth"],
+     ["ebitda_margin", "revenue_growth"], [],
+     "Weighted maturity scorecard from entered dimension inputs; illustrative "
+     "until scored against a real platform.",
+     "Maturity gaps are the value-creation runway before exit.",
+     _DC.MODEL_ESTIMATE),
+    # Trackers (user-entered fund / deal data)
+    ("/tax-credits", "Tax Credits / Incentives Tracker",
+     "Tracks available tax credits and incentives relevant to a deal/platform.",
+     "Keep tax credits and incentives organized so none are left on the table.",
+     ["What credits are available?", "What's the incentive value?",
+      "What's the filing status?"],
+     ["Credit value", "By type"], [], [],
+     "Tracks entered credit/incentive records; illustrative seed until "
+     "populated. NOT tax advice.",
+     "Unclaimed incentives are free return; tracking them is pure upside.",
+     _DC.MIXED),
+    ("/escrow-earnout", "Escrow & Earnout Tracker",
+     "Tracks escrow balances and earnout milestones / payouts post-close.",
+     "Monitor escrow releases and earnout milestones so obligations are met "
+     "and recoveries claimed.",
+     ["What's in escrow?", "When does it release?", "What earnouts are due?"],
+     ["Escrow balance", "Earnout milestones"], [], [],
+     "Tracks entered escrow/earnout records; illustrative seed until "
+     "populated.",
+     "Escrow and earnout slip-ups leak real money post-close.",
+     _DC.MIXED),
+    ("/debt-financing", "Debt Financing Tracker",
+     "Tracks LBO debt commitments, lenders, terms, and the financing process.",
+     "Manage the debt-financing process from term sheets to commitment.",
+     ["Who are the lenders?", "What terms are committed?", "Where's the "
+      "financing process?"],
+     ["Commitment", "Leverage", "Terms"], ["leverage", "debt"], [],
+     "Tracks entered financing commitments/terms; illustrative seed until "
+     "populated.",
+     "Financing certainty and terms make or break a leveraged deal.",
+     _DC.MIXED),
+    ("/direct-lending", "Private Credit / Direct Lending Tracker",
+     "Tracks direct-lending / private-credit positions, terms, and yields.",
+     "Manage a direct-lending book's positions and economics.",
+     ["What positions are held?", "What yields are we earning?", "What's "
+      "the risk profile?"],
+     ["Yield", "Leverage", "Position size"], ["leverage", "debt"], [],
+     "Tracks entered credit positions; illustrative seed until populated.",
+     "Private credit economics hinge on terms, yield, and downside protection.",
+     _DC.MIXED),
+    ("/continuation-vehicle", "Continuation Vehicle",
+     "Models / tracks a GP-led continuation-vehicle transaction and its "
+     "economics.",
+     "Evaluate moving an asset into a continuation vehicle and the LP/GP "
+     "economics.",
+     ["Should we use a CV?", "What are the economics?", "What's the LP "
+      "rollover option?"],
+     ["MOIC", "IRR", "Carry reset"], ["moic", "irr"], [],
+     "Models CV economics from entered assumptions / tracks a live CV; "
+     "illustrative seed until populated.",
+     "CVs extend hold on winners but carry conflict and pricing scrutiny.",
+     _DC.MIXED),
+    ("/secondaries-tracker", "Secondaries / GP-Led Tracker",
+     "Tracks secondary-market and GP-led transaction opportunities and "
+     "pricing.",
+     "Manage secondary opportunities and their pricing/discounts.",
+     ["What secondaries are available?", "What discounts to NAV?", "What's "
+      "the pipeline?"],
+     ["NAV discount", "Deal count"], [], [],
+     "Tracks entered secondary opportunities; illustrative seed until "
+     "populated.",
+     "Secondaries can buy quality NAV at a discount and manage liquidity.",
+     _DC.MIXED),
+    ("/nav-loan-tracker", "NAV Loan / Fund Financing Tracker",
+     "Tracks fund-level NAV loans and other fund financing facilities.",
+     "Monitor fund-level financing, covenants, and cost.",
+     ["What NAV financing is outstanding?", "What's the cost?", "What "
+      "covenants apply?"],
+     ["Facility size", "Leverage", "Cost"], ["leverage", "debt"], [],
+     "Tracks entered fund-financing facilities; illustrative seed until "
+     "populated.",
+     "NAV loans add fund-level leverage — useful but scrutinized by LPs.",
+     _DC.MIXED),
+    ("/dpi-tracker", "DPI / Distribution Tracker",
+     "Tracks distributions to paid-in (DPI) and realized return progress over "
+     "fund life.",
+     "Monitor realized returns and DPI as the fund matures.",
+     ["What's our DPI?", "How much have we distributed?", "How realized is "
+      "the fund?"],
+     ["DPI", "Distributions", "MOIC"], ["moic"], [],
+     "Tracks entered distribution/contribution records to compute DPI; "
+     "illustrative seed until populated.",
+     "DPI is the realized-cash truth LPs ultimately judge a fund on.",
+     _DC.MIXED),
+    ("/lp-reporting", "LP Reporting Dashboard",
+     "Assembles LP-facing reporting — performance, holdings, and "
+     "distributions.",
+     "Produce consistent, LP-ready performance reporting from fund data.",
+     ["What do we report to LPs?", "What's portfolio performance?", "What's "
+      "been distributed?"],
+     ["MOIC", "IRR", "DPI"], ["moic", "irr"], [],
+     "Assembles reporting from portfolio/fund data; reflects whatever has "
+     "been entered, illustrative until populated.",
+     "Clear, consistent LP reporting is core to the GP-LP relationship.",
+     _DC.MIXED),
+    ("/fundraising", "Fundraising / LP Pipeline Tracker",
+     "Tracks the fundraising pipeline — LP prospects, commitments, and close "
+     "status.",
+     "Manage a fund's capital-raising pipeline to a close.",
+     ["Where's the raise?", "Which LPs are committed?", "What's the gap to "
+      "target?"],
+     ["Committed", "Target", "By LP"], [], [],
+     "Tracks entered LP prospects/commitments; illustrative seed until "
+     "populated.",
+     "A disciplined raise pipeline is how a fund actually closes.",
+     _DC.MIXED),
+    ("/coinvest-pipeline", "Co-Investment Pipeline Tracker",
+     "Tracks co-investment opportunities and LP allocation.",
+     "Manage co-invest opportunities and allocate them across LPs.",
+     ["What co-invests are available?", "Who gets allocation?", "What's the "
+      "pipeline?"],
+     ["Opportunity count", "Allocation"], [], [],
+     "Tracks entered co-invest opportunities/allocations; illustrative seed "
+     "until populated.",
+     "Co-invest is a key LP-relationship and fee-economics lever.",
+     _DC.MIXED),
+    ("/pmi-integration", "PMI / Post-Merger Integration Scorecard",
+     "Tracks post-merger integration progress against a scorecard of "
+     "workstreams and synergies.",
+     "Run the 100-day+ integration: workstreams, owners, and synergy capture.",
+     ["How's integration tracking?", "Which workstreams are behind?", "Are "
+      "synergies being captured?"],
+     ["Integration %", "Synergy capture", "EBITDA impact"],
+     ["synergy_estimate", "ebitda"], [],
+     "Tracks entered integration workstreams/synergies; illustrative seed "
+     "until populated.",
+     "Most M&A value is won or lost in integration execution.",
+     _DC.MIXED),
+]
+# Never clobber a route already documented elsewhere (several of these are
+# also DATA-REQUIRED pages with their own upload-instruction contexts).
+_existing_routes_b4 = {c.route for c in _MANUAL}
+for (_r, _t, _sd, _pp, _cq, _km, _mids, _dsids, _ml, _why, _dc2) in _PE_TOOLS_4:
+    if _r in _existing_routes_b4:
+        continue
+    _is_corpus = "public_transaction_corpus" in _dsids
+    _is_tracker = _dc2 == _DC.MIXED
+    if _is_corpus:
+        _inputs = ["Licensed PE deal corpus (public_transaction_corpus)."]
+        _guidance = ["Benchmarks reflect the licensed corpus's disclosed-deal "
+                     "coverage, not the full market — descriptive."]
+        _limits = ["Corpus is a sample of disclosed deals."]
+        _srcs = ["Licensed PE deal corpus (public_transaction_corpus)."]
+    elif _is_tracker:
+        _inputs = ["Your entered fund / deal records; renders illustrative "
+                   "seed data until you add your own."]
+        _guidance = ["Tracks YOUR entered data; figures shown before you "
+                     "populate it are an illustrative scaffold, not real "
+                     "activity."]
+        _limits = ["Only as complete as what you enter; not a market dataset."]
+        _srcs = ["User-entered fund / deal data."]
+    else:
+        _inputs = ["Scenario assumptions (query parameters); renders an "
+                   "illustrative example with no inputs."]
+        _guidance = list(_ILLUS_GUIDANCE)
+        _limits = ["Deterministic point scenarios, no probability distribution.",
+                   "Illustrative assumptions unless overridden via parameters."]
+        _srcs = ["None — computed from the entered/illustrative assumptions."]
+    _MANUAL.append(_ctx(
+        _r, _t,
+        short_description=_sd, primary_purpose=_pp, common_questions=_cq,
+        inputs=_inputs,
+        outputs=["Computed tables/charts for the analysis above."],
+        key_metrics=_km, data_sources=_srcs, model_logic_summary=_ml,
+        why_it_matters=_why, diligence_use_cases=[_pp],
+        interpretation_guidance=_guidance, limitations=_limits,
+        related_routes=["/quant-lab", "/lbo-stress", "/lp-dashboard"],
+        metric_ids=_mids, data_source_ids=_dsids,
+        source_confidence=SourceConfidence.DOCUMENTED, data_confidence=_dc2,
+    ))
+
+
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
