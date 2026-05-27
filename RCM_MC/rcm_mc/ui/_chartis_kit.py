@@ -3948,8 +3948,10 @@ _CSS_INLINE_FALLBACK = """
   }
   .ck-toc-content { min-width: 0; }
   .ck-toc {
-    position: sticky; top: 90px;
-    max-height: calc(100vh - 110px); overflow-y: auto;
+    /* top == 58px topbar + ~14px breathing room. Was 90px (pre-#1014 76px
+       topbar), which left the TOC floating ~18px too low. */
+    position: sticky; top: 72px;
+    max-height: calc(100vh - 92px); overflow-y: auto;
     padding: 18px 4px 24px;
     font-family: "Inter Tight", sans-serif;
   }
@@ -4655,7 +4657,8 @@ _CSS_INLINE_FALLBACK = """
    * Insights triplet on /library, /research, /notes. */
   .ck-rail-layout { display:grid; grid-template-columns:240px 1fr; gap:var(--sc-s-7); align-items:start; margin:0 0 var(--sc-s-6); }
   @media (max-width: 880px) { .ck-rail-layout { grid-template-columns:1fr; } }
-  .ck-filter-rail { font-family:var(--sc-sans); position:sticky; top:88px; }
+  /* top == 58px topbar + 12px. Was 88px (pre-#1014 76px topbar). */
+  .ck-filter-rail { font-family:var(--sc-sans); position:sticky; top:70px; }
   .ck-filter-rail form { margin:0; }
   .ck-filter-rail-title { font-family:var(--sc-mono); font-size:11px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--sc-text-dim); margin:0 0 var(--sc-s-5); display:flex; align-items:center; gap:12px; }
   .ck-filter-rail-title::before { content:''; display:inline-block; width:24px; height:2px; background:var(--sc-teal); flex-shrink:0; }
