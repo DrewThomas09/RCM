@@ -4278,79 +4278,111 @@ _CSS_INLINE_FALLBACK = """
      screen / text doesn't wrap" bug). minmax(0,…) lets the track shrink so
      the inner cells wrap instead. `max-width` clamps to the viewport on
      narrow windows (overrides min-width when smaller). */
-  /* DEFINITE width (not min-width) + minmax(0,1fr) items track. A fixed
-     min-width:660px let a left-anchored group's panel run off the right edge
-     on a narrow/embedded viewport, clipping the destinations column so the
-     feature blurb looked like it "flooded" across. A definite width that
-     clamps to the viewport, plus the earlier single-column stack below,
-     keeps the two columns intact at every width. */
-  .ck-nav-mega { grid-template-columns:212px minmax(0,1fr); width:632px;
-    max-width:calc(100vw - 20px); padding:0; overflow:hidden; }
-  /* Shown mega = grid (grid layout overrides the generic `display:block`). */
+  /* Full-bleed editorial mega-menu (design handoff v2 · 2026-05-27).
+     The panel is a full-width paper backdrop pinned under the 76px bar (a true
+     mega-menu, not a compact dropdown); its inner content (.ck-mega-inner) is
+     constrained to --content-max and centered so the lede's left edge aligns
+     with the wordmark and the listing's right edge with the right rail.
+     position:fixed lives ONLY on .ck-nav-mega (the single-positioning-mode
+     guard isolates the .ck-topbar base rule, which is untouched) and the bar
+     carries no transform, so fixed resolves against the viewport — true
+     full-bleed with one continuous ink underline reading as the bar's. */
+  .ck-nav-mega { --content-max:1320px;
+    position:fixed; top:76px; left:0; right:0; width:auto; max-width:none;
+    padding:0; overflow:visible; background:var(--tb-paper);
+    border:0; border-top:1px solid var(--tb-rule);
+    border-bottom:2px solid var(--tb-ink);
+    box-shadow:0 30px 50px -20px rgba(13,35,54,.18);
+    animation:ckMegaIn .14s ease-out; }
+  @media (prefers-reduced-motion: reduce){ .ck-nav-mega { animation:none; } }
+  @keyframes ckMegaIn { from{opacity:0; transform:translateY(-4px);}
+    to{opacity:1; transform:translateY(0);} }
+  .ck-mega-inner { max-width:var(--content-max); margin:0 auto;
+    padding:32px 32px 28px; display:grid; grid-template-columns:2fr 3fr;
+    gap:56px; align-items:stretch; }
+  /* Shown mega = block (the centered 2fr/3fr grid lives on .ck-mega-inner). */
   .ck-nav-group:hover > .ck-nav-mega,
-  .ck-nav-group.is-open > .ck-nav-mega { display:grid; }
+  .ck-nav-group.is-open > .ck-nav-mega { display:block; }
   .ck-topbar[data-menu-js] .ck-nav-group:hover > .ck-nav-mega { display:none; }
-  .ck-topbar[data-menu-js] .ck-nav-group.is-open > .ck-nav-mega { display:grid; }
-  /* Keep the right-hand sections' panels inside the viewport: anchor the three
-     rightmost mega groups to their right edge so a 660px panel extends left
-     (on-screen) instead of off the right edge. The left-hand groups keep
-     left:0. */
+  .ck-topbar[data-menu-js] .ck-nav-group.is-open > .ck-nav-mega { display:block; }
+  /* Full-bleed → no per-group right-edge anchoring needed (the panel already
+     spans the viewport); pin every group's panel to the same full width. */
   .ck-nav-group:last-of-type .ck-nav-mega,
   .ck-nav-group:nth-last-of-type(2) .ck-nav-mega,
-  .ck-nav-group:nth-last-of-type(3) .ck-nav-mega { left:auto; right:0; }
-  /* min-width:0 on grid items is required: the default min-width:auto lets a
-     long blurb/label overflow its track and bleed into the neighbouring column
-     (the Source feature blurb was overlapping the destination items).
-     Combined with overflow-wrap:break-word below, every cell's text now wraps
-     inside its own column. */
-  .ck-mega-feat { display:flex; flex-direction:column; gap:8px; padding:20px 22px;
-    min-width:0; overflow:hidden; background:var(--tb-paper2);
-    border-right:1px solid var(--tb-rule);
-    text-decoration:none; transition:background .12s; }
-  .ck-mega-feat:hover { background:var(--tb-green-soft); }
-  .ck-mega-feat-eyebrow { font-family:var(--sc-mono,monospace); font-size:9.5px;
-    letter-spacing:.16em; text-transform:uppercase; color:var(--tb-muted); }
-  .ck-mega-feat-title { font-family:var(--sc-serif,Georgia,serif); font-size:23px;
-    line-height:1.05; color:var(--tb-ink); max-width:100%;
+  .ck-nav-group:nth-last-of-type(3) .ck-nav-mega { left:0; right:0; }
+  /* LEDE column (2fr) — editorial: kicker · headline · pull-quote · anchored
+     all-tools CTA. min-width:0 keeps a long blurb wrapping in-column (guarded);
+     the right rule + 48px pad separate it from the listing. */
+  .ck-mega-lede { display:flex; flex-direction:column; min-width:0;
+    padding-right:48px; border-right:1px solid var(--tb-rule); }
+  .ck-mega-feat { display:flex; flex-direction:column; gap:12px; padding:0;
+    min-width:0; overflow:visible; background:transparent; border:0;
+    text-decoration:none; }
+  .ck-mega-kicker { font-family:var(--sc-mono,monospace); font-size:10.5px;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--tb-green);
+    display:inline-flex; align-items:center; gap:8px; }
+  .ck-mega-dot { width:5px; height:5px; border-radius:50%;
+    background:var(--tb-green); display:inline-block; flex-shrink:0; }
+  .ck-mega-feat-eyebrow { font-family:var(--sc-mono,monospace); font-size:10.5px;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--tb-green); }
+  .ck-mega-feat-title { font-family:var(--sc-serif,Georgia,serif); font-weight:400;
+    font-size:34px; line-height:1.04; letter-spacing:-.022em; color:var(--tb-ink);
+    text-wrap:balance; max-width:100%;
     white-space:normal; overflow-wrap:anywhere; word-break:break-word; }
+  .ck-mega-feat-title em { font-style:italic; color:var(--tb-green); }
   .ck-mega-feat-blurb { font-family:var(--sc-serif,Georgia,serif); font-style:italic;
-    font-size:13px; line-height:1.5; color:var(--tb-ink2); max-width:100%;
+    font-size:15px; line-height:1.45; color:var(--tb-ink2); max-width:40ch;
+    border-left:2px solid var(--tb-green); padding-left:14px;
     white-space:normal; overflow-wrap:anywhere; word-break:break-word; }
-  .ck-mega-feat-go { margin-top:auto; font-family:var(--sc-mono,monospace);
-    font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--tb-green); }
-  .ck-mega-items { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-    gap:2px 18px; padding:16px 20px; align-content:start; min-width:0; }
-  /* align-items:flex-start so the index number top-aligns with the label's
-     first line (default `stretch` let the number drift off-center vs multi-
-     line labels). */
-  .ck-mega-item { display:flex; gap:10px; padding:9px 10px; text-decoration:none;
-    border-radius:2px; transition:background .12s; min-width:0;
-    align-items:flex-start; }
-  .ck-mega-item:hover { background:var(--tb-paper2); }
-  /* Match the label's first-line box height (15px × 1.2 = 18px) so the
-     smaller index glyph centres against the title's first line instead of
-     top-floating above it (the "number off-center" look). */
-  .ck-mega-idx { font-family:var(--sc-mono,monospace); font-size:11px;
-    color:var(--tb-green); line-height:18px; flex-shrink:0; }
-  .ck-mega-it-body { display:flex; flex-direction:column; gap:1px; min-width:0;
+  .ck-mega-feat-go { font-family:var(--sc-mono,monospace);
+    font-size:10.5px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--tb-muted); transition:color .12s; }
+  .ck-mega-feat:hover .ck-mega-feat-go { color:var(--tb-green); }
+  /* Anchored all-tools CTA — pinned to the bottom of the lede with a dashed
+     top rule (design's "open the whole section" link → ranked /best index). */
+  .ck-mega-all { margin-top:auto; padding-top:16px;
+    border-top:1px dashed var(--tb-rule);
+    font-family:var(--sc-mono,monospace); font-size:11px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--tb-green); text-decoration:none;
+    display:inline-flex; align-items:center; gap:8px; align-self:flex-start;
+    transition:color .12s; }
+  .ck-mega-all:hover { color:var(--tb-green-deep); }
+  .ck-mega-all-arr { font-family:var(--sc-serif,Georgia,serif); font-style:italic;
+    font-size:14px; }
+  /* LISTING column (3fr) — 3 columns × 2 rows for the 6 ranked leaves.
+     repeat(3, minmax(0,1fr)) + per-item min-width:0 + overflow-wrap below keeps
+     a long description wrapping in-column instead of bleeding across (the v3
+     overflow bug). */
+  .ck-mega-items { display:grid; grid-template-columns:repeat(3, minmax(0,1fr));
+    column-gap:36px; row-gap:22px; padding:0; align-content:start; min-width:0; }
+  .ck-mega-item { display:grid; grid-template-columns:28px minmax(0,1fr);
+    column-gap:12px; padding:0; text-decoration:none;
+    align-items:baseline; min-width:0; }
+  .ck-mega-item:hover { background:transparent; }
+  /* Mono counter, baseline-aligned to the 17px serif title's first line. */
+  .ck-mega-idx { font-family:var(--sc-mono,monospace); font-size:10.5px;
+    letter-spacing:.1em; color:var(--tb-muted); line-height:1.4; padding-top:3px;
+    flex-shrink:0; transition:color .12s; }
+  .ck-mega-item:hover .ck-mega-idx { color:var(--tb-green); }
+  .ck-mega-it-body { display:flex; flex-direction:column; gap:3px; min-width:0;
     flex:1 1 auto; }
-  /* overflow-wrap:anywhere (not just break-word) guarantees even a long
-     unbroken token wraps inside its column instead of bleeding out of the
-     panel/into the neighbour. */
-  .ck-mega-it-label { font-family:var(--sc-serif,Georgia,serif); font-size:15px;
-    color:var(--tb-ink); line-height:1.2; overflow-wrap:anywhere; }
+  /* overflow-wrap:anywhere guarantees even a long unbroken token wraps inside
+     its column instead of bleeding into the neighbour. */
+  .ck-mega-it-label { font-family:var(--sc-serif,Georgia,serif); font-size:17px;
+    color:var(--tb-ink); line-height:1.2; letter-spacing:-.005em;
+    overflow-wrap:anywhere; transition:color .12s; }
   .ck-mega-item:hover .ck-mega-it-label { color:var(--tb-green); }
   .ck-mega-it-desc { font-family:var(--sc-serif,Georgia,serif); font-style:italic;
-    font-size:11.5px; color:var(--tb-muted); line-height:1.3; overflow-wrap:anywhere; }
-  /* Stack to a single column earlier (1100px, not 860px): on embedded /
-     half-width browser panes the two-column panel was wider than the space a
-     left-anchored group had before the viewport edge, clipping the right
-     column. Stacked, the feature card sits above its destinations and nothing
-     can overlap. */
-  @media (max-width:1100px){ .ck-nav-mega { grid-template-columns:1fr;
-    width:min(420px, calc(100vw - 20px)); }
-    .ck-mega-feat { border-right:0; border-bottom:1px solid var(--tb-rule); }
-    .ck-mega-items { grid-template-columns:1fr; } }
+    font-size:13px; color:var(--tb-muted); line-height:1.4; overflow-wrap:anywhere; }
+  /* Responsive: stack the lede above the listing, then collapse the listing
+     columns. The backdrop stays full-bleed; only .ck-mega-inner reflows. */
+  @media (max-width:1100px){
+    .ck-mega-inner { grid-template-columns:1fr; gap:28px; padding:24px 22px; }
+    .ck-mega-lede { padding-right:0; border-right:0;
+      border-bottom:1px solid var(--tb-rule); padding-bottom:22px; }
+    .ck-mega-items { grid-template-columns:1fr 1fr; }
+    .ck-mega-feat-title { font-size:28px; } }
+  @media (max-width:680px){ .ck-mega-items { grid-template-columns:1fr; } }
   /* Legacy single-column dropdown links (kept for .ck-subnav-link reuse). */
   .ck-nav-menu .ck-subnav-link { display:block; padding:9px 20px; border:0;
     border-bottom:0; white-space:nowrap; color:var(--tb-ink2);
@@ -7050,6 +7082,8 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         # "More →" to the full ranked /best/<section> index — so each bar leads
         # with its strongest pages and "show more" opens the ranked catalogue.
         _top, _has_more = _ranked_subnav_items(sect)
+        # Exactly the 6 ranked leaves fill the 3×2 listing grid (real routes +
+        # vetted one-line descriptions — no fabricated copy).
         items = "".join(
             f'<a href="{_esc(s["href"])}" class="ck-mega-item" role="menuitem">'
             f'<span class="ck-mega-idx">{i:02d}.</span>'
@@ -7059,28 +7093,43 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
             f'</span></a>'
             for i, s in enumerate(_top, start=1)
         )
-        items += (
-            f'<a href="/best/{_esc(sect)}" class="ck-mega-item ck-mega-more" '
-            f'role="menuitem"><span class="ck-mega-idx">→</span>'
-            f'<span class="ck-mega-it-body"><span class="ck-mega-it-label">'
-            f'All {_esc(_nav_label(item["label"]))} tools</span></span></a>'
-        )
-        # Featured left panel — the "what is this section" card.
+        # Featured left panel — the "what is this section" card. Honest,
+        # descriptive copy only (eyebrow / title / blurb from _SECTION_FEATURE,
+        # no fabricated stats). The headline italicises + greens its last word
+        # (design treatment) using only the real section title.
         feat = _SECTION_FEATURE.get(sect, {})
+        _title = str(feat.get("title") or item["label"])
+        _head, _, _tail = _title.rpartition(" ")
+        _title_html = (
+            f'{_esc(_head)} <em>{_esc(_tail)}</em>' if _head
+            else f'<em>{_esc(_title)}</em>'
+        )
         feature = (
             '<a class="ck-mega-feat" href="' + _esc(feat.get("href", item["href"])) + '">'
-            f'<span class="ck-mega-feat-eyebrow">{_esc(feat.get("eyebrow", ""))}</span>'
-            f'<span class="ck-mega-feat-title">{_esc(feat.get("title", item["label"]))}</span>'
+            '<span class="ck-mega-kicker">'
+            '<span class="ck-mega-dot" aria-hidden="true"></span>'
+            f'<span class="ck-mega-feat-eyebrow">{_esc(feat.get("eyebrow", ""))}</span></span>'
+            f'<span class="ck-mega-feat-title">{_title_html}</span>'
             f'<span class="ck-mega-feat-blurb">{_esc(feat.get("blurb", ""))}</span>'
             f'<span class="ck-mega-feat-go">Open {_esc(_nav_label(item["label"]))} &rarr;</span>'
             '</a>'
+        )
+        # All-tools CTA — anchored at the bottom of the lede column (design),
+        # routes to the full ranked /best/<section> index.
+        all_tools = (
+            f'<a href="/best/{_esc(sect)}" class="ck-mega-all" role="menuitem">'
+            f'All {_esc(_nav_label(item["label"]))} tools '
+            '<span class="ck-mega-all-arr" aria-hidden="true">&rarr;</span></a>'
         )
         return (
             '<div class="ck-nav-group" aria-haspopup="true">'
             f'{anchor}'
             f'<div class="ck-nav-menu ck-nav-mega" role="menu" '
             f'aria-label="{_esc(_nav_label(item["label"]))} menu">'
-            f'{feature}<div class="ck-mega-items">{items}</div>'
+            '<div class="ck-mega-inner">'
+            f'<div class="ck-mega-lede">{feature}{all_tools}</div>'
+            f'<div class="ck-mega-items">{items}</div>'
+            '</div>'
             '</div>'
             '</div>'
         )
