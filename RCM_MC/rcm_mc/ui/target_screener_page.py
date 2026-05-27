@@ -830,6 +830,35 @@ def _scaffold(title: str, pr: str, bullets: List[str]) -> str:
     )
 
 
+def _universe_kpis(vertical: str, rows: List[Dict]) -> str:
+    """A computed at-a-glance read of the active universe — real counts from
+    the loaded provider rows (no fabrication), so the screener is informative
+    before any filter is applied. Only shows a metric when the universe
+    actually carries it."""
+    from ._chartis_kit import ck_kpi_block
+    n = len(rows)
+    if not n:
+        return ""
+    states = {r.get("state") for r in rows if r.get("state")}
+    sizes = [r.get("size") for r in rows if isinstance(r.get("size"), (int, float))]
+    qs_vals = [r.get("q") for r in rows if isinstance(r.get("q"), (int, float))]
+    size_label = next((r.get("size_label") for r in rows if r.get("size_label")), None)
+    q_label = next((r.get("q_label") for r in rows if r.get("q_label")), "Quality")
+    blocks = [
+        ck_kpi_block("Providers", f"{n:,}", "in this universe"),
+        ck_kpi_block("States & territories", f"{len(states)}", "CMS coverage"),
+    ]
+    if sizes:
+        med = _median(sizes)
+        blocks.append(ck_kpi_block(f"Median {size_label.lower()}",
+                                   f"{med:,.0f}", f"{len(sizes):,} reported"))
+    if qs_vals:
+        pct = 100.0 * len(qs_vals) / n
+        blocks.append(ck_kpi_block(f"{q_label} coverage", f"{pct:.0f}%",
+                                   f"{len(qs_vals):,} of {n:,} report it"))
+    return f'<div class="ck-kpi-grid">{"".join(blocks)}</div>'
+
+
 def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
     # Market/geography verticals screen states, not providers → geo view.
     if vertical in ("provider_supply", "market"):
@@ -850,7 +879,8 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
             f'<p class="ck-section-body" style="margin:0;">Screening '
             f'<strong>{vinfo["label"]}</strong> &middot; <span style="font-family:var(--sc-mono);'
             f'font-size:11px;">{vinfo["universe"]}</span>. {vinfo["note"]} '
-            f'This is market data, not your deals.</p>',
+            f'This is market data, not your deals.</p>'
+            + _universe_kpis(vertical, _vertical_rows(vertical, limit=None)),
             title="Active universe")
         + ck["panel"](_render_map(vertical, qs),
                       title="Provider density · click a state to filter")
