@@ -6787,4 +6787,336 @@ for (_r, _t, _sd, _cq, _km, _mids, _why, _bucket) in _BATCH7:
     ))
 
 
+# ── Final coverage: analytic _route_ pages + system surfaces (batch 8) ──
+# Analytic/diligence pages (real contexts). bucket: corpus/model/deal.
+_BATCH8_ANALYTIC = [
+    ("/analysis", "Analysis Landing", PageContextCategory.DILIGENCE_WORKSPACE,
+     "Hub for all per-deal analytical tools — links into a deal's analysis "
+     "packet sections.",
+     ["What can I analyze for this deal?", "Where's the LBO/DCF/bridge?",
+      "How do I build a packet?"],
+     ["MOIC", "IRR", "EBITDA"], ["moic", "irr", "ebitda"],
+     ["analysis_run"],
+     "Navigation hub over the deal's analysis packet (rcm_mc/analysis); the "
+     "per-model views live under /models/<type>/<deal_id>.",
+     "One entry point to every model keeps deal analysis coherent.",
+     _DC.MIXED, "deal"),
+    ("/ml-insights", "ML Insights", PageContextCategory.RESEARCH_BACKTESTING,
+     "Machine-learning analysis over the public hospital universe — predicted "
+     "KPIs and drivers.",
+     ["What does ML say about this universe?", "Which features drive "
+      "outcomes?", "How confident are the predictions?"],
+     ["Predicted KPIs", "Feature importance"],
+     ["denial_rate", "operating_margin", "model_estimate"], ["cms_hcris"],
+     "Runs the ML stack (ridge/conformal, feature importance) over HCRIS; "
+     "outputs are model estimates with honest confidence tiers.",
+     "ML surfaces patterns across thousands of providers a human can't eyeball.",
+     _DC.PUBLIC_BENCHMARK_DATA, "corpus"),
+    ("/model-validation", "Model Validation",
+     PageContextCategory.RESEARCH_BACKTESTING,
+     "Validation dashboard for the predictive models — held-out accuracy, "
+     "calibration, and drift.",
+     ["Are the models accurate?", "What's the held-out error?", "Are "
+      "predictions calibrated?"],
+     ["CV R²/AUC", "Calibration", "Confidence tier"],
+     ["model_estimate", "confidence_tier"], ["cms_hcris"],
+     "Reports cross-validated/held-out metrics for the models; numbers are "
+     "out-of-sample, not in-sample, so they don't overstate accuracy.",
+     "A model you haven't validated out-of-sample is a model you can't trust.",
+     _DC.PUBLIC_BENCHMARK_DATA, "corpus"),
+    ("/value-creation", "Value Creation",
+     PageContextCategory.PORTFOLIO_LP,
+     "Value-creation view — initiative impact and progress toward the EBITDA "
+     "plan.",
+     ["What value are we creating?", "Which levers matter most?", "Are we on "
+      "plan?"],
+     ["Value-creation opportunity", "EBITDA"],
+     ["value_creation_opportunity", "ebitda"], ["monthly_actuals"],
+     "Aggregates initiative impact vs plan; meaningful once a deal's plan and "
+     "actuals are loaded.",
+     "Tracked value creation is where the return thesis becomes real.",
+     _DC.MIXED, "deal"),
+    ("/underwriting", "Underwriting",
+     PageContextCategory.DILIGENCE_WORKSPACE,
+     "Underwriting view — base-case return from entry, growth, leverage, and "
+     "exit assumptions.",
+     ["What does this underwrite to?", "What has to be true?", "How sensitive "
+      "is the return?"],
+     ["MOIC", "IRR", "EV/EBITDA", "Leverage"],
+     ["moic", "irr", "ev_to_ebitda", "leverage"], [],
+     "LBO underwriting arithmetic over entered assumptions; illustrative "
+     "unless a deal's inputs are supplied.",
+     "The base-case underwrite is the spine of the investment decision.",
+     _DC.MODEL_ESTIMATE, "model"),
+    ("/scenario-mc", "Scenario Monte Carlo",
+     PageContextCategory.RESEARCH_BACKTESTING,
+     "Monte-Carlo scenario analyzer — outcome distribution under stochastic "
+     "assumptions.",
+     ["What's the outcome distribution?", "What's the P10/P90?", "How risky "
+      "is this scenario?"],
+     ["EBITDA distribution", "P10/P50/P90"], ["ebitda", "moic"], [],
+     "Draws many scenarios from entered distributions and reports the outcome "
+     "spread; illustrative unless deal inputs are supplied.",
+     "A distribution shows the risk a single point estimate hides.",
+     _DC.MODEL_ESTIMATE, "model"),
+    ("/diligence/synthesis", "Diligence Synthesis",
+     PageContextCategory.DILIGENCE_WORKSPACE,
+     "Synthesizes a deal's diligence findings into a thesis-level view — "
+     "strengths, risks, and open questions.",
+     ["What's the diligence synthesis?", "What are the key risks?", "What's "
+      "still open?"],
+     ["Risk score", "Open questions"], ["risk_score"], ["analysis_run"],
+     "Composes findings from the deal's packet into a synthesis; surfaces "
+     "gaps rather than papering over them.",
+     "Synthesis turns scattered findings into an IC-ready point of view.",
+     _DC.MIXED, "deal"),
+    ("/diligence/sponsor-detail", "Sponsor Detail",
+     PageContextCategory.DILIGENCE_WORKSPACE,
+     "Single-sponsor drill-down — a sponsor's deal history and performance "
+     "from the corpus.",
+     ["What's this sponsor's track record?", "What have they done in this "
+      "sector?", "How do they perform?"],
+     ["MOIC", "IRR", "Deal count"], ["moic", "irr"],
+     ["public_transaction_corpus"],
+     "Filters the corpus to one sponsor and summarizes their realized record; "
+     "reflects corpus coverage.",
+     "Sponsor track record shapes competition and co-invest decisions.",
+     _DC.PUBLIC_BENCHMARK_DATA, "corpus"),
+    ("/diligence/regulatory-calendar", "Regulatory Calendar",
+     PageContextCategory.RESEARCH_BACKTESTING,
+     "Regulatory calendar with thesis kill-switch flags — upcoming rule "
+     "changes that could break a thesis.",
+     ["What regulation is coming?", "Could a rule break this thesis?", "What "
+      "should we watch?"],
+     ["Upcoming rules", "Kill-switch flags"], [],
+     ["regulatory_calendar_sources"],
+     "Curated regulatory events mapped to thesis-risk flags from public "
+     "rulemaking sources.",
+     "A single CMS rule can erase a thesis; watching the calendar is risk "
+     "management.",
+     _DC.PUBLIC_BENCHMARK_DATA, "corpus"),
+    ("/diligence-checklist", "Diligence Checklist",
+     PageContextCategory.DILIGENCE_WORKSPACE,
+     "Diligence checklist dashboard — workstreams, status, owners, and "
+     "evidence.",
+     ["What's left to diligence?", "What's blocked?", "Who owns what?"],
+     ["Items complete", "By status"], [], ["checklist_state"],
+     "Tracks entered checklist items through status/owner; reflects what the "
+     "team has populated.",
+     "A live checklist is how a deal team avoids diligence gaps.",
+     _DC.MIXED, "deal"),
+    ("/diligence/ic-memo", "Diligence IC Memo",
+     PageContextCategory.DILIGENCE_WORKSPACE,
+     "IC memo view within the diligence workspace for a deal.",
+     ["Show the IC memo", "What's the recommendation?", "What's missing?"],
+     ["MOIC", "IRR"], ["moic", "irr"], ["analysis_run"],
+     "Renders the deal's IC memo from its packet; surfaces gaps honestly.",
+     "The IC memo is where the diligence lands as a decision.",
+     _DC.MIXED, "deal"),
+    ("/calibration", "Prior Calibration",
+     PageContextCategory.LIBRARY_REFERENCE,
+     "Per-payer prior-calibration view — the Bayesian priors the models shrink "
+     "thin data toward.",
+     ["What priors does the model use?", "How are priors calibrated?", "Why "
+      "this prior for this payer?"],
+     ["Prior mean", "Prior strength"], ["benchmark_percentile"],
+     ["benchmark_prior"],
+     "Shows the calibrated priors (rcm_mc calibration) by payer that the "
+     "Bayesian layer uses; reference, not a per-deal output.",
+     "Transparent priors are what make the Bayesian estimates defensible.",
+     _DC.PUBLIC_BENCHMARK_DATA, "corpus"),
+    ("/portfolio-analytics", "Deal Corpus Analytics",
+     PageContextCategory.RESEARCH_BACKTESTING,
+     "Analytics across the licensed deal corpus — distributions, drivers, and "
+     "cross-cuts.",
+     ["What does the corpus say overall?", "What drives returns?", "How do "
+      "cuts compare?"],
+     ["MOIC", "IRR", "EV/EBITDA"], ["moic", "irr", "ev_to_ebitda"],
+     ["public_transaction_corpus"],
+     "Cross-sectional analytics over the corpus; descriptive, reflects "
+     "coverage.",
+     "Corpus-wide analytics turn a deal database into market intelligence.",
+     _DC.PUBLIC_BENCHMARK_DATA, "corpus"),
+    ("/variance", "Variance Drill-Down",
+     PageContextCategory.PORTFOLIO_LP,
+     "Actual-vs-plan / actual-vs-benchmark variance drill-down for portfolio "
+     "deals.",
+     ["Where are we off plan?", "What's driving the variance?", "Which deals "
+      "are behind?"],
+     ["Variance", "EBITDA", "Actual vs plan"], ["ebitda"],
+     ["monthly_actuals", "portfolio_snapshot"],
+     "Computes variance between entered actuals and plan/benchmark from stored "
+     "snapshots; meaningful once actuals are loaded.",
+     "Variance is the early-warning signal that a thesis is slipping.",
+     _DC.MIXED, "deal"),
+]
+_existing_b8 = {c.route for c in _MANUAL}
+for (_r, _t, _cat, _sd, _cq, _km, _mids, _dsids, _ml, _why, _dc2, _bucket) in _BATCH8_ANALYTIC:
+    if _r in _existing_b8:
+        continue
+    if _bucket == "corpus":
+        _inputs = ["Licensed PE deal corpus / public data; some views take a "
+                   "selection."]
+        _guidance = ["Descriptive — reflects the corpus/public-data coverage, "
+                     "not a forecast or the full market."]
+        _limits = ["Coverage-limited; descriptive only."]
+    elif _bucket == "deal":
+        _inputs = ["The selected deal's analysis packet / entered data."]
+        _guidance = ["Outputs are model estimates / tracked figures for the "
+                     "deal, not realized results; needs a built packet / "
+                     "loaded actuals."]
+        _limits = ["Only as good as the deal's inputs and packet assumptions."]
+    else:
+        _inputs = ["Scenario assumptions (query parameters); illustrative "
+                   "with no inputs."]
+        _guidance = list(_ILLUS_GUIDANCE)
+        _limits = ["Deterministic point scenarios; illustrative unless "
+                   "overridden."]
+    _MANUAL.append(_ctx(
+        _r, _t, category=_cat,
+        short_description=_sd, primary_purpose=_sd, common_questions=_cq,
+        inputs=_inputs, outputs=["Computed tables/charts for the analysis."],
+        key_metrics=_km, data_sources=["See data_source_ids."],
+        model_logic_summary=_ml, why_it_matters=_why,
+        diligence_use_cases=[_sd], interpretation_guidance=_guidance,
+        limitations=_limits,
+        related_routes=["/quant-lab", "/analysis", "/corpus-dashboard"],
+        metric_ids=_mids, data_source_ids=_dsids,
+        source_confidence=SourceConfidence.DOCUMENTED, data_confidence=_dc2,
+    ))
+
+# System / utility surfaces — concise, honest contexts (not analytic).
+# (route, title, category, short_desc, common_qs)
+_SYS = PageContextCategory.ADMIN_SYSTEM
+_HOME = PageContextCategory.HOME_OPERATIONS
+_BATCH8_SYSTEM = [
+    ("/settings", _SYS, "Settings — workspace and application preferences.",
+     ["How do I change settings?", "Where are my preferences?"]),
+    ("/settings/ai", _SYS, "AI / Guide settings — controls for the local "
+     "Ollama Guide and RAG (enable, model, index).",
+     ["How do I configure the Guide?", "Which model does the assistant use?"]),
+    ("/settings/workspace", _SYS, "Workspace-mode settings — switch between PE "
+     "Partner and Chartis Consulting interface modes.",
+     ["How do I switch workspace mode?", "What does PE Partner mode change?"]),
+    ("/jobs", _SYS, "Background job queue — status of queued/running simulation "
+     "and analysis jobs.",
+     ["What jobs are running?", "Did my simulation finish?"]),
+    ("/runs", _SYS, "Simulation run history — past Monte-Carlo / analysis runs "
+     "with parameters and results.",
+     ["What runs have I done?", "Can I re-open a past run?"]),
+    ("/cli-runs", _SYS, "CLI run history — records of analyses launched via the "
+     "rcm-mc command line.",
+     ["What CLI runs happened?", "What did the cron jobs do?"]),
+    ("/ops", _SYS, "Operations / system status surface for the deployment.",
+     ["Is the system healthy?", "What's the operational status?"]),
+    ("/outputs", _SYS, "Generated outputs index — exports, reports, and "
+     "artifacts produced by the app.",
+     ["Where are my exports?", "What outputs were generated?"]),
+    ("/search", _HOME, "Global search across deals, hospitals, and routes.",
+     ["How do I search?", "Where do I find a deal/hospital?"]),
+    ("/global-search", _HOME, "Global search results across the app's "
+     "entities and surfaces.",
+     ["Search everything", "Find a deal or page"]),
+    ("/query", _SYS, "Ad-hoc query tool over the app's data.",
+     ["How do I query the data?", "Can I run a custom query?"]),
+    ("/admin/audit-chain", _SYS, "Audit-log chain — the tamper-evident record "
+     "of state-changing actions.",
+     ["What changed and who did it?", "Is the audit chain intact?"]),
+    ("/v3-status", _SYS, "Build / phase status page (v3 milestone tracking).",
+     ["What's the v3 status?", "What shipped in this phase?"]),
+    ("/v5-status", _SYS, "Build / phase status page (v5 milestone tracking).",
+     ["What's the v5 status?", "What shipped in this phase?"]),
+    ("/guide/context-debug", _SYS, "Debug view of the Guide's own page-context "
+     "packet for a route — what the assistant knows about a page.",
+     ["What context does the Guide have for this page?", "Why did the Guide "
+      "answer that way?"]),
+    ("/team", _HOME, "Team dashboard — members, ownership, and activity.",
+     ["Who's on the team?", "Who owns which deals?"]),
+    ("/news", _HOME, "News / activity feed relevant to the portfolio and "
+     "pipeline.",
+     ["What's new?", "Any relevant news?"]),
+    ("/insights", _HOME, "Insights feed — surfaced highlights across the "
+     "portfolio and universe.",
+     ["What should I look at?", "Any notable insights?"]),
+    ("/new-deal", PageContextCategory.PIPELINE_SOURCING,
+     "New-deal entry — create a deal in the pipeline (manual or import).",
+     ["How do I add a deal?", "How do I import a deal?"]),
+    ("/market-data/map", PageContextCategory.RESEARCH_BACKTESTING,
+     "Geographic market-data map — public market indicators by location.",
+     ["What's the geographic picture?", "How do markets compare on the map?"]),
+    ("/market-intel/seeking-alpha", PageContextCategory.RESEARCH_BACKTESTING,
+     "Market-intelligence reading view (Seeking-Alpha-style) over licensed "
+     "research exports.",
+     ["What's the market view?", "What does the research say?"]),
+    ("/fund-learning", _HOME, "Fund-learning / day-one playbook surface — "
+     "lessons and standard plays for new holdings.",
+     ["What's the day-one playbook?", "What have we learned across deals?"]),
+]
+for (_r, _cat, _sd, _cq) in _BATCH8_SYSTEM:
+    if _r in {c.route for c in _MANUAL}:
+        continue
+    _MANUAL.append(_ctx(
+        _r, _r.strip("/").replace("/", " ").replace("-", " ").title() or "Home",
+        category=_cat,
+        short_description=_sd,
+        primary_purpose=_sd,
+        common_questions=_cq,
+        inputs=["App / system state."],
+        outputs=["The surface described above."],
+        key_metrics=[],
+        data_sources=["Application state (not an analytic dataset)."],
+        model_logic_summary="A system / navigation / admin surface, not an "
+        "analytic model — it shows app state or controls, so there are no "
+        "computed figures to interpret.",
+        why_it_matters="Supports the workflow around the analytics rather than "
+        "producing analysis itself.",
+        diligence_use_cases=[_sd],
+        interpretation_guidance=["This is a system/utility surface, not an "
+                                "analytic output — don't read figures here as "
+                                "diligence findings."],
+        limitations=["Not an analytic dataset; reflects current app state."],
+        related_routes=[],
+        metric_ids=[], data_source_ids=[],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=_DC.MIXED,
+    ))
+
+
+if "/compare" not in {c.route for c in _MANUAL}:
+    _MANUAL.append(_ctx(
+        "/compare", "Compare Deals",
+        category=PageContextCategory.PORTFOLIO_LP,
+        short_description="Side-by-side, column-per-deal comparison of selected "
+        "deals (?deals=a,b,c) — KPIs, returns, and trajectory.",
+        primary_purpose="Put two or more deals next to each other so the team "
+        "can see where they differ at a glance.",
+        common_questions=["How do these deals compare?", "Which has the better "
+                          "returns?", "Where do they diverge?"],
+        inputs=["The selected deals (deals= query param) and their stored "
+                "packets / snapshots."],
+        outputs=["A column-per-deal table of KPIs/returns plus an EBITDA "
+                 "trajectory comparison."],
+        key_metrics=["MOIC", "IRR", "EBITDA", "EV/EBITDA"],
+        data_sources=["The selected deals' analysis packets / portfolio "
+                      "snapshots."],
+        model_logic_summary="Renders a side-by-side comparison from each "
+        "selected deal's stored figures (rcm_mc/ui/deal_comparison); values are "
+        "whatever each deal's packet/snapshot holds, not recomputed live.",
+        why_it_matters="Relative comparison is how allocation and "
+        "prioritization decisions actually get made.",
+        diligence_use_cases=["Comparing shortlisted targets or portfolio deals "
+                            "head-to-head."],
+        interpretation_guidance=["Figures are each deal's stored values; a deal "
+                                "with a thinner packet shows fewer/older "
+                                "numbers — not a true zero."],
+        limitations=["Only as current as each deal's last packet/snapshot; "
+                     "deals must be selected via the deals= parameter."],
+        related_routes=["/diligence/compare", "/analysis", "/app"],
+        metric_ids=["moic", "irr", "ebitda", "ev_to_ebitda"],
+        data_source_ids=["analysis_run", "portfolio_snapshot"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ))
+
+
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
