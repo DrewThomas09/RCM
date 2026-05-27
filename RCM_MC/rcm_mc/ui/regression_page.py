@@ -21,6 +21,8 @@ from ..data.hospital_taxonomy import (
     derive_taxonomy, filter_to_universe, SEGMENT_LABELS,
 )
 from ..finance.regression import run_segmented_regression as _run_segmented
+from ..finance.regression import breusch_pagan_test as _breusch_pagan
+from ..finance.regression import hc1_robust_se as _hc1_robust_se
 from ..finance.leakage import (
     audit_features as _audit_leakage,
     forecasting_safe_features as _safe_features,
@@ -517,7 +519,20 @@ def _run_ols(
         # negative round-off that would sqrt to NaN (leaking 'nan' SEs into
         # the page). max(.,0) keeps every SE a real, non-negative number.
         var_diag = np.clip(np.diag(mse * np.linalg.pinv(X_aug.T @ X_aug)), 0.0, None)
-        se = np.sqrt(var_diag)
+        classical_se = np.sqrt(var_diag)
+        # Inference uses HETEROSKEDASTICITY-ROBUST (HC1) standard errors —
+        # cross-sectional hospital data is almost never homoskedastic (a $9B AMC
+        # and a $400K rural CAH don't share an error scale), so classical SEs
+        # overstate precision. The Breusch–Pagan test reports whether that
+        # assumption is actually violated. Robust SEs fall back to classical if
+        # the sandwich can't be formed.
+        try:
+            se = _hc1_robust_se(X_aug, resid)
+            if se.shape != classical_se.shape or not np.all(np.isfinite(se)):
+                se = classical_se
+        except Exception:  # noqa: BLE001
+            se = classical_se
+        bp_test = _breusch_pagan(X_aug, resid)
         t_stats = beta / np.where(se > 0, se, 1)
 
         # P-values from t-distribution (approximation via normal for large n)
@@ -749,6 +764,10 @@ def _run_ols(
             "verdict": verdict,
             "optimized_features": opt_features,
             "optimized_dropped": opt_dropped,
+            # Inference diagnostics: SEs are HC1-robust; BP reports whether the
+            # homoskedasticity assumption is actually violated for this fit.
+            "robust_se": True,
+            "breusch_pagan": bp_test,
         }
     except Exception:
         return None
@@ -1324,12 +1343,33 @@ def render_regression_page(
         f'&middot; bar = effect, whisker = confidence interval</div>'
         f'{_coef_chart}'
     ) if _coef_chart else ""
+    # Inference-method note: SEs are HC1-robust; report the Breusch–Pagan
+    # verdict so the reader knows whether the robustness actually mattered.
+    _bp = result.get("breusch_pagan") or {}
+    if _bp.get("heteroskedastic") is True:
+        _bp_verdict = (
+            f'Breusch&ndash;Pagan F={_bp.get("f_stat", 0):.1f}, '
+            f'p={_bp.get("p_value", 1):.4f} &mdash; <strong>heteroskedasticity '
+            'detected</strong>, so the robust SEs (wider, honest) are what you '
+            'should read here, not the classical ones.'
+        )
+    elif _bp.get("heteroskedastic") is False:
+        _bp_verdict = (
+            f'Breusch&ndash;Pagan p={_bp.get("p_value", 1):.3f} &mdash; no '
+            'heteroskedasticity detected; robust and classical SEs agree.'
+        )
+    else:
+        _bp_verdict = "Heteroskedasticity test not available for this fit."
     coef_section = ck_panel(
         '<p class="ck-section-body">'
         f'Target: <strong>{_html.escape(target.replace("_", " ").title())}</strong>. '
         'Standardized coefficients (-1.0 to +1.0): a one-SD increase in the feature produces '
         'this fraction of the strongest effect. '
         '*** p&lt;0.001, ** p&lt;0.01, * p&lt;0.05.</p>'
+        '<p class="ck-section-body" style="font-size:12px;">'
+        'Standard errors are <strong>HC1 heteroskedasticity-robust</strong> '
+        '(White sandwich) &mdash; the t-stats, p-values and 95% CIs below use '
+        f'them. {_bp_verdict}</p>'
         f'{_coef_fig}'
         '<table class="cad-table"><thead><tr>'
         '<th>Variable</th><th>Strength</th><th>t</th><th>p-value</th>'

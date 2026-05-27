@@ -247,6 +247,75 @@ def f_pvalue(f_stat: float, df_model: int, df_resid: int) -> float:
     return float(_betai(df_resid / 2.0, df_model / 2.0, x))
 
 
+def hc1_robust_se(
+    x_with_intercept: np.ndarray, residuals: np.ndarray
+) -> np.ndarray:
+    """Heteroskedasticity-consistent (HC1) standard errors — the White
+    "sandwich" estimator with the n/(n-p) small-sample correction.
+
+    Classical OLS SEs assume the error variance is constant across
+    observations. Cross-sectional hospital data almost never satisfies that
+    (a $9B academic medical center and a $400K rural CAH do not share an error
+    scale), so the classical t-stats/p-values overstate precision. HC1 corrects
+    the covariance without assuming a variance form:
+
+        V = c · (XᵀX)⁻¹ (Xᵀ diag(eᵢ²) X) (XᵀX)⁻¹,   c = n / (n − p)
+
+    Returns sqrt(diag(V)), clipped at 0 (pinv round-off on collinear designs can
+    leave tiny negative diagonals — same guard the classical path uses).
+    """
+    x = np.asarray(x_with_intercept, dtype=float)
+    e = np.asarray(residuals, dtype=float)
+    n, kp1 = x.shape
+    xtx_inv = np.linalg.pinv(x.T @ x)
+    xe = x * e[:, None]            # rows scaled by their residual
+    meat = xe.T @ xe              # == Xᵀ diag(e²) X
+    cov = xtx_inv @ meat @ xtx_inv
+    dof = max(n - kp1, 1)
+    cov = cov * (n / dof)         # HC1 correction
+    return np.sqrt(np.clip(np.diag(cov), 0.0, None))
+
+
+def breusch_pagan_test(
+    x_with_intercept: np.ndarray, residuals: np.ndarray
+) -> Dict[str, Any]:
+    """Breusch–Pagan / Koenker test for heteroskedasticity (F-form).
+
+    Regresses the squared residuals on the model's regressors; if they explain
+    the squared residuals, the error variance depends on the predictors
+    (heteroskedasticity). Uses the F-form of the auxiliary regression —
+    F = (R²/k) / ((1−R²)/(n−k−1)) ~ F(k, n−k−1) — so it reuses the exact
+    ``f_pvalue`` (no chi-square implementation needed) and is robust to
+    non-normal errors (Koenker's studentized variant). p < 0.05 ⇒ use robust
+    SEs. Returns a dict; ``heteroskedastic`` is None when undefined.
+    """
+    x = np.asarray(x_with_intercept, dtype=float)
+    e2 = np.asarray(residuals, dtype=float) ** 2
+    n, kp1 = x.shape
+    k = kp1 - 1
+    out: Dict[str, Any] = {"f_stat": 0.0, "p_value": 1.0, "df_model": k,
+                           "df_resid": max(n - k - 1, 0), "r2_aux": 0.0,
+                           "heteroskedastic": None}
+    if k < 1 or n - k - 1 < 1:
+        return out
+    beta_aux = np.linalg.lstsq(x, e2, rcond=None)[0]
+    fitted = x @ beta_aux
+    ss_res = float(np.sum((e2 - fitted) ** 2))
+    ss_tot = float(np.sum((e2 - e2.mean()) ** 2))
+    if ss_tot <= 0:
+        return out
+    r2 = 1.0 - ss_res / ss_tot
+    if r2 <= 0.0 or r2 >= 1.0:
+        out["r2_aux"] = max(0.0, min(1.0, r2))
+        out["heteroskedastic"] = False if r2 <= 0.0 else None
+        return out
+    f_stat = (r2 / k) / ((1.0 - r2) / (n - k - 1))
+    p = f_pvalue(f_stat, k, n - k - 1)
+    out.update({"f_stat": float(f_stat), "p_value": float(p), "r2_aux": float(r2),
+                "heteroskedastic": bool(p < 0.05)})
+    return out
+
+
 def compute_vif(features_df: pd.DataFrame) -> Dict[str, float]:
     """Variance Inflation Factor per feature column.
 
