@@ -2086,6 +2086,44 @@ class RCMHandler(BaseHTTPRequestHandler):
             hashlib.sha256,
         ).hexdigest()
 
+    def _refresh_csrf_cookie(self) -> None:
+        """Keep the double-submit ``rcm_csrf`` cookie in sync with the current
+        per-process CSRF secret.
+
+        Sessions persist in SQLite and survive a server restart, but the CSRF
+        secret is per-process (when ``RCM_MC_CSRF_SECRET`` is unset) so it
+        rotates on every restart/deploy. Without this, a still-logged-in
+        partner keeps a stale ``rcm_csrf`` cookie after a deploy and every
+        session POST — most visibly the Guide on /app — fails the CSRF check
+        with a 403, even though they appear logged in. Re-issuing the cookie
+        to the current expected value on each authenticated HTML response
+        self-heals it on the next page load.
+
+        This only keeps the client's CSRF cookie current — it does NOT change
+        how sessions are validated, the secret, or any auth logic. Mirrors the
+        exact cookie attributes set at login. No-op when there is no session or
+        the cookie is already in sync.
+        """
+        token = self._session_token()
+        if not token:
+            return
+        expected = self._csrf_value(token)
+        cookie = self.headers.get("Cookie", "") or ""
+        current = None
+        for part in cookie.split(";"):
+            k, _, v = part.strip().partition("=")
+            if k == "rcm_csrf":
+                current = v.strip()
+                break
+        if current == expected:
+            return
+        secure = self._cookie_flags()
+        self.send_header(
+            "Set-Cookie",
+            f"rcm_csrf={expected}; Path=/; SameSite=Lax; "
+            f"Max-Age={7*24*3600}{secure}",
+        )
+
     def _csrf_ok(self, form: Optional[dict] = None) -> bool:
         """B128: CSRF check for session-authenticated POSTs.
 
@@ -2518,6 +2556,12 @@ class RCMHandler(BaseHTTPRequestHandler):
             "connect-src 'self'; "
             "frame-ancestors 'none'",
         )
+        # Self-heal the double-submit CSRF cookie so a still-logged-in partner
+        # whose rcm_csrf went stale across a deploy (per-process secret rotates)
+        # can POST again — without this their Guide call on /app 403s. Only on
+        # OK HTML; no-op without a session or when already in sync.
+        if status == HTTPStatus.OK:
+            self._refresh_csrf_cookie()
         self._send_security_headers()
         self.end_headers()
         self.wfile.write(encoded)

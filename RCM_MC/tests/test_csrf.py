@@ -215,5 +215,85 @@ class TestCsrf(unittest.TestCase):
                 server.shutdown(); server.server_close()
 
 
+class TestCsrfCookieSelfHeal(unittest.TestCase):
+    """The CSRF secret is per-process and rotates on every restart/deploy,
+    but sessions persist in SQLite — so after a deploy a still-logged-in
+    partner's rcm_csrf cookie goes stale and every POST (notably the Guide
+    on /app) 403s. Authenticated HTML responses re-issue the cookie to the
+    current value so the next page load self-heals it.
+    """
+
+    def _start(self, tmp):
+        import socket as _socket, threading, time as _time
+        from rcm_mc.server import build_server
+        s = _socket.socket(); s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]; s.close()
+        server, _ = build_server(port=port,
+                                 db_path=os.path.join(tmp, "p.db"))
+        t = threading.Thread(target=server.serve_forever, daemon=True)
+        t.start(); _time.sleep(0.05)
+        return server, port
+
+    def _get_set_cookies(self, port, path, cookie_header):
+        req = _u.Request(f"http://127.0.0.1:{port}{path}",
+                         headers={"Cookie": cookie_header})
+        try:
+            with _u.urlopen(req) as r:
+                return r.status, (r.headers.get_all("Set-Cookie") or [])
+        except HTTPError as e:                      # pragma: no cover
+            return e.code, (e.headers.get_all("Set-Cookie") or [])
+
+    def test_stale_csrf_cookie_is_refreshed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            create_user(PortfolioStore(os.path.join(tmp, "p.db")),
+                        "at", "supersecret1")
+            server, port = self._start(tmp)
+            try:
+                token, csrf = _login_and_get_tokens(port, "at", "supersecret1")
+                # Logged in, but the browser still carries a stale csrf cookie
+                # (the post-deploy scenario). The page must re-issue the right one.
+                status, cookies = self._get_set_cookies(
+                    port, "/dashboard",
+                    f"rcm_session={token}; rcm_csrf=STALE_FROM_OLD_PROCESS")
+                self.assertEqual(status, 200)
+                refreshed = [c for c in cookies if c.startswith("rcm_csrf=")]
+                self.assertTrue(
+                    refreshed,
+                    f"stale csrf cookie was not refreshed (cookies={cookies})")
+                self.assertIn(f"rcm_csrf={csrf}", refreshed[0])
+                self.assertIn("Path=/", refreshed[0])
+            finally:
+                server.shutdown(); server.server_close()
+
+    def test_correct_csrf_cookie_not_rewritten(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            create_user(PortfolioStore(os.path.join(tmp, "p.db")),
+                        "at", "supersecret1")
+            server, port = self._start(tmp)
+            try:
+                token, csrf = _login_and_get_tokens(port, "at", "supersecret1")
+                status, cookies = self._get_set_cookies(
+                    port, "/dashboard",
+                    f"rcm_session={token}; rcm_csrf={csrf}")
+                self.assertEqual(status, 200)
+                self.assertFalse(
+                    [c for c in cookies if c.startswith("rcm_csrf=")],
+                    "in-sync csrf cookie should not be rewritten")
+            finally:
+                server.shutdown(); server.server_close()
+
+    def test_no_session_no_csrf_cookie(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            server, port = self._start(tmp)
+            try:
+                status, cookies = self._get_set_cookies(
+                    port, "/login", "")
+                self.assertFalse(
+                    [c for c in cookies if c.startswith("rcm_csrf=")],
+                    "no session → must not set a csrf cookie")
+            finally:
+                server.shutdown(); server.server_close()
+
+
 if __name__ == "__main__":
     unittest.main()
