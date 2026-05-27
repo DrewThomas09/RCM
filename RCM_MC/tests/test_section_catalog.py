@@ -31,6 +31,19 @@ class CatalogRendererTests(unittest.TestCase):
         self.assertEqual(_tier("/diligence/payer-stress"), "green")
         self.assertEqual(_tier("/diligence/management"), "yellow")  # illustrative
 
+    def test_meta_shows_computed_honesty_coverage(self):
+        # The catalog header summarises how much of the section is live vs
+        # illustrative — counted from surface_status, not hand-set.
+        h = render_grouped_catalog(
+            section="diligence", title="T", eyebrow="X",
+            pillars=[{"title": "G", "eyebrow": "E", "body": "b", "links": [
+                {"href": "/diligence/payer-stress", "label": "A", "blurb": "j"},
+                {"href": "/diligence/management", "label": "B", "blurb": "j"}]}],
+            explainer_head="h", explainer_body="b", explainer_source="s",
+            intro_headline="hi", intro_body="bod")
+        self.assertIn("1 live", h)
+        self.assertIn("1 illustrative", h)
+
 
 class DiligenceLandingTests(unittest.TestCase):
     def test_uses_shared_renderer_with_dots(self):
