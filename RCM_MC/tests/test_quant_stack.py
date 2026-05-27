@@ -64,6 +64,26 @@ class TestBayesianCalibration(unittest.TestCase):
         self.assertEqual(est.data_quality, "strong")
         self.assertGreater(est.posterior_mean, 40)
 
+    def test_continuous_ci_is_data_anchored_and_shrinks(self):
+        from rcm_mc.ml.bayesian_calibration import calibrate_continuous_metric
+        # More data → tighter interval (posterior-mean SE shrinks with n).
+        weak = calibrate_continuous_metric("days_in_ar", 55, 10, beds=200)
+        strong = calibrate_continuous_metric("days_in_ar", 55, 400, beds=200)
+        w_weak = weak.credible_interval_90[1] - weak.credible_interval_90[0]
+        w_strong = strong.credible_interval_90[1] - strong.credible_interval_90[0]
+        self.assertGreater(w_weak, w_strong)
+        # The band is centered on the posterior mean, not the prior.
+        self.assertLessEqual(strong.credible_interval_90[0], strong.posterior_mean)
+        self.assertGreaterEqual(strong.credible_interval_90[1], strong.posterior_mean)
+        # A higher-spread metric (cost_to_collect: 0.018→0.032 across types)
+        # earns a wider *relative* band than a stable one (days_in_ar) at the
+        # same n — the dispersion is read from the prior, not hand-set.
+        ar = calibrate_continuous_metric("days_in_ar", 45, 50, beds=200)
+        cost = calibrate_continuous_metric("cost_to_collect", 0.022, 50, beds=200)
+        ar_rel = (ar.credible_interval_90[1] - ar.credible_interval_90[0]) / ar.posterior_mean
+        cost_rel = (cost.credible_interval_90[1] - cost.credible_interval_90[0]) / cost.posterior_mean
+        self.assertGreater(cost_rel, ar_rel)
+
     def test_hospital_profile(self):
         from rcm_mc.ml.bayesian_calibration import calibrate_hospital_profile
         results = calibrate_hospital_profile(
