@@ -287,6 +287,28 @@ def t_critical_value(df: int, alpha: float = 0.05) -> float:
     return 0.5 * (lo + hi)
 
 
+def hc1_robust_cov(
+    x_with_intercept: np.ndarray, residuals: np.ndarray
+) -> np.ndarray:
+    """Full HC1 (White) heteroskedasticity-consistent covariance matrix.
+
+        V = c · (XᵀX)⁻¹ (Xᵀ diag(eᵢ²) X) (XᵀX)⁻¹,   c = n / (n − p)
+
+    The diagonal gives the robust SEs; the off-diagonals are needed for the
+    robust joint Wald/F test of several coefficients at once. pinv keeps it
+    stable on collinear designs.
+    """
+    x = np.asarray(x_with_intercept, dtype=float)
+    e = np.asarray(residuals, dtype=float)
+    n, kp1 = x.shape
+    xtx_inv = np.linalg.pinv(x.T @ x)
+    xe = x * e[:, None]            # rows scaled by their residual
+    meat = xe.T @ xe              # == Xᵀ diag(e²) X
+    cov = xtx_inv @ meat @ xtx_inv
+    dof = max(n - kp1, 1)
+    return cov * (n / dof)         # HC1 correction
+
+
 def hc1_robust_se(
     x_with_intercept: np.ndarray, residuals: np.ndarray
 ) -> np.ndarray:
@@ -297,23 +319,57 @@ def hc1_robust_se(
     observations. Cross-sectional hospital data almost never satisfies that
     (a $9B academic medical center and a $400K rural CAH do not share an error
     scale), so the classical t-stats/p-values overstate precision. HC1 corrects
-    the covariance without assuming a variance form:
-
-        V = c · (XᵀX)⁻¹ (Xᵀ diag(eᵢ²) X) (XᵀX)⁻¹,   c = n / (n − p)
+    the covariance without assuming a variance form.
 
     Returns sqrt(diag(V)), clipped at 0 (pinv round-off on collinear designs can
     leave tiny negative diagonals — same guard the classical path uses).
     """
-    x = np.asarray(x_with_intercept, dtype=float)
-    e = np.asarray(residuals, dtype=float)
-    n, kp1 = x.shape
-    xtx_inv = np.linalg.pinv(x.T @ x)
-    xe = x * e[:, None]            # rows scaled by their residual
-    meat = xe.T @ xe              # == Xᵀ diag(e²) X
-    cov = xtx_inv @ meat @ xtx_inv
-    dof = max(n - kp1, 1)
-    cov = cov * (n / dof)         # HC1 correction
+    cov = hc1_robust_cov(x_with_intercept, residuals)
     return np.sqrt(np.clip(np.diag(cov), 0.0, None))
+
+
+def robust_joint_f_test(
+    x_with_intercept: np.ndarray, beta: np.ndarray, residuals: np.ndarray
+) -> Dict[str, Any]:
+    """Heteroskedasticity-robust Wald test that all slopes are jointly zero.
+
+    The classical overall F assumes homoskedastic errors — but the regression
+    page reports robust SEs precisely because Breusch–Pagan usually finds
+    heteroskedasticity on HCRIS data, which makes that classical F invalid for
+    the headline "is the model jointly significant?" This is the consistent
+    version: a Wald statistic on the slope vector using the HC1 covariance,
+
+        W = b'  Σ_bb⁻¹  b   ~  χ²(p)      (b = slopes, Σ_bb = robust cov block)
+
+    reported in F-form W/p ~ F(p, n−p−1) so it reuses the exact ``f_pvalue``
+    (no chi-square needed) and is directly comparable to the classical F. The
+    intercept is excluded — joint significance is about the slopes. Returns a
+    dict; ``significant`` is None when undefined (too few dof / singular block).
+    """
+    x = np.asarray(x_with_intercept, dtype=float)
+    b = np.asarray(beta, dtype=float)
+    n, kp1 = x.shape
+    p = kp1 - 1
+    df_resid = n - kp1
+    out: Dict[str, Any] = {"f_stat": 0.0, "p_value": 1.0, "df_model": max(p, 0),
+                           "df_resid": max(df_resid, 0), "wald": 0.0,
+                           "significant": None}
+    if p < 1 or df_resid < 1:
+        return out
+    cov = hc1_robust_cov(x, residuals)
+    cov_bb = cov[1:, 1:]                       # drop intercept row/col
+    slopes = b[1:]
+    try:
+        wald = float(slopes @ np.linalg.pinv(cov_bb) @ slopes)
+    except np.linalg.LinAlgError:
+        return out
+    if not np.isfinite(wald) or wald < 0:
+        return out
+    f_stat = wald / p
+    pv = f_pvalue(f_stat, p, df_resid)
+    out.update({"f_stat": float(f_stat), "p_value": float(pv),
+                "wald": wald, "significant": bool(pv < 0.05)})
+    return out
 
 
 def breusch_pagan_test(
