@@ -804,13 +804,29 @@ def _render_geo_view(vertical: str, qs: Dict[str, List[str]], ck) -> str:
         "<script>(function(){document.addEventListener('us-map-select',function(e){"
         "var st=e&&e.detail&&e.detail.state;if(!st)return;"
         "window.location.href='/state-profile?state='+encodeURIComponent(st);});})();</script>")
+    # Real at-a-glance read of this market view (computed from the loaded
+    # state values, no fabrication) — parity with the provider universes' KPI
+    # strip so every screener universe opens informative.
+    geo_kpis = ""
+    if values:
+        from ._chartis_kit import ck_kpi_block
+        med = _median(list(values.values()))
+        top_st, top_v = max(values.items(), key=lambda kv: kv[1])
+        geo_kpis = (
+            '<div class="ck-kpi-grid">'
+            + ck_kpi_block("States & territories", f"{len(values)}", "with data")
+            + ck_kpi_block(f"Median {mlabel.lower()}",
+                           fmt(med) if med is not None else "—", "across states")
+            + ck_kpi_block("Highest", _h.escape(top_st), fmt(top_v))
+            + '</div>')
     return (
         _vertical_bar(vertical, qs)
         + ck["panel"](
             f'<p class="ck-section-body" style="margin:0;"><strong>{vinfo["label"]}</strong> is a '
             f'<strong>market/geography</strong> view — it screens states (and, later, counties), '
             f'not individual providers. Real {source}. Click a state to open its '
-            f'<a href="/geo-intel" class="ck-link">Geographic Intelligence</a> market detail.</p>',
+            f'<a href="/geo-intel" class="ck-link">Geographic Intelligence</a> market detail.</p>'
+            + geo_kpis,
             title="Market-level universe (not individual providers)")
         + ck["panel"](layer_bar + map_html + listener,
                       title=f"{mlabel} by state · click a state for market detail")
