@@ -713,6 +713,15 @@ class BackwardCompatTests(unittest.TestCase):
         n = len(_vertical_rows("hospitals", limit=None))
         self.assertIn(f"{n:,}", h)
 
+    def test_market_view_also_leads_with_kpis(self):
+        # The state/market universes (no provider rows) get a state-level KPI
+        # read too, so every one of the 9 universes opens informative.
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        h = render_target_screener({"view": ["main"], "vertical": ["market"]})
+        self.assertIn("ck-kpi-grid", h)
+        self.assertIn("territories", h)   # States & territories with data
+        self.assertIn("Highest", h)
+
 
 if __name__ == "__main__":
     unittest.main()
