@@ -403,6 +403,43 @@ def ramsey_reset_test(
     return out
 
 
+def jarque_bera_test(residuals: np.ndarray) -> Dict[str, Any]:
+    """Jarque–Bera test for non-normality of OLS residuals.
+
+    Completes the residual-diagnostic trio: Breusch–Pagan checks the variance,
+    Ramsey RESET checks the mean shape, and JB checks the *distribution*. It
+    matters because the exact small-sample t and F p-values this module reports
+    are only valid if the errors are (approximately) normal — with a tight
+    universe filter there's no large-sample CLT to lean on, so a skewed or
+    heavy-tailed residual is the reader's cue to trust the robust SEs and the
+    overall direction rather than a borderline p-value.
+
+        JB = n/6 · (S² + (K−3)²/4)     S=skewness, K=kurtosis, JB ~ χ²(2)
+
+    The χ²(2) survival function is exactly ``exp(−JB/2)`` (the df=2 chi-square
+    is an exponential), so the p-value is exact with no approximation. Needs
+    n ≥ 8 for the moment estimates to mean anything; returns ``normal: None``
+    below that or for a degenerate (zero-variance) residual.
+    """
+    e = np.asarray(residuals, dtype=float)
+    n = int(e.size)
+    out: Dict[str, Any] = {"jb_stat": 0.0, "p_value": 1.0, "skewness": 0.0,
+                           "kurtosis": 3.0, "normal": None}
+    if n < 8:
+        return out
+    e = e - e.mean()
+    m2 = float(np.mean(e ** 2))
+    if m2 <= 0:
+        return out
+    skew = float(np.mean(e ** 3) / m2 ** 1.5)
+    kurt = float(np.mean(e ** 4) / m2 ** 2)        # raw (normal = 3)
+    jb = n / 6.0 * (skew ** 2 + (kurt - 3.0) ** 2 / 4.0)
+    p = float(np.exp(-jb / 2.0))                    # exact χ²(2) survival
+    out.update({"jb_stat": float(jb), "p_value": p, "skewness": skew,
+                "kurtosis": kurt, "normal": bool(p >= 0.05)})
+    return out
+
+
 def information_criteria(
     n: int, ss_res: float, n_features: int
 ) -> Dict[str, float]:
