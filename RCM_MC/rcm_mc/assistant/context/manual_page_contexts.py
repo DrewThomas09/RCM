@@ -5447,4 +5447,266 @@ _MANUAL.extend([
 ])
 
 
+# ── Illustrative PE analytic tools (data_public family) ────────────────
+# Scenario/assumption-driven calculators (no live CMS data); a few summarise
+# the licensed deal corpus. Documented from each module's docstring + the
+# shared data_public pattern (query-param driven, ck_illustrative_note). Tuple:
+# (route, title, short_desc, purpose, common_qs, key_metrics, metric_ids,
+#  data_source_ids, model_logic, why, data_conf)
+_DC = DataConfidence
+_ILLUSTRATIVE_TOOLS = [
+    ("/value-creation-plan", "Value Creation Plan",
+     "Post-close 100-day / value-creation plan tracker — initiatives, owners, "
+     "EBITDA-impact targets and status.",
+     "Track the operational value-creation initiatives that turn the deal "
+     "thesis into realized EBITDA after close.",
+     ["What's in the 100-day plan?", "How much EBITDA do the initiatives target?",
+      "Which initiatives are behind?"],
+     ["Initiative count", "Targeted EBITDA impact", "% complete"],
+     ["value_creation_opportunity", "ebitda", "synergy_estimate"], [],
+     "Composes a plan from initiative inputs and sums their targeted EBITDA "
+     "impact against status; the figures shown are an illustrative scaffold "
+     "until populated for a specific deal.",
+     "Disciplined post-close execution is where PE returns are actually made.",
+     _DC.MODEL_ESTIMATE),
+    ("/qoe-analyzer", "Quality of Earnings Analyzer",
+     "Structures a quality-of-earnings review — adjusted-EBITDA bridge, "
+     "add-backs, and one-time / run-rate normalization.",
+     "Move from reported to adjusted EBITDA transparently so the team can "
+     "pressure-test the earnings a valuation rests on.",
+     ["What are the EBITDA add-backs?", "How does reported bridge to adjusted "
+      "EBITDA?", "Which adjustments are aggressive?"],
+     ["Reported EBITDA", "Adjusted EBITDA", "Add-backs", "EBITDA margin"],
+     ["ebitda", "adjusted_ebitda", "ebitda_margin", "revenue"], [],
+     "Builds a reported→adjusted EBITDA bridge from entered add-backs/"
+     "normalizations; values are illustrative until a deal's actuals are "
+     "supplied.",
+     "QoE add-backs directly move the purchase price; making them explicit "
+     "is core diligence.",
+     _DC.MODEL_ESTIMATE),
+    ("/portfolio-optimizer", "Portfolio Construction Optimizer",
+     "Analyzes a selected set of corpus deals for portfolio construction — "
+     "return/risk trade-offs and concentration.",
+     "Help think about which combination of deals balances return, risk and "
+     "concentration at the fund level.",
+     ["What mix optimizes return vs risk?", "Where is the portfolio "
+      "concentrated?", "How diversified is this construction?"],
+     ["MOIC", "IRR", "Concentration", "Hold period"],
+     ["moic", "irr", "hold_period"], ["public_transaction_corpus"],
+     "Optimization/heuristic over selected corpus deals' return profiles; "
+     "benchmarks come from the licensed corpus, scenario weightings are "
+     "illustrative.",
+     "Fund-level construction, not single-deal underwriting, drives realized "
+     "fund returns.",
+     _DC.MIXED),
+    ("/hold-optimizer", "Hold Period Optimizer",
+     "Given an entry profile, models how MOIC/IRR trade off across different "
+     "hold periods.",
+     "Surface the hold-period sweet spot where compounding EBITDA growth still "
+     "beats the IRR drag of a longer hold.",
+     ["What's the optimal hold period?", "How does IRR change if we hold "
+      "longer?", "When does MOIC stop compensating for time?"],
+     ["Hold period", "IRR", "MOIC", "Exit multiple"],
+     ["hold_period", "irr", "moic", "exit_multiple"], [],
+     "Projects exit value across candidate hold lengths from the entry profile "
+     "(sector, EV, EV/EBITDA, payer mix) and reports IRR/MOIC by year; "
+     "illustrative assumptions unless overridden.",
+     "Time is a first-order IRR driver; the optimal hold is rarely the "
+     "default five years.",
+     _DC.MODEL_ESTIMATE),
+    ("/exit-readiness", "Exit Readiness Index",
+     "Multi-dimensional exit-readiness scoring across Financial / Operational "
+     "/ Commercial / Governance axes.",
+     "Give a structured read on whether an asset is actually ready to go to "
+     "market, not just whether the numbers look good.",
+     ["Is this asset ready to exit?", "What's weakest for a sale process?",
+      "What should we fix before going to market?"],
+     ["Readiness score", "Per-axis scores", "Gaps"],
+     ["ebitda_margin", "revenue_growth"], [],
+     "Weighted scorecard across readiness dimensions; the inputs are "
+     "illustrative until scored against a real asset.",
+     "Going to market unprepared destroys value; a readiness gap list is "
+     "actionable pre-exit.",
+     _DC.MODEL_ESTIMATE),
+    ("/refi-optimizer", "Refinance Optimizer",
+     "Models refinancing scenarios — new leverage, rate, and the cash-out / "
+     "rate-savings trade-off.",
+     "Evaluate whether and when to refinance a portfolio company's debt.",
+     ["Should we refinance now?", "How much can we cash out?", "What's the "
+      "rate-savings impact?"],
+     ["Leverage", "Interest rate", "Cash-out", "EV/EBITDA"],
+     ["leverage", "debt", "ev_to_ebitda"], [],
+     "Computes new debt service and cash-out across entered refi assumptions; "
+     "illustrative unless deal-specific terms are supplied.",
+     "Refinancings can return capital to LPs mid-hold and reset the cost of "
+     "debt.",
+     _DC.MODEL_ESTIMATE),
+    ("/working-capital", "Working Capital Analyzer",
+     "AR / AP / DSO / cash-conversion-cycle diligence with payer-level AR and "
+     "RCM levers.",
+     "Quantify the cash tied up in working capital and the RCM levers that "
+     "free it — a recurring source of hidden value in healthcare deals.",
+     ["How much cash is trapped in AR?", "What's the cash conversion cycle?",
+      "Which payers drive DSO?"],
+     ["Days in AR", "DSO", "Cash conversion cycle", "Net collection rate"],
+     ["days_in_ar", "net_collection_rate"], [],
+     "Computes AR/AP/DSO/CCC and payer-level AR from entered balances; "
+     "illustrative until a target's actuals are loaded.",
+     "Working-capital release is often the fastest post-close cash win in "
+     "provider businesses.",
+     _DC.MODEL_ESTIMATE),
+    ("/unit-economics", "Unit Economics Analyzer",
+     "Per-location / per-provider unit economics — revenue, ramp curves, and "
+     "visit / provider profitability.",
+     "Get under the platform average to the economics of a single site or "
+     "provider, where roll-up value is actually created.",
+     ["What does one location earn?", "How long is the ramp to maturity?",
+      "Which providers are profitable?"],
+     ["Revenue/location", "Contribution margin", "Ramp curve"],
+     ["provider_contribution_margin", "revenue", "ebitda_margin"], [],
+     "Builds per-unit P&L and ramp curves from entered location/provider "
+     "inputs; illustrative unless populated with real site data.",
+     "A platform is only as good as the repeatable economics of its next "
+     "unit.",
+     _DC.MODEL_ESTIMATE),
+    ("/rollup-economics", "Roll-Up / Platform Economics",
+     "Models roll-up math — multiple arbitrage, synergy capture, and "
+     "platform-vs-add-on blended multiples.",
+     "Show how buying add-ons below the platform multiple and capturing "
+     "synergies compounds equity value.",
+     ["What's the multiple-arbitrage value?", "How much synergy is needed?",
+      "What blended multiple results?"],
+     ["EV/EBITDA", "Synergy", "Blended multiple", "MOIC"],
+     ["ev_to_ebitda", "synergy_estimate", "ebitda", "moic"], [],
+     "Computes blended entry multiple and equity build from platform + add-on "
+     "assumptions; illustrative scenario math, not a specific program.",
+     "Multiple arbitrage + synergy is the core healthcare-services roll-up "
+     "thesis.",
+     _DC.MODEL_ESTIMATE),
+    ("/sponsor-league", "Sponsor League Table",
+     "Ranks healthcare PE sponsors by realized returns across the licensed "
+     "deal corpus.",
+     "Benchmark sponsors against each other on realized performance to inform "
+     "co-invest and competitive dynamics.",
+     ["Which sponsors perform best?", "How does a sponsor rank?", "Who's "
+      "active in this sector?"],
+     ["MOIC", "IRR", "Deal count", "Hold period"],
+     ["moic", "irr", "hold_period"], ["public_transaction_corpus"],
+     "Aggregates realized-return metrics per sponsor from the licensed deal "
+     "corpus; rankings reflect corpus coverage, not the full market.",
+     "Knowing who wins in a sector shapes co-invest, competition, and exit "
+     "buyer lists.",
+     _DC.PUBLIC_BENCHMARK_DATA),
+    ("/growth-runway", "Growth Runway Analyzer",
+     "TAM / SAM / SOM sizing, penetration curve, and share-expansion drivers.",
+     "Pressure-test how much room a thesis has to grow before the market "
+     "caps it.",
+     ["How big is the addressable market?", "What penetration is assumed?",
+      "How much runway is left?"],
+     ["TAM/SAM/SOM", "Penetration %", "Revenue growth"],
+     ["revenue_growth", "revenue"], [],
+     "Builds market-sizing and penetration curves from entered assumptions; "
+     "illustrative unless grounded in real market data.",
+     "A thesis without runway is a value trap; sizing the ceiling matters.",
+     _DC.MODEL_ESTIMATE),
+    ("/return-attribution", "Return Attribution",
+     "MOIC decomposition (P25/P50/P75) by deal dimensions — sector, vintage, "
+     "payer mix — from the deal corpus.",
+     "Attribute realized returns to the factors that produced them so the "
+     "team learns what actually drives MOIC.",
+     ["What drives MOIC in the corpus?", "Which sectors/vintages return best?",
+      "How dispersed are returns?"],
+     ["MOIC P25/P50/P75", "IRR"],
+     ["moic", "irr"], ["public_transaction_corpus"],
+     "Groups corpus deals by dimension and reports the MOIC distribution; "
+     "reflects corpus coverage, not a forecast.",
+     "Return attribution turns a track record into a repeatable playbook.",
+     _DC.PUBLIC_BENCHMARK_DATA),
+    ("/entry-multiple", "Entry Multiple Analysis",
+     "EV/EBITDA entry multiples across sectors and their correlation with "
+     "realized returns, from the deal corpus.",
+     "Ground an entry-price view in what comparable deals actually paid and "
+     "how that related to returns.",
+     ["What's the typical entry multiple here?", "Do lower entries return "
+      "better?", "How do sectors compare on entry price?"],
+     ["EV/EBITDA", "Exit multiple", "EBITDA"],
+     ["ev_to_ebitda", "exit_multiple", "ebitda"], ["public_transaction_corpus"],
+     "Summarizes entry EV/EBITDA by sector and its correlation to outcomes "
+     "from the licensed corpus; descriptive, not predictive.",
+     "Entry multiple is the single biggest controllable return lever.",
+     _DC.PUBLIC_BENCHMARK_DATA),
+    ("/exit-multiple", "Exit Multiple Analysis",
+     "Exit EV/EBITDA multiples by sector and the multiple-expansion vs "
+     "EBITDA-growth split of returns.",
+     "See how much of corpus returns came from paying-up vs growing the "
+     "business.",
+     ["What exit multiples are realistic?", "How much return is multiple "
+      "expansion?", "Which sectors re-rate on exit?"],
+     ["Exit multiple", "EV/EBITDA", "Multiple expansion"],
+     ["exit_multiple", "ev_to_ebitda"], ["public_transaction_corpus"],
+     "Summarizes exit multiples and decomposes returns into expansion vs "
+     "growth from corpus data; descriptive.",
+     "Underwriting flat-to-down exit multiples is the discipline that "
+     "survives a re-rating.",
+     _DC.PUBLIC_BENCHMARK_DATA),
+    ("/dividend-recap", "Dividend Recap",
+     "Capital-structure recap scenarios — incremental leverage, timing, and "
+     "the carry / DPI impact of returning capital early.",
+     "Evaluate pulling capital out via a dividend recap and what it does to "
+     "leverage and returns.",
+     ["Can we do a dividend recap?", "How much can we distribute?", "What's "
+      "the IRR/DPI impact?"],
+     ["Leverage", "Distribution", "MOIC", "IRR"],
+     ["leverage", "debt", "moic", "irr"], [],
+     "Models incremental debt capacity and the distribution's return impact "
+     "across entered scenarios; illustrative unless deal terms are supplied.",
+     "Recaps return capital to LPs mid-hold and boost DPI/IRR without an "
+     "exit.",
+     _DC.MODEL_ESTIMATE),
+]
+
+_ILLUS_GUIDANCE = [
+    "Figures are ILLUSTRATIVE scenario outputs from the entered/default "
+    "assumptions — not a specific deal's modeled result unless you supply its "
+    "inputs.",
+    "Read the assumptions before quoting any number; the outputs move "
+    "mechanically with them.",
+]
+for (_r, _t, _sd, _pp, _cq, _km, _mids, _dsids, _ml, _why, _dc) in _ILLUSTRATIVE_TOOLS:
+    _corpus = "public_transaction_corpus" in _dsids
+    _MANUAL.append(_ctx(
+        _r, _t,
+        short_description=_sd,
+        primary_purpose=_pp,
+        common_questions=_cq,
+        inputs=(["Deal benchmarks from the licensed deal corpus, plus scenario "
+                 "assumptions."] if _corpus else
+                ["Scenario assumptions (query parameters); renders an "
+                 "illustrative example with no inputs."]),
+        outputs=["Computed tables/charts for the analysis above."],
+        key_metrics=_km,
+        data_sources=(["Licensed PE deal corpus (public_transaction_corpus)."]
+                      if _corpus else
+                      ["None — computed deterministically from the "
+                       "entered/illustrative assumptions."]),
+        model_logic_summary=_ml,
+        why_it_matters=_why,
+        diligence_use_cases=[_pp],
+        interpretation_guidance=(
+            ["Benchmarks reflect the licensed corpus's coverage, not the full "
+             "market; scenario overlays are illustrative."] if _corpus
+            else list(_ILLUS_GUIDANCE)),
+        limitations=(
+            ["Corpus coverage is a sample of disclosed deals — not exhaustive."]
+            if _corpus else
+            ["Deterministic point scenarios, no probability distribution.",
+             "Illustrative assumptions unless overridden via parameters."]),
+        related_routes=["/quant-lab", "/lbo-stress", "/portfolio/monte-carlo"],
+        metric_ids=_mids,
+        data_source_ids=_dsids,
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=_dc,
+    ))
+
+
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
