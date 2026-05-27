@@ -4361,21 +4361,19 @@ _CSS_INLINE_FALLBACK = """
     font-size:15px; line-height:1.45; color:var(--tb-ink2); max-width:40ch;
     border-left:2px solid var(--tb-green); padding-left:14px;
     white-space:normal; overflow-wrap:anywhere; word-break:break-word; }
-  /* All-tools CTA — its OWN full-width footer row spanning both columns at the
-     bottom of the panel (grid-column:1/-1), separated by a top rule and
-     centered. Pulling it out of the lede column is what finally kills the
-     overlap: it can never collide with a variable-height pull-quote because it
-     is in a separate grid row below everything. Centered + generous hit-area =
-     easy to click and visually balanced (not jammed off to one side). */
-  .ck-mega-foot { grid-column:1 / -1; margin-top:24px; padding-top:16px;
-    border-top:1px solid var(--tb-rule); display:flex; justify-content:center; }
-  .ck-mega-all { font-family:var(--sc-mono,monospace); font-size:11px;
+  /* Right column = the leaves grid + the all-tools link beneath it, aligned to
+     the column's FAR RIGHT. The link lives INSIDE the listing box (not a
+     separate full-width footer chunk) and reads in green so it's the visible
+     "see everything" affordance. It sits in normal flow below the leaves, so
+     it can never overlap the lede pull-quote or the leaves. */
+  .ck-mega-listing { display:flex; flex-direction:column; min-width:0; }
+  .ck-mega-all { align-self:flex-end; margin-top:18px;
+    font-family:var(--sc-mono,monospace); font-size:11px; font-weight:600;
     letter-spacing:.14em; text-transform:uppercase; color:var(--tb-green);
-    text-decoration:none; display:inline-flex; align-items:center; gap:8px;
-    padding:6px 14px; border-radius:2px; transition:color .12s, background .12s; }
-  .ck-mega-all:hover { color:var(--tb-green-deep); background:var(--tb-paper2); }
-  .ck-mega-all-arr { font-family:var(--sc-serif,Georgia,serif); font-style:italic;
-    font-size:14px; }
+    text-decoration:none; display:inline-flex; align-items:center; gap:7px;
+    padding:6px 10px; border-radius:2px; transition:color .12s, background .12s; }
+  .ck-mega-all:hover { color:var(--tb-green-deep); background:var(--tb-green-soft); }
+  .ck-mega-all-arr { font-size:13px; }
   /* LISTING column (3fr) — 3 columns × 2 rows for the 6 ranked leaves.
      repeat(3, minmax(0,1fr)) + per-item min-width:0 + overflow-wrap below keeps
      a long description wrapping in-column instead of bleeding across (the v3
@@ -7144,16 +7142,13 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
             f'<span class="ck-mega-feat-blurb">{_esc(feat.get("blurb", ""))}</span>'
             '</a>'
         )
-        # All-tools CTA — its own full-width footer row spanning both columns at
-        # the bottom of the panel, so it can NEVER overlap the lede pull-quote
-        # (the prior bottom-of-lede placement collided with the variable-height
-        # blurb). Centered + generous hit-area; routes to /best/<section>.
+        # All-tools link — sits at the FAR-RIGHT bottom of the listing column,
+        # inside the links box (not a separate full-width footer chunk), in
+        # green. Normal flow below the leaves → never overlaps anything.
         all_tools = (
-            '<div class="ck-mega-foot">'
             f'<a href="/best/{_esc(sect)}" class="ck-mega-all" role="menuitem">'
             f'All {_esc(_nav_label(item["label"]))} tools '
             '<span class="ck-mega-all-arr" aria-hidden="true">&rarr;</span></a>'
-            '</div>'
         )
         return (
             '<div class="ck-nav-group" aria-haspopup="true">'
@@ -7162,8 +7157,10 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
             f'aria-label="{_esc(_nav_label(item["label"]))} menu">'
             '<div class="ck-mega-inner">'
             f'<div class="ck-mega-lede">{feature}</div>'
+            '<div class="ck-mega-listing">'
             f'<div class="ck-mega-items">{items}</div>'
             f'{all_tools}'
+            '</div>'
             '</div>'
             '</div>'
             '</div>'
