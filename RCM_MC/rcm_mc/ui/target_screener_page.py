@@ -91,47 +91,47 @@ _MODES = [
 
 _CSS = """
 .tsw-tabs{display:flex;gap:0;overflow-x:auto;border:1px solid var(--sc-rule,#c9c1ac);
- border-radius:3px;background:var(--sc-paper-2,#f3eddb);margin:14px 0 18px;}
+ border-radius:3px;background:var(--sc-paper-2,#f3eddb);margin:10px 0 14px;}
 .tsw-group{display:flex;}
 .tsw-group + .tsw-group{border-left:1px solid var(--sc-rule,#c9c1ac);}
-.tsw-glabel{padding:0 12px;font-family:var(--sc-mono);font-size:8px;letter-spacing:.14em;
+.tsw-glabel{padding:0 8px;font-family:var(--sc-mono);font-size:7.5px;letter-spacing:.12em;
  text-transform:uppercase;color:var(--sc-text-faint,#8b94a0);align-self:center;
  background:var(--sc-paper-3,#ece5d6);border-right:1px solid var(--sc-rule,#c9c1ac);
  line-height:1.3;}
-.tsw-tab{padding:11px 16px 9px;border-right:1px solid var(--sc-rule,#c9c1ac);
- display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;
- min-width:170px;text-decoration:none;background:var(--sc-paper-2,#f3eddb);}
+.tsw-tab{padding:7px 11px 6px;border-right:1px solid var(--sc-rule,#c9c1ac);
+ display:grid;grid-template-columns:auto 1fr;gap:7px;align-items:center;
+ min-width:112px;text-decoration:none;background:var(--sc-paper-2,#f3eddb);}
 .tsw-tab:last-child{border-right:0;}
 .tsw-tab:hover{background:var(--sc-paper,#faf6ec);}
 .tsw-tab.is-active{background:var(--sc-paper,#faf6ec);border-bottom:3px solid var(--sc-teal-deep,#0e3d39);padding-bottom:6px;}
-.tsw-num{font-family:var(--sc-serif);font-style:italic;font-size:21px;line-height:1;
- color:var(--sc-teal,#155752);width:22px;text-align:center;}
+.tsw-num{font-family:var(--sc-serif);font-style:italic;font-size:15px;line-height:1;
+ color:var(--sc-teal,#155752);width:16px;text-align:center;}
 .tsw-tab.is-active .tsw-num{color:var(--sc-teal-deep,#0e3d39);}
-.tsw-t{font-family:var(--sc-serif);font-size:14.5px;color:var(--sc-navy,#15202b);line-height:1.1;}
+.tsw-t{font-family:var(--sc-serif);font-size:12.5px;color:var(--sc-navy,#15202b);line-height:1.1;}
 .tsw-t em{font-style:italic;color:var(--sc-teal,#155752);}
 .tsw-s{font-family:var(--sc-mono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;
  color:var(--sc-text-faint,#8b94a0);margin-top:3px;}
 .tsw-verticals{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 16px;}
-.tsw-vert{font-family:var(--sc-mono);font-size:10.5px;letter-spacing:.04em;
- padding:5px 11px;border:1px solid var(--sc-rule,#c9c1ac);border-radius:2px;
+.tsw-vert{font-family:var(--sc-mono);font-size:10px;letter-spacing:.03em;
+ padding:4px 9px;border:1px solid var(--sc-rule,#c9c1ac);border-radius:2px;
  text-decoration:none;color:var(--sc-text,#2a3a4a);background:var(--sc-paper,#faf6ec);}
 .tsw-vert:hover{border-color:var(--sc-teal,#155752);}
 .tsw-vert.is-active{background:var(--sc-navy,#15202b);color:var(--sc-paper,#faf6ec);border-color:var(--sc-navy,#15202b);}
 .tsw-vert .u{opacity:.6;font-size:9px;}
-.ts-modes{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:6px 0 var(--sc-s-5);}
+.ts-modes{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0 var(--sc-s-4);}
 @media (max-width:900px){.ts-modes{grid-template-columns:1fr;}.tsw-tab{min-width:140px;}}
-.ts-mode{display:flex;flex-direction:column;gap:7px;background:var(--sc-paper,#faf6ec);
- border:1px solid var(--sc-rule,#c9c1ac);border-top:3px solid var(--sc-teal,#155752);
- padding:15px 17px;text-decoration:none;}
+.ts-mode{display:flex;flex-direction:column;gap:5px;background:var(--sc-paper,#faf6ec);
+ border:1px solid var(--sc-rule,#c9c1ac);border-top:2px solid var(--sc-teal,#155752);
+ padding:11px 13px;text-decoration:none;}
 .ts-mode:hover{box-shadow:var(--sc-shadow-2,0 8px 24px rgba(11,32,55,.14));}
 .ts-mode.is-active{border-top-color:var(--sc-navy,#15202b);background:var(--sc-bone,#f3eddb);}
-.ts-mode-label{font-family:var(--sc-serif);font-size:19px;color:var(--sc-navy,#15202b);line-height:1.1;}
+.ts-mode-label{font-family:var(--sc-serif);font-size:15px;color:var(--sc-navy,#15202b);line-height:1.15;}
 .ts-mode-how{font-family:var(--sc-mono);font-size:10px;letter-spacing:.04em;color:var(--sc-text-dim,#6a7480);}
 .ts-mode-go{margin-top:auto;font-family:var(--sc-mono);font-size:10px;letter-spacing:.12em;
  text-transform:uppercase;color:var(--sc-teal,#155752);}
 .tsw-scaffold{background:var(--sc-paper,#faf6ec);border:1px dashed var(--sc-rule-2,#bfb6a2);
  border-radius:3px;padding:18px 20px;margin:14px 0;}
-.tsw-scaffold h3{font-family:var(--sc-serif);font-size:17px;color:var(--sc-navy,#15202b);margin:0 0 6px;}
+.tsw-scaffold h3{font-family:var(--sc-serif);font-size:14.5px;color:var(--sc-navy,#15202b);margin:0 0 6px;}
 .tsw-scaffold .tag{font-family:var(--sc-mono);font-size:9px;letter-spacing:.12em;
  text-transform:uppercase;color:var(--sc-warning,#b8732a);}
 .tsw-scaffold ul{margin:8px 0 0 18px;font-family:var(--sc-serif);font-size:13.5px;
@@ -977,7 +977,7 @@ def _screen_inspector(qs, ck) -> str:
     qcur = _fmt_q(r)
     qmed = (f"{med:.1%}" if (med is not None and r.get("q_pct")) else (f"{med:g}" if med is not None else "—"))
     identity = ck["panel"](
-        f'<div style="font-family:var(--sc-serif);font-size:20px;color:var(--sc-navy,#15202b);">'
+        f'<div style="font-family:var(--sc-serif);font-size:16px;color:var(--sc-navy,#15202b);">'
         f'{_h.escape(r["name"])}</div>'
         f'<div style="font-family:var(--sc-mono);font-size:10px;color:var(--sc-text-faint,#8b94a0);'
         f'margin-bottom:8px;">{_h.escape(ccn)} · {_h.escape(vertical)} · {_h.escape(vinfo["universe"])}</div>'
