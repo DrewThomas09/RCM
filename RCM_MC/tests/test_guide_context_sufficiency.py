@@ -129,6 +129,32 @@ class NewMetricsAreUsable(unittest.TestCase):
         self.assertEqual(m.formula_confidence.name, "NOT_APPLICABLE")
 
 
+class CoverageBackfillResolves(unittest.TestCase):
+    """2026-05-27 Ollama coverage pass: standard RCM/CMS metrics pages
+    reference are now registered + documented, and common on-page KPI labels
+    resolve to the metric that already existed."""
+
+    def test_new_standard_metrics_are_documented(self):
+        for mid in ("cost_to_collect", "medicare_spending_per_beneficiary"):
+            m = METRIC_REGISTRY.get(mid)
+            self.assertIsNotNone(m, f"{mid} missing from registry")
+            self.assertNotEqual(m.formula, _NEEDS, f"{mid} has no real formula")
+            self.assertTrue(m.definition and m.caveats and m.caveats != [_NEEDS],
+                            f"{mid} lacks definition/caveats")
+
+    def test_synonym_aliases_resolve_to_their_metric(self):
+        from rcm_mc.assistant.context.get_metric_context import get_metric_context
+        for label, mid in (("Weighted MOIC", "moic"), ("Median IRR", "irr"),
+                           ("After-tax IRR", "irr"), ("Days in AR", "days_in_ar"),
+                           ("Cost to collect", "cost_to_collect"),
+                           ("MSPB", "medicare_spending_per_beneficiary"),
+                           ("Value-creation opportunity",
+                            "value_creation_opportunity")):
+            r = get_metric_context(label)
+            self.assertTrue(r.found and r.metric_id == mid,
+                            f"{label!r} resolved to {r.metric_id!r}, want {mid!r}")
+
+
 class BackendConceptDocsArePresent(unittest.TestCase):
     """The Guide must be able to explain the backend ENGINES, not just pages /
     metrics. These concept cards (docs/rag_sources/) are what RAG retrieves for

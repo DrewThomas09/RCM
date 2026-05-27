@@ -1028,3 +1028,68 @@ for _mid, _cav in _CAVEAT_PATCHES.items():
     if _m_obj is not None and _cav and (
             list(_m_obj.caveats or []) == [_NEEDS] or not _m_obj.caveats):
         _m_obj.caveats = list(_cav)
+
+
+# ── Coverage backfill (2026-05-27) ─────────────────────────────────────────
+# Standard RCM / CMS metrics that live pages reference but the registry lacked,
+# so the Guide can now explain them quantitatively (real definitions, no
+# fabrication). Plus synonym aliases so common on-page KPI labels resolve to
+# the metric that already exists (e.g. "Weighted MOIC" → moic).
+_COVERAGE_METRICS = [
+    _m(
+        "cost_to_collect", "Cost to Collect",
+        ["cost to collect", "cost-to-collect", "cost to collect rate",
+         "rcm cost ratio", "cost of collections"],
+        "The total cost of running the revenue cycle as a share of cash "
+        "collected (the HFMA MAP key) — e.g. $0.03 of RCM cost per $1 collected.",
+        "It is the headline efficiency metric for a revenue-cycle operation; an "
+        "RCM roll-up or turnaround thesis often hinges on moving it toward "
+        "best-in-class.",
+        "Lower is better — HFMA strong performers run roughly 2-4%. Scope drives "
+        "comparability: confirm whether vendor fees, IT, and which functions are "
+        "included before benchmarking.",
+        formula="total revenue-cycle cost / total cash collected",
+        formula_confidence=_DOC,
+        source_types=[_OBS], data_confidence=_OBS,
+        caveats=["Scope varies (in-house vs outsourced, which functions count) "
+                 "— normalize before comparing.",
+                 "A low ratio with rising denials/AR can be false economy."],
+        related_metrics=["net_collection_rate", "days_in_ar", "denial_rate"],
+    ),
+    _m(
+        "medicare_spending_per_beneficiary", "Medicare Spending per Beneficiary",
+        ["mspb", "medicare spending per beneficiary", "spending per beneficiary"],
+        "CMS efficiency measure: price-standardized, risk-adjusted Medicare "
+        "spending for an episode (3 days before to 30 days after an inpatient "
+        "stay), expressed as a ratio to the national median (1.00 = at median).",
+        "Flags whether a hospital is a high- or low-cost provider per episode — "
+        "a payer-leverage, value-based-care, and efficiency signal.",
+        "1.00 = national median; >1 costlier than peers, <1 more efficient. It "
+        "is CMS's own price/risk-adjusted composite — read it, don't recompute "
+        "it.",
+        formula="CMS price-standardized, risk-adjusted episode spending ÷ "
+        "national median (CMS composite)",
+        formula_confidence=_NA,
+        source_types=[_PUB], data_confidence=_PUB,
+        caveats=["A CMS-published composite — not recomputed here.",
+                 "Episode window is fixed (3 days pre to 30 days post "
+                 "admission); it is not total cost of care."],
+        related_metrics=["cost_per_adjusted_discharge", "readmission_rate"],
+    ),
+]
+for _cm in _COVERAGE_METRICS:
+    METRIC_REGISTRY.setdefault(_cm.metric_id, _cm)
+
+# Synonym aliases → existing metrics (unambiguous; each maps to exactly one).
+_ALIAS_EXTEND_COVERAGE: Dict[str, List[str]] = {
+    "moic": ["weighted moic", "p50 moic", "median moic"],
+    "irr": ["weighted irr", "median irr", "after-tax irr"],
+    "days_in_ar": ["days in ar"],
+    "value_creation_opportunity": ["value-creation opportunity", "value-creation"],
+}
+for _mid, _al in _ALIAS_EXTEND_COVERAGE.items():
+    _o = METRIC_REGISTRY.get(_mid)
+    if _o is not None:
+        for _a in _al:
+            if _a not in _o.aliases:
+                _o.aliases.append(_a)
