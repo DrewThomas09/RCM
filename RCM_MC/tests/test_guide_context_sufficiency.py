@@ -30,6 +30,25 @@ class CoverageStaysHigh(unittest.TestCase):
         ph = [r for r, c in PAGE_CONTEXT_REGISTRY.items() if _is_placeholder(c)]
         self.assertLessEqual(len(ph), 3, f"placeholders crept back up: {ph}")
 
+    def test_related_routes_have_no_dead_cross_links(self):
+        # Every related_routes entry the Guide offers as "open this next" must
+        # resolve to a real mapped context — a dead cross-link sends a partner
+        # to a route the Guide knows nothing about. The post-build
+        # _RELATED_ROUTE_FIXES pass in manual_page_contexts.py repoints the
+        # known-wrong links and drops unresolved ones; pin that it holds.
+        known = set(PAGE_CONTEXT_REGISTRY.keys())
+        broken = {
+            r: [rr for rr in (c.related_routes or []) if rr not in known]
+            for r, c in PAGE_CONTEXT_REGISTRY.items()
+        }
+        broken = {r: v for r, v in broken.items() if v}
+        self.assertEqual(broken, {}, f"dead Guide cross-links: {broken}")
+
+    def test_tools_index_is_mapped(self):
+        # /tools is a real served route (the full searchable tool index) — it
+        # must carry a real context, not 404 in the Guide.
+        self.assertIn("/tools", PAGE_CONTEXT_REGISTRY)
+
     def test_core_analytic_routes_grade_strong(self):
         # These are the pages partners hit with hard quantitative questions;
         # each must resolve linked metric/source context (STRONG), not prose
@@ -113,6 +132,14 @@ class BackendConceptDocsArePresent(unittest.TestCase):
                         "provenance_and_data_quality"):
             self.assertIn(concept, blob,
                           f"Guide corpus missing a backend concept doc: {concept}")
+
+    def test_acronym_glossary_is_present(self):
+        # A partner asking "what does TVPI / DSCR / RAF / 340B mean" should get
+        # an expansion — the healthcare-PE acronym glossary card must be in the
+        # corpus so RAG can retrieve it.
+        blob = self._doc_blob()
+        self.assertIn("pe_healthcare_glossary", blob,
+                      "Guide corpus missing the acronym glossary card")
 
     def test_nuanced_pe_and_process_concept_docs(self):
         # The Guide should also be able to explain nuanced PE concepts and the
