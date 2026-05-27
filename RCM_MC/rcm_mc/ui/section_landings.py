@@ -30,6 +30,7 @@ _SECTIONS: Dict[str, Dict] = {
         "intro_italic": "Find",
         "intro_body": "Screeners over real CMS/HCRIS universes, plus the "
         "geographic intelligence to decide where to hunt.",
+        "next": {"label": "Move a promising target into the Pipeline", "href": "/best/pipeline", "italic": "Pipeline"},
         "pillars": [
             {"title": "Screen for targets", "eyebrow": "SCREEN THE UNIVERSE",
              "body": "Filter real provider universes down to a short list.",
@@ -87,6 +88,7 @@ _SECTIONS: Dict[str, Dict] = {
         "intro_italic": "real",
         "intro_body": "The opportunities you're actively working, with the "
         "scoring to prioritize them.",
+        "next": {"label": "Take a live deal into the Diligence playbook", "href": "/diligence", "italic": "Diligence"},
         "pillars": [
             {"title": "Build the pipeline", "eyebrow": "TRACK LIVE DEALS",
              "body": "Every opportunity you're working, staged toward IC.",
@@ -121,6 +123,7 @@ _SECTIONS: Dict[str, Dict] = {
         "intro_italic": "where",
         "intro_body": "Benchmarks and comps, the deal corpus, and the data "
         "catalog + methodology that back the platform.",
+        "next": {"label": "Apply these benchmarks in Diligence", "href": "/diligence", "italic": "Diligence"},
         "pillars": [
             {"title": "Benchmarks & comps", "eyebrow": "WHAT GOOD LOOKS LIKE",
              "body": "The bands and multiples you measure a target against.",
@@ -167,6 +170,7 @@ _SECTIONS: Dict[str, Dict] = {
         "intro_italic": "before",
         "intro_body": "Market and industry intelligence, comparable outcomes, "
         "backtesting, and the regulatory + thesis frame.",
+        "next": {"label": "Frame the thesis in the Diligence playbook", "href": "/diligence", "italic": "Diligence"},
         "pillars": [
             {"title": "Market & industry", "eyebrow": "READ THE MARKET",
              "body": "Demand, supply, reimbursement, and where multiples move.",
@@ -234,6 +238,7 @@ _SECTIONS: Dict[str, Dict] = {
         "intro_italic": "drives",
         "intro_body": "Monitoring and risk for every holding, plus the "
         "cross-portfolio analytics.",
+        "next": {"label": "Source the next add-on acquisition", "href": "/best/source", "italic": "add-on"},
         "pillars": [
             {"title": "Operate the book", "eyebrow": "RUN THE PORTFOLIO",
              "body": "Daily portfolio operations.",
@@ -291,6 +296,7 @@ def render_section_landing(section: str) -> Optional[str]:
             explainer_body="Every surface in this section.",
             explainer_source="Curated catalog.",
             intro_headline=f"Everything in {section}.", intro_body="")
+    nxt = cfg.get("next", {})
     return render_grouped_catalog(
         section=section, title=cfg["title"], eyebrow=cfg["eyebrow"],
         pillars=cfg["pillars"], explainer_head=cfg["explainer_head"],
@@ -298,4 +304,6 @@ def render_section_landing(section: str) -> Optional[str]:
         explainer_source="Curated catalog of this section's routes.",
         intro_headline=cfg["intro_headline"], intro_italic=cfg.get("intro_italic", ""),
         intro_body=cfg["intro_body"],
+        next_label=nxt.get("label"), next_href=nxt.get("href"),
+        next_italic=nxt.get("italic", ""),
         subtitle=f"{cfg['title']} · grouped catalog")
