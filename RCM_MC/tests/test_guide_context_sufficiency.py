@@ -159,7 +159,9 @@ class CoverageBackfillResolves(unittest.TestCase):
         for route, sid in (("/payer-rate-trends", "civhc_rbp"),
                            ("/ref-pricing", "civhc_rbp"),
                            ("/cms-data-browser", "cms_provider_data_catalog"),
-                           ("/cms-sources", "cms_provider_data_catalog")):
+                           ("/cms-sources", "cms_provider_data_catalog"),
+                           ("/drug-shortage", "openfda_drug_shortages"),
+                           ("/cms-apm", "cms_cmmi_apm")):
             pkt = build_guide_context_packet(route)
             sids = {s.source_id for s in pkt.data_source_contexts}
             self.assertIn(sid, sids, f"{route} missing source {sid}")
