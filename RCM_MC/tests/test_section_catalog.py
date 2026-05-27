@@ -46,6 +46,20 @@ class DiligenceLandingTests(unittest.TestCase):
         self.assertIn("/diligence/management", h)
         self.assertIn("#c9a227", h)   # an illustrative (yellow) dot is present
 
+    def test_catalog_covers_every_served_diligence_route(self):
+        # "Add all the diligence layers" — every /diligence/* route the server
+        # serves must appear in the catalog, so nothing is orphaned.
+        import re
+        import pathlib
+        from rcm_mc.ui.diligence_index_page import _PILLARS
+        in_catalog = {l["href"].split("?")[0]
+                      for p in _PILLARS for l in p["links"]}
+        src = (pathlib.Path(__file__).resolve().parents[1]
+               / "rcm_mc" / "server.py").read_text()
+        served = set(re.findall(r'"(/diligence/[a-z0-9\-]+)"', src))
+        missing = served - in_catalog
+        self.assertEqual(missing, set(), f"diligence routes not in catalog: {missing}")
+
 
 if __name__ == "__main__":
     unittest.main()
