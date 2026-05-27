@@ -473,6 +473,16 @@ def _run_ols(
     # target is 0 or negative so np.log doesn't produce -inf/NaN.
     if log_target:
         clean = clean[clean[target] > 0]
+    # Drop features that DON'T VARY within this subset. A constant column can't
+    # be measured or regressed here — it would otherwise sit on the charts as a
+    # meaningless zero bar (the "things left at 0 because it doesn't measure
+    # certain things" a universe filter like acquisition_targets exposes). They
+    # simply drop out of the model + every chart instead.
+    if len(clean) >= 3:
+        available = [f for f in available
+                     if float(clean[f].std(skipna=True) or 0.0) > 0.0]
+    if not available:
+        return None
     if len(clean) < max(3, len(available) + 1):
         return None
 
