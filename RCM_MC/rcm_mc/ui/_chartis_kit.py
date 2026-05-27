@@ -4225,10 +4225,10 @@ _CSS_INLINE_FALLBACK = """
      hard `height`) means that if anything ever does grow, the bar grows rather
      than clipping its top edge. */
   .ck-topbar-inner { display:flex; flex-wrap:nowrap; align-items:center; gap:0;
-    min-height:76px; padding:0 32px; width:100%; box-sizing:border-box; }
+    min-height:58px; padding:0 32px; width:100%; box-sizing:border-box; }
   .ck-wordmark { display:inline-flex; align-items:center; gap:0.5rem;
     font-family:var(--sc-serif,'Source Serif 4',Georgia,serif); font-weight:400;
-    font-size:26px; color:var(--tb-ink); letter-spacing:-0.018em;
+    font-size:20px; color:var(--tb-ink); letter-spacing:-0.018em;
     text-decoration:none; line-height:1; padding-right:32px;
     border-right:1px solid var(--tb-rule); margin-right:16px; }
   .ck-wordmark-text { display:inline-flex; align-items:baseline; }
@@ -4250,18 +4250,18 @@ _CSS_INLINE_FALLBACK = """
      control used to leave the link text floating high because the old
      line-height:76px only centres when the bar is exactly 76px). */
   .ck-nav a { font-family:var(--sc-serif,'Source Serif 4',Georgia,serif);
-    font-size:17px; font-weight:400; letter-spacing:0; text-transform:none;
+    font-size:14.5px; font-weight:400; letter-spacing:0; text-transform:none;
     color:var(--tb-ink2); padding:0 18px;
-    display:inline-flex; align-items:center; height:76px; line-height:1.1;
+    display:inline-flex; align-items:center; height:58px; line-height:1.1;
     white-space:nowrap;
     border-bottom:2px solid transparent; text-decoration:none; transition:color 0.15s; }
   /* Tighten the nav row before the full-width right rail (mode chip + search +
      Guide + New Deal) collides with it. Steps chosen so the 7 links + wordmark
      + right rail fit without wrapping down to common laptop widths. */
   @media (max-width:1480px){ .ck-nav a { padding:0 13px; } }
-  @media (max-width:1320px){ .ck-nav a { padding:0 10px; font-size:16px; }
+  @media (max-width:1320px){ .ck-nav a { padding:0 10px; font-size:13.5px; }
     .ck-topbar-inner { padding:0 22px; } }
-  @media (max-width:1180px){ .ck-nav a { padding:0 8px; font-size:15px; } }
+  @media (max-width:1180px){ .ck-nav a { padding:0 8px; font-size:13px; } }
   .ck-nav a:hover { color:var(--tb-green); }
   .ck-nav a.active { color:var(--tb-green); font-style:italic;
     border-bottom-color:var(--tb-green); margin-bottom:-1px; }
@@ -4325,7 +4325,7 @@ _CSS_INLINE_FALLBACK = """
      carries no transform, so fixed resolves against the viewport — true
      full-bleed with one continuous ink underline reading as the bar's. */
   .ck-nav-mega { --content-max:1320px;
-    position:fixed; top:76px; left:0; right:0; width:auto; max-width:none;
+    position:fixed; top:58px; left:0; right:0; width:auto; max-width:none;
     padding:0; overflow:visible; background:var(--tb-paper);
     border:0; border-top:1px solid var(--tb-rule);
     border-bottom:2px solid var(--tb-ink);
@@ -4335,8 +4335,8 @@ _CSS_INLINE_FALLBACK = """
   @keyframes ckMegaIn { from{opacity:0; transform:translateY(-4px);}
     to{opacity:1; transform:translateY(0);} }
   .ck-mega-inner { max-width:var(--content-max); margin:0 auto;
-    padding:32px 32px 24px; display:grid; grid-template-columns:2fr 3fr;
-    column-gap:56px; row-gap:0; align-items:start; }
+    padding:20px 32px 16px; display:grid; grid-template-columns:2fr 3fr;
+    column-gap:40px; row-gap:0; align-items:start; }
   /* Shown mega = block (the centered 2fr/3fr grid lives on .ck-mega-inner). */
   .ck-nav-group:hover > .ck-nav-mega,
   .ck-nav-group.is-open > .ck-nav-mega { display:block; }
@@ -4351,24 +4351,24 @@ _CSS_INLINE_FALLBACK = """
      all-tools CTA. min-width:0 keeps a long blurb wrapping in-column (guarded);
      the right rule + 48px pad separate it from the listing. */
   .ck-mega-lede { display:flex; flex-direction:column; min-width:0;
-    padding-right:48px; border-right:1px solid var(--tb-rule); }
-  .ck-mega-feat { display:flex; flex-direction:column; gap:12px; padding:0;
+    padding-right:36px; border-right:1px solid var(--tb-rule); }
+  .ck-mega-feat { display:flex; flex-direction:column; gap:8px; padding:0;
     min-width:0; overflow:visible; background:transparent; border:0;
     text-decoration:none; }
-  .ck-mega-kicker { font-family:var(--sc-mono,monospace); font-size:10.5px;
+  .ck-mega-kicker { font-family:var(--sc-mono,monospace); font-size:9px;
     letter-spacing:.14em; text-transform:uppercase; color:var(--tb-green);
     display:inline-flex; align-items:center; gap:8px; }
   .ck-mega-dot { width:5px; height:5px; border-radius:50%;
     background:var(--tb-green); display:inline-block; flex-shrink:0; }
-  .ck-mega-feat-eyebrow { font-family:var(--sc-mono,monospace); font-size:10.5px;
+  .ck-mega-feat-eyebrow { font-family:var(--sc-mono,monospace); font-size:9px;
     letter-spacing:.14em; text-transform:uppercase; color:var(--tb-green); }
   .ck-mega-feat-title { font-family:var(--sc-serif,Georgia,serif); font-weight:400;
-    font-size:34px; line-height:1.04; letter-spacing:-.022em; color:var(--tb-ink);
+    font-size:22px; line-height:1.06; letter-spacing:-.018em; color:var(--tb-ink);
     text-wrap:balance; max-width:100%;
     white-space:normal; overflow-wrap:anywhere; word-break:break-word; }
   .ck-mega-feat-title em { font-style:italic; color:var(--tb-green); }
   .ck-mega-feat-blurb { font-family:var(--sc-serif,Georgia,serif); font-style:italic;
-    font-size:15px; line-height:1.45; color:var(--tb-ink2); max-width:40ch;
+    font-size:12.5px; line-height:1.4; color:var(--tb-ink2); max-width:42ch;
     border-left:2px solid var(--tb-green); padding-left:14px;
     white-space:normal; overflow-wrap:anywhere; word-break:break-word; }
   /* Right column = the leaves grid + the all-tools link beneath it, aligned to
@@ -4403,12 +4403,12 @@ _CSS_INLINE_FALLBACK = """
     flex:1 1 auto; }
   /* overflow-wrap:anywhere guarantees even a long unbroken token wraps inside
      its column instead of bleeding into the neighbour. */
-  .ck-mega-it-label { font-family:var(--sc-serif,Georgia,serif); font-size:17px;
+  .ck-mega-it-label { font-family:var(--sc-serif,Georgia,serif); font-size:14px;
     color:var(--tb-ink); line-height:1.2; letter-spacing:-.005em;
     overflow-wrap:anywhere; transition:color .12s; }
   .ck-mega-item:hover .ck-mega-it-label { color:var(--tb-green); }
   .ck-mega-it-desc { font-family:var(--sc-serif,Georgia,serif); font-style:italic;
-    font-size:13px; color:var(--tb-muted); line-height:1.4; overflow-wrap:anywhere; }
+    font-size:11.5px; color:var(--tb-muted); line-height:1.4; overflow-wrap:anywhere; }
   /* Responsive: stack the lede above the listing, then collapse the listing
      columns. The backdrop stays full-bleed; only .ck-mega-inner reflows. */
   @media (max-width:1100px){
@@ -4416,7 +4416,7 @@ _CSS_INLINE_FALLBACK = """
     .ck-mega-lede { padding-right:0; border-right:0;
       border-bottom:1px solid var(--tb-rule); padding-bottom:22px; }
     .ck-mega-items { grid-template-columns:1fr 1fr; }
-    .ck-mega-feat-title { font-size:28px; } }
+    .ck-mega-feat-title { font-size:19px; } }
   @media (max-width:680px){ .ck-mega-items { grid-template-columns:1fr; } }
   /* Legacy single-column dropdown links (kept for .ck-subnav-link reuse). */
   .ck-nav-menu .ck-subnav-link { display:block; padding:9px 20px; border:0;
@@ -4536,7 +4536,7 @@ _CSS_INLINE_FALLBACK = """
    * just below the navy topbar. Lets a partner click into a common
    * second-level page (Alerts, Heatmap, Find Comps, etc.) without
    * landing on a section index first. */
-  .ck-subnav { background:#f3eddb; border-bottom:1px solid #c9c1ac; position:sticky; top:76px; z-index:40; }
+  .ck-subnav { background:#f3eddb; border-bottom:1px solid #c9c1ac; position:sticky; top:58px; z-index:40; }
   /* Subnav rail aligns to the full-width top bar's 32px gutter (so its first
      pill sits under the wordmark) instead of the old centered max-width. */
   .ck-subnav-inner { display:flex; gap:var(--sc-s-5); align-items:center; padding:10px 32px; width:100%; box-sizing:border-box; overflow-x:auto; }

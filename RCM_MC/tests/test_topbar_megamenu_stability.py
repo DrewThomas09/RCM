@@ -49,7 +49,8 @@ class TestTopbarRowDoesNotWrap(unittest.TestCase):
         block = m.group(0)
         self.assertIn("flex-wrap:nowrap", block)
         # min-height (not a hard height) so a grown child cannot clip the top.
-        self.assertIn("min-height:76px", block)
+        # Compact bar (2026-05-27: shrunk from 76 → 58px per "too massive").
+        self.assertIn("min-height:58px", block)
 
     def test_nav_can_shrink(self):
         html = _app_shell()

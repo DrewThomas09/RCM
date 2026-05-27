@@ -321,7 +321,7 @@ _TOOLS_CSS = """
 /* card grid */
 .ti-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;}
 .mode-index .ti-cards{grid-template-columns:repeat(6,minmax(0,1fr));}
-.ti-card{background:var(--ti-paper);border:1px solid var(--ti-rule);
+.ti-card{background:#ffffff;border:1px solid var(--ti-rule);
   padding:14px 14px 12px;min-height:96px;display:flex;flex-direction:column;
   gap:8px;cursor:pointer;text-decoration:none;position:relative;min-width:0;
   transition:border-color .12s,transform .12s,box-shadow .12s;}
