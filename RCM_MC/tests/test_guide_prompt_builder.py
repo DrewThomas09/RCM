@@ -36,6 +36,27 @@ class PromptBuilderTests(unittest.TestCase):
         # no chain-of-thought
         self.assertIn("<think>", sysp)  # mentioned as forbidden
 
+    def test_system_prompt_invites_analysis_but_keeps_guardrails(self):
+        # The Guide should act like an analyst (interpret/connect into analysis
+        # + suggest a next step), WITHOUT crossing into buy/sell calls or
+        # losing the read-only / no-fabrication contract.
+        sysp = build_guide_system_prompt(self.packet).lower()
+        self.assertIn("analyze", sysp)
+        self.assertIn("driver or risk", sysp)
+        self.assertIn("next step", sysp)
+        self.assertIn("diligence analyst", sysp)
+        # guardrails intact
+        self.assertIn("not a buy/sell/hold call", sysp)
+        self.assertIn("final investment recommendations", sysp)
+        self.assertIn("ground every claim in the provided context", sysp)
+
+    def test_analyst_lens_does_not_trip_the_recommendation_guard(self):
+        # The new style language itself must not read as an investment
+        # recommendation to the eval gate.
+        from rcm_mc.assistant.eval.guide_eval import has_investment_recommendation
+        sysp = build_guide_system_prompt(self.packet)
+        self.assertFalse(has_investment_recommendation(sysp)[0])
+
     def test_packet_to_prompt_context_respects_max_chars(self):
         small = packet_to_prompt_context(self.packet, max_chars=400)
         self.assertLessEqual(len(small), 400)
