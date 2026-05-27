@@ -4325,8 +4325,8 @@ _CSS_INLINE_FALLBACK = """
   @keyframes ckMegaIn { from{opacity:0; transform:translateY(-4px);}
     to{opacity:1; transform:translateY(0);} }
   .ck-mega-inner { max-width:var(--content-max); margin:0 auto;
-    padding:32px 32px 28px; display:grid; grid-template-columns:2fr 3fr;
-    gap:56px; align-items:start; }
+    padding:32px 32px 24px; display:grid; grid-template-columns:2fr 3fr;
+    column-gap:56px; row-gap:0; align-items:start; }
   /* Shown mega = block (the centered 2fr/3fr grid lives on .ck-mega-inner). */
   .ck-nav-group:hover > .ck-nav-mega,
   .ck-nav-group.is-open > .ck-nav-mega { display:block; }
@@ -4361,18 +4361,19 @@ _CSS_INLINE_FALLBACK = """
     font-size:15px; line-height:1.45; color:var(--tb-ink2); max-width:40ch;
     border-left:2px solid var(--tb-green); padding-left:14px;
     white-space:normal; overflow-wrap:anywhere; word-break:break-word; }
-  /* All-tools CTA — flows directly under the pull-quote with a dashed top
-     rule (design's "open the whole section" link → ranked /best index). Uses
-     a fixed top margin in normal flow — NOT margin-top:auto — so it can never
-     float onto/over the blurb when a short section's listing column is
-     shorter than the lede (the overlap bug). */
-  .ck-mega-all { margin-top:20px; padding-top:14px;
-    border-top:1px dashed var(--tb-rule);
-    font-family:var(--sc-mono,monospace); font-size:11px; letter-spacing:.14em;
-    text-transform:uppercase; color:var(--tb-green); text-decoration:none;
-    display:inline-flex; align-items:center; gap:8px; align-self:flex-start;
-    transition:color .12s; }
-  .ck-mega-all:hover { color:var(--tb-green-deep); }
+  /* All-tools CTA — its OWN full-width footer row spanning both columns at the
+     bottom of the panel (grid-column:1/-1), separated by a top rule and
+     centered. Pulling it out of the lede column is what finally kills the
+     overlap: it can never collide with a variable-height pull-quote because it
+     is in a separate grid row below everything. Centered + generous hit-area =
+     easy to click and visually balanced (not jammed off to one side). */
+  .ck-mega-foot { grid-column:1 / -1; margin-top:24px; padding-top:16px;
+    border-top:1px solid var(--tb-rule); display:flex; justify-content:center; }
+  .ck-mega-all { font-family:var(--sc-mono,monospace); font-size:11px;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--tb-green);
+    text-decoration:none; display:inline-flex; align-items:center; gap:8px;
+    padding:6px 14px; border-radius:2px; transition:color .12s, background .12s; }
+  .ck-mega-all:hover { color:var(--tb-green-deep); background:var(--tb-paper2); }
   .ck-mega-all-arr { font-family:var(--sc-serif,Georgia,serif); font-style:italic;
     font-size:14px; }
   /* LISTING column (3fr) — 3 columns × 2 rows for the 6 ranked leaves.
@@ -7143,12 +7144,16 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
             f'<span class="ck-mega-feat-blurb">{_esc(feat.get("blurb", ""))}</span>'
             '</a>'
         )
-        # All-tools CTA — anchored at the bottom of the lede column (design),
-        # routes to the full ranked /best/<section> index.
+        # All-tools CTA — its own full-width footer row spanning both columns at
+        # the bottom of the panel, so it can NEVER overlap the lede pull-quote
+        # (the prior bottom-of-lede placement collided with the variable-height
+        # blurb). Centered + generous hit-area; routes to /best/<section>.
         all_tools = (
+            '<div class="ck-mega-foot">'
             f'<a href="/best/{_esc(sect)}" class="ck-mega-all" role="menuitem">'
             f'All {_esc(_nav_label(item["label"]))} tools '
             '<span class="ck-mega-all-arr" aria-hidden="true">&rarr;</span></a>'
+            '</div>'
         )
         return (
             '<div class="ck-nav-group" aria-haspopup="true">'
@@ -7156,8 +7161,9 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
             f'<div class="ck-nav-menu ck-nav-mega" role="menu" '
             f'aria-label="{_esc(_nav_label(item["label"]))} menu">'
             '<div class="ck-mega-inner">'
-            f'<div class="ck-mega-lede">{feature}{all_tools}</div>'
+            f'<div class="ck-mega-lede">{feature}</div>'
             f'<div class="ck-mega-items">{items}</div>'
+            f'{all_tools}'
             '</div>'
             '</div>'
             '</div>'
