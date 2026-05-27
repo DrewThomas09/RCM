@@ -62,6 +62,22 @@ class CoverageStaysHigh(unittest.TestCase):
                              f"{route} is not STRONG: {pkt.context_quality}")
 
 
+class EveryLivePageHasGuideContext(unittest.TestCase):
+    """Ollama/Guide coverage contract: every page that renders on /tools must
+    have a page context the Guide can answer from — no Guide-blind pages. Pairs
+    with the /tools 'every card renders 200' health guard: a real page must
+    both open AND be explainable."""
+
+    def test_no_live_tools_page_is_guide_blind(self):
+        from rcm_mc.server import RCMHandler
+        ws, index, _, _ = RCMHandler._build_tools_index_data()
+        routes = sorted({t["path"] for sec in index for t in sec["tools"]})
+        blind = [r for r in routes
+                 if build_guide_context_packet(r).page_context is None]
+        self.assertEqual(blind, [],
+                         f"Guide-blind live pages (no context): {blind}")
+
+
 class HardQuestionContextIsPresent(unittest.TestCase):
     """For a hard question on a route, the packet must carry the metric the
     answer depends on — i.e. the Guide can actually answer it from context."""
