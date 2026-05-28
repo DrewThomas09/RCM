@@ -6721,6 +6721,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_metric_glossary()
         if path == "/pipeline":
             return self._route_pipeline()
+        # Deal-lens analysis surfaces — /deals/<ccn> and /deals/<ccn>/<surface>.
+        # 18-surface family from the analysis-surfaces handoff; surfaces ship
+        # one at a time, unbuilt ones render an honest "coming soon" stub.
+        if path.startswith("/deals/"):
+            tail = path[len("/deals/"):].strip("/")
+            if tail and "/" not in tail:
+                return self._route_deal_surface(tail, "profile")
+            if tail.count("/") == 1:
+                ccn, _, slug = tail.partition("/")
+                return self._route_deal_surface(ccn, slug)
         if path == "/deals":
             # /deals is the v2-nav label — redirect to /pipeline so
             # stale nav links don't 404.
@@ -6784,6 +6794,36 @@ class RCMHandler(BaseHTTPRequestHandler):
         )
 
     # ── Route handlers ──
+
+    def _route_deal_surface(self, ccn: str, slug: str) -> None:
+        """GET /deals/<ccn>/<surface> — deal-lens analysis surfaces.
+
+        Phase 1 ships Surface 01 (Profile) backed by real HCRIS + score +
+        comparables. Every other slug in the 18-surface family renders an
+        honest "under construction" stub inside the same shell so nav works
+        and nothing is fabricated. Unknown slugs 404.
+        """
+        from .ui.deal_surfaces import (
+            SURFACE_BY_PATH, fetch_hospital, render_deal_profile,
+            render_surface_stub,
+        )
+        if slug not in SURFACE_BY_PATH:
+            return self._send_html(
+                f'<h1>Surface not found</h1><p>No deal surface at <code>'
+                f'/deals/{html.escape(ccn)}/{html.escape(slug)}</code>.</p>',
+                status=HTTPStatus.NOT_FOUND,
+            )
+        hospital = fetch_hospital(ccn)
+        if hospital is None:
+            return self._send_html(
+                f'<h1>Hospital not found</h1>'
+                f'<p>CCN <code>{html.escape(ccn)}</code> is not in the HCRIS '
+                'dataset, so no deal surface can render for it.</p>',
+                status=HTTPStatus.NOT_FOUND,
+            )
+        if slug == "profile":
+            return self._send_html(render_deal_profile(ccn, hospital))
+        return self._send_html(render_surface_stub(ccn, slug, hospital))
 
     def _route_hospital_profile(self, ccn: str) -> None:
         """GET /hospital/<ccn> — full hospital profile page."""
