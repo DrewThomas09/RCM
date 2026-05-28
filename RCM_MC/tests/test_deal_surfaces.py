@@ -53,13 +53,13 @@ class SurfaceRegistry(unittest.TestCase):
         self.assertEqual(sorted(s.number for s in SURFACES), list(range(1, 19)))
 
     def test_built_surfaces_grow_one_phase_at_a_time(self):
-        # Phases 1..14. New surfaces appear here as they land.
+        # Phases 1..15. New surfaces appear here as they land.
         built = {s.slug for s in SURFACES if s.built}
         self.assertEqual(built,
                          {"profile", "bridge", "lbo", "dcf",
                           "comp-intel", "ml", "denial", "returns",
                           "trends", "stmt", "levers", "waterfall",
-                          "playbook", "ic-memo"})
+                          "playbook", "ic-memo", "memo-auto"})
 
     def test_lookup_by_path(self):
         self.assertIs(SURFACE_BY_PATH["profile"].built, True)
@@ -102,8 +102,8 @@ class ProfileRender(unittest.TestCase):
         self.assertIn('aria-current="page"', self.html)
 
     def test_unbuilt_surfaces_get_soon_badge(self):
-        # 18 − built (now 14) = 4 soon badges
-        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 4)
+        # 18 − built (now 15) = 3 soon badges
+        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 3)
 
     def test_payer_mix_uses_real_data(self):
         self.assertIn("Medicare 42%", self.html)
@@ -128,6 +128,35 @@ class ProfileRender(unittest.TestCase):
         for slug in ("ic-memo", "bridge", "comp-intel", "scenarios", "ml",
                      "market", "denial", "trends", "dcf", "lbo", "stmt", "returns"):
             self.assertIn(f"/deals/050001/{slug}", self.html)
+
+
+class MemoAutoRender(unittest.TestCase):
+    """Surface 18 (Memo · auto) — lightweight 4-section quick-take memo."""
+
+    def test_memo_auto_renders_four_sections_plus_hero_and_links(self):
+        from rcm_mc.ui.deal_surfaces import render_deal_memo_auto
+        out = render_deal_memo_auto("050001", FAKE_HOSPITAL)
+        for title in ("Executive summary", "Investment thesis",
+                      "Risk assessment", "Recommendation", "Cross-links"):
+            self.assertIn(title, out, f"missing section title: {title}")
+        # Every fact-check badge defaults to "Unverified" per spec
+        self.assertIn("Unverified", out)
+        # Hero shows warning count
+        self.assertIn("Fact-check warnings", out)
+        # JSON download is honest "coming soon" — not a fake link
+        self.assertIn("Coming soon", out)
+        # One <h1>
+        self.assertEqual(len(re.findall(r"<h1[ >]", out)), 1)
+
+    def test_memo_auto_renders_honest_empty_when_npr_missing(self):
+        from rcm_mc.ui.deal_surfaces import render_deal_memo_auto
+        h = {"ccn": "999999", "name": "Sparse Co", "state": "TX"}
+        out = render_deal_memo_auto("999999", h)
+        self.assertIn("Auto-memo cannot run", out)
+        self.assertNotIn("Executive summary", out)
+
+    def test_memo_auto_marked_built_in_registry(self):
+        self.assertTrue(SURFACE_BY_PATH["memo-auto"].built)
 
 
 class ICMemoRender(unittest.TestCase):
@@ -672,6 +701,24 @@ class DealRoutes(unittest.TestCase):
                     body = r.read().decode()
                 self.assertIn("Under construction", body)
                 self.assertIn("DEAL · CCN", body)
+            finally:
+                server.shutdown(); server.server_close()
+
+    def test_real_ccn_memo_auto_renders_real_data_200(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            create_user(PortfolioStore(os.path.join(tmp, "p.db")), "at", "supersecret1")
+            server, port = self._start(tmp)
+            try:
+                opener = _login_opener(port, "at", "supersecret1")
+                ccn = self._pick_real_ccn()
+                with opener.open(f"http://127.0.0.1:{port}/deals/{ccn}/memo-auto") as r:
+                    self.assertEqual(r.status, 200)
+                    body = r.read().decode()
+                self.assertNotIn("Under construction", body)
+                self.assertIn("DEAL · CCN", body)
+                self.assertEqual(len(re.findall(r"<h1[ >]", body)), 1)
+                self.assertTrue(
+                    "Executive summary" in body or "Auto-memo cannot run" in body)
             finally:
                 server.shutdown(); server.server_close()
 
