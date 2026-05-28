@@ -168,7 +168,8 @@ def _api_client_docs() -> str:
   <div class="ck-panel-title">CMS API Client — Quick Reference</div>
   <div style="padding:14px 16px;">
     <div class="ck-section-label" style="margin-bottom:8px;">Python Usage</div>
-    <pre style="background:#FAF7F0;border:1px solid #D6CFC0;border-left:3px solid #155752;border-radius:2px;padding:12px 14px;
+    <!-- 2026-05-28 batch 34 · Tier-4 trope removal — strip 3px brand stripe -->
+    <pre style="background:#FAF7F0;border:1px solid #D6CFC0;border-radius:2px;padding:12px 14px;
                 font-family:var(--ck-mono);font-size:11px;color:#1a2332;overflow-x:auto;
                 white-space:pre;line-height:1.6;">
 <span style="color:#5C6878"># rcm_mc/data_public/cms_api_client.py</span>

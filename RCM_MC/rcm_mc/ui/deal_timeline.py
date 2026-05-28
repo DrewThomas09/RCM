@@ -233,9 +233,12 @@ def render_timeline(
             + '</div>'
         )
 
+    # 2026-05-28 batch 34 · Tier-4 trope removal — drops the default
+    # 3px brand-color stripe from the .tl-card class; every event
+    # already sets its own semantic per-event color via inline
+    # `style="border-left:3px solid {color}"`, which wins over CSS.
     css = """
     .tl-card { background:#FAF7F0; border:1px solid #D6CFC0;
-      border-left:3px solid #155752;
       padding:12px 14px; margin-bottom:8px; border-radius:2px;
       font-family:"Inter Tight","Inter",sans-serif; }
     .tl-meta { color:#5C6878; font-size:11px; margin-bottom:4px;

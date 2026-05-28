@@ -614,9 +614,10 @@ def _geo_intel_section() -> str:
         f'{lbl} <span style="color:{fa};font-size:10px">· {hint}</span></a>'
         for lbl, href, hint in links
     )
+    # 2026-05-28 batch 34 · Tier-4 trope removal — strip 3px accent.
     return (
         f'<div style="background:{P["panel"]};border:1px solid {border};'
-        f'border-left:3px solid {ac};padding:14px 16px;margin:0 0 18px">'
+        f'border-radius:2px;padding:14px 16px;margin:0 0 18px">'
         f'<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{td};'
         f'text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">'
         f'Geographic Intelligence · real public data</div>'

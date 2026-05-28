@@ -143,9 +143,11 @@ def render_waterfall_page(deal_id: str, deal_name: str, result: Dict[str, Any]) 
     )
 
     # Interpretation
+    # 2026-05-28 batch 34 · Tier-4 trope removal — strip decorative
+    # brand-accent stripe from the waterfall interpretation card.
     lp_share = lp_total / (lp_total + gp_total) * 100 if (lp_total + gp_total) > 0 else 80
     interp = (
-        f'<div class="cad-card" style="border-left:3px solid {PALETTE["brand_accent"]};">'
+        f'<div class="cad-card">'
         f'<h2>What This Means</h2>'
         f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
         f'<p>LPs receive {lp_share:.0f}% of total distributions (${lp_total/1e6:.1f}M) '

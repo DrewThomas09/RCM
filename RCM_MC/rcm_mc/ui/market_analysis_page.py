@@ -280,8 +280,10 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
         else f'Operational improvements are the primary value driver — see the '
              f'<a href="/models/bridge/{did_esc}" style="color:{link_col};">EBITDA bridge</a>.'
     )
+    # 2026-05-28 batch 34 · Tier-4 trope removal — strip decorative
+    # brand-accent stripe from the market analysis interpretation.
     interp = (
-        f'<div class="cad-card" style="border-left:3px solid {PALETTE["brand_accent"]};">'
+        f'<div class="cad-card">'
         f'<h2>What This Means</h2>'
         f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
         f'<p>This hospital has {moat_phrase} — {moat_interp}. '

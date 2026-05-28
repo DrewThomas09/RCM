@@ -2,7 +2,7 @@
 
 **Spec**: 2026-05-28 editorial handoff — strict Tier-1 5-block head + spec-forbidden trope removal.
 
-**Status (as of batch 33, 2026-05-28)**: 33 batches shipped/in-flight; ~110 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep at 31 surfaces cleaned + 1 gradient retired.
+**Status (as of batch 34, 2026-05-28)**: 34 batches shipped/in-flight; ~117 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep at 38 surfaces cleaned + 1 gradient retired.
 
 **Wave-1 (batch 19) shipped**: `my_dashboard_page`, `portfolio_monitor_page`, `deal_mc_page`
 **Wave-2 (batch 20) shipped**: `portfolio_bridge_page`, `risk_workbench_page`, `scenario_modeler_page`, `market_intel_page`, `escalations_page`
@@ -32,6 +32,14 @@ All 24 originally-flagged Group D files are now in Group A. Every renderer in th
 **Next**: Phase 4 — Group C trope removal. ~180 pages still carry `cad-card`/`cad-table` chrome with spec-forbidden tropes (3px left-border accents, box-shadow on content cards, `border-radius > 2px`). Migration is a CSS-level sweep, ~3-4 files per batch.
 
 ## Phase 4 · Group C trope removal (in progress)
+
+**Wave-5 (batch 34) shipped** — 7 more decorative stripes removed across 6 files (interpretation cards + timeline default + CMS code-block stripe):
+- `deal_timeline.py` (default `.tl-card` brand stripe — per-event semantic colors preserved)
+- `data_public/cms_sources_page.py` (code-block 3px brand stripe)
+- `models_page.py` (2 surfaces: DCF interpretation + Financials interpretation)
+- `market_analysis_page.py` (Market analysis interpretation)
+- `waterfall_page.py` (Waterfall interpretation)
+- `market_intel_page.py` (Geographic Intelligence overlay panel)
 
 **Wave-4 (batch 33) shipped** — continues `data_public/` sweep (6 more decorative stripes removed across 5 files):
 - `_benchmark_panels.py` (MIPS physician quality panel)
