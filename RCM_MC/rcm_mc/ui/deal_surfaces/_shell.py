@@ -33,7 +33,7 @@ SURFACES: Tuple[DealSurface, ...] = (
     # ── Diligence ──
     DealSurface(1,  "profile",     "Profile",         "Diligence",      True,
                 "Front door — identity, headline financials, score."),
-    DealSurface(2,  "ic-memo",     "IC Memo",         "Diligence",      False,
+    DealSurface(2,  "ic-memo",     "IC Memo",         "Diligence",      True,
                 "Auto-assembled IC memorandum (sections stream in)."),
     DealSurface(3,  "bridge",      "EBITDA Bridge",   "Diligence",      True,
                 "7-lever RCM bridge to pro-forma EBITDA."),
