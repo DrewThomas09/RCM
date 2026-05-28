@@ -37,7 +37,7 @@ SURFACES: Tuple[DealSurface, ...] = (
                 "Auto-assembled IC memorandum (sections stream in)."),
     DealSurface(3,  "bridge",      "EBITDA Bridge",   "Diligence",      True,
                 "7-lever RCM bridge to pro-forma EBITDA."),
-    DealSurface(4,  "comp-intel",  "Comp Intel",      "Diligence",      False,
+    DealSurface(4,  "comp-intel",  "Comp Intel",      "Diligence",      True,
                 "Percentile ranks across 12 metrics × 4 cohorts."),
     DealSurface(5,  "scenarios",   "Scenarios",       "Diligence",      False,
                 "Toggle base/conservative/aggressive/downside."),
