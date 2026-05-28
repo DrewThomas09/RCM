@@ -33,10 +33,14 @@ def _scoped_styles() -> str:
 color:{tf};font-weight:600;}}
 .et-h1{{font-size:26px;color:{tx};font-weight:600;line-height:1.15;
 margin:4px 0 0 0;letter-spacing:-.2px;}}
+/* 2026-05-28 batch 31 · Tier-4 trope removal — default callout
+   drops the decorative 3px accent stripe (plain hairline panel);
+   .rec variant re-adds a semantic positive stripe (carries
+   meaning: this is the recommended path). */
 .et-callout{{background:{pa};padding:12px 16px;
-border-left:3px solid {ac};border-radius:0 3px 3px 0;
+border:1px solid {bd};border-radius:2px;
 font-size:12px;color:{td};line-height:1.65;max-width:880px;margin-top:12px;}}
-.et-callout.rec{{border-left-color:{po};color:{tx};font-size:13px;
+.et-callout.rec{{border-left:3px solid {po};color:{tx};font-size:13px;
 line-height:1.6;}}
 .et-section-label{{font-size:10px;letter-spacing:1.6px;text-transform:uppercase;
 font-weight:700;color:{tf};margin:22px 0 10px 0;}}
@@ -787,12 +791,14 @@ def render_exit_timing_page(
                 f'{(after.moic - peak.moic):+.2f}x of MOIC. This is '
                 f'the partner-facing time-vs-return tradeoff.'
             )
+    # 2026-05-28 batch 31 · Tier-4 trope removal — drops decorative
+    # 3px accent stripe on the "how to read" info panel.
     curve_panel = (
         f'<div class="et-panel">'
         f'{_curve_svg(report.curve)}'
         f'<div style="margin-top:10px;padding:10px 14px;'
-        f'background:{P["panel_alt"]};border-left:3px solid '
-        f'{P["accent"]};border-radius:0 3px 3px 0;'
+        f'background:{P["panel_alt"]};border:1px solid '
+        f'{P["border"]};border-radius:2px;'
         f'font-size:12px;color:{P["text_dim"]};line-height:1.6;'
         f'max-width:880px;">'
         f'<strong style="color:{P["text"]};">How to read: </strong>'
@@ -850,8 +856,10 @@ def render_exit_timing_page(
         f'grid-template-columns:1fr 1fr;gap:18px;align-items:center;">'
         f'<div>{_buyer_radar_svg(report.buyer_fit)}</div>'
         f'<div style="font-size:12px;color:{P["text_dim"]};line-height:1.65;">'
+        # 2026-05-28 batch 31 · Tier-4 trope removal — drops
+        # decorative 3px accent stripe.
         f'<div style="padding:10px 14px;background:{P["panel_alt"]};'
-        f'border-left:3px solid {P["accent"]};border-radius:0 3px 3px 0;'
+        f'border:1px solid {P["border"]};border-radius:2px;'
         f'margin-bottom:10px;">'
         f'<strong style="color:{P["text"]};">How to read: </strong>'
         f'Each vertex is a buyer channel (strategic / PE secondary / '

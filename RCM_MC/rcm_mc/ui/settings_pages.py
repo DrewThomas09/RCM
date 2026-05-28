@@ -88,8 +88,12 @@ def render_workspace_mode_page() -> str:
         'ease,box-shadow .18s ease,transform .18s ease;}'
         '.ws-card:hover{border-color:#155752;transform:translateY(-1px);'
         'box-shadow:0 6px 16px -10px rgba(21,87,82,.45);}'
+        # 2026-05-28 batch 31 · Tier-4 trope removal — drops the
+        # 135° gradient on the active workspace card in favor of a
+        # flat brand tint. The semantic 3px green stripe stays (it
+        # marks the currently-selected workspace).
         '.ws-card-active{border-color:#155752;border-left:3px solid #155752;'
-        'background:linear-gradient(135deg,#D4E4E2 0%,#FAF7F0 70%);}'
+        'background:#E8F0EF;}'
         '.ws-card-head{display:flex;align-items:center;gap:10px;'
         'margin-bottom:8px;}'
         '.ws-radio{color:#155752;font-size:15px;}'

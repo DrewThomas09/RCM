@@ -117,9 +117,11 @@ def render_hospital_providers(
             '</p>'
             '<p class="ck-section-body" style="margin-top:8px;">'
             'Run from the project root:</p>'
+            # 2026-05-28 batch 31 · Tier-4 trope removal — drops
+            # decorative 3px accent stripe; caps radius at 2px.
             f'<pre style="background:var(--cad-panel-alt);padding:12px;'
-            f'font-family:var(--cad-mono);font-size:12px;border-radius:3px;'
-            f'border-left:3px solid var(--cad-accent);overflow-x:auto;">'
+            f'font-family:var(--cad-mono);font-size:12px;border-radius:2px;'
+            f'border:1px solid var(--cad-border);overflow-x:auto;">'
             f'rcm-mc data refresh-nppes --ccn {ccn_safe} '
             f'--name "{_html.escape(hospital_name or "Hospital")}" '
             f'--state {_html.escape(state or "—")}'
