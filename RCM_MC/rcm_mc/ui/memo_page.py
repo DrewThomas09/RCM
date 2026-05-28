@@ -111,22 +111,34 @@ def render_memo_page(deal_id: str, deal_name: str, memo: Dict[str, Any]) -> str:
         eyebrow="Continue —",
         italic_word="packet",
     )
-    body = f'{nav}{kpis}{sections_html}{warning_html}{actions}{next_up}'
+    # 2026-05-28 batch 25 · Group D sweep · universal strict 5-block
+    # head. Replaces the shell's editorial_intro= auto-inject (which
+    # produced a stack: shell h1 + ck_section_intro h2 deck) with a
+    # single unified header.
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="IC MEMO",
+        title=f"IC Memo — {html.escape(deal_name)}",
+        meta=(
+            f"{len(sections)} SECTION"
+            f"{'S' if len(sections) != 1 else ''} · "
+            f"{len(warnings)} FACT-CHECK WARNING"
+            f"{'S' if len(warnings) != 1 else ''} · "
+            f"{'AI-GENERATED' if llm_used else 'TEMPLATE-BASED'}"
+        ),
+        lede_italic_phrase="Where the deal earns its hour at IC.",
+        lede_body=(
+            "Auto-assembled IC memo with thesis, comps, "
+            "exit, and bear case. Use as a draft anchor; "
+            "the partner adds judgment in the gaps the "
+            "platform can't reason about."
+        ),
+    )
+    body = f'{head}{nav}{kpis}{sections_html}{warning_html}{actions}{next_up}'
 
     return chartis_shell(body, f"IC Memo — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"{len(sections)} sections | {'AI-generated' if llm_used else 'Template-based'}",
-        editorial_intro={
-            "eyebrow": "IC MEMO",
-            "headline": "Where the deal earns its hour at IC.",
-            "italic_word": "earns",
-            "body": (
-                "Auto-assembled IC memo with thesis, comps, "
-                "exit, and bear case. Use as a draft anchor; "
-                "the partner adds judgment in the gaps the "
-                "platform can't reason about."
-            ),
-        })
+                    subtitle=f"{len(sections)} sections | {'AI-generated' if llm_used else 'Template-based'}")
 
 
 def render_validation_page(deal_id: str, deal_name: str, validation: Dict[str, Any]) -> str:

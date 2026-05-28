@@ -164,8 +164,26 @@ def render_metric_glossary() -> str:
         "});});})();</script>"
     )
 
+    # 2026-05-28 batch 25 · Group D sweep · universal strict 5-block
+    # head. Drops the shell editorial_intro= auto-inject in favor
+    # of the in-body universal helper.
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="METRIC GLOSSARY",
+        title="Where every number has a definition.",
+        meta=f"{len(keys)} METRICS · DEFINITION + RATIONALE + FORMULA",
+        lede_italic_phrase="Where every number has a definition.",
+        lede_body=(
+            "Cross-reference every number the platform "
+            "surfaces — definition, rationale, formula, and "
+            "the source documents that back it. Use this as "
+            "the canonical answer when a partner asks 'where "
+            "does that number come from?'."
+        ),
+    )
+
     body = (
-        ck_eyebrow("Metric Glossary")
+        head
         + kpi_strip
         + _toc(keys)
         + "".join(cards)
@@ -183,16 +201,4 @@ def render_metric_glossary() -> str:
         "Metric Glossary",
         active_nav="/metric-glossary",
         subtitle=f"{len(keys)} metrics — definitions, rationale, formulas",
-        editorial_intro={
-            "eyebrow": "METRIC GLOSSARY",
-            "headline": "Where every number has a definition.",
-            "italic_word": "every",
-            "body": (
-                "Cross-reference every number the platform "
-                "surfaces - definition, rationale, formula, and "
-                "the source documents that back it. Use this as "
-                "the canonical answer when a partner asks 'where "
-                "does that number come from?'."
-            ),
-        },
     )

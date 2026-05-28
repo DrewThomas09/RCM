@@ -554,7 +554,28 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
         eyebrow="Continue —",
         italic_word="feature",
     )
-    body = f'{_ML_CHART_CSS}{kpis}{cluster_section}{distress_section}{rcm_screen}{methodology}{nav}{next_up}'
+    # 2026-05-28 batch 25 · Group D sweep · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="ML INSIGHTS",
+        title="What the model sees that the spreadsheet misses.",
+        meta=(
+            f"{n_hospitals:,} HOSPITALS · "
+            f"{n_clusters} ARCHETYPES · "
+            f"DISTRESS AUC {auc:.3f} · "
+            f"{n_distressed} HIGH-RISK"
+        ),
+        lede_italic_phrase=(
+            "What the model sees that the spreadsheet misses."
+        ),
+        lede_body=(
+            "Hospital archetypes, distress prediction, and RCM "
+            "opportunity scoring across the full HCRIS corpus. "
+            "Each model carries its training cutoff and AUC so "
+            "the partner sees the ground beneath each call."
+        ),
+    )
+    body = f'{head}{_ML_CHART_CSS}{kpis}{cluster_section}{distress_section}{rcm_screen}{methodology}{nav}{next_up}'
 
     return chartis_shell(
         body,
@@ -564,17 +585,6 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
             f"{n_hospitals:,} hospitals | {n_clusters} archetypes | "
             f"Distress AUC {auc:.3f} | {n_distressed} high-risk"
         ),
-        editorial_intro={
-            "eyebrow": "ML INSIGHTS",
-            "headline": "What the model sees that the spreadsheet misses.",
-            "italic_word": "sees",
-            "body": (
-                "Hospital archetypes, distress prediction, and RCM "
-                "opportunity scoring across the full HCRIS corpus. "
-                "Each model carries its training cutoff and AUC so "
-                "the partner sees the ground beneath each call."
-            ),
-        },
     )
 
 

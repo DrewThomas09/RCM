@@ -92,8 +92,32 @@ def render_diligence_questions(deal_id: str, deal_name: str, questions: List[Dic
         f'<a href="/analysis/{html.escape(deal_id)}" class="cad-btn">'
         f'Full Analysis</a></p>'
     )
+    # 2026-05-28 batch 25 · Group D sweep · universal strict 5-block
+    # head. Pre-sweep this page had NO explicit h1 (relied on shell
+    # auto-inject); partners landed on it with no editorial anchor.
+    from ._chartis_kit import ck_editorial_head
+    n_high = sum(1 for q in questions
+                 if str(q.get("priority", q.get("severity", ""))).lower()
+                 in ("high", "critical"))
+    head = ck_editorial_head(
+        eyebrow=f"DILIGENCE QUESTIONS · {html.escape(deal_id).upper()}",
+        title=f"Open questions — {html.escape(deal_name)}",
+        meta=(
+            f"{len(questions)} QUESTION"
+            f"{'S' if len(questions) != 1 else ''} · "
+            f"{n_high} HIGH/CRITICAL · "
+            f"{len(by_category)} CATEGORIES"
+        ),
+        lede_italic_phrase="Auto-generated diligence questions.",
+        lede_body=(
+            "Every analytic output that raises a question lands here, "
+            "ranked by severity. Use the CSV button to push the lot "
+            "to the data room or hit Cmd+P for an IC binder appendix."
+        ),
+    )
     body = (
-        f"{nav}"
+        head
+        + f"{nav}"
         + kpi_strip
         + ck_panel(cat_body, title="Categories")
         + ck_panel(questions_table, title="Diligence Questions")
