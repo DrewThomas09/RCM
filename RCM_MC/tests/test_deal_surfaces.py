@@ -53,13 +53,13 @@ class SurfaceRegistry(unittest.TestCase):
         self.assertEqual(sorted(s.number for s in SURFACES), list(range(1, 19)))
 
     def test_built_surfaces_grow_one_phase_at_a_time(self):
-        # Phases 1..13. New surfaces appear here as they land.
+        # Phases 1..14. New surfaces appear here as they land.
         built = {s.slug for s in SURFACES if s.built}
         self.assertEqual(built,
                          {"profile", "bridge", "lbo", "dcf",
                           "comp-intel", "ml", "denial", "returns",
                           "trends", "stmt", "levers", "waterfall",
-                          "playbook"})
+                          "playbook", "ic-memo"})
 
     def test_lookup_by_path(self):
         self.assertIs(SURFACE_BY_PATH["profile"].built, True)
@@ -102,8 +102,8 @@ class ProfileRender(unittest.TestCase):
         self.assertIn('aria-current="page"', self.html)
 
     def test_unbuilt_surfaces_get_soon_badge(self):
-        # 18 − built (now 13) = 5 soon badges
-        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 5)
+        # 18 − built (now 14) = 4 soon badges
+        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 4)
 
     def test_payer_mix_uses_real_data(self):
         self.assertIn("Medicare 42%", self.html)
@@ -128,6 +128,42 @@ class ProfileRender(unittest.TestCase):
         for slug in ("ic-memo", "bridge", "comp-intel", "scenarios", "ml",
                      "market", "denial", "trends", "dcf", "lbo", "stmt", "returns"):
             self.assertIn(f"/deals/050001/{slug}", self.html)
+
+
+class ICMemoRender(unittest.TestCase):
+    """Surface 02 (IC Memo) — composes everything else into 8 sections."""
+
+    def test_ic_memo_renders_eight_sections_plus_hero(self):
+        from rcm_mc.ui.deal_surfaces import render_deal_ic_memo
+        out = render_deal_ic_memo("050001", FAKE_HOSPITAL)
+        # All 8 spec-required sections present, plus the hero block
+        for i in range(1, 9):
+            self.assertIn(f'id="section-{i}"', out, f"missing section {i}")
+        # Section titles match the spec
+        for title in ("Target overview", "Market context", "RCM comp",
+                      "Predicted improvements", "EBITDA bridge",
+                      "Returns scenarios", "Risks &amp; mitigants",
+                      "Recommendation"):
+            self.assertIn(title, out, f"missing section title: {title}")
+        # Recommendation block uses the spec's dark-navy treatment
+        self.assertIn("#0b2341", out)
+        self.assertIn("Investability grade", out)
+        # Returns matrix runs LBO at three exit multiples
+        for band in ("Bear", "Base", "Bull"):
+            self.assertIn(band, out)
+        # IC tab marked active, one <h1>
+        self.assertIn('aria-current="page"', out)
+        self.assertEqual(len(re.findall(r"<h1[ >]", out)), 1)
+
+    def test_ic_memo_renders_honest_empty_when_npr_missing(self):
+        from rcm_mc.ui.deal_surfaces import render_deal_ic_memo
+        h = {"ccn": "999999", "name": "Sparse Co", "state": "TX"}
+        out = render_deal_ic_memo("999999", h)
+        self.assertIn("IC memo cannot run", out)
+        self.assertNotIn("Section 1", out)
+
+    def test_ic_memo_marked_built_in_registry(self):
+        self.assertTrue(SURFACE_BY_PATH["ic-memo"].built)
 
 
 class PlaybookRender(unittest.TestCase):
@@ -623,7 +659,23 @@ class DealRoutes(unittest.TestCase):
                 server.shutdown(); server.server_close()
 
     def test_real_ccn_unbuilt_surface_renders_stub_200(self):
-        # Use a still-unbuilt slug (dcf is now built; ic-memo still isn't).
+        # Use a still-unbuilt slug (memo-auto, market, scenarios, and
+        # predicted remain stubs).
+        with tempfile.TemporaryDirectory() as tmp:
+            create_user(PortfolioStore(os.path.join(tmp, "p.db")), "at", "supersecret1")
+            server, port = self._start(tmp)
+            try:
+                opener = _login_opener(port, "at", "supersecret1")
+                ccn = self._pick_real_ccn()
+                with opener.open(f"http://127.0.0.1:{port}/deals/{ccn}/scenarios") as r:
+                    self.assertEqual(r.status, 200)
+                    body = r.read().decode()
+                self.assertIn("Under construction", body)
+                self.assertIn("DEAL · CCN", body)
+            finally:
+                server.shutdown(); server.server_close()
+
+    def test_real_ccn_ic_memo_renders_real_data_200(self):
         with tempfile.TemporaryDirectory() as tmp:
             create_user(PortfolioStore(os.path.join(tmp, "p.db")), "at", "supersecret1")
             server, port = self._start(tmp)
@@ -633,8 +685,11 @@ class DealRoutes(unittest.TestCase):
                 with opener.open(f"http://127.0.0.1:{port}/deals/{ccn}/ic-memo") as r:
                     self.assertEqual(r.status, 200)
                     body = r.read().decode()
-                self.assertIn("Under construction", body)
+                self.assertNotIn("Under construction", body)
                 self.assertIn("DEAL · CCN", body)
+                self.assertEqual(len(re.findall(r"<h1[ >]", body)), 1)
+                self.assertTrue(
+                    "Recommendation" in body or "IC memo cannot run" in body)
             finally:
                 server.shutdown(); server.server_close()
 

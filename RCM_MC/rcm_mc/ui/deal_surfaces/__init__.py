@@ -21,6 +21,7 @@ from .bridge import render_deal_bridge
 from .comp_intel import render_deal_comp_intel
 from .dcf import render_deal_dcf
 from .denial import render_deal_denial
+from .ic_memo import render_deal_ic_memo
 from .lbo import render_deal_lbo
 from .levers import render_deal_levers
 from .ml import render_deal_ml
@@ -44,6 +45,7 @@ __all__ = [
     "render_deal_comp_intel",
     "render_deal_dcf",
     "render_deal_denial",
+    "render_deal_ic_memo",
     "render_deal_lbo",
     "render_deal_levers",
     "render_deal_playbook",
