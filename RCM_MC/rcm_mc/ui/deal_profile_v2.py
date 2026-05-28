@@ -105,7 +105,7 @@ def _section_header(
 def _empty_note(text: str) -> str:
     return (
         f'<div style="background:{_BG_ELEVATED};border:'
-        f'1px solid {_BORDER};border-radius:8px;padding:'
+        f'1px solid {_BORDER};border-radius:2px;padding:'
         f'18px;color:{_TEXT_DIM};font-size:13px;'
         f'text-align:center;">{_esc(text)}</div>')
 
@@ -124,7 +124,7 @@ def _kv_table(rows: List[tuple]) -> str:
     return (
         f'<table style="width:100%;border-collapse:collapse;'
         f'background:{_BG_SURFACE};border:1px solid {_BORDER};'
-        f'border-radius:8px;overflow:hidden;">{body}'
+        f'border-radius:2px;overflow:hidden;">{body}'
         f'</table>')
 
 
@@ -278,7 +278,7 @@ def _comps_section(packet: Any) -> str:
         f"benchmark calculation downstream.")
     table = (
         f'<div style="background:{_BG_SURFACE};border:1px solid '
-        f'{_BORDER};border-radius:8px;overflow:hidden;">'
+        f'{_BORDER};border-radius:2px;overflow:hidden;">'
         f'<table style="width:100%;border-collapse:collapse;">'
         f'<thead><tr style="background:{_BG_ELEVATED};">'
         f'<th style="padding:10px 16px;text-align:left;'
@@ -324,7 +324,7 @@ def _metrics_section(packet: Any) -> str:
     return _section_header(4, "Observed metrics", prose) + (
         f'<table style="width:100%;border-collapse:collapse;'
         f'background:{_BG_SURFACE};border:1px solid {_BORDER};'
-        f'border-radius:8px;overflow:hidden;">'
+        f'border-radius:2px;overflow:hidden;">'
         f'{"".join(rows)}</table>')
 
 
@@ -362,7 +362,7 @@ def _predictions_section(packet: Any) -> str:
     return _section_header(5, "Predictions", prose) + (
         f'<table style="width:100%;border-collapse:collapse;'
         f'background:{_BG_SURFACE};border:1px solid {_BORDER};'
-        f'border-radius:8px;overflow:hidden;">'
+        f'border-radius:2px;overflow:hidden;">'
         f'{"".join(rows)}</table>')
 
 
@@ -408,7 +408,7 @@ def _bridge_lever_chart(impacts: List[Any]) -> str:
         )
     return (
         f'<div style="background:{_BG_SURFACE};border:1px solid {_BORDER};'
-        f'border-radius:8px;padding:14px 16px;margin-bottom:12px;">'
+        f'border-radius:2px;padding:14px 16px;margin-bottom:12px;">'
         f'<div style="font-size:11px;text-transform:uppercase;'
         f'letter-spacing:0.05em;color:{_TEXT_DIM};margin-bottom:8px;">'
         f'Lever contribution · ranked by EBITDA impact</div>'
@@ -457,7 +457,7 @@ def _bridge_section(packet: Any) -> str:
     )
     table = (
         f'<div style="background:{_BG_SURFACE};border:1px solid '
-        f'{_BORDER};border-radius:8px;overflow:hidden;">'
+        f'{_BORDER};border-radius:2px;overflow:hidden;">'
         f'<table style="width:100%;border-collapse:collapse;">'
         f'<thead><tr style="background:{_BG_ELEVATED};">'
         f'<th style="padding:10px 16px;text-align:left;'
@@ -561,7 +561,7 @@ def _risks_section(packet: Any) -> str:
           "decision in the next section.")
     return _section_header(8, "Risks", prose) + (
         f'<div style="background:{_BG_SURFACE};border:'
-        f'1px solid {_BORDER};border-radius:8px;overflow:'
+        f'1px solid {_BORDER};border-radius:2px;overflow:'
         f'hidden;">{"".join(rows)}</div>')
 
 
@@ -604,7 +604,7 @@ def _actions_section(packet: Any) -> str:
         f"needs to make before closing.")
     return _section_header(9, "Actions", prose) + (
         f'<div style="background:{_BG_SURFACE};border:1px '
-        f'solid {_BORDER};border-radius:8px;overflow:'
+        f'solid {_BORDER};border-radius:2px;overflow:'
         f'hidden;">{"".join(rows)}</div>')
 
 
