@@ -127,12 +127,19 @@ def render_portfolio_monitor(store: Any) -> str:
         deals = []
 
     if not deals:
+        # 2026-05-28 sweep batch 19 · empty-state path also uses
+        # the universal helper so the page shape is consistent
+        # whether the partner has data or not.
+        from ._chartis_kit import ck_editorial_head
         return chartis_shell(
-            ck_section_intro(
+            ck_editorial_head(
                 eyebrow="PORTFOLIO MONITOR",
-                headline="No active deals in portfolio.",
-                italic_word="No",
-                body="Import deals to start monitoring.",
+                title="No active deals in portfolio.",
+                meta="0 ACTIVE · IMPORT TO POPULATE",
+                lede_italic_phrase=(
+                    "No active deals in portfolio."
+                ),
+                lede_body="Import deals to start monitoring.",
             ),
             "Portfolio Monitor", subtitle="No active deals",
         )
@@ -232,11 +239,26 @@ def render_portfolio_monitor(store: Any) -> str:
     no_health = n_deals - green - amber - red
 
     # ── Editorial intro + KPI strip ──
-    intro = ck_section_intro(
+    # 2026-05-28 sweep batch 19 · strict 5-block head via the
+    # universal kit helper. Replaces ck_section_intro to eliminate
+    # the dual-h1 trap and bring this page in line with /portfolio,
+    # /pipeline, /home, /day-one, /bear-cases, etc.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
         eyebrow="PORTFOLIO MONITOR",
-        headline="What needs the partner's attention this week.",
-        italic_word="attention",
-        body=(
+        title="What needs the partner's attention this week.",
+        meta=(
+            f"{n_deals} ACTIVE DEAL"
+            f"{'S' if n_deals != 1 else ''} · "
+            f"{n_with_actuals} WITH ACTUALS · "
+            f"{green}G / {amber}A / {red}R · "
+            f"{n_alerts} OPEN ALERT"
+            f"{'S' if n_alerts != 1 else ''}"
+        ),
+        lede_italic_phrase=(
+            "What needs the partner's attention this week."
+        ),
+        lede_body=(
             f"{n_deals} active deals · {n_with_actuals} with quarterly "
             f"actuals · {green} green / {amber} amber / {red} red · "
             f"{n_alerts} open alerts."
