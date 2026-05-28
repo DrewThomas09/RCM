@@ -38,8 +38,9 @@ def _input_form(qs: Dict[str, Any]) -> str:
     return (
         '<form method="GET" action="/diligence/comparable-outcomes" '
         'style="display:flex;flex-wrap:wrap;gap:10px;align-items:end;'
+        # 2026-05-28 batch 43 · Tier-4 trope removal — cap radius at 2px.
         'margin:12px 0 20px;padding:14px 16px;background:#f7f3ea;'
-        'border:1px solid #d6cfc0;border-radius:6px;">'
+        'border:1px solid #d6cfc0;border-radius:2px;">'
         '<div><label style="display:block;font-size:11px;color:#7a8699;'
         'text-transform:uppercase;letter-spacing:0.05em;'
         'margin-bottom:4px;">Sector</label>'
@@ -112,9 +113,10 @@ def _outcome_strip(summary: Dict[str, Any]) -> str:
     hold_s = f"{hold:.1f}y" if hold else "—"
 
     def _stat(label: str, big: str, sub: str) -> str:
+        # 2026-05-28 batch 43 · Tier-4 trope removal — cap radius at 2px.
         return (
             f'<div style="flex:1;min-width:160px;padding:14px 16px;'
-            f'background:#fff;border:1px solid #d6cfc0;border-radius:8px;">'
+            f'background:#fff;border:1px solid #d6cfc0;border-radius:2px;">'
             f'<div style="font-size:10px;color:#7a8699;font-weight:600;'
             f'text-transform:uppercase;letter-spacing:0.05em;">'
             f'{label}</div>'
@@ -357,10 +359,11 @@ def render_comparable_outcomes_page(
         filter_placeholder="Filter by deal name or buyer…",
     )
 
+    # 2026-05-28 batch 43 · Tier-4 trope removal — cap radius at 2px.
     breakdown_legend = (
         '<div style="display:flex;flex-wrap:wrap;gap:14px;'
         'font-size:11px;color:#7a8699;margin:8px 0 0;'
-        'padding:8px 12px;background:#f7f3ea;border-radius:6px;">'
+        'padding:8px 12px;background:#f7f3ea;border-radius:2px;">'
         '<span style="font-weight:600;color:#1a2332;'
         'text-transform:uppercase;letter-spacing:0.05em;">'
         'Match-score bar</span>'

@@ -2,7 +2,7 @@
 
 **Spec**: 2026-05-28 editorial handoff — strict Tier-1 5-block head + spec-forbidden trope removal.
 
-**Status (as of batch 42, 2026-05-28)**: 42 batches shipped/in-flight; ~148 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep at 77 surfaces cleaned + **7 gradients retired** + **7 box-shadows removed** (one shared `render_insights_page` cleanup fans out across many index pages).
+**Status (as of batch 43, 2026-05-28)**: 43 batches shipped/in-flight; ~155 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep at 90 surfaces cleaned + **7 gradients retired** + **7 box-shadows removed** (one shared `render_insights_page` cleanup fans out across many index pages).
 
 **Wave-1 (batch 19) shipped**: `my_dashboard_page`, `portfolio_monitor_page`, `deal_mc_page`
 **Wave-2 (batch 20) shipped**: `portfolio_bridge_page`, `risk_workbench_page`, `scenario_modeler_page`, `market_intel_page`, `escalations_page`
@@ -32,6 +32,10 @@ All 24 originally-flagged Group D files are now in Group A. Every renderer in th
 **Next**: Phase 4 — Group C trope removal. ~180 pages still carry `cad-card`/`cad-table` chrome with spec-forbidden tropes (3px left-border accents, box-shadow on content cards, `border-radius > 2px`). Migration is a CSS-level sweep, ~3-4 files per batch.
 
 ## Phase 4 · Group C trope removal (in progress)
+
+**Wave-14 (batch 43) shipped** — 13 more radius caps across 2 files (bulk sweep of deal_profile_v2):
+- `deal_profile_v2.py` (10 surfaces, all 8px → 2px via global replace — empty notes, kv-tables, score tables, lever sections, etc.)
+- `comparable_outcomes_page.py` (filter container 6px → 2px; stat tile 8px → 2px; breakdown legend 6px → 2px). Form inputs/buttons left at 4px (UI affordances).
 
 **Wave-13 (batch 42) shipped** — 5 more radius caps across 3 files (semantic tone borders preserved):
 - `payer_stress_page.py` (`.ps-panel`, `.ps-verdict-card`, `.ps-payer-card` — all 4px → 2px; semantic tone left-stripes and ::before semantic tone-bar preserved)
