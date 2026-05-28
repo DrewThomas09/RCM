@@ -3038,6 +3038,79 @@ _CK_RECENT_JS = """
 """
 
 
+_CK_BACK_TO_TOP_CSS = """
+<style>
+.ck-back-to-top{position:fixed;bottom:24px;right:24px;
+  font:500 11px/1 var(--sc-sans,Inter),sans-serif;
+  letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink,#16263a);background:var(--paper-card,#fefcf3);
+  border:1px solid var(--rule,#c9bf9c);border-radius:2px;
+  padding:9px 14px;text-decoration:none;cursor:pointer;
+  display:none;opacity:0;
+  transition:background .12s,border-color .12s,opacity .2s;
+  z-index:50;}
+.ck-back-to-top.ck-back-to-top-visible{display:inline-block;opacity:1;}
+.ck-back-to-top:hover{background:var(--paper-hi,#fbf6e8);
+  border-color:var(--rule-hi,#b6a87f);}
+.ck-back-to-top:focus-visible{outline:2px solid var(--green-deep,#154e36);
+  outline-offset:-1px;}
+@media (max-width:720px){
+  .ck-back-to-top{bottom:14px;right:14px;padding:7px 11px;
+    font-size:10.5px;}
+}
+@media print{.ck-back-to-top{display:none!important;}}
+</style>
+"""
+
+_CK_BACK_TO_TOP_JS = """
+<script>
+(function(){
+  if (window.__rcmBackToTopInstalled) return;
+  window.__rcmBackToTopInstalled = true;
+  function install(){
+    var btn = document.querySelector('[data-rcm-back-to-top]');
+    if (!btn) return;
+    var threshold = 600;
+    function update(){
+      var y = window.pageYOffset || document.documentElement.scrollTop;
+      if (y > threshold) btn.classList.add('ck-back-to-top-visible');
+      else btn.classList.remove('ck-back-to-top-visible');
+    }
+    btn.addEventListener('click', function(ev){
+      ev.preventDefault();
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+    window.addEventListener('scroll', update, {passive:true});
+    update();
+  }
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', install);
+  } else { install(); }
+})();
+</script>
+"""
+
+
+def ck_back_to_top_button(label: str = "↑ Back to top") -> str:
+    """Floating "back to top" button — appears after the partner
+    scrolls more than 600px down. Click smooth-scrolls to top.
+    Useful on long screener tables / detail pages where the partner
+    deep-scrolls.
+
+    Renders the CSS + JS + button. Idempotent JS install guarded
+    by ``window.__rcmBackToTopInstalled``.
+    """
+    return (
+        _CK_BACK_TO_TOP_CSS
+        + _CK_BACK_TO_TOP_JS
+        + (
+            f'<button type="button" class="ck-back-to-top" '
+            f'data-rcm-back-to-top aria-label="Back to top of page">'
+            f'{_esc(label)}</button>'
+        )
+    )
+
+
 def ck_recently_viewed_rail(
     *,
     eyebrow: str = "Recently viewed",
@@ -4389,6 +4462,18 @@ _CSS_INLINE_FALLBACK = """
    * variant unchanged — pages opting into ck-dense explicitly want
    * the tighter packing. */
   .ck-table thead th { background:var(--sc-bone); color:var(--sc-text-dim); font-family:var(--sc-sans); font-weight:600; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; padding:10px 14px; border-bottom:1px solid var(--sc-rule); text-align:left; }
+  /* 2026-05-28 usability lift · opt-in sticky thead. Pages that
+   * render long result tables (predictive-screener, hospital-screener,
+   * sector screeners, pipeline hospitals) opt-in by adding the
+   * `ck-table-sticky-head` class to the <table>. The thead row then
+   * stays pinned to the topbar (-1px overlap avoids a hairline gap
+   * on scroll). Background fill ensures rows scrolling under the
+   * thead don't bleed through. */
+  /* Depth on the pinned thead comes from the existing hairline
+   * border-bottom + opaque --sc-bone background. No box-shadow
+   * (Tier-4 don'ts forbid shadows; the hairline carries the
+   * visual separation). */
+  .ck-table.ck-table-sticky-head thead th { position:sticky; top:0; z-index:5; background:var(--sc-bone); }
   .ck-table tbody td { padding:10px 14px; border-bottom:1px solid var(--sc-rule); }
   .ck-table.ck-dense tbody td { padding:5px 10px; font-size:12px; }
   .ck-table .sc-num { font-family:var(--sc-mono); font-variant-numeric:tabular-nums; }

@@ -540,11 +540,17 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
             f'all <strong>{n_shown}</strong> hospitals &middot; click a funnel '
             'stage or KPI to filter &middot; click a column header to sort'
         )
+        # 2026-05-28 usability lift · sticky thead on the long
+        # pipeline hospitals table so the column labels stay
+        # visible while the partner scrolls a 50+ row pipeline.
+        # Opt-in via the ck-table-sticky-head class (also pairs
+        # with ck-data-table for the existing click-to-sort JS).
         pipeline_table = ck_panel(
             f'<p class="ck-section-body">{scope_line}</p>'
             '<p class="ck-section-body">'
             f'<a href="/pipeline/bridge" class="cad-btn cad-btn-primary">Portfolio EBITDA Bridge</a></p>'
-            '<table class="ck-data-table"><thead><tr>'
+            '<table class="ck-data-table ck-table ck-table-sticky-head">'
+            '<thead><tr>'
             '<th></th><th data-sortable>Hospital</th><th data-sortable>State</th>'
             '<th data-sortable>Beds</th><th data-sortable>Revenue</th>'
             '<th data-sortable>Margin</th><th data-sortable>Recent</th>'
@@ -643,12 +649,18 @@ border-radius:2px;transition:background 0.12s;}
         eyebrow="Continue —",
         italic_word="deal",
     )
+    # 2026-05-28 usability lift · floating back-to-top button for the
+    # long pipeline page (head + funnel + searches + activity rail +
+    # hospitals table can total 1000+ vertical px). Button is hidden
+    # until the partner scrolls > 600px down, then fades in.
+    from ._chartis_kit import ck_back_to_top_button
+    back_to_top = ck_back_to_top_button()
     body = (
         pp_styles + title_block + explainer_html + actions_row + kpis
         + '<div class="pp-grid">'
         + f'<div>{funnel}{search_section}</div>'
         + f'<div>{activity_section}</div></div>'
-        + f'{pipeline_table}{next_up}{nav}'
+        + f'{pipeline_table}{next_up}{nav}{back_to_top}'
     )
 
     return chartis_shell(

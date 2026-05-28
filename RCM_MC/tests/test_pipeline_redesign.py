@@ -108,7 +108,12 @@ class PipelineSeededTests(unittest.TestCase):
         html = render_pipeline(db)
         if rows:
             # Sortable table with the required sort columns + quick actions.
-            self.assertIn('class="ck-data-table"', html)
+            # 2026-05-28 usability sweep (#1074) added sticky-thead
+            # opt-in classes to the table — the ck-data-table class
+            # now lives in a compound class= attribute. Pin the
+            # substring rather than the exact attribute so both old
+            # and new shapes pass.
+            self.assertIn("ck-data-table", html)
             for col in ("Beds", "Revenue", "Margin", "Recent"):
                 self.assertIn(f"<th data-sortable>{col}</th>", html)
             self.assertIn(">Bridge<", html)
