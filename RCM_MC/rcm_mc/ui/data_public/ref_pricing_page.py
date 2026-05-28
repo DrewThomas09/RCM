@@ -259,9 +259,10 @@ def _colorado_rbp_section(params: dict) -> str:
         f'{P["border"]};border-radius:2px;min-width:260px;font-size:13px">'
         f'<button type="submit" style="padding:7px 14px;background:{P["accent"]};color:#fff;'
         f'border:none;border-radius:2px;font-size:12px;cursor:pointer">Search</button></form>')
+    # 2026-05-28 batch 33 · Tier-4 trope removal — strip 3px accent.
     return (
         f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-left:3px solid {P["accent"]};padding:14px 16px;margin-bottom:18px">'
+        f'border-radius:2px;padding:14px 16px;margin-bottom:18px">'
         f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
         f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:8px">'
         f'Colorado provider reimbursement vs Medicare · LIVE (CIVHC)</div>'

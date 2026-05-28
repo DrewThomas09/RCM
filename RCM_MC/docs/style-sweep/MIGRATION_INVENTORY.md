@@ -2,7 +2,7 @@
 
 **Spec**: 2026-05-28 editorial handoff — strict Tier-1 5-block head + spec-forbidden trope removal.
 
-**Status (as of batch 32, 2026-05-28)**: 32 batches shipped/in-flight; ~105 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep at 25 surfaces cleaned + 1 gradient retired.
+**Status (as of batch 33, 2026-05-28)**: 33 batches shipped/in-flight; ~110 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep at 31 surfaces cleaned + 1 gradient retired.
 
 **Wave-1 (batch 19) shipped**: `my_dashboard_page`, `portfolio_monitor_page`, `deal_mc_page`
 **Wave-2 (batch 20) shipped**: `portfolio_bridge_page`, `risk_workbench_page`, `scenario_modeler_page`, `market_intel_page`, `escalations_page`
@@ -32,6 +32,13 @@ All 24 originally-flagged Group D files are now in Group A. Every renderer in th
 **Next**: Phase 4 — Group C trope removal. ~180 pages still carry `cad-card`/`cad-table` chrome with spec-forbidden tropes (3px left-border accents, box-shadow on content cards, `border-radius > 2px`). Migration is a CSS-level sweep, ~3-4 files per batch.
 
 ## Phase 4 · Group C trope removal (in progress)
+
+**Wave-4 (batch 33) shipped** — continues `data_public/` sweep (6 more decorative stripes removed across 5 files):
+- `_benchmark_panels.py` (MIPS physician quality panel)
+- `_colorado_context.py` (shared CIVHC context panel — fans out across multiple pages)
+- `physician_productivity_page.py` (MIPS + HRSA shortage panels)
+- `payer_rate_trends_page.py` (Colorado payer cost trend panel)
+- `ref_pricing_page.py` (Colorado reimbursement vs Medicare panel)
 
 **Wave-3 (batch 32) shipped** — sweeps `data_public/` analyzer surfaces (decorative 3px stripes removed; risk-tier semantic stripe in drug_shortage preserved):
 - `cms_apm_tracker_page.py` (3 surfaces: Colorado APM panel, MSSP ACO panel, landscape note)
