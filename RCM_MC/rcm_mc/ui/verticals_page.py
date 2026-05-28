@@ -195,8 +195,27 @@ def render_verticals() -> str:
         eyebrow="Continue —",
         italic_word="metric",
     )
+    # 2026-05-28 batch 29 · Phase 3 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="HEALTHCARE VERTICALS",
+        title="Where the playbook actually changes.",
+        meta=(
+            f"{len(verticals)} VERTICAL"
+            f"{'S' if len(verticals) != 1 else ''} · "
+            "ACUTE CARE · ASC · BH · MSO"
+        ),
+        lede_italic_phrase="Where the playbook actually changes.",
+        lede_body=(
+            "Acute care, ASC, behavioral health, MSO, and "
+            "specialty practices each have their own value "
+            "bridge, key metrics, and diligence framework. "
+            "Pick the right vertical first; the analysis "
+            "modules calibrate themselves accordingly."
+        ),
+    )
     body = (
-        ck_eyebrow("Healthcare Verticals")
+        head
         + kpi_strip
         + f'<div class="cad-card">'
         f'<p style="color:{PALETTE["text_secondary"]};font-size:12.5px;">'
@@ -211,16 +230,4 @@ def render_verticals() -> str:
     return chartis_shell(
         body, "Healthcare Verticals",
         subtitle="Acute Care, ASC, Behavioral Health, MSO",
-        editorial_intro={
-            "eyebrow": "HEALTHCARE VERTICALS",
-            "headline": "Where the playbook actually changes.",
-            "italic_word": "actually",
-            "body": (
-                "Acute care, ASC, behavioral health, MSO, and "
-                "specialty practices each have their own value "
-                "bridge, key metrics, and diligence framework. "
-                "Pick the right vertical first; the analysis "
-                "modules calibrate themselves accordingly."
-            ),
-        },
     )

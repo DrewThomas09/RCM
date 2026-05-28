@@ -987,21 +987,28 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
         eyebrow="Continue —",
         italic_word="waterfall",
     )
-    body = f'{_MODELS_CHART_CAPTION_CSS}{nav}{kpis}{su_html}{annual_html}{interp}{waterfall_html}{actions}{next_up}'
+    # 2026-05-28 batch 29 · Phase 3 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="LBO MODEL",
+        title=f"LBO — {html.escape(deal_name)}",
+        meta=(
+            f"IRR {_fmt_pct(irr).upper()} · "
+            f"MOIC {_fmt_x(moic).upper()} · "
+            f"{hold_years}-YEAR HOLD"
+        ),
+        lede_italic_phrase="What the leverage returns to equity.",
+        lede_body=(
+            "Sources and uses, debt amortization, and "
+            "the equity waterfall through a 5-year hold. "
+            "Tune leverage and exit multiple to see "
+            "where the deal stops working."
+        ),
+    )
+    body = f'{head}{_MODELS_CHART_CAPTION_CSS}{nav}{kpis}{su_html}{annual_html}{interp}{waterfall_html}{actions}{next_up}'
     return chartis_shell(body, f"LBO — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"IRR: {_fmt_pct(irr)} | MOIC: {_fmt_x(moic)}",
-                    editorial_intro={
-                        "eyebrow": "LBO MODEL",
-                        "headline": "What the leverage returns to equity.",
-                        "italic_word": "returns",
-                        "body": (
-                            "Sources and uses, debt amortization, and "
-                            "the equity waterfall through a 5-year hold. "
-                            "Tune leverage and exit multiple to see "
-                            "where the deal stops working."
-                        ),
-                    })
+                    subtitle=f"IRR: {_fmt_pct(irr)} | MOIC: {_fmt_x(moic)}")
 
 
 def render_financials_page(deal_id: str, deal_name: str, model: Dict[str, Any]) -> str:
@@ -1115,18 +1122,27 @@ def render_financials_page(deal_id: str, deal_name: str, model: Dict[str, Any]) 
         eyebrow="Continue —",
         italic_word="DCF",
     )
-    body = f'{nav}{kpis}{is_section}{bs_section}{interp}{cf_section}{actions}{next_up}'
+    # 2026-05-28 batch 29 · Phase 3 · universal strict 5-block head.
+    # Real-count meta: number of populated statement sections + summary count.
+    n_statements = sum(1 for s in (is_section, bs_section, cf_section) if s)
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="FINANCIAL MODEL",
+        title=f"Financials — {html.escape(deal_name)}",
+        meta=(
+            f"3-STATEMENT MODEL · "
+            f"{n_statements} OF 3 SECTIONS POPULATED · "
+            f"SOURCED FROM HCRIS + DEAL PROFILE"
+        ),
+        lede_italic_phrase="What the three statements tell each other.",
+        lede_body=(
+            "Income statement, balance sheet, and cash "
+            "flow reconstructed from HCRIS plus deal "
+            "profile. The places these don't tie tell "
+            "you what the seller is hiding."
+        ),
+    )
+    body = f'{head}{nav}{kpis}{is_section}{bs_section}{interp}{cf_section}{actions}{next_up}'
     return chartis_shell(body, f"Financials — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle="3-statement model reconstructed from HCRIS + deal profile",
-                    editorial_intro={
-                        "eyebrow": "FINANCIAL MODEL",
-                        "headline": "What the three statements tell each other.",
-                        "italic_word": "tell",
-                        "body": (
-                            "Income statement, balance sheet, and cash "
-                            "flow reconstructed from HCRIS plus deal "
-                            "profile. The places these don't tie tell "
-                            "you what the seller is hiding."
-                        ),
-                    })
+                    subtitle="3-statement model reconstructed from HCRIS + deal profile")
