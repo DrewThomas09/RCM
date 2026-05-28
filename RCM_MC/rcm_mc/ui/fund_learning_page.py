@@ -181,7 +181,27 @@ def render_fund_learning(db_path: str) -> str:
         target=f"{accuracy.n_closed_deals} closed deals",
         tone=_fl_tone,
     )
-    body = f'{lead_anchor}{kpis}{narrative}{lever_section}{flywheel}{nav}{next_up}'
+    # 2026-05-28 batch 28 · Phase 3 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="FUND LEARNING",
+        title="What the fund knows now that it didn't.",
+        meta=(
+            f"{accuracy.n_closed_deals} CLOSED DEAL"
+            f"{'S' if accuracy.n_closed_deals != 1 else ''} · "
+            f"{accuracy.fund_realization_pct:.0%} REALIZATION · "
+            f"{len(accuracy.lever_biases)} LEVERS TRACKED"
+        ),
+        lede_italic_phrase="What the fund knows now that it didn't.",
+        lede_body=(
+            "Per-fund lever biases learned from realized "
+            "outcomes vs. underwriting projections. Use this "
+            "to calibrate the next deal's bridge — if your "
+            "fund consistently over-projects RCM uplift by "
+            "20%, the next underwriting should reflect that."
+        ),
+    )
+    body = f'{head}{lead_anchor}{kpis}{narrative}{lever_section}{flywheel}{nav}{next_up}'
 
     return chartis_shell(
         body, "Fund Learning",
@@ -191,16 +211,4 @@ def render_fund_learning(db_path: str) -> str:
             f"{accuracy.fund_realization_pct:.0%} realization | "
             f"{len(accuracy.lever_biases)} levers tracked"
         ),
-        editorial_intro={
-            "eyebrow": "FUND LEARNING",
-            "headline": "What the fund knows now that it didn't.",
-            "italic_word": "knows",
-            "body": (
-                "Per-fund lever biases learned from realized "
-                "outcomes vs. underwriting projections. Use this "
-                "to calibrate the next deal's bridge - if your "
-                "fund consistently over-projects RCM uplift by "
-                "20%, the next underwriting should reflect that."
-            ),
-        },
     )

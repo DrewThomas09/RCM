@@ -353,8 +353,32 @@ def render_ai_settings(store: Any) -> str:
         ("System Info",       "/api/system/info"),
     ])
 
+    # 2026-05-28 batch 28 · Phase 3 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="AI ASSISTANT",
+        title="Where Claude plugs into the deal work.",
+        meta=(
+            f"{'CONNECTED' if key_set else 'NOT CONNECTED'} · "
+            f"{stats['total_calls']:,} CALL"
+            f"{'S' if stats['total_calls'] != 1 else ''} · "
+            f"{stats['cached_hits']:,} CACHED · "
+            f"{len(stats['by_model'])} MODEL"
+            f"{'S' if len(stats['by_model']) != 1 else ''}"
+        ),
+        lede_italic_phrase="Where Claude plugs into the deal work.",
+        lede_body=(
+            "On-box Ollama plus the Anthropic API back the "
+            "platform's AI-assist features — IC memo drafting, "
+            "document Q&amp;A, and conversational portfolio "
+            "queries. Cost, cache hit-rate, and per-model "
+            "volume live in the strip below; rotate the key "
+            "or change the Ollama host without leaving this page."
+        ),
+    )
     body = (
-        header_card
+        head
+        + header_card
         + kpi_strip
         + ck_section_header("LOCAL OLLAMA", "on-box model — connection & config")
         + _ollama_config_card()
@@ -377,9 +401,4 @@ def render_ai_settings(store: Any) -> str:
         title="AI Assistant — Claude",
         active_nav="/settings",
         subtitle=("Connected" if key_set else "Not yet connected"),
-        editorial_intro={
-            "eyebrow": "AI ASSISTANT — CLAUDE",
-            "headline": "What the ai assistant — claude reveals on this deal.",
-            "italic_word": "reveals",
-        }
     )

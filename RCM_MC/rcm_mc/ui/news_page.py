@@ -477,8 +477,29 @@ def render_news(category: str = "all") -> str:
         eyebrow="Continue —",
         italic_word="research",
     )
+    # 2026-05-28 batch 28 · Phase 3 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="NEWS & RESEARCH",
+        title="What the market is saying about the deal universe.",
+        meta=(
+            f"{len(_CURATED_ARTICLES)} CURATED ARTICLE"
+            f"{'S' if len(_CURATED_ARTICLES) != 1 else ''} · "
+            f"{n_categories} CATEGOR"
+            f"{'IES' if n_categories != 1 else 'Y'} · "
+            f"HEALTHCARE PE COVERAGE"
+        ),
+        lede_italic_phrase="What the market is saying about the deal universe.",
+        lede_body=(
+            "Curated healthcare PE coverage by sector and "
+            "deal type — bankruptcies, transactions, "
+            "regulatory moves. Use this as the partner-day "
+            "context check before opening any deal page."
+        ),
+    )
     body = (
-        kpi_strip
+        head
+        + kpi_strip
         + f'{tab_bar}'
         f'<div style="display:grid;grid-template-columns:1fr 300px;gap:20px;">'
         f'<div>{cards}</div>'
@@ -491,15 +512,4 @@ def render_news(category: str = "all") -> str:
         body, "News & Research",
         active_nav="/news",
         subtitle="Healthcare PE market intelligence",
-        editorial_intro={
-            "eyebrow": "NEWS & RESEARCH",
-            "headline": "What the market is saying about the deal universe.",
-            "italic_word": "saying",
-            "body": (
-                "Curated healthcare PE coverage by sector and "
-                "deal type - bankruptcies, transactions, "
-                "regulatory moves. Use this as the partner-day "
-                "context check before opening any deal page."
-            ),
-        },
     )

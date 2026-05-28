@@ -118,19 +118,26 @@ def render_source_page(
         eyebrow="Continue —",
         italic_word="screener",
     )
-    body = ck_eyebrow("Deal Sourcing") + kpi_strip + body + next_up
+    # 2026-05-28 batch 28 · Phase 3 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="DEAL SOURCING",
+        title="Where the next deal might be hiding.",
+        meta=(
+            f"{n} MATCH{'ES' if n != 1 else ''} · "
+            f"{n_theses} THES{'ES' if n_theses != 1 else 'IS'} · "
+            f"~6,000 HOSPITAL HCRIS UNIVERSE"
+        ),
+        lede_italic_phrase="Where the next deal might be hiding.",
+        lede_body=(
+            "Pick an investment thesis and the platform "
+            "ranks the HCRIS universe against it. Use this "
+            "before screening — thesis-first sourcing finds "
+            "deals that fit the fund, not deals that look "
+            "good in isolation."
+        ),
+    )
+    body = head + kpi_strip + body + next_up
 
     sub = f"{n} matches found" if results else "Thesis-driven deal origination from HCRIS"
-    return chartis_shell(body, "Deal Sourcing", subtitle=sub,
-        editorial_intro={
-            "eyebrow": "DEAL SOURCING",
-            "headline": "Where the next deal might be hiding.",
-            "italic_word": "hiding",
-            "body": (
-                "Pick an investment thesis and the platform "
-                "ranks the HCRIS universe against it. Use this "
-                "before screening - thesis-first sourcing finds "
-                "deals that fit the fund, not deals that look "
-                "good in isolation."
-            ),
-        })
+    return chartis_shell(body, "Deal Sourcing", subtitle=sub)

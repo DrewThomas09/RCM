@@ -211,20 +211,27 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
         target=f"${entry_eq / 1e6:.0f}M in → ${exit_proc / 1e6:.0f}M exit",
         tone=_ret_tone,
     )
-    body = f'{nav}{lead_anchor}{kpis}{interp}{cov_section}{actions}{next_up}'
+    # 2026-05-28 batch 28 · Phase 3 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="PE RETURNS & COVENANTS",
+        title=f"Returns & covenants — {html.escape(deal_name)}",
+        meta=(
+            f"IRR {irr:.1%} · "
+            f"MOIC {moic:.2f}x · "
+            f"COVENANT CUSHION {cushion:.0%}"
+        ),
+        lede_italic_phrase="Where the leverage and returns meet.",
+        lede_body=(
+            "Levered returns + covenant headroom in one view. "
+            "The IRR / MOIC tiles read the equity outcome; "
+            "the covenant tiles read structural risk. EBITDA "
+            "cushion below 15% usually triggers a working-"
+            "capital review."
+        ),
+    )
+    body = f'{head}{nav}{lead_anchor}{kpis}{interp}{cov_section}{actions}{next_up}'
 
     return chartis_shell(body, f"Returns & Covenant — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"IRR: {irr:.1%} | MOIC: {moic:.2f}x | Covenant cushion: {cushion:.0%}",
-        editorial_intro={
-            "eyebrow": "PE RETURNS & COVENANTS",
-            "headline": "Where the leverage and returns meet.",
-            "italic_word": "meet",
-            "body": (
-                "Levered returns + covenant headroom in one view. "
-                "The IRR / MOIC tiles read the equity outcome; "
-                "the covenant tiles read structural risk. EBITDA "
-                "cushion below 15% usually triggers a working-"
-                "capital review."
-            ),
-        })
+                    subtitle=f"IRR: {irr:.1%} | MOIC: {moic:.2f}x | Covenant cushion: {cushion:.0%}")
