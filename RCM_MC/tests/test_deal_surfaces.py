@@ -53,11 +53,11 @@ class SurfaceRegistry(unittest.TestCase):
         self.assertEqual(sorted(s.number for s in SURFACES), list(range(1, 19)))
 
     def test_built_surfaces_grow_one_phase_at_a_time(self):
-        # Phases 1..7: profile, bridge, lbo, dcf, comp-intel, ml, denial.
+        # Phases 1..8: profile, bridge, lbo, dcf, comp-intel, ml, denial, returns.
         built = {s.slug for s in SURFACES if s.built}
         self.assertEqual(built,
                          {"profile", "bridge", "lbo", "dcf",
-                          "comp-intel", "ml", "denial"})
+                          "comp-intel", "ml", "denial", "returns"})
 
     def test_lookup_by_path(self):
         self.assertIs(SURFACE_BY_PATH["profile"].built, True)
@@ -100,9 +100,8 @@ class ProfileRender(unittest.TestCase):
         self.assertIn('aria-current="page"', self.html)
 
     def test_unbuilt_surfaces_get_soon_badge(self):
-        # 18 − built (now 7: profile, bridge, lbo, dcf, comp-intel, ml,
-        # denial) = 11 soon badges
-        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 11)
+        # 18 − built (now 8) = 10 soon badges
+        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 10)
 
     def test_payer_mix_uses_real_data(self):
         self.assertIn("Medicare 42%", self.html)
@@ -127,6 +126,38 @@ class ProfileRender(unittest.TestCase):
         for slug in ("ic-memo", "bridge", "comp-intel", "scenarios", "ml",
                      "market", "denial", "trends", "dcf", "lbo", "stmt", "returns"):
             self.assertIn(f"/deals/050001/{slug}", self.html)
+
+
+class ReturnsRender(unittest.TestCase):
+    """Surface 12 (Returns) — LBO returns lens + covenant headroom."""
+
+    def test_returns_renders_four_panels_when_npr_present(self):
+        from rcm_mc.ui.deal_surfaces import render_deal_returns
+        out = render_deal_returns("050001", FAKE_HOSPITAL)
+        for eyebrow in ("HERO", "RETURNS ASSESSMENT",
+                        "COVENANT HEADROOM", "ACTIONS"):
+            self.assertIn(eyebrow, out, f"missing panel: {eyebrow}")
+        # Verdict from real LBO output
+        self.assertTrue(
+            "Clears hurdle" in out or "Marginal" in out
+            or "Below hurdle" in out or "Impaired" in out,
+            "no IRR verdict band rendered")
+        # Covenant defaults explicitly named
+        self.assertIn("MAX LEVERAGE", out)
+        # Returns tab active, one <h1>
+        self.assertIn('aria-current="page"', out)
+        self.assertEqual(len(re.findall(r"<h1[ >]", out)), 1)
+
+    def test_returns_renders_honest_empty_when_npr_missing(self):
+        from rcm_mc.ui.deal_surfaces import render_deal_returns
+        h = {"ccn": "999999", "name": "Sparse Co", "state": "TX"}
+        out = render_deal_returns("999999", h)
+        self.assertIn("Returns lens cannot run", out)
+        self.assertNotIn("HERO", out)
+        self.assertIn("CCN 999999", out)
+
+    def test_returns_marked_built_in_registry(self):
+        self.assertTrue(SURFACE_BY_PATH["returns"].built)
 
 
 class DenialRender(unittest.TestCase):
@@ -423,6 +454,24 @@ class DealRoutes(unittest.TestCase):
                     body = r.read().decode()
                 self.assertIn("Under construction", body)
                 self.assertIn("DEAL · CCN", body)
+            finally:
+                server.shutdown(); server.server_close()
+
+    def test_real_ccn_returns_renders_real_data_200(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            create_user(PortfolioStore(os.path.join(tmp, "p.db")), "at", "supersecret1")
+            server, port = self._start(tmp)
+            try:
+                opener = _login_opener(port, "at", "supersecret1")
+                ccn = self._pick_real_ccn()
+                with opener.open(f"http://127.0.0.1:{port}/deals/{ccn}/returns") as r:
+                    self.assertEqual(r.status, 200)
+                    body = r.read().decode()
+                self.assertNotIn("Under construction", body)
+                self.assertIn("DEAL · CCN", body)
+                self.assertEqual(len(re.findall(r"<h1[ >]", body)), 1)
+                self.assertTrue(
+                    "COVENANT HEADROOM" in body or "Returns lens cannot run" in body)
             finally:
                 server.shutdown(); server.server_close()
 
