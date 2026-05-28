@@ -31,6 +31,146 @@ from .power_ui import (
 )
 
 
+# 2026-05-28 style-sweep · strict Tier-1 5-block head for the four
+# covenant-lab render paths (rendered report / landing form / err
+# state / main intro). Plus a "Copy share link" usability button
+# inlined in the head's actions area so partners can deep-link a
+# specific scenario to teammates with one click.
+_CV_HEAD_CSS = """
+<style>
+.cv-head{padding:0 0 28px;margin:0 0 24px;
+  border-bottom:1px solid var(--rule-soft,#ddd1ac);}
+.cv-head .head-row{display:flex;justify-content:space-between;
+  align-items:flex-start;gap:32px;}
+.cv-head .head-left{flex:1;min-width:0;}
+.cv-head .head-actions{display:flex;gap:8px;flex-shrink:0;
+  align-items:flex-start;}
+.cv-head .head-actions a,.cv-head .head-actions button{
+  font:500 11px/1 var(--sc-sans,Inter),sans-serif;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink,#16263a);
+  background:var(--paper-card,#fefcf3);border:1px solid var(--rule,#c9bf9c);
+  border-radius:2px;padding:9px 14px;text-decoration:none;cursor:pointer;
+  transition:background .12s,border-color .12s;}
+.cv-head .head-actions a:hover,.cv-head .head-actions button:hover{
+  background:var(--paper-hi,#fbf6e8);border-color:var(--rule-hi,#b6a87f);}
+.cv-head .eyebrow{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--green-deep,#154e36);display:flex;align-items:center;
+  gap:12px;margin:0 0 18px;}
+.cv-head .eyebrow .dash{width:24px;height:1px;
+  background:var(--green-deep,#154e36);}
+.cv-head h1{font:400 40px/1.05 var(--sc-serif,Georgia),serif;
+  letter-spacing:-.015em;color:var(--ink,#16263a);margin:0 0 14px;}
+.cv-head .meta{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted,#7a8595);margin:0 0 18px;}
+.cv-head .lede{font:400 italic 16.5px/1.55 var(--sc-serif,Georgia),serif;
+  color:var(--ink-2,#2b3e54);max-width:68ch;margin:0 0 18px;}
+.cv-head .lede em{color:var(--green-deep,#154e36);font-style:italic;}
+.cv-head .legend{display:flex;gap:24px;list-style:none;padding:0;
+  margin:0;font:400 12.5px/1 var(--sc-sans,Inter),sans-serif;
+  color:var(--ink-2,#2b3e54);flex-wrap:wrap;}
+.cv-head .legend li{display:flex;align-items:center;}
+.cv-head .legend .dot{width:8px;height:8px;border-radius:50%;
+  display:inline-block;margin-right:10px;}
+.cv-head .legend .dot.live{background:var(--green-deep,#154e36);}
+.cv-head .legend .dot.computed{background:var(--ink-deep,#0e1a29);}
+.cv-head .legend .dot.needs{background:var(--coral,#b04a3a);}
+.cv-head .legend .dot.illustrative{background:var(--gold,#a08227);}
+@media (max-width:960px){
+  .cv-head h1{font-size:32px;}
+  .cv-head .head-row{flex-direction:column;}
+}
+</style>
+<script>
+/* Copy-share-link helper — single source of truth for the editorial
+ * head's "Copy share link" button across covenant-lab + payer-stress.
+ * The button copies window.location.href to clipboard via the modern
+ * navigator.clipboard API. Falls back to a textarea+execCommand path
+ * for older browsers. Surfaces a 2-second toast confirmation in the
+ * button itself so the partner sees the action took. */
+(function(){
+  if (window.__rcmCopyShareLinkInstalled) return;
+  window.__rcmCopyShareLinkInstalled = true;
+  function bind(){
+    document.querySelectorAll('[data-rcm-share-link]').forEach(function(btn){
+      btn.addEventListener('click', function(ev){
+        ev.preventDefault();
+        var url = window.location.href;
+        var original = btn.textContent;
+        var ok = function(){
+          btn.textContent = 'Copied ✓';
+          setTimeout(function(){ btn.textContent = original; }, 1800);
+        };
+        var fail = function(){
+          btn.textContent = 'Copy failed';
+          setTimeout(function(){ btn.textContent = original; }, 1800);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(url).then(ok, fail);
+        } else {
+          try {
+            var ta = document.createElement('textarea');
+            ta.value = url; document.body.appendChild(ta);
+            ta.select(); document.execCommand('copy');
+            document.body.removeChild(ta); ok();
+          } catch(e){ fail(); }
+        }
+      });
+    });
+  }
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', bind);
+  } else { bind(); }
+})();
+</script>
+"""
+
+
+def _cv_head(
+    eyebrow: str,
+    title: str,
+    *,
+    meta: str,
+    lede_italic_phrase: str,
+    lede_body: str,
+    actions_html: str = "",
+) -> str:
+    """Strict Tier-1 5-block head for a covenant-lab render path.
+
+    ``actions_html`` is optional extra HTML for the right-side actions
+    column (Copy share link, Open in IC memo, etc.). Use the
+    ``data-rcm-share-link`` attribute on a button to wire the
+    auto-installed clipboard-copy handler.
+    """
+    actions_block = (
+        f'<div class="head-actions">{actions_html}</div>'
+        if actions_html else ""
+    )
+    return (
+        _CV_HEAD_CSS
+        + '<header class="cv-head">'
+        '<div class="head-row">'
+        '<div class="head-left">'
+        f'<div class="eyebrow"><span class="dash"></span>'
+        f'{html.escape(eyebrow)}</div>'
+        f'<h1>{title}</h1>'
+        f'<div class="meta">{html.escape(meta)}</div>'
+        f'<p class="lede"><em>{html.escape(lede_italic_phrase)}</em> '
+        f'{lede_body}</p>'
+        '</div>'
+        f'{actions_block}'
+        '</div>'
+        '<ul class="legend">'
+        '<li><span class="dot live"></span>Live data</li>'
+        '<li><span class="dot computed"></span>Computed</li>'
+        '<li><span class="dot needs"></span>Needs data</li>'
+        '<li><span class="dot illustrative"></span>Illustrative</li>'
+        '</ul>'
+        '</header>'
+    )
+
+
 # ────────────────────────────────────────────────────────────────────
 # Industry peer benchmarks — healthcare PE underwriting norms
 # ────────────────────────────────────────────────────────────────────
@@ -389,11 +529,27 @@ def _verdict_card(res: CovenantStressResult) -> str:
         "WATCH": "warning",
         "PASS": "positive",
     }.get(verdict, "neutral")
-    intro = ck_section_intro(
+    # 2026-05-28 sweep · strict 5-block head + usability lift:
+    # "Copy share link" so partners can deep-link this scenario to
+    # teammates, plus a contextual cross-link to the IC memo and the
+    # bear case for the same deal — closes the analytical loop.
+    actions_html = (
+        '<button type="button" data-rcm-share-link>Copy share link</button>'
+        '<a href="/ic-memo">Open IC memo →</a>'
+        '<a href="/bear-cases">Open bear case →</a>'
+    )
+    intro = _cv_head(
         eyebrow=f"Covenant Stress · {verdict}",
-        headline=html.escape(res.headline),
-        body=html.escape(res.rationale),
-        italic_word="covenant",
+        title=html.escape(res.headline),
+        meta=(
+            f"VERDICT {verdict} · MAX BREACH PROB {max_prob_val} · "
+            f"{res.n_paths:,} PATHS · EARLIEST 50% {early_label}"
+        ),
+        lede_italic_phrase=(
+            "How close this deal is to a covenant breach."
+        ),
+        lede_body=html.escape(res.rationale),
+        actions_html=actions_html,
     )
     badge = ck_signal_badge(verdict, tone=badge_tone)
     kpis = (
@@ -693,11 +849,18 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
   </div>
 </form>
 """
-    landing_hero = ck_section_intro(
+    # 2026-05-28 sweep · strict 5-block head for the landing form path.
+    landing_hero = _cv_head(
         eyebrow="Covenant & Capital Stack Stress Lab",
-        headline="When does your thesis hit a covenant cliff?",
-        italic_word="cliff",
-        body=(
+        title="When does your thesis hit a covenant cliff?",
+        meta=(
+            "DEAL MC × CAPITAL STACK × COVENANT PACKAGE · "
+            "PER-QUARTER BREACH PROBABILITY"
+        ),
+        lede_italic_phrase=(
+            "When the covenant cliff hits — by quarter."
+        ),
+        lede_body=(
             "Takes the Deal MC EBITDA cone, overlays your capital "
             "stack and covenant package, and produces per-quarter "
             "breach-probability curves for each covenant. Optionally "
@@ -762,11 +925,17 @@ def render_covenant_lab_page(
     # X-Ray on a negative-margin hospital, we'd otherwise produce
     # a nonsensical "FAIL" verdict on empty math.
     if ebitda_y0 <= 0 or total_debt <= 0:
-        err_intro = ck_section_intro(
+        # 2026-05-28 sweep · strict 5-block head for the error path.
+        err_intro = _cv_head(
             eyebrow="Covenant Stress Lab",
-            headline="Cannot run stress on this input.",
-            italic_word="this",
-            body=(
+            title="Cannot run stress on this input.",
+            meta=(
+                f"INPUTS REJECTED · EBITDA "
+                f"${ebitda_y0/1e6:,.1f}M · "
+                f"DEBT ${total_debt/1e6:,.0f}M"
+            ),
+            lede_italic_phrase="The math doesn't run on these inputs.",
+            lede_body=(
                 f"Covenant stress requires positive Y0 EBITDA and "
                 f"non-zero total debt. You supplied EBITDA "
                 f"${ebitda_y0/1e6:,.1f}M and debt ${total_debt/1e6:,.0f}M. "
@@ -774,6 +943,9 @@ def render_covenant_lab_page(
                 "service covenant-bearing debt — partners should "
                 "underwrite either a restructured target or a "
                 "higher equity check before running this module."
+            ),
+            actions_html=(
+                '<a href="/diligence/covenant-stress">← Back to form</a>'
             ),
         )
         return chartis_shell(
@@ -902,16 +1074,33 @@ def render_covenant_lab_page(
         peer_label="bank-acceptable band",
     )
 
-    main_intro = ck_section_intro(
+    # 2026-05-28 sweep · strict 5-block head for the main intro path.
+    # Includes the same share-link + cross-link actions as the rendered
+    # report.
+    main_intro_actions = (
+        '<button type="button" data-rcm-share-link>Copy share link</button>'
+        '<a href="/ic-memo">Open IC memo →</a>'
+        '<a href="/bear-cases">Open bear case →</a>'
+    )
+    main_intro = _cv_head(
         eyebrow="Covenant Stress Lab",
-        headline=f"{html.escape(deal_name)} — capital-stack covenant cliff.",
-        italic_word="cliff",
-        body=(
-            f"{len(stack.tranches)} tranches · "
-            f"${stack.total_funded_usd/1e6:.0f}M funded · "
-            f"{len(custom_cov)} covenants tested · "
-            f"{res.n_paths:,} simulated paths."
+        title=f"Capital-stack covenant cliff — {html.escape(deal_name)}",
+        meta=(
+            f"{len(stack.tranches)} TRANCHES · "
+            f"${stack.total_funded_usd/1e6:.0f}M FUNDED · "
+            f"{len(custom_cov)} COVENANTS · "
+            f"{res.n_paths:,} PATHS"
         ),
+        lede_italic_phrase=(
+            "The capital-stack vs the covenant package, simulated."
+        ),
+        lede_body=(
+            f"{len(stack.tranches)} tranches modeled across "
+            f"{len(custom_cov)} covenants and {res.n_paths:,} "
+            "simulated paths. The headline below names the first "
+            "breach quarter and sizes the equity cure."
+        ),
+        actions_html=main_intro_actions,
     )
     chips_strip = (
         '<div class="cl-chips-row">'

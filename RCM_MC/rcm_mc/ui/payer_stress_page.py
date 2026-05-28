@@ -36,6 +36,138 @@ from .power_ui import (
 )
 
 
+# 2026-05-28 style-sweep · strict Tier-1 5-block head for the four
+# payer-stress render paths (rendered report / landing / err state /
+# main intro). Includes the same "Copy share link" + IC cross-link
+# usability lifts as the covenant-lab sweep (#1072). The script
+# block installs the clipboard-copy handler once per page-load
+# (guarded by window.__rcmCopyShareLinkInstalled).
+_PS_HEAD_CSS = """
+<style>
+.ps-head{padding:0 0 28px;margin:0 0 24px;
+  border-bottom:1px solid var(--rule-soft,#ddd1ac);}
+.ps-head .head-row{display:flex;justify-content:space-between;
+  align-items:flex-start;gap:32px;}
+.ps-head .head-left{flex:1;min-width:0;}
+.ps-head .head-actions{display:flex;gap:8px;flex-shrink:0;
+  align-items:flex-start;}
+.ps-head .head-actions a,.ps-head .head-actions button{
+  font:500 11px/1 var(--sc-sans,Inter),sans-serif;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink,#16263a);
+  background:var(--paper-card,#fefcf3);border:1px solid var(--rule,#c9bf9c);
+  border-radius:2px;padding:9px 14px;text-decoration:none;cursor:pointer;
+  transition:background .12s,border-color .12s;}
+.ps-head .head-actions a:hover,.ps-head .head-actions button:hover{
+  background:var(--paper-hi,#fbf6e8);border-color:var(--rule-hi,#b6a87f);}
+.ps-head .eyebrow{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--green-deep,#154e36);display:flex;align-items:center;
+  gap:12px;margin:0 0 18px;}
+.ps-head .eyebrow .dash{width:24px;height:1px;
+  background:var(--green-deep,#154e36);}
+.ps-head h1{font:400 40px/1.05 var(--sc-serif,Georgia),serif;
+  letter-spacing:-.015em;color:var(--ink,#16263a);margin:0 0 14px;}
+.ps-head .meta{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted,#7a8595);margin:0 0 18px;}
+.ps-head .lede{font:400 italic 16.5px/1.55 var(--sc-serif,Georgia),serif;
+  color:var(--ink-2,#2b3e54);max-width:68ch;margin:0 0 18px;}
+.ps-head .lede em{color:var(--green-deep,#154e36);font-style:italic;}
+.ps-head .legend{display:flex;gap:24px;list-style:none;padding:0;
+  margin:0;font:400 12.5px/1 var(--sc-sans,Inter),sans-serif;
+  color:var(--ink-2,#2b3e54);flex-wrap:wrap;}
+.ps-head .legend li{display:flex;align-items:center;}
+.ps-head .legend .dot{width:8px;height:8px;border-radius:50%;
+  display:inline-block;margin-right:10px;}
+.ps-head .legend .dot.live{background:var(--green-deep,#154e36);}
+.ps-head .legend .dot.computed{background:var(--ink-deep,#0e1a29);}
+.ps-head .legend .dot.needs{background:var(--coral,#b04a3a);}
+.ps-head .legend .dot.illustrative{background:var(--gold,#a08227);}
+@media (max-width:960px){
+  .ps-head h1{font-size:32px;}
+  .ps-head .head-row{flex-direction:column;}
+}
+</style>
+<script>
+/* Same Copy-share-link install pattern as covenant_lab_page. The
+ * window-scoped guard ensures it only binds once even when both
+ * pages co-load (e.g. via a future SPA shell). */
+(function(){
+  if (window.__rcmCopyShareLinkInstalled) return;
+  window.__rcmCopyShareLinkInstalled = true;
+  function bind(){
+    document.querySelectorAll('[data-rcm-share-link]').forEach(function(btn){
+      btn.addEventListener('click', function(ev){
+        ev.preventDefault();
+        var url = window.location.href;
+        var original = btn.textContent;
+        var ok = function(){
+          btn.textContent = 'Copied ✓';
+          setTimeout(function(){ btn.textContent = original; }, 1800);
+        };
+        var fail = function(){
+          btn.textContent = 'Copy failed';
+          setTimeout(function(){ btn.textContent = original; }, 1800);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(url).then(ok, fail);
+        } else {
+          try {
+            var ta = document.createElement('textarea');
+            ta.value = url; document.body.appendChild(ta);
+            ta.select(); document.execCommand('copy');
+            document.body.removeChild(ta); ok();
+          } catch(e){ fail(); }
+        }
+      });
+    });
+  }
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', bind);
+  } else { bind(); }
+})();
+</script>
+"""
+
+
+def _ps_head(
+    eyebrow: str,
+    title: str,
+    *,
+    meta: str,
+    lede_italic_phrase: str,
+    lede_body: str,
+    actions_html: str = "",
+) -> str:
+    """Strict Tier-1 5-block head for a payer-stress render path."""
+    actions_block = (
+        f'<div class="head-actions">{actions_html}</div>'
+        if actions_html else ""
+    )
+    return (
+        _PS_HEAD_CSS
+        + '<header class="ps-head">'
+        '<div class="head-row">'
+        '<div class="head-left">'
+        f'<div class="eyebrow"><span class="dash"></span>'
+        f'{html.escape(eyebrow)}</div>'
+        f'<h1>{title}</h1>'
+        f'<div class="meta">{html.escape(meta)}</div>'
+        f'<p class="lede"><em>{html.escape(lede_italic_phrase)}</em> '
+        f'{lede_body}</p>'
+        '</div>'
+        f'{actions_block}'
+        '</div>'
+        '<ul class="legend">'
+        '<li><span class="dot live"></span>Live data</li>'
+        '<li><span class="dot computed"></span>Computed</li>'
+        '<li><span class="dot needs"></span>Needs data</li>'
+        '<li><span class="dot illustrative"></span>Illustrative</li>'
+        '</ul>'
+        '</header>'
+    )
+
+
 # ────────────────────────────────────────────────────────────────────
 # Scoped CSS (ps- prefix)
 # ────────────────────────────────────────────────────────────────────
@@ -566,11 +698,19 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
   </div>
 </form>
 """
-    landing_hero = ck_section_intro(
+    # 2026-05-28 sweep · strict 5-block head for the landing form path.
+    landing_hero = _ps_head(
         eyebrow="Payer Mix Stress Lab",
-        headline="How fragile is your payer mix?",
-        italic_word="fragile",
-        body=(
+        title="How fragile is your payer mix?",
+        meta=(
+            "19 US PAYER PRIORS · HFMA / MGMA / AHA + 10-K · "
+            "QUARTERLY REFRESH"
+        ),
+        lede_italic_phrase=(
+            "Empirical rate-movement priors against your payer "
+            "portfolio."
+        ),
+        lede_body=(
             "Stress-tests the target's commercial + government payer "
             "portfolio against empirical rate-movement priors for 19 "
             "major US payers. Produces per-payer rate shock "
@@ -679,11 +819,26 @@ def _verdict_card(report: PayerStressReport) -> str:
         "WARNING": "warning",
         "FAIL": "negative",
     }.get(verdict, "neutral")
-    intro = ck_section_intro(
+    # 2026-05-28 sweep · strict 5-block head for the rendered-report
+    # path + Copy-share-link + IC/denial drilldown cross-links.
+    intro_actions = (
+        '<button type="button" data-rcm-share-link>Copy share link</button>'
+        '<a href="/ic-memo">Open IC memo →</a>'
+        '<a href="/denial-drilldown">Open denial drilldown →</a>'
+    )
+    intro = _ps_head(
         eyebrow=f"Payer Stress · {verdict}",
-        headline=html.escape(report.headline),
-        body=html.escape(report.rationale),
-        italic_word="payer",
+        title=html.escape(report.headline),
+        meta=(
+            f"VERDICT {verdict} · RISK SCORE {risk_val} · "
+            f"{len(report.per_payer)} PAYER"
+            f"{'S' if len(report.per_payer) != 1 else ''}"
+        ),
+        lede_italic_phrase=(
+            "How fragile this payer mix is under stress."
+        ),
+        lede_body=html.escape(report.rationale),
+        actions_html=intro_actions,
     )
     badge = ck_signal_badge(verdict, tone=badge_tone)
     kpis = (
@@ -861,13 +1016,21 @@ def render_payer_stress_page(
 
     mix = _parse_mix_text(mix_text)
     if not mix:
-        err_intro = ck_section_intro(
+        # 2026-05-28 sweep · strict 5-block head for the parse-error
+        # path. Honest about what failed; offers a one-click back.
+        err_intro = _ps_head(
             eyebrow="Payer Stress",
-            headline="Could not parse any payer lines.",
-            italic_word="parse",
-            body=(
-                "Expected format: 'UnitedHealthcare, 34%' — "
-                "one line per payer."
+            title="Could not parse any payer lines.",
+            meta="INPUT REJECTED · CHECK FORMAT",
+            lede_italic_phrase="The payer list could not be parsed.",
+            lede_body=(
+                "Expected format: <code>UnitedHealthcare, 34%</code> "
+                "— one line per payer, comma between name and "
+                "share. Use the back link to fix the input and "
+                "re-submit."
+            ),
+            actions_html=(
+                '<a href="/diligence/payer-stress">← Back to form</a>'
             ),
         )
         return chartis_shell(
@@ -923,17 +1086,31 @@ def render_payer_stress_page(
             f"than single-payer shock."
         )
 
-    main_intro = ck_section_intro(
+    # 2026-05-28 sweep · strict 5-block head for the main intro path.
+    main_intro_actions = (
+        '<button type="button" data-rcm-share-link>Copy share link</button>'
+        '<a href="/ic-memo">Open IC memo →</a>'
+        '<a href="/denial-drilldown">Open denial drilldown →</a>'
+    )
+    main_intro = _ps_head(
         eyebrow="Payer Mix Stress Lab",
-        headline=f"{html.escape(target_name)} — payer concentration cliff.",
-        italic_word="concentration",
-        body=(
-            f"{len(mix)} payers · {report.n_paths} simulated paths · "
-            f"{horizon}-year horizon · "
-            f"${total_npr/1e6:,.0f}M total NPR"
-            + (f" · {report.unclassified_share*100:.0f}% unclassified."
-               if report.unclassified_share > 0.05 else ".")
+        title=f"Payer concentration cliff — {html.escape(target_name)}",
+        meta=(
+            f"{len(mix)} PAYERS · {report.n_paths} PATHS · "
+            f"{horizon}-YR HORIZON · ${total_npr/1e6:,.0f}M NPR"
+            + (f" · {report.unclassified_share*100:.0f}% UNCLASSIFIED"
+               if report.unclassified_share > 0.05 else "")
         ),
+        lede_italic_phrase=(
+            "Where the payer concentration cliff lives."
+        ),
+        lede_body=(
+            f"{len(mix)} payers stress-tested across "
+            f"{report.n_paths:,} paths over a {horizon}-year hold. "
+            "Verdict card below names the dominant payer and sizes "
+            "the cumulative EBITDA drag at P10 / P50 / P90."
+        ),
+        actions_html=main_intro_actions,
     )
     hero = main_intro + _verdict_card(report)
 
