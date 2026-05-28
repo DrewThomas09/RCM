@@ -132,11 +132,17 @@ def render_debt_model(deal_id: str, deal_name: str, debt: Dict[str, Any]) -> str
     exit_leverage = summary.get("exit_leverage", debt.get("exit_leverage", 0))
     total_debt = summary.get("total_debt", debt.get("total_debt", 0))
 
-    intro = ck_section_intro(
+    # 2026-05-28 batch 24 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
         eyebrow="DEBT MODEL",
-        headline=f"{html.escape(deal_name)} — annual leverage trajectory.",
-        italic_word="trajectory",
-        body=(
+        title=f"Leverage trajectory — {html.escape(deal_name)}",
+        meta=(
+            f"ENTRY {entry_leverage:.1f}x → EXIT {exit_leverage:.1f}x · "
+            f"${total_debt/1e6:,.0f}M TOTAL DEBT"
+        ),
+        lede_italic_phrase="Annual leverage trajectory through the hold.",
+        lede_body=(
             f"Entry {entry_leverage:.1f}x → exit {exit_leverage:.1f}x. "
             "Annual debt balance, mandatory repayment, interest "
             "expense, and leverage path through the hold."
@@ -252,11 +258,18 @@ def render_challenge_solver(deal_id: str, deal_name: str, result: Dict[str, Any]
     target = result.get("target_ebitda_drag", result.get("target", 0))
     solutions = result.get("solutions", result.get("assumptions", []))
 
-    intro = ck_section_intro(
+    # 2026-05-28 batch 24 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
         eyebrow="CHALLENGE SOLVER",
-        headline=f"{html.escape(deal_name)} — what would have to be true.",
-        italic_word="have",
-        body=(
+        title=f"What would have to be true — {html.escape(deal_name)}",
+        meta=(
+            f"TARGET EBITDA DRAG ${abs(float(target))/1e6:.1f}M · "
+            f"{len(solutions)} ASSUMPTION"
+            f"{'S' if len(solutions) != 1 else ''}"
+        ),
+        lede_italic_phrase="What would have to be true.",
+        lede_body=(
             "Reverse-solve: which KPI assumptions would have to "
             "hold to produce the target EBITDA drag? Frames the "
             "downside case in 'we believe X is unlikely' terms."
