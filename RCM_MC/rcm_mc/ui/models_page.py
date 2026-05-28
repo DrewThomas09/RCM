@@ -690,8 +690,10 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
     wacc = float(assumptions.get("wacc", 0.10))
     growth = float(assumptions.get("terminal_growth", 0.025))
     tv_pct = pv_term / ev * 100 if ev > 0 else 0
+    # 2026-05-28 batch 34 · Tier-4 trope removal — strip decorative
+    # brand-accent stripe from the DCF interpretation card.
     interp = (
-        f'<div class="cad-card" style="border-left:3px solid {PALETTE["brand_accent"]};">'
+        f'<div class="cad-card">'
         f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
         f'<h2 style="margin:0;">Interpretation</h2>'
         f'<span class="cad-section-code">INT</span></div>'
@@ -1098,8 +1100,10 @@ def render_financials_page(deal_id: str, deal_name: str, model: Dict[str, Any]) 
     )
 
     # Interpretation
+    # 2026-05-28 batch 34 · Tier-4 trope removal — strip decorative
+    # brand-accent stripe from the 3-statement interpretation card.
     interp = (
-        f'<div class="cad-card" style="border-left:3px solid {PALETTE["brand_accent"]};">'
+        f'<div class="cad-card">'
         f'<h2>What This Means</h2>'
         f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
         f'<p>This 3-statement model reconstructs the hospital\'s income statement, balance sheet, '
