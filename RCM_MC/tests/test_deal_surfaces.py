@@ -53,13 +53,12 @@ class SurfaceRegistry(unittest.TestCase):
         self.assertEqual(sorted(s.number for s in SURFACES), list(range(1, 19)))
 
     def test_built_surfaces_grow_one_phase_at_a_time(self):
-        # Phases 1..10: profile, bridge, lbo, dcf, comp-intel, ml, denial,
-        # returns, trends, stmt.
+        # Phases 1..11. New surfaces appear here as they land.
         built = {s.slug for s in SURFACES if s.built}
         self.assertEqual(built,
                          {"profile", "bridge", "lbo", "dcf",
                           "comp-intel", "ml", "denial", "returns",
-                          "trends", "stmt"})
+                          "trends", "stmt", "levers"})
 
     def test_lookup_by_path(self):
         self.assertIs(SURFACE_BY_PATH["profile"].built, True)
@@ -102,8 +101,8 @@ class ProfileRender(unittest.TestCase):
         self.assertIn('aria-current="page"', self.html)
 
     def test_unbuilt_surfaces_get_soon_badge(self):
-        # 18 − built (now 10) = 8 soon badges
-        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 8)
+        # 18 − built (now 11) = 7 soon badges
+        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 7)
 
     def test_payer_mix_uses_real_data(self):
         self.assertIn("Medicare 42%", self.html)
@@ -128,6 +127,31 @@ class ProfileRender(unittest.TestCase):
         for slug in ("ic-memo", "bridge", "comp-intel", "scenarios", "ml",
                      "market", "denial", "trends", "dcf", "lbo", "stmt", "returns"):
             self.assertIn(f"/deals/050001/{slug}", self.html)
+
+
+class LeversRender(unittest.TestCase):
+    """Surface 13 (Levers) — bridge × realization probability."""
+
+    def test_levers_renders_when_inputs_real(self):
+        from rcm_mc.ui.deal_surfaces import render_deal_levers
+        out = render_deal_levers("050001", FAKE_HOSPITAL)
+        for eyebrow in ("HERO", "7-LEVER MODEL", "WHAT THIS MEANS"):
+            self.assertIn(eyebrow, out, f"missing panel: {eyebrow}")
+        # P-weighted uplift label is the spec's headline distinction
+        self.assertIn("P-weighted", out)
+        # IC talking-point quote uses serif italic blockquote
+        self.assertIn("<blockquote", out)
+        self.assertEqual(len(re.findall(r"<h1[ >]", out)), 1)
+
+    def test_levers_renders_honest_empty_when_npr_missing(self):
+        from rcm_mc.ui.deal_surfaces import render_deal_levers
+        h = {"ccn": "999999", "name": "Sparse Co", "state": "TX"}
+        out = render_deal_levers("999999", h)
+        self.assertIn("Levers cannot run", out)
+        self.assertNotIn("HERO", out)
+
+    def test_levers_marked_built_in_registry(self):
+        self.assertTrue(SURFACE_BY_PATH["levers"].built)
 
 
 class StmtRender(unittest.TestCase):
@@ -519,6 +543,24 @@ class DealRoutes(unittest.TestCase):
                     body = r.read().decode()
                 self.assertIn("Under construction", body)
                 self.assertIn("DEAL · CCN", body)
+            finally:
+                server.shutdown(); server.server_close()
+
+    def test_real_ccn_levers_renders_real_data_200(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            create_user(PortfolioStore(os.path.join(tmp, "p.db")), "at", "supersecret1")
+            server, port = self._start(tmp)
+            try:
+                opener = _login_opener(port, "at", "supersecret1")
+                ccn = self._pick_real_ccn()
+                with opener.open(f"http://127.0.0.1:{port}/deals/{ccn}/levers") as r:
+                    self.assertEqual(r.status, 200)
+                    body = r.read().decode()
+                self.assertNotIn("Under construction", body)
+                self.assertIn("DEAL · CCN", body)
+                self.assertEqual(len(re.findall(r"<h1[ >]", body)), 1)
+                self.assertTrue(
+                    "7-LEVER MODEL" in body or "Levers cannot run" in body)
             finally:
                 server.shutdown(); server.server_close()
 
