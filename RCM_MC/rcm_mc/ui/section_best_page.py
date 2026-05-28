@@ -25,58 +25,143 @@ _TIER_DOT = {
 }
 
 _CSS = """
+/* 2026-05-28 style-sweep · removed two spec-forbidden tropes:
+   `border-left:3px solid var(--sc-teal)` on .sb-card (Tier-4
+   don'ts: no left-border-accent cards) and the box-shadow on
+   hover (Tier-4 don'ts: no shadows, ever — depth by paper-tone).
+   Hover now uses --paper-hi background fill instead. */
 .sb-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:16px 0;}
 @media (max-width:820px){.sb-grid{grid-template-columns:1fr;}}
-.sb-card{display:flex;flex-direction:column;gap:6px;background:var(--sc-paper,#faf6ec);
- border:1px solid var(--sc-rule,#c9c1ac);border-left:3px solid var(--sc-teal,#155752);
- padding:13px 16px;text-decoration:none;}
-.sb-card:hover{box-shadow:var(--sc-shadow-2,0 8px 24px rgba(11,32,55,.14));}
-.sb-rank{font-family:var(--sc-serif);font-style:italic;font-size:18px;color:var(--sc-teal,#155752);}
-.sb-label{font-family:var(--sc-serif);font-size:17px;color:var(--sc-navy,#15202b);line-height:1.15;}
-.sb-meta{display:flex;align-items:center;gap:8px;font-family:var(--sc-mono);font-size:10px;
- letter-spacing:.04em;color:var(--sc-text-dim,#6a7480);}
+.sb-card{display:flex;flex-direction:column;gap:6px;
+ background:var(--paper-card,#fefcf3);
+ border:1px solid var(--rule,#c9bf9c);
+ padding:14px 16px;text-decoration:none;
+ transition:background 0.12s,border-color 0.12s;}
+.sb-card:hover{background:var(--paper-hi,#fbf6e8);
+ border-color:var(--rule-hi,#b6a87f);}
+.sb-card:focus-visible{outline:2px solid var(--green-deep,#154e36);
+ outline-offset:-2px;}
+.sb-rank{font-family:var(--sc-serif);font-style:italic;font-size:18px;
+ color:var(--green-deep,#154e36);}
+.sb-label{font-family:var(--sc-serif);font-size:17px;
+ color:var(--ink,#16263a);line-height:1.15;}
+.sb-meta{display:flex;align-items:center;gap:8px;
+ font-family:var(--sc-mono);font-size:10px;
+ letter-spacing:.04em;color:var(--ink-3,#506478);}
 .sb-dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
-.sb-score{margin-left:auto;font-weight:600;color:var(--sc-navy,#15202b);}
-.sb-route{font-family:var(--sc-mono);font-size:10px;color:var(--sc-text-faint,#8b94a0);}
+.sb-score{margin-left:auto;font-weight:600;color:var(--ink,#16263a);}
+.sb-route{font-family:var(--sc-mono);font-size:10px;
+ color:var(--muted-2,#9a9e8a);}
+
+/* Strict Tier-1 5-block head. */
+.sb-head{padding:0 0 28px;margin:0 0 24px;
+  border-bottom:1px solid var(--rule-soft,#ddd1ac);}
+.sb-head .eyebrow{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--green-deep,#154e36);display:flex;align-items:center;
+  gap:12px;margin:0 0 18px;}
+.sb-head .eyebrow .dash{width:24px;height:1px;
+  background:var(--green-deep,#154e36);}
+.sb-head h1{font:400 44px/1.05 var(--sc-serif,Georgia),serif;
+  letter-spacing:-.015em;color:var(--ink,#16263a);margin:0 0 14px;}
+.sb-head .meta{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted,#7a8595);margin:0 0 18px;}
+.sb-head .lede{font:400 italic 16.5px/1.55 var(--sc-serif,Georgia),serif;
+  color:var(--ink-2,#2b3e54);max-width:64ch;margin:0 0 18px;}
+.sb-head .lede em{color:var(--green-deep,#154e36);font-style:italic;}
+.sb-head .legend{display:flex;gap:24px;list-style:none;padding:0;
+  margin:0;font:400 12.5px/1 var(--sc-sans,Inter),sans-serif;
+  color:var(--ink-2,#2b3e54);flex-wrap:wrap;}
+.sb-head .legend li{display:flex;align-items:center;}
+.sb-head .legend .dot{width:8px;height:8px;border-radius:50%;
+  display:inline-block;margin-right:10px;}
+.sb-head .legend .dot.live{background:var(--green-deep,#154e36);}
+.sb-head .legend .dot.computed{background:var(--ink-deep,#0e1a29);}
+.sb-head .legend .dot.needs{background:var(--coral,#b04a3a);}
+.sb-head .legend .dot.illustrative{background:var(--gold,#a08227);}
+@media (max-width:960px){.sb-head h1{font-size:36px;}}
 """
 
 
 def render_section_best(section: str, qs: Optional[Dict] = None) -> str:
-    from ._chartis_kit import (chartis_shell, ck_page_title, ck_panel,
-                               ck_source_purpose)
+    """2026-05-28 style-sweep · strict Tier-1 5-block head. Replaces the
+    legacy ``ck_page_title + ck_source_purpose`` 2-block head with a
+    single <header class="sb-head"> carrying eyebrow + dash + h1 +
+    real-count meta + italic-first-phrase lede + status-dot legend.
+    Plus auto-derived coverage line that quotes per-tier counts.
+    """
+    from ._chartis_kit import chartis_shell, ck_panel
     try:
         from ._surface_rankings import RANKINGS
     except Exception:  # noqa: BLE001
         RANKINGS = {}
     import html as _h
+    from collections import Counter
 
     section = (section or "").strip().lower()
     title = _SECTION_TITLE.get(section, section.title() or "Section")
     rows: List[Dict] = list(RANKINGS.get(section, []))
 
-    head = ck_page_title(
-        f"All {title} tools",
-        eyebrow=f"{title.upper()}",
-        meta=(f"{len(rows)} tools" if rows else "no tools yet"),
-    )
-    src = ck_source_purpose(
-        purpose=f"Everything in {title}, ordered best-first. Open any tool — "
-                "the dot shows whether it runs on live data, a computed model, "
-                "or illustrative figures.",
-        universe="derived",
-        source="Every row is a real, route-backed page.",
-        confidence="derived",
-        next_action=f"Open the first {title} tool",
-        next_href=(rows[0]["route"] if rows else "/home"),
+    # Per-tier coverage — quoted in the meta-line. Same source of
+    # truth as the section_catalog cascade (#1060).
+    tier_counts = Counter(r.get("tier", "") for r in rows)
+    coverage_bits = []
+    for key, word in (
+        ("green", "LIVE"), ("navy", "COMPUTED"),
+        ("data_required", "NEED DATA"), ("yellow", "ILLUSTRATIVE"),
+        ("red", "PLACEHOLDER"),
+    ):
+        if tier_counts.get(key):
+            coverage_bits.append(f"{tier_counts[key]} {word}")
+    coverage = " · ".join(coverage_bits)
+
+    if rows:
+        meta = (
+            f"{len(rows)} TOOL{'S' if len(rows) != 1 else ''}"
+            f"{(' · ' + coverage) if coverage else ''}"
+        )
+        lede_html = (
+            f'<em>Everything in {_h.escape(title)}, ordered best-first.</em> '
+            'Open any tool — the dot shows whether it runs on live data, '
+            'a computed model, or illustrative figures.'
+        )
+    else:
+        meta = "NO TOOLS YET"
+        lede_html = (
+            f'<em>Nothing ranked for {_h.escape(title)} yet.</em> '
+            'Run <code>python scripts/rank_surfaces.py</code> to refresh '
+            'the manifest, then reload this page.'
+        )
+
+    head = (
+        '<header class="sb-head">'
+        f'<div class="eyebrow"><span class="dash"></span>'
+        f'{_h.escape(title.upper())}</div>'
+        f'<h1>All {_h.escape(title)} tools</h1>'
+        f'<div class="meta">{meta}</div>'
+        f'<p class="lede">{lede_html}</p>'
+        '<ul class="legend">'
+        '<li><span class="dot live"></span>Live data</li>'
+        '<li><span class="dot computed"></span>Computed</li>'
+        '<li><span class="dot needs"></span>Needs data</li>'
+        '<li><span class="dot illustrative"></span>Illustrative</li>'
+        '</ul>'
+        '</header>'
     )
 
     if not rows:
-        body = head + src + ck_panel(
-            f'<p class="ck-section-body">No ranked surfaces for “{_h.escape(title)}” '
-            'yet. Run <code>python scripts/rank_surfaces.py</code> to refresh the '
-            'manifest.</p>', title="Nothing ranked")
-        return chartis_shell(body, f"{title} — best", active_nav="/" + section,
-                             extra_css=_CSS)
+        body = head + ck_panel(
+            f'<p class="ck-section-body">No ranked surfaces for '
+            f'"{_h.escape(title)}" yet. Run '
+            '<code>python scripts/rank_surfaces.py</code> to refresh '
+            'the manifest.</p>',
+            title="Nothing ranked",
+        )
+        return chartis_shell(
+            body, f"{title} — best", active_nav="/" + section,
+            extra_css=_CSS,
+        )
 
     cards = []
     for r in rows:
@@ -90,6 +175,8 @@ def render_section_best(section: str, qs: Optional[Dict] = None) -> str:
             f'<div class="sb-route">{_h.escape(r["route"])}</div></a>'
         )
     grid = f'<div class="sb-grid">{"".join(cards)}</div>'
-    body = head + src + grid
-    return chartis_shell(body, f"All {title} tools", active_nav="/" + section,
-                         extra_css=_CSS)
+    body = head + grid
+    return chartis_shell(
+        body, f"All {title} tools", active_nav="/" + section,
+        extra_css=_CSS,
+    )
