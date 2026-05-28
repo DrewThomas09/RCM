@@ -2,7 +2,7 @@
 
 **Spec**: 2026-05-28 editorial handoff — strict Tier-1 5-block head + spec-forbidden trope removal.
 
-**Status (as of batch 41, 2026-05-28)**: 41 batches shipped/in-flight; ~144 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep at 72 surfaces cleaned + **7 gradients retired** + **7 box-shadows removed** (one shared `render_insights_page` cleanup fans out across many index pages).
+**Status (as of batch 42, 2026-05-28)**: 42 batches shipped/in-flight; ~148 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep at 77 surfaces cleaned + **7 gradients retired** + **7 box-shadows removed** (one shared `render_insights_page` cleanup fans out across many index pages).
 
 **Wave-1 (batch 19) shipped**: `my_dashboard_page`, `portfolio_monitor_page`, `deal_mc_page`
 **Wave-2 (batch 20) shipped**: `portfolio_bridge_page`, `risk_workbench_page`, `scenario_modeler_page`, `market_intel_page`, `escalations_page`
@@ -32,6 +32,11 @@ All 24 originally-flagged Group D files are now in Group A. Every renderer in th
 **Next**: Phase 4 — Group C trope removal. ~180 pages still carry `cad-card`/`cad-table` chrome with spec-forbidden tropes (3px left-border accents, box-shadow on content cards, `border-radius > 2px`). Migration is a CSS-level sweep, ~3-4 files per batch.
 
 ## Phase 4 · Group C trope removal (in progress)
+
+**Wave-13 (batch 42) shipped** — 5 more radius caps across 3 files (semantic tone borders preserved):
+- `payer_stress_page.py` (`.ps-panel`, `.ps-verdict-card`, `.ps-payer-card` — all 4px → 2px; semantic tone left-stripes and ::before semantic tone-bar preserved)
+- `v3_status_page.py` (stat card 6px → 2px)
+- `deal_profile_page.py` (`.ck-dp-form` 4px → 2px)
 
 **Wave-12 (batch 41) shipped** — 4 more dark hover box-shadows removed + 4 oversized radii capped across 3 files (border-color shift preserves interactivity affordance):
 - `management_scorecard_page.py` (`.ms-card`: radius 4px → 2px; hover 0/6/16 shadow removed)

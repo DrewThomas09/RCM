@@ -181,14 +181,17 @@ color:{tf};font-weight:600;}}
 margin:4px 0 0 0;letter-spacing:-.2px;}}
 .ps-section-label{{font-size:10px;letter-spacing:1.6px;text-transform:uppercase;
 font-weight:700;color:{tf};margin:22px 0 10px 0;}}
-.ps-panel{{background:{pn};border:1px solid {bd};border-radius:4px;
+/* 2026-05-28 batch 42 · Tier-4 trope removal — cap radius at 2px. */
+.ps-panel{{background:{pn};border:1px solid {bd};border-radius:2px;
 padding:14px 20px;margin-bottom:16px;}}
 /* 2026-05-28 batch 35 · Tier-4 trope removal — drops decorative
    3px accent stripe on .ps-callout; flat hairline panel instead. */
 .ps-callout{{background:{pa};padding:12px 16px;border:1px solid {bd};
 border-radius:2px;font-size:12px;color:{td};line-height:1.65;
 max-width:900px;margin-top:12px;}}
-.ps-verdict-card{{background:{pn};border:1px solid {bd};border-radius:4px;
+/* 2026-05-28 batch 42 · Tier-4 trope removal — cap radius at 2px.
+   ::before semantic 3px tone-bar preserved. */
+.ps-verdict-card{{background:{pn};border:1px solid {bd};border-radius:2px;
 padding:18px 22px;margin-top:14px;position:relative;overflow:hidden;}}
 .ps-verdict-card::before{{content:"";position:absolute;top:0;left:0;right:0;
 height:3px;background:linear-gradient(90deg,var(--tone),{ac});}}
@@ -211,7 +214,9 @@ color:{tf};font-weight:600;margin-bottom:3px;}}
 font-variant-numeric:tabular-nums;font-weight:700;color:{tx};}}
 .ps-kpi__val.neg{{color:{ne};}}
 .ps-kpi__val.pos{{color:{po};}}
-.ps-payer-card{{background:{pn};border:1px solid {bd};border-radius:4px;
+/* 2026-05-28 batch 42 · Tier-4 trope removal — cap radius at 2px;
+   semantic per-payer tone left-stripe preserved. */
+.ps-payer-card{{background:{pn};border:1px solid {bd};border-radius:2px;
 border-left:3px solid var(--tone);padding:14px 18px;margin-bottom:12px;}}
 .ps-payer-head{{display:flex;justify-content:space-between;gap:12px;
 flex-wrap:wrap;align-items:baseline;}}

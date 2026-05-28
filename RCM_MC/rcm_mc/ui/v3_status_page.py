@@ -116,10 +116,11 @@ def _kpi_card(label: str, value_html: str, sub: str = "") -> str:
         f'<div class="micro" style="margin-top:.25rem;">{_html.escape(sub)}</div>'
         if sub else ""
     )
+    # 2026-05-28 batch 42 · Tier-4 trope removal — cap radius at 2px.
     return (
         '<div style="border:1px solid var(--border,#D6CFC0);'
         'background:var(--paper,#FAF7F0);'
-        'padding:1rem 1.25rem;border-radius:6px;min-width:9rem;flex:1;">'
+        'padding:1rem 1.25rem;border-radius:2px;min-width:9rem;flex:1;">'
         f'<div class="micro">{_html.escape(label)}</div>'
         f'<div style="font-size:1.6rem;font-weight:600;margin-top:.35rem;">{value_html}</div>'
         f"{sub_html}"
