@@ -129,7 +129,13 @@ class RenderInsightsPageContractTests(unittest.TestCase):
             rail_form_block,
         )
 
-    def test_intro_kwargs_passed_to_section_intro(self):
+    def test_intro_kwargs_render_strict_5_block_head(self):
+        # 2026-05-28 style-sweep · intro kwargs now compose the strict
+        # Tier-1 5-block head (eyebrow with dash → serif h1 → italic
+        # deck → lede → status-dot legend) instead of the legacy
+        # ck_section_intro h2 deck. The italicized word AND the
+        # eyebrow text still appear in the rendered output; the
+        # wrapper class changed from ck-section-intro to ip-head.
         html = render_insights_page(
             action="/library",
             state={},
@@ -143,9 +149,19 @@ class RenderInsightsPageContractTests(unittest.TestCase):
                 "italic_word": "finds",
             },
         )
-        self.assertIn('class="ck-section-intro"', html)
-        self.assertIn(">EYEBROW</div>", html)
+        # The new wrapper carries class="ip-head ck-page-title" so
+        # the shell auto-inject is skipped (one h1, not two).
+        self.assertIn('class="ip-head ck-page-title"', html)
+        # Eyebrow + dash glyph (Tier-2 §2.1).
+        self.assertIn('class="eyebrow"', html)
+        self.assertIn('class="dash"', html)
+        self.assertIn("EYEBROW", html)
+        # Italic word still wraps the deck phrase.
         self.assertIn("<em>finds</em>", html)
+        # H1 uses the page title.
+        self.assertIn("<h1>Library</h1>", html)
+        # Status-dot legend lives inside the head (Tier-2 §2.4).
+        self.assertIn('<span class="dot live"></span>', html)
 
     def test_section_title_renders_when_provided(self):
         html = render_insights_page(
