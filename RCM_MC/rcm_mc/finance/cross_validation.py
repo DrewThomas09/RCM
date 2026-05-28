@@ -92,6 +92,14 @@ class CVResult:
     mean_test_mae: float
     folds: List[CVFoldResult] = field(default_factory=list)
     requested_k: Optional[int] = None  # only set when auto-reduced
+    # Empirical prediction-interval coverage (Phase 5 — editorial
+    # redesign spec §8). Each entry quotes the fraction of held-out
+    # test rows whose absolute residual fell inside a PI whose half-
+    # width was set from the TRAINING fold's |resid| quantile at the
+    # nominal level. Honest: this is a leave-one-fold-out conformal
+    # estimate, not a parametric Gaussian PI. Empty list when CV was
+    # skipped or coverage couldn't be computed.
+    pi_coverage: List[Dict[str, float]] = field(default_factory=list)
 
     @property
     def overfit_gap(self) -> float:
@@ -114,6 +122,7 @@ class CVResult:
             "mean_test_mae": round(self.mean_test_mae, 4),
             "overfit_gap": round(self.overfit_gap, 4),
             "folds": [f.to_dict() for f in self.folds],
+            "pi_coverage": [dict(p) for p in self.pi_coverage],
         }
 
 
@@ -241,6 +250,17 @@ def run_cv_regression(
     test_r2s = []
     test_rmses = []
     test_maes = []
+    # Empirical PI coverage (spec §8) — accumulated across folds.
+    # For each nominal level we record per-fold (within_count, total)
+    # then aggregate at the end. Width half-widths come from the
+    # TRAINING fold's |resid| at the matching quantile — this is the
+    # split-conformal construction, which is finite-sample valid
+    # under row-exchangeability without distributional assumptions
+    # on residuals.
+    pi_levels = (0.5, 0.8, 0.95)
+    pi_hits = {lvl: 0 for lvl in pi_levels}
+    pi_widths_abs: Dict[float, List[float]] = {lvl: [] for lvl in pi_levels}
+    pi_total = 0
 
     for i in range(k):
         test_idx = perm[fold_starts[i]: fold_starts[i] + fold_sizes[i]]
@@ -273,6 +293,22 @@ def run_cv_regression(
         test_rmses.append(test_rmse)
         test_maes.append(test_mae)
 
+        # Conformal PI coverage: half-widths are the training-fold
+        # |resid| quantile at the nominal level; test-set rows count
+        # as "covered" when their |resid| is within that half-width.
+        try:
+            train_abs = np.abs(y[train_idx] - y_hat_train)
+            test_abs = np.abs(err)
+            pi_total += int(len(test_abs))
+            for lvl in pi_levels:
+                half_w = float(np.quantile(train_abs, lvl))
+                pi_widths_abs[lvl].append(half_w)
+                pi_hits[lvl] += int(np.sum(test_abs <= half_w))
+        except Exception:
+            # Defensive: if quantile computation fails on a thin
+            # fold, skip coverage for that fold rather than blow up.
+            pass
+
     # Baseline in-sample R² for the overfit-gap comparison
     beta_all = _ols_fit(X, y)
     baseline_r2 = _r2(y, _predict(beta_all, X))
@@ -282,6 +318,22 @@ def run_cv_regression(
             "every fold failed to fit — features may be perfectly "
             "collinear on every split"
         )
+
+    # Aggregate the conformal PI coverage across folds. Empirical
+    # coverage = sum(test rows inside the per-fold PI) / total test
+    # rows. Median half-width is the per-fold half-width's median —
+    # avoids letting one thin fold dominate.
+    pi_coverage: List[Dict[str, float]] = []
+    if pi_total > 0:
+        for lvl in pi_levels:
+            emp = pi_hits[lvl] / pi_total if pi_total else 0.0
+            widths = pi_widths_abs[lvl]
+            median_w = float(np.median(widths)) if widths else 0.0
+            pi_coverage.append({
+                "nominal": float(lvl),
+                "empirical": float(emp),
+                "median_half_width": float(median_w),
+            })
 
     return CVResult(
         target=target,
@@ -296,4 +348,5 @@ def run_cv_regression(
         mean_test_mae=float(np.mean(test_maes)),
         folds=folds,
         requested_k=requested_k,
+        pi_coverage=pi_coverage,
     )

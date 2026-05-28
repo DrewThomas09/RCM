@@ -710,6 +710,161 @@ def _run_ols(
                 })
             state_r2.sort(key=lambda x: -x["r2"])
 
+        # ── Cohort R² grids (Phase 5 — editorial redesign spec §14) ──
+        # Same construction as state_r2 (within-bucket R² holding the
+        # same coefficients), generalized to three more groupings the
+        # spec specifically calls out: bed_size, segment (hospital
+        # taxonomy), region (census region from state lookup). Every
+        # bucket reports R² + n + delta-vs-headline so the partner
+        # sees where the headline R² hides regime variance — the
+        # spec's specific concern ("The 56% national headline hides a
+        # 72% Academic fit and a 28% CAH fit.").
+        def _within_r2(mask: np.ndarray) -> Optional[float]:
+            if int(mask.sum()) < 5:
+                return None
+            y_m = y[mask]
+            yhat_m = y_hat[mask]
+            ss_res_m = float(np.sum((y_m - yhat_m) ** 2))
+            ss_tot_m = float(np.sum((y_m - y_m.mean()) ** 2))
+            if ss_tot_m <= 0:
+                return None
+            return 1.0 - ss_res_m / ss_tot_m
+
+        # Bed-size buckets — the textbook PE cuts: rural-small,
+        # community, mid, large, AMC. Standard CMS bed thresholds.
+        cohort_r2_by_bed_size: List[Dict[str, Any]] = []
+        if "beds" in clean.columns:
+            bed_buckets = [
+                ("< 50",      lambda b: b < 50),
+                ("50–149",    lambda b: 50 <= b < 150),
+                ("150–299",   lambda b: 150 <= b < 300),
+                ("300–499",   lambda b: 300 <= b < 500),
+                ("≥ 500",     lambda b: b >= 500),
+            ]
+            beds_arr = clean["beds"].to_numpy()
+            for label, pred in bed_buckets:
+                mask = np.array([bool(pred(float(b)))
+                                 if b == b else False
+                                 for b in beds_arr])
+                bucket_r2 = _within_r2(mask)
+                if bucket_r2 is not None:
+                    cohort_r2_by_bed_size.append({
+                        "bucket": label,
+                        "n": int(mask.sum()),
+                        "r2": round(bucket_r2, 3),
+                        "delta_vs_headline": round(float(bucket_r2 - r2), 3),
+                    })
+
+        # Segment cohort — uses the hospital taxonomy segment_label
+        # the universe filter already relies on. If the frame doesn't
+        # carry it (e.g. portfolio source), the grid simply doesn't
+        # ship; the page falls back to its "Awaiting data" tile.
+        cohort_r2_by_segment: List[Dict[str, Any]] = []
+        if "segment_label" in clean.columns:
+            for seg in sorted(clean["segment_label"].dropna().unique()):
+                mask = (clean["segment_label"] == seg).to_numpy()
+                bucket_r2 = _within_r2(mask)
+                if bucket_r2 is not None:
+                    cohort_r2_by_segment.append({
+                        "bucket": str(seg),
+                        "n": int(mask.sum()),
+                        "r2": round(bucket_r2, 3),
+                        "delta_vs_headline": round(float(bucket_r2 - r2), 3),
+                    })
+            cohort_r2_by_segment.sort(key=lambda x: -x["r2"])
+
+        # Region cohort — derive census region from the state code so
+        # the grid still shows even when a more curated region field
+        # isn't on the frame. Maps the 50 states + DC into the 4
+        # census regions every hospital report uses.
+        cohort_r2_by_region: List[Dict[str, Any]] = []
+        if "state" in clean.columns:
+            _CENSUS_REGION = {
+                # Northeast
+                **{s: "Northeast" for s in
+                   ("CT","ME","MA","NH","NJ","NY","PA","RI","VT")},
+                # Midwest
+                **{s: "Midwest" for s in
+                   ("IL","IN","IA","KS","MI","MN","MO","NE","ND",
+                    "OH","SD","WI")},
+                # South
+                **{s: "South" for s in
+                   ("AL","AR","DE","DC","FL","GA","KY","LA","MD",
+                    "MS","NC","OK","SC","TN","TX","VA","WV")},
+                # West
+                **{s: "West" for s in
+                   ("AK","AZ","CA","CO","HI","ID","MT","NV","NM",
+                    "OR","UT","WA","WY")},
+            }
+            region_series = clean["state"].astype(str).map(_CENSUS_REGION)
+            for region in ("Northeast", "Midwest", "South", "West"):
+                mask = (region_series == region).to_numpy()
+                bucket_r2 = _within_r2(mask)
+                if bucket_r2 is not None:
+                    cohort_r2_by_region.append({
+                        "bucket": region,
+                        "n": int(mask.sum()),
+                        "r2": round(bucket_r2, 3),
+                        "delta_vs_headline": round(float(bucket_r2 - r2), 3),
+                    })
+
+        # ── Learning curve (Phase 5 — spec §11) ──
+        # Refit on increasing fractions of the training data and
+        # measure both train R² (on the fraction) and test R² (on a
+        # held-out 20% evaluation set). Curves that BOTH plateau by
+        # the time we hit 100% are the "more data won't help" signal
+        # the spec is built around. Train fractions step 10% → 100%
+        # in 10% increments; deterministic ordering via seed 42.
+        def _lc_r2(yv: np.ndarray, yh: np.ndarray) -> float:
+            ss_tot_v = float(np.sum((yv - yv.mean()) ** 2))
+            if ss_tot_v <= 0:
+                return 0.0
+            ss_res_v = float(np.sum((yv - yh) ** 2))
+            return 1.0 - ss_res_v / ss_tot_v
+
+        learning_curve: List[Dict[str, Any]] = []
+        try:
+            n_total = len(y)
+            if n_total >= max(40, (p + 2) * 4):
+                rng_lc = np.random.default_rng(42)
+                lc_perm = rng_lc.permutation(n_total)
+                # Hold out 20% as the fixed evaluation set — every
+                # learning-curve point scores against the same rows.
+                eval_size = max(int(n_total * 0.2), p + 2)
+                eval_idx = lc_perm[:eval_size]
+                train_pool_idx = lc_perm[eval_size:]
+                pool_size = len(train_pool_idx)
+                X_aug_full = X_aug
+                for frac in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6,
+                             0.7, 0.8, 0.9, 1.0]:
+                    n_train_pts = max(p + 2, int(pool_size * frac))
+                    if n_train_pts > pool_size:
+                        n_train_pts = pool_size
+                    sub_train = train_pool_idx[:n_train_pts]
+                    try:
+                        beta_lc = np.linalg.lstsq(
+                            X_aug_full[sub_train],
+                            y[sub_train],
+                            rcond=None,
+                        )[0]
+                    except np.linalg.LinAlgError:
+                        continue
+                    yh_train = X_aug_full[sub_train] @ beta_lc
+                    yh_eval = X_aug_full[eval_idx] @ beta_lc
+                    train_r2_pt = _lc_r2(y[sub_train], yh_train)
+                    eval_r2_pt = _lc_r2(y[eval_idx], yh_eval)
+                    learning_curve.append({
+                        "train_fraction": float(frac),
+                        "n_train": int(n_train_pts),
+                        "train_r2": round(float(train_r2_pt), 4),
+                        "test_r2": round(float(eval_r2_pt), 4),
+                        "gap": round(
+                            float(train_r2_pt - eval_r2_pt), 4,
+                        ),
+                    })
+        except Exception:
+            learning_curve = []
+
         # Phase-2 helper: when fitting log(y) we want partner-facing
         # error metrics in log space (per the Phase-1 decision to
         # avoid biased exp() back-transforms). exp(rmse_log) - 1 is
@@ -895,6 +1050,15 @@ def _run_ols(
             # an "awaiting data" badge if either is None.
             "residual_summary": residual_summary,
             "calibration_deciles": calibration_deciles,
+            # Phase 5 — editorial spec §14 cohort grids. Same within-
+            # bucket R² construction as state_r2, generalized to
+            # three groupings the spec specifically calls out.
+            "cohort_r2_by_bed_size": cohort_r2_by_bed_size,
+            "cohort_r2_by_segment": cohort_r2_by_segment,
+            "cohort_r2_by_region": cohort_r2_by_region,
+            # Phase 5 — editorial spec §11 learning curve. Empty list
+            # when n is too small for the held-out 20% eval split.
+            "learning_curve": learning_curve,
         }
     except Exception:
         return None
@@ -1513,6 +1677,709 @@ def _rge_verdict_row(
         '<a class="v" href="#next" role="status" aria-label="Do next">'
         '<div class="tag"><span class="dot"></span>Do next</div>'
         f'<p>{next_text}</p></a>'
+        '</div>'
+    )
+
+
+_RGE_PHASE2_STYLES = """
+<style>
+.rge-pi{display:grid;grid-template-columns:repeat(4,1fr);
+  border:1px solid var(--rge-rule);background:var(--rge-paper-card);
+  margin:0 0 40px;}
+.rge-pi .cell{padding:18px 22px;
+  border-right:1px solid var(--rge-rule-soft);}
+.rge-pi .cell:last-child{border-right:0;}
+.rge-pi .label{font:500 10px/1 var(--sc-mono,monospace);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--rge-muted);margin-bottom:8px;}
+.rge-pi .val{font:500 22px/1.1 var(--sc-mono,monospace);color:var(--rge-ink);
+  font-variant-numeric:tabular-nums;}
+.rge-pi .sub{font:500 10px/1.4 var(--sc-mono,monospace);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--rge-muted);margin-top:6px;}
+.rge-pi .sub.good{color:var(--rge-green-deep);}
+.rge-pi .sub.warn{color:var(--rge-amber);}
+.rge-pi .sub.bad{color:var(--rge-coral);}
+.rge-pi .pending{display:inline-block;padding:2px 7px;font:500 9px/1
+  var(--sc-mono,monospace);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--rge-muted);background:var(--rge-paper-2);
+  border:1px solid var(--rge-rule-soft);}
+
+.rge-cohort-block{margin:0 0 40px;border:1px solid var(--rge-rule);
+  border-top:0;background:var(--rge-paper-card);padding:24px 26px;}
+.rge-cohort-block + .rge-cohort-block{border-top:0;}
+.rge-cohort-block .head{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--rge-muted);
+  margin:0 0 14px;}
+.rge-cohort-grid{display:grid;gap:1px;background:var(--rge-rule-soft);
+  border:1px solid var(--rge-rule-soft);}
+.rge-cohort-grid.cols-3{grid-template-columns:repeat(3,1fr);}
+.rge-cohort-grid.cols-4{grid-template-columns:repeat(4,1fr);}
+.rge-cohort-grid.cols-5{grid-template-columns:repeat(5,1fr);}
+.rge-cohort-grid .c{background:var(--rge-paper-card);
+  padding:16px 14px;text-align:center;}
+.rge-cohort-grid .c .b{font:500 10px/1.2 var(--sc-mono,monospace);
+  letter-spacing:.12em;text-transform:uppercase;color:var(--rge-muted);
+  margin-bottom:6px;}
+.rge-cohort-grid .c .v{font:500 22px/1.1 var(--sc-mono,monospace);
+  color:var(--rge-ink);margin-bottom:4px;font-variant-numeric:tabular-nums;}
+.rge-cohort-grid .c .n{font:400 10.5px/1 var(--sc-mono,monospace);
+  letter-spacing:.1em;text-transform:uppercase;color:var(--rge-muted);}
+.rge-cohort-grid .c.hi .v{color:var(--rge-green-deep);}
+.rge-cohort-grid .c.lo .v{color:var(--rge-coral);}
+.rge-cohort-grid .c .d{font:500 9.5px/1 var(--sc-mono,monospace);
+  letter-spacing:.1em;margin-top:4px;color:var(--rge-muted);}
+.rge-cohort-grid .c.hi .d{color:var(--rge-green-deep);}
+.rge-cohort-grid .c.lo .d{color:var(--rge-coral);}
+
+.rge-lc-wrap{background:var(--rge-paper-card);border:1px solid var(--rge-rule);
+  border-top:0;padding:24px 26px;margin:0 0 40px;}
+.rge-lc-wrap .head{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--rge-muted);
+  margin:0 0 8px;}
+.rge-lc-wrap h3{font:400 22px/1.15 var(--sc-serif,Georgia),serif;
+  letter-spacing:-.01em;color:var(--rge-ink);margin:0 0 18px;}
+.rge-lc-svg{width:100%;height:240px;background:var(--rge-paper-2);
+  border:1px solid var(--rge-rule-soft);}
+.rge-lc-legend{display:flex;gap:24px;margin-top:14px;
+  font:500 11px/1 var(--sc-mono,monospace);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--rge-ink-2);}
+.rge-lc-legend .swatch{width:24px;height:2px;display:inline-block;
+  margin-right:8px;vertical-align:middle;}
+
+.rge-lev-wrap{background:var(--rge-paper-card);border:1px solid var(--rge-rule);
+  border-top:0;padding:24px 26px;margin:0 0 40px;}
+.rge-lev-wrap .head{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--rge-muted);
+  margin:0 0 8px;}
+.rge-lev-wrap h3{font:400 22px/1.15 var(--sc-serif,Georgia),serif;
+  letter-spacing:-.01em;color:var(--rge-ink);margin:0 0 18px;}
+.rge-lev-svg{width:100%;height:340px;background:var(--rge-paper-2);
+  border:1px solid var(--rge-rule-soft);}
+.rge-lev-legend{display:flex;gap:24px;margin-top:14px;flex-wrap:wrap;
+  font:400 12px/1.4 var(--sc-sans,Inter),sans-serif;color:var(--rge-ink-2);}
+.rge-lev-legend .dot{width:8px;height:8px;border-radius:50%;display:inline-block;
+  margin-right:8px;vertical-align:middle;}
+
+.rge-interp{display:grid;grid-template-columns:1fr 1fr;gap:0;
+  border:1px solid var(--rge-rule);background:var(--rge-paper-card);
+  margin:0 0 48px;}
+.rge-interp .col{padding:24px 26px;
+  border-right:1px solid var(--rge-rule-soft);}
+.rge-interp .col:last-child{border-right:0;}
+.rge-interp .col h3{font:400 22px/1.15 var(--sc-serif,Georgia),serif;
+  letter-spacing:-.01em;color:var(--rge-ink);margin:0 0 14px;}
+.rge-interp .col.use h3{color:var(--rge-green-deep);}
+.rge-interp .col.skip h3{color:var(--rge-coral);}
+.rge-interp .col ul{list-style:none;padding:0;margin:0;}
+.rge-interp .col li{padding:10px 0 10px 22px;position:relative;
+  font:400 13.5px/1.5 var(--sc-sans,Inter),sans-serif;color:var(--rge-ink-2);
+  border-bottom:1px solid var(--rge-rule-soft);}
+.rge-interp .col li:last-child{border-bottom:0;}
+.rge-interp .col.use li::before{content:"●";position:absolute;left:4px;top:11px;
+  color:var(--rge-green-deep);}
+.rge-interp .col.skip li::before{content:"●";position:absolute;left:4px;top:11px;
+  color:var(--rge-coral);}
+</style>
+"""
+
+
+def _rge_pi_strip(cv_res: Optional[Any]) -> str:
+    """Empirical PI coverage strip per spec §8.
+
+    Honest: empty/pending pills when CV isn't on. When CV ran, the
+    nominal vs empirical coverage is the conformal estimate built
+    from training-fold |resid| quantiles checked against held-out
+    test rows — see ``run_cv_regression`` for the construction.
+    """
+    if cv_res is None or not getattr(cv_res, "pi_coverage", None):
+        # 4-tile strip with awaiting-CV pills so the page anatomy
+        # holds even before the partner toggles CV.
+        cells = ""
+        for label in ("Nominal 50%", "Nominal 80%", "Nominal 95%",
+                      "Median PI width"):
+            cells += (
+                f'<div class="cell"><div class="label">{label}</div>'
+                '<div class="val"><span class="pending">Awaiting CV</span></div>'
+                '<div class="sub">RUN WITH CROSS-VALIDATE</div></div>'
+            )
+        return (
+            '<div class="rge-bar"><span>Prediction-interval '
+            'coverage · honest empirical hit rate</span>'
+            '<span class="meta">spec §8 · conformal</span></div>'
+            f'<div class="rge-pi rge-tokens">{cells}</div>'
+        )
+
+    cov = list(cv_res.pi_coverage)
+    cov_by_nominal = {round(p["nominal"], 2): p for p in cov}
+    cells = ""
+    for nominal in (0.5, 0.8, 0.95):
+        p = cov_by_nominal.get(nominal)
+        if p is None:
+            cells += (
+                f'<div class="cell"><div class="label">'
+                f'Nominal {int(nominal*100)}%</div>'
+                '<div class="val"><span class="pending">N/A</span></div>'
+                '<div class="sub">FOLD COVERAGE NOT COMPUTED</div></div>'
+            )
+            continue
+        emp = p["empirical"]
+        delta = (emp - nominal) * 100
+        if abs(delta) < 2.0:
+            sub_cls, sub_lbl = "good", "ON-TARGET"
+        elif abs(delta) < 5.0:
+            sub_cls, sub_lbl = "warn", (
+                f"{'+' if delta>0 else '−'}{abs(delta):.1f}pp "
+                f"{'OVER' if delta>0 else 'UNDER'}-COVERS"
+            )
+        else:
+            sub_cls, sub_lbl = "bad", (
+                f"{'+' if delta>0 else '−'}{abs(delta):.1f}pp "
+                f"{'OVER' if delta>0 else 'UNDER'}-COVERS"
+            )
+        cells += (
+            f'<div class="cell"><div class="label">'
+            f'Nominal {int(nominal*100)}%</div>'
+            f'<div class="val">{emp*100:.1f}%</div>'
+            f'<div class="sub {sub_cls}">{sub_lbl}</div></div>'
+        )
+    # Median PI half-width — quote at the 80% level (the partner's
+    # default reading level for a PI on a deck).
+    p80 = cov_by_nominal.get(0.80)
+    if p80 is not None:
+        half = p80.get("median_half_width", 0.0)
+        # In log-space fits the half-width is in log units; convert to
+        # multiplicative percent for the partner-facing tile.
+        if cv_res.target_was_log_transformed:
+            import math as _math
+            pct = (_math.exp(half) - 1.0) * 100
+            width_text = f"±{pct:.1f}%"
+        else:
+            width_text = f"±{_fmt_num(half)}"
+        width_sub = "AT NOMINAL 80%"
+    else:
+        width_text = '<span class="pending">N/A</span>'
+        width_sub = "80% PI WIDTH NOT COMPUTED"
+    cells += (
+        '<div class="cell"><div class="label">Median PI half-width</div>'
+        f'<div class="val">{width_text}</div>'
+        f'<div class="sub">{width_sub}</div></div>'
+    )
+    return (
+        '<div class="rge-bar"><span>Prediction-interval coverage · '
+        'honest empirical hit rate</span>'
+        f'<span class="meta">{cv_res.k}-fold conformal · '
+        f'n_test={sum(f.n_test for f in cv_res.folds):,}</span></div>'
+        f'<div class="rge-pi rge-tokens">{cells}</div>'
+    )
+
+
+def _rge_cohort_grids(result: Dict[str, Any]) -> str:
+    """Three cohort-R² grids per spec §14 — bed_size / segment /
+    region. Each bucket renders as ``label / R² / n / Δ-vs-headline``;
+    green-tinted when above the headline, coral when below.
+    """
+    headline_r2 = result.get("r2", 0.0)
+    head_pct = headline_r2 * 100
+
+    def _grid(
+        rows: List[Dict[str, Any]],
+        head_label: str,
+        empty_msg: str,
+        cols: int,
+    ) -> str:
+        if not rows:
+            return (
+                f'<div class="rge-cohort-block rge-tokens">'
+                f'<div class="head">{_html.escape(head_label)}</div>'
+                f'<div class="rge-empty">{_html.escape(empty_msg)}</div>'
+                '</div>'
+            )
+        # Cap to ``cols × 2`` so the grid stays scan-able; rows are
+        # already sorted by R² desc where it matters (segment).
+        display = rows[: cols * 2]
+        cells = ""
+        for r in display:
+            r2 = r.get("r2", 0.0) * 100
+            delta = r.get("delta_vs_headline", 0.0) * 100
+            cls = "c hi" if delta >= 5 else ("c lo" if delta <= -5 else "c")
+            sign = "+" if delta >= 0 else "−"
+            cells += (
+                f'<div class="{cls}">'
+                f'<div class="b">{_html.escape(str(r["bucket"]))}</div>'
+                f'<div class="v">{r2:.0f}%</div>'
+                f'<div class="n">N = {r["n"]:,}</div>'
+                f'<div class="d">{sign}{abs(delta):.0f}pp vs hd</div>'
+                '</div>'
+            )
+        # Always render a flush-flex grid; cols-3/4/5 just pick the layout.
+        col_cls = (
+            "cols-5" if len(display) >= 5 else
+            ("cols-4" if len(display) >= 4 else "cols-3")
+        )
+        return (
+            f'<div class="rge-cohort-block rge-tokens">'
+            f'<div class="head">{_html.escape(head_label)} · '
+            f'national R² = {head_pct:.1f}%</div>'
+            f'<div class="rge-cohort-grid {col_cls}">{cells}</div>'
+            '</div>'
+        )
+
+    bed = result.get("cohort_r2_by_bed_size") or []
+    seg = result.get("cohort_r2_by_segment") or []
+    reg = result.get("cohort_r2_by_region") or []
+    return (
+        '<div class="rge-bar"><span>Cohort robustness · '
+        'where the national R² hides regime variance</span>'
+        '<span class="meta">spec §14 · bed-size · segment · region</span>'
+        '</div>'
+        + _grid(bed, "By bed size",
+                "Bed-count column unavailable in this fit.", cols=5)
+        + _grid(seg, "By segment",
+                "Segment taxonomy not on this frame — "
+                "use the HCRIS universe for segment cohorts.", cols=5)
+        + _grid(reg, "By census region",
+                "State column unavailable — region cohort cannot run.",
+                cols=4)
+    )
+
+
+def _rge_learning_curve(result: Dict[str, Any]) -> str:
+    """Learning curve SVG per spec §11. Empty-state badge if n was
+    too small to hold out a 20% evaluation set on this fit.
+    """
+    curve = result.get("learning_curve") or []
+    if not curve:
+        return (
+            '<div class="rge-bar"><span>Learning curve · '
+            'does more data help?</span>'
+            '<span class="meta">spec §11</span></div>'
+            '<div class="rge-lc-wrap rge-tokens">'
+            '<div class="head">Awaiting data</div>'
+            '<h3>Learning curve not computed.</h3>'
+            '<p style="font:400 13.5px/1.55 var(--sc-sans,Inter),'
+            'sans-serif;color:var(--rge-ink-3);margin:0;max-width:62ch;">'
+            'The held-out 20% evaluation set needs at least '
+            '4·(p+2) rows. Re-run on a larger universe or fewer features '
+            'to populate this curve.</p>'
+            '</div>'
+        )
+
+    # Build the SVG manually — viewBox is 0–100 (x = train fraction
+    # in pct) by 0–100 (y = R² in pct). Padding zone left/right for
+    # tick labels, top/bottom for axis room.
+    W, H = 1000.0, 240.0
+    pad_l, pad_r, pad_t, pad_b = 50.0, 20.0, 16.0, 28.0
+    x_lo = min(pt["train_fraction"] for pt in curve) * 100
+    x_hi = max(pt["train_fraction"] for pt in curve) * 100
+    # R² band: bottom 0, top max(observed)+5pp, capped at 100.
+    y_top = min(100.0, max(
+        max(pt["train_r2"] for pt in curve) * 100,
+        max(pt["test_r2"] for pt in curve) * 100,
+    ) + 5)
+    y_bot = max(0.0, min(
+        min(pt["train_r2"] for pt in curve) * 100,
+        min(pt["test_r2"] for pt in curve) * 100,
+    ) - 5)
+    y_span = (y_top - y_bot) or 1.0
+
+    def _sx(x_pct: float) -> float:
+        return pad_l + (x_pct - x_lo) / max(1.0, x_hi - x_lo) * (
+            W - pad_l - pad_r
+        )
+
+    def _sy(y_pct: float) -> float:
+        return pad_t + (1.0 - (y_pct - y_bot) / y_span) * (
+            H - pad_t - pad_b
+        )
+
+    # Gridlines + tick labels
+    ticks_y_html = ""
+    for tick_y in (y_bot, (y_bot + y_top) / 2, y_top):
+        sy = _sy(tick_y)
+        ticks_y_html += (
+            f'<line x1="{pad_l:.1f}" y1="{sy:.1f}" '
+            f'x2="{W - pad_r:.1f}" y2="{sy:.1f}" '
+            f'stroke="#ddd1ac" stroke-width="0.5"/>'
+            f'<text x="{pad_l - 6:.1f}" y="{sy + 4:.1f}" '
+            'text-anchor="end" font-family="JetBrains Mono,monospace" '
+            'font-size="10" fill="#7a8595" '
+            'style="letter-spacing:.1em;text-transform:uppercase">'
+            f'{tick_y:.0f}%</text>'
+        )
+    ticks_x_html = ""
+    for tick_x in (x_lo, (x_lo + x_hi) / 2, x_hi):
+        sx = _sx(tick_x)
+        ticks_x_html += (
+            f'<line x1="{sx:.1f}" y1="{H - pad_b:.1f}" '
+            f'x2="{sx:.1f}" y2="{H - pad_b + 4:.1f}" '
+            'stroke="#c9bf9c" stroke-width="0.6"/>'
+            f'<text x="{sx:.1f}" y="{H - pad_b + 18:.1f}" '
+            'text-anchor="middle" '
+            'font-family="JetBrains Mono,monospace" '
+            'font-size="10" fill="#7a8595" '
+            'style="letter-spacing:.1em;text-transform:uppercase">'
+            f'{tick_x:.0f}%</text>'
+        )
+
+    train_path = "M " + " L ".join(
+        f"{_sx(pt['train_fraction']*100):.1f},"
+        f"{_sy(pt['train_r2']*100):.1f}"
+        for pt in curve
+    )
+    test_path = "M " + " L ".join(
+        f"{_sx(pt['train_fraction']*100):.1f},"
+        f"{_sy(pt['test_r2']*100):.1f}"
+        for pt in curve
+    )
+    train_pts_html = "".join(
+        f'<circle cx="{_sx(pt["train_fraction"]*100):.1f}" '
+        f'cy="{_sy(pt["train_r2"]*100):.1f}" r="3" '
+        'fill="#506478" stroke="#0e1a29" stroke-width="0.7"/>'
+        for pt in curve
+    )
+    test_pts_html = "".join(
+        f'<circle cx="{_sx(pt["train_fraction"]*100):.1f}" '
+        f'cy="{_sy(pt["test_r2"]*100):.1f}" r="3" '
+        'fill="#1f6a4c" stroke="#154e36" stroke-width="0.7"/>'
+        for pt in curve
+    )
+
+    # Plateau verdict — flat last 3 points within 1pp = "won't help".
+    tail = [pt["test_r2"] for pt in curve[-3:]]
+    if len(tail) >= 3 and (max(tail) - min(tail)) < 0.01:
+        plateau_text = (
+            "Both curves plateau by 80% of the universe — "
+            "more rows won't meaningfully raise out-of-sample R²."
+        )
+    else:
+        plateau_text = (
+            "Test R² is still moving in the last fraction — "
+            "more data would likely still help."
+        )
+
+    return (
+        '<div class="rge-bar"><span>Learning curve · '
+        'does more data help?</span>'
+        f'<span class="meta">spec §11 · 80/20 holdout</span></div>'
+        '<div class="rge-lc-wrap rge-tokens">'
+        '<div class="head">spec §11</div>'
+        f'<h3>{_html.escape(plateau_text)}</h3>'
+        f'<svg class="rge-lc-svg" viewBox="0 0 {W:.0f} {H:.0f}" '
+        'preserveAspectRatio="none">'
+        f'{ticks_y_html}{ticks_x_html}'
+        f'<path d="{train_path}" stroke="#506478" stroke-width="1.6" '
+        'fill="none"/>'
+        f'<path d="{test_path}" stroke="#1f6a4c" stroke-width="1.8" '
+        'fill="none"/>'
+        f'{train_pts_html}{test_pts_html}'
+        f'<text x="{pad_l + (W - pad_l - pad_r)/2:.1f}" '
+        f'y="{H - 4:.1f}" text-anchor="middle" '
+        'font-family="JetBrains Mono,monospace" font-size="10" '
+        'fill="#7a8595" '
+        'style="letter-spacing:.1em;text-transform:uppercase">'
+        'Training fraction</text>'
+        '</svg>'
+        '<div class="rge-lc-legend">'
+        '<span><span class="swatch" '
+        'style="background:#506478"></span>Train R²</span>'
+        '<span><span class="swatch" '
+        'style="background:#1f6a4c"></span>Test R² (held-out 20%)</span>'
+        '</div>'
+        '</div>'
+    )
+
+
+def _rge_leverage_scatter(result: Dict[str, Any]) -> str:
+    """Leverage × std-residual scatter per spec §16.
+
+    Data comes from ``result["outliers"]`` — every row already
+    carries leverage / std_residual / cooks_d / influence_class.
+    Cook's-D contour is drawn at the conventional 4/n threshold; dots
+    above the threshold are red and labeled inline so the partner
+    sees which hospitals carry the model's influence.
+    """
+    outs = result.get("outliers") or []
+    if not outs:
+        return (
+            '<div class="rge-bar"><span>Leverage × residual · '
+            'who carries the model\'s weight</span>'
+            '<span class="meta">spec §16</span></div>'
+            '<div class="rge-lev-wrap rge-tokens">'
+            '<div class="head">Awaiting data</div>'
+            '<h3>Outlier matrix not computed.</h3>'
+            '</div>'
+        )
+    # Drop rows with non-finite leverage / residual (some pathological
+    # fits leak NaN through the influence helper).
+    safe = [
+        o for o in outs
+        if all(o.get(k) is not None for k in ("leverage", "std_residual"))
+        and o["leverage"] == o["leverage"]  # NaN check
+        and o["std_residual"] == o["std_residual"]
+    ]
+    if not safe:
+        return (
+            '<div class="rge-bar"><span>Leverage × residual · '
+            'who carries the model\'s weight</span>'
+            '<span class="meta">spec §16</span></div>'
+            '<div class="rge-lev-wrap rge-tokens">'
+            '<div class="head">Awaiting data</div>'
+            '<h3>Outlier matrix had no finite rows.</h3>'
+            '</div>'
+        )
+    W, H = 1000.0, 340.0
+    pad_l, pad_r, pad_t, pad_b = 60.0, 24.0, 16.0, 28.0
+    lev_arr = [float(o["leverage"]) for o in safe]
+    sr_arr = [float(o["std_residual"]) for o in safe]
+    lev_hi = max(lev_arr) * 1.05 or 0.05
+    sr_abs = max(abs(min(sr_arr)), abs(max(sr_arr))) * 1.1 or 1.0
+
+    def _sx(lev: float) -> float:
+        return pad_l + (lev / lev_hi) * (W - pad_l - pad_r)
+
+    def _sy(sr: float) -> float:
+        # Center 0 in the middle of the panel.
+        mid = (H - pad_t - pad_b) / 2 + pad_t
+        return mid - (sr / sr_abs) * (mid - pad_t)
+
+    # Axes + zero line
+    axis_html = (
+        f'<line x1="{pad_l:.1f}" y1="{(H+pad_t-pad_b)/2:.1f}" '
+        f'x2="{W - pad_r:.1f}" y2="{(H+pad_t-pad_b)/2:.1f}" '
+        'stroke="#0e1a29" stroke-width="0.5" opacity="0.35"/>'
+        f'<line x1="{pad_l:.1f}" y1="{pad_t:.1f}" '
+        f'x2="{pad_l:.1f}" y2="{H - pad_b:.1f}" '
+        'stroke="#c9bf9c" stroke-width="0.6"/>'
+        f'<line x1="{pad_l:.1f}" y1="{H - pad_b:.1f}" '
+        f'x2="{W - pad_r:.1f}" y2="{H - pad_b:.1f}" '
+        'stroke="#c9bf9c" stroke-width="0.6"/>'
+    )
+    # Tick labels — leverage on x, std-resid on y
+    ticks_html = ""
+    for frac in (0.0, 0.5, 1.0):
+        tx = lev_hi * frac
+        sx = _sx(tx)
+        ticks_html += (
+            f'<text x="{sx:.1f}" y="{H - pad_b + 18:.1f}" '
+            'text-anchor="middle" '
+            'font-family="JetBrains Mono,monospace" font-size="10" '
+            'fill="#7a8595" '
+            'style="letter-spacing:.1em;text-transform:uppercase">'
+            f'{tx:.3f}</text>'
+        )
+    for sr_tick in (-sr_abs, 0.0, sr_abs):
+        sy = _sy(sr_tick)
+        ticks_html += (
+            f'<text x="{pad_l - 8:.1f}" y="{sy + 4:.1f}" '
+            'text-anchor="end" '
+            'font-family="JetBrains Mono,monospace" font-size="10" '
+            'fill="#7a8595" '
+            'style="letter-spacing:.1em;text-transform:uppercase">'
+            f'{sr_tick:+.1f}σ</text>'
+        )
+
+    # Dots — color by influence_class
+    _CLASS_FILL = {
+        "high_leverage":     "#b27a1c",  # amber
+        "outlier":           "#b04a3a",  # coral
+        "outlier_influence": "#b04a3a",
+        "data_issue":        "#b04a3a",
+        "high_influence":    "#b27a1c",
+        "possible_opportunity": "#0a8a5f",
+    }
+    dots_html = ""
+    labels_html = ""
+    for o in safe[:20]:  # top-20 ranked by influence
+        fill = _CLASS_FILL.get(o.get("influence_class") or "", "#506478")
+        x = _sx(float(o["leverage"]))
+        y = _sy(float(o["std_residual"]))
+        r = 4.5 if fill != "#506478" else 3.2
+        dots_html += (
+            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{r:.1f}" '
+            f'fill="{fill}" stroke="#0e1a29" stroke-width="0.6" '
+            f'opacity="0.85"/>'
+        )
+        if fill != "#506478":
+            # Label only flagged points so the chart doesn't crowd
+            name = (o.get("name") or o.get("ccn") or "?")[:18]
+            labels_html += (
+                f'<text x="{x + 8:.1f}" y="{y + 3:.1f}" '
+                'font-family="JetBrains Mono,monospace" font-size="9" '
+                'fill="#0e1a29" '
+                'style="letter-spacing:.05em">'
+                f'{_html.escape(name)}</text>'
+            )
+
+    # Cook's D conventional cutoff at 4/n (where n is the model's n).
+    n_all = result.get("n") or len(safe)
+    cook_cut = 4.0 / max(1, int(n_all))
+    flagged = [o for o in safe
+               if (o.get("cooks_d") or 0.0) > cook_cut]
+    n_flagged = len(flagged)
+    # Quote the cutoff in the verdict line (not on the chart itself —
+    # it's a Cook's-D space, not a leverage-space contour).
+
+    return (
+        '<div class="rge-bar"><span>Leverage × residual · '
+        'who carries the model\'s weight</span>'
+        f'<span class="meta">spec §16 · Cook\'s D &gt; 4/n on '
+        f'{n_flagged} of {len(safe)} ranked rows</span></div>'
+        '<div class="rge-lev-wrap rge-tokens">'
+        '<div class="head">spec §16 · top-20 by influence</div>'
+        f'<h3>{n_flagged} hospitals carry disproportionate '
+        f'weight on the fit.</h3>'
+        f'<svg class="rge-lev-svg" viewBox="0 0 {W:.0f} {H:.0f}" '
+        'preserveAspectRatio="none">'
+        f'{axis_html}{ticks_html}{dots_html}{labels_html}'
+        f'<text x="{pad_l + (W - pad_l - pad_r)/2:.1f}" '
+        f'y="{H - 6:.1f}" text-anchor="middle" '
+        'font-family="JetBrains Mono,monospace" font-size="10" '
+        'fill="#7a8595" '
+        'style="letter-spacing:.1em;text-transform:uppercase">'
+        'Leverage h_ii →</text>'
+        '</svg>'
+        '<div class="rge-lev-legend">'
+        '<span><span class="dot" style="background:#506478"></span>'
+        'Normal</span>'
+        '<span><span class="dot" style="background:#b27a1c"></span>'
+        'High leverage / influence</span>'
+        '<span><span class="dot" style="background:#b04a3a"></span>'
+        'Outlier (|std-resid| &gt; 2σ)</span>'
+        '<span><span class="dot" style="background:#0a8a5f"></span>'
+        'Possible opportunity</span>'
+        '</div>'
+        '</div>'
+    )
+
+
+def _rge_interpretation(
+    result: Dict[str, Any],
+    cv_res: Optional[Any],
+) -> str:
+    """Auto-derived "use this model for / don't use this model for"
+    block per spec §18. Every line keys off a real fit characteristic
+    so the block can be quoted verbatim in an IC-memo appendix.
+    """
+    use_for: List[str] = []
+    skip_for: List[str] = []
+
+    r2 = result.get("r2", 0.0)
+    coefs = result.get("coefficients") or []
+    sig_count = sum(1 for c in coefs if c.get("significance"))
+    rs = result.get("residual_summary") or {}
+    p80 = rs.get("p80_abs")
+    share_2s = rs.get("share_outside_2s", 0.0)
+    log_target = result.get("log_target", False)
+    max_vif = result.get("max_vif", 1.0) or 1.0
+    bp = result.get("breusch_pagan") or {}
+    bp_p = float(bp.get("p_value", 1.0))
+
+    if r2 >= 0.5 and sig_count == len(coefs) and coefs:
+        use_for.append(
+            f"Ranking targets across the universe — R² {r2*100:.0f}% "
+            f"with every one of the {len(coefs)} drivers significant."
+        )
+    elif r2 >= 0.3:
+        use_for.append(
+            f"Generating hypotheses about the {sig_count} "
+            f"significant drivers; R² {r2*100:.0f}% is enough "
+            "for a directional read."
+        )
+    if cv_res is not None and cv_res.overfit_gap <= 0.05:
+        use_for.append(
+            f"Out-of-sample reads — the OOS R² ({cv_res.mean_test_r2*100:.0f}%) "
+            f"is within {cv_res.overfit_gap*100:.1f}pp of in-sample, "
+            "so the headline survives held-out folds."
+        )
+    if max_vif < 5:
+        use_for.append(
+            "Reading individual coefficients as semi-elasticities; "
+            f"max VIF {max_vif:.1f} means each driver's effect is "
+            "interpretable on its own."
+        )
+
+    if p80 is not None:
+        if log_target:
+            import math as _math
+            pct = (_math.exp(p80) - 1.0) * 100
+            if pct > 25:
+                skip_for.append(
+                    f"Point valuation of a single hospital — the "
+                    f"80% PI half-width is ±{pct:.0f}%, so a "
+                    "stand-alone forecast carries too much spread."
+                )
+        else:
+            if p80 > result.get("y_std", 0.0) * 0.5:
+                skip_for.append(
+                    f"Point valuation of a single hospital — the "
+                    f"80% PI half-width is ±{_fmt_num(p80)}, too "
+                    "wide for a stand-alone forecast."
+                )
+    if share_2s > 0.08:
+        skip_for.append(
+            "Reading heavy-tailed residuals as Gaussian — "
+            f"{share_2s*100:.0f}% of rows exceed ±2σ. Quote "
+            "conformal PIs (above), not parametric ones."
+        )
+    if bp_p < 0.05:
+        skip_for.append(
+            "Reporting classical SEs to LPs — the Breusch–Pagan "
+            f"test rejects homoskedasticity (p = {bp_p:.3f}). "
+            "Use the HC1-robust SEs already on every coefficient."
+        )
+    if max_vif >= 5:
+        skip_for.append(
+            f"Reading each coefficient in isolation — max VIF "
+            f"{max_vif:.1f} means several drivers move together. "
+            "Toggle the optimized (VIF-pruned) view first."
+        )
+    # Cohort regime breaks — auto-flag a "don't use" line whenever
+    # any cohort is more than 15pp off the headline.
+    for grid_key, grid_name in (
+        ("cohort_r2_by_segment", "segment"),
+        ("cohort_r2_by_bed_size", "bed-size"),
+        ("cohort_r2_by_region", "region"),
+    ):
+        for r in (result.get(grid_key) or []):
+            if (r.get("delta_vs_headline") or 0.0) <= -0.15:
+                skip_for.append(
+                    f"Cross-{grid_name} extrapolation — the "
+                    f"{_html.escape(str(r['bucket']))} cohort fits "
+                    f"at R² {r['r2']*100:.0f}% "
+                    f"({(r['delta_vs_headline'])*100:+.0f}pp vs "
+                    "headline). Segment first."
+                )
+                break
+
+    # Guarantee at least one bullet on each side — the spec wants
+    # this block to be IC-memo quotable, never half-empty.
+    if not use_for:
+        use_for.append(
+            "Hypothesis generation only — R² is too low to anchor "
+            "a screening decision."
+        )
+    if not skip_for:
+        skip_for.append(
+            "Nothing flagged for caution in the current fit; "
+            "re-run with cross-validate to harden the OOS claim."
+        )
+
+    use_li = "".join(
+        f"<li>{line}</li>" for line in use_for[:4]
+    )
+    skip_li = "".join(
+        f"<li>{line}</li>" for line in skip_for[:4]
+    )
+    return (
+        '<a id="next"></a>'
+        '<div class="rge-bar"><span>Interpretation for diligence · '
+        'what this model is and isn\'t for</span>'
+        '<span class="meta">spec §18 · auto-derived from fit '
+        'characteristics</span></div>'
+        '<div class="rge-interp rge-tokens">'
+        '<div class="col use"><h3>Use this model for</h3>'
+        f'<ul>{use_li}</ul></div>'
+        '<div class="col skip"><h3>Don\'t use this model for</h3>'
+        f'<ul>{skip_li}</ul></div>'
         '</div>'
     )
 
@@ -3280,6 +4147,7 @@ letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
     # pill per spec §4 Partial — never a hard-coded value.
     editorial_top = (
         _RGE_STYLES
+        + _RGE_PHASE2_STYLES
         + ck_page_title(
             "Regression Analysis",
             eyebrow="STATISTICAL ANALYTICS",
@@ -3297,27 +4165,38 @@ letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
         + _rge_verdict_row(result, cv_res)
     )
 
-    # Anchor IDs that the verdict-row cards scroll to. Wrapping the
-    # existing panels in named <a id> spans is the least-invasive way
-    # to hit the spec §6 anchor contract (#fit / #prediction / #cohort
-    # / #leverage / #next) without restructuring every panel.
-    cv_anchor = f'<a id="fit"></a>{cv_section}' if cv_section else '<a id="fit"></a>'
-    prediction_anchor = f'<a id="prediction"></a>'
-    cohort_anchor = (
-        f'<a id="cohort"></a>{segmented_section}'
-        if segmented_section
-        else '<a id="cohort"></a>'
+    # ── Phase 2 supplemental sections (spec §8 / §11 / §14 / §16 / §18) ──
+    # Land between the verdict row and the existing analytical detail.
+    # Anchor IDs are inlined inside the helpers (interpretation owns
+    # #next; the rest piggy-back on the existing #fit/#prediction/
+    # #cohort/#leverage anchors below or get their own here).
+    editorial_phase2 = (
+        '<a id="prediction"></a>'
+        + _rge_pi_strip(cv_res)
+        + '<a id="cohort"></a>'
+        + _rge_cohort_grids(result)
+        + _rge_learning_curve(result)
+        + '<a id="leverage"></a>'
+        + _rge_leverage_scatter(result)
+        + _rge_interpretation(result, cv_res)
     )
 
+    # Anchor IDs that the verdict-row cards scroll to. With Phase 2
+    # consuming #prediction / #cohort / #leverage / #next at the top,
+    # the existing detail panels below still get an #fit anchor so the
+    # SIGNAL card lands on the CV section.
+    cv_anchor = f'<a id="fit"></a>{cv_section}' if cv_section else '<a id="fit"></a>'
+
     body = (
-        f'{editorial_top}{rg_styles}{intro}{diagnostic_banner}{source_selector}'
+        f'{editorial_top}{editorial_phase2}'
+        f'{rg_styles}{intro}{diagnostic_banner}{source_selector}'
         f'{leakage_banner}{formula_related_banner}'
         f'{leakage_section}{cv_anchor}{cluster_section}'
-        f'{buyability_section}{cohort_anchor}'
-        f'{prediction_anchor}{kpis}{multicollinearity_banner}{intercept_section}'
+        f'{buyability_section}{segmented_section}'
+        f'{kpis}{multicollinearity_banner}{intercept_section}'
         '<div class="rg-grid">'
         f'<div>{left_col}</div><div>{right_col}</div></div>'
-        f'{nav_section}<a id="leverage"></a><a id="next"></a>{next_up}'
+        f'{nav_section}{next_up}'
     )
 
     sig_count = sum(1 for c in result["coefficients"] if c["significance"])
