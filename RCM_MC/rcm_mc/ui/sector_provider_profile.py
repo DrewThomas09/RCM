@@ -260,11 +260,125 @@ def render_sector_provider_profile(
         + '</p>'
     )
 
+    # ── 2026-05-28 style-sweep · strict Tier-1 5-block head ──
+    # Powers every provider profile cascade: /dialysis/<ccn>, /snf/<ccn>,
+    # /home-health/<ccn>, /hospice/<ccn>, /irf/<ccn>, /ltch/<ccn>.
+    # Replaces the legacy xr_eyebrow + ck_page_title + back-link
+    # triple with a single <header class="pp-head"> carrying:
+    #   eyebrow + dash → serif h1 (provider name) → mono meta-line
+    #   (CCN · city · ownership) → italic-first-phrase lede with
+    #   real rank/benchmark verdict → source-note → status-dot legend
+    _pp_head_css = """
+<style>
+.pp-head{padding:0 0 28px;margin:0 0 24px;
+  border-bottom:1px solid var(--rule-soft,#ddd1ac);}
+.pp-head .crumb{font:500 10px/1 var(--sc-mono,monospace);
+  letter-spacing:.2em;text-transform:uppercase;
+  color:var(--muted,#7a8595);margin:0 0 22px;}
+.pp-head .crumb a{color:var(--muted,#7a8595);text-decoration:none;}
+.pp-head .crumb a:hover{color:var(--ink,#16263a);}
+.pp-head .crumb .sep{color:var(--rule-hi,#b6a87f);margin:0 8px;}
+.pp-head .eyebrow{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--green-deep,#154e36);display:flex;align-items:center;
+  gap:12px;margin:0 0 18px;}
+.pp-head .eyebrow .dash{width:24px;height:1px;
+  background:var(--green-deep,#154e36);}
+.pp-head h1{font:400 40px/1.05 var(--sc-serif,Georgia),serif;
+  letter-spacing:-.015em;color:var(--ink,#16263a);margin:0 0 14px;}
+.pp-head .meta{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted,#7a8595);margin:0 0 18px;}
+.pp-head .lede{font:400 italic 16.5px/1.55 var(--sc-serif,Georgia),serif;
+  color:var(--ink-2,#2b3e54);max-width:70ch;margin:0 0 18px;}
+.pp-head .lede em{color:var(--green-deep,#154e36);font-style:italic;}
+.pp-head .source-note{font:500 10px/1.4 var(--sc-mono,monospace);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted-2,#9a9e8a);margin:0 0 16px;max-width:62ch;}
+.pp-head .legend{display:flex;gap:24px;list-style:none;padding:0;
+  margin:0;font:400 12.5px/1 var(--sc-sans,Inter),sans-serif;
+  color:var(--ink-2,#2b3e54);flex-wrap:wrap;}
+.pp-head .legend li{display:flex;align-items:center;}
+.pp-head .legend .dot{width:8px;height:8px;border-radius:50%;
+  display:inline-block;margin-right:10px;}
+.pp-head .legend .dot.live{background:var(--green-deep,#154e36);}
+.pp-head .legend .dot.computed{background:var(--ink-deep,#0e1a29);}
+.pp-head .legend .dot.needs{background:var(--coral,#b04a3a);}
+.pp-head .legend .dot.illustrative{background:var(--gold,#a08227);}
+@media (max-width:960px){.pp-head h1{font-size:32px;}}
+</style>
+"""
+    # Auto-derived verdict line — quotes real rank + real delta. If
+    # rank is unknown the verdict honestly says so; never editorial
+    # filler. The "above peers" / "below peers" framing is the
+    # higher_is_better axis the caller already declared.
+    if h_val is not None and rated and h_state_avg is not None:
+        # Use the existing `rank` integer computed just above the
+        # kpis block — it's already in scope.
+        diff_h = round(h_val - h_state_avg, 2)
+        better = (diff_h >= 0) if higher_is_better else (diff_h <= 0)
+        diff_word = "above" if better else "below"
+        verdict_text = (
+            f"Ranks #{rank} of {len(rated)} rated "
+            f"{_esc(kind_singular)}s in {_esc(state)} on "
+            f"{_esc(h_label.lower())}, {_fmt(diff_h, h_suffix)} "
+            f"{diff_word} the state mean of {_fmt(h_state_avg)}."
+        )
+    elif h_val is not None:
+        verdict_text = (
+            f"{_esc(h_label)} reads {_fmt(h_val, h_suffix)} on this "
+            f"{_esc(kind_singular)}; "
+            f"no state benchmark available for the comparison."
+        )
+    else:
+        verdict_text = (
+            f"No {_esc(h_label.lower())} on file for this "
+            f"{_esc(kind_singular)}; the comparison panel below "
+            "may be partial."
+        )
+    # Italic FIRST PHRASE per spec §2.3.
+    if "." in verdict_text:
+        _first, _rest = verdict_text.split(".", 1)
+        verdict_html = f"<em>{_first.strip()}.</em>{_rest}"
+    else:
+        verdict_html = f"<em>{verdict_text}</em>"
+
+    crumb_html = (
+        '<nav class="crumb">'
+        f'<a href="{route}">All {_esc(kind_singular)}s</a>'
+        + (
+            f'<span class="sep">/</span>'
+            f'<a href="{route}?state={_esc(state)}">{_esc(state)} list</a>'
+            if state else ""
+        )
+        + '<span class="sep">/</span>'
+        f'<b>{_esc(getattr(provider, name_attr, "") or "Profile")}</b>'
+        '</nav>'
+    )
+
+    head_block = (
+        _pp_head_css
+        + '<header class="pp-head">'
+        + crumb_html
+        + f'<div class="eyebrow"><span class="dash"></span>'
+        f'{_esc(eyebrow)}</div>'
+        + f'<h1>{name}</h1>'
+        + f'<div class="meta">{" · ".join(meta_bits)}</div>'
+        + f'<p class="lede">{verdict_html}</p>'
+        + f'<p class="source-note">Source: {_esc(provenance)}</p>'
+        + '<ul class="legend">'
+        '<li><span class="dot live"></span>Live data</li>'
+        '<li><span class="dot computed"></span>Computed</li>'
+        '<li><span class="dot needs"></span>Needs data</li>'
+        '<li><span class="dot illustrative"></span>Illustrative</li>'
+        '</ul>'
+        '</header>'
+    )
+
     body = (
-        '<div class="xr">'
-        + f'<div class="xr-profile-eyebrow">{xr_eyebrow(eyebrow)}</div>'
-        + ck_page_title(name, eyebrow=eyebrow, meta=" · ".join(meta_bits))
-        + back + kpis + identity_panel + quality_panel
+        head_block
+        + '<div class="xr">'
+        + kpis + identity_panel + quality_panel
         + peers_panel + locality_panel + prov_panel
         + '</div>'
     )
