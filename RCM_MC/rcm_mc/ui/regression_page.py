@@ -2937,10 +2937,12 @@ def render_regression_page(
             '<div style="margin-top:8px;font-size:12.5px;color:'
             'var(--sc-text-dim,#465366);">&#10003; Every predictor is below the '
             'VIF&nbsp;10 threshold — no collinear features to drop.</div>')
+    # 2026-05-28 batch 40 · Tier-4 trope removal — cap radius at 2px.
+    # Semantic severity border stays — it carries multicollinearity verdict.
     multicollinearity_banner = (
         f'<div style="background:var(--sc-paper,#faf6ec);border:1px solid '
         f'var(--sc-rule,#c9c1ac);border-left:4px solid {_sev_color};'
-        f'border-radius:3px;padding:13px 16px;margin:0 0 16px;">'
+        f'border-radius:2px;padding:13px 16px;margin:0 0 16px;">'
         f'<div style="display:flex;align-items:baseline;gap:10px;'
         f'flex-wrap:wrap;margin-bottom:4px;">'
         f'<span style="font-family:var(--sc-mono);font-size:10px;'

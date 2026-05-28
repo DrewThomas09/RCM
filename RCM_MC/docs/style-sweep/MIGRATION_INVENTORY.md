@@ -2,7 +2,7 @@
 
 **Spec**: 2026-05-28 editorial handoff — strict Tier-1 5-block head + spec-forbidden trope removal.
 
-**Status (as of batch 39, 2026-05-28)**: 39 batches shipped/in-flight; ~136 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep at 64 surfaces cleaned + **7 gradients retired** + 3 box-shadows removed.
+**Status (as of batch 40, 2026-05-28)**: 40 batches shipped/in-flight; ~140 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep at 68 surfaces cleaned + **7 gradients retired** + 3 box-shadows removed (one shared `render_insights_page` cleanup fans out across many index pages).
 
 **Wave-1 (batch 19) shipped**: `my_dashboard_page`, `portfolio_monitor_page`, `deal_mc_page`
 **Wave-2 (batch 20) shipped**: `portfolio_bridge_page`, `risk_workbench_page`, `scenario_modeler_page`, `market_intel_page`, `escalations_page`
@@ -32,6 +32,12 @@ All 24 originally-flagged Group D files are now in Group A. Every renderer in th
 **Next**: Phase 4 — Group C trope removal. ~180 pages still carry `cad-card`/`cad-table` chrome with spec-forbidden tropes (3px left-border accents, box-shadow on content cards, `border-radius > 2px`). Migration is a CSS-level sweep, ~3-4 files per batch.
 
 ## Phase 4 · Group C trope removal (in progress)
+
+**Wave-11 (batch 40) shipped** — 4 more radius caps across 4 files (3 of them load-bearing on lots of index pages):
+- `insights_page.py` (shared insight card — fans out across every index page that uses `render_insights_page`; radius 8px → 2px; semantic per-insight {fg} severity border preserved)
+- `ic_packet_page.py` (`.ic-form` panel radius 4px → 2px)
+- `regression_page.py` (multicollinearity verdict banner radius 3px → 2px; semantic sev_color border preserved)
+- `ebitda_bridge_page.py` (lever-impact bar viz radii 3px → 2px, all instances)
 
 **Wave-10 (batch 39) shipped** — 5 oversized 8px radii capped at 2px across 2 quant-stack pages:
 - `model_quality_dashboard.py` (3 surfaces: KPI tile + empty state + results table)

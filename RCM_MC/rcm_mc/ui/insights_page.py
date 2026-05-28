@@ -122,11 +122,14 @@ def render_insights_page(db_path: str) -> str:
         )
 
         cards.append(
+            # 2026-05-28 batch 40 · Tier-4 trope removal — cap radius
+            # at 2px. Semantic per-insight severity (border-left {fg})
+            # preserved — it carries meaning.
             f'<a href="{_html.escape(href)}" '
             f'style="display:block;text-decoration:none;'
             f'margin:0 0 12px;padding:18px 22px;background:{bg};'
             f'border:1px solid {border};border-left:4px solid {fg};'
-            f'border-radius:8px;color:{fg};'
+            f'border-radius:2px;color:{fg};'
             f'transition:transform 0.1s, border-color 0.1s;" '
             f'onmouseover="this.style.transform=\'translateX(2px)\';" '
             f'onmouseout="this.style.transform=\'\';">'
