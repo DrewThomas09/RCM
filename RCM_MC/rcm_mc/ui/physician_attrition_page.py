@@ -76,11 +76,13 @@ color:{tf};margin-bottom:6px;font-weight:600;}}
 .pa-kpi__val{{font-size:26px;line-height:1;font-family:"JetBrains Mono",monospace;
 font-variant-numeric:tabular-nums;font-weight:700;}}
 .pa-kpi__band{{font-size:10px;margin-top:4px;font-weight:600;}}
-.pa-card{{background:{pn};border:1px solid {bd};border-radius:4px;
+/* 2026-05-28 batch 37 · Tier-4 trope removal — caps card radius
+   at 2px; drops the dark box-shadow hover affordance (border-color
+   hover already conveys interactivity). */
+.pa-card{{background:{pn};border:1px solid {bd};border-radius:2px;
 margin-bottom:14px;overflow:hidden;
-transition:transform 140ms ease,border-color 140ms ease,box-shadow 140ms ease;}}
-.pa-card:hover{{transform:translateY(-1px);border-color:{tf};
-box-shadow:0 8px 20px rgba(0,0,0,0.35);}}
+transition:transform 140ms ease,border-color 140ms ease;}}
+.pa-card:hover{{transform:translateY(-1px);border-color:{tf};}}
 .pa-card__band{{height:3px;}}
 .pa-card__body{{padding:16px 20px;}}
 .pa-card__head{{display:flex;justify-content:space-between;
