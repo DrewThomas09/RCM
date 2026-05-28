@@ -2,7 +2,7 @@
 
 **Spec**: 2026-05-28 editorial handoff — strict Tier-1 5-block head + spec-forbidden trope removal.
 
-**Status (as of batch 40, 2026-05-28)**: 40 batches shipped/in-flight; ~140 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep at 68 surfaces cleaned + **7 gradients retired** + 3 box-shadows removed (one shared `render_insights_page` cleanup fans out across many index pages).
+**Status (as of batch 41, 2026-05-28)**: 41 batches shipped/in-flight; ~144 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep at 72 surfaces cleaned + **7 gradients retired** + **7 box-shadows removed** (one shared `render_insights_page` cleanup fans out across many index pages).
 
 **Wave-1 (batch 19) shipped**: `my_dashboard_page`, `portfolio_monitor_page`, `deal_mc_page`
 **Wave-2 (batch 20) shipped**: `portfolio_bridge_page`, `risk_workbench_page`, `scenario_modeler_page`, `market_intel_page`, `escalations_page`
@@ -32,6 +32,12 @@ All 24 originally-flagged Group D files are now in Group A. Every renderer in th
 **Next**: Phase 4 — Group C trope removal. ~180 pages still carry `cad-card`/`cad-table` chrome with spec-forbidden tropes (3px left-border accents, box-shadow on content cards, `border-radius > 2px`). Migration is a CSS-level sweep, ~3-4 files per batch.
 
 ## Phase 4 · Group C trope removal (in progress)
+
+**Wave-12 (batch 41) shipped** — 4 more dark hover box-shadows removed + 4 oversized radii capped across 3 files (border-color shift preserves interactivity affordance):
+- `management_scorecard_page.py` (`.ms-card`: radius 4px → 2px; hover 0/6/16 shadow removed)
+- `exit_timing_page.py` (`.et-buyer-card`: same treatment — radius cap + hover shadow removed)
+- `deal_profile_page.py` (`.ck-dp-card`: radius 4px → 2px; 0/6/18 shadow removed)
+- `deal_profile_page.py` (`.ck-dp-saved-card`: radius 4px → 2px; 0/4/14 shadow removed)
 
 **Wave-11 (batch 40) shipped** — 4 more radius caps across 4 files (3 of them load-bearing on lots of index pages):
 - `insights_page.py` (shared insight card — fans out across every index page that uses `render_insights_page`; radius 8px → 2px; semantic per-insight {fg} severity border preserved)

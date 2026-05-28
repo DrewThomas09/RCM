@@ -56,11 +56,13 @@ color:{tf};font-weight:600;margin-bottom:3px;}}
 font-variant-numeric:tabular-nums;font-weight:700;}}
 .et-panel{{background:{pn};border:1px solid {bd};border-radius:4px;
 padding:14px 20px;margin-bottom:16px;}}
-.et-buyer-card{{background:{pn};border:1px solid {bd};border-radius:4px;
+/* 2026-05-28 batch 41 · Tier-4 trope removal — radius 4px → 2px;
+   drops decorative box-shadow on hover (border-color shift conveys
+   the affordance). */
+.et-buyer-card{{background:{pn};border:1px solid {bd};border-radius:2px;
 padding:14px 18px;margin-bottom:12px;
-transition:border-color 140ms ease, box-shadow 140ms ease;}}
-.et-buyer-card:hover{{border-color:{tf};
-box-shadow:0 6px 16px rgba(0,0,0,0.3);}}
+transition:border-color 140ms ease;}}
+.et-buyer-card:hover{{border-color:{tf};}}
 .et-buyer-card__head{{display:flex;justify-content:space-between;
 align-items:baseline;gap:12px;flex-wrap:wrap;}}
 .et-buyer-card__name{{font-size:15px;color:{tx};font-weight:600;}}
