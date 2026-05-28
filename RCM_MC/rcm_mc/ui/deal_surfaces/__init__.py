@@ -28,6 +28,7 @@ from .market import render_deal_market
 from .memo_auto import render_deal_memo_auto
 from .ml import render_deal_ml
 from .playbook import render_deal_playbook
+from .predicted import render_deal_predicted
 from .profile import render_deal_profile
 from .returns import render_deal_returns
 from .scenarios import render_deal_scenarios
@@ -54,6 +55,7 @@ __all__ = [
     "render_deal_market",
     "render_deal_memo_auto",
     "render_deal_playbook",
+    "render_deal_predicted",
     "render_deal_ml",
     "render_deal_returns",
     "render_deal_scenarios",
