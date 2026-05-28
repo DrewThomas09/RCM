@@ -358,11 +358,17 @@ def _hero(state: DealChecklistState) -> str:
         formula="count(items where status=DONE)",
         detail="Total items covered across all phases and priorities.",
     )
-    intro = ck_section_intro(
+    # 2026-05-28 batch 21 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
         eyebrow="DILIGENCE CHECKLIST",
-        headline="Coverage + open questions for IC.",
-        italic_word="open",
-        body=(
+        title="Coverage + open questions for IC.",
+        meta=(
+            f"{state.done}/{state.total} ITEMS DONE · "
+            f"AUTO-TRACKED · URL-SHARABLE STATE"
+        ),
+        lede_italic_phrase="Coverage + open questions for IC.",
+        lede_body=(
             f"{html.escape(banner)} Auto-tracked from live analytics; "
             "partner overrides URL-encoded so you can share a state "
             "snapshot by copying the link."

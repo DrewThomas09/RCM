@@ -304,15 +304,21 @@ def _hero(report: DenialPredictionReport) -> str:
     # tile layout. Tone-bearing labels go into the ``sub`` slot;
     # secondary peer-comparison strings get appended via
     # newline-separated text since ck_kpi_block sub is single-line.
-    intro = ck_section_intro(
-        eyebrow="Denial Prediction",
-        headline=(
-            f"{report.provider_id or 'Provider'} · "
-            f"{report.n_claims:,} claims · "
-            f"{report.n_train:,} train · {report.n_test:,} test"
+    # 2026-05-28 batch 21 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
+        eyebrow="DENIAL PREDICTION",
+        title=(
+            f"Denial model — {report.provider_id or 'Provider'}"
         ),
-        body=summary,
-        italic_word="shows",
+        meta=(
+            f"{report.n_claims:,} CLAIMS · "
+            f"{report.n_train:,} TRAIN · "
+            f"{report.n_test:,} TEST · "
+            f"BASELINE {report.baseline_denial_rate*100:.1f}%"
+        ),
+        lede_italic_phrase="What the model shows on this provider.",
+        lede_body=summary,
     )
     kpis = (
         '<div class="ck-kpi-strip">'

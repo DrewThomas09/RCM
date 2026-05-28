@@ -379,11 +379,17 @@ def _recommendation_block(rec: Optional[ExitRecommendation]) -> str:
         else "acceptable" if rec.expected_moic < 2.5
         else "top quintile"
     )
-    intro = ck_section_intro(
+    # 2026-05-28 batch 21 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
         eyebrow="Recommended exit path",
-        headline=html.escape(rec.summary),
-        body=html.escape(rec.rationale),
-        italic_word="exit",
+        title=html.escape(rec.summary),
+        meta=(
+            f"YEAR {rec.exit_year} · "
+            f"EXPECTED MOIC {rec.expected_moic:.2f}x ({moic_label.upper()})"
+        ),
+        lede_italic_phrase="When to exit, and on what terms.",
+        lede_body=html.escape(rec.rationale),
     )
     kpis = (
         '<div class="ck-kpi-strip">'

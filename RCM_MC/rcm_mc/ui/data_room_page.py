@@ -76,11 +76,22 @@ def render_data_room(
     n_ml_only = sum(1 for c in calibrations if c.data_quality == "ml_only")
     n_total = len(calibrations)
 
-    intro = ck_section_intro(
+    # 2026-05-28 batch 21 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
         eyebrow=f"DATA ROOM · CCN {_html.escape(ccn)}",
-        headline=f"{_html.escape(hospital_name)} — where seller data meets ML.",
-        italic_word="meets",
-        body=(
+        title=(
+            f"Data room — {_html.escape(hospital_name)}"
+        ),
+        meta=(
+            f"{n_total} METRIC{'S' if n_total != 1 else ''} · "
+            f"{n_seller} SELLER-CONFIRMED · "
+            f"{n_ml_only} ML-ONLY · "
+            f"{len(entries)} ENTRY POINT"
+            f"{'S' if len(entries) != 1 else ''}"
+        ),
+        lede_italic_phrase="Where seller data meets ML.",
+        lede_body=(
             f"{n_seller} seller-confirmed · {n_ml_only} ML-only · "
             f"{len(entries)} data points entered. Each entry triggers "
             "Bayesian recalibration: ML priors update, confidence "
