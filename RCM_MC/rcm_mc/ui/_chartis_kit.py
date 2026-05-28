@@ -5040,7 +5040,7 @@ _GUIDE_PANEL_HTML = """
        aria-modal="false" aria-label="PEdesk Guide">
   <header class="ck-guide-head">
     <span class="ck-guide-eyebrow">PEdesk Guide</span>
-    <h1 class="ck-guide-title" data-ck-guide-page-title tabindex="-1">PEdesk Guide</h1>
+    <h2 class="ck-guide-title" data-ck-guide-page-title tabindex="-1">PEdesk Guide</h2>
     <div class="ck-guide-meta">
       <span class="ck-guide-ctx-badge" data-ck-guide-quality hidden>
         <span class="ck-guide-ctx-dot"></span><span data-ck-guide-quality-label></span>
