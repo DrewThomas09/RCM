@@ -850,7 +850,11 @@ z-index:2;}}
 font-family:"JetBrains Mono",monospace;letter-spacing:.3px;word-break:break-all;}}
 .ck-dp-phase-section{{margin-bottom:22px;}}
 .ck-dp-phase-head{{display:flex;align-items:baseline;gap:12px;
-margin-bottom:10px;padding-left:10px;border-left:3px solid {P["text_dim"]};}}
+margin-bottom:10px;padding-bottom:6px;
+border-bottom:1px solid var(--rule-soft,#ddd1ac);}}
+/* 2026-05-28 style-sweep · replaced `border-left:3px solid` accent
+   with a hairline-bottom underline (Tier-4 don'ts forbid colored
+   left-border-accent cards). Depth by hairline, never colored bar. */
 .ck-dp-phase-label{{font-size:11px;color:{P["text"]};font-weight:700;
 letter-spacing:1.2px;text-transform:uppercase;}}
 .ck-dp-phase-subtitle{{font-size:10px;color:{P["text_faint"]};font-style:italic;}}
@@ -919,11 +923,16 @@ font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;}}
 font-family:"JetBrains Mono",monospace;}}
 .ck-dp-lifecycle{{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap;}}
 .ck-dp-life-seg{{flex:1;padding:12px 14px;background:{P["panel"]};
-border:1px solid {P["border"]};border-left:3px solid {P["text_dim"]};
-border-radius:4px;position:relative;cursor:pointer;
-transition:background 140ms ease, transform 140ms ease, box-shadow 140ms ease;}}
-.ck-dp-life-seg:hover{{transform:translateY(-1px);
-box-shadow:0 4px 12px rgba(0,0,0,0.06);}}
+border:1px solid {P["border"]};
+border-radius:2px;position:relative;cursor:pointer;
+transition:background 140ms ease, border-color 140ms ease;}}
+.ck-dp-life-seg:hover{{background:var(--paper-hi,#fbf6e8);
+border-color:var(--rule-hi,#b6a87f);}}
+/* 2026-05-28 style-sweep · stripped three spec-forbidden tropes:
+   `border-left:3px solid` accent (Tier-4 don'ts),
+   `border-radius:4px` (Tier-0 caps radius at 2px),
+   `box-shadow + transform` hover (Tier-4 forbids shadows; depth
+   comes from background-tone, never elevation). */
 /* Lifecycle state markers: pending (faded), current (highlighted),
    done (muted-positive). The first phase renders as is-current by
    default; inline JS flips state classes from rcm_deal_<slug>_phase
@@ -2474,19 +2483,66 @@ def render_deal_profile_page(
             if val:
                 seed_values[key] = val
 
-    hero = ck_section_intro(
-        eyebrow="DEAL PROFILE",
-        headline=(
-            f'<span data-rcm-deal-display-name>{html.escape(slug)}</span>'
-        ),
-        italic_word=html.escape(slug),
-        body=(
-            f"slug: {html.escape(slug)} · persisted to browser "
-            "localStorage. Enter deal parameters once. Save Profile "
-            "stores them in your browser. Every analytic link below "
-            "pre-fills the relevant parameters — click any card and "
-            "the tool opens with your deal context already populated."
-        ),
+    # 2026-05-28 style-sweep · strict Tier-1 5-block head for the
+    # slug path. Replaces the legacy ck_section_intro h2 deck (which
+    # the shell would also auto-inject a ck_page_title above —
+    # stacking two title blocks). Single in-body header now:
+    # eyebrow + dash → serif h1 (the slug) → mono meta-line →
+    # italic-first-phrase serif lede → status-dot legend.
+    _dp_head_css = """
+<style>
+.dp-head{padding:0 0 28px;margin:0 0 24px;
+  border-bottom:1px solid var(--rule-soft,#ddd1ac);}
+.dp-head .eyebrow{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--green-deep,#154e36);display:flex;align-items:center;
+  gap:12px;margin:0 0 18px;}
+.dp-head .eyebrow .dash{width:24px;height:1px;
+  background:var(--green-deep,#154e36);}
+.dp-head h1{font:400 44px/1.05 var(--sc-serif,Georgia),serif;
+  letter-spacing:-.015em;color:var(--ink,#16263a);margin:0 0 14px;
+  text-transform:lowercase;font-variant:small-caps;}
+.dp-head .meta{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted,#7a8595);margin:0 0 18px;}
+.dp-head .lede{font:400 italic 16.5px/1.55 var(--sc-serif,Georgia),serif;
+  color:var(--ink-2,#2b3e54);max-width:68ch;margin:0 0 18px;}
+.dp-head .lede em{color:var(--green-deep,#154e36);font-style:italic;}
+.dp-head .legend{display:flex;gap:24px;list-style:none;padding:0;
+  margin:0;font:400 12.5px/1 var(--sc-sans,Inter),sans-serif;
+  color:var(--ink-2,#2b3e54);flex-wrap:wrap;}
+.dp-head .legend li{display:flex;align-items:center;}
+.dp-head .legend .dot{width:8px;height:8px;border-radius:50%;
+  display:inline-block;margin-right:10px;}
+.dp-head .legend .dot.live{background:var(--green-deep,#154e36);}
+.dp-head .legend .dot.computed{background:var(--ink-deep,#0e1a29);}
+.dp-head .legend .dot.needs{background:var(--coral,#b04a3a);}
+.dp-head .legend .dot.illustrative{background:var(--gold,#a08227);}
+@media (max-width:960px){.dp-head h1{font-size:36px;}}
+</style>
+"""
+    _slug_esc = html.escape(slug)
+    hero = (
+        _dp_head_css
+        + '<header class="dp-head">'
+        '<div class="eyebrow"><span class="dash"></span>DEAL PROFILE</div>'
+        f'<h1><span data-rcm-deal-display-name>{_slug_esc}</span></h1>'
+        f'<div class="meta">SLUG <code>{_slug_esc}</code> · '
+        'PERSISTED TO BROWSER LOCALSTORAGE · '
+        'PRE-FILLS EVERY ANALYTIC LINK</div>'
+        '<p class="lede">'
+        f'<em>One slug, every analytic.</em> '
+        'Enter the deal parameters once; '
+        '<strong>Save Profile</strong> stores them in your browser. '
+        'Click any card below and the tool opens with your deal '
+        'context already populated.</p>'
+        '<ul class="legend">'
+        '<li><span class="dot live"></span>Live data</li>'
+        '<li><span class="dot computed"></span>Computed</li>'
+        '<li><span class="dot needs"></span>Needs data</li>'
+        '<li><span class="dot illustrative"></span>Illustrative</li>'
+        '</ul>'
+        '</header>'
     ) + (
         '<p class="ck-section-body" style="display:flex;gap:14px;'
         'align-items:baseline;flex-wrap:wrap;">'
