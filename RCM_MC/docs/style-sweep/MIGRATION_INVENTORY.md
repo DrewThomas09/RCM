@@ -2,7 +2,7 @@
 
 **Spec**: 2026-05-28 editorial handoff — strict Tier-1 5-block head + spec-forbidden trope removal.
 
-**Status (as of batch 29, 2026-05-28)**: 29 batches shipped/in-flight; ~85 routes effectively swept; **Groups B and D both fully cleared**; Group C (180 files) remaining.
+**Status (as of batch 30, 2026-05-28)**: 30 batches shipped/in-flight; ~95 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep started (10 surfaces cleaned wave-1).
 
 **Wave-1 (batch 19) shipped**: `my_dashboard_page`, `portfolio_monitor_page`, `deal_mc_page`
 **Wave-2 (batch 20) shipped**: `portfolio_bridge_page`, `risk_workbench_page`, `scenario_modeler_page`, `market_intel_page`, `escalations_page`
@@ -30,6 +30,22 @@ Precise re-audit found **23 Group D files** (down from the agent's wildly inflat
 All 24 originally-flagged Group D files are now in Group A. Every renderer in the inventory emits a strict Tier-1 5-block head via `ck_editorial_head()` (or an equivalent local helper already aligned to the same shape).
 
 **Next**: Phase 4 — Group C trope removal. ~180 pages still carry `cad-card`/`cad-table` chrome with spec-forbidden tropes (3px left-border accents, box-shadow on content cards, `border-radius > 2px`). Migration is a CSS-level sweep, ~3-4 files per batch.
+
+## Phase 4 · Group C trope removal (in progress)
+
+**Wave-1 (batch 30) shipped** — stripped decorative 3px left-border accent stripes from 10 surfaces (semantic severity stripes preserved):
+- `command_center.py` (Getting Started card)
+- `conference_page.py` (Planning Tips card)
+- `ml_insights_page.py` (Proprietary Models card)
+- `value_tracking_page.py` (Record Quarterly Actual form)
+- `fund_learning_page.py` (Fund Learning Summary card)
+- `data_dashboard.py` (Data Sources card)
+- `bayesian_page.py` (Methodology card)
+- `compare_page.py` (What this shows / How to read panels)
+- `deal_library_page.py` (Sponsor footprint + ratio tiles)
+- `empty_states.py` (es-inline variant)
+
+**Honest rule for severity bands**: `var(--cad-pos)`, `var(--cad-warn)`, `var(--cad-neg)`, `var(--sc-positive)`, `var(--sc-negative)`, `var(--sc-warning)`, `var(--sc-teal)`, plus explicit hex severity colors stay — they carry meaning (good/warning/bad). Only decorative `cad-accent` / `cad-link` / non-semantic hex stripes are removed.
 
 This doc is the **single source of truth** for what remains. Every batch updates it.
 

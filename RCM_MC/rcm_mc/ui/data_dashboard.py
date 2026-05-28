@@ -382,8 +382,10 @@ def render_data_dashboard(hcris_df: pd.DataFrame) -> str:
         )
 
     # ── Data sources ──
+    # 2026-05-28 batch 30 · Tier-4 trope removal — drops decorative
+    # 3px accent stripe.
     sources = (
-        f'<div class="cad-card" style="border-left:3px solid var(--cad-accent);">'
+        f'<div class="cad-card">'
         f'<h2>Data Sources</h2>'
         f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:12px;">'
         f'<div>'

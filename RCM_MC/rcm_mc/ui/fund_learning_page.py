@@ -75,8 +75,10 @@ def render_fund_learning(db_path: str) -> str:
     )
 
     # Narrative
+    # 2026-05-28 batch 30 · Tier-4 trope removal — drops decorative
+    # 3px accent stripe.
     narrative = (
-        f'<div class="cad-card" style="border-left:3px solid var(--cad-accent);">'
+        f'<div class="cad-card">'
         f'<h2>Fund Learning Summary</h2>'
         f'<p style="font-size:13px;color:var(--cad-text2);line-height:1.7;">'
         f'{_html.escape(accuracy.narrative)}</p></div>'

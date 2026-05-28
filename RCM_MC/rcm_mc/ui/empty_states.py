@@ -90,10 +90,13 @@ def _css(*, inject: bool = True) -> str:
         '.es-btn-secondary{background:transparent;'
         'color:#1a2332;}'
         '.es-btn-secondary:hover{background:#F2EDE3;}'
+        # 2026-05-28 batch 30 · Tier-4 trope removal — drops the
+        # decorative 3px green stripe on the empty-state inline
+        # variant in favor of the plain hairline panel.
         '.es-inline{padding:18px 20px;color:#5C6878;'
         'font-size:13px;line-height:1.55;text-align:center;'
         'background:#F2EDE3;border:1px solid #D6CFC0;'
-        'border-left:3px solid #155752;border-radius:2px;'
+        'border-radius:2px;'
         'font-family:"Inter Tight","Inter",sans-serif;}'
         '.es-inline a{color:#155752;text-decoration:none;font-weight:600;}'
         '.es-inline a:hover{text-decoration:underline;}'

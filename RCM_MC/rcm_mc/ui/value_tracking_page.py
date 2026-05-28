@@ -378,8 +378,10 @@ def render_value_tracker(
             continue
         lever_options += f'<option value="{_html.escape(lev["name"])}">{_html.escape(lev["name"])}</option>'
 
+    # 2026-05-28 batch 30 · Tier-4 trope removal — drops decorative
+    # 3px accent stripe on the record-actual form card.
     entry_form = (
-        f'<div class="cad-card" style="border-left:3px solid var(--cad-accent);">'
+        f'<div class="cad-card">'
         f'<h2>Record Quarterly Actual</h2>'
         f'<form method="POST" action="/value-tracker/{_html.escape(deal_id)}/record" '
         f'style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">'
