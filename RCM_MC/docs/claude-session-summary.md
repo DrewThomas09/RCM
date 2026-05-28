@@ -159,6 +159,71 @@ requires enabling Ollama on the box: rebuild the RAG embedding index
   (carry the page's data confidence, never IC-ready, never invent figures).
   Backward compatible (omitting them = v1 prompt byte-for-byte).
 
+## Addendum — 2026-05-28: editorial style-sweep loop (Phase 3 + 4)
+
+A sustained multi-PR sweep against the 2026-05-28 editorial-style handoff
+spec. Single source of truth: `docs/style-sweep/MIGRATION_INVENTORY.md` —
+updated after every batch. PRs are 4-7 surfaces each so review stays small.
+
+### Phase 3 — Groups B + D fully cleared
+
+- **Group B** (30 files) — every `ck_section_intro()` masthead is now the
+  universal strict Tier-1 5-block head via `ck_editorial_head()`.
+  Cleared across batches 19-24 (PRs #1075-#1080).
+- **Group D** (24 files) — every `editorial_intro=` shell kwarg is now the
+  same universal helper inline. Cleared across batches 25-29
+  (PRs #1081-#1085).
+- The helper `ck_editorial_head()` lives in
+  `rcm_mc/ui/_chartis_kit.py` and produces one `<h1>`, a 24×1px green dash
+  glyph, a mono uppercase meta-line (REAL counts; never hard-coded), an
+  italic-first-phrase serif lede in `--green-deep`, and a 4-bucket
+  status-dot legend.
+
+### Phase 4 — Group C trope sweep (in progress)
+
+Strips spec-forbidden tropes (`border-left:[1-9]px solid` decorative accents,
+`border-radius > 2px`, `box-shadow` on content cards, gradients on card
+backgrounds). Semantic severity colors **preserved** — they carry meaning.
+
+Migration recipe per file:
+1. Strip decorative 3px left-border accents (`var(--cad-accent)`,
+   `var(--cad-link)`, `P["accent"]`, non-semantic brand hex).
+2. Preserve semantic severity stripes (`cad-pos/warn/neg`,
+   `sc-positive/negative/warning/teal`, per-tone `var(--tone)`,
+   `status_color`, per-event palette, `irr_color`, severity tier colors).
+3. For stripe-with-variants (e.g. `.pa-callout` + `.pa-callout.alert/.warn/.good`):
+   default goes flat-hairline; variants re-add their stripe with semantic color.
+4. Cap `border-radius` at 2px on content surfaces.
+5. Retire decorative gradients on card backgrounds; keep functional gradients
+   (heatmap legends, skeleton loaders, semantic 2-3px tone-encoded top-bars).
+6. Drop heavy box-shadows on content cards; keep affordance shadows on buttons
+   / interactive elements.
+
+Progress so far (batches 30-39, PRs #1086-#1095):
+- **64 surfaces cleaned** across 24 files
+- **7 decorative gradients retired**
+- **3 dark box-shadows removed**
+
+Files cleared in Phase 4:
+- `command_center.py`, `conference_page.py`, `ml_insights_page.py`,
+  `value_tracking_page.py`, `fund_learning_page.py`, `data_dashboard.py`,
+  `bayesian_page.py`, `compare_page.py`, `deal_library_page.py`,
+  `empty_states.py`, `exit_timing_page.py`, `hospital_providers_page.py`,
+  `cliff_calendar_page.py`, `settings_ai_page.py`, `settings_pages.py`,
+  `cms_apm_tracker_page.py`, `drug_shortage_page.py`, `payer_intel_page.py`,
+  `deal_flow_heatmap_page.py`, `industry_page.py`,
+  `_benchmark_panels.py`, `_colorado_context.py`, `physician_productivity_page.py`,
+  `payer_rate_trends_page.py`, `ref_pricing_page.py`,
+  `deal_timeline.py`, `cms_sources_page.py`, `models_page.py`,
+  `market_analysis_page.py`, `waterfall_page.py`, `market_intel_page.py`,
+  `payer_stress_page.py`, `covenant_lab_page.py`, `regulatory_calendar_page.py`,
+  `physician_attrition_page.py`, `dashboard_page.py`, `hcris_xray_page.py`,
+  `deal_autopsy_page.py`, `ic_memo_page.py`, `bridge_audit_page.py`,
+  `bear_case_page.py`, `analysis_workbench.py`,
+  `model_quality_dashboard.py`, `calibration_page.py`.
+
+Group C still has ~116 surfaces remaining. Loop continues.
+
 ## Recommended next improvements
 
 1. Enable Ollama on the droplet and run the Guide eval harness
@@ -168,6 +233,9 @@ requires enabling Ollama on the box: rebuild the RAG embedding index
    real-data-backed (verified case-by-case) — not a blanket migration.
 3. Further metric/data-source registry depth as new pages reference new
    concepts.
+4. Finish the Phase-4 Group C trope sweep — see
+   `docs/style-sweep/MIGRATION_INVENTORY.md` for the active per-batch
+   worklist.
 
 ## Guardrails honored
 
