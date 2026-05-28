@@ -53,10 +53,10 @@ class SurfaceRegistry(unittest.TestCase):
         self.assertEqual(sorted(s.number for s in SURFACES), list(range(1, 19)))
 
     def test_built_surfaces_grow_one_phase_at_a_time(self):
-        # Phase 1 shipped profile; Phase 2 added bridge. New surfaces appear
-        # here as they land — assertion is order-insensitive on purpose.
+        # Phase 1: profile. Phase 2: bridge. Phase 3: lbo. New surfaces
+        # appear here as they land — assertion is order-insensitive.
         built = {s.slug for s in SURFACES if s.built}
-        self.assertEqual(built, {"profile", "bridge"})
+        self.assertEqual(built, {"profile", "bridge", "lbo"})
 
     def test_lookup_by_path(self):
         self.assertIs(SURFACE_BY_PATH["profile"].built, True)
@@ -99,8 +99,8 @@ class ProfileRender(unittest.TestCase):
         self.assertIn('aria-current="page"', self.html)
 
     def test_unbuilt_surfaces_get_soon_badge(self):
-        # 18 total - 2 currently built (profile, bridge) = 16 soon badges
-        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 16)
+        # 18 total − built (profile, bridge, lbo) = 15 soon badges
+        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 15)
 
     def test_payer_mix_uses_real_data(self):
         self.assertIn("Medicare 42%", self.html)
@@ -125,6 +125,41 @@ class ProfileRender(unittest.TestCase):
         for slug in ("ic-memo", "bridge", "comp-intel", "scenarios", "ml",
                      "market", "denial", "trends", "dcf", "lbo", "stmt", "returns"):
             self.assertIn(f"/deals/050001/{slug}", self.html)
+
+
+class LBORender(unittest.TestCase):
+    """Surface 08 (LBO) — wired to build_lbo_from_deal; honest empty otherwise."""
+
+    def test_lbo_renders_all_four_panels_when_inputs_real(self):
+        from rcm_mc.ui.deal_surfaces import render_deal_lbo
+        out = render_deal_lbo("050001", FAKE_HOSPITAL)
+        # Hero / S&U / signals / waterfall all eyebrowed. The "&" in the S&U
+        # eyebrow is html-escaped in the rendered output.
+        for eyebrow in ("HERO", "SOURCES &amp; USES",
+                        "WHAT DRIVES THE RETURN", "RETURNS WATERFALL"):
+            self.assertIn(eyebrow, out, f"missing panel: {eyebrow}")
+        # IRR / MOIC tokens shown (real numbers from the engine).
+        self.assertRegex(out, r"\d+\.\d+%")             # IRR pct
+        self.assertRegex(out, r"\d+\.\d+x")             # MOIC suffix
+        # LBO tab is the active one.
+        self.assertIn('aria-current="page"', out)
+        # One <h1> only.
+        self.assertEqual(len(re.findall(r"<h1[ >]", out)), 1)
+        # Decomposition reconciliation note present
+        self.assertIn("VALUE CREATED", out)
+
+    def test_lbo_renders_honest_empty_when_npr_missing(self):
+        from rcm_mc.ui.deal_surfaces import render_deal_lbo
+        h = {"ccn": "999999", "name": "Sparse Co", "state": "TX"}
+        out = render_deal_lbo("999999", h)
+        self.assertIn("LBO cannot run", out)
+        # No fabricated returns metrics
+        self.assertNotIn("HERO", out)
+        # Identity preserved
+        self.assertIn("CCN 999999", out)
+
+    def test_lbo_marked_built_in_registry(self):
+        self.assertTrue(SURFACE_BY_PATH["lbo"].built)
 
 
 class BridgeRender(unittest.TestCase):
@@ -258,7 +293,23 @@ class DealRoutes(unittest.TestCase):
                 server.shutdown(); server.server_close()
 
     def test_real_ccn_unbuilt_surface_renders_stub_200(self):
-        # Use an unbuilt slug — bridge is now built, lbo still isn't.
+        # Use a still-unbuilt slug (lbo and bridge are now built; dcf isn't).
+        with tempfile.TemporaryDirectory() as tmp:
+            create_user(PortfolioStore(os.path.join(tmp, "p.db")), "at", "supersecret1")
+            server, port = self._start(tmp)
+            try:
+                opener = _login_opener(port, "at", "supersecret1")
+                ccn = self._pick_real_ccn()
+                with opener.open(f"http://127.0.0.1:{port}/deals/{ccn}/dcf") as r:
+                    self.assertEqual(r.status, 200)
+                    body = r.read().decode()
+                self.assertIn("Under construction", body)
+                # identity header still rendered (shell is shared)
+                self.assertIn("DEAL · CCN", body)
+            finally:
+                server.shutdown(); server.server_close()
+
+    def test_real_ccn_lbo_renders_real_data_200(self):
         with tempfile.TemporaryDirectory() as tmp:
             create_user(PortfolioStore(os.path.join(tmp, "p.db")), "at", "supersecret1")
             server, port = self._start(tmp)
@@ -268,9 +319,14 @@ class DealRoutes(unittest.TestCase):
                 with opener.open(f"http://127.0.0.1:{port}/deals/{ccn}/lbo") as r:
                     self.assertEqual(r.status, 200)
                     body = r.read().decode()
-                self.assertIn("Under construction", body)
-                # identity header still rendered (shell is shared)
+                # Built surface — never the construction stub.
+                self.assertNotIn("Under construction", body)
                 self.assertIn("DEAL · CCN", body)
+                self.assertEqual(len(re.findall(r"<h1[ >]", body)), 1)
+                self.assertTrue(
+                    "SOURCES &amp; USES" in body or "LBO cannot run" in body,
+                    "LBO neither rendered the S&U nor an honest empty",
+                )
             finally:
                 server.shutdown(); server.server_close()
 

@@ -46,7 +46,7 @@ SURFACES: Tuple[DealSurface, ...] = (
     # ── Models ──
     DealSurface(7,  "dcf",         "DCF",             "Models",         False,
                 "5-year explicit + Gordon-growth terminal."),
-    DealSurface(8,  "lbo",         "LBO",             "Models",         False,
+    DealSurface(8,  "lbo",         "LBO",             "Models",         True,
                 "Sources & uses, debt schedule, returns waterfall."),
     DealSurface(9,  "stmt",        "3-Statement",     "Models",         False,
                 "P&L, balance sheet, cash flow with source tags."),
