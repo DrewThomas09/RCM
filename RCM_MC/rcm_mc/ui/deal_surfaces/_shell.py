@@ -58,7 +58,7 @@ SURFACES: Tuple[DealSurface, ...] = (
     DealSurface(12, "returns",     "Returns",         "Market & risk",  True,
                 "IRR, MOIC, covenant headroom under stress."),
     # ── Value creation ──
-    DealSurface(13, "levers",      "Levers",          "Value creation", False,
+    DealSurface(13, "levers",      "Levers",          "Value creation", True,
                 "7-lever EBITDA bridge weighted by probability."),
     DealSurface(14, "waterfall",   "Waterfall",       "Value creation", False,
                 "LP / GP split with pref + carry mechanics."),
