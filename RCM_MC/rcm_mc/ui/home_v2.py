@@ -654,8 +654,18 @@ def render_home(
     # they can run the pipeline and see real output immediately.
     quickstart = _quickstart_block() if deals.empty else ""
 
+    # 2026-05-28 usability lift · /home now carries a Recently-viewed
+    # deals rail right under the masthead. JS-hydrated from the
+    # rcm_recent_deals localStorage key that deal_profile_page
+    # already populates on every visit. Partner hops between deals
+    # all day; this gives them one-click re-entry to the last 5
+    # without having to remember slugs or scroll the pipeline table.
+    from ._chartis_kit import ck_recently_viewed_rail
+    recent_rail = ck_recently_viewed_rail()
+
     body = (
-        f'{head_block}{quickstart}{pulse_section}{portfolio_summary}'
+        f'{head_block}{recent_rail}{quickstart}{pulse_section}'
+        f'{portfolio_summary}'
         f'{insights_section}{deals_section}'
         f'{freshness_section}{links_section}'
     )

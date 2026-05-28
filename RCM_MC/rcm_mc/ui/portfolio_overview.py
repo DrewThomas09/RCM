@@ -551,10 +551,26 @@ def render_portfolio_overview(
     if total_rev is not None and total_rev > 0:
         meta_bits.append(f"{_fmt_money(total_rev)} NPR")
     meta_line = " · ".join(meta_bits)
+    # 2026-05-28 usability lift · Copy-share-link button on the
+    # /portfolio masthead so partners can deep-link the current view
+    # (filters, sort) to a teammate with one click. Uses the shared
+    # ck_copy_share_link_button helper so the JS install is
+    # idempotent across pages.
+    from ._chartis_kit import ck_copy_share_link_button
+    share_button = ck_copy_share_link_button()
+    # Position the button at the top-right of the head — small
+    # inline-style override so the existing po-head CSS doesn't
+    # need to learn about an actions slot.
+    share_wrap = (
+        '<div style="float:right;margin-top:2px;">'
+        f'{share_button}</div>'
+    )
+
     page_head = (
         _po_head_css
-        + '<header class="po-head">'
-        '<div class="eyebrow"><span class="dash"></span>PORTFOLIO</div>'
+        + '<header class="po-head" style="overflow:auto;">'
+        + share_wrap
+        + '<div class="eyebrow"><span class="dash"></span>PORTFOLIO</div>'
         '<h1>Portfolio</h1>'
         f'<div class="meta">{html.escape(meta_line)}</div>'
         '<p class="lede">'
