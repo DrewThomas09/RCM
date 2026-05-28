@@ -2,7 +2,7 @@
 
 **Spec**: 2026-05-28 editorial handoff — strict Tier-1 5-block head + spec-forbidden trope removal.
 
-**Status (as of batch 27, 2026-05-28)**: 27 batches shipped/in-flight; ~75 routes effectively swept; Group B fully cleared, Group D 14/23 swept, ~9 Group D remaining + Group C ahead.
+**Status (as of batch 28, 2026-05-28)**: 28 batches shipped/in-flight; ~80 routes effectively swept; Group B fully cleared, Group D 19/24 swept, ~5 Group D remaining + Group C ahead.
 
 **Wave-1 (batch 19) shipped**: `my_dashboard_page`, `portfolio_monitor_page`, `deal_mc_page`
 **Wave-2 (batch 20) shipped**: `portfolio_bridge_page`, `risk_workbench_page`, `scenario_modeler_page`, `market_intel_page`, `escalations_page`
@@ -22,8 +22,9 @@ Precise re-audit found **23 Group D files** (down from the agent's wildly inflat
 **Wave-1 (batch 25) shipped**: `diligence_page`, `memo_page`, `metric_glossary_page`, `ml_insights_page`
 **Wave-2 (batch 26) shipped**: `demand_page`, `models_page` (DCF path), `scenarios_page`, `waterfall_page`, `team_page`
 **Wave-3 (batch 27) shipped**: `denial_page`, `market_analysis_page`, `pressure_page`, `value_tracking_page`, `hospital_stats_page`
+**Wave-4 (batch 28) shipped**: `fund_learning_page`, `news_page`, `pe_returns_page`, `settings_ai_page`, `source_page`
 
-**Remaining ~9 Group D files** (true no-head, not covered by shared helpers): `fund_learning_page`, `models_page` (LBO + 3-statement + other paths still on legacy), `news_page`, `pe_returns_page`, `settings_ai_page`, `source_page`, `surrogate_page`, `v3_status_page`, `v5_status_page`, `verticals_page`.
+**Remaining ~5 Group D files** (true no-head, not covered by shared helpers): `models_page` (LBO + 3-statement + other paths still on legacy), `surrogate_page`, `v3_status_page`, `v5_status_page`, `verticals_page`.
 
 This doc is the **single source of truth** for what remains. Every batch updates it.
 
