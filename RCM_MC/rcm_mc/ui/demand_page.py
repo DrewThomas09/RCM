@@ -407,22 +407,32 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
         tone=_dem_tone,
     )
     geo_ctx = state_context_panel(state)
-    body = f'{lead_anchor}{kpis}{prevalence_section}{geo_ctx}{stick_section}{elas_section}{tw_section}{interp}{actions}{next_up}'
+    # 2026-05-28 batch 26 · Phase 3 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="DEMAND ANALYSIS",
+        title=f"Demand analysis — {name}",
+        meta=(
+            f"{county.upper()}, {state.upper()} · "
+            f"DENSITY {density:.0f} · "
+            f"STICKINESS {stickiness:.0f} · "
+            f"ELASTICITY {elasticity:.2f}"
+        ),
+        lede_italic_phrase=(
+            "Where the catchment's demand actually sits."
+        ),
+        lede_body=(
+            "Per-hospital catchment demand: disease density "
+            "in the population, switching cost (stickiness), "
+            "and price elasticity. Structural demand is the "
+            "moat — hospitals with high stickiness and "
+            "inelastic pricing carry their own margin floor."
+        ),
+    )
+    body = f'{head}{lead_anchor}{kpis}{prevalence_section}{geo_ctx}{stick_section}{elas_section}{tw_section}{interp}{actions}{next_up}'
 
     return chartis_shell(
         body, f"Demand Analysis — {name}",
         active_nav="/market-data/map",
         subtitle=f"{county}, {state} | Density: {density:.0f} | Stickiness: {stickiness:.0f} | Elasticity: {elasticity:.2f}",
-        editorial_intro={
-            "eyebrow": "DEMAND ANALYSIS",
-            "headline": "Where the catchment's demand actually sits.",
-            "italic_word": "actually",
-            "body": (
-                "Per-hospital catchment demand: disease density "
-                "in the population, switching cost (stickiness), "
-                "and price elasticity. Structural demand is the "
-                "moat - hospitals with high stickiness and "
-                "inelastic pricing carry their own margin floor."
-            ),
-        },
     )

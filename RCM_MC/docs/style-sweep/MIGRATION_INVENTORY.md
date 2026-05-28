@@ -20,8 +20,9 @@ All 30 originally-flagged Group B files are now in Group A. The strict 5-block h
 Precise re-audit found **23 Group D files** (down from the agent's wildly inflated 78). Most "Group D" candidates in the original audit were already covered by shared helpers (`render_insights_page`, `render_grouped_catalog`, etc.).
 
 **Wave-1 (batch 25) shipped**: `diligence_page`, `memo_page`, `metric_glossary_page`, `ml_insights_page`
+**Wave-2 (batch 26) shipped**: `demand_page`, `models_page` (DCF path), `scenarios_page`, `waterfall_page`, `team_page`
 
-**Remaining ~19 Group D files** (true no-head, not covered by shared helpers): `demand_page`, `denial_page`, `fund_learning_page`, `hospital_stats_page`, `market_analysis_page`, `models_page`, `news_page`, `pe_returns_page`, `pressure_page`, `scenarios_page`, `settings_ai_page`, `source_page`, `surrogate_page`, `team_page`, `v3_status_page`, `v5_status_page`, `value_tracking_page`, `verticals_page`, `waterfall_page`.
+**Remaining ~14 Group D files** (true no-head, not covered by shared helpers): `denial_page`, `fund_learning_page`, `hospital_stats_page`, `market_analysis_page`, `models_page` (LBO + 3-statement + other paths still on legacy), `news_page`, `pe_returns_page`, `pressure_page`, `settings_ai_page`, `source_page`, `surrogate_page`, `v3_status_page`, `v5_status_page`, `value_tracking_page`, `verticals_page`.
 
 This doc is the **single source of truth** for what remains. Every batch updates it.
 

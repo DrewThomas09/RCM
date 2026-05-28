@@ -181,20 +181,28 @@ def render_waterfall_page(deal_id: str, deal_name: str, result: Dict[str, Any]) 
         target=f"${gp_total / 1e6:.0f}M GP carry",
         tone=_wf_tone,
     )
-    body = f'{nav}{lead_anchor}{kpis}{split}{interp}{tier_section}{actions}{next_up}'
+    # 2026-05-28 batch 26 · Phase 3 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="RETURNS WATERFALL",
+        title=f"Returns waterfall — {html.escape(deal_name)}",
+        meta=(
+            f"GROSS IRR {gross_irr:.1%} · "
+            f"MOIC {gross_moic:.2f}x · "
+            f"HOLD {hold_years:.1f}YR · "
+            f"LP {lp_moic:.2f}x"
+        ),
+        lede_italic_phrase="Where the equity actually splits.",
+        lede_body=(
+            "Tier-by-tier waterfall from gross deal returns "
+            "to LP / GP economics. Compare gross MOIC to LP "
+            "net MOIC to read the fee + carry drag. The split "
+            "between hurdle, catch-up, and carry tiers shows "
+            "where each tier's payout sits."
+        ),
+    )
+    body = f'{head}{nav}{lead_anchor}{kpis}{split}{interp}{tier_section}{actions}{next_up}'
 
     return chartis_shell(body, f"Returns Waterfall — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"Gross IRR: {gross_irr:.1%} | MOIC: {gross_moic:.2f}x | Hold: {hold_years:.1f}yr",
-        editorial_intro={
-            "eyebrow": "RETURNS WATERFALL",
-            "headline": "Where the equity actually splits.",
-            "italic_word": "splits",
-            "body": (
-                "Tier-by-tier waterfall from gross deal returns "
-                "to LP / GP economics. Compare gross MOIC to LP "
-                "net MOIC to read the fee + carry drag. The split "
-                "between hurdle, catch-up, and carry tiers shows "
-                "where each tier's payout sits."
-            ),
-        })
+                    subtitle=f"Gross IRR: {gross_irr:.1%} | MOIC: {gross_moic:.2f}x | Hold: {hold_years:.1f}yr")

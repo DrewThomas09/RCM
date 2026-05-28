@@ -112,17 +112,27 @@ def render_scenarios_page(presets: List[Dict[str, Any]]) -> str:
             italic_word="deal",
         )
     )
+    # 2026-05-28 batch 26 · Phase 3 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="SCENARIO EXPLORER",
+        title="Where the deal breaks under policy shocks.",
+        meta=(
+            f"{len(presets)} PRESET SHOCK"
+            f"{'S' if len(presets) != 1 else ''} · "
+            "PAYER-POLICY OVERLAY"
+        ),
+        lede_italic_phrase=(
+            "Where the deal breaks under policy shocks."
+        ),
+        lede_body=(
+            "Preset payer-policy shocks the platform applies "
+            "to a deal's bridge — rate cuts, denial spikes, "
+            "volume drops. Pair with the Pressure Test or "
+            "Analysis workbench to see which preset closes "
+            "the equity check first."
+        ),
+    )
+    body = head + body
     return chartis_shell(body, "Scenario Explorer",
-                    subtitle=f"{len(presets)} preset shock scenarios",
-        editorial_intro={
-            "eyebrow": "SCENARIO EXPLORER",
-            "headline": "Where the deal breaks under policy shocks.",
-            "italic_word": "breaks",
-            "body": (
-                "Preset payer-policy shocks the platform applies "
-                "to a deal's bridge - rate cuts, denial spikes, "
-                "volume drops. Pair with the Pressure Test or "
-                "Analysis workbench to see which preset closes "
-                "the equity check first."
-            ),
-        })
+                    subtitle=f"{len(presets)} preset shock scenarios")

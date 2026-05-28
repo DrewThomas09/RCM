@@ -715,21 +715,24 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
         eyebrow="Continue —",
         italic_word="LBO",
     )
-    body = f'{_MODELS_CHART_CAPTION_CSS}{nav}{kpis}{proj_table}{interp}{sens_html}{assume_section}{actions}{next_up}'
+    # 2026-05-28 batch 26 · Phase 3 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="DCF MODEL",
+        title=f"DCF — {html.escape(deal_name)}",
+        meta=f"ENTERPRISE VALUE: {_fmt_m(ev).upper()}",
+        lede_italic_phrase="What the cash flows are worth.",
+        lede_body=(
+            "Discounted free-cash-flow valuation with a "
+            "WACC + terminal-multiple sensitivity grid. "
+            "Pair this with the LBO and 3-statement "
+            "models for a full investment-committee view."
+        ),
+    )
+    body = f'{head}{_MODELS_CHART_CAPTION_CSS}{nav}{kpis}{proj_table}{interp}{sens_html}{assume_section}{actions}{next_up}'
     return chartis_shell(body, f"DCF — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"Enterprise Value: {_fmt_m(ev)}",
-                    editorial_intro={
-                        "eyebrow": "DCF MODEL",
-                        "headline": "What the cash flows are worth.",
-                        "italic_word": "worth",
-                        "body": (
-                            "Discounted free-cash-flow valuation with a "
-                            "WACC + terminal-multiple sensitivity grid. "
-                            "Pair this with the LBO and 3-statement "
-                            "models for a full investment-committee view."
-                        ),
-                    })
+                    subtitle=f"Enterprise Value: {_fmt_m(ev)}")
 
 
 def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
