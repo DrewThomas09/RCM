@@ -28,6 +28,7 @@ from .profile import render_deal_profile
 from .returns import render_deal_returns
 from .stmt import render_deal_stmt
 from .trends import render_deal_trends
+from .waterfall import render_deal_waterfall
 
 __all__ = [
     "DealSurface",
@@ -48,4 +49,5 @@ __all__ = [
     "render_deal_returns",
     "render_deal_stmt",
     "render_deal_trends",
+    "render_deal_waterfall",
 ]

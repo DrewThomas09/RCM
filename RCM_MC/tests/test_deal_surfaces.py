@@ -53,12 +53,12 @@ class SurfaceRegistry(unittest.TestCase):
         self.assertEqual(sorted(s.number for s in SURFACES), list(range(1, 19)))
 
     def test_built_surfaces_grow_one_phase_at_a_time(self):
-        # Phases 1..11. New surfaces appear here as they land.
+        # Phases 1..12. New surfaces appear here as they land.
         built = {s.slug for s in SURFACES if s.built}
         self.assertEqual(built,
                          {"profile", "bridge", "lbo", "dcf",
                           "comp-intel", "ml", "denial", "returns",
-                          "trends", "stmt", "levers"})
+                          "trends", "stmt", "levers", "waterfall"})
 
     def test_lookup_by_path(self):
         self.assertIs(SURFACE_BY_PATH["profile"].built, True)
@@ -101,8 +101,8 @@ class ProfileRender(unittest.TestCase):
         self.assertIn('aria-current="page"', self.html)
 
     def test_unbuilt_surfaces_get_soon_badge(self):
-        # 18 − built (now 11) = 7 soon badges
-        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 7)
+        # 18 − built (now 12) = 6 soon badges
+        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 6)
 
     def test_payer_mix_uses_real_data(self):
         self.assertIn("Medicare 42%", self.html)
@@ -127,6 +127,60 @@ class ProfileRender(unittest.TestCase):
         for slug in ("ic-memo", "bridge", "comp-intel", "scenarios", "ml",
                      "market", "denial", "trends", "dcf", "lbo", "stmt", "returns"):
             self.assertIn(f"/deals/050001/{slug}", self.html)
+
+
+class WaterfallRender(unittest.TestCase):
+    """Surface 14 (Waterfall) — European LP/GP split on the LBO exit."""
+
+    def test_waterfall_renders_three_panels_when_npr_present(self):
+        from rcm_mc.ui.deal_surfaces import render_deal_waterfall
+        out = render_deal_waterfall("050001", FAKE_HOSPITAL)
+        for eyebrow in ("HERO", "LP / GP SPLIT", "WHAT THIS MEANS"):
+            # The "/" in the LP/GP eyebrow renders verbatim — no html-escape concern.
+            self.assertIn(eyebrow, out, f"missing panel: {eyebrow}")
+        # MOIC pair labels render on the split bar
+        self.assertIn("LP", out)
+        self.assertIn("GP", out)
+        # Default terms labeled explicitly
+        self.assertIn("PREF 8%", out.upper())
+        self.assertIn("80/20", out)
+        self.assertEqual(len(re.findall(r"<h1[ >]", out)), 1)
+
+    def test_waterfall_engine_european_math_correct(self):
+        """Spot-check the waterfall math on a clean example."""
+        from rcm_mc.ui.deal_surfaces.waterfall import _european_waterfall
+        # $100M invested, $300M exit, 5 years, 8% pref, 20% carry.
+        w = _european_waterfall(100e6, 300e6, 5, 0.08, 0.20)
+        # Pref = 100 × 0.08 × 5 = 40
+        self.assertAlmostEqual(w.pref_amount, 40e6, delta=1)
+        # Catch-up = (0.20 / 0.80) × 40 = 10
+        self.assertAlmostEqual(w.catch_up, 10e6, delta=1)
+        # Above-catch-up pool = 300 - 100 - 40 - 10 = 150
+        self.assertAlmostEqual(w.profit_above_catch_up, 150e6, delta=1)
+        # LP = 100 (ROC) + 40 (pref) + 0.80 × 150 = 260; GP = 10 + 0.20 × 150 = 40
+        self.assertAlmostEqual(w.lp_total, 260e6, delta=1)
+        self.assertAlmostEqual(w.gp_total, 40e6, delta=1)
+        # LP + GP = invested + profit (sums to exit_proceeds within rounding)
+        self.assertAlmostEqual(w.lp_total + w.gp_total, 300e6, delta=10)
+
+    def test_waterfall_pref_not_cleared(self):
+        """When exit_proceeds < invested+pref, LP gets everything, GP gets zero."""
+        from rcm_mc.ui.deal_surfaces.waterfall import _european_waterfall
+        w = _european_waterfall(100e6, 110e6, 5, 0.08, 0.20)
+        self.assertFalse(w.pref_cleared)
+        self.assertEqual(w.gp_total, 0.0)
+        self.assertAlmostEqual(w.lp_total, 110e6, delta=1)
+
+    def test_waterfall_lp_diagonal_stripes_when_roc_incomplete(self):
+        """LP MOIC < 1.0 ⇒ bar renders with diagonal-stripe pattern (build note)."""
+        from rcm_mc.ui.deal_surfaces.waterfall import _european_waterfall, _split_bar
+        w = _european_waterfall(100e6, 80e6, 5, 0.08, 0.20)
+        self.assertTrue(w.lp_moic < 1.0)
+        bar_html = _split_bar(w)
+        self.assertIn("repeating-linear-gradient", bar_html)
+
+    def test_waterfall_marked_built_in_registry(self):
+        self.assertTrue(SURFACE_BY_PATH["waterfall"].built)
 
 
 class LeversRender(unittest.TestCase):
@@ -543,6 +597,24 @@ class DealRoutes(unittest.TestCase):
                     body = r.read().decode()
                 self.assertIn("Under construction", body)
                 self.assertIn("DEAL · CCN", body)
+            finally:
+                server.shutdown(); server.server_close()
+
+    def test_real_ccn_waterfall_renders_real_data_200(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            create_user(PortfolioStore(os.path.join(tmp, "p.db")), "at", "supersecret1")
+            server, port = self._start(tmp)
+            try:
+                opener = _login_opener(port, "at", "supersecret1")
+                ccn = self._pick_real_ccn()
+                with opener.open(f"http://127.0.0.1:{port}/deals/{ccn}/waterfall") as r:
+                    self.assertEqual(r.status, 200)
+                    body = r.read().decode()
+                self.assertNotIn("Under construction", body)
+                self.assertIn("DEAL · CCN", body)
+                self.assertEqual(len(re.findall(r"<h1[ >]", body)), 1)
+                self.assertTrue(
+                    "LP / GP SPLIT" in body or "Waterfall cannot run" in body)
             finally:
                 server.shutdown(); server.server_close()
 

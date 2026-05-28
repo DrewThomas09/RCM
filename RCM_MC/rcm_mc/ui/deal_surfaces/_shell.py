@@ -60,7 +60,7 @@ SURFACES: Tuple[DealSurface, ...] = (
     # ── Value creation ──
     DealSurface(13, "levers",      "Levers",          "Value creation", True,
                 "7-lever EBITDA bridge weighted by probability."),
-    DealSurface(14, "waterfall",   "Waterfall",       "Value creation", False,
+    DealSurface(14, "waterfall",   "Waterfall",       "Value creation", True,
                 "LP / GP split with pref + carry mechanics."),
     DealSurface(15, "playbook",    "Playbook",        "Value creation", False,
                 "100-day operational playbook (impact × tractability)."),
