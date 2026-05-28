@@ -149,8 +149,30 @@ def render_team_dashboard(db_path: str) -> str:
         italic_word="portfolio",
     )
 
+    # 2026-05-28 batch 26 · Phase 3 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="TEAM",
+        title="Where the team's work shows up.",
+        meta=(
+            f"{len(actors)} MEMBER"
+            f"{'S' if len(actors) != 1 else ''} · "
+            f"{len(activity)} ACTION"
+            f"{'S' if len(activity) != 1 else ''} · "
+            f"{n_hospitals} PIPELINE DEAL"
+            f"{'S' if n_hospitals != 1 else ''}"
+        ),
+        lede_italic_phrase="Where the team's work shows up.",
+        lede_body=(
+            "Active partners, recent actions, and the deals "
+            "each team member is moving forward. Use this "
+            "to read team velocity and to see whether any "
+            "deals are stuck waiting on a single owner."
+        ),
+    )
+
     body = (
-        f'{kpis}'
+        f'{head}{kpis}'
         f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
         f'<div>{feed_section}</div><div>{pipe_section}</div></div>'
         f'{nav}'
@@ -161,15 +183,4 @@ def render_team_dashboard(db_path: str) -> str:
         body, "Team",
         active_nav="/pipeline",
         subtitle=f"{len(actors)} members | {len(activity)} actions | {n_hospitals} pipeline deals",
-        editorial_intro={
-            "eyebrow": "TEAM",
-            "headline": "Where the team's work shows up.",
-            "italic_word": "shows",
-            "body": (
-                "Active partners, recent actions, and the deals "
-                "each team member is moving forward. Use this "
-                "to read team velocity and to see whether any "
-                "deals are stuck waiting on a single owner."
-            ),
-        },
     )
