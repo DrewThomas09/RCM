@@ -99,11 +99,17 @@ def _check_page(route: str, status: int, body: str) -> PageResult:
     findings: List[str] = []
     if status >= 500:
         findings.append(f"HTTP {status}")
+    # Scan only VISIBLE content for error/leak markers — strip <script> and
+    # <style> first. Otherwise bare markers like "undefined" match legitimate
+    # inline JS (e.g. `signal: ctrl ? ctrl.signal : undefined`) on every page
+    # and drown the report in false positives.
+    visible = re.sub(r"<(script|style)\b[^>]*>.*?</\1>", "", body,
+                     flags=re.S | re.I)
     for m in _ERROR_MARKERS:
-        if m in body:
+        if m in visible:
             findings.append(f"error-marker: {m!r}")
     for m in _LEAK_MARKERS:
-        if m in body:
+        if m in visible:
             findings.append(f"render-leak: {m!r}")
     # Editorial chrome: every real page should carry the shell.
     if status < 400 and "ck-topbar" not in body and "chartis" not in body.lower():
