@@ -86,9 +86,10 @@ def _kpi_card(label: str, value_html: str, sub: str = "") -> str:
         f'<div class="micro" style="margin-top:.35rem;color:var(--muted,#9b9382);">'
         f'{_html.escape(sub)}</div>' if sub else ""
     )
+    # 2026-05-28 batch 39 · Tier-4 trope removal — cap radius at 2px.
     return (
         '<div style="border:1px solid var(--border,#465366);'
-        'background:var(--paper,#F2EDE3);border-radius:8px;'
+        'background:var(--paper,#F2EDE3);border-radius:2px;'
         'padding:.9rem 1.1rem;flex:1;min-width:170px;">'
         f'<div class="micro">{_html.escape(label)}</div>'
         f'<div style="font-size:1.4rem;font-weight:600;margin-top:.4rem;">'
@@ -266,8 +267,9 @@ def render_model_quality_dashboard(
         body = (
             '<section style="max-width:80rem;">'
             '<h1 style="margin:0 0 .5rem 0;">Model Quality</h1>'
+            # 2026-05-28 batch 39 · Tier-4 trope removal — cap radius at 2px.
             '<div style="background:var(--paper,#F2EDE3);'
-            'border:1px solid var(--border,#465366);border-radius:8px;'
+            'border:1px solid var(--border,#465366);border-radius:2px;'
             'padding:2.5rem;text-align:center;color:var(--muted,#9b9382);">'
             'No backtest results — run '
             '<code>run_model_quality_panel(...)</code> first.'
@@ -335,10 +337,11 @@ def render_model_quality_dashboard(
 
     r2_chart = _r2_bar_chart(results)
     rows = "".join(_row(r) for r in results)
+    # 2026-05-28 batch 39 · Tier-4 trope removal — cap radius at 2px.
     table_html = (
         '<table style="width:100%;border-collapse:collapse;'
         'border:1px solid var(--border,#465366);'
-        'background:var(--paper,#F2EDE3);border-radius:8px;'
+        'background:var(--paper,#F2EDE3);border-radius:2px;'
         'overflow:hidden;">'
         '<thead>'
         '<tr style="border-bottom:1px solid var(--border,#465366);">'

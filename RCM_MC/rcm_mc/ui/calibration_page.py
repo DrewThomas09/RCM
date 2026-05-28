@@ -86,9 +86,10 @@ def _slider_card(payer: str, agg: Dict[str, float]) -> str:
     idr_m = agg["idr_m"]
     fwr_m = agg["fwr_m"]
     dar_m = agg["dar_m"]
+    # 2026-05-28 batch 39 · Tier-4 trope removal — cap radius at 2px.
     return (
         '<section style="border:1px solid var(--border,#465366);'
-        'background:var(--paper,#F2EDE3);border-radius:8px;'
+        'background:var(--paper,#F2EDE3);border-radius:2px;'
         'padding:1rem 1.25rem;margin-bottom:.75rem;">'
         f'<h3 style="margin:0 0 .5rem 0;font-size:1rem;">{ep}</h3>'
         '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;'
@@ -150,8 +151,9 @@ def render_calibration_page(store: Any) -> str:
             'Per-payer prior calibration. Aggregates IDR / FWR / DAR '
             'primitives across every run in the analysis cache so you '
             'can intuit priors before configuring a new deal.</p>'
+            # 2026-05-28 batch 39 · Tier-4 trope removal — cap radius at 2px.
             '<div style="background:var(--paper,#F2EDE3);'
-            'border:1px solid var(--border,#465366);border-radius:8px;'
+            'border:1px solid var(--border,#465366);border-radius:2px;'
             'padding:2.5rem;text-align:center;color:var(--muted,#9b9382);">'
             'No simulation runs yet. Run an analysis first to populate '
             'calibration priors.<br><br>'
