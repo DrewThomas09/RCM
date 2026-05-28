@@ -41,8 +41,12 @@ class CatalogRendererTests(unittest.TestCase):
                 {"href": "/diligence/management", "label": "B", "blurb": "j"}]}],
             explainer_head="h", explainer_body="b", explainer_source="s",
             intro_headline="hi", intro_body="bod")
-        self.assertIn("1 live", h)
-        self.assertIn("1 illustrative", h)
+        # 2026-05-28 style-sweep · the catalog meta-line is now mono
+        # uppercase per Tier-2 §2.2, so the coverage string renders
+        # uppercased. Case-insensitive check preserves the original
+        # intent: "the renderer must surface the per-tier coverage".
+        self.assertIn("1 live", h.lower())
+        self.assertIn("1 illustrative", h.lower())
 
 
 class DiligenceLandingTests(unittest.TestCase):

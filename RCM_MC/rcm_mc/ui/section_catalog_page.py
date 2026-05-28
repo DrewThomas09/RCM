@@ -93,6 +93,35 @@ def _legend() -> str:
     )
 
 
+_HEAD_CSS = (
+    '<style>'
+    # 2026-05-28 style-sweep · strict Tier-1 5-block head. Same shape
+    # now lives on /portfolio, /pipeline, /methodology — every
+    # section landing rendered through this helper inherits it.
+    '.sc-head{padding:0 0 28px;margin:0 0 24px;'
+    'border-bottom:1px solid var(--rule-soft,#ddd1ac);}'
+    '.sc-head .eyebrow{font:500 11px/1 var(--sc-mono,monospace);'
+    'letter-spacing:.18em;text-transform:uppercase;'
+    'color:var(--green-deep,#154e36);display:flex;align-items:center;'
+    'gap:12px;margin:0 0 18px;}'
+    '.sc-head .eyebrow .dash{width:24px;height:1px;'
+    'background:var(--green-deep,#154e36);}'
+    '.sc-head h1{font:400 44px/1.05 var(--sc-serif,Georgia),serif;'
+    'letter-spacing:-.015em;color:var(--ink,#16263a);margin:0 0 14px;}'
+    '.sc-head .meta{font:500 11px/1 var(--sc-mono,monospace);'
+    'letter-spacing:.14em;text-transform:uppercase;'
+    'color:var(--muted,#7a8595);margin:0 0 18px;}'
+    '.sc-head .lede{font:400 italic 16.5px/1.55 var(--sc-serif,Georgia),serif;'
+    'color:var(--ink-2,#2b3e54);max-width:64ch;margin:0 0 18px;}'
+    '.sc-head .lede em{color:var(--green-deep,#154e36);font-style:italic;}'
+    '.sc-head .source-note{font:500 10px/1.4 var(--sc-mono,monospace);'
+    'letter-spacing:.14em;text-transform:uppercase;'
+    'color:var(--muted-2,#9a9e8a);margin:0 0 16px;max-width:62ch;}'
+    '@media (max-width:960px){.sc-head h1{font-size:36px;}}'
+    '</style>'
+)
+
+
 def render_grouped_catalog(
     *,
     section: str,
@@ -111,9 +140,7 @@ def render_grouped_catalog(
     subtitle: str = "",
 ) -> str:
     """Render a section landing as grouped pillars with honesty dots."""
-    from ._chartis_kit import (
-        chartis_shell, ck_next_section, ck_page_title, ck_panel,
-        ck_section_intro, ck_page_explainer)
+    from ._chartis_kit import chartis_shell, ck_next_section, ck_panel
 
     pillars_html: List[str] = []
     for p in pillars:
@@ -141,22 +168,60 @@ def render_grouped_catalog(
         if tiers.get(key):
             parts.append(f"{tiers[key]} {word}")
     coverage = " · ".join(parts)
+    # ── 2026-05-28 style-sweep · strict 5-block head ──
+    # Replaces the legacy ck_page_title + ck_page_explainer +
+    # ck_section_intro triple stack (which produced two h2 headers
+    # above the page h1 — visual stacking confusion). Single header
+    # block with eyebrow + dash + h1 + meta + italic lede + source-
+    # note + status-dot legend (the existing _legend()). One h1.
+    intro_h = intro_headline
+    if intro_italic and intro_italic in intro_h:
+        intro_h = intro_h.replace(
+            intro_italic,
+            f"<em>{intro_italic}</em>",
+            1,
+        )
+    elif intro_italic and intro_italic.capitalize() in intro_h:
+        intro_h = intro_h.replace(
+            intro_italic.capitalize(),
+            f"<em>{intro_italic.capitalize()}</em>",
+            1,
+        )
+    else:
+        # Fall back to italicizing the first phrase up to the first
+        # period (Tier-2 §2.3 — italic FIRST PHRASE in green-deep).
+        if "." in intro_h:
+            first, rest = intro_h.split(".", 1)
+            intro_h = f"<em>{_html.escape(first.strip())}.</em>{_html.escape(rest)}"
+        else:
+            intro_h = f"<em>{_html.escape(intro_h)}</em>"
     head = (
-        ck_page_title(
-            title, eyebrow=eyebrow,
-            meta=(f"{n} surfaces · {len(pillars)} pillars"
-                  + (f" · {coverage}" if coverage else "")))
-        + ck_page_explainer(explainer_head, explainer_body,
-                            source=explainer_source)
+        _HEAD_CSS
+        + '<header class="sc-head">'
+        f'<div class="eyebrow"><span class="dash"></span>'
+        f'{_html.escape(eyebrow)}</div>'
+        f'<h1>{_html.escape(title)}</h1>'
+        f'<div class="meta">{n} SURFACES · {len(pillars)} PILLARS'
+        f'{(" · " + coverage.upper()) if coverage else ""}</div>'
+        f'<p class="lede">{intro_h}</p>'
+        + (
+            f'<p class="lede" style="font-style:normal;color:var(--ink-2,#2b3e54);">'
+            f'{_html.escape(explainer_body)}</p>'
+            if explainer_body and explainer_body != intro_body else ""
+        )
+        + (
+            f'<p class="source-note">Source: {_html.escape(explainer_source)}</p>'
+            if explainer_source else ""
+        )
+        + _legend()
+        + '</header>'
     )
-    intro = ck_section_intro(eyebrow=f"{eyebrow}", headline=intro_headline,
-                             italic_word=intro_italic or None, body=intro_body)
     nxt = ""
     if next_label and next_href:
         nxt = ck_next_section(next_label, next_href, eyebrow="Continue —",
                               italic_word=next_italic or None)
     body = (
-        _CSS + head + intro + _legend()
+        _CSS + head
         + '<div class="sc-grid">' + "".join(pillars_html) + '</div>' + nxt
     )
     return chartis_shell(body, title, active_nav="/" + section,
