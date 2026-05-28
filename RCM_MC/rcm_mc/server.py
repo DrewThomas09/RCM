@@ -6805,7 +6805,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         """
         from .ui.deal_surfaces import (
             SURFACE_BY_PATH, fetch_hospital, render_deal_bridge,
-            render_deal_profile, render_surface_stub,
+            render_deal_lbo, render_deal_profile, render_surface_stub,
         )
         if slug not in SURFACE_BY_PATH:
             return self._send_html(
@@ -6825,6 +6825,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_html(render_deal_profile(ccn, hospital))
         if slug == "bridge":
             return self._send_html(render_deal_bridge(ccn, hospital))
+        if slug == "lbo":
+            return self._send_html(render_deal_lbo(ccn, hospital))
         return self._send_html(render_surface_stub(ccn, slug, hospital))
 
     def _route_hospital_profile(self, ccn: str) -> None:
