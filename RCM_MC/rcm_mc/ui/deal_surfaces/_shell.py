@@ -51,7 +51,7 @@ SURFACES: Tuple[DealSurface, ...] = (
     DealSurface(9,  "stmt",        "3-Statement",     "Models",         True,
                 "P&L, balance sheet, cash flow with source tags."),
     # ── Market & risk ──
-    DealSurface(10, "market",      "Market",          "Market & risk",  False,
+    DealSurface(10, "market",      "Market",          "Market & risk",  True,
                 "HHI, market share, top competitors, payer mix."),
     DealSurface(11, "denial",      "Denial",          "Market & risk",  True,
                 "Root-cause decomposition of denial leakage."),
