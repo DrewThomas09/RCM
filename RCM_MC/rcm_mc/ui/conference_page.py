@@ -411,8 +411,10 @@ def render_conference_roadmap(category: str = "all") -> str:
         f'{cat_breakdown}</div>'
     )
 
+    # 2026-05-28 batch 30 · Tier-4 trope removal — drops decorative
+    # 3px accent stripe.
     planning_tips = (
-        f'<div class="cad-card" style="border-left:3px solid var(--cad-accent);">'
+        f'<div class="cad-card">'
         f'<h2 style="font-size:13px;margin-bottom:8px;">Planning Tips</h2>'
         f'<ul style="font-size:12px;color:var(--cad-text2);line-height:1.8;padding-left:16px;">'
         f'<li>Book J.P. Morgan meetings 6-8 weeks in advance</li>'

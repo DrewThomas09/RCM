@@ -426,7 +426,9 @@ def render_command_center(
     # ── Platform capabilities (for new users) ──
     if not has_portfolio:
         sections.append(
-            f'<div class="cad-card" style="border-left:3px solid var(--cad-accent);">'
+            # 2026-05-28 batch 30 · Tier-4 trope removal — drops
+            # decorative 3px accent stripe.
+            f'<div class="cad-card">'
             f'<h2>Getting Started</h2>'
             f'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;font-size:12.5px;">'
             f'<div>'

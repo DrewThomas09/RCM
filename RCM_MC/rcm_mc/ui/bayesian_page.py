@@ -196,8 +196,10 @@ def render_bayesian_profile(
     )
 
     # ── Methodology note ──
+    # 2026-05-28 batch 30 · Tier-4 trope removal — drops decorative
+    # 3px accent stripe.
     method = (
-        f'<div class="cad-card" style="border-left:3px solid var(--cad-accent);">'
+        f'<div class="cad-card">'
         f'<h2 style="font-size:13px;">Methodology: Hierarchical Bayesian Partial Pooling</h2>'
         f'<p style="font-size:12px;color:var(--cad-text2);line-height:1.7;">'
         f'Rate metrics (denial rate, collection rate, clean claim rate) use '

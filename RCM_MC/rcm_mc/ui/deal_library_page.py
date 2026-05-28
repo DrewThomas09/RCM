@@ -56,9 +56,12 @@ def _sponsor_rollup_card(roll: Dict[str, Any]) -> str:
     if not roll.get("n_total"):
         return ""
     states = " · ".join(f'{s["state"]} {s["n"]}' for s in roll["top_states"]) or "—"
+    # 2026-05-28 batch 30 · Tier-4 trope removal — drops decorative
+    # 3px left-border accent (non-semantic accent color) in favor
+    # of plain hairline panel.
     return (
-        f'<div style="border:1px solid {P["border"]};border-left:3px solid '
-        f'{P["accent"]};border-radius:2px;padding:12px 16px;margin:14px 0;'
+        f'<div style="border:1px solid {P["border"]};'
+        f'border-radius:2px;padding:12px 16px;margin:14px 0;'
         f'background:{P["panel"] if "panel" in P else "#fff"}">'
         f'<div style="font-family:var(--sc-mono);font-size:10px;'
         f'letter-spacing:0.08em;text-transform:uppercase;color:{P["text_dim"]}">'
@@ -357,9 +360,11 @@ def _dist_card(label: str, d: Dict[str, Any], suffix: str = "x") -> str:
                 f'text-transform:uppercase;color:{P["text_dim"]}">{_html.escape(label)}</div>'
                 f'<div style="color:{P["text_dim"]};font-size:13px;margin-top:6px">'
                 f'no companies disclose this</div></div>')
+    # 2026-05-28 batch 30 · Tier-4 trope removal — drops decorative
+    # 3px left-border accent in favor of plain hairline tile.
     return (
         f'<div style="flex:1;min-width:220px;border:1px solid {P["border"]};'
-        f'border-left:3px solid {P["accent"]};border-radius:2px;padding:12px 16px">'
+        f'border-radius:2px;padding:12px 16px">'
         f'<div style="font-family:var(--sc-mono);font-size:10px;'
         f'text-transform:uppercase;color:{P["text_dim"]}">{_html.escape(label)}</div>'
         f'<div style="font-size:20px;font-weight:600;margin:4px 0">'
