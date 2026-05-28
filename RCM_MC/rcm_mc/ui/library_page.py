@@ -513,9 +513,15 @@ def render_library(q: str = "") -> str:
         eyebrow="Continue —",
         italic_word="glossary",
     )
+    # 2026-05-28 usability lift · floating back-to-top button. The
+    # methodology library is dense (15+ sections × multiple entries
+    # each); partner who scrolls deep to find an entry then wants
+    # to re-search shouldn't have to scroll back up.
+    from ._chartis_kit import ck_back_to_top_button
+    back_to_top = ck_back_to_top_button()
     body = (
         head_block + search_bar + empty_state
-        + sections + extra_links + next_up
+        + sections + extra_links + next_up + back_to_top
     )
 
     return chartis_shell(
