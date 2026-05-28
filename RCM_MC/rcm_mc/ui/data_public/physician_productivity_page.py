@@ -359,9 +359,10 @@ def render_physician_productivity(params: dict = None) -> str:
                     f'<div style="font-size:9px;color:{P["text_dim"]};font-family:JetBrains Mono,monospace">{pct:.0f}%</div>'
                     f'<div style="height:{max(2, pct):.0f}px;background:{P["accent"]};opacity:0.8;margin:2px 3px 0"></div>'
                     f'<div style="font-size:9px;color:{P["text_dim"]};margin-top:2px">{_html.escape(str(b["band"]))}</div></div>')
+            # 2026-05-28 batch 33 · Tier-4 trope removal — strip 3px accent.
             _mips_panel = (
                 f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-                f'border-left:3px solid {P["accent"]};padding:14px 16px;margin-bottom:16px">'
+                f'border-radius:2px;padding:14px 16px;margin-bottom:16px">'
                 f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
                 f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:6px">'
                 f'Physician quality benchmark · LIVE (CMS MIPS, PY{_ms.get("performance_year","2023")})</div>'
@@ -391,9 +392,10 @@ def render_physician_productivity(params: dict = None) -> str:
                 f'<td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums">{int(t["designated_pc_hpsas"]):,}</td>'
                 f'<td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums">{t["median_hpsa_score"]:.0f}</td></tr>'
                 for t in _top)
+            # 2026-05-28 batch 33 · Tier-4 trope removal — strip 3px accent.
             _hrsa_panel = (
                 f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-                f'border-left:3px solid {P["accent"]};padding:14px 16px;margin-bottom:16px">'
+                f'border-radius:2px;padding:14px 16px;margin-bottom:16px">'
                 f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
                 f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:6px">'
                 f'Primary-care workforce shortage context · LIVE (HRSA)</div>'

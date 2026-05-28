@@ -14,9 +14,10 @@ from rcm_mc.ui._chartis_kit import P, ck_source_purpose
 
 
 def _panel(title: str, hdr: str, inner: str, caveat: str) -> str:
+    # 2026-05-28 batch 33 · Tier-4 trope removal — strip 3px accent.
     return (
         f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-left:3px solid {P["accent"]};padding:14px 16px;margin-bottom:16px">'
+        f'border-radius:2px;padding:14px 16px;margin-bottom:16px">'
         f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
         f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:8px">'
         f'{_html.escape(title)} · CONTEXTUAL (Colorado, CIVHC)</div>'
