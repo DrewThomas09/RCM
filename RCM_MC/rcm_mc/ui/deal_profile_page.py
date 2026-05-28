@@ -615,8 +615,9 @@ font-family:inherit;font-size:11px;}}
 .ck-dp-field-label{{font-size:9px;color:{P["text_faint"]};letter-spacing:1px;
 text-transform:uppercase;font-weight:600;display:block;margin-bottom:3px;}}
 .ck-dp-field-chips{{margin-top:3px;line-height:1.5;}}
+/* 2026-05-28 batch 42 · Tier-4 trope removal — cap form radius at 2px. */
 .ck-dp-form{{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 16px;
-background:{P["panel"]};border:1px solid {P["border"]};border-radius:4px;
+background:{P["panel"]};border:1px solid {P["border"]};border-radius:2px;
 padding:16px 20px;margin-bottom:24px;}}
 .ck-dp-form-actions{{grid-column:span 3;display:flex;gap:10px;align-items:center;
 margin-top:6px;}}
