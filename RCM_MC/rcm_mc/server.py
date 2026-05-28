@@ -6807,8 +6807,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             SURFACE_BY_PATH, fetch_hospital, render_deal_bridge,
             render_deal_comp_intel, render_deal_dcf, render_deal_denial,
             render_deal_lbo, render_deal_levers, render_deal_ml,
-            render_deal_profile, render_deal_returns, render_deal_stmt,
-            render_deal_trends, render_deal_waterfall, render_surface_stub,
+            render_deal_playbook, render_deal_profile, render_deal_returns,
+            render_deal_stmt, render_deal_trends, render_deal_waterfall,
+            render_surface_stub,
         )
         if slug not in SURFACE_BY_PATH:
             return self._send_html(
@@ -6848,6 +6849,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_html(render_deal_levers(ccn, hospital))
         if slug == "waterfall":
             return self._send_html(render_deal_waterfall(ccn, hospital))
+        if slug == "playbook":
+            return self._send_html(render_deal_playbook(ccn, hospital))
         return self._send_html(render_surface_stub(ccn, slug, hospital))
 
     def _route_hospital_profile(self, ccn: str) -> None:

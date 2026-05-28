@@ -53,12 +53,13 @@ class SurfaceRegistry(unittest.TestCase):
         self.assertEqual(sorted(s.number for s in SURFACES), list(range(1, 19)))
 
     def test_built_surfaces_grow_one_phase_at_a_time(self):
-        # Phases 1..12. New surfaces appear here as they land.
+        # Phases 1..13. New surfaces appear here as they land.
         built = {s.slug for s in SURFACES if s.built}
         self.assertEqual(built,
                          {"profile", "bridge", "lbo", "dcf",
                           "comp-intel", "ml", "denial", "returns",
-                          "trends", "stmt", "levers", "waterfall"})
+                          "trends", "stmt", "levers", "waterfall",
+                          "playbook"})
 
     def test_lookup_by_path(self):
         self.assertIs(SURFACE_BY_PATH["profile"].built, True)
@@ -101,8 +102,8 @@ class ProfileRender(unittest.TestCase):
         self.assertIn('aria-current="page"', self.html)
 
     def test_unbuilt_surfaces_get_soon_badge(self):
-        # 18 − built (now 12) = 6 soon badges
-        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 6)
+        # 18 − built (now 13) = 5 soon badges
+        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 5)
 
     def test_payer_mix_uses_real_data(self):
         self.assertIn("Medicare 42%", self.html)
@@ -127,6 +128,43 @@ class ProfileRender(unittest.TestCase):
         for slug in ("ic-memo", "bridge", "comp-intel", "scenarios", "ml",
                      "market", "denial", "trends", "dcf", "lbo", "stmt", "returns"):
             self.assertIn(f"/deals/050001/{slug}", self.html)
+
+
+class PlaybookRender(unittest.TestCase):
+    """Surface 15 (Playbook) — auto-derived initiatives from real engines."""
+
+    def test_playbook_renders_three_panels_when_inputs_real(self):
+        from rcm_mc.ui.deal_surfaces import render_deal_playbook
+        out = render_deal_playbook("050001", FAKE_HOSPITAL)
+        for eyebrow in ("HERO", "VALUE-CREATION PLAYBOOK", "WHAT THIS MEANS"):
+            self.assertIn(eyebrow, out, f"missing panel: {eyebrow}")
+        # Owner column always TBD (no management roster in HCRIS)
+        self.assertIn(">TBD<", out)
+        # Source-tag chips from the spec's Phase-10 system
+        self.assertTrue("Bridge lever" in out or "Denial driver" in out,
+                        "no source-tag chip present")
+        # IC talking-point quote uses serif italic blockquote
+        self.assertIn("<blockquote", out)
+        # Exit-multiple disclaimer present
+        self.assertIn("10×", out.replace("10x", "10×"))   # tolerate either glyph
+        self.assertEqual(len(re.findall(r"<h1[ >]", out)), 1)
+
+    def test_playbook_priority_bands_match_spec(self):
+        """P0 >$25M, P1 $5–25M, P2 <$5M per the spec's severity map."""
+        from rcm_mc.ui.deal_surfaces.playbook import _priority_band
+        self.assertEqual(_priority_band(30e6), "P0")
+        self.assertEqual(_priority_band(15e6), "P1")
+        self.assertEqual(_priority_band(3e6), "P2")
+        self.assertEqual(_priority_band(0.0), "P2")
+
+    def test_playbook_renders_honest_empty_when_npr_missing(self):
+        from rcm_mc.ui.deal_surfaces import render_deal_playbook
+        h = {"ccn": "999999", "name": "Sparse Co", "state": "TX"}
+        out = render_deal_playbook("999999", h)
+        self.assertIn("Playbook cannot run", out)
+
+    def test_playbook_marked_built_in_registry(self):
+        self.assertTrue(SURFACE_BY_PATH["playbook"].built)
 
 
 class WaterfallRender(unittest.TestCase):
@@ -597,6 +635,25 @@ class DealRoutes(unittest.TestCase):
                     body = r.read().decode()
                 self.assertIn("Under construction", body)
                 self.assertIn("DEAL · CCN", body)
+            finally:
+                server.shutdown(); server.server_close()
+
+    def test_real_ccn_playbook_renders_real_data_200(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            create_user(PortfolioStore(os.path.join(tmp, "p.db")), "at", "supersecret1")
+            server, port = self._start(tmp)
+            try:
+                opener = _login_opener(port, "at", "supersecret1")
+                ccn = self._pick_real_ccn()
+                with opener.open(f"http://127.0.0.1:{port}/deals/{ccn}/playbook") as r:
+                    self.assertEqual(r.status, 200)
+                    body = r.read().decode()
+                self.assertNotIn("Under construction", body)
+                self.assertIn("DEAL · CCN", body)
+                self.assertEqual(len(re.findall(r"<h1[ >]", body)), 1)
+                self.assertTrue(
+                    "VALUE-CREATION PLAYBOOK" in body
+                    or "Playbook cannot run" in body)
             finally:
                 server.shutdown(); server.server_close()
 
