@@ -2871,6 +2871,204 @@ def ck_arrow_link(text: str, href: str, *, on_navy: bool = False) -> str:
     return f'<a class="{cls}" href="{_esc(href)}">{_esc(text)}</a>'
 
 
+# ╔══════════════════════════════════════════════════════════════════╗
+# ║  2026-05-28 usability helpers · ck_copy_share_link_button +      ║
+# ║  ck_recently_viewed_rail                                          ║
+# ║                                                                   ║
+# ║  Two small reusable primitives extracted from covenant_lab +     ║
+# ║  payer_stress sweeps (#1072) so any page can opt-in to the       ║
+# ║  same Copy share link button without duplicating the JS install. ║
+# ║  ck_recently_viewed_rail hydrates from the rcm_recent_deals      ║
+# ║  localStorage key that deal_profile_page already populates.      ║
+# ╚══════════════════════════════════════════════════════════════════╝
+
+
+# Install JS once per page — guards against the duplicate install
+# that happens when two helpers co-emit the snippet (e.g. share
+# button + recently-viewed rail on the same page).
+_CK_SHARE_LINK_JS = """
+<script>
+(function(){
+  if (window.__rcmCopyShareLinkInstalled) return;
+  window.__rcmCopyShareLinkInstalled = true;
+  function bind(){
+    document.querySelectorAll('[data-rcm-share-link]').forEach(function(btn){
+      btn.addEventListener('click', function(ev){
+        ev.preventDefault();
+        var url = window.location.href;
+        var original = btn.textContent;
+        var ok = function(){
+          btn.textContent = 'Copied ✓';
+          setTimeout(function(){ btn.textContent = original; }, 1800);
+        };
+        var fail = function(){
+          btn.textContent = 'Copy failed';
+          setTimeout(function(){ btn.textContent = original; }, 1800);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(url).then(ok, fail);
+        } else {
+          try {
+            var ta = document.createElement('textarea');
+            ta.value = url; document.body.appendChild(ta);
+            ta.select(); document.execCommand('copy');
+            document.body.removeChild(ta); ok();
+          } catch(e){ fail(); }
+        }
+      });
+    });
+  }
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', bind);
+  } else { bind(); }
+})();
+</script>
+"""
+
+_CK_SHARE_LINK_CSS = """
+<style>
+.ck-share-btn{font:500 11px/1 var(--sc-sans,Inter),sans-serif;
+  letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink,#16263a);background:var(--paper-card,#fefcf3);
+  border:1px solid var(--rule,#c9bf9c);border-radius:2px;
+  padding:9px 14px;text-decoration:none;cursor:pointer;
+  transition:background .12s,border-color .12s;}
+.ck-share-btn:hover{background:var(--paper-hi,#fbf6e8);
+  border-color:var(--rule-hi,#b6a87f);}
+.ck-share-btn:focus-visible{outline:2px solid var(--green-deep,#154e36);
+  outline-offset:-1px;}
+</style>
+"""
+
+
+def ck_copy_share_link_button(label: str = "Copy share link") -> str:
+    """Reusable Copy-share-link button.
+
+    Returns CSS + JS + button HTML. The JS is idempotent —
+    ``window.__rcmCopyShareLinkInstalled`` guards against duplicate
+    install when multiple helpers emit the snippet on one page. Wire
+    the button anywhere a deep-link is useful (analytic report
+    masthead, scenario page header, etc.).
+    """
+    return (
+        _CK_SHARE_LINK_CSS
+        + _CK_SHARE_LINK_JS
+        + (
+            f'<button type="button" class="ck-share-btn" '
+            f'data-rcm-share-link>{_esc(label)}</button>'
+        )
+    )
+
+
+_CK_RECENT_CSS = """
+<style>
+.ck-recent{background:var(--paper-card,#fefcf3);
+  border:1px solid var(--rule,#c9bf9c);
+  padding:20px 22px;margin:0 0 24px;}
+.ck-recent .head{display:flex;justify-content:space-between;
+  align-items:baseline;gap:14px;margin:0 0 14px;}
+.ck-recent .eyebrow{font:500 10.5px/1 var(--sc-mono,monospace);
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--green-deep,#154e36);display:flex;align-items:center;
+  gap:10px;}
+.ck-recent .eyebrow .dash{width:20px;height:1px;
+  background:var(--green-deep,#154e36);}
+.ck-recent .head .count{font:500 10.5px/1 var(--sc-mono,monospace);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted,#7a8595);}
+.ck-recent ol{list-style:none;padding:0;margin:0;
+  display:flex;flex-wrap:wrap;gap:8px;}
+.ck-recent ol li{display:contents;}
+.ck-recent a.pill{display:inline-flex;align-items:center;gap:8px;
+  font:500 12.5px/1.2 var(--sc-sans,Inter),sans-serif;
+  color:var(--ink,#16263a);background:var(--bg,#efeadd);
+  border:1px solid var(--rule,#c9bf9c);border-radius:2px;
+  padding:6px 12px;text-decoration:none;
+  transition:background .12s,border-color .12s;}
+.ck-recent a.pill:hover{background:var(--paper-hi,#fbf6e8);
+  border-color:var(--rule-hi,#b6a87f);}
+.ck-recent a.pill .slug{font-family:var(--sc-mono,monospace);
+  font-size:10.5px;letter-spacing:.06em;
+  color:var(--muted,#7a8595);}
+.ck-recent .empty{font:400 italic 14px/1.5 var(--sc-serif,Georgia),serif;
+  color:var(--ink-3,#506478);margin:0;max-width:64ch;}
+</style>
+"""
+
+_CK_RECENT_JS = """
+<script>
+(function(){
+  if (window.__rcmRecentlyViewedInstalled) return;
+  window.__rcmRecentlyViewedInstalled = true;
+  function paint(){
+    var root = document.querySelector('[data-rcm-recent-deals]');
+    if (!root) return;
+    var raw = null;
+    try { raw = localStorage.getItem('rcm_recent_deals'); }
+    catch (e) { raw = null; }
+    var rows = [];
+    if (raw) { try { rows = JSON.parse(raw); } catch (e) { rows = []; } }
+    if (!Array.isArray(rows)) rows = [];
+    rows = rows.filter(function(r){
+      return r && typeof r.slug === 'string';
+    }).slice(0, 5);
+    if (!rows.length){
+      root.innerHTML = '<p class="empty">' +
+        '<em>Visit a deal profile to populate this rail.</em> ' +
+        'Open /diligence/deal/&lt;slug&gt; from anywhere ' +
+        '(the screener, the pipeline funnel, the workbench) ' +
+        'and it lands here for one-click re-entry.</p>';
+      return;
+    }
+    var lis = rows.map(function(r){
+      var slug = String(r.slug).replace(/[^a-z0-9-]/gi, '');
+      var name = (r.name || slug).toString().slice(0, 40);
+      var href = '/diligence/deal/' + encodeURIComponent(slug);
+      return '<li><a class="pill" href="' + href + '">' +
+        '<span>' + name.replace(/[<>&"]/g, '') + '</span>' +
+        '<span class="slug">' + slug + '</span></a></li>';
+    }).join('');
+    root.innerHTML = '<ol>' + lis + '</ol>';
+  }
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', paint);
+  } else { paint(); }
+})();
+</script>
+"""
+
+
+def ck_recently_viewed_rail(
+    *,
+    eyebrow: str = "Recently viewed",
+    placeholder_label: str = "Loading recent deals…",
+) -> str:
+    """Recently-viewed deals rail — hydrated from localStorage.
+
+    Renders an inline <section> that JS fills with the most recent
+    5 deal-profile visits (stored under ``rcm_recent_deals`` by
+    deal_profile_page on every open). Empty state when the partner
+    hasn't visited any deal yet honestly says so.
+
+    The helper is server-friendly — emits a placeholder; JS hydrates
+    after page-load. No SSR call needed; localStorage is per-browser.
+    """
+    return (
+        _CK_RECENT_CSS
+        + _CK_RECENT_JS
+        + '<section class="ck-recent" data-rcm-recent-wrap>'
+        '<div class="head">'
+        '<div class="eyebrow"><span class="dash"></span>'
+        f'{_esc(eyebrow)}</div>'
+        '<span class="count">UP TO 5</span>'
+        '</div>'
+        f'<div data-rcm-recent-deals>'
+        f'<p class="empty"><em>{_esc(placeholder_label)}</em></p>'
+        '</div>'
+        '</section>'
+    )
+
+
 def ck_page_title(
     title: str,
     *,
