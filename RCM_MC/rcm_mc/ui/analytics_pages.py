@@ -6,12 +6,79 @@ mc/scenario_comparison to browser pages.
 from __future__ import annotations
 
 import html
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import (
     chartis_shell, ck_kpi_block, ck_next_section, ck_page_title, ck_panel,
     ck_section_intro,
 )
+
+
+# 2026-05-28 style-sweep · shared strict 5-block head for the four
+# analytics pages in this module. Replaces the previous
+# ck_section_intro h2 deck (which the shell would also auto-inject a
+# ck_page_title above, stacking two title blocks). Single header,
+# single h1, same shape as every other swept masthead.
+_AP_HEAD_CSS = """
+<style>
+.ap-head{padding:0 0 28px;margin:0 0 24px;
+  border-bottom:1px solid var(--rule-soft,#ddd1ac);}
+.ap-head .eyebrow{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--green-deep,#154e36);display:flex;align-items:center;
+  gap:12px;margin:0 0 18px;}
+.ap-head .eyebrow .dash{width:24px;height:1px;
+  background:var(--green-deep,#154e36);}
+.ap-head h1{font:400 40px/1.05 var(--sc-serif,Georgia),serif;
+  letter-spacing:-.015em;color:var(--ink,#16263a);margin:0 0 14px;}
+.ap-head .meta{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted,#7a8595);margin:0 0 18px;}
+.ap-head .lede{font:400 italic 16.5px/1.55 var(--sc-serif,Georgia),serif;
+  color:var(--ink-2,#2b3e54);max-width:68ch;margin:0 0 18px;}
+.ap-head .lede em{color:var(--green-deep,#154e36);font-style:italic;}
+.ap-head .legend{display:flex;gap:24px;list-style:none;padding:0;
+  margin:0;font:400 12.5px/1 var(--sc-sans,Inter),sans-serif;
+  color:var(--ink-2,#2b3e54);flex-wrap:wrap;}
+.ap-head .legend li{display:flex;align-items:center;}
+.ap-head .legend .dot{width:8px;height:8px;border-radius:50%;
+  display:inline-block;margin-right:10px;}
+.ap-head .legend .dot.live{background:var(--green-deep,#154e36);}
+.ap-head .legend .dot.computed{background:var(--ink-deep,#0e1a29);}
+.ap-head .legend .dot.needs{background:var(--coral,#b04a3a);}
+.ap-head .legend .dot.illustrative{background:var(--gold,#a08227);}
+@media (max-width:960px){.ap-head h1{font-size:32px;}}
+</style>
+"""
+
+
+def _ap_head(
+    eyebrow: str,
+    title: str,
+    *,
+    meta: str,
+    lede_italic_phrase: str,
+    lede_body: str,
+) -> str:
+    """Strict Tier-1 5-block head for an analytics page. Italic FIRST
+    PHRASE in --green-deep per spec §2.3."""
+    return (
+        _AP_HEAD_CSS
+        + '<header class="ap-head">'
+        f'<div class="eyebrow"><span class="dash"></span>'
+        f'{html.escape(eyebrow)}</div>'
+        f'<h1>{title}</h1>'
+        f'<div class="meta">{html.escape(meta)}</div>'
+        f'<p class="lede"><em>{html.escape(lede_italic_phrase)}</em> '
+        f'{lede_body}</p>'
+        '<ul class="legend">'
+        '<li><span class="dot live"></span>Live data</li>'
+        '<li><span class="dot computed"></span>Computed</li>'
+        '<li><span class="dot needs"></span>Needs data</li>'
+        '<li><span class="dot illustrative"></span>Illustrative</li>'
+        '</ul>'
+        '</header>'
+    )
 
 _BENCH_EXPLAINER_CSS = """
 .ck-be-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
@@ -261,11 +328,17 @@ def render_causal_page(deal_id: str, deal_name: str, estimates: List[Dict[str, A
 
     sig_count = sum(1 for e in estimates if float(e.get("p_value", 1)) < 0.05)
 
-    intro = ck_section_intro(
+    # 2026-05-28 sweep · strict 5-block head replaces ck_section_intro.
+    intro = _ap_head(
         eyebrow="CAUSAL INFERENCE",
-        headline=f"{html.escape(deal_name)} — what actually moved the needle.",
-        italic_word="moved",
-        body=(
+        title=f"Causal inference — {html.escape(deal_name)}",
+        meta=(
+            f"DEAL {deal_id.upper()} · {len(estimates)} ESTIMATE"
+            f"{'S' if len(estimates) != 1 else ''} · "
+            f"{sig_count} SIGNIFICANT (p<0.05)"
+        ),
+        lede_italic_phrase="What actually moved the needle.",
+        lede_body=(
             f"{len(estimates)} initiative-level estimates run through "
             "three causal methods (interrupted time series, "
             "difference-in-differences, pre-post). The scorecard "
@@ -483,11 +556,21 @@ def render_counterfactual_page(deal_id: str, deal_name: str, result: Dict[str, A
 
     cum_cls = "cad-pos" if cumulative > 0 else "cad-neg"
 
-    intro = ck_section_intro(
+    # 2026-05-28 sweep · strict 5-block head replaces ck_section_intro.
+    cum_direction = "higher" if cumulative > 0 else "lower"
+    intro = _ap_head(
         eyebrow="COUNTERFACTUAL",
-        headline=f"{html.escape(deal_name)} — what would have happened without it.",
-        italic_word="without",
-        body=(
+        title=f"Counterfactual — {html.escape(deal_name)}",
+        meta=(
+            f"DEAL {deal_id.upper()} · {len(actual)} PERIOD"
+            f"{'S' if len(actual) != 1 else ''} · "
+            f"CUMULATIVE ${abs(cumulative)/1e6:.1f}M "
+            f"{cum_direction.upper()}"
+        ),
+        lede_italic_phrase=(
+            "What would have happened without the initiative."
+        ),
+        lede_body=(
             "Side-by-side actual vs counterfactual EBITDA "
             "trajectory. The cumulative delta is the initiative's "
             "attributable value-creation; pair with causal inference "
@@ -576,19 +659,26 @@ def render_benchmark_drift(drifts: List[Dict[str, Any]]) -> str:
             f'</tr>'
         )
 
-    title_block = ck_page_title(
-        "Benchmark Evolution", eyebrow="BENCHMARK EVOLUTION",
-        meta=f"{len(drifts)} benchmarks · {improving} improving · {declining} declining",
+    # 2026-05-28 sweep · replaces the legacy ck_page_title +
+    # ck-be-explainer pair with the strict 5-block head.
+    title_block = _ap_head(
+        eyebrow="BENCHMARK EVOLUTION",
+        title="Benchmark evolution",
+        meta=(
+            f"{len(drifts)} BENCHMARKS · {improving} IMPROVING · "
+            f"{declining} DECLINING"
+        ),
+        lede_italic_phrase=(
+            "How the bar is moving on you, year over year."
+        ),
+        lede_body=(
+            "Industry P50 drift across the metrics that drive the "
+            "bridge. When benchmarks shift, a deal's relative "
+            "position changes even without operational improvement "
+            "— factor this into target-margin assumptions before IC."
+        ),
     )
-    explainer_html = (
-        '<p class="ck-be-explainer">'
-        '<em>How the bar is moving on you, year over year.</em> '
-        "Industry P50 drift across the metrics that drive the bridge. "
-        "When benchmarks shift, a deal's relative position changes even "
-        "without operational improvement — factor this into "
-        "target-margin assumptions before IC."
-        '</p>'
-    )
+    explainer_html = ""  # subsumed into the strict head above
 
     kpis = (
         '<div class="ck-kpi-strip">'
@@ -660,11 +750,17 @@ def render_predicted_vs_actual(deal_id: str, deal_name: str,
             f'</tr>'
         )
 
-    intro = ck_section_intro(
+    # 2026-05-28 sweep · strict 5-block head.
+    intro = _ap_head(
         eyebrow="PREDICTED VS ACTUAL",
-        headline=f"{html.escape(deal_name)} — how the diligence-era forecast aged.",
-        italic_word="aged",
-        body=(
+        title=f"Predicted vs actual — {html.escape(deal_name)}",
+        meta=(
+            f"DEAL {deal_id.upper()} · {n_metrics} METRIC"
+            f"{'S' if n_metrics != 1 else ''} · "
+            f"{pct_ci:.0%} WITHIN CI · MAE {mae:.2f}"
+        ),
+        lede_italic_phrase="How the diligence-era forecast aged.",
+        lede_body=(
             f"{n_metrics} metrics from the original analysis packet "
             "compared against current operational data. Within-CI "
             "rate measures model calibration; variance % flags the "
