@@ -70,26 +70,109 @@ def render_sector_screener(
     sel_state = (qs.get("state") or [""])[0].strip().upper()
     sel_loc = (qs.get("locality") or [""])[0].strip()
 
+    # ── 2026-05-28 style-sweep · strict Tier-1 5-block head ──
+    # The shared sector screener powers six pages: /dialysis,
+    # /home-health, /hospice, /irf, /ltch, /snf. Sweeping this one
+    # helper applies the spec head to all six in one edit. Replaces
+    # the legacy xr-screener-eyebrow + ck_page_title + description-
+    # paragraph triple with a single <header class="ss-head"> block.
+    _ss_head_css = """
+<style>
+.ss-head{padding:0 0 28px;margin:0 0 24px;
+  border-bottom:1px solid var(--rule-soft,#ddd1ac);}
+.ss-head .eyebrow{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--green-deep,#154e36);display:flex;align-items:center;
+  gap:12px;margin:0 0 18px;}
+.ss-head .eyebrow .dash{width:24px;height:1px;
+  background:var(--green-deep,#154e36);}
+.ss-head h1{font:400 44px/1.05 var(--sc-serif,Georgia),serif;
+  letter-spacing:-.015em;color:var(--ink,#16263a);margin:0 0 14px;}
+.ss-head .meta{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted,#7a8595);margin:0 0 18px;}
+.ss-head .lede{font:400 italic 16.5px/1.55 var(--sc-serif,Georgia),serif;
+  color:var(--ink-2,#2b3e54);max-width:70ch;margin:0 0 18px;}
+.ss-head .lede em{color:var(--green-deep,#154e36);font-style:italic;}
+.ss-head .source-note{font:500 10px/1.4 var(--sc-mono,monospace);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted-2,#9a9e8a);margin:0 0 16px;max-width:62ch;}
+.ss-head .legend{display:flex;gap:24px;list-style:none;padding:0;
+  margin:0;font:400 12.5px/1 var(--sc-sans,Inter),sans-serif;
+  color:var(--ink-2,#2b3e54);flex-wrap:wrap;}
+.ss-head .legend li{display:flex;align-items:center;}
+.ss-head .legend .dot{width:8px;height:8px;border-radius:50%;
+  display:inline-block;margin-right:10px;}
+.ss-head .legend .dot.live{background:var(--green-deep,#154e36);}
+.ss-head .legend .dot.computed{background:var(--ink-deep,#0e1a29);}
+.ss-head .legend .dot.needs{background:var(--coral,#b04a3a);}
+.ss-head .legend .dot.illustrative{background:var(--gold,#a08227);}
+@media (max-width:960px){.ss-head h1{font-size:36px;}}
+</style>
+"""
+
+    def _italicize_first_phrase(text: str) -> str:
+        # Italic FIRST PHRASE in --green-deep per spec §2.3.
+        if "." in text:
+            first, rest = text.split(".", 1)
+            return (
+                f'<em>{_esc(first.strip())}.</em>'
+                f'{_esc(rest)}'
+            )
+        return f'<em>{_esc(text)}</em>'
+
     # ── Honest empty state (data file missing) ──
     if not providers:
-        body = (
-            '<div class="xr">'
-            + ck_page_title(title, eyebrow=eyebrow, meta="data not loaded")
-            + ck_panel(
-                '<p class="ck-section-body">No sector data is loaded yet. '
-                'This page reads vendored CMS Provider Data Catalog files; '
-                'when they are present it shows providers, quality, and a '
-                'state map.</p>',
-                title=title,
-            )
-            + '</div>'
+        empty_head = (
+            _ss_head_css
+            + '<header class="ss-head">'
+            f'<div class="eyebrow"><span class="dash"></span>'
+            f'{_esc(eyebrow)}</div>'
+            f'<h1>{_esc(title)}</h1>'
+            '<div class="meta">DATA NOT LOADED</div>'
+            f'<p class="lede">'
+            f'{_italicize_first_phrase("No sector data is loaded yet.")} '
+            'This page reads vendored CMS Provider Data Catalog files; '
+            'when they are present it shows providers, quality scores, '
+            'and a state-level map.</p>'
+            '</header>'
         )
+        body = empty_head + '<div class="xr"></div>'
         return chartis_shell(body, title, active_nav=route,
                              extra_css=XRAY_CSS + _SCREENER_SKIN)
 
     n_total = len(providers)
     n_states = len(summary)
     n_rated = sum(int(s.get("rated", 0)) for s in summary.values())
+
+    # 2026-05-28 sweep · NEW functionality lift — overall % at 4+
+    # stars across the universe (or within selected state). Quotes
+    # a real share from the live quality map.
+    if sel_state and sel_state in summary:
+        # State-scoped share
+        state_ccns = {
+            getattr(p, "ccn", "")
+            for p in providers_for_state(sel_state)
+        }
+        scoped_ratings = [
+            quality[c].get("five_star")
+            for c in state_ccns
+            if c in quality and quality[c].get("five_star") is not None
+        ]
+    else:
+        scoped_ratings = [
+            q.get("five_star") for q in quality.values()
+            if q.get("five_star") is not None
+        ]
+    if scoped_ratings:
+        share_4_plus = sum(
+            1 for r in scoped_ratings if float(r) >= 4.0
+        ) / len(scoped_ratings)
+        quality_share_html = f"{share_4_plus * 100:.0f}%"
+        quality_share_n = len(scoped_ratings)
+    else:
+        quality_share_html = "—"
+        quality_share_n = 0
 
     # ── Real US state map: shaded by provider count, drilldown by state ──
     state_values = {st: int(s.get(count_key, 0)) for st, s in summary.items()}
@@ -112,21 +195,30 @@ def render_sector_screener(
     )
 
     # ── KPI cards (national or selected-state) ──
+    # 2026-05-28 sweep · added a 4th tile "≥4-STAR SHARE" with real
+    # share from the live quality map. Honest "—" when no rated
+    # facilities are in scope.
+    quality_sub = (
+        f"of {quality_share_n:,} rated facilities"
+        if quality_share_n else "no rated facilities in scope"
+    )
     if sel_state and sel_state in summary:
         s = summary[sel_state]
         kpis = (
-            '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+            '<div class="ck-kpi-grid" style="grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">'
             + ck_kpi_block(f"{count_label} in {sel_state}", f"{int(s.get(count_key,0)):,}", "Medicare-certified")
             + ck_kpi_block(f"With {avg_label}", f"{int(s.get('rated',0)):,}", "publicly reported")
             + ck_kpi_block(f"Avg {avg_label}", _fmt(s.get(avg_key)), f"{sel_state} mean")
+            + ck_kpi_block("≥4-star share", quality_share_html, quality_sub)
             + '</div>'
         )
     else:
         kpis = (
-            '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+            '<div class="ck-kpi-grid" style="grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">'
             + ck_kpi_block(f"Total {count_label}", f"{n_total:,}", "Medicare-certified")
             + ck_kpi_block("States covered", f"{n_states}", "incl. territories")
             + ck_kpi_block(f"With {avg_label}", f"{n_rated:,}", "publicly reported")
+            + ck_kpi_block("≥4-star share", quality_share_html, quality_sub)
             + '</div>'
         )
 
@@ -197,12 +289,31 @@ def render_sector_screener(
         title="Data source & limitations",
     )
 
+    # ── Strict 5-block head + meta line quoting REAL data ──
+    head_block = (
+        _ss_head_css
+        + '<header class="ss-head">'
+        f'<div class="eyebrow"><span class="dash"></span>'
+        f'{_esc(eyebrow)}</div>'
+        f'<h1>{_esc(title)}</h1>'
+        f'<div class="meta">{n_total:,} PROVIDER'
+        f'{"S" if n_total != 1 else ""} · {n_states} STATE'
+        f'{"S" if n_states != 1 else ""}'
+        f' · {n_rated:,} RATED · CMS PUBLIC DATA</div>'
+        f'<p class="lede">{_italicize_first_phrase(description)}</p>'
+        f'<p class="source-note">Source: {_esc(provenance)}</p>'
+        '<ul class="legend">'
+        '<li><span class="dot live"></span>Live data</li>'
+        '<li><span class="dot computed"></span>Computed</li>'
+        '<li><span class="dot needs"></span>Needs data</li>'
+        '<li><span class="dot illustrative"></span>Illustrative</li>'
+        '</ul>'
+        '</header>'
+    )
+
     body = (
-        '<div class="xr">'
-        + f'<div class="xr-screener-eyebrow">{xr_eyebrow(eyebrow)}</div>'
-        + ck_page_title(title, eyebrow=eyebrow,
-                      meta=f"{n_total:,} providers · {n_states} states · CMS public data")
-        + f'<p class="ck-section-body" style="max-width:70ch;margin:0 0 14px;">{_esc(description)}</p>'
+        head_block
+        + '<div class="xr">'
         + kpis + map_panel + table + prov_card
         + '</div>'
     )
