@@ -52,9 +52,11 @@ class SurfaceRegistry(unittest.TestCase):
         self.assertEqual(len({s.slug for s in SURFACES}), 18)
         self.assertEqual(sorted(s.number for s in SURFACES), list(range(1, 19)))
 
-    def test_profile_is_the_phase1_built_surface(self):
-        built = [s.slug for s in SURFACES if s.built]
-        self.assertEqual(built, ["profile"])
+    def test_built_surfaces_grow_one_phase_at_a_time(self):
+        # Phase 1 shipped profile; Phase 2 added bridge. New surfaces appear
+        # here as they land — assertion is order-insensitive on purpose.
+        built = {s.slug for s in SURFACES if s.built}
+        self.assertEqual(built, {"profile", "bridge"})
 
     def test_lookup_by_path(self):
         self.assertIs(SURFACE_BY_PATH["profile"].built, True)
@@ -97,8 +99,8 @@ class ProfileRender(unittest.TestCase):
         self.assertIn('aria-current="page"', self.html)
 
     def test_unbuilt_surfaces_get_soon_badge(self):
-        # At least one "soon" badge present (everything except profile)
-        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 17)
+        # 18 total - 2 currently built (profile, bridge) = 16 soon badges
+        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 16)
 
     def test_payer_mix_uses_real_data(self):
         self.assertIn("Medicare 42%", self.html)
@@ -123,6 +125,40 @@ class ProfileRender(unittest.TestCase):
         for slug in ("ic-memo", "bridge", "comp-intel", "scenarios", "ml",
                      "market", "denial", "trends", "dcf", "lbo", "stmt", "returns"):
             self.assertIn(f"/deals/050001/{slug}", self.html)
+
+
+class BridgeRender(unittest.TestCase):
+    """Surface 03 (Bridge) — wired to _compute_bridge; honest empty otherwise."""
+
+    def test_bridge_renders_all_four_panels_when_inputs_real(self):
+        from rcm_mc.ui.deal_surfaces import render_deal_bridge
+        h = dict(FAKE_HOSPITAL)               # NPR + opex present
+        out = render_deal_bridge("050001", h)
+        # Hero, 7-lever bars, lever detail, implementation timing all eyebrowed.
+        for eyebrow in ("HERO", "7-LEVER MODEL", "LEVER DETAIL",
+                        "IMPLEMENTATION TIMING"):
+            self.assertIn(eyebrow, out, f"missing panel: {eyebrow}")
+        # Hero stat must reflect REAL computed current EBITDA = NPR - opex.
+        # 4.2e8 - 3.9e8 = 3.0e7 → "$30.0M".
+        self.assertIn("$30.0M", out)
+        # Bridge tab is the active one.
+        self.assertIn('aria-current="page"', out)
+        # One <h1> only (accessibility / spec).
+        self.assertEqual(len(re.findall(r"<h1[ >]", out)), 1)
+        # Phase 2b deferral note present (honest about what's not shipped).
+        self.assertIn("Phase 2b", out)
+
+    def test_bridge_renders_honest_empty_when_npr_missing(self):
+        from rcm_mc.ui.deal_surfaces import render_deal_bridge
+        h = {"ccn": "999999", "name": "Sparse Co", "state": "TX"}
+        out = render_deal_bridge("999999", h)
+        self.assertIn("Bridge cannot run", out)
+        self.assertNotIn("7-LEVER MODEL", out)        # no fabricated bridge
+        # Identity header still real
+        self.assertIn("CCN 999999", out)
+
+    def test_bridge_marked_built_in_registry(self):
+        self.assertTrue(SURFACE_BY_PATH["bridge"].built)
 
 
 class StubRender(unittest.TestCase):
@@ -222,6 +258,23 @@ class DealRoutes(unittest.TestCase):
                 server.shutdown(); server.server_close()
 
     def test_real_ccn_unbuilt_surface_renders_stub_200(self):
+        # Use an unbuilt slug — bridge is now built, lbo still isn't.
+        with tempfile.TemporaryDirectory() as tmp:
+            create_user(PortfolioStore(os.path.join(tmp, "p.db")), "at", "supersecret1")
+            server, port = self._start(tmp)
+            try:
+                opener = _login_opener(port, "at", "supersecret1")
+                ccn = self._pick_real_ccn()
+                with opener.open(f"http://127.0.0.1:{port}/deals/{ccn}/lbo") as r:
+                    self.assertEqual(r.status, 200)
+                    body = r.read().decode()
+                self.assertIn("Under construction", body)
+                # identity header still rendered (shell is shared)
+                self.assertIn("DEAL · CCN", body)
+            finally:
+                server.shutdown(); server.server_close()
+
+    def test_real_ccn_bridge_renders_real_data_200(self):
         with tempfile.TemporaryDirectory() as tmp:
             create_user(PortfolioStore(os.path.join(tmp, "p.db")), "at", "supersecret1")
             server, port = self._start(tmp)
@@ -231,9 +284,17 @@ class DealRoutes(unittest.TestCase):
                 with opener.open(f"http://127.0.0.1:{port}/deals/{ccn}/bridge") as r:
                     self.assertEqual(r.status, 200)
                     body = r.read().decode()
-                self.assertIn("Under construction", body)
-                # identity header still rendered (shell is shared)
+                # The body either renders bridge data or an honest empty —
+                # NEVER "Under construction" (this is a built surface).
+                self.assertNotIn("Under construction", body)
+                # Identity is real, sub-nav is present, h1 count is 1.
                 self.assertIn("DEAL · CCN", body)
+                self.assertEqual(len(re.findall(r"<h1[ >]", body)), 1)
+                # Bridge surface eyebrow or empty-state marker must be present.
+                self.assertTrue(
+                    "7-LEVER MODEL" in body or "Bridge cannot run" in body,
+                    "bridge surface neither rendered the model nor an honest empty",
+                )
             finally:
                 server.shutdown(); server.server_close()
 

@@ -17,6 +17,7 @@ from ._shell import (
     fetch_hospital,
 )
 from ._stub import render_surface_stub
+from .bridge import render_deal_bridge
 from .profile import render_deal_profile
 
 __all__ = [
@@ -28,4 +29,5 @@ __all__ = [
     "fetch_hospital",
     "render_surface_stub",
     "render_deal_profile",
+    "render_deal_bridge",
 ]
