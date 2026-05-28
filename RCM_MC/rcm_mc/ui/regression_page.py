@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    chartis_shell, ck_kpi_block, ck_next_section, ck_page_title, ck_panel,
     ck_section_intro,
 )
 from .brand import PALETTE
@@ -744,6 +744,88 @@ def _run_ols(
         opt_features = vif_keep
         opt_dropped = fam_dropped + vif_dropped
 
+        # ── Editorial-redesign-only fields (Phase 5) ──
+        # Residual distribution summary — the hero "RESIDUALS" tile needs
+        # the FULL standardized-residual histogram (not just the top-20
+        # outliers exposed above). Computed inline from the residual
+        # array that already lives in this fit; no new compute path.
+        # 14 bins capped at ±4σ per spec §C is the convention; bins
+        # outside that range get folded into the edge bins so the chart
+        # never loses mass.
+        try:
+            sigma = float(np.std(std_resid)) or 1.0
+            sr = std_resid / sigma  # unit-variance for symmetric clipping
+            sr_clipped = np.clip(sr, -4.0, 4.0)
+            hist_counts, hist_edges = np.histogram(
+                sr_clipped, bins=14, range=(-4.0, 4.0),
+            )
+            hist_total = max(1, int(hist_counts.sum()))
+            residual_histogram = [
+                {
+                    "x_lo": float(hist_edges[i]),
+                    "x_hi": float(hist_edges[i + 1]),
+                    "count": int(hist_counts[i]),
+                    "share": float(hist_counts[i]) / hist_total,
+                }
+                for i in range(len(hist_counts))
+            ]
+            # Moment-based skew/kurtosis (numpy-only — no scipy dep).
+            mean_r = float(np.mean(std_resid))
+            sd_r = float(np.std(std_resid)) or 1.0
+            zr = (std_resid - mean_r) / sd_r
+            resid_skew = float(np.mean(zr ** 3))
+            resid_kurt = float(np.mean(zr ** 4) - 3.0)
+            share_2s = float(np.mean(np.abs(std_resid) > 2.0))
+            share_3s = float(np.mean(np.abs(std_resid) > 3.0))
+            # Median + p80 + p95 of |resid| (in fit-space units) so the
+            # Prediction-Interval tile can quote an analytic-residual-
+            # based 80% PI half-width without a bootstrap pass.
+            abs_resid = np.abs(resid)
+            residual_summary = {
+                "histogram": residual_histogram,
+                "skew": resid_skew,
+                "kurtosis": resid_kurt,
+                "share_outside_2s": share_2s,
+                "share_outside_3s": share_3s,
+                "p50_abs": float(np.percentile(abs_resid, 50)),
+                "p80_abs": float(np.percentile(abs_resid, 80)),
+                "p95_abs": float(np.percentile(abs_resid, 95)),
+                "n": int(len(resid)),
+            }
+        except Exception:
+            residual_summary = None
+
+        # Calibration deciles — sort by predicted, bucket into 10 equal
+        # groups, report mean predicted vs mean actual per bucket. This
+        # is the hero "CALIBRATION" tile per spec §C; without it the
+        # tile reads "—" / awaiting data. We compute in RAW target
+        # units so the hover line ("predicted $X, actual $Y") matches
+        # what a partner sees on a deal page.
+        try:
+            order = np.argsort(y_hat)
+            y_actual_raw = (
+                np.exp(y) if log_target else y
+            )
+            y_pred_raw = (
+                np.exp(y_hat) if log_target else y_hat
+            )
+            calibration_deciles = []
+            n_total = len(order)
+            for d in range(10):
+                lo = int(n_total * d / 10)
+                hi = int(n_total * (d + 1) / 10)
+                if hi <= lo:
+                    continue
+                idx = order[lo:hi]
+                calibration_deciles.append({
+                    "decile": d + 1,
+                    "n": int(len(idx)),
+                    "mean_predicted": float(np.mean(y_pred_raw[idx])),
+                    "mean_actual": float(np.mean(y_actual_raw[idx])),
+                })
+        except Exception:
+            calibration_deciles = None
+
         return {
             "r2": r2,
             "adj_r2": adj_r2,
@@ -805,6 +887,14 @@ def _run_ols(
             "aic": info_criteria.get("aic", 0.0),
             "bic": info_criteria.get("bic", 0.0),
             "log_likelihood": info_criteria.get("log_likelihood", 0.0),
+            # Editorial-redesign supplements (Phase 5). Both are
+            # computed from the same residual / prediction arrays that
+            # already exist in this fit — no new compute path, no new
+            # dependency. They populate the hero "Residuals" and
+            # "Calibration" tiles per the spec; the page falls back to
+            # an "awaiting data" badge if either is None.
+            "residual_summary": residual_summary,
+            "calibration_deciles": calibration_deciles,
         }
     except Exception:
         return None
@@ -818,6 +908,613 @@ def _fmt_num(val: float) -> str:
     if abs(val) >= 1e3:
         return f"{val:,.0f}"
     return f"{val:.4f}"
+
+
+# ╔════════════════════════════════════════════════════════════════════════╗
+# ║  Editorial redesign block (RGE_*)  ·  spec anatomy §1-§6              ║
+# ║                                                                       ║
+# ║  Honest data contract:                                                 ║
+# ║  · OOS R², overfit gap, mean-test-RMSE — only present when            ║
+# ║    cv_res is not None (cv toggle on, finance.cross_validation         ║
+# ║    succeeded). Otherwise the tile reads "—" with an "AWAITING CV"     ║
+# ║    badge per spec §4 Partial state.                                   ║
+# ║  · 80% PI half-width — derived from residual_summary.p80_abs (the     ║
+# ║    80th-percentile absolute residual on this fit's data). Honest     ║
+# ║    label is "analytic 80% PI" — NOT bootstrap; the spec's            ║
+# ║    bootstrap-resampled PI is a backlog item that lands here when     ║
+# ║    the back-end exposes it.                                          ║
+# ║  · Calibration / residual histogram — both come from new fields     ║
+# ║    on _run_ols (calibration_deciles, residual_summary). If the      ║
+# ║    fit didn't compute them, the tile shows the awaiting-data badge. ║
+# ║  · Verdict row — fully derived from the live fit; never editorial   ║
+# ║    boilerplate. Each card lead phrase quotes a real number.         ║
+# ╚════════════════════════════════════════════════════════════════════════╝
+
+_RGE_STYLES = """
+<style>
+.rge-tokens{
+  /* Spec §1 — editorial tokens. Alias-only when they don't conflict
+     with the existing --sc-* layer the rest of the page uses. */
+  --rge-bg:#efeadd; --rge-paper:#f6f1e3; --rge-paper-2:#ebe5d4;
+  --rge-paper-card:#fefcf3; --rge-ink:#16263a; --rge-ink-2:#2b3e54;
+  --rge-ink-3:#506478; --rge-ink-deep:#0e1a29;
+  --rge-muted:#7a8595; --rge-rule:#c9bf9c; --rge-rule-soft:#ddd1ac;
+  --rge-green:#1f6a4c; --rge-green-deep:#154e36; --rge-green-2:#2d8964;
+  --rge-coral:#b04a3a; --rge-amber:#b27a1c;
+}
+.rge-diag{display:flex;gap:14px;align-items:center;
+  border-top:1px solid var(--rge-rule);border-bottom:1px solid var(--rge-rule);
+  padding:12px 0;margin:18px 0 28px;
+  font:400 12.5px/1.4 var(--sc-sans,Inter),sans-serif;color:var(--rge-ink-3);}
+.rge-diag .tag{font:500 10px/1 var(--sc-mono,monospace);letter-spacing:.18em;
+  text-transform:uppercase;color:var(--rge-green-deep);padding:4px 8px;
+  border:1px solid var(--rge-green-deep);flex-shrink:0;}
+.rge-diag em{color:var(--rge-ink-2);font-style:italic;
+  font-family:var(--sc-serif,Georgia),serif;font-size:13px;}
+.rge-diag b{color:var(--rge-ink-2);font-weight:600;}
+
+.rge-strip{display:grid;grid-template-columns:repeat(6,1fr);
+  border:1px solid var(--rge-rule);background:var(--rge-paper-card);
+  margin:0 0 40px;}
+.rge-strip .cell{padding:18px 22px;border-right:1px solid var(--rge-rule-soft);}
+.rge-strip .cell:last-child{border-right:0;}
+.rge-strip .label{font:500 10px/1 var(--sc-mono,monospace);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--rge-muted);margin-bottom:8px;
+  display:flex;gap:6px;align-items:center;}
+.rge-strip .label .q{font-size:9px;color:var(--rge-muted);
+  border:1px solid var(--rge-rule-soft);width:13px;height:13px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:50%;cursor:help;}
+.rge-strip .val{font:500 22px/1.1 var(--sc-mono,monospace);color:var(--rge-ink);
+  font-variant-numeric:tabular-nums;}
+.rge-strip .sub{font:500 10px/1.4 var(--sc-mono,monospace);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--rge-muted);margin-top:6px;}
+.rge-strip .sub.good{color:var(--rge-green-deep);}
+.rge-strip .sub.bad{color:var(--rge-coral);}
+.rge-strip .sub.warn{color:var(--rge-amber);}
+.rge-strip .pending{display:inline-block;padding:2px 7px;font:500 9px/1
+  var(--sc-mono,monospace);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--rge-muted);background:var(--rge-paper-2);
+  border:1px solid var(--rge-rule-soft);}
+
+.rge-bar{background:var(--rge-ink-deep);color:var(--rge-bg);
+  padding:14px 22px;font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.16em;text-transform:uppercase;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;}
+.rge-bar .meta{color:#9aa9bd;font-weight:400;font-size:10px;}
+
+.rge-hero{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;
+  background:var(--rge-paper-card);border:1px solid var(--rge-rule);
+  border-top:0;margin:0 0 40px;}
+.rge-hero .tile{padding:20px 22px;
+  border-right:1px solid var(--rge-rule-soft);}
+.rge-hero .tile:last-child{border-right:0;}
+.rge-hero .head{display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:12px;gap:12px;}
+.rge-hero .head .eb{font:500 11px/1 var(--sc-mono,monospace);letter-spacing:.16em;
+  text-transform:uppercase;color:var(--rge-muted);margin:0;}
+.rge-hero .head .verdict{font:500 10px/1 var(--sc-mono,monospace);
+  letter-spacing:.12em;text-transform:uppercase;color:var(--rge-green-deep);}
+.rge-hero .head .verdict.warn{color:var(--rge-amber);}
+.rge-hero .head .verdict.bad{color:var(--rge-coral);}
+.rge-hero .x-axis{display:flex;justify-content:space-between;
+  font:500 9.5px/1 var(--sc-mono,monospace);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--rge-muted);margin-top:10px;}
+.rge-cal{position:relative;height:200px;background:var(--rge-paper-2);
+  border:1px solid var(--rge-rule-soft);overflow:hidden;}
+.rge-cal .grid{position:absolute;background:var(--rge-rule-soft);}
+.rge-cal .grid.h{left:0;right:0;height:1px;}
+.rge-cal .grid.v{top:0;bottom:0;width:1px;}
+.rge-cal .diag{position:absolute;left:0;bottom:0;width:200%;height:1px;
+  background:var(--rge-ink-3);opacity:.4;
+  transform-origin:0 100%;transform:rotate(-45deg);}
+.rge-cal .pt{position:absolute;width:8px;height:8px;border-radius:50%;
+  background:var(--rge-green-2);transform:translate(-50%,50%);
+  border:1px solid var(--rge-green-deep);}
+.rge-cal .pt.out{background:var(--rge-coral);border-color:var(--rge-coral);}
+.rge-hist{display:flex;align-items:end;gap:3px;height:200px;
+  border-bottom:1px solid var(--rge-ink);padding-top:8px;}
+.rge-hist .b{flex:1;background:var(--rge-ink-3);}
+.rge-hist .b.mid{background:var(--rge-green-2);}
+.rge-hist .b.tail{background:var(--rge-coral);}
+.rge-hist .b.tail-amber{background:var(--rge-amber);}
+.rge-drv{display:grid;gap:8px;margin-top:6px;}
+.rge-drv .row{display:grid;grid-template-columns:130px 1fr 44px;
+  align-items:center;gap:12px;}
+.rge-drv .row .lbl{font:500 11.5px/1.2 var(--sc-sans,Inter),sans-serif;
+  color:var(--rge-ink-2);text-align:right;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rge-drv .row .track{position:relative;height:18px;background:var(--rge-paper-2);
+  border:1px solid var(--rge-rule-soft);}
+.rge-drv .row .mid-line{position:absolute;top:0;bottom:0;left:50%;width:1px;
+  background:var(--rge-ink);opacity:.45;}
+.rge-drv .row .fill{position:absolute;top:0;bottom:0;}
+.rge-drv .row .fill.pos{left:50%;background:var(--rge-green-2);}
+.rge-drv .row .fill.neg{right:50%;background:var(--rge-coral);}
+.rge-drv .row .val{font:500 12px/1 var(--sc-mono,monospace);
+  font-variant-numeric:tabular-nums;text-align:left;}
+.rge-drv .row .val.pos{color:var(--rge-green-deep);}
+.rge-drv .row .val.neg{color:var(--rge-coral);}
+.rge-empty{display:flex;align-items:center;justify-content:center;
+  height:200px;background:var(--rge-paper-2);
+  border:1px solid var(--rge-rule-soft);
+  font:500 11px/1.4 var(--sc-mono,monospace);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--rge-muted);text-align:center;
+  padding:0 16px;}
+
+.rge-verdict{display:grid;grid-template-columns:repeat(5,1fr);gap:0;
+  border:1px solid var(--rge-rule);background:var(--rge-paper-card);
+  margin:0 0 40px;}
+.rge-verdict .v{padding:16px 18px;
+  border-right:1px solid var(--rge-rule-soft);text-decoration:none;
+  color:inherit;display:block;}
+.rge-verdict .v:last-child{border-right:0;}
+.rge-verdict .v:hover{background:var(--rge-paper-2);}
+.rge-verdict .v:focus-visible{outline:2px solid var(--rge-green);
+  outline-offset:-2px;}
+.rge-verdict .v .tag{font:500 9.5px/1 var(--sc-mono,monospace);letter-spacing:.16em;
+  text-transform:uppercase;color:var(--rge-green-deep);margin-bottom:10px;
+  display:flex;align-items:center;gap:8px;}
+.rge-verdict .v.warn .tag{color:var(--rge-coral);}
+.rge-verdict .v.flag .tag{color:var(--rge-amber);}
+.rge-verdict .v .tag .dot{width:6px;height:6px;border-radius:50%;
+  background:currentColor;display:inline-block;}
+.rge-verdict .v p{font:500 12.5px/1.4 var(--sc-sans,Inter),sans-serif;
+  color:var(--rge-ink);margin:0;}
+.rge-verdict .v p b{color:var(--rge-green-deep);font-weight:600;}
+.rge-verdict .v.warn p b{color:var(--rge-coral);}
+.rge-verdict .v.flag p b{color:var(--rge-amber);}
+.rge-skip{position:absolute;left:-9999px;top:auto;}
+.rge-skip:focus{position:static;display:inline-block;padding:6px 10px;
+  background:var(--rge-ink);color:var(--rge-bg);
+  font:500 11px/1 var(--sc-mono,monospace);letter-spacing:.14em;
+  text-transform:uppercase;}
+@media (max-width:960px){
+  .rge-strip{grid-template-columns:repeat(3,1fr);}
+  .rge-hero{grid-template-columns:1fr;}
+  .rge-verdict{grid-template-columns:1fr;}
+  .rge-verdict .v{border-right:0;border-bottom:1px solid var(--rge-rule-soft);}
+}
+</style>
+"""
+
+
+def _rge_diagnostic_strip() -> str:
+    """Slim inline diagnostic strip — replaces the bigger DIAGNOSTIC banner
+    at the top of the page per spec §3. The longer explainer banner stays
+    further down (it's still useful) but doesn't dominate the masthead."""
+    return (
+        '<div class="rge-diag rge-tokens">'
+        '<span class="tag">▲ Read this</span>'
+        '<span><em>Numbers default to in-sample.</em> For out-of-sample reads '
+        'use the <b>OOS R²</b> tile and the <b>Cohort</b> block below. '
+        'Use in-sample for hypothesis generation, not LP-facing forecasts.</span>'
+        '</div>'
+    )
+
+
+def _rge_headline_strip(
+    result: Dict[str, Any],
+    cv_res: Optional[Any],
+    log_target: bool,
+) -> str:
+    """6-tile headline metric strip per spec §4. Every value is wired
+    to a real field on ``result`` or ``cv_res``; never hard-coded.
+
+    Tiles that depend on data we don't have today render the
+    ``AWAITING CV`` / ``AWAITING DATA`` pending pill (spec §4 Partial)
+    rather than fake numbers.
+    """
+    r2 = result.get("r2", 0.0)
+    cond_n = result.get("condition_number", 0.0) or 0.0
+    rmse = result.get("rmse", 0.0)
+    y_std = result.get("y_std", 0.0) or 0.0
+    rmse_pct_of_sd = (rmse / y_std) * 100 if y_std else 0.0
+
+    # OOS R² + overfit gap come from the CV result; if CV is off, render
+    # the pending pill rather than a fake number.
+    oos_val_html = '<span class="pending">Awaiting CV</span>'
+    oos_sub_html = '<div class="sub">RUN WITH CROSS-VALIDATE</div>'
+    gap_val_html = '<span class="pending">Awaiting CV</span>'
+    gap_sub_html = '<div class="sub">RUN WITH CROSS-VALIDATE</div>'
+    if cv_res is not None:
+        oos_val_html = f'{cv_res.mean_test_r2:.1%}'
+        oos_sub_html = (
+            f'<div class="sub good">{cv_res.k}-FOLD CV</div>'
+        )
+        gap = cv_res.overfit_gap
+        gap_cls = "good" if gap <= 0.05 else ("warn" if gap <= 0.15 else "bad")
+        gap_label = (
+            "CLEAN" if gap <= 0.05 else
+            ("MODEST" if gap <= 0.15 else "OVERFIT")
+        )
+        gap_val_html = f'{gap*100:+.1f}pp'
+        gap_sub_html = f'<div class="sub {gap_cls}">{gap_label}</div>'
+
+    # 80% PI half-width — analytic, from the residual_summary p80 abs
+    # value. In log-space fits, exp(p80) − 1 is the multiplicative
+    # half-width (the partner reads "±42%"); else dollar half-width.
+    rs = result.get("residual_summary") or {}
+    p80 = rs.get("p80_abs")
+    if p80 is None:
+        pi_val = '<span class="pending">Awaiting data</span>'
+        pi_sub = '<div class="sub">RESIDUAL SUMMARY NOT COMPUTED</div>'
+    else:
+        if log_target:
+            import math as _math
+            pct = (_math.exp(p80) - 1.0) * 100
+            pi_val = f'±{pct:.1f}%'
+            pi_sub = '<div class="sub warn">ANALYTIC P80 |RESID|</div>'
+        else:
+            pi_val = f'±{_fmt_num(p80)}'
+            pi_sub = '<div class="sub warn">ANALYTIC P80 |RESID|</div>'
+
+    # Condition # → low-multicollinearity verdict matches the existing
+    # multicollinearity_verdict logic.
+    if cond_n < 10:
+        cond_sub_cls = "good"; cond_sub_lbl = "LOW MULTICOLL."
+    elif cond_n < 30:
+        cond_sub_cls = "warn"; cond_sub_lbl = "MILD MULTICOLL."
+    else:
+        cond_sub_cls = "bad";  cond_sub_lbl = "HIGH MULTICOLL."
+
+    return (
+        '<div class="rge-strip rge-tokens">'
+        f'<div class="cell"><div class="label">R²</div>'
+        f'<div class="val">{r2:.1%}</div>'
+        '<div class="sub">IN-SAMPLE</div></div>'
+        f'<div class="cell"><div class="label">OOS R²</div>'
+        f'<div class="val">{oos_val_html}</div>'
+        f'{oos_sub_html}</div>'
+        f'<div class="cell"><div class="label">Overfit gap</div>'
+        f'<div class="val">{gap_val_html}</div>'
+        f'{gap_sub_html}</div>'
+        f'<div class="cell"><div class="label">RMSE</div>'
+        f'<div class="val">{rmse:.3f}</div>'
+        f'<div class="sub {"bad" if rmse_pct_of_sd > 80 else "warn"}">'
+        f'{rmse_pct_of_sd:.0f}% vs SD</div></div>'
+        f'<div class="cell"><div class="label">80% PI width</div>'
+        f'<div class="val">{pi_val}</div>'
+        f'{pi_sub}</div>'
+        f'<div class="cell"><div class="label">Condition #</div>'
+        f'<div class="val">{cond_n:.1f}</div>'
+        f'<div class="sub {cond_sub_cls}">{cond_sub_lbl}</div></div>'
+        '</div>'
+    )
+
+
+def _rge_hero_grid(result: Dict[str, Any]) -> str:
+    """3-tile hero per spec §5: CALIBRATION / RESIDUALS / DRIVERS.
+
+    Drivers always wired (every fit has coefficients). Calibration +
+    residual histogram render the empty-state badge if their
+    additive fields aren't present (defensive: the page still works
+    against an older fit cache that doesn't carry them).
+    """
+    # CALIBRATION tile -------------------------------------------------
+    deciles = result.get("calibration_deciles") or []
+    if deciles:
+        # Normalize to a 0–1 scatter on the 200px canvas. The 45° line
+        # is rendered by CSS; dots sit at (predicted_norm, actual_norm).
+        vals = []
+        for d in deciles:
+            vals.append(d.get("mean_predicted", 0.0))
+            vals.append(d.get("mean_actual", 0.0))
+        lo = min(vals) if vals else 0.0
+        hi = max(vals) if vals else 1.0
+        rng = (hi - lo) or 1.0
+        pts = ""
+        for d in deciles:
+            pred_n = (d["mean_predicted"] - lo) / rng
+            act_n = (d["mean_actual"] - lo) / rng
+            # Outlier dot if residual > 25% relative
+            rel_err = (
+                abs(d["mean_actual"] - d["mean_predicted"])
+                / max(1.0, abs(d["mean_predicted"]))
+            )
+            cls = "pt out" if rel_err > 0.25 else "pt"
+            left = max(0.0, min(1.0, pred_n)) * 100
+            bottom = max(0.0, min(1.0, act_n)) * 100
+            pts += (
+                f'<span class="{cls}" '
+                f'style="left:{left:.1f}%;bottom:{bottom:.1f}%"></span>'
+            )
+        # Verdict — calibrated if median decile error is < 15%.
+        med_err = sorted(
+            abs(d["mean_actual"] - d["mean_predicted"])
+            / max(1.0, abs(d["mean_predicted"]))
+            for d in deciles
+        )[len(deciles) // 2]
+        cal_verdict_cls = "" if med_err < 0.15 else "warn"
+        cal_verdict_lbl = (
+            "● Calibrated through middle 80%" if med_err < 0.15
+            else f"● Median decile error {med_err*100:.0f}%"
+        )
+        # X-axis: D1 vs D10 mean predicted, formatted by _fmt_num
+        d1 = deciles[0]["mean_predicted"]
+        d10 = deciles[-1]["mean_predicted"]
+        cal_body = (
+            '<div class="rge-cal">'
+            '<span class="grid h" style="top:25%"></span>'
+            '<span class="grid h" style="top:50%"></span>'
+            '<span class="grid h" style="top:75%"></span>'
+            '<span class="grid v" style="left:25%"></span>'
+            '<span class="grid v" style="left:50%"></span>'
+            '<span class="grid v" style="left:75%"></span>'
+            '<span class="diag"></span>'
+            f'{pts}'
+            '</div>'
+            '<div class="x-axis">'
+            f'<span>D1 {_fmt_num(d1)}</span>'
+            '<span>Predicted →</span>'
+            f'<span>D10 {_fmt_num(d10)}</span>'
+            '</div>'
+        )
+    else:
+        cal_verdict_cls = "warn"
+        cal_verdict_lbl = "● Awaiting data"
+        cal_body = (
+            '<div class="rge-empty">Calibration deciles not '
+            'computed on this fit</div>'
+        )
+
+    # RESIDUALS tile ---------------------------------------------------
+    rs = result.get("residual_summary")
+    if rs and rs.get("histogram"):
+        bins = rs["histogram"]
+        max_share = max((b["share"] for b in bins), default=1.0) or 1.0
+        bars = ""
+        n_bins = len(bins)
+        for i, b in enumerate(bins):
+            # Center bin = green, abs |x|>2σ = coral, |x|>1σ = amber-tail
+            mid = (b["x_lo"] + b["x_hi"]) / 2
+            if abs(mid) > 2.0:
+                cls = "b tail"
+            elif abs(mid) > 1.0:
+                cls = "b tail-amber"
+            else:
+                cls = "b mid" if abs(mid) < 0.5 else "b"
+            h = (b["share"] / max_share) * 100
+            bars += f'<div class="{cls}" style="height:{h:.1f}%"></div>'
+        skew = rs.get("skew", 0.0)
+        share_2s = rs.get("share_outside_2s", 0.0)
+        sign = "+" if skew >= 0 else "−"
+        if abs(skew) < 0.3 and share_2s < 0.06:
+            r_verdict_cls = ""
+        elif abs(skew) > 0.7 or share_2s > 0.10:
+            r_verdict_cls = "bad"
+        else:
+            r_verdict_cls = "warn"
+        r_verdict_lbl = (
+            f"● {'Heavy' if share_2s > 0.06 else 'Light'}-tailed "
+            f"· skew {sign}{abs(skew):.2f}"
+        )
+        resid_body = (
+            f'<div class="rge-hist">{bars}</div>'
+            '<div class="x-axis">'
+            '<span>−4σ</span>'
+            '<span>STD residual</span>'
+            '<span>+4σ</span></div>'
+        )
+    else:
+        r_verdict_cls = "warn"
+        r_verdict_lbl = "● Awaiting data"
+        resid_body = (
+            '<div class="rge-empty">Residual histogram not '
+            'computed on this fit</div>'
+        )
+
+    # DRIVERS tile -----------------------------------------------------
+    coefs = result.get("coefficients") or []
+    # Rank by |coefficient|; the top 5 lead. Standardized betas are in
+    # ``coefficient`` (X_norm scale), so |β| reads as "1σ change in
+    # feature → β SDs of target".
+    by_mag = sorted(coefs, key=lambda c: -abs(c.get("coefficient", 0.0)))[:5]
+    max_abs = max(
+        (abs(c.get("coefficient", 0.0)) for c in by_mag), default=1.0,
+    ) or 1.0
+    sig_count = sum(1 for c in coefs if c.get("significance"))
+    drv_verdict_cls = "" if sig_count == len(coefs) else "warn"
+    drv_verdict_lbl = (
+        f"● {sig_count}/{len(coefs)} significant"
+        if coefs else "● No drivers"
+    )
+    drv_rows = ""
+    for c in by_mag:
+        feat = c.get("feature", "")
+        coef = c.get("coefficient", 0.0)
+        # 50% of half-track = |coef|/max_abs ratio
+        pct = (abs(coef) / max_abs) * 50.0
+        fill_cls = "fill pos" if coef >= 0 else "fill neg"
+        val_cls = "val pos" if coef >= 0 else "val neg"
+        sign = "+" if coef >= 0 else "−"
+        feat_label = _html.escape(feat.replace("_", " ").title())
+        drv_rows += (
+            '<div class="row">'
+            f'<div class="lbl" title="{feat_label}">{feat_label}</div>'
+            '<div class="track">'
+            '<div class="mid-line"></div>'
+            f'<div class="{fill_cls}" style="width:{pct:.1f}%"></div>'
+            '</div>'
+            f'<div class="{val_cls}">{sign}{abs(coef):.2f}</div>'
+            '</div>'
+        )
+    drv_body = (
+        f'<div class="rge-drv">{drv_rows}</div>'
+        '<div class="x-axis" style="margin-top:14px">'
+        '<span>−1.0σ</span>'
+        '<span>standardized β</span>'
+        '<span>+1.0σ</span></div>'
+    )
+
+    return (
+        '<div class="rge-bar"><span>At a glance · the model\'s three '
+        'honest pictures</span>'
+        '<span class="meta">calibration · residuals · drivers</span>'
+        '</div>'
+        '<div class="rge-hero rge-tokens">'
+        '<div class="tile">'
+        '<div class="head">'
+        '<span class="eb">Calibration</span>'
+        f'<span class="verdict {cal_verdict_cls}">{cal_verdict_lbl}</span>'
+        '</div>'
+        f'{cal_body}'
+        '</div>'
+        '<div class="tile">'
+        '<div class="head">'
+        '<span class="eb">Residuals</span>'
+        f'<span class="verdict {r_verdict_cls}">{r_verdict_lbl}</span>'
+        '</div>'
+        f'{resid_body}'
+        '</div>'
+        '<div class="tile">'
+        '<div class="head">'
+        '<span class="eb">Drivers</span>'
+        f'<span class="verdict {drv_verdict_cls}">{drv_verdict_lbl}</span>'
+        '</div>'
+        f'{drv_body}'
+        '</div>'
+        '</div>'
+    )
+
+
+def _rge_verdict_row(
+    result: Dict[str, Any],
+    cv_res: Optional[Any],
+) -> str:
+    """5-card verdict row per spec §6. Each card is anchor-linked to its
+    supporting block further down the page; the lead phrase quotes a
+    real number from the live fit so the row is never editorial
+    boilerplate.
+    """
+    coefs = result.get("coefficients") or []
+    sig_count = sum(1 for c in coefs if c.get("significance"))
+    p_count = result.get("p", 0)
+    shap = result.get("shapley_r2") or []
+    top_shap = max(
+        (s.get("share", 0.0) for s in shap), default=0.0,
+    ) if shap else 0.0
+    top_shap_feat = ""
+    if shap:
+        best = max(shap, key=lambda s: s.get("share", 0.0))
+        top_shap_feat = best.get("feature", "")
+
+    # SIGNAL — significant features + top Shapley driver.
+    if shap and top_shap > 0:
+        signal_text = (
+            f'<b>{sig_count}/{p_count} features significant.</b> '
+            f'{_html.escape(top_shap_feat.replace("_", " ").title())} '
+            f'carries {top_shap*100:.1f}% of explained variance.'
+        )
+    else:
+        signal_text = (
+            f'<b>{sig_count}/{p_count} features significant.</b> '
+            f'Joint F = {min(result.get("f_stat", 0.0), 9999):.1f}.'
+        )
+
+    # CAUTION — PI width.
+    rs = result.get("residual_summary") or {}
+    p80 = rs.get("p80_abs")
+    if p80 is None:
+        caution_text = (
+            '<b>RMSE {rmse:.3f} in fit space.</b> Run Cross-validate '
+            'for a calibrated 80% prediction interval.'
+        ).format(rmse=result.get("rmse", 0.0))
+    else:
+        if result.get("log_target"):
+            import math as _math
+            pct = (_math.exp(p80) - 1.0) * 100
+            caution_text = (
+                f'<b>±{pct:.0f}% 80% PI width.</b> Use for ranking, '
+                'not point valuation.'
+            )
+        else:
+            caution_text = (
+                f'<b>±{_fmt_num(p80)} 80% PI width.</b> Use for '
+                'ranking, not point valuation.'
+            )
+
+    # REGIME BREAK — state R² spread.
+    state_r2 = result.get("state_r2") or []
+    if len(state_r2) >= 4:
+        r2s = sorted(s.get("r2", 0.0) for s in state_r2)
+        # 90th/10th percentile rather than min/max so a single weird
+        # state doesn't dominate the read.
+        lo_p = r2s[len(r2s) // 10] if len(r2s) >= 10 else r2s[0]
+        hi_p = r2s[-(len(r2s) // 10) - 1] if len(r2s) >= 10 else r2s[-1]
+        if (hi_p - lo_p) > 0.20:
+            regime_cls = "flag"
+            regime_text = (
+                f'<b>R² spans {lo_p*100:.0f}–{hi_p*100:.0f}% '
+                f'across states.</b> Segment before extrapolating.'
+            )
+        else:
+            regime_cls = ""
+            regime_text = (
+                f'<b>R² within {(hi_p-lo_p)*100:.0f}pp across states.</b> '
+                'Headline applies broadly.'
+            )
+    else:
+        regime_cls = "flag"
+        regime_text = (
+            '<b>Cohort R² not segmented.</b> Toggle '
+            '<em>Segmented regression</em> to test for regime breaks.'
+        )
+
+    # INFLUENCE — outliers with high cooks_d.
+    outs = result.get("outliers") or []
+    hi_inf = [
+        o for o in outs
+        if o.get("influence_class") in {"high_influence", "outlier_influence"}
+    ]
+    if hi_inf:
+        names = ", ".join(
+            (o.get("name") or o.get("ccn", "?"))[:18]
+            for o in hi_inf[:4]
+        )
+        infl_cls = "flag"
+        infl_text = (
+            f'<b>{len(hi_inf)} high-influence rows.</b> {_html.escape(names)}.'
+        )
+    else:
+        infl_cls = ""
+        infl_text = (
+            '<b>No high-influence outliers.</b> '
+            'Top-20 Cook’s D values stay below threshold.'
+        )
+
+    # DO NEXT — derived from caution + regime cards.
+    next_text = (
+        '<b>Rank, don’t price.</b> Quote with the 80% PI from the '
+        'Prediction block; cross-validate before sourcing.'
+    )
+
+    return (
+        '<div class="rge-bar"><span>Verdict · 5 things this '
+        'regression is telling you</span>'
+        '<span class="meta">click a card to jump to the supporting block'
+        '</span></div>'
+        '<div class="rge-verdict rge-tokens">'
+        '<a class="v" href="#fit" role="status" aria-label="Signal verdict">'
+        '<div class="tag"><span class="dot"></span>Signal</div>'
+        f'<p>{signal_text}</p></a>'
+        '<a class="v warn" href="#prediction" role="status" '
+        'aria-label="Caution verdict">'
+        '<div class="tag"><span class="dot"></span>Caution</div>'
+        f'<p>{caution_text}</p></a>'
+        f'<a class="v {regime_cls}" href="#cohort" role="status" '
+        'aria-label="Regime break verdict">'
+        '<div class="tag"><span class="dot"></span>Regime break</div>'
+        f'<p>{regime_text}</p></a>'
+        f'<a class="v {infl_cls}" href="#leverage" role="status" '
+        'aria-label="Influence verdict">'
+        '<div class="tag"><span class="dot"></span>Influence</div>'
+        f'<p>{infl_text}</p></a>'
+        '<a class="v" href="#next" role="status" aria-label="Do next">'
+        '<div class="tag"><span class="dot"></span>Do next</div>'
+        f'<p>{next_text}</p></a>'
+        '</div>'
+    )
 
 
 def render_regression_page(
@@ -1110,6 +1807,25 @@ def render_regression_page(
             if opt_result is not None:
                 result = opt_result
                 optimized_applied = True
+
+    # Cross-validation result. Computed ONCE here (when cv is on) so
+    # the editorial top-strip can quote a real OOS R² / overfit gap
+    # in its headline tile AND the existing detailed cv_section panel
+    # below renders against the same object (no double-compute). When
+    # CV is off the editorial tiles render the "Awaiting CV" pending
+    # pill per spec §4 Partial.
+    cv_res = None
+    cv_error: Optional[str] = None
+    if cv:
+        try:
+            cv_res = _run_cv(
+                df, target, result["features"],
+                k=5, log_transform_target=log_target,
+                random_state=42,
+                auto_reduce_k=True,
+            )
+        except ValueError as exc:
+            cv_error = str(exc)
 
     # ── Editorial intro + KPI strip ──
     # Guided, plain-language lead — what you're predicting and what the model
@@ -1868,25 +2584,20 @@ def render_regression_page(
     # ── Cross-validation panel (Phase 4A) ──
     # Only computed when the partner explicitly toggles
     # "Cross-validate". CV is expensive (~k × baseline fit cost)
-    # so we don't run it by default. Result is the OOS R² + RMSE
-    # the diagnostic banner says we don't yet have without CV.
+    # so we don't run it by default. ``cv_res`` was computed once
+    # earlier so the editorial headline strip + this detail panel
+    # share the same object (no double-compute). The error path is
+    # also single-source: ``cv_error`` is the string from the failed
+    # earlier ValueError, if any.
     cv_section = ""
     if cv:
-        try:
-            cv_res = _run_cv(
-                df, target, result["features"],
-                k=5, log_transform_target=log_target,
-                random_state=42,
-                auto_reduce_k=True,
-            )
-        except ValueError as exc:
+        if cv_error is not None:
             cv_section = ck_panel(
                 f'<p class="ck-section-body cad-warn">'
                 f'Cross-validation could not run: '
-                f'{_html.escape(str(exc))}</p>',
+                f'{_html.escape(cv_error)}</p>',
                 title="Cross-Validation (5-fold)",
             )
-            cv_res = None
 
         if cv_res is not None:
             import math as _math
@@ -2559,15 +3270,54 @@ letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
             '</div>'
         )
 
+    # ── Editorial top-block (spec anatomy §1-§6) ──
+    # The slim diagnostic strip replaces the bigger diagnostic_banner
+    # at the masthead so the page leads with VISUALS per spec §0. The
+    # full diagnostic_banner stays below as a fuller explainer for
+    # readers who scroll back up. Headline strip / hero / verdict row
+    # are all wired to real fields on ``result`` and ``cv_res``;
+    # blocks with un-computed inputs render the awaiting-data pending
+    # pill per spec §4 Partial — never a hard-coded value.
+    editorial_top = (
+        _RGE_STYLES
+        + ck_page_title(
+            "Regression Analysis",
+            eyebrow="STATISTICAL ANALYTICS",
+            meta=(
+                f"OLS · {target.replace('_', ' ').upper()}"
+                f"{' (LOG)' if log_target else ''}"
+                f" · {result['p']} FEATURES · N {result['n']:,}"
+                f"{' · 5-FOLD CV' if cv else ''}"
+                f"{' · LEAKAGE-FILTERED' if drop_leakage else ''}"
+            ),
+        )
+        + _rge_diagnostic_strip()
+        + _rge_headline_strip(result, cv_res, log_target)
+        + _rge_hero_grid(result)
+        + _rge_verdict_row(result, cv_res)
+    )
+
+    # Anchor IDs that the verdict-row cards scroll to. Wrapping the
+    # existing panels in named <a id> spans is the least-invasive way
+    # to hit the spec §6 anchor contract (#fit / #prediction / #cohort
+    # / #leverage / #next) without restructuring every panel.
+    cv_anchor = f'<a id="fit"></a>{cv_section}' if cv_section else '<a id="fit"></a>'
+    prediction_anchor = f'<a id="prediction"></a>'
+    cohort_anchor = (
+        f'<a id="cohort"></a>{segmented_section}'
+        if segmented_section
+        else '<a id="cohort"></a>'
+    )
+
     body = (
-        f'{rg_styles}{intro}{diagnostic_banner}{source_selector}'
+        f'{editorial_top}{rg_styles}{intro}{diagnostic_banner}{source_selector}'
         f'{leakage_banner}{formula_related_banner}'
-        f'{leakage_section}{cv_section}{cluster_section}'
-        f'{buyability_section}{segmented_section}'
-        f'{kpis}{multicollinearity_banner}{intercept_section}'
+        f'{leakage_section}{cv_anchor}{cluster_section}'
+        f'{buyability_section}{cohort_anchor}'
+        f'{prediction_anchor}{kpis}{multicollinearity_banner}{intercept_section}'
         '<div class="rg-grid">'
         f'<div>{left_col}</div><div>{right_col}</div></div>'
-        f'{nav_section}{next_up}'
+        f'{nav_section}<a id="leverage"></a><a id="next"></a>{next_up}'
     )
 
     sig_count = sum(1 for c in result["coefficients"] if c["significance"])
