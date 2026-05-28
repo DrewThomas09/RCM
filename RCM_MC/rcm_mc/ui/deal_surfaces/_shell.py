@@ -35,7 +35,7 @@ SURFACES: Tuple[DealSurface, ...] = (
                 "Front door — identity, headline financials, score."),
     DealSurface(2,  "ic-memo",     "IC Memo",         "Diligence",      False,
                 "Auto-assembled IC memorandum (sections stream in)."),
-    DealSurface(3,  "bridge",      "EBITDA Bridge",   "Diligence",      False,
+    DealSurface(3,  "bridge",      "EBITDA Bridge",   "Diligence",      True,
                 "7-lever RCM bridge to pro-forma EBITDA."),
     DealSurface(4,  "comp-intel",  "Comp Intel",      "Diligence",      False,
                 "Percentile ranks across 12 metrics × 4 cohorts."),
