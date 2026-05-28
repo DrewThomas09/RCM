@@ -101,11 +101,15 @@ font-size:10.5px;font-weight:700;letter-spacing:1.1px;}}
 .rc-chip-KILLED{{background:{ne};color:#fff;}}
 .rc-chip-DAMAGED{{background:{wn};color:#1a1a1a;}}
 .rc-chip-UNAFFECTED{{background:{pa};color:{td};border:1px solid {bd};}}
-.rc-event-card{{background:{pn};border:1px solid {bd};border-left:3px solid {ac};
-border-radius:0 3px 3px 0;padding:14px 18px;margin-bottom:12px;}}
-.rc-event-card.killer{{border-left-color:{ne};}}
-.rc-event-card.damager{{border-left-color:{wn};}}
-.rc-event-card.tailwind{{border-left-color:{po};}}
+/* 2026-05-28 batch 35 · Tier-4 trope removal — default .rc-event-card
+   loses the decorative 3px accent stripe (plain hairline panel);
+   .killer/.damager/.tailwind variants re-add a semantic 3px stripe
+   that carries meaning (severity of policy event for the deal). */
+.rc-event-card{{background:{pn};border:1px solid {bd};
+border-radius:2px;padding:14px 18px;margin-bottom:12px;}}
+.rc-event-card.killer{{border-left:3px solid {ne};}}
+.rc-event-card.damager{{border-left:3px solid {wn};}}
+.rc-event-card.tailwind{{border-left:3px solid {po};}}
 .rc-event-head{{display:flex;justify-content:space-between;gap:14px;
 flex-wrap:wrap;align-items:baseline;}}
 .rc-event-title{{font-size:14.5px;color:{tx};font-weight:600;}}
@@ -135,8 +139,10 @@ border-radius:3px;font-family:"JetBrains Mono",monospace;font-size:13px;}}
 color:#fff;border:0;border-radius:3px;font-size:12px;letter-spacing:1.3px;
 text-transform:uppercase;font-weight:700;cursor:pointer;}}
 .rc-form-submit:hover{{filter:brightness(1.15);}}
-.rc-callout{{background:{pa};padding:12px 16px;border-left:3px solid {ac};
-border-radius:0 3px 3px 0;font-size:12px;color:{td};line-height:1.65;
+/* 2026-05-28 batch 35 · Tier-4 trope removal — drops decorative
+   3px accent stripe on .rc-callout; flat hairline panel instead. */
+.rc-callout{{background:{pa};padding:12px 16px;border:1px solid {bd};
+border-radius:2px;font-size:12px;color:{td};line-height:1.65;
 max-width:880px;margin-top:12px;}}
 """.format(
         tx=P["text"], td=P["text_dim"], tf=P["text_faint"],

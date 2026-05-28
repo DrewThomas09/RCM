@@ -52,14 +52,18 @@ def _scoped_styles() -> str:
 color:{tf};font-weight:600;}}
 .pa-h1{{font-size:26px;color:{tx};font-weight:600;line-height:1.15;
 margin:4px 0 0 0;letter-spacing:-.2px;}}
+/* 2026-05-28 batch 35 · Tier-4 trope removal — default .pa-callout
+   drops the decorative 3px accent stripe (flat hairline panel);
+   .alert/.warn/.good variants re-add a semantic 3px stripe that
+   carries severity meaning (red/amber/green). */
 .pa-callout{{background:{pa};padding:12px 16px;
-border-left:3px solid {ac};border-radius:0 3px 3px 0;
+border:1px solid {bd};border-radius:2px;
 font-size:12px;color:{td};line-height:1.65;max-width:880px;margin-top:12px;}}
-.pa-callout.alert{{border-left-color:{ne};color:{ne};
+.pa-callout.alert{{border-left:3px solid {ne};color:{ne};
 font-weight:600;font-size:13px;}}
-.pa-callout.warn{{border-left-color:{wn};color:{wn};
+.pa-callout.warn{{border-left:3px solid {wn};color:{wn};
 font-weight:600;font-size:13px;}}
-.pa-callout.good{{border-left-color:{po};color:{po};
+.pa-callout.good{{border-left:3px solid {po};color:{po};
 font-weight:600;font-size:13px;}}
 .pa-section-label{{font-size:10px;letter-spacing:1.6px;text-transform:uppercase;
 font-weight:700;color:{tf};margin:22px 0 10px 0;}}
@@ -94,9 +98,11 @@ font-variant-numeric:tabular-nums;}}
 .pa-driver{{display:inline-block;padding:3px 9px;margin:2px 4px 2px 0;
 border:1px solid currentColor;font-size:10px;border-radius:3px;
 background:{pn};}}
+/* 2026-05-28 batch 35 · Tier-4 trope removal — strip decorative
+   2px accent stripe; flat hairline panel instead. */
 .pa-bond{{margin-top:12px;padding:10px 14px;background:{pa};
-border-left:2px solid {ac};font-size:12px;line-height:1.6;
-color:{td};border-radius:0 3px 3px 0;}}
+border:1px solid {bd};font-size:12px;line-height:1.6;
+color:{td};border-radius:2px;}}
 .pa-bond__num{{font-family:"JetBrains Mono",monospace;
 font-variant-numeric:tabular-nums;color:{tx};font-weight:700;}}
 .pa-pill{{display:inline-block;padding:2px 9px;font-size:9px;
@@ -1020,9 +1026,10 @@ def _hrsa_attrition_panel() -> str:
         for t in top
     )
     total = int(summ.get("total_designated", 0)); med = summ.get("national_median_score", "")
+    # 2026-05-28 batch 35 · Tier-4 trope removal — strip 3px accent.
     return (
-        f'<div style="background:{P["panel"]};border:1px solid {bd};border-left:3px solid {ac};'
-        f'padding:14px 16px;margin-bottom:16px">'
+        f'<div style="background:{P["panel"]};border:1px solid {bd};'
+        f'border-radius:2px;padding:14px 16px;margin-bottom:16px">'
         f'<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:{td};'
         f'text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">'
         f'Real HRSA shortage areas &mdash; the attrition-pressure backdrop'
