@@ -627,11 +627,13 @@ font-weight:700;cursor:pointer;}}
 border:1px solid {P["border"]};font-size:10px;letter-spacing:1.5px;
 text-transform:uppercase;font-weight:600;cursor:pointer;}}
 .ck-dp-saved-at{{font-size:10px;color:{P["text_faint"]};margin-left:10px;letter-spacing:.5px;}}
+/* 2026-05-28 batch 41 · Tier-4 trope removal — radius 4px → 2px;
+   drops decorative box-shadow on hover (transform + border-color
+   already convey the affordance). */
 .ck-dp-card{{display:block;background:{P["panel"]};border:1px solid {P["border"]};
-border-radius:4px;padding:14px 16px;text-decoration:none;
-transition:transform 140ms ease,border-color 140ms ease,box-shadow 140ms ease;}}
-.ck-dp-card:hover{{transform:translateY(-1px);border-color:{P["text_faint"]};
-box-shadow:0 6px 18px rgba(0,0,0,0.30);}}
+border-radius:2px;padding:14px 16px;text-decoration:none;
+transition:transform 140ms ease,border-color 140ms ease;}}
+.ck-dp-card:hover{{transform:translateY(-1px);border-color:{P["text_faint"]};}}
 .ck-dp-card-head{{display:flex;justify-content:space-between;align-items:baseline;
 margin-bottom:6px;}}
 .ck-dp-card-title{{font-size:13px;color:{P["text"]};font-weight:600;letter-spacing:-.1px;}}
@@ -959,11 +961,13 @@ font-family:"Source Serif 4",Georgia,serif;font-style:italic;}}
 text-transform:uppercase;font-weight:700;margin-bottom:10px;}}
 .ck-dp-saved-grid{{display:grid;
 grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;}}
+/* 2026-05-28 batch 41 · Tier-4 trope removal — radius 4px → 2px;
+   drops decorative box-shadow on hover (border-color shift
+   already conveys interactivity). */
 .ck-dp-saved-card{{background:var(--bg);border:1px solid var(--paper-pure);
-border-radius:4px;padding:14px 16px;
-transition:border-color 140ms ease, box-shadow 140ms ease;}}
-.ck-dp-saved-card:hover{{border-color:var(--muted);
-box-shadow:0 4px 14px rgba(0,0,0,0.35);}}
+border-radius:2px;padding:14px 16px;
+transition:border-color 140ms ease;}}
+.ck-dp-saved-card:hover{{border-color:var(--muted);}}
 .ck-dp-saved-row{{display:flex;justify-content:space-between;
 align-items:baseline;gap:10px;margin-bottom:6px;}}
 .ck-dp-saved-slug{{font-size:9px;color:var(--muted);letter-spacing:1.3px;
