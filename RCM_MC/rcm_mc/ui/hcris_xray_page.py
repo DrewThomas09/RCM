@@ -357,15 +357,25 @@ def _target_card(
         ),
     )
     trend_chip = _trend_signal_chip(trend_signal, history_len)
-    intro = ck_section_intro(
+    # 2026-05-28 batch 22 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
         eyebrow=(
             f"CCN {html.escape(target.ccn)} · "
             f"FY{target.fiscal_year} · "
             f"{html.escape(target.city)}, {html.escape(target.state)}"
         ),
-        headline=html.escape(target.name),
-        body=None,
-        italic_word=None,
+        title=html.escape(target.name),
+        meta=(
+            f"{target.beds:,} BEDS · "
+            f"${target.net_patient_revenue/1e6:,.1f}M NPR · "
+            f"${target.operating_expenses/1e6:,.1f}M OPEX"
+        ),
+        lede_italic_phrase="HCRIS at a glance.",
+        lede_body=(
+            f"Federally-reported financials for "
+            f"{html.escape(target.name)}, FY{target.fiscal_year}."
+        ),
     )
     kpis = (
         '<div class="ck-kpi-strip">'
@@ -1155,11 +1165,20 @@ def render_hcris_xray_page(
         )
     chart_plain = " ".join(chart_plain_parts)
 
-    main_intro = ck_section_intro(
+    # 2026-05-28 batch 22 · universal strict 5-block head for the
+    # peer X-Ray main intro path.
+    from ._chartis_kit import ck_editorial_head
+    main_intro = ck_editorial_head(
         eyebrow="HCRIS-Native Peer X-Ray",
-        headline=f"{html.escape(target.name)} — peer benchmark.",
-        italic_word="peer",
-        body=(
+        title=f"Peer benchmark — {html.escape(target.name)}",
+        meta=(
+            f"{len(report.peers)} PEERS · "
+            f"{report.peer_filter_used.upper()} · "
+            f"{len(report.metrics)} METRIC"
+            f"{'S' if len(report.metrics) != 1 else ''}"
+        ),
+        lede_italic_phrase="Peer-benchmarked, on real HCRIS.",
+        lede_body=(
             f"{len(report.peers)} peers · {report.peer_filter_used} · "
             f"benchmarked on {len(report.metrics)} metrics."
         ),

@@ -67,11 +67,21 @@ def render_hospital_providers(
     providers = list_providers(con, ccn)
     age = cache_age_days(con, ccn)
 
-    intro = ck_section_intro(
+    # 2026-05-28 batch 22 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
         eyebrow=f"PROVIDER DIRECTORY · {ccn_safe}",
-        headline=f"Who actually practices at {name_safe}.",
-        italic_word="actually",
-        body=(
+        title=f"Who actually practices at {name_safe}.",
+        meta=(
+            f"{len(providers)} NPI"
+            f"{'S' if len(providers) != 1 else ''} · "
+            f"NPPES LIVE CACHE · "
+            + (f"AGE {age}d" if age is not None else "FRESH")
+        ),
+        lede_italic_phrase=(
+            "Who actually practices at this hospital."
+        ),
+        lede_body=(
             "NPPES live-cache view of every Type-1 individual and "
             "Type-2 organization NPI registered to this hospital's "
             "practice address. Used during commercial DD to read "
