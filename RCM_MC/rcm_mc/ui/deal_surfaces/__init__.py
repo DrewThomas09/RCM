@@ -18,6 +18,7 @@ from ._shell import (
 )
 from ._stub import render_surface_stub
 from .bridge import render_deal_bridge
+from .comp_intel import render_deal_comp_intel
 from .dcf import render_deal_dcf
 from .lbo import render_deal_lbo
 from .profile import render_deal_profile
@@ -32,6 +33,7 @@ __all__ = [
     "render_surface_stub",
     "render_deal_profile",
     "render_deal_bridge",
+    "render_deal_comp_intel",
     "render_deal_dcf",
     "render_deal_lbo",
 ]

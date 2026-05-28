@@ -53,10 +53,10 @@ class SurfaceRegistry(unittest.TestCase):
         self.assertEqual(sorted(s.number for s in SURFACES), list(range(1, 19)))
 
     def test_built_surfaces_grow_one_phase_at_a_time(self):
-        # Phase 1: profile. Phase 2: bridge. Phase 3: lbo. Phase 4: dcf.
-        # New surfaces appear here as they land — order-insensitive.
+        # Phases 1..5: profile, bridge, lbo, dcf, comp-intel.
         built = {s.slug for s in SURFACES if s.built}
-        self.assertEqual(built, {"profile", "bridge", "lbo", "dcf"})
+        self.assertEqual(built,
+                         {"profile", "bridge", "lbo", "dcf", "comp-intel"})
 
     def test_lookup_by_path(self):
         self.assertIs(SURFACE_BY_PATH["profile"].built, True)
@@ -99,8 +99,8 @@ class ProfileRender(unittest.TestCase):
         self.assertIn('aria-current="page"', self.html)
 
     def test_unbuilt_surfaces_get_soon_badge(self):
-        # 18 total − built (profile, bridge, lbo, dcf) = 14 soon badges
-        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 14)
+        # 18 − built (profile, bridge, lbo, dcf, comp-intel) = 13 soon badges
+        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 13)
 
     def test_payer_mix_uses_real_data(self):
         self.assertIn("Medicare 42%", self.html)
@@ -125,6 +125,34 @@ class ProfileRender(unittest.TestCase):
         for slug in ("ic-memo", "bridge", "comp-intel", "scenarios", "ml",
                      "market", "denial", "trends", "dcf", "lbo", "stmt", "returns"):
             self.assertIn(f"/deals/050001/{slug}", self.html)
+
+
+class CompIntelRender(unittest.TestCase):
+    """Surface 04 (Comp Intel) — percentile matrix from real HCRIS pool."""
+
+    def test_comp_intel_renders_three_panels_when_pool_loads(self):
+        from rcm_mc.ui.deal_surfaces import render_deal_comp_intel
+        # Use a REAL CCN so the full HCRIS pool partitions cleanly.
+        from rcm_mc.data.hcris import _get_latest_per_ccn
+        from rcm_mc.ui.deal_surfaces import fetch_hospital
+        hdf = _get_latest_per_ccn()
+        ccn = str(hdf.iloc[0]["ccn"])
+        h = fetch_hospital(ccn)
+        self.assertIsNotNone(h)
+        out = render_deal_comp_intel(ccn, h)
+        for eyebrow in ("HERO", "PERCENTILE RANKING", "TOP SIZE-MATCHED PEERS"):
+            self.assertIn(eyebrow, out, f"missing panel: {eyebrow}")
+        # 4 cohort headers in the percentile table
+        for c in ("National", "State", "Size-matched", "State + size"):
+            self.assertIn(c, out, f"missing cohort: {c}")
+        # Direction glyphs from the registry
+        self.assertIn("▲", out)
+        self.assertIn("▼", out)
+        # One <h1>
+        self.assertEqual(len(re.findall(r"<h1[ >]", out)), 1)
+
+    def test_comp_intel_marked_built_in_registry(self):
+        self.assertTrue(SURFACE_BY_PATH["comp-intel"].built)
 
 
 class DCFRender(unittest.TestCase):
@@ -335,6 +363,26 @@ class DealRoutes(unittest.TestCase):
                     body = r.read().decode()
                 self.assertIn("Under construction", body)
                 self.assertIn("DEAL · CCN", body)
+            finally:
+                server.shutdown(); server.server_close()
+
+    def test_real_ccn_comp_intel_renders_real_data_200(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            create_user(PortfolioStore(os.path.join(tmp, "p.db")), "at", "supersecret1")
+            server, port = self._start(tmp)
+            try:
+                opener = _login_opener(port, "at", "supersecret1")
+                ccn = self._pick_real_ccn()
+                with opener.open(f"http://127.0.0.1:{port}/deals/{ccn}/comp-intel") as r:
+                    self.assertEqual(r.status, 200)
+                    body = r.read().decode()
+                self.assertNotIn("Under construction", body)
+                self.assertIn("DEAL · CCN", body)
+                self.assertEqual(len(re.findall(r"<h1[ >]", body)), 1)
+                self.assertTrue(
+                    "PERCENTILE RANKING" in body or "Comp Intel cannot run" in body,
+                    "Comp Intel neither rendered the table nor an honest empty",
+                )
             finally:
                 server.shutdown(); server.server_close()
 
