@@ -140,11 +140,14 @@ def render_portfolio_bridge(
     active = [h for h in hospitals if h.stage not in ("passed",)]
 
     if not active:
-        empty_intro = ck_section_intro(
+        # 2026-05-28 batch 20 · universal strict 5-block head.
+        from ._chartis_kit import ck_editorial_head
+        empty_intro = ck_editorial_head(
             eyebrow="PORTFOLIO BRIDGE",
-            headline="No pipeline hospitals yet.",
-            italic_word="No",
-            body=(
+            title="No pipeline hospitals yet.",
+            meta="0 ACTIVE · ADD FROM SCREENER",
+            lede_italic_phrase="No pipeline hospitals yet.",
+            lede_body=(
                 "Add hospitals to the pipeline from the Deal "
                 "Screener to see the portfolio-level EBITDA bridge."
             ),
@@ -224,15 +227,33 @@ def render_portfolio_bridge(
     avg_margin_improvement = np.mean([d["margin_bps"] for d in deal_results]) if deal_results else 0
 
     # ── Editorial intro + KPI strip ──
-    intro = ck_section_intro(
+    # 2026-05-28 batch 20 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    _cur_pct = (
+        total_current_ebitda / total_revenue * 100
+        if total_revenue > 0 else 0
+    )
+    _new_pct = (
+        total_new_ebitda / total_revenue * 100
+        if total_revenue > 0 else 0
+    )
+    intro = ck_editorial_head(
         eyebrow="PORTFOLIO BRIDGE",
-        headline="Where the partner sees the whole pipeline at once.",
-        italic_word="whole",
-        body=(
+        title="Where the partner sees the whole pipeline at once.",
+        meta=(
+            f"{n_deals} ACTIVE DEAL"
+            f"{'S' if n_deals != 1 else ''} · "
+            f"{_fm(total_revenue)} REVENUE · "
+            f"+{_fm(total_uplift)} EBITDA UPLIFT · "
+            f"{_cur_pct:.1f}% → {_new_pct:.1f}% MARGIN"
+        ),
+        lede_italic_phrase=(
+            "Where the partner sees the whole pipeline at once."
+        ),
+        lede_body=(
             f"{n_deals} active pipeline deals · {_fm(total_revenue)} "
             f"revenue · projected +{_fm(total_uplift)} EBITDA uplift "
-            f"({total_current_ebitda/total_revenue*100 if total_revenue > 0 else 0:.1f}% → "
-            f"{total_new_ebitda/total_revenue*100 if total_revenue > 0 else 0:.1f}% margin)."
+            f"({_cur_pct:.1f}% → {_new_pct:.1f}% margin)."
         ),
     )
     kpis = (

@@ -1188,11 +1188,16 @@ def render_risk_workbench(
     *,
     print_preview: bool = False,
 ) -> str:
-    hero = _RW_CSS + ck_section_intro(
+    # 2026-05-28 batch 20 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    hero = _RW_CSS + ck_editorial_head(
         eyebrow="Regulatory Risk Workbench",
-        headline=f"{html.escape(inp.target_name)} — nine-panel risk panorama.",
-        italic_word="risk",
-        body=(
+        title=(
+            f"Risk panorama — {html.escape(inp.target_name)}"
+        ),
+        meta="9-PANEL TIER-1/2/3 DILIGENCE · LIVE ENGINE PER PANEL",
+        lede_italic_phrase="Nine engines, one panorama.",
+        lede_body=(
             "Live panels for the 9 Tier-1/2/3 diligence subpackages "
             "(Prompts G-O). Each panel runs its engine against the "
             "supplied inputs; panels without inputs render "

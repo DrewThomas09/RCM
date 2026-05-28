@@ -190,11 +190,19 @@ def render_escalations(
         extra_hidden={"min_days": str(min_days)},
     )
 
-    intro = ck_section_intro(
+    # 2026-05-28 batch 20 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    n_esc = len(escalated) if 'escalated' in dir() else 0
+    intro = ck_editorial_head(
         eyebrow="ESCALATIONS",
-        headline="What stayed open longer than it should.",
-        italic_word="longer",
-        body=(
+        title="What stayed open longer than it should.",
+        meta=(
+            f"RED ALERTS · OPEN > {min_days} DAYS · OLDEST FIRST"
+        ),
+        lede_italic_phrase=(
+            "What stayed open longer than it should."
+        ),
+        lede_body=(
             "Red-severity alerts sorted by days-open, oldest first. "
             "Anything still red past the threshold needs a decision "
             "before the next LP update."
