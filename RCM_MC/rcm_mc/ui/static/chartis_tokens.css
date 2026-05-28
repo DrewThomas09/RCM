@@ -125,6 +125,30 @@
   --accent:         var(--sc-teal);
   --accent-soft:    #d4e4e2;
   --card:           #ffffff;
+
+  /* ── 2026-05-28 style-sweep tokens ─────────────────────────────
+   * Editorial redesign spec tokens. These are NEW (not aliases of
+   * existing values) — kept distinct so adding them doesn't
+   * silently recolor pages still on --sc-parchment. Pages opting
+   * into the new editorial shape (portfolio_overview, regression
+   * editorial top, sweep batches) reference these directly. Spec
+   * source of truth: docs/style-sweep/STYLE_SWEEP_PROMPT.md. */
+  --paper-2:        #ebe5d4;     /* alt panel / table stripe */
+  --paper-3:        #e2dcc8;     /* deep panel / divider blocks */
+  --paper-hi:       #fbf6e8;     /* highlight / hovered row */
+  --paper-card:     #fefcf3;     /* inset card (filter panels) */
+  --ink-3:          #506478;     /* deeper muted */
+  --ink-deep:       #0e1a29;     /* sidebar floor / nav bar */
+  --muted-2:        #9a9e8a;     /* placeholder / dim mono */
+  --rule-soft:      #ddd1ac;     /* sub-divider */
+  --rule-hi:        #b6a87f;     /* hover / emphasized rule */
+  --green-2:        #2d8964;     /* lighter primary */
+  --green-deep:     #154e36;     /* darker primary / eyebrow */
+  --green-tint:     #e6efe1;     /* subtle tint */
+  --coral:          #b04a3a;     /* negative / destructive */
+  --coral-soft:     #ecd4cc;
+  --amber-soft:     #ecdfb4;
+  --gold:           #a08227;     /* scores, accent numerals */
 }
 
 /* Reset / base */

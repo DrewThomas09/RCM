@@ -150,17 +150,45 @@ def render_portfolio_overview(
     n = len(deals)
 
     if n == 0:
+        # Editorial empty state — same 5-block head, just with the
+        # mono "NO DEALS YET" eyebrow phrasing per spec §2.14.
+        empty_css = """
+<style>
+.po-empty-head{padding:0 0 36px;margin:0 0 48px;
+  border-bottom:1px solid var(--rule-soft,#ddd1ac);}
+.po-empty-head .eyebrow{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--green-deep,#154e36);display:flex;align-items:center;
+  gap:12px;margin:0 0 18px;}
+.po-empty-head .eyebrow .dash{width:24px;height:1px;
+  background:var(--green-deep,#154e36);}
+.po-empty-head h1{font:400 44px/1.05 var(--sc-serif,Georgia),serif;
+  letter-spacing:-.015em;color:var(--ink,#16263a);margin:0 0 14px;}
+.po-empty-head .lede{font:400 italic 17px/1.55 var(--sc-serif,Georgia),serif;
+  color:var(--ink-2,#2b3e54);max-width:62ch;margin:0;}
+.po-empty-head .lede em{color:var(--green-deep,#154e36);font-style:italic;}
+.po-empty-cta{display:flex;gap:12px;margin-top:32px;}
+.po-empty-cta a{font:500 14px/1 var(--sc-sans,Inter),sans-serif;
+  padding:12px 22px;border-radius:2px;text-decoration:none;}
+.po-empty-cta a.primary{background:var(--green-deep,#154e36);
+  color:#fff;border:1px solid var(--green-deep,#154e36);}
+.po-empty-cta a.ghost{background:transparent;
+  border:1px solid var(--ink,#16263a);color:var(--ink,#16263a);}
+</style>"""
         empty = (
-            f'<div class="cad-card" style="text-align:center;padding:40px;">'
-            f'<h2 style="font-size:18px;margin-bottom:12px;">No Deals in Portfolio</h2>'
-            f'<p style="color:{PALETTE["text_secondary"]};margin-bottom:16px;">'
-            f'Create deals to see portfolio analytics, health scores, and regression insights.</p>'
-            f'<div style="display:flex;gap:12px;justify-content:center;">'
-            f'<a href="/import" class="cad-btn cad-btn-primary" style="text-decoration:none;">'
-            f'+ New Deal</a>'
-            f'<a href="/screen" class="cad-btn" style="text-decoration:none;">Screen Hospitals</a>'
-            f'<a href="/market-data/map" class="cad-btn" style="text-decoration:none;">'
-            f'Market Data</a></div></div>'
+            empty_css
+            + '<header class="po-empty-head">'
+            '<div class="eyebrow"><span class="dash"></span>PORTFOLIO</div>'
+            '<h1>Portfolio</h1>'
+            '<p class="lede"><em>No deals tracked yet.</em> '
+            'Import a deal, screen the universe, or open the national '
+            'market heatmap to populate this view.</p>'
+            '</header>'
+            '<div class="po-empty-cta">'
+            '<a href="/import" class="primary">+ New deal</a>'
+            '<a href="/screen" class="ghost">Screen hospitals</a>'
+            '<a href="/market-data/map" class="ghost">Market heatmap</a>'
+            '</div>'
         )
         return chartis_shell(empty, "Portfolio", active_nav="/portfolio",
                         subtitle="No deals yet")
@@ -372,8 +400,12 @@ def render_portfolio_overview(
 
     opportunity = ""
     if recoverable > 0:
+        # 2026-05-28 style-sweep · removed the spec-forbidden
+        # "card with left-border accent" trope (Tier-4 don'ts).
+        # Cards are SQUARE with hairline borders; depth comes from
+        # paper-tone stacking, not a colored accent strip.
         opportunity = (
-            f'<div class="cad-card" style="border-left:3px solid {PALETTE["positive"]};">'
+            f'<div class="cad-card">'
             f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
             f'<h2 style="margin:0;">Portfolio Value Opportunity</h2>'
             f'<span class="cad-section-code" style="color:{PALETTE["positive"]};">OPP</span></div>'
@@ -395,8 +427,10 @@ def render_portfolio_overview(
         rcm_cost_base = total_rev * 0.06
         synergy_pct = min(0.25, 0.08 + 0.03 * (n - 2))
         synergy_ebitda = rcm_cost_base * synergy_pct
+        # 2026-05-28 style-sweep · same Tier-4 don't as opportunity
+        # block — no colored left-border accent on cards.
         synergy_section = (
-            f'<div class="cad-card" style="border-left:3px solid {PALETTE["brand_accent"]};">'
+            f'<div class="cad-card">'
             f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
             f'<h2 style="margin:0;">Cross-Deal RCM Synergy</h2>'
             f'<span class="cad-section-code" style="color:{PALETTE["brand_accent"]};">SYN</span></div>'
@@ -453,21 +487,89 @@ def render_portfolio_overview(
         f'{tiles_html}</div>'
     )
 
-    # Editorial section header — eyebrow + serif h2 + lede.
+    # ── 2026-05-28 style-sweep · Tier-1 page header ──
+    # Strict 5-block anatomy per the editorial sweep spec:
+    #   eyebrow (green-dash + mono uppercase) → H1 (serif) →
+    #   meta-line (mono uppercase) → lede (italic-first-phrase
+    #   serif, max-width 56ch) → status-dot legend.
+    # Replaces the legacy `<div class="sect">` head that paired a
+    # mono "PORTFOLIO · OVERVIEW" micro-eyebrow with an `<h2>` (the
+    # spec wants `<h1>`) — visible parity with /tools, /source, and
+    # the regression masthead.
     deals_label = f"{n} active deal" + ("s" if n != 1 else "")
+    # Style block scoped to `.po-head` so we don't restyle other
+    # pages. Tokens come from chartis_tokens.css (the additive
+    # spec-token block; --green-deep / --rule-soft / --ink / etc.).
+    _po_head_css = """
+<style>
+.po-head{padding:0 0 36px;margin:0 0 36px;
+  border-bottom:1px solid var(--rule-soft,#ddd1ac);}
+.po-head .eyebrow{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--green-deep,#154e36);display:flex;align-items:center;
+  gap:12px;margin:0 0 18px;}
+.po-head .eyebrow .dash{width:24px;height:1px;
+  background:var(--green-deep,#154e36);}
+.po-head h1{font:400 44px/1.05 var(--sc-serif,Georgia),serif;
+  letter-spacing:-.015em;color:var(--ink,#16263a);margin:0 0 14px;}
+.po-head .meta{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted,#7a8595);margin:0 0 24px;}
+.po-head .lede{font:400 italic 17px/1.55 var(--sc-serif,Georgia),serif;
+  color:var(--ink-2,#2b3e54);max-width:62ch;margin:0 0 24px;}
+.po-head .lede em{color:var(--green-deep,#154e36);font-style:italic;}
+.po-head .legend{display:flex;gap:24px;list-style:none;padding:0;
+  margin:0;font:400 12.5px/1 var(--sc-sans,Inter),sans-serif;
+  color:var(--ink-2,#2b3e54);flex-wrap:wrap;}
+.po-head .legend li{display:flex;align-items:center;}
+.po-head .legend .dot{width:8px;height:8px;border-radius:50%;
+  display:inline-block;margin-right:10px;}
+.po-head .legend .dot.live{background:var(--green-deep,#154e36);}
+.po-head .legend .dot.computed{background:var(--ink-deep,#0e1a29);}
+.po-head .legend .dot.needs{background:var(--coral,#b04a3a);}
+.po-head .legend .dot.illustrative{background:var(--gold,#a08227);}
+@media (max-width:960px){
+  .po-head h1{font-size:36px;}
+}
+</style>
+"""
+    # Meta-line builds from real data: deal count + sector count +
+    # active-vs-pipeline split. Never hardcode — quote real fields.
+    _n_sectors = (
+        deals["sector"].dropna().nunique()
+        if "sector" in deals.columns else None
+    )
+    _n_active = (
+        int((deals["stage"].astype(str).str.lower() == "active").sum())
+        if "stage" in deals.columns else None
+    )
+    meta_bits = [f"{n} DEAL" + ("S" if n != 1 else "")]
+    if _n_sectors:
+        meta_bits.append(f"{_n_sectors} SECTOR" + ("S" if _n_sectors != 1 else ""))
+    if _n_active is not None and _n_active != n:
+        meta_bits.append(f"{_n_active} ACTIVE · {n - _n_active} PIPELINE")
+    if total_rev is not None and total_rev > 0:
+        meta_bits.append(f"{_fmt_money(total_rev)} NPR")
+    meta_line = " · ".join(meta_bits)
     page_head = (
-        '<div class="sect">'
-        '<div>'
-        '<div class="micro">PORTFOLIO &nbsp;·&nbsp; OVERVIEW</div>'
-        '<h2>Active deals,<br/><em>at a glance</em>.</h2>'
-        '</div>'
-        '<p class="desc">'
-        f'{deals_label} across the fund. KPI roll-ups across denial / DAR / '
-        'collection rate, health distribution, opportunity ranking, and '
-        'cross-portfolio synergy signals — every value linked to the deal '
-        'page that owns it.'
+        _po_head_css
+        + '<header class="po-head">'
+        '<div class="eyebrow"><span class="dash"></span>PORTFOLIO</div>'
+        '<h1>Portfolio</h1>'
+        f'<div class="meta">{html.escape(meta_line)}</div>'
+        '<p class="lede">'
+        '<em>Active deals, at a glance.</em> '
+        'KPI roll-ups for denial rate, days in AR, and collection rate; '
+        'health distribution across the cohort; cross-portfolio '
+        'opportunity ranking and RCM synergy signals.'
         '</p>'
-        '</div>'
+        '<ul class="legend">'
+        '<li><span class="dot live"></span>Live data</li>'
+        '<li><span class="dot computed"></span>Computed</li>'
+        '<li><span class="dot needs"></span>Needs data</li>'
+        '<li><span class="dot illustrative"></span>Illustrative</li>'
+        '</ul>'
+        '</header>'
     )
 
     from ._chartis_kit import ck_next_section, ck_sticky_toc
