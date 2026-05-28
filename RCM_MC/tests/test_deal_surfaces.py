@@ -52,15 +52,13 @@ class SurfaceRegistry(unittest.TestCase):
         self.assertEqual(len({s.slug for s in SURFACES}), 18)
         self.assertEqual(sorted(s.number for s in SURFACES), list(range(1, 19)))
 
-    def test_built_surfaces_grow_one_phase_at_a_time(self):
-        # Phases 1..17. Only "predicted" remains unbuilt.
+    def test_all_eighteen_surfaces_built(self):
+        # Phases 1..18 complete. Every spec surface is now wired to a real
+        # engine (or to an honest pre-close empty per the spec for
+        # predicted-vs-actual).
         built = {s.slug for s in SURFACES if s.built}
-        self.assertEqual(built,
-                         {"profile", "bridge", "lbo", "dcf",
-                          "comp-intel", "ml", "denial", "returns",
-                          "trends", "stmt", "levers", "waterfall",
-                          "playbook", "ic-memo", "memo-auto", "market",
-                          "scenarios"})
+        self.assertEqual(built, {s.slug for s in SURFACES})
+        self.assertEqual(len(built), 18)
 
     def test_lookup_by_path(self):
         self.assertIs(SURFACE_BY_PATH["profile"].built, True)
@@ -102,9 +100,12 @@ class ProfileRender(unittest.TestCase):
     def test_profile_tab_marked_active(self):
         self.assertIn('aria-current="page"', self.html)
 
-    def test_unbuilt_surfaces_get_soon_badge(self):
-        # 18 − built (now 17) = 1 soon badge (predicted only)
-        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 1)
+    def test_no_more_soon_badges_when_spec_complete(self):
+        # With all 18 surfaces built, no "soon" badge ELEMENTS should be
+        # emitted. (The `.ds-nav-soon` CSS rule itself stays in the
+        # stylesheet — match the tag, not the class substring.)
+        self.assertEqual(
+            self.html.count('<span class="ds-nav-soon"'), 0)
 
     def test_payer_mix_uses_real_data(self):
         self.assertIn("Medicare 42%", self.html)
@@ -129,6 +130,34 @@ class ProfileRender(unittest.TestCase):
         for slug in ("ic-memo", "bridge", "comp-intel", "scenarios", "ml",
                      "market", "denial", "trends", "dcf", "lbo", "stmt", "returns"):
             self.assertIn(f"/deals/050001/{slug}", self.html)
+
+
+class PredictedRender(unittest.TestCase):
+    """Surface 17 (Predicted vs Actual) — honest pre-close empty + shape preview."""
+
+    def test_predicted_renders_pre_close_empty_state(self):
+        from rcm_mc.ui.deal_surfaces import render_deal_predicted
+        out = render_deal_predicted("050001", FAKE_HOSPITAL)
+        # Spec-mandated language
+        self.assertIn("Predictions stored", out)
+        self.assertIn("Actuals appear post-close", out)
+        # Hero placeholders: em-dashed within-CI / MAE; "0" metrics compared
+        self.assertIn("Within-CI %", out)
+        self.assertIn("Mean absolute error", out)
+        # Shape-preview table renders with REAL current HCRIS in the
+        # "Current actual" column; CI + variance columns em-dashed.
+        self.assertIn("Predicted [CI]", out)
+        self.assertIn("Current actual", out)
+        self.assertIn("$420.0M", out)             # NPR — real
+        self.assertIn("Pending", out)             # In-CI? badge
+        # Cross-links to ML + Trends
+        self.assertIn("/deals/050001/ml", out)
+        self.assertIn("/deals/050001/trends", out)
+        # One <h1>
+        self.assertEqual(len(re.findall(r"<h1[ >]", out)), 1)
+
+    def test_predicted_marked_built_in_registry(self):
+        self.assertTrue(SURFACE_BY_PATH["predicted"].built)
 
 
 class ScenariosRender(unittest.TestCase):
@@ -745,8 +774,16 @@ class DealRoutes(unittest.TestCase):
             finally:
                 server.shutdown(); server.server_close()
 
-    def test_real_ccn_unbuilt_surface_renders_stub_200(self):
-        # Only "predicted" remains unbuilt heading into Phase 18.
+    def test_stub_helper_still_renders_safely(self):
+        """All 18 surfaces are built, but the stub helper stays in the
+        codebase as a safety net for future additions. Exercise it directly."""
+        from rcm_mc.ui.deal_surfaces import render_surface_stub
+        out = render_surface_stub("050001", "profile", FAKE_HOSPITAL)
+        self.assertIn("Under construction", out)
+        self.assertIn("DEAL · CCN", out)
+        self.assertEqual(len(re.findall(r"<h1[ >]", out)), 1)
+
+    def test_real_ccn_predicted_renders_real_data_200(self):
         with tempfile.TemporaryDirectory() as tmp:
             create_user(PortfolioStore(os.path.join(tmp, "p.db")), "at", "supersecret1")
             server, port = self._start(tmp)
@@ -756,8 +793,11 @@ class DealRoutes(unittest.TestCase):
                 with opener.open(f"http://127.0.0.1:{port}/deals/{ccn}/predicted") as r:
                     self.assertEqual(r.status, 200)
                     body = r.read().decode()
-                self.assertIn("Under construction", body)
+                # NEVER the construction stub now — every surface is built.
+                self.assertNotIn("Under construction", body)
                 self.assertIn("DEAL · CCN", body)
+                self.assertIn("Predictions stored", body)
+                self.assertEqual(len(re.findall(r"<h1[ >]", body)), 1)
             finally:
                 server.shutdown(); server.server_close()
 

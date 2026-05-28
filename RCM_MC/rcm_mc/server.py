@@ -6808,9 +6808,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             render_deal_comp_intel, render_deal_dcf, render_deal_denial,
             render_deal_ic_memo, render_deal_lbo, render_deal_levers,
             render_deal_market, render_deal_memo_auto, render_deal_ml,
-            render_deal_playbook, render_deal_profile, render_deal_returns,
-            render_deal_scenarios, render_deal_stmt, render_deal_trends,
-            render_deal_waterfall, render_surface_stub,
+            render_deal_playbook, render_deal_predicted, render_deal_profile,
+            render_deal_returns, render_deal_scenarios, render_deal_stmt,
+            render_deal_trends, render_deal_waterfall, render_surface_stub,
         )
         if slug not in SURFACE_BY_PATH:
             return self._send_html(
@@ -6860,6 +6860,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_html(render_deal_market(ccn, hospital))
         if slug == "scenarios":
             return self._send_html(render_deal_scenarios(ccn, hospital))
+        if slug == "predicted":
+            return self._send_html(render_deal_predicted(ccn, hospital))
+        # All 18 surfaces are now built — this fallback should never fire,
+        # but stays as a safety net.
         return self._send_html(render_surface_stub(ccn, slug, hospital))
 
     def _route_hospital_profile(self, ccn: str) -> None:
