@@ -113,15 +113,73 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
     active = sum(1 for h in hospitals if h.stage not in ("closed", "passed"))
 
     # ── Page title + KPI strip ──
-    title_block = ck_page_title(
-        "Deal Pipeline",
-        eyebrow="DEAL PIPELINE",
-        meta=(
-            f"{total} hospitals · {active} active · "
-            f"{summary.get('diligence', 0)} in diligence · "
-            f"{len(searches)} saved searches"
-        ),
-    ) + '<div style="margin:8px 0 0;">' + ck_data_universe("user-deals") + '</div>'
+    # 2026-05-28 style-sweep · strict Tier-1 5-block head.
+    # Replaces the legacy ck_page_title + explainer paragraph with a
+    # spec-compliant <header class="pp-head"> carrying the eyebrow
+    # (with 24×1px green-dash), serif H1, mono meta-line quoting
+    # real counts, italic-first-phrase serif lede, and the 4-bucket
+    # status-dot legend. Same shape now lives on /portfolio (#1057)
+    # and the regression masthead (#1055).
+    _pp_head_css = """
+<style>
+.pp-head{padding:0 0 32px;margin:0 0 28px;
+  border-bottom:1px solid var(--rule-soft,#ddd1ac);}
+.pp-head .eyebrow{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--green-deep,#154e36);display:flex;align-items:center;
+  gap:12px;margin:0 0 18px;}
+.pp-head .eyebrow .dash{width:24px;height:1px;
+  background:var(--green-deep,#154e36);}
+.pp-head h1{font:400 44px/1.05 var(--sc-serif,Georgia),serif;
+  letter-spacing:-.015em;color:var(--ink,#16263a);margin:0 0 14px;}
+.pp-head .meta{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted,#7a8595);margin:0 0 20px;}
+.pp-head .lede{font:400 italic 16.5px/1.55 var(--sc-serif,Georgia),serif;
+  color:var(--ink-2,#2b3e54);max-width:64ch;margin:0 0 20px;}
+.pp-head .lede em{color:var(--green-deep,#154e36);font-style:italic;}
+.pp-head .legend{display:flex;gap:24px;list-style:none;padding:0;
+  margin:0;font:400 12.5px/1 var(--sc-sans,Inter),sans-serif;
+  color:var(--ink-2,#2b3e54);flex-wrap:wrap;}
+.pp-head .legend li{display:flex;align-items:center;}
+.pp-head .legend .dot{width:8px;height:8px;border-radius:50%;
+  display:inline-block;margin-right:10px;}
+.pp-head .legend .dot.live{background:var(--green-deep,#154e36);}
+.pp-head .legend .dot.computed{background:var(--ink-deep,#0e1a29);}
+.pp-head .legend .dot.needs{background:var(--coral,#b04a3a);}
+.pp-head .legend .dot.illustrative{background:var(--gold,#a08227);}
+@media (max-width:960px){
+  .pp-head h1{font-size:36px;}
+}
+</style>
+"""
+    diligence_count = summary.get('diligence', 0)
+    title_block = (
+        _pp_head_css
+        + '<header class="pp-head">'
+        '<div class="eyebrow"><span class="dash"></span>DEAL PIPELINE</div>'
+        '<h1>Deal Pipeline</h1>'
+        f'<div class="meta">{total} HOSPITAL'
+        f'{"S" if total != 1 else ""} · '
+        f'{active} ACTIVE · {diligence_count} IN DILIGENCE · '
+        f'{len(searches)} SAVED SEARCH'
+        f'{"ES" if len(searches) != 1 else ""}</div>'
+        '<p class="lede">'
+        '<em>How prospects flow from screening to close.</em> '
+        'Track hospitals from first screen through LOI, diligence, IC, '
+        'and close. Saved searches re-run against the corpus; pipeline '
+        'hospitals carry stage, priority, and HCRIS revenue and margin '
+        'for quick-glance sizing.</p>'
+        '<ul class="legend">'
+        '<li><span class="dot live"></span>Live data</li>'
+        '<li><span class="dot computed"></span>Computed</li>'
+        '<li><span class="dot needs"></span>Needs data</li>'
+        '<li><span class="dot illustrative"></span>Illustrative</li>'
+        '</ul>'
+        '</header>'
+        '<div style="margin:8px 0 0;">' + ck_data_universe("user-deals")
+        + '</div>'
+    )
     # Explicit deal-lifecycle actions: bring a target in, or jump back to Source
     # to find one. Pipeline holds YOUR opportunities — these are how they enter.
     actions_row = (
@@ -131,15 +189,7 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
         '<a class="pp-action" href="/target-screener">&larr; Promote from Source</a>'
         '</div>'
     )
-    explainer_html = (
-        '<p class="ck-pp-explainer">'
-        '<em>How prospects flow from screening to close.</em> '
-        "Track hospitals from first screen through LOI, diligence, "
-        "IC, and close. Saved searches re-run against the corpus; "
-        "pipeline hospitals carry stage, priority, and HCRIS revenue "
-        "and margin for quick-glance sizing."
-        '</p>'
-    )
+    explainer_html = ""  # subsumed into the editorial lede above
     # Clickable KPI strip: the stage-mapped cells filter the table (same
     # ?stage= contract as the funnel); "In Pipeline" clears the filter.
     def _kpi_link(href: str, block: str, active: bool = False) -> str:
@@ -162,9 +212,57 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
 
     # ── Funnel visualization ──
     # Editorial table-style: stage badge | description | bar | count.
-    # Roomier than the prior 4px/20px-bar layout — 14px row padding,
-    # 32px bar height, named description column so the partner sees
-    # the stage's plain-English meaning without hovering anything.
+    # 2026-05-28 style-sweep adds two new functional columns:
+    #   · MEDIAN DAYS IN STAGE — how long the typical hospital has
+    #     been sitting at this stage (computed from updated_at vs
+    #     today). Shows the partner where deals are aging.
+    #   · STALLED — count of hospitals in this stage with no
+    #     activity for >30 days. A stage-health early-warning so
+    #     a partner can see a "screening" pool building up without
+    #     advancement.
+    # Both columns sit on the right of the conversion %.
+    from datetime import datetime, timezone
+    _now = datetime.now(timezone.utc).date()
+
+    def _days_in_stage(h: Any) -> Optional[int]:
+        # Honest: only counts the time since the LAST activity (stage
+        # change or add). If updated_at is missing or unparseable we
+        # return None → tile shows "—" (not a fake number).
+        ref = (h.updated_at or h.added_at or "")[:10]
+        if not ref:
+            return None
+        try:
+            d = datetime.strptime(ref, "%Y-%m-%d").date()
+            return (_now - d).days
+        except (TypeError, ValueError):
+            return None
+
+    # Pre-compute days-in-stage for every pipeline hospital once so the
+    # funnel rows and the stage-velocity strip below pull from the
+    # same numbers.
+    _per_stage_days: Dict[str, List[int]] = {
+        sk: [] for sk, _, _ in PIPELINE_STAGES
+    }
+    _per_stage_stalled: Dict[str, int] = {
+        sk: 0 for sk, _, _ in PIPELINE_STAGES
+    }
+    for _h in hospitals:
+        _d = _days_in_stage(_h)
+        if _d is None:
+            continue
+        _per_stage_days.setdefault(_h.stage, []).append(_d)
+        if _d > 30:
+            _per_stage_stalled[_h.stage] = (
+                _per_stage_stalled.get(_h.stage, 0) + 1
+            )
+
+    def _median(xs: List[int]) -> Optional[int]:
+        if not xs:
+            return None
+        xs = sorted(xs)
+        n = len(xs)
+        return xs[n // 2] if n % 2 else (xs[n // 2 - 1] + xs[n // 2]) // 2
+
     funnel_bars = ""
     max_count = max(summary.values()) if summary else 1
     prev_count: Optional[int] = None  # stage-to-stage conversion needs the prior stage
@@ -195,10 +293,24 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
         if sel_stage == stage_key:
             row_cls += " ck-funnel-row-active"
         style = ' style="opacity:0.45;"' if count == 0 else ""
+        # Median days in stage + stalled count for this stage (Phase 2).
+        med_days = _median(_per_stage_days.get(stage_key, []))
+        med_days_html = (
+            f'{med_days}d' if med_days is not None else "—"
+        )
+        stalled_n = _per_stage_stalled.get(stage_key, 0)
+        # Stalled cell highlighted coral when > 0 (real-data signal,
+        # not decorative).
+        stalled_cls = (
+            "ck-funnel-stalled ck-funnel-stalled-on"
+            if stalled_n > 0
+            else "ck-funnel-stalled"
+        )
         funnel_bars += (
             f'<a class="{row_cls}" href="/pipeline?stage={_html.escape(stage_key)}"'
             f'{style} aria-label="Filter pipeline to {_html.escape(stage_label)} '
-            f'({count}){conv_aria}">'
+            f'({count}){conv_aria}, median {med_days_html} in stage, '
+            f'{stalled_n} stalled">'
             f'<div class="ck-funnel-stage">{_stage_badge(stage_key)}'
             f'<span class="ck-funnel-stage-desc">{_html.escape(stage_desc)}</span>'
             f'</div>'
@@ -207,22 +319,39 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
             f'background:{bar_color};"></div>'
             f'</div>'
             f'<div class="ck-funnel-count">{count}</div>'
-            f'<div class="ck-funnel-conv" title="Conversion from prior stage">{conv}</div>'
+            f'<div class="ck-funnel-conv" title="Conversion from prior stage">'
+            f'{conv}</div>'
+            f'<div class="ck-funnel-median" title="Median days in this stage">'
+            f'{med_days_html}</div>'
+            f'<div class="{stalled_cls}" title="Hospitals with no activity in 30 days">'
+            f'{stalled_n}</div>'
             f'</a>'
         )
 
     funnel_css = (
         '<style>'
-        '.ck-funnel-row{display:grid;grid-template-columns:230px 1fr 56px 60px;'
+        # 2026-05-28 style-sweep · added MEDIAN + STALLED columns,
+        # removed spec-forbidden `border-left:3px solid` accent on
+        # the active row (depth is now by background-tone only).
+        '.ck-funnel-head{display:grid;'
+        'grid-template-columns:230px 1fr 56px 60px 64px 64px;'
+        'align-items:end;gap:18px;padding:6px 8px;'
+        'border-bottom:1px solid var(--ink-deep,#0e1a29);'
+        'font-family:var(--sc-mono,monospace);font-size:9.5px;'
+        'letter-spacing:.14em;text-transform:uppercase;'
+        'color:var(--muted,#7a8595);}'
+        '.ck-funnel-head .h-num{text-align:right;}'
+        '.ck-funnel-row{display:grid;'
+        'grid-template-columns:230px 1fr 56px 60px 64px 64px;'
         'align-items:center;gap:18px;padding:12px 8px;'
         'border-bottom:1px solid var(--sc-rule,#d6cfc0);'
         'text-decoration:none;color:inherit;cursor:pointer;'
-        'border-left:3px solid transparent;transition:background 0.12s;}'
+        'transition:background 0.12s;}'
         '.ck-funnel-row:last-child{border-bottom:0;}'
-        '.ck-funnel-row:hover{background:var(--sc-bone,#ece5d6);}'
-        '.ck-funnel-row:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:-2px;}'
-        '.ck-funnel-row-active{background:var(--sc-bone,#ece5d6);'
-        'border-left-color:var(--sc-teal,#155752);}'
+        '.ck-funnel-row:hover{background:var(--paper-hi,#fbf6e8);}'
+        '.ck-funnel-row:focus-visible{outline:2px solid var(--green-deep,#154e36);'
+        'outline-offset:-2px;}'
+        '.ck-funnel-row-active{background:var(--paper-hi,#fbf6e8);}'
         '.ck-funnel-stage{display:flex;flex-direction:column;gap:4px;}'
         '.ck-funnel-stage-desc{font-family:var(--sc-serif,Georgia,serif);'
         'font-size:12.5px;color:var(--sc-text-dim,#465366);line-height:1.35;}'
@@ -233,24 +362,70 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
         '.ck-funnel-count{font-family:var(--sc-mono,JetBrains Mono,monospace);'
         'font-size:18px;font-weight:600;color:var(--sc-navy,#0b2341);'
         'text-align:right;font-variant-numeric:tabular-nums;}'
-        '.ck-funnel-conv{font-family:var(--sc-mono,JetBrains Mono,monospace);'
+        '.ck-funnel-conv,.ck-funnel-median,.ck-funnel-stalled{'
+        'font-family:var(--sc-mono,JetBrains Mono,monospace);'
         'font-size:12px;color:var(--sc-text-dim,#465366);text-align:right;'
         'font-variant-numeric:tabular-nums;}'
-        '@media (max-width:720px){.ck-funnel-row{grid-template-columns:1fr 56px 60px;}'
+        # Stalled count flips coral when > 0 — text only, never a
+        # background fill (Tier-2 §2.10 contract).
+        '.ck-funnel-stalled-on{color:var(--coral,#b04a3a);font-weight:600;}'
+        '@media (max-width:720px){'
+        '.ck-funnel-head,.ck-funnel-row{'
+        'grid-template-columns:1fr 56px 60px 64px 64px;}'
         '.ck-funnel-track{grid-column:1/-1;}}'
         '</style>'
     )
+
+    # Funnel head row labels the new columns so the partner doesn't
+    # have to hover to learn what each cell is.
+    _funnel_head = (
+        '<div class="ck-funnel-head" role="row" aria-hidden="true">'
+        '<div>Stage</div>'
+        '<div>Volume</div>'
+        '<div class="h-num">Count</div>'
+        '<div class="h-num">Conv %</div>'
+        '<div class="h-num">Med d</div>'
+        '<div class="h-num">Stalled</div>'
+        '</div>'
+    )
+    # Auto-derived velocity verdict — quotes real numbers.
+    total_stalled = sum(_per_stage_stalled.values())
+    if total_stalled == 0 and total > 0:
+        velocity_verdict = (
+            "Healthy flow — no hospitals stalled (no activity in 30 days)."
+        )
+    elif total_stalled > 0:
+        worst_stage = max(
+            _per_stage_stalled.items(), key=lambda kv: kv[1],
+        )
+        velocity_verdict = (
+            f"{total_stalled} hospital{'s' if total_stalled != 1 else ''} "
+            f"stalled (no activity in 30 days), worst at "
+            f'<strong>{_html.escape(worst_stage[0])}</strong> '
+            f"({worst_stage[1]})."
+        )
+    else:
+        velocity_verdict = (
+            "No hospitals in the pipeline yet — funnel + velocity stats "
+            "populate after the first add."
+        )
 
     funnel = (
         f'{funnel_css}'
         + ck_panel(
             '<p class="ck-section-body">'
-            'How prospects flow from screening to close. The right-hand '
-            'figure is stage-to-stage conversion — the share of the prior '
-            'stage that advanced ("—" at the top of the funnel or when the '
-            'prior stage is empty). Empty stages remain visible at low '
-            'opacity so the funnel shape stays readable.</p>'
-            f'{funnel_bars}',
+            'How prospects flow from screening to close. <strong>Conv %</strong> '
+            'is stage-to-stage conversion (share of the prior stage that '
+            'advanced; "—" at the top of the funnel or when the prior stage '
+            'is empty). <strong>Med d</strong> is the median days hospitals '
+            'in this stage have been sitting on it (computed from the last '
+            'stage-change or add). <strong>Stalled</strong> counts hospitals '
+            'with no activity in the last 30 days; the number flips coral '
+            'when &gt; 0. Empty stages remain visible at low opacity so the '
+            'funnel shape stays readable.</p>'
+            f'<p class="ck-section-body" style="color:var(--ink-2,#2b3e54);">'
+            f'<strong>Velocity:</strong> {velocity_verdict}</p>'
+            f'{_funnel_head}{funnel_bars}',
             title="Pipeline Funnel",
         )
     )
