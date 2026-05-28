@@ -24,6 +24,7 @@ from .denial import render_deal_denial
 from .lbo import render_deal_lbo
 from .levers import render_deal_levers
 from .ml import render_deal_ml
+from .playbook import render_deal_playbook
 from .profile import render_deal_profile
 from .returns import render_deal_returns
 from .stmt import render_deal_stmt
@@ -45,6 +46,7 @@ __all__ = [
     "render_deal_denial",
     "render_deal_lbo",
     "render_deal_levers",
+    "render_deal_playbook",
     "render_deal_ml",
     "render_deal_returns",
     "render_deal_stmt",
