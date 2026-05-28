@@ -224,12 +224,17 @@ class UIRenderTests(unittest.TestCase):
             "mix": ["# only comments"],
             "target_name": ["Empty"],
         })
-        # Editorial refactor: headline italicizes the active verb,
-        # so "Could not parse any payer lines." renders as
-        # "Could not <em>parse</em> any payer lines." — contiguous
-        # substring is split across the <em> tag.
-        self.assertIn("Could not", html)
-        self.assertIn("<em>parse</em>", html)
+        # 2026-05-28 style-sweep · the editorial err-path head was
+        # rewritten from ck_section_intro (italic_word="parse") to
+        # the strict 5-block head (_ps_head). The italic phrase is
+        # now a deck-style first sentence. Concept preserved (page
+        # surfaces the parse error honestly with an italic emphasis);
+        # wording changed.
+        self.assertIn("Could not parse any payer lines.", html)
+        self.assertIn(
+            "<em>The payer list could not be parsed.</em>",
+            html,
+        )
 
 
 class HTTPEndpointTests(unittest.TestCase):
