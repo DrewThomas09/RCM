@@ -484,11 +484,19 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
     # ── Model AUC + Stats ──
     _, _, _, auc, n_train, feats = cached["distress"]
 
-    intro = ck_section_intro(
+    # 2026-05-28 batch 23 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
         eyebrow="QUANT LAB",
-        headline="Where the analytical moat lives.",
-        italic_word="lives",
-        body=(
+        title="Where the analytical moat lives.",
+        meta=(
+            f"{len(hcris_df):,} HOSPITALS · "
+            f"{len(markets)} MARKETS · "
+            f"12 MODELS · "
+            f"DISTRESS AUC {auc:.3f} (N={n_train:,})"
+        ),
+        lede_italic_phrase="Where the analytical moat lives.",
+        lede_body=(
             f"{len(hcris_df):,} hospitals, {len(markets)} markets, "
             "12 quantitative models — from Bayesian calibration "
             "through DEA efficiency frontiers, queueing theory, and "

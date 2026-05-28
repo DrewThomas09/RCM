@@ -184,11 +184,18 @@ def render_model_validation(
         top_grade = "—"
 
     # ── Editorial hero + KPI strip ──
-    intro = ck_section_intro(
+    # 2026-05-28 batch 23 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
         eyebrow="MODEL VALIDATION",
-        headline="Where every prediction earns its trust.",
-        italic_word="trust",
-        body=(
+        title="Where every prediction earns its trust.",
+        meta=(
+            f"COVERAGE {avg_coverage*100:.0f}% · "
+            f"MAE {avg_mae:.3f} · "
+            f"TOP GRADE {top_grade}"
+        ),
+        lede_italic_phrase="Where every prediction earns its trust.",
+        lede_body=(
             "Every metric prediction is logged with its confidence "
             "interval; actuals get matched as deals close. The "
             "scorecard below shows R², 90%-CI coverage, MAE, and "

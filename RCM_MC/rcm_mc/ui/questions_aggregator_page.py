@@ -478,11 +478,20 @@ def render_questions_aggregator(
     the cut before printing, but ``@media print`` hides them so
     the printed PDF shows only the question lists.
     """
-    intro = ck_section_intro(
+    # 2026-05-28 batch 23 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
         eyebrow="DILIGENCE QUESTIONS · PORTFOLIO",
-        headline="Every question, every deal, one ledger.",
-        italic_word="ledger",
-        body=(
+        title="Every question, every deal, one ledger.",
+        meta=(
+            "BROWSER LOCALSTORAGE · "
+            "MARKDOWN + CSV EXPORT · "
+            "NO SERVER ROUNDTRIP"
+        ),
+        lede_italic_phrase=(
+            "Every question, every deal, one ledger."
+        ),
+        lede_body=(
             "Reads your browser's saved question lists across every "
             "deal you've opened. Filter by category or status; copy "
             "the lot as Markdown to send to the seller; download a "

@@ -75,11 +75,16 @@ def render_methodology() -> str:
 
     # ── Intro ── ck_section_intro provides the italic-serif "audit"
     # cadence; intro stats sit below in a ck_kpi_strip.
-    intro_hero = ck_section_intro(
+    # 2026-05-28 batch 23 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    intro_hero = ck_editorial_head(
         eyebrow="METHODOLOGY",
-        headline="How every number on the platform can be audited.",
-        italic_word="audited",
-        body=(
+        title="How every number on the platform can be audited.",
+        meta="EVERY NUMBER TRACEABLE · PUBLIC DATA + MODELS",
+        lede_italic_phrase=(
+            "How every number on the platform can be audited."
+        ),
+        lede_body=(
             "PE Desk combines public hospital data with "
             "proprietary analytical models to generate diligence-grade "
             "intelligence for healthcare PE. Every number on this "
