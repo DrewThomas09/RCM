@@ -400,8 +400,34 @@ def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
     )
     profile_section = _percentile_profile(profile_data)
 
+    # 2026-05-28 batch 27 · Phase 3 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="STATISTICAL PROFILE",
+        title=f"Statistical profile — {_html.escape(name)}",
+        meta=(
+            # helper escapes meta; pass raw — ccn/county/state are
+            # CMS-controlled identifiers (8-digit CCN, US state code,
+            # county name) so safe to forward unescaped here.
+            f"CCN {ccn} · "
+            f"{county.upper()}, {state.upper()} · "
+            f"{len(outlier_flags)} OUTLIER FLAG"
+            f"{'S' if len(outlier_flags) != 1 else ''}"
+        ),
+        lede_italic_phrase=(
+            "Where this hospital sits in the corpus."
+        ),
+        lede_body=(
+            "Per-metric percentile ranks against the HCRIS "
+            "corpus, with outlier flags where this hospital "
+            "is more than 2 standard deviations from the "
+            "sector median. Use this as the deal-day "
+            "anchor on whether the operations are typical "
+            "or extraordinary."
+        ),
+    )
     body = (
-        f'{kpis}{flags_html}{profile_section}{metrics_section}'
+        f'{head}{kpis}{flags_html}{profile_section}{metrics_section}'
         f'{residual_section}{drivers_section}{actions}{next_up}'
     )
 
@@ -412,17 +438,4 @@ def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
             f"CCN {_html.escape(ccn)} | {_html.escape(county)}, {_html.escape(state)} | "
             f"{len(outlier_flags)} outlier flags"
         ),
-        editorial_intro={
-            "eyebrow": "STATISTICAL PROFILE",
-            "headline": "Where this hospital sits in the corpus.",
-            "italic_word": "sits",
-            "body": (
-                "Per-metric percentile ranks against the HCRIS "
-                "corpus, with outlier flags where this hospital "
-                "is more than 2 standard deviations from the "
-                "sector median. Use this as the deal-day "
-                "anchor on whether the operations are typical "
-                "or extraordinary."
-            ),
-        },
     )
