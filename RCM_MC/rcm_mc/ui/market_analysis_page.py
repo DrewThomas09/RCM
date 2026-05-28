@@ -320,21 +320,31 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
         ),
         tone=_mkt_tone,
     )
-    body = f'{nav}{lead_anchor}{kpis}{moat_section}{interp}{comp_section}{payer_html}{actions}{next_up}'
+    # 2026-05-28 batch 27 · Phase 3 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="MARKET ANALYSIS",
+        title=f"Market analysis — {html.escape(deal_name)}",
+        meta=(
+            f"{state.upper()} MARKET · "
+            f"{market_size.get('hospitals', 0)} HOSPITALS · "
+            f"HHI {hhi:,.0f} ({hhi_label.upper()}) · "
+            f"MOAT {moat.get('moat_score', 0)}/10"
+        ),
+        lede_italic_phrase=(
+            "Where this hospital sits in its market."
+        ),
+        lede_body=(
+            "Per-deal market structure: competitive set, "
+            "concentration (HHI), moat rating, and market-"
+            "share rank. Wide moats in concentrated markets "
+            "= structural pricing power; competitive markets "
+            "with no moat are commodity hospital economics."
+        ),
+    )
+    body = f'{head}{nav}{lead_anchor}{kpis}{moat_section}{interp}{comp_section}{payer_html}{actions}{next_up}'
     return chartis_shell(
         body, f"Market Analysis — {html.escape(deal_name)}",
         active_nav="/analysis",
         subtitle=f"{state} market | {market_size.get('hospitals', 0)} hospitals | HHI: {hhi:,.0f} ({hhi_label})",
-        editorial_intro={
-            "eyebrow": "MARKET ANALYSIS",
-            "headline": "Where this hospital sits in its market.",
-            "italic_word": "sits",
-            "body": (
-                "Per-deal market structure: competitive set, "
-                "concentration (HHI), moat rating, and market-"
-                "share rank. Wide moats in concentrated markets "
-                "= structural pricing power; competitive markets "
-                "with no moat are commodity hospital economics."
-            ),
-        },
     )

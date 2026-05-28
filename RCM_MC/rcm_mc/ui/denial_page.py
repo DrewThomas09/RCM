@@ -211,22 +211,32 @@ def render_denial_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -
         target=f"{len(drivers)} root causes identified",
         tone="teal",
     )
-    body = f'{nav}{lead_anchor}{kpis}{drivers_section}{interp}{rec_html}{actions}{next_up}'
+    # 2026-05-28 batch 27 · Phase 3 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="DENIAL DRIVERS",
+        title=f"Denial drivers — {html.escape(deal_name)}",
+        meta=(
+            f"DENIAL RATE {denial_rate:.1f}% · "
+            f"${total_impact/1e6:.1f}M RECOVERABLE EBITDA · "
+            f"{len(drivers)} ROOT CAUSE"
+            f"{'S' if len(drivers) != 1 else ''}"
+        ),
+        lede_italic_phrase=(
+            "Where the denials actually come from."
+        ),
+        lede_body=(
+            "Decompose this hospital's denial rate by payer, "
+            "denial code, and CARC category. Recoverable "
+            "EBITDA estimate weights each driver by historical "
+            "appeal-success rates — the addressable bucket, "
+            "not the gross denial rate."
+        ),
+    )
+    body = f'{head}{nav}{lead_anchor}{kpis}{drivers_section}{interp}{rec_html}{actions}{next_up}'
 
     return chartis_shell(
         body, f"Denial Drivers — {html.escape(deal_name)}",
         active_nav="/analysis",
         subtitle=f"Current: {denial_rate:.1f}% | Recoverable: ${total_impact/1e6:.1f}M/year",
-        editorial_intro={
-            "eyebrow": "DENIAL DRIVERS",
-            "headline": "Where the denials actually come from.",
-            "italic_word": "actually",
-            "body": (
-                "Decompose this hospital's denial rate by payer, "
-                "denial code, and CARC category. Recoverable "
-                "EBITDA estimate weights each driver by historical "
-                "appeal-success rates - the addressable bucket, "
-                "not the gross denial rate."
-            ),
-        },
     )

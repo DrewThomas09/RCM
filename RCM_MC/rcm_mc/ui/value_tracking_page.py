@@ -442,7 +442,33 @@ def render_value_tracker(
         ),
         tone=_vt_tone,
     )
-    body = f'{lead_anchor}{kpis}{ramp_banner}{lever_table}{entry_form}{plan_section}{nav}{next_up}'
+    # 2026-05-28 batch 27 · Phase 3 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="VALUE TRACKER",
+        title=f"Value tracker — {name}",
+        meta=(
+            # helper escapes meta; pass raw — deal_id is a
+            # server-controlled identifier (slugified).
+            f"{deal_id.upper()} · "
+            f"PLANNED {_fm(total_planned).upper()} · "
+            f"REALIZED {_fm(total_realized).upper()} "
+            f"({realization:.0%}) · "
+            f"{quarters} QUARTER"
+            f"{'S' if quarters != 1 else ''}"
+        ),
+        lede_italic_phrase=(
+            "What the value plan actually delivered."
+        ),
+        lede_body=(
+            "Per-lever realization rates: planned EBITDA "
+            "uplift vs. quarter-over-quarter actual. The "
+            "ramp banner flags whether the deal is tracking "
+            "ahead, on plan, or behind — early warnings "
+            "surface 1-2 quarters before the gap matters."
+        ),
+    )
+    body = f'{head}{lead_anchor}{kpis}{ramp_banner}{lever_table}{entry_form}{plan_section}{nav}{next_up}'
 
     return chartis_shell(
         body,
@@ -452,16 +478,4 @@ def render_value_tracker(
             f"Planned {_fm(total_planned)} | Realized {_fm(total_realized)} "
             f"({realization:.0%}) | {quarters} quarters"
         ),
-        editorial_intro={
-            "eyebrow": "VALUE TRACKER",
-            "headline": "What the value plan actually delivered.",
-            "italic_word": "actually",
-            "body": (
-                "Per-lever realization rates: planned EBITDA "
-                "uplift vs. quarter-over-quarter actual. The "
-                "ramp banner flags whether the deal is tracking "
-                "ahead, on plan, or behind - early warnings "
-                "surface 1-2 quarters before the gap matters."
-            ),
-        },
     )

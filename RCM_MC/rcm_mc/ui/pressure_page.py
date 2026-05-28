@@ -116,18 +116,26 @@ def render_pressure_page(
         eyebrow="Continue —",
         italic_word="Workbench",
     )
-    body = ck_eyebrow("Pressure Test") + form + results_html + next_up
+    # 2026-05-28 batch 27 · Phase 3 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    head_meta = (
+        f"DEAL {selected_deal_id.upper()} · STRESS SCENARIOS"
+        if selected_deal_id else
+        "STRESS SCENARIOS · RISK FLAGS"
+    )
+    head = ck_editorial_head(
+        eyebrow="PRESSURE TEST",
+        title="Where the deal cracks under shocks.",
+        meta=head_meta,
+        lede_italic_phrase="Where the deal cracks under shocks.",
+        lede_body=(
+            "Apply scenario shocks to the deal's bridge and "
+            "surface the risk flags that fire. The number "
+            "and severity of flags tell you how much "
+            "diligence this deal still needs before IC."
+        ),
+    )
+    body = head + form + results_html + next_up
 
     subtitle = f"Pressure test: {selected_deal_id}" if selected_deal_id else "Stress scenarios with risk flags"
-    return chartis_shell(body, "Pressure Test", subtitle=subtitle,
-        editorial_intro={
-            "eyebrow": "PRESSURE TEST",
-            "headline": "Where the deal cracks under shocks.",
-            "italic_word": "cracks",
-            "body": (
-                "Apply scenario shocks to the deal's bridge and "
-                "surface the risk flags that fire. The number "
-                "and severity of flags tell you how much "
-                "diligence this deal still needs before IC."
-            ),
-        })
+    return chartis_shell(body, "Pressure Test", subtitle=subtitle)
