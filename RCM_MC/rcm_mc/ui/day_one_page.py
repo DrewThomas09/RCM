@@ -589,27 +589,92 @@ def render_day_one(store: Any) -> str:
     now = datetime.now(timezone.utc)
     weekday = now.strftime("%A")
     iso_week = now.isocalendar()[1]
-    date_stamp = (
-        '<div class="do-datestamp">'
-        f'<span class="do-datestamp-day">{weekday}</span>'
-        f'<span class="do-datestamp-date">'
-        f'{now.strftime("%B")} '
-        f'{now.day}, {now.year}</span>'
-        f'<span class="do-datestamp-week">Week {iso_week:02d} · '
-        f'{now.strftime("%Y-%m-%d")}</span>'
-        '</div>'
+
+    # 2026-05-28 style-sweep · strict Tier-1 5-block head. Replaces
+    # the legacy date-stamp + ck_section_intro pair with a single
+    # editorial header. The date stamp content folds into the mono
+    # meta-line; the eyebrow names the weekday brief; the lede
+    # carries the partner-facing italic-first-phrase guidance.
+    n_alerts = len(alerts) if alerts else 0
+    n_activity = len(activity) if activity else 0
+    n_packets = len(recent_packets) if recent_packets else 0
+    # Auto-derived counts in the meta-line — never hard-coded.
+    meta_bits = [
+        f"WEEK {iso_week:02d}",
+        f"{now.strftime('%Y-%m-%d').upper()}",
+    ]
+    if n_alerts:
+        meta_bits.append(
+            f"{n_alerts} ALERT{'S' if n_alerts != 1 else ''}"
+        )
+    if n_activity:
+        meta_bits.append(
+            f"{n_activity} ACTIVITY ITEM{'S' if n_activity != 1 else ''}"
+        )
+    if n_packets:
+        meta_bits.append(
+            f"{n_packets} RECENT PACKET{'S' if n_packets != 1 else ''}"
+        )
+    meta_line = " · ".join(meta_bits)
+
+    _do_head_css = """
+<style>
+.do-head{padding:0 0 28px;margin:0 0 24px;
+  border-bottom:1px solid var(--rule-soft,#ddd1ac);}
+.do-head .eyebrow{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--green-deep,#154e36);display:flex;align-items:center;
+  gap:12px;margin:0 0 18px;}
+.do-head .eyebrow .dash{width:24px;height:1px;
+  background:var(--green-deep,#154e36);}
+.do-head h1{font:400 44px/1.05 var(--sc-serif,Georgia),serif;
+  letter-spacing:-.015em;color:var(--ink,#16263a);margin:0 0 14px;}
+.do-head .meta{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted,#7a8595);margin:0 0 18px;}
+.do-head .lede{font:400 italic 16.5px/1.55 var(--sc-serif,Georgia),serif;
+  color:var(--ink-2,#2b3e54);max-width:68ch;margin:0 0 18px;}
+.do-head .lede em{color:var(--green-deep,#154e36);font-style:italic;}
+.do-head .legend{display:flex;gap:24px;list-style:none;padding:0;
+  margin:0;font:400 12.5px/1 var(--sc-sans,Inter),sans-serif;
+  color:var(--ink-2,#2b3e54);flex-wrap:wrap;}
+.do-head .legend li{display:flex;align-items:center;}
+.do-head .legend .dot{width:8px;height:8px;border-radius:50%;
+  display:inline-block;margin-right:10px;}
+.do-head .legend .dot.live{background:var(--green-deep,#154e36);}
+.do-head .legend .dot.computed{background:var(--ink-deep,#0e1a29);}
+.do-head .legend .dot.needs{background:var(--coral,#b04a3a);}
+.do-head .legend .dot.illustrative{background:var(--gold,#a08227);}
+@media (max-width:960px){.do-head h1{font-size:36px;}}
+</style>
+"""
+    intro = (
+        _do_head_css
+        + '<header class="do-head">'
+        f'<div class="eyebrow"><span class="dash"></span>'
+        f'{weekday.upper()} BRIEF</div>'
+        f'<h1>Day One — {weekday}, '
+        f'{now.strftime("%B")} {now.day}</h1>'
+        f'<div class="meta">{meta_line}</div>'
+        '<p class="lede">'
+        '<em>Where to start your week.</em> '
+        'Five surfaces in the order partners check them. Each '
+        'one is a two-minute read or a click into deeper work. '
+        'Begin with alerts — anything that needs a decision '
+        'before lunch — and end with your platform journey.</p>'
+        '<ul class="legend">'
+        '<li><span class="dot live"></span>Live data</li>'
+        '<li><span class="dot computed"></span>Computed</li>'
+        '<li><span class="dot needs"></span>Needs data</li>'
+        '<li><span class="dot illustrative"></span>Illustrative</li>'
+        '</ul>'
+        '</header>'
     )
-    intro = ck_section_intro(
-        eyebrow=f"{weekday.upper()} BRIEF",
-        headline="Where to start your week.",
-        italic_word="start",
-        body=(
-            "Five surfaces in the order partners check them. Each "
-            "one is a two-minute read or a click into deeper work. "
-            "Begin with alerts — anything that needs a decision "
-            "before lunch — and end with your platform journey."
-        ),
-    )
+    # The legacy `date_stamp` block is now subsumed into the head's
+    # mono meta-line (`WEEK NN · YYYY-MM-DD · ...`); kept here as an
+    # empty string so the body assembly below doesn't 500 on a name
+    # reference, but it no longer renders separately.
+    date_stamp = ""
 
     next_up = ck_next_section(
         "Open the v3 dashboard for the full data view",
