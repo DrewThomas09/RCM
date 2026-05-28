@@ -5239,40 +5239,66 @@ _MANUAL.extend([
         "/portfolio/regression", "Regression Analysis",
         category=PageContextCategory.RESEARCH_BACKTESTING,
         short_description="Interactive OLS regression over the CMS HCRIS "
-        "universe with built-in multicollinearity diagnostics (VIF, Belsley "
-        "condition number) and a VIF-pruned optimized model.",
+        "universe with a full classical inference + diagnostic suite: "
+        "heteroskedasticity-robust (HC1) standard errors, exact Student-t "
+        "p-values and t-based CIs, multicollinearity diagnostics (VIF, Belsley "
+        "condition number) with a VIF-pruned optimized model, residual tests "
+        "(Breusch–Pagan, Ramsey RESET, Jarque–Bera), AIC/BIC, a Shapley R² "
+        "driver-importance decomposition, and a heteroskedasticity-robust "
+        "joint F-test.",
         primary_purpose="Let the team fit and interpret a transparent linear "
         "model of a hospital financial outcome on operating drivers, while "
         "actively guarding against the high-R²-but-meaningless trap that "
-        "multicollinearity creates.",
+        "multicollinearity creates and reporting honestly whether the OLS "
+        "assumptions actually hold for this fit.",
         intended_users=["Quantitatively-inclined principals/associates."],
         common_questions=[
             "Which features actually drive the target, net of collinearity?",
             "Why was a feature dropped from the optimized model?",
             "Is this R² real or inflated by multicollinearity?",
             "What does the condition number tell me?",
+            "Are the standard errors robust to heteroskedasticity?",
+            "Does Breusch–Pagan / Ramsey RESET / Jarque–Bera flag a problem?",
+            "Which driver owns the most explained variance (Shapley R²)?",
+            "Why is the robust F different from the classical F?",
         ],
         inputs=["CMS HCRIS latest-per-CCN data; query controls for target "
                 "variable, universe filter, log-target, and segmented "
                 "regression. Honest-by-default on first load: leaky features "
                 "are dropped and dollar targets log-transformed."],
-        outputs=["Coefficient table with significance, R²/adjusted R², an F "
-                 "test, per-feature VIF, the Belsley condition number with a "
-                 "verdict banner, and a VIF-pruned optimized model."],
-        key_metrics=["R² / adjusted R²", "F statistic", "VIF",
-                     "Condition number", "Coefficient significance"],
+        outputs=["Coefficient table with HC1-robust SEs, exact Student-t "
+                 "p-values and t-based 95% CIs; R²/adjusted R², classical and "
+                 "heteroskedasticity-robust joint F tests; AIC/BIC; per-feature "
+                 "VIF and the Belsley condition number with a verdict banner; a "
+                 "VIF-pruned optimized model; residual diagnostics (Breusch–"
+                 "Pagan heteroskedasticity, Ramsey RESET functional form, "
+                 "Jarque–Bera normality) with plain-language verdicts; and a "
+                 "Shapley R² driver-importance panel."],
+        key_metrics=["R² / adjusted R²", "Classical & robust F statistic",
+                     "HC1-robust coefficient SEs", "Exact Student-t p-values",
+                     "VIF", "Condition number", "AIC / BIC",
+                     "Breusch–Pagan", "Ramsey RESET", "Jarque–Bera",
+                     "Shapley R² share"],
         data_sources=["CMS HCRIS (Medicare cost reports)."],
         model_logic_summary=(
             "Ordinary least squares fit in-page (the page has its own _run_ols), "
-            "plus rcm_mc/finance/regression.py for VIF, the Belsley condition "
-            "number, prune_collinear, and a multicollinearity verdict. The "
-            "F-test p-value uses an incomplete-beta implementation (no scipy). "
+            "with the statistics implemented in rcm_mc/finance/regression.py and "
+            "no scipy. Inference uses HC1 (White sandwich) robust standard errors "
+            "and EXACT Student-t p-values + t critical values via the incomplete "
+            "beta (F(1,df)=t²(df)), so it's honest at small sample sizes. "
+            "Diagnostics: VIF + Belsley condition number + multicollinearity "
+            "verdict + prune_collinear; Breusch–Pagan (variance), Ramsey RESET "
+            "(functional form) and Jarque–Bera (residual normality, exact χ²(2)); "
+            "AIC/BIC for model selection; a Shapley/LMG decomposition that splits "
+            "R² fairly across correlated drivers; and a robust (HC1 Wald) joint "
+            "F-test that stays valid when Breusch–Pagan finds heteroskedasticity. "
             "The default view is the defensible model: algebraically-leaky "
             "features removed and dollar targets log-transformed; an explicit "
             "form submit lets a partner inspect the leaky/raw-dollar version."),
         why_it_matters="A high R² from a collinear model is a classic "
-        "diligence false-positive; this page makes the model honest and the "
-        "dropped-feature reasoning explicit.",
+        "diligence false-positive; this page makes the model honest, reports "
+        "whether its assumptions hold, and makes the dropped-feature reasoning "
+        "explicit.",
         diligence_use_cases=[
             "Identifying which operating levers move a financial outcome.",
             "Pressure-testing a thesis claim that 'X drives Y' for collinearity."],
@@ -5281,11 +5307,20 @@ _MANUAL.extend([
             "are unstable — read the optimized/pruned model, not the raw one.",
             "A feature dropped for collinearity is not 'unimportant'; it is "
             "redundant with another feature already in the model.",
+            "Standard errors are HC1-robust; if Breusch–Pagan flags "
+            "heteroskedasticity, trust the robust SEs and the robust F over the "
+            "classical ones. If Ramsey RESET fires, the linear shape is missing "
+            "curvature — try the log toggle. If Jarque–Bera flags non-normal "
+            "residuals, lean on the robust SEs and the effect direction rather "
+            "than a borderline p-value.",
+            "Shapley R² shares are the fair, additive split of explained "
+            "variance across drivers and sum to the model's R² — use them, not "
+            "univariate correlations, to say which lever matters most.",
             "This fits public HCRIS, not a single deal's financials."],
         limitations=[
             "Cross-sectional HCRIS only — no causal claim, just association.",
-            "OLS assumptions (linearity, homoskedasticity) are not fully "
-            "tested on the page."],
+            "Out-of-sample (cross-validated) performance is only shown when the "
+            "Cross-validate toggle is on; the default metrics are in-sample."],
         related_routes=["/quant-lab", "/data-intelligence", "/target-screener"],
         metric_ids=["operating_margin", "revenue", "occupancy_rate", "payer_mix"],
         data_source_ids=["cms_hcris"],
