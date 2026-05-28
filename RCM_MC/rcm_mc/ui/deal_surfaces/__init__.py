@@ -25,6 +25,7 @@ from .lbo import render_deal_lbo
 from .ml import render_deal_ml
 from .profile import render_deal_profile
 from .returns import render_deal_returns
+from .trends import render_deal_trends
 
 __all__ = [
     "DealSurface",
@@ -42,4 +43,5 @@ __all__ = [
     "render_deal_lbo",
     "render_deal_ml",
     "render_deal_returns",
+    "render_deal_trends",
 ]
