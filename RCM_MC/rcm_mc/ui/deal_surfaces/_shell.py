@@ -41,7 +41,7 @@ SURFACES: Tuple[DealSurface, ...] = (
                 "Percentile ranks across 12 metrics × 4 cohorts."),
     DealSurface(5,  "scenarios",   "Scenarios",       "Diligence",      False,
                 "Toggle base/conservative/aggressive/downside."),
-    DealSurface(6,  "ml",          "ML Analysis",     "Diligence",      False,
+    DealSurface(6,  "ml",          "ML Analysis",     "Diligence",      True,
                 "Margin · distress · opportunity from three models."),
     # ── Models ──
     DealSurface(7,  "dcf",         "DCF",             "Models",         True,

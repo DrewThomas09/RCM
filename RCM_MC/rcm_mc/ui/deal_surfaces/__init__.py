@@ -21,6 +21,7 @@ from .bridge import render_deal_bridge
 from .comp_intel import render_deal_comp_intel
 from .dcf import render_deal_dcf
 from .lbo import render_deal_lbo
+from .ml import render_deal_ml
 from .profile import render_deal_profile
 
 __all__ = [
@@ -36,4 +37,5 @@ __all__ = [
     "render_deal_comp_intel",
     "render_deal_dcf",
     "render_deal_lbo",
+    "render_deal_ml",
 ]
