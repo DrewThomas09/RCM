@@ -2,7 +2,7 @@
 
 **Spec**: 2026-05-28 editorial handoff — strict Tier-1 5-block head + spec-forbidden trope removal.
 
-**Status (as of batch 31, 2026-05-28)**: 31 batches shipped/in-flight; ~100 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep at 16 surfaces cleaned + 1 gradient retired.
+**Status (as of batch 32, 2026-05-28)**: 32 batches shipped/in-flight; ~105 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep at 25 surfaces cleaned + 1 gradient retired.
 
 **Wave-1 (batch 19) shipped**: `my_dashboard_page`, `portfolio_monitor_page`, `deal_mc_page`
 **Wave-2 (batch 20) shipped**: `portfolio_bridge_page`, `risk_workbench_page`, `scenario_modeler_page`, `market_intel_page`, `escalations_page`
@@ -32,6 +32,13 @@ All 24 originally-flagged Group D files are now in Group A. Every renderer in th
 **Next**: Phase 4 — Group C trope removal. ~180 pages still carry `cad-card`/`cad-table` chrome with spec-forbidden tropes (3px left-border accents, box-shadow on content cards, `border-radius > 2px`). Migration is a CSS-level sweep, ~3-4 files per batch.
 
 ## Phase 4 · Group C trope removal (in progress)
+
+**Wave-3 (batch 32) shipped** — sweeps `data_public/` analyzer surfaces (decorative 3px stripes removed; risk-tier semantic stripe in drug_shortage preserved):
+- `cms_apm_tracker_page.py` (3 surfaces: Colorado APM panel, MSSP ACO panel, landscape note)
+- `drug_shortage_page.py` (2 surfaces: FDA shortage panel, supply-chain thesis note)
+- `payer_intel_page.py` (deeper-view link panel)
+- `deal_flow_heatmap_page.py` (real consolidation panel)
+- `industry_page.py` (2 surfaces: public-data-connections panel + Open Payments scale panel)
 
 **Wave-2 (batch 31) shipped** — stripped 6 more decorative stripes (kept semantic ones), capped 3 oversized radii, retired 1 gradient:
 - `exit_timing_page.py` (3 surfaces: `.et-callout` default + curve panel + radar panel; semantic `.et-callout.rec` positive stripe preserved)

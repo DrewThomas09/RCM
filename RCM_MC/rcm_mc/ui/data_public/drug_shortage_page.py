@@ -201,9 +201,10 @@ def _fda_shortage_section(params: dict) -> str:
         f'<td style="padding:3px 10px">{_html.escape(str(t.therapeutic_category)[:28])}</td>'
         f'<td style="padding:3px 10px">{_html.escape(str(t.availability) or "—")}</td></tr>'
         for t in tbl.itertuples())
+    # 2026-05-28 batch 32 · Tier-4 trope removal — strip 3px accent.
     return (
         f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-left:3px solid {P["accent"]};padding:14px 16px;margin-bottom:16px">'
+        f'border-radius:2px;padding:14px 16px;margin-bottom:16px">'
         f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
         f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:8px">'
         f'FDA Drug Shortages · LIVE (openFDA)</div>{hdr}'
@@ -297,7 +298,7 @@ def render_drug_shortage(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Geographic Exposure &amp; Tariff Risk</div>{g_tbl}</div>
   <div style="{cell}"><div style="{h3}">Shortage Scenario Playbooks</div>{p_tbl}</div>
   <div style="{cell}"><div style="{h3}">GPO Partner Performance</div>{gpo_tbl}</div>
-  <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
+  <div style="background:{panel_alt};border:1px solid {border};border-radius:2px;padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Supply Chain Thesis:</strong> {r.active_shortages} of {r.total_critical_drugs} critical drugs in active or intermittent shortage.
     Sole-source exposure ${r.sole_source_exposure_mm:,.2f}M (Adenosine, Regadenoson — cardiac stress testing).
     China sterile-injectables tariff escalation is the highest-probability / highest-impact scenario at 45% likelihood and ${max(p.financial_impact_mm for p in r.playbooks if 'tariff' in p.scenario.lower()):,.1f}M downside.

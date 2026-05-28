@@ -208,7 +208,8 @@ def render_industry(slug: str, params: dict = None) -> str:
         f'<li style="margin-bottom:6px">{_tag_chip(tag)} '
         f'<a href="{href}" style="color:{P["accent"]};text-decoration:none">{_html.escape(label)}</a></li>'
         for label, href, tag in conns)
-    conn_panel = (f'<div style="{cell};border-left:3px solid {P["accent"]}">'
+    # 2026-05-28 batch 32 · Tier-4 trope removal — strip 3px accent.
+    conn_panel = (f'<div style="{cell}">'
                   f'<div style="{h3}">Public data connections — validate this thesis with real data</div>'
                   f'<ul style="margin:0;padding-left:18px;font-size:12px;line-height:1.8">{conn_rows}</ul>'
                   f'<p style="font-size:11px;color:{P["text_dim"]};margin:8px 0 0">'
@@ -234,8 +235,9 @@ def render_industry(slug: str, params: dict = None) -> str:
                     f'<li>{_html.escape(str(t["AMGPO_Name"]))} '
                     f'<span style="color:{P["text_dim"]}">· ${float(t["total_amount"])/1e6:,.0f}M</span></li>'
                     for t in tops)
+                # 2026-05-28 batch 32 · Tier-4 trope removal — strip 3px accent.
                 op_panel = (
-                    f'<div style="{cell};border-left:3px solid {P["accent"]}">'
+                    f'<div style="{cell}">'
                     f'<div style="{h3}">Industry financial relationships · LIVE (CMS Open Payments {s.get("program_year","")})</div>'
                     f'<p style="font-size:12px;color:{P["text_dim"]};margin:0 0 8px">'
                     f'<b style="color:{P["text"]}">${s["total_payments_usd"]/1e9:,.2f}bn</b> in industry '
