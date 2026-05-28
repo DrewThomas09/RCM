@@ -39,7 +39,7 @@ SURFACES: Tuple[DealSurface, ...] = (
                 "7-lever RCM bridge to pro-forma EBITDA."),
     DealSurface(4,  "comp-intel",  "Comp Intel",      "Diligence",      True,
                 "Percentile ranks across 12 metrics × 4 cohorts."),
-    DealSurface(5,  "scenarios",   "Scenarios",       "Diligence",      False,
+    DealSurface(5,  "scenarios",   "Scenarios",       "Diligence",      True,
                 "Toggle base/conservative/aggressive/downside."),
     DealSurface(6,  "ml",          "ML Analysis",     "Diligence",      True,
                 "Margin · distress · opportunity from three models."),

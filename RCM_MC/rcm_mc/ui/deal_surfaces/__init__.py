@@ -30,6 +30,7 @@ from .ml import render_deal_ml
 from .playbook import render_deal_playbook
 from .profile import render_deal_profile
 from .returns import render_deal_returns
+from .scenarios import render_deal_scenarios
 from .stmt import render_deal_stmt
 from .trends import render_deal_trends
 from .waterfall import render_deal_waterfall
@@ -55,6 +56,7 @@ __all__ = [
     "render_deal_playbook",
     "render_deal_ml",
     "render_deal_returns",
+    "render_deal_scenarios",
     "render_deal_stmt",
     "render_deal_trends",
     "render_deal_waterfall",

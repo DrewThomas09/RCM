@@ -53,13 +53,14 @@ class SurfaceRegistry(unittest.TestCase):
         self.assertEqual(sorted(s.number for s in SURFACES), list(range(1, 19)))
 
     def test_built_surfaces_grow_one_phase_at_a_time(self):
-        # Phases 1..16. New surfaces appear here as they land.
+        # Phases 1..17. Only "predicted" remains unbuilt.
         built = {s.slug for s in SURFACES if s.built}
         self.assertEqual(built,
                          {"profile", "bridge", "lbo", "dcf",
                           "comp-intel", "ml", "denial", "returns",
                           "trends", "stmt", "levers", "waterfall",
-                          "playbook", "ic-memo", "memo-auto", "market"})
+                          "playbook", "ic-memo", "memo-auto", "market",
+                          "scenarios"})
 
     def test_lookup_by_path(self):
         self.assertIs(SURFACE_BY_PATH["profile"].built, True)
@@ -102,8 +103,8 @@ class ProfileRender(unittest.TestCase):
         self.assertIn('aria-current="page"', self.html)
 
     def test_unbuilt_surfaces_get_soon_badge(self):
-        # 18 − built (now 16) = 2 soon badges
-        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 2)
+        # 18 − built (now 17) = 1 soon badge (predicted only)
+        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 1)
 
     def test_payer_mix_uses_real_data(self):
         self.assertIn("Medicare 42%", self.html)
@@ -128,6 +129,35 @@ class ProfileRender(unittest.TestCase):
         for slug in ("ic-memo", "bridge", "comp-intel", "scenarios", "ml",
                      "market", "denial", "trends", "dcf", "lbo", "stmt", "returns"):
             self.assertIn(f"/deals/050001/{slug}", self.html)
+
+
+class ScenariosRender(unittest.TestCase):
+    """Surface 05 (Scenarios) — 4 named transforms of the base bridge."""
+
+    def test_scenarios_renders_four_panels_when_inputs_real(self):
+        from rcm_mc.ui.deal_surfaces import render_deal_scenarios
+        out = render_deal_scenarios("050001", FAKE_HOSPITAL)
+        for eyebrow in ("SCENARIO SELECTOR", "HERO", "SCENARIO COMPARISON",
+                        "PER-SCENARIO CARDS"):
+            self.assertIn(eyebrow, out, f"missing panel: {eyebrow}")
+        # All 4 scenario labels present
+        for label in ("Base", "Conservative", "Aggressive", "Downside"):
+            self.assertIn(label, out, f"missing scenario: {label}")
+        # Read-only disclosure
+        self.assertIn("READ-ONLY SNAPSHOT", out.upper())
+        # Base column tinted green per spec (the tint hex)
+        self.assertIn("#e6efe1", out)
+        # One <h1>
+        self.assertEqual(len(re.findall(r"<h1[ >]", out)), 1)
+
+    def test_scenarios_renders_honest_empty_when_npr_missing(self):
+        from rcm_mc.ui.deal_surfaces import render_deal_scenarios
+        h = {"ccn": "999999", "name": "Sparse Co", "state": "TX"}
+        out = render_deal_scenarios("999999", h)
+        self.assertIn("Scenarios cannot run", out)
+
+    def test_scenarios_marked_built_in_registry(self):
+        self.assertTrue(SURFACE_BY_PATH["scenarios"].built)
 
 
 class MarketRender(unittest.TestCase):
@@ -716,8 +746,22 @@ class DealRoutes(unittest.TestCase):
                 server.shutdown(); server.server_close()
 
     def test_real_ccn_unbuilt_surface_renders_stub_200(self):
-        # Use a still-unbuilt slug (memo-auto, market, scenarios, and
-        # predicted remain stubs).
+        # Only "predicted" remains unbuilt heading into Phase 18.
+        with tempfile.TemporaryDirectory() as tmp:
+            create_user(PortfolioStore(os.path.join(tmp, "p.db")), "at", "supersecret1")
+            server, port = self._start(tmp)
+            try:
+                opener = _login_opener(port, "at", "supersecret1")
+                ccn = self._pick_real_ccn()
+                with opener.open(f"http://127.0.0.1:{port}/deals/{ccn}/predicted") as r:
+                    self.assertEqual(r.status, 200)
+                    body = r.read().decode()
+                self.assertIn("Under construction", body)
+                self.assertIn("DEAL · CCN", body)
+            finally:
+                server.shutdown(); server.server_close()
+
+    def test_real_ccn_scenarios_renders_real_data_200(self):
         with tempfile.TemporaryDirectory() as tmp:
             create_user(PortfolioStore(os.path.join(tmp, "p.db")), "at", "supersecret1")
             server, port = self._start(tmp)
@@ -727,8 +771,11 @@ class DealRoutes(unittest.TestCase):
                 with opener.open(f"http://127.0.0.1:{port}/deals/{ccn}/scenarios") as r:
                     self.assertEqual(r.status, 200)
                     body = r.read().decode()
-                self.assertIn("Under construction", body)
+                self.assertNotIn("Under construction", body)
                 self.assertIn("DEAL · CCN", body)
+                self.assertEqual(len(re.findall(r"<h1[ >]", body)), 1)
+                self.assertTrue(
+                    "SCENARIO COMPARISON" in body or "Scenarios cannot run" in body)
             finally:
                 server.shutdown(); server.server_close()
 
