@@ -33,6 +33,72 @@ from .power_ui import (
 )
 
 
+# 2026-05-28 style-sweep · shared strict 5-block head for the three
+# bear-case render paths (rendered report / landing form / no-CCD
+# fastpath). Replaces three separate ck_section_intro calls so the
+# masthead shape matches /portfolio, /pipeline, /home, /day-one,
+# /research, /notes, every other swept page.
+_BC_HEAD_CSS = """
+<style>
+.bc-head{padding:0 0 28px;margin:0 0 24px;
+  border-bottom:1px solid var(--rule-soft,#ddd1ac);}
+.bc-head .eyebrow{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--green-deep,#154e36);display:flex;align-items:center;
+  gap:12px;margin:0 0 18px;}
+.bc-head .eyebrow .dash{width:24px;height:1px;
+  background:var(--green-deep,#154e36);}
+.bc-head h1{font:400 40px/1.05 var(--sc-serif,Georgia),serif;
+  letter-spacing:-.015em;color:var(--ink,#16263a);margin:0 0 14px;}
+.bc-head .meta{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted,#7a8595);margin:0 0 18px;}
+.bc-head .lede{font:400 italic 16.5px/1.55 var(--sc-serif,Georgia),serif;
+  color:var(--ink-2,#2b3e54);max-width:68ch;margin:0 0 18px;}
+.bc-head .lede em{color:var(--green-deep,#154e36);font-style:italic;}
+.bc-head .legend{display:flex;gap:24px;list-style:none;padding:0;
+  margin:0;font:400 12.5px/1 var(--sc-sans,Inter),sans-serif;
+  color:var(--ink-2,#2b3e54);flex-wrap:wrap;}
+.bc-head .legend li{display:flex;align-items:center;}
+.bc-head .legend .dot{width:8px;height:8px;border-radius:50%;
+  display:inline-block;margin-right:10px;}
+.bc-head .legend .dot.live{background:var(--green-deep,#154e36);}
+.bc-head .legend .dot.computed{background:var(--ink-deep,#0e1a29);}
+.bc-head .legend .dot.needs{background:var(--coral,#b04a3a);}
+.bc-head .legend .dot.illustrative{background:var(--gold,#a08227);}
+@media (max-width:960px){.bc-head h1{font-size:32px;}}
+</style>
+"""
+
+
+def _bc_head(
+    eyebrow: str,
+    title: str,
+    *,
+    meta: str,
+    lede_italic_phrase: str,
+    lede_body: str,
+) -> str:
+    """Strict Tier-1 5-block head for a bear-case render path."""
+    return (
+        _BC_HEAD_CSS
+        + '<header class="bc-head">'
+        f'<div class="eyebrow"><span class="dash"></span>'
+        f'{html.escape(eyebrow)}</div>'
+        f'<h1>{title}</h1>'
+        f'<div class="meta">{html.escape(meta)}</div>'
+        f'<p class="lede"><em>{html.escape(lede_italic_phrase)}</em> '
+        f'{lede_body}</p>'
+        '<ul class="legend">'
+        '<li><span class="dot live"></span>Live data</li>'
+        '<li><span class="dot computed"></span>Computed</li>'
+        '<li><span class="dot needs"></span>Needs data</li>'
+        '<li><span class="dot illustrative"></span>Illustrative</li>'
+        '</ul>'
+        '</header>'
+    )
+
+
 # ────────────────────────────────────────────────────────────────────
 # Scoped CSS (bc- prefix)
 # ────────────────────────────────────────────────────────────────────
@@ -179,11 +245,24 @@ def _verdict_card(
             label="EBITDA at risk · % of run-rate",
             peer_label="IC-critical band",
         )
-    intro = ck_section_intro(
+    # 2026-05-28 sweep · strict 5-block head for the rendered-report
+    # path. Eyebrow + dash + serif h1 + mono uppercase meta-line
+    # (real EBITDA at-risk + counts) + italic-first-phrase deck +
+    # status-dot legend. Single h1 (no more dual ck_section_intro +
+    # auto-injected ck_page_title stack).
+    intro = _bc_head(
         eyebrow="Bear Case · auto-synthesized",
-        headline=html.escape(report.headline),
-        body=html.escape(report.top_line_summary),
-        italic_word="bear",
+        title=html.escape(report.headline),
+        meta=(
+            f"${report.combined_ebitda_at_risk_usd/1e6:,.1f}M AT RISK · "
+            f"{report.critical_count} CRITICAL · "
+            f"{len(report.evidence)} EVIDENCE ITEM"
+            f"{'S' if len(report.evidence) != 1 else ''} · "
+            f"{len(report.sources_active)} SOURCE"
+            f"{'S' if len(report.sources_active) != 1 else ''}"
+        ),
+        lede_italic_phrase="What could break this thesis.",
+        lede_body=html.escape(report.top_line_summary),
     )
     kpis = (
         '<div class="ck-kpi-strip">'
@@ -399,18 +478,22 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
   </div>
 </form>
 """
-    landing_hero = ck_section_intro(
+    # 2026-05-28 sweep · strict 5-block head for the landing-form path.
+    landing_hero = _bc_head(
         eyebrow="Bear Case Auto-Generator",
-        headline="What could break this thesis?",
-        italic_word="break",
-        body=(
-            "Runs the full Thesis Pipeline and synthesizes the "
-            "counter-narrative every IC memo needs: ranked evidence "
-            "from Regulatory Calendar × Covenant Stress × Bridge "
-            "Audit × Deal MC × Deal Autopsy × Exit Timing, with "
-            "citation keys, per-theme narratives, and a print-ready "
-            "IC-memo drop-in block. What partners spend 3-5 hours "
-            "writing by hand, auto-generated in under a second."
+        title="What could break this thesis?",
+        meta=(
+            "7-SOURCE SYNTHESIS · REGULATORY · COVENANT · BRIDGE · "
+            "MC · AUTOPSY · EXIT"
+        ),
+        lede_italic_phrase="The counter-narrative every IC memo needs.",
+        lede_body=(
+            "Ranked evidence from Regulatory Calendar × Covenant "
+            "Stress × Bridge Audit × Deal MC × Deal Autopsy × Exit "
+            "Timing — with citation keys, per-theme narratives, and "
+            "a print-ready IC-memo drop-in block. What partners "
+            "spend 3-5 hours writing by hand, auto-generated in "
+            "under a second."
         ),
     )
     body = (
@@ -489,15 +572,23 @@ def _render_bear_case_no_ccd(
         hcris_xray=hcris_xray,
     )
 
-    fastpath_hero = ck_section_intro(
+    # 2026-05-28 sweep · strict 5-block head for the no-CCD fastpath.
+    fastpath_hero = _bc_head(
         eyebrow="Bear Case · no CCD fixture",
-        headline=f"{html.escape(deal_name)} — fast-path bear case",
-        italic_word="bear",
-        body=(
-            f"{len(report.evidence)} evidence items across "
-            f"{len(report.sources_active)} sources (no claims "
-            f"data). Standalone modules only — for the full 7-source "
-            f"bear case supply a dataset fixture."
+        title=f"Fast-path bear case — {html.escape(deal_name)}",
+        meta=(
+            f"{len(report.evidence)} EVIDENCE ITEM"
+            f"{'S' if len(report.evidence) != 1 else ''} · "
+            f"{len(report.sources_active)} SOURCE"
+            f"{'S' if len(report.sources_active) != 1 else ''} · "
+            "STANDALONE MODULES ONLY"
+        ),
+        lede_italic_phrase="No claims data — standalone modules only.",
+        lede_body=(
+            f"For the full 7-source bear case supply a dataset "
+            f"fixture. Otherwise this rendering uses only the "
+            f"modules that don't require claims data (Regulatory "
+            f"Calendar, HCRIS X-Ray)."
         ),
     )
     hero = (
