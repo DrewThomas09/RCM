@@ -8,6 +8,7 @@
 **Wave-2 (batch 20) shipped**: `portfolio_bridge_page`, `risk_workbench_page`, `scenario_modeler_page`, `market_intel_page`, `escalations_page`
 **Wave-3 (batch 21) shipped**: `bridge_audit_page`, `data_room_page`, `denial_prediction_page`, `diligence_checklist_page`, `exit_timing_page`
 **Wave-4 (batch 22) shipped**: `hcris_xray_page` (2 paths), `hospital_providers_page`, `ic_memo_page`, `ic_packet_page` (2 paths), `management_scorecard_page`
+**Wave-5 (batch 23) shipped**: `methodology_page`, `model_validation_page`, `physician_eu_page`, `quant_lab_page`, `questions_aggregator_page`
 
 This doc is the **single source of truth** for what remains. Every batch updates it.
 

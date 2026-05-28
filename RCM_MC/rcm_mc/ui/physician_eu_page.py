@@ -296,11 +296,20 @@ def _hero(
         + '</div>'
     )
 
-    intro = ck_section_intro(
+    # 2026-05-28 batch 23 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
         eyebrow="PHYSICIAN ECONOMIC UNITS",
-        headline=f"{html.escape(target_name)} — per-provider P&L.",
-        italic_word="per-provider",
-        body=(
+        title=f"Per-provider P&L — {html.escape(target_name)}",
+        meta=(
+            f"OVERHEAD METHOD: "
+            f"{report.overhead_method.upper().replace('_',' ')} · "
+            f"{report.overhead_pct*100:.0f}% OF REVENUE"
+        ),
+        lede_italic_phrase=(
+            "Per-provider P&L for the physician-economic-unit view."
+        ),
+        lede_body=(
             f"{html.escape(banner)} "
             f"Overhead allocation: {report.overhead_method.replace('_', ' ')} "
             f"at {report.overhead_pct*100:.0f}% of revenue."
