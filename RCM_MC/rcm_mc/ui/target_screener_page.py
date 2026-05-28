@@ -90,27 +90,43 @@ _MODES = [
 ]
 
 _CSS = """
+/* 2026-05-28 layout redesign:
+   - .tsw-meta CSS rule added (previously referenced but undefined,
+     causing the title and subtitle inside each tab to render inline
+     and produce the "overlapping text" the user reported).
+   - .tsw-tab padding widened and column gap increased so the
+     workbench-state numeral and the label stop touching.
+   - .tsw-tab min-width raised so the 8-char subtitle has room.
+   - Tier-4 style-sweep compliance: radii capped at 2px;
+     decorative hover box-shadow on .ts-mode replaced with a
+     subtle border-color shift (matches every other interactive
+     card on the platform after the batch 30-43 sweep). */
 .tsw-tabs{display:flex;gap:0;overflow-x:auto;border:1px solid var(--sc-rule,#c9c1ac);
- border-radius:3px;background:var(--sc-paper-2,#f3eddb);margin:10px 0 14px;}
+ border-radius:2px;background:var(--sc-paper-2,#f3eddb);margin:10px 0 14px;}
 .tsw-group{display:flex;}
 .tsw-group + .tsw-group{border-left:1px solid var(--sc-rule,#c9c1ac);}
-.tsw-glabel{padding:0 8px;font-family:var(--sc-mono);font-size:7.5px;letter-spacing:.12em;
+.tsw-glabel{padding:0 10px;font-family:var(--sc-mono);font-size:7.5px;letter-spacing:.12em;
  text-transform:uppercase;color:var(--sc-text-faint,#8b94a0);align-self:center;
  background:var(--sc-paper-3,#ece5d6);border-right:1px solid var(--sc-rule,#c9c1ac);
- line-height:1.3;}
-.tsw-tab{padding:7px 11px 6px;border-right:1px solid var(--sc-rule,#c9c1ac);
- display:grid;grid-template-columns:auto 1fr;gap:7px;align-items:center;
- min-width:112px;text-decoration:none;background:var(--sc-paper-2,#f3eddb);}
+ line-height:1.3;white-space:nowrap;}
+.tsw-tab{padding:9px 14px 8px;border-right:1px solid var(--sc-rule,#c9c1ac);
+ display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;
+ min-width:142px;text-decoration:none;background:var(--sc-paper-2,#f3eddb);}
 .tsw-tab:last-child{border-right:0;}
 .tsw-tab:hover{background:var(--sc-paper,#faf6ec);}
-.tsw-tab.is-active{background:var(--sc-paper,#faf6ec);border-bottom:3px solid var(--sc-teal-deep,#0e3d39);padding-bottom:6px;}
-.tsw-num{font-family:var(--sc-serif);font-style:italic;font-size:15px;line-height:1;
- color:var(--sc-teal,#155752);width:16px;text-align:center;}
+.tsw-tab.is-active{background:var(--sc-paper,#faf6ec);
+ border-bottom:3px solid var(--sc-teal-deep,#0e3d39);padding-bottom:5px;}
+.tsw-num{font-family:var(--sc-serif);font-style:italic;font-size:16px;line-height:1;
+ color:var(--sc-teal,#155752);width:18px;text-align:center;}
 .tsw-tab.is-active .tsw-num{color:var(--sc-teal-deep,#0e3d39);}
-.tsw-t{font-family:var(--sc-serif);font-size:12.5px;color:var(--sc-navy,#15202b);line-height:1.1;}
+/* Stack the tab's title and subtitle vertically. Without this rule
+   they render inline (spans default to inline), which is what the
+   user saw as cramped/overlapping text inside each tab. */
+.tsw-meta{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.tsw-t{font-family:var(--sc-serif);font-size:13px;color:var(--sc-navy,#15202b);line-height:1.15;}
 .tsw-t em{font-style:italic;color:var(--sc-teal,#155752);}
-.tsw-s{font-family:var(--sc-mono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;
- color:var(--sc-text-faint,#8b94a0);margin-top:3px;}
+.tsw-s{font-family:var(--sc-mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;
+ color:var(--sc-text-faint,#8b94a0);}
 .tsw-verticals{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 16px;}
 .tsw-vert{font-family:var(--sc-mono);font-size:10px;letter-spacing:.03em;
  padding:4px 9px;border:1px solid var(--sc-rule,#c9c1ac);border-radius:2px;
@@ -119,18 +135,19 @@ _CSS = """
 .tsw-vert.is-active{background:var(--sc-navy,#15202b);color:var(--sc-paper,#faf6ec);border-color:var(--sc-navy,#15202b);}
 .tsw-vert .u{opacity:.6;font-size:9px;}
 .ts-modes{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0 var(--sc-s-4);}
-@media (max-width:900px){.ts-modes{grid-template-columns:1fr;}.tsw-tab{min-width:140px;}}
+@media (max-width:900px){.ts-modes{grid-template-columns:1fr;}.tsw-tab{min-width:160px;}}
 .ts-mode{display:flex;flex-direction:column;gap:5px;background:var(--sc-paper,#faf6ec);
  border:1px solid var(--sc-rule,#c9c1ac);border-top:2px solid var(--sc-teal,#155752);
- padding:11px 13px;text-decoration:none;}
-.ts-mode:hover{box-shadow:var(--sc-shadow-2,0 8px 24px rgba(11,32,55,.14));}
+ padding:11px 13px;text-decoration:none;
+ transition:border-color 140ms ease;}
+.ts-mode:hover{border-color:var(--sc-teal-deep,#0e3d39);}
 .ts-mode.is-active{border-top-color:var(--sc-navy,#15202b);background:var(--sc-bone,#f3eddb);}
 .ts-mode-label{font-family:var(--sc-serif);font-size:15px;color:var(--sc-navy,#15202b);line-height:1.15;}
 .ts-mode-how{font-family:var(--sc-mono);font-size:10px;letter-spacing:.04em;color:var(--sc-text-dim,#6a7480);}
 .ts-mode-go{margin-top:auto;font-family:var(--sc-mono);font-size:10px;letter-spacing:.12em;
  text-transform:uppercase;color:var(--sc-teal,#155752);}
 .tsw-scaffold{background:var(--sc-paper,#faf6ec);border:1px dashed var(--sc-rule-2,#bfb6a2);
- border-radius:3px;padding:18px 20px;margin:14px 0;}
+ border-radius:2px;padding:18px 20px;margin:14px 0;}
 .tsw-scaffold h3{font-family:var(--sc-serif);font-size:14.5px;color:var(--sc-navy,#15202b);margin:0 0 6px;}
 .tsw-scaffold .tag{font-family:var(--sc-mono);font-size:9px;letter-spacing:.12em;
  text-transform:uppercase;color:var(--sc-warning,#b8732a);}
@@ -889,6 +906,13 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
         for m in _MODES
     )
     vinfo = next((v for v in _VERTICALS if v["key"] == vertical), _VERTICALS[0])
+    # 2026-05-28 layout fix: pull the "three established entry points"
+    # mode-card panel up so it sits with the universe selector at the
+    # top — before the map and table. Previously the modes panel landed
+    # AFTER the table (index ≈ 290k vs. table at 166k), which made the
+    # cards look like they explained the table rather than offering
+    # alternative ways to start a screen, and matched the user's
+    # report that "the selection and targets are below the map".
     return (
         _vertical_bar(vertical, qs)
         + ck["panel"](
@@ -898,6 +922,14 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
             f'This is market data, not your deals.</p>'
             + _universe_kpis(vertical, _vertical_rows(vertical, limit=None)),
             title="Active universe")
+        + ck["panel"](
+            '<p class="ck-section-body" style="margin:0 0 8px;">'
+            'Three established entry points into the SAME public universe — '
+            'preserved and unchanged. Pick one to start a screen with a '
+            'pre-set strategy, or keep scrolling for the map &amp; ranked '
+            'table.</p>'
+            f'<div class="ts-modes">{cards}</div>',
+            title="Same universe, three ways in")
         + ck["panel"](_render_map(vertical, qs),
                       title="Provider density · click a state to filter")
         + ck["panel"](
@@ -907,11 +939,6 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
                + (f'&state={_q1(qs, "state").upper()}' if _q1(qs, "state") else "")
                + '">Download CSV (this screen) ↓</a></p>'),
             title="Ranked providers · real loader · X-Ray / Inspect / CSV")
-        + ck["panel"](
-            '<p class="ck-section-body">Three established ways into the SAME '
-            'public universe — preserved and unchanged:</p>'
-            f'<div class="ts-modes">{cards}</div>',
-            title="Same universe, three ways in")
         + ck["panel"](
             'Rank and score geographic markets first — '
             '<a href="/geo-intel" style="font-weight:600">Geographic Intelligence</a> '
@@ -1492,7 +1519,7 @@ _SCREENS = {
 def render_target_screener(qs: Optional[Dict[str, List[str]]] = None,
                            *, saved: Optional[List[Dict]] = None,
                            owner: str = "") -> str:
-    from ._chartis_kit import (chartis_shell, ck_data_universe, ck_page_title,
+    from ._chartis_kit import (chartis_shell, ck_page_title,
                                ck_panel, ck_source_purpose)
     qs = qs or {}
     view = _q1(qs, "view", "main")
@@ -1503,10 +1530,14 @@ def render_target_screener(qs: Optional[Dict[str, List[str]]] = None,
         vertical = "hospitals"
     ck = {"panel": ck_panel}
 
+    # 2026-05-28 layout fix: drop the standalone CMS chip after the
+    # title. The ck_source_purpose strip below already renders a CMS
+    # PUBLIC DATA pill, so showing one here too produced the
+    # "two CMS public data things" the user reported.
     title = ck_page_title(
         "Target Screener", eyebrow="SOURCE · /target-screener · WORKBENCH",
         meta="six screens · every public CMS/provider universe · same data, not your deals",
-    ) + '<div style="margin:8px 0 0;">' + ck_data_universe("cms") + '</div>'
+    )
 
     source_purpose = ck_source_purpose(
         purpose="Find acquisition targets across every public CMS/provider "

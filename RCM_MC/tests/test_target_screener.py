@@ -107,6 +107,50 @@ class WorkbenchShellTests(unittest.TestCase):
         self.assertIn("Scaffold", self._render(view="inspector"))   # no ccn
         self.assertIn("Scaffold", self._render(view="compare"))     # empty basket
 
+    # ── 2026-05-28 layout-fix regression pins ────────────────────────
+    # The user reported (a) two CMS PUBLIC DATA pills stacked under the
+    # title, (b) overlapping/jumbled text inside the workbench tabs, and
+    # (c) the mode-card "selection" panel appearing below the map and
+    # ranked-providers table. Each of these is now load-bearing
+    # behavior — pin them so the bugs can't quietly come back.
+
+    def test_only_one_cms_pill_renders(self):
+        # The page must render exactly one CMS PUBLIC DATA pill (the one
+        # inside the ck_source_purpose strip). A second standalone pill
+        # underneath the title was the "two CMS public data things"
+        # the user reported.
+        import re
+        h = self._render()
+        chips = re.findall(r'<span class="ck-universe ck-universe-cms"', h)
+        self.assertEqual(len(chips), 1,
+                         f"expected exactly one CMS pill, got {len(chips)}")
+
+    def test_workbench_tabs_have_tsw_meta_css(self):
+        # .tsw-meta is the flex-column wrapper that stacks each tab's
+        # title and subtitle. Without it the two spans render inline
+        # and overlap (which the user saw as the "jumbled textbar").
+        h = self._render()
+        self.assertIn(".tsw-meta{display:flex", h)
+        # And the HTML still uses the wrapper.
+        self.assertIn('class="tsw-meta"', h)
+
+    def test_modes_panel_precedes_map_and_table(self):
+        # The "Same universe, three ways in" mode-card panel is an
+        # entry-point selector and must sit ABOVE the map and the
+        # ranked-providers table so it doesn't look like a footer to
+        # the table.
+        h = self._render()
+        modes_idx = h.find("Same universe, three ways in")
+        map_idx = h.find("Provider density")
+        table_idx = h.find("Ranked providers")
+        self.assertGreater(modes_idx, 0, "modes panel missing")
+        self.assertGreater(map_idx, 0, "map panel missing")
+        self.assertGreater(table_idx, 0, "table panel missing")
+        self.assertLess(modes_idx, map_idx,
+                        "modes panel must render before the map panel")
+        self.assertLess(map_idx, table_idx,
+                        "map panel must render before the ranked-providers table")
+
 
 class WorkbenchMapTests(unittest.TestCase):
     """PR 3 — real US map (reuses render_us_geo_map), state click→filter,
