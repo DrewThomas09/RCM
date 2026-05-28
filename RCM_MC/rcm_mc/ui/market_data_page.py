@@ -570,20 +570,19 @@ def render_market_data(
         title="Highest Medicare Dependency",
     ) if med_rows else ""
 
-    # B11 — add explicit page title above the section intro. Pre-fix,
-    # this page rendered with no h1 (only the breadcrumb + ck_section_intro
-    # subhead), so partners landing here saw KPI tiles + heatmap without
-    # an editorial anchor explaining what they were looking at.
-    page_title = ck_page_title(
-        "National Hospital Market Intelligence",
+    # 2026-05-28 batch 24 · universal strict 5-block head. Replaces
+    # the previous ck_page_title + ck_section_intro pair (dual-head
+    # trap from B11 fix) with a single unified header. The h1 and
+    # the italic deck phrase now live in one block, eliminating the
+    # stacked-title visual that B11 partially-but-not-fully resolved.
+    from ._chartis_kit import ck_editorial_head
+    page_title = ""  # absorbed into the universal helper below
+    intro = ck_editorial_head(
         eyebrow="MARKET DATA",
-        meta=f"HCRIS-derived state-level data · 50 states + DC",
-    )
-    intro = ck_section_intro(
-        eyebrow="MARKET DATA",
-        headline="National hospital market intelligence.",
-        italic_word="market",
-        body=(
+        title="National Hospital Market Intelligence",
+        meta="HCRIS-DERIVED STATE-LEVEL DATA · 50 STATES + DC",
+        lede_italic_phrase="National hospital market intelligence.",
+        lede_body=(
             "HCRIS-derived state-level operating margin, payer mix, "
             "concentration (HHI), and revenue distribution across "
             "all 50 states + DC. Heatmap on margin / HHI / Medicare "
@@ -683,11 +682,20 @@ def render_state_detail(
         + '</div>'
     )
 
-    intro = ck_section_intro(
+    # 2026-05-28 batch 24 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
         eyebrow=f"MARKET — {html.escape(state_upper)}",
-        headline=f"Hospitals in {html.escape(state_upper)}.",
-        italic_word=html.escape(state_upper),
-        body=f"{n} HCRIS-filed hospitals · ${total_rev/1e9:.1f}B total NPR.",
+        title=f"Hospitals in {html.escape(state_upper)}.",
+        meta=(
+            f"{n} HCRIS HOSPITALS · "
+            f"{total_beds:,} BEDS · "
+            f"${total_rev/1e9:.1f}B TOTAL NPR"
+        ),
+        lede_italic_phrase=f"Hospitals in {html.escape(state_upper)}.",
+        lede_body=(
+            f"{n} HCRIS-filed hospitals · ${total_rev/1e9:.1f}B total NPR."
+        ),
     )
 
     # Hospital point map — join this state's HCRIS hospitals to the vendored

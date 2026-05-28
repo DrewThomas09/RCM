@@ -9,6 +9,11 @@
 **Wave-3 (batch 21) shipped**: `bridge_audit_page`, `data_room_page`, `denial_prediction_page`, `diligence_checklist_page`, `exit_timing_page`
 **Wave-4 (batch 22) shipped**: `hcris_xray_page` (2 paths), `hospital_providers_page`, `ic_memo_page`, `ic_packet_page` (2 paths), `management_scorecard_page`
 **Wave-5 (batch 23) shipped**: `methodology_page`, `model_validation_page`, `physician_eu_page`, `quant_lab_page`, `questions_aggregator_page`
+**Wave-6 (batch 24) shipped**: `advanced_tools_page` (2 paths), `market_data_page` (2 paths), `regulatory_calendar_page`, `sector_intelligence_page`, `seeking_alpha_page`, `thesis_pipeline_page` (2 paths)
+
+## 🎉 Group B fully cleared
+
+All 30 originally-flagged Group B files are now in Group A. The strict 5-block head + `ck_editorial_head()` cascade is the universal standard across every page that previously emitted a `ck_section_intro` at its masthead.
 
 This doc is the **single source of truth** for what remains. Every batch updates it.
 

@@ -14,7 +14,9 @@ from __future__ import annotations
 import html as _html
 from typing import List, Optional, Tuple
 
-from ._chartis_kit import chartis_shell, ck_page_title, ck_section_intro
+from ._chartis_kit import (
+    chartis_shell, ck_editorial_head, ck_page_title, ck_section_intro,
+)
 
 # (sector, status, phase, data_status, [(link_label, route)])
 # status: "live" (real routes) | "roadmap" (planned — no dead links)
@@ -105,17 +107,20 @@ def render_sector_intelligence() -> str:
     )
     n_live = sum(1 for s in _SECTORS if s[1] == "live")
     body = (
-        ck_page_title(
-            "Sector Intelligence",
+        # 2026-05-28 batch 24 · universal strict 5-block head.
+        # Replaces the previous ck_page_title + ck_section_intro pair.
+        ck_editorial_head(
             eyebrow="SECTOR INTELLIGENCE",
-            meta=f"{n_live} live · {len(_SECTORS) - n_live} on the roadmap · "
-                 "healthcare-services coverage",
-        )
-        + ck_section_intro(
-            eyebrow="COVERAGE",
-            headline="The healthcare-services sectors PEdesk covers.",
-            italic_word="covers",
-            body=(
+            title="The healthcare-services sectors PEdesk covers.",
+            meta=(
+                f"{n_live} LIVE · "
+                f"{len(_SECTORS) - n_live} ON ROADMAP · "
+                "HEALTHCARE-SERVICES COVERAGE"
+            ),
+            lede_italic_phrase=(
+                "The healthcare-services sectors PEdesk covers."
+            ),
+            lede_body=(
                 "PE deal flow spans far more than hospitals. This is the "
                 "honest coverage map: only sectors marked Live have data and "
                 "pages today; the rest are planned, each labeled with the "

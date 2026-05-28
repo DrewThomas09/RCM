@@ -658,25 +658,32 @@ def render_thesis_pipeline_page(
         n_runs=_i("n_runs") or 1500,
     )
 
+    # 2026-05-28 batch 24 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
     try:
         report = run_thesis_pipeline(inp)
     except Exception as exc:  # noqa: BLE001
         return chartis_shell(
-            ck_section_intro(
+            ck_editorial_head(
                 eyebrow="Thesis Pipeline",
-                headline="Pipeline failed.",
-                italic_word="failed",
-                body=str(exc),
+                title="Pipeline failed.",
+                meta="PIPELINE ERROR · CHECK INPUTS",
+                lede_italic_phrase="The pipeline did not complete.",
+                lede_body=html.escape(str(exc)),
             ),
             "Thesis Pipeline",
         )
 
     # Hero
-    hero = ck_section_intro(
+    hero = ck_editorial_head(
         eyebrow=f"Thesis Pipeline · {html.escape(dataset)}",
-        headline=f"{html.escape(inp.deal_name)} — full diligence chain.",
-        italic_word="diligence",
-        body=(
+        title=f"Full diligence chain — {html.escape(inp.deal_name)}",
+        meta=(
+            f"{len(report.step_log)} STEPS · "
+            f"{report.total_compute_ms:.0f}ms TOTAL COMPUTE"
+        ),
+        lede_italic_phrase="Full diligence chain, end-to-end.",
+        lede_body=(
             f"{len(report.step_log)} steps · "
             f"{report.total_compute_ms:.0f}ms total compute. "
             "Every analytic output + populated Deal MC scenario + IC "

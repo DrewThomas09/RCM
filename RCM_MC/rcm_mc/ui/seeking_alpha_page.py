@@ -500,11 +500,19 @@ def render_seeking_alpha_page(
         f"to that public band given the small-target size penalty."
     )
 
-    intro = ck_section_intro(
+    # 2026-05-28 batch 24 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
         eyebrow="Seeking Alpha · Market Intelligence",
-        headline="Healthcare public-market + PE snapshot.",
-        italic_word="snapshot",
-        body=(
+        title="Healthcare public-market + PE snapshot.",
+        meta=(
+            f"{len(comps)} PUBLIC COMPS · "
+            f"{len(txs)} PE TRANSACTIONS · "
+            f"{len(news)} CURATED HEADLINES · "
+            "QUARTERLY REFRESH"
+        ),
+        lede_italic_phrase="Healthcare public-market + PE snapshot.",
+        lede_body=(
             f"{len(comps)} public comps · {len(txs)} PE "
             f"transactions · {len(news)} curated headlines · "
             "refreshed quarterly from public filings + aggregated "

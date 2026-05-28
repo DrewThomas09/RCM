@@ -420,11 +420,14 @@ def _verdict_card(report: RegulatoryExposureReport) -> str:
         "WARNING": "warning",
         "PASS": "positive",
     }.get(verdict, "neutral")
-    intro = ck_section_intro(
+    # 2026-05-28 batch 24 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
         eyebrow=f"Regulatory Calendar · {verdict}",
-        headline=headline,
-        body=rationale,
-        italic_word="regulatory",
+        title=headline,
+        meta=f"VERDICT {verdict} · RISK SCORE {risk_val}",
+        lede_italic_phrase="The regulatory clock for this thesis.",
+        lede_body=rationale,
     )
     badge = ck_signal_badge(verdict, tone=badge_tone)
     kpis = (
