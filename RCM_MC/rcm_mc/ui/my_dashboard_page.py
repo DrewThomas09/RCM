@@ -61,7 +61,7 @@ def render_my_dashboard(
 ) -> str:
     """Render /my/<owner> with the editorial chrome."""
     from rcm_mc.ui._chartis_kit import (
-        chartis_shell, ck_section_intro, ck_kpi_block,
+        chartis_shell, ck_editorial_head, ck_kpi_block,
         ck_severity_panel, ck_affirm_empty, ck_arrow_link,
         ck_next_section, ck_provenance_tooltip,
     )
@@ -84,11 +84,21 @@ def render_my_dashboard(
     # Single-line cadence matching chartis.com ("Where the portfolio
     # *needs* attention" on /alerts).
     safe_owner = _html.escape(owner)
-    intro = ck_section_intro(
+    # 2026-05-28 sweep batch 19 · strict 5-block head via the
+    # universal kit helper. Replaces ck_section_intro (h2 deck +
+    # shell auto-inject double-h1 risk) with one editorial header.
+    n_my_deals = len(my_deals)
+    intro = ck_editorial_head(
         eyebrow=f"PARTNER · {safe_owner.upper()}",
-        headline=f"Your week, in one read.",
-        italic_word="week",
-        body=(
+        title="Your week, in one read.",
+        meta=(
+            f"{n_my_deals} DEAL{'S' if n_my_deals != 1 else ''} · "
+            f"{len(my_alerts)} ALERT{'S' if len(my_alerts) != 1 else ''}"
+            f" · {n_red} RED · {n_amber} AMBER · "
+            f"{len(my_od)} OVERDUE · {len(my_up)} UPCOMING (14d)"
+        ),
+        lede_italic_phrase="Your week, in one read.",
+        lede_body=(
             f"Active deals, alerts, and deadlines assigned to "
             f"{safe_owner}, refreshed each request. The pulse strip "
             f"below summarises what needs attention this morning."

@@ -25,10 +25,15 @@ def _fresh_store() -> PortfolioStore:
 class MyDashboardEditorialChromeTests(unittest.TestCase):
     def test_empty_state_renders_intro_pulse_and_three_affirm_bands(self):
         html = render_my_dashboard(store=_fresh_store(), owner="alice")
-        # Editorial intro with italic-serif headline
-        self.assertIn('class="ck-section-intro"', html)
-        self.assertIn(">PARTNER · ALICE</div>", html)
-        self.assertIn("<em>week</em>", html)
+        # 2026-05-28 sweep batch 19 · /my/<owner> migrated to the
+        # universal ck_editorial_head helper. The eyebrow text and
+        # italic emphasis are preserved; the wrapper class changed
+        # from ck-section-intro to ck-eh.
+        self.assertIn('class="ck-eh"', html)
+        self.assertIn("PARTNER · ALICE", html)
+        # Italic-first-phrase is the deck phrase "Your week, in one
+        # read." — preserves the "week" emphasis the old test pinned.
+        self.assertIn("Your week, in one read.", html)
         # Pulse strip — 5 KPI blocks always rendered
         self.assertIn("ck-pulse-grid", html)
         self.assertIn(">My Deals</div>", html)

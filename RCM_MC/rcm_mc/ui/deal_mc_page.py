@@ -156,14 +156,23 @@ def _hero_stats(result: DealMCResult, scenario_name: str) -> str:
             f"changes shift the distribution meaningfully right."
         )
 
-    intro = ck_section_intro(
-        eyebrow="Deal Monte Carlo",
-        headline=html.escape(scenario_name),
-        body=(
-            f"{result.n_runs:,} Monte Carlo trials · "
-            f"{result.hold_years}y hold · {summary}"
+    # 2026-05-28 sweep batch 19 · strict 5-block head via the
+    # universal kit helper. Eliminates the dual-h1 trap and brings
+    # /models/mc/<deal> in line with every other swept analytic.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
+        eyebrow="DEAL MONTE CARLO",
+        title=html.escape(scenario_name),
+        meta=(
+            f"{result.n_runs:,} TRIAL"
+            f"{'S' if result.n_runs != 1 else ''} · "
+            f"{result.hold_years}-YR HOLD · "
+            f"P50 MOIC {result.moic_p50:.2f}x · "
+            f"P25 {result.moic_p25:.2f}x · "
+            f"P75 {result.moic_p75:.2f}x"
         ),
-        italic_word="shows",
+        lede_italic_phrase="Range of outcomes for this thesis.",
+        lede_body=summary,
     )
     kpis = (
         '<div class="ck-kpi-strip">'

@@ -3091,6 +3091,176 @@ _CK_BACK_TO_TOP_JS = """
 """
 
 
+_CK_EDITORIAL_HEAD_CSS = """
+<style>
+/* 2026-05-28 batch-19 · universal strict Tier-1 5-block head. The
+ * same shape ten separate page-local helpers had been emitting
+ * (po-head / pp-head / lib-head / ss-head / home-head / do-head /
+ *  bc-head / cv-head / ps-head / hp-head / dp-head / ap-head /
+ *  sb-head / cl-head). Extracted to one helper so the remaining
+ * ~270 pages can adopt the same masthead with one call. Scoped to
+ * `.ck-eh` so it doesn't collide with any page-local head class. */
+.ck-eh{padding:0 0 28px;margin:0 0 24px;
+  border-bottom:1px solid var(--rule-soft,#ddd1ac);}
+.ck-eh .ck-eh-row{display:flex;justify-content:space-between;
+  align-items:flex-start;gap:32px;}
+.ck-eh .ck-eh-left{flex:1;min-width:0;}
+.ck-eh .ck-eh-actions{display:flex;gap:8px;flex-shrink:0;
+  align-items:flex-start;}
+.ck-eh .ck-eh-actions a,.ck-eh .ck-eh-actions button{
+  font:500 11px/1 var(--sc-sans,Inter),sans-serif;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink,#16263a);
+  background:var(--paper-card,#fefcf3);
+  border:1px solid var(--rule,#c9bf9c);border-radius:2px;
+  padding:9px 14px;text-decoration:none;cursor:pointer;
+  transition:background .12s,border-color .12s;}
+.ck-eh .ck-eh-actions a:hover,.ck-eh .ck-eh-actions button:hover{
+  background:var(--paper-hi,#fbf6e8);
+  border-color:var(--rule-hi,#b6a87f);}
+.ck-eh .ck-eh-eyebrow{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--green-deep,#154e36);display:flex;align-items:center;
+  gap:12px;margin:0 0 18px;}
+.ck-eh .ck-eh-eyebrow .ck-eh-dash{width:24px;height:1px;
+  background:var(--green-deep,#154e36);}
+.ck-eh h1{font:400 44px/1.05 var(--sc-serif,Georgia),serif;
+  letter-spacing:-.015em;color:var(--ink,#16263a);margin:0 0 14px;}
+.ck-eh .ck-eh-meta{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted,#7a8595);margin:0 0 18px;}
+.ck-eh .ck-eh-lede{font:400 italic 16.5px/1.55
+  var(--sc-serif,Georgia),serif;
+  color:var(--ink-2,#2b3e54);max-width:68ch;margin:0 0 18px;}
+.ck-eh .ck-eh-lede em{color:var(--green-deep,#154e36);
+  font-style:italic;}
+.ck-eh .ck-eh-source{font:500 10px/1.4 var(--sc-mono,monospace);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted-2,#9a9e8a);margin:0 0 16px;max-width:62ch;}
+.ck-eh .ck-eh-legend{display:flex;gap:24px;list-style:none;padding:0;
+  margin:0;font:400 12.5px/1 var(--sc-sans,Inter),sans-serif;
+  color:var(--ink-2,#2b3e54);flex-wrap:wrap;}
+.ck-eh .ck-eh-legend li{display:flex;align-items:center;}
+.ck-eh .ck-eh-legend .ck-eh-dot{width:8px;height:8px;border-radius:50%;
+  display:inline-block;margin-right:10px;}
+.ck-eh .ck-eh-legend .ck-eh-dot.live{background:var(--green-deep,#154e36);}
+.ck-eh .ck-eh-legend .ck-eh-dot.computed{background:var(--ink-deep,#0e1a29);}
+.ck-eh .ck-eh-legend .ck-eh-dot.needs{background:var(--coral,#b04a3a);}
+.ck-eh .ck-eh-legend .ck-eh-dot.illustrative{background:var(--gold,#a08227);}
+@media (max-width:960px){
+  .ck-eh h1{font-size:36px;}
+  .ck-eh .ck-eh-row{flex-direction:column;}
+}
+@media (max-width:720px){
+  .ck-eh h1{font-size:32px;}
+}
+</style>
+"""
+
+
+def ck_editorial_head(
+    eyebrow: str,
+    title: str,
+    *,
+    meta: str = "",
+    lede_italic_phrase: str = "",
+    lede_body: str = "",
+    source_note: str = "",
+    actions_html: str = "",
+    show_legend: bool = True,
+) -> str:
+    """Universal strict Tier-1 5-block head — one helper, all pages.
+
+    Consolidates the ten page-local head builders shipped across
+    batches 1-18 into a single reusable primitive. Pages adopting
+    this helper get the exact same masthead shape that already
+    lives on /portfolio, /pipeline, /home, /library, /diligence,
+    /bear-cases, /covenant-stress, /payer-stress, the sector
+    family, the hospital-profile family, and the analytics family.
+
+    Anatomy (Tier-1 5-block):
+      · eyebrow + 24×1px --green-deep dash glyph
+      · serif <h1> (the page title)
+      · mono uppercase meta-line (real counts; never hard-coded)
+      · italic-first-phrase serif lede in --green-deep, with the
+        body in --ink-2 (Tier-2 §2.3)
+      · optional mono source-note line
+      · 4-bucket status-dot legend (live / computed / needs /
+        illustrative) — Tier-2 §2.4
+
+    Args:
+      eyebrow: short uppercase tag for the section the page lives
+        in (e.g. "DEAL MONTE CARLO", "PORTFOLIO MONITOR").
+      title: H1 text — the page name, serif 44px. Caller passes
+        ALREADY-ESCAPED markup if it embeds tags (e.g. spans).
+      meta: mono uppercase strip; caller supplies the real count
+        string (e.g. "12 SCENARIOS · 5 ACTIVE · LIVE"). Empty
+        string omits the strip entirely.
+      lede_italic_phrase: the deck-style first phrase that lands
+        in --green-deep italic. Caller supplies escaped text;
+        helper wraps it in <em>.
+      lede_body: the roman body that follows the italic phrase.
+        Caller supplies pre-escaped HTML.
+      source_note: optional "Source: ..." style line that lands
+        under the lede in mono uppercase. Caller supplies escaped
+        text.
+      actions_html: optional right-side actions block (Copy share
+        link button, Open IC memo link, etc.). Caller supplies
+        pre-rendered HTML.
+      show_legend: include the 4-bucket status-dot legend. Default
+        True; pages that don't need it (e.g. login) can suppress.
+
+    Returns the full CSS + header block. The CSS is namespaced
+    to .ck-eh so it doesn't collide with any page-local head
+    class. The h1 anchor lives at the page's natural masthead
+    position; auto-h1 inject from chartis_shell is skipped because
+    a real <h1> is present.
+    """
+    meta_html = (
+        f'<div class="ck-eh-meta">{_esc(meta)}</div>' if meta else ""
+    )
+    lede_html = ""
+    if lede_italic_phrase or lede_body:
+        italic = (
+            f'<em>{_esc(lede_italic_phrase)}</em> '
+            if lede_italic_phrase else ""
+        )
+        lede_html = f'<p class="ck-eh-lede">{italic}{lede_body}</p>'
+    source_html = (
+        f'<p class="ck-eh-source">Source: {_esc(source_note)}</p>'
+        if source_note else ""
+    )
+    actions_block = (
+        f'<div class="ck-eh-actions">{actions_html}</div>'
+        if actions_html else ""
+    )
+    legend_html = (
+        '<ul class="ck-eh-legend">'
+        '<li><span class="ck-eh-dot live"></span>Live data</li>'
+        '<li><span class="ck-eh-dot computed"></span>Computed</li>'
+        '<li><span class="ck-eh-dot needs"></span>Needs data</li>'
+        '<li><span class="ck-eh-dot illustrative"></span>Illustrative</li>'
+        '</ul>'
+        if show_legend else ""
+    )
+    return (
+        _CK_EDITORIAL_HEAD_CSS
+        + '<header class="ck-eh">'
+        '<div class="ck-eh-row">'
+        '<div class="ck-eh-left">'
+        f'<div class="ck-eh-eyebrow">'
+        f'<span class="ck-eh-dash"></span>{_esc(eyebrow)}</div>'
+        f'<h1>{title}</h1>'
+        f'{meta_html}'
+        f'{lede_html}'
+        f'{source_html}'
+        '</div>'
+        f'{actions_block}'
+        '</div>'
+        f'{legend_html}'
+        '</header>'
+    )
+
+
 def ck_back_to_top_button(label: str = "↑ Back to top") -> str:
     """Floating "back to top" button — appears after the partner
     scrolls more than 600px down. Click smooth-scrolls to top.
