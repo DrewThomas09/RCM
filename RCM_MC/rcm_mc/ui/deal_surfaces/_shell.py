@@ -65,7 +65,7 @@ SURFACES: Tuple[DealSurface, ...] = (
     DealSurface(15, "playbook",    "Playbook",        "Value creation", False,
                 "100-day operational playbook (impact × tractability)."),
     # ── Diagnostics ──
-    DealSurface(16, "trends",      "Trends",          "Diagnostics",    False,
+    DealSurface(16, "trends",      "Trends",          "Diagnostics",    True,
                 "Per-metric time-series forecasts."),
     DealSurface(17, "predicted",   "Predicted vs Actual", "Diagnostics", False,
                 "Diligence predictions vs current actuals."),
