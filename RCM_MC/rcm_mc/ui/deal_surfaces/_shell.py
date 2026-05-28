@@ -69,7 +69,7 @@ SURFACES: Tuple[DealSurface, ...] = (
                 "Per-metric time-series forecasts."),
     DealSurface(17, "predicted",   "Predicted vs Actual", "Diagnostics", False,
                 "Diligence predictions vs current actuals."),
-    DealSurface(18, "memo-auto",   "Memo (auto)",     "Diagnostics",    False,
+    DealSurface(18, "memo-auto",   "Memo (auto)",     "Diagnostics",    True,
                 "Lightweight auto-generated IC memo."),
 )
 
