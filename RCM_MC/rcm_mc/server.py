@@ -3691,8 +3691,12 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/methodology":
             # Methodology hub — renders the reference-catalogue (formerly /library).
             # The detailed calculation explainer moved to /methodology/calculations.
+            # 2026-05-28 sweep batch 3 — pass ``?q=`` through so the
+            # keyword-search bar at the masthead actually filters.
             from .ui.library_page import render_library
-            return self._send_html(render_library())
+            from urllib.parse import urlparse, parse_qs as _pq
+            _q = (_pq(urlparse(self.path).query).get("q") or [""])[0]
+            return self._send_html(render_library(q=_q))
         if path == "/methodology/calculations":
             from .ui.methodology_page import render_methodology
             return self._send_html(render_methodology())
@@ -7868,9 +7872,17 @@ class RCMHandler(BaseHTTPRequestHandler):
             results=results, filters=filters, predefined=preset, total_scanned=total))
 
     def _route_library_page(self) -> None:
-        """GET /library — research library and reference materials."""
+        """GET /library — research library and reference materials.
+
+        2026-05-28 sweep batch 3 — forwards ``?q=`` to the renderer so
+        the keyword-search bar works on the legacy /library route too.
+        """
         from .ui.library_page import render_library
-        return self._send_html(render_library())
+        # The route is called without a parsed qs argument; pull from
+        # the request directly so the keyword search lands.
+        from urllib.parse import urlparse, parse_qs
+        q = (parse_qs(urlparse(self.path).query).get("q") or [""])[0]
+        return self._send_html(render_library(q=q))
 
     def _route_regression_page(self) -> None:
         """GET /portfolio/regression — interactive regression analysis."""
