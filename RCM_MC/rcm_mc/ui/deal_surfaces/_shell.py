@@ -48,7 +48,7 @@ SURFACES: Tuple[DealSurface, ...] = (
                 "5-year explicit + Gordon-growth terminal."),
     DealSurface(8,  "lbo",         "LBO",             "Models",         True,
                 "Sources & uses, debt schedule, returns waterfall."),
-    DealSurface(9,  "stmt",        "3-Statement",     "Models",         False,
+    DealSurface(9,  "stmt",        "3-Statement",     "Models",         True,
                 "P&L, balance sheet, cash flow with source tags."),
     # ── Market & risk ──
     DealSurface(10, "market",      "Market",          "Market & risk",  False,

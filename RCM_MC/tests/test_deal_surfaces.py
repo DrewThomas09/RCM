@@ -53,12 +53,13 @@ class SurfaceRegistry(unittest.TestCase):
         self.assertEqual(sorted(s.number for s in SURFACES), list(range(1, 19)))
 
     def test_built_surfaces_grow_one_phase_at_a_time(self):
-        # Phases 1..9: profile, bridge, lbo, dcf, comp-intel, ml, denial,
-        # returns, trends.
+        # Phases 1..10: profile, bridge, lbo, dcf, comp-intel, ml, denial,
+        # returns, trends, stmt.
         built = {s.slug for s in SURFACES if s.built}
         self.assertEqual(built,
                          {"profile", "bridge", "lbo", "dcf",
-                          "comp-intel", "ml", "denial", "returns", "trends"})
+                          "comp-intel", "ml", "denial", "returns",
+                          "trends", "stmt"})
 
     def test_lookup_by_path(self):
         self.assertIs(SURFACE_BY_PATH["profile"].built, True)
@@ -101,8 +102,8 @@ class ProfileRender(unittest.TestCase):
         self.assertIn('aria-current="page"', self.html)
 
     def test_unbuilt_surfaces_get_soon_badge(self):
-        # 18 − built (now 9) = 9 soon badges
-        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 9)
+        # 18 − built (now 10) = 8 soon badges
+        self.assertGreaterEqual(self.html.count("ds-nav-soon"), 8)
 
     def test_payer_mix_uses_real_data(self):
         self.assertIn("Medicare 42%", self.html)
@@ -127,6 +128,40 @@ class ProfileRender(unittest.TestCase):
         for slug in ("ic-memo", "bridge", "comp-intel", "scenarios", "ml",
                      "market", "denial", "trends", "dcf", "lbo", "stmt", "returns"):
             self.assertIn(f"/deals/050001/{slug}", self.html)
+
+
+class StmtRender(unittest.TestCase):
+    """Surface 09 (3-Statement) — Income statement real, BS/CF honest empties."""
+
+    def test_stmt_renders_income_statement_when_hcris_present(self):
+        from rcm_mc.ui.deal_surfaces import render_deal_stmt
+        out = render_deal_stmt("050001", FAKE_HOSPITAL)
+        # Income Statement panel + honest empties for BS and CF + 'what means'
+        self.assertIn("INCOME STATEMENT", out)
+        self.assertIn("Balance sheet", out)
+        self.assertIn("Cash flow statement", out)
+        self.assertIn("WHAT THIS MEANS", out)
+        # Source-tag chips present
+        for tag in ("hcris", "computed", "needs", "benchmark"):
+            self.assertIn(tag, out.lower())
+        # Income lines reflect REAL numbers
+        # NPR = 4.2e8 → $420.0M; net income = 2.5e7 → $25.0M
+        self.assertIn("$420.0M", out)
+        self.assertIn("$25.0M", out)
+        # No fabricated balance sheet / cash flow numbers
+        self.assertIn("HCRIS DOES NOT CARRY THIS", out.upper())
+        self.assertEqual(len(re.findall(r"<h1[ >]", out)), 1)
+
+    def test_stmt_renders_honest_empty_when_no_hcris(self):
+        from rcm_mc.ui.deal_surfaces import render_deal_stmt
+        h = {"ccn": "999999", "name": "Sparse Co", "state": "TX"}
+        out = render_deal_stmt("999999", h)
+        self.assertIn("Statement reconstruction cannot run", out)
+        self.assertNotIn("INCOME STATEMENT", out)
+        self.assertIn("CCN 999999", out)
+
+    def test_stmt_marked_built_in_registry(self):
+        self.assertTrue(SURFACE_BY_PATH["stmt"].built)
 
 
 class TrendsRender(unittest.TestCase):
@@ -484,6 +519,25 @@ class DealRoutes(unittest.TestCase):
                     body = r.read().decode()
                 self.assertIn("Under construction", body)
                 self.assertIn("DEAL · CCN", body)
+            finally:
+                server.shutdown(); server.server_close()
+
+    def test_real_ccn_stmt_renders_real_data_200(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            create_user(PortfolioStore(os.path.join(tmp, "p.db")), "at", "supersecret1")
+            server, port = self._start(tmp)
+            try:
+                opener = _login_opener(port, "at", "supersecret1")
+                ccn = self._pick_real_ccn()
+                with opener.open(f"http://127.0.0.1:{port}/deals/{ccn}/stmt") as r:
+                    self.assertEqual(r.status, 200)
+                    body = r.read().decode()
+                self.assertNotIn("Under construction", body)
+                self.assertIn("DEAL · CCN", body)
+                self.assertEqual(len(re.findall(r"<h1[ >]", body)), 1)
+                self.assertTrue(
+                    "INCOME STATEMENT" in body
+                    or "Statement reconstruction cannot run" in body)
             finally:
                 server.shutdown(); server.server_close()
 
