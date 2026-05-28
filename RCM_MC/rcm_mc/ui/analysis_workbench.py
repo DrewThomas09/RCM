@@ -760,9 +760,12 @@ body.analysis-workbench {{
 }}
 
 /* ── Analyst Override / Assumptions tab ── */
+/* 2026-05-28 batch 38 · Tier-4 trope removal — drops 135° gradient;
+   flat brand-tinted background + decorative left stripe stripped.
+   The border + radius already mark this as a banner. */
 .analysis-workbench .ov-banner {{
-  background: linear-gradient(135deg, rgba(21,87,82,0.10) 0%, rgba(212,228,226,0.4) 100%);
-  border: 1px solid var(--wb-accent); border-left: 3px solid var(--wb-accent);
+  background: rgba(21,87,82,0.06);
+  border: 1px solid var(--wb-accent);
   border-radius: 2px;
   padding: 9px 12px; margin-bottom: 10px;
   font-size: 12px; color: var(--wb-text);

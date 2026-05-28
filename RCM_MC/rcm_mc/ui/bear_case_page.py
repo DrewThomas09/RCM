@@ -114,11 +114,15 @@ margin:4px 0 0 0;letter-spacing:-.2px;}}
 font-weight:700;color:{tf};margin:22px 0 10px 0;}}
 .bc-panel{{background:{pn};border:1px solid {bd};border-radius:4px;
 padding:14px 20px;margin-bottom:16px;}}
-.bc-callout{{background:{pa};padding:12px 16px;border-left:3px solid {ac};
-border-radius:0 3px 3px 0;font-size:12px;color:{td};line-height:1.65;
+/* 2026-05-28 batch 38 · Tier-4 trope removal — .bc-callout default
+   loses decorative 3px accent; .bc-verdict-card drops 135°
+   background gradient; semantic neg border preserves bear-case
+   warning context. Radius capped. */
+.bc-callout{{background:{pa};padding:12px 16px;border:1px solid {bd};
+border-radius:2px;font-size:12px;color:{td};line-height:1.65;
 max-width:900px;margin-top:12px;}}
-.bc-verdict-card{{background:linear-gradient(135deg,{pn} 0%,{pa} 100%);
-border:1px solid {ne};border-radius:4px;padding:20px 24px;
+.bc-verdict-card{{background:{pn};
+border:1px solid {ne};border-radius:2px;padding:20px 24px;
 position:relative;overflow:hidden;margin-top:14px;}}
 .bc-verdict-card::before{{content:"";position:absolute;top:0;left:0;right:0;
 height:3px;background:linear-gradient(90deg,{ne},{wn});}}
