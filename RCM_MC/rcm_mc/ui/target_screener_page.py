@@ -134,18 +134,35 @@ _CSS = """
 .tsw-vert:hover{border-color:var(--sc-teal,#155752);}
 .tsw-vert.is-active{background:var(--sc-navy,#15202b);color:var(--sc-paper,#faf6ec);border-color:var(--sc-navy,#15202b);}
 .tsw-vert .u{opacity:.6;font-size:9px;}
-.ts-modes{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0 var(--sc-s-4);}
+.ts-modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0;}
 @media (max-width:900px){.ts-modes{grid-template-columns:1fr;}.tsw-tab{min-width:160px;}}
-.ts-mode{display:flex;flex-direction:column;gap:5px;background:var(--sc-paper,#faf6ec);
+.ts-mode{display:flex;flex-direction:column;gap:4px;background:var(--sc-paper,#faf6ec);
  border:1px solid var(--sc-rule,#c9c1ac);border-top:2px solid var(--sc-teal,#155752);
- padding:11px 13px;text-decoration:none;
+ padding:9px 12px;text-decoration:none;
  transition:border-color 140ms ease;}
 .ts-mode:hover{border-color:var(--sc-teal-deep,#0e3d39);}
 .ts-mode.is-active{border-top-color:var(--sc-navy,#15202b);background:var(--sc-bone,#f3eddb);}
-.ts-mode-label{font-family:var(--sc-serif);font-size:15px;color:var(--sc-navy,#15202b);line-height:1.15;}
-.ts-mode-how{font-family:var(--sc-mono);font-size:10px;letter-spacing:.04em;color:var(--sc-text-dim,#6a7480);}
-.ts-mode-go{margin-top:auto;font-family:var(--sc-mono);font-size:10px;letter-spacing:.12em;
- text-transform:uppercase;color:var(--sc-teal,#155752);}
+.ts-mode-label{font-family:var(--sc-serif);font-size:14px;color:var(--sc-navy,#15202b);line-height:1.2;}
+.ts-mode-how{font-family:var(--sc-mono);font-size:10px;letter-spacing:.04em;
+ color:var(--sc-text-dim,#6a7480);line-height:1.4;}
+/* 2026-05-28 merged universe panel — three named sub-blocks (universe
+   selector / active screen summary / pre-set entry points) inside
+   one ck_panel. Each sub-block carries its own eyebrow lbl + prompt
+   line + content, separated by a hairline rule so the user reads it
+   as one coherent surface rather than three competing announcements. */
+.ts-univ-block{padding:0 0 14px;margin:0 0 14px;
+ border-bottom:1px solid var(--sc-rule,#c9c1ac);}
+.ts-univ-block:last-child{padding-bottom:0;margin-bottom:0;border-bottom:0;}
+.ts-univ-lbl{font-family:var(--sc-mono);font-size:10px;letter-spacing:.12em;
+ text-transform:uppercase;color:var(--sc-teal,#155752);font-weight:700;
+ margin-bottom:4px;}
+.ts-univ-prompt{font-family:var(--sc-mono);font-size:11px;
+ color:var(--sc-text-dim,#6a7480);margin-bottom:8px;}
+.ts-univ-summary{font-family:var(--sc-serif);font-size:13.5px;line-height:1.55;
+ color:var(--sc-text,#2a3a4a);margin:0 0 10px;max-width:80ch;}
+.ts-univ-summary em{font-style:italic;color:var(--sc-text-dim,#6a7480);}
+.ts-univ-code{font-family:var(--sc-mono);font-size:11px;
+ color:var(--sc-text-dim,#6a7480);}
 .tsw-scaffold{background:var(--sc-paper,#faf6ec);border:1px dashed var(--sc-rule-2,#bfb6a2);
  border-radius:2px;padding:18px 20px;margin:14px 0;}
 .tsw-scaffold h3{font-family:var(--sc-serif);font-size:14.5px;color:var(--sc-navy,#15202b);margin:0 0 6px;}
@@ -430,7 +447,9 @@ def _tab_bar(active_view: str, qs: Dict[str, List[str]]) -> str:
     return "".join(html)
 
 
-def _vertical_bar(active_vertical: str, qs: Dict[str, List[str]]) -> str:
+def _vertical_chips_html(active_vertical: str, qs: Dict[str, List[str]]) -> str:
+    """Just the chip strip — no surrounding prompt/label. Used by the
+    merged universe panel which renders its own prompt inline."""
     chips = []
     for v in _VERTICALS:
         cls = "tsw-vert is-active" if v["key"] == active_vertical else "tsw-vert"
@@ -438,14 +457,18 @@ def _vertical_bar(active_vertical: str, qs: Dict[str, List[str]]) -> str:
             f'<a class="{cls}" href="{_vhref(v["key"], qs)}" title="{v["note"]}">'
             f'{v["label"]} <span class="u">{v["universe"]}</span></a>'
         )
-    # Make the universe switch obvious — this is what makes it more than a
-    # hospital screener. A clear prompt + the count of toggleable universes.
+    return '<div class="tsw-verticals">' + "".join(chips) + '</div>'
+
+
+def _vertical_bar(active_vertical: str, qs: Dict[str, List[str]]) -> str:
+    # Preserved for back-compat (used by some non-main views below).
+    # Main view uses the merged universe panel instead.
     return ('<div style="font-family:var(--sc-mono);font-size:11px;'
             'letter-spacing:.08em;text-transform:uppercase;'
             'color:var(--sc-teal,#155752);font-weight:600;margin-bottom:7px;">'
             f'Screen which universe? &middot; {len(_VERTICALS)} CMS provider '
             'universes — toggle to switch</div>'
-            '<div class="tsw-verticals">' + "".join(chips) + '</div>')
+            + _vertical_chips_html(active_vertical, qs))
 
 
 def _layer_bar(active_layer: str, qs: Dict[str, List[str]]) -> str:
@@ -897,39 +920,67 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
     if vertical in ("provider_supply", "market"):
         return _render_geo_view(vertical, qs, ck)
     active_mode = _q1(qs, "mode").lower()
+    # 2026-05-28 better-fitted redesign: drop the "Open X →" footer
+    # line from each mode card. The hover affordance (border-color
+    # shift after batch 35) and the card-as-link semantics already
+    # convey clickability; the extra mono ALL-CAPS line was the bulk
+    # of each card's vertical footprint.
     cards = "".join(
         f'<a class="ts-mode{" is-active" if m["key"] == active_mode else ""}" '
         f'href="{m["href"]}">'
         f'<span class="ts-mode-label">{m["label"]}</span>'
-        f'<span class="ts-mode-how">{m["how"]}</span>'
-        f'<span class="ts-mode-go">Open {m["label"]} &rarr;</span></a>'
+        f'<span class="ts-mode-how">{m["how"]}</span></a>'
         for m in _MODES
     )
     vinfo = next((v for v in _VERTICALS if v["key"] == vertical), _VERTICALS[0])
-    # 2026-05-28 layout fix: pull the "three established entry points"
-    # mode-card panel up so it sits with the universe selector at the
-    # top — before the map and table. Previously the modes panel landed
-    # AFTER the table (index ≈ 290k vs. table at 166k), which made the
-    # cards look like they explained the table rather than offering
-    # alternative ways to start a screen, and matched the user's
-    # report that "the selection and targets are below the map".
+
+    # 2026-05-28 better-fitted redesign: collapse the previous four
+    # top-of-page panels (raw vertical bar + "Active universe" intro +
+    # "Same universe, three ways in" + map) into a single "Choose a
+    # universe & entry point" panel above the map and table.
+    #
+    # Why: the page was rendering navy-headered panels for the
+    # universe-selector lead-in, the active-universe summary, AND the
+    # entry-point mode cards — three full panels of CHROME before the
+    # user reached the actual data. The user reported the page felt
+    # "jumbled" and "split so weirdly", which traced directly to that
+    # vertical stacking. One panel with three named sub-blocks
+    # (universe / summary / entry points) reads as one coherent
+    # control surface instead of three competing announcements.
+    universe_panel = (
+        # ── Sub-block 1: universe selector chips ──────────────
+        '<div class="ts-univ-block">'
+        '<div class="ts-univ-lbl">Universe</div>'
+        '<div class="ts-univ-prompt">'
+        f'Pick one of {len(_VERTICALS)} public CMS provider screens — '
+        'toggle to switch:'
+        '</div>'
+        + _vertical_chips_html(vertical, qs)
+        + '</div>'
+        # ── Sub-block 2: active-universe summary + real KPIs ──
+        '<div class="ts-univ-block">'
+        '<div class="ts-univ-lbl">Active screen</div>'
+        f'<p class="ts-univ-summary">'
+        f'<strong>{vinfo["label"]}</strong> &middot; '
+        f'<span class="ts-univ-code">{vinfo["universe"]}</span>. '
+        f'{vinfo["note"]} <em>Market data, not your deals.</em>'
+        '</p>'
+        + _universe_kpis(vertical, _vertical_rows(vertical, limit=None))
+        + '</div>'
+        # ── Sub-block 3: pre-set entry-point mode cards ───────
+        '<div class="ts-univ-block">'
+        '<div class="ts-univ-lbl">Or start with a pre-set entry point</div>'
+        '<div class="ts-univ-prompt">'
+        'All three run over the SAME public universe — pick the one that '
+        'matches how you want to find candidates.'
+        '</div>'
+        f'<div class="ts-modes">{cards}</div>'
+        '</div>'
+    )
+
     return (
-        _vertical_bar(vertical, qs)
-        + ck["panel"](
-            f'<p class="ck-section-body" style="margin:0;">Screening '
-            f'<strong>{vinfo["label"]}</strong> &middot; <span style="font-family:var(--sc-mono);'
-            f'font-size:11px;">{vinfo["universe"]}</span>. {vinfo["note"]} '
-            f'This is market data, not your deals.</p>'
-            + _universe_kpis(vertical, _vertical_rows(vertical, limit=None)),
-            title="Active universe")
-        + ck["panel"](
-            '<p class="ck-section-body" style="margin:0 0 8px;">'
-            'Three established entry points into the SAME public universe — '
-            'preserved and unchanged. Pick one to start a screen with a '
-            'pre-set strategy, or keep scrolling for the map &amp; ranked '
-            'table.</p>'
-            f'<div class="ts-modes">{cards}</div>',
-            title="Same universe, three ways in")
+        ck["panel"](universe_panel,
+                    title="Choose a universe & entry point")
         + ck["panel"](_render_map(vertical, qs),
                       title="Provider density · click a state to filter")
         + ck["panel"](
@@ -1559,16 +1610,15 @@ def render_target_screener(qs: Optional[Dict[str, List[str]]] = None,
     else:
         screen = _SCREENS[view](qs, ck)
 
-    note = (
-        '<p class="ck-section-body" style="font-style:italic;max-width:80ch;">'
-        'All screening runs over the same public CMS/provider universes — this '
-        'is market data, not your deals. Promote a result into the Pipeline to '
-        'start tracking it. (Six screens; press a tab to switch.)</p>'
-    )
-
-    body = (
-        title + source_purpose + tab_bar + screen
-        + ck_panel(note, title="One universe, one workbench")
-    )
+    # 2026-05-28 better-fitted redesign: drop the trailing
+    # "One universe, one workbench" closer panel. Its content
+    # ("market data, not your deals · Promote a result into the
+    # Pipeline · Six screens") is already carried by the
+    # source-purpose strip at the top of the page and by the
+    # next-steps panel inside _screen_main — keeping it as the
+    # final element repeated what the partner had already read
+    # twice and ended the page on chrome instead of on the
+    # next action.
+    body = title + source_purpose + tab_bar + screen
     return chartis_shell(body, "Target Screener", active_nav="/target-screener",
                          extra_css=_CSS)

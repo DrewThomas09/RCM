@@ -135,21 +135,73 @@ class WorkbenchShellTests(unittest.TestCase):
         self.assertIn('class="tsw-meta"', h)
 
     def test_modes_panel_precedes_map_and_table(self):
-        # The "Same universe, three ways in" mode-card panel is an
-        # entry-point selector and must sit ABOVE the map and the
-        # ranked-providers table so it doesn't look like a footer to
-        # the table.
+        # Pinned by 2026-05-28 better-fitted redesign: the entry-point
+        # mode cards now live in the merged universe panel (sub-block
+        # 3) rather than as their own panel. They still must render
+        # ABOVE the map and the ranked-providers table — pin by the
+        # FIRST mode label so the test survives future panel renames.
         h = self._render()
-        modes_idx = h.find("Same universe, three ways in")
+        modes_idx = h.find("Thesis Sourcing")
         map_idx = h.find("Provider density")
         table_idx = h.find("Ranked providers")
-        self.assertGreater(modes_idx, 0, "modes panel missing")
+        self.assertGreater(modes_idx, 0, "Thesis Sourcing entry-point missing")
         self.assertGreater(map_idx, 0, "map panel missing")
         self.assertGreater(table_idx, 0, "table panel missing")
         self.assertLess(modes_idx, map_idx,
-                        "modes panel must render before the map panel")
+                        "entry-point modes must render before the map panel")
         self.assertLess(map_idx, table_idx,
                         "map panel must render before the ranked-providers table")
+
+    # ── 2026-05-28 better-fitted redesign pins ──────────────────────
+    # Stop the layout from quietly drifting back to 5+ stacked navy
+    # panels. The merged "Choose a universe & entry point" panel is
+    # the load-bearing top-of-page surface; if it splinters back into
+    # separate vertical-bar / Active-universe / modes panels, the
+    # "jumbled" feedback the user described will return.
+
+    def test_main_view_has_four_ck_panels(self):
+        # Main view should render exactly 4 panels: merged universe
+        # panel, map, table, next-steps. The pre-redesign page had
+        # 5+ and the partner reported it as visually noisy.
+        import re
+        h = self._render()
+        titles = re.findall(r'class="ck-panel-title">([^<]+)<', h)
+        self.assertEqual(
+            len(titles), 4,
+            f"expected 4 panels in main view, got {len(titles)}: {titles}")
+
+    def test_merged_universe_panel_has_three_sub_blocks(self):
+        # The merged panel groups three named sub-blocks (universe
+        # selector / active screen summary / pre-set entry points)
+        # behind a single navy header strip. Each sub-block has a
+        # ts-univ-block wrapper so the hairline separators stay
+        # consistent — pin that count.
+        import re
+        h = self._render()
+        sub_blocks = re.findall(r'<div class="ts-univ-block">', h)
+        self.assertEqual(len(sub_blocks), 3,
+                         f"expected 3 ts-univ-block sub-blocks, got {len(sub_blocks)}")
+        # And the three sub-block eyebrow labels are present.
+        for lbl in ("Universe", "Active screen",
+                    "Or start with a pre-set entry point"):
+            self.assertIn(f'class="ts-univ-lbl">{lbl}<', h, lbl)
+
+    def test_trailing_footer_panel_dropped(self):
+        # The redundant "One universe, one workbench" closer panel
+        # at the very bottom is gone — its content was duplicated by
+        # the source-purpose strip + the next-steps panel.
+        h = self._render()
+        self.assertNotIn("One universe, one workbench", h)
+
+    def test_entry_point_mode_cards_dropped_open_x_line(self):
+        # Mode cards now show just the label + the "how" subtitle.
+        # The ALL-CAPS "OPEN X →" footer line was the bulk of each
+        # card's vertical footprint and is now removed; the hover
+        # affordance still conveys clickability.
+        h = self._render()
+        # The CSS class for the dropped line should no longer be
+        # referenced in the rendered HTML.
+        self.assertNotIn('class="ts-mode-go"', h)
 
 
 class WorkbenchMapTests(unittest.TestCase):
