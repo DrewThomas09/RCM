@@ -255,10 +255,14 @@ _IC_MEMO_CSS = """
   white-space: nowrap; box-shadow: 2px 0 0 rgba(15,28,46,.04);
   transition: width .35s ease;
 }
+/* 2026-05-28 batch 38 · Tier-4 trope removal — drops the 135°
+   gradient on the IC memo total-bar; flat brand tint preserves
+   the visual weight without the gradient. Semantic 3px brand-deep
+   left-stripe stays (marks the total/summary row). */
 .ic-memo-bar-total {
   display: flex; justify-content: space-between; align-items: baseline;
   padding: .9rem 1rem; margin-top: .9rem;
-  background: linear-gradient(135deg, #D4E4E2 0%, #FAF7F0 100%);
+  background: #E8F0EF;
   border: 1px solid #BFD1CE; border-left: 3px solid #155752;
   border-radius: 2px;
   font-family: "Source Serif 4",Georgia,serif;

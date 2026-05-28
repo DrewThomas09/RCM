@@ -79,8 +79,11 @@ color:{tf};font-weight:600;margin-bottom:3px;}}
 font-variant-numeric:tabular-nums;font-weight:700;color:{tx};}}
 .ba-kpi__val.neg{{color:{ne};}}
 .ba-kpi__val.pos{{color:{po};}}
-.ba-counter-card{{background:linear-gradient(135deg,{pa} 0%,{pn} 100%);
-border:1px solid {po};border-radius:4px;padding:18px 22px;margin-top:14px;}}
+/* 2026-05-28 batch 38 · Tier-4 trope removal — drops 135° gradient;
+   flat panel-alt + semantic positive border (carries "pass" status
+   meaning) preserves the verdict-affirmation read. Radius capped. */
+.ba-counter-card{{background:{pa};
+border:1px solid {po};border-radius:2px;padding:18px 22px;margin-top:14px;}}
 .ba-counter-num{{font-size:36px;font-family:"JetBrains Mono",monospace;
 font-weight:700;color:{po};line-height:1;}}
 .ba-counter-sub{{font-size:12px;color:{td};line-height:1.55;margin-top:8px;

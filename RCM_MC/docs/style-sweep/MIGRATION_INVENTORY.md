@@ -2,7 +2,7 @@
 
 **Spec**: 2026-05-28 editorial handoff — strict Tier-1 5-block head + spec-forbidden trope removal.
 
-**Status (as of batch 37, 2026-05-28)**: 37 batches shipped/in-flight; ~130 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep at 55 surfaces cleaned + 3 gradients retired + 3 box-shadows removed.
+**Status (as of batch 38, 2026-05-28)**: 38 batches shipped/in-flight; ~134 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep at 59 surfaces cleaned + **7 gradients retired** + 3 box-shadows removed.
 
 **Wave-1 (batch 19) shipped**: `my_dashboard_page`, `portfolio_monitor_page`, `deal_mc_page`
 **Wave-2 (batch 20) shipped**: `portfolio_bridge_page`, `risk_workbench_page`, `scenario_modeler_page`, `market_intel_page`, `escalations_page`
@@ -32,6 +32,12 @@ All 24 originally-flagged Group D files are now in Group A. Every renderer in th
 **Next**: Phase 4 — Group C trope removal. ~180 pages still carry `cad-card`/`cad-table` chrome with spec-forbidden tropes (3px left-border accents, box-shadow on content cards, `border-radius > 2px`). Migration is a CSS-level sweep, ~3-4 files per batch.
 
 ## Phase 4 · Group C trope removal (in progress)
+
+**Wave-9 (batch 38) shipped** — 4 more decorative 135° gradients retired (semantic severity borders preserved):
+- `ic_memo_page.py` (`.ic-memo-bar-total` 135° → flat brand tint; semantic brand-deep left-stripe preserved)
+- `bridge_audit_page.py` (`.ba-counter-card` 135° → flat panel; semantic positive border preserved; radius capped)
+- `bear_case_page.py` (`.bc-callout` default decorative stripe stripped; `.bc-verdict-card` 135° → flat; semantic negative border preserved; radius capped)
+- `analysis_workbench.py` (`.ov-banner` 135° → flat brand tint; decorative left stripe stripped)
 
 **Wave-8 (batch 37) shipped** — 1 gradient + 2 dark box-shadows retired across 3 high-density Group C files:
 - `hcris_xray_page.py` (`.hx-callout` default flat-hairline; `.hx-target-card` 135° gradient → flat brand; decorative stripe stripped; radius capped at 2px)
