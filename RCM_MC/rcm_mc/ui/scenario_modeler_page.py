@@ -425,11 +425,23 @@ def render_scenario_modeler(
         title="Select Scenarios",
     )
 
-    intro = ck_section_intro(
+    # 2026-05-28 batch 20 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
         eyebrow=f"SCENARIO MODELER · CCN {_html.escape(ccn)}",
-        headline=f"{_html.escape(name)} — adjust assumptions, compare returns.",
-        italic_word="compare",
-        body=(
+        title=(
+            f"Scenarios — {_html.escape(name)}"
+        ),
+        meta=(
+            f"{len(selected)} SCENARIO"
+            f"{'S' if len(selected) != 1 else ''} · "
+            f"{_fm(rev)} BASELINE NPR · "
+            f"{_fm(ebitda)} CURRENT EBITDA"
+        ),
+        lede_italic_phrase=(
+            "Adjust assumptions, compare returns."
+        ),
+        lede_body=(
             f"{len(selected)} scenarios running against the same "
             f"baseline ({_fm(rev)} revenue · {_fm(ebitda)} current "
             "EBITDA). Each scenario flows through the bridge + "

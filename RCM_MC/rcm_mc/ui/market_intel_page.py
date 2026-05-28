@@ -197,11 +197,14 @@ def _hero(category: Optional[str], specialty: Optional[str]) -> str:
         "Public-market overlay. Refresh the curated content YAMLs "
         "quarterly from primary filings."
     )
-    return ck_section_intro(
+    # 2026-05-28 batch 20 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    return ck_editorial_head(
         eyebrow="MARKET INTELLIGENCE",
-        headline="Public comps & market context.",
-        italic_word="market",
-        body=sub,
+        title="Public comps & market context.",
+        meta="PUBLIC-MARKET OVERLAY · QUARTERLY REFRESH",
+        lede_italic_phrase="Public comps & market context.",
+        lede_body=sub,
     )
 
 
