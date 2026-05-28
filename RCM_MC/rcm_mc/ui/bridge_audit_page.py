@@ -293,11 +293,17 @@ def _verdict_card(report: BridgeAuditReport) -> str:
         "GAP": "warning",
         "OK": "positive",
     }.get(verdict, "neutral")
-    intro = ck_section_intro(
+    # 2026-05-28 batch 21 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
         eyebrow=f"Bridge Audit · {verdict}",
-        headline=html.escape(report.headline),
-        body=html.escape(report.rationale),
-        italic_word="bridge",
+        title=html.escape(report.headline),
+        meta=(
+            f"VERDICT {verdict} · BANKER ${report.claimed_bridge_usd/1e6:.1f}M"
+            f" · BRIDGE LEVERS"
+        ),
+        lede_italic_phrase="What the sell-side bridge claims, audited.",
+        lede_body=html.escape(report.rationale),
     )
     badge = ck_signal_badge(verdict, tone=badge_tone)
     kpis = (

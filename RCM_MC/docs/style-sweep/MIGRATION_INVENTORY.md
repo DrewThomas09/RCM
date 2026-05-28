@@ -2,10 +2,11 @@
 
 **Spec**: 2026-05-28 editorial handoff — strict Tier-1 5-block head + spec-forbidden trope removal.
 
-**Status (as of batch 20, 2026-05-28)**: 20 PRs shipped (#1057–#1076 pending); ~51 routes effectively swept; ~280 page renderers still to migrate.
+**Status (as of batch 21, 2026-05-28)**: 21 PRs shipped (#1057–#1077 pending); ~56 routes effectively swept; ~275 page renderers still to migrate.
 
 **Wave-1 (batch 19) shipped**: `my_dashboard_page`, `portfolio_monitor_page`, `deal_mc_page`
 **Wave-2 (batch 20) shipped**: `portfolio_bridge_page`, `risk_workbench_page`, `scenario_modeler_page`, `market_intel_page`, `escalations_page`
+**Wave-3 (batch 21) shipped**: `bridge_audit_page`, `data_room_page`, `denial_prediction_page`, `diligence_checklist_page`, `exit_timing_page`
 
 This doc is the **single source of truth** for what remains. Every batch updates it.
 
