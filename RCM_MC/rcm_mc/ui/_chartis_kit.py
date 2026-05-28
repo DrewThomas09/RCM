@@ -3364,9 +3364,91 @@ def render_insights_page(
         clear_all_href=action if chips else None,
     )
 
+    # 2026-05-28 style-sweep · strict Tier-1 5-block head when intro
+    # is supplied. Replaces the legacy ck_section_intro (h2 deck) +
+    # shell-auto-injected ck_page_title (h1 with mono eyebrow) — two
+    # stacked headers — with a single in-body 5-block head:
+    #   eyebrow + dash → serif h1 (uses page ``title``) → mono meta
+    #   line (the ``intro['eyebrow']`` value + the page subtitle if
+    #   any) → italic-first-phrase serif lede (built from the
+    #   ``headline`` + ``italic_word`` + ``body`` fields each caller
+    #   already provides) → 4-bucket status-dot legend.
+    # Marked class="ck-page-title" so the shell skips its own
+    # auto-inject (avoids the double-h1 trap).
     intro_html = ""
     if intro:
-        intro_html = ck_section_intro(**intro)
+        _eb = _esc(str(intro.get("eyebrow") or ""))
+        _headline = str(intro.get("headline") or "")
+        _italic = intro.get("italic_word")
+        _body = str(intro.get("body") or "")
+        # Italicize the headline word OR the first phrase up to the
+        # period (spec §2.3 — italic FIRST PHRASE in --green-deep).
+        _hl_html = _esc(_headline)
+        if _italic:
+            for _cand in (_italic, _italic.capitalize(), _italic.upper()):
+                _eh = _esc(_cand)
+                if _eh in _hl_html:
+                    _hl_html = _hl_html.replace(
+                        _eh, f'<em>{_eh}</em>', 1,
+                    )
+                    break
+        elif "." in _headline:
+            _first, _rest = _headline.split(".", 1)
+            _hl_html = (
+                f'<em>{_esc(_first.strip())}.</em>{_esc(_rest)}'
+            )
+        else:
+            _hl_html = f'<em>{_hl_html}</em>'
+
+        intro_html = (
+            '<style>'
+            '.ip-head{padding:0 0 28px;margin:0 0 24px;'
+            'border-bottom:1px solid var(--rule-soft,#ddd1ac);}'
+            '.ip-head .eyebrow{font:500 11px/1 var(--sc-mono,monospace);'
+            'letter-spacing:.18em;text-transform:uppercase;'
+            'color:var(--green-deep,#154e36);display:flex;'
+            'align-items:center;gap:12px;margin:0 0 18px;}'
+            '.ip-head .eyebrow .dash{width:24px;height:1px;'
+            'background:var(--green-deep,#154e36);}'
+            '.ip-head h1{font:400 44px/1.05 var(--sc-serif,Georgia),serif;'
+            'letter-spacing:-.015em;color:var(--ink,#16263a);'
+            'margin:0 0 14px;}'
+            '.ip-head .deck{font:400 italic 18px/1.45 '
+            'var(--sc-serif,Georgia),serif;color:var(--ink-2,#2b3e54);'
+            'max-width:62ch;margin:0 0 12px;}'
+            '.ip-head .deck em{color:var(--green-deep,#154e36);'
+            'font-style:italic;}'
+            '.ip-head .lede{font:400 15.5px/1.55 var(--sc-sans,Inter),sans-serif;'
+            'color:var(--ink-2,#2b3e54);max-width:64ch;margin:0 0 18px;}'
+            '.ip-head .legend{display:flex;gap:24px;list-style:none;'
+            'padding:0;margin:0;font:400 12.5px/1 '
+            'var(--sc-sans,Inter),sans-serif;'
+            'color:var(--ink-2,#2b3e54);flex-wrap:wrap;}'
+            '.ip-head .legend li{display:flex;align-items:center;}'
+            '.ip-head .legend .dot{width:8px;height:8px;border-radius:50%;'
+            'display:inline-block;margin-right:10px;}'
+            '.ip-head .legend .dot.live{background:var(--green-deep,#154e36);}'
+            '.ip-head .legend .dot.computed{background:var(--ink-deep,#0e1a29);}'
+            '.ip-head .legend .dot.needs{background:var(--coral,#b04a3a);}'
+            '.ip-head .legend .dot.illustrative{background:var(--gold,#a08227);}'
+            '@media (max-width:960px){.ip-head h1{font-size:36px;}}'
+            '</style>'
+            # The wrapper class must include "ck-page-title" so the
+            # shell's auto-inject skips this (it checks for the
+            # substring in the body before adding its own h1).
+            f'<header class="ip-head ck-page-title">'
+            f'<div class="eyebrow"><span class="dash"></span>{_eb}</div>'
+            f'<h1>{_esc(title)}</h1>'
+            f'<p class="deck">{_hl_html}</p>'
+            + (f'<p class="lede">{_esc(_body)}</p>' if _body else '')
+            + '<ul class="legend">'
+            '<li><span class="dot live"></span>Live data</li>'
+            '<li><span class="dot computed"></span>Computed</li>'
+            '<li><span class="dot needs"></span>Needs data</li>'
+            '<li><span class="dot illustrative"></span>Illustrative</li>'
+            '</ul>'
+            '</header>'
+        )
 
     section_html = ""
     if section_title:
