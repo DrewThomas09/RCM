@@ -390,17 +390,27 @@ def _hero(report: ManagementReport, target_name: str) -> str:
                 f'≈ ${hc.dollar_adjustment_usd:,.0f} EBITDA adjustment'
             )
 
-    intro = ck_section_intro(
+    # 2026-05-28 batch 22 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
         eyebrow="Management Scorecard",
-        headline=html.escape(target_name),
-        body=(
+        title=html.escape(target_name),
+        meta=(
+            f"{report.team_size} EXECUTIVE"
+            f"{'S' if report.team_size != 1 else ''} · "
+            f"{report.aggregate_confidence.upper()} CONFIDENCE · "
+            f"{report.aggregate_overall}/100 AGGREGATE · "
+            f"{report.red_flag_count} RED FLAGS "
+            f"({report.critical_flag_count} CRITICAL)"
+        ),
+        lede_italic_phrase="How the management team scores.",
+        lede_body=(
             f"{report.team_size} executive"
             f"{'s' if report.team_size != 1 else ''} scored · "
             f"{report.aggregate_confidence} confidence · "
             f"{report.red_flag_count} red flags "
             f"({report.critical_flag_count} critical)"
         ),
-        italic_word="management",
     )
     kpis = (
         '<div class="ck-kpi-strip">'

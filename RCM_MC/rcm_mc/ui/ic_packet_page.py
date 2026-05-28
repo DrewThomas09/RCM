@@ -107,10 +107,18 @@ def _landing() -> str:
         f'<option value="{html.escape(n)}">{html.escape(l)}</option>'
         for n, l in AVAILABLE_FIXTURES
     )
-    intro = ck_section_intro(
+    # 2026-05-28 batch 22 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
         eyebrow="IC Packet Assembler",
-        headline="One-click IC Memo",
-        body=(
+        title="One-click IC Memo",
+        meta=(
+            f"{len(AVAILABLE_FIXTURES)} FIXTURE"
+            f"{'S' if len(AVAILABLE_FIXTURES) != 1 else ''} · "
+            "URL-REPRODUCIBLE · BROWSER-PRINT READY"
+        ),
+        lede_italic_phrase="The signed IC deliverable, in one step.",
+        lede_body=(
             "Assembles the signed IC deliverable in one browser-print "
             "step: cover + partner synthesis + headline numbers + "
             "Bankruptcy-Survivor Scan + QoR waterfall + risk-module "
@@ -118,7 +126,6 @@ def _landing() -> str:
             "100-day plan + open questions + walkaway conditions + "
             "signature block. Single URL-reproducible memo."
         ),
-        italic_word="memo",
     )
     form = (
         '<form method="GET" action="/diligence/ic-packet" class="ic-form">'
@@ -246,11 +253,14 @@ def render_ic_packet_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
     try:
         ccd = ingest_dataset(ds_path)
     except Exception as exc:  # noqa: BLE001
-        err_intro = ck_section_intro(
+        # 2026-05-28 batch 22 · err-path also uses the universal head.
+        from ._chartis_kit import ck_editorial_head
+        err_intro = ck_editorial_head(
             eyebrow="IC Packet",
-            headline=f"Ingest failed for {html.escape(dataset)}.",
-            italic_word="failed",
-            body=str(exc),
+            title=f"Ingest failed for {html.escape(dataset)}.",
+            meta="INGEST FAILED · CHECK FIXTURE",
+            lede_italic_phrase="The dataset didn't ingest.",
+            lede_body=html.escape(str(exc)),
         )
         return chartis_shell(err_intro, "IC Packet")
     as_of = date(2025, 1, 1)

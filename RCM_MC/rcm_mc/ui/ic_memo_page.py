@@ -449,14 +449,27 @@ def render_ic_memo(
         if _is_consulting
         else f"INVESTMENT COMMITTEE MEMORANDUM · CCN {_html.escape(ccn)}"
     )
-    intro = ck_section_intro(
+    # 2026-05-28 batch 22 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    intro = ck_editorial_head(
         eyebrow=_memo_eyebrow,
-        headline=_html.escape(data["name"]),
-        body=(
+        title=_html.escape(data["name"]),
+        meta=(
+            f"{_html.escape(data['county'])}, "
+            f"{_html.escape(data['state'])} · "
+            f"{data['beds']:.0f} BEDS · "
+            f"AS OF {_html.escape(ts)} · "
+            f"INVESTABILITY {_html.escape(invest_grade)}"
+        ),
+        lede_italic_phrase=(
+            "Diligence readout for commercial review."
+            if _is_consulting
+            else "Memorandum for the investment committee."
+        ),
+        lede_body=(
             f"{_html.escape(data['county'])}, {_html.escape(data['state'])} · "
             f"{data['beds']:.0f} beds · As of {_html.escape(ts)}"
         ),
-        italic_word="committee" if not _is_consulting else "diligence",
     )
     grade_kpi = (
         '<div class="ck-kpi-strip">'
