@@ -97,11 +97,13 @@ font-size:12px;color:{td};line-height:1.65;max-width:880px;margin-top:12px;}}
 .da-callout.alert{{border-left-color:{ne};color:{ne};font-weight:600;font-size:13px;}}
 .da-callout.warn{{border-left-color:{wn};color:{wn};font-weight:600;font-size:13px;}}
 .da-callout.good{{border-left-color:{po};color:{po};font-weight:600;font-size:13px;}}
-.da-card{{background:{pn};border:1px solid {bd};border-radius:4px;
+/* 2026-05-28 batch 37 · Tier-4 trope removal — caps card radius
+   at 2px; drops the dark box-shadow hover affordance (the
+   border-color hover signal already conveys interactivity). */
+.da-card{{background:{pn};border:1px solid {bd};border-radius:2px;
 margin-bottom:16px;overflow:hidden;
-transition:transform 140ms ease,border-color 140ms ease,box-shadow 140ms ease;}}
-.da-card:hover{{transform:translateY(-1px);border-color:{tf};
-box-shadow:0 8px 24px rgba(0,0,0,0.35);}}
+transition:transform 140ms ease,border-color 140ms ease;}}
+.da-card:hover{{transform:translateY(-1px);border-color:{tf};}}
 .da-card__band{{height:3px;}}
 .da-card__body{{padding:18px 22px;}}
 .da-card__head{{display:flex;justify-content:space-between;

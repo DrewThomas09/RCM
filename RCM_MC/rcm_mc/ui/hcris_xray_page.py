@@ -230,11 +230,14 @@ margin:4px 0 0 0;letter-spacing:-.2px;}}
 font-weight:700;color:{tf};margin:22px 0 10px 0;}}
 .hx-panel{{background:{pn};border:1px solid {bd};border-radius:4px;
 padding:14px 20px;margin-bottom:16px;}}
-.hx-callout{{background:{pa};padding:12px 16px;border-left:3px solid {ac};
-border-radius:0 3px 3px 0;font-size:12px;color:{td};line-height:1.65;
+/* 2026-05-28 batch 37 · Tier-4 trope removal — .hx-callout default
+   drops decorative 3px accent (plain hairline); .hx-target-card
+   drops the 135° gradient + decorative left stripe; radius capped. */
+.hx-callout{{background:{pa};padding:12px 16px;border:1px solid {bd};
+border-radius:2px;font-size:12px;color:{td};line-height:1.65;
 max-width:900px;margin-top:12px;}}
-.hx-target-card{{background:linear-gradient(135deg,{pn} 0%,{pa} 100%);
-border:1px solid {bd};border-left:3px solid {ac};border-radius:4px;
+.hx-target-card{{background:{pn};
+border:1px solid {bd};border-radius:2px;
 padding:18px 22px;margin-top:14px;}}
 .hx-target-name{{font-size:20px;color:{tx};font-weight:600;
 letter-spacing:-.2px;}}

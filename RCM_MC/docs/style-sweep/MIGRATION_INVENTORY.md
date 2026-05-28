@@ -2,7 +2,7 @@
 
 **Spec**: 2026-05-28 editorial handoff — strict Tier-1 5-block head + spec-forbidden trope removal.
 
-**Status (as of batch 36, 2026-05-28)**: 36 batches shipped/in-flight; ~127 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep at 51 surfaces cleaned + 2 gradients retired + 1 box-shadow.
+**Status (as of batch 37, 2026-05-28)**: 37 batches shipped/in-flight; ~130 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep at 55 surfaces cleaned + 3 gradients retired + 3 box-shadows removed.
 
 **Wave-1 (batch 19) shipped**: `my_dashboard_page`, `portfolio_monitor_page`, `deal_mc_page`
 **Wave-2 (batch 20) shipped**: `portfolio_bridge_page`, `risk_workbench_page`, `scenario_modeler_page`, `market_intel_page`, `escalations_page`
@@ -32,6 +32,13 @@ All 24 originally-flagged Group D files are now in Group A. Every renderer in th
 **Next**: Phase 4 — Group C trope removal. ~180 pages still carry `cad-card`/`cad-table` chrome with spec-forbidden tropes (3px left-border accents, box-shadow on content cards, `border-radius > 2px`). Migration is a CSS-level sweep, ~3-4 files per batch.
 
 ## Phase 4 · Group C trope removal (in progress)
+
+**Wave-8 (batch 37) shipped** — 1 gradient + 2 dark box-shadows retired across 3 high-density Group C files:
+- `hcris_xray_page.py` (`.hx-callout` default flat-hairline; `.hx-target-card` 135° gradient → flat brand; decorative stripe stripped; radius capped at 2px)
+- `deal_autopsy_page.py` (`.da-card` radius 4px → 2px; dark 8/24 box-shadow removed; border-color hover preserved as interactivity affordance)
+- `physician_attrition_page.py` (`.pa-card` same treatment — radius capped + box-shadow removed)
+
+Pattern: when a card uses `transform`+`border-color` on hover AND a heavy box-shadow, the border-color shift alone provides clear interactivity — the shadow is decorative theatre on parchment.
 
 **Wave-7 (batch 36) shipped** — `dashboard_page.py` (the biggest single Group C file at 2,623 LOC) gets oversized-radius caps + one gradient retired:
 - Pulse hero section: 135° gradient → flat brand color; radius 12px → 2px; box-shadow removed
