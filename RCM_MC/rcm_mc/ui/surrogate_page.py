@@ -103,17 +103,27 @@ def render_surrogate_page(
             italic_word="screener",
         )
     )
+    # 2026-05-28 batch 29 · Phase 3 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="SURROGATE MODEL",
+        title="What the model predicts in milliseconds.",
+        meta=(
+            f"{n_features} FEATURE"
+            f"{'S' if n_features != 1 else ''} · "
+            f"{n_targets} TARGET"
+            f"{'S' if n_targets != 1 else ''} · "
+            f"{'TRAINED' if model_ready else 'AWAITING TRAINING'}"
+        ),
+        lede_italic_phrase="What the model predicts in milliseconds.",
+        lede_body=(
+            "A trained surrogate fits cached analysis runs "
+            "and produces fast EBITDA-drag predictions for "
+            "screening and what-if work. Use as a triage "
+            "filter, not as a substitute for the full "
+            "DealAnalysisPacket."
+        ),
+    )
+    body = head + body
     return chartis_shell(body, "Surrogate Model",
-                    subtitle="Fast approximate prediction for screening",
-        editorial_intro={
-            "eyebrow": "SURROGATE MODEL",
-            "headline": "What the model predicts in milliseconds.",
-            "italic_word": "milliseconds",
-            "body": (
-                "A trained surrogate fits cached analysis runs "
-                "and produces fast EBITDA-drag predictions for "
-                "screening and what-if work. Use as a triage "
-                "filter, not as a substitute for the full "
-                "DealAnalysisPacket."
-            ),
-        })
+                    subtitle="Fast approximate prediction for screening")

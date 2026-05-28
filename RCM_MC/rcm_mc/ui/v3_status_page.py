@@ -250,20 +250,28 @@ def render_v3_status() -> str:
         )
     )
 
+    # 2026-05-28 batch 29 · Phase 3 · universal strict 5-block head.
+    from ._chartis_kit import ck_editorial_head
+    head = ck_editorial_head(
+        eyebrow="V3 STATUS",
+        title="Where the v3 transformation landed.",
+        meta=(
+            f"{counts.total} ROUTES · "
+            f"{counts.v3} V3 ({pct_v3:.0f}%) · "
+            f"{counts.packet_driven} PACKET-DRIVEN ({pct_packet:.0f}%)"
+        ),
+        lede_italic_phrase="Where the v3 transformation landed.",
+        lede_body=(
+            "Predecessor to the v5 editorial campaign. v3 "
+            "ported every renderer to chartis_shell; v5 added "
+            "italic-serif headlines, primitive density, "
+            "provenance, and ck_fmt_* discipline on top. "
+            "Numbers come from the route inventory."
+        ),
+    )
+    body = head + body
     return chartis_shell(
         body,
         "v3 Transformation Status",
         subtitle="campaign progress · saving-seeking-chartis",
-        editorial_intro={
-            "eyebrow": "V3 STATUS",
-            "headline": "Where the v3 transformation landed.",
-            "italic_word": "landed",
-            "body": (
-                "Predecessor to the v5 editorial campaign. v3 "
-                "ported every renderer to chartis_shell; v5 added "
-                "italic-serif headlines, primitive density, "
-                "provenance, and ck_fmt_* discipline on top. "
-                "Numbers come from the route inventory."
-            ),
-        },
     )
