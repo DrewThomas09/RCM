@@ -274,6 +274,183 @@ def render_home(
 ) -> str:
     """Render the PE Desk home page."""
 
+    # ── 2026-05-28 style-sweep · strict Tier-1 5-block head ──
+    # Replaces the editorial_intro= kwarg (which auto-injected a
+    # ck_page_title via the shell) with an in-body 5-block header
+    # matching /portfolio, /pipeline, /library, /diligence, regression.
+    # Same shape end-to-end across the masthead pages.
+    _home_head_css = """
+<style>
+.home-head{padding:0 0 32px;margin:0 0 28px;
+  border-bottom:1px solid var(--rule-soft,#ddd1ac);}
+.home-head .eyebrow{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--green-deep,#154e36);display:flex;align-items:center;
+  gap:12px;margin:0 0 18px;}
+.home-head .eyebrow .dash{width:24px;height:1px;
+  background:var(--green-deep,#154e36);}
+.home-head h1{font:400 44px/1.05 var(--sc-serif,Georgia),serif;
+  letter-spacing:-.015em;color:var(--ink,#16263a);margin:0 0 14px;}
+.home-head .meta{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted,#7a8595);margin:0 0 20px;}
+.home-head .lede{font:400 italic 16.5px/1.55 var(--sc-serif,Georgia),serif;
+  color:var(--ink-2,#2b3e54);max-width:64ch;margin:0 0 20px;}
+.home-head .lede em{color:var(--green-deep,#154e36);font-style:italic;}
+.home-head .legend{display:flex;gap:24px;list-style:none;padding:0;
+  margin:0;font:400 12.5px/1 var(--sc-sans,Inter),sans-serif;
+  color:var(--ink-2,#2b3e54);flex-wrap:wrap;}
+.home-head .legend li{display:flex;align-items:center;}
+.home-head .legend .dot{width:8px;height:8px;border-radius:50%;
+  display:inline-block;margin-right:10px;}
+.home-head .legend .dot.live{background:var(--green-deep,#154e36);}
+.home-head .legend .dot.computed{background:var(--ink-deep,#0e1a29);}
+.home-head .legend .dot.needs{background:var(--coral,#b04a3a);}
+.home-head .legend .dot.illustrative{background:var(--gold,#a08227);}
+@media (max-width:960px){.home-head h1{font-size:36px;}}
+
+/* Today's Brief — auto-derived 3-row digest. Each row quotes a
+   real fact from the live portfolio data; never editorial filler.
+   Renders right under the head, above the legacy Market Pulse / KPI
+   sections, so the partner gets a one-glance read of where things
+   stand BEFORE drilling into the analytics. */
+.home-brief{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:0;border:1px solid var(--rule,#c9bf9c);
+  background:var(--paper-card,#fefcf3);margin:0 0 32px;}
+.home-brief .cell{padding:18px 22px;
+  border-right:1px solid var(--rule-soft,#ddd1ac);}
+.home-brief .cell:last-child{border-right:0;}
+.home-brief .label{font:500 10px/1 var(--sc-mono,monospace);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted,#7a8595);margin:0 0 8px;}
+.home-brief .val{font:500 22px/1.1 var(--sc-mono,monospace);
+  color:var(--ink,#16263a);font-variant-numeric:tabular-nums;
+  margin:0 0 6px;}
+.home-brief .val.bad{color:var(--coral,#b04a3a);}
+.home-brief .val.good{color:var(--green-deep,#154e36);}
+.home-brief .sub{font:400 12.5px/1.45 var(--sc-sans,Inter),sans-serif;
+  color:var(--ink-3,#506478);margin:0;max-width:36ch;}
+@media (max-width:720px){.home-brief{grid-template-columns:1fr;}
+  .home-brief .cell{border-right:0;
+  border-bottom:1px solid var(--rule-soft,#ddd1ac);}
+  .home-brief .cell:last-child{border-bottom:0;}}
+</style>
+"""
+    # Today's-Brief auto-derivation — every value pulled from the
+    # live ``deals`` frame. When a needed field is absent we honestly
+    # show "—" rather than fabricate.
+    from datetime import datetime as _dt, timezone as _tz
+    n_deals = len(deals) if deals is not None else 0
+    today = _dt.now(_tz.utc).date()
+
+    # Tile 1 — portfolio NPR total
+    if not deals.empty and "net_revenue" in deals.columns:
+        npr_total = float(deals["net_revenue"].dropna().sum() or 0)
+        if npr_total >= 1e9:
+            npr_val = f"${npr_total/1e9:.2f}B"
+        elif npr_total >= 1e6:
+            npr_val = f"${npr_total/1e6:.0f}M"
+        else:
+            npr_val = "—"
+        npr_sub = f"{n_deals} deal" + ("s" if n_deals != 1 else "") + " on file"
+        npr_cls = ""
+    else:
+        npr_val = "—"
+        npr_sub = "No portfolio deals tracked yet"
+        npr_cls = ""
+
+    # Tile 2 — health distribution
+    if not deals.empty and "health_score" in deals.columns:
+        scores = deals["health_score"].dropna()
+        if len(scores) > 0:
+            green = int((scores >= 70).sum())
+            amber = int(((scores >= 40) & (scores < 70)).sum())
+            red = int((scores < 40).sum())
+            health_val = f"{green}/{amber}/{red}"
+            health_sub = f"green / amber / red across {len(scores)} scored deals"
+            if red > green and red > 0:
+                health_cls = "bad"
+            elif green > red + amber:
+                health_cls = "good"
+            else:
+                health_cls = ""
+        else:
+            health_val = "—"
+            health_sub = "No health scores computed yet"
+            health_cls = ""
+    else:
+        health_val = "—"
+        health_sub = "Health score absent from this portfolio"
+        health_cls = ""
+
+    # Tile 3 — stalled deals (no activity in 30 days). Same
+    # 30-day threshold as the /pipeline stalled column for
+    # cross-page consistency.
+    if not deals.empty and "updated_at" in deals.columns:
+        stalled = 0
+        for _, _row in deals.iterrows():
+            _ref = str(_row.get("updated_at") or "")[:10]
+            if not _ref:
+                continue
+            try:
+                _d = _dt.strptime(_ref, "%Y-%m-%d").date()
+                if (today - _d).days > 30:
+                    stalled += 1
+            except (TypeError, ValueError):
+                continue
+        stalled_val = str(stalled)
+        stalled_sub = (
+            f"deal{'s' if stalled != 1 else ''} with no activity in 30 days"
+        )
+        stalled_cls = "bad" if stalled > 0 else "good"
+    else:
+        stalled_val = "—"
+        stalled_sub = "Activity timestamps absent"
+        stalled_cls = ""
+
+    brief_block = (
+        '<div class="home-brief">'
+        '<div class="cell">'
+        '<div class="label">Portfolio NPR</div>'
+        f'<div class="val {npr_cls}">{npr_val}</div>'
+        f'<p class="sub">{html.escape(npr_sub)}</p>'
+        '</div>'
+        '<div class="cell">'
+        '<div class="label">Health · G / A / R</div>'
+        f'<div class="val {health_cls}">{html.escape(health_val)}</div>'
+        f'<p class="sub">{html.escape(health_sub)}</p>'
+        '</div>'
+        '<div class="cell">'
+        '<div class="label">Stalled · 30d</div>'
+        f'<div class="val {stalled_cls}">{html.escape(stalled_val)}</div>'
+        f'<p class="sub">{html.escape(stalled_sub)}</p>'
+        '</div>'
+        '</div>'
+    )
+
+    head_block = (
+        _home_head_css
+        + '<header class="home-head">'
+        '<div class="eyebrow"><span class="dash"></span>HOME</div>'
+        '<h1>Home</h1>'
+        f'<div class="meta">MARKET PULSE · INSIGHTS · '
+        f'{n_deals} PORTFOLIO DEAL'
+        f'{"S" if n_deals != 1 else ""}</div>'
+        '<p class="lede">'
+        '<em>Where the partner reads the market first.</em> '
+        'Market pulse, the analyst voice\'s latest insights, and the '
+        'live portfolio in one screen. Numbers carry hover-card '
+        'provenance so the methodology is one click away.</p>'
+        '<ul class="legend">'
+        '<li><span class="dot live"></span>Live data</li>'
+        '<li><span class="dot computed"></span>Computed</li>'
+        '<li><span class="dot needs"></span>Needs data</li>'
+        '<li><span class="dot illustrative"></span>Illustrative</li>'
+        '</ul>'
+        '</header>'
+        + brief_block
+    )
+
     # Market Pulse KPIs
     pulse_cards = ""
     for ind in (market_pulse.indicators if hasattr(market_pulse, "indicators") else []):
@@ -478,24 +655,17 @@ def render_home(
     quickstart = _quickstart_block() if deals.empty else ""
 
     body = (
-        f'{quickstart}{pulse_section}{portfolio_summary}'
+        f'{head_block}{quickstart}{pulse_section}{portfolio_summary}'
         f'{insights_section}{deals_section}'
         f'{freshness_section}{links_section}'
     )
 
+    # 2026-05-28 sweep — dropped editorial_intro= so the shell
+    # doesn't auto-inject a second page-title block above the
+    # in-body home-head. The lede + eyebrow + legend now live
+    # inside head_block at the top of body.
     return chartis_shell(
         body, "Home",
         active_nav="/home",
         subtitle="Healthcare PE diligence, instrument-grade",
-        editorial_intro={
-            "eyebrow": "HOME",
-            "headline": "Where the partner reads the market first.",
-            "italic_word": "reads",
-            "body": (
-                "Market pulse, the analyst voice's latest insights, "
-                "and your own portfolio in one screen. Numbers carry "
-                "hover-card provenance so the methodology is one "
-                "click away."
-            ),
-        },
     )
