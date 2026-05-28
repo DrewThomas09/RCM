@@ -2,7 +2,7 @@
 
 **Spec**: 2026-05-28 editorial handoff — strict Tier-1 5-block head + spec-forbidden trope removal.
 
-**Status (as of batch 30, 2026-05-28)**: 30 batches shipped/in-flight; ~95 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep started (10 surfaces cleaned wave-1).
+**Status (as of batch 31, 2026-05-28)**: 31 batches shipped/in-flight; ~100 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep at 16 surfaces cleaned + 1 gradient retired.
 
 **Wave-1 (batch 19) shipped**: `my_dashboard_page`, `portfolio_monitor_page`, `deal_mc_page`
 **Wave-2 (batch 20) shipped**: `portfolio_bridge_page`, `risk_workbench_page`, `scenario_modeler_page`, `market_intel_page`, `escalations_page`
@@ -32,6 +32,13 @@ All 24 originally-flagged Group D files are now in Group A. Every renderer in th
 **Next**: Phase 4 — Group C trope removal. ~180 pages still carry `cad-card`/`cad-table` chrome with spec-forbidden tropes (3px left-border accents, box-shadow on content cards, `border-radius > 2px`). Migration is a CSS-level sweep, ~3-4 files per batch.
 
 ## Phase 4 · Group C trope removal (in progress)
+
+**Wave-2 (batch 31) shipped** — stripped 6 more decorative stripes (kept semantic ones), capped 3 oversized radii, retired 1 gradient:
+- `exit_timing_page.py` (3 surfaces: `.et-callout` default + curve panel + radar panel; semantic `.et-callout.rec` positive stripe preserved)
+- `hospital_providers_page.py` (CLI command pre block)
+- `cliff_calendar_page.py` (Partner read callout)
+- `settings_ai_page.py` (Setup instructions card stripped; header card status-color stripe preserved)
+- `settings_pages.py` (`.ws-card-active` 135° gradient replaced with flat brand tint; semantic green stripe preserved)
 
 **Wave-1 (batch 30) shipped** — stripped decorative 3px left-border accent stripes from 10 surfaces (semantic severity stripes preserved):
 - `command_center.py` (Getting Started card)

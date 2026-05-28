@@ -185,9 +185,11 @@ def _models_table(active_id: Optional[str]) -> str:
 
 
 def _setup_instructions() -> str:
+    # 2026-05-28 batch 31 · Tier-4 trope removal — drops decorative
+    # 3px accent stripe; caps radius at 2px.
     return (
         f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-left:3px solid {P["accent"]};border-radius:3px;'
+        f'border-radius:2px;'
         f'padding:14px 16px;">'
         f'<div style="font-family:var(--ck-mono);font-size:10px;'
         f'letter-spacing:0.12em;color:{P["text_faint"]};margin-bottom:10px;">'
@@ -320,9 +322,12 @@ def render_ai_settings(store: Any) -> str:
         if key_set else ""
     )
 
+    # 2026-05-28 batch 31 · header card keeps semantic status-color
+    # left stripe (carries meaning: connected/disconnected/error);
+    # radius capped at 2px.
     header_card = (
         f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-left:3px solid {status_color};border-radius:3px;'
+        f'border-left:3px solid {status_color};border-radius:2px;'
         f'padding:16px 20px;margin-bottom:14px;">'
         f'<div style="display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;">'
         f'<div style="font-size:15px;font-weight:600;color:{P["text"]};">'

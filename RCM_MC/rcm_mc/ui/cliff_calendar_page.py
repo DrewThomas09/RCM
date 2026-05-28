@@ -210,9 +210,11 @@ def render_cliff_calendar_page(
                f"hold ({report.hold_start_year}–{report.hold_end_year})"),
     )
 
+    # 2026-05-28 batch 31 · Tier-4 trope removal — drops decorative
+    # 3px accent stripe; caps radius at 2px.
     partner_note = (
         f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-left:3px solid {P["accent"]};border-radius:3px;padding:12px 14px;'
+        f'border-radius:2px;padding:12px 14px;'
         f'margin-top:14px;"><div style="font-family:var(--ck-mono);font-size:9.5px;'
         f'letter-spacing:0.12em;color:{P["text_faint"]};text-transform:uppercase;'
         f'margin-bottom:5px;">Partner read</div>'
