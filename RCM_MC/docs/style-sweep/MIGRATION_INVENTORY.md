@@ -2,7 +2,7 @@
 
 **Spec**: 2026-05-28 editorial handoff — strict Tier-1 5-block head + spec-forbidden trope removal.
 
-**Status (as of batch 35, 2026-05-28)**: 35 batches shipped/in-flight; ~125 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep at 46 surfaces cleaned + 1 gradient retired.
+**Status (as of batch 36, 2026-05-28)**: 36 batches shipped/in-flight; ~127 routes effectively swept; **Groups B and D both fully cleared**; Group C trope sweep at 51 surfaces cleaned + 2 gradients retired + 1 box-shadow.
 
 **Wave-1 (batch 19) shipped**: `my_dashboard_page`, `portfolio_monitor_page`, `deal_mc_page`
 **Wave-2 (batch 20) shipped**: `portfolio_bridge_page`, `risk_workbench_page`, `scenario_modeler_page`, `market_intel_page`, `escalations_page`
@@ -32,6 +32,13 @@ All 24 originally-flagged Group D files are now in Group A. Every renderer in th
 **Next**: Phase 4 — Group C trope removal. ~180 pages still carry `cad-card`/`cad-table` chrome with spec-forbidden tropes (3px left-border accents, box-shadow on content cards, `border-radius > 2px`). Migration is a CSS-level sweep, ~3-4 files per batch.
 
 ## Phase 4 · Group C trope removal (in progress)
+
+**Wave-7 (batch 36) shipped** — `dashboard_page.py` (the biggest single Group C file at 2,623 LOC) gets oversized-radius caps + one gradient retired:
+- Pulse hero section: 135° gradient → flat brand color; radius 12px → 2px; box-shadow removed
+- Synthesis callout: radius 6px → 2px (semantic amber stripe preserved)
+- Deal card link: radius 8px → 2px
+- Posture status tile: radius 6px → 2px
+- Cmd+K hint bar: radius 6px → 2px
 
 **Wave-6 (batch 35) shipped** — 6 more callout-class defaults restructured (decorative accent stripped, semantic severity stripes for variants preserved) + 1 bond panel + 1 inline panel:
 - `payer_stress_page.py` (`.ps-callout` default — flat hairline; verdict tones preserved)

@@ -1150,10 +1150,12 @@ def _render_portfolio_pulse_hero(
 
     # ── The synthesis line — the surprise the partner didn't ask for
     syn_text = _html.escape(pulse["headline_synthesis"])
+    # 2026-05-28 batch 36 · Tier-4 trope removal — cap radius at 2px.
+    # Semantic amber stripe (synthesis call-out tone) preserved.
     synthesis = (
         '<div style="background:rgba(255,255,255,0.08);'
         'border-left:3px solid #B7791F;padding:12px 16px;'
-        'border-radius:6px;margin:18px 0 0;">'
+        'border-radius:2px;margin:18px 0 0;">'
         '<div style="font-size:10px;font-weight:600;'
         'text-transform:uppercase;letter-spacing:0.1em;'
         'color:#B7791F;margin-bottom:4px;">'
@@ -1190,10 +1192,14 @@ def _render_portfolio_pulse_hero(
 
     return (
         pulse_anim
-        + '<section style="background:linear-gradient(135deg,'
-        '#FAF7F0 0%,#155752 100%);color:#fff;padding:22px 26px;'
-        'border-radius:12px;margin:6px 0 18px;'
-        'box-shadow:0 8px 24px rgba(15,23,42,0.18);">'
+        # 2026-05-28 batch 36 · Tier-4 trope removal — drops the
+        # 135° gradient, 12px radius, and heavy box-shadow on the
+        # pulse hero section. Flat brand color + 2px radius (spec cap)
+        # + no shadow keeps the dark visual emphasis without the
+        # forbidden tropes.
+        + '<section style="background:#155752;'
+        'color:#fff;padding:22px 26px;'
+        'border-radius:2px;margin:6px 0 18px;">'
         + label_row
         + stats
         + '<div style="font-size:10px;font-weight:600;'
@@ -2242,10 +2248,11 @@ def _render_pinned_deals_section(db_path: str) -> str:
                 spark = ""
 
         score_str = str(score) if score is not None else "—"
+        # 2026-05-28 batch 36 · Tier-4 trope removal — cap radius at 2px.
         cards.append(
             f'<a href="/deal/{_html.escape(deal_id)}" '
             f'style="display:block;text-decoration:none;color:inherit;'
-            f'background:#fff;border:1px solid #D6CFC0;border-radius:8px;'
+            f'background:#fff;border:1px solid #D6CFC0;border-radius:2px;'
             f'padding:10px 12px;min-width:160px;flex:1 1 160px;'
             f'transition:border-color 0.1s;">'
             f'<div style="display:flex;align-items:baseline;'
@@ -2450,9 +2457,10 @@ def _render_system_status_section(db_path: str,
     from . import _web_components as _wc
     cards = []
     for label, level, value in items:
+        # 2026-05-28 batch 36 · Tier-4 trope removal — cap radius at 2px.
         cards.append(
             f'<div style="background:#FAF7F0;border:1px solid #D6CFC0;'
-            f'border-radius:6px;padding:10px 12px;min-width:140px;'
+            f'border-radius:2px;padding:10px 12px;min-width:140px;'
             f'flex:1 1 140px;">'
             f'<div style="font-size:11px;color:#5C6878;text-transform:uppercase;'
             f'letter-spacing:0.05em;">{_html.escape(label)}</div>'
@@ -2561,10 +2569,11 @@ def render_dashboard(db_path: str, *,
     # Discoverability hint for the command palette — kbd tags need to
     # render as HTML, which page_header's subtitle escapes, so emit
     # this as a standalone strip below the header.
+    # 2026-05-28 batch 36 · Tier-4 trope removal — cap radius at 2px.
     cmdk_hint = (
         '<div class="wc-cmdk-hint-bar" style="margin:4px 0 16px;'
         'padding:8px 12px;background:#FAF7F0;border:1px solid #D6E1EB;'
-        'border-radius:6px;font-size:12px;color:#2C5C84;">'
+        'border-radius:2px;font-size:12px;color:#2C5C84;">'
         'Tip: press '
         '<kbd style="font-family:monospace;padding:1px 5px;background:#fff;'
         'color:#0F1C2E;border:1px solid #D6CFC0;border-radius:3px;'
