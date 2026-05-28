@@ -93,6 +93,11 @@ def render_hospital_profile(
 
     hp_styles = f"""
 <style>
+/* 2026-05-28 style-sweep · removed `border-left:4px solid {{grade_color}}`
+   from .hp-grade-block (Tier-4 don'ts forbid colored left-border
+   accents). Grade emphasis now lives in text-color only — the
+   letter-grade reads in the severity color, the surrounding card
+   stays hairline-square. */
 .cad-deal-ident{{font-family:var(--cad-mono);font-size:10.5px;
 letter-spacing:0.12em;color:{PALETTE["text_muted"]};text-transform:uppercase;}}
 .cad-deal-ident .ident-key{{color:{PALETTE["text_muted"]};}}
@@ -100,15 +105,46 @@ letter-spacing:0.12em;color:{PALETTE["text_muted"]};text-transform:uppercase;}}
 .cad-deal-ident .ident-sep{{color:{PALETTE["border_light"]};padding:0 8px;}}
 .hp-grade-block{{display:flex;flex-direction:column;align-items:center;
 padding:12px 22px;border:1px solid {PALETTE["border"]};
-border-left:4px solid {grade_color};
 background:#fff;min-width:120px;}}
 .hp-grade-val{{font-family:var(--cad-mono);font-size:32px;font-weight:700;
-line-height:1;letter-spacing:-0.02em;color:{PALETTE["text_primary"]};}}
+line-height:1;letter-spacing:-0.02em;color:{grade_color};}}
 .hp-grade-label{{font-family:var(--cad-mono);font-size:10.5px;letter-spacing:0.18em;
 text-transform:uppercase;margin-top:4px;}}
 .hp-grade-sub{{font-family:var(--cad-mono);font-size:9px;letter-spacing:0.12em;
 text-transform:uppercase;color:{PALETTE["text_muted"]};margin-top:3px;}}
 .hp-header-row{{display:flex;justify-content:space-between;align-items:center;gap:20px;}}
+
+/* Strict Tier-1 5-block head. Replaces the legacy ck_section_intro
+   editorial deck — single h1, eyebrow with dash, mono meta, italic-
+   first-phrase lede with auto-derived score-breakdown verdict, status-
+   dot legend. Same shape as every other swept masthead. */
+.hp-head{{padding:0 0 28px;margin:0 0 24px;
+  border-bottom:1px solid var(--rule-soft,#ddd1ac);}}
+.hp-head .eyebrow{{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--green-deep,#154e36);display:flex;align-items:center;
+  gap:12px;margin:0 0 18px;}}
+.hp-head .eyebrow .dash{{width:24px;height:1px;
+  background:var(--green-deep,#154e36);}}
+.hp-head h1{{font:400 40px/1.05 var(--sc-serif,Georgia),serif;
+  letter-spacing:-.015em;color:var(--ink,#16263a);margin:0 0 14px;}}
+.hp-head .meta{{font:500 11px/1 var(--sc-mono,monospace);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted,#7a8595);margin:0 0 18px;}}
+.hp-head .lede{{font:400 italic 16.5px/1.55 var(--sc-serif,Georgia),serif;
+  color:var(--ink-2,#2b3e54);max-width:70ch;margin:0 0 18px;}}
+.hp-head .lede em{{color:var(--green-deep,#154e36);font-style:italic;}}
+.hp-head .legend{{display:flex;gap:24px;list-style:none;padding:0;
+  margin:0;font:400 12.5px/1 var(--sc-sans,Inter),sans-serif;
+  color:var(--ink-2,#2b3e54);flex-wrap:wrap;}}
+.hp-head .legend li{{display:flex;align-items:center;}}
+.hp-head .legend .dot{{width:8px;height:8px;border-radius:50%;
+  display:inline-block;margin-right:10px;}}
+.hp-head .legend .dot.live{{background:var(--green-deep,#154e36);}}
+.hp-head .legend .dot.computed{{background:var(--ink-deep,#0e1a29);}}
+.hp-head .legend .dot.needs{{background:var(--coral,#b04a3a);}}
+.hp-head .legend .dot.illustrative{{background:var(--gold,#a08227);}}
+@media (max-width:960px){{.hp-head h1{{font-size:32px;}}}}
 .hp-payer-bar{{display:flex;gap:0;height:14px;overflow:hidden;
 margin-bottom:8px;border:1px solid {PALETTE["border"]};}}
 .hp-payer-legend{{display:flex;gap:20px;font-family:var(--cad-mono);
@@ -123,16 +159,59 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
 .hp-comment-body{{flex:1;min-width:200px;}}
 </style>
 """
-    header = ck_section_intro(
-        eyebrow=f"HOSPITAL PROFILE · CCN {ccn}",
-        headline=f"{name} — {city}, {state}.",
-        italic_word=name,
-        body=(
-            f"{beds:,} licensed beds · ${npr/1e6:,.1f}M net patient "
-            f"revenue · {margin:.1%} operating margin · "
-            f"PE Desk score {score_val}/100 (grade {grade})."
-        ),
-    ) + ck_panel(
+    # 2026-05-28 sweep · auto-derived score-breakdown verdict.
+    # Quotes the strongest and weakest component from the score's
+    # ``components`` dict — partner sees WHERE the grade comes from
+    # in the lede, not just the letter.
+    score_components: Dict[str, float] = (
+        getattr(score, "components", {}) or {}
+    )
+    verdict_extras = ""
+    if score_components:
+        try:
+            ordered = sorted(
+                score_components.items(),
+                key=lambda kv: -float(kv[1]),
+            )
+            top_name, top_val = ordered[0]
+            bot_name, bot_val = ordered[-1]
+            if top_name != bot_name:
+                verdict_extras = (
+                    f" Strongest on <strong>{html.escape(top_name)}</strong> "
+                    f"({float(top_val):.0f}); weakest on "
+                    f"<strong>{html.escape(bot_name)}</strong> "
+                    f"({float(bot_val):.0f})."
+                )
+        except (TypeError, ValueError):
+            verdict_extras = ""
+
+    head_block = (
+        '<header class="hp-head">'
+        f'<div class="eyebrow"><span class="dash"></span>'
+        f'HOSPITAL PROFILE · CCN {ccn}</div>'
+        f'<h1>{name}</h1>'
+        f'<div class="meta">{city}, {state} · {beds:,} BEDS · '
+        f'${npr/1e6:,.1f}M NPR · {margin:.1%} OP MARGIN · '
+        f'PE DESK SCORE {score_val}/100 ({grade})</div>'
+        f'<p class="lede">'
+        f'<em>{name}</em> — {city}, {state}.'
+        f' {beds:,} licensed beds, ${npr/1e6:,.1f}M net patient '
+        f'revenue, {margin:.1%} operating margin.{verdict_extras}'
+        '</p>'
+        '<ul class="legend">'
+        '<li><span class="dot live"></span>Live data</li>'
+        '<li><span class="dot computed"></span>Computed</li>'
+        '<li><span class="dot needs"></span>Needs data</li>'
+        '<li><span class="dot illustrative"></span>Illustrative</li>'
+        '</ul>'
+        '</header>'
+    )
+
+    # Identity panel preserved — same Bloomberg-style ribbon + grade
+    # block partners are used to, just with the spec-forbidden
+    # left-border accent stripped (depth now in the grade-letter
+    # text color only).
+    header = head_block + ck_panel(
         '<div class="hp-header-row">'
         f'<div class="cad-deal-ident">{ident}</div>'
         '<div class="hp-grade-block">'
