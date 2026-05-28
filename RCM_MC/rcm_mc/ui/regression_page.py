@@ -855,9 +855,9 @@ def render_regression_page(
         partner can see whether one slope-set fits every regime or
         whether the regimes really do follow different equations.
 
-    All three controls are diagnostic. Per the Phase-1 docs, the
-    R² / RMSE / VIF numbers here are IN-SAMPLE explanatory fits;
-    cross-validation lands in a later PR.
+    All three controls are diagnostic. By default the R² / RMSE / VIF
+    numbers here are IN-SAMPLE explanatory fits; the ``cv`` toggle adds an
+    out-of-sample 5-fold cross-validated R²/RMSE panel (run_cv_regression).
     """
 
     # ── Universe selector (Phase 2) ──
@@ -994,11 +994,11 @@ def render_regression_page(
         '<div class="rg-diagnostic-banner">'
         '<span class="rg-diagnostic-tag">DIAGNOSTIC</span>'
         '<span class="rg-diagnostic-text">'
-        'Every R² / RMSE / VIF / coefficient on this page is an '
+        'By default every R² / RMSE / VIF / coefficient on this page is an '
         '<em>in-sample explanatory fit</em> — it describes how well '
         'the model fits the data it was trained on, not how it will '
-        'predict an unseen hospital. Cross-validation lands in a '
-        'later phase of the rebuild. Use these numbers for '
+        'predict an unseen hospital. For an out-of-sample read, turn on '
+        '<em>Cross-validate (5-fold OOS R²)</em> above. Use these numbers for '
         'hypothesis generation and feature selection, not for '
         'sourcing decisions or LP-facing forecasts.'
         '</span></div>'
