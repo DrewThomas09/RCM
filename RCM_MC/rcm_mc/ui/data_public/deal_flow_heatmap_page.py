@@ -349,9 +349,10 @@ def render_deal_flow_heatmap(min_sector_deals: int = 3) -> str:
                           f'<div style="font-size:8px;color:{P["text_dim"]};font-family:{_SANS}">{tot}</div>'
                           f'<div style="height:{ht}px;background:{P["accent"]};opacity:.8;margin:2px 2px 0"></div>'
                           f'<div style="font-size:8px;color:{P["text_dim"]};margin-top:2px">{y}</div></div>')
+            # 2026-05-28 batch 32 · Tier-4 trope removal — strip 3px accent.
             real_panel = (
                 f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-                f'border-left:3px solid {P["accent"]};padding:12px 14px;margin-bottom:14px">'
+                f'border-radius:2px;padding:12px 14px;margin-bottom:14px">'
                 f'<div style="font-size:10px;font-weight:600;letter-spacing:.08em;'
                 f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:6px">'
                 f'Real consolidation activity · LIVE (CMS SNF + Hospital Change-of-Ownership)</div>'

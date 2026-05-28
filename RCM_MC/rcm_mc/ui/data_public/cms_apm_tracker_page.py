@@ -241,9 +241,10 @@ def _colorado_apm_section() -> str:
         f'<thead><tr style="border-bottom:1px solid {P["border"]};color:{P["text_dim"]}">'
         f'<th style="padding:4px 10px;text-align:left">Payer (% of medical spend in APMs)</th>'
         f'{head}</tr></thead><tbody>{"".join(rows)}</tbody></table>')
+    # 2026-05-28 batch 32 · Tier-4 trope removal — strip 3px accent.
     return (
         f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-left:3px solid {P["accent"]};padding:14px 16px;margin-bottom:16px">'
+        f'border-radius:2px;padding:14px 16px;margin-bottom:16px">'
         f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
         f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:8px">'
         f'Colorado APM Adoption · LIVE (CIVHC)</div>{hdr}{table}'
@@ -282,9 +283,10 @@ def _mssp_landscape_section() -> str:
         f'<tr><td style="padding:3px 10px">{_html.escape(str(a["aco_name"])[:38])}</td>'
         f'<td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums">{a["participants"]:,}</td></tr>'
         for a in top)
+    # 2026-05-28 batch 32 · Tier-4 trope removal — strip 3px accent.
     return (
         f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-left:3px solid {P["accent"]};padding:14px 16px;margin-bottom:16px">'
+        f'border-radius:2px;padding:14px 16px;margin-bottom:16px">'
         f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
         f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:8px">'
         f'National MSSP ACO Landscape · LIVE (CMS)</div>{hdr}'
@@ -385,7 +387,7 @@ def render_cms_apm_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Risk Structure Options</div>{rs_tbl}</div>
   <div style="{cell}"><div style="{h3}">2026-2027 Policy Calendar & Portfolio Impact</div>{c_tbl}</div>
   <div style="{cell}"><div style="{h3}">Commercial / MA Value-Based Adjacency <span style="color:{P['warning']}">· ILLUSTRATIVE</span></div>{pa_tbl}</div>
-  <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
+  <div style="background:{panel_alt};border:1px solid {border};border-radius:2px;padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">CMS APM landscape (public reference):</strong> {r.total_programs} active CMS APMs cover {r.total_lives_covered_m:.1f}M lives and route ${r.total_apm_payments_b:.1f}B in annual Medicare payments — avg {r.avg_savings_rate_pct:.2f}% savings rate across active programs.
     Policy overhang: ACO REACH sunset 2026-12-31 ($42.5B program ending), PCF sunset 2026-12-31 ($12.8B), BPCI-A sunset 2025-12-31 ($18.5B) — transition paths to MCP, MSSP, and TEAM.
     -2.8% proposed 2026 physician fee schedule conversion-factor cut is the headline FFS pressure for the cycle.

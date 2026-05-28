@@ -272,9 +272,11 @@ def render_payer_intel() -> str:
   </div>
 </div>"""
 
+    # 2026-05-28 batch 32 · Tier-4 trope removal — strip decorative
+    # 3px brand-color stripe from the "deeper view" link panel.
     deeper_link = (
         f'<div style="background:#FAF7F0;border:1px solid #D6CFC0;'
-        f'border-left:3px solid #155752;padding:10px 14px;margin-bottom:14px;'
+        f'padding:10px 14px;margin-bottom:14px;'
         f'border-radius:2px;">'
         f'<span style="font-family:JetBrains Mono,monospace;font-size:9.5px;'
         f'letter-spacing:0.15em;color:#5C6878;font-weight:600;">SUMMARY VIEW</span>'
