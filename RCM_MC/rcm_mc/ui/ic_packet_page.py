@@ -84,9 +84,10 @@ _HOSPITAL_BASED_SPECIALTIES = {
 
 _FORM_CSS = f"""
 <style>
+/* 2026-05-28 batch 40 · Tier-4 trope removal — cap radius at 2px. */
 .ic-form{{display:grid;grid-template-columns:1fr 1fr;gap:12px;
 max-width:720px;margin-top:20px;background:{P["panel"]};
-border:1px solid {P["border"]};border-radius:4px;padding:20px;}}
+border:1px solid {P["border"]};border-radius:2px;padding:20px;}}
 .ic-form .ic-form-full{{grid-column:span 2;}}
 .ic-form label{{font-size:9px;color:{P["text_faint"]};
 letter-spacing:1.5px;text-transform:uppercase;font-weight:600;
