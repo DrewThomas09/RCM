@@ -3898,7 +3898,13 @@ _CSS_LINK = (
 _CSS_INLINE_FALLBACK = """
 <style>
   /* Panel + data chrome layered on top of chartis_tokens.css */
-  .ck-panel { background:#fff; border:1px solid var(--sc-rule); border-radius:2px; box-shadow:var(--sc-shadow-1); margin:0 0 var(--sc-s-5); }
+  /* 2026-05-28 style-sweep · removed `box-shadow:var(--sc-shadow-1)`
+     from .ck-panel. The static v3/chartis.css already renders panels
+     without a shadow (line 1510); this inline fallback was emitting
+     a shadow when the static file wasn't served, drifting from the
+     canonical chrome. Depth on content panels comes from paper-tone
+     stacking + hairlines (Tier-4 don'ts: no shadows anywhere). */
+  .ck-panel { background:#fff; border:1px solid var(--sc-rule); border-radius:2px; margin:0 0 var(--sc-s-5); }
   .ck-panel-head { display:flex; align-items:center; justify-content:space-between; background:var(--sc-navy); color:var(--sc-on-navy); padding:10px 16px; border-radius:2px 2px 0 0; }
   .ck-panel-title { font-family:var(--sc-sans); font-weight:600; font-size:13px; letter-spacing:0.04em; text-transform:uppercase; }
   .ck-panel-code { font-family:var(--sc-mono); font-size:10px; letter-spacing:0.1em; color:var(--sc-on-navy-dim); }
@@ -4643,7 +4649,12 @@ _CSS_INLINE_FALLBACK = """
   .ck-eyebrow.on-navy::before { background:var(--sc-teal); }
   /* Empty state — the "no data here yet" surface every page reaches
    * for. Reads as a deliberate editorial card, not a forgotten gap. */
-  .ck-empty-state { background:#fff; border:1px solid var(--sc-rule); border-radius:2px; padding:48px 40px; max-width:640px; margin:24px auto; text-align:center; box-shadow:var(--sc-shadow-1); display:flex; flex-direction:column; align-items:center; gap:14px; }
+  /* 2026-05-28 style-sweep · shadow removed from .ck-empty-state.
+     Same depth-by-paper-tone rule as .ck-panel. The .tone-* variants
+     below still carry a 3px colored left-border as a SEMANTIC tone
+     signal (positive / warning), not decoration — kept per spec
+     Tier-2 §2.12 (tag/badge color carries category, allowed). */
+  .ck-empty-state { background:#fff; border:1px solid var(--sc-rule); border-radius:2px; padding:48px 40px; max-width:640px; margin:24px auto; text-align:center; display:flex; flex-direction:column; align-items:center; gap:14px; }
   .ck-empty-state.ck-empty-state-positive { border-left:3px solid var(--sc-positive); }
   .ck-empty-state.ck-empty-state-warning { border-left:3px solid var(--sc-warning); }
   .ck-empty-state-icon { width:56px; height:56px; border-radius:50%; background:var(--sc-bone); display:flex; align-items:center; justify-content:center; font-size:24px; color:var(--sc-teal-ink); margin-bottom:4px; }
@@ -4674,8 +4685,14 @@ _CSS_INLINE_FALLBACK = """
   .ck-image-card-title { font-family:var(--sc-serif); font-weight:500; font-size:21px; line-height:1.25; color:var(--sc-navy); margin:var(--sc-s-3) 0 var(--sc-s-3); }
   .ck-image-card-body p { font-family:var(--sc-sans); font-size:14px; line-height:1.6; color:var(--sc-text-dim); margin:0 0 var(--sc-s-4); }
 
-  /* Severity panels — replace legacy <div class="card"> in alerts/etc. */
-  .ck-severity-panel { background:#fff; border:1px solid var(--sc-rule); border-left:4px solid var(--sc-rule-2); border-radius:2px; box-shadow:var(--sc-shadow-1); margin:0 0 var(--sc-s-5); }
+  /* Severity panels — replace legacy <div class="card"> in alerts/etc.
+     2026-05-28 sweep · shadow removed (Tier-4 don'ts). The 4px
+     `border-left` is RETAINED here because it's SEMANTIC — the
+     tone-red / tone-amber / tone-info / tone-positive classes
+     below recolor it to encode severity (a tag/badge use, per
+     spec Tier-2 §2.12). Without it, the alert-severity surface
+     loses its only at-a-glance category cue. */
+  .ck-severity-panel { background:#fff; border:1px solid var(--sc-rule); border-left:4px solid var(--sc-rule-2); border-radius:2px; margin:0 0 var(--sc-s-5); }
   .ck-severity-panel.tone-red { border-left-color:var(--sc-negative); }
   .ck-severity-panel.tone-amber { border-left-color:var(--sc-warning); }
   .ck-severity-panel.tone-info { border-left-color:var(--sc-teal); }
@@ -4696,7 +4713,16 @@ _CSS_INLINE_FALLBACK = """
   .ck-severity-actions select { font-family:var(--sc-sans); font-size:12px; padding:4px 8px; border:1px solid var(--sc-rule); border-radius:2px; background:#fff; color:var(--sc-text); }
   .ck-severity-actions button { font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; padding:6px 12px; border:1px solid var(--sc-navy); background:var(--sc-navy); color:var(--sc-on-navy); border-radius:2px; cursor:pointer; }
   .ck-severity-actions button:hover { background:var(--sc-navy-2); border-color:var(--sc-navy-2); }
-  .ck-affirm-empty { background:#fff; border:1px solid var(--sc-rule); border-left:4px solid var(--sc-positive); border-radius:2px; box-shadow:var(--sc-shadow-1); padding:20px 24px; }
+  /* 2026-05-28 sweep · .ck-affirm-empty was the "everything's
+     clear" affirmative state on alert/notes/etc. surfaces. Was
+     emitting BOTH a shadow AND a decorative 4px positive-tone
+     left-border accent. Both removed: depth is now paper-tone +
+     hairline, and the positive tone is conveyed by the h3 color
+     (var(--sc-positive)) which is already in the rule below.
+     Unlike .ck-severity-panel above, this one carries no
+     multi-tone semantic — only the single positive flavor — so
+     the colored bar was pure decoration. */
+  .ck-affirm-empty { background:#fff; border:1px solid var(--sc-rule); border-radius:2px; padding:20px 24px; }
   .ck-affirm-empty h3 { font-family:var(--sc-serif); font-weight:500; font-size:20px; color:var(--sc-positive); margin:0 0 6px; }
   .ck-affirm-empty p { font-family:var(--sc-sans); font-size:14px; line-height:1.6; color:var(--sc-text-dim); margin:0; max-width:64ch; }
   .ck-affirm-empty .ck-arrow { margin-top:var(--sc-s-4); }
@@ -4834,7 +4860,9 @@ _CSS_INLINE_FALLBACK = """
   .ck-pulse-grid .ck-kpi:last-child { border-right:0; }
   .ck-pulse-grid .ck-kpi-value .neg { color:var(--sc-negative); }
   .ck-pulse-grid .ck-kpi-value .warn { color:var(--sc-warning); }
-  .ck-health-mix { background:#fff; border:1px solid var(--sc-rule); border-radius:2px; box-shadow:var(--sc-shadow-1); margin:0 0 var(--sc-s-5); padding:18px; }
+  /* 2026-05-28 sweep · .ck-health-mix shadow removed.
+     Depth-by-paper-tone same as .ck-panel. */
+  .ck-health-mix { background:#fff; border:1px solid var(--sc-rule); border-radius:2px; margin:0 0 var(--sc-s-5); padding:18px; }
   .ck-health-mix-head { display:flex; align-items:baseline; justify-content:space-between; gap:var(--sc-s-4); margin-bottom:14px; }
   .ck-health-mix-head h3 { font-family:var(--sc-sans); font-weight:700; font-size:13px; letter-spacing:0.12em; text-transform:uppercase; color:var(--sc-navy); margin:0; }
   .ck-health-mix-head .count { font-family:var(--sc-mono); font-size:13px; color:var(--sc-text-faint); }
