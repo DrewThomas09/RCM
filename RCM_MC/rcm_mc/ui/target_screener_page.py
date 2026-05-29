@@ -324,6 +324,29 @@ _CSS = """
  border-bottom-width:2px;border-radius:2px;
  font-family:var(--sc-mono);font-size:10px;font-weight:600;
  color:var(--sc-navy,#15202b);}
+/* Map state-filter banner. Lives directly under the map svg
+   inside the map panel; surfaces the selected state and its
+   in-state provider count, with a clear-link styled as a chip
+   so it reads as a discrete action. The active-filter chip strip
+   in the universe panel still mirrors this (state is one of the
+   chips), but this banner provides immediate context next to the
+   visualisation the partner just clicked. */
+.ts-map-filter-banner{margin:10px 0 0;padding:8px 12px;
+ background:var(--sc-bone,#ece5d6);
+ border:1px solid var(--sc-rule,#c9c1ac);border-radius:2px;
+ font-family:var(--sc-sans,Inter Tight,sans-serif);font-size:12.5px;
+ color:var(--sc-text,#2a3a4a);display:flex;flex-wrap:wrap;
+ align-items:center;gap:8px;}
+.ts-map-filter-lbl{font-family:var(--sc-mono);font-size:9.5px;
+ letter-spacing:.12em;color:var(--sc-text-faint,#8b94a0);
+ font-weight:700;}
+.ts-map-filter-state{font-weight:600;color:var(--sc-navy,#15202b);}
+.ts-map-filter-clear{margin-left:auto;font-family:var(--sc-mono);
+ font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+ font-weight:600;padding:3px 9px;text-decoration:none;
+ color:var(--sc-warning,#b8732a);background:#fff;
+ border:1px solid var(--sc-warning,#b8732a);border-radius:2px;}
+.ts-map-filter-clear:hover{background:var(--sc-warning,#b8732a);color:#fff;}
 .tsw-scaffold{background:var(--sc-paper,#faf6ec);border:1px dashed var(--sc-rule-2,#bfb6a2);
  border-radius:2px;padding:18px 20px;margin:14px 0;}
 .tsw-scaffold h3{font-family:var(--sc-serif);font-size:14.5px;color:var(--sc-navy,#15202b);margin:0 0 6px;}
@@ -785,10 +808,31 @@ def _render_map(vertical: str, qs: Dict[str, List[str]]) -> str:
         "})();</script>")
     filt = ""
     if sel:
-        clear = _vhref(vertical, {})
-        filt = (f'<p class="ck-section-body" style="margin:8px 0 0;">Filtered to '
-                f'<strong>{sel}</strong> · <a class="ck-link" href="{clear}">clear '
-                f'state filter</a>.</span></p>')
+        # Wave-17: richer state-filter banner. Show the state full
+        # name when available + the in-state provider count, fix the
+        # stray </span> typo that closed nothing, render the clear
+        # link as a small chip so it reads as an action rather than
+        # buried link text. The active-filter chip strip in the
+        # universe panel already lets the partner clear the state,
+        # but this banner sits next to the map where they clicked
+        # so it provides immediate context.
+        from .us_map import STATE_NAMES
+        clear_href = _vhref(vertical, {})
+        state_name = STATE_NAMES.get(sel, sel)
+        in_state_count = counts.get(sel, 0)
+        count_clause = (
+            f" · <strong>{in_state_count:,}</strong> {vinfo['label']} providers"
+            if in_state_count else ""
+        )
+        filt = (
+            '<div class="ts-map-filter-banner">'
+            '<span class="ts-map-filter-lbl">FILTERED TO</span> '
+            f'<span class="ts-map-filter-state">{sel} · {state_name}</span>'
+            f'{count_clause}'
+            f' <a class="ts-map-filter-clear" href="{clear_href}">'
+            'Clear state filter</a>'
+            '</div>'
+        )
     # 2026-05-28 wave-4: layer bar moved up into the universe panel
     # (4th sub-block) so the partner picks universe → state filter →
     # map shading layer in one continuous read instead of scrolling

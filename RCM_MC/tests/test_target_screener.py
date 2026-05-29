@@ -530,6 +530,51 @@ class WorkbenchShellTests(unittest.TestCase):
     # ck_copy_share_link_button on the Active-screen sub-block
     # eyebrow row.
 
+    # ── 2026-05-28 Wave 17 — map state-filter banner ─────────────
+    # The map panel used to render 'Filtered to <strong>TX</strong> ·
+    # clear state filter.</span></p>' — buried link text + a stray
+    # </span> typo. Wave-17 promotes it to a real banner with state
+    # full name, in-state provider count, and a chip-styled clear
+    # link.
+
+    def test_map_filter_banner_renders_when_state_selected(self):
+        h = self._render(state="TX")
+        self.assertIn('<div class="ts-map-filter-banner">', h)
+        # Full state name resolved from us_map.STATE_NAMES.
+        self.assertIn("TX · Texas", h)
+
+    def test_map_filter_banner_hidden_without_state(self):
+        h = self._render()
+        self.assertNotIn('<div class="ts-map-filter-banner">', h)
+
+    def test_map_filter_banner_state_full_name_for_california(self):
+        h = self._render(state="CA")
+        self.assertIn("CA · California", h)
+
+    def test_map_filter_banner_includes_in_state_provider_count(self):
+        import re
+        h = self._render(state="TX")
+        m = re.search(
+            r'<div class="ts-map-filter-banner">(.*?)</div>',
+            h, re.DOTALL)
+        self.assertIsNotNone(m)
+        banner = m.group(1)
+        # The banner's strong number is the per-state count
+        # (Texas hospitals — not the universe total).
+        in_state = re.search(r"<strong>([\d,]+)</strong>", banner)
+        self.assertIsNotNone(in_state, "in-state count missing")
+        n = int(in_state.group(1).replace(",", ""))
+        self.assertGreater(n, 0)
+        self.assertLess(n, 5000,
+                        "expected TX-only count not universe total")
+
+    def test_no_stray_span_typo_in_map_filter_banner(self):
+        # Pre-wave-17 the legacy banner had '.</span></p>' closing
+        # a <span> that was never opened. Pin that the typo is gone
+        # even when the banner is active.
+        h = self._render(state="TX")
+        self.assertNotIn(".</span></p>", h)
+
     def test_share_link_button_present_in_universe_panel(self):
         h = self._render()
         self.assertIn(
@@ -764,10 +809,15 @@ class WorkbenchMapTests(unittest.TestCase):
         self.assertIn("us-map-select", self._render(view="main"))
 
     def test_state_param_selects_and_shows_filter(self):
+        # Wave-17 polished the banner: 'Filtered to' → 'FILTERED TO',
+        # 'clear state filter' → 'Clear state filter' inside a real
+        # banner element instead of inline link text. Pin both the
+        # selection and the banner element.
         h = self._render(view="main", vertical="hospice", state="TX")
         self.assertIn("usgeo-selected", h)       # TX highlighted
-        self.assertIn("Filtered to", h)
-        self.assertIn("clear state filter", h)
+        self.assertIn('<div class="ts-map-filter-banner">', h)
+        self.assertIn("FILTERED TO", h)
+        self.assertIn("Clear state filter", h)
 
     def test_layer_selector_present(self):
         h = self._render(view="main")
