@@ -203,6 +203,61 @@ class WorkbenchShellTests(unittest.TestCase):
         # referenced in the rendered HTML.
         self.assertNotIn('class="ts-mode-go"', h)
 
+    # ── 2026-05-28 Wave 1 — active filter chips ───────────────────
+    # Pre-existing pain: state/min-quality/min-size/ownership filters
+    # were surfaced in 4 different places (state in the map summary;
+    # the other three only in the table's filter-form clear-link,
+    # which only appeared if a filter was already set). A partner
+    # couldn't glance at the top of the page and answer "what's
+    # filtered?". The Active-screen sub-block now renders a chip
+    # per active filter, each a one-click "remove" link, plus a
+    # "Clear all filters" link when 2+ are active.
+
+    def test_filter_chips_hidden_when_no_filters(self):
+        # The chip strip element is suppressed on a clean page load
+        # so it doesn't add visual noise to the default state.
+        h = self._render()
+        self.assertNotIn('<div class="ts-fchips"', h)
+
+    def test_state_filter_renders_chip(self):
+        h = self._render(state="TX")
+        self.assertIn('<div class="ts-fchips"', h)
+        self.assertIn('ts-fchip-lbl">State<', h)
+        self.assertIn('ts-fchip-val">TX<', h)
+        # One chip → no clear-all link yet.
+        self.assertNotIn("Clear all filters", h)
+
+    def test_multiple_filters_render_chips_and_clear_all(self):
+        import re
+        h = self._render(state="CA", min_quality="3", ownership="for-profit")
+        chips = re.findall(r'<a class="ts-fchip" href="', h)
+        self.assertEqual(len(chips), 3,
+                         f"expected 3 chips, got {len(chips)}")
+        self.assertIn("Clear all filters", h)
+        # Each chip carries a real removable URL — clear-all goes back
+        # to the unfiltered universe view.
+        self.assertIn(
+            '/target-screener?view=main&vertical=snf"',
+            h.replace("hospitals", "snf"),  # canonical clear-all shape
+        )
+
+    def test_chip_remove_link_drops_only_that_param(self):
+        import re
+        h = self._render(state="TX", min_quality="4")
+        # Find each chip and its href.
+        chips = re.findall(
+            r'<a class="ts-fchip" href="([^"]+)"[^>]*>'
+            r'.*?ts-fchip-lbl">([^<]+)<.*?ts-fchip-val">([^<]+)<',
+            h, re.DOTALL)
+        self.assertEqual(len(chips), 2)
+        by_label = {lbl: href for href, lbl, _val in chips}
+        # The State chip's removal href drops state= but keeps min_quality=4.
+        self.assertNotIn("state=TX", by_label["State"])
+        self.assertIn("min_quality=4", by_label["State"])
+        # The Min quality chip's removal href drops min_quality but keeps state=TX.
+        self.assertNotIn("min_quality=4", by_label["Min quality"])
+        self.assertIn("state=TX", by_label["Min quality"])
+
 
 class WorkbenchMapTests(unittest.TestCase):
     """PR 3 — real US map (reuses render_us_geo_map), state click→filter,

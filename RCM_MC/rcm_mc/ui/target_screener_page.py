@@ -163,6 +163,31 @@ _CSS = """
 .ts-univ-summary em{font-style:italic;color:var(--sc-text-dim,#6a7480);}
 .ts-univ-code{font-family:var(--sc-mono);font-size:11px;
  color:var(--sc-text-dim,#6a7480);}
+/* Active filter chip strip — every non-default query param renders
+   as a removable chip in the Active-screen sub-block so partners can
+   tell at a glance what's filtered (was buried in 4 different places
+   pre-redesign). Each chip's href drops just that param. */
+.ts-fchips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+ margin:8px 0 0;}
+.ts-fchips-lbl{font-family:var(--sc-mono);font-size:9.5px;letter-spacing:.12em;
+ text-transform:uppercase;color:var(--sc-text-faint,#8b94a0);
+ font-weight:700;margin-right:2px;}
+.ts-fchip{display:inline-flex;align-items:center;gap:5px;
+ padding:3px 6px 3px 8px;font-family:var(--sc-mono);font-size:10.5px;
+ letter-spacing:.02em;text-decoration:none;
+ background:var(--sc-bone,#ece5d6);color:var(--sc-text,#2a3a4a);
+ border:1px solid var(--sc-rule,#c9c1ac);border-radius:2px;}
+.ts-fchip:hover{background:#fff;border-color:var(--sc-warning,#b8732a);}
+.ts-fchip-lbl{color:var(--sc-text-dim,#6a7480);text-transform:uppercase;
+ letter-spacing:.06em;font-size:9px;font-weight:700;}
+.ts-fchip-val{color:var(--sc-navy,#15202b);font-weight:600;}
+.ts-fchip-x{color:var(--sc-text-faint,#8b94a0);font-size:13px;line-height:1;
+ padding-left:2px;}
+.ts-fchip:hover .ts-fchip-x{color:var(--sc-warning,#b8732a);}
+.ts-fchip-clear{font-family:var(--sc-mono);font-size:10px;letter-spacing:.08em;
+ text-transform:uppercase;color:var(--sc-warning,#b8732a);text-decoration:none;
+ margin-left:6px;font-weight:600;}
+.ts-fchip-clear:hover{text-decoration:underline;}
 .tsw-scaffold{background:var(--sc-paper,#faf6ec);border:1px dashed var(--sc-rule-2,#bfb6a2);
  border-radius:2px;padding:18px 20px;margin:14px 0;}
 .tsw-scaffold h3{font-family:var(--sc-serif);font-size:14.5px;color:var(--sc-navy,#15202b);margin:0 0 6px;}
@@ -886,6 +911,86 @@ def _scaffold(title: str, pr: str, bullets: List[str]) -> str:
     )
 
 
+def _active_filter_chips(vertical: str, qs: Dict[str, List[str]]) -> str:
+    """Render every active filter on the page as a small removable chip.
+
+    Pre-existing pain: state/min-quality/min-size/ownership filters were
+    surfaced in four different places (state in the map summary, the
+    other three only inside the table's filter form's clear-link, which
+    only appeared if a filter was already applied). A partner couldn't
+    glance at the top of the page and answer "what's filtered?".
+
+    This helper builds one chip per non-default param. Each chip is a
+    one-click "remove this filter" link — the href drops just that
+    param while keeping every other current query value. A "Clear all
+    filters" link follows when 2+ are active.
+    """
+    import html as _h
+    state = _q1(qs, "state").upper()
+    min_q = _q1(qs, "min_quality")
+    min_size = _q1(qs, "min_size")
+    own = _q1(qs, "ownership")
+    sort_key = _q1(qs, "sort")
+
+    # Catalog → label/value pairs.
+    active: List[tuple] = []  # (param_key, chip_label, chip_value)
+    if state:
+        active.append(("state", "State", state))
+    if min_q:
+        active.append(("min_quality", "Min quality", min_q))
+    if min_size:
+        active.append(("min_size", "Min size", min_size))
+    if own:
+        active.append(("ownership", "Ownership", own))
+    if sort_key:
+        active.append(("sort", "Sort", sort_key))
+
+    if not active:
+        return ""
+
+    # Server-first: every chip-remove link is a real URL the user can
+    # bookmark. Same query state minus the one param being cleared.
+    base_kept = {"view": "main", "vertical": vertical}
+
+    def _remove_href(drop_key: str) -> str:
+        kept = dict(base_kept)
+        for k, _label, _val in active:
+            if k == drop_key:
+                continue
+            kept[k] = _q1(qs, k)
+        # Preserve sort direction whenever we keep sort.
+        if "sort" in kept:
+            dirn = _q1(qs, "direction")
+            if dirn:
+                kept["direction"] = dirn
+        return "/target-screener?" + "&".join(
+            f"{k}={_h.escape(str(v))}" for k, v in kept.items() if v
+        )
+
+    chips_html = "".join(
+        f'<a class="ts-fchip" href="{_remove_href(k)}" '
+        f'title="Remove the {_h.escape(lbl.lower())} filter">'
+        f'<span class="ts-fchip-lbl">{_h.escape(lbl)}</span>'
+        f'<span class="ts-fchip-val">{_h.escape(str(val))}</span>'
+        f'<span class="ts-fchip-x" aria-hidden="true">×</span></a>'
+        for k, lbl, val in active
+    )
+    clear_all = ""
+    if len(active) >= 2:
+        clear_all = (
+            f'<a class="ts-fchip-clear" '
+            f'href="/target-screener?view=main&vertical={vertical}">'
+            f'Clear all filters</a>'
+        )
+    return (
+        '<div class="ts-fchips" role="group" '
+        'aria-label="Active filters">'
+        f'<span class="ts-fchips-lbl">Active filters:</span>'
+        f'{chips_html}{clear_all}'
+        '</div>'
+    )
+
+
 def _universe_kpis(vertical: str, rows: List[Dict]) -> str:
     """A computed at-a-glance read of the active universe — real counts from
     the loaded provider rows (no fabrication), so the screener is informative
@@ -957,7 +1062,12 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
         '</div>'
         + _vertical_chips_html(vertical, qs)
         + '</div>'
-        # ── Sub-block 2: active-universe summary + real KPIs ──
+        # ── Sub-block 2: active-universe summary + real KPIs +
+        # any active filter chips (state / min-quality / etc.). The
+        # filter chips render only when at least one filter is set,
+        # so the sub-block stays clean on a fresh page load. Each
+        # chip is a one-click "remove" link; "Clear all filters"
+        # appears when 2+ chips are active.
         '<div class="ts-univ-block">'
         '<div class="ts-univ-lbl">Active screen</div>'
         f'<p class="ts-univ-summary">'
@@ -966,6 +1076,7 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
         f'{vinfo["note"]} <em>Market data, not your deals.</em>'
         '</p>'
         + _universe_kpis(vertical, _vertical_rows(vertical, limit=None))
+        + _active_filter_chips(vertical, qs)
         + '</div>'
         # ── Sub-block 3: pre-set entry-point mode cards ───────
         '<div class="ts-univ-block">'
