@@ -388,7 +388,7 @@ def render_scenario_mc(params: dict = None) -> str:
     from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link
     # + Back-to-top affordances. Idempotent JS guards.
-    from ._chartis_kit import ck_page_actions
+    from .._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(_ckn("scenario figures (illustrative defaults; Monte Carlo on your inputs)") + body, "Scenario Monte Carlo", active_nav="/scenario-mc",
         editorial_intro={

@@ -349,7 +349,7 @@ def render_corpus_dashboard() -> str:
     )
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link
     # + Back-to-top affordances. Idempotent JS guards.
-    from ._chartis_kit import ck_page_actions
+    from .._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(
         page_title + explainer + ck_illustrative_note("corpus figures (illustrative seed corpus)") + body,

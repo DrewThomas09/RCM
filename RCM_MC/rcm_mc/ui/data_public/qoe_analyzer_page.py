@@ -452,7 +452,7 @@ def render_qoe_analyzer(params: dict) -> str:
         page_key="qoe-analyzer",
     )
     return chartis_shell(
-        ck_illustrative_note("quality-of-earnings add-back figures") + explainer + content,
+        ck_illustrative_note("quality-of-earnings add-back figures") + explainer + content + ck_page_actions(),
         title=f"Quality of Earnings — {sector}",
         active_nav="/qoe-analyzer",
         editorial_intro={

@@ -298,7 +298,7 @@ def render_biosimilars(params: dict = None) -> str:
         next_action="Define purpose/source or defer") + body
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link
     # + Back-to-top affordances. Idempotent JS guards.
-    from ._chartis_kit import ck_page_actions
+    from .._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(body, "Biosimilars", active_nav="/biosimilars",
         extra_css=_EXPLAINER_CSS)

@@ -331,7 +331,7 @@ def render_sector_momentum(recent_years: int = 5) -> str:
 
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link
     # + Back-to-top affordances. Idempotent JS guards.
-    from ._chartis_kit import ck_page_actions
+    from .._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(ck_illustrative_note("deals-corpus aggregates — built from the bundled illustrative seed deals (data_public seed + extended_seed), not your ingested portfolio") + body, "Sector Momentum", active_nav="/sector-momentum",
                          subtitle=f"{recent_years}y window — {len(momentum_data)} sectors",

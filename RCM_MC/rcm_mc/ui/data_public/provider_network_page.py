@@ -435,7 +435,7 @@ def render_provider_network(params: dict) -> str:
 '''
 
     return chartis_shell(
-        ck_illustrative_note("network figures") + content,
+        ck_illustrative_note("network figures") + content + ck_page_actions(),
         title=f"Provider Network Intelligence — {sector}",
         active_nav="/provider-network",
         editorial_intro={

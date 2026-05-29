@@ -253,8 +253,12 @@ def render_diligence_checklist(params: dict) -> str:
 </div>
 '''
 
+    # 2026-05-28 wave-D: add ck_page_actions.
+
+    from .._chartis_kit import ck_page_actions
+
     return chartis_shell(
-        content,
+        content + ck_page_actions(),
         title=f"Diligence Checklist — {sector}",
         active_nav="/diligence-checklist",
         editorial_intro={

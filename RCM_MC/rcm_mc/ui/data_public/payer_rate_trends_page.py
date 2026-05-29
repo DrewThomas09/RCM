@@ -365,7 +365,7 @@ def render_payer_rate_trends() -> str:
         next_action="See the Colorado payer cost trend above") + body
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link
     # + Back-to-top affordances. Idempotent JS guards.
-    from ._chartis_kit import ck_page_actions
+    from .._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(body, "Payer Rate Trends", active_nav="/payer-rate-trends",
                          subtitle=f"{len(with_payer)} deals with payer data",

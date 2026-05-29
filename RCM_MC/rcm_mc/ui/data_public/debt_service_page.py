@@ -465,7 +465,7 @@ def render_debt_service(params: dict = None) -> str:
             next_href="/diligence/hcris-xray") + body
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link
     # + Back-to-top affordances. Idempotent JS guards.
-    from ._chartis_kit import ck_page_actions
+    from .._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(body, "Debt Service Coverage", active_nav="/debt-service",
         editorial_intro={
