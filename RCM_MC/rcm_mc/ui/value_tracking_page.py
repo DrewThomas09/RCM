@@ -472,6 +472,10 @@ def render_value_tracker(
     )
     body = f'{head}{lead_anchor}{kpis}{ramp_banner}{lever_table}{entry_form}{plan_section}{nav}{next_up}'
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body,
         f"Value Tracker — {name}",

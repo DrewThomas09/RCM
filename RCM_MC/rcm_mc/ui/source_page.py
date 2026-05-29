@@ -140,4 +140,8 @@ def render_source_page(
     body = head + kpi_strip + body + next_up
 
     sub = f"{n} matches found" if results else "Thesis-driven deal origination from HCRIS"
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, "Deal Sourcing", subtitle=sub)

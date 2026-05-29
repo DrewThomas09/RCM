@@ -227,6 +227,10 @@ def render_verticals() -> str:
         + next_up
     )
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body, "Healthcare Verticals",
         subtitle="Acute Care, ASC, Behavioral Health, MSO",

@@ -172,6 +172,10 @@ def render_v5_status() -> str:
         ),
     )
     body = head + body
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body,
         "v5 Transformation Status",
