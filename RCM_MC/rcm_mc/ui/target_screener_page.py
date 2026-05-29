@@ -1319,12 +1319,23 @@ def _active_filter_chips(vertical: str, qs: Dict[str, List[str]]) -> str:
     )
 
 
-def _universe_kpis(vertical: str, rows: List[Dict]) -> str:
+def _universe_kpis(vertical: str, rows: List[Dict],
+                   state_scope: str = "") -> str:
     """A computed at-a-glance read of the active universe — real counts from
     the loaded provider rows (no fabrication), so the screener is informative
     before any filter is applied. Only shows a metric when the universe
-    actually carries it."""
+    actually carries it.
+
+    Wave-10: ``state_scope`` (e.g. 'TX') rescopes the calculation to that
+    state's providers and updates the sub-labels accordingly. Previously
+    the KPI tiles always described the WHOLE universe ('6,123 providers /
+    50 states'), even when the partner had filtered to TX — so the
+    headline numbers were lying about what the table below was showing.
+    """
     from ._chartis_kit import ck_kpi_block
+    state_scope = (state_scope or "").upper()
+    if state_scope:
+        rows = [r for r in rows if (r.get("state") or "").upper() == state_scope]
     n = len(rows)
     if not n:
         return ""
@@ -1333,18 +1344,30 @@ def _universe_kpis(vertical: str, rows: List[Dict]) -> str:
     qs_vals = [r.get("q") for r in rows if isinstance(r.get("q"), (int, float))]
     size_label = next((r.get("size_label") for r in rows if r.get("size_label")), None)
     q_label = next((r.get("q_label") for r in rows if r.get("q_label")), "Quality")
-    blocks = [
-        ck_kpi_block("Providers", f"{n:,}", "in this universe"),
-        ck_kpi_block("States & territories", f"{len(states)}", "CMS coverage"),
-    ]
+    # Sub-labels swap between the unfiltered-universe story and the
+    # state-scoped story so the partner reads what they're seeing.
+    scope_sub = f"in {state_scope}" if state_scope else "in this universe"
+    blocks = [ck_kpi_block("Providers", f"{n:,}", scope_sub)]
+    if not state_scope:
+        # The "States & territories" tile is meaningless when the
+        # universe is already scoped to one state — drop it instead
+        # of rendering '1' which adds no information.
+        blocks.append(ck_kpi_block("States & territories",
+                                   f"{len(states)}", "CMS coverage"))
     if sizes:
         med = _median(sizes)
+        med_sub = f"{len(sizes):,} reported"
+        if state_scope:
+            med_sub += f" · {state_scope}-only"
         blocks.append(ck_kpi_block(f"Median {size_label.lower()}",
-                                   f"{med:,.0f}", f"{len(sizes):,} reported"))
+                                   f"{med:,.0f}", med_sub))
     if qs_vals:
         pct = 100.0 * len(qs_vals) / n
+        cov_sub = f"{len(qs_vals):,} of {n:,} report it"
+        if state_scope:
+            cov_sub += f" · {state_scope}-only"
         blocks.append(ck_kpi_block(f"{q_label} coverage", f"{pct:.0f}%",
-                                   f"{len(qs_vals):,} of {n:,} report it"))
+                                   cov_sub))
     return f'<div class="ck-kpi-grid">{"".join(blocks)}</div>'
 
 
@@ -1403,7 +1426,8 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
         f'<span class="ts-univ-code">{vinfo["universe"]}</span>. '
         f'{vinfo["note"]} <em>Market data, not your deals.</em>'
         '</p>'
-        + _universe_kpis(vertical, _vertical_rows(vertical, limit=None))
+        + _universe_kpis(vertical, _vertical_rows(vertical, limit=None),
+                         state_scope=_q1(qs, "state"))
         + _active_filter_chips(vertical, qs)
         + '</div>'
         # ── Sub-block 3: pre-set entry-point mode cards ───────
