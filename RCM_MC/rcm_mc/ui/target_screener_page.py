@@ -287,6 +287,17 @@ _CSS = """
  letter-spacing:.06em;text-transform:uppercase;
  color:var(--sc-warning,#b8732a);text-decoration:none;font-weight:600;}
 .ts-cmp-bucket-clear:hover{text-decoration:underline;}
+/* Sort indicators. The active column's link goes navy/teal-deep
+   so the eye lands on it from the row of headers; the arrow is
+   bigger and renders in teal. */
+.ts-sort-on{color:var(--sc-teal-deep,#0e3d39) !important;
+ font-weight:600;}
+.ts-sort-arrow{color:var(--sc-teal,#155752);font-size:12px;
+ padding-left:1px;}
+.ts-sort-reset{font-family:var(--sc-mono);font-size:10px;
+ letter-spacing:.06em;text-transform:uppercase;font-weight:600;
+ color:var(--sc-warning,#b8732a);margin-left:6px;}
+.ts-sort-reset:hover{text-decoration:underline;}
 .tsw-scaffold{background:var(--sc-paper,#faf6ec);border:1px dashed var(--sc-rule-2,#bfb6a2);
  border-radius:2px;padding:18px 20px;margin:14px 0;}
 .tsw-scaffold h3{font-family:var(--sc-serif);font-size:14.5px;color:var(--sc-navy,#15202b);margin:0 0 6px;}
@@ -1086,14 +1097,22 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
 
     def _sh(label, col, align="left"):
         # Clickable header: sets sort=col and toggles asc/desc when re-clicked.
+        # Wave-12: glyph swapped from the easy-to-miss ▾/▴ pair to
+        # the standard ↓/↑ arrows so the active sort column reads
+        # at a glance. Wrapped in a ts-sort-arrow span so the active
+        # arrow renders in teal rather than the link color.
         nd = "asc" if (sort_key == col and direction == "desc") else "desc"
         keep = {"view": "main", "vertical": vertical, "sort": col, "direction": nd}
         if state:
             keep["state"] = state
         href = "/target-screener?" + "&".join(f"{k}={v}" for k, v in keep.items()) + hide_param
-        arrow = (" ▾" if direction == "desc" else " ▴") if sort_key == col else ""
+        is_sorted = (sort_key == col)
+        arrow_glyph = " ↓" if direction == "desc" else " ↑"
+        arrow = (f'<span class="ts-sort-arrow">{arrow_glyph}</span>'
+                 if is_sorted else "")
         ta = f"text-align:{align};"
-        return (f'<th style="padding:6px 8px;{ta}"><a class="ck-link" href="{href}">'
+        cls = "ck-link ts-sort-on" if is_sorted else "ck-link"
+        return (f'<th style="padding:6px 8px;{ta}"><a class="{cls}" href="{href}">'
                 f'{label}{arrow}</a></th>')
 
     head = (
@@ -1178,15 +1197,51 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
     # provider is queued via the row "+Cmp" links. Sits above the
     # row-cap toolbar so partners always know how many they've staged.
     basket = _compare_basket_banner(vertical, qs)
+    # Wave-12: surface the active sort + direction in the "Showing
+    # X of Y" line so it reads what the table is actually showing.
+    # When sorted by a non-default column, append a "Reset to
+    # default ranking" link so the partner can return to the
+    # quality-desc default with one click.
+    # Honesty: only describe the sort if the sorted column is
+    # actually visible. Sorting by Op margin when every row reports
+    # None (HCRIS hospitals) would otherwise lie about what the
+    # table is showing — silently fall back to the default ranking
+    # text in that case.
+    _sort_label_map = {
+        "name": ("Provider name", True),
+        "location": ("Location", True),
+        "size": (size_label, show_size),
+        "quality": (q_label, show_q),
+    }
+    sort_lbl, sort_visible = _sort_label_map.get(sort_key, (None, False))
+    if sort_key in _sort_label_map and sort_visible:
+        dir_word = "descending" if direction == "desc" else "ascending"
+        sort_clause = (f"sorted by <strong>{sort_lbl}</strong> "
+                       f"({dir_word})")
+        # Build the reset-sort link — preserve every other param.
+        reset_keep = {"view": "main", "vertical": vertical}
+        for k in ("state", "min_quality", "min_size", "ownership",
+                  "hide", "limit", "layer", "compare"):
+            v = _q1(qs, k)
+            if v:
+                reset_keep[k] = v
+        reset_href = "/target-screener?" + "&".join(
+            f"{k}={v}" for k, v in reset_keep.items()
+        )
+        reset_link = (f' <a class="ck-link ts-sort-reset" href="{reset_href}">'
+                      'reset sort</a>')
+    else:
+        sort_clause = f"ranked by {q_label.lower()}"
+        reset_link = ""
     return (
         table_css
         + filter_form
         + basket
         + top_n
         + f'<p class="ck-section-body" style="margin:0 0 8px;">Showing {len(rows)} '
-        f'of {match_txt} {vinfo["label"]} providers{scope} (ranked by '
-        f'{q_label.lower()}; real {vinfo["universe"]} data, "—" = not reported). '
-        f'Capped at {row_limit}.</p>'
+        f'of {match_txt} {vinfo["label"]} providers{scope} ({sort_clause}; '
+        f'real {vinfo["universe"]} data, "—" = not reported). '
+        f'Capped at {row_limit}.{reset_link}</p>'
         '<div style="overflow-x:auto;"><table class="ts-screen-table">'
         f'<thead>{head}</thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
