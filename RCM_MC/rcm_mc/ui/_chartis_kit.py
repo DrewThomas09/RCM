@@ -3267,6 +3267,7 @@ def ck_page_actions(
     back_to_top: bool = True,
     print_btn: bool = True,
     shortcuts: bool = True,
+    palette: bool = True,
     extras_html: str = "",
 ) -> str:
     """One-liner helper that drops the standard page-action affordances
@@ -3293,6 +3294,8 @@ def ck_page_actions(
         parts.append(ck_print_view_button())
     if shortcuts:
         parts.append(ck_shortcuts_hint_button())
+    if palette:
+        parts.append(ck_palette_open_button())
     if extras_html:
         parts.append(extras_html)
     parts.append("</div>")
@@ -3306,6 +3309,51 @@ def ck_page_actions(
         "</style>"
     )
     return "".join(parts)
+
+
+def ck_palette_open_button(label: str = "⌘K Quick jump") -> str:
+    """Compact pill that opens the Cmd-K command palette.
+
+    The palette ships in every chartis_shell render but most partners
+    only discover it by stumbling onto the ⌘K / g+k keyboard
+    shortcuts. This button gives the palette a visible affordance
+    next to the other page actions. Click handler unhides
+    #ck-palette and focuses its input (mirrors what the shell's
+    keyboard handler already does on ⌘K).
+
+    Idempotent — no JS install fires (inline click handler), so this
+    can be emitted any number of times per page.
+    """
+    return (
+        "<style>"
+        ".ck-palette-btn{display:inline-flex;align-items:center;gap:6px;"
+        "padding:5px 11px;font-family:var(--sc-mono,monospace);"
+        "font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;"
+        "font-weight:600;background:#fff;color:var(--sc-text,#2a3a4a);"
+        "border:1px solid var(--sc-rule,#c9c1ac);border-radius:2px;"
+        "cursor:pointer;}"
+        ".ck-palette-btn:hover{border-color:var(--sc-teal,#155752);"
+        "color:var(--sc-teal,#155752);}"
+        ".ck-palette-btn:focus-visible{outline:2px solid var(--sc-teal,#155752);"
+        "outline-offset:1px;}"
+        "</style>"
+        "<script>(function(){"
+        "if(window.__rcmPaletteOpenInstalled)return;"
+        "window.__rcmPaletteOpenInstalled=true;"
+        "document.addEventListener('click',function(e){"
+        "var t=e.target;"
+        "if(!t||!t.matches||!t.matches('[data-rcm-palette-open],"
+        "[data-rcm-palette-open] *'))return;"
+        "e.preventDefault();"
+        "var p=document.getElementById('ck-palette');"
+        "if(p){p.hidden=false;"
+        "var inp=p.querySelector('.ck-palette-input');"
+        "if(inp)setTimeout(function(){inp.focus();},0);}"
+        "});})();</script>"
+        f'<button type="button" class="ck-palette-btn" data-rcm-palette-open '
+        f'aria-label="Open command palette (Cmd+K)">'
+        f'{_esc(label)}</button>'
+    )
 
 
 def ck_shortcuts_hint_button(label: str = "? Shortcuts") -> str:
