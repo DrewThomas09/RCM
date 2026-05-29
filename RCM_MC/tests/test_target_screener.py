@@ -170,20 +170,25 @@ class WorkbenchShellTests(unittest.TestCase):
             len(titles), 4,
             f"expected 4 panels in main view, got {len(titles)}: {titles}")
 
-    def test_merged_universe_panel_has_three_sub_blocks(self):
-        # The merged panel groups three named sub-blocks (universe
-        # selector / active screen summary / pre-set entry points)
-        # behind a single navy header strip. Each sub-block has a
-        # ts-univ-block wrapper so the hairline separators stay
-        # consistent — pin that count.
+    def test_merged_universe_panel_has_four_sub_blocks(self):
+        # The merged panel groups four named sub-blocks (universe
+        # selector / active screen summary + filters / pre-set entry
+        # points / map shading layer) behind a single navy header
+        # strip. Each sub-block has a ts-univ-block wrapper so the
+        # hairline separators stay consistent — pin that count.
+        #
+        # Wave-4 added the Map-layer sub-block (previously inlined at
+        # the top of _render_map, which buried the control inside the
+        # visualization). Now sits at the end of the universe panel
+        # so it flows visually into the map panel below.
         import re
         h = self._render()
         sub_blocks = re.findall(r'<div class="ts-univ-block">', h)
-        self.assertEqual(len(sub_blocks), 3,
-                         f"expected 3 ts-univ-block sub-blocks, got {len(sub_blocks)}")
-        # And the three sub-block eyebrow labels are present.
+        self.assertEqual(len(sub_blocks), 4,
+                         f"expected 4 ts-univ-block sub-blocks, got {len(sub_blocks)}")
         for lbl in ("Universe", "Active screen",
-                    "Or start with a pre-set entry point"):
+                    "Or start with a pre-set entry point",
+                    "Map layer"):
             self.assertIn(f'class="ts-univ-lbl">{lbl}<', h, lbl)
 
     def test_trailing_footer_panel_dropped(self):
@@ -295,6 +300,27 @@ class WorkbenchShellTests(unittest.TestCase):
         groups = re.findall(r'<div class="tsw-group">', h)
         self.assertEqual(len(groups), 2,
                          f"expected 2 group divs, got {len(groups)}")
+
+    # ── 2026-05-28 Wave 4 — map-layer relocation ─────────────────
+    # The layer-selector chips used to render inline at the top of
+    # _render_map (so they sat INSIDE the map panel). Wave-4 lifted
+    # them out into a 4th sub-block of the merged universe panel,
+    # placed at the END of that panel so the partner's eye flows
+    # universe → state filter → entry points → map-layer chips →
+    # map svg directly below.
+
+    def test_layer_chips_now_render_above_map_panel(self):
+        # The "Map layer" eyebrow label is the load-bearing pin from
+        # the pre-existing test_layer_selector_present test — verify
+        # it now sits in the universe panel (before the map panel),
+        # not inside it.
+        h = self._render()
+        layer_idx = h.find('class="ts-univ-lbl">Map layer<')
+        map_panel_idx = h.find("Provider density · click a state to filter")
+        self.assertGreater(layer_idx, 0, "Map layer sub-block missing")
+        self.assertGreater(map_panel_idx, 0, "map panel missing")
+        self.assertLess(layer_idx, map_panel_idx,
+                        "Map layer must render BEFORE the map panel")
 
     def test_tab_bar_subtitles_preserved_in_title_attribute(self):
         # Discoverability — hovering a tab reveals what the dropped

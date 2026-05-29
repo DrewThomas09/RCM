@@ -546,7 +546,10 @@ def _vertical_bar(active_vertical: str, qs: Dict[str, List[str]]) -> str:
             + _vertical_chips_html(active_vertical, qs))
 
 
-def _layer_bar(active_layer: str, qs: Dict[str, List[str]]) -> str:
+def _layer_chips_html(active_layer: str, qs: Dict[str, List[str]]) -> str:
+    """Just the layer chips — no surrounding label/prompt. Used by the
+    map-layer sub-block in the universe panel; previously inlined at
+    the top of _render_map."""
     chips = []
     for ly in _LAYERS:
         if ly["live"]:
@@ -564,9 +567,36 @@ def _layer_bar(active_layer: str, qs: Dict[str, List[str]]) -> str:
                 f'<a class="tsw-vert" href="{ly["href"]}" '
                 f'title="Lives on the geo/market intelligence surface (real data)">'
                 f'{ly["label"]} <span class="u">↗ geo</span></a>')
+    return '<div class="tsw-verticals">' + "".join(chips) + '</div>'
+
+
+def _layer_subblock(qs: Dict[str, List[str]]) -> str:
+    """Full Map-layer sub-block — eyebrow + prompt + chips. Renders in
+    the universe panel right above the map so the partner picks
+    universe → state filter → map shading layer in one continuous
+    read, rather than scrolling down into the map panel to find it.
+    The 'Map layer' label string is the load-bearing pin from
+    test_layer_selector_present."""
+    active_layer = _q1(qs, "layer", "provider_count") or "provider_count"
+    return (
+        '<div class="ts-univ-block">'
+        '<div class="ts-univ-lbl">Map layer</div>'
+        '<div class="ts-univ-prompt">'
+        'Shade the map by a provider-density or market-context layer. '
+        'Real data only — non-live layers link out to the surface that '
+        'owns the real source rather than fabricating shade.'
+        '</div>'
+        + _layer_chips_html(active_layer, qs)
+        + '</div>'
+    )
+
+
+# Back-compat wrapper. Some non-main views may still want a stand-alone
+# bar; preserve the old "Map layer" label + chips shape.
+def _layer_bar(active_layer: str, qs: Dict[str, List[str]]) -> str:
     return ('<div style="font-family:var(--sc-mono);font-size:9px;letter-spacing:.12em;'
             'text-transform:uppercase;color:var(--sc-text-faint,#8b94a0);margin:2px 0 5px;">'
-            'Map layer</div><div class="tsw-verticals">' + "".join(chips) + '</div>')
+            'Map layer</div>' + _layer_chips_html(active_layer, qs))
 
 
 def _render_map(vertical: str, qs: Dict[str, List[str]]) -> str:
@@ -628,7 +658,13 @@ def _render_map(vertical: str, qs: Dict[str, List[str]]) -> str:
         filt = (f'<p class="ck-section-body" style="margin:8px 0 0;">Filtered to '
                 f'<strong>{sel}</strong> · <a class="ck-link" href="{clear}">clear '
                 f'state filter</a>.</span></p>')
-    return (_layer_bar(layer_key, qs) + summary + map_html + listener + filt)
+    # 2026-05-28 wave-4: layer bar moved up into the universe panel
+    # (4th sub-block) so the partner picks universe → state filter →
+    # map shading layer in one continuous read instead of scrolling
+    # down into the visualization to find the shading control. The
+    # map panel now contains just the summary + svg + click listener
+    # + filter banner.
+    return summary + map_html + listener + filt
 
 
 def _fmt_q(row: Dict) -> str:
@@ -1137,6 +1173,13 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
         '</div>'
         f'<div class="ts-modes">{cards}</div>'
         '</div>'
+        # ── Sub-block 4: map shading layer ──────────────────────
+        # Sits at the END of the panel so it visually flows into the
+        # map panel directly below. Previously inline at the top of
+        # _render_map, which buried the control inside the
+        # visualization — partners had to scroll into the map to
+        # find it.
+        + _layer_subblock(qs)
     )
 
     return (
