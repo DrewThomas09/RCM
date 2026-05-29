@@ -2456,6 +2456,12 @@ def render_target_screener(qs: Optional[Dict[str, List[str]]] = None,
     # final element repeated what the partner had already read
     # twice and ended the page on chrome instead of on the
     # next action.
-    body = title + source_purpose + tab_bar + screen
+    # Wave-I: append ck_page_actions (Print / Shortcuts / ⌘K / Glossary
+    # / Back-to-top). share=False because the universe panel already
+    # has its own Copy share link button on the Active-screen eyebrow
+    # row (wave-16). Idempotent JS guards prevent any double-binding.
+    from ._chartis_kit import ck_page_actions
+    body = (title + source_purpose + tab_bar + screen
+            + ck_page_actions(share=False))
     return chartis_shell(body, "Target Screener", active_nav="/target-screener",
                          extra_css=_CSS)
