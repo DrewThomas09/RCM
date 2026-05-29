@@ -263,6 +263,30 @@ _CSS = """
 .ts-refine[open] .ts-refine-summary{border-bottom:1px solid var(--sc-rule,#c9c1ac);
  color:var(--sc-text,#2a3a4a);}
 .ts-refine-form{padding:10px 12px 12px;}
+/* Compare-basket banner — surfaces the count of providers queued
+   via row '+Cmp' actions so the partner can see what they've staged
+   without leaving for the Compare screen. Hidden when the basket
+   is empty (banner not rendered server-side). */
+.ts-cmp-bucket{display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+ margin:0 0 8px;padding:7px 12px;background:var(--sc-bone,#ece5d6);
+ border:1px solid var(--sc-rule,#c9c1ac);
+ border-left:3px solid var(--sc-teal,#155752);
+ border-radius:2px;}
+.ts-cmp-bucket-lbl{font-family:var(--sc-mono);font-size:9.5px;
+ letter-spacing:.12em;text-transform:uppercase;
+ color:var(--sc-teal,#155752);font-weight:700;}
+.ts-cmp-bucket-count{font-family:var(--sc-mono);font-size:11.5px;
+ font-variant-numeric:tabular-nums;color:var(--sc-text,#2a3a4a);
+ font-weight:600;}
+.ts-cmp-bucket-go{margin-left:auto;font-family:var(--sc-mono);font-size:10.5px;
+ letter-spacing:.08em;text-transform:uppercase;font-weight:600;
+ padding:4px 10px;text-decoration:none;color:#fff;
+ background:var(--sc-teal,#155752);border-radius:2px;}
+.ts-cmp-bucket-go:hover{background:var(--sc-teal-deep,#0e3d39);}
+.ts-cmp-bucket-clear{font-family:var(--sc-mono);font-size:10px;
+ letter-spacing:.06em;text-transform:uppercase;
+ color:var(--sc-warning,#b8732a);text-decoration:none;font-weight:600;}
+.ts-cmp-bucket-clear:hover{text-decoration:underline;}
 .tsw-scaffold{background:var(--sc-paper,#faf6ec);border:1px dashed var(--sc-rule-2,#bfb6a2);
  border-radius:2px;padding:18px 20px;margin:14px 0;}
 .tsw-scaffold h3{font-family:var(--sc-serif);font-size:14.5px;color:var(--sc-navy,#15202b);margin:0 0 6px;}
@@ -744,6 +768,59 @@ def _fmt_q(row: Dict) -> str:
     return f"{v:.1%}" if row.get("q_pct") else (f"{v:g}")
 
 
+def _compare_basket_banner(vertical: str,
+                           qs: Dict[str, List[str]]) -> str:
+    """Render a small banner showing how many providers are queued for
+    the /compare view, plus a one-click 'View comparison' link.
+
+    Pre-existing pain: clicking '+Cmp' on a row appended the CCN to
+    the bucket (the ?compare= param), but the partner couldn't see
+    what was in the bucket without leaving for the Compare screen.
+    Easy to lose track of how many they'd queued.
+
+    Renders nothing when the bucket is empty so the banner stays out
+    of the way on a clean page load. When non-empty: shows the count,
+    a 'View comparison →' link, and a 'Clear basket' link.
+    """
+    import html as _h
+    cur = [c for c in _q1(qs, "compare").split(",") if c]
+    if not cur:
+        return ""
+    # Preserve every other relevant param when sending the partner to
+    # the Compare view — they can still come back to this main view
+    # by removing ?view= from the URL or clicking the workbench tab.
+    base = {"view": "compare", "vertical": vertical}
+    for k in ("state", "sort", "direction", "min_quality", "min_size",
+              "ownership", "hide", "limit", "layer"):
+        v = _q1(qs, k)
+        if v:
+            base[k] = v
+    base["compare"] = ",".join(cur)
+    cmp_href = "/target-screener?" + "&".join(
+        f"{k}={_h.escape(str(v))}" for k, v in base.items()
+    )
+    # Clear basket = same URL minus compare=
+    clear_base = dict(base)
+    clear_base.pop("compare", None)
+    clear_base["view"] = "main"  # stay on main when clearing
+    clear_href = "/target-screener?" + "&".join(
+        f"{k}={_h.escape(str(v))}" for k, v in clear_base.items()
+    )
+    plural = "" if len(cur) == 1 else "s"
+    return (
+        '<div class="ts-cmp-bucket" role="status" '
+        'aria-label="Compare basket — current selection">'
+        '<span class="ts-cmp-bucket-lbl">Compare basket</span>'
+        f'<span class="ts-cmp-bucket-count">{len(cur)} '
+        f'provider{plural} queued</span>'
+        f'<a class="ts-cmp-bucket-go" href="{cmp_href}">'
+        'View comparison &rarr;</a>'
+        f'<a class="ts-cmp-bucket-clear" href="{clear_href}">'
+        'Clear basket</a>'
+        '</div>'
+    )
+
+
 def _topn_toggle_html(vertical: str, qs: Dict[str, List[str]],
                       active_limit: int) -> str:
     """Render the 10/25/50/100/150 row-cap chip strip plus the inline
@@ -956,12 +1033,13 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
     size_label = size_label0
     q_label = q_label0
     if not rows:
-        # Render the top-N toggle in the empty-state path too — the
-        # partner may want to dial the cap back up after relaxing a
-        # filter, and the toggle's chip-URLs already preserve all
-        # the other params.
+        # Render the top-N toggle + compare-basket banner in the
+        # empty-state path too — the partner may want to dial the
+        # cap back up after relaxing a filter, and the basket should
+        # remain visible while they iterate filters.
         top_n = _topn_toggle_html(vertical, qs, row_limit)
-        return (filter_form + top_n
+        basket = _compare_basket_banner(vertical, qs)
+        return (filter_form + basket + top_n
                 + f'<p class="ck-section-body">No {vinfo["label"]} '
                 f'providers match these filters (of {total_universe:,} in '
                 f'{("scope " + state) if state else "the universe"}). Relax a '
@@ -1096,9 +1174,14 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
     # current vertical / state / sort / direction / filters / hide
     # params; only flips ?limit=.
     top_n = _topn_toggle_html(vertical, qs, row_limit)
+    # Wave-11: compare-basket banner — visible only when at least one
+    # provider is queued via the row "+Cmp" links. Sits above the
+    # row-cap toolbar so partners always know how many they've staged.
+    basket = _compare_basket_banner(vertical, qs)
     return (
         table_css
         + filter_form
+        + basket
         + top_n
         + f'<p class="ck-section-body" style="margin:0 0 8px;">Showing {len(rows)} '
         f'of {match_txt} {vinfo["label"]} providers{scope} (ranked by '

@@ -467,6 +467,53 @@ class WorkbenchShellTests(unittest.TestCase):
             "States &amp; territories" in h or "States & territories" in h,
             "States & territories KPI tile should render unfiltered")
 
+    # ── 2026-05-28 Wave 11 — compare-basket banner ───────────────
+    # Pre-existing pain: clicking '+Cmp' on a row appended the CCN
+    # to the ?compare= bucket, but the partner couldn't see what
+    # was in the bucket without leaving the screen. Now: a small
+    # banner above the table shows the count + a one-click 'View
+    # comparison' link + a 'Clear basket' link. Hidden when empty.
+
+    def test_compare_basket_banner_hidden_when_empty(self):
+        h = self._render()
+        self.assertNotIn('<div class="ts-cmp-bucket"', h)
+
+    def test_compare_basket_banner_one_provider_singular(self):
+        h = self._render(compare="010001")
+        self.assertIn('<div class="ts-cmp-bucket"', h)
+        self.assertIn("1 provider queued", h)
+        self.assertIn("View comparison", h)
+
+    def test_compare_basket_banner_multiple_providers_plural(self):
+        h = self._render(compare="010001,020001,030001")
+        self.assertIn("3 providers queued", h)
+
+    def test_compare_basket_view_link_carries_ccns_and_view(self):
+        import re
+        h = self._render(compare="010001,020001")
+        m = re.search(
+            r'class="ts-cmp-bucket-go" href="([^"]+)"', h)
+        self.assertIsNotNone(m, "View comparison link missing")
+        href = m.group(1)
+        self.assertIn("view=compare", href)
+        # Either URL-encoded or raw comma is fine.
+        self.assertTrue(
+            "compare=010001%2C020001" in href
+            or "compare=010001,020001" in href,
+            f"CCN bucket lost from view link: {href}",
+        )
+
+    def test_compare_basket_clear_link_drops_bucket(self):
+        import re
+        h = self._render(compare="010001,020001")
+        m = re.search(
+            r'class="ts-cmp-bucket-clear" href="([^"]+)"', h)
+        self.assertIsNotNone(m, "Clear basket link missing")
+        clear_href = m.group(1)
+        # Clear basket drops compare= and stays on main view.
+        self.assertNotIn("compare=", clear_href)
+        self.assertIn("view=main", clear_href)
+
     def test_state_filtered_kpis_describe_state_scope(self):
         h = self._render(state="TX")
         # Sub-label says 'in TX' not 'in this universe'.
