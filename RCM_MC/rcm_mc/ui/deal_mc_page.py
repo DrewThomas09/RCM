@@ -662,6 +662,10 @@ def render_deal_mc_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             italic_word="packet",
         )
     )
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body, f"Deal MC — {scenario_name}",
         active_nav="/diligence/deal-mc",

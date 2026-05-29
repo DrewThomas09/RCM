@@ -251,6 +251,10 @@ def render_bayesian_profile(
     )
     body = f'{page_title}{explainer_html}{kpis}{missing_warning}{estimates_section}{method}{actions}{next_up}'
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body,
         f"Bayesian Calibration — {_html.escape(hospital_name)}",

@@ -567,6 +567,10 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
     geo_ctx = state_context_panel(state)
     body = deal_ribbon + page_title + ci_explainer + f'{kpis}{percentile_section}{gap_section}{peer_section}{geo_ctx}{next_up}'
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body,
         f"Competitive Intelligence — {_html.escape(name)}",

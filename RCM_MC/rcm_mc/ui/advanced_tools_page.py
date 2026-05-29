@@ -533,6 +533,10 @@ def render_trend_forecast(deal_id: str, deal_name: str, trends: List[Dict[str, A
         )
     )
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, f"Trend Forecast — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"{improving} improving, {declining} declining across {len(trends)} metrics")

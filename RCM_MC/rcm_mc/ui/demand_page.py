@@ -431,6 +431,10 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
     )
     body = f'{head}{lead_anchor}{kpis}{prevalence_section}{geo_ctx}{stick_section}{elas_section}{tw_section}{interp}{actions}{next_up}'
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body, f"Demand Analysis — {name}",
         active_nav="/market-data/map",
