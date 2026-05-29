@@ -1189,6 +1189,20 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         show_size = False
     if not _has_any("q"):
         show_q = False
+    # Wave-18: if every visible row carries the same Source string
+    # (the universal case in a single-vertical screen — e.g. every
+    # hospital row says 'CMS HCRIS'), drop the Source column and
+    # surface the source once in the status line instead. Saves a
+    # full table column of horizontal real estate without losing
+    # the provenance signal.
+    unique_sources = {r.get("source", "") for r in rows if r.get("source")}
+    uniform_source = (
+        unique_sources.pop() if len(unique_sources) == 1 else None
+    )
+    if uniform_source and show_src:
+        show_src = False
+    else:
+        uniform_source = None
     hide_param = ("&hide=" + ",".join(sorted(hide))) if hide else ""
 
     def _sh(label, col, align="left"):
@@ -1333,6 +1347,13 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
     else:
         sort_clause = f"ranked by {q_label.lower()}"
         reset_link = ""
+    # Wave-18: when the Source column was collapsed because every row
+    # carried the same value, surface the source string once in the
+    # status line instead so the provenance signal isn't lost.
+    source_clause = (
+        f' Source: <strong>{_h.escape(uniform_source)}</strong>.'
+        if uniform_source else ""
+    )
     return (
         table_css
         + filter_form
@@ -1340,7 +1361,7 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         + top_n
         + f'<p class="ck-section-body" style="margin:0 0 8px;">Showing {len(rows)} '
         f'of {match_txt} {vinfo["label"]} providers{scope} ({sort_clause}; '
-        f'real {vinfo["universe"]} data, "—" = not reported). '
+        f'real {vinfo["universe"]} data, "—" = not reported).{source_clause} '
         f'Capped at {row_limit}.{reset_link}</p>'
         '<div style="overflow-x:auto;"><table class="ts-screen-table">'
         f'<thead>{head}</thead><tbody>{"".join(trs)}'
