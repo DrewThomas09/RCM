@@ -84,4 +84,8 @@ def render_geo_metrics(params=None) -> str:
     Back to the <a href="/geo-intel" style="color:{ac};text-decoration:none">Geographic Intelligence</a> hub.
   </p>
 </div>"""
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, "Geographic Intelligence — Metrics", active_nav="/geo-metrics")

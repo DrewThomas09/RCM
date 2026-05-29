@@ -353,6 +353,10 @@ def render_esg_dashboard(params: dict = None) -> str:
         purpose="Summarize ESG / sustainability posture.",
         universe="illustrative", source="No ESG metric source",
         next_action="Define a real ESG metric source or defer") + body
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, "ESG Dashboard", active_nav="/esg-dashboard",
         editorial_intro={
             "eyebrow": "ESG DASHBOARD",

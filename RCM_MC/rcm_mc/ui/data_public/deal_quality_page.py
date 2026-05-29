@@ -395,6 +395,10 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
     body = (page_title + ck_illustrative_note("deal-quality grades (illustrative seed corpus)")
             + kpis + dist_panel + filter_panel + table_html + page_links + method_panel)
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body,
         title="Deal Quality",

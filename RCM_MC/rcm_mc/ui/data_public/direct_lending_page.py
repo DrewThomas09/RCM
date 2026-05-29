@@ -228,6 +228,10 @@ def render_direct_lending(params: dict = None) -> str:
   </div>
 </div>"""
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, "Direct Lending", active_nav="/direct-lending",
         editorial_intro={
             "eyebrow": "DIRECT LENDING",

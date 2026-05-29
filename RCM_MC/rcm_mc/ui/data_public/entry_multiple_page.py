@@ -272,6 +272,10 @@ def render_entry_multiple() -> str:
 </div>"""
 
     from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(_ckn("entry-multiple model (illustrative defaults; computes off your inputs)") + body, "Entry Multiple Analysis", active_nav="/entry-multiple",
                          subtitle=f"{len(has_mult)} deals with multiple data",
         editorial_intro={

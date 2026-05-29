@@ -96,4 +96,8 @@ def render_geo_map(params: Dict = None) -> str:
     or see every metric's source on <a href="/geo-metrics" style="color:{ac};text-decoration:none">Metrics &amp; Sources &rarr;</a>.
   </p>
 </div>"""
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, "Geo Map", active_nav="/geo-map")
