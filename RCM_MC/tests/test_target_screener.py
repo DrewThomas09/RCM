@@ -241,6 +241,52 @@ class WorkbenchShellTests(unittest.TestCase):
             h.replace("hospitals", "snf"),  # canonical clear-all shape
         )
 
+    # ── 2026-05-28 Wave 2 — universe chip provider counts ────────
+    # Each vertical chip now carries a real CMS provider-count badge
+    # so the partner can compare scale across universes at a glance
+    # without clicking into each. Geo verticals (provider_supply,
+    # market) have no provider universe → no count rendered.
+
+    def test_universe_chip_has_provider_count_badge(self):
+        # Live verticals carry a numeric count in a <span class="n">.
+        h = self._render()
+        # The active vertical (hospitals) and at least one inactive
+        # vertical should both carry counts in the chip strip.
+        self.assertIn('<span class="n">', h)
+        import re
+        # Find every count badge in the chip strip.
+        badges = re.findall(r'<span class="n">([\d,]+)</span>', h)
+        # 7 live verticals (hospitals, HHA, hospice, SNF, dialysis,
+        # IRF, LTCH) each carry a count; provider_supply and market
+        # are geo screens with no provider universe.
+        self.assertGreaterEqual(
+            len(badges), 7,
+            f"expected at least 7 chip-count badges, got {len(badges)}")
+        # Each badge is a positive number (no fabricated zeros).
+        for b in badges:
+            self.assertGreater(int(b.replace(",", "")), 0, b)
+
+    def test_geo_verticals_have_no_count_badge_on_their_chip(self):
+        # The provider_supply and market chips render WITHOUT a
+        # numeric count — those verticals screen geographies, not
+        # providers. Inject nothing rather than fabricating a value.
+        import re
+        h = self._render()
+        # The chip HTML pattern includes the universe label and an
+        # optional .n span. Extract the chip block for each geo
+        # vertical and assert no .n span inside.
+        for slug, label in (("provider_supply", "Provider Supply"),
+                            ("market", "Market")):
+            chip_blocks = re.findall(
+                rf'<a class="tsw-vert[^"]*" href="[^"]*vertical={slug}[^"]*"[^>]*>'
+                r'(.*?)</a>',
+                h, re.DOTALL)
+            self.assertEqual(len(chip_blocks), 1,
+                             f"{slug} chip not found uniquely")
+            self.assertNotIn(
+                'class="n"', chip_blocks[0],
+                f"{label} chip should not carry a provider-count badge")
+
     def test_chip_remove_link_drops_only_that_param(self):
         import re
         h = self._render(state="TX", min_quality="4")
