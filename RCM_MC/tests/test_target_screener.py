@@ -481,6 +481,33 @@ class WorkbenchShellTests(unittest.TestCase):
     # 'reset sort' link returns to the default quality-desc ranking
     # in one click while preserving every other current param.
 
+    # ── 2026-05-28 Wave 13 — zero-match placeholder ──────────────
+    # When the client-side search filter hides every row, the table
+    # used to render as an empty box with no feedback. Now a hidden
+    # <tr data-ts-empty> placeholder lives inside <tbody> and the
+    # JS apply() handler reveals it with a 'No providers match X'
+    # message + ESC hint when shown == 0.
+
+    def test_no_match_placeholder_row_renders_hidden(self):
+        h = self._render()
+        # Server renders the row but hidden so it never flashes
+        # during the unfiltered state.
+        self.assertIn(
+            '<tr data-ts-empty style="display:none;">', h)
+
+    def test_no_match_placeholder_message_has_kbd_hint(self):
+        h = self._render()
+        # The Esc hint advertises the shortcut wave-9 wired.
+        self.assertIn("Press <kbd>Esc</kbd> to clear", h)
+
+    def test_no_match_js_toggles_placeholder(self):
+        # The apply() function in _TS_SEARCH_JS reads the empty
+        # marker and toggles display based on shown.
+        h = self._render()
+        self.assertIn("tr[data-ts-empty]", h)
+        # And stamps the query into the rendered message.
+        self.assertIn("data-ts-empty-msg", h)
+
     def test_default_sort_says_ranked_by_no_reset_link(self):
         h = self._render()
         self.assertIn("ranked by", h)

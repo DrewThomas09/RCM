@@ -298,6 +298,24 @@ _CSS = """
  letter-spacing:.06em;text-transform:uppercase;font-weight:600;
  color:var(--sc-warning,#b8732a);margin-left:6px;}
 .ts-sort-reset:hover{text-decoration:underline;}
+/* No-match placeholder revealed by the client-side filter when
+   every visible row is hidden. Spans the full table width via
+   colspan from the renderer; kept inside <tbody> so it inherits
+   sticky-thead scroll behaviour. */
+.ts-empty-cell{padding:32px 18px;text-align:center;
+ background:var(--sc-paper,#faf6ec);}
+.ts-empty-msg{font-family:var(--sc-serif);font-size:14.5px;
+ color:var(--sc-text,#2a3a4a);line-height:1.5;
+ margin-bottom:6px;}
+.ts-empty-msg span{font-family:var(--sc-mono);font-weight:600;
+ color:var(--sc-warning,#b8732a);}
+.ts-empty-hint{font-family:var(--sc-mono);font-size:11px;
+ letter-spacing:.04em;color:var(--sc-text-dim,#6a7480);}
+.ts-empty-hint kbd{display:inline-block;padding:1px 6px;
+ background:#fff;border:1px solid var(--sc-rule,#c9c1ac);
+ border-bottom-width:2px;border-radius:2px;
+ font-family:var(--sc-mono);font-size:10px;font-weight:600;
+ color:var(--sc-navy,#15202b);}
 .tsw-scaffold{background:var(--sc-paper,#faf6ec);border:1px dashed var(--sc-rule-2,#bfb6a2);
  border-radius:2px;padding:18px 20px;margin:14px 0;}
 .tsw-scaffold h3{font-family:var(--sc-serif);font-size:14.5px;color:var(--sc-navy,#15202b);margin:0 0 6px;}
@@ -916,6 +934,21 @@ _TS_SEARCH_JS = """
     if (c){
       c.textContent = q ? (shown + ' of ' + rows.length) : '';
     }
+    // Wave-13: if the client-side filter has hidden every row,
+    // reveal the data-ts-empty placeholder row and stamp it with
+    // the current query so the message reads
+    // "No matches for 'foobar'". Otherwise hide it. The placeholder
+    // is server-rendered as a hidden <tr> inside <tbody>, so this
+    // is purely a display toggle.
+    var empty = document.querySelector('tr[data-ts-empty]');
+    if (empty){
+      var noMatch = (q.length > 0 && shown === 0);
+      empty.style.display = noMatch ? '' : 'none';
+      if (noMatch){
+        var msg = empty.querySelector('[data-ts-empty-msg]');
+        if (msg) msg.textContent = q;
+      }
+    }
   }
   document.addEventListener('input', function(e){
     var t = e.target;
@@ -1115,6 +1148,10 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         return (f'<th style="padding:6px 8px;{ta}"><a class="{cls}" href="{href}">'
                 f'{label}{arrow}</a></th>')
 
+    # Wave-13: column count for the no-match placeholder row's
+    # colspan. Provider + Location + Open always render; Ownership /
+    # Size / Quality / Source add one each when visible.
+    n_cols = 3 + sum((show_own, show_size, show_q, show_src))
     head = (
         '<tr style="border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
         + _sh("Provider", "name")
@@ -1243,7 +1280,23 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         f'real {vinfo["universe"]} data, "—" = not reported). '
         f'Capped at {row_limit}.{reset_link}</p>'
         '<div style="overflow-x:auto;"><table class="ts-screen-table">'
-        f'<thead>{head}</thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<thead>{head}</thead><tbody>{"".join(trs)}'
+        # Wave-13: hidden placeholder row revealed by the JS filter
+        # when every visible row is filtered out. Lives inside the
+        # tbody so it inherits the table's column structure and
+        # the sticky-thead scroll behaviour.
+        f'<tr data-ts-empty style="display:none;">'
+        f'<td colspan="{n_cols}" class="ts-empty-cell">'
+        '<div class="ts-empty-msg">'
+        'No providers match '
+        '“<span data-ts-empty-msg></span>”'
+        '</div>'
+        '<div class="ts-empty-hint">'
+        'Press <kbd>Esc</kbd> to clear the search, or try a CCN, city, '
+        'or state.'
+        '</div>'
+        '</td></tr>'
+        '</tbody></table></div>'
     )
 
 
