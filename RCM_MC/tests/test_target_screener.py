@@ -448,6 +448,37 @@ class WorkbenchShellTests(unittest.TestCase):
     # (standard GitHub / Slack / Linear pattern). ESC inside the
     # search input clears the value, re-runs the filter, blurs.
 
+    # ── 2026-05-28 Wave 10 — state-scoped KPI tiles ──────────────
+    # Pre-existing pain: the KPI strip in the Active-screen sub-block
+    # always described the WHOLE universe ('6,123 providers / 50
+    # states') even when the partner had filtered to one state — so
+    # the headline numbers were lying about what the table below
+    # was actually showing. Wave-10 rescopes _universe_kpis when
+    # state= is set: counts and sub-labels reflect the state, and
+    # the 'States & territories' tile is dropped (rendering '1'
+    # adds no information).
+
+    def test_unfiltered_kpis_describe_whole_universe(self):
+        h = self._render()
+        self.assertIn("in this universe", h)
+        # The 'States & territories' tile is present without a state
+        # filter.
+        self.assertTrue(
+            "States &amp; territories" in h or "States & territories" in h,
+            "States & territories KPI tile should render unfiltered")
+
+    def test_state_filtered_kpis_describe_state_scope(self):
+        h = self._render(state="TX")
+        # Sub-label says 'in TX' not 'in this universe'.
+        self.assertIn("in TX", h)
+        # The States & territories tile is dropped — '1' is no signal.
+        # (The whole-universe sub-label is also gone.)
+        self.assertNotIn("in this universe", h)
+        # Sub-labels on the median/coverage tiles mark them as
+        # state-scoped so the partner can't confuse them with
+        # universe-wide medians.
+        self.assertIn("TX-only", h)
+
     def test_slash_hotkey_handler_in_installed_js(self):
         h = self._render()
         # The keydown listener for '/' is present in the inlined JS.
