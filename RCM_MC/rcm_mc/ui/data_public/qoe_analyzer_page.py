@@ -5,7 +5,7 @@ from typing import Dict
 
 from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_kpi_block, ck_provenance_tooltip, ck_value_anchor,
-    ck_illustrative_note,
+    ck_illustrative_note, ck_page_actions,
 )
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 

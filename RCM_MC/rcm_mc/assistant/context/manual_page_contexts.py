@@ -1159,36 +1159,59 @@ _MANUAL: List[PageContext] = [
         "/diligence/risk-workbench", "Risk Workbench",
         short_description="A nine-panel risk panorama — runs the Tier-1/2/3 "
         "diligence engines against the supplied deal metadata and shows a "
-        "severity band per panel.",
+        "severity band per panel. DATA REQUIRED: supply deal metadata via "
+        "query params or upload your risk-register template "
+        "(risk_register_template.csv).",
         primary_purpose="Pressure-test a deal's structural risks (regulatory, "
-        "real-estate, physician, cyber, MA, labor, patient-pay) in one view.",
-        common_questions=["Where does this deal carry structural risk?",
-                         "What does the Steward precedent look like here?"],
+        "real-estate, physician, cyber, MA, labor, patient-pay) in one view; "
+        "upload your risk-register to activate the missing panels.",
+        common_questions=[
+            "Where does this deal carry structural risk?",
+            "What does the Steward precedent look like here?",
+            "What inputs does each risk panel need?",
+            "Why is this panel showing 'not supplied'?",
+            "What's the severity band scale (GREEN / YELLOW / RED / CRITICAL)?",
+            "How do I add risks to the register?",
+            "Can I export the 9-panel view for IC?",
+        ],
         inputs=["Deal metadata via query params (states, specialty, legal "
                 "structure, landlord, lease terms, etc.); panels without "
-                "inputs render 'not supplied' rather than fabricating numbers."],
+                "inputs render 'not supplied' rather than fabricating numbers. "
+                "Or upload a full risk register via /import "
+                "(risk_register_template.csv)."],
         outputs=["Per page labels: a metadata strip and a 9-panel grid, each "
                  "panel showing a severity band (GREEN / YELLOW / RED / "
                  "CRITICAL) with a headline number."],
         key_metrics=["Per-panel severity band", "Risk score"],
         data_sources=["The supplied deal metadata, run through the diligence "
-                      "engines; a hardcoded Steward replay in demo mode."],
+                      "engines; OR you can upload a risk register via "
+                      "/import for the per-panel deep-dive. A hardcoded "
+                      "Steward replay is available in demo mode "
+                      "(?demo=steward)."],
         model_logic_summary="Each panel runs its own engine on the metadata "
         "and emits a severity band. No CCD/claims data is required. Exact "
         "per-engine rules: see risk_workbench_page.py — treat specifics as "
         "needing source confirmation.",
         why_it_matters="Forces the structural downside into view before IC.",
-        diligence_use_cases=["A fast structural-risk read across many vectors "
-                            "early in diligence."],
+        diligence_use_cases=[
+            "A fast structural-risk read across many vectors "
+            "early in diligence.",
+            "IC preparation: cite the per-panel severity bands.",
+            "Lender discussion: walk through the structural exposures.",
+        ],
         interpretation_guidance=[
             "Severity bands are rule-derived signals on the inputs, not a "
             "verdict — should be verified before IC use.",
-            "Panels with no inputs say 'not supplied'; absence is not safety.",
+            "Panels with no inputs say 'not supplied'; absence is not safety. "
+            "Upload the missing data via /import to activate them.",
+            "?demo=steward replays the Steward 2016 pattern as a precedent "
+            "— do NOT cite as a current deal.",
         ],
         limitations=["Runs on metadata only; quality depends on what's "
                      "supplied. A clean panorama is not proof of no risk."],
         related_routes=["/diligence/payer-stress", "/diligence/covenant-stress",
                        "/bear-cases"],
+        source_confidence=SourceConfidence.DOCUMENTED,
         notes_for_assistant=[
             "?demo=steward is a SPECIFIC named historical replay (the Steward "
             "Health 2016 pattern), not a generic example dataset — figures in "
@@ -1197,17 +1220,92 @@ _MANUAL: List[PageContext] = [
         ],
         metric_ids=["risk_score"],
         data_source_ids=["model_output", "demo_fixture"],
-        source_confidence=SourceConfidence.INFERRED_FROM_PAGE,
         data_confidence=DataConfidence.MIXED,
     ),
     _ctx(
         "/diligence/payer-stress", "Payer Stress",
         short_description="Stress the deal's economics against payer-mix / "
-        "reimbursement shifts.",
+        "reimbursement shifts — what happens to EBITDA if commercial rates "
+        "cut 5%, Medicare Advantage penetration jumps 10pts, or the largest "
+        "commercial contract walks.",
         primary_purpose="Quantify sensitivity to payer concentration and "
-        "rate pressure.",
-        why_it_matters="Payer mix is a top driver of healthcare deal risk.",
-        related_routes=["/payer-intelligence", "/diligence/risk-workbench"],
+        "rate pressure so partners can size the downside before IC and "
+        "structure protections (rate floors, term length, MFN clauses).",
+        common_questions=[
+            "What happens to EBITDA if the largest commercial payer "
+            "cuts rates 5%?",
+            "How concentrated is the payer mix?",
+            "What's the commercial vs Medicare vs Medicaid exposure?",
+            "Which payers are the biggest single-payer concentration risk?",
+            "What's the MA penetration risk in this market?",
+            "How does this payer mix compare to peer hospitals?",
+            "What protections should we ask for given this concentration?",
+        ],
+        inputs=[
+            "Deal payer-contract schedule (payer, contract term, "
+            "rate-base index, recent renewal).",
+            "Optional: claims volume by payer for weighting.",
+            "Scenario shock parameters (rate cut %, MA shift, "
+            "single-payer walkout).",
+        ],
+        outputs=[
+            "Per-payer share of net revenue with concentration index.",
+            "Stress-scenario EBITDA waterfall under each shock.",
+            "Verdict band (PASS / CAUTION / WARNING / FAIL) per "
+            "scenario based on covenant headroom impact.",
+            "Comparable-deal cross-check on similar payer mixes.",
+        ],
+        key_metrics=[
+            "Payer concentration (Herfindahl)", "Commercial exposure %",
+            "Medicare exposure %", "Medicaid exposure %",
+            "Stress-scenario EBITDA delta",
+            "Verdict band per scenario",
+        ],
+        data_sources=[
+            "Payer contracts (target supplied)",
+            "Benchmark prior (commercial rate-cut frequencies from corpus)",
+            "Model output (covenant-headroom impact per scenario)",
+        ],
+        model_logic_summary=(
+            "Loads the payer mix, computes shares of net revenue. "
+            "For each scenario, applies the shock to per-payer "
+            "revenue, recomputes EBITDA assuming variable-cost "
+            "ratio holds, computes covenant ratio under stress, "
+            "compares to the threshold, assigns verdict band. "
+            "Concentration uses Herfindahl on revenue shares; >0.25 "
+            "= high concentration. Logic in finance/payer_stress.py."
+        ),
+        why_it_matters="Payer mix is a top driver of healthcare deal "
+        "risk. A 60% commercial payer mix looks beautiful at LOI "
+        "and terrible if the largest commercial walks. Pre-IC "
+        "stress testing sizes that downside.",
+        diligence_use_cases=[
+            "Pre-IC: confirm worst-case payer scenario still clears "
+            "covenant.",
+            "Lender discussion: cite the stress-test headroom impact.",
+            "Contract negotiation: size the MFN / rate-floor protection.",
+        ],
+        interpretation_guidance=[
+            "Concentration uses revenue, not lives — payer rates "
+            "vary, so high lives don't always mean high revenue share.",
+            "MA penetration risk is market-level, not deal-level — "
+            "shocks reflect general MA trends, not specific contracts.",
+            "Variable-cost assumption breaks at extreme shocks; "
+            "FAIL scenarios should be cross-checked with operating "
+            "leverage modeling.",
+            "Stress is a snapshot — multi-year contracts may push "
+            "the impact 2-3 years out, not immediately.",
+        ],
+        limitations=[
+            "Shock parameters are deterministic, not probabilistic "
+            "— treats a 5% cut as certain, not as one of many.",
+            "Does not model offsetting volume / mix shifts that "
+            "often accompany rate changes.",
+            "Payer-contract data is only as good as the schedule "
+            "provided.",
+        ],
+        related_routes=["/payer-intelligence", "/diligence/risk-workbench",
+                        "/payer-stress", "/diligence/covenant-stress"],
         metric_ids=["payer_mix", "commercial_payer_exposure",
                     "medicare_exposure", "medicaid_exposure",
                     "payer_stress_impact"],
@@ -2241,11 +2339,79 @@ _MANUAL: List[PageContext] = [
     ),
     _ctx(
         "/data", "Data Catalog",
-        short_description="Catalog of the public/CMS datasets feeding the "
-        "platform.",
-        primary_purpose="Document what external data is loaded and where it "
-        "comes from.",
-        related_routes=["/methodology"],
+        short_description="Catalog of every public / CMS / commercial "
+        "dataset feeding the platform — name, source URL, refresh "
+        "cadence, last-loaded timestamp, row count, license terms.",
+        primary_purpose="Document what external data is loaded, where "
+        "it comes from, when it was last refreshed, and what it costs "
+        "partners to cite — the platform's source-of-truth provenance "
+        "page.",
+        common_questions=[
+            "What data is loaded on the platform?",
+            "When was HCRIS last refreshed?",
+            "What's the source URL for the CMS Care Compare data?",
+            "What's the refresh cadence for each dataset?",
+            "Can I cite this dataset for an IC packet?",
+            "Are there license restrictions on any dataset?",
+            "How big is each dataset (rows / GB)?",
+            "Which datasets are stale?",
+        ],
+        inputs=[
+            "data_source_status table (refresh history per dataset).",
+            "Per-dataset registry entry (source URL, cadence, license).",
+        ],
+        outputs=[
+            "Per-dataset row: name, source, refresh cadence, "
+            "last-loaded timestamp, row count, license terms.",
+            "Staleness flag when a dataset is past its refresh cadence.",
+            "Filter by category (public / CMS / commercial / licensed).",
+        ],
+        key_metrics=[
+            "Datasets loaded (count)", "Stale-dataset count",
+            "Total platform row count", "Days since last full refresh",
+        ],
+        data_sources=[
+            "data_source_status SQLite table (per-dataset metadata)",
+            "Per-dataset loader modules in rcm_mc.data.* and "
+            "rcm_mc.data_public.* which register their freshness "
+            "stats here",
+        ],
+        model_logic_summary=(
+            "Read-only catalog page. Reads data_source_status table, "
+            "joins to per-dataset registry (source URL, cadence, "
+            "license), computes staleness flag (now - last_loaded > "
+            "cadence). No external API call at render time. Refresh "
+            "actually happens via the CLI `rcm-mc data refresh` "
+            "commands or the GitHub Actions data-refresh workflow."
+        ),
+        why_it_matters="Provenance. Every number on every page needs "
+        "to be defensible. This page is where partners answer 'where "
+        "did this come from' and 'is it current'. Without it, "
+        "citing data in an IC packet becomes a research project.",
+        diligence_use_cases=[
+            "Pre-IC: confirm the source datasets backing the analysis "
+            "are fresh enough.",
+            "LP discussion: cite the source + last-refresh date.",
+            "Operational: identify datasets that need a refresh "
+            "before a critical analysis.",
+        ],
+        interpretation_guidance=[
+            "Last-loaded timestamp is the platform's load time, not "
+            "the dataset's publication date — some datasets are "
+            "loaded months after they're published.",
+            "Stale doesn't mean wrong — it means past the expected "
+            "refresh cadence; the data is still valid for "
+            "longer-tenured analyses.",
+            "License terms matter for citations — some commercial "
+            "datasets prohibit redistribution.",
+        ],
+        limitations=[
+            "Refresh happens out-of-band (CLI / GitHub Actions); the "
+            "page only reads status, doesn't trigger.",
+            "Row counts are approximate for very large datasets.",
+        ],
+        related_routes=["/methodology", "/cms-sources",
+                        "/data-refresh", "/admin/data-sources"],
         # The catalog covers the platform's external/public data feeds.
         data_source_ids=["cms_hcris", "cms_care_compare",
                          "medicare_utilization", "sec_edgar", "fred",
@@ -4638,22 +4804,140 @@ _MANUAL: List[PageContext] = [
     ),
     _ctx(
         "/owners", "Owners",
-        short_description="Deal owner assignments — who owns which deal.",
-        primary_purpose="Manage deal ownership across the team.",
-        data_sources=["Live deal store (owner assignments)."],
-        interpretation_guidance=["Operates on YOUR tracked deals/team."],
-        related_routes=["/pipeline", "/cohorts", "/my/AT"],
+        short_description="Deal owner assignments across the team — who's "
+        "responsible for which deals, with the per-owner book size and "
+        "active alert load.",
+        primary_purpose="Manage deal ownership across the team so every "
+        "deal has a clear partner-of-record and no owner is overloaded; "
+        "balance the book on volume + complexity + alert load.",
+        common_questions=[
+            "Who owns this deal?",
+            "Which partner has the largest book?",
+            "Which owner has the most active red alerts?",
+            "Who's the partner for hospital X?",
+            "How do I reassign a deal to a different owner?",
+            "Which deals don't have an owner assigned?",
+            "What's the owner workload distribution?",
+        ],
+        inputs=[
+            "Live deal store with owner assignment table.",
+            "Optional: alert load per owner from the alerts module.",
+        ],
+        outputs=[
+            "Per-owner table: book size, active red/amber alerts, "
+            "average deal age, deal stage breakdown.",
+            "Unassigned-deals list (deals with no owner).",
+            "Workload distribution chart.",
+        ],
+        key_metrics=[
+            "Deals per owner", "Active alerts per owner",
+            "Unassigned deal count", "Average deal age per owner",
+        ],
+        data_sources=["Live deal store (owner assignments)",
+                      "Alerts module (active counts per owner)"],
+        model_logic_summary=(
+            "Joins deals to their assigned owner (deal_owners table), "
+            "aggregates count + average age + alert load per owner. "
+            "Unassigned deals = deals with NULL owner_id. Logic in "
+            "rcm_mc.deals.deal_owners. Pure read; reassignment goes "
+            "via the POST /api/deals/<id>/owner endpoint."
+        ),
+        why_it_matters="Clear partner-of-record drives accountability. "
+        "Without it, deals slip — the worst portfolio outcomes "
+        "frequently trace to a deal that had no clear owner during "
+        "a tough stretch.",
+        diligence_use_cases=[
+            "Weekly portfolio review: confirm every deal has an owner.",
+            "Team load-balancing: identify overloaded partners.",
+            "New-hire onboarding: reassign a chunk of the book.",
+        ],
+        interpretation_guidance=[
+            "Operates on YOUR tracked deals/team.",
+            "An owner with zero alerts may mean a clean book OR a "
+            "stale book — check deal age before celebrating.",
+            "Reassignment audit-logs in /audit; reviewable if a "
+            "partner asks why ownership changed.",
+        ],
+        limitations=[
+            "Single-owner model — does not support co-leads or "
+            "specialist support roles natively.",
+            "Workload heuristic; partner judgment on capacity wins.",
+        ],
+        related_routes=["/pipeline", "/cohorts", "/my/AT",
+                        "/audit", "/users"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
     _ctx(
         "/exports", "Exports",
-        short_description="Generated exports (LP updates, CSVs, packets).",
-        primary_purpose="Produce partner/LP-ready exports from live data.",
-        data_sources=["Live deal store + generated export artifacts."],
-        interpretation_guidance=["Exports reflect current live data at "
-                                "generation time."],
-        related_routes=["/lp-update", "/exports/lp-update", "/diligence/ic-packet"],
+        short_description="Generated exports (LP updates, CSVs, IC packets) "
+        "with status, age, and a download history — the audit trail of "
+        "everything sent to LPs or stakeholders.",
+        primary_purpose="Produce partner/LP-ready exports from live data "
+        "AND keep an audit trail of what was generated when so partners "
+        "can re-share or revert if a number changed.",
+        common_questions=[
+            "What exports have I generated?",
+            "When was the last LP update produced?",
+            "How do I generate a new IC packet?",
+            "Can I download a previous LP update?",
+            "What format is the export in (PDF / DOCX / CSV)?",
+            "How do I know if an export is stale?",
+            "Where do exports live (storage)?",
+        ],
+        inputs=[
+            "Live deal store (current state for the export).",
+            "Export type (LP update, IC packet, deal CSV, "
+            "portfolio CSV).",
+            "Optional: as-of date for historical re-run.",
+        ],
+        outputs=[
+            "Generated artifact (PDF / DOCX / CSV / XLSX depending on type).",
+            "Download history table: artifact, type, deal/portfolio "
+            "scope, generated-at, partner-of-record, file size.",
+            "Stale-export flag when the underlying data has changed "
+            "since generation.",
+        ],
+        key_metrics=[
+            "Generated exports (count by type)",
+            "Days since last LP update",
+            "Stale-export count",
+        ],
+        data_sources=[
+            "Live deal store (current data for exports)",
+            "generated_exports table (audit trail of past exports)",
+        ],
+        model_logic_summary=(
+            "Two surfaces: (1) generation — calls the appropriate "
+            "renderer (lp_update, ic_packet_builder, csv_exporter) "
+            "and writes the artifact to disk + audit row. (2) Browse "
+            "— lists past artifacts from generated_exports table with "
+            "download links. Stale check compares export's "
+            "data_as_of vs current portfolio_snapshot timestamp."
+        ),
+        why_it_matters="Exports are the deliverable. LP updates, IC "
+        "packets, board books — partners are judged on their quality "
+        "and timeliness. The audit trail prevents 're-share confusion' "
+        "when an export becomes stale.",
+        diligence_use_cases=[
+            "Monthly LP cycle: generate + send the LP update.",
+            "Pre-IC: produce the latest IC packet for the deal.",
+            "Audit: re-download a prior period's export.",
+        ],
+        interpretation_guidance=[
+            "Exports reflect current live data at generation time.",
+            "If an export is flagged stale, re-generate before sharing.",
+            "Download history is permanent — never deleted, but "
+            "individual artifacts can be archived for storage hygiene.",
+        ],
+        limitations=[
+            "Generation can be slow for portfolio-wide exports; "
+            "expect 30-60s for an LP update.",
+            "Stale flag is based on data_as_of comparison; doesn't "
+            "detect content changes within a stable as-of.",
+        ],
+        related_routes=["/lp-update", "/exports/lp-update",
+                        "/diligence/ic-packet", "/audit"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
@@ -5364,7 +5648,12 @@ _DATA_REQUIRED_GUIDE = [
     # the same data-required content plus common_questions, model_logic,
     # interpretation_guidance, etc. Auto-generating a second thin entry
     # would silently override the rich one via the dict construction.
-    ("/diligence/risk-workbench", "Risk Workbench", "risk register / regulatory inputs", "Deal team / risk owners", "the nine-panel risk panorama from your real inputs", "risk_register_template.csv"),
+    # /diligence/risk-workbench intentionally NOT auto-generated — it
+    # has a rich hand-written context at line ~1158 that covers the
+    # nine-panel structural risk read, Steward precedent demo mode,
+    # interpretation guidance, and limitations. Auto-generating a
+    # thin entry would silently override the rich one via the dict
+    # construction.
 ]
 
 # HIGH_PRIORITY pages must keep metric/data-source links (test_pedesk_guide_metric_data_context).
