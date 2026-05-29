@@ -143,6 +143,22 @@ class CkPageActionsTests(unittest.TestCase):
         self.assertNotIn("📖 Glossary", out)
         self.assertIn("Copy share link", out)
 
+    # ── Wave J — Methodology link ──────────────────────────────
+    # Pages compute hundreds of derived metrics; partners often
+    # need to cite the underlying methodology for IC packets or LP
+    # discussions. Pill points to /methodology where every model
+    # has documented inputs, assumptions, formulas, and validation.
+
+    def test_methodology_link_present_by_default(self):
+        out = ck_page_actions()
+        self.assertIn("🔬 Methodology", out)
+        self.assertIn('href="/methodology"', out)
+
+    def test_methodology_link_can_be_disabled(self):
+        out = ck_page_actions(methodology=False)
+        self.assertNotIn("🔬 Methodology", out)
+        self.assertIn("Copy share link", out)
+
 
 if __name__ == "__main__":
     unittest.main()

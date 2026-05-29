@@ -3269,6 +3269,7 @@ def ck_page_actions(
     shortcuts: bool = True,
     palette: bool = True,
     glossary: bool = True,
+    methodology: bool = True,
     extras_html: str = "",
 ) -> str:
     """One-liner helper that drops the standard page-action affordances
@@ -3299,6 +3300,8 @@ def ck_page_actions(
         parts.append(ck_palette_open_button())
     if glossary:
         parts.append(ck_metric_glossary_link())
+    if methodology:
+        parts.append(ck_methodology_link())
     if extras_html:
         parts.append(extras_html)
     parts.append("</div>")
@@ -3312,6 +3315,36 @@ def ck_page_actions(
         "</style>"
     )
     return "".join(parts)
+
+
+def ck_methodology_link(label: str = "🔬 Methodology") -> str:
+    """Compact pill linking to /methodology.
+
+    Pages compute hundreds of derived metrics (MOIC, IRR, EBITDA
+    bridge, ramp curves, …) and partners often need to cite the
+    underlying methodology for IC packets or LP discussions. The
+    pill on every page sends them to the canonical methodology
+    hub where every model has its inputs, assumptions, formulas,
+    and validation references documented.
+    """
+    return (
+        "<style>"
+        ".ck-methodology-link{display:inline-flex;align-items:center;gap:6px;"
+        "padding:5px 11px;font-family:var(--sc-mono,monospace);"
+        "font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;"
+        "font-weight:600;background:#fff;color:var(--sc-text,#2a3a4a);"
+        "border:1px solid var(--sc-rule,#c9c1ac);border-radius:2px;"
+        "text-decoration:none;}"
+        ".ck-methodology-link:hover{border-color:var(--sc-teal,#155752);"
+        "color:var(--sc-teal,#155752);}"
+        ".ck-methodology-link:focus-visible{outline:2px solid var(--sc-teal,#155752);"
+        "outline-offset:1px;}"
+        "</style>"
+        f'<a class="ck-methodology-link" href="/methodology" '
+        f'aria-label="Open the methodology hub" '
+        f'title="Inputs, assumptions, formulas, validation references for every model on the platform">'
+        f'{_esc(label)}</a>'
+    )
 
 
 def ck_metric_glossary_link(label: str = "📖 Glossary") -> str:
