@@ -59,6 +59,37 @@ class CkPageActionsTests(unittest.TestCase):
         # elsewhere on the page-control surfaces.
         self.assertIn(".ck-page-actions{display:flex", out)
 
+    # ── 2026-05-28 Wave E — Print this view button ───────────────
+    # Added Print button to the action row so partners can save the
+    # current view as PDF or send to printer for IC memos. One edit
+    # propagates to every page that already has ck_page_actions
+    # (which is every page after waves A-D).
+
+    def test_print_button_present_by_default(self):
+        out = ck_page_actions()
+        self.assertIn("Print this view", out)
+        self.assertIn("data-rcm-print-view", out)
+
+    def test_print_button_install_guard_present(self):
+        out = ck_page_actions()
+        self.assertIn("__rcmPrintViewInstalled", out)
+
+    def test_print_button_can_be_disabled(self):
+        out = ck_page_actions(print_btn=False)
+        self.assertNotIn("Print this view", out)
+        # Other buttons still present.
+        self.assertIn("Copy share link", out)
+        self.assertIn("Back to top", out)
+
+    def test_print_button_hides_actions_row_in_print_media(self):
+        # @media print rule hides the action row + back-to-top so
+        # the printed page doesn't show the buttons themselves.
+        out = ck_page_actions()
+        self.assertIn(
+            "@media print{.ck-page-actions,.ck-back-to-top",
+            out,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

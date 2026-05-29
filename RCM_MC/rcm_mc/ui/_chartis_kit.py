@@ -3265,18 +3265,21 @@ def ck_page_actions(
     *,
     share: bool = True,
     back_to_top: bool = True,
+    print_btn: bool = True,
     extras_html: str = "",
 ) -> str:
     """One-liner helper that drops the standard page-action affordances
-    (Copy share link + Back-to-top + any caller-supplied extras) into
-    any page in one call.
+    (Copy share link + Print this view + Back-to-top + any caller-
+    supplied extras) into any page in one call.
 
     Use this on any analytic / index / detail page so the partner has
     a consistent set of actions on every screen — share via URL
-    permalink, jump back to the top after deep-scrolling. The
+    permalink, send the current view to a printer (PDF or paper) for
+    IC memos, jump back to the top after deep-scrolling. The
     underlying helpers' idempotent JS install guards
-    (``__rcmCopyShareLinkInstalled`` / ``__rcmBackToTopInstalled``)
-    mean dropping this twice on one page never double-binds.
+    (``__rcmCopyShareLinkInstalled`` / ``__rcmBackToTopInstalled`` /
+    ``__rcmPrintViewInstalled``) mean dropping this twice on one page
+    never double-binds.
 
     The result is meant to drop into a page body — for example, near
     the title or just before the closing of the main content area.
@@ -3285,6 +3288,8 @@ def ck_page_actions(
     parts: List[str] = ['<div class="ck-page-actions">']
     if share:
         parts.append(ck_copy_share_link_button())
+    if print_btn:
+        parts.append(ck_print_view_button())
     if extras_html:
         parts.append(extras_html)
     parts.append("</div>")
@@ -3298,6 +3303,45 @@ def ck_page_actions(
         "</style>"
     )
     return "".join(parts)
+
+
+def ck_print_view_button(label: str = "Print this view") -> str:
+    """Reusable "Print this view" button.
+
+    Calls window.print() — the browser handles the rest. Many editorial
+    panels already have @media print rules in chartis_tokens.css so the
+    result is partner-presentable (no chrome, panels avoid breaks).
+
+    Idempotent JS install (``window.__rcmPrintViewInstalled``)
+    composes cleanly with the share + back-to-top buttons.
+    """
+    return (
+        "<style>"
+        ".ck-print-btn{display:inline-flex;align-items:center;gap:6px;"
+        "padding:5px 11px;font-family:var(--sc-mono,monospace);"
+        "font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;"
+        "font-weight:600;background:#fff;color:var(--sc-text,#2a3a4a);"
+        "border:1px solid var(--sc-rule,#c9c1ac);border-radius:2px;"
+        "cursor:pointer;}"
+        ".ck-print-btn:hover{border-color:var(--sc-teal,#155752);"
+        "color:var(--sc-teal,#155752);}"
+        ".ck-print-btn:focus-visible{outline:2px solid var(--sc-teal,#155752);"
+        "outline-offset:1px;}"
+        "@media print{.ck-page-actions,.ck-back-to-top{display:none !important;}}"
+        "</style>"
+        "<script>(function(){"
+        "if(window.__rcmPrintViewInstalled)return;"
+        "window.__rcmPrintViewInstalled=true;"
+        "document.addEventListener('click',function(e){"
+        "var t=e.target;"
+        "if(!t||!t.matches||!t.matches('[data-rcm-print-view],"
+        "[data-rcm-print-view] *'))return;"
+        "e.preventDefault();window.print();"
+        "});})();</script>"
+        f'<button type="button" class="ck-print-btn" data-rcm-print-view '
+        f'aria-label="Print this view via the browser print dialog">'
+        f'{_esc(label)}</button>'
+    )
 
 
 def ck_back_to_top_button(label: str = "↑ Back to top") -> str:
