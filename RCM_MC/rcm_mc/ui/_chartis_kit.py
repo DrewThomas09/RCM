@@ -3266,6 +3266,7 @@ def ck_page_actions(
     share: bool = True,
     back_to_top: bool = True,
     print_btn: bool = True,
+    shortcuts: bool = True,
     extras_html: str = "",
 ) -> str:
     """One-liner helper that drops the standard page-action affordances
@@ -3290,6 +3291,8 @@ def ck_page_actions(
         parts.append(ck_copy_share_link_button())
     if print_btn:
         parts.append(ck_print_view_button())
+    if shortcuts:
+        parts.append(ck_shortcuts_hint_button())
     if extras_html:
         parts.append(extras_html)
     parts.append("</div>")
@@ -3303,6 +3306,40 @@ def ck_page_actions(
         "</style>"
     )
     return "".join(parts)
+
+
+def ck_shortcuts_hint_button(label: str = "? Shortcuts") -> str:
+    """Compact pill that surfaces the in-page keyboard-shortcut help.
+
+    The shell ships a hidden .ck-shortcuts overlay (modal with the
+    full shortcut list). Pre-wave-F partners only discovered it by
+    accidentally pressing ``?`` — most never knew it existed. This
+    button gives the overlay a visible affordance on every page,
+    next to the share + print buttons. Clicking it dispatches a
+    'rcm:shortcuts-open' event the shell already listens for.
+
+    Idempotent — fires no JS install (the click handler is inline
+    on the button), so this can be emitted any number of times per
+    page without double-binding.
+    """
+    return (
+        "<style>"
+        ".ck-shortcuts-btn{display:inline-flex;align-items:center;gap:6px;"
+        "padding:5px 11px;font-family:var(--sc-mono,monospace);"
+        "font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;"
+        "font-weight:600;background:#fff;color:var(--sc-text,#2a3a4a);"
+        "border:1px solid var(--sc-rule,#c9c1ac);border-radius:2px;"
+        "cursor:pointer;}"
+        ".ck-shortcuts-btn:hover{border-color:var(--sc-teal,#155752);"
+        "color:var(--sc-teal,#155752);}"
+        ".ck-shortcuts-btn:focus-visible{outline:2px solid var(--sc-teal,#155752);"
+        "outline-offset:1px;}"
+        "</style>"
+        '<button type="button" class="ck-shortcuts-btn" '
+        'data-ck-shortcuts-open '
+        'aria-label="Show keyboard shortcuts for this page">'
+        f"{_esc(label)}</button>"
+    )
 
 
 def ck_print_view_button(label: str = "Print this view") -> str:

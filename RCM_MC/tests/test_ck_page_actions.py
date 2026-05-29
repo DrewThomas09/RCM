@@ -90,6 +90,24 @@ class CkPageActionsTests(unittest.TestCase):
             out,
         )
 
+    # ── Wave F — keyboard shortcuts hint button ──────────────────
+    # Pre-wave-F partners discovered the .ck-shortcuts overlay only
+    # by accidentally pressing '?'. The new pill makes the affordance
+    # visible alongside share + print, wired via the shell's existing
+    # data-ck-shortcuts-open click hook.
+
+    def test_shortcuts_button_present_by_default(self):
+        out = ck_page_actions()
+        self.assertIn("? Shortcuts", out)
+        self.assertIn("data-ck-shortcuts-open", out)
+
+    def test_shortcuts_button_can_be_disabled(self):
+        out = ck_page_actions(shortcuts=False)
+        self.assertNotIn("? Shortcuts", out)
+        # Other buttons still present.
+        self.assertIn("Copy share link", out)
+        self.assertIn("Print this view", out)
+
 
 if __name__ == "__main__":
     unittest.main()
