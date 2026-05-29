@@ -443,6 +443,33 @@ class WorkbenchShellTests(unittest.TestCase):
         # The detail is NOT open when no refine-filter is set.
         self.assertNotIn('<details class="ts-refine" open>', h)
 
+    # ── 2026-05-28 Wave 9 — '/' keyboard hotkey ──────────────────
+    # '/' anywhere on the page focuses the table search input
+    # (standard GitHub / Slack / Linear pattern). ESC inside the
+    # search input clears the value, re-runs the filter, blurs.
+
+    def test_slash_hotkey_handler_in_installed_js(self):
+        h = self._render()
+        # The keydown listener for '/' is present in the inlined JS.
+        self.assertIn("e.key !== '/'", h)
+        # And it focuses the same input the row filter uses.
+        self.assertIn(
+            "document.querySelector('[data-ts-search-input]')", h)
+
+    def test_escape_hotkey_handler_in_installed_js(self):
+        h = self._render()
+        # ESC inside the search input clears and blurs.
+        self.assertIn("e.key !== 'Escape'", h)
+
+    def test_search_placeholder_advertises_hotkey(self):
+        # Surface the hotkey in the placeholder + aria-label so
+        # discoverability doesn't depend on the partner reading docs.
+        h = self._render()
+        self.assertIn("(press /)", h)
+        self.assertIn(
+            "Keyboard shortcut: press slash to focus, escape to clear",
+            h)
+
     def test_refine_filters_open_when_active(self):
         # min_quality active → details open
         h_q = self._render(min_quality="3")
