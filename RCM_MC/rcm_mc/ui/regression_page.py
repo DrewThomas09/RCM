@@ -4223,6 +4223,10 @@ letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
     if buyability:
         subtitle_bits.append("+buyability")
     subtitle_bits.append(f"{sig_count} significant")
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body, "Regression Analysis",
         active_nav="/portfolio/regression",

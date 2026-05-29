@@ -176,6 +176,10 @@ def render_section_best(section: str, qs: Optional[Dict] = None) -> str:
         )
     grid = f'<div class="sb-grid">{"".join(cards)}</div>'
     body = head + grid
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body, f"All {title} tools", active_nav="/" + section,
         extra_css=_CSS,
