@@ -676,11 +676,14 @@ def render_day_one(store: Any) -> str:
     # reference, but it no longer renders separately.
     date_stamp = ""
 
+    # 2026-05-29: drop the internal "v3 dashboard" vocabulary leak from
+    # the partner-facing CTA copy. URL (/?v3=1) is unchanged — it's the
+    # legacy flag that still routes to the morning dashboard view.
     next_up = ck_next_section(
-        "Open the v3 dashboard for the full data view",
+        "Open the morning dashboard for the full view",
         "/?v3=1",
         eyebrow="Continue —",
-        italic_word="data",
+        italic_word="dashboard",
     )
 
     body = (

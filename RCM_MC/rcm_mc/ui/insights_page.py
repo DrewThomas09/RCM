@@ -36,8 +36,14 @@ def render_insights_page(db_path: str) -> str:
 
     if not insights:
         from ._chartis_kit import ck_empty_state, ck_next_section
+        # 2026-05-29 audit follow-up: the empty branch previously dropped
+        # `header`, leaving the page without an <h1> (CLAUDE.md a11y
+        # invariant violation). Render it here too so screen-readers and
+        # the page-actions copy-share-link have an anchor on the empty
+        # state — which is what a partner sees on day-one with no data.
         body_html = (
-            ck_empty_state(
+            header
+            + ck_empty_state(
                 title="Quiet morning.",
                 eyebrow="INSIGHTS",
                 body=(
@@ -50,10 +56,14 @@ def render_insights_page(db_path: str) -> str:
                 cta_href="/day-one",
             )
             + ck_next_section(
-                "Open the v3 dashboard for the full data view",
+                # 2026-05-29: drop the internal "v3 dashboard"
+                # vocabulary leak from the partner-facing CTA.
+                # The URL (/?v3=1) is the legacy flag that still
+                # routes to the morning dashboard view.
+                "Open the morning dashboard for the full view",
                 "/?v3=1",
                 eyebrow="Continue —",
-                italic_word="data",
+                italic_word="dashboard",
             )
         )
         return chartis_shell(body_html, "All insights",
