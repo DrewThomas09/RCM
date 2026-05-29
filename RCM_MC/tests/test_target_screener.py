@@ -562,6 +562,37 @@ class WorkbenchShellTests(unittest.TestCase):
         h = self._render()
         self.assertIn("Source: <strong>CMS HCRIS</strong>", h)
 
+    # ── 2026-05-28 Wave 19 — next-steps as ordered action list ────
+    # Pre-wave-19 the 'next steps' panel was a paragraph of embedded
+    # links. Partners had to parse prose to find their next action.
+    # Wave-19 restructures it into a numbered three-step list (A/B/C
+    # eyebrows mirror the workbench-state numerals in the tab bar)
+    # with serif headline + mono one-liner per step.
+
+    def test_next_steps_renders_three_action_items(self):
+        import re
+        h = self._render()
+        nums = re.findall(
+            r'<span class="ts-next-step-num">([^<]+)</span>', h)
+        self.assertEqual(nums, ["A", "B", "C"])
+        heads = re.findall(
+            r'<div class="ts-next-step-head">([^<]+)</div>', h)
+        self.assertEqual(heads, [
+            "Rank the markets first",
+            "Open a candidate's X-Ray",
+            "Promote a target to Pipeline",
+        ])
+
+    def test_next_steps_preserves_all_pre_existing_routes(self):
+        # The five cross-link routes the legacy paragraph carried
+        # must still appear so the partner doesn't lose any
+        # navigation affordance.
+        h = self._render()
+        for route in ("/geo-intel", "/market-intel/geo",
+                      "/diligence/hcris-xray", "/diligence/xray",
+                      "/pipeline"):
+            self.assertIn(route, h, f"route {route} missing")
+
     def test_map_filter_banner_renders_when_state_selected(self):
         h = self._render(state="TX")
         self.assertIn('<div class="ts-map-filter-banner">', h)

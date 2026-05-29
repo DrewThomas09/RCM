@@ -347,6 +347,25 @@ _CSS = """
  color:var(--sc-warning,#b8732a);background:#fff;
  border:1px solid var(--sc-warning,#b8732a);border-radius:2px;}
 .ts-map-filter-clear:hover{background:var(--sc-warning,#b8732a);color:#fff;}
+/* Next-steps action list — three discrete moves a partner makes
+   after screening, each with an eyebrow letter (A/B/C), serif
+   headline, and mono one-liner. Pre-wave-19 it was a single
+   paragraph of embedded links; partners parsed prose to find
+   their next action. */
+.ts-next-steps{list-style:none;margin:0;padding:0;
+ display:grid;gap:14px;}
+.ts-next-steps li{display:flex;align-items:flex-start;gap:14px;}
+.ts-next-step-num{font-family:var(--sc-serif);font-style:italic;
+ font-size:22px;line-height:1;color:var(--sc-teal,#155752);
+ font-weight:600;min-width:24px;text-align:center;flex-shrink:0;
+ margin-top:1px;}
+.ts-next-step-body{flex:1;}
+.ts-next-step-head{font-family:var(--sc-serif);font-size:14.5px;
+ color:var(--sc-navy,#15202b);font-weight:600;line-height:1.25;
+ margin-bottom:2px;}
+.ts-next-step-how{font-family:var(--sc-sans,Inter Tight,sans-serif);
+ font-size:12.5px;color:var(--sc-text-dim,#6a7480);line-height:1.55;
+ max-width:78ch;}
 .tsw-scaffold{background:var(--sc-paper,#faf6ec);border:1px dashed var(--sc-rule-2,#bfb6a2);
  border-radius:2px;padding:18px 20px;margin:14px 0;}
 .tsw-scaffold h3{font-family:var(--sc-serif);font-size:14.5px;color:var(--sc-navy,#15202b);margin:0 0 6px;}
@@ -1773,14 +1792,50 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
                + '">Download CSV (this screen) ↓</a></p>'),
             title="Ranked providers · real loader · X-Ray / Inspect / CSV")
         + ck["panel"](
-            'Rank and score geographic markets first — '
-            '<a href="/geo-intel" style="font-weight:600">Geographic Intelligence</a> '
-            'and <a href="/market-intel/geo" style="font-weight:600">Geographic Market '
-            'Intelligence &rarr;</a>. Then open a candidate\'s '
-            '<a href="/diligence/hcris-xray" class="ck-link">HCRIS X-Ray</a> or '
-            '<a href="/diligence/xray" class="ck-link">CMS X-Ray</a>, check its '
-            'market, and <a href="/pipeline" class="ck-link">promote it to '
-            'Pipeline</a>.',
+            # Wave-19: ordered list of next actions so the partner
+            # reads three discrete moves instead of parsing a
+            # paragraph of embedded links. Each step has an eyebrow
+            # numeral + serif headline + mono one-liner pointing at
+            # the action, mirroring the workbench-state numerals
+            # (01-03) in the tab bar so the action steps feel like
+            # a continuation of that visual language.
+            '<ol class="ts-next-steps">'
+            '<li>'
+            '<span class="ts-next-step-num">A</span>'
+            '<div class="ts-next-step-body">'
+            '<div class="ts-next-step-head">Rank the markets first</div>'
+            '<div class="ts-next-step-how">'
+            'Score the geographies before the providers — '
+            '<a href="/geo-intel" class="ck-link">Geographic '
+            'Intelligence</a> or <a href="/market-intel/geo" '
+            'class="ck-link">Geographic Market Intelligence</a>.'
+            '</div>'
+            '</div>'
+            '</li>'
+            '<li>'
+            '<span class="ts-next-step-num">B</span>'
+            '<div class="ts-next-step-body">'
+            '<div class="ts-next-step-head">Open a candidate\'s X-Ray</div>'
+            '<div class="ts-next-step-how">'
+            'Drill into a row above — the HCRIS-backed '
+            '<a href="/diligence/hcris-xray" class="ck-link">HCRIS '
+            'X-Ray</a> or the CMS-backed <a href="/diligence/xray" '
+            'class="ck-link">CMS X-Ray</a>.'
+            '</div>'
+            '</div>'
+            '</li>'
+            '<li>'
+            '<span class="ts-next-step-num">C</span>'
+            '<div class="ts-next-step-body">'
+            '<div class="ts-next-step-head">Promote a target to Pipeline</div>'
+            '<div class="ts-next-step-how">'
+            'Move a screened candidate into the '
+            '<a href="/pipeline" class="ck-link">Pipeline</a> to '
+            'track it through diligence.'
+            '</div>'
+            '</div>'
+            '</li>'
+            '</ol>',
             title="Screen the market, then the target · next steps")
     )
 
