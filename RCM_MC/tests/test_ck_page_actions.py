@@ -1,0 +1,64 @@
+"""Pins for ck_page_actions — the shared page-action helper.
+
+ck_page_actions wraps the existing Copy share link + Back-to-top
+helpers into a single one-liner pages can opt into. The idempotent
+JS install guards on each underlying helper mean dropping this
+twice on one page never double-binds — pin that contract.
+"""
+from __future__ import annotations
+
+import unittest
+
+from rcm_mc.ui._chartis_kit import ck_page_actions
+
+
+class CkPageActionsTests(unittest.TestCase):
+
+    def test_default_renders_share_and_back_to_top(self):
+        out = ck_page_actions()
+        self.assertIn("Copy share link", out)
+        self.assertIn("Back to top", out)
+
+    def test_install_guards_present(self):
+        # Each underlying helper carries an idempotent install guard
+        # so dropping the wrapper on a page that already has either
+        # helper installed never double-binds.
+        out = ck_page_actions()
+        self.assertIn("__rcmCopyShareLinkInstalled", out)
+        self.assertIn("__rcmBackToTopInstalled", out)
+
+    def test_extras_pass_through_into_actions_row(self):
+        out = ck_page_actions(extras_html='<a class="foo">X</a>')
+        self.assertIn('<a class="foo">X</a>', out)
+
+    def test_share_can_be_disabled(self):
+        out = ck_page_actions(share=False)
+        self.assertNotIn("Copy share link", out)
+        # Back-to-top still present.
+        self.assertIn("Back to top", out)
+
+    def test_back_to_top_can_be_disabled(self):
+        out = ck_page_actions(back_to_top=False)
+        self.assertNotIn("Back to top", out)
+        # Share link still present.
+        self.assertIn("Copy share link", out)
+
+    def test_both_can_be_disabled(self):
+        # Setting both False still emits the wrapper + CSS, but no
+        # buttons or back-to-top floating element.
+        out = ck_page_actions(share=False, back_to_top=False)
+        self.assertNotIn("Copy share link", out)
+        self.assertNotIn("Back to top", out)
+        # Wrapper class still present.
+        self.assertIn('class="ck-page-actions"', out)
+
+    def test_actions_row_uses_flex_layout(self):
+        out = ck_page_actions()
+        # The row layout supports right-edge sub-blocks (e.g. wave-16
+        # share button) — flex+wrap+gap matches the rhythm used
+        # elsewhere on the page-control surfaces.
+        self.assertIn(".ck-page-actions{display:flex", out)
+
+
+if __name__ == "__main__":
+    unittest.main()
