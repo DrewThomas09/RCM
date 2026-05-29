@@ -361,4 +361,8 @@ def render_industry_brief(slug: str, params: dict = None) -> str:
             next_action="Use the CMS/HCRIS validation layer to ground the thesis")
         + f'<p style="margin:6px 0 16px">{_LICENSE_CHIP}</p>'
         + f'<div style="{sec}">{"".join(parts)}</div>')
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, f'{r["title"]} Brief', active_nav="/industry")

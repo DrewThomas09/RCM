@@ -261,6 +261,10 @@ def render_insurance(params: dict = None) -> str:
         purpose="Track insurance / malpractice exposure for holdings.",
         universe="data-required", source="No portfolio insurance data attached",
         next_action="Link to portfolio/deal insurance data") + body
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, "Insurance Tracker", active_nav="/insurance-tracker",
         editorial_intro={
             "eyebrow": "INSURANCE TRACKER",

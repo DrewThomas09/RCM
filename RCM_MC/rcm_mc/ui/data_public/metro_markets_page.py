@@ -183,4 +183,8 @@ def render_metro_markets(params: Dict = None) -> str:
     or up to states via the <a href="/geo-intel" style="color:{ac};text-decoration:none">Geographic Intelligence</a> hub.
   </p>
 </div>"""
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, "Metro Markets", active_nav="/metro-markets")

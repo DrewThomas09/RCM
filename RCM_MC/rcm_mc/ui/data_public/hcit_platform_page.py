@@ -243,6 +243,10 @@ def render_hcit_platform(params: dict = None) -> str:
         purpose="Assess an HCIT / SaaS platform target.",
         universe="illustrative", source="No platform-data source",
         next_action="Define source/scope or defer") + body
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, "HCIT Platform", active_nav="/hcit-platform",
         editorial_intro={
             "eyebrow": "HCIT PLATFORM",

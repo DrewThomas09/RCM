@@ -300,6 +300,10 @@ def render_partner_economics(params: dict = None) -> str:
         purpose="Model partner/physician buy-in economics and alignment.",
         universe="data-required", source="Illustrative model — no deal model attached",
         next_action="Enter the deal's partner-economics model") + body
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, "Partner Economics", active_nav="/partner-economics",
         editorial_intro={
             "eyebrow": "PARTNER ECONOMICS",
