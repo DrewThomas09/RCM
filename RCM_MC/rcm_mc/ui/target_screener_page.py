@@ -242,6 +242,27 @@ _CSS = """
   .ts-topn{flex-direction:column;align-items:stretch;}
   .ts-topn-search{margin-left:0;width:100%;flex:1 1 100%;}
 }
+/* Refine-filters disclosure (Min quality / Min size / Ownership).
+   Collapsed by default — the form was ~50px of permanent chrome for
+   a control most partners use once a session. <details open> when
+   any filter inside is already active so the partner never loses
+   state on a server round-trip. */
+.ts-refine{margin:0 0 8px;padding:0;
+ background:var(--sc-paper,#faf6ec);
+ border:1px solid var(--sc-rule,#c9c1ac);border-radius:2px;}
+.ts-refine-summary{padding:7px 12px;cursor:pointer;
+ font-family:var(--sc-mono);font-size:10.5px;letter-spacing:.1em;
+ text-transform:uppercase;color:var(--sc-text-dim,#6a7480);font-weight:700;
+ list-style:none;display:flex;align-items:center;gap:8px;}
+.ts-refine-summary::-webkit-details-marker{display:none;}
+.ts-refine-summary::before{content:"▸";font-size:11px;
+ color:var(--sc-text-faint,#8b94a0);transition:transform 120ms ease;
+ display:inline-block;width:10px;}
+.ts-refine[open] .ts-refine-summary::before{transform:rotate(90deg);}
+.ts-refine-summary:hover{color:var(--sc-teal,#155752);}
+.ts-refine[open] .ts-refine-summary{border-bottom:1px solid var(--sc-rule,#c9c1ac);
+ color:var(--sc-text,#2a3a4a);}
+.ts-refine-form{padding:10px 12px 12px;}
 .tsw-scaffold{background:var(--sc-paper,#faf6ec);border:1px dashed var(--sc-rule-2,#bfb6a2);
  border-radius:2px;padding:18px 20px;margin:14px 0;}
 .tsw-scaffold h3{font-family:var(--sc-serif);font-size:14.5px;color:var(--sc-navy,#15202b);margin:0 0 6px;}
@@ -856,9 +877,33 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
     _inp = 'style="padding:4px 7px;border:1px solid var(--sc-rule,#c9c1ac);"'
     _lbl = 'style="font-family:var(--sc-mono);font-size:10px;"'
     # GET filter form (server-first, shareable). Keeps vertical/state/sort.
+    #
+    # Wave-8: wrap the form in a <details> so it collapses by default.
+    # The form took ~50px of permanent vertical space even when no
+    # refine-filters were active, dominating the table area for a
+    # control most partners use once a session. <details> auto-opens
+    # when any of its filters ARE active so the partner never loses
+    # state. Active-filter chips in the universe panel still show
+    # the partner what's filtered when the form is collapsed.
+    refine_open = (min_q is not None or min_size is not None or own)
+    summary_bits: List[str] = []
+    if has_q_any:
+        summary_bits.append(f"Min {q_label0.lower()}")
+    if has_size_any:
+        summary_bits.append(f"Min {size_label0.lower()}")
+    if has_own_any:
+        summary_bits.append("Ownership")
+    refine_summary = (
+        "Refine — " + " · ".join(summary_bits) if summary_bits
+        else "Refine"
+    )
     filter_form = (
-        '<form method="get" action="/target-screener" style="display:flex;gap:12px;'
-        'align-items:flex-end;flex-wrap:wrap;margin:0 0 10px;">'
+        f'<details class="ts-refine"{" open" if refine_open else ""}>'
+        f'<summary class="ts-refine-summary">{refine_summary}</summary>'
+        '<form method="get" action="/target-screener" '
+        'class="ts-refine-form" '
+        'style="display:flex;gap:12px;'
+        'align-items:flex-end;flex-wrap:wrap;margin:0;">'
         '<input type="hidden" name="view" value="main">'
         f'<input type="hidden" name="vertical" value="{vertical}">'
         + (f'<input type="hidden" name="state" value="{_h.escape(state)}">' if state else "")
@@ -874,8 +919,9 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         + '<button type="submit" class="tsw-vert" style="cursor:pointer;">Apply filters</button>'
         + (f'<a class="ck-link" style="font-size:11px;" href="/target-screener?view=main&vertical={vertical}'
            + (f"&state={state}" if state else "") + '">clear</a>'
-           if (min_q is not None or min_size is not None or own) else "")
+           if refine_open else "")
         + '</form>'
+        '</details>'
     )
     size_label = size_label0
     q_label = q_label0

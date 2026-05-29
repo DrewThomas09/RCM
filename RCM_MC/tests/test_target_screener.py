@@ -429,6 +429,31 @@ class WorkbenchShellTests(unittest.TestCase):
     # table buried the workbench nav. Tab bar now sticks at top:58px
     # (right below the chartis_shell topbar at 0/58 height).
 
+    # ── 2026-05-28 Wave 8 — collapsible refine-filters ───────────
+    # The Min quality / Min size / Ownership form took ~50px of
+    # permanent vertical space at the top of every ranked-providers
+    # table render — for a control most partners use once a session.
+    # Wave-8 wraps it in <details> so it collapses by default, and
+    # auto-opens when any of its filters ARE active so the partner
+    # never loses state on a server round-trip.
+
+    def test_refine_filters_collapsed_by_default(self):
+        h = self._render()
+        self.assertIn('<details class="ts-refine"', h)
+        # The detail is NOT open when no refine-filter is set.
+        self.assertNotIn('<details class="ts-refine" open>', h)
+
+    def test_refine_filters_open_when_active(self):
+        # min_quality active → details open
+        h_q = self._render(min_quality="3")
+        self.assertIn('<details class="ts-refine" open>', h_q)
+        # min_size active → details open
+        h_s = self._render(min_size="50")
+        self.assertIn('<details class="ts-refine" open>', h_s)
+        # ownership active → details open
+        h_o = self._render(ownership="for-profit")
+        self.assertIn('<details class="ts-refine" open>', h_o)
+
     def test_workbench_tab_bar_is_sticky(self):
         h = self._render()
         # Pin the exact sticky offset so future stacking changes
