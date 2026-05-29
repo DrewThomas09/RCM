@@ -127,6 +127,22 @@ class CkPageActionsTests(unittest.TestCase):
         self.assertNotIn("⌘K Quick jump", out)
         self.assertIn("Copy share link", out)
 
+    # ── Wave H — Metric glossary link ──────────────────────────
+    # Pages reference dozens of metrics each but partners had no
+    # consistent way to look them up. The pill points to the
+    # canonical /metric-glossary where every metric has a
+    # definition, rationale, formula, and source documents.
+
+    def test_glossary_link_present_by_default(self):
+        out = ck_page_actions()
+        self.assertIn("📖 Glossary", out)
+        self.assertIn('href="/metric-glossary"', out)
+
+    def test_glossary_link_can_be_disabled(self):
+        out = ck_page_actions(glossary=False)
+        self.assertNotIn("📖 Glossary", out)
+        self.assertIn("Copy share link", out)
+
 
 if __name__ == "__main__":
     unittest.main()
