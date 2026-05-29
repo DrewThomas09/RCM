@@ -1457,6 +1457,18 @@ def _active_filter_chips(vertical: str, qs: Dict[str, List[str]]) -> str:
     layer = _q1(qs, "layer")
     limit_param = _q1(qs, "limit")
 
+    # Wave-15: human-readable chip values. The raw URL value
+    # ('age65', 'name', '25', 'for-profit') reads like a debugging
+    # API param — partners shouldn't have to translate.
+    _sort_chip_labels = {
+        "name": "Provider name",
+        "location": "Location",
+        "size": "Size",
+        "quality": "Quality",
+    }
+    _layer_chip_labels = {ly["key"]: ly["label"] for ly in _LAYERS}
+    direction_arrow = "↓" if _q1(qs, "direction") != "asc" else "↑"
+
     # Catalog → label/value pairs (only non-default values).
     active: List[tuple] = []  # (param_key, chip_label, chip_value)
     if state:
@@ -1468,11 +1480,13 @@ def _active_filter_chips(vertical: str, qs: Dict[str, List[str]]) -> str:
     if own:
         active.append(("ownership", "Ownership", own))
     if sort_key:
-        active.append(("sort", "Sort", sort_key))
+        sort_pretty = _sort_chip_labels.get(sort_key, sort_key)
+        active.append(("sort", "Sort", f"{sort_pretty} {direction_arrow}"))
     if layer and layer != "provider_count":
-        active.append(("layer", "Map layer", layer))
+        layer_pretty = _layer_chip_labels.get(layer, layer)
+        active.append(("layer", "Map layer", layer_pretty))
     if limit_param and limit_param != str(_TABLE_LIMIT):
-        active.append(("limit", "Row cap", limit_param))
+        active.append(("limit", "Row cap", f"top {limit_param}"))
 
     if not active:
         return ""
