@@ -311,11 +311,17 @@ def render_sector_screener(
         '</header>'
     )
 
+    # 2026-05-28 wave-B: ck_page_actions adds the Copy share link
+    # + Back-to-top affordances. This single edit covers every
+    # sector page that calls render_sector_screener (dialysis,
+    # hospice, home_health, ltch, irf, snf, etc) — 7 routes at once.
+    from ._chartis_kit import ck_page_actions
     body = (
         head_block
         + '<div class="xr">'
         + kpis + map_panel + table + prov_card
         + '</div>'
+        + ck_page_actions()
     )
     return chartis_shell(body, title, active_nav=route,
                          extra_css=XRAY_CSS + _SCREENER_SKIN)
