@@ -190,7 +190,7 @@ def shell(
     extra_js: str = "",
     active_nav: Optional[str] = None,
     generated: bool = True,  # noqa: ARG001 — kept for signature parity
-    omit_h1: bool = False,  # noqa: ARG001 — kept for signature parity
+    omit_h1: bool = False,
 ) -> str:
     """Legacy ``shell()`` — routes through ``chartis_shell``.
 
@@ -198,8 +198,19 @@ def shell(
     and later delegated to ``shell_v2``. After the chartis unification
     it just calls ``chartis_shell`` with a compatible signature. The
     ``back_href`` argument is rendered as a small breadcrumb link above
-    the body content; the ``generated`` and ``omit_h1`` arguments are
-    accepted for backward compat but ignored.
+    the body content; the ``generated`` argument is accepted for
+    backward compat but ignored.
+
+    ``omit_h1`` is honored: when False (the default) and the supplied
+    body has no ``<h1`` element of its own, an editorial-styled h1 is
+    prepended carrying ``title``. This closes the audit-2026-05-29
+    finding that ~11 legacy ``shell()``-routed pages (/cohorts,
+    /deadlines, /owners, /variance, /initiatives, /runs, /jobs,
+    /upload, /users, /query, /settings) all rendered without an h1,
+    directly violating the CLAUDE.md One-H1 invariant. Pages that
+    genuinely don't want a title h1 can pass ``omit_h1=True``; the
+    chartis ``ck_page_title`` path is unaffected because those bodies
+    already contain ``<h1``.
 
     Always injects the editorial overlay CSS (`_LEGACY_BODY_OVERLAY`)
     so legacy `card` / `kpi-card` / raw-table markup picks up
@@ -217,6 +228,18 @@ def shell(
             f'style="color:var(--sc-teal-ink);text-decoration:none;">'
             f'&larr; Back to index</a></nav>{body}'
         )
+    # Auto-inject an editorial h1 when the body has none. Idempotent:
+    # callers that already emit their own h1 (e.g. via ck_page_title)
+    # are detected and untouched, so this never produces a double-h1.
+    # Skip when caller explicitly opts out via omit_h1=True.
+    if not omit_h1 and "<h1" not in body:
+        body = (
+            f'<h1 class="ck-page-h1" '
+            f'style="font-family:Source Serif 4,Georgia,serif;'
+            f'font-weight:600;font-size:28px;line-height:1.18;'
+            f'color:var(--sc-ink,#1a2332);margin:0 0 12px;">'
+            f'{_html.escape(title)}</h1>'
+        ) + body
     # Prepend the editorial overlay — it's a <style> block so order
     # doesn't matter, but conceptually it belongs above the body so
     # the rules are in place before the markup renders.
