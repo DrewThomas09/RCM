@@ -205,6 +205,10 @@ def render_fund_learning(db_path: str) -> str:
     )
     body = f'{head}{lead_anchor}{kpis}{narrative}{lever_section}{flywheel}{nav}{next_up}'
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body, "Fund Learning",
         active_nav="/pipeline",

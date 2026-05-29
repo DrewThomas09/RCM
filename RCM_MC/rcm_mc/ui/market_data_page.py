@@ -756,6 +756,10 @@ def render_state_detail(
     )
     body = f'{intro}{source_purpose}{kpis}{market_ctx}{map_panel}{table_panel}{actions}'
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body, f"Market: {state_upper}",
         active_nav="/market-data/map",

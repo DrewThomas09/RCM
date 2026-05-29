@@ -335,6 +335,10 @@ def render_completeness_page(deal_id: str, deal_name: str, completeness: Dict[st
     nav = _model_nav(deal_id, "")
     body = f'{nav}{kpis}{bar}{actions}'
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, f"Completeness — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"Grade: {grade} | {pct:.0f}% coverage | {present}/{total} fields",

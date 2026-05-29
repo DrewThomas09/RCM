@@ -951,6 +951,10 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
     from .models_page import _model_nav
     deal_ribbon = _model_nav(ccn, active="ml")
     body = deal_ribbon + _ML_CHART_CSS + "\n".join(sections)
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body,
         f"ML Analysis — {_html.escape(name)}",

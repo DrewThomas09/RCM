@@ -665,6 +665,10 @@ def render_market_intel_page(
         + _news_section(specialty, tickers, tags)
         + next_up
     )
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body, "RCM Diligence — Market Intelligence",
         active_nav="/market-intel",

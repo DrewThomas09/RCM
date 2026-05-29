@@ -345,6 +345,10 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
         ),
     )
     body = f'{head}{nav}{lead_anchor}{kpis}{moat_section}{interp}{comp_section}{payer_html}{actions}{next_up}'
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body, f"Market Analysis — {html.escape(deal_name)}",
         active_nav="/analysis",
