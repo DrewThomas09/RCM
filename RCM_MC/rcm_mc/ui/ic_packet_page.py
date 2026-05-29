@@ -158,6 +158,10 @@ def _landing() -> str:
         'Assemble IC Packet</button></form>'
     )
     body = f'{_FORM_CSS}{intro}' + ck_panel(form, title="Inputs")
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body, "RCM Diligence — IC Packet Assembler",
         subtitle="One-click IC deliverable",

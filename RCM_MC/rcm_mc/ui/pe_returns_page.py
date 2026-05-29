@@ -232,6 +232,10 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
     )
     body = f'{head}{nav}{lead_anchor}{kpis}{interp}{cov_section}{actions}{next_up}'
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, f"Returns & Covenant — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"IRR: {irr:.1%} | MOIC: {moic:.2f}x | Covenant cushion: {cushion:.0%}")

@@ -524,6 +524,10 @@ def render_library(q: str = "") -> str:
         + sections + extra_links + next_up + back_to_top
     )
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body, "Methodology",
         active_nav="/methodology",

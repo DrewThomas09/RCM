@@ -431,6 +431,10 @@ def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
         f'{residual_section}{drivers_section}{actions}{next_up}'
     )
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body,
         f"Statistical Profile — {_html.escape(name)}",
