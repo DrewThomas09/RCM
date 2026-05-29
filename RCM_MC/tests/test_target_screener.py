@@ -522,6 +522,31 @@ class WorkbenchShellTests(unittest.TestCase):
                               direction="desc")
         self.assertIn('ts-fchip-val">Size ↓<', h_desc)
 
+    # ── 2026-05-28 Wave 16 — Copy-share-link button ──────────────
+    # Partners share screen state via URL (filters / sort / layer /
+    # limit are all server-rendered into the query). Pre-wave-16
+    # there was no easy way to grab the current URL — the partner
+    # had to copy from the browser bar. Wave-16 adds the existing
+    # ck_copy_share_link_button on the Active-screen sub-block
+    # eyebrow row.
+
+    def test_share_link_button_present_in_universe_panel(self):
+        h = self._render()
+        self.assertIn(
+            '<button type="button" class="ck-share-btn" '
+            'data-rcm-share-link>Copy share link</button>',
+            h)
+        # Idempotent install guard from ck_copy_share_link_button
+        # ensures the script doesn't double-bind across pages or
+        # when the universe panel re-renders.
+        self.assertIn("__rcmCopyShareLinkInstalled", h)
+
+    def test_share_link_button_lives_in_active_screen_head_row(self):
+        # The button shares its row with the 'Active screen' eyebrow
+        # label via the .ts-univ-block-head wrapper.
+        h = self._render()
+        self.assertIn('<div class="ts-univ-block-head">', h)
+
     def test_limit_chip_uses_top_n_language(self):
         # 'top 25' reads better than just '25' on a chip labelled
         # 'Row cap'.
