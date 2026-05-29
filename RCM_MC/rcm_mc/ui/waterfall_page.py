@@ -205,6 +205,10 @@ def render_waterfall_page(deal_id: str, deal_name: str, result: Dict[str, Any]) 
     )
     body = f'{head}{nav}{lead_anchor}{kpis}{split}{interp}{tier_section}{actions}{next_up}'
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, f"Returns Waterfall — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"Gross IRR: {gross_irr:.1%} | MOIC: {gross_moic:.2f}x | Hold: {hold_years:.1f}yr")

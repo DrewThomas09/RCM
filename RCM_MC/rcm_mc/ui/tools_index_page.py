@@ -220,6 +220,10 @@ def render_tools_index(
         "wsSections": len([s for s in workspaces if s.get("tools")]),
         "idxSections": len([s for s in index if s.get("tools")]),
     })
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body + f'<script>window.__TI_META__={meta};</script>' + _TOOLS_JS,
         "Tools", active_nav="/tools", extra_css=_TOOLS_CSS,

@@ -131,4 +131,8 @@ def render_tools_showcase(total_surfaces: int = 0) -> str:
     )
 
     body = head + intro + legend + "".join(sections) + all_bar
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, "Tools", active_nav="/tools", extra_css=_CSS)
