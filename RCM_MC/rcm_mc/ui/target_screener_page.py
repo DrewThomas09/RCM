@@ -107,9 +107,15 @@ _CSS = """
    dropped; the two groups stay separated by a vertical hairline.
    Each tab is numeral + serif title only, ~108px wide vs the
    previous ~142px — six tabs comfortably fit in a single row at any
-   reasonable viewport. */
+   reasonable viewport.
+   Wave-7 sticky: the tabbar stays at top:58px (right below the
+   chartis_shell topbar at top:0/height:58px) so the partner always
+   sees the workbench navigation while scrolling through the ranked-
+   providers table. z-index:30 stays below the topbar (z:50) and the
+   subnav (z:40) but above all panel content. */
 .tsw-tabs{display:flex;gap:0;overflow-x:auto;border:1px solid var(--sc-rule,#c9c1ac);
- border-radius:2px;background:var(--sc-paper-2,#f3eddb);margin:10px 0 14px;}
+ border-radius:2px;background:var(--sc-paper-2,#f3eddb);margin:10px 0 14px;
+ position:sticky;top:58px;z-index:30;}
 .tsw-group{display:flex;}
 .tsw-group + .tsw-group{border-left:1px solid var(--sc-rule,#c9c1ac);}
 .tsw-tab{padding:8px 14px 7px;border-right:1px solid var(--sc-rule,#c9c1ac);

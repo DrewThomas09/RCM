@@ -424,6 +424,18 @@ class WorkbenchShellTests(unittest.TestCase):
             self.assertRegex(blob, r"\d{6,}",
                              f"blob missing a CCN: {blob!r}")
 
+    # ── 2026-05-28 Wave 7 — sticky workbench tab bar ─────────────
+    # Pre-existing pain: scrolling into the long ranked-providers
+    # table buried the workbench nav. Tab bar now sticks at top:58px
+    # (right below the chartis_shell topbar at 0/58 height).
+
+    def test_workbench_tab_bar_is_sticky(self):
+        h = self._render()
+        # Pin the exact sticky offset so future stacking changes
+        # (top:58px must match the shell's topbar height) don't
+        # silently drift.
+        self.assertIn("position:sticky;top:58px;z-index:30", h)
+
     def test_table_toolbar_has_search_input(self):
         h = self._render()
         self.assertIn("data-ts-search-input", h)
