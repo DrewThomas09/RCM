@@ -537,6 +537,31 @@ class WorkbenchShellTests(unittest.TestCase):
     # full name, in-state provider count, and a chip-styled clear
     # link.
 
+    # ── 2026-05-28 Wave 18 — collapse uniform Source column ──────
+    # Every row in a single-vertical screen carries the same Source
+    # string (every hospital says 'CMS HCRIS', every SNF says 'CMS
+    # Nursing Home Compare'). The column took the same width as
+    # Provider / Location / ranking columns but added 0 bits of
+    # info per cell. Wave-18 drops it and surfaces the source once
+    # in the status line.
+
+    def test_uniform_source_column_dropped_for_single_vertical(self):
+        import re
+        h = self._render()
+        # Get all rendered <th> labels — Source should NOT appear.
+        ths = re.findall(
+            r'<th[^>]*>(?:<a[^>]*>([^<]+)</a>|([^<]+))</th>', h)
+        labels = [a or b for a, b in ths]
+        self.assertNotIn("Source", labels,
+                         f"Source column should be dropped, got: {labels}")
+
+    def test_uniform_source_surfaced_in_status_line(self):
+        # When the column is dropped, the source name still has to
+        # appear so partners can cite provenance. The status line
+        # gets ' Source: <strong>CMS HCRIS</strong>.' appended.
+        h = self._render()
+        self.assertIn("Source: <strong>CMS HCRIS</strong>", h)
+
     def test_map_filter_banner_renders_when_state_selected(self):
         h = self._render(state="TX")
         self.assertIn('<div class="ts-map-filter-banner">', h)
