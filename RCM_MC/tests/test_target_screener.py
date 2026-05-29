@@ -225,25 +225,32 @@ class WorkbenchShellTests(unittest.TestCase):
         self.assertNotIn('<div class="ts-fchips"', h)
 
     def test_state_filter_renders_chip(self):
+        # Wave-14: reset link now surfaces whenever ANY non-default
+        # param is active (was: only when 2+). One chip is enough.
         h = self._render(state="TX")
         self.assertIn('<div class="ts-fchips"', h)
         self.assertIn('ts-fchip-lbl">State<', h)
         self.assertIn('ts-fchip-val">TX<', h)
-        # One chip → no clear-all link yet.
+        self.assertIn("Reset to defaults", h)
+        # Old wording is gone.
         self.assertNotIn("Clear all filters", h)
 
-    def test_multiple_filters_render_chips_and_clear_all(self):
+    def test_multiple_filters_render_chips_and_reset_link(self):
+        # Wave-14 renamed 'Clear all filters' to 'Reset to defaults'
+        # and surfaces the link whenever ANY non-default param is
+        # active (was: only when 2+). Tighter scope here: 3 filters
+        # → 3 chips + reset link.
         import re
         h = self._render(state="CA", min_quality="3", ownership="for-profit")
         chips = re.findall(r'<a class="ts-fchip" href="', h)
         self.assertEqual(len(chips), 3,
                          f"expected 3 chips, got {len(chips)}")
-        self.assertIn("Clear all filters", h)
-        # Each chip carries a real removable URL — clear-all goes back
+        self.assertIn("Reset to defaults", h)
+        # Each chip carries a real removable URL — reset goes back
         # to the unfiltered universe view.
         self.assertIn(
             '/target-screener?view=main&vertical=snf"',
-            h.replace("hospitals", "snf"),  # canonical clear-all shape
+            h.replace("hospitals", "snf"),  # canonical reset shape
         )
 
     # ── 2026-05-28 Wave 2 — universe chip provider counts ────────
@@ -487,6 +494,36 @@ class WorkbenchShellTests(unittest.TestCase):
     # <tr data-ts-empty> placeholder lives inside <tbody> and the
     # JS apply() handler reveals it with a 'No providers match X'
     # message + ESC hint when shown == 0.
+
+    # ── 2026-05-28 Wave 14 — chips widened to layer + limit; reset
+    # link always-on when any param is active ──────────────────────
+    # The chip strip used to only catalog state / refines / sort.
+    # Wave-14 adds chips for the map layer (when non-default
+    # 'provider_count') and the row cap (when non-default 150)
+    # so the partner sees every off-baseline selection in one
+    # place. The reset link is renamed 'Reset to defaults' and
+    # surfaces any time the strip is non-empty.
+
+    def test_non_default_layer_renders_chip(self):
+        h = self._render(layer="age65")
+        self.assertIn('ts-fchip-lbl">Map layer<', h)
+        self.assertIn('ts-fchip-val">age65<', h)
+
+    def test_default_layer_does_NOT_render_chip(self):
+        # provider_count is the default, so no chip even if it's
+        # explicitly set in the URL.
+        h = self._render(layer="provider_count")
+        # State and refines aren't set either → strip hidden entirely.
+        self.assertNotIn('<div class="ts-fchips"', h)
+
+    def test_non_default_limit_renders_chip(self):
+        h = self._render(limit="25")
+        self.assertIn('ts-fchip-lbl">Row cap<', h)
+        self.assertIn('ts-fchip-val">25<', h)
+
+    def test_default_limit_does_NOT_render_chip(self):
+        h = self._render(limit="150")
+        self.assertNotIn('<div class="ts-fchips"', h)
 
     def test_no_match_placeholder_row_renders_hidden(self):
         h = self._render()

@@ -1431,18 +1431,22 @@ def _scaffold(title: str, pr: str, bullets: List[str]) -> str:
 
 
 def _active_filter_chips(vertical: str, qs: Dict[str, List[str]]) -> str:
-    """Render every active filter on the page as a small removable chip.
+    """Render every non-default param on the page as a small removable chip.
 
-    Pre-existing pain: state/min-quality/min-size/ownership filters were
-    surfaced in four different places (state in the map summary, the
-    other three only inside the table's filter form's clear-link, which
-    only appeared if a filter was already applied). A partner couldn't
-    glance at the top of the page and answer "what's filtered?".
+    Pre-existing pain: state/min-quality/min-size/ownership/sort/layer/
+    limit filters were surfaced in 4+ different places. A partner
+    couldn't glance at the top of the page and answer
+    "what's filtered?".
 
-    This helper builds one chip per non-default param. Each chip is a
-    one-click "remove this filter" link — the href drops just that
-    param while keeping every other current query value. A "Clear all
-    filters" link follows when 2+ are active.
+    Wave-1 introduced the chip strip; wave-14 widens it to include
+    every non-default param (layer != provider_count, limit != 150)
+    and surfaces the reset link any time at least one chip is
+    present — renamed 'Reset to defaults' since it strips more than
+    just filters now.
+
+    Each chip is a one-click 'remove' link — the href drops just
+    that param while keeping every other current query value.
+    'Reset to defaults' returns to a totally clean main view.
     """
     import html as _h
     state = _q1(qs, "state").upper()
@@ -1450,8 +1454,10 @@ def _active_filter_chips(vertical: str, qs: Dict[str, List[str]]) -> str:
     min_size = _q1(qs, "min_size")
     own = _q1(qs, "ownership")
     sort_key = _q1(qs, "sort")
+    layer = _q1(qs, "layer")
+    limit_param = _q1(qs, "limit")
 
-    # Catalog → label/value pairs.
+    # Catalog → label/value pairs (only non-default values).
     active: List[tuple] = []  # (param_key, chip_label, chip_value)
     if state:
         active.append(("state", "State", state))
@@ -1463,6 +1469,10 @@ def _active_filter_chips(vertical: str, qs: Dict[str, List[str]]) -> str:
         active.append(("ownership", "Ownership", own))
     if sort_key:
         active.append(("sort", "Sort", sort_key))
+    if layer and layer != "provider_count":
+        active.append(("layer", "Map layer", layer))
+    if limit_param and limit_param != str(_TABLE_LIMIT):
+        active.append(("limit", "Row cap", limit_param))
 
     if not active:
         return ""
@@ -1494,18 +1504,21 @@ def _active_filter_chips(vertical: str, qs: Dict[str, List[str]]) -> str:
         f'<span class="ts-fchip-x" aria-hidden="true">×</span></a>'
         for k, lbl, val in active
     )
-    clear_all = ""
-    if len(active) >= 2:
-        clear_all = (
-            f'<a class="ts-fchip-clear" '
-            f'href="/target-screener?view=main&vertical={vertical}">'
-            f'Clear all filters</a>'
-        )
+    # Wave-14: reset link shows whenever ANY non-default param is
+    # active (was: only when 2+). Renamed 'Reset to defaults' since
+    # the link strips sort / layer / limit too — not just filters.
+    reset_link = (
+        f'<a class="ts-fchip-clear" '
+        f'href="/target-screener?view=main&vertical={vertical}" '
+        f'title="Clear every selection on this page and return to '
+        f'the default universe view">'
+        f'Reset to defaults</a>'
+    )
     return (
         '<div class="ts-fchips" role="group" '
-        'aria-label="Active filters">'
+        'aria-label="Active filters and refinements">'
         f'<span class="ts-fchips-lbl">Active filters:</span>'
-        f'{chips_html}{clear_all}'
+        f'{chips_html}{reset_link}'
         '</div>'
     )
 
