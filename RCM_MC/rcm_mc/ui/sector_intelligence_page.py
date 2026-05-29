@@ -134,6 +134,10 @@ def render_sector_intelligence() -> str:
         'linked until its data is sourced and vendored, the same way the '
         'hospital sector was.</p>'
     )
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body, "Sector Intelligence", active_nav="/sector-intelligence",
     )

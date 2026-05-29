@@ -377,4 +377,8 @@ def render_pe_reference_page(library: str = "") -> str:
         + ck_section_header(title.upper(), intro, count=len(items))
         + cards
     )
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, title=title, active_nav="/diligence")

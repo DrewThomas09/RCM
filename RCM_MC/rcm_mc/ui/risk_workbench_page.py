@@ -1310,6 +1310,10 @@ def render_risk_workbench(
                 italic_word="bear",
             )
         )
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         data_required_panel(P, title="Risk Workbench", needed=[("risk","risk / regulatory item"),("category","tier 1-3 / cyber / labor / quality"),("likelihood","high / med / low"),("impact","high / med / low"),("owner","owner"),("mitigation","mitigation")], template="risk_register_template.csv", request_from="Deal team / risk owners", activates="the nine-panel risk panorama from your deal's real risk inputs")
         + body, "RCM Diligence — Risk Workbench",

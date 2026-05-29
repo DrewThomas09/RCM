@@ -458,6 +458,10 @@ def render_xray_report(report: ProviderXrayReport) -> str:
     body = ('<div class="xr">' + title + source_purpose + identity + signals + note + bench
             + expectation + model_sec + corr_sec
             + risk + market + questions + caveats + '</div>')
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, f"CMS X-Ray · {_e(m.name)}",
                          active_nav="/diligence", extra_css=_XRAY_CSS + k.XRAY_CSS)
 

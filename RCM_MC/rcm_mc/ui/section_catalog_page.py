@@ -224,5 +224,9 @@ def render_grouped_catalog(
         _CSS + head
         + '<div class="sc-grid">' + "".join(pillars_html) + '</div>' + nxt
     )
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, title, active_nav="/" + section,
                          subtitle=subtitle or f"{title} · {n} surfaces")

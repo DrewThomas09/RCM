@@ -584,6 +584,10 @@ overflow:hidden;margin-bottom:8px;}
         f'{health_bar}{deal_table}{value_creation}{pred_vs_actual}{nav}{next_up}'
     )
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body, "Portfolio Monitor",
         active_nav="/portfolio/monitor",
