@@ -3261,6 +3261,45 @@ def ck_editorial_head(
     )
 
 
+def ck_page_actions(
+    *,
+    share: bool = True,
+    back_to_top: bool = True,
+    extras_html: str = "",
+) -> str:
+    """One-liner helper that drops the standard page-action affordances
+    (Copy share link + Back-to-top + any caller-supplied extras) into
+    any page in one call.
+
+    Use this on any analytic / index / detail page so the partner has
+    a consistent set of actions on every screen — share via URL
+    permalink, jump back to the top after deep-scrolling. The
+    underlying helpers' idempotent JS install guards
+    (``__rcmCopyShareLinkInstalled`` / ``__rcmBackToTopInstalled``)
+    mean dropping this twice on one page never double-binds.
+
+    The result is meant to drop into a page body — for example, near
+    the title or just before the closing of the main content area.
+    Extras can be any HTML (e.g. additional buttons, mode toggles).
+    """
+    parts: List[str] = ['<div class="ck-page-actions">']
+    if share:
+        parts.append(ck_copy_share_link_button())
+    if extras_html:
+        parts.append(extras_html)
+    parts.append("</div>")
+    if back_to_top:
+        # Back-to-top is fixed-position so it lives outside the row.
+        parts.append(ck_back_to_top_button())
+    parts.append(
+        "<style>"
+        ".ck-page-actions{display:flex;flex-wrap:wrap;gap:8px;"
+        "align-items:center;margin:0 0 var(--sc-s-4,12px);}"
+        "</style>"
+    )
+    return "".join(parts)
+
+
 def ck_back_to_top_button(label: str = "↑ Back to top") -> str:
     """Floating "back to top" button — appears after the partner
     scrolls more than 600px down. Click smooth-scrolls to top.
