@@ -226,7 +226,7 @@ def render_platform_maturity(params: dict = None) -> str:
 
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link
     # + Back-to-top affordances. Idempotent JS guards.
-    from ._chartis_kit import ck_page_actions
+    from .._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(data_required_panel(P, title="Platform Maturity", needed=[("dimension","maturity dimension"),("self_score","score 1-5"),("evidence","supporting evidence"),("target_score","target 1-5")], template="platform_maturity_template.csv", request_from="Management / portfolio operations", activates="maturity self-assessment vs target by dimension", guide_hint="What platform-maturity data do I need to upload?") + ck_illustrative_note("platform-maturity scores") + body, "Platform Maturity", active_nav="/platform-maturity",
         editorial_intro={

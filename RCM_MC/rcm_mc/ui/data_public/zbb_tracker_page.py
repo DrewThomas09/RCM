@@ -229,7 +229,7 @@ def render_zbb_tracker(params: dict = None) -> str:
 
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link
     # + Back-to-top affordances. Idempotent JS guards.
-    from ._chartis_kit import ck_page_actions
+    from .._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(body, "ZBB Tracker", active_nav="/zbb-tracker",
         editorial_intro={

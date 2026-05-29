@@ -431,7 +431,11 @@ def render_underwriting_model(params: dict) -> str:
 </div>
 '''
 
-    return chartis_shell(ck_illustrative_note("underwriting-model outputs") + content,
+    # 2026-05-28 wave-D: add ck_page_actions for share + back-to-top.
+
+    from .._chartis_kit import ck_page_actions
+
+    return chartis_shell(ck_illustrative_note("underwriting-model outputs") + content + ck_page_actions(),
         title=f"Underwriting Model — {sector}",
         active_nav="/underwriting-model",
         editorial_intro={

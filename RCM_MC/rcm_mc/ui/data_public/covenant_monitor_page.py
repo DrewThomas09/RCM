@@ -471,7 +471,10 @@ def render_covenant_monitor(params: dict) -> str:
 </div>
 '''
 
-    return chartis_shell(ck_illustrative_note("covenant-headroom figures") + content,
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link + Back-to-top.
+    from .._chartis_kit import ck_page_actions
+    return chartis_shell(
+        ck_illustrative_note("covenant-headroom figures") + content + ck_page_actions(),
         title=f"Covenant Monitor — {sector}",
         active_nav="/covenant-monitor",
         editorial_intro={

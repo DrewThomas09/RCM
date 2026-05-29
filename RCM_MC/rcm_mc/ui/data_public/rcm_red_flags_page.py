@@ -393,7 +393,7 @@ def render_rcm_red_flags(params: Dict[str, str]) -> str:
 
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link
     # + Back-to-top affordances. Idempotent JS guards.
-    from ._chartis_kit import ck_page_actions
+    from .._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(data_required_panel(P, title="RCM Red Flags", needed=[("claim_id","claim id (de-identify)"),("denial_code","CARC/RARC code"),("payer","payer"),("service_date","service date")], template="claims_denials_template.csv (+ ar_aging_template.csv, encounter volume)", request_from="RCM / revenue-cycle lead", activates="RCM red-flag detection (denial rate, DAR, aged AR, payer concentration)", guide_hint="What claims/denial/AR data do I need to upload?") + ck_illustrative_note("red-flag figures") + body, "RCM Red Flag Detector", active_nav="/rcm-red-flags",
                          subtitle=f"{len(_RISK_FACTORS)} risk factors — {len(corpus):,} deal corpus",

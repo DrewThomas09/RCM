@@ -360,7 +360,7 @@ def render_mgmt_fee_tracker(params: dict) -> str:
             template="mgmt_fee_schedule_template.csv", request_from="Fund CFO / fund administrator",
             activates="fee drag, offset tracking, committed-vs-invested basis comparison",
             guide_hint="What management-fee data do I need to upload?")
-        + ck_illustrative_note("fee figures") + content,
+        + ck_illustrative_note("fee figures") + content + ck_page_actions(),
         title="Management Fee Tracker",
         active_nav="/mgmt-fee-tracker",
         editorial_intro={

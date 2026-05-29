@@ -3960,7 +3960,10 @@ def render_insights_page(
             intro_html + search_hero + prelude_html + rail_layout
         )
 
-    full_body = full_body + next_section_html
+    # 2026-05-28 wave-B: render_insights_page powers /research,
+    # /pe-library, /library and other catalog surfaces. One edit
+    # here adds Copy share link + Back-to-top to all of them.
+    full_body = full_body + next_section_html + ck_page_actions()
 
     return chartis_shell(
         full_body,

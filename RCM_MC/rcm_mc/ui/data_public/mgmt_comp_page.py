@@ -334,7 +334,7 @@ def render_mgmt_comp(params: dict = None) -> str:
         next_action="Wire to IRS 990 exec comp (non-profits)") + body
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link
     # + Back-to-top affordances. Idempotent JS guards.
-    from ._chartis_kit import ck_page_actions
+    from .._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(body, "Mgmt Compensation Analyzer", active_nav="/mgmt-comp",
         editorial_intro={

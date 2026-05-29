@@ -356,7 +356,7 @@ def render_drug_pricing_340b(params: dict = None) -> str:
 
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link
     # + Back-to-top affordances. Idempotent JS guards.
-    from ._chartis_kit import ck_page_actions
+    from .._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(body, "340B Drug Pricing", active_nav="/drug-pricing-340b",
         editorial_intro={

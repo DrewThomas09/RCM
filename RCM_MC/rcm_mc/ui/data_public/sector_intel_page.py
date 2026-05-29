@@ -287,7 +287,7 @@ def render_sector_intel(min_deals: int = 3, sort_by: str = "moic_p50") -> str:
 
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link
     # + Back-to-top affordances. Idempotent JS guards.
-    from ._chartis_kit import ck_page_actions
+    from .._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(
         ck_illustrative_note("sector-intelligence aggregates — built from the "

@@ -386,7 +386,7 @@ def render_geo_market(params: dict = None) -> str:
 
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link
     # + Back-to-top affordances. Idempotent JS guards.
-    from ._chartis_kit import ck_page_actions
+    from .._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(ck_illustrative_note("geographic-market aggregates — built from the bundled illustrative seed deals, not your ingested portfolio") + body, "Geographic Market", active_nav="/geo-market",
         editorial_intro={

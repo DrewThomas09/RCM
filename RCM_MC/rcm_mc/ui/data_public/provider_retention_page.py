@@ -319,7 +319,7 @@ def render_provider_retention(params: dict = None) -> str:
         next_action="Attach this deal's HR roster for deal-specific retention") + body
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link
     # + Back-to-top affordances. Idempotent JS guards.
-    from ._chartis_kit import ck_page_actions
+    from .._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(body, "Provider Retention", active_nav="/provider-retention",
         editorial_intro={

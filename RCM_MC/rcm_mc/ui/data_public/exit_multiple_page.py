@@ -353,7 +353,11 @@ def render_exit_multiple(params: dict) -> str:
 </div>
 '''
 
-    return chartis_shell(ck_illustrative_note("exit-multiple scenarios") + content,
+    # 2026-05-28 wave-D: add ck_page_actions for share + back-to-top.
+
+    from .._chartis_kit import ck_page_actions
+
+    return chartis_shell(ck_illustrative_note("exit-multiple scenarios") + content + ck_page_actions(),
         title=f"Exit Multiple Analysis — {sector}",
         active_nav="/exit-multiple",
         editorial_intro={
