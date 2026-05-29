@@ -334,6 +334,10 @@ def render_risk_matrix(sector_filter: str = "") -> str:
 
     body = _dr_panel + ck_illustrative_note("risk-matrix figures") + kpis + filter_bar + section_scatter + scatter_panel + section_heatmap + heatmap
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body,
         title="Risk Matrix",

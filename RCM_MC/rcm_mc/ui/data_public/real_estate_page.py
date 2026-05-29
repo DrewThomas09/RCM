@@ -324,6 +324,10 @@ def render_real_estate(params: dict = None) -> str:
 
 </div>"""
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, "Real Estate", active_nav="/real-estate",
         editorial_intro={
             "eyebrow": "REAL ESTATE",

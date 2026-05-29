@@ -258,6 +258,10 @@ def render_portfolio_optimizer(sectors: Optional[List[str]] = None) -> str:
     body = kpis + form_html + sec_hhi + hhi_p + sec_weights + weight_panels
 
     from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         _ckn("portfolio-optimizer model (illustrative defaults; computes off your inputs)") + body,
         title="Portfolio Construction",

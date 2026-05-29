@@ -359,6 +359,10 @@ def render_revenue_leakage(params: dict = None) -> str:
 
 </div>"""
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, "Revenue Leakage", active_nav="/revenue-leakage",
         editorial_intro={
             "eyebrow": "REVENUE LEAKAGE",

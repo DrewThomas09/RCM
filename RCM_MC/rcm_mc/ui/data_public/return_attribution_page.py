@@ -233,6 +233,10 @@ def render_return_attribution() -> str:
 </div>"""
 
     from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(_ckn("attribution figures (illustrative seed corpus)") + body, "Return Attribution", active_nav="/return-attribution", subtitle=f"Corpus: {ra.corpus_size} deals",
         editorial_intro={
             "eyebrow": "RETURN ATTRIBUTION",

@@ -246,6 +246,10 @@ def render_state_profile(params: Dict = None) -> str:
     Move from market to target: <a href="/screen?state={state}" style="color:{ac};text-decoration:none">screen {name}'s hospitals &rarr;</a>
   </p>
 </div>"""
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, f"State Profile — {name}", active_nav="/state-profile")
 
 
