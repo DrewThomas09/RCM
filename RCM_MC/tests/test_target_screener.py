@@ -352,6 +352,55 @@ class WorkbenchShellTests(unittest.TestCase):
                 'class="n"', chip_blocks[0],
                 f"{label} chip should not carry a provider-count badge")
 
+    # ── 2026-05-28 Wave 5 — top-N row-cap toggle ───────────────────
+    # The ranked-providers table caps at 150 rows historically; the
+    # partner had no way to focus on just the strongest 10/25/50/100
+    # without scrolling. Wave-5 adds a chip strip above the table:
+    #   Show top  [10] [25] [50] [100] [150]  of matches
+    # Each chip is a real GET link that flips ?limit= while keeping
+    # state / sort / direction / filters / hide / compare / layer.
+
+    def test_topn_toggle_renders_all_five_chips(self):
+        import re
+        h = self._render()
+        chips = re.findall(r'class="ts-topn-chip[^"]*"[^>]*>(\d+)<', h)
+        self.assertEqual(chips, ["10", "25", "50", "100", "150"])
+
+    def test_topn_default_active_is_150(self):
+        import re
+        h = self._render()
+        active = re.findall(r'class="ts-topn-chip is-active"[^>]*>(\d+)<', h)
+        self.assertEqual(active, ["150"])
+
+    def test_topn_limit_param_actually_caps_table(self):
+        # When ?limit=25 is set, the rendered table really shows 25
+        # rows max — not just the chip highlighting. Pinned via the
+        # 'Capped at N' line at the top of the panel.
+        h = self._render(limit="25")
+        self.assertIn("Capped at 25.", h)
+        # And the active chip is now 25.
+        import re
+        active = re.findall(r'class="ts-topn-chip is-active"[^>]*>(\d+)<', h)
+        self.assertEqual(active, ["25"])
+
+    def test_topn_hostile_limit_falls_back_to_150(self):
+        # A bookmark or hand-crafted URL with a value outside the
+        # allowed set silently falls back to the historical 150
+        # default — never lets a partner accidentally render
+        # 99,999 rows.
+        h = self._render(limit="9999")
+        self.assertIn("Capped at 150.", h)
+
+    def test_topn_chip_urls_preserve_other_params(self):
+        import re
+        h = self._render(limit="10", state="TX", min_quality="3")
+        hrefs = re.findall(
+            r'<a class="ts-topn-chip[^"]*" href="([^"]+)"', h)
+        self.assertEqual(len(hrefs), 5)
+        for href in hrefs:
+            self.assertIn("state=TX", href)
+            self.assertIn("min_quality=3", href)
+
     def test_chip_remove_link_drops_only_that_param(self):
         import re
         h = self._render(state="TX", min_quality="4")

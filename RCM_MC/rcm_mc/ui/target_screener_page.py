@@ -198,6 +198,24 @@ _CSS = """
  text-transform:uppercase;color:var(--sc-warning,#b8732a);text-decoration:none;
  margin-left:6px;font-weight:600;}
 .ts-fchip-clear:hover{text-decoration:underline;}
+/* Top-N row-cap toggle above the table. Partners default to 150
+   (the historical hard cap) but can focus on the strongest 10 / 25
+   without scrolling. Each chip is a real GET link → bookmark-safe. */
+.ts-topn{display:flex;flex-wrap:wrap;align-items:center;gap:5px;
+ margin:0 0 8px;padding:6px 8px;background:var(--sc-paper,#faf6ec);
+ border:1px solid var(--sc-rule,#c9c1ac);border-radius:2px;}
+.ts-topn-lbl,.ts-topn-suffix{font-family:var(--sc-mono);font-size:9.5px;
+ letter-spacing:.12em;text-transform:uppercase;
+ color:var(--sc-text-faint,#8b94a0);font-weight:700;}
+.ts-topn-suffix{margin-left:4px;}
+.ts-topn-chip{display:inline-flex;align-items:center;justify-content:center;
+ min-width:32px;padding:3px 9px;font-family:var(--sc-mono);font-size:11px;
+ font-variant-numeric:tabular-nums;font-weight:600;text-decoration:none;
+ color:var(--sc-text,#2a3a4a);background:#fff;
+ border:1px solid var(--sc-rule,#c9c1ac);border-radius:2px;}
+.ts-topn-chip:hover{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
+.ts-topn-chip.is-active{background:var(--sc-navy,#15202b);color:#fff;
+ border-color:var(--sc-navy,#15202b);}
 .tsw-scaffold{background:var(--sc-paper,#faf6ec);border:1px dashed var(--sc-rule-2,#bfb6a2);
  border-radius:2px;padding:18px 20px;margin:14px 0;}
 .tsw-scaffold h3{font-family:var(--sc-serif);font-size:14.5px;color:var(--sc-navy,#15202b);margin:0 0 6px;}
@@ -251,6 +269,11 @@ _VERTICAL_TABLE = {
 }
 
 _TABLE_LIMIT = 150
+# Wave-5: user-pickable top-N for the ranked-providers table. 150 is
+# the historical hard cap and stays the default; lower values let the
+# partner focus on the strongest matches without scrolling, higher
+# isn't useful here because the columns/inspector screens take over.
+_TOP_N_CHOICES = (10, 25, 50, 100, 150)
 
 
 def _q1(qs: Dict[str, List[str]], key: str, default: str = "") -> str:
@@ -674,6 +697,44 @@ def _fmt_q(row: Dict) -> str:
     return f"{v:.1%}" if row.get("q_pct") else (f"{v:g}")
 
 
+def _topn_toggle_html(vertical: str, qs: Dict[str, List[str]],
+                      active_limit: int) -> str:
+    """Render the 10/25/50/100/150 row-cap chip strip above the table.
+
+    Each chip is a real GET link — server-rendered, bookmark-safe.
+    Preserves every other relevant query param (state / sort /
+    direction / filters / hide / compare) so flipping the cap
+    doesn't lose the partner's other selections.
+    """
+    import html as _h
+    # Carry-through params other than `limit`.
+    keep_keys = ("state", "sort", "direction", "min_quality", "min_size",
+                 "ownership", "hide", "compare", "layer")
+    base = {"view": "main", "vertical": vertical}
+    for k in keep_keys:
+        v = _q1(qs, k)
+        if v:
+            base[k] = v
+
+    chips = []
+    for n in _TOP_N_CHOICES:
+        q = dict(base)
+        q["limit"] = str(n)
+        href = "/target-screener?" + "&".join(
+            f"{k}={_h.escape(str(v))}" for k, v in q.items()
+        )
+        cls = "ts-topn-chip is-active" if n == active_limit else "ts-topn-chip"
+        chips.append(f'<a class="{cls}" href="{href}">{n}</a>')
+
+    return (
+        '<div class="ts-topn">'
+        '<span class="ts-topn-lbl">Show top</span>'
+        + "".join(chips)
+        + '<span class="ts-topn-suffix">of matches</span>'
+        '</div>'
+    )
+
+
 def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
     import html as _h
     vinfo = next((v for v in _VERTICALS if v["key"] == vertical), _VERTICALS[0])
@@ -698,7 +759,18 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
     if own:
         rows = [r for r in rows if own in str(r.get("ownership", "")).lower()]
     n_matching = len(rows)
-    rows = rows[:_TABLE_LIMIT]
+    # Wave-5: respect ?limit= from the top-N toggle. Validate against
+    # the choice set so a hostile or stale URL can't ask for a
+    # million rows; falls back to _TABLE_LIMIT (150) when absent or
+    # invalid so existing behavior is unchanged on a clean page load.
+    try:
+        _limit_param = int(_q1(qs, "limit", str(_TABLE_LIMIT)))
+    except ValueError:
+        _limit_param = _TABLE_LIMIT
+    if _limit_param not in _TOP_N_CHOICES:
+        _limit_param = _TABLE_LIMIT
+    row_limit = _limit_param
+    rows = rows[:row_limit]
 
     size_label0 = (all_rows[0].get("size_label") or "Size")
     q_label0 = (all_rows[0].get("q_label") or "Quality")
@@ -736,7 +808,13 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
     size_label = size_label0
     q_label = q_label0
     if not rows:
-        return (filter_form + f'<p class="ck-section-body">No {vinfo["label"]} '
+        # Render the top-N toggle in the empty-state path too — the
+        # partner may want to dial the cap back up after relaxing a
+        # filter, and the toggle's chip-URLs already preserve all
+        # the other params.
+        top_n = _topn_toggle_html(vertical, qs, row_limit)
+        return (filter_form + top_n
+                + f'<p class="ck-section-body">No {vinfo["label"]} '
                 f'providers match these filters (of {total_universe:,} in '
                 f'{("scope " + state) if state else "the universe"}). Relax a '
                 'filter — or open Just-missed to see who narrowly failed.</p>')
@@ -855,13 +933,19 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         'border-color:var(--sc-teal,#155752);}'
         '</style>'
     )
+    # Wave-5: top-N quick-toggle (10 / 25 / 50 / 100 / 150). Each chip
+    # is a real GET link — server-rendered, shareable. Preserves the
+    # current vertical / state / sort / direction / filters / hide
+    # params; only flips ?limit=.
+    top_n = _topn_toggle_html(vertical, qs, row_limit)
     return (
         table_css
         + filter_form
+        + top_n
         + f'<p class="ck-section-body" style="margin:0 0 8px;">Showing {len(rows)} '
         f'of {match_txt} {vinfo["label"]} providers{scope} (ranked by '
         f'{q_label.lower()}; real {vinfo["universe"]} data, "—" = not reported). '
-        f'Capped at {_TABLE_LIMIT}.</p>'
+        f'Capped at {row_limit}.</p>'
         '<div style="overflow-x:auto;"><table class="ts-screen-table">'
         f'<thead>{head}</thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
