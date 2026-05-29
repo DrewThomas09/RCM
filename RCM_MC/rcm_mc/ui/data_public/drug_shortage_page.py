@@ -314,6 +314,10 @@ def render_drug_shortage(params: dict = None) -> str:
         universe="cms", confidence="derived",
         source="openFDA drug shortages (live snapshot) + illustrative model",
         next_action="Search a drug in the FDA section") + body
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, "Drug Shortage", active_nav="/drug-shortage",
         editorial_intro={
             "eyebrow": "DRUG SHORTAGE",

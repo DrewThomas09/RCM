@@ -375,6 +375,10 @@ def render_exit_readiness(params: dict = None) -> str:
         source="data_public/exit_readiness.py (multi-dimensional readiness model).",
         page_key="exit-readiness",
     )
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(ck_illustrative_note("exit-readiness scores") + explainer + body, "Exit Readiness Index", active_nav="/exit-readiness",
         editorial_intro={
             "eyebrow": "EXIT READINESS",

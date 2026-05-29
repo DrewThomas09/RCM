@@ -377,6 +377,10 @@ def render_dividend_recap(params: dict = None) -> str:
 
 </div>"""
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, "Dividend Recap", active_nav="/dividend-recap",
         editorial_intro={
             "eyebrow": "DIVIDEND RECAP",
