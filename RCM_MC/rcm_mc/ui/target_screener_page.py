@@ -216,6 +216,26 @@ _CSS = """
 .ts-topn-chip:hover{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
 .ts-topn-chip.is-active{background:var(--sc-navy,#15202b);color:#fff;
  border-color:var(--sc-navy,#15202b);}
+/* Inline name/CCN/location filter input, lives in the same toolbar
+   as the top-N chips so partners have all the table controls in one
+   place. Pushed to the right by margin-left:auto so the chips own
+   the left edge. */
+.ts-topn-search{margin-left:auto;display:flex;align-items:center;gap:8px;
+ flex:0 1 280px;min-width:180px;}
+.ts-topn-search-input{flex:1;padding:5px 9px;font-family:var(--sc-sans,Inter Tight,sans-serif);
+ font-size:12px;color:var(--sc-text,#2a3a4a);background:#fff;
+ border:1px solid var(--sc-rule,#c9c1ac);border-radius:2px;}
+.ts-topn-search-input:focus{outline:none;border-color:var(--sc-teal,#155752);
+ box-shadow:0 0 0 1px var(--sc-teal,#155752);}
+.ts-topn-search-input::placeholder{color:var(--sc-text-faint,#8b94a0);
+ font-style:italic;}
+.ts-topn-search-count{font-family:var(--sc-mono);font-size:10px;
+ letter-spacing:.04em;color:var(--sc-text-dim,#6a7480);
+ font-variant-numeric:tabular-nums;white-space:nowrap;}
+@media (max-width:720px){
+  .ts-topn{flex-direction:column;align-items:stretch;}
+  .ts-topn-search{margin-left:0;width:100%;flex:1 1 100%;}
+}
 .tsw-scaffold{background:var(--sc-paper,#faf6ec);border:1px dashed var(--sc-rule-2,#bfb6a2);
  border-radius:2px;padding:18px 20px;margin:14px 0;}
 .tsw-scaffold h3{font-family:var(--sc-serif);font-size:14.5px;color:var(--sc-navy,#15202b);margin:0 0 6px;}
@@ -699,12 +719,16 @@ def _fmt_q(row: Dict) -> str:
 
 def _topn_toggle_html(vertical: str, qs: Dict[str, List[str]],
                       active_limit: int) -> str:
-    """Render the 10/25/50/100/150 row-cap chip strip above the table.
+    """Render the 10/25/50/100/150 row-cap chip strip plus the inline
+    client-side name-filter input, in a single toolbar above the table.
 
-    Each chip is a real GET link — server-rendered, bookmark-safe.
-    Preserves every other relevant query param (state / sort /
-    direction / filters / hide / compare) so flipping the cap
-    doesn't lose the partner's other selections.
+    Top-N chips are real GET links — server-rendered, bookmark-safe —
+    and preserve every other relevant query param.
+
+    The name-filter input is purely client-side: pure JS that toggles
+    a hidden class on table rows whose data-ts-search blob doesn't
+    contain the typed substring. No server round-trip, so typing
+    feels instant in a 150-row table.
     """
     import html as _h
     # Carry-through params other than `limit`.
@@ -731,8 +755,50 @@ def _topn_toggle_html(vertical: str, qs: Dict[str, List[str]],
         '<span class="ts-topn-lbl">Show top</span>'
         + "".join(chips)
         + '<span class="ts-topn-suffix">of matches</span>'
+        # ── client-side instant name filter ─────────────────────
+        '<span class="ts-topn-search">'
+        '<input type="search" class="ts-topn-search-input" '
+        'placeholder="Filter by name, CCN, city, state…" '
+        'aria-label="Filter ranked providers by name, CCN, or location" '
+        'data-ts-search-input>'
+        '<span class="ts-topn-search-count" data-ts-search-count></span>'
+        '</span>'
         '</div>'
+        + _TS_SEARCH_JS
     )
+
+
+# Idempotent install JS for the client-side row filter. Reads from
+# every <tr data-ts-search="..."> in the page, hides rows that don't
+# contain the typed substring, and updates the chip-counter.
+_TS_SEARCH_JS = """
+<script>
+(function(){
+  if (window.__rcmTsSearchInstalled) return;
+  window.__rcmTsSearchInstalled = true;
+  var ATTR = 'data-ts-search';
+  function apply(input){
+    var q = (input.value || '').trim().toLowerCase();
+    var rows = document.querySelectorAll('tr['+ATTR+']');
+    var shown = 0;
+    rows.forEach(function(r){
+      var blob = r.getAttribute(ATTR) || '';
+      var match = !q || blob.indexOf(q) !== -1;
+      r.style.display = match ? '' : 'none';
+      if (match) shown++;
+    });
+    var c = input.parentNode.querySelector('[data-ts-search-count]');
+    if (c){
+      c.textContent = q ? (shown + ' of ' + rows.length) : '';
+    }
+  }
+  document.addEventListener('input', function(e){
+    var t = e.target;
+    if (t && t.matches && t.matches('[data-ts-search-input]')) apply(t);
+  });
+})();
+</script>
+"""
 
 
 def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
@@ -897,8 +963,18 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
                 if show_q else "")
         src_td = (f'<td style="padding:5px 8px;font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-dim,#6a7480);">{_h.escape(r["source"])}</td>'
                   if show_src else "")
+        # Wave-6: data-ts-search carries a lowercased name+ccn+location
+        # blob the client-side instant-filter input searches. Single
+        # attribute → cheap selector lookup in the JS handler.
+        search_blob = " ".join((
+            (r.get("name") or ""),
+            (r.get("ccn") or ""),
+            (r.get("city") or ""),
+            (r.get("state") or ""),
+        )).lower()
         trs.append(
-            '<tr style="border-bottom:1px solid var(--sc-rule,#e4ddca);">'
+            f'<tr data-ts-search="{_h.escape(search_blob, quote=True)}" '
+            'style="border-bottom:1px solid var(--sc-rule,#e4ddca);">'
             f'<td style="padding:5px 8px;font-weight:600;">{_h.escape(r["name"])}'
             f'<span style="font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-faint,#8b94a0);"> · {ccn}</span></td>'
             f'<td style="padding:5px 8px;">{loc}</td>'
