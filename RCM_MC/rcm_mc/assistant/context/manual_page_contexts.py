@@ -35,7 +35,7 @@ _BASE_NOTES = [
     # standard page-action affordances via the shared ck_page_actions
     # helper. If a partner asks how to share / print / look up / jump
     # / find shortcuts, point at these.
-    "Every PEdesk page now has six standard actions wired by the "
+    "Every PEdesk page now has SEVEN standard actions wired by the "
     "shared ck_page_actions helper: (1) Copy share link — captures "
     "the current URL with every filter, sort, and scope param "
     "encoded so the partner can share or bookmark the exact view; "
@@ -46,8 +46,11 @@ _BASE_NOTES = [
     "command palette so the partner can navigate to any route by "
     "typing; (5) 📖 Glossary — direct link to /metric-glossary "
     "where every metric has its definition, rationale, formula, "
-    "and source documents; (6) Back to top — floating pill that "
-    "appears after the partner scrolls more than 600px down.",
+    "and source documents; (6) 🔬 Methodology — direct link to "
+    "/methodology where every model has its inputs, assumptions, "
+    "formulas, and validation references documented; (7) Back to "
+    "top — floating pill that appears after the partner scrolls "
+    "more than 600px down.",
 ]
 
 
