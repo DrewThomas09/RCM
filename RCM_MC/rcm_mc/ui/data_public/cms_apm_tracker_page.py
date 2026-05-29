@@ -401,6 +401,10 @@ def render_cms_apm_tracker(params: dict = None) -> str:
     # the #670→#678 rebase — it both duplicated and contradicted the accurate
     # CMMI framing (the program catalog is real public reference; only the
     # portfolio overlay is illustrative, which is scoped separately).
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, "CMS APM Tracker", active_nav="/cms-apm",
         editorial_intro={
             "eyebrow": "CMS APM TRACKER",

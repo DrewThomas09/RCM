@@ -269,6 +269,10 @@ def render_concentration_risk() -> str:
   </div>
 </div>"""
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(ck_illustrative_note("concentration-risk figures") + body, "Concentration Risk", active_nav="/concentration-risk",
                          subtitle=f"HHI analysis — {cr.corpus_size} deals",
         editorial_intro={

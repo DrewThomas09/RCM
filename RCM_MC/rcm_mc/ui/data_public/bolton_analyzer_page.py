@@ -434,5 +434,9 @@ def render_bolton_analyzer(params: dict = None) -> str:
 
 </div>"""
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(ck_illustrative_note("bolt-on accretion figures") + body, "Bolt-on M&A Analyzer", active_nav="/bolton-analyzer",
         extra_css=_EXPLAINER_CSS)

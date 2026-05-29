@@ -80,4 +80,8 @@ def render_data_activation(params: Dict = None) -> str:
   <div class="ck-kpi-grid" style="grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px">{_summary_strip()}</div>
   {"".join(sections)}
 </div>"""
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, "Data Activation Center", active_nav="/data-activation")

@@ -253,6 +253,10 @@ def render_cms_data_browser(params: dict = None) -> str:
     # deck headline + the meta_line. Drop it; the shell-injected
     # title, eyebrow, meta, and deck cover the same ground without
     # the noise.
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         body, "CMS Public Data Browser",
         active_nav="/cms-data-browser",
