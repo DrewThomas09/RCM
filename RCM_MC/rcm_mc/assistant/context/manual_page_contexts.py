@@ -31,6 +31,17 @@ _BASE_NOTES = [
     "assumptions, or make investment recommendations.",
     "Do not invent formulas, data lineage, or model mechanics; if a "
     "specific is not in this context, say it needs source documentation.",
+    # 2026-05-28 wave-A-D: every PEdesk page now ships the same two "
+    # page actions — a Copy share link button (puts the current URL "
+    # on the clipboard with every filter / sort / scope encoded so a "
+    # partner can share the exact view) and a Back-to-top floating "
+    # button (fades in after 600px scroll). If a partner asks how to "
+    # share a screen state or bookmark it, point at these.
+    "Every PEdesk page now has a 'Copy share link' button "
+    "(captures the current URL with every filter and sort encoded) "
+    "and a floating 'Back to top' button (appears after the partner "
+    "deep-scrolls). Both are server-rendered by the shared "
+    "ck_page_actions helper.",
 ]
 
 
