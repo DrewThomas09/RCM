@@ -505,9 +505,28 @@ class WorkbenchShellTests(unittest.TestCase):
     # surfaces any time the strip is non-empty.
 
     def test_non_default_layer_renders_chip(self):
+        # Wave-15: chip value reads as human-friendly label
+        # ('Age 65+') not the URL slug ('age65').
         h = self._render(layer="age65")
         self.assertIn('ts-fchip-lbl">Map layer<', h)
-        self.assertIn('ts-fchip-val">age65<', h)
+        self.assertIn('ts-fchip-val">Age 65+<', h)
+
+    # ── 2026-05-28 Wave 15 — human-readable chip values ──────────
+    # Raw URL slugs (age65 / name / 25 / for-profit) read like
+    # debug API params. Map them to friendly labels for the chip.
+
+    def test_sort_chip_humanises_with_direction_arrow(self):
+        h_asc = self._render(sort="name", direction="asc")
+        self.assertIn('ts-fchip-val">Provider name ↑<', h_asc)
+        h_desc = self._render(sort="size", vertical="snf",
+                              direction="desc")
+        self.assertIn('ts-fchip-val">Size ↓<', h_desc)
+
+    def test_limit_chip_uses_top_n_language(self):
+        # 'top 25' reads better than just '25' on a chip labelled
+        # 'Row cap'.
+        h = self._render(limit="25")
+        self.assertIn('ts-fchip-val">top 25<', h)
 
     def test_default_layer_does_NOT_render_chip(self):
         # provider_count is the default, so no chip even if it's
@@ -517,9 +536,12 @@ class WorkbenchShellTests(unittest.TestCase):
         self.assertNotIn('<div class="ts-fchips"', h)
 
     def test_non_default_limit_renders_chip(self):
+        # Wave-15: chip value reads as 'top 25' rather than the
+        # bare '25' so the partner doesn't have to interpret what
+        # 'Row cap: 25' means out of context.
         h = self._render(limit="25")
         self.assertIn('ts-fchip-lbl">Row cap<', h)
-        self.assertIn('ts-fchip-val">25<', h)
+        self.assertIn('ts-fchip-val">top 25<', h)
 
     def test_default_limit_does_NOT_render_chip(self):
         h = self._render(limit="150")
