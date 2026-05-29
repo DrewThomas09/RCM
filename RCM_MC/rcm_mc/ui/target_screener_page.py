@@ -169,6 +169,14 @@ _CSS = """
 .ts-univ-block{padding:0 0 14px;margin:0 0 14px;
  border-bottom:1px solid var(--sc-rule,#c9c1ac);}
 .ts-univ-block:last-child{padding-bottom:0;margin-bottom:0;border-bottom:0;}
+/* Eyebrow row of a sub-block — eyebrow label on the left,
+   any auxiliary actions (e.g. wave-16 'Copy share link' button) on
+   the right. */
+.ts-univ-block-head{display:flex;align-items:center;
+ justify-content:space-between;gap:12px;margin-bottom:4px;}
+.ts-univ-block-head .ts-univ-lbl{margin-bottom:0;}
+.ts-univ-block-head .ck-share-btn{font-family:var(--sc-mono);font-size:10px;
+ letter-spacing:.08em;}
 .ts-univ-lbl{font-family:var(--sc-mono);font-size:10px;letter-spacing:.12em;
  text-transform:uppercase;color:var(--sc-teal,#155752);font-weight:700;
  margin-bottom:4px;}
@@ -795,6 +803,17 @@ def _fmt_q(row: Dict) -> str:
     if v is None:
         return '<span style="color:var(--sc-text-faint,#8b94a0)">—</span>'
     return f"{v:.1%}" if row.get("q_pct") else (f"{v:g}")
+
+
+def _share_link_button_html() -> str:
+    """Compact 'Copy share link' button for the Active-screen header
+    row. Reuses ck_copy_share_link_button so the install JS deduplicates
+    across the page (`__rcmCopyShareLinkInstalled` guard). The current
+    URL has every filter / sort / layer / limit baked in, so the
+    permalink the button puts on the clipboard re-creates exactly the
+    screen the partner is looking at."""
+    from ._chartis_kit import ck_copy_share_link_button
+    return ck_copy_share_link_button("Copy share link")
 
 
 def _compare_basket_banner(vertical: str,
@@ -1638,7 +1657,17 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
         # chip is a one-click "remove" link; "Clear all filters"
         # appears when 2+ chips are active.
         '<div class="ts-univ-block">'
+        # Wave-16: sub-block eyebrow row now carries a Copy-share-link
+        # button on the right edge. The current URL has every filter /
+        # sort / layer / limit baked in, so one click puts a partner-
+        # shareable permalink on the clipboard. Uses the shared
+        # ck_copy_share_link_button helper from _chartis_kit so the
+        # idempotent JS install (__rcmCopyShareLinkInstalled guard)
+        # composes cleanly with the other inline scripts on the page.
+        '<div class="ts-univ-block-head">'
         '<div class="ts-univ-lbl">Active screen</div>'
+        + _share_link_button_html()
+        + '</div>'
         f'<p class="ts-univ-summary">'
         f'<strong>{vinfo["label"]}</strong> &middot; '
         f'<span class="ts-univ-code">{vinfo["universe"]}</span>. '
