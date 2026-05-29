@@ -225,6 +225,10 @@ def render_playbook(deal_id: str, deal_name: str, entries: List[Dict[str, Any]])
         f'style="text-decoration:none;">Deal Dashboard</a></div>'
     )
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, f"Playbook — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"{len(entries)} initiatives | ${total_impact/1e6:.1f}M total impact",

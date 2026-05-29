@@ -443,6 +443,10 @@ def render_deal_comps(store: Any, params: Optional[Dict[str, str]] = None) -> st
         pager += f'<a href="/deal-library/comps?{_url.urlencode(np)}">Next →</a>'
     pager += "</span></div>"
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(back + title + cards + caveat + table + pager,
                          title="Comparables — Deal Library",
                          active_nav="/deal-library")

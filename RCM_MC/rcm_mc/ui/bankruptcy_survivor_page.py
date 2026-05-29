@@ -344,6 +344,10 @@ def render_scan_result(scan: BankruptcySurvivorScan) -> str:
         "entry EV and outcome from the public-deals corpus.</div>"
         f"<div class='caveat'>Computed {html.escape(scan.computed_at)}.</div>"
     )
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         result_title + result_explainer + body,
         title=f"Bankruptcy-Survivor Scan — {html.escape(scan.target_name)}",

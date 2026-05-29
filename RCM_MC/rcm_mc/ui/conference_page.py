@@ -463,6 +463,10 @@ def render_conference_roadmap(category: str = "all") -> str:
         ".cad-badge-blue{background:var(--cad-accent);color:#fff;}"
         ".cad-badge-muted{background:var(--cad-border);color:var(--cad-text2);}"
     )
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         title_block + explainer_html + body,
         "Conference Roadmap",

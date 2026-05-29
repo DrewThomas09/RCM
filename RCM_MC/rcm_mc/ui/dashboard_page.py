@@ -2622,10 +2622,15 @@ def render_dashboard(db_path: str, *,
     # the private web deployment has it. No dashboard-specific
     # wiring needed; removing the duplicate here keeps the DOM
     # free of two #wc-cmdk modals on the dashboard.
+    # 2026-05-28 wave-B: ck_page_actions adds the Copy share link
+    # affordance + Back-to-top jump for partners who deep-scroll
+    # the dashboard. Idempotent JS guards prevent double-binding.
+    from ._chartis_kit import ck_page_actions
     body = (
         _wc.web_styles()
         + _wc.responsive_container(inner)
         + _wc.sortable_table_js()
         + _wc.spinner_js()
+        + ck_page_actions()
     )
     return chartis_shell(body, "Dashboard", active_nav="/dashboard")
