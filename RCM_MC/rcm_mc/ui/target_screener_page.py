@@ -102,32 +102,33 @@ _CSS = """
      decorative hover box-shadow on .ts-mode replaced with a
      subtle border-color shift (matches every other interactive
      card on the platform after the batch 30-43 sweep). */
+/* 2026-05-28 wave-3 compaction: tabbar single-line. Group meta-labels
+   ('Workbench states' / 'Linked screens') and per-tab subtitles are
+   dropped; the two groups stay separated by a vertical hairline.
+   Each tab is numeral + serif title only, ~108px wide vs the
+   previous ~142px — six tabs comfortably fit in a single row at any
+   reasonable viewport. */
 .tsw-tabs{display:flex;gap:0;overflow-x:auto;border:1px solid var(--sc-rule,#c9c1ac);
  border-radius:2px;background:var(--sc-paper-2,#f3eddb);margin:10px 0 14px;}
 .tsw-group{display:flex;}
 .tsw-group + .tsw-group{border-left:1px solid var(--sc-rule,#c9c1ac);}
-.tsw-glabel{padding:0 10px;font-family:var(--sc-mono);font-size:7.5px;letter-spacing:.12em;
- text-transform:uppercase;color:var(--sc-text-faint,#8b94a0);align-self:center;
- background:var(--sc-paper-3,#ece5d6);border-right:1px solid var(--sc-rule,#c9c1ac);
- line-height:1.3;white-space:nowrap;}
-.tsw-tab{padding:9px 14px 8px;border-right:1px solid var(--sc-rule,#c9c1ac);
- display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;
- min-width:142px;text-decoration:none;background:var(--sc-paper-2,#f3eddb);}
+.tsw-tab{padding:8px 14px 7px;border-right:1px solid var(--sc-rule,#c9c1ac);
+ display:flex;gap:8px;align-items:center;
+ min-width:108px;text-decoration:none;background:var(--sc-paper-2,#f3eddb);}
 .tsw-tab:last-child{border-right:0;}
 .tsw-tab:hover{background:var(--sc-paper,#faf6ec);}
 .tsw-tab.is-active{background:var(--sc-paper,#faf6ec);
- border-bottom:3px solid var(--sc-teal-deep,#0e3d39);padding-bottom:5px;}
-.tsw-num{font-family:var(--sc-serif);font-style:italic;font-size:16px;line-height:1;
- color:var(--sc-teal,#155752);width:18px;text-align:center;}
+ border-bottom:3px solid var(--sc-teal-deep,#0e3d39);padding-bottom:4px;}
+.tsw-num{font-family:var(--sc-serif);font-style:italic;font-size:15px;line-height:1;
+ color:var(--sc-teal,#155752);min-width:18px;text-align:center;}
 .tsw-tab.is-active .tsw-num{color:var(--sc-teal-deep,#0e3d39);}
-/* Stack the tab's title and subtitle vertically. Without this rule
-   they render inline (spans default to inline), which is what the
-   user saw as cramped/overlapping text inside each tab. */
+/* .tsw-meta wrapper retained (PR #1101 contract) but now holds only
+   the title — the subtitle line is dropped. Keep it as flex so any
+   future addition stacks cleanly. */
 .tsw-meta{display:flex;flex-direction:column;gap:2px;min-width:0;}
-.tsw-t{font-family:var(--sc-serif);font-size:13px;color:var(--sc-navy,#15202b);line-height:1.15;}
+.tsw-t{font-family:var(--sc-serif);font-size:13px;color:var(--sc-navy,#15202b);
+ line-height:1.15;white-space:nowrap;}
 .tsw-t em{font-style:italic;color:var(--sc-teal,#155752);}
-.tsw-s{font-family:var(--sc-mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;
- color:var(--sc-text-faint,#8b94a0);}
 .tsw-verticals{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 16px;}
 .tsw-vert{font-family:var(--sc-mono);font-size:10px;letter-spacing:.03em;
  padding:4px 9px;border:1px solid var(--sc-rule,#c9c1ac);border-radius:2px;
@@ -458,10 +459,23 @@ def _vhref(vertical: str, qs: Dict[str, List[str]]) -> str:
 
 
 def _tab_bar(active_view: str, qs: Dict[str, List[str]]) -> str:
-    groups = {"states": "Workbench<br>states", "linked": "Linked<br>screens"}
+    """Compact single-line tab bar.
+
+    2026-05-28 wave-3 compaction: dropped the inline 'Workbench states /
+    Linked screens' meta-labels and the per-tab subtitle line
+    ('SCREEN · MAP · TABLE', 'DRAWER · PEER · MARKET', …). The
+    subtitles repeated the panel titles found inside each view, and
+    the meta-labels were nav-on-nav-on-nav. Tabs are now numeral +
+    serif title only; the two groups stay separated by a vertical
+    hairline so the workbench-vs-linked distinction reads visually
+    without spending a row of text on it. Each tab also carries a
+    title= attribute with the dropped subtitle so the discoverability
+    moves into the hover affordance.
+    """
+    groups = ("states", "linked")
     html = ['<nav class="tsw-tabs" aria-label="Target Screener workbench screens">']
-    for gkey, glabel in groups.items():
-        html.append(f'<div class="tsw-group"><div class="tsw-glabel">{glabel}</div>')
+    for gkey in groups:
+        html.append('<div class="tsw-group">')
         for v in (x for x in _VIEWS if x["group"] == gkey):
             cls = "tsw-tab is-active" if v["key"] == active_view else "tsw-tab"
             t = v["label"]
@@ -471,10 +485,10 @@ def _tab_bar(active_view: str, qs: Dict[str, List[str]]) -> str:
                 t = f'<em>{t}</em>'
             html.append(
                 f'<a class="{cls}" href="{_href(v["key"], qs)}" '
-                f'aria-current="{"page" if v["key"] == active_view else "false"}">'
+                f'aria-current="{"page" if v["key"] == active_view else "false"}" '
+                f'title="{v["sub"]}">'
                 f'<span class="tsw-num">{v["num"]}</span>'
-                f'<span class="tsw-meta"><span class="tsw-t">{t}</span>'
-                f'<span class="tsw-s">{v["sub"]}</span></span></a>'
+                f'<span class="tsw-meta"><span class="tsw-t">{t}</span></span></a>'
             )
         html.append('</div>')
     html.append('</nav>')

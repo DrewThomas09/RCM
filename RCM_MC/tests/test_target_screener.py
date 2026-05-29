@@ -266,6 +266,45 @@ class WorkbenchShellTests(unittest.TestCase):
         for b in badges:
             self.assertGreater(int(b.replace(",", "")), 0, b)
 
+    # ── 2026-05-28 Wave 3 — tab-bar compaction ────────────────────
+    # Dropped the group meta-labels ('Workbench states' / 'Linked
+    # screens') and the per-tab subtitle line ('SCREEN · MAP · TABLE'
+    # etc) so the workbench tab strip is single-line and ~76% the
+    # width of its pre-compaction self. Subtitles moved to title=
+    # attributes so the discoverability is preserved on hover.
+
+    def test_tab_bar_subtitle_line_dropped(self):
+        # tsw-s was the per-tab subtitle <span>; no longer rendered.
+        h = self._render()
+        self.assertNotIn('class="tsw-s"', h)
+
+    def test_tab_bar_group_labels_dropped(self):
+        # tsw-glabel was the inline 'Workbench states' / 'Linked
+        # screens' meta-label — also no longer rendered.
+        h = self._render()
+        self.assertNotIn('class="tsw-glabel"', h)
+        self.assertNotIn("Workbench<br>states", h)
+        self.assertNotIn("Linked<br>screens", h)
+
+    def test_tab_bar_groups_visually_separated(self):
+        # Even with no labels, the two tab groups (workbench states
+        # 01-03 vs linked screens 04-06) stay visually divided by
+        # the .tsw-group + .tsw-group { border-left … } CSS rule.
+        import re
+        h = self._render()
+        groups = re.findall(r'<div class="tsw-group">', h)
+        self.assertEqual(len(groups), 2,
+                         f"expected 2 group divs, got {len(groups)}")
+
+    def test_tab_bar_subtitles_preserved_in_title_attribute(self):
+        # Discoverability — hovering a tab reveals what the dropped
+        # subtitle said. Title attributes are server-rendered so a
+        # browser without CSS still has the hint.
+        h = self._render()
+        self.assertIn('title="SCREEN · MAP · TABLE"', h)
+        self.assertIn('title="DRAWER · PEER · MARKET"', h)
+        self.assertIn('title="MISS-DISTANCE SCAN"', h)
+
     def test_geo_verticals_have_no_count_badge_on_their_chip(self):
         # The provider_supply and market chips render WITHOUT a
         # numeric count — those verticals screen geographies, not
