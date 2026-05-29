@@ -3268,6 +3268,7 @@ def ck_page_actions(
     print_btn: bool = True,
     shortcuts: bool = True,
     palette: bool = True,
+    glossary: bool = True,
     extras_html: str = "",
 ) -> str:
     """One-liner helper that drops the standard page-action affordances
@@ -3296,6 +3297,8 @@ def ck_page_actions(
         parts.append(ck_shortcuts_hint_button())
     if palette:
         parts.append(ck_palette_open_button())
+    if glossary:
+        parts.append(ck_metric_glossary_link())
     if extras_html:
         parts.append(extras_html)
     parts.append("</div>")
@@ -3309,6 +3312,39 @@ def ck_page_actions(
         "</style>"
     )
     return "".join(parts)
+
+
+def ck_metric_glossary_link(label: str = "📖 Glossary") -> str:
+    """Compact pill linking to /metric-glossary.
+
+    Pages reference dozens of metrics each (denial rate, MOIC,
+    EBITDA margin, …) but partners had no consistent way to look
+    up what each one means or how it's calculated. This pill on
+    every page sends the partner to the canonical metric glossary
+    where every metric has definition, rationale, formula, and
+    source documents.
+
+    Renders as a plain anchor so it costs zero JS — just CSS for
+    the affordance styling.
+    """
+    return (
+        "<style>"
+        ".ck-glossary-link{display:inline-flex;align-items:center;gap:6px;"
+        "padding:5px 11px;font-family:var(--sc-mono,monospace);"
+        "font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;"
+        "font-weight:600;background:#fff;color:var(--sc-text,#2a3a4a);"
+        "border:1px solid var(--sc-rule,#c9c1ac);border-radius:2px;"
+        "text-decoration:none;}"
+        ".ck-glossary-link:hover{border-color:var(--sc-teal,#155752);"
+        "color:var(--sc-teal,#155752);}"
+        ".ck-glossary-link:focus-visible{outline:2px solid var(--sc-teal,#155752);"
+        "outline-offset:1px;}"
+        "</style>"
+        f'<a class="ck-glossary-link" href="/metric-glossary" '
+        f'aria-label="Open the metric glossary — definitions, formulas, sources" '
+        f'title="Definitions, rationale, formulas for every metric the platform reports">'
+        f'{_esc(label)}</a>'
+    )
 
 
 def ck_palette_open_button(label: str = "⌘K Quick jump") -> str:
