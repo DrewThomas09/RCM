@@ -4278,87 +4278,6 @@ _MANUAL: List[PageContext] = [
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
     # ── Core deal/portfolio workflow pages (operate on the live deal store) ──
-    _ctx(
-        "/pipeline", "Deal Pipeline",
-        short_description="The deal pipeline — deals by stage (sourcing → LOI → "
-        "diligence → IC → close) on the live deal store.",
-        primary_purpose="Track and move deals through the funnel; saved searches "
-        "re-run against the corpus.",
-        data_sources=["Live SQLite deal store (the user's real deals)."],
-        interpretation_guidance=["Operates on YOUR tracked deals; empty/— means "
-                                "no deals at that stage, not zero value."],
-        related_routes=["/deal-pipeline", "/portfolio", "/diligence/checklist"],
-        source_confidence=SourceConfidence.DOCUMENTED,
-        data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
-    ),
-    _ctx(
-        "/diligence/checklist", "Diligence Checklist",
-        short_description="Per-deal diligence checklist — items, status, owners.",
-        primary_purpose="Track diligence completeness for a deal.",
-        data_sources=["Live deal store (per-deal checklist items)."],
-        interpretation_guidance=["Per-deal workflow state; reflects what's been "
-                                "entered for the selected deal."],
-        related_routes=["/diligence-checklist", "/diligence/questions", "/diligence/ic-packet"],
-        source_confidence=SourceConfidence.DOCUMENTED,
-        data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
-    ),
-    _ctx(
-        "/diligence/ingest", "Diligence Ingest",
-        short_description="Ingest a deal's documents/financials into the deal "
-        "store for analysis.",
-        primary_purpose="Load deal-specific data (the user's own) for diligence.",
-        data_sources=["User-uploaded deal data → live deal store."],
-        interpretation_guidance=["USER DATA REQUIRED — outputs reflect what you "
-                                "ingest for the deal."],
-        related_routes=["/diligence/checklist", "/import", "/new-deal/upload"],
-        source_confidence=SourceConfidence.DOCUMENTED,
-        data_confidence=DataConfidence.USER_ENTERED_DATA,
-    ),
-    _ctx(
-        "/diligence/questions", "Diligence Questions",
-        short_description="Generated + tracked diligence questions for a deal.",
-        primary_purpose="Build and manage the management-question / data-request "
-        "list for a deal.",
-        data_sources=["Live deal store + packet-derived question generation."],
-        interpretation_guidance=["Per-deal; combine with real CMS/HCRIS data "
-                                "when answering."],
-        related_routes=["/diligence/checklist", "/diligence/ic-packet"],
-        source_confidence=SourceConfidence.DOCUMENTED,
-        data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
-    ),
-    _ctx(
-        "/diligence/ic-packet", "IC Packet Assembler",
-        short_description="One-click investment-committee packet for a deal from "
-        "the live analysis packet.",
-        primary_purpose="Assemble an IC-ready memo/packet for a tracked deal.",
-        data_sources=["Live deal store + the deal's analysis packet."],
-        interpretation_guidance=["Per-deal; honest empty states where inputs "
-                                "are missing."],
-        related_routes=["/diligence/questions", "/ic-memo", "/exports"],
-        source_confidence=SourceConfidence.DOCUMENTED,
-        data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
-    ),
-    _ctx(
-        "/watchlist", "Watchlist",
-        short_description="Starred/watched deals for quick monitoring.",
-        primary_purpose="Track a focused subset of deals.",
-        data_sources=["Live deal store (watchlist flags)."],
-        interpretation_guidance=["Operates on YOUR watched deals."],
-        related_routes=["/pipeline", "/alerts", "/portfolio/monitor"],
-        source_confidence=SourceConfidence.DOCUMENTED,
-        data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
-    ),
-    _ctx(
-        "/escalations", "Escalations",
-        short_description="Escalated alerts/issues across the portfolio.",
-        primary_purpose="Surface deals/issues that need partner attention.",
-        data_sources=["Live deal store + alerts lifecycle."],
-        interpretation_guidance=["Reflects current alert/escalation state of "
-                                "tracked deals."],
-        related_routes=["/alerts", "/portfolio/monitor", "/watchlist"],
-        source_confidence=SourceConfidence.DOCUMENTED,
-        data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
-    ),
     # (/portfolio/monitor already documented earlier with metric/data-source
     #  links — no duplicate here.)
     # ── More live-deal-store workflow pages (Queue 6, batch 2) ──
@@ -4390,26 +4309,6 @@ _MANUAL: List[PageContext] = [
         data_sources=["Live deal store (owner assignments)."],
         interpretation_guidance=["Operates on YOUR tracked deals/team."],
         related_routes=["/pipeline", "/cohorts", "/my/AT"],
-        source_confidence=SourceConfidence.DOCUMENTED,
-        data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
-    ),
-    _ctx(
-        "/notes", "Notes",
-        short_description="Deal notes (searchable, taggable) on the live store.",
-        primary_purpose="Capture and search deal notes.",
-        data_sources=["Live deal store (notes; soft-deleted rows filtered)."],
-        interpretation_guidance=["Your entered notes; search/tag filter applies."],
-        related_routes=["/pipeline", "/research", "/cohorts"],
-        source_confidence=SourceConfidence.DOCUMENTED,
-        data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
-    ),
-    _ctx(
-        "/engagements", "Engagements",
-        short_description="Consulting/operating engagements tracked per deal.",
-        primary_purpose="Track engagement work tied to deals.",
-        data_sources=["Live deal store (engagement tables)."],
-        interpretation_guidance=["Per-deal engagement records you've entered."],
-        related_routes=["/engagements/create", "/portfolio", "/initiatives"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
@@ -5049,31 +4948,6 @@ _MANUAL: List[PageContext] = [
         related_routes=["/diligence/ic-packet", "/diligence/payer-stress", "/diligence/risk-workbench"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.MIXED,
-    ),
-    _ctx(
-        "/diligence/deal-mc", "Deal Monte Carlo",
-        category=PageContextCategory.DILIGENCE_WORKSPACE,
-        short_description="Monte Carlo of the deal's RCM initiatives + base "
-        "business to produce a 5-year EBITDA cone (base / downside / upside).",
-        primary_purpose="Size the spread between base, downside and upside "
-        "EBITDA for IC and LP reporting.",
-        common_questions=["What's the EBITDA range?",
-                          "How wide is the downside?",
-                          "What assumptions drive the cone?"],
-        inputs=["The deal's RCM initiative assumptions + base-business inputs (user/deal data)."],
-        outputs=["A 5-year EBITDA distribution cone + assumption sensitivity."],
-        data_sources=["USER/DEAL inputs + assumed distributions — a model, not observed outcomes."],
-        model_logic_summary="N simulations over the initiative + base assumptions; "
-        "the cone is the simulated EBITDA percentile band.",
-        why_it_matters="Quantifies uncertainty around the base case for underwriting.",
-        interpretation_guidance=[
-            "Runs on YOUR assumptions — the cone is only as good as the inputs.",
-            "Distribution width reflects assumed volatility, not a guarantee.",
-        ],
-        limitations=["Not a forecast; no model-accuracy claim — it propagates assumptions."],
-        related_routes=["/diligence/payer-stress", "/diligence/bridge-audit", "/diligence/ic-packet"],
-        source_confidence=SourceConfidence.DOCUMENTED,
-        data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
     _ctx(
         "/diligence/denial-prediction", "Denial Prediction",
