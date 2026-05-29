@@ -298,6 +298,10 @@ def _hero(
 
     # 2026-05-28 batch 23 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
+    # as_subhead=True: this page also renders a top-of-body
+    # ck_page_title (the H1). The editorial deck is the section
+    # head under that H1 — render as H2 so the page satisfies the
+    # One-H1 invariant (audit 2026-05-29).
     intro = ck_editorial_head(
         eyebrow="PHYSICIAN ECONOMIC UNITS",
         title=f"Per-provider P&L — {html.escape(target_name)}",
@@ -314,6 +318,7 @@ def _hero(
             f"Overhead allocation: {report.overhead_method.replace('_', ' ')} "
             f"at {report.overhead_pct*100:.0f}% of revenue."
         ),
+        as_subhead=True,
     )
     explainer = ck_panel(
         f'<p class="ck-section-body"><strong>What this shows:</strong> {summary}</p>',

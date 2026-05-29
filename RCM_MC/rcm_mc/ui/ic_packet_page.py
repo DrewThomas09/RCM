@@ -110,6 +110,10 @@ def _landing() -> str:
     )
     # 2026-05-28 batch 22 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
+    # as_subhead=True: chartis_shell's editorial_intro path below
+    # already emits the page ck_page_title (the H1). This editorial
+    # deck is the section deck under that H1 — render as H2 so the
+    # page satisfies the One-H1 invariant (audit 2026-05-29).
     intro = ck_editorial_head(
         eyebrow="IC Packet Assembler",
         title="One-click IC Memo",
@@ -127,6 +131,7 @@ def _landing() -> str:
             "100-day plan + open questions + walkaway conditions + "
             "signature block. Single URL-reproducible memo."
         ),
+        as_subhead=True,
     )
     form = (
         '<form method="GET" action="/diligence/ic-packet" class="ic-form">'

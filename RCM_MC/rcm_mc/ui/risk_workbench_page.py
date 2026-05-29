@@ -1190,6 +1190,10 @@ def render_risk_workbench(
 ) -> str:
     # 2026-05-28 batch 20 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
+    # as_subhead=True: this page also renders a top-of-body
+    # ck_page_title (the H1). The editorial deck is the section
+    # head under that H1 — render as H2 so the page satisfies the
+    # One-H1 invariant (audit 2026-05-29).
     hero = _RW_CSS + ck_editorial_head(
         eyebrow="Regulatory Risk Workbench",
         title=(
@@ -1203,6 +1207,7 @@ def render_risk_workbench(
             "supplied inputs; panels without inputs render "
             "'not supplied' rather than fabricating numbers."
         ),
+        as_subhead=True,
     ) + ck_panel(
         '<p class="ck-section-body">'
         '<strong>How to read these panels:</strong> '

@@ -359,6 +359,10 @@ def _hero(state: DealChecklistState) -> str:
         detail="Total items covered across all phases and priorities.",
     )
     # 2026-05-28 batch 21 · universal strict 5-block head.
+    # as_subhead=True (audit 2026-05-29): this page also renders a
+    # top-of-body ck_page_title (the H1). The editorial deck is
+    # the section head under that H1 — render as H2 so the page
+    # satisfies the One-H1 invariant.
     from ._chartis_kit import ck_editorial_head
     intro = ck_editorial_head(
         eyebrow="DILIGENCE CHECKLIST",
@@ -373,6 +377,7 @@ def _hero(state: DealChecklistState) -> str:
             "partner overrides URL-encoded so you can share a state "
             "snapshot by copying the link."
         ),
+        as_subhead=True,
     )
     explainer = ck_panel(
         '<p class="ck-section-body">'
