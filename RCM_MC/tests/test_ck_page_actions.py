@@ -108,6 +108,25 @@ class CkPageActionsTests(unittest.TestCase):
         self.assertIn("Copy share link", out)
         self.assertIn("Print this view", out)
 
+    # ── Wave G — ⌘K Palette quick-jump button ──────────────────
+    # Discoverability for the Cmd-K command palette which ships in
+    # every chartis_shell render. Most partners never discovered it
+    # because the affordance was only the keyboard shortcut.
+
+    def test_palette_button_present_by_default(self):
+        out = ck_page_actions()
+        self.assertIn("⌘K Quick jump", out)
+        self.assertIn("data-rcm-palette-open", out)
+
+    def test_palette_button_install_guard_present(self):
+        out = ck_page_actions()
+        self.assertIn("__rcmPaletteOpenInstalled", out)
+
+    def test_palette_button_can_be_disabled(self):
+        out = ck_page_actions(palette=False)
+        self.assertNotIn("⌘K Quick jump", out)
+        self.assertIn("Copy share link", out)
+
 
 if __name__ == "__main__":
     unittest.main()
