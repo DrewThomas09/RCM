@@ -420,18 +420,14 @@ def render_deals_library(
     kpis = _kpi_bar(deals, rows)
     table = ck_table(rows, _COLUMNS)
 
-    # Editorial H1 — gives the page a clear identity above the
-    # KPI strip + search hero. Meta line replaces the deprecated
-    # subtitle slot with corpus state and current sort.
-    page_title = ck_page_title(
-        "Deals Library",
-        eyebrow="DEAL CORPUS",
-        meta=(
-            f"{len(rows):,} deals · "
-            f"{len({r['sector'] for r in rows})} sectors · "
-            f"sorted by {sort_by} {sort_dir}"
-        ),
-    )
+    # 2026-05-29 audit follow-up: the page previously built a
+    # local `page_title = ck_page_title("Deals Library", ...)` and
+    # threaded it into prelude_html below. But
+    # `render_insights_page(title="Deals Library", intro={...})`
+    # already emits its own ck_page_title H1 from `title`, so the
+    # rendered page had TWO identical "Deals Library" H1s. The
+    # local builder is removed; the KPI strip alone rides in the
+    # prelude.
 
     return render_insights_page(
         action="/library",
@@ -468,11 +464,12 @@ def render_deals_library(
             "moic_bucket": lambda v: _MOIC_BUCKETS.get(v, (v, None))[0],
         },
         # Page header stack above the search bar:
-        #   1. ck_page_title (H1 + eyebrow + meta)
-        #   2. KPI strip
+        #   1. ck_page_title — supplied by render_insights_page's
+        #      `intro` block, not duplicated in the prelude.
+        #   2. KPI strip — local prelude.
         # Then the search hero, filter rail, and table below.
         prelude_html=ck_illustrative_note(
             "deals-corpus aggregates — built from the bundled illustrative "
-            "seed deals, not your ingested portfolio") + page_title + kpis,
+            "seed deals, not your ingested portfolio") + kpis,
         prelude_position="before",
     )

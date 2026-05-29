@@ -3167,6 +3167,7 @@ def ck_editorial_head(
     source_note: str = "",
     actions_html: str = "",
     show_legend: bool = True,
+    as_subhead: bool = False,
 ) -> str:
     """Universal strict Tier-1 5-block head — one helper, all pages.
 
@@ -3208,6 +3209,14 @@ def ck_editorial_head(
         pre-rendered HTML.
       show_legend: include the 4-bucket status-dot legend. Default
         True; pages that don't need it (e.g. login) can suppress.
+      as_subhead: when True, render the heading as ``<h2>`` instead
+        of ``<h1>``. Use for pages that ALREADY render a separate
+        page-title block (``ck_page_title``) above this editorial
+        deck — the 2026-05-29 audit found 5 diligence pages
+        rendering both at h1 level, producing a double-h1
+        invariant violation. Default False keeps the original
+        contract for the 48 pages that use this helper as their
+        sole masthead.
 
     Returns the full CSS + header block. The CSS is namespaced
     to .ck-eh so it doesn't collide with any page-local head
@@ -3242,6 +3251,7 @@ def ck_editorial_head(
         '</ul>'
         if show_legend else ""
     )
+    heading_tag = "h2" if as_subhead else "h1"
     return (
         _CK_EDITORIAL_HEAD_CSS
         + '<header class="ck-eh">'
@@ -3249,7 +3259,7 @@ def ck_editorial_head(
         '<div class="ck-eh-left">'
         f'<div class="ck-eh-eyebrow">'
         f'<span class="ck-eh-dash"></span>{_esc(eyebrow)}</div>'
-        f'<h1>{title}</h1>'
+        f'<{heading_tag}>{title}</{heading_tag}>'
         f'{meta_html}'
         f'{lede_html}'
         f'{source_html}'

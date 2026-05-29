@@ -395,6 +395,10 @@ def _hero(report: ManagementReport, target_name: str) -> str:
 
     # 2026-05-28 batch 22 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
+    # as_subhead=True: this page also renders a top-of-body
+    # ck_page_title (the H1). The editorial deck is the section
+    # head under that H1 — render as H2 so the page satisfies the
+    # One-H1 invariant (audit 2026-05-29).
     intro = ck_editorial_head(
         eyebrow="Management Scorecard",
         title=html.escape(target_name),
@@ -414,6 +418,7 @@ def _hero(report: ManagementReport, target_name: str) -> str:
             f"{report.red_flag_count} red flags "
             f"({report.critical_flag_count} critical)"
         ),
+        as_subhead=True,
     )
     kpis = (
         '<div class="ck-kpi-strip">'
