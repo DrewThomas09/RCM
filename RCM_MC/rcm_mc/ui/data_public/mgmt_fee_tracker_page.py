@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_fmt_moic, ck_kpi_block, ck_provenance_tooltip, ck_value_anchor,
-    ck_illustrative_note,
+    ck_illustrative_note, ck_page_actions,
 )
 from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
 
