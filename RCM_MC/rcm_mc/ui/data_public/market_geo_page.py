@@ -406,4 +406,8 @@ def render_market_geo_detail(fips: str, params: dict = None) -> str:
         + '<li>What do CMS/HCRIS provider data show for targets in this market?</li></ul></div>'
         + f'<div style="{cell}"><div style="{h3}">Not yet on record (export required)</div>'
         + f'<ul style="margin:0;padding-left:18px;font-size:12px;color:{P["text_dim"]}">{backlog}</ul></div>')
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, f'{prof["geo_name"]} Market', active_nav="/market-intel")
