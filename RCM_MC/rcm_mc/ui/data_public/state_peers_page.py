@@ -175,4 +175,8 @@ def render_state_peers(params: Dict = None) -> str:
     or compare a shortlist on <a href="/state-compare?states={state}" style="color:{ac};text-decoration:none">State Comparison &rarr;</a>
   </p>
 </div>"""
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, f"Similar States — {name}", active_nav="/state-peers")

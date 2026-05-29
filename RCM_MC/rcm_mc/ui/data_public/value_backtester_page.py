@@ -319,6 +319,10 @@ def render_value_backtester(params: dict = None) -> str:
         source="data_public/value_backtester.py; base_rates.py.",
         page_key="value-backtester",
     )
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         ck_illustrative_note("backtest figures (illustrative seed corpus)") + explainer + body, "Value Backtester", active_nav="/backtester",
         editorial_intro={

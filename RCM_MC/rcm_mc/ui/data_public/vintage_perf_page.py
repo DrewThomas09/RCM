@@ -249,6 +249,10 @@ def render_vintage_perf() -> str:
     body = kpis + ck_section_header("VINTAGE HEATMAP", "P50 MOIC by entry year — macro timing view") + heatmap_panel + ck_section_header("PERFORMANCE CHARTS", "P50 MOIC with P25/P75 range · deal count by year") + chart_grid + ck_section_header("VINTAGE DETAIL", "year-by-year breakdown") + table
 
     from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         _ckn("vintage figures (illustrative seed corpus)") + body,
         title="Vintage Performance",

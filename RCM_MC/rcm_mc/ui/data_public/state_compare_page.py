@@ -361,4 +361,8 @@ def render_state_compare(params: Dict = None) -> str:
     Health Rankings · HRSA HPSA · CMS MSSP ACOs. Area-level — combine with deal-specific data before a decision.
   </p>
 </div>"""
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, "State Comparison", active_nav="/state-compare")

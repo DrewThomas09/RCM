@@ -168,4 +168,8 @@ def render_state_rankings(params: Dict = None) -> str:
     Compare a shortlist side by side on <a href="/state-compare" style="color:{ac};text-decoration:none">State Comparison &rarr;</a>
   </p>
 </div>"""
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, "State Rankings", active_nav="/state-rankings")
