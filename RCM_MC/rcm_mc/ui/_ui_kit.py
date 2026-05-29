@@ -251,6 +251,12 @@ def shell(
         extra_css=extra_css,
         extra_js=extra_js,
         active_nav=active_nav,
+        # Forward the caller's opt-out so chartis_shell's auto-h1
+        # backstop also respects it. Without this, omit_h1=True at
+        # the legacy-shell layer would be silently re-injected by
+        # the chartis backstop (regression caught by b164's
+        # test_omit_h1_opt_out_keeps_no_h1).
+        omit_h1=omit_h1,
     )
 
 

@@ -109,11 +109,26 @@ class ChartisShellLegacySectionIntroAutoTitleTests(unittest.TestCase):
         # The title text rendered
         self.assertIn(">Bear Case</h1>", html)
 
-    def test_body_without_section_intro_does_not_get_title(self):
-        # Plain bodies don't get a forced H1 — leaves login/error
-        # pages and dashboards that bring their own header alone.
+    def test_body_without_section_intro_now_gets_backstop_title(self):
+        # 2026-05-29 audit follow-up — the old contract was "plain
+        # body, no editorial signal → leave alone." The audit found
+        # that six chartis-direct routes (/runs, /query, /settings,
+        # /engagements, /fund-learning, /admin/audit-chain) shipped
+        # with NO <h1> at all under that contract, violating
+        # CLAUDE.md's One-H1 invariant. The new contract uses the
+        # shell's `title` arg as a backstop: when the body still has
+        # no `<h1`, prepend a ck_page_title from it. Pages that
+        # genuinely want no h1 (login, error pages, callers passing
+        # their own header) pass `omit_h1=True` — covered in
+        # test_b165 — or carry their own `<h1` in the body.
         html = chartis_shell("<p>just body</p>", title="Plain")
-        self.assertNotIn('class="ck-page-title"', html)
+        self.assertIn('class="ck-page-title"', html,
+                      "backstop must inject a ck_page_title from title "
+                      "when body has no <h1>")
+        # And opting out works:
+        html_opt = chartis_shell(
+            "<p>just body</p>", title="Plain", omit_h1=True)
+        self.assertNotIn('class="ck-page-title"', html_opt)
 
     def test_body_with_existing_page_title_not_doubled(self):
         body = (

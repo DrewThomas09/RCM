@@ -8161,6 +8161,14 @@ def chartis_shell(
     # already on chartis_shell but missing the editorial-cadence
     # intro signal.
     editorial_intro: Optional[Mapping[str, Any]] = None,
+    # 2026-05-29 audit follow-up. The auto-h1 backstop near the
+    # bottom of this function adds a ck_page_title from ``title``
+    # when the body still has no <h1>. Legacy ``_ui_kit.shell()``
+    # callers that pass ``omit_h1=True`` explicitly opt out of any
+    # auto-injection; forward that intent so the backstop respects
+    # the same opt-out. Default False keeps the backstop active
+    # for direct chartis_shell callers.
+    omit_h1: bool = False,
     **_extra: Any,
 ) -> str:
     """Render a full page. Drop-in replacement for the legacy dark shell.
@@ -8275,6 +8283,32 @@ def chartis_shell(
     if (_is_illustrative_route(active_nav)
             and "ck-illus-note" not in body_html):
         body_html = ck_illustrative_note(_ILLUSTRATIVE_ROUTE_NOTE) + body_html
+
+    # 2026-05-29 audit follow-up — backstop One-H1 invariant.
+    # The two auto-inject paths above only fire when the page advertises
+    # editorial cadence (editorial_intro= kwarg, or a ck-section-intro
+    # in the body). Six chartis-direct routes (/runs, /query, /settings,
+    # /engagements, /fund-learning, /admin/audit-chain) call
+    # chartis_shell with plain panel bodies and were left without any
+    # <h1> at all. Backfill from the page `title` when the body still
+    # contains no h1. Idempotent: any prior path that already added an
+    # h1 (ck_page_title, ck_editorial_head, or a hand-rolled <h1> in
+    # the body) is detected and the backstop skipped, so this can
+    # never produce a double-h1. ``omit_h1=True`` opts out — legacy
+    # callers that explicitly want no auto-injected title h1 keep
+    # that behavior.
+    if (
+        not omit_h1
+        and title
+        and title != "PE Desk"
+        and "<h1" not in body_html
+    ):
+        body_html = ck_page_title(
+            title,
+            meta=subtitle if subtitle else None,
+        ) + body_html
+        if subtitle:
+            subtitle_consumed_by_title = True
 
     # Render the standalone subtitle_html only when the shell did
     # NOT auto-inject the subtitle into a ck_page_title AND the
