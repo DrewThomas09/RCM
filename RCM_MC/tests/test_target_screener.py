@@ -401,6 +401,36 @@ class WorkbenchShellTests(unittest.TestCase):
             self.assertIn("state=TX", href)
             self.assertIn("min_quality=3", href)
 
+    # ── 2026-05-28 Wave 6 — table client-side name/CCN/location filter
+    # The top-N toolbar now hosts a search input next to the chips.
+    # Typing anything filters the table rows in real time client-side
+    # by matching against a lowercased data-ts-search blob on each
+    # <tr> (name + CCN + city + state). Zero server round-trips.
+
+    def test_table_rows_carry_search_blob_attribute(self):
+        import re
+        h = self._render()
+        rows = re.findall(r'<tr data-ts-search="([^"]+)"', h)
+        # Default cap is 150 rows in the hospitals universe (real
+        # CMS HCRIS provides more than that; we cap for display).
+        self.assertGreaterEqual(len(rows), 100,
+                                f"expected >=100 searchable rows, got {len(rows)}")
+        # Each blob should be lowercased so the JS substring match
+        # is case-insensitive without runtime work.
+        for blob in rows[:5]:
+            self.assertEqual(blob, blob.lower(),
+                             f"blob not lowercased: {blob!r}")
+            # And carry at least the CCN (8-char digit string).
+            self.assertRegex(blob, r"\d{6,}",
+                             f"blob missing a CCN: {blob!r}")
+
+    def test_table_toolbar_has_search_input(self):
+        h = self._render()
+        self.assertIn("data-ts-search-input", h)
+        self.assertIn("data-ts-search-count", h)
+        # Idempotent install guard so re-rendering doesn't double-bind.
+        self.assertIn("__rcmTsSearchInstalled", h)
+
     def test_chip_remove_link_drops_only_that_param(self):
         import re
         h = self._render(state="TX", min_quality="4")
