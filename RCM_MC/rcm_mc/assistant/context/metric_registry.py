@@ -739,6 +739,29 @@ _METRICS.extend([
        formula_confidence=_INF, source_types=[_OBS, _USR], data_confidence=_MIX,
        related_metrics=["debt", "leverage", "enterprise_value"],
        related_routes=["/debt-service", "/cap-structure"]),
+    # ── Portfolio-operations metrics ──────────────────────────────
+    # Health score is a first-class composite the portfolio dashboards
+    # surface; adding it lets the Guide answer 'how is the health
+    # score computed' with real content. The covenant-cushion concept
+    # already lives at covenant_cushion (line 129) so we don't
+    # duplicate it; portfolio/monitor's page context references that
+    # canonical id.
+    _m("health_score", "Health Score", ["deal health", "composite health"],
+       "Composite 0-100 score per deal that combines plan-realization, "
+       "covenant cushion, alert posture, and trend slope into a single "
+       "monitoring number.",
+       "The single read partner reach for during the morning portfolio "
+       "scan — replaces opening 8 separate dials.",
+       "Heuristic, not predictive — pair with the active-alert detail "
+       "before acting. 80+ = green, 60-79 = amber, <60 = red.",
+       formula="weighted blend of: plan realization %, covenant cushion "
+               "%, active alert count, and 4-quarter trend slope. Weights "
+               "documented in rcm_mc.deals.health_score; subject to "
+               "calibration review each quarter.",
+       formula_confidence=_INF, source_types=[_OBS], data_confidence=_MIX,
+       related_metrics=["covenant_cushion", "ebitda", "adjusted_ebitda"],
+       related_routes=["/portfolio/monitor", "/my/AT", "/dashboard",
+                       "/watchlist"]),
 ])
 
 METRIC_REGISTRY: Dict[str, MetricContext] = {m.metric_id: m for m in _METRICS}

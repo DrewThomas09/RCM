@@ -871,15 +871,76 @@ _MANUAL: List[PageContext] = [
     _ctx(
         "/diligence/hcris-xray", "HCRIS X-Ray",
         short_description="A close read of a hospital's CMS HCRIS cost-report "
-        "data.",
+        "data with peer-percentile benchmarking and outlier flags.",
         primary_purpose="Expose the public-filing financials underlying a "
-        "target.",
-        data_sources=["CMS HCRIS cost-report filings."],
+        "target so partners can sanity-check the seller's CIM against the "
+        "audited cost report.",
+        common_questions=[
+            "What does HCRIS say about this hospital's margin?",
+            "How does this hospital's cost-per-discharge compare to peers?",
+            "What's the Medicare exposure for this target?",
+            "Which line items are outliers vs the CMS HCRIS peer group?",
+            "Is the labor cost ratio normal for this size hospital?",
+            "What year of HCRIS is this from? Is the data stale?",
+            "What's the bed count and how does it scale revenue?",
+        ],
+        inputs=[
+            "Hospital CCN (CMS Certification Number).",
+            "Optional: peer set definition (size band + state).",
+        ],
+        outputs=[
+            "Filed HCRIS line items (revenue, cost, labor, supplies, bed-day "
+            "metrics), per-metric peer percentile rank against the corpus, "
+            "outlier flags (>2 standard deviations from peer median), "
+            "year-over-year trend sparklines, residual decomposition.",
+        ],
+        key_metrics=[
+            "Operating margin, Cost per adjusted discharge, "
+            "Labor cost ratio, Medicare exposure %, Bed count, "
+            "Outpatient revenue share, Days cash on hand",
+        ],
+        data_sources=[
+            "CMS HCRIS cost-report filings (Form 2552-10) from the latest "
+            "available filing year (typically 18-24 months in arrears).",
+        ],
+        model_logic_summary=(
+            "Loads the hospital's filing rows from data.hcris, computes "
+            "derived ratios (margin = (revenue - cost) / revenue, etc.), "
+            "joins to the corpus peer set, computes percentile rank per "
+            "metric, flags >2σ outliers. Residual decomposition uses "
+            "OLS against bed_count + payer_mix + region to isolate the "
+            "size-adjusted margin."
+        ),
         why_it_matters="HCRIS is the public ground truth for hospital "
-        "financials in diligence.",
-        interpretation_guidance=["HCRIS lags real-time and has filing "
-                                "artifacts; treat as a public baseline."],
-        related_routes=["/diligence/deal", "/comparables"],
+        "financials in diligence. If the seller's CIM EBITDA differs "
+        "from the HCRIS-derived number, the gap needs explaining before IC.",
+        diligence_use_cases=[
+            "Pre-LOI: confirm the seller's claimed EBITDA reconciles "
+            "with the HCRIS filing.",
+            "IC: cite the peer-percentile rank for margin/cost discipline.",
+            "Operational diligence: target the outlier-flagged line items "
+            "for management Q&A.",
+        ],
+        interpretation_guidance=[
+            "HCRIS lags real-time and has filing artifacts; treat as a "
+            "public baseline.",
+            "Cost-per-discharge varies by case mix; compare same-CMI peer "
+            "sets, not raw cost.",
+            "Operating margin includes Medicaid DSH and supplemental "
+            "payments that may not recur post-close.",
+            "A 'normal' margin vs peers does not preclude operational "
+            "problems below the surface — pair with management Q&A.",
+        ],
+        limitations=[
+            "Filings lag 18-24 months; recent operational changes may "
+            "not be in this data.",
+            "Peer-percentile rank depends on the corpus year-cohort; "
+            "off-cycle filers may compare against a different vintage.",
+            "Some HCRIS rows are self-reported and known to have "
+            "data-quality issues (e.g. wage-index components).",
+        ],
+        related_routes=["/diligence/deal", "/comparables",
+                        "/diligence/payer-stress", "/diligence/xray"],
         metric_ids=["bed_count", "operating_margin",
                     "cost_per_adjusted_discharge", "labor_cost_ratio",
                     "medicare_exposure"],
@@ -890,21 +951,86 @@ _MANUAL: List[PageContext] = [
     _ctx(
         "/diligence/bridge-audit", "Bridge Audit",
         short_description="Audits the EBITDA value-creation bridge — the "
-        "levers from current to target EBITDA and how achievable each is.",
+        "levers from current to target EBITDA and how achievable each is, "
+        "with probability-weighting and a realization-rate cross-check "
+        "against the realized-deal corpus.",
         primary_purpose="Pressure-test the adjusted-EBITDA bridge and the "
-        "probability-weighting behind the value-creation case.",
+        "probability-weighting behind the value-creation case; flag bridges "
+        "that depend on a single big lever or on unweighted gross impacts.",
+        common_questions=[
+            "What does the EBITDA bridge look like for this deal?",
+            "Which levers contribute the most upside?",
+            "How realistic is the bridge given the realized-deal corpus?",
+            "What's the probability-weighted bridge value?",
+            "Are any levers double-counted across categories?",
+            "What's the largest concentration risk in the bridge?",
+            "How does the realization probability compare to similar deals?",
+        ],
+        inputs=[
+            "Deal ID with a populated value-creation bridge.",
+            "The seller's claimed add-backs to bridge to adjusted EBITDA.",
+            "Lever definitions (RCM uplift, pricing, supply, labor, "
+            "synergy, growth) with gross impact and probability weights.",
+        ],
+        outputs=[
+            "Waterfall chart of levers from current EBITDA to target.",
+            "Probability-weighted total opportunity.",
+            "Realization-rate benchmark vs corpus median for each lever type.",
+            "Concentration warning if any single lever > 40% of bridge.",
+            "Cross-check vs PE corpus realized bridges.",
+        ],
+        key_metrics=[
+            "Current EBITDA, Adjusted EBITDA, Target EBITDA, "
+            "Bridge gross impact, Bridge probability-weighted impact, "
+            "Lever realization rate, Concentration risk",
+        ],
+        data_sources=[
+            "Seller CIM (lever definitions + gross impact)",
+            "QoE report (adjusted-EBITDA reconciliation)",
+            "Corpus realized-bridge data (rcm_mc.pe.rcm_ebitda_bridge)",
+            "Model output (probability prior from the realized corpus)",
+        ],
+        model_logic_summary=(
+            "Loads the bridge structure for the deal, validates that "
+            "lever sums equal target EBITDA - current EBITDA, joins "
+            "each lever to its corpus realization-rate distribution, "
+            "computes probability-weighted impact = gross × realization "
+            "rate. Flags bridge concentration via Herfindahl index on "
+            "lever shares. Concentration > 40% on one lever or > 70% "
+            "on top two raises an amber/red flag."
+        ),
         why_it_matters="The bridge is the upside thesis; the audit checks it "
-        "isn't built on optimistic add-backs or unweighted gross impacts.",
+        "isn't built on optimistic add-backs or unweighted gross impacts. "
+        "If 80% of the bridge sits in one lever, that's the diligence priority.",
+        diligence_use_cases=[
+            "IC defense: show the probability-weighted bridge, not the "
+            "gross.",
+            "Lever validation: identify which 1-2 levers warrant a deep dive.",
+            "Sensitivity: model what happens if the largest lever delivers "
+            "at 50% of plan.",
+        ],
         interpretation_guidance=[
             "Distinguish gross lever impact from probability-weighted impact.",
             "Add-backs into adjusted EBITDA are judgmental — see the QoE.",
+            "Realization rates in the corpus are HISTORICAL — use them as "
+            "priors not predictions.",
+            "Bridge concentration warnings are heuristics, not hard limits.",
+        ],
+        limitations=[
+            "Realization-rate priors are pulled from a limited corpus and "
+            "may not reflect the specific market or sponsor playbook.",
+            "Probability weighting assumes lever independence; correlated "
+            "levers will overstate the de-risking.",
+            "Does not model the cost of capture (capex/opex required to "
+            "realize each lever).",
         ],
         metric_ids=["adjusted_ebitda", "ebitda_bridge",
                     "bridge_realization_probability",
                     "value_creation_opportunity"],
         data_source_ids=["seller_cim", "qoe_report", "model_output",
                          "public_transaction_corpus"],
-        related_routes=["/diligence/value", "/diligence/qoe-memo"],
+        related_routes=["/diligence/value", "/diligence/qoe-memo",
+                        "/diligence/risk-workbench", "/ebitda-bridge"],
         data_confidence=DataConfidence.MIXED,
     ),
     _ctx(
@@ -930,22 +1056,103 @@ _MANUAL: List[PageContext] = [
     _ctx(
         "/diligence/physician-eu", "Provider Economics",
         short_description="Per-provider economics — productivity, "
-        "compensation, and contribution.",
+        "compensation, contribution, and the comp-redesign opportunity. "
+        "DATA REQUIRED: activates once you upload your provider roster + "
+        "compensation file (template: management_compensation_template.csv).",
         primary_purpose="Show which providers/sites are economically "
-        "additive and where comp is out of line with output.",
-        why_it_matters="Physician economics drive group margin and the "
-        "retention / comp-redesign value lever.",
-        interpretation_guidance=[
-            "wRVU is work-RVU only; comp-to-collections benchmarks vary by "
+        "additive and where comp is out of line with output; surface the "
+        "comp-redesign opportunity as a value-creation lever. Upload your "
+        "provider roster + compensation file via /import to activate.",
+        common_questions=[
+            "Which providers are most productive (wRVU)?",
+            "Where is comp out of line with collections?",
+            "What's the compensation-to-collections ratio by provider?",
+            "Which providers have the highest contribution margin?",
+            "What's the comp-redesign opportunity?",
+            "Are there providers with comp > collections (subsidies)?",
+            "What's the productivity distribution vs MGMA benchmarks?",
+        ],
+        inputs=[
+            "Provider roster (NPI, specialty, hire date, employment "
+            "status).",
+            "Compensation file (per-provider base + incentive + benefits).",
+            "Activity data: wRVU, encounters, panel size, "
+            "collections per provider.",
+            "Optional: MGMA / SullivanCotter benchmark set for the "
             "specialty.",
+        ],
+        outputs=[
+            "Per-provider table: wRVU, comp, collections, "
+            "comp-to-collections ratio, contribution margin, "
+            "percentile vs MGMA.",
+            "Specialty roll-up: average wRVU, median comp, "
+            "comp-redesign opportunity in $.",
+            "Subsidized-provider list: providers whose comp exceeds "
+            "their collections.",
+            "Scatter: comp vs wRVU with the specialty benchmark line.",
+        ],
+        key_metrics=[
+            "wRVU (work RVU), Comp-to-collections ratio, "
+            "Contribution margin per provider, "
+            "Productivity percentile vs specialty benchmark, "
+            "Comp-redesign opportunity ($)",
+        ],
+        data_sources=[
+            "Provider roster (target's HR file, sometimes via NPPES join) "
+            "— DATA REQUIRED: upload via /import (template: "
+            "management_compensation_template.csv).",
+            "Compensation file (target's payroll/comp system export) — "
+            "uploaded alongside the roster.",
+            "Monthly actuals (collections, encounters per provider)",
+            "Optional: MGMA / SullivanCotter benchmark set",
+        ],
+        model_logic_summary=(
+            "For each provider, joins comp + collections + wRVU on NPI. "
+            "Computes comp-to-collections (comp / collections), "
+            "contribution margin (collections - direct cost - allocated "
+            "overhead). Productivity percentile uses MGMA tables when "
+            "supplied, otherwise the corpus distribution. Comp-redesign "
+            "opportunity = comp paid above the 75th-percentile MGMA "
+            "comp-to-collections ratio — partner can decide to redesign "
+            "or accept."
+        ),
+        why_it_matters="Physician economics drive group margin and the "
+        "retention / comp-redesign value lever. A subsidized-provider "
+        "list of 20% of the panel can represent millions in EBITDA "
+        "opportunity but also retention risk if redesigned aggressively.",
+        diligence_use_cases=[
+            "Pre-LOI: scan for subsidized providers — they're the "
+            "comp-redesign EBITDA lever.",
+            "Lever sizing: compute the comp-redesign opportunity for "
+            "the bridge.",
+            "Retention risk: identify high-producer providers whose "
+            "comp exceeds local market — they're the flight risks.",
+        ],
+        interpretation_guidance=[
+            "wRVU is work-RVU only; comp-to-collections benchmarks vary "
+            "by specialty.",
             "Shared-cost allocation changes contribution-margin answers.",
+            "Subsidized providers may carry strategic value (referrals, "
+            "coverage, geography) — don't redesign without operational "
+            "review.",
+            "MGMA percentiles depend on the specialty match; "
+            "subspecialists may need an alternate benchmark.",
+        ],
+        limitations=[
+            "Only as good as the comp file — bonuses paid as benefits "
+            "may not show.",
+            "wRVU does not capture cognitive work or admin time.",
+            "MGMA benchmarks lag and vary in sample size per specialty.",
+            "Does not model retention probability after comp redesign.",
         ],
         metric_ids=["wrvu", "provider_productivity",
                     "compensation_to_collections",
                     "provider_contribution_margin"],
         data_source_ids=["provider_roster", "compensation_file",
                          "monthly_actuals"],
-        related_routes=["/diligence/physician-attrition"],
+        related_routes=["/diligence/physician-attrition",
+                        "/diligence/value", "/provider-supply"],
+        source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
     _ctx(
@@ -1769,11 +1976,77 @@ _MANUAL: List[PageContext] = [
     ),
     _ctx(
         "/methodology", "Methodology",
-        short_description="How PEdesk's models and analyses are constructed.",
-        primary_purpose="Document the platform's analytical approach.",
-        related_routes=["/metric-glossary"],
-        # The methodology page is where the core model / risk / PE metrics
-        # are explained, so it links the model + valuation metric set.
+        short_description="The canonical methodology hub — every model on the "
+        "platform with its inputs, assumptions, formulas, and validation "
+        "references in one place.",
+        primary_purpose="Cite the underlying methodology when answering "
+        "partner / IC / LP questions about how a number was computed; check "
+        "an assumption before defending it.",
+        common_questions=[
+            "How does PEdesk compute MOIC / IRR / EBITDA bridge?",
+            "What are the modeling assumptions behind the value-creation bridge?",
+            "Which models are validated and which are still illustrative?",
+            "What inputs does the predictive screener use?",
+            "How is the conformal prediction interval constructed?",
+            "Where can I cite this methodology for an IC packet?",
+            "Has the methodology been updated since last quarter?",
+        ],
+        inputs=[
+            "Model inputs are listed per-model on the page — packet data, "
+            "HCRIS rows, scenario shocks, etc.",
+        ],
+        outputs=[
+            "Per-model documentation: inputs list, assumptions, formula, "
+            "calibration references, validation diagnostics, citations.",
+        ],
+        key_metrics=[
+            "MOIC, IRR, EBITDA bridge, adjusted EBITDA, RCM uplift, "
+            "leverage, confidence tier, benchmark percentile",
+        ],
+        data_sources=[
+            "Source-code-derived: every model's formula and parameter "
+            "set live in finance/, mc/, pe/, ml/, calibration/. The page "
+            "renders the documented surface.",
+        ],
+        model_logic_summary=(
+            "Hub page — does not compute on the fly. Renders documented "
+            "model summaries built from finance.regression, mc.ebitda_mc, "
+            "pe.rcm_ebitda_bridge, ml.ridge_predictor, ml.conformal, "
+            "calibration. Each section explains a single model: its "
+            "inputs, the formula or fit procedure, the validation "
+            "diagnostic, and where in the codebase it lives. The "
+            "/methodology/calculations sub-page expands on the math."
+        ),
+        why_it_matters=(
+            "Defensibility. Partners citing a number in IC or to LPs "
+            "need to point at the underlying methodology. This page is "
+            "the single source of truth for 'how was this computed'."
+        ),
+        diligence_use_cases=[
+            "Pre-IC: confirm the modeling assumption set for the bridge.",
+            "LP discussion: cite the validation diagnostic for the "
+            "predictive screener.",
+            "Audit: trace a number back to its formula.",
+        ],
+        interpretation_guidance=[
+            "If a model is marked 'illustrative' it has not been "
+            "validated against held-out data — describe it as a "
+            "structural framework, not a prediction.",
+            "Conformal intervals are coverage guarantees under "
+            "exchangeability — describe them as 'X% of similar deals "
+            "fall within this interval', not 'X% probability'.",
+            "Document version + last-update date are at the top of "
+            "each section — cite both in IC packets.",
+        ],
+        limitations=[
+            "Methodology page is descriptive, not prescriptive — does "
+            "not modify any computation.",
+            "Some models (e.g. RCM uplift bridge) describe a structural "
+            "decomposition rather than a fitted prediction; this is "
+            "called out explicitly.",
+        ],
+        related_routes=["/metric-glossary", "/methodology/calculations",
+                        "/diligence/model-validation", "/methodology/sources"],
         metric_ids=["ev_to_ebitda", "moic", "irr", "exit_multiple",
                     "leverage", "adjusted_ebitda", "value_creation_opportunity",
                     "rcm_uplift", "risk_score", "confidence_tier",
@@ -2524,21 +2797,82 @@ _MANUAL: List[PageContext] = [
     _ctx(
         "/portfolio/monitor", "Portfolio Monitor",
         short_description="Ongoing monitoring of portfolio-company performance "
-        "against plan.",
+        "against plan — daily-driver dashboard for partners in post-close.",
         primary_purpose="Track each portfolio company's actuals (revenue, "
-        "EBITDA) against the value-creation plan over the hold.",
+        "EBITDA) against the value-creation plan over the hold; surface "
+        "deals that are drifting behind so they get an action plan.",
+        common_questions=[
+            "Which portfolio companies are behind plan this quarter?",
+            "What's the EBITDA realization rate across the portfolio?",
+            "Which deals have triggered red alerts recently?",
+            "How is hospital X tracking vs its underwriting plan?",
+            "Where is the biggest miss vs synergy plan?",
+            "What's the health score trend for my watchlist?",
+            "Which deals need a partner check-in before LP update?",
+            "What's the covenant headroom across the portfolio?",
+        ],
+        inputs=[
+            "Live deal store (all tracked deals); latest monthly actuals; "
+            "saved value-creation plan per deal; alert history.",
+        ],
+        outputs=[
+            "Per-deal cards/rows with: health score (0-100 + sparkline), "
+            "EBITDA % of plan, revenue % of plan, covenant cushion %, "
+            "active alert count, last-actuals-as-of date, stage chip.",
+        ],
+        key_metrics=[
+            "Health score (composite 0-100)", "EBITDA realization %",
+            "Revenue realization %", "Covenant headroom %",
+            "Days since last actuals", "Active red/amber alert counts",
+        ],
+        data_sources=[
+            "Live SQLite deal store (rcm_mc.portfolio.store.PortfolioStore)",
+            "monthly_actuals table (uploaded actuals)",
+            "audit_log + alerts lifecycle for the alert counts",
+        ],
+        model_logic_summary=(
+            "Aggregates the latest snapshot per tracked deal: pulls "
+            "value-creation plan from deal_plan, monthly actuals from "
+            "the actuals table, computes plan vs actual percentages, "
+            "joins active alert counts from the alerts module, and "
+            "computes a composite health score via "
+            "rcm_mc.deals.health_score. Does not run a Monte Carlo — "
+            "summary read of the most-recent state."
+        ),
         why_it_matters="Post-close, the question shifts from 'should we buy' "
-        "to 'are we realizing the plan' — this is that read.",
+        "to 'are we realizing the plan' — this is that read. Partners use "
+        "it as the morning-check dashboard before the weekly portfolio "
+        "review.",
+        diligence_use_cases=[
+            "Pre-LP-update: scan for deals that need a status update.",
+            "Weekly partner review: confirm every red deal has an owner.",
+            "Monthly underwriting check: compare actual EBITDA % of plan "
+            "across deals.",
+        ],
         interpretation_guidance=[
             "Monthly actuals are unaudited and can be reclassified; read "
             "trends, not single months.",
-            "Plan vs actual gaps are the signal — model/synergy estimates are "
-            "the plan, not realized results.",
+            "Plan vs actual gaps are the signal — model/synergy estimates "
+            "are the plan, not realized results.",
+            "Health score 80+ = green, 60-79 = amber, <60 = red. Below 60 "
+            "should have an active alert.",
+            "If 'days since last actuals' > 60 the EBITDA % is stale; "
+            "treat it as the last-known-state, not current.",
         ],
-        metric_ids=["ebitda", "adjusted_ebitda", "revenue", "synergy_estimate"],
+        limitations=[
+            "Only shows deals the user has loaded into the deal store; "
+            "doesn't see market deals.",
+            "Plan vs actual depends on a saved plan; deals without a "
+            "plan show '—' on those columns.",
+            "Health score is a heuristic — does not replace partner "
+            "judgment.",
+        ],
+        metric_ids=["ebitda", "adjusted_ebitda", "revenue", "synergy_estimate",
+                    "health_score", "covenant_cushion"],
         data_source_ids=["monthly_actuals", "portfolio_snapshot",
-                         "model_output"],
-        related_routes=["/portfolio", "/portfolio/risk-scan", "/lp-update"],
+                         "model_output", "audit_log"],
+        related_routes=["/portfolio", "/portfolio/risk-scan", "/lp-update",
+                        "/alerts", "/escalations", "/watchlist"],
         data_confidence=DataConfidence.MIXED,
     ),
     _ctx(
@@ -5025,7 +5359,11 @@ _DATA_REQUIRED_GUIDE = [
     ("/clinical-ai", "Clinical AI", "AI tools, vendors, use-cases, validation", "CMIO / clinical informatics", "clinical-AI tool inventory + adoption + validation", "ai_operating_model_template.csv"),
     ("/digital-front-door", "Digital Front Door", "patient-access channels, volumes, conversion", "Patient access / marketing", "access-channel volume + conversion + leakage", "digital_front_door_template.csv"),
     ("/direct-employer", "Direct Employer", "employer contracts, lives, PEPM, services", "Sales / employer-contracting", "direct-employer roster + PEPM economics", "direct_employer_template.csv"),
-    ("/diligence/physician-eu", "Physician Economic Unit", "provider roster, wRVU, collections, comp, payer mix", "CFO / practice management / RCM", "real per-provider P&L + roster optimization", "management_compensation_template.csv"),
+    # /diligence/physician-eu intentionally NOT auto-generated here — it
+    # has a rich hand-written context at the top of _MANUAL that covers
+    # the same data-required content plus common_questions, model_logic,
+    # interpretation_guidance, etc. Auto-generating a second thin entry
+    # would silently override the rich one via the dict construction.
     ("/diligence/risk-workbench", "Risk Workbench", "risk register / regulatory inputs", "Deal team / risk owners", "the nine-panel risk panorama from your real inputs", "risk_register_template.csv"),
 ]
 
