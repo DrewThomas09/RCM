@@ -31,17 +31,23 @@ _BASE_NOTES = [
     "assumptions, or make investment recommendations.",
     "Do not invent formulas, data lineage, or model mechanics; if a "
     "specific is not in this context, say it needs source documentation.",
-    # 2026-05-28 wave-A-D: every PEdesk page now ships the same two "
-    # page actions — a Copy share link button (puts the current URL "
-    # on the clipboard with every filter / sort / scope encoded so a "
-    # partner can share the exact view) and a Back-to-top floating "
-    # button (fades in after 600px scroll). If a partner asks how to "
-    # share a screen state or bookmark it, point at these.
-    "Every PEdesk page now has a 'Copy share link' button "
-    "(captures the current URL with every filter and sort encoded) "
-    "and a floating 'Back to top' button (appears after the partner "
-    "deep-scrolls). Both are server-rendered by the shared "
-    "ck_page_actions helper.",
+    # 2026-05-28 waves A-H: every PEdesk page now ships the same six
+    # standard page-action affordances via the shared ck_page_actions
+    # helper. If a partner asks how to share / print / look up / jump
+    # / find shortcuts, point at these.
+    "Every PEdesk page now has six standard actions wired by the "
+    "shared ck_page_actions helper: (1) Copy share link — captures "
+    "the current URL with every filter, sort, and scope param "
+    "encoded so the partner can share or bookmark the exact view; "
+    "(2) Print this view — sends the page to the browser print "
+    "dialog; many editorial panels already carry @media print rules "
+    "so the output is partner-presentable; (3) ? Shortcuts — opens "
+    "the keyboard shortcut overlay; (4) ⌘K Quick jump — opens the "
+    "command palette so the partner can navigate to any route by "
+    "typing; (5) 📖 Glossary — direct link to /metric-glossary "
+    "where every metric has its definition, rationale, formula, "
+    "and source documents; (6) Back to top — floating pill that "
+    "appears after the partner scrolls more than 600px down.",
 ]
 
 
