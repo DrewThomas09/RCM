@@ -474,6 +474,50 @@ class WorkbenchShellTests(unittest.TestCase):
     # banner above the table shows the count + a one-click 'View
     # comparison' link + a 'Clear basket' link. Hidden when empty.
 
+    # ── 2026-05-28 Wave 12 — sort indicator + reset-sort link ────
+    # The active sort + direction now surfaces in the 'Showing X of Y'
+    # status line ('sorted by Provider name (ascending)') and the
+    # active column header gets a ↓/↑ glyph + teal-deep weight. A
+    # 'reset sort' link returns to the default quality-desc ranking
+    # in one click while preserving every other current param.
+
+    def test_default_sort_says_ranked_by_no_reset_link(self):
+        h = self._render()
+        self.assertIn("ranked by", h)
+        self.assertNotIn("reset sort", h)
+
+    def test_sort_by_name_asc_shows_summary_and_arrow(self):
+        import re
+        h = self._render(sort="name", direction="asc")
+        self.assertIn(
+            "sorted by <strong>Provider name</strong> (ascending)", h)
+        self.assertIn("reset sort", h)
+        # Exactly one ↑ arrow span on the active column.
+        spans = re.findall(
+            r'<span class="ts-sort-arrow">([^<]+)</span>', h)
+        self.assertEqual(len(spans), 1)
+        self.assertEqual(spans[0].strip(), "↑")
+
+    def test_sort_does_not_lie_when_column_hidden(self):
+        # HCRIS hospitals have all-None operating_margin so the q
+        # column is dropped. Sorting by quality silently falls back
+        # to the default 'ranked by' language rather than claiming
+        # the table is 'sorted by Op margin' when there's no Op
+        # margin column to point at.
+        h = self._render(sort="quality")
+        self.assertIn("ranked by", h)
+        self.assertNotIn("sorted by <strong>Op margin", h)
+
+    def test_reset_sort_link_drops_sort_keeps_other_params(self):
+        import re
+        h = self._render(sort="name", state="TX")
+        m = re.search(
+            r'class="ck-link ts-sort-reset" href="([^"]+)"', h)
+        self.assertIsNotNone(m, "reset-sort link missing")
+        reset_href = m.group(1)
+        self.assertNotIn("sort=", reset_href)
+        self.assertIn("state=TX", reset_href)
+
     def test_compare_basket_banner_hidden_when_empty(self):
         h = self._render()
         self.assertNotIn('<div class="ts-cmp-bucket"', h)
