@@ -300,6 +300,10 @@ def render_capital_efficiency(params: Dict[str, str]) -> str:
 </p>
 """
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(ck_illustrative_note("capital-efficiency figures") + body,
         title="Capital Efficiency Analysis",
         active_nav="/capital-efficiency",

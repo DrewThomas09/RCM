@@ -349,6 +349,10 @@ def render_acq_timing(params: Dict[str, str]) -> str:
 </p>
 """
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(ck_illustrative_note("acquisition-timing figures") + body,
         title="Acquisition Timing Analyzer",
         active_nav="/acq-timing",

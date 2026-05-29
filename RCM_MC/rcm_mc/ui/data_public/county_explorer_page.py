@@ -221,4 +221,8 @@ def render_county_explorer(params: Dict = None) -> str:
     or the <a href="/geo-intel" style="color:{ac};text-decoration:none">Geographic Intelligence</a> suite.
   </p>
 </div>"""
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, f"County Explorer — {name}", active_nav="/county-explorer")

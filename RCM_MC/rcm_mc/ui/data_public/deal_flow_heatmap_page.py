@@ -404,6 +404,10 @@ def render_deal_flow_heatmap(min_sector_deals: int = 3) -> str:
 </div>"""
 
     from rcm_mc.ui._chartis_kit import ck_illustrative_note as _ckn
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(_ckn("deal-flow figures (illustrative seed corpus)") + body, "Deal Flow Heatmap", active_nav="/deal-flow-heatmap",
                          subtitle=f"{len(active_sectors)} sectors × {len(years)} years",
         editorial_intro={
