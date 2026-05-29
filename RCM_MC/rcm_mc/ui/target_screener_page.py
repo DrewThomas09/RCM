@@ -22,6 +22,7 @@ active target universe — only ever a labeled benchmark/research reference.
 """
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import Dict, List, Optional
 from urllib.parse import quote as _uq
 
@@ -134,6 +135,14 @@ _CSS = """
 .tsw-vert:hover{border-color:var(--sc-teal,#155752);}
 .tsw-vert.is-active{background:var(--sc-navy,#15202b);color:var(--sc-paper,#faf6ec);border-color:var(--sc-navy,#15202b);}
 .tsw-vert .u{opacity:.6;font-size:9px;}
+/* Real provider-count badge on each universe chip — partner can
+   compare scale (5,234 Hospitals vs 4,800 Hospice vs 15,200 SNF)
+   without clicking into each. Source: live CMS loaders. */
+.tsw-vert .n{margin-left:6px;padding:1px 5px;font-family:var(--sc-mono);
+ font-size:9px;font-variant-numeric:tabular-nums;letter-spacing:.02em;
+ background:var(--sc-bone,#ece5d6);color:var(--sc-text-dim,#6a7480);
+ border-radius:2px;}
+.tsw-vert.is-active .n{background:var(--sc-teal-deep,#0e3d39);color:#fff;}
 .ts-modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0;}
 @media (max-width:900px){.ts-modes{grid-template-columns:1fr;}.tsw-tab{min-width:160px;}}
 .ts-mode{display:flex;flex-direction:column;gap:4px;background:var(--sc-paper,#faf6ec);
@@ -472,15 +481,42 @@ def _tab_bar(active_view: str, qs: Dict[str, List[str]]) -> str:
     return "".join(html)
 
 
+@lru_cache(maxsize=16)
+def _vertical_total(vertical: str) -> Optional[int]:
+    """Return the real total provider count for a vertical, or None when
+    the loader doesn't expose a sensible count (provider_supply/market
+    are geo screens, not provider universes). Cached per-process so
+    rendering the chip strip on every page load is cheap. Best-effort:
+    any loader exception → None so the chip just hides its count
+    rather than fabricating a number."""
+    if vertical in ("provider_supply", "market"):
+        return None
+    counts = _provider_counts_by_state(vertical)
+    if not counts:
+        return None
+    return int(sum(counts.values()))
+
+
 def _vertical_chips_html(active_vertical: str, qs: Dict[str, List[str]]) -> str:
     """Just the chip strip — no surrounding prompt/label. Used by the
-    merged universe panel which renders its own prompt inline."""
+    merged universe panel which renders its own prompt inline.
+
+    Each chip now carries a real provider-count badge so the partner
+    can compare scale across universes at a glance (5,234 Hospitals vs
+    4,800 Hospice vs 15,200 SNF) without having to click into each. The
+    count comes from the real CMS loaders via _vertical_total — cached.
+    Verticals without a provider universe (provider_supply, market)
+    render no count rather than a fabricated one."""
     chips = []
     for v in _VERTICALS:
         cls = "tsw-vert is-active" if v["key"] == active_vertical else "tsw-vert"
+        count = _vertical_total(v["key"])
+        count_html = (
+            f'<span class="n">{count:,}</span>' if count is not None else ""
+        )
         chips.append(
             f'<a class="{cls}" href="{_vhref(v["key"], qs)}" title="{v["note"]}">'
-            f'{v["label"]} <span class="u">{v["universe"]}</span></a>'
+            f'{v["label"]} <span class="u">{v["universe"]}</span>{count_html}</a>'
         )
     return '<div class="tsw-verticals">' + "".join(chips) + '</div>'
 
