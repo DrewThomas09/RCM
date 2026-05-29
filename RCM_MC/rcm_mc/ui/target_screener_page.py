@@ -785,8 +785,9 @@ def _topn_toggle_html(vertical: str, qs: Dict[str, List[str]],
         # ── client-side instant name filter ─────────────────────
         '<span class="ts-topn-search">'
         '<input type="search" class="ts-topn-search-input" '
-        'placeholder="Filter by name, CCN, city, state…" '
-        'aria-label="Filter ranked providers by name, CCN, or location" '
+        'placeholder="Filter by name, CCN, city, state… (press /)" '
+        'aria-label="Filter ranked providers by name, CCN, or location. '
+        'Keyboard shortcut: press slash to focus, escape to clear and blur." '
         'data-ts-search-input>'
         '<span class="ts-topn-search-count" data-ts-search-count></span>'
         '</span>'
@@ -798,6 +799,15 @@ def _topn_toggle_html(vertical: str, qs: Dict[str, List[str]],
 # Idempotent install JS for the client-side row filter. Reads from
 # every <tr data-ts-search="..."> in the page, hides rows that don't
 # contain the typed substring, and updates the chip-counter.
+#
+# Wave-9 keyboard hotkeys:
+#   - '/' anywhere on the page focuses the table search input
+#     (standard GitHub/Slack/Linear pattern). Skipped when an
+#     input/textarea/contenteditable already has focus so the
+#     partner can keep typing in the Refine fields or any other form.
+#   - ESC inside the search input clears the value, re-runs the
+#     filter (revealing every row), then blurs so the partner can
+#     scroll immediately.
 _TS_SEARCH_JS = """
 <script>
 (function(){
@@ -822,6 +832,26 @@ _TS_SEARCH_JS = """
   document.addEventListener('input', function(e){
     var t = e.target;
     if (t && t.matches && t.matches('[data-ts-search-input]')) apply(t);
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key !== '/') return;
+    var a = document.activeElement;
+    if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' ||
+              a.isContentEditable)) return;
+    var input = document.querySelector('[data-ts-search-input]');
+    if (!input) return;
+    e.preventDefault();
+    input.focus();
+    input.select();
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key !== 'Escape') return;
+    var t = e.target;
+    if (!t || !t.matches || !t.matches('[data-ts-search-input]')) return;
+    if (!t.value) { t.blur(); return; }
+    t.value = '';
+    apply(t);
+    t.blur();
   });
 })();
 </script>
