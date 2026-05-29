@@ -425,6 +425,10 @@ def render_physician_productivity(params: dict = None) -> str:
                "(illustrative, not licensed MGMA tables) + real CMS MIPS "
                "physician-quality distribution + real HRSA shortage context",
         next_action="Attach CMS Part B / PECOS provider data for real utilization") + body
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(body, "Physician Productivity", active_nav="/physician-productivity",
         editorial_intro={
             "eyebrow": "PHYSICIAN PRODUCTIVITY",

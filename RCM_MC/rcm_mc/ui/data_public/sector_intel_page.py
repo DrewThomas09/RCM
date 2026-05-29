@@ -285,6 +285,10 @@ def render_sector_intel(min_deals: int = 3, sort_by: str = "moic_p50") -> str:
     )
     body = explainer + kpis + ck_section_header("SECTOR SCATTER", "P50 MOIC vs loss rate — portfolio positioning map") + scatter_panel + filter_bar + ck_section_header("SECTOR BENCHMARKS", f"P25/P50/P75 MOIC · IRR · loss rate · hold — sorted by {sort_by.replace('_',' ')}") + table
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(
         ck_illustrative_note("sector-intelligence aggregates — built from the "
                              "bundled illustrative seed deals, not your "

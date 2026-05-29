@@ -233,6 +233,10 @@ def render_redflag_scanner(params: dict = None) -> str:
   </div>
 </div>"""
 
+    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
+    # + Back-to-top affordances. Idempotent JS guards.
+    from ._chartis_kit import ck_page_actions
+    body = body + ck_page_actions()
     return chartis_shell(data_required_panel(P, title="Red-Flag Scanner", needed=[("metric","financial / KPI metric"),("value","target value"),("payer","payer mix line"),("ar_bucket","AR aging bucket")], template="ar_aging_template.csv (+ target financials, payer mix)", request_from="CFO / FP&A / deal team", activates="cross-financial red-flag scan (margins, AR, payer concentration, KPIs)", guide_hint="What financial/KPI/AR data do I need to upload?") + ck_illustrative_note("red-flag scan results") + body, "Red-Flag Scanner", active_nav="/redflag-scanner",
         editorial_intro={
             "eyebrow": "REDFLAG SCANNER",
