@@ -840,8 +840,13 @@ _MANUAL: List[PageContext] = [
         "reasonableness, red-flag, and bear-book inventories.",
         primary_purpose="Orient users on what the codified PE-judgment library "
         "can do and route them to per-deal reads.",
-        common_questions=["What can the PE-intelligence brain do?",
-                         "Where do I run it on a specific deal?"],
+        common_questions=[
+            "What can the PE-intelligence brain do?",
+            "Where do I run it on a specific deal?",
+            "What's the difference between reflexes, archetypes, and red-flag catalogs?",
+            "Is the PE-intelligence output a prediction or codified judgment?",
+            "Which deal routes consume these modules?",
+        ],
         inputs=["None on the hub itself — it is a catalog / methodology "
                 "overview; per-deal output runs from deal routes."],
         outputs=["Per page labels: a reflexes card grid, inventory links "
@@ -878,8 +883,13 @@ _MANUAL: List[PageContext] = [
         "M&A teams.",
         primary_purpose="Give diligence/sourcing teams a reference roadmap of "
         "relevant industry events.",
-        common_questions=["What conferences are coming up?",
-                         "Which events matter for healthcare PE?"],
+        common_questions=[
+            "What conferences are coming up?",
+            "Which events matter for healthcare PE?",
+            "Where can I filter by category — provider, payer, investing?",
+            "Is the calendar a live feed or a curated list?",
+            "Which conferences focus on hospital M&A?",
+        ],
         inputs=["A category filter (the events themselves are a curated list)."],
         outputs=["Per page labels: events grouped by quarter with name, date, "
                  "location, category, tier, and relevance."],
@@ -1572,8 +1582,13 @@ _MANUAL: List[PageContext] = [
         primary_purpose="Run the whole diligence analytic chain on a deal in "
         "one pass and surface the headline numbers with deep links to each "
         "individual analytic.",
-        common_questions=["What does the full diligence run say?",
-                         "Which step flagged the biggest issue?"],
+        common_questions=[
+            "What does the full diligence run say?",
+            "Which step flagged the biggest issue?",
+            "How long does the full chain take to run end-to-end?",
+            "How do I rerun just one analytic when an input changes?",
+            "Which analytics are chained — ingest, denial, MC, counterfactual, bankruptcy?",
+        ],
         inputs=["A claims dataset (fixture) plus deal metadata (EV, equity, "
                 "debt, revenue, EBITDA, lease terms, EHR vendor, roster, "
                 "market category, HCRIS CCN)."],
@@ -1663,8 +1678,13 @@ _MANUAL: List[PageContext] = [
         "the claims data.",
         primary_purpose="Attribute denial dollars to their root-cause "
         "categories so the recoverable opportunity is concrete and traceable.",
-        common_questions=["What's driving the denials?",
-                         "Where are the recoverable write-offs?"],
+        common_questions=[
+            "What's driving the denials?",
+            "Where are the recoverable write-offs?",
+            "What's the dollar volume in the biggest denial category?",
+            "How are denial codes mapped to root-cause categories?",
+            "Which payer has the most write-offs?",
+        ],
         inputs=["A claims dataset (fixture on this page) the analysis is "
                 "computed from."],
         outputs=["Per page labels: a denial Pareto (category, dollars, claim "
@@ -1748,8 +1768,13 @@ _MANUAL: List[PageContext] = [
         primary_purpose="Identify the minimum change on each lever (rate, "
         "denial, AR, structure) that would move a RED/YELLOW band to GREEN, "
         "and how feasible that change is.",
-        common_questions=["What would change the conclusion on this deal?",
-                         "Which lever is the binding constraint?"],
+        common_questions=[
+            "What would change the conclusion on this deal?",
+            "Which lever is the binding constraint?",
+            "How much rate / denial / AR improvement do we need to flip the band?",
+            "How feasibly can each lever realistically be moved?",
+            "What's the $ impact of moving each lever to GREEN?",
+        ],
         inputs=["A claims dataset (fixture) + deal metadata (legal structure, "
                 "states, specialty, landlord, lease terms, etc.)."],
         outputs=["Per page labels: per-lever cards (module, action, original→"
@@ -1789,8 +1814,13 @@ _MANUAL: List[PageContext] = [
         "distributions of EBITDA, MOIC, and IRR, not a single point estimate.",
         primary_purpose="Show the spread of outcomes by simulating many "
         "stochastic paths across the deal's value-creation levers.",
-        common_questions=["What's the range of outcomes, not just the base "
-                         "case?", "How likely is a sub-1x result?"],
+        common_questions=[
+            "What's the range of outcomes, not just the base case?",
+            "How likely is a sub-1x result?",
+            "How many simulated paths does the run use by default?",
+            "Which assumptions have the biggest impact on the spread?",
+            "How does this differ from /scenarios and /portfolio/monte-carlo?",
+        ],
         inputs=["Capital structure + assumption inputs (EV, equity, debt, "
                 "entry multiple, revenue/EBITDA, growth mean/σ, denial "
                 "improvement, regulatory headwind, lease, cyber, exit multiple "
