@@ -4588,6 +4588,13 @@ _MANUAL: List[PageContext] = [
         primary_purpose="Gauge a physician group's productivity against "
         "representative benchmarks, framed by real physician-quality and "
         "shortage data.",
+        common_questions=[
+            "What's a top-quartile wRVU figure for this specialty?",
+            "How does this group's productivity compare to MGMA-style ranges?",
+            "Is the area a designated HPSA (shortage area)?",
+            "Are these benchmark figures licensed MGMA or representative?",
+            "How does panel size affect wRVU productivity reading?",
+        ],
         data_sources=["Representative MGMA/AMGA-style benchmark ranges "
                       "(illustrative); real CMS MIPS distribution; real HRSA HPSA."],
         interpretation_guidance=[
@@ -4606,6 +4613,13 @@ _MANUAL: List[PageContext] = [
         "to the real CMS Care Compare nurse-staff turnover benchmark.",
         primary_purpose="Frame provider/staff churn risk and cost, against a "
         "real sector turnover benchmark.",
+        common_questions=[
+            "What's the cost of losing a key provider?",
+            "How does the target's turnover compare to the ~45% nurse-sector median?",
+            "Is the at-risk watchlist real names or illustrative scaffold?",
+            "How does retention spend translate into EBITDA?",
+            "Where do I plug in the target's actual HR roster?",
+        ],
         data_sources=["Representative role-level churn assumptions (illustrative) "
                       "+ real CMS nurse-staff turnover (median ~45%)."],
         interpretation_guidance=[
@@ -5056,6 +5070,13 @@ _MANUAL: List[PageContext] = [
         "/acq-timing", "Acquisition Timing",
         short_description="Acquisition-timing model on your inputs.",
         primary_purpose="Frame timing trade-offs for an acquisition.",
+        common_questions=[
+            "Is now a good time to acquire in this sector?",
+            "What's the trade-off between buying earlier vs waiting for a cycle bottom?",
+            "What multiple-cycle do the defaults assume?",
+            "How does interest-rate forecast affect the timing answer?",
+            "Where do I see the macro / sector signals feeding the model?",
+        ],
         data_sources=["Calculator: your inputs + illustrative defaults."],
         interpretation_guidance=["Computes off YOUR inputs; illustrative defaults."],
         related_routes=["/entry-multiple", "/hold-optimizer"],
@@ -5290,6 +5311,13 @@ _MANUAL: List[PageContext] = [
         "anchored to the real CIVHC commercial-vs-Medicare rate benchmark.",
         primary_purpose="Frame contract rates against the real commercial-%-of-"
         "Medicare benchmark contracts negotiate against.",
+        common_questions=[
+            "What rate should I negotiate as % of Medicare?",
+            "Which contracts have escalator clauses worth modeling?",
+            "When do the top contracts come up for renegotiation?",
+            "Is the contract book on this page real or illustrative scaffold?",
+            "Where do I find the actual rate sheets?",
+        ],
         data_sources=["Illustrative contract book/negotiations/escalators (labeled) + "
                       "real CIVHC / CO APCD reference-based pricing."],
         interpretation_guidance=["Contract book is illustrative scaffold.",
@@ -5316,6 +5344,13 @@ _MANUAL: List[PageContext] = [
         short_description="Telehealth visit-economics model (illustrative) anchored to "
         "real CDC PLACES access barriers (transportation, uninsured).",
         primary_purpose="Frame telehealth demand against real access-barrier prevalence.",
+        common_questions=[
+            "What's the unit economics of a telehealth visit vs in-person?",
+            "How big is the addressable telehealth demand in this market?",
+            "Does payment parity hold post-PHE for this state?",
+            "Where do the access-barrier figures come from?",
+            "How sensitive is the EV to parity / reimbursement assumptions?",
+        ],
         data_sources=["Illustrative visit P&L / parity / productivity (labeled) + real "
                       "CDC PLACES access barriers."],
         interpretation_guidance=["Visit economics are illustrative.",
@@ -5343,6 +5378,13 @@ _MANUAL: List[PageContext] = [
         short_description="Locum spend/coverage model (illustrative) anchored to real "
         "HRSA Health Professional Shortage Areas — the locum-demand driver.",
         primary_purpose="Frame locum/temp-staffing demand against real shortage-area data.",
+        common_questions=[
+            "How much of the deal's labor cost is going to locum / agency?",
+            "Is the area a designated HPSA driving locum demand?",
+            "What's a typical locum rate-to-permanent ratio for this specialty?",
+            "How does locum spend translate into EBITDA drag?",
+            "Where can I plug in the target's actual locum invoices?",
+        ],
         data_sources=["Illustrative locum spend/coverage/rates (labeled) + real HRSA "
                       "HPSA (7,635 designated PC shortage areas)."],
         interpretation_guidance=["Locum figures are illustrative.",
