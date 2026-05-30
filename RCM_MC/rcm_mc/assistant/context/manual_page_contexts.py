@@ -5692,6 +5692,13 @@ _MANUAL: List[PageContext] = [
         short_description="Reference documentation of how PEdesk's metrics and models "
         "are calculated.",
         primary_purpose="Explain the formulas/assumptions behind the analytics.",
+        common_questions=[
+            "How is the EBITDA bridge actually computed?",
+            "What's the formula for the covenant cushion?",
+            "Where do the health-score weights come from?",
+            "Is the IRR calculated with annual or quarterly compounding?",
+            "How does the Monte Carlo simulation seed work?",
+        ],
         data_sources=["Documentation of PEdesk's own calculation methods."],
         interpretation_guidance=["Reference/methodology, not a data surface."],
         related_routes=["/methodology", "/metric-glossary"],
@@ -5702,6 +5709,13 @@ _MANUAL: List[PageContext] = [
         category=PageContextCategory.LIBRARY_REFERENCE,
         short_description="A navigable index of every PEdesk module/surface.",
         primary_purpose="Find and jump to any tool or page.",
+        common_questions=[
+            "What pages does PEdesk have for portfolio monitoring?",
+            "Where do I find the deal-pipeline tools?",
+            "Is there a covenant-monitoring page?",
+            "How does this differ from /tools?",
+            "Where do I see only the green-tier pages?",
+        ],
         data_sources=["The route/module manifest (system metadata)."],
         interpretation_guidance=["A navigation index, not a data surface."],
         related_routes=["/tools", "/library"],
@@ -5713,6 +5727,13 @@ _MANUAL: List[PageContext] = [
         short_description="Index of the CMS-data-backed healthcare vertical pages "
         "(dialysis, home health, hospice, SNF, IRF, LTCH, hospital).",
         primary_purpose="Navigate to the real-data vertical analytics by care setting.",
+        common_questions=[
+            "Which healthcare verticals does PEdesk have analytics for?",
+            "Where's the SNF / nursing-home data?",
+            "How fresh is each vertical's CMS data?",
+            "How do I compare verticals on common metrics?",
+            "Which verticals share the same CMS Care Compare source?",
+        ],
         data_sources=["Real CMS public vertical datasets (per linked page)."],
         interpretation_guidance=["Each linked vertical uses real CMS public data."],
         related_routes=["/dialysis", "/home-health", "/hospice", "/nursing-homes"],
