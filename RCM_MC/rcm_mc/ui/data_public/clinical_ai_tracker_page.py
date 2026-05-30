@@ -275,8 +275,11 @@ def render_clinical_ai_tracker(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     total_revenue = sum(o.revenue_impact_m for o in r.outcomes)
+    # 2026-05-30 audit P5 editorial: clinical AI and clinical ML are
+    # the same thing in healthcare-PE diligence vocabulary. The
+    # eyebrow already reads CLINICAL AI TRACKER.
     page_title = ck_page_title(
-        "Clinical AI / ML Deployment Tracker",
+        "Clinical AI Tracker",
         eyebrow="CLINICAL AI TRACKER",
         meta=(
             f"{r.total_systems} AI systems · {r.total_deals_with_ai} portcos · "

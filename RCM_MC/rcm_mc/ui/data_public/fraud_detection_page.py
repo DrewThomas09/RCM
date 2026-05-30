@@ -254,8 +254,12 @@ def render_fraud_detection(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    # 2026-05-30 audit P5 editorial: "FWA" (Fraud / Waste / Abuse) is
+    # the compliance acronym; "fraud" is the common-vocabulary umbrella.
+    # Eyebrow keeps FRAUD DETECTION; FWA framing continues to appear
+    # in the meta line and body.
     page_title = ck_page_title(
-        "Fraud / Waste / Abuse Detection Panel",
+        "Fraud Detection Panel",
         eyebrow="FRAUD DETECTION",
         meta=f"{r.total_anomalies_flagged} anomalies flagged ({r.high_severity_count} high severity) · ${r.total_exposure_mm:,.1f}M total exposure if findings sustained · {r.platform_fwa_risk_score}/100 FWA risk score ({r.risk_tier.upper()} tier) · {len(r.events)} compliance events on record",
     )

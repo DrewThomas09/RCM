@@ -263,8 +263,11 @@ def render_capex_budget(params: dict = None) -> str:
     pct_deployed = r.total_ytd_spent_m / r.total_annual_budget_m * 100 if r.total_annual_budget_m else 0
     denovo_budget = sum(d.budget_m for d in r.denovo)
     denovo_yr1_rev = sum(d.projected_year_1_revenue_m for d in r.denovo)
+    # 2026-05-30 audit P5 editorial: capex planning and capital
+    # budget tracking are the same activity. "Capex Budget Tracker"
+    # matches the eyebrow (CAPEX BUDGET) and the route /capex-budget.
     page_title = ck_page_title(
-        "Capex Planning / Capital Budget Tracker",
+        "Capex Budget Tracker",
         eyebrow="CAPEX BUDGET",
         meta=(
             f"${r.total_annual_budget_m:,.1f}M budget · "
