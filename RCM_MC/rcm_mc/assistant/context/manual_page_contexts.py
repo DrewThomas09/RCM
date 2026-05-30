@@ -4819,6 +4819,8 @@ _MANUAL: List[PageContext] = [
             "Is this market over- or under-supplied with providers?",
             "How active is nursing-home / hospital consolidation here?",
             "Is this market data or provider-specific?",
+            "How is the partial market score weighted across the demand / "
+            "supply / consolidation signals?",
         ],
         inputs=["?var= (variable selector); /market-intel/geo/<FIPS> for a "
                 "state profile."],
@@ -4865,6 +4867,8 @@ _MANUAL: List[PageContext] = [
             "Which public CMS datasets can validate this thesis?",
             "Which metrics are report-derived vs provider-specific?",
             "What should I ask management about this sector?",
+            "Which of the five healthcare industries is covered, and how stale "
+            "is each report's vintage?",
         ],
         inputs=["/industry/<slug> for a dossier; /industry/<slug>/brief for a "
                 "PEdesk-generated brief."],
@@ -6064,7 +6068,10 @@ _MANUAL: List[PageContext] = [
         "healthcare markets by state for origination/screening.",
         common_questions=["How do I compare states?",
                           "Which states lead/lag on a metric?",
-                          "What does the data say about one state?"],
+                          "What does the data say about one state?",
+                          "What public data backs the three state modes — and "
+                          "what's the vintage of each source?",
+                          "How does /geo-intel differ from /market-intel/geo?"],
         data_sources=["Navigation surface only — links to the three modes; "
                       "renders no data itself."],
         key_metrics=["(none — hub page)"],
@@ -6261,7 +6268,10 @@ _MANUAL: List[PageContext] = [
         "must withstand, for the IC memo's bear case.",
         common_questions=["What's the bear case for this deal?",
                           "Which risks put the most EBITDA at risk?",
-                          "Is this real or illustrative?"],
+                          "Is this real or illustrative?",
+                          "How is EBITDA-at-risk computed — and what does it assume?",
+                          "How does /diligence/bear-case differ from "
+                          "/diligence/risk-workbench and /diligence/payer-stress?"],
         inputs=["A dataset fixture (full pipeline) OR live deal inputs "
                 "(standalone regulatory/covenant/bridge/HCRIS extractors)."],
         outputs=["Ranked risk evidence by theme + an IC-memo bear-case preview."],
@@ -6433,6 +6443,8 @@ _MANUAL.extend([
             "What does the efficiency frontier say about this hospital?",
             "How does Bayesian calibration shrink a thin-data KPI toward peers?",
             "Is the denial-rate estimate observed or a prior?",
+            "How fresh is the HCRIS universe powering these models, and which "
+            "peer cohort defines 'peers'?",
         ],
         inputs=["Latest-per-CCN CMS HCRIS cost reports with computed features "
                 "(_get_latest_per_ccn + _add_computed_features)."],
@@ -6594,6 +6606,9 @@ _MANUAL.extend([
             "How sensitive is MOIC to the exit multiple?",
             "At what leverage does this deal stop working?",
             "What IRR do these assumptions imply?",
+            "What are the illustrative inputs (entry EV, debt, growth, margin) "
+            "and what should I replace with the deal's real figures?",
+            "How does /lbo-stress differ from /scenarios and /portfolio/monte-carlo?",
         ],
         inputs=["Scenario assumptions from query parameters (entry/exit "
                 "multiple, leverage, EBITDA growth). With no parameters it "
