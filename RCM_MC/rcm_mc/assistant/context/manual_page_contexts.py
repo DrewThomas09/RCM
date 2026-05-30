@@ -2690,8 +2690,13 @@ _MANUAL: List[PageContext] = [
         "— histogram, IRR-vs-MOIC scatter, and sector benchmarks.",
         primary_purpose="Show the spread of realized returns, not just the "
         "median.",
-        common_questions=["How wide is the realized IRR spread?",
-                         "What share clears a 20% hurdle?"],
+        common_questions=[
+            "How wide is the realized IRR spread?",
+            "What share clears a 20% hurdle?",
+            "How does sector affect the IRR distribution?",
+            "What's the historical loss rate (sub-1x) in the corpus?",
+            "Is this prediction or historical observation?",
+        ],
         inputs=["The realized-deal corpus (deals with realized IRR + MOIC)."],
         outputs=["Per page labels: KPIs (With IRR Data, IRR P25/P50/P75, "
                  "≥20% hurdle share) and a per-sector table (N, MOIC "
@@ -2727,8 +2732,13 @@ _MANUAL: List[PageContext] = [
         "buckets, and outliers.",
         primary_purpose="Show how realized returns vary with hold duration in "
         "the corpus.",
-        common_questions=["How does hold length relate to realized MOIC?",
-                         "What's the typical hold for this sector?"],
+        common_questions=[
+            "How does hold length relate to realized MOIC?",
+            "What's the typical hold for this sector?",
+            "Are longer holds correlated with higher MOIC or just more risk?",
+            "Which hold-bucket has the best risk-adjusted returns?",
+            "Which deals are outliers — long hold + sub-1x?",
+        ],
         inputs=["The realized-deal corpus (deals with hold + MOIC)."],
         outputs=["Per page labels: hold KPIs (P25/P50/P75/mean), a hold-vs-"
                  "MOIC scatter, hold-bucket stats (MOIC P25/P50/P75, IRR P50, "
@@ -3430,8 +3440,13 @@ _MANUAL: List[PageContext] = [
         "consulting engagements with their client, status, and deliverables.",
         primary_purpose="Manage consulting engagements (members, deliverables, "
         "comment stream) in the Chartis-consulting workspace.",
-        common_questions=["What engagements are active?",
-                         "What's the status of this client engagement?"],
+        common_questions=[
+            "What engagements are active?",
+            "What's the status of this client engagement?",
+            "Who's on the engagement team?",
+            "How does engagement access (members/deliverables) work?",
+            "How is this different from the PE deal pipeline?",
+        ],
         inputs=["Engagement records (id, name, client, status, created) from "
                 "the store; per-engagement members / deliverables / comments."],
         outputs=["Per page labels: a table (ID, Name, Client, Status, Created) "
@@ -8167,7 +8182,11 @@ _BATCH8_SYSTEM = [
      ["How do I search?", "Where do I find a deal/hospital?"]),
     ("/global-search", _HOME, "Global search results across the app's "
      "entities and surfaces.",
-     ["Search everything", "Find a deal or page"]),
+     ["Search everything",
+      "Find a deal or page",
+      "What entities are searchable — deals, hospitals, sponsors?",
+      "How does this differ from /search and /deal-search?",
+      "Can I search inside uploaded documents?"]),
     ("/query", _SYS, "Ad-hoc query tool over the app's data.",
      ["How do I query the data?", "Can I run a custom query?"]),
     ("/admin/audit-chain", _SYS, "Audit-log chain — the tamper-evident record "
@@ -8198,7 +8217,11 @@ _BATCH8_SYSTEM = [
      ["How do I add a deal?", "How do I import a deal?"]),
     ("/market-data/map", PageContextCategory.RESEARCH_BACKTESTING,
      "Geographic market-data map — public market indicators by location.",
-     ["What's the geographic picture?", "How do markets compare on the map?"]),
+     ["What's the geographic picture?",
+      "How do markets compare on the map?",
+      "Which public market indicators can be plotted?",
+      "How does this differ from /geo-map and /market-intel/geo?",
+      "What's the underlying data refresh cadence?"]),
     ("/market-intel/seeking-alpha", PageContextCategory.RESEARCH_BACKTESTING,
      "Market-intelligence reading view (Seeking-Alpha-style) over licensed "
      "research exports.",
@@ -8724,8 +8747,13 @@ _GUIDE_BACKFILL = [
         primary_purpose="Document, for each geo metric, exactly what it measures, "
         "where it comes from, and how complete the coverage is — so the maps and "
         "rankings are auditable, not black boxes.",
-        common_questions=["Where does this geo metric come from?",
-                          "What's the coverage/vintage of this data?"],
+        common_questions=[
+            "Where does this geo metric come from?",
+            "What's the coverage/vintage of this data?",
+            "Which metrics are CMS-sourced vs Census/ACS?",
+            "How often does each dataset refresh?",
+            "Is the coverage gap on this metric material for my thesis?",
+        ],
         outputs=["A per-metric table: definition, source, coverage."],
         key_metrics=[], data_sources=["The shared geo metrics registry and its "
                                       "underlying public datasets."],
