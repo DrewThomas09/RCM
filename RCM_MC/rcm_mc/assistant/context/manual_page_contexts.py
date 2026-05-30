@@ -7966,7 +7966,9 @@ _BATCH6 = [
      "public).",
      "Think about when to exit and to whom, not just at what multiple.",
      ["When should we exit?", "Who's the natural buyer?", "Strategic or "
-      "sponsor exit?"],
+      "sponsor exit?",
+      "What signals (multiple regime, EBITDA growth slowdown, buyer interest) drive the timing score?",
+      "How does /exit-timing differ from /exit-readiness, /hold, and /hold-optimizer?"],
      ["Exit multiple", "MOIC", "Buyer fit"], ["exit_multiple", "moic"], [],
      "Scores exit timing/buyer fit from entered assumptions; illustrative.",
      "The right buyer at the right time can out-matter the entry price.",
@@ -8059,7 +8061,9 @@ _BATCH7 = [
     ("/drug-pricing-340b", "340B Drug Pricing Analyzer",
      "Estimates 340B program savings vs non-340B acquisition cost.",
      ["What's the 340B savings?", "Which sites qualify?", "How much margin "
-      "does 340B add?"],
+      "does 340B add?",
+      "What discount, mix, and contract-pharmacy assumptions does the analyzer use, and how should I override them for a real platform?",
+      "How does /drug-pricing-340b differ from /tracker-340b and /biosimilars?"],
      ["340B savings"], [],
      "340B economics materially change pharmacy margin for eligible providers.",
      "model"),
@@ -8104,7 +8108,9 @@ _BATCH7 = [
     ("/esg-dashboard", "ESG Dashboard",
      "Summarizes ESG metrics and scores for a platform.",
      ["What's the ESG profile?", "Where are the ESG gaps?", "What do LPs "
-      "want here?"],
+      "want here?",
+      "Which ESG framework (SASB, TCFD, custom) does the score map to, and are the inputs partner-entered or imputed?",
+      "How does /esg-dashboard differ from /esg-impact and /pmi-integration?"],
      ["ESG score"], [],
      "ESG posture increasingly affects LP appetite and exit buyer lists.",
      "model"),
@@ -8112,7 +8118,9 @@ _BATCH7 = [
      "Flags potential fraud, waste, and abuse patterns in claims/operations "
      "data.",
      ["Any FWA red flags?", "Which patterns look anomalous?", "What needs a "
-      "compliance look?"],
+      "compliance look?",
+      "Which detection patterns (upcoding, modifier abuse, duplicate billing) does the page run, and at what z-threshold?",
+      "How does /fraud-detection differ from /models/anomalies and /diligence/risk-workbench?"],
      ["Risk score", "Flag count"], ["risk_score"],
      "Undetected FWA is a compliance and valuation landmine.", "model"),
     ("/geo-market", "Geographic Market Analyzer",
@@ -8162,7 +8170,9 @@ _BATCH7 = [
     ("/esg-impact", "ESG / Impact Reporting Tracker",
      "Tracks ESG / impact metrics and reporting commitments over time.",
      ["What ESG do we report?", "Are we hitting commitments?", "What's due "
-      "to LPs?"],
+      "to LPs?",
+      "Is the commitment tracker persisted, and does the page diff current vs prior period for trend?",
+      "How does /esg-impact differ from /esg-dashboard and /lp-reporting?"],
      ["ESG metrics", "Commitments"], [],
      "Impact reporting is increasingly an LP requirement, not a nicety.",
      "user"),
@@ -8613,7 +8623,8 @@ if "/ebitda-bridge" not in {c.route for c in _MANUAL}:
             "How does RCM improvement bridge to EBITDA here?",
             "Which lever contributes the most?",
             "What MOIC/IRR does this bridge imply?",
-            "How were the lever targets set?"],
+            "How were the lever targets set?",
+            "How does /ebitda-bridge differ from /models/bridge and /diligence/value?"],
         inputs=["The hospital's CMS HCRIS data (by CCN in the URL) plus "
                 "RCM benchmark targets / any data-room overrides."],
         outputs=["A 7-lever bridge (denial rate, days in AR, clean-claim, "
