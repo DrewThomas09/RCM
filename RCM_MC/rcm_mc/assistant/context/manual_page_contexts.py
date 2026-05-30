@@ -912,8 +912,13 @@ _MANUAL: List[PageContext] = [
         primary_purpose="Capture and persist one deal's profile (dataset, "
         "deal/partner/preparer names, specialty, states, legal structure) as "
         "the shared context for its analyses.",
-        common_questions=["What deal am I working on?",
-                         "Where do I set the deal's parameters?"],
+        common_questions=[
+            "What deal am I working on?",
+            "Where do I set the deal's parameters?",
+            "Why does the profile reset when I open a new browser?",
+            "How do I move a deal profile to a teammate's machine?",
+            "Which downstream tools read this profile?",
+        ],
         inputs=["User-entered profile fields; based on page code these are "
                 "saved in the browser's local storage keyed by deal slug."],
         outputs=["A saved deal profile that downstream tools read; the page "
@@ -1535,8 +1540,13 @@ _MANUAL: List[PageContext] = [
         "delta badges on the headline metrics.",
         primary_purpose="Put two specimens next to each other for an 'IC "
         "bake-off / which do we lead with' read.",
-        common_questions=["How do these two deals compare?",
-                         "Which is the stronger lead?"],
+        common_questions=[
+            "How do these two deals compare?",
+            "Which is the stronger lead?",
+            "What deltas does the page show — KPIs, QoR, counterfactual?",
+            "How do I switch the left/right datasets?",
+            "How does this differ from /compare and /find-comps?",
+        ],
         inputs=["Two datasets chosen via query params (?left=…&right=…) from "
                 "the available fixtures."],
         outputs=["Per page labels: two columns (KPIs, QoR waterfall, "
@@ -1619,8 +1629,13 @@ _MANUAL: List[PageContext] = [
         "against external peer benchmark bands.",
         primary_purpose="Place each of the target's RCM KPIs next to peer "
         "quartile bands so off-benchmark gaps stand out.",
-        common_questions=["How does this target compare to peers?",
-                         "Which KPIs are off-benchmark?"],
+        common_questions=[
+            "How does this target compare to peers?",
+            "Which KPIs are off-benchmark?",
+            "Where do the peer quartile bands come from (HFMA, MGMA)?",
+            "How does Days in A/R / denial rate / NCR map to MOIC upside?",
+            "What's a good vs bad cost-to-collect ratio?",
+        ],
         inputs=["A claims dataset (fixture on this page) the KPIs are computed "
                 "from; built-in peer benchmark bands."],
         outputs=["Per page labels: KPI cards (Days in A/R, First-Pass Denial "
@@ -1704,8 +1719,13 @@ _MANUAL: List[PageContext] = [
         primary_purpose="Estimate what each RCM lever could be worth on this "
         "deal's size / payer mix / denial profile, to prioritize the 100-day "
         "plan and underwrite the bridge.",
-        common_questions=["What's the RCM upside worth on this deal?",
-                         "Which levers should the 100-day plan prioritize?"],
+        common_questions=[
+            "What's the RCM upside worth on this deal?",
+            "Which levers should the 100-day plan prioritize?",
+            "How does denial-rate reduction translate into EBITDA dollars?",
+            "What's the typical realization rate on these levers in year 1?",
+            "How does the EBITDA contribution flow into the value bridge?",
+        ],
         inputs=["A claims dataset (fixture) and the deal's size / payer-mix / "
                 "denial profile; payer-rate and CMS-regime schedules (demo on "
                 "this page)."],
@@ -1870,9 +1890,13 @@ _MANUAL: List[PageContext] = [
         "paths and quarters.",
         primary_purpose="Stress-test how much headroom a deal's covenants have "
         "under a range of EBITDA paths, not predict an actual breach.",
-        common_questions=["How much covenant headroom does this structure "
-                         "have?", "Under stress, when might a covenant get "
-                         "tight?"],
+        common_questions=[
+            "How much covenant headroom does this structure have?",
+            "Under stress, when might a covenant get tight?",
+            "What's the simulated peak breach probability per covenant?",
+            "Which quarter is most likely to trip under the stress paths?",
+            "How does this differ from /covenant-monitor and /covenant-headroom?",
+        ],
         inputs=["Capital-structure inputs (total debt, EBITDA Y0, growth, "
                 "volatility) and covenant definitions; simulated EBITDA paths."],
         outputs=["Per page labels: KPIs (Max Breach Prob, Earliest 50% "
@@ -1912,8 +1936,13 @@ _MANUAL: List[PageContext] = [
         "(2–7) and buyer archetype to find the return-maximizing exit path.",
         primary_purpose="Explore which hold year and buyer type look best for "
         "a deal, as a scenario read — not a market-timing call.",
-        common_questions=["When might be the best time to exit?",
-                         "Which buyer type fits this deal?"],
+        common_questions=[
+            "When might be the best time to exit?",
+            "Which buyer type fits this deal?",
+            "What expected MOIC does each hold-year scenario produce?",
+            "How does buyer-type affect the multiple at exit?",
+            "Is this a market-timing call or just a scenario read?",
+        ],
         inputs=["Capital structure + assumptions (equity, debt, EBITDA, "
                 "growth, peer multiple, regulatory verdict, payer share, "
                 "management score); Deal-MC year bands, market-intel peer "
