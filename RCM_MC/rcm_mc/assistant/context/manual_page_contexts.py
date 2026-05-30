@@ -6928,7 +6928,9 @@ _ILLUSTRATIVE_TOOLS = [
      "Pressure-test how much room a thesis has to grow before the market "
      "caps it.",
      ["How big is the addressable market?", "What penetration is assumed?",
-      "How much runway is left?"],
+      "How much runway is left?",
+      "How is TAM vs SAM vs SOM defined here, and what bounds the SOM?",
+      "How does /growth-runway differ from /industry and /market-intel/geo?"],
      ["TAM/SAM/SOM", "Penetration %", "Revenue growth"],
      ["revenue_growth", "revenue"], [],
      "Builds market-sizing and penetration curves from entered assumptions; "
@@ -6941,7 +6943,9 @@ _ILLUSTRATIVE_TOOLS = [
      "Attribute realized returns to the factors that produced them so the "
      "team learns what actually drives MOIC.",
      ["What drives MOIC in the corpus?", "Which sectors/vintages return best?",
-      "How dispersed are returns?"],
+      "How dispersed are returns?",
+      "Which dimensions (sector, vintage, payer mix) is the decomposition cut on, and is interaction handled?",
+      "How does /return-attribution differ from /deal-corpus-analytics and /sponsor-league?"],
      ["MOIC P25/P50/P75", "IRR"],
      ["moic", "irr"], ["public_transaction_corpus"],
      "Groups corpus deals by dimension and reports the MOIC distribution; "
@@ -6954,7 +6958,9 @@ _ILLUSTRATIVE_TOOLS = [
      "Ground an entry-price view in what comparable deals actually paid and "
      "how that related to returns.",
      ["What's the typical entry multiple here?", "Do lower entries return "
-      "better?", "How do sectors compare on entry price?"],
+      "better?", "How do sectors compare on entry price?",
+      "Is the entry-multiple-vs-return correlation causal or selection-driven (better businesses sell for more)?",
+      "How does /entry-multiple differ from /exit-multiple and /comparables?"],
      ["EV/EBITDA", "Exit multiple", "EBITDA"],
      ["ev_to_ebitda", "exit_multiple", "ebitda"], ["public_transaction_corpus"],
      "Summarizes entry EV/EBITDA by sector and its correlation to outcomes "
@@ -6967,7 +6973,9 @@ _ILLUSTRATIVE_TOOLS = [
      "See how much of corpus returns came from paying-up vs growing the "
      "business.",
      ["What exit multiples are realistic?", "How much return is multiple "
-      "expansion?", "Which sectors re-rate on exit?"],
+      "expansion?", "Which sectors re-rate on exit?",
+      "What's the disciplined assumption — flat-to-entry, sector median, or paid?",
+      "How does /exit-multiple differ from /entry-multiple and /sponsor-league?"],
      ["Exit multiple", "EV/EBITDA", "Multiple expansion"],
      ["exit_multiple", "ev_to_ebitda"], ["public_transaction_corpus"],
      "Summarizes exit multiples and decomposes returns into expansion vs "
@@ -6981,7 +6989,9 @@ _ILLUSTRATIVE_TOOLS = [
      "Evaluate pulling capital out via a dividend recap and what it does to "
      "leverage and returns.",
      ["Can we do a dividend recap?", "How much can we distribute?", "What's "
-      "the IRR/DPI impact?"],
+      "the IRR/DPI impact?",
+      "What leverage covenants and rate environment does the page assume — and how should I override them?",
+      "How does /dividend-recap differ from /refi-optimizer and /hold-optimizer?"],
      ["Leverage", "Distribution", "MOIC", "IRR"],
      ["leverage", "debt", "moic", "irr"], [],
      "Models incremental debt capacity and the distribution's return impact "
@@ -7043,7 +7053,9 @@ _PE_TOOLS_3 = [
      "Year × sector deal-activity matrix from the licensed deal corpus.",
      "See where and when deal activity concentrated, to read sector cycles.",
      ["Which sectors are most active?", "How has activity shifted by year?",
-      "Where is deal flow heating up or cooling?"],
+      "Where is deal flow heating up or cooling?",
+      "What deal corpus underlies the heatmap, and how complete is its sector coverage?",
+      "How does /deal-flow-heatmap differ from /sponsor-heatmap and /sector-intel?"],
      ["Deal count by year × sector"], [], ["public_transaction_corpus"],
      "Counts corpus deals per (year, sector) cell and renders a heatmap; "
      "reflects the corpus's disclosed-deal coverage.",
