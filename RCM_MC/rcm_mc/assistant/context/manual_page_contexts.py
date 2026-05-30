@@ -142,8 +142,13 @@ _MANUAL: List[PageContext] = [
         "pipeline, onboarding) in the order partners check them.",
         primary_purpose="Give the team a single start-of-week orientation "
         "before they dive into individual deals.",
-        common_questions=["What changed over the weekend?",
-                         "What needs attention first this week?"],
+        common_questions=[
+            "What changed over the weekend?",
+            "What needs attention first this week?",
+            "Which deals advanced or were added in the last 7 days?",
+            "Are there any red alerts I haven't seen yet?",
+            "What's the overall portfolio-health mix this morning?",
+        ],
         inputs=["Live portfolio state (active alerts, health scores, recent "
                 "activity, last-7-day pipeline) from the store."],
         outputs=["Per page labels: top alerts by severity, a portfolio "
@@ -258,8 +263,13 @@ _MANUAL: List[PageContext] = [
         "update or weekly check-in.",
         primary_purpose="Surface unresolved red alerts that have persisted, so "
         "they get a decision rather than sitting open.",
-        common_questions=["What red alerts are still open and for how long?",
-                         "What needs a partner decision before the LP update?"],
+        common_questions=[
+            "What red alerts are still open and for how long?",
+            "What needs a partner decision before the LP update?",
+            "How many alerts have been red for more than 30 days?",
+            "Are any escalations acknowledged but still open?",
+            "Which deal carries the most aged alerts?",
+        ],
         inputs=["A days-open threshold (7/14/30/60/90); red alerts from alert "
                 "history that meet it."],
         outputs=["Per page labels: a table of aged red alerts (Deal, Title, "
@@ -294,8 +304,13 @@ _MANUAL: List[PageContext] = [
         "closely.",
         primary_purpose="Keep a focused subset of deals one click away, with "
         "their headline returns and covenant posture.",
-        common_questions=["Which deals am I watching?",
-                         "How are my pinned deals trending?"],
+        common_questions=[
+            "Which deals am I watching?",
+            "How are my pinned deals trending?",
+            "Did any pinned deal trip a covenant?",
+            "What's the average MOIC / IRR across my watchlist?",
+            "How do I add a deal to / remove from the watchlist?",
+        ],
         inputs=["The set of deals the user has starred (persisted); latest "
                 "snapshot per pinned deal."],
         outputs=["A table of pinned deals — based on page labels: health "
@@ -360,8 +375,13 @@ _MANUAL: List[PageContext] = [
         "trail — users, recent alert acknowledgements, and ownership changes.",
         primary_purpose="Provide an accountable, view-only trail of who did "
         "what across the platform.",
-        common_questions=["Who acknowledged this alert and when?",
-                         "Who changed this deal's owner?"],
+        common_questions=[
+            "Who acknowledged this alert and when?",
+            "Who changed this deal's owner?",
+            "Which users have logged in recently?",
+            "Did any user delete data they shouldn't have?",
+            "How far back does this audit window go?",
+        ],
         inputs=["Admin session (gated to the admin role when users exist)."],
         outputs=["Based on page sections: a users card, recent alert "
                  "acknowledgements (when / by / deal / kind / snooze / note), "
@@ -420,7 +440,13 @@ _MANUAL: List[PageContext] = [
         "array) into the portfolio store.",
         primary_purpose="Bring deals into the portfolio store with their RCM "
         "and financial profile fields.",
-        common_questions=["How do I add a deal?", "Can I bulk-load deals?"],
+        common_questions=[
+            "How do I add a deal?",
+            "Can I bulk-load deals?",
+            "What format does the bulk JSON payload need?",
+            "Which fields are required vs prior-filled?",
+            "Why is my imported deal showing prior-filled values?",
+        ],
         inputs=["Single-deal form (deal id, hospital name + optional "
                 "denial_rate, days_in_ar, net_collection_rate, "
                 "clean_claim_rate, cost_to_collect, claims volume, net "
@@ -693,8 +719,13 @@ _MANUAL: List[PageContext] = [
         "similarity scores and a peer benchmark block.",
         primary_purpose="Identify peer deals for benchmarking and valuation by "
         "profile similarity.",
-        common_questions=["What deals are comparable to this target?",
-                         "What's the peer MOIC / EV/EBITDA?"],
+        common_questions=[
+            "What deals are comparable to this target?",
+            "What's the peer MOIC / EV/EBITDA?",
+            "How is the similarity score weighted (sector vs EV vs vintage)?",
+            "Are the comps from real realized deals or illustrative?",
+            "How does this differ from /comparables and /diligence/comparable-outcomes?",
+        ],
         inputs=["Target characteristics the user enters (sector, EV, EV/EBITDA, "
                 "payer mix, vintage)."],
         outputs=["Per page labels: a ranked comps table (Rank, Deal, Sector, "
