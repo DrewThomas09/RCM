@@ -2411,8 +2411,13 @@ _MANUAL: List[PageContext] = [
         "bands for seven RCM metrics across eight facility segments.",
         primary_purpose="Provide industry benchmark bands so a target's RCM "
         "metrics can be read against peers of the same segment.",
-        common_questions=["What's a good denial rate / days in A/R for this "
-                         "segment?", "Where do peers sit on these metrics?"],
+        common_questions=[
+            "What's a good denial rate / days in A/R for this segment?",
+            "Where do peers sit on these metrics?",
+            "Which segments are covered (community, academic, ASC, etc.)?",
+            "Are these bands from HFMA, MGMA, or proprietary data?",
+            "Which direction is better (e.g. lower denial rate)?",
+        ],
         inputs=["A facility segment selection; the curated benchmark set."],
         outputs=["Per page labels: per-metric tables (Metric with better-"
                  "direction arrow, P25, P50 median, P75) across segments like "
@@ -2601,8 +2606,13 @@ _MANUAL: List[PageContext] = [
         "conference roadmap.",
         primary_purpose="Help users discover the reference/analysis pages "
         "scattered across the platform from one searchable list.",
-        common_questions=["What research is available?",
-                         "Where's the methodology / a given framework?"],
+        common_questions=[
+            "What research is available?",
+            "Where's the methodology / a given framework?",
+            "How do I filter research by topic or format?",
+            "How is this different from /library?",
+            "Where's the conference roadmap?",
+        ],
         inputs=["Topic and format filters; a keyword search over a curated "
                 "entry list."],
         outputs=["Per page labels: a filtered, searchable list of research "
@@ -2870,8 +2880,13 @@ _MANUAL: List[PageContext] = [
         "/ FTC / DOJ) mapped to the thesis drivers each could 'kill'.",
         primary_purpose="Track regulatory dates that could move or break a "
         "thesis, tied to named events.",
-        common_questions=["What regulatory events are coming?",
-                         "Which thesis drivers does an event threaten?"],
+        common_questions=[
+            "What regulatory events are coming?",
+            "Which thesis drivers does an event threaten?",
+            "What's a 'kill-switch' event?",
+            "How does this differ from /diligence/regulatory-calendar?",
+            "How is the calendar refreshed — manual, automated?",
+        ],
         inputs=["A curated event set (publish/effective dates, affected "
                 "specialties, thesis-driver kill map)."],
         outputs=["Per page labels: a timeline of events with KPIs (events "
@@ -3255,8 +3270,13 @@ _MANUAL: List[PageContext] = [
         "with state shading for CON status.",
         primary_purpose="Visualize where the portfolio's deals sit "
         "geographically and how they cluster by stage and size.",
-        common_questions=["Where are our deals geographically?",
-                         "Which states carry the most opportunity?"],
+        common_questions=[
+            "Where are our deals geographically?",
+            "Which states carry the most opportunity?",
+            "What does the marker color (stage) mean?",
+            "What does the state-shading CON status indicate?",
+            "How does this differ from /portfolio/heatmap?",
+        ],
         inputs=["Portfolio deals (deal_id, name, state, EBITDA opportunity, "
                 "stage) from analysis packets."],
         outputs=["Per page labels: an inline US SVG map with deal markers "
@@ -8184,7 +8204,11 @@ _BATCH8_SYSTEM = [
       "Where are job logs and output?"]),
     ("/runs", _SYS, "Simulation run history — past Monte-Carlo / analysis runs "
      "with parameters and results.",
-     ["What runs have I done?", "Can I re-open a past run?"]),
+     ["What runs have I done?",
+      "Can I re-open a past run?",
+      "How are runs different from /jobs (background queue)?",
+      "Where do run inputs / outputs live?",
+      "Can I clone and rerun with tweaked parameters?"]),
     ("/cli-runs", _SYS, "CLI run history — records of analyses launched via the "
      "rcm-mc command line.",
      ["What CLI runs happened?",
@@ -8800,8 +8824,13 @@ _GUIDE_BACKFILL = [
         "Intelligence suite — ranks metro markets by a real metric.",
         primary_purpose="Drop below the state level to the metro market — where "
         "deals actually compete — and rank/compare CBSAs on a chosen metric.",
-        common_questions=["Which metros lead on this metric?",
-                          "How does this metro compare to peers?"],
+        common_questions=[
+            "Which metros lead on this metric?",
+            "How does this metro compare to peers?",
+            "What's a CBSA and why is it the right unit?",
+            "Which metrics can I rank by?",
+            "How does this differ from /county-explorer?",
+        ],
         outputs=["A ranked CBSA table on the selected metric."],
         key_metrics=[], data_sources=["The shared geo metrics registry at the "
                                       "CBSA level (real public data)."],
