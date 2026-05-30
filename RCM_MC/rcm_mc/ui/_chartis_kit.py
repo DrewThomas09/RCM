@@ -8206,7 +8206,14 @@ def chartis_shell(
         'family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">'
     )
     palette_html = ""
-    if include_palette:
+    # Palette + tour + quick-capture + shortcuts overlay + topbar
+    # menu JS are all chrome-coupled: they have nothing to operate
+    # on when show_chrome=False (no Cmd-K trigger, no shortcut
+    # button, no user menu, no nav dropdowns). Audit 2026-05-29
+    # measured /login + /forgot still shipping ~62 KB of these
+    # chrome-only blocks even with show_chrome=False — gate them
+    # all on the same flag so auth pages stay lean.
+    if include_palette and show_chrome:
         # Use the platform-wide default tools index if the caller
         # didn't pass a curated list. Lets every editorial page jump
         # to any tool via Cmd+K without each renderer having to
@@ -8354,6 +8361,22 @@ def chartis_shell(
     guide_html = (
         f"{_GUIDE_CSS}{_GUIDE_PANEL_HTML}{_GUIDE_JS}" if show_chrome else ""
     )
+    # Chrome-coupled blocks (overlays, topbar JS, tour, quick
+    # capture) only matter when show_chrome=True. Auth pages
+    # (/login, /forgot) pass show_chrome=False — they have no
+    # topbar, no Cmd-K trigger, no shortcut button, so these
+    # bundles have nothing to operate on. Gating them here cuts
+    # ~62 KB off every chrome-less request (audit 2026-05-29).
+    # Always shipped: CSRF JS (form POSTs) + toast + intro-dismiss
+    # (used by ck_section_intro, which auth pages may render).
+    shortcuts_html = _SHORTCUTS_HTML if show_chrome else ""
+    user_menu_js = _USER_MENU_JS if show_chrome else ""
+    nav_menu_js = _NAV_MENU_JS if show_chrome else ""
+    qpill_js = _QPILL_JS if show_chrome else ""
+    palette_js = _PALETTE_JS if (include_palette and show_chrome) else ""
+    shortcuts_js = _SHORTCUTS_JS if show_chrome else ""
+    tour_html = ck_default_tour() if show_chrome else ""
+    quick_capture_html = ck_quick_capture() if show_chrome else ""
     return (
         "<!doctype html>"
         '<html lang="en"><head>'
@@ -8370,17 +8393,17 @@ def chartis_shell(
         f"{chrome_html}"
         f'<main class="{main_class}"{_phi_attr}>{debug_tag}{subtitle_html}{body_html}</main>'
         f"{palette_html}"
-        f"{_SHORTCUTS_HTML}"
+        f"{shortcuts_html}"
         f"{_TOAST_HTML}"
-        f"{ck_default_tour()}"
-        f"{ck_quick_capture()}"
+        f"{tour_html}"
+        f"{quick_capture_html}"
         f"{_CSRF_JS}"
-        f"{_USER_MENU_JS}"
-        f"{_NAV_MENU_JS}"
-        f"{_QPILL_JS}"
+        f"{user_menu_js}"
+        f"{nav_menu_js}"
+        f"{qpill_js}"
         f"{_INTRO_DISMISS_JS}"
-        f"{_PALETTE_JS}"
-        f"{_SHORTCUTS_JS}"
+        f"{palette_js}"
+        f"{shortcuts_js}"
         f"{_TOAST_JS}"
         f"{_SORT_JS}"
         f"{_TABLE_FILTER_JS}"
