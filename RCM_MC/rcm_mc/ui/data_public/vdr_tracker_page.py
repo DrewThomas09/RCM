@@ -260,8 +260,11 @@ def render_vdr_tracker(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    # 2026-05-30 audit P5 editorial: VDR (Virtual Data Room) is what
+    # the diligence requests are tracked in. Eyebrow + route both
+    # read VDR.
     page_title = ck_page_title(
-        "VDR / Diligence Request Tracker",
+        "VDR Tracker",
         eyebrow="VDR TRACKER",
         meta=f"""{_html.escape(r.deal_name)} · {r.days_since_vdr_open} days since VDR open · {r.total_requests} requests across {len(r.workstreams)} workstreams · {r.overdue_count} overdue · {r.material_findings_count} material findings — {r.corpus_deal_count:,} corpus deals""",
     )

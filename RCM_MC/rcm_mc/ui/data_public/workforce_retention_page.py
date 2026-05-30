@@ -294,8 +294,10 @@ def render_workforce_retention(params: dict = None) -> str:
 
     program_cost = sum(p.annual_cost_m for p in r.programs)
     savings_opp = sum(c.savings_opportunity_m for c in r.contract_labor)
+    # 2026-05-30 audit P5 editorial: turnover is the inverse of
+    # retention. Eyebrow + route both read RETENTION.
     page_title = ck_page_title(
-        "Workforce Turnover / Retention Tracker",
+        "Workforce Retention Tracker",
         eyebrow="WORKFORCE RETENTION",
         meta=f"""{r.total_headcount:,} headcount · {r.weighted_turnover_pct * 100:.1f}% weighted turnover · {r.avg_engagement_score:.2f}/10 engagement · ${r.total_contract_labor_spend_m:.1f}M contract labor · ${r.total_retention_spend_m:.1f}M retention spend · {r.critical_roles} critical roles — {r.corpus_deal_count:,} corpus deals""",
     )

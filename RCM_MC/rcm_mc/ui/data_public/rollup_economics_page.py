@@ -300,8 +300,11 @@ def render_rollup_economics(params: dict = None) -> str:
 
     total_int_cost = sum(ic.total_cost_mm for ic in r.integration_costs)
 
+    # 2026-05-30 audit P5 editorial: "roll-up economics" is the
+    # canonical partner phrase; the slash to "Platform Economics"
+    # was a near-synonym. Eyebrow + route both read ROLLUP/rollup.
     page_title = ck_page_title(
-        "Roll-Up / Platform Economics",
+        "Roll-Up Economics",
         eyebrow="ROLLUP ECONOMICS",
         meta=f"""Multiple arb · add-on cadence · synergy capture · debt capacity · exit waterfall — {r.corpus_deal_count:,} corpus deals""",
     )

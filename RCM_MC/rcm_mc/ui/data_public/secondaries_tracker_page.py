@@ -233,8 +233,11 @@ def render_secondaries_tracker(params: dict = None) -> str:
     lpac_required = sum(1 for c in r.conflicts if c.lpac_vote_needed)
     total_vol = sum(t.transaction_size_mm for t in r.transactions)
 
+    # 2026-05-30 audit P5 editorial: GP-led is the dominant
+    # secondaries form the page tracks (continuation vehicles, strip
+    # sales). Eyebrow already reads SECONDARIES TRACKER.
     page_title = ck_page_title(
-        "Secondaries / GP-Led Market Tracker",
+        "Secondaries Tracker",
         eyebrow="SECONDARIES TRACKER",
         meta=f"""Continuation vehicles · strip sales · tender offers · buyer landscape · CV economics · LP conflicts — {r.corpus_deal_count:,} corpus deals""",
     )
