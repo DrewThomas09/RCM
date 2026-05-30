@@ -5183,15 +5183,15 @@ _CSS_INLINE_FALLBACK = """
      overflow bug). */
   .ck-mega-items { display:grid; grid-template-columns:repeat(3, minmax(0,1fr));
     column-gap:36px; row-gap:22px; padding:0; align-content:start; min-width:0; }
-  .ck-mega-item { display:grid; grid-template-columns:28px minmax(0,1fr);
-    column-gap:12px; padding:0; text-decoration:none;
-    align-items:baseline; min-width:0; }
+  /* 2026-05-30: removed the 28px mono-ordinal column. The "01. 02. …"
+     prefixes read like a magazine TOC, not a tool nav, and the
+     numbers didn't carry meaning (they were just the ranking order,
+     which the partner has no way to know). Dropping them frees the
+     full row width for the serif title + italic description and
+     reduces visual noise on every page load (audit 2026-05-29 §2.1). */
+  .ck-mega-item { display:block; padding:0; text-decoration:none;
+    min-width:0; }
   .ck-mega-item:hover { background:transparent; }
-  /* Mono counter, baseline-aligned to the 17px serif title's first line. */
-  .ck-mega-idx { font-family:var(--sc-mono,monospace); font-size:10.5px;
-    letter-spacing:.1em; color:var(--tb-muted); line-height:1.4; padding-top:3px;
-    flex-shrink:0; transition:color .12s; }
-  .ck-mega-item:hover .ck-mega-idx { color:var(--tb-green); }
   .ck-mega-it-body { display:flex; flex-direction:column; gap:3px; min-width:0;
     flex:1 1 auto; }
   /* overflow-wrap:anywhere guarantees even a long unbroken token wraps inside
@@ -7935,14 +7935,19 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         _top, _has_more = _ranked_subnav_items(sect)
         # Exactly the 6 ranked leaves fill the 3×2 listing grid (real routes +
         # vetted one-line descriptions — no fabricated copy).
+        # 2026-05-30 audit follow-up: dropped the "01. 02. …" mono
+        # ordinal prefix. It read like a magazine TOC; the digits
+        # were the ranking order, which the partner has no way to
+        # know, so they were noise. enumerate() is retained only to
+        # preserve render-order stability in case a future revision
+        # re-introduces a meaningful per-item index.
         items = "".join(
             f'<a href="{_esc(s["href"])}" class="ck-mega-item" role="menuitem">'
-            f'<span class="ck-mega-idx">{i:02d}.</span>'
             f'<span class="ck-mega-it-body"><span class="ck-mega-it-label">'
             f'{_esc(s["label"])}</span>'
             f'<span class="ck-mega-it-desc">{_esc(_NAV_DESC.get(s["href"], ""))}</span>'
             f'</span></a>'
-            for i, s in enumerate(_top, start=1)
+            for s in _top
         )
         # Featured left panel — the "what is this section" card. Honest,
         # descriptive copy only (eyebrow / title / blurb from _SECTION_FEATURE,
