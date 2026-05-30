@@ -7795,7 +7795,9 @@ _BATCH6 = [
      "corpus.",
      "Ground an outcome expectation in how genuinely comparable deals fared.",
      ["How did comparable deals do?", "What outcome is realistic here?",
-      "Where does this sit vs peers?"],
+      "Where does this sit vs peers?",
+      "How is 'comparable' computed — distance on which numeric features, and is the cohort size shown?",
+      "How does /diligence/comparable-outcomes differ from /comparable-outcomes and /models/comparables?"],
      ["Benchmark percentile", "MOIC", "EV/EBITDA"],
      ["benchmark_percentile", "moic", "ev_to_ebitda"],
      ["public_transaction_corpus"],
@@ -7879,7 +7881,9 @@ _BATCH6 = [
      "Turn an uploaded claims/financial snapshot into normalized, "
      "quality-checked records the rest of diligence runs on.",
      ["How do I upload a snapshot?", "What's the data quality?", "What rows "
-      "failed validation?"],
+      "failed validation?",
+      "Which 835/837 fields are required vs optional for downstream analytics to light up?",
+      "How does /diligence/snapshot differ from /upload, /new-deal/upload and /diligence/checklist?"],
      ["Rows ingested", "Valid/invalid", "Data quality"], [],
      ["edi_835", "edi_837"],
      "Parses, validates, normalizes and summarizes an uploaded snapshot "
@@ -8281,7 +8285,9 @@ _BATCH8_ANALYTIC = [
      "Synthesizes a deal's diligence findings into a thesis-level view — "
      "strengths, risks, and open questions.",
      ["What's the diligence synthesis?", "What are the key risks?", "What's "
-      "still open?"],
+      "still open?",
+      "Which packet findings drive the synthesis, and how does the page flag a gap (missing data vs unresolved opinion)?",
+      "How does /diligence/synthesis differ from /diligence/ic-memo and /diligence/ic-packet?"],
      ["Risk score", "Open questions"], ["risk_score"], ["analysis_run"],
      "Composes findings from the deal's packet into a synthesis; surfaces "
      "gaps rather than papering over them.",
@@ -8292,7 +8298,9 @@ _BATCH8_ANALYTIC = [
      "Single-sponsor drill-down — a sponsor's deal history and performance "
      "from the corpus.",
      ["What's this sponsor's track record?", "What have they done in this "
-      "sector?", "How do they perform?"],
+      "sector?", "How do they perform?",
+      "What fraction of this sponsor's deals are in the corpus, and how many are realized vs unrealized?",
+      "How does /diligence/sponsor-detail differ from /gp-benchmarking, /sponsor-league, and /sponsor-heatmap?"],
      ["MOIC", "IRR", "Deal count"], ["moic", "irr"],
      ["public_transaction_corpus"],
      "Filters the corpus to one sponsor and summarizes their realized record; "
@@ -8304,7 +8312,9 @@ _BATCH8_ANALYTIC = [
      "Regulatory calendar with thesis kill-switch flags — upcoming rule "
      "changes that could break a thesis.",
      ["What regulation is coming?", "Could a rule break this thesis?", "What "
-      "should we watch?"],
+      "should we watch?",
+      "How current is the rulemaking feed, and which sources (Federal Register, CMS, state) are wired in?",
+      "How does /diligence/regulatory-calendar differ from /diligence/payer-stress and /industry?"],
      ["Upcoming rules", "Kill-switch flags"], [],
      ["regulatory_calendar_sources"],
      "Curated regulatory events mapped to thesis-risk flags from public "
@@ -8327,7 +8337,9 @@ _BATCH8_ANALYTIC = [
     ("/diligence/ic-memo", "Diligence IC Memo",
      PageContextCategory.DILIGENCE_WORKSPACE,
      "IC memo view within the diligence workspace for a deal.",
-     ["Show the IC memo", "What's the recommendation?", "What's missing?"],
+     ["Show the IC memo", "What's the recommendation?", "What's missing?",
+      "How are 'missing' items detected — required packet sections, blocked checklist P0s, or both?",
+      "How does /diligence/ic-memo differ from /ic-memo, /ic-memo-gen, and /diligence/ic-packet?"],
      ["MOIC", "IRR"], ["moic", "irr"], ["analysis_run"],
      "Renders the deal's IC memo from its packet; surfaces gaps honestly.",
      "The IC memo is where the diligence lands as a decision.",
