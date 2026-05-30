@@ -5290,6 +5290,13 @@ _MANUAL: List[PageContext] = [
         short_description="Supply-chain savings model (illustrative) anchored to the "
         "real CMS Open Payments device/pharma vendor landscape.",
         primary_purpose="Frame GPO savings against the real manufacturer-vendor scale.",
+        common_questions=[
+            "What savings rate do platform GPOs typically achieve?",
+            "Who are the top device/pharma vendors by industry payments?",
+            "Are the savings numbers from real deals or illustrative?",
+            "How do bulk-buys and rebate-capture differ?",
+            "Where can I plug in the target's actual spend?",
+        ],
         data_sources=["Illustrative GPO savings/contracts/bulk-buys (labeled) + real "
                       "CMS Open Payments ($3.31bn, top vendors)."],
         interpretation_guidance=["Savings/contract figures are illustrative scaffold.",
@@ -5466,6 +5473,13 @@ _MANUAL: List[PageContext] = [
         short_description="CIN shared-savings/quality model on your inputs, anchored "
         "to the real CMS MSSP ACO landscape.",
         primary_purpose="Frame a CIN's value-based posture against the real ACO landscape.",
+        common_questions=[
+            "What's the shared-savings opportunity for this CIN size?",
+            "How does the target's quality stack up vs the 511 MSSP ACOs?",
+            "Is a CIN the right structure vs ACO vs IPA?",
+            "What's the minimum scale for shared-savings to work?",
+            "Where can I see the underlying MSSP performance data?",
+        ],
         data_sources=["Illustrative CIN roster/contracts/quality (labeled) + real CMS "
                       "MSSP ACO landscape (511 ACOs, 15,293 orgs)."],
         interpretation_guidance=["CIN roster/contract figures are illustrative.",
@@ -5480,6 +5494,13 @@ _MANUAL: List[PageContext] = [
         "anchored to the real CIVHC commercial-vs-Medicare OON/QPA benchmark.",
         primary_purpose="Frame NSA OON/IDR exposure against the real rate benchmark "
         "disputes reference.",
+        common_questions=[
+            "How much OON exposure does the target have post-NSA?",
+            "What's the typical IDR award outcome — provider or payer?",
+            "How does QPA (qualifying payment amount) cap revenue?",
+            "Where does the CIVHC OON/QPA benchmark come from?",
+            "Which specialties face the highest NSA exposure?",
+        ],
         data_sources=["Illustrative OON volume/balance-bill/IDR (labeled) + real CIVHC "
                       "commercial-%-of-Medicare distribution."],
         interpretation_guidance=["OON/IDR figures are illustrative.",
@@ -5496,6 +5517,13 @@ _MANUAL: List[PageContext] = [
         short_description="A chronological feed of YOUR real workspace activity — "
         "deals created, notes, stage changes, alerts, escalations.",
         primary_purpose="See what's changed across your deals/portfolio recently.",
+        common_questions=[
+            "What happened on the book over the weekend?",
+            "Which deals had stage changes in the last 7 days?",
+            "Who made the last edit to deal X?",
+            "Is this feed audit-grade — can I cite it in IC?",
+            "How far back does the activity log go?",
+        ],
         data_sources=["Your real workspace audit/event log (SQLite)."],
         interpretation_guidance=["This is your own real activity, not market/corpus data."],
         related_routes=["/app", "/alerts", "/escalations"],
@@ -5506,6 +5534,13 @@ _MANUAL: List[PageContext] = [
         category=PageContextCategory.PIPELINE_SOURCING,
         short_description="Your real deal pipeline by stage (alias of /pipeline).",
         primary_purpose="Track your actual opportunities through the deal funnel.",
+        common_questions=[
+            "How many active deals are at each pipeline stage right now?",
+            "Which deals are stalled in their stage past the SLA?",
+            "What's the funnel conversion stage-by-stage?",
+            "How does this differ from /pipeline?",
+            "Can I filter by owner or sector here?",
+        ],
         data_sources=["Your real deal records (SQLite)."],
         interpretation_guidance=["YOUR deals, not the market or seed corpus."],
         related_routes=["/pipeline", "/app", "/deals"],
@@ -5537,6 +5572,13 @@ _MANUAL: List[PageContext] = [
         short_description="Value-creation initiatives tracked against YOUR real deals/"
         "portfolio companies.",
         primary_purpose="Track operating initiatives and their progress per company.",
+        common_questions=[
+            "Which value-creation initiatives are behind plan?",
+            "What's the total realized EBITDA uplift from initiatives this quarter?",
+            "Which initiatives are flagged at-risk across the portfolio?",
+            "How do I add a new initiative to a deal?",
+            "Where does this data come from — manual entry or actuals upload?",
+        ],
         data_sources=["Your real initiative records (SQLite)."],
         interpretation_guidance=["Your own initiatives — real workspace data."],
         related_routes=["/portfolio", "/value-creation-plan", "/app"],
