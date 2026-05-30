@@ -212,8 +212,11 @@ def render_hcit_platform(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     tam_opp = sum(t.revenue_opportunity_mm for t in r.tam)
+    # 2026-05-30 audit P5 editorial: in healthcare PE, HCIT platforms
+    # ARE the SaaS category being analyzed — the slash-dual was a
+    # subtype restatement. Eyebrow reads HCIT PLATFORM.
     page_title = ck_page_title(
-        "HCIT / SaaS Platform Analyzer",
+        "HCIT Platform Analyzer",
         eyebrow="HCIT PLATFORM",
         meta=f"${r.total_arr_mm:,.1f}M ARR growing {r.arr_growth_pct * 100:+.1f}% YoY · {r.total_nrr_pct:.2f}x NRR at {r.total_gross_margin_pct * 100:.1f}% gross margin · Rule of 40: {r.rule_of_40_score * 100:.0f} · Magic Number: {r.magic_number:.2f} · ${tam_opp:,.0f}M TAM opportunity across {len(r.tam)} sub-markets",
     )
