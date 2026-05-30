@@ -15022,9 +15022,12 @@ class RCMHandler(BaseHTTPRequestHandler):
           {jobs_table}
         </div>
         """
+        # 2026-05-30 audit §6.1: dropped "rcm-mc run" CLI vocabulary.
+        # Partners on the web don't have the CLI as context; the
+        # page's job is to queue a simulation run, period.
         self._send_html(shell(
             body=body, title="Simulation jobs",
-            subtitle="Web-triggered rcm-mc run with live progress",
+            subtitle="Queue a simulation run · live progress",
             back_href="/",
         ))
 
