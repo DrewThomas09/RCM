@@ -229,8 +229,12 @@ def render_dpi_tracker(params: dict = None) -> str:
     active_requests = len(r.lp_requests)
     high_conf_exits = sum(1 for p in r.exit_paths if p.confidence == "high")
 
+    # 2026-05-30 audit P5 editorial: DPI = Distributions to Paid-in,
+    # so the slash-dual was the acronym + its expansion. Use the
+    # acronym (partner vocab) matching the route /dpi-tracker and
+    # the eyebrow.
     page_title = ck_page_title(
-        "DPI / Distribution Tracker",
+        "DPI Tracker",
         eyebrow="DPI TRACKER",
         meta=f"{r.total_funds} funds at {r.weighted_dpi:.2f}x weighted DPI / {r.weighted_tvpi:.2f}x TVPI · ${r.total_distributions_b:.2f}B LTM distributions · {r.below_benchmark_funds} of {r.total_funds} funds below vintage benchmark · {active_requests} active LP liquidity requests",
     )
