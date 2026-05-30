@@ -237,8 +237,11 @@ def render_reit_analyzer(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    # 2026-05-30 audit P5 editorial: sale-leasebacks are the dominant
+    # mechanism the page analyzes for monetizing healthcare RE.
+    # Eyebrow + route both read REIT.
     page_title = ck_page_title(
-        "Healthcare REIT / Sale-Leaseback Analyzer",
+        "Healthcare REIT Analyzer",
         eyebrow="REIT ANALYZER",
         meta=f"""Real-estate monetization · cap-rate comps · rent coverage · REIT buyer landscape · proceeds allocation — {r.corpus_deal_count:,} corpus deals""",
     )
