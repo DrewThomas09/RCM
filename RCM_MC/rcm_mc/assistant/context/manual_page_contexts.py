@@ -4728,6 +4728,13 @@ _MANUAL: List[PageContext] = [
         "with a real CMS MA population-context panel (dual-eligible/age mix).",
         primary_purpose="Frame risk-adjustment intensity, with the real "
         "population drivers shown as context.",
+        common_questions=[
+            "What's a normal RAF score for a Medicare Advantage population?",
+            "How much does dual-eligible mix shift RAF?",
+            "Are the RAF numbers on this page from real data or illustrative?",
+            "What CMS population data drives the right-side panel?",
+            "Where do I get the target's actual coding intensity?",
+        ],
         data_sources=["Illustrative RAF model + real CMS MA dual-eligible / age "
                       "population mix by state."],
         interpretation_guidance=[
@@ -4748,6 +4755,13 @@ _MANUAL: List[PageContext] = [
         "— current active shortages by therapeutic category.",
         primary_purpose="Surface real drug-shortage exposure for pharmacy-"
         "dependent operations and supply-chain risk framing.",
+        common_questions=[
+            "Which drug categories are in active shortage right now?",
+            "How does the page get from FDA data to a portfolio risk score?",
+            "Is the FDA data live or a snapshot?",
+            "Why do some products have a blank availability field?",
+            "How does drug-shortage exposure affect pharmacy / 340B operations?",
+        ],
         data_sources=["openFDA drug shortages (committed snapshot; no runtime "
                       "network)."],
         key_metrics=["Active shortages", "Therapeutic categories",
@@ -4983,6 +4997,13 @@ _MANUAL: List[PageContext] = [
         "/aco-economics", "ACO Economics",
         short_description="ACO shared-savings economics calculator on your inputs.",
         primary_purpose="Model ACO/value-based shared-savings economics for a deal.",
+        common_questions=[
+            "What shared-savings rate does the ACO model assume?",
+            "How does benchmark-vs-spend translate into provider revenue?",
+            "What's the break-even attribution count for an ACO?",
+            "How sensitive is the deal economics to risk-track choice?",
+            "Where are the inputs vs the defaults documented?",
+        ],
         data_sources=["Calculator: your inputs + illustrative defaults."],
         interpretation_guidance=["Computes off YOUR inputs; defaults are "
                                 "illustrative, not a specific ACO's results."],
@@ -5002,6 +5023,13 @@ _MANUAL: List[PageContext] = [
         "/bolton-analyzer", "Bolt-on Analyzer",
         short_description="Bolt-on / roll-up accretion calculator on your inputs.",
         primary_purpose="Model accretion/dilution from a bolt-on acquisition.",
+        common_questions=[
+            "Is this bolt-on accretive at the platform's entry multiple?",
+            "What synergy run-rate makes the deal break even?",
+            "How much multiple-arb is captured at platform exit?",
+            "What's a realistic integration timeline assumption?",
+            "How does the bolt-on affect platform leverage?",
+        ],
         data_sources=["Calculator: your inputs + illustrative defaults."],
         interpretation_guidance=["Computes off YOUR inputs; illustrative defaults, "
                                 "not a specific deal."],
@@ -5063,6 +5091,13 @@ _MANUAL: List[PageContext] = [
         short_description="Quality grade across the illustrative seed-deal corpus.",
         primary_purpose="Benchmark a deal's data-completeness/credibility grade "
         "against the corpus.",
+        common_questions=[
+            "What does a 'grade A' deal look like in this scorer?",
+            "Which factors most affect the deal quality grade?",
+            "How does the corpus distribution skew across grades?",
+            "Is the grade benchmarked against real deals or illustrative ones?",
+            "How should I use this score in IC vs underwriting?",
+        ],
         data_sources=["Bundled ILLUSTRATIVE seed-deal corpus (labeled)."],
         interpretation_guidance=["Scores the illustrative corpus — not this "
                                 "market's real deals; use as a structural benchmark."],
@@ -5096,6 +5131,13 @@ _MANUAL: List[PageContext] = [
         "inputs, anchored to the real CMS FFS provider-supply universe.",
         primary_purpose="Gauge network payer concentration and the real provider-"
         "supply backdrop a deal acquires into.",
+        common_questions=[
+            "What HHI level is considered concentrated for a payer mix?",
+            "How concentrated is this deal's payer book?",
+            "What does the CMS provider-supply panel tell me about the market?",
+            "How do I read the regime classification?",
+            "Are the peer comparison numbers from real deals?",
+        ],
         data_sources=["Illustrative corpus peers/regime stats (labeled) + real CMS "
                       "FFS provider enrollment (2.98M)."],
         interpretation_guidance=["HHI/regime compute off YOUR payer mix.",
