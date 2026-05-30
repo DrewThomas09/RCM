@@ -2158,8 +2158,13 @@ _MANUAL: List[PageContext] = [
         "Mednax precedents).",
         primary_purpose="Flag, early, whether a deal's structure matches the "
         "moves that have already broken comparable deals.",
-        common_questions=["Does this deal match a known failure playbook?",
-                         "What structural patterns fire here?"],
+        common_questions=[
+            "Does this deal match a known failure playbook?",
+            "What structural patterns fire here?",
+            "Which 12 patterns are scanned (Steward, Envision, Mednax)?",
+            "What does each verdict band (GREEN/YELLOW/RED) trigger?",
+            "Is the scan predictive or pattern-matching?",
+        ],
         inputs=["Deal structure inputs (specialty, states, legal structure, "
                 "landlord, lease terms, EBITDAR coverage, OON revenue share, "
                 "geography); no CCD/claims required."],
@@ -2671,8 +2676,13 @@ _MANUAL: List[PageContext] = [
         "by sector across the corpus to show acceleration / deceleration.",
         primary_purpose="Show which healthcare sectors have been picking up or "
         "cooling in corpus deal activity and returns.",
-        common_questions=["Which sectors are heating up or cooling?",
-                         "How has MOIC moved by sector?"],
+        common_questions=[
+            "Which sectors are heating up or cooling?",
+            "How has MOIC moved by sector?",
+            "What's the default window — 3 years, 5 years?",
+            "Is sector momentum predictive or descriptive?",
+            "Which sectors have seen the biggest deal-count drop?",
+        ],
         inputs=["A window size (?years=N); the realized-deal corpus."],
         outputs=["Per page labels: per-sector tables (Recent count, Prior "
                  "count, Change %, momentum arrow, MOIC P50 recent vs prior)."],
@@ -3343,8 +3353,13 @@ _MANUAL: List[PageContext] = [
         "0–1 consistency score.",
         primary_purpose="Benchmark sponsors on their realized corpus outcomes "
         "and outcome consistency.",
-        common_questions=["How has this sponsor performed historically?",
-                         "Which sponsors are consistent vs lottery-like?"],
+        common_questions=[
+            "How has this sponsor performed historically?",
+            "Which sponsors are consistent vs lottery-like?",
+            "How is the 0-1 consistency score computed?",
+            "What's the home-run rate definition?",
+            "Are these realized corpus outcomes or current marks?",
+        ],
         inputs=["The realized-deal corpus, aggregated by sponsor."],
         outputs=["Per page labels: KPIs (Sponsors Tracked, Deals Counted, "
                  "Realized, Overall Median MOIC) and a league table (Med MOIC, "
@@ -6009,9 +6024,13 @@ _MANUAL: List[PageContext] = [
         "state-keyed public dataset PEdesk has ingested.",
         primary_purpose="Give a head-to-head read on a shortlist of target "
         "geographies in one table.",
-        common_questions=["How does CA compare to TX and FL?",
-                          "Which of these states has the most providers / "
-                          "highest uninsured rate?"],
+        common_questions=[
+            "How does CA compare to TX and FL?",
+            "Which of these states has the most providers / highest uninsured rate?",
+            "What 15 metrics does the comparison cover?",
+            "How does this differ from /state-rankings?",
+            "Can I compare more than 4 states?",
+        ],
         inputs=["?states=CA,TX,FL — up to 4 validated US states (50 + DC)."],
         outputs=["A metric×state comparison table (15 metrics)."],
         key_metrics=["Population", "Median HH income", "Uninsured rate",
@@ -6070,8 +6089,13 @@ _MANUAL: List[PageContext] = [
         "state, each with that state's national rank (#k of n).",
         primary_purpose="Give a quick, ranked read on a single market being "
         "underwritten.",
-        common_questions=["What does the data say about California?",
-                          "Where does this state rank nationally on each metric?"],
+        common_questions=[
+            "What does the data say about California?",
+            "Where does this state rank nationally on each metric?",
+            "Why is one metric listed as 'unranked'?",
+            "Which state has the highest dual-eligible share?",
+            "How does this differ from /state-rankings?",
+        ],
         inputs=["?state=CA — one validated US state (50 + DC)."],
         outputs=["A metric table with the state's value and national rank per row."],
         key_metrics=["All 15 shared geo metrics, each with a national rank."],
@@ -6096,8 +6120,13 @@ _MANUAL: List[PageContext] = [
         "most similar to a chosen state — a comp-set read for origination.",
         primary_purpose="Answer 'if the thesis works in state X, where else "
         "looks like X?' for building a target-geography comp set.",
-        common_questions=["Which states are most like Ohio?",
-                          "Where else resembles this market?"],
+        common_questions=[
+            "Which states are most like Ohio?",
+            "Where else resembles this market?",
+            "How is similarity defined (RMS of z-score gaps)?",
+            "How many shared metrics are needed for a state to score?",
+            "Are these comp-states from real public data or a model?",
+        ],
         inputs=["?state=OH — one validated US state (50 + DC)."],
         outputs=["States ranked by similarity (closest-first) with a distance."],
         key_metrics=["Standardized (z-score) Euclidean distance over the 15 "
