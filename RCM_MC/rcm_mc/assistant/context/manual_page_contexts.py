@@ -7808,7 +7808,9 @@ _BATCH6 = [
      "Check whether a value-creation thesis has actually worked in comparable "
      "deals before betting on it.",
      ["Has this thesis worked before?", "What's the historical hit rate?",
-      "Which levers backtest well?"],
+      "Which levers backtest well?",
+      "How is a thesis defined for replay — and does the backtest control for sector and vintage?",
+      "How does /backtester differ from /base-rates and /portfolio-sim?"],
      ["MOIC", "Value-creation opportunity", "Hit rate"],
      ["moic", "value_creation_opportunity"], ["public_transaction_corpus"],
      "Replays value-creation theses over corpus deals and reports realized "
@@ -7820,7 +7822,9 @@ _BATCH6 = [
      "things actually happen.",
      "Anchor judgment in base rates instead of the inside view of one deal.",
      ["What's the base rate for this outcome?", "How often does this work?",
-      "What are the odds historically?"],
+      "What are the odds historically?",
+      "How is the outcome defined — and how is the comparable cohort cut so the rate isn't inflated by selection?",
+      "How does /base-rates differ from /backtester and /corpus-dashboard?"],
      ["Outcome frequency", "MOIC", "Benchmark percentile"],
      ["moic", "irr", "benchmark_percentile"], ["public_transaction_corpus"],
      "Computes empirical outcome frequencies across corpus deals; descriptive.",
@@ -7846,7 +7850,9 @@ _BATCH6 = [
      "Show how complete and trustworthy the corpus is, field by field, before "
      "anyone relies on it.",
      ["How complete is the corpus?", "Which fields are sparse?", "Can I trust "
-      "this benchmark?"],
+      "this benchmark?",
+      "Which downstream tools degrade most when a specific field is sparse?",
+      "How does /corpus-coverage differ from /corpus-dashboard and /diligence/snapshot?"],
      ["Field coverage %", "Data coverage score"], ["data_coverage_score"],
      ["public_transaction_corpus"],
      "Computes per-field non-null/quality rates across the corpus; this is a "
@@ -7859,7 +7865,9 @@ _BATCH6 = [
      "sponsors, and return summaries.",
      "Give a single read on what the corpus contains and what it says.",
      ["What's in the corpus?", "What does it say about the market?", "Where's "
-      "the coverage strong?"],
+      "the coverage strong?",
+      "What time window and licensing scope does the corpus span — and how does that bound the read?",
+      "How does /corpus-dashboard differ from /corpus-coverage and /deal-corpus-analytics?"],
      ["Deal count", "MOIC", "IRR", "EV/EBITDA"],
      ["moic", "irr", "ev_to_ebitda"], ["public_transaction_corpus"],
      "Aggregates corpus counts and return summaries; descriptive.",
@@ -8193,7 +8201,9 @@ _BATCH8_ANALYTIC = [
      "Hub for all per-deal analytical tools — links into a deal's analysis "
      "packet sections.",
      ["What can I analyze for this deal?", "Where's the LBO/DCF/bridge?",
-      "How do I build a packet?"],
+      "How do I build a packet?",
+      "How fresh is a deal's packet, and what triggers a rebuild vs a cache read?",
+      "How does /analysis differ from /models/<type>/<deal_id> and /diligence?"],
      ["MOIC", "IRR", "EBITDA"], ["moic", "irr", "ebitda"],
      ["analysis_run"],
      "Navigation hub over the deal's analysis packet (rcm_mc/analysis); the "
@@ -8317,7 +8327,9 @@ _BATCH8_ANALYTIC = [
      "Per-payer prior-calibration view — the Bayesian priors the models shrink "
      "thin data toward.",
      ["What priors does the model use?", "How are priors calibrated?", "Why "
-      "this prior for this payer?"],
+      "this prior for this payer?",
+      "How much does each payer's prior shrink thin data — what's the effective sample-size weight?",
+      "How does /calibration differ from /models/quality and /corpus-coverage?"],
      ["Prior mean", "Prior strength"], ["benchmark_percentile"],
      ["benchmark_prior"],
      "Shows the calibrated priors (rcm_mc calibration) by payer that the "
